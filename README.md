@@ -7,12 +7,12 @@ API Client Interface Packages to use ekoDB as a service.
 ### Python Client
 
 A type-safe Python client with async/await support for interacting with EkoDB databases. 
-[Learn more](./python/README.md)
+[Learn more](./clients/python/README.md)
 
 ### Node.js Client
 
 A TypeScript-first Node.js client providing a robust interface to EkoDB databases.
-[Learn more](./nodejs/README.md)
+[Learn more](./clients/nodejs/README.md)
 
 ## Features
 
