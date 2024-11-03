@@ -25,3 +25,4 @@ htmlcov/
 *.pid.*
 *.db
 *.db.*
+clients/go/ekodb/coverage.out
