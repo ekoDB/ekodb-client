@@ -12,8 +12,8 @@ describe('EkoDBClient', () => {
   let mockAxiosInstance: jest.Mocked<AxiosInstance>;
   
   const mockConfig = {
-    baseURL: 'http://test.api',
-    apiKey: 'test-api-key'
+    baseURL: 'http://devleopment.google.ekodb.net',
+    apiKey: 'ekodb-test-api-key'
   };
 
   beforeEach(() => {
