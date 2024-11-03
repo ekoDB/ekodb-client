@@ -4,13 +4,13 @@
 all: build
 
 # Build all clients
-build: build-nodejs build-python
+build: build-nodejs build-python build-go
 
 # Test all clients
-test: test-nodejs test-python
+test: test-nodejs test-python test-go
 
 # Clean all builds
-clean: clean-nodejs clean-python
+clean: clean-nodejs clean-python clean-go
 
 # Node.js targets
 build-nodejs:
@@ -31,3 +31,14 @@ test-python:
 
 clean-python:
 	cd clients/python && rm -rf dist/ build/ *.egg-info/ .pytest_cache/ .coverage htmlcov/
+
+# Go targets
+build-go:
+	cd clients/go && go build ./...
+
+test-go:
+	cd clients/go && go test -v -race -cover ./...
+
+clean-go:
+	cd clients/go && go clean
+	rm -rf clients/go/dist
