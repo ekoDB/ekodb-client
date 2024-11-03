@@ -11,3 +11,17 @@ yarn-debug.log*
 dist/
 *.tsbuildinfo
 coverage/
+__pycache__/
+*.egg-info/
+*.egg/
+.coverage
+.coverage.*
+htmlcov/
+*.log
+*.log.*
+*.tmp
+*.tmp.*
+*.pid
+*.pid.*
+*.db
+*.db.*
