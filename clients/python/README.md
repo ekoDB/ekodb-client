@@ -5,7 +5,7 @@ A Python client library for interacting with EkoDB databases, providing a type-s
 ## Installation
 
 ```bash
-pip install ekodb-client
+pip install ekodb-client-python
 ```
 
 ## Features
@@ -24,7 +24,7 @@ pip install ekodb-client
 
 ```python
 import asyncio
-from ekodb import EkoDBClient, TypedValue, ValueType
+from ekodb_client import EkoDBClient, TypedValue, ValueType
 
 # Initialize the client
 client = EkoDBClient({
