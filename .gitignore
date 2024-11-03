@@ -25,4 +25,18 @@ htmlcov/
 *.pid.*
 *.db
 *.db.*
-clients/go/ekodb/coverage.out
+
+# Example directories
+clients/nodejs/node_modules
+clients/nodejs/dist
+clients/python/venv
+clients/python/.pytest_cache
+clients/python/__pycache__
+clients/python/*.pyc
+
+clients/nodejs/examples/node_modules/
+clients/nodejs/examples/dist/
+clients/python/examples/venv/
+clients/python/examples/.pytest_cache/
+clients/python/examples/__pycache__/
+clients/python/examples/*.pyc
