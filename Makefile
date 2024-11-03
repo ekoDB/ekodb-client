@@ -3,14 +3,14 @@
 # Default target
 all: build
 
-# Build all clients (currently only nodejs)
-build: build-nodejs
+# Build all clients
+build: build-nodejs build-python
 
-# Test all clients (currently only nodejs)
-test: test-nodejs
+# Test all clients
+test: test-nodejs test-python
 
-# Clean all builds (currently only nodejs)
-clean: clean-nodejs
+# Clean all builds
+clean: clean-nodejs clean-python
 
 # Node.js targets
 build-nodejs:
@@ -22,9 +22,12 @@ test-nodejs:
 clean-nodejs:
 	cd clients/nodejs && npm run clean
 
-# Future targets (commented out)
-# build-python:
-# 	@echo "Python client not implemented yet"
+# Python targets
+build-python:
+	cd clients/python && python3 -m pip install -e ".[dev]"
 
-# build-go:
-# 	@echo "Go client not implemented yet"
+test-python:
+	cd clients/python && python3 -m pytest tests/ --cov=ekodb
+
+clean-python:
+	cd clients/python && rm -rf dist/ build/ *.egg-info/ .pytest_cache/ .coverage htmlcov/
