@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="ekodb-client",
+    name="ekodb-client-python",
     packages=find_packages(),
     install_requires=[
         "requests>=2.31.0",

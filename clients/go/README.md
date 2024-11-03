@@ -5,7 +5,7 @@ A Go client library for interacting with EkoDB databases, providing a type-safe 
 ## Installation
 
 ```bash
-go get github.com/ekodb/ekodb-go
+go get github.com/ekodb/ekodb-client/go
 ```
 
 ## Features
@@ -29,7 +29,7 @@ import (
     "context"
     "log"
     
-    "github.com/ekodb/ekodb-go"
+    "github.com/ekodb/ekodb-client/go"
 )
 
 func main() {

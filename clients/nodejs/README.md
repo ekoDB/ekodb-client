@@ -5,7 +5,7 @@ A serverside client interface utility for ekoDB, providing a simple and type-saf
 ## Installation
 
 ```bash
-npm install ekodb-client-js
+npm install @ekodb-client/nodejs
 ```
 
 ## Features
@@ -22,7 +22,7 @@ npm install ekodb-client-js
 ## Quick Start
 
 ```typescript
-import EkoDBClient from 'ekodb-client-js';
+import EkoDBClient from '@ekodb-client/nodejs';
 
 // Initialize the client
 const client = new EkoDBClient({
@@ -58,6 +58,7 @@ const client = new EkoDBClient({
 ### Basic Operations
 
 #### Insert
+
 ```typescript
 // Single insert
 const id = await client.insert<T>(collection: string, record: TypedRecord<T>): Promise<string>
@@ -67,6 +68,7 @@ const result = await client.batchInsert<T>(collection: string, records: TypedRec
 ```
 
 #### Find
+
 ```typescript
 // Find multiple records
 const records = await client.find<T>(collection: string, options?: FindOptions): Promise<TypedRecord<T>[]>
@@ -76,6 +78,7 @@ const record = await client.findById<T>(collection: string, id: string): Promise
 ```
 
 #### Update
+
 ```typescript
 // Single update
 const success = await client.update<T>(collection: string, id: string, updates: Partial<TypedRecord<T>>): Promise<boolean>
@@ -85,6 +88,7 @@ const result = await client.batchUpdate<T>(collection: string, updates: Record<s
 ```
 
 #### Delete
+
 ```typescript
 // Single delete
 const success = await client.delete(collection: string, id: string): Promise<boolean>
@@ -94,6 +98,7 @@ const result = await client.batchDelete(collection: string, ids: string[]): Prom
 ```
 
 #### Schema Operations
+
 ```typescript
 const schema = await client.getSchema(collection: string): Promise<CollectionSchema>
 ```
@@ -172,9 +177,7 @@ try {
 ### Setup
 
 ```bash
-# Clone the repository
-git clone <repository-url>
-cd ekodb-client-js
+cd ekodb-client/client/nodejs
 
 # Install dependencies
 npm install
