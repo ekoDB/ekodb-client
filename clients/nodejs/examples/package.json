@@ -1,0 +1,18 @@
+{
+  "name": "@ekodb-client/nodejs-examples",
+  "version": "1.0.0",
+  "description": "Examples for EkoDB Node.js client",
+  "main": "test.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "ts-node test.ts"
+  },
+  "dependencies": {
+    "@ekodb-client/nodejs": "file:.."
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "ts-node": "^10.9.1",
+    "@types/node": "^20.0.0"
+  }
+}
