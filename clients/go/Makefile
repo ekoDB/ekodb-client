@@ -37,22 +37,26 @@ all: deps
 	@echo "Running standard build..."
 	@$(MAKE) test || exit 1
 	@$(MAKE) build || exit 1
+	@echo "Standard build complete"
 
 # Install dependencies
 deps:
 	@echo "Installing dependencies..."
 	@cd $(PROJECT_DIR) && $(GOMOD) download || (echo "Failed to download dependencies"; exit 1)
 	@cd $(PROJECT_DIR) && $(GOMOD) tidy || (echo "Failed to tidy dependencies"; exit 1)
+	@echo "Dependencies installed successfully"
 
 # Build the project
 build:
 	@echo "Building..."
 	@cd $(PROJECT_DIR) && $(GOBUILD) ./... || (echo "Build failed"; exit 1)
+	@echo "Build complete"
 
 # Run all tests
 test:
 	@echo "Running tests..."
 	@cd $(PROJECT_DIR) && $(GOTEST) $(TEST_FLAGS) ./... || (echo "Tests failed"; exit 1)
+	@echo "Tests passed successfully"
 
 # Run tests with coverage
 coverage:
@@ -60,6 +64,7 @@ coverage:
 	@cd $(PROJECT_DIR) && $(GOTEST) $(COVERAGE_FLAGS) ./... || (echo "Coverage tests failed"; exit 1)
 	@echo "Generating coverage report..."
 	@cd $(PROJECT_DIR) && $(GOCMD) tool cover $(COVERAGE_HTML_FLAGS)
+	@echo "Coverage tests passed successfully"
 
 # Clean build artifacts
 clean:
@@ -72,17 +77,20 @@ clean:
 fmt:
 	@echo "Formatting code..."
 	@cd $(PROJECT_DIR) && $(GOCMD) fmt ./...
+	@echo "Code formatted successfully"
 
 # Verify dependencies
 verify:
 	@echo "Verifying dependencies..."
 	@cd $(PROJECT_DIR) && $(GOMOD) verify || (echo "Dependency verification failed"; exit 1)
+	@echo "Dependencies verified successfully"
 
 # Check for updates to dependencies
 check-updates:
 	@echo "Checking for dependency updates..."
 	@cd $(PROJECT_DIR) && GO111MODULE=on $(GOCMD) list -u -m all
 	@cd $(PROJECT_DIR) && $(GOMOD) tidy
+	@echo "Dependency check complete"
 
 # Security check
 security:
@@ -93,6 +101,7 @@ security:
 		echo "nancy not installed. Install with: go install github.com/sonatype-nexus-community/nancy@latest"; \
 		exit 1; \
 	fi
+	@echo "Security check passed successfully"
 
 # CI pipeline steps
 ci: deps
@@ -104,11 +113,13 @@ ci: deps
 doc:
 	@echo "Generating documentation..."
 	@cd $(PROJECT_DIR) && $(GOCMD) doc -all
+	@echo "Documentation generated successfully"
 
 # Run benchmarks
 bench:
 	@echo "Running benchmarks..."
 	@cd $(PROJECT_DIR) && $(GOTEST) -bench=. -benchmem ./...
+	@echo "Benchmarks complete"
 
 # Install tools needed for development
 tools:
