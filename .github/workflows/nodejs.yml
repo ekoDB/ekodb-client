@@ -21,7 +21,7 @@ jobs:
         working-directory: clients/nodejs
     strategy:
       matrix:
-        node-version: [14.x, 16.x, 18.x, 20.x]
+        node-version: [16.x, 18.x, 20.x]
 
     steps:
     - uses: actions/checkout@v4
@@ -31,27 +31,16 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
-        cache-dependency-path: '**/package-lock.json'
+        cache-dependency-path: 'package.json'
     
-    - name: Install root dependencies
-      run: npm ci
-      working-directory: .
-      
-    - name: Install workspace dependencies
-      run: npm ci
-      
+    - name: Install dependencies
+      run: npm install
+    
     - name: Run linting
       run: npm run lint
       
     - name: Run tests
       run: npm run test
-      
-    - name: Upload coverage reports
-      uses: codecov/codecov-action@v4
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        files: ./clients/nodejs/coverage/lcov.info
-        fail_ci_if_error: true
 
   build:
     needs: test
@@ -68,14 +57,10 @@ jobs:
       with:
         node-version: '20.x'
         cache: 'npm'
-        cache-dependency-path: '**/package-lock.json'
+        cache-dependency-path: 'package.json'
     
-    - name: Install root dependencies
-      run: npm ci
-      working-directory: .
-      
-    - name: Install workspace dependencies
-      run: npm ci
+    - name: Install dependencies
+      run: npm install
       
     - name: Build package
       run: npm run build
