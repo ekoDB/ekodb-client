@@ -1,0 +1,46 @@
+name: Go Client CI
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'clients/go/**'
+      - '.github/workflows/go.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'clients/go/**'
+      - '.github/workflows/go.yml'
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: clients/go
+    strategy:
+      matrix:
+        go-version: ['1.18', '1.19', '1.20', '1.21']
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Go ${{ matrix.go-version }}
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ matrix.go-version }}
+        cache: true
+        cache-dependency-path: clients/go/go.sum
+    
+    - name: Install dependencies
+      run: go mod download
+    
+    - name: Run tests with coverage
+      run: go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
+    
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.out
+        flags: go
