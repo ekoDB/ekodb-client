@@ -1,4 +1,4 @@
-# ekodb-go
+# @ekodb-client/go
 
 A Go client library for interacting with EkoDB databases, providing a type-safe and idiomatic interface.
 
