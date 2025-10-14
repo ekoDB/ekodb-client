@@ -275,7 +275,7 @@ dependencies = [
 
 [[package]]
 name = "ekodb-client-py"
-version = "0.1.8"
+version = "0.2.0"
 dependencies = [
  "ekodb_client",
  "pyo3",
@@ -287,7 +287,7 @@ dependencies = [
 
 [[package]]
 name = "ekodb_client"
-version = "0.1.8"
+version = "0.2.0"
 dependencies = [
  "base64",
  "chrono",

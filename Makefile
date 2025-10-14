@@ -142,6 +142,11 @@ build-release:
 deploy-client: deploy-client-rust
 	@echo "✅ $(GREEN)All client libraries deployed!$(RESET)"
 
+deploy-all: ## Deploy all client libraries (Rust, Python, TypeScript)
+	@echo "🚀 $(CYAN)Deploying all client libraries...$(RESET)"
+	@./scripts/publish-all.sh --all
+	@echo "✅ $(GREEN)All client libraries deployed!$(RESET)"
+
 # Version bumping targets
 bump-version:
 	@echo "🔢 $(CYAN)Bumping all client versions...$(RESET)"
