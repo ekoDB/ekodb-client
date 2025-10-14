@@ -1,0 +1,87 @@
+[package]
+name = "ekodb-examples"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Raw HTTP/WebSocket examples
+tokio = { version = "1.0", features = ["full"] }
+reqwest = { version = "0.11", features = ["json"] }
+tokio-tungstenite = { version = "0.20", features = ["native-tls"] }
+futures = "0.3"
+futures-util = "0.3"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+chrono = "0.4"
+url = "2.4"
+dotenv = "0.15.0"
+rand = "0.8"
+
+# ekoDB client library (for client-based examples)
+ekodb_client = { path = "../../ekodb_client" }  # Local development
+# ekodb_client = "0.1.0"  # Published from crates.io
+
+[[example]]
+name = "simple_crud"
+path = "examples/simple_crud.rs"
+
+[[example]]
+name = "simple_websocket"
+path = "examples/simple_websocket.rs"
+
+[[example]]
+name = "document_ttl"
+path = "examples/document_ttl.rs"
+
+[[example]]
+name = "websocket_ttl"
+path = "examples/websocket_ttl.rs"
+
+# Client library examples (using ekodb_client)
+[[example]]
+name = "client_simple_crud"
+path = "examples/client_simple_crud.rs"
+
+[[example]]
+name = "client_batch_operations"
+path = "examples/client_batch_operations.rs"
+
+[[example]]
+name = "client_kv_operations"
+path = "examples/client_kv_operations.rs"
+
+[[example]]
+name = "client_collection_management"
+path = "examples/client_collection_management.rs"
+
+[[example]]
+name = "client_document_ttl"
+path = "examples/client_document_ttl.rs"
+
+[[example]]
+name = "client_simple_websocket"
+path = "examples/client_simple_websocket.rs"
+
+[[example]]
+name = "client_websocket_ttl"
+path = "examples/client_websocket_ttl.rs"
+
+[[example]]
+name = "client_search"
+path = "examples/client_search.rs"
+
+[[example]]
+name = "client_query_builder"
+path = "examples/client_query_builder.rs"
+
+[[example]]
+name = "client_schema_management"
+path = "examples/client_schema_management.rs"
+
+[[example]]
+name = "client_chat_basic"
+path = "examples/client_chat_basic.rs"
+
+[[example]]
+name = "client_chat_sessions"
+path = "examples/client_chat_sessions.rs"

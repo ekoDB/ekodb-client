@@ -1,42 +1,65 @@
-debug/
-target/
 .DS_Store
+
+.env
+debug
+target
+dist
+
+# Client-specific build directories
+ekodb-client-ts/node_modules
+ekodb-client-ts/target
+ekodb-client-ts/debug
+ekodb-client-ts/dist
+
+ekodb-client-py/target
+ekodb-client-py/debug
+ekodb-client-py/dist
+
+ekodb_client/target
+ekodb_client/debug
+ekodb_client/dist
+
+# Example directories
+examples/javascript/node_modules
+examples/typescript/node_modules
+
+# IDE/Editor files
 .vscode/
 .idea/
 *.swp
 *.swo
-node_modules/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.pytest_cache/
+venv/
+.venv/
+test_env/
+
+# Node
 npm-debug.log*
 yarn-debug.log*
-dist/
-*.tsbuildinfo
-coverage/
-__pycache__/
-*.egg-info/
-*.egg/
+yarn-error.log
+
+# Coverage
 .coverage
-.coverage.*
 htmlcov/
+coverage/
+
+# Logs
 *.log
-*.log.*
+
+# Temporary files
 *.tmp
-*.tmp.*
-*.pid
-*.pid.*
-*.db
-*.db.*
 
-# Example directories
-clients/nodejs/node_modules
-clients/nodejs/dist
-clients/python/venv
-clients/python/.pytest_cache
-clients/python/__pycache__
-clients/python/*.pyc
-
-clients/nodejs/examples/node_modules/
-clients/nodejs/examples/dist/
-clients/python/examples/venv/
-clients/python/examples/.pytest_cache/
-clients/python/examples/__pycache__/
-clients/python/examples/*.pyc
+# Sensitive files
+cargo-token.png
+cargo_token.txt
+NPM Recovery Codes.txt
+npm_token.txt
+PyPI Recovery Codes.txt
+pypi_token.txt
+pypi-token-init.png

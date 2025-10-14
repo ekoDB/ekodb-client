@@ -1,0 +1,8 @@
+# Production requirements - uses published package from PyPI
+ekodb-client>=0.1.0  # Published from PyPI
+# ekodb-client @ file://../../ekodb-client-py  # Local development (uncomment to use)
+
+# Other dependencies
+aiohttp>=3.8.0
+websockets>=10.0
+python-dotenv>=2.8.0

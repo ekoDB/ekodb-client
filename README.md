@@ -1,23 +1,41 @@
-# ekodb-client
+# ekoDB Client Libraries
 
-API Client Interface Packages to use ekoDB as a service.
+Official client libraries for ekoDB - a high-performance document database.
 
-## Available Clients
+## 📦 Available Clients
 
-### Go Client
+### 🦀 Rust Client (`ekodb_client`)
 
-A type-safe Go client with context support for interacting with EkoDB databases.
-[Learn more](./clients/go/README.md)
+[![Crates.io](https://img.shields.io/crates/v/ekodb_client)](https://crates.io/crates/ekodb_client)
+[![docs.rs](https://docs.rs/ekodb_client/badge.svg)](https://docs.rs/ekodb_client)
 
-### Python Client
+```bash
+cargo add ekodb_client
+```
 
-A type-safe Python client with async/await support for interacting with EkoDB databases. 
-[Learn more](./clients/python/README.md)
+### 🐍 Python Client (`ekodb-client`)
 
-### Node.js Client
+[![PyPI](https://img.shields.io/pypi/v/ekodb-client)](https://pypi.org/project/ekodb-client/)
 
-A TypeScript-first Node.js client providing a robust interface to EkoDB databases.
-[Learn more](./clients/nodejs/README.md)
+```bash
+pip install ekodb-client
+```
+
+### 🔷 Go Client
+
+[![Go Reference](https://pkg.go.dev/badge/github.com/ekoDB/ekodb-client-go.svg)](https://pkg.go.dev/github.com/ekoDB/ekodb-client-go)
+
+```bash
+go get github.com/ekoDB/ekodb-client-go
+```
+
+### 📘 TypeScript/JavaScript Client
+
+[![npm](https://img.shields.io/npm/v/@ekodb/client)](https://www.npmjs.com/package/@ekodb/client)
+
+```bash
+npm install @ekodb/client
+```
 
 ## Features
 
@@ -37,32 +55,52 @@ Each client also includes language-specific features:
 - Python: Async/await support
 - Node.js: TypeScript support, Promises
 
-## Documentation
+## 📚 Documentation
 
-- [Go Client Documentation](./clients/go/README.md)
-- [Python Client Documentation](./clients/python/README.md)
-- [Node.js Client Documentation](./clients/nodejs/README.md)
+- [Rust Client Documentation](https://docs.rs/ekodb_client)
+- [Python Client Documentation](./ekodb-client-py/README.md)
+- [Go Client Documentation](./ekodb-client-go/README.md)
+- [TypeScript Client Documentation](./ekodb-client-ts/README.md)
+- [Examples](./examples/) - Code examples for all languages
 
-## Development
+## 🛠️ Development
 
-Each client has its own development setup and testing procedures. Please refer to their respective README files for details.
+See [COMMANDS.md](./COMMANDS.md) for detailed command reference.
 
-### Building All Clients
+### Quick Start
 
 ```bash
+# Build Rust client
 make build
-```
 
-### Running All Tests
+# Build Python client
+make build-python-client
 
-```bash
+# Build TypeScript client
+make build-typescript-client
+
+# Run all tests
 make test
+
+# Run examples for all languages
+make test-examples
 ```
 
-### Cleaning All Builds
+### Deployment
 
 ```bash
-make clean
+# Deploy Python client to PyPI
+make bump-client-py      # Bump version
+make deploy-client-py    # Build & publish (Linux + macOS + source)
+
+# Deploy Rust client to crates.io
+make deploy-client-rust
+
+# Deploy TypeScript client to npm
+make deploy-client-ts
+
+# Deploy Go client (via git tags)
+make deploy-client-go
 ```
 
 ## License
