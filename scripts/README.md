@@ -15,8 +15,8 @@ package registries.
 | `PUBLISHING.md`          | Comprehensive publishing guide                    |
 | `QUICK_PUBLISH.md`       | Quick reference for publishing                    |
 
-**Note:** Go client has its own `publish.sh` script in `ekodb-client-go/`
-directory (will be moved to separate repository)
+**Note:** Go client is in a separate repository at
+[github.com/ekoDB/ekodb-client-go](https://github.com/ekoDB/ekodb-client-go)
 
 ## 🚀 Quick Start
 

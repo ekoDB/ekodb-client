@@ -259,12 +259,13 @@ deploy-client-py:
 
 deploy-client-go:
 	@echo "🔷 $(CYAN)Tagging Go client for pkg.go.dev...$(RESET)"
-	@echo "📝 $(YELLOW)Go modules are published via git tags$(RESET)"
-	@echo "💡 $(YELLOW)To publish:$(RESET)"
-	@echo "   1. Commit your changes"
-	@echo "   2. Run: git tag ekodb-client-go/v0.1.1"
-	@echo "   3. Run: git push origin ekodb-client-go/v0.1.1"
-	@echo "   4. Go will automatically index it at pkg.go.dev"
+	@echo "📝 $(YELLOW)Go client is in a separate repository$(RESET)"
+	@echo "💡 $(YELLOW)To publish Go client:$(RESET)"
+	@echo "   1. Go to: github.com/ekoDB/ekodb-client-go"
+	@echo "   2. Commit your changes"
+	@echo "   3. Run: git tag v0.1.1"
+	@echo "   4. Run: git push origin v0.1.1"
+	@echo "   5. Go will automatically index it at pkg.go.dev"
 	@echo "✅ $(GREEN)Go client deployment instructions shown!$(RESET)"
 
 # Simple Python deployment (current platform only, uses script)
@@ -545,8 +546,9 @@ fmt-python:
 fmt-go:
 	@echo "🔷 $(CYAN)Formatting Go code...$(RESET)"
 	@if command -v gofmt > /dev/null; then \
-		gofmt -w ekodb-client-go/ examples/go/; \
+		gofmt -w examples/go/; \
 		echo "✅ $(GREEN)Go formatting complete with gofmt!$(RESET)"; \
+		echo "💡 $(YELLOW)Note: Go client is in separate repo: github.com/ekoDB/ekodb-client-go$(RESET)"; \
 	else \
 		echo "$(YELLOW)gofmt not found. Please install Go.$(RESET)"; \
 	fi
@@ -623,9 +625,10 @@ install-typescript:
 	@echo "✅ $(GREEN)TypeScript client installed!$(RESET)"
 
 install-go:
-	@echo "🔷 $(CYAN)Installing Go client dependencies...$(RESET)"
-	@cd ekodb-client-go && go mod download
-	@echo "✅ $(GREEN)Go client dependencies installed!$(RESET)"
+	@echo "🔷 $(CYAN)Installing Go example dependencies...$(RESET)"
+	@cd examples/go && go mod download
+	@echo "✅ $(GREEN)Go example dependencies installed!$(RESET)"
+	@echo "💡 $(YELLOW)Note: Go client is in separate repo: github.com/ekoDB/ekodb-client-go$(RESET)"
 
 setup:
 	@echo "🛠️  $(CYAN)Setting up the project...$(RESET)"

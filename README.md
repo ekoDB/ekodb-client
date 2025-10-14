@@ -59,7 +59,8 @@ Each client also includes language-specific features:
 
 - [Rust Client Documentation](https://docs.rs/ekodb_client)
 - [Python Client Documentation](./ekodb-client-py/README.md)
-- [Go Client Documentation](./ekodb-client-go/README.md)
+- [Go Client Documentation](https://github.com/ekoDB/ekodb-client-go) - Separate
+  repository
 - [TypeScript Client Documentation](./ekodb-client-ts/README.md)
 - [Examples](./examples/) - Code examples for all languages
 

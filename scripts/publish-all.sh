@@ -35,8 +35,8 @@ show_usage() {
     echo "  $0 --rust --python          # Publish only Rust and Python"
     echo "  $0 --typescript             # Publish only TypeScript"
     echo ""
-    echo "Note: Go client has its own publish script in ekodb-client-go/publish.sh"
-    echo "      (Go client will be moved to a separate repository)"
+    echo "Note: Go client is in a separate repository:"
+    echo "      https://github.com/ekoDB/ekodb-client-go"
     echo ""
 }
 
@@ -154,5 +154,6 @@ echo "📦 Installation Commands:"
 echo "  Rust:       cargo add ekodb_client"
 echo "  Python:     pip install ekodb-client"
 echo "  TypeScript: npm install @ekodb/ekodb-client"
+echo "  Go:         go get github.com/ekoDB/ekodb-client-go"
 echo ""
-echo "Note: Go client will be published separately from ekodb-client-go repository"
+echo "Note: Go client is in a separate repository: https://github.com/ekoDB/ekodb-client-go"
