@@ -88,15 +88,71 @@ rm -rf target/wheels/*
 
 # Build for Linux (via Docker)
 echo "🐧 Building for Linux (via Docker)..."
-if command -v docker &> /dev/null; then
+
+# Check if Docker is available and running
+if ! command -v docker &> /dev/null; then
+    echo "⚠️  Docker not found, skipping Linux build"
+    echo "   (Linux users won't be able to install)"
+elif ! docker info > /dev/null 2>&1; then
+    echo "🔄 Docker is not running. Attempting to start..."
+    
+    # Try to start Colima
+    if command -v colima > /dev/null 2>&1; then
+        echo "🔄 Checking Colima status..."
+        if colima status 2>/dev/null | grep -q "Running"; then
+            echo "⏳ Colima is already running but Docker socket isn't ready. Waiting..."
+            sleep 5
+            for i in {1..12}; do
+                if docker info > /dev/null 2>&1; then
+                    echo "✅ Docker is now ready"
+                    break
+                fi
+                echo "⏳ Still waiting for Docker... ($i/12)"
+                sleep 5
+            done
+        else
+            echo "🔄 Starting Colima..."
+            colima start || {
+                echo "❌ Failed to start Colima. Skipping Linux build."
+                echo "   Run 'colima start' manually to build Linux wheels."
+                SKIP_LINUX=true
+            }
+        fi
+    # Try to start Docker Desktop on macOS
+    elif command -v open > /dev/null 2>&1 && [ -d "/Applications/Docker.app" ]; then
+        echo "🔄 Starting Docker Desktop..."
+        open -a Docker
+        echo "⏳ Waiting for Docker to start..."
+        for i in {1..30}; do
+            if docker info > /dev/null 2>&1; then
+                echo "✅ Docker is now ready"
+                break
+            fi
+            sleep 2
+        done
+    else
+        echo "⚠️  Could not find Docker Desktop or Colima. Skipping Linux build."
+        echo "   Install Colima with: brew install colima"
+        SKIP_LINUX=true
+    fi
+    
+    # Final check
+    if ! docker info > /dev/null 2>&1; then
+        echo "❌ Docker is still not ready. Skipping Linux build."
+        SKIP_LINUX=true
+    fi
+fi
+
+# Build Linux wheel if Docker is ready
+if [ "$SKIP_LINUX" != "true" ] && docker info > /dev/null 2>&1; then
     docker run --rm \
         -v "$(pwd)":/workspace \
         -w /workspace \
         ghcr.io/pyo3/maturin build --release --manylinux 2014
     echo "✅ Linux wheel built"
 else
-    echo "⚠️  Docker not found, skipping Linux build"
-    echo "   (Linux users won't be able to install)"
+    echo "⚠️  Skipping Linux build (Docker not available)"
+    echo "   macOS and source distribution will still be built"
 fi
 
 # Build for macOS (current platform) + source distribution
