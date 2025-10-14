@@ -16,6 +16,7 @@ cargo add ekodb_client
 ### 🐍 Python Client (`ekodb-client`)
 
 [![PyPI](https://img.shields.io/pypi/v/ekodb-client)](https://pypi.org/project/ekodb-client/)
+[![Python Version](https://img.shields.io/pypi/pyversions/ekodb-client)](https://pypi.org/project/ekodb-client/)
 
 ```bash
 pip install ekodb-client
@@ -24,17 +25,22 @@ pip install ekodb-client
 ### 🔷 Go Client
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/ekoDB/ekodb-client-go.svg)](https://pkg.go.dev/github.com/ekoDB/ekodb-client-go)
+[![Go Report Card](https://goreportcard.com/badge/github.com/ekoDB/ekodb-client-go)](https://goreportcard.com/report/github.com/ekoDB/ekodb-client-go)
 
 ```bash
 go get github.com/ekoDB/ekodb-client-go
 ```
 
+**Note:** Go client is maintained in a separate repository:
+[github.com/ekoDB/ekodb-client-go](https://github.com/ekoDB/ekodb-client-go)
+
 ### 📘 TypeScript/JavaScript Client
 
-[![npm](https://img.shields.io/npm/v/@ekodb/client)](https://www.npmjs.com/package/@ekodb/client)
+[![npm](https://img.shields.io/npm/v/@ekodb/ekodb-client)](https://www.npmjs.com/package/@ekodb/ekodb-client)
+[![npm downloads](https://img.shields.io/npm/dm/@ekodb/ekodb-client)](https://www.npmjs.com/package/@ekodb/ekodb-client)
 
 ```bash
-npm install @ekodb/client
+npm install @ekodb/ekodb-client
 ```
 
 ## Features
