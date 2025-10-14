@@ -312,7 +312,7 @@ const joinResults = await client.find("users", multiQuery);
 ## Examples
 
 See the
-[examples directory](https://github.com/ekoDB/ekodb/tree/main/examples/typescript)
+[examples directory](https://github.com/ekoDB/ekodb-client/tree/main/examples/typescript)
 for complete working examples:
 
 - `client_simple_crud.ts` - Basic CRUD operations
@@ -327,3 +327,9 @@ for complete working examples:
 ## License
 
 MIT
+
+## Links
+
+- [GitHub Repository](https://github.com/ekoDB/ekodb-client)
+- [Examples](https://github.com/ekoDB/ekodb-client/tree/main/examples/typescript)
+- [npm Package](https://www.npmjs.com/package/@ekodb/ekodb-client)

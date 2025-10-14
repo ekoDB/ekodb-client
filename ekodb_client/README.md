@@ -638,7 +638,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Resources
 
-- [ekoDB Documentation](https://docs.ekodb.io)
 - [API Reference](https://docs.rs/ekodb_client)
-- [Examples](https://github.com/ekoDB/ekodb/tree/main/examples/rust/examples)
-- [Issue Tracker](https://github.com/ekoDB/ekodb/issues)
+- [GitHub Repository](https://github.com/ekoDB/ekodb-client)
+- [Examples](https://github.com/ekoDB/ekodb-client/tree/main/examples/rust/examples)
+- [crates.io Package](https://crates.io/crates/ekodb_client)

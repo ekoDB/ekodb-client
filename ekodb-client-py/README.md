@@ -388,7 +388,7 @@ Get collection metadata including schema.
 ## Examples
 
 See the
-[examples directory](https://github.com/ekoDB/ekodb/tree/main/examples/python)
+[examples directory](https://github.com/ekoDB/ekodb-client/tree/main/examples/python)
 for complete working examples:
 
 - `client_simple_crud.py` - Basic CRUD operations
@@ -431,6 +431,6 @@ MIT OR Apache-2.0
 
 ## Links
 
-- [GitHub](https://github.com/ekoDB/ekodb)
-- [Documentation](https://github.com/ekoDB/ekodb/tree/main/documentation)
-- [Examples](https://github.com/ekoDB/ekodb/tree/main/examples/python)
+- [GitHub](https://github.com/ekoDB/ekodb-client)
+- [Examples](https://github.com/ekoDB/ekodb-client/tree/main/examples/python)
+- [PyPI Package](https://pypi.org/project/ekodb-client/)

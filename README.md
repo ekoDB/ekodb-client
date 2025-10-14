@@ -23,10 +23,10 @@ pip install ekodb-client
 
 ### 🔷 Go Client
 
-[![Go Reference](https://pkg.go.dev/badge/github.com/ekoDB/ekodb-client/ekodb-client-go.svg)](https://pkg.go.dev/github.com/ekoDB/ekodb-client/ekodb-client-go)
+[![Go Reference](https://pkg.go.dev/badge/github.com/ekoDB/ekodb-client-go.svg)](https://pkg.go.dev/github.com/ekoDB/ekodb-client-go)
 
 ```bash
-go get github.com/ekoDB/ekodb-client/ekodb-client-go
+go get github.com/ekoDB/ekodb-client-go
 ```
 
 ### 📘 TypeScript/JavaScript Client
