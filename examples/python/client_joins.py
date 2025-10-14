@@ -166,8 +166,15 @@ async def main():
     # Example 2: Join with filtering
     print("2. Join with filtering:")
     query2 = {
-        "department_id": {"$eq": "dept-001"},
-        "$join": {
+        "filter": {
+            "type": "Condition",
+            "content": {
+                "field": "department_id",
+                "operator": "Eq",
+                "value": "dept-001",
+            },
+        },
+        "join": {
             "collection": departments_collection,
             "local_field": "department_id",
             "foreign_field": "id",
@@ -240,8 +247,11 @@ async def main():
     # Example 4: Join orders with user data
     print("4. Join orders with user data:")
     query4 = {
-        "status": {"$eq": "completed"},
-        "$join": {
+        "filter": {
+            "type": "Condition",
+            "content": {"field": "status", "operator": "Eq", "value": "completed"},
+        },
+        "join": {
             "collection": users_collection,
             "local_field": "user_id",
             "foreign_field": "id",
@@ -274,14 +284,21 @@ async def main():
     # Example 5: Complex join with multiple conditions
     print("5. Complex join with multiple conditions:")
     query5 = {
-        "email": {"$contains": "@example.com"},
-        "$join": {
+        "filter": {
+            "type": "Condition",
+            "content": {
+                "field": "email",
+                "operator": "Contains",
+                "value": "@example.com",
+            },
+        },
+        "join": {
             "collection": departments_collection,
             "local_field": "department_id",
             "foreign_field": "id",
             "as": "department",
         },
-        "$sort": {"name": 1},
+        "sort": [{"field": "name", "ascending": True}],
     }
 
     results5 = await client.find(users_collection, query5)

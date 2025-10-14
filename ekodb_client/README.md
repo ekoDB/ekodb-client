@@ -195,8 +195,10 @@ let ws_client = client.websocket("ws://localhost:8080/ws").await?;
 let results = ws_client.find_all("users").await?;
 println!("Found {} users via WebSocket", results.len());
 
-// Query with filters
-let query = Query::new().filter("status", json!({"$eq": "active"}));
+// Query with filters using ekoDB format
+let query = QueryBuilder::new()
+    .eq("status", "active")
+    .build();
 let active_users = ws_client.find("users", query).await?;
 ```
 

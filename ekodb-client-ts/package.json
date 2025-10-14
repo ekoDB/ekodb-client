@@ -1,6 +1,6 @@
 {
   "name": "@ekodb/ekodb-client",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Official TypeScript/JavaScript client for ekoDB",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

@@ -37,7 +37,7 @@ impl QueryBuilder {
     // Comparison Operators
     // ========================================================================
 
-    /// Add an equality filter ($eq)
+    /// Add an equality filter (Eq operator)
     pub fn eq(mut self, field: impl Into<String>, value: impl Into<Value>) -> Self {
         self.filters.push(json!({
             "type": "Condition",
@@ -50,7 +50,7 @@ impl QueryBuilder {
         self
     }
 
-    /// Add a not-equal filter ($ne)
+    /// Add a not-equal filter (Ne operator)
     pub fn ne(mut self, field: impl Into<String>, value: impl Into<Value>) -> Self {
         self.filters.push(json!({
             "type": "Condition",
@@ -63,7 +63,7 @@ impl QueryBuilder {
         self
     }
 
-    /// Add a greater-than filter ($gt)
+    /// Add a greater-than filter (Gt operator)
     pub fn gt(mut self, field: impl Into<String>, value: impl Into<Value>) -> Self {
         self.filters.push(json!({
             "type": "Condition",
@@ -76,7 +76,7 @@ impl QueryBuilder {
         self
     }
 
-    /// Add a greater-than-or-equal filter ($gte)
+    /// Add a greater-than-or-equal filter (Gte operator)
     pub fn gte(mut self, field: impl Into<String>, value: impl Into<Value>) -> Self {
         self.filters.push(json!({
             "type": "Condition",
@@ -89,7 +89,7 @@ impl QueryBuilder {
         self
     }
 
-    /// Add a less-than filter ($lt)
+    /// Add a less-than filter (Lt operator)
     pub fn lt(mut self, field: impl Into<String>, value: impl Into<Value>) -> Self {
         self.filters.push(json!({
             "type": "Condition",
@@ -102,7 +102,7 @@ impl QueryBuilder {
         self
     }
 
-    /// Add a less-than-or-equal filter ($lte)
+    /// Add a less-than-or-equal filter (Lte operator)
     pub fn lte(mut self, field: impl Into<String>, value: impl Into<Value>) -> Self {
         self.filters.push(json!({
             "type": "Condition",
@@ -115,7 +115,7 @@ impl QueryBuilder {
         self
     }
 
-    /// Add an in-array filter ($in)
+    /// Add an in-array filter (In operator)
     pub fn in_array(mut self, field: impl Into<String>, values: Vec<Value>) -> Self {
         self.filters.push(json!({
             "type": "Condition",
@@ -128,7 +128,7 @@ impl QueryBuilder {
         self
     }
 
-    /// Add a not-in-array filter ($nin)
+    /// Add a not-in-array filter (NotIn operator)
     pub fn nin(mut self, field: impl Into<String>, values: Vec<Value>) -> Self {
         self.filters.push(json!({
             "type": "Condition",
@@ -396,8 +396,8 @@ mod tests {
     fn test_logical_operators() {
         let query = QueryBuilder::new()
             .or(vec![
-                json!({"status": {"$eq": "active"}}),
-                json!({"status": {"$eq": "pending"}}),
+                json!({"type": "Condition", "content": {"field": "status", "operator": "Eq", "value": "active"}}),
+                json!({"type": "Condition", "content": {"field": "status", "operator": "Eq", "value": "pending"}}),
             ])
             .build();
 
@@ -474,8 +474,8 @@ mod tests {
     fn test_and_operator() {
         let query = QueryBuilder::new()
             .and(vec![
-                json!({"age": {"$gte": 18}}),
-                json!({"status": "active"}),
+                json!({"type": "Condition", "content": {"field": "age", "operator": "Gte", "value": 18}}),
+                json!({"type": "Condition", "content": {"field": "status", "operator": "Eq", "value": "active"}}),
             ])
             .build();
         assert!(query.filter.is_some());

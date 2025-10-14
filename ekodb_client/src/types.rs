@@ -215,39 +215,32 @@ impl Default for Record {
     }
 }
 
-/// Query operators for filtering records
+/// Query operators for filtering
+///
+/// ekoDB uses its own operator format, not MongoDB-style $ operators
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
+#[serde(rename_all = "PascalCase")]
 pub enum QueryOperator {
     /// Equal to
-    #[serde(rename = "$eq")]
     Eq(FieldType),
     /// Not equal to
-    #[serde(rename = "$ne")]
     Ne(FieldType),
     /// Greater than
-    #[serde(rename = "$gt")]
     Gt(FieldType),
     /// Greater than or equal to
-    #[serde(rename = "$gte")]
     Gte(FieldType),
     /// Less than
-    #[serde(rename = "$lt")]
     Lt(FieldType),
     /// Less than or equal to
-    #[serde(rename = "$lte")]
     Lte(FieldType),
     /// In array
-    #[serde(rename = "$in")]
     In(Vec<FieldType>),
     /// Not in array
-    #[serde(rename = "$nin")]
+    #[serde(rename = "NotIn")]
     Nin(Vec<FieldType>),
     /// Regex match
-    #[serde(rename = "$regex")]
     Regex(String),
     /// Exists
-    #[serde(rename = "$exists")]
     Exists(bool),
 }
 

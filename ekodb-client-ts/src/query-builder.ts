@@ -44,7 +44,7 @@ export class QueryBuilder {
   // ========================================================================
 
   /**
-   * Add an equality filter ($eq)
+   * Add an equality filter (Eq operator)
    */
   eq(field: string, value: any): this {
     this.filters.push({
@@ -59,7 +59,7 @@ export class QueryBuilder {
   }
 
   /**
-   * Add a not-equal filter ($ne)
+   * Add a not-equal filter (Ne operator)
    */
   ne(field: string, value: any): this {
     this.filters.push({
@@ -74,7 +74,7 @@ export class QueryBuilder {
   }
 
   /**
-   * Add a greater-than filter ($gt)
+   * Add a greater-than filter (Gt operator)
    */
   gt(field: string, value: any): this {
     this.filters.push({
@@ -89,7 +89,7 @@ export class QueryBuilder {
   }
 
   /**
-   * Add a greater-than-or-equal filter ($gte)
+   * Add a greater-than-or-equal filter (Gte operator)
    */
   gte(field: string, value: any): this {
     this.filters.push({
@@ -104,7 +104,7 @@ export class QueryBuilder {
   }
 
   /**
-   * Add a less-than filter ($lt)
+   * Add a less-than filter (Lt operator)
    */
   lt(field: string, value: any): this {
     this.filters.push({
@@ -119,7 +119,7 @@ export class QueryBuilder {
   }
 
   /**
-   * Add a less-than-or-equal filter ($lte)
+   * Add a less-than-or-equal filter (Lte operator)
    */
   lte(field: string, value: any): this {
     this.filters.push({
@@ -134,7 +134,7 @@ export class QueryBuilder {
   }
 
   /**
-   * Add an in-array filter ($in)
+   * Add an in-array filter (In operator)
    */
   in(field: string, values: any[]): this {
     this.filters.push({
@@ -149,7 +149,7 @@ export class QueryBuilder {
   }
 
   /**
-   * Add a not-in-array filter ($nin)
+   * Add a not-in-array filter (NotIn operator)
    */
   nin(field: string, values: any[]): this {
     this.filters.push({
