@@ -1,6 +1,5 @@
-tek@Seans-MacBook-Pro ~/Development/teknology/ekodb
-[feat/ekodb-client-package+]$ make test-examples-go 🧪 Running Go examples
-(direct HTTP/WebSocket)...
+
+$ make test-examples-go 🧪 Running Go examples (direct HTTP/WebSocket)...
 
 ╔════════════════════════════════════════╗ ║ ekoDB Go Examples Test Suite ║
 ╚════════════════════════════════════════╝
@@ -492,5 +491,4 @@ Setting up sample data... ✅ Sample data created
 === Cleanup === ✅ Deleted test collections
 
 ✅ Join operations examples completed! ✅ Go client examples complete! ✅ All Go
-integration tests complete! tek@Seans-MacBook-Pro ~/Development/teknology/ekodb
-[feat/ekodb-client-package+]$
+integration tests complete!

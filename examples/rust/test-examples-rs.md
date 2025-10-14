@@ -1,5 +1,4 @@
-tek@Seans-MacBook-Pro ~/Development/teknology/ekodb
-[feat/ekodb-client-package+*]$ make test-examples-rs 🧪 Running Rust examples
+make test-examples-rs 🧪 Running Rust examples
 (direct HTTP/WebSocket)... Finished `dev` profile [unoptimized + debuginfo]
 target(s) in 0.08s Running `target/debug/examples/simple_crud` ✓ Authentication
 successful
@@ -306,7 +305,7 @@ matching all conditions
 === Cleanup === ✓ Deleted collection
 
 ✓ All query builder operations completed successfully Compiling ekodb-examples
-v0.1.0 (/Users/tek/Development/teknology/ekodb/examples/rust) Finished `dev`
+v0.1.0 Finished `dev`
 profile [unoptimized + debuginfo] target(s) in 0.50s Running
 `target/debug/examples/client_search` === ekoDB Search Example ===
 
@@ -429,8 +428,7 @@ Execution Time: 2574ms
 === Cleanup === ✓ Deleted collection
 
 ✓ Chat completed successfully Compiling ekodb-examples v0.1.0
-(/Users/tek/Development/teknology/ekodb/examples/rust) Finished `dev` profile
-[unoptimized + debuginfo] target(s) in 0.52s Running
+Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.52s Running
 `target/debug/examples/client_chat_sessions` === ekoDB Chat Session Management
 Example ===
 
@@ -471,10 +469,9 @@ odWsGw-8ykGcR3HgdPNin42MJZBs_FwCaGvQUUizR_NKeKvR9vNa3YHJWPzXb-s9fkz5ZRWn_BHEnSlC
 === Cleanup === ✓ Deleted collection
 
 ✓ All session management operations completed successfully Compiling
-ekodb-examples v0.1.0 (/Users/tek/Development/teknology/ekodb/examples/rust)
-Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.51s Running
-`target/debug/examples/client_chat_advanced` === ekoDB Advanced Chat Features
-Example ===
+ekodb-examples v0.1.0 Finished `dev` profile [unoptimized + debuginfo] target(s)
+in 0.51s Running `target/debug/examples/client_chat_advanced` === ekoDB
+Advanced Chat Features Example ===
 
 === Inserting Sample Data === ✓ Inserted sample product
 
@@ -510,5 +507,4 @@ in merged session: 4
 === Cleanup === ✓ Deleted session ✓ Deleted collection
 
 ✓ All advanced chat features demonstrated successfully! ✅ Rust client examples
-complete! ✅ All Rust integration tests complete! tek@Seans-MacBook-Pro
-~/Development/teknology/ekodb [feat/ekodb-client-package+*]$
+complete! ✅ All Rust integration tests complete!

@@ -1,5 +1,4 @@
-tek@Seans-MacBook-Pro ~/Development/teknology/ekodb
-[feat/ekodb-client-package+]$ make test-examples-py 🧪 Running Python examples
+make test-examples-py 🧪 Running Python examples
 (direct HTTP/WebSocket)...
 
 ╔════════════════════════════════════════╗ ║ ekoDB Python Examples Test Suite ║
@@ -137,7 +136,6 @@ abi3 support 🐍 Not using a specific python interpreter 💻 Using
 `MACOSX_DEPLOYMENT_TARGET=11.0` for aarch64-apple-darwin by default Finished
 `release` profile [optimized] target(s) in 0.08s 📦 Built wheel for abi3 Python
 ≥ 3.8 to
-/Users/tek/Development/teknology/ekodb/ekodb-client-py/target/wheels/ekodb_client-0.1.0-cp38-abi3-macosx_11_0_arm64.whl
 Processing
 ./ekodb-client-py/target/wheels/ekodb_client-0.1.0-cp38-abi3-macosx_11_0_arm64.whl
 Installing collected packages: ekodb-client Attempting uninstall: ekodb-client
@@ -361,5 +359,3 @@ in merged session: 4
 
 ✓ All advanced chat features demonstrated successfully! ✅ Python client
 examples complete! ✅ All Python integration tests complete!
-tek@Seans-MacBook-Pro ~/Development/teknology/ekodb
-[feat/ekodb-client-package+]$

@@ -1,6 +1,4 @@
-tek@Seans-MacBook-Pro ~/Development/teknology/ekodb
-[feat/ekodb-client-package+]$ make test-examples-typescript 📦 Building
-TypeScript client library...
+make test-examples-typescript 📦 Building TypeScript client library...
 
 > @ekodb/ekodb-client@0.1.0 prepare npm run build
 
@@ -364,5 +362,4 @@ Setting up sample data... ✅ Sample data created
 === Cleanup === ✅ Deleted test collections
 
 ✅ Join operations examples completed! ✅ TypeScript client examples complete!
-✅ All TypeScript integration tests complete! tek@Seans-MacBook-Pro
-~/Development/teknology/ekodb [feat/ekodb-client-package+]$
+✅ All TypeScript integration tests complete!

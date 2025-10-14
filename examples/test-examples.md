@@ -1,5 +1,4 @@
-tek@Seans-MacBook-Pro ~/Development/teknology/ekodb
-[feat/ekodb-client-package+*]$ make test-examples 🧪 Running Rust examples
+make test-examples 🧪 Running Rust examples
 (direct HTTP/WebSocket)... Finished `dev` profile [unoptimized + debuginfo]
 target(s) in 0.13s Running `target/debug/examples/simple_crud` ✓ Authentication
 successful
@@ -27,7 +26,7 @@ String("gw26DJPLRgWThHjNYjgLAc725xLKbSwFSPB1SuDvkFwXgOmJyT4-EWp0QSWgqga6N1UVhWD7
 === Delete Document === Deleted document
 
 ✓ All CRUD operations completed successfully Compiling ekodb-examples v0.1.0
-(/Users/tek/Development/teknology/ekodb/examples/rust) Finished `dev` profile
+Finished `dev` profile
 [unoptimized + debuginfo] target(s) in 0.66s Running
 `target/debug/examples/simple_websocket` ✓ Authentication successful
 
@@ -44,7 +43,7 @@ String("gw26DJPLRgWThHjNYjgLAc725xLKbSwFSPB1SuDvkFwXgOmJyT4-EWp0QSWgqga6N1UVhWD7
 record(s) via WebSocket
 
 ✓ WebSocket example completed successfully Compiling ekodb-examples v0.1.0
-(/Users/tek/Development/teknology/ekodb/examples/rust) Finished `dev` profile
+Finished `dev` profile
 [unoptimized + debuginfo] target(s) in 0.50s Running
 `target/debug/examples/batch_operations` ✓ Authentication successful
 
@@ -60,7 +59,7 @@ status="active"
 deleted (not found)
 
 ✓ All batch operations completed successfully Compiling ekodb-examples v0.1.0
-(/Users/tek/Development/teknology/ekodb/examples/rust) Finished `dev` profile
+ Finished `dev` profile
 [unoptimized + debuginfo] target(s) in 0.46s Running
 `target/debug/examples/kv_operations` ✓ Authentication successful
 
@@ -82,7 +81,7 @@ deleted (not found)
 === Delete Multiple Keys === ✓ Deleted 3 keys
 
 ✓ All KV operations completed successfully Compiling ekodb-examples v0.1.0
-(/Users/tek/Development/teknology/ekodb/examples/rust) Finished `dev` profile
+ Finished `dev` profile
 [unoptimized + debuginfo] target(s) in 0.47s Running
 `target/debug/examples/collection_management` ✓ Authentication successful
 
@@ -105,7 +104,7 @@ deleted (not found)
 === Verify Deletion === Collection still exists: false
 
 ✓ All collection management operations completed successfully Compiling
-ekodb-examples v0.1.0 (/Users/tek/Development/teknology/ekodb/examples/rust)
+ekodb-examples v0.1.0 
 Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.46s Running
 `target/debug/examples/document_ttl` ✓ Authentication successful
 
@@ -121,7 +120,7 @@ Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.46s Running
 === Delete Document === ✓ Deleted document
 
 ✓ All document TTL operations completed successfully Compiling ekodb-examples
-v0.1.0 (/Users/tek/Development/teknology/ekodb/examples/rust) Finished `dev`
+v0.1.0  Finished `dev`
 profile [unoptimized + debuginfo] target(s) in 0.66s Running
 `target/debug/examples/websocket_ttl` ✓ Authentication successful
 
@@ -132,10 +131,10 @@ String("uuzgeH4TYJPlCoIwb_hep6W3gSUzmbfmebhlkdvbLw24XjFz_5D5Io3dlt3gE3gfVSxy-7u8
 
 ✓ WebSocket TTL example completed successfully ✅ Rust direct examples complete!
 🛠️ Building client library... cargo build -p ekodb_client Compiling ekodb_client
-v0.1.0 (/Users/tek/Development/teknology/ekodb/ekodb_client) Finished `dev`
+v0.1.0  Finished `dev`
 profile [unoptimized + debuginfo] target(s) in 9.14s ✅ Client build complete!
 🧪 Running Rust client library examples... Compiling ekodb-examples v0.1.0
-(/Users/tek/Development/teknology/ekodb/examples/rust) Finished `dev` profile
+ Finished `dev` profile
 [unoptimized + debuginfo] target(s) in 0.72s Running
 `target/debug/examples/client_simple_crud` ✓ Client created (token exchange
 happens automatically)
@@ -168,7 +167,7 @@ String("48e_5yks-eQ5ms10X_VYUxbVSc4qffbqlyUuhBgzz31FoP1wfasaP4kar4XFFskaD3E9Alhp
 === Cleanup === ✓ Deleted collection
 
 ✓ All CRUD operations completed successfully Compiling ekodb-examples v0.1.0
-(/Users/tek/Development/teknology/ekodb/examples/rust) Finished `dev` profile
+ Finished `dev` profile
 [unoptimized + debuginfo] target(s) in 0.78s Running
 `target/debug/examples/client_batch_operations` ✓ Client created
 
@@ -182,7 +181,7 @@ Found 5 total records in collection
 === Cleanup === ✓ Deleted collection
 
 ✓ All batch operations completed successfully Compiling ekodb-examples v0.1.0
-(/Users/tek/Development/teknology/ekodb/examples/rust) Finished `dev` profile
+ Finished `dev` profile
 [unoptimized + debuginfo] target(s) in 0.64s Running
 `target/debug/examples/client_kv_operations` ✓ Client created
 
@@ -204,7 +203,7 @@ deleted (not found)
 === Delete Multiple Keys === ✓ Deleted 3 keys
 
 ✓ All KV operations completed successfully Compiling ekodb-examples v0.1.0
-(/Users/tek/Development/teknology/ekodb/examples/rust) Finished `dev` profile
+ Finished `dev` profile
 [unoptimized + debuginfo] target(s) in 0.74s Running
 `target/debug/examples/client_collection_management` ✓ Client created
 
@@ -224,7 +223,7 @@ deleted (not found)
 === Verify Deletion === Collection still exists: false
 
 ✓ All collection management operations completed successfully Compiling
-ekodb-examples v0.1.0 (/Users/tek/Development/teknology/ekodb/examples/rust)
+ekodb-examples v0.1.0 
 Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.69s Running
 `target/debug/examples/client_document_ttl` ✓ Client created
 
@@ -246,7 +245,7 @@ Some(String("R9yvX1yjLynuLVOlK1QkfQgbaU27KmVec52Piyx5RURMTUIl34-0UYnkGPN632tlFho
 
 💡 Note: Documents with TTL will automatically expire after the specified
 duration Compiling ekodb-examples v0.1.0
-(/Users/tek/Development/teknology/ekodb/examples/rust) Finished `dev` profile
+ Finished `dev` profile
 [unoptimized + debuginfo] target(s) in 0.95s Running
 `target/debug/examples/client_simple_websocket` ✓ Client created
 
@@ -261,7 +260,7 @@ TwhfsyPmfJPCt_7Mom7fZDNWMMJintiZJm5KkvBsu7U0M9IrAOmX4I0X3rJy2f7--hg_ZDjNPoO5rnf_
 === Cleanup === ✓ Deleted collection
 
 ✓ WebSocket example completed successfully Compiling ekodb-examples v0.1.0
-(/Users/tek/Development/teknology/ekodb/examples/rust) Finished `dev` profile
+ Finished `dev` profile
 [unoptimized + debuginfo] target(s) in 0.98s Running
 `target/debug/examples/client_websocket_ttl` ✓ Client created
 
@@ -277,7 +276,7 @@ WebSocket Record 1: 4 fields
 
 💡 Note: Documents with TTL will automatically expire after the specified
 duration Compiling ekodb-examples v0.1.0
-(/Users/tek/Development/teknology/ekodb/examples/rust) Finished `dev` profile
+ Finished `dev` profile
 [unoptimized + debuginfo] target(s) in 0.74s Running
 `target/debug/examples/client_query_builder` === ekoDB Query Builder Example ===
 
@@ -337,7 +336,7 @@ matching all conditions
 === Cleanup === ✓ Deleted collection
 
 ✓ All query builder operations completed successfully Compiling ekodb-examples
-v0.1.0 (/Users/tek/Development/teknology/ekodb/examples/rust) Finished `dev`
+v0.1.0  Finished `dev`
 profile [unoptimized + debuginfo] target(s) in 0.73s Running
 `target/debug/examples/client_search` === ekoDB Search Example ===
 
@@ -383,7 +382,7 @@ profile [unoptimized + debuginfo] target(s) in 0.73s Running
 === Cleanup === ✓ Deleted collection
 
 ✓ All search operations completed successfully Execution time: 1ms Compiling
-ekodb-examples v0.1.0 (/Users/tek/Development/teknology/ekodb/examples/rust)
+ekodb-examples v0.1.0 
 Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.75s Running
 `target/debug/examples/client_schema_management` === ekoDB Schema Management
 Example ===
@@ -410,7 +409,7 @@ Some(String("eSZe3r8_D71o6Azp96BSsjzXipIXkdDXejffpqXHiW6tTwOD0LXWHFr1V5ybcFBXhaO
 === Cleanup === ✓ Deleted collection
 
 ✓ All schema management operations completed successfully Compiling
-ekodb-examples v0.1.0 (/Users/tek/Development/teknology/ekodb/examples/rust)
+ekodb-examples v0.1.0 
 Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.71s Running
 `target/debug/examples/client_chat_basic` === ekoDB Chat Basic Example ===
 
@@ -466,7 +465,7 @@ Execution Time: 4761ms
 === Cleanup === ✓ Deleted collection
 
 ✓ Chat completed successfully Compiling ekodb-examples v0.1.0
-(/Users/tek/Development/teknology/ekodb/examples/rust) Finished `dev` profile
+ Finished `dev` profile
 [unoptimized + debuginfo] target(s) in 0.80s Running
 `target/debug/examples/client_chat_sessions` === ekoDB Chat Session Management
 Example ===
@@ -508,7 +507,7 @@ zD8QK-\_zbcPyNND0Fd0Y91HVJ3hwgOec_dG5KeWi_oVcXZN9noSyWL7SiussdSAKLRhrCrpp-wBrfOG
 === Cleanup === ✓ Deleted collection
 
 ✓ All session management operations completed successfully Compiling
-ekodb-examples v0.1.0 (/Users/tek/Development/teknology/ekodb/examples/rust)
+ekodb-examples v0.1.0 
 Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.84s Running
 `target/debug/examples/client_chat_advanced` === ekoDB Advanced Chat Features
 Example ===
@@ -687,11 +686,11 @@ Python direct examples complete! 🐍 Building and installing Python client
 package... 🍹 Building a mixed python/rust project 🔗 Found pyo3 bindings with
 abi3 support 🐍 Not using a specific python interpreter 💻 Using
 `MACOSX_DEPLOYMENT_TARGET=11.0` for aarch64-apple-darwin by default Compiling
-ekodb_client v0.1.0 (/Users/tek/Development/teknology/ekodb/ekodb_client)
+ekodb_client v0.1.0 
 Compiling ekodb-client-py v0.1.0
-(/Users/tek/Development/teknology/ekodb/ekodb-client-py) Finished `release`
+ Finished `release`
 profile [optimized] target(s) in 8.60s 📦 Built wheel for abi3 Python ≥ 3.8 to
-/Users/tek/Development/teknology/ekodb/ekodb-client-py/target/wheels/ekodb_client-0.1.0-cp38-abi3-macosx_11_0_arm64.whl
+
 Processing
 ./ekodb-client-py/target/wheels/ekodb_client-0.1.0-cp38-abi3-macosx_11_0_arm64.whl
 Installing collected packages: ekodb-client Attempting uninstall: ekodb-client
@@ -1949,7 +1948,7 @@ Server is ready
 === Running 7 Examples ===
 
 === Running
-/Users/tek/Development/teknology/ekodb/examples/javascript/ttl-caching/simple_crud.js
+
 === ✓ Authentication successful
 
 === Insert Document === (node:11853) [DEP0040] DeprecationWarning: The
@@ -1977,7 +1976,7 @@ active: { type: 'Boolean', value: true }, name: 'Updated Record', value: 100 }
 successfully
 
 === Running
-/Users/tek/Development/teknology/ekodb/examples/javascript/ttl-caching/simple_websocket.js
+simple_websocket.js
 === ✓ Authentication successful
 
 === Inserting Test Data === (node:11856) [DEP0040] DeprecationWarning: The
@@ -2011,7 +2010,7 @@ record(s) via WebSocket
 successfully
 
 === Running
-/Users/tek/Development/teknology/ekodb/examples/javascript/ttl-caching/batch_operations.js
+
 === ✓ Authentication successful
 
 === Batch Insert === (node:11868) [DEP0040] DeprecationWarning: The `punycode`
@@ -2031,7 +2030,6 @@ deleted (not found)
 successfully
 
 === Running
-/Users/tek/Development/teknology/ekodb/examples/javascript/ttl-caching/kv_operations.js
 === ✓ Authentication successful
 
 === KV Set === (node:11871) [DEP0040] DeprecationWarning: The `punycode` module
@@ -2057,7 +2055,6 @@ deleted (not found)
 successfully
 
 === Running
-/Users/tek/Development/teknology/ekodb/examples/javascript/ttl-caching/collection_management.js
 === ✓ Authentication successful
 
 === Create Collection (via insert) === (node:11873) [DEP0040]
@@ -2081,7 +2078,6 @@ ucAwCsVz0s2DxnwWWXn_EmsF92ysEXOZQWpmN1tmt_o9MT4tfs89QUrHlwP6X3S0MKtp0kLtBHdKaNL0
 collection_management.js completed successfully
 
 === Running
-/Users/tek/Development/teknology/ekodb/examples/javascript/ttl-caching/document_ttl.js
 === ✓ Authentication successful
 
 === Insert Document with TTL (1 hour) === (node:11885) [DEP0040]
@@ -2102,7 +2098,6 @@ ge9NRYHlyJQPxLGh3jQGV1tzQvrB0xMQ4LOoxL6PREvD2HXNtAcaxEhOJ39nmPaCk_WdGvbMd1zpW7dc
 successfully
 
 === Running
-/Users/tek/Development/teknology/ekodb/examples/javascript/ttl-caching/websocket_ttl.js
 === ✓ Authentication successful
 
 === Insert Test Data with TTL === (node:11887) [DEP0040] DeprecationWarning: The
