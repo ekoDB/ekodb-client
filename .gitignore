@@ -37,6 +37,7 @@ __pycache__/
 .pytest_cache/
 venv/
 .venv/
+test_env/
 
 # Node
 npm-debug.log*
