@@ -1,0 +1,27 @@
+{
+  "name": "@ekodb/ekodb-client",
+  "version": "0.1.0",
+  "description": "Official TypeScript/JavaScript client for ekoDB",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "prepare": "npm run build"
+  },
+  "keywords": [
+    "ekodb",
+    "database",
+    "client",
+    "typescript"
+  ],
+  "author": "ekoDB",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/ws": "^8.5.10",
+    "typescript": "^5.3.0"
+  },
+  "dependencies": {
+    "ws": "^8.16.0"
+  }
+}

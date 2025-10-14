@@ -1,0 +1,9 @@
+# Development requirements - uses local ekodb_client
+
+# Install local editable version
+-e ../../ekodb-client-py
+
+# Other dependencies
+aiohttp>=3.8.0
+websockets>=10.0
+python-dotenv>=2.8.0

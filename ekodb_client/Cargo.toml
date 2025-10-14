@@ -1,0 +1,41 @@
+[package]
+name = "ekodb_client"
+version = "0.1.2"
+authors = ["Sean M. Vazquez <sean.m.vazquez@gmail.com>"]
+edition = "2021"
+license = "MIT OR Apache-2.0"
+description = "Official Rust client library for ekoDB - A high-performance database"
+repository = "https://github.com/ekoDB/ekodb"
+documentation = "https://docs.rs/ekodb_client"
+readme = "README.md"
+keywords = ["database", "ekodb", "client", "async"]
+categories = ["database", "api-bindings"]
+
+[dependencies]
+# Use workspace dependencies
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+reqwest = { workspace = true }
+chrono = { workspace = true }
+rust_decimal = { workspace = true }
+uuid = { workspace = true }
+thiserror = { workspace = true }
+base64 = { workspace = true }
+log = { workspace = true }
+
+# Client-specific dependencies
+tokio-tungstenite = { version = "0.21", default-features = false }
+futures-util = "0.3"
+url = "2.5"
+regex = "1.10"
+
+[dev-dependencies]
+tokio-test = "0.4"
+mockito = "1.2"
+env_logger = "0.11"
+
+[features]
+default = ["rustls"]
+rustls = ["reqwest/rustls-tls", "tokio-tungstenite/rustls-tls-webpki-roots", "tokio-tungstenite/connect"]
+native-tls = ["reqwest/native-tls", "tokio-tungstenite/native-tls", "tokio-tungstenite/connect"]

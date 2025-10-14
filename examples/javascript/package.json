@@ -1,0 +1,14 @@
+{
+  "name": "ekodb-examples",
+  "version": "1.0.0",
+  "description": "ekoDB JavaScript Examples",
+  "scripts": {
+    "test": "node test-runner.js"
+  },
+  "dependencies": {
+    "@ekodb/ekodb-client": "file:../../ekodb-client-ts",
+    "dotenv": "^16.0.3",
+    "node-fetch": "^2.6.1",
+    "ws": "^8.5.0"
+  }
+}
