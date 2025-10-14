@@ -14,7 +14,7 @@ YELLOW := \033[33m
 RED := \033[31m
 RESET := \033[0m
 
-.PHONY: all build build-release build-client build-python-client build-typescript-client test test-ci test-client test-examples test-examples-direct test-examples-client test-examples-rust test-examples-python test-examples-go test-examples-typescript test-examples-javascript clean check fmt fmt-rust fmt-rust-client fmt-rust-examples fmt-python fmt-go fmt-typescript fmt-md format install install-rust install-python install-typescript install-go setup install-hooks deps-check deps-update deploy-client deploy-client-rust deploy-client-py deploy-client-py-simple deploy-client-go deploy-client-ts bump-client-py docs-client
+.PHONY: all build build-release build-client build-python-client build-typescript-client test test-ci test-client test-examples test-examples-direct test-examples-client test-examples-rust test-examples-python test-examples-go test-examples-typescript test-examples-javascript clean check fmt fmt-rust fmt-rust-client fmt-rust-examples fmt-python fmt-go fmt-typescript fmt-md format install install-rust install-python install-typescript install-go setup install-hooks deps-check deps-update deploy-client deploy-client-rust deploy-client-py deploy-client-py-simple deploy-client-go deploy-client-ts bump-version bump-client-py docs-client
 
 # ASCII Banner for ekoDB
 BANNER := \
@@ -80,7 +80,8 @@ help:
 	@echo "  🐍 $(GREEN)make deploy-client-py-simple$(RESET) - Deploy Python client (current platform, uses script)"
 	@echo "  🔷 $(GREEN)make deploy-client-go$(RESET)   - Show Go client deployment instructions"
 	@echo "  📘 $(GREEN)make deploy-client-ts$(RESET)   - Deploy TypeScript client (uses scripts/publish-typescript.sh)"
-	@echo "  🔢 $(GREEN)make bump-client-py$(RESET)     - Bump Python client version"
+	@echo "  🔢 $(GREEN)make bump-version$(RESET)       - Bump version for ALL clients (Rust, Python, TS)"
+	@echo "  🔢 $(GREEN)make bump-client-py$(RESET)     - Bump Python client version only"
 	@echo ""
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "📜 $(CYAN)SCRIPTS$(RESET)"
@@ -142,6 +143,50 @@ deploy-client: deploy-client-rust
 	@echo "✅ $(GREEN)All client libraries deployed!$(RESET)"
 
 # Version bumping targets
+bump-version:
+	@echo "🔢 $(CYAN)Bumping all client versions...$(RESET)"
+	@echo ""
+	@read -p "Enter new version (e.g., 0.1.3): " NEW_VERSION; \
+	if [ -z "$$NEW_VERSION" ]; then \
+		echo "$(RED)❌ No version provided$(RESET)"; \
+		exit 1; \
+	fi; \
+	echo ""; \
+	echo "$(YELLOW)📦 Current versions:$(RESET)"; \
+	echo "  Rust:       $$(grep '^version = ' ekodb_client/Cargo.toml | head -1 | cut -d'"' -f2)"; \
+	echo "  Python:     $$(grep '^version = ' ekodb-client-py/Cargo.toml | head -1 | cut -d'"' -f2)"; \
+	echo "  TypeScript: $$(grep '"version":' ekodb-client-ts/package.json | head -1 | cut -d'"' -f4)"; \
+	echo ""; \
+	echo "$(YELLOW)📦 New version: $$NEW_VERSION$(RESET)"; \
+	echo ""; \
+	read -p "Continue? (y/N): " -n 1 -r; \
+	echo; \
+	if [[ ! $$REPLY =~ ^[Yy]$$ ]]; then \
+		echo "$(RED)❌ Cancelled$(RESET)"; \
+		exit 1; \
+	fi; \
+	echo ""; \
+	echo "$(CYAN)Updating Rust client...$(RESET)"; \
+	sed -i '' "s/^version = \"[^\"]*\"/version = \"$$NEW_VERSION\"/" ekodb_client/Cargo.toml; \
+	echo "  ✅ ekodb_client/Cargo.toml"; \
+	echo ""; \
+	echo "$(CYAN)Updating Python client...$(RESET)"; \
+	sed -i '' "s/^version = \"[^\"]*\"/version = \"$$NEW_VERSION\"/" ekodb-client-py/Cargo.toml; \
+	sed -i '' "s/^version = \"[^\"]*\"/version = \"$$NEW_VERSION\"/" ekodb-client-py/pyproject.toml; \
+	echo "  ✅ ekodb-client-py/Cargo.toml"; \
+	echo "  ✅ ekodb-client-py/pyproject.toml"; \
+	echo ""; \
+	echo "$(CYAN)Updating TypeScript client...$(RESET)"; \
+	sed -i '' "s/\"version\": \"[^\"]*\"/\"version\": \"$$NEW_VERSION\"/" ekodb-client-ts/package.json; \
+	echo "  ✅ ekodb-client-ts/package.json"; \
+	echo ""; \
+	echo "$(GREEN)✅ All versions bumped to $$NEW_VERSION$(RESET)"; \
+	echo ""; \
+	echo "$(YELLOW)💡 Next steps:$(RESET)"; \
+	echo "  1. Review changes: git diff"; \
+	echo "  2. Commit: git add -A && git commit -m 'Bump version to $$NEW_VERSION'"; \
+	echo "  3. Publish: make deploy-client (or individual deploy commands)"
+
 bump-client-py:
 	@echo "🔢 $(CYAN)Bumping Python client version...$(RESET)"
 	@CURRENT_VERSION=$$(grep '^version = ' ekodb-client-py/Cargo.toml | head -1 | cut -d'"' -f2); \
