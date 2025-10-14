@@ -342,7 +342,7 @@ dependencies = [
 
 [[package]]
 name = "ekodb_client"
-version = "0.1.7"
+version = "0.1.8"
 dependencies = [
  "base64",
  "chrono",
