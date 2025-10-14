@@ -145,9 +145,10 @@ fi
 
 # Build Linux wheel if Docker is ready
 if [ "$SKIP_LINUX" != "true" ] && docker info > /dev/null 2>&1; then
+    # Mount the parent directory so ekodb_client dependency can be found
     docker run --rm \
-        -v "$(pwd)":/workspace \
-        -w /workspace \
+        -v "$REPO_ROOT":/workspace \
+        -w /workspace/ekodb-client-py \
         ghcr.io/pyo3/maturin build --release --manylinux 2014
     echo "✅ Linux wheel built"
 else
