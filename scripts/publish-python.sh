@@ -77,10 +77,33 @@ cd ../ekodb_client
 cargo test --lib
 cd ../ekodb-client-py
 
-# Build the package
+# Build the package for multiple platforms
 echo ""
-echo "🔨 Building wheels..."
-maturin build --release
+echo "🔨 Building wheels for multiple platforms..."
+echo ""
+
+# Clean old wheels
+echo "🧹 Cleaning old wheels..."
+rm -rf target/wheels/*
+
+# Build for Linux (via Docker)
+echo "🐧 Building for Linux (via Docker)..."
+if command -v docker &> /dev/null; then
+    docker run --rm \
+        -v "$(pwd)":/workspace \
+        -w /workspace \
+        ghcr.io/pyo3/maturin build --release --manylinux 2014
+    echo "✅ Linux wheel built"
+else
+    echo "⚠️  Docker not found, skipping Linux build"
+    echo "   (Linux users won't be able to install)"
+fi
+
+# Build for macOS (current platform) + source distribution
+echo ""
+echo "🍎 Building for macOS + source distribution..."
+maturin build --release --sdist
+echo "✅ macOS wheel and source distribution built"
 
 # List built wheels
 echo ""
@@ -92,8 +115,14 @@ echo ""
 echo "🧪 Testing build..."
 python3 -m venv test_env
 source test_env/bin/activate
-pip install target/wheels/*.whl
-python -c "import ekodb_client; print('✅ Import successful')" || echo "❌ Import failed"
+# Install only the platform-specific wheel (exclude Linux wheels on macOS)
+WHEEL=$(ls -t target/wheels/*.whl | grep -v manylinux | grep -v musllinux | head -1)
+if [ -n "$WHEEL" ]; then
+    pip install "$WHEEL"
+    python -c "import ekodb_client; print('✅ Import successful')" || echo "❌ Import failed"
+else
+    echo "❌ No compatible wheel found for current platform"
+fi
 deactivate
 rm -rf test_env
 
@@ -109,10 +138,14 @@ if [[ ! $REPLY =~ ^[Yy]$ ]]; then
     exit 1
 fi
 
-# Publish to PyPI
+# Publish to PyPI using twine (uploads all wheels)
 echo ""
-echo "🚀 Publishing to PyPI..."
-maturin publish --username __token__
+echo "🚀 Publishing all wheels to PyPI..."
+if ! command -v twine &> /dev/null; then
+    echo "📦 Installing twine..."
+    pip install twine
+fi
+twine upload --skip-existing target/wheels/* -u __token__ -p "$MATURIN_PYPI_TOKEN"
 
 echo ""
 echo "✅ Successfully published ekodb-client v$VERSION to PyPI!"
