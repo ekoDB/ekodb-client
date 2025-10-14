@@ -173,7 +173,8 @@ bump-version:
 	echo "$(CYAN)Updating Python client...$(RESET)"; \
 	sed -i '' "s/^version = \"[^\"]*\"/version = \"$$NEW_VERSION\"/" ekodb-client-py/Cargo.toml; \
 	sed -i '' "s/^version = \"[^\"]*\"/version = \"$$NEW_VERSION\"/" ekodb-client-py/pyproject.toml; \
-	echo "  ✅ ekodb-client-py/Cargo.toml"; \
+	sed -i '' "s/ekodb_client = { version = \"[^\"]*\"/ekodb_client = { version = \"$$NEW_VERSION\"/" ekodb-client-py/Cargo.toml; \
+	echo "  ✅ ekodb-client-py/Cargo.toml (version + ekodb_client dependency)"; \
 	echo "  ✅ ekodb-client-py/pyproject.toml"; \
 	echo ""; \
 	echo "$(CYAN)Updating TypeScript client...$(RESET)"; \
