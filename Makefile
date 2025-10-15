@@ -80,6 +80,7 @@ help:
 	@echo "  🐍 $(GREEN)make deploy-client-py-simple$(RESET) - Deploy Python client (current platform, uses script)"
 	@echo "  🔷 $(GREEN)make deploy-client-go$(RESET)   - Show Go client deployment instructions"
 	@echo "  📘 $(GREEN)make deploy-client-ts$(RESET)   - Deploy TypeScript client (uses scripts/publish-typescript.sh)"
+	@echo "  🟣 $(GREEN)make deploy-client-kt$(RESET)   - Deploy Kotlin client to Maven Central (uses scripts/publish-kotlin.sh)"
 	@echo "  🔢 $(GREEN)make bump-version$(RESET)       - Bump version for ALL clients (Rust, Python, TS)"
 	@echo "  🔢 $(GREEN)make bump-client-py$(RESET)     - Bump Python client version only"
 	@echo ""
@@ -97,6 +98,9 @@ help:
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "  🖌️  $(GREEN)make fmt$(RESET)          - Format all code (Rust + Python + Go + TS + Markdown)"
 	@echo "  🖌️  $(GREEN)make format$(RESET)       - Format all code (alias for fmt)"
+	@echo "  📋 $(GREEN)make examples-ls$(RESET)  - Generate comprehensive examples inventory"
+	@echo "  🔍 $(GREEN)make examples-ls-check$(RESET) - Validate examples inventory against committed snapshot"
+	@echo "  🔄 $(GREEN)make examples-ls-badge$(RESET) - Update README badge with current example count"
 	@echo "  🦀 $(GREEN)make fmt-rust$(RESET)     - Format all Rust code (client + examples)"
 	@echo "     $(GREEN)make fmt-rust-client$(RESET)   - Format ekodb_client only"
 	@echo "     $(GREEN)make fmt-rust-examples$(RESET) - Format Rust examples only"
@@ -280,6 +284,13 @@ deploy-client-py-simple:
 deploy-client-ts:
 	@./scripts/publish-typescript.sh
 
+deploy-client-kt:
+	@echo "🟣 $(CYAN)Publishing Kotlin client to Maven Central...$(RESET)"
+	@chmod +x scripts/publish-kotlin.sh
+	@./scripts/publish-kotlin.sh
+
+deploy-client-kotlin: deploy-client-kt
+
 # Test targets
 test:
 	@echo "🧪 $(CYAN)Running Rust client tests...$(RESET)"
@@ -322,7 +333,7 @@ test-ci:
 # ============================================================================
 
 # Run all examples (all languages, both direct and client)
-test-examples: test-examples-rust test-examples-python test-examples-go test-examples-typescript test-examples-javascript
+test-examples: examples-ls-check test-examples-rust test-examples-python test-examples-go test-examples-typescript test-examples-javascript test-examples-kotlin
 	@echo "✅ $(GREEN)All integration tests complete!$(RESET)"
 
 # Run direct API examples (using raw HTTP/WebSocket calls)
@@ -360,6 +371,7 @@ test-examples-rust-client: build-client
 	@cd examples/rust && cargo run --example client_query_builder
 	@cd examples/rust && cargo run --example client_search
 	@cd examples/rust && cargo run --example client_schema_management
+	@cd examples/rust && cargo run --example client_joins
 	@cd examples/rust && cargo run --example client_chat_basic
 	@cd examples/rust && cargo run --example client_chat_sessions
 	@cd examples/rust && cargo run --example client_chat_advanced
@@ -500,6 +512,45 @@ test-examples-javascript-client: build-typescript-client
 	@cd examples/javascript && node client_websocket_ttl.js
 	@echo "✅ $(GREEN)JavaScript client examples complete!$(RESET)"
 
+# ============================================================================
+# Kotlin Examples (client only)
+# ============================================================================
+test-examples-kotlin: test-examples-kotlin-client
+	@echo "✅ $(GREEN)All Kotlin integration tests complete!$(RESET)"
+
+test-examples-kt: test-examples-kotlin
+
+build-kotlin-client:
+	@echo "🟣 $(CYAN)Building Kotlin client library...$(RESET)"
+	@cd ekodb-client-kt && ./gradlew build --no-daemon
+	@echo "✅ $(GREEN)Kotlin client built!$(RESET)"
+
+test-examples-kotlin-client: build-kotlin-client
+	@echo "🧪 $(CYAN)Running Kotlin client library examples...$(RESET)"
+	@if [ -f .env ]; then \
+		. ./.env && \
+		cd examples/kotlin && \
+		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientSimpleCrudKt --no-daemon && \
+		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientBatchOperationsKt --no-daemon && \
+		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientQueryBuilderKt --no-daemon && \
+		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientKvOperationsKt --no-daemon && \
+		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientCollectionManagementKt --no-daemon && \
+		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientDocumentTtlKt --no-daemon && \
+		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientSimpleWebsocketKt --no-daemon && \
+		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientSchemaManagementKt --no-daemon && \
+		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientSearchKt --no-daemon && \
+		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientWebsocketTtlKt --no-daemon && \
+		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientJoinsKt --no-daemon && \
+		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientChatBasicKt --no-daemon && \
+		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientChatSessionsKt --no-daemon && \
+		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientChatAdvancedKt --no-daemon; \
+	else \
+		echo "$(RED)❌ .env file not found$(RESET)"; \
+		echo "$(YELLOW)💡 Create .env file with API_BASE_URL, WS_BASE_URL, and API_BASE_KEY$(RESET)"; \
+		exit 1; \
+	fi
+	@echo "✅ $(GREEN)Kotlin client examples complete!$(RESET)"
+
 # Clean targets
 clean:
 	@echo "🧹 $(YELLOW)Cleaning build artifacts...$(RESET)"
@@ -513,7 +564,7 @@ check:
 	@echo "✅ $(GREEN)Check complete!$(RESET)"
 
 # Format all code (Rust + Python + Go + TypeScript + Markdown) - this is the main formatting target
-fmt: fmt-rust fmt-python fmt-go fmt-typescript fmt-md
+fmt: examples-ls examples-ls-badge fmt-rust fmt-python fmt-go fmt-typescript fmt-md
 	@echo "✅ $(GREEN)All formatting complete!$(RESET)"
 
 # Format all Rust code (client + examples)
@@ -670,3 +721,35 @@ deps-update:
 	$(CARGO) update
 	@echo "✅ $(GREEN)Dependencies updated successfully!$(RESET)"
 	@echo "💡 $(YELLOW)Run 'make deps-check' to see if any dependencies still need updating$(RESET)"
+
+# ============================================================================
+# Examples Inventory
+# ============================================================================
+
+examples-ls:
+	@echo "📋 $(CYAN)Generating examples inventory...$(RESET)"
+	@chmod +x scripts/generate_examples_list.sh
+	@./scripts/generate_examples_list.sh
+	@echo "✅ $(GREEN)Examples list generated!$(RESET)"
+
+examples-ls-check:
+	@echo "🔍 $(CYAN)Checking examples inventory against committed snapshot...$(RESET)"
+	@chmod +x scripts/generate_examples_list.sh
+	@./scripts/generate_examples_list.sh --temp
+	@if ! diff -I "^# Generated:" examples_list.txt examples_list.txt.tmp > /dev/null 2>&1; then \
+		echo "$(RED)❌ Examples inventory has changed!$(RESET)"; \
+		echo "$(YELLOW)Differences found:$(RESET)"; \
+		diff -I "^# Generated:" examples_list.txt examples_list.txt.tmp || true; \
+		echo "$(YELLOW)Run 'make examples-ls' to update the snapshot$(RESET)"; \
+		rm -f examples_list.txt.tmp examples_list.json.tmp; \
+		exit 1; \
+	else \
+		echo "$(GREEN)✅ Examples inventory is up to date!$(RESET)"; \
+		rm -f examples_list.txt.tmp examples_list.json.tmp; \
+	fi
+
+examples-ls-badge:
+	@echo "🔄 $(CYAN)Updating README badge with current example statistics...$(RESET)"
+	@chmod +x scripts/update_examples_badge.sh
+	@./scripts/update_examples_badge.sh
+	@echo "✅ $(GREEN)README badge updated!$(RESET)"

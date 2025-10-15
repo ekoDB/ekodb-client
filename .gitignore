@@ -63,3 +63,19 @@ npm_token.txt
 PyPI Recovery Codes.txt
 pypi_token.txt
 pypi-token-init.png
+examples_list.json
+ekodb-client-kt/gpg-maven.txt
+ekodb-client-kt/gpg-maven-token.png
+ekodb-client-kt/gradle.properties.template
+ekodb-client-kt/gpg-maven-token-2.png
+
+# Kotlin publishing artifacts
+ekodb-client-kt/upload-to-maven/
+ekodb-client-kt/*-bundle.zip
+
+# Test directories
+test-published-kt/
+
+# Gradle user home (global config)
+.gradle/
+gradle.properties

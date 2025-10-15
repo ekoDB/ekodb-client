@@ -1,5 +1,6 @@
+make test-examples-go
 
-$ make test-examples-go 🧪 Running Go examples (direct HTTP/WebSocket)...
+🧪 Running Go examples (direct HTTP/WebSocket)...
 
 ╔════════════════════════════════════════╗ ║ ekoDB Go Examples Test Suite ║
 ╚════════════════════════════════════════╝

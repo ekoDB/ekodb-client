@@ -1,0 +1,45 @@
+name: Examples Inventory Check
+
+on:
+  pull_request:
+    paths:
+      - 'examples/**'
+      - 'examples_list.txt'
+      - 'scripts/generate_examples_list.sh'
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - 'examples/**'
+      - 'examples_list.txt'
+      - 'scripts/generate_examples_list.sh'
+
+jobs:
+  check-inventory:
+    name: Verify Examples Inventory
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Make scripts executable
+        run: chmod +x scripts/generate_examples_list.sh
+      
+      - name: Generate examples inventory
+        run: make examples-ls-check
+      
+      - name: Check if inventory is up to date
+        run: |
+          if [ -f examples_list.txt.tmp ]; then
+            echo "❌ Examples inventory check failed!"
+            echo "The examples have changed but examples_list.txt hasn't been updated."
+            echo ""
+            echo "Differences:"
+            diff examples_list.txt examples_list.txt.tmp || true
+            echo ""
+            echo "To fix this, run: make examples-ls"
+            exit 1
+          fi
+          echo "✅ Examples inventory is up to date!"
