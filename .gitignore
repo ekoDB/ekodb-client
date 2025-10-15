@@ -73,6 +73,9 @@ ekodb-client-kt/gpg-maven-token-2.png
 ekodb-client-kt/upload-to-maven/
 ekodb-client-kt/*-bundle.zip
 
+# Test directories
+test-published-kt/
+
 # Gradle user home (global config)
 .gradle/
 gradle.properties
