@@ -80,6 +80,7 @@ help:
 	@echo "  🐍 $(GREEN)make deploy-client-py-simple$(RESET) - Deploy Python client (current platform, uses script)"
 	@echo "  🔷 $(GREEN)make deploy-client-go$(RESET)   - Show Go client deployment instructions"
 	@echo "  📘 $(GREEN)make deploy-client-ts$(RESET)   - Deploy TypeScript client (uses scripts/publish-typescript.sh)"
+	@echo "  🟣 $(GREEN)make deploy-client-kt$(RESET)   - Deploy Kotlin client to Maven Central (uses scripts/publish-kotlin.sh)"
 	@echo "  🔢 $(GREEN)make bump-version$(RESET)       - Bump version for ALL clients (Rust, Python, TS)"
 	@echo "  🔢 $(GREEN)make bump-client-py$(RESET)     - Bump Python client version only"
 	@echo ""
@@ -282,6 +283,13 @@ deploy-client-py-simple:
 
 deploy-client-ts:
 	@./scripts/publish-typescript.sh
+
+deploy-client-kt:
+	@echo "🟣 $(CYAN)Publishing Kotlin client to Maven Central...$(RESET)"
+	@chmod +x scripts/publish-kotlin.sh
+	@./scripts/publish-kotlin.sh
+
+deploy-client-kotlin: deploy-client-kt
 
 # Test targets
 test:

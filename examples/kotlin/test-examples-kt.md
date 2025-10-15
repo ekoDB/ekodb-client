@@ -2,155 +2,151 @@ make test-examples-kt
 
 🟣 Building Kotlin client library... To honour the JVM settings for this build a
 single-use Daemon process will be forked. For more on this, please refer to
-https://docs.gradle.org/8.5/userguide/gradle_daemon.html#sec:disabling_the_daemon
+https://docs.gradle.org/8.11.1/userguide/gradle_daemon.html#sec:disabling_the_daemon
 in the Gradle documentation. Daemon will be stopped at the end of the build
 
-> Task :compileKotlin w:
-> file:///Users/tek/Development/ekoDB/ekodb-client/ekodb-client-kt/src/main/kotlin/io/ekodb/client/QueryBuilder.kt:304:76
-> Unchecked cast: Any to Map<String, Any> w:
-> file:///Users/tek/Development/ekoDB/ekodb-client/ekodb-client-kt/src/main/kotlin/io/ekodb/client/QueryBuilder.kt:307:72
-> Unchecked cast: Any? to Map<String, Any>
-
-BUILD SUCCESSFUL in 6s 3 actionable tasks: 3 executed ✅ Kotlin client built! 🧪
-Running Kotlin client library examples... To honour the JVM settings for this
+BUILD SUCCESSFUL in 3s 2 actionable tasks: 2 up-to-date ✅ Kotlin client built!
+🧪 Running Kotlin client library examples... To honour the JVM settings for this
 build a single-use Daemon process will be forked. For more on this, please refer
 to
-https://docs.gradle.org/8.5/userguide/gradle_daemon.html#sec:disabling_the_daemon
+https://docs.gradle.org/8.11.1/userguide/gradle_daemon.html#sec:disabling_the_daemon
 in the Gradle documentation. Daemon will be stopped at the end of the build
 
-> Task :compileKotlin w:
-> file:///Users/tek/Development/ekoDB/ekodb-client/examples/kotlin/examples/ClientJoins.kt:69:39
-> Unnecessary non-null assertion (!!) on a non-null receiver of type String w:
-> file:///Users/tek/Development/ekoDB/ekodb-client/examples/kotlin/examples/ClientJoins.kt:76:39
-> Unnecessary non-null assertion (!!) on a non-null receiver of type String w:
-> file:///Users/tek/Development/ekoDB/ekodb-client/examples/kotlin/examples/ClientJoins.kt:83:39
-> Unnecessary non-null assertion (!!) on a non-null receiver of type String w:
-> file:///Users/tek/Development/ekoDB/ekodb-client/examples/kotlin/examples/ClientJoins.kt:138:34
-> Unnecessary non-null assertion (!!) on a non-null receiver of type String w:
-> file:///Users/tek/Development/ekoDB/ekodb-client/examples/kotlin/examples/ClientJoins.kt:143:34
-> Unnecessary non-null assertion (!!) on a non-null receiver of type String
-
-> Task :run SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
-> SLF4J: Defaulting to no-operation (NOP) logger implementation SLF4J: See
-> http://www.slf4j.org/codes.html#StaticLoggerBinder for further details. ===
-> ekoDB Kotlin Client - Simple CRUD Example ===
+> Task :run SLF4J(W): No SLF4J providers were found. SLF4J(W): Defaulting to
+> no-operation (NOP) logger implementation SLF4J(W): See
+> https://www.slf4j.org/codes.html#noProviders for further details. === ekoDB
+> Kotlin Client - Simple CRUD Example ===
 
 === Create === ✓ Inserted user:
-Record(fields={id=StringValue(value=cEdcRgfVg5QzS6R9N1Y96Oycg-XYNbUVeI_Xp81CedhrNUV2tgbKTM4q7Uky_LOdueRmSYnZLQKaENfnkLIZBw)})
+Record(fields={id=StringValue(value=CGqlbKXufElxjJ7zzsSycKXq85imQx2pTDb8YoODqLoB-4XlPgJS9LNvQxWthovI8hVgpw1cqCmifZQ6M5NPwQ)})
 User ID:
-cEdcRgfVg5QzS6R9N1Y96Oycg-XYNbUVeI_Xp81CedhrNUV2tgbKTM4q7Uky_LOdueRmSYnZLQKaENfnkLIZBw
+CGqlbKXufElxjJ7zzsSycKXq85imQx2pTDb8YoODqLoB-4XlPgJS9LNvQxWthovI8hVgpw1cqCmifZQ6M5NPwQ
 
 === Read === ✓ Found user by ID:
-Record(fields={active=ObjectValue(value={type=StringValue(value=Boolean),
+Record(fields={age=ObjectValue(value={value=IntegerValue(value=28),
+type=StringValue(value=Integer)}),
+active=ObjectValue(value={value=BooleanValue(value=true),
+type=StringValue(value=Boolean)}),
+email=ObjectValue(value={value=StringValue(value=alice@example.com),
+type=StringValue(value=String)}),
+id=StringValue(value=CGqlbKXufElxjJ7zzsSycKXq85imQx2pTDb8YoODqLoB-4XlPgJS9LNvQxWthovI8hVgpw1cqCmifZQ6M5NPwQ),
+name=ObjectValue(value={value=StringValue(value=Alice Johnson),
+type=StringValue(value=String)})})
+
+=== Update === ✓ Updated user: Record(fields={city=StringValue(value=San
+Francisco), active=ObjectValue(value={type=StringValue(value=Boolean),
 value=BooleanValue(value=true)}),
-id=StringValue(value=cEdcRgfVg5QzS6R9N1Y96Oycg-XYNbUVeI_Xp81CedhrNUV2tgbKTM4q7Uky_LOdueRmSYnZLQKaENfnkLIZBw),
-email=ObjectValue(value={type=StringValue(value=String),
-value=StringValue(value=alice@example.com)}),
-age=ObjectValue(value={type=StringValue(value=Integer),
-value=IntegerValue(value=28)}),
-name=ObjectValue(value={type=StringValue(value=String),
-value=StringValue(value=Alice Johnson)})}) === Update === ✓ Updated user:
-Record(fields={active=ObjectValue(value={value=BooleanValue(value=true),
-type=StringValue(value=Boolean)}), city=StringValue(value=San Francisco),
+id=StringValue(value=CGqlbKXufElxjJ7zzsSycKXq85imQx2pTDb8YoODqLoB-4XlPgJS9LNvQxWthovI8hVgpw1cqCmifZQ6M5NPwQ),
 email=ObjectValue(value={value=StringValue(value=alice@example.com),
 type=StringValue(value=String)}), age=IntegerValue(value=29),
-name=ObjectValue(value={value=StringValue(value=Alice Johnson),
-type=StringValue(value=String)}),
-id=StringValue(value=cEdcRgfVg5QzS6R9N1Y96Oycg-XYNbUVeI_Xp81CedhrNUV2tgbKTM4q7Uky_LOdueRmSYnZLQKaENfnkLIZBw)})
+name=ObjectValue(value={type=StringValue(value=String),
+value=StringValue(value=Alice Johnson)})})
+
 === Query === ✓ Found 1 users matching query
 
-- Record(fields={id=StringValue(value=cEdcRgfVg5QzS6R9N1Y96Oycg-XYNbUVeI_Xp81CedhrNUV2tgbKTM4q7Uky_LOdueRmSYnZLQKaENfnkLIZBw),
-  active=ObjectValue(value={value=BooleanValue(value=true),
-  type=StringValue(value=Boolean)}),
-  name=ObjectValue(value={value=StringValue(value=Alice Johnson),
+- Record(fields={city=ObjectValue(value={value=StringValue(value=San Francisco),
   type=StringValue(value=String)}),
+  name=ObjectValue(value={type=StringValue(value=String),
+  value=StringValue(value=Alice Johnson)}),
   age=ObjectValue(value={value=IntegerValue(value=29),
   type=StringValue(value=Integer)}),
   email=ObjectValue(value={value=StringValue(value=alice@example.com),
   type=StringValue(value=String)}),
-  city=ObjectValue(value={value=StringValue(value=San Francisco),
-  type=StringValue(value=String)})}) === Delete === ✓ Deleted user with ID:
-  cEdcRgfVg5QzS6R9N1Y96Oycg-XYNbUVeI_Xp81CedhrNUV2tgbKTM4q7Uky_LOdueRmSYnZLQKaENfnkLIZBw
+  active=ObjectValue(value={type=StringValue(value=Boolean),
+  value=BooleanValue(value=true)}),
+  id=StringValue(value=CGqlbKXufElxjJ7zzsSycKXq85imQx2pTDb8YoODqLoB-4XlPgJS9LNvQxWthovI8hVgpw1cqCmifZQ6M5NPwQ)})
 
-✓ Confirmed user was deleted === Cleanup === ✓ Deleted collection:
-kotlin_users_example === Example Complete === BUILD SUCCESSFUL in 8s 3
-actionable tasks: 3 executed To honour the JVM settings for this build a
-single-use Daemon process will be forked. For more on this, please refer to
-https://docs.gradle.org/8.5/userguide/gradle_daemon.html#sec:disabling_the_daemon
+=== Delete === ✓ Deleted user with ID:
+CGqlbKXufElxjJ7zzsSycKXq85imQx2pTDb8YoODqLoB-4XlPgJS9LNvQxWthovI8hVgpw1cqCmifZQ6M5NPwQ
+✓ Confirmed user was deleted
+
+=== Cleanup === ✓ Deleted collection: kotlin_users_example
+
+=== Example Complete ===
+
+BUILD SUCCESSFUL in 9s 2 actionable tasks: 2 executed To honour the JVM settings
+for this build a single-use Daemon process will be forked. For more on this,
+please refer to
+https://docs.gradle.org/8.11.1/userguide/gradle_daemon.html#sec:disabling_the_daemon
 in the Gradle documentation. Daemon will be stopped at the end of the build
 
-> Task :run SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
-> SLF4J: Defaulting to no-operation (NOP) logger implementation SLF4J: See
-> http://www.slf4j.org/codes.html#StaticLoggerBinder for further details. ===
-> ekoDB Kotlin Client - Batch Operations Example ===
+> Task :run SLF4J(W): No SLF4J providers were found. SLF4J(W): Defaulting to
+> no-operation (NOP) logger implementation SLF4J(W): See
+> https://www.slf4j.org/codes.html#noProviders for further details. === ekoDB
+> Kotlin Client - Batch Operations Example ===
 
 === Batch Insert === ✓ Inserted 5 records IDs:
-PCKWX2IYppNeONDCK0W2j_vZwNqKjLp2-os205B9RipY3iQyath56m2RridIanZVuK9m9Qyh-S5YWQ6lsBbRCA,
-qIubEGdqlbZ91RcorEGBrBOx61JvY2KYCxKFmcDUO_rFScNAvov7bdKt3RYBb7WvJotm942iYaXWeJNkhXvZ-A,
-yiC7VQhSPtNihIw-PDS8TIQYntutmYq8XfF9Wu6N-NOKlRYhBPpC7li3SPJbsGgZnJJO3VuerpuWVzGaoBHpaw...
+94a4f9SVjwQz-jctkMwXzJjncAv7XGy3q5qqBWP8cBDGOZLykypsGIIQRYRdpVeub2ABuFwbvdqPfbqyW9K5Qg,
+tAFfGosIgxykFUXfTDjEVWm7wbBqnlyC0dPfH5iCePk734ni-QHfffChHKDPgEJCgK2CxTiGl2aLq2VQQCF1tw,
+Rlp4r7sp_vuuuJY_pm0QferHPtu3Gu2CmCoir9WXcyszr83RDUdB-\_RGgZNj5b23wl04oWHPfcfx-q17czdyvg...
 
 === Batch Update === ✓ Updated 3 records
 
 === Batch Delete === ✓ Deleted 2 records === Cleanup === ✓ Deleted collection:
-kotlin_batch_example === Example Complete ===
+kotlin_batch_example
 
-BUILD SUCCESSFUL in 3s 3 actionable tasks: 2 executed, 1 up-to-date To honour
-the JVM settings for this build a single-use Daemon process will be forked. For
-more on this, please refer to
-https://docs.gradle.org/8.5/userguide/gradle_daemon.html#sec:disabling_the_daemon
+=== Example Complete === BUILD SUCCESSFUL in 3s 2 actionable tasks: 1 executed,
+1 up-to-date To honour the JVM settings for this build a single-use Daemon
+process will be forked. For more on this, please refer to
+https://docs.gradle.org/8.11.1/userguide/gradle_daemon.html#sec:disabling_the_daemon
 in the Gradle documentation. Daemon will be stopped at the end of the build
 
-> Task :run SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
-> SLF4J: Defaulting to no-operation (NOP) logger implementation SLF4J: See
-> http://www.slf4j.org/codes.html#StaticLoggerBinder for further details. ===
-> ekoDB Kotlin Client - Query Builder Example === === Inserting Sample Data ===
-> ✓ Inserted 5 records
+> Task :run SLF4J(W): No SLF4J providers were found. SLF4J(W): Defaulting to
+> no-operation (NOP) logger implementation SLF4J(W): See
+> https://www.slf4j.org/codes.html#noProviders for further details. === ekoDB
+> Kotlin Client - Query Builder Example ===
 
-                                                                                                          === Query 1: Equality (city = 'NYC') ===
+=== Inserting Sample Data === ✓ Inserted 5 records
 
-✓ Found 2 records in NYC
+=== Query 1: Equality (city = 'NYC') === ✓ Found 2 records in NYC
 
 === Query 2: Range (age >= 25 AND age < 32) === ✓ Found 3 records with age 25-31
-=== Query 3: Sort by score (descending) === ✓ Top 3 scores: - Score:
-ObjectValue(value={type=StringValue(value=Integer),
-value=IntegerValue(value=95)}) - Score:
-ObjectValue(value={type=StringValue(value=Integer),
-value=IntegerValue(value=92)}) - Score:
-ObjectValue(value={value=IntegerValue(value=88),
-type=StringValue(value=Integer)}) === Query 4: Complex (score > 80 AND
-age >= 25) === ✓ Found 4 high-scoring adults === Query 5: IN (city IN ['NYC',
-'LA']) === ✓ Found 4 records in NYC or LA === Query 6: Pagination (skip 2,
-limit 2) === ✓ Page 2 (2 records): -
-ObjectValue(value={value=StringValue(value=Charlie),
-type=StringValue(value=String)}) -
-ObjectValue(value={value=StringValue(value=Diana),
-type=StringValue(value=String)}) === Query 7: Contains (name contains 'a') === ✓
-Found 2 names containing 'a'
+=== Query 3: Sort by score (descending) === ✓ Top 3 scores:
 
-=== Cleanup === ✓ Deleted collection: kotlin_query_example
+- Score: ObjectValue(value={value=IntegerValue(value=95),
+  type=StringValue(value=Integer)})
+- Score: ObjectValue(value={type=StringValue(value=Integer),
+  value=IntegerValue(value=92)})
+- Score: ObjectValue(value={type=StringValue(value=Integer),
+  value=IntegerValue(value=88)})
+
+=== Query 4: Complex (score > 80 AND age >= 25) === ✓ Found 4 high-scoring
+adults
+
+=== Query 5: IN (city IN ['NYC', 'LA']) === ✓ Found 4 records in NYC or LA
+
+=== Query 6: Pagination (skip 2, limit 2) === ✓ Page 2 (2 records):
+
+- ObjectValue(value={value=StringValue(value=Charlie),
+  type=StringValue(value=String)})
+- ObjectValue(value={type=StringValue(value=String),
+  value=StringValue(value=Diana)})
+
+=== Query 7: Contains (name contains 'a') === ✓ Found 2 names containing 'a' ===
+Cleanup === ✓ Deleted collection: kotlin_query_example
 
 === Example Complete ===
 
-BUILD SUCCESSFUL in 3s 3 actionable tasks: 2 executed, 1 up-to-date To honour
+BUILD SUCCESSFUL in 4s 2 actionable tasks: 1 executed, 1 up-to-date To honour
 the JVM settings for this build a single-use Daemon process will be forked. For
 more on this, please refer to
-https://docs.gradle.org/8.5/userguide/gradle_daemon.html#sec:disabling_the_daemon
+https://docs.gradle.org/8.11.1/userguide/gradle_daemon.html#sec:disabling_the_daemon
 in the Gradle documentation. Daemon will be stopped at the end of the build
 
-> Task :run SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
-> SLF4J: Defaulting to no-operation (NOP) logger implementation SLF4J: See
-> http://www.slf4j.org/codes.html#StaticLoggerBinder for further details. ===
-> ekoDB Kotlin Client - KV Operations Example ===
+> Task :run SLF4J(W): No SLF4J providers were found. SLF4J(W): Defaulting to
+> no-operation (NOP) logger implementation SLF4J(W): See
+> https://www.slf4j.org/codes.html#noProviders for further details. === ekoDB
+> Kotlin Client - KV Operations Example ===
 
 === KV Set === ✓ Set key: user:123
 
 === KV Get === ✓ Retrieved value:
-{"role":"admin","name":"Alice","email":"alice@example.com"}
+{"name":"Alice","role":"admin","email":"alice@example.com"}
 
 === KV Set with TTL === ✓ Set key with 10s TTL: session:abc123
 
 === Verify TTL Key === ✓ Session value:
-{"created_at":1760511901979,"user_id":"123"} (Will expire in 10 seconds)
+{"created_at":1760517193904,"user_id":"123"} (Will expire in 10 seconds)
 
 === Set Multiple Keys === ✓ Set 3 configuration keys
 
@@ -162,16 +158,16 @@ in the Gradle documentation. Daemon will be stopped at the end of the build
 
 === Example Complete ===
 
-BUILD SUCCESSFUL in 3s 3 actionable tasks: 2 executed, 1 up-to-date To honour
+BUILD SUCCESSFUL in 3s 2 actionable tasks: 1 executed, 1 up-to-date To honour
 the JVM settings for this build a single-use Daemon process will be forked. For
 more on this, please refer to
-https://docs.gradle.org/8.5/userguide/gradle_daemon.html#sec:disabling_the_daemon
+https://docs.gradle.org/8.11.1/userguide/gradle_daemon.html#sec:disabling_the_daemon
 in the Gradle documentation. Daemon will be stopped at the end of the build
 
-> Task :run SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
-> SLF4J: Defaulting to no-operation (NOP) logger implementation SLF4J: See
-> http://www.slf4j.org/codes.html#StaticLoggerBinder for further details. ===
-> ekoDB Kotlin Client - Collection Management Example ===
+> Task :run SLF4J(W): No SLF4J providers were found. SLF4J(W): Defaulting to
+> no-operation (NOP) logger implementation SLF4J(W): See
+> https://www.slf4j.org/codes.html#noProviders for further details. === ekoDB
+> Kotlin Client - Collection Management Example ===
 
 === List Collections === ✓ Found 0 collections
 
@@ -182,36 +178,36 @@ exists: false
 kotlin_collection_example
 
 === Get Collection Schema === ✓ Schema:
-{"fields":{"name":{"field_type":"String","default":null,"unique":false,"required":true,"enums":[],"max":null,"min":null,"regex":null},"age":{"field_type":"Integer","default":null,"unique":false,"required":false,"enums":[],"max":null,"min":null,"regex":null}},"version":1,"created_at":"2025-10-15T07:05:05.872413Z","last_modified":"2025-10-15T07:05:05.872413Z","bypass_ripple":false}
+{"fields":{"name":{"field_type":"String","default":null,"unique":false,"required":true,"enums":[],"max":null,"min":null,"regex":null},"age":{"field_type":"Integer","default":null,"unique":false,"required":false,"enums":[],"max":null,"min":null,"regex":null}},"version":1,"created_at":"2025-10-15T08:33:18.029510Z","last_modified":"2025-10-15T08:33:18.029511Z","bypass_ripple":false}
 
 === Cleanup === ✓ Deleted collection: kotlin_collection_example
 
 === Example Complete ===
 
-BUILD SUCCESSFUL in 3s 3 actionable tasks: 2 executed, 1 up-to-date To honour
+BUILD SUCCESSFUL in 3s 2 actionable tasks: 1 executed, 1 up-to-date To honour
 the JVM settings for this build a single-use Daemon process will be forked. For
 more on this, please refer to
-https://docs.gradle.org/8.5/userguide/gradle_daemon.html#sec:disabling_the_daemon
+https://docs.gradle.org/8.11.1/userguide/gradle_daemon.html#sec:disabling_the_daemon
 in the Gradle documentation. Daemon will be stopped at the end of the build
 
-> Task :run SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
-> SLF4J: Defaulting to no-operation (NOP) logger implementation SLF4J: See
-> http://www.slf4j.org/codes.html#StaticLoggerBinder for further details. ===
-> ekoDB Kotlin Client - Document TTL Example ===
+> Task :run SLF4J(W): No SLF4J providers were found. SLF4J(W): Defaulting to
+> no-operation (NOP) logger implementation SLF4J(W): See
+> https://www.slf4j.org/codes.html#noProviders for further details. === ekoDB
+> Kotlin Client - Document TTL Example ===
 
 === Insert with TTL === ✓ Inserted document with 10s TTL Document ID:
-bxLe1Ep5FawFREyQvlAYv2DrcUloiT8hCCWmkPOIsONCC9MjAG873HCUXbJR2Zta32AOckshzHw7Qed0FE-yAA
+NwtmqEDuQFiaKBVyufGdlJpcpCiiuVVjPjz9DYaKZTerzt1Td9IsVFb52eRCP_hVwj7qe7NpBjCAV56gE1Y6fA
 
-=== Verify Document Exists === ✓ Document found: [id, created_at, ttl_duration,
-user_id, session_id]
+=== Verify Document Exists === ✓ Document found: [created_at, user_id,
+session_id, id, ttl_duration]
 
 === Insert with Longer TTL === ✓ Inserted document with 1h TTL Document ID:
-ea4j7YrMuRtu1yuvc2xcDjRDEYJVKI7TrxCUAqLW1jZXNrE2XhVM0574jeJJB91eoEpSJIeBCZQAUCw3nkbMvg
+NAUwQnWhYlfY1u8iTi8PBPLbIXBD92JswxCj-jYQJ3F25yqoilUz9JrDr_MDzW9EzKLrhkorH86heeenimj23w
 
 === TTL Expiration === ✓ Document will automatically expire after 10 seconds
 
-=== Verify Long TTL Document === ✓ Long TTL document still exists:
-[ttl_duration, value, id, cache_key]
+=== Verify Long TTL Document === ✓ Long TTL document still exists: [cache_key,
+value, ttl_duration, id]
 
 === Delete Document === ✓ Deleted document
 
@@ -219,16 +215,16 @@ ea4j7YrMuRtu1yuvc2xcDjRDEYJVKI7TrxCUAqLW1jZXNrE2XhVM0574jeJJB91eoEpSJIeBCZQAUCw3
 
 === Example Complete ===
 
-BUILD SUCCESSFUL in 3s 3 actionable tasks: 2 executed, 1 up-to-date To honour
+BUILD SUCCESSFUL in 3s 2 actionable tasks: 1 executed, 1 up-to-date To honour
 the JVM settings for this build a single-use Daemon process will be forked. For
 more on this, please refer to
-https://docs.gradle.org/8.5/userguide/gradle_daemon.html#sec:disabling_the_daemon
+https://docs.gradle.org/8.11.1/userguide/gradle_daemon.html#sec:disabling_the_daemon
 in the Gradle documentation. Daemon will be stopped at the end of the build
 
-> Task :run SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
-> SLF4J: Defaulting to no-operation (NOP) logger implementation SLF4J: See
-> http://www.slf4j.org/codes.html#StaticLoggerBinder for further details. ===
-> ekoDB Kotlin Client - Simple WebSocket Example ===
+> Task :run SLF4J(W): No SLF4J providers were found. SLF4J(W): Defaulting to
+> no-operation (NOP) logger implementation SLF4J(W): See
+> https://www.slf4j.org/codes.html#noProviders for further details. === ekoDB
+> Kotlin Client - Simple WebSocket Example ===
 
 === Create WebSocket Client === ✓ WebSocket client created
 
@@ -237,7 +233,7 @@ in the Gradle documentation. Daemon will be stopped at the end of the build
 === Insert Test Record === ✓ Inserted test record
 
 === Find All via WebSocket === ✓ WebSocket findAll result:
-{"payload":{"data":[{"id":"XJAZewF57F_WrA0tPG3mpqSfNilkTIERJtEmpYDjcJpiZ07ofMSsIxVcw5WP7oQkTX2jD40XNOuDjwfeooySVQ","name":{"type":"String","value":"Test
+{"payload":{"data":[{"id":"m0BN-DurrwQoHfMcB-xsWu6OMQZRBC2ZWkxPgOyAynu-yn3u_4n5bILts2VuEZ4LA5Pj4nks_zQL-FIoq7k8Kw","name":{"type":"String","value":"Test
 User"},"status":{"type":"String","value":"active"}}]},"type":"Success"}
 
 === Close WebSocket === ✓ WebSocket closed
@@ -246,27 +242,27 @@ User"},"status":{"type":"String","value":"active"}}]},"type":"Success"}
 
 === Example Complete ===
 
-BUILD SUCCESSFUL in 3s 3 actionable tasks: 2 executed, 1 up-to-date To honour
+BUILD SUCCESSFUL in 3s 2 actionable tasks: 1 executed, 1 up-to-date To honour
 the JVM settings for this build a single-use Daemon process will be forked. For
 more on this, please refer to
-https://docs.gradle.org/8.5/userguide/gradle_daemon.html#sec:disabling_the_daemon
+https://docs.gradle.org/8.11.1/userguide/gradle_daemon.html#sec:disabling_the_daemon
 in the Gradle documentation. Daemon will be stopped at the end of the build
 
-> Task :run SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
-> SLF4J: Defaulting to no-operation (NOP) logger implementation SLF4J: See
-> http://www.slf4j.org/codes.html#StaticLoggerBinder for further details. ===
-> ekoDB Kotlin Client - Schema Management Example ===
+> Task :run SLF4J(W): No SLF4J providers were found. SLF4J(W): Defaulting to
+> no-operation (NOP) logger implementation SLF4J(W): See
+> https://www.slf4j.org/codes.html#noProviders for further details. === ekoDB
+> Kotlin Client - Schema Management Example ===
 
 === Creating Collection with Schema === ✓ Created collection
 'kotlin_schema_example' with schema
 
 === Inserting Valid Documents === ✓ Inserted user 1:
-StringValue(value=GlWLy5licKJ_qmfybdTewUzUu9gYv4UfUH0m67oex6KWxTQ7GIma_5z7VZUG755lZzvgm8BwJVDMojwy0KnJ0g)
+StringValue(value=AiAPCLiTmONsMFUXQmKKVCy9Pi6W4sf5\_-Er9gkOPcnqdw8cOMnxhlCwvHFJvks7Qim-FFAjDyB_oLPEzFAiBw)
 ✓ Inserted user 2:
-StringValue(value=KYE_XxyGYpOx9TyMbBQdgMGKGSZVBe-ruuBajOOxIcgQHKrZ9rLdVuWLK4RsXLfw6-KzL-mGHNcsfkHafc10uQ)
+StringValue(value=PIcUk5vLgrZWkVTe3q57GkuNrBgInU7EjFMMQ7M3y-Bzri23p8W-86HysIntyIjenip1IKSxVFWTGZRTwXNU1Q)
 
 === Getting Schema === ✓ Schema for kotlin_schema_example: Fields:
-{"email":{"field_type":"String","default":null,"unique":false,"required":true,"enums":[],"max":null,"min":null,"regex":null},"age":{"field_type":"Integer","default":null,"unique":false,"required":false,"enums":[],"max":null,"min":null,"regex":null},"title":{"field_type":"String","default":null,"unique":false,"required":true,"enums":[],"max":null,"min":null,"regex":null},"status":{"field_type":"String","default":null,"unique":false,"required":false,"enums":[],"max":null,"min":null,"regex":null}}
+{"status":{"field_type":"String","default":null,"unique":false,"required":false,"enums":[],"max":null,"min":null,"regex":null},"email":{"field_type":"String","default":null,"unique":false,"required":true,"enums":[],"max":null,"min":null,"regex":null},"title":{"field_type":"String","default":null,"unique":false,"required":true,"enums":[],"max":null,"min":null,"regex":null},"age":{"field_type":"Integer","default":null,"unique":false,"required":false,"enums":[],"max":null,"min":null,"regex":null}}
 
 === Listing Collections === ✓ Total collections: 1 Sample:
 [kotlin_schema_example]
@@ -275,69 +271,67 @@ StringValue(value=KYE_XxyGYpOx9TyMbBQdgMGKGSZVBe-ruuBajOOxIcgQHKrZ9rLdVuWLK4RsXL
 
 ✓ All schema management operations completed successfully
 
-BUILD SUCCESSFUL in 3s 3 actionable tasks: 2 executed, 1 up-to-date To honour
+BUILD SUCCESSFUL in 3s 2 actionable tasks: 1 executed, 1 up-to-date To honour
 the JVM settings for this build a single-use Daemon process will be forked. For
 more on this, please refer to
-https://docs.gradle.org/8.5/userguide/gradle_daemon.html#sec:disabling_the_daemon
+https://docs.gradle.org/8.11.1/userguide/gradle_daemon.html#sec:disabling_the_daemon
 in the Gradle documentation. Daemon will be stopped at the end of the build
 
-> Task :run SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
-> SLF4J: Defaulting to no-operation (NOP) logger implementation SLF4J: See
-> http://www.slf4j.org/codes.html#StaticLoggerBinder for further details. ===
-> ekoDB Kotlin Client - Search Example ===
+> Task :run SLF4J(W): No SLF4J providers were found. SLF4J(W): Defaulting to
+> no-operation (NOP) logger implementation SLF4J(W): See
+> https://www.slf4j.org/codes.html#noProviders for further details. === ekoDB
+> Kotlin Client - Search Example ===
 
 === Inserting Sample Documents === ✓ Inserted 5 sample documents
 
 === Basic Text Search === ✓ Search results for 'programming':
-{"results":[{"record":{"tags":"programming,rust,tutorial","description":"Learn
+{"results":[{"record":{"title":"Rust
+Programming","tags":"programming,rust,tutorial","views":808,"id":"JLqGPucEi9B4ggxtGyZJEIxGSQmzYVxCuUBYojZy6O6gdW3LiIHYpEId5SZW_KiFKDVAKuS3gIfioyFjGstmoQ","description":"Learn
 Rust programming language with hands-on examples and best
-practices.","title":"Rust
-Programming","views":465,"id":"19ogLjcJPxayuCcnuhIIzt8jzo5DTJgCktaTVyScBbj3w-7I9fKGN30OwoSUSB9EiiMyMzvx0DDUCEa1EEko0w"},"score":19.8,"matched_fields":["description","title","tags"]},{"record":{"tags":"programming,python,data-science","views":735,"id":"N2u-Z82Vg8lWQvfPpUfq0RGMTcQNNJDqVytrZWxtgE6ssx94adUFo8VdyfN9tyy5QBL8bWKT-raJYymBwmrOSg","title":"Python
-for Data Science","description":"Master Python for data analysis, machine
-learning, and
-visualization."},"score":6.6000000000000005,"matched_fields":["tags"]},{"record":{"description":"Build
-modern web applications using JavaScript, React, and
-Node.js.","id":"j2bOAk65eSR3DIU9S0Sdhn11R12nIrQZX87-DNRNAhw2KCXnNmE_hR9DuK9xBxMPJbb4AtaKZpIurAqQmcnVAQ","views":512,"title":"JavaScript
-Web
-Development","tags":"programming,javascript,web"},"score":6.6000000000000005,"matched_fields":["tags"]}],"total":3,"execution_time_ms":1}
+practices."},"score":19.8,"matched_fields":["tags","title","description"]},{"record":{"id":"VJQ6Jc1K503t0FUqbN8arJClWPxVuDvy0D1UzIfGM9uSxdXdguuLdcsEGN7MGua1X6El_ThZD0eOmayB6PIfoQ","views":811,"tags":"programming,javascript,web","title":"JavaScript
+Web Development","description":"Build modern web applications using JavaScript,
+React, and
+Node.js."},"score":6.6000000000000005,"matched_fields":["tags"]},{"record":{"tags":"programming,python,data-science","id":"1_zW4CUo_y-pbUjiyOMDR2qZAKYHKitkkmrk09hA1IDCwKlPnC7dQ3DzZLODkUPn8H0RYuzKdtoAPIZotR3QvA","title":"Python
+for Data Science","views":12,"description":"Master Python for data analysis,
+machine learning, and
+visualization."},"score":6.6000000000000005,"matched_fields":["tags"]}],"total":3,"execution_time_ms":1}
 
 === Search for 'machine learning' === ✓ Found results for 'machine learning'
-{"results":[{"record":{"views":281,"description":"Introduction to machine
-learning algorithms and neural
-networks.","id":"B07cDhYBaReG7NQkQR-6QT-Ho1lfepmumRo_8mIYbg5bgUGIMYoAxpTAdAng0xg20gRXx3-OXGWnP1a2tjsB6w","tags":"ai,machine-learning,python","title":"Machine
-Learning
-Basics"},"score":2.7,"matched_fields":["description","title","tags"]},{"record":{"description":"Master
-Python for data analysis, machine learning, and visualization.","title":"Python
-for Data
-Science","id":"N2u-Z82Vg8lWQvfPpUfq0RGMTcQNNJDqVytrZWxtgE6ssx94adUFo8VdyfN9tyy5QBL8bWKT-raJYymBwmrOSg","tags":"programming,python,data-science","views":735},"score":1.0,"matched_fields":["description"]},{"record":{"title":"Database
-Design","tags":"database,design,sql","description":"Learn database design
-principles, normalization, and query
-optimization.","id":"iyZwGGXJB3qx5g2HgJe9mI0tA-6b2w7FsxiC7tZNLARveriSxdFqaPKyvYxBwhm_AiB8HmiVL90fGWuCsJdwPQ","views":512},"score":0.5,"matched_fields":["description"]},{"record":{"description":"Learn
+{"results":[{"record":{"id":"1e_EgosnmzsP8hVVoZzO1vU0c5j44Md3TN2tWjC2W0v_1vDgZBecSIhFzItMasG_VxZQv5qduzwDdYe9RMsIqQ","views":271,"description":"Introduction
+to machine learning algorithms and neural
+networks.","tags":"ai,machine-learning,python","title":"Machine Learning
+Basics"},"score":2.7,"matched_fields":["description","tags","title"]},{"record":{"tags":"programming,python,data-science","id":"1_zW4CUo_y-pbUjiyOMDR2qZAKYHKitkkmrk09hA1IDCwKlPnC7dQ3DzZLODkUPn8H0RYuzKdtoAPIZotR3QvA","title":"Python
+for Data Science","views":12,"description":"Master Python for data analysis,
+machine learning, and
+visualization."},"score":1.0,"matched_fields":["description"]},{"record":{"title":"Database
+Design","views":747,"id":"z7N1tJMzF0A-v2aPwRO-omA8bEdkQgAF6eNjjeUY_Tmk0HP91C-fYvF38doqrLod1gmg8gtgJFrGqc4qeRaIbg","description":"Learn
+database design principles, normalization, and query
+optimization.","tags":"database,design,sql"},"score":0.5,"matched_fields":["description"]},{"record":{"tags":"programming,rust,tutorial","views":808,"description":"Learn
 Rust programming language with hands-on examples and best
-practices.","id":"19ogLjcJPxayuCcnuhIIzt8jzo5DTJgCktaTVyScBbj3w-7I9fKGN30OwoSUSB9EiiMyMzvx0DDUCEa1EEko0w","views":465,"tags":"programming,rust,tutorial","title":"Rust
+practices.","id":"JLqGPucEi9B4ggxtGyZJEIxGSQmzYVxCuUBYojZy6O6gdW3LiIHYpEId5SZW_KiFKDVAKuS3gIfioyFjGstmoQ","title":"Rust
 Programming"},"score":0.5,"matched_fields":["description"]}],"total":4,"execution_time_ms":1}
 
 === Cleanup === ✓ Deleted collection: kotlin_search_example
 
 ✓ All search operations completed successfully
 
-BUILD SUCCESSFUL in 3s 3 actionable tasks: 2 executed, 1 up-to-date To honour
+BUILD SUCCESSFUL in 3s 2 actionable tasks: 1 executed, 1 up-to-date To honour
 the JVM settings for this build a single-use Daemon process will be forked. For
 more on this, please refer to
-https://docs.gradle.org/8.5/userguide/gradle_daemon.html#sec:disabling_the_daemon
+https://docs.gradle.org/8.11.1/userguide/gradle_daemon.html#sec:disabling_the_daemon
 in the Gradle documentation. Daemon will be stopped at the end of the build
 
-> Task :run SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
-> SLF4J: Defaulting to no-operation (NOP) logger implementation SLF4J: See
-> http://www.slf4j.org/codes.html#StaticLoggerBinder for further details. ===
-> ekoDB Kotlin Client - WebSocket TTL Example ===
+> Task :run SLF4J(W): No SLF4J providers were found. SLF4J(W): Defaulting to
+> no-operation (NOP) logger implementation SLF4J(W): See
+> https://www.slf4j.org/codes.html#noProviders for further details. === ekoDB
+> Kotlin Client - WebSocket TTL Example ===
 
 === Insert Test Data with TTL === ✓ Inserted document with TTL:
-StringValue(value=6NakwV_oq8kF7E5imRzhc3FovGrFahkplEgP5AlrL1sn1qPvgbEpiNSFjNaaEJXxvwQZi9OVPdRWvrYdqFeGxA)
+StringValue(value=Qci1qqRq3cBviSt6W-ZbWJ4NJcMNfPN9F3yzHCHcsZEhYCvzOx3i7UAKEwbRpuhCG1jkFgheZDAZW7AXH3OdzA)
 
 === Query via WebSocket === ✓ WebSocket connected ✓ Retrieved data via
 WebSocket:
-{"payload":{"data":[{"created_at":{"type":"Integer","value":1760511925504},"id":"6NakwV_oq8kF7E5imRzhc3FovGrFahkplEgP5AlrL1sn1qPvgbEpiNSFjNaaEJXxvwQZi9OVPdRWvrYdqFeGxA","name":{"type":"String","value":"WebSocket
+{"payload":{"data":[{"created_at":{"type":"Integer","value":1760517218576},"id":"Qci1qqRq3cBviSt6W-ZbWJ4NJcMNfPN9F3yzHCHcsZEhYCvzOx3i7UAKEwbRpuhCG1jkFgheZDAZW7AXH3OdzA","name":{"type":"String","value":"WebSocket
 TTL
 Test"},"ttl_duration":{"type":"String","value":"1h"},"value":{"type":"Integer","value":42}}]},"type":"Success"}
 
@@ -350,162 +344,161 @@ Test"},"ttl_duration":{"type":"String","value":"1h"},"value":{"type":"Integer","
 💡 Note: Documents with TTL will automatically expire after the specified
 duration
 
-BUILD SUCCESSFUL in 3s 3 actionable tasks: 2 executed, 1 up-to-date To honour
+BUILD SUCCESSFUL in 3s 2 actionable tasks: 1 executed, 1 up-to-date To honour
 the JVM settings for this build a single-use Daemon process will be forked. For
 more on this, please refer to
-https://docs.gradle.org/8.5/userguide/gradle_daemon.html#sec:disabling_the_daemon
+https://docs.gradle.org/8.11.1/userguide/gradle_daemon.html#sec:disabling_the_daemon
 in the Gradle documentation. Daemon will be stopped at the end of the build
 
-> Task :run SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
-> SLF4J: Defaulting to no-operation (NOP) logger implementation SLF4J: See
-> http://www.slf4j.org/codes.html#StaticLoggerBinder for further details. ===
-> ekoDB Kotlin Client - Join Operations Example ===
+> Task :run SLF4J(W): No SLF4J providers were found. SLF4J(W): Defaulting to
+> no-operation (NOP) logger implementation SLF4J(W): See
+> https://www.slf4j.org/codes.html#noProviders for further details. === ekoDB
+> Kotlin Client - Join Operations Example ===
 
 === Setting up sample data === ✓ Sample data created
 
 === Example 1: Single collection join (users with departments) === ✓ Found 2
 users with department data
 
-- Alice Johnson
 - Bob Smith
+- Alice Johnson
 
 === Example 2: Join with filtering === ✓ Found 2 users in Engineering
 
-- Alice Johnson
 - Bob Smith
+- Alice Johnson
 
 === Example 3: Multi-collection join (users with departments and profiles) === ✓
 Found 2 users with department join
 
-- Alice Johnson
 - Bob Smith
+- Alice Johnson
 
 === Example 4: Join orders with user data === ✓ Found 3 completed orders
 
-- Keyboard ($75)
 - Mouse ($25)
+- Keyboard ($75)
 - Laptop ($1200)
 
 === Example 5: Complex join with multiple conditions === ✓ Found 2 users with
 example.com emails
 
-- Alice Johnson (alice@example.com)
 - Bob Smith (bob@example.com)
+- Alice Johnson (alice@example.com)
 
 === Cleanup === ✓ Deleted test collections
 
 ✓ Join operations example completed successfully
 
-BUILD SUCCESSFUL in 3s 3 actionable tasks: 2 executed, 1 up-to-date To honour
+BUILD SUCCESSFUL in 3s 2 actionable tasks: 1 executed, 1 up-to-date To honour
 the JVM settings for this build a single-use Daemon process will be forked. For
 more on this, please refer to
-https://docs.gradle.org/8.5/userguide/gradle_daemon.html#sec:disabling_the_daemon
+https://docs.gradle.org/8.11.1/userguide/gradle_daemon.html#sec:disabling_the_daemon
 in the Gradle documentation. Daemon will be stopped at the end of the build
 
-> Task :run SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
-> SLF4J: Defaulting to no-operation (NOP) logger implementation SLF4J: See
-> http://www.slf4j.org/codes.html#StaticLoggerBinder for further details. ===
-> ekoDB Kotlin Client - Basic Chat Example ===
+> Task :run SLF4J(W): No SLF4J providers were found. SLF4J(W): Defaulting to
+> no-operation (NOP) logger implementation SLF4J(W): See
+> https://www.slf4j.org/codes.html#noProviders for further details. === ekoDB
+> Kotlin Client - Basic Chat Example ===
 
 === Inserting Sample Data === ✓ Inserted 3 sample documents
 
 === Creating Chat Session === ✓ Created session:
-nE4JW5qmSaVqoq59BoBplNyvEXO5led_sm6_Vg1tyPw0rBeN168ZDd3Mo3E-UVUm_CqrZdeOdWhXHyRlYntq2g
+peh3VGEXupNYFARuAzEahoUL1CToF3_MsQDU_x3C7e7IxPK8eMjXJO_Tz6P_5KlE1RzQW9or_5esOnIbOcXO4Q
 
 === Sending Chat Message === ✓ Chat response: Message ID:
-"bMoP22EkaXq4oJgZPb54kk-hL1r7cAjcQTeTCeHb7iKLruG-sAuRBvkgMLGuK7rCJvHLLpR4infYL9NcNaHBog"
-Responses: ["ekoDB is a high-performance database that comes with intelligent
-caching, real-time capabilities, and AI integration. Some of its notable
-features include an AI Chat Integration, which allows you to query your database
-using natural language and receive AI-powered responses with relevant context.
-Additionally, ekoDB supports various search functionalities inclusive of
-full-text search, vector search, and hybrid search with automatic context
-retrieval."]
+"o-shOqF1I9bpNowkDRuIrG28jtqMyE5ZDUcfrF6z_01tyZPHs1prGAUogddywZ0O7Qab44trVRy36bKQJpSoBA"
+Responses: ["Answer: ekoDB is a high-performance database that comes with
+several features. It has intelligent caching, real-time capabilities, and AI
+integration. One of its notable features is the AI Chat Integration, which lets
+you query your database using natural language and receive AI-powered responses.
+ekoDB also supports various search types including full-text search, vector
+search, and hybrid search with automatic context retrieval."]
 
 === Cleanup === ✓ Deleted chat session ✓ Deleted collection:
 kotlin_chat_basic_example
 
 ✓ Basic chat example completed successfully
 
-BUILD SUCCESSFUL in 8s 3 actionable tasks: 2 executed, 1 up-to-date To honour
+BUILD SUCCESSFUL in 7s 2 actionable tasks: 1 executed, 1 up-to-date To honour
 the JVM settings for this build a single-use Daemon process will be forked. For
 more on this, please refer to
-https://docs.gradle.org/8.5/userguide/gradle_daemon.html#sec:disabling_the_daemon
+https://docs.gradle.org/8.11.1/userguide/gradle_daemon.html#sec:disabling_the_daemon
 in the Gradle documentation. Daemon will be stopped at the end of the build
 
-> Task :run SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
-> SLF4J: Defaulting to no-operation (NOP) logger implementation SLF4J: See
-> http://www.slf4j.org/codes.html#StaticLoggerBinder for further details. ===
-> ekoDB Kotlin Client - Chat Session Management Example ===
+> Task :run SLF4J(W): No SLF4J providers were found. SLF4J(W): Defaulting to
+> no-operation (NOP) logger implementation SLF4J(W): See
+> https://www.slf4j.org/codes.html#noProviders for further details. === ekoDB
+> Kotlin Client - Chat Session Management Example ===
 
 === Inserting Sample Data === ✓ Inserted sample product
 
 === Creating Chat Session === ✓ Created session:
-s5v-ilIyfpV7RMcaMRYFsOXyPh7gI1J-bokKG0vIskgd_TqHzR2FaObmh_YWRVDUiYvX88WZTXaiaObUfoKp_g
+If3aFrCkjQWowYEtU6PNY21R3EM--i7QhlXdXy7xWdCzBadLHRxGgz8XRuSpGNnvoOrT9GKQrpS1PzdCR-BG4w
 
 === Sending Messages === ✓ Message 1 sent Responses: ["Based on the provided
-context, one available product is ekoDB. This is a high-performance database
+context, the available product is ekoDB, which is a high-performance database
 product with AI capabilities. It is priced at $99."]
 
 ✓ Message 2 sent Responses: ["As an assistant, I'm sorry but I can't provide the
-information you're asking for because the context doesn't mention any specific
-product or service. Could you please provide more details?"]
+price you're asking for because there's no information given about a specific
+product. Could you please specify the product you're interested in?"]
 
 === Getting Message History === ✓ Retrieved message history Total messages:
-[{"chat_id":{"type":"String","value":"s5v-ilIyfpV7RMcaMRYFsOXyPh7gI1J-bokKG0vIskgd_TqHzR2FaObmh_YWRVDUiYvX88WZTXaiaObUfoKp_g"},"content":{"type":"String","value":"What
+[{"chat_id":{"type":"String","value":"If3aFrCkjQWowYEtU6PNY21R3EM--i7QhlXdXy7xWdCzBadLHRxGgz8XRuSpGNnvoOrT9GKQrpS1PzdCR-BG4w"},"content":{"type":"String","value":"What
 products are
 available?"},"context_snippets":{"type":"Array","value":[{"type":"Object","value":{"collection":{"type":"String","value":"kotlin_chat_sessions_example"},"matched_fields":{"type":"Array","value":[{"type":"String","value":"description"}]},"record":{"type":"Object","value":{"description":{"type":"String","value":"A
 high-performance database product with AI
-capabilities"},"id":{"type":"String","value":"Bx8eBoFONwvz_2xdv7zeFth5HoQk0JI0M6hZBMqugOe8-uZp3nDCdl21AcpwSBNPAG6HHBPN5xL5wakhp2dVeA"},"price":{"type":"Integer","value":99},"product":{"type":"String","value":"ekoDB"}}},"score":{"type":"Float","value":0.25}}}]},"created_at":{"type":"DateTime","value":"2025-10-15T07:05:44.238276Z"},"id":"IHVUjf3TBRKGPTsKFnsMavCHlYbHLfPBBVMRZ4W9RYag4n1X5_TtJjXSHIYqmnlAg8I6ZIOCY0FVPBueNn0t1w","role":{"type":"String","value":"user"},"token_usage":{"type":"Object","value":{"completion_tokens":{"type":"Integer","value":32},"prompt_tokens":{"type":"Integer","value":169},"total_tokens":{"type":"Integer","value":201}}},"updated_at":{"type":"DateTime","value":"2025-10-15T07:05:44.238276Z"}},{"chat_id":{"type":"String","value":"s5v-ilIyfpV7RMcaMRYFsOXyPh7gI1J-bokKG0vIskgd_TqHzR2FaObmh_YWRVDUiYvX88WZTXaiaObUfoKp_g"},"content":{"type":"String","value":"Based
-on the provided context, one available product is ekoDB. This is a
+capabilities"},"id":{"type":"String","value":"bjEn9h_SGz3iglpcz56aZg_VL2MgND-mvU7AA8cRkdlRfvJRv68GEl4DTDKwsUshf5BKKuzonYrjIWeY07y0cg"},"price":{"type":"Integer","value":99},"product":{"type":"String","value":"ekoDB"}}},"score":{"type":"Float","value":0.25}}}]},"created_at":{"type":"DateTime","value":"2025-10-15T08:33:57.709506Z"},"id":"5QD922PwV9K_cTJLtI6iZsAhcAYCE7ggnVMA61mvmHOa_46TtX9piaPdmNvcOCj-tbzc6ftioL6etNRmaOvfRA","role":{"type":"String","value":"user"},"token_usage":{"type":"Object","value":{"completion_tokens":{"type":"Integer","value":32},"prompt_tokens":{"type":"Integer","value":165},"total_tokens":{"type":"Integer","value":197}}},"updated_at":{"type":"DateTime","value":"2025-10-15T08:33:57.709506Z"}},{"chat_id":{"type":"String","value":"If3aFrCkjQWowYEtU6PNY21R3EM--i7QhlXdXy7xWdCzBadLHRxGgz8XRuSpGNnvoOrT9GKQrpS1PzdCR-BG4w"},"content":{"type":"String","value":"Based
+on the provided context, the available product is ekoDB, which is a
 high-performance database product with AI capabilities. It is priced at
 $99."},"context_snippets":{"type":"Array","value":[{"type":"Object","value":{"collection":{"type":"String","value":"kotlin_chat_sessions_example"},"matched_fields":{"type":"Array","value":[{"type":"String","value":"description"}]},"record":{"type":"Object","value":{"description":{"type":"String","value":"A
 high-performance database product with AI
-capabilities"},"id":{"type":"String","value":"Bx8eBoFONwvz_2xdv7zeFth5HoQk0JI0M6hZBMqugOe8-uZp3nDCdl21AcpwSBNPAG6HHBPN5xL5wakhp2dVeA"},"price":{"type":"Integer","value":99},"product":{"type":"String","value":"ekoDB"}}},"score":{"type":"Float","value":0.25}}}]},"created_at":{"type":"DateTime","value":"2025-10-15T07:05:44.240337Z"},"id":"w0IaosPICknf4h9Y8TlBnnjqFjOhBOXIXtSpNkshkEEbrJDFh1XA6V45df5gISReiCxqagpFZYnaQgZi0HF_Lg","role":{"type":"String","value":"assistant"},"token_usage":{"type":"Object","value":{"completion_tokens":{"type":"Integer","value":32},"prompt_tokens":{"type":"Integer","value":169},"total_tokens":{"type":"Integer","value":201}}},"updated_at":{"type":"DateTime","value":"2025-10-15T07:05:44.240337Z"}},{"chat_id":{"type":"String","value":"s5v-ilIyfpV7RMcaMRYFsOXyPh7gI1J-bokKG0vIskgd_TqHzR2FaObmh_YWRVDUiYvX88WZTXaiaObUfoKp_g"},"content":{"type":"String","value":"What
+capabilities"},"id":{"type":"String","value":"bjEn9h_SGz3iglpcz56aZg_VL2MgND-mvU7AA8cRkdlRfvJRv68GEl4DTDKwsUshf5BKKuzonYrjIWeY07y0cg"},"price":{"type":"Integer","value":99},"product":{"type":"String","value":"ekoDB"}}},"score":{"type":"Float","value":0.25}}}]},"created_at":{"type":"DateTime","value":"2025-10-15T08:33:57.712466Z"},"id":"FxzAq_3fTJeQCUEQ5z-C49qD4Q-tnWLgGccODzK51fpd2LBwigrKxBj3GC8pAwLxGWyMARXevtSqe38QM2GnXQ","role":{"type":"String","value":"assistant"},"token_usage":{"type":"Object","value":{"completion_tokens":{"type":"Integer","value":32},"prompt_tokens":{"type":"Integer","value":165},"total_tokens":{"type":"Integer","value":197}}},"updated_at":{"type":"DateTime","value":"2025-10-15T08:33:57.712466Z"}},{"chat_id":{"type":"String","value":"If3aFrCkjQWowYEtU6PNY21R3EM--i7QhlXdXy7xWdCzBadLHRxGgz8XRuSpGNnvoOrT9GKQrpS1PzdCR-BG4w"},"content":{"type":"String","value":"What
 is the
-price?"},"created_at":{"type":"DateTime","value":"2025-10-15T07:05:46.073621Z"},"id":"d69yZQ86kTdMNLGCZoNlQ2dTLdSNFHlKaaI5t_rbUQTRGSMoCluMUFUtUygo9c3aXHkTX8diDUOW09LDdZpvYw","role":{"type":"String","value":"user"},"token_usage":{"type":"Object","value":{"completion_tokens":{"type":"Integer","value":37},"prompt_tokens":{"type":"Integer","value":63},"total_tokens":{"type":"Integer","value":100}}},"updated_at":{"type":"DateTime","value":"2025-10-15T07:05:46.073621Z"}},{"chat_id":{"type":"String","value":"s5v-ilIyfpV7RMcaMRYFsOXyPh7gI1J-bokKG0vIskgd_TqHzR2FaObmh_YWRVDUiYvX88WZTXaiaObUfoKp_g"},"content":{"type":"String","value":"As
-an assistant, I'm sorry but I can't provide the information you're asking for
-because the context doesn't mention any specific product or service. Could you
-please provide more
-details?"},"created_at":{"type":"DateTime","value":"2025-10-15T07:05:46.075345Z"},"id":"XFvyrPLjjzDmnRG-XhLJVZP8D_wrOknFbSv3I7EWpwsUz0SnvqlpBa03LUPF5jmreDJroHSxCGX3GLf2tVEWIw","role":{"type":"String","value":"assistant"},"token_usage":{"type":"Object","value":{"completion_tokens":{"type":"Integer","value":37},"prompt_tokens":{"type":"Integer","value":63},"total_tokens":{"type":"Integer","value":100}}},"updated_at":{"type":"DateTime","value":"2025-10-15T07:05:46.075345Z"}}]
+price?"},"created_at":{"type":"DateTime","value":"2025-10-15T08:33:59.633359Z"},"id":"xYb0tydyGsWE7Hb1K2RwNb-YWxWvxE_g_jovFhrs07iMGoFP0uMSuPqkdqsTYy1Svs-an9kcEdHLJb9KxQPhcA","role":{"type":"String","value":"user"},"token_usage":{"type":"Object","value":{"completion_tokens":{"type":"Integer","value":40},"prompt_tokens":{"type":"Integer","value":63},"total_tokens":{"type":"Integer","value":103}}},"updated_at":{"type":"DateTime","value":"2025-10-15T08:33:59.633359Z"}},{"chat_id":{"type":"String","value":"If3aFrCkjQWowYEtU6PNY21R3EM--i7QhlXdXy7xWdCzBadLHRxGgz8XRuSpGNnvoOrT9GKQrpS1PzdCR-BG4w"},"content":{"type":"String","value":"As
+an assistant, I'm sorry but I can't provide the price you're asking for because
+there's no information given about a specific product. Could you please specify
+the product you're interested
+in?"},"created_at":{"type":"DateTime","value":"2025-10-15T08:33:59.634829Z"},"id":"h4Jw5Z-fWJhSOv8mbZkh-UX9i8chwNjYeH0kK9953q653ipiq1Qf52QMgnZMT7RkwSyXSBsZQW_6M2trBeQjKA","role":{"type":"String","value":"assistant"},"token_usage":{"type":"Object","value":{"completion_tokens":{"type":"Integer","value":40},"prompt_tokens":{"type":"Integer","value":63},"total_tokens":{"type":"Integer","value":103}}},"updated_at":{"type":"DateTime","value":"2025-10-15T08:33:59.634829Z"}}]
 
 === Updating Session === ✓ Updated session system prompt
 
 === Listing Sessions === ✓ Total sessions: 1
 
 === Branching Session === ✓ Created branched session:
-Rx7IA0B8niqK1mfUQKCY-loK6SxqSDG9c4uW-aBd2vOu4ZYelzR4bsFQ_cofs6D4-X1e55kt2NER2USkO5LQWw
+g81-pH8JNHP_nqu4jFtvKo-pnBPvnNXttskHxo8JV7PYOaX-Oi9NzUfc2xDIIQU68Z7bWs-0EqOys-XpvF39ig
 
 === Cleanup === ✓ Deleted chat sessions ✓ Deleted collection:
 kotlin_chat_sessions_example
 
 ✓ Chat session management example completed successfully
 
-BUILD SUCCESSFUL in 6s 3 actionable tasks: 2 executed, 1 up-to-date To honour
+BUILD SUCCESSFUL in 7s 2 actionable tasks: 1 executed, 1 up-to-date To honour
 the JVM settings for this build a single-use Daemon process will be forked. For
 more on this, please refer to
-https://docs.gradle.org/8.5/userguide/gradle_daemon.html#sec:disabling_the_daemon
+https://docs.gradle.org/8.11.1/userguide/gradle_daemon.html#sec:disabling_the_daemon
 in the Gradle documentation. Daemon will be stopped at the end of the build
 
-> Task :run SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
-> SLF4J: Defaulting to no-operation (NOP) logger implementation SLF4J: See
-> http://www.slf4j.org/codes.html#StaticLoggerBinder for further details. ===
-> ekoDB Kotlin Client - Advanced Chat Features Example ===
+> Task :run SLF4J(W): No SLF4J providers were found. SLF4J(W): Defaulting to
+> no-operation (NOP) logger implementation SLF4J(W): See
+> https://www.slf4j.org/codes.html#noProviders for further details. === ekoDB
+> Kotlin Client - Advanced Chat Features Example ===
 
 === Inserting Sample Data === ✓ Inserted sample product
 
 === Creating Chat Session === ✓ Created session:
-\_onrSis7r4ZVo4TS2Sm3d45QK-YST_WdEEMWp9cP-BaktsoTZ3p0TPI92fwaRfsWI3DBGhtm2nP5zFdvJ3_Cvg
+Z45CcicZj-x0fVYNYurK7pVVhuOUA7837PSDS2eoPqqqMY9RPy_wiUTthlMyCAoX9kY0d_7MpaZYRKAkhPbRpQ
 
-=== Sending Initial Message === ✓ Message sent Responses: ["Based on the context
-provided, the available product is ekoDB. It's a high-performance database
-product priced at $99."]
+=== Sending Initial Message === ✓ Message sent Responses: ["Based on the
+information provided, the available product is a high-performance database
+product named ekoDB. It is priced at 99."]
 
 ✓ Second message sent
 
-=== Regenerating AI Response === ✓ AI response regenerated New responses:
-["Based on the provided context, the available product is a high-performance
-database product named ekoDB. It costs $99."]
+=== Regenerating AI Response === ✓ AI response regenerated New responses: ["The
+available product based on the given context is ekoDB. It is a high-performance
+database product and is priced at 99."]
 
 === Updating Message === ✓ Updated message content
 
@@ -513,7 +506,7 @@ database product named ekoDB. It costs $99."]
 context)
 
 === Creating Second Session for Merge === ✓ Created second session:
-FOuha0tk0cItOoQhjUdtW0yFgsuXca1xHys2xOqCMtGybv6jH9X4jGEQhhnIPpfYpsm-y4NoLSF2fZHV-lHdYQ
+egjXFuU6z7699cCpZu_Zp5TO47FE_MuLIRlzBeqV6xiMDr8jJyv42n6a4y_kQkCBS6SKEQp28_T1vlIy6zHc0g
 
 === Merging Sessions === ✓ Merged sessions Merged session ID: null
 
@@ -524,5 +517,5 @@ kotlin_chat_advanced_example
 
 ✓ Advanced chat features example completed successfully
 
-BUILD SUCCESSFUL in 9s 3 actionable tasks: 2 executed, 1 up-to-date ✅ Kotlin
+BUILD SUCCESSFUL in 9s 2 actionable tasks: 1 executed, 1 up-to-date ✅ Kotlin
 client examples complete! ✅ All Kotlin integration tests complete!
