@@ -2,6 +2,20 @@
 
 Official client libraries for ekoDB - a high-performance document database.
 
+[![Examples](https://img.shields.io/badge/Examples-105_Working-success)](examples/)
+[![Languages](https://img.shields.io/badge/Languages-6-blue)](examples/)
+[![Client Libraries](https://img.shields.io/badge/Client_Libraries-5-purple)](examples/)
+
+**🚀 Quick Stats:**
+
+- **105 working examples** - 77 client library + 28 direct API examples
+- **6 programming languages** - Rust, Python, Go, TypeScript, JavaScript, Kotlin
+- **5 full-featured clients** - Complete feature parity across Rust, Python, Go,
+  TypeScript, Kotlin
+- **14 examples per client** - CRUD, batch ops, queries, joins, search,
+  WebSocket, AI/chat, and more
+- **100% tested** - All examples run in CI/CD
+
 ## 📦 Available Clients
 
 ### 🦀 Rust Client (`ekodb_client`)
@@ -43,23 +57,50 @@ go get github.com/ekoDB/ekodb-client-go
 npm install @ekodb/ekodb-client
 ```
 
+### 🟣 Kotlin Client (`ekodb-client-kt`)
+
+[![Maven Central](https://img.shields.io/maven-central/v/io.ekodb/ekodb-client-kt)](https://central.sonatype.com/artifact/io.ekodb/ekodb-client-kt)
+
+```kotlin
+// Gradle (Kotlin DSL)
+implementation("io.ekodb:ekodb-client-kt:0.1.0")
+```
+
+**Features:**
+
+- ✅ Full coroutines support
+- ✅ Type-safe operations
+- ✅ Fluent query builder with joins
+- ✅ WebSocket real-time queries
+- ✅ AI/Chat integration
+- ✅ Schema management
+- ✅ Full-text search
+- ✅ 14 comprehensive examples
+
 ## Features
 
 All clients provide:
 
-- Type-safe database operations
-- Comprehensive CRUD operations
-- Batch operations support
-- Authentication handling
-- Query filtering and sorting
-- Schema management
-- Error handling
+- ✅ Type-safe database operations
+- ✅ Comprehensive CRUD operations
+- ✅ Batch operations (insert, update, delete)
+- ✅ Authentication handling
+- ✅ Query filtering and sorting with joins
+- ✅ Schema management and validation
+- ✅ Full-text search capabilities
+- ✅ WebSocket real-time queries
+- ✅ AI/Chat integration with context retrieval
+- ✅ TTL (time-to-live) support
+- ✅ Key-value operations
+- ✅ Error handling and retries
 
 Each client also includes language-specific features:
 
-- Go: Context support, idiomatic error handling
-- Python: Async/await support
-- Node.js: TypeScript support, Promises
+- **Rust**: Tokio async runtime, strong type safety, zero-cost abstractions
+- **Python**: Async/await support, type hints, modern Python 3.8+
+- **Go**: Context support, idiomatic error handling, goroutines
+- **TypeScript/JavaScript**: TypeScript support, Promises, Node.js compatibility
+- **Kotlin**: Coroutines, null safety, extension functions, fluent APIs
 
 ## 📚 Documentation
 
@@ -68,7 +109,9 @@ Each client also includes language-specific features:
 - [Go Client Documentation](https://github.com/ekoDB/ekodb-client-go) - Separate
   repository
 - [TypeScript Client Documentation](./ekodb-client-ts/README.md)
-- [Examples](./examples/) - Code examples for all languages
+- [Kotlin Client Documentation](./ekodb-client-kt/README.md)
+- [Examples](./examples/) - Code examples across all available languages (14
+  examples per client)
 
 ## 🛠️ Development
 
@@ -86,28 +129,37 @@ make build-python-client
 # Build TypeScript client
 make build-typescript-client
 
+# Build Kotlin client
+make build-kotlin-client
+
 # Run all tests
 make test
 
 # Run examples for all languages
 make test-examples
+
+# Run Kotlin examples specifically
+make test-examples-kt
 ```
 
 ### Deployment
 
 ```bash
+# Deploy Rust client to crates.io
+make deploy-client-rust
+
 # Deploy Python client to PyPI
 make bump-client-py      # Bump version
 make deploy-client-py    # Build & publish (Linux + macOS + source)
-
-# Deploy Rust client to crates.io
-make deploy-client-rust
 
 # Deploy TypeScript client to npm
 make deploy-client-ts
 
 # Deploy Go client (via git tags)
 make deploy-client-go
+
+# Deploy Kotlin client to Maven Central
+cd ekodb-client-kt && ./gradlew publish
 ```
 
 ## License

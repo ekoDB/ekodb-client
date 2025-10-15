@@ -2,10 +2,10 @@
 
 Back to [README](../README.md)
 
-This directory contains **78 working examples** demonstrating ekoDB's features
-across 5 programming languages. Examples are organized into two categories:
+This directory contains **84 working examples** demonstrating ekoDB's features
+across 6 programming languages. Examples are organized into two categories:
 
-- **Client Library Examples** (50 examples) - Using official client libraries
+- **Client Library Examples** (56 examples) - Using official client libraries
   (recommended)
 - **Direct API Examples** (28 examples) - Raw HTTP/WebSocket calls for learning
   the API
@@ -59,7 +59,7 @@ This will:
 
 - Check server availability
 - Install dependencies for each language
-- Run all 78 examples (28 direct + 50 client)
+- Run all 84 examples (28 direct + 56 client)
 - Provide pass/fail summary
 
 ### Run via Makefile (Recommended)
@@ -79,6 +79,7 @@ make test-examples-rust               # or: make test-examples-rs
 make test-examples-python             # or: make test-examples-py
 make test-examples-go
 make test-examples-typescript         # or: make test-examples-ts
+make test-examples-kotlin             # or: make test-examples-kt
 make test-examples-javascript         # or: make test-examples-js
 
 # Run specific language + type
@@ -105,9 +106,10 @@ HTTP/WebSocket calls to demonstrate the API directly.
 
 **Languages:** JavaScript, Python, Go, Rust (7 examples each)
 
-### Client Library Examples (50 examples)
+### Client Library Examples (56 examples)
 
-Located in `{language}/client_*.{ext}` files. These examples use official client
+Located in `{language}/client_*.{ext}` files or
+`{language}/examples/Client*.{ext}`. These examples use official client
 libraries for production use.
 
 **Purpose:**
@@ -117,7 +119,8 @@ libraries for production use.
 - Advanced features (chat, search, schema management)
 - Recommended for application development
 
-**Languages:** Rust (13), Python (10), Go (10), TypeScript (10), JavaScript (7)
+**Languages:** Rust (14), Python (14), Go (14), TypeScript (14), JavaScript (7),
+Kotlin (14)
 
 **Key Difference:** Client examples automatically clean up test collections,
 while direct examples use predictable collection names for learning purposes.
@@ -135,11 +138,12 @@ All direct examples are in the `ttl-caching/` subdirectories:
 
 ### Client Library Examples
 
-- **Rust** - 13 examples (`client_*.rs` in `rust/examples/`)
-- **Python** - 10 examples (`client_*.py` in `python/`)
-- **Go** - 10 examples (`client_*.go` in `go/`)
-- **TypeScript** - 10 examples (`client_*.ts` in `typescript/`)
+- **Rust** - 14 examples (`client_*.rs` in `rust/examples/`)
+- **Python** - 14 examples (`client_*.py` in `python/`)
+- **Go** - 14 examples (`client_*.go` in `go/`)
+- **TypeScript** - 14 examples (`client_*.ts` in `typescript/`)
 - **JavaScript** - 7 examples (`client_*.js` in `javascript/`)
+- **Kotlin** - 14 examples (`Client*.kt` in `kotlin/examples/`)
 
 ### Feature Categories (Direct API Examples)
 
@@ -871,27 +875,29 @@ For detailed API documentation and guides, see:
 
 ## 📊 Summary
 
-- **Total Examples**: 78 examples
+- **Total Examples**: 84 examples
   - **Direct API**: 28 examples (JavaScript, Python, Go, Rust - 7 each)
-  - **Client Libraries**: 50 examples (Rust: 13, Python: 10, Go: 10, TypeScript:
-    10, JavaScript: 7)
-- **Languages**: JavaScript, TypeScript, Python, Go, Rust
+  - **Client Libraries**: 56 examples (Rust: 14, Go: 14, TypeScript: 14,
+    JavaScript: 7, Kotlin: 14)
+- **Languages**: JavaScript, TypeScript, Python, Go, Rust, Kotlin
 - **Test Coverage**: All examples tested automatically via Makefile
 - **CI/CD Ready**: Easy integration into pipelines
 - **Documentation**: Self-documenting code examples
 - **Cleanup**: Client examples auto-cleanup, direct examples use predictable
   names
+- **Feature Parity**: All client libraries have complete feature parity (14
+  examples each)
 
 ### Quick Reference
 
 | Command                            | Description                        |
 | ---------------------------------- | ---------------------------------- |
-| `make test-examples`               | Run all 78 examples                |
+| `make test-examples`               | Run all 84 examples                |
 | `make test-examples-direct`        | Run 28 direct API examples         |
-| `make test-examples-client`        | Run 50 client library examples     |
+| `make test-examples-client`        | Run 56 client library examples     |
 | `make test-examples-{lang}`        | Run all examples for a language    |
 | `make test-examples-{lang}-direct` | Run direct examples for a language |
 | `make test-examples-{lang}-client` | Run client examples for a language |
 
 **Supported language aliases:** `rust`/`rs`, `python`/`py`, `typescript`/`ts`,
-`javascript`/`js`, `go`
+`javascript`/`js`, `go`, `kotlin`/`kt`

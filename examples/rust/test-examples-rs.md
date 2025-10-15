@@ -1,7 +1,8 @@
-make test-examples-rs 🧪 Running Rust examples
-(direct HTTP/WebSocket)... Finished `dev` profile [unoptimized + debuginfo]
-target(s) in 0.08s Running `target/debug/examples/simple_crud` ✓ Authentication
-successful
+make test-examples-rs
+
+🧪 Running Rust examples (direct HTTP/WebSocket)... Finished `dev` profile
+[unoptimized + debuginfo] target(s) in 0.08s Running
+`target/debug/examples/simple_crud` ✓ Authentication successful
 
 === Insert Document === Inserted: Object {"id":
 String("WokDR6K4gIOAUOUQEg1HALDp12v7fxiBwY_6F6ymP62BO5iv5RqEjdvMHqsKVu8bSxc8e1bL4m8XLlUcukyUng")}
@@ -305,9 +306,8 @@ matching all conditions
 === Cleanup === ✓ Deleted collection
 
 ✓ All query builder operations completed successfully Compiling ekodb-examples
-v0.1.0 Finished `dev`
-profile [unoptimized + debuginfo] target(s) in 0.50s Running
-`target/debug/examples/client_search` === ekoDB Search Example ===
+v0.1.0 Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.50s
+Running `target/debug/examples/client_search` === ekoDB Search Example ===
 
 === Inserting Sample Documents === ✓ Inserted 5 sample documents
 
@@ -427,8 +427,8 @@ Execution Time: 2574ms
 
 === Cleanup === ✓ Deleted collection
 
-✓ Chat completed successfully Compiling ekodb-examples v0.1.0
-Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.52s Running
+✓ Chat completed successfully Compiling ekodb-examples v0.1.0 Finished `dev`
+profile [unoptimized + debuginfo] target(s) in 0.52s Running
 `target/debug/examples/client_chat_sessions` === ekoDB Chat Session Management
 Example ===
 
@@ -470,8 +470,8 @@ odWsGw-8ykGcR3HgdPNin42MJZBs_FwCaGvQUUizR_NKeKvR9vNa3YHJWPzXb-s9fkz5ZRWn_BHEnSlC
 
 ✓ All session management operations completed successfully Compiling
 ekodb-examples v0.1.0 Finished `dev` profile [unoptimized + debuginfo] target(s)
-in 0.51s Running `target/debug/examples/client_chat_advanced` === ekoDB
-Advanced Chat Features Example ===
+in 0.51s Running `target/debug/examples/client_chat_advanced` === ekoDB Advanced
+Chat Features Example ===
 
 === Inserting Sample Data === ✓ Inserted sample product
 

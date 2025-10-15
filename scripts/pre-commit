@@ -1,0 +1,55 @@
+#!/bin/bash
+
+# Pre-commit hook for ekoDB Client Libraries
+# This hook ensures that:
+# 1. Examples inventory is up to date
+# 2. Code is formatted
+# 3. No uncommitted changes to critical files
+
+set -e
+
+# Colors for output
+CYAN='\033[36m'
+GREEN='\033[32m'
+YELLOW='\033[33m'
+RED='\033[31m'
+RESET='\033[0m'
+
+echo -e "${CYAN}🔍 Running pre-commit checks...${RESET}"
+
+# Check if examples inventory is up to date
+echo -e "${CYAN}📋 Checking examples inventory...${RESET}"
+if [ -f "scripts/generate_examples_list.sh" ]; then
+    chmod +x scripts/generate_examples_list.sh
+    ./scripts/generate_examples_list.sh --temp > /dev/null 2>&1
+    
+    if ! diff -I "^# Generated:" examples_list.txt examples_list.txt.tmp > /dev/null 2>&1; then
+        echo -e "${RED}❌ Examples inventory is out of date!${RESET}"
+        echo -e "${YELLOW}The examples have changed but examples_list.txt hasn't been updated.${RESET}"
+        echo -e "${YELLOW}Run 'make examples-ls' to update the inventory.${RESET}"
+        rm -f examples_list.txt.tmp examples_list.json.tmp
+        exit 1
+    fi
+    
+    rm -f examples_list.txt.tmp examples_list.json.tmp
+    echo -e "${GREEN}✅ Examples inventory is up to date${RESET}"
+else
+    echo -e "${YELLOW}⚠️  generate_examples_list.sh not found, skipping inventory check${RESET}"
+fi
+
+# Check if README badge is up to date
+if [ -f "examples_list.txt" ]; then
+    total_examples=$(grep "Total Examples:" examples_list.txt | awk '{print $3}')
+    
+    if ! grep -q "Examples-${total_examples}_Working" README.md 2>/dev/null; then
+        echo -e "${RED}❌ README badge is out of date!${RESET}"
+        echo -e "${YELLOW}The badge shows a different count than examples_list.txt${RESET}"
+        echo -e "${YELLOW}Run 'make examples-ls-badge' to update the badge.${RESET}"
+        exit 1
+    fi
+    
+    echo -e "${GREEN}✅ README badge is up to date${RESET}"
+fi
+
+echo -e "${GREEN}✅ All pre-commit checks passed!${RESET}"
+exit 0

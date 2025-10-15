@@ -1,51 +1,59 @@
-make test-examples 🧪 Running Rust examples
-(direct HTTP/WebSocket)... Finished `dev` profile [unoptimized + debuginfo]
-target(s) in 0.13s Running `target/debug/examples/simple_crud` ✓ Authentication
-successful
+make test-examples
+
+🔍 Checking examples inventory against committed snapshot... 🔍 Generating
+comprehensive examples list... 📋 Counting Direct API examples... javascript: 7
+direct examples python: 7 direct examples go: 7 direct examples rust: 7 direct
+examples 📚 Counting Client Library examples... rust: 14 client examples python:
+14 client examples go: 14 client examples typescript: 14 client examples
+javascript: 7 client examples kotlin: 14 client examples ✅ Examples list
+generated! Total: 105 examples Direct: 28 | Client: 77 Files:
+examples_list.txt.tmp, examples_list.json.tmp ✅ Examples inventory is up to
+date! 🧪 Running Rust examples (direct HTTP/WebSocket)... Finished `dev` profile
+[unoptimized + debuginfo] target(s) in 0.11s Running
+`target/debug/examples/simple_crud` ✓ Authentication successful
 
 === Insert Document === Inserted: Object {"id":
-String("gw26DJPLRgWThHjNYjgLAc725xLKbSwFSPB1SuDvkFwXgOmJyT4-EWp0QSWgqga6N1UVhWD7Ovj4m7W7FANDyg")}
+String("FYQ2d6Vn9jIhCryRFFcD0yx4O5VecZQWUzSRuHUDY8shafOQLXx4CzLXQUX9N3liOJ7Qet4PzW5Rx9T0pAjedw")}
 
 === Find by ID === Found: Object {"active": Object {"type": String("Boolean"),
 "value": Bool(true)}, "id":
-String("gw26DJPLRgWThHjNYjgLAc725xLKbSwFSPB1SuDvkFwXgOmJyT4-EWp0QSWgqga6N1UVhWD7Ovj4m7W7FANDyg"),
+String("FYQ2d6Vn9jIhCryRFFcD0yx4O5VecZQWUzSRuHUDY8shafOQLXx4CzLXQUX9N3liOJ7Qet4PzW5Rx9T0pAjedw"),
 "name": Object {"type": String("String"), "value": String("Test Record")},
 "value": Object {"type": String("Integer"), "value": Number(42)}}
 
 === Find with Query === Found documents: Array [Object {"active": Object
 {"type": String("Boolean"), "value": Bool(true)}, "id":
-String("gw26DJPLRgWThHjNYjgLAc725xLKbSwFSPB1SuDvkFwXgOmJyT4-EWp0QSWgqga6N1UVhWD7Ovj4m7W7FANDyg"),
+String("FYQ2d6Vn9jIhCryRFFcD0yx4O5VecZQWUzSRuHUDY8shafOQLXx4CzLXQUX9N3liOJ7Qet4PzW5Rx9T0pAjedw"),
 "name": Object {"type": String("String"), "value": String("Test Record")},
 "value": Object {"type": String("Integer"), "value": Number(42)}}]
 
 === Update Document === Updated: Object {"active": Object {"type":
 String("Boolean"), "value": Bool(true)}, "id":
-String("gw26DJPLRgWThHjNYjgLAc725xLKbSwFSPB1SuDvkFwXgOmJyT4-EWp0QSWgqga6N1UVhWD7Ovj4m7W7FANDyg"),
+String("FYQ2d6Vn9jIhCryRFFcD0yx4O5VecZQWUzSRuHUDY8shafOQLXx4CzLXQUX9N3liOJ7Qet4PzW5Rx9T0pAjedw"),
 "name": String("Updated Record"), "value": Number(100)}
 
 === Delete Document === Deleted document
 
-✓ All CRUD operations completed successfully Compiling ekodb-examples v0.1.0
-Finished `dev` profile
-[unoptimized + debuginfo] target(s) in 0.66s Running
-`target/debug/examples/simple_websocket` ✓ Authentication successful
+✓ All CRUD operations completed successfully Finished `dev` profile [unoptimized
+
+- debuginfo] target(s) in 0.09s Running `target/debug/examples/simple_websocket`
+  ✓ Authentication successful
 
 === Inserting Test Data === ✓ Inserted test record:
-"Ud9HWP3Q5qdR_BH_mcPhrPS0ThE9Esc6Pf2Egw7uZzJFsyHyEijHPBaXdseil8tIctclNV6nR6sDcEgosoUNVQ"
+"8U3djf9soDBOt9Ukki_aeb5abDxCt-CCiku0KZpBkWaBhFqQCRmBBv6v2-\_lm61KF2WgBxA1C5bSyjyoAb-UJQ"
 
 === Connecting to WebSocket === ✓ WebSocket connected
 
 === Querying Data via WebSocket === Response: { "payload": { "data": [ {
 "active": { "type": "Boolean", "value": true }, "id":
-"Ud9HWP3Q5qdR_BH_mcPhrPS0ThE9Esc6Pf2Egw7uZzJFsyHyEijHPBaXdseil8tIctclNV6nR6sDcEgosoUNVQ",
+"8U3djf9soDBOt9Ukki_aeb5abDxCt-CCiku0KZpBkWaBhFqQCRmBBv6v2-_lm61KF2WgBxA1C5bSyjyoAb-UJQ",
 "name": { "type": "String", "value": "WebSocket Test Record" }, "value": {
 "type": "Integer", "value": 42 } } ] }, "type": "Success" } ✓ Retrieved 1
 record(s) via WebSocket
 
-✓ WebSocket example completed successfully Compiling ekodb-examples v0.1.0
-Finished `dev` profile
-[unoptimized + debuginfo] target(s) in 0.50s Running
-`target/debug/examples/batch_operations` ✓ Authentication successful
+✓ WebSocket example completed successfully Finished `dev` profile [unoptimized +
+debuginfo] target(s) in 0.08s Running `target/debug/examples/batch_operations` ✓
+Authentication successful
 
 === Batch Insert === ✓ Batch inserted 5 records ✓ Verified: Found 5 total
 records in collection
@@ -58,9 +66,8 @@ status="active"
 === Batch Delete === ✓ Batch deleted 3 records ✓ Verified: Records successfully
 deleted (not found)
 
-✓ All batch operations completed successfully Compiling ekodb-examples v0.1.0
- Finished `dev` profile
-[unoptimized + debuginfo] target(s) in 0.46s Running
+✓ All batch operations completed successfully Finished `dev` profile
+[unoptimized + debuginfo] target(s) in 0.08s Running
 `target/debug/examples/kv_operations` ✓ Authentication successful
 
 === KV Set === ✓ Set key: session:user123
@@ -80,22 +87,15 @@ deleted (not found)
 
 === Delete Multiple Keys === ✓ Deleted 3 keys
 
-✓ All KV operations completed successfully Compiling ekodb-examples v0.1.0
- Finished `dev` profile
-[unoptimized + debuginfo] target(s) in 0.47s Running
+✓ All KV operations completed successfully Finished `dev` profile [unoptimized +
+debuginfo] target(s) in 0.08s Running
 `target/debug/examples/collection_management` ✓ Authentication successful
 
 === Create Collection (via insert) === Collection created with first record:
-"LuIm6RhbS3kN-ew3LKLPNMjoGwZu1AJD2TxuwXBSljkceE-xE09FcUAlbeQWBeT-j_VtXbl4ROBauK9MFMfyDQ"
+"U5NCWlNwIU982KUvAbMatCpbyEHPEXIywrSJXVuvKXflKlRbjrws9mq2hMoTg94RJPpXIJOiD28lywhxeUerig"
 
-=== List Collections === Total collections: 21 Sample collections:
-["non_indexed_vector_perf", "indexed_query_scale_10k", "indexed_search_perf",
-"text_search_articles", "indexed_vector_perf", "benchmark_test_collection",
-"demo_collection", "non_indexed_query_scale_10k", "non_indexed_hybrid_scale",
-"indexed_hybrid_scale", "usertable", "non_indexed_scale_1k",
-"indexed_query_perf", "non_indexed_search_perf", "indexed_scale_1k",
-"vector_search_articles", "batch_users", "simple_crud_client_py",
-"websocket_test", "test_collection", "non_indexed_query_perf"]
+=== List Collections === Total collections: 4 Sample collections:
+["batch_users", "test_collection", "demo_collection", "websocket_test"]
 
 === Count Documents === Document count: 1
 
@@ -103,13 +103,12 @@ deleted (not found)
 
 === Verify Deletion === Collection still exists: false
 
-✓ All collection management operations completed successfully Compiling
-ekodb-examples v0.1.0 
-Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.46s Running
+✓ All collection management operations completed successfully Finished `dev`
+profile [unoptimized + debuginfo] target(s) in 0.09s Running
 `target/debug/examples/document_ttl` ✓ Authentication successful
 
 === Insert Document with TTL (1 hour) === ✓ Inserted document:
-"EWp_yKaailceMWTevZ9OUbgFdcaOWlQH8aV2aAPvQ78CMFkrCEZind6DExSm-2fSVoLBFsyAVI6473JAr634WQ"
+"gxb7ygiuuy3jBaUvLD5upmapgJtDk-Y5Oc1KX7MHFOsf_CuuePHlKmhCB7345qalEmD5o4PXQvsjRD2mzBgPyQ"
 
 === Insert Document with TTL (5 minutes) === ✓ Inserted document: null
 
@@ -119,57 +118,53 @@ Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.46s Running
 
 === Delete Document === ✓ Deleted document
 
-✓ All document TTL operations completed successfully Compiling ekodb-examples
-v0.1.0  Finished `dev`
-profile [unoptimized + debuginfo] target(s) in 0.66s Running
+✓ All document TTL operations completed successfully Finished `dev` profile
+[unoptimized + debuginfo] target(s) in 0.08s Running
 `target/debug/examples/websocket_ttl` ✓ Authentication successful
 
 === Insert Test Data with TTL === ✓ Inserted document with TTL:
-String("uuzgeH4TYJPlCoIwb_hep6W3gSUzmbfmebhlkdvbLw24XjFz_5D5Io3dlt3gE3gfVSxy-7u8fGcjBqb8U1wGSg")
+String("XsNKyc_xiK-8sO3FpXzO0R48dB7ZsRwfqC02pZF0DNIa5cU3WwdmXKiBEE6v2Xm9mJUZp1NraT1SsfLgRrtxCg")
 
-=== Query via WebSocket === ✓ WebSocket connected
+=== Query via WebSocket === ✓ WebSocket connected ✓ Retrieved 1 record(s) via
+WebSocket
 
 ✓ WebSocket TTL example completed successfully ✅ Rust direct examples complete!
-🛠️ Building client library... cargo build -p ekodb_client Compiling ekodb_client
-v0.1.0  Finished `dev`
-profile [unoptimized + debuginfo] target(s) in 9.14s ✅ Client build complete!
-🧪 Running Rust client library examples... Compiling ekodb-examples v0.1.0
- Finished `dev` profile
-[unoptimized + debuginfo] target(s) in 0.72s Running
-`target/debug/examples/client_simple_crud` ✓ Client created (token exchange
-happens automatically)
+🛠️ Building client library... cargo build -p ekodb_client Finished `dev` profile
+[unoptimized + debuginfo] target(s) in 0.14s ✅ Client build complete! 🧪
+Running Rust client library examples... Finished `dev` profile [unoptimized +
+debuginfo] target(s) in 0.08s Running `target/debug/examples/client_simple_crud`
+✓ Client created (token exchange happens automatically)
 
 === Insert Document === Inserted: Record { fields: {"id":
-String("48e_5yks-eQ5ms10X_VYUxbVSc4qffbqlyUuhBgzz31FoP1wfasaP4kar4XFFskaD3E9AlhpVjyFrYX3ENQsfg")}
+String("DWnO7suFkC6tFX8BbuXv0fxzzNYfwxnwUQog1m1xW9sZhu1aUFlOdmyas9UU0Oke3HkXcEEsGaEVHnPa6_VXfQ")}
 }
 
-=== Find by ID === Found: Record { fields: {"name": Object({"type":
-String("String"), "value": String("Test Record")}), "active": Object({"type":
-String("Boolean"), "value": Boolean(true)}), "value": Object({"type":
-String("Integer"), "value": Integer(42)}), "id":
-String("48e_5yks-eQ5ms10X_VYUxbVSc4qffbqlyUuhBgzz31FoP1wfasaP4kar4XFFskaD3E9AlhpVjyFrYX3ENQsfg")}
-}
+=== Find by ID === Found: Record { fields: {"id":
+String("DWnO7suFkC6tFX8BbuXv0fxzzNYfwxnwUQog1m1xW9sZhu1aUFlOdmyas9UU0Oke3HkXcEEsGaEVHnPa6_VXfQ"),
+"value": Object({"value": Integer(42), "type": String("Integer")}), "active":
+Object({"value": Boolean(true), "type": String("Boolean")}), "name":
+Object({"value": String("Test Record"), "type": String("String")})} }
 
-=== Find with Query === Found documents: [Record { fields: {"active":
-Object({"value": Boolean(true), "type": String("Boolean")}), "value":
+=== Find with Query === Found documents: [Record { fields: {"value":
 Object({"type": String("Integer"), "value": Integer(42)}), "name":
-Object({"type": String("String"), "value": String("Test Record")}), "id":
-String("48e_5yks-eQ5ms10X_VYUxbVSc4qffbqlyUuhBgzz31FoP1wfasaP4kar4XFFskaD3E9AlhpVjyFrYX3ENQsfg")}
+Object({"type": String("String"), "value": String("Test Record")}), "active":
+Object({"type": String("Boolean"), "value": Boolean(true)}), "id":
+String("DWnO7suFkC6tFX8BbuXv0fxzzNYfwxnwUQog1m1xW9sZhu1aUFlOdmyas9UU0Oke3HkXcEEsGaEVHnPa6_VXfQ")}
 }]
 
-=== Update Document === Updated: Record { fields: {"value": Integer(100), "id":
-String("48e_5yks-eQ5ms10X_VYUxbVSc4qffbqlyUuhBgzz31FoP1wfasaP4kar4XFFskaD3E9AlhpVjyFrYX3ENQsfg"),
-"name": String("Updated Record"), "active": Object({"value": Boolean(true),
-"type": String("Boolean")})} }
+=== Update Document === Updated: Record { fields: {"id":
+String("DWnO7suFkC6tFX8BbuXv0fxzzNYfwxnwUQog1m1xW9sZhu1aUFlOdmyas9UU0Oke3HkXcEEsGaEVHnPa6_VXfQ"),
+"value": Integer(100), "active": Object({"value": Boolean(true), "type":
+String("Boolean")}), "name": String("Updated Record")} }
 
 === Delete Document === Deleted document
 
 === Cleanup === ✓ Deleted collection
 
-✓ All CRUD operations completed successfully Compiling ekodb-examples v0.1.0
- Finished `dev` profile
-[unoptimized + debuginfo] target(s) in 0.78s Running
-`target/debug/examples/client_batch_operations` ✓ Client created
+✓ All CRUD operations completed successfully Finished `dev` profile [unoptimized
+
+- debuginfo] target(s) in 0.09s Running
+  `target/debug/examples/client_batch_operations` ✓ Client created
 
 === Batch Insert (via multiple inserts) === ✓ Inserted 5 records ✓ Verified:
 Found 5 total records in collection
@@ -180,9 +175,8 @@ Found 5 total records in collection
 
 === Cleanup === ✓ Deleted collection
 
-✓ All batch operations completed successfully Compiling ekodb-examples v0.1.0
- Finished `dev` profile
-[unoptimized + debuginfo] target(s) in 0.64s Running
+✓ All batch operations completed successfully Finished `dev` profile
+[unoptimized + debuginfo] target(s) in 0.09s Running
 `target/debug/examples/client_kv_operations` ✓ Client created
 
 === KV Set === ✓ Set key: session:user123
@@ -202,17 +196,16 @@ deleted (not found)
 
 === Delete Multiple Keys === ✓ Deleted 3 keys
 
-✓ All KV operations completed successfully Compiling ekodb-examples v0.1.0
- Finished `dev` profile
-[unoptimized + debuginfo] target(s) in 0.74s Running
+✓ All KV operations completed successfully Finished `dev` profile [unoptimized +
+debuginfo] target(s) in 0.08s Running
 `target/debug/examples/client_collection_management` ✓ Client created
 
 === Create Collection (via insert) === Collection created with first record:
-"mKgpkIHKKQMss_Vik1YIgOvlVF2zALipqN5Qj5sDg8LTvg6TuwH2bPU1qUKxrgqhS5U5dXSsXvL7vunmOIhtYw"
+"6tKRKOL9hzeznIGgDSzZK1NafQK3Q9wtRc6EGDpPJ1qUecPFj2g5gtib2mRVQ8eYzv3VDs6nfKSkB5Bj395oSQ"
 
-=== List Collections === Total collections: 23 Sample collections:
-["non_indexed_vector_perf", "indexed_query_scale_10k",
-"client_collection_management_rust", "ttl_cache", "indexed_search_perf"]
+=== List Collections === Total collections: 6 Sample collections:
+["batch_users", "test_collection", "ws_ttl_test", "ttl_cache",
+"client_collection_management_rust"]
 
 === Count Documents === Document count: 1
 
@@ -222,16 +215,15 @@ deleted (not found)
 
 === Verify Deletion === Collection still exists: false
 
-✓ All collection management operations completed successfully Compiling
-ekodb-examples v0.1.0 
-Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.69s Running
+✓ All collection management operations completed successfully Finished `dev`
+profile [unoptimized + debuginfo] target(s) in 0.09s Running
 `target/debug/examples/client_document_ttl` ✓ Client created
 
 === Insert Document with TTL (1 hour) === ✓ Inserted document:
-"lIXsb7bVsw2EoCO9sGEC8pZ1SW9cjTaFcUTWDrzkkepA6RTJQKl_sb7_d22N2ogBFfkXWrZZbt-8n3_M9zE4hA"
+"S5IuiJoa0CHZy4kGjb3LtvDEPuHkvkWPzZ8yNSfGvgqVzPFC7zp_mUJyJTNyPIySbRq22OBrjaw16KY4kTVf_A"
 
 === Insert Document with TTL (5 minutes) === ✓ Inserted document:
-Some(String("R9yvX1yjLynuLVOlK1QkfQgbaU27KmVec52Piyx5RURMTUIl34-0UYnkGPN632tlFhoImZPtxf7Zc-KYmQbRiw"))
+Some(String("w1cewbM3-Sq4tw7rKyWbk76tjd9XNh_SCRfQJ0m2tdUHW1q2s9UvrfA4jKj63JQe218MumONMCjiWnz-UJr0Rw"))
 
 === Query Documents === ✓ Found 2 documents with TTL
 
@@ -244,13 +236,11 @@ Some(String("R9yvX1yjLynuLVOlK1QkfQgbaU27KmVec52Piyx5RURMTUIl34-0UYnkGPN632tlFho
 ✓ All document TTL operations completed successfully
 
 💡 Note: Documents with TTL will automatically expire after the specified
-duration Compiling ekodb-examples v0.1.0
- Finished `dev` profile
-[unoptimized + debuginfo] target(s) in 0.95s Running
-`target/debug/examples/client_simple_websocket` ✓ Client created
+duration Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.09s
+Running `target/debug/examples/client_simple_websocket` ✓ Client created
 
 === Inserting Test Data === ✓ Inserted test record:
-TwhfsyPmfJPCt_7Mom7fZDNWMMJintiZJm5KkvBsu7U0M9IrAOmX4I0X3rJy2f7--hg_ZDjNPoO5rnf_HT9rWg
+oJVv_curwbqtfkAOKxaXBW5h_iyp532Ei8p2rsTSXQPx5yV8iwcT0nXQOw3tvvTWkSKewM0KGfLL9DArkYjMtQ
 
 === Connecting to WebSocket === ✓ WebSocket connected
 
@@ -259,13 +249,12 @@ TwhfsyPmfJPCt_7Mom7fZDNWMMJintiZJm5KkvBsu7U0M9IrAOmX4I0X3rJy2f7--hg_ZDjNPoO5rnf_
 
 === Cleanup === ✓ Deleted collection
 
-✓ WebSocket example completed successfully Compiling ekodb-examples v0.1.0
- Finished `dev` profile
-[unoptimized + debuginfo] target(s) in 0.98s Running
+✓ WebSocket example completed successfully Finished `dev` profile [unoptimized +
+debuginfo] target(s) in 0.09s Running
 `target/debug/examples/client_websocket_ttl` ✓ Client created
 
 === Insert Test Data with TTL === ✓ Inserted document with TTL:
-Some(String("8DDSrcKpy9lBXt0bGpyTHduzW5Jz65YNsYxQxBsY_LAtLQP1pAMTKYB5ul9lOmv97N1tm3YqPMiFyVQXGm_Jvg"))
+Some(String("7eNgeGqFEI8IEiPS6YavWmAvvFPo7bg-DnzIwA8iF7FSOhitqXrJd92ujfGe400Jjs8FkhrKUDEPxLkygxJtgw"))
 
 === Query via WebSocket === ✓ WebSocket connected ✓ Retrieved 1 record(s) via
 WebSocket Record 1: 4 fields
@@ -275,31 +264,30 @@ WebSocket Record 1: 4 fields
 ✓ WebSocket TTL example completed successfully
 
 💡 Note: Documents with TTL will automatically expire after the specified
-duration Compiling ekodb-examples v0.1.0
- Finished `dev` profile
-[unoptimized + debuginfo] target(s) in 0.74s Running
-`target/debug/examples/client_query_builder` === ekoDB Query Builder Example ===
+duration Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.09s
+Running `target/debug/examples/client_query_builder` === ekoDB Query Builder
+Example ===
 
 === Inserting Sample Data === ✓ Inserted 5 users
 
 === Simple Equality Query === ✓ Found 3 active users
 
 - Some(Object({"type": String("String"), "value": String("David")}))
-- Some(Object({"value": String("Bob"), "type": String("String")}))
-- Some(Object({"type": String("String"), "value": String("Alice")}))
+- Some(Object({"type": String("String"), "value": String("Bob")}))
+- Some(Object({"value": String("Alice"), "type": String("String")}))
 
 === Range Query (age >= 28 AND age < 35) === ✓ Found 3 users in age range
 
+- Some(Object({"value": String("David"), "type": String("String")}))
 - Some(Object({"type": String("String"), "value": String("Eve")}))
-- Some(Object({"type": String("String"), "value": String("David")}))
-- Some(Object({"type": String("String"), "value": String("Bob")}))
+- Some(Object({"value": String("Bob"), "type": String("String")}))
 
 === IN Operator === ✓ Found 4 users with status active or pending
 
-- Some(Object({"type": String("String"), "value": String("Bob")}))
-- Some(Object({"type": String("String"), "value": String("Eve")}))
-- Some(Object({"value": String("Alice"), "type": String("String")}))
 - Some(Object({"value": String("David"), "type": String("String")}))
+- Some(Object({"type": String("String"), "value": String("Eve")}))
+- Some(Object({"type": String("String"), "value": String("Bob")}))
+- Some(Object({"value": String("Alice"), "type": String("String")}))
 
 === NOT IN Operator === ✓ Found 4 users not inactive
 
@@ -310,19 +298,19 @@ duration Compiling ekodb-examples v0.1.0
 === Complex Query (active AND age >= 28 AND score > 1500) === ✓ Found 2 users
 matching all conditions
 
-- Some(Object({"type": String("String"), "value": String("David")}))
 - Some(Object({"type": String("String"), "value": String("Bob")}))
+- Some(Object({"type": String("String"), "value": String("David")}))
 
 === OR Query === ✓ Found 2 users with age < 28 OR age > 32
 
-- Some(Object({"type": String("String"), "value": String("Charlie")}))
+- Some(Object({"value": String("Charlie"), "type": String("String")}))
 - Some(Object({"type": String("String"), "value": String("Alice")}))
 
 === Sorted Query (by score descending) === ✓ Top 3 users by score:
 
-1. Some(Object({"type": String("String"), "value": String("Bob")}))
-2. Some(Object({"type": String("String"), "value": String("David")}))
-3. Some(Object({"type": String("String"), "value": String("Alice")}))
+1. Some(Object({"value": String("Bob"), "type": String("String")}))
+2. Some(Object({"value": String("David"), "type": String("String")}))
+3. Some(Object({"value": String("Alice"), "type": String("String")}))
 
 === Pagination (page 2, size 2) === ✓ Page 2 results:
 
@@ -335,9 +323,8 @@ matching all conditions
 
 === Cleanup === ✓ Deleted collection
 
-✓ All query builder operations completed successfully Compiling ekodb-examples
-v0.1.0  Finished `dev`
-profile [unoptimized + debuginfo] target(s) in 0.73s Running
+✓ All query builder operations completed successfully Finished `dev` profile
+[unoptimized + debuginfo] target(s) in 0.08s Running
 `target/debug/examples/client_search` === ekoDB Search Example ===
 
 === Inserting Sample Documents === ✓ Inserted 5 sample documents
@@ -357,13 +344,13 @@ profile [unoptimized + debuginfo] target(s) in 0.73s Running
 === Field-Specific Search === ✓ Found 4 results in title/description
 
 1. Score: 4.0000 Title: Some(String("Machine Learning Basics")) Matched:
-   ["description.value", "title", "title.value", "description"]
+   ["description.value", "title.value", "title", "description"]
 2. Score: 2.0000 Title: Some(String("Python for Data Science")) Matched:
-   ["description.value", "description"]
+   ["description", "description.value"]
 3. Score: 1.0000 Title: Some(String("Database Design")) Matched: ["description",
    "description.value"]
 4. Score: 1.0000 Title: Some(String("Rust Programming")) Matched:
-   ["description", "description.value"]
+   ["description.value", "description"]
 
 === Weighted Search === ✓ Found 2 results with field weights
 
@@ -381,9 +368,8 @@ profile [unoptimized + debuginfo] target(s) in 0.73s Running
 
 === Cleanup === ✓ Deleted collection
 
-✓ All search operations completed successfully Execution time: 1ms Compiling
-ekodb-examples v0.1.0 
-Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.75s Running
+✓ All search operations completed successfully Execution time: 3ms Finished
+`dev` profile [unoptimized + debuginfo] target(s) in 0.09s Running
 `target/debug/examples/client_schema_management` === ekoDB Schema Management
 Example ===
 
@@ -391,140 +377,169 @@ Example ===
 'schema_client_rust' with schema
 
 === Inserting Valid Documents === ✓ Inserted user 1:
-Some(String("-48eFkmer6WIuudYemyXNcN1b0YldPLWlQohUItCHu1zQtiNnYzSG3Hr1UkzcQcN8pE8jM8VvNcUmYnvvecggQ"))
+Some(String("1wOQuUxzj9jjU7Y0NbFPyC8QSE32VizZmt6I4uAEKcKgMQLNkxEMwl1evZHnHjltOor7qYUYvgB8Axkrt0bJtA"))
 ✓ Inserted user 2:
-Some(String("eSZe3r8_D71o6Azp96BSsjzXipIXkdDXejffpqXHiW6tTwOD0LXWHFr1V5ybcFBXhaO1GRzqIIiHx42-NiiG2A"))
+Some(String("HeTBdj-fERd935DBBMcviQZxErxOUg6hcU5zk3j1EtS5PG6P-Ig2nvKVryo90RbQnEWCLPPFgh15E2Hv09J3kA"))
 
 === Getting Schema === ✓ Schema for schema_client_rust:
 
-- age: Integer
-- email: String (required)
 - title: String (required)
 - status: String
+- age: Integer
+- email: String (required)
 
-=== Listing Collections === ✓ Total collections: 23 Sample:
-["schema_client_rust", "non_indexed_vector_perf", "indexed_query_scale_10k",
-"ttl_cache", "indexed_search_perf"]
+=== Listing Collections === ✓ Total collections: 6 Sample: ["batch_users",
+"test_collection", "ws_ttl_test", "ttl_cache", "schema_client_rust"]
 
 === Cleanup === ✓ Deleted collection
 
-✓ All schema management operations completed successfully Compiling
-ekodb-examples v0.1.0 
-Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.71s Running
+✓ All schema management operations completed successfully Finished `dev` profile
+[unoptimized + debuginfo] target(s) in 0.09s Running
+`target/debug/examples/client_joins` === ekoDB Rust Client - Join Operations
+Example ===
+
+=== Setting up sample data === ✓ Sample data created
+
+=== Example 1: Single collection join (users with departments) === ✓ Found 2
+users with department data
+
+- Alice Johnson
+- Bob Smith
+
+=== Example 2: Join with filtering === ✓ Found 2 users in Engineering
+
+- Alice Johnson
+- Bob Smith
+
+=== Example 3: Join with user profiles === ✓ Found 2 users with department join
+
+- Alice Johnson
+- Bob Smith
+
+=== Example 4: Join orders with user data === ✓ Found 3 completed orders
+
+- Laptop ($1200)
+- Keyboard ($75)
+- Mouse ($25)
+
+=== Example 5: Complex join with multiple conditions === ✓ Found 2 users with
+example.com emails
+
+- Alice Johnson (alice@example.com)
+- Bob Smith (bob@example.com)
+
+=== Cleanup === ✓ Deleted test collections
+
+✓ Join operations example completed successfully Finished `dev` profile
+[unoptimized + debuginfo] target(s) in 0.10s Running
 `target/debug/examples/client_chat_basic` === ekoDB Chat Basic Example ===
 
 === Inserting Sample Data === ✓ Inserted 3 sample documents
 
 === Creating Chat Session === ✓ Created session:
-a32aml0lCgvARh0XI0CLgW-ZUZ6ggtQ7sXLIVxT7uvsPgJ-YhYDnHPvJcA5CUYOYSEqmXZO4OBmKpp_HUm--aQ
+ZURF2ib3SHaypBxnBrqL2naVxuCnl23gEz-QQRuu-1IuGSqjsj96IXO-7eXCKjQB0YqRQKufcOMqmuf5Kz2ZTw
 
 === Sending Chat Message === Message ID:
-OSkNd7zl63TG8-mxfiDA1HJGlE2youD9RN9sdFihYiMqvdeH9klkyYkvbfuZK9SOfnHHSFql0XG2ZTFnpjxM-Q
+osAaS2jMcritqFcf8kSNKXUZkr_iIKx-VK0ekXmk5jWjLUMXcDY_T2GZa0ewGJlbOISph4nlvpe_xw089gaHUg
 
-=== AI Response === Response 1: ekoDB is a high-performance database known for
-its intelligent caching and real-time capabilities. It is designed with AI
-integration to provide more efficient and intelligent database handling. Some of
-its significant features include an AI Chat Integration, which lets you query
-your database using natural language and get AI-powered responses with relevant
-context. Additionally, ekoDB also supports different types of search features,
-such as full-text search, vector search, and hybrid search with automatic
-context retrieval. These features make ekoDB a robust and smart tool for
-managing and querying your database.
+=== AI Response === Response 1: Answer: ekoDB is a high-performance database
+that provides intelligent caching and real-time capabilities. It also features
+AI integration. Some of the other notable features include a chat feature that
+allows you to query your database using natural language and get AI-powered
+responses with relevant context. Additionally, it supports full-text search,
+vector search, and hybrid search with automatic context retrieval.
 
 === Context Used (3 snippets) ===
 
 Snippet 1: Collection: client_chat_basic_rust Score: 0.6333 Matched Fields:
-["content", "title", "category"] Record: Object {"category": Object {"type":
+["title", "category", "content"] Record: Object {"category": Object {"type":
 String("String"), "value": String("features")}, "content": Object {"type":
 String("String"), "value": String("The chat feature allows you to query your
 database using natural language and get AI-powered responses with relevant
 context.")}, "id":
-String("RcLT3Ls6KaFpHC2q_vMY0Lr2pwfoxH_Y_iugfixl3yQxyCaGh1K7lLkPp-cJfMOXKg_Xca3JkxSY4NbNo_R01Q"),
+String("9DZ8SxldSyHOX-rk6BK8PGcj7oLisCZS4zM3fIJksSIv8dCswILrxuLRJ2fiwpgZVyeDDf6Fyvr9jI0QeEXy1g"),
 "title": Object {"type": String("String"), "value": String("AI Chat
 Integration")}}
 
 Snippet 2: Collection: client_chat_basic_rust Score: 0.5222 Matched Fields:
-["content", "title"] Record: Object {"category": Object {"type":
-String("String"), "value": String("documentation")}, "content": Object {"type":
-String("String"), "value": String("ekoDB is a high-performance database with
-intelligent caching, real-time capabilities, and AI integration.")}, "id":
-String("20ixhBaH3Cijk1A44SXG2FyyTPVCEs8Y1LQU2vAkcg3XAvGGXbBoo1uJ8kr3tFW6ocyaNTCCzww6T_AivBLPqw"),
-"title": Object {"type": String("String"), "value": String("Introduction to
-ekoDB")}}
-
-Snippet 3: Collection: client_chat_basic_rust Score: 0.5222 Matched Fields:
-["category", "title", "content"] Record: Object {"category": Object {"type":
+["content", "category", "title"] Record: Object {"category": Object {"type":
 String("String"), "value": String("features")}, "content": Object {"type":
 String("String"), "value": String("ekoDB supports full-text search, vector
 search, and hybrid search with automatic context retrieval.")}, "id":
-String("yx-MOMBBhSh8LuqTH5Q3EkfgO1knJPbsGT-pZwd6MK1hRw245OolU3T11OR-iPjBsT7gOnyImgbinfMbmf_xWA"),
+String("wsDGColWwb0Z2kfBSspE_Nfl6m3vNUQFLjitJNGZRZBNER7dzWgvn7vPhyztPcb2M1635qMtIucDt9KOHhtevg"),
 "title": Object {"type": String("String"), "value": String("Search Features")}}
 
-Execution Time: 4761ms
+Snippet 3: Collection: client_chat_basic_rust Score: 0.5222 Matched Fields:
+["title", "content"] Record: Object {"category": Object {"type":
+String("String"), "value": String("documentation")}, "content": Object {"type":
+String("String"), "value": String("ekoDB is a high-performance database with
+intelligent caching, real-time capabilities, and AI integration.")}, "id":
+String("WZOI4XmmXYcF9hy-VzH0joFyau_YPJRS8Akv9Co9_XQk0QnBl0Vx7JVnTfWwMC-YAuts-ZN371xOtGU2Aplihw"),
+"title": Object {"type": String("String"), "value": String("Introduction to
+ekoDB")}}
+
+Execution Time: 3213ms
 
 === Cleanup === ✓ Deleted collection
 
-✓ Chat completed successfully Compiling ekodb-examples v0.1.0
- Finished `dev` profile
-[unoptimized + debuginfo] target(s) in 0.80s Running
-`target/debug/examples/client_chat_sessions` === ekoDB Chat Session Management
-Example ===
+✓ Chat completed successfully Finished `dev` profile [unoptimized + debuginfo]
+target(s) in 0.09s Running `target/debug/examples/client_chat_sessions` ===
+ekoDB Chat Session Management Example ===
 
 === Inserting Sample Data === ✓ Inserted sample product
 
 === Creating Chat Session === ✓ Created session:
-6DIRowivSBaPHC1eY4V5_FZpVKu1Z9560LGJEZrdVZD_TehSreJ4lzqW6CrpEOpCWTfXt_4aWS9IYnXfdI8MKQ
+HBxCxS4SggFkCb0KDnhHmx0K5E-UyoAonpKvBBkCSrsriWxIyyjwMs6rlkbUA\_\_N965YGH-8IGT-XGUoAgpnrA
 === Sending Messages === ✓ Message 1 sent Response: Based on the information
-provided, the available product is ekoDB, a high-performance database product
-with AI capabilities. The price of this product is $99.
+provided, the product available is ekoDB, a high-performance database product
+with AI capabilities. It is priced at $99.
 
-✓ Message 2 sent Response: As an assistant, I'm sorry but I can't provide the
-information you're looking for because the context doesn't specify which
-product's price you're asking about. Could you please provide more details?
+✓ Message 2 sent Response: Apologies, but there's no context provided about a
+specific product. Could you please specify which product you're referring to?
 
 === Retrieving Session Messages === ✓ Retrieved 4 messages
 
 === Updating Session === ✓ Session updated
 
 === Branching Session === ✓ Created branch:
-zD8QK-\_zbcPyNND0Fd0Y91HVJ3hwgOec_dG5KeWi_oVcXZN9noSyWL7SiussdSAKLRhrCrpp-wBrfOGhRVGyvQ
+92fCa1jk9n_a6YVUw1ufdeNoQa3UwItGJC6jGhQHB-tYWxPbkE7uKN0lo1AtvUrE8XwDd1jD72ilglXooqfKHA
 Parent:
-6DIRowivSBaPHC1eY4V5_FZpVKu1Z9560LGJEZrdVZD_TehSreJ4lzqW6CrpEOpCWTfXt_4aWS9IYnXfdI8MKQ
+HBxCxS4SggFkCb0KDnhHmx0K5E-UyoAonpKvBBkCSrsriWxIyyjwMs6rlkbUA\_\_N965YGH-8IGT-XGUoAgpnrA
 
 === Listing Sessions === ✓ Found 3 sessions Session 1:
-zD8QK-\_zbcPyNND0Fd0Y91HVJ3hwgOec_dG5KeWi_oVcXZN9noSyWL7SiussdSAKLRhrCrpp-wBrfOGhRVGyvQ
+92fCa1jk9n_a6YVUw1ufdeNoQa3UwItGJC6jGhQHB-tYWxPbkE7uKN0lo1AtvUrE8XwDd1jD72ilglXooqfKHA
 (Untitled) Session 2:
-6DIRowivSBaPHC1eY4V5_FZpVKu1Z9560LGJEZrdVZD_TehSreJ4lzqW6CrpEOpCWTfXt_4aWS9IYnXfdI8MKQ
+HBxCxS4SggFkCb0KDnhHmx0K5E-UyoAonpKvBBkCSrsriWxIyyjwMs6rlkbUA\_\_N965YGH-8IGT-XGUoAgpnrA
 (Untitled) Session 3:
-a32aml0lCgvARh0XI0CLgW-ZUZ6ggtQ7sXLIVxT7uvsPgJ-YhYDnHPvJcA5CUYOYSEqmXZO4OBmKpp_HUm--aQ
+ZURF2ib3SHaypBxnBrqL2naVxuCnl23gEz-QQRuu-1IuGSqjsj96IXO-7eXCKjQB0YqRQKufcOMqmuf5Kz2ZTw
 (Untitled)
 
 === Getting Session Details === ✓ Session details retrieved Messages: 4
 
 === Deleting Branch Session === ✓ Deleted branch session:
-zD8QK-\_zbcPyNND0Fd0Y91HVJ3hwgOec_dG5KeWi_oVcXZN9noSyWL7SiussdSAKLRhrCrpp-wBrfOGhRVGyvQ
+92fCa1jk9n_a6YVUw1ufdeNoQa3UwItGJC6jGhQHB-tYWxPbkE7uKN0lo1AtvUrE8XwDd1jD72ilglXooqfKHA
 
 === Cleanup === ✓ Deleted collection
 
-✓ All session management operations completed successfully Compiling
-ekodb-examples v0.1.0 
-Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.84s Running
+✓ All session management operations completed successfully Finished `dev`
+profile [unoptimized + debuginfo] target(s) in 0.08s Running
 `target/debug/examples/client_chat_advanced` === ekoDB Advanced Chat Features
 Example ===
 
 === Inserting Sample Data === ✓ Inserted sample product
 
 === Creating Chat Session === ✓ Created session:
-43igFLahuEry-3nG8kd9ayEfm7wL39AdDxKLdshd9oBZkHuUWF6E1CpNbfYc0S3k8E076NARv1KEUhj7KJtXXg
+KER9RVds0bFTv_JU-n2ofY-Em9r6xSsdZQeGmPYxYdTDSv7fMt67aMHjecQBT5ViPZudi8RXRF-3D1K-vRF3LA
 
-=== Sending Initial Message === ✓ Message sent Response: Based on the given
-context, the available product is ekoDB. It is a high-performance database
+=== Sending Initial Message === ✓ Message sent Response: Based on the context
+provided, the available product is ekoDB. It is a high-performance database
 product priced at $99.
 
 ✓ Second message sent === Feature 1: Regenerate AI Response === ✓ Message
-regenerated New response: I'm sorry, but the context provided doesn't include
-information on the price of ekoDB. I would recommend checking the official
-website or contacting the sellers for the most accurate and up-to-date price.
+regenerated New response: I'm sorry, but the context provided does not include
+information on the price of ekoDB. I recommend checking the official website or
+contacting the sales department of ekoDB for the most accurate and up-to-date
+pricing information.
 
 === Feature 2: Edit Message === ✓ Message content updated
 
@@ -534,7 +549,7 @@ website or contacting the sellers for the most accurate and up-to-date price.
 ✓ Message unmarked as forgotten
 
 === Feature 4: Merge Chat Sessions === ✓ Created second session:
-F7uUMqqxQ7XuajY-SPdEbMM05Tm5BzTgRRhae3dNYMbQQIwC4IqV9G2UMBKg3ner4HljFhlmF9FznoNk1dCQoA
+DXKs6VxkJxJmJTavQYM3q_3MsGmZ4bb9tAl_ILih_VZ5d2qcQHGYuWnmWJuMtNLroXVVeZOwT4H8eKwSkowJ-A
 ✓ Sent message in second session ✓ Sessions merged successfully Total messages
 in merged session: 4
 
@@ -560,18 +575,18 @@ complete! ✅ All Rust integration tests complete! 🧪 Running Python examples
 === Running simple_crud.py === ✓ Authentication successful
 
 === Insert Document === Inserted: {'id':
-'FKtXZ6a0ik3dOG1HaS4gCa6F9OE9nGb7xvYi-XX1eSj4S9s9bNqDfJrO8TqAq2A40UbuoLlkShmFOaM383UJ2w'}
+'\_HN9HFpmVtnJcSZohbkiI4ZvaDCVYX6LhLlnQ5ChhoeXkkEznPAVIrR094kpwsTg_Ty08jslsEPxJvQ2oYZHjA'}
 
-=== Find by ID === Found: {'value': {'type': 'Integer', 'value': 42}, 'id':
-'FKtXZ6a0ik3dOG1HaS4gCa6F9OE9nGb7xvYi-XX1eSj4S9s9bNqDfJrO8TqAq2A40UbuoLlkShmFOaM383UJ2w',
-'name': {'type': 'String', 'value': 'Test Record'}, 'active': {'value': True,
-'type': 'Boolean'}}
+=== Find by ID === Found: {'active': {'value': True, 'type': 'Boolean'}, 'id':
+'\_HN9HFpmVtnJcSZohbkiI4ZvaDCVYX6LhLlnQ5ChhoeXkkEznPAVIrR094kpwsTg_Ty08jslsEPxJvQ2oYZHjA',
+'value': {'type': 'Integer', 'value': 42}, 'name': {'type': 'String', 'value':
+'Test Record'}}
 
 === Find with Query === Found documents: 1
 
-=== Update Document === Updated: {'name': 'Updated Record', 'id':
-'FKtXZ6a0ik3dOG1HaS4gCa6F9OE9nGb7xvYi-XX1eSj4S9s9bNqDfJrO8TqAq2A40UbuoLlkShmFOaM383UJ2w',
-'active': {'value': True, 'type': 'Boolean'}, 'value': 100}
+=== Update Document === Updated: {'active': {'type': 'Boolean', 'value': True},
+'name': 'Updated Record', 'value': 100, 'id':
+'\_HN9HFpmVtnJcSZohbkiI4ZvaDCVYX6LhLlnQ5ChhoeXkkEznPAVIrR094kpwsTg_Ty08jslsEPxJvQ2oYZHjA'}
 
 === Delete Document === Deleted document
 
@@ -581,17 +596,17 @@ successfully
 === Running simple_websocket.py === ✓ Authentication successful
 
 === Inserting Test Data === ✓ Inserted test record:
-JF7LOsatLKIGAi-huzbhWK46yMKOEsxkCp6xNfJBR0-hioVIZtx7tBeywjzRbu-yKqBKxo6p8yXJMDWHMtj1lg
+WEGxpeB4YnE2t1l48ZiBo0r0i-0OapZon3QrGoRFCcA703ICWHmvRMcARry3o1kBEGbIlovbbn-bIJ-oLLmGbg
 
 === Connecting to WebSocket === ✓ WebSocket connected
 
 === Querying Data via WebSocket === Response: { "payload": { "data": [ {
 "active": { "type": "Boolean", "value": true }, "id":
-"JF7LOsatLKIGAi-huzbhWK46yMKOEsxkCp6xNfJBR0-hioVIZtx7tBeywjzRbu-yKqBKxo6p8yXJMDWHMtj1lg",
+"8U3djf9soDBOt9Ukki_aeb5abDxCt-CCiku0KZpBkWaBhFqQCRmBBv6v2-_lm61KF2WgBxA1C5bSyjyoAb-UJQ",
 "name": { "type": "String", "value": "WebSocket Test Record" }, "value": {
 "type": "Integer", "value": 42 } }, { "active": { "type": "Boolean", "value":
 true }, "id":
-"Ud9HWP3Q5qdR_BH_mcPhrPS0ThE9Esc6Pf2Egw7uZzJFsyHyEijHPBaXdseil8tIctclNV6nR6sDcEgosoUNVQ",
+"WEGxpeB4YnE2t1l48ZiBo0r0i-0OapZon3QrGoRFCcA703ICWHmvRMcARry3o1kBEGbIlovbbn-bIJ-oLLmGbg",
 "name": { "type": "String", "value": "WebSocket Test Record" }, "value": {
 "type": "Integer", "value": 42 } } ] }, "type": "Success" } ✓ Retrieved 2
 record(s) via WebSocket
@@ -625,7 +640,7 @@ successfully
 
 === Get Multiple Keys === cache:product:1: {'name': 'Product 1', 'price': 29.99}
 cache:product:2: {'price': 39.989999999999995, 'name': 'Product 2'}
-cache:product:3: {'price': 49.989999999999995, 'name': 'Product 3'}
+cache:product:3: {'name': 'Product 3', 'price': 49.989999999999995}
 
 === KV Delete === ✓ Deleted key: session:user123 ✓ Verified: Key successfully
 deleted (not found)
@@ -638,11 +653,11 @@ successfully
 === Running collection_management.py === ✓ Authentication successful
 
 === Create Collection (via insert) === Collection created with first record:
-VScWrqCneIRLgmjsb52lLMJbcPuu7TetYsRWl22EYsXkQtOgje5gJHYe4q2xbLZAGisgDogzUsDwYbMwrbbhaA
+Fv3tOAlJUjsjB5C--NY1KOhAgHoC_yYTjOAu4Iq2Wih9v6aQmcrobBzuWqEj3XC3LmFwT-uIC0A_QrT_t71yCQ
 
-=== List Collections === Total collections: 25 Sample collections:
-['non_indexed_vector_perf', 'indexed_query_scale_10k',
-'chat_messages__ek0_bench', 'ttl_cache', 'indexed_search_perf']
+=== List Collections === Total collections: 8 Sample collections:
+['batch_users', 'test_collection', 'ws_ttl_test', 'ttl_cache',
+'demo_collection']
 
 === Count Documents === Document count: 1
 
@@ -656,7 +671,7 @@ collection_management.py completed successfully
 === Running document_ttl.py === ✓ Authentication successful
 
 === Insert Document with TTL (1 hour) === ✓ Inserted document:
-\_LOlmQb7UZy5sRLC0-OM31-Rpao5fOe3ZDLhb3OL3YDnhQilf2qp7N57wqvqSlxDqSHq76OCsi-C5DkaUt0Q8A
+BkN9BBBlVNCcGh_iCmXPaF4kU0pehO-x6v6wlwGHfd8i3Vh-vMc2968P18AOLSzIyriszXVXEXdWY8UdOaAwpg
 
 === Insert Document with TTL (5 minutes) === ✓ Inserted document: created
 
@@ -672,7 +687,7 @@ successfully
 === Running websocket_ttl.py === ✓ Authentication successful
 
 === Insert Test Data with TTL === ✓ Inserted document with TTL:
-YEdTQiJUyF0gfmcCpn7hRxNFoNrzP-okWeo6JwLAYBOvmHD-coiDsWx1qW_oY7_wllIbEhboBC5WkUPXUTxItQ
+c2MCGpL659V-cnjOCW24fsOXUY1N6TTEMWbhZMWCgeAIow00jbtjKY3fpXJKAZBmo5ow3mCJO9XRNtl4Y4jrFQ
 
 === Query via WebSocket === ✓ WebSocket connected ✓ Retrieved 2 record(s) via
 WebSocket
@@ -682,38 +697,35 @@ successfully
 
 ╔════════════════════════════════════════╗ ║ Test Summary ║
 ╚════════════════════════════════════════╝ Total: 7 Passed: 7 Failed: 0 ✅
-Python direct examples complete! 🐍 Building and installing Python client
-package... 🍹 Building a mixed python/rust project 🔗 Found pyo3 bindings with
-abi3 support 🐍 Not using a specific python interpreter 💻 Using
-`MACOSX_DEPLOYMENT_TARGET=11.0` for aarch64-apple-darwin by default Compiling
-ekodb_client v0.1.0 
-Compiling ekodb-client-py v0.1.0
- Finished `release`
-profile [optimized] target(s) in 8.60s 📦 Built wheel for abi3 Python ≥ 3.8 to
-
-Processing
-./ekodb-client-py/target/wheels/ekodb_client-0.1.0-cp38-abi3-macosx_11_0_arm64.whl
+Python direct examples complete! 🐍 Building Python client package... 🍹
+Building a mixed python/rust project 🔗 Found pyo3 bindings with abi3 support 🐍
+Not using a specific python interpreter 💻 Using `MACOSX_DEPLOYMENT_TARGET=11.0`
+for aarch64-apple-darwin by default Finished `release` profile [optimized]
+target(s) in 0.14s 📦 Built wheel for abi3 Python ≥ 3.8 to
+/ekoDB/ekodb-client/ekodb-client-py/target/wheels/ekodb_client-0.2.1-cp38-abi3-macosx_11_0_arm64.whl
+📦 Installing Python wheel for current platform... Processing
+./ekodb-client-py/target/wheels/ekodb_client-0.2.1-cp38-abi3-macosx_11_0_arm64.whl
 Installing collected packages: ekodb-client Attempting uninstall: ekodb-client
-Found existing installation: ekodb_client 0.1.0 Uninstalling ekodb_client-0.1.0:
-Successfully uninstalled ekodb_client-0.1.0 Successfully installed
-ekodb-client-0.1.0 ✅ Python client package built and installed! 🧪 Running
+Found existing installation: ekodb_client 0.2.1 Uninstalling ekodb_client-0.2.1:
+Successfully uninstalled ekodb_client-0.2.1 Successfully installed
+ekodb-client-0.2.1 ✅ Python client package built and installed! 🧪 Running
 Python client library examples... ✓ Client created (token exchange happens
 automatically)
 
 === Insert Document === Inserted: {'id':
-'HuosszaIUl1RoxPqLj2pFlPl6QdG24htxNyP5mmvB4x6-q7QivGUfp4pfh6o7xDLyAoOTUAxtwTasuU4fCslfQ'}
+'lE6B3hg1YrEWQjBz6i9f_gwlO6HGFGqxVDjZeNWtYhVPgGobnyM0aytmH2Fpv6f9WH96iBi0Fwo3YKnuWapvbA'}
 
 === Find by ID === Found: {'name': {'value': 'Test Record', 'type': 'String'},
 'id':
-'HuosszaIUl1RoxPqLj2pFlPl6QdG24htxNyP5mmvB4x6-q7QivGUfp4pfh6o7xDLyAoOTUAxtwTasuU4fCslfQ',
-'active': {'value': True, 'type': 'Boolean'}, 'value': {'value': 42, 'type':
-'Integer'}}
+'lE6B3hg1YrEWQjBz6i9f_gwlO6HGFGqxVDjZeNWtYhVPgGobnyM0aytmH2Fpv6f9WH96iBi0Fwo3YKnuWapvbA',
+'value': {'value': 42, 'type': 'Integer'}, 'active': {'value': True, 'type':
+'Boolean'}}
 
 === Find with Query === Found documents: 1
 
-=== Update Document === Updated: {'active': {'type': 'Boolean', 'value': True},
-'name': 'Updated Record', 'value': 100, 'id':
-'HuosszaIUl1RoxPqLj2pFlPl6QdG24htxNyP5mmvB4x6-q7QivGUfp4pfh6o7xDLyAoOTUAxtwTasuU4fCslfQ'}
+=== Update Document === Updated: {'value': 100, 'active': {'type': 'Boolean',
+'value': True}, 'name': 'Updated Record', 'id':
+'lE6B3hg1YrEWQjBz6i9f_gwlO6HGFGqxVDjZeNWtYhVPgGobnyM0aytmH2Fpv6f9WH96iBi0Fwo3YKnuWapvbA'}
 
 === Delete Document === Deleted document
 
@@ -752,11 +764,10 @@ deleted (not found)
 ✓ All KV operations completed successfully ✓ Client created
 
 === Create Collection (via insert) === Collection created with first record:
-"lrnKLDJMT_ji0PBA9Wdzw6OyqralzsAnBHgi0AN7v2fy65ZxsPk-Ls2cgrvL15QDFcu2VNYwSjY4hIed46JM7w"
+"td9VnxOvs5ADMbMXUkroVDRfbuU1Dr5TwCO-JZrESUrX1uY3-ZsV8Y6TGvteBK_D_2FMNf7MXQ9k_xBioetGFQ"
 
-=== List Collections === Total collections: 24 Sample collections:
-['non_indexed_vector_perf', 'indexed_query_scale_10k',
-'chat_messages__ek0_bench', 'ttl_cache', 'indexed_search_perf']
+=== List Collections === Total collections: 8 Sample collections:
+['batch_users', 'test_collection', 'ws_ttl_test', 'ttl_cache', 'websocket_test']
 
 === Count Documents === Document count: 1
 
@@ -767,10 +778,10 @@ deleted (not found)
 ✓ All collection management operations completed successfully ✓ Client created
 
 === Insert Document with TTL (1 hour) === ✓ Inserted document:
-At7huyBrgPPeo4uPnggQNjHeoV8G_5GCCf0jSZrOTwWmQuonJqzmJGqEb7TpVyRV_pZ-dVZUUKVXq7kc2aku-A
+WYsPiSITCJ2ioT8y8ATp6vhI2yvWiBPlnnoVa1qIeL2QdvePLlrxoe3W9jqCKFKevkikL4ov7ifAE7yCcWg_sA
 
 === Insert Document with TTL (5 minutes) === ✓ Inserted document:
-qh6tMHpUXWgLNcc7W18g683y3aQQQz2uPdD_vVKKtyrOmX86_vXfZKj8BzlrWAK3AfkNifTlGtdTlBaCJhRqaw
+aItz5UxgOpdgzgrGG9F3Dlj7sC1ygJq8-XrWBm_plJuUF_A62Jd1MpuDvxj0df_iqY40UfDUQq-EfTeOu7GorA
 
 === Query Documents === ✓ Found 2 documents with TTL
 
@@ -786,7 +797,7 @@ qh6tMHpUXWgLNcc7W18g683y3aQQQz2uPdD_vVKKtyrOmX86_vXfZKj8BzlrWAK3AfkNifTlGtdTlBaC
 duration ✓ Client created
 
 === Inserting Test Data === ✓ Inserted test record:
-7lXlzBUJazy5An8OLNRv4XRlvoKqXLku6j5DVmRLcWoLCcJirUXsLyeD92NwGe_RBC5A-sxIuq8GTNuI4pXX6A
+qPhlexcct_o_KR72QRtmx4jJXD94Mm8tOIz03zGxMl3sVfgxo6Np8Sn5YS27Cl56Zmruay5mP4LPK4dA8gV2Pw
 
 === Connecting to WebSocket === ✓ WebSocket connected
 
@@ -798,7 +809,7 @@ duration ✓ Client created
 ✓ WebSocket example completed successfully ✓ Client created
 
 === Insert Test Data with TTL === ✓ Inserted document with TTL:
-0GaHpJJsKttqgiIyTzpB3dxpyzVmAOtDSh9XajvVFOdAT6GLeCnia0S92qMQigxfbu0TYC0BSgb9ya4-Q73Txg
+\_rFwxl1L13do_pMIY4VeIn69E5gf85ngqxYRPcVUMs0CIrSvwun22N9EPc69_SOihApFN_g8CBjRAP2nfjzySQ
 
 === Query via WebSocket === ✓ WebSocket connected ✓ Retrieved 1 record(s) via
 WebSocket Record 1: 5 fields
@@ -812,21 +823,21 @@ duration === Query Builder Examples ===
 
 Setting up test data... ✅ Test data created
 
-1. Simple equality query: Found 3 active users
+1. Simple equality query: Found 2 active users
 
 2. Range query with sorting: Found 3 users aged 18-65
 
-3. String operations: Found 3 users with @example.com emails
+3. String operations: Found 2 users with @example.com emails
 
-4. IN operator: Found 3 privileged users
+4. IN operator: Found 2 privileged users
 
-5. Complex query with multiple conditions: Found 3 active US users over 21
+5. Complex query with multiple conditions: Found 1 active US users over 21
 
-6. Pagination: Page 1: 3 users
+6. Pagination: Page 1: 2 users
 
-7. NOT IN operator: Found 3 valid users
+7. NOT IN operator: Found 2 valid users
 
-8. Using bypass flags: Found 3 users (bypassed cache)
+8. Using bypass flags: Found 2 users (bypassed cache)
 
 === Cleanup === ✅ Deleted test collection
 
@@ -835,39 +846,39 @@ Setting up test data... ✅ Test data created
 Setting up test data... ✅ Test data created
 
 1. Basic full-text search: Found 2 results
-1. Score: 25.740, Matched: name, email, name.value, email.value
-1. Score: 12.540, Matched: name, name.value
+1. Score: 25.740, Matched: email, name.value, name, email.value
+1. Score: 12.540, Matched: name.value, name
 
 1. Fuzzy search (typo tolerance): Found 4 results with fuzzy matching
-1. Score: 26.400, Matched: title, bio.value, title.value, bio
-1. Score: 26.400, Matched: title.value, bio.value, bio, title
-1. Score: 26.400, Matched: bio, title, bio.value, title.value
+1. Score: 26.400, Matched: title, bio, title.value, bio.value
 1. Score: 26.400, Matched: title, bio, bio.value, title.value
+1. Score: 26.400, Matched: bio, title.value, bio.value, title
+1. Score: 26.400, Matched: bio.value, title, bio, title.value
 
 1. Search with field weights: Found 4 results with weighted fields
-1. Score: 39.600, Matched: bio, bio.value, title.value, title
-1. Score: 39.600, Matched: bio.value, title, bio, title.value
-1. Score: 39.600, Matched: title, bio, bio.value, title.value
-1. Score: 39.600, Matched: title.value, bio, bio.value, title
+1. Score: 39.600, Matched: bio, bio.value, title, title.value
+1. Score: 39.600, Matched: bio.value, bio, title.value, title
+1. Score: 39.600, Matched: bio, bio.value, title, title.value
+1. Score: 39.600, Matched: title, bio.value, title.value, bio
 
 1. Search with minimum score threshold: Found 2 results with score >= 0.3
 1. Score: 13.200, Matched: bio, bio.value
-1. Score: 13.200, Matched: bio.value, bio
+1. Score: 13.200, Matched: bio, bio.value
 
 1. Search with stemming and exact match boosting: Found 2 results (matches: run,
    running, runs)
-1. Score: 13.200, Matched: bio, bio.value
+1. Score: 13.200, Matched: bio.value, bio
 1. Score: 13.200, Matched: bio, bio.value
 
 1. Vector search (semantic search): Found 0 semantically similar documents
 
 1. Hybrid search (text + vector): Found 2 results using hybrid search (text +
    vector)
-1. Score: 1.200, Matched: title.value, title, content, content.value
-1. Score: 0.600, Matched: title, content.value, content, title.value
+1. Score: 1.200, Matched: title.value, content, content.value, title
+1. Score: 0.600, Matched: content, title, title.value, content.value
 
 1. Case-sensitive search: Found 1 results (case-sensitive)
-1. Score: 13.200, Matched: title.value, title
+1. Score: 13.200, Matched: title, title.value
 
 === Cleanup === ✅ Deleted test collections
 
@@ -912,9 +923,9 @@ Setting up sample data... ✅ Sample data created
 
 4. Join orders with user data: Found 3 completed orders:
 
+- Keyboard ($75) by Unknown
 - Laptop ($1200) by Unknown
 - Mouse ($25) by Unknown
-- Keyboard ($75) by Unknown
 
 5. Complex join with multiple conditions: Found 2 users with example.com emails:
 
@@ -928,25 +939,22 @@ Setting up sample data... ✅ Sample data created
 === Inserting Sample Data === ✓ Inserted 3 sample documents
 
 === Creating Chat Session === ✓ Created session:
-HWiXSRaxFxP3-U1fL-oXnKbly_MYe-bmXrz3xeJI3TUyO_pWGfgNUAfgPw3YiwV-y306B37GQ3EkqNZCQVEV4g
+GpJGyY4TwEnpt94EiY1-eMbr4fU7hhB3XOzUvfWBO8XEEDS_zisfZKCzKou-zE_b4zHYl5Vwh3mZVckj1JUgvw
 
 === Sending Chat Message === Message ID:
-RkfTvAaouTlicRcWbGGLAo5l5Zc9u2Rx0YvzE56aI9k06nGK9KsxIgd7oGcL7NSGh6UtWwiNeK8WSDbdrzS2ew
+HvXqw0eTCwHgf7fiwh3KOpG2kfrzR7_XWxtywEhf_hkbQLfaNxNuEryNH9FUANYycXcCno3loyjjS-RVr5zA7Q
 
 === AI Response === The available products and their prices are as follows:
 
-1. ekoDB Pro: It is an Enterprise edition product with advanced features. The
-   price is $299.
+1. ekoDB: A high-performance database product with AI capabilities, priced at
+   $99.
+2. ekoDB Pro: An enterprise edition product with advanced features, priced at
+   $299.
+3. ekoDB Cloud: A fully managed cloud database service product, priced at $499.
 
-2. ekoDB Cloud: This is a fully managed cloud database service product. The
-   price is $499.
+Execution Time: 3094ms
 
-3. ekoDB: This is a high-performance database product with AI capabilities. The
-   price is $99.
-
-Execution Time: 3683ms
-
-=== Token Usage === Prompt tokens: 371 Completion tokens: 79 Total tokens: 450
+=== Token Usage === Prompt tokens: 375 Completion tokens: 70 Total tokens: 445
 
 === Cleanup === ✓ Deleted collection
 
@@ -955,41 +963,40 @@ Execution Time: 3683ms
 === Inserting Sample Data === ✓ Inserted sample product
 
 === Creating Chat Session === ✓ Created session:
-kzxqWv6UxXJVmepsrBHNYB_Xo_EAgY3tojfh-nQbMziX1NfVHAKSw5yeSRq2R2T_u_ee4FRm-AqjI8rp-vVNuQ
+iQoohxHDhoCePst9Ntir0pRa5_Wkn8ll8z5WjMZF_bJ-V93TcOhO6xDkK0hZpHPQ5BQPcqibZlVEgd-R9bh23g
 
 === Sending Messages === ✓ Message 1 sent Response: Based on the provided
-context, the available product is ekoDB. It is a high-performance database
-product priced at $99.
+context, the available product is a high-performance database product named
+ekoDB. It is priced at $99.
 
-✓ Message 2 sent Response: As an assistant, I'm sorry but I can't provide the
-price you're asking for because the context doesn't mention any specific
-product. Could you please provide more details or specify the product?
+✓ Message 2 sent Response: I'm sorry, but there's no information provided about
+which product you're asking for. Could you please specify the product?
 
 === Retrieving Session Messages === ✓ Retrieved 4 messages
 
 === Updating Session === ✓ Session updated
 
 === Branching Session === ✓ Created branch:
-JqXd_c4mB6aYl1PQO1Z_opRe6kCkiCca1iulesbnVNm0Vvev1d7wwA69YNhms2WGAHTHU9VXe0B8XbGJKmYjyQ
+uE42O1eeT_zDuvxNtBwr5V34tVOwu_01DTvzirL72sYBzm9CCx7juYfXFVOB3zyvK5ukmeamSTK8LpYE1Jl-dA
 Parent:
-kzxqWv6UxXJVmepsrBHNYB_Xo_EAgY3tojfh-nQbMziX1NfVHAKSw5yeSRq2R2T_u_ee4FRm-AqjI8rp-vVNuQ
+iQoohxHDhoCePst9Ntir0pRa5_Wkn8ll8z5WjMZF_bJ-V93TcOhO6xDkK0hZpHPQ5BQPcqibZlVEgd-R9bh23g
 
 === Listing Sessions === ✓ Found 6 sessions Session 1:
-JqXd_c4mB6aYl1PQO1Z_opRe6kCkiCca1iulesbnVNm0Vvev1d7wwA69YNhms2WGAHTHU9VXe0B8XbGJKmYjyQ
+uE42O1eeT_zDuvxNtBwr5V34tVOwu_01DTvzirL72sYBzm9CCx7juYfXFVOB3zyvK5ukmeamSTK8LpYE1Jl-dA
 (Untitled) Session 2:
-kzxqWv6UxXJVmepsrBHNYB_Xo_EAgY3tojfh-nQbMziX1NfVHAKSw5yeSRq2R2T_u_ee4FRm-AqjI8rp-vVNuQ
+iQoohxHDhoCePst9Ntir0pRa5_Wkn8ll8z5WjMZF_bJ-V93TcOhO6xDkK0hZpHPQ5BQPcqibZlVEgd-R9bh23g
 (Untitled) Session 3:
-HWiXSRaxFxP3-U1fL-oXnKbly_MYe-bmXrz3xeJI3TUyO_pWGfgNUAfgPw3YiwV-y306B37GQ3EkqNZCQVEV4g
+GpJGyY4TwEnpt94EiY1-eMbr4fU7hhB3XOzUvfWBO8XEEDS_zisfZKCzKou-zE_b4zHYl5Vwh3mZVckj1JUgvw
 (Untitled) Session 4:
-F7uUMqqxQ7XuajY-SPdEbMM05Tm5BzTgRRhae3dNYMbQQIwC4IqV9G2UMBKg3ner4HljFhlmF9FznoNk1dCQoA
+DXKs6VxkJxJmJTavQYM3q_3MsGmZ4bb9tAl_ILih_VZ5d2qcQHGYuWnmWJuMtNLroXVVeZOwT4H8eKwSkowJ-A
 (Untitled) Session 5:
-6DIRowivSBaPHC1eY4V5_FZpVKu1Z9560LGJEZrdVZD_TehSreJ4lzqW6CrpEOpCWTfXt_4aWS9IYnXfdI8MKQ
+HBxCxS4SggFkCb0KDnhHmx0K5E-UyoAonpKvBBkCSrsriWxIyyjwMs6rlkbUA\_\_N965YGH-8IGT-XGUoAgpnrA
 (Untitled) Session 6:
-a32aml0lCgvARh0XI0CLgW-ZUZ6ggtQ7sXLIVxT7uvsPgJ-YhYDnHPvJcA5CUYOYSEqmXZO4OBmKpp_HUm--aQ
+ZURF2ib3SHaypBxnBrqL2naVxuCnl23gEz-QQRuu-1IuGSqjsj96IXO-7eXCKjQB0YqRQKufcOMqmuf5Kz2ZTw
 (Untitled)
 
 === Deleting Branch Session === ✓ Deleted branch session:
-JqXd_c4mB6aYl1PQO1Z_opRe6kCkiCca1iulesbnVNm0Vvev1d7wwA69YNhms2WGAHTHU9VXe0B8XbGJKmYjyQ
+uE42O1eeT_zDuvxNtBwr5V34tVOwu_01DTvzirL72sYBzm9CCx7juYfXFVOB3zyvK5ukmeamSTK8LpYE1Jl-dA
 
 === Cleanup === ✓ Deleted collection
 
@@ -999,21 +1006,21 @@ Chat Features Example ===
 === Inserting Sample Data === ✓ Inserted sample product
 
 === Creating Chat Session === ✓ Created session:
-8f2v9KdtTeTXj3yBWSKTcBRJbQBgkV97Crx2FTLrOYfG2J5fIg_MNwws1Iov_YFeNo_HkV2N8FBtiAo1HBoZ1w
+GgEtZ3OX7WsDzGyu2yCrPqqazxn5c6kat9iMTltgcd4-lWDZFEJ3uCxKHFyxptkjiEY_ioAyTQ7iXy0Tg5YHfg
 
-=== Sending Initial Message === ✓ Message sent Response: Based on the provided
-context, the available product is ekoDB. It is a high-performance database
-product and is priced at $99.
+=== Sending Initial Message === ✓ Message sent Response: Based on the context
+provided, the available product is ekoDB. It is a high-performance database
+product priced at $99.
 
 ✓ Second message sent
 
-Debug: Found 4 messages Debug: First message keys: dict_keys(['updated_at',
-'token_usage', 'chat_id', 'created_at', 'content', 'id', 'role']) Debug: First
-message role: {'type': 'String', 'value': 'assistant'} === Feature 1: Regenerate
+Debug: Found 4 messages Debug: First message keys: dict_keys(['content', 'id',
+'role', 'updated_at', 'chat_id', 'created_at', 'token_usage']) Debug: First
+message role: {'value': 'assistant', 'type': 'String'} === Feature 1: Regenerate
 AI Response === ✓ Message regenerated New response: I'm sorry, but the context
-provided does not include information on the price of ekoDB. I recommend
-checking the official website or contacting the sales department of ekoDB for
-the most accurate and up-to-date pricing information.
+provided does not include information on the price of ekoDB. You may need to
+check the official website or contact the vendor for the most accurate and
+current pricing.
 
 === Feature 2: Edit Message === ✓ Message content updated
 
@@ -1023,7 +1030,7 @@ the most accurate and up-to-date pricing information.
 ✓ Message unmarked as forgotten
 
 === Feature 4: Merge Chat Sessions === ✓ Created second session:
-wU8go7PH1c807KAV8RgT27mlDpS3sg0MeBNPCSiqo8X-wMf7KARghD83v5EjT1Wb3yuvRmGqnf8chxiY3JjbcA
+1ttWfumAX4sysCJO_c_HkD1p5NgOpYCon-2-Hj6mJWd5X7ALW2F59iTaGFokRTi_GJmHG3PBbDgZdXhqN1oFXA
 ✓ Sent message in second session ✓ Sessions merged successfully Total messages
 in merged session: 4
 
@@ -1047,16 +1054,16 @@ examples (direct HTTP/WebSocket)...
 === Running simple_crud.go === ✓ Authentication successful
 
 === Insert Document === Inserted:
-map[id:Y129ca5qEJx_8XRfqM_nUopTH6JPxHROWDva8yFawZEP3cPRgsLBg3KplEQZayVa8CYyRM1g6U-ofSQJdD9s0A]
+map[id:gLABISjMgrDTEkByHwilgVXm3KIyunsARdWasJ29L6niN3vCYh_-i14yw8krwjTCClwjI5SKL6FJUU5tLKMtqg]
 
 === Find by ID === Found: map[active:map[type:Boolean value:true]
-id:Y129ca5qEJx_8XRfqM_nUopTH6JPxHROWDva8yFawZEP3cPRgsLBg3KplEQZayVa8CYyRM1g6U-ofSQJdD9s0A
+id:gLABISjMgrDTEkByHwilgVXm3KIyunsARdWasJ29L6niN3vCYh\_-i14yw8krwjTCClwjI5SKL6FJUU5tLKMtqg
 name:map[type:String value:Test Record] value:map[type:Integer value:42]]
 
 === Find with Query === Found 1 documents
 
 === Update Document === Updated: map[active:map[type:Boolean value:true]
-id:Y129ca5qEJx_8XRfqM_nUopTH6JPxHROWDva8yFawZEP3cPRgsLBg3KplEQZayVa8CYyRM1g6U-ofSQJdD9s0A
+id:gLABISjMgrDTEkByHwilgVXm3KIyunsARdWasJ29L6niN3vCYh\_-i14yw8krwjTCClwjI5SKL6FJUU5tLKMtqg
 name:Updated Record value:100]
 
 === Delete Document === Deleted document
@@ -1067,21 +1074,21 @@ successfully
 === Running simple_websocket.go === ✓ Authentication successful
 
 === Inserting Test Data === ✓ Inserted test record:
-WdkxVkmEg6eaKu5MrjsYteG3GbKtZ2i4U8nHb6HSE31YLVFCBwgkuySXCtK9u-p-SSlsLUbHxpmzDx_iJVr4Cg
+2bEt2dz6vweiMDpuewUo_4SvAC0luxh7rUxc0l2bMF3J9ZHmw7Q7OynpyxnVUf-0oXkEH3sQYnkWcobtrWN6ig
 
 === Connecting to WebSocket === ✓ WebSocket connected
 
 === Querying Data via WebSocket === Response: { "payload": { "data": [ {
 "active": { "type": "Boolean", "value": true }, "id":
-"WdkxVkmEg6eaKu5MrjsYteG3GbKtZ2i4U8nHb6HSE31YLVFCBwgkuySXCtK9u-p-SSlsLUbHxpmzDx_iJVr4Cg",
+"2bEt2dz6vweiMDpuewUo_4SvAC0luxh7rUxc0l2bMF3J9ZHmw7Q7OynpyxnVUf-0oXkEH3sQYnkWcobtrWN6ig",
 "name": { "type": "String", "value": "WebSocket Test Record" }, "value": {
 "type": "Integer", "value": 42 } }, { "active": { "type": "Boolean", "value":
 true }, "id":
-"JF7LOsatLKIGAi-huzbhWK46yMKOEsxkCp6xNfJBR0-hioVIZtx7tBeywjzRbu-yKqBKxo6p8yXJMDWHMtj1lg",
+"8U3djf9soDBOt9Ukki_aeb5abDxCt-CCiku0KZpBkWaBhFqQCRmBBv6v2-_lm61KF2WgBxA1C5bSyjyoAb-UJQ",
 "name": { "type": "String", "value": "WebSocket Test Record" }, "value": {
 "type": "Integer", "value": 42 } }, { "active": { "type": "Boolean", "value":
 true }, "id":
-"Ud9HWP3Q5qdR_BH_mcPhrPS0ThE9Esc6Pf2Egw7uZzJFsyHyEijHPBaXdseil8tIctclNV6nR6sDcEgosoUNVQ",
+"WEGxpeB4YnE2t1l48ZiBo0r0i-0OapZon3QrGoRFCcA703ICWHmvRMcARry3o1kBEGbIlovbbn-bIJ-oLLmGbg",
 "name": { "type": "String", "value": "WebSocket Test Record" }, "value": {
 "type": "Integer", "value": 42 } } ] }, "type": "Success" } ✓ Retrieved 3
 record(s) via WebSocket
@@ -1092,25 +1099,25 @@ successfully
 === Running batch_operations.go === ✓ Authentication successful
 
 === Batch Insert === Batch insert response: map[failed:[]
-successful:[GhQ-zgN2F3z4QqFCV1RqibyYC8_3AaMDM3YoKcm35z6VQ0MscdgIn0qpuFAbV6zQ-Ry4sxJEpzGhuPAn1TedxQ
-xZf_6YplHulPeIsCQcI0DDoLD239xKprE-UN7UiKVGrbQ-1JyD5tWRZAgBBY1vkP74iHn0-_AVs3kygmH-HpOw
-qW1qdJYZssdYrgt33W_DU8bp6tuOw1IJEm8QYZ1LujYzpcl5dh2280NjK78arakAsQvpv_DL2SKf2Hnb6CQ2AQ
-fGKz0NKuZxUIWABGcUA-3lCLossrlBOsLmvOAYic8djt1hbPiMyQx-houGwwE59zsw-McnPUdy3zw7nzvf8fKw
-Yk5yBLzaRid9I8tDWs7fhq9bafiwfE4bG43RAizTCWO5pbLLwSrYAOebcSv3zcnfydNjnXYPctPjDEsgoU0ptw]]
+successful:[E_0FVwOlVYkXJdbAx9lB8R9Pc_a0wRhop5X6_4JPrFcFsrjt6XPS8LwErM4r-z9OO_nnORIL_FgbQYuemIy0CQ
+P4JQxX8DQGabj-YQpyg4kYbZW4d3YXC_kkLyykJy2RGB4oTrWQtxGYHG3Kax5k3Pn6hLyzDhP-n7Q6CS7MnDbw
+mkeCPmdHd-zaAXdLOdkQ2qTtJvJxYffDPGqvMS4UbGinQ_92xzp_cjAjnJ3N9hHJUdRwxehKDHm0aN9kTDdViA
+WvsoXCv--HCqPVOxnNZDOYA74PgtMQm3ZhQa9TqpyI0VoLtTocQlUmTBpaeBYbDeraEm4_v41YsFbjpqTKumkA
+qjCFa6j0UjW83RoeQLvgdVPBq5rv05ocw_p4BmuiP89QLQZV4Gr8Syihhpe1AIZnqWJv0AvLXxURdSlkNFQMzg]]
 ✓ Batch insert completed
 
 === Creating test records for update/delete === Created 3 test records
 
 === Batch Update === Batch update response: map[failed:[]
-successful:[6tDCBx0ookCzpOLpZY0HtDz6Hy1U5TQ4xqoI8Qg8RqzkXDCwLoVZbuyIaqBjcTV11dhqGG_uaN4nxHBzoeaCVw
-mkI2ksDWFFyGiTIRx4-HjhZ9OD2eebiU8YpphKHcq9H6J21C4l2nyMxEJcxasbvxporUPCteahr6YuT4bk29bw
-7ku-bwmxaVmJMcs3bELzX0vuQyS3ZqqGRkYEIOCUsXjN_pHv5K9NmYiNgsvV2Iz3kQmTZ_-88nsn5JgYNpP4Yg]]
+successful:[0eh0_jHLv9Ac59JVc-rlqQLuJIKtvhBT_Rn6OriSSljxpBzvad8EhjVV5oW22LiDVVR08N7hUO4tJPUkQK3fiw
+alP_KmTCmOiq2dsnn6xHz46nzW98QXgPg8CNBSCIuNSiRyaX4NyQGeGhavery6nCyWxqZWli4JgNqRCum44Nlg
+aKCwVmAWE7tIgj_pwTXSE3QhxJVtgu-5R2UScz6XJdKTBR4AgZ3CbqU6a1t-YjNXLoXo7dtQ9i4cQj_EkmGIhA]]
 ✓ Batch update completed
 
 === Batch Delete === Batch delete response: map[failed:[]
-successful:[6tDCBx0ookCzpOLpZY0HtDz6Hy1U5TQ4xqoI8Qg8RqzkXDCwLoVZbuyIaqBjcTV11dhqGG_uaN4nxHBzoeaCVw
-mkI2ksDWFFyGiTIRx4-HjhZ9OD2eebiU8YpphKHcq9H6J21C4l2nyMxEJcxasbvxporUPCteahr6YuT4bk29bw
-7ku-bwmxaVmJMcs3bELzX0vuQyS3ZqqGRkYEIOCUsXjN_pHv5K9NmYiNgsvV2Iz3kQmTZ_-88nsn5JgYNpP4Yg]]
+successful:[0eh0_jHLv9Ac59JVc-rlqQLuJIKtvhBT_Rn6OriSSljxpBzvad8EhjVV5oW22LiDVVR08N7hUO4tJPUkQK3fiw
+alP_KmTCmOiq2dsnn6xHz46nzW98QXgPg8CNBSCIuNSiRyaX4NyQGeGhavery6nCyWxqZWli4JgNqRCum44Nlg
+aKCwVmAWE7tIgj_pwTXSE3QhxJVtgu-5R2UScz6XJdKTBR4AgZ3CbqU6a1t-YjNXLoXo7dtQ9i4cQj_EkmGIhA]]
 ✓ Batch delete completed
 
 ✓ All batch operations completed successfully ✓ batch_operations.go completed
@@ -1139,18 +1146,12 @@ successfully
 === Running collection_management.go === ✓ Authentication successful
 
 === Create Collection (via insert) === Collection created with first record:
-RMJmLOt8gLpDzcBBV4JPP2_0mj9HHjpvLZZBswdBCQY6z9qc_9sCCs-K55Yd9b0ZK-DEgxjKIaWAvXrCSHVD3A
+qM94DizAY4N4Spp7B0MTGbtXPqpugquaUdU9EgtKRr9gGIUEVZYaasPhCkP-3teKPxtjXvC0_FPFS_X0LKeIuQ
 
-=== List Collections === Total collections: 28 Sample collections:
-[non_indexed_vector_perf indexed_query_scale_10k schema_products_client_py
-chat_messages__ek0_bench ttl_cache indexed_search_perf ws_ttl_test
-text_search_articles indexed_vector_perf benchmark_test_collection
-demo_collection non_indexed_query_scale_10k non_indexed_hybrid_scale
-indexed_hybrid_scale schema_employees_client_py schema_documents_client_py
-usertable non_indexed_scale_1k schema_users_client_py indexed_query_perf
-non_indexed_search_perf indexed_scale_1k vector_search_articles batch_users
-chat_configurations__ek0_bench websocket_test test_collection
-non_indexed_query_perf]
+=== List Collections === Total collections: 12 Sample collections: [batch_users
+test_collection ws_ttl_test ttl_cache demo_collection schema_products_client_py
+schema_employees_client_py websocket_test chat_configurations__ek0_bench
+chat_messages__ek0_bench schema_users_client_py schema_documents_client_py]
 
 === Count Documents === Document count: 1
 
@@ -1164,7 +1165,7 @@ collection_management.go completed successfully
 === Running document_ttl.go === ✓ Authentication successful
 
 === Insert Document with TTL (1 hour) === ✓ Inserted document:
-6MN3rMD7yob_i0eJICQkt-2w8VSblj83C48Mn7ADWX7BBnUJHXcXWhFmFv-bQM4IAC0MCaNJIUFvzi2Uj_nwOg
+JkZ9yvpjCb2q1LAy4abf_0cUpwmsZR0L-MFGzNMzsbXs-QADo10dr2Ixr1W4WnPLFwOeX4rgB4mHzPRx1ekjLw
 
 === Insert Document with TTL (5 minutes) === ✓ Inserted document: created
 
@@ -1180,7 +1181,7 @@ successfully
 === Running websocket_ttl.go === ✓ Authentication successful
 
 === Insert Test Data with TTL === ✓ Inserted document with TTL:
-Boy7uvMRO0HQaHOkZ_wTC3pOtOeLe8wMKPqeZoQY_2XIThGYNyOll20tROD5lGAbsnfq95oCukV3dW7l1_V--w
+BebbZ8wIPWzzd9PmW78BLA9VYKnQIKROHwWT1TL9fW3h9KU8l3aZTKyr-saFcNY8L_eJl_sZNsNlqIOFvQIVRQ
 
 === Query via WebSocket === ✓ WebSocket connected ✓ Retrieved 3 record(s) via
 WebSocket
@@ -1194,16 +1195,16 @@ direct examples complete! 🧪 Running Go client library examples... ✓ Client
 created (token exchange happens automatically)
 
 === Insert Document === Inserted:
-map[id:F7JoGfe5Ezx6nmN_Dx9PjD8qbo8b9mthHSfBbTFt_PTh1h686TK0f_hQErnxtztFtvKPyHHWznJ12s6PayEpqw]
+map[id:YfaB1KSV47LG9HeRhLPuh-WllGpxHp2eIzbESndiL5N0-Pf0cGZCTUJhyCKXekjKPI9Nxwsd7ombdqrXr6BN3A]
 
 === Find by ID === Found: map[active:map[type:Boolean value:true]
-id:F7JoGfe5Ezx6nmN_Dx9PjD8qbo8b9mthHSfBbTFt_PTh1h686TK0f_hQErnxtztFtvKPyHHWznJ12s6PayEpqw
+id:YfaB1KSV47LG9HeRhLPuh-WllGpxHp2eIzbESndiL5N0-Pf0cGZCTUJhyCKXekjKPI9Nxwsd7ombdqrXr6BN3A
 name:map[type:String value:Test Record] value:map[type:Integer value:42]]
 
 === Find with Query === Found documents: 1
 
 === Update Document === Updated: map[active:map[type:Boolean value:true]
-id:F7JoGfe5Ezx6nmN_Dx9PjD8qbo8b9mthHSfBbTFt_PTh1h686TK0f_hQErnxtztFtvKPyHHWznJ12s6PayEpqw
+id:YfaB1KSV47LG9HeRhLPuh-WllGpxHp2eIzbESndiL5N0-Pf0cGZCTUJhyCKXekjKPI9Nxwsd7ombdqrXr6BN3A
 name:Updated Record value:100]
 
 === Delete Document === Deleted document
@@ -1241,11 +1242,10 @@ deleted (not found)
 ✓ All KV operations completed successfully ✓ Client created
 
 === Create Collection (via insert) === Collection created with first record:
-wwatDnKsJLUtyoaBtVRuc8hNLQHrD6LyAPMPF1NKhjIDzleMu0TVbYfSqiAx5MLFh7a0sKfSB5ZROdA-4SLBBQ
+Tk3aRoh3_sd9aMqrbjuBU9p5fNv2RaQOZyD97Wbiu86YvFgzATWCJg0Q6VBhrquMczLo6wYx5rWTalGMpX719g
 
-=== List Collections === Total collections: 28 Sample collections:
-[non_indexed_vector_perf indexed_query_scale_10k schema_products_client_py
-chat_messages__ek0_bench ttl_cache]
+=== List Collections === Total collections: 12 Sample collections: [batch_users
+test_collection ws_ttl_test client_collection_management_go ttl_cache]
 
 === Count Documents === Document count: 1
 
@@ -1256,10 +1256,10 @@ chat_messages__ek0_bench ttl_cache]
 ✓ All collection management operations completed successfully ✓ Client created
 
 === Insert Document with TTL (1 hour) === ✓ Inserted document:
-D-7f8tOucG_tnCDjnhR8XQKbZtvjx4OIV-E39c7BQGSd3vCmbyOtoUe2LvarLz4KHrlDLzG5jdrFEMw3sbrLhg
+kpb8cCeLdeXPJdqQVkQGIPFLjc6K_NQSoT9pRz8sPCyJmAKPv8t7vHLakH3n7bWjJy0c-kmeC7YoUcac3AVYMg
 
 === Insert Document with TTL (5 minutes) === ✓ Inserted document:
-zw-o14WbH_PWK1MpQ9GLfn_b8iCUbnCyu7HPRnul1cjsIhtGCLwyhAd8NccbYiJTNNnKtgRSbP5nBv9uFwVVCA
+GJm0GRkoYwX_vJD61bhbFmZaVJP6-R82iWpWPKuakNrzM2A4wXv6m0aj9obj4onbsZT_6J8i6nFyVz6PHpOkFw
 
 === Query Documents === ✓ Found 2 documents with TTL
 
@@ -1275,7 +1275,7 @@ zw-o14WbH_PWK1MpQ9GLfn_b8iCUbnCyu7HPRnul1cjsIhtGCLwyhAd8NccbYiJTNNnKtgRSbP5nBv9u
 duration ✓ Client created
 
 === Inserting Test Data === ✓ Inserted test record:
-YfyYx5ON78CHEAjr0tDrlqASQySZ1cfWB_jZgraUJw656SAyA0bjbxPsDr16FaMiKY7AX9djePEnKushSA3kRw
+XLyAHq9YhXC8maK8x28KRgrTQ4EKM8Kt8YhTFZrU2kcNiO9HED5QFN6VXDojS1t37HR64dHcPGD0yx3mr21nTg
 
 === Connecting to WebSocket === ✓ WebSocket connected
 
@@ -1287,7 +1287,7 @@ YfyYx5ON78CHEAjr0tDrlqASQySZ1cfWB_jZgraUJw656SAyA0bjbxPsDr16FaMiKY7AX9djePEnKush
 ✓ WebSocket example completed successfully ✓ Client created
 
 === Insert Test Data with TTL === ✓ Inserted document with TTL:
-H3XTh5T4L9er6dcpZVJnnUAlTCHV1vNj4c0M3_6Jq8RYENQ2qcoXWhYbZZW6HVu0iEowYoFuWWwH9LI127z2QQ
+AO4oxYrn2I5Vfzbic_4x4bmFeWxGih2Z8O0k1C2iApxpws9_bOJD94kIBzHrHjAm3zs1iYlX82JP4UVGZibnvg
 
 === Query via WebSocket === ✓ WebSocket connected ✓ Retrieved 1 record(s) via
 WebSocket Record 1: 5 fields
@@ -1302,42 +1302,40 @@ duration === ekoDB Chat Basic Example ===
 === Inserting Sample Data === ✓ Inserted 3 sample documents
 
 === Creating Chat Session === ✓ Created session:
-0KEJp7uqQ7uGrfFtahSjEoYzqC9OnuGGMxaNxKkKM8T00cRCtAK-jzlMQa3QNN1MUXWZBlANCcmcCdm4Se8mcw
+TYpHvinc9xK3hjYSvriJhJn68EP9vZEn7AE0KjOj5eF_8JYy5SveK1nJpZaLQhU2IMipYdWJ5XdMke24w3-D9g
 
 === Sending Chat Message === Message ID:
-exaXUqC_j-hHn3vgWa-zK2st3C8JkOc3eHx2VzjBB7jdG0B7tg31qEOf2wx-3S0FI96WgrhGeAfsDypeseRbjA
+zL3mt0ld2RSTbkiCeHRJpZHsV2v-Xe_A6UvywjEbUhiciIx0HYPRjVFdpdiD7vpIumCO1yWJo0a2Vyv4LruDpg
 
-=== AI Response === The available products are:
+=== AI Response === Three products are available:
 
-1. ekoDB Cloud: This is a fully managed cloud database service product. It is
-   priced at $499.
-
-2. ekoDB: This is a high-performance database product with AI capabilities. It
-   is available at a price of $99.
-
-3. ekoDB Pro: This is an enterprise edition product with advanced features. The
-   cost of this product is $299.
+1. ekoDB: This is a high-performance database product with AI capabilities. It
+   is priced at $99.
+2. ekoDB Cloud: This is a fully managed cloud database service product. It costs
+   $499.
+3. ekoDB Pro: This is an enterprise edition product with advanced features. It
+   is available for $299.
 
 === Context Used (3 snippets) === Snippet 1: map[collection:client_chat_basic_go
-matched_fields:[description] record:map[description:map[type:String value:Fully
-managed cloud database service product]
-id:zKDbtvnH2KQvWMjQRhgnPsECJfWIzSwxNY4zEEEKASnaZmiOy2OJJyPFZ7KtperHIkRFukLZ0UB_1Tm3C2LTUw
-name:map[type:String value:ekoDB Cloud] price:map[type:Integer value:499]]
-score:0.1111111111111111] Snippet 2: map[collection:client_chat_basic_go
 matched_fields:[description] record:map[description:map[type:String value:A
 high-performance database product with AI capabilities]
-id:2yonUJwxwjSEXUQGD44pQslHPDLJ3ka3C8L66iv7gEqnBs_Y_tys_mVomjcQs8X1qd92gh0lKicA61N2iOYNrA
+id:lRLfac47fgnm2UERMyHDQjm5VqQDBp-0zexV_2OqiKcEuPgfK7ZmXbES562LpOgKzcwfFrqgUbaj55kkElhsmQ
 name:map[type:String value:ekoDB] price:map[type:Integer value:99]]
+score:0.1111111111111111] Snippet 2: map[collection:client_chat_basic_go
+matched_fields:[description] record:map[description:map[type:String value:Fully
+managed cloud database service product]
+id:-zBlU0cqQOiFtZcXJFyPIa4Xmc82zHX3HC1r3SgtidlGmy7EQqC1Ena9Yvxyu9870Hcg-fzOtGtvP1mz3NC_AA
+name:map[type:String value:ekoDB Cloud] price:map[type:Integer value:499]]
 score:0.1111111111111111] Snippet 3: map[collection:client_chat_basic_go
 matched_fields:[description] record:map[description:map[type:String
 value:Enterprise edition product with advanced features]
-id:RxNoynpDnBOqeRnKZL0YiIt9ar_e1JyAMlPLB_VCoSL5N5zvvM_uDTxY84TdJYRCKZ40jMyMwSye08s4ZV_A8g
+id:boOLx4FxhpFuXb31aorBSBLVHlovAoAWsuvQy53WNTouyTBHlMDtNmUpDtz8xeMv0LWgLPwDNB5-i9ZLtigcag
 name:map[type:String value:ekoDB Pro] price:map[type:Integer value:299]]
 score:0.1111111111111111]
 
-Execution Time: 3156ms
+Execution Time: 3366ms
 
-=== Token Usage === Prompt tokens: 377 Completion tokens: 82 Total tokens: 459
+=== Token Usage === Prompt tokens: 372 Completion tokens: 75 Total tokens: 447
 
 === Cleanup === ✓ Deleted collection
 
@@ -1346,49 +1344,49 @@ Execution Time: 3156ms
 === Inserting Sample Data === ✓ Inserted sample product
 
 === Creating Chat Session === ✓ Created session:
-gxEBI3CNNntf2xaehuZyTplT-Fzkvi8gRM_KHiyf4E5vBdbPCXVeKoJCd5I9JZ0GPO2Fe-4uPbeTO1Ojuh39tw
+0P3dWB9CGf1pm6szSFSi3vAHdKEKtPPZzAxvmmdFsVzbDWBO6CAnvI-DKu57u3dLQ1deUbO5hw5Y1jEipepELA
 
 === Sending Messages === ✓ Message 1 sent Response: Based on the context
-provided, the available product is ekoDB. It is a high-performance database
-product, priced at $99.
+provided, the available product is a high-performance database product named
+'ekoDB'. It is priced at $99.
 
-✓ Message 2 sent Response: Apologies, but there's no context provided about the
-product you're inquiring about. Could you please specify the product whose price
-you'd like to know?
+✓ Message 2 sent Response: As an assistant, I'm sorry but I can't provide the
+information you're looking for because the context doesn't mention any specific
+product. Could you please provide more details?
 
 === Retrieving Session Messages === ✓ Retrieved 4 messages
 
 === Updating Session === ✓ Session updated
 
 === Branching Session === ✓ Created branch:
-6GG0ovCEdepxLNfF4Fw1VVhsoO-oxMwQCLPKHfDKosGdHCqayiZPinlR_I9fumTGpy5aFZDq7XCsa5kSvXKUyA
+0eBMjp-wQMtZWLTb6IhSEeF4SiHY1NTfvJJkrRscBVvMDsPhSbqTqw6g3KecZ-9NkzMec5fSEbnnLALZlvyI-w
 Parent:
-gxEBI3CNNntf2xaehuZyTplT-Fzkvi8gRM_KHiyf4E5vBdbPCXVeKoJCd5I9JZ0GPO2Fe-4uPbeTO1Ojuh39tw
+0P3dWB9CGf1pm6szSFSi3vAHdKEKtPPZzAxvmmdFsVzbDWBO6CAnvI-DKu57u3dLQ1deUbO5hw5Y1jEipepELA
 
 === Listing Sessions === ✓ Found 9 sessions Session 1:
-6GG0ovCEdepxLNfF4Fw1VVhsoO-oxMwQCLPKHfDKosGdHCqayiZPinlR_I9fumTGpy5aFZDq7XCsa5kSvXKUyA
+0eBMjp-wQMtZWLTb6IhSEeF4SiHY1NTfvJJkrRscBVvMDsPhSbqTqw6g3KecZ-9NkzMec5fSEbnnLALZlvyI-w
 (Untitled) Session 2:
-gxEBI3CNNntf2xaehuZyTplT-Fzkvi8gRM_KHiyf4E5vBdbPCXVeKoJCd5I9JZ0GPO2Fe-4uPbeTO1Ojuh39tw
+0P3dWB9CGf1pm6szSFSi3vAHdKEKtPPZzAxvmmdFsVzbDWBO6CAnvI-DKu57u3dLQ1deUbO5hw5Y1jEipepELA
 (Untitled) Session 3:
-0KEJp7uqQ7uGrfFtahSjEoYzqC9OnuGGMxaNxKkKM8T00cRCtAK-jzlMQa3QNN1MUXWZBlANCcmcCdm4Se8mcw
+TYpHvinc9xK3hjYSvriJhJn68EP9vZEn7AE0KjOj5eF_8JYy5SveK1nJpZaLQhU2IMipYdWJ5XdMke24w3-D9g
 (Untitled) Session 4:
-wU8go7PH1c807KAV8RgT27mlDpS3sg0MeBNPCSiqo8X-wMf7KARghD83v5EjT1Wb3yuvRmGqnf8chxiY3JjbcA
+1ttWfumAX4sysCJO_c_HkD1p5NgOpYCon-2-Hj6mJWd5X7ALW2F59iTaGFokRTi_GJmHG3PBbDgZdXhqN1oFXA
 (Untitled) Session 5:
-kzxqWv6UxXJVmepsrBHNYB_Xo_EAgY3tojfh-nQbMziX1NfVHAKSw5yeSRq2R2T_u_ee4FRm-AqjI8rp-vVNuQ
+iQoohxHDhoCePst9Ntir0pRa5_Wkn8ll8z5WjMZF_bJ-V93TcOhO6xDkK0hZpHPQ5BQPcqibZlVEgd-R9bh23g
 (Untitled) Session 6:
-HWiXSRaxFxP3-U1fL-oXnKbly_MYe-bmXrz3xeJI3TUyO_pWGfgNUAfgPw3YiwV-y306B37GQ3EkqNZCQVEV4g
+GpJGyY4TwEnpt94EiY1-eMbr4fU7hhB3XOzUvfWBO8XEEDS_zisfZKCzKou-zE_b4zHYl5Vwh3mZVckj1JUgvw
 (Untitled) Session 7:
-F7uUMqqxQ7XuajY-SPdEbMM05Tm5BzTgRRhae3dNYMbQQIwC4IqV9G2UMBKg3ner4HljFhlmF9FznoNk1dCQoA
+DXKs6VxkJxJmJTavQYM3q_3MsGmZ4bb9tAl_ILih_VZ5d2qcQHGYuWnmWJuMtNLroXVVeZOwT4H8eKwSkowJ-A
 (Untitled) Session 8:
-6DIRowivSBaPHC1eY4V5_FZpVKu1Z9560LGJEZrdVZD_TehSreJ4lzqW6CrpEOpCWTfXt_4aWS9IYnXfdI8MKQ
+HBxCxS4SggFkCb0KDnhHmx0K5E-UyoAonpKvBBkCSrsriWxIyyjwMs6rlkbUA\_\_N965YGH-8IGT-XGUoAgpnrA
 (Untitled) Session 9:
-a32aml0lCgvARh0XI0CLgW-ZUZ6ggtQ7sXLIVxT7uvsPgJ-YhYDnHPvJcA5CUYOYSEqmXZO4OBmKpp_HUm--aQ
+ZURF2ib3SHaypBxnBrqL2naVxuCnl23gEz-QQRuu-1IuGSqjsj96IXO-7eXCKjQB0YqRQKufcOMqmuf5Kz2ZTw
 (Untitled)
 
 === Getting Session Details === ✓ Session details retrieved Messages: 4
 
 === Deleting Branch Session === ✓ Deleted branch session:
-6GG0ovCEdepxLNfF4Fw1VVhsoO-oxMwQCLPKHfDKosGdHCqayiZPinlR_I9fumTGpy5aFZDq7XCsa5kSvXKUyA
+0eBMjp-wQMtZWLTb6IhSEeF4SiHY1NTfvJJkrRscBVvMDsPhSbqTqw6g3KecZ-9NkzMec5fSEbnnLALZlvyI-w
 
 === Cleanup === ✓ Deleted collection
 
@@ -1398,18 +1396,18 @@ Chat Features Example ===
 === Inserting Sample Data === ✓ Inserted sample product
 
 === Creating Chat Session === ✓ Created session:
-l5cvyy0YTiOfAHsaHDsTq0jHOfhz8WsEJleAzJN5nWSsoAg9xUPFDFkn9Wloh68eqwGW1eBDC0Rqa70rv5QByQ
+yrJD57Y0R1cnTynEBWjXh_UZ3abgQ3VirDOQX3-U7rJsgbeXIWXfMaqjKHAu_xj-l2b5jCwOeFeE_RM8b4QHOw
 
-=== Sending Initial Message === ✓ Message sent Response: Based on the context
-provided, the available product is ekoDB. It is a high-performance database
-product priced at $99.
+=== Sending Initial Message === ✓ Message sent Response: Based on the
+information provided, the available product is a high-performance database
+product named ekoDB. It is priced at $99.
 
 ✓ Second message sent
 
 === Feature 1: Regenerate AI Response === ✓ Message regenerated New response:
-I'm sorry, but the context provided does not include information on the price of
-ekoDB. I recommend checking the product's official website or contacting their
-sales department for the most accurate and up-to-date pricing information.
+I'm sorry, but the context provided doesn't include information about the price
+of ekoDB. I would recommend checking the official website or contacting the
+sales department for the most accurate and up-to-date price.
 
 === Feature 2: Edit Message === ✓ Message content updated
 
@@ -1419,7 +1417,7 @@ sales department for the most accurate and up-to-date pricing information.
 ✓ Message unmarked as forgotten
 
 === Feature 4: Merge Chat Sessions === ✓ Created second session:
-J3iLk9IsINUsd3TG56wPK-n-4EuN38nLGoXXX6VyY_Jok11CDapZ7Q3vvqzn7UCqrVV8LBGfKxOLhrA3zYemtg
+y4sBrm2usa1Ym6Z-DgK-RqBCJbLj4yykRZB5-unT6p0s-Qi5srry9G3BLck-gntosIj8WnT8PB5kL6EgM9pUiw
 ✓ Sent message in second session ✓ Sessions merged successfully Total messages
 in merged session: 4
 
@@ -1481,15 +1479,15 @@ Setting up test data... ✅ Test data created
 1. Score: 13.200
 
 1. Vector search (semantic search): Found 3 semantically similar documents
-1. Score: 0.766
-1. Score: 0.764
-1. Score: 0.761
+1. Score: 0.737
+1. Score: 0.732
+1. Score: 0.724
 
 1. Hybrid search (text + vector): Found 3 results using hybrid search (text +
    vector)
-1. Score: 2.706
-1. Score: 1.504
-1. Score: 0.306
+1. Score: 2.693
+1. Score: 1.495
+1. Score: 0.290
 
 1. Case-sensitive search: Found 1 results (case-sensitive)
 1. Score: 13.200
@@ -1548,39 +1546,38 @@ Setting up sample data... ✅ Sample data created
 ✅ Join operations examples completed! ✅ Go client examples complete! ✅ All Go
 integration tests complete! 📦 Building TypeScript client library...
 
-> @ekodb/ekodb-client@0.1.0 prepare npm run build
+> @ekodb/ekodb-client@0.2.1 prepare npm run build
 
-> @ekodb/ekodb-client@0.1.0 build tsc
+> @ekodb/ekodb-client@0.2.1 build tsc
 
 up to date, audited 6 packages in 1s
 
 found 0 vulnerabilities
 
-> @ekodb/ekodb-client@0.1.0 build tsc
+> @ekodb/ekodb-client@0.2.1 build tsc
 
 ✅ TypeScript client built! 🧪 Running TypeScript client library examples...
 
-added 1 package, removed 1 package, and audited 13 packages in 675ms
+added 1 package, removed 1 package, and audited 13 packages in 720ms
 
 3 packages are looking for funding run `npm fund` for details
 
 found 0 vulnerabilities ✓ Client created (token exchange happens automatically)
 
 === Insert Document === Inserted: { id:
-'usyMUZGASSCK4B2MzYH1y5uBow0ojtIybRwBcxWBf_ftQxcwQD0t_I_RDTBIJVmaZUO2HBfe4jEbkQ2OFONHvA'
+'k2Mp_XiM60Ua-UqsVvlp0Iwz8BKB17oXESUUuzrypsx6PQCiQEubWgY3yuwI1Wip0EXTvXTR3MovWlUjzoDU8w'
 }
 
-=== Find by ID === Found: { id:
-'usyMUZGASSCK4B2MzYH1y5uBow0ojtIybRwBcxWBf_ftQxcwQD0t_I_RDTBIJVmaZUO2HBfe4jEbkQ2OFONHvA',
-active: { type: 'Boolean', value: true }, name: { value: 'Test Record', type:
-'String' }, value: { value: 42, type: 'Integer' } }
+=== Find by ID === Found: { value: { value: 42, type: 'Integer' }, active: {
+value: true, type: 'Boolean' }, id:
+'k2Mp_XiM60Ua-UqsVvlp0Iwz8BKB17oXESUUuzrypsx6PQCiQEubWgY3yuwI1Wip0EXTvXTR3MovWlUjzoDU8w',
+name: { value: 'Test Record', type: 'String' } }
 
 === Find with Query === Found documents: 1
 
-=== Update Document === Updated: { active: { type: 'Boolean', value: true },
-value: 100, id:
-'usyMUZGASSCK4B2MzYH1y5uBow0ojtIybRwBcxWBf_ftQxcwQD0t_I_RDTBIJVmaZUO2HBfe4jEbkQ2OFONHvA',
-name: 'Updated Record' }
+=== Update Document === Updated: { id:
+'k2Mp_XiM60Ua-UqsVvlp0Iwz8BKB17oXESUUuzrypsx6PQCiQEubWgY3yuwI1Wip0EXTvXTR3MovWlUjzoDU8w',
+active: { value: true, type: 'Boolean' }, value: 100, name: 'Updated Record' }
 
 === Delete Document === Deleted document
 
@@ -1601,13 +1598,13 @@ records in collection
 
 === KV Set === ✓ Set key: session:user123
 
-=== KV Get === Retrieved value: { userId: 123, username: 'john_doe' }
+=== KV Get === Retrieved value: { username: 'john_doe', userId: 123 }
 
 === Set Multiple Keys === ✓ Set 3 keys
 
 === Get Multiple Keys === cache:product:1: { name: 'Product 1', price: 29.99 }
 cache:product:2: { price: 39.989999999999995, name: 'Product 2' }
-cache:product:3: { price: 49.989999999999995, name: 'Product 3' }
+cache:product:3: { name: 'Product 3', price: 49.989999999999995 }
 
 === KV Delete === ✓ Deleted key: session:user123 ✓ Verified: Key successfully
 deleted (not found)
@@ -1617,10 +1614,10 @@ deleted (not found)
 ✓ All KV operations completed successfully ✓ Client created
 
 === Create Collection (via insert) === Collection created with first record:
-Q8j0seYe3xzniYDLarwxywdiEcAbiies4Y4kN4RLfMIGS45w5cRev9c56dy_j6SygglWo624BOQXEfc8tXF5IA
+jj5iZwsfS_lUf_VHU-GDdIdThEhJPIBJA-D_0GaX1rUmYMPzA7Cs4Vy5tGU4b4OYYV6QeMLBPkRLnHY2nphhPg
 
-=== List Collections === Total collections: 32 Sample collections:
-non_indexed_vector_perf,indexed_query_scale_10k,client_collection_management_ts,schema_products_client_py,chat_messages\_\_ek0_bench
+=== List Collections === Total collections: 16 Sample collections:
+batch_users,test_collection,schema_employees_client_go,ws_ttl_test,ttl_cache
 
 === Count Documents === Document count: 1
 
@@ -1631,10 +1628,10 @@ non_indexed_vector_perf,indexed_query_scale_10k,client_collection_management_ts,
 ✓ All collection management operations completed successfully ✓ Client created
 
 === Insert Document with TTL (1 hour) === ✓ Inserted document:
-OyvAmQYoyin4uhodwlwQrF71UGhPwi0Bjroahnjsl6w8IFPJm0-v8V2UfVU8xy82Mge_MZFESPLLZ9scQBxOlA
+5V1EI0eDOPiT-owhZeD4vwlHezd2BK9QKVeUNnmdilzxG0X37Txz8AhHp-YcBMi5GjawMxKS2LZGB6xQ7k3Q2Q
 
 === Insert Document with TTL (5 minutes) === ✓ Inserted document:
-5otgC6epj3zGWNu_Z6hZNI0eOMf55itivnXHi3yeqkkl6uy8H608PNeavkQyDRwLH9IJ1J1ii_EbLWWxX7u40A
+HTjmBy8GK5vvZELPF5t0ic2cJv0kqZA-824deYiyvC5JwJFwa13MUgHdqEPci9CgSQfLo1iCVKfXfXVf8hcimA
 
 === Query Documents === ✓ Found 2 documents with TTL
 
@@ -1650,7 +1647,7 @@ OyvAmQYoyin4uhodwlwQrF71UGhPwi0Bjroahnjsl6w8IFPJm0-v8V2UfVU8xy82Mge_MZFESPLLZ9sc
 duration ✓ Client created
 
 === Inserting Test Data === ✓ Inserted test record:
-amCFDb17VXoTB8v6LXwb3r7EhTp4VZbOuwEisFre1JhrYhsMLt5Ws1Hw1HURcstXj760NDXRUAugzF27RGAwkg
+S8QTQhKvEYyMQbnOo0B1Lrjxa5HYKHHp8n0C-5ctejeHSCTTXGOFC6UskBux-z1qOrEyh-LepQzC0BLeEtjcNQ
 
 === Connecting to WebSocket === ✓ WebSocket connected
 
@@ -1662,7 +1659,7 @@ amCFDb17VXoTB8v6LXwb3r7EhTp4VZbOuwEisFre1JhrYhsMLt5Ws1Hw1HURcstXj760NDXRUAugzF27
 ✓ WebSocket example completed successfully ✓ Client created
 
 === Insert Test Data with TTL === ✓ Inserted document with TTL:
-YQpvBH9rgMPFiQoDV86iNxc7wr03Inb_9KlEvPNde9CWyWC4Q0FYHSqy8Dg5S5Ee0-Ii0dPdiIGOKX1hzzKD3w
+iSde0iYSFynB6NsDSnUtAvhirGV3gfHPZ9jbI-6ZLuoz_NG7KuJqIKpSDCMSc1lPGRwzr473lQ4w1uINWHIb7A
 
 === Query via WebSocket === ✓ WebSocket connected ✓ Retrieved 1 record(s) via
 WebSocket Record 1: 5 fields
@@ -1677,44 +1674,40 @@ duration === ekoDB Chat Basic Example ===
 === Inserting Sample Data === ✓ Inserted 3 sample documents
 
 === Creating Chat Session === ✓ Created session:
-5tVuxVVkjAsMXx5psq9seI33edXx5q3bz1hSVJq8kmaJAV9O9HN0UAlWq4T-X1htwdcNDXvr2X1lzHwPBEemMw
+uTrnJ39c17ZF3Uf8mJag0QTGBIiTwugsDhz-RZo7Qu9y_9fUaofc95RG6V2f7o76KcynNuGS3ZVTdhunVy5YmA
 
 === Sending Chat Message === Message ID:
-tLIonkKvY2A-2KA-IPJRZBdURhca9ivv7D69XDZPDRqrJN8BE7ex6mt0KD3AkGyedAbbBKiricagSisolhxBEA
+qmx4nkffATRP_UdOwrJzrFHzYqAGy3syBEfCssJ1Y7qytIHlOBgGpSncdmFtxMEgQumoyoFsN2xh3bE-Tl8K9Q
 
 === AI Response === There are three products available:
 
-1. ekoDB Cloud: This is a fully managed cloud database service product. The
-   price for this product is $499.
-
-2. ekoDB: This is a high-performance database product with AI capabilities. The
-   price for this product is $99.
-
-3. ekoDB Pro: This is an enterprise edition product with advanced features. The
-   price for this product is $299.
+1. ekoDB Cloud, a fully managed cloud database service product, priced at $499.
+2. ekoDB Pro, an enterprise edition product with advanced features, priced at
+   $299.
+3. ekoDB, a high-performance database product with AI capabilities, priced at
+   $99.
 
 === Context Used (3 snippets) === Snippet 1: { collection:
-'client_chat_basic_ts', record: { name: { type: 'String', value: 'ekoDB Cloud'
-}, description: { type: 'String', value: 'Fully managed cloud database service
-product' }, price: { type: 'Integer', value: 499 }, id:
-'V61Xgun38HyDdnN4Ag54nSI1X8eb2WS7BODcAKSt9H_XHrbAKfrjn0XtOLufQvvTpt2eexh88oMg3BxTHeh7Kw'
+'client_chat_basic_ts', record: { description: { type: 'String', value: 'Fully
+managed cloud database service product' }, price: { type: 'Integer', value: 499
+}, name: { type: 'String', value: 'ekoDB Cloud' }, id:
+'mX9x5rj1F35zBM2k9VfC4pvLC0ZHPl7KEeEawvP-0V0rUnRY0jcgCs9FDYmoaLJVW929F4fXymnYdh42LIuYmw'
 }, score: 0.1111111111111111, matched_fields: [ 'description' ] } Snippet 2: {
-collection: 'client_chat_basic_ts', record: { description: { type: 'String',
-value: 'A high-performance database product with AI capabilities' }, price: {
-type: 'Integer', value: 99 }, id:
-'HLA4ifLQ2y-3nPLgN2ahe8Bjay9TB53w-qRU9Wl5AjwtYNf5bHM-9K90Vt8dT4F3dU2U9pakTBYWfkPLqm152w',
-name: { value: 'ekoDB', type: 'String' } }, score: 0.1111111111111111,
-matched_fields: [ 'description' ] } Snippet 3: { collection:
-'client_chat_basic_ts', record: { description: { type: 'String', value:
-'Enterprise edition product with advanced features' }, name: { value: 'ekoDB
-Pro', type: 'String' }, id:
-'9IE-Eul0IqX7kfcUnYbz5-0BNwLKp44hLEtIe8iK8rgV5jFWDzLgGMvTF_SCl00KLHvS6ZAuSs3yFucbbjWK8Q',
-price: { value: 299, type: 'Integer' } }, score: 0.1111111111111111,
-matched_fields: [ 'description' ] }
+collection: 'client_chat_basic_ts', record: { name: { type: 'String', value:
+'ekoDB Pro' }, price: { value: 299, type: 'Integer' }, description: { type:
+'String', value: 'Enterprise edition product with advanced features' }, id:
+'RrkEnbVvQxUjh6Sik5evi5niGcikww9Ytr-I2LWEGLE8eSc475F4YEt6u0zn3nHRnx-WpGAWRWiLvKSJ_QVPuw'
+}, score: 0.1111111111111111, matched_fields: [ 'description' ] } Snippet 3: {
+collection: 'client_chat_basic_ts', record: { id:
+'hg-K5hWPh87NYIueXk8hXiy1pAMT8koNLRtsufWgWDUM9bmwl0zukASXTdwV-F2NqcAp5C5NukSSdSSl96LFRQ',
+description: { type: 'String', value: 'A high-performance database product with
+AI capabilities' }, name: { value: 'ekoDB', type: 'String' }, price: { value:
+99, type: 'Integer' } }, score: 0.1111111111111111, matched_fields: [
+'description' ] }
 
-Execution Time: 2912ms
+Execution Time: 3044ms
 
-=== Token Usage === Prompt tokens: 381 Completion tokens: 84 Total tokens: 465
+=== Token Usage === Prompt tokens: 375 Completion tokens: 66 Total tokens: 441
 
 === Cleanup === ✓ Deleted collection
 
@@ -1723,51 +1716,51 @@ Execution Time: 2912ms
 === Inserting Sample Data === ✓ Inserted sample product
 
 === Creating Chat Session === ✓ Created session:
-lRUavD2flOZJbddJSLctK5nPRRZBlQ6sCJygd2tnQmtDfjdWD_rgysmTwU7xSoV5EMwUCJ1dtbjUQBRZE5xe9w
+oWSqv_t1UwvUDXjvQwOWKfC2p_PuWLGVt3L2J7VchPKsLQ1FDykQXlXqNFZlZar62q3dbUxZtFnZSnLSeDjIUA
 
 === Sending Messages === ✓ Message 1 sent Response: Based on the information
-provided, the available product is ekoDB, a high-performance database product.
-It is priced at $99.
+provided, the available product is ekoDB, which is a high-performance database
+product. It is priced at $99.
 
-✓ Message 2 sent Response: Apologies, but the context provided does not specify
-any product to provide a price for. Could you please provide more details about
-the product you are interested in?
+✓ Message 2 sent Response: As an assistant, I'm sorry but I can't provide the
+price because there's no specific product mentioned in the context. Could you
+please specify the product you're interested in?
 
 === Retrieving Session Messages === ✓ Retrieved 4 messages
 
 === Updating Session === ✓ Session updated
 
 === Branching Session === ✓ Created branch:
-ZV6f5sSqvWwSNB-iIxJYX2DNnT_TGsJAWnlXOwGqlAuINo0m24lH9Ixm-f1GV1GLOFUrHJOdtF1jtcb1g8MLWQ
+0XVW5AnHQeNV0MwQHe5ijXR0UBs089IPeexCPl1OY3WaABJV3OqL1Xse3FBnInGMZZhaT5Nt0ytYnpSNPOtUog
 Parent:
-lRUavD2flOZJbddJSLctK5nPRRZBlQ6sCJygd2tnQmtDfjdWD_rgysmTwU7xSoV5EMwUCJ1dtbjUQBRZE5xe9w
+oWSqv_t1UwvUDXjvQwOWKfC2p_PuWLGVt3L2J7VchPKsLQ1FDykQXlXqNFZlZar62q3dbUxZtFnZSnLSeDjIUA
 
 === Listing Sessions === ✓ Found 10 sessions Session 1:
-ZV6f5sSqvWwSNB-iIxJYX2DNnT_TGsJAWnlXOwGqlAuINo0m24lH9Ixm-f1GV1GLOFUrHJOdtF1jtcb1g8MLWQ
+0XVW5AnHQeNV0MwQHe5ijXR0UBs089IPeexCPl1OY3WaABJV3OqL1Xse3FBnInGMZZhaT5Nt0ytYnpSNPOtUog
 (Untitled) Session 2:
-lRUavD2flOZJbddJSLctK5nPRRZBlQ6sCJygd2tnQmtDfjdWD_rgysmTwU7xSoV5EMwUCJ1dtbjUQBRZE5xe9w
+oWSqv_t1UwvUDXjvQwOWKfC2p_PuWLGVt3L2J7VchPKsLQ1FDykQXlXqNFZlZar62q3dbUxZtFnZSnLSeDjIUA
 (Untitled) Session 3:
-5tVuxVVkjAsMXx5psq9seI33edXx5q3bz1hSVJq8kmaJAV9O9HN0UAlWq4T-X1htwdcNDXvr2X1lzHwPBEemMw
+uTrnJ39c17ZF3Uf8mJag0QTGBIiTwugsDhz-RZo7Qu9y_9fUaofc95RG6V2f7o76KcynNuGS3ZVTdhunVy5YmA
 (Untitled) Session 4:
-J3iLk9IsINUsd3TG56wPK-n-4EuN38nLGoXXX6VyY_Jok11CDapZ7Q3vvqzn7UCqrVV8LBGfKxOLhrA3zYemtg
+y4sBrm2usa1Ym6Z-DgK-RqBCJbLj4yykRZB5-unT6p0s-Qi5srry9G3BLck-gntosIj8WnT8PB5kL6EgM9pUiw
 (Untitled) Session 5:
-gxEBI3CNNntf2xaehuZyTplT-Fzkvi8gRM_KHiyf4E5vBdbPCXVeKoJCd5I9JZ0GPO2Fe-4uPbeTO1Ojuh39tw
+0P3dWB9CGf1pm6szSFSi3vAHdKEKtPPZzAxvmmdFsVzbDWBO6CAnvI-DKu57u3dLQ1deUbO5hw5Y1jEipepELA
 (Untitled) Session 6:
-0KEJp7uqQ7uGrfFtahSjEoYzqC9OnuGGMxaNxKkKM8T00cRCtAK-jzlMQa3QNN1MUXWZBlANCcmcCdm4Se8mcw
+TYpHvinc9xK3hjYSvriJhJn68EP9vZEn7AE0KjOj5eF_8JYy5SveK1nJpZaLQhU2IMipYdWJ5XdMke24w3-D9g
 (Untitled) Session 7:
-wU8go7PH1c807KAV8RgT27mlDpS3sg0MeBNPCSiqo8X-wMf7KARghD83v5EjT1Wb3yuvRmGqnf8chxiY3JjbcA
+1ttWfumAX4sysCJO_c_HkD1p5NgOpYCon-2-Hj6mJWd5X7ALW2F59iTaGFokRTi_GJmHG3PBbDgZdXhqN1oFXA
 (Untitled) Session 8:
-kzxqWv6UxXJVmepsrBHNYB_Xo_EAgY3tojfh-nQbMziX1NfVHAKSw5yeSRq2R2T_u_ee4FRm-AqjI8rp-vVNuQ
+iQoohxHDhoCePst9Ntir0pRa5_Wkn8ll8z5WjMZF_bJ-V93TcOhO6xDkK0hZpHPQ5BQPcqibZlVEgd-R9bh23g
 (Untitled) Session 9:
-HWiXSRaxFxP3-U1fL-oXnKbly_MYe-bmXrz3xeJI3TUyO_pWGfgNUAfgPw3YiwV-y306B37GQ3EkqNZCQVEV4g
+GpJGyY4TwEnpt94EiY1-eMbr4fU7hhB3XOzUvfWBO8XEEDS_zisfZKCzKou-zE_b4zHYl5Vwh3mZVckj1JUgvw
 (Untitled) Session 10:
-F7uUMqqxQ7XuajY-SPdEbMM05Tm5BzTgRRhae3dNYMbQQIwC4IqV9G2UMBKg3ner4HljFhlmF9FznoNk1dCQoA
+DXKs6VxkJxJmJTavQYM3q_3MsGmZ4bb9tAl_ILih_VZ5d2qcQHGYuWnmWJuMtNLroXVVeZOwT4H8eKwSkowJ-A
 (Untitled)
 
 === Getting Session Details === ✓ Session details retrieved Messages: 4
 
 === Deleting Branch Session === ✓ Deleted branch session:
-ZV6f5sSqvWwSNB-iIxJYX2DNnT_TGsJAWnlXOwGqlAuINo0m24lH9Ixm-f1GV1GLOFUrHJOdtF1jtcb1g8MLWQ
+0XVW5AnHQeNV0MwQHe5ijXR0UBs089IPeexCPl1OY3WaABJV3OqL1Xse3FBnInGMZZhaT5Nt0ytYnpSNPOtUog
 
 === Cleanup === ✓ Deleted collection
 
@@ -1777,18 +1770,18 @@ Chat Features Example ===
 === Inserting Sample Data === ✓ Inserted sample product
 
 === Creating Chat Session === ✓ Created session:
-D9yL29sqv6KRuXqP*tsLeKkRxfAiPU5ZtTrHA3pGQWxhtgxWJyI3AwvHBrBjl9n2NLaI_dQl92ous5iS*-9yQw
+qPbkysbkG8svfXtHgWSptsVKLx4VBEnh0thLEdTdLGgRK4HG2Ydd8KCOFFGM9rXvWXwkSi315VfozuY-cQnumQ
 
-=== Sending Initial Message === ✓ Message sent Response: Based on the
-information provided, the product available is ekoDB, which is a
-high-performance database product. It is priced at $99.
+=== Sending Initial Message === ✓ Message sent Response: Based on the provided
+context, the available product is ekoDB, a high-performance database product. It
+is priced at $99.
 
 ✓ Second message sent
 
 === Feature 1: Regenerate AI Response === ✓ Message regenerated New response:
-I'm sorry, but there is no context provided regarding the price of ekoDB. You
-may need to check the official website or contact the sales department for
-accurate pricing information.
+I'm sorry, but the context provided does not include information on the price of
+ekoDB. I recommend checking the product's official website or contacting their
+sales department for the most accurate and up-to-date pricing information.
 
 === Feature 2: Edit Message === ✓ Message content updated
 
@@ -1798,7 +1791,7 @@ accurate pricing information.
 ✓ Message unmarked as forgotten
 
 === Feature 4: Merge Chat Sessions === ✓ Created second session:
-GDxX-qUcjfyQO_F17JV-achovQEzTHHvfSaKDssAF1tHHV6kJxgkBm6AknH4I-miTyOwQns2xdAWSejgtYl7tg
+jPwNOojN5scvSm6YQaBk2uGxyXEehdPpuzjyeq17gNXXNZFrjxA8KsW5UW1kxsLV3XpokXZBU6IfkAwNSWe15A
 ✓ Sent message in second session ✓ Sessions merged successfully Total messages
 in merged session: 4
 
@@ -1837,22 +1830,22 @@ Setting up test data... ✅ Test data created
 
 1. Basic full-text search: Found 2 results
 1. Score: 25.740, Matched: name.value, email, name, email.value
-1. Score: 12.540, Matched: name.value, name
+1. Score: 12.540, Matched: name, name.value
 
 1. Fuzzy search (typo tolerance): Found 4 results with fuzzy matching
-1. Score: 26.400, Matched: bio.value, title.value, title, bio
 1. Score: 26.400, Matched: title.value, bio.value, title, bio
 1. Score: 26.400, Matched: title, bio.value, bio, title.value
-1. Score: 26.400, Matched: title, bio, title.value, bio.value
+1. Score: 26.400, Matched: title.value, bio, title, bio.value
+1. Score: 26.400, Matched: bio, title.value, title, bio.value
 
 1. Search with field weights: Found 4 results with weighted fields
-1. Score: 39.600, Matched: bio.value, title, bio, title.value
-1. Score: 39.600, Matched: bio.value, title, title.value, bio
-1. Score: 39.600, Matched: title, bio.value, bio, title.value
 1. Score: 39.600, Matched: title.value, bio, title, bio.value
+1. Score: 39.600, Matched: bio.value, title, title.value, bio
+1. Score: 39.600, Matched: bio.value, title, bio, title.value
+1. Score: 39.600, Matched: bio, bio.value, title, title.value
 
 1. Search with minimum score threshold: Found 2 results with score >= 0.3
-1. Score: 13.200, Matched: bio, bio.value
+1. Score: 13.200, Matched: bio.value, bio
 1. Score: 13.200, Matched: bio, bio.value
 
 1. Search with stemming and exact match boosting: Found 1 results (matches:
@@ -1860,15 +1853,15 @@ Setting up test data... ✅ Test data created
 1. Score: 13.200, Matched: bio, bio.value
 
 1. Vector search (semantic search): Found 3 semantically similar documents
-1. Score: 0.750, Matched:
+1. Score: 0.767, Matched:
+1. Score: 0.760, Matched:
 1. Score: 0.746, Matched:
-1. Score: 0.728, Matched:
 
 1. Hybrid search (text + vector): Found 3 results using hybrid search (text +
    vector)
-1. Score: 2.698, Matched: title, title.value, content.value, content
-1. Score: 1.500, Matched: content.value, title, content, title.value
-1. Score: 0.291, Matched:
+1. Score: 2.698, Matched: title.value, title, content.value, content
+1. Score: 1.507, Matched: content, title, title.value, content.value
+1. Score: 0.304, Matched:
 
 1. Case-sensitive search: Found 1 results (case-sensitive)
 1. Score: 13.200, Matched: bio.value, bio
@@ -1929,7 +1922,7 @@ Setting up sample data... ✅ Sample data created
 ✅ All TypeScript integration tests complete! 🧪 Running JavaScript examples
 (direct HTTP/WebSocket)...
 
-added 1 package, removed 1 package, and audited 9 packages in 616ms
+added 1 package, removed 1 package, and audited 9 packages in 599ms
 
 1 package is looking for funding run `npm fund` for details
 
@@ -1938,7 +1931,7 @@ found 0 vulnerabilities
 ╔════════════════════════════════════════╗ ║ ekoDB JavaScript Examples Test
 Suite ║ ╚════════════════════════════════════════╝
 
-=== Checking Server Connection === (node:11851) [DEP0040] DeprecationWarning:
+=== Checking Server Connection === (node:50698) [DEP0040] DeprecationWarning:
 The `punycode` module is deprecated. Please use a userland alternative instead.
 (Use `node --trace-deprecation ...` to show where the warning was created) ✓
 Server is ready
@@ -1947,28 +1940,28 @@ Server is ready
 
 === Running 7 Examples ===
 
-=== Running
-
+=== Running /ekoDB/ekodb-client/examples/javascript/ttl-caching/simple_crud.js
 === ✓ Authentication successful
 
-=== Insert Document === (node:11853) [DEP0040] DeprecationWarning: The
+=== Insert Document === (node:50701) [DEP0040] DeprecationWarning: The
 `punycode` module is deprecated. Please use a userland alternative instead. (Use
 `node --trace-deprecation ...` to show where the warning was created) Inserted:
 { id:
-'rNhbHPSIArzFnQKQMR25x1Sfl70Iz-U1bLR8Dn_87l7k4hXOtbHUy14mtNlftt-uppG-U0gusBjc1tOYYMadQg'
+'ygptf3EuHBBZAPLY0KPEtQ76ZvZGmS44njmxuvDVxx2I42CcD6xdhKHX1Wh5y9IXQpS09zWG0oc0aDRJd9qaEA'
 }
 
-=== Find by ID === Found: { value: { type: 'Integer', value: 42 }, active: {
-type: 'Boolean', value: true }, name: { type: 'String', value: 'Test Record' },
+=== Find by ID === Found: { name: { type: 'String', value: 'Test Record' },
+active: { type: 'Boolean', value: true }, value: { value: 42, type: 'Integer' },
 id:
-'rNhbHPSIArzFnQKQMR25x1Sfl70Iz-U1bLR8Dn_87l7k4hXOtbHUy14mtNlftt-uppG-U0gusBjc1tOYYMadQg'
+'ygptf3EuHBBZAPLY0KPEtQ76ZvZGmS44njmxuvDVxx2I42CcD6xdhKHX1Wh5y9IXQpS09zWG0oc0aDRJd9qaEA'
 }
 
 === Find with Query === Found documents: 1
 
-=== Update Document === Updated: { id:
-'rNhbHPSIArzFnQKQMR25x1Sfl70Iz-U1bLR8Dn_87l7k4hXOtbHUy14mtNlftt-uppG-U0gusBjc1tOYYMadQg',
-active: { type: 'Boolean', value: true }, name: 'Updated Record', value: 100 }
+=== Update Document === Updated: { active: { type: 'Boolean', value: true },
+name: 'Updated Record', value: 100, id:
+'ygptf3EuHBBZAPLY0KPEtQ76ZvZGmS44njmxuvDVxx2I42CcD6xdhKHX1Wh5y9IXQpS09zWG0oc0aDRJd9qaEA'
+}
 
 === Delete Document === Deleted document
 
@@ -1976,32 +1969,32 @@ active: { type: 'Boolean', value: true }, name: 'Updated Record', value: 100 }
 successfully
 
 === Running
-simple_websocket.js
-=== ✓ Authentication successful
+/ekoDB/ekodb-client/examples/javascript/ttl-caching/simple_websocket.js === ✓
+Authentication successful
 
-=== Inserting Test Data === (node:11856) [DEP0040] DeprecationWarning: The
+=== Inserting Test Data === (node:50722) [DEP0040] DeprecationWarning: The
 `punycode` module is deprecated. Please use a userland alternative instead. (Use
 `node --trace-deprecation ...` to show where the warning was created) ✓ Inserted
 test record:
-eaL1CZPaNh7GaFHw3fhf78aNUisk3G3fUjGpKKEjzoK2_NNanznnngayneqm5aJN4r2-i_ObHyPSTRwvqZJ7jg
+gcSW3HFs2OM8aobFDZMZ7i5UiPeSzVoGU8j5PO3i4-MXH1EG6vsio6vuUszD3NOxxfqFvSwCKfj5VnIzSRB9GA
 
 === Connecting to WebSocket === ✓ WebSocket connected
 
 === Querying Data via WebSocket === Response: { "payload": { "data": [ {
 "active": { "type": "Boolean", "value": true }, "id":
-"WdkxVkmEg6eaKu5MrjsYteG3GbKtZ2i4U8nHb6HSE31YLVFCBwgkuySXCtK9u-p-SSlsLUbHxpmzDx_iJVr4Cg",
+"2bEt2dz6vweiMDpuewUo_4SvAC0luxh7rUxc0l2bMF3J9ZHmw7Q7OynpyxnVUf-0oXkEH3sQYnkWcobtrWN6ig",
 "name": { "type": "String", "value": "WebSocket Test Record" }, "value": {
 "type": "Integer", "value": 42 } }, { "active": { "type": "Boolean", "value":
 true }, "id":
-"Ud9HWP3Q5qdR_BH_mcPhrPS0ThE9Esc6Pf2Egw7uZzJFsyHyEijHPBaXdseil8tIctclNV6nR6sDcEgosoUNVQ",
+"WEGxpeB4YnE2t1l48ZiBo0r0i-0OapZon3QrGoRFCcA703ICWHmvRMcARry3o1kBEGbIlovbbn-bIJ-oLLmGbg",
 "name": { "type": "String", "value": "WebSocket Test Record" }, "value": {
 "type": "Integer", "value": 42 } }, { "active": { "type": "Boolean", "value":
 true }, "id":
-"JF7LOsatLKIGAi-huzbhWK46yMKOEsxkCp6xNfJBR0-hioVIZtx7tBeywjzRbu-yKqBKxo6p8yXJMDWHMtj1lg",
+"8U3djf9soDBOt9Ukki_aeb5abDxCt-CCiku0KZpBkWaBhFqQCRmBBv6v2-_lm61KF2WgBxA1C5bSyjyoAb-UJQ",
 "name": { "type": "String", "value": "WebSocket Test Record" }, "value": {
 "type": "Integer", "value": 42 } }, { "active": { "type": "Boolean", "value":
 true }, "id":
-"eaL1CZPaNh7GaFHw3fhf78aNUisk3G3fUjGpKKEjzoK2_NNanznnngayneqm5aJN4r2-i_ObHyPSTRwvqZJ7jg",
+"gcSW3HFs2OM8aobFDZMZ7i5UiPeSzVoGU8j5PO3i4-MXH1EG6vsio6vuUszD3NOxxfqFvSwCKfj5VnIzSRB9GA",
 "name": { "type": "String", "value": "WebSocket Test Record" }, "value": {
 "type": "Integer", "value": 42 } } ] }, "type": "Success" } ✓ Retrieved 4
 record(s) via WebSocket
@@ -2010,10 +2003,10 @@ record(s) via WebSocket
 successfully
 
 === Running
+/ekoDB/ekodb-client/examples/javascript/ttl-caching/batch_operations.js === ✓
+Authentication successful
 
-=== ✓ Authentication successful
-
-=== Batch Insert === (node:11868) [DEP0040] DeprecationWarning: The `punycode`
+=== Batch Insert === (node:50725) [DEP0040] DeprecationWarning: The `punycode`
 module is deprecated. Please use a userland alternative instead. (Use
 `node --trace-deprecation ...` to show where the warning was created) ✓ Batch
 inserted 5 records ✓ Verified: Found 20 total records in collection
@@ -2029,21 +2022,21 @@ deleted (not found)
 ✓ All batch operations completed successfully ✓ batch_operations.js completed
 successfully
 
-=== Running
+=== Running /ekoDB/ekodb-client/examples/javascript/ttl-caching/kv_operations.js
 === ✓ Authentication successful
 
-=== KV Set === (node:11871) [DEP0040] DeprecationWarning: The `punycode` module
+=== KV Set === (node:50734) [DEP0040] DeprecationWarning: The `punycode` module
 is deprecated. Please use a userland alternative instead. (Use
 `node --trace-deprecation ...` to show where the warning was created) ✓ Set key:
 session:user123
 
-=== KV Get === Retrieved value: { loginTime: '2025-10-14T06:46:24.766Z',
-username: 'john_doe', userId: 123 }
+=== KV Get === Retrieved value: { loginTime: '2025-10-15T07:47:31.615Z', userId:
+123, username: 'john_doe' }
 
 === Set Multiple Keys === ✓ Set 3 keys
 
 === Get Multiple Keys === cache:product:1: { name: 'Product 1', price: 29.99 }
-cache:product:2: { name: 'Product 2', price: 39.989999999999995 }
+cache:product:2: { price: 39.989999999999995, name: 'Product 2' }
 cache:product:3: { price: 49.989999999999995, name: 'Product 3' }
 
 === KV Delete === ✓ Deleted key: session:user123 ✓ Verified: Key successfully
@@ -2055,18 +2048,18 @@ deleted (not found)
 successfully
 
 === Running
-=== ✓ Authentication successful
+/ekoDB/ekodb-client/examples/javascript/ttl-caching/collection_management.js ===
+✓ Authentication successful
 
-=== Create Collection (via insert) === (node:11873) [DEP0040]
+=== Create Collection (via insert) === (node:50750) [DEP0040]
 DeprecationWarning: The `punycode` module is deprecated. Please use a userland
 alternative instead. (Use `node --trace-deprecation ...` to show where the
 warning was created) Collection created with first record:
-ucAwCsVz0s2DxnwWWXn_EmsF92ysEXOZQWpmN1tmt_o9MT4tfs89QUrHlwP6X3S0MKtp0kLtBHdKaNL0LmFyPg
+jfdLMYXUyOuX6zrVb-GhoaIYWlDa3IgGAQL1AZgXw4t98HafqBnfI8RCeYQQ-BGpsfSVMESIfGTx6WxtmVkz1A
 
-=== List Collections === Total collections: 36 Sample collections: [
-'schema_documents_client_ts', 'non_indexed_vector_perf',
-'indexed_query_scale_10k', 'schema_products_client_ts',
-'schema_products_client_py' ]
+=== List Collections === Total collections: 20 Sample collections: [
+'schema_products_client_ts', 'batch_users', 'test_collection',
+'schema_documents_client_ts', 'schema_employees_client_go' ]
 
 === Count Documents === Document count: 1
 
@@ -2077,14 +2070,14 @@ ucAwCsVz0s2DxnwWWXn_EmsF92ysEXOZQWpmN1tmt_o9MT4tfs89QUrHlwP6X3S0MKtp0kLtBHdKaNL0
 ✓ All collection management operations completed successfully ✓
 collection_management.js completed successfully
 
-=== Running
+=== Running /ekoDB/ekodb-client/examples/javascript/ttl-caching/document_ttl.js
 === ✓ Authentication successful
 
-=== Insert Document with TTL (1 hour) === (node:11885) [DEP0040]
+=== Insert Document with TTL (1 hour) === (node:50753) [DEP0040]
 DeprecationWarning: The `punycode` module is deprecated. Please use a userland
 alternative instead. (Use `node --trace-deprecation ...` to show where the
 warning was created) ✓ Inserted document:
-ge9NRYHlyJQPxLGh3jQGV1tzQvrB0xMQ4LOoxL6PREvD2HXNtAcaxEhOJ39nmPaCk_WdGvbMd1zpW7dcKViFbA
+4UodkzuHBCkB2vXNRcxyhJC7u60dXuX5F0pj3bXq5YkucI8Wx5MYUurpMBMogVmzc0JPxOvnpWuuob3oRTGVPQ
 
 === Insert Document with TTL (5 minutes) === ✓ Inserted document: created
 
@@ -2097,14 +2090,14 @@ ge9NRYHlyJQPxLGh3jQGV1tzQvrB0xMQ4LOoxL6PREvD2HXNtAcaxEhOJ39nmPaCk_WdGvbMd1zpW7dc
 ✓ All document TTL operations completed successfully ✓ document_ttl.js completed
 successfully
 
-=== Running
+=== Running /ekoDB/ekodb-client/examples/javascript/ttl-caching/websocket_ttl.js
 === ✓ Authentication successful
 
-=== Insert Test Data with TTL === (node:11887) [DEP0040] DeprecationWarning: The
+=== Insert Test Data with TTL === (node:50770) [DEP0040] DeprecationWarning: The
 `punycode` module is deprecated. Please use a userland alternative instead. (Use
 `node --trace-deprecation ...` to show where the warning was created) ✓ Inserted
 document with TTL:
-s5pSBOomBx1BhTHN8X-inGV6HZ7JKnGQA3cZ98FFwPmuzcZOS11sJ07dYhHCQn-Qf1ZXx13OWP9qOQjug1FdBg
+loO_oghFYhfz4nRp6HIxqUvY5mOjgq6Eng6OKiLh3v4K8T1cL9b7rbMN7HZEQ-MG84lwPeNcgWU3TdO08Xm_yg
 
 === Query via WebSocket === ✓ WebSocket connected ✓ Retrieved 4 record(s) via
 WebSocket
@@ -2117,26 +2110,27 @@ successfully
 JavaScript direct examples complete! 🧪 Running JavaScript client library
 examples...
 
-added 1 package, removed 1 package, and audited 9 packages in 678ms
+added 1 package, removed 1 package, and audited 9 packages in 647ms
 
 1 package is looking for funding run `npm fund` for details
 
 found 0 vulnerabilities ✓ Client created (token exchange happens automatically)
 
 === Insert Document === Inserted: { id:
-'M-9CfoZeFbM-MwyRdVXI7CYhu8eLa_YHBZkFVk9VL4snU8uCdr37odJBC5a_zSKQSUEUzVa6auRdHQXomQICpg'
+'xZYHrYI7ImLniPsXFBqa8KODA6deZ-os_nXyO1RH_XuZmvh0EIIhVKoK406ktGVq1BVzmlZDZRpvlMUtNQSwZA'
 }
 
-=== Find by ID === Found: { id:
-'M-9CfoZeFbM-MwyRdVXI7CYhu8eLa_YHBZkFVk9VL4snU8uCdr37odJBC5a_zSKQSUEUzVa6auRdHQXomQICpg',
-name: { value: 'Test Record', type: 'String' }, active: { type: 'Boolean',
-value: true }, value: { type: 'Integer', value: 42 } }
+=== Find by ID === Found: { name: { type: 'String', value: 'Test Record' },
+value: { type: 'Integer', value: 42 }, active: { value: true, type: 'Boolean' },
+id:
+'xZYHrYI7ImLniPsXFBqa8KODA6deZ-os_nXyO1RH_XuZmvh0EIIhVKoK406ktGVq1BVzmlZDZRpvlMUtNQSwZA'
+}
 
 === Find with Query === Found documents: 1
 
 === Update Document === Updated: { id:
-'M-9CfoZeFbM-MwyRdVXI7CYhu8eLa_YHBZkFVk9VL4snU8uCdr37odJBC5a_zSKQSUEUzVa6auRdHQXomQICpg',
-active: { type: 'Boolean', value: true }, value: 100, name: 'Updated Record' }
+'xZYHrYI7ImLniPsXFBqa8KODA6deZ-os_nXyO1RH_XuZmvh0EIIhVKoK406ktGVq1BVzmlZDZRpvlMUtNQSwZA',
+name: 'Updated Record', value: 100, active: { type: 'Boolean', value: true } }
 
 === Delete Document === Deleted document
 
@@ -2157,7 +2151,7 @@ records in collection
 
 === KV Set === ✓ Set key: session:user123
 
-=== KV Get === Retrieved value: { username: 'john_doe', userId: 123 }
+=== KV Get === Retrieved value: { userId: 123, username: 'john_doe' }
 
 === Set Multiple Keys === ✓ Set 3 keys
 
@@ -2173,10 +2167,10 @@ deleted (not found)
 ✓ All KV operations completed successfully ✓ Client created
 
 === Create Collection (via insert) === Collection created with first record:
-VrPP4iOmVxwh0SiV3t0Hu0cUZM87j750jwjVQI_N8zMNzdDzixMYCl2zuidBwl_GVnUDZz6EHXoZ92RJh7PWzg
+3NKI8dzl40UPoZJ5B_ka-6BH_juqTg3oVCkvX0T4CeTrMEpoe6oJP17TkF3KMVNtYn80ROkFbe37HYc2oUY44g
 
-=== List Collections === Total collections: 36 Sample collections:
-schema_documents_client_ts,non_indexed_vector_perf,indexed_query_scale_10k,schema_products_client_ts,schema_products_client_py
+=== List Collections === Total collections: 20 Sample collections:
+schema_products_client_ts,batch_users,test_collection,schema_documents_client_ts,schema_employees_client_go
 
 === Count Documents === Document count: 1
 
@@ -2187,10 +2181,10 @@ schema_documents_client_ts,non_indexed_vector_perf,indexed_query_scale_10k,schem
 ✓ All collection management operations completed successfully ✓ Client created
 
 === Insert Document with TTL (1 hour) === ✓ Inserted document:
-KFugQe76BogcwH51dFaFrRr5THPX_we8WM3SoGQRcV2Btlf96R3XJ7Di2HXHNZk-yghlD13dPcpX3iJYjfe5Dw
+aXgkZogG7Viwr3izS3D5q7pSKLcp5K7wcRNlFNxZhg8UuqnMdYIB-JfBpDtN72XsBEPZWycSYYv8RfZ-3ytYCg
 
 === Insert Document with TTL (5 minutes) === ✓ Inserted document:
-lHbS-SLdZBeZBq3NfO50RzSBd8oZgHuvu0DEC0Fh5XmZAHAKuSK_2i1U_BhoEoYdBhdHVRcqfNZ8uFblWBagjQ
+ycTNY9IkxCQ5mq_dB57u4J-01hFa8Lk6pfU_lPvY2zRkcgc6LC5neNxlLTrHEWvJrrWsUQMnzCQFfuvewZ-Ukg
 
 === Query Documents === ✓ Found 2 documents with TTL
 
@@ -2206,7 +2200,7 @@ lHbS-SLdZBeZBq3NfO50RzSBd8oZgHuvu0DEC0Fh5XmZAHAKuSK_2i1U_BhoEoYdBhdHVRcqfNZ8uFbl
 duration ✓ Client created
 
 === Inserting Test Data === ✓ Inserted test record:
-pOGur8D3VWvega_h72BWSiRoEhuUds40XsyYsf3RAvBqEsPQ52kwDLyYEck3kcgyxkwCy8UvxNBnahHZl-N-ZA
+x0pV0hRtL6FjaIOIIB8fcry-BhhMdatjwb_iIGFAFWUQ8wNgkEGj7ZJnMPELC6BdUMDbPDANeLcrqSGD4bui2A
 
 === Connecting to WebSocket === ✓ WebSocket connected
 
@@ -2218,7 +2212,7 @@ pOGur8D3VWvega_h72BWSiRoEhuUds40XsyYsf3RAvBqEsPQ52kwDLyYEck3kcgyxkwCy8UvxNBnahHZ
 ✓ WebSocket example completed successfully ✓ Client created
 
 === Insert Test Data with TTL === ✓ Inserted document with TTL:
-z112OwQTrFARl8ylG9Xwi2Z5f-syN21oH2Lh4fgqZ6jAVOWTeJCc0WjilApFkUZzE8fLduKlTNrxg00s4zfwrw
+\_g2vx74d8j17q63gsKKbMvraMYILB-PSST0Axn8ZqjWUdl2IcJr_HUIQhmrDZBqvfKgssVht9TemypXgwiYwPg
 
 === Query via WebSocket === ✓ WebSocket connected ✓ Retrieved 1 record(s) via
 WebSocket Record 1: 5 fields
@@ -2229,4 +2223,539 @@ WebSocket Record 1: 5 fields
 
 💡 Note: Documents with TTL will automatically expire after the specified
 duration ✅ JavaScript client examples complete! ✅ All JavaScript integration
-tests complete! ✅ All integration tests complete!
+tests complete! 🟣 Building Kotlin client library... To honour the JVM settings
+for this build a single-use Daemon process will be forked. For more on this,
+please refer to
+https://docs.gradle.org/8.5/userguide/gradle_daemon.html#sec:disabling_the_daemon
+in the Gradle documentation. Daemon will be stopped at the end of the build
+
+BUILD SUCCESSFUL in 3s 3 actionable tasks: 1 executed, 2 up-to-date ✅ Kotlin
+client built! 🧪 Running Kotlin client library examples... To honour the JVM
+settings for this build a single-use Daemon process will be forked. For more on
+this, please refer to
+https://docs.gradle.org/8.5/userguide/gradle_daemon.html#sec:disabling_the_daemon
+in the Gradle documentation. Daemon will be stopped at the end of the build
+
+> Task :run SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
+> SLF4J: Defaulting to no-operation (NOP) logger implementation SLF4J: See
+> http://www.slf4j.org/codes.html#StaticLoggerBinder for further details. ===
+> ekoDB Kotlin Client - Simple CRUD Example ===
+
+=== Create === ✓ Inserted user:
+Record(fields={id=StringValue(value=bdPavszvsfOtEb8x2zFMWrju75xcBAGeeE-SSORjBwcH6kr4sp-vNO6p6wLWjb3IshF89hrPDMTsl6k_YpynJg)})
+User ID:
+bdPavszvsfOtEb8x2zFMWrju75xcBAGeeE-SSORjBwcH6kr4sp-vNO6p6wLWjb3IshF89hrPDMTsl6k_YpynJg
+
+=== Read === ✓ Found user by ID:
+Record(fields={id=StringValue(value=bdPavszvsfOtEb8x2zFMWrju75xcBAGeeE-SSORjBwcH6kr4sp-vNO6p6wLWjb3IshF89hrPDMTsl6k_YpynJg),
+name=ObjectValue(value={value=StringValue(value=Alice Johnson),
+type=StringValue(value=String)}),
+email=ObjectValue(value={type=StringValue(value=String),
+value=StringValue(value=alice@example.com)}),
+age=ObjectValue(value={value=IntegerValue(value=28),
+type=StringValue(value=Integer)}),
+active=ObjectValue(value={type=StringValue(value=Boolean),
+value=BooleanValue(value=true)})})
+
+=== Update === ✓ Updated user: Record(fields={city=StringValue(value=San
+Francisco), age=IntegerValue(value=29),
+email=ObjectValue(value={type=StringValue(value=String),
+value=StringValue(value=alice@example.com)}),
+id=StringValue(value=bdPavszvsfOtEb8x2zFMWrju75xcBAGeeE-SSORjBwcH6kr4sp-vNO6p6wLWjb3IshF89hrPDMTsl6k_YpynJg),
+active=ObjectValue(value={value=BooleanValue(value=true),
+type=StringValue(value=Boolean)}),
+name=ObjectValue(value={value=StringValue(value=Alice Johnson),
+type=StringValue(value=String)})})
+
+=== Query === ✓ Found 1 users matching query
+
+- Record(fields={age=ObjectValue(value={type=StringValue(value=Integer),
+  value=IntegerValue(value=29)}),
+  active=ObjectValue(value={value=BooleanValue(value=true),
+  type=StringValue(value=Boolean)}),
+  id=StringValue(value=bdPavszvsfOtEb8x2zFMWrju75xcBAGeeE-SSORjBwcH6kr4sp-vNO6p6wLWjb3IshF89hrPDMTsl6k_YpynJg),
+  name=ObjectValue(value={value=StringValue(value=Alice Johnson),
+  type=StringValue(value=String)}),
+  city=ObjectValue(value={type=StringValue(value=String),
+  value=StringValue(value=San Francisco)}),
+  email=ObjectValue(value={type=StringValue(value=String),
+  value=StringValue(value=alice@example.com)})})
+
+=== Delete === ✓ Deleted user with ID:
+bdPavszvsfOtEb8x2zFMWrju75xcBAGeeE-SSORjBwcH6kr4sp-vNO6p6wLWjb3IshF89hrPDMTsl6k_YpynJg
+
+✓ Confirmed user was deleted
+
+=== Cleanup === ✓ Deleted collection: kotlin_users_example
+
+=== Example Complete ===
+
+BUILD SUCCESSFUL in 3s 3 actionable tasks: 2 executed, 1 up-to-date To honour
+the JVM settings for this build a single-use Daemon process will be forked. For
+more on this, please refer to
+https://docs.gradle.org/8.5/userguide/gradle_daemon.html#sec:disabling_the_daemon
+in the Gradle documentation. Daemon will be stopped at the end of the build
+
+> Task :run SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
+> SLF4J: Defaulting to no-operation (NOP) logger implementation SLF4J: See
+> http://www.slf4j.org/codes.html#StaticLoggerBinder for further details. ===
+> ekoDB Kotlin Client - Batch Operations Example ===
+
+=== Batch Insert === ✓ Inserted 5 records IDs:
+u82q4F5RkmPZVJIUP852e8Sp_oqR6eNWdXYA2_cnvRorS15qG2HgZR5azFn3y7f_zSXOAykWWGdjdrkuS9412w,
+OsX60KSP9x-hu7H2D2YOZJIXFev35Nm1YqVLN1yFMz7Xw6TemyDAuNuK6KYyon1TpVQvzygd3pFvpO0KLOcDFQ,
+V34hTamgd8D9AK8ui1r1AzWwziJ666SU7Ro9ctWMdgWnmaArlVszT0w3Eff3m87k73aZVGNJKFo1hFr-nv53Gg...
+
+=== Batch Update === ✓ Updated 3 records
+
+=== Batch Delete === ✓ Deleted 2 records
+
+=== Cleanup === ✓ Deleted collection: kotlin_batch_example
+
+=== Example Complete ===
+
+BUILD SUCCESSFUL in 3s 3 actionable tasks: 2 executed, 1 up-to-date To honour
+the JVM settings for this build a single-use Daemon process will be forked. For
+more on this, please refer to
+https://docs.gradle.org/8.5/userguide/gradle_daemon.html#sec:disabling_the_daemon
+in the Gradle documentation. Daemon will be stopped at the end of the build
+
+> Task :run SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
+> SLF4J: Defaulting to no-operation (NOP) logger implementation SLF4J: See
+> http://www.slf4j.org/codes.html#StaticLoggerBinder for further details. ===
+> ekoDB Kotlin Client - Query Builder Example ===
+
+=== Inserting Sample Data === ✓ Inserted 5 records
+
+=== Query 1: Equality (city = 'NYC') === ✓ Found 2 records in NYC
+
+=== Query 2: Range (age >= 25 AND age < 32) === ✓ Found 3 records with age 25-31
+
+=== Query 3: Sort by score (descending) === ✓ Top 3 scores:
+
+- Score: ObjectValue(value={type=StringValue(value=Integer),
+  value=IntegerValue(value=95)})
+- Score: ObjectValue(value={type=StringValue(value=Integer),
+  value=IntegerValue(value=92)})
+- Score: ObjectValue(value={value=IntegerValue(value=88),
+  type=StringValue(value=Integer)})
+
+=== Query 4: Complex (score > 80 AND age >= 25) === ✓ Found 4 high-scoring
+adults
+
+=== Query 5: IN (city IN ['NYC', 'LA']) === ✓ Found 4 records in NYC or LA
+
+=== Query 6: Pagination (skip 2, limit 2) === ✓ Page 2 (2 records):
+
+- ObjectValue(value={type=StringValue(value=String),
+  value=StringValue(value=Charlie)})
+- ObjectValue(value={type=StringValue(value=String),
+  value=StringValue(value=Diana)})
+
+=== Query 7: Contains (name contains 'a') === ✓ Found 2 names containing 'a'
+
+=== Cleanup === ✓ Deleted collection: kotlin_query_example
+
+=== Example Complete ===
+
+BUILD SUCCESSFUL in 3s 3 actionable tasks: 2 executed, 1 up-to-date To honour
+the JVM settings for this build a single-use Daemon process will be forked. For
+more on this, please refer to
+https://docs.gradle.org/8.5/userguide/gradle_daemon.html#sec:disabling_the_daemon
+in the Gradle documentation. Daemon will be stopped at the end of the build
+
+> Task :run SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
+> SLF4J: Defaulting to no-operation (NOP) logger implementation SLF4J: See
+> http://www.slf4j.org/codes.html#StaticLoggerBinder for further details. ===
+> ekoDB Kotlin Client - KV Operations Example ===
+
+=== KV Set === ✓ Set key: user:123
+
+=== KV Get === ✓ Retrieved value:
+{"name":"Alice","email":"alice@example.com","role":"admin"}
+
+=== KV Set with TTL === ✓ Set key with 10s TTL: session:abc123
+
+=== Verify TTL Key === ✓ Session value:
+{"user_id":"123","created_at":1760514480558} (Will expire in 10 seconds)
+
+=== Set Multiple Keys === ✓ Set 3 configuration keys
+
+=== KV Delete === ✓ Deleted key: user:123
+
+=== Verify Deletion === ✓ Confirmed key was deleted
+
+=== Cleanup === ✓ Cleaned up test keys
+
+=== Example Complete ===
+
+BUILD SUCCESSFUL in 3s 3 actionable tasks: 2 executed, 1 up-to-date To honour
+the JVM settings for this build a single-use Daemon process will be forked. For
+more on this, please refer to
+https://docs.gradle.org/8.5/userguide/gradle_daemon.html#sec:disabling_the_daemon
+in the Gradle documentation. Daemon will be stopped at the end of the build
+
+> Task :run SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
+> SLF4J: Defaulting to no-operation (NOP) logger implementation SLF4J: See
+> http://www.slf4j.org/codes.html#StaticLoggerBinder for further details. ===
+> ekoDB Kotlin Client - Collection Management Example ===
+
+=== List Collections === ✓ Found 19 collections
+
+- schema_products_client_ts
+- batch_users
+- test_collection
+- schema_documents_client_ts
+- schema_employees_client_go
+
+=== Check Collection Existence === Collection 'kotlin_collection_example'
+exists: false
+
+=== Create Collection with Schema === ✓ Created collection with schema:
+kotlin_collection_example
+
+=== Get Collection Schema === ✓ Schema:
+{"fields":{"name":{"field_type":"String","default":null,"unique":false,"required":true,"enums":[],"max":null,"min":null,"regex":null},"age":{"field_type":"Integer","default":null,"unique":false,"required":false,"enums":[],"max":null,"min":null,"regex":null}},"version":1,"created_at":"2025-10-15T07:48:04.387770Z","last_modified":"2025-10-15T07:48:04.387770Z","bypass_ripple":false}
+
+=== Cleanup === ✓ Deleted collection: kotlin_collection_example
+
+=== Example Complete ===
+
+BUILD SUCCESSFUL in 3s 3 actionable tasks: 2 executed, 1 up-to-date To honour
+the JVM settings for this build a single-use Daemon process will be forked. For
+more on this, please refer to
+https://docs.gradle.org/8.5/userguide/gradle_daemon.html#sec:disabling_the_daemon
+in the Gradle documentation. Daemon will be stopped at the end of the build
+
+> Task :run SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
+> SLF4J: Defaulting to no-operation (NOP) logger implementation SLF4J: See
+> http://www.slf4j.org/codes.html#StaticLoggerBinder for further details. ===
+> ekoDB Kotlin Client - Document TTL Example ===
+
+=== Insert with TTL === ✓ Inserted document with 10s TTL Document ID:
+X_AZNedTiJveitF72_a3xjE9sD24GXO1GCaswrNTz3jwH9K8Chlv5xtqu-dW7pwncPsBNvZoU3z4Sk5Tlo6cEA
+
+=== Verify Document Exists === ✓ Document found: [session_id, created_at,
+ttl_duration, user_id, id]
+
+=== Insert with Longer TTL === ✓ Inserted document with 1h TTL Document ID:
+mHnFdq0qSP2FXxnPTJpwqF6bGO8fLWhRkFoeLe9Z0akjicAsVJHj5WPpUqg09iXEURAjmWCO*JnulE7*-rEPxg
+
+=== TTL Expiration === ✓ Document will automatically expire after 10 seconds
+
+=== Verify Long TTL Document === ✓ Long TTL document still exists:
+[ttl_duration, id, value, cache_key]
+
+=== Delete Document === ✓ Deleted document
+
+=== Cleanup === ✓ Deleted collection: kotlin_ttl_example
+
+=== Example Complete ===
+
+BUILD SUCCESSFUL in 3s 3 actionable tasks: 2 executed, 1 up-to-date To honour
+the JVM settings for this build a single-use Daemon process will be forked. For
+more on this, please refer to
+https://docs.gradle.org/8.5/userguide/gradle_daemon.html#sec:disabling_the_daemon
+in the Gradle documentation. Daemon will be stopped at the end of the build
+
+> Task :run SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
+> SLF4J: Defaulting to no-operation (NOP) logger implementation SLF4J: See
+> http://www.slf4j.org/codes.html#StaticLoggerBinder for further details. ===
+> ekoDB Kotlin Client - Simple WebSocket Example ===
+
+=== Create WebSocket Client === ✓ WebSocket client created
+
+=== Connect to WebSocket === ✓ Connected to WebSocket
+
+=== Insert Test Record === ✓ Inserted test record
+
+=== Find All via WebSocket === ✓ WebSocket findAll result:
+{"payload":{"data":[{"id":"gQec42xBgZS-ySG6ucsb9FN9cjbp_popWnIGK9zljvO0Drt9QRDXFLO4ZKH7uNFm-3yfKeO0bmjDvdM8LZ3aPQ","name":{"type":"String","value":"Test
+User"},"status":{"type":"String","value":"active"}}]},"type":"Success"}
+
+=== Close WebSocket === ✓ WebSocket closed
+
+=== Cleanup === ✓ Deleted collection: kotlin_websocket_example
+
+=== Example Complete ===
+
+BUILD SUCCESSFUL in 3s 3 actionable tasks: 2 executed, 1 up-to-date To honour
+the JVM settings for this build a single-use Daemon process will be forked. For
+more on this, please refer to
+https://docs.gradle.org/8.5/userguide/gradle_daemon.html#sec:disabling_the_daemon
+in the Gradle documentation. Daemon will be stopped at the end of the build
+
+> Task :run SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
+> SLF4J: Defaulting to no-operation (NOP) logger implementation SLF4J: See
+> http://www.slf4j.org/codes.html#StaticLoggerBinder for further details. ===
+> ekoDB Kotlin Client - Schema Management Example ===
+
+=== Creating Collection with Schema === ✓ Created collection
+'kotlin_schema_example' with schema
+
+=== Inserting Valid Documents === ✓ Inserted user 1:
+StringValue(value=QU7Vxx2a17hxdgW1_xtGLIKIWKHu5BcEa-vTqxBaY1U6zBqyxjnoCwyL-IEySUD4pGlTwvq3rtbufWL8st05qA)
+✓ Inserted user 2:
+StringValue(value=A99xDihZHNaYQpmuZQB1SNvRqmAqJmhdmnqaAfkda5cSKtVWq5vULwDwWUtRIZUqRJz9Hz6ssGpmyI4fE3VrrA)
+
+=== Getting Schema === ✓ Schema for kotlin_schema_example: Fields:
+{"age":{"field_type":"Integer","default":null,"unique":false,"required":false,"enums":[],"max":null,"min":null,"regex":null},"email":{"field_type":"String","default":null,"unique":false,"required":true,"enums":[],"max":null,"min":null,"regex":null},"status":{"field_type":"String","default":null,"unique":false,"required":false,"enums":[],"max":null,"min":null,"regex":null},"title":{"field_type":"String","default":null,"unique":false,"required":true,"enums":[],"max":null,"min":null,"regex":null}}
+
+=== Listing Collections === ✓ Total collections: 20 Sample:
+[schema_products_client_ts, batch_users, test_collection,
+schema_documents_client_ts, kotlin_schema_example]
+
+=== Cleanup === ✓ Deleted collection: kotlin_schema_example
+
+✓ All schema management operations completed successfully
+
+BUILD SUCCESSFUL in 3s 3 actionable tasks: 2 executed, 1 up-to-date To honour
+the JVM settings for this build a single-use Daemon process will be forked. For
+more on this, please refer to
+https://docs.gradle.org/8.5/userguide/gradle_daemon.html#sec:disabling_the_daemon
+in the Gradle documentation. Daemon will be stopped at the end of the build
+
+> Task :run SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
+> SLF4J: Defaulting to no-operation (NOP) logger implementation SLF4J: See
+> http://www.slf4j.org/codes.html#StaticLoggerBinder for further details. ===
+> ekoDB Kotlin Client - Search Example ===
+
+=== Inserting Sample Documents === ✓ Inserted 5 sample documents
+
+=== Basic Text Search === ✓ Search results for 'programming':
+{"results":[{"record":{"views":558,"description":"Learn Rust programming
+language with hands-on examples and best practices.","title":"Rust
+Programming","tags":"programming,rust,tutorial","id":"sE52la6QSou_xxBz5qoHjyXDexUesFSYNVe3u7M06RcCZYEh8-pEhVZNrr8mKryYprL6Fhd8xrpYOXFtYiCftw"},"score":19.8,"matched_fields":["description","title","tags"]},{"record":{"views":54,"title":"Python
+for Data
+Science","id":"Xc-MBiwjp1wsrchH3sTBQrKQZtb3Sj4_UZRg5kWHH8zOah9fnpc6kfwIQYUCG-OpAhFy_o5p3Hk_ffuHge6A5g","tags":"programming,python,data-science","description":"Master
+Python for data analysis, machine learning, and
+visualization."},"score":6.6000000000000005,"matched_fields":["tags"]},{"record":{"views":736,"title":"JavaScript
+Web
+Development","id":"aJ1OT3Mo3VQ-d-72wE8_4ZGISkA61kXUBiuU9_vfIL5fIHCih4pYzj076\_\_6444v7pzuAh_5kBvZ6nQmkI7kMw","description":"Build
+modern web applications using JavaScript, React, and
+Node.js.","tags":"programming,javascript,web"},"score":6.6000000000000005,"matched_fields":["tags"]}],"total":3,"execution_time_ms":1}
+
+=== Search for 'machine learning' === ✓ Found results for 'machine learning'
+{"results":[{"record":{"title":"Machine Learning
+Basics","description":"Introduction to machine learning algorithms and neural
+networks.","id":"s5fmaxkt7UahSFYdFK-QuRL2Ic0Mvi9XC2rVAqjJYAgIYI8jDqkQLkxxMeG_ACH4ru-ymvCxndAYFMgXNjlslA","views":764,"tags":"ai,machine-learning,python"},"score":2.7,"matched_fields":["description","tags","title"]},{"record":{"title":"Python
+for Data
+Science","id":"Xc-MBiwjp1wsrchH3sTBQrKQZtb3Sj4_UZRg5kWHH8zOah9fnpc6kfwIQYUCG-OpAhFy_o5p3Hk_ffuHge6A5g","views":54,"tags":"programming,python,data-science","description":"Master
+Python for data analysis, machine learning, and
+visualization."},"score":1.0,"matched_fields":["description"]},{"record":{"title":"Rust
+Programming","views":558,"description":"Learn Rust programming language with
+hands-on examples and best
+practices.","tags":"programming,rust,tutorial","id":"sE52la6QSou_xxBz5qoHjyXDexUesFSYNVe3u7M06RcCZYEh8-pEhVZNrr8mKryYprL6Fhd8xrpYOXFtYiCftw"},"score":0.5,"matched_fields":["description"]},{"record":{"tags":"database,design,sql","description":"Learn
+database design principles, normalization, and query
+optimization.","title":"Database
+Design","id":"-Bxz9b9OcAdpk0zvO2fU-3_5q3ZY1hkY37BQtDHcxbSvMoUIbKBjR4QBWx92OR-nsmw3qp7E_Tk911GBtMKEng","views":660},"score":0.5,"matched_fields":["description"]}],"total":4,"execution_time_ms":1}
+
+=== Cleanup === ✓ Deleted collection: kotlin_search_example
+
+✓ All search operations completed successfully
+
+BUILD SUCCESSFUL in 3s 3 actionable tasks: 2 executed, 1 up-to-date To honour
+the JVM settings for this build a single-use Daemon process will be forked. For
+more on this, please refer to
+https://docs.gradle.org/8.5/userguide/gradle_daemon.html#sec:disabling_the_daemon
+in the Gradle documentation. Daemon will be stopped at the end of the build
+
+> Task :run SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
+> SLF4J: Defaulting to no-operation (NOP) logger implementation SLF4J: See
+> http://www.slf4j.org/codes.html#StaticLoggerBinder for further details. ===
+> ekoDB Kotlin Client - WebSocket TTL Example ===
+
+=== Insert Test Data with TTL === ✓ Inserted document with TTL:
+StringValue(value=BVGwnTXyyVR7KHJMTEtBh7eZfzzAE3X8ywlEfJEi2qX1YZQH5OtyFAEZua59RJP7if79oOXAQCxFCgcxPZ5Neg)
+
+=== Query via WebSocket === ✓ WebSocket connected ✓ Retrieved data via
+WebSocket:
+{"payload":{"data":[{"created_at":{"type":"Integer","value":1760514503457},"id":"BVGwnTXyyVR7KHJMTEtBh7eZfzzAE3X8ywlEfJEi2qX1YZQH5OtyFAEZua59RJP7if79oOXAQCxFCgcxPZ5Neg","name":{"type":"String","value":"WebSocket
+TTL
+Test"},"ttl_duration":{"type":"String","value":"1h"},"value":{"type":"Integer","value":42}}]},"type":"Success"}
+
+✓ WebSocket closed
+
+=== Cleanup === ✓ Deleted collection: kotlin_websocket_ttl_example
+
+✓ WebSocket TTL example completed successfully
+
+💡 Note: Documents with TTL will automatically expire after the specified
+duration
+
+BUILD SUCCESSFUL in 3s 3 actionable tasks: 2 executed, 1 up-to-date To honour
+the JVM settings for this build a single-use Daemon process will be forked. For
+more on this, please refer to
+https://docs.gradle.org/8.5/userguide/gradle_daemon.html#sec:disabling_the_daemon
+in the Gradle documentation. Daemon will be stopped at the end of the build
+
+> Task :run SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
+> SLF4J: Defaulting to no-operation (NOP) logger implementation SLF4J: See
+> http://www.slf4j.org/codes.html#StaticLoggerBinder for further details. ===
+> ekoDB Kotlin Client - Join Operations Example ===
+
+=== Setting up sample data === ✓ Sample data created
+
+=== Example 1: Single collection join (users with departments) === ✓ Found 2
+users with department data
+
+- Alice Johnson
+- Bob Smith
+
+=== Example 2: Join with filtering === ✓ Found 2 users in Engineering
+
+- Alice Johnson
+- Bob Smith
+
+=== Example 3: Multi-collection join (users with departments and profiles) === ✓
+Found 2 users with department join
+
+- Alice Johnson
+- Bob Smith
+
+=== Example 4: Join orders with user data === ✓ Found 3 completed orders
+
+- Keyboard ($75)
+- Laptop ($1200)
+- Mouse ($25)
+
+=== Example 5: Complex join with multiple conditions === ✓ Found 2 users with
+example.com emails
+
+- Alice Johnson (alice@example.com)
+- Bob Smith (bob@example.com)
+
+=== Cleanup === ✓ Deleted test collections
+
+✓ Join operations example completed successfully
+
+BUILD SUCCESSFUL in 3s 3 actionable tasks: 2 executed, 1 up-to-date To honour
+the JVM settings for this build a single-use Daemon process will be forked. For
+more on this, please refer to
+https://docs.gradle.org/8.5/userguide/gradle_daemon.html#sec:disabling_the_daemon
+in the Gradle documentation. Daemon will be stopped at the end of the build
+
+> Task :run SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
+> SLF4J: Defaulting to no-operation (NOP) logger implementation SLF4J: See
+> http://www.slf4j.org/codes.html#StaticLoggerBinder for further details. ===
+> ekoDB Kotlin Client - Basic Chat Example ===
+
+=== Inserting Sample Data === ✓ Inserted 3 sample documents
+
+=== Creating Chat Session === ✓ Created session:
+-VD0BQIJ7Rbzf6LHZgzZdMA-k9W45shvFrpDYU9nyovDKmqV7LzMIReZLgcjw_7-jkYkQ62mKyH1cln2L8LlBg
+
+=== Sending Chat Message === ✓ Chat response: Message ID:
+"vOO2Xm2_iEtZ9muGcCw6H7v2EgsLIlHiF0QIIfKCaORJIbPxjMuw50moVN-YcR52uoLWakp2MnuFtTL_mT7gCA"
+Responses: ["Answer: ekoDB is a high-performance database that offers
+intelligent caching, real-time capabilities, and AI integration. It comes with
+several notable features including a chat feature that allows you to query your
+database using natural language and receive AI-powered responses with relevant
+context. Moreover, ekoDB supports different types of search including full-text
+search, vector search, and hybrid search with automatic context retrieval."]
+
+=== Cleanup === ✓ Deleted chat session ✓ Deleted collection:
+kotlin_chat_basic_example
+
+✓ Basic chat example completed successfully
+
+BUILD SUCCESSFUL in 5s 3 actionable tasks: 2 executed, 1 up-to-date To honour
+the JVM settings for this build a single-use Daemon process will be forked. For
+more on this, please refer to
+https://docs.gradle.org/8.5/userguide/gradle_daemon.html#sec:disabling_the_daemon
+in the Gradle documentation. Daemon will be stopped at the end of the build
+
+> Task :run SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
+> SLF4J: Defaulting to no-operation (NOP) logger implementation SLF4J: See
+> http://www.slf4j.org/codes.html#StaticLoggerBinder for further details. ===
+> ekoDB Kotlin Client - Chat Session Management Example ===
+
+=== Inserting Sample Data === ✓ Inserted sample product
+
+=== Creating Chat Session === ✓ Created session:
+yRDF-4LViH56CG4PX5Q7vdhyPVFeV6zdT80kgW26CZC1I7w7Z6nC_xIo_VXdz0-pZsSFMrINUMOWZoRM53Se4A
+
+=== Sending Messages === ✓ Message 1 sent Responses: ["Based on the information
+provided in the context, the available product is ekoDB, which is a
+high-performance database product with AI capabilities. It is priced at $99."]
+
+✓ Message 2 sent Responses: ["I'm sorry, but there seems to be no information
+provided about the product or its price in the context. Could you please specify
+which product you're interested in?"]
+
+=== Getting Message History === ✓ Retrieved message history Total messages:
+[{"chat_id":{"type":"String","value":"yRDF-4LViH56CG4PX5Q7vdhyPVFeV6zdT80kgW26CZC1I7w7Z6nC_xIo_VXdz0-pZsSFMrINUMOWZoRM53Se4A"},"content":{"type":"String","value":"What
+products are
+available?"},"context_snippets":{"type":"Array","value":[{"type":"Object","value":{"collection":{"type":"String","value":"kotlin_chat_sessions_example"},"matched_fields":{"type":"Array","value":[{"type":"String","value":"description"}]},"record":{"type":"Object","value":{"description":{"type":"String","value":"A
+high-performance database product with AI
+capabilities"},"id":{"type":"String","value":"VXKM7lNpKew1TbKi2uzpVXhwgZujFqfdXzcIF3Gostu9_oT0g8m2j2ZiPvEKDxfrjDvILQISCZiSyMw7WT7fjg"},"price":{"type":"Integer","value":99},"product":{"type":"String","value":"ekoDB"}}},"score":{"type":"Float","value":0.25}}}]},"created_at":{"type":"DateTime","value":"2025-10-15T07:48:39.824957Z"},"id":"WKNSqgj9Ejbww9FXR8UvoFGfQ9dmmGg5GtntLhtQcPfWPYX-57-78SFyEFvnMRhsi9l25_eG1md0NRH7xkChtA","role":{"type":"String","value":"user"},"token_usage":{"type":"Object","value":{"completion_tokens":{"type":"Integer","value":35},"prompt_tokens":{"type":"Integer","value":170},"total_tokens":{"type":"Integer","value":205}}},"updated_at":{"type":"DateTime","value":"2025-10-15T07:48:39.824957Z"}},{"chat_id":{"type":"String","value":"yRDF-4LViH56CG4PX5Q7vdhyPVFeV6zdT80kgW26CZC1I7w7Z6nC_xIo_VXdz0-pZsSFMrINUMOWZoRM53Se4A"},"content":{"type":"String","value":"Based
+on the information provided in the context, the available product is ekoDB,
+which is a high-performance database product with AI capabilities. It is priced
+at
+$99."},"context_snippets":{"type":"Array","value":[{"type":"Object","value":{"collection":{"type":"String","value":"kotlin_chat_sessions_example"},"matched_fields":{"type":"Array","value":[{"type":"String","value":"description"}]},"record":{"type":"Object","value":{"description":{"type":"String","value":"A
+high-performance database product with AI
+capabilities"},"id":{"type":"String","value":"VXKM7lNpKew1TbKi2uzpVXhwgZujFqfdXzcIF3Gostu9_oT0g8m2j2ZiPvEKDxfrjDvILQISCZiSyMw7WT7fjg"},"price":{"type":"Integer","value":99},"product":{"type":"String","value":"ekoDB"}}},"score":{"type":"Float","value":0.25}}}]},"created_at":{"type":"DateTime","value":"2025-10-15T07:48:39.828307Z"},"id":"gqmYwL-JEV7NzdnWSIhG0f224iZ67U4YzKbXayBNQR_aIojRibPRzcmld-LXjMNz_m8ZvX9qxz6oyZoEKyS-pQ","role":{"type":"String","value":"assistant"},"token_usage":{"type":"Object","value":{"completion_tokens":{"type":"Integer","value":35},"prompt_tokens":{"type":"Integer","value":170},"total_tokens":{"type":"Integer","value":205}}},"updated_at":{"type":"DateTime","value":"2025-10-15T07:48:39.828307Z"}},{"chat_id":{"type":"String","value":"yRDF-4LViH56CG4PX5Q7vdhyPVFeV6zdT80kgW26CZC1I7w7Z6nC_xIo_VXdz0-pZsSFMrINUMOWZoRM53Se4A"},"content":{"type":"String","value":"What
+is the
+price?"},"created_at":{"type":"DateTime","value":"2025-10-15T07:48:41.560339Z"},"id":"aKj8WgBu9FBTmsVzhk73fyUXhHbmMJS5-Eli6KzEQBlt9c0kGBP0lvAJvm0dU1qm1-JVxQBkS4KSJ8_Dar6qxw","role":{"type":"String","value":"user"},"token_usage":{"type":"Object","value":{"completion_tokens":{"type":"Integer","value":33},"prompt_tokens":{"type":"Integer","value":63},"total_tokens":{"type":"Integer","value":96}}},"updated_at":{"type":"DateTime","value":"2025-10-15T07:48:41.560339Z"}},{"chat_id":{"type":"String","value":"yRDF-4LViH56CG4PX5Q7vdhyPVFeV6zdT80kgW26CZC1I7w7Z6nC_xIo_VXdz0-pZsSFMrINUMOWZoRM53Se4A"},"content":{"type":"String","value":"I'm
+sorry, but there seems to be no information provided about the product or its
+price in the context. Could you please specify which product you're interested
+in?"},"created_at":{"type":"DateTime","value":"2025-10-15T07:48:41.563381Z"},"id":"a1q3hFEKDeIjyim1aVt3y6vYs7wbiw2zCUyE_1qhHOa1L4TrGsPNDxmteIk7QapwXw71NrV2cVT-8ZDbWLTDUQ","role":{"type":"String","value":"assistant"},"token_usage":{"type":"Object","value":{"completion_tokens":{"type":"Integer","value":33},"prompt_tokens":{"type":"Integer","value":63},"total_tokens":{"type":"Integer","value":96}}},"updated_at":{"type":"DateTime","value":"2025-10-15T07:48:41.563381Z"}}]
+
+=== Updating Session === ✓ Updated session system prompt
+
+=== Listing Sessions === ✓ Total sessions: 13
+
+=== Branching Session === ✓ Created branched session:
+Qrjypue1TP2HBpPcRMzNh4USx6X9HM3Y3KV3UsRcOeuuUHPvHJ_yTLG8QA26lgR0cevgwWaWUjCcrS5CL5abAg
+
+=== Cleanup === ✓ Deleted chat sessions ✓ Deleted collection:
+kotlin_chat_sessions_example
+
+✓ Chat session management example completed successfully
+
+BUILD SUCCESSFUL in 7s 3 actionable tasks: 2 executed, 1 up-to-date To honour
+the JVM settings for this build a single-use Daemon process will be forked. For
+more on this, please refer to
+https://docs.gradle.org/8.5/userguide/gradle_daemon.html#sec:disabling_the_daemon
+in the Gradle documentation. Daemon will be stopped at the end of the build
+
+> Task :run SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
+> SLF4J: Defaulting to no-operation (NOP) logger implementation SLF4J: See
+> http://www.slf4j.org/codes.html#StaticLoggerBinder for further details. ===
+> ekoDB Kotlin Client - Advanced Chat Features Example ===
+
+=== Inserting Sample Data === ✓ Inserted sample product
+
+=== Creating Chat Session === ✓ Created session:
+jXxfVecUmdw2e0rRQrG3RQdoJNtJxf7M8eCNwYd0sZZ4t4eztFhoLRF0UVibMI1J45K4abQP8GXuq_APGnjw0A
+
+=== Sending Initial Message === ✓ Message sent Responses: ["Based on the
+information provided, the available product is ekoDB. It is a high-performance
+database product priced at $99."]
+
+✓ Second message sent
+
+=== Regenerating AI Response === ✓ AI response regenerated New responses:
+["Based on the information provided, the available product is a high-performance
+database product named ekoDB. It is priced at 99."]
+
+=== Updating Message === ✓ Updated message content
+
+=== Toggling Forgotten Status === ✓ Marked message as forgotten (excluded from
+context)
+
+=== Creating Second Session for Merge === ✓ Created second session:
+4b6A846f2kCRB-L35hnELKKNURbWpqdJnuIJ3E8JSBTVtmTT0ZKi2eftS8IfN9XWEVHemAaZZQyrSPaZTJI05g
+
+=== Merging Sessions === ✓ Merged sessions Merged session ID: null
+
+=== Deleting Message === ✓ Deleted message
+
+=== Cleanup === ✓ Deleted chat sessions ✓ Deleted collection:
+kotlin_chat_advanced_example
+
+✓ Advanced chat features example completed successfully
+
+BUILD SUCCESSFUL in 9s 3 actionable tasks: 2 executed, 1 up-to-date ✅ Kotlin
+client examples complete! ✅ All Kotlin integration tests complete! ✅ All
+integration tests complete!
