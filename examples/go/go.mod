@@ -1,6 +1,6 @@
 module github.com/ekodb/examples
 
-go 1.21
+go 1.23.0
 
 toolchain go1.24.2
 
@@ -12,4 +12,4 @@ require (
 	github.com/joho/godotenv v1.5.1
 )
 
-require golang.org/x/net v0.17.0 // indirect
+require golang.org/x/net v0.38.0 // indirect
