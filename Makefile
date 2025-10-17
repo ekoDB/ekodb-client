@@ -23,13 +23,18 @@ BANNER := \
 		"███████╗ ████═╝  ██║   ██║██    ██║███████ " "\n" \
 		"██     ║ ██╔██╗  ██║   ██║██    ██║██   ██ " "\n" \
 		"███████║ ██║  ██ ║██████╔╝███████║║███████ " "\n" \
-		"╚══════╝ ╚═╝  ╚══╝ ╚════╝ ╚══════╝ ╚═════╝  " "\n" \
+		"╚══════╝ ╚═╝  ╚══╝ ╚════╝ ╚══════╝ ╚═════╝  " "\n"
+
+# Language Sub-Banner
+LANGUAGES := \
+	"         🦀 Rust  •  🐍 Python  •  📘 TypeScript  •  🟣 Kotlin" "\n"
 
 # Default target
 all: build
 
 help:
 	@echo $(BANNER)
+	@echo $(LANGUAGES)
 	@echo "✨ $(CYAN)Welcome to ekoDB Client Libraries ✨$(RESET)"
 	@echo ""
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
@@ -265,17 +270,6 @@ deploy-client-py:
 	fi
 	@echo "✅ $(GREEN)Python client published!$(RESET)"
 	@echo "💡 $(YELLOW)Note: Windows wheels require a Windows machine or CI/CD$(RESET)"
-
-deploy-client-go:
-	@echo "🔷 $(CYAN)Tagging Go client for pkg.go.dev...$(RESET)"
-	@echo "📝 $(YELLOW)Go client is in a separate repository$(RESET)"
-	@echo "💡 $(YELLOW)To publish Go client:$(RESET)"
-	@echo "   1. Go to: github.com/ekoDB/ekodb-client-go"
-	@echo "   2. Commit your changes"
-	@echo "   3. Run: git tag v0.1.1"
-	@echo "   4. Run: git push origin v0.1.1"
-	@echo "   5. Go will automatically index it at pkg.go.dev"
-	@echo "✅ $(GREEN)Go client deployment instructions shown!$(RESET)"
 
 # Simple Python deployment (current platform only, uses script)
 deploy-client-py-simple:
