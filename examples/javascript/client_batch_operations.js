@@ -44,7 +44,7 @@ async function main() {
   // Example 2: Batch Update
   console.log('\n=== Batch Update ===');
   const updates = ids.slice(0, 3).map(id => ({
-    id,
+    id: id,
     data: { status: 'active', updated: true },
   }));
 

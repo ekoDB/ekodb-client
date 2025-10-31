@@ -77,7 +77,7 @@ async def main():
             for msg in messages["messages"]
             if (
                 isinstance(msg.get("role"), dict)
-                and msg.get("role", {}).get("value") == "assistant"
+                and msg.get("role", {}).get("_field_value") == "assistant"
             )
             or msg.get("role") == "assistant"
         ),
@@ -96,7 +96,7 @@ async def main():
             for msg in messages["messages"]
             if (
                 isinstance(msg.get("role"), dict)
-                and msg.get("role", {}).get("value") == "user"
+                and msg.get("role", {}).get("_field_value") == "user"
             )
             or msg.get("role") == "user"
         ),

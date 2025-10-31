@@ -4,11 +4,11 @@ make test-examples-rs
 [unoptimized + debuginfo] target(s) in 0.08s Running
 `target/debug/examples/simple_crud` ✓ Authentication successful
 
-=== Insert Document === Inserted: Object {"id":
+=== Insert Document === Inserted: Object {"\id":
 String("WokDR6K4gIOAUOUQEg1HALDp12v7fxiBwY_6F6ymP62BO5iv5RqEjdvMHqsKVu8bSxc8e1bL4m8XLlUcukyUng")}
 
 === Find by ID === Found: Object {"active": Object {"type": String("Boolean"),
-"value": Bool(true)}, "id":
+"value": Bool(true)}, "\id":
 String("WokDR6K4gIOAUOUQEg1HALDp12v7fxiBwY_6F6ymP62BO5iv5RqEjdvMHqsKVu8bSxc8e1bL4m8XLlUcukyUng"),
 "name": Object {"type": String("String"), "value": String("Test Record")},
 "value": Object {"type": String("Integer"), "value": Number(42)}}
@@ -20,7 +20,7 @@ String("WokDR6K4gIOAUOUQEg1HALDp12v7fxiBwY_6F6ymP62BO5iv5RqEjdvMHqsKVu8bSxc8e1bL
 "value": Object {"type": String("Integer"), "value": Number(42)}}]
 
 === Update Document === Updated: Object {"active": Object {"type":
-String("Boolean"), "value": Bool(true)}, "id":
+String("Boolean"), "value": Bool(true)}, "\id":
 String("WokDR6K4gIOAUOUQEg1HALDp12v7fxiBwY_6F6ymP62BO5iv5RqEjdvMHqsKVu8bSxc8e1bL4m8XLlUcukyUng"),
 "name": String("Updated Record"), "value": Number(100)}
 
@@ -116,12 +116,12 @@ Running Rust client library examples... Finished `dev` profile [unoptimized +
 debuginfo] target(s) in 0.07s Running `target/debug/examples/client_simple_crud`
 ✓ Client created (token exchange happens automatically)
 
-=== Insert Document === Inserted: Record { fields: {"id":
+=== Insert Document === Inserted: Record { fields: {"\id":
 String("nf6Jj7Acpxy6R4B4ns8onGyDBHUED9A8Yj0BdY-z5xho3Stfiu9CBbFHdW1ArcfvoKCw29DOmo6uXUKNeXQcow")}
 }
 
 === Find by ID === Found: Record { fields: {"value": Object({"type":
-String("Integer"), "value": Integer(42)}), "id":
+String("Integer"), "value": Integer(42)}), "\id":
 String("nf6Jj7Acpxy6R4B4ns8onGyDBHUED9A8Yj0BdY-z5xho3Stfiu9CBbFHdW1ArcfvoKCw29DOmo6uXUKNeXQcow"),
 "active": Object({"value": Boolean(true), "type": String("Boolean")}), "name":
 Object({"value": String("Test Record"), "type": String("String")})} }
@@ -135,7 +135,7 @@ String("nf6Jj7Acpxy6R4B4ns8onGyDBHUED9A8Yj0BdY-z5xho3Stfiu9CBbFHdW1ArcfvoKCw29DO
 
 === Update Document === Updated: Record { fields: {"active": Object({"type":
 String("Boolean"), "value": Boolean(true)}), "name": String("Updated Record"),
-"id":
+"\id":
 String("nf6Jj7Acpxy6R4B4ns8onGyDBHUED9A8Yj0BdY-z5xho3Stfiu9CBbFHdW1ArcfvoKCw29DOmo6uXUKNeXQcow"),
 "value": Integer(100)} }
 
@@ -401,7 +401,7 @@ Snippet 1: Collection: client_chat_basic_rust Score: 0.6333 Matched Fields:
 String("String"), "value": String("features")}, "content": Object {"type":
 String("String"), "value": String("The chat feature allows you to query your
 database using natural language and get AI-powered responses with relevant
-context.")}, "id":
+context.")}, "\id":
 String("WeQBCofqFgJrswlb2mH7XwqpZAa7Mpt0xk57cPwNPPYPMJn1R17opelDBzwNxWWao7NCogBavBbK3hdkKm7r5g"),
 "title": Object {"type": String("String"), "value": String("AI Chat
 Integration")}}
@@ -410,7 +410,7 @@ Snippet 2: Collection: client_chat_basic_rust Score: 0.5222 Matched Fields:
 ["content", "title"] Record: Object {"category": Object {"type":
 String("String"), "value": String("documentation")}, "content": Object {"type":
 String("String"), "value": String("ekoDB is a high-performance database with
-intelligent caching, real-time capabilities, and AI integration.")}, "id":
+intelligent caching, real-time capabilities, and AI integration.")}, "\id":
 String("kgveBgr9WN_m2Ng7oSCMD178YhuOMlcf7xp2dqYOcURZ5uyuuRftO4jOU1v01kHIUzs_s0PP0RwLkBhpVwOvzw"),
 "title": Object {"type": String("String"), "value": String("Introduction to
 ekoDB")}}
@@ -419,7 +419,7 @@ Snippet 3: Collection: client_chat_basic_rust Score: 0.5222 Matched Fields:
 ["title", "category", "content"] Record: Object {"category": Object {"type":
 String("String"), "value": String("features")}, "content": Object {"type":
 String("String"), "value": String("ekoDB supports full-text search, vector
-search, and hybrid search with automatic context retrieval.")}, "id":
+search, and hybrid search with automatic context retrieval.")}, "\id":
 String("CpjcH_8zCOV7jlPl3GyBUqexrgQGPfbpVny8bhguALSPMr5KM05CBpqTdHC8M7jnYLND1wH2GqBZfaSwyEEsrQ"),
 "title": Object {"type": String("String"), "value": String("Search Features")}}
 

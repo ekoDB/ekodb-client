@@ -44,13 +44,30 @@ async def main():
     # Setup: Create sample data
     print("Setting up sample data...")
 
-    # Create users
+    # Create departments first (need their IDs for users)
+    dept1 = await client.insert(
+        departments_collection,
+        {
+            "name": "Engineering",
+            "location": "Building A",
+        },
+    )
+
+    dept2 = await client.insert(
+        departments_collection,
+        {
+            "name": "Sales",
+            "location": "Building B",
+        },
+    )
+
+    # Create users with actual department IDs
     user1 = await client.insert(
         users_collection,
         {
             "name": "Alice Johnson",
             "email": "alice@example.com",
-            "department_id": "dept-001",
+            "department_id": dept1.get("id"),
         },
     )
 
@@ -59,26 +76,7 @@ async def main():
         {
             "name": "Bob Smith",
             "email": "bob@example.com",
-            "department_id": "dept-002",
-        },
-    )
-
-    # Create departments
-    await client.insert(
-        departments_collection,
-        {
-            "id": "dept-001",
-            "name": "Engineering",
-            "location": "Building A",
-        },
-    )
-
-    await client.insert(
-        departments_collection,
-        {
-            "id": "dept-002",
-            "name": "Sales",
-            "location": "Building B",
+            "department_id": dept2.get("id"),
         },
     )
 
@@ -117,7 +115,7 @@ async def main():
     await client.insert(
         profiles_collection,
         {
-            "id": user1.get("id"),
+            "user_id": user1.get("id"),
             "bio": "Senior Software Engineer",
             "skills": ["JavaScript", "TypeScript", "React"],
         },
@@ -126,7 +124,7 @@ async def main():
     await client.insert(
         profiles_collection,
         {
-            "id": user2.get("id"),
+            "user_id": user2.get("id"),
             "bio": "Sales Manager",
             "skills": ["Negotiation", "CRM", "Communication"],
         },
@@ -137,26 +135,28 @@ async def main():
     # Example 1: Simple single collection join
     print("1. Single collection join (users with departments):")
     query1 = {
-        "$join": {
-            "collection": departments_collection,
+        "join": {
+            "collections": [departments_collection],
             "local_field": "department_id",
             "foreign_field": "id",
-            "as": "department",
+            "as_field": "department",
         },
-        "$limit": 10,
+        "limit": 10,
     }
 
     results1 = await client.find(users_collection, query1)
     print(f"Found {len(results1)} users with department data:")
     for user in results1:
         user_name = (
-            user.get("name", {}).get("value")
+            user.get("name", {}).get("_field_value")
             if isinstance(user.get("name"), dict)
             else user.get("name", "Unknown")
         )
-        dept = user.get("department", {})
+        # Join returns an array, get first element
+        depts = user.get("department", [])
+        dept = depts[0] if depts else {}
         dept_name = (
-            dept.get("name", {}).get("value")
+            dept.get("name", {}).get("_field_value")
             if isinstance(dept.get("name"), dict)
             else dept.get("name", "No department")
         )
@@ -171,14 +171,14 @@ async def main():
             "content": {
                 "field": "department_id",
                 "operator": "Eq",
-                "value": "dept-001",
+                "value": dept1.get("id"),
             },
         },
         "join": {
-            "collection": departments_collection,
+            "collections": [departments_collection],
             "local_field": "department_id",
             "foreign_field": "id",
-            "as": "department",
+            "as_field": "department",
         },
     }
 
@@ -186,62 +186,50 @@ async def main():
     print(f"Found {len(results2)} users in Engineering:")
     for user in results2:
         user_name = (
-            user.get("name", {}).get("value")
+            user.get("name", {}).get("_field_value")
             if isinstance(user.get("name"), dict)
             else user.get("name", "Unknown")
         )
-        dept = user.get("department", {})
+        # Join returns an array, get first element
+        depts = user.get("department", [])
+        dept = depts[0] if depts else {}
         location = (
-            dept.get("location", {}).get("value")
+            dept.get("location", {}).get("_field_value")
             if isinstance(dept.get("location"), dict)
             else dept.get("location", "Unknown")
         )
         print(f"  - {user_name}: {location}")
     print()
 
-    # Example 3: Multi-collection join (users with departments and profiles)
-    print("3. Multi-collection join (users with departments and profiles):")
+    # Example 3: Join with user profiles
+    print("3. Join with user profiles:")
     query3 = {
-        "$join": [
-            {
-                "collection": departments_collection,
-                "local_field": "department_id",
-                "foreign_field": "id",
-                "as": "department",
-            },
-            {
-                "collection": profiles_collection,
-                "local_field": "id",
-                "foreign_field": "id",
-                "as": "profile",
-            },
-        ],
-        "$limit": 10,
+        "join": {
+            "collections": [profiles_collection],
+            "local_field": "id",
+            "foreign_field": "user_id",
+            "as_field": "profile",
+        },
+        "limit": 10,
     }
 
     results3 = await client.find(users_collection, query3)
-    print(f"Found {len(results3)} users with multiple joins:")
+    print(f"Found {len(results3)} users with profile data:")
     for user in results3:
         user_name = (
-            user.get("name", {}).get("value")
+            user.get("name", {}).get("_field_value")
             if isinstance(user.get("name"), dict)
             else user.get("name", "Unknown")
         )
-        dept = user.get("department", {})
-        dept_name = (
-            dept.get("name", {}).get("value")
-            if isinstance(dept.get("name"), dict)
-            else dept.get("name", "N/A")
-        )
-        profile = user.get("profile", {})
+        # Join returns an array, get first element
+        profiles = user.get("profile", [])
+        profile = profiles[0] if profiles else {}
         bio = (
-            profile.get("bio", {}).get("value")
+            profile.get("bio", {}).get("_field_value")
             if isinstance(profile.get("bio"), dict)
             else profile.get("bio", "N/A")
         )
-        print(f"  - {user_name}:")
-        print(f"    Department: {dept_name}")
-        print(f"    Bio: {bio}")
+        print(f"  - {user_name}: {bio}")
     print()
 
     # Example 4: Join orders with user data
@@ -252,10 +240,10 @@ async def main():
             "content": {"field": "status", "operator": "Eq", "value": "completed"},
         },
         "join": {
-            "collection": users_collection,
+            "collections": [users_collection],
             "local_field": "user_id",
             "foreign_field": "id",
-            "as": "user",
+            "as_field": "user",
         },
     }
 
@@ -263,18 +251,20 @@ async def main():
     print(f"Found {len(results4)} completed orders:")
     for order in results4:
         product = (
-            order.get("product", {}).get("value")
+            order.get("product", {}).get("_field_value")
             if isinstance(order.get("product"), dict)
             else order.get("product", "Unknown")
         )
         amount = (
-            order.get("amount", {}).get("value")
+            order.get("amount", {}).get("_field_value")
             if isinstance(order.get("amount"), dict)
             else order.get("amount", 0)
         )
-        user = order.get("user", {})
+        # Join returns an array, get first element
+        users = order.get("user", [])
+        user = users[0] if users else {}
         user_name = (
-            user.get("name", {}).get("value")
+            user.get("name", {}).get("_field_value")
             if isinstance(user.get("name"), dict)
             else user.get("name", "Unknown")
         )
@@ -293,10 +283,10 @@ async def main():
             },
         },
         "join": {
-            "collection": departments_collection,
+            "collections": [departments_collection],
             "local_field": "department_id",
             "foreign_field": "id",
-            "as": "department",
+            "as_field": "department",
         },
         "sort": [{"field": "name", "ascending": True}],
     }
@@ -305,22 +295,24 @@ async def main():
     print(f"Found {len(results5)} users with example.com emails:")
     for user in results5:
         user_name = (
-            user.get("name", {}).get("value")
+            user.get("name", {}).get("_field_value")
             if isinstance(user.get("name"), dict)
             else user.get("name", "Unknown")
         )
         email = (
-            user.get("email", {}).get("value")
+            user.get("email", {}).get("_field_value")
             if isinstance(user.get("email"), dict)
             else user.get("email", "Unknown")
         )
-        dept = user.get("department", {})
-        dept_name = (
-            dept.get("name", {}).get("value")
-            if isinstance(dept.get("name"), dict)
-            else dept.get("name", "N/A")
+        # Join returns an array, get first element
+        depts = user.get("department", [])
+        dept = depts[0] if depts else {}
+        location = (
+            dept.get("location", {}).get("_field_value")
+            if isinstance(dept.get("location"), dict)
+            else dept.get("location", "N/A")
         )
-        print(f"  - {user_name} ({email}): {dept_name}")
+        print(f"  - {user_name} ({email}): {location}")
     print()
 
     # Cleanup

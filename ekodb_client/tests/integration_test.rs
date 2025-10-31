@@ -41,7 +41,7 @@ async fn test_insert_and_find() -> Result<(), Box<dyn std::error::Error>> {
     record.insert("number", 42);
 
     let inserted = client.insert("test_collection", record).await?;
-    assert!(inserted.get("_id").is_some());
+    assert!(inserted.get("id").is_some());
 
     // Find the record
     let query = Query::new();

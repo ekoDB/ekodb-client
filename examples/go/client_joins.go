@@ -48,30 +48,28 @@ func main() {
 	// Setup: Create sample data
 	fmt.Println("Setting up sample data...")
 
-	// Create users
+	// Create departments first (need their IDs for users)
+	dept1, _ := client.Insert(departmentsCollection, ekodb.Record{
+		"name":     "Engineering",
+		"location": "Building A",
+	})
+
+	dept2, _ := client.Insert(departmentsCollection, ekodb.Record{
+		"name":     "Sales",
+		"location": "Building B",
+	})
+
+	// Create users with actual department IDs
 	user1, _ := client.Insert(usersCollection, ekodb.Record{
 		"name":          "Alice Johnson",
 		"email":         "alice@example.com",
-		"department_id": "dept-001",
+		"department_id": dept1["id"],
 	})
 
 	user2, _ := client.Insert(usersCollection, ekodb.Record{
 		"name":          "Bob Smith",
 		"email":         "bob@example.com",
-		"department_id": "dept-002",
-	})
-
-	// Create departments
-	client.Insert(departmentsCollection, ekodb.Record{
-		"id":       "dept-001",
-		"name":     "Engineering",
-		"location": "Building A",
-	})
-
-	client.Insert(departmentsCollection, ekodb.Record{
-		"id":       "dept-002",
-		"name":     "Sales",
-		"location": "Building B",
+		"department_id": dept2["id"],
 	})
 
 	// Create orders
@@ -114,7 +112,9 @@ func main() {
 		fmt.Printf("Found %d users with department data\n", len(results1))
 		for _, user := range results1 {
 			name := getStringValue(user, "name")
-			fmt.Printf("  - %s\n", name)
+			// Join returns an array, get first element
+			deptName := getJoinedStringValue(user, "department", "name")
+			fmt.Printf("  - %s: %s\n", name, deptName)
 		}
 	}
 	fmt.Println()
@@ -124,7 +124,7 @@ func main() {
 	join2 := ekodb.NewSingleJoin(departmentsCollection, "department_id", "id", "department")
 
 	query2 := ekodb.NewQueryBuilder().
-		Eq("department_id", "dept-001").
+		Eq("department_id", dept1["id"]).
 		Join(join2.ToMap()).
 		Build()
 
@@ -135,33 +135,30 @@ func main() {
 		fmt.Printf("Found %d users in Engineering\n", len(results2))
 		for _, user := range results2 {
 			name := getStringValue(user, "name")
-			fmt.Printf("  - %s\n", name)
+			// Join returns an array, get first element
+			location := getJoinedStringValue(user, "department", "location")
+			fmt.Printf("  - %s: %s\n", name, location)
 		}
 	}
 	fmt.Println()
 
-	// Example 3: Multi-collection join
-	fmt.Println("3. Multi-collection join (users with departments and profiles):")
+	// Example 3: Join with user profiles
+	fmt.Println("3. Join with user profiles:")
 
 	// Create profiles
 	client.Insert(profilesCollection, ekodb.Record{
-		"id":     user1["id"],
-		"bio":    "Senior Software Engineer",
-		"skills": []string{"JavaScript", "TypeScript", "React"},
+		"user_id": user1["id"],
+		"bio":     "Senior Software Engineer",
+		"skills":  []string{"JavaScript", "TypeScript", "React"},
 	})
 
 	client.Insert(profilesCollection, ekodb.Record{
-		"id":     user2["id"],
-		"bio":    "Sales Manager",
-		"skills": []string{"Negotiation", "CRM", "Communication"},
+		"user_id": user2["id"],
+		"bio":     "Sales Manager",
+		"skills":  []string{"Negotiation", "CRM", "Communication"},
 	})
 
-	join3 := ekodb.NewJoinConfig(
-		[]string{departmentsCollection, profilesCollection},
-		"department_id",
-		"id",
-		"related_data",
-	)
+	join3 := ekodb.NewSingleJoin(profilesCollection, "id", "user_id", "profile")
 
 	query3 := ekodb.NewQueryBuilder().
 		Join(join3.ToMap()).
@@ -172,10 +169,12 @@ func main() {
 	if err != nil {
 		log.Printf("Error: %v", err)
 	} else {
-		fmt.Printf("Found %d users with multiple joins\n", len(results3))
+		fmt.Printf("Found %d users with profile data\n", len(results3))
 		for _, user := range results3 {
 			name := getStringValue(user, "name")
-			fmt.Printf("  - %s\n", name)
+			// Join returns an array, get first element
+			bio := getJoinedStringValue(user, "profile", "bio")
+			fmt.Printf("  - %s: %s\n", name, bio)
 		}
 	}
 	fmt.Println()
@@ -197,7 +196,9 @@ func main() {
 		for _, order := range results4 {
 			product := getStringValue(order, "product")
 			amount := getFloatValue(order, "amount")
-			fmt.Printf("  - %s ($%.0f)\n", product, amount)
+			// Join returns an array, get first element
+			userName := getJoinedStringValue(order, "user", "name")
+			fmt.Printf("  - %s ($%.0f) by %s\n", product, amount, userName)
 		}
 	}
 	fmt.Println()
@@ -221,7 +222,9 @@ func main() {
 		for _, user := range results5 {
 			name := getStringValue(user, "name")
 			email := getStringValue(user, "email")
-			fmt.Printf("  - %s (%s)\n", name, email)
+			// Join returns an array, get first element
+			location := getJoinedStringValue(user, "department", "location")
+			fmt.Printf("  - %s (%s): %s\n", name, email, location)
 		}
 	}
 	fmt.Println()
@@ -242,7 +245,7 @@ func getStringValue(record ekodb.Record, field string) string {
 	if val, ok := record[field]; ok {
 		// Check if it's a FieldType wrapper
 		if m, ok := val.(map[string]interface{}); ok {
-			if value, ok := m["value"]; ok {
+			if value, ok := m["_field_value"]; ok {
 				if str, ok := value.(string); ok {
 					return str
 				}
@@ -261,7 +264,7 @@ func getFloatValue(record ekodb.Record, field string) float64 {
 	if val, ok := record[field]; ok {
 		// Check if it's a FieldType wrapper
 		if m, ok := val.(map[string]interface{}); ok {
-			if value, ok := m["value"]; ok {
+			if value, ok := m["_field_value"]; ok {
 				if num, ok := value.(float64); ok {
 					return num
 				}
@@ -276,4 +279,19 @@ func getFloatValue(record ekodb.Record, field string) float64 {
 		}
 	}
 	return 0
+}
+
+// Helper function to extract string values from joined arrays
+func getJoinedStringValue(record ekodb.Record, joinField, field string) string {
+	if val, ok := record[joinField]; ok {
+		// Join returns an array
+		if arr, ok := val.([]interface{}); ok {
+			if len(arr) > 0 {
+				if obj, ok := arr[0].(map[string]interface{}); ok {
+					return getStringValue(obj, field)
+				}
+			}
+		}
+	}
+	return "Unknown"
 }

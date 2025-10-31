@@ -244,6 +244,7 @@ impl HttpClient {
         // Convert to the format the server expects
         #[derive(Serialize)]
         struct BatchUpdateItem {
+            #[serde(rename = "id")]
             id: String,
             data: Record,
         }
@@ -308,6 +309,7 @@ impl HttpClient {
         // Convert to the format the server expects
         #[derive(Serialize)]
         struct BatchDeleteItem {
+            #[serde(rename = "id")]
             id: String,
         }
 

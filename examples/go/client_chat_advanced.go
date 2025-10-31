@@ -112,7 +112,7 @@ func main() {
 		// Role is wrapped in an Object with type/value structure
 		var role string
 		if roleObj, ok := msg["role"].(map[string]interface{}); ok {
-			if roleVal, ok := roleObj["value"].(string); ok {
+			if roleVal, ok := roleObj["_field_value"].(string); ok {
 				role = roleVal
 			}
 		} else if roleStr, ok := msg["role"].(string); ok {

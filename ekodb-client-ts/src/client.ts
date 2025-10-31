@@ -288,6 +288,8 @@ export class EkoDBClient {
       await this.refreshToken();
     }
 
+    // Note: Modern fetch API automatically handles gzip/deflate decompression
+    // when server sends Content-Encoding header. No additional configuration needed.
     const options: RequestInit = {
       method,
       headers: {
@@ -447,7 +449,7 @@ export class EkoDBClient {
       `/api/batch/insert/${collection}`,
       { inserts },
     );
-    return result.successful.map((id) => ({ id }));
+    return result.successful.map((id) => ({ id: id }));
   }
 
   /**
@@ -462,14 +464,14 @@ export class EkoDBClient {
       `/api/batch/update/${collection}`,
       { updates },
     );
-    return result.successful.map((id) => ({ id }));
+    return result.successful.map((id) => ({ id: id }));
   }
 
   /**
    * Batch delete multiple documents
    */
   async batchDelete(collection: string, ids: string[]): Promise<number> {
-    const deletes = ids.map((id) => ({ id }));
+    const deletes = ids.map((id) => ({ id: id }));
     const result = await this.makeRequest<BatchOperationResult>(
       "DELETE",
       `/api/batch/delete/${collection}`,

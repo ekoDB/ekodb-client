@@ -62,7 +62,7 @@ impl Client {
     ///
     /// # Returns
     ///
-    /// The inserted record with server-generated fields (e.g., `_id`, `_created_at`)
+    /// The inserted record with server-generated fields (e.g., `id`, `_created_at`)
     ///
     /// # Example
     ///

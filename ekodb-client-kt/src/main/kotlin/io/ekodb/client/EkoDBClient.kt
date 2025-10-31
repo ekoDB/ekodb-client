@@ -7,6 +7,7 @@ import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.*
+import io.ktor.client.plugins.compression.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.plugins.logging.*
 import io.ktor.client.plugins.websocket.*
@@ -37,6 +38,13 @@ class EkoDBClient private constructor(
                 isLenient = true
                 ignoreUnknownKeys = true
             })
+        }
+        
+        // Enable compression with proper content negotiation
+        // Client sends Accept-Encoding: gzip, server compresses only if it accepts
+        install(ContentEncoding) {
+            gzip()
+            deflate()
         }
         
         install(HttpTimeout) {

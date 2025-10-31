@@ -286,29 +286,29 @@ in the Gradle documentation. Daemon will be stopped at the end of the build
 
 === Basic Text Search === ✓ Search results for 'programming':
 {"results":[{"record":{"title":"Rust
-Programming","tags":"programming,rust,tutorial","views":808,"id":"JLqGPucEi9B4ggxtGyZJEIxGSQmzYVxCuUBYojZy6O6gdW3LiIHYpEId5SZW_KiFKDVAKuS3gIfioyFjGstmoQ","description":"Learn
+Programming","tags":"programming,rust,tutorial","views":808,"\id":"JLqGPucEi9B4ggxtGyZJEIxGSQmzYVxCuUBYojZy6O6gdW3LiIHYpEId5SZW_KiFKDVAKuS3gIfioyFjGstmoQ","description":"Learn
 Rust programming language with hands-on examples and best
-practices."},"score":19.8,"matched_fields":["tags","title","description"]},{"record":{"id":"VJQ6Jc1K503t0FUqbN8arJClWPxVuDvy0D1UzIfGM9uSxdXdguuLdcsEGN7MGua1X6El_ThZD0eOmayB6PIfoQ","views":811,"tags":"programming,javascript,web","title":"JavaScript
+practices."},"score":19.8,"matched_fields":["tags","title","description"]},{"record":{"\id":"VJQ6Jc1K503t0FUqbN8arJClWPxVuDvy0D1UzIfGM9uSxdXdguuLdcsEGN7MGua1X6El_ThZD0eOmayB6PIfoQ","views":811,"tags":"programming,javascript,web","title":"JavaScript
 Web Development","description":"Build modern web applications using JavaScript,
 React, and
-Node.js."},"score":6.6000000000000005,"matched_fields":["tags"]},{"record":{"tags":"programming,python,data-science","id":"1_zW4CUo_y-pbUjiyOMDR2qZAKYHKitkkmrk09hA1IDCwKlPnC7dQ3DzZLODkUPn8H0RYuzKdtoAPIZotR3QvA","title":"Python
+Node.js."},"score":6.6000000000000005,"matched_fields":["tags"]},{"record":{"tags":"programming,python,data-science","\id":"1_zW4CUo_y-pbUjiyOMDR2qZAKYHKitkkmrk09hA1IDCwKlPnC7dQ3DzZLODkUPn8H0RYuzKdtoAPIZotR3QvA","title":"Python
 for Data Science","views":12,"description":"Master Python for data analysis,
 machine learning, and
 visualization."},"score":6.6000000000000005,"matched_fields":["tags"]}],"total":3,"execution_time_ms":1}
 
 === Search for 'machine learning' === ✓ Found results for 'machine learning'
-{"results":[{"record":{"id":"1e_EgosnmzsP8hVVoZzO1vU0c5j44Md3TN2tWjC2W0v_1vDgZBecSIhFzItMasG_VxZQv5qduzwDdYe9RMsIqQ","views":271,"description":"Introduction
+{"results":[{"record":{"\id":"1e_EgosnmzsP8hVVoZzO1vU0c5j44Md3TN2tWjC2W0v_1vDgZBecSIhFzItMasG_VxZQv5qduzwDdYe9RMsIqQ","views":271,"description":"Introduction
 to machine learning algorithms and neural
 networks.","tags":"ai,machine-learning,python","title":"Machine Learning
-Basics"},"score":2.7,"matched_fields":["description","tags","title"]},{"record":{"tags":"programming,python,data-science","id":"1_zW4CUo_y-pbUjiyOMDR2qZAKYHKitkkmrk09hA1IDCwKlPnC7dQ3DzZLODkUPn8H0RYuzKdtoAPIZotR3QvA","title":"Python
+Basics"},"score":2.7,"matched_fields":["description","tags","title"]},{"record":{"tags":"programming,python,data-science","\id":"1_zW4CUo_y-pbUjiyOMDR2qZAKYHKitkkmrk09hA1IDCwKlPnC7dQ3DzZLODkUPn8H0RYuzKdtoAPIZotR3QvA","title":"Python
 for Data Science","views":12,"description":"Master Python for data analysis,
 machine learning, and
 visualization."},"score":1.0,"matched_fields":["description"]},{"record":{"title":"Database
-Design","views":747,"id":"z7N1tJMzF0A-v2aPwRO-omA8bEdkQgAF6eNjjeUY_Tmk0HP91C-fYvF38doqrLod1gmg8gtgJFrGqc4qeRaIbg","description":"Learn
+Design","views":747,"\id":"z7N1tJMzF0A-v2aPwRO-omA8bEdkQgAF6eNjjeUY_Tmk0HP91C-fYvF38doqrLod1gmg8gtgJFrGqc4qeRaIbg","description":"Learn
 database design principles, normalization, and query
 optimization.","tags":"database,design,sql"},"score":0.5,"matched_fields":["description"]},{"record":{"tags":"programming,rust,tutorial","views":808,"description":"Learn
 Rust programming language with hands-on examples and best
-practices.","id":"JLqGPucEi9B4ggxtGyZJEIxGSQmzYVxCuUBYojZy6O6gdW3LiIHYpEId5SZW_KiFKDVAKuS3gIfioyFjGstmoQ","title":"Rust
+practices.","\id":"JLqGPucEi9B4ggxtGyZJEIxGSQmzYVxCuUBYojZy6O6gdW3LiIHYpEId5SZW_KiFKDVAKuS3gIfioyFjGstmoQ","title":"Rust
 Programming"},"score":0.5,"matched_fields":["description"]}],"total":4,"execution_time_ms":1}
 
 === Cleanup === ✓ Deleted collection: kotlin_search_example
@@ -449,18 +449,18 @@ product. Could you please specify the product you're interested in?"]
 products are
 available?"},"context_snippets":{"type":"Array","value":[{"type":"Object","value":{"collection":{"type":"String","value":"kotlin_chat_sessions_example"},"matched_fields":{"type":"Array","value":[{"type":"String","value":"description"}]},"record":{"type":"Object","value":{"description":{"type":"String","value":"A
 high-performance database product with AI
-capabilities"},"id":{"type":"String","value":"bjEn9h_SGz3iglpcz56aZg_VL2MgND-mvU7AA8cRkdlRfvJRv68GEl4DTDKwsUshf5BKKuzonYrjIWeY07y0cg"},"price":{"type":"Integer","value":99},"product":{"type":"String","value":"ekoDB"}}},"score":{"type":"Float","value":0.25}}}]},"created_at":{"type":"DateTime","value":"2025-10-15T08:33:57.709506Z"},"id":"5QD922PwV9K_cTJLtI6iZsAhcAYCE7ggnVMA61mvmHOa_46TtX9piaPdmNvcOCj-tbzc6ftioL6etNRmaOvfRA","role":{"type":"String","value":"user"},"token_usage":{"type":"Object","value":{"completion_tokens":{"type":"Integer","value":32},"prompt_tokens":{"type":"Integer","value":165},"total_tokens":{"type":"Integer","value":197}}},"updated_at":{"type":"DateTime","value":"2025-10-15T08:33:57.709506Z"}},{"chat_id":{"type":"String","value":"If3aFrCkjQWowYEtU6PNY21R3EM--i7QhlXdXy7xWdCzBadLHRxGgz8XRuSpGNnvoOrT9GKQrpS1PzdCR-BG4w"},"content":{"type":"String","value":"Based
+capabilities"},"\id":{"type":"String","value":"bjEn9h_SGz3iglpcz56aZg_VL2MgND-mvU7AA8cRkdlRfvJRv68GEl4DTDKwsUshf5BKKuzonYrjIWeY07y0cg"},"price":{"type":"Integer","value":99},"product":{"type":"String","value":"ekoDB"}}},"score":{"type":"Float","value":0.25}}}]},"created_at":{"type":"DateTime","value":"2025-10-15T08:33:57.709506Z"},"\id":"5QD922PwV9K_cTJLtI6iZsAhcAYCE7ggnVMA61mvmHOa_46TtX9piaPdmNvcOCj-tbzc6ftioL6etNRmaOvfRA","role":{"type":"String","value":"user"},"token_usage":{"type":"Object","value":{"completion_tokens":{"type":"Integer","value":32},"prompt_tokens":{"type":"Integer","value":165},"total_tokens":{"type":"Integer","value":197}}},"updated_at":{"type":"DateTime","value":"2025-10-15T08:33:57.709506Z"}},{"chat_id":{"type":"String","value":"If3aFrCkjQWowYEtU6PNY21R3EM--i7QhlXdXy7xWdCzBadLHRxGgz8XRuSpGNnvoOrT9GKQrpS1PzdCR-BG4w"},"content":{"type":"String","value":"Based
 on the provided context, the available product is ekoDB, which is a
 high-performance database product with AI capabilities. It is priced at
 $99."},"context_snippets":{"type":"Array","value":[{"type":"Object","value":{"collection":{"type":"String","value":"kotlin_chat_sessions_example"},"matched_fields":{"type":"Array","value":[{"type":"String","value":"description"}]},"record":{"type":"Object","value":{"description":{"type":"String","value":"A
 high-performance database product with AI
-capabilities"},"id":{"type":"String","value":"bjEn9h_SGz3iglpcz56aZg_VL2MgND-mvU7AA8cRkdlRfvJRv68GEl4DTDKwsUshf5BKKuzonYrjIWeY07y0cg"},"price":{"type":"Integer","value":99},"product":{"type":"String","value":"ekoDB"}}},"score":{"type":"Float","value":0.25}}}]},"created_at":{"type":"DateTime","value":"2025-10-15T08:33:57.712466Z"},"id":"FxzAq_3fTJeQCUEQ5z-C49qD4Q-tnWLgGccODzK51fpd2LBwigrKxBj3GC8pAwLxGWyMARXevtSqe38QM2GnXQ","role":{"type":"String","value":"assistant"},"token_usage":{"type":"Object","value":{"completion_tokens":{"type":"Integer","value":32},"prompt_tokens":{"type":"Integer","value":165},"total_tokens":{"type":"Integer","value":197}}},"updated_at":{"type":"DateTime","value":"2025-10-15T08:33:57.712466Z"}},{"chat_id":{"type":"String","value":"If3aFrCkjQWowYEtU6PNY21R3EM--i7QhlXdXy7xWdCzBadLHRxGgz8XRuSpGNnvoOrT9GKQrpS1PzdCR-BG4w"},"content":{"type":"String","value":"What
+capabilities"},"\id":{"type":"String","value":"bjEn9h_SGz3iglpcz56aZg_VL2MgND-mvU7AA8cRkdlRfvJRv68GEl4DTDKwsUshf5BKKuzonYrjIWeY07y0cg"},"price":{"type":"Integer","value":99},"product":{"type":"String","value":"ekoDB"}}},"score":{"type":"Float","value":0.25}}}]},"created_at":{"type":"DateTime","value":"2025-10-15T08:33:57.712466Z"},"\id":"FxzAq_3fTJeQCUEQ5z-C49qD4Q-tnWLgGccODzK51fpd2LBwigrKxBj3GC8pAwLxGWyMARXevtSqe38QM2GnXQ","role":{"type":"String","value":"assistant"},"token_usage":{"type":"Object","value":{"completion_tokens":{"type":"Integer","value":32},"prompt_tokens":{"type":"Integer","value":165},"total_tokens":{"type":"Integer","value":197}}},"updated_at":{"type":"DateTime","value":"2025-10-15T08:33:57.712466Z"}},{"chat_id":{"type":"String","value":"If3aFrCkjQWowYEtU6PNY21R3EM--i7QhlXdXy7xWdCzBadLHRxGgz8XRuSpGNnvoOrT9GKQrpS1PzdCR-BG4w"},"content":{"type":"String","value":"What
 is the
-price?"},"created_at":{"type":"DateTime","value":"2025-10-15T08:33:59.633359Z"},"id":"xYb0tydyGsWE7Hb1K2RwNb-YWxWvxE_g_jovFhrs07iMGoFP0uMSuPqkdqsTYy1Svs-an9kcEdHLJb9KxQPhcA","role":{"type":"String","value":"user"},"token_usage":{"type":"Object","value":{"completion_tokens":{"type":"Integer","value":40},"prompt_tokens":{"type":"Integer","value":63},"total_tokens":{"type":"Integer","value":103}}},"updated_at":{"type":"DateTime","value":"2025-10-15T08:33:59.633359Z"}},{"chat_id":{"type":"String","value":"If3aFrCkjQWowYEtU6PNY21R3EM--i7QhlXdXy7xWdCzBadLHRxGgz8XRuSpGNnvoOrT9GKQrpS1PzdCR-BG4w"},"content":{"type":"String","value":"As
+price?"},"created_at":{"type":"DateTime","value":"2025-10-15T08:33:59.633359Z"},"\id":"xYb0tydyGsWE7Hb1K2RwNb-YWxWvxE_g_jovFhrs07iMGoFP0uMSuPqkdqsTYy1Svs-an9kcEdHLJb9KxQPhcA","role":{"type":"String","value":"user"},"token_usage":{"type":"Object","value":{"completion_tokens":{"type":"Integer","value":40},"prompt_tokens":{"type":"Integer","value":63},"total_tokens":{"type":"Integer","value":103}}},"updated_at":{"type":"DateTime","value":"2025-10-15T08:33:59.633359Z"}},{"chat_id":{"type":"String","value":"If3aFrCkjQWowYEtU6PNY21R3EM--i7QhlXdXy7xWdCzBadLHRxGgz8XRuSpGNnvoOrT9GKQrpS1PzdCR-BG4w"},"content":{"type":"String","value":"As
 an assistant, I'm sorry but I can't provide the price you're asking for because
 there's no information given about a specific product. Could you please specify
 the product you're interested
-in?"},"created_at":{"type":"DateTime","value":"2025-10-15T08:33:59.634829Z"},"id":"h4Jw5Z-fWJhSOv8mbZkh-UX9i8chwNjYeH0kK9953q653ipiq1Qf52QMgnZMT7RkwSyXSBsZQW_6M2trBeQjKA","role":{"type":"String","value":"assistant"},"token_usage":{"type":"Object","value":{"completion_tokens":{"type":"Integer","value":40},"prompt_tokens":{"type":"Integer","value":63},"total_tokens":{"type":"Integer","value":103}}},"updated_at":{"type":"DateTime","value":"2025-10-15T08:33:59.634829Z"}}]
+in?"},"created_at":{"type":"DateTime","value":"2025-10-15T08:33:59.634829Z"},"\id":"h4Jw5Z-fWJhSOv8mbZkh-UX9i8chwNjYeH0kK9953q653ipiq1Qf52QMgnZMT7RkwSyXSBsZQW_6M2trBeQjKA","role":{"type":"String","value":"assistant"},"token_usage":{"type":"Object","value":{"completion_tokens":{"type":"Integer","value":40},"prompt_tokens":{"type":"Integer","value":63},"total_tokens":{"type":"Integer","value":103}}},"updated_at":{"type":"DateTime","value":"2025-10-15T08:33:59.634829Z"}}]
 
 === Updating Session === ✓ Updated session system prompt
 

@@ -30,6 +30,7 @@ dependencies {
     implementation("io.ktor:ktor-serialization-kotlinx-json:3.0.1")
     implementation("io.ktor:ktor-client-websockets:3.0.1")
     implementation("io.ktor:ktor-client-logging:3.0.1")
+    implementation("io.ktor:ktor-client-encoding:3.0.1")
     
     // DateTime
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.1")
