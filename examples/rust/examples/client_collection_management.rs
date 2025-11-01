@@ -31,7 +31,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     record.insert("name", "Demo Record");
     record.insert("value", 42);
 
-    let inserted = client.insert(collection, record).await?;
+    let inserted = client.insert(collection, record, None).await?;
     if let Some(ekodb_client::FieldType::String(id)) = inserted.get("id") {
         println!("Collection created with first record: {:?}", id);
     }

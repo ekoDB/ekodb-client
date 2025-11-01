@@ -148,7 +148,7 @@ async def main():
     print(f"Found {len(results1)} users with department data:")
     for user in results1:
         user_name = (
-            user.get("name", {}).get("_field_value")
+            user.get("name", {}).get("value")
             if isinstance(user.get("name"), dict)
             else user.get("name", "Unknown")
         )
@@ -156,7 +156,7 @@ async def main():
         depts = user.get("department", [])
         dept = depts[0] if depts else {}
         dept_name = (
-            dept.get("name", {}).get("_field_value")
+            dept.get("name", {}).get("value")
             if isinstance(dept.get("name"), dict)
             else dept.get("name", "No department")
         )
@@ -186,7 +186,7 @@ async def main():
     print(f"Found {len(results2)} users in Engineering:")
     for user in results2:
         user_name = (
-            user.get("name", {}).get("_field_value")
+            user.get("name", {}).get("value")
             if isinstance(user.get("name"), dict)
             else user.get("name", "Unknown")
         )
@@ -194,7 +194,7 @@ async def main():
         depts = user.get("department", [])
         dept = depts[0] if depts else {}
         location = (
-            dept.get("location", {}).get("_field_value")
+            dept.get("location", {}).get("value")
             if isinstance(dept.get("location"), dict)
             else dept.get("location", "Unknown")
         )
@@ -217,7 +217,7 @@ async def main():
     print(f"Found {len(results3)} users with profile data:")
     for user in results3:
         user_name = (
-            user.get("name", {}).get("_field_value")
+            user.get("name", {}).get("value")
             if isinstance(user.get("name"), dict)
             else user.get("name", "Unknown")
         )
@@ -225,7 +225,7 @@ async def main():
         profiles = user.get("profile", [])
         profile = profiles[0] if profiles else {}
         bio = (
-            profile.get("bio", {}).get("_field_value")
+            profile.get("bio", {}).get("value")
             if isinstance(profile.get("bio"), dict)
             else profile.get("bio", "N/A")
         )
@@ -251,12 +251,12 @@ async def main():
     print(f"Found {len(results4)} completed orders:")
     for order in results4:
         product = (
-            order.get("product", {}).get("_field_value")
+            order.get("product", {}).get("value")
             if isinstance(order.get("product"), dict)
             else order.get("product", "Unknown")
         )
         amount = (
-            order.get("amount", {}).get("_field_value")
+            order.get("amount", {}).get("value")
             if isinstance(order.get("amount"), dict)
             else order.get("amount", 0)
         )
@@ -264,7 +264,7 @@ async def main():
         users = order.get("user", [])
         user = users[0] if users else {}
         user_name = (
-            user.get("name", {}).get("_field_value")
+            user.get("name", {}).get("value")
             if isinstance(user.get("name"), dict)
             else user.get("name", "Unknown")
         )
@@ -295,12 +295,12 @@ async def main():
     print(f"Found {len(results5)} users with example.com emails:")
     for user in results5:
         user_name = (
-            user.get("name", {}).get("_field_value")
+            user.get("name", {}).get("value")
             if isinstance(user.get("name"), dict)
             else user.get("name", "Unknown")
         )
         email = (
-            user.get("email", {}).get("_field_value")
+            user.get("email", {}).get("value")
             if isinstance(user.get("email"), dict)
             else user.get("email", "Unknown")
         )
@@ -308,7 +308,7 @@ async def main():
         depts = user.get("department", [])
         dept = depts[0] if depts else {}
         location = (
-            dept.get("location", {}).get("_field_value")
+            dept.get("location", {}).get("value")
             if isinstance(dept.get("location"), dict)
             else dept.get("location", "N/A")
         )

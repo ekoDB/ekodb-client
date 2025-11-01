@@ -36,7 +36,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     record.insert("name", "ekoDB");
     record.insert("description", "High-performance database product");
     record.insert("price", 99);
-    client.insert(collection, record).await?;
+    client.insert(collection, record, None).await?;
     println!("✓ Inserted sample product\n");
 
     // Create a chat session
@@ -97,7 +97,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .find(|msg| {
             // Role is wrapped in an Object with type/value structure
             if let Some(ekodb_client::FieldType::Object(role_obj)) = msg.get("role") {
-                if let Some(ekodb_client::FieldType::String(role)) = role_obj.get("_field_value") {
+                if let Some(ekodb_client::FieldType::String(role)) = role_obj.get("value") {
                     return role == "assistant";
                 }
             }
@@ -118,7 +118,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .iter()
         .find(|msg| {
             if let Some(ekodb_client::FieldType::Object(role_obj)) = msg.get("role") {
-                if let Some(ekodb_client::FieldType::String(role)) = role_obj.get("_field_value") {
+                if let Some(ekodb_client::FieldType::String(role)) = role_obj.get("value") {
                     return role == "user";
                 }
             }

@@ -74,8 +74,8 @@ async function main() {
   });
 
   const assistantMessage = messages.messages.find((msg: any) => {
-    // Role is wrapped in an Object with _field_type/_field_value structure
-    return msg.role?._field_value === "assistant" || msg.role === "assistant";
+    // Role is wrapped in an Object with type/value structure
+    return msg.role?.value === "assistant" || msg.role === "assistant";
   });
   if (!assistantMessage) {
     throw new Error("Could not find assistant message");
@@ -83,7 +83,7 @@ async function main() {
   const assistantMessageId = assistantMessage.id;
 
   const userMessage = messages.messages.find((msg: any) => {
-    return msg.role?._field_value === "user" || msg.role === "user";
+    return msg.role?.value === "user" || msg.role === "user";
   });
   if (!userMessage) {
     throw new Error("Could not find user message");

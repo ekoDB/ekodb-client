@@ -10,7 +10,7 @@ use crate::error::{Error, Result};
 use crate::retry::RetryPolicy;
 use crate::schema::{CollectionMetadata, Schema};
 use crate::search::{SearchQuery, SearchResponse};
-use crate::types::{Query, Record};
+use crate::types::{Query, Record, SerializationFormat};
 use reqwest::{Client as ReqwestClient, Response, StatusCode};
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
@@ -22,18 +22,21 @@ pub struct HttpClient {
     base_url: Url,
     retry_policy: RetryPolicy,
     should_retry: bool,
+    format: SerializationFormat,
 }
 
 impl HttpClient {
-    /// Create a new HTTP client
+    /// Create a new HTTP client with specific serialization format
     pub fn new(
         base_url: &str,
         timeout: Duration,
         max_retries: u32,
         should_retry: bool,
+        format: SerializationFormat,
     ) -> Result<Self> {
         let client = ReqwestClient::builder()
             .timeout(timeout)
+            .gzip(true) // Enable automatic gzip decompression
             .build()
             .map_err(|e| Error::Connection(e.to_string()))?;
 
@@ -45,7 +48,81 @@ impl HttpClient {
             base_url,
             retry_policy,
             should_retry,
+            format,
         })
+    }
+
+    /// Check if a path should use JSON instead of MessagePack
+    /// Only CRUD operations (insert/update/delete/batch) support MessagePack
+    /// Everything else (search, collections, kv, auth, chat) uses JSON
+    fn should_use_json(path: &str) -> bool {
+        // ONLY these operations support MessagePack
+        let msgpack_paths = [
+            "/api/insert/",
+            "/api/batch/insert/",
+            "/api/update/",
+            "/api/batch/update/",
+            "/api/delete/",
+            "/api/batch/delete/",
+        ];
+        
+        // Check if path starts with any MessagePack-supported operation
+        for prefix in &msgpack_paths {
+            if path.starts_with(prefix) {
+                return false; // Use MessagePack
+            }
+        }
+        
+        // Everything else uses JSON
+        true
+    }
+
+    /// Serialize data based on the client's format and path
+    /// Only CRUD operations use MessagePack, everything else uses JSON
+    fn serialize<T: Serialize>(&self, path: &str, data: &T) -> Result<Vec<u8>> {
+        let use_json = Self::should_use_json(path) || self.format == SerializationFormat::Json;
+        
+        if use_json {
+            serde_json::to_vec(data).map_err(Error::Serialization)
+        } else {
+            rmp_serde::to_vec(data)
+                .map_err(|e| Error::Validation(format!("MessagePack serialization error: {}", e)))
+        }
+    }
+
+    /// Deserialize data based on the client's format and path
+    /// Only CRUD operations use MessagePack, everything else uses JSON
+    fn deserialize<'a, T: Deserialize<'a>>(&self, path: &str, data: &'a [u8]) -> Result<T> {
+        let use_json = Self::should_use_json(path) || self.format == SerializationFormat::Json;
+        
+        if use_json {
+            serde_json::from_slice(data).map_err(Error::Serialization)
+        } else {
+            rmp_serde::from_slice(data).map_err(|e| {
+                Error::Validation(format!("MessagePack deserialization error: {}", e))
+            })
+        }
+    }
+
+    /// Get content-type header for the current format and path
+    fn content_type(&self, path: &str) -> &'static str {
+        let use_json = Self::should_use_json(path) || self.format == SerializationFormat::Json;
+        
+        if use_json {
+            "application/json"
+        } else {
+            "application/msgpack"
+        }
+    }
+
+    /// Add format headers (Content-Type and Accept) to a request builder
+    /// Note: reqwest automatically handles gzip compression with the gzip feature enabled
+    fn add_format_headers(&self, path: &str, builder: reqwest::RequestBuilder) -> reqwest::RequestBuilder {
+        let content_type = self.content_type(path);
+        builder
+            .header("Content-Type", content_type)
+            .header("Accept", content_type)
+            // Accept-Encoding is automatically handled by reqwest when gzip feature is enabled
     }
 
     /// Execute a request with optional retry logic
@@ -62,58 +139,100 @@ impl HttpClient {
     }
 
     /// Insert a record
-    pub async fn insert(&self, collection: &str, record: Record, token: &str) -> Result<Record> {
-        let url = self.base_url.join(&format!("/api/insert/{}", collection))?;
+    pub async fn insert(
+        &self,
+        collection: &str,
+        record: Record,
+        bypass_ripple: Option<bool>,
+        token: &str,
+    ) -> Result<Record> {
+        let url_path = if let Some(bypass) = bypass_ripple {
+            format!("/api/insert/{}?bypass_ripple={}", collection, bypass)
+        } else {
+            format!("/api/insert/{}", collection)
+        };
+        let url = self.base_url.join(&url_path)?;
+        let body = self.serialize(&url_path, &record)?;
 
         self.execute_with_retry(|| async {
             let response = self
-                .client
-                .post(url.clone())
-                .header("Authorization", format!("Bearer {}", token))
-                .json(&record)
+                .add_format_headers(
+                    &url_path,
+                    self.client
+                        .post(url.clone())
+                        .header("Authorization", format!("Bearer {}", token)),
+                )
+                .body(body.clone())
                 .send()
                 .await?;
 
-            self.handle_response(response).await
+            self.handle_response(&url_path, response).await
         })
         .await
     }
 
     /// Find records
-    pub async fn find(&self, collection: &str, query: Query, token: &str) -> Result<Vec<Record>> {
-        let url = self.base_url.join(&format!("/api/find/{}", collection))?;
+    pub async fn find(
+        &self,
+        collection: &str,
+        query: Query,
+        token: &str,
+        bypass_ripple: Option<bool>,
+    ) -> Result<Vec<Record>> {
+        let url_path = if let Some(bypass) = bypass_ripple {
+            format!("/api/find/{}?bypass_ripple={}", collection, bypass)
+        } else {
+            format!("/api/find/{}", collection)
+        };
+        let url = self.base_url.join(&url_path)?;
+        let body = self.serialize(&url_path, &query)?;
 
         self.retry_policy
             .execute(|| async {
                 let response = self
-                    .client
-                    .post(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .json(&query)
+                    .add_format_headers(
+                        &url_path,
+                        self.client
+                            .post(url.clone())
+                            .header("Authorization", format!("Bearer {}", token)),
+                    )
+                    .body(body.clone())
                     .send()
                     .await?;
 
-                self.handle_response(response).await
+                self.handle_response(&url_path, response).await
             })
             .await
     }
 
     /// Find a record by ID
-    pub async fn find_by_id(&self, collection: &str, id: &str, token: &str) -> Result<Record> {
-        let url = self
-            .base_url
-            .join(&format!("/api/find/{}/{}", collection, id))?;
+    pub async fn find_by_id(
+        &self,
+        collection: &str,
+        id: &str,
+        token: &str,
+        bypass_ripple: Option<bool>,
+    ) -> Result<Record> {
+        let url_path = if let Some(bypass) = bypass_ripple {
+            format!("/api/find/{}/{}?bypass_ripple={}", collection, id, bypass)
+        } else {
+            format!("/api/find/{}/{}", collection, id)
+        };
+        let url = self.base_url.join(&url_path)?;
 
         self.retry_policy
             .execute(|| async {
                 let response = self
-                    .client
-                    .get(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
+                    .add_format_headers(
+                        &url_path,
+                        self.client
+                            .get(url.clone())
+                            .header("Authorization", format!("Bearer {}", token)),
+                    )
                     .send()
                     .await?;
 
-                self.handle_response(response).await
+                self.handle_response(&url_path, response).await
             })
             .await
     }
@@ -124,44 +243,64 @@ impl HttpClient {
         collection: &str,
         id: &str,
         record: Record,
+        bypass_ripple: Option<bool>,
         token: &str,
     ) -> Result<Record> {
-        let url = self
-            .base_url
-            .join(&format!("/api/update/{}/{}", collection, id))?;
+        let url_path = if let Some(bypass) = bypass_ripple {
+            format!("/api/update/{}/{}?bypass_ripple={}", collection, id, bypass)
+        } else {
+            format!("/api/update/{}/{}", collection, id)
+        };
+        let url = self.base_url.join(&url_path)?;
+        let body = self.serialize(&url_path, &record)?;
 
         self.retry_policy
             .execute(|| async {
                 let response = self
-                    .client
-                    .put(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .json(&record)
+                    .add_format_headers(
+                        &url_path,
+                        self.client
+                            .put(url.clone())
+                            .header("Authorization", format!("Bearer {}", token)),
+                    )
+                    .body(body.clone())
                     .send()
                     .await?;
 
-                self.handle_response(response).await
+                self.handle_response(&url_path, response).await
             })
             .await
     }
 
     /// Delete a record
-    pub async fn delete(&self, collection: &str, id: &str, token: &str) -> Result<()> {
-        let url = self
-            .base_url
-            .join(&format!("/api/delete/{}/{}", collection, id))?;
+    pub async fn delete(
+        &self,
+        collection: &str,
+        id: &str,
+        token: &str,
+        bypass_ripple: Option<bool>,
+    ) -> Result<()> {
+        let url_path = if let Some(bypass) = bypass_ripple {
+            format!("/api/delete/{}/{}?bypass_ripple={}", collection, id, bypass)
+        } else {
+            format!("/api/delete/{}/{}", collection, id)
+        };
+        let url = self.base_url.join(&url_path)?;
 
         self.retry_policy
             .execute(|| async {
                 let response = self
-                    .client
-                    .delete(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
+                    .add_format_headers(
+                        &url_path,
+                        self.client
+                            .delete(url.clone())
+                            .header("Authorization", format!("Bearer {}", token)),
+                    )
                     .send()
                     .await?;
 
                 // Server returns the deleted record, but we discard it
-                let _deleted: Record = self.handle_response(response).await?;
+                let _deleted: Record = self.handle_response(&url_path, response).await?;
                 Ok(())
             })
             .await
@@ -173,15 +312,16 @@ impl HttpClient {
         collection: &str,
         records: Vec<Record>,
         token: &str,
+        bypass_ripple: Option<bool>,
     ) -> Result<Vec<Record>> {
-        let url = self
-            .base_url
-            .join(&format!("/api/batch/insert/{}", collection))?;
+        let url_path = format!("/api/batch/insert/{}", collection);
+        let url = self.base_url.join(&url_path)?;
 
         // Convert to the format the server expects
         #[derive(Serialize)]
         struct BatchInsertItem {
             data: Record,
+            bypass_ripple: Option<bool>,
         }
 
         #[derive(Serialize)]
@@ -192,7 +332,10 @@ impl HttpClient {
         let batch_data = BatchInsertQuery {
             inserts: records
                 .into_iter()
-                .map(|r| BatchInsertItem { data: r })
+                .map(|r| BatchInsertItem {
+                    data: r,
+                    bypass_ripple,
+                })
                 .collect(),
         };
 
@@ -203,18 +346,23 @@ impl HttpClient {
             failed: Vec<serde_json::Value>,
         }
 
+        let body = self.serialize(&url_path, &batch_data)?;
+
         let result: BatchOperationResult = self
             .retry_policy
             .execute(|| async {
                 let response = self
-                    .client
-                    .post(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .json(&batch_data)
+                    .add_format_headers(
+                        &url_path,
+                        self.client
+                            .post(url.clone())
+                            .header("Authorization", format!("Bearer {}", token)),
+                    )
+                    .body(body.clone())
                     .send()
                     .await?;
 
-                self.handle_response(response).await
+                self.handle_response(&url_path, response).await
             })
             .await?;
 
@@ -236,10 +384,10 @@ impl HttpClient {
         collection: &str,
         updates: Vec<(String, Record)>, // Vec of (id, record) pairs
         token: &str,
+        bypass_ripple: Option<bool>,
     ) -> Result<Vec<Record>> {
-        let url = self
-            .base_url
-            .join(&format!("/api/batch/update/{}", collection))?;
+        let url_path = format!("/api/batch/update/{}", collection);
+        let url = self.base_url.join(&url_path)?;
 
         // Convert to the format the server expects
         #[derive(Serialize)]
@@ -247,6 +395,7 @@ impl HttpClient {
             #[serde(rename = "id")]
             id: String,
             data: Record,
+            bypass_ripple: Option<bool>,
         }
 
         #[derive(Serialize)]
@@ -257,7 +406,11 @@ impl HttpClient {
         let batch_data = BatchUpdateQuery {
             updates: updates
                 .into_iter()
-                .map(|(id, data)| BatchUpdateItem { id, data })
+                .map(|(id, data)| BatchUpdateItem {
+                    id,
+                    data,
+                    bypass_ripple,
+                })
                 .collect(),
         };
 
@@ -268,18 +421,23 @@ impl HttpClient {
             failed: Vec<serde_json::Value>,
         }
 
+        let body = self.serialize(&url_path, &batch_data)?;
+
         let result: BatchOperationResult = self
             .retry_policy
             .execute(|| async {
                 let response = self
-                    .client
-                    .put(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .json(&batch_data)
+                    .add_format_headers(
+                        &url_path,
+                        self.client
+                            .put(url.clone())
+                            .header("Authorization", format!("Bearer {}", token)),
+                    )
+                    .body(body.clone())
                     .send()
                     .await?;
 
-                self.handle_response(response).await
+                self.handle_response(&url_path, response).await
             })
             .await?;
 
@@ -301,16 +459,17 @@ impl HttpClient {
         collection: &str,
         ids: Vec<String>,
         token: &str,
+        bypass_ripple: Option<bool>,
     ) -> Result<u64> {
-        let url = self
-            .base_url
-            .join(&format!("/api/batch/delete/{}", collection))?;
+        let url_path = format!("/api/batch/delete/{}", collection);
+        let url = self.base_url.join(&url_path)?;
 
         // Convert to the format the server expects
         #[derive(Serialize)]
         struct BatchDeleteItem {
             #[serde(rename = "id")]
             id: String,
+            bypass_ripple: Option<bool>,
         }
 
         #[derive(Serialize)]
@@ -319,7 +478,10 @@ impl HttpClient {
         }
 
         let batch_data = BatchDeleteQuery {
-            deletes: ids.into_iter().map(|id| BatchDeleteItem { id }).collect(),
+            deletes: ids
+                .into_iter()
+                .map(|id| BatchDeleteItem { id, bypass_ripple })
+                .collect(),
         };
 
         #[derive(Deserialize)]
@@ -329,18 +491,23 @@ impl HttpClient {
             failed: Vec<serde_json::Value>,
         }
 
+        let body = self.serialize(&url_path, &batch_data)?;
+
         let result: BatchOperationResult = self
             .retry_policy
             .execute(|| async {
                 let response = self
-                    .client
-                    .delete(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .json(&batch_data)
+                    .add_format_headers(
+                        &url_path,
+                        self.client
+                            .delete(url.clone())
+                            .header("Authorization", format!("Bearer {}", token)),
+                    )
+                    .body(body.clone())
                     .send()
                     .await?;
 
-                self.handle_response(response).await
+                self.handle_response(&url_path, response).await
             })
             .await?;
 
@@ -363,10 +530,13 @@ impl HttpClient {
                     .client
                     .get(url.clone())
                     .header("Authorization", format!("Bearer {}", token))
+                    .header("Accept", "application/json") // Force JSON for metadata operations
                     .send()
                     .await?;
 
-                self.handle_response(response).await
+                // Force JSON deserialization for metadata operations
+                let bytes = response.bytes().await.map_err(Error::Http)?;
+                serde_json::from_slice(&bytes).map_err(Error::Serialization)
             })
             .await?;
 
@@ -385,11 +555,14 @@ impl HttpClient {
                     .client
                     .delete(url.clone())
                     .header("Authorization", format!("Bearer {}", token))
+                    .header("Accept", "application/json")
                     .send()
                     .await?;
 
-                // Server might return empty or success message
-                let _: serde_json::Value = self.handle_response(response).await?;
+                // Force JSON for metadata operations
+                let bytes = response.bytes().await.map_err(Error::Http)?;
+                let _: serde_json::Value =
+                    serde_json::from_slice(&bytes).map_err(Error::Serialization)?;
                 Ok(())
             })
             .await
@@ -410,13 +583,17 @@ impl HttpClient {
                     .client
                     .post(url.clone())
                     .header("Authorization", format!("Bearer {}", token))
+                    .header("Accept", "application/json") // KV uses JSON values
                     .json(&KvSetRequest {
                         value: value.clone(),
                     })
                     .send()
                     .await?;
 
-                let _: serde_json::Value = self.handle_response(response).await?;
+                // Force JSON for KV operations (stores serde_json::Value)
+                let bytes = response.bytes().await.map_err(Error::Http)?;
+                let _: serde_json::Value =
+                    serde_json::from_slice(&bytes).map_err(Error::Serialization)?;
                 Ok(())
             })
             .await
@@ -438,10 +615,13 @@ impl HttpClient {
                     .client
                     .get(url.clone())
                     .header("Authorization", format!("Bearer {}", token))
+                    .header("Accept", "application/json") // KV uses JSON values
                     .send()
                     .await?;
 
-                self.handle_response::<KvGetResponse>(response).await
+                // Force JSON for KV operations (stores serde_json::Value)
+                let bytes = response.bytes().await.map_err(Error::Http)?;
+                serde_json::from_slice::<KvGetResponse>(&bytes).map_err(Error::Serialization)
             })
             .await
         {
@@ -461,10 +641,14 @@ impl HttpClient {
                     .client
                     .delete(url.clone())
                     .header("Authorization", format!("Bearer {}", token))
+                    .header("Accept", "application/json") // KV uses JSON values
                     .send()
                     .await?;
 
-                let _: serde_json::Value = self.handle_response(response).await?;
+                // Force JSON for KV operations
+                let bytes = response.bytes().await.map_err(Error::Http)?;
+                let _: serde_json::Value =
+                    serde_json::from_slice(&bytes).map_err(Error::Serialization)?;
                 Ok(())
             })
             .await
@@ -479,17 +663,21 @@ impl HttpClient {
     ) -> Result<SearchResponse> {
         let url = self.base_url.join(&format!("/api/search/{}", collection))?;
 
+        // Temporarily use JSON for search until MessagePack issue is resolved
         self.retry_policy
             .execute(|| async {
                 let response = self
                     .client
                     .post(url.clone())
                     .header("Authorization", format!("Bearer {}", token))
+                    .header("Accept", "application/json")
                     .json(&search_query)
                     .send()
                     .await?;
 
-                self.handle_response(response).await
+                // Force JSON for search operations
+                let bytes = response.bytes().await.map_err(Error::Http)?;
+                serde_json::from_slice(&bytes).map_err(Error::Serialization)
             })
             .await
     }
@@ -511,11 +699,15 @@ impl HttpClient {
                     .client
                     .post(url.clone())
                     .header("Authorization", format!("Bearer {}", token))
+                    .header("Accept", "application/json")
                     .json(&schema)
                     .send()
                     .await?;
 
-                let _: serde_json::Value = self.handle_response(response).await?;
+                // Force JSON for metadata operations
+                let bytes = response.bytes().await.map_err(Error::Http)?;
+                let _: serde_json::Value =
+                    serde_json::from_slice(&bytes).map_err(Error::Serialization)?;
                 Ok(())
             })
             .await
@@ -537,10 +729,13 @@ impl HttpClient {
                     .client
                     .get(url.clone())
                     .header("Authorization", format!("Bearer {}", token))
+                    .header("Accept", "application/json")
                     .send()
                     .await?;
 
-                self.handle_response(response).await
+                // Force JSON for metadata operations
+                let bytes = response.bytes().await.map_err(Error::Http)?;
+                serde_json::from_slice(&bytes).map_err(Error::Serialization)
             })
             .await
     }
@@ -557,10 +752,13 @@ impl HttpClient {
                     .client
                     .get(url.clone())
                     .header("Authorization", format!("Bearer {}", token))
+                    .header("Accept", "application/json")
                     .send()
                     .await?;
 
-                self.handle_response(response).await
+                // Force JSON for metadata operations
+                let bytes = response.bytes().await.map_err(Error::Http)?;
+                serde_json::from_slice(&bytes).map_err(Error::Serialization)
             })
             .await
     }
@@ -592,7 +790,7 @@ impl HttpClient {
     }
 
     /// Handle HTTP response and convert to Result
-    async fn handle_response<T: for<'de> Deserialize<'de>>(&self, response: Response) -> Result<T> {
+    async fn handle_response<T: for<'de> Deserialize<'de>>(&self, path: &str, response: Response) -> Result<T> {
         let status = response.status();
 
         match status {
@@ -615,13 +813,41 @@ impl HttpClient {
                     }
                 }
 
-                // Get the response text first for better error messages
-                let text = response.text().await?;
-                serde_json::from_str(&text).map_err(|e| {
+                // Check if response is gzip compressed by looking at Content-Encoding header
+                let is_gzipped = response
+                    .headers()
+                    .get("content-encoding")
+                    .and_then(|v| v.to_str().ok())
+                    .map(|s| s.contains("gzip"))
+                    .unwrap_or(false);
+                
+                let bytes = if is_gzipped {
+                    // Use async decompression for gzipped responses
+                    use async_compression::tokio::bufread::GzipDecoder;
+                    use tokio_util::io::StreamReader;
+                    use tokio::io::AsyncReadExt;
+                    use futures_util::StreamExt;
+                    
+                    let byte_stream = response.bytes_stream();
+                    let stream_reader = StreamReader::new(byte_stream.map(|result| {
+                        result.map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))
+                    }));
+                    let mut decompressed_reader = GzipDecoder::new(stream_reader);
+                    
+                    let mut decompressed = Vec::new();
+                    decompressed_reader.read_to_end(&mut decompressed).await
+                        .map_err(|e| Error::Validation(format!("Gzip decompression failed: {}", e)))?;
+                    decompressed.into()
+                } else {
+                    // No compression - read bytes directly
+                    response.bytes().await?
+                };
+                
+                self.deserialize(path, &bytes).map_err(|e| {
                     Error::Validation(format!(
-                        "Failed to parse response as JSON: {}. Response was: {}",
+                        "Failed to parse response: {}. First 200 bytes: {:?}",
                         e,
-                        text.chars().take(200).collect::<String>()
+                        bytes.iter().take(200).collect::<Vec<_>>()
                     ))
                 })
             }
@@ -675,16 +901,19 @@ impl HttpClient {
     pub async fn get_chat_models(&self, token: &str) -> Result<Models> {
         let url = self.base_url.join("/api/chat_models")?;
 
+        // Force JSON for chat operations
         self.retry_policy
             .execute(|| async {
                 let response = self
                     .client
                     .get(url.clone())
                     .header("Authorization", format!("Bearer {}", token))
+                    .header("Accept", "application/json")
                     .send()
                     .await?;
 
-                self.handle_response(response).await
+                let bytes = response.bytes().await.map_err(Error::Http)?;
+                serde_json::from_slice(&bytes).map_err(Error::Serialization)
             })
             .await
     }
@@ -695,16 +924,19 @@ impl HttpClient {
             .base_url
             .join(&format!("/api/chat_models/{}", model_name))?;
 
+        // Force JSON for chat operations
         self.retry_policy
             .execute(|| async {
                 let response = self
                     .client
                     .get(url.clone())
                     .header("Authorization", format!("Bearer {}", token))
+                    .header("Accept", "application/json")
                     .send()
                     .await?;
 
-                self.handle_response(response).await
+                let bytes = response.bytes().await.map_err(Error::Http)?;
+                serde_json::from_slice(&bytes).map_err(Error::Serialization)
             })
             .await
     }
@@ -717,17 +949,20 @@ impl HttpClient {
     ) -> Result<ChatResponse> {
         let url = self.base_url.join("/api/chat")?;
 
+        // Force JSON for chat operations
         self.retry_policy
             .execute(|| async {
                 let response = self
                     .client
                     .post(url.clone())
                     .header("Authorization", format!("Bearer {}", token))
+                    .header("Accept", "application/json")
                     .json(&request)
                     .send()
                     .await?;
 
-                self.handle_response(response).await
+                let bytes = response.bytes().await.map_err(Error::Http)?;
+                serde_json::from_slice(&bytes).map_err(Error::Serialization)
             })
             .await
     }
@@ -740,16 +975,19 @@ impl HttpClient {
     ) -> Result<ChatSessionResponse> {
         let url = self.base_url.join(&format!("/api/chat/{}", chat_id))?;
 
+        // Force JSON for chat operations
         self.retry_policy
             .execute(|| async {
                 let response = self
                     .client
                     .get(url.clone())
                     .header("Authorization", format!("Bearer {}", token))
+                    .header("Accept", "application/json")
                     .send()
                     .await?;
 
-                self.handle_response(response).await
+                let bytes = response.bytes().await.map_err(Error::Http)?;
+                serde_json::from_slice(&bytes).map_err(Error::Serialization)
             })
             .await
     }
@@ -776,16 +1014,19 @@ impl HttpClient {
             }
         }
 
+        // Force JSON for chat operations
         self.retry_policy
             .execute(|| async {
                 let response = self
                     .client
                     .get(url.clone())
                     .header("Authorization", format!("Bearer {}", token))
+                    .header("Accept", "application/json")
                     .send()
                     .await?;
 
-                self.handle_response(response).await
+                let bytes = response.bytes().await.map_err(Error::Http)?;
+                serde_json::from_slice(&bytes).map_err(Error::Serialization)
             })
             .await
     }
@@ -799,17 +1040,20 @@ impl HttpClient {
     ) -> Result<ChatSessionResponse> {
         let url = self.base_url.join(&format!("/api/chat/{}", chat_id))?;
 
+        // Force JSON for chat operations
         self.retry_policy
             .execute(|| async {
                 let response = self
                     .client
                     .put(url.clone())
                     .header("Authorization", format!("Bearer {}", token))
+                    .header("Accept", "application/json")
                     .json(&request)
                     .send()
                     .await?;
 
-                self.handle_response(response).await
+                let bytes = response.bytes().await.map_err(Error::Http)?;
+                serde_json::from_slice(&bytes).map_err(Error::Serialization)
             })
             .await
     }
@@ -845,17 +1089,20 @@ impl HttpClient {
     ) -> Result<ChatResponse> {
         let url = self.base_url.join("/api/chat/branch")?;
 
+        // Force JSON for chat operations
         self.retry_policy
             .execute(|| async {
                 let response = self
                     .client
                     .post(url.clone())
                     .header("Authorization", format!("Bearer {}", token))
+                    .header("Accept", "application/json")
                     .json(&request)
                     .send()
                     .await?;
 
-                self.handle_response(response).await
+                let bytes = response.bytes().await.map_err(Error::Http)?;
+                serde_json::from_slice(&bytes).map_err(Error::Serialization)
             })
             .await
     }
@@ -868,17 +1115,20 @@ impl HttpClient {
     ) -> Result<ChatSessionResponse> {
         let url = self.base_url.join("/api/chat/merge")?;
 
+        // Force JSON for chat operations
         self.retry_policy
             .execute(|| async {
                 let response = self
                     .client
                     .post(url.clone())
                     .header("Authorization", format!("Bearer {}", token))
+                    .header("Accept", "application/json")
                     .json(&request)
                     .send()
                     .await?;
 
-                self.handle_response(response).await
+                let bytes = response.bytes().await.map_err(Error::Http)?;
+                serde_json::from_slice(&bytes).map_err(Error::Serialization)
             })
             .await
     }
@@ -894,17 +1144,20 @@ impl HttpClient {
             .base_url
             .join(&format!("/api/chat/{}/messages", chat_id))?;
 
+        // Force JSON for chat operations
         self.retry_policy
             .execute(|| async {
                 let response = self
                     .client
                     .post(url.clone())
                     .header("Authorization", format!("Bearer {}", token))
+                    .header("Accept", "application/json")
                     .json(&request)
                     .send()
                     .await?;
 
-                self.handle_response(response).await
+                let bytes = response.bytes().await.map_err(Error::Http)?;
+                serde_json::from_slice(&bytes).map_err(Error::Serialization)
             })
             .await
     }
@@ -934,16 +1187,19 @@ impl HttpClient {
             }
         }
 
+        // Force JSON for chat operations
         self.retry_policy
             .execute(|| async {
                 let response = self
                     .client
                     .get(url.clone())
                     .header("Authorization", format!("Bearer {}", token))
+                    .header("Accept", "application/json")
                     .send()
                     .await?;
 
-                self.handle_response(response).await
+                let bytes = response.bytes().await.map_err(Error::Http)?;
+                serde_json::from_slice(&bytes).map_err(Error::Serialization)
             })
             .await
     }
@@ -959,16 +1215,19 @@ impl HttpClient {
             .base_url
             .join(&format!("/api/chat/{}/messages/{}", chat_id, message_id))?;
 
+        // Force JSON for chat operations
         self.retry_policy
             .execute(|| async {
                 let response = self
                     .client
                     .get(url.clone())
                     .header("Authorization", format!("Bearer {}", token))
+                    .header("Accept", "application/json")
                     .send()
                     .await?;
 
-                self.handle_response(response).await
+                let bytes = response.bytes().await.map_err(Error::Http)?;
+                serde_json::from_slice(&bytes).map_err(Error::Serialization)
             })
             .await
     }
@@ -985,17 +1244,20 @@ impl HttpClient {
             .base_url
             .join(&format!("/api/chat/{}/messages/{}", chat_id, message_id))?;
 
+        // Force JSON for chat operations
         self.retry_policy
             .execute(|| async {
                 let response = self
                     .client
                     .put(url.clone())
                     .header("Authorization", format!("Bearer {}", token))
+                    .header("Accept", "application/json")
                     .json(&request)
                     .send()
                     .await?;
 
-                self.handle_response(response).await
+                let bytes = response.bytes().await.map_err(Error::Http)?;
+                serde_json::from_slice(&bytes).map_err(Error::Serialization)
             })
             .await
     }
@@ -1043,17 +1305,20 @@ impl HttpClient {
             chat_id, message_id
         ))?;
 
+        // Force JSON for chat operations
         self.retry_policy
             .execute(|| async {
                 let response = self
                     .client
                     .patch(url.clone())
                     .header("Authorization", format!("Bearer {}", token))
+                    .header("Accept", "application/json")
                     .json(&request)
                     .send()
                     .await?;
 
-                self.handle_response(response).await
+                let bytes = response.bytes().await.map_err(Error::Http)?;
+                serde_json::from_slice(&bytes).map_err(Error::Serialization)
             })
             .await
     }
@@ -1070,16 +1335,19 @@ impl HttpClient {
             chat_id, message_id
         ))?;
 
+        // Force JSON for chat operations
         self.retry_policy
             .execute(|| async {
                 let response = self
                     .client
                     .post(url.clone())
                     .header("Authorization", format!("Bearer {}", token))
+                    .header("Accept", "application/json")
                     .send()
                     .await?;
 
-                self.handle_response(response).await
+                let bytes = response.bytes().await.map_err(Error::Http)?;
+                serde_json::from_slice(&bytes).map_err(Error::Serialization)
             })
             .await
     }

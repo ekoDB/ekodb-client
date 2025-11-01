@@ -14,10 +14,26 @@ import io.ktor.client.plugins.websocket.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
+import io.ktor.http.content.*
 import io.ktor.serialization.kotlinx.json.*
+import io.ktor.util.*
 import kotlinx.coroutines.delay
 import kotlinx.serialization.json.*
+import kotlinx.serialization.cbor.Cbor
+import kotlinx.serialization.encodeToByteArray
+import kotlinx.serialization.decodeFromByteArray
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlin.time.Duration.Companion.seconds
+
+/**
+ * Serialization format for client-server communication
+ */
+enum class SerializationFormat {
+    /** JSON format (default, human-readable, fully supported) */
+    JSON,
+    /** MessagePack format (binary, experimental) - uses CBOR encoding. Has compatibility issues with custom types. */
+    MESSAGEPACK
+}
 
 /**
  * ekoDB Client for Kotlin
@@ -25,12 +41,19 @@ import kotlin.time.Duration.Companion.seconds
  * Official Kotlin client library for ekoDB - A high-performance database with
  * intelligent caching, real-time capabilities, and automatic optimization.
  */
+@OptIn(ExperimentalSerializationApi::class)
 class EkoDBClient private constructor(
     private val baseUrl: String,
     private val apiKey: String,
     private val timeout: Long = 30,
-    private val maxRetries: Int = 3
+    private val maxRetries: Int = 3,
+    private val format: SerializationFormat = SerializationFormat.JSON // Default to JSON (CBOR has serialization compatibility issues)
 ) {
+    // CBOR serializer for MessagePack format
+    private val cbor = Cbor {
+        ignoreUnknownKeys = true
+    }
+    
     private val httpClient = HttpClient(CIO) {
         install(ContentNegotiation) {
             json(Json {
@@ -72,7 +95,8 @@ class EkoDBClient private constructor(
         
         // Exchange API key for JWT token
         val response = httpClient.post("$baseUrl/api/auth/token") {
-            contentType(ContentType.Application.Json)
+            contentType(getContentTypeForRequest())
+            header("Accept", getContentTypeForRequest().toString())
             setBody(buildJsonObject {
                 put("api_key", apiKey)
             })
@@ -107,6 +131,96 @@ class EkoDBClient private constructor(
     }
     
     /**
+     * Determine if a path should always use JSON (metadata endpoints)
+     * CRUD operations support MessagePack/CBOR, but metadata/KV/auth/chat endpoints are JSON-only
+     */
+    private fun shouldUseJSON(path: String): Boolean {
+        val jsonOnlyPaths = listOf(
+            "/api/collections",
+            "/api/kv",
+            "/api/auth",
+            "/api/health",
+            "/api/config",
+            "/api/schema",
+            "/api/analytics",
+            "/api/ripples",
+            "/api/chat"
+        )
+        
+        return jsonOnlyPaths.any { prefix ->
+            path == prefix || path.startsWith("$prefix/")
+        }
+    }
+    
+    /**
+     * Get the ContentType based on the serialization format and request URL
+     */
+    private fun HttpRequestBuilder.getContentTypeForRequest(): ContentType {
+        val path = url.encodedPath
+        return if (shouldUseJSON(path)) {
+            ContentType.Application.Json
+        } else {
+            when (this@EkoDBClient.format) {
+                SerializationFormat.JSON -> ContentType.Application.Json
+                SerializationFormat.MESSAGEPACK -> ContentType("application", "msgpack")
+            }
+        }
+    }
+    
+    /**
+     * Set request body with proper serialization based on format and request URL
+     */
+    private fun HttpRequestBuilder.setBodyWithFormat(data: Any) {
+        // Get path from the request URL
+        val path = url.encodedPath
+        val forceJSON = shouldUseJSON(path)
+        
+        when {
+            forceJSON || this@EkoDBClient.format == SerializationFormat.JSON -> {
+                // Use JSON serialization
+                when (data) {
+                    is JsonElement -> {
+                        val jsonString = Json.encodeToString(JsonElement.serializer(), data)
+                        setBody(TextContent(jsonString, ContentType.Application.Json))
+                    }
+                    else -> setBody(data)  // Let ContentNegotiation handle @Serializable types
+                }
+            }
+            this@EkoDBClient.format == SerializationFormat.MESSAGEPACK -> {
+                // Manually serialize to CBOR bytes for CRUD operations only
+                val cborBytes = when (data) {
+                    is JsonElement -> {
+                        // Convert JsonElement to JSON string first, then to CBOR-compatible structure
+                        val jsonString = Json.encodeToString(JsonElement.serializer(), data)
+                        this@EkoDBClient.cbor.encodeToByteArray(JsonObject.serializer(), Json.decodeFromString(jsonString))
+                    }
+                    else -> {
+                        // Encode @Serializable types directly to CBOR
+                        @Suppress("UNCHECKED_CAST")
+                        val serializer = kotlinx.serialization.serializer(data::class.java as Class<Any>)
+                        this@EkoDBClient.cbor.encodeToByteArray(serializer, data)
+                    }
+                }
+                setBody(ByteArrayContent(cborBytes, ContentType("application", "msgpack")))
+            }
+        }
+    }
+    
+    /**
+     * Parse response body based on format
+     */
+    private suspend inline fun <reified T> HttpResponse.bodyWithFormat(): T {
+        return when (this@EkoDBClient.format) {
+            SerializationFormat.JSON -> body()
+            SerializationFormat.MESSAGEPACK -> {
+                val bytes = body<ByteArray>()
+                val jsonElement = this@EkoDBClient.cbor.decodeFromByteArray(JsonElement.serializer(), bytes)
+                Json.decodeFromJsonElement(jsonElement)
+            }
+        }
+    }
+    
+    /**
      * Insert a record into a collection
      */
     suspend fun insert(collection: String, record: Record): Record {
@@ -114,8 +228,9 @@ class EkoDBClient private constructor(
         val response = executeWithRetry {
             httpClient.post("$baseUrl/api/insert/$collection") {
                 header("Authorization", "Bearer $token")
-                contentType(ContentType.Application.Json)
-                setBody(record)
+                contentType(getContentTypeForRequest())
+                header("Accept", getContentTypeForRequest().toString())
+                setBodyWithFormat(record)
             }
         }
         
@@ -124,7 +239,7 @@ class EkoDBClient private constructor(
             throw Exception("Insert failed with status ${response.status}: $errorBody")
         }
         
-        return response.body()
+        return response.bodyWithFormat()
     }
     
     /**
@@ -161,7 +276,8 @@ class EkoDBClient private constructor(
         val response = executeWithRetry {
             httpClient.post("$baseUrl/api/find/$collection") {
                 header("Authorization", "Bearer $token")
-                contentType(ContentType.Application.Json)
+                contentType(getContentTypeForRequest())
+                header("Accept", getContentTypeForRequest().toString())
                 setBody(query)
             }
         }
@@ -183,7 +299,8 @@ class EkoDBClient private constructor(
         val response = executeWithRetry {
             httpClient.put("$baseUrl/api/update/$collection/$id") {
                 header("Authorization", "Bearer $token")
-                contentType(ContentType.Application.Json)
+                contentType(getContentTypeForRequest())
+                header("Accept", getContentTypeForRequest().toString())
                 setBody(updates)
             }
         }
@@ -215,7 +332,8 @@ class EkoDBClient private constructor(
         val response = executeWithRetry {
             httpClient.post("$baseUrl/api/batch/insert/$collection") {
                 header("Authorization", "Bearer $token")
-                contentType(ContentType.Application.Json)
+                contentType(getContentTypeForRequest())
+                header("Accept", getContentTypeForRequest().toString())
                 setBody(buildJsonObject {
                     put("inserts", JsonArray(records.map { record ->
                         buildJsonObject {
@@ -249,7 +367,8 @@ class EkoDBClient private constructor(
         val response = executeWithRetry {
             httpClient.put("$baseUrl/api/batch/update/$collection") {
                 header("Authorization", "Bearer $token")
-                contentType(ContentType.Application.Json)
+                contentType(getContentTypeForRequest())
+                header("Accept", getContentTypeForRequest().toString())
                 setBody(buildJsonObject {
                     put("updates", JsonArray(updates.map { (id, data) ->
                         buildJsonObject {
@@ -277,7 +396,8 @@ class EkoDBClient private constructor(
         val response = executeWithRetry {
             httpClient.delete("$baseUrl/api/batch/delete/$collection") {
                 header("Authorization", "Bearer $token")
-                contentType(ContentType.Application.Json)
+                contentType(getContentTypeForRequest())
+                header("Accept", getContentTypeForRequest().toString())
                 setBody(buildJsonObject {
                     put("deletes", JsonArray(ids.map { id ->
                         buildJsonObject {
@@ -343,7 +463,8 @@ class EkoDBClient private constructor(
         executeWithRetry {
             httpClient.post("$baseUrl/api/collections/$collection") {
                 header("Authorization", "Bearer $token")
-                contentType(ContentType.Application.Json)
+                contentType(getContentTypeForRequest())
+                header("Accept", getContentTypeForRequest().toString())
                 setBody(schema)
             }
         }
@@ -395,7 +516,8 @@ class EkoDBClient private constructor(
         val response = executeWithRetry {
             httpClient.post("$baseUrl/api/search/$collection") {
                 header("Authorization", "Bearer $token")
-                contentType(ContentType.Application.Json)
+                contentType(getContentTypeForRequest())
+                header("Accept", getContentTypeForRequest().toString())
                 setBody(searchQuery)
             }
         }
@@ -410,7 +532,8 @@ class EkoDBClient private constructor(
         executeWithRetry {
             httpClient.post("$baseUrl/api/kv/set/$key") {
                 header("Authorization", "Bearer $token")
-                contentType(ContentType.Application.Json)
+                contentType(getContentTypeForRequest())
+                header("Accept", getContentTypeForRequest().toString())
                 setBody(buildJsonObject {
                     put("value", value)
                 })
@@ -426,7 +549,8 @@ class EkoDBClient private constructor(
         executeWithRetry {
             httpClient.post("$baseUrl/api/kv/set/$key") {
                 header("Authorization", "Bearer $token")
-                contentType(ContentType.Application.Json)
+                contentType(getContentTypeForRequest())
+                header("Accept", getContentTypeForRequest().toString())
                 parameter("ttl", ttl)
                 setBody(buildJsonObject {
                     put("value", value)
@@ -554,7 +678,8 @@ class EkoDBClient private constructor(
         val response = executeWithRetry {
             httpClient.post("$baseUrl/api/chat") {
                 header("Authorization", "Bearer $token")
-                contentType(ContentType.Application.Json)
+                contentType(getContentTypeForRequest())
+                header("Accept", getContentTypeForRequest().toString())
                 setBody(request)
             }
         }
@@ -598,7 +723,8 @@ class EkoDBClient private constructor(
         val response = executeWithRetry {
             httpClient.put("$baseUrl/api/chat/$chatId") {
                 header("Authorization", "Bearer $token")
-                contentType(ContentType.Application.Json)
+                contentType(getContentTypeForRequest())
+                header("Accept", getContentTypeForRequest().toString())
                 setBody(request)
             }
         }
@@ -625,7 +751,8 @@ class EkoDBClient private constructor(
         val response = executeWithRetry {
             httpClient.post("$baseUrl/api/chat/branch") {
                 header("Authorization", "Bearer $token")
-                contentType(ContentType.Application.Json)
+                contentType(getContentTypeForRequest())
+                header("Accept", getContentTypeForRequest().toString())
                 setBody(request)
             }
         }
@@ -640,7 +767,8 @@ class EkoDBClient private constructor(
         val response = executeWithRetry {
             httpClient.post("$baseUrl/api/chat/merge") {
                 header("Authorization", "Bearer $token")
-                contentType(ContentType.Application.Json)
+                contentType(getContentTypeForRequest())
+                header("Accept", getContentTypeForRequest().toString())
                 setBody(request)
             }
         }
@@ -655,7 +783,8 @@ class EkoDBClient private constructor(
         val response = executeWithRetry {
             httpClient.post("$baseUrl/api/chat/$chatId/messages") {
                 header("Authorization", "Bearer $token")
-                contentType(ContentType.Application.Json)
+                contentType(getContentTypeForRequest())
+                header("Accept", getContentTypeForRequest().toString())
                 setBody(request)
             }
         }
@@ -699,7 +828,8 @@ class EkoDBClient private constructor(
         executeWithRetry {
             httpClient.put("$baseUrl/api/chat/$chatId/messages/$messageId") {
                 header("Authorization", "Bearer $token")
-                contentType(ContentType.Application.Json)
+                contentType(getContentTypeForRequest())
+                header("Accept", getContentTypeForRequest().toString())
                 setBody(request)
             }
         }
@@ -738,7 +868,8 @@ class EkoDBClient private constructor(
         val response = executeWithRetry {
             httpClient.patch("$baseUrl/api/chat/$chatId/messages/$messageId/forgotten") {
                 header("Authorization", "Bearer $token")
-                contentType(ContentType.Application.Json)
+                contentType(getContentTypeForRequest())
+                header("Accept", getContentTypeForRequest().toString())
                 setBody(request)
             }
         }
@@ -768,15 +899,22 @@ class EkoDBClient private constructor(
         private var apiKey: String = ""
         private var timeout: Long = 30
         private var maxRetries: Int = 3
+        private var format: SerializationFormat = SerializationFormat.JSON // Default to JSON (CBOR has compatibility issues)
         
         fun baseUrl(url: String) = apply { this.baseUrl = url }
         fun apiKey(key: String) = apply { this.apiKey = key }
         fun timeout(seconds: Long) = apply { this.timeout = seconds }
         fun maxRetries(retries: Int) = apply { this.maxRetries = retries }
         
+        /**
+         * Set serialization format (default: JSON for compatibility, MESSAGEPACK experimental)
+         * MESSAGEPACK uses CBOR encoding which is faster but has compatibility issues with custom types
+         */
+        fun format(format: SerializationFormat) = apply { this.format = format }
+        
         fun build(): EkoDBClient {
             require(apiKey.isNotEmpty()) { "API key is required" }
-            return EkoDBClient(baseUrl, apiKey, timeout, maxRetries)
+            return EkoDBClient(baseUrl, apiKey, timeout, maxRetries, format)
         }
     }
     

@@ -102,11 +102,11 @@ async function main() {
   const results1 = await client.find(usersCollection, query1);
   console.log(`Found ${results1.length} users with department data:`);
   results1.forEach((user: any) => {
-    const userName = user.name?._field_value || user.name || "Unknown";
+    const userName = user.name?.value || user.name || "Unknown";
     // Join returns an array, get first element
     const depts = user.department || [];
     const dept = depts[0] || {};
-    const deptName = dept.name?._field_value || dept.name || "No department";
+    const deptName = dept.name?.value || dept.name || "No department";
     console.log(`  - ${userName}: ${deptName}`);
   });
   console.log();
@@ -128,11 +128,11 @@ async function main() {
   const results2 = await client.find(usersCollection, query2);
   console.log(`Found ${results2.length} users in Engineering:`);
   results2.forEach((user: any) => {
-    const userName = user.name?._field_value || user.name || "Unknown";
+    const userName = user.name?.value || user.name || "Unknown";
     // Join returns an array, get first element
     const depts = user.department || [];
     const dept = depts[0] || {};
-    const location = dept.location?._field_value || dept.location || "Unknown";
+    const location = dept.location?.value || dept.location || "Unknown";
     console.log(`  - ${userName}: ${location}`);
   });
   console.log();
@@ -165,11 +165,11 @@ async function main() {
   const results3 = await client.find(usersCollection, query3);
   console.log(`Found ${results3.length} users with profile data:`);
   results3.forEach((user: any) => {
-    const userName = user.name?._field_value || user.name || "Unknown";
+    const userName = user.name?.value || user.name || "Unknown";
     // Join returns an array, get first element
     const profiles = user.profile || [];
     const profile = profiles[0] || {};
-    const bio = profile.bio?._field_value || profile.bio || "N/A";
+    const bio = profile.bio?.value || profile.bio || "N/A";
     console.log(`  - ${userName}: ${bio}`);
   });
   console.log();
@@ -187,12 +187,12 @@ async function main() {
   const results4 = await client.find(ordersCollection, query4);
   console.log(`Found ${results4.length} completed orders:`);
   results4.forEach((order: any) => {
-    const product = order.product?._field_value || order.product || "Unknown";
-    const amount = order.amount?._field_value || order.amount || 0;
+    const product = order.product?.value || order.product || "Unknown";
+    const amount = order.amount?.value || order.amount || 0;
     // Join returns an array, get first element
     const users = order.user || [];
     const user = users[0] || {};
-    const userName = user.name?._field_value || user.name || "Unknown";
+    const userName = user.name?.value || user.name || "Unknown";
     console.log(`  - ${product} ($${amount}) by ${userName}`);
   });
   console.log();
@@ -216,12 +216,12 @@ async function main() {
   const results5 = await client.find(usersCollection, query5);
   console.log(`Found ${results5.length} users with example.com emails:`);
   results5.forEach((user: any) => {
-    const userName = user.name?._field_value || user.name || "Unknown";
-    const email = user.email?._field_value || user.email || "Unknown";
+    const userName = user.name?.value || user.name || "Unknown";
+    const email = user.email?.value || user.email || "Unknown";
     // Join returns an array, get first element
     const depts = user.department || [];
     const dept = depts[0] || {};
-    const location = dept.location?._field_value || dept.location || "N/A";
+    const location = dept.location?.value || dept.location || "N/A";
     console.log(`  - ${userName} (${email}): ${location}`);
   });
   console.log();

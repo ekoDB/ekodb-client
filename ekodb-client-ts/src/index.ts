@@ -1,6 +1,7 @@
 export {
   EkoDBClient,
   WebSocketClient,
+  SerializationFormat,
   MergeStrategy,
   RateLimitError,
 } from "./client";

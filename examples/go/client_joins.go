@@ -245,7 +245,7 @@ func getStringValue(record ekodb.Record, field string) string {
 	if val, ok := record[field]; ok {
 		// Check if it's a FieldType wrapper
 		if m, ok := val.(map[string]interface{}); ok {
-			if value, ok := m["_field_value"]; ok {
+			if value, ok := m["value"]; ok {
 				if str, ok := value.(string); ok {
 					return str
 				}
@@ -264,7 +264,7 @@ func getFloatValue(record ekodb.Record, field string) float64 {
 	if val, ok := record[field]; ok {
 		// Check if it's a FieldType wrapper
 		if m, ok := val.(map[string]interface{}); ok {
-			if value, ok := m["_field_value"]; ok {
+			if value, ok := m["value"]; ok {
 				if num, ok := value.(float64); ok {
 					return num
 				}

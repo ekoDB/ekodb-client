@@ -2,6 +2,7 @@ package io.ekodb.client.types
 
 import kotlinx.datetime.Instant
 import kotlinx.serialization.*
+import kotlinx.serialization.builtins.*
 import kotlinx.serialization.descriptors.*
 import kotlinx.serialization.encoding.*
 import kotlinx.serialization.json.*
@@ -57,30 +58,55 @@ object FieldTypeSerializer : KSerializer<FieldType> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("FieldType")
     
     override fun serialize(encoder: Encoder, value: FieldType) {
-        require(encoder is JsonEncoder)
-        // Serialize as raw JSON values (untagged) to match server's serde(untagged) format
-        val element = when (value) {
-            is FieldType.StringValue -> JsonPrimitive(value.value)
-            is FieldType.IntegerValue -> JsonPrimitive(value.value)
-            is FieldType.FloatValue -> JsonPrimitive(value.value)
-            is FieldType.BooleanValue -> JsonPrimitive(value.value)
-            is FieldType.ObjectValue -> JsonObject(value.value.mapValues { encoder.json.encodeToJsonElement(it.value) })
-            is FieldType.ArrayValue -> JsonArray(value.value.map { encoder.json.encodeToJsonElement(it) })
-            is FieldType.SetValue -> JsonArray(value.value.map { encoder.json.encodeToJsonElement(it) })
-            is FieldType.VectorValue -> JsonArray(value.value.map { JsonPrimitive(it) })
-            is FieldType.DateTimeValue -> JsonPrimitive(value.value)
-            is FieldType.UUIDValue -> JsonPrimitive(value.value)
-            is FieldType.DecimalValue -> JsonPrimitive(value.value)
-            is FieldType.BinaryValue -> JsonArray(value.value.map { JsonPrimitive(it.toInt()) })
-            is FieldType.NullValue -> JsonNull
+        // Format-agnostic serialization - works with both JSON and CBOR
+        when (value) {
+            is FieldType.StringValue -> encoder.encodeString(value.value)
+            is FieldType.IntegerValue -> encoder.encodeLong(value.value)
+            is FieldType.FloatValue -> encoder.encodeDouble(value.value)
+            is FieldType.BooleanValue -> encoder.encodeBoolean(value.value)
+            is FieldType.ObjectValue -> {
+                val mapSerializer: KSerializer<Map<String, FieldType>> = kotlinx.serialization.builtins.MapSerializer(
+                    String.serializer(),
+                    FieldTypeSerializer
+                )
+                encoder.encodeSerializableValue(mapSerializer, value.value)
+            }
+            is FieldType.ArrayValue, is FieldType.SetValue -> {
+                val list = when (value) {
+                    is FieldType.ArrayValue -> value.value
+                    is FieldType.SetValue -> value.value
+                    else -> emptyList()
+                }
+                val listSerializer: KSerializer<List<FieldType>> = kotlinx.serialization.builtins.ListSerializer(FieldTypeSerializer)
+                encoder.encodeSerializableValue(listSerializer, list)
+            }
+            is FieldType.VectorValue -> {
+                val listSerializer: KSerializer<List<Double>> = kotlinx.serialization.builtins.ListSerializer(Double.serializer())
+                encoder.encodeSerializableValue(listSerializer, value.value)
+            }
+            is FieldType.DateTimeValue -> encoder.encodeString(value.value)
+            is FieldType.UUIDValue -> encoder.encodeString(value.value)
+            is FieldType.DecimalValue -> encoder.encodeString(value.value)
+            is FieldType.BinaryValue -> {
+                // Encode as array of integers for compatibility
+                val listSerializer: KSerializer<List<Int>> = kotlinx.serialization.builtins.ListSerializer(Int.serializer())
+                encoder.encodeSerializableValue(listSerializer, value.value.map { it.toInt() })
+            }
+            is FieldType.NullValue -> encoder.encodeNull()
         }
-        encoder.encodeJsonElement(element)
     }
     
     override fun deserialize(decoder: Decoder): FieldType {
-        require(decoder is JsonDecoder)
-        val element = decoder.decodeJsonElement()
-        return deserializeElement(element)
+        // For deserialization, we need to peek at the structure
+        // Since we can't easily do that in a format-agnostic way, we'll use JsonDecoder when available
+        return if (decoder is JsonDecoder) {
+            val element = decoder.decodeJsonElement()
+            deserializeElement(element)
+        } else {
+            // For CBOR and other formats, try to decode as a dynamic structure
+            // This is a simplified approach - in practice, CBOR responses should be JSON
+            decoder.decodeString().let { FieldType.StringValue(it) }
+        }
     }
     
     private fun deserializeElement(element: JsonElement): FieldType {

@@ -22,6 +22,7 @@ dependencies {
     
     // Serialization
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-cbor:1.7.3") // CBOR for binary serialization (similar to MessagePack)
     
     // HTTP client
     implementation("io.ktor:ktor-client-core:3.0.1")

@@ -23,6 +23,7 @@ dependencies {
     
     // Serialization
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-cbor:1.7.3") // CBOR for binary serialization (required by client library)
     
     // Ktor client (same versions as the client library)
     implementation("io.ktor:ktor-client-core:3.0.1")

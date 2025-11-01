@@ -6,6 +6,7 @@ CLIENT_DIR := ekodb_client
 CLIENT_PY_DIR := ekodb-client-py
 CLIENT_TS_DIR := ekodb-client-ts
 CLIENT_GO_DIR := ekodb-client-go
+CLIENT_KT_DIR := ekodb-client-kt
 
 # Color codes for pretty output
 CYAN := \033[36m
@@ -46,11 +47,12 @@ help:
 	@echo "     $(GREEN)make install-typescript$(RESET) - Install TypeScript client only"
 	@echo "     $(GREEN)make install-go$(RESET)         - Install Go client only"
 	@echo "  🛠️  $(GREEN)make setup$(RESET)              - Set up the project (fetch deps, create .env)"
-	@echo "  🛠️  $(GREEN)make build$(RESET)              - Build ALL client libraries (Rust, Python, TS)"
+	@echo "  🛠️  $(GREEN)make build$(RESET)              - Build ALL client libraries (Rust, Python, TS, Kotlin)"
 	@echo "  🚀 $(GREEN)make build-release$(RESET)      - Build Rust client (release mode)"
 	@echo "  🦀 $(GREEN)make build-client$(RESET)       - Build Rust client only"
 	@echo "  🐍 $(GREEN)make build-python-client$(RESET) - Build Python client only"
 	@echo "  📘 $(GREEN)make build-typescript-client$(RESET) - Build TypeScript client only"
+	@echo "  🟣 $(GREEN)make build-kotlin-client$(RESET) - Build Kotlin client only"
 	@echo "  🧪 $(GREEN)make test$(RESET)               - Run Rust client tests"
 	@echo "  📚 $(GREEN)make docs$(RESET)               - Generate Rust client documentation"
 	@echo "  🖌️  $(GREEN)make fmt$(RESET)                - Format all code (Rust + Python + Go + TS + Markdown)"
@@ -139,7 +141,7 @@ docs-client:
 docs: docs-client
 
 # Build targets - builds all client libraries
-build: build-client build-python-client build-typescript-client
+build: build-client build-python-client build-typescript-client build-kotlin-client
 	@echo "✅ $(GREEN)All client libraries built!$(RESET)"
 
 build-release:

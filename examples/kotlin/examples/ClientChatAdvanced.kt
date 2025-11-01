@@ -83,13 +83,13 @@ fun main() = runBlocking {
         
         // Find the most recent assistant message ID
         val assistantMessageId = messages.firstOrNull { msg ->
-            val role = msg.jsonObject["role"]?.jsonObject?.get("_field_value")?.jsonPrimitive?.content
+            val role = msg.jsonObject["role"]?.jsonObject?.get("value")?.jsonPrimitive?.content
             role == "assistant"
         }?.jsonObject?.get("id")?.jsonPrimitive?.content ?: error("No assistant message found")
         
         // Find the most recent user message ID
         val userMessageId = messages.firstOrNull { msg ->
-            val role = msg.jsonObject["role"]?.jsonObject?.get("_field_value")?.jsonPrimitive?.content
+            val role = msg.jsonObject["role"]?.jsonObject?.get("value")?.jsonPrimitive?.content
             role == "user"
         }?.jsonObject?.get("id")?.jsonPrimitive?.content ?: error("No user message found")
         

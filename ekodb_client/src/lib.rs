@@ -70,7 +70,7 @@ pub use schema::{
     CollectionMetadata, DistanceMetric, FieldTypeSchema, IndexConfig, Schema, VectorIndexAlgorithm,
 };
 pub use search::{SearchQuery, SearchResponse, SearchResult};
-pub use types::{FieldType, NumberValue, Query, QueryOperator, Record};
+pub use types::{FieldType, NumberValue, Query, QueryOperator, Record, SerializationFormat};
 pub use websocket::WebSocketClient;
 
 /// Client version

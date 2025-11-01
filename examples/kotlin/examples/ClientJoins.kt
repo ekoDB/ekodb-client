@@ -104,11 +104,11 @@ fun main() = runBlocking {
         val results1 = client.find(usersCollection, query1)
         println("✓ Found ${results1.size} users with department data")
         results1.forEach { user ->
-            val name = (user["name"] as? FieldType.ObjectValue)?.value?.get("_field_value") as? FieldType.StringValue
+            val name = (user["name"] as? FieldType.ObjectValue)?.value?.get("value") as? FieldType.StringValue
             // Join returns an array, get first element
             val depts = user["department"] as? FieldType.ArrayValue
             val dept = depts?.value?.firstOrNull() as? FieldType.ObjectValue
-            val deptName = (dept?.value?.get("name") as? FieldType.ObjectValue)?.value?.get("_field_value") as? FieldType.StringValue
+            val deptName = (dept?.value?.get("name") as? FieldType.ObjectValue)?.value?.get("value") as? FieldType.StringValue
             println("  - ${name?.value ?: "Unknown"}: ${deptName?.value ?: "No department"}")
         }
         println()
@@ -129,11 +129,11 @@ fun main() = runBlocking {
         val results2 = client.find(usersCollection, query2)
         println("✓ Found ${results2.size} users in Engineering")
         results2.forEach { user ->
-            val name = (user["name"] as? FieldType.ObjectValue)?.value?.get("_field_value") as? FieldType.StringValue
+            val name = (user["name"] as? FieldType.ObjectValue)?.value?.get("value") as? FieldType.StringValue
             // Join returns an array, get first element
             val depts = user["department"] as? FieldType.ArrayValue
             val dept = depts?.value?.firstOrNull() as? FieldType.ObjectValue
-            val location = (dept?.value?.get("location") as? FieldType.ObjectValue)?.value?.get("_field_value") as? FieldType.StringValue
+            val location = (dept?.value?.get("location") as? FieldType.ObjectValue)?.value?.get("value") as? FieldType.StringValue
             println("  - ${name?.value ?: "Unknown"}: ${location?.value ?: "Unknown"}")
         }
         println()
@@ -165,11 +165,11 @@ fun main() = runBlocking {
         val results3 = client.find(usersCollection, query3)
         println("✓ Found ${results3.size} users with profile data")
         results3.forEach { user ->
-            val name = (user["name"] as? FieldType.ObjectValue)?.value?.get("_field_value") as? FieldType.StringValue
+            val name = (user["name"] as? FieldType.ObjectValue)?.value?.get("value") as? FieldType.StringValue
             // Join returns an array, get first element
             val profiles = user["profile"] as? FieldType.ArrayValue
             val profile = profiles?.value?.firstOrNull() as? FieldType.ObjectValue
-            val bio = (profile?.value?.get("bio") as? FieldType.ObjectValue)?.value?.get("_field_value") as? FieldType.StringValue
+            val bio = (profile?.value?.get("bio") as? FieldType.ObjectValue)?.value?.get("value") as? FieldType.StringValue
             println("  - ${name?.value ?: "Unknown"}: ${bio?.value ?: "N/A"}")
         }
         println()
@@ -190,12 +190,12 @@ fun main() = runBlocking {
         val results4 = client.find(ordersCollection, query4)
         println("✓ Found ${results4.size} completed orders")
         results4.forEach { order ->
-            val product = (order["product"] as? FieldType.ObjectValue)?.value?.get("_field_value") as? FieldType.StringValue
-            val amount = (order["amount"] as? FieldType.ObjectValue)?.value?.get("_field_value") as? FieldType.IntegerValue
+            val product = (order["product"] as? FieldType.ObjectValue)?.value?.get("value") as? FieldType.StringValue
+            val amount = (order["amount"] as? FieldType.ObjectValue)?.value?.get("value") as? FieldType.IntegerValue
             // Join returns an array, get first element
             val users = order["user"] as? FieldType.ArrayValue
             val user = users?.value?.firstOrNull() as? FieldType.ObjectValue
-            val userName = (user?.value?.get("name") as? FieldType.ObjectValue)?.value?.get("_field_value") as? FieldType.StringValue
+            val userName = (user?.value?.get("name") as? FieldType.ObjectValue)?.value?.get("value") as? FieldType.StringValue
             println("  - ${product?.value ?: "Unknown"} (\$${amount?.value ?: 0}) by ${userName?.value ?: "Unknown"}")
         }
         println()
@@ -218,12 +218,12 @@ fun main() = runBlocking {
         val results5 = client.find(usersCollection, query5)
         println("✓ Found ${results5.size} users with example.com emails")
         results5.forEach { user ->
-            val name = (user["name"] as? FieldType.ObjectValue)?.value?.get("_field_value") as? FieldType.StringValue
-            val email = (user["email"] as? FieldType.ObjectValue)?.value?.get("_field_value") as? FieldType.StringValue
+            val name = (user["name"] as? FieldType.ObjectValue)?.value?.get("value") as? FieldType.StringValue
+            val email = (user["email"] as? FieldType.ObjectValue)?.value?.get("value") as? FieldType.StringValue
             // Join returns an array, get first element
             val depts = user["department"] as? FieldType.ArrayValue
             val dept = depts?.value?.firstOrNull() as? FieldType.ObjectValue
-            val location = (dept?.value?.get("location") as? FieldType.ObjectValue)?.value?.get("_field_value") as? FieldType.StringValue
+            val location = (dept?.value?.get("location") as? FieldType.ObjectValue)?.value?.get("value") as? FieldType.StringValue
             println("  - ${name?.value ?: "Unknown"} (${email?.value ?: "Unknown"}): ${location?.value ?: "N/A"}")
         }
         println()

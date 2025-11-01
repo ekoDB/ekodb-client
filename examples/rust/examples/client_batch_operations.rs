@@ -37,7 +37,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         record.insert("email", format!("user{}@example.com", i));
         record.insert("age", 20 + (i * 5));
 
-        let result = client.insert(collection, record).await?;
+        let result = client.insert(collection, record, None).await?;
 
         // Extract ID
         if let Some(ekodb_client::FieldType::String(id)) = result.get("id") {
@@ -50,7 +50,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Verify the inserts
     use ekodb_client::Query;
     let query = Query::new().limit(100);
-    let docs = client.find(collection, query).await?;
+    let docs = client.find(collection, query, None).await?;
     println!(
         "✓ Verified: Found {} total records in collection",
         docs.len()
@@ -63,14 +63,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         updates.insert("status", "active");
         updates.insert("updated_index", i as i64);
 
-        client.update(collection, id, updates).await?;
+        client.update(collection, id, updates, None).await?;
     }
     println!("✓ Updated 3 records");
 
     // Example 3: Delete records
     println!("\n=== Delete Records ===");
     for id in inserted_ids.iter().take(3) {
-        client.delete(collection, id).await?;
+        client.delete(collection, id, None).await?;
     }
     println!("✓ Deleted 3 records");
 
