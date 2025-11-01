@@ -31,7 +31,7 @@
 //!     record.insert("name", "John Doe");
 //!     record.insert("age", 30);
 //!     
-//!     let result = client.insert("users", record).await?;
+//!     let result = client.insert("users", record, None).await?;
 //!     println!("Inserted: {:?}", result);
 //!
 //!     Ok(())

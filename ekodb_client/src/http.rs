@@ -65,14 +65,14 @@ impl HttpClient {
             "/api/delete/",
             "/api/batch/delete/",
         ];
-        
+
         // Check if path starts with any MessagePack-supported operation
         for prefix in &msgpack_paths {
             if path.starts_with(prefix) {
                 return false; // Use MessagePack
             }
         }
-        
+
         // Everything else uses JSON
         true
     }
@@ -81,7 +81,7 @@ impl HttpClient {
     /// Only CRUD operations use MessagePack, everything else uses JSON
     fn serialize<T: Serialize>(&self, path: &str, data: &T) -> Result<Vec<u8>> {
         let use_json = Self::should_use_json(path) || self.format == SerializationFormat::Json;
-        
+
         if use_json {
             serde_json::to_vec(data).map_err(Error::Serialization)
         } else {
@@ -94,20 +94,19 @@ impl HttpClient {
     /// Only CRUD operations use MessagePack, everything else uses JSON
     fn deserialize<'a, T: Deserialize<'a>>(&self, path: &str, data: &'a [u8]) -> Result<T> {
         let use_json = Self::should_use_json(path) || self.format == SerializationFormat::Json;
-        
+
         if use_json {
             serde_json::from_slice(data).map_err(Error::Serialization)
         } else {
-            rmp_serde::from_slice(data).map_err(|e| {
-                Error::Validation(format!("MessagePack deserialization error: {}", e))
-            })
+            rmp_serde::from_slice(data)
+                .map_err(|e| Error::Validation(format!("MessagePack deserialization error: {}", e)))
         }
     }
 
     /// Get content-type header for the current format and path
     fn content_type(&self, path: &str) -> &'static str {
         let use_json = Self::should_use_json(path) || self.format == SerializationFormat::Json;
-        
+
         if use_json {
             "application/json"
         } else {
@@ -117,12 +116,16 @@ impl HttpClient {
 
     /// Add format headers (Content-Type and Accept) to a request builder
     /// Note: reqwest automatically handles gzip compression with the gzip feature enabled
-    fn add_format_headers(&self, path: &str, builder: reqwest::RequestBuilder) -> reqwest::RequestBuilder {
+    fn add_format_headers(
+        &self,
+        path: &str,
+        builder: reqwest::RequestBuilder,
+    ) -> reqwest::RequestBuilder {
         let content_type = self.content_type(path);
         builder
             .header("Content-Type", content_type)
             .header("Accept", content_type)
-            // Accept-Encoding is automatically handled by reqwest when gzip feature is enabled
+        // Accept-Encoding is automatically handled by reqwest when gzip feature is enabled
     }
 
     /// Execute a request with optional retry logic
@@ -790,7 +793,11 @@ impl HttpClient {
     }
 
     /// Handle HTTP response and convert to Result
-    async fn handle_response<T: for<'de> Deserialize<'de>>(&self, path: &str, response: Response) -> Result<T> {
+    async fn handle_response<T: for<'de> Deserialize<'de>>(
+        &self,
+        path: &str,
+        response: Response,
+    ) -> Result<T> {
         let status = response.status();
 
         match status {
@@ -820,29 +827,33 @@ impl HttpClient {
                     .and_then(|v| v.to_str().ok())
                     .map(|s| s.contains("gzip"))
                     .unwrap_or(false);
-                
+
                 let bytes = if is_gzipped {
                     // Use async decompression for gzipped responses
                     use async_compression::tokio::bufread::GzipDecoder;
-                    use tokio_util::io::StreamReader;
-                    use tokio::io::AsyncReadExt;
                     use futures_util::StreamExt;
-                    
+                    use tokio::io::AsyncReadExt;
+                    use tokio_util::io::StreamReader;
+
                     let byte_stream = response.bytes_stream();
                     let stream_reader = StreamReader::new(byte_stream.map(|result| {
                         result.map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))
                     }));
                     let mut decompressed_reader = GzipDecoder::new(stream_reader);
-                    
+
                     let mut decompressed = Vec::new();
-                    decompressed_reader.read_to_end(&mut decompressed).await
-                        .map_err(|e| Error::Validation(format!("Gzip decompression failed: {}", e)))?;
+                    decompressed_reader
+                        .read_to_end(&mut decompressed)
+                        .await
+                        .map_err(|e| {
+                            Error::Validation(format!("Gzip decompression failed: {}", e))
+                        })?;
                     decompressed.into()
                 } else {
                     // No compression - read bytes directly
                     response.bytes().await?
                 };
-                
+
                 self.deserialize(path, &bytes).map_err(|e| {
                     Error::Validation(format!(
                         "Failed to parse response: {}. First 200 bytes: {:?}",

@@ -71,14 +71,14 @@ impl Client {
     /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
     /// let client = Client::builder()
     ///     .base_url("https://your-instance.ekodb.net")
-    ///     .api_token("your-token")
+    ///     .api_key("your-token")
     ///     .build()?;
     ///
     /// let mut record = Record::new();
     /// record.insert("name", "John Doe");
     /// record.insert("age", 30);
     ///
-    /// let result = client.insert("users", record).await?;
+    /// let result = client.insert("users", record, None).await?;
     /// # Ok(())
     /// # }
     /// ```
@@ -125,7 +125,7 @@ impl Client {
     ///         }
     ///     }))
     ///     .limit(10);
-    /// let results = client.find("users", query).await?;
+    /// let results = client.find("users", query, None).await?;
     /// # Ok(())
     /// # }
     /// ```
