@@ -105,6 +105,13 @@ help:
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "  🖌️  $(GREEN)make fmt$(RESET)          - Format all code (Rust + Python + Go + TS + Markdown)"
 	@echo "  🖌️  $(GREEN)make format$(RESET)       - Format all code (alias for fmt)"
+	@echo "  📦 $(GREEN)make deps-check-all$(RESET) - Check for outdated dependencies (Rust + TS + Kotlin)"
+	@echo "  📦 $(GREEN)make deps-update-all$(RESET) - Update all dependencies within constraints"
+	@echo "     $(GREEN)make deps-check$(RESET)       - Check Rust dependencies only"
+	@echo "     $(GREEN)make deps-update$(RESET)      - Update Rust dependencies only"
+	@echo "     $(GREEN)make deps-check-rust$(RESET)  - Detailed Rust dependency check"
+	@echo "     $(GREEN)make deps-check-typescript$(RESET) - Check TypeScript/npm dependencies"
+	@echo "     $(GREEN)make deps-check-kotlin$(RESET) - Check Kotlin/Gradle dependencies"
 	@echo "  📋 $(GREEN)make examples-ls$(RESET)  - Generate comprehensive examples inventory"
 	@echo "  🔍 $(GREEN)make examples-ls-check$(RESET) - Validate examples inventory against committed snapshot"
 	@echo "  🔄 $(GREEN)make examples-ls-badge$(RESET) - Update README badge with current example count"
@@ -700,23 +707,146 @@ install-hooks:
 	chmod +x .git/hooks/pre-commit
 	@echo "✅ $(GREEN)Git hooks installed!$(RESET)"
 
-# Check for outdated dependencies
+# ============================================================================
+# Dependency Management - All Packages
+# ============================================================================
+
+# Check for outdated dependencies (Rust only)
 deps-check:
-	@echo "📦 $(CYAN)Checking for outdated dependencies...$(RESET)"
+	@echo "📦 $(CYAN)Checking for outdated Rust dependencies...$(RESET)"
 	@if command -v cargo-outdated > /dev/null; then \
 		cargo outdated; \
 	else \
 		echo "$(YELLOW)cargo-outdated is not installed.$(RESET)"; \
 		echo "$(YELLOW)Run 'cargo install cargo-outdated' to install it.$(RESET)"; \
 	fi
-	@echo "✅ $(GREEN)Dependencies check complete!$(RESET)"
+	@echo "✅ $(GREEN)Rust dependencies check complete!$(RESET)"
 
-# Update dependencies within Cargo.toml constraints
+# Update dependencies within Cargo.toml constraints (Rust only)
 deps-update:
-	@echo "📦 $(CYAN)Updating dependencies within constraints...$(RESET)"
+	@echo "📦 $(CYAN)Updating Rust dependencies within constraints...$(RESET)"
 	$(CARGO) update
-	@echo "✅ $(GREEN)Dependencies updated successfully!$(RESET)"
+	@echo "✅ $(GREEN)Rust dependencies updated successfully!$(RESET)"
 	@echo "💡 $(YELLOW)Run 'make deps-check' to see if any dependencies still need updating$(RESET)"
+
+# Check all packages for outdated dependencies
+deps-check-all: deps-check-rust deps-check-typescript deps-check-kotlin
+	@echo "✅ $(GREEN)All dependency checks complete!$(RESET)"
+
+# Update all packages' dependencies
+deps-update-all: deps-update-rust deps-update-typescript deps-update-kotlin
+	@echo "✅ $(GREEN)All dependencies updated!$(RESET)"
+
+# Rust dependency checks (detailed)
+deps-check-rust:
+	@echo "🦀 $(CYAN)Checking Rust workspace dependencies...$(RESET)"
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "📦 Workspace Root & ekodb_client"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@if command -v cargo-outdated > /dev/null; then \
+		cargo outdated; \
+	else \
+		echo "$(RED)❌ cargo-outdated not installed$(RESET)"; \
+		echo "$(YELLOW)Run: cargo install cargo-outdated$(RESET)"; \
+		exit 1; \
+	fi
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "📦 Python Bindings (ekodb-client-py)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@cd ekodb-client-py && cargo outdated
+	@echo ""
+	@echo "💡 $(YELLOW)Note: Many 'Removed' entries are transitive dependencies - safe to ignore$(RESET)"
+	@echo "💡 $(YELLOW)Focus on direct dependencies with major version updates$(RESET)"
+
+# TypeScript dependency checks
+deps-check-typescript:
+	@echo "📘 $(CYAN)Checking TypeScript/npm dependencies...$(RESET)"
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "📦 ekodb-client-ts"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@if [ -d "ekodb-client-ts" ]; then \
+		cd ekodb-client-ts && npm outdated || true; \
+		echo ""; \
+		echo "$(YELLOW)💡 To update: cd ekodb-client-ts && npm update$(RESET)"; \
+		echo "$(YELLOW)💡 For major updates: npm install -g npm-check-updates && ncu -u$(RESET)"; \
+	else \
+		echo "$(RED)❌ ekodb-client-ts directory not found$(RESET)"; \
+	fi
+
+# Kotlin dependency checks  
+deps-check-kotlin:
+	@echo "🟣 $(CYAN)Checking Kotlin/Gradle dependencies...$(RESET)"
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "📦 ekodb-client-kt"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@if [ -d "ekodb-client-kt" ]; then \
+		cd ekodb-client-kt && ./gradlew dependencyUpdates --no-daemon || { \
+			echo "$(YELLOW)⚠️  dependencyUpdates plugin not configured$(RESET)"; \
+			echo "$(YELLOW)Current versions in build.gradle.kts:$(RESET)"; \
+			echo "  - Kotlin: $$(grep 'kotlin("jvm")' build.gradle.kts | grep -o 'version "[^"]*"' | cut -d'"' -f2)"; \
+			echo "  - Coroutines: $$(grep 'kotlinx-coroutines-core' build.gradle.kts | grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+')"; \
+			echo "  - Serialization: $$(grep 'kotlinx-serialization-json' build.gradle.kts | grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+')"; \
+			echo "  - Ktor: $$(grep 'ktor-client-core' build.gradle.kts | grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+')"; \
+			echo ""; \
+			echo "$(YELLOW)💡 To add dependencyUpdates plugin, add to build.gradle.kts:$(RESET)"; \
+			echo "$(YELLOW)   plugins { id(\"com.github.ben-manes.versions\") version \"0.51.0\" }$(RESET)"; \
+		}; \
+	else \
+		echo "$(RED)❌ ekodb-client-kt directory not found$(RESET)"; \
+	fi
+
+# Rust dependency updates (detailed)
+deps-update-rust:
+	@echo "🦀 $(CYAN)Updating Rust workspace dependencies...$(RESET)"
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "📦 Workspace Root & ekodb_client"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	$(CARGO) update --workspace
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "📦 Python Bindings (ekodb-client-py)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@cd ekodb-client-py && cargo update
+	@echo ""
+	@echo "✅ $(GREEN)Rust dependencies updated!$(RESET)"
+	@echo "💡 $(YELLOW)Run 'make deps-check-rust' to see remaining updates$(RESET)"
+
+# TypeScript dependency updates
+deps-update-typescript:
+	@echo "📘 $(CYAN)Updating TypeScript/npm dependencies...$(RESET)"
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "📦 ekodb-client-ts"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@if [ -d "ekodb-client-ts" ]; then \
+		cd ekodb-client-ts && npm update && npm audit fix || true; \
+		echo ""; \
+		echo "✅ $(GREEN)TypeScript dependencies updated!$(RESET)"; \
+		echo "💡 $(YELLOW)For major updates: npm install -g npm-check-updates && cd ekodb-client-ts && ncu -u && npm install$(RESET)"; \
+	else \
+		echo "$(RED)❌ ekodb-client-ts directory not found$(RESET)"; \
+	fi
+
+# Kotlin dependency updates
+deps-update-kotlin:
+	@echo "🟣 $(CYAN)Updating Kotlin/Gradle dependencies...$(RESET)"
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "📦 ekodb-client-kt"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "$(YELLOW)⚠️  Gradle requires manual dependency updates in build.gradle.kts$(RESET)"
+	@echo "$(YELLOW)Run 'make deps-check-kotlin' to see available updates$(RESET)"
+	@echo ""
+	@if [ -d "ekodb-client-kt" ]; then \
+		cd ekodb-client-kt && ./gradlew dependencies --no-daemon --configuration runtimeClasspath || true; \
+	else \
+		echo "$(RED)❌ ekodb-client-kt directory not found$(RESET)"; \
+	fi
 
 # ============================================================================
 # Examples Inventory
