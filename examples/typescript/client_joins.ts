@@ -40,30 +40,28 @@ async function main() {
   // Setup: Create sample data
   console.log("Setting up sample data...");
 
-  // Create users
+  // Create departments first (need their IDs for users)
+  const dept1 = await client.insert(departmentsCollection, {
+    name: "Engineering",
+    location: "Building A",
+  });
+
+  const dept2 = await client.insert(departmentsCollection, {
+    name: "Sales",
+    location: "Building B",
+  });
+
+  // Create users with actual department IDs
   const user1 = await client.insert(usersCollection, {
     name: "Alice Johnson",
     email: "alice@example.com",
-    department_id: "dept-001",
+    department_id: dept1.id,
   });
 
   const user2 = await client.insert(usersCollection, {
     name: "Bob Smith",
     email: "bob@example.com",
-    department_id: "dept-002",
-  });
-
-  // Create departments
-  await client.insert(departmentsCollection, {
-    id: "dept-001",
-    name: "Engineering",
-    location: "Building A",
-  });
-
-  await client.insert(departmentsCollection, {
-    id: "dept-002",
-    name: "Sales",
-    location: "Building B",
+    department_id: dept2.id,
   });
 
   // Create orders
@@ -105,8 +103,10 @@ async function main() {
   console.log(`Found ${results1.length} users with department data:`);
   results1.forEach((user: any) => {
     const userName = user.name?.value || user.name || "Unknown";
-    const deptName =
-      user.department?.name?.value || user.department?.name || "No department";
+    // Join returns an array, get first element
+    const depts = user.department || [];
+    const dept = depts[0] || {};
+    const deptName = dept.name?.value || dept.name || "No department";
     console.log(`  - ${userName}: ${deptName}`);
   });
   console.log();
@@ -121,7 +121,7 @@ async function main() {
   );
 
   const query2 = new QueryBuilder()
-    .eq("department_id", "dept-001")
+    .eq("department_id", dept1.id)
     .join(join2)
     .build();
 
@@ -129,52 +129,48 @@ async function main() {
   console.log(`Found ${results2.length} users in Engineering:`);
   results2.forEach((user: any) => {
     const userName = user.name?.value || user.name || "Unknown";
-    const location =
-      user.department?.location?.value ||
-      user.department?.location ||
-      "Unknown";
+    // Join returns an array, get first element
+    const depts = user.department || [];
+    const dept = depts[0] || {};
+    const location = dept.location?.value || dept.location || "Unknown";
     console.log(`  - ${userName}: ${location}`);
   });
   console.log();
 
-  // Example 3: Multi-collection join
-  console.log(
-    "3. Multi-collection join (users with departments and profiles):",
-  );
+  // Example 3: Join with user profiles
+  console.log("3. Join with user profiles:");
 
   // Create profiles
   await client.insert(profilesCollection, {
-    id: user1.id,
+    user_id: user1.id,
     bio: "Senior Software Engineer",
     skills: ["JavaScript", "TypeScript", "React"],
   });
 
   await client.insert(profilesCollection, {
-    id: user2.id,
+    user_id: user2.id,
     bio: "Sales Manager",
     skills: ["Negotiation", "CRM", "Communication"],
   });
 
-  const join3 = JoinBuilder.multi(
-    [departmentsCollection, profilesCollection],
-    "department_id",
+  const join3 = JoinBuilder.single(
+    profilesCollection,
     "id",
-    "related_data",
+    "user_id",
+    "profile",
   );
 
   const query3 = new QueryBuilder().join(join3).limit(10).build();
 
   const results3 = await client.find(usersCollection, query3);
-  console.log(`Found ${results3.length} users with multiple joins:`);
+  console.log(`Found ${results3.length} users with profile data:`);
   results3.forEach((user: any) => {
     const userName = user.name?.value || user.name || "Unknown";
-    const deptName =
-      user.related_data?.name?.value || user.related_data?.name || "N/A";
-    const bio =
-      user.related_data?.bio?.value || user.related_data?.bio || "N/A";
-    console.log(`  - ${userName}:`);
-    console.log(`    Department: ${deptName}`);
-    console.log(`    Bio: ${bio}`);
+    // Join returns an array, get first element
+    const profiles = user.profile || [];
+    const profile = profiles[0] || {};
+    const bio = profile.bio?.value || profile.bio || "N/A";
+    console.log(`  - ${userName}: ${bio}`);
   });
   console.log();
 
@@ -193,7 +189,10 @@ async function main() {
   results4.forEach((order: any) => {
     const product = order.product?.value || order.product || "Unknown";
     const amount = order.amount?.value || order.amount || 0;
-    const userName = order.user?.name?.value || order.user?.name || "Unknown";
+    // Join returns an array, get first element
+    const users = order.user || [];
+    const user = users[0] || {};
+    const userName = user.name?.value || user.name || "Unknown";
     console.log(`  - ${product} ($${amount}) by ${userName}`);
   });
   console.log();
@@ -219,9 +218,11 @@ async function main() {
   results5.forEach((user: any) => {
     const userName = user.name?.value || user.name || "Unknown";
     const email = user.email?.value || user.email || "Unknown";
-    const deptName =
-      user.department?.name?.value || user.department?.name || "N/A";
-    console.log(`  - ${userName} (${email}): ${deptName}`);
+    // Join returns an array, get first element
+    const depts = user.department || [];
+    const dept = depts[0] || {};
+    const location = dept.location?.value || dept.location || "N/A";
+    console.log(`  - ${userName} (${email}): ${location}`);
   });
   console.log();
 

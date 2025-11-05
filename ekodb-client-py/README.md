@@ -180,34 +180,34 @@ schema = await client.get_schema("users")
 ```python
 # Single collection join
 query = {
-    "$join": {
-        "collection": "departments",
+    "join": {
+        "collections": ["departments"],
         "local_field": "department_id",
         "foreign_field": "id",
-        "as": "department"
+        "as_field": "department"
     },
-    "$limit": 10
+    "limit": 10
 }
 
 results = await client.find("users", query)
 
 # Multi-collection join
 query = {
-    "$join": [
+    "join": [
         {
-            "collection": "departments",
+            "collections": ["departments"],
             "local_field": "department_id",
             "foreign_field": "id",
-            "as": "department"
+            "as_field": "department"
         },
         {
-            "collection": "profiles",
+            "collections": ["profiles"],
             "local_field": "id",
             "foreign_field": "id",
-            "as": "profile"
+            "as_field": "profile"
         }
     ],
-    "$limit": 10
+    "limit": 10
 }
 
 results = await client.find("users", query)

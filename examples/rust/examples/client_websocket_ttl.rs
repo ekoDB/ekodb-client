@@ -33,7 +33,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     record.insert("value", 42);
     let record = record.with_ttl("1h");
 
-    let inserted = client.insert(collection, record).await?;
+    let inserted = client.insert(collection, record, None).await?;
     println!("✓ Inserted document with TTL: {:?}", inserted.get("id"));
 
     // Step 2: Query via WebSocket

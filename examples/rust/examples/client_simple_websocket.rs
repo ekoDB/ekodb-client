@@ -33,7 +33,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     record.insert("value", 42);
     record.insert("active", true);
 
-    let inserted = client.insert(collection, record).await?;
+    let inserted = client.insert(collection, record, None).await?;
     if let Some(ekodb_client::FieldType::String(id)) = inserted.get("id") {
         println!("✓ Inserted test record: {}", id);
     }

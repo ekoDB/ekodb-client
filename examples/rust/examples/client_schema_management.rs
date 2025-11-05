@@ -51,7 +51,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     user1.insert("age", 28);
     user1.insert("status", "active");
 
-    let inserted = client.insert(collection, user1).await?;
+    let inserted = client.insert(collection, user1, None).await?;
     println!("✓ Inserted user 1: {:?}", inserted.get("id"));
 
     let mut user2 = Record::new();
@@ -60,7 +60,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     user2.insert("age", 32);
     user2.insert("status", "pending");
 
-    let inserted = client.insert(collection, user2).await?;
+    let inserted = client.insert(collection, user2, None).await?;
     println!("✓ Inserted user 2: {:?}\n", inserted.get("id"));
 
     // Step 3: Get schema

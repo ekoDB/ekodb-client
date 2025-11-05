@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "io.ekodb"
-version = "0.1.0"
+version = "0.2.0"
 
 repositories {
     mavenCentral()
@@ -22,6 +22,7 @@ dependencies {
     
     // Serialization
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-cbor:1.7.3") // CBOR for binary serialization (similar to MessagePack)
     
     // HTTP client
     implementation("io.ktor:ktor-client-core:3.0.1")
@@ -30,6 +31,7 @@ dependencies {
     implementation("io.ktor:ktor-serialization-kotlinx-json:3.0.1")
     implementation("io.ktor:ktor-client-websockets:3.0.1")
     implementation("io.ktor:ktor-client-logging:3.0.1")
+    implementation("io.ktor:ktor-client-encoding:3.0.1")
     
     // DateTime
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.1")

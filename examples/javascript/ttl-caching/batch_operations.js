@@ -113,7 +113,7 @@ async function batchOperationsExamples() {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                deletes: ids.map(id => ({ id })),
+                deletes: ids.map(id => ({ id: id })),
                 bypass_ripple: false
             })
         });

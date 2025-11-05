@@ -122,7 +122,10 @@ async def batch_operations_examples():
             async with session.delete(
                 f"{BASE_URL}/api/batch/delete/batch_users",
                 headers=headers,
-                json={"deletes": [{"id": id} for id in ids], "bypass_ripple": False},
+                json={
+                    "deletes": [{"id": id} for id in ids],
+                    "bypass_ripple": False,
+                },
             ) as response:
                 result = await response.json()
                 print(f'✓ Batch deleted {len(result.get("successful", []))} records')

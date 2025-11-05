@@ -10,6 +10,15 @@ use std::collections::HashMap;
 use std::time::Duration;
 use uuid::Uuid;
 
+/// Serialization format for client-server communication
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SerializationFormat {
+    /// JSON format (default, human-readable)
+    Json,
+    /// MessagePack format (binary, faster)
+    MessagePack,
+}
+
 /// Flexible numeric value that can be Integer, Float, or Decimal
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]

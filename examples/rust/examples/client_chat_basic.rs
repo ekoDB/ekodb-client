@@ -37,19 +37,19 @@ async fn main() -> Result<(), Box<dyn Error>> {
     doc1.insert("title", "Introduction to ekoDB");
     doc1.insert("content", "ekoDB is a high-performance database with intelligent caching, real-time capabilities, and AI integration.");
     doc1.insert("category", "documentation");
-    client.insert(collection, doc1).await?;
+    client.insert(collection, doc1, None).await?;
 
     let mut doc2 = Record::new();
     doc2.insert("title", "Search Features");
     doc2.insert("content", "ekoDB supports full-text search, vector search, and hybrid search with automatic context retrieval.");
     doc2.insert("category", "features");
-    client.insert(collection, doc2).await?;
+    client.insert(collection, doc2, None).await?;
 
     let mut doc3 = Record::new();
     doc3.insert("title", "AI Chat Integration");
     doc3.insert("content", "The chat feature allows you to query your database using natural language and get AI-powered responses with relevant context.");
     doc3.insert("category", "features");
-    client.insert(collection, doc3).await?;
+    client.insert(collection, doc3, None).await?;
 
     println!("✓ Inserted 3 sample documents\n");
 

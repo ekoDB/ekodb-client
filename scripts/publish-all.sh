@@ -24,16 +24,17 @@ show_usage() {
     echo "Usage: $0 [OPTIONS]"
     echo ""
     echo "Options:"
-    echo "  --all           Publish all client packages (Rust, Python, TypeScript)"
+    echo "  --all           Publish all client packages (Rust, Python, TypeScript, Kotlin)"
     echo "  --rust          Publish Rust client to crates.io"
     echo "  --python        Publish Python client to PyPI"
     echo "  --typescript    Publish TypeScript client to npm"
+    echo "  --kotlin        Publish Kotlin client to Maven Central"
     echo "  --help          Show this help message"
     echo ""
     echo "Examples:"
     echo "  $0 --all                    # Publish all packages"
     echo "  $0 --rust --python          # Publish only Rust and Python"
-    echo "  $0 --typescript             # Publish only TypeScript"
+    echo "  $0 --typescript --kotlin    # Publish only TypeScript and Kotlin"
     echo ""
     echo "Note: Go client is in a separate repository:"
     echo "      https://github.com/ekoDB/ekodb-client-go"
@@ -44,6 +45,7 @@ show_usage() {
 PUBLISH_RUST=false
 PUBLISH_PYTHON=false
 PUBLISH_TYPESCRIPT=false
+PUBLISH_KOTLIN=false
 PUBLISH_ALL=false
 
 if [ $# -eq 0 ]; then
@@ -69,6 +71,10 @@ while [[ $# -gt 0 ]]; do
             PUBLISH_TYPESCRIPT=true
             shift
             ;;
+        --kotlin)
+            PUBLISH_KOTLIN=true
+            shift
+            ;;
         --help)
             show_usage
             exit 0
@@ -86,6 +92,7 @@ if [ "$PUBLISH_ALL" = true ]; then
     PUBLISH_RUST=true
     PUBLISH_PYTHON=true
     PUBLISH_TYPESCRIPT=true
+    PUBLISH_KOTLIN=true
 fi
 
 # Track success/failure
@@ -133,6 +140,20 @@ if [ "$PUBLISH_TYPESCRIPT" = true ]; then
     fi
 fi
 
+# Publish Kotlin
+if [ "$PUBLISH_KOTLIN" = true ]; then
+    echo ""
+    echo "════════════════════════════════════════"
+    echo "Publishing Kotlin Client"
+    echo "════════════════════════════════════════"
+    if bash "$SCRIPT_DIR/publish-kotlin.sh"; then
+        echo "✅ Kotlin client published successfully"
+    else
+        echo "❌ Kotlin client publication failed"
+        FAILED_PACKAGES+=("Kotlin")
+    fi
+fi
+
 # Summary
 echo ""
 echo "════════════════════════════════════════"
@@ -154,6 +175,7 @@ echo "📦 Installation Commands:"
 echo "  Rust:       cargo add ekodb_client"
 echo "  Python:     pip install ekodb-client"
 echo "  TypeScript: npm install @ekodb/ekodb-client"
+echo "  Kotlin:     implementation(\"io.ekodb:ekodb-client-kt:VERSION\")"
 echo "  Go:         go get github.com/ekoDB/ekodb-client-go"
 echo ""
 echo "Note: Go client is in a separate repository: https://github.com/ekoDB/ekodb-client-go"

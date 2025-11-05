@@ -36,33 +36,33 @@ fun main() = runBlocking {
         // Setup: Create sample data
         println("=== Setting up sample data ===")
         
-        // Create users
+        // Create departments first (need their IDs for users)
+        val dept1 = client.insert(departmentsCollection, Record.new()
+            .insert("name", "Engineering")
+            .insert("location", "Building A")
+        )
+        val dept1Id = (dept1["id"] as? FieldType.StringValue)?.value ?: error("No ID")
+        
+        val dept2 = client.insert(departmentsCollection, Record.new()
+            .insert("name", "Sales")
+            .insert("location", "Building B")
+        )
+        val dept2Id = (dept2["id"] as? FieldType.StringValue)?.value ?: error("No ID")
+        
+        // Create users with actual department IDs
         val user1 = client.insert(usersCollection, Record.new()
             .insert("name", "Alice Johnson")
             .insert("email", "alice@example.com")
-            .insert("department_id", "dept-001")
+            .insert("department_id", dept1Id!!)
         )
         val user1Id = (user1["id"] as? FieldType.StringValue)?.value ?: error("No ID")
         
         val user2 = client.insert(usersCollection, Record.new()
             .insert("name", "Bob Smith")
             .insert("email", "bob@example.com")
-            .insert("department_id", "dept-002")
+            .insert("department_id", dept2Id!!)
         )
         val user2Id = (user2["id"] as? FieldType.StringValue)?.value ?: error("No ID")
-        
-        // Create departments
-        client.insert(departmentsCollection, Record.new()
-            .insert("id", "dept-001")
-            .insert("name", "Engineering")
-            .insert("location", "Building A")
-        )
-        
-        client.insert(departmentsCollection, Record.new()
-            .insert("id", "dept-002")
-            .insert("name", "Sales")
-            .insert("location", "Building B")
-        )
         
         // Create orders
         client.insert(ordersCollection, Record.new()
@@ -93,10 +93,10 @@ fun main() = runBlocking {
         
         val query1 = QueryBuilder.new()
             .join(mapOf(
-                "collection" to departmentsCollection,
+                "collections" to listOf(departmentsCollection),
                 "local_field" to "department_id",
                 "foreign_field" to "id",
-                "as" to "department"
+                "as_field" to "department"
             ))
             .limit(10)
             .build()
@@ -105,7 +105,11 @@ fun main() = runBlocking {
         println("✓ Found ${results1.size} users with department data")
         results1.forEach { user ->
             val name = (user["name"] as? FieldType.ObjectValue)?.value?.get("value") as? FieldType.StringValue
-            println("  - ${name?.value ?: "Unknown"}")
+            // Join returns an array, get first element
+            val depts = user["department"] as? FieldType.ArrayValue
+            val dept = depts?.value?.firstOrNull() as? FieldType.ObjectValue
+            val deptName = (dept?.value?.get("name") as? FieldType.ObjectValue)?.value?.get("value") as? FieldType.StringValue
+            println("  - ${name?.value ?: "Unknown"}: ${deptName?.value ?: "No department"}")
         }
         println()
         
@@ -113,12 +117,12 @@ fun main() = runBlocking {
         println("=== Example 2: Join with filtering ===")
         
         val query2 = QueryBuilder.new()
-            .eq("department_id", "dept-001")
+            .eq("department_id", dept1Id!!)
             .join(mapOf(
-                "collection" to departmentsCollection,
+                "collections" to listOf(departmentsCollection),
                 "local_field" to "department_id",
                 "foreign_field" to "id",
-                "as" to "department"
+                "as_field" to "department"
             ))
             .build()
         
@@ -126,39 +130,47 @@ fun main() = runBlocking {
         println("✓ Found ${results2.size} users in Engineering")
         results2.forEach { user ->
             val name = (user["name"] as? FieldType.ObjectValue)?.value?.get("value") as? FieldType.StringValue
-            println("  - ${name?.value ?: "Unknown"}")
+            // Join returns an array, get first element
+            val depts = user["department"] as? FieldType.ArrayValue
+            val dept = depts?.value?.firstOrNull() as? FieldType.ObjectValue
+            val location = (dept?.value?.get("location") as? FieldType.ObjectValue)?.value?.get("value") as? FieldType.StringValue
+            println("  - ${name?.value ?: "Unknown"}: ${location?.value ?: "Unknown"}")
         }
         println()
         
-        // Example 3: Multi-collection join
-        println("=== Example 3: Multi-collection join (users with departments and profiles) ===")
+        // Example 3: Join with user profiles
+        println("=== Example 3: Join with user profiles ===")
         
         // Create profiles
         client.insert(profilesCollection, Record.new()
-            .insert("id", user1Id!!)
+            .insert("user_id", user1Id!!)
             .insert("bio", "Senior Software Engineer")
         )
         
         client.insert(profilesCollection, Record.new()
-            .insert("id", user2Id!!)
+            .insert("user_id", user2Id!!)
             .insert("bio", "Sales Manager")
         )
         
         val query3 = QueryBuilder.new()
             .join(mapOf(
-                "collection" to departmentsCollection,
-                "local_field" to "department_id",
-                "foreign_field" to "id",
-                "as" to "department"
+                "collections" to listOf(profilesCollection),
+                "local_field" to "id",
+                "foreign_field" to "user_id",
+                "as_field" to "profile"
             ))
             .limit(10)
             .build()
         
         val results3 = client.find(usersCollection, query3)
-        println("✓ Found ${results3.size} users with department join")
+        println("✓ Found ${results3.size} users with profile data")
         results3.forEach { user ->
             val name = (user["name"] as? FieldType.ObjectValue)?.value?.get("value") as? FieldType.StringValue
-            println("  - ${name?.value ?: "Unknown"}")
+            // Join returns an array, get first element
+            val profiles = user["profile"] as? FieldType.ArrayValue
+            val profile = profiles?.value?.firstOrNull() as? FieldType.ObjectValue
+            val bio = (profile?.value?.get("bio") as? FieldType.ObjectValue)?.value?.get("value") as? FieldType.StringValue
+            println("  - ${name?.value ?: "Unknown"}: ${bio?.value ?: "N/A"}")
         }
         println()
         
@@ -168,10 +180,10 @@ fun main() = runBlocking {
         val query4 = QueryBuilder.new()
             .eq("status", "completed")
             .join(mapOf(
-                "collection" to usersCollection,
+                "collections" to listOf(usersCollection),
                 "local_field" to "user_id",
                 "foreign_field" to "id",
-                "as" to "user"
+                "as_field" to "user"
             ))
             .build()
         
@@ -180,7 +192,11 @@ fun main() = runBlocking {
         results4.forEach { order ->
             val product = (order["product"] as? FieldType.ObjectValue)?.value?.get("value") as? FieldType.StringValue
             val amount = (order["amount"] as? FieldType.ObjectValue)?.value?.get("value") as? FieldType.IntegerValue
-            println("  - ${product?.value ?: "Unknown"} (\$${amount?.value ?: 0})")
+            // Join returns an array, get first element
+            val users = order["user"] as? FieldType.ArrayValue
+            val user = users?.value?.firstOrNull() as? FieldType.ObjectValue
+            val userName = (user?.value?.get("name") as? FieldType.ObjectValue)?.value?.get("value") as? FieldType.StringValue
+            println("  - ${product?.value ?: "Unknown"} (\$${amount?.value ?: 0}) by ${userName?.value ?: "Unknown"}")
         }
         println()
         
@@ -190,10 +206,10 @@ fun main() = runBlocking {
         val query5 = QueryBuilder.new()
             .contains("email", "@example.com")
             .join(mapOf(
-                "collection" to departmentsCollection,
+                "collections" to listOf(departmentsCollection),
                 "local_field" to "department_id",
                 "foreign_field" to "id",
-                "as" to "department"
+                "as_field" to "department"
             ))
             .sortAscending("name")
             .limit(5)
@@ -204,7 +220,11 @@ fun main() = runBlocking {
         results5.forEach { user ->
             val name = (user["name"] as? FieldType.ObjectValue)?.value?.get("value") as? FieldType.StringValue
             val email = (user["email"] as? FieldType.ObjectValue)?.value?.get("value") as? FieldType.StringValue
-            println("  - ${name?.value ?: "Unknown"} (${email?.value ?: "Unknown"})")
+            // Join returns an array, get first element
+            val depts = user["department"] as? FieldType.ArrayValue
+            val dept = depts?.value?.firstOrNull() as? FieldType.ObjectValue
+            val location = (dept?.value?.get("location") as? FieldType.ObjectValue)?.value?.get("value") as? FieldType.StringValue
+            println("  - ${name?.value ?: "Unknown"} (${email?.value ?: "Unknown"}): ${location?.value ?: "N/A"}")
         }
         println()
         

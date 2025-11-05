@@ -62,7 +62,7 @@ impl Client {
     ///
     /// # Returns
     ///
-    /// The inserted record with server-generated fields (e.g., `_id`, `_created_at`)
+    /// The inserted record with server-generated fields (e.g., `id`, `_created_at`)
     ///
     /// # Example
     ///
@@ -71,20 +71,27 @@ impl Client {
     /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
     /// let client = Client::builder()
     ///     .base_url("https://your-instance.ekodb.net")
-    ///     .api_token("your-token")
+    ///     .api_key("your-token")
     ///     .build()?;
     ///
     /// let mut record = Record::new();
     /// record.insert("name", "John Doe");
     /// record.insert("age", 30);
     ///
-    /// let result = client.insert("users", record).await?;
+    /// let result = client.insert("users", record, None).await?;
     /// # Ok(())
     /// # }
     /// ```
-    pub async fn insert(&self, collection: &str, record: Record) -> Result<Record> {
+    pub async fn insert(
+        &self,
+        collection: &str,
+        record: Record,
+        bypass_ripple: Option<bool>,
+    ) -> Result<Record> {
         let token = self.auth.get_token().await?;
-        self.http.insert(collection, record, &token).await
+        self.http
+            .insert(collection, record, bypass_ripple, &token)
+            .await
     }
 
     /// Find records in a collection
@@ -118,13 +125,20 @@ impl Client {
     ///         }
     ///     }))
     ///     .limit(10);
-    /// let results = client.find("users", query).await?;
+    /// let results = client.find("users", query, None).await?;
     /// # Ok(())
     /// # }
     /// ```
-    pub async fn find(&self, collection: &str, query: Query) -> Result<Vec<Record>> {
+    pub async fn find(
+        &self,
+        collection: &str,
+        query: Query,
+        bypass_ripple: Option<bool>,
+    ) -> Result<Vec<Record>> {
         let token = self.auth.get_token().await?;
-        self.http.find(collection, query, &token).await
+        self.http
+            .find(collection, query, &token, bypass_ripple)
+            .await
     }
 
     /// Find a single record by ID
@@ -137,9 +151,16 @@ impl Client {
     /// # Returns
     ///
     /// The record if found, or `Error::NotFound` if not found
-    pub async fn find_by_id(&self, collection: &str, id: &str) -> Result<Record> {
+    pub async fn find_by_id(
+        &self,
+        collection: &str,
+        id: &str,
+        bypass_ripple: Option<bool>,
+    ) -> Result<Record> {
         let token = self.auth.get_token().await?;
-        self.http.find_by_id(collection, id, &token).await
+        self.http
+            .find_by_id(collection, id, &token, bypass_ripple)
+            .await
     }
 
     /// Update a record by ID
@@ -153,9 +174,17 @@ impl Client {
     /// # Returns
     ///
     /// The updated record
-    pub async fn update(&self, collection: &str, id: &str, record: Record) -> Result<Record> {
+    pub async fn update(
+        &self,
+        collection: &str,
+        id: &str,
+        record: Record,
+        bypass_ripple: Option<bool>,
+    ) -> Result<Record> {
         let token = self.auth.get_token().await?;
-        self.http.update(collection, id, record, &token).await
+        self.http
+            .update(collection, id, record, bypass_ripple, &token)
+            .await
     }
 
     /// Delete a record by ID
@@ -168,9 +197,16 @@ impl Client {
     /// # Returns
     ///
     /// `Ok(())` if the record was deleted successfully
-    pub async fn delete(&self, collection: &str, id: &str) -> Result<()> {
+    pub async fn delete(
+        &self,
+        collection: &str,
+        id: &str,
+        bypass_ripple: Option<bool>,
+    ) -> Result<()> {
         let token = self.auth.get_token().await?;
-        self.http.delete(collection, id, &token).await
+        self.http
+            .delete(collection, id, &token, bypass_ripple)
+            .await
     }
 
     /// Batch insert multiple documents
@@ -187,9 +223,12 @@ impl Client {
         &self,
         collection: &str,
         records: Vec<Record>,
+        bypass_ripple: Option<bool>,
     ) -> Result<Vec<Record>> {
         let token = self.auth.get_token().await?;
-        self.http.batch_insert(collection, records, &token).await
+        self.http
+            .batch_insert(collection, records, &token, bypass_ripple)
+            .await
     }
 
     /// Batch update multiple documents
@@ -206,9 +245,12 @@ impl Client {
         &self,
         collection: &str,
         updates: Vec<(String, Record)>,
+        bypass_ripple: Option<bool>,
     ) -> Result<Vec<Record>> {
         let token = self.auth.get_token().await?;
-        self.http.batch_update(collection, updates, &token).await
+        self.http
+            .batch_update(collection, updates, &token, bypass_ripple)
+            .await
     }
 
     /// Batch delete multiple documents by IDs
@@ -221,9 +263,16 @@ impl Client {
     /// # Returns
     ///
     /// The number of records deleted
-    pub async fn batch_delete(&self, collection: &str, ids: Vec<String>) -> Result<u64> {
+    pub async fn batch_delete(
+        &self,
+        collection: &str,
+        ids: Vec<String>,
+        bypass_ripple: Option<bool>,
+    ) -> Result<u64> {
         let token = self.auth.get_token().await?;
-        self.http.batch_delete(collection, ids, &token).await
+        self.http
+            .batch_delete(collection, ids, &token, bypass_ripple)
+            .await
     }
 
     /// Refresh the authentication token
@@ -294,7 +343,7 @@ impl Client {
     /// The number of documents in the collection
     pub async fn count_documents(&self, collection: &str) -> Result<usize> {
         let query = Query::new().limit(100000); // Large limit to get all
-        let records = self.find(collection, query).await?;
+        let records = self.find(collection, query, None).await?;
         Ok(records.len())
     }
 
@@ -694,6 +743,7 @@ pub struct ClientBuilder {
     timeout: Option<Duration>,
     max_retries: Option<usize>,
     should_retry: Option<bool>,
+    serialization_format: Option<crate::types::SerializationFormat>,
 }
 
 impl ClientBuilder {
@@ -791,6 +841,31 @@ impl ClientBuilder {
         self
     }
 
+    /// Set the serialization format for client-server communication
+    ///
+    /// Supports JSON (default, human-readable) and MessagePack (binary, faster).
+    /// MessagePack can provide 2-3x performance improvement over JSON.
+    ///
+    /// Default: JSON
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use ekodb_client::{Client, SerializationFormat};
+    ///
+    /// // Use MessagePack for better performance
+    /// let client = Client::builder()
+    ///     .base_url("https://api.ekodb.net")
+    ///     .api_key("your-api-key")
+    ///     .serialization_format(SerializationFormat::MessagePack)
+    ///     .build()?;
+    /// # Ok::<(), ekodb_client::Error>(())
+    /// ```
+    pub fn serialization_format(mut self, format: crate::types::SerializationFormat) -> Self {
+        self.serialization_format = Some(format);
+        self
+    }
+
     /// Build the client
     ///
     /// # Errors
@@ -808,12 +883,21 @@ impl ClientBuilder {
         let timeout = self.timeout.unwrap_or(Duration::from_secs(30));
         let max_retries = self.max_retries.unwrap_or(3);
         let should_retry = self.should_retry.unwrap_or(true); // Default to true
+        let format = self
+            .serialization_format
+            .unwrap_or(crate::types::SerializationFormat::MessagePack); // Default to MessagePack for 2-3x performance
 
         // Parse base URL
         let base_url = url::Url::parse(&base_url_str)?;
 
-        // Create HTTP client
-        let http = HttpClient::new(&base_url_str, timeout, max_retries as u32, should_retry)?;
+        // Create HTTP client with specified format
+        let http = HttpClient::new(
+            &base_url_str,
+            timeout,
+            max_retries as u32,
+            should_retry,
+            format,
+        )?;
 
         // Create reqwest client for auth
         let reqwest_client = reqwest::Client::builder().timeout(timeout).build()?;

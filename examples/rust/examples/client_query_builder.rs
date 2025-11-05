@@ -48,7 +48,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         user.insert("email", email);
         user.insert("status", status);
         user.insert("score", score);
-        client.insert(collection, user).await?;
+        client.insert(collection, user, None).await?;
     }
     println!("✓ Inserted {} users\n", user_count);
 
@@ -56,7 +56,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     println!("=== Simple Equality Query ===");
     let query = QueryBuilder::new().eq("status", "active").build();
 
-    let results = client.find(collection, query).await?;
+    let results = client.find(collection, query, None).await?;
     println!("✓ Found {} active users", results.len());
     for user in &results {
         println!("  - {:?}", user.get("name"));
@@ -67,7 +67,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     println!("=== Range Query (age >= 28 AND age < 35) ===");
     let query = QueryBuilder::new().gte("age", 28).lt("age", 35).build();
 
-    let results = client.find(collection, query).await?;
+    let results = client.find(collection, query, None).await?;
     println!("✓ Found {} users in age range", results.len());
     for user in &results {
         println!("  - {:?}", user.get("name"));
@@ -80,7 +80,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .in_array("status", vec![json!("active"), json!("pending")])
         .build();
 
-    let results = client.find(collection, query).await?;
+    let results = client.find(collection, query, None).await?;
     println!(
         "✓ Found {} users with status active or pending",
         results.len()
@@ -96,7 +96,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .nin("status", vec![json!("inactive")])
         .build();
 
-    let results = client.find(collection, query).await?;
+    let results = client.find(collection, query, None).await?;
     println!("✓ Found {} users not inactive", results.len());
     println!();
 
@@ -106,7 +106,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .contains("email", "@example.com")
         .build();
 
-    let results = client.find(collection, query).await?;
+    let results = client.find(collection, query, None).await?;
     println!("✓ Found {} users with @example.com email", results.len());
     println!();
 
@@ -116,7 +116,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .regex("name", "^[A-C]") // Names starting with A, B, or C
         .build();
 
-    let results = client.find(collection, query).await?;
+    let results = client.find(collection, query, None).await?;
     println!(
         "✓ Found {} users with names starting with A-C",
         results.len()
@@ -134,7 +134,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .gt("score", 1500)
         .build();
 
-    let results = client.find(collection, query).await?;
+    let results = client.find(collection, query, None).await?;
     println!("✓ Found {} users matching all conditions", results.len());
     for user in &results {
         println!("  - {:?}", user.get("name"));
@@ -164,7 +164,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         ])
         .build();
 
-    let results = client.find(collection, query).await?;
+    let results = client.find(collection, query, None).await?;
     println!("✓ Found {} users with age < 28 OR age > 32", results.len());
     for user in &results {
         println!("  - {:?}", user.get("name"));
@@ -175,7 +175,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     println!("=== Sorted Query (by score descending) ===");
     let query = QueryBuilder::new().sort_desc("score").limit(3).build();
 
-    let results = client.find(collection, query).await?;
+    let results = client.find(collection, query, None).await?;
     println!("✓ Top 3 users by score:");
     for (i, user) in results.iter().enumerate() {
         println!("  {}. {:?}", i + 1, user.get("name"));
@@ -189,7 +189,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .page(1, 2) // Page 1 (0-indexed), 2 items per page
         .build();
 
-    let results = client.find(collection, query).await?;
+    let results = client.find(collection, query, None).await?;
     println!("✓ Page 2 results:");
     for user in &results {
         println!("  - {:?}", user.get("name"));
@@ -209,7 +209,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }))
         .build();
 
-    let results = client.find(collection, query).await?;
+    let results = client.find(collection, query, None).await?;
     println!("✓ Found {} users NOT inactive", results.len());
     println!();
 
@@ -224,7 +224,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .bypass_cache(true)
         .build();
 
-    let results = client.find(collection, query).await?;
+    let results = client.find(collection, query, None).await?;
     println!("✓ Found {} users with all conditions", results.len());
     println!();
 

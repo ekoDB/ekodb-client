@@ -2,12 +2,23 @@
  * ekoDB TypeScript Client
  */
 
+import { encode, decode } from "@msgpack/msgpack";
 import { QueryBuilder, Query as QueryBuilderQuery } from "./query-builder";
 import { SearchQuery, SearchQueryBuilder, SearchResponse } from "./search";
 import { Schema, SchemaBuilder, CollectionMetadata } from "./schema";
 
 export interface Record {
   [key: string]: any;
+}
+
+/**
+ * Serialization format for client-server communication
+ */
+export enum SerializationFormat {
+  /** JSON format (default, human-readable) */
+  Json = "Json",
+  /** MessagePack format (binary, 2-3x faster) */
+  MessagePack = "MessagePack",
 }
 
 /**
@@ -36,6 +47,8 @@ export interface ClientConfig {
   maxRetries?: number;
   /** Request timeout in milliseconds (default: 30000) */
   timeout?: number;
+  /** Serialization format (default: MessagePack for best performance, use Json for debugging) */
+  format?: SerializationFormat;
 }
 
 /**
@@ -184,6 +197,7 @@ export class EkoDBClient {
   private shouldRetry: boolean;
   private maxRetries: number;
   private timeout: number;
+  private format: SerializationFormat;
   private rateLimitInfo: RateLimitInfo | null = null;
 
   constructor(config: string | ClientConfig, apiKey?: string) {
@@ -194,12 +208,14 @@ export class EkoDBClient {
       this.shouldRetry = true;
       this.maxRetries = 3;
       this.timeout = 30000;
+      this.format = SerializationFormat.MessagePack; // Default to MessagePack for 2-3x performance
     } else {
       this.baseURL = config.baseURL;
       this.apiKey = config.apiKey;
       this.shouldRetry = config.shouldRetry ?? true;
       this.maxRetries = config.maxRetries ?? 3;
       this.timeout = config.timeout ?? 30000;
+      this.format = config.format ?? SerializationFormat.MessagePack; // Default to MessagePack for 2-3x performance
     }
   }
 
@@ -276,6 +292,33 @@ export class EkoDBClient {
   }
 
   /**
+   * Helper to determine if a path should use JSON
+   * Only CRUD operations (insert/update/delete/batch) use MessagePack
+   * Everything else uses JSON for compatibility
+   */
+  private shouldUseJSON(path: string): boolean {
+    // ONLY these operations support MessagePack
+    const msgpackPaths = [
+      "/api/insert/",
+      "/api/batch_insert/",
+      "/api/update/",
+      "/api/batch_update/",
+      "/api/delete/",
+      "/api/batch_delete/",
+    ];
+
+    // Check if path starts with any MessagePack-supported operation
+    for (const prefix of msgpackPaths) {
+      if (path.startsWith(prefix)) {
+        return false; // Use MessagePack
+      }
+    }
+
+    // Everything else uses JSON
+    return true;
+  }
+
+  /**
    * Make an HTTP request to the ekoDB API with retry logic
    */
   private async makeRequest<T>(
@@ -283,21 +326,36 @@ export class EkoDBClient {
     path: string,
     data?: any,
     attempt: number = 0,
+    forceJson: boolean = false,
   ): Promise<T> {
     if (!this.token) {
       await this.refreshToken();
     }
 
+    // Determine content type and serialization based on path
+    // Only CRUD operations support MessagePack, everything else uses JSON
+    const shouldForceJson = forceJson || this.shouldUseJSON(path);
+    const isMessagePack =
+      !shouldForceJson && this.format === SerializationFormat.MessagePack;
+    const contentType = isMessagePack
+      ? "application/msgpack"
+      : "application/json";
+
+    // Note: Modern fetch API automatically handles gzip/deflate decompression
+    // when server sends Content-Encoding header. No additional configuration needed.
     const options: RequestInit = {
       method,
       headers: {
         Authorization: `Bearer ${this.token}`,
-        "Content-Type": "application/json",
+        "Content-Type": contentType,
+        Accept: contentType,
       },
     };
 
     if (data) {
-      options.body = JSON.stringify(data);
+      options.body = isMessagePack
+        ? (encode(data) as any)
+        : JSON.stringify(data);
     }
 
     try {
@@ -306,7 +364,14 @@ export class EkoDBClient {
       // Extract rate limit info from successful responses
       if (response.ok) {
         this.extractRateLimitInfo(response);
-        return response.json() as Promise<T>;
+
+        // Deserialize based on format
+        if (isMessagePack) {
+          const buffer = await response.arrayBuffer();
+          return decode(new Uint8Array(buffer)) as T;
+        } else {
+          return response.json() as Promise<T>;
+        }
       }
 
       // Handle rate limiting (429)
@@ -319,7 +384,13 @@ export class EkoDBClient {
         if (this.shouldRetry && attempt < this.maxRetries) {
           console.log(`Rate limited. Retrying after ${retryAfter} seconds...`);
           await this.sleep(retryAfter);
-          return this.makeRequest<T>(method, path, data, attempt + 1);
+          return this.makeRequest<T>(
+            method,
+            path,
+            data,
+            attempt + 1,
+            forceJson,
+          );
         }
 
         throw new RateLimitError(retryAfter);
@@ -336,7 +407,7 @@ export class EkoDBClient {
           `Service unavailable. Retrying after ${retryDelay} seconds...`,
         );
         await this.sleep(retryDelay);
-        return this.makeRequest<T>(method, path, data, attempt + 1);
+        return this.makeRequest<T>(method, path, data, attempt + 1, forceJson);
       }
 
       // Handle other errors
@@ -352,7 +423,7 @@ export class EkoDBClient {
         const retryDelay = 3;
         console.log(`Network error. Retrying after ${retryDelay} seconds...`);
         await this.sleep(retryDelay);
-        return this.makeRequest<T>(method, path, data, attempt + 1);
+        return this.makeRequest<T>(method, path, data, attempt + 1, forceJson);
       }
 
       throw error;
@@ -440,14 +511,20 @@ export class EkoDBClient {
   /**
    * Batch insert multiple documents
    */
-  async batchInsert(collection: string, records: Record[]): Promise<Record[]> {
-    const inserts = records.map((data) => ({ data }));
-    const result = await this.makeRequest<BatchOperationResult>(
+  async batchInsert(
+    collection: string,
+    records: Record[],
+    bypassRipple?: boolean,
+  ): Promise<BatchOperationResult> {
+    const inserts = records.map((data) => ({
+      data,
+      bypass_ripple: bypassRipple,
+    }));
+    return this.makeRequest<BatchOperationResult>(
       "POST",
       `/api/batch/insert/${collection}`,
       { inserts },
     );
-    return result.successful.map((id) => ({ id }));
   }
 
   /**
@@ -455,27 +532,37 @@ export class EkoDBClient {
    */
   async batchUpdate(
     collection: string,
-    updates: Array<{ id: string; data: Record }>,
-  ): Promise<Record[]> {
-    const result = await this.makeRequest<BatchOperationResult>(
+    updates: Array<{ id: string; data: Record; bypassRipple?: boolean }>,
+  ): Promise<BatchOperationResult> {
+    const formattedUpdates = updates.map((u) => ({
+      id: u.id,
+      data: u.data,
+      bypass_ripple: u.bypassRipple,
+    }));
+    return this.makeRequest<BatchOperationResult>(
       "PUT",
       `/api/batch/update/${collection}`,
-      { updates },
+      { updates: formattedUpdates },
     );
-    return result.successful.map((id) => ({ id }));
   }
 
   /**
    * Batch delete multiple documents
    */
-  async batchDelete(collection: string, ids: string[]): Promise<number> {
-    const deletes = ids.map((id) => ({ id }));
-    const result = await this.makeRequest<BatchOperationResult>(
+  async batchDelete(
+    collection: string,
+    ids: string[],
+    bypassRipple?: boolean,
+  ): Promise<BatchOperationResult> {
+    const deletes = ids.map((id) => ({
+      id: id,
+      bypass_ripple: bypassRipple,
+    }));
+    return this.makeRequest<BatchOperationResult>(
       "DELETE",
       `/api/batch/delete/${collection}`,
       { deletes },
     );
-    return result.successful.length;
   }
 
   /**
@@ -486,6 +573,8 @@ export class EkoDBClient {
       "POST",
       `/api/kv/set/${encodeURIComponent(key)}`,
       { value },
+      0,
+      true, // Force JSON for KV operations
     );
   }
 
@@ -496,6 +585,9 @@ export class EkoDBClient {
     const result = await this.makeRequest<{ value: any }>(
       "GET",
       `/api/kv/get/${encodeURIComponent(key)}`,
+      undefined,
+      0,
+      true, // Force JSON for KV operations
     );
     return result.value;
   }
@@ -507,6 +599,9 @@ export class EkoDBClient {
     await this.makeRequest<void>(
       "DELETE",
       `/api/kv/delete/${encodeURIComponent(key)}`,
+      undefined,
+      0,
+      true, // Force JSON for KV operations
     );
   }
 
@@ -517,6 +612,9 @@ export class EkoDBClient {
     const result = await this.makeRequest<{ collections: string[] }>(
       "GET",
       "/api/collections",
+      undefined,
+      0,
+      true, // Force JSON for metadata operations
     );
     return result.collections;
   }
@@ -525,7 +623,13 @@ export class EkoDBClient {
    * Delete a collection
    */
   async deleteCollection(collection: string): Promise<void> {
-    await this.makeRequest<void>("DELETE", `/api/collections/${collection}`);
+    await this.makeRequest<void>(
+      "DELETE",
+      `/api/collections/${collection}`,
+      undefined,
+      0,
+      true, // Force JSON for metadata operations
+    );
   }
 
   /**
@@ -553,6 +657,8 @@ export class EkoDBClient {
       "POST",
       `/api/collections/${collection}`,
       schemaObj,
+      0,
+      true, // Force JSON for metadata operations
     );
   }
 
@@ -566,6 +672,9 @@ export class EkoDBClient {
     return this.makeRequest<CollectionMetadata>(
       "GET",
       `/api/collections/${collection}`,
+      undefined,
+      0,
+      true, // Force JSON for metadata operations
     );
   }
 
@@ -625,6 +734,8 @@ export class EkoDBClient {
       "POST",
       `/api/search/${collection}`,
       queryObj,
+      0,
+      true, // Force JSON for search operations
     );
   }
 
@@ -636,7 +747,13 @@ export class EkoDBClient {
   async createChatSession(
     request: CreateChatSessionRequest,
   ): Promise<ChatResponse> {
-    return this.makeRequest<ChatResponse>("POST", "/api/chat", request);
+    return this.makeRequest<ChatResponse>(
+      "POST",
+      "/api/chat",
+      request,
+      0,
+      true, // Force JSON for chat operations
+    );
   }
 
   /**
@@ -650,6 +767,8 @@ export class EkoDBClient {
       "POST",
       `/api/chat/${sessionId}/messages`,
       request,
+      0,
+      true, // Force JSON for chat operations
     );
   }
 
@@ -660,6 +779,9 @@ export class EkoDBClient {
     return this.makeRequest<ChatSessionResponse>(
       "GET",
       `/api/chat/${sessionId}`,
+      undefined,
+      0,
+      true, // Force JSON for chat operations
     );
   }
 
@@ -676,7 +798,13 @@ export class EkoDBClient {
 
     const queryString = params.toString();
     const path = queryString ? `/api/chat?${queryString}` : "/api/chat";
-    return this.makeRequest<ListSessionsResponse>("GET", path);
+    return this.makeRequest<ListSessionsResponse>(
+      "GET",
+      path,
+      undefined,
+      0,
+      true, // Force JSON for chat operations
+    );
   }
 
   /**
@@ -695,7 +823,13 @@ export class EkoDBClient {
     const path = queryString
       ? `/api/chat/${sessionId}/messages?${queryString}`
       : `/api/chat/${sessionId}/messages`;
-    return this.makeRequest<GetMessagesResponse>("GET", path);
+    return this.makeRequest<GetMessagesResponse>(
+      "GET",
+      path,
+      undefined,
+      0,
+      true, // Force JSON for chat operations
+    );
   }
 
   /**
@@ -709,6 +843,8 @@ export class EkoDBClient {
       "PUT",
       `/api/chat/${sessionId}`,
       request,
+      0,
+      true, // Force JSON for chat operations
     );
   }
 
@@ -718,14 +854,26 @@ export class EkoDBClient {
   async branchChatSession(
     request: CreateChatSessionRequest,
   ): Promise<ChatResponse> {
-    return this.makeRequest<ChatResponse>("POST", "/api/chat/branch", request);
+    return this.makeRequest<ChatResponse>(
+      "POST",
+      "/api/chat/branch",
+      request,
+      0,
+      true, // Force JSON for chat operations
+    );
   }
 
   /**
    * Delete a chat session
    */
   async deleteChatSession(sessionId: string): Promise<void> {
-    await this.makeRequest<void>("DELETE", `/api/chat/${sessionId}`);
+    await this.makeRequest<void>(
+      "DELETE",
+      `/api/chat/${sessionId}`,
+      undefined,
+      0,
+      true, // Force JSON for chat operations
+    );
   }
 
   /**
@@ -738,6 +886,9 @@ export class EkoDBClient {
     return this.makeRequest<ChatResponse>(
       "POST",
       `/api/chat/${sessionId}/messages/${messageId}/regenerate`,
+      undefined,
+      0,
+      true, // Force JSON for chat operations
     );
   }
 
@@ -753,6 +904,8 @@ export class EkoDBClient {
       "PUT",
       `/api/chat/${sessionId}/messages/${messageId}`,
       { content },
+      0,
+      true, // Force JSON for chat operations
     );
   }
 
@@ -763,6 +916,9 @@ export class EkoDBClient {
     await this.makeRequest<void>(
       "DELETE",
       `/api/chat/${sessionId}/messages/${messageId}`,
+      undefined,
+      0,
+      true, // Force JSON for chat operations
     );
   }
 
@@ -778,6 +934,8 @@ export class EkoDBClient {
       "PATCH",
       `/api/chat/${sessionId}/messages/${messageId}/forgotten`,
       { forgotten },
+      0,
+      true, // Force JSON for chat operations
     );
   }
 
@@ -791,6 +949,8 @@ export class EkoDBClient {
       "POST",
       "/api/chat/merge",
       request,
+      0,
+      true, // Force JSON for chat operations
     );
   }
 

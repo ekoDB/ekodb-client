@@ -36,7 +36,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     record.insert("name", "ekoDB");
     record.insert("description", "High-performance database product");
     record.insert("price", 99);
-    client.insert(collection, record).await?;
+    client.insert(collection, record, None).await?;
     println!("✓ Inserted sample product\n");
 
     // Create a chat session

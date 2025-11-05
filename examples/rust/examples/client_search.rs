@@ -69,7 +69,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         doc.insert("description", description);
         doc.insert("tags", tags.join(",")); // Store as comma-separated string
         doc.insert("views", (rand::random::<u32>() % 1000) as i64);
-        client.insert(collection, doc).await?;
+        client.insert(collection, doc, None).await?;
     }
     println!("✓ Inserted {} sample documents\n", doc_count);
 

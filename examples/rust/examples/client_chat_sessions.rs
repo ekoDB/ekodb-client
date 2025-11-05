@@ -41,7 +41,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         "A high-performance database product with AI capabilities",
     );
     doc.insert("price", 99);
-    client.insert(collection, doc).await?;
+    client.insert(collection, doc, None).await?;
     println!("✓ Inserted sample product\n");
 
     // Step 2: Create a chat session

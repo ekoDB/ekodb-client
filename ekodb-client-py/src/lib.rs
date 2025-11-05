@@ -6,8 +6,8 @@ use ekodb_client::{
     ChatMessageRequest, ChatResponse, Client as RustClient, CollectionConfig,
     CreateChatSessionRequest, FieldType, GetMessagesQuery,
     GetMessagesResponse, ListSessionsQuery, ListSessionsResponse, Query as RustQuery,
-    RateLimitInfo as RustRateLimitInfo, Record as RustRecord, UpdateSessionRequest,
-    WebSocketClient as RustWebSocketClient,
+    RateLimitInfo as RustRateLimitInfo, Record as RustRecord, SerializationFormat as RustSerializationFormat,
+    UpdateSessionRequest, WebSocketClient as RustWebSocketClient,
 };
 use serde_json;
 use pyo3::create_exception;
@@ -18,6 +18,25 @@ use pyo3_asyncio::tokio::future_into_py;
 
 // Create a custom exception for rate limiting
 create_exception!(ekodb_client, RateLimitError, PyException, "Rate limit exceeded");
+
+/// Serialization format for client-server communication
+#[pyclass]
+#[derive(Clone, Copy)]
+enum SerializationFormat {
+    /// JSON format (default, human-readable)
+    Json,
+    /// MessagePack format (binary, 2-3x faster)
+    MessagePack,
+}
+
+impl From<SerializationFormat> for RustSerializationFormat {
+    fn from(format: SerializationFormat) -> Self {
+        match format {
+            SerializationFormat::Json => RustSerializationFormat::Json,
+            SerializationFormat::MessagePack => RustSerializationFormat::MessagePack,
+        }
+    }
+}
 
 /// Rate limit information from the server
 #[pyclass]
@@ -86,25 +105,33 @@ impl Client {
     ///     should_retry: Enable automatic retries (default: True)
     ///     max_retries: Maximum number of retry attempts (default: 3)
     ///     timeout_secs: Request timeout in seconds (default: 30)
+    ///     format: Serialization format (default: SerializationFormat.Json)
+    ///             Use SerializationFormat.MessagePack for 2-3x better performance
     ///
     /// Returns:
     ///     A new Client instance
     #[staticmethod]
-    #[pyo3(signature = (base_url, api_key, should_retry=true, max_retries=3, timeout_secs=30))]
+    #[pyo3(signature = (base_url, api_key, should_retry=true, max_retries=3, timeout_secs=30, format=None))]
     fn new(
         base_url: String,
         api_key: String,
         should_retry: bool,
         max_retries: usize,
         timeout_secs: u64,
+        format: Option<SerializationFormat>,
     ) -> PyResult<Self> {
-        let client = RustClient::builder()
+        let mut builder = RustClient::builder()
             .base_url(&base_url)
             .api_key(&api_key)
             .should_retry(should_retry)
             .max_retries(max_retries)
-            .timeout(std::time::Duration::from_secs(timeout_secs))
-            .build()
+            .timeout(std::time::Duration::from_secs(timeout_secs));
+        
+        if let Some(fmt) = format {
+            builder = builder.serialization_format(fmt.into());
+        }
+        
+        let client = builder.build()
             .map_err(|e| PyRuntimeError::new_err(format!("Failed to create client: {}", e)))?;
 
         Ok(Client { inner: client })
@@ -122,6 +149,7 @@ impl Client {
         collection: String,
         record: &PyDict,
         ttl: Option<String>,
+        bypass_ripple: Option<bool>,
     ) -> PyResult<&'py PyAny> {
         let mut rust_record = dict_to_record(record)?;
         
@@ -134,7 +162,7 @@ impl Client {
 
         future_into_py::<_, PyObject>(py, async move {
             let result = client
-                .insert(&collection, rust_record)
+                .insert(&collection, rust_record, bypass_ripple)
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("Insert failed: {}", e)))?;
 
@@ -148,12 +176,13 @@ impl Client {
         py: Python<'py>,
         collection: String,
         id: String,
+        bypass_ripple: Option<bool>,
     ) -> PyResult<&'py PyAny> {
         let client = self.inner.clone();
 
         future_into_py::<_, PyObject>(py, async move {
             let result = client
-                .find_by_id(&collection, &id)
+                .find_by_id(&collection, &id, bypass_ripple)
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("Find failed: {}", e)))?;
 
@@ -173,6 +202,7 @@ impl Client {
         collection: String,
         query: Option<&PyDict>,
         limit: Option<usize>,
+        bypass_ripple: Option<bool>,
     ) -> PyResult<&'py PyAny> {
         let client = self.inner.clone();
         let query_json = if let Some(q) = query {
@@ -197,7 +227,7 @@ impl Client {
             }
 
             let results = client
-                .find(&collection, rust_query)
+                .find(&collection, rust_query, bypass_ripple)
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("Find failed: {}", e)))?;
 
@@ -218,13 +248,14 @@ impl Client {
         collection: String,
         id: String,
         updates: &PyDict,
+        bypass_ripple: Option<bool>,
     ) -> PyResult<&'py PyAny> {
         let rust_updates = dict_to_record(updates)?;
         let client = self.inner.clone();
 
         future_into_py::<_, PyObject>(py, async move {
             let result = client
-                .update(&collection, &id, rust_updates)
+                .update(&collection, &id, rust_updates, bypass_ripple)
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("Update failed: {}", e)))?;
 
@@ -238,12 +269,13 @@ impl Client {
         py: Python<'py>,
         collection: String,
         id: String,
+        bypass_ripple: Option<bool>,
     ) -> PyResult<&'py PyAny> {
         let client = self.inner.clone();
 
         future_into_py::<_, PyObject>(py, async move {
             client
-                .delete(&collection, &id)
+                .delete(&collection, &id, bypass_ripple)
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("Delete failed: {}", e)))?;
 
@@ -272,11 +304,13 @@ impl Client {
     }
 
     /// Batch insert multiple documents
+    #[pyo3(signature = (collection, records, bypass_ripple=None))]
     fn batch_insert<'py>(
         &self,
         py: Python<'py>,
         collection: String,
         records: Vec<&PyDict>,
+        bypass_ripple: Option<bool>,
     ) -> PyResult<&'py PyAny> {
         let rust_records: Result<Vec<RustRecord>, _> = records
             .iter()
@@ -287,7 +321,7 @@ impl Client {
 
         future_into_py::<_, PyObject>(py, async move {
             let results = client
-                .batch_insert(&collection, rust_records)
+                .batch_insert(&collection, rust_records, bypass_ripple)
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("Batch insert failed: {}", e)))?;
 
@@ -302,11 +336,13 @@ impl Client {
     }
 
     /// Batch update multiple documents
+    #[pyo3(signature = (collection, updates, bypass_ripple=None))]
     fn batch_update<'py>(
         &self,
         py: Python<'py>,
         collection: String,
         updates: Vec<(&str, &PyDict)>, // Vec of (id, record) pairs
+        bypass_ripple: Option<bool>,
     ) -> PyResult<&'py PyAny> {
         let rust_updates: Result<Vec<(String, RustRecord)>, PyErr> = updates
             .iter()
@@ -317,7 +353,7 @@ impl Client {
 
         future_into_py::<_, PyObject>(py, async move {
             let results = client
-                .batch_update(&collection, rust_updates)
+                .batch_update(&collection, rust_updates, bypass_ripple)
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("Batch update failed: {}", e)))?;
 
@@ -332,17 +368,19 @@ impl Client {
     }
 
     /// Batch delete multiple documents by IDs
+    #[pyo3(signature = (collection, ids, bypass_ripple=None))]
     fn batch_delete<'py>(
         &self,
         py: Python<'py>,
         collection: String,
         ids: Vec<String>,
+        bypass_ripple: Option<bool>,
     ) -> PyResult<&'py PyAny> {
         let client = self.inner.clone();
 
         future_into_py::<_, PyObject>(py, async move {
             let deleted_count = client
-                .batch_delete(&collection, ids)
+                .batch_delete(&collection, ids, bypass_ripple)
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("Batch delete failed: {}", e)))?;
 
@@ -1211,6 +1249,7 @@ fn _ekodb_client(py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Client>()?;
     m.add_class::<WebSocketClient>()?;
     m.add_class::<RateLimitInfo>()?;
+    m.add_class::<SerializationFormat>()?;
     m.add("RateLimitError", py.get_type::<RateLimitError>())?;
     Ok(())
 }

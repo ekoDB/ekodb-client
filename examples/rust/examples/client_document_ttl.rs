@@ -32,7 +32,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     record1.insert("value", "abc123");
     let record1 = record1.with_ttl_update_on_access("1h", true);
 
-    let doc1 = client.insert(collection, record1).await?;
+    let doc1 = client.insert(collection, record1, None).await?;
     if let Some(ekodb_client::FieldType::String(id)) = doc1.get("id") {
         println!("✓ Inserted document: {:?}", id);
     }
@@ -44,13 +44,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     record2.insert("important", true);
     let record2 = record2.with_ttl("5m");
 
-    let doc2 = client.insert(collection, record2).await?;
+    let doc2 = client.insert(collection, record2, None).await?;
     println!("✓ Inserted document: {:?}", doc2.get("id"));
 
     // Example 3: Query documents
     println!("\n=== Query Documents ===");
     let query = Query::new().limit(10);
-    let docs = client.find(collection, query).await?;
+    let docs = client.find(collection, query, None).await?;
     println!("✓ Found {} documents with TTL", docs.len());
 
     // Example 4: Update document (TTL persists)
@@ -59,7 +59,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let mut updates = Record::new();
         updates.insert("value", "updated_value");
 
-        client.update(collection, id, updates).await?;
+        client.update(collection, id, updates, None).await?;
         println!("✓ Updated document");
     }
 
@@ -67,7 +67,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n=== Delete Document ===");
     if let Some(id) = doc2.get("id") {
         if let ekodb_client::FieldType::String(id_str) = id {
-            client.delete(collection, id_str).await?;
+            client.delete(collection, id_str, None).await?;
             println!("✓ Deleted document");
         }
     }

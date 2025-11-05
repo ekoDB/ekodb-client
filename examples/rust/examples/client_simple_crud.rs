@@ -33,7 +33,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     record.insert("value", 42);
     record.insert("active", true);
 
-    let inserted = client.insert(collection, record).await?;
+    let inserted = client.insert(collection, record, None).await?;
     println!("Inserted: {:?}", inserted);
 
     // Extract the ID
@@ -48,7 +48,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Example 2: Find by ID
     println!("\n=== Find by ID ===");
-    let found_doc = client.find_by_id(collection, &doc_id).await?;
+    let found_doc = client.find_by_id(collection, &doc_id, None).await?;
     println!("Found: {:?}", found_doc);
 
     // Example 3: Find with query
@@ -66,7 +66,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }))
         .limit(10);
 
-    let docs = client.find(collection, query).await?;
+    let docs = client.find(collection, query, None).await?;
     println!("Found documents: {:?}", docs);
 
     // Example 4: Update document
@@ -75,12 +75,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     updates.insert("name", "Updated Record");
     updates.insert("value", 100);
 
-    let updated = client.update(collection, &doc_id, updates).await?;
+    let updated = client.update(collection, &doc_id, updates, None).await?;
     println!("Updated: {:?}", updated);
 
     // Example 5: Delete document
     println!("\n=== Delete Document ===");
-    client.delete(collection, &doc_id).await?;
+    client.delete(collection, &doc_id, None).await?;
     println!("Deleted document");
 
     // Cleanup: Delete the collection

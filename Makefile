@@ -6,6 +6,7 @@ CLIENT_DIR := ekodb_client
 CLIENT_PY_DIR := ekodb-client-py
 CLIENT_TS_DIR := ekodb-client-ts
 CLIENT_GO_DIR := ekodb-client-go
+CLIENT_KT_DIR := ekodb-client-kt
 
 # Color codes for pretty output
 CYAN := \033[36m
@@ -23,13 +24,18 @@ BANNER := \
 		"███████╗ ████═╝  ██║   ██║██    ██║███████ " "\n" \
 		"██     ║ ██╔██╗  ██║   ██║██    ██║██   ██ " "\n" \
 		"███████║ ██║  ██ ║██████╔╝███████║║███████ " "\n" \
-		"╚══════╝ ╚═╝  ╚══╝ ╚════╝ ╚══════╝ ╚═════╝  " "\n" \
+		"╚══════╝ ╚═╝  ╚══╝ ╚════╝ ╚══════╝ ╚═════╝  " "\n"
+
+# Language Sub-Banner
+LANGUAGES := \
+	"         🦀 Rust  •  🐍 Python  •  📘 TypeScript  •  🟣 Kotlin" "\n"
 
 # Default target
 all: build
 
 help:
 	@echo $(BANNER)
+	@echo $(LANGUAGES)
 	@echo "✨ $(CYAN)Welcome to ekoDB Client Libraries ✨$(RESET)"
 	@echo ""
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
@@ -41,11 +47,12 @@ help:
 	@echo "     $(GREEN)make install-typescript$(RESET) - Install TypeScript client only"
 	@echo "     $(GREEN)make install-go$(RESET)         - Install Go client only"
 	@echo "  🛠️  $(GREEN)make setup$(RESET)              - Set up the project (fetch deps, create .env)"
-	@echo "  🛠️  $(GREEN)make build$(RESET)              - Build ALL client libraries (Rust, Python, TS)"
+	@echo "  🛠️  $(GREEN)make build$(RESET)              - Build ALL client libraries (Rust, Python, TS, Kotlin)"
 	@echo "  🚀 $(GREEN)make build-release$(RESET)      - Build Rust client (release mode)"
 	@echo "  🦀 $(GREEN)make build-client$(RESET)       - Build Rust client only"
 	@echo "  🐍 $(GREEN)make build-python-client$(RESET) - Build Python client only"
 	@echo "  📘 $(GREEN)make build-typescript-client$(RESET) - Build TypeScript client only"
+	@echo "  🟣 $(GREEN)make build-kotlin-client$(RESET) - Build Kotlin client only"
 	@echo "  🧪 $(GREEN)make test$(RESET)               - Run Rust client tests"
 	@echo "  📚 $(GREEN)make docs$(RESET)               - Generate Rust client documentation"
 	@echo "  🖌️  $(GREEN)make fmt$(RESET)                - Format all code (Rust + Python + Go + TS + Markdown)"
@@ -75,13 +82,14 @@ help:
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "🚀 $(CYAN)DEPLOYMENT$(RESET)"
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "  🚀 $(GREEN)make deploy-all$(RESET)         - Deploy ALL clients (Rust + Python + TS + Kotlin)"
 	@echo "  🦀 $(GREEN)make deploy-client-rust$(RESET) - Deploy Rust client (uses scripts/publish-rust.sh)"
 	@echo "  🐍 $(GREEN)make deploy-client-py$(RESET)   - Deploy Python client (multi-platform: Linux+macOS+source)"
 	@echo "  🐍 $(GREEN)make deploy-client-py-simple$(RESET) - Deploy Python client (current platform, uses script)"
-	@echo "  🔷 $(GREEN)make deploy-client-go$(RESET)   - Show Go client deployment instructions"
 	@echo "  📘 $(GREEN)make deploy-client-ts$(RESET)   - Deploy TypeScript client (uses scripts/publish-typescript.sh)"
 	@echo "  🟣 $(GREEN)make deploy-client-kt$(RESET)   - Deploy Kotlin client to Maven Central (uses scripts/publish-kotlin.sh)"
-	@echo "  🔢 $(GREEN)make bump-version$(RESET)       - Bump version for ALL clients (Rust, Python, TS)"
+	@echo "  🔷 $(GREEN)make deploy-client-go$(RESET)   - Show Go client deployment instructions"
+	@echo "  🔢 $(GREEN)make bump-version$(RESET)       - Bump version for ALL clients (Rust + Python + TS + Kotlin)"
 	@echo "  🔢 $(GREEN)make bump-client-py$(RESET)     - Bump Python client version only"
 	@echo ""
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
@@ -98,6 +106,13 @@ help:
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "  🖌️  $(GREEN)make fmt$(RESET)          - Format all code (Rust + Python + Go + TS + Markdown)"
 	@echo "  🖌️  $(GREEN)make format$(RESET)       - Format all code (alias for fmt)"
+	@echo "  📦 $(GREEN)make deps-check-all$(RESET) - Check for outdated dependencies (Rust + TS + Kotlin)"
+	@echo "  📦 $(GREEN)make deps-update-all$(RESET) - Update all dependencies within constraints"
+	@echo "     $(GREEN)make deps-check$(RESET)       - Check Rust dependencies only"
+	@echo "     $(GREEN)make deps-update$(RESET)      - Update Rust dependencies only"
+	@echo "     $(GREEN)make deps-check-rust$(RESET)  - Detailed Rust dependency check"
+	@echo "     $(GREEN)make deps-check-typescript$(RESET) - Check TypeScript/npm dependencies"
+	@echo "     $(GREEN)make deps-check-kotlin$(RESET) - Check Kotlin/Gradle dependencies"
 	@echo "  📋 $(GREEN)make examples-ls$(RESET)  - Generate comprehensive examples inventory"
 	@echo "  🔍 $(GREEN)make examples-ls-check$(RESET) - Validate examples inventory against committed snapshot"
 	@echo "  🔄 $(GREEN)make examples-ls-badge$(RESET) - Update README badge with current example count"
@@ -134,7 +149,7 @@ docs-client:
 docs: docs-client
 
 # Build targets - builds all client libraries
-build: build-client build-python-client build-typescript-client
+build: build-client build-python-client build-typescript-client build-kotlin-client
 	@echo "✅ $(GREEN)All client libraries built!$(RESET)"
 
 build-release:
@@ -146,7 +161,7 @@ build-release:
 deploy-client: deploy-client-rust
 	@echo "✅ $(GREEN)All client libraries deployed!$(RESET)"
 
-deploy-all: ## Deploy all client libraries (Rust, Python, TypeScript)
+deploy-all: ## Deploy all client libraries (Rust, Python, TypeScript, Kotlin)
 	@echo "🚀 $(CYAN)Deploying all client libraries...$(RESET)"
 	@./scripts/publish-all.sh --all
 	@echo "✅ $(GREEN)All client libraries deployed!$(RESET)"
@@ -165,6 +180,7 @@ bump-version:
 	echo "  Rust:       $$(grep '^version = ' ekodb_client/Cargo.toml | head -1 | cut -d'"' -f2)"; \
 	echo "  Python:     $$(grep '^version = ' ekodb-client-py/Cargo.toml | head -1 | cut -d'"' -f2)"; \
 	echo "  TypeScript: $$(grep '"version":' ekodb-client-ts/package.json | head -1 | cut -d'"' -f4)"; \
+	echo "  Kotlin:     $$(grep '^version = ' ekodb-client-kt/build.gradle.kts | head -1 | cut -d'"' -f2)"; \
 	echo ""; \
 	echo "$(YELLOW)📦 New version: $$NEW_VERSION$(RESET)"; \
 	echo ""; \
@@ -190,12 +206,16 @@ bump-version:
 	sed -i '' "s/\"version\": \"[^\"]*\"/\"version\": \"$$NEW_VERSION\"/" ekodb-client-ts/package.json; \
 	echo "  ✅ ekodb-client-ts/package.json"; \
 	echo ""; \
+	echo "$(CYAN)Updating Kotlin client...$(RESET)"; \
+	sed -i '' "s/^version = \"[^\"]*\"/version = \"$$NEW_VERSION\"/" ekodb-client-kt/build.gradle.kts; \
+	echo "  ✅ ekodb-client-kt/build.gradle.kts"; \
+	echo ""; \
 	echo "$(GREEN)✅ All versions bumped to $$NEW_VERSION$(RESET)"; \
 	echo ""; \
 	echo "$(YELLOW)💡 Next steps:$(RESET)"; \
 	echo "  1. Review changes: git diff"; \
 	echo "  2. Commit: git add -A && git commit -m 'Bump version to $$NEW_VERSION'"; \
-	echo "  3. Publish: make deploy-client (or individual deploy commands)"
+	echo "  3. Publish: make deploy-all (or individual deploy commands)"
 
 bump-client-py:
 	@echo "🔢 $(CYAN)Bumping Python client version...$(RESET)"
@@ -265,17 +285,6 @@ deploy-client-py:
 	fi
 	@echo "✅ $(GREEN)Python client published!$(RESET)"
 	@echo "💡 $(YELLOW)Note: Windows wheels require a Windows machine or CI/CD$(RESET)"
-
-deploy-client-go:
-	@echo "🔷 $(CYAN)Tagging Go client for pkg.go.dev...$(RESET)"
-	@echo "📝 $(YELLOW)Go client is in a separate repository$(RESET)"
-	@echo "💡 $(YELLOW)To publish Go client:$(RESET)"
-	@echo "   1. Go to: github.com/ekoDB/ekodb-client-go"
-	@echo "   2. Commit your changes"
-	@echo "   3. Run: git tag v0.1.1"
-	@echo "   4. Run: git push origin v0.1.1"
-	@echo "   5. Go will automatically index it at pkg.go.dev"
-	@echo "✅ $(GREEN)Go client deployment instructions shown!$(RESET)"
 
 # Simple Python deployment (current platform only, uses script)
 deploy-client-py-simple:
@@ -704,23 +713,146 @@ install-hooks:
 	chmod +x .git/hooks/pre-commit
 	@echo "✅ $(GREEN)Git hooks installed!$(RESET)"
 
-# Check for outdated dependencies
+# ============================================================================
+# Dependency Management - All Packages
+# ============================================================================
+
+# Check for outdated dependencies (Rust only)
 deps-check:
-	@echo "📦 $(CYAN)Checking for outdated dependencies...$(RESET)"
+	@echo "📦 $(CYAN)Checking for outdated Rust dependencies...$(RESET)"
 	@if command -v cargo-outdated > /dev/null; then \
 		cargo outdated; \
 	else \
 		echo "$(YELLOW)cargo-outdated is not installed.$(RESET)"; \
 		echo "$(YELLOW)Run 'cargo install cargo-outdated' to install it.$(RESET)"; \
 	fi
-	@echo "✅ $(GREEN)Dependencies check complete!$(RESET)"
+	@echo "✅ $(GREEN)Rust dependencies check complete!$(RESET)"
 
-# Update dependencies within Cargo.toml constraints
+# Update dependencies within Cargo.toml constraints (Rust only)
 deps-update:
-	@echo "📦 $(CYAN)Updating dependencies within constraints...$(RESET)"
+	@echo "📦 $(CYAN)Updating Rust dependencies within constraints...$(RESET)"
 	$(CARGO) update
-	@echo "✅ $(GREEN)Dependencies updated successfully!$(RESET)"
+	@echo "✅ $(GREEN)Rust dependencies updated successfully!$(RESET)"
 	@echo "💡 $(YELLOW)Run 'make deps-check' to see if any dependencies still need updating$(RESET)"
+
+# Check all packages for outdated dependencies
+deps-check-all: deps-check-rust deps-check-typescript deps-check-kotlin
+	@echo "✅ $(GREEN)All dependency checks complete!$(RESET)"
+
+# Update all packages' dependencies
+deps-update-all: deps-update-rust deps-update-typescript deps-update-kotlin
+	@echo "✅ $(GREEN)All dependencies updated!$(RESET)"
+
+# Rust dependency checks (detailed)
+deps-check-rust:
+	@echo "🦀 $(CYAN)Checking Rust workspace dependencies...$(RESET)"
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "📦 Workspace Root & ekodb_client"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@if command -v cargo-outdated > /dev/null; then \
+		cargo outdated; \
+	else \
+		echo "$(RED)❌ cargo-outdated not installed$(RESET)"; \
+		echo "$(YELLOW)Run: cargo install cargo-outdated$(RESET)"; \
+		exit 1; \
+	fi
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "📦 Python Bindings (ekodb-client-py)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@cd ekodb-client-py && cargo outdated
+	@echo ""
+	@echo "💡 $(YELLOW)Note: Many 'Removed' entries are transitive dependencies - safe to ignore$(RESET)"
+	@echo "💡 $(YELLOW)Focus on direct dependencies with major version updates$(RESET)"
+
+# TypeScript dependency checks
+deps-check-typescript:
+	@echo "📘 $(CYAN)Checking TypeScript/npm dependencies...$(RESET)"
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "📦 ekodb-client-ts"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@if [ -d "ekodb-client-ts" ]; then \
+		cd ekodb-client-ts && npm outdated || true; \
+		echo ""; \
+		echo "$(YELLOW)💡 To update: cd ekodb-client-ts && npm update$(RESET)"; \
+		echo "$(YELLOW)💡 For major updates: npm install -g npm-check-updates && ncu -u$(RESET)"; \
+	else \
+		echo "$(RED)❌ ekodb-client-ts directory not found$(RESET)"; \
+	fi
+
+# Kotlin dependency checks  
+deps-check-kotlin:
+	@echo "🟣 $(CYAN)Checking Kotlin/Gradle dependencies...$(RESET)"
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "📦 ekodb-client-kt"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@if [ -d "ekodb-client-kt" ]; then \
+		cd ekodb-client-kt && ./gradlew dependencyUpdates --no-daemon || { \
+			echo "$(YELLOW)⚠️  dependencyUpdates plugin not configured$(RESET)"; \
+			echo "$(YELLOW)Current versions in build.gradle.kts:$(RESET)"; \
+			echo "  - Kotlin: $$(grep 'kotlin("jvm")' build.gradle.kts | grep -o 'version "[^"]*"' | cut -d'"' -f2)"; \
+			echo "  - Coroutines: $$(grep 'kotlinx-coroutines-core' build.gradle.kts | grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+')"; \
+			echo "  - Serialization: $$(grep 'kotlinx-serialization-json' build.gradle.kts | grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+')"; \
+			echo "  - Ktor: $$(grep 'ktor-client-core' build.gradle.kts | grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+')"; \
+			echo ""; \
+			echo "$(YELLOW)💡 To add dependencyUpdates plugin, add to build.gradle.kts:$(RESET)"; \
+			echo "$(YELLOW)   plugins { id(\"com.github.ben-manes.versions\") version \"0.51.0\" }$(RESET)"; \
+		}; \
+	else \
+		echo "$(RED)❌ ekodb-client-kt directory not found$(RESET)"; \
+	fi
+
+# Rust dependency updates (detailed)
+deps-update-rust:
+	@echo "🦀 $(CYAN)Updating Rust workspace dependencies...$(RESET)"
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "📦 Workspace Root & ekodb_client"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	$(CARGO) update --workspace
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "📦 Python Bindings (ekodb-client-py)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@cd ekodb-client-py && cargo update
+	@echo ""
+	@echo "✅ $(GREEN)Rust dependencies updated!$(RESET)"
+	@echo "💡 $(YELLOW)Run 'make deps-check-rust' to see remaining updates$(RESET)"
+
+# TypeScript dependency updates
+deps-update-typescript:
+	@echo "📘 $(CYAN)Updating TypeScript/npm dependencies...$(RESET)"
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "📦 ekodb-client-ts"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@if [ -d "ekodb-client-ts" ]; then \
+		cd ekodb-client-ts && npm update && npm audit fix || true; \
+		echo ""; \
+		echo "✅ $(GREEN)TypeScript dependencies updated!$(RESET)"; \
+		echo "💡 $(YELLOW)For major updates: npm install -g npm-check-updates && cd ekodb-client-ts && ncu -u && npm install$(RESET)"; \
+	else \
+		echo "$(RED)❌ ekodb-client-ts directory not found$(RESET)"; \
+	fi
+
+# Kotlin dependency updates
+deps-update-kotlin:
+	@echo "🟣 $(CYAN)Updating Kotlin/Gradle dependencies...$(RESET)"
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "📦 ekodb-client-kt"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "$(YELLOW)⚠️  Gradle requires manual dependency updates in build.gradle.kts$(RESET)"
+	@echo "$(YELLOW)Run 'make deps-check-kotlin' to see available updates$(RESET)"
+	@echo ""
+	@if [ -d "ekodb-client-kt" ]; then \
+		cd ekodb-client-kt && ./gradlew dependencies --no-daemon --configuration runtimeClasspath || true; \
+	else \
+		echo "$(RED)❌ ekodb-client-kt directory not found$(RESET)"; \
+	fi
 
 # ============================================================================
 # Examples Inventory
