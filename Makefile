@@ -82,13 +82,14 @@ help:
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "🚀 $(CYAN)DEPLOYMENT$(RESET)"
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "  🚀 $(GREEN)make deploy-all$(RESET)         - Deploy ALL clients (Rust + Python + TS + Kotlin)"
 	@echo "  🦀 $(GREEN)make deploy-client-rust$(RESET) - Deploy Rust client (uses scripts/publish-rust.sh)"
 	@echo "  🐍 $(GREEN)make deploy-client-py$(RESET)   - Deploy Python client (multi-platform: Linux+macOS+source)"
 	@echo "  🐍 $(GREEN)make deploy-client-py-simple$(RESET) - Deploy Python client (current platform, uses script)"
-	@echo "  🔷 $(GREEN)make deploy-client-go$(RESET)   - Show Go client deployment instructions"
 	@echo "  📘 $(GREEN)make deploy-client-ts$(RESET)   - Deploy TypeScript client (uses scripts/publish-typescript.sh)"
 	@echo "  🟣 $(GREEN)make deploy-client-kt$(RESET)   - Deploy Kotlin client to Maven Central (uses scripts/publish-kotlin.sh)"
-	@echo "  🔢 $(GREEN)make bump-version$(RESET)       - Bump version for ALL clients (Rust, Python, TS)"
+	@echo "  🔷 $(GREEN)make deploy-client-go$(RESET)   - Show Go client deployment instructions"
+	@echo "  🔢 $(GREEN)make bump-version$(RESET)       - Bump version for ALL clients (Rust + Python + TS + Kotlin)"
 	@echo "  🔢 $(GREEN)make bump-client-py$(RESET)     - Bump Python client version only"
 	@echo ""
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
@@ -160,7 +161,7 @@ build-release:
 deploy-client: deploy-client-rust
 	@echo "✅ $(GREEN)All client libraries deployed!$(RESET)"
 
-deploy-all: ## Deploy all client libraries (Rust, Python, TypeScript)
+deploy-all: ## Deploy all client libraries (Rust, Python, TypeScript, Kotlin)
 	@echo "🚀 $(CYAN)Deploying all client libraries...$(RESET)"
 	@./scripts/publish-all.sh --all
 	@echo "✅ $(GREEN)All client libraries deployed!$(RESET)"
@@ -179,6 +180,7 @@ bump-version:
 	echo "  Rust:       $$(grep '^version = ' ekodb_client/Cargo.toml | head -1 | cut -d'"' -f2)"; \
 	echo "  Python:     $$(grep '^version = ' ekodb-client-py/Cargo.toml | head -1 | cut -d'"' -f2)"; \
 	echo "  TypeScript: $$(grep '"version":' ekodb-client-ts/package.json | head -1 | cut -d'"' -f4)"; \
+	echo "  Kotlin:     $$(grep '^version = ' ekodb-client-kt/build.gradle.kts | head -1 | cut -d'"' -f2)"; \
 	echo ""; \
 	echo "$(YELLOW)📦 New version: $$NEW_VERSION$(RESET)"; \
 	echo ""; \
@@ -204,12 +206,16 @@ bump-version:
 	sed -i '' "s/\"version\": \"[^\"]*\"/\"version\": \"$$NEW_VERSION\"/" ekodb-client-ts/package.json; \
 	echo "  ✅ ekodb-client-ts/package.json"; \
 	echo ""; \
+	echo "$(CYAN)Updating Kotlin client...$(RESET)"; \
+	sed -i '' "s/^version = \"[^\"]*\"/version = \"$$NEW_VERSION\"/" ekodb-client-kt/build.gradle.kts; \
+	echo "  ✅ ekodb-client-kt/build.gradle.kts"; \
+	echo ""; \
 	echo "$(GREEN)✅ All versions bumped to $$NEW_VERSION$(RESET)"; \
 	echo ""; \
 	echo "$(YELLOW)💡 Next steps:$(RESET)"; \
 	echo "  1. Review changes: git diff"; \
 	echo "  2. Commit: git add -A && git commit -m 'Bump version to $$NEW_VERSION'"; \
-	echo "  3. Publish: make deploy-client (or individual deploy commands)"
+	echo "  3. Publish: make deploy-all (or individual deploy commands)"
 
 bump-client-py:
 	@echo "🔢 $(CYAN)Bumping Python client version...$(RESET)"
