@@ -14,6 +14,11 @@ export {
   DistanceMetric,
 } from "./schema";
 export { JoinBuilder } from "./join";
+export {
+  Stage,
+  ParameterValue,
+  ChatMessage as FunctionChatMessage,
+} from "./functions";
 export type { SearchQuery, SearchResult, SearchResponse } from "./search";
 export type {
   Schema,
@@ -22,6 +27,16 @@ export type {
   CollectionMetadata,
 } from "./schema";
 export type { JoinConfig } from "./join";
+export type {
+  SavedFunction,
+  ParameterDefinition,
+  FunctionStageConfig,
+  GroupFunctionConfig,
+  SortFieldConfig,
+  FunctionResult,
+  FunctionStats,
+  StageStats,
+} from "./functions";
 export type {
   Record,
   Query,

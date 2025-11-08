@@ -32,10 +32,10 @@ async function main() {
   ];
 
   const inserted = await client.batchInsert(collection, records);
-  console.log(`✓ Batch inserted ${inserted.length} records`);
+  console.log(`✓ Batch inserted ${inserted.successful.length} records`);
 
   // Collect IDs
-  const ids = inserted.map((rec) => rec.id as string);
+  const ids = inserted.successful;
 
   // Verify
   const allDocs = await client.find(collection, { limit: 100 });
@@ -51,13 +51,13 @@ async function main() {
   }));
 
   const updated = await client.batchUpdate(collection, updates);
-  console.log(`✓ Batch updated ${updated.length} records`);
+  console.log(`✓ Batch updated ${updated.successful.length} records`);
 
   // Example 3: Batch Delete
   console.log("\n=== Batch Delete ===");
   const deleteIDs = ids.slice(0, 3);
-  const deletedCount = await client.batchDelete(collection, deleteIDs);
-  console.log(`✓ Batch deleted ${deletedCount} records`);
+  const deleted = await client.batchDelete(collection, deleteIDs);
+  console.log(`✓ Batch deleted ${deleted.successful.length} records`);
 
   // Cleanup: Delete the collection
   console.log("\n=== Cleanup ===");

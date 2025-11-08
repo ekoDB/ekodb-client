@@ -4,9 +4,10 @@
 
 use ekodb_client::{
     ChatMessageRequest, ChatResponse, Client as RustClient, CollectionConfig,
-    CreateChatSessionRequest, FieldType, GetMessagesQuery,
-    GetMessagesResponse, ListSessionsQuery, ListSessionsResponse, Query as RustQuery,
-    RateLimitInfo as RustRateLimitInfo, Record as RustRecord, SerializationFormat as RustSerializationFormat,
+    CreateChatSessionRequest, FieldType, GetMessagesQuery, GetMessagesResponse,
+    ListSessionsQuery, ListSessionsResponse, Query as RustQuery,
+    RateLimitInfo as RustRateLimitInfo, Record as RustRecord,
+    SavedFunction as RustSavedFunction, SerializationFormat as RustSerializationFormat,
     UpdateSessionRequest, WebSocketClient as RustWebSocketClient,
 };
 use serde_json;
@@ -947,6 +948,190 @@ impl Client {
         })
     }
 
+    // ========================================================================
+    // SAVED FUNCTIONS API
+    // ========================================================================
+
+    /// Save a new function definition
+    ///
+    /// Args:
+    ///     function: Function definition as a dict
+    ///
+    /// Returns:
+    ///     Function ID string
+    fn save_function<'py>(
+        &self,
+        py: Python<'py>,
+        function: &PyDict,
+    ) -> PyResult<&'py PyAny> {
+        let client = self.inner.clone();
+        let function_json = serde_json::to_string(&pydict_to_json(py, function)?)
+            .map_err(|e| PyValueError::new_err(format!("Invalid function definition: {}", e)))?;
+        
+        future_into_py::<_, PyObject>(py, async move {
+            let function: RustSavedFunction = serde_json::from_str(&function_json)
+                .map_err(|e| PyRuntimeError::new_err(format!("Failed to parse function: {}", e)))?;
+            
+            let id = client
+                .save_function(function)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("Save function failed: {}", e)))?;
+            
+            Python::with_gil(|py| Ok(id.to_object(py)))
+        })
+    }
+
+    /// Get a function by label
+    ///
+    /// Args:
+    ///     label: Function label
+    ///
+    /// Returns:
+    ///     Function definition as a dict
+    fn get_function<'py>(
+        &self,
+        py: Python<'py>,
+        label: String,
+    ) -> PyResult<&'py PyAny> {
+        let client = self.inner.clone();
+        
+        future_into_py::<_, PyObject>(py, async move {
+            let function = client
+                .get_function(&label)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("Get function failed: {}", e)))?;
+            
+            let json = serde_json::to_value(&function)
+                .map_err(|e| PyRuntimeError::new_err(format!("Serialization failed: {}", e)))?;
+            
+            Python::with_gil(|py| json_to_pydict(py, &json))
+        })
+    }
+
+    /// List all functions, optionally filtered by tags
+    ///
+    /// Args:
+    ///     tags: Optional list of tags to filter by
+    ///
+    /// Returns:
+    ///     List of function definitions
+    fn list_functions<'py>(
+        &self,
+        py: Python<'py>,
+        tags: Option<Vec<String>>,
+    ) -> PyResult<&'py PyAny> {
+        let client = self.inner.clone();
+        
+        future_into_py::<_, PyObject>(py, async move {
+            let functions = client
+                .list_functions(tags)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("List functions failed: {}", e)))?;
+            
+            let json = serde_json::to_value(&functions)
+                .map_err(|e| PyRuntimeError::new_err(format!("Serialization failed: {}", e)))?;
+            
+            Python::with_gil(|py| json_to_pydict(py, &json))
+        })
+    }
+
+    /// Update an existing function
+    ///
+    /// Args:
+    ///     label: Function label
+    ///     function: Updated function definition as a dict
+    fn update_function<'py>(
+        &self,
+        py: Python<'py>,
+        label: String,
+        function: &PyDict,
+    ) -> PyResult<&'py PyAny> {
+        let client = self.inner.clone();
+        let function_json = serde_json::to_string(&pydict_to_json(py, function)?)
+            .map_err(|e| PyValueError::new_err(format!("Invalid function definition: {}", e)))?;
+        
+        future_into_py::<_, PyObject>(py, async move {
+            let function: RustSavedFunction = serde_json::from_str(&function_json)
+                .map_err(|e| PyRuntimeError::new_err(format!("Failed to parse function: {}", e)))?;
+            
+            client
+                .update_function(&label, function)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("Update function failed: {}", e)))?;
+            
+            Python::with_gil(|py| Ok(py.None()))
+        })
+    }
+
+    /// Delete a function by label
+    ///
+    /// Args:
+    ///     label: Function label
+    fn delete_function<'py>(
+        &self,
+        py: Python<'py>,
+        label: String,
+    ) -> PyResult<&'py PyAny> {
+        let client = self.inner.clone();
+        
+        future_into_py::<_, PyObject>(py, async move {
+            client
+                .delete_function(&label)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("Delete function failed: {}", e)))?;
+            
+            Python::with_gil(|py| Ok(py.None()))
+        })
+    }
+
+    /// Call a saved function by ID or label
+    ///
+    /// Args:
+    ///     function_id_or_label: Function ID or label name
+    ///     params: Optional parameters as a dict
+    ///
+    /// Returns:
+    ///     Function result with records and metadata
+    fn call_function<'py>(
+        &self,
+        py: Python<'py>,
+        function_id_or_label: String,
+        params: Option<&PyDict>,
+    ) -> PyResult<&'py PyAny> {
+        let client = self.inner.clone();
+        let params_map = if let Some(p) = params {
+            Some(pydict_to_fieldtype_map(py, p)?)
+        } else {
+            None
+        };
+        
+        future_into_py::<_, PyObject>(py, async move {
+            let result = client
+                .call_function(&function_id_or_label, params_map)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("Call function failed: {}", e)))?;
+            
+            Python::with_gil(|py| {
+                let dict = PyDict::new(py);
+                
+                // Convert records
+                let records_list = PyList::empty(py);
+                for record in &result.records {
+                    // Convert Record to serde_json::Value first
+                    let record_value = serde_json::to_value(record).unwrap();
+                    records_list.append(json_to_pydict(py, &record_value)?)?;
+                }
+                dict.set_item("records", records_list)?;
+                
+                // Convert stats (not metadata)
+                let stats = json_to_pydict(py, &serde_json::to_value(&result.stats).unwrap())?;
+                dict.set_item("stats", stats)?;
+                
+                Ok(dict.into())
+            })
+        })
+    }
+
     /// Create a WebSocket connection
     fn websocket<'py>(
         &self,
@@ -1241,6 +1426,70 @@ fn json_to_pydict(py: Python, value: &serde_json::Value) -> PyResult<PyObject> {
             Ok(dict.to_object(py))
         }
     }
+}
+
+/// Convert Python dict to JSON value
+fn pydict_to_json(py: Python, dict: &PyDict) -> PyResult<serde_json::Value> {
+    use pyo3::types::{PyBool, PyFloat, PyInt, PyString};
+    
+    let mut map = serde_json::Map::new();
+    for (key, value) in dict {
+        let key_str: String = key.extract()?;
+        let json_value = if value.is_none() {
+            serde_json::Value::Null
+        } else if let Ok(b) = value.downcast::<PyBool>() {
+            serde_json::Value::Bool(b.is_true())
+        } else if let Ok(i) = value.downcast::<PyInt>() {
+            serde_json::Value::Number(serde_json::Number::from(i.extract::<i64>()?))
+        } else if let Ok(f) = value.downcast::<PyFloat>() {
+            serde_json::Number::from_f64(f.value())
+                .map(serde_json::Value::Number)
+                .unwrap_or(serde_json::Value::Null)
+        } else if let Ok(s) = value.downcast::<PyString>() {
+            serde_json::Value::String(s.to_str()?.to_string())
+        } else if let Ok(list) = value.downcast::<PyList>() {
+            let mut arr = Vec::new();
+            for item in list {
+                if let Ok(d) = item.downcast::<PyDict>() {
+                    arr.push(pydict_to_json(py, d)?);
+                } else {
+                    // Try to extract as primitive
+                    arr.push(if item.is_none() {
+                        serde_json::Value::Null
+                    } else if let Ok(s) = item.extract::<String>() {
+                        serde_json::Value::String(s)
+                    } else if let Ok(i) = item.extract::<i64>() {
+                        serde_json::Value::Number(serde_json::Number::from(i))
+                    } else if let Ok(f) = item.extract::<f64>() {
+                        serde_json::Number::from_f64(f)
+                            .map(serde_json::Value::Number)
+                            .unwrap_or(serde_json::Value::Null)
+                    } else if let Ok(b) = item.extract::<bool>() {
+                        serde_json::Value::Bool(b)
+                    } else {
+                        serde_json::Value::Null
+                    });
+                }
+            }
+            serde_json::Value::Array(arr)
+        } else if let Ok(d) = value.downcast::<PyDict>() {
+            pydict_to_json(py, d)?
+        } else {
+            serde_json::Value::Null
+        };
+        map.insert(key_str, json_value);
+    }
+    Ok(serde_json::Value::Object(map))
+}
+
+/// Convert Python dict to FieldType map
+fn pydict_to_fieldtype_map(
+    py: Python,
+    dict: &PyDict,
+) -> PyResult<std::collections::HashMap<String, FieldType>> {
+    let json = pydict_to_json(py, dict)?;
+    serde_json::from_value(json)
+        .map_err(|e| PyValueError::new_err(format!("Failed to convert to FieldType map: {}", e)))
 }
 
 /// ekoDB Python module

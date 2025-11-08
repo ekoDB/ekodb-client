@@ -1362,6 +1362,246 @@ impl HttpClient {
             })
             .await
     }
+
+    // ========================================================================
+    // SAVED FUNCTIONS API
+    // ========================================================================
+
+    /// Save a function definition
+    pub async fn save_function(
+        &self,
+        function: crate::functions::SavedFunction,
+        token: &str,
+    ) -> Result<String> {
+        let url = self.base_url.join("/api/functions")?;
+
+        self.retry_policy
+            .execute(|| async {
+                let response = self
+                    .client
+                    .post(url.clone())
+                    .header("Authorization", format!("Bearer {}", token))
+                    .header("Content-Type", "application/json")
+                    .header("Accept", "application/json")
+                    .json(&function)
+                    .send()
+                    .await?;
+
+                let status = response.status();
+                let bytes = response.bytes().await.map_err(Error::Http)?;
+
+                if !status.is_success() {
+                    let error_msg = String::from_utf8_lossy(&bytes);
+                    return Err(Error::api(
+                        status.as_u16(),
+                        format!("Server error: {}", error_msg),
+                    ));
+                }
+
+                if bytes.is_empty() {
+                    return Err(Error::api(
+                        status.as_u16(),
+                        "Empty response from server".to_string(),
+                    ));
+                }
+
+                #[derive(Deserialize)]
+                struct FunctionResponse {
+                    status: String,
+                    id: String,
+                }
+
+                let result: FunctionResponse = serde_json::from_slice(&bytes).map_err(|e| {
+                    Error::api(
+                        500,
+                        format!(
+                            "Failed to parse response: {} (body: {})",
+                            e,
+                            String::from_utf8_lossy(&bytes)
+                        ),
+                    )
+                })?;
+
+                if result.status != "success" {
+                    return Err(Error::api(
+                        500,
+                        format!("Failed to save function: status={}", result.status),
+                    ));
+                }
+
+                Ok(result.id)
+            })
+            .await
+    }
+
+    /// Get a function by label
+    pub async fn get_function(
+        &self,
+        label: &str,
+        token: &str,
+    ) -> Result<crate::functions::SavedFunction> {
+        let url = self.base_url.join(&format!("/api/functions/{}", label))?;
+
+        self.retry_policy
+            .execute(|| async {
+                let response = self
+                    .client
+                    .get(url.clone())
+                    .header("Authorization", format!("Bearer {}", token))
+                    .header("Accept", "application/json")
+                    .send()
+                    .await?;
+
+                let bytes = response.bytes().await.map_err(Error::Http)?;
+                serde_json::from_slice(&bytes).map_err(Error::Serialization)
+            })
+            .await
+    }
+
+    /// List all functions (optionally filtered by tags)
+    pub async fn list_functions(
+        &self,
+        tags: Option<Vec<String>>,
+        token: &str,
+    ) -> Result<Vec<crate::functions::SavedFunction>> {
+        let mut url = self.base_url.join("/api/functions")?;
+
+        if let Some(tags) = tags {
+            let tags_query = tags.join(",");
+            url.set_query(Some(&format!("tags={}", tags_query)));
+        }
+
+        self.retry_policy
+            .execute(|| async {
+                let response = self
+                    .client
+                    .get(url.clone())
+                    .header("Authorization", format!("Bearer {}", token))
+                    .header("Accept", "application/json")
+                    .send()
+                    .await?;
+
+                let bytes = response.bytes().await.map_err(Error::Http)?;
+                serde_json::from_slice(&bytes).map_err(Error::Serialization)
+            })
+            .await
+    }
+
+    /// Update an existing function
+    pub async fn update_function(
+        &self,
+        label: &str,
+        function: crate::functions::SavedFunction,
+        token: &str,
+    ) -> Result<()> {
+        let url = self.base_url.join(&format!("/api/functions/{}", label))?;
+
+        self.retry_policy
+            .execute(|| async {
+                let response = self
+                    .client
+                    .put(url.clone())
+                    .header("Authorization", format!("Bearer {}", token))
+                    .header("Content-Type", "application/json")
+                    .header("Accept", "application/json")
+                    .json(&function)
+                    .send()
+                    .await?;
+
+                if response.status().is_success() {
+                    Ok(())
+                } else {
+                    let status = response.status().as_u16();
+                    let bytes = response.bytes().await.map_err(Error::Http)?;
+                    let error_msg = String::from_utf8_lossy(&bytes);
+                    Err(Error::api(status, error_msg.to_string()))
+                }
+            })
+            .await
+    }
+
+    /// Delete a function by label
+    pub async fn delete_function(&self, label: &str, token: &str) -> Result<()> {
+        let url = self.base_url.join(&format!("/api/functions/{}", label))?;
+
+        self.retry_policy
+            .execute(|| async {
+                let response = self
+                    .client
+                    .delete(url.clone())
+                    .header("Authorization", format!("Bearer {}", token))
+                    .header("Accept", "application/json")
+                    .send()
+                    .await?;
+
+                if response.status().is_success() {
+                    Ok(())
+                } else {
+                    let status = response.status().as_u16();
+                    let bytes = response.bytes().await.map_err(Error::Http)?;
+                    let error_msg = String::from_utf8_lossy(&bytes);
+                    Err(Error::api(status, error_msg.to_string()))
+                }
+            })
+            .await
+    }
+
+    /// Call a saved function by ID or label
+    pub async fn call_function(
+        &self,
+        function_id_or_label: &str,
+        params: Option<std::collections::HashMap<String, crate::types::FieldType>>,
+        token: &str,
+    ) -> Result<crate::functions::FunctionResult> {
+        let url = self
+            .base_url
+            .join(&format!("/api/functions/{}", function_id_or_label))?;
+
+        let body = params.unwrap_or_default();
+
+        self.retry_policy
+            .execute(|| async {
+                let response = self
+                    .client
+                    .post(url.clone())
+                    .header("Authorization", format!("Bearer {}", token))
+                    .header("Content-Type", "application/json")
+                    .header("Accept", "application/json")
+                    .json(&body)
+                    .send()
+                    .await?;
+
+                let status = response.status();
+                let bytes = response.bytes().await.map_err(Error::Http)?;
+
+                if !status.is_success() {
+                    let error_msg = String::from_utf8_lossy(&bytes);
+                    return Err(Error::api(
+                        status.as_u16(),
+                        format!("Server error: {}", error_msg),
+                    ));
+                }
+
+                if bytes.is_empty() {
+                    return Err(Error::api(
+                        status.as_u16(),
+                        "Empty response from server".to_string(),
+                    ));
+                }
+
+                serde_json::from_slice(&bytes).map_err(|e| {
+                    Error::api(
+                        500,
+                        format!(
+                            "Failed to parse response: {} (body: {})",
+                            e,
+                            String::from_utf8_lossy(&bytes)
+                        ),
+                    )
+                })
+            })
+            .await
+    }
 }
 
 #[derive(Deserialize, Serialize)]

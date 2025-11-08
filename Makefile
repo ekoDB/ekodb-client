@@ -384,6 +384,7 @@ test-examples-rust-client: build-client
 	@cd examples/rust && cargo run --example client_chat_basic
 	@cd examples/rust && cargo run --example client_chat_sessions
 	@cd examples/rust && cargo run --example client_chat_advanced
+	@cd examples/rust && cargo run --example client_functions
 	@echo "✅ $(GREEN)Rust client examples complete!$(RESET)"
 
 # ============================================================================
@@ -430,6 +431,7 @@ test-examples-python-client: build-python-client
 	@cd examples/python && python3 client_chat_basic.py
 	@cd examples/python && python3 client_chat_sessions.py
 	@cd examples/python && python3 client_chat_advanced.py
+	@cd examples/python && python3 client_functions.py
 	@echo "✅ $(GREEN)Python client examples complete!$(RESET)"
 
 # ============================================================================
@@ -459,6 +461,7 @@ test-examples-go-client:
 	@cd examples/go && go run client_search.go
 	@cd examples/go && go run client_schema.go
 	@cd examples/go && go run client_joins.go
+	@cd examples/go && go run client_functions.go
 	@echo "✅ $(GREEN)Go client examples complete!$(RESET)"
 
 # ============================================================================
@@ -492,6 +495,7 @@ test-examples-typescript-client: build-typescript-client
 	@cd examples/typescript && npx tsx client_search.ts
 	@cd examples/typescript && npx tsx client_schema.ts
 	@cd examples/typescript && npx tsx client_joins.ts
+	@cd examples/typescript && npx tsx client_functions.ts
 	@echo "✅ $(GREEN)TypeScript client examples complete!$(RESET)"
 
 # ============================================================================
@@ -519,6 +523,7 @@ test-examples-javascript-client: build-typescript-client
 	@cd examples/javascript && node client_document_ttl.js
 	@cd examples/javascript && node client_simple_websocket.js
 	@cd examples/javascript && node client_websocket_ttl.js
+	@cd examples/javascript && node http_functions.js
 	@echo "✅ $(GREEN)JavaScript client examples complete!$(RESET)"
 
 # ============================================================================
@@ -531,13 +536,14 @@ test-examples-kt: test-examples-kotlin
 
 build-kotlin-client:
 	@echo "🟣 $(CYAN)Building Kotlin client library...$(RESET)"
-	@cd ekodb-client-kt && ./gradlew build --no-daemon
+	@cd ekodb-client-kt && export JAVA_HOME=$$(/usr/libexec/java_home -v 17) && export PATH=$$JAVA_HOME/bin:$$PATH && ./gradlew build --no-daemon
 	@echo "✅ $(GREEN)Kotlin client built!$(RESET)"
 
 test-examples-kotlin-client: build-kotlin-client
 	@echo "🧪 $(CYAN)Running Kotlin client library examples...$(RESET)"
 	@if [ -f .env ]; then \
 		. ./.env && \
+		export JAVA_HOME=$$(/usr/libexec/java_home -v 17) && export PATH=$$JAVA_HOME/bin:$$PATH && \
 		cd examples/kotlin && \
 		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientSimpleCrudKt --no-daemon && \
 		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientBatchOperationsKt --no-daemon && \
@@ -552,7 +558,8 @@ test-examples-kotlin-client: build-kotlin-client
 		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientJoinsKt --no-daemon && \
 		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientChatBasicKt --no-daemon && \
 		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientChatSessionsKt --no-daemon && \
-		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientChatAdvancedKt --no-daemon; \
+		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientChatAdvancedKt --no-daemon && \
+		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=ClientFunctionsKt --no-daemon; \
 	else \
 		echo "$(RED)❌ .env file not found$(RESET)"; \
 		echo "$(YELLOW)💡 Create .env file with API_BASE_URL, WS_BASE_URL, and API_BASE_KEY$(RESET)"; \
