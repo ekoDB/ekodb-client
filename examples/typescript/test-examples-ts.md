@@ -1,37 +1,40 @@
-make test-examples-typescript 📦 Building TypeScript client library...
+make test-examples-typescript 📦 [36mBuilding TypeScript client library...[0m
 
-> @ekodb/ekodb-client@0.1.0 prepare npm run build
+> @ekodb/ekodb-client@0.3.0 prepare npm run build
 
-> @ekodb/ekodb-client@0.1.0 build tsc
+> @ekodb/ekodb-client@0.3.0 build tsc
 
-up to date, audited 6 packages in 838ms
+up to date, audited 7 packages in 1s
 
 found 0 vulnerabilities
 
-> @ekodb/ekodb-client@0.1.0 build tsc
+> @ekodb/ekodb-client@0.3.0 build tsc
 
-✅ TypeScript client built! 🧪 Running TypeScript client library examples...
+✅ [32mTypeScript client built![0m 🧪 [36mRunning TypeScript client library
+examples...[0m
 
-up to date, audited 13 packages in 607ms
+added 1 package, removed 1 package, and audited 13 packages in 664ms
 
 3 packages are looking for funding run `npm fund` for details
 
 found 0 vulnerabilities ✓ Client created (token exchange happens automatically)
 
 === Insert Document === Inserted: { id:
-'V7S9hn08t2XojJ4Zp3OPUnLI97QlM79aI298XWipoXt2nNWmOduEKjioO8uJQwlbTsd6DHWCWIpntLs_vv6fDA'
+'FN-yR2DyqXfQx9THq4nqq2EyeHHnQ4Q9F2PQgbg-h6YVBaymjnSDb0G4bp61RdTTDHjUt9go8GtIQ9SByvB8MA'
 }
 
-=== Find by ID === Found: { id:
-'V7S9hn08t2XojJ4Zp3OPUnLI97QlM79aI298XWipoXt2nNWmOduEKjioO8uJQwlbTsd6DHWCWIpntLs_vv6fDA',
+=== Find by ID === Found: { name: { type: 'String', value: 'Test Record' },
 active: { type: 'Boolean', value: true }, value: { value: 42, type: 'Integer' },
-name: { type: 'String', value: 'Test Record' } }
+id:
+'FN-yR2DyqXfQx9THq4nqq2EyeHHnQ4Q9F2PQgbg-h6YVBaymjnSDb0G4bp61RdTTDHjUt9go8GtIQ9SByvB8MA'
+}
 
 === Find with Query === Found documents: 1
 
-=== Update Document === Updated: { name: 'Updated Record', value: 100, active: {
-type: 'Boolean', value: true }, id:
-'V7S9hn08t2XojJ4Zp3OPUnLI97QlM79aI298XWipoXt2nNWmOduEKjioO8uJQwlbTsd6DHWCWIpntLs_vv6fDA'
+=== Update Document === Updated: { name: { type: 'String', value: 'Updated
+Record' }, id:
+'FN-yR2DyqXfQx9THq4nqq2EyeHHnQ4Q9F2PQgbg-h6YVBaymjnSDb0G4bp61RdTTDHjUt9go8GtIQ9SByvB8MA',
+value: { type: 'Integer', value: 100 }, active: { type: 'Boolean', value: true }
 }
 
 === Delete Document === Deleted document
@@ -53,13 +56,13 @@ records in collection
 
 === KV Set === ✓ Set key: session:user123
 
-=== KV Get === Retrieved value: { username: 'john_doe', userId: 123 }
+=== KV Get === Retrieved value: { userId: 123, username: 'john_doe' }
 
 === Set Multiple Keys === ✓ Set 3 keys
 
-=== Get Multiple Keys === cache:product:1: { price: 29.99, name: 'Product 1' }
+=== Get Multiple Keys === cache:product:1: { name: 'Product 1', price: 29.99 }
 cache:product:2: { name: 'Product 2', price: 39.989999999999995 }
-cache:product:3: { price: 49.989999999999995, name: 'Product 3' }
+cache:product:3: { name: 'Product 3', price: 49.989999999999995 }
 
 === KV Delete === ✓ Deleted key: session:user123 ✓ Verified: Key successfully
 deleted (not found)
@@ -69,10 +72,10 @@ deleted (not found)
 ✓ All KV operations completed successfully ✓ Client created
 
 === Create Collection (via insert) === Collection created with first record:
-6qRUjkCfXTZMPjB7KENSgKw1eLLr7pk7dAnYagzreCbs_sx-jSldnlntCjYv3800OMfcfGJFyELKsfLfmdvOIg
+ijS3h5EUQcfvr-rGbA7IhpEDBWdPUdTYQLW0bBFAxXngBiZUGvdcDy07iV1nRSkN4fqv3bGobrjYHHrr97erjw
 
-=== List Collections === Total collections: 1 Sample collections:
-client_collection_management_ts
+=== List Collections === Total collections: 18 Sample collections:
+functions**ek0_bench,websocket_test,schema_documents_client_go,chat_configurations**ek0_bench,users
 
 === Count Documents === Document count: 1
 
@@ -83,10 +86,10 @@ client_collection_management_ts
 ✓ All collection management operations completed successfully ✓ Client created
 
 === Insert Document with TTL (1 hour) === ✓ Inserted document:
-qfZPvzORTEO9b9plwvWOSo-UVgdsbMdR7WUNNnzQrLTuai7TdUdXkWoicEdXnC6nGty3R7PGmECmDse34iP5WA
+eFjRSNYZWn_MCTAgAQXI6hJ5pGwH6V34j2riv40EY6RyS_iK2Dc-aTnD_yTU0-WagCi_kY_3rtuAKYjl53TTyA
 
 === Insert Document with TTL (5 minutes) === ✓ Inserted document:
-7NI_FkB5D4cP8ZdTrILYXMnpUzgrZwVIg6qmLGcFe7mr1g9UAs-l-Afbjc641f1K7QVLzPPVhBAWUTkun5gkKw
+535RSWKAflr7UKXjVrNgOAPnsIrOWcnzFCJSHrVRCNpVgCsX8u0W5YITAaGpb_P7nmwMqfzx3lWyp9wVuNqxbA
 
 === Query Documents === ✓ Found 2 documents with TTL
 
@@ -102,7 +105,7 @@ qfZPvzORTEO9b9plwvWOSo-UVgdsbMdR7WUNNnzQrLTuai7TdUdXkWoicEdXnC6nGty3R7PGmECmDse3
 duration ✓ Client created
 
 === Inserting Test Data === ✓ Inserted test record:
-bjTmwHWE9PR0FkVRS9vEKYLepd_LJ3ZYn4nHvpHpm153W9zRK3yNI1quIciuHDeaWVTZL_ovOxaTK52x2H815A
+3SVD8501Zy7kyPA5lMkM_Anbfc871V3QlcSOW1wWftJtYvOR6LmJ4_WGbQqnHljbUT5-b5_LyVHj49O30Bzqjg
 
 === Connecting to WebSocket === ✓ WebSocket connected
 
@@ -114,7 +117,7 @@ bjTmwHWE9PR0FkVRS9vEKYLepd_LJ3ZYn4nHvpHpm153W9zRK3yNI1quIciuHDeaWVTZL_ovOxaTK52x
 ✓ WebSocket example completed successfully ✓ Client created
 
 === Insert Test Data with TTL === ✓ Inserted document with TTL:
-IkmL3-bgTRypi6LhCAB_AYWh7vCiyy1E3w33K_4IH_IVRaCBH_wcaRj0eVC4lWNgAQtDj4eqqKdx97HS6mY8HA
+c0Zf3yavoi9bGt7mWG2-DZppiJwTKJ5i_eft7-ETe3R-AqqpHMPPkzlie6CP9h5DNgdnui1LYDmIjoKZ-dZQhg
 
 === Query via WebSocket === ✓ WebSocket connected ✓ Retrieved 1 record(s) via
 WebSocket Record 1: 5 fields
@@ -129,42 +132,42 @@ duration === ekoDB Chat Basic Example ===
 === Inserting Sample Data === ✓ Inserted 3 sample documents
 
 === Creating Chat Session === ✓ Created session:
-hIdSf67EYHKiyswyiyAjusdt_oGeMaoD_wf9VMDlDKbODCtrWl_X8CcZHpTCG16vmsbWaN-iF8vjQvniwUTEiA
+4QZi*e93dhsh0eI70pnl6p1uM3XXy6gaVIoASTVXKOYxNDUrRZt6PT0N8OgJ03RZg6_X8IgUZy4RPSh4*-2ymg
 
 === Sending Chat Message === Message ID:
-TD29I8xcaAydjIzk0A_xZnRgYmf7ve3UejfTU5q9oGtOg9WliBRXcyVpiYNf4Xxzq6teICKzsrVT8344zBHyRA
+H2lWqr54E8NSfWKiRneDgBRZbJ19HasSd8w_Go_yCv60IK6OPriWH7khIPrUfijUHNZBws9IGGgwhMkkLfVxog
 
-=== AI Response === Based on the provided context, there are three products
-available:
+=== AI Response === There are three products available:
 
-1. ekoDB, which is a high-performance database product with AI capabilities. The
-   price for this product is $99.
-2. ekoDB Pro, this is an enterprise edition product with advanced features. The
-   price for this product is $299.
-3. ekoDB Cloud, a fully managed cloud database service product. The price for
-   this product is $499.
+1. ekoDB Cloud: This is a fully managed cloud database service product. It's
+   priced at $499.
+
+2. ekoDB: This is a high-performance database product with AI capabilities. It's
+   priced at $99.
+
+3. ekoDB Pro: This is an enterprise edition product with advanced features. It's
+   priced at $299.
 
 === Context Used (3 snippets) === Snippet 1: { collection:
-'client_chat_basic_ts', record: { price: { type: 'Integer', value: 99 },
-description: { type: 'String', value: 'A high-performance database product with
-AI capabilities' }, name: { value: 'ekoDB', type: 'String' }, id:
-'9h0VEcKXt8Y5N5hfSBdgh90QGAw19BRutumgQq40wpsSjl8wzd_PJcHU3nv06P-iNBdPQAsoENml4qKlteI0Dw'
+'client_chat_basic_ts', record: { name: { type: 'String', value: 'ekoDB Cloud'
+}, description: { value: 'Fully managed cloud database service product', type:
+'String' }, price: { type: 'Integer', value: 499 }, id:
+'F-jUz3rA53afXOJkN5C2ugpLP-0y9A9LIeJlkMfYNMZ1wzdA0JhX4Cm1FjdB-oleAQOIrIGPnNwjLaBEo30XhQ'
 }, score: 0.1111111111111111, matched_fields: [ 'description' ] } Snippet 2: {
-collection: 'client_chat_basic_ts', record: { id:
-'WGrX_0FtBBVKqyTMHAeqaSBGUMVhgmbf4uETygcS3CZHTaeelEeJNPZdxUX6XcaPBY4ZgWiq1LucuUISYdMYGg',
-price: { value: 299, type: 'Integer' }, description: { type: 'String', value:
-'Enterprise edition product with advanced features' }, name: { type: 'String',
-value: 'ekoDB Pro' } }, score: 0.1111111111111111, matched_fields: [
-'description' ] } Snippet 3: { collection: 'client_chat_basic_ts', record: {
-price: { type: 'Integer', value: 499 }, name: { value: 'ekoDB Cloud', type:
-'String' }, description: { value: 'Fully managed cloud database service
-product', type: 'String' }, id:
-'LeA776kdV-Dj9as831QjDRFNLBjBdIu0nYQTAKyUsTx6VgDunYlh5W1rlVlXEOuSh0nwhrgJwsrF_ZPMtGfPRw'
-}, score: 0.1111111111111111, matched_fields: [ 'description' ] }
+collection: 'client_chat_basic_ts', record: { description: { value: 'A
+high-performance database product with AI capabilities', type: 'String' }, id:
+'e53hdPphp5Y_bd0yFBNNEQPFdijsrMjCTvbLrXUHavgpdGPHS1vpuUbbLi1nchzqvJMLHv1C2Q8AqMCOg2Fcfg',
+name: { type: 'String', value: 'ekoDB' }, price: { type: 'Integer', value: 99 }
+}, score: 0.1111111111111111, matched_fields: [ 'description' ] } Snippet 3: {
+collection: 'client_chat_basic_ts', record: { price: { type: 'Integer', value:
+299 }, name: { type: 'String', value: 'ekoDB Pro' }, id:
+'PHZLHbvg3WfYK5xjG8KJ5aSl7r-WYcyqf4QQQO-QorVhX06WQWYnVUUvLYdZRdnX-JG6keI5tVY-htSBhqR_fw',
+description: { type: 'String', value: 'Enterprise edition product with advanced
+features' } }, score: 0.1111111111111111, matched_fields: [ 'description' ] }
 
-Execution Time: 3186ms
+Execution Time: 2252ms
 
-=== Token Usage === Prompt tokens: 376 Completion tokens: 88 Total tokens: 464
+=== Token Usage === Prompt tokens: 386 Completion tokens: 78 Total tokens: 464
 
 === Cleanup === ✓ Deleted collection
 
@@ -173,37 +176,51 @@ Execution Time: 3186ms
 === Inserting Sample Data === ✓ Inserted sample product
 
 === Creating Chat Session === ✓ Created session:
-lwVkcqGLpj-IbL5XCPwmFLvrbpCN4OcjHtuxmMJDPHJNY5M6hqul0grh-KAmvmIQcbZd5cyyxxtuCps_nY81JQ
+58N69ci6R0DjA4d3YVjcvHSpZhx65SmyadGVnWzfynELu3R1VVgd01F-cekrhY4m6V0RqYFq9fIDHnSVrVk9Qw
 
 === Sending Messages === ✓ Message 1 sent Response: Based on the provided
-context, the available product is ekoDB, which is a high-performance database
-product. It is priced at 99.
+context, the available product is a high-performance database product named
+ekoDB. It is priced at $99.
 
-✓ Message 2 sent Response: As an assistant, I'm sorry but I can't provide the
-price you're asking for because the context doesn't specify any product. Could
-you please give more details?
+✓ Message 2 sent Response: Apologies, but there's no context provided about a
+specific product to determine its price. Could you please specify which product
+you're referring to?
 
 === Retrieving Session Messages === ✓ Retrieved 4 messages
 
 === Updating Session === ✓ Session updated
 
 === Branching Session === ✓ Created branch:
-A9hGKmu8B1eWf3FykbI6XER2vjOYAi_fgSBWNQp1f9zAc82q43HqTF2Njgw7Fj9RV2oF9wUvXl5yA-HC-64wdQ
+to4YhbLL1ypv9Wwl3GpGvTAwsFLTW0gU-zuf_CYjzCXadIm6s9_38-M3u7hXRXyG9tU-SGMXwgJEVxLknyYVew
 Parent:
-lwVkcqGLpj-IbL5XCPwmFLvrbpCN4OcjHtuxmMJDPHJNY5M6hqul0grh-KAmvmIQcbZd5cyyxxtuCps_nY81JQ
+58N69ci6R0DjA4d3YVjcvHSpZhx65SmyadGVnWzfynELu3R1VVgd01F-cekrhY4m6V0RqYFq9fIDHnSVrVk9Qw
 
-=== Listing Sessions === ✓ Found 3 sessions Session 1:
-A9hGKmu8B1eWf3FykbI6XER2vjOYAi_fgSBWNQp1f9zAc82q43HqTF2Njgw7Fj9RV2oF9wUvXl5yA-HC-64wdQ
+=== Listing Sessions === ✓ Found 10 sessions Session 1:
+to4YhbLL1ypv9Wwl3GpGvTAwsFLTW0gU-zuf*CYjzCXadIm6s9_38-M3u7hXRXyG9tU-SGMXwgJEVxLknyYVew
 (Untitled) Session 2:
-lwVkcqGLpj-IbL5XCPwmFLvrbpCN4OcjHtuxmMJDPHJNY5M6hqul0grh-KAmvmIQcbZd5cyyxxtuCps_nY81JQ
+58N69ci6R0DjA4d3YVjcvHSpZhx65SmyadGVnWzfynELu3R1VVgd01F-cekrhY4m6V0RqYFq9fIDHnSVrVk9Qw
 (Untitled) Session 3:
-hIdSf67EYHKiyswyiyAjusdt_oGeMaoD_wf9VMDlDKbODCtrWl_X8CcZHpTCG16vmsbWaN-iF8vjQvniwUTEiA
+4QZi_e93dhsh0eI70pnl6p1uM3XXy6gaVIoASTVXKOYxNDUrRZt6PT0N8OgJ03RZg6_X8IgUZy4RPSh4*-2ymg
+(Untitled) Session 4:
+64PqDH2-9s1ejYU4yAFAXB_BEdFHsAVMRbqhnMnUC9foiNvfmoJkQqgfj56sJy2lfEL4SB5P7oH3LqrbCKHSGA
+(Untitled) Session 5:
+eITxpP2JZEN8PKiXQdkKnmf6hvhhJGG4kb_gPI0fi4-bk2dFMoB0MMGldYqWbFSohyoEqD83yBsv1dCH9WoWEA
+(Untitled) Session 6:
+oPrnM6kivNtaLzP2WoGhJJ_SLoj3tHUyy2jjubt0TOY3M_7sfOSazEKacZYTNtFAvWaXtCZfyhz53pBMMU5ADA
+(Untitled) Session 7:
+lAHOXEH0Vn_UaU7jgvyRgTYJAwZEfq-86R88IureusiszLg6fj3OIgdsy6hU1Z29liPpbFoRXma4WbfCp7IkDg
+(Untitled) Session 8:
+21OnPz3iUFCAewjLBksLm7apObROKYm2hbandIHd4apRXOgAqWHWU4LltkLp14mGsGQ6y_YKWiy9CVPC6LCNew
+(Untitled) Session 9:
+f-eT1zQ7ClDPwYDBZ992i0813Uo2z174-H8iquiQ8whjYhSChArtxUjmeRrWF8OvsZ378-nfgD74zHcId6rURA
+(Untitled) Session 10:
+6YIRrX0Nw2WBJcMCmpa--QKGb8NaTSFlXRB270pQqNBrlt02ojr7tXiJzdLdk7ZEnlBZo8f2JPHTeDJF5GkUnw
 (Untitled)
 
 === Getting Session Details === ✓ Session details retrieved Messages: 4
 
 === Deleting Branch Session === ✓ Deleted branch session:
-A9hGKmu8B1eWf3FykbI6XER2vjOYAi_fgSBWNQp1f9zAc82q43HqTF2Njgw7Fj9RV2oF9wUvXl5yA-HC-64wdQ
+to4YhbLL1ypv9Wwl3GpGvTAwsFLTW0gU-zuf_CYjzCXadIm6s9_38-M3u7hXRXyG9tU-SGMXwgJEVxLknyYVew
 
 === Cleanup === ✓ Deleted collection
 
@@ -213,18 +230,18 @@ Chat Features Example ===
 === Inserting Sample Data === ✓ Inserted sample product
 
 === Creating Chat Session === ✓ Created session:
--d3A_vqx1ZK2gY0SV13es4_9FTsYLjxmtHo01mqX1FGoQDFbgW51esPohnfIiYCJol6jZMfQaeGJLg6657b8TQ
+5ZWDXaqks_WRjzgSC_NShlE94p43Wj17yM0rcmhDBVU32ZDqzNk6qt6VZyybqVIpGAZRfELSdCg3ZVSYIeJMTw
 
 === Sending Initial Message === ✓ Message sent Response: Based on the
-information available, the product that is available is a high-performance
-database product named ekoDB, priced at 99.
+information provided, the available product is a high-performance database
+product named ekoDB, priced at $99.
 
 ✓ Second message sent
 
 === Feature 1: Regenerate AI Response === ✓ Message regenerated New response:
-I'm sorry, but the context provided does not include information on the price of
-ekoDB. You may need to check the official website or contact the sales
-department of ekoDB for accurate pricing information.
+I'm sorry, but the context provided doesn't include information about the price
+of ekoDB. I'd recommend checking the official website or contacting the sales
+department of ekoDB for the most accurate and up-to-date pricing information.
 
 === Feature 2: Edit Message === ✓ Message content updated
 
@@ -234,7 +251,7 @@ department of ekoDB for accurate pricing information.
 ✓ Message unmarked as forgotten
 
 === Feature 4: Merge Chat Sessions === ✓ Created second session:
-xJsF01_LCPcHuzhzM9_r7smJjuisBMYCJtrbbPTVuVkFTHLuau9xjmwKFSpBV7S1A3wGKuJ7f1m9lmlETZR_Kg
+lIP5KOzTPzvMR1uaQ4cbkgoc18Vy2CqKeO9F0gAYVN0ZXDQ-yyNZdcOCjNCHLUJ0-3GfLFo0wIYD_oB537TgqQ
 ✓ Sent message in second session ✓ Sessions merged successfully Total messages
 in merged session: 4
 
@@ -272,39 +289,39 @@ Setting up test data... ✅ Test data created
 Setting up test data... ✅ Test data created
 
 1. Basic full-text search: Found 2 results
-1. Score: 25.740, Matched: name.value, email, name, email.value
-1. Score: 12.540, Matched: name.value, name
+1. Score: 25.740, Matched: email, email.value, name, name.value
+1. Score: 12.540, Matched: name, name.value
 
 1. Fuzzy search (typo tolerance): Found 4 results with fuzzy matching
-1. Score: 26.400, Matched: bio, title.value, title, bio.value
-1. Score: 26.400, Matched: title.value, title, bio, bio.value
-1. Score: 26.400, Matched: title, bio, title.value, bio.value
-1. Score: 26.400, Matched: title, title.value, bio.value, bio
+1. Score: 26.400, Matched: bio.value, title, title.value, bio
+1. Score: 26.400, Matched: bio, bio.value, title, title.value
+1. Score: 26.400, Matched: bio.value, title, title.value, bio
+1. Score: 26.400, Matched: title, bio.value, bio, title.value
 
 1. Search with field weights: Found 4 results with weighted fields
-1. Score: 39.600, Matched: title, title.value, bio.value, bio
-1. Score: 39.600, Matched: bio.value, bio, title, title.value
-1. Score: 39.600, Matched: title, title.value, bio, bio.value
 1. Score: 39.600, Matched: bio.value, title, title.value, bio
+1. Score: 39.600, Matched: title.value, bio, title, bio.value
+1. Score: 39.600, Matched: bio, bio.value, title.value, title
+1. Score: 39.600, Matched: bio.value, bio, title, title.value
 
 1. Search with minimum score threshold: Found 2 results with score >= 0.3
 1. Score: 13.200, Matched: bio.value, bio
-1. Score: 13.200, Matched: bio, bio.value
+1. Score: 13.200, Matched: bio.value, bio
 
 1. Search with stemming and exact match boosting: Found 1 results (matches:
    work, working, worked)
-1. Score: 13.200, Matched: bio, bio.value
+1. Score: 13.200, Matched: bio.value, bio
 
 1. Vector search (semantic search): Found 3 semantically similar documents
-1. Score: 0.746, Matched:
-1. Score: 0.742, Matched:
-1. Score: 0.738, Matched:
+1. Score: 0.744, Matched:
+1. Score: 0.735, Matched:
+1. Score: 0.727, Matched:
 
 1. Hybrid search (text + vector): Found 3 results using hybrid search (text +
    vector)
-1. Score: 2.697, Matched: title, content.value, content, title.value
-1. Score: 1.499, Matched: content.value, title, content, title.value
-1. Score: 0.295, Matched:
+1. Score: 2.691, Matched: content.value, title, title.value, content
+1. Score: 1.494, Matched: title.value, content, content.value, title
+1. Score: 0.298, Matched:
 
 1. Case-sensitive search: Found 1 results (case-sensitive)
 1. Score: 13.200, Matched: bio, bio.value
@@ -336,30 +353,60 @@ Setting up sample data... ✅ Sample data created
 1. Single collection join (users with departments): Found 2 users with
    department data:
 
-- Bob Smith: No department
-- Alice Johnson: No department
+- Bob Smith: Sales
+- Alice Johnson: Engineering
 
 2. Join with filtering: Found 1 users in Engineering:
 
-- Alice Johnson: Unknown
+- Alice Johnson: Building A
 
-3. Multi-collection join (users with departments and profiles): Found 2 users
-   with multiple joins:
+3. Join with user profiles: Found 2 users with profile data:
 
-- Bob Smith: Department: N/A Bio: N/A
-- Alice Johnson: Department: N/A Bio: N/A
+- Bob Smith: Sales Manager
+- Alice Johnson: Senior Software Engineer
 
 4. Join orders with user data: Found 2 completed orders:
 
-- Laptop ($1200) by Unknown
-- Mouse ($25) by Unknown
+- Laptop ($1200) by Alice Johnson
+- Mouse ($25) by Alice Johnson
 
 5. Complex join with multiple conditions: Found 2 users with example.com emails:
 
-- Alice Johnson (alice@example.com): N/A
-- Bob Smith (bob@example.com): N/A
+- Alice Johnson (alice@example.com): Building A
+- Bob Smith (bob@example.com): Building B
 
 === Cleanup === ✅ Deleted test collections
 
-✅ Join operations examples completed! ✅ TypeScript client examples complete!
-✅ All TypeScript integration tests complete!
+✅ Join operations examples completed! 🚀 ekoDB Saved Functions Example
+(TypeScript)
+
+📋 Setting up test data... ✅ Test data ready
+
+📝 Example 1: Simple Query Function
+
+✅ Function saved:
+nwaUpSdPgajavxCaXeCJ82MvooKYl8jJqBrH3rttCh6Yt8F5cs_MNsTyCJD9CRmrWe7H-xsd7EybeKShFXWHLw
+📊 Found 40 active users
+
+📝 Example 2: Parameterized Function
+
+✅ Function saved:
+K1LauOyTGQitW-plvawVxOJNaC-KSy6BIGfF2E5xC52IvvrZBG6uFi9gqWMvMa7Q05oMoHcbU7gJMySzCzvKxA
+📊 Found 40 users (limited)
+
+📝 Example 3: Aggregation Function
+
+✅ Function saved:
+myvR1eFs1Ooq40dnOmH6PEtqbRXD8cvL2fsbB6RO3egnPFULpteJA30t4826QkTYdXiEqkA2eKLR5s5T5YHYug
+📊 Statistics: 2 groups {"avg_score":50,"count":20,"status":"inactive"}
+{"status":"active","count":20,"avg_score":60}
+
+📝 Example 4: Function Management
+
+📋 Total functions: 9 🔍 Retrieved function: Get Active Users ✏️ Function
+updated 🗑️ Function deleted
+
+ℹ️ Note: GET/UPDATE/DELETE operations require the encrypted ID ℹ️ Only CALL can
+use either ID or label
+
+✅ All examples completed! ✅ [32mTypeScript client examples complete![0m

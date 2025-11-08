@@ -342,7 +342,9 @@ test-ci:
 # ============================================================================
 
 # Run all examples (all languages, both direct and client)
-test-examples: examples-ls-check test-examples-rust test-examples-python test-examples-go test-examples-typescript test-examples-javascript test-examples-kotlin
+test-examples: examples-ls-check
+	@echo "make test-examples" > examples/test-examples.md
+	@$(MAKE) test-examples-rust test-examples-python test-examples-go test-examples-typescript test-examples-javascript test-examples-kotlin 2>&1 | tee -a examples/test-examples.md
 	@echo "✅ $(GREEN)All integration tests complete!$(RESET)"
 
 # Run direct API examples (using raw HTTP/WebSocket calls)
@@ -356,7 +358,9 @@ test-examples-client: test-examples-rust-client test-examples-python-client test
 # ============================================================================
 # Rust Examples (both direct + client)
 # ============================================================================
-test-examples-rust: test-examples-rust-direct test-examples-rust-client
+test-examples-rust:
+	@echo "make test-examples-rust" > examples/rust/test-examples-rs.md
+	@$(MAKE) test-examples-rust-direct test-examples-rust-client 2>&1 | tee -a examples/rust/test-examples-rs.md
 	@echo "✅ $(GREEN)All Rust integration tests complete!$(RESET)"
 
 test-examples-rs: test-examples-rust
@@ -390,7 +394,9 @@ test-examples-rust-client: build-client
 # ============================================================================
 # Python Examples (both direct + client)
 # ============================================================================
-test-examples-python: test-examples-python-direct test-examples-python-client
+test-examples-python:
+	@echo "make test-examples-python" > examples/python/text-examples-py.md
+	@$(MAKE) test-examples-python-direct test-examples-python-client 2>&1 | tee -a examples/python/text-examples-py.md
 	@echo "✅ $(GREEN)All Python integration tests complete!$(RESET)"
 
 test-examples-py: test-examples-python
@@ -437,7 +443,9 @@ test-examples-python-client: build-python-client
 # ============================================================================
 # Go Examples (both direct + client)
 # ============================================================================
-test-examples-go: test-examples-go-direct test-examples-go-client
+test-examples-go:
+	@echo "make test-examples-go" > examples/go/test-examples-go.md
+	@$(MAKE) test-examples-go-direct test-examples-go-client 2>&1 | tee -a examples/go/test-examples-go.md
 	@echo "✅ $(GREEN)All Go integration tests complete!$(RESET)"
 
 test-examples-go-direct:
@@ -467,7 +475,9 @@ test-examples-go-client:
 # ============================================================================
 # TypeScript Examples (client only - no direct examples)
 # ============================================================================
-test-examples-typescript: test-examples-typescript-client
+test-examples-typescript:
+	@echo "make test-examples-typescript" > examples/typescript/test-examples-ts.md
+	@$(MAKE) test-examples-typescript-client 2>&1 | tee -a examples/typescript/test-examples-ts.md
 	@echo "✅ $(GREEN)All TypeScript integration tests complete!$(RESET)"
 
 test-examples-ts: test-examples-typescript
@@ -501,7 +511,9 @@ test-examples-typescript-client: build-typescript-client
 # ============================================================================
 # JavaScript Examples (both direct + client)
 # ============================================================================
-test-examples-javascript: test-examples-javascript-direct test-examples-javascript-client
+test-examples-javascript:
+	@echo "make test-examples-javascript" > examples/javascript/test-examples-js.md
+	@$(MAKE) test-examples-javascript-direct test-examples-javascript-client 2>&1 | tee -a examples/javascript/test-examples-js.md
 	@echo "✅ $(GREEN)All JavaScript integration tests complete!$(RESET)"
 
 test-examples-js: test-examples-javascript
@@ -529,7 +541,9 @@ test-examples-javascript-client: build-typescript-client
 # ============================================================================
 # Kotlin Examples (client only)
 # ============================================================================
-test-examples-kotlin: test-examples-kotlin-client
+test-examples-kotlin:
+	@echo "make test-examples-kotlin" > examples/kotlin/test-examples-kt.md
+	@$(MAKE) test-examples-kotlin-client 2>&1 | tee -a examples/kotlin/test-examples-kt.md
 	@echo "✅ $(GREEN)All Kotlin integration tests complete!$(RESET)"
 
 test-examples-kt: test-examples-kotlin
