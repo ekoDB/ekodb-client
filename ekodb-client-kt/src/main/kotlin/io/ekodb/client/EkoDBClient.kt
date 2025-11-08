@@ -60,6 +60,7 @@ class EkoDBClient private constructor(
                 prettyPrint = true
                 isLenient = true
                 ignoreUnknownKeys = true
+                classDiscriminator = "kotlinType"  // Use different discriminator to avoid conflict with "type" field
             })
         }
         
@@ -916,6 +917,118 @@ class EkoDBClient private constructor(
             require(apiKey.isNotEmpty()) { "API key is required" }
             return EkoDBClient(baseUrl, apiKey, timeout, maxRetries, format)
         }
+    }
+    
+    // ========================================================================
+    // SAVED FUNCTIONS API
+    // ========================================================================
+    
+    /**
+     * Save a new function definition
+     */
+    suspend fun saveFunction(function: io.ekodb.client.functions.SavedFunction): String {
+        val token = getToken()
+        val response = executeWithRetry {
+            httpClient.post("$baseUrl/api/functions") {
+                bearerAuth(token)
+                contentType(ContentType.Application.Json)
+                setBody(function)
+            }
+        }
+        val result = response.body<JsonObject>()
+        return result["id"]?.jsonPrimitive?.content 
+            ?: throw IllegalStateException("No function ID returned")
+    }
+    
+    /**
+     * Get a function by label
+     */
+    suspend fun getFunction(label: String): io.ekodb.client.functions.SavedFunction {
+        val token = getToken()
+        val response = executeWithRetry {
+            httpClient.get("$baseUrl/api/functions/$label") {
+                bearerAuth(token)
+            }
+        }
+        return response.body<io.ekodb.client.functions.SavedFunction>()
+    }
+    
+    /**
+     * List all functions, optionally filtered by tags
+     */
+    suspend fun listFunctions(tags: List<String>? = null): List<io.ekodb.client.functions.SavedFunction> {
+        val token = getToken()
+        val url = if (tags != null) {
+            "$baseUrl/api/functions?tags=${tags.joinToString(",")}"
+        } else {
+            "$baseUrl/api/functions"
+        }
+        val response = executeWithRetry {
+            httpClient.get(url) {
+                bearerAuth(token)
+            }
+        }
+        return response.body<List<io.ekodb.client.functions.SavedFunction>>()
+    }
+    
+    /**
+     * Update an existing function
+     */
+    suspend fun updateFunction(label: String, function: io.ekodb.client.functions.SavedFunction) {
+        val token = getToken()
+        executeWithRetry {
+            httpClient.put("$baseUrl/api/functions/$label") {
+                bearerAuth(token)
+                contentType(ContentType.Application.Json)
+                setBody(function)
+            }
+        }
+    }
+    
+    /**
+     * Delete a function by label
+     */
+    suspend fun deleteFunction(label: String) {
+        val token = getToken()
+        executeWithRetry {
+            httpClient.delete("$baseUrl/api/functions/$label") {
+                bearerAuth(token)
+            }
+        }
+    }
+    
+    /**
+     * Call a saved function by label or ID
+     * @param labelOrId Function label or encrypted ID
+     * @param params Optional parameters for the function
+     */
+    suspend fun callFunction(
+        labelOrId: String,
+        params: Map<String, JsonElement>? = null
+    ): io.ekodb.client.functions.FunctionResult {
+        val token = getToken()
+        val response = executeWithRetry {
+            httpClient.post("$baseUrl/api/functions/$labelOrId") {
+                bearerAuth(token)
+                contentType(ContentType.Application.Json)
+                // Send parameters directly, or empty map if no params
+                setBody(params ?: emptyMap<String, JsonElement>())
+            }
+        }
+        return response.body<io.ekodb.client.functions.FunctionResult>()
+    }
+    
+    /**
+     * Call a saved function (deprecated - use callFunction with labelOrId)
+     * @deprecated Use callFunction(labelOrId, params) instead
+     */
+    @Deprecated("Collection parameter is not used for saved functions", ReplaceWith("callFunction(label, params)"))
+    suspend fun callFunction(
+        collection: String,
+        label: String,
+        params: Map<String, JsonElement>? = null
+    ): io.ekodb.client.functions.FunctionResult {
+        return callFunction(label, params)
     }
     
     companion object {

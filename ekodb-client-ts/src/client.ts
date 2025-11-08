@@ -6,6 +6,7 @@ import { encode, decode } from "@msgpack/msgpack";
 import { QueryBuilder, Query as QueryBuilderQuery } from "./query-builder";
 import { SearchQuery, SearchQueryBuilder, SearchResponse } from "./search";
 import { Schema, SchemaBuilder, CollectionMetadata } from "./schema";
+import { SavedFunction, FunctionResult } from "./functions";
 
 export interface Record {
   [key: string]: any;
@@ -951,6 +952,65 @@ export class EkoDBClient {
       request,
       0,
       true, // Force JSON for chat operations
+    );
+  }
+
+  // ========================================================================
+  // SAVED FUNCTIONS API
+  // ========================================================================
+
+  /**
+   * Save a new function definition
+   */
+  async saveFunction(func: SavedFunction): Promise<string> {
+    const result = await this.makeRequest<{ id: string }>(
+      "POST",
+      "/api/functions",
+      func,
+    );
+    return result.id;
+  }
+
+  /**
+   * Get a function by label
+   */
+  async getFunction(label: string): Promise<SavedFunction> {
+    return this.makeRequest<SavedFunction>("GET", `/api/functions/${label}`);
+  }
+
+  /**
+   * List all functions, optionally filtered by tags
+   */
+  async listFunctions(tags?: string[]): Promise<SavedFunction[]> {
+    const params = tags ? `?tags=${tags.join(",")}` : "";
+    return this.makeRequest<SavedFunction[]>("GET", `/api/functions${params}`);
+  }
+
+  /**
+   * Update an existing function
+   */
+  async updateFunction(label: string, func: SavedFunction): Promise<void> {
+    await this.makeRequest<void>("PUT", `/api/functions/${label}`, func);
+  }
+
+  /**
+   * Delete a function by label
+   */
+  async deleteFunction(label: string): Promise<void> {
+    await this.makeRequest<void>("DELETE", `/api/functions/${label}`);
+  }
+
+  /**
+   * Call a saved function
+   */
+  async callFunction(
+    label: string,
+    params?: { [key: string]: any },
+  ): Promise<FunctionResult> {
+    return this.makeRequest<FunctionResult>(
+      "POST",
+      `/api/functions/${label}`,
+      params || {},
     );
   }
 

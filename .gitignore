@@ -79,3 +79,4 @@ test-published-kt/
 # Gradle user home (global config)
 .gradle/
 gradle.properties
+examples/go/client_functions

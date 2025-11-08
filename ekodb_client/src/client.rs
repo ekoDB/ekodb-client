@@ -733,6 +733,143 @@ impl Client {
             .regenerate_chat_message(chat_id, message_id, &token)
             .await
     }
+
+    // ========================================================================
+    // SAVED FUNCTIONS API
+    // ========================================================================
+
+    /// Save a new function definition
+    ///
+    /// # Arguments
+    ///
+    /// * `function` - The function definition to save
+    ///
+    /// # Returns
+    ///
+    /// The function ID assigned by the server
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # use ekodb_client::{Client, SavedFunction, FunctionStageConfig};
+    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// let client = Client::builder()
+    ///     .base_url("https://your-instance.ekodb.net")
+    ///     .api_key("your-token")
+    ///     .build()?;
+    ///
+    /// let function = SavedFunction::new("get_active_users", "Get Active Users")
+    ///     .with_stage(FunctionStageConfig::Query {
+    ///         collection: "users".to_string(),
+    ///         expression: serde_json::json!({"status": "active"})
+    ///     });
+    ///
+    /// let id = client.save_function(function).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn save_function(&self, function: crate::functions::SavedFunction) -> Result<String> {
+        let token = self.auth.get_token().await?;
+        self.http.save_function(function, &token).await
+    }
+
+    /// Get a function by its label
+    ///
+    /// # Arguments
+    ///
+    /// * `label` - The function label (unique identifier)
+    ///
+    /// # Returns
+    ///
+    /// The saved function definition
+    pub async fn get_function(&self, label: &str) -> Result<crate::functions::SavedFunction> {
+        let token = self.auth.get_token().await?;
+        self.http.get_function(label, &token).await
+    }
+
+    /// List all saved functions, optionally filtered by tags
+    ///
+    /// # Arguments
+    ///
+    /// * `tags` - Optional list of tags to filter by
+    ///
+    /// # Returns
+    ///
+    /// Vector of saved functions
+    pub async fn list_functions(
+        &self,
+        tags: Option<Vec<String>>,
+    ) -> Result<Vec<crate::functions::SavedFunction>> {
+        let token = self.auth.get_token().await?;
+        self.http.list_functions(tags, &token).await
+    }
+
+    /// Update an existing function
+    ///
+    /// # Arguments
+    ///
+    /// * `label` - The function label to update
+    /// * `function` - The updated function definition
+    pub async fn update_function(
+        &self,
+        label: &str,
+        function: crate::functions::SavedFunction,
+    ) -> Result<()> {
+        let token = self.auth.get_token().await?;
+        self.http.update_function(label, function, &token).await
+    }
+
+    /// Delete a function by its label
+    ///
+    /// # Arguments
+    ///
+    /// * `label` - The function label to delete
+    pub async fn delete_function(&self, label: &str) -> Result<()> {
+        let token = self.auth.get_token().await?;
+        self.http.delete_function(label, &token).await
+    }
+
+    /// Call a saved function
+    ///
+    /// # Arguments
+    ///
+    /// * `collection` - The collection to operate on
+    /// * `label` - The function label to execute
+    /// * `params` - Optional parameters to pass to the function
+    ///
+    /// # Returns
+    ///
+    /// Function execution result containing records and metadata
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # use ekodb_client::{Client, FieldType};
+    /// # use std::collections::HashMap;
+    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// let client = Client::builder()
+    ///     .base_url("https://your-instance.ekodb.net")
+    ///     .api_key("your-token")
+    ///     .build()?;
+    ///
+    /// let mut params = HashMap::new();
+    /// params.insert("status".to_string(), FieldType::String("active".to_string()));
+    ///
+    /// let result = client.call_function("get_active_users", Some(params)).await?;
+    /// println!("Found {} records", result.records.len());
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn call_function(
+        &self,
+        function_id_or_label: &str,
+        params: Option<std::collections::HashMap<String, crate::types::FieldType>>,
+    ) -> Result<crate::functions::FunctionResult> {
+        let token = self.auth.get_token().await?;
+        self.http
+            .call_function(function_id_or_label, params, &token)
+            .await
+    }
 }
 
 /// Builder for creating a Client
