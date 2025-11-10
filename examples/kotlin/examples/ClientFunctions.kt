@@ -1,11 +1,14 @@
 /**
- * Saved Functions Example for ekoDB Kotlin Client
+ * Scripts Example for ekoDB Kotlin Client
  *
- * Demonstrates creating, managing, and executing saved functions
+ * Demonstrates creating, managing, and executing scripts with the Kotlin client.
+ * Covers: FindAll, Group, Project, Count, and Script management operations.
  */
 
 import io.ekodb.client.EkoDBClient
-import io.ekodb.client.functions.*
+import io.ekodb.client.functions.Script
+import io.ekodb.client.functions.ParameterDefinition
+import io.ekodb.client.functions.FunctionStageConfig
 import io.ekodb.client.functions.GroupFunctionConfig
 import io.ekodb.client.functions.GroupFunctionOp
 import io.ekodb.client.types.Record
@@ -28,35 +31,35 @@ suspend fun setupTestData(client: EkoDBClient) {
     println("✅ Test data ready\n")
 }
 
-suspend fun simpleFunction(client: EkoDBClient): String {
-    println("📝 Example 1: Simple Query Function\n")
+suspend fun simpleQueryScript(client: EkoDBClient): String {
+    println("📝 Example 1: Simple Query Script\n")
 
-    val function = SavedFunction(
+    val script = Script(
         label = "get_active_users",
         name = "Get Active Users",
         description = "Retrieve all active users",
         version = "1.0",
         parameters = emptyMap(),
-        pipeline = listOf(
+        functions = listOf(
             FunctionStageConfig.FindAll(collection = "users")
         ),
         tags = listOf("users", "query")
     )
 
-    val id = client.saveFunction(function)
-    println("✅ Function saved: $id")
+    val scriptId = client.saveScript(script)
+    println("✅ Script saved: $scriptId")
 
-    // Call function by label
-    val result = client.callFunction("get_active_users")
-    println("📊 Found ${result.records.size} active users\n")
+    val result = client.callScript("get_active_users")
+    println("📊 Found ${result.records.size} records")
+    println("⏱️  Execution time: ${result.stats.execution_time_ms}ms\n")
     
-    return id
+    return scriptId
 }
 
-suspend fun parameterizedFunction(client: EkoDBClient) {
-    println("📝 Example 2: Parameterized Function\n")
+suspend fun parameterizedScript(client: EkoDBClient) {
+    println("📝 Example 2: Parameterized Script\n")
 
-    val function = SavedFunction(
+    val script = Script(
         label = "get_users_by_status",
         name = "Get Users By Status",
         version = "1.0",
@@ -64,40 +67,41 @@ suspend fun parameterizedFunction(client: EkoDBClient) {
             "status" to ParameterDefinition(
                 required = false,
                 default = JsonPrimitive("active"),
-                description = "Filter by status"
+                description = "Filter by user status"
             ),
             "limit" to ParameterDefinition(
                 required = false,
                 default = JsonPrimitive(10),
-                description = "Limit number of results"
+                description = "Maximum number of results"
             )
         ),
-        pipeline = listOf(
+        functions = listOf(
             FunctionStageConfig.FindAll(collection = "users")
         ),
         tags = listOf("users", "parameterized")
     )
 
-    val id = client.saveFunction(function)
-    println("✅ Function saved: $id")
+    client.saveScript(script)
+    println("✅ Script saved")
 
     val params = mapOf(
         "status" to JsonPrimitive("active"),
         "limit" to JsonPrimitive(3)
     )
-    val result = client.callFunction("get_users_by_status", params)
-    println("📊 Found ${result.records.size} users (limited)\n")
+    val result = client.callScript("get_users_by_status", params)
+    println("📊 Found ${result.records.size} users (limited)")
+    println("⏱️  Execution time: ${result.stats.execution_time_ms}ms\n")
 }
 
-suspend fun aggregationFunction(client: EkoDBClient): String {
-    println("📝 Example 3: Aggregation Function\n")
+suspend fun aggregationScript(client: EkoDBClient): String {
+    println("📝 Example 3: Aggregation Script\n")
 
-    val function = SavedFunction(
+    val script = Script(
         label = "user_stats",
         name = "User Statistics",
         version = "1.0",
         parameters = emptyMap(),
-        pipeline = listOf(
+        functions = listOf(
             FunctionStageConfig.FindAll(collection = "users"),
             FunctionStageConfig.Group(
                 by_fields = listOf("status"),
@@ -117,75 +121,170 @@ suspend fun aggregationFunction(client: EkoDBClient): String {
         tags = listOf("analytics")
     )
 
-    val id = client.saveFunction(function)
-    println("✅ Function saved: $id")
+    val scriptId = client.saveScript(script)
+    println("✅ Script saved")
 
-    val result = client.callFunction("user_stats")
+    val result = client.callScript("user_stats")
     println("📊 Statistics: ${result.records.size} groups")
     result.records.forEach { record ->
         println("   $record")
     }
-    println()
+    println("⏱️  Execution time: ${result.stats.execution_time_ms}ms\n")
     
-    return id
+    return scriptId
 }
 
-suspend fun functionManagement(client: EkoDBClient, functionIds: Map<String, String>) {
-    println("📝 Example 4: Function Management\n")
+suspend fun scriptManagement(client: EkoDBClient, getActiveUsersId: String, userStatsId: String) {
+    println("📝 Example 4: Script Management\n")
 
-    // List all functions
-    val functions = client.listFunctions()
-    println("📋 Total functions: ${functions.size}")
+    // List all scripts
+    val scripts = client.listScripts()
+    println("📋 Total scripts: ${scripts.size}")
 
-    // Get specific function by ID
-    val getActiveUsersId = functionIds["get_active_users"] ?: error("Function ID not found")
-    val func = client.getFunction(getActiveUsersId)
-    println("🔍 Retrieved function: ${func.name}")
+    // Get specific script (use encrypted ID)
+    val script = client.getScript(getActiveUsersId)
+    println("🔍 Retrieved script: ${script.name}")
 
-    // Update function
-    val updated = SavedFunction(
+    // Update script (use encrypted ID)
+    val updated = Script(
         label = "get_active_users",
         name = "Get Active Users (Updated)",
         description = "Updated description",
         version = "1.1",
         parameters = emptyMap(),
-        pipeline = listOf(
+        functions = listOf(
             FunctionStageConfig.FindAll(collection = "users")
         ),
         tags = listOf("users")
     )
-    client.updateFunction(getActiveUsersId, updated)
-    println("✏️  Function updated")
+    client.updateScript(getActiveUsersId, updated)
+    println("✏️  Script updated")
 
-    // Delete function by ID
-    val userStatsId = functionIds["user_stats"] ?: error("Function ID not found")
-    client.deleteFunction(userStatsId)
-    println("🗑️  Function deleted\n")
+    // Delete script (use ID) - handle error gracefully
+    try {
+        client.deleteScript(userStatsId)
+        println("🗑️  Script deleted")
+    } catch (e: Exception) {
+        println("ℹ️  Script delete skipped (may not exist)")
+    }
+    println()
+    
+    println("ℹ️  Note: GET/UPDATE/DELETE operations require the encrypted ID")
+    println("ℹ️  Only CALL can use either ID or label\n")
+}
+
+suspend fun multiStageScript(client: EkoDBClient) {
+    println("📝 Example 5: Multi-Stage Pipeline\n")
+
+    val script = Script(
+        label = "top_users",
+        name = "Top Performing Users",
+        version = "1.0",
+        parameters = mapOf(
+            "min_score" to ParameterDefinition(
+                required = false,
+                default = JsonPrimitive(50)
+            )
+        ),
+        functions = listOf(
+            FunctionStageConfig.FindAll(collection = "users"),
+            FunctionStageConfig.Project(
+                fields = listOf("name", "score", "status"),
+                exclude = false
+            )
+        ),
+        tags = listOf("analytics", "reporting")
+    )
+
+    client.saveScript(script)
+    println("✅ Multi-stage script saved")
+
+    val result = client.callScript("top_users", mapOf("min_score" to JsonPrimitive(50)))
+    println("📊 Pipeline executed ${result.stats.stages_executed} stages")
+    println("⏱️  Total execution time: ${result.stats.execution_time_ms}ms")
+    println("📈 Stage breakdown:")
+    result.stats.stage_stats.forEachIndexed { index, stage ->
+        println("   ${index + 1}. ${stage.stage}: ${stage.execution_time_ms}ms (${stage.input_count} → ${stage.output_count} records)")
+    }
+    println()
+}
+
+suspend fun countScript(client: EkoDBClient) {
+    println("📝 Example 6: Count Users\n")
+
+    val script = Script(
+        label = "count_users",
+        name = "Count All Users",
+        version = "1.0",
+        parameters = emptyMap(),
+        functions = listOf(
+            FunctionStageConfig.FindAll(collection = "users"),
+            FunctionStageConfig.Count(output_field = "count")
+        ),
+        tags = listOf("users", "count")
+    )
+
+    client.saveScript(script)
+    println("✅ Count script saved")
+
+    val result = client.callScript("count_users")
+    val count = result.records.firstOrNull()?.get("count")
+    println("📊 Total user count: $count")
+    println("⏱️  Execution time: ${result.stats.execution_time_ms}ms\n")
+}
+
+suspend fun cleanup(client: EkoDBClient) {
+    println("🧹 Cleaning up...")
+
+    // Delete test collection
+    client.deleteCollection("users")
+    println("✅ Deleted collection")
+
+    // List and delete all test scripts
+    val scripts = client.listScripts()
+    for (script in scripts) {
+        if (script.label.startsWith("get_") || script.label.startsWith("user_") ||
+            script.label.startsWith("top_") || script.label.startsWith("count_")) {
+            try {
+                script.id?.let { client.deleteScript(it) }
+            } catch (e: Exception) {
+                // Script might already be deleted
+            }
+        }
+    }
+    println("✅ Deleted test scripts\n")
 }
 
 fun main() = runBlocking {
-    println("🚀 ekoDB Saved Functions Example (Kotlin)\n")
+    println("🚀 ekoDB Scripts Example (Kotlin Client)\n")
 
-    val baseUrl = System.getenv("API_BASE_URL") ?: "http://localhost:8080"
-    val apiKey = System.getenv("API_BASE_KEY") ?: error("API_BASE_KEY environment variable not set")
+    try {
+        val baseUrl = System.getenv("API_BASE_URL") ?: "http://localhost:8080"
+        val apiKey = System.getenv("API_BASE_KEY") ?: "a-test-api-key-from-ekodb"
 
-    val client = EkoDBClient.builder()
-        .baseUrl(baseUrl)
-        .apiKey(apiKey)
-        .build()
+        val client = EkoDBClient.builder()
+            .baseUrl(baseUrl)
+            .apiKey(apiKey)
+            .build()
 
-    // Run examples
-    setupTestData(client)
-    val getActiveUsersId = simpleFunction(client)
-    parameterizedFunction(client)
-    val userStatsId = aggregationFunction(client)
-    
-    // Collect function IDs for management operations
-    val functionIds = mapOf(
-        "get_active_users" to getActiveUsersId,
-        "user_stats" to userStatsId
-    )
-    functionManagement(client, functionIds)
+        println("✅ Client initialized\n")
 
-    println("✅ All examples completed!")
+        setupTestData(client)
+        val getActiveUsersId = simpleQueryScript(client)
+        parameterizedScript(client)
+        val userStatsId = aggregationScript(client)
+        scriptManagement(client, getActiveUsersId, userStatsId)
+        multiStageScript(client)
+        countScript(client)
+        cleanup(client)
+
+        println("✅ All examples completed successfully!")
+        println("\n💡 Key Advantages of Using the Client:")
+        println("   • Automatic token management")
+        println("   • Type-safe Stage builders")
+        println("   • Built-in error handling")
+    } catch (e: Exception) {
+        println("❌ Error: ${e.message}")
+        throw e
+    }
 }

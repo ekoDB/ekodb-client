@@ -1,11 +1,11 @@
 /**
- * Saved Functions Example - Using @ekodb/ekodb-client library
+ * Scripts Example - Using @ekodb/ekodb-client library
  * 
- * This example demonstrates saved functions using the JavaScript client library.
- * Compare with http_functions.js to see the difference!
+ * Demonstrates creating, managing, and executing scripts with the JavaScript client.
+ * Covers: FindAll, Group, Sort, Limit, Count, and Script management operations.
  */
 
-const { EkoDBClient, Stage, ParameterValue, ChatMessage } = require('@ekodb/ekodb-client');
+const { EkoDBClient, Stage, ChatMessage } = require('@ekodb/ekodb-client');
 const dotenv = require('dotenv');
 
 dotenv.config();
@@ -30,65 +30,63 @@ async function setupTestData(client) {
   console.log('✅ Test data ready\n');
 }
 
-async function simpleQueryFunction(client) {
-  console.log('📝 Example 1: Simple Query Function\n');
+async function simpleQueryScript(client) {
+  console.log('📝 Example 1: Simple Query Script\n');
   
-  const function1 = {
+  const script = {
     label: 'get_active_users',
     name: 'Get Active Users',
     description: 'Retrieve all active users',
     version: '1.0',
     parameters: {},
-    pipeline: [
+    functions: [
       Stage.findAll('users')
     ],
     tags: ['users', 'query'],
   };
   
-  // Save function
-  const functionId = await client.saveFunction(function1);
-  console.log(`✅ Function saved: ${functionId}`);
+  // Save script
+  const scriptId = await client.saveScript(script);
+  console.log(`✅ Script saved: ${scriptId}`);
   
-  // Call function (use label)
-  const result = await client.callFunction('get_active_users');
+  // Call script (use label)
+  const result = await client.callScript('get_active_users');
   console.log(`📊 Found ${result.records.length} records`);
   console.log(`⏱️  Execution time: ${result.stats.execution_time_ms}ms\n`);
   
-  return functionId;
+  return scriptId;
 }
 
-async function parameterizedFunction(client) {
-  console.log('📝 Example 2: Parameterized Function\n');
+async function parameterizedScript(client) {
+  console.log('📝 Example 2: Parameterized Script\n');
   
-  const function2 = {
+  const script = {
     label: 'get_users_by_status',
     name: 'Get Users By Status',
     version: '1.0',
     parameters: {
       status: {
-        param_type: 'String',
         required: false,
         default: 'active',
         description: 'Filter by user status',
       },
       limit: {
-        param_type: 'Integer',
         required: false,
         default: 10,
         description: 'Maximum number of results',
       },
     },
-    pipeline: [
+    functions: [
       Stage.findAll('users')
     ],
     tags: ['users', 'parameterized'],
   };
   
-  await client.saveFunction(function2);
-  console.log('✅ Function saved');
+  await client.saveScript(script);
+  console.log('✅ Script saved');
   
   // Call with parameters
-  const result = await client.callFunction('get_users_by_status', {
+  const result = await client.callScript('get_users_by_status', {
     status: 'active',
     limit: 3
   });
@@ -96,15 +94,15 @@ async function parameterizedFunction(client) {
   console.log(`⏱️  Execution time: ${result.stats.execution_time_ms}ms\n`);
 }
 
-async function aggregationFunction(client) {
-  console.log('📝 Example 3: Aggregation Function\n');
+async function aggregationScript(client) {
+  console.log('📝 Example 3: Aggregation Script\n');
   
-  const function3 = {
+  const script = {
     label: 'user_stats',
     name: 'User Statistics',
     version: '1.0',
     parameters: {},
-    pipeline: [
+    functions: [
       Stage.findAll('users'),
       Stage.group(['status'], [
         {
@@ -121,79 +119,80 @@ async function aggregationFunction(client) {
     tags: ['analytics'],
   };
   
-  await client.saveFunction(function3);
-  console.log('✅ Function saved');
+  const scriptId = await client.saveScript(script);
+  console.log('✅ Script saved');
   
-  const result = await client.callFunction('user_stats');
+  const result = await client.callScript('user_stats');
   console.log(`📊 Statistics: ${result.records.length} groups`);
   result.records.forEach((record) => {
     console.log(`   ${JSON.stringify(record)}`);
   });
   console.log(`⏱️  Execution time: ${result.stats.execution_time_ms}ms\n`);
   
-  return function3.label;
+  return scriptId;
 }
 
-async function functionManagement(client, getActiveUsersId, userStatsLabel) {
-  console.log('📝 Example 4: Function Management\n');
+async function scriptManagement(client, getActiveUsersId, userStatsId) {
+  console.log('📝 Example 4: Script Management\n');
   
-  // List all functions
-  const functions = await client.listFunctions();
-  console.log(`📋 Total functions: ${functions.length}`);
+  // List all scripts
+  const scripts = await client.listScripts();
+  console.log(`📋 Total scripts: ${scripts.length}`);
   
-  // Get specific function (use encrypted ID)
-  const func = await client.getFunction(getActiveUsersId);
-  console.log(`🔍 Retrieved function: ${func.name}`);
+  // Get specific script (use encrypted ID)
+  const script = await client.getScript(getActiveUsersId);
+  console.log(`🔍 Retrieved script: ${script.name}`);
   
-  // Update function (use encrypted ID)
+  // Update script (use encrypted ID)
   const updated = {
     label: 'get_active_users',
     name: 'Get Active Users (Updated)',
     description: 'Updated description',
     version: '1.1',
     parameters: {},
-    pipeline: [Stage.findAll('users')],
+    functions: [Stage.findAll('users')],
     tags: ['users'],
   };
-  await client.updateFunction(getActiveUsersId, updated);
-  console.log('✏️  Function updated');
+  await client.updateScript(getActiveUsersId, updated);
+  console.log('✏️  Script updated');
   
-  // Delete function (use label)
-  await client.deleteFunction(userStatsLabel);
-  console.log('🗑️  Function deleted\n');
+  // Delete script (use ID) - handle error gracefully
+  try {
+    await client.deleteScript(userStatsId);
+    console.log('🗑️  Script deleted');
+  } catch (error) {
+    console.log('ℹ️  Script delete skipped (may not exist)');
+  }
+  console.log();
   
-  console.log('ℹ️  Note: GET/UPDATE/DELETE can use either ID or label');
-  console.log('ℹ️  CALL can also use either ID or label\n');
+  console.log('ℹ️  Note: GET/UPDATE/DELETE operations require the encrypted ID');
+  console.log('ℹ️  Only CALL can use either ID or label\n');
 }
 
-async function pipelineStagesExample(client) {
-  console.log('📝 Example 5: Complex Pipeline with Multiple Stages\n');
+async function multiStageScript(client) {
+  console.log('📝 Example 5: Multi-Stage Pipeline\n');
   
-  const function5 = {
+  const script = {
     label: 'top_users',
     name: 'Top Performing Users',
     version: '1.0',
     parameters: {
       min_score: {
-        param_type: 'Integer',
         required: false,
         default: 50,
       }
     },
-    pipeline: [
+    functions: [
       Stage.findAll('users'),
-      // Note: Query stage would filter but we'll demonstrate projection
-      Stage.project(['name', 'score', 'status']),
-      // Count the results
-      Stage.count(),
+      Stage.project(['name', 'score', 'status'], false),
     ],
     tags: ['analytics', 'reporting'],
   };
   
-  await client.saveFunction(function5);
-  console.log('✅ Multi-stage function saved');
+  await client.saveScript(script);
+  console.log('✅ Multi-stage script saved');
   
-  const result = await client.callFunction('top_users', { min_score: 50 });
+  const result = await client.callScript('top_users', { min_score: 50 });
   console.log(`📊 Pipeline executed ${result.stats.stages_executed} stages`);
   console.log(`⏱️  Total execution time: ${result.stats.execution_time_ms}ms`);
   console.log('📈 Stage breakdown:');
@@ -203,44 +202,26 @@ async function pipelineStagesExample(client) {
   console.log();
 }
 
-async function writeOperationsExample(client) {
-  console.log('📝 Example 6: Write Operations in Functions\n');
+async function countScript(client) {
+  console.log('📝 Example 6: Count Users\n');
   
-  const function6 = {
-    label: 'create_user',
-    name: 'Create New User',
+  const script = {
+    label: 'count_users',
+    name: 'Count All Users',
     version: '1.0',
-    parameters: {
-      name: {
-        param_type: 'String',
-        required: true,
-        description: 'User name',
-      },
-      age: {
-        param_type: 'Integer',
-        required: true,
-        description: 'User age',
-      },
-    },
-    pipeline: [
-      Stage.insert('users', {
-        name: ParameterValue.parameter('name'),
-        age: ParameterValue.parameter('age'),
-        status: ParameterValue.literal('active'),
-        score: ParameterValue.literal(0),
-      }),
+    parameters: {},
+    functions: [
+      Stage.findAll('users'),
+      Stage.count(),
     ],
-    tags: ['users', 'write'],
+    tags: ['users', 'count'],
   };
   
-  await client.saveFunction(function6);
-  console.log('✅ Write function saved');
+  await client.saveScript(script);
+  console.log('✅ Count script saved');
   
-  const result = await client.callFunction('create_user', {
-    name: 'New User',
-    age: 25,
-  });
-  console.log(`✅ User created via function`);
+  const result = await client.callScript('count_users');
+  console.log(`📊 Total user count: ${result.records[0]?.count?.value || result.records[0]?.count || 0}`);
   console.log(`⏱️  Execution time: ${result.stats.execution_time_ms}ms\n`);
 }
 
@@ -251,23 +232,23 @@ async function cleanup(client) {
   await client.deleteCollection('users');
   console.log('✅ Deleted collection');
   
-  // List and delete all test functions
-  const functions = await client.listFunctions();
-  for (const func of functions) {
-    if (func.label.startsWith('get_') || func.label.startsWith('user_') || 
-        func.label.startsWith('top_') || func.label.startsWith('create_')) {
+  // List and delete all test scripts
+  const scripts = await client.listScripts();
+  for (const script of scripts) {
+    if (script.label.startsWith('get_') || script.label.startsWith('user_') || 
+        script.label.startsWith('top_') || script.label.startsWith('create_')) {
       try {
-        await client.deleteFunction(func.label);
+        await client.deleteScript(script.id);
       } catch (error) {
-        // Function might already be deleted
+        // Script might already be deleted
       }
     }
   }
-  console.log('✅ Deleted test functions\n');
+  console.log('✅ Deleted test scripts\n');
 }
 
 async function main() {
-  console.log('🚀 ekoDB Saved Functions Example (JavaScript Client)\n');
+  console.log('🚀 ekoDB Scripts Example (JavaScript Client)\n');
   
   try {
     // Create and initialize ekoDB client
@@ -276,19 +257,19 @@ async function main() {
     console.log('✅ Client initialized (token exchange automatic)\n');
     
     await setupTestData(client);
-    const getActiveUsersId = await simpleQueryFunction(client);
-    await parameterizedFunction(client);
-    const userStatsLabel = await aggregationFunction(client);
-    await functionManagement(client, getActiveUsersId, userStatsLabel);
-    await pipelineStagesExample(client);
-    await writeOperationsExample(client);
+    const getActiveUsersId = await simpleQueryScript(client);
+    await parameterizedScript(client);
+    const userStatsId = await aggregationScript(client);
+    await scriptManagement(client, getActiveUsersId, userStatsId);
+    await multiStageScript(client);
+    await countScript(client);
     await cleanup(client);
     
     console.log('✅ All examples completed successfully!');
     console.log('\n💡 Key Advantages of Using the Client:');
     console.log('   • Automatic token management');
     console.log('   • Type-safe Stage builders');
-    console.log('   • ParameterValue and ChatMessage helpers');
+    console.log('   • ChatMessage helpers');
     console.log('   • Cleaner, more maintainable code');
     console.log('   • Built-in error handling');
   } catch (error) {

@@ -1,16 +1,16 @@
-//! Saved Functions API for ekoDB client
+//! Scripts API for ekoDB client
 //!
-//! This module provides types and methods for working with saved functions,
-//! allowing you to create, manage, and execute server-side data processing pipelines.
+//! This module provides types and methods for working with Scripts,
+//! allowing you to create, manage, and execute server-side sequences of Functions.
 
 use crate::types::FieldType;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-/// A saved function definition with pipeline stages and parameters
+/// A Script definition with Functions and parameters
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SavedFunction {
+pub struct Script {
     /// User-defined label (unique identifier)
     pub label: String,
 
@@ -29,8 +29,8 @@ pub struct SavedFunction {
     #[serde(default)]
     pub parameters: HashMap<String, ParameterDefinition>,
 
-    /// Pipeline stages to execute
-    pub pipeline: Vec<FunctionStageConfig>,
+    /// Functions to execute in sequence
+    pub functions: Vec<Function>,
 
     /// Tags for categorization
     #[serde(default)]
@@ -49,8 +49,8 @@ fn default_version() -> String {
     "1.0".to_string()
 }
 
-impl SavedFunction {
-    /// Create a new saved function
+impl Script {
+    /// Create a new Script
     pub fn new(label: impl Into<String>, name: impl Into<String>) -> Self {
         Self {
             label: label.into(),
@@ -58,7 +58,7 @@ impl SavedFunction {
             description: None,
             version: default_version(),
             parameters: HashMap::new(),
-            pipeline: Vec::new(),
+            functions: Vec::new(),
             tags: Vec::new(),
             created_at: None, // Server will set this
             updated_at: None, // Server will set this
@@ -83,9 +83,97 @@ impl SavedFunction {
         self
     }
 
-    /// Add a pipeline stage
-    pub fn with_stage(mut self, stage: FunctionStageConfig) -> Self {
-        self.pipeline.push(stage);
+    /// Add a Function to the Script
+    pub fn with_function(mut self, function: Function) -> Self {
+        self.functions.push(function);
+        self
+    }
+
+    /// Add a tag
+    pub fn with_tag(mut self, tag: impl Into<String>) -> Self {
+        self.tags.push(tag.into());
+        self
+    }
+}
+
+/// A UserFunction is a reusable sequence of Functions that can be called by Scripts
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UserFunction {
+    /// Unique identifier (ekoDB-generated)
+    pub id: Option<String>,
+
+    /// User-defined label (unique identifier)
+    pub label: String,
+
+    /// Human-readable name
+    pub name: String,
+
+    /// Optional description
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+
+    /// Version string
+    #[serde(default = "default_version")]
+    pub version: String,
+
+    /// Parameter definitions
+    #[serde(default)]
+    pub parameters: HashMap<String, ParameterDefinition>,
+
+    /// Functions to execute in sequence
+    pub functions: Vec<Function>,
+
+    /// Tags for categorization
+    #[serde(default)]
+    pub tags: Vec<String>,
+
+    /// Creation timestamp (server-managed)
+    #[serde(skip_serializing, skip_deserializing)]
+    pub created_at: Option<DateTime<Utc>>,
+
+    /// Last update timestamp (server-managed)
+    #[serde(skip_serializing, skip_deserializing)]
+    pub updated_at: Option<DateTime<Utc>>,
+}
+
+impl UserFunction {
+    /// Create a new UserFunction
+    pub fn new(label: impl Into<String>, name: impl Into<String>) -> Self {
+        Self {
+            id: None,
+            label: label.into(),
+            name: name.into(),
+            description: None,
+            version: default_version(),
+            parameters: HashMap::new(),
+            functions: Vec::new(),
+            tags: Vec::new(),
+            created_at: None,
+            updated_at: None,
+        }
+    }
+
+    /// Set the description
+    pub fn with_description(mut self, description: impl Into<String>) -> Self {
+        self.description = Some(description.into());
+        self
+    }
+
+    /// Set the version
+    pub fn with_version(mut self, version: impl Into<String>) -> Self {
+        self.version = version.into();
+        self
+    }
+
+    /// Add a parameter definition
+    pub fn with_parameter(mut self, param: ParameterDefinition) -> Self {
+        self.parameters.insert(param.name.clone(), param);
+        self
+    }
+
+    /// Add a Function
+    pub fn with_function(mut self, function: Function) -> Self {
+        self.functions.push(function);
         self
     }
 
@@ -146,43 +234,55 @@ impl ParameterDefinition {
     }
 }
 
-/// Represents a value that can be a literal or a parameter reference
+/// Condition evaluation for Script control flow (If statements)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", content = "value")]
-pub enum ParameterValue {
-    /// Direct value (any FieldType)
-    Literal(FieldType),
-    /// Parameter reference (e.g., "{{limit}}")
-    Parameter(String),
+pub enum ScriptCondition {
+    /// Check if field equals value in current records
+    FieldEquals {
+        field: String,
+        value: serde_json::Value,
+    },
+    /// Check if field exists in current records
+    FieldExists { field: String },
+    /// Check if we have any records
+    HasRecords,
+    /// Check if record count equals N
+    CountEquals { count: usize },
+    /// Check if record count > N
+    CountGreaterThan { count: usize },
+    /// Check if record count < N
+    CountLessThan { count: usize },
+    /// Logical AND
+    And { conditions: Vec<ScriptCondition> },
+    /// Logical OR
+    Or { conditions: Vec<ScriptCondition> },
+    /// Logical NOT
+    Not { condition: Box<ScriptCondition> },
 }
 
-impl ParameterValue {
-    /// Create a literal value
-    pub fn literal(value: FieldType) -> Self {
-        ParameterValue::Literal(value)
-    }
-
-    /// Create a parameter reference
-    pub fn parameter(name: impl Into<String>) -> Self {
-        ParameterValue::Parameter(name.into())
-    }
-}
-
-/// Function pipeline stage configuration
+/// Function in a Script
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "PascalCase")]
-pub enum FunctionStageConfig {
+pub enum Function {
     /// Find all records in collection
     FindAll { collection: String },
 
     /// Query records with advanced options
     Query {
         collection: String,
-        expression: serde_json::Value,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        filter: Option<serde_json::Value>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        sort: Option<Vec<SortFieldConfig>>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        limit: Option<serde_json::Value>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        skip: Option<serde_json::Value>,
     },
 
     /// Project specific fields
-    Project { fields: Vec<String> },
+    Project { fields: Vec<String>, exclude: bool },
 
     /// Group records with functions
     Group {
@@ -191,35 +291,43 @@ pub enum FunctionStageConfig {
     },
 
     /// Count records
-    Count,
+    Count { output_field: String },
 
     /// Insert a record
     Insert {
-        data: serde_json::Value,
-        #[serde(default)]
-        bypass_ripple: bool,
+        collection: String,
+        record: serde_json::Value,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        bypass_ripple: Option<bool>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        ttl: Option<serde_json::Value>,
     },
 
-    /// Update a record
+    /// Update records matching filter
     Update {
-        id: serde_json::Value,
-        data: serde_json::Value,
-        #[serde(default)]
-        bypass_ripple: bool,
+        collection: String,
+        filter: serde_json::Value,
+        updates: serde_json::Value,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        bypass_ripple: Option<bool>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        ttl: Option<serde_json::Value>,
     },
 
-    /// Delete a record
+    /// Delete records matching filter
     Delete {
-        id: serde_json::Value,
-        #[serde(default)]
-        bypass_ripple: bool,
+        collection: String,
+        filter: serde_json::Value,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        bypass_ripple: Option<bool>,
     },
 
     /// Batch insert records
     BatchInsert {
+        collection: String,
         records: serde_json::Value,
-        #[serde(default)]
-        bypass_ripple: bool,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        bypass_ripple: Option<bool>,
     },
 
     /// Batch delete records
@@ -249,9 +357,14 @@ pub enum FunctionStageConfig {
 
     /// Text search
     TextSearch {
-        query: String,
+        collection: String,
+        query_text: serde_json::Value,
         #[serde(skip_serializing_if = "Option::is_none")]
-        options: Option<serde_json::Value>,
+        fields: Option<Vec<String>>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        limit: Option<serde_json::Value>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        fuzzy: Option<bool>,
     },
 
     /// Hybrid search (text + vector)
@@ -284,18 +397,19 @@ pub enum FunctionStageConfig {
 
     /// Conditional execution
     If {
-        condition: serde_json::Value,
-        then_stages: Vec<FunctionStageConfig>,
+        condition: ScriptCondition,
+        then_functions: Vec<Box<Function>>,
         #[serde(skip_serializing_if = "Option::is_none")]
-        else_stages: Option<Vec<FunctionStageConfig>>,
+        else_functions: Option<Vec<Box<Function>>>,
     },
 
-    /// Loop over items
-    ForEach {
-        items: serde_json::Value,
-        #[serde(rename = "var")]
-        variable: String,
-        stages: Vec<FunctionStageConfig>,
+    /// For each record, execute Functions
+    ForEach { functions: Vec<Box<Function>> },
+
+    /// Call a saved UserFunction by label
+    CallFunction {
+        function_label: String,
+        params: Option<HashMap<String, serde_json::Value>>,
     },
 }
 
@@ -306,38 +420,33 @@ fn default_method() -> String {
 /// Chat message for AI operations
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ChatMessage {
-    pub role: ParameterValue,
-    pub content: ParameterValue,
+    pub role: String,
+    pub content: String,
 }
 
 impl ChatMessage {
     /// Create a system message
     pub fn system(content: impl Into<String>) -> Self {
         Self {
-            role: ParameterValue::Literal(FieldType::String("system".to_string())),
-            content: ParameterValue::Literal(FieldType::String(content.into())),
+            role: "system".to_string(),
+            content: content.into(),
         }
     }
 
     /// Create a user message
     pub fn user(content: impl Into<String>) -> Self {
         Self {
-            role: ParameterValue::Literal(FieldType::String("user".to_string())),
-            content: ParameterValue::Literal(FieldType::String(content.into())),
+            role: "user".to_string(),
+            content: content.into(),
         }
     }
 
     /// Create an assistant message
     pub fn assistant(content: impl Into<String>) -> Self {
         Self {
-            role: ParameterValue::Literal(FieldType::String("assistant".to_string())),
-            content: ParameterValue::Literal(FieldType::String(content.into())),
+            role: "assistant".to_string(),
+            content: content.into(),
         }
-    }
-
-    /// Create a message with parameter references
-    pub fn with_params(role: ParameterValue, content: ParameterValue) -> Self {
-        Self { role, content }
     }
 }
 

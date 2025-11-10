@@ -107,4 +107,7 @@ async function documentTTLExamples() {
 }
 
 // Run the examples
-documentTTLExamples().catch(console.error);
+documentTTLExamples().catch((error) => {
+  console.error("❌ Error:", error);
+  process.exit(1);
+});

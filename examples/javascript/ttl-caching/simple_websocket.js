@@ -103,4 +103,7 @@ async function simpleWebSocketExample() {
 }
 
 // Run the example
-simpleWebSocketExample().catch(console.error);
+simpleWebSocketExample().catch((error) => {
+  console.error("❌ Error:", error);
+  process.exit(1);
+});

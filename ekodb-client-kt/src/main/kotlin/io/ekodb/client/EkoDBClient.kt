@@ -60,7 +60,7 @@ class EkoDBClient private constructor(
                 prettyPrint = true
                 isLenient = true
                 ignoreUnknownKeys = true
-                classDiscriminator = "kotlinType"  // Use different discriminator to avoid conflict with "type" field
+                // No global classDiscriminator - let sealed classes define their own
             })
         }
         
@@ -920,43 +920,50 @@ class EkoDBClient private constructor(
     }
     
     // ========================================================================
-    // SAVED FUNCTIONS API
+    // SCRIPTS API
     // ========================================================================
     
     /**
-     * Save a new function definition
+     * Save a new script definition
      */
-    suspend fun saveFunction(function: io.ekodb.client.functions.SavedFunction): String {
+    suspend fun saveScript(script: io.ekodb.client.functions.Script): String {
         val token = getToken()
         val response = executeWithRetry {
             httpClient.post("$baseUrl/api/functions") {
                 bearerAuth(token)
                 contentType(ContentType.Application.Json)
-                setBody(function)
+                setBody(script)
             }
         }
+        
+        // Check for error response
+        if (response.status.value >= 400) {
+            val errorText = response.bodyAsText()
+            throw IllegalStateException("Server error ${response.status.value}: $errorText")
+        }
+        
         val result = response.body<JsonObject>()
         return result["id"]?.jsonPrimitive?.content 
-            ?: throw IllegalStateException("No function ID returned")
+            ?: throw IllegalStateException("No script ID returned")
     }
     
     /**
-     * Get a function by label
+     * Get a script by ID
      */
-    suspend fun getFunction(label: String): io.ekodb.client.functions.SavedFunction {
+    suspend fun getScript(id: String): io.ekodb.client.functions.Script {
         val token = getToken()
         val response = executeWithRetry {
-            httpClient.get("$baseUrl/api/functions/$label") {
+            httpClient.get("$baseUrl/api/functions/$id") {
                 bearerAuth(token)
             }
         }
-        return response.body<io.ekodb.client.functions.SavedFunction>()
+        return response.body<io.ekodb.client.functions.Script>()
     }
     
     /**
-     * List all functions, optionally filtered by tags
+     * List all scripts, optionally filtered by tags
      */
-    suspend fun listFunctions(tags: List<String>? = null): List<io.ekodb.client.functions.SavedFunction> {
+    suspend fun listScripts(tags: List<String>? = null): List<io.ekodb.client.functions.Script> {
         val token = getToken()
         val url = if (tags != null) {
             "$baseUrl/api/functions?tags=${tags.joinToString(",")}"
@@ -968,41 +975,41 @@ class EkoDBClient private constructor(
                 bearerAuth(token)
             }
         }
-        return response.body<List<io.ekodb.client.functions.SavedFunction>>()
+        return response.body<List<io.ekodb.client.functions.Script>>()
     }
     
     /**
-     * Update an existing function
+     * Update an existing script by ID
      */
-    suspend fun updateFunction(label: String, function: io.ekodb.client.functions.SavedFunction) {
+    suspend fun updateScript(id: String, script: io.ekodb.client.functions.Script) {
         val token = getToken()
         executeWithRetry {
-            httpClient.put("$baseUrl/api/functions/$label") {
+            httpClient.put("$baseUrl/api/functions/$id") {
                 bearerAuth(token)
                 contentType(ContentType.Application.Json)
-                setBody(function)
+                setBody(script)
             }
         }
     }
     
     /**
-     * Delete a function by label
+     * Delete a script by ID
      */
-    suspend fun deleteFunction(label: String) {
+    suspend fun deleteScript(id: String) {
         val token = getToken()
         executeWithRetry {
-            httpClient.delete("$baseUrl/api/functions/$label") {
+            httpClient.delete("$baseUrl/api/functions/$id") {
                 bearerAuth(token)
             }
         }
     }
     
     /**
-     * Call a saved function by label or ID
-     * @param labelOrId Function label or encrypted ID
-     * @param params Optional parameters for the function
+     * Call a script by label or ID
+     * @param labelOrId Script label or encrypted ID
+     * @param params Optional parameters for the script
      */
-    suspend fun callFunction(
+    suspend fun callScript(
         labelOrId: String,
         params: Map<String, JsonElement>? = null
     ): io.ekodb.client.functions.FunctionResult {
@@ -1019,16 +1026,16 @@ class EkoDBClient private constructor(
     }
     
     /**
-     * Call a saved function (deprecated - use callFunction with labelOrId)
-     * @deprecated Use callFunction(labelOrId, params) instead
+     * Call a script (deprecated - use callScript with labelOrId)
+     * @deprecated Use callScript(labelOrId, params) instead
      */
-    @Deprecated("Collection parameter is not used for saved functions", ReplaceWith("callFunction(label, params)"))
-    suspend fun callFunction(
+    @Deprecated("Collection parameter is not used for scripts", ReplaceWith("callScript(label, params)"))
+    suspend fun callScript(
         collection: String,
         label: String,
         params: Map<String, JsonElement>? = null
     ): io.ekodb.client.functions.FunctionResult {
-        return callFunction(label, params)
+        return callScript(label, params)
     }
     
     companion object {

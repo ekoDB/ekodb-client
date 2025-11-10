@@ -4,17 +4,18 @@ import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
 
 /**
- * Saved function definition with pipeline stages and parameters
+ * Script definition with function stages and parameters
  */
 @Serializable
-data class SavedFunction(
+data class Script(
     val label: String,
     val name: String,
     val description: String? = null,
     val version: String = "1.0",
     val parameters: Map<String, ParameterDefinition> = emptyMap(),
-    val pipeline: List<FunctionStageConfig>,
+    val functions: List<FunctionStageConfig>,
     val tags: List<String> = emptyList(),
+    val id: String? = null,
     val created_at: String? = null,
     val updated_at: String? = null
 )
@@ -29,25 +30,10 @@ data class ParameterDefinition(
     val description: String? = null
 )
 
-/**
- * Parameter value - literal or parameter reference
- */
-@Serializable
-data class ParameterValue(
-    val type: String, // "Literal" or "Parameter"
-    val value: kotlinx.serialization.json.JsonElement
-) {
-    companion object {
-        fun literal(value: kotlinx.serialization.json.JsonElement) = 
-            ParameterValue("Literal", value)
-        
-        fun parameter(name: String) = 
-            ParameterValue("Parameter", kotlinx.serialization.json.JsonPrimitive(name))
-    }
-}
+// ParameterValue removed - use direct values or string interpolation "{{param}}" instead
 
 /**
- * Function execution result
+ * Script execution result
  */
 @Serializable
 data class FunctionResult(
@@ -56,7 +42,7 @@ data class FunctionResult(
 )
 
 /**
- * Function execution statistics
+ * Script execution statistics
  */
 @Serializable
 data class FunctionStats(

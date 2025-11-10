@@ -438,6 +438,7 @@ test-examples-python-client: build-python-client
 	@cd examples/python && python3 client_chat_sessions.py
 	@cd examples/python && python3 client_chat_advanced.py
 	@cd examples/python && python3 client_functions.py
+	@cd examples/python && python3 client_functions_complete.py
 	@echo "✅ $(GREEN)Python client examples complete!$(RESET)"
 
 # ============================================================================
@@ -506,6 +507,7 @@ test-examples-typescript-client: build-typescript-client
 	@cd examples/typescript && npx tsx client_schema.ts
 	@cd examples/typescript && npx tsx client_joins.ts
 	@cd examples/typescript && npx tsx client_functions.ts
+	@cd examples/typescript && npx tsx client_functions_complete.ts
 	@echo "✅ $(GREEN)TypeScript client examples complete!$(RESET)"
 
 # ============================================================================
@@ -536,6 +538,11 @@ test-examples-javascript-client: build-typescript-client
 	@cd examples/javascript && node client_simple_websocket.js
 	@cd examples/javascript && node client_websocket_ttl.js
 	@cd examples/javascript && node http_functions.js
+	@cd examples/javascript && node client_functions.js
+	@cd examples/javascript && node client_functions_advanced.js
+	@cd examples/javascript && node client_functions_crud.js
+	@cd examples/javascript && node client_functions_search.js
+	@cd examples/javascript && node client_functions_ai.js
 	@echo "✅ $(GREEN)JavaScript client examples complete!$(RESET)"
 
 # ============================================================================

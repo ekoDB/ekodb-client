@@ -67,4 +67,7 @@ async function main() {
   console.log("\n✓ All batch operations completed successfully");
 }
 
-main().catch(console.error);
+main().catch((error) => {
+  console.error("❌ Error:", error);
+  process.exit(1);
+});
