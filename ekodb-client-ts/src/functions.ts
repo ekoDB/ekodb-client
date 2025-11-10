@@ -1,14 +1,14 @@
 /**
- * Saved Functions API for ekoDB TypeScript client
+ * Scripts API for ekoDB TypeScript client
  */
 
-export interface SavedFunction {
+export interface Script {
   label: string;
   name: string;
   description?: string;
   version: string;
   parameters: { [key: string]: ParameterDefinition };
-  pipeline: FunctionStageConfig[];
+  functions: FunctionStageConfig[];
   tags: string[];
   created_at?: string;
   updated_at?: string;
@@ -21,42 +21,62 @@ export interface ParameterDefinition {
   param_type?: string;
 }
 
-export interface ParameterValue {
-  type: "Literal" | "Parameter";
-  value: any;
-}
-
-export const ParameterValue = {
-  literal: (value: any): ParameterValue => ({
-    type: "Literal",
-    value,
-  }),
-  parameter: (name: string): ParameterValue => ({
-    type: "Parameter",
-    value: name,
-  }),
-};
+// ParameterValue removed - use plain values instead
 
 export type FunctionStageConfig =
   | { type: "FindAll"; collection: string }
-  | { type: "Query"; collection: string; expression: Record<string, any> }
-  | { type: "Project"; fields: string[] }
+  | {
+      type: "Query";
+      collection: string;
+      filter?: Record<string, any>;
+      sort?: SortFieldConfig[];
+      limit?: number;
+      skip?: number;
+    }
+  | { type: "Project"; fields: string[]; exclude: boolean }
   | {
       type: "Group";
       by_fields: string[];
       functions: GroupFunctionConfig[];
     }
-  | { type: "Count" }
+  | { type: "Count"; output_field: string }
+  | { type: "Filter"; filter: Record<string, any> }
+  | { type: "Sort"; sort: SortFieldConfig[] }
+  | { type: "Limit"; limit: number }
+  | { type: "Skip"; skip: number }
   | {
       type: "Insert";
       collection: string;
-      data: Record<string, any>;
+      record: Record<string, any>;
       bypass_ripple?: boolean;
+      ttl?: number;
+    }
+  | {
+      type: "Update";
+      collection: string;
+      filter: Record<string, any>;
+      updates: Record<string, any>;
+      bypass_ripple?: boolean;
+      ttl?: number;
+    }
+  | {
+      type: "UpdateById";
+      collection: string;
+      record_id: string;
+      updates: Record<string, any>;
+      bypass_ripple?: boolean;
+      ttl?: number;
     }
   | {
       type: "Delete";
       collection: string;
-      id: ParameterValue;
+      filter: Record<string, any>;
+      bypass_ripple?: boolean;
+    }
+  | {
+      type: "DeleteById";
+      collection: string;
+      record_id: string;
       bypass_ripple?: boolean;
     }
   | {
@@ -68,7 +88,7 @@ export type FunctionStageConfig =
   | {
       type: "BatchDelete";
       collection: string;
-      ids: ParameterValue[];
+      record_ids: string[];
       bypass_ripple?: boolean;
     }
   | {
@@ -82,50 +102,55 @@ export type FunctionStageConfig =
       type: "VectorSearch";
       collection: string;
       query_vector: number[];
-      options?: Record<string, any>;
+      limit?: number;
+      threshold?: number;
     }
   | {
       type: "TextSearch";
       collection: string;
-      query: string;
-      options?: Record<string, any>;
+      query_text: string;
+      fields?: string[];
+      limit?: number;
+      fuzzy?: boolean;
     }
   | {
       type: "HybridSearch";
       collection: string;
-      text_query: string;
-      vector_query: number[];
-      options?: Record<string, any>;
+      query_text: string;
+      query_vector?: number[];
+      limit?: number;
     }
   | {
       type: "Chat";
       messages: ChatMessage[];
       model?: string;
       temperature?: number;
+      max_tokens?: number;
     }
   | {
       type: "Embed";
-      texts: any;
+      input_field: string;
+      output_field: string;
       model?: string;
     };
 
 export interface ChatMessage {
-  role: ParameterValue;
-  content: ParameterValue;
+  role: string;
+  content: string;
 }
 
 export const ChatMessage = {
   system: (content: string): ChatMessage => ({
-    role: ParameterValue.literal("system"),
-    content: ParameterValue.literal(content),
+    role: "system",
+    content: content,
   }),
   user: (content: string): ChatMessage => ({
-    role: ParameterValue.literal("user"),
-    content: ParameterValue.literal(content),
+    role: "user",
+    content: content,
   }),
   assistant: (content: string): ChatMessage => ({
-    role: ParameterValue.literal("assistant"),
-    content: ParameterValue.literal(content),
+    role: "assistant",
+    content: content,
   }),
 };
 
@@ -177,16 +202,23 @@ export const Stage = {
 
   query: (
     collection: string,
-    expression: Record<string, any>,
+    filter?: Record<string, any>,
+    sort?: SortFieldConfig[],
+    limit?: number,
+    skip?: number,
   ): FunctionStageConfig => ({
     type: "Query",
     collection,
-    expression,
+    filter,
+    sort,
+    limit,
+    skip,
   }),
 
-  project: (fields: string[]): FunctionStageConfig => ({
+  project: (fields: string[], exclude = false): FunctionStageConfig => ({
     type: "Project",
     fields,
+    exclude,
   }),
 
   group: (
@@ -198,27 +230,73 @@ export const Stage = {
     functions,
   }),
 
-  count: (): FunctionStageConfig => ({ type: "Count" }),
+  count: (output_field = "count"): FunctionStageConfig => ({
+    type: "Count",
+    output_field,
+  }),
 
   insert: (
     collection: string,
-    data: Record<string, any>,
+    record: Record<string, any>,
     bypassRipple = false,
+    ttl?: number,
   ): FunctionStageConfig => ({
     type: "Insert",
     collection,
-    data,
+    record,
     bypass_ripple: bypassRipple,
+    ttl,
+  }),
+
+  update: (
+    collection: string,
+    filter: Record<string, any>,
+    updates: Record<string, any>,
+    bypassRipple = false,
+    ttl?: number,
+  ): FunctionStageConfig => ({
+    type: "Update",
+    collection,
+    filter,
+    updates,
+    bypass_ripple: bypassRipple,
+    ttl,
+  }),
+
+  updateById: (
+    collection: string,
+    record_id: string,
+    updates: Record<string, any>,
+    bypassRipple = false,
+    ttl?: number,
+  ): FunctionStageConfig => ({
+    type: "UpdateById",
+    collection,
+    record_id,
+    updates,
+    bypass_ripple: bypassRipple,
+    ttl,
   }),
 
   delete: (
     collection: string,
-    id: ParameterValue,
+    filter: Record<string, any>,
     bypassRipple = false,
   ): FunctionStageConfig => ({
     type: "Delete",
     collection,
-    id,
+    filter,
+    bypass_ripple: bypassRipple,
+  }),
+
+  deleteById: (
+    collection: string,
+    record_id: string,
+    bypassRipple = false,
+  ): FunctionStageConfig => ({
+    type: "DeleteById",
+    collection,
+    record_id,
     bypass_ripple: bypassRipple,
   }),
 
@@ -235,13 +313,33 @@ export const Stage = {
 
   batchDelete: (
     collection: string,
-    ids: ParameterValue[],
+    record_ids: string[],
     bypassRipple = false,
   ): FunctionStageConfig => ({
     type: "BatchDelete",
     collection,
-    ids,
+    record_ids,
     bypass_ripple: bypassRipple,
+  }),
+
+  filter: (filter: Record<string, any>): FunctionStageConfig => ({
+    type: "Filter",
+    filter,
+  }),
+
+  sort: (sort: SortFieldConfig[]): FunctionStageConfig => ({
+    type: "Sort",
+    sort,
+  }),
+
+  limit: (limit: number): FunctionStageConfig => ({
+    type: "Limit",
+    limit,
+  }),
+
+  skip: (skip: number): FunctionStageConfig => ({
+    type: "Skip",
+    skip,
   }),
 
   httpRequest: (
@@ -259,53 +357,64 @@ export const Stage = {
 
   vectorSearch: (
     collection: string,
-    queryVector: number[],
-    options?: Record<string, any>,
+    query_vector: number[],
+    limit?: number,
+    threshold?: number,
   ): FunctionStageConfig => ({
     type: "VectorSearch",
     collection,
-    query_vector: queryVector,
-    options,
+    query_vector,
+    limit,
+    threshold,
   }),
 
   textSearch: (
     collection: string,
-    query: string,
-    options?: Record<string, any>,
+    query_text: string,
+    options?: { fields?: string[]; limit?: number; fuzzy?: boolean },
   ): FunctionStageConfig => ({
     type: "TextSearch",
     collection,
-    query,
-    options,
+    query_text,
+    fields: options?.fields,
+    limit: options?.limit,
+    fuzzy: options?.fuzzy,
   }),
 
   hybridSearch: (
     collection: string,
-    textQuery: string,
-    vectorQuery: number[],
-    options?: Record<string, any>,
+    query_text: string,
+    query_vector?: number[],
+    limit?: number,
   ): FunctionStageConfig => ({
     type: "HybridSearch",
     collection,
-    text_query: textQuery,
-    vector_query: vectorQuery,
-    options,
+    query_text,
+    query_vector,
+    limit,
   }),
 
   chat: (
     messages: ChatMessage[],
     model?: string,
     temperature?: number,
+    max_tokens?: number,
   ): FunctionStageConfig => ({
     type: "Chat",
     messages,
     model,
     temperature,
+    max_tokens,
   }),
 
-  embed: (texts: any, model?: string): FunctionStageConfig => ({
+  embed: (
+    input_field: string,
+    output_field: string,
+    model?: string,
+  ): FunctionStageConfig => ({
     type: "Embed",
-    texts,
+    input_field,
+    output_field,
     model,
   }),
 };

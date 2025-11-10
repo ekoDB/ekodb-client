@@ -131,4 +131,7 @@ async function main() {
   console.log("✓ All session management operations completed successfully");
 }
 
-main().catch(console.error);
+main().catch((error) => {
+  console.error("❌ Error:", error);
+  process.exit(1);
+});

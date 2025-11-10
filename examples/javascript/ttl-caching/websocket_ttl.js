@@ -84,4 +84,7 @@ async function websocketTTLExamples() {
 }
 
 // Run the examples
-websocketTTLExamples().catch(console.error);
+websocketTTLExamples().catch((error) => {
+  console.error("❌ Error:", error);
+  process.exit(1);
+});

@@ -7,7 +7,7 @@ use ekodb_client::{
     CreateChatSessionRequest, FieldType, GetMessagesQuery, GetMessagesResponse,
     ListSessionsQuery, ListSessionsResponse, Query as RustQuery,
     RateLimitInfo as RustRateLimitInfo, Record as RustRecord,
-    SavedFunction as RustSavedFunction, SerializationFormat as RustSerializationFormat,
+    Script as RustScript, SerializationFormat as RustSerializationFormat,
     UpdateSessionRequest, WebSocketClient as RustWebSocketClient,
 };
 use serde_json;
@@ -949,73 +949,73 @@ impl Client {
     }
 
     // ========================================================================
-    // SAVED FUNCTIONS API
+    // SCRIPTS API
     // ========================================================================
 
-    /// Save a new function definition
+    /// Save a new script definition
     ///
     /// Args:
-    ///     function: Function definition as a dict
+    ///     script: Script definition as a dict
     ///
     /// Returns:
-    ///     Function ID string
-    fn save_function<'py>(
+    ///     Script ID string
+    fn save_script<'py>(
         &self,
         py: Python<'py>,
-        function: &PyDict,
+        script: &PyDict,
     ) -> PyResult<&'py PyAny> {
         let client = self.inner.clone();
-        let function_json = serde_json::to_string(&pydict_to_json(py, function)?)
-            .map_err(|e| PyValueError::new_err(format!("Invalid function definition: {}", e)))?;
+        let script_json = serde_json::to_string(&pydict_to_json(py, script)?)
+            .map_err(|e| PyValueError::new_err(format!("Invalid script definition: {}", e)))?;
         
         future_into_py::<_, PyObject>(py, async move {
-            let function: RustSavedFunction = serde_json::from_str(&function_json)
-                .map_err(|e| PyRuntimeError::new_err(format!("Failed to parse function: {}", e)))?;
+            let script: RustScript = serde_json::from_str(&script_json)
+                .map_err(|e| PyRuntimeError::new_err(format!("Failed to parse script: {}", e)))?;
             
             let id = client
-                .save_function(function)
+                .save_script(script)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Save function failed: {}", e)))?;
+                .map_err(|e| PyRuntimeError::new_err(format!("Save script failed: {}", e)))?;
             
             Python::with_gil(|py| Ok(id.to_object(py)))
         })
     }
 
-    /// Get a function by label
+    /// Get a script by ID
     ///
     /// Args:
-    ///     label: Function label
+    ///     id: Script ID
     ///
     /// Returns:
-    ///     Function definition as a dict
-    fn get_function<'py>(
+    ///     Script definition as a dict
+    fn get_script<'py>(
         &self,
         py: Python<'py>,
-        label: String,
+        id: String,
     ) -> PyResult<&'py PyAny> {
         let client = self.inner.clone();
         
         future_into_py::<_, PyObject>(py, async move {
-            let function = client
-                .get_function(&label)
+            let script = client
+                .get_script(&id)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Get function failed: {}", e)))?;
+                .map_err(|e| PyRuntimeError::new_err(format!("Get script failed: {}", e)))?;
             
-            let json = serde_json::to_value(&function)
+            let json = serde_json::to_value(&script)
                 .map_err(|e| PyRuntimeError::new_err(format!("Serialization failed: {}", e)))?;
             
             Python::with_gil(|py| json_to_pydict(py, &json))
         })
     }
 
-    /// List all functions, optionally filtered by tags
+    /// List all scripts, optionally filtered by tags
     ///
     /// Args:
     ///     tags: Optional list of tags to filter by
     ///
     /// Returns:
-    ///     List of function definitions
-    fn list_functions<'py>(
+    ///     List of script definitions
+    fn list_scripts<'py>(
         &self,
         py: Python<'py>,
         tags: Option<Vec<String>>,
@@ -1023,79 +1023,79 @@ impl Client {
         let client = self.inner.clone();
         
         future_into_py::<_, PyObject>(py, async move {
-            let functions = client
-                .list_functions(tags)
+            let scripts = client
+                .list_scripts(tags)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("List functions failed: {}", e)))?;
+                .map_err(|e| PyRuntimeError::new_err(format!("List scripts failed: {}", e)))?;
             
-            let json = serde_json::to_value(&functions)
+            let json = serde_json::to_value(&scripts)
                 .map_err(|e| PyRuntimeError::new_err(format!("Serialization failed: {}", e)))?;
             
             Python::with_gil(|py| json_to_pydict(py, &json))
         })
     }
 
-    /// Update an existing function
+    /// Update an existing script
     ///
     /// Args:
-    ///     label: Function label
-    ///     function: Updated function definition as a dict
-    fn update_function<'py>(
+    ///     id: Script ID
+    ///     script: Updated script definition as a dict
+    fn update_script<'py>(
         &self,
         py: Python<'py>,
-        label: String,
-        function: &PyDict,
+        id: String,
+        script: &PyDict,
     ) -> PyResult<&'py PyAny> {
         let client = self.inner.clone();
-        let function_json = serde_json::to_string(&pydict_to_json(py, function)?)
-            .map_err(|e| PyValueError::new_err(format!("Invalid function definition: {}", e)))?;
+        let script_json = serde_json::to_string(&pydict_to_json(py, script)?)
+            .map_err(|e| PyValueError::new_err(format!("Invalid script definition: {}", e)))?;
         
         future_into_py::<_, PyObject>(py, async move {
-            let function: RustSavedFunction = serde_json::from_str(&function_json)
-                .map_err(|e| PyRuntimeError::new_err(format!("Failed to parse function: {}", e)))?;
+            let script: RustScript = serde_json::from_str(&script_json)
+                .map_err(|e| PyRuntimeError::new_err(format!("Failed to parse script: {}", e)))?;
             
             client
-                .update_function(&label, function)
+                .update_script(&id, script)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Update function failed: {}", e)))?;
+                .map_err(|e| PyRuntimeError::new_err(format!("Update script failed: {}", e)))?;
             
             Python::with_gil(|py| Ok(py.None()))
         })
     }
 
-    /// Delete a function by label
+    /// Delete a script by ID
     ///
     /// Args:
-    ///     label: Function label
-    fn delete_function<'py>(
+    ///     id: Script ID
+    fn delete_script<'py>(
         &self,
         py: Python<'py>,
-        label: String,
+        id: String,
     ) -> PyResult<&'py PyAny> {
         let client = self.inner.clone();
         
         future_into_py::<_, PyObject>(py, async move {
             client
-                .delete_function(&label)
+                .delete_script(&id)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Delete function failed: {}", e)))?;
+                .map_err(|e| PyRuntimeError::new_err(format!("Delete script failed: {}", e)))?;
             
             Python::with_gil(|py| Ok(py.None()))
         })
     }
 
-    /// Call a saved function by ID or label
+    /// Call a saved script by ID or label
     ///
     /// Args:
-    ///     function_id_or_label: Function ID or label name
+    ///     script_id_or_label: Script ID or label name
     ///     params: Optional parameters as a dict
     ///
     /// Returns:
-    ///     Function result with records and metadata
-    fn call_function<'py>(
+    ///     Script execution result with records and metadata
+    fn call_script<'py>(
         &self,
         py: Python<'py>,
-        function_id_or_label: String,
+        script_id_or_label: String,
         params: Option<&PyDict>,
     ) -> PyResult<&'py PyAny> {
         let client = self.inner.clone();
@@ -1107,9 +1107,9 @@ impl Client {
         
         future_into_py::<_, PyObject>(py, async move {
             let result = client
-                .call_function(&function_id_or_label, params_map)
+                .call_script(&script_id_or_label, params_map)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Call function failed: {}", e)))?;
+                .map_err(|e| PyRuntimeError::new_err(format!("Call script failed: {}", e)))?;
             
             Python::with_gil(|py| {
                 let dict = PyDict::new(py);

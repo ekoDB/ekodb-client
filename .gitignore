@@ -80,3 +80,6 @@ test-published-kt/
 .gradle/
 gradle.properties
 examples/go/client_functions
+examples/go/client_functions_complete
+examples/go/client_chat_advanced
+examples/go/client_batch_operations

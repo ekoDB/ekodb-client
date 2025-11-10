@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Saved Functions Example for ekoDB Python Client
+Scripts Example for ekoDB Python Client
 
-Demonstrates creating, managing, and executing saved functions
+Demonstrates creating, managing, and executing Scripts
 """
 
 import asyncio
@@ -37,36 +37,36 @@ async def setup_test_data(client):
     print("✅ Test data ready\n")
 
 
-async def simple_query_function(client):
-    """Example 1: Simple query function"""
-    print("📝 Example 1: Simple Query Function\n")
+async def simple_query_script(client):
+    """Example 1: Simple query script"""
+    print("📝 Example 1: Simple Query Script\n")
 
-    function = {
+    script = {
         "label": "get_active_users",
         "name": "Get Active Users",
         "description": "Retrieve all active users",
         "version": "1.0",
         "parameters": {},
-        "pipeline": [
+        "functions": [
             {"type": "FindAll", "collection": "users"},
         ],
         "tags": ["users", "query"],
     }
 
-    func_id = await client.save_function(function)
-    print(f"✅ Function saved: {func_id}")
+    script_id = await client.save_script(script)
+    print(f"✅ Script saved: {script_id}")
 
-    result = await client.call_function("get_active_users", None)
+    result = await client.call_script("get_active_users", None)
     print(f"📊 Found {len(result['records'])} active users\n")
 
-    return func_id
+    return script_id
 
 
-async def parameterized_function(client):
-    """Example 2: Function with parameters"""
-    print("📝 Example 2: Parameterized Function\n")
+async def parameterized_script(client):
+    """Example 2: Script with parameters"""
+    print("📝 Example 2: Parameterized Script\n")
 
-    function = {
+    script = {
         "label": "get_users_by_status",
         "name": "Get Users By Status",
         "version": "1.0",
@@ -82,30 +82,32 @@ async def parameterized_function(client):
                 "default": 10,
             },
         },
-        "pipeline": [
+        "functions": [
             {"type": "FindAll", "collection": "users"},
         ],
         "tags": ["users", "parameterized"],
     }
 
-    func_id = await client.save_function(function)
-    print(f"✅ Function saved: {func_id}")
+    script_id = await client.save_script(script)
+    print(f"✅ Script saved: {script_id}")
 
     params = {"status": "active", "limit": 3}
-    result = await client.call_function("get_users_by_status", params)
+    result = await client.call_script("get_users_by_status", params)
     print(f"📊 Found {len(result['records'])} users (limited)\n")
 
+    return script_id
 
-async def aggregation_function(client):
-    """Example 3: Aggregation function"""
-    print("📝 Example 3: Aggregation Function\n")
 
-    function = {
+async def aggregation_script(client):
+    """Example 3: Aggregation script"""
+    print("📝 Example 3: Aggregation Script\n")
+
+    script = {
         "label": "user_stats",
         "name": "User Statistics",
         "version": "1.0",
         "parameters": {},
-        "pipeline": [
+        "functions": [
             {"type": "FindAll", "collection": "users"},
             {
                 "type": "Group",
@@ -123,64 +125,63 @@ async def aggregation_function(client):
         "tags": ["analytics"],
     }
 
-    func_id = await client.save_function(function)
-    print(f"✅ Function saved: {func_id}")
+    script_id = await client.save_script(script)
+    print(f"✅ Script saved: {script_id}")
 
-    result = await client.call_function("user_stats", None)
+    result = await client.call_script("user_stats", None)
     print(f"📊 Statistics: {len(result['records'])} groups")
     for record in result["records"]:
         print(f"   {record}\n")
 
-    return func_id
+    return script_id
 
 
-async def function_management(client, get_active_users_id, user_stats_id):
-    """Example 4: Function management operations"""
-    print("📝 Example 4: Function Management\n")
+async def script_management(client, get_active_users_id, user_stats_id):
+    """Example 4: Script management operations"""
+    print("📝 Example 4: Script Management\n")
 
-    # List all functions
-    functions = await client.list_functions(None)
-    print(f"📋 Total functions: {len(functions)}")
+    # List all scripts
+    scripts = await client.list_scripts(None)
+    print(f"📋 Total scripts: {len(scripts)}")
 
-    # Get specific function (requires ID, not label)
-    func = await client.get_function(get_active_users_id)
-    print(f"🔍 Retrieved function: {func['name']}")
+    # Get specific script by ID
+    script = await client.get_script(get_active_users_id)
+    print(f"🔍 Retrieved script: {script['name']}")
 
-    # Update function (requires ID, not label)
+    # Update script by ID
     updated = {
-        "label": "get_active_users",
+        "label": "get_active_users_updated",
         "name": "Get Active Users (Updated)",
         "description": "Updated description",
         "version": "1.1",
         "parameters": {},
-        "pipeline": [
+        "functions": [
             {"type": "FindAll", "collection": "users"},
         ],
         "tags": ["users"],
     }
-    await client.update_function(get_active_users_id, updated)
-    print("✏️  Function updated")
+    await client.update_script(get_active_users_id, updated)
+    print("✏️  Script updated")
 
-    # Delete function (requires ID, not label)
-    await client.delete_function(user_stats_id)
-    print("🗑️  Function deleted\n")
+    # Delete script by ID
+    await client.delete_script(user_stats_id)
+    print("🗑️  Script deleted\n")
 
-    print("ℹ️  Note: GET/UPDATE/DELETE operations require the encrypted ID")
-    print("ℹ️  Only CALL can use either ID or label\n")
+    print("ℹ️  Note: GET/UPDATE/DELETE use IDs. Only CALL supports labels.\n")
 
 
 async def main():
     """Main execution"""
-    print("🚀 ekoDB Saved Functions Example (Python)\n")
+    print("🚀 ekoDB Scripts Example (Python)\n")
 
     client = Client.new(BASE_URL, API_KEY)
 
-    # Run examples
+    # Run examples and track IDs
     await setup_test_data(client)
-    get_active_users_id = await simple_query_function(client)
-    await parameterized_function(client)
-    user_stats_id = await aggregation_function(client)
-    await function_management(client, get_active_users_id, user_stats_id)
+    get_active_users_id = await simple_query_script(client)
+    get_users_by_status_id = await parameterized_script(client)
+    user_stats_id = await aggregation_script(client)
+    await script_management(client, get_active_users_id, user_stats_id)
 
     print("✅ All examples completed!")
 

@@ -66,9 +66,8 @@ pub use chat::{
 pub use client::{Client, ClientBuilder, RateLimitInfo};
 pub use error::{Error, Result};
 pub use functions::{
-    ChatMessage, FunctionResult, FunctionStageConfig, FunctionStats, GroupFunctionConfig,
-    GroupFunctionOp, ParameterDefinition, ParameterValue, SavedFunction, SortFieldConfig,
-    StageStats,
+    ChatMessage, Function, FunctionResult, FunctionStats, GroupFunctionConfig, GroupFunctionOp,
+    ParameterDefinition, Script, ScriptCondition, SortFieldConfig, StageStats, UserFunction,
 };
 pub use join::JoinConfig;
 pub use query_builder::{QueryBuilder, SortOrder};

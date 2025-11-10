@@ -52,6 +52,23 @@ impl HttpClient {
         })
     }
 
+    /// Health Check
+    pub async fn health_check(&self) -> Result<()> {
+        let response = self
+            .client
+            .get(self.base_url.join("/api/health").unwrap())
+            .send()
+            .await?;
+        if response.status().is_success() {
+            Ok(())
+        } else {
+            Err(Error::Connection(format!(
+                "Health check failed: {}",
+                response.status()
+            )))
+        }
+    }
+
     /// Check if a path should use JSON instead of MessagePack
     /// Only CRUD operations (insert/update/delete/batch) support MessagePack
     /// Everything else (search, collections, kv, auth, chat) uses JSON
@@ -1364,13 +1381,13 @@ impl HttpClient {
     }
 
     // ========================================================================
-    // SAVED FUNCTIONS API
+    // SCRIPTS API
     // ========================================================================
 
-    /// Save a function definition
-    pub async fn save_function(
+    /// Save a Script definition
+    pub async fn save_script(
         &self,
-        function: crate::functions::SavedFunction,
+        script: crate::functions::Script,
         token: &str,
     ) -> Result<String> {
         let url = self.base_url.join("/api/functions")?;
@@ -1383,7 +1400,7 @@ impl HttpClient {
                     .header("Authorization", format!("Bearer {}", token))
                     .header("Content-Type", "application/json")
                     .header("Accept", "application/json")
-                    .json(&function)
+                    .json(&script)
                     .send()
                     .await?;
 
@@ -1425,7 +1442,7 @@ impl HttpClient {
                 if result.status != "success" {
                     return Err(Error::api(
                         500,
-                        format!("Failed to save function: status={}", result.status),
+                        format!("Failed to save script: status={}", result.status),
                     ));
                 }
 
@@ -1434,13 +1451,9 @@ impl HttpClient {
             .await
     }
 
-    /// Get a function by label
-    pub async fn get_function(
-        &self,
-        label: &str,
-        token: &str,
-    ) -> Result<crate::functions::SavedFunction> {
-        let url = self.base_url.join(&format!("/api/functions/{}", label))?;
+    /// Get a Script by ID
+    pub async fn get_script(&self, id: &str, token: &str) -> Result<crate::functions::Script> {
+        let url = self.base_url.join(&format!("/api/functions/{}", id))?;
 
         self.retry_policy
             .execute(|| async {
@@ -1458,12 +1471,12 @@ impl HttpClient {
             .await
     }
 
-    /// List all functions (optionally filtered by tags)
-    pub async fn list_functions(
+    /// List all Scripts (optionally filtered by tags)
+    pub async fn list_scripts(
         &self,
         tags: Option<Vec<String>>,
         token: &str,
-    ) -> Result<Vec<crate::functions::SavedFunction>> {
+    ) -> Result<Vec<crate::functions::Script>> {
         let mut url = self.base_url.join("/api/functions")?;
 
         if let Some(tags) = tags {
@@ -1487,14 +1500,14 @@ impl HttpClient {
             .await
     }
 
-    /// Update an existing function
-    pub async fn update_function(
+    /// Update an existing Script by ID
+    pub async fn update_script(
         &self,
-        label: &str,
-        function: crate::functions::SavedFunction,
+        id: &str,
+        script: crate::functions::Script,
         token: &str,
     ) -> Result<()> {
-        let url = self.base_url.join(&format!("/api/functions/{}", label))?;
+        let url = self.base_url.join(&format!("/api/functions/{}", id))?;
 
         self.retry_policy
             .execute(|| async {
@@ -1504,7 +1517,7 @@ impl HttpClient {
                     .header("Authorization", format!("Bearer {}", token))
                     .header("Content-Type", "application/json")
                     .header("Accept", "application/json")
-                    .json(&function)
+                    .json(&script)
                     .send()
                     .await?;
 
@@ -1520,9 +1533,9 @@ impl HttpClient {
             .await
     }
 
-    /// Delete a function by label
-    pub async fn delete_function(&self, label: &str, token: &str) -> Result<()> {
-        let url = self.base_url.join(&format!("/api/functions/{}", label))?;
+    /// Delete a Script by ID
+    pub async fn delete_script(&self, id: &str, token: &str) -> Result<()> {
+        let url = self.base_url.join(&format!("/api/functions/{}", id))?;
 
         self.retry_policy
             .execute(|| async {
@@ -1546,16 +1559,16 @@ impl HttpClient {
             .await
     }
 
-    /// Call a saved function by ID or label
-    pub async fn call_function(
+    /// Call a saved Script by ID or label
+    pub async fn call_script(
         &self,
-        function_id_or_label: &str,
+        script_id_or_label: &str,
         params: Option<std::collections::HashMap<String, crate::types::FieldType>>,
         token: &str,
     ) -> Result<crate::functions::FunctionResult> {
         let url = self
             .base_url
-            .join(&format!("/api/functions/{}", function_id_or_label))?;
+            .join(&format!("/api/functions/{}", script_id_or_label))?;
 
         let body = params.unwrap_or_default();
 
@@ -1599,6 +1612,195 @@ impl HttpClient {
                         ),
                     )
                 })
+            })
+            .await
+    }
+
+    // ========================================================================
+    // USER FUNCTIONS API
+    // ========================================================================
+
+    /// Save a UserFunction definition
+    pub async fn save_user_function(
+        &self,
+        user_function: crate::functions::UserFunction,
+        token: &str,
+    ) -> Result<String> {
+        let url = self.base_url.join("/api/user-functions")?;
+
+        self.retry_policy
+            .execute(|| async {
+                let response = self
+                    .client
+                    .post(url.clone())
+                    .header("Authorization", format!("Bearer {}", token))
+                    .header("Content-Type", "application/json")
+                    .header("Accept", "application/json")
+                    .json(&user_function)
+                    .send()
+                    .await?;
+
+                let status = response.status();
+                let bytes = response.bytes().await.map_err(Error::Http)?;
+
+                if !status.is_success() {
+                    let error_msg = String::from_utf8_lossy(&bytes);
+                    return Err(Error::api(
+                        status.as_u16(),
+                        format!("Server error: {}", error_msg),
+                    ));
+                }
+
+                if bytes.is_empty() {
+                    return Err(Error::api(
+                        status.as_u16(),
+                        "Empty response from server".to_string(),
+                    ));
+                }
+
+                #[derive(Deserialize)]
+                struct FunctionResponse {
+                    status: String,
+                    id: String,
+                }
+
+                let result: FunctionResponse = serde_json::from_slice(&bytes).map_err(|e| {
+                    Error::api(
+                        500,
+                        format!(
+                            "Failed to parse response: {} (body: {})",
+                            e,
+                            String::from_utf8_lossy(&bytes)
+                        ),
+                    )
+                })?;
+
+                if result.status != "success" {
+                    return Err(Error::api(
+                        500,
+                        format!("Failed to save user function: status={}", result.status),
+                    ));
+                }
+
+                Ok(result.id)
+            })
+            .await
+    }
+
+    /// Get a UserFunction by label
+    pub async fn get_user_function(
+        &self,
+        label: &str,
+        token: &str,
+    ) -> Result<crate::functions::UserFunction> {
+        let url = self
+            .base_url
+            .join(&format!("/api/user-functions/{}", label))?;
+
+        self.retry_policy
+            .execute(|| async {
+                let response = self
+                    .client
+                    .get(url.clone())
+                    .header("Authorization", format!("Bearer {}", token))
+                    .header("Accept", "application/json")
+                    .send()
+                    .await?;
+
+                let bytes = response.bytes().await.map_err(Error::Http)?;
+                serde_json::from_slice(&bytes).map_err(Error::Serialization)
+            })
+            .await
+    }
+
+    /// List all UserFunctions (optionally filtered by tags)
+    pub async fn list_user_functions(
+        &self,
+        tags: Option<Vec<String>>,
+        token: &str,
+    ) -> Result<Vec<crate::functions::UserFunction>> {
+        let mut url = self.base_url.join("/api/user-functions")?;
+
+        if let Some(tags) = tags {
+            let tags_query = tags.join(",");
+            url.set_query(Some(&format!("tags={}", tags_query)));
+        }
+
+        self.retry_policy
+            .execute(|| async {
+                let response = self
+                    .client
+                    .get(url.clone())
+                    .header("Authorization", format!("Bearer {}", token))
+                    .header("Accept", "application/json")
+                    .send()
+                    .await?;
+
+                let bytes = response.bytes().await.map_err(Error::Http)?;
+                serde_json::from_slice(&bytes).map_err(Error::Serialization)
+            })
+            .await
+    }
+
+    /// Update an existing UserFunction
+    pub async fn update_user_function(
+        &self,
+        label: &str,
+        user_function: crate::functions::UserFunction,
+        token: &str,
+    ) -> Result<()> {
+        let url = self
+            .base_url
+            .join(&format!("/api/user-functions/{}", label))?;
+
+        self.retry_policy
+            .execute(|| async {
+                let response = self
+                    .client
+                    .put(url.clone())
+                    .header("Authorization", format!("Bearer {}", token))
+                    .header("Content-Type", "application/json")
+                    .header("Accept", "application/json")
+                    .json(&user_function)
+                    .send()
+                    .await?;
+
+                if response.status().is_success() {
+                    Ok(())
+                } else {
+                    let status = response.status().as_u16();
+                    let bytes = response.bytes().await.map_err(Error::Http)?;
+                    let error_msg = String::from_utf8_lossy(&bytes);
+                    Err(Error::api(status, error_msg.to_string()))
+                }
+            })
+            .await
+    }
+
+    /// Delete a UserFunction by label
+    pub async fn delete_user_function(&self, label: &str, token: &str) -> Result<()> {
+        let url = self
+            .base_url
+            .join(&format!("/api/user-functions/{}", label))?;
+
+        self.retry_policy
+            .execute(|| async {
+                let response = self
+                    .client
+                    .delete(url.clone())
+                    .header("Authorization", format!("Bearer {}", token))
+                    .header("Accept", "application/json")
+                    .send()
+                    .await?;
+
+                if response.status().is_success() {
+                    Ok(())
+                } else {
+                    let status = response.status().as_u16();
+                    let bytes = response.bytes().await.map_err(Error::Http)?;
+                    let error_msg = String::from_utf8_lossy(&bytes);
+                    Err(Error::api(status, error_msg.to_string()))
+                }
             })
             .await
     }

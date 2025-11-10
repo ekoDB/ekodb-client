@@ -6,7 +6,7 @@ import { encode, decode } from "@msgpack/msgpack";
 import { QueryBuilder, Query as QueryBuilderQuery } from "./query-builder";
 import { SearchQuery, SearchQueryBuilder, SearchResponse } from "./search";
 import { Schema, SchemaBuilder, CollectionMetadata } from "./schema";
-import { SavedFunction, FunctionResult } from "./functions";
+import { Script, FunctionResult } from "./functions";
 
 export interface Record {
   [key: string]: any;
@@ -956,60 +956,60 @@ export class EkoDBClient {
   }
 
   // ========================================================================
-  // SAVED FUNCTIONS API
+  // SCRIPTS API
   // ========================================================================
 
   /**
-   * Save a new function definition
+   * Save a new script definition
    */
-  async saveFunction(func: SavedFunction): Promise<string> {
+  async saveScript(script: Script): Promise<string> {
     const result = await this.makeRequest<{ id: string }>(
       "POST",
       "/api/functions",
-      func,
+      script,
     );
     return result.id;
   }
 
   /**
-   * Get a function by label
+   * Get a script by ID
    */
-  async getFunction(label: string): Promise<SavedFunction> {
-    return this.makeRequest<SavedFunction>("GET", `/api/functions/${label}`);
+  async getScript(id: string): Promise<Script> {
+    return this.makeRequest<Script>("GET", `/api/functions/${id}`);
   }
 
   /**
-   * List all functions, optionally filtered by tags
+   * List all scripts, optionally filtered by tags
    */
-  async listFunctions(tags?: string[]): Promise<SavedFunction[]> {
+  async listScripts(tags?: string[]): Promise<Script[]> {
     const params = tags ? `?tags=${tags.join(",")}` : "";
-    return this.makeRequest<SavedFunction[]>("GET", `/api/functions${params}`);
+    return this.makeRequest<Script[]>("GET", `/api/functions${params}`);
   }
 
   /**
-   * Update an existing function
+   * Update an existing script by ID
    */
-  async updateFunction(label: string, func: SavedFunction): Promise<void> {
-    await this.makeRequest<void>("PUT", `/api/functions/${label}`, func);
+  async updateScript(id: string, script: Script): Promise<void> {
+    await this.makeRequest<void>("PUT", `/api/functions/${id}`, script);
   }
 
   /**
-   * Delete a function by label
+   * Delete a script by ID
    */
-  async deleteFunction(label: string): Promise<void> {
-    await this.makeRequest<void>("DELETE", `/api/functions/${label}`);
+  async deleteScript(id: string): Promise<void> {
+    await this.makeRequest<void>("DELETE", `/api/functions/${id}`);
   }
 
   /**
-   * Call a saved function
+   * Call a saved script by ID or label
    */
-  async callFunction(
-    label: string,
+  async callScript(
+    idOrLabel: string,
     params?: { [key: string]: any },
   ): Promise<FunctionResult> {
     return this.makeRequest<FunctionResult>(
       "POST",
-      `/api/functions/${label}`,
+      `/api/functions/${idOrLabel}`,
       params || {},
     );
   }

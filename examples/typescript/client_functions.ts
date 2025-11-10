@@ -1,7 +1,7 @@
 /**
- * Saved Functions Example for ekoDB TypeScript Client
+ * Scripts Example for ekoDB TypeScript Client
  *
- * Demonstrates creating, managing, and executing saved functions
+ * Demonstrates creating, managing, and executing scripts
  */
 
 import { EkoDBClient, Stage } from "@ekodb/ekodb-client";
@@ -25,32 +25,32 @@ async function setupTestData(client: EkoDBClient): Promise<void> {
   console.log("✅ Test data ready\n");
 }
 
-async function simpleQueryFunction(client: EkoDBClient): Promise<string> {
-  console.log("📝 Example 1: Simple Query Function\n");
+async function simpleQueryScript(client: EkoDBClient): Promise<string> {
+  console.log("📝 Example 1: Simple Query Script\n");
 
-  const function1 = {
+  const script = {
     label: "get_active_users",
     name: "Get Active Users",
     description: "Retrieve all active users",
     version: "1.0",
     parameters: {},
-    pipeline: [Stage.findAll("users")],
+    functions: [Stage.findAll("users")],
     tags: ["users", "query"],
   };
 
-  const id = await client.saveFunction(function1);
-  console.log(`✅ Function saved: ${id}`);
+  const id = await client.saveScript(script);
+  console.log(`✅ Script saved: ${id}`);
 
-  const result = await client.callFunction("get_active_users");
+  const result = await client.callScript("get_active_users");
   console.log(`📊 Found ${result.records.length} active users\n`);
 
   return id;
 }
 
-async function parameterizedFunction(client: EkoDBClient): Promise<void> {
-  console.log("📝 Example 2: Parameterized Function\n");
+async function parameterizedScript(client: EkoDBClient): Promise<string> {
+  console.log("📝 Example 2: Parameterized Script\n");
 
-  const function2 = {
+  const script = {
     label: "get_users_by_status",
     name: "Get Users By Status",
     version: "1.0",
@@ -66,27 +66,29 @@ async function parameterizedFunction(client: EkoDBClient): Promise<void> {
         default: 10,
       },
     },
-    pipeline: [Stage.findAll("users")],
+    functions: [Stage.findAll("users")],
     tags: ["users", "parameterized"],
   };
 
-  const id = await client.saveFunction(function2);
-  console.log(`✅ Function saved: ${id}`);
+  const id = await client.saveScript(script);
+  console.log(`✅ Script saved: ${id}`);
 
   const params = { status: "active", limit: 3 };
-  const result = await client.callFunction("get_users_by_status", params);
+  const result = await client.callScript("get_users_by_status", params);
   console.log(`📊 Found ${result.records.length} users (limited)\n`);
+
+  return id;
 }
 
-async function aggregationFunction(client: EkoDBClient): Promise<string> {
-  console.log("📝 Example 3: Aggregation Function\n");
+async function aggregationScript(client: EkoDBClient): Promise<string> {
+  console.log("📝 Example 3: Aggregation Script\n");
 
-  const function3 = {
+  const script = {
     label: "user_stats",
     name: "User Statistics",
     version: "1.0",
     parameters: {},
-    pipeline: [
+    functions: [
       Stage.findAll("users"),
       Stage.group(
         ["status"], // by_fields
@@ -104,10 +106,10 @@ async function aggregationFunction(client: EkoDBClient): Promise<string> {
     tags: ["analytics"],
   };
 
-  const id = await client.saveFunction(function3);
-  console.log(`✅ Function saved: ${id}`);
+  const id = await client.saveScript(script);
+  console.log(`✅ Script saved: ${id}`);
 
-  const result = await client.callFunction("user_stats");
+  const result = await client.callScript("user_stats");
   console.log(`📊 Statistics: ${result.records.length} groups`);
   result.records.forEach((record) =>
     console.log(`   ${JSON.stringify(record)}`),
@@ -117,46 +119,46 @@ async function aggregationFunction(client: EkoDBClient): Promise<string> {
   return id;
 }
 
-async function functionManagement(
+async function scriptManagement(
   client: EkoDBClient,
   getActiveUsersId: string,
+  getUsersByStatusId: string,
   userStatsId: string,
 ): Promise<void> {
-  console.log("📝 Example 4: Function Management\n");
+  console.log("📝 Example 4: Script Management\n");
 
-  // List all functions
-  const functions = await client.listFunctions();
-  console.log(`📋 Total functions: ${functions.length}`);
+  // List all scripts
+  const scripts = await client.listScripts();
+  console.log(`📋 Total scripts: ${scripts.length}`);
 
-  // Get specific function (requires ID, not label)
-  const func = await client.getFunction(getActiveUsersId);
-  console.log(`🔍 Retrieved function: ${func.name}`);
+  // Get specific script by ID
+  const script = await client.getScript(getActiveUsersId);
+  console.log(`🔍 Retrieved script: ${script.name}`);
 
-  // Update function (requires ID, not label)
+  // Update script by ID
   const updated = {
-    label: "get_active_users",
+    label: "get_active_users_updated",
     name: "Get Active Users (Updated)",
     description: "Updated description",
     version: "1.1",
     parameters: {},
-    pipeline: [Stage.findAll("users")],
+    functions: [Stage.findAll("users")],
     tags: ["users"],
   };
-  await client.updateFunction(getActiveUsersId, updated);
-  console.log("✏️  Function updated");
+  await client.updateScript(getActiveUsersId, updated);
+  console.log("✏️  Script updated");
 
-  // Delete function (requires ID, not label)
-  await client.deleteFunction(userStatsId);
-  console.log("🗑️  Function deleted\n");
+  // Delete script by ID
+  await client.deleteScript(userStatsId);
+  console.log("🗑️  Script deleted\n");
 
   console.log(
-    "ℹ️  Note: GET/UPDATE/DELETE operations require the encrypted ID",
+    "ℹ️  Note: GET/UPDATE/DELETE use IDs. Only CALL supports labels.\n",
   );
-  console.log("ℹ️  Only CALL can use either ID or label\n");
 }
 
 async function main(): Promise<void> {
-  console.log("🚀 ekoDB Saved Functions Example (TypeScript)\n");
+  console.log("🚀 ekoDB Scripts Example (TypeScript)\n");
 
   const baseUrl = process.env.API_BASE_URL || "http://localhost:8080";
   const apiKey = process.env.API_BASE_KEY;
@@ -169,12 +171,17 @@ async function main(): Promise<void> {
   const client = new EkoDBClient(baseUrl, apiKey);
   await client.init();
 
-  // Run examples
+  // Run examples and track IDs
   await setupTestData(client);
-  const getActiveUsersId = await simpleQueryFunction(client);
-  await parameterizedFunction(client);
-  const userStatsId = await aggregationFunction(client);
-  await functionManagement(client, getActiveUsersId, userStatsId);
+  const getActiveUsersId = await simpleQueryScript(client);
+  const getUsersByStatusId = await parameterizedScript(client);
+  const userStatsId = await aggregationScript(client);
+  await scriptManagement(
+    client,
+    getActiveUsersId,
+    getUsersByStatusId,
+    userStatsId,
+  );
 
   console.log("✅ All examples completed!");
 }

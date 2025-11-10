@@ -1,7 +1,7 @@
 /**
- * Saved Functions Example using Direct HTTP Requests
+ * Scripts Example using Direct HTTP Requests
  *
- * Demonstrates using saved functions with raw HTTP/fetch API
+ * Demonstrates using scripts with raw HTTP/fetch API
  * No client library required
  */
 
@@ -85,15 +85,15 @@ async function simpleQueryFunction() {
     description: "Retrieve all active users",
     version: "1.0",
     parameters: {},
-    pipeline: [{ type: "FindAll", collection: "users" }],
+    functions: [{ type: "FindAll", collection: "users" }],
     tags: ["users", "query"],
   };
 
-  // Save function
+  // Save script
   const saveResult = await request("POST", "/api/functions", function1);
-  console.log(`✅ Function saved: ${saveResult.id}`);
+  console.log(`✅ Script saved: ${saveResult.id}`);
 
-  // Call function (can use label)
+  // Call script (can use label)
   const callResult = await request(
     "POST",
     "/api/functions/get_active_users",
@@ -123,12 +123,12 @@ async function parameterizedFunction() {
         default: 10,
       },
     },
-    pipeline: [{ type: "FindAll", collection: "users" }],
+    functions: [{ type: "FindAll", collection: "users" }],
     tags: ["users", "parameterized"],
   };
 
   const saveResult = await request("POST", "/api/functions", function2);
-  console.log(`✅ Function saved: ${saveResult.id}`);
+  console.log(`✅ Script saved: ${saveResult.id}`);
 
   // Call with parameters
   const callResult = await request(
@@ -147,7 +147,7 @@ async function aggregationFunction() {
     name: "User Statistics",
     version: "1.0",
     parameters: {},
-    pipeline: [
+    functions: [
       { type: "FindAll", collection: "users" },
       {
         type: "Group",
@@ -166,7 +166,7 @@ async function aggregationFunction() {
   };
 
   const saveResult = await request("POST", "/api/functions", function3);
-  console.log(`✅ Function saved: ${saveResult.id}`);
+  console.log(`✅ Script saved: ${saveResult.id}`);
 
   const callResult = await request("POST", "/api/functions/user_stats", {});
   console.log(`📊 Statistics: ${callResult.records.length} groups`);
@@ -181,37 +181,37 @@ async function aggregationFunction() {
 async function functionManagement(getActiveUsersId, userStatsId) {
   console.log("📝 Example 4: Function Management\n");
 
-  // List all functions
-  const functions = await request("GET", "/api/functions");
-  console.log(`📋 Total functions: ${functions.length}`);
+  // List all scripts
+  const scripts = await request("GET", "/api/functions");
+  console.log(`📋 Total scripts: ${scripts.length}`);
 
-  // Get specific function (requires encrypted ID)
-  const func = await request("GET", `/api/functions/${getActiveUsersId}`);
-  console.log(`🔍 Retrieved function: ${func.name}`);
+  // Get specific script (requires encrypted ID)
+  const script = await request("GET", `/api/functions/${getActiveUsersId}`);
+  console.log(`🔍 Retrieved script: ${script.name}`);
 
-  // Update function (requires encrypted ID)
+  // Update script (requires encrypted ID)
   const updated = {
     label: "get_active_users",
     name: "Get Active Users (Updated)",
     description: "Updated description",
     version: "1.1",
     parameters: {},
-    pipeline: [{ type: "FindAll", collection: "users" }],
+    functions: [{ type: "FindAll", collection: "users" }],
     tags: ["users"],
   };
   await request("PUT", `/api/functions/${getActiveUsersId}`, updated);
-  console.log("✏️  Function updated");
+  console.log("✏️  Script updated");
 
-  // Delete function (requires encrypted ID)
+  // Delete script (requires encrypted ID)
   await request("DELETE", `/api/functions/${userStatsId}`);
-  console.log("🗑️  Function deleted\n");
+  console.log("🗑️  Script deleted\n");
 
   console.log("ℹ️  Note: GET/UPDATE/DELETE operations require the encrypted ID");
   console.log("ℹ️  Only CALL can use either ID or label\n");
 }
 
 async function main() {
-  console.log("🚀 ekoDB Saved Functions Example (JavaScript/HTTP)\n");
+  console.log("🚀 ekoDB Scripts Example (JavaScript/HTTP)\n");
 
   try {
     await setupTestData();

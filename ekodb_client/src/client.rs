@@ -53,6 +53,11 @@ impl Client {
         ClientBuilder::default()
     }
 
+    /// Health check
+    pub async fn health_check(&self) -> Result<()> {
+        self.http.health_check().await
+    }
+
     /// Insert a record into a collection
     ///
     /// # Arguments
@@ -734,60 +739,35 @@ impl Client {
             .await
     }
 
-    // ========================================================================
-    // SAVED FUNCTIONS API
-    // ========================================================================
-
-    /// Save a new function definition
+    /// Save a new Script
     ///
     /// # Arguments
     ///
-    /// * `function` - The function definition to save
+    /// * `script` - The Script definition to save
     ///
     /// # Returns
     ///
-    /// The function ID assigned by the server
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// # use ekodb_client::{Client, SavedFunction, FunctionStageConfig};
-    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
-    /// let client = Client::builder()
-    ///     .base_url("https://your-instance.ekodb.net")
-    ///     .api_key("your-token")
-    ///     .build()?;
-    ///
-    /// let function = SavedFunction::new("get_active_users", "Get Active Users")
-    ///     .with_stage(FunctionStageConfig::Query {
-    ///         collection: "users".to_string(),
-    ///         expression: serde_json::json!({"status": "active"})
-    ///     });
-    ///
-    /// let id = client.save_function(function).await?;
-    /// # Ok(())
-    /// # }
-    /// ```
-    pub async fn save_function(&self, function: crate::functions::SavedFunction) -> Result<String> {
+    /// The Script ID assigned by the server
+    pub async fn save_script(&self, script: crate::functions::Script) -> Result<String> {
         let token = self.auth.get_token().await?;
-        self.http.save_function(function, &token).await
+        self.http.save_script(script, &token).await
     }
 
-    /// Get a function by its label
+    /// Get a Script by its ID
     ///
     /// # Arguments
     ///
-    /// * `label` - The function label (unique identifier)
+    /// * `id` - The Script ID (from save_script)
     ///
     /// # Returns
     ///
-    /// The saved function definition
-    pub async fn get_function(&self, label: &str) -> Result<crate::functions::SavedFunction> {
+    /// The saved Script definition
+    pub async fn get_script(&self, id: &str) -> Result<crate::functions::Script> {
         let token = self.auth.get_token().await?;
-        self.http.get_function(label, &token).await
+        self.http.get_script(id, &token).await
     }
 
-    /// List all saved functions, optionally filtered by tags
+    /// List all saved Scripts, optionally filtered by tags
     ///
     /// # Arguments
     ///
@@ -795,51 +775,46 @@ impl Client {
     ///
     /// # Returns
     ///
-    /// Vector of saved functions
-    pub async fn list_functions(
+    /// Vector of saved Scripts
+    pub async fn list_scripts(
         &self,
         tags: Option<Vec<String>>,
-    ) -> Result<Vec<crate::functions::SavedFunction>> {
+    ) -> Result<Vec<crate::functions::Script>> {
         let token = self.auth.get_token().await?;
-        self.http.list_functions(tags, &token).await
+        self.http.list_scripts(tags, &token).await
     }
 
-    /// Update an existing function
+    /// Update an existing Script
     ///
     /// # Arguments
     ///
-    /// * `label` - The function label to update
-    /// * `function` - The updated function definition
-    pub async fn update_function(
-        &self,
-        label: &str,
-        function: crate::functions::SavedFunction,
-    ) -> Result<()> {
+    /// * `id` - The Script ID to update
+    /// * `script` - The updated Script definition
+    pub async fn update_script(&self, id: &str, script: crate::functions::Script) -> Result<()> {
         let token = self.auth.get_token().await?;
-        self.http.update_function(label, function, &token).await
+        self.http.update_script(id, script, &token).await
     }
 
-    /// Delete a function by its label
+    /// Delete a Script by its ID
     ///
     /// # Arguments
     ///
-    /// * `label` - The function label to delete
-    pub async fn delete_function(&self, label: &str) -> Result<()> {
+    /// * `id` - The Script ID to delete
+    pub async fn delete_script(&self, id: &str) -> Result<()> {
         let token = self.auth.get_token().await?;
-        self.http.delete_function(label, &token).await
+        self.http.delete_script(id, &token).await
     }
 
-    /// Call a saved function
+    /// Call a saved Script
     ///
     /// # Arguments
     ///
-    /// * `collection` - The collection to operate on
-    /// * `label` - The function label to execute
-    /// * `params` - Optional parameters to pass to the function
+    /// * `label` - The Script label to execute
+    /// * `params` - Optional parameters to pass to the Script
     ///
     /// # Returns
     ///
-    /// Function execution result containing records and metadata
+    /// Script execution result containing records and metadata
     ///
     /// # Example
     ///
@@ -855,20 +830,99 @@ impl Client {
     /// let mut params = HashMap::new();
     /// params.insert("status".to_string(), FieldType::String("active".to_string()));
     ///
-    /// let result = client.call_function("get_active_users", Some(params)).await?;
+    /// let result = client.call_script("get_active_users", Some(params)).await?;
     /// println!("Found {} records", result.records.len());
     /// # Ok(())
     /// # }
     /// ```
-    pub async fn call_function(
+    pub async fn call_script(
         &self,
-        function_id_or_label: &str,
+        script_id_or_label: &str,
         params: Option<std::collections::HashMap<String, crate::types::FieldType>>,
     ) -> Result<crate::functions::FunctionResult> {
         let token = self.auth.get_token().await?;
         self.http
-            .call_function(function_id_or_label, params, &token)
+            .call_script(script_id_or_label, params, &token)
             .await
+    }
+
+    // ========================================================================
+    // USER FUNCTIONS API
+    // ========================================================================
+
+    /// Save a new UserFunction
+    ///
+    /// # Arguments
+    ///
+    /// * `user_function` - The UserFunction definition to save
+    ///
+    /// # Returns
+    ///
+    /// The UserFunction ID assigned by the server
+    pub async fn save_user_function(
+        &self,
+        user_function: crate::functions::UserFunction,
+    ) -> Result<String> {
+        let token = self.auth.get_token().await?;
+        self.http.save_user_function(user_function, &token).await
+    }
+
+    /// Get a UserFunction by its label
+    ///
+    /// # Arguments
+    ///
+    /// * `label` - The UserFunction label (unique identifier)
+    ///
+    /// # Returns
+    ///
+    /// The saved UserFunction definition
+    pub async fn get_user_function(&self, label: &str) -> Result<crate::functions::UserFunction> {
+        let token = self.auth.get_token().await?;
+        self.http.get_user_function(label, &token).await
+    }
+
+    /// List all saved UserFunctions, optionally filtered by tags
+    ///
+    /// # Arguments
+    ///
+    /// * `tags` - Optional list of tags to filter by
+    ///
+    /// # Returns
+    ///
+    /// Vector of saved UserFunctions
+    pub async fn list_user_functions(
+        &self,
+        tags: Option<Vec<String>>,
+    ) -> Result<Vec<crate::functions::UserFunction>> {
+        let token = self.auth.get_token().await?;
+        self.http.list_user_functions(tags, &token).await
+    }
+
+    /// Update an existing UserFunction
+    ///
+    /// # Arguments
+    ///
+    /// * `label` - The UserFunction label to update
+    /// * `user_function` - The updated UserFunction definition
+    pub async fn update_user_function(
+        &self,
+        label: &str,
+        user_function: crate::functions::UserFunction,
+    ) -> Result<()> {
+        let token = self.auth.get_token().await?;
+        self.http
+            .update_user_function(label, user_function, &token)
+            .await
+    }
+
+    /// Delete a UserFunction by its label
+    ///
+    /// # Arguments
+    ///
+    /// * `label` - The UserFunction label to delete
+    pub async fn delete_user_function(&self, label: &str) -> Result<()> {
+        let token = self.auth.get_token().await?;
+        self.http.delete_user_function(label, &token).await
     }
 }
 
