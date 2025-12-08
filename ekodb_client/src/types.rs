@@ -391,6 +391,33 @@ impl From<Decimal> for FieldType {
     }
 }
 
+impl From<serde_json::Value> for FieldType {
+    fn from(value: serde_json::Value) -> Self {
+        match value {
+            serde_json::Value::Null => FieldType::Null,
+            serde_json::Value::Bool(b) => FieldType::Boolean(b),
+            serde_json::Value::Number(n) => {
+                if let Some(i) = n.as_i64() {
+                    FieldType::Integer(i)
+                } else if let Some(f) = n.as_f64() {
+                    FieldType::Float(f)
+                } else {
+                    FieldType::String(n.to_string())
+                }
+            }
+            serde_json::Value::String(s) => FieldType::String(s),
+            serde_json::Value::Array(arr) => {
+                FieldType::Array(arr.into_iter().map(FieldType::from).collect())
+            }
+            serde_json::Value::Object(obj) => FieldType::Object(
+                obj.into_iter()
+                    .map(|(k, v)| (k, FieldType::from(v)))
+                    .collect(),
+            ),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
