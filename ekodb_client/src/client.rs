@@ -214,6 +214,43 @@ impl Client {
             .await
     }
 
+    /// Restore a deleted record from trash (undelete)
+    ///
+    /// # Arguments
+    ///
+    /// * `collection` - The collection name
+    /// * `id` - The record ID to restore
+    ///
+    /// # Returns
+    ///
+    /// `Ok(true)` if the record was restored, `Ok(false)` if no tombstone was found
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # use ekodb_client::Client;
+    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// let client = Client::builder()
+    ///     .base_url("https://your-instance.ekodb.net")
+    ///     .api_key("your-token")
+    ///     .build()?;
+    ///
+    /// // Delete a record
+    /// client.delete("users", "user123", None).await?;
+    ///
+    /// // Restore it from trash
+    /// let restored = client.restore_deleted("users", "user123").await?;
+    /// if restored {
+    ///     println!("Record restored successfully");
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn restore_deleted(&self, collection: &str, id: &str) -> Result<bool> {
+        let token = self.auth.get_token().await?;
+        self.http.restore_deleted(collection, id, &token).await
+    }
+
     /// Batch insert multiple documents
     ///
     /// # Arguments

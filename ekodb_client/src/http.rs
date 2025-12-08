@@ -326,6 +326,29 @@ impl HttpClient {
             .await
     }
 
+    /// Restore a deleted record from trash
+    pub async fn restore_deleted(&self, collection: &str, id: &str, token: &str) -> Result<bool> {
+        let url_path = format!("/api/trash/{}/{}", collection, id);
+        let url = self.base_url.join(&url_path)?;
+
+        self.retry_policy
+            .execute(|| async {
+                let response = self
+                    .client
+                    .post(url.clone())
+                    .header("Authorization", format!("Bearer {}", token))
+                    .send()
+                    .await?;
+
+                let result: serde_json::Value = self.handle_response(&url_path, response).await?;
+                Ok(result
+                    .get("restored")
+                    .and_then(|v| v.as_bool())
+                    .unwrap_or(false))
+            })
+            .await
+    }
+
     /// Batch insert records
     pub async fn batch_insert(
         &self,
