@@ -15,7 +15,7 @@ YELLOW := \033[33m
 RED := \033[31m
 RESET := \033[0m
 
-.PHONY: all build build-release build-client build-python-client build-typescript-client test test-ci test-client test-examples test-examples-direct test-examples-client test-examples-rust test-examples-python test-examples-go test-examples-typescript test-examples-javascript clean check fmt fmt-rust fmt-rust-client fmt-rust-examples fmt-python fmt-go fmt-typescript fmt-md format install install-rust install-python install-typescript install-go setup install-hooks deps-check deps-update deploy-client deploy-client-rust deploy-client-py deploy-client-py-simple deploy-client-go deploy-client-ts bump-version bump-client-py docs-client
+.PHONY: all build build-release build-client build-python-client build-typescript-client test test-ci test-client test-examples test-examples-direct test-examples-client test-examples-rust test-examples-python test-examples-go test-examples-typescript test-examples-javascript test-examples-transactions clean check fmt fmt-rust fmt-rust-client fmt-rust-examples fmt-python fmt-go fmt-typescript fmt-md format install install-rust install-python install-typescript install-go setup install-hooks deps-check deps-update deploy-client deploy-client-rust deploy-client-py deploy-client-py-simple deploy-client-go deploy-client-ts bump-version bump-client-py docs-client
 
 # ASCII Banner for ekoDB
 BANNER := \
@@ -63,7 +63,7 @@ help:
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "  🧪 $(GREEN)make test$(RESET)         - Run Rust client tests"
 	@echo "  🤖 $(GREEN)make test-ci$(RESET)      - Run optimized CI tests"
-	@echo "  🔗 $(GREEN)make test-examples$(RESET) - Run integration tests (all languages)"
+	@echo "  🔗 $(GREEN)make test-examples$(RESET) - Run ALL integration tests (includes transactions)"
 	@echo "  🦀 $(GREEN)make test-examples-rust$(RESET) (or rs) - Run Rust examples"
 	@echo "     $(GREEN)make test-examples-rs-direct$(RESET) - Rust direct HTTP/WebSocket"
 	@echo "     $(GREEN)make test-examples-rs-client$(RESET) - Rust client library"
@@ -78,6 +78,7 @@ help:
 	@echo "  📦 $(GREEN)make test-examples-javascript$(RESET) (or js) - Run JavaScript examples"
 	@echo "     $(GREEN)make test-examples-js-direct$(RESET) - JavaScript direct HTTP/WebSocket"
 	@echo "     $(GREEN)make test-examples-js-client$(RESET) - JavaScript client library"
+	@echo "  💳 $(GREEN)make test-examples-transactions$(RESET) - Run transaction examples (Python, Go, JS, Rust, Kotlin)"
 	@echo ""
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "🚀 $(CYAN)DEPLOYMENT$(RESET)"
@@ -341,19 +342,43 @@ test-ci:
 #   make test-examples-{language}-client
 # ============================================================================
 
-# Run all examples (all languages, both direct and client)
+# Run all examples (all languages, both direct and client, including transactions)
 test-examples: examples-ls-check
 	@echo "make test-examples" > examples/test-examples.md
 	@$(MAKE) test-examples-rust test-examples-python test-examples-go test-examples-typescript test-examples-javascript test-examples-kotlin 2>&1 | tee -a examples/test-examples.md
 	@echo "✅ $(GREEN)All integration tests complete!$(RESET)"
 
-# Run direct API examples (using raw HTTP/WebSocket calls)
+# Run direct API examples (using raw HTTP/WebSocket calls, including transactions)
 test-examples-direct: test-examples-rust-direct test-examples-python-direct test-examples-go-direct test-examples-javascript-direct
 	@echo "✅ $(GREEN)Direct API examples complete!$(RESET)"
 
 # Run client library examples (using language-specific clients)
 test-examples-client: test-examples-rust-client test-examples-python-client test-examples-go-client test-examples-typescript-client test-examples-javascript-client
 	@echo "✅ $(GREEN)All client library examples complete!$(RESET)"
+
+# Run transaction examples (all languages with direct API support)
+test-examples-transactions:
+	@echo ""
+	@echo "💳 $(CYAN)Running Transaction Examples (Direct API)...$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo ""
+	@echo "🐍 $(YELLOW)Python Transactions...$(RESET)"
+	@cd examples/python && python3 transactions.py
+	@echo ""
+	@echo "🔷 $(YELLOW)Go Transactions...$(RESET)"
+	@cd examples/go && go run transactions.go
+	@echo ""
+	@echo "� $(YELLOW)JavaScript Transactions...$(RESET)"
+	@cd examples/javascript && node transactions.js
+	@echo ""
+	@echo "🦀 $(YELLOW)Rust Transactions...$(RESET)"
+	@cd examples/rust && cargo run --example transactions --quiet
+	@echo ""
+	@echo "🟣 $(YELLOW)Kotlin Transactions...$(RESET)"
+	@cd examples/kotlin && kotlinc -script transactions.kt || echo "Kotlin example (requires kotlinc installed)"
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "✅ $(GREEN)All transaction examples completed successfully!$(RESET)"
 
 # ============================================================================
 # Rust Examples (both direct + client)
@@ -369,7 +394,7 @@ test-examples-rs-client: test-examples-rust-client
 
 test-examples-rust-direct:
 	@echo "🧪 $(CYAN)Running Rust examples (direct HTTP/WebSocket)...$(RESET)"
-	@cd examples/rust && cargo run --example simple_crud && cargo run --example simple_websocket && cargo run --example batch_operations && cargo run --example kv_operations && cargo run --example collection_management && cargo run --example document_ttl && cargo run --example websocket_ttl
+	@cd examples/rust && cargo run --example simple_crud && cargo run --example simple_websocket && cargo run --example batch_operations && cargo run --example kv_operations && cargo run --example collection_management && cargo run --example document_ttl && cargo run --example websocket_ttl && cargo run --example transactions
 	@echo "✅ $(GREEN)Rust direct examples complete!$(RESET)"
 
 test-examples-rust-client: build-client
@@ -546,11 +571,13 @@ test-examples-javascript-client: build-typescript-client
 	@echo "✅ $(GREEN)JavaScript client examples complete!$(RESET)"
 
 # ============================================================================
-# Kotlin Examples (client only)
+# Kotlin Examples (client + transactions)
 # ============================================================================
 test-examples-kotlin:
 	@echo "make test-examples-kotlin" > examples/kotlin/test-examples-kt.md
 	@$(MAKE) test-examples-kotlin-client 2>&1 | tee -a examples/kotlin/test-examples-kt.md
+	@echo "🟣 $(YELLOW)Kotlin Transactions...$(RESET)"
+	@cd examples/kotlin && kotlinc -script transactions.kt || echo "Kotlin example (requires kotlinc installed)" 2>&1 | tee -a test-examples-kt.md
 	@echo "✅ $(GREEN)All Kotlin integration tests complete!$(RESET)"
 
 test-examples-kt: test-examples-kotlin

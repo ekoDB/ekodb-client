@@ -128,6 +128,7 @@ async def main():
 
         # List of example files to run
         examples_dir = Path(__file__).parent / "ttl-caching"
+        base_dir = Path(__file__).parent
         examples = [
             examples_dir / "simple_crud.py",
             examples_dir / "simple_websocket.py",
@@ -136,6 +137,7 @@ async def main():
             examples_dir / "collection_management.py",
             examples_dir / "document_ttl.py",
             examples_dir / "websocket_ttl.py",
+            base_dir / "transactions.py",
         ]
 
         log(f"\n=== Running {len(examples)} Examples ===", "YELLOW")

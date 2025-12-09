@@ -77,7 +77,7 @@ for lang in javascript python go rust; do
         dir="examples/rust/examples"
         pattern="*.rs"
     else
-        dir="examples/$lang/ttl-caching"
+        dir="examples/$lang"
         case $lang in
             javascript) pattern="*.js" ;;
             python) pattern="*.py" ;;
@@ -91,8 +91,13 @@ for lang in javascript python go rust; do
         while IFS= read -r file; do
             if [ -f "$file" ]; then
                 basename=$(basename "$file")
-                # Skip client_* files
-                if [[ ! "$basename" =~ ^client_ ]] && [[ ! "$basename" =~ ^Client ]]; then
+                # Skip client_* files, test runners, durability tests, and files in client-specific directories
+                if [[ ! "$basename" =~ ^client_ ]] && \
+                   [[ ! "$basename" =~ ^Client ]] && \
+                   [[ ! "$file" =~ /client/ ]] && \
+                   [[ ! "$basename" =~ test.runner ]] && \
+                   [[ ! "$basename" =~ _test ]] && \
+                   [[ ! "$basename" =~ Test ]]; then
                     name="${basename%.*}"
                     count=$((count + 1))
                     
@@ -105,7 +110,7 @@ for lang in javascript python go rust; do
                     total_direct=$((total_direct + 1))
                 fi
             fi
-        done < <(find "$dir" -maxdepth 1 -name "$pattern" -type f 2>/dev/null | sort)
+        done < <(find "$dir" -maxdepth 2 -name "$pattern" -type f 2>/dev/null | sort)
     fi
     
     echo "  $lang: $count examples" >> "$EXAMPLES_TXT"
