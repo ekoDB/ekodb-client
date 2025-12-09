@@ -77,15 +77,28 @@ async function setupTestData() {
 }
 
 async function simpleQueryFunction() {
-  console.log("📝 Example 1: Simple Query Function\n");
+  console.log("📝 Example 1: Simple Query Function with Filter\n");
 
   const function1 = {
     label: "get_active_users",
     name: "Get Active Users",
-    description: "Retrieve all active users",
+    description: "Query users with active status",
     version: "1.0",
     parameters: {},
-    functions: [{ type: "FindAll", collection: "users" }],
+    functions: [
+      {
+        type: "Query",
+        collection: "users",
+        filter: {
+          type: "Condition",
+          content: {
+            field: "status",
+            operator: "Eq",
+            value: "active",
+          },
+        },
+      },
+    ],
     tags: ["users", "query"],
   };
 
@@ -104,51 +117,84 @@ async function simpleQueryFunction() {
   return saveResult.id;
 }
 
-async function parameterizedFunction() {
-  console.log("📝 Example 2: Parameterized Function\n");
+async function complexFilterFunction() {
+  console.log("📝 Example 2: Complex Filter with Multiple Conditions\n");
 
   const function2 = {
-    label: "get_users_by_status",
-    name: "Get Users By Status",
+    label: "get_high_scoring_active_users",
+    name: "Get High Scoring Active Users",
     version: "1.0",
-    parameters: {
-      status: {
-        param_type: "String",
-        required: false,
-        default: "active",
+    parameters: {},
+    functions: [
+      {
+        type: "Query",
+        collection: "users",
+        filter: {
+          type: "Logical",
+          content: {
+            operator: "And",
+            expressions: [
+              {
+                type: "Condition",
+                content: {
+                  field: "status",
+                  operator: "Eq",
+                  value: "active",
+                },
+              },
+              {
+                type: "Condition",
+                content: {
+                  field: "score",
+                  operator: "Gt",
+                  value: 50,
+                },
+              },
+            ],
+          },
+        },
+        sort: [{ field: "score", ascending: false }],
+        limit: 10,
       },
-      limit: {
-        param_type: "Integer",
-        required: false,
-        default: 10,
-      },
-    },
-    functions: [{ type: "FindAll", collection: "users" }],
-    tags: ["users", "parameterized"],
+    ],
+    tags: ["users", "filter"],
   };
 
   const saveResult = await request("POST", "/api/functions", function2);
   console.log(`✅ Script saved: ${saveResult.id}`);
 
-  // Call with parameters
+  // Call the function
   const callResult = await request(
     "POST",
-    "/api/functions/get_users_by_status",
-    { status: "active", limit: 3 },
+    "/api/functions/get_high_scoring_active_users",
+    {},
   );
-  console.log(`📊 Found ${callResult.records.length} users (limited)\n`);
+  console.log(
+    `📊 Found ${callResult.records.length} users (status=active, score>50, sorted by score)\n`,
+  );
 }
 
 async function aggregationFunction() {
-  console.log("📝 Example 3: Aggregation Function\n");
+  console.log("📝 Example 3: Multi-Stage Pipeline (Query → Group → Calculate)\n");
 
   const function3 = {
     label: "user_stats",
-    name: "User Statistics",
+    name: "User Statistics by Status",
     version: "1.0",
     parameters: {},
     functions: [
-      { type: "FindAll", collection: "users" },
+      {
+        type: "Query",
+        collection: "users",
+        filter: {
+          type: "Condition",
+          content: {
+            field: "age",
+            operator: "Gt",
+            value: 20,
+          },
+        },
+      },
       {
         type: "Group",
         by_fields: ["status"],
@@ -159,17 +205,24 @@ async function aggregationFunction() {
             operation: "Average",
             input_field: "score",
           },
+          {
+            output_field: "max_score",
+            operation: "Max",
+            input_field: "score",
+          },
         ],
       },
     ],
-    tags: ["analytics"],
+    tags: ["analytics", "pipeline"],
   };
 
   const saveResult = await request("POST", "/api/functions", function3);
   console.log(`✅ Script saved: ${saveResult.id}`);
 
   const callResult = await request("POST", "/api/functions/user_stats", {});
-  console.log(`📊 Statistics: ${callResult.records.length} groups`);
+  console.log(
+    `📊 Pipeline Results: Filtered (age>20) → Grouped by status → ${callResult.records.length} groups`,
+  );
   callResult.records.forEach((record) => {
     console.log(`   ${JSON.stringify(record)}`);
   });
@@ -216,7 +269,7 @@ async function main() {
   try {
     await setupTestData();
     const getActiveUsersId = await simpleQueryFunction();
-    await parameterizedFunction();
+    await complexFilterFunction();
     const userStatsId = await aggregationFunction();
     await functionManagement(getActiveUsersId, userStatsId);
 

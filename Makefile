@@ -394,7 +394,7 @@ test-examples-rs-client: test-examples-rust-client
 
 test-examples-rust-direct:
 	@echo "🧪 $(CYAN)Running Rust examples (direct HTTP/WebSocket)...$(RESET)"
-	@cd examples/rust && cargo run --example simple_crud && cargo run --example simple_websocket && cargo run --example batch_operations && cargo run --example kv_operations && cargo run --example collection_management && cargo run --example document_ttl && cargo run --example websocket_ttl && cargo run --example transactions
+	@cd examples/rust && cargo run --example simple_crud && cargo run --example simple_websocket && cargo run --example batch_operations && cargo run --example kv_operations && cargo run --example collection_management && cargo run --example document_ttl && cargo run --example websocket_ttl && cargo run --example http_functions && cargo run --example transactions
 	@echo "✅ $(GREEN)Rust direct examples complete!$(RESET)"
 
 test-examples-rust-client: build-client

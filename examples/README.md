@@ -216,7 +216,24 @@ All direct examples are in the `ttl-caching/` subdirectories:
 - **Go**: [websocket_ttl.go](./go/ttl-caching/websocket_ttl.go)
 - **Rust**: [websocket_ttl.rs](./rust/examples/websocket_ttl.rs)
 
-### 8. Transactions
+### 8. Scripts/Functions (Direct HTTP)
+
+> **Saved scripts for reusable queries and multi-stage pipelines**
+
+- **JavaScript**: [http_functions.js](./javascript/http_functions.js)
+- **Python**: [http_functions.py](./python/http_functions.py)
+- **Go**: [http_functions.go](./go/http_functions.go)
+- **Rust**: [http_functions.rs](./rust/examples/http_functions.rs)
+
+**Features demonstrated:**
+
+- Save/call/update/delete scripts via direct HTTP API
+- Parameterized scripts with type validation
+- Multi-stage pipelines (query + aggregation)
+- Script management (list, retrieve by ID/label)
+- Group aggregations (count, average, etc.)
+
+### 9. Transactions
 
 > **✅ Enhanced in v0.24.0:** Transaction reliability significantly improved.
 > Commit and rollback operations now work correctly across all isolation levels

@@ -28,50 +28,50 @@ in the Gradle documentation. Daemon will be stopped at the end of the build
 > Kotlin Client - Simple CRUD Example ===
 
 === Create === ✓ Inserted user:
-Record(fields={id=StringValue(value=DBMi7robOq2yk1h_VhsiIoP3URs_EJ2SRSyijL089hOY_oKelbkZnu89KDLZ_5AWB1jzTW8jg0i-S_S469DJKw)})
+Record(fields={id=StringValue(value=wSvKi-yRIPcuALetPLM3C64b5CNKs56f8K9XiNCo96dROuw6zqQV5A0Vh-qneP00VID6ehptKEQfwUFdmdgR_A)})
 User ID:
-DBMi7robOq2yk1h_VhsiIoP3URs_EJ2SRSyijL089hOY_oKelbkZnu89KDLZ_5AWB1jzTW8jg0i-S_S469DJKw
+wSvKi-yRIPcuALetPLM3C64b5CNKs56f8K9XiNCo96dROuw6zqQV5A0Vh-qneP00VID6ehptKEQfwUFdmdgR_A
 
 === Read === ✓ Found user by ID:
-Record(fields={id=StringValue(value=DBMi7robOq2yk1h_VhsiIoP3URs_EJ2SRSyijL089hOY_oKelbkZnu89KDLZ_5AWB1jzTW8jg0i-S_S469DJKw),
-name=ObjectValue(value={value=StringValue(value=Alice Johnson),
-type=StringValue(value=String)}),
-age=ObjectValue(value={value=IntegerValue(value=28),
-type=StringValue(value=Integer)}),
-email=ObjectValue(value={value=StringValue(value=alice@example.com),
-type=StringValue(value=String)}),
-active=ObjectValue(value={type=StringValue(value=Boolean),
-value=BooleanValue(value=true)})})
-
-=== Update === ✓ Updated user:
-Record(fields={age=ObjectValue(value={type=StringValue(value=Integer),
-value=IntegerValue(value=29)}),
-city=ObjectValue(value={type=StringValue(value=String),
-value=StringValue(value=San Francisco)}),
-id=StringValue(value=DBMi7robOq2yk1h_VhsiIoP3URs_EJ2SRSyijL089hOY_oKelbkZnu89KDLZ_5AWB1jzTW8jg0i-S_S469DJKw),
+Record(fields={name=ObjectValue(value={type=StringValue(value=String),
+value=StringValue(value=Alice Johnson)}),
 active=ObjectValue(value={type=StringValue(value=Boolean),
 value=BooleanValue(value=true)}),
-email=ObjectValue(value={value=StringValue(value=alice@example.com),
+id=StringValue(value=wSvKi-yRIPcuALetPLM3C64b5CNKs56f8K9XiNCo96dROuw6zqQV5A0Vh-qneP00VID6ehptKEQfwUFdmdgR_A),
+email=ObjectValue(value={type=StringValue(value=String),
+value=StringValue(value=alice@example.com)}),
+age=ObjectValue(value={type=StringValue(value=Integer),
+value=IntegerValue(value=28)})})
+
+=== Update === ✓ Updated user:
+Record(fields={email=ObjectValue(value={type=StringValue(value=String),
+value=StringValue(value=alice@example.com)}),
+city=ObjectValue(value={value=StringValue(value=San Francisco),
 type=StringValue(value=String)}),
-name=ObjectValue(value={value=StringValue(value=Alice Johnson),
-type=StringValue(value=String)})})
+name=ObjectValue(value={type=StringValue(value=String),
+value=StringValue(value=Alice Johnson)}),
+active=ObjectValue(value={type=StringValue(value=Boolean),
+value=BooleanValue(value=true)}),
+age=ObjectValue(value={type=StringValue(value=Integer),
+value=IntegerValue(value=29)}),
+id=StringValue(value=wSvKi-yRIPcuALetPLM3C64b5CNKs56f8K9XiNCo96dROuw6zqQV5A0Vh-qneP00VID6ehptKEQfwUFdmdgR_A)})
 
 === Query === ✓ Found 1 users matching query
 
-- Record(fields={city=ObjectValue(value={value=StringValue(value=San Francisco),
-  type=StringValue(value=String)}),
-  email=ObjectValue(value={value=StringValue(value=alice@example.com),
-  type=StringValue(value=String)}),
-  name=ObjectValue(value={value=StringValue(value=Alice Johnson),
-  type=StringValue(value=String)}),
-  active=ObjectValue(value={type=StringValue(value=Boolean),
+- Record(fields={active=ObjectValue(value={type=StringValue(value=Boolean),
   value=BooleanValue(value=true)}),
-  id=StringValue(value=DBMi7robOq2yk1h_VhsiIoP3URs_EJ2SRSyijL089hOY_oKelbkZnu89KDLZ_5AWB1jzTW8jg0i-S_S469DJKw),
+  city=ObjectValue(value={type=StringValue(value=String),
+  value=StringValue(value=San Francisco)}),
+  name=ObjectValue(value={type=StringValue(value=String),
+  value=StringValue(value=Alice Johnson)}),
   age=ObjectValue(value={value=IntegerValue(value=29),
-  type=StringValue(value=Integer)})})
+  type=StringValue(value=Integer)}),
+  email=ObjectValue(value={type=StringValue(value=String),
+  value=StringValue(value=alice@example.com)}),
+  id=StringValue(value=wSvKi-yRIPcuALetPLM3C64b5CNKs56f8K9XiNCo96dROuw6zqQV5A0Vh-qneP00VID6ehptKEQfwUFdmdgR_A)})
 
 === Delete === ✓ Deleted user with ID:
-DBMi7robOq2yk1h_VhsiIoP3URs_EJ2SRSyijL089hOY_oKelbkZnu89KDLZ_5AWB1jzTW8jg0i-S_S469DJKw
+wSvKi-yRIPcuALetPLM3C64b5CNKs56f8K9XiNCo96dROuw6zqQV5A0Vh-qneP00VID6ehptKEQfwUFdmdgR_A
 
 ✓ Confirmed user was deleted
 
@@ -95,9 +95,9 @@ in the Gradle documentation. Daemon will be stopped at the end of the build
 > Kotlin Client - Batch Operations Example ===
 
 === Batch Insert === ✓ Inserted 5 records IDs:
-DDuw1GWURg73wlFIrvL4qiAmvuwK7BmflKOirM1aGRRlvx6EESGZulzAagtiOlZAEjN8LlujYjqfbKzfvC4gBA,
-mUD1XRGdILa852QqKNh5DfaHnvpZE4dQgLNkyU6ZcYfVU8vRL6FrfEsdesYUsKmINGWnleVJwLb3ta9enwhTLA,
-hqvbKdfE3KDzbt643g1brbU1j64hWb1-nIW605ZXQUrSbkf7WO50z8YpLz4Mn3Z4jN0V_flVMOwE6rrn49_w3g...
+oY4ckp466jvlgn3SdAhPOpHGNEv0a2zp2iUgo4voDC0aQQlt-RrYCwv7KPprLpy9datwSkIyzu4zHuFKTgFyww,
+BWQsxHLvFLAfXijVh9d3-TCVXBjy_99MrWvIpQpwmMvraVuWpYYaZW4hpibtIdwvRhaVQaER4oW43QEteTBIFQ,
+cXZvviK-gD3R1c8yji22cZHkVGo2O7zUa99BEaEbXLmni6jbTlomc_y5PTqQQbkzJoG5n34u8h2ilvjRh4c1sQ...
 
 === Batch Update === ✓ Updated 3 records
 
@@ -144,10 +144,10 @@ adults
 
 === Query 6: Pagination (skip 2, limit 2) === ✓ Page 2 (2 records):
 
-- ObjectValue(value={value=StringValue(value=Charlie),
-  type=StringValue(value=String)})
 - ObjectValue(value={type=StringValue(value=String),
-  value=StringValue(value=Diana)})
+  value=StringValue(value=Charlie)})
+- ObjectValue(value={value=StringValue(value=Diana),
+  type=StringValue(value=String)})
 
 === Query 7: Contains (name contains 'a') === ✓ Found 2 names containing 'a'
 
@@ -173,12 +173,12 @@ in the Gradle documentation. Daemon will be stopped at the end of the build
 === KV Set === ✓ Set key: user:123
 
 === KV Get === ✓ Retrieved value:
-{"role":"admin","email":"alice@example.com","name":"Alice"}
+{"role":"admin","name":"Alice","email":"alice@example.com"}
 
 === KV Set with TTL === ✓ Set key with 10s TTL: session:abc123
 
 === Verify TTL Key === ✓ Session value:
-{"created_at":1765258857427,"user_id":"123"} (Will expire in 10 seconds)
+{"created_at":1765262530624,"user_id":"123"} (Will expire in 10 seconds)
 
 === Set Multiple Keys === ✓ Set 3 configuration keys
 
@@ -207,11 +207,11 @@ in the Gradle documentation. Daemon will be stopped at the end of the build
 
 === List Collections === ✓ Found 21 collections
 
-- schema_products_client_ts
-- schema_documents_client_py
+- schema_employees_client_py
+- schema_products_client_go
 - schema_documents_client_go
-- schema_users_client_ts
-- test_collection
+- schema_users_client_py
+- websocket_test
 
 === Check Collection Existence === Collection 'kotlin_collection_example'
 exists: false
@@ -220,7 +220,7 @@ exists: false
 kotlin_collection_example
 
 === Get Collection Schema === ✓ Schema:
-{"fields":{"age":{"field_type":"Integer","default":null,"unique":false,"required":false,"enums":[],"max":null,"min":null,"regex":null},"name":{"field_type":"String","default":null,"unique":false,"required":true,"enums":[],"max":null,"min":null,"regex":null}},"version":1,"created_at":"2025-12-09T05:41:01.657846Z","last_modified":"2025-12-09T05:41:01.657846Z","bypass_ripple":false,"primary_key_alias":"id"}
+{"fields":{"name":{"field_type":"String","default":null,"unique":false,"required":true,"enums":[],"max":null,"min":null,"regex":null},"age":{"field_type":"Integer","default":null,"unique":false,"required":false,"enums":[],"max":null,"min":null,"regex":null}},"version":1,"created_at":"2025-12-09T06:42:14.850313Z","last_modified":"2025-12-09T06:42:14.850314Z","bypass_ripple":false,"primary_key_alias":"id"}
 
 === Cleanup === ✓ Deleted collection: kotlin_collection_example
 
@@ -242,13 +242,13 @@ in the Gradle documentation. Daemon will be stopped at the end of the build
 > Kotlin Client - Document TTL Example ===
 
 === Insert with TTL === ✓ Inserted document with 10s TTL Document ID:
-yl-wJSu97elnSTfcgRolZPSTTq2r3YBoSAmvXPVlE00BnlOiqSgCSs729iO3T94fxKqZVvK1yD9rGPp7wHFt_A
+tNMU0os4OS8sZ1jvqwmROtFxGdTv63int8L-2qUCKE0uDlXLvmbahzYR8b-XZpqYPD4N_m_hpREIVZYQslfisQ
 
-=== Verify Document Exists === ✓ Document found: [created_at, ttl_duration,
-session_id, user_id, id]
+=== Verify Document Exists === ✓ Document found: [id, created_at, session_id,
+user_id, ttl_duration]
 
 === Insert with Longer TTL === ✓ Inserted document with 1h TTL Document ID:
-6tiBON2jg2RokB1849zVZXyq6mjtcs-JJoqrbf9OGJDd5kJiEyb06LthXVaROAUwZvlz01TneF7K9W4G29K1Dg
+\_XSWYI21welVEqFrBkfLTw80tfQ2V3syJKYmYfe4_mAgpkn-aSOHXSD7c0FJrYqPqzVzkPyrCkgVHYSt4WRB-A
 
 === TTL Expiration === ✓ Document will automatically expire after 10 seconds
 
@@ -283,7 +283,7 @@ in the Gradle documentation. Daemon will be stopped at the end of the build
 === Insert Test Record === ✓ Inserted test record
 
 === Find All via WebSocket === ✓ WebSocket findAll result:
-{"payload":{"data":[{"id":"3oEdzIzOSD5TlZaBHxWflCL2fLt8YDqYwjxlWdzxHewT_uNsM-6e4qFJLzk8fi3wy50ZwMzJZrn-vX78_NKXZQ","name":{"type":"String","value":"Test
+{"payload":{"data":[{"id":"5nL1q-gMDRhlwSRsjzOBVKyu_lsCHdB7BnTcfBwCNYoPmwU-Wbk5wV-TrkuP0_AOnu3f8R3458GppwdVTGiQxQ","name":{"type":"String","value":"Test
 User"},"status":{"type":"String","value":"active"}}]},"type":"Success"}
 
 === Close WebSocket === ✓ WebSocket closed
@@ -311,16 +311,16 @@ in the Gradle documentation. Daemon will be stopped at the end of the build
 'kotlin_schema_example' with schema
 
 === Inserting Valid Documents === ✓ Inserted user 1:
-StringValue(value=8Eziy2_mDlGPgmOK07VVepHCLVH_Jv8ScUPfxUVnLcbTINubzjELPnEPdOlmMbdlMfYF_E7ZfbyhoACHm7Gkgw)
+StringValue(value=MS7WdKI6-WWZU9qWVxxF8lm82VLJUt2kp-IRJJUo1uv6kkCuGfTm3npeilXIQgbHTFjXEu8WrE_1x-iPOqVs0g)
 ✓ Inserted user 2:
-StringValue(value=Km2JQq6OLThBhl7XWFmu0zXlrMU3jo4EjtVEH-RpocHlb8QklryrCTeaEvhAvzLAdKtWbh-G1CQfZp40ZSjcVQ)
+StringValue(value=TpldEhD5GQeqzuBoIByQzs6fx-OKOniFzuC2nkibe28EOghpFQQlDxwaAGNPobV2zm0uNbPWgTPDU1J-6DAS2A)
 
 === Getting Schema === ✓ Schema for kotlin_schema_example: Fields:
-{"status":{"field_type":"String","default":null,"unique":false,"required":false,"enums":[],"max":null,"min":null,"regex":null},"email":{"field_type":"String","default":null,"unique":false,"required":true,"enums":[],"max":null,"min":null,"regex":null},"title":{"field_type":"String","default":null,"unique":false,"required":true,"enums":[],"max":null,"min":null,"regex":null},"age":{"field_type":"Integer","default":null,"unique":false,"required":false,"enums":[],"max":null,"min":null,"regex":null}}
+{"email":{"field_type":"String","default":null,"unique":false,"required":true,"enums":[],"max":null,"min":null,"regex":null},"age":{"field_type":"Integer","default":null,"unique":false,"required":false,"enums":[],"max":null,"min":null,"regex":null},"status":{"field_type":"String","default":null,"unique":false,"required":false,"enums":[],"max":null,"min":null,"regex":null},"title":{"field_type":"String","default":null,"unique":false,"required":true,"enums":[],"max":null,"min":null,"regex":null}}
 
 === Listing Collections === ✓ Total collections: 22 Sample:
-[schema_products_client_ts, schema_documents_client_py,
-schema_documents_client_go, kotlin_schema_example, schema_users_client_ts]
+[schema_employees_client_py, kotlin_schema_example, schema_products_client_go,
+schema_documents_client_go, schema_users_client_py]
 
 === Cleanup === ✓ Deleted collection: kotlin_schema_example
 
@@ -344,32 +344,31 @@ in the Gradle documentation. Daemon will be stopped at the end of the build
 === Inserting Sample Documents === ✓ Inserted 5 sample documents
 
 === Basic Text Search === ✓ Search results for 'programming':
-{"results":[{"record":{"views":21,"tags":"programming,rust,tutorial","title":"Rust
+{"results":[{"record":{"id":"IaGAXRfQJIm9Kpq0GJVTY37QqGsqIX1FHoEkV5KwX25mxCroFKtPXrzNOMWJvfjSMdQn7sdJQyWqF43dIsna2g","tags":"programming,rust,tutorial","views":252,"title":"Rust
 Programming","description":"Learn Rust programming language with hands-on
 examples and best
-practices.","id":"sjX-PgZlkkthLg2HQXGGVAYRv4AWlUbjSMTfoq_2-lPWW0MMbo4g19sAb8e2avgTXwWOnQnkWwvXm1hmx0ivVg"},"score":19.8,"matched_fields":["description","tags","title"]},{"record":{"views":800,"title":"JavaScript
-Web Development","description":"Build modern web applications using JavaScript,
-React, and
-Node.js.","tags":"programming,javascript,web","id":"DZ2_4lDPuV1DimgURCAaQ9bl39aDP6rSAww7aQbZlnLZHHVu7WzMIfCZi3XH7ReWnGg9YjVaRinqgKrU2S3GTQ"},"score":6.6000000000000005,"matched_fields":["tags"]},{"record":{"description":"Master
-Python for data analysis, machine learning, and
-visualization.","tags":"programming,python,data-science","id":"cqXU50FZ90ovbQmVdMKUETeNm406nIDMiBjEUPbgdkoQE1RAfiwjPW6rVTcivHGMR5QZAhh3DX24ISp-fSO9qA","title":"Python
-for Data
-Science","views":435},"score":6.6000000000000005,"matched_fields":["tags"]}],"total":3,"execution_time_ms":1}
+practices."},"score":19.8,"matched_fields":["tags","title","description"]},{"record":{"description":"Build
+modern web applications using JavaScript, React, and
+Node.js.","tags":"programming,javascript,web","id":"nxlEb2faJO50NiYP8vDCSMz5W-jFhGhQUnISOy-5X2WGsugKzWDADWoxGaw2AjHq1LAlFCJalwPkQE9N0yrxKg","views":432,"title":"JavaScript
+Web
+Development"},"score":6.6000000000000005,"matched_fields":["tags"]},{"record":{"id":"BCMkr7V3HSMqtRyz0ADT5vrNWvHA3m_IwdtaiHKRBvoRaWHmI-3BVuAKTpykDL_emQ0btKRAR4yCztwPGviT1w","title":"Python
+for Data Science","description":"Master Python for data analysis, machine
+learning, and
+visualization.","tags":"programming,python,data-science","views":552},"score":6.6000000000000005,"matched_fields":["tags"]}],"total":3,"execution_time_ms":1}
 
 === Search for 'machine learning' === ✓ Found results for 'machine learning'
-{"results":[{"record":{"tags":"ai,machine-learning,python","id":"OJbmP3OTYitZQgCxZGJ3v9FZ0n0GhwCGz8EBK5q07HyjAv1qfR8f-17nq5MTjXLqtR-qtN7DZfCTrx0xaacMFA","description":"Introduction
-to machine learning algorithms and neural
-networks.","views":419,"title":"Machine Learning
-Basics"},"score":2.7,"matched_fields":["description","title","tags"]},{"record":{"title":"Python
-for Data Science","views":435,"description":"Master Python for data analysis,
-machine learning, and
-visualization.","tags":"programming,python,data-science","id":"cqXU50FZ90ovbQmVdMKUETeNm406nIDMiBjEUPbgdkoQE1RAfiwjPW6rVTcivHGMR5QZAhh3DX24ISp-fSO9qA"},"score":1.0,"matched_fields":["description"]},{"record":{"id":"mZ7Lf0i3Pi6A8b-viX0fc7mVMeXpP1eeA8ENkL8K33mvVOPvWSuBVJNB_UBl5SQ-rzf4fSwhDLeNiNIMqJ4r8A","description":"Learn
+{"results":[{"record":{"description":"Introduction to machine learning
+algorithms and neural networks.","views":923,"title":"Machine Learning
+Basics","tags":"ai,machine-learning,python","id":"4e7kiO4u2mPAzIu4G330ZacrfLa-jlzcTjZk3a82TwWGYPz9yPfLQHPL3rtdqsJ86X_4XvuF7VyxAHp7apAkHQ"},"score":2.7,"matched_fields":["description","title","tags"]},{"record":{"description":"Master
+Python for data analysis, machine learning, and visualization.","title":"Python
+for Data
+Science","views":552,"id":"BCMkr7V3HSMqtRyz0ADT5vrNWvHA3m_IwdtaiHKRBvoRaWHmI-3BVuAKTpykDL_emQ0btKRAR4yCztwPGviT1w","tags":"programming,python,data-science"},"score":1.0,"matched_fields":["description"]},{"record":{"description":"Learn
 database design principles, normalization, and query
-optimization.","views":639,"tags":"database,design,sql","title":"Database
-Design"},"score":0.5,"matched_fields":["description"]},{"record":{"tags":"programming,rust,tutorial","id":"sjX-PgZlkkthLg2HQXGGVAYRv4AWlUbjSMTfoq_2-lPWW0MMbo4g19sAb8e2avgTXwWOnQnkWwvXm1hmx0ivVg","title":"Rust
-Programming","description":"Learn Rust programming language with hands-on
-examples and best
-practices.","views":21},"score":0.5,"matched_fields":["description"]}],"total":4,"execution_time_ms":1}
+optimization.","id":"3YnzEStGg6wb27G6LS5f6-bFHqgsGDPC2QNTobk9zgTXCOat3Mo7G1pIAyw5igh8_iC-yXgkiDk9UVd49p4yAw","title":"Database
+Design","tags":"database,design,sql","views":510},"score":0.5,"matched_fields":["description"]},{"record":{"description":"Learn
+Rust programming language with hands-on examples and best
+practices.","id":"IaGAXRfQJIm9Kpq0GJVTY37QqGsqIX1FHoEkV5KwX25mxCroFKtPXrzNOMWJvfjSMdQn7sdJQyWqF43dIsna2g","views":252,"title":"Rust
+Programming","tags":"programming,rust,tutorial"},"score":0.5,"matched_fields":["description"]}],"total":4,"execution_time_ms":1}
 
 === Cleanup === ✓ Deleted collection: kotlin_search_example
 
@@ -391,11 +390,11 @@ in the Gradle documentation. Daemon will be stopped at the end of the build
 > Kotlin Client - WebSocket TTL Example ===
 
 === Insert Test Data with TTL === ✓ Inserted document with TTL:
-StringValue(value=3vjQ9_EkRpbppTtAFiI60BoinPcaYhhSNlgb_X4v1zWq0TekVQ53BJoOPLoiPFTiIQ1hsy8ZWT6FnOLfM5eQIg)
+StringValue(value=2hwxOQ6emv8STEp5L7PnRxmlTC5i_KyLeOreUDqc7pU2zD5LyVH4lDnMlEXPS8xfiOZ6N1crHNxkiuTChHxUzg)
 
 === Query via WebSocket === ✓ WebSocket connected ✓ Retrieved data via
 WebSocket:
-{"payload":{"data":[{"created_at":{"type":"Integer","value":1765258882772},"id":"3vjQ9_EkRpbppTtAFiI60BoinPcaYhhSNlgb_X4v1zWq0TekVQ53BJoOPLoiPFTiIQ1hsy8ZWT6FnOLfM5eQIg","name":{"type":"String","value":"WebSocket
+{"payload":{"data":[{"created_at":{"type":"Integer","value":1765262555826},"id":"2hwxOQ6emv8STEp5L7PnRxmlTC5i_KyLeOreUDqc7pU2zD5LyVH4lDnMlEXPS8xfiOZ6N1crHNxkiuTChHxUzg","name":{"type":"String","value":"WebSocket
 TTL
 Test"},"ttl_duration":{"type":"String","value":"1h"},"value":{"type":"Integer","value":42}}]},"type":"Success"}
 
@@ -428,8 +427,8 @@ in the Gradle documentation. Daemon will be stopped at the end of the build
 === Example 1: Single collection join (users with departments) === ✓ Found 2
 users with department data
 
-- Bob Smith: Sales
 - Alice Johnson: Engineering
+- Bob Smith: Sales
 
 === Example 2: Join with filtering === ✓ Found 1 users in Engineering
 
@@ -437,13 +436,13 @@ users with department data
 
 === Example 3: Join with user profiles === ✓ Found 2 users with profile data
 
-- Bob Smith: Sales Manager
 - Alice Johnson: Senior Software Engineer
+- Bob Smith: Sales Manager
 
 === Example 4: Join orders with user data === ✓ Found 2 completed orders
 
-- Mouse ($25) by Alice Johnson
 - Laptop ($1200) by Alice Johnson
+- Mouse ($25) by Alice Johnson
 
 === Example 5: Complex join with multiple conditions === ✓ Found 2 users with
 example.com emails
@@ -473,22 +472,21 @@ in the Gradle documentation. Daemon will be stopped at the end of the build
 === Inserting Sample Data === ✓ Inserted 3 sample documents
 
 === Creating Chat Session === ✓ Created session:
-vkK-IPDpRaOkF4_S-ne1PCGvc2Lg-D3C-3NIe9e-vcnsFTDKllYynudFWiecXHHtja83hQ9FWUpG55nj5qFrVQ
+w6xFbh5G1TSMio4O_z1G-tTj0fHQMwFHsXj0ySMSnj1Bfys22ZTA0ufV0oBb62rmPN7CBBn9VYPIm76GsRj-Yg
 
 === Sending Chat Message === ✓ Chat response: Message ID:
-"htI9Y82FdaLkd-zxlq-xGi_2i0KplSH9x8Xl0tJPqNZ5tTft-z13SG7fBCoE2Ao1ICYfczrm9mmfHeoSv6weBg"
-Responses: ["I'm sorry, but the provided context doesn't contain any specific
-information about ekoDB or its features. However, ekoDB is typically a database,
-and databases usually have features like data storage, data management, data
-retrieval, and security features. It would be best if you refer to the specific
-documentation of ekoDB for a comprehensive list of its features."]
+"GHKk2Xk-r_OVpzxiALra-tQz3h_Afw5JGAfYy_jZQpchOY2Cnlv928JEXoun4gLO_8KZh5rfyz4Axha7QfjZcQ"
+Responses: ["I'm sorry for the inconvenience, but the context provided does not
+contain any specific information about ekoDB or its features. Could you please
+provide more details or a different context? I'd be glad to assist you with the
+right information."]
 
 === Cleanup === ✓ Deleted chat session ✓ Deleted collection:
 kotlin_chat_basic_example
 
 ✓ Basic chat example completed successfully
 
-BUILD SUCCESSFUL in 5s 2 actionable tasks: 1 executed, 1 up-to-date To honour
+BUILD SUCCESSFUL in 7s 2 actionable tasks: 1 executed, 1 up-to-date To honour
 the JVM settings for this build a single-use Daemon process will be forked. For
 more on this, please refer to
 https://docs.gradle.org/8.11.1/userguide/gradle_daemon.html#sec:disabling_the_daemon
@@ -506,46 +504,46 @@ in the Gradle documentation. Daemon will be stopped at the end of the build
 === Inserting Sample Data === ✓ Inserted sample product
 
 === Creating Chat Session === ✓ Created session:
-sgYZC8swkGOQl9EC-lDbQQy6Z-XChJXbXi1fNhrA-QAxJvpU85wZVrxQSIcrKwtkM7o-JE6QVmR52_ZKanDeFw
+jQ-mql9ApPLJmQlnK462WYrSw4Xz8Vgz71NWvZCkplAXcQ_KOutyq3tvX-VBYerhVeFNubLcFA76gCH8wH3JIg
 
 === Sending Messages === ✓ Message 1 sent Responses: ["I'm sorry, but the
-context provided doesn't contain any specific information about available
-products. Could you please provide more details or a different context?"]
+context provided does not include specific information about available products.
+Could you please provide more details or context?"]
 
-✓ Message 2 sent Responses: ["Apologies, but the context provided does not
-include information about the price of a specific product. Could you please
-mention the product you're interested in?"]
+✓ Message 2 sent Responses: ["I'm sorry, but there's no information provided
+about the product or its price in the context. Could you please provide more
+details?"]
 
 === Getting Message History === ✓ Retrieved message history Total messages:
-[{"chat*id":{"type":"String","value":"sgYZC8swkGOQl9EC-lDbQQy6Z-XChJXbXi1fNhrA-QAxJvpU85wZVrxQSIcrKwtkM7o-JE6QVmR52_ZKanDeFw"},"content":{"type":"String","value":"What
+[{"chat_id":{"type":"String","value":"jQ-mql9ApPLJmQlnK462WYrSw4Xz8Vgz71NWvZCkplAXcQ_KOutyq3tvX-VBYerhVeFNubLcFA76gCH8wH3JIg"},"content":{"type":"String","value":"What
 products are
 available?"},"context_snippets":{"type":"Array","value":[{"collection":"kotlin_chat_sessions_example","matched_fields":["description"],"record":{"description":{"type":"String","value":"A
 high-performance database product with AI
-capabilities"},"id":"feYOzhXKE2broMytoD2Sm3vthuJ7TnOpkL6KNMHR-4WznCigYHiQwcBHyGb8Mu-EtqO_iSSJ6bBUnonzrx2_SA","price":{"type":"Integer","value":99},"product":{"type":"String","value":"ekoDB"}},"score":0.25}]},"created_at":{"type":"DateTime","value":"2025-12-09T05:41:40.082368Z"},"id":"K6Me49vQfDW7gBS4l6CydhI3YVZ57AxPYS8qH--cVE1u*-bIExfu13V1x1CVaagvHsZsh45D6jwlbI8w_becZg","role":{"type":"String","value":"user"},"token_usage":{"type":"Object","value":{"completion_tokens":29,"prompt_tokens":150,"total_tokens":179}},"updated_at":{"type":"DateTime","value":"2025-12-09T05:41:40.082368Z"}},{"chat_id":{"type":"String","value":"sgYZC8swkGOQl9EC-lDbQQy6Z-XChJXbXi1fNhrA-QAxJvpU85wZVrxQSIcrKwtkM7o-JE6QVmR52_ZKanDeFw"},"content":{"type":"String","value":"I'm
-sorry, but the context provided doesn't contain any specific information about
-available products. Could you please provide more details or a different
+capabilities"},"id":"1YDlwG54PeucCUd0L-vUlSmOOCg3E6OazJ2nzMmlfFU6eR1Qfq1F8MugKQlcj74xUzwqJb_yW3FgBLSnu3Cj5w","price":{"type":"Integer","value":99},"product":{"type":"String","value":"ekoDB"}},"score":0.25}]},"created_at":{"type":"DateTime","value":"2025-12-09T06:42:53.891381Z"},"id":"gtQS2zX7g0ZgV16E4mAp1M145F3kLCXuJ-oJ0_OYopijSmsq_S3pW8z1Me8G96CTMZSfnz_KjZnXYoH5tWSzKQ","role":{"type":"String","value":"user"},"token_usage":{"type":"Object","value":{"completion_tokens":26,"prompt_tokens":158,"total_tokens":184}},"updated_at":{"type":"DateTime","value":"2025-12-09T06:42:53.891381Z"}},{"chat_id":{"type":"String","value":"jQ-mql9ApPLJmQlnK462WYrSw4Xz8Vgz71NWvZCkplAXcQ_KOutyq3tvX-VBYerhVeFNubLcFA76gCH8wH3JIg"},"content":{"type":"String","value":"I'm
+sorry, but the context provided does not include specific information about
+available products. Could you please provide more details or
 context?"},"context_snippets":{"type":"Array","value":[{"collection":"kotlin_chat_sessions_example","matched_fields":["description"],"record":{"description":{"type":"String","value":"A
 high-performance database product with AI
-capabilities"},"id":"feYOzhXKE2broMytoD2Sm3vthuJ7TnOpkL6KNMHR-4WznCigYHiQwcBHyGb8Mu-EtqO_iSSJ6bBUnonzrx2_SA","price":{"type":"Integer","value":99},"product":{"type":"String","value":"ekoDB"}},"score":0.25}]},"created_at":{"type":"DateTime","value":"2025-12-09T05:41:40.088651Z"},"id":"zYdfeCekwcLKiCkOhe6vctyCdIwqy7--prQcDAIOoS72jQyu0dp3I9kWpYsu1DzSksSxgeORFiLC6yfKJb83FA","role":{"type":"String","value":"assistant"},"token_usage":{"type":"Object","value":{"completion_tokens":29,"prompt_tokens":150,"total_tokens":179}},"updated_at":{"type":"DateTime","value":"2025-12-09T05:41:40.088651Z"}},{"chat_id":{"type":"String","value":"sgYZC8swkGOQl9EC-lDbQQy6Z-XChJXbXi1fNhrA-QAxJvpU85wZVrxQSIcrKwtkM7o-JE6QVmR52_ZKanDeFw"},"content":{"type":"String","value":"What
+capabilities"},"id":"1YDlwG54PeucCUd0L-vUlSmOOCg3E6OazJ2nzMmlfFU6eR1Qfq1F8MugKQlcj74xUzwqJb_yW3FgBLSnu3Cj5w","price":{"type":"Integer","value":99},"product":{"type":"String","value":"ekoDB"}},"score":0.25}]},"created_at":{"type":"DateTime","value":"2025-12-09T06:42:53.894886Z"},"id":"UzHq2L5Yk6Dr5ewZw1USXTog_uQw7t89FDewff2ojeh6gZO3UL55eHAEMK6n4HQCkLHG4BtQe869Qfmq0N6gow","role":{"type":"String","value":"assistant"},"token_usage":{"type":"Object","value":{"completion_tokens":26,"prompt_tokens":158,"total_tokens":184}},"updated_at":{"type":"DateTime","value":"2025-12-09T06:42:53.894886Z"}},{"chat_id":{"type":"String","value":"jQ-mql9ApPLJmQlnK462WYrSw4Xz8Vgz71NWvZCkplAXcQ_KOutyq3tvX-VBYerhVeFNubLcFA76gCH8wH3JIg"},"content":{"type":"String","value":"What
 is the
-price?"},"created_at":{"type":"DateTime","value":"2025-12-09T05:41:41.718482Z"},"id":"CPRPn18qy18ERfZxBb2U6YrXs928-bZZyABzIGuBrYJXTFcT2Mp78OwbW8qwFdwQVgZhma_0IRF-StjRNrQEsg","role":{"type":"String","value":"user"},"token_usage":{"type":"Object","value":{"completion_tokens":30,"prompt_tokens":70,"total_tokens":100}},"updated_at":{"type":"DateTime","value":"2025-12-09T05:41:41.718482Z"}},{"chat_id":{"type":"String","value":"sgYZC8swkGOQl9EC-lDbQQy6Z-XChJXbXi1fNhrA-QAxJvpU85wZVrxQSIcrKwtkM7o-JE6QVmR52_ZKanDeFw"},"content":{"type":"String","value":"Apologies,
-but the context provided does not include information about the price of a
-specific product. Could you please mention the product you're interested
-in?"},"created_at":{"type":"DateTime","value":"2025-12-09T05:41:41.719368Z"},"id":"ZRHA5LB-cDQEk87w5ssSsISwnb0DFRuCCjmCgBiIj7dbQzaP7hETGRqDRGtVq0hOA239JHNGOwPvaKeUKpwtaA","role":{"type":"String","value":"assistant"},"token_usage":{"type":"Object","value":{"completion_tokens":30,"prompt_tokens":70,"total_tokens":100}},"updated_at":{"type":"DateTime","value":"2025-12-09T05:41:41.719368Z"}}]
+price?"},"created_at":{"type":"DateTime","value":"2025-12-09T06:42:55.321462Z"},"id":"kbozPGUxKkaWngfoTTICWRjZexblR7-Bdg1g4YgtBkhwPyKpm1Pa301V_9Ovg6H3LC6lKrEQ19f0C7sXjW-YEw","role":{"type":"String","value":"user"},"token_usage":{"type":"Object","value":{"completion_tokens":27,"prompt_tokens":70,"total_tokens":97}},"updated_at":{"type":"DateTime","value":"2025-12-09T06:42:55.321462Z"}},{"chat_id":{"type":"String","value":"jQ-mql9ApPLJmQlnK462WYrSw4Xz8Vgz71NWvZCkplAXcQ_KOutyq3tvX-VBYerhVeFNubLcFA76gCH8wH3JIg"},"content":{"type":"String","value":"I'm
+sorry, but there's no information provided about the product or its price in the
+context. Could you please provide more
+details?"},"created_at":{"type":"DateTime","value":"2025-12-09T06:42:55.324718Z"},"id":"3Q3aFWhjcETN6J3nVZT1tMgn3e5v7GtVr_HkWvcIAh0OK7aIiYVkSfDldYPlki0MC9LVa3vPV2hRUSu0ojyv3Q","role":{"type":"String","value":"assistant"},"token_usage":{"type":"Object","value":{"completion_tokens":27,"prompt_tokens":70,"total_tokens":97}},"updated_at":{"type":"DateTime","value":"2025-12-09T06:42:55.324718Z"}}]
 
 === Updating Session === ✓ Updated session system prompt
 
 === Listing Sessions === ✓ Total sessions: 13
 
 === Branching Session === ✓ Created branched session:
-NZ0oeQ20I3YPCBzyFl5U3Tyrp7kP0ZJyb6XCw4UXuPiDXjQ3JWz2Aoqpuhd8aIKesKGW2DNJV_1MDDofITVgPQ
+p43fU7mEirBQB9li20PnMZeERlttLSmoKYKA_3cw2rchXTKGEP95esGkTYwi0FUHUNnt2m2J4eEQjkeXE463tg
 
 === Cleanup === ✓ Deleted chat sessions ✓ Deleted collection:
 kotlin_chat_sessions_example
 
 ✓ Chat session management example completed successfully
 
-BUILD SUCCESSFUL in 7s 2 actionable tasks: 1 executed, 1 up-to-date To honour
+BUILD SUCCESSFUL in 6s 2 actionable tasks: 1 executed, 1 up-to-date To honour
 the JVM settings for this build a single-use Daemon process will be forked. For
 more on this, please refer to
 https://docs.gradle.org/8.11.1/userguide/gradle_daemon.html#sec:disabling_the_daemon
@@ -563,17 +561,17 @@ in the Gradle documentation. Daemon will be stopped at the end of the build
 === Inserting Sample Data === ✓ Inserted sample product
 
 === Creating Chat Session === ✓ Created session:
-hjk0IjJSsS1-zr-3_dW0JcE60OA1XbdoDMy7q1LSjhERjKdFVjXkJlo4eznmbT60TesLKchwCl1zJtiCg_Eqgg
+vfVFT2wW7LSP7omm3gIzyJty926EIGVyM-2CWm4D3xFb8l-eV5RoJTQ6Vs6K0XeHbh755zllWdQPykNR2JwnGw
 
 === Sending Initial Message === ✓ Message sent Responses: ["I'm sorry, but the
-provided context does not include specific information about available products.
-Could you please provide more details or context?"]
+context provided does not contain information about any specific products. Could
+you please provide more details or a different context?"]
 
 ✓ Second message sent
 
 === Regenerating AI Response === ✓ AI response regenerated New responses: ["I'm
-sorry, but the context provided does not contain any specific product
-information. Can you provide more details or context?"]
+sorry, but the context provided does not include any information about available
+products. Can you provide more details or try again?"]
 
 === Updating Message === ✓ Updated message content
 
@@ -581,7 +579,7 @@ information. Can you provide more details or context?"]
 context)
 
 === Creating Second Session for Merge === ✓ Created second session:
-F1ax2mm2phQmWFqOO7INRlkwNqg1aXGqFn3Io6-C_aopbQX-Nm_Q2CwIBBVnBPAdnr-PCcN95EQfRsiEywy1rw
+aX4zzkC5xiItRHpGT_ASx3o-fwJ-FOxjLGuJwqbxSarrppSehvPYiz7zXeKJEVv6FbDYn0Qb25pJTBgloHTh9g
 
 === Merging Sessions === ✓ Merged sessions Merged session ID: null
 
@@ -592,7 +590,7 @@ kotlin_chat_advanced_example
 
 ✓ Advanced chat features example completed successfully
 
-BUILD SUCCESSFUL in 8s 2 actionable tasks: 1 executed, 1 up-to-date To honour
+BUILD SUCCESSFUL in 7s 2 actionable tasks: 1 executed, 1 up-to-date To honour
 the JVM settings for this build a single-use Daemon process will be forked. For
 more on this, please refer to
 https://docs.gradle.org/8.11.1/userguide/gradle_daemon.html#sec:disabling_the_daemon
@@ -614,7 +612,7 @@ initialized
 📝 Example 1: Simple Query Script
 
 ✅ Script saved:
-i6bN2N6ZHn4_5QFllaWN5Ek_UleP2INxXcNw8FBF8O_YdHixDSSvmY81-gTF_XHVSTXcrgwBYwGlcbMOGNe6Dg
+6rMqCJMox4UUUAu3dhXPg5Ismaf_VpXwDTpHDv_nAQca-wT_9ogvJUmZE71YzBgmcFY6zF86VVHFoCJf3jqCFQ
 📊 Found 10 records ⏱️ Execution time: 0ms
 
 📝 Example 2: Parameterized Script
@@ -624,12 +622,12 @@ i6bN2N6ZHn4_5QFllaWN5Ek_UleP2INxXcNw8FBF8O_YdHixDSSvmY81-gTF_XHVSTXcrgwBYwGlcbMO
 📝 Example 3: Aggregation Script
 
 ✅ Script saved 📊 Statistics: 2 groups
-{"avg_score":60.0,"status":"active","count":5}
-{"avg_score":50.0,"count":5,"status":"inactive"} ⏱️ Execution time: 0ms
+{"avg_score":50.0,"status":"inactive","count":5}
+{"status":"active","count":5,"avg_score":60.0} ⏱️ Execution time: 0ms
 
 📝 Example 4: Script Management
 
-📋 Total scripts: 21 🔍 Retrieved script: Get Active Users ✏️ Script updated 🗑️
+📋 Total scripts: 27 🔍 Retrieved script: Get Active Users ✏️ Script updated 🗑️
 Script deleted
 
 ℹ️ Note: GET/UPDATE/DELETE operations require the encrypted ID ℹ️ Only CALL can
