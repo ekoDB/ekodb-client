@@ -115,6 +115,7 @@ func main() {
 		"ttl-caching/websocket_ttl.go",
 		"http_functions.go",
 		"transactions.go",
+		"crud_scripts.go",
 	}
 
 	log(fmt.Sprintf("\n=== Running %d Examples ===", len(examples)), colorYellow)

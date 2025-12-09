@@ -1,48 +1,48 @@
 make test-examples-rust 🧪 [36mRunning Rust examples (direct
 HTTP/WebSocket)...[0m Finished `dev` profile [unoptimized + debuginfo] target(s)
-in 0.13s Running `target/debug/examples/simple_crud` ✓ Authentication successful
+in 0.10s Running `target/debug/examples/simple_crud` ✓ Authentication successful
 
 === Insert Document === Inserted: Object {"id":
-String("9hpDtjuAr6r_1ZJwIbbUVwXC0Js6E5l03hDTlejTBFm75bLYVrkM6aGyfxkijbN5HwQgndIdDChmC-tQ0w7Z8A")}
+String("dhOOtWqhD_rFGIGyi9UnXaDCF35Ib8Fyge2_iNUv7Q2aoTKDrG1AR8e6P6_V63ra5QeSIx3qqfOpSNNDjdpV7A")}
 
 === Find by ID === Found: Object {"active": Object {"type": String("Boolean"),
 "value": Bool(true)}, "id":
-String("9hpDtjuAr6r_1ZJwIbbUVwXC0Js6E5l03hDTlejTBFm75bLYVrkM6aGyfxkijbN5HwQgndIdDChmC-tQ0w7Z8A"),
+String("dhOOtWqhD_rFGIGyi9UnXaDCF35Ib8Fyge2_iNUv7Q2aoTKDrG1AR8e6P6_V63ra5QeSIx3qqfOpSNNDjdpV7A"),
 "name": Object {"type": String("String"), "value": String("Test Record")},
 "value": Object {"type": String("Integer"), "value": Number(42)}}
 
 === Find with Query === Found documents: Array [Object {"active": Object
 {"type": String("Boolean"), "value": Bool(true)}, "id":
-String("9hpDtjuAr6r_1ZJwIbbUVwXC0Js6E5l03hDTlejTBFm75bLYVrkM6aGyfxkijbN5HwQgndIdDChmC-tQ0w7Z8A"),
+String("dhOOtWqhD_rFGIGyi9UnXaDCF35Ib8Fyge2_iNUv7Q2aoTKDrG1AR8e6P6_V63ra5QeSIx3qqfOpSNNDjdpV7A"),
 "name": Object {"type": String("String"), "value": String("Test Record")},
 "value": Object {"type": String("Integer"), "value": Number(42)}}]
 
 === Update Document === Updated: Object {"active": Object {"type":
 String("Boolean"), "value": Bool(true)}, "id":
-String("9hpDtjuAr6r_1ZJwIbbUVwXC0Js6E5l03hDTlejTBFm75bLYVrkM6aGyfxkijbN5HwQgndIdDChmC-tQ0w7Z8A"),
+String("dhOOtWqhD_rFGIGyi9UnXaDCF35Ib8Fyge2_iNUv7Q2aoTKDrG1AR8e6P6_V63ra5QeSIx3qqfOpSNNDjdpV7A"),
 "name": Object {"type": String("String"), "value": String("Updated Record")},
 "value": Object {"type": String("Integer"), "value": Number(100)}}
 
 === Delete Document === Deleted document
 
 ✓ All CRUD operations completed successfully Finished `dev` profile [unoptimized
-+ debuginfo] target(s) in 0.15s Running `target/debug/examples/simple_websocket`
++ debuginfo] target(s) in 0.08s Running `target/debug/examples/simple_websocket`
 ✓ Authentication successful
 
 === Inserting Test Data === ✓ Inserted test record:
-"xHB7dOzhn-TURJ68KMxUhViza0AENh17KfL1vjmYJsMyjVX49kQaqRZqLD_AbCoe-BrfQx-JZokRamE6b0Vm3Q"
+"ChsE4hhtNg8BkHvjsfyGVK_RCbVHQx8IaoOx1Vo0vx5l_0yuETorylmHzekR4I61txQOtNqmD1ntnmwC4zO4Nw"
 
 === Connecting to WebSocket === ✓ WebSocket connected
 
 === Querying Data via WebSocket === Response: { "payload": { "data": [ {
 "active": { "type": "Boolean", "value": true }, "id":
-"xHB7dOzhn-TURJ68KMxUhViza0AENh17KfL1vjmYJsMyjVX49kQaqRZqLD_AbCoe-BrfQx-JZokRamE6b0Vm3Q",
+"ChsE4hhtNg8BkHvjsfyGVK_RCbVHQx8IaoOx1Vo0vx5l_0yuETorylmHzekR4I61txQOtNqmD1ntnmwC4zO4Nw",
 "name": { "type": "String", "value": "WebSocket Test Record" }, "value": {
 "type": "Integer", "value": 42 } } ] }, "type": "Success" } ✓ Retrieved 1
 record(s) via WebSocket
 
 ✓ WebSocket example completed successfully Finished `dev` profile [unoptimized +
-debuginfo] target(s) in 0.10s Running `target/debug/examples/batch_operations` ✓
+debuginfo] target(s) in 0.09s Running `target/debug/examples/batch_operations` ✓
 Authentication successful
 
 === Batch Insert === ✓ Batch inserted 5 records ✓ Verified: Found 5 total
@@ -82,10 +82,10 @@ debuginfo] target(s) in 0.08s Running
 `target/debug/examples/collection_management` ✓ Authentication successful
 
 === Create Collection (via insert) === Collection created with first record:
-"6pLz3KZlcc8xEqoVTwyIMmskgT-BowJwy1A9VvMzrOWG5mHmLQSom6NSnQrIf5CTodOWYixbSBNaACA3WG8tAA"
+"W87MEHvTLJHZcpJmswqvjzGvo8Ta5YyAooOfP8gkZ64UmBV1Ys7Uk1cBWkjStNB8H\_\_uQgCOrzI42Rej_ZRtjw"
 
 === List Collections === Total collections: 4 Sample collections:
-["demo_collection", "websocket_test", "test_collection", "batch_users"]
+["test_collection", "demo_collection", "websocket_test", "batch_users"]
 
 === Count Documents === Document count: 1
 
@@ -98,7 +98,7 @@ profile [unoptimized + debuginfo] target(s) in 0.09s Running
 `target/debug/examples/document_ttl` ✓ Authentication successful
 
 === Insert Document with TTL (1 hour) === ✓ Inserted document:
-"DuYw9RORUb64nW-fHnceeh1ccZrTTOxSxtwveqn6Un4iOD09pTMMDvTzfxcSPnE6sFPMXJaxSInNSI6MiWmtpg"
+"BqOmf2l6NkYyqiualTGHVL1JHH0-8wCZnazGi52cI95DthS380XzVCDwHPDL2EC8evZzQa-hfQIX1PWySsslEA"
 
 === Insert Document with TTL (5 minutes) === ✓ Inserted document: null
 
@@ -113,13 +113,19 @@ profile [unoptimized + debuginfo] target(s) in 0.09s Running
 `target/debug/examples/websocket_ttl` ✓ Authentication successful
 
 === Insert Test Data with TTL === ✓ Inserted document with TTL:
-String("XqwPlBLUsD98yk8OYTMaH77EV6gGm74aklYivnPMAQdYyo7RA_G5O4J4W74ZKuYo1ViyqkaYqoVwodjmqghcig")
+String("5PY1faZP6u2NUUGhStuthfyTyKiPJuiWxaFfLO_akbwAO0gAeKPdYyq1AUqcJ_OugwbikmhepzFj37a-ppi-BQ")
 
 === Query via WebSocket === ✓ WebSocket connected ✓ Retrieved 1 record(s) via
 WebSocket
 
-✓ WebSocket TTL example completed successfully Finished `dev` profile
-[unoptimized + debuginfo] target(s) in 0.10s Running
+✓ WebSocket TTL example completed successfully warning: function
+`complex_filter_function` is never used --> examples/http_functions.rs:206:10 |
+206 | async fn complex_filter_function() -> Result<(),
+Box<dyn std::error::Error>> { | ^^^^^^^^^^^^^^^^^^^^^^^ | = note:
+`#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `ekodb-examples` (example "http_functions") generated 1 warning
+Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.09s Running
 `target/debug/examples/http_functions` 🚀 ekoDB Scripts Example (Rust/HTTP)
 
 📋 Setting up test data... ✅ Test data ready
@@ -127,22 +133,23 @@ WebSocket
 📝 Example 1: Simple Query Function with Filter
 
 ✅ Script saved:
-E6QTwL66IK0gUE_e_YIvyUx5UcYehdSKQHYJ1z63f6sCDyhFOFPKQ2MaGTYHQfo3EuiiX_vFUNitaQnIb_ngZA
+qG6WltbvbX6s_zgkIAtU3bGU6vljI7ba3qaUkAVpUB3lEudYpKZk2IL-GDflkJNHzA1s37gqt37dnZ64kX3phw
 📊 Found 5 active users
 
-📝 Example 2: Complex Filter with Multiple Conditions
+📝 Example 2: Parameterized Pagination with Limit/Skip
 
 ✅ Script saved:
-T-315lEXcqYM-c2OOM9z0zXtKr8xGqoLmf2lrInlzxk4eJBqSqXOql_ks2IXg5BB-Qjbi8MxB9Fx3lMQfyLzoQ
-📊 Found 3 users (status=active, score>50, sorted by score)
+"4vXYOFYSNrROaAGa23H1to2RcVRIwIZTcL4tWboMbgBuEiKmncKIo0AXzVGl2v2EmY_Ew46woxY-luTa0Id-Hw"
+📊 Page 1: Found 3 users (limit=3, skip=0) 📊 Page 2: Found 2 users (limit=3,
+skip=3)
 
-📝 Example 3: Multi-Stage Pipeline (Query → Group → Calculate)
+📝 Example 4: Multi-Stage Pipeline (Query → Group → Calculate)
 
 ✅ Script saved:
-qeUYORRBXFTFMTwwnhYU1relS6Jzt-4oSO4aElOfW0P0Xgi0HoIOoOFFKX5d95wpFNoXoc0TJ6Dkx6p5Uafkzw
+xvgLG4Evw7NN9bPyw6PbMGjuqXatrgdvd4HZXwQUUp4wsY7_uAzMSAhy5oiY29N13ac_8Bh1AqgwjJAWbbzkJQ
 📊 Pipeline Results: Filtered (age>20) → Grouped by status → 2 groups
-{"avg_score":60.0,"count":5,"max_score":100,"status":"active"}
 {"avg_score":50.0,"count":5,"max_score":90,"status":"inactive"}
+{"avg_score":60.0,"count":5,"max_score":100,"status":"active"}
 
 📝 Example 4: Function Management
 
@@ -153,16 +160,16 @@ Script deleted
 use either ID or label
 
 ✅ All examples completed! Finished `dev` profile [unoptimized + debuginfo]
-target(s) in 0.09s Running `target/debug/examples/transactions` ✓ Authentication
+target(s) in 0.10s Running `target/debug/examples/transactions` ✓ Authentication
 successful
 
 === Setup: Creating Test Accounts === Created Alice: $1000 - ID:
-FN2T2VRD3r7q-88MvCk05_mbNNiL9IASdcOy5l18LWn6a6cFUX7UnlIgm3HJ2DvZHzQTeCfpwF6ZBAykc5jLJg
+WCsHaANZe2serZq8feQupb9usDNxAzPpaiam_I21PLWQHMajcGsU1gDA1U0Unj51HqDMR4KJlwrjPGMmmK17dw
 Created Bob: $500 - ID:
-FfQA4GZZBZ9F5AyhAFs9H2btnxUguQq6ioBypE0k9sCA0DMfUcEvg2BhP9QvJcCRkt29LpH-rD9nzE4N1Nb95g
+t5TcTrYemsTjv-KjCOD-pTQcD-s563BIu8RAdjOi22g1Hs-px3lfwCW2Bv0lfRTBf1dXskCCvzrzTnMtsd56xA
 
 === Example 1: Begin Transaction === Transaction ID:
-f5763029-07e1-4adb-bf65-c95d0d829dea
+da989f9d-2cc0-4a16-82d5-21966339a498
 
 === Example 2: Operations with transaction_id === Updated Alice: $1000 → $800
 Updated Bob: $500 → $700
@@ -175,49 +182,47 @@ Updated Bob: $500 → $700
 {"type":"Integer","value":700}
 
 === Example 5: Rollback === New transaction:
-ce4dea53-0649-431d-ad6e-91ae6fc4843d Updated Bob: $700 → $600 (in transaction) ✓
+e17be52e-ebd9-4046-abfb-55629f7bb14f Updated Bob: $700 → $600 (in transaction) ✓
 Transaction rolled back Bob after rollback: {"type":"Integer","value":700}
 
 === Cleanup === ✓ Deleted test accounts
 
 ✓ All transaction examples completed ✅ [32mRust direct examples complete![0m 🛠️
 [36mBuilding client library...[0m cargo build -p ekodb_client Finished `dev`
-profile [unoptimized + debuginfo] target(s) in 0.08s ✅ [32mClient build
+profile [unoptimized + debuginfo] target(s) in 0.09s ✅ [32mClient build
 complete![0m 🧪 [36mRunning Rust client library examples...[0m Finished `dev`
 profile [unoptimized + debuginfo] target(s) in 0.08s Running
 `target/debug/examples/client_simple_crud` ✓ Client created (token exchange
 happens automatically)
 
 === Insert Document === Inserted: Record { fields: {"id":
-String("VEYHUYoPB5zglTy32HMFRlZ3hxx7ZeAE3BNhE5ouJc_ALeN-RjYQwZjzyALZgAfbGqHimHjfEDFGw7Ytr_jAag")}
+String("DBmHbbG5uifFBbGqYbEwmSBXxPRTN47rk1TcUJOv190ZzHO96wCpVmWey5qdzGy9L-3-7fyUOUpW2DSelNTpag")}
 }
 
-=== Find by ID === Found: Record { fields: {"value": Object({"type":
-String("Integer"), "value": Integer(42)}), "id":
-String("VEYHUYoPB5zglTy32HMFRlZ3hxx7ZeAE3BNhE5ouJc_ALeN-RjYQwZjzyALZgAfbGqHimHjfEDFGw7Ytr_jAag"),
-"active": Object({"value": Boolean(true), "type": String("Boolean")}), "name":
-Object({"value": String("Test Record"), "type": String("String")})} }
+=== Find by ID === Found: Record { fields: {"active": Object({"type":
+String("Boolean"), "value": Boolean(true)}), "id":
+String("DBmHbbG5uifFBbGqYbEwmSBXxPRTN47rk1TcUJOv190ZzHO96wCpVmWey5qdzGy9L-3-7fyUOUpW2DSelNTpag"),
+"name": Object({"type": String("String"), "value": String("Test Record")}),
+"value": Object({"value": Integer(42), "type": String("Integer")})} }
 
-=== Find with Query === Found documents: [Record { fields: {"value":
-Object({"type": String("Integer"), "value": Integer(42)}), "name":
-Object({"type": String("String"), "value": String("Test Record")}), "active":
-Object({"value": Boolean(true), "type": String("Boolean")}), "id":
-String("VEYHUYoPB5zglTy32HMFRlZ3hxx7ZeAE3BNhE5ouJc_ALeN-RjYQwZjzyALZgAfbGqHimHjfEDFGw7Ytr_jAag")}
-}]
+=== Find with Query === Found documents: [Record { fields: {"name":
+Object({"type": String("String"), "value": String("Test Record")}), "id":
+String("DBmHbbG5uifFBbGqYbEwmSBXxPRTN47rk1TcUJOv190ZzHO96wCpVmWey5qdzGy9L-3-7fyUOUpW2DSelNTpag"),
+"active": Object({"value": Boolean(true), "type": String("Boolean")}), "value":
+Object({"type": String("Integer"), "value": Integer(42)})} }]
 
-=== Update Document === Updated: Record { fields: {"value": Object({"type":
-String("Integer"), "value": Integer(100)}), "active": Object({"type":
-String("Boolean"), "value": Boolean(true)}), "name": Object({"value":
-String("Updated Record"), "type": String("String")}), "id":
-String("VEYHUYoPB5zglTy32HMFRlZ3hxx7ZeAE3BNhE5ouJc_ALeN-RjYQwZjzyALZgAfbGqHimHjfEDFGw7Ytr_jAag")}
-}
+=== Update Document === Updated: Record { fields: {"id":
+String("DBmHbbG5uifFBbGqYbEwmSBXxPRTN47rk1TcUJOv190ZzHO96wCpVmWey5qdzGy9L-3-7fyUOUpW2DSelNTpag"),
+"name": Object({"type": String("String"), "value": String("Updated Record")}),
+"active": Object({"value": Boolean(true), "type": String("Boolean")}), "value":
+Object({"type": String("Integer"), "value": Integer(100)})} }
 
 === Delete Document === Deleted document
 
 === Cleanup === ✓ Deleted collection
 
 ✓ All CRUD operations completed successfully Finished `dev` profile [unoptimized
-+ debuginfo] target(s) in 0.09s Running
++ debuginfo] target(s) in 0.10s Running
 `target/debug/examples/client_batch_operations` ✓ Client created
 
 === Batch Insert (via multiple inserts) === ✓ Inserted 5 records ✓ Verified:
@@ -251,15 +256,15 @@ deleted (not found)
 === Delete Multiple Keys === ✓ Deleted 3 keys
 
 ✓ All KV operations completed successfully Finished `dev` profile [unoptimized +
-debuginfo] target(s) in 0.08s Running
+debuginfo] target(s) in 0.09s Running
 `target/debug/examples/client_collection_management` ✓ Client created
 
 === Create Collection (via insert) === Collection created with first record:
-"am3VYRYLKCI1_NONWR13x1DrAoM94Nyi5cLxtVYteAPf7ECTIylaIj-8dyHqMvVhJBqTitRnHeTsVKk7_pKlNw"
+"KzKFoSQXphAgx36BhKjxK2fjOp3TUAze9eSLaMA6iZJYWJ9PTmxb5l2GRDK0h2JfUQYnSJEaK9uaPfkEuAhSZw"
 
 === List Collections === Total collections: 9 Sample collections:
-["client_collection_management_rust", "websocket_test", "test_collection",
-"ttl_cache", "batch_users"]
+["test_collection", "ws_ttl_test", "ttl_cache", "websocket_test",
+"scripts__ek0_bench"]
 
 === Count Documents === Document count: 1
 
@@ -270,14 +275,14 @@ debuginfo] target(s) in 0.08s Running
 === Verify Deletion === Collection still exists: false
 
 ✓ All collection management operations completed successfully Finished `dev`
-profile [unoptimized + debuginfo] target(s) in 0.09s Running
+profile [unoptimized + debuginfo] target(s) in 0.13s Running
 `target/debug/examples/client_document_ttl` ✓ Client created
 
 === Insert Document with TTL (1 hour) === ✓ Inserted document:
-"g67v9Au*kCuYzrr-UDVUwTsJTRNE44MTrl9hO*-kWlIR2IrF0MS9_1v5b1UkXLR23fGVL2R0i50lmmYSbzm58A"
+"cMtSDKS9T1KoeJ-qsLlUghMKB_D1_PzeSs7FNcnSVmoQz2LLXx8pyEQ9voXBGJNCThCz2AKAcUxJ3Q1BKq0Byw"
 
 === Insert Document with TTL (5 minutes) === ✓ Inserted document:
-Some(String("OKeDQhZeewb0YqbkMhrfaV3wiYkthtxO_NCzDPJO-a_73fFhCIxlmS7vnpImI4uwlKdpIZfzVhZMwlYAFEBQ0g"))
+Some(String("ReAhOTGZqKWLQh7G1gjttKV8F11D8zPc09IVUxmYBVdSya2SYmQbQRmwONv04zfF3J6HmpI0BXptjaDDS9KX6w"))
 
 === Query Documents === ✓ Found 2 documents with TTL
 
@@ -294,7 +299,7 @@ duration Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.09s
 Running `target/debug/examples/client_simple_websocket` ✓ Client created
 
 === Inserting Test Data === ✓ Inserted test record:
-LpThyF1bQn-9VnFM8507EelrE22jsSMHYutVMPB2yq2HBWDS5oCm1fW36OIWhdhHNDH80JSyuNFcHeu1Do6P6Q
+4FtYjKcOCvlBvM5qB6TEQI7UHxQen2njoV4ApX7LYNj0hN0jhmNYxj-y2XN1v7n5gSHrH57jFnzYq7-szK29vA
 
 === Connecting to WebSocket === ✓ WebSocket connected
 
@@ -308,7 +313,7 @@ debuginfo] target(s) in 0.09s Running
 `target/debug/examples/client_websocket_ttl` ✓ Client created
 
 === Insert Test Data with TTL === ✓ Inserted document with TTL:
-Some(String("6rk1O8GKTdvKuajKQ59DhkDdJSaeeR7tirVtrXzOzSN6pcKL0FhwdRQJngyn_oagdEc4Zqr1Hdz6xIUZgMtJ9g"))
+Some(String("A01YtYBYMqlG-6ZHMR3f39ywxQw5n7qOx3GZ6B9I0lM4luC6BkP7y0FHfMmvqGJV-rQv4L5prEgNa8iQewD3Dg"))
 
 === Query via WebSocket === ✓ WebSocket connected ✓ Retrieved 1 record(s) via
 WebSocket Record 1: 4 fields
@@ -326,22 +331,22 @@ Example ===
 
 === Simple Equality Query === ✓ Found 3 active users
 
-- Some(Object({"value": String("David"), "type": String("String")}))
+- Some(Object({"value": String("Bob"), "type": String("String")}))
+- Some(Object({"type": String("String"), "value": String("David")}))
 - Some(Object({"type": String("String"), "value": String("Alice")}))
-- Some(Object({"type": String("String"), "value": String("Bob")}))
 
 === Range Query (age >= 28 AND age < 35) === ✓ Found 3 users in age range
 
-- Some(Object({"type": String("String"), "value": String("Bob")}))
-- Some(Object({"value": String("David"), "type": String("String")}))
-- Some(Object({"type": String("String"), "value": String("Eve")}))
+- Some(Object({"value": String("Bob"), "type": String("String")}))
+- Some(Object({"value": String("Eve"), "type": String("String")}))
+- Some(Object({"type": String("String"), "value": String("David")}))
 
 === IN Operator === ✓ Found 4 users with status active or pending
 
-- Some(Object({"type": String("String"), "value": String("David")}))
-- Some(Object({"type": String("String"), "value": String("Eve")}))
-- Some(Object({"value": String("Alice"), "type": String("String")}))
+- Some(Object({"value": String("David"), "type": String("String")}))
 - Some(Object({"value": String("Bob"), "type": String("String")}))
+- Some(Object({"type": String("String"), "value": String("Alice")}))
+- Some(Object({"value": String("Eve"), "type": String("String")}))
 
 === NOT IN Operator === ✓ Found 4 users not inactive
 
@@ -352,13 +357,13 @@ Example ===
 === Complex Query (active AND age >= 28 AND score > 1500) === ✓ Found 2 users
 matching all conditions
 
-- Some(Object({"type": String("String"), "value": String("David")}))
 - Some(Object({"value": String("Bob"), "type": String("String")}))
+- Some(Object({"type": String("String"), "value": String("David")}))
 
 === OR Query === ✓ Found 2 users with age < 28 OR age > 32
 
+- Some(Object({"value": String("Charlie"), "type": String("String")}))
 - Some(Object({"type": String("String"), "value": String("Alice")}))
-- Some(Object({"type": String("String"), "value": String("Charlie")}))
 
 === Sorted Query (by score descending) === ✓ Top 3 users by score:
 
@@ -368,7 +373,7 @@ matching all conditions
 
 === Pagination (page 2, size 2) === ✓ Page 2 results:
 
-- Some(Object({"type": String("String"), "value": String("Charlie")}))
+- Some(Object({"value": String("Charlie"), "type": String("String")}))
 - Some(Object({"value": String("David"), "type": String("String")}))
 
 === NOT Operator === ✓ Found 4 users NOT inactive
@@ -398,11 +403,11 @@ matching all conditions
 === Field-Specific Search === ✓ Found 4 results in title/description
 
 1. Score: 4.0000 Title: Some(String("Machine Learning Basics")) Matched:
-   ["description.value", "description", "title", "title.value"]
+   ["title.value", "title", "description.value", "description"]
 2. Score: 2.0000 Title: Some(String("Python for Data Science")) Matched:
    ["description.value", "description"]
 3. Score: 1.0000 Title: Some(String("Rust Programming")) Matched:
-   ["description.value", "description"]
+   ["description", "description.value"]
 4. Score: 1.0000 Title: Some(String("Database Design")) Matched: ["description",
    "description.value"]
 
@@ -431,19 +436,19 @@ Example ===
 'schema_client_rust' with schema
 
 === Inserting Valid Documents === ✓ Inserted user 1:
-Some(String("puigsNDOGrGUPoMMhVun08YWBTYD5fqJddBLRdiDKif2T0pnCuYxzRmj8wGZ_LfaNGEUf9APZw6ej4YzMigZTw"))
+Some(String("IBnU75j14AX0rZrOOdKwyNl1BgmyHUJTPkHP2z14l7ZERlnI0-6D8pgH826os_3xdfWZpfhyuPzQQMK-fL8m_g"))
 ✓ Inserted user 2:
-Some(String("M0aKwQgK1wzIl2v4Eiq4hfVk1W_bcBLBXB06FbE1m6mgRiEehRx-AAxsLrofcdZTOdWg4nzkFjGkh7kFOJIg4g"))
+Some(String("lWxKRJaIaftdF-uKJUzQQSe7CICXIxUiQPfO26EIDHa0FyXiSrpVFP_EGhTBXkaRD-V4uI228dmUJEAiRmiCnA"))
 
 === Getting Schema === ✓ Schema for schema_client_rust:
 
-- status: String
 - title: String (required)
 - age: Integer
+- status: String
 - email: String (required)
 
-=== Listing Collections === ✓ Total collections: 9 Sample: ["websocket_test",
-"test_collection", "schema_client_rust", "ttl_cache", "batch_users"]
+=== Listing Collections === ✓ Total collections: 9 Sample: ["test_collection",
+"ws_ttl_test", "ttl_cache", "websocket_test", "scripts__ek0_bench"]
 
 === Cleanup === ✓ Deleted collection
 
@@ -457,8 +462,8 @@ Example ===
 === Example 1: Single collection join (users with departments) === ✓ Found 2
 users with department data
 
-- Alice Johnson: Engineering
 - Bob Smith: Sales
+- Alice Johnson: Engineering
 
 === Example 2: Join with filtering === ✓ Found 1 users in Engineering
 
@@ -466,8 +471,8 @@ users with department data
 
 === Example 3: Join with user profiles === ✓ Found 2 users with profile data
 
-- Alice Johnson: Senior Software Engineer
 - Bob Smith: Sales Manager
+- Alice Johnson: Senior Software Engineer
 
 === Example 4: Join orders with user data === ✓ Found 2 completed orders
 
@@ -489,86 +494,86 @@ example.com emails
 === Inserting Sample Data === ✓ Inserted 3 sample documents
 
 === Creating Chat Session === ✓ Created session:
-wFcIqUdFKFba7_NRR2SD1v1j68swGE6y6e1ZCGgA8_XfIMj_dJ_fXiQhjVuSR3TrnICo0OW2clU5xYAVpYChpw
+pya1NJ3sd_plhrdNkxjV2UR64G7fwYPWoMMYOLD9nKmXIYUpiHjhWAWx9vDsNgnjfiUhdknf53UZWjg0-GZM8Q
 
 === Sending Chat Message === Message ID:
-C0-xT-i8QsiGVRK35wxEqa74O6j2i1oKJwhRcNsHRfrvWpx3ZR9Cukxed1vJcDyZaSI8J10IDdO4vmqxRG3_9Q
+6mUbAnWWP7xySzErHBfLJFLyMnn5sEB6dq1wvFvpZXW0Kxf1A12w--OLr5s6wYDROi1OXtgN9lY6qm_lBFTz-Q
 
-=== AI Response === Response 1: I'm sorry, but the provided context does not
-contain any specific information about ekoDB or its features. Could you please
-provide more detailed context or specific information about ekoDB so I can
-assist you better?
+=== AI Response === Response 1: I'm sorry, but the context provided doesn't seem
+to include any specific information about ekoDB or its features. Could you
+provide additional details or context?
 
 === Context Used (3 snippets) ===
 
-Snippet 1: Collection: client_chat_basic_rust Score: 0.6333 Matched Fields:
+Snippet 1: Collection: client*chat_basic_rust Score: 0.6333 Matched Fields:
 ["content", "category", "title"] Record: Object {"category": Object {"type":
 String("String"), "value": String("features")}, "content": Object {"type":
 String("String"), "value": String("The chat feature allows you to query your
 database using natural language and get AI-powered responses with relevant
 context.")}, "id":
-String("140V9N3Adn8F3R4VAlAOKFifb7O6NjHAY4CTAbC_SS6Eo1c46skUFwkM1fPIXHsLjDFn9rJRISj07m6PTO7Bmg"),
+String("aR*-YWMJxfsMMocF_HftJzsh8H5IeQB1yqwEKOS0QStZ59KG-QNGFSZ3rzVsTuxCQK33g7OdcKGg7ITH11WQ5A"),
 "title": Object {"type": String("String"), "value": String("AI Chat
 Integration")}}
 
 Snippet 2: Collection: client_chat_basic_rust Score: 0.5222 Matched Fields:
-["title", "category", "content"] Record: Object {"category": Object {"type":
+["category", "content", "title"] Record: Object {"category": Object {"type":
 String("String"), "value": String("features")}, "content": Object {"type":
 String("String"), "value": String("ekoDB supports full-text search, vector
 search, and hybrid search with automatic context retrieval.")}, "id":
-String("oZ3W7ZOv4-vXFWHsucoq4JKXH50LnwNwRjPhkNUvik9ZOj-KAzBhD-Fn-wsCseFgX1p_iikfWKCgey4sAHOHvw"),
+String("dg9lDAysuqoWyQSgEfkuSHYRSw-Gf8rDJbsmqdwZCw5x0_YaIdu-EsFX8qovy_gKI9LCS5r5-dLEMjurpYsVKg"),
 "title": Object {"type": String("String"), "value": String("Search Features")}}
 
 Snippet 3: Collection: client_chat_basic_rust Score: 0.5222 Matched Fields:
-["content", "title"] Record: Object {"category": Object {"type":
+["title", "content"] Record: Object {"category": Object {"type":
 String("String"), "value": String("documentation")}, "content": Object {"type":
 String("String"), "value": String("ekoDB is a high-performance database with
 intelligent caching, real-time capabilities, and AI integration.")}, "id":
-String("k73_B1RmCsSizvNnU2tCgkf0vcqDIbWS3CsHIxpV-oJLxzVInxb_YferBigqsL32pso13bRLFJoiTdQVIQ2_qw"),
+String("ANEo73JoIvE_hw0LKIy96Buwwmd_9iVu6tPu9zFg5x_yVZHibwbxGBZFOej5foZaRTKra4YvZxmyg42AfQnSIA"),
 "title": Object {"type": String("String"), "value": String("Introduction to
 ekoDB")}}
 
-Execution Time: 3316ms
+Execution Time: 1746ms
 
 === Cleanup === ✓ Deleted collection
 
 ✓ Chat completed successfully Finished `dev` profile [unoptimized + debuginfo]
-target(s) in 0.08s Running `target/debug/examples/client_chat_sessions` ===
+target(s) in 0.10s Running `target/debug/examples/client_chat_sessions` ===
 ekoDB Chat Session Management Example ===
 
 === Inserting Sample Data === ✓ Inserted sample product
 
 === Creating Chat Session === ✓ Created session:
-ibO8oA4VdNKJx8MlQKtRtIuVB5WanPjnMLOrJSIIietcdTJk5n1aMoIgHOY00veFNThz80mq1tJMflxUHEmqEg
-=== Sending Messages === ✓ Message 1 sent Response: I'm sorry, but the context
-provided does not contain specific information about any available products.
-Could you please provide more details or clarify your request?
+Ols-WO2aHQOC7MeahkVVK-T9Tc-ADE9GzB9ZhrbriEtpGVorP3vLjzQyHBQ_eURfu6VZqSeNJB5cO1Ge2zKbGg
+=== Sending Messages === ✓ Message 1 sent Response: Apologies for the
+inconvenience, but the context provided does not include specific information
+about any available products. Could you please provide more details or specify
+the type of product you're interested in?
 
-✓ Message 2 sent Response: Apologies, but there doesn't seem to be enough
-context provided to answer your question about price. Could you please specify
-the product you're referring to?
+✓ Message 2 sent Response: Apologies, but the context provided does not include
+any information about the price. Could you please provide more details or
+specify which product you're asking about?
 
 === Retrieving Session Messages === ✓ Retrieved 4 messages
 
 === Updating Session === ✓ Session updated
 
 === Branching Session === ✓ Created branch:
-uviWL2Srz8QZeCTNv4s0-R3MPBnpYgdoWQFHyavzhrFBmvuDWiKEsVlqFlOSrBL26sUMn1YFryESBo0SebA0xw
+D0AXRCt_BDhCQLvFj_OcguQ6qvLyHxhYnl1yCK2eQgEvMht1H7hUygEpobfgTATt8qnw9IF685Gu1CKjqLIIrA
 Parent:
-ibO8oA4VdNKJx8MlQKtRtIuVB5WanPjnMLOrJSIIietcdTJk5n1aMoIgHOY00veFNThz80mq1tJMflxUHEmqEg
+Ols-WO2aHQOC7MeahkVVK-T9Tc-ADE9GzB9ZhrbriEtpGVorP3vLjzQyHBQ_eURfu6VZqSeNJB5cO1Ge2zKbGg
 
 === Listing Sessions === ✓ Found 3 sessions Session 1:
-uviWL2Srz8QZeCTNv4s0-R3MPBnpYgdoWQFHyavzhrFBmvuDWiKEsVlqFlOSrBL26sUMn1YFryESBo0SebA0xw
+D0AXRCt_BDhCQLvFj_OcguQ6qvLyHxhYnl1yCK2eQgEvMht1H7hUygEpobfgTATt8qnw9IF685Gu1CKjqLIIrA
 (Untitled) Session 2:
-ibO8oA4VdNKJx8MlQKtRtIuVB5WanPjnMLOrJSIIietcdTJk5n1aMoIgHOY00veFNThz80mq1tJMflxUHEmqEg
+Ols-WO2aHQOC7MeahkVVK-T9Tc-ADE9GzB9ZhrbriEtpGVorP3vLjzQyHBQ_eURfu6VZqSeNJB5cO1Ge2zKbGg
 (Untitled) Session 3:
-wFcIqUdFKFba7_NRR2SD1v1j68swGE6y6e1ZCGgA8_XfIMj_dJ_fXiQhjVuSR3TrnICo0OW2clU5xYAVpYChpw
+pya1NJ3sd_plhrdNkxjV2UR64G7fwYPWoMMYOLD9nKmXIYUpiHjhWAWx9vDsNgnjfiUhdknf53UZWjg0-GZM8Q
 (Untitled)
 
 === Getting Session Details === ✓ Session details retrieved Messages: 4
 
 === Deleting Branch Session === ✓ Deleted branch session:
-uviWL2Srz8QZeCTNv4s0-R3MPBnpYgdoWQFHyavzhrFBmvuDWiKEsVlqFlOSrBL26sUMn1YFryESBo0SebA0xw
+D0AXRCt_BDhCQLvFj_OcguQ6qvLyHxhYnl1yCK2eQgEvMht1H7hUygEpobfgTATt8qnw9IF685Gu1CKjqLIIrA
 
 === Cleanup === ✓ Deleted collection
 
@@ -580,16 +585,17 @@ Example ===
 === Inserting Sample Data === ✓ Inserted sample product
 
 === Creating Chat Session === ✓ Created session:
-8S0tYVoRFBTY0zxngkWkaKQL-lOSZ-PC01APteclqfDQsKXloEQit3Oi0eLt-Mm7C1Q4fenm5vZBuLlNraTilA
+II_0e-ST7101df8Llt2jXRrlC0NaIYztnpvpt4fnqreoJWYa61XKxcczpdTh0owcs9tz3mM2T07oPh1i9zi4BA
 
 === Sending Initial Message === ✓ Message sent Response: I'm sorry, but the
-context provided does not contain specific information about any available
-products. Could you please provide more details or context?
+context provided doesn't contain specific information about any available
+products. Could you please provide more details or specify the type of products
+you're interested in?
 
 ✓ Second message sent === Feature 1: Regenerate AI Response === ✓ Message
-regenerated New response: Apologies, but the context provided does not include
+regenerated New response: Apologies, but the provided context does not include
 information on the price of ekoDB. I recommend checking the official website or
-contacting the seller for the most accurate and up-to-date price.
+contacting the seller for the most accurate and up-to-date pricing.
 
 === Feature 2: Edit Message === ✓ Message content updated
 
@@ -599,7 +605,7 @@ contacting the seller for the most accurate and up-to-date price.
 ✓ Message unmarked as forgotten
 
 === Feature 4: Merge Chat Sessions === ✓ Created second session:
-DZrN-AQV9Nn4wOTelR2KA6397oce29THpcBtxbI_iT2QOQo1yaK92LZIYuZGB_sN1pUrtH1Cg8FTgApuh7BRoA
+Y9oeEuI0Dmbz-mFP_WrCEsZDbKYoKGSpek0DIqaEDWl5ia3L5pUftCBVIKBw4dtX5sMlhoqqhoK5Dj-TltDRgg
 ✓ Sent message in second session ✓ Sessions merged successfully Total messages
 in merged session: 4
 
@@ -619,19 +625,19 @@ in merged session: 4
 📝 Example 1: Simple Query Script
 
 ✅ Script saved:
-5YLeo1S6KjsVnMk4j8F-BkPIaQdwTUSODHQgJlo4YsqIJt-4xSUUs8ktUjbrFjGIcsupdXqHf8UXCGdgvAyBOQ
+p71bhspCeVh_y7rxLwV_0DODan3UtHtjqpJsoa3eZvjtc6ZaDMjxZ0eQnIr\_\_dpxUtnLQNXBQH4tG4duIm3dzg
 📊 Found 20 active users
 
 📝 Example 2: Parameterized Script
 
 ✅ Script saved:
-82PQ7OrjCrgaH6MP8SAi4R0GAyzBDdItHpCbmrxrYZgGHEusz05fvushTxLOdzd6dzJKKPrhTIxpIbAFCKX6lQ
+70mgZLd7nqYym7mpi5T9m3lVxNobCL447lB3yEf5rCyOpXIck0okWXJUZtOYX1rM4optyf1JCErqyI2RfSt4Sg
 📊 Found 20 users (limited)
 
 📝 Example 3: Aggregation Script
 
 ✅ Script saved:
-aWGzIv6K1qdVtrsEN3hzWRu_IXQnD1LKnIzG6CQlmfXBxVfYOPvphIZr8reYAHqh5DJOgn1EtYDx8SOolM8JmA
+zi5_XmAPbt4abXIvxUq70qG_rfz-P-EtvPGsx7DLfVRSFN-i7fei53qICxVHYR9KR9Hkv9kr_Q8Bo182Fyw3Fg
 📊 Statistics: 2 groups
 
 📝 Example 4: Script Management

@@ -103,64 +103,68 @@ async def simple_query_function(session, token):
     return save_result["id"]
 
 
-async def complex_filter_function(session, token):
-    """Example 2: Complex Filter with Multiple Conditions"""
-    print("📝 Example 2: Complex Filter with Multiple Conditions\n")
+async def parameterized_pagination_function(session, token):
+    """Example 2: Parameterized Pagination with Limit/Skip"""
+    print("📝 Example 2: Parameterized Pagination with Limit/Skip\n")
 
     function2 = {
-        "label": "get_high_scoring_active_users",
-        "name": "Get High Scoring Active Users",
+        "label": "get_active_users_paginated",
+        "name": "Get Active Users (Paginated)",
         "version": "1.0",
-        "parameters": {},
+        "parameters": {
+            "page_size": {
+                "type": "Integer",
+                "required": False,
+                "default": 5,
+            },
+            "page_offset": {
+                "type": "Integer",
+                "required": False,
+                "default": 0,
+            },
+        },
         "functions": [
             {
                 "type": "Query",
                 "collection": "users",
                 "filter": {
-                    "type": "Logical",
+                    "type": "Condition",
                     "content": {
-                        "operator": "And",
-                        "expressions": [
-                            {
-                                "type": "Condition",
-                                "content": {
-                                    "field": "status",
-                                    "operator": "Eq",
-                                    "value": "active",
-                                },
-                            },
-                            {
-                                "type": "Condition",
-                                "content": {
-                                    "field": "score",
-                                    "operator": "Gt",
-                                    "value": 50,
-                                },
-                            },
-                        ],
+                        "field": "status",
+                        "operator": "Eq",
+                        "value": "active",
                     },
                 },
                 "sort": [{"field": "score", "ascending": False}],
-                "limit": 10,
+                "limit": "{{page_size}}",
+                "skip": "{{page_offset}}",
             }
         ],
-        "tags": ["users", "filter"],
+        "tags": ["users", "pagination"],
     }
 
     save_result = await request(session, "POST", "/api/functions", function2, token)
     print(f"✅ Script saved: {save_result['id']}")
 
-    # Call the function
+    # Call with page 1 (first 3 users)
     call_result = await request(
         session,
         "POST",
-        "/api/functions/get_high_scoring_active_users",
-        {},
+        "/api/functions/get_active_users_paginated",
+        {"page_size": 3, "page_offset": 0},
         token,
     )
-    print(
-        f"📊 Found {len(call_result['records'])} users (status=active, score>50, sorted by score)\n"
+    print(f"📊 Page 1: Found {len(call_result['records'])} users (limit=3, skip=0)\n")
+
+    # Call with page 2 (next 3 users)
+    call_result = await request(
+        session,
+        "POST",
+        "/api/functions/get_active_users_paginated",
+        {"page_size": 3, "page_offset": 3},
+        token,
     )
+    print(f"📊 Page 2: Found {len(call_result['records'])} users (limit=3, skip=3)\n")
 
 
 async def aggregation_function(session, token):
@@ -268,7 +272,7 @@ async def main():
 
             await setup_test_data(session, token)
             get_active_users_id = await simple_query_function(session, token)
-            await complex_filter_function(session, token)
+            await parameterized_pagination_function(session, token)
             user_stats_id = await aggregation_function(session, token)
             await function_management(
                 session, token, get_active_users_id, user_stats_id

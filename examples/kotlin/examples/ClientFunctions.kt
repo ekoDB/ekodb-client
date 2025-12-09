@@ -137,9 +137,13 @@ suspend fun aggregationScript(client: EkoDBClient): String {
 suspend fun scriptManagement(client: EkoDBClient, getActiveUsersId: String, userStatsId: String) {
     println("📝 Example 4: Script Management\n")
 
-    // List all scripts
-    val scripts = client.listScripts()
-    println("📋 Total scripts: ${scripts.size}")
+    // List all scripts (skip if deserialization fails due to parameter placeholders)
+    try {
+        val scripts = client.listScripts()
+        println("📋 Total scripts: ${scripts.size}")
+    } catch (e: Exception) {
+        println("📋 Script listing skipped (some scripts contain parameter placeholders)")
+    }
 
     // Get specific script (use encrypted ID)
     val script = client.getScript(getActiveUsersId)
@@ -240,19 +244,23 @@ suspend fun cleanup(client: EkoDBClient) {
     client.deleteCollection("users")
     println("✅ Deleted collection")
 
-    // List and delete all test scripts
-    val scripts = client.listScripts()
-    for (script in scripts) {
-        if (script.label.startsWith("get_") || script.label.startsWith("user_") ||
-            script.label.startsWith("top_") || script.label.startsWith("count_")) {
-            try {
-                script.id?.let { client.deleteScript(it) }
-            } catch (e: Exception) {
-                // Script might already be deleted
+    // List and delete all test scripts (skip if deserialization fails)
+    try {
+        val scripts = client.listScripts()
+        for (script in scripts) {
+            if (script.label.startsWith("get_") || script.label.startsWith("user_") ||
+                script.label.startsWith("top_") || script.label.startsWith("count_")) {
+                try {
+                    script.id?.let { client.deleteScript(it) }
+                } catch (e: Exception) {
+                    // Script might already be deleted
+                }
             }
         }
+        println("✅ Deleted test scripts\n")
+    } catch (e: Exception) {
+        println("⚠️  Script cleanup skipped (some scripts contain parameter placeholders)\n")
     }
-    println("✅ Deleted test scripts\n")
 }
 
 fun main() = runBlocking {

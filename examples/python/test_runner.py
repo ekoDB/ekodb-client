@@ -139,6 +139,7 @@ async def main():
             examples_dir / "websocket_ttl.py",
             base_dir / "http_functions.py",
             base_dir / "transactions.py",
+            base_dir / "crud_scripts.py",
         ]
 
         log(f"\n=== Running {len(examples)} Examples ===", "YELLOW")

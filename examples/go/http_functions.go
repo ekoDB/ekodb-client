@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 
@@ -170,47 +171,43 @@ func simpleQueryFunction() (string, error) {
 	return saveResult["id"].(string), nil
 }
 
-func complexFilterFunction() error {
-	fmt.Println("📝 Example 2: Complex Filter with Multiple Conditions\n")
+func parameterizedPaginationFunction() error {
+	fmt.Println("📝 Example 2: Parameterized Pagination with Limit/Skip\n")
 
 	function2 := map[string]interface{}{
-		"label":      "get_high_scoring_active_users",
-		"name":       "Get High Scoring Active Users",
-		"version":    "1.0",
-		"parameters": map[string]interface{}{},
+		"label":   "get_active_users_paginated",
+		"name":    "Get Active Users (Paginated)",
+		"version": "1.0",
+		"parameters": map[string]interface{}{
+			"page_size": map[string]interface{}{
+				"type":     "Integer",
+				"required": false,
+				"default":  5,
+			},
+			"page_offset": map[string]interface{}{
+				"type":     "Integer",
+				"required": false,
+				"default":  0,
+			},
+		},
 		"functions": []map[string]interface{}{
 			{
 				"type":       "Query",
 				"collection": "users",
 				"filter": map[string]interface{}{
-					"type": "Logical",
+					"type": "Condition",
 					"content": map[string]interface{}{
-						"operator": "And",
-						"expressions": []map[string]interface{}{
-							{
-								"type": "Condition",
-								"content": map[string]interface{}{
-									"field":    "status",
-									"operator": "Eq",
-									"value":    "active",
-								},
-							},
-							{
-								"type": "Condition",
-								"content": map[string]interface{}{
-									"field":    "score",
-									"operator": "Gt",
-									"value":    50,
-								},
-							},
-						},
+						"field":    "status",
+						"operator": "Eq",
+						"value":    "active",
 					},
 				},
 				"sort":  []map[string]interface{}{{"field": "score", "ascending": false}},
-				"limit": 10,
+				"limit": "{{page_size}}",
+				"skip":  "{{page_offset}}",
 			},
 		},
-		"tags": []string{"users", "filter"},
+		"tags": []string{"users", "pagination"},
 	}
 
 	saveResultRaw, err := request("POST", "/api/functions", function2)
@@ -220,14 +217,29 @@ func complexFilterFunction() error {
 	saveResult := saveResultRaw.(map[string]interface{})
 	fmt.Printf("✅ Script saved: %s\n", saveResult["id"])
 
-	// Call the function
-	callResultRaw, err := request("POST", "/api/functions/get_high_scoring_active_users", map[string]interface{}{})
+	// Call with page 1 (first 3 users)
+	callResultRaw, err := request("POST", "/api/functions/get_active_users_paginated", map[string]interface{}{
+		"page_size":   3,
+		"page_offset": 0,
+	})
 	if err != nil {
 		return err
 	}
 	callResult := callResultRaw.(map[string]interface{})
 	records := callResult["records"].([]interface{})
-	fmt.Printf("📊 Found %d users (status=active, score>50, sorted by score)\n\n", len(records))
+	fmt.Printf("📊 Page 1: Found %d users (limit=3, skip=0)\n", len(records))
+
+	// Call with page 2 (next 3 users)
+	callResultRaw, err = request("POST", "/api/functions/get_active_users_paginated", map[string]interface{}{
+		"page_size":   3,
+		"page_offset": 3,
+	})
+	if err != nil {
+		return err
+	}
+	callResult = callResultRaw.(map[string]interface{})
+	records = callResult["records"].([]interface{})
+	fmt.Printf("📊 Page 2: Found %d users (limit=3, skip=3)\n\n", len(records))
 
 	return nil
 }
@@ -358,18 +370,16 @@ func main() {
 
 	getActiveUsersID, err := simpleQueryFunction()
 	if err != nil {
-		fmt.Printf("❌ Error: %v\n", err)
-		os.Exit(1)
+		log.Fatal(err)
 	}
 
-	if err := complexFilterFunction(); err != nil {
-		fmt.Printf("Error: %v\n", err)
-		return
+	if err := parameterizedPaginationFunction(); err != nil {
+		log.Fatal(err)
 	}
 
 	userStatsID, err := aggregationFunction()
 	if err != nil {
-		fmt.Printf("❌ Error: %v\n", err)
+		log.Fatal(err)
 		os.Exit(1)
 	}
 

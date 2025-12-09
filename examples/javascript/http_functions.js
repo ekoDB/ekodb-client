@@ -117,60 +117,66 @@ async function simpleQueryFunction() {
   return saveResult.id;
 }
 
-async function complexFilterFunction() {
-  console.log("📝 Example 2: Complex Filter with Multiple Conditions\n");
+async function parameterizedPaginationFunction() {
+  console.log("📝 Example 2: Parameterized Pagination with Limit/Skip\n");
 
   const function2 = {
-    label: "get_high_scoring_active_users",
-    name: "Get High Scoring Active Users",
+    label: "get_active_users_paginated",
+    name: "Get Active Users (Paginated)",
     version: "1.0",
-    parameters: {},
+    parameters: {
+      page_size: {
+        type: "Integer",
+        required: false,
+        default: 5,
+      },
+      page_offset: {
+        type: "Integer",
+        required: false,
+        default: 0,
+      },
+    },
     functions: [
       {
         type: "Query",
         collection: "users",
         filter: {
-          type: "Logical",
+          type: "Condition",
           content: {
-            operator: "And",
-            expressions: [
-              {
-                type: "Condition",
-                content: {
-                  field: "status",
-                  operator: "Eq",
-                  value: "active",
-                },
-              },
-              {
-                type: "Condition",
-                content: {
-                  field: "score",
-                  operator: "Gt",
-                  value: 50,
-                },
-              },
-            ],
+            field: "status",
+            operator: "Eq",
+            value: "active",
           },
         },
         sort: [{ field: "score", ascending: false }],
-        limit: 10,
+        limit: "{{page_size}}",
+        skip: "{{page_offset}}",
       },
     ],
-    tags: ["users", "filter"],
+    tags: ["users", "pagination"],
   };
 
   const saveResult = await request("POST", "/api/functions", function2);
   console.log(`✅ Script saved: ${saveResult.id}`);
 
-  // Call the function
-  const callResult = await request(
+  // Call with page 1 (first 3 users)
+  let callResult = await request(
     "POST",
-    "/api/functions/get_high_scoring_active_users",
-    {},
+    "/api/functions/get_active_users_paginated",
+    { page_size: 3, page_offset: 0 }
   );
   console.log(
-    `📊 Found ${callResult.records.length} users (status=active, score>50, sorted by score)\n`,
+    `📊 Page 1: Found ${callResult.records.length} users (limit=3, skip=0)`
+  );
+
+  // Call with page 2 (next 3 users)
+  callResult = await request(
+    "POST",
+    "/api/functions/get_active_users_paginated",
+    { page_size: 3, page_offset: 3 }
+  );
+  console.log(
+    `📊 Page 2: Found ${callResult.records.length} users (limit=3, skip=3)\n`
   );
 }
 
@@ -269,7 +275,7 @@ async function main() {
   try {
     await setupTestData();
     const getActiveUsersId = await simpleQueryFunction();
-    await complexFilterFunction();
+    await parameterizedPaginationFunction();
     const userStatsId = await aggregationFunction();
     await functionManagement(getActiveUsersId, userStatsId);
 
