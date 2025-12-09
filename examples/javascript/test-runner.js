@@ -127,7 +127,8 @@ async function main() {
             path.join(__dirname, 'ttl-caching', 'document_ttl.js'),
             path.join(__dirname, 'ttl-caching', 'websocket_ttl.js'),
             path.join(__dirname, 'http_functions.js'),
-            path.join(__dirname, 'transactions.js')
+            path.join(__dirname, 'transactions.js'),
+            path.join(__dirname, 'crud_scripts.js')
         ];
         
         log(`\n=== Running ${examples.length} Examples ===`, 'yellow');

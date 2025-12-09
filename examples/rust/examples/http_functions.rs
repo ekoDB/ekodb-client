@@ -137,8 +137,74 @@ async fn simple_query_function() -> Result<String, Box<dyn std::error::Error>> {
     Ok(id.to_string())
 }
 
+async fn parameterized_pagination_function() -> Result<(), Box<dyn std::error::Error>> {
+    println!("📝 Example 2: Parameterized Pagination with Limit/Skip\n");
+
+    let function2 = json!({
+        "label": "get_active_users_paginated",
+        "name": "Get Active Users (Paginated)",
+        "version": "1.0",
+        "parameters": {
+            "page_size": {
+                "type": "Integer",
+                "required": false,
+                "default": 5
+            },
+            "page_offset": {
+                "type": "Integer",
+                "required": false,
+                "default": 0
+            }
+        },
+        "functions": [{
+            "type": "Query",
+            "collection": "users",
+            "filter": {
+                "type": "Condition",
+                "content": {
+                    "field": "status",
+                    "operator": "Eq",
+                    "value": "active"
+                }
+            },
+            "sort": [{"field": "score", "ascending": false}],
+            "limit": "{{page_size}}",
+            "skip": "{{page_offset}}"
+        }],
+        "tags": ["users", "pagination"]
+    });
+
+    let save_result = request("POST", "/api/functions", Some(function2)).await?;
+    println!("✅ Script saved: {}", save_result["id"]);
+
+    // Call with page 1 (first 3 users)
+    let call_result = request(
+        "POST",
+        "/api/functions/get_active_users_paginated",
+        Some(json!({"page_size": 3, "page_offset": 0})),
+    )
+    .await?;
+    let records = call_result["records"].as_array().unwrap();
+    println!("📊 Page 1: Found {} users (limit=3, skip=0)", records.len());
+
+    // Call with page 2 (next 3 users)
+    let call_result = request(
+        "POST",
+        "/api/functions/get_active_users_paginated",
+        Some(json!({"page_size": 3, "page_offset": 3})),
+    )
+    .await?;
+    let records = call_result["records"].as_array().unwrap();
+    println!(
+        "📊 Page 2: Found {} users (limit=3, skip=3)\n",
+        records.len()
+    );
+
+    Ok(())
+}
+
 async fn complex_filter_function() -> Result<(), Box<dyn std::error::Error>> {
-    println!("📝 Example 2: Complex Filter with Multiple Conditions\n");
+    println!("📝 Example 3: Complex Filter with Multiple Conditions\n");
 
     let function2 = json!({
         "label": "get_high_scoring_active_users",
@@ -201,7 +267,7 @@ async fn complex_filter_function() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 async fn aggregation_function() -> Result<String, Box<dyn std::error::Error>> {
-    println!("📝 Example 3: Multi-Stage Pipeline (Query → Group → Calculate)\n");
+    println!("📝 Example 4: Multi-Stage Pipeline (Query → Group → Calculate)\n");
 
     let function3 = json!({
         "label": "user_stats",
@@ -319,7 +385,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     setup_test_data().await?;
     let get_active_users_id = simple_query_function().await?;
-    complex_filter_function().await?;
+    parameterized_pagination_function().await?;
     let user_stats_id = aggregation_function().await?;
     function_management(&get_active_users_id, &user_stats_id).await?;
 

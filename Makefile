@@ -15,7 +15,7 @@ YELLOW := \033[33m
 RED := \033[31m
 RESET := \033[0m
 
-.PHONY: all build build-release build-client build-python-client build-typescript-client test test-ci test-client test-examples test-examples-direct test-examples-client test-examples-rust test-examples-python test-examples-go test-examples-typescript test-examples-javascript test-examples-transactions clean check fmt fmt-rust fmt-rust-client fmt-rust-examples fmt-python fmt-go fmt-typescript fmt-md format install install-rust install-python install-typescript install-go setup install-hooks deps-check deps-update deploy-client deploy-client-rust deploy-client-py deploy-client-py-simple deploy-client-go deploy-client-ts bump-version bump-client-py docs-client
+.PHONY: all build build-release build-client build-python-client build-typescript-client test test-ci test-client test-examples test-examples-direct test-examples-client test-examples-rust test-examples-python test-examples-go test-examples-typescript test-examples-javascript test-examples-transactions test-examples-scripts test-examples-scripts-crud clean check fmt fmt-rust fmt-rust-client fmt-rust-examples fmt-python fmt-go fmt-typescript fmt-md format install install-rust install-python install-typescript install-go setup install-hooks deps-check deps-update deploy-client deploy-client-rust deploy-client-py deploy-client-py-simple deploy-client-go deploy-client-ts bump-version bump-client-py docs-client
 
 # ASCII Banner for ekoDB
 BANNER := \
@@ -79,6 +79,8 @@ help:
 	@echo "     $(GREEN)make test-examples-js-direct$(RESET) - JavaScript direct HTTP/WebSocket"
 	@echo "     $(GREEN)make test-examples-js-client$(RESET) - JavaScript client library"
 	@echo "  💳 $(GREEN)make test-examples-transactions$(RESET) - Run transaction examples (Python, Go, JS, Rust, Kotlin)"
+	@echo "  📜 $(GREEN)make test-examples-scripts$(RESET) - Run all Scripts/Functions examples (http_functions + crud_scripts)"
+	@echo "  📚 $(GREEN)make test-examples-scripts-crud$(RESET) - Run CRUD Scripts examples only (all languages)"
 	@echo ""
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "🚀 $(CYAN)DEPLOYMENT$(RESET)"
@@ -379,6 +381,50 @@ test-examples-transactions:
 	@echo ""
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "✅ $(GREEN)All transaction examples completed successfully!$(RESET)"
+
+# ============================================================================
+# Scripts/Functions Examples (http_functions + crud_scripts)
+# ============================================================================
+test-examples-scripts:
+	@echo ""
+	@echo "📜 $(CYAN)Running Scripts/Functions Examples (Direct API)...$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo ""
+	@echo "🐍 $(YELLOW)Python Scripts (http_functions + crud_scripts)...$(RESET)"
+	@cd examples/python && python3 http_functions.py && python3 crud_scripts.py
+	@echo ""
+	@echo "🔷 $(YELLOW)Go Scripts (http_functions + crud_scripts)...$(RESET)"
+	@cd examples/go && go run http_functions.go && go run crud_scripts.go
+	@echo ""
+	@echo "📦 $(YELLOW)JavaScript Scripts (http_functions + crud_scripts)...$(RESET)"
+	@cd examples/javascript && node http_functions.js && node crud_scripts.js
+	@echo ""
+	@echo "🦀 $(YELLOW)Rust Scripts (http_functions + crud_scripts)...$(RESET)"
+	@cd examples/rust && cargo run --example http_functions --quiet && cargo run --example crud_scripts --quiet
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "✅ $(GREEN)All Scripts/Functions examples completed successfully!$(RESET)"
+
+# Run only CRUD Scripts examples
+test-examples-scripts-crud:
+	@echo ""
+	@echo "📚 $(CYAN)Running CRUD Scripts Examples (Direct API)...$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo ""
+	@echo "🐍 $(YELLOW)Python CRUD Scripts...$(RESET)"
+	@cd examples/python && python3 crud_scripts.py
+	@echo ""
+	@echo "🔷 $(YELLOW)Go CRUD Scripts...$(RESET)"
+	@cd examples/go && go run crud_scripts.go
+	@echo ""
+	@echo "📦 $(YELLOW)JavaScript CRUD Scripts...$(RESET)"
+	@cd examples/javascript && node crud_scripts.js
+	@echo ""
+	@echo "🦀 $(YELLOW)Rust CRUD Scripts...$(RESET)"
+	@cd examples/rust && cargo run --example crud_scripts --quiet
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "✅ $(GREEN)All CRUD Scripts examples completed successfully!$(RESET)"
 
 # ============================================================================
 # Rust Examples (both direct + client)
