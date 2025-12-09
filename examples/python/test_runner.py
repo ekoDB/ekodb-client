@@ -137,6 +137,7 @@ async def main():
             examples_dir / "collection_management.py",
             examples_dir / "document_ttl.py",
             examples_dir / "websocket_ttl.py",
+            base_dir / "http_functions.py",
             base_dir / "transactions.py",
         ]
 
