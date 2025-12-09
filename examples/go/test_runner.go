@@ -113,6 +113,7 @@ func main() {
 		"ttl-caching/collection_management.go",
 		"ttl-caching/document_ttl.go",
 		"ttl-caching/websocket_ttl.go",
+		"transactions.go",
 	}
 
 	log(fmt.Sprintf("\n=== Running %d Examples ===", len(examples)), colorYellow)
