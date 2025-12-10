@@ -26,8 +26,9 @@ String("dhOOtWqhD_rFGIGyi9UnXaDCF35Ib8Fyge2_iNUv7Q2aoTKDrG1AR8e6P6_V63ra5QeSIx3q
 === Delete Document === Deleted document
 
 ✓ All CRUD operations completed successfully Finished `dev` profile [unoptimized
-+ debuginfo] target(s) in 0.08s Running `target/debug/examples/simple_websocket`
-✓ Authentication successful
+
+- debuginfo] target(s) in 0.08s Running `target/debug/examples/simple_websocket`
+  ✓ Authentication successful
 
 === Inserting Test Data === ✓ Inserted test record:
 "ChsE4hhtNg8BkHvjsfyGVK_RCbVHQx8IaoOx1Vo0vx5l_0yuETorylmHzekR4I61txQOtNqmD1ntnmwC4zO4Nw"
@@ -222,8 +223,9 @@ Object({"type": String("Integer"), "value": Integer(100)})} }
 === Cleanup === ✓ Deleted collection
 
 ✓ All CRUD operations completed successfully Finished `dev` profile [unoptimized
-+ debuginfo] target(s) in 0.10s Running
-`target/debug/examples/client_batch_operations` ✓ Client created
+
+- debuginfo] target(s) in 0.10s Running
+  `target/debug/examples/client_batch_operations` ✓ Client created
 
 === Batch Insert (via multiple inserts) === ✓ Inserted 5 records ✓ Verified:
 Found 5 total records in collection
