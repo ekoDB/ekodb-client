@@ -73,6 +73,22 @@ pip install -r requirements.txt
 - [Batch Operations](performance/batch.py) - Efficient batch operations
 - [Real-time Updates](websocket/realtime.py) - WebSocket-based real-time updates
 
+### AI & RAG Examples
+
+- **[rag_conversation_system.py](rag_conversation_system.py)** - RAG System
+  (NEW)
+
+  ```bash
+  python rag_conversation_system.py
+  ```
+
+  Complete RAG (Retrieval-Augmented Generation) example showing:
+  - Message storage with automatic embeddings
+  - Cross-conversation hybrid search (semantic + keyword)
+  - Context-aware AI responses using search results
+  - Self-improving knowledge base
+  - Dynamic search configurations per conversation
+
 ## Running Examples
 
 1. Start the ekoDB server

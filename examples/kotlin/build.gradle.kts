@@ -13,7 +13,7 @@ repositories {
 
 dependencies {
     // Use the local client library
-    implementation(files("../../ekodb-client-kt/build/libs/ekodb-client-kt-0.2.0.jar"))
+    implementation(files("../../ekodb-client-kt/build/libs/ekodb-client-kt-0.4.0.jar"))
     
     // Kotlin stdlib
     implementation(kotlin("stdlib"))
@@ -52,7 +52,7 @@ application {
 tasks.named<JavaExec>("run") {
     environment("API_BASE_URL", System.getenv("API_BASE_URL") ?: "http://localhost:8080")
     environment("WS_BASE_URL", System.getenv("WS_BASE_URL") ?: "ws://localhost:8080")
-    environment("API_BASE_KEY", System.getenv("API_BASE_KEY") ?: "")
+    environment("API_BASE_KEY", System.getenv("API_BASE_KEY") ?: "a-test-api-key-from-ekodb")
 }
 
 // Add source directory

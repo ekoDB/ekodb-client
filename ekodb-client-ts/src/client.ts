@@ -397,6 +397,14 @@ export class EkoDBClient {
         throw new RateLimitError(retryAfter);
       }
 
+      // Handle unauthorized (401) - try refreshing token
+      if (response.status === 401 && attempt === 0) {
+        console.log("Authentication failed, refreshing token...");
+        await this.refreshToken();
+        // Retry with new token
+        return this.makeRequest<T>(method, path, data, attempt + 1, forceJson);
+      }
+
       // Handle service unavailable (503)
       if (
         response.status === 503 &&
@@ -1019,6 +1027,177 @@ export class EkoDBClient {
    */
   websocket(wsURL: string): WebSocketClient {
     return new WebSocketClient(wsURL, this.token!);
+  }
+
+  // ========== RAG Helper Methods ==========
+
+  /**
+   * Generate embeddings for text using ekoDB's native Functions
+   *
+   * This helper simplifies embedding generation by:
+   * 1. Creating a temporary collection with the text
+   * 2. Running a Script with FindAll + Embed Functions
+   * 3. Extracting and returning the embedding vector
+   * 4. Cleaning up temporary resources
+   *
+   * @param text - The text to generate embeddings for
+   * @param model - The embedding model to use (e.g., "text-embedding-3-small")
+   * @returns Array of floats representing the embedding vector
+   *
+   * @example
+   * ```typescript
+   * const embedding = await client.embed(
+   *   "Hello world",
+   *   "text-embedding-3-small"
+   * );
+   * console.log(`Generated ${embedding.length} dimensions`);
+   * ```
+   */
+  async embed(text: string, model: string): Promise<number[]> {
+    const tempCollection = `embed_temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+    try {
+      // Insert temporary record with the text
+      await this.insert(tempCollection, { text }, undefined);
+
+      // Create Script with FindAll + Embed Functions
+      const tempLabel = `embed_script_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const script: Script = {
+        label: tempLabel,
+        name: "Generate Embedding",
+        description: "Temporary script for embedding generation",
+        version: "1.0",
+        parameters: {},
+        functions: [
+          {
+            type: "FindAll",
+            collection: tempCollection,
+          },
+          {
+            type: "Embed",
+            input_field: "text",
+            output_field: "embedding",
+            model: model,
+          } as any,
+        ],
+        tags: [],
+      };
+
+      // Save and execute the script
+      const scriptId = await this.saveScript(script);
+      const result = await this.callScript(scriptId, undefined);
+
+      // Clean up
+      await this.deleteScript(scriptId).catch(() => {});
+      await this.deleteCollection(tempCollection).catch(() => {});
+
+      // Extract embedding from result
+      if (result.records && result.records.length > 0) {
+        const record = result.records[0];
+        if (record.embedding && Array.isArray(record.embedding)) {
+          return record.embedding as number[];
+        }
+      }
+
+      throw new Error("Failed to extract embedding from result");
+    } catch (error) {
+      // Ensure cleanup even on error
+      await this.deleteCollection(tempCollection).catch(() => {});
+      throw error;
+    }
+  }
+
+  /**
+   * Perform text search without embeddings
+   *
+   * Simplified text search with full-text matching, fuzzy search, and stemming.
+   *
+   * @param collection - Collection name to search
+   * @param queryText - Search query text
+   * @param limit - Maximum number of results to return
+   * @returns Array of matching records
+   *
+   * @example
+   * ```typescript
+   * const results = await client.textSearch(
+   *   "documents",
+   *   "ownership system",
+   *   10
+   * );
+   * ```
+   */
+  async textSearch(
+    collection: string,
+    queryText: string,
+    limit: number,
+  ): Promise<Record[]> {
+    const searchQuery: SearchQuery = {
+      query: queryText,
+      limit,
+    };
+
+    const response = await this.search(collection, searchQuery);
+    return response.results.map((r) => r.record);
+  }
+
+  /**
+   * Perform hybrid search combining text and vector search
+   *
+   * Combines semantic similarity (vector search) with keyword matching (text search)
+   * for more accurate and relevant results.
+   *
+   * @param collection - Collection name to search
+   * @param queryText - Search query text
+   * @param queryVector - Embedding vector for semantic search
+   * @param limit - Maximum number of results to return
+   * @returns Array of matching records
+   *
+   * @example
+   * ```typescript
+   * const embedding = await client.embed(query, "text-embedding-3-small");
+   * const results = await client.hybridSearch(
+   *   "documents",
+   *   query,
+   *   embedding,
+   *   5
+   * );
+   * ```
+   */
+  async hybridSearch(
+    collection: string,
+    queryText: string,
+    queryVector: number[],
+    limit: number,
+  ): Promise<Record[]> {
+    const searchQuery: SearchQuery = {
+      query: queryText,
+      vector: queryVector,
+      limit,
+    };
+
+    const response = await this.search(collection, searchQuery);
+    return response.results.map((r) => r.record);
+  }
+
+  /**
+   * Find all records in a collection with a limit
+   *
+   * Simplified method to query all documents in a collection.
+   *
+   * @param collection - Collection name
+   * @param limit - Maximum number of records to return
+   * @returns Array of records
+   *
+   * @example
+   * ```typescript
+   * const allMessages = await client.findAll("messages", 1000);
+   * console.log(`Found ${allMessages.length} messages`);
+   * ```
+   */
+  async findAllWithLimit(collection: string, limit: number): Promise<Record[]> {
+    const query = new QueryBuilder().limit(limit).build();
+    const results = await this.find(collection, query);
+    return results;
   }
 }
 

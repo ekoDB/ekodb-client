@@ -388,9 +388,10 @@ pub enum Function {
         temperature: Option<f32>,
     },
 
-    /// Generate embeddings
+    /// Generate embeddings for field in records
     Embed {
-        texts: serde_json::Value,
+        input_field: String,
+        output_field: String,
         #[serde(skip_serializing_if = "Option::is_none")]
         model: Option<String>,
     },

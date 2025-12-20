@@ -81,6 +81,7 @@ help:
 	@echo "  💳 $(GREEN)make test-examples-transactions$(RESET) - Run transaction examples (Python, Go, JS, Rust, Kotlin)"
 	@echo "  📜 $(GREEN)make test-examples-scripts$(RESET) - Run all Scripts/Functions examples (http_functions + crud_scripts)"
 	@echo "  📚 $(GREEN)make test-examples-scripts-crud$(RESET) - Run CRUD Scripts examples only (all languages)"
+	@echo "  🤖 $(GREEN)make test-examples-rag$(RESET) - Run RAG Conversation System examples (Rust, Python, TypeScript)"
 	@echo ""
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "🚀 $(CYAN)DEPLOYMENT$(RESET)"
@@ -347,7 +348,7 @@ test-ci:
 # Run all examples (all languages, both direct and client, including transactions)
 test-examples: examples-ls-check
 	@echo "make test-examples" > examples/test-examples.md
-	@$(MAKE) test-examples-rust test-examples-python test-examples-go test-examples-typescript test-examples-javascript test-examples-kotlin 2>&1 | tee -a examples/test-examples.md
+	@$(MAKE) test-examples-rust test-examples-python test-examples-go test-examples-typescript test-examples-javascript test-examples-kotlin test-examples-rag 2>&1 | tee -a examples/test-examples.md
 	@echo "✅ $(GREEN)All integration tests complete!$(RESET)"
 
 # Run direct API examples (using raw HTTP/WebSocket calls, including transactions)
@@ -425,6 +426,99 @@ test-examples-scripts-crud:
 	@echo ""
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "✅ $(GREEN)All CRUD Scripts examples completed successfully!$(RESET)"
+
+# ============================================================================
+# RAG Conversation System Examples
+# ============================================================================
+test-examples-rag:
+	@echo "make test-examples-rag" > test-examples-rag.md
+	@$(MAKE) run-rag-examples 2>&1 | tee -a test-examples-rag.md
+	@echo "✅ $(GREEN)All RAG examples complete! Output saved to test-examples-rag.md$(RESET)"
+
+run-rag-examples:
+	@echo ""
+	@echo "🤖 $(CYAN)RAG Conversation System Examples$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo ""
+	@echo "$(YELLOW)Prerequisites:$(RESET)"
+	@echo "  1. ekoDB server running (make run in ekodb/)"
+	@echo "  2. OPENAI_API_KEY set in server environment"
+	@echo "  3. API_BASE_URL and API_BASE_KEY exported in your shell"
+	@echo ""
+	@echo "$(CYAN)Building Rust client library...$(RESET)"
+	@cd ekodb_client && cargo build --release --quiet
+	@echo "✓ Rust client built"
+	@echo ""
+	@echo "$(CYAN)Building Python client bindings...$(RESET)"
+	@cd ekodb-client-py && maturin build --release --quiet
+	@pip3 install --force-reinstall --quiet ekodb-client-py/target/wheels/ekodb_client-0.4.0-cp38-abi3-macosx_11_0_arm64.whl
+	@echo "✓ Python client built and installed"
+	@echo ""
+	@echo "$(CYAN)Building TypeScript client library...$(RESET)"
+	@cd ekodb-client-ts && npm run build --silent
+	@echo "✓ TypeScript client built"
+	@echo ""
+	@echo "$(CYAN)Installing TypeScript client in examples...$(RESET)"
+	@cd examples/typescript && npm install --silent
+	@echo "✓ TypeScript client installed"
+	@echo ""
+	@echo "$(CYAN)Building TypeScript example...$(RESET)"
+	@cd examples/typescript && npm run build --silent
+	@echo "✓ TypeScript example built"
+	@echo ""
+	@echo "$(CYAN)Building Go client library...$(RESET)"
+	@cd ../ekodb-client-go && go build -o /dev/null . 2>&1 | head -5 || true
+	@echo "✓ Go client built"
+	@echo ""
+	@echo "$(CYAN)Building Go RAG example...$(RESET)"
+	@cd ../ekodb-client-go && go build -o examples/rag_conversation_system examples/rag_conversation_system.go
+	@echo "✓ Go example built"
+	@echo ""
+	@echo "$(CYAN)Building Kotlin client library...$(RESET)"
+	@cd ekodb-client-kt && ./gradlew build -x test --quiet
+	@echo "✓ Kotlin client built"
+	@echo ""
+	@echo "$(CYAN)Building Kotlin RAG example...$(RESET)"
+	@cd examples/kotlin && ./gradlew build -x test --quiet
+	@echo "✓ Kotlin example built"
+	@echo ""
+	@echo "$(CYAN)Running Rust RAG Example...$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@cd examples/rust && cargo run --example rag_conversation_system --quiet
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "$(CYAN)Running Python RAG Example...$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@cd examples/python && python3 rag_conversation_system.py
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "$(CYAN)Running TypeScript RAG Example...$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@cd examples/typescript && node dist/rag_conversation_system.js
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "$(CYAN)Running Go RAG Example...$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@cd ../ekodb-client-go/examples && ./rag_conversation_system
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "$(CYAN)Running Kotlin RAG Example...$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@cd examples/kotlin && export $$(grep -v '^#' .env | grep -v '^$$' | xargs) && ./gradlew run -PmainClass="io.ekodb.client.examples.RagConversationSystemKt" --quiet
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "✅ $(GREEN)RAG Examples Complete!$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo ""
+	@echo "$(GREEN)What you just saw across 5 languages:$(RESET)"
+	@echo "  ✓ Embeddings generated via ekoDB Functions"
+	@echo "  ✓ Hybrid search (semantic + keyword)"
+	@echo "  ✓ Text search with stemming"
+	@echo "  ✓ Cross-conversation context retrieval"
+	@echo "  ✓ Simple client helpers wrapping powerful AI"
+	@echo ""
+	@echo "$(CYAN)Mission: AI for All 🚀$(RESET) - Making RAG accessible to everyone!"
+	@echo ""
 
 # ============================================================================
 # Rust Examples (both direct + client)
