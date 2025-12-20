@@ -25,6 +25,10 @@ pub enum Error {
     #[error("Authentication failed: {0}")]
     Auth(String),
 
+    /// Token expired - can be retried with token refresh
+    #[error("Token expired, please refresh")]
+    TokenExpired,
+
     /// Invalid URL
     #[error("Invalid URL: {0}")]
     InvalidUrl(#[from] url::ParseError),

@@ -523,6 +523,122 @@ impl Client {
         })
     }
 
+    /// Text-only search (full-text search helper)
+    ///
+    /// Args:
+    ///     collection: Collection name
+    ///     query_text: Search query text
+    ///     limit: Maximum number of results
+    fn text_search<'py>(
+        &self,
+        py: Python<'py>,
+        collection: String,
+        query_text: String,
+        limit: usize,
+    ) -> PyResult<&'py PyAny> {
+        let client = self.inner.clone();
+
+        future_into_py::<_, PyObject>(py, async move {
+            let results = client
+                .text_search(&collection, &query_text, limit)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("Text search failed: {}", e)))?;
+
+            Python::with_gil(|py| {
+                let results_json = serde_json::to_value(&results).map_err(|e| {
+                    PyRuntimeError::new_err(format!("Failed to serialize results: {}", e))
+                })?;
+                json_to_pydict(py, &results_json)
+            })
+        })
+    }
+
+    /// Hybrid search (combines text + vector search)
+    ///
+    /// Args:
+    ///     collection: Collection name
+    ///     query_text: Search query text
+    ///     query_vector: List of floats representing the query embedding
+    ///     limit: Maximum number of results
+    fn hybrid_search<'py>(
+        &self,
+        py: Python<'py>,
+        collection: String,
+        query_text: String,
+        query_vector: Vec<f64>,
+        limit: usize,
+    ) -> PyResult<&'py PyAny> {
+        let client = self.inner.clone();
+
+        future_into_py::<_, PyObject>(py, async move {
+            let results = client
+                .hybrid_search(&collection, &query_text, query_vector, limit)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("Hybrid search failed: {}", e)))?;
+
+            Python::with_gil(|py| {
+                let results_json = serde_json::to_value(&results).map_err(|e| {
+                    PyRuntimeError::new_err(format!("Failed to serialize results: {}", e))
+                })?;
+                json_to_pydict(py, &results_json)
+            })
+        })
+    }
+
+    /// Find all records in a collection (with limit)
+    ///
+    /// Args:
+    ///     collection: Collection name
+    ///     limit: Maximum number of records to return
+    fn find_all<'py>(
+        &self,
+        py: Python<'py>,
+        collection: String,
+        limit: usize,
+    ) -> PyResult<&'py PyAny> {
+        let client = self.inner.clone();
+
+        future_into_py::<_, PyObject>(py, async move {
+            let results = client
+                .find_all(&collection, limit)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("Find all failed: {}", e)))?;
+
+            Python::with_gil(|py| {
+                let results_json = serde_json::to_value(&results).map_err(|e| {
+                    PyRuntimeError::new_err(format!("Failed to serialize results: {}", e))
+                })?;
+                json_to_pydict(py, &results_json)
+            })
+        })
+    }
+
+    /// Generate embeddings for text using AI
+    ///
+    /// Args:
+    ///     text: The text to generate embeddings for
+    ///     model: The embedding model to use (e.g., "text-embedding-3-small")
+    fn embed<'py>(
+        &self,
+        py: Python<'py>,
+        text: String,
+        model: String,
+    ) -> PyResult<&'py PyAny> {
+        let client = self.inner.clone();
+
+        future_into_py::<_, PyObject>(py, async move {
+            let embedding = client
+                .embed(&text, &model)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("Embed failed: {}", e)))?;
+
+            Python::with_gil(|py| {
+                let py_list = PyList::new(py, embedding);
+                Ok(py_list.into())
+            })
+        })
+    }
+
     /// Set a key-value pair
     fn kv_set<'py>(
         &self,

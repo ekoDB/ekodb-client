@@ -386,6 +386,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     setup_test_data().await?;
     let get_active_users_id = simple_query_function().await?;
     parameterized_pagination_function().await?;
+    complex_filter_function().await?;
     let user_stats_id = aggregation_function().await?;
     function_management(&get_active_users_id, &user_stats_id).await?;
 

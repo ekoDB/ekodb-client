@@ -116,6 +116,22 @@ yarn install
   npx tsx client_websocket_ttl.ts
   ```
 
+### AI & RAG Examples
+
+- **[rag_conversation_system.ts](rag_conversation_system.ts)** - RAG System
+  (NEW)
+
+  ```bash
+  npx tsx rag_conversation_system.ts
+  ```
+
+  Complete RAG (Retrieval-Augmented Generation) example showing:
+  - Message storage with automatic embeddings
+  - Cross-conversation hybrid search (semantic + keyword)
+  - Context-aware AI responses using search results
+  - Self-improving knowledge base
+  - Dynamic search configurations per conversation
+
 ## Running Examples
 
 1. Start the ekoDB server

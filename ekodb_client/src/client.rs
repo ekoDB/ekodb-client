@@ -58,6 +58,26 @@ impl Client {
         self.http.health_check().await
     }
 
+    /// Execute an operation with automatic token refresh on TokenExpired errors
+    async fn execute_with_token_refresh<F, Fut, T>(&self, mut operation: F) -> Result<T>
+    where
+        F: FnMut(String) -> Fut,
+        Fut: std::future::Future<Output = Result<T>>,
+    {
+        // First attempt with current token
+        let token = self.auth.get_token().await?;
+        match operation(token).await {
+            Ok(result) => Ok(result),
+            Err(Error::TokenExpired) => {
+                // Token expired, refresh and retry once
+                log::debug!("Token expired, refreshing and retrying...");
+                let new_token = self.auth.refresh_token().await?;
+                operation(new_token).await
+            }
+            Err(e) => Err(e),
+        }
+    }
+
     /// Insert a record into a collection
     ///
     /// # Arguments
@@ -93,10 +113,18 @@ impl Client {
         record: Record,
         bypass_ripple: Option<bool>,
     ) -> Result<Record> {
-        let token = self.auth.get_token().await?;
-        self.http
-            .insert(collection, record, bypass_ripple, &token)
-            .await
+        let collection = collection.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let collection = collection.clone();
+            let record = record.clone();
+            let http = http.clone();
+            async move {
+                http.insert(&collection, record, bypass_ripple, &token)
+                    .await
+            }
+        })
+        .await
     }
 
     /// Find records in a collection
@@ -140,10 +168,15 @@ impl Client {
         query: Query,
         bypass_ripple: Option<bool>,
     ) -> Result<Vec<Record>> {
-        let token = self.auth.get_token().await?;
-        self.http
-            .find(collection, query, &token, bypass_ripple)
-            .await
+        let collection = collection.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let collection = collection.clone();
+            let query = query.clone();
+            let http = http.clone();
+            async move { http.find(&collection, query, &token, bypass_ripple).await }
+        })
+        .await
     }
 
     /// Find a single record by ID
@@ -487,6 +520,129 @@ impl Client {
         self.http.search(collection, search_query, &token).await
     }
 
+    /// Text-only search (full-text search)
+    ///
+    /// Convenience method for text search without vectors.
+    ///
+    /// # Arguments
+    ///
+    /// * `collection` - The collection to search
+    /// * `query_text` - The search query text
+    /// * `limit` - Maximum number of results
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # use ekodb_client::Client;
+    /// # async fn example(client: &Client) -> Result<(), ekodb_client::Error> {
+    /// let results = client.text_search("articles", "rust programming", 10).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn text_search(
+        &self,
+        collection: &str,
+        query_text: &str,
+        limit: usize,
+    ) -> Result<Vec<Record>> {
+        let search_query = SearchQuery::new(query_text).limit(limit);
+        let response = self.search(collection, search_query).await?;
+
+        // Convert SearchResult to Record
+        let records: Vec<Record> = response
+            .results
+            .into_iter()
+            .filter_map(|result| serde_json::from_value(result.record).ok())
+            .collect();
+
+        Ok(records)
+    }
+
+    /// Hybrid search (combines text + vector search)
+    ///
+    /// Performs semantic search using both text and vector embeddings.
+    ///
+    /// # Arguments
+    ///
+    /// * `collection` - The collection to search
+    /// * `query_text` - The search query text
+    /// * `query_vector` - The query embedding vector
+    /// * `limit` - Maximum number of results
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # use ekodb_client::Client;
+    /// # async fn example(client: &Client) -> Result<(), ekodb_client::Error> {
+    /// let embedding = vec![0.1, 0.2, 0.3]; // From embed() call
+    /// let results = client.hybrid_search(
+    ///     "articles",
+    ///     "rust programming",
+    ///     embedding,
+    ///     10
+    /// ).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn hybrid_search(
+        &self,
+        collection: &str,
+        query_text: &str,
+        query_vector: Vec<f64>,
+        limit: usize,
+    ) -> Result<Vec<Record>> {
+        let search_query = SearchQuery::new(query_text)
+            .vector(query_vector)
+            .text_weight(0.5)
+            .vector_weight(0.5)
+            .limit(limit);
+
+        let response = self.search(collection, search_query).await?;
+
+        // Convert SearchResult to Record
+        let records: Vec<Record> = response
+            .results
+            .into_iter()
+            .filter_map(|result| serde_json::from_value(result.record).ok())
+            .collect();
+
+        Ok(records)
+    }
+
+    /// Find all records in a collection
+    ///
+    /// Convenience method to retrieve all records (up to a limit).
+    ///
+    /// # Arguments
+    ///
+    /// * `collection` - The collection name
+    /// * `limit` - Maximum number of records to return
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # use ekodb_client::Client;
+    /// # async fn example(client: &Client) -> Result<(), ekodb_client::Error> {
+    /// let all_records = client.find_all("users", 100).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn find_all(&self, collection: &str, limit: usize) -> Result<Vec<Record>> {
+        use crate::types::Query;
+
+        let query = Query {
+            filter: None,
+            sort: None,
+            limit: Some(limit),
+            skip: None,
+            join: None,
+            bypass_cache: None,
+            bypass_ripple: None,
+        };
+
+        self.find(collection, query, None).await
+    }
+
     /// Create a collection with schema
     ///
     /// # Arguments
@@ -706,6 +862,102 @@ impl Client {
         self.http
             .get_chat_message(chat_id, message_id, &token)
             .await
+    }
+
+    /// Generate embeddings for text using AI (via ekoDB Functions)
+    ///
+    /// Uses ekoDB's AI integration to generate vector embeddings for semantic search.
+    /// Requires OPENAI_API_KEY to be set in the ekoDB server environment.
+    ///
+    /// # Arguments
+    ///
+    /// * `text` - The text to generate embeddings for
+    /// * `model` - The embedding model to use (e.g., "text-embedding-3-small")
+    ///
+    /// # Returns
+    ///
+    /// A vector of f64 values representing the embedding
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # use ekodb_client::Client;
+    /// # async fn example(client: &Client) -> Result<(), ekodb_client::Error> {
+    /// let embedding = client.embed("Hello world", "text-embedding-3-small").await?;
+    /// println!("Generated {} dimensions", embedding.len());
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn embed(&self, text: &str, model: &str) -> Result<Vec<f64>> {
+        use crate::functions::{Function, Script};
+        use rust_decimal::prelude::ToPrimitive;
+
+        // Create a temporary collection for embedding generation
+        let temp_collection = format!("embed_temp_{}", uuid::Uuid::new_v4());
+
+        // Insert a temporary record with the text
+        let mut temp_record = Record::new();
+        temp_record.insert("text", text);
+        self.insert(&temp_collection, temp_record, None).await?;
+
+        // Create a Script that loads the record, embeds it, and returns it
+        let temp_label = format!("embed_script_{}", uuid::Uuid::new_v4());
+        let script = Script::new(&temp_label, "Generate Embedding")
+            .with_description("Temporary script for embedding generation")
+            .with_function(Function::FindAll {
+                collection: temp_collection.clone(),
+            })
+            .with_function(Function::Embed {
+                input_field: "text".to_string(),
+                output_field: "embedding".to_string(),
+                model: Some(model.to_string()),
+            });
+
+        // Save and execute the script
+        let script_id = self.save_script(script).await?;
+        let result = self.call_script(&script_id, None).await?;
+
+        // Clean up script and temp collection
+        let _ = self.delete_script(&script_id).await;
+        let _ = self.delete_collection(&temp_collection).await;
+
+        // Extract embedding from result
+        let records = result.records;
+        if !records.is_empty() {
+            if let Some(first_record) = records.first() {
+                // Try to get embedding field
+                if let Some(embedding_field) = first_record.get("embedding") {
+                    // Handle FieldType::Array
+                    if let crate::types::FieldType::Array(arr) = embedding_field {
+                        let embedding: Vec<f64> = arr
+                            .iter()
+                            .filter_map(|v| {
+                                if let crate::types::FieldType::Float(f) = v {
+                                    Some(*f)
+                                } else if let crate::types::FieldType::Number(n) = v {
+                                    match n {
+                                        crate::types::NumberValue::Float(f) => Some(*f),
+                                        crate::types::NumberValue::Integer(i) => Some(*i as f64),
+                                        crate::types::NumberValue::Decimal(d) => d.to_f64(),
+                                    }
+                                } else {
+                                    None
+                                }
+                            })
+                            .collect();
+
+                        if !embedding.is_empty() {
+                            return Ok(embedding);
+                        }
+                    }
+                }
+            }
+        }
+
+        Err(crate::Error::Api {
+            code: 500,
+            message: "Failed to extract embedding from result".to_string(),
+        })
     }
 
     /// Update a chat message

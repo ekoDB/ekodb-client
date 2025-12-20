@@ -253,6 +253,45 @@ All direct examples are in the `ttl-caching/` subdirectories:
 - Multiple isolation levels (ReadCommitted, RepeatableRead, Serializable)
 - Testing with different durability configurations
 
+### 10. RAG Conversation System 🤖
+
+> **NEW:** Complete example of building a self-improving AI system with ekoDB.
+> Demonstrates how ekoDB can power RAG (Retrieval-Augmented Generation)
+> applications with message history and cross-conversation search.
+
+- **Rust**:
+  [rag_conversation_system.rs](./rust/examples/rag_conversation_system.rs)
+- **Python**: [rag_conversation_system.py](./python/rag_conversation_system.py)
+- **TypeScript**:
+  [rag_conversation_system.ts](./typescript/rag_conversation_system.ts)
+
+**Features demonstrated:**
+
+- Store messages with automatic embeddings
+- Hybrid search across all conversations (semantic + keyword)
+- Use search results as context for AI responses (RAG)
+- Dynamic search configurations per conversation
+- Cross-conversation knowledge retrieval
+- Self-improving knowledge base
+
+**What this example shows:**
+
+This demonstrates ekoDB as an **all-in-one backend for AI applications**:
+
+- ✅ Vector search (semantic similarity via HNSW)
+- ✅ Text search (keyword matching)
+- ✅ Hybrid search (best of both worlds)
+- ✅ AI functions (Chat, Embed)
+- ✅ Flexible querying and filtering
+- ✅ No external vector database needed
+
+**Use cases:**
+
+- AI chatbots that learn from conversation history
+- Customer support systems with contextual responses
+- Knowledge bases that surface related information
+- Documentation search with semantic understanding
+
 ## 🏃 Running Examples
 
 ### Individual Examples

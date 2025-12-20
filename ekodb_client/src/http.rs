@@ -903,8 +903,8 @@ impl HttpClient {
                 })
             }
             StatusCode::UNAUTHORIZED => {
-                let error_body: ErrorResponse = response.json().await?;
-                Err(Error::Auth(error_body.message))
+                // Return TokenExpired so client layer can refresh token and retry
+                Err(Error::TokenExpired)
             }
             StatusCode::NOT_FOUND => Err(Error::NotFound),
             StatusCode::TOO_MANY_REQUESTS => {
