@@ -264,6 +264,9 @@ All direct examples are in the `ttl-caching/` subdirectories:
 - **Python**: [rag_conversation_system.py](./python/rag_conversation_system.py)
 - **TypeScript**:
   [rag_conversation_system.ts](./typescript/rag_conversation_system.ts)
+- **Go**: [rag_conversation_system.go](./go/rag_conversation_system.go)
+- **Kotlin**:
+  [RagConversationSystem.kt](./kotlin/examples/RagConversationSystem.kt)
 
 **Features demonstrated:**
 

@@ -26,8 +26,9 @@ String("uKzIQ7icrwktVPAABDxZ9_jrSWgYrUOcZL_X0qORPOa3-mVb_JnYIebXhfzcsElXXFdfRESW
 === Delete Document === Deleted document
 
 ✓ All CRUD operations completed successfully Finished `dev` profile [unoptimized
-+ debuginfo] target(s) in 0.10s Running `target/debug/examples/simple_websocket`
-✓ Authentication successful
+
+- debuginfo] target(s) in 0.10s Running `target/debug/examples/simple_websocket`
+  ✓ Authentication successful
 
 === Inserting Test Data === ✓ Inserted test record:
 "ZcYBdW4BqNkDzf5RbWUTc1jIg4MNTZSmLAIkKJV-qyVNSV9E7XHRzPgh3hNqd7aO-Wc1hgdTsZeNeSg32CNDwg"
@@ -221,8 +222,9 @@ String("aaAyMGqR_9PWOvGvlFpErsEv1qew5_JSbu4ga4CSIj4Sq1rjne6MXko1K7zxijt6Ez6Ij-eI
 === Cleanup === ✓ Deleted collection
 
 ✓ All CRUD operations completed successfully Finished `dev` profile [unoptimized
-+ debuginfo] target(s) in 0.11s Running
-`target/debug/examples/client_batch_operations` ✓ Client created
+
+- debuginfo] target(s) in 0.11s Running
+  `target/debug/examples/client_batch_operations` ✓ Client created
 
 === Batch Insert (via multiple inserts) === ✓ Inserted 5 records ✓ Verified:
 Found 5 total records in collection
