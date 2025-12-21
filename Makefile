@@ -173,18 +173,22 @@ deploy-all: ## Deploy all client libraries (Rust, Python, TypeScript, Kotlin)
 # Version bumping targets
 bump-version:
 	@echo "🔢 $(CYAN)Bumping all client versions...$(RESET)"
-	@echo ""
-	@read -p "Enter new version (e.g., 0.1.3): " NEW_VERSION; \
+	@RUST_VERSION=$$(grep '^version = ' ekodb_client/Cargo.toml | head -1 | cut -d'"' -f2); \
+	PYTHON_VERSION=$$(grep '^version = ' ekodb-client-py/Cargo.toml | head -1 | cut -d'"' -f2); \
+	TS_VERSION=$$(grep '"version":' ekodb-client-ts/package.json | head -1 | cut -d'"' -f4); \
+	KOTLIN_VERSION=$$(grep '^version = ' ekodb-client-kt/build.gradle.kts | head -1 | cut -d'"' -f2); \
+	echo ""; \
+	echo "$(YELLOW)📦 Current versions:$(RESET)"; \
+	echo "  Rust:       $$RUST_VERSION"; \
+	echo "  Python:     $$PYTHON_VERSION"; \
+	echo "  TypeScript: $$TS_VERSION"; \
+	echo "  Kotlin:     $$KOTLIN_VERSION"; \
+	echo ""; \
+	read -p "Enter new version (e.g. current: '$$RUST_VERSION'): " NEW_VERSION; \
 	if [ -z "$$NEW_VERSION" ]; then \
 		echo "$(RED)❌ No version provided$(RESET)"; \
 		exit 1; \
 	fi; \
-	echo ""; \
-	echo "$(YELLOW)📦 Current versions:$(RESET)"; \
-	echo "  Rust:       $$(grep '^version = ' ekodb_client/Cargo.toml | head -1 | cut -d'"' -f2)"; \
-	echo "  Python:     $$(grep '^version = ' ekodb-client-py/Cargo.toml | head -1 | cut -d'"' -f2)"; \
-	echo "  TypeScript: $$(grep '"version":' ekodb-client-ts/package.json | head -1 | cut -d'"' -f4)"; \
-	echo "  Kotlin:     $$(grep '^version = ' ekodb-client-kt/build.gradle.kts | head -1 | cut -d'"' -f2)"; \
 	echo ""; \
 	echo "$(YELLOW)📦 New version: $$NEW_VERSION$(RESET)"; \
 	echo ""; \
@@ -216,6 +220,14 @@ bump-version:
 	echo ""; \
 	echo "$(GREEN)✅ All versions bumped to $$NEW_VERSION$(RESET)"; \
 	echo ""; \
+	echo "$(CYAN)Running make fmt...$(RESET)"; \
+	$(MAKE) fmt; \
+	echo ""; \
+	echo "$(CYAN)Running make build...$(RESET)"; \
+	$(MAKE) build; \
+	echo ""; \
+	echo "$(GREEN)✅ Format and build complete!$(RESET)"; \
+	echo ""; \
 	echo "$(YELLOW)💡 Next steps:$(RESET)"; \
 	echo "  1. Review changes: git diff"; \
 	echo "  2. Commit: git add -A && git commit -m 'Bump version to $$NEW_VERSION'"; \
@@ -224,8 +236,8 @@ bump-version:
 bump-client-py:
 	@echo "🔢 $(CYAN)Bumping Python client version...$(RESET)"
 	@CURRENT_VERSION=$$(grep '^version = ' ekodb-client-py/Cargo.toml | head -1 | cut -d'"' -f2); \
-	echo "Current version: $$CURRENT_VERSION"; \
-	read -p "Enter new version (e.g., 0.1.3): " NEW_VERSION; \
+	echo ""; \
+	read -p "Enter new version (e.g. current version: '$$CURRENT_VERSION'): " NEW_VERSION; \
 	if [ -z "$$NEW_VERSION" ]; then \
 		echo "$(RED)❌ No version provided$(RESET)"; \
 		exit 1; \
