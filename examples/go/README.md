@@ -28,6 +28,22 @@ go mod download
 - [Batch Operations](performance/batch.go) - Efficient batch operations
 - [Real-time Updates](websocket/realtime.go) - WebSocket-based real-time updates
 
+### AI & RAG Examples
+
+- **[rag_conversation_system.go](rag_conversation_system.go)** - RAG System
+
+  ```bash
+  go run rag_conversation_system.go
+  ```
+
+  Complete RAG (Retrieval-Augmented Generation) example showing:
+  - Message storage with automatic embeddings
+  - Cross-conversation hybrid search (semantic + keyword)
+  - Context-aware AI responses using search results
+  - Dynamic search configurations per conversation
+  - Text search with fuzzy matching
+  - Self-improving knowledge base
+
 ## Running Examples
 
 1. Start the ekoDB server
