@@ -13,27 +13,27 @@ found 0 vulnerabilities
 ✅ [32mTypeScript client built![0m 🧪 [36mRunning TypeScript client library
 examples...[0m
 
-added 1 package, removed 1 package, and audited 13 packages in 641ms
+added 1 package, removed 1 package, and audited 13 packages in 812ms
 
 3 packages are looking for funding run `npm fund` for details
 
 found 0 vulnerabilities ✓ Client created (token exchange happens automatically)
 
 === Insert Document === Inserted: { id:
-'mNXDtq_O56G5JgxDURUKp_THNkyxEhoHZ6ZiX5svtDrULzaDK1mziJNMMR1siAp0uWO3Y5auf3OkSFE3ZdJS4g'
+'ry4yL6LgBfo1LDEodz_QvouL6M14P3aBOfs2glCt34rWznw4j0feq9xRZvu60sa02uNq8p861S9tRzn-HL10zA'
 }
 
-=== Find by ID === Found: { active: { value: true, type: 'Boolean' }, id:
-'mNXDtq_O56G5JgxDURUKp_THNkyxEhoHZ6ZiX5svtDrULzaDK1mziJNMMR1siAp0uWO3Y5auf3OkSFE3ZdJS4g',
-value: { value: 42, type: 'Integer' }, name: { type: 'String', value: 'Test
-Record' } }
+=== Find by ID === Found: { id:
+'ry4yL6LgBfo1LDEodz_QvouL6M14P3aBOfs2glCt34rWznw4j0feq9xRZvu60sa02uNq8p861S9tRzn-HL10zA',
+value: { type: 'Integer', value: 42 }, active: { type: 'Boolean', value: true },
+name: { type: 'String', value: 'Test Record' } }
 
 === Find with Query === Found documents: 1
 
-=== Update Document === Updated: { value: { type: 'Integer', value: 100 },
-active: { value: true, type: 'Boolean' }, id:
-'mNXDtq_O56G5JgxDURUKp_THNkyxEhoHZ6ZiX5svtDrULzaDK1mziJNMMR1siAp0uWO3Y5auf3OkSFE3ZdJS4g',
-name: { type: 'String', value: 'Updated Record' } }
+=== Update Document === Updated: { id:
+'ry4yL6LgBfo1LDEodz_QvouL6M14P3aBOfs2glCt34rWznw4j0feq9xRZvu60sa02uNq8p861S9tRzn-HL10zA',
+active: { type: 'Boolean', value: true }, name: { type: 'String', value:
+'Updated Record' }, value: { type: 'Integer', value: 100 } }
 
 === Delete Document === Deleted document
 
@@ -58,7 +58,7 @@ records in collection
 
 === Set Multiple Keys === ✓ Set 3 keys
 
-=== Get Multiple Keys === cache:product:1: { price: 29.99, name: 'Product 1' }
+=== Get Multiple Keys === cache:product:1: { name: 'Product 1', price: 29.99 }
 cache:product:2: { name: 'Product 2', price: 39.989999999999995 }
 cache:product:3: { name: 'Product 3', price: 49.989999999999995 }
 
@@ -70,10 +70,10 @@ deleted (not found)
 ✓ All KV operations completed successfully ✓ Client created
 
 === Create Collection (via insert) === Collection created with first record:
-FCfORvZic6GzUM2chbEgYKZoHETZchIiyOPvto2v0pFD07aJhPd-7DP57tlDtNrn_sWixABELEX_M1LUyJdc3A
+bEzryU5Dj9rXuSINkMWdA4N5AKW0cP9KDNKgqDtxGO1Jql4W903w5vcc8r\_-c0MuTOJETZ7fcvOADYoxO8U2xw
 
 === List Collections === Total collections: 18 Sample collections:
-scripts\_\_ek0_bench,websocket_test,schema_documents_client_py,schema_users_client_go,schema_employees_client_go
+schema_documents_client_py,websocket_test,schema_employees_client_py,client_collection_management_ts,schema_documents_client_go
 
 === Count Documents === Document count: 1
 
@@ -84,10 +84,10 @@ scripts\_\_ek0_bench,websocket_test,schema_documents_client_py,schema_users_clie
 ✓ All collection management operations completed successfully ✓ Client created
 
 === Insert Document with TTL (1 hour) === ✓ Inserted document:
-NMPRK-KpjcR1RipIx0-MKlqNAJAiW99WFB7MJ1gCYJxOAWcquYp7_EeVmB6\_\_WOI5TiP1XGNd5RNVWx5C8N3NA
+oTp5Xnnz4VmDMheWCzStQYIj_9hHuIqIIFrDIxmbX7OA-YW3duqO9e-SmeMvEOtx1ew9xzl57i5fTUFiyGWAVQ
 
 === Insert Document with TTL (5 minutes) === ✓ Inserted document:
-zxJ91zOWW76kXW7JjA9poUil-O_KbjvJFPcBOPt7YaPIZ0HozDnpwP38QR8_Od6V8ZHce4RMLQ927odziIABog
+cG3FFbvAAxYVTGHyr15Fh31Pn07n-vHSkacgfeMV8uEkeolNiZ0QJ00HRE_kOYxX5IpxT4lMXwvoXAm-U5Bhdw
 
 === Query Documents === ✓ Found 2 documents with TTL
 
@@ -103,7 +103,7 @@ zxJ91zOWW76kXW7JjA9poUil-O_KbjvJFPcBOPt7YaPIZ0HozDnpwP38QR8_Od6V8ZHce4RMLQ927odz
 duration ✓ Client created
 
 === Inserting Test Data === ✓ Inserted test record:
-iYJgu7ge66cqydk_c8Hdiypi_iWSEy50Tob14RUl8685TnYKOcyIShjHVyRWlHfNOfiRf_8fpzhMnmEAeBleGA
+\_BQr0wipSXpCriBsRESwcnvZ1tuLErhD0h6yq6kkgabXTSjJXJyWrvA12-CnNghdbwUgGwswt7O20BFeTN_uhA
 
 === Connecting to WebSocket === ✓ WebSocket connected
 
@@ -115,7 +115,7 @@ iYJgu7ge66cqydk_c8Hdiypi_iWSEy50Tob14RUl8685TnYKOcyIShjHVyRWlHfNOfiRf_8fpzhMnmEA
 ✓ WebSocket example completed successfully ✓ Client created
 
 === Insert Test Data with TTL === ✓ Inserted document with TTL:
-5Zk04fBZ7bIzjRlRdcNgxxA-as7obxyo8nWIe7zzFu0jq9K01A9FV5BTVYpORj1frcUcJBsMoZe_T0_e406Vzw
+XSLhSkPG02NAkKTR1vp8zfQTl0ysxNwTpJM8V67NAAZhQoTJw34A9JLSWsT5iC8QnkQneNjS1XAk8nUImjhOlw
 
 === Query via WebSocket === ✓ WebSocket connected ✓ Retrieved 1 record(s) via
 WebSocket Record 1: 5 fields
@@ -130,36 +130,36 @@ duration === ekoDB Chat Basic Example ===
 === Inserting Sample Data === ✓ Inserted 3 sample documents
 
 === Creating Chat Session === ✓ Created session:
-SngZo3l4_KRCF_AHJMU2c6QrBn_b2A61Btx4CnhiPTKepSlxp95VdfMtrOQYBo7JAlO7NjqXbDeHkoHLKBIY-Q
+UsEFZtdDz-pNk9IjXHv5abWj5i_NokGKR6LGHOkqavIaMjdYm_9NkF9jarqHmI4ZF_0Hd01q7vwo1yhCVG71rA
 
 === Sending Chat Message === Message ID:
-AlEmyvlJelEIBHQRPh2AarXZ0NIWayjcRcxmd60i2zdNrVTQuilAzLPQNFHwoSftwW_LYzgtMRH471XmhJpHXw
+WnUOVkbAJfwStxpBCZsLrE_U5AKXSr_51pxrfOg0XKhf_Gk5YgbHB96CUdn7lZFt64bxNz1gq1uSyXMpYGgUTw
 
 === AI Response === I'm sorry, but the context provided does not include
-specific information about the names or prices of any products. Could you please
-provide more detailed information?
+specific product names or their prices. Could you please provide more
+information?
 
 === Context Used (3 snippets) === Snippet 1: { collection:
-'client_chat_basic_ts', record: { name: { value: 'ekoDB Pro', type: 'String' },
-id:
-'ROJ7nld8cpEgVPjgwLNdW3LslcT7Rk5A7-L372j_zceb0JvgOtP6yVEtmr2Z-sxdTRUlGE8GDKGMvuY9-PYkKA',
-price: { value: 299, type: 'Integer' }, description: { value: 'Enterprise
-edition product with advanced features', type: 'String' } }, score:
+'client*chat_basic_ts', record: { price: { value: 299, type: 'Integer' }, id:
+'SjlFTw199zPrxlEHLH2obrQJIINQM1rlVqsaGWRejTrEH*-EmKPviMtyXRDdZHMBlVP1G3tarv4DYf-sVpYjEA',
+description: { value: 'Enterprise edition product with advanced features', type:
+'String' }, name: { type: 'String', value: 'ekoDB Pro' } }, score:
 0.1111111111111111, matched_fields: [ 'description' ] } Snippet 2: { collection:
-'client_chat_basic_ts', record: { price: { type: 'Integer', value: 99 }, id:
-'FLrLO6Ckk_b0uzOsdtDAD31AOArTSO3TQ3jBeWQBHFLCeL6Cr0dPxTNFx3lmo8ogMhbZu8ufQk_41NbBEA45Kw',
+'client_chat_basic_ts', record: { id:
+'6ioduVPc1ShCrLjoEiJwUeqV-NZPJDuy7xbFyaLi3XH8nDuE4VG0oIHolXSILICcD8JzxF7iDdSkVUfaOBiXqw',
+price: { type: 'Integer', value: 499 }, description: { value: 'Fully managed
+cloud database service product', type: 'String' }, name: { value: 'ekoDB Cloud',
+type: 'String' } }, score: 0.1111111111111111, matched_fields: [ 'description' ]
+} Snippet 3: { collection: 'client_chat_basic_ts', record: { name: { value:
+'ekoDB', type: 'String' }, price: { type: 'Integer', value: 99 }, id:
+'CEGpniyINJEpHc2aFeeRU8UaxO9YvhPB464O8WbRPckDoqgd8auwMQEYNnOc1Qk-jekTZBm9Qo6lIcpUkdeu4w',
 description: { type: 'String', value: 'A high-performance database product with
-AI capabilities' }, name: { type: 'String', value: 'ekoDB' } }, score:
-0.1111111111111111, matched_fields: [ 'description' ] } Snippet 3: { collection:
-'client_chat_basic_ts', record: { description: { type: 'String', value: 'Fully
-managed cloud database service product' }, id:
-'\_enem1mL3KL1jmvF4tvFUyyThGG0X2oci4vsmvUiOFB3d_hi9fuZQY2Xxq2RguvcSd9KDRCwRLQNNHq34ahn2w',
-price: { type: 'Integer', value: 499 }, name: { value: 'ekoDB Cloud', type:
-'String' } }, score: 0.1111111111111111, matched_fields: [ 'description' ] }
+AI capabilities' } }, score: 0.1111111111111111, matched_fields: [ 'description'
+] }
 
-Execution Time: 1125ms
+Execution Time: 1465ms
 
-=== Token Usage === Prompt tokens: 312 Completion tokens: 30 Total tokens: 342
+=== Token Usage === Prompt tokens: 313 Completion tokens: 25 Total tokens: 338
 
 === Cleanup === ✓ Deleted collection
 
@@ -168,51 +168,51 @@ Execution Time: 1125ms
 === Inserting Sample Data === ✓ Inserted sample product
 
 === Creating Chat Session === ✓ Created session:
-sgngjXb6_bp3zDAGpPWCq7z6WzaoKH9CC9eysgNqtmhdqnm1UOr7FVJAPkajpQpc4EldHKAoN-ZV1aKTy50mlg
+qdxCGX6CQqVL0KOp5IvBZ1DOfwFllzXUE3ruqjh3qa76afit-K-znu7nje5LoYiBvqmoBFShqNrRWegsuKiDWQ
 
 === Sending Messages === ✓ Message 1 sent Response: I'm sorry, but the context
-provided does not include specific information about any products. Could you
-please provide more details?
+provided does not contain any specific product information. Could you please
+provide more details or specify the type of products you are interested in?
 
-✓ Message 2 sent Response: As an assistant, I'm sorry but I cannot provide the
-price as the context does not specify any product. Could you please provide more
-details or specify the product you're referring to?
+✓ Message 2 sent Response: Apologies, but the context provided does not include
+information about a specific product or its price. Could you please provide more
+details or clarify which product you're interested in?
 
 === Retrieving Session Messages === ✓ Retrieved 4 messages
 
 === Updating Session === ✓ Session updated
 
 === Branching Session === ✓ Created branch:
-TTGkBG2oCVvHaIu1FV9mR2s_dPjniPYvWF8_W_nQr4-LiilCNV5CZ9gD6ztByPueHnfxjB9oWxhKlYUjZ2iWeg
+OMq9gymjNDHDtGiBjvQ8Wzp-WM9_CujYJ0nG1iEQtB7h8raxRtZOIF8BhxnosocbsTohPgkAV4qSxVyJcbyQbQ
 Parent:
-sgngjXb6_bp3zDAGpPWCq7z6WzaoKH9CC9eysgNqtmhdqnm1UOr7FVJAPkajpQpc4EldHKAoN-ZV1aKTy50mlg
+qdxCGX6CQqVL0KOp5IvBZ1DOfwFllzXUE3ruqjh3qa76afit-K-znu7nje5LoYiBvqmoBFShqNrRWegsuKiDWQ
 
 === Listing Sessions === ✓ Found 10 sessions Session 1:
-TTGkBG2oCVvHaIu1FV9mR2s_dPjniPYvWF8_W_nQr4-LiilCNV5CZ9gD6ztByPueHnfxjB9oWxhKlYUjZ2iWeg
+OMq9gymjNDHDtGiBjvQ8Wzp-WM9_CujYJ0nG1iEQtB7h8raxRtZOIF8BhxnosocbsTohPgkAV4qSxVyJcbyQbQ
 (Untitled) Session 2:
-sgngjXb6_bp3zDAGpPWCq7z6WzaoKH9CC9eysgNqtmhdqnm1UOr7FVJAPkajpQpc4EldHKAoN-ZV1aKTy50mlg
+qdxCGX6CQqVL0KOp5IvBZ1DOfwFllzXUE3ruqjh3qa76afit-K-znu7nje5LoYiBvqmoBFShqNrRWegsuKiDWQ
 (Untitled) Session 3:
-SngZo3l4_KRCF_AHJMU2c6QrBn_b2A61Btx4CnhiPTKepSlxp95VdfMtrOQYBo7JAlO7NjqXbDeHkoHLKBIY-Q
+UsEFZtdDz-pNk9IjXHv5abWj5i_NokGKR6LGHOkqavIaMjdYm_9NkF9jarqHmI4ZF_0Hd01q7vwo1yhCVG71rA
 (Untitled) Session 4:
-mwE_UXqsFXQSRhOFX3Nt4hIcexq-iFNBRqP5H0ZO8L9T_DRrXwPd7ew4cQqi6J3KXSiL_LHAuUz3c936tjUDPQ
+zkkyfdmFnYypkAqEgfCEOohsXEn_9nMMpSt8BSnC6ndXSyLLB5M6XsYAkvgkWHqVWOs9he7TmMsMqBQAyNFq_w
 (Untitled) Session 5:
-k4j8sFpfurOcPhiKbDk0sPYzER1PhQ5lKRQOqxTQUqdIR8jGnrA8E6AXhZQQ4dvea02zgRAZYEf7cvpbnGslHg
+l2TKmXvg8rdbBtJammgCyq4Jy3yVgirnt4-pk6LvMOAAockMGXCmZRC6WNzREj_pUUnlVPXFu7miAzmx039jNw
 (Untitled) Session 6:
-l4ZyFBZ3lJRgkSZ4Yf_N1b9Rfvz-q_wNsegBtgwaPpi0efGToI0ktyU3xujoPSikQhQid-3f9P65Q_6az3ddpA
+U6ghpVmbIClTPbe95ajQzICrBvWDayyiU9jU-ksm_xwEYCjPl5G4va407cIuGPo_Qgko-e_P09vaBE52QSd46Q
 (Untitled) Session 7:
-HJUs621HzLEuG-m3hdCO5FpoC-fowMhZgf8gzr4v6o8alHcz6CEqa3dEurUFur_j7nF6j77ahqyjSO2SnTo54A
+j0ZNc8BrbxhRUDgb2Fwn4wHDCMGkwyehQjCVIE_5utey3QYCVumADwRrDHTrdEJPdutXXUHL_TIEvjy9tas1ig
 (Untitled) Session 8:
-s2WcgbfvYLkuAG0qe_pB3ULJxvn0w8ZdFc3XIhqmOeNvr4HdqkK_r0Jj9ctHuD2YITZSbmJy5CUrv8Ky4CQFDg
+Kw60gQSthrKhDTfMuRtxqAQIyQTjGlsO4MUe8y65_FJHpsNu1vRm7nOJP10OKVfro3MzZkmxpCCQUhBStMMfhg
 (Untitled) Session 9:
-jC9n-MLxQZb3--dNvpyK_CMNOi8WJDW2Mm_iNNCGVoKg8l-xArdqbsUhIQcVe-iVPo8jjolL5q5-41gIUXepAQ
+LCHZxuXi5of0QvhmSm0wm2f0WqfUiFUL6umnxwqTLFma71kgbt2sXS9UnwTggcBS-gSdQZqtf466qGxqUAT_hg
 (Untitled) Session 10:
-fcQkL9x-SJ9VPI8YEYzJjcZh5CrpXeQAC8VL_ax38Gh3b2yMZsDgCkIYqONB9cTxXJiRFa5iA6AsALNAhrtwzw
+pC_Hvla-W6X4dKvY4WkJu4fHKzUoGMR1u2f-5FM1qJvi3iON0PEl6jCJjAEIWgpAThKQIjskKUCCOt0Ad51qMQ
 (Untitled)
 
 === Getting Session Details === ✓ Session details retrieved Messages: 4
 
 === Deleting Branch Session === ✓ Deleted branch session:
-TTGkBG2oCVvHaIu1FV9mR2s_dPjniPYvWF8_W_nQr4-LiilCNV5CZ9gD6ztByPueHnfxjB9oWxhKlYUjZ2iWeg
+OMq9gymjNDHDtGiBjvQ8Wzp-WM9_CujYJ0nG1iEQtB7h8raxRtZOIF8BhxnosocbsTohPgkAV4qSxVyJcbyQbQ
 
 === Cleanup === ✓ Deleted collection
 
@@ -222,18 +222,18 @@ Chat Features Example ===
 === Inserting Sample Data === ✓ Inserted sample product
 
 === Creating Chat Session === ✓ Created session:
-5nAF76hbhd4_GP47_LsQ5OFFMV_5oxUVNAM8ZkQVhOJj95jVCxvvNEFGBwfRa9ydXjGkLL4mjUGbu_TXBJt0eg
+GtwYLWVvRmo3_PULzuGdjXxy1YBB9JqJIP8P9HML35Ir-x1UC1UAFiLQ_u0541_Ijm8QY9PCqVER33Of77NBKQ
 
 === Sending Initial Message === ✓ Message sent Response: I'm sorry, but the
-context provided does not contain information about any specific products. Could
-you please provide more details?
+context provided doesn't give information about any specific product. Could you
+please provide more details or specify the type of product you are interested
+in?
 
 ✓ Second message sent
 
 === Feature 1: Regenerate AI Response === ✓ Message regenerated New response:
-Apologies, but the context provided does not include information about the price
-of ekoDB. I recommend checking the product's official website or contacting
-their customer service for accurate pricing details.
+Answer: I'm sorry, but the context provided does not include information on the
+price of ekoDB.
 
 === Feature 2: Edit Message === ✓ Message content updated
 
@@ -243,7 +243,7 @@ their customer service for accurate pricing details.
 ✓ Message unmarked as forgotten
 
 === Feature 4: Merge Chat Sessions === ✓ Created second session:
-4tm8p8PHqserwqg0kX_R7SbM_FrLwlMB3wkaw4zz-h2VoLtY65QidsxhWYR_FHbGtONOjUZS2i0V-1F_c53How
+rS0mxn8V7loz_E6U8ApkdhM_fvNusgU3fGTn0ndjtJ9loLKlpvV6fYhgoVTYkizoh7P3eX-NyWIDxDu0q5YyTg
 ✓ Sent message in second session ✓ Sessions merged successfully Total messages
 in merged session: 4
 
@@ -281,42 +281,42 @@ Setting up test data... ✅ Test data created
 Setting up test data... ✅ Test data created
 
 1. Basic full-text search: Found 2 results
-1. Score: 25.740, Matched: name.value, name, email, email.value
+1. Score: 25.740, Matched: name, email, email.value, name.value
 1. Score: 12.540, Matched: name, name.value
 
 1. Fuzzy search (typo tolerance): Found 4 results with fuzzy matching
-1. Score: 26.400, Matched: bio, title, title.value, bio.value
+1. Score: 26.400, Matched: title, bio, bio.value, title.value
 1. Score: 26.400, Matched: title.value, title, bio, bio.value
-1. Score: 26.400, Matched: title.value, bio.value, title, bio
-1. Score: 26.400, Matched: title.value, title, bio, bio.value
+1. Score: 26.400, Matched: title.value, bio.value, bio, title
+1. Score: 26.400, Matched: title.value, bio, bio.value, title
 
 1. Search with field weights: Found 4 results with weighted fields
-1. Score: 39.600, Matched: title.value, bio, bio.value, title
-1. Score: 39.600, Matched: title.value, bio.value, bio, title
-1. Score: 39.600, Matched: bio.value, bio, title.value, title
-1. Score: 39.600, Matched: title.value, title, bio, bio.value
+1. Score: 39.600, Matched: bio.value, title.value, title, bio
+1. Score: 39.600, Matched: title.value, bio, title, bio.value
+1. Score: 39.600, Matched: bio.value, title, title.value, bio
+1. Score: 39.600, Matched: bio, title.value, bio.value, title
 
 1. Search with minimum score threshold: Found 2 results with score >= 0.3
 1. Score: 13.200, Matched: bio, bio.value
-1. Score: 13.200, Matched: bio.value, bio
+1. Score: 13.200, Matched: bio, bio.value
 
 1. Search with stemming and exact match boosting: Found 1 results (matches:
    work, working, worked)
 1. Score: 13.200, Matched: bio, bio.value
 
 1. Vector search (semantic search): Found 3 semantically similar documents
-1. Score: 0.759, Matched:
-1. Score: 0.755, Matched:
-1. Score: 0.730, Matched:
+1. Score: 0.748, Matched:
+1. Score: 0.742, Matched:
+1. Score: 0.740, Matched:
 
 1. Hybrid search (text + vector): Found 3 results using hybrid search (text +
    vector)
-1. Score: 2.704, Matched: title, content, content.value, title.value
-1. Score: 1.502, Matched: content.value, title.value, content, title
-1. Score: 0.292, Matched:
+1. Score: 2.697, Matched: content.value, title, content, title.value
+1. Score: 1.496, Matched: content, title, content.value, title.value
+1. Score: 0.299, Matched:
 
 1. Case-sensitive search: Found 1 results (case-sensitive)
-1. Score: 26.400, Matched: skills.value, bio, skills, bio.value
+1. Score: 26.400, Matched: bio, skills, skills.value, bio.value
 
 === Cleanup === ✅ Deleted test collections
 
@@ -345,8 +345,8 @@ Setting up sample data... ✅ Sample data created
 1. Single collection join (users with departments): Found 2 users with
    department data:
 
-- Bob Smith: Sales
 - Alice Johnson: Engineering
+- Bob Smith: Sales
 
 2. Join with filtering: Found 1 users in Engineering:
 
@@ -354,8 +354,8 @@ Setting up sample data... ✅ Sample data created
 
 3. Join with user profiles: Found 2 users with profile data:
 
-- Bob Smith: Sales Manager
 - Alice Johnson: Senior Software Engineer
+- Bob Smith: Sales Manager
 
 4. Join orders with user data: Found 2 completed orders:
 
@@ -376,21 +376,21 @@ Setting up sample data... ✅ Sample data created
 📝 Example 1: Simple Query Script
 
 ✅ Script saved:
-lWAL6q3xJ01hpSZE0-EpdQxccTWR7uZ3fcgu1xQgp4fZJvmTVzl8vH4CwSGgX5tRVgrC-N0ZqHPMw6Et1E4r6A
+atDYknsuaAZaWyOq0KhJL0r-jn2IORLVG6txGBdCVR0j9bQc0DqXQGy6ou2VbOLOtUqnr4Oxsj3_f7yyaClknQ
 📊 Found 10 active users
 
 📝 Example 2: Parameterized Script
 
 ✅ Script saved:
-yO6aO86yLtjKxit7Gv9NlhKXbarIF4ir9X4GuPZMnhVDpkaEsgQdezu6Hn1QYSUvSPWhpNxfqSYFN9lnadlL1A
+t9H06CcU0DxlpQ7rdeszfz9C8HXrZ5wHRwQxtWH9b6SOb6tDhX2pQeMSqsEVkxWqkgruX3FgFuPdJRlFgvlhHw
 📊 Found 10 users (limited)
 
 📝 Example 3: Aggregation Script
 
 ✅ Script saved:
-lA9VOZiBP9eQct43aD3l1Y8PhYNYi4i4E1sfDiXigISAhN1Lyc4k8YpXBaNUvDB3EyQPkV7XcEz5TBQvnZefaw
-📊 Statistics: 2 groups {"status":"active","count":5,"avg_score":60}
-{"status":"inactive","avg_score":50,"count":5}
+L0zBh-no8aViN1lsYAg_t7iMoZbx8q1HoOMrven6XZ-aTOPEQ6kyj6WPs_ENi0nnewWftpKL1lZCpyqeivPjyw
+📊 Statistics: 2 groups {"count":5,"status":"active","avg_score":60}
+{"status":"inactive","count":5,"avg_score":50}
 
 📝 Example 4: Script Management
 
@@ -408,10 +408,10 @@ Script deleted
 📝 Example 1: FindAll + Group (Simple Aggregation)
 
 ✅ Script saved:
-MWdyl_vfgk0x8uS78OixHacMQtypIMScmGUAL6Io-prBqVItQ1IssV5G78Z54KVFFDkg4w0KxKU5eGUErMAPGQ
-📊 Found 2 product groups {"count":2,"category":"Furniture","avg_price":474}
-{"category":"Electronics","avg_price":575.6666666666666,"count":3} ⏱️ Execution
-time: 0ms
+4tf-2IQ9eLvHj7GxOO8gSPW9oep8YBh0pn1na9wnjvOJCf_OqwI05taJ5MtgPeq5eYbd27R_pGJ-j_VJoKy76A
+📊 Found 2 product groups
+{"count":3,"category":"Electronics","avg_price":575.6666666666666}
+{"avg_price":474,"category":"Furniture","count":2} ⏱️ Execution time: 0ms
 
 📝 Example 2: Simple Product Listing
 
@@ -419,8 +419,8 @@ time: 0ms
 
 📝 Example 3: Count by Category
 
-✅ Script saved 📊 Found 2 categories {"count":3,"category":"Electronics"}
-{"category":"Furniture","count":2} ⏱️ Execution time: 0ms
+✅ Script saved 📊 Found 2 categories {"category":"Electronics","count":3}
+{"count":2,"category":"Furniture"} ⏱️ Execution time: 0ms
 
 📝 Example 4: High Rating Products
 
