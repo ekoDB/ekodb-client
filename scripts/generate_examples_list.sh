@@ -209,10 +209,17 @@ if [ -f "examples/typescript/rag_conversation_system.ts" ]; then
     echo -e "  typescript: ${GREEN}1${RESET} RAG example"
 fi
 
-# Go RAG
-if [ -f "../ekodb-client-go/examples/rag_conversation_system.go" ]; then
+# Go RAG (check in both locations)
+go_rag_file=""
+if [ -f "examples/go/rag_conversation_system.go" ]; then
+    go_rag_file="examples/go/rag_conversation_system.go"
+elif [ -f "../ekodb-client-go/examples/rag_conversation_system.go" ]; then
+    go_rag_file="../ekodb-client-go/examples/rag_conversation_system.go"
+fi
+
+if [ -n "$go_rag_file" ]; then
     if [ $total_examples -gt 0 ]; then echo "," >> "$EXAMPLES_JSON"; fi
-    echo "  {\"language\": \"go\", \"name\": \"rag_conversation_system\", \"type\": \"rag\", \"file\": \"../ekodb-client-go/examples/rag_conversation_system.go\"}" >> "$EXAMPLES_JSON"
+    echo "  {\"language\": \"go\", \"name\": \"rag_conversation_system\", \"type\": \"rag\", \"file\": \"$go_rag_file\"}" >> "$EXAMPLES_JSON"
     total_examples=$((total_examples + 1))
     total_client=$((total_client + 1))
     rag_total=$((rag_total + 1))

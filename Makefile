@@ -471,7 +471,7 @@ run-rag-examples:
 	@echo "✓ Go client built"
 	@echo ""
 	@echo "$(CYAN)Building Go RAG example...$(RESET)"
-	@cd ../ekodb-client-go && go build -o examples/rag_conversation_system examples/rag_conversation_system.go
+	@cd examples/go && go build -o rag_conversation_system rag_conversation_system.go
 	@echo "✓ Go example built"
 	@echo ""
 	@echo "$(CYAN)Building Kotlin client library...$(RESET)"
@@ -499,7 +499,7 @@ run-rag-examples:
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "$(CYAN)Running Go RAG Example...$(RESET)"
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
-	@cd ../ekodb-client-go/examples && ./rag_conversation_system
+	@cd examples/go && ./rag_conversation_system
 	@echo ""
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "$(CYAN)Running Kotlin RAG Example...$(RESET)"
