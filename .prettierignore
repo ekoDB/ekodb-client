@@ -1,0 +1,10 @@
+# Test output files - preserve exact formatting
+**/test-examples*.md
+**/text-examples*.md
+test-examples-rag.md
+
+# Build artifacts
+**/target/
+**/node_modules/
+**/.venv/
+**/venv/
