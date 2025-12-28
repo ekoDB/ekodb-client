@@ -463,7 +463,7 @@ run-rag-examples:
 	@echo ""
 	@echo "$(CYAN)Building Python client bindings...$(RESET)"
 	@cd ekodb-client-py && maturin build --release --quiet
-	@pip3 install --force-reinstall --quiet ekodb-client-py/target/wheels/ekodb_client-0.4.0-cp38-abi3-macosx_11_0_arm64.whl
+	@pip3 install --force-reinstall --quiet ekodb-client-py/target/wheels/ekodb_client-0.5.0-cp38-abi3-macosx_11_0_arm64.whl
 	@echo "✓ Python client built and installed"
 	@echo ""
 	@echo "$(CYAN)Building TypeScript client library...$(RESET)"
@@ -848,7 +848,7 @@ fmt-md:
 		prettier --write "**/*.md" --prose-wrap always --print-width 80; \
 		echo "✅ $(GREEN)Markdown formatting complete!$(RESET)"; \
 	elif command -v markdownlint > /dev/null; then \
-		find . -name "*.md" -not -path "./target/*" -not -path "./node_modules/*" -exec markdownlint --fix {} \; 2>/dev/null || true; \
+		find . -name "*.md" -not -path "./target/*" -not -path "./node_modules/*" -not -name "test-examples*.md" -exec markdownlint --fix {} \; 2>/dev/null || true; \
 		echo "✅ $(GREEN)Markdown formatting complete with markdownlint!$(RESET)"; \
 	else \
 		echo "$(YELLOW)No markdown formatter found. Installing prettier...$(RESET)"; \
