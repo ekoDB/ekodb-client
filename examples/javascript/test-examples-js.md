@@ -1,7 +1,7 @@
 make test-examples-javascript
 🧪 [36mRunning JavaScript examples (direct HTTP/WebSocket)...[0m
 
-added 1 package, removed 1 package, and audited 9 packages in 640ms
+added 1 package, removed 1 package, and audited 9 packages in 639ms
 
 1 package is looking for funding
   run `npm fund` for details
@@ -13,7 +13,7 @@ found 0 vulnerabilities
 [34m╚════════════════════════════════════════╝[0m
 [34m
 === Checking Server Connection ===[0m
-(node:75641) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(node:86279) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
 (Use `node --trace-deprecation ...` to show where the warning was created)
 [32m✓ Server is ready[0m
 [34m
@@ -26,18 +26,18 @@ found 0 vulnerabilities
 ✓ Authentication successful
 
 === Insert Document ===
-(node:75644) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(node:86285) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
 (Use `node --trace-deprecation ...` to show where the warning was created)
 Inserted: {
-  id: 'HExkc71eokHYIpompSBj1e6mkszJI5d4SjOJ2D-stwBm3GTFV6Lb5pJCT_v5dtbN-ecFHgcqHv54UvHeFY-BQA'
+  id: 'AfNQMNPED1uDbcUEMbipWzNg3aaZvRihKq4Y8hTyAjDw2Si78rOGQRzdy1A8Fs1h797JkQupgCSyXCphVwzUgQ'
 }
 
 === Find by ID ===
 Found: {
+  name: { value: 'Test Record', type: 'String' },
+  id: 'AfNQMNPED1uDbcUEMbipWzNg3aaZvRihKq4Y8hTyAjDw2Si78rOGQRzdy1A8Fs1h797JkQupgCSyXCphVwzUgQ',
   active: { value: true, type: 'Boolean' },
-  name: { type: 'String', value: 'Test Record' },
-  value: { type: 'Integer', value: 42 },
-  id: 'HExkc71eokHYIpompSBj1e6mkszJI5d4SjOJ2D-stwBm3GTFV6Lb5pJCT_v5dtbN-ecFHgcqHv54UvHeFY-BQA'
+  value: { type: 'Integer', value: 42 }
 }
 
 === Find with Query ===
@@ -45,10 +45,10 @@ Found documents: 1
 
 === Update Document ===
 Updated: {
-  active: { value: true, type: 'Boolean' },
-  name: { type: 'String', value: 'Updated Record' },
-  id: 'HExkc71eokHYIpompSBj1e6mkszJI5d4SjOJ2D-stwBm3GTFV6Lb5pJCT_v5dtbN-ecFHgcqHv54UvHeFY-BQA',
-  value: { type: 'Integer', value: 100 }
+  value: { value: 100, type: 'Integer' },
+  id: 'AfNQMNPED1uDbcUEMbipWzNg3aaZvRihKq4Y8hTyAjDw2Si78rOGQRzdy1A8Fs1h797JkQupgCSyXCphVwzUgQ',
+  name: { value: 'Updated Record', type: 'String' },
+  active: { type: 'Boolean', value: true }
 }
 
 === Delete Document ===
@@ -61,9 +61,9 @@ Deleted document
 ✓ Authentication successful
 
 === Inserting Test Data ===
-(node:75657) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(node:86293) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
 (Use `node --trace-deprecation ...` to show where the warning was created)
-✓ Inserted test record: DPEkqZIh-i23QxrxTy9w5u3GHzN4R4xthmy2IGmxlMQOc7Ui8r2egTNy5jwHONuAeiAishu1GBMezwJqfwWegQ
+✓ Inserted test record: XagcYGfGZjZLHPNzrZRw5YIDihM2baaBm9FD47uGXGtwgw0odQTkKPmeuo1csWiweq5SWe_NSsa_fhQIA88oaQ
 
 === Connecting to WebSocket ===
 ✓ WebSocket connected
@@ -77,7 +77,7 @@ Response: {
           "type": "Boolean",
           "value": true
         },
-        "id": "IclmydnNxR1P-E0R7bBIuBKTF1Ka65Q1s32FLDl28hTOjoHAqNCeuCWCZsfDHQ4J5KOp9vNZEg0ayYtaSPXtQA",
+        "id": "BExdULEoFaYZPfAMdPX2qmL8ebqnPB_ZMAWtSsyK8bboegtIiDf1HsJ6a_WgAl-vfT93UVHT98iu3psuczswtA",
         "name": {
           "type": "String",
           "value": "WebSocket Test Record"
@@ -92,7 +92,7 @@ Response: {
           "type": "Boolean",
           "value": true
         },
-        "id": "EHRclmzT3prR90JJIQl3JV0OnzQ_zdm5GHUZwl1JG0Dv33EQi6Elici_xRW6FSSDrWR4Yjl4f0a7s25WdNchNw",
+        "id": "3Awc9NloAhbSMUXXm8y07-9ANeZvyAbv1gjbq8vfkVThYcYC1A8SY_IsZLqK_tk6hCHn8vk_slodW9-uHJelZA",
         "name": {
           "type": "String",
           "value": "WebSocket Test Record"
@@ -107,7 +107,7 @@ Response: {
           "type": "Boolean",
           "value": true
         },
-        "id": "DPEkqZIh-i23QxrxTy9w5u3GHzN4R4xthmy2IGmxlMQOc7Ui8r2egTNy5jwHONuAeiAishu1GBMezwJqfwWegQ",
+        "id": "XagcYGfGZjZLHPNzrZRw5YIDihM2baaBm9FD47uGXGtwgw0odQTkKPmeuo1csWiweq5SWe_NSsa_fhQIA88oaQ",
         "name": {
           "type": "String",
           "value": "WebSocket Test Record"
@@ -122,7 +122,7 @@ Response: {
           "type": "Boolean",
           "value": true
         },
-        "id": "fGqA_U1JCaXbYlEiFASIABYGZ-Ckhe9tGhJXqSIoaSMrfQnRLfvqHABUQDbp2Vb2nk6WYTT1jQOIKE8UhS3SGQ",
+        "id": "OIcUeukTb5AoykKpQDNuJeW36cIo-7vd-q8gp7gPtlnHoXGHToZKYM_zNufISLbfCfwaSx6cT6aRhWPJ5ALqJA",
         "name": {
           "type": "String",
           "value": "WebSocket Test Record"
@@ -145,7 +145,7 @@ Response: {
 ✓ Authentication successful
 
 === Batch Insert ===
-(node:75660) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(node:86306) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
 (Use `node --trace-deprecation ...` to show where the warning was created)
 ✓ Batch inserted 5 records
 ✓ Verified: Found 20 total records in collection
@@ -168,24 +168,24 @@ Created 3 test records
 ✓ Authentication successful
 
 === KV Set ===
-(node:75674) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(node:86309) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
 (Use `node --trace-deprecation ...` to show where the warning was created)
 ✓ Set key: session:user123
 
 === KV Get ===
 Retrieved value: {
-  loginTime: '2025-12-31T16:20:54.765Z',
   userId: 123,
-  username: 'john_doe'
+  username: 'john_doe',
+  loginTime: '2025-12-31T16:51:33.240Z'
 }
 
 === Set Multiple Keys ===
 ✓ Set 3 keys
 
 === Get Multiple Keys ===
-cache:product:1: { price: 29.99, name: 'Product 1' }
-cache:product:2: { name: 'Product 2', price: 39.989999999999995 }
-cache:product:3: { name: 'Product 3', price: 49.989999999999995 }
+cache:product:1: { name: 'Product 1', price: 29.99 }
+cache:product:2: { price: 39.989999999999995, name: 'Product 2' }
+cache:product:3: { price: 49.989999999999995, name: 'Product 3' }
 
 === KV Delete ===
 ✓ Deleted key: session:user123
@@ -201,18 +201,18 @@ cache:product:3: { name: 'Product 3', price: 49.989999999999995 }
 ✓ Authentication successful
 
 === Create Collection (via insert) ===
-(node:75677) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(node:86323) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
 (Use `node --trace-deprecation ...` to show where the warning was created)
-Collection created with first record: u5FEveCERNtg9a4Dv5rOA1H9V_2HlzVVD8p-fVJ_wqLlNqNORqPlNFca6zuwen44sx-PVzTE9qXeslgSCTI10A
+Collection created with first record: Z5wZKr5hjw65Osch_BBtykTjv7XdBtWusKRG23-rCndur9HD6bJ6TSOM5YNchc9KGkG2hFe54E-nlX4b-BT_dw
 
 === List Collections ===
 Total collections: 23
 Sample collections: [
-  'schema_documents_client_go',
-  'websocket_test',
+  'schema_documents_client_py',
+  'schema_users_client_ts',
+  'test_accounts',
   'ttl_cache',
-  'schema_employees_client_py',
-  'schema_users_client_ts'
+  'demo_collection'
 ]
 
 === Count Documents ===
@@ -231,9 +231,9 @@ Collection still exists: false
 ✓ Authentication successful
 
 === Insert Document with TTL (1 hour) ===
-(node:75680) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(node:86326) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
 (Use `node --trace-deprecation ...` to show where the warning was created)
-✓ Inserted document: retYL8l1z7i4GWviJXvLONp-thw6XxRj3TsjIdCQADrF418OntsRn631amABxHHYMliQ7L2jsuVCTGuW_zUznQ
+✓ Inserted document: vRIheFFqk1PchSeW7gOulle-vh4bcCVGhApb2aeH3am1uPYaJhJEv2XNCB-jp2VFKv1U32XYwm0mnCdvlbkhew
 
 === Insert Document with TTL (5 minutes) ===
 ✓ Inserted document: created
@@ -254,9 +254,9 @@ Collection still exists: false
 ✓ Authentication successful
 
 === Insert Test Data with TTL ===
-(node:75693) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(node:86330) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
 (Use `node --trace-deprecation ...` to show where the warning was created)
-✓ Inserted document with TTL: pPJxHIus6ZtR9_5hRjPWgyf9zwwcknEc4bM2V5Mase92CpxoJ9ICzEvGmjuPS47Bke6LAqngjIvQxxF9lISm1Q
+✓ Inserted document with TTL: MGNAuocQjioSvOrVZslVY_epwhN_CW-GumW7yaOFyTvFqWqRc2uZGvadCqE3mMTQk-0CZSF7FYu3_7DdO1jZMA
 
 === Query via WebSocket ===
 ✓ WebSocket connected
@@ -273,21 +273,21 @@ Collection still exists: false
 
 📝 Example 1: Simple Query Function with Filter
 
-✅ Script saved: OFuMWZq8Zoa7mWig38AowNIcs17nGXYqcb1IRSUuiD4fJLEQ_rbvXhSz9YT0DD5A-vQERfuYKhjVByapxKevqg
-📊 Found 20 active users
+✅ Script saved: GWgiCoL-28_pFscjPqHvqtmbe8Cyqs_c55DkHsh7BNlOlQCYfNQpNqz4LtlyuKBnyeQuM1zeRHdPBvZMEyfYKg
+📊 Found 10 active users
 
 📝 Example 2: Parameterized Pagination with Limit/Skip
 
-✅ Script saved: 5eS2EGqH7JgBg57FB1gd_o8qIVI5s_hnBWAiE3bIi9INafELjytyNcDER1vYJaK2AXvCf7AMcEQPW9zBLuY2fA
+✅ Script saved: 1ky9JKbtCFWYjxpmPwQvFtRNvaSqsM05VQG125dEZvH4h8VMQBtsHiS8aYFZC8L3QLwZ0ZFLTV24s61NS09h8A
 📊 Page 1: Found 3 users (limit=3, skip=0)
 📊 Page 2: Found 3 users (limit=3, skip=3)
 
 📝 Example 3: Multi-Stage Pipeline (Query → Group → Calculate)
 
-✅ Script saved: sPcBdbgaOTwRmuvR9NUN8UKuEY-dZBiYIzggd8ZUmXfIYJ_gRQ5V1wBMGhCNTwnKwx9nI05KNj0MeKo-_agACw
+✅ Script saved: c93Sw5TQmErmVEiWSZn_CPhSbiY7cpQPyltjtKWIWcMMGqyaEUOQ_K3MABRu3N-kMfxns-giC9mD1KwwWnxu7w
 📊 Pipeline Results: Filtered (age>20) → Grouped by status → 2 groups
    {"count":10,"avg_score":50,"max_score":90,"status":"inactive"}
-   {"max_score":100,"avg_score":60,"status":"active","count":10}
+   {"count":10,"status":"active","max_score":100,"avg_score":60}
 
 📝 Example 4: Function Management
 
@@ -306,11 +306,11 @@ Collection still exists: false
 ✓ Authentication successful
 
 === Setup: Creating Test Accounts ===
-Created Alice: $1000 - ID: M3gxo-A4kX3hYfkpSZYQZXKPCQIZAGQ6e2V32lVQz_OKzBiTJLUODbYvpdVlAJFTFGMrp0gLgQPabbi-GWb4lA
-Created Bob: $500 - ID: Pe50VxMvVmQszvJ7jcNVqOk2PhGua1OrBM8Z-vO0eybTccUoCu-k_1CaYWfnGmD_F-HKE5bGkHUDxzyx0T5qLQ
+Created Alice: $1000 - ID: vRpb7Nzs_Zb6Jb9ttOsIQmrHmmMRwfVxncx_Gx7AYJ12dUzJb21nW8cvPlBtFBR7vbYDuNJ96FOwvouY6oKJNA
+Created Bob: $500 - ID: Dgs8lks_yMJWClN87r2iLgfy2f11QWx0mm7R4WFUdTzd0k2-RcZFWeojRP8HdG9JcxCT-Rcxr2bEiC70lgEHGg
 
 === Example 1: Begin Transaction ===
-Transaction ID: 133c1327-856b-4107-a22c-78cc3afe258a
+Transaction ID: 39008d74-7a4e-42c5-aaab-0f8e0ad295bf
 
 === Example 2: Operations with transaction_id ===
 Updated Alice: $1000 → $800
@@ -328,7 +328,7 @@ Alice: 800
 Bob: 700
 
 === Example 5: Rollback ===
-New transaction: bd7280a2-a17b-47af-984c-30e1909b725c
+New transaction: dae4f562-c1d9-4ec3-b6f1-9627d91df337
 Updated Bob: $700 → $600 (in transaction)
 ✓ Transaction rolled back
 Bob after rollback: 700
@@ -356,7 +356,7 @@ Each Script shows Functions chaining with proper verification
 ============================================================
 
 1️⃣ Saving Script...
-   ✅ Script saved: fvUS4vRJID5roMA8N5fvIIR8Cd4cre-gyeoWzPnv5TsiuuynmxLlBRn--npKyjFUXJu9dlB6tjuKSV7N0LmIRg
+   ✅ Script saved: 42BiBRW3zaE-MSaEzvDEJBjEptxr06IvendI1kQVs-g3vFPbdxVgES8PUh5F0aH4TPUaehIECZJ_DNRCW1swcQ
 
 2️⃣ Calling Script (Insert + Verify)...
    ✅ Script executed: 2 Functions
@@ -365,7 +365,7 @@ Each Script shows Functions chaining with proper verification
 3️⃣ Verification Results:
    ✅ Found 1 record(s)
    📋 Name: [object Object]
-   📋 Email: {"value":"alice@example.com","type":"String"}
+   📋 Email: {"type":"String","value":"alice@example.com"}
    📋 Status: [object Object]
    📋 Credits: [object Object]
 
@@ -374,7 +374,7 @@ Each Script shows Functions chaining with proper verification
 ============================================================
 
 1️⃣ Saving Script...
-   ✅ Script saved: eqgNPlJYGPgCFhFO6_REsG8MG4eC_bx5eiKNvWP43Xr8hpb7ENfdYjzkxx4e_qIUA3hPXACO1izJ1eE--yqTyw
+   ✅ Script saved: zUFwC7NfwzOrzDoQuk9fP91NUXytseQEgv3flDH7LKv79VUHYSdE4Uph5VNK0SOSVytBPcbLKUtl8sJ_9P4OQw
 
 2️⃣ Calling Script (Query + Update + Verify)...
    ✅ Script executed: 3 Functions
@@ -390,7 +390,7 @@ Each Script shows Functions chaining with proper verification
 ============================================================
 
 1️⃣ Saving Script...
-   ✅ Script saved: AfFwn6tJcsj68aw-Dw1yP_VoYBw_ZebZ4YaTesP-J3Ijw8V_BSrgVQt7PCaUxkFDTO86lumstcNAd6PouvIlGQ
+   ✅ Script saved: 25WUpn4z3iQkycyd1O4vV2lV2BsYA1fbjd-jZozBdQ5gvFuZuDe7SgY_WTwq891IH47-uSmMtJ35raRsmU6uSQ
 
 2️⃣ Calling Script (Query + Update Credits + Verify)...
    ✅ Script executed: 3 Functions
@@ -407,7 +407,7 @@ Each Script shows Functions chaining with proper verification
 ============================================================
 
 1️⃣ Saving Script...
-   ✅ Script saved: Pkzastp935yfHC-kRQEcgoNHhGksx5xkNPOQ8kiMdhwspyYE85TqVioPRURv3JrIHyTVrduKQY2bV2m5lqgcPQ
+   ✅ Script saved: Js1JN8Oka3Wn1kNUIHSK07KWfyGzod7ttNblA_tk8XRcPgtDtEVVyuDWSviFi8a-26x6LrYGoHGMFFF65wMd9Q
 
 2️⃣ Calling Script (Query + Delete + Verify)...
    ✅ Script executed: 3 Functions
@@ -420,10 +420,10 @@ Each Script shows Functions chaining with proper verification
 ============================================================
 🧹 Cleanup
 ============================================================
-   ✅ Deleted script: fvUS4vRJID5roMA8N5fv...
-   ✅ Deleted script: eqgNPlJYGPgCFhFO6_RE...
-   ✅ Deleted script: AfFwn6tJcsj68aw-Dw1y...
-   ✅ Deleted script: Pkzastp935yfHC-kRQEc...
+   ✅ Deleted script: 42BiBRW3zaE-MSaEzvDE...
+   ✅ Deleted script: zUFwC7NfwzOrzDoQuk9f...
+   ✅ Deleted script: 25WUpn4z3iQkycyd1O4v...
+   ✅ Deleted script: Js1JN8Oka3Wn1kNUIHSK...
    ✅ Deleted collection: users
 
 ============================================================
@@ -455,7 +455,7 @@ Each Script shows Functions chaining with proper verification
 > tsc
 
 
-up to date, audited 7 packages in 798ms
+up to date, audited 7 packages in 992ms
 
 found 0 vulnerabilities
 
@@ -465,7 +465,7 @@ found 0 vulnerabilities
 ✅ [32mTypeScript client built![0m
 🧪 [36mRunning JavaScript client library examples...[0m
 
-added 1 package, removed 1 package, and audited 9 packages in 624ms
+added 1 package, removed 1 package, and audited 9 packages in 668ms
 
 1 package is looking for funding
   run `npm fund` for details
@@ -475,15 +475,15 @@ found 0 vulnerabilities
 
 === Insert Document ===
 Inserted: {
-  id: 'IcvqG-d4OGn_0p0LHfDp9t827lKUsKv9OGB1U-9MRrA3fof7KimyTTvjgGWpdcZ0S8lM83gf7SyQ4i8w0WnrFA'
+  id: 'vlLf5W1Z8EsHpNUwXO1w80OD5ApLlAmoWQCpF2flNB9Bo1UQXbYPviVvJf2z0__4WlFsJ-VIhNzaAyP35wZDnA'
 }
 
 === Find by ID ===
 Found: {
-  value: { value: 42, type: 'Integer' },
+  name: { value: 'Test Record', type: 'String' },
+  id: 'vlLf5W1Z8EsHpNUwXO1w80OD5ApLlAmoWQCpF2flNB9Bo1UQXbYPviVvJf2z0__4WlFsJ-VIhNzaAyP35wZDnA',
   active: { type: 'Boolean', value: true },
-  name: { type: 'String', value: 'Test Record' },
-  id: 'IcvqG-d4OGn_0p0LHfDp9t827lKUsKv9OGB1U-9MRrA3fof7KimyTTvjgGWpdcZ0S8lM83gf7SyQ4i8w0WnrFA'
+  value: { type: 'Integer', value: 42 }
 }
 
 === Find with Query ===
@@ -492,9 +492,9 @@ Found documents: 1
 === Update Document ===
 Updated: {
   name: { type: 'String', value: 'Updated Record' },
-  value: { value: 100, type: 'Integer' },
-  id: 'IcvqG-d4OGn_0p0LHfDp9t827lKUsKv9OGB1U-9MRrA3fof7KimyTTvjgGWpdcZ0S8lM83gf7SyQ4i8w0WnrFA',
-  active: { value: true, type: 'Boolean' }
+  value: { type: 'Integer', value: 100 },
+  id: 'vlLf5W1Z8EsHpNUwXO1w80OD5ApLlAmoWQCpF2flNB9Bo1UQXbYPviVvJf2z0__4WlFsJ-VIhNzaAyP35wZDnA',
+  active: { type: 'Boolean', value: true }
 }
 
 === Delete Document ===
@@ -532,7 +532,7 @@ Retrieved value: { userId: 123, username: 'john_doe' }
 ✓ Set 3 keys
 
 === Get Multiple Keys ===
-cache:product:1: { price: 29.99, name: 'Product 1' }
+cache:product:1: { name: 'Product 1', price: 29.99 }
 cache:product:2: { name: 'Product 2', price: 39.989999999999995 }
 cache:product:3: { price: 49.989999999999995, name: 'Product 3' }
 
@@ -547,11 +547,11 @@ cache:product:3: { price: 49.989999999999995, name: 'Product 3' }
 ✓ Client created
 
 === Create Collection (via insert) ===
-Collection created with first record: 6Dm0FDIChSdIo1w7LTKnLBbN7oKm-l8AFwPGXyZSHSRxWltmdHW_vdkzcalCU5zAEo0-XKAkhwEdxIBmsSUIQg
+Collection created with first record: o21_VfJNhk4P43sm3THoyzXN9949E3i0iCZEAus8P-av_96fzTG_SPpsP-CXhtr-QLhYrvJ4DseI9rOIaSSBCA
 
 === List Collections ===
 Total collections: 22
-Sample collections: schema_documents_client_go,websocket_test,ttl_cache,schema_employees_client_py,schema_users_client_ts
+Sample collections: schema_documents_client_py,schema_users_client_ts,test_accounts,ttl_cache,schema_employees_client_py
 
 === Count Documents ===
 Document count: 1
@@ -566,10 +566,10 @@ Collection still exists: false
 ✓ Client created
 
 === Insert Document with TTL (1 hour) ===
-✓ Inserted document: FFBL9K9IFSYpSRFCzvXW1wWAF5w41Wc5B4SK9EuCTTM2DS9PVH1-REG8NFoPsJALmIDrOwH1VpUcurY-fQebQg
+✓ Inserted document: LXt2LkAQ5LG4XtorBOmPRkYoiOhL4mRhH_TLvn5tBleXJSjkEVHLWXxWnwBaIA47n-PUjPdoFVqG8n58JXYvlg
 
 === Insert Document with TTL (5 minutes) ===
-✓ Inserted document: SBhFCs-muIASj8Q0wOe_cCTCmY1rs47-cNvzObXRuIPg3P5mAbPBqf-MgQQHWcjfDeJ-LO2-clxmdNQVILe-sg
+✓ Inserted document: _s9VBp0xWjEFwkOS_HOK6AM29I7iNbOx-1cP-0vGRIbsBG-1wtBzjS6y3tnLQ3DqKSqKn7r59uLZkHZXEnoExw
 
 === Query Documents ===
 ✓ Found 2 documents with TTL
@@ -589,7 +589,7 @@ Collection still exists: false
 ✓ Client created
 
 === Inserting Test Data ===
-✓ Inserted test record: PqgiUDC5XrejtedsiPNOn2PrX8NQ_Qz-uSfNCdvznHBe74Iij845NbRwQayZl3IROMkUn39tUYnzEwKhFqY4Zg
+✓ Inserted test record: DKCXM-axoENYeE4MmhhKX9ZvreHvWOUmVUr0WUoIAI7ftMXelEB1LlXF75AE61b40SRVMDTV7OILrr_rDwyqFw
 
 === Connecting to WebSocket ===
 ✓ WebSocket connected
@@ -605,7 +605,7 @@ Collection still exists: false
 ✓ Client created
 
 === Insert Test Data with TTL ===
-✓ Inserted document with TTL: 0ZQwQvshN1itz-CVzHv07JTt11GzxVJDwwRdceEI7JeuSC1biPfgGD_2VmV50ydwNTErIB2qcx9gp0paaA7Ryw
+✓ Inserted document with TTL: 2xfsLYvf9z1qZSZxk1XOEuRLyB5UO2kFdLSH5J7NrYj2qp_PghYS9cuguJgt1hOzUsoWG3zIu85KQSu27IP2Kw
 
 === Query via WebSocket ===
 ✓ WebSocket connected
@@ -625,21 +625,21 @@ Collection still exists: false
 
 📝 Example 1: Simple Query Function with Filter
 
-✅ Script saved: V2OmV7Y_UUPB233XnSHN37rXUfkcjsc3kogJmtGB_CHU_9C1wbcP1oZXZx_Q0jwBXS4wOUFPsXsKkfH7FAUvPg
-📊 Found 5 active users
+✅ Script saved: scXTY9WypgKC5gtkRs4MqudNxqJLIPVB6PWDeaa2BPv7xab0KAHtQ97vQGj1HHSaFK4u2GRaAk-P79XKooCXVw
+📊 Found 10 active users
 
 📝 Example 2: Parameterized Pagination with Limit/Skip
 
-✅ Script saved: MJ31QwISP4VeaOzkR49ExNpSOaRPKzrttPTEu3e-1OW1On1UCuRItSLnQ021eo_7SIEmehp-GBy82j1dZPJl3A
+✅ Script saved: PN59_WYsTmvmxttkIoVQPoRtXgx6En7e4axoGc0hmZlml01ncQRttSqtEAxnLUdDS_qvn57hYTWOsTq29h5MJw
 📊 Page 1: Found 3 users (limit=3, skip=0)
 📊 Page 2: Found 2 users (limit=3, skip=3)
 
 📝 Example 3: Multi-Stage Pipeline (Query → Group → Calculate)
 
-✅ Script saved: u4EMnO60ImpgKXIDiokHH8I0bppzozgMvmHihWT1xutLf-wKnYqsKpkgR4OS5Egh4vDE_AsA2qF6jnl3EyIEHQ
+✅ Script saved: uBB6JBGsf5a9bMuCp4cLkOVZUHCE4eVsSw5UZXg-vktlOtW9gH8Xf8-CA_Go2p7yNHatmr2m-yU16TQgtyZ1Gg
 📊 Pipeline Results: Filtered (age>20) → Grouped by status → 2 groups
-   {"max_score":90,"count":5,"status":"inactive","avg_score":50}
-   {"avg_score":60,"count":5,"status":"active","max_score":100}
+   {"status":"inactive","count":5,"avg_score":50,"max_score":90}
+   {"status":"active","count":5,"avg_score":60,"max_score":100}
 
 📝 Example 4: Function Management
 
@@ -661,7 +661,7 @@ Collection still exists: false
 
 📝 Example 1: Simple Query Script
 
-✅ Script saved: N1N7I4mWd-lqpCAq7ObrRZlHkzwkRwC7HaMN7jdnWc3rs7Rqy7h0I5vEHRs64YwZq3ZAEokyup4H1c24UEBmdw
+✅ Script saved: jY1J0-m-G6hwbKzwuGq__gWHTjXWNpGQSfvrQXTOyw9wDtlORBX3-SiCH9vHx5Eq3QSbcS0ZG6bzgXPP5EPFxQ
 📊 Found 20 records
 ⏱️  Execution time: 0ms
 
@@ -676,7 +676,7 @@ Collection still exists: false
 ✅ Script saved
 📊 Statistics: 2 groups
    {"status":"active","count":10,"avg_score":60}
-   {"count":10,"status":"inactive","avg_score":50}
+   {"avg_score":50,"status":"inactive","count":10}
 ⏱️  Execution time: 0ms
 
 📝 Example 4: Script Management
@@ -729,8 +729,8 @@ Collection still exists: false
 
 ✅ Script saved
 📊 Found 2 categories
-   Furniture: 4 items (avg $294.00)
    Electronics: 6 items (avg $325.67)
+   Furniture: 4 items (avg $294.00)
 ⏱️  Execution time: 0ms
 
 📝 Example 3: Count All Products
@@ -743,10 +743,10 @@ Collection still exists: false
 
 ✅ Script saved
 📊 Category analysis (2 categories):
-   Electronics:
-      Products: 6 | Stock: 232 | Avg Rating: ⭐4.52
    Furniture:
       Products: 4 | Stock: 43 | Avg Rating: ⭐4.26
+   Electronics:
+      Products: 6 | Stock: 232 | Avg Rating: ⭐4.52
 
 ⏱️  Total execution time: 0ms
 📈 Pipeline stages:
@@ -755,9 +755,9 @@ Collection still exists: false
 
 ✅ Script saved
 📊 Product summaries (10 items, showing first 3):
-   1. Wireless Mouse - $29 (⭐4.5)
-   2. Monitor 27" - $399 (⭐4.6)
-   3. Office Lamp - $79 (⭐4.05)
+   1. USB-C Cable - $19 (⭐4.3)
+   2. Bookshelf - $149 (⭐4.1)
+   3. Laptop Pro - $1299 (⭐4.8)
 ⏱️  Execution time: 0ms
 
 🧹 Cleaning up...
@@ -779,27 +779,22 @@ Collection still exists: false
 
 ✅ Script saved
 📊 User counts by status:
-   active: 7 users
    inactive: 3 users
+   active: 7 users
 ⏱️  Execution time: 0ms
 
 📝 Example 3: Average Score by Role
 
 ✅ Script saved
 📊 Average scores by role:
-   user: 70.0 (7 users)
    admin: 20.0 (3 users)
+   user: 70.0 (7 users)
 ⏱️  Execution time: 0ms
 
 📝 Example 4: Top Users by Score
 
 ✅ Script saved
-📊 Users (showing first 5 of 10):
-   1. User 4 (user4@example.com) - Score: 40
-   2. User 7 (user7@example.com) - Score: 70
-   3. User 9 (user9@example.com) - Score: 90
-   4. User 5 (user5@example.com) - Score: 50
-   5. User 2 (user2@example.com) - Score: 20
+📊 Users (showing first 5 of 0):
 ⏱️  Execution time: 0ms
 
 📝 Example 5: User Summary Statistics
@@ -823,11 +818,11 @@ Collection still exists: false
 
 ✅ Script saved
 📊 Found 5 documents
-   1. Getting Started with ekoDB (Database)
-   2. Introduction to Machine Learning (AI)
-   3. Natural Language Processing (AI)
-   4. Database Design Principles (Database)
-   5. Vector Databases Explained (Database)
+   1. Natural Language Processing (AI)
+   2. Getting Started with ekoDB (Database)
+   3. Introduction to Machine Learning (AI)
+   4. Vector Databases Explained (Database)
+   5. Database Design Principles (Database)
 ⏱️  Execution time: 0ms
 
 📝 Example 2: Count Documents by Category
@@ -842,28 +837,28 @@ Collection still exists: false
 
 ✅ Script saved
 📊 Document titles (5 docs):
-   1. Getting Started with ekoDB
-   2. Introduction to Machine Learning
-   3. Natural Language Processing
-   4. Database Design Principles
-   5. Vector Databases Explained
+   1. Natural Language Processing
+   2. Getting Started with ekoDB
+   3. Introduction to Machine Learning
+   4. Vector Databases Explained
+   5. Database Design Principles
 ⏱️  Execution time: 0ms
 
 📝 Example 4: Project Document Fields
 
 ✅ Script saved
 📊 Projected documents (showing first 3):
-   1. Getting Started with ekoDB
-   2. Introduction to Machine Learning
-   3. Natural Language Processing
+   1. Natural Language Processing
+   2. Getting Started with ekoDB
+   3. Introduction to Machine Learning
 ⏱️  Execution time: 0ms
 
 📝 Example 5: All Document Fields
 
 ✅ Script saved
 📊 All documents (5 total, showing first 2):
-   1. Getting Started with ekoDB (Database)
-   2. Introduction to Machine Learning (AI)
+   1. Natural Language Processing (AI)
+   2. Getting Started with ekoDB (Database)
 ⏱️  Execution time: 0ms
 
 🧹 Cleaning up...
@@ -881,22 +876,21 @@ Collection still exists: false
 
 ✅ Chat script saved
 🤖 AI Response:
-   1. Scalability: Vector databases can handle large amounts of data and are highly scalable.
-2. High Precision: They support a high level of detail and precision, with no loss of quality when zooming in or out.
-3. Flexibility: These databases can handle various types of data, including points, lines, and polygons.
-4. Fast Processing: Vector databases allow for quick data processing and analysis.
-5. Better Visualization: They provide better visualization options due to their ability to represent data in a graphical manner.
-6. Efficient Storage: Vector databases use less disk space compared to raster databases.
-7. Easy to Update: Updating data in a vector database is relatively easy since it involves changing the attributes of the vector features.
+   1. Scalability: Vector databases can handle large amounts of data and scale as the data grows.
+2. Speed: They are optimized for fast data retrieval and updates.
+3. Flexibility: They can handle various types of data including spatial data.
+4. Precision: They provide high precision in data representation and analysis.
+5. Complexity Handling: Ability to manage complex data structures and relationships.
+6. Efficient Storage: Reduces the amount of storage required by eliminating redundancy.
 ⏱️  Execution time: 0ms
 
 📝 Example 2: Generate Embeddings
 
 ✅ Embedding script saved
 📊 Generated embeddings for 3 articles
-   1. "Advanced Query Patterns" - 1536D vector
-   2. "Draft Article" - 1536D vector
-   3. "Getting Started with ekoDB" - 1536D vector
+   1. "Getting Started with ekoDB" - 1536D vector
+   2. "Advanced Query Patterns" - 1536D vector
+   3. "Draft Article" - 1536D vector
 ⏱️  Execution time: 0ms
 
 📝 Example 3: List All Articles
