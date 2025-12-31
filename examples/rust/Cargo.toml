@@ -97,3 +97,7 @@ path = "examples/client_joins.rs"
 [[example]]
 name = "client_functions"
 path = "examples/client_functions.rs"
+
+[[example]]
+name = "swr_pattern"
+path = "examples/swr_pattern.rs"

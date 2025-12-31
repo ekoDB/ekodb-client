@@ -293,6 +293,19 @@ pub enum Function {
     /// Count records
     Count { output_field: String },
 
+    /// Find record by ID
+    FindById {
+        collection: String,
+        record_id: String,
+    },
+
+    /// Find one record by key/value
+    FindOne {
+        collection: String,
+        key: String,
+        value: serde_json::Value,
+    },
+
     /// Insert a record
     Insert {
         collection: String,
@@ -314,10 +327,49 @@ pub enum Function {
         ttl: Option<serde_json::Value>,
     },
 
+    /// Update record by ID
+    UpdateById {
+        collection: String,
+        record_id: String,
+        updates: serde_json::Value,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        bypass_ripple: Option<bool>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        ttl: Option<serde_json::Value>,
+    },
+
+    /// Find one record and update atomically
+    FindOneAndUpdate {
+        collection: String,
+        filter: serde_json::Value,
+        updates: serde_json::Value,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        bypass_ripple: Option<bool>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        ttl: Option<serde_json::Value>,
+    },
+
+    /// Update with actions (increment/decrement)
+    UpdateWithAction {
+        collection: String,
+        filter: serde_json::Value,
+        actions: serde_json::Value,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        bypass_ripple: Option<bool>,
+    },
+
     /// Delete records matching filter
     Delete {
         collection: String,
         filter: serde_json::Value,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        bypass_ripple: Option<bool>,
+    },
+
+    /// Delete record by ID
+    DeleteById {
+        collection: String,
+        record_id: String,
         #[serde(skip_serializing_if = "Option::is_none")]
         bypass_ripple: Option<bool>,
     },
@@ -346,6 +398,10 @@ pub enum Function {
         headers: Option<HashMap<String, String>>,
         #[serde(skip_serializing_if = "Option::is_none")]
         body: Option<serde_json::Value>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        timeout_seconds: Option<u64>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        output_field: Option<String>,
     },
 
     /// Vector search
@@ -412,6 +468,15 @@ pub enum Function {
         function_label: String,
         params: Option<HashMap<String, serde_json::Value>>,
     },
+
+    /// Create a savepoint for partial rollback
+    CreateSavepoint { name: String },
+
+    /// Rollback to a specific savepoint
+    RollbackToSavepoint { name: String },
+
+    /// Release a savepoint (no longer needed)
+    ReleaseSavepoint { name: String },
 }
 
 fn default_method() -> String {

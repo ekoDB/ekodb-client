@@ -54,75 +54,75 @@ Storing previous conversations with embeddings...
     • Using model: text-embedding-3-small
     • Text length: 34 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 458.951875ms
+    ✓ Generated embedding: 1536 dimensions in 675.251959ms
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 169 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 788.180291ms
+    ✓ Generated embedding: 1536 dimensions in 1.20389075s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 33 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 606.630875ms
+    ✓ Generated embedding: 1536 dimensions in 389.406792ms
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 230 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 287.829333ms
+    ✓ Generated embedding: 1536 dimensions in 1.121243125s
     • Function auto-cleaned up by client
 ✓ Stored Rust programming conversation (4 messages)
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 31 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 267.182084ms
+    ✓ Generated embedding: 1536 dimensions in 231.574208ms
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 217 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 422.509625ms
+    ✓ Generated embedding: 1536 dimensions in 1.175061458s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 33 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 404.699834ms
+    ✓ Generated embedding: 1536 dimensions in 1.229006167s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 232 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 312.177958ms
+    ✓ Generated embedding: 1536 dimensions in 755.930459ms
     • Function auto-cleaned up by client
 ✓ Stored database design conversation (4 messages)
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 36 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 618.995458ms
+    ✓ Generated embedding: 1536 dimensions in 293.11475ms
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 178 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 477.622917ms
+    ✓ Generated embedding: 1536 dimensions in 460.628875ms
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 37 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 292.184458ms
+    ✓ Generated embedding: 1536 dimensions in 602.317584ms
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 213 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 349.5575ms
+    ✓ Generated embedding: 1536 dimensions in 439.726542ms
     • Function auto-cleaned up by client
 ✓ Stored performance optimization conversation (4 messages)
 
@@ -138,7 +138,7 @@ Using hybrid search to find relevant messages from all conversations...
     • Using model: text-embedding-3-small
     • Text length: 58 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 644.758167ms
+    ✓ Generated embedding: 1536 dimensions in 279.793125ms
     • Function auto-cleaned up by client
 
 → Executing hybrid_search()...
@@ -148,7 +148,7 @@ Using hybrid search to find relevant messages from all conversations...
   • Limit: 5 results
   • Search type: Semantic (vector) + Keyword (text)
   • Server combines both scores for relevance ranking
-  ✓ Search completed in 107.970292ms
+  ✓ Search completed in 107.725959ms
 
 ✓ Found 5 related messages across all conversations:
   1. From conv_database_design
@@ -169,36 +169,38 @@ Using hybrid search to find relevant messages from all conversations...
 === Step 4: Generating Context-Aware Response ===
 ✓ AI Response (with context from 3 conversations):
 
-Writing memory-safe, high-performance database code requires a fair understanding of both the database system you are using (whether it's SQL or NoSQL) and the programming language you're coding with. Here are some general steps you can follow:
+Writing memory-safe high-performance database code involves several best practices and techniques. Here are some tips:
 
-1. **Understand Your Database**: Whether you're using SQL or NoSQL, understand the strengths and weaknesses of your database. For example, if you're using SQL, remember to use its ability to make complex queries and ACID transactions. If you're using NoSQL, take advantage of its flexible schemas and ability to handle high write throughput.
+1. Query Optimization: Write efficient queries. This is the most effective way to improve performance in your database code. You can optimize your database queries by using indexing, minimizing the use of joins where possible, avoiding wildcard characters at the beginning of LIKE patterns, and using LIMIT to sample query results.
 
-2. **Normalize Your Database**: As mentioned in context 3, database normalization is essential to reduce redundancy and improve data integrity. This not only makes your database more efficient but also makes your code safer as it reduces the chances of data inconsistency.
+2. Connection Management: Make sure to properly manage your database connections. Keep them open only as long as necessary and close them as soon as you're done with them. This will prevent your application from consuming too much memory and slowing down.
 
-3. **Optimize Your Queries**: The efficiency of your database code is often determined by the efficiency of your queries. Make sure your queries are as precise as possible, retrieve only what's necessary, and avoid unnecessary calculations. Indexing can also greatly improve your query performance.
+3. Use Prepared Statements: Prepared statements can help optimize your database code by reducing the parsing time of SQL statements. They also help prevent SQL injection attacks, thereby increasing the security of your application.
 
-4. **Connection Handling**: Ensure that your code properly opens, uses, and closes database connections. Improper handling of database connections can lead to memory leaks and other performance issues.
+4. Normalization: As mentioned in context 3, database normalization can help improve data integrity and reduce redundancy. This process involves dividing large tables into smaller ones and defining relationships between them using foreign keys.
 
-5. **Use Prepared Statements**: Prepared statements not only help prevent SQL injection attacks, but they also often perform better than plain text SQL queries.
+5. Choose the Right Database Type: Depending on your use case, you may want to choose between SQL and NoSQL databases. As stated in Contexts 1 and 4, NoSQL is good for flexible schemas, horizontal scaling, high write throughput, and working with unstructured data, while SQL is better for complex queries, ACID transactions, and structured data with well-defined relationships.
 
-6. **Error Handling**: Proper error handling is crucial to writing memory-safe code. Make sure your code is equipped to handle any database errors that may occur.
+6. Use Efficient Data Types: Use the most appropriate data types for your columns. More efficient data types take up less space in memory and improve the speed of your queries.
 
-7. **Profiling and Monitoring**: Regularly profile and monitor your database performance. This can help you identify any bottlenecks or memory issues.
+7. Batch Operations: Instead of inserting or updating records one by one, group similar operations together in batches.
 
-Remember, the specifics of how you implement these steps will depend on the specific database system and programming language you're using.
+8. Error Handling: Implement robust error handling to ensure that your application can gracefully handle any issues that arise and recover from failures. This includes checking return values and error codes, and using try/catch blocks in your code.
+
+Remember, every application is unique and some of these tips may not apply to your specific situation. Always profile and test your code to find out where the bottlenecks are and where you can make improvements.
 
 === Step 5: Storing New Conversation ===
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 58 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 629.121875ms
+    ✓ Generated embedding: 1536 dimensions in 314.190709ms
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
-    • Text length: 1983 characters
+    • Text length: 2328 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 341.6645ms
+    ✓ Generated embedding: 1536 dimensions in 332.032917ms
     • Function auto-cleaned up by client
 ✓ New conversation stored and indexed for future retrieval
 
@@ -212,30 +214,14 @@ Searching for messages about 'ownership' across ALL conversations...
   • Limit: 3 results
   • Search method: Full-text with fuzzy matching & stemming
   • No vector embeddings needed - pure keyword search
-  ✓ Text search completed in 68.187292ms
+  ✓ Text search completed in 67.143ms
 
 ✓ Found 3 messages mentioning ownership:
-  1. From conv_performance: Rust's ownership system provides zero-cost memory management. Use Box for heap allocation, Rc/Arc for shared ownership, and avoid cloning large data structures. The compiler optimizes away unnecessary allocations.
+  1. From conv_rust_programming: Rust's key features include: memory safety without garbage collection, zero-cost abstractions, ownership system, powerful type system, and excellent concurrency support.
 
-  2. From conv_rust_programming: Rust's key features include: memory safety without garbage collection, zero-cost abstractions, ownership system, powerful type system, and excellent concurrency support.
+  2. From conv_performance: Rust's ownership system provides zero-cost memory management. Use Box for heap allocation, Rc/Arc for shared ownership, and avoid cloning large data structures. The compiler optimizes away unnecessary allocations.
 
-  3. From conv_new_question: Writing memory-safe, high-performance database code requires a fair understanding of both the database system you are using (whether it's SQL or NoSQL) and the programming language you're coding with. Here are some general steps you can follow:
-
-1. **Understand Your Database**: Whether you're using SQL or NoSQL, understand the strengths and weaknesses of your database. For example, if you're using SQL, remember to use its ability to make complex queries and ACID transactions. If you're using NoSQL, take advantage of its flexible schemas and ability to handle high write throughput.
-
-2. **Normalize Your Database**: As mentioned in context 3, database normalization is essential to reduce redundancy and improve data integrity. This not only makes your database more efficient but also makes your code safer as it reduces the chances of data inconsistency.
-
-3. **Optimize Your Queries**: The efficiency of your database code is often determined by the efficiency of your queries. Make sure your queries are as precise as possible, retrieve only what's necessary, and avoid unnecessary calculations. Indexing can also greatly improve your query performance.
-
-4. **Connection Handling**: Ensure that your code properly opens, uses, and closes database connections. Improper handling of database connections can lead to memory leaks and other performance issues.
-
-5. **Use Prepared Statements**: Prepared statements not only help prevent SQL injection attacks, but they also often perform better than plain text SQL queries.
-
-6. **Error Handling**: Proper error handling is crucial to writing memory-safe code. Make sure your code is equipped to handle any database errors that may occur.
-
-7. **Profiling and Monitoring**: Regularly profile and monitor your database performance. This can help you identify any bottlenecks or memory issues.
-
-Remember, the specifics of how you implement these steps will depend on the specific database system and programming language you're using.
+  3. From conv_rust_programming: The borrow checker enforces Rust's ownership rules at compile time. It ensures that references don't outlive the data they point to and prevents data races by allowing either multiple immutable references or one mutable reference.
 
 === System Statistics ===
 
@@ -295,75 +281,75 @@ Storing previous conversations with embeddings...
     • Using model: text-embedding-3-small
     • Text length: 34 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.251s
+    ✓ Generated embedding: 1536 dimensions in 0.347s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 169 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.468s
+    ✓ Generated embedding: 1536 dimensions in 0.269s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 33 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.564s
+    ✓ Generated embedding: 1536 dimensions in 0.243s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 230 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.289s
+    ✓ Generated embedding: 1536 dimensions in 0.236s
     • Function auto-cleaned up by client
 ✓ Stored Rust programming conversation (4 messages)
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 31 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.263s
+    ✓ Generated embedding: 1536 dimensions in 0.292s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 217 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.237s
+    ✓ Generated embedding: 1536 dimensions in 0.343s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 33 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.268s
+    ✓ Generated embedding: 1536 dimensions in 0.498s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 232 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.277s
+    ✓ Generated embedding: 1536 dimensions in 0.402s
     • Function auto-cleaned up by client
 ✓ Stored database design conversation (4 messages)
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 36 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.306s
+    ✓ Generated embedding: 1536 dimensions in 1.130s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 178 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.221s
+    ✓ Generated embedding: 1536 dimensions in 0.242s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 37 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.325s
+    ✓ Generated embedding: 1536 dimensions in 0.281s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 213 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.330s
+    ✓ Generated embedding: 1536 dimensions in 0.204s
     • Function auto-cleaned up by client
 ✓ Stored performance optimization conversation (4 messages)
 
@@ -379,7 +365,7 @@ Using hybrid search to find relevant messages from all conversations...
     • Using model: text-embedding-3-small
     • Text length: 58 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.300s
+    ✓ Generated embedding: 1536 dimensions in 0.451s
     • Function auto-cleaned up by client
 
 → Executing hybrid_search()...
@@ -389,7 +375,7 @@ Using hybrid search to find relevant messages from all conversations...
   • Limit: 5 results
   • Search type: Semantic (vector) + Keyword (text)
   • Server combines both scores for relevance ranking
-  ✓ Search completed in 0.099s
+  ✓ Search completed in 0.085s
 
 ✓ Found 5 related messages across all conversations:
   1. [Score: 0.000] From conv_database_design
@@ -410,38 +396,36 @@ Using hybrid search to find relevant messages from all conversations...
 === Step 4: Generating Context-Aware Response ===
 ✓ AI Response (with context from 3 conversations):
 
-Writing memory-safe, high-performance database code requires a combination of good coding practices, careful database design, and a deep understanding of the database system you're using. Here are a few general tips:
+Writing memory-safe high-performance database code involves several aspects, including database design, query optimization, and the use of appropriate database management systems. Here are some general tips:
 
-1. **Use prepared statements**: Prepared statements not only help prevent SQL injection attacks, but they can also improve performance by allowing the database to cache and reuse query plans.
+1. **Database Design:** As mentioned in Context 3, normalization is a crucial part of database design. It helps to reduce redundancy and improve data integrity. This can have a significant effect on the performance of your database.
 
-2. **Optimize your queries**: Avoid fetching more data than you need. For example, use SELECT specific columns instead of SELECT *. Also, take advantage of indexes for faster data retrieval. 
+2. **Choosing the Right DBMS:** As discussed in Contexts 1 and 4, the choice between SQL and NoSQL can affect the performance of your application. SQL is a good choice when dealing with structured data and complex queries, while NoSQL can provide high write throughput and horizontal scaling. Choose the one that best fits your requirements.
 
-3. **Database normalization**: As per context 2 and 3, database normalization is a process to organize data to reduce redundancy and improve data integrity. This can lead to better overall performance.
+3. **Query Optimization:** As per Context 5, query optimization is an essential part of improving database performance. This can involve using indexes, avoiding full table scans, and reducing the amount of data that needs to be processed by the database.
 
-4. **Use the right database type**: If your data is unstructured or if you need high write throughput, horizontal scaling, and flexible schemas, a NoSQL database could be more efficient, as per Context 1.
+4. **Memory Management:** To write memory-safe code, it's important to manage resources properly. This includes closing database connections when they are no longer needed, and correctly handling exceptions to avoid memory leaks. In some languages, it may also involve manually freeing memory that is no longer needed.
 
-5. **Close Connections**: Always close database connections when they're not in use. Open connections consume resources.
+5. **Concurrency Control:** Efficient handling of concurrent transactions can significantly improve the performance of your database. This involves using appropriate isolation levels and locking mechanisms to prevent conflicts and ensure data integrity.
 
-6. **Use transactions wisely**: Transactions help maintain data integrity, but they can also lock the database and cause performance issues. Use them only when necessary.
+6. **Caching:** Using caching can dramatically improve the performance of your application by storing frequently accessed data in memory. This reduces the need to access the database and hence reduces the load on your database server.
 
-7. **Memory Management**: In your program, always free up resources that are no longer needed, especially large data structures, to avoid memory leaks.
+7. **Batch Processing:** Rather than executing individual queries for each operation, you can group similar operations together into a batch. This reduces the number of database round-trips, which can significantly improve performance.
 
-8. **Concurrency**: Utilize multithreading or multiprocessing where applicable to allow multiple operations to run simultaneously.
-
-In addition to these, the specific methods to improve performance can greatly depend on the particular database system being used. For instance, different databases have different ways to define indexes, partition data, manage memory, etc. Therefore, understanding the specific database documentation well can be highly beneficial.
+Remember, the best practices might vary depending on the specific database system and the programming language you are using. Always refer to the documentation for specific guidelines.
 
 === Step 5: Storing New Conversation ===
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 58 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.245s
+    ✓ Generated embedding: 1536 dimensions in 0.898s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
-    • Text length: 1923 characters
+    • Text length: 2274 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.350s
+    ✓ Generated embedding: 1536 dimensions in 0.421s
     • Function auto-cleaned up by client
 ✓ New conversation stored and indexed for future retrieval
 
@@ -453,7 +437,23 @@ Searching for messages about 'ownership' across ALL conversations...
 
   2. From conv_performance: Rust's ownership system provides zero-cost memory management. Use Box for heap allocation, Rc/Arc for shared ownership, and avoid cloning large data structures. The compiler optimizes away unnecessary allocations.
 
-  3. From conv_rust_programming: The borrow checker enforces Rust's ownership rules at compile time. It ensures that references don't outlive the data they point to and prevents data races by allowing either multiple immutable references or one mutable reference.
+  3. From conv_new_question: Writing memory-safe high-performance database code involves several aspects, including database design, query optimization, and the use of appropriate database management systems. Here are some general tips:
+
+1. **Database Design:** As mentioned in Context 3, normalization is a crucial part of database design. It helps to reduce redundancy and improve data integrity. This can have a significant effect on the performance of your database.
+
+2. **Choosing the Right DBMS:** As discussed in Contexts 1 and 4, the choice between SQL and NoSQL can affect the performance of your application. SQL is a good choice when dealing with structured data and complex queries, while NoSQL can provide high write throughput and horizontal scaling. Choose the one that best fits your requirements.
+
+3. **Query Optimization:** As per Context 5, query optimization is an essential part of improving database performance. This can involve using indexes, avoiding full table scans, and reducing the amount of data that needs to be processed by the database.
+
+4. **Memory Management:** To write memory-safe code, it's important to manage resources properly. This includes closing database connections when they are no longer needed, and correctly handling exceptions to avoid memory leaks. In some languages, it may also involve manually freeing memory that is no longer needed.
+
+5. **Concurrency Control:** Efficient handling of concurrent transactions can significantly improve the performance of your database. This involves using appropriate isolation levels and locking mechanisms to prevent conflicts and ensure data integrity.
+
+6. **Caching:** Using caching can dramatically improve the performance of your application by storing frequently accessed data in memory. This reduces the need to access the database and hence reduces the load on your database server.
+
+7. **Batch Processing:** Rather than executing individual queries for each operation, you can group similar operations together into a batch. This reduces the number of database round-trips, which can significantly improve performance.
+
+Remember, the best practices might vary depending on the specific database system and the programming language you are using. Always refer to the documentation for specific guidelines.
 
 === System Statistics ===
 Total conversations: 4
@@ -521,25 +521,25 @@ Storing previous conversations with embeddings...
     • Using model: text-embedding-3-small
     • Text length: 34 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.211s
+    ✓ Generated embedding: 1536 dimensions in 0.295s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 169 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.256s
+    ✓ Generated embedding: 1536 dimensions in 0.310s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 33 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.501s
+    ✓ Generated embedding: 1536 dimensions in 0.435s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 230 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.339s
+    ✓ Generated embedding: 1536 dimensions in 1.307s
     • Function auto-cleaned up by client
 ✓ Stored Rust programming conversation (4 messages)
   → Calling ekoDB embed() helper...
@@ -552,44 +552,44 @@ Storing previous conversations with embeddings...
     • Using model: text-embedding-3-small
     • Text length: 217 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.557s
+    ✓ Generated embedding: 1536 dimensions in 0.294s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 33 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.214s
+    ✓ Generated embedding: 1536 dimensions in 0.262s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 232 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.258s
+    ✓ Generated embedding: 1536 dimensions in 0.433s
     • Function auto-cleaned up by client
 ✓ Stored database design conversation (4 messages)
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 36 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.478s
+    ✓ Generated embedding: 1536 dimensions in 0.366s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 178 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.420s
+    ✓ Generated embedding: 1536 dimensions in 0.272s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 37 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.254s
+    ✓ Generated embedding: 1536 dimensions in 0.431s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 213 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.292s
+    ✓ Generated embedding: 1536 dimensions in 0.231s
     • Function auto-cleaned up by client
 ✓ Stored performance optimization conversation (4 messages)
 
@@ -605,7 +605,7 @@ Using hybrid search to find relevant messages from all conversations...
     • Using model: text-embedding-3-small
     • Text length: 58 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.293s
+    ✓ Generated embedding: 1536 dimensions in 0.463s
     • Function auto-cleaned up by client
 
 → Executing hybridSearch()...
@@ -615,60 +615,62 @@ Using hybrid search to find relevant messages from all conversations...
   • Limit: 5 results
   • Search type: Semantic (vector) + Keyword (text)
   • Server combines both scores for relevance ranking
-  ✓ Search completed in 0.102s
+  ✓ Search completed in 0.077s
 ✓ Found 5 related messages across all conversations:
-  1. [Score: 0.000] From conv_performance
-     How can I optimize database queries?
+  1. [Score: 0.000] From conv_database_design
+     Database normalization is the process of organizing data to reduce redundancy and improve data integrity. It involves dividing large tables into smaller ones and defining relationships between them using foreign keys.
 
   2. [Score: 0.000] From conv_database_design
      Use NoSQL when you need: flexible schemas, horizontal scaling, high write throughput, or when working with unstructured data. SQL is better for complex queries, ACID transactions, and structured data with well-defined relationships.
 
   3. [Score: 0.000] From conv_database_design
-     When should I use NoSQL over SQL?
-
-  4. [Score: 0.000] From conv_database_design
      What is database normalization?
 
-  5. [Score: 0.000] From conv_database_design
-     Database normalization is the process of organizing data to reduce redundancy and improve data integrity. It involves dividing large tables into smaller ones and defining relationships between them using foreign keys.
+  4. [Score: 0.000] From conv_database_design
+     When should I use NoSQL over SQL?
+
+  5. [Score: 0.000] From conv_performance
+     How can I optimize database queries?
 
 === Step 4: Generating Context-Aware Response ===
 ✓ AI Response (with context from 3 conversations):
 
-Writing memory-safe, high-performance database code involves a combination of best practices from both database management and software development. Here are some general tips:
+Writing memory-safe, high-performance database code involves several principles and strategies:
 
-1. **Optimize your queries:** As discussed in Context 1, optimizing your queries is crucial. This can be done by removing any unnecessary columns, using WHERE clauses to filter data properly, using JOINs effectively, and avoiding nested queries where possible. Using indexes can also significantly speed up data retrieval.
+1. **Normalization**: As mentioned in Context 1, database normalization can help reduce redundancy and improve data integrity. This can improve performance by reducing the amount of data that needs to be read from disk.
 
-2. **Database Design:** Your database design plays a key role in performance. As mentioned in Context 5, normalization can reduce data redundancy and improve integrity. However, it's also important to note that in some high-performance applications, a degree of denormalization might be beneficial, as it can reduce the number of table joins required.
+2. **Appropriate Database Choice**: Depending on the type of data and the operations you need to perform, SQL or NoSQL may be a better fit. For example, according to Context 2, NoSQL can provide high write throughput and is good for unstructured data, while SQL is better for complex queries and structured data.
 
-3. **Choose the right database system:** As mentioned in Context 2 and 3, the choice between SQL and NoSQL databases can impact performance. SQL is good for structured data with complex queries and ACID transactions. NoSQL is good for unstructured data with high write throughput, flexible schemas, and horizontal scaling.
+3. **Indexing**: Create indexes on the columns that you frequently query. Indexes can greatly speed up data retrieval but remember that they also slow down write operations because the index also needs to be updated.
 
-4. **Memory Management in Code:** When writing your code, be mindful of memory usage. Avoid loading large amounts of data into memory at once, and free up memory that's no longer needed. In a garbage-collected language like Java or Python, this usually means making sure there are no remaining references to objects you're done with. In a language with manual memory management like C++, it means properly using `delete` or smart pointers.
+4. **Optimize Queries**: As asked in Context 5, optimizing database queries is crucial for high performance. Avoid using SELECT * queries, instead, specify the exact fields you need. Also, try to avoid complex joins and nested queries where possible.
 
-5. **Use Efficient Data Structures:** Certain data structures are more efficient than others for certain tasks. For instance, using a Hash Map can provide constant-time lookups, which can be beneficial when dealing with large datasets.
+5. **Use Prepared Statements or Parameterized Queries**: These not only help prevent SQL injection attacks but also can improve performance by allowing the database to efficiently cache and reuse query execution plans.
 
-6. **Concurrency Control:** When multiple users or processes are accessing your database simultaneously, concurrency control becomes important. Techniques like locking, optimistic concurrency control, or using transactions can help ensure data integrity while maintaining high performance.
+6. **Connection Pooling**: Reusing database connections rather than establishing a new connection for every operation can save a significant amount of resources.
 
-7. **Caching:** Frequently accessed data could be stored in cache to improve performance. Database systems often include their own caching mechanisms, but application-level caching can also be beneficial.
+7. **Paging Large Results**: When dealing with large amounts of data, retrieve and process them in smaller chunks to avoid using too much memory at once.
 
-8. **Batch Operations:** Instead of performing database operations one at a time, batch them together where possible. This can reduce the number of round trips between your application and the database, improving performance.
+8. **Caching**: Cache the results of expensive or frequently accessed queries to reduce the load on the database.
 
-9. **Monitoring and Profiling:** Regularly monitor and profile your code to find bottlenecks. Tools like slow query logs, performance schema, or explain plans can help you understand where your database code might need optimization.
+9. **Concurrency Control**: Use appropriate locking mechanisms or transaction isolation levels to prevent data inconsistencies and conflicts while allowing for as much parallelism as possible.
 
-Remember, high-performance code also needs to be safe and maintainable. It's important to balance these considerations to create robust, efficient applications.
+10. **Memory Management**: Be mindful of how your database code uses memory. Avoid loading large amounts of data into memory at once. Always ensure to close connections, result sets, and other database resources after use to free up memory.
+
+Remember that performance tuning can be a complex task that often involves trade-offs. Monitor your application's performance, identify bottlenecks, and iteratively refine your approach.
 
 === Step 5: Storing New Conversation ===
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 58 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.346s
+    ✓ Generated embedding: 1536 dimensions in 0.288s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
-    • Text length: 2975 characters
+    • Text length: 2377 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.238s
+    ✓ Generated embedding: 1536 dimensions in 0.455s
     • Function auto-cleaned up by client
 ✓ New conversation stored and indexed for future retrieval
 
@@ -682,11 +684,11 @@ Searching for messages about 'ownership' across ALL conversations...
   • Limit: 3 results
   • Search method: Full-text with fuzzy matching & stemming
   • No vector embeddings needed - pure keyword search
-  ✓ Text search completed in 0.059s
+  ✓ Text search completed in 0.056s
 ✓ Found 3 messages mentioning ownership:
-  1. From conv_rust_programming: Rust's key features include: memory safety without garbage collection, zero-cost abstractions, ownership system, powerful type system, and excellent concurrency support.
+  1. From conv_performance: Rust's ownership system provides zero-cost memory management. Use Box for heap allocation, Rc/Arc for shared ownership, and avoid cloning large data structures. The compiler optimizes away unnecessary allocations.
 
-  2. From conv_performance: Rust's ownership system provides zero-cost memory management. Use Box for heap allocation, Rc/Arc for shared ownership, and avoid cloning large data structures. The compiler optimizes away unnecessary allocations.
+  2. From conv_rust_programming: Rust's key features include: memory safety without garbage collection, zero-cost abstractions, ownership system, powerful type system, and excellent concurrency support.
 
   3. From conv_rust_programming: The borrow checker enforces Rust's ownership rules at compile time. It ensures that references don't outlive the data they point to and prevents data races by allowing either multiple immutable references or one mutable reference.
 
@@ -761,75 +763,75 @@ Storing previous conversations with embeddings...
     • Using model: text-embedding-3-small
     • Text length: 34 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.233s
+    ✓ Generated embedding: 1536 dimensions in 0.292s
     • Function auto-cleaned up by client
   → Calling ekoDB Embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 169 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.445s
+    ✓ Generated embedding: 1536 dimensions in 0.831s
     • Function auto-cleaned up by client
   → Calling ekoDB Embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 33 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.308s
+    ✓ Generated embedding: 1536 dimensions in 0.221s
     • Function auto-cleaned up by client
   → Calling ekoDB Embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 230 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.257s
+    ✓ Generated embedding: 1536 dimensions in 0.255s
     • Function auto-cleaned up by client
 ✓ Stored Rust programming conversation (4 messages)
   → Calling ekoDB Embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 31 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.222s
+    ✓ Generated embedding: 1536 dimensions in 0.453s
     • Function auto-cleaned up by client
   → Calling ekoDB Embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 217 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.295s
+    ✓ Generated embedding: 1536 dimensions in 0.253s
     • Function auto-cleaned up by client
   → Calling ekoDB Embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 33 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.322s
+    ✓ Generated embedding: 1536 dimensions in 1.305s
     • Function auto-cleaned up by client
   → Calling ekoDB Embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 232 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.249s
+    ✓ Generated embedding: 1536 dimensions in 0.229s
     • Function auto-cleaned up by client
 ✓ Stored database design conversation (4 messages)
   → Calling ekoDB Embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 36 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.243s
+    ✓ Generated embedding: 1536 dimensions in 0.300s
     • Function auto-cleaned up by client
   → Calling ekoDB Embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 178 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.368s
+    ✓ Generated embedding: 1536 dimensions in 0.218s
     • Function auto-cleaned up by client
   → Calling ekoDB Embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 37 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.283s
+    ✓ Generated embedding: 1536 dimensions in 0.315s
     • Function auto-cleaned up by client
   → Calling ekoDB Embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 213 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.346s
+    ✓ Generated embedding: 1536 dimensions in 0.287s
     • Function auto-cleaned up by client
 ✓ Stored performance optimization conversation (4 messages)
 
@@ -845,7 +847,7 @@ Using hybrid search to find relevant messages from all conversations...
     • Using model: text-embedding-3-small
     • Text length: 58 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.365s
+    ✓ Generated embedding: 1536 dimensions in 0.248s
     • Function auto-cleaned up by client
 
 → Executing HybridSearch()...
@@ -855,59 +857,59 @@ Using hybrid search to find relevant messages from all conversations...
   • Limit: 5 results
   • Search type: Semantic (vector) + Keyword (text)
   • Server combines both scores for relevance ranking
-  ✓ Search completed in 0.099s
+  ✓ Search completed in 0.098s
 
 ✓ Found 5 related messages across all conversations:
-  1. [Score: 0.000] From conv_performance
-     How can I optimize database queries?
+  1. [Score: 0.000] From conv_database_design
+     Database normalization is the process of organizing data to reduce redundancy and improve data integrity. It involves dividing large tables into smaller ones and defining relationships between them using foreign keys.
 
   2. [Score: 0.000] From conv_database_design
-     Use NoSQL when you need: flexible schemas, horizontal scaling, high write throughput, or when working with unstructured data. SQL is better for complex queries, ACID transactions, and structured data with well-defined relationships.
-
-  3. [Score: 0.000] From conv_database_design
-     When should I use NoSQL over SQL?
-
-  4. [Score: 0.000] From conv_database_design
      What is database normalization?
 
-  5. [Score: 0.000] From conv_database_design
-     Database normalization is the process of organizing data to reduce redundancy and improve data integrity. It involves dividing large tables into smaller ones and defining relationships between them using foreign keys.
+  3. [Score: 0.000] From conv_database_design
+     Use NoSQL when you need: flexible schemas, horizontal scaling, high write throughput, or when working with unstructured data. SQL is better for complex queries, ACID transactions, and structured data with well-defined relationships.
+
+  4. [Score: 0.000] From conv_database_design
+     When should I use NoSQL over SQL?
+
+  5. [Score: 0.000] From conv_performance
+     How can I optimize database queries?
 
 === Step 4: Generating Context-Aware Response ===
 ✓ AI Response (with context from 3 conversations):
 
-Writing memory-safe, high-performance database code can vary based on the type of database you are using (SQL or NoSQL), but here are a few general guidelines:
+Writing memory-safe, high-performance database code involves a combination of good practices, optimization techniques, and the appropriate choice of technology. Here are some steps you can follow:
 
-1. **Optimize your queries**: This was discussed in Context 1. To do this, you can use techniques like indexing, avoiding the use of wildcard characters at the beginning of LIKE patterns, using the LIMIT clause to limit the number of rows returned by a query, and running EXPLAIN PLAN to understand how your query is being executed.
+1. **Choose the right database system**: Depending on your use case, you may benefit more from SQL or NoSQL databases (Context 3 and 4). SQL databases are better for complex queries and structured data with well-defined relationships, while NoSQL databases are great for unstructured data, flexible schemas, and high write throughput.
 
-2. **Choose the right database type**: As discussed in Contexts 2 and 3, the choice between SQL and NoSQL can significantly impact performance. If you need to handle unstructured data, require high write throughput, or need horizontal scaling, a NoSQL database may be more efficient. Conversely, if you are working with structured data and need to perform complex queries or ACID transactions, SQL might be the better choice.
+2. **Normalize your data**: Normalization helps to reduce data redundancy and improve data integrity by dividing large tables into smaller ones and defining relationships between them using foreign keys (Context 1). This can simplify the writing of queries and reduce the amount of data that needs to be loaded into memory.
 
-3. **Normalize your database**: As mentioned in Context 4 and 5, database normalization can improve data integrity and reduce redundancy, which can in turn improve performance. By dividing large tables into smaller ones and defining relationships with foreign keys, you can ensure more efficient operations.
+3. **Optimize your queries**: Efficient queries can significantly improve the performance of your database code. This can involve techniques like indexing, using the correct datatypes, limiting the results returned by your queries, avoiding nested queries, and making use of query planner tools to analyze and improve your SQL queries (Context 5).
 
-4. **Memory Management**: Be mindful of how your database operations use memory. Avoid loading large datasets into memory all at once, instead, try to process data in chunks. In SQL, avoid using large temporary tables when not necessary as this can consume significant memory.
+4. **Manage memory usage**: Look for ways to reduce memory usage in your code. This could involve using appropriate data structures, avoiding unnecessary duplication of data, and disposing of objects that are no longer needed.
 
-5. **Use prepared statements**: Prepared statements not only protect against SQL injection attacks but they also can improve performance by allowing the database to cache the query plan and reuse it.
+5. **Implement caching**: Caching can significantly improve the performance of your application by storing frequently accessed data in memory. However, it's important to manage your cache carefully to avoid memory leaks.
 
-6. **Close connections**: Always ensure database connections are closed promptly after use. This can prevent memory leaks and improve performance by freeing up system resources.
+6. **Use connection pooling**: Connection pooling can help to manage resources, improve performance, and ensure memory safety. It allows you to reuse database connections rather than creating a new one every time a client makes a request.
 
-7. **Concurrency control**: Implement concurrency control mechanisms like locks, semaphores, or optimistic concurrency control depending on your use-case to ensure memory-safe operations.
+7. **Handle exceptions properly**: Exception handling can help to ensure the integrity of your data and prevent memory leaks. If an error occurs, you should roll back any changes that were made during the current transaction and release any resources that were acquired.
 
-8. **Consider using a connection pool**: Connection pooling can greatly enhance performance for applications that require frequent short interactions with the database by reducing the overhead of establishing a new connection every time.
+8. **Test your code**: Regular testing can help to identify any issues with memory usage or performance. Tools like profilers and load testers can be very useful.
 
-Remember, each application and system can have unique requirements, so it's essential to benchmark and test different strategies to identify what works best for your specific use case.
+Remember that writing memory-safe, high-performance database code often involves a balance between optimizing for speed and maintaining data integrity. It's important to understand the trade-offs involved and make decisions based on the specific requirements of your project.
 
 === Step 5: Storing New Conversation ===
   → Calling ekoDB Embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 58 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.336s
+    ✓ Generated embedding: 1536 dimensions in 0.376s
     • Function auto-cleaned up by client
   → Calling ekoDB Embed() helper...
     • Using model: text-embedding-3-small
-    • Text length: 2501 characters
+    • Text length: 2609 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.277s
+    ✓ Generated embedding: 1536 dimensions in 0.423s
     • Function auto-cleaned up by client
 ✓ New conversation stored and indexed for future retrieval
 
@@ -921,7 +923,7 @@ Searching for messages about 'ownership' across ALL conversations...
   • Limit: 3 results
   • Search method: Full-text with fuzzy matching & stemming
   • No vector embeddings needed - pure keyword search
-  ✓ Text search completed in 0.059s
+  ✓ Text search completed in 0.060s
 
 ✓ Found 3 messages mentioning ownership:
   1. From conv_performance: Rust's ownership system provides zero-cost memory management. Use Box for heap allocation, Rc/Arc for shared ownership, and avoid cloning large data structures. The compiler optimizes away unnecessary allocations.
@@ -1004,75 +1006,75 @@ Storing previous conversations with embeddings...
     • Using model: text-embedding-3-small
     • Text length: 34 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.358s
+    ✓ Generated embedding: 1536 dimensions in 0.324s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 169 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.234s
+    ✓ Generated embedding: 1536 dimensions in 0.23s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 33 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.28s
+    ✓ Generated embedding: 1536 dimensions in 0.239s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 230 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.333s
+    ✓ Generated embedding: 1536 dimensions in 0.231s
     • Function auto-cleaned up by client
 ✓ Stored Rust programming conversation (4 messages)
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 31 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.262s
+    ✓ Generated embedding: 1536 dimensions in 0.271s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 217 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.272s
+    ✓ Generated embedding: 1536 dimensions in 0.324s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 33 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.461s
+    ✓ Generated embedding: 1536 dimensions in 0.281s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 232 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.304s
+    ✓ Generated embedding: 1536 dimensions in 0.341s
     • Function auto-cleaned up by client
 ✓ Stored database design conversation (4 messages)
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 36 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.279s
+    ✓ Generated embedding: 1536 dimensions in 0.307s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 178 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.344s
+    ✓ Generated embedding: 1536 dimensions in 0.31s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 37 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.255s
+    ✓ Generated embedding: 1536 dimensions in 0.302s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 213 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.273s
+    ✓ Generated embedding: 1536 dimensions in 0.264s
     • Function auto-cleaned up by client
 ✓ Stored performance optimization conversation (4 messages)
 
@@ -1088,7 +1090,7 @@ Using hybrid search to find relevant messages from all conversations...
     • Using model: text-embedding-3-small
     • Text length: 58 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.264s
+    ✓ Generated embedding: 1536 dimensions in 0.401s
     • Function auto-cleaned up by client
 
 → Executing hybridSearch()...
@@ -1098,7 +1100,7 @@ Using hybrid search to find relevant messages from all conversations...
   • Limit: 5 results
   • Search type: Semantic (vector) + Keyword (text)
   • Server combines both scores for relevance ranking
-  ✓ Search completed in 0.09s
+  ✓ Search completed in 0.124s
 
 ✓ Found 5 related messages across all conversations:
   1. [Score: 0.000] From conv_database_design
@@ -1125,7 +1127,7 @@ Using hybrid search to find relevant messages from all conversations...
     • Using model: text-embedding-3-small
     • Text length: 58 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.322s
+    ✓ Generated embedding: 1536 dimensions in 0.263s
     • Function auto-cleaned up by client
 ✓ New conversation stored and indexed for future retrieval
 
@@ -1139,12 +1141,12 @@ Searching for messages about 'ownership' across ALL conversations...
   • Limit: 3 results
   • Search method: Full-text with fuzzy matching & stemming
   • No vector embeddings needed - pure keyword search
-  ✓ Text search completed in 0.047s
+  ✓ Text search completed in 0.056s
 
 ✓ Found 3 messages mentioning ownership:
-  1. From conv_rust_programming: Rust's key features include: memory safety without garbage collection, zero-cost abstractions, ownership system, powerful type system, and excellent concurrency support.
+  1. From conv_performance: Rust's ownership system provides zero-cost memory management. Use Box for heap allocation, Rc/Arc for shared ownership, and avoid cloning large data structures. The compiler optimizes away unnecessary allocations.
 
-  2. From conv_performance: Rust's ownership system provides zero-cost memory management. Use Box for heap allocation, Rc/Arc for shared ownership, and avoid cloning large data structures. The compiler optimizes away unnecessary allocations.
+  2. From conv_rust_programming: Rust's key features include: memory safety without garbage collection, zero-cost abstractions, ownership system, powerful type system, and excellent concurrency support.
 
   3. From conv_rust_programming: The borrow checker enforces Rust's ownership rules at compile time. It ensures that references don't outlive the data they point to and prevents data races by allowing either multiple immutable references or one mutable reference.
 

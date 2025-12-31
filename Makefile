@@ -15,7 +15,7 @@ YELLOW := \033[33m
 RED := \033[31m
 RESET := \033[0m
 
-.PHONY: all build build-release build-client build-python-client build-typescript-client test test-ci test-client test-examples test-examples-direct test-examples-client test-examples-rust test-examples-python test-examples-go test-examples-typescript test-examples-javascript test-examples-transactions test-examples-scripts test-examples-scripts-crud clean check fmt fmt-rust fmt-rust-client fmt-rust-examples fmt-python fmt-go fmt-typescript fmt-md format install install-rust install-python install-typescript install-go setup install-hooks deps-check deps-update deploy-client deploy-client-rust deploy-client-py deploy-client-py-simple deploy-client-go deploy-client-ts bump-version bump-client-py docs-client
+.PHONY: all build build-release build-client build-python-client build-typescript-client test test-ci test-client test-examples test-examples-direct test-examples-client test-examples-rust test-examples-python test-examples-go test-examples-typescript test-examples-javascript test-examples-transactions test-examples-scripts test-examples-scripts-crud test-examples-swr test-examples-ts-swr test-examples-py-swr test-examples-go-swr test-examples-rust-swr test-examples-kt-swr clean check fmt fmt-rust fmt-rust-client fmt-rust-examples fmt-python fmt-go fmt-typescript fmt-md format install install-rust install-python install-typescript install-go setup install-hooks deps-check deps-update deploy-client deploy-client-rust deploy-client-py deploy-client-py-simple deploy-client-go deploy-client-ts bump-version bump-client-py docs-client
 
 # ASCII Banner for ekoDB
 BANNER := \
@@ -82,6 +82,12 @@ help:
 	@echo "  📜 $(GREEN)make test-examples-scripts$(RESET) - Run all Scripts/Functions examples (http_functions + crud_scripts)"
 	@echo "  📚 $(GREEN)make test-examples-scripts-crud$(RESET) - Run CRUD Scripts examples only (all languages)"
 	@echo "  🤖 $(GREEN)make test-examples-rag$(RESET) - Run RAG Conversation System examples (Rust, Python, TypeScript)"
+	@echo "  🌐 $(GREEN)make test-examples-swr$(RESET) - Run SWR (Stale-While-Revalidate) edge cache examples (all languages)"
+	@echo "     $(GREEN)make test-examples-ts-swr$(RESET) - TypeScript SWR examples only"
+	@echo "     $(GREEN)make test-examples-py-swr$(RESET) - Python SWR examples only"
+	@echo "     $(GREEN)make test-examples-go-swr$(RESET) - Go SWR examples only"
+	@echo "     $(GREEN)make test-examples-rust-swr$(RESET) - Rust SWR examples only"
+	@echo "     $(GREEN)make test-examples-kt-swr$(RESET) - Kotlin SWR examples only"
 	@echo ""
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "🚀 $(CYAN)DEPLOYMENT$(RESET)"
@@ -360,7 +366,7 @@ test-ci:
 # Run all examples (all languages, both direct and client, including transactions)
 test-examples: examples-ls-check
 	@echo "make test-examples" > examples/test-examples.md
-	@$(MAKE) test-examples-rust test-examples-python test-examples-go test-examples-typescript test-examples-javascript test-examples-kotlin test-examples-rag 2>&1 | tee -a examples/test-examples.md
+	@$(MAKE) test-examples-rust test-examples-python test-examples-go test-examples-typescript test-examples-javascript test-examples-kotlin test-examples-rag test-examples-swr 2>&1 | tee -a examples/test-examples.md
 	@echo "✅ $(GREEN)All integration tests complete!$(RESET)"
 
 # Run direct API examples (using raw HTTP/WebSocket calls, including transactions)
@@ -531,6 +537,83 @@ run-rag-examples:
 	@echo ""
 	@echo "$(CYAN)Mission: AI for All 🚀$(RESET) - Making RAG accessible to everyone!"
 	@echo ""
+
+# ============================================================================
+# SWR (Stale-While-Revalidate) Edge Cache Examples
+# ============================================================================
+.PHONY: test-examples-swr test-examples-ts-swr test-examples-py-swr test-examples-go-swr test-examples-rust-swr test-examples-kt-swr
+
+test-examples-swr:
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "🌐 $(CYAN)Testing SWR (Stale-While-Revalidate) Pattern Examples$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo ""
+	@$(MAKE) test-examples-ts-swr test-examples-py-swr test-examples-go-swr test-examples-rust-swr test-examples-kt-swr
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "✅ $(GREEN)All SWR Examples Complete!$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo ""
+	@echo "$(GREEN)What you just saw - ekoDB as Edge Cache:$(RESET)"
+	@echo "  ✓ FindById → Check cache"
+	@echo "  ✓ If/Else → Conditional execution"
+	@echo "  ✓ HttpRequest → External API calls"
+	@echo "  ✓ Insert with TTL → Auto-expiring cache"
+	@echo "  ✓ Sub-millisecond cache hits"
+	@echo "  ✓ No Redis, no CDN, no cache invalidation logic needed"
+	@echo ""
+	@echo "$(CYAN)Your DATABASE is your EDGE! 🚀$(RESET)"
+	@echo ""
+
+test-examples-ts-swr: build-typescript-client
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "$(CYAN)Running TypeScript SWR Examples...$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@cd examples/typescript && npx tsx client_swr_pattern.ts
+	@cd examples/typescript && npx tsx client_edge_cache.ts
+	@echo "✅ $(GREEN)TypeScript SWR examples complete!$(RESET)"
+
+test-examples-py-swr: build-python-client
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "$(CYAN)Running Python SWR Examples...$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@cd examples/python && python3 swr_pattern.py
+	@echo "✅ $(GREEN)Python SWR examples complete!$(RESET)"
+
+test-examples-go-swr:
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "$(CYAN)Running Go SWR Examples...$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@cd examples/go && go run swr_pattern.go
+	@echo "✅ $(GREEN)Go SWR examples complete!$(RESET)"
+
+test-examples-rust-swr: build-client
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "$(CYAN)Running Rust SWR Examples...$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@cd examples/rust && cargo run --example swr_pattern
+	@echo "✅ $(GREEN)Rust SWR examples complete!$(RESET)"
+
+test-examples-kt-swr:
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "$(CYAN)Running Kotlin SWR Examples...$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@if [ -f .env ]; then \
+		. ./.env && \
+		export JAVA_HOME=$$(/usr/libexec/java_home -v 17) && export PATH=$$JAVA_HOME/bin:$$PATH && \
+		cd examples/kotlin && \
+		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.SwrPatternKt --no-daemon; \
+	else \
+		echo "$(RED)✗ .env file not found$(RESET)"; \
+		exit 1; \
+	fi
+	@echo "✅ $(GREEN)Kotlin SWR examples complete!$(RESET)"
 
 # ============================================================================
 # Rust Examples (both direct + client)
