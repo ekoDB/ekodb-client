@@ -132,6 +132,61 @@ export type FunctionStageConfig =
       input_field: string;
       output_field: string;
       model?: string;
+    }
+  | {
+      type: "FindById";
+      collection: string;
+      record_id: string;
+    }
+  | {
+      type: "FindOne";
+      collection: string;
+      key: string;
+      value: any;
+    }
+  | {
+      type: "If";
+      condition: ScriptCondition;
+      then_functions: FunctionStageConfig[];
+      else_functions?: FunctionStageConfig[];
+    }
+  | {
+      type: "ForEach";
+      functions: FunctionStageConfig[];
+    }
+  | {
+      type: "CallFunction";
+      function_label: string;
+      params?: Record<string, any>;
+    }
+  | {
+      type: "FindOneAndUpdate";
+      collection: string;
+      record_id: string;
+      updates: Record<string, any>;
+      bypass_ripple?: boolean;
+      ttl?: number;
+    }
+  | {
+      type: "UpdateWithAction";
+      collection: string;
+      record_id: string;
+      action: string;
+      field: string;
+      value: any;
+      bypass_ripple?: boolean;
+    }
+  | {
+      type: "CreateSavepoint";
+      name: string;
+    }
+  | {
+      type: "RollbackToSavepoint";
+      name: string;
+    }
+  | {
+      type: "ReleaseSavepoint";
+      name: string;
     };
 
 export interface ChatMessage {
@@ -172,6 +227,17 @@ export interface SortFieldConfig {
   field: string;
   ascending: boolean;
 }
+
+export type ScriptCondition =
+  | { type: "FieldEquals"; field: string; value: any }
+  | { type: "FieldExists"; field: string }
+  | { type: "HasRecords" }
+  | { type: "CountEquals"; count: number }
+  | { type: "CountGreaterThan"; count: number }
+  | { type: "CountLessThan"; count: number }
+  | { type: "And"; conditions: ScriptCondition[] }
+  | { type: "Or"; conditions: ScriptCondition[] }
+  | { type: "Not"; condition: ScriptCondition };
 
 export interface FunctionResult {
   records: Record<string, any>[];
@@ -416,5 +482,94 @@ export const Stage = {
     input_field,
     output_field,
     model,
+  }),
+
+  findById: (collection: string, record_id: string): FunctionStageConfig => ({
+    type: "FindById",
+    collection,
+    record_id,
+  }),
+
+  findOne: (
+    collection: string,
+    key: string,
+    value: any,
+  ): FunctionStageConfig => ({
+    type: "FindOne",
+    collection,
+    key,
+    value,
+  }),
+
+  if: (
+    condition: ScriptCondition,
+    thenFunctions: FunctionStageConfig[],
+    elseFunctions?: FunctionStageConfig[],
+  ): FunctionStageConfig => ({
+    type: "If",
+    condition,
+    then_functions: thenFunctions,
+    else_functions: elseFunctions,
+  }),
+
+  forEach: (functions: FunctionStageConfig[]): FunctionStageConfig => ({
+    type: "ForEach",
+    functions,
+  }),
+
+  callFunction: (
+    function_label: string,
+    params?: Record<string, any>,
+  ): FunctionStageConfig => ({
+    type: "CallFunction",
+    function_label,
+    params,
+  }),
+
+  findOneAndUpdate: (
+    collection: string,
+    record_id: string,
+    updates: Record<string, any>,
+    bypassRipple = false,
+    ttl?: number,
+  ): FunctionStageConfig => ({
+    type: "FindOneAndUpdate",
+    collection,
+    record_id,
+    updates,
+    bypass_ripple: bypassRipple,
+    ttl,
+  }),
+
+  updateWithAction: (
+    collection: string,
+    record_id: string,
+    action: string,
+    field: string,
+    value: any,
+    bypassRipple = false,
+  ): FunctionStageConfig => ({
+    type: "UpdateWithAction",
+    collection,
+    record_id,
+    action,
+    field,
+    value,
+    bypass_ripple: bypassRipple,
+  }),
+
+  createSavepoint: (name: string): FunctionStageConfig => ({
+    type: "CreateSavepoint",
+    name,
+  }),
+
+  rollbackToSavepoint: (name: string): FunctionStageConfig => ({
+    type: "RollbackToSavepoint",
+    name,
+  }),
+
+  releaseSavepoint: (name: string): FunctionStageConfig => ({
+    type: "ReleaseSavepoint",
+    name,
   }),
 };

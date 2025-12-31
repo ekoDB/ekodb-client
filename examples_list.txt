@@ -1,26 +1,26 @@
 # ekoDB Client Examples Inventory
-# Generated: Sun Dec 28 16:00:00 EST 2025
+# Generated: Wed Dec 31 02:17:49 EST 2025
 # 
 
 ## Direct API Examples (Raw HTTP/WebSocket)
 
   javascript: 10 examples
-  python: 10 examples
-  go: 10 examples
-  rust: 10 examples
+  python: 11 examples
+  go: 11 examples
+  rust: 12 examples
 
-  Total Direct: 40
+  Total Direct: 44
 
 ## Client Library Examples
 
   rust: 15 examples
   python: 16 examples
   go: 15 examples
-  typescript: 16 examples
+  typescript: 18 examples
   javascript: 12 examples
   kotlin: 15 examples
 
-  Total Client: 89
+  Total Client: 91
 
 ## RAG Conversation System Examples
 
@@ -32,13 +32,13 @@
 
   Total RAG: 5
 
-  Updated Total Client: 94
+  Updated Total Client: 96
 
 ## Summary
 
-  Total Examples: 134
-  Direct API: 40
-  Client Libraries: 94
+  Total Examples: 140
+  Direct API: 44
+  Client Libraries: 96
 
   Languages: 6 (Rust, Python, Go, TypeScript, JavaScript, Kotlin)
   Full-Featured Clients: 5 (Rust, Python, Go, TypeScript, Kotlin)

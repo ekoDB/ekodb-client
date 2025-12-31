@@ -191,6 +191,141 @@ sealed class FunctionStageConfig {
         val output_field: String,
         val model: JsonElement? = null  // Flexible like TypeScript - accepts any JSON
     ) : FunctionStageConfig()
+    
+    @Serializable
+    @SerialName("FindById")
+    data class FindById(
+        val collection: String,
+        val record_id: String
+    ) : FunctionStageConfig()
+    
+    @Serializable
+    @SerialName("FindOne")
+    data class FindOne(
+        val collection: String,
+        val key: String,
+        val value: JsonElement
+    ) : FunctionStageConfig()
+    
+    @Serializable
+    @SerialName("FindOneAndUpdate")
+    data class FindOneAndUpdate(
+        val collection: String,
+        val record_id: String,
+        val updates: JsonObject,
+        @EncodeDefault val bypass_ripple: Boolean = false,
+        val ttl: Long? = null
+    ) : FunctionStageConfig()
+    
+    @Serializable
+    @SerialName("UpdateWithAction")
+    data class UpdateWithAction(
+        val collection: String,
+        val record_id: String,
+        val action: String,
+        val field: String,
+        val value: JsonElement,
+        @EncodeDefault val bypass_ripple: Boolean = false
+    ) : FunctionStageConfig()
+    
+    @Serializable
+    @SerialName("If")
+    data class If(
+        val condition: ScriptCondition,
+        val then_functions: List<FunctionStageConfig>,
+        val else_functions: List<FunctionStageConfig>? = null
+    ) : FunctionStageConfig()
+    
+    @Serializable
+    @SerialName("ForEach")
+    data class ForEach(
+        val functions: List<FunctionStageConfig>
+    ) : FunctionStageConfig()
+    
+    @Serializable
+    @SerialName("CallFunction")
+    data class CallFunction(
+        val function_label: String,
+        val params: JsonObject? = null
+    ) : FunctionStageConfig()
+    
+    @Serializable
+    @SerialName("CreateSavepoint")
+    data class CreateSavepoint(
+        val name: String
+    ) : FunctionStageConfig()
+    
+    @Serializable
+    @SerialName("RollbackToSavepoint")
+    data class RollbackToSavepoint(
+        val name: String
+    ) : FunctionStageConfig()
+    
+    @Serializable
+    @SerialName("ReleaseSavepoint")
+    data class ReleaseSavepoint(
+        val name: String
+    ) : FunctionStageConfig()
+}
+
+/**
+ * Condition for Script control flow (If statements)
+ */
+@Serializable
+@JsonClassDiscriminator("type")
+sealed class ScriptCondition {
+    @Serializable
+    @SerialName("HasRecords")
+    object HasRecords : ScriptCondition()
+    
+    @Serializable
+    @SerialName("FieldEquals")
+    data class FieldEquals(
+        val field: String,
+        val value: JsonElement
+    ) : ScriptCondition()
+    
+    @Serializable
+    @SerialName("FieldExists")
+    data class FieldExists(
+        val field: String
+    ) : ScriptCondition()
+    
+    @Serializable
+    @SerialName("CountEquals")
+    data class CountEquals(
+        val count: Int
+    ) : ScriptCondition()
+    
+    @Serializable
+    @SerialName("CountGreaterThan")
+    data class CountGreaterThan(
+        val count: Int
+    ) : ScriptCondition()
+    
+    @Serializable
+    @SerialName("CountLessThan")
+    data class CountLessThan(
+        val count: Int
+    ) : ScriptCondition()
+    
+    @Serializable
+    @SerialName("And")
+    data class And(
+        val conditions: List<ScriptCondition>
+    ) : ScriptCondition()
+    
+    @Serializable
+    @SerialName("Or")
+    data class Or(
+        val conditions: List<ScriptCondition>
+    ) : ScriptCondition()
+    
+    @Serializable
+    @SerialName("Not")
+    data class Not(
+        val condition: ScriptCondition
+    ) : ScriptCondition()
 }
 
 /**

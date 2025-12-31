@@ -36,6 +36,9 @@ dependencies {
     
     // DateTime
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.1")
+    
+    // Dotenv for environment variables
+    implementation("io.github.cdimascio:dotenv-kotlin:6.4.1")
 }
 
 kotlin {
