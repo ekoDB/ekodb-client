@@ -30,11 +30,12 @@ func main() {
 	// Create SWR script for GitHub user caching
 	fmt.Println("Step 1: Create SWR function that acts as edge cache")
 
+	version := "1.0"
 	swrScript := ekodb.Script{
 		Label:       "fetch_github_user",
 		Name:        "Fetch GitHub User with Cache",
 		Description: strPtr("SWR pattern: Check cache, fetch from GitHub API if stale, auto-update with TTL"),
-		Version:     "1.0",
+		Version:     &version,
 		Parameters: map[string]ekodb.ParameterDefinition{
 			"username": {
 				Required:    true,
@@ -120,11 +121,12 @@ func main() {
 	fmt.Println("=== Advanced: SWR with Data Enrichment ===\n")
 	fmt.Println("Creating product enrichment function...")
 
+	version2 := "1.0"
 	enrichScript := ekodb.Script{
 		Label:       "fetch_product_enriched",
 		Name:        "Fetch Product with Enrichment",
 		Description: strPtr("Demonstrates calling external API and enriching data"),
-		Version:     "1.0",
+		Version:     &version2,
 		Parameters: map[string]ekodb.ParameterDefinition{
 			"product_id": {
 				Required:    true,

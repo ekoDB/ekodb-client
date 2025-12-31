@@ -21,9 +21,9 @@ pub struct Script {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 
-    /// Version string
-    #[serde(default = "default_version")]
-    pub version: String,
+    /// Version string (optional)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub version: Option<String>,
 
     /// Parameter definitions (keyed by parameter name)
     #[serde(default)]
@@ -45,10 +45,6 @@ pub struct Script {
     pub updated_at: Option<DateTime<Utc>>,
 }
 
-fn default_version() -> String {
-    "1.0".to_string()
-}
-
 impl Script {
     /// Create a new Script
     pub fn new(label: impl Into<String>, name: impl Into<String>) -> Self {
@@ -56,7 +52,7 @@ impl Script {
             label: label.into(),
             name: name.into(),
             description: None,
-            version: default_version(),
+            version: None,
             parameters: HashMap::new(),
             functions: Vec::new(),
             tags: Vec::new(),
@@ -73,7 +69,7 @@ impl Script {
 
     /// Set the version
     pub fn with_version(mut self, version: impl Into<String>) -> Self {
-        self.version = version.into();
+        self.version = Some(version.into());
         self
     }
 
@@ -112,9 +108,9 @@ pub struct UserFunction {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 
-    /// Version string
-    #[serde(default = "default_version")]
-    pub version: String,
+    /// Version string (optional)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub version: Option<String>,
 
     /// Parameter definitions
     #[serde(default)]
@@ -144,7 +140,7 @@ impl UserFunction {
             label: label.into(),
             name: name.into(),
             description: None,
-            version: default_version(),
+            version: None,
             parameters: HashMap::new(),
             functions: Vec::new(),
             tags: Vec::new(),
@@ -161,7 +157,7 @@ impl UserFunction {
 
     /// Set the version
     pub fn with_version(mut self, version: impl Into<String>) -> Self {
-        self.version = version.into();
+        self.version = Some(version.into());
         self
     }
 

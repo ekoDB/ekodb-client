@@ -62,5 +62,7 @@ tasks.named<JavaExec>("run") {
 sourceSets {
     main {
         kotlin.srcDir("examples")
+        // Exclude composition example - client API incompatible with composition pattern
+        kotlin.exclude("**/ClientFunctionComposition.kt")
     }
 }
