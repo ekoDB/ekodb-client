@@ -44,11 +44,12 @@ func setupTestData(client *ekodb.Client) error {
 func simpleQueryScript(client *ekodb.Client) (string, error) {
 	fmt.Println("📝 Example 1: Simple Query Script\n")
 
+	version := "1.0"
 	script := ekodb.Script{
 		Label:       "get_active_users",
 		Name:        "Get Active Users",
 		Description: strPtr("Retrieve all active users"),
-		Version:     "1.0",
+		Version:     &version,
 		Parameters:  map[string]ekodb.ParameterDefinition{},
 		Functions: []ekodb.FunctionStageConfig{
 			ekodb.StageFindAll("users"),
@@ -75,10 +76,11 @@ func simpleQueryScript(client *ekodb.Client) (string, error) {
 func parameterizedScript(client *ekodb.Client) error {
 	fmt.Println("📝 Example 2: Parameterized Script\n")
 
+	version := "1.0"
 	script := ekodb.Script{
 		Label:   "get_users_by_status",
 		Name:    "Get Users By Status",
-		Version: "1.0",
+		Version: &version,
 		Parameters: map[string]ekodb.ParameterDefinition{
 			"status": {
 				Required:    false,
@@ -120,10 +122,11 @@ func parameterizedScript(client *ekodb.Client) error {
 func aggregationScript(client *ekodb.Client) (string, error) {
 	fmt.Println("📝 Example 3: Aggregation Script\n")
 
+	version := "1.0"
 	script := ekodb.Script{
 		Label:      "user_stats",
 		Name:       "User Statistics",
-		Version:    "1.0",
+		Version:    &version,
 		Parameters: map[string]ekodb.ParameterDefinition{},
 		Functions: []ekodb.FunctionStageConfig{
 			ekodb.StageFindAll("users"),
@@ -182,18 +185,19 @@ func scriptManagement(client *ekodb.Client, getActiveUsersID, userStatsID string
 	fmt.Printf("🔍 Retrieved script: %s\n", script.Name)
 
 	// Update script (use encrypted ID)
-	updated := ekodb.Script{
+	updatedVersion := "1.1"
+	updatedScript := ekodb.Script{
 		Label:       "get_active_users",
 		Name:        "Get Active Users (Updated)",
 		Description: strPtr("Updated description"),
-		Version:     "1.1",
+		Version:     &updatedVersion,
 		Parameters:  map[string]ekodb.ParameterDefinition{},
 		Functions: []ekodb.FunctionStageConfig{
 			ekodb.StageFindAll("users"),
 		},
 		Tags: []string{"users"},
 	}
-	if err := client.UpdateScript(getActiveUsersID, updated); err != nil {
+	if err := client.UpdateScript(getActiveUsersID, updatedScript); err != nil {
 		return err
 	}
 	fmt.Println("✏️  Script updated")
@@ -215,10 +219,11 @@ func scriptManagement(client *ekodb.Client, getActiveUsersID, userStatsID string
 func multiStageScript(client *ekodb.Client) error {
 	fmt.Println("📝 Example 5: Multi-Stage Pipeline\n")
 
+	version := "1.0"
 	script := ekodb.Script{
 		Label:   "top_users",
 		Name:    "Top Performing Users",
-		Version: "1.0",
+		Version: &version,
 		Parameters: map[string]ekodb.ParameterDefinition{
 			"min_score": {
 				Required: false,
@@ -258,10 +263,11 @@ func multiStageScript(client *ekodb.Client) error {
 func countScript(client *ekodb.Client) error {
 	fmt.Println("📝 Example 6: Count Users\n")
 
+	version := "1.0"
 	script := ekodb.Script{
 		Label:      "count_users",
 		Name:       "Count All Users",
-		Version:    "1.0",
+		Version:    &version,
 		Parameters: map[string]ekodb.ParameterDefinition{},
 		Functions: []ekodb.FunctionStageConfig{
 			ekodb.StageFindAll("users"),

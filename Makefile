@@ -366,7 +366,7 @@ test-ci:
 # Run all examples (all languages, both direct and client, including transactions)
 test-examples: examples-ls-check
 	@echo "make test-examples" > examples/test-examples.md
-	@$(MAKE) test-examples-rust test-examples-python test-examples-go test-examples-typescript test-examples-javascript test-examples-kotlin test-examples-rag test-examples-swr 2>&1 | tee -a examples/test-examples.md
+	@$(MAKE) test-examples-rust test-examples-python test-examples-go test-examples-typescript test-examples-javascript test-examples-kotlin test-examples-rag test-examples-swr test-examples-fcomp 2>&1 | tee -a examples/test-examples.md
 	@echo "✅ $(GREEN)All integration tests complete!$(RESET)"
 
 # Run direct API examples (using raw HTTP/WebSocket calls, including transactions)
@@ -599,6 +599,92 @@ test-examples-rust-swr: build-client
 	@cd examples/rust && cargo run --example swr_pattern
 	@echo "✅ $(GREEN)Rust SWR examples complete!$(RESET)"
 
+test-examples-rust-fcomp: build-client
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "$(CYAN)Running Rust Function Composition Examples...$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@cd examples/rust && cargo run --example client_function_composition
+	@echo "✅ $(GREEN)Rust function composition examples complete!$(RESET)"
+
+test-examples-rs-fcomp: test-examples-rust-fcomp
+
+# ============================================================================
+# Function Composition Examples (CallFunction)
+# ============================================================================
+.PHONY: test-examples-fcomp test-examples-ts-fcomp test-examples-py-fcomp test-examples-go-fcomp test-examples-js-fcomp test-examples-kt-fcomp
+
+test-examples-fcomp:
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "🔗 $(CYAN)Testing Function Composition Examples$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo ""
+	@$(MAKE) test-examples-rust-fcomp test-examples-ts-fcomp test-examples-py-fcomp test-examples-go-fcomp test-examples-js-fcomp
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "✅ $(GREEN)All Function Composition Examples Complete!$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo ""
+	@echo "$(GREEN)What you just saw - CallFunction composability:$(RESET)"
+	@echo "  ✓ Reusable Script building blocks"
+	@echo "  ✓ Scripts calling other Scripts"
+	@echo "  ✓ Clean SWR patterns via composition"
+	@echo "  ✓ Multi-level nesting (arbitrary depth)"
+	@echo "  ✓ No code duplication"
+	@echo "  ✓ Single source of truth"
+	@echo ""
+	@echo "$(CYAN)Build complex workflows from simple pieces! 🚀$(RESET)"
+	@echo ""
+
+test-examples-ts-fcomp: build-typescript-client
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "$(CYAN)Running TypeScript Function Composition Examples...$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@cd examples/typescript && npx tsx client_function_composition.ts
+	@echo "✅ $(GREEN)TypeScript function composition examples complete!$(RESET)"
+
+test-examples-py-fcomp: build-python-client
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "$(CYAN)Running Python Function Composition Examples...$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@cd examples/python && python3 client_function_composition.py
+	@echo "✅ $(GREEN)Python function composition examples complete!$(RESET)"
+
+test-examples-go-fcomp:
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "$(CYAN)Running Go Function Composition Examples...$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@cd examples/go && go run client_function_composition.go
+	@echo "✅ $(GREEN)Go function composition examples complete!$(RESET)"
+
+test-examples-js-fcomp: build-javascript-client
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "$(CYAN)Running JavaScript Function Composition Examples...$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@cd examples/javascript && node client_function_composition.js
+	@echo "✅ $(GREEN)JavaScript function composition examples complete!$(RESET)"
+
+test-examples-kt-fcomp:
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "$(CYAN)Running Kotlin Function Composition Examples...$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@if [ -f .env ]; then \
+		. ./.env && \
+		export JAVA_HOME=$$(/usr/libexec/java_home -v 17) && export PATH=$$JAVA_HOME/bin:$$PATH && \
+		cd examples/kotlin && \
+		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientFunctionCompositionKt --no-daemon; \
+	else \
+		echo "$(RED)✗ .env file not found$(RESET)"; \
+		exit 1; \
+	fi
+	@echo "✅ $(GREEN)Kotlin function composition examples complete!$(RESET)"
+
 test-examples-kt-swr:
 	@echo ""
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
@@ -748,6 +834,9 @@ build-typescript-client:
 	@echo "📦 $(CYAN)Building TypeScript client library...$(RESET)"
 	@cd ekodb-client-ts && npm install && npm run build
 	@echo "✅ $(GREEN)TypeScript client built!$(RESET)"
+
+# JavaScript uses the TypeScript client (npm package)
+build-javascript-client: build-typescript-client
 
 test-examples-typescript-client: build-typescript-client
 	@echo "🧪 $(CYAN)Running TypeScript client library examples...$(RESET)"

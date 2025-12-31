@@ -6,10 +6,10 @@ export interface Script {
   label: string;
   name: string;
   description?: string;
-  version: string;
+  version?: string;
   parameters: { [key: string]: ParameterDefinition };
   functions: FunctionStageConfig[];
-  tags: string[];
+  tags?: string[];
   created_at?: string;
   updated_at?: string;
 }
