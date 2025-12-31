@@ -149,7 +149,7 @@ if [ "$SKIP_LINUX" != "true" ] && docker info > /dev/null 2>&1; then
     docker run --rm \
         -v "$REPO_ROOT":/workspace \
         -w /workspace/ekodb-client-py \
-        ghcr.io/pyo3/maturin build --release --manylinux 2014
+        ghcr.io/pyo3/maturin build --release --manylinux 2_28
     echo "✅ Linux wheel built"
 else
     echo "⚠️  Skipping Linux build (Docker not available)"

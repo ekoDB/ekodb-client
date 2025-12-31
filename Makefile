@@ -281,7 +281,7 @@ deploy-client-py:
 		docker run --rm \
 			-v $$(pwd):/workspace \
 			-w /workspace/ekodb-client-py \
-			ghcr.io/pyo3/maturin build --release --manylinux 2014 --no-default-features --features rustls && \
+			ghcr.io/pyo3/maturin build --release --manylinux 2_28 --no-default-features --features rustls && \
 		echo "  🍎 Building for macOS (current platform)..." && \
 		cd ekodb-client-py && python3 -m maturin build --release --no-default-features --features rustls --sdist && \
 		echo "📤 $(CYAN)Publishing all wheels to PyPI...$(RESET)" && \
@@ -299,7 +299,7 @@ deploy-client-py:
 		docker run --rm \
 			-v $$(pwd):/workspace \
 			-w /workspace/ekodb-client-py \
-			ghcr.io/pyo3/maturin build --release --manylinux 2014 --no-default-features --features rustls && \
+			ghcr.io/pyo3/maturin build --release --manylinux 2_28 --no-default-features --features rustls && \
 		echo "  🍎 Building for macOS (current platform)..." && \
 		cd ekodb-client-py && python3 -m maturin build --release --no-default-features --features rustls --sdist && \
 		echo "📤 $(CYAN)Publishing all wheels to PyPI...$(RESET)" && \
