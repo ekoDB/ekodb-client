@@ -175,7 +175,13 @@ async function userSummaryScript(client) {
   const result = await client.callScript('user_summary');
   console.log(`📊 User summary (${result.records.length} groups):`);
   result.records.forEach((group) => {
-    console.log(`   ${group.status?.value || group.status} ${group.role?.value || group.role}s: ${group.count?.value || group.count} users, Total Score: ${group.total_score?.value || group.total_score}`);
+    // Debug: log raw group to see structure
+    // console.log('DEBUG group:', JSON.stringify(group, null, 2));
+    const status = group.status?.value || group.status || 'unknown';
+    const role = group.role?.value || group.role || 'user';
+    const count = group.count?.value || group.count;
+    const totalScore = group.total_score?.value || group.total_score;
+    console.log(`   ${status} ${role}s: ${count} users, Total Score: ${totalScore}`);
   });
   console.log(`⏱️  Execution time: ${result.stats.execution_time_ms}ms\n`);
   
