@@ -47,6 +47,40 @@ Example:
 """
 
 from ._ekodb_client import Client, RateLimitInfo, RateLimitError
+from .utils import (
+    get_value,
+    get_values,
+    extract_record,
+    get_datetime_value,
+    get_uuid_value,
+    get_decimal_value,
+    get_duration_value,
+    get_bytes_value,
+    get_binary_value,
+    get_array_value,
+    get_set_value,
+    get_vector_value,
+    get_object_value,
+)
 
 __version__ = "0.1.0"
-__all__ = ["Client", "RateLimitInfo", "RateLimitError"]
+__all__ = (
+    [
+        "Client",
+        "RateLimitInfo",
+        "RateLimitError",
+        "get_value",
+        "get_values",
+        "extract_record",
+        "get_datetime_value",
+        "get_uuid_value",
+        "get_decimal_value",
+        "get_duration_value",
+        "get_bytes_value",
+        "get_binary_value",
+        "get_array_value",
+        "get_set_value",
+        "get_vector_value",
+        "get_object_value",
+    ],
+)

@@ -469,7 +469,7 @@ run-rag-examples:
 	@echo ""
 	@echo "$(CYAN)Building Python client bindings...$(RESET)"
 	@cd ekodb-client-py && maturin build --release --quiet
-	@pip3 install --force-reinstall --quiet ekodb-client-py/target/wheels/ekodb_client-0.5.0-cp38-abi3-macosx_11_0_arm64.whl
+	@pip3 install --force-reinstall --quiet $$(ls -t ekodb-client-py/target/wheels/ekodb_client-*.whl | head -n 1)
 	@echo "✓ Python client built and installed"
 	@echo ""
 	@echo "$(CYAN)Building TypeScript client library...$(RESET)"

@@ -286,9 +286,14 @@ async function nestedCompositionExample(client: EkoDBClient): Promise<void> {
   console.log(`   Records: ${result.records.length}`);
   if (result.records.length > 0) {
     const record = result.records[0];
-    console.log(`   Name: ${JSON.stringify(record.name)}`);
-    console.log(`   Department: ${JSON.stringify(record.department)}`);
-    console.log(`   Record count: ${JSON.stringify(record.record_count)}\n`);
+    const name = (record.name as any)?.value || record.name || "N/A";
+    const department =
+      (record.department as any)?.value || record.department || "N/A";
+    const recordCount =
+      (record.record_count as any)?.value || record.record_count || 0;
+    console.log(`   Name: ${name}`);
+    console.log(`   Department: ${department}`);
+    console.log(`   Record count: ${recordCount}\n`);
   }
 
   console.log(

@@ -3,16 +3,16 @@ make test-examples-python
 ✓ Authentication successful
 
 === Insert Document ===
-Inserted: {'id': '_bDuL-hndeYv8fRUpB_c2oFYSgvRqqqEiXb-EotSTW_CWoQ1R9vHRNDd-Se-oEpORCd2fJKXwAVLPMlYcc0t1w'}
+Inserted: {'id': 'Z5RB5lTCfs5daBDLiJdAwpjZMql8f-w1aAUqkKw2cgtP1akKV-UOp_jxPRIShOGMwMpMl8mNXrfR33pXSOXkIQ'}
 
 === Find by ID ===
-Found: {'id': '_bDuL-hndeYv8fRUpB_c2oFYSgvRqqqEiXb-EotSTW_CWoQ1R9vHRNDd-Se-oEpORCd2fJKXwAVLPMlYcc0t1w', 'active': {'value': True, 'type': 'Boolean'}, 'name': {'type': 'String', 'value': 'Test Record'}, 'value': {'type': 'Integer', 'value': 42}}
+Found: {'active': {'type': 'Boolean', 'value': True}, 'value': {'value': 42, 'type': 'Integer'}, 'id': 'Z5RB5lTCfs5daBDLiJdAwpjZMql8f-w1aAUqkKw2cgtP1akKV-UOp_jxPRIShOGMwMpMl8mNXrfR33pXSOXkIQ', 'name': {'value': 'Test Record', 'type': 'String'}}
 
 === Find with Query ===
 Found documents: 1
 
 === Update Document ===
-Updated: {'name': {'value': 'Updated Record', 'type': 'String'}, 'active': {'value': True, 'type': 'Boolean'}, 'id': '_bDuL-hndeYv8fRUpB_c2oFYSgvRqqqEiXb-EotSTW_CWoQ1R9vHRNDd-Se-oEpORCd2fJKXwAVLPMlYcc0t1w', 'value': {'type': 'Integer', 'value': 100}}
+Updated: {'id': 'Z5RB5lTCfs5daBDLiJdAwpjZMql8f-w1aAUqkKw2cgtP1akKV-UOp_jxPRIShOGMwMpMl8mNXrfR33pXSOXkIQ', 'active': {'value': True, 'type': 'Boolean'}, 'name': {'value': 'Updated Record', 'type': 'String'}, 'value': {'type': 'Integer', 'value': 100}}
 
 === Delete Document ===
 Deleted document
@@ -21,7 +21,7 @@ Deleted document
 ✓ Authentication successful
 
 === Inserting Test Data ===
-✓ Inserted test record: EHEYTwN4dvGdPiFjeN68OBYQo7RXh3x50hrjyfNlRu14LvgPwHcWDqQ-lzEqpzxKv9OGmvlLZReOEVa3sk9Szw
+✓ Inserted test record: DWtfhXvA14K_gV543gEE-ww8d0AntNrR6aknFBPOXwp_d3kvxo0T58fFXFS68odu9b2TN8gPAqPB1d44FLyLyg
 
 === Connecting to WebSocket ===
 ✓ WebSocket connected
@@ -35,7 +35,7 @@ Response: {
           "type": "Boolean",
           "value": true
         },
-        "id": "EHEYTwN4dvGdPiFjeN68OBYQo7RXh3x50hrjyfNlRu14LvgPwHcWDqQ-lzEqpzxKv9OGmvlLZReOEVa3sk9Szw",
+        "id": "DWtfhXvA14K_gV543gEE-ww8d0AntNrR6aknFBPOXwp_d3kvxo0T58fFXFS68odu9b2TN8gPAqPB1d44FLyLyg",
         "name": {
           "type": "String",
           "value": "WebSocket Test Record"
@@ -50,7 +50,7 @@ Response: {
           "type": "Boolean",
           "value": true
         },
-        "id": "WaBLKHHaUr5EzU2ATdkHLvXtzFbO8-_txXCCsCgLbh3hqPL8p-jLVoUzdHAgJhCQlO1uSOqvXl_I5gzOCfGMxA",
+        "id": "j7cabfp3zf1fqbuWvsaWueFgmiV_kbeJ8-iQm7irQ6aYmr3XJKzZBVeOS5sytzHo_wrxas5BYrKHWjfI6lwWXQ",
         "name": {
           "type": "String",
           "value": "WebSocket Test Record"
@@ -98,8 +98,8 @@ Retrieved value: {'username': 'john_doe', 'userId': 123}
 
 === Get Multiple Keys ===
 cache:product:1: {'name': 'Product 1', 'price': 29.99}
-cache:product:2: {'name': 'Product 2', 'price': 39.989999999999995}
-cache:product:3: {'price': 49.989999999999995, 'name': 'Product 3'}
+cache:product:2: {'price': 39.989999999999995, 'name': 'Product 2'}
+cache:product:3: {'name': 'Product 3', 'price': 49.989999999999995}
 
 === KV Delete ===
 ✓ Deleted key: session:user123
@@ -112,11 +112,11 @@ cache:product:3: {'price': 49.989999999999995, 'name': 'Product 3'}
 ✓ Authentication successful
 
 === Create Collection (via insert) ===
-Collection created with first record: iJkY7hlsEDpY0r3ieE9t1vQtwT7CAglH86ERBMes1DcSXj_1lAzJqeTpiV8BMGNcL6nfpiTP8eowaWvMUd-f9w
+Collection created with first record: smTn3nJ8Wv3FKyEn0c1W3rg3wdWgu5pCAqjmiGmtDvBrD1hh5fvpMh3mc5uawHI2D_rHC8s3Ei6aLWjPNkrSLQ
 
 === List Collections ===
 Total collections: 11
-Sample collections: ['chat_messages__ek0_testing', 'test_accounts', 'websocket_test', 'users', 'demo_collection']
+Sample collections: ['chat_configurations__ek0_testing', 'test_accounts', 'test_collection', 'chat_messages__ek0_testing', 'users']
 
 === Count Documents ===
 Document count: 1
@@ -131,7 +131,7 @@ Collection still exists: False
 ✓ Authentication successful
 
 === Insert Document with TTL (1 hour) ===
-✓ Inserted document: vUcI3WxcKRs1AJZvYFQg23obmEMIffDi-WEZG1Xw9o9YJ1CpdqQhzfDV3Jv7ar2yzMO06fEpjET5-rJofKQ37g
+✓ Inserted document: nSI5yOcHux82_QbAp0gw9OcWcqOJnx_bpvdeDUp1ayeajdaSHK8JzVQ7wqU6uhcwRqsQk7K6eaJQDpDqb1c8SA
 
 === Insert Document with TTL (5 minutes) ===
 ✓ Inserted document: created
@@ -149,7 +149,7 @@ Collection still exists: False
 ✓ Authentication successful
 
 === Insert Test Data with TTL ===
-✓ Inserted document with TTL: SlPs0GwVOEFPm1uHaZVLCzmCprw5SHi-tSV8iDd5Cx43dbUzvxtFl8sP5AP0pIBPU3zD0-Lx5ct73YZeqvxoqA
+✓ Inserted document with TTL: KMP8u55Eidw7c1mnW4Uq7GgN16Jgjfvq6H_AiSLJey6l_SfUb5JBy7v09NkYvmatvAJiR-0x9RFEojugAkJtMg
 
 === Query via WebSocket ===
 ✓ WebSocket connected
@@ -165,22 +165,22 @@ Collection still exists: False
 
 📝 Example 1: Simple Query Function with Filter
 
-✅ Script saved: bpZb3HsuOUDk0_ay2bI2DKGz6LmoCVkqF4sU-1PER3e7b4atIBMMDFqkCFJGlinrXkkpu7p5V0TOll44Dn8LMA
-📊 Found 15 active users
+✅ Script saved: LmnufFjIL0gBt7e4cXj9A_HZrEXVDk4xVH9qsOoMV46tPCZZE5YYNZDinSNvvs479_8TxGJVeMC7zg6WB1uj7g
+📊 Found 30 active users
 
 📝 Example 2: Parameterized Pagination with Limit/Skip
 
-✅ Script saved: 3IPoKS4GC5C-peIGm09hBaXjL7az0HCT_3uLgxMvP_Hd-lGauybB3GmPGdilk_nzfpVl3kPy27NNQVnaaNgP-Q
+✅ Script saved: 8EHSBJR9uQCSY6JZ7LZaJbRBR-34bz0BhvFeh24FvyaKTGGWe9QhjnVi_GJAnp3qp7k829NzId_5rwuZSNRhSA
 📊 Page 1: Found 3 users (limit=3, skip=0)
 
 📊 Page 2: Found 3 users (limit=3, skip=3)
 
 📝 Example 3: Multi-Stage Pipeline (Query → Group → Calculate)
 
-✅ Script saved: y3gjl959mLjhBpM92IPhlf3_KKN9jHcuzESIdwsLCwclLgFebW4fePSVN44E4ooolXaWChOaRS5v8pXRuUeLhQ
+✅ Script saved: 3uma-Y7E9ZrYzumiquSod7KqxHDI96zcDDfnThfXF25xeElN4_mPgXbcpiWJ0P34mGcWyz6umKbEQcPTI4gGew
 📊 Pipeline Results: Filtered (age>20) → Grouped by status → 2 groups
-   {'status': 'inactive', 'max_score': 90, 'count': 15, 'avg_score': 50.0}
-   {'max_score': 100, 'status': 'active', 'count': 15, 'avg_score': 60.0}
+   {'status': 'inactive', 'avg_score': 50.0, 'max_score': 90, 'count': 15}
+   {'avg_score': 60.0, 'max_score': 100, 'status': 'active', 'count': 15}
 
 📝 Example 4: Function Management
 
@@ -204,11 +204,11 @@ Collection still exists: False
 ============================================================
 
 === Setup: Creating Test Accounts ===
-Created Alice: $1000 - ID: Xx9htuCOGqj6XY8xuCPVhLbxnVoMjEEmnNAqUcit2D3vD0nTdCA1n33itUywUSyzmmB4cwFJwAVGYm7meSs_5g
-Created Bob: $500 - ID: mp5X0xb2AvVlFBrUKBImEkECBfASJTdovRuCduEsH02mWCn17tXsd9ym-zldPhyJKulfZpxgUiKAP2c0cl7dyw
+Created Alice: $1000 - ID: k6UhufSHqFX7xaq2Wv_g7ea4mMaCENG6hL67Kfb-BrmUU6II_Pggy7hO6BX36LsBvRuwwoaWvpd2Q7ZbQceT7A
+Created Bob: $500 - ID: p2Nnw1Dgx2OqMPAtU80j3G59MkXGZyp1wTZMWCkWg0-9HKSL8xij2rNxQoUjPKwb3nwIIIpPqeMwSIqqmfvaLw
 
 === Example 1: Begin Transaction ===
-Transaction ID: 837f4b0f-b4a7-4d95-a8ee-1a156d73c5dc
+Transaction ID: 6a7647b6-e660-46cf-bce5-190f3573670a
 
 === Example 2: Operations with transaction_id ===
 Updated Alice: $1000 → $800
@@ -226,7 +226,7 @@ Alice: $800
 Bob: $700
 
 === Example 5: Rollback ===
-New transaction: 0e93b5e9-88a2-453e-b093-caa9c1588ebd
+New transaction: 8d728fd7-8b77-4b63-93ba-e0c8cce0e3a2
 Updated Bob: $700 → $600 (in transaction)
 ✓ Transaction rolled back
 Bob after rollback: $700
@@ -234,11 +234,11 @@ Bob after rollback: $700
 === Cleanup ===
 ✓ All transaction examples completed
 === Setup: Creating Test Accounts ===
-Created Alice: $1000 - ID: wouASXHcRyLmvx-IDENvcWHxYsMp6H-dSJBoBcyrGTLH5ic7Y7rwfwckIxYfBHJV-_9Pt8Mg7P_YUuhTwGXXBg
-Created Bob: $500 - ID: 292A7bfrG0ghVaQaLSh-BbRgvsn092Rxs2JaTS80cwYf8ERY7Mml3duTzp5QmYvWe0nQc-TJoMBsDy9cOpb_MQ
+Created Alice: $1000 - ID: k2kczb7PGCwRGZAlwQcknQaRdsCa4H1L0vU1SHqGhfULcGQ-owsDRsVzKGcehU3dD8SffaY9hdSHhxMUXcWgrw
+Created Bob: $500 - ID: MPV9uOwyTA9pMUUpc29usrZdWNcrXVusHoqcWt1WKGkZs_eA9FRcsyseHoLWev4QMTCgNrlEkisMDWAhaVhmPA
 
 === Example 1: Begin Transaction ===
-Transaction ID: 07618cff-71b2-4065-b5c8-f826212d5d75
+Transaction ID: 7c341b35-e32a-4f5d-a6af-a830d2f76cb4
 
 === Example 2: Operations with transaction_id ===
 Updated Alice: $1000 → $800
@@ -264,11 +264,11 @@ Bob: $700
 ============================================================
 
 === Setup: Creating Test Accounts ===
-Created Alice: $1000 - ID: mTnFQdeO7NSlBSqpf2lBNoblDWhHOUee7Sg0YUJOLSUGSghfXck8SvMCTKJrwQdg72SBa9Cvvqf27qwji4DXNw
-Created Bob: $500 - ID: F-JRWElmKN04sCfSuiaL_Iw2YTRmZf8N-QSZBknt__LS-jgZfxBN9xXhBe7aJbFYvR0dqWSs_vzVQPM4j-plYw
+Created Alice: $1000 - ID: aDJfP5gZYly71Iut0IraYT1dazSfaol_KMOQ_egcF0nKtmM_X7r65oOYpglU_k06et5l3ZSgjnaapoMwopuCLQ
+Created Bob: $500 - ID: b6M1aD6QzNx9GeqBrXSIOHdNrptSXbih0ta5iPoYJcNG73aM2PJy5dIK1JnWPtwcspCgG_vei2rVubQB2OPXzg
 
 === Example 1: Begin Transaction ===
-Transaction ID: 047ed0dd-a4bd-42d2-8ec5-61c0c7b53061
+Transaction ID: 1784e9b3-acaf-4867-8ae0-3e15084fb72a
 
 === Example 2: Operations with transaction_id ===
 Updated Alice: $1000 → $800
@@ -286,7 +286,7 @@ Alice: $800
 Bob: $700
 
 === Example 5: Rollback ===
-New transaction: b777559c-f74c-43c7-bf9b-6ba83bb5f48c
+New transaction: 223d27cd-9f81-42bd-8428-2a55fd6a0aa1
 Updated Bob: $700 → $600 (in transaction)
 ✓ Transaction rolled back
 Bob after rollback: $700
@@ -294,11 +294,11 @@ Bob after rollback: $700
 === Cleanup ===
 ✓ All transaction examples completed
 === Setup: Creating Test Accounts ===
-Created Alice: $1000 - ID: yzEqp9egYFUpHWVQAr3MiA2yZ12-2anJYUU7GIBJuzk76resQF_itqhuaZkNCQzR7O_lJe_anf0w8NFHvjh9Kg
-Created Bob: $500 - ID: qe8g6s5w0Oujfl4kDCl4kiUmQh7YnLcMg3zn3wjH0PcXCzvlVf9mduOpITS9bywO5T4lCTUR2mGLNN3JSPhOGg
+Created Alice: $1000 - ID: hQd9cQczUBDtFG4SgJSEWlqPftCeRD7Rokj1ThAAW06TL8vfeGHx4u7qBiflWggtrdmh2NdHCNH06zFTYvEHFw
+Created Bob: $500 - ID: yz9H-B4iITHYiWJC7pNfD5z1watjXM4W03asfmZnr0JE4pHRezy-cEKgCOSxHi2Rl1G_SGxKKRtEtFk7a7dQtg
 
 === Example 1: Begin Transaction ===
-Transaction ID: 8d34b705-3745-4d6a-a5b3-807e585c0716
+Transaction ID: 1cfe2606-f628-4c94-94dc-7f9f0c700416
 
 === Example 2: Operations with transaction_id ===
 Updated Alice: $1000 → $800
@@ -324,11 +324,11 @@ Bob: $700
 ============================================================
 
 === Setup: Creating Test Accounts ===
-Created Alice: $1000 - ID: 2v1aCHWK0MDWVSi7AK2vBSs4PJaAKtq5Mf15xmAtKXAvZxwmxEYnT4YhT8L6wIsh8Pejkrtz4V1tdHPoel65mg
-Created Bob: $500 - ID: awKX2OPgtzmq2D4YZX-rziDuJODkRaLdxPIKTd3nCev2OQxDTGOCfFlAQb0o0voFd3NxL3WAQOcjV0lTa-HqYA
+Created Alice: $1000 - ID: 3RZKYEkvlSQna0p5NPx25LF96gDah95PK9H9WiHZVVnM745eK1pM1H0BeeF-46IixehyjjRxBsNScMpkzuQ9yg
+Created Bob: $500 - ID: b3uLIEnuKIFzBJAzbOCKITfGCbuy5BhLURDBg2L-UXF9V3OJxX16MWKifYOAii6_Spq5rQ8_rZLCBOMWf3sZlw
 
 === Example 1: Begin Transaction ===
-Transaction ID: 77e6dc93-03b5-4342-90ca-7ac3ff7fcf20
+Transaction ID: f59718b0-d668-493a-abd1-33ed93daf9f2
 
 === Example 2: Operations with transaction_id ===
 Updated Alice: $1000 → $800
@@ -346,7 +346,7 @@ Alice: $800
 Bob: $700
 
 === Example 5: Rollback ===
-New transaction: 56795fc2-cdfc-40d4-8804-7133b1918cd9
+New transaction: fafb3cbf-fae9-4bd9-b760-960978979537
 Updated Bob: $700 → $600 (in transaction)
 ✓ Transaction rolled back
 Bob after rollback: $700
@@ -354,11 +354,11 @@ Bob after rollback: $700
 === Cleanup ===
 ✓ All transaction examples completed
 === Setup: Creating Test Accounts ===
-Created Alice: $1000 - ID: 6FGj1FgNa-iMqwiW9xhRw9BNi1cUhPCR7W_Q3MP77SiFNxUTqWy7T_ElcMsNw4DWugIE1hH9fmtRYfLhenDoDQ
-Created Bob: $500 - ID: waBa8vKrm8RrnoXFX9Ox5aVJMF-pTFQVT_w8Bd6xdEUKECWh7crWvRmOes1z9gnBfNcKCmarB2H3jdXVJqm_Xw
+Created Alice: $1000 - ID: RvDqonMNhnvR-HAu2QB8Y3XNzoUl_33h6NbjLWpMufIe7a79GAK5VeWLwmD-nO0PHrPUOvO8PvIGIfmnsoHvug
+Created Bob: $500 - ID: Ag0n5iMPO4gNfmXx5PUkzf0Uw0Y5hROGOgkjVmcxvrNMM4X-j_LBh1P8m-LusUMmojAPLKHzTX4AZqSSFAMCuA
 
 === Example 1: Begin Transaction ===
-Transaction ID: fac0ac69-3dfb-46c9-b772-f961f0644836
+Transaction ID: 10e4e6af-7d4b-434e-a8f8-38e95d855b36
 
 === Example 2: Operations with transaction_id ===
 Updated Alice: $1000 → $800
@@ -398,7 +398,7 @@ Each Script shows Functions chaining with proper verification
 ============================================================
 
 1️⃣ Saving Script...
-   ✅ Script saved: mXffO6t28NQb868CBLnOwYvGP8BYxuZT6d8KoXXLXtJEQ09BPq6BHMpi5bj_4zy3TX4pcjnBQZhnfB8khMIHXQ
+   ✅ Script saved: UnFydaNC3g_MHmw0uiwnDGu6D4FISjmQQuDYANDl_XKSW0eKT3tmgQWtncSEURfNjYr8bDiQX_CmjG-P7IBvEQ
 
 2️⃣ Calling Script (Insert + Verify)...
    ✅ Script executed: 2 Functions
@@ -406,18 +406,18 @@ Each Script shows Functions chaining with proper verification
 
 3️⃣ Verification Results:
    ✅ Found 1 record(s)
-   📋 User ID: p2knr01uiJu1H5qZ63Crmdq2Hr66v0BwZBoT5Bu0mrVZ_sVlExDNOl6WA-Aw1uBdGTCIXl7u9NtqAwudVrkj2g
-   📋 Name: {'type': 'String', 'value': 'Alice Smith'}
-   📋 Email: {'value': 'alice@example.com', 'type': 'String'}
+   📋 User ID: butEN3CyRpkWTm8hft5zCvml_KT2hnQxBraMkgNuT0WnalYSxQnjFdgb1d7AcLUnqTx4DmKl9DVg-SmL8Hdq_Q
+   📋 Name: {'value': 'Alice Smith', 'type': 'String'}
+   📋 Email: {'type': 'String', 'value': 'alice@example.com'}
    📋 Status: {'type': 'String', 'value': 'pending'}
-   📋 Credits: {'value': 0, 'type': 'Integer'}
+   📋 Credits: {'type': 'Integer', 'value': 0}
 
 ============================================================
 📝 Script 2: Query + Update + Verify
 ============================================================
 
 1️⃣ Saving Script...
-   ✅ Script saved: y0Xm6B-ekNqdakdJ4LlowK9RRWX2YbVL2hQUuaXWmK-aWL3aWO_gaIOwuRi9i-5_QAYVmInpeIXQIxoYFpX75Q
+   ✅ Script saved: evkMRvmClHbIr63y-TF0aQDw2XabTxDNR6Z9QwD_XsNCk01dMWbznM624N-X_WnXP2lHLyih1wcNWuBPw56wzg
 
 2️⃣ Calling Script (Query + Update + Verify)...
    ✅ Script executed: 3 Functions
@@ -425,15 +425,15 @@ Each Script shows Functions chaining with proper verification
 
 3️⃣ Verification Results:
    ✅ Found 1 record(s)
-   📋 Status updated to: {'value': 'active', 'type': 'String'}
-   📋 Name: {'type': 'String', 'value': 'Alice Smith'}
+   📋 Status updated to: {'type': 'String', 'value': 'active'}
+   📋 Name: {'value': 'Alice Smith', 'type': 'String'}
 
 ============================================================
 📝 Script 3: Query + Update Credits + Verify
 ============================================================
 
 1️⃣ Saving Script...
-   ✅ Script saved: tMl3EtJv6NV5svTXYLclpYrdGH_UmxjiVu4gbXQQZNZuoDjIvRv1QMgmB3TnKZs1b6ynTbwamDXvMxduUQp2CQ
+   ✅ Script saved: U-WPwNEnMCuOTVXEa3TiKyB0vSlHFQ4RgR0Vq-kVdHph1eVNolIZHG3dv-X6i09CqMxCgliyGySUkUKSKOH_Jg
 
 2️⃣ Calling Script (Query + Update Credits + Verify)...
    ✅ Script executed: 3 Functions
@@ -441,7 +441,7 @@ Each Script shows Functions chaining with proper verification
 
 3️⃣ Verification Results:
    ✅ Found 1 record(s)
-   📋 Credits updated to: {'value': 0, 'type': 'Integer'}
+   📋 Credits updated to: {'type': 'Integer', 'value': 0}
    📋 Status: {'type': 'String', 'value': 'active'}
    📋 Name: {'type': 'String', 'value': 'Alice Smith'}
 
@@ -450,7 +450,7 @@ Each Script shows Functions chaining with proper verification
 ============================================================
 
 1️⃣ Saving Script...
-   ✅ Script saved: eYpBAPOP22LNGJVUHT78vEnUG9k_tl-StIZiPGCi8RpXjo1iv3D5dFCpIMMCd4YVldwLuIASqFIkcA02qKBf3w
+   ✅ Script saved: cqjoKjSnsNoO_6H39N7utS7rwO2KvBHxv7Lp3fqvXUO5EEFDzRY9qBLbT41tZheinTdpEHQsibpLItktsvX5XQ
 
 2️⃣ Calling Script (Query + Delete + Verify)...
    ✅ Script executed: 3 Functions
@@ -463,10 +463,10 @@ Each Script shows Functions chaining with proper verification
 ============================================================
 🧹 Cleanup
 ============================================================
-   ✅ Deleted script: mXffO6t28NQb868CBLnO...
-   ✅ Deleted script: y0Xm6B-ekNqdakdJ4Llo...
-   ✅ Deleted script: tMl3EtJv6NV5svTXYLcl...
-   ✅ Deleted script: eYpBAPOP22LNGJVUHT78...
+   ✅ Deleted script: UnFydaNC3g_MHmw0uiwn...
+   ✅ Deleted script: evkMRvmClHbIr63y-TF0...
+   ✅ Deleted script: U-WPwNEnMCuOTVXEa3Ti...
+   ✅ Deleted script: cqjoKjSnsNoO_6H39N7u...
    ✅ Deleted collection: users
 
 ============================================================
@@ -534,7 +534,7 @@ Each Script shows Functions chaining with proper verification
 🔗 Found pyo3 bindings with abi3 support
 🐍 Not using a specific python interpreter
 💻 Using `MACOSX_DEPLOYMENT_TARGET=11.0` for aarch64-apple-darwin by default
-    Finished `release` profile [optimized] target(s) in 0.08s
+    Finished `release` profile [optimized] target(s) in 0.09s
 📦 Built wheel for abi3 Python ≥ 3.8 to /Users/tek/Development/ekoDB/ekodb-client/ekodb-client-py/target/wheels/ekodb_client-0.6.0-cp38-abi3-macosx_11_0_arm64.whl
 📦 [36mInstalling Python wheel for current platform...[0m
 Processing ./ekodb-client-py/target/wheels/ekodb_client-0.6.0-cp38-abi3-macosx_11_0_arm64.whl
@@ -549,16 +549,31 @@ Successfully installed ekodb-client-0.6.0
 ✓ Client created (token exchange happens automatically)
 
 === Insert Document ===
-Inserted: {'id': 'fVsT2QFTJak8_IVXXGszDJaXykigeMToHH1QslqG2AWtcqj6u7UztJLrzI3PdVBW5rwRYQdnL2XetQbU0mD2Qw'}
+Inserted: {'id': 'n6l2uiuwyfDjbdUENLzso8o2zVJ-4QzJYzJSrVl4izTGc1-VBbXfOaf65NtO4rO6eA6obSDJOs_gT7WCsOymOQ'}
 
 === Find by ID ===
-Found: {'value': {'value': 42, 'type': 'Integer'}, 'name': {'type': 'String', 'value': 'Test Record'}, 'id': 'fVsT2QFTJak8_IVXXGszDJaXykigeMToHH1QslqG2AWtcqj6u7UztJLrzI3PdVBW5rwRYQdnL2XetQbU0mD2Qw', 'active': {'type': 'Boolean', 'value': True}}
+Found: {'created_at': {'value': '2026-01-01T21:16:40.823012', 'type': 'String'}, 'categories': {'type': 'Array', 'value': ['electronics', 'computers']}, 'embedding': {'type': 'Array', 'value': [0.1, 0.2, 0.3, 0.4, 0.5]}, 'metadata': {'type': 'Object', 'value': {'nested': {'deep': True}, 'key': 'value'}}, 'tags': {'type': 'Array', 'value': ['tag1', 'tag2', 'tag3']}, 'price': {'value': 99.99, 'type': 'Float'}, 'active': {'type': 'Boolean', 'value': True}, 'data': {'type': 'String', 'value': 'aGVsbG8gd29ybGQ='}, 'id': 'n6l2uiuwyfDjbdUENLzso8o2zVJ-4QzJYzJSrVl4izTGc1-VBbXfOaf65NtO4rO6eA6obSDJOs_gT7WCsOymOQ', 'user_id': {'type': 'String', 'value': '550e8400-e29b-41d4-a716-446655440000'}, 'value': {'type': 'Integer', 'value': 42}, 'name': {'type': 'String', 'value': 'Test Record'}}
+
+=== Extract Field Values (All Types) ===
+Extracted values:
+  name (String): Test Record
+  value (Integer): 42
+  active (Boolean): True
+  price (Decimal): 99.99
+  created_at (DateTime): 2026-01-01 21:16:40.823012
+  user_id (UUID): 550e8400-e29b-41d4-a716-446655440000
+  tags (Array): ['tag1', 'tag2', 'tag3']
+  metadata (Object): {'nested': {'deep': True}, 'key': 'value'}
+  embedding (Vector): [0.1, 0.2, 0.3, 0.4, 0.5]
+  categories (Set): ['electronics', 'computers']
+  data (Bytes): 11 bytes
+Plain record: {'created_at': '2026-01-01T21:16:40.823012', 'categories': ['electronics', 'computers'], 'embedding': [0.1, 0.2, 0.3, 0.4, 0.5], 'metadata': {'nested': {'deep': True}, 'key': 'value'}, 'tags': ['tag1', 'tag2', 'tag3'], 'price': 99.99, 'active': True, 'data': 'aGVsbG8gd29ybGQ=', 'id': 'n6l2uiuwyfDjbdUENLzso8o2zVJ-4QzJYzJSrVl4izTGc1-VBbXfOaf65NtO4rO6eA6obSDJOs_gT7WCsOymOQ', 'user_id': '550e8400-e29b-41d4-a716-446655440000', 'value': 42, 'name': 'Test Record'}
 
 === Find with Query ===
 Found documents: 1
 
 === Update Document ===
-Updated: {'active': {'type': 'Boolean', 'value': True}, 'value': {'type': 'Integer', 'value': 100}, 'id': 'fVsT2QFTJak8_IVXXGszDJaXykigeMToHH1QslqG2AWtcqj6u7UztJLrzI3PdVBW5rwRYQdnL2XetQbU0mD2Qw', 'name': {'value': 'Updated Record', 'type': 'String'}}
+Updated: {'embedding': {'type': 'Array', 'value': [0.1, 0.2, 0.3, 0.4, 0.5]}, 'value': {'value': 100, 'type': 'Integer'}, 'categories': {'type': 'Array', 'value': ['electronics', 'computers']}, 'data': {'type': 'String', 'value': 'aGVsbG8gd29ybGQ='}, 'name': {'value': 'Updated Record', 'type': 'String'}, 'tags': {'type': 'Array', 'value': ['tag1', 'tag2', 'tag3']}, 'active': {'type': 'Boolean', 'value': True}, 'user_id': {'type': 'String', 'value': '550e8400-e29b-41d4-a716-446655440000'}, 'created_at': {'type': 'String', 'value': '2026-01-01T21:16:40.823012'}, 'id': 'n6l2uiuwyfDjbdUENLzso8o2zVJ-4QzJYzJSrVl4izTGc1-VBbXfOaf65NtO4rO6eA6obSDJOs_gT7WCsOymOQ', 'metadata': {'value': {'key': 'value', 'nested': {'deep': True}}, 'type': 'Object'}, 'price': {'value': 99.99, 'type': 'Float'}}
 
 === Delete Document ===
 Deleted document
@@ -610,11 +625,11 @@ cache:product:3: {'value': '{"name":"Product 3","price":49.989999999999995}'}
 ✓ Client created
 
 === Create Collection (via insert) ===
-Collection created with first record: "3iDvykMhNCrl2VzWg1ExjByB1Qn5zw58-ksHh1ZEbD6zZIhgXYrQQDb-S2Zt4uXiZaVKzI8fwPORdYVpeTTSlw"
+Collection created with first record: "BWSwBx8pieGGKCA1EDwMbWk0L5E2kuY91_p0nwH6ri-_ybsrNYDUcsxpFwYT747I0_4w2oj1dirxq9iHQ-xMyw"
 
 === List Collections ===
 Total collections: 10
-Sample collections: ['chat_messages__ek0_testing', 'client_collection_management_python', 'test_accounts', 'websocket_test', 'ttl_cache']
+Sample collections: ['chat_configurations__ek0_testing', 'test_accounts', 'test_collection', 'chat_messages__ek0_testing', 'batch_users']
 
 === Count Documents ===
 Document count: 1
@@ -629,10 +644,10 @@ Collection still exists: False
 ✓ Client created
 
 === Insert Document with TTL (1 hour) ===
-✓ Inserted document: I2lBYGb3A00NOTKTXmK-0VJjnofHzQHPmIDlWwWr7AhNK-I2xeOv4jh10wAyBuKGqQQ5tPLVtqMbfSpk2q0nmw
+✓ Inserted document: XTJeJb8ujSsRuYE-ORKJwKBppjcqitiD7jq1GdsiCeI9OJnwU16-UeMfQAKz9s_83xZTHobGALnCEfLuene_XA
 
 === Insert Document with TTL (5 minutes) ===
-✓ Inserted document: DWft8VoFogdZOOJFhv1FvjfabzXEa-UX9jKYef9dKSsYjBTRrcjblk2IJUoP6bVFE4Xp4RW0qzzw5izHx5DABw
+✓ Inserted document: 2WXjWJeV9YYFFGtmfRuu-o3XcpQ6VgGKxv-70dAeRwNrAUoWeMXSJJmfomYSEKx2Mqn0lSpx6wbVcfhg9UQb5g
 
 === Query Documents ===
 ✓ Found 2 documents with TTL
@@ -652,7 +667,7 @@ Collection still exists: False
 ✓ Client created
 
 === Inserting Test Data ===
-✓ Inserted test record: 2ZRdkkdqHM0fzEgtj8_t3pXg0mVinohGMPx8GsWnyQ2z61S3lz5Sn9G-Bh16uGocgNViNwb8hsZUzEhbsvR8TQ
+✓ Inserted test record: fSyUmHGAjw2vGXLD4WW6d6xcKueZwAfHflFzBwSptIoc1JHzWUGeGN0gx-6HBKxRbiAhEn6rbZo48mAXsIvx9g
 
 === Connecting to WebSocket ===
 ✓ WebSocket connected
@@ -668,7 +683,7 @@ Collection still exists: False
 ✓ Client created
 
 === Insert Test Data with TTL ===
-✓ Inserted document with TTL: qk9hFhy6gN-MT31zFCsAtU9ILapKkchHWwFwSS8P0WUU3u_DkO4EZC1yV_5A5OA7SQ3uIvHz8FH5Ob8FYuHv1g
+✓ Inserted document with TTL: js65sebgUEspAmT5Fwb7qWZ64k_cYdp4PTeD37PJTspFg8VkcXV9lwKrVpTOWNvVa3WS0tQcMuh8T0T7r7IfJA
 
 === Query via WebSocket ===
 ✓ WebSocket connected
@@ -721,22 +736,22 @@ Setting up test data...
 
 1. Basic full-text search:
 Found 2 results
-  1. Score: 25.740, Matched: email.value, name.value, email, name
-  2. Score: 12.540, Matched: name.value, name
+  1. Score: 25.740, Matched: name, email.value, name.value, email
+  2. Score: 12.540, Matched: name, name.value
 
 2. Fuzzy search (typo tolerance):
 Found 4 results with fuzzy matching
-  1. Score: 26.400, Matched: bio.value, bio, title, title.value
-  2. Score: 26.400, Matched: title.value, bio.value, bio, title
-  3. Score: 26.400, Matched: title.value, bio.value, title, bio
-  4. Score: 26.400, Matched: bio, title, title.value, bio.value
+  1. Score: 26.400, Matched: title.value, bio, title, bio.value
+  2. Score: 26.400, Matched: title.value, bio.value, title, bio
+  3. Score: 26.400, Matched: title, title.value, bio, bio.value
+  4. Score: 26.400, Matched: title, bio.value, title.value, bio
 
 3. Search with field weights:
 Found 4 results with weighted fields
-  1. Score: 39.600, Matched: title.value, bio.value, title, bio
-  2. Score: 39.600, Matched: title.value, bio.value, title, bio
-  3. Score: 39.600, Matched: title.value, bio, bio.value, title
-  4. Score: 39.600, Matched: title.value, title, bio, bio.value
+  1. Score: 39.600, Matched: title, bio, title.value, bio.value
+  2. Score: 39.600, Matched: title.value, title, bio.value, bio
+  3. Score: 39.600, Matched: bio.value, title, title.value, bio
+  4. Score: 39.600, Matched: bio.value, title.value, title, bio
 
 4. Search with minimum score threshold:
 Found 2 results with score >= 0.3
@@ -750,15 +765,15 @@ Found 2 results (matches: run, running, runs)
 
 6. Vector search (semantic search):
 Found 3 semantically similar documents
-  1. Score: 0.755
-  2. Score: 0.736
-  3. Score: 0.728
+  1. Score: 0.786
+  2. Score: 0.771
+  3. Score: 0.752
 
 7. Hybrid search (text + vector):
 Found 3 results using hybrid search (text + vector)
-  1. Score: 1.729, Matched: content, title.value, title, content.value
-  2. Score: 1.110, Matched: title, content.value, content, title.value
-  3. Score: 0.515, Matched: 
+  1. Score: 1.751, Matched: title, title.value, content.value, content
+  2. Score: 1.139, Matched: title, content, content.value, title.value
+  3. Score: 0.527, Matched: 
 
 8. Case-sensitive search:
 Found 1 results (case-sensitive)
@@ -829,24 +844,26 @@ Found 2 users with example.com emails:
 ✓ Inserted 3 sample documents
 
 === Creating Chat Session ===
-✓ Created session: KQOalY4bPJPqNB915OmVLg_bRHONknf6mt2pN34QtbgXg1de6yTko9Mp822in1Pivy0H5-NxZjwyBR7wcoMXTA
+✓ Created session: rtWqQ91ZdgT7AU06vsKV7rcjVfvC8s_aekKGnhDsMuSXt3hPn3DbR2FlL6POaqP5km1zzY-bcFb7-qL6A2CfNw
 
 === Sending Chat Message ===
-Message ID: FjQ6L8BUyxgC6kKqB4NYF6ATzJC5UIZWFO6tpvh52M8Atp8Ha0TCNbWlC8l1g5mUJjmc3h2h7KsuBE1hUXQucw
+Message ID: Qzmf_-K1oiZ9FwE47feilUgJreUBD9cok7D5X3Ej8LGwCx_oc6VJ370WntFxVucguu70R56m_cgF4klRK83akw
 
 === AI Response ===
 There are three products available:
 
-1. "ekoDB Cloud" is a fully managed cloud database service product. Its price is $499.
-2. "ekoDB Pro" is an enterprise edition product with advanced features. It is priced at $299.
-3. "ekoDB" is a high-performance database product with AI capabilities. It costs $99.
+1. ekoDB: This is a high-performance database product with AI capabilities. The price for this product is $99.
 
-Execution Time: 2689ms
+2. ekoDB Cloud: This is a fully managed cloud database service product. The price for this product is $499.
+
+3. ekoDB Pro: This is an enterprise edition product with advanced features. The price for this product is $299.
+
+Execution Time: 2190ms
 
 === Token Usage ===
-Prompt tokens: 609
-Completion tokens: 72
-Total tokens: 681
+Prompt tokens: 608
+Completion tokens: 84
+Total tokens: 692
 
 === Cleanup ===
 ✓ Deleted collection
@@ -858,11 +875,11 @@ Total tokens: 681
 ✓ Inserted sample product
 
 === Creating Chat Session ===
-✓ Created session: 098hQxXsSWrfeco-Rh28tx65AW2CPFqfirZRpCKkdrdI-eH8o4gZ9XROWCgCRUEiFNQphpO4aCi05xZJ_pgJMQ
+✓ Created session: Qbq7z6JqiL85ZJejuPI55MMKxTTGgr7gDxB3N_FcD6e2OvrOabfKIMAFkSLjuM60ApEL40ENOiyaThC9cTF_uA
 
 === Sending Messages ===
 ✓ Message 1 sent
-  Response: Based on the information available, there is a product named "ekoDB". It is a high-performance database product. The price for this product is $99.
+  Response: Based on the context provided, the available product is ekoDB. It is a high-performance database product and is priced at $99.
 
 ✓ Message 2 sent
   Response: The price of the ekoDB product is $99.
@@ -874,20 +891,20 @@ Total tokens: 681
 ✓ Session updated
 
 === Branching Session ===
-✓ Created branch: oG7gkN7o7INnE2MbLkPPo5UGsO0U_G-9MVJIbdjtYBjuBeWQ3BTfnCdaiZjCUJINr3cTELHlQHlYu6I0YR1EDA
-  Parent: 098hQxXsSWrfeco-Rh28tx65AW2CPFqfirZRpCKkdrdI-eH8o4gZ9XROWCgCRUEiFNQphpO4aCi05xZJ_pgJMQ
+✓ Created branch: BGMBN5FnLMG7fmvQingbiIOc1-1d4OlqgIkgCgkKikBgzBz64iqyX-kbAhrTf3V42AxL7TmtWYrCANGNbCvlnQ
+  Parent: Qbq7z6JqiL85ZJejuPI55MMKxTTGgr7gDxB3N_FcD6e2OvrOabfKIMAFkSLjuM60ApEL40ENOiyaThC9cTF_uA
 
 === Listing Sessions ===
 ✓ Found 6 sessions
-  Session 1: oG7gkN7o7INnE2MbLkPPo5UGsO0U_G-9MVJIbdjtYBjuBeWQ3BTfnCdaiZjCUJINr3cTELHlQHlYu6I0YR1EDA (Untitled)
-  Session 2: 098hQxXsSWrfeco-Rh28tx65AW2CPFqfirZRpCKkdrdI-eH8o4gZ9XROWCgCRUEiFNQphpO4aCi05xZJ_pgJMQ (Untitled)
-  Session 3: KQOalY4bPJPqNB915OmVLg_bRHONknf6mt2pN34QtbgXg1de6yTko9Mp822in1Pivy0H5-NxZjwyBR7wcoMXTA (Untitled)
-  Session 4: OUSEtgQ_-7kKWGMt4AmVYrdXPPGik3263KCnNt9ueJAKP1k4kK_PUO1YW4JlGYF-TG2Tmcwoh-qhMRAInCKHkA (Untitled)
-  Session 5: G4DhRHz9-8gw8a7-nQBcBLd29RZmU5B9ERthrec45Dhw07EDfqLMUnzuBtpz7-EnRrin2N2AEJOh2lhgCH-HZA (Untitled)
-  Session 6: LsrAmQyiFnof-6HfYut53SABCHrDvt2bS-ATTomrdt03ouabmWG3DHX-iGnYDsyVIYmH3pxEdrdeqf0cTWaG8A (Untitled)
+  Session 1: BGMBN5FnLMG7fmvQingbiIOc1-1d4OlqgIkgCgkKikBgzBz64iqyX-kbAhrTf3V42AxL7TmtWYrCANGNbCvlnQ (Untitled)
+  Session 2: Qbq7z6JqiL85ZJejuPI55MMKxTTGgr7gDxB3N_FcD6e2OvrOabfKIMAFkSLjuM60ApEL40ENOiyaThC9cTF_uA (Untitled)
+  Session 3: rtWqQ91ZdgT7AU06vsKV7rcjVfvC8s_aekKGnhDsMuSXt3hPn3DbR2FlL6POaqP5km1zzY-bcFb7-qL6A2CfNw (Untitled)
+  Session 4: M5jfgFMLXAGf8KQ-Kc3oeMIk1LG1uVKrEIKZP_wh993kb2mGcllzluKQ5mV-o6qZU1qofEi4eQOSEA6BACYP8g (Untitled)
+  Session 5: ipy1SsZHmJi1lwpkk_PUStFrqpVFSIw6gysmgKGyw0jZRdO3MHb5ubGGqXzRzjxFLn5IOhTi_xUNuuO_97A0hg (Untitled)
+  Session 6: EIki62qqB5lU5m6nt01y8UfVL_LgF66otheWB_KKRJMELVCaNA2lRWOQuszEK7iX-FhyXi-qmmcIhK7m9S_YMw (Untitled)
 
 === Deleting Branch Session ===
-✓ Deleted branch session: oG7gkN7o7INnE2MbLkPPo5UGsO0U_G-9MVJIbdjtYBjuBeWQ3BTfnCdaiZjCUJINr3cTELHlQHlYu6I0YR1EDA
+✓ Deleted branch session: BGMBN5FnLMG7fmvQingbiIOc1-1d4OlqgIkgCgkKikBgzBz64iqyX-kbAhrTf3V42AxL7TmtWYrCANGNbCvlnQ
 
 === Cleanup ===
 ✓ Deleted collection
@@ -899,20 +916,20 @@ Total tokens: 681
 ✓ Inserted sample product
 
 === Creating Chat Session ===
-✓ Created session: wN7NSjooXs-J7nzhl5nCO0938qabFU2bU8ictghNl0Gcafsqdm1xkvXnAH-8NXoDn9w6i-C2Pxq3Z1Ms1EwM7Q
+✓ Created session: FLzKUYJMBI5-zHXig94uMv_cy328YdSpQb-5NLRySAVU8DRpTq5kHxuCHd1Afw5LKu6kxAhP9uHmRVK28UOtRw
 
 === Sending Initial Message ===
 ✓ Message sent
-  Response: The product available based on the context is "ekoDB". It's a high-performance database product priced at $99.
+  Response: Based on the information available, the product "ekoDB" is available. It is a high-performance database product and is priced at $99.
 
 ✓ Second message sent
 
 Debug: Found 4 messages
-Debug: First message keys: dict_keys(['chat_id', 'role', 'id', 'created_at', 'content', 'token_usage', 'context_snippets', 'updated_at'])
-Debug: First message role: {'value': 'assistant', 'type': 'String'}
+Debug: First message keys: dict_keys(['token_usage', 'context_snippets', 'id', 'updated_at', 'role', 'created_at', 'chat_id', 'content'])
+Debug: First message role: {'type': 'String', 'value': 'assistant'}
 === Feature 1: Regenerate AI Response ===
 ✓ Message regenerated
-  New response: The price of ekoDB is 99.
+  New response: The price of ekoDB is $99.
 
 === Feature 2: Edit Message ===
 ✓ Message content updated
@@ -923,7 +940,7 @@ Debug: First message role: {'value': 'assistant', 'type': 'String'}
 ✓ Message unmarked as forgotten
 
 === Feature 4: Merge Chat Sessions ===
-✓ Created second session: IldEnBWbEmtuzluqWP2jIEkU5fEl-tkgvYm_Ws_4Txx-zvPQ4p6OrzVY6M-ejEo1hk1UOA5yZ1ceJxqIT73qgw
+✓ Created second session: IrEDW5RVJSGcKFA6HYlzC3Jo45l1VQTq3iAf0nUXBShA7QxYasnCKR91wfvsZWK5sehGUT0fSMyCS8_ck9yeIQ
 ✓ Sent message in second session
 ✓ Sessions merged successfully
   Total messages in merged session: 4
@@ -945,21 +962,21 @@ Debug: First message role: {'value': 'assistant', 'type': 'String'}
 
 📝 Example 1: Simple Query Script
 
-✅ Script saved: rPi461iJQoLodRrqiy0R_nIrIlEGfXsLcpYQythRbR7A7VzhQeJ02XhnBsyujadF-yCoNmmF3iAHC-xDh_-gKw
+✅ Script saved: bCSzccu52FZxnM2hTkwvXDU8DUdtY9AeBQU8rvrVhLUCx-_lg2e8faVhBfNNwFm7b5AKYbvLhTELo_NSCz-Wkg
 📊 Found 10 active users
 
 📝 Example 2: Parameterized Script
 
-✅ Script saved: 5ZDIuPWacmHsRuQCTYl9AhnvY5GvC38ao8XNf9ivubyciiEhl2NJsCA_-rdokcC1fcSu_uscHIUs9cPZobNVpQ
+✅ Script saved: _WLMDNpm1VVUnPwaXz82VVdRjpHeSyHa5OsaqJjpj9HFInl5p9kWK3DGkX4Swf-JC195vv2581J57uiIOyjk7Q
 📊 Found 10 users (limited)
 
 📝 Example 3: Aggregation Script
 
-✅ Script saved: 7ydNywRyfeW4DpxISuKQ8tFRhRD_8jIvNQVYzDqXpYceoGE6ZIExTGXFg19DIqkq5k06EyUC41skAAiTZUqvAw
+✅ Script saved: z2Ie0ZfUb112mAQCqWPvajKR1trpKpQdGfVNyv4ef6a5w1iDnHChB85gZtTfdo3uARKtQ_XpkCO1xNIc1dq9Uw
 📊 Statistics: 2 groups
-   {'avg_score': 50.0, 'count': 5, 'status': 'inactive'}
-
    {'avg_score': 60.0, 'count': 5, 'status': 'active'}
+
+   {'avg_score': 50.0, 'count': 5, 'status': 'inactive'}
 
 📝 Example 4: Script Management
 
@@ -980,10 +997,10 @@ Debug: First message role: {'value': 'assistant', 'type': 'String'}
 
 📝 Example 1: FindAll + Group (Simple Aggregation)
 
-✅ Script saved: MLUHIkkc-BFGRhPPxFoY5rBkEyv4H18WDhAokqYLu_VZThY_UxxWguhresfpdGm-ECRy7OfmPF_lR1Y3sChoGw
+✅ Script saved: 8jNxhf_5luqZDgT56yq8VGXwTLJe1QIzCwxYB2f4tjtGiwBUbVgOzmptRjnJQ_vBtd1YRwGEM186buxC-of7Ow
 📊 Found 2 product groups
-   {'avg_price': 474.0, 'category': 'Furniture', 'count': 2}
    {'avg_price': 575.6666666666666, 'category': 'Electronics', 'count': 3}
+   {'avg_price': 474.0, 'category': 'Furniture', 'count': 2}
 ⏱️  Execution time: 0ms
 
 📝 Example 2: Simple Product Listing
@@ -996,8 +1013,8 @@ Debug: First message role: {'value': 'assistant', 'type': 'String'}
 
 ✅ Script saved
 📊 Found 2 categories
-   {'category': 'Furniture', 'count': 2}
    {'category': 'Electronics', 'count': 3}
+   {'category': 'Furniture', 'count': 2}
 ⏱️  Execution time: 0ms
 
 📝 Example 4: High Rating Products

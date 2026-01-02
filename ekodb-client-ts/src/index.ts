@@ -15,6 +15,21 @@ export {
 } from "./schema";
 export { JoinBuilder } from "./join";
 export { Stage, ChatMessage } from "./functions";
+export {
+  getValue,
+  getValues,
+  extractRecord,
+  getDateTimeValue,
+  getUUIDValue,
+  getDecimalValue,
+  getDurationValue,
+  getBytesValue,
+  getBinaryValue,
+  getArrayValue,
+  getSetValue,
+  getVectorValue,
+  getObjectValue,
+} from "./utils";
 export type { SearchQuery, SearchResult, SearchResponse } from "./search";
 export type {
   Schema,
