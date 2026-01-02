@@ -43,6 +43,7 @@ mod batch;
 mod chat;
 mod client;
 mod error;
+mod functions;
 mod http;
 mod join;
 mod query;
@@ -64,6 +65,10 @@ pub use chat::{
 };
 pub use client::{Client, ClientBuilder, RateLimitInfo};
 pub use error::{Error, Result};
+pub use functions::{
+    ChatMessage, Function, FunctionResult, FunctionStats, GroupFunctionConfig, GroupFunctionOp,
+    ParameterDefinition, Script, ScriptCondition, SortFieldConfig, StageStats, UserFunction,
+};
 pub use join::JoinConfig;
 pub use query_builder::{QueryBuilder, SortOrder};
 pub use schema::{

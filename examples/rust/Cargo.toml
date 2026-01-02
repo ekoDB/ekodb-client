@@ -85,3 +85,19 @@ path = "examples/client_chat_basic.rs"
 [[example]]
 name = "client_chat_sessions"
 path = "examples/client_chat_sessions.rs"
+
+[[example]]
+name = "client_chat_advanced"
+path = "examples/client_chat_advanced.rs"
+
+[[example]]
+name = "client_joins"
+path = "examples/client_joins.rs"
+
+[[example]]
+name = "client_functions"
+path = "examples/client_functions.rs"
+
+[[example]]
+name = "swr_pattern"
+path = "examples/swr_pattern.rs"

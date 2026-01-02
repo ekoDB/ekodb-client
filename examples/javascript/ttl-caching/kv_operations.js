@@ -123,4 +123,7 @@ async function kvOperationsExamples() {
 }
 
 // Run the examples
-kvOperationsExamples().catch(console.error);
+kvOperationsExamples().catch((error) => {
+  console.error("❌ Error:", error);
+  process.exit(1);
+});

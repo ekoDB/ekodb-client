@@ -172,4 +172,7 @@ async function main() {
   console.log("✓ All advanced chat features demonstrated successfully!");
 }
 
-main().catch(console.error);
+main().catch((error) => {
+  console.error("❌ Error:", error);
+  process.exit(1);
+});

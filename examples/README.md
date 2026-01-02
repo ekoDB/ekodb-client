@@ -13,6 +13,22 @@ across 6 programming languages. Examples are organized into two categories:
 Each example is self-contained, fully tested, and serves as both documentation
 and integration tests.
 
+---
+
+> **🎉 ekoDB v0.24.0+ Compatibility**
+>
+> All examples are compatible with ekoDB v0.24.0+. Transaction examples have
+> been significantly improved with enhanced reliability:
+>
+> - ✅ Commit operations correctly persist all changes
+> - ✅ Rollback operations properly restore previous state
+> - ✅ Works across all isolation levels and durability modes
+>
+> No code changes required for existing examples - the external API remains
+> unchanged. See [Transaction Examples](#8-transactions) for details.
+
+---
+
 ## Table of Contents
 
 - [Quick Start](#-quick-start)
@@ -199,6 +215,85 @@ All direct examples are in the `ttl-caching/` subdirectories:
 - **Python**: [websocket_ttl.py](./python/ttl-caching/websocket_ttl.py)
 - **Go**: [websocket_ttl.go](./go/ttl-caching/websocket_ttl.go)
 - **Rust**: [websocket_ttl.rs](./rust/examples/websocket_ttl.rs)
+
+### 8. Scripts/Functions (Direct HTTP)
+
+> **Saved scripts for reusable queries and multi-stage pipelines**
+
+- **JavaScript**: [http_functions.js](./javascript/http_functions.js)
+- **Python**: [http_functions.py](./python/http_functions.py)
+- **Go**: [http_functions.go](./go/http_functions.go)
+- **Rust**: [http_functions.rs](./rust/examples/http_functions.rs)
+
+**Features demonstrated:**
+
+- Save/call/update/delete scripts via direct HTTP API
+- Parameterized scripts with type validation
+- Multi-stage pipelines (query + aggregation)
+- Script management (list, retrieve by ID/label)
+- Group aggregations (count, average, etc.)
+
+### 9. Transactions
+
+> **✅ Enhanced in v0.24.0:** Transaction reliability significantly improved.
+> Commit and rollback operations now work correctly across all isolation levels
+> and durability modes.
+
+- **JavaScript**: [transactions.js](./javascript/transactions.js)
+- **Python**: [transactions.py](./python/transactions.py)
+- **Go**: [transactions.go](./go/transactions.go)
+- **Rust**: [transactions.rs](./rust/examples/transactions.rs)
+- **Kotlin**: [transactions.kt](./kotlin/transactions.kt)
+
+**Features demonstrated:**
+
+- Begin/commit/rollback transactions
+- Operations within transactions (`transaction_id` parameter)
+- Savepoints for partial rollback
+- Multiple isolation levels (ReadCommitted, RepeatableRead, Serializable)
+- Testing with different durability configurations
+
+### 10. RAG Conversation System 🤖
+
+> **NEW:** Complete example of building a self-improving AI system with ekoDB.
+> Demonstrates how ekoDB can power RAG (Retrieval-Augmented Generation)
+> applications with message history and cross-conversation search.
+
+- **Rust**:
+  [rag_conversation_system.rs](./rust/examples/rag_conversation_system.rs)
+- **Python**: [rag_conversation_system.py](./python/rag_conversation_system.py)
+- **TypeScript**:
+  [rag_conversation_system.ts](./typescript/rag_conversation_system.ts)
+- **Go**: [rag_conversation_system.go](./go/rag_conversation_system.go)
+- **Kotlin**:
+  [RagConversationSystem.kt](./kotlin/examples/RagConversationSystem.kt)
+
+**Features demonstrated:**
+
+- Store messages with automatic embeddings
+- Hybrid search across all conversations (semantic + keyword)
+- Use search results as context for AI responses (RAG)
+- Dynamic search configurations per conversation
+- Cross-conversation knowledge retrieval
+- Self-improving knowledge base
+
+**What this example shows:**
+
+This demonstrates ekoDB as an **all-in-one backend for AI applications**:
+
+- ✅ Vector search (semantic similarity via HNSW)
+- ✅ Text search (keyword matching)
+- ✅ Hybrid search (best of both worlds)
+- ✅ AI functions (Chat, Embed)
+- ✅ Flexible querying and filtering
+- ✅ No external vector database needed
+
+**Use cases:**
+
+- AI chatbots that learn from conversation history
+- Customer support systems with contextual responses
+- Knowledge bases that surface related information
+- Documentation search with semantic understanding
 
 ## 🏃 Running Examples
 
@@ -865,20 +960,17 @@ Add your example to this README under the appropriate category.
 
 ## 📖 Additional Documentation
 
-For detailed API documentation and guides, see:
-
-- [API Documentation](../documentation/API.md)
-- [TTL Documentation](../documentation/TTL.md)
-- [WebSocket Guide](../documentation/WEBSOCKET.md)
-- [Security Guide](../documentation/SECURITY.md)
-- [Performance Guide](../documentation/PERFORMANCE.md)
+For detailed API documentation and guides, see the official ekoDB documentation
+at [docs.ekodb.io](https://docs.ekodb.io) (or your ekoDB server instance's
+documentation)
 
 ## 📊 Summary
 
-- **Total Examples**: 84 examples
+- **Total Examples**: 84+ examples
   - **Direct API**: 28 examples (JavaScript, Python, Go, Rust - 7 each)
   - **Client Libraries**: 56 examples (Rust: 14, Go: 14, TypeScript: 14,
     JavaScript: 7, Kotlin: 14)
+  - **Transaction Examples**: Available across all languages (v0.24.0+)
 - **Languages**: JavaScript, TypeScript, Python, Go, Rust, Kotlin
 - **Test Coverage**: All examples tested automatically via Makefile
 - **CI/CD Ready**: Easy integration into pipelines
@@ -887,6 +979,7 @@ For detailed API documentation and guides, see:
   names
 - **Feature Parity**: All client libraries have complete feature parity (14
   examples each)
+- **v0.24.0 Compatible**: Transaction reliability improvements fully supported
 
 ### Quick Reference
 

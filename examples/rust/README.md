@@ -96,9 +96,23 @@ These examples show the same operations using the type-safe client library:
 
 - **[client_collection_management.rs](examples/client_collection_management.rs)** -
   Collections (planned)
+
   ```bash
   cargo run --example client_collection_management
   ```
+
+- **[rag_conversation_system.rs](examples/rag_conversation_system.rs)** - RAG
+  System (NEW)
+
+  ```bash
+  cargo run --example rag_conversation_system
+  ```
+
+  Complete RAG (Retrieval-Augmented Generation) example showing:
+  - Message storage with automatic embeddings
+  - Cross-conversation hybrid search
+  - Context-aware AI responses
+  - Self-improving knowledge base
 
 ## Running Examples
 

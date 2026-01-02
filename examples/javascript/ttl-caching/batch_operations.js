@@ -142,4 +142,7 @@ async function batchOperationsExamples() {
 }
 
 // Run the examples
-batchOperationsExamples().catch(console.error);
+batchOperationsExamples().catch((error) => {
+  console.error("❌ Error:", error);
+  process.exit(1);
+});

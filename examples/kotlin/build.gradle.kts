@@ -13,7 +13,7 @@ repositories {
 
 dependencies {
     // Use the local client library
-    implementation(files("../../ekodb-client-kt/build/libs/ekodb-client-kt-0.1.0.jar"))
+    implementation(files("../../ekodb-client-kt/build/libs/ekodb-client-kt-0.5.0.jar"))
     
     // Kotlin stdlib
     implementation(kotlin("stdlib"))
@@ -36,6 +36,9 @@ dependencies {
     
     // DateTime
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.1")
+    
+    // Dotenv for environment variables
+    implementation("io.github.cdimascio:dotenv-kotlin:6.4.1")
 }
 
 kotlin {
@@ -52,12 +55,14 @@ application {
 tasks.named<JavaExec>("run") {
     environment("API_BASE_URL", System.getenv("API_BASE_URL") ?: "http://localhost:8080")
     environment("WS_BASE_URL", System.getenv("WS_BASE_URL") ?: "ws://localhost:8080")
-    environment("API_BASE_KEY", System.getenv("API_BASE_KEY") ?: "")
+    environment("API_BASE_KEY", System.getenv("API_BASE_KEY") ?: "a-test-api-key-from-ekodb")
 }
 
 // Add source directory
 sourceSets {
     main {
         kotlin.srcDir("examples")
+        // Exclude composition example - client API incompatible with composition pattern
+        kotlin.exclude("**/ClientFunctionComposition.kt")
     }
 }

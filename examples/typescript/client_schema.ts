@@ -186,4 +186,7 @@ async function main() {
   console.log("✅ Schema management examples completed!");
 }
 
-main().catch(console.error);
+main().catch((error) => {
+  console.error("❌ Error:", error);
+  process.exit(1);
+});

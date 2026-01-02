@@ -46,4 +46,7 @@ async function main() {
   console.log('\n💡 Note: Documents with TTL will automatically expire after the specified duration');
 }
 
-main().catch(console.error);
+main().catch((error) => {
+  console.error("❌ Error:", error);
+  process.exit(1);
+});

@@ -103,4 +103,7 @@ async function collectionManagementExamples() {
 }
 
 // Run the examples
-collectionManagementExamples().catch(console.error);
+collectionManagementExamples().catch((error) => {
+  console.error("❌ Error:", error);
+  process.exit(1);
+});

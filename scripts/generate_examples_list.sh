@@ -77,7 +77,7 @@ for lang in javascript python go rust; do
         dir="examples/rust/examples"
         pattern="*.rs"
     else
-        dir="examples/$lang/ttl-caching"
+        dir="examples/$lang"
         case $lang in
             javascript) pattern="*.js" ;;
             python) pattern="*.py" ;;
@@ -91,8 +91,16 @@ for lang in javascript python go rust; do
         while IFS= read -r file; do
             if [ -f "$file" ]; then
                 basename=$(basename "$file")
-                # Skip client_* files
-                if [[ ! "$basename" =~ ^client_ ]] && [[ ! "$basename" =~ ^Client ]]; then
+                # Skip client_* files, test runners, durability tests, and files in client-specific directories
+                # Also skip rag_conversation_system (counted separately as client examples)
+                if [[ ! "$basename" =~ ^client_ ]] && \
+                   [[ ! "$basename" =~ ^Client ]] && \
+                   [[ ! "$basename" =~ rag_conversation ]] && \
+                   [[ ! "$basename" =~ RagConversation ]] && \
+                   [[ ! "$file" =~ /client/ ]] && \
+                   [[ ! "$basename" =~ test.runner ]] && \
+                   [[ ! "$basename" =~ _test ]] && \
+                   [[ ! "$basename" =~ Test ]]; then
                     name="${basename%.*}"
                     count=$((count + 1))
                     
@@ -105,7 +113,7 @@ for lang in javascript python go rust; do
                     total_direct=$((total_direct + 1))
                 fi
             fi
-        done < <(find "$dir" -maxdepth 1 -name "$pattern" -type f 2>/dev/null | sort)
+        done < <(find "$dir" -maxdepth 2 -name "$pattern" -type f 2>/dev/null | sort)
     fi
     
     echo "  $lang: $count examples" >> "$EXAMPLES_TXT"
@@ -159,6 +167,81 @@ total_client=$((total_client + kotlin_client_count))
 
 echo "" >> "$EXAMPLES_TXT"
 echo "  Total Client: $total_client" >> "$EXAMPLES_TXT"
+
+# Count RAG Examples (special category - client examples across languages)
+echo -e "${YELLOW}🤖 Counting RAG Conversation System examples...${RESET}"
+echo "" >> "$EXAMPLES_TXT"
+echo "## RAG Conversation System Examples" >> "$EXAMPLES_TXT"
+echo "" >> "$EXAMPLES_TXT"
+
+rag_total=0
+
+# Rust RAG
+if [ -f "examples/rust/examples/rag_conversation_system.rs" ]; then
+    if [ $total_examples -gt 0 ]; then echo "," >> "$EXAMPLES_JSON"; fi
+    echo "  {\"language\": \"rust\", \"name\": \"rag_conversation_system\", \"type\": \"rag\", \"file\": \"examples/rust/examples/rag_conversation_system.rs\"}" >> "$EXAMPLES_JSON"
+    total_examples=$((total_examples + 1))
+    total_client=$((total_client + 1))
+    rag_total=$((rag_total + 1))
+    echo "  rust: 1 example" >> "$EXAMPLES_TXT"
+    echo -e "  rust: ${GREEN}1${RESET} RAG example"
+fi
+
+# Python RAG
+if [ -f "examples/python/rag_conversation_system.py" ]; then
+    if [ $total_examples -gt 0 ]; then echo "," >> "$EXAMPLES_JSON"; fi
+    echo "  {\"language\": \"python\", \"name\": \"rag_conversation_system\", \"type\": \"rag\", \"file\": \"examples/python/rag_conversation_system.py\"}" >> "$EXAMPLES_JSON"
+    total_examples=$((total_examples + 1))
+    total_client=$((total_client + 1))
+    rag_total=$((rag_total + 1))
+    echo "  python: 1 example" >> "$EXAMPLES_TXT"
+    echo -e "  python: ${GREEN}1${RESET} RAG example"
+fi
+
+# TypeScript RAG
+if [ -f "examples/typescript/rag_conversation_system.ts" ]; then
+    if [ $total_examples -gt 0 ]; then echo "," >> "$EXAMPLES_JSON"; fi
+    echo "  {\"language\": \"typescript\", \"name\": \"rag_conversation_system\", \"type\": \"rag\", \"file\": \"examples/typescript/rag_conversation_system.ts\"}" >> "$EXAMPLES_JSON"
+    total_examples=$((total_examples + 1))
+    total_client=$((total_client + 1))
+    rag_total=$((rag_total + 1))
+    echo "  typescript: 1 example" >> "$EXAMPLES_TXT"
+    echo -e "  typescript: ${GREEN}1${RESET} RAG example"
+fi
+
+# Go RAG (check in both locations)
+go_rag_file=""
+if [ -f "examples/go/rag_conversation_system.go" ]; then
+    go_rag_file="examples/go/rag_conversation_system.go"
+elif [ -f "../ekodb-client-go/examples/rag_conversation_system.go" ]; then
+    go_rag_file="../ekodb-client-go/examples/rag_conversation_system.go"
+fi
+
+if [ -n "$go_rag_file" ]; then
+    if [ $total_examples -gt 0 ]; then echo "," >> "$EXAMPLES_JSON"; fi
+    echo "  {\"language\": \"go\", \"name\": \"rag_conversation_system\", \"type\": \"rag\", \"file\": \"$go_rag_file\"}" >> "$EXAMPLES_JSON"
+    total_examples=$((total_examples + 1))
+    total_client=$((total_client + 1))
+    rag_total=$((rag_total + 1))
+    echo "  go: 1 example" >> "$EXAMPLES_TXT"
+    echo -e "  go: ${GREEN}1${RESET} RAG example"
+fi
+
+# Kotlin RAG
+if [ -f "examples/kotlin/examples/RagConversationSystem.kt" ]; then
+    if [ $total_examples -gt 0 ]; then echo "," >> "$EXAMPLES_JSON"; fi
+    echo "  {\"language\": \"kotlin\", \"name\": \"RagConversationSystem\", \"type\": \"rag\", \"file\": \"examples/kotlin/examples/RagConversationSystem.kt\"}" >> "$EXAMPLES_JSON"
+    total_examples=$((total_examples + 1))
+    total_client=$((total_client + 1))
+    rag_total=$((rag_total + 1))
+    echo "  kotlin: 1 example" >> "$EXAMPLES_TXT"
+    echo -e "  kotlin: ${GREEN}1${RESET} RAG example"
+fi
+
+echo "" >> "$EXAMPLES_TXT"
+echo "  Total RAG: $rag_total" >> "$EXAMPLES_TXT"
+echo "" >> "$EXAMPLES_TXT"
+echo "  Updated Total Client: $total_client" >> "$EXAMPLES_TXT"
 
 # Close JSON array
 echo "" >> "$EXAMPLES_JSON"

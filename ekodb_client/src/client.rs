@@ -53,6 +53,31 @@ impl Client {
         ClientBuilder::default()
     }
 
+    /// Health check
+    pub async fn health_check(&self) -> Result<()> {
+        self.http.health_check().await
+    }
+
+    /// Execute an operation with automatic token refresh on TokenExpired errors
+    async fn execute_with_token_refresh<F, Fut, T>(&self, mut operation: F) -> Result<T>
+    where
+        F: FnMut(String) -> Fut,
+        Fut: std::future::Future<Output = Result<T>>,
+    {
+        // First attempt with current token
+        let token = self.auth.get_token().await?;
+        match operation(token).await {
+            Ok(result) => Ok(result),
+            Err(Error::TokenExpired) => {
+                // Token expired, refresh and retry once
+                log::debug!("Token expired, refreshing and retrying...");
+                let new_token = self.auth.refresh_token().await?;
+                operation(new_token).await
+            }
+            Err(e) => Err(e),
+        }
+    }
+
     /// Insert a record into a collection
     ///
     /// # Arguments
@@ -88,10 +113,18 @@ impl Client {
         record: Record,
         bypass_ripple: Option<bool>,
     ) -> Result<Record> {
-        let token = self.auth.get_token().await?;
-        self.http
-            .insert(collection, record, bypass_ripple, &token)
-            .await
+        let collection = collection.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let collection = collection.clone();
+            let record = record.clone();
+            let http = http.clone();
+            async move {
+                http.insert(&collection, record, bypass_ripple, &token)
+                    .await
+            }
+        })
+        .await
     }
 
     /// Find records in a collection
@@ -135,10 +168,15 @@ impl Client {
         query: Query,
         bypass_ripple: Option<bool>,
     ) -> Result<Vec<Record>> {
-        let token = self.auth.get_token().await?;
-        self.http
-            .find(collection, query, &token, bypass_ripple)
-            .await
+        let collection = collection.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let collection = collection.clone();
+            let query = query.clone();
+            let http = http.clone();
+            async move { http.find(&collection, query, &token, bypass_ripple).await }
+        })
+        .await
     }
 
     /// Find a single record by ID
@@ -207,6 +245,43 @@ impl Client {
         self.http
             .delete(collection, id, &token, bypass_ripple)
             .await
+    }
+
+    /// Restore a deleted record from trash (undelete)
+    ///
+    /// # Arguments
+    ///
+    /// * `collection` - The collection name
+    /// * `id` - The record ID to restore
+    ///
+    /// # Returns
+    ///
+    /// `Ok(true)` if the record was restored, `Ok(false)` if no tombstone was found
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # use ekodb_client::Client;
+    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// let client = Client::builder()
+    ///     .base_url("https://your-instance.ekodb.net")
+    ///     .api_key("your-token")
+    ///     .build()?;
+    ///
+    /// // Delete a record
+    /// client.delete("users", "user123", None).await?;
+    ///
+    /// // Restore it from trash
+    /// let restored = client.restore_deleted("users", "user123").await?;
+    /// if restored {
+    ///     println!("Record restored successfully");
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn restore_deleted(&self, collection: &str, id: &str) -> Result<bool> {
+        let token = self.auth.get_token().await?;
+        self.http.restore_deleted(collection, id, &token).await
     }
 
     /// Batch insert multiple documents
@@ -445,6 +520,129 @@ impl Client {
         self.http.search(collection, search_query, &token).await
     }
 
+    /// Text-only search (full-text search)
+    ///
+    /// Convenience method for text search without vectors.
+    ///
+    /// # Arguments
+    ///
+    /// * `collection` - The collection to search
+    /// * `query_text` - The search query text
+    /// * `limit` - Maximum number of results
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # use ekodb_client::Client;
+    /// # async fn example(client: &Client) -> Result<(), ekodb_client::Error> {
+    /// let results = client.text_search("articles", "rust programming", 10).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn text_search(
+        &self,
+        collection: &str,
+        query_text: &str,
+        limit: usize,
+    ) -> Result<Vec<Record>> {
+        let search_query = SearchQuery::new(query_text).limit(limit);
+        let response = self.search(collection, search_query).await?;
+
+        // Convert SearchResult to Record
+        let records: Vec<Record> = response
+            .results
+            .into_iter()
+            .filter_map(|result| serde_json::from_value(result.record).ok())
+            .collect();
+
+        Ok(records)
+    }
+
+    /// Hybrid search (combines text + vector search)
+    ///
+    /// Performs semantic search using both text and vector embeddings.
+    ///
+    /// # Arguments
+    ///
+    /// * `collection` - The collection to search
+    /// * `query_text` - The search query text
+    /// * `query_vector` - The query embedding vector
+    /// * `limit` - Maximum number of results
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # use ekodb_client::Client;
+    /// # async fn example(client: &Client) -> Result<(), ekodb_client::Error> {
+    /// let embedding = vec![0.1, 0.2, 0.3]; // From embed() call
+    /// let results = client.hybrid_search(
+    ///     "articles",
+    ///     "rust programming",
+    ///     embedding,
+    ///     10
+    /// ).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn hybrid_search(
+        &self,
+        collection: &str,
+        query_text: &str,
+        query_vector: Vec<f64>,
+        limit: usize,
+    ) -> Result<Vec<Record>> {
+        let search_query = SearchQuery::new(query_text)
+            .vector(query_vector)
+            .text_weight(0.5)
+            .vector_weight(0.5)
+            .limit(limit);
+
+        let response = self.search(collection, search_query).await?;
+
+        // Convert SearchResult to Record
+        let records: Vec<Record> = response
+            .results
+            .into_iter()
+            .filter_map(|result| serde_json::from_value(result.record).ok())
+            .collect();
+
+        Ok(records)
+    }
+
+    /// Find all records in a collection
+    ///
+    /// Convenience method to retrieve all records (up to a limit).
+    ///
+    /// # Arguments
+    ///
+    /// * `collection` - The collection name
+    /// * `limit` - Maximum number of records to return
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # use ekodb_client::Client;
+    /// # async fn example(client: &Client) -> Result<(), ekodb_client::Error> {
+    /// let all_records = client.find_all("users", 100).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn find_all(&self, collection: &str, limit: usize) -> Result<Vec<Record>> {
+        use crate::types::Query;
+
+        let query = Query {
+            filter: None,
+            sort: None,
+            limit: Some(limit),
+            skip: None,
+            join: None,
+            bypass_cache: None,
+            bypass_ripple: None,
+        };
+
+        self.find(collection, query, None).await
+    }
+
     /// Create a collection with schema
     ///
     /// # Arguments
@@ -666,6 +864,102 @@ impl Client {
             .await
     }
 
+    /// Generate embeddings for text using AI (via ekoDB Functions)
+    ///
+    /// Uses ekoDB's AI integration to generate vector embeddings for semantic search.
+    /// Requires OPENAI_API_KEY to be set in the ekoDB server environment.
+    ///
+    /// # Arguments
+    ///
+    /// * `text` - The text to generate embeddings for
+    /// * `model` - The embedding model to use (e.g., "text-embedding-3-small")
+    ///
+    /// # Returns
+    ///
+    /// A vector of f64 values representing the embedding
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # use ekodb_client::Client;
+    /// # async fn example(client: &Client) -> Result<(), ekodb_client::Error> {
+    /// let embedding = client.embed("Hello world", "text-embedding-3-small").await?;
+    /// println!("Generated {} dimensions", embedding.len());
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn embed(&self, text: &str, model: &str) -> Result<Vec<f64>> {
+        use crate::functions::{Function, Script};
+        use rust_decimal::prelude::ToPrimitive;
+
+        // Create a temporary collection for embedding generation
+        let temp_collection = format!("embed_temp_{}", uuid::Uuid::new_v4());
+
+        // Insert a temporary record with the text
+        let mut temp_record = Record::new();
+        temp_record.insert("text", text);
+        self.insert(&temp_collection, temp_record, None).await?;
+
+        // Create a Script that loads the record, embeds it, and returns it
+        let temp_label = format!("embed_script_{}", uuid::Uuid::new_v4());
+        let script = Script::new(&temp_label, "Generate Embedding")
+            .with_description("Temporary script for embedding generation")
+            .with_function(Function::FindAll {
+                collection: temp_collection.clone(),
+            })
+            .with_function(Function::Embed {
+                input_field: "text".to_string(),
+                output_field: "embedding".to_string(),
+                model: Some(model.to_string()),
+            });
+
+        // Save and execute the script
+        let script_id = self.save_script(script).await?;
+        let result = self.call_script(&script_id, None).await?;
+
+        // Clean up script and temp collection
+        let _ = self.delete_script(&script_id).await;
+        let _ = self.delete_collection(&temp_collection).await;
+
+        // Extract embedding from result
+        let records = result.records;
+        if !records.is_empty() {
+            if let Some(first_record) = records.first() {
+                // Try to get embedding field
+                if let Some(embedding_field) = first_record.get("embedding") {
+                    // Handle FieldType::Array
+                    if let crate::types::FieldType::Array(arr) = embedding_field {
+                        let embedding: Vec<f64> = arr
+                            .iter()
+                            .filter_map(|v| {
+                                if let crate::types::FieldType::Float(f) = v {
+                                    Some(*f)
+                                } else if let crate::types::FieldType::Number(n) = v {
+                                    match n {
+                                        crate::types::NumberValue::Float(f) => Some(*f),
+                                        crate::types::NumberValue::Integer(i) => Some(*i as f64),
+                                        crate::types::NumberValue::Decimal(d) => d.to_f64(),
+                                    }
+                                } else {
+                                    None
+                                }
+                            })
+                            .collect();
+
+                        if !embedding.is_empty() {
+                            return Ok(embedding);
+                        }
+                    }
+                }
+            }
+        }
+
+        Err(crate::Error::Api {
+            code: 500,
+            message: "Failed to extract embedding from result".to_string(),
+        })
+    }
+
     /// Update a chat message
     ///
     /// # Arguments
@@ -732,6 +1026,192 @@ impl Client {
         self.http
             .regenerate_chat_message(chat_id, message_id, &token)
             .await
+    }
+
+    /// Save a new Script
+    ///
+    /// # Arguments
+    ///
+    /// * `script` - The Script definition to save
+    ///
+    /// # Returns
+    ///
+    /// The Script ID assigned by the server
+    pub async fn save_script(&self, script: crate::functions::Script) -> Result<String> {
+        let token = self.auth.get_token().await?;
+        self.http.save_script(script, &token).await
+    }
+
+    /// Get a Script by its ID
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The Script ID (from save_script)
+    ///
+    /// # Returns
+    ///
+    /// The saved Script definition
+    pub async fn get_script(&self, id: &str) -> Result<crate::functions::Script> {
+        let token = self.auth.get_token().await?;
+        self.http.get_script(id, &token).await
+    }
+
+    /// List all saved Scripts, optionally filtered by tags
+    ///
+    /// # Arguments
+    ///
+    /// * `tags` - Optional list of tags to filter by
+    ///
+    /// # Returns
+    ///
+    /// Vector of saved Scripts
+    pub async fn list_scripts(
+        &self,
+        tags: Option<Vec<String>>,
+    ) -> Result<Vec<crate::functions::Script>> {
+        let token = self.auth.get_token().await?;
+        self.http.list_scripts(tags, &token).await
+    }
+
+    /// Update an existing Script
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The Script ID to update
+    /// * `script` - The updated Script definition
+    pub async fn update_script(&self, id: &str, script: crate::functions::Script) -> Result<()> {
+        let token = self.auth.get_token().await?;
+        self.http.update_script(id, script, &token).await
+    }
+
+    /// Delete a Script by its ID
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The Script ID to delete
+    pub async fn delete_script(&self, id: &str) -> Result<()> {
+        let token = self.auth.get_token().await?;
+        self.http.delete_script(id, &token).await
+    }
+
+    /// Call a saved Script
+    ///
+    /// # Arguments
+    ///
+    /// * `label` - The Script label to execute
+    /// * `params` - Optional parameters to pass to the Script
+    ///
+    /// # Returns
+    ///
+    /// Script execution result containing records and metadata
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # use ekodb_client::{Client, FieldType};
+    /// # use std::collections::HashMap;
+    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// let client = Client::builder()
+    ///     .base_url("https://your-instance.ekodb.net")
+    ///     .api_key("your-token")
+    ///     .build()?;
+    ///
+    /// let mut params = HashMap::new();
+    /// params.insert("status".to_string(), FieldType::String("active".to_string()));
+    ///
+    /// let result = client.call_script("get_active_users", Some(params)).await?;
+    /// println!("Found {} records", result.records.len());
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn call_script(
+        &self,
+        script_id_or_label: &str,
+        params: Option<std::collections::HashMap<String, crate::types::FieldType>>,
+    ) -> Result<crate::functions::FunctionResult> {
+        let token = self.auth.get_token().await?;
+        self.http
+            .call_script(script_id_or_label, params, &token)
+            .await
+    }
+
+    // ========================================================================
+    // USER FUNCTIONS API
+    // ========================================================================
+
+    /// Save a new UserFunction
+    ///
+    /// # Arguments
+    ///
+    /// * `user_function` - The UserFunction definition to save
+    ///
+    /// # Returns
+    ///
+    /// The UserFunction ID assigned by the server
+    pub async fn save_user_function(
+        &self,
+        user_function: crate::functions::UserFunction,
+    ) -> Result<String> {
+        let token = self.auth.get_token().await?;
+        self.http.save_user_function(user_function, &token).await
+    }
+
+    /// Get a UserFunction by its label
+    ///
+    /// # Arguments
+    ///
+    /// * `label` - The UserFunction label (unique identifier)
+    ///
+    /// # Returns
+    ///
+    /// The saved UserFunction definition
+    pub async fn get_user_function(&self, label: &str) -> Result<crate::functions::UserFunction> {
+        let token = self.auth.get_token().await?;
+        self.http.get_user_function(label, &token).await
+    }
+
+    /// List all saved UserFunctions, optionally filtered by tags
+    ///
+    /// # Arguments
+    ///
+    /// * `tags` - Optional list of tags to filter by
+    ///
+    /// # Returns
+    ///
+    /// Vector of saved UserFunctions
+    pub async fn list_user_functions(
+        &self,
+        tags: Option<Vec<String>>,
+    ) -> Result<Vec<crate::functions::UserFunction>> {
+        let token = self.auth.get_token().await?;
+        self.http.list_user_functions(tags, &token).await
+    }
+
+    /// Update an existing UserFunction
+    ///
+    /// # Arguments
+    ///
+    /// * `label` - The UserFunction label to update
+    /// * `user_function` - The updated UserFunction definition
+    pub async fn update_user_function(
+        &self,
+        label: &str,
+        user_function: crate::functions::UserFunction,
+    ) -> Result<()> {
+        let token = self.auth.get_token().await?;
+        self.http
+            .update_user_function(label, user_function, &token)
+            .await
+    }
+
+    /// Delete a UserFunction by its label
+    ///
+    /// # Arguments
+    ///
+    /// * `label` - The UserFunction label to delete
+    pub async fn delete_user_function(&self, label: &str) -> Result<()> {
+        let token = self.auth.get_token().await?;
+        self.http.delete_user_function(label, &token).await
     }
 }
 

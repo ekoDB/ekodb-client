@@ -132,7 +132,7 @@ if command -v cargo &> /dev/null; then
     cd rust
     
     # Run only the working examples
-    if cargo run --example simple_crud && cargo run --example simple_websocket; then
+    if cargo run --example simple_crud && cargo run --example simple_websocket && cargo run --example crud_scripts; then
         echo -e "${GREEN}✓ Rust tests passed${NC}"
         PASSED_SUITES=$((PASSED_SUITES + 1))
     else

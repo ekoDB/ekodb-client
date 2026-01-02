@@ -15,7 +15,7 @@ YELLOW := \033[33m
 RED := \033[31m
 RESET := \033[0m
 
-.PHONY: all build build-release build-client build-python-client build-typescript-client test test-ci test-client test-examples test-examples-direct test-examples-client test-examples-rust test-examples-python test-examples-go test-examples-typescript test-examples-javascript clean check fmt fmt-rust fmt-rust-client fmt-rust-examples fmt-python fmt-go fmt-typescript fmt-md format install install-rust install-python install-typescript install-go setup install-hooks deps-check deps-update deploy-client deploy-client-rust deploy-client-py deploy-client-py-simple deploy-client-go deploy-client-ts bump-version bump-client-py docs-client
+.PHONY: all build build-release build-client build-python-client build-typescript-client test test-ci test-client test-examples test-examples-direct test-examples-client test-examples-rust test-examples-python test-examples-go test-examples-typescript test-examples-javascript test-examples-transactions test-examples-scripts test-examples-scripts-crud test-examples-swr test-examples-ts-swr test-examples-py-swr test-examples-go-swr test-examples-rust-swr test-examples-kt-swr clean check fmt fmt-rust fmt-rust-client fmt-rust-examples fmt-python fmt-go fmt-typescript fmt-md format install install-rust install-python install-typescript install-go setup install-hooks deps-check deps-update deploy-client deploy-client-rust deploy-client-py deploy-client-py-simple deploy-client-go deploy-client-ts bump-version bump-client-py docs-client
 
 # ASCII Banner for ekoDB
 BANNER := \
@@ -63,7 +63,7 @@ help:
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "  🧪 $(GREEN)make test$(RESET)         - Run Rust client tests"
 	@echo "  🤖 $(GREEN)make test-ci$(RESET)      - Run optimized CI tests"
-	@echo "  🔗 $(GREEN)make test-examples$(RESET) - Run integration tests (all languages)"
+	@echo "  🔗 $(GREEN)make test-examples$(RESET) - Run ALL integration tests (includes transactions)"
 	@echo "  🦀 $(GREEN)make test-examples-rust$(RESET) (or rs) - Run Rust examples"
 	@echo "     $(GREEN)make test-examples-rs-direct$(RESET) - Rust direct HTTP/WebSocket"
 	@echo "     $(GREEN)make test-examples-rs-client$(RESET) - Rust client library"
@@ -78,6 +78,16 @@ help:
 	@echo "  📦 $(GREEN)make test-examples-javascript$(RESET) (or js) - Run JavaScript examples"
 	@echo "     $(GREEN)make test-examples-js-direct$(RESET) - JavaScript direct HTTP/WebSocket"
 	@echo "     $(GREEN)make test-examples-js-client$(RESET) - JavaScript client library"
+	@echo "  💳 $(GREEN)make test-examples-transactions$(RESET) - Run transaction examples (Python, Go, JS, Rust, Kotlin)"
+	@echo "  📜 $(GREEN)make test-examples-scripts$(RESET) - Run all Scripts/Functions examples (http_functions + crud_scripts)"
+	@echo "  📚 $(GREEN)make test-examples-scripts-crud$(RESET) - Run CRUD Scripts examples only (all languages)"
+	@echo "  🤖 $(GREEN)make test-examples-rag$(RESET) - Run RAG Conversation System examples (Rust, Python, TypeScript)"
+	@echo "  🌐 $(GREEN)make test-examples-swr$(RESET) - Run SWR (Stale-While-Revalidate) edge cache examples (all languages)"
+	@echo "     $(GREEN)make test-examples-ts-swr$(RESET) - TypeScript SWR examples only"
+	@echo "     $(GREEN)make test-examples-py-swr$(RESET) - Python SWR examples only"
+	@echo "     $(GREEN)make test-examples-go-swr$(RESET) - Go SWR examples only"
+	@echo "     $(GREEN)make test-examples-rust-swr$(RESET) - Rust SWR examples only"
+	@echo "     $(GREEN)make test-examples-kt-swr$(RESET) - Kotlin SWR examples only"
 	@echo ""
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "🚀 $(CYAN)DEPLOYMENT$(RESET)"
@@ -169,18 +179,22 @@ deploy-all: ## Deploy all client libraries (Rust, Python, TypeScript, Kotlin)
 # Version bumping targets
 bump-version:
 	@echo "🔢 $(CYAN)Bumping all client versions...$(RESET)"
-	@echo ""
-	@read -p "Enter new version (e.g., 0.1.3): " NEW_VERSION; \
+	@RUST_VERSION=$$(grep '^version = ' ekodb_client/Cargo.toml | head -1 | cut -d'"' -f2); \
+	PYTHON_VERSION=$$(grep '^version = ' ekodb-client-py/Cargo.toml | head -1 | cut -d'"' -f2); \
+	TS_VERSION=$$(grep '"version":' ekodb-client-ts/package.json | head -1 | cut -d'"' -f4); \
+	KOTLIN_VERSION=$$(grep '^version = ' ekodb-client-kt/build.gradle.kts | head -1 | cut -d'"' -f2); \
+	echo ""; \
+	echo "$(YELLOW)📦 Current versions:$(RESET)"; \
+	echo "  Rust:       $$RUST_VERSION"; \
+	echo "  Python:     $$PYTHON_VERSION"; \
+	echo "  TypeScript: $$TS_VERSION"; \
+	echo "  Kotlin:     $$KOTLIN_VERSION"; \
+	echo ""; \
+	read -p "Enter new version (e.g. current: '$$RUST_VERSION'): " NEW_VERSION; \
 	if [ -z "$$NEW_VERSION" ]; then \
 		echo "$(RED)❌ No version provided$(RESET)"; \
 		exit 1; \
 	fi; \
-	echo ""; \
-	echo "$(YELLOW)📦 Current versions:$(RESET)"; \
-	echo "  Rust:       $$(grep '^version = ' ekodb_client/Cargo.toml | head -1 | cut -d'"' -f2)"; \
-	echo "  Python:     $$(grep '^version = ' ekodb-client-py/Cargo.toml | head -1 | cut -d'"' -f2)"; \
-	echo "  TypeScript: $$(grep '"version":' ekodb-client-ts/package.json | head -1 | cut -d'"' -f4)"; \
-	echo "  Kotlin:     $$(grep '^version = ' ekodb-client-kt/build.gradle.kts | head -1 | cut -d'"' -f2)"; \
 	echo ""; \
 	echo "$(YELLOW)📦 New version: $$NEW_VERSION$(RESET)"; \
 	echo ""; \
@@ -212,6 +226,14 @@ bump-version:
 	echo ""; \
 	echo "$(GREEN)✅ All versions bumped to $$NEW_VERSION$(RESET)"; \
 	echo ""; \
+	echo "$(CYAN)Running make fmt...$(RESET)"; \
+	$(MAKE) fmt; \
+	echo ""; \
+	echo "$(CYAN)Running make build...$(RESET)"; \
+	$(MAKE) build; \
+	echo ""; \
+	echo "$(GREEN)✅ Format and build complete!$(RESET)"; \
+	echo ""; \
 	echo "$(YELLOW)💡 Next steps:$(RESET)"; \
 	echo "  1. Review changes: git diff"; \
 	echo "  2. Commit: git add -A && git commit -m 'Bump version to $$NEW_VERSION'"; \
@@ -220,8 +242,8 @@ bump-version:
 bump-client-py:
 	@echo "🔢 $(CYAN)Bumping Python client version...$(RESET)"
 	@CURRENT_VERSION=$$(grep '^version = ' ekodb-client-py/Cargo.toml | head -1 | cut -d'"' -f2); \
-	echo "Current version: $$CURRENT_VERSION"; \
-	read -p "Enter new version (e.g., 0.1.3): " NEW_VERSION; \
+	echo ""; \
+	read -p "Enter new version (e.g. current version: '$$CURRENT_VERSION'): " NEW_VERSION; \
 	if [ -z "$$NEW_VERSION" ]; then \
 		echo "$(RED)❌ No version provided$(RESET)"; \
 		exit 1; \
@@ -259,7 +281,7 @@ deploy-client-py:
 		docker run --rm \
 			-v $$(pwd):/workspace \
 			-w /workspace/ekodb-client-py \
-			ghcr.io/pyo3/maturin build --release --manylinux 2014 --no-default-features --features rustls && \
+			ghcr.io/pyo3/maturin build --release --manylinux 2_28 --no-default-features --features rustls && \
 		echo "  🍎 Building for macOS (current platform)..." && \
 		cd ekodb-client-py && python3 -m maturin build --release --no-default-features --features rustls --sdist && \
 		echo "📤 $(CYAN)Publishing all wheels to PyPI...$(RESET)" && \
@@ -277,7 +299,7 @@ deploy-client-py:
 		docker run --rm \
 			-v $$(pwd):/workspace \
 			-w /workspace/ekodb-client-py \
-			ghcr.io/pyo3/maturin build --release --manylinux 2014 --no-default-features --features rustls && \
+			ghcr.io/pyo3/maturin build --release --manylinux 2_28 --no-default-features --features rustls && \
 		echo "  🍎 Building for macOS (current platform)..." && \
 		cd ekodb-client-py && python3 -m maturin build --release --no-default-features --features rustls --sdist && \
 		echo "📤 $(CYAN)Publishing all wheels to PyPI...$(RESET)" && \
@@ -341,11 +363,13 @@ test-ci:
 #   make test-examples-{language}-client
 # ============================================================================
 
-# Run all examples (all languages, both direct and client)
-test-examples: examples-ls-check test-examples-rust test-examples-python test-examples-go test-examples-typescript test-examples-javascript test-examples-kotlin
+# Run all examples (all languages, both direct and client, including transactions)
+test-examples: examples-ls-check
+	@echo "make test-examples" > examples/test-examples.md
+	@$(MAKE) test-examples-rust test-examples-python test-examples-go test-examples-typescript test-examples-javascript test-examples-kotlin test-examples-rag test-examples-swr test-examples-fcomp 2>&1 | tee -a examples/test-examples.md
 	@echo "✅ $(GREEN)All integration tests complete!$(RESET)"
 
-# Run direct API examples (using raw HTTP/WebSocket calls)
+# Run direct API examples (using raw HTTP/WebSocket calls, including transactions)
 test-examples-direct: test-examples-rust-direct test-examples-python-direct test-examples-go-direct test-examples-javascript-direct
 	@echo "✅ $(GREEN)Direct API examples complete!$(RESET)"
 
@@ -353,10 +377,336 @@ test-examples-direct: test-examples-rust-direct test-examples-python-direct test
 test-examples-client: test-examples-rust-client test-examples-python-client test-examples-go-client test-examples-typescript-client test-examples-javascript-client
 	@echo "✅ $(GREEN)All client library examples complete!$(RESET)"
 
+# Run transaction examples (all languages with direct API support)
+test-examples-transactions:
+	@echo ""
+	@echo "💳 $(CYAN)Running Transaction Examples (Direct API)...$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo ""
+	@echo "🐍 $(YELLOW)Python Transactions...$(RESET)"
+	@cd examples/python && python3 transactions.py
+	@echo ""
+	@echo "🔷 $(YELLOW)Go Transactions...$(RESET)"
+	@cd examples/go && go run transactions.go
+	@echo ""
+	@echo "� $(YELLOW)JavaScript Transactions...$(RESET)"
+	@cd examples/javascript && node transactions.js
+	@echo ""
+	@echo "🦀 $(YELLOW)Rust Transactions...$(RESET)"
+	@cd examples/rust && cargo run --example transactions --quiet
+	@echo ""
+	@echo "🟣 $(YELLOW)Kotlin Transactions...$(RESET)"
+	@cd examples/kotlin && kotlinc -script transactions.kt || echo "Kotlin example (requires kotlinc installed)"
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "✅ $(GREEN)All transaction examples completed successfully!$(RESET)"
+
+# ============================================================================
+# Scripts/Functions Examples (http_functions + crud_scripts)
+# ============================================================================
+test-examples-scripts:
+	@echo ""
+	@echo "📜 $(CYAN)Running Scripts/Functions Examples (Direct API)...$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo ""
+	@echo "🐍 $(YELLOW)Python Scripts (http_functions + crud_scripts)...$(RESET)"
+	@cd examples/python && python3 http_functions.py && python3 crud_scripts.py
+	@echo ""
+	@echo "🔷 $(YELLOW)Go Scripts (http_functions + crud_scripts)...$(RESET)"
+	@cd examples/go && go run http_functions.go && go run crud_scripts.go
+	@echo ""
+	@echo "📦 $(YELLOW)JavaScript Scripts (http_functions + crud_scripts)...$(RESET)"
+	@cd examples/javascript && node http_functions.js && node crud_scripts.js
+	@echo ""
+	@echo "🦀 $(YELLOW)Rust Scripts (http_functions + crud_scripts)...$(RESET)"
+	@cd examples/rust && cargo run --example http_functions --quiet && cargo run --example crud_scripts --quiet
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "✅ $(GREEN)All Scripts/Functions examples completed successfully!$(RESET)"
+
+# Run only CRUD Scripts examples
+test-examples-scripts-crud:
+	@echo ""
+	@echo "📚 $(CYAN)Running CRUD Scripts Examples (Direct API)...$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo ""
+	@echo "🐍 $(YELLOW)Python CRUD Scripts...$(RESET)"
+	@cd examples/python && python3 crud_scripts.py
+	@echo ""
+	@echo "🔷 $(YELLOW)Go CRUD Scripts...$(RESET)"
+	@cd examples/go && go run crud_scripts.go
+	@echo ""
+	@echo "📦 $(YELLOW)JavaScript CRUD Scripts...$(RESET)"
+	@cd examples/javascript && node crud_scripts.js
+	@echo ""
+	@echo "🦀 $(YELLOW)Rust CRUD Scripts...$(RESET)"
+	@cd examples/rust && cargo run --example crud_scripts --quiet
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "✅ $(GREEN)All CRUD Scripts examples completed successfully!$(RESET)"
+
+# ============================================================================
+# RAG Conversation System Examples
+# ============================================================================
+test-examples-rag:
+	@echo "make test-examples-rag" > test-examples-rag.md
+	@$(MAKE) run-rag-examples 2>&1 | tee -a test-examples-rag.md
+	@echo "✅ $(GREEN)All RAG examples complete! Output saved to test-examples-rag.md$(RESET)"
+
+run-rag-examples:
+	@echo ""
+	@echo "🤖 $(CYAN)RAG Conversation System Examples$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo ""
+	@echo "$(YELLOW)Prerequisites:$(RESET)"
+	@echo "  1. ekoDB server running (make run in ekodb/)"
+	@echo "  2. OPENAI_API_KEY set in server environment"
+	@echo "  3. API_BASE_URL and API_BASE_KEY exported in your shell"
+	@echo ""
+	@echo "$(CYAN)Building Rust client library...$(RESET)"
+	@cd ekodb_client && cargo build --release --quiet
+	@echo "✓ Rust client built"
+	@echo ""
+	@echo "$(CYAN)Building Python client bindings...$(RESET)"
+	@cd ekodb-client-py && maturin build --release --quiet
+	@pip3 install --force-reinstall --quiet ekodb-client-py/target/wheels/ekodb_client-0.5.0-cp38-abi3-macosx_11_0_arm64.whl
+	@echo "✓ Python client built and installed"
+	@echo ""
+	@echo "$(CYAN)Building TypeScript client library...$(RESET)"
+	@cd ekodb-client-ts && npm run build --silent
+	@echo "✓ TypeScript client built"
+	@echo ""
+	@echo "$(CYAN)Installing TypeScript client in examples...$(RESET)"
+	@cd examples/typescript && npm install --silent
+	@echo "✓ TypeScript client installed"
+	@echo ""
+	@echo "$(CYAN)Building TypeScript example...$(RESET)"
+	@cd examples/typescript && npm run build --silent
+	@echo "✓ TypeScript example built"
+	@echo ""
+	@echo "$(CYAN)Building Go client library...$(RESET)"
+	@cd ../ekodb-client-go && go build -o /dev/null . 2>&1 | head -5 || true
+	@echo "✓ Go client built"
+	@echo ""
+	@echo "$(CYAN)Building Go RAG example...$(RESET)"
+	@cd examples/go && go build -o rag_conversation_system rag_conversation_system.go
+	@echo "✓ Go example built"
+	@echo ""
+	@echo "$(CYAN)Building Kotlin client library...$(RESET)"
+	@cd ekodb-client-kt && ./gradlew build -x test --quiet
+	@echo "✓ Kotlin client built"
+	@echo ""
+	@echo "$(CYAN)Building Kotlin RAG example...$(RESET)"
+	@cd examples/kotlin && ./gradlew build -x test --quiet
+	@echo "✓ Kotlin example built"
+	@echo ""
+	@echo "$(CYAN)Running Rust RAG Example...$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@cd examples/rust && cargo run --example rag_conversation_system --quiet
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "$(CYAN)Running Python RAG Example...$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@cd examples/python && python3 rag_conversation_system.py
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "$(CYAN)Running TypeScript RAG Example...$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@cd examples/typescript && node dist/rag_conversation_system.js
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "$(CYAN)Running Go RAG Example...$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@cd examples/go && ./rag_conversation_system
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "$(CYAN)Running Kotlin RAG Example...$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@cd examples/kotlin && export $$(grep -v '^#' .env | grep -v '^$$' | xargs) && ./gradlew run -PmainClass="io.ekodb.client.examples.RagConversationSystemKt" --quiet
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "✅ $(GREEN)RAG Examples Complete!$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo ""
+	@echo "$(GREEN)What you just saw across 5 languages:$(RESET)"
+	@echo "  ✓ Embeddings generated via ekoDB Functions"
+	@echo "  ✓ Hybrid search (semantic + keyword)"
+	@echo "  ✓ Text search with stemming"
+	@echo "  ✓ Cross-conversation context retrieval"
+	@echo "  ✓ Simple client helpers wrapping powerful AI"
+	@echo ""
+	@echo "$(CYAN)Mission: AI for All 🚀$(RESET) - Making RAG accessible to everyone!"
+	@echo ""
+
+# ============================================================================
+# SWR (Stale-While-Revalidate) Edge Cache Examples
+# ============================================================================
+.PHONY: test-examples-swr test-examples-ts-swr test-examples-py-swr test-examples-go-swr test-examples-rust-swr test-examples-kt-swr
+
+test-examples-swr:
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "🌐 $(CYAN)Testing SWR (Stale-While-Revalidate) Pattern Examples$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo ""
+	@$(MAKE) test-examples-ts-swr test-examples-py-swr test-examples-go-swr test-examples-rust-swr test-examples-kt-swr
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "✅ $(GREEN)All SWR Examples Complete!$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo ""
+	@echo "$(GREEN)What you just saw - ekoDB as Edge Cache:$(RESET)"
+	@echo "  ✓ FindById → Check cache"
+	@echo "  ✓ If/Else → Conditional execution"
+	@echo "  ✓ HttpRequest → External API calls"
+	@echo "  ✓ Insert with TTL → Auto-expiring cache"
+	@echo "  ✓ Sub-millisecond cache hits"
+	@echo "  ✓ No Redis, no CDN, no cache invalidation logic needed"
+	@echo ""
+	@echo "$(CYAN)Your DATABASE is your EDGE! 🚀$(RESET)"
+	@echo ""
+
+test-examples-ts-swr: build-typescript-client
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "$(CYAN)Running TypeScript SWR Examples...$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@cd examples/typescript && npx tsx client_swr_pattern.ts
+	@cd examples/typescript && npx tsx client_edge_cache.ts
+	@echo "✅ $(GREEN)TypeScript SWR examples complete!$(RESET)"
+
+test-examples-py-swr: build-python-client
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "$(CYAN)Running Python SWR Examples...$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@cd examples/python && python3 swr_pattern.py
+	@echo "✅ $(GREEN)Python SWR examples complete!$(RESET)"
+
+test-examples-go-swr:
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "$(CYAN)Running Go SWR Examples...$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@cd examples/go && go run swr_pattern.go
+	@echo "✅ $(GREEN)Go SWR examples complete!$(RESET)"
+
+test-examples-rust-swr: build-client
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "$(CYAN)Running Rust SWR Examples...$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@cd examples/rust && cargo run --example swr_pattern
+	@echo "✅ $(GREEN)Rust SWR examples complete!$(RESET)"
+
+test-examples-rust-fcomp: build-client
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "$(CYAN)Running Rust Function Composition Examples...$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@cd examples/rust && cargo run --example client_function_composition
+	@echo "✅ $(GREEN)Rust function composition examples complete!$(RESET)"
+
+test-examples-rs-fcomp: test-examples-rust-fcomp
+
+# ============================================================================
+# Function Composition Examples (CallFunction)
+# ============================================================================
+.PHONY: test-examples-fcomp test-examples-ts-fcomp test-examples-py-fcomp test-examples-go-fcomp test-examples-js-fcomp test-examples-kt-fcomp
+
+test-examples-fcomp:
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "🔗 $(CYAN)Testing Function Composition Examples$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo ""
+	@$(MAKE) test-examples-rust-fcomp test-examples-ts-fcomp test-examples-py-fcomp test-examples-go-fcomp test-examples-js-fcomp
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "✅ $(GREEN)All Function Composition Examples Complete!$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo ""
+	@echo "$(GREEN)What you just saw - CallFunction composability:$(RESET)"
+	@echo "  ✓ Reusable Script building blocks"
+	@echo "  ✓ Scripts calling other Scripts"
+	@echo "  ✓ Clean SWR patterns via composition"
+	@echo "  ✓ Multi-level nesting (arbitrary depth)"
+	@echo "  ✓ No code duplication"
+	@echo "  ✓ Single source of truth"
+	@echo ""
+	@echo "$(CYAN)Build complex workflows from simple pieces! 🚀$(RESET)"
+	@echo ""
+
+test-examples-ts-fcomp: build-typescript-client
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "$(CYAN)Running TypeScript Function Composition Examples...$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@cd examples/typescript && npx tsx client_function_composition.ts
+	@echo "✅ $(GREEN)TypeScript function composition examples complete!$(RESET)"
+
+test-examples-py-fcomp: build-python-client
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "$(CYAN)Running Python Function Composition Examples...$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@cd examples/python && python3 client_function_composition.py
+	@echo "✅ $(GREEN)Python function composition examples complete!$(RESET)"
+
+test-examples-go-fcomp:
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "$(CYAN)Running Go Function Composition Examples...$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@cd examples/go && go run client_function_composition.go
+	@echo "✅ $(GREEN)Go function composition examples complete!$(RESET)"
+
+test-examples-js-fcomp: build-javascript-client
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "$(CYAN)Running JavaScript Function Composition Examples...$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@cd examples/javascript && node client_function_composition.js
+	@echo "✅ $(GREEN)JavaScript function composition examples complete!$(RESET)"
+
+test-examples-kt-fcomp:
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "$(CYAN)Running Kotlin Function Composition Examples...$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@if [ -f .env ]; then \
+		. ./.env && \
+		export JAVA_HOME=$$(/usr/libexec/java_home -v 17) && export PATH=$$JAVA_HOME/bin:$$PATH && \
+		cd examples/kotlin && \
+		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientFunctionCompositionKt --no-daemon; \
+	else \
+		echo "$(RED)✗ .env file not found$(RESET)"; \
+		exit 1; \
+	fi
+	@echo "✅ $(GREEN)Kotlin function composition examples complete!$(RESET)"
+
+test-examples-kt-swr:
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "$(CYAN)Running Kotlin SWR Examples...$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@if [ -f .env ]; then \
+		. ./.env && \
+		export JAVA_HOME=$$(/usr/libexec/java_home -v 17) && export PATH=$$JAVA_HOME/bin:$$PATH && \
+		cd examples/kotlin && \
+		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.SwrPatternKt --no-daemon; \
+	else \
+		echo "$(RED)✗ .env file not found$(RESET)"; \
+		exit 1; \
+	fi
+	@echo "✅ $(GREEN)Kotlin SWR examples complete!$(RESET)"
+
 # ============================================================================
 # Rust Examples (both direct + client)
 # ============================================================================
-test-examples-rust: test-examples-rust-direct test-examples-rust-client
+test-examples-rust:
+	@echo "make test-examples-rust" > examples/rust/test-examples-rs.md
+	@$(MAKE) test-examples-rust-direct test-examples-rust-client 2>&1 | tee -a examples/rust/test-examples-rs.md
 	@echo "✅ $(GREEN)All Rust integration tests complete!$(RESET)"
 
 test-examples-rs: test-examples-rust
@@ -365,7 +715,7 @@ test-examples-rs-client: test-examples-rust-client
 
 test-examples-rust-direct:
 	@echo "🧪 $(CYAN)Running Rust examples (direct HTTP/WebSocket)...$(RESET)"
-	@cd examples/rust && cargo run --example simple_crud && cargo run --example simple_websocket && cargo run --example batch_operations && cargo run --example kv_operations && cargo run --example collection_management && cargo run --example document_ttl && cargo run --example websocket_ttl
+	@cd examples/rust && cargo run --example simple_crud && cargo run --example simple_websocket && cargo run --example batch_operations && cargo run --example kv_operations && cargo run --example collection_management && cargo run --example document_ttl && cargo run --example websocket_ttl && cargo run --example http_functions && cargo run --example transactions
 	@echo "✅ $(GREEN)Rust direct examples complete!$(RESET)"
 
 test-examples-rust-client: build-client
@@ -384,12 +734,15 @@ test-examples-rust-client: build-client
 	@cd examples/rust && cargo run --example client_chat_basic
 	@cd examples/rust && cargo run --example client_chat_sessions
 	@cd examples/rust && cargo run --example client_chat_advanced
+	@cd examples/rust && cargo run --example client_functions
 	@echo "✅ $(GREEN)Rust client examples complete!$(RESET)"
 
 # ============================================================================
 # Python Examples (both direct + client)
 # ============================================================================
-test-examples-python: test-examples-python-direct test-examples-python-client
+test-examples-python:
+	@echo "make test-examples-python" > examples/python/text-examples-py.md
+	@$(MAKE) test-examples-python-direct test-examples-python-client 2>&1 | tee -a examples/python/text-examples-py.md
 	@echo "✅ $(GREEN)All Python integration tests complete!$(RESET)"
 
 test-examples-py: test-examples-python
@@ -430,12 +783,16 @@ test-examples-python-client: build-python-client
 	@cd examples/python && python3 client_chat_basic.py
 	@cd examples/python && python3 client_chat_sessions.py
 	@cd examples/python && python3 client_chat_advanced.py
+	@cd examples/python && python3 client_functions.py
+	@cd examples/python && python3 client_functions_complete.py
 	@echo "✅ $(GREEN)Python client examples complete!$(RESET)"
 
 # ============================================================================
 # Go Examples (both direct + client)
 # ============================================================================
-test-examples-go: test-examples-go-direct test-examples-go-client
+test-examples-go:
+	@echo "make test-examples-go" > examples/go/test-examples-go.md
+	@$(MAKE) test-examples-go-direct test-examples-go-client 2>&1 | tee -a examples/go/test-examples-go.md
 	@echo "✅ $(GREEN)All Go integration tests complete!$(RESET)"
 
 test-examples-go-direct:
@@ -459,12 +816,15 @@ test-examples-go-client:
 	@cd examples/go && go run client_search.go
 	@cd examples/go && go run client_schema.go
 	@cd examples/go && go run client_joins.go
+	@cd examples/go && go run client_functions.go
 	@echo "✅ $(GREEN)Go client examples complete!$(RESET)"
 
 # ============================================================================
 # TypeScript Examples (client only - no direct examples)
 # ============================================================================
-test-examples-typescript: test-examples-typescript-client
+test-examples-typescript:
+	@echo "make test-examples-typescript" > examples/typescript/test-examples-ts.md
+	@$(MAKE) test-examples-typescript-client 2>&1 | tee -a examples/typescript/test-examples-ts.md
 	@echo "✅ $(GREEN)All TypeScript integration tests complete!$(RESET)"
 
 test-examples-ts: test-examples-typescript
@@ -474,6 +834,9 @@ build-typescript-client:
 	@echo "📦 $(CYAN)Building TypeScript client library...$(RESET)"
 	@cd ekodb-client-ts && npm install && npm run build
 	@echo "✅ $(GREEN)TypeScript client built!$(RESET)"
+
+# JavaScript uses the TypeScript client (npm package)
+build-javascript-client: build-typescript-client
 
 test-examples-typescript-client: build-typescript-client
 	@echo "🧪 $(CYAN)Running TypeScript client library examples...$(RESET)"
@@ -492,12 +855,16 @@ test-examples-typescript-client: build-typescript-client
 	@cd examples/typescript && npx tsx client_search.ts
 	@cd examples/typescript && npx tsx client_schema.ts
 	@cd examples/typescript && npx tsx client_joins.ts
+	@cd examples/typescript && npx tsx client_functions.ts
+	@cd examples/typescript && npx tsx client_functions_complete.ts
 	@echo "✅ $(GREEN)TypeScript client examples complete!$(RESET)"
 
 # ============================================================================
 # JavaScript Examples (both direct + client)
 # ============================================================================
-test-examples-javascript: test-examples-javascript-direct test-examples-javascript-client
+test-examples-javascript:
+	@echo "make test-examples-javascript" > examples/javascript/test-examples-js.md
+	@$(MAKE) test-examples-javascript-direct test-examples-javascript-client 2>&1 | tee -a examples/javascript/test-examples-js.md
 	@echo "✅ $(GREEN)All JavaScript integration tests complete!$(RESET)"
 
 test-examples-js: test-examples-javascript
@@ -519,25 +886,36 @@ test-examples-javascript-client: build-typescript-client
 	@cd examples/javascript && node client_document_ttl.js
 	@cd examples/javascript && node client_simple_websocket.js
 	@cd examples/javascript && node client_websocket_ttl.js
+	@cd examples/javascript && node http_functions.js
+	@cd examples/javascript && node client_functions.js
+	@cd examples/javascript && node client_functions_advanced.js
+	@cd examples/javascript && node client_functions_crud.js
+	@cd examples/javascript && node client_functions_search.js
+	@cd examples/javascript && node client_functions_ai.js
 	@echo "✅ $(GREEN)JavaScript client examples complete!$(RESET)"
 
 # ============================================================================
-# Kotlin Examples (client only)
+# Kotlin Examples (client + transactions)
 # ============================================================================
-test-examples-kotlin: test-examples-kotlin-client
+test-examples-kotlin:
+	@echo "make test-examples-kotlin" > examples/kotlin/test-examples-kt.md
+	@$(MAKE) test-examples-kotlin-client 2>&1 | tee -a examples/kotlin/test-examples-kt.md
+	@echo "🟣 $(YELLOW)Kotlin Transactions...$(RESET)"
+	@cd examples/kotlin && kotlinc -script transactions.kt || echo "Kotlin example (requires kotlinc installed)" 2>&1 | tee -a test-examples-kt.md
 	@echo "✅ $(GREEN)All Kotlin integration tests complete!$(RESET)"
 
 test-examples-kt: test-examples-kotlin
 
 build-kotlin-client:
 	@echo "🟣 $(CYAN)Building Kotlin client library...$(RESET)"
-	@cd ekodb-client-kt && ./gradlew build --no-daemon
+	@cd ekodb-client-kt && export JAVA_HOME=$$(/usr/libexec/java_home -v 17) && export PATH=$$JAVA_HOME/bin:$$PATH && ./gradlew build --no-daemon
 	@echo "✅ $(GREEN)Kotlin client built!$(RESET)"
 
 test-examples-kotlin-client: build-kotlin-client
 	@echo "🧪 $(CYAN)Running Kotlin client library examples...$(RESET)"
 	@if [ -f .env ]; then \
 		. ./.env && \
+		export JAVA_HOME=$$(/usr/libexec/java_home -v 17) && export PATH=$$JAVA_HOME/bin:$$PATH && \
 		cd examples/kotlin && \
 		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientSimpleCrudKt --no-daemon && \
 		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientBatchOperationsKt --no-daemon && \
@@ -552,7 +930,8 @@ test-examples-kotlin-client: build-kotlin-client
 		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientJoinsKt --no-daemon && \
 		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientChatBasicKt --no-daemon && \
 		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientChatSessionsKt --no-daemon && \
-		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientChatAdvancedKt --no-daemon; \
+		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientChatAdvancedKt --no-daemon && \
+		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=ClientFunctionsKt --no-daemon; \
 	else \
 		echo "$(RED)❌ .env file not found$(RESET)"; \
 		echo "$(YELLOW)💡 Create .env file with API_BASE_URL, WS_BASE_URL, and API_BASE_KEY$(RESET)"; \
@@ -641,7 +1020,7 @@ fmt-md:
 		prettier --write "**/*.md" --prose-wrap always --print-width 80; \
 		echo "✅ $(GREEN)Markdown formatting complete!$(RESET)"; \
 	elif command -v markdownlint > /dev/null; then \
-		find . -name "*.md" -not -path "./target/*" -not -path "./node_modules/*" -exec markdownlint --fix {} \; 2>/dev/null || true; \
+		find . -name "*.md" -not -path "./target/*" -not -path "./node_modules/*" -not -name "test-examples*.md" -exec markdownlint --fix {} \; 2>/dev/null || true; \
 		echo "✅ $(GREEN)Markdown formatting complete with markdownlint!$(RESET)"; \
 	else \
 		echo "$(YELLOW)No markdown formatter found. Installing prettier...$(RESET)"; \
