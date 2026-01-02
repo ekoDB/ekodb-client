@@ -1,6 +1,6 @@
 [package]
 name = "ekodb_client"
-version = "0.6.0"
+version = "0.6.1"
 authors = ["Sean M. Vazquez <sean.m.vazquez@gmail.com>"]
 edition = "2021"
 license = "MIT OR Apache-2.0"
