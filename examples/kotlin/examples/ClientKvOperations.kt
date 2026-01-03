@@ -60,22 +60,30 @@ fun main() = runBlocking {
         }
         println("✓ Set ${keys.size} configuration keys\n")
         
-        // Example 6: Delete a key
+        // Example 6: Check if key exists
+        println("=== KV Exists ===")
+        val exists = client.kvExists("user:123")
+        println("✓ Key exists: $exists\n")
+        
+        // Example 7: Find keys with pattern
+        println("=== KV Find (Pattern Query) ===")
+        val configResults = client.kvFind(pattern = "config:.*")
+        println("✓ Found ${configResults.size} keys matching 'config:.*'\n")
+        
+        // Example 8: Query all keys
+        println("=== KV Query (Alias for Find) ===")
+        val allResults = client.kvQuery()
+        println("✓ Total keys in store: ${allResults.size}\n")
+        
+        // Example 9: Delete a key
         println("=== KV Delete ===")
         client.kvDelete("user:123")
         println("✓ Deleted key: user:123\n")
         
-        // Example 7: Verify deletion
+        // Example 10: Verify deletion with kvExists
         println("=== Verify Deletion ===")
-        val deletedValue = client.kvGet("user:123")
-        if (deletedValue == null) {
-            println("✓ Confirmed key was deleted\n")
-        } else {
-            println("⚠ Key still exists (unexpected)\n")
-        }
-        
-        // Note: TTL expiration is automatic - the key will expire after 10 seconds
-        // We don't wait to verify to keep the example fast
+        val existsAfter = client.kvExists("user:123")
+        println("✓ Key exists after delete: $existsAfter\n")
         
         // Cleanup remaining keys
         println("=== Cleanup ===")
