@@ -245,9 +245,29 @@ async def nested_composition_example(client):
     print(f"   Records: {len(result['records'])}")
     if result["records"]:
         record = result["records"][0]
-        print(f"   Name: {json.dumps(record.get('name'))}")
-        print(f"   Department: {json.dumps(record.get('department'))}")
-        print(f"   Record count: {json.dumps(record.get('record_count'))}\n")
+        name_field = record.get("name", {})
+        dept_field = record.get("department", {})
+        count_field = record.get("record_count", {})
+
+        name = (
+            name_field.get("value")
+            if isinstance(name_field, dict)
+            else name_field or "N/A"
+        )
+        department = (
+            dept_field.get("value")
+            if isinstance(dept_field, dict)
+            else dept_field or "N/A"
+        )
+        record_count = (
+            count_field.get("value")
+            if isinstance(count_field, dict)
+            else count_field or 0
+        )
+
+        print(f"   Name: {name}")
+        print(f"   Department: {department}")
+        print(f"   Record count: {record_count}\n")
 
     print("🎯 Key Benefit: Each function is independently testable and reusable!")
     print("   - validate_user: Used in 100 different workflows")

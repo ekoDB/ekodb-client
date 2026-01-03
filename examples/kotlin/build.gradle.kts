@@ -12,8 +12,10 @@ repositories {
 }
 
 dependencies {
-    // Use the local client library
-    implementation(files("../../ekodb-client-kt/build/libs/ekodb-client-kt-0.5.0.jar"))
+    // Use the local client library (dynamically find the built JAR)
+    implementation(fileTree("../../ekodb-client-kt/build/libs") {
+        include("ekodb-client-kt-*.jar")
+    })
     
     // Kotlin stdlib
     implementation(kotlin("stdlib"))

@@ -14,8 +14,8 @@ use serde_json;
 use pyo3::create_exception;
 use pyo3::exceptions::{PyException, PyRuntimeError, PyValueError};
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyList};
-use pyo3_asyncio::tokio::future_into_py;
+use pyo3::types::{PyBool, PyDict, PyFloat, PyInt, PyList, PyString};
+use pyo3_async_runtimes::tokio::future_into_py;
 
 // Create a custom exception for rate limiting
 create_exception!(ekodb_client, RateLimitError, PyException, "Rate limit exceeded");
@@ -144,14 +144,15 @@ impl Client {
     ///     collection: Collection name
     ///     record: Document data as a dict
     ///     ttl: Optional TTL duration (e.g., "30s", "5m", "1h", "1d")
+    #[pyo3(signature = (collection, record, ttl=None, bypass_ripple=None))]
     fn insert<'py>(
         &self,
         py: Python<'py>,
         collection: String,
-        record: &PyDict,
+        record: &Bound<'py, PyDict>,
         ttl: Option<String>,
         bypass_ripple: Option<bool>,
-    ) -> PyResult<&'py PyAny> {
+    ) -> PyResult<Bound<'py, PyAny>> {
         let mut rust_record = dict_to_record(record)?;
         
         // Add TTL if provided
@@ -161,33 +162,34 @@ impl Client {
         
         let client = self.inner.clone();
 
-        future_into_py::<_, PyObject>(py, async move {
+        future_into_py::<_, Py<PyAny>>(py, async move {
             let result = client
                 .insert(&collection, rust_record, bypass_ripple)
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("Insert failed: {}", e)))?;
 
-            Python::with_gil(|py| record_to_dict(py, &result))
+            Ok(Python::attach(|py| record_to_dict(py, &result))?)
         })
     }
 
     /// Find a document by ID
+    #[pyo3(signature = (collection, id, bypass_ripple=None))]
     fn find_by_id<'py>(
         &self,
         py: Python<'py>,
         collection: String,
         id: String,
         bypass_ripple: Option<bool>,
-    ) -> PyResult<&'py PyAny> {
+    ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
 
-        future_into_py::<_, PyObject>(py, async move {
+        future_into_py(py, async move {
             let result = client
                 .find_by_id(&collection, &id, bypass_ripple)
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("Find failed: {}", e)))?;
 
-            Python::with_gil(|py| record_to_dict(py, &result))
+            Python::attach(|py| record_to_dict(py, &result))
         })
     }
 
@@ -197,14 +199,15 @@ impl Client {
     ///     collection: Collection name
     ///     query: Optional query dict with filters, joins, etc.
     ///     limit: Optional limit (deprecated, use query dict instead)
+    #[pyo3(signature = (collection, query=None, limit=None, bypass_ripple=None))]
     fn find<'py>(
         &self,
         py: Python<'py>,
         collection: String,
-        query: Option<&PyDict>,
+        query: Option<&Bound<'py, PyDict>>,
         limit: Option<usize>,
         bypass_ripple: Option<bool>,
-    ) -> PyResult<&'py PyAny> {
+    ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
         let query_json = if let Some(q) = query {
             Some(dict_to_json(q)?)
@@ -212,7 +215,7 @@ impl Client {
             None
         };
 
-        future_into_py::<_, PyObject>(py, async move {
+        future_into_py::<_, Py<PyAny>>(py, async move {
             let mut rust_query = RustQuery::new();
             
             // Apply limit from parameter if provided (for backward compatibility)
@@ -232,7 +235,7 @@ impl Client {
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("Find failed: {}", e)))?;
 
-            Python::with_gil(|py| {
+            Python::attach(|py| {
                 let list = PyList::empty(py);
                 for record in results {
                     list.append(record_to_dict(py, &record)?)?;
@@ -243,58 +246,60 @@ impl Client {
     }
 
     /// Update a document
+    #[pyo3(signature = (collection, id, updates, bypass_ripple=None))]
     fn update<'py>(
         &self,
         py: Python<'py>,
         collection: String,
         id: String,
-        updates: &PyDict,
+        updates: &Bound<'py, PyDict>,
         bypass_ripple: Option<bool>,
-    ) -> PyResult<&'py PyAny> {
+    ) -> PyResult<Bound<'py, PyAny>> {
         let rust_updates = dict_to_record(updates)?;
         let client = self.inner.clone();
 
-        future_into_py::<_, PyObject>(py, async move {
+        future_into_py(py, async move {
             let result = client
                 .update(&collection, &id, rust_updates, bypass_ripple)
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("Update failed: {}", e)))?;
 
-            Python::with_gil(|py| record_to_dict(py, &result))
+            Python::attach(|py| record_to_dict(py, &result))
         })
     }
 
     /// Delete a document
+    #[pyo3(signature = (collection, id, bypass_ripple=None))]
     fn delete<'py>(
         &self,
         py: Python<'py>,
         collection: String,
         id: String,
         bypass_ripple: Option<bool>,
-    ) -> PyResult<&'py PyAny> {
+    ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
 
-        future_into_py::<_, PyObject>(py, async move {
+        future_into_py(py, async move {
             client
                 .delete(&collection, &id, bypass_ripple)
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("Delete failed: {}", e)))?;
 
-            Python::with_gil(|py| Ok(py.None()))
+            Python::attach(|py| Ok(py.None()))
         })
     }
 
     /// List all collections
-    fn list_collections<'py>(&self, py: Python<'py>) -> PyResult<&'py PyAny> {
+    fn list_collections<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
 
-        future_into_py::<_, PyObject>(py, async move {
+        future_into_py::<_, Py<PyAny>>(py, async move {
             let collections = client
                 .list_collections()
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("List collections failed: {}", e)))?;
 
-            Python::with_gil(|py| {
+            Python::attach(|py| {
                 let list = PyList::empty(py);
                 for name in collections {
                     list.append(name)?;
@@ -310,9 +315,9 @@ impl Client {
         &self,
         py: Python<'py>,
         collection: String,
-        records: Vec<&PyDict>,
+        records: Vec<Bound<'py, PyDict>>,
         bypass_ripple: Option<bool>,
-    ) -> PyResult<&'py PyAny> {
+    ) -> PyResult<Bound<'py, PyAny>> {
         let rust_records: Result<Vec<RustRecord>, _> = records
             .iter()
             .map(|d| dict_to_record(d))
@@ -320,13 +325,13 @@ impl Client {
         let rust_records = rust_records?;
         let client = self.inner.clone();
 
-        future_into_py::<_, PyObject>(py, async move {
+        future_into_py::<_, Py<PyAny>>(py, async move {
             let results = client
                 .batch_insert(&collection, rust_records, bypass_ripple)
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("Batch insert failed: {}", e)))?;
 
-            Python::with_gil(|py| {
+            Python::attach(|py| {
                 let list = PyList::empty(py);
                 for record in results {
                     list.append(record_to_dict(py, &record)?)?;
@@ -342,23 +347,23 @@ impl Client {
         &self,
         py: Python<'py>,
         collection: String,
-        updates: Vec<(&str, &PyDict)>, // Vec of (id, record) pairs
+        updates: Vec<(String, Bound<'py, PyDict>)>, // Vec of (id, record) pairs
         bypass_ripple: Option<bool>,
-    ) -> PyResult<&'py PyAny> {
+    ) -> PyResult<Bound<'py, PyAny>> {
         let rust_updates: Result<Vec<(String, RustRecord)>, PyErr> = updates
             .iter()
-            .map(|(id, d)| Ok((id.to_string(), dict_to_record(d)?)))
+            .map(|(id, d)| Ok((id.clone(), dict_to_record(d)?)))
             .collect();
         let rust_updates = rust_updates?;
         let client = self.inner.clone();
 
-        future_into_py::<_, PyObject>(py, async move {
+        future_into_py::<_, Py<PyAny>>(py, async move {
             let results = client
                 .batch_update(&collection, rust_updates, bypass_ripple)
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("Batch update failed: {}", e)))?;
 
-            Python::with_gil(|py| {
+            Python::attach(|py| {
                 let list = PyList::empty(py);
                 for record in results {
                     list.append(record_to_dict(py, &record)?)?;
@@ -376,16 +381,16 @@ impl Client {
         collection: String,
         ids: Vec<String>,
         bypass_ripple: Option<bool>,
-    ) -> PyResult<&'py PyAny> {
+    ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
 
-        future_into_py::<_, PyObject>(py, async move {
+        future_into_py::<_, Py<PyAny>>(py, async move {
             let deleted_count = client
                 .batch_delete(&collection, ids, bypass_ripple)
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("Batch delete failed: {}", e)))?;
 
-            Python::with_gil(|py| Ok(deleted_count.into_py(py)))
+            Python::attach(|py| Ok(PyInt::new(py, deleted_count).into()))
         })
     }
 
@@ -394,16 +399,16 @@ impl Client {
         &self,
         py: Python<'py>,
         collection: String,
-    ) -> PyResult<&'py PyAny> {
+    ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
 
-        future_into_py::<_, PyObject>(py, async move {
+        future_into_py(py, async move {
             client
                 .delete_collection(&collection)
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("Delete collection failed: {}", e)))?;
 
-            Python::with_gil(|py| Ok(py.None()))
+            Python::attach(|py| Ok(py.None()))
         })
     }
 
@@ -412,12 +417,13 @@ impl Client {
     /// Args:
     ///     collection: Collection name
     ///     schema: Optional schema dict with field definitions
+    #[pyo3(signature = (collection, schema=None))]
     fn create_collection<'py>(
         &self,
         py: Python<'py>,
         collection: String,
-        schema: Option<&PyDict>,
-    ) -> PyResult<&'py PyAny> {
+        schema: Option<&Bound<'py, PyDict>>,
+    ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
         let schema_config = if let Some(s) = schema {
             let schema_json = dict_to_json(s)?;
@@ -428,13 +434,13 @@ impl Client {
             ekodb_client::Schema::default()
         };
 
-        future_into_py::<_, PyObject>(py, async move {
+        future_into_py(py, async move {
             client
                 .create_collection(&collection, schema_config)
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("Create collection failed: {}", e)))?;
 
-            Python::with_gil(|py| Ok(py.None()))
+            Python::attach(|py| Ok(py.None()))
         })
     }
 
@@ -446,16 +452,16 @@ impl Client {
         &self,
         py: Python<'py>,
         collection: String,
-    ) -> PyResult<&'py PyAny> {
+    ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
 
-        future_into_py::<_, PyObject>(py, async move {
+        future_into_py(py, async move {
             let schema = client
                 .get_schema(&collection)
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("Get schema failed: {}", e)))?;
 
-            Python::with_gil(|py| {
+            Python::attach(|py| {
                 let schema_json = serde_json::to_value(&schema).map_err(|e| {
                     PyRuntimeError::new_err(format!("Failed to serialize schema: {}", e))
                 })?;
@@ -472,16 +478,16 @@ impl Client {
         &self,
         py: Python<'py>,
         collection: String,
-    ) -> PyResult<&'py PyAny> {
+    ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
 
-        future_into_py::<_, PyObject>(py, async move {
+        future_into_py(py, async move {
             let metadata = client
                 .get_collection(&collection)
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("Get collection failed: {}", e)))?;
 
-            Python::with_gil(|py| {
+            Python::attach(|py| {
                 let metadata_json = serde_json::to_value(&metadata).map_err(|e| {
                     PyRuntimeError::new_err(format!("Failed to serialize metadata: {}", e))
                 })?;
@@ -499,12 +505,12 @@ impl Client {
         &self,
         py: Python<'py>,
         collection: String,
-        search_query: &PyDict,
-    ) -> PyResult<&'py PyAny> {
+        search_query: &Bound<'py, PyDict>,
+    ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
         let query_json = dict_to_json(search_query)?;
 
-        future_into_py::<_, PyObject>(py, async move {
+        future_into_py(py, async move {
             let search_query = serde_json::from_value(query_json).map_err(|e| {
                 PyRuntimeError::new_err(format!("Failed to parse search query: {}", e))
             })?;
@@ -514,7 +520,7 @@ impl Client {
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("Search failed: {}", e)))?;
 
-            Python::with_gil(|py| {
+            Python::attach(|py| {
                 let results_json = serde_json::to_value(&results).map_err(|e| {
                     PyRuntimeError::new_err(format!("Failed to serialize results: {}", e))
                 })?;
@@ -535,16 +541,16 @@ impl Client {
         collection: String,
         query_text: String,
         limit: usize,
-    ) -> PyResult<&'py PyAny> {
+    ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
 
-        future_into_py::<_, PyObject>(py, async move {
+        future_into_py(py, async move {
             let results = client
                 .text_search(&collection, &query_text, limit)
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("Text search failed: {}", e)))?;
 
-            Python::with_gil(|py| {
+            Python::attach(|py| {
                 let results_json = serde_json::to_value(&results).map_err(|e| {
                     PyRuntimeError::new_err(format!("Failed to serialize results: {}", e))
                 })?;
@@ -567,16 +573,16 @@ impl Client {
         query_text: String,
         query_vector: Vec<f64>,
         limit: usize,
-    ) -> PyResult<&'py PyAny> {
+    ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
 
-        future_into_py::<_, PyObject>(py, async move {
+        future_into_py(py, async move {
             let results = client
                 .hybrid_search(&collection, &query_text, query_vector, limit)
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("Hybrid search failed: {}", e)))?;
 
-            Python::with_gil(|py| {
+            Python::attach(|py| {
                 let results_json = serde_json::to_value(&results).map_err(|e| {
                     PyRuntimeError::new_err(format!("Failed to serialize results: {}", e))
                 })?;
@@ -595,16 +601,16 @@ impl Client {
         py: Python<'py>,
         collection: String,
         limit: usize,
-    ) -> PyResult<&'py PyAny> {
+    ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
 
-        future_into_py::<_, PyObject>(py, async move {
+        future_into_py(py, async move {
             let results = client
                 .find_all(&collection, limit)
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("Find all failed: {}", e)))?;
 
-            Python::with_gil(|py| {
+            Python::attach(|py| {
                 let results_json = serde_json::to_value(&results).map_err(|e| {
                     PyRuntimeError::new_err(format!("Failed to serialize results: {}", e))
                 })?;
@@ -623,18 +629,18 @@ impl Client {
         py: Python<'py>,
         text: String,
         model: String,
-    ) -> PyResult<&'py PyAny> {
+    ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
 
-        future_into_py::<_, PyObject>(py, async move {
+        future_into_py::<_, Py<PyAny>>(py, async move {
             let embedding = client
                 .embed(&text, &model)
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("Embed failed: {}", e)))?;
 
-            Python::with_gil(|py| {
-                let py_list = PyList::new(py, embedding);
-                Ok(py_list.into())
+            Python::attach(|py| {
+                let list = PyList::new(py, &embedding)?;
+                Ok(list.into())
             })
         })
     }
@@ -644,8 +650,8 @@ impl Client {
         &self,
         py: Python<'py>,
         key: String,
-        value: &PyDict,
-    ) -> PyResult<&'py PyAny> {
+        value: &Bound<'py, PyDict>,
+    ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
         // Convert Python dict to JSON value
         let json_str = serde_json::to_string(&dict_to_json(value)?)
@@ -653,13 +659,13 @@ impl Client {
         let json_value: serde_json::Value = serde_json::from_str(&json_str)
             .map_err(|e| PyRuntimeError::new_err(format!("JSON parse error: {}", e)))?;
 
-        future_into_py::<_, PyObject>(py, async move {
+        future_into_py(py, async move {
             client
                 .kv_set(&key, json_value)
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("KV set failed: {}", e)))?;
 
-            Python::with_gil(|py| Ok(py.None()))
+            Python::attach(|py| Ok(py.None()))
         })
     }
 
@@ -668,16 +674,16 @@ impl Client {
         &self,
         py: Python<'py>,
         key: String,
-    ) -> PyResult<&'py PyAny> {
+    ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
 
-        future_into_py::<_, PyObject>(py, async move {
+        future_into_py(py, async move {
             let result = client
                 .kv_get(&key)
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("KV get failed: {}", e)))?;
 
-            Python::with_gil(|py| {
+            Python::attach(|py| {
                 match result {
                     Some(value) => {
                         // Convert JSON value to Python dict
@@ -699,16 +705,159 @@ impl Client {
         &self,
         py: Python<'py>,
         key: String,
-    ) -> PyResult<&'py PyAny> {
+    ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
 
-        future_into_py::<_, PyObject>(py, async move {
+        future_into_py(py, async move {
             client
                 .kv_delete(&key)
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("KV delete failed: {}", e)))?;
 
-            Python::with_gil(|py| Ok(py.None()))
+            Python::attach(|py| Ok(py.None()))
+        })
+    }
+
+    /// Check if a key exists
+    fn kv_exists<'py>(
+        &self,
+        py: Python<'py>,
+        key: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            let exists = client
+                .kv_exists(&key)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("KV exists failed: {}", e)))?;
+
+            Python::attach(|py| {
+                Ok(PyBool::new(py, exists).as_borrowed().to_owned().into())
+            })
+        })
+    }
+
+    /// Query/find KV entries with pattern matching
+    #[pyo3(signature = (pattern=None, include_expired=false))]
+    fn kv_find<'py>(
+        &self,
+        py: Python<'py>,
+        pattern: Option<String>,
+        include_expired: bool,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            let result = client
+                .kv_find(pattern.as_deref(), include_expired)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("KV find failed: {}", e)))?;
+
+            Python::attach(|py| {
+                let list = PyList::empty(py);
+                for item in result {
+                    let py_value = json_to_pydict(py, &item)?;
+                    list.append(py_value)?;
+                }
+                Ok(list.into())
+            })
+        })
+    }
+
+    /// Query KV store with pattern (alias for kv_find)
+    #[pyo3(signature = (pattern=None, include_expired=false))]
+    fn kv_query<'py>(
+        &self,
+        py: Python<'py>,
+        pattern: Option<String>,
+        include_expired: bool,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        self.kv_find(py, pattern, include_expired)
+    }
+
+    // ========== Transaction Methods ==========
+
+    /// Begin a new transaction
+    #[pyo3(signature = (isolation_level="ReadCommitted"))]
+    fn begin_transaction<'py>(
+        &self,
+        py: Python<'py>,
+        isolation_level: &str,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        let isolation_level = isolation_level.to_string();
+
+        future_into_py(py, async move {
+            let result = client
+                .begin_transaction(&isolation_level)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("Begin transaction failed: {}", e)))?;
+
+            Ok(result)
+        })
+    }
+
+    /// Get transaction status
+    fn get_transaction_status<'py>(
+        &self,
+        py: Python<'py>,
+        transaction_id: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py(py, async move {
+            let result = client
+                .get_transaction_status(&transaction_id)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("Get transaction status failed: {}", e)))?;
+
+            Python::attach(|py| {
+                let dict = PyDict::new(py);
+                if let Some(state) = result.get("state").and_then(|v| v.as_str()) {
+                    dict.set_item("state", state)?;
+                }
+                if let Some(count) = result.get("operations_count").and_then(|v| v.as_i64()) {
+                    dict.set_item("operations_count", count)?;
+                }
+                Ok(dict.into_any().unbind())
+            })
+        })
+    }
+
+    /// Commit a transaction
+    fn commit_transaction<'py>(
+        &self,
+        py: Python<'py>,
+        transaction_id: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py(py, async move {
+            client
+                .commit_transaction(&transaction_id)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("Commit transaction failed: {}", e)))?;
+
+            Python::attach(|py| Ok(py.None()))
+        })
+    }
+
+    /// Rollback a transaction
+    fn rollback_transaction<'py>(
+        &self,
+        py: Python<'py>,
+        transaction_id: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py(py, async move {
+            client
+                .rollback_transaction(&transaction_id)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("Rollback transaction failed: {}", e)))?;
+
+            Python::attach(|py| Ok(py.None()))
         })
     }
 
@@ -717,6 +866,7 @@ impl Client {
     // Note: The chat() method has been removed. Use create_chat_session() and chat_message() instead.
 
     /// Create a new chat session
+    #[pyo3(signature = (collections, llm_provider, llm_model=None, system_prompt=None))]
     fn create_chat_session<'py>(
         &self,
         py: Python<'py>,
@@ -724,10 +874,10 @@ impl Client {
         llm_provider: String,
         llm_model: Option<String>,
         system_prompt: Option<String>,
-    ) -> PyResult<&'py PyAny> {
+    ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
 
-        future_into_py::<_, PyObject>(py, async move {
+        future_into_py(py, async move {
             let collection_configs: Vec<CollectionConfig> = collections
                 .into_iter()
                 .map(|(name, _fields)| CollectionConfig {
@@ -753,7 +903,7 @@ impl Client {
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("Create session failed: {}", e)))?;
 
-            Python::with_gil(|py| chat_response_to_dict(py, &result))
+            Python::attach(|py| chat_response_to_dict(py, &result))
         })
     }
 
@@ -763,10 +913,10 @@ impl Client {
         py: Python<'py>,
         chat_id: String,
         message: String,
-    ) -> PyResult<&'py PyAny> {
+    ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
 
-        future_into_py::<_, PyObject>(py, async move {
+        future_into_py(py, async move {
             let request = ChatMessageRequest {
                 message,
                 bypass_ripple: None,
@@ -778,21 +928,22 @@ impl Client {
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("Chat message failed: {}", e)))?;
 
-            Python::with_gil(|py| chat_response_to_dict(py, &result))
+            Python::attach(|py| chat_response_to_dict(py, &result))
         })
     }
 
     /// List all chat sessions
+    #[pyo3(signature = (limit=None, skip=None, sort=None))]
     fn list_chat_sessions<'py>(
         &self,
         py: Python<'py>,
         limit: Option<usize>,
         skip: Option<usize>,
         sort: Option<String>,
-    ) -> PyResult<&'py PyAny> {
+    ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
 
-        future_into_py::<_, PyObject>(py, async move {
+        future_into_py(py, async move {
             let query = ListSessionsQuery { limit, skip, sort };
 
             let result = client
@@ -800,11 +951,12 @@ impl Client {
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("List sessions failed: {}", e)))?;
 
-            Python::with_gil(|py| list_sessions_response_to_dict(py, &result))
+            Python::attach(|py| list_sessions_response_to_dict(py, &result))
         })
     }
 
     /// Get messages from a chat session
+    #[pyo3(signature = (chat_id, limit=None, skip=None, sort=None))]
     fn get_chat_session_messages<'py>(
         &self,
         py: Python<'py>,
@@ -812,10 +964,10 @@ impl Client {
         limit: Option<usize>,
         skip: Option<usize>,
         sort: Option<String>,
-    ) -> PyResult<&'py PyAny> {
+    ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
 
-        future_into_py::<_, PyObject>(py, async move {
+        future_into_py(py, async move {
             let query = GetMessagesQuery { limit, skip, sort };
 
             let result = client
@@ -823,7 +975,7 @@ impl Client {
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("Get messages failed: {}", e)))?;
 
-            Python::with_gil(|py| get_messages_response_to_dict(py, &result))
+            Python::attach(|py| get_messages_response_to_dict(py, &result))
         })
     }
 
@@ -832,16 +984,16 @@ impl Client {
         &self,
         py: Python<'py>,
         chat_id: String,
-    ) -> PyResult<&'py PyAny> {
+    ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
 
-        future_into_py::<_, PyObject>(py, async move {
+        future_into_py::<_, Py<PyAny>>(py, async move {
             let result = client
                 .get_chat_session(&chat_id)
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("Get session failed: {}", e)))?;
 
-            Python::with_gil(|py| {
+            Python::attach(|py| {
                 let dict = PyDict::new(py);
                 dict.set_item("session", record_to_dict(py, &result.session)?)?;
                 dict.set_item("message_count", result.message_count)?;
@@ -851,16 +1003,17 @@ impl Client {
     }
 
     /// Update a chat session
+    #[pyo3(signature = (chat_id, system_prompt=None, llm_model=None))]
     fn update_chat_session<'py>(
         &self,
         py: Python<'py>,
         chat_id: String,
         system_prompt: Option<String>,
         llm_model: Option<String>,
-    ) -> PyResult<&'py PyAny> {
+    ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
 
-        future_into_py::<_, PyObject>(py, async move {
+        future_into_py::<_, Py<PyAny>>(py, async move {
             let request = UpdateSessionRequest {
                 system_prompt,
                 llm_model,
@@ -873,7 +1026,7 @@ impl Client {
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("Update session failed: {}", e)))?;
 
-            Python::with_gil(|py| {
+            Python::attach(|py| {
                 let dict = PyDict::new(py);
                 dict.set_item("session", record_to_dict(py, &result.session)?)?;
                 dict.set_item("message_count", result.message_count)?;
@@ -883,6 +1036,7 @@ impl Client {
     }
 
     /// Branch a chat session
+    #[pyo3(signature = (parent_id, branch_point_idx, collections, llm_provider, llm_model=None))]
     fn branch_chat_session<'py>(
         &self,
         py: Python<'py>,
@@ -891,10 +1045,10 @@ impl Client {
         collections: Vec<(String, Vec<String>)>,
         llm_provider: String,
         llm_model: Option<String>,
-    ) -> PyResult<&'py PyAny> {
+    ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
 
-        future_into_py::<_, PyObject>(py, async move {
+        future_into_py(py, async move {
             let collection_configs: Vec<CollectionConfig> = collections
                 .into_iter()
                 .map(|(name, _fields)| CollectionConfig {
@@ -920,7 +1074,7 @@ impl Client {
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("Branch session failed: {}", e)))?;
 
-            Python::with_gil(|py| chat_response_to_dict(py, &result))
+            Python::attach(|py| chat_response_to_dict(py, &result))
         })
     }
 
@@ -929,16 +1083,16 @@ impl Client {
         &self,
         py: Python<'py>,
         chat_id: String,
-    ) -> PyResult<&'py PyAny> {
+    ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
 
-        future_into_py::<_, PyObject>(py, async move {
+        future_into_py(py, async move {
             client
                 .delete_chat_session(&chat_id)
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("Delete session failed: {}", e)))?;
 
-            Python::with_gil(|py| Ok(py.None()))
+            Python::attach(|py| Ok(py.None()))
         })
     }
 
@@ -948,16 +1102,16 @@ impl Client {
         py: Python<'py>,
         chat_id: String,
         message_id: String,
-    ) -> PyResult<&'py PyAny> {
+    ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
 
-        future_into_py::<_, PyObject>(py, async move {
+        future_into_py(py, async move {
             let result = client
                 .regenerate_chat_message(&chat_id, &message_id)
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("Regenerate message failed: {}", e)))?;
 
-            Python::with_gil(|py| chat_response_to_dict(py, &result))
+            Python::attach(|py| chat_response_to_dict(py, &result))
         })
     }
 
@@ -968,10 +1122,10 @@ impl Client {
         chat_id: String,
         message_id: String,
         content: String,
-    ) -> PyResult<&'py PyAny> {
+    ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
 
-        future_into_py::<_, PyObject>(py, async move {
+        future_into_py(py, async move {
             let request = ekodb_client::UpdateMessageRequest { content };
             
             client
@@ -979,7 +1133,7 @@ impl Client {
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("Update message failed: {}", e)))?;
 
-            Python::with_gil(|py| Ok(py.None()))
+            Python::attach(|py| Ok(py.None()))
         })
     }
 
@@ -989,16 +1143,16 @@ impl Client {
         py: Python<'py>,
         chat_id: String,
         message_id: String,
-    ) -> PyResult<&'py PyAny> {
+    ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
 
-        future_into_py::<_, PyObject>(py, async move {
+        future_into_py(py, async move {
             client
                 .delete_chat_message(&chat_id, &message_id)
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("Delete message failed: {}", e)))?;
 
-            Python::with_gil(|py| Ok(py.None()))
+            Python::attach(|py| Ok(py.None()))
         })
     }
 
@@ -1009,10 +1163,10 @@ impl Client {
         chat_id: String,
         message_id: String,
         forgotten: bool,
-    ) -> PyResult<&'py PyAny> {
+    ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
 
-        future_into_py::<_, PyObject>(py, async move {
+        future_into_py(py, async move {
             let request = ekodb_client::ToggleForgottenRequest { forgotten };
             
             client
@@ -1020,7 +1174,7 @@ impl Client {
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("Toggle forgotten failed: {}", e)))?;
 
-            Python::with_gil(|py| Ok(py.None()))
+            Python::attach(|py| Ok(py.None()))
         })
     }
 
@@ -1031,10 +1185,10 @@ impl Client {
         source_chat_ids: Vec<String>,
         target_chat_id: String,
         merge_strategy: String,
-    ) -> PyResult<&'py PyAny> {
+    ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
 
-        future_into_py::<_, PyObject>(py, async move {
+        future_into_py::<_, Py<PyAny>>(py, async move {
             use ekodb_client::MergeStrategy;
             
             let strategy = match merge_strategy.as_str() {
@@ -1055,7 +1209,7 @@ impl Client {
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("Merge sessions failed: {}", e)))?;
 
-            Python::with_gil(|py| {
+            Python::attach(|py| {
                 let dict = PyDict::new(py);
                 dict.set_item("session", record_to_dict(py, &result.session)?)?;
                 dict.set_item("message_count", result.message_count)?;
@@ -1078,13 +1232,13 @@ impl Client {
     fn save_script<'py>(
         &self,
         py: Python<'py>,
-        script: &PyDict,
-    ) -> PyResult<&'py PyAny> {
+        script: &Bound<'py, PyDict>,
+    ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
         let script_json = serde_json::to_string(&pydict_to_json(py, script)?)
             .map_err(|e| PyValueError::new_err(format!("Invalid script definition: {}", e)))?;
         
-        future_into_py::<_, PyObject>(py, async move {
+        future_into_py::<_, Py<PyAny>>(py, async move {
             let script: RustScript = serde_json::from_str(&script_json)
                 .map_err(|e| PyRuntimeError::new_err(format!("Failed to parse script: {}", e)))?;
             
@@ -1093,7 +1247,7 @@ impl Client {
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("Save script failed: {}", e)))?;
             
-            Python::with_gil(|py| Ok(id.to_object(py)))
+            Python::attach(|py| Ok(PyString::new(py, &id).into()))
         })
     }
 
@@ -1108,10 +1262,10 @@ impl Client {
         &self,
         py: Python<'py>,
         id: String,
-    ) -> PyResult<&'py PyAny> {
+    ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
         
-        future_into_py::<_, PyObject>(py, async move {
+        future_into_py(py, async move {
             let script = client
                 .get_script(&id)
                 .await
@@ -1120,7 +1274,7 @@ impl Client {
             let json = serde_json::to_value(&script)
                 .map_err(|e| PyRuntimeError::new_err(format!("Serialization failed: {}", e)))?;
             
-            Python::with_gil(|py| json_to_pydict(py, &json))
+            Python::attach(|py| json_to_pydict(py, &json))
         })
     }
 
@@ -1135,10 +1289,10 @@ impl Client {
         &self,
         py: Python<'py>,
         tags: Option<Vec<String>>,
-    ) -> PyResult<&'py PyAny> {
+    ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
         
-        future_into_py::<_, PyObject>(py, async move {
+        future_into_py(py, async move {
             let scripts = client
                 .list_scripts(tags)
                 .await
@@ -1147,7 +1301,7 @@ impl Client {
             let json = serde_json::to_value(&scripts)
                 .map_err(|e| PyRuntimeError::new_err(format!("Serialization failed: {}", e)))?;
             
-            Python::with_gil(|py| json_to_pydict(py, &json))
+            Python::attach(|py| json_to_pydict(py, &json))
         })
     }
 
@@ -1159,23 +1313,23 @@ impl Client {
     fn update_script<'py>(
         &self,
         py: Python<'py>,
-        id: String,
-        script: &PyDict,
-    ) -> PyResult<&'py PyAny> {
+        script_id: String,
+        data: &Bound<'py, PyDict>,
+    ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
-        let script_json = serde_json::to_string(&pydict_to_json(py, script)?)
+        let script_json = serde_json::to_string(&pydict_to_json(py, data)?)
             .map_err(|e| PyValueError::new_err(format!("Invalid script definition: {}", e)))?;
         
-        future_into_py::<_, PyObject>(py, async move {
+        future_into_py(py, async move {
             let script: RustScript = serde_json::from_str(&script_json)
                 .map_err(|e| PyRuntimeError::new_err(format!("Failed to parse script: {}", e)))?;
             
             client
-                .update_script(&id, script)
+                .update_script(&script_id, script)
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("Update script failed: {}", e)))?;
             
-            Python::with_gil(|py| Ok(py.None()))
+            Python::attach(|py| Ok(py.None()))
         })
     }
 
@@ -1187,16 +1341,16 @@ impl Client {
         &self,
         py: Python<'py>,
         id: String,
-    ) -> PyResult<&'py PyAny> {
+    ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
         
-        future_into_py::<_, PyObject>(py, async move {
+        future_into_py(py, async move {
             client
                 .delete_script(&id)
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("Delete script failed: {}", e)))?;
             
-            Python::with_gil(|py| Ok(py.None()))
+            Python::attach(|py| Ok(py.None()))
         })
     }
 
@@ -1208,12 +1362,13 @@ impl Client {
     ///
     /// Returns:
     ///     Script execution result with records and metadata
+    #[pyo3(signature = (script_id_or_label, params=None))]
     fn call_script<'py>(
         &self,
         py: Python<'py>,
         script_id_or_label: String,
-        params: Option<&PyDict>,
-    ) -> PyResult<&'py PyAny> {
+        params: Option<&Bound<'py, PyDict>>,
+    ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
         let params_map = if let Some(p) = params {
             Some(pydict_to_fieldtype_map(py, p)?)
@@ -1221,13 +1376,13 @@ impl Client {
             None
         };
         
-        future_into_py::<_, PyObject>(py, async move {
+        future_into_py::<_, Py<PyAny>>(py, async move {
             let result = client
                 .call_script(&script_id_or_label, params_map)
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("Call script failed: {}", e)))?;
             
-            Python::with_gil(|py| {
+            Python::attach(|py| {
                 let dict = PyDict::new(py);
                 
                 // Convert records
@@ -1253,21 +1408,21 @@ impl Client {
         &self,
         py: Python<'py>,
         ws_url: String,
-    ) -> PyResult<&'py PyAny> {
+    ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
 
-        future_into_py::<_, PyObject>(py, async move {
+        future_into_py::<_, Py<PyAny>>(py, async move {
             let ws_client = client
                 .websocket(&ws_url)
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("WebSocket connection failed: {}", e)))?;
 
-            Python::with_gil(|py| {
+            Python::attach(|py| {
                 // Return a WebSocketClient wrapper
                 let ws_wrapper = WebSocketClient {
                     inner: Some(ws_client),
                 };
-                Ok(Py::new(py, ws_wrapper)?.into_py(py))
+                Ok(Py::new(py, ws_wrapper)?.into())
             })
         })
     }
@@ -1286,20 +1441,20 @@ impl WebSocketClient {
         &self,
         py: Python<'py>,
         collection: String,
-    ) -> PyResult<&'py PyAny> {
+    ) -> PyResult<Bound<'py, PyAny>> {
         // Clone the WebSocket client before moving into async block
         let ws_client = match &self.inner {
             Some(client) => client.clone(),
             None => return Err(PyRuntimeError::new_err("WebSocket client not initialized")),
         };
 
-        future_into_py::<_, PyObject>(py, async move {
+        future_into_py::<_, Py<PyAny>>(py, async move {
             let records = ws_client
                 .find_all(&collection)
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("WebSocket find_all failed: {}", e)))?;
 
-            Python::with_gil(|py| {
+            Python::attach(|py| {
                 let list = PyList::empty(py);
                 for record in records {
                     list.append(record_to_dict(py, &record)?)?;
@@ -1311,7 +1466,7 @@ impl WebSocketClient {
 }
 
 /// Convert ChatResponse to Python dict
-fn chat_response_to_dict(py: Python, response: &ChatResponse) -> PyResult<PyObject> {
+fn chat_response_to_dict(py: Python, response: &ChatResponse) -> PyResult<Py<PyAny>> {
     let dict = PyDict::new(py);
     dict.set_item("chat_id", &response.chat_id)?;
     dict.set_item("message_id", &response.message_id)?;
@@ -1336,7 +1491,7 @@ fn chat_response_to_dict(py: Python, response: &ChatResponse) -> PyResult<PyObje
 }
 
 /// Convert ListSessionsResponse to Python dict
-fn list_sessions_response_to_dict(py: Python, response: &ListSessionsResponse) -> PyResult<PyObject> {
+fn list_sessions_response_to_dict(py: Python, response: &ListSessionsResponse) -> PyResult<Py<PyAny>> {
     let dict = PyDict::new(py);
     
     let sessions_list = PyList::empty(py);
@@ -1365,7 +1520,7 @@ fn list_sessions_response_to_dict(py: Python, response: &ListSessionsResponse) -
 }
 
 /// Convert GetMessagesResponse to Python dict
-fn get_messages_response_to_dict(py: Python, response: &GetMessagesResponse) -> PyResult<PyObject> {
+fn get_messages_response_to_dict(py: Python, response: &GetMessagesResponse) -> PyResult<Py<PyAny>> {
     let dict = PyDict::new(py);
     
     let messages_list = PyList::empty(py);
@@ -1385,7 +1540,7 @@ fn get_messages_response_to_dict(py: Python, response: &GetMessagesResponse) -> 
 }
 
 /// Convert Python value to JSON recursively
-fn py_to_json(value: &PyAny) -> PyResult<serde_json::Value> {
+fn py_to_json(value: &Bound<'_, PyAny>) -> PyResult<serde_json::Value> {
     use serde_json::json;
     
     // Check bool BEFORE int (Python bool is subclass of int)
@@ -1399,13 +1554,13 @@ fn py_to_json(value: &PyAny) -> PyResult<serde_json::Value> {
         Ok(json!(f))
     } else if value.is_none() {
         Ok(serde_json::Value::Null)
-    } else if let Ok(list) = value.downcast::<PyList>() {
+    } else if let Ok(list) = value.cast::<PyList>() {
         let mut arr = Vec::new();
         for item in list.iter() {
-            arr.push(py_to_json(item)?);
+            arr.push(py_to_json(&item)?);
         }
         Ok(serde_json::Value::Array(arr))
-    } else if let Ok(dict) = value.downcast::<PyDict>() {
+    } else if let Ok(dict) = value.cast::<PyDict>() {
         dict_to_json(dict)
     } else {
         Ok(serde_json::Value::Null)
@@ -1413,19 +1568,19 @@ fn py_to_json(value: &PyAny) -> PyResult<serde_json::Value> {
 }
 
 /// Convert Python dict to JSON value
-fn dict_to_json(dict: &PyDict) -> PyResult<serde_json::Value> {
+fn dict_to_json(dict: &Bound<'_, PyDict>) -> PyResult<serde_json::Value> {
     let mut map = serde_json::Map::new();
     
     for (key, value) in dict.iter() {
         let key_str: String = key.extract()?;
-        map.insert(key_str, py_to_json(value)?);
+        map.insert(key_str, py_to_json(&value)?);
     }
     
     Ok(serde_json::Value::Object(map))
 }
 
 /// Convert Python value to FieldType recursively
-fn py_to_field_type(value: &PyAny) -> PyResult<FieldType> {
+fn py_to_field_type(value: &Bound<'_, PyAny>) -> PyResult<FieldType> {
     // Check bool BEFORE int (Python bool is subclass of int)
     if let Ok(b) = value.extract::<bool>() {
         Ok(FieldType::Boolean(b))
@@ -1437,17 +1592,17 @@ fn py_to_field_type(value: &PyAny) -> PyResult<FieldType> {
         Ok(FieldType::Float(f))
     } else if value.is_none() {
         Ok(FieldType::Null)
-    } else if let Ok(list) = value.downcast::<PyList>() {
+    } else if let Ok(list) = value.cast::<PyList>() {
         let mut arr = Vec::new();
         for item in list.iter() {
-            arr.push(py_to_field_type(item)?);
+            arr.push(py_to_field_type(&item)?);
         }
         Ok(FieldType::Array(arr))
-    } else if let Ok(dict) = value.downcast::<PyDict>() {
+    } else if let Ok(dict) = value.cast::<PyDict>() {
         let mut map = std::collections::HashMap::new();
         for (k, v) in dict.iter() {
             let key_str: String = k.extract()?;
-            map.insert(key_str, py_to_field_type(v)?);
+            map.insert(key_str, py_to_field_type(&v)?);
         }
         Ok(FieldType::Object(map))
     } else {
@@ -1459,12 +1614,12 @@ fn py_to_field_type(value: &PyAny) -> PyResult<FieldType> {
 }
 
 /// Convert Python dict to Rust Record
-fn dict_to_record(dict: &PyDict) -> PyResult<RustRecord> {
-    let mut record = RustRecord::new();
-
+fn dict_to_record(dict: &Bound<'_, PyDict>) -> PyResult<RustRecord> {
+    let mut record = RustRecord::default();
+    
     for (key, value) in dict.iter() {
         let key_str: String = key.extract()?;
-        let field_value = py_to_field_type(value)?;
+        let field_value = py_to_field_type(&value)?;
         record.fields.insert(key_str, field_value);
     }
 
@@ -1472,37 +1627,37 @@ fn dict_to_record(dict: &PyDict) -> PyResult<RustRecord> {
 }
 
 /// Convert FieldType to Python object recursively
-fn field_type_to_py(py: Python, value: &FieldType) -> PyResult<PyObject> {
+fn field_type_to_py(py: Python, value: &FieldType) -> PyResult<Py<PyAny>> {
     match value {
-        FieldType::String(s) => Ok(s.to_object(py)),
-        FieldType::Integer(i) => Ok(i.to_object(py)),
-        FieldType::Float(f) => Ok(f.to_object(py)),
-        FieldType::Boolean(b) => Ok(b.to_object(py)),
+        FieldType::String(s) => Ok(PyString::new(py, s).into()),
+        FieldType::Integer(i) => Ok(PyInt::new(py, *i).into()),
+        FieldType::Float(f) => Ok(PyFloat::new(py, *f).into()),
+        FieldType::Boolean(b) => Ok(PyBool::new(py, *b).as_borrowed().to_owned().into()),
         FieldType::Null => Ok(py.None()),
         FieldType::Array(arr) => {
             let list = PyList::empty(py);
             for item in arr {
                 list.append(field_type_to_py(py, item)?)?;
             }
-            Ok(list.to_object(py))
+            Ok(list.into())
         }
         FieldType::Object(obj) => {
             let dict = PyDict::new(py);
             for (k, v) in obj {
                 dict.set_item(k, field_type_to_py(py, v)?)?;
             }
-            Ok(dict.to_object(py))
+            Ok(dict.into())
         }
         // For all other complex types, convert to string representation
         _ => {
             let value_str = format!("{:?}", value);
-            Ok(value_str.to_object(py))
+            Ok(PyString::new(py, &value_str).into())
         }
     }
 }
 
 /// Convert Rust Record to Python dict
-fn record_to_dict(py: Python, record: &RustRecord) -> PyResult<PyObject> {
+fn record_to_dict(py: Python, record: &RustRecord) -> PyResult<Py<PyAny>> {
     let dict = PyDict::new(py);
 
     for (key, value) in record.fields.iter() {
@@ -1513,60 +1668,60 @@ fn record_to_dict(py: Python, record: &RustRecord) -> PyResult<PyObject> {
 }
 
 /// Convert JSON value to Python dict
-fn json_to_pydict(py: Python, value: &serde_json::Value) -> PyResult<PyObject> {
+fn json_to_pydict(py: Python, value: &serde_json::Value) -> PyResult<Py<PyAny>> {
     match value {
         serde_json::Value::Null => Ok(py.None()),
-        serde_json::Value::Bool(b) => Ok(b.to_object(py)),
+        serde_json::Value::Bool(b) => Ok(PyBool::new(py, *b).as_borrowed().to_owned().into()),
         serde_json::Value::Number(n) => {
             if let Some(i) = n.as_i64() {
-                Ok(i.to_object(py))
+                Ok(PyInt::new(py, i).into())
             } else if let Some(f) = n.as_f64() {
-                Ok(f.to_object(py))
+                Ok(PyFloat::new(py, f).into())
             } else {
                 Ok(py.None())
             }
         }
-        serde_json::Value::String(s) => Ok(s.to_object(py)),
+        serde_json::Value::String(s) => Ok(PyString::new(py, s).into()),
         serde_json::Value::Array(arr) => {
             let list = PyList::empty(py);
             for item in arr {
                 list.append(json_to_pydict(py, item)?)?;
             }
-            Ok(list.to_object(py))
+            Ok(list.into())
         }
         serde_json::Value::Object(obj) => {
             let dict = PyDict::new(py);
             for (k, v) in obj {
                 dict.set_item(k, json_to_pydict(py, v)?)?;
             }
-            Ok(dict.to_object(py))
+            Ok(dict.into())
         }
     }
 }
 
 /// Convert Python dict to JSON value
-fn pydict_to_json(py: Python, dict: &PyDict) -> PyResult<serde_json::Value> {
+fn pydict_to_json(py: Python, dict: &Bound<'_, PyDict>) -> PyResult<serde_json::Value> {
     use pyo3::types::{PyBool, PyFloat, PyInt, PyString};
     
     let mut map = serde_json::Map::new();
-    for (key, value) in dict {
+    for (key, value) in dict.iter() {
         let key_str: String = key.extract()?;
         let json_value = if value.is_none() {
             serde_json::Value::Null
-        } else if let Ok(b) = value.downcast::<PyBool>() {
+        } else if let Ok(b) = value.cast::<PyBool>() {
             serde_json::Value::Bool(b.is_true())
-        } else if let Ok(i) = value.downcast::<PyInt>() {
+        } else if let Ok(i) = value.cast::<PyInt>() {
             serde_json::Value::Number(serde_json::Number::from(i.extract::<i64>()?))
-        } else if let Ok(f) = value.downcast::<PyFloat>() {
+        } else if let Ok(f) = value.cast::<PyFloat>() {
             serde_json::Number::from_f64(f.value())
                 .map(serde_json::Value::Number)
                 .unwrap_or(serde_json::Value::Null)
-        } else if let Ok(s) = value.downcast::<PyString>() {
-            serde_json::Value::String(s.to_str()?.to_string())
-        } else if let Ok(list) = value.downcast::<PyList>() {
+        } else if let Ok(s) = value.cast::<PyString>() {
+            serde_json::Value::String(s.extract()?)
+        } else if let Ok(list) = value.cast::<PyList>() {
             let mut arr = Vec::new();
             for item in list {
-                if let Ok(d) = item.downcast::<PyDict>() {
+                if let Ok(d) = item.cast::<PyDict>() {
                     arr.push(pydict_to_json(py, d)?);
                 } else {
                     // Try to extract as primitive
@@ -1588,7 +1743,7 @@ fn pydict_to_json(py: Python, dict: &PyDict) -> PyResult<serde_json::Value> {
                 }
             }
             serde_json::Value::Array(arr)
-        } else if let Ok(d) = value.downcast::<PyDict>() {
+        } else if let Ok(d) = value.cast::<PyDict>() {
             pydict_to_json(py, d)?
         } else {
             serde_json::Value::Null
@@ -1601,7 +1756,7 @@ fn pydict_to_json(py: Python, dict: &PyDict) -> PyResult<serde_json::Value> {
 /// Convert Python dict to FieldType map
 fn pydict_to_fieldtype_map(
     py: Python,
-    dict: &PyDict,
+    dict: &Bound<'_, PyDict>,
 ) -> PyResult<std::collections::HashMap<String, FieldType>> {
     let json = pydict_to_json(py, dict)?;
     serde_json::from_value(json)
@@ -1610,11 +1765,11 @@ fn pydict_to_fieldtype_map(
 
 /// ekoDB Python module
 #[pymodule]
-fn _ekodb_client(py: Python, m: &PyModule) -> PyResult<()> {
+fn _ekodb_client(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Client>()?;
     m.add_class::<WebSocketClient>()?;
     m.add_class::<RateLimitInfo>()?;
     m.add_class::<SerializationFormat>()?;
-    m.add("RateLimitError", py.get_type::<RateLimitError>())?;
+    m.add("RateLimitError", m.py().get_type::<RateLimitError>())?;
     Ok(())
 }

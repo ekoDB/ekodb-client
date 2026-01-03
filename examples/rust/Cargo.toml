@@ -16,6 +16,7 @@ chrono = "0.4"
 url = "2.4"
 dotenv = "0.15.0"
 rand = "0.8"
+base64 = "0.21"
 
 # ekoDB client library (for client-based examples)
 ekodb_client = { path = "../../ekodb_client" }  # Local development

@@ -52,6 +52,7 @@ mod retry;
 mod schema;
 mod search;
 mod types;
+mod utils;
 mod websocket;
 
 // Public API exports
@@ -76,6 +77,12 @@ pub use schema::{
 };
 pub use search::{SearchQuery, SearchResponse, SearchResult};
 pub use types::{FieldType, NumberValue, Query, QueryOperator, Record, SerializationFormat};
+pub use utils::{
+    extract_record, get_array_value, get_binary_value, get_bool_value, get_bytes_value,
+    get_datetime_value, get_decimal_value, get_duration_value, get_float_value, get_int_value,
+    get_object_value, get_set_value, get_string_value, get_uuid_value, get_value, get_values,
+    get_vector_value,
+};
 pub use websocket::WebSocketClient;
 
 /// Client version

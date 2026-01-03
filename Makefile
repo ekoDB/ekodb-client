@@ -396,7 +396,9 @@ test-examples-transactions:
 	@cd examples/rust && cargo run --example transactions --quiet
 	@echo ""
 	@echo "🟣 $(YELLOW)Kotlin Transactions...$(RESET)"
-	@cd examples/kotlin && kotlinc -script transactions.kt || echo "Kotlin example (requires kotlinc installed)"
+	@if [ -f .env ]; then . ./.env; fi && \
+		export JAVA_HOME=$$(/usr/libexec/java_home -v 17) && export PATH=$$JAVA_HOME/bin:$$PATH && \
+		cd examples/kotlin && API_BASE_URL=$$API_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass="io.ekodb.client.examples.ClientTransactionsKt" --quiet
 	@echo ""
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "✅ $(GREEN)All transaction examples completed successfully!$(RESET)"
@@ -469,7 +471,7 @@ run-rag-examples:
 	@echo ""
 	@echo "$(CYAN)Building Python client bindings...$(RESET)"
 	@cd ekodb-client-py && maturin build --release --quiet
-	@pip3 install --force-reinstall --quiet ekodb-client-py/target/wheels/ekodb_client-0.5.0-cp38-abi3-macosx_11_0_arm64.whl
+	@pip3 install --force-reinstall --quiet $$(ls -t ekodb-client-py/target/wheels/ekodb_client-*.whl | head -n 1)
 	@echo "✓ Python client built and installed"
 	@echo ""
 	@echo "$(CYAN)Building TypeScript client library...$(RESET)"
@@ -735,6 +737,7 @@ test-examples-rust-client: build-client
 	@cd examples/rust && cargo run --example client_chat_sessions
 	@cd examples/rust && cargo run --example client_chat_advanced
 	@cd examples/rust && cargo run --example client_functions
+	@cd examples/rust && cargo run --example client_transactions
 	@echo "✅ $(GREEN)Rust client examples complete!$(RESET)"
 
 # ============================================================================
@@ -785,6 +788,7 @@ test-examples-python-client: build-python-client
 	@cd examples/python && python3 client_chat_advanced.py
 	@cd examples/python && python3 client_functions.py
 	@cd examples/python && python3 client_functions_complete.py
+	@cd examples/python && python3 client_transactions.py
 	@echo "✅ $(GREEN)Python client examples complete!$(RESET)"
 
 # ============================================================================
@@ -817,6 +821,7 @@ test-examples-go-client:
 	@cd examples/go && go run client_schema.go
 	@cd examples/go && go run client_joins.go
 	@cd examples/go && go run client_functions.go
+	@cd examples/go && go run client_transactions.go
 	@echo "✅ $(GREEN)Go client examples complete!$(RESET)"
 
 # ============================================================================
@@ -857,6 +862,7 @@ test-examples-typescript-client: build-typescript-client
 	@cd examples/typescript && npx tsx client_joins.ts
 	@cd examples/typescript && npx tsx client_functions.ts
 	@cd examples/typescript && npx tsx client_functions_complete.ts
+	@cd examples/typescript && npx tsx client_transactions.ts
 	@echo "✅ $(GREEN)TypeScript client examples complete!$(RESET)"
 
 # ============================================================================
@@ -892,6 +898,7 @@ test-examples-javascript-client: build-typescript-client
 	@cd examples/javascript && node client_functions_crud.js
 	@cd examples/javascript && node client_functions_search.js
 	@cd examples/javascript && node client_functions_ai.js
+	@cd examples/javascript && node client_transactions.js
 	@echo "✅ $(GREEN)JavaScript client examples complete!$(RESET)"
 
 # ============================================================================
@@ -901,7 +908,9 @@ test-examples-kotlin:
 	@echo "make test-examples-kotlin" > examples/kotlin/test-examples-kt.md
 	@$(MAKE) test-examples-kotlin-client 2>&1 | tee -a examples/kotlin/test-examples-kt.md
 	@echo "🟣 $(YELLOW)Kotlin Transactions...$(RESET)"
-	@cd examples/kotlin && kotlinc -script transactions.kt || echo "Kotlin example (requires kotlinc installed)" 2>&1 | tee -a test-examples-kt.md
+	@if [ -f .env ]; then . ./.env; fi && \
+		export JAVA_HOME=$$(/usr/libexec/java_home -v 17) && export PATH=$$JAVA_HOME/bin:$$PATH && \
+		cd examples/kotlin && API_BASE_URL=$$API_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass="io.ekodb.client.examples.ClientTransactionsKt" --quiet 2>&1 | tee -a test-examples-kt.md
 	@echo "✅ $(GREEN)All Kotlin integration tests complete!$(RESET)"
 
 test-examples-kt: test-examples-kotlin

@@ -36,8 +36,12 @@ fun main() = runBlocking {
         println("✓ Inserted ${insertResult.successful.size} records")
         
         // Extract IDs from successful inserts
-        val insertedIds = insertResult.successful.map { record ->
-            (record["id"] as? FieldType.StringValue)?.value ?: error("No ID in record")
+        // Using helper pattern that's also available as getRecordId() in Utils.kt
+        val insertedIds = insertResult.successful.mapNotNull { record ->
+            when (val idField = record["id"]) {
+                is FieldType.StringValue -> idField.value
+                else -> null
+            }
         }
         println("  IDs: ${insertedIds.take(3).joinToString(", ")}...\n")
         
