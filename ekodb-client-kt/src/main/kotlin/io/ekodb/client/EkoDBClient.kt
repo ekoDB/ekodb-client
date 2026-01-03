@@ -192,8 +192,9 @@ class EkoDBClient private constructor(
                 val cborBytes = when (data) {
                     is JsonElement -> {
                         // Convert JsonElement to JSON string first, then to CBOR-compatible structure
+                        // JsonElement can be JsonObject, JsonArray, JsonPrimitive, or JsonNull
                         val jsonString = Json.encodeToString(JsonElement.serializer(), data)
-                        this@EkoDBClient.cbor.encodeToByteArray(JsonObject.serializer(), Json.decodeFromString(jsonString))
+                        this@EkoDBClient.cbor.encodeToByteArray(JsonElement.serializer(), Json.decodeFromString(jsonString))
                     }
                     is Record -> {
                         // Serialize Record using its custom serializer
