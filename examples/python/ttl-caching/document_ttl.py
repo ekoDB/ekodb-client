@@ -36,30 +36,46 @@ async def document_ttl_examples():
                 json={
                     "key": "session_token",
                     "value": "abc123",
-                    "ttl_duration": "1h",
-                    "ttl_update_on_access": True,
+                    "ttl": 3600,
                 },
             ) as response:
                 doc1 = await response.json()
                 doc1_id = doc1.get("id")
                 print(f"✓ Inserted document: {doc1_id}")
 
-            # Example 2: Insert with shorter TTL (5 minutes)
-            print("\n=== Insert Document with TTL (5 minutes) ===")
+            # Example 2: Insert with shorter TTL (integer seconds)
+            print("\n=== Insert Document with TTL (5 minutes - integer) ===")
             async with session.post(
                 f"{BASE_URL}/api/insert/ttl_cache",
                 headers=headers,
                 json={
                     "key": "temp_data",
                     "value": {"important": True},
-                    "ttl_duration": "5m",
+                    "ttl": 300,
                 },
             ) as response:
                 doc2 = await response.json()
                 doc2_id = doc2.get("id")
                 print(f'✓ Inserted document: {doc2_id or "created"}')
 
-            # Example 3: Query documents
+            # Example 3: Insert with duration string format
+            print("\n=== Insert Document with TTL (30 minutes - duration string) ===")
+            async with session.post(
+                f"{BASE_URL}/api/insert/ttl_cache",
+                headers=headers,
+                json={
+                    "key": "duration_test",
+                    "value": "testing duration strings",
+                    "ttl": "30m",
+                },
+            ) as response:
+                doc3 = await response.json()
+                doc3_id = doc3.get("id")
+                print(
+                    f'✓ Inserted document with duration string TTL: {doc3_id or "created"}'
+                )
+
+            # Example 4: Query documents
             print("\n=== Query Documents ===")
             async with session.post(
                 f"{BASE_URL}/api/find/ttl_cache", headers=headers, json={"limit": 10}
@@ -67,7 +83,7 @@ async def document_ttl_examples():
                 docs = await response.json()
                 print(f"✓ Found {len(docs)} documents with TTL")
 
-            # Example 4: Update document
+            # Example 5: Update document
             if doc1_id:
                 print("\n=== Update Document ===")
                 async with session.put(
@@ -78,11 +94,11 @@ async def document_ttl_examples():
                     await response.json()
                     print("✓ Updated document")
 
-            # Example 5: Delete document
-            if doc2_id:
+            # Example 6: Delete document
+            if doc1_id:
                 print("\n=== Delete Document ===")
                 async with session.delete(
-                    f"{BASE_URL}/api/delete/ttl_cache/{doc2_id}", headers=headers
+                    f"{BASE_URL}/api/delete/ttl_cache/{doc1_id}", headers=headers
                 ) as response:
                     await response.json()
                     print("✓ Deleted document")
