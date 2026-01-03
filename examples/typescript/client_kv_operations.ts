@@ -39,15 +39,25 @@ async function main() {
     console.log(`${key}:`, val);
   }
 
+  console.log("\n=== KV Exists ===");
+  const exists = await client.kvExists("session:user123");
+  console.log(`Key exists: ${exists}`);
+
+  console.log("\n=== KV Find (Pattern Query) ===");
+  const cacheResults = await client.kvFind({ pattern: "cache:product:.*" });
+  console.log(`Found ${cacheResults.length} keys matching 'cache:product:.*'`);
+
+  console.log("\n=== KV Query (Alias for Find) ===");
+  const allResults = await client.kvQuery({});
+  console.log(`Total keys in store: ${allResults.length}`);
+
   console.log("\n=== KV Delete ===");
   await client.kvDelete("session:user123");
   console.log("✓ Deleted key: session:user123");
 
-  try {
-    await client.kvGet("session:user123");
-  } catch {
-    console.log("✓ Verified: Key successfully deleted (not found)");
-  }
+  // Verify deletion with kvExists
+  const existsAfterDelete = await client.kvExists("session:user123");
+  console.log(`✓ Verified: Key exists after delete: ${existsAfterDelete}`);
 
   console.log("\n=== Delete Multiple Keys ===");
   for (const key of keys) {

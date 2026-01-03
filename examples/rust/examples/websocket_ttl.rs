@@ -34,7 +34,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .json(&json!({
             "name": "WebSocket TTL Test",
             "value": 42,
-            "ttl_duration": "1h"
+            "ttl": 3600
         }))
         .send()
         .await?
