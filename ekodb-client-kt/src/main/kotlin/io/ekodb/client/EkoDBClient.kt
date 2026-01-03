@@ -192,14 +192,26 @@ class EkoDBClient private constructor(
                 val cborBytes = when (data) {
                     is JsonElement -> {
                         // Convert JsonElement to JSON string first, then to CBOR-compatible structure
+                        // JsonElement can be JsonObject, JsonArray, JsonPrimitive, or JsonNull
                         val jsonString = Json.encodeToString(JsonElement.serializer(), data)
-                        this@EkoDBClient.cbor.encodeToByteArray(JsonObject.serializer(), Json.decodeFromString(jsonString))
+                        this@EkoDBClient.cbor.encodeToByteArray(JsonElement.serializer(), Json.decodeFromString(jsonString))
+                    }
+                    is Record -> {
+                        // Serialize Record using its custom serializer
+                        this@EkoDBClient.cbor.encodeToByteArray(Record.serializer(), data)
+                    }
+                    is Query -> {
+                        // Serialize Query using its custom serializer
+                        this@EkoDBClient.cbor.encodeToByteArray(Query.serializer(), data)
                     }
                     else -> {
-                        // Encode @Serializable types directly to CBOR
-                        @Suppress("UNCHECKED_CAST")
-                        val serializer = kotlinx.serialization.serializer(data::class.java as Class<Any>)
-                        this@EkoDBClient.cbor.encodeToByteArray(serializer, data)
+                        // CBOR only supports known @Serializable types
+                        // For other types, throw clear error instead of attempting dynamic resolution
+                        throw IllegalArgumentException(
+                            "MessagePack/CBOR serialization only supports Record, Query, and JsonElement types. " +
+                            "Received unsupported type: ${data::class.qualifiedName}. " +
+                            "Use SerializationFormat.JSON instead or ensure your type is @Serializable and explicitly handled."
+                        )
                     }
                 }
                 setBody(ByteArrayContent(cborBytes, ContentType("application", "msgpack")))
