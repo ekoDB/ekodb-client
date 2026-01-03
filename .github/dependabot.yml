@@ -1,0 +1,27 @@
+# To get started with Dependabot version updates, you'll need to specify which
+# package ecosystems to update and where the package manifests are located.
+# Please see the documentation for all configuration options:
+# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+version: 2
+updates:
+  - package-ecosystem: "cargo" # Rust
+    directory: "/" # Location of Parent Cargo.toml manifests
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "cargo" # Rust
+    directory: "/ekodb_client" # Location of Cargo.toml manifests
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "pip" # Python
+    directory: "/ekodb-client-py" # Location of requirements files / pyproject.toml
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "npm" # TypeScript/JavaScript
+    directory: "/ekodb-client-ts" # Location of package.json
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "gradle" # Kotlin
+    directory: "/ekodb-client-kt" # Location of build.gradle / build.gradle.kts
+    schedule:
+      interval: "weekly"
