@@ -61,6 +61,22 @@ from .utils import (
     get_set_value,
     get_vector_value,
     get_object_value,
+    # Field builders for wrapped types
+    field_uuid,
+    field_decimal,
+    field_datetime,
+    field_duration,
+    field_number,
+    field_set,
+    field_vector,
+    field_binary,
+    field_bytes,
+    field_array,
+    field_object,
+    field_string,
+    field_integer,
+    field_float,
+    field_boolean,
 )
 
 __version__ = "0.1.0"
@@ -69,6 +85,7 @@ __all__ = (
         "Client",
         "RateLimitInfo",
         "RateLimitError",
+        # Value extractors
         "get_value",
         "get_values",
         "extract_record",
@@ -82,5 +99,21 @@ __all__ = (
         "get_set_value",
         "get_vector_value",
         "get_object_value",
+        # Field builders
+        "field_uuid",
+        "field_decimal",
+        "field_datetime",
+        "field_duration",
+        "field_number",
+        "field_set",
+        "field_vector",
+        "field_binary",
+        "field_bytes",
+        "field_array",
+        "field_object",
+        "field_string",
+        "field_integer",
+        "field_float",
+        "field_boolean",
     ],
 )

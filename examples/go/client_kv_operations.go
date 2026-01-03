@@ -80,20 +80,42 @@ func main() {
 		fmt.Printf("%s: %v\n", key, value)
 	}
 
-	// Example 5: Delete a key
+	// Example 5: Check if key exists
+	fmt.Println("\n=== KV Exists ===")
+	exists, err := client.KVExists("session:user123")
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Key exists: %v\n", exists)
+
+	// Example 6: Find keys with pattern
+	fmt.Println("\n=== KV Find (Pattern Query) ===")
+	cacheResults, err := client.KVFind("cache:product:.*", false)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Found %d keys matching 'cache:product:.*'\n", len(cacheResults))
+
+	// Example 7: Query all keys
+	fmt.Println("\n=== KV Query (Alias for Find) ===")
+	allResults, err := client.KVQuery("", false)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Total keys in store: %d\n", len(allResults))
+
+	// Example 8: Delete a key
 	fmt.Println("\n=== KV Delete ===")
 	if err := client.KVDelete("session:user123"); err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("✓ Deleted key: session:user123")
 
-	// Verify deletion
-	_, err = client.KVGet("session:user123")
-	if err != nil {
-		fmt.Println("✓ Verified: Key successfully deleted (not found)")
-	}
+	// Verify deletion with KVExists
+	existsAfter, _ := client.KVExists("session:user123")
+	fmt.Printf("✓ Verified: Key exists after delete: %v\n", existsAfter)
 
-	// Example 6: Delete multiple keys
+	// Example 9: Delete multiple keys
 	fmt.Println("\n=== Delete Multiple Keys ===")
 	for _, key := range keys {
 		if err := client.KVDelete(key); err != nil {

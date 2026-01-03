@@ -32,7 +32,7 @@ async def websocket_ttl_examples():
             async with session.post(
                 f"{BASE_URL}/api/insert/ws_ttl_test",
                 headers=headers,
-                json={"name": "WebSocket TTL Test", "value": 42, "ttl_duration": "1h"},
+                json={"name": "WebSocket TTL Test", "value": 42, "ttl": 3600},
             ) as response:
                 doc = await response.json()
                 print(f'✓ Inserted document with TTL: {doc.get("id")}')

@@ -51,10 +51,9 @@ func main() {
 	// Example 1: Insert document with TTL (1 hour)
 	fmt.Println("\n=== Insert Document with TTL (1 hour) ===")
 	doc1Data := map[string]interface{}{
-		"key":                  "session_token",
-		"value":                "abc123",
-		"ttl_duration":         "1h",
-		"ttl_update_on_access": true,
+		"key":   "session_token",
+		"value": "abc123",
+		"ttl":   3600,
 	}
 	doc1JSON, _ := json.Marshal(doc1Data)
 
@@ -72,12 +71,12 @@ func main() {
 	json.NewDecoder(resp.Body).Decode(&doc1Result)
 	fmt.Printf("✓ Inserted document: %v\n", doc1Result["id"])
 
-	// Example 2: Insert with shorter TTL (5 minutes)
-	fmt.Println("\n=== Insert Document with TTL (5 minutes) ===")
+	// Example 2: Insert with shorter TTL (integer seconds)
+	fmt.Println("\n=== Insert Document with TTL (5 minutes - integer) ===")
 	doc2Data := map[string]interface{}{
-		"key":          "temp_data",
-		"value":        map[string]bool{"important": true},
-		"ttl_duration": "5m",
+		"key":   "temp_data",
+		"value": map[string]bool{"important": true},
+		"ttl":   300,
 	}
 	doc2JSON, _ := json.Marshal(doc2Data)
 
@@ -93,14 +92,32 @@ func main() {
 
 	var doc2Result map[string]interface{}
 	json.NewDecoder(resp.Body).Decode(&doc2Result)
-	doc2ID := doc2Result["id"]
-	if doc2ID != nil {
-		fmt.Printf("✓ Inserted document: %v\n", doc2ID)
-	} else {
-		fmt.Println("✓ Inserted document: created")
-	}
+	fmt.Printf("✓ Inserted document: %v\n", doc2Result["id"])
 
-	// Example 3: Query documents
+	// Example 3: Insert with duration string format
+	fmt.Println("\n=== Insert Document with TTL (30 minutes - duration string) ===")
+	doc3Data := map[string]interface{}{
+		"key":   "duration_test",
+		"value": "testing duration strings",
+		"ttl":   "30m",
+	}
+	doc3JSON, _ := json.Marshal(doc3Data)
+
+	req, _ = http.NewRequest("POST", baseURL+"/api/insert/ttl_cache", bytes.NewBuffer(doc3JSON))
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err = client.Do(req)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	var doc3Result map[string]interface{}
+	json.NewDecoder(resp.Body).Decode(&doc3Result)
+	fmt.Printf("✓ Inserted document with duration string TTL: %v\n", doc3Result["id"])
+
+	// Example 4: Query documents
 	fmt.Println("\n=== Query Documents ===")
 	queryData := map[string]interface{}{"limit": 10}
 	queryJSON, _ := json.Marshal(queryData)
@@ -119,7 +136,7 @@ func main() {
 	json.NewDecoder(resp.Body).Decode(&docs)
 	fmt.Printf("✓ Found %d documents with TTL\n", len(docs))
 
-	// Example 4: Update document
+	// Example 5: Update document
 	fmt.Println("\n=== Update Document ===")
 	updateData := map[string]interface{}{"value": "updated_value"}
 	updateJSON, _ := json.Marshal(updateData)
@@ -135,10 +152,10 @@ func main() {
 	defer resp.Body.Close()
 	fmt.Println("✓ Updated document")
 
-	// Example 5: Delete document
+	// Example 6: Delete document
 	fmt.Println("\n=== Delete Document ===")
-	if doc2ID != nil {
-		req, _ = http.NewRequest("DELETE", fmt.Sprintf("%s/api/delete/ttl_cache/%v", baseURL, doc2ID), nil)
+	if doc1Result["id"] != nil {
+		req, _ = http.NewRequest("DELETE", fmt.Sprintf("%s/api/delete/ttl_cache/%v", baseURL, doc1Result["id"]), nil)
 		req.Header.Set("Authorization", "Bearer "+token)
 
 		resp, err = client.Do(req)
