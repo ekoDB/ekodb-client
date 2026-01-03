@@ -13,11 +13,11 @@ use std::collections::HashMap;
 ///
 /// let field = json!({"type": "String", "value": "user@example.com"});
 /// let value = get_value(&field);
-/// assert_eq!(value, &json!("user@example.com"));
+/// assert_eq!(value, json!("user@example.com"));
 ///
 /// let plain = json!("direct_value");
 /// let value = get_value(&plain);
-/// assert_eq!(value, &plain);
+/// assert_eq!(value, plain);
 /// ```
 pub fn get_value(field: &Value) -> Value {
     if let Value::Object(map) = field {
