@@ -176,3 +176,105 @@ def extract_record(record: Dict[str, Any]) -> Dict[str, Any]:
         else:
             result[key] = get_value(value)
     return result
+
+
+# =============================================================================
+# Wrapped Type Builders
+# =============================================================================
+# These functions create wrapped type objects for sending to ekoDB.
+# Use these when inserting/updating records with special field types.
+#
+# Example:
+#     await client.insert("orders", {
+#         "id": field_uuid("550e8400-e29b-41d4-a716-446655440000"),
+#         "total": field_decimal("99.99"),
+#         "created_at": field_datetime(datetime.now()),
+#         "tags": field_set(["sale", "featured"]),
+#     })
+
+
+def field_uuid(value: str) -> Dict[str, Any]:
+    """Create a UUID field value"""
+    return {"type": "UUID", "value": value}
+
+
+def field_decimal(value: str) -> Dict[str, Any]:
+    """Create a Decimal field value for precise numeric values"""
+    return {"type": "Decimal", "value": value}
+
+
+def field_datetime(value: Any) -> Dict[str, Any]:
+    """Create a DateTime field value from datetime or RFC3339 string"""
+    from datetime import datetime
+
+    if isinstance(value, datetime):
+        return {"type": "DateTime", "value": value.isoformat()}
+    return {"type": "DateTime", "value": value}
+
+
+def field_duration(milliseconds: int) -> Dict[str, Any]:
+    """Create a Duration field value (in milliseconds)"""
+    return {"type": "Duration", "value": milliseconds}
+
+
+def field_number(value: Any) -> Dict[str, Any]:
+    """Create a Number field value (flexible numeric type)"""
+    return {"type": "Number", "value": value}
+
+
+def field_set(values: List[Any]) -> Dict[str, Any]:
+    """Create a Set field value (unique elements)"""
+    return {"type": "Set", "value": values}
+
+
+def field_vector(values: List[float]) -> Dict[str, Any]:
+    """Create a Vector field value (for embeddings/similarity search)"""
+    return {"type": "Vector", "value": values}
+
+
+def field_binary(value: Any) -> Dict[str, Any]:
+    """Create a Binary field value from bytes or base64 string"""
+    import base64
+
+    if isinstance(value, bytes):
+        return {"type": "Binary", "value": base64.b64encode(value).decode("utf-8")}
+    return {"type": "Binary", "value": value}
+
+
+def field_bytes(value: Any) -> Dict[str, Any]:
+    """Create a Bytes field value from bytes or base64 string"""
+    import base64
+
+    if isinstance(value, bytes):
+        return {"type": "Bytes", "value": base64.b64encode(value).decode("utf-8")}
+    return {"type": "Bytes", "value": value}
+
+
+def field_array(values: List[Any]) -> Dict[str, Any]:
+    """Create an Array field value"""
+    return {"type": "Array", "value": values}
+
+
+def field_object(value: Dict[str, Any]) -> Dict[str, Any]:
+    """Create an Object field value"""
+    return {"type": "Object", "value": value}
+
+
+def field_string(value: str) -> Dict[str, Any]:
+    """Create a String field value (explicit wrapping)"""
+    return {"type": "String", "value": value}
+
+
+def field_integer(value: int) -> Dict[str, Any]:
+    """Create an Integer field value (explicit wrapping)"""
+    return {"type": "Integer", "value": value}
+
+
+def field_float(value: float) -> Dict[str, Any]:
+    """Create a Float field value (explicit wrapping)"""
+    return {"type": "Float", "value": value}
+
+
+def field_boolean(value: bool) -> Dict[str, Any]:
+    """Create a Boolean field value (explicit wrapping)"""
+    return {"type": "Boolean", "value": value}

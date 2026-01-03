@@ -1,5 +1,7 @@
 package io.ekodb.client
 
+import io.ekodb.client.types.FieldType
+
 /**
  * Utility functions for working with ekoDB records
  */
@@ -17,7 +19,7 @@ data class FieldValue(
  * ekoDB returns fields as {"type": "String", "value": "..."} objects.
  * This helper safely extracts the value or returns the input if it's not a field object.
  *
- * @param field The field value from ekoDB (may be Map with type/value or a plain value)
+ * @param field The field value from ekoDB (may be FieldType, Map with type/value, or a plain value)
  * @return The extracted value
  *
  * Example:
@@ -30,13 +32,73 @@ data class FieldValue(
 inline fun <reified T> getValue(field: Any?): T? {
     if (field == null) return null
     
+    // Handle FieldType sealed class instances
+    if (field is FieldType) {
+        val extracted = extractFieldTypeValue(field)
+        return convertValue<T>(extracted)
+    }
+    
     // Try to extract from map structure
     if (field is Map<*, *>) {
         val value = field["value"]
-        return value as? T
+        return convertValue<T>(value)
     }
     
-    return field as? T
+    return convertValue<T>(field)
+}
+
+/**
+ * Convert a value to the target type, handling numeric conversions
+ */
+inline fun <reified T> convertValue(value: Any?): T? {
+    if (value == null) return null
+    if (value is T) return value
+    
+    // Handle numeric conversions
+    if (value is Number) {
+        return when (T::class) {
+            Int::class -> value.toInt() as T
+            Long::class -> value.toLong() as T
+            Double::class -> value.toDouble() as T
+            Float::class -> value.toFloat() as T
+            else -> value as? T
+        }
+    }
+    
+    return value as? T
+}
+
+/**
+ * Extract the raw value from a FieldType.
+ * Handles nested ObjectValue containing {type, value} structure from server responses.
+ */
+fun extractFieldTypeValue(field: FieldType): Any? {
+    return when (field) {
+        is FieldType.StringValue -> field.value
+        is FieldType.IntegerValue -> field.value
+        is FieldType.FloatValue -> field.value
+        is FieldType.BooleanValue -> field.value
+        is FieldType.ObjectValue -> {
+            // Check if this is a wrapped type from server: {type: "String", value: "..."}
+            val typeField = field.value["type"]
+            val valueField = field.value["value"]
+            if (typeField != null && valueField != null) {
+                // This is a wrapped type, extract the inner value
+                extractFieldTypeValue(valueField)
+            } else {
+                // Regular object, convert to Map<String, Any?>
+                field.value.mapValues { (_, v) -> extractFieldTypeValue(v) }
+            }
+        }
+        is FieldType.ArrayValue -> field.value.map { extractFieldTypeValue(it) }
+        is FieldType.SetValue -> field.value.map { extractFieldTypeValue(it) }
+        is FieldType.VectorValue -> field.value
+        is FieldType.DateTimeValue -> field.value
+        is FieldType.UUIDValue -> field.value
+        is FieldType.DecimalValue -> field.value.toDoubleOrNull() ?: field.value
+        is FieldType.BinaryValue -> field.value
+        is FieldType.NullValue -> null
+    }
 }
 
 /**
@@ -47,7 +109,15 @@ fun getStringValue(field: Any?): String? = getValue<String>(field)
 /**
  * Extract an integer value from an ekoDB field
  */
-fun getIntValue(field: Any?): Int? = getValue<Int>(field)
+fun getIntValue(field: Any?): Int? {
+    val val_ = getValue<Any>(field) ?: return null
+    return when (val_) {
+        is Int -> val_
+        is Long -> val_.toInt()
+        is Number -> val_.toInt()
+        else -> null
+    }
+}
 
 /**
  * Extract a long value from an ekoDB field
@@ -96,10 +166,22 @@ fun getDateTimeValue(field: Any?): java.util.Date? {
     val val_= getValue<Any>(field) ?: return null
     if (val_ is java.util.Date) return val_
     if (val_ is String) {
-        return try {
-            java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(val_)
-        } catch (e: Exception) {
-            null
+        // Try multiple date formats
+        val formats = listOf(
+            "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'",
+            "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
+            "yyyy-MM-dd'T'HH:mm:ss'Z'",
+            "yyyy-MM-dd'T'HH:mm:ss",
+            "EEE MMM dd HH:mm:ss zzz yyyy"  // Java Date.toString() format
+        )
+        for (format in formats) {
+            try {
+                val sdf = java.text.SimpleDateFormat(format, java.util.Locale.US)
+                sdf.timeZone = java.util.TimeZone.getTimeZone("UTC")
+                return sdf.parse(val_)
+            } catch (e: Exception) {
+                // Try next format
+            }
         }
     }
     return null
@@ -258,3 +340,113 @@ fun extractRecord(record: Map<String, Any?>): Map<String, Any?> {
     }
     return result
 }
+
+// =============================================================================
+// Wrapped Type Builders
+// =============================================================================
+// These functions create wrapped type objects for sending to ekoDB.
+// Use these when inserting/updating records with special field types.
+//
+// Example:
+//   client.insert("orders", mapOf(
+//       "id" to fieldUUID("550e8400-e29b-41d4-a716-446655440000"),
+//       "total" to fieldDecimal("99.99"),
+//       "created_at" to fieldDateTime(Date()),
+//       "tags" to fieldSet(listOf("sale", "featured")),
+//   ))
+
+/**
+ * Create a UUID field value
+ */
+fun fieldUUID(value: String): Map<String, Any> = mapOf("type" to "UUID", "value" to value)
+
+/**
+ * Create a Decimal field value for precise numeric values
+ */
+fun fieldDecimal(value: String): Map<String, Any> = mapOf("type" to "Decimal", "value" to value)
+
+/**
+ * Create a DateTime field value from a Date
+ */
+fun fieldDateTime(value: java.util.Date): Map<String, Any> {
+    val formatter = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
+    formatter.timeZone = java.util.TimeZone.getTimeZone("UTC")
+    return mapOf("type" to "DateTime", "value" to formatter.format(value))
+}
+
+/**
+ * Create a DateTime field value from an RFC3339 string
+ */
+fun fieldDateTimeString(value: String): Map<String, Any> = mapOf("type" to "DateTime", "value" to value)
+
+/**
+ * Create a Duration field value (in milliseconds)
+ */
+fun fieldDuration(milliseconds: Long): Map<String, Any> = mapOf("type" to "Duration", "value" to milliseconds)
+
+/**
+ * Create a Number field value (flexible numeric type)
+ */
+fun fieldNumber(value: Number): Map<String, Any> = mapOf("type" to "Number", "value" to value)
+
+/**
+ * Create a Set field value (unique elements)
+ */
+fun fieldSet(values: List<Any?>): Map<String, Any> = mapOf("type" to "Set", "value" to values)
+
+/**
+ * Create a Vector field value (for embeddings/similarity search)
+ */
+fun fieldVector(values: List<Double>): Map<String, Any> = mapOf("type" to "Vector", "value" to values)
+
+/**
+ * Create a Binary field value from bytes
+ */
+fun fieldBinary(value: ByteArray): Map<String, Any> = 
+    mapOf("type" to "Binary", "value" to java.util.Base64.getEncoder().encodeToString(value))
+
+/**
+ * Create a Binary field value from a base64 string
+ */
+fun fieldBinaryBase64(value: String): Map<String, Any> = mapOf("type" to "Binary", "value" to value)
+
+/**
+ * Create a Bytes field value from bytes
+ */
+fun fieldBytes(value: ByteArray): Map<String, Any> = 
+    mapOf("type" to "Bytes", "value" to java.util.Base64.getEncoder().encodeToString(value))
+
+/**
+ * Create a Bytes field value from a base64 string
+ */
+fun fieldBytesBase64(value: String): Map<String, Any> = mapOf("type" to "Bytes", "value" to value)
+
+/**
+ * Create an Array field value
+ */
+fun fieldArray(values: List<Any?>): Map<String, Any> = mapOf("type" to "Array", "value" to values)
+
+/**
+ * Create an Object field value
+ */
+fun fieldObject(value: Map<String, Any?>): Map<String, Any?> = mapOf("type" to "Object", "value" to value)
+
+/**
+ * Create a String field value (explicit wrapping)
+ */
+fun fieldString(value: String): Map<String, Any> = mapOf("type" to "String", "value" to value)
+
+/**
+ * Create an Integer field value (explicit wrapping)
+ */
+fun fieldInteger(value: Long): Map<String, Any> = mapOf("type" to "Integer", "value" to value)
+
+/**
+ * Create a Float field value (explicit wrapping)
+ */
+fun fieldFloat(value: Double): Map<String, Any> = mapOf("type" to "Float", "value" to value)
+
+/**
+ * Create a Boolean field value (explicit wrapping)
+ */
+fun fieldBoolean(value: Boolean): Map<String, Any> = mapOf("type" to "Boolean", "value" to value)

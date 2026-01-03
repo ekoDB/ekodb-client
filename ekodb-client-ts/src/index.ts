@@ -29,7 +29,9 @@ export {
   getSetValue,
   getVectorValue,
   getObjectValue,
+  Field,
 } from "./utils";
+export type { WrappedFieldValue } from "./utils";
 export type { SearchQuery, SearchResult, SearchResponse } from "./search";
 export type {
   Schema,

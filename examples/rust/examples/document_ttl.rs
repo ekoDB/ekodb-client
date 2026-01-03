@@ -31,8 +31,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .json(&json!({
             "key": "session_token",
             "value": "abc123",
-            "ttl_duration": "1h",
-            "ttl_update_on_access": true
+            "ttl": 3600
         }))
         .send()
         .await?
@@ -40,15 +39,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await?;
     println!("✓ Inserted document: {}", doc1["id"]);
 
-    // Example 2: Insert with shorter TTL
-    println!("\n=== Insert Document with TTL (5 minutes) ===");
+    // Example 2: Insert with shorter TTL (integer seconds)
+    println!("\n=== Insert Document with TTL (5 minutes - integer) ===");
     let doc2: Value = client
         .post(&format!("{}/api/insert/ttl_cache", base_url))
         .header("Authorization", format!("Bearer {}", token))
         .json(&json!({
             "key": "temp_data",
-            "value": {"important": true},
-            "ttl_duration": "5m"
+            "value": "short-lived data",
+            "ttl": 300
         }))
         .send()
         .await?
@@ -57,6 +56,25 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!(
         "✓ Inserted document: {}",
         doc2.get("id").unwrap_or(&Value::Null)
+    );
+
+    // Example 3: Insert with duration string format
+    println!("\n=== Insert Document with TTL (30 minutes - duration string) ===");
+    let doc3: Value = client
+        .post(&format!("{}/api/insert/ttl_cache", base_url))
+        .header("Authorization", format!("Bearer {}", token))
+        .json(&json!({
+            "key": "duration_test",
+            "value": "testing duration strings",
+            "ttl": "30m"
+        }))
+        .send()
+        .await?
+        .json()
+        .await?;
+    println!(
+        "✓ Inserted document with duration string TTL: {}",
+        doc3.get("id").unwrap_or(&Value::Null)
     );
 
     // Example 3: Query documents
@@ -81,13 +99,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await?;
     println!("✓ Updated document");
 
-    // Example 5: Delete document
+    // Example 6: Delete document
     println!("\n=== Delete Document ===");
     client
         .delete(&format!(
             "{}/api/delete/ttl_cache/{}",
             base_url,
-            doc2.get("id").unwrap_or(&Value::Null)
+            doc1.get("id").unwrap_or(&Value::Null)
         ))
         .header("Authorization", format!("Bearer {}", token))
         .send()
