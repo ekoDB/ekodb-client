@@ -187,6 +187,31 @@ export type FunctionStageConfig =
   | {
       type: "ReleaseSavepoint";
       name: string;
+    }
+  | {
+      type: "KvGet";
+      key: string;
+      output_field?: string;
+    }
+  | {
+      type: "KvSet";
+      key: string;
+      value: any;
+      ttl?: number;
+    }
+  | {
+      type: "KvDelete";
+      key: string;
+    }
+  | {
+      type: "KvExists";
+      key: string;
+      output_field?: string;
+    }
+  | {
+      type: "KvQuery";
+      pattern?: string;
+      include_expired?: boolean;
     };
 
 export interface ChatMessage {
@@ -571,5 +596,39 @@ export const Stage = {
   releaseSavepoint: (name: string): FunctionStageConfig => ({
     type: "ReleaseSavepoint",
     name,
+  }),
+
+  // KV Store operations - faster than collection lookups for simple key-value data
+  kvGet: (key: string, output_field?: string): FunctionStageConfig => ({
+    type: "KvGet",
+    key,
+    output_field,
+  }),
+
+  kvSet: (key: string, value: any, ttl?: number): FunctionStageConfig => ({
+    type: "KvSet",
+    key,
+    value,
+    ttl,
+  }),
+
+  kvDelete: (key: string): FunctionStageConfig => ({
+    type: "KvDelete",
+    key,
+  }),
+
+  kvExists: (key: string, output_field?: string): FunctionStageConfig => ({
+    type: "KvExists",
+    key,
+    output_field,
+  }),
+
+  kvQuery: (
+    pattern?: string,
+    include_expired?: boolean,
+  ): FunctionStageConfig => ({
+    type: "KvQuery",
+    pattern,
+    include_expired,
   }),
 };

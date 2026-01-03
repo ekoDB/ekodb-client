@@ -68,17 +68,34 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    // Example 5: Delete a key
+    // Example 5: Check if key exists
+    println!("\n=== KV Exists ===");
+    let exists = client.kv_exists("session:user123").await?;
+    println!("Key exists: {}", exists);
+
+    // Example 6: Find keys with pattern
+    println!("\n=== KV Find (Pattern Query) ===");
+    let cache_results = client.kv_find(Some("cache:product:.*"), false).await?;
+    println!(
+        "Found {} keys matching 'cache:product:.*'",
+        cache_results.len()
+    );
+
+    // Example 7: Query all keys
+    println!("\n=== KV Query (Alias for Find) ===");
+    let all_results = client.kv_query(None, false).await?;
+    println!("Total keys in store: {}", all_results.len());
+
+    // Example 8: Delete a key
     println!("\n=== KV Delete ===");
     client.kv_delete("session:user123").await?;
     println!("✓ Deleted key: session:user123");
 
-    // Verify deletion
-    if client.kv_get("session:user123").await?.is_none() {
-        println!("✓ Verified: Key successfully deleted (not found)");
-    }
+    // Verify deletion with kv_exists
+    let exists_after = client.kv_exists("session:user123").await?;
+    println!("✓ Verified: Key exists after delete: {}", exists_after);
 
-    // Example 6: Delete multiple keys
+    // Example 9: Delete multiple keys
     println!("\n=== Delete Multiple Keys ===");
     for key in &keys {
         client.kv_delete(key).await?;

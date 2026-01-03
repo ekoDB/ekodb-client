@@ -471,6 +471,100 @@ impl Client {
         self.http.kv_delete(key, &token).await
     }
 
+    /// Check if a key exists in the KV store
+    ///
+    /// # Arguments
+    ///
+    /// * `key` - The key to check
+    ///
+    /// # Returns
+    ///
+    /// `true` if the key exists, `false` otherwise
+    pub async fn kv_exists(&self, key: &str) -> Result<bool> {
+        let token = self.auth.get_token().await?;
+        self.http.kv_exists(key, &token).await
+    }
+
+    /// Query/find KV entries with pattern matching
+    ///
+    /// # Arguments
+    ///
+    /// * `pattern` - Optional regex pattern for keys (e.g., "cache:user:.*")
+    /// * `include_expired` - Whether to include expired entries
+    ///
+    /// # Returns
+    ///
+    /// A vector of matching records
+    pub async fn kv_find(
+        &self,
+        pattern: Option<&str>,
+        include_expired: bool,
+    ) -> Result<Vec<serde_json::Value>> {
+        let token = self.auth.get_token().await?;
+        self.http.kv_find(pattern, include_expired, &token).await
+    }
+
+    /// Alias for kv_find - query KV store with pattern
+    pub async fn kv_query(
+        &self,
+        pattern: Option<&str>,
+        include_expired: bool,
+    ) -> Result<Vec<serde_json::Value>> {
+        self.kv_find(pattern, include_expired).await
+    }
+
+    // ========== Transaction Methods ==========
+
+    /// Begin a new transaction
+    ///
+    /// # Arguments
+    ///
+    /// * `isolation_level` - Transaction isolation level (e.g., "ReadCommitted")
+    ///
+    /// # Returns
+    ///
+    /// The transaction ID
+    pub async fn begin_transaction(&self, isolation_level: &str) -> Result<String> {
+        let token = self.auth.get_token().await?;
+        self.http.begin_transaction(isolation_level, &token).await
+    }
+
+    /// Get transaction status
+    ///
+    /// # Arguments
+    ///
+    /// * `transaction_id` - The transaction ID
+    ///
+    /// # Returns
+    ///
+    /// Transaction status including state and operations count
+    pub async fn get_transaction_status(&self, transaction_id: &str) -> Result<serde_json::Value> {
+        let token = self.auth.get_token().await?;
+        self.http
+            .get_transaction_status(transaction_id, &token)
+            .await
+    }
+
+    /// Commit a transaction
+    ///
+    /// # Arguments
+    ///
+    /// * `transaction_id` - The transaction ID to commit
+    pub async fn commit_transaction(&self, transaction_id: &str) -> Result<()> {
+        let token = self.auth.get_token().await?;
+        self.http.commit_transaction(transaction_id, &token).await
+    }
+
+    /// Rollback a transaction
+    ///
+    /// # Arguments
+    ///
+    /// * `transaction_id` - The transaction ID to rollback
+    pub async fn rollback_transaction(&self, transaction_id: &str) -> Result<()> {
+        let token = self.auth.get_token().await?;
+        self.http.rollback_transaction(transaction_id, &token).await
+    }
+
     /// Connect to WebSocket endpoint
     ///
     /// # Arguments

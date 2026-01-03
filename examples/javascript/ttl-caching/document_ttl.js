@@ -34,14 +34,13 @@ async function documentTTLExamples() {
             body: JSON.stringify({
                 key: 'session_token',
                 value: 'abc123',
-                ttl_duration: '1h',
-                ttl_update_on_access: true
+                ttl: 3600
             })
         }).then(res => res.json());
         console.log(`✓ Inserted document: ${doc1.id}`);
 
-        // Example 2: Insert with shorter TTL (5 minutes)
-        console.log('\n=== Insert Document with TTL (5 minutes) ===');
+        // Example 2: Insert with shorter TTL (integer seconds)
+        console.log('\n=== Insert Document with TTL (5 minutes - integer) ===');
         const doc2 = await fetch(`${BASE_URL}/api/insert/ttl_cache`, {
             method: 'POST',
             headers: {
@@ -51,12 +50,28 @@ async function documentTTLExamples() {
             body: JSON.stringify({
                 key: 'temp_data',
                 value: { important: true },
-                ttl_duration: '5m'
+                ttl: 300
             })
         }).then(res => res.json());
         console.log(`✓ Inserted document: ${doc2.id || 'created'}`);
 
-        // Example 3: Query documents
+        // Example 3: Insert with duration string format
+        console.log('\n=== Insert Document with TTL (30 minutes - duration string) ===');
+        const doc3 = await fetch(`${BASE_URL}/api/insert/ttl_cache`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${TOKEN}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                key: 'duration_test',
+                value: 'testing duration strings',
+                ttl: '30m'
+            })
+        }).then(res => res.json());
+        console.log(`✓ Inserted document with duration string TTL: ${doc3.id || 'created'}`);
+
+        // Example 4: Query documents
         console.log('\n=== Query Documents ===');
         const docs = await fetch(`${BASE_URL}/api/find/ttl_cache`, {
             method: 'POST',
@@ -86,8 +101,8 @@ async function documentTTLExamples() {
 
         // Example 5: Delete document
         console.log('\n=== Delete Document ===');
-        if (doc2.id) {
-            await fetch(`${BASE_URL}/api/delete/ttl_cache/${doc2.id}`, {
+        if (doc1.id) {
+            await fetch(`${BASE_URL}/api/delete/ttl_cache/${doc1.id}`, {
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${TOKEN}`
