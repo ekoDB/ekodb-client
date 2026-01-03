@@ -53,19 +53,31 @@ async def kv_operations_examples():
             data = await client.kv_get(key)
             print(f"{key}: {data}")
 
-        # Example 5: Delete a key
+        # Example 5: Check if key exists
+        print("\n=== KV Exists ===")
+        exists = await client.kv_exists("session:user123")
+        print(f"Key exists: {exists}")
+
+        # Example 6: Find keys with pattern
+        print("\n=== KV Find (Pattern Query) ===")
+        cache_results = await client.kv_find(pattern="cache:product:.*")
+        print(f"Found {len(cache_results)} keys matching 'cache:product:.*'")
+
+        # Example 7: Query all keys
+        print("\n=== KV Query (Alias for Find) ===")
+        all_results = await client.kv_query()
+        print(f"Total keys in store: {len(all_results)}")
+
+        # Example 8: Delete a key
         print("\n=== KV Delete ===")
         await client.kv_delete("session:user123")
         print("✓ Deleted key: session:user123")
 
-        # Verify deletion
-        verify_result = await client.kv_get("session:user123")
-        if verify_result is None:
-            print(f"✓ Verified: Key successfully deleted (not found)")
-        else:
-            print(f"✗ Warning: Key still exists after delete!")
+        # Verify deletion with kv_exists
+        exists_after = await client.kv_exists("session:user123")
+        print(f"✓ Verified: Key exists after delete: {exists_after}")
 
-        # Example 6: Delete multiple keys
+        # Example 9: Delete multiple keys
         print("\n=== Delete Multiple Keys ===")
         for key in keys:
             await client.kv_delete(key)
