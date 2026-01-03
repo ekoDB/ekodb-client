@@ -441,6 +441,9 @@ export class EkoDBClient {
 
   /**
    * Insert a document into a collection
+   * @param collection - Collection name
+   * @param record - Document to insert
+   * @param ttl - Optional TTL: duration string ("1h", "30m"), seconds ("3600"), or ISO8601 timestamp
    */
   async insert(
     collection: string,
@@ -449,7 +452,7 @@ export class EkoDBClient {
   ): Promise<Record> {
     const data = { ...record };
     if (ttl) {
-      data.ttl_duration = ttl;
+      data.ttl = ttl;
     }
     return this.makeRequest<Record>("POST", `/api/insert/${collection}`, data);
   }
@@ -575,13 +578,20 @@ export class EkoDBClient {
   }
 
   /**
-   * Set a key-value pair
+   * Set a key-value pair with optional TTL
+   * @param key - The key to set
+   * @param value - The value to store
+   * @param ttl - Optional TTL in seconds
    */
-  async kvSet(key: string, value: any): Promise<void> {
+  async kvSet(key: string, value: any, ttl?: number): Promise<void> {
+    const body: any = { value };
+    if (ttl !== undefined) {
+      body.ttl = ttl;
+    }
     await this.makeRequest<void>(
       "POST",
       `/api/kv/set/${encodeURIComponent(key)}`,
-      { value },
+      body,
       0,
       true, // Force JSON for KV operations
     );
@@ -611,6 +621,116 @@ export class EkoDBClient {
       undefined,
       0,
       true, // Force JSON for KV operations
+    );
+  }
+
+  /**
+   * Check if a key exists
+   * @param key - The key to check
+   * @returns true if the key exists, false otherwise
+   */
+  async kvExists(key: string): Promise<boolean> {
+    try {
+      const result = await this.kvGet(key);
+      return result !== null && result !== undefined;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Query/find KV entries with pattern matching
+   * @param options - Query options including pattern and include_expired
+   * @returns Array of matching records
+   */
+  async kvFind(options?: {
+    pattern?: string;
+    include_expired?: boolean;
+  }): Promise<any[]> {
+    const result = await this.makeRequest<any[]>(
+      "POST",
+      "/api/kv/find",
+      options || {},
+      0,
+      true, // Force JSON for KV operations
+    );
+    return result;
+  }
+
+  /**
+   * Alias for kvFind - query KV store with pattern
+   */
+  async kvQuery(options?: {
+    pattern?: string;
+    include_expired?: boolean;
+  }): Promise<any[]> {
+    return this.kvFind(options);
+  }
+
+  // ============================================================================
+  // Transaction Operations
+  // ============================================================================
+
+  /**
+   * Begin a new transaction
+   * @param isolationLevel - Transaction isolation level (default: "ReadCommitted")
+   * @returns Transaction ID
+   */
+  async beginTransaction(
+    isolationLevel: string = "ReadCommitted",
+  ): Promise<string> {
+    const result = await this.makeRequest<{ transaction_id: string }>(
+      "POST",
+      "/api/transactions",
+      { isolation_level: isolationLevel },
+      0,
+      true,
+    );
+    return result.transaction_id;
+  }
+
+  /**
+   * Get transaction status
+   * @param transactionId - The transaction ID
+   * @returns Transaction status object
+   */
+  async getTransactionStatus(
+    transactionId: string,
+  ): Promise<{ state: string; operations_count: number }> {
+    return this.makeRequest<{ state: string; operations_count: number }>(
+      "GET",
+      `/api/transactions/${encodeURIComponent(transactionId)}`,
+      undefined,
+      0,
+      true,
+    );
+  }
+
+  /**
+   * Commit a transaction
+   * @param transactionId - The transaction ID to commit
+   */
+  async commitTransaction(transactionId: string): Promise<void> {
+    await this.makeRequest<void>(
+      "POST",
+      `/api/transactions/${encodeURIComponent(transactionId)}/commit`,
+      undefined,
+      0,
+      true,
+    );
+  }
+
+  /**
+   * Rollback a transaction
+   * @param transactionId - The transaction ID to rollback
+   */
+  async rollbackTransaction(transactionId: string): Promise<void> {
+    await this.makeRequest<void>(
+      "POST",
+      `/api/transactions/${encodeURIComponent(transactionId)}/rollback`,
+      undefined,
+      0,
+      true,
     );
   }
 
