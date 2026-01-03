@@ -191,3 +191,165 @@ export function extractRecord<T extends Record<string, any>>(record: any): T {
   }
   return result as T;
 }
+
+// ============================================================================
+// Wrapped Type Builders
+// ============================================================================
+// These functions create wrapped type objects for sending to ekoDB.
+// Use these when inserting/updating records with special field types.
+//
+// Example:
+//   await client.insert("orders", {
+//     id: Field.uuid("550e8400-e29b-41d4-a716-446655440000"),
+//     total: Field.decimal("99.99"),
+//     created_at: Field.dateTime(new Date()),
+//     tags: Field.set(["sale", "featured"]),
+//   });
+
+export interface WrappedFieldValue {
+  type: string;
+  value: unknown;
+}
+
+/**
+ * Field builders for creating wrapped type values to send to ekoDB.
+ * These are the inverse of the getValue* extraction functions.
+ */
+export const Field = {
+  /**
+   * Create a UUID field value
+   * @param value - UUID string (e.g., "550e8400-e29b-41d4-a716-446655440000")
+   */
+  uuid: (value: string): WrappedFieldValue => ({
+    type: "UUID",
+    value,
+  }),
+
+  /**
+   * Create a Decimal field value for precise numeric values
+   * @param value - Decimal as string (e.g., "99.99") to preserve precision
+   */
+  decimal: (value: string): WrappedFieldValue => ({
+    type: "Decimal",
+    value,
+  }),
+
+  /**
+   * Create a DateTime field value
+   * @param value - Date object or RFC3339 string
+   */
+  dateTime: (value: Date | string): WrappedFieldValue => ({
+    type: "DateTime",
+    value: value instanceof Date ? value.toISOString() : value,
+  }),
+
+  /**
+   * Create a Duration field value
+   * @param milliseconds - Duration in milliseconds
+   */
+  duration: (milliseconds: number): WrappedFieldValue => ({
+    type: "Duration",
+    value: milliseconds,
+  }),
+
+  /**
+   * Create a Number field value (flexible numeric type)
+   * @param value - Integer or float
+   */
+  number: (value: number): WrappedFieldValue => ({
+    type: "Number",
+    value,
+  }),
+
+  /**
+   * Create a Set field value (unique elements)
+   * @param values - Array of values (duplicates will be removed by server)
+   */
+  set: <T>(values: T[]): WrappedFieldValue => ({
+    type: "Set",
+    value: values,
+  }),
+
+  /**
+   * Create a Vector field value (for embeddings/similarity search)
+   * @param values - Array of numbers representing the vector
+   */
+  vector: (values: number[]): WrappedFieldValue => ({
+    type: "Vector",
+    value: values,
+  }),
+
+  /**
+   * Create a Binary field value
+   * @param value - Base64 encoded string or Uint8Array
+   */
+  binary: (value: string | Uint8Array): WrappedFieldValue => ({
+    type: "Binary",
+    value:
+      value instanceof Uint8Array ? btoa(String.fromCharCode(...value)) : value,
+  }),
+
+  /**
+   * Create a Bytes field value
+   * @param value - Base64 encoded string or Uint8Array
+   */
+  bytes: (value: string | Uint8Array): WrappedFieldValue => ({
+    type: "Bytes",
+    value:
+      value instanceof Uint8Array ? btoa(String.fromCharCode(...value)) : value,
+  }),
+
+  /**
+   * Create an Array field value
+   * @param values - Array of values
+   */
+  array: <T>(values: T[]): WrappedFieldValue => ({
+    type: "Array",
+    value: values,
+  }),
+
+  /**
+   * Create an Object field value
+   * @param value - Object/map of key-value pairs
+   */
+  object: (value: Record<string, unknown>): WrappedFieldValue => ({
+    type: "Object",
+    value,
+  }),
+
+  /**
+   * Create a String field value (explicit wrapping)
+   * @param value - String value
+   */
+  string: (value: string): WrappedFieldValue => ({
+    type: "String",
+    value,
+  }),
+
+  /**
+   * Create an Integer field value (explicit wrapping)
+   * @param value - Integer value
+   */
+  integer: (value: number): WrappedFieldValue => ({
+    type: "Integer",
+    value: Math.floor(value),
+  }),
+
+  /**
+   * Create a Float field value (explicit wrapping)
+   * @param value - Float value
+   */
+  float: (value: number): WrappedFieldValue => ({
+    type: "Float",
+    value,
+  }),
+
+  /**
+   * Create a Boolean field value (explicit wrapping)
+   * @param value - Boolean value
+   */
+  boolean: (value: boolean): WrappedFieldValue => ({
+    type: "Boolean",
+    value,
+  }),
+};
