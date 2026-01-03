@@ -39,17 +39,17 @@ data class Record(
     
     /**
      * Set TTL duration for this record
-     * Duration format: "30s", "5m", "1h", "1d"
+     * Supported formats: "30s", "5m", "1h", "1d", "2w", seconds ("3600"), or ISO8601
      */
     fun withTtl(duration: String) = apply {
-        fields["ttl_duration"] = FieldType.string(duration)
+        fields["ttl"] = FieldType.string(duration)
     }
     
     /**
      * Set TTL with update-on-access behavior
      */
     fun withTtlUpdateOnAccess(duration: String, updateOnAccess: Boolean) = apply {
-        fields["ttl_duration"] = FieldType.string(duration)
+        fields["ttl"] = FieldType.string(duration)
         fields["ttl_update_on_access"] = FieldType.boolean(updateOnAccess)
     }
     

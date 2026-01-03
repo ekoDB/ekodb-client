@@ -718,6 +718,149 @@ impl Client {
         })
     }
 
+    /// Check if a key exists
+    fn kv_exists<'py>(
+        &self,
+        py: Python<'py>,
+        key: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            let exists = client
+                .kv_exists(&key)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("KV exists failed: {}", e)))?;
+
+            Python::attach(|py| {
+                Ok(PyBool::new(py, exists).as_borrowed().to_owned().into())
+            })
+        })
+    }
+
+    /// Query/find KV entries with pattern matching
+    #[pyo3(signature = (pattern=None, include_expired=false))]
+    fn kv_find<'py>(
+        &self,
+        py: Python<'py>,
+        pattern: Option<String>,
+        include_expired: bool,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            let result = client
+                .kv_find(pattern.as_deref(), include_expired)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("KV find failed: {}", e)))?;
+
+            Python::attach(|py| {
+                let list = PyList::empty(py);
+                for item in result {
+                    let py_value = json_to_pydict(py, &item)?;
+                    list.append(py_value)?;
+                }
+                Ok(list.into())
+            })
+        })
+    }
+
+    /// Query KV store with pattern (alias for kv_find)
+    #[pyo3(signature = (pattern=None, include_expired=false))]
+    fn kv_query<'py>(
+        &self,
+        py: Python<'py>,
+        pattern: Option<String>,
+        include_expired: bool,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        self.kv_find(py, pattern, include_expired)
+    }
+
+    // ========== Transaction Methods ==========
+
+    /// Begin a new transaction
+    #[pyo3(signature = (isolation_level="ReadCommitted"))]
+    fn begin_transaction<'py>(
+        &self,
+        py: Python<'py>,
+        isolation_level: &str,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        let isolation_level = isolation_level.to_string();
+
+        future_into_py(py, async move {
+            let result = client
+                .begin_transaction(&isolation_level)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("Begin transaction failed: {}", e)))?;
+
+            Ok(result)
+        })
+    }
+
+    /// Get transaction status
+    fn get_transaction_status<'py>(
+        &self,
+        py: Python<'py>,
+        transaction_id: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py(py, async move {
+            let result = client
+                .get_transaction_status(&transaction_id)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("Get transaction status failed: {}", e)))?;
+
+            Python::attach(|py| {
+                let dict = PyDict::new(py);
+                if let Some(state) = result.get("state").and_then(|v| v.as_str()) {
+                    dict.set_item("state", state)?;
+                }
+                if let Some(count) = result.get("operations_count").and_then(|v| v.as_i64()) {
+                    dict.set_item("operations_count", count)?;
+                }
+                Ok(dict.into_any().unbind())
+            })
+        })
+    }
+
+    /// Commit a transaction
+    fn commit_transaction<'py>(
+        &self,
+        py: Python<'py>,
+        transaction_id: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py(py, async move {
+            client
+                .commit_transaction(&transaction_id)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("Commit transaction failed: {}", e)))?;
+
+            Python::attach(|py| Ok(py.None()))
+        })
+    }
+
+    /// Rollback a transaction
+    fn rollback_transaction<'py>(
+        &self,
+        py: Python<'py>,
+        transaction_id: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py(py, async move {
+            client
+                .rollback_transaction(&transaction_id)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("Rollback transaction failed: {}", e)))?;
+
+            Python::attach(|py| Ok(py.None()))
+        })
+    }
+
     // ========== Chat Methods ==========
 
     // Note: The chat() method has been removed. Use create_chat_session() and chat_message() instead.

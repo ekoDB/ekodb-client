@@ -189,12 +189,13 @@ impl Record {
 
     /// Set TTL duration for this record
     ///
-    /// Duration format: "30s", "5m", "1h", "1d"
+    /// Supported formats:
+    /// - Duration strings: "30s", "5m", "1h", "1d", "2w"
+    /// - Integer seconds as string: "3600"
+    /// - ISO8601 timestamp: "2024-12-31T23:59:59Z"
     pub fn with_ttl(mut self, duration: impl Into<String>) -> Self {
-        self.fields.insert(
-            "ttl_duration".to_string(),
-            FieldType::String(duration.into()),
-        );
+        self.fields
+            .insert("ttl".to_string(), FieldType::String(duration.into()));
         self
     }
 
@@ -206,10 +207,8 @@ impl Record {
         duration: impl Into<String>,
         update_on_access: bool,
     ) -> Self {
-        self.fields.insert(
-            "ttl_duration".to_string(),
-            FieldType::String(duration.into()),
-        );
+        self.fields
+            .insert("ttl".to_string(), FieldType::String(duration.into()));
         self.fields.insert(
             "ttl_update_on_access".to_string(),
             FieldType::Boolean(update_on_access),

@@ -697,6 +697,176 @@ impl HttpClient {
             .await
     }
 
+    /// Check if a key exists in the KV store
+    pub async fn kv_exists(&self, key: &str, token: &str) -> Result<bool> {
+        match self.kv_get(key, token).await {
+            Ok(Some(_)) => Ok(true),
+            Ok(None) => Ok(false),
+            Err(Error::NotFound) => Ok(false),
+            Err(e) => Err(e),
+        }
+    }
+
+    /// Query/find KV entries with pattern matching
+    pub async fn kv_find(
+        &self,
+        pattern: Option<&str>,
+        include_expired: bool,
+        token: &str,
+    ) -> Result<Vec<serde_json::Value>> {
+        let url = self.base_url.join("/api/kv/find")?;
+
+        #[derive(Serialize)]
+        struct KvFindRequest<'a> {
+            #[serde(skip_serializing_if = "Option::is_none")]
+            pattern: Option<&'a str>,
+            include_expired: bool,
+        }
+
+        let request = KvFindRequest {
+            pattern,
+            include_expired,
+        };
+
+        self.retry_policy
+            .execute(|| async {
+                let response = self
+                    .client
+                    .post(url.clone())
+                    .header("Authorization", format!("Bearer {}", token))
+                    .header("Accept", "application/json")
+                    .json(&request)
+                    .send()
+                    .await?;
+
+                let bytes = response.bytes().await.map_err(Error::Http)?;
+                let result: Vec<serde_json::Value> =
+                    serde_json::from_slice(&bytes).map_err(Error::Serialization)?;
+                Ok(result)
+            })
+            .await
+    }
+
+    // ========== Transaction Methods ==========
+
+    /// Begin a new transaction
+    pub async fn begin_transaction(&self, isolation_level: &str, token: &str) -> Result<String> {
+        let url = self.base_url.join("/api/transactions")?;
+
+        #[derive(Serialize)]
+        struct BeginTransactionRequest<'a> {
+            isolation_level: &'a str,
+        }
+
+        let request = BeginTransactionRequest { isolation_level };
+
+        self.retry_policy
+            .execute(|| async {
+                let response = self
+                    .client
+                    .post(url.clone())
+                    .header("Authorization", format!("Bearer {}", token))
+                    .header("Accept", "application/json")
+                    .json(&request)
+                    .send()
+                    .await?;
+
+                let bytes = response.bytes().await.map_err(Error::Http)?;
+                let result: serde_json::Value =
+                    serde_json::from_slice(&bytes).map_err(Error::Serialization)?;
+
+                result["transaction_id"]
+                    .as_str()
+                    .map(|s| s.to_string())
+                    .ok_or_else(|| {
+                        Error::Serialization(serde::de::Error::custom(
+                            "No transaction_id in response",
+                        ))
+                    })
+            })
+            .await
+    }
+
+    /// Get transaction status
+    pub async fn get_transaction_status(
+        &self,
+        transaction_id: &str,
+        token: &str,
+    ) -> Result<serde_json::Value> {
+        let url = self
+            .base_url
+            .join(&format!("/api/transactions/{}", transaction_id))?;
+
+        self.retry_policy
+            .execute(|| async {
+                let response = self
+                    .client
+                    .get(url.clone())
+                    .header("Authorization", format!("Bearer {}", token))
+                    .header("Accept", "application/json")
+                    .send()
+                    .await?;
+
+                let bytes = response.bytes().await.map_err(Error::Http)?;
+                let result: serde_json::Value =
+                    serde_json::from_slice(&bytes).map_err(Error::Serialization)?;
+                Ok(result)
+            })
+            .await
+    }
+
+    /// Commit a transaction
+    pub async fn commit_transaction(&self, transaction_id: &str, token: &str) -> Result<()> {
+        let url = self
+            .base_url
+            .join(&format!("/api/transactions/{}/commit", transaction_id))?;
+
+        self.retry_policy
+            .execute(|| async {
+                let response = self
+                    .client
+                    .post(url.clone())
+                    .header("Authorization", format!("Bearer {}", token))
+                    .send()
+                    .await?;
+
+                if response.status().is_success() {
+                    Ok(())
+                } else {
+                    Err(Error::Http(reqwest::Error::from(
+                        response.error_for_status().unwrap_err(),
+                    )))
+                }
+            })
+            .await
+    }
+
+    /// Rollback a transaction
+    pub async fn rollback_transaction(&self, transaction_id: &str, token: &str) -> Result<()> {
+        let url = self
+            .base_url
+            .join(&format!("/api/transactions/{}/rollback", transaction_id))?;
+
+        self.retry_policy
+            .execute(|| async {
+                let response = self
+                    .client
+                    .post(url.clone())
+                    .header("Authorization", format!("Bearer {}", token))
+                    .send()
+                    .await?;
+
+                if response.status().is_success() {
+                    Ok(())
+                } else {
+                    Err(Error::Http(reqwest::Error::from(
+                        response.error_for_status().unwrap_err(),
+                    )))
+                }
+            })
+            .await
+    }
+
     /// Perform a full-text search
     pub async fn search(
         &self,

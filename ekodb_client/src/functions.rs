@@ -473,6 +473,42 @@ pub enum Function {
 
     /// Release a savepoint (no longer needed)
     ReleaseSavepoint { name: String },
+
+    // =========================================================================
+    // KV Store Operations
+    // =========================================================================
+    /// Get a value from the KV store
+    KvGet {
+        key: serde_json::Value,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        output_field: Option<String>,
+    },
+
+    /// Set a value in the KV store
+    KvSet {
+        key: serde_json::Value,
+        value: serde_json::Value,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        ttl: Option<serde_json::Value>,
+    },
+
+    /// Delete a key from the KV store
+    KvDelete { key: serde_json::Value },
+
+    /// Check if a key exists in the KV store
+    KvExists {
+        key: serde_json::Value,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        output_field: Option<String>,
+    },
+
+    /// Query the KV store with a pattern
+    KvQuery {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pattern: Option<serde_json::Value>,
+        #[serde(default)]
+        include_expired: bool,
+    },
 }
 
 fn default_method() -> String {
