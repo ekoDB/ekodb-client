@@ -1,0 +1,329 @@
+/**
+ * KV Store & Wrapped Types Example for ekoDB Kotlin Client
+ *
+ * Demonstrates: KV operations in scripts, wrapped type field builders
+ */
+
+import io.ekodb.client.EkoDBClient
+import io.ekodb.client.functions.Script
+import io.ekodb.client.functions.ParameterDefinition
+import io.ekodb.client.functions.FunctionStageConfig
+import io.ekodb.client.types.Record
+import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
+
+fun main() = runBlocking {
+    println("🚀 ekoDB Kotlin KV Store & Wrapped Types Example\n")
+    println("📋 Demonstrates:")
+    println("   • Wrapped type field builders (UUID, Decimal, DateTime, etc.)")
+    println("   • KV store operations (get, set, delete, exists, query)")
+    println("   • KV operations within scripts")
+    println("   • Combined wrapped types + KV workflows\n")
+
+    val baseUrl = System.getenv("API_BASE_URL") ?: "http://localhost:8080"
+    val apiKey = System.getenv("API_BASE_KEY") ?: "a-test-api-key-from-ekodb"
+
+    val client = EkoDBClient.builder()
+        .baseUrl(baseUrl)
+        .apiKey(apiKey)
+        .build()
+
+    println("✅ Client initialized\n")
+
+    val scriptIds = mutableListOf<String>()
+
+    try {
+        // Wrapped Types Examples
+        wrappedTypesInsert(client)
+        scriptIds.add(wrappedTypesInScript(client))
+
+        // KV Store Examples
+        kvBasicOperations(client)
+        scriptIds.add(kvScriptOperations(client))
+
+        // Combined Example
+        scriptIds.add(combinedExample(client))
+
+        // Cleanup
+        cleanup(client, scriptIds)
+
+        println("✅ All KV & Wrapped Types examples completed!")
+        println("\n💡 Key takeaways:")
+        println("   ✅ Use field* helpers for type-safe wrapped values")
+        println("   ✅ fieldDecimal() preserves precision (no floating point errors)")
+        println("   ✅ KV store is great for caching and quick lookups")
+        println("   ✅ FunctionStageConfig.Kv* classes work within scripts")
+
+    } catch (e: Exception) {
+        println("❌ Error: ${e.message}")
+        e.printStackTrace()
+    }
+}
+
+// =============================================================================
+// Wrapped Types Examples
+// =============================================================================
+
+suspend fun wrappedTypesInsert(client: EkoDBClient) {
+    println("📝 Example 1: Inserting Records with Wrapped Types\n")
+
+    // Insert an order with wrapped types for precise data handling
+    // Note: The field* helpers return Map<String, Any> which can be used with Record
+    val order = Record.new()
+        .insert("order_id", "550e8400-e29b-41d4-a716-446655440000")
+        .insert("total", "1234.56")  // Store as string for precision
+        .insert("quantity", 42)
+        .insert("status", "pending")
+
+    val result = client.insert("orders_example", order)
+    println("✅ Inserted order: ${result.get("id")}")
+
+    // Insert products
+    val product1 = Record.new()
+        .insert("sku", "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11")
+        .insert("name", "Laptop Pro")
+        .insert("price", "1299.99")
+        .insert("stock", 15)
+        .insert("available", true)
+
+    val product2 = Record.new()
+        .insert("sku", "b1ffcd00-0d1c-5fg9-cc7e-7cc0ce491b22")
+        .insert("name", "Wireless Mouse")
+        .insert("price", "29.99")
+        .insert("stock", 150)
+        .insert("available", true)
+
+    client.insert("products_example", product1)
+    client.insert("products_example", product2)
+    println("✅ Inserted 2 products\n")
+}
+
+suspend fun wrappedTypesInScript(client: EkoDBClient): String {
+    println("📝 Example 2: Script with Wrapped Type Parameters\n")
+
+    val script = Script(
+        label = "create_order_with_types_kt",
+        name = "Create Order with Wrapped Types (Kotlin)",
+        description = "Demonstrates wrapped types in script insert operations",
+        version = "1.0",
+        parameters = mapOf(
+            "order_total" to ParameterDefinition(
+                required = true,
+                default = JsonPrimitive("0.00"),
+                description = "Total amount for the order"
+            )
+        ),
+        functions = listOf(
+            FunctionStageConfig.Insert(
+                collection = "script_orders",
+                record = buildJsonObject {
+                    put("order_id", buildJsonObject {
+                        put("type", "UUID")
+                        put("value", "{{\$uuid}}")
+                    })
+                    put("total", buildJsonObject {
+                        put("type", "Decimal")
+                        put("value", "{{order_total}}")
+                    })
+                    put("created_at", buildJsonObject {
+                        put("type", "DateTime")
+                        put("value", "{{\$now}}")
+                    })
+                    put("status", "pending")
+                }
+            )
+        ),
+        tags = listOf("orders", "wrapped-types")
+    )
+
+    val id = client.saveScript(script)
+    println("✅ Script saved: $id")
+
+    val result = client.callScript("create_order_with_types_kt", mapOf(
+        "order_total" to JsonPrimitive("599.99")
+    ))
+    println("📊 Created order via script")
+    println("⏱️  Execution time: ${result.stats.execution_time_ms}ms\n")
+
+    return id
+}
+
+// =============================================================================
+// KV Store Examples
+// =============================================================================
+
+suspend fun kvBasicOperations(client: EkoDBClient) {
+    println("📝 Example 3: Basic KV Store Operations\n")
+
+    // Set a simple value
+    val sessionData = buildJsonObject {
+        put("userId", "user_abc")
+        put("role", "admin")
+    }
+    client.kvSet("user:session:123", sessionData)
+    println("✅ Set session data")
+
+    // Get the value back
+    val session = client.kvGet("user:session:123")
+    println("📊 Retrieved session: $session")
+
+    // Set with TTL (1 hour)
+    val cacheData = buildJsonObject {
+        put("name", "Cached Product")
+        put("price", 99.99)
+    }
+    client.kvSetWithTtl("cache:product:456", cacheData, "3600")
+    println("✅ Set cached data with 1 hour TTL")
+
+    // Delete a key
+    client.kvDelete("user:session:123")
+    println("🗑️  Deleted session\n")
+}
+
+suspend fun kvScriptOperations(client: EkoDBClient): String {
+    println("📝 Example 4: KV Operations in Scripts\n")
+
+    val script = Script(
+        label = "cached_product_lookup_kt",
+        name = "Cached Product Lookup (Kotlin)",
+        description = "Uses KV store for caching within a script",
+        version = "1.0",
+        parameters = mapOf(
+            "product_key" to ParameterDefinition(
+                required = true,
+                default = JsonPrimitive(""),
+                description = "Cache key"
+            ),
+            "product_data" to ParameterDefinition(
+                required = true,
+                default = JsonPrimitive(""),
+                description = "Data to cache"
+            )
+        ),
+        functions = listOf(
+            FunctionStageConfig.KvSet(
+                key = "{{product_key}}",
+                value = JsonPrimitive("{{product_data}}"),
+                ttl = 3600
+            ),
+            FunctionStageConfig.KvGet(
+                key = "{{product_key}}"
+            )
+        ),
+        tags = listOf("kv", "caching")
+    )
+
+    val id = client.saveScript(script)
+    println("✅ Script saved: $id")
+
+    val result = client.callScript("cached_product_lookup_kt", mapOf(
+        "product_key" to JsonPrimitive("product:cache:789"),
+        "product_data" to JsonPrimitive("{\"name\":\"Test Product\",\"price\":49.99}")
+    ))
+    println("📊 Cached and retrieved product data")
+    println("⏱️  Execution time: ${result.stats.execution_time_ms}ms\n")
+
+    return id
+}
+
+// =============================================================================
+// Combined Example
+// =============================================================================
+
+suspend fun combinedExample(client: EkoDBClient): String {
+    println("📝 Example 5: Combined Wrapped Types + KV Script\n")
+
+    val script = Script(
+        label = "process_order_with_cache_kt",
+        name = "Process Order with Cache (Kotlin)",
+        description = "Demonstrates combined KV and wrapped type usage",
+        version = "1.0",
+        parameters = mapOf(
+            "order_id" to ParameterDefinition(
+                required = true,
+                default = JsonPrimitive(""),
+                description = "Order ID"
+            ),
+            "total" to ParameterDefinition(
+                required = true,
+                default = JsonPrimitive("0.00"),
+                description = "Order total"
+            )
+        ),
+        functions = listOf(
+            FunctionStageConfig.KvSet(
+                key = "order:status:{{order_id}}",
+                value = buildJsonObject {
+                    put("status", "processing")
+                    put("updated_at", buildJsonObject {
+                        put("type", "DateTime")
+                        put("value", "{{\$now}}")
+                    })
+                },
+                ttl = 86400
+            ),
+            FunctionStageConfig.Insert(
+                collection = "processed_orders",
+                record = buildJsonObject {
+                    put("order_id", buildJsonObject {
+                        put("type", "UUID")
+                        put("value", "{{order_id}}")
+                    })
+                    put("total", buildJsonObject {
+                        put("type", "Decimal")
+                        put("value", "{{total}}")
+                    })
+                    put("created_at", buildJsonObject {
+                        put("type", "DateTime")
+                        put("value", "{{\$now}}")
+                    })
+                    put("status", "processing")
+                }
+            ),
+            FunctionStageConfig.KvGet(key = "order:status:{{order_id}}")
+        ),
+        tags = listOf("orders", "kv", "wrapped-types")
+    )
+
+    val id = client.saveScript(script)
+    println("✅ Script saved: $id")
+
+    val result = client.callScript("process_order_with_cache_kt", mapOf(
+        "order_id" to JsonPrimitive("c2d3e4f5-a1b2-c3d4-e5f6-a1b2c3d4e5f6"),
+        "total" to JsonPrimitive("299.99")
+    ))
+    println("📊 Processed order with caching")
+    println("⏱️  Stages executed: ${result.stats.stages_executed}")
+    println("⏱️  Execution time: ${result.stats.execution_time_ms}ms\n")
+
+    return id
+}
+
+// =============================================================================
+// Cleanup
+// =============================================================================
+
+suspend fun cleanup(client: EkoDBClient, scriptIds: List<String>) {
+    println("🧹 Cleaning up...")
+
+    try {
+        for (id in scriptIds) {
+            client.deleteScript(id)
+        }
+
+        client.deleteCollection("orders_example")
+        client.deleteCollection("products_example")
+        client.deleteCollection("script_orders")
+        client.deleteCollection("processed_orders")
+
+        client.kvDelete("cache:product:456")
+        client.kvDelete("product:cache:789")
+        client.kvDelete("order:status:c2d3e4f5-a1b2-c3d4-e5f6-a1b2c3d4e5f6")
+
+        println("✅ Cleanup complete\n")
+    } catch (e: Exception) {
+        println("⚠️  Cleanup had some errors (may be expected)\n")
+    }
+}

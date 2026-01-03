@@ -34,7 +34,7 @@ async function websocketTTLExamples() {
             body: JSON.stringify({
                 name: 'WebSocket TTL Test',
                 value: 42,
-                ttl_duration: '1h'
+                ttl: 3600
             })
         }).then(res => res.json());
         console.log(`✓ Inserted document with TTL: ${doc.id}`);

@@ -266,6 +266,45 @@ sealed class FunctionStageConfig {
     data class ReleaseSavepoint(
         val name: String
     ) : FunctionStageConfig()
+    
+    // =========================================================================
+    // KV Store Operations
+    // =========================================================================
+    
+    @Serializable
+    @SerialName("KvGet")
+    data class KvGet(
+        val key: String,
+        val output_field: String? = null
+    ) : FunctionStageConfig()
+    
+    @Serializable
+    @SerialName("KvSet")
+    data class KvSet(
+        val key: String,
+        val value: JsonElement,
+        val ttl: Long? = null
+    ) : FunctionStageConfig()
+    
+    @Serializable
+    @SerialName("KvDelete")
+    data class KvDelete(
+        val key: String
+    ) : FunctionStageConfig()
+    
+    @Serializable
+    @SerialName("KvExists")
+    data class KvExists(
+        val key: String,
+        val output_field: String? = null
+    ) : FunctionStageConfig()
+    
+    @Serializable
+    @SerialName("KvQuery")
+    data class KvQuery(
+        val pattern: String? = null,
+        @EncodeDefault val include_expired: Boolean = false
+    ) : FunctionStageConfig()
 }
 
 /**
