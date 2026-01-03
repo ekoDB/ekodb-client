@@ -362,11 +362,23 @@ class EkoDBClient private constructor(
     
     /**
      * Batch update records
+     * @param collection The collection name
+     * @param updates List of (id, data) pairs to update
+     * @param transactionId Optional transaction ID for transactional updates
      */
-    suspend fun batchUpdate(collection: String, updates: List<Pair<String, Record>>): List<Record> {
+    suspend fun batchUpdate(
+        collection: String, 
+        updates: List<Pair<String, Record>>,
+        transactionId: String? = null
+    ): List<Record> {
         val token = getToken()
+        val urlPath = if (transactionId != null) {
+            "$baseUrl/api/batch/update/$collection?transaction_id=$transactionId"
+        } else {
+            "$baseUrl/api/batch/update/$collection"
+        }
         val response = executeWithRetry {
-            httpClient.put("$baseUrl/api/batch/update/$collection") {
+            httpClient.put(urlPath) {
                 header("Authorization", "Bearer $token")
                 contentType(getContentTypeForRequest())
                 header("Accept", getContentTypeForRequest().toString())
@@ -593,6 +605,145 @@ class EkoDBClient private constructor(
         if (!response.status.isSuccess() && response.status != HttpStatusCode.NotFound) {
             val errorBody = response.bodyAsText()
             throw Exception("KV delete failed with status ${response.status}: $errorBody")
+        }
+    }
+    
+    /**
+     * Key-Value: Check if a key exists
+     */
+    suspend fun kvExists(key: String): Boolean {
+        return try {
+            val result = kvGet(key)
+            result != null
+        } catch (e: Exception) {
+            false
+        }
+    }
+    
+    /**
+     * Key-Value: Find/query entries with pattern matching
+     */
+    suspend fun kvFind(pattern: String? = null, includeExpired: Boolean = false): List<JsonElement> {
+        val token = getToken()
+        val body = buildJsonObject {
+            pattern?.let { put("pattern", it) }
+            put("include_expired", includeExpired)
+        }
+        
+        val response = executeWithRetry {
+            httpClient.post("$baseUrl/api/kv/find") {
+                header("Authorization", "Bearer $token")
+                contentType(ContentType.Application.Json)
+                setBody(body)
+            }
+        }
+        
+        if (!response.status.isSuccess()) {
+            val errorBody = response.bodyAsText()
+            throw Exception("KV find failed with status ${response.status}: $errorBody")
+        }
+        
+        return response.body<List<JsonElement>>()
+    }
+    
+    /**
+     * Key-Value: Query entries with pattern (alias for kvFind)
+     */
+    suspend fun kvQuery(pattern: String? = null, includeExpired: Boolean = false): List<JsonElement> {
+        return kvFind(pattern, includeExpired)
+    }
+    
+    // ============================================================================
+    // Transaction Operations
+    // ============================================================================
+    
+    /**
+     * Begin a new transaction
+     * @param isolationLevel Transaction isolation level (default: "ReadCommitted")
+     * @return Transaction ID
+     */
+    suspend fun beginTransaction(isolationLevel: String = "ReadCommitted"): String {
+        val token = getToken()
+        
+        val response = executeWithRetry {
+            httpClient.post("$baseUrl/api/transactions") {
+                header("Authorization", "Bearer $token")
+                contentType(ContentType.Application.Json)
+                setBody(mapOf("isolation_level" to isolationLevel))
+            }
+        }
+        
+        if (!response.status.isSuccess()) {
+            val errorBody = response.bodyAsText()
+            throw Exception("Begin transaction failed with status ${response.status}: $errorBody")
+        }
+        
+        val result = response.body<JsonElement>()
+        return result.jsonObject["transaction_id"]?.jsonPrimitive?.content
+            ?: throw Exception("No transaction_id in response")
+    }
+    
+    /**
+     * Get transaction status
+     * @param transactionId The transaction ID
+     * @return Transaction status map
+     */
+    suspend fun getTransactionStatus(transactionId: String): Map<String, Any?> {
+        val token = getToken()
+        
+        val response = executeWithRetry {
+            httpClient.get("$baseUrl/api/transactions/$transactionId") {
+                header("Authorization", "Bearer $token")
+            }
+        }
+        
+        if (!response.status.isSuccess()) {
+            val errorBody = response.bodyAsText()
+            throw Exception("Get transaction status failed with status ${response.status}: $errorBody")
+        }
+        
+        val result = response.body<JsonElement>()
+        return mapOf(
+            "state" to result.jsonObject["state"]?.jsonPrimitive?.content,
+            "operations_count" to result.jsonObject["operations_count"]?.jsonPrimitive?.int
+        )
+    }
+    
+    /**
+     * Commit a transaction
+     * @param transactionId The transaction ID to commit
+     */
+    suspend fun commitTransaction(transactionId: String) {
+        val token = getToken()
+        
+        val response = executeWithRetry {
+            httpClient.post("$baseUrl/api/transactions/$transactionId/commit") {
+                header("Authorization", "Bearer $token")
+            }
+        }
+        
+        if (!response.status.isSuccess()) {
+            val errorBody = response.bodyAsText()
+            throw Exception("Commit transaction failed with status ${response.status}: $errorBody")
+        }
+    }
+    
+    /**
+     * Rollback a transaction
+     * @param transactionId The transaction ID to rollback
+     */
+    suspend fun rollbackTransaction(transactionId: String) {
+        val token = getToken()
+        
+        val response = executeWithRetry {
+            httpClient.post("$baseUrl/api/transactions/$transactionId/rollback") {
+                header("Authorization", "Bearer $token")
+            }
+        }
+        
+        if (!response.status.isSuccess()) {
+            val errorBody = response.bodyAsText()
+            throw Exception("Rollback transaction failed with status ${response.status}: $errorBody")
         }
     }
     

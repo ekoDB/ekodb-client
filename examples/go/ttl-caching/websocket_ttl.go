@@ -55,9 +55,9 @@ func main() {
 	// Insert test data with TTL
 	fmt.Println("\n=== Insert Test Data with TTL ===")
 	insertData := map[string]interface{}{
-		"name":         "WebSocket TTL Test",
-		"value":        42,
-		"ttl_duration": "1h",
+		"name":  "WebSocket TTL Test",
+		"value": 42,
+		"ttl":   3600,
 	}
 	insertBody, _ := json.Marshal(insertData)
 
