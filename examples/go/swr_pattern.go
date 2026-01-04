@@ -68,9 +68,18 @@ func main() {
 					ekodb.StageInsert(
 						"github_cache",
 						map[string]interface{}{
-							"id":        "{{username}}",
-							"data":      "{{http_response}}",
-							"cached_at": time.Now().Format(time.RFC3339),
+							"id": map[string]interface{}{
+								"type":  "String",
+								"value": "{{username}}",
+							},
+							"data": map[string]interface{}{
+								"type":  "Object",
+								"value": "{{http_response}}",
+							},
+							"cached_at": map[string]interface{}{
+								"type":  "String",
+								"value": time.Now().Format(time.RFC3339),
+							},
 						},
 						false,
 						nil,
@@ -155,9 +164,18 @@ func main() {
 					ekodb.StageInsert(
 						"product_cache",
 						map[string]interface{}{
-							"id":            "{{product_id}}",
-							"enriched_data": "{{http_response}}",
-							"enriched_at":   time.Now().Format(time.RFC3339),
+							"id": map[string]interface{}{
+								"type":  "String",
+								"value": "{{product_id}}",
+							},
+							"enriched_data": map[string]interface{}{
+								"type":  "Object",
+								"value": "{{http_response}}",
+							},
+							"enriched_at": map[string]interface{}{
+								"type":  "String",
+								"value": time.Now().Format(time.RFC3339),
+							},
 						},
 						false,
 						nil,

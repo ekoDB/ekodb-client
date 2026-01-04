@@ -117,7 +117,10 @@ async def swr_composition_example(client):
             {
                 "type": "Insert",
                 "collection": "github_cache",
-                "record": {"id": "{{username}}", "data": "{{http_response}}"},
+                "record": {
+                    "id": {"type": "String", "value": "{{username}}"},
+                    "data": {"type": "Object", "value": "{{http_response}}"},
+                },
                 "ttl": 300,  # 5 minute cache
             },
         ],

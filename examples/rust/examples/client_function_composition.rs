@@ -146,8 +146,8 @@ async fn swr_with_composition_example(client: &Client) -> Result<(), Box<dyn std
         .with_function(Function::Insert {
             collection: "github_cache".to_string(),
             record: serde_json::json!({
-                "id": "{{username}}",
-                "data": "{{http_response}}"
+                "id": {"type": "String", "value": "{{username}}"},
+                "data": {"type": "Object", "value": "{{http_response}}"}
             }),
             bypass_ripple: None,
             ttl: Some(serde_json::json!(300)), // 5 minute cache
