@@ -1,0 +1,145 @@
+name: Unit Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rust-tests:
+    name: Rust Client Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Run Rust tests
+        run: cargo test -p ekodb_client --no-fail-fast
+        env:
+          RUST_BACKTRACE: 1
+
+  typescript-tests:
+    name: TypeScript Client Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ekodb-client-ts
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: ekodb-client-ts/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run TypeScript tests
+        run: npm test
+
+  python-tests:
+    name: Python Client Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ekodb-client-py
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Create virtual environment
+        run: python -m venv .venv
+
+      - name: Install maturin and test dependencies
+        run: |
+          source .venv/bin/activate
+          pip install maturin pytest pytest-asyncio
+
+      - name: Build and install Python client
+        run: |
+          source .venv/bin/activate
+          maturin develop
+
+      - name: Run Python tests
+        run: |
+          source .venv/bin/activate
+          python -m pytest tests/ -v
+
+  kotlin-tests:
+    name: Kotlin Client Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ekodb-client-kt
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Run Kotlin tests
+        run: ./gradlew test
+
+  # Note: Go client is in separate repo (ekoDB/ekodb-client-go) with its own CI
+
+  summary:
+    name: Test Summary
+    runs-on: ubuntu-latest
+    needs: [rust-tests, typescript-tests, python-tests, kotlin-tests]
+    if: always()
+    steps:
+      - name: Check test results
+        run: |
+          echo "## Unit Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Client | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Rust (253 tests) | ${{ needs.rust-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| TypeScript (108 tests) | ${{ needs.typescript-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Python (66 tests) | ${{ needs.python-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Kotlin (100 tests) | ${{ needs.kotlin-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "_Go client (72 tests) runs in separate repo: ekoDB/ekodb-client-go_" >> $GITHUB_STEP_SUMMARY
+
+      - name: Fail if any test failed
+        if: |
+          needs.rust-tests.result == 'failure' ||
+          needs.typescript-tests.result == 'failure' ||
+          needs.python-tests.result == 'failure' ||
+          needs.kotlin-tests.result == 'failure'
+        run: exit 1

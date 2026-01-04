@@ -27,6 +27,9 @@ classifiers = [
     "Programming Language :: Rust",
 ]
 
+[project.optional-dependencies]
+dev = ["pytest>=7.0.0", "pytest-asyncio>=0.21.0"]
+
 [project.urls]
 Homepage = "https://github.com/ekoDB/ekodb"
 Repository = "https://github.com/ekoDB/ekodb"

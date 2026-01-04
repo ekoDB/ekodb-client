@@ -9,7 +9,10 @@ make test-examples-typescript
 > tsc
 
 
-up to date, audited 7 packages in 845ms
+up to date, audited 58 packages in 1s
+
+15 packages are looking for funding
+  run `npm fund` for details
 
 found 0 vulnerabilities
 
@@ -19,7 +22,7 @@ found 0 vulnerabilities
 ✅ [32mTypeScript client built![0m
 🧪 [36mRunning TypeScript client library examples...[0m
 
-added 1 package, removed 1 package, and audited 13 packages in 661ms
+added 1 package, removed 1 package, and audited 13 packages in 820ms
 
 3 packages are looking for funding
   run `npm fund` for details
@@ -29,23 +32,23 @@ found 0 vulnerabilities
 
 === Insert Document ===
 Inserted: {
-  id: 'hZ2ERKSh2N_9d85MXl37TWx2L6221p4kenhShpKqYvrslKXpGdRF92ZH4_YX8CRDwV6pPHfNC-xOXgqbk3J28g'
+  id: 'qp0GAShJIxFYG-OdZIqRASYVr2cyO7-GbmmGuNJNGlXTsNHhZfPfMUh95Mq9TGZ3aFeej2tKp3GbTNm_N0QElw'
 }
 
 === Find by ID ===
 Found: {
-  metadata: { type: 'Object', value: { nested: [Object], key: 'value' } },
   price: { type: 'Float', value: 99.99 },
+  data: { value: 'aGVsbG8gd29ybGQ=', type: 'String' },
   categories: { type: 'Array', value: [ 'electronics', 'computers' ] },
-  user_id: { value: '550e8400-e29b-41d4-a716-446655440000', type: 'String' },
-  active: { type: 'Boolean', value: true },
-  data: { type: 'String', value: 'aGVsbG8gd29ybGQ=' },
-  embedding: { value: [ 0.1, 0.2, 0.3, 0.4, 0.5 ], type: 'Array' },
+  metadata: { type: 'Object', value: { key: 'value', nested: [Object] } },
   tags: { value: [ 'tag1', 'tag2', 'tag3' ], type: 'Array' },
-  id: 'hZ2ERKSh2N_9d85MXl37TWx2L6221p4kenhShpKqYvrslKXpGdRF92ZH4_YX8CRDwV6pPHfNC-xOXgqbk3J28g',
+  value: { value: 42, type: 'Integer' },
+  embedding: { type: 'Array', value: [ 0.1, 0.2, 0.3, 0.4, 0.5 ] },
+  active: { value: true, type: 'Boolean' },
+  user_id: { type: 'String', value: '550e8400-e29b-41d4-a716-446655440000' },
   name: { type: 'String', value: 'Test Record' },
-  created_at: { type: 'DateTime', value: '2026-01-03T09:51:28.852Z' },
-  value: { type: 'Integer', value: 42 }
+  id: 'qp0GAShJIxFYG-OdZIqRASYVr2cyO7-GbmmGuNJNGlXTsNHhZfPfMUh95Mq9TGZ3aFeej2tKp3GbTNm_N0QElw',
+  created_at: { type: 'DateTime', value: '2026-01-04T00:31:11.367Z' }
 }
 
 === Extract Field Values (All Types) ===
@@ -54,26 +57,26 @@ Extracted values:
   value (Integer): 42
   active (Boolean): true
   price (Decimal): 99.99
-  created_at (DateTime): 2026-01-03T09:51:28.852Z
+  created_at (DateTime): 2026-01-04T00:31:11.367Z
   user_id (UUID): 550e8400-e29b-41d4-a716-446655440000
   tags (Array): [ 'tag1', 'tag2', 'tag3' ]
-  metadata (Object): { nested: { deep: true }, key: 'value' }
+  metadata (Object): { key: 'value', nested: { deep: true } }
   embedding (Vector): [ 0.1, 0.2, 0.3, 0.4, 0.5 ]
   categories (Set): [ 'electronics', 'computers' ]
   data (Bytes): 11 bytes
 Plain record: {
-  metadata: { nested: { deep: true }, key: 'value' },
   price: 99.99,
-  categories: [ 'electronics', 'computers' ],
-  user_id: '550e8400-e29b-41d4-a716-446655440000',
-  active: true,
   data: 'aGVsbG8gd29ybGQ=',
-  embedding: [ 0.1, 0.2, 0.3, 0.4, 0.5 ],
+  categories: [ 'electronics', 'computers' ],
+  metadata: { key: 'value', nested: { deep: true } },
   tags: [ 'tag1', 'tag2', 'tag3' ],
-  id: 'hZ2ERKSh2N_9d85MXl37TWx2L6221p4kenhShpKqYvrslKXpGdRF92ZH4_YX8CRDwV6pPHfNC-xOXgqbk3J28g',
+  value: 42,
+  embedding: [ 0.1, 0.2, 0.3, 0.4, 0.5 ],
+  active: true,
+  user_id: '550e8400-e29b-41d4-a716-446655440000',
   name: 'Test Record',
-  created_at: '2026-01-03T09:51:28.852Z',
-  value: 42
+  id: 'qp0GAShJIxFYG-OdZIqRASYVr2cyO7-GbmmGuNJNGlXTsNHhZfPfMUh95Mq9TGZ3aFeej2tKp3GbTNm_N0QElw',
+  created_at: '2026-01-04T00:31:11.367Z'
 }
 
 === Find with Query ===
@@ -81,18 +84,18 @@ Found documents: 1
 
 === Update Document ===
 Updated: {
-  metadata: { value: { nested: [Object], key: 'value' }, type: 'Object' },
-  tags: { type: 'Array', value: [ 'tag1', 'tag2', 'tag3' ] },
+  name: { value: 'Updated Record', type: 'String' },
   data: { type: 'String', value: 'aGVsbG8gd29ybGQ=' },
-  user_id: { type: 'String', value: '550e8400-e29b-41d4-a716-446655440000' },
-  value: { value: 100, type: 'Integer' },
-  id: 'hZ2ERKSh2N_9d85MXl37TWx2L6221p4kenhShpKqYvrslKXpGdRF92ZH4_YX8CRDwV6pPHfNC-xOXgqbk3J28g',
+  value: { type: 'Integer', value: 100 },
+  metadata: { value: { key: 'value', nested: [Object] }, type: 'Object' },
+  id: 'qp0GAShJIxFYG-OdZIqRASYVr2cyO7-GbmmGuNJNGlXTsNHhZfPfMUh95Mq9TGZ3aFeej2tKp3GbTNm_N0QElw',
   categories: { value: [ 'electronics', 'computers' ], type: 'Array' },
-  created_at: { type: 'DateTime', value: '2026-01-03T09:51:28.852Z' },
+  created_at: { type: 'DateTime', value: '2026-01-04T00:31:11.367Z' },
   active: { type: 'Boolean', value: true },
+  tags: { type: 'Array', value: [ 'tag1', 'tag2', 'tag3' ] },
+  price: { value: 99.99, type: 'Float' },
   embedding: { type: 'Array', value: [ 0.1, 0.2, 0.3, 0.4, 0.5 ] },
-  name: { type: 'String', value: 'Updated Record' },
-  price: { type: 'Float', value: 99.99 }
+  user_id: { value: '550e8400-e29b-41d4-a716-446655440000', type: 'String' }
 }
 
 === Delete Document ===
@@ -124,15 +127,15 @@ Deleted document
 ✓ Set key: session:user123
 
 === KV Get ===
-Retrieved value: { userId: 123, username: 'john_doe' }
+Retrieved value: { username: 'john_doe', userId: 123 }
 
 === Set Multiple Keys ===
 ✓ Set 3 keys
 
 === Get Multiple Keys ===
 cache:product:1: { price: 29.99, name: 'Product 1' }
-cache:product:2: { name: 'Product 2', price: 39.989999999999995 }
-cache:product:3: { name: 'Product 3', price: 49.989999999999995 }
+cache:product:2: { price: 39.989999999999995, name: 'Product 2' }
+cache:product:3: { price: 49.989999999999995, name: 'Product 3' }
 
 === KV Exists ===
 Key exists: true
@@ -154,11 +157,11 @@ Total keys in store: 4
 ✓ Client created
 
 === Create Collection (via insert) ===
-Collection created with first record: r06iZtsqwfiY3HvxHFY02yENMaESJznJl8eTS0U8CR1VQIYmj6SbSPqcx4W8CTFbLn7Xx9b6VdcXeGkYwmmBjA
+Collection created with first record: pA4l9oHEL6VnWTgxHeSxYnasZcXGpjqzKW-VTwkfiQWJbeJtK2h1WOXfsiVsZMttnDoiOeJv4Z_ErWiwsQqIXg
 
 === List Collections ===
 Total collections: 18
-Sample collections: test_accounts,schema_users_client_go,client_collection_management_ts,schema_employees_client_go,ttl_cache
+Sample collections: ttl_cache,schema_products_client_py,schema_documents_client_go,batch_users,test_collection
 
 === Count Documents ===
 Document count: 1
@@ -173,10 +176,10 @@ Collection still exists: false
 ✓ Client created
 
 === Insert Document with TTL (1 hour) ===
-✓ Inserted document: v1fOVp5jhBN8dYwrmlhYEibG7kC3TYT8YXKvVdRlsALI3twTdFxtJpS0W-pdxVf2DJnlDsm5k-1dfUqw1xrrfQ
+✓ Inserted document: zlZDcp7wMsg9jR-MPtkl9ulVX0QPZDOU9YmhX2ounbH0uDyiItGG-aOZa0zoRPTBrp08n5XDPO0CNlQDoRlbMw
 
 === Insert Document with TTL (5 minutes) ===
-✓ Inserted document: LvkVQwMievbOovAjq-aYB2JBGvkAdVltKeLSsf_vHxPlcExtJ0nj_EPfn5L-LfWoHezdthLfxwzBLS2YPErMbg
+✓ Inserted document: AWHZMW0X1qQxRf7S4svGMdTd6_uTieRVeZrVBSWBDNZKv4t8KWuXdlURY5wu8Q-jMOaW0T15K6yDYKsEZzZoKg
 
 === Query Documents ===
 ✓ Found 2 documents with TTL
@@ -196,7 +199,7 @@ Collection still exists: false
 ✓ Client created
 
 === Inserting Test Data ===
-✓ Inserted test record: ws367Y0WVPj7aaVdBR1bLPXesRqKbLYesaipwLVTZzb3CKg6TYX0XEE-Wu3PrC7w_KsX21Worc06sROsw2Q7hQ
+✓ Inserted test record: WnSDzPzNjDGgZKLoS9B737KYeh0lAR1dUFbuXbvsSsnUjbVO2wxAUaCNXr0KMT9Wf_PoOxzGZ4mAxlUFM4Bsog
 
 === Connecting to WebSocket ===
 ✓ WebSocket connected
@@ -212,7 +215,7 @@ Collection still exists: false
 ✓ Client created
 
 === Insert Test Data with TTL ===
-✓ Inserted document with TTL: J9-vEWJGZMeAhn5ui9uMWr7szDCutLHPHrTkFVKlcVTJwOv16bpfn_mFbKD5GA2ebO3XZ6RFMHnKKbnpx9klbA
+✓ Inserted document with TTL: c1C4QgDfodf7uYNYercrYIMPeljiAdEmNplGEnJcN0rGC0NfBl4h7qP4zlqXCDFsurXm6iDDmGlCsVUJx86K-w
 
 === Query via WebSocket ===
 ✓ WebSocket connected
@@ -231,26 +234,28 @@ Collection still exists: false
 ✓ Inserted 3 sample documents
 
 === Creating Chat Session ===
-✓ Created session: THUFBEFfdkmCMHn2hdYXm4n0jJJ9YnsomL5MpahhsHwun4UkrANjuobwskFCQzkTmcJPnE9KBefdHotFCGlrBQ
+✓ Created session: TX_DOulhqROP3QYBNpg9VSl2sqDE2_GxFX--WbOcwpWJCNRFqcjG4R2LST5CoLsHQ_ekD-UX7x18CSrmPA6NnQ
 
 === Sending Chat Message ===
-Message ID: 4-9lnihgjt8USsPnGXsFcUm8VC7BXNwKQUuFHKZjJRdOx0wapWahWEBFctthZBRsWWM8VWXaI9biFJCP7-1Yvw
+Message ID: 2cN3IuLOelcKrOktcAzlBs1IwXUkmYXYKF4LCk1sWYt9E7i2XJU_xxNo1nPojj6sU6XE1M6oSaUOoRHmKx4sMQ
 
 === AI Response ===
-There are three products available:
+The products available are:
 
-1. ekoDB - A high-performance database product with AI capabilities, priced at $99.
-2. ekoDB Pro - An enterprise edition product with advanced features, priced at $299.
-3. ekoDB Cloud - A fully managed cloud database service product, priced at $499.
+1. ekoDB Pro: This is an enterprise edition product with advanced features. The price for this product is $299.
+
+2. ekoDB Cloud: This is a fully managed cloud database service product. The price for this product is $499.
+
+3. ekoDB: This is a high-performance database product with AI capabilities. The price for this product is $99.
 
 === Context Used (3 snippets) ===
   Snippet 1: {
   collection: 'client_chat_basic_ts',
   record: {
-    price: 299,
+    description: 'Enterprise edition product with advanced features',
     name: 'ekoDB Pro',
-    id: 'cRxzon1HZjl6InRD0VHP4nMSvDRzDm5mwM80jmqn-ViMURHk0PRqWjI9YF-nuBfKJwDpVNoHo8Rsg88IuausTw',
-    description: 'Enterprise edition product with advanced features'
+    id: '8ljXMK-53dBfCFJuGhHJSFHyiM75Okug1swQHe_D0_U4YE9SuzE0jeL_jVEsivvz094oKsukC2ojTIblwynCvg',
+    price: 299
   },
   score: 0.1111111111111111,
   matched_fields: [ 'description' ]
@@ -258,10 +263,10 @@ There are three products available:
   Snippet 2: {
   collection: 'client_chat_basic_ts',
   record: {
-    name: 'ekoDB',
-    description: 'A high-performance database product with AI capabilities',
-    id: 'uiCcYZq4KFdMJ7XNqVXqK8EFFUEP8SGc93XZEVkpqBIvMkYIeVUvNnPB-EsAY23_YYWthigDA0ZtBqryPMkhfQ',
-    price: 99
+    id: '7E4uOaSRK43g8U9zFpxBrgv1LF640hGDRhbciF22fz6j3eo06NWDnaHMQtvyHuhxTxMAbjC6kFCJJCjuOUKFmQ',
+    description: 'Fully managed cloud database service product',
+    name: 'ekoDB Cloud',
+    price: 499
   },
   score: 0.1111111111111111,
   matched_fields: [ 'description' ]
@@ -269,21 +274,21 @@ There are three products available:
   Snippet 3: {
   collection: 'client_chat_basic_ts',
   record: {
-    name: 'ekoDB Cloud',
-    id: 'noHSSG6sSdfnkzEHWylRLG_rNmUQPfkapFbDWqnHP7GQRXBi2gb41I8sdOUVhtPFTdKO2W8NDORBrWn7MhIZVA',
-    price: 499,
-    description: 'Fully managed cloud database service product'
+    price: 99,
+    description: 'A high-performance database product with AI capabilities',
+    name: 'ekoDB',
+    id: 'ctRcKwPHDjKi0q71QhXixuYr_gvhMQBEnya1PQDzPD6clVgmyoy72vPacIxv3pGW4ehMJzDYNfyhjMsLpuPFOg'
   },
   score: 0.1111111111111111,
   matched_fields: [ 'description' ]
 }
 
-Execution Time: 1809ms
+Execution Time: 3411ms
 
 === Token Usage ===
-Prompt tokens: 603
-Completion tokens: 66
-Total tokens: 669
+Prompt tokens: 599
+Completion tokens: 83
+Total tokens: 682
 
 === Cleanup ===
 ✓ Deleted collection
@@ -295,11 +300,11 @@ Total tokens: 669
 ✓ Inserted sample product
 
 === Creating Chat Session ===
-✓ Created session: g-_bT_eNpoXLhbWtsQaFoZBaZ1XThT42geudrg3gWt0bMgB0VETxtXs4hKsIQmF4MmT_GAvKMB-QqQC3FIzFhA
+✓ Created session: bWGPxRS0ic4XsrV8RsXsr1MmTxtNBKlG1v2LOTwmYGS7gJaxEzmp-X41KsSNLhmg-Z7KpUcs0umjPCWdxq-K7g
 
 === Sending Messages ===
 ✓ Message 1 sent
-  Response: Answer: The product available according to the provided context is "ekoDB". It is a high-performance database product.
+  Response: Based on the information I have, one product that is available is "ekoDB". It is a high-performance database product and is priced at $99.
 
 ✓ Message 2 sent
   Response: The price of the ekoDB product is $99.
@@ -311,28 +316,28 @@ Total tokens: 669
 ✓ Session updated
 
 === Branching Session ===
-✓ Created branch: fo0Jvez4Z0G95m88_BG8MxDasRd8Dk-jR2kbMF-lzgCLAiHbCvuCYkNCWOBwK392uYLyozoatkkyGdGF5wHuEQ
-  Parent: g-_bT_eNpoXLhbWtsQaFoZBaZ1XThT42geudrg3gWt0bMgB0VETxtXs4hKsIQmF4MmT_GAvKMB-QqQC3FIzFhA
+✓ Created branch: fleuzb-jXI-jRyE2LP90r8Cfvgz1w-4zWbh0tr4wqgtmorVIYgjj9a0o2KMrZCw_t6bel8uCb7l6Wts0Sr5LIQ
+  Parent: bWGPxRS0ic4XsrV8RsXsr1MmTxtNBKlG1v2LOTwmYGS7gJaxEzmp-X41KsSNLhmg-Z7KpUcs0umjPCWdxq-K7g
 
 === Listing Sessions ===
 ✓ Found 10 sessions
-  Session 1: fo0Jvez4Z0G95m88_BG8MxDasRd8Dk-jR2kbMF-lzgCLAiHbCvuCYkNCWOBwK392uYLyozoatkkyGdGF5wHuEQ (Untitled)
-  Session 2: g-_bT_eNpoXLhbWtsQaFoZBaZ1XThT42geudrg3gWt0bMgB0VETxtXs4hKsIQmF4MmT_GAvKMB-QqQC3FIzFhA (Untitled)
-  Session 3: THUFBEFfdkmCMHn2hdYXm4n0jJJ9YnsomL5MpahhsHwun4UkrANjuobwskFCQzkTmcJPnE9KBefdHotFCGlrBQ (Untitled)
-  Session 4: aRl2LkGcRd7T25p5PRat3KIdAs16ofTpaDxFNR29iOaKKEM6fI71deiXeF0clC7DGdm3GL9KoHsZbKVfRlwKSg (Untitled)
-  Session 5: cW1cPq-jltIWG_-9ktoHU7rmTVOUdCHtyHfIf3qKNv2xf70zgTMgqEs5j74CEdrtwEPO8J8FdZPBC7ZzrPe3EA (Untitled)
-  Session 6: IA5-rWYt2lejYRO9aNTZg4W-5TeMAvxB42a9TSCPeQw1CwR_yBAuwn2TANGMOssgAlVBKIqvHCr9wPW1BHcn5g (Untitled)
-  Session 7: kjK1pDTNLOKHPH9OvZuvvQLFzTMCSQt-byLD2bA78E2U9VUsJHSz_I5zfuQo1BXHoSW53CpQnsFBhK4Q530HVw (Untitled)
-  Session 8: r8-q1NPgr8SOnlJxjWfntm6zuChhix2h6xtYe5ervcSBCOE-h8CFI_i7m9pJxLVzK_gop-dpdEHNtpNLVEH2Zg (Untitled)
-  Session 9: YQzzCfZjPdw5kP1aBN6THyY1bRvLMtCvolkzyPoRuQRuLMHMWeb6xYWJbJXPi-iZTzqBLMxeJJFJzPXJlfwLbQ (Untitled)
-  Session 10: kjC5gFDXqUMkJtTG9oQxoJ4GZsqn4-JnYCiIcGGKMR0243BGdCUoT_VC4DQP5SHwUY2nER_UmhkyajKM6mJdfQ (Untitled)
+  Session 1: fleuzb-jXI-jRyE2LP90r8Cfvgz1w-4zWbh0tr4wqgtmorVIYgjj9a0o2KMrZCw_t6bel8uCb7l6Wts0Sr5LIQ (Untitled)
+  Session 2: bWGPxRS0ic4XsrV8RsXsr1MmTxtNBKlG1v2LOTwmYGS7gJaxEzmp-X41KsSNLhmg-Z7KpUcs0umjPCWdxq-K7g (Untitled)
+  Session 3: TX_DOulhqROP3QYBNpg9VSl2sqDE2_GxFX--WbOcwpWJCNRFqcjG4R2LST5CoLsHQ_ekD-UX7x18CSrmPA6NnQ (Untitled)
+  Session 4: VRHWIC7kF05GxbyDMiUw3FVNimhEZRsjE5BzXOgppbkEvI0gPniZaKTNKA-Ta9tI1IjBFEdeIT2myg1F_JvQ4g (Untitled)
+  Session 5: PJ8nggyQAzxxbTPNehaA9ppN_05e5b5tbmQFUBTc1fBMGrb9aGE7lYK6i9vyy0vBfrOLFoD_REB7ukGOYzECWQ (Untitled)
+  Session 6: O0e5OhjkxTgEk947WT4uU8b5O7jaV8ukCVC1jT4HoUVUxWYNjIQW59gljpW6ScYuz8eBNtjDRB7XPM1v_2XhTQ (Untitled)
+  Session 7: 6V4Pa6UrFZn93O2rj4Xl2oPWQBRhE5NdBj-mVQPTiEg9jLGGJBmAYi4aMsrNyEos-WdgVlcHz9orGRnSM0okww (Untitled)
+  Session 8: otL5_twubZAn9rGrc4bEFnd5xkY4aS2V7VeuBxE3pivjxf5HDsQBPB-gbnqrtwHNe0x-K4V_bsQIlymnQFDwSw (Untitled)
+  Session 9: 9_Jjc959t0oHyhGBza3R3NQbjHYLRTpswpfQR5l9OKH7tCF_LGFPkB1rbqnKFjS45RdDuv67_0nCrE_yC0eGJw (Untitled)
+  Session 10: nG-we3gQtp1gSDq6fq6xMPlJ-4gSKMIesqqHvUqGbz21aNYku8Q_W2jLmV6iL1vTODEep_b5rEryHUaH2yHB-g (Untitled)
 
 === Getting Session Details ===
 ✓ Session details retrieved
   Messages: 4
 
 === Deleting Branch Session ===
-✓ Deleted branch session: fo0Jvez4Z0G95m88_BG8MxDasRd8Dk-jR2kbMF-lzgCLAiHbCvuCYkNCWOBwK392uYLyozoatkkyGdGF5wHuEQ
+✓ Deleted branch session: fleuzb-jXI-jRyE2LP90r8Cfvgz1w-4zWbh0tr4wqgtmorVIYgjj9a0o2KMrZCw_t6bel8uCb7l6Wts0Sr5LIQ
 
 === Cleanup ===
 ✓ Deleted collection
@@ -344,11 +349,11 @@ Total tokens: 669
 ✓ Inserted sample product
 
 === Creating Chat Session ===
-✓ Created session: RqHn5Rv7510ycwxyLP4Dj_qeNVOsdk6NIIWCuMIXSOkgEChTPudSesTWL_EKha3vq9T88BeWLkWYravcpNhsag
+✓ Created session: 4PvMPZSvcexbluA75ghWVxfayg-0oWMhNELHe3l2DsRQ2RGoV0B4MfoLAhh_axFYwVuucRG4I9GBCee0npvlPA
 
 === Sending Initial Message ===
 ✓ Message sent
-  Response: Currently, the available product is ekoDB, which is a high-performance database product. It is priced at $99.
+  Response: Based on the context provided, one available product is "ekoDB". It is a high-performance database product. The price for ekoDB is $99.
 
 ✓ Second message sent
 
@@ -365,7 +370,7 @@ Total tokens: 669
 ✓ Message unmarked as forgotten
 
 === Feature 4: Merge Chat Sessions ===
-✓ Created second session: JGeXXCkOoElfPsWHUpLTVXdLCBr0umT43ZDLGkWabp_fOmMK_meJTdznkscieQlsmFufkGttBgS4SYVAO_pNqw
+✓ Created second session: 5SEaJb-mU5v5VYrvgH9Opdx9l83D41Dcrwc0CwBJnAzNkUVTLgKL0APa0JhyfgWb046Oa_g2c3gy_kB1XKQF4Q
 ✓ Sent message in second session
 ✓ Sessions merged successfully
   Total messages in merged session: 4
@@ -420,47 +425,47 @@ Setting up test data...
 
 1. Basic full-text search:
 Found 2 results
-  1. Score: 25.740, Matched: email, email.value, name.value, name
-  2. Score: 12.540, Matched: name.value, name
+  1. Score: 25.740, Matched: email.value, name, email, name.value
+  2. Score: 12.540, Matched: name, name.value
 
 2. Fuzzy search (typo tolerance):
 Found 4 results with fuzzy matching
-  1. Score: 26.400, Matched: title.value, bio, bio.value, title
-  2. Score: 26.400, Matched: bio.value, title.value, bio, title
-  3. Score: 26.400, Matched: title.value, title, bio.value, bio
-  4. Score: 26.400, Matched: bio.value, bio, title, title.value
+  1. Score: 26.400, Matched: title.value, bio.value, title, bio
+  2. Score: 26.400, Matched: title, title.value, bio, bio.value
+  3. Score: 26.400, Matched: bio, title, bio.value, title.value
+  4. Score: 26.400, Matched: title.value, title, bio, bio.value
 
 3. Search with field weights:
 Found 4 results with weighted fields
-  1. Score: 39.600, Matched: bio, bio.value, title, title.value
-  2. Score: 39.600, Matched: title, bio, title.value, bio.value
-  3. Score: 39.600, Matched: bio, title, bio.value, title.value
-  4. Score: 39.600, Matched: bio, title.value, title, bio.value
+  1. Score: 39.600, Matched: title, bio, title.value, bio.value
+  2. Score: 39.600, Matched: title, title.value, bio, bio.value
+  3. Score: 39.600, Matched: bio.value, bio, title.value, title
+  4. Score: 39.600, Matched: title, bio.value, bio, title.value
 
 4. Search with minimum score threshold:
 Found 2 results with score >= 0.3
   1. Score: 13.200, Matched: bio, bio.value
-  2. Score: 13.200, Matched: bio, bio.value
+  2. Score: 13.200, Matched: bio.value, bio
 
 5. Search with stemming and exact match boosting:
 Found 1 results (matches: work, working, worked)
-  1. Score: 13.200, Matched: bio, bio.value
+  1. Score: 13.200, Matched: bio.value, bio
 
 6. Vector search (semantic search):
 Found 3 semantically similar documents
-  1. Score: 0.756, Matched: 
-  2. Score: 0.741, Matched: 
-  3. Score: 0.736, Matched: 
+  1. Score: 0.755, Matched: 
+  2. Score: 0.747, Matched: 
+  3. Score: 0.726, Matched: 
 
 7. Hybrid search (text + vector):
 Found 3 results using hybrid search (text + vector)
-  1. Score: 2.694, Matched: title.value, content.value, title, content
-  2. Score: 1.502, Matched: content, title, title.value, content.value
-  3. Score: 0.296, Matched: 
+  1. Score: 2.699, Matched: title, content, title.value, content.value
+  2. Score: 1.490, Matched: title, content.value, title.value, content
+  3. Score: 0.302, Matched: 
 
 8. Case-sensitive search:
 Found 1 results (case-sensitive)
-  1. Score: 26.400, Matched: bio.value, skills, bio, skills.value
+  1. Score: 26.400, Matched: skills.value, skills, bio, bio.value
 
 === Cleanup ===
 ✅ Deleted test collections
@@ -495,8 +500,8 @@ Setting up sample data...
 
 1. Single collection join (users with departments):
 Found 2 users with department data:
-  - Bob Smith: Sales
   - Alice Johnson: Engineering
+  - Bob Smith: Sales
 
 2. Join with filtering:
 Found 1 users in Engineering:
@@ -504,8 +509,8 @@ Found 1 users in Engineering:
 
 3. Join with user profiles:
 Found 2 users with profile data:
-  - Bob Smith: Sales Manager
   - Alice Johnson: Senior Software Engineer
+  - Bob Smith: Sales Manager
 
 4. Join orders with user data:
 Found 2 completed orders:
@@ -528,20 +533,20 @@ Found 2 users with example.com emails:
 
 📝 Example 1: Simple Query Script
 
-✅ Script saved: DXu3oI_nCag5eyD79RDmV4yZf-YjfTVxOpitZclxZBMXNZgu3nX-I_B6v-5_VqSul7LRTqEQzj8I92QtbDGI3Q
+✅ Script saved: WWOPHFPcHSP305a7jOVlTwmETrcXxXkXLw8UbEuUYIqi-w7uBHuu7TSVzsJ-lQbavV2Kf4m5vHgWqhvgOjgU4A
 📊 Found 10 active users
 
 📝 Example 2: Parameterized Script
 
-✅ Script saved: 1q2EpYU64cVU02PEtiR9HSLtU2HbchcaEPGXmGaxLDtIZkkQFW5j0jfCAIIN1etUlf-dth8CVTU_s3X3p73_Hg
+✅ Script saved: EJh5PISuPssIxK5UWcYy6O1qx2t2SXEzLiFN4Q8HLpjUXgHDGi79TNCco3JPTJyrJwA0CExGd0wBv6dgVEdOng
 📊 Found 10 users (limited)
 
 📝 Example 3: Aggregation Script
 
-✅ Script saved: ry8oKS4zZwAKjURsZBYGAuQvsIXBgzEmMvAUxEJs2wOsdbLZjoI5sYEY6M6Uu23g4eTVK0TyILH9VUOzr6wJyQ
+✅ Script saved: 3XxGjPHODWPPQXE7LP1rHa4Vdf42Ih7Jpxr4ymmTp7FLtL_3S5O1zwUmzuNPlKTr7lRPxvzUUSgoTso4wrwfrA
 📊 Statistics: 2 groups
-   {"status":"active","count":5,"avg_score":60}
-   {"count":5,"avg_score":50,"status":"inactive"}
+   {"count":5,"avg_score":60,"status":"active"}
+   {"status":"inactive","count":5,"avg_score":50}
 
 📝 Example 4: Script Management
 
@@ -562,10 +567,10 @@ Found 2 users with example.com emails:
 
 📝 Example 1: FindAll + Group (Simple Aggregation)
 
-✅ Script saved: 6U7oKn5ZfV7NpXgLVyScd5J3UhHXgFxwZSri502EW6cX1TyD6DO-pgbesQl4CFhzExUSb40W8NicwmxiqX_4Gw
+✅ Script saved: emLR9mHyFO_aINAGEjjcQvl-psL8wRTz5n2xHDZePNQdsaF3ow5jXZ52cXXC8X2Bb1B8L9Tghoao-kUsmwkOVA
 📊 Found 2 product groups
-   {"category":"Furniture","avg_price":474,"count":2}
-   {"category":"Electronics","count":3,"avg_price":575.6666666666666}
+   {"count":3,"avg_price":575.6666666666666,"category":"Electronics"}
+   {"avg_price":474,"category":"Furniture","count":2}
 ⏱️  Execution time: 0ms
 
 📝 Example 2: Simple Product Listing
@@ -578,8 +583,8 @@ Found 2 users with example.com emails:
 
 ✅ Script saved
 📊 Found 2 categories
-   {"category":"Furniture","count":2}
    {"count":3,"category":"Electronics"}
+   {"category":"Furniture","count":2}
 ⏱️  Execution time: 0ms
 
 📝 Example 4: High Rating Products
@@ -614,11 +619,11 @@ Found 2 users with example.com emails:
 ✓ Client created
 
 === Setup: Creating Test Accounts ===
-Created Alice: $1000 - ID: C9ePxBiKlVMTH9eg13HpgPXBzXBOVnu91LH8naA9zrZCkB6jlRTWnZPB2TIUN5bB9an9zwqUCOtp6gGtlC3_Yw
-Created Bob: $500 - ID: Bu4z6PxyhdOHzMhURYsn-W5NiC6sjCMzbPbtfxfyrzp890kNTACRHdm8Emy3O5AfDEQXYLhPOMrMZD8Zh9p3dQ
+Created Alice: $1000 - ID: WmzWIlkvYxnq8PHwIZElr5xofEYnV3dyu9HraXxGFn2ETneGFSiEqTQgGkpa_B8kB2ddyXsmXfN5UC_YCk80sQ
+Created Bob: $500 - ID: vrKAqLZN_v96yCm2TlCLPweZ5WXBZmp00mD0pL2E0nF5mJRO7dljAdyhLI8KHCIHW6b1-sssw1Bqv7pXPrc33Q
 
 === Example 1: Begin Transaction ===
-Transaction ID: 4c5a68b6-45c6-4bc9-a9b0-dc7a20a53db9
+Transaction ID: 406f762b-d1a4-47f0-a728-5325ef27f7ae
 
 === Example 2: Operations within Transaction ===
 Updated Alice: $1000 → $800 (simulated)
@@ -632,7 +637,7 @@ Operations: 0
 ✓ Transaction committed
 
 === Example 5: Rollback Demo ===
-New transaction: a94aedca-0a70-4791-8a6f-8c47c9de2518
+New transaction: 6cf5a515-2468-4ab5-a655-f8f7674c037e
 Status before rollback: Active
 ✓ Transaction rolled back
 
