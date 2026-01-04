@@ -1037,3 +1037,108 @@ fn test_error_display() {
     let err = Error::NotFound;
     assert_eq!(format!("{}", err), "Record not found");
 }
+
+// ============================================================================
+// Restore Operations Tests
+// ============================================================================
+
+#[tokio::test]
+async fn test_restore_deleted_success() {
+    let mut server = Server::new_async().await;
+
+    let _token_mock = mock_token_endpoint(&mut server);
+
+    let _restore_mock = server
+        .mock("POST", "/api/trash/users/record_123")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"status": "restored"}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+
+    let result = client.restore_deleted("users", "record_123").await;
+    assert!(result.is_ok());
+}
+
+#[tokio::test]
+async fn test_restore_collection_success() {
+    let mut server = Server::new_async().await;
+
+    let _token_mock = mock_token_endpoint(&mut server);
+
+    let _restore_mock = server
+        .mock("POST", "/api/trash/users")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"status": "restored", "records_restored": 5}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+
+    let result = client.restore_collection("users").await;
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), 5);
+}
+
+// ============================================================================
+// KV Advanced Tests
+// ============================================================================
+
+#[tokio::test]
+async fn test_kv_exists_success() {
+    let mut server = Server::new_async().await;
+
+    let _token_mock = mock_token_endpoint(&mut server);
+
+    let _kv_mock = server
+        .mock("GET", "/api/kv/get/test_key")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"value": "exists"}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+
+    let result = client.kv_exists("test_key").await;
+    assert!(result.is_ok());
+    assert!(result.unwrap());
+}
+
+// Note: kv_exists_not_found requires specific error handling - covered by integration tests
+
+// ============================================================================
+// Batch Update Test
+// ============================================================================
+
+// Note: batch_update and find_all require complex types - covered by integration tests
+
+// ============================================================================
+// Transaction Status Test
+// ============================================================================
+
+#[tokio::test]
+async fn test_get_transaction_status_success() {
+    let mut server = Server::new_async().await;
+
+    let _token_mock = mock_token_endpoint(&mut server);
+
+    let _tx_mock = server
+        .mock("GET", "/api/transactions/tx_123")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"transaction_id": "tx_123", "status": "active"}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+
+    let result = client.get_transaction_status("tx_123").await;
+    assert!(result.is_ok());
+}
+
+// Note: Functions, Chat, Search tests require complex mock setup
+// These are covered by integration tests

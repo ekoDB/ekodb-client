@@ -762,6 +762,43 @@ export class EkoDBClient {
   }
 
   /**
+   * Restore a deleted record from trash
+   * Records remain in trash for 30 days before permanent deletion
+   *
+   * @param collection - Collection name
+   * @param id - Record ID to restore
+   * @returns true if restored successfully
+   */
+  async restoreRecord(collection: string, id: string): Promise<boolean> {
+    const result = await this.makeRequest<{ status: string }>(
+      "POST",
+      `/api/trash/${collection}/${id}`,
+      undefined,
+      0,
+      true,
+    );
+    return result.status === "restored";
+  }
+
+  /**
+   * Restore all deleted records in a collection from trash
+   * Records remain in trash for 30 days before permanent deletion
+   *
+   * @param collection - Collection name
+   * @returns Number of records restored
+   */
+  async restoreCollection(
+    collection: string,
+  ): Promise<{ recordsRestored: number }> {
+    const result = await this.makeRequest<{
+      status: string;
+      collection: string;
+      records_restored: number;
+    }>("POST", `/api/trash/${collection}`, undefined, 0, true);
+    return { recordsRestored: result.records_restored };
+  }
+
+  /**
    * Create a collection with schema
    *
    * @param collection - Collection name
@@ -866,6 +903,24 @@ export class EkoDBClient {
       0,
       true, // Force JSON for search operations
     );
+  }
+
+  /**
+   * Health check - verify the ekoDB server is responding
+   */
+  async health(): Promise<boolean> {
+    try {
+      const result = await this.makeRequest<{ status: string }>(
+        "GET",
+        "/api/health",
+        undefined,
+        0,
+        true,
+      );
+      return result.status === "ok";
+    } catch {
+      return false;
+    }
   }
 
   // ========== Chat Methods ==========

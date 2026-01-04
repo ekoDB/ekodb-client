@@ -412,6 +412,76 @@ impl Client {
         })
     }
 
+    /// Restore a deleted record from trash
+    /// 
+    /// Args:
+    ///     collection: Collection name
+    ///     id: Record ID to restore
+    /// 
+    /// Returns:
+    ///     True if the record was restored, False if not found
+    fn restore_deleted<'py>(
+        &self,
+        py: Python<'py>,
+        collection: String,
+        id: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            let restored = client
+                .restore_deleted(&collection, &id)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("Restore deleted failed: {}", e)))?;
+
+            Python::attach(|py| {
+                Ok(PyBool::new(py, restored).as_borrowed().to_owned().into())
+            })
+        })
+    }
+
+    /// Restore all deleted records in a collection from trash
+    /// 
+    /// Args:
+    ///     collection: Collection name
+    /// 
+    /// Returns:
+    ///     Number of records restored
+    fn restore_collection<'py>(
+        &self,
+        py: Python<'py>,
+        collection: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            let count = client
+                .restore_collection(&collection)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("Restore collection failed: {}", e)))?;
+
+            Python::attach(|py| Ok(PyInt::new(py, count as i64).into()))
+        })
+    }
+
+    /// Health check - verify the ekoDB server is responding
+    /// 
+    /// Returns:
+    ///     True if the server is healthy, False otherwise
+    fn health_check<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            let result = client
+                .health_check()
+                .await;
+
+            Python::attach(|py| {
+                Ok(PyBool::new(py, result.is_ok()).as_borrowed().to_owned().into())
+            })
+        })
+    }
+
     /// Create a collection with optional schema
     /// 
     /// Args:

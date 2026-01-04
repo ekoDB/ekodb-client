@@ -284,6 +284,31 @@ impl Client {
         self.http.restore_deleted(collection, id, &token).await
     }
 
+    /// Restore all deleted records in a collection from trash
+    ///
+    /// # Arguments
+    ///
+    /// * `collection` - The collection name
+    ///
+    /// # Returns
+    ///
+    /// Number of records restored
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # use ekodb_client::Client;
+    /// # async fn example(client: &Client) -> Result<(), ekodb_client::Error> {
+    /// let count = client.restore_collection("users").await?;
+    /// println!("Restored {} records", count);
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn restore_collection(&self, collection: &str) -> Result<usize> {
+        let token = self.auth.get_token().await?;
+        self.http.restore_collection(collection, &token).await
+    }
+
     /// Batch insert multiple documents
     ///
     /// # Arguments
