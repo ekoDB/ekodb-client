@@ -494,7 +494,7 @@ export class EkoDBClient {
   /**
    * Find a document by ID
    */
-  async findByID(collection: string, id: string): Promise<Record> {
+  async findById(collection: string, id: string): Promise<Record> {
     return this.makeRequest<Record>("GET", `/api/find/${collection}/${id}`);
   }
 

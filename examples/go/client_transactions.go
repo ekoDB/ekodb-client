@@ -66,7 +66,7 @@ func main() {
 
 	// Example 1: Begin Transaction
 	fmt.Println("=== Example 1: Begin Transaction ===")
-	txID, err := client.BeginTransaction("ReadCommitted")
+	txID, err := client.BeginTransaction("READ_COMMITTED")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -95,7 +95,7 @@ func main() {
 
 	// Example 5: Rollback Demo
 	fmt.Println("=== Example 5: Rollback Demo ===")
-	txID2, err := client.BeginTransaction("ReadCommitted")
+	txID2, err := client.BeginTransaction("READ_COMMITTED")
 	if err != nil {
 		log.Fatal(err)
 	}
