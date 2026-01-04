@@ -290,7 +290,7 @@ dependencies = [
 
 [[package]]
 name = "ekodb-client-py"
-version = "0.7.0"
+version = "0.7.1"
 dependencies = [
  "ekodb_client",
  "pyo3",
@@ -302,7 +302,7 @@ dependencies = [
 
 [[package]]
 name = "ekodb_client"
-version = "0.7.0"
+version = "0.7.1"
 dependencies = [
  "async-compression",
  "base64",
