@@ -4,7 +4,6 @@ Unit tests for ekoDB Python client utility functions.
 Run with: pytest tests/ -v
 """
 
-import pytest
 from datetime import datetime
 from ekodb_client.utils import (
     get_value,
