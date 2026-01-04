@@ -397,7 +397,7 @@ test-ci:
 # ============================================================================
 #
 # Example Structure:
-#   - Direct API: Raw HTTP/WebSocket calls (in ttl-caching/ subdirectories)
+#   - Direct API: Raw HTTP/WebSocket calls
 #   - Client Library: Using language-specific client libraries
 #
 # Available targets:
@@ -760,6 +760,50 @@ test-examples-kt-swr:
 		exit 1; \
 	fi
 	@echo "✅ $(GREEN)Kotlin SWR examples complete!$(RESET)"
+
+# ============================================================================
+# TTL Verification Tests (verify TTL expiration actually works)
+# ============================================================================
+.PHONY: test-examples-ttl test-examples-ttl-go test-examples-ttl-js test-examples-ttl-py
+
+test-examples-ttl:
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "⏰ $(CYAN)TTL Expiration Verification Tests$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo ""
+	@echo "$(YELLOW)These tests VERIFY that TTL expiration actually works by:$(RESET)"
+	@echo "  1. Inserting documents with short TTL (2-5 seconds)"
+	@echo "  2. Verifying documents exist immediately"
+	@echo "  3. Waiting for TTL to expire"
+	@echo "  4. Verifying documents are GONE"
+	@echo ""
+	@$(MAKE) test-examples-ttl-go test-examples-ttl-js test-examples-ttl-py
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "✅ $(GREEN)All TTL Verification Tests Passed!$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+
+test-examples-ttl-go:
+	@echo ""
+	@echo "🔷 $(YELLOW)Go TTL Verification Tests...$(RESET)"
+	@cd examples/go/ttl && go run document_ttl.go
+	@cd examples/go/ttl && go run websocket_ttl.go
+	@echo "✅ $(GREEN)Go TTL tests complete!$(RESET)"
+
+test-examples-ttl-js:
+	@echo ""
+	@echo "📦 $(YELLOW)JavaScript TTL Verification Tests...$(RESET)"
+	@cd examples/javascript/ttl && node document_ttl.js
+	@cd examples/javascript/ttl && node websocket_ttl.js
+	@echo "✅ $(GREEN)JavaScript TTL tests complete!$(RESET)"
+
+test-examples-ttl-py:
+	@echo ""
+	@echo "🐍 $(YELLOW)Python TTL Verification Tests...$(RESET)"
+	@cd examples/python/ttl && python3 document_ttl.py
+	@cd examples/python/ttl && python3 websocket_ttl.py
+	@echo "✅ $(GREEN)Python TTL tests complete!$(RESET)"
 
 # ============================================================================
 # Rust Examples (both direct + client)

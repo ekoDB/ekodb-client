@@ -1,7 +1,7 @@
 // WebSocket TTL - Using ekodb-client-go library
 //
 // This example demonstrates WebSocket queries with TTL documents using the Go client library.
-// Compare with ttl-caching/websocket_ttl.go to see the difference!
+// Compare with websocket_ttl.go to see the difference!
 
 package main
 

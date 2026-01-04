@@ -2,7 +2,7 @@
 """Collection Management Examples - Using ekodb_client Python library
 
 This example demonstrates collection management using the Python client library.
-Compare with ttl-caching/collection_management.py to see the difference!
+Compare with collection_management.py to see the difference!
 """
 
 import asyncio

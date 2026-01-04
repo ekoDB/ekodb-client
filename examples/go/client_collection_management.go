@@ -1,7 +1,7 @@
 // Collection Management - Using ekodb-client-go library
 //
 // This example demonstrates collection management using the Go client library.
-// Compare with ttl-caching/collection_management.go to see the difference!
+// Compare with collection_management.go to see the difference!
 
 package main
 

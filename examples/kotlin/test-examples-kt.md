@@ -24,9 +24,9 @@ BUILD SUCCESSFUL in 3s
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.11.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build 
 > Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :processResources NO-SOURCE
-> Task :compileKotlin
+> Task :compileKotlin UP-TO-DATE
 > Task :compileJava NO-SOURCE
+> Task :processResources NO-SOURCE
 > Task :classes UP-TO-DATE
 
 > Task :run
@@ -36,11 +36,11 @@ SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
 === ekoDB Kotlin Client - Simple CRUD Example ===
 
 === Create ===
-✓ Inserted user: Record(fields={id=StringValue(value=fJi3RDyc4uo6Lg4kcbj69--JCiXwKrWd2Jmpev-orc0pY9XyFIvwb3AfYvawtZIaZS2hNFyKtXi_AAi-2FaYGA)})
-  User ID: fJi3RDyc4uo6Lg4kcbj69--JCiXwKrWd2Jmpev-orc0pY9XyFIvwb3AfYvawtZIaZS2hNFyKtXi_AAi-2FaYGA
+✓ Inserted user: Record(fields={id=StringValue(value=73mkvPW3NeqZYBh2JM6eDMpzB6nblFPFbj1AaEocM9L1xw67l-TGfWoDUO-UiwfyoZPyhbcx91-0LuzrE2E77A)})
+  User ID: 73mkvPW3NeqZYBh2JM6eDMpzB6nblFPFbj1AaEocM9L1xw67l-TGfWoDUO-UiwfyoZPyhbcx91-0LuzrE2E77A
 
 === Read ===
-✓ Found user by ID: Record(fields={embedding=ObjectValue(value={type=StringValue(value=Array), value=ArrayValue(value=[FloatValue(value=0.1), FloatValue(value=0.2), FloatValue(value=0.3), FloatValue(value=0.4), FloatValue(value=0.5)])}), data=ObjectValue(value={type=StringValue(value=Array), value=ArrayValue(value=[IntegerValue(value=104), IntegerValue(value=101), IntegerValue(value=108), IntegerValue(value=108), IntegerValue(value=111), IntegerValue(value=32), IntegerValue(value=119), IntegerValue(value=111), IntegerValue(value=114), IntegerValue(value=108), IntegerValue(value=100)])}), active=ObjectValue(value={type=StringValue(value=Boolean), value=BooleanValue(value=true)}), metadata=ObjectValue(value={type=StringValue(value=Object), value=ObjectValue(value={key=StringValue(value=value), nested=ObjectValue(value={deep=BooleanValue(value=true)})})}), user_id=ObjectValue(value={value=StringValue(value=550e8400-e29b-41d4-a716-446655440000), type=StringValue(value=String)}), categories=ObjectValue(value={value=ArrayValue(value=[StringValue(value=electronics), StringValue(value=computers)]), type=StringValue(value=Array)}), id=StringValue(value=fJi3RDyc4uo6Lg4kcbj69--JCiXwKrWd2Jmpev-orc0pY9XyFIvwb3AfYvawtZIaZS2hNFyKtXi_AAi-2FaYGA), age=ObjectValue(value={type=StringValue(value=Integer), value=IntegerValue(value=28)}), created_at=ObjectValue(value={type=StringValue(value=String), value=StringValue(value=Sun Jan 04 14:39:10 EST 2026)}), tags=ObjectValue(value={type=StringValue(value=Array), value=ArrayValue(value=[StringValue(value=tag1), StringValue(value=tag2), StringValue(value=tag3)])}), email=ObjectValue(value={type=StringValue(value=String), value=StringValue(value=alice@example.com)}), price=ObjectValue(value={type=StringValue(value=Float), value=FloatValue(value=99.99)}), name=ObjectValue(value={type=StringValue(value=String), value=StringValue(value=Alice Johnson)})})
+✓ Found user by ID: Record(fields={created_at=ObjectValue(value={value=StringValue(value=Sun Jan 04 17:32:39 EST 2026), type=StringValue(value=String)}), id=StringValue(value=73mkvPW3NeqZYBh2JM6eDMpzB6nblFPFbj1AaEocM9L1xw67l-TGfWoDUO-UiwfyoZPyhbcx91-0LuzrE2E77A), price=ObjectValue(value={type=StringValue(value=Float), value=FloatValue(value=99.99)}), age=ObjectValue(value={value=IntegerValue(value=28), type=StringValue(value=Integer)}), metadata=ObjectValue(value={type=StringValue(value=Object), value=ObjectValue(value={nested=ObjectValue(value={deep=BooleanValue(value=true)}), key=StringValue(value=value)})}), data=ObjectValue(value={type=StringValue(value=Array), value=ArrayValue(value=[IntegerValue(value=104), IntegerValue(value=101), IntegerValue(value=108), IntegerValue(value=108), IntegerValue(value=111), IntegerValue(value=32), IntegerValue(value=119), IntegerValue(value=111), IntegerValue(value=114), IntegerValue(value=108), IntegerValue(value=100)])}), active=ObjectValue(value={value=BooleanValue(value=true), type=StringValue(value=Boolean)}), tags=ObjectValue(value={type=StringValue(value=Array), value=ArrayValue(value=[StringValue(value=tag1), StringValue(value=tag2), StringValue(value=tag3)])}), categories=ObjectValue(value={type=StringValue(value=Array), value=ArrayValue(value=[StringValue(value=electronics), StringValue(value=computers)])}), embedding=ObjectValue(value={value=ArrayValue(value=[FloatValue(value=0.1), FloatValue(value=0.2), FloatValue(value=0.3), FloatValue(value=0.4), FloatValue(value=0.5)]), type=StringValue(value=Array)}), email=ObjectValue(value={type=StringValue(value=String), value=StringValue(value=alice@example.com)}), user_id=ObjectValue(value={value=StringValue(value=550e8400-e29b-41d4-a716-446655440000), type=StringValue(value=String)}), name=ObjectValue(value={value=StringValue(value=Alice Johnson), type=StringValue(value=String)})})
 
 === Extract Field Values (All Types) ===
 Extracted values:
@@ -49,24 +49,24 @@ Extracted values:
   age (Integer): 28
   active (Boolean): true
   price (Decimal): 99.99
-  created_at (DateTime): Sun Jan 04 14:39:10 EST 2026
+  created_at (DateTime): Sun Jan 04 17:32:39 EST 2026
   user_id (UUID): 550e8400-e29b-41d4-a716-446655440000
   tags (Array): [tag1, tag2, tag3]
-  metadata (Object): {key=value, nested={deep=true}}
+  metadata (Object): {nested={deep=true}, key=value}
   embedding (Vector): [0.1, 0.2, 0.3, 0.4, 0.5]
   categories (Set): [electronics, computers]
   data (Bytes): 11 bytes
-Record fields: [embedding, data, active, metadata, user_id, categories, id, age, created_at, tags, email, price, name]
+Record fields: [created_at, id, price, age, metadata, data, active, tags, categories, embedding, email, user_id, name]
 
 === Update ===
-✓ Updated user: Record(fields={name=ObjectValue(value={type=StringValue(value=String), value=StringValue(value=Alice Johnson)}), created_at=ObjectValue(value={value=StringValue(value=Sun Jan 04 14:39:10 EST 2026), type=StringValue(value=String)}), tags=ObjectValue(value={type=StringValue(value=Array), value=ArrayValue(value=[StringValue(value=tag1), StringValue(value=tag2), StringValue(value=tag3)])}), categories=ObjectValue(value={value=ArrayValue(value=[StringValue(value=electronics), StringValue(value=computers)]), type=StringValue(value=Array)}), city=ObjectValue(value={value=StringValue(value=San Francisco), type=StringValue(value=String)}), active=ObjectValue(value={type=StringValue(value=Boolean), value=BooleanValue(value=true)}), id=StringValue(value=fJi3RDyc4uo6Lg4kcbj69--JCiXwKrWd2Jmpev-orc0pY9XyFIvwb3AfYvawtZIaZS2hNFyKtXi_AAi-2FaYGA), user_id=ObjectValue(value={type=StringValue(value=String), value=StringValue(value=550e8400-e29b-41d4-a716-446655440000)}), embedding=ObjectValue(value={value=ArrayValue(value=[FloatValue(value=0.1), FloatValue(value=0.2), FloatValue(value=0.3), FloatValue(value=0.4), FloatValue(value=0.5)]), type=StringValue(value=Array)}), price=ObjectValue(value={type=StringValue(value=Float), value=FloatValue(value=99.99)}), data=ObjectValue(value={value=ArrayValue(value=[IntegerValue(value=104), IntegerValue(value=101), IntegerValue(value=108), IntegerValue(value=108), IntegerValue(value=111), IntegerValue(value=32), IntegerValue(value=119), IntegerValue(value=111), IntegerValue(value=114), IntegerValue(value=108), IntegerValue(value=100)]), type=StringValue(value=Array)}), metadata=ObjectValue(value={value=ObjectValue(value={key=StringValue(value=value), nested=ObjectValue(value={deep=BooleanValue(value=true)})}), type=StringValue(value=Object)}), email=ObjectValue(value={value=StringValue(value=alice@example.com), type=StringValue(value=String)}), age=ObjectValue(value={type=StringValue(value=Integer), value=IntegerValue(value=29)})})
+✓ Updated user: Record(fields={embedding=ObjectValue(value={type=StringValue(value=Array), value=ArrayValue(value=[FloatValue(value=0.1), FloatValue(value=0.2), FloatValue(value=0.3), FloatValue(value=0.4), FloatValue(value=0.5)])}), categories=ObjectValue(value={value=ArrayValue(value=[StringValue(value=electronics), StringValue(value=computers)]), type=StringValue(value=Array)}), age=ObjectValue(value={type=StringValue(value=Integer), value=IntegerValue(value=29)}), city=ObjectValue(value={type=StringValue(value=String), value=StringValue(value=San Francisco)}), metadata=ObjectValue(value={type=StringValue(value=Object), value=ObjectValue(value={nested=ObjectValue(value={deep=BooleanValue(value=true)}), key=StringValue(value=value)})}), active=ObjectValue(value={value=BooleanValue(value=true), type=StringValue(value=Boolean)}), user_id=ObjectValue(value={type=StringValue(value=String), value=StringValue(value=550e8400-e29b-41d4-a716-446655440000)}), email=ObjectValue(value={type=StringValue(value=String), value=StringValue(value=alice@example.com)}), created_at=ObjectValue(value={value=StringValue(value=Sun Jan 04 17:32:39 EST 2026), type=StringValue(value=String)}), price=ObjectValue(value={type=StringValue(value=Float), value=FloatValue(value=99.99)}), id=StringValue(value=73mkvPW3NeqZYBh2JM6eDMpzB6nblFPFbj1AaEocM9L1xw67l-TGfWoDUO-UiwfyoZPyhbcx91-0LuzrE2E77A), name=ObjectValue(value={type=StringValue(value=String), value=StringValue(value=Alice Johnson)}), tags=ObjectValue(value={value=ArrayValue(value=[StringValue(value=tag1), StringValue(value=tag2), StringValue(value=tag3)]), type=StringValue(value=Array)}), data=ObjectValue(value={type=StringValue(value=Array), value=ArrayValue(value=[IntegerValue(value=104), IntegerValue(value=101), IntegerValue(value=108), IntegerValue(value=108), IntegerValue(value=111), IntegerValue(value=32), IntegerValue(value=119), IntegerValue(value=111), IntegerValue(value=114), IntegerValue(value=108), IntegerValue(value=100)])})})
 
 === Query ===
 ✓ Found 1 users matching query
-  - Record(fields={categories=ObjectValue(value={value=ArrayValue(value=[StringValue(value=electronics), StringValue(value=computers)]), type=StringValue(value=Array)}), city=ObjectValue(value={type=StringValue(value=String), value=StringValue(value=San Francisco)}), data=ObjectValue(value={type=StringValue(value=Array), value=ArrayValue(value=[IntegerValue(value=104), IntegerValue(value=101), IntegerValue(value=108), IntegerValue(value=108), IntegerValue(value=111), IntegerValue(value=32), IntegerValue(value=119), IntegerValue(value=111), IntegerValue(value=114), IntegerValue(value=108), IntegerValue(value=100)])}), active=ObjectValue(value={type=StringValue(value=Boolean), value=BooleanValue(value=true)}), tags=ObjectValue(value={value=ArrayValue(value=[StringValue(value=tag1), StringValue(value=tag2), StringValue(value=tag3)]), type=StringValue(value=Array)}), user_id=ObjectValue(value={value=StringValue(value=550e8400-e29b-41d4-a716-446655440000), type=StringValue(value=String)}), created_at=ObjectValue(value={value=StringValue(value=Sun Jan 04 14:39:10 EST 2026), type=StringValue(value=String)}), embedding=ObjectValue(value={value=ArrayValue(value=[FloatValue(value=0.1), FloatValue(value=0.2), FloatValue(value=0.3), FloatValue(value=0.4), FloatValue(value=0.5)]), type=StringValue(value=Array)}), name=ObjectValue(value={type=StringValue(value=String), value=StringValue(value=Alice Johnson)}), price=ObjectValue(value={type=StringValue(value=Float), value=FloatValue(value=99.99)}), metadata=ObjectValue(value={type=StringValue(value=Object), value=ObjectValue(value={key=StringValue(value=value), nested=ObjectValue(value={deep=BooleanValue(value=true)})})}), id=StringValue(value=fJi3RDyc4uo6Lg4kcbj69--JCiXwKrWd2Jmpev-orc0pY9XyFIvwb3AfYvawtZIaZS2hNFyKtXi_AAi-2FaYGA), email=ObjectValue(value={type=StringValue(value=String), value=StringValue(value=alice@example.com)}), age=ObjectValue(value={value=IntegerValue(value=29), type=StringValue(value=Integer)})})
+  - Record(fields={metadata=ObjectValue(value={value=ObjectValue(value={nested=ObjectValue(value={deep=BooleanValue(value=true)}), key=StringValue(value=value)}), type=StringValue(value=Object)}), name=ObjectValue(value={type=StringValue(value=String), value=StringValue(value=Alice Johnson)}), email=ObjectValue(value={type=StringValue(value=String), value=StringValue(value=alice@example.com)}), created_at=ObjectValue(value={value=StringValue(value=Sun Jan 04 17:32:39 EST 2026), type=StringValue(value=String)}), age=ObjectValue(value={type=StringValue(value=Integer), value=IntegerValue(value=29)}), id=StringValue(value=73mkvPW3NeqZYBh2JM6eDMpzB6nblFPFbj1AaEocM9L1xw67l-TGfWoDUO-UiwfyoZPyhbcx91-0LuzrE2E77A), tags=ObjectValue(value={type=StringValue(value=Array), value=ArrayValue(value=[StringValue(value=tag1), StringValue(value=tag2), StringValue(value=tag3)])}), price=ObjectValue(value={type=StringValue(value=Float), value=FloatValue(value=99.99)}), user_id=ObjectValue(value={type=StringValue(value=String), value=StringValue(value=550e8400-e29b-41d4-a716-446655440000)}), categories=ObjectValue(value={type=StringValue(value=Array), value=ArrayValue(value=[StringValue(value=electronics), StringValue(value=computers)])}), city=ObjectValue(value={type=StringValue(value=String), value=StringValue(value=San Francisco)}), active=ObjectValue(value={value=BooleanValue(value=true), type=StringValue(value=Boolean)}), data=ObjectValue(value={type=StringValue(value=Array), value=ArrayValue(value=[IntegerValue(value=104), IntegerValue(value=101), IntegerValue(value=108), IntegerValue(value=108), IntegerValue(value=111), IntegerValue(value=32), IntegerValue(value=119), IntegerValue(value=111), IntegerValue(value=114), IntegerValue(value=108), IntegerValue(value=100)])}), embedding=ObjectValue(value={value=ArrayValue(value=[FloatValue(value=0.1), FloatValue(value=0.2), FloatValue(value=0.3), FloatValue(value=0.4), FloatValue(value=0.5)]), type=StringValue(value=Array)})})
 
 === Delete ===
-✓ Deleted user with ID: fJi3RDyc4uo6Lg4kcbj69--JCiXwKrWd2Jmpev-orc0pY9XyFIvwb3AfYvawtZIaZS2hNFyKtXi_AAi-2FaYGA
+✓ Deleted user with ID: 73mkvPW3NeqZYBh2JM6eDMpzB6nblFPFbj1AaEocM9L1xw67l-TGfWoDUO-UiwfyoZPyhbcx91-0LuzrE2E77A
 
 ✓ Confirmed user was deleted
 
@@ -75,8 +75,8 @@ Record fields: [embedding, data, active, metadata, user_id, categories, id, age,
 
 === Example Complete ===
 
-BUILD SUCCESSFUL in 9s
-2 actionable tasks: 2 executed
+BUILD SUCCESSFUL in 3s
+2 actionable tasks: 1 executed, 1 up-to-date
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.11.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build 
 > Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
@@ -93,7 +93,7 @@ SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
 
 === Batch Insert ===
 ✓ Inserted 5 records
-  IDs: NI5-q-JWYZEcgBt3usBylsRJJQa9-UHKc-q1XtsHyxktYcL3j153De4Bh4RrZV8B6BdRwFgiV-szTkJ6Mvb2Fw, 5-0DBd6FrZtskj9rrWTAc33QSAzZEJtxrO5cP-yaGikG8huweFHes9x2leBdlTy-O4SEbjcoRl3KiWP79geSWw, w5IyqyYk3IftqZ8QwEVEuQzx3wp38H3cXpxSk_bG49yYApjHDF-aQx07IY3mK4DZvS7EpE46b5bk9UNF-gT4WA...
+  IDs: i8-OBwva7cE3-Alwo7FiNQQGVTr5Dg-fg3CYOVMVNLof_ThwFQ3NnqVoFsFCmBehFWg3E0ugQfP2nSKrO6dAgg, tWi_r2ulpiVbAxlVXI5_pJ8bYx91F15SGdzlYuEwKSGjLu1fBjxx6hh_qIXHQF39BJzPOUCIr3OBELBUbspU5Q, cUFx4VJSuTV1oBVibLkrV_x6RaMpcVcEL0r_gyDZqUs2-pz4kGaTUdKftG5EnnqyVbbPv6zvR1TOxB6DD5TmwA...
 
 === Batch Update ===
 ✓ Updated 3 records
@@ -134,8 +134,8 @@ SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
 === Query 3: Sort by score (descending) ===
 ✓ Top 3 scores:
   - Score: ObjectValue(value={type=StringValue(value=Integer), value=IntegerValue(value=95)})
-  - Score: ObjectValue(value={type=StringValue(value=Integer), value=IntegerValue(value=92)})
-  - Score: ObjectValue(value={type=StringValue(value=Integer), value=IntegerValue(value=88)})
+  - Score: ObjectValue(value={value=IntegerValue(value=92), type=StringValue(value=Integer)})
+  - Score: ObjectValue(value={value=IntegerValue(value=88), type=StringValue(value=Integer)})
 
 === Query 4: Complex (score > 80 AND age >= 25) ===
 ✓ Found 4 high-scoring adults
@@ -176,13 +176,13 @@ SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
 ✓ Set key: user:123
 
 === KV Get ===
-✓ Retrieved value: {"role":"admin","email":"alice@example.com","name":"Alice"}
+✓ Retrieved value: {"name":"Alice","email":"alice@example.com","role":"admin"}
 
 === KV Set with TTL ===
 ✓ Set key with 10s TTL: session:abc123
 
 === Verify TTL Key ===
-✓ Session value: {"user_id":"123","created_at":1767555564170}
+✓ Session value: {"created_at":1767565972759,"user_id":"123"}
   (Will expire in 10 seconds)
 
 === Set Multiple Keys ===
@@ -226,11 +226,11 @@ SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
 
 === List Collections ===
 ✓ Found 21 collections
-  - schema_employees_client_ts
+  - schema_documents_client_ts
   - ttl_cache
-  - schema_products_client_py
-  - test_accounts
-  - schema_users_client_go
+  - schema_users_client_ts
+  - websocket_test
+  - chat_messages__ek0_testing
 
 === Check Collection Existence ===
 Collection 'kotlin_collection_example' exists: false
@@ -239,7 +239,7 @@ Collection 'kotlin_collection_example' exists: false
 ✓ Created collection with schema: kotlin_collection_example
 
 === Get Collection Schema ===
-✓ Schema: {"fields":{"name":{"field_type":"String","default":null,"unique":false,"required":true,"enums":[],"max":null,"min":null,"regex":null},"age":{"field_type":"Integer","default":null,"unique":false,"required":false,"enums":[],"max":null,"min":null,"regex":null}},"version":1,"created_at":"2026-01-04T19:39:28.465115Z","last_modified":"2026-01-04T19:39:28.465115Z","bypass_ripple":false,"primary_key_alias":"id"}
+✓ Schema: {"fields":{"age":{"field_type":"Integer","default":null,"unique":false,"required":false,"enums":[],"max":null,"min":null,"regex":null},"name":{"field_type":"String","default":null,"unique":false,"required":true,"enums":[],"max":null,"min":null,"regex":null}},"version":1,"created_at":"2026-01-04T22:32:57.094455Z","last_modified":"2026-01-04T22:32:57.094455Z","bypass_ripple":false,"primary_key_alias":"id"}
 
 === Cleanup ===
 ✓ Deleted collection: kotlin_collection_example
@@ -264,14 +264,14 @@ SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
 
 === Insert with TTL ===
 ✓ Inserted document with 10s TTL
-  Document ID: STOIja0m3pBmA8ueNF-ttDyQHW_sZODcHFqGKWbQSGQ_9ttDSGDg2biZqUqg57hNVHZSQoBnWaYo_Bqi2N24lg
+  Document ID: 2tauopborPjih7-TYQLA00aouoNI6MqQoOrDT_371oBYL-6W_q5jnRXLfjnOd-5AcnEPdIwLwVMrsyIAS9_gRg
 
 === Verify Document Exists ===
-✓ Document found: [session_id, created_at, user_id, id, ttl]
+✓ Document found: [session_id, created_at, id, user_id, ttl]
 
 === Insert with Longer TTL ===
 ✓ Inserted document with 1h TTL
-  Document ID: RxK2Wv0J3GW7mllXuwz9reshsIX5L4OMA2AZshW_AmLByoLoogDQ1IG9c2EIkim0PGfx1r2DI3KQpbRxCglDUA
+  Document ID: 85ZK_GXMPzkSjAORgtcy3VGYhkjhV8sERzPFJMOdbYkmN9NU4T8Fc2DdVN5YxXb94RHeSS2p_ucM7HW8SfLa7g
 
 === TTL Expiration ===
 ✓ Document will automatically expire after 10 seconds
@@ -314,7 +314,7 @@ SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
 
 === Find All via WebSocket ===
 ✓ WebSocket findAll result:
-  {"payload":{"data":[{"id":"a5XPfPtETyg2z3nS7gfVpNaVrXPRkpAZC2IZ3I3u7dosAucC3zTCVtqzbkfKGv1aLJhbwNNNgpJlJikKcJqzRQ","name":{"type":"String","value":"Test User"},"status":{"type":"String","value":"active"}}]},"type":"Success"}
+  {"payload":{"data":[{"id":"QOcZvX6oL0dXja73dnT2_y3CLr5qlCZdUzj-177gvaMrarjq94mZabs7UjoAKRpZmiDeFxSOP1ISiL_wUWJkIg","name":{"type":"String","value":"Test User"},"status":{"type":"String","value":"active"}}]},"type":"Success"}
 
 === Close WebSocket ===
 ✓ WebSocket closed
@@ -344,16 +344,16 @@ SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
 ✓ Created collection 'kotlin_schema_example' with schema
 
 === Inserting Valid Documents ===
-✓ Inserted user 1: StringValue(value=6AachGyt_8dA-_ghnfusBNdnDutC_eDj_0G0ka_uHv03zS_l78BdAganX-S9tinxvPVNIotMvdnDsCtwZo4G2Q)
-✓ Inserted user 2: StringValue(value=38ZxG1FY8yiNviJeeKHWVk9x8-MgCVQxfS9fM4KR6MIe2C7o5qars3lWjTzos_Ywk8hAhZlsSV0cBzrumDfzFQ)
+✓ Inserted user 1: StringValue(value=Q0KLZw7PmarRrsI_qmfiQ3kevw_bot5-evyBo40gVl2QuVWvlPT4xIV2LpO-aoHKnEodbiXIihJIwBqIkTM_xw)
+✓ Inserted user 2: StringValue(value=mv4l_xmjLox0vtdrKkY3N8ZUZU4LZZWLsNWe9jpa_9S_uNqxwN-5HQgkAQG0eLGN6bZ0O1HhHbGfae2cAxfC1Q)
 
 === Getting Schema ===
 ✓ Schema for kotlin_schema_example:
-  Fields: {"status":{"field_type":"String","default":null,"unique":false,"required":false,"enums":[],"max":null,"min":null,"regex":null},"title":{"field_type":"String","default":null,"unique":false,"required":true,"enums":[],"max":null,"min":null,"regex":null},"email":{"field_type":"String","default":null,"unique":false,"required":true,"enums":[],"max":null,"min":null,"regex":null},"age":{"field_type":"Integer","default":null,"unique":false,"required":false,"enums":[],"max":null,"min":null,"regex":null}}
+  Fields: {"email":{"field_type":"String","default":null,"unique":false,"required":true,"enums":[],"max":null,"min":null,"regex":null},"title":{"field_type":"String","default":null,"unique":false,"required":true,"enums":[],"max":null,"min":null,"regex":null},"age":{"field_type":"Integer","default":null,"unique":false,"required":false,"enums":[],"max":null,"min":null,"regex":null},"status":{"field_type":"String","default":null,"unique":false,"required":false,"enums":[],"max":null,"min":null,"regex":null}}
 
 === Listing Collections ===
 ✓ Total collections: 22
-  Sample: [schema_employees_client_ts, ttl_cache, schema_products_client_py, test_accounts, schema_users_client_go]
+  Sample: [schema_documents_client_ts, ttl_cache, schema_users_client_ts, websocket_test, chat_messages__ek0_testing]
 
 === Cleanup ===
 ✓ Deleted collection: kotlin_schema_example
@@ -381,11 +381,11 @@ SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
 
 === Basic Text Search ===
 ✓ Search results for 'programming':
-  {"results":[{"record":{"tags":"programming,rust,tutorial","title":"Rust Programming","description":"Learn Rust programming language with hands-on examples and best practices.","views":762,"id":"tmT80J3B0Ee_ijb_OyzfU-pt8cRQRZZ-qgYygm5rnaCS8j5GFJ01tSQENBgE1D9wK0tMWXI-wBze6GuVS9TVgA"},"score":19.8,"matched_fields":["title","description","tags"]},{"record":{"description":"Master Python for data analysis, machine learning, and visualization.","views":398,"tags":"programming,python,data-science","id":"1WDOLOTbZgRZbjs2mJNdpJhHNfMmUnJWMx-stDBge3FQ-BKFa03odlQ6ZMcsWWr0FgTKYAea-fHZzZTBSxFMkA","title":"Python for Data Science"},"score":6.6000000000000005,"matched_fields":["tags"]},{"record":{"description":"Build modern web applications using JavaScript, React, and Node.js.","id":"mPnAMR-iLKpRahGXNVzLt0KPUWszpt-XSpqQZCJ29E1HFLZHvNOwelJ3XopSm3nEmbF7pUup1V-BcmiGNAlZXw","tags":"programming,javascript,web","title":"JavaScript Web Development","views":759},"score":6.6000000000000005,"matched_fields":["tags"]}],"total":3,"execution_time_ms":1}
+  {"results":[{"record":{"tags":"programming,rust,tutorial","description":"Learn Rust programming language with hands-on examples and best practices.","id":"hAHJ6Cuek9p2BVH8_1RYFWcMeZiwLRU0Q7nGVtrxGl4rzMTizd8m4YWwlTLMhQgjT3Aqn3aYatJ3kblq6m32sw","title":"Rust Programming","views":832},"score":19.8,"matched_fields":["title","tags","description"]},{"record":{"views":920,"description":"Master Python for data analysis, machine learning, and visualization.","title":"Python for Data Science","id":"NYpmcasQAH2WfIqGakiN1k6wTF1IRE0GRvm4sD0VrQxrA-3InngKiKTuSDIAU11gnSY6CONa9Sh1GX9CefdXEA","tags":"programming,python,data-science"},"score":6.6000000000000005,"matched_fields":["tags"]},{"record":{"id":"6O-p3FWXzRJ9FRXpTuLaPTPQZzRWOqrNHBMPItSiQCbiMFIkP5lrGiGzTeDTdGc-7KGghizkdQYehdQ3BccyNw","description":"Build modern web applications using JavaScript, React, and Node.js.","tags":"programming,javascript,web","views":767,"title":"JavaScript Web Development"},"score":6.6000000000000005,"matched_fields":["tags"]}],"total":3,"execution_time_ms":1}
 
 === Search for 'machine learning' ===
 ✓ Found results for 'machine learning'
-  {"results":[{"record":{"tags":"ai,machine-learning,python","views":853,"title":"Machine Learning Basics","description":"Introduction to machine learning algorithms and neural networks.","id":"CahleZ-sZxB-8LUlHcFBC5I5dJ0Kf8tfuilUkmD9fISifjmoyh_uxW6TbatMRJH5zIH2MmlWHCKdEbHWmGPGMg"},"score":2.7,"matched_fields":["tags","title","description"]},{"record":{"title":"Python for Data Science","description":"Master Python for data analysis, machine learning, and visualization.","views":398,"id":"1WDOLOTbZgRZbjs2mJNdpJhHNfMmUnJWMx-stDBge3FQ-BKFa03odlQ6ZMcsWWr0FgTKYAea-fHZzZTBSxFMkA","tags":"programming,python,data-science"},"score":1.0,"matched_fields":["description"]},{"record":{"id":"l_e3rTmfJVfzAmLfoXPmFFnYEG1xOieASooZNUxnNgYvMpx6BwF9ps2PcBPX4L_J_9SmVCX2Y7fYb5QpOQoSQw","title":"Database Design","views":805,"tags":"database,design,sql","description":"Learn database design principles, normalization, and query optimization."},"score":0.5,"matched_fields":["description"]},{"record":{"description":"Learn Rust programming language with hands-on examples and best practices.","tags":"programming,rust,tutorial","views":762,"id":"tmT80J3B0Ee_ijb_OyzfU-pt8cRQRZZ-qgYygm5rnaCS8j5GFJ01tSQENBgE1D9wK0tMWXI-wBze6GuVS9TVgA","title":"Rust Programming"},"score":0.5,"matched_fields":["description"]}],"total":4,"execution_time_ms":1}
+  {"results":[{"record":{"tags":"ai,machine-learning,python","id":"HWYCGtR_mJXsbuf7INwT3OxrYo6WDHBjysWwsOhH-vwGwYDLOagSZ5jw2FKJiWCTPzO9BmRiuqw9WSu-1g5iUQ","title":"Machine Learning Basics","description":"Introduction to machine learning algorithms and neural networks.","views":395},"score":2.7,"matched_fields":["title","description","tags"]},{"record":{"views":920,"description":"Master Python for data analysis, machine learning, and visualization.","tags":"programming,python,data-science","id":"NYpmcasQAH2WfIqGakiN1k6wTF1IRE0GRvm4sD0VrQxrA-3InngKiKTuSDIAU11gnSY6CONa9Sh1GX9CefdXEA","title":"Python for Data Science"},"score":1.0,"matched_fields":["description"]},{"record":{"views":832,"id":"hAHJ6Cuek9p2BVH8_1RYFWcMeZiwLRU0Q7nGVtrxGl4rzMTizd8m4YWwlTLMhQgjT3Aqn3aYatJ3kblq6m32sw","tags":"programming,rust,tutorial","description":"Learn Rust programming language with hands-on examples and best practices.","title":"Rust Programming"},"score":0.5,"matched_fields":["description"]},{"record":{"title":"Database Design","id":"BoinHVF1f9wSghK4ug_hEXWpHmeFUJC6ZH5dCMUxzNNSf4jkK5dcZBZhgbf8UV7_5Vd-st9G9DSuGDZeVT1ECw","views":156,"tags":"database,design,sql","description":"Learn database design principles, normalization, and query optimization."},"score":0.5,"matched_fields":["description"]}],"total":4,"execution_time_ms":1}
 
 === Cleanup ===
 ✓ Deleted collection: kotlin_search_example
@@ -409,12 +409,12 @@ SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
 === ekoDB Kotlin Client - WebSocket TTL Example ===
 
 === Insert Test Data with TTL ===
-✓ Inserted document with TTL: StringValue(value=QAHuUBCO4FK_aSITRshWon95aFLswnGmM8rFneBfA7TDn92FGtULzAR0HKrVNAJ5Z7yukKme1Sj1wxrVwshvAw)
+✓ Inserted document with TTL: StringValue(value=wuxiQOqKaWef-ZykXtfSlb5kFBsa3ZrVRDQWrkwVJLgrdi8CbVBDZ7h2ZNvTZFnZHF8lrgIBGmypwWIJ1b0OOQ)
 
 === Query via WebSocket ===
 ✓ WebSocket connected
 ✓ Retrieved data via WebSocket:
-  {"payload":{"data":[{"created_at":{"type":"Integer","value":1767555589870},"id":"QAHuUBCO4FK_aSITRshWon95aFLswnGmM8rFneBfA7TDn92FGtULzAR0HKrVNAJ5Z7yukKme1Sj1wxrVwshvAw","name":{"type":"String","value":"WebSocket TTL Test"},"ttl":"2026-01-04T20:39:49.011800Z","value":{"type":"Integer","value":42}}]},"type":"Success"}
+  {"payload":{"data":[{"created_at":{"type":"Integer","value":1767565998535},"id":"wuxiQOqKaWef-ZykXtfSlb5kFBsa3ZrVRDQWrkwVJLgrdi8CbVBDZ7h2ZNvTZFnZHF8lrgIBGmypwWIJ1b0OOQ","name":{"type":"String","value":"WebSocket TTL Test"},"ttl":"2026-01-04T23:33:17.679138Z","value":{"type":"Integer","value":42}}]},"type":"Success"}
 
 ✓ WebSocket closed
 
@@ -460,8 +460,8 @@ SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
 
 === Example 4: Join orders with user data ===
 ✓ Found 2 completed orders
-  - Mouse ($25) by Alice Johnson
   - Laptop ($1200) by Alice Johnson
+  - Mouse ($25) by Alice Johnson
 
 === Example 5: Complex join with multiple conditions ===
 ✓ Found 2 users with example.com emails
@@ -473,7 +473,7 @@ SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
 
 ✓ Join operations example completed successfully
 
-BUILD SUCCESSFUL in 3s
+BUILD SUCCESSFUL in 4s
 2 actionable tasks: 1 executed, 1 up-to-date
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.11.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build 
@@ -493,12 +493,12 @@ SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
 ✓ Inserted 3 sample documents
 
 === Creating Chat Session ===
-✓ Created session: BupP1oojiZ-6M5vOKcpzBsuDrwlLYn7GYJ21z_O5OuuyolTje7eVwv2T23z0DM1ss8DC1NT2WEkbNFglVfEspg
+✓ Created session: gHL_1zvJXHgXVlQap1Rs4C1hsUwI9uvIeJxocx9NtfnrdshNWM4_9vaGa4oUxJwEWlaJBzNx0uUGlLxKF1Ukjg
 
 === Sending Chat Message ===
 ✓ Chat response:
-  Message ID: "RMtmkTNycMNaaf83_P9cm0lZWG3FzuvHYln_-F36DT3jZn6JBCgp65DqaDm_ogxI4T14Gq6DUNc2aDmNq989uA"
-  Responses: ["ekoDB is a high-performance database with intelligent caching and real-time capabilities. It has integrated AI features that contribute to its robust functionality.\n\nOne of its key features is the AI Chat Integration. This feature allows you to query your database using natural language and get AI-powered responses with relevant context, enhancing the user's interaction with the database.\n\nekoDB also supports various types of searches including full-text search, vector search, and hybrid search. These capabilities, combined with automatic context retrieval, make it a powerful tool for finding and managing data.\n\nThese are just some of the features of ekoDB, and more details can be found in the rest of the documentation."]
+  Message ID: "9vikJdoiEm1JhG17ZIeTDaKIsAZriK8lekckMsMtCnQ789BfsO8lwISOwYo6UTvNyHM5uyIo2m0u1XybsZ7cYA"
+  Responses: ["ekoDB is a high-performance database system with intelligent caching and real-time capabilities. It offers AI integration features and supports a wide range of search methods, including full-text search, vector search, and hybrid search with automatic context retrieval. One of its key features is the AI Chat Integration, which allows you to query your database using natural language and receive AI-powered responses with relevant context."]
 
 === Cleanup ===
 ✓ Deleted chat session
@@ -506,7 +506,7 @@ SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
 
 ✓ Basic chat example completed successfully
 
-BUILD SUCCESSFUL in 7s
+BUILD SUCCESSFUL in 6s
 2 actionable tasks: 1 executed, 1 up-to-date
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.11.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build 
@@ -526,18 +526,18 @@ SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
 ✓ Inserted sample product
 
 === Creating Chat Session ===
-✓ Created session: px_cTD1SFKmyV4URD7AphoRLpOiw_nxoeTZSBv5h2UtJe_eyOdy_mcGmLmmipoN1MA6VStTY9prwuY6eQx8jDA
+✓ Created session: euf1sG57BSwkmZDTs6M3Hl4uCvYuXJZEw37kEcFs4-b7igcXkRIvsOwzyMwzJnyB4ZpoTpewYbl3VQU8O61C7A
 
 === Sending Messages ===
 ✓ Message 1 sent
-  Responses: ["Answer: The product available is ekoDB, a high-performance database product with AI capabilities. The price of this product is $99."]
+  Responses: ["Based on the provided context, the available product is \"ekoDB\", a high-performance database product with AI capabilities. It is priced at $99."]
 
 ✓ Message 2 sent
-  Responses: ["The price of the ekoDB, a high-performance database product with AI capabilities, is $99."]
+  Responses: ["The price of the ekoDB product is $99."]
 
 === Getting Message History ===
 ✓ Retrieved message history
-  Total messages: [{"chat_id":{"type":"String","value":"px_cTD1SFKmyV4URD7AphoRLpOiw_nxoeTZSBv5h2UtJe_eyOdy_mcGmLmmipoN1MA6VStTY9prwuY6eQx8jDA"},"content":{"type":"String","value":"What products are available?"},"context_snippets":{"type":"Array","value":[{"collection":"kotlin_chat_sessions_example","matched_fields":["description"],"record":{"description":"A high-performance database product with AI capabilities","id":"QNwXRJb6uu7HJUNKqhw5bFVl6EH7CrkOIn-vZIpy8IkfNezXcJlGRqybeQE2KRBdQ0hGO1hdNzSQAHz6oGGwYQ","price":99,"product":"ekoDB"},"score":0.25}]},"created_at":{"type":"DateTime","value":"2026-01-04T19:40:08.548206Z"},"id":"RSrJRxnPdhC04bW7IResK47om1BS5RN28uaGcddclmnovYjI69inR-hADcCgBmb6KDd0x5ss5Fvtpq2SiSyL0A","role":{"type":"String","value":"user"},"token_usage":{"type":"Object","value":{"completion_tokens":28,"prompt_tokens":242,"total_tokens":270}},"updated_at":{"type":"DateTime","value":"2026-01-04T19:40:08.548206Z"}},{"chat_id":{"type":"String","value":"px_cTD1SFKmyV4URD7AphoRLpOiw_nxoeTZSBv5h2UtJe_eyOdy_mcGmLmmipoN1MA6VStTY9prwuY6eQx8jDA"},"content":{"type":"String","value":"Answer: The product available is ekoDB, a high-performance database product with AI capabilities. The price of this product is $99."},"context_snippets":{"type":"Array","value":[{"collection":"kotlin_chat_sessions_example","matched_fields":["description"],"record":{"description":"A high-performance database product with AI capabilities","id":"QNwXRJb6uu7HJUNKqhw5bFVl6EH7CrkOIn-vZIpy8IkfNezXcJlGRqybeQE2KRBdQ0hGO1hdNzSQAHz6oGGwYQ","price":99,"product":"ekoDB"},"score":0.25}]},"created_at":{"type":"DateTime","value":"2026-01-04T19:40:08.553113Z"},"id":"ezzP5pbW0pJIzv3RSF5teDxG4oCeRwwy6KSVW4qnHEXfAAOBwQ0Ypyw751PveK-NZPK_6PjqItNOyHXfD7XyIQ","role":{"type":"String","value":"assistant"},"token_usage":{"type":"Object","value":{"completion_tokens":28,"prompt_tokens":242,"total_tokens":270}},"updated_at":{"type":"DateTime","value":"2026-01-04T19:40:08.553113Z"}},{"chat_id":{"type":"String","value":"px_cTD1SFKmyV4URD7AphoRLpOiw_nxoeTZSBv5h2UtJe_eyOdy_mcGmLmmipoN1MA6VStTY9prwuY6eQx8jDA"},"content":{"type":"String","value":"What is the price?"},"context_snippets":{"type":"Array","value":[{"collection":"kotlin_chat_sessions_example","matched_fields":["price"],"record":{"description":"A high-performance database product with AI capabilities","id":"QNwXRJb6uu7HJUNKqhw5bFVl6EH7CrkOIn-vZIpy8IkfNezXcJlGRqybeQE2KRBdQ0hGO1hdNzSQAHz6oGGwYQ","price":99,"product":"ekoDB"},"score":0.8}]},"created_at":{"type":"DateTime","value":"2026-01-04T19:40:09.471904Z"},"id":"eI6xLJnyjNNvyLFKnre8PDj03UP2XxDOXm7UIoLeLP1VcHmnElwfYyFogpFTJgUFk3M4wbx9higqF5POxz7zIQ","role":{"type":"String","value":"user"},"token_usage":{"type":"Object","value":{"completion_tokens":21,"prompt_tokens":242,"total_tokens":263}},"updated_at":{"type":"DateTime","value":"2026-01-04T19:40:09.471904Z"}},{"chat_id":{"type":"String","value":"px_cTD1SFKmyV4URD7AphoRLpOiw_nxoeTZSBv5h2UtJe_eyOdy_mcGmLmmipoN1MA6VStTY9prwuY6eQx8jDA"},"content":{"type":"String","value":"The price of the ekoDB, a high-performance database product with AI capabilities, is $99."},"context_snippets":{"type":"Array","value":[{"collection":"kotlin_chat_sessions_example","matched_fields":["price"],"record":{"description":"A high-performance database product with AI capabilities","id":"QNwXRJb6uu7HJUNKqhw5bFVl6EH7CrkOIn-vZIpy8IkfNezXcJlGRqybeQE2KRBdQ0hGO1hdNzSQAHz6oGGwYQ","price":99,"product":"ekoDB"},"score":0.8}]},"created_at":{"type":"DateTime","value":"2026-01-04T19:40:09.476876Z"},"id":"BjhQtYPbFz_BpfUPlGk2aPWH5WSIzP_H464n1GyHmtu-q4bemTbn1rwmBqOHfILd0_nyP8GlKOlK6bLTQ7gKVQ","role":{"type":"String","value":"assistant"},"token_usage":{"type":"Object","value":{"completion_tokens":21,"prompt_tokens":242,"total_tokens":263}},"updated_at":{"type":"DateTime","value":"2026-01-04T19:40:09.476876Z"}}]
+  Total messages: [{"chat_id":{"type":"String","value":"euf1sG57BSwkmZDTs6M3Hl4uCvYuXJZEw37kEcFs4-b7igcXkRIvsOwzyMwzJnyB4ZpoTpewYbl3VQU8O61C7A"},"content":{"type":"String","value":"What products are available?"},"context_snippets":{"type":"Array","value":[{"collection":"kotlin_chat_sessions_example","matched_fields":["description"],"record":{"description":"A high-performance database product with AI capabilities","id":"atx8sAJPtjmUxZL7Htr731LKKfJgzcyEkraa_EqM_tdZ8ISPapIJkAHCwF0NHakWrM-uv4kKgRQ_Kb7VKx5t7g","price":99,"product":"ekoDB"},"score":0.25}]},"created_at":{"type":"DateTime","value":"2026-01-04T22:33:36.463987Z"},"id":"Uh_qFprQen0q9cxBnq7W6d-U4aO10empfH2CtpJ6obHDsuE6UA3KMidfCfhVK7H8pt7u-nC1AQicjm6QEBDvcg","role":{"type":"String","value":"user"},"token_usage":{"type":"Object","value":{"completion_tokens":30,"prompt_tokens":239,"total_tokens":269}},"updated_at":{"type":"DateTime","value":"2026-01-04T22:33:36.463987Z"}},{"chat_id":{"type":"String","value":"euf1sG57BSwkmZDTs6M3Hl4uCvYuXJZEw37kEcFs4-b7igcXkRIvsOwzyMwzJnyB4ZpoTpewYbl3VQU8O61C7A"},"content":{"type":"String","value":"Based on the provided context, the available product is \"ekoDB\", a high-performance database product with AI capabilities. It is priced at $99."},"context_snippets":{"type":"Array","value":[{"collection":"kotlin_chat_sessions_example","matched_fields":["description"],"record":{"description":"A high-performance database product with AI capabilities","id":"atx8sAJPtjmUxZL7Htr731LKKfJgzcyEkraa_EqM_tdZ8ISPapIJkAHCwF0NHakWrM-uv4kKgRQ_Kb7VKx5t7g","price":99,"product":"ekoDB"},"score":0.25}]},"created_at":{"type":"DateTime","value":"2026-01-04T22:33:36.464953Z"},"id":"TVvDhcRDnelFAJ3WOQb51o7xjwOD0hxo95guStilxoHixinW10dnVxaUpBO_reRRe_cq1wKH930_7o_lwIrMFg","role":{"type":"String","value":"assistant"},"token_usage":{"type":"Object","value":{"completion_tokens":30,"prompt_tokens":239,"total_tokens":269}},"updated_at":{"type":"DateTime","value":"2026-01-04T22:33:36.464953Z"}},{"chat_id":{"type":"String","value":"euf1sG57BSwkmZDTs6M3Hl4uCvYuXJZEw37kEcFs4-b7igcXkRIvsOwzyMwzJnyB4ZpoTpewYbl3VQU8O61C7A"},"content":{"type":"String","value":"What is the price?"},"context_snippets":{"type":"Array","value":[{"collection":"kotlin_chat_sessions_example","matched_fields":["price"],"record":{"description":"A high-performance database product with AI capabilities","id":"atx8sAJPtjmUxZL7Htr731LKKfJgzcyEkraa_EqM_tdZ8ISPapIJkAHCwF0NHakWrM-uv4kKgRQ_Kb7VKx5t7g","price":99,"product":"ekoDB"},"score":0.8}]},"created_at":{"type":"DateTime","value":"2026-01-04T22:33:37.694417Z"},"id":"pyUDna-wauy3YD9QXVj7NmBc-ArMqBhLcjcekqJiVFOJGH7QAWCBpZlC0RL9u_WJCRSeFqrhgUAP_znNHzqSjQ","role":{"type":"String","value":"user"},"token_usage":{"type":"Object","value":{"completion_tokens":12,"prompt_tokens":239,"total_tokens":251}},"updated_at":{"type":"DateTime","value":"2026-01-04T22:33:37.694417Z"}},{"chat_id":{"type":"String","value":"euf1sG57BSwkmZDTs6M3Hl4uCvYuXJZEw37kEcFs4-b7igcXkRIvsOwzyMwzJnyB4ZpoTpewYbl3VQU8O61C7A"},"content":{"type":"String","value":"The price of the ekoDB product is $99."},"context_snippets":{"type":"Array","value":[{"collection":"kotlin_chat_sessions_example","matched_fields":["price"],"record":{"description":"A high-performance database product with AI capabilities","id":"atx8sAJPtjmUxZL7Htr731LKKfJgzcyEkraa_EqM_tdZ8ISPapIJkAHCwF0NHakWrM-uv4kKgRQ_Kb7VKx5t7g","price":99,"product":"ekoDB"},"score":0.8}]},"created_at":{"type":"DateTime","value":"2026-01-04T22:33:37.697257Z"},"id":"9c_R6pK0Lai--ksR6PGaQ4-essE8Hi32d74d0wBFbmKAM67LNdpWSqAEGbhUZHJ4kTcIT_4pCe8YiNqxsgtX1g","role":{"type":"String","value":"assistant"},"token_usage":{"type":"Object","value":{"completion_tokens":12,"prompt_tokens":239,"total_tokens":251}},"updated_at":{"type":"DateTime","value":"2026-01-04T22:33:37.697257Z"}}]
 
 === Updating Session ===
 ✓ Updated session system prompt
@@ -546,7 +546,7 @@ SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
 ✓ Total sessions: 13
 
 === Branching Session ===
-✓ Created branched session: b-s3tzB_uaG3KEe2a-nC7BENoeubDh97wg_QdryhpYt4twP5aU690aV16s6gtsz95SnsweLPuwQ6GeF4--7jvg
+✓ Created branched session: NWVU8IiDXezcDpMgr2IbQYjRCJdz3Ol9ZuBcdyfmlDmPAHFUVWD8eMmjJ5EsB_vIxKf4amZvqzyCLJPdU8M5dg
 
 === Cleanup ===
 ✓ Deleted chat sessions
@@ -574,17 +574,17 @@ SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
 ✓ Inserted sample product
 
 === Creating Chat Session ===
-✓ Created session: 6IKFI8iGciI54PKtHMilQ3RPlJNStPlbN0HCWe8emU7rsZMmFoa_QXoQol4F0YJ-RLv4AeuK_hH-G760sNrCLg
+✓ Created session: lCKecKySEtNiD9b94KloExenkKFzKa5uOul8-1efXxPgM5J1rNbIo1t--XJZewqn31JcaRufNm-ePRpMPlSVBg
 
 === Sending Initial Message ===
 ✓ Message sent
-  Responses: ["Based on the information provided, one product that is available is ekoDB. It is a high-performance database product and it costs $99."]
+  Responses: ["The available product is \"ekoDB\", a high-performance database product. It's priced at $99."]
 
 ✓ Second message sent
 
 === Regenerating AI Response ===
 ✓ AI response regenerated
-  New responses: ["Based on the information available, we have a high-performance database product named \"ekoDB\". It is priced at $99."]
+  New responses: ["The product available is \"ekoDB\", which is a high-performance database product. It is priced at $99."]
 
 === Updating Message ===
 ✓ Updated message content
@@ -593,7 +593,7 @@ SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
 ✓ Marked message as forgotten (excluded from context)
 
 === Creating Second Session for Merge ===
-✓ Created second session: gs9xkjzev8zBeINr5Ejlcb7ZZ3KmpZjJ__9DJavWK8I-kOmgjd9C8Fwzgwch1l1UG1PWrq30YN10D1pNtpnRPw
+✓ Created second session: bDySUfAgGyud9yUAZ-_wXv4OqhErzouH15NZLo3hnvPPFw1fALhGm8K98g1igV6W5b9iC497sSmdGJeoxJfC_Q
 
 === Merging Sessions ===
 ✓ Merged sessions
@@ -608,7 +608,7 @@ SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
 
 ✓ Advanced chat features example completed successfully
 
-BUILD SUCCESSFUL in 7s
+BUILD SUCCESSFUL in 6s
 2 actionable tasks: 1 executed, 1 up-to-date
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.11.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build 
@@ -631,7 +631,7 @@ SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
 
 📝 Example 1: Simple Query Script
 
-✅ Script saved: BWINm5TAKq9RmjslMExUsBWnMXc0JzXXrEXh8rD4magbzOnC9sK8yQFeCuNhmldQcCMHSPQzIBTtlQ53W3xzww
+✅ Script saved: c1lxmuyXpnFqCszrX0_SDj4PpiCkdPdKiCaXDAkJbEmnzlvXRcehkuUzSnsMCRKmFjGICLoga1qPANRQH7gyHQ
 📊 Found 10 records
 ⏱️  Execution time: 0ms
 
@@ -645,8 +645,8 @@ SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
 
 ✅ Script saved
 📊 Statistics: 2 groups
-   {"status":"inactive","count":5,"avg_score":50.0}
-   {"count":5,"status":"active","avg_score":60.0}
+   {"avg_score":50.0,"status":"inactive","count":5}
+   {"count":5,"avg_score":60.0,"status":"active"}
 ⏱️  Execution time: 0ms
 
 📝 Example 4: Script Management
@@ -692,11 +692,11 @@ SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
 ✓ Client created
 
 === Setup: Creating Test Accounts ===
-Created Alice: $1000 - ID: bePc7rbwK-_Ibw8ELCXXUDt3ctitVysEA9uY8YBWclkEiDHbGLkKp5mTTKow1wBe6bbF22NXvWm64EQVjdkAoQ
-Created Bob: $500 - ID: 2ywLNSmu5625eNJurWpW2nVHlz4MKoXWuLCXC7-voFt1sgeXukeXWZQrR8AULc_O8Jp5Q8sLgrQj8Fcg-kFawQ
+Created Alice: $1000 - ID: 7S13gMGm2LP84PqfeNn-5QROwdFE2MsWXKDY-zKMUVjXgdg4atRwmksjVLZqlfDyKtdBnwd0ABarX8vKIMRL0Q
+Created Bob: $500 - ID: ZTfzzcXP9X6U6yE8Tn9V4c9xrN0JllYGRHNEWEuhOzUo0kKLAdYcqoVqX7s_ZqCBiPMYnUEMtd4lplMahlXpaA
 
 === Example 1: Begin Transaction ===
-Transaction ID: 055d36a6-2b9c-4121-aadc-b8f23810abfc
+Transaction ID: 36561d3c-d57b-4d6f-9e6c-e92f002377c8
 
 === Example 2: Operations within Transaction ===
 Updated Alice: $1000 → $800 (simulated)
@@ -710,7 +710,7 @@ Operations: 0
 ✓ Transaction committed
 
 === Example 5: Rollback Demo ===
-New transaction: b516b8c9-f34c-4c2f-9921-5519aef3d0e5
+New transaction: 4e1f02c4-4033-435e-90a8-4cb3151b0f03
 Status before rollback: Active
 ✓ Transaction rolled back
 

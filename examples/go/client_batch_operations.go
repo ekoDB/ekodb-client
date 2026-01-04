@@ -1,7 +1,7 @@
 // Batch Operations - Using ekodb-client-go library
 //
 // This example demonstrates batch operations using the Go client library.
-// Compare with ttl-caching/batch_operations.go to see the difference!
+// Compare with batch_operations.go to see the difference!
 
 package main
 

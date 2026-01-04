@@ -1,7 +1,7 @@
 // Key-Value Operations - Using ekodb-client-go library
 //
 // This example demonstrates KV operations using the Go client library.
-// Compare with ttl-caching/kv_operations.go to see the difference!
+// Compare with kv_operations.go to see the difference!
 
 package main
 

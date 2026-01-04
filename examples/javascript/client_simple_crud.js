@@ -2,7 +2,7 @@
  * Simple CRUD Operations - Using @ekodb/ekodb-client library
  * 
  * This example demonstrates CRUD operations using the JavaScript client library.
- * Compare with ttl-caching/simple_crud.js to see the difference!
+ * Compare with simple_crud.js to see the difference!
  */
 
 const { EkoDBClient } = require('@ekodb/ekodb-client');

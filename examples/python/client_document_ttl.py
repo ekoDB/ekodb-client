@@ -2,7 +2,7 @@
 """Document TTL Examples - Using ekodb_client Python library
 
 This example demonstrates documents with TTL using the Python client library.
-Compare with ttl-caching/document_ttl.py to see the difference!
+Compare with document_ttl.py to see the difference!
 """
 
 import asyncio

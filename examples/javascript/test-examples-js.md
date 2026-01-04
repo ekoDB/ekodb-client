@@ -1,7 +1,7 @@
 make test-examples-javascript
 🧪 [36mRunning JavaScript examples (direct HTTP/WebSocket)...[0m
 
-added 1 package, removed 1 package, and audited 9 packages in 823ms
+added 1 package, removed 1 package, and audited 9 packages in 851ms
 
 1 package is looking for funding
   run `npm fund` for details
@@ -13,7 +13,7 @@ found 0 vulnerabilities
 [34m╚════════════════════════════════════════╝[0m
 [34m
 === Checking Server Connection ===[0m
-(node:9604) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(node:71112) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
 (Use `node --trace-deprecation ...` to show where the warning was created)
 [32m✓ Server is ready[0m
 [34m
@@ -22,33 +22,40 @@ found 0 vulnerabilities
 [33m
 === Running 10 Examples ===[0m
 [34m
-=== Running /Users/tek/Development/ekoDB/ekodb-client/examples/javascript/ttl-caching/simple_crud.js ===[0m
+=== Running /Users/tek/Development/ekoDB/ekodb-client/examples/javascript/simple_crud.js ===[0m
+=== Simple CRUD Operations (Direct HTTP) ===
+
 ✓ Authentication successful
 
 === Insert Document ===
-(node:9607) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
-(Use `node --trace-deprecation ...` to show where the warning was created)
 Inserted: {
-  id: 'j_lszmgYJr2XR5KrjSf16UgKygNjJ4-S_BlcYFIO1QWWEP3DFF5PnSfFNw1z8Gmo-WxfyzNCTl1DEvsDufhSuQ'
+  id: 'hbvG-g7y4P7IlJimbtfDN0-d3VSHuU-YRaL8YdE-I1aDlB6SfSfnaeeBjaTnSCW2D2GoxA7eJeMu1ksGSKJEBA'
 }
 
 === Find by ID ===
 Found: {
-  active: { type: 'Boolean', value: true },
-  value: { type: 'Integer', value: 42 },
-  id: 'j_lszmgYJr2XR5KrjSf16UgKygNjJ4-S_BlcYFIO1QWWEP3DFF5PnSfFNw1z8Gmo-WxfyzNCTl1DEvsDufhSuQ',
-  name: { value: 'Test Record', type: 'String' }
+  name: { type: 'String', value: 'Test Record' },
+  active: { value: true, type: 'Boolean' },
+  id: 'hbvG-g7y4P7IlJimbtfDN0-d3VSHuU-YRaL8YdE-I1aDlB6SfSfnaeeBjaTnSCW2D2GoxA7eJeMu1ksGSKJEBA',
+  value: { value: 42, type: 'Integer' }
 }
 
 === Find with Query ===
-Found documents: 1
+Found documents: [
+  {
+    active: { value: true, type: 'Boolean' },
+    value: { value: 42, type: 'Integer' },
+    id: 'hbvG-g7y4P7IlJimbtfDN0-d3VSHuU-YRaL8YdE-I1aDlB6SfSfnaeeBjaTnSCW2D2GoxA7eJeMu1ksGSKJEBA',
+    name: { type: 'String', value: 'Test Record' }
+  }
+]
 
 === Update Document ===
 Updated: {
-  id: 'j_lszmgYJr2XR5KrjSf16UgKygNjJ4-S_BlcYFIO1QWWEP3DFF5PnSfFNw1z8Gmo-WxfyzNCTl1DEvsDufhSuQ',
-  name: { value: 'Updated Record', type: 'String' },
   value: { value: 100, type: 'Integer' },
-  active: { type: 'Boolean', value: true }
+  name: { type: 'String', value: 'Updated Record' },
+  active: { value: true, type: 'Boolean' },
+  id: 'hbvG-g7y4P7IlJimbtfDN0-d3VSHuU-YRaL8YdE-I1aDlB6SfSfnaeeBjaTnSCW2D2GoxA7eJeMu1ksGSKJEBA'
 }
 
 === Delete Document ===
@@ -57,13 +64,13 @@ Deleted document
 ✓ All CRUD operations completed successfully
 [32m✓ simple_crud.js completed successfully[0m
 [34m
-=== Running /Users/tek/Development/ekoDB/ekodb-client/examples/javascript/ttl-caching/simple_websocket.js ===[0m
+=== Running /Users/tek/Development/ekoDB/ekodb-client/examples/javascript/simple_websocket.js ===[0m
+=== Simple WebSocket Operations (Direct API) ===
+
 ✓ Authentication successful
 
 === Inserting Test Data ===
-(node:9614) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
-(Use `node --trace-deprecation ...` to show where the warning was created)
-✓ Inserted test record: UcoB-gn-YjVytHZmK4ByYPmAMtzVBkcSZIxPsU9aBGCZCFqRLuPuKA_wRgFJTs11NvbM9D8D1cGbAw1Qc9PbnA
+✓ Inserted test record: _0Q3Oudgg4ouoqLCGbtJ7sEpLv6v9qtiZuhhettIAPlJl-X7iHBn3HEVGUzTbb5aZE9PGIWS6mOdCIrTTxJoDg
 
 === Connecting to WebSocket ===
 ✓ WebSocket connected
@@ -77,7 +84,7 @@ Response: {
           "type": "Boolean",
           "value": true
         },
-        "id": "LBF7Gequi0v04qbT1iANWTN-FRO0bYDKvukFbxdX9CO7wYKIchKcISe0P-UObFrpY2NNO2nXY-XcPKH9NW1CkA",
+        "id": "d2VJG5iv4Y2GM8EF5v5Bvs8hZucupbWnljtU8V09E6kHsVSL76g8IaS5XdJ9hRAvPBx73kHkr6R-756nGUvxHg",
         "name": {
           "type": "String",
           "value": "WebSocket Test Record"
@@ -92,7 +99,7 @@ Response: {
           "type": "Boolean",
           "value": true
         },
-        "id": "UcoB-gn-YjVytHZmK4ByYPmAMtzVBkcSZIxPsU9aBGCZCFqRLuPuKA_wRgFJTs11NvbM9D8D1cGbAw1Qc9PbnA",
+        "id": "_0Q3Oudgg4ouoqLCGbtJ7sEpLv6v9qtiZuhhettIAPlJl-X7iHBn3HEVGUzTbb5aZE9PGIWS6mOdCIrTTxJoDg",
         "name": {
           "type": "String",
           "value": "WebSocket Test Record"
@@ -107,7 +114,7 @@ Response: {
           "type": "Boolean",
           "value": true
         },
-        "id": "9jhiJD-vX2ICyYsmVzgVmtlyo9yTqcOWZTdsd5jfBvDaYIiuAKy4_bD3ASkcLX_E2gV2whXZrWIPWIfwLrXQAQ",
+        "id": "US1URz1oElP11pCefhxXASu8-cl5XivMknbWJiWq1kXVtN-5hRHQyja-29vCYjgUA0cRpJ_hJZcKdqayTZhPww",
         "name": {
           "type": "String",
           "value": "WebSocket Test Record"
@@ -122,7 +129,7 @@ Response: {
           "type": "Boolean",
           "value": true
         },
-        "id": "y9NoyejrqnC0jG01aRCiN8LAwyxDTytOuFaianoVIj5ki1UHMIIB0_cmUCxZarYjkBfyk_34ya5TMs876CQIVw",
+        "id": "ggUkVE8p-4-sgFujbNnfoo55fNFXQjXjuC4CFyYjUOz6nF6tI0-pZ_LBzcVVwNTxaLqn3-UX4dKYH11ySN0p4A",
         "name": {
           "type": "String",
           "value": "WebSocket Test Record"
@@ -139,14 +146,52 @@ Response: {
 ✓ Retrieved 4 record(s) via WebSocket
 
 ✓ WebSocket example completed successfully
+WebSocket closed
 [32m✓ simple_websocket.js completed successfully[0m
 [34m
-=== Running /Users/tek/Development/ekoDB/ekodb-client/examples/javascript/ttl-caching/batch_operations.js ===[0m
+=== Running /Users/tek/Development/ekoDB/ekodb-client/examples/javascript/http_functions.js ===[0m
+🚀 ekoDB Scripts Example (JavaScript/HTTP)
+
+📋 Setting up test data...
+✅ Test data ready
+
+📝 Example 1: Simple Query Function with Filter
+
+✅ Script saved: MD0Tbf7C-tk_6PygovHIgEjpPDNm9226GEdF9iuHOMtkTLKbTYzZWYoGtoKmbK_7gnWo8kZv2-S7kfwgvDLY3A
+📊 Found 20 active users
+
+📝 Example 2: Parameterized Pagination with Limit/Skip
+
+✅ Script saved: Zr1bxN4XenwFs8FiZzZ_ZPiJToV_bHbYq6YczNkrpG3jP_q03OgN76Civmt1i-BXjscex6mS2fzXBxF1fmc1Gw
+📊 Page 1: Found 3 users (limit=3, skip=0)
+📊 Page 2: Found 3 users (limit=3, skip=3)
+
+📝 Example 3: Multi-Stage Pipeline (Query → Group → Calculate)
+
+✅ Script saved: MzfwedvICb2bVXQ-Yy_iE1s0-uYrcSQYI3xlLcJ8LUQnQK1ST9u_z6QWzKHxDoQxc2pWRKdw3O1QNvgHtHUjEA
+📊 Pipeline Results: Filtered (age>20) → Grouped by status → 2 groups
+   {"count":10,"avg_score":50,"status":"inactive","max_score":90}
+   {"avg_score":60,"status":"active","count":10,"max_score":100}
+
+📝 Example 4: Function Management
+
+📋 Total scripts: 20
+🔍 Retrieved script: Get Active Users
+✏️  Script updated
+🗑️  Script deleted
+
+ℹ️  Note: GET/UPDATE/DELETE operations require the encrypted ID
+ℹ️  Only CALL can use either ID or label
+
+✅ All examples completed!
+[32m✓ http_functions.js completed successfully[0m
+[34m
+=== Running /Users/tek/Development/ekoDB/ekodb-client/examples/javascript/batch_operations.js ===[0m
+=== Batch Operations (Direct HTTP) ===
+
 ✓ Authentication successful
 
 === Batch Insert ===
-(node:9631) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
-(Use `node --trace-deprecation ...` to show where the warning was created)
 ✓ Batch inserted 5 records
 ✓ Verified: Found 20 total records in collection
 
@@ -164,20 +209,16 @@ Created 3 test records
 ✓ All batch operations completed successfully
 [32m✓ batch_operations.js completed successfully[0m
 [34m
-=== Running /Users/tek/Development/ekoDB/ekodb-client/examples/javascript/ttl-caching/kv_operations.js ===[0m
+=== Running /Users/tek/Development/ekoDB/ekodb-client/examples/javascript/kv_operations.js ===[0m
+=== Key-Value Operations (Direct HTTP) ===
+
 ✓ Authentication successful
 
 === KV Set ===
-(node:9634) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
-(Use `node --trace-deprecation ...` to show where the warning was created)
 ✓ Set key: session:user123
 
 === KV Get ===
-Retrieved value: {
-  loginTime: '2026-01-04T19:38:31.904Z',
-  userId: 123,
-  username: 'john_doe'
-}
+Retrieved value: { userId: 123, username: 'john_doe' }
 
 === Set Multiple Keys ===
 ✓ Set 3 keys
@@ -185,7 +226,7 @@ Retrieved value: {
 === Get Multiple Keys ===
 cache:product:1: { price: 29.99, name: 'Product 1' }
 cache:product:2: { price: 39.989999999999995, name: 'Product 2' }
-cache:product:3: { price: 49.989999999999995, name: 'Product 3' }
+cache:product:3: { name: 'Product 3', price: 49.989999999999995 }
 
 === KV Delete ===
 ✓ Deleted key: session:user123
@@ -197,22 +238,22 @@ cache:product:3: { price: 49.989999999999995, name: 'Product 3' }
 ✓ All KV operations completed successfully
 [32m✓ kv_operations.js completed successfully[0m
 [34m
-=== Running /Users/tek/Development/ekoDB/ekodb-client/examples/javascript/ttl-caching/collection_management.js ===[0m
+=== Running /Users/tek/Development/ekoDB/ekodb-client/examples/javascript/collection_management.js ===[0m
+=== Collection Management (Direct HTTP) ===
+
 ✓ Authentication successful
 
 === Create Collection (via insert) ===
-(node:9642) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
-(Use `node --trace-deprecation ...` to show where the warning was created)
-Collection created with first record: GRs9nzidzRrtkANeTH6ZDo_M2Ftk7QcU1wg0wX45RCiW6cbeeD6Pk4clW0y5SH5VSv-EETr6Y7xlP6ATzcRwhA
+Collection created with first record: Zlfx3I0NGEQl4HDUy3kh_cNlNPFaNgvbuSFOZYaHNqWRZePIR2yTzvkA7ibwvXV_9qPQvJmU1EspQduVSdYFFw
 
 === List Collections ===
 Total collections: 23
 Sample collections: [
-  'schema_employees_client_ts',
+  'schema_documents_client_ts',
   'ttl_cache',
-  'schema_products_client_py',
-  'test_accounts',
-  'schema_users_client_go'
+  'schema_users_client_ts',
+  'users',
+  'websocket_test'
 ]
 
 === Count Documents ===
@@ -227,93 +268,15 @@ Collection still exists: false
 ✓ All collection management operations completed successfully
 [32m✓ collection_management.js completed successfully[0m
 [34m
-=== Running /Users/tek/Development/ekoDB/ekodb-client/examples/javascript/ttl-caching/document_ttl.js ===[0m
-✓ Authentication successful
-
-=== Insert Document with TTL (1 hour) ===
-(node:9656) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
-(Use `node --trace-deprecation ...` to show where the warning was created)
-✓ Inserted document: 1XDKD4r71t-s5lIHrAq1sxa0Yj_1RrOU-NlRtnXqlJF4EiQDWSpARzs_-Snhuw-uYmsCAaoyzjKxG63RFmswaQ
-
-=== Insert Document with TTL (5 minutes - integer) ===
-✓ Inserted document: created
-
-=== Insert Document with TTL (30 minutes - duration string) ===
-✓ Inserted document with duration string TTL: vus_514-GMJ3USHYNdXHu-P7gaLKlweokkrsivZ1ehtKGKzXbGzH5xoUsP_YcmRzUqY2x46nPPYgEAYCgWfPdQ
-
-=== Query Documents ===
-✓ Found 7 documents with TTL
-
-=== Update Document ===
-✓ Updated document
-
-=== Delete Document ===
-✓ Deleted document
-
-✓ All document TTL operations completed successfully
-[32m✓ document_ttl.js completed successfully[0m
-[34m
-=== Running /Users/tek/Development/ekoDB/ekodb-client/examples/javascript/ttl-caching/websocket_ttl.js ===[0m
-✓ Authentication successful
-
-=== Insert Test Data with TTL ===
-(node:9663) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
-(Use `node --trace-deprecation ...` to show where the warning was created)
-✓ Inserted document with TTL: 1BTa2ZhUezRidHXMOj2ZLw9zTg90e0p6sd4xyti89kzz-3apfpQ5BHourwqzn4DAHcLKscMQnfONIAhD7byfsA
-
-=== Query via WebSocket ===
-✓ WebSocket connected
-✓ Retrieved 4 record(s) via WebSocket
-
-✓ WebSocket TTL example completed successfully
-[32m✓ websocket_ttl.js completed successfully[0m
-[34m
-=== Running /Users/tek/Development/ekoDB/ekodb-client/examples/javascript/http_functions.js ===[0m
-🚀 ekoDB Scripts Example (JavaScript/HTTP)
-
-📋 Setting up test data...
-✅ Test data ready
-
-📝 Example 1: Simple Query Function with Filter
-
-✅ Script saved: dsMVETt7-S5VSyc7Rr8ODHILnSuZpKqfHUBRWPWzPS5ArS07SGHMUWadCcWVhNND-NcovsGbzwHADyDrMevvyQ
-📊 Found 20 active users
-
-📝 Example 2: Parameterized Pagination with Limit/Skip
-
-✅ Script saved: WD_qzh8Jb-lhW3jb11GkPFvuyw7IMin0tUp-RU95VRj1si30PHs-ZhopZZfq8v2VzXvjTB5aVktEgW7gXfPn7w
-📊 Page 1: Found 3 users (limit=3, skip=0)
-📊 Page 2: Found 3 users (limit=3, skip=3)
-
-📝 Example 3: Multi-Stage Pipeline (Query → Group → Calculate)
-
-✅ Script saved: rGqD4YJ-UDZl3NZCdD5mKGyGlWf7U0DrrtAyq6K0XGN-TxyLi_T_pfNyWaPE1sZv-Q76B0s58XlceYRYvRwAsA
-📊 Pipeline Results: Filtered (age>20) → Grouped by status → 2 groups
-   {"avg_score":50,"max_score":90,"count":10,"status":"inactive"}
-   {"status":"active","count":10,"avg_score":60,"max_score":100}
-
-📝 Example 4: Function Management
-
-📋 Total scripts: 20
-🔍 Retrieved script: Get Active Users
-✏️  Script updated
-🗑️  Script deleted
-
-ℹ️  Note: GET/UPDATE/DELETE operations require the encrypted ID
-ℹ️  Only CALL can use either ID or label
-
-✅ All examples completed!
-[32m✓ http_functions.js completed successfully[0m
-[34m
 === Running /Users/tek/Development/ekoDB/ekodb-client/examples/javascript/transactions.js ===[0m
 ✓ Authentication successful
 
 === Setup: Creating Test Accounts ===
-Created Alice: $1000 - ID: KN2wxYgi4XEhrLRhs8iofsFxS3a5nHTnUqQ5ZNE4wmPPZzFBiaRAgzgXaXudyDSfJIPIHBuspsz_vFl3cqDXyw
-Created Bob: $500 - ID: ls52avK0YFx_gUnjXEhfZVWFGIl_OiEUXleASmP424u73gbkTq9CeA5CD5au3w0jTrQCzpBaRHnxIEH6M7nC0g
+Created Alice: $1000 - ID: wLYPadg5L7aP_bBYvLDXhmG0OA_cNO4gy2_5ocXz-W8-Po7TMstdrix1eRJKznkyRBLeNqTHqHl9iGRpOtnJDQ
+Created Bob: $500 - ID: BdZi4K4Wej7FyuqyTq0A1Xxw8xP99iysOawPBuCe1XqSonsRx17rLTeGxE_eyF3iEfr6Y51Ty6JygOM_5QaOKg
 
 === Example 1: Begin Transaction ===
-Transaction ID: 02e5ed3d-165b-4bef-b6fc-77642664e936
+Transaction ID: f87d4f98-edae-4f03-8cec-b9c7b9c942c6
 
 === Example 2: Operations with transaction_id ===
 Updated Alice: $1000 → $800
@@ -331,7 +294,7 @@ Alice: 800
 Bob: 700
 
 === Example 5: Rollback ===
-New transaction: 6cb5f52f-6ece-4098-bc58-aeb0f5fa82fc
+New transaction: 8a242188-f552-4a35-a5c2-8df155d36277
 Updated Bob: $700 → $600 (in transaction)
 ✓ Transaction rolled back
 Bob after rollback: 700
@@ -359,7 +322,7 @@ Each Script shows Functions chaining with proper verification
 ============================================================
 
 1️⃣ Saving Script...
-   ✅ Script saved: U1scSkBobIZyHQipcfzyLEdoA2q51r-anlNhrydoH5a2XQA99jkWOGaRBR3SAl2bG7yTxAVz1SOCP_bVLsV78g
+   ✅ Script saved: 3TfRNrHGUXDleqbnC5Xyzz3e2HcPPJ9iHTN-d9aLgXbMnz-UyL50zi68vSOYUsiYFN6uqeXRfw9vlrvwY5BlzA
 
 2️⃣ Calling Script (Insert + Verify)...
    ✅ Script executed: 2 Functions
@@ -377,7 +340,7 @@ Each Script shows Functions chaining with proper verification
 ============================================================
 
 1️⃣ Saving Script...
-   ✅ Script saved: tJG-pdX8zZlPK03-DyaCoE7yrtulmylampLEh-t1YTi044QqtR2oVYTh3Xk10c05mVnyRrQjqzDo6VMzZXRNKA
+   ✅ Script saved: 85h2ropiMCiyf1M9MvWRo_ayMIfKz8TJlKF75Keadqq0ihlruBBUqnqHb84Bc4xsQ8oIO_VEMZbVJFZxLLhjQA
 
 2️⃣ Calling Script (Query + Update + Verify)...
    ✅ Script executed: 3 Functions
@@ -393,7 +356,7 @@ Each Script shows Functions chaining with proper verification
 ============================================================
 
 1️⃣ Saving Script...
-   ✅ Script saved: DkNobJRGFfBkpG7Uq3Lisdm7039nQx75j6u967mfGoPwx2My5Ox1pGqabSFVoLq84NS4p3pLPi9v762AopybeA
+   ✅ Script saved: m6O8hOzYnUMvck5uqFhRievI8Jz7YdPnXClYUAlQ9skHnrfENTEHtdUuJmlR6quAPZRbjb_7lI2UvGR5npi9JA
 
 2️⃣ Calling Script (Query + Update Credits + Verify)...
    ✅ Script executed: 3 Functions
@@ -401,16 +364,16 @@ Each Script shows Functions chaining with proper verification
 
 3️⃣ Verification Results:
    ✅ Found 1 record(s)
-   📋 Credits updated to: {"type":"Integer","value":0}
-   📋 Status: {"value":"active","type":"String"}
-   📋 Name: {"type":"String","value":"Alice Smith"}
+   📋 Credits updated to: {"value":0,"type":"Integer"}
+   📋 Status: {"type":"String","value":"active"}
+   📋 Name: {"value":"Alice Smith","type":"String"}
 
 ============================================================
 📝 Script 4: Query Before Delete + Delete + Verify
 ============================================================
 
 1️⃣ Saving Script...
-   ✅ Script saved: hBsl1M4h-NHu1eLupRwtJTzzRx8lOvEUy9JZkmRNikwVEl5EzG_jy5TdcVgTjD26qnmKiRQa6JsF1Y2Zl-K5yA
+   ✅ Script saved: j79faR_3o86f5SgyQNPbNBBKYorrGOkwVyTfl3H8U3ug_9uYUTdeinFZVMSqk_9faXdmuSPApUyqQYgb4F6rmA
 
 2️⃣ Calling Script (Query + Delete + Verify)...
    ✅ Script executed: 3 Functions
@@ -423,10 +386,10 @@ Each Script shows Functions chaining with proper verification
 ============================================================
 🧹 Cleanup
 ============================================================
-   ✅ Deleted script: U1scSkBobIZyHQipcfzy...
-   ✅ Deleted script: tJG-pdX8zZlPK03-DyaC...
-   ✅ Deleted script: DkNobJRGFfBkpG7Uq3Li...
-   ✅ Deleted script: hBsl1M4h-NHu1eLupRwt...
+   ✅ Deleted script: 3TfRNrHGUXDleqbnC5Xy...
+   ✅ Deleted script: 85h2ropiMCiyf1M9MvWR...
+   ✅ Deleted script: m6O8hOzYnUMvck5uqFhR...
+   ✅ Deleted script: j79faR_3o86f5SgyQNPb...
    ✅ Deleted collection: users
 
 ============================================================
@@ -440,6 +403,120 @@ Each Script shows Functions chaining with proper verification
    ✅ Verification is built into the Script itself
    ✅ Complete CRUD lifecycle in 4 focused Scripts
 [32m✓ crud_scripts.js completed successfully[0m
+[34m
+=== Running /Users/tek/Development/ekoDB/ekodb-client/examples/javascript/ttl/document_ttl.js ===[0m
+╔════════════════════════════════════════════════════════╗
+║     TTL EXPIRATION VERIFICATION TEST                   ║
+╚════════════════════════════════════════════════════════╝
+
+This test verifies that document TTL expiration works correctly.
+We will insert documents with short TTL and verify they expire.
+
+✓ Client connected
+
+═══════════════════════════════════════════════════════════
+TEST 1: Document TTL Expiration
+═══════════════════════════════════════════════════════════
+
+[Step 1] Insert document with 3 second TTL
+  Input: {name: 'TTL Test', value: 'should expire'}
+  TTL: 3s
+  Output: Document ID = LJ7tN0F7HYmFTRh2SZ_CT4d3-tvS6X39GdiIc9qWE8l6XbSW3OgjYukpUQX75McTd4aZsjzNe_b6T1x1p575KQ
+  ✓ PASS: Document inserted
+
+[Step 2] Verify document exists immediately
+  Input: findById(LJ7tN0F7HYmFTRh2SZ_CT4d3-tvS6X39GdiIc9qWE8l6XbSW3OgjYukpUQX75McTd4aZsjzNe_b6T1x1p575KQ)
+  Output: Found document with name = TTL Test
+  ✓ PASS: Document exists
+
+[Step 3] Wait for TTL to expire (5s)
+  Waiting..... done
+  ✓ PASS: Wait complete
+
+[Step 4] Verify document has expired
+  Input: findById(LJ7tN0F7HYmFTRh2SZ_CT4d3-tvS6X39GdiIc9qWE8l6XbSW3OgjYukpUQX75McTd4aZsjzNe_b6T1x1p575KQ)
+  Output: Error (expected) - Request failed with status 404: {"error":"Record not found (expired)"}
+  ✓ PASS: Document expired (not found error)
+
+═══════════════════════════════════════════════════════════
+TEST 2: Multiple Documents with Different TTLs
+═══════════════════════════════════════════════════════════
+
+[Step 1] Insert 3 documents with different TTLs
+  Inserted: 3s TTL=TRDlCq6n, 10s TTL=8D40T62j, Permanent=Dz4l_BIM
+  ✓ PASS: All documents inserted
+
+[Step 2] Wait 5 seconds (3s doc should expire)
+  ✓ PASS: 3s TTL document expired
+  ✓ PASS: 10s TTL document still exists
+  ✓ PASS: Permanent document still exists
+
+[Step 3] Wait 7 more seconds (10s doc should expire)
+  ✓ PASS: 10s TTL document expired
+  ✓ PASS: Permanent document still exists
+
+═══════════════════════════════════════════════════════════
+CLEANUP
+═══════════════════════════════════════════════════════════
+✓ Deleted test collection
+
+╔════════════════════════════════════════════════════════╗
+║              ALL TTL TESTS PASSED ✓                    ║
+╚════════════════════════════════════════════════════════╝
+
+TTL expiration is working correctly:
+  • Documents with TTL expire after the specified time
+  • Documents without TTL persist indefinitely
+  • Different TTL durations are handled correctly
+[32m✓ document_ttl.js completed successfully[0m
+[34m
+=== Running /Users/tek/Development/ekoDB/ekodb-client/examples/javascript/ttl/websocket_ttl.js ===[0m
+╔════════════════════════════════════════════════════════╗
+║   WEBSOCKET TTL EXPIRATION VERIFICATION TEST           ║
+╚════════════════════════════════════════════════════════╝
+
+This test verifies TTL expiration works via WebSocket connections.
+We will use WebSocket to insert, query, and verify TTL expiration.
+
+✓ Client connected
+
+═══════════════════════════════════════════════════════════
+TEST: WebSocket TTL Expiration
+═══════════════════════════════════════════════════════════
+
+[Step 1] Insert document with 3 second TTL
+  Input: {name: 'WS TTL Test', value: 'should expire'}
+  TTL: 3s
+  Output: Document ID = DbGP5QmjiPdu69nWGqb5ECPOApW1ZRM0c-OnivDsqwo4jQlE5hURHsk-gSJ_fXtt0ZLC9-ddxRAwj1tK6m1Y3Q
+  ✓ PASS: Document inserted
+
+[Step 2] Query to verify document exists
+  Input: findById(DbGP5QmjiPdu69nWGqb5ECPOApW1ZRM0c-OnivDsqwo4jQlE5hURHsk-gSJ_fXtt0ZLC9-ddxRAwj1tK6m1Y3Q)
+  Output: Found document with name = WS TTL Test
+  ✓ PASS: Document exists
+
+[Step 3] Wait for TTL to expire (5s)
+  Waiting..... done
+  ✓ PASS: Wait complete
+
+[Step 4] Query to verify document has expired
+  Input: findById(DbGP5QmjiPdu69nWGqb5ECPOApW1ZRM0c-OnivDsqwo4jQlE5hURHsk-gSJ_fXtt0ZLC9-ddxRAwj1tK6m1Y3Q)
+  Output: Error (expected) - Request failed with status 404: {"error":"Record not found (expired)"}
+  ✓ PASS: Document expired (not found error)
+
+═══════════════════════════════════════════════════════════
+CLEANUP
+═══════════════════════════════════════════════════════════
+✓ Deleted test collection
+
+╔════════════════════════════════════════════════════════╗
+║          WEBSOCKET TTL TEST PASSED ✓                   ║
+╚════════════════════════════════════════════════════════╝
+
+WebSocket TTL expiration is working correctly:
+  • Documents with TTL inserted via client expire correctly
+  • Queries correctly return null for expired documents
+[32m✓ websocket_ttl.js completed successfully[0m
 [34m
 ╔════════════════════════════════════════╗[0m
 [34m║           Test Summary                 ║[0m
@@ -458,7 +535,7 @@ Each Script shows Functions chaining with proper verification
 > tsc
 
 
-up to date, audited 58 packages in 995ms
+up to date, audited 58 packages in 1s
 
 15 packages are looking for funding
   run `npm fund` for details
@@ -471,7 +548,7 @@ found 0 vulnerabilities
 ✅ [32mTypeScript client built![0m
 🧪 [36mRunning JavaScript client library examples...[0m
 
-added 1 package, removed 1 package, and audited 9 packages in 817ms
+added 1 package, removed 1 package, and audited 9 packages in 849ms
 
 1 package is looking for funding
   run `npm fund` for details
@@ -481,15 +558,15 @@ found 0 vulnerabilities
 
 === Insert Document ===
 Inserted: {
-  id: 'HAIVMBgDQ75mLNLwWB4f7ZTiH17uQNFid1sdPhrBOoowX9orjrB-7e2rxE1qvc1i2yRhnAEMuGqtRJ5SLOLOtw'
+  id: 'Mo-EPH1LnusDM7EbvrdHjwYvsa_RSuHOOol1hTQzRK0dngX6ttcbyR9rLiTCOfq5GBq4EVVkb9BbF9xFoPTC_Q'
 }
 
 === Find by ID ===
 Found: {
-  name: { type: 'String', value: 'Test Record' },
-  id: 'HAIVMBgDQ75mLNLwWB4f7ZTiH17uQNFid1sdPhrBOoowX9orjrB-7e2rxE1qvc1i2yRhnAEMuGqtRJ5SLOLOtw',
   active: { value: true, type: 'Boolean' },
-  value: { value: 42, type: 'Integer' }
+  id: 'Mo-EPH1LnusDM7EbvrdHjwYvsa_RSuHOOol1hTQzRK0dngX6ttcbyR9rLiTCOfq5GBq4EVVkb9BbF9xFoPTC_Q',
+  name: { type: 'String', value: 'Test Record' },
+  value: { type: 'Integer', value: 42 }
 }
 
 === Find with Query ===
@@ -497,10 +574,10 @@ Found documents: 1
 
 === Update Document ===
 Updated: {
-  active: { type: 'Boolean', value: true },
-  value: { value: 100, type: 'Integer' },
+  value: { type: 'Integer', value: 100 },
   name: { value: 'Updated Record', type: 'String' },
-  id: 'HAIVMBgDQ75mLNLwWB4f7ZTiH17uQNFid1sdPhrBOoowX9orjrB-7e2rxE1qvc1i2yRhnAEMuGqtRJ5SLOLOtw'
+  active: { value: true, type: 'Boolean' },
+  id: 'Mo-EPH1LnusDM7EbvrdHjwYvsa_RSuHOOol1hTQzRK0dngX6ttcbyR9rLiTCOfq5GBq4EVVkb9BbF9xFoPTC_Q'
 }
 
 === Delete Document ===
@@ -562,11 +639,11 @@ Total keys in store: 4
 ✓ Client created
 
 === Create Collection (via insert) ===
-Collection created with first record: yHKciOmSIS6NoqVrXkRYpF9rmojGG0olFA2xkehMjy31_Uab3_8enSpz5ja6J8fdnAth_HfoBzPxDTspV_stfw
+Collection created with first record: KbgJw-xf-UfaAjAR31jsr3kugA6OSaxsD41eKirwifUDdDQa7WXlNAq2RskrniHrhOBDJj7VhqdlW5WyFpKZeQ
 
 === List Collections ===
 Total collections: 22
-Sample collections: schema_employees_client_ts,ttl_cache,client_collection_management_js,schema_products_client_py,test_accounts
+Sample collections: schema_documents_client_ts,client_collection_management_js,ttl_cache,schema_users_client_ts,websocket_test
 
 === Count Documents ===
 Document count: 1
@@ -581,10 +658,10 @@ Collection still exists: false
 ✓ Client created
 
 === Insert Document with TTL (1 hour) ===
-✓ Inserted document: RxZyppwubrdz2zb-_KMvR35liNCh-nfah9wivYZWZ7v9uNFz9hzpE51GMemqaMz-j9YIe08a5D7iNXNG7BxtRA
+✓ Inserted document: qzFC79isXWrs78jhqwAJvjOfQ8nO3yTxUlDrumEwVxS_qv887FWhuEgcCaGauGU6E7fQ2smdieTpz2_Ikibu0w
 
 === Insert Document with TTL (5 minutes) ===
-✓ Inserted document: MG5mfiv8TbVZeR8lWuUKkziZWAJiCxfj5AgTjflR4NTKP0OhWT9x-JpvqmBDBoqPUjJL6CeYdlZUYVkFjhXqwQ
+✓ Inserted document: D4dXyHu_GXC-z-fHoLqlJFqOkIDdpEtyxTYRONDecesvmLRyBaSfZgy5D4owK-D78jA1FqDmk8Y2KHMQnULGkA
 
 === Query Documents ===
 ✓ Found 2 documents with TTL
@@ -604,7 +681,7 @@ Collection still exists: false
 ✓ Client created
 
 === Inserting Test Data ===
-✓ Inserted test record: zcflI3Sdk3FNl2v56D_xbz7OnulTsQjGaYVGmVdLR1Rlfp_h9ZZ0ohNxo1RnxYHDAs5xFstf8r2xW6DD9_S2-g
+✓ Inserted test record: fVZjJhrmmXzvShmSuJ9iLh6KLh7SxA9dv2tbRLHkyW0f0Ooa5r5LGvY3292j5hJ8sSnrAWGw6lnjexpRgk6OLw
 
 === Connecting to WebSocket ===
 ✓ WebSocket connected
@@ -620,7 +697,7 @@ Collection still exists: false
 ✓ Client created
 
 === Insert Test Data with TTL ===
-✓ Inserted document with TTL: a0R2SIqvRW1ip8KGriqWyaBbRQCzaspy5zs1YOg7h2AJ3BA-DjKoMCvWrZQ4xUXnW_Dp7jKtBIJ9qz3uqG6buw
+✓ Inserted document with TTL: l0GW1pEOpm_qw-irQpanbz6iOaAhegntSzcNggo2s-_Wd3g3ynOh0Z1ich0i3g8PosKEHQ3lY1SPxjTJlEYBLQ
 
 === Query via WebSocket ===
 ✓ WebSocket connected
@@ -640,21 +717,21 @@ Collection still exists: false
 
 📝 Example 1: Simple Query Function with Filter
 
-✅ Script saved: e8-zWTVrfFLUjv60AParDjsDnBRaTWhTTGKE3riT5-uFNkFicYaqgD7rV0-7pfnnXuXalmXwW1uEGR1slpcjyw
+✅ Script saved: o6bsEqY3XXhNkLKsgOhf0CkyNfO2VOre9DliZpIFQoqTNl2aoDiWBevDv6176wt8MVWam4Oh5j3Dis41J5V6Cw
 📊 Found 10 active users
 
 📝 Example 2: Parameterized Pagination with Limit/Skip
 
-✅ Script saved: pm9AZezphZkpps2QwJvtwULg79BhKsme2Vonfn-w5m5Jc3NV0dnrLH3eM6C-EYbmqtGHbDI3UCBrKcHUgHHn7Q
+✅ Script saved: ggXwzYp_z1eltafBZDiw4RO__qcgcQdif8_iJRCHpwP8uquP0gIJHp3AnnW4Tvcbvsyh7bdmHBCuD6elgbd-Xw
 📊 Page 1: Found 3 users (limit=3, skip=0)
 📊 Page 2: Found 2 users (limit=3, skip=3)
 
 📝 Example 3: Multi-Stage Pipeline (Query → Group → Calculate)
 
-✅ Script saved: tx_p4ch5Qr_BR21qqyB8ZQe3L7gk-TAwPR_Vpu7o0WGH0B8JyYrGhMk_mDzERi3vL_qz-eGnmNfirMIZ-esF9g
+✅ Script saved: -9ZhE-87PccBT4opjjunVKk3lmgWZnSiai8kJdApQvDIOWA5mfTEI8sNq30K_aKnR9GEkeMmgosL6r04p356rA
 📊 Pipeline Results: Filtered (age>20) → Grouped by status → 2 groups
-   {"status":"inactive","count":5,"avg_score":50,"max_score":90}
-   {"avg_score":60,"status":"active","count":5,"max_score":100}
+   {"count":5,"avg_score":60,"max_score":100,"status":"active"}
+   {"count":5,"avg_score":50,"max_score":90,"status":"inactive"}
 
 📝 Example 4: Function Management
 
@@ -676,7 +753,7 @@ Collection still exists: false
 
 📝 Example 1: Simple Query Script
 
-✅ Script saved: A6ZKG5TNneGxclex-2R92_etfDJTbCdedgnT5N020EyhWWGNZLfexK-_850RO5J0z54XUj4SEc7BqCuxpQVgig
+✅ Script saved: qb84O3Ubfb1Kt_GN9cK0j4gzkYdE4cOc-3kVK_Ch3HBSEi03BfeTJc9xRFaUZA7ONoC1oBPbj5T4Nyn_JH1mjA
 📊 Found 20 records
 ⏱️  Execution time: 0ms
 
@@ -690,8 +767,8 @@ Collection still exists: false
 
 ✅ Script saved
 📊 Statistics: 2 groups
-   {"status":"active","avg_score":60,"count":10}
-   {"status":"inactive","count":10,"avg_score":50}
+   {"avg_score":50,"status":"inactive","count":10}
+   {"count":10,"status":"active","avg_score":60}
 ⏱️  Execution time: 0ms
 
 📝 Example 4: Script Management
@@ -770,9 +847,9 @@ Collection still exists: false
 
 ✅ Script saved
 📊 Product summaries (10 items, showing first 3):
-   1. Monitor 27" - $399 (⭐4.6)
-   2. Desk Chair - $349 (⭐4.2)
-   3. Office Lamp - $79 (⭐4.05)
+   1. USB-C Cable - $19 (⭐4.3)
+   2. Wireless Mouse - $29 (⭐4.5)
+   3. Webcam HD - $119 (⭐4.5)
 ⏱️  Execution time: 0ms
 
 🧹 Cleaning up...
@@ -810,10 +887,10 @@ Collection still exists: false
 
 ✅ Script saved
 📊 Users (showing first 5 of 10):
-   1. User 4 (user4@example.com) - Score: 40
-   2. User 6 (user6@example.com) - Score: 60
-   3. User 3 (user3@example.com) - Score: 30
-   4. User 2 (user2@example.com) - Score: 20
+   1. User 2 (user2@example.com) - Score: 20
+   2. User 9 (user9@example.com) - Score: 90
+   3. User 10 (user10@example.com) - Score: 100
+   4. User 6 (user6@example.com) - Score: 60
    5. User 1 (user1@example.com) - Score: 10
 ⏱️  Execution time: 0ms
 
@@ -821,8 +898,8 @@ Collection still exists: false
 
 ✅ Script saved
 📊 User summary (2 groups):
-   active users: 7 users, Total Score: 370
    inactive users: 3 users, Total Score: 180
+   active users: 7 users, Total Score: 370
 ⏱️  Execution time: 0ms
 
 🧹 Cleaning up...
@@ -838,10 +915,10 @@ Collection still exists: false
 
 ✅ Script saved
 📊 Found 5 documents
-   1. Natural Language Processing (AI)
-   2. Introduction to Machine Learning (AI)
-   3. Database Design Principles (Database)
-   4. Vector Databases Explained (Database)
+   1. Database Design Principles (Database)
+   2. Vector Databases Explained (Database)
+   3. Natural Language Processing (AI)
+   4. Introduction to Machine Learning (AI)
    5. Getting Started with ekoDB (Database)
 ⏱️  Execution time: 0ms
 
@@ -849,18 +926,18 @@ Collection still exists: false
 
 ✅ Script saved
 📊 Documents by category:
-   AI: 2 documents
    Database: 3 documents
+   AI: 2 documents
 ⏱️  Execution time: 0ms
 
 📝 Example 3: Select Specific Fields
 
 ✅ Script saved
 📊 Document titles (5 docs):
-   1. Natural Language Processing
-   2. Introduction to Machine Learning
-   3. Database Design Principles
-   4. Vector Databases Explained
+   1. Database Design Principles
+   2. Vector Databases Explained
+   3. Natural Language Processing
+   4. Introduction to Machine Learning
    5. Getting Started with ekoDB
 ⏱️  Execution time: 0ms
 
@@ -868,17 +945,17 @@ Collection still exists: false
 
 ✅ Script saved
 📊 Projected documents (showing first 3):
-   1. Natural Language Processing
-   2. Introduction to Machine Learning
-   3. Database Design Principles
+   1. Database Design Principles
+   2. Vector Databases Explained
+   3. Natural Language Processing
 ⏱️  Execution time: 0ms
 
 📝 Example 5: All Document Fields
 
 ✅ Script saved
 📊 All documents (5 total, showing first 2):
-   1. Natural Language Processing (AI)
-   2. Introduction to Machine Learning (AI)
+   1. Database Design Principles (Database)
+   2. Vector Databases Explained (Database)
 ⏱️  Execution time: 0ms
 
 🧹 Cleaning up...
@@ -896,19 +973,12 @@ Collection still exists: false
 
 ✅ Chat script saved
 🤖 AI Response:
-   Vector databases offer several benefits:
-
-1. Spatial Accuracy: They provide better spatial accuracy as they use points, lines, and polygons to represent spatial data.
-
-2. Scalability: They maintain the same visual quality when zoomed in or out, unlike raster databases.
-
-3. Attribute Storage: They can store associated attribute data directly, making them useful for complex data analysis.
-
-4. Smaller Size: They often require less storage space than raster databases.
-
-5. Flexibility: They allow for more complex operations such as network analysis and topology.
-
-6. Editability: Vector data is easy to edit, making it ideal for applications where data needs to be updated regularly.
+   1. Efficient Spatial Analysis: Vector databases allow for more precise calculations and spatial analyses compared to raster databases.
+2. High Accuracy: They provide high geometric accuracy due to the use of points, lines, and polygons to represent spatial data.
+3. Less Storage Space: They typically require less storage space compared to raster databases.
+4. Scalability: Vector data can be easily scaled from small to large without losing any quality or detail.
+5. Flexibility: They offer more flexibility in terms of data representation, as they can be easily edited and manipulated.
+6. Better Visualization: Vector databases can provide better visual representation for features like points of interest, roads, and boundaries.
 ⏱️  Execution time: 0ms
 
 📝 Example 2: Generate Embeddings
@@ -933,11 +1003,11 @@ Collection still exists: false
 ✓ Client created
 
 === Setup: Creating Test Accounts ===
-Created Alice: $1000 - ID: 7Be9bZ46UVxZOt-gD8LkietCrfunFXn6MLxpxUEpQchmJO-xgLLs6BOJMMcn1KB6CJJ7eWgx17pN1I6D4wwnrA
-Created Bob: $500 - ID: YCaDEdYT_KOhrr9Hn6-ghod__vK0xcYxX7LH5qlARhBfOYcwnwwC0UhmMj6v3KkYGcK3wdL7EBXS7KeQEHijTQ
+Created Alice: $1000 - ID: 77P0Sed4T8RJbJdED1dBLh8R1Eo3ER6nmYWhvflV2NL0PGh-dpNqAIi3XEbkdIxQpZQYaG680sZrgOwe-82d3w
+Created Bob: $500 - ID: zE-qmo5i3__5HiINDww0NhICYeVCcyh50qsGUnr7wAzHy9p5yUu6Uj-nmAdlZKZQkX08bKUOD-fUJ3l0GowSMQ
 
 === Example 1: Begin Transaction ===
-Transaction ID: c39b45d8-cd93-4cf1-8ea1-ed29d0955c8e
+Transaction ID: d9058756-f78d-4727-8477-e5a0e86d943b
 
 === Example 2: Operations within Transaction ===
 Updated Alice: $1000 → $800 (simulated)
@@ -951,7 +1021,7 @@ Operations: 0
 ✓ Transaction committed
 
 === Example 5: Rollback Demo ===
-New transaction: 4ec6af3f-e560-4c3f-993a-5200cb0c0d49
+New transaction: 7672cc52-8b7d-4a78-8474-0971dbb6466e
 Status before rollback: Active
 ✓ Transaction rolled back
 

@@ -105,17 +105,19 @@ func main() {
 	}
 
 	// List of examples to run
+	// Note: Direct API examples are in the main directory
+	// TTL verification tests are in the ttl/ subdirectory
 	examples := []string{
-		"ttl-caching/simple_crud.go",
-		"ttl-caching/simple_websocket.go",
-		"ttl-caching/batch_operations.go",
-		"ttl-caching/kv_operations.go",
-		"ttl-caching/collection_management.go",
-		"ttl-caching/document_ttl.go",
-		"ttl-caching/websocket_ttl.go",
+		"simple_crud.go",
+		"simple_websocket.go",
 		"http_functions.go",
+		"batch_operations.go",
+		"kv_operations.go",
+		"collection_management.go",
 		"transactions.go",
 		"crud_scripts.go",
+		"ttl/document_ttl.go",
+		"ttl/websocket_ttl.go",
 	}
 
 	log(fmt.Sprintf("\n=== Running %d Examples ===", len(examples)), colorYellow)
