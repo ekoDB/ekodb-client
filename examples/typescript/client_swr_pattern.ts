@@ -45,9 +45,9 @@ async function swrPatternExample() {
           Stage.insert(
             "github_cache",
             {
-              id: "{{username}}",
-              data: "{{http_response}}",
-              cached_at: new Date().toISOString(),
+              id: { type: "String", value: "{{username}}" },
+              data: { type: "Object", value: "{{http_response}}" },
+              cached_at: { type: "String", value: new Date().toISOString() },
             },
             false,
             undefined,
@@ -110,9 +110,9 @@ async function swrPatternExample() {
           Stage.insert(
             "product_cache",
             {
-              id: "{{product_id}}",
-              enriched_data: "{{http_response}}",
-              enriched_at: new Date().toISOString(),
+              id: { type: "String", value: "{{product_id}}" },
+              enriched_data: { type: "Object", value: "{{http_response}}" },
+              enriched_at: { type: "String", value: new Date().toISOString() },
             },
             false,
             undefined,

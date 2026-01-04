@@ -72,9 +72,12 @@ async def main():
                         "type": "Insert",
                         "collection": "github_cache",
                         "record": {
-                            "id": "{{username}}",
-                            "data": "{{http_response}}",
-                            "cached_at": str(int(time.time())),
+                            "id": {"type": "String", "value": "{{username}}"},
+                            "data": {"type": "Object", "value": "{{http_response}}"},
+                            "cached_at": {
+                                "type": "String",
+                                "value": str(int(time.time())),
+                            },
                         },
                         "bypass_ripple": False,
                     },
@@ -146,9 +149,15 @@ async def main():
                         "type": "Insert",
                         "collection": "product_cache",
                         "record": {
-                            "id": "{{product_id}}",
-                            "enriched_data": "{{http_response}}",
-                            "enriched_at": str(int(time.time())),
+                            "id": {"type": "String", "value": "{{product_id}}"},
+                            "enriched_data": {
+                                "type": "Object",
+                                "value": "{{http_response}}",
+                            },
+                            "enriched_at": {
+                                "type": "String",
+                                "value": str(int(time.time())),
+                            },
                         },
                         "bypass_ripple": False,
                     },

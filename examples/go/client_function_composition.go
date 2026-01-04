@@ -132,8 +132,8 @@ func swrCompositionExample(client *ekodb.Client) error {
 			ekodb.StageInsert(
 				"github_cache",
 				map[string]interface{}{
-					"id":   "{{username}}",
-					"data": "{{http_response}}",
+					"id":   map[string]interface{}{"type": "String", "value": "{{username}}"},
+					"data": map[string]interface{}{"type": "Object", "value": "{{http_response}}"},
 				},
 				false,
 				&ttl,

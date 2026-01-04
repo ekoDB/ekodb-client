@@ -137,8 +137,8 @@ suspend fun swrCompositionExample(client: EkoDBClient) {
             Function.Insert(
                 collection = "github_cache",
                 record = mapOf(
-                    "id" to "{{username}}",
-                    "data" to "{{http_response}}"
+                    "id" to mapOf("type" to "String", "value" to "{{username}}"),
+                    "data" to mapOf("type" to "Object", "value" to "{{http_response}}")
                 ),
                 ttl = 300 // 5 minute cache
             )

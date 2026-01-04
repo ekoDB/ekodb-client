@@ -56,8 +56,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 Box::new(Function::Insert {
                     collection: "github_cache".to_string(),
                     record: serde_json::json!({
-                        "id": "{{username}}",
-                        "data": "{{http_response}}"
+                        "id": {"type": "String", "value": "{{username}}"},
+                        "data": {"type": "Object", "value": "{{http_response}}"}
                     }),
                     bypass_ripple: None,
                     ttl: None,
@@ -147,8 +147,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 Box::new(Function::Insert {
                     collection: "product_cache".to_string(),
                     record: serde_json::json!({
-                        "id": "{{product_id}}",
-                        "enriched_data": "{{http_response}}"
+                        "id": {"type": "String", "value": "{{product_id}}"},
+                        "enriched_data": {"type": "Object", "value": "{{http_response}}"}
                     }),
                     bypass_ripple: None,
                     ttl: None,

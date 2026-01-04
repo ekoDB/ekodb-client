@@ -53,9 +53,9 @@ async function edgeCacheExample() {
           Stage.insert(
             "edge_cache",
             {
-              id: "{{cache_key}}",
-              data: "{{http_response}}",
-              cached_at: new Date().toISOString(),
+              id: { type: "String", value: "{{cache_key}}" },
+              data: { type: "Object", value: "{{http_response}}" },
+              cached_at: { type: "String", value: new Date().toISOString() },
             },
             false,
             undefined, // ttl parameter - backend will handle {{ttl_seconds}}

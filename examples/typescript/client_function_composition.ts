@@ -121,8 +121,8 @@ async function swrCompositionExample(client: EkoDBClient): Promise<void> {
         type: "Insert" as const,
         collection: "github_cache",
         record: {
-          id: "{{username}}",
-          data: "{{http_response}}",
+          id: { type: "String", value: "{{username}}" },
+          data: { type: "Object", value: "{{http_response}}" },
         },
         ttl: 300, // 5 minute cache
       },

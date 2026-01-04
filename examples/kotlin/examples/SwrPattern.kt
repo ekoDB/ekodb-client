@@ -65,9 +65,18 @@ fun main() = runBlocking {
                     FunctionStageConfig.Insert(
                         collection = "github_cache",
                         record = buildJsonObject {
-                            put("id", "{{username}}")
-                            put("data", "{{http_response}}")
-                            put("cached_at", System.currentTimeMillis().toString())
+                            putJsonObject("id") {
+                                put("type", "String")
+                                put("value", "{{username}}")
+                            }
+                            putJsonObject("data") {
+                                put("type", "Object")
+                                put("value", "{{http_response}}")
+                            }
+                            putJsonObject("cached_at") {
+                                put("type", "String")
+                                put("value", System.currentTimeMillis().toString())
+                            }
                         },
                         bypass_ripple = false,
                         ttl = null
@@ -150,9 +159,18 @@ fun main() = runBlocking {
                     FunctionStageConfig.Insert(
                         collection = "product_cache",
                         record = buildJsonObject {
-                            put("id", "{{product_id}}")
-                            put("enriched_data", "{{http_response}}")
-                            put("enriched_at", System.currentTimeMillis().toString())
+                            putJsonObject("id") {
+                                put("type", "String")
+                                put("value", "{{product_id}}")
+                            }
+                            putJsonObject("enriched_data") {
+                                put("type", "Object")
+                                put("value", "{{http_response}}")
+                            }
+                            putJsonObject("enriched_at") {
+                                put("type", "String")
+                                put("value", System.currentTimeMillis().toString())
+                            }
                         },
                         bypass_ripple = false,
                         ttl = null
