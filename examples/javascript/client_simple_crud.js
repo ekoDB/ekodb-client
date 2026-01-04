@@ -35,7 +35,7 @@ async function main() {
 
   // Example 2: Find by ID
   console.log('\n=== Find by ID ===');
-  const found = await client.findByID(collection, docID);
+  const found = await client.findById(collection, docID);
   console.log('Found:', found);
 
   // Example 3: Find with query

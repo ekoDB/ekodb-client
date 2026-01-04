@@ -154,7 +154,7 @@ impl WebSocketClient {
 
         // Send request
         if let Err(e) = write
-            .send(Message::Text(serde_json::to_string(&request)?))
+            .send(Message::Text(serde_json::to_string(&request)?.into()))
             .await
         {
             // Connection failed, clear it for reconnection

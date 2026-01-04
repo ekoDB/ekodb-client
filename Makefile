@@ -59,10 +59,18 @@ help:
 
 	@echo ""
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
-	@echo "🧪 $(CYAN)TESTING$(RESET)"
+	@echo "🧪 $(CYAN)UNIT TESTING$(RESET)"
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
-	@echo "  🧪 $(GREEN)make test$(RESET)         - Run Rust client tests"
-	@echo "  🤖 $(GREEN)make test-ci$(RESET)      - Run optimized CI tests"
+	@echo "  🧪 $(GREEN)make test$(RESET)           - Run ALL unit tests (Rust+TS+Python+Kotlin = 527 tests)"
+	@echo "  🦀 $(GREEN)make test-rust$(RESET)      - Run Rust client tests (253 tests)"
+	@echo "  📘 $(GREEN)make test-typescript$(RESET) - Run TypeScript client tests (108 tests)"
+	@echo "  🐍 $(GREEN)make test-python$(RESET)    - Run Python client tests (66 tests)"
+	@echo "  🟣 $(GREEN)make test-kotlin$(RESET)    - Run Kotlin client tests (100 tests)"
+	@echo "  🤖 $(GREEN)make test-ci$(RESET)        - Run optimized CI tests"
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "🔗 $(CYAN)INTEGRATION TESTING$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "  🔗 $(GREEN)make test-examples$(RESET) - Run ALL integration tests (includes transactions)"
 	@echo "  🦀 $(GREEN)make test-examples-rust$(RESET) (or rs) - Run Rust examples"
 	@echo "     $(GREEN)make test-examples-rs-direct$(RESET) - Rust direct HTTP/WebSocket"
@@ -322,11 +330,39 @@ deploy-client-kt:
 
 deploy-client-kotlin: deploy-client-kt
 
-# Test targets
-test:
-	@echo "🧪 $(CYAN)Running Rust client tests...$(RESET)"
-	$(CARGO) test -p ekodb_client
-	@echo "✅ $(GREEN)Tests complete!$(RESET)"
+# Test targets - runs ALL unit tests across all client libraries
+test: test-rust test-typescript test-python test-kotlin
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "✅ $(GREEN)All unit tests complete!$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "  🦀 Rust:       253 tests"
+	@echo "  📘 TypeScript: 108 tests"
+	@echo "  🐍 Python:      66 tests"
+	@echo "  🟣 Kotlin:     100 tests"
+	@echo "  ─────────────────────"
+	@echo "  📊 Total:      527 tests"
+	@echo ""
+
+test-rust:
+	@echo "🦀 $(CYAN)Running Rust client tests...$(RESET)"
+	@$(CARGO) test -p ekodb_client
+	@echo "✅ $(GREEN)Rust tests complete!$(RESET)"
+
+test-typescript:
+	@echo "📘 $(CYAN)Running TypeScript client tests...$(RESET)"
+	@cd $(CLIENT_TS_DIR) && npm test
+	@echo "✅ $(GREEN)TypeScript tests complete!$(RESET)"
+
+test-python:
+	@echo "🐍 $(CYAN)Running Python client tests...$(RESET)"
+	@cd $(CLIENT_PY_DIR) && python3 -m pytest tests/ -v
+	@echo "✅ $(GREEN)Python tests complete!$(RESET)"
+
+test-kotlin:
+	@echo "🟣 $(CYAN)Running Kotlin client tests...$(RESET)"
+	@cd $(CLIENT_KT_DIR) && ./gradlew test --quiet
+	@echo "✅ $(GREEN)Kotlin tests complete!$(RESET)"
 
 test-ci:
 	@echo "🧪 $(CYAN)Running CI-safe tests (optimized for CI/CD pipelines)...$(RESET)"

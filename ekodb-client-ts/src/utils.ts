@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * const user = await client.findByID('users', userId);
+ * const user = await client.findById('users', userId);
  * const email = getValue(user.email); // Extracts string from { type: 'String', value: 'user@example.com' }
  * const age = getValue(user.age);     // Extracts number from { type: 'Integer', value: 25 }
  * ```
@@ -34,7 +34,7 @@ export function getValue<T = any>(field: any): T {
  *
  * @example
  * ```typescript
- * const user = await client.findByID('users', userId);
+ * const user = await client.findById('users', userId);
  * const { email, first_name, status } = getValues(user, ['email', 'first_name', 'status']);
  * ```
  */
@@ -171,7 +171,7 @@ export function getObjectValue<T = any>(field: any): T | null {
  *
  * @example
  * ```typescript
- * const user = await client.findByID('users', userId);
+ * const user = await client.findById('users', userId);
  * const plainUser = extractRecord(user);
  * // { id: '123', email: 'user@example.com', first_name: 'John', ... }
  * ```

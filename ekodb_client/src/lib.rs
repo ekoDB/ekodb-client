@@ -51,6 +51,8 @@ mod query_builder;
 mod retry;
 mod schema;
 mod search;
+#[cfg(test)]
+mod test_utils;
 mod types;
 mod utils;
 mod websocket;
