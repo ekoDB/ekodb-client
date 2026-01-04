@@ -47,14 +47,15 @@ class EkoDBClient private constructor(
     private val apiKey: String,
     private val timeout: Long = 30,
     private val maxRetries: Int = 3,
-    private val format: SerializationFormat = SerializationFormat.JSON // Default to JSON (CBOR has serialization compatibility issues)
+    private val format: SerializationFormat = SerializationFormat.JSON, // Default to JSON (CBOR has serialization compatibility issues)
+    injectedClient: HttpClient? = null // Optional injected client for testing
 ) {
     // CBOR serializer for MessagePack format
     private val cbor = Cbor {
         ignoreUnknownKeys = true
     }
     
-    private val httpClient = HttpClient(CIO) {
+    private val client: HttpClient = injectedClient ?: HttpClient(CIO) {
         install(ContentNegotiation) {
             json(Json {
                 prettyPrint = true
@@ -95,7 +96,7 @@ class EkoDBClient private constructor(
         authToken?.let { return it }
         
         // Exchange API key for JWT token
-        val response = httpClient.post("$baseUrl/api/auth/token") {
+        val response = client.post("$baseUrl/api/auth/token") {
             contentType(getContentTypeForRequest())
             header("Accept", getContentTypeForRequest().toString())
             setBody(buildJsonObject {
@@ -239,7 +240,7 @@ class EkoDBClient private constructor(
     suspend fun insert(collection: String, record: Record): Record {
         val token = getToken()
         val response = executeWithRetry {
-            httpClient.post("$baseUrl/api/insert/$collection") {
+            client.post("$baseUrl/api/insert/$collection") {
                 header("Authorization", "Bearer $token")
                 contentType(getContentTypeForRequest())
                 header("Accept", getContentTypeForRequest().toString())
@@ -268,7 +269,7 @@ class EkoDBClient private constructor(
     suspend fun findById(collection: String, id: String): Record {
         val token = getToken()
         val response = executeWithRetry {
-            httpClient.get("$baseUrl/api/find/$collection/$id") {
+            client.get("$baseUrl/api/find/$collection/$id") {
                 header("Authorization", "Bearer $token")
             }
         }
@@ -287,7 +288,7 @@ class EkoDBClient private constructor(
     suspend fun find(collection: String, query: Query): List<Record> {
         val token = getToken()
         val response = executeWithRetry {
-            httpClient.post("$baseUrl/api/find/$collection") {
+            client.post("$baseUrl/api/find/$collection") {
                 header("Authorization", "Bearer $token")
                 contentType(getContentTypeForRequest())
                 header("Accept", getContentTypeForRequest().toString())
@@ -310,7 +311,7 @@ class EkoDBClient private constructor(
     suspend fun update(collection: String, id: String, updates: Record): Record {
         val token = getToken()
         val response = executeWithRetry {
-            httpClient.put("$baseUrl/api/update/$collection/$id") {
+            client.put("$baseUrl/api/update/$collection/$id") {
                 header("Authorization", "Bearer $token")
                 contentType(getContentTypeForRequest())
                 header("Accept", getContentTypeForRequest().toString())
@@ -326,7 +327,7 @@ class EkoDBClient private constructor(
     suspend fun delete(collection: String, id: String) {
         val token = getToken()
         val response = executeWithRetry {
-            httpClient.delete("$baseUrl/api/delete/$collection/$id") {
+            client.delete("$baseUrl/api/delete/$collection/$id") {
                 header("Authorization", "Bearer $token")
             }
         }
@@ -343,7 +344,7 @@ class EkoDBClient private constructor(
     suspend fun batchInsert(collection: String, records: List<Record>): BatchResult {
         val token = getToken()
         val response = executeWithRetry {
-            httpClient.post("$baseUrl/api/batch/insert/$collection") {
+            client.post("$baseUrl/api/batch/insert/$collection") {
                 header("Authorization", "Bearer $token")
                 contentType(getContentTypeForRequest())
                 header("Accept", getContentTypeForRequest().toString())
@@ -390,7 +391,7 @@ class EkoDBClient private constructor(
             "$baseUrl/api/batch/update/$collection"
         }
         val response = executeWithRetry {
-            httpClient.put(urlPath) {
+            client.put(urlPath) {
                 header("Authorization", "Bearer $token")
                 contentType(getContentTypeForRequest())
                 header("Accept", getContentTypeForRequest().toString())
@@ -419,7 +420,7 @@ class EkoDBClient private constructor(
     suspend fun batchDelete(collection: String, ids: List<String>): Long {
         val token = getToken()
         val response = executeWithRetry {
-            httpClient.delete("$baseUrl/api/batch/delete/$collection") {
+            client.delete("$baseUrl/api/batch/delete/$collection") {
                 header("Authorization", "Bearer $token")
                 contentType(getContentTypeForRequest())
                 header("Accept", getContentTypeForRequest().toString())
@@ -444,7 +445,7 @@ class EkoDBClient private constructor(
     suspend fun count(collection: String): Long {
         val token = getToken()
         val response = executeWithRetry {
-            httpClient.get("$baseUrl/api/collections/$collection") {
+            client.get("$baseUrl/api/collections/$collection") {
                 header("Authorization", "Bearer $token")
             }
         }
@@ -459,7 +460,7 @@ class EkoDBClient private constructor(
     suspend fun listCollections(): List<String> {
         val token = getToken()
         val response = executeWithRetry {
-            httpClient.get("$baseUrl/api/collections") {
+            client.get("$baseUrl/api/collections") {
                 header("Authorization", "Bearer $token")
             }
         }
@@ -474,9 +475,52 @@ class EkoDBClient private constructor(
     suspend fun deleteCollection(collection: String) {
         val token = getToken()
         executeWithRetry {
-            httpClient.delete("$baseUrl/api/collections/$collection") {
+            client.delete("$baseUrl/api/collections/$collection") {
                 header("Authorization", "Bearer $token")
             }
+        }
+    }
+    
+    /**
+     * Restore a deleted record from trash
+     * Records remain in trash for 30 days before permanent deletion
+     */
+    suspend fun restoreRecord(collection: String, id: String): Boolean {
+        val token = getToken()
+        val response = executeWithRetry {
+            client.post("$baseUrl/api/trash/$collection/$id") {
+                header("Authorization", "Bearer $token")
+            }
+        }
+        val result: JsonObject = response.body()
+        return result["status"]?.toString()?.contains("restored") == true
+    }
+    
+    /**
+     * Restore all deleted records in a collection from trash
+     * Returns the number of records restored
+     */
+    suspend fun restoreCollection(collection: String): Long {
+        val token = getToken()
+        val response = executeWithRetry {
+            client.post("$baseUrl/api/trash/$collection") {
+                header("Authorization", "Bearer $token")
+            }
+        }
+        val result: JsonObject = response.body()
+        return result["records_restored"]?.toString()?.toLongOrNull() ?: 0L
+    }
+    
+    /**
+     * Health check - verify the ekoDB server is responding
+     */
+    suspend fun health(): Boolean {
+        return try {
+            val response = client.get("$baseUrl/api/health")
+            val result: JsonObject = response.body()
+            result["status"]?.toString()?.contains("ok") == true
+        } catch (e: Exception) {
+            false
         }
     }
     
@@ -486,7 +530,7 @@ class EkoDBClient private constructor(
     suspend fun createCollection(collection: String, schema: JsonObject) {
         val token = getToken()
         executeWithRetry {
-            httpClient.post("$baseUrl/api/collections/$collection") {
+            client.post("$baseUrl/api/collections/$collection") {
                 header("Authorization", "Bearer $token")
                 contentType(getContentTypeForRequest())
                 header("Accept", getContentTypeForRequest().toString())
@@ -501,7 +545,7 @@ class EkoDBClient private constructor(
     suspend fun getCollection(collection: String): JsonObject {
         val token = getToken()
         val response = executeWithRetry {
-            httpClient.get("$baseUrl/api/collections/$collection") {
+            client.get("$baseUrl/api/collections/$collection") {
                 header("Authorization", "Bearer $token")
             }
         }
@@ -514,7 +558,7 @@ class EkoDBClient private constructor(
     suspend fun getSchema(collection: String): JsonObject {
         val token = getToken()
         val response = executeWithRetry {
-            httpClient.get("$baseUrl/api/schemas/$collection") {
+            client.get("$baseUrl/api/schemas/$collection") {
                 header("Authorization", "Bearer $token")
             }
         }
@@ -539,7 +583,7 @@ class EkoDBClient private constructor(
     suspend fun search(collection: String, searchQuery: JsonObject): JsonObject {
         val token = getToken()
         val response = executeWithRetry {
-            httpClient.post("$baseUrl/api/search/$collection") {
+            client.post("$baseUrl/api/search/$collection") {
                 header("Authorization", "Bearer $token")
                 contentType(getContentTypeForRequest())
                 header("Accept", getContentTypeForRequest().toString())
@@ -555,7 +599,7 @@ class EkoDBClient private constructor(
     suspend fun kvSet(key: String, value: JsonElement) {
         val token = getToken()
         executeWithRetry {
-            httpClient.post("$baseUrl/api/kv/set/$key") {
+            client.post("$baseUrl/api/kv/set/$key") {
                 header("Authorization", "Bearer $token")
                 contentType(getContentTypeForRequest())
                 header("Accept", getContentTypeForRequest().toString())
@@ -572,7 +616,7 @@ class EkoDBClient private constructor(
     suspend fun kvSetWithTtl(key: String, value: JsonElement, ttl: String) {
         val token = getToken()
         executeWithRetry {
-            httpClient.post("$baseUrl/api/kv/set/$key") {
+            client.post("$baseUrl/api/kv/set/$key") {
                 header("Authorization", "Bearer $token")
                 contentType(getContentTypeForRequest())
                 header("Accept", getContentTypeForRequest().toString())
@@ -590,7 +634,7 @@ class EkoDBClient private constructor(
     suspend fun kvGet(key: String): Any? {
         val token = getToken()
         val response = executeWithRetry {
-            httpClient.get("$baseUrl/api/kv/get/$key") {
+            client.get("$baseUrl/api/kv/get/$key") {
                 header("Authorization", "Bearer $token")
             }
         }
@@ -609,7 +653,7 @@ class EkoDBClient private constructor(
     suspend fun kvDelete(key: String) {
         val token = getToken()
         val response = executeWithRetry {
-            httpClient.delete("$baseUrl/api/kv/delete/$key") {
+            client.delete("$baseUrl/api/kv/delete/$key") {
                 header("Authorization", "Bearer $token")
             }
         }
@@ -643,7 +687,7 @@ class EkoDBClient private constructor(
         }
         
         val response = executeWithRetry {
-            httpClient.post("$baseUrl/api/kv/find") {
+            client.post("$baseUrl/api/kv/find") {
                 header("Authorization", "Bearer $token")
                 contentType(ContentType.Application.Json)
                 setBody(body)
@@ -678,7 +722,7 @@ class EkoDBClient private constructor(
         val token = getToken()
         
         val response = executeWithRetry {
-            httpClient.post("$baseUrl/api/transactions") {
+            client.post("$baseUrl/api/transactions") {
                 header("Authorization", "Bearer $token")
                 contentType(ContentType.Application.Json)
                 setBody(mapOf("isolation_level" to isolationLevel))
@@ -704,7 +748,7 @@ class EkoDBClient private constructor(
         val token = getToken()
         
         val response = executeWithRetry {
-            httpClient.get("$baseUrl/api/transactions/$transactionId") {
+            client.get("$baseUrl/api/transactions/$transactionId") {
                 header("Authorization", "Bearer $token")
             }
         }
@@ -729,7 +773,7 @@ class EkoDBClient private constructor(
         val token = getToken()
         
         val response = executeWithRetry {
-            httpClient.post("$baseUrl/api/transactions/$transactionId/commit") {
+            client.post("$baseUrl/api/transactions/$transactionId/commit") {
                 header("Authorization", "Bearer $token")
             }
         }
@@ -748,7 +792,7 @@ class EkoDBClient private constructor(
         val token = getToken()
         
         val response = executeWithRetry {
-            httpClient.post("$baseUrl/api/transactions/$transactionId/rollback") {
+            client.post("$baseUrl/api/transactions/$transactionId/rollback") {
                 header("Authorization", "Bearer $token")
             }
         }
@@ -823,7 +867,7 @@ class EkoDBClient private constructor(
     suspend fun getChatModels(): JsonObject {
         val token = getToken()
         val response = executeWithRetry {
-            httpClient.get("$baseUrl/api/chat_models") {
+            client.get("$baseUrl/api/chat_models") {
                 header("Authorization", "Bearer $token")
             }
         }
@@ -836,7 +880,7 @@ class EkoDBClient private constructor(
     suspend fun getChatModel(modelName: String): JsonArray {
         val token = getToken()
         val response = executeWithRetry {
-            httpClient.get("$baseUrl/api/chat_models/$modelName") {
+            client.get("$baseUrl/api/chat_models/$modelName") {
                 header("Authorization", "Bearer $token")
             }
         }
@@ -849,7 +893,7 @@ class EkoDBClient private constructor(
     suspend fun createChatSession(request: JsonObject): JsonObject {
         val token = getToken()
         val response = executeWithRetry {
-            httpClient.post("$baseUrl/api/chat") {
+            client.post("$baseUrl/api/chat") {
                 header("Authorization", "Bearer $token")
                 contentType(getContentTypeForRequest())
                 header("Accept", getContentTypeForRequest().toString())
@@ -865,7 +909,7 @@ class EkoDBClient private constructor(
     suspend fun getChatSession(chatId: String): JsonObject {
         val token = getToken()
         val response = executeWithRetry {
-            httpClient.get("$baseUrl/api/chat/$chatId") {
+            client.get("$baseUrl/api/chat/$chatId") {
                 header("Authorization", "Bearer $token")
             }
         }
@@ -878,7 +922,7 @@ class EkoDBClient private constructor(
     suspend fun listChatSessions(query: JsonObject = buildJsonObject {}): JsonObject {
         val token = getToken()
         val response = executeWithRetry {
-            httpClient.get("$baseUrl/api/chat") {
+            client.get("$baseUrl/api/chat") {
                 header("Authorization", "Bearer $token")
                 query.forEach { (key, value) ->
                     parameter(key, value.toString())
@@ -894,7 +938,7 @@ class EkoDBClient private constructor(
     suspend fun updateChatSession(chatId: String, request: JsonObject): JsonObject {
         val token = getToken()
         val response = executeWithRetry {
-            httpClient.put("$baseUrl/api/chat/$chatId") {
+            client.put("$baseUrl/api/chat/$chatId") {
                 header("Authorization", "Bearer $token")
                 contentType(getContentTypeForRequest())
                 header("Accept", getContentTypeForRequest().toString())
@@ -910,7 +954,7 @@ class EkoDBClient private constructor(
     suspend fun deleteChatSession(chatId: String) {
         val token = getToken()
         executeWithRetry {
-            httpClient.delete("$baseUrl/api/chat/$chatId") {
+            client.delete("$baseUrl/api/chat/$chatId") {
                 header("Authorization", "Bearer $token")
             }
         }
@@ -922,7 +966,7 @@ class EkoDBClient private constructor(
     suspend fun branchChatSession(request: JsonObject): JsonObject {
         val token = getToken()
         val response = executeWithRetry {
-            httpClient.post("$baseUrl/api/chat/branch") {
+            client.post("$baseUrl/api/chat/branch") {
                 header("Authorization", "Bearer $token")
                 contentType(getContentTypeForRequest())
                 header("Accept", getContentTypeForRequest().toString())
@@ -938,7 +982,7 @@ class EkoDBClient private constructor(
     suspend fun mergeChatSessions(request: JsonObject): JsonObject {
         val token = getToken()
         val response = executeWithRetry {
-            httpClient.post("$baseUrl/api/chat/merge") {
+            client.post("$baseUrl/api/chat/merge") {
                 header("Authorization", "Bearer $token")
                 contentType(getContentTypeForRequest())
                 header("Accept", getContentTypeForRequest().toString())
@@ -954,7 +998,7 @@ class EkoDBClient private constructor(
     suspend fun chatMessage(chatId: String, request: JsonObject): JsonObject {
         val token = getToken()
         val response = executeWithRetry {
-            httpClient.post("$baseUrl/api/chat/$chatId/messages") {
+            client.post("$baseUrl/api/chat/$chatId/messages") {
                 header("Authorization", "Bearer $token")
                 contentType(getContentTypeForRequest())
                 header("Accept", getContentTypeForRequest().toString())
@@ -970,7 +1014,7 @@ class EkoDBClient private constructor(
     suspend fun getChatSessionMessages(chatId: String, query: JsonObject = buildJsonObject {}): JsonObject {
         val token = getToken()
         val response = executeWithRetry {
-            httpClient.get("$baseUrl/api/chat/$chatId/messages") {
+            client.get("$baseUrl/api/chat/$chatId/messages") {
                 header("Authorization", "Bearer $token")
                 query.forEach { (key, value) ->
                     parameter(key, value.toString())
@@ -986,7 +1030,7 @@ class EkoDBClient private constructor(
     suspend fun getChatMessage(chatId: String, messageId: String): Record {
         val token = getToken()
         val response = executeWithRetry {
-            httpClient.get("$baseUrl/api/chat/$chatId/messages/$messageId") {
+            client.get("$baseUrl/api/chat/$chatId/messages/$messageId") {
                 header("Authorization", "Bearer $token")
             }
         }
@@ -999,7 +1043,7 @@ class EkoDBClient private constructor(
     suspend fun updateChatMessage(chatId: String, messageId: String, request: JsonObject) {
         val token = getToken()
         executeWithRetry {
-            httpClient.put("$baseUrl/api/chat/$chatId/messages/$messageId") {
+            client.put("$baseUrl/api/chat/$chatId/messages/$messageId") {
                 header("Authorization", "Bearer $token")
                 contentType(getContentTypeForRequest())
                 header("Accept", getContentTypeForRequest().toString())
@@ -1014,7 +1058,7 @@ class EkoDBClient private constructor(
     suspend fun deleteChatMessage(chatId: String, messageId: String) {
         val token = getToken()
         executeWithRetry {
-            httpClient.delete("$baseUrl/api/chat/$chatId/messages/$messageId") {
+            client.delete("$baseUrl/api/chat/$chatId/messages/$messageId") {
                 header("Authorization", "Bearer $token")
             }
         }
@@ -1026,7 +1070,7 @@ class EkoDBClient private constructor(
     suspend fun regenerateChatMessage(chatId: String, messageId: String): JsonObject {
         val token = getToken()
         val response = executeWithRetry {
-            httpClient.post("$baseUrl/api/chat/$chatId/messages/$messageId/regenerate") {
+            client.post("$baseUrl/api/chat/$chatId/messages/$messageId/regenerate") {
                 header("Authorization", "Bearer $token")
             }
         }
@@ -1039,7 +1083,7 @@ class EkoDBClient private constructor(
     suspend fun toggleForgottenMessage(chatId: String, messageId: String, request: JsonObject): Record {
         val token = getToken()
         val response = executeWithRetry {
-            httpClient.patch("$baseUrl/api/chat/$chatId/messages/$messageId/forgotten") {
+            client.patch("$baseUrl/api/chat/$chatId/messages/$messageId/forgotten") {
                 header("Authorization", "Bearer $token")
                 contentType(getContentTypeForRequest())
                 header("Accept", getContentTypeForRequest().toString())
@@ -1054,14 +1098,14 @@ class EkoDBClient private constructor(
      */
     suspend fun websocket(wsUrl: String): WebSocketClient {
         val token = getToken()
-        return WebSocketClient(wsUrl, token, httpClient)
+        return WebSocketClient(wsUrl, token, client)
     }
     
     /**
      * Close the client and release resources
      */
     fun close() {
-        httpClient.close()
+        client.close()
     }
     
     /**
@@ -1073,6 +1117,7 @@ class EkoDBClient private constructor(
         private var timeout: Long = 30
         private var maxRetries: Int = 3
         private var format: SerializationFormat = SerializationFormat.JSON // Default to JSON (CBOR has compatibility issues)
+        private var httpClient: HttpClient? = null // For testing
         
         fun baseUrl(url: String) = apply { this.baseUrl = url }
         fun apiKey(key: String) = apply { this.apiKey = key }
@@ -1085,9 +1130,14 @@ class EkoDBClient private constructor(
          */
         fun format(format: SerializationFormat) = apply { this.format = format }
         
+        /**
+         * Set a custom HTTP client (for testing with mock engines)
+         */
+        fun httpClient(client: HttpClient) = apply { this.httpClient = client }
+        
         fun build(): EkoDBClient {
             require(apiKey.isNotEmpty()) { "API key is required" }
-            return EkoDBClient(baseUrl, apiKey, timeout, maxRetries, format)
+            return EkoDBClient(baseUrl, apiKey, timeout, maxRetries, format, httpClient)
         }
     }
     
@@ -1101,7 +1151,7 @@ class EkoDBClient private constructor(
     suspend fun saveScript(script: io.ekodb.client.functions.Script): String {
         val token = getToken()
         val response = executeWithRetry {
-            httpClient.post("$baseUrl/api/functions") {
+            client.post("$baseUrl/api/functions") {
                 bearerAuth(token)
                 contentType(ContentType.Application.Json)
                 setBody(script)
@@ -1125,7 +1175,7 @@ class EkoDBClient private constructor(
     suspend fun getScript(id: String): io.ekodb.client.functions.Script {
         val token = getToken()
         val response = executeWithRetry {
-            httpClient.get("$baseUrl/api/functions/$id") {
+            client.get("$baseUrl/api/functions/$id") {
                 bearerAuth(token)
             }
         }
@@ -1143,7 +1193,7 @@ class EkoDBClient private constructor(
             "$baseUrl/api/functions"
         }
         val response = executeWithRetry {
-            httpClient.get(url) {
+            client.get(url) {
                 bearerAuth(token)
             }
         }
@@ -1156,7 +1206,7 @@ class EkoDBClient private constructor(
     suspend fun updateScript(id: String, script: io.ekodb.client.functions.Script) {
         val token = getToken()
         executeWithRetry {
-            httpClient.put("$baseUrl/api/functions/$id") {
+            client.put("$baseUrl/api/functions/$id") {
                 bearerAuth(token)
                 contentType(ContentType.Application.Json)
                 setBody(script)
@@ -1170,7 +1220,7 @@ class EkoDBClient private constructor(
     suspend fun deleteScript(id: String) {
         val token = getToken()
         executeWithRetry {
-            httpClient.delete("$baseUrl/api/functions/$id") {
+            client.delete("$baseUrl/api/functions/$id") {
                 bearerAuth(token)
             }
         }
@@ -1187,7 +1237,7 @@ class EkoDBClient private constructor(
     ): io.ekodb.client.functions.FunctionResult {
         val token = getToken()
         val response = executeWithRetry {
-            httpClient.post("$baseUrl/api/functions/$labelOrId") {
+            client.post("$baseUrl/api/functions/$labelOrId") {
                 bearerAuth(token)
                 contentType(ContentType.Application.Json)
                 // Send parameters directly, or empty map if no params

@@ -1,5 +1,5 @@
 # ekoDB Client Examples Inventory
-# Generated: Sun Jan  4 01:30:41 EST 2026
+# Generated: Sun Jan  4 14:29:24 EST 2026
 # 
 
 ## Direct API Examples (Raw HTTP/WebSocket)

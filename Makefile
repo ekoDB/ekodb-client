@@ -331,18 +331,40 @@ deploy-client-kt:
 deploy-client-kotlin: deploy-client-kt
 
 # Test targets - runs ALL unit tests across all client libraries
-test: test-rust test-typescript test-python test-kotlin
-	@echo ""
-	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
-	@echo "✅ $(GREEN)All unit tests complete!$(RESET)"
-	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
-	@echo "  🦀 Rust:       253 tests"
-	@echo "  📘 TypeScript: 108 tests"
-	@echo "  🐍 Python:      66 tests"
-	@echo "  🟣 Kotlin:     100 tests"
-	@echo "  ─────────────────────"
-	@echo "  📊 Total:      527 tests"
-	@echo ""
+test:
+	@RUST_COUNT=0; TS_COUNT=0; PY_COUNT=0; KT_COUNT=0; \
+	echo "🦀 $(CYAN)Running Rust client tests...$(RESET)"; \
+	RUST_OUTPUT=$$($(CARGO) test -p ekodb_client 2>&1); \
+	echo "$$RUST_OUTPUT"; \
+	RUST_COUNT=$$(echo "$$RUST_OUTPUT" | grep -E "^test result:" | grep -oE "[0-9]+ passed" | awk '{sum+=$$1} END {print sum}'); \
+	echo "✅ $(GREEN)Rust tests complete!$(RESET)"; \
+	echo "📘 $(CYAN)Running TypeScript client tests...$(RESET)"; \
+	TS_OUTPUT=$$(cd $(CLIENT_TS_DIR) && npm test 2>&1); \
+	echo "$$TS_OUTPUT"; \
+	TS_COUNT=$$(echo "$$TS_OUTPUT" | grep -oE "Tests\s+[0-9]+ passed" | grep -oE "[0-9]+"); \
+	echo "✅ $(GREEN)TypeScript tests complete!$(RESET)"; \
+	echo "🐍 $(CYAN)Running Python client tests...$(RESET)"; \
+	PY_OUTPUT=$$(cd $(CLIENT_PY_DIR) && python3 -m pytest tests/ -v 2>&1); \
+	echo "$$PY_OUTPUT"; \
+	PY_COUNT=$$(echo "$$PY_OUTPUT" | grep -oE "[0-9]+ passed" | grep -oE "[0-9]+"); \
+	echo "✅ $(GREEN)Python tests complete!$(RESET)"; \
+	echo "🟣 $(CYAN)Running Kotlin client tests...$(RESET)"; \
+	(cd $(CLIENT_KT_DIR) && ./gradlew test --quiet); \
+	KT_COUNT=$$(grep -rh "@Test" ./$(CLIENT_KT_DIR)/src/test --include="*.kt" 2>/dev/null | wc -l | tr -d ' '); \
+	echo "✅ $(GREEN)Kotlin tests complete!$(RESET)"; \
+	echo ""; \
+	echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"; \
+	echo "✅ $(GREEN)All unit tests complete!$(RESET)"; \
+	echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"; \
+	RUST_COUNT=$${RUST_COUNT:-0}; TS_COUNT=$${TS_COUNT:-0}; PY_COUNT=$${PY_COUNT:-0}; KT_COUNT=$${KT_COUNT:-0}; \
+	TOTAL=$$((RUST_COUNT + TS_COUNT + PY_COUNT + KT_COUNT)); \
+	printf "  🦀 Rust:       %3d tests\n" "$$RUST_COUNT"; \
+	printf "  📘 TypeScript: %3d tests\n" "$$TS_COUNT"; \
+	printf "  🐍 Python:     %3d tests\n" "$$PY_COUNT"; \
+	printf "  🟣 Kotlin:     %3d tests\n" "$$KT_COUNT"; \
+	echo "  ─────────────────────"; \
+	printf "  📊 Total:      %3d tests\n" "$$TOTAL"; \
+	echo ""
 
 test-rust:
 	@echo "🦀 $(CYAN)Running Rust client tests...$(RESET)"
