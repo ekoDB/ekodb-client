@@ -2,7 +2,7 @@
 """KV Operations Examples - Using ekodb_client Python library
 
 This example demonstrates key-value operations using the Python client library.
-Compare with ttl-caching/kv_operations.py to see the difference!
+Compare with kv_operations.py to see the difference!
 """
 
 import asyncio

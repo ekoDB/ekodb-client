@@ -2,7 +2,7 @@
 """WebSocket TTL Examples - Using ekodb_client Python library
 
 This example demonstrates WebSocket queries with TTL documents using the Python client library.
-Compare with ttl-caching/websocket_ttl.py to see the difference!
+Compare with websocket_ttl.py to see the difference!
 """
 
 import asyncio

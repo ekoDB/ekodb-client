@@ -1,7 +1,7 @@
 // Document TTL - Using ekodb-client-go library
 //
 // This example demonstrates documents with TTL using the Go client library.
-// Compare with ttl-caching/document_ttl.go to see the difference!
+// Compare with document_ttl.go to see the difference!
 
 package main
 

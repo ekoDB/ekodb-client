@@ -2,7 +2,7 @@
  * Batch Operations - Using @ekodb/ekodb-client library
  * 
  * This example demonstrates batch operations using the JavaScript client library.
- * Compare with ttl-caching/batch_operations.js to see the difference!
+ * Compare with batch_operations.js to see the difference!
  */
 
 const { EkoDBClient } = require('@ekodb/ekodb-client');

@@ -2,12 +2,12 @@
 
 Back to [README](../README.md)
 
-This directory contains **84 working examples** demonstrating ekoDB's features
+This directory contains **93 working examples** demonstrating ekoDB's features
 across 6 programming languages. Examples are organized into two categories:
 
 - **Client Library Examples** (56 examples) - Using official client libraries
   (recommended)
-- **Direct API Examples** (28 examples) - Raw HTTP/WebSocket calls for learning
+- **Direct API Examples** (37 examples) - Raw HTTP/WebSocket calls for learning
   the API
 
 Each example is self-contained, fully tested, and serves as both documentation
@@ -108,10 +108,11 @@ make test-examples-python-client      # Python client library examples
 
 ## 📋 Example Types
 
-### Direct API Examples (28 examples)
+### Direct API Examples (37 examples)
 
-Located in `{language}/ttl-caching/` directories. These examples use raw
-HTTP/WebSocket calls to demonstrate the API directly.
+Located in the main `{language}/` directories and `{language}/ttl/`
+subdirectories. These examples use raw HTTP/WebSocket calls to demonstrate the
+API directly.
 
 **Purpose:**
 
@@ -120,7 +121,7 @@ HTTP/WebSocket calls to demonstrate the API directly.
 - See request/response formats
 - Reference for custom client implementations
 
-**Languages:** JavaScript, Python, Go, Rust (7 examples each)
+**Languages:** Rust (7), JavaScript (10), Python (10), Go (10)
 
 ### Client Library Examples (56 examples)
 
@@ -145,11 +146,11 @@ while direct examples use predictable collection names for learning purposes.
 
 ### Direct API Examples (Raw HTTP/WebSocket)
 
-All direct examples are in the `ttl-caching/` subdirectories:
+Direct examples are in the main language directories and `ttl/` subdirectories:
 
-- **JavaScript** - 7 examples in `javascript/ttl-caching/`
-- **Python** - 7 examples in `python/ttl-caching/`
-- **Go** - 7 examples in `go/ttl-caching/`
+- **JavaScript** - 10 examples (8 in `javascript/` + 2 in `javascript/ttl/`)
+- **Python** - 10 examples (8 in `python/` + 2 in `python/ttl/`)
+- **Go** - 10 examples (8 in `go/` + 2 in `go/ttl/`)
 - **Rust** - 7 examples in `rust/examples/`
 
 ### Client Library Examples
@@ -165,55 +166,52 @@ All direct examples are in the `ttl-caching/` subdirectories:
 
 ### 1. Basic CRUD Operations
 
-- **JavaScript**: [simple_crud.js](./javascript/ttl-caching/simple_crud.js)
-- **Python**: [simple_crud.py](./python/ttl-caching/simple_crud.py)
-- **Go**: [simple_crud.go](./go/ttl-caching/simple_crud.go)
+- **JavaScript**: [simple_crud.js](./javascript/simple_crud.js)
+- **Python**: [simple_crud.py](./python/simple_crud.py)
+- **Go**: [simple_crud.go](./go/simple_crud.go)
 - **Rust**: [simple_crud.rs](./rust/examples/simple_crud.rs)
 
 ### 2. WebSocket Real-time Queries
 
-- **JavaScript**:
-  [simple_websocket.js](./javascript/ttl-caching/simple_websocket.js)
-- **Python**: [simple_websocket.py](./python/ttl-caching/simple_websocket.py)
-- **Go**: [simple_websocket.go](./go/ttl-caching/simple_websocket.go)
+- **JavaScript**: [simple_websocket.js](./javascript/simple_websocket.js)
+- **Python**: [simple_websocket.py](./python/simple_websocket.py)
+- **Go**: [simple_websocket.go](./go/simple_websocket.go)
 - **Rust**: [simple_websocket.rs](./rust/examples/simple_websocket.rs)
 
 ### 3. Batch Operations
 
-- **JavaScript**:
-  [batch_operations.js](./javascript/ttl-caching/batch_operations.js)
-- **Python**: [batch_operations.py](./python/ttl-caching/batch_operations.py)
-- **Go**: [batch_operations.go](./go/ttl-caching/batch_operations.go)
+- **JavaScript**: [batch_operations.js](./javascript/batch_operations.js)
+- **Python**: [batch_operations.py](./python/batch_operations.py)
+- **Go**: [batch_operations.go](./go/batch_operations.go)
 - **Rust**: [batch_operations.rs](./rust/examples/batch_operations.rs)
 
 ### 4. Key-Value Store
 
-- **JavaScript**: [kv_operations.js](./javascript/ttl-caching/kv_operations.js)
-- **Python**: [kv_operations.py](./python/ttl-caching/kv_operations.py)
-- **Go**: [kv_operations.go](./go/ttl-caching/kv_operations.go)
+- **JavaScript**: [kv_operations.js](./javascript/kv_operations.js)
+- **Python**: [kv_operations.py](./python/kv_operations.py)
+- **Go**: [kv_operations.go](./go/kv_operations.go)
 - **Rust**: [kv_operations.rs](./rust/examples/kv_operations.rs)
 
 ### 5. Collection Management
 
 - **JavaScript**:
-  [collection_management.js](./javascript/ttl-caching/collection_management.js)
-- **Python**:
-  [collection_management.py](./python/ttl-caching/collection_management.py)
-- **Go**: [collection_management.go](./go/ttl-caching/collection_management.go)
+  [collection_management.js](./javascript/collection_management.js)
+- **Python**: [collection_management.py](./python/collection_management.py)
+- **Go**: [collection_management.go](./go/collection_management.go)
 - **Rust**: [collection_management.rs](./rust/examples/collection_management.rs)
 
 ### 6. Document TTL (Time-To-Live)
 
-- **JavaScript**: [document_ttl.js](./javascript/ttl-caching/document_ttl.js)
-- **Python**: [document_ttl.py](./python/ttl-caching/document_ttl.py)
-- **Go**: [document_ttl.go](./go/ttl-caching/document_ttl.go)
+- **JavaScript**: [document_ttl.js](./javascript/document_ttl.js)
+- **Python**: [document_ttl.py](./python/document_ttl.py)
+- **Go**: [document_ttl.go](./go/document_ttl.go)
 - **Rust**: [document_ttl.rs](./rust/examples/document_ttl.rs)
 
 ### 7. WebSocket with TTL
 
-- **JavaScript**: [websocket_ttl.js](./javascript/ttl-caching/websocket_ttl.js)
-- **Python**: [websocket_ttl.py](./python/ttl-caching/websocket_ttl.py)
-- **Go**: [websocket_ttl.go](./go/ttl-caching/websocket_ttl.go)
+- **JavaScript**: [websocket_ttl.js](./javascript/websocket_ttl.js)
+- **Python**: [websocket_ttl.py](./python/websocket_ttl.py)
+- **Go**: [websocket_ttl.go](./go/websocket_ttl.go)
 - **Rust**: [websocket_ttl.rs](./rust/examples/websocket_ttl.rs)
 
 ### 8. Scripts/Functions (Direct HTTP)
@@ -304,7 +302,7 @@ Each example can be run standalone:
 #### JavaScript
 
 ```bash
-cd javascript/ttl-caching
+cd javascript
 node simple_crud.js
 node simple_websocket.js
 node batch_operations.js
@@ -317,7 +315,7 @@ node websocket_ttl.js
 #### Python
 
 ```bash
-cd python/ttl-caching
+cd python
 python3 simple_crud.py
 python3 simple_websocket.py
 python3 batch_operations.py
@@ -330,7 +328,7 @@ python3 websocket_ttl.py
 #### Go
 
 ```bash
-cd go/ttl-caching
+cd go
 go run simple_crud.go
 go run simple_websocket.go
 go run batch_operations.go
@@ -461,13 +459,13 @@ All examples function as integration tests:
 └──────────┬──────────────────────────┘
            │
            ├──> JavaScript Test Runner (test-runner.js)
-           │    └──> 7 examples in ttl-caching/
+           │    └──> 7 examples in javascript/
            │
            ├──> Python Test Runner (test_runner.py)
-           │    └──> 7 examples in ttl-caching/
+           │    └──> 7 examples in python/
            │
            ├──> Go Test Runner (test_runner.go)
-           │    └──> 7 examples in ttl-caching/
+           │    └──> 7 examples in go/
            │
            └──> Rust Examples (cargo run --example)
                 └──> 7 examples in examples/
@@ -878,13 +876,13 @@ Create your example in the appropriate language directory:
 
 ```bash
 # JavaScript
-touch javascript/ttl-caching/my_new_example.js
+touch javascript/my_new_example.js
 
 # Python
-touch python/ttl-caching/my_new_example.py
+touch python/my_new_example.py
 
 # Go
-touch go/ttl-caching/my_new_example.go
+touch go/my_new_example.go
 
 # Rust
 touch rust/examples/my_new_example.rs
@@ -935,8 +933,8 @@ Update the test runner's example list:
 ```javascript
 // JavaScript: test-runner.js
 const examples = [
-  "ttl-caching/simple_crud.js",
-  "ttl-caching/my_new_example.js", // Add here
+  "simple_crud.js",
+  "my_new_example.js", // Add here
   // ...
 ];
 ```
@@ -945,7 +943,7 @@ const examples = [
 
 ```bash
 # Test individually
-node javascript/ttl-caching/my_new_example.js
+node javascript/my_new_example.js
 
 # Test with runner
 cd javascript && node test-runner.js
@@ -966,8 +964,8 @@ documentation)
 
 ## 📊 Summary
 
-- **Total Examples**: 84+ examples
-  - **Direct API**: 28 examples (JavaScript, Python, Go, Rust - 7 each)
+- **Total Examples**: 93 examples
+  - **Direct API**: 37 examples (Rust: 7, JavaScript: 10, Python: 10, Go: 10)
   - **Client Libraries**: 56 examples (Rust: 14, Go: 14, TypeScript: 14,
     JavaScript: 7, Kotlin: 14)
   - **Transaction Examples**: Available across all languages (v0.24.0+)
@@ -985,8 +983,8 @@ documentation)
 
 | Command                            | Description                        |
 | ---------------------------------- | ---------------------------------- |
-| `make test-examples`               | Run all 84 examples                |
-| `make test-examples-direct`        | Run 28 direct API examples         |
+| `make test-examples`               | Run all 93 examples                |
+| `make test-examples-direct`        | Run 37 direct API examples         |
 | `make test-examples-client`        | Run 56 client library examples     |
 | `make test-examples-{lang}`        | Run all examples for a language    |
 | `make test-examples-{lang}-direct` | Run direct examples for a language |

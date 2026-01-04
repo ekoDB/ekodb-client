@@ -61,10 +61,9 @@ pip install -r requirements.txt
 
 ### TTL Features
 
-- [Document TTL](ttl-caching/document_ttl.py) - Basic document-level TTL
-  operations
-- [WebSocket TTL](ttl-caching/websocket_ttl.py) - Real-time TTL events via
-  WebSocket
+- [Document TTL](document_ttl.py) - Basic document-level TTL operations
+- [WebSocket TTL](websocket_ttl.py) - Real-time TTL events via WebSocket
+- [TTL Verification Tests](ttl/) - Tests that verify TTL expiration works
 
 ### Basic Operations
 
@@ -96,7 +95,7 @@ pip install -r requirements.txt
 3. Run an example:
 
    ```bash
-   python ttl-caching/document_ttl.py
+   python document_ttl.py
    ```
 
 ## Important Notes

@@ -2,7 +2,7 @@
 """Simple WebSocket Operations - Using ekodb_client Python library
 
 This example demonstrates WebSocket queries using the Python client library.
-Compare with ttl-caching/simple_websocket.py to see the difference!
+Compare with simple_websocket.py to see the difference!
 """
 
 import asyncio

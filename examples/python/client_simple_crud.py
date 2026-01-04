@@ -2,7 +2,7 @@
 """Simple CRUD Examples - Using ekodb_client Python library
 
 This example demonstrates the Python client library wrapping the Rust ekodb_client.
-Compare with ttl-caching/simple_crud.py to see the difference!
+Compare with simple_crud.py to see the difference!
 """
 
 import asyncio

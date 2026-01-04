@@ -1,7 +1,7 @@
 // Simple WebSocket Operations - Using ekodb-client-go library
 //
 // This example demonstrates WebSocket queries using the Go client library.
-// Compare with ttl-caching/simple_websocket.go to see the difference!
+// Compare with simple_websocket.go to see the difference!
 
 package main
 

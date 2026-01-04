@@ -118,17 +118,19 @@ async function main() {
         const token = await getAuthToken();
         
         // List of example files to run
+        // Note: Direct API examples are in the main directory
+        // TTL verification tests are in the ttl/ subdirectory
         const examples = [
-            path.join(__dirname, 'ttl-caching', 'simple_crud.js'),
-            path.join(__dirname, 'ttl-caching', 'simple_websocket.js'),
-            path.join(__dirname, 'ttl-caching', 'batch_operations.js'),
-            path.join(__dirname, 'ttl-caching', 'kv_operations.js'),
-            path.join(__dirname, 'ttl-caching', 'collection_management.js'),
-            path.join(__dirname, 'ttl-caching', 'document_ttl.js'),
-            path.join(__dirname, 'ttl-caching', 'websocket_ttl.js'),
+            path.join(__dirname, 'simple_crud.js'),
+            path.join(__dirname, 'simple_websocket.js'),
             path.join(__dirname, 'http_functions.js'),
+            path.join(__dirname, 'batch_operations.js'),
+            path.join(__dirname, 'kv_operations.js'),
+            path.join(__dirname, 'collection_management.js'),
             path.join(__dirname, 'transactions.js'),
-            path.join(__dirname, 'crud_scripts.js')
+            path.join(__dirname, 'crud_scripts.js'),
+            path.join(__dirname, 'ttl', 'document_ttl.js'),
+            path.join(__dirname, 'ttl', 'websocket_ttl.js'),
         ];
         
         log(`\n=== Running ${examples.length} Examples ===`, 'yellow');

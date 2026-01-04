@@ -1,7 +1,7 @@
 // Simple CRUD Operations - Using ekodb-client-go library
 //
 // This example demonstrates CRUD operations using the Go client library.
-// Compare with ttl-caching/simple_crud.go to see the difference!
+// Compare with simple_crud.go to see the difference!
 
 package main
 

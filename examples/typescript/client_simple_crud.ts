@@ -2,7 +2,7 @@
  * Simple CRUD Operations - Using @ekodb/ekodb-client library
  *
  * This example demonstrates CRUD operations using the TypeScript client library.
- * Compare with javascript/ttl-caching/simple_crud.js to see the difference!
+ * Compare with javascript/simple_crud.js to see the difference!
  */
 
 import {

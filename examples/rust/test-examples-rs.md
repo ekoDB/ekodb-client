@@ -1,34 +1,31 @@
 make test-examples-rust
 🧪 [36mRunning Rust examples (direct HTTP/WebSocket)...[0m
-   Compiling ekodb_client v0.7.1 (/Users/tek/Development/ekoDB/ekodb-client/ekodb_client)
-   Compiling ekodb-examples v0.1.0 (/Users/tek/Development/ekoDB/ekodb-client/examples/rust)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.36s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s
      Running `target/debug/examples/simple_crud`
 ✓ Authentication successful
 
 === Insert Document ===
-Inserted: Object {"id": String("Ys2dmRZWtTMe0l2ReNH2FrULWzf90PYWNsK9dP9RqAmbNlxe05sNt_FoB13dWTM2LA6BAFH0mweUIzF3suXG2A")}
+Inserted: Object {"id": String("Waw2CKvloj2OGKkxdvA30q5qM2Z97Vz-prAglekfk3-hNyD7EDcpHjMOAF7HZCwP0eX6ewUxV_clDokoQoyacA")}
 
 === Find by ID ===
-Found: Object {"active": Object {"type": String("Boolean"), "value": Bool(true)}, "id": String("Ys2dmRZWtTMe0l2ReNH2FrULWzf90PYWNsK9dP9RqAmbNlxe05sNt_FoB13dWTM2LA6BAFH0mweUIzF3suXG2A"), "name": Object {"type": String("String"), "value": String("Test Record")}, "value": Object {"type": String("Integer"), "value": Number(42)}}
+Found: Object {"active": Object {"type": String("Boolean"), "value": Bool(true)}, "id": String("Waw2CKvloj2OGKkxdvA30q5qM2Z97Vz-prAglekfk3-hNyD7EDcpHjMOAF7HZCwP0eX6ewUxV_clDokoQoyacA"), "name": Object {"type": String("String"), "value": String("Test Record")}, "value": Object {"type": String("Integer"), "value": Number(42)}}
 
 === Find with Query ===
-Found documents: Array [Object {"active": Object {"type": String("Boolean"), "value": Bool(true)}, "id": String("Ys2dmRZWtTMe0l2ReNH2FrULWzf90PYWNsK9dP9RqAmbNlxe05sNt_FoB13dWTM2LA6BAFH0mweUIzF3suXG2A"), "name": Object {"type": String("String"), "value": String("Test Record")}, "value": Object {"type": String("Integer"), "value": Number(42)}}]
+Found documents: Array [Object {"active": Object {"type": String("Boolean"), "value": Bool(true)}, "id": String("Waw2CKvloj2OGKkxdvA30q5qM2Z97Vz-prAglekfk3-hNyD7EDcpHjMOAF7HZCwP0eX6ewUxV_clDokoQoyacA"), "name": Object {"type": String("String"), "value": String("Test Record")}, "value": Object {"type": String("Integer"), "value": Number(42)}}]
 
 === Update Document ===
-Updated: Object {"active": Object {"type": String("Boolean"), "value": Bool(true)}, "id": String("Ys2dmRZWtTMe0l2ReNH2FrULWzf90PYWNsK9dP9RqAmbNlxe05sNt_FoB13dWTM2LA6BAFH0mweUIzF3suXG2A"), "name": Object {"type": String("String"), "value": String("Updated Record")}, "value": Object {"type": String("Integer"), "value": Number(100)}}
+Updated: Object {"active": Object {"type": String("Boolean"), "value": Bool(true)}, "id": String("Waw2CKvloj2OGKkxdvA30q5qM2Z97Vz-prAglekfk3-hNyD7EDcpHjMOAF7HZCwP0eX6ewUxV_clDokoQoyacA"), "name": Object {"type": String("String"), "value": String("Updated Record")}, "value": Object {"type": String("Integer"), "value": Number(100)}}
 
 === Delete Document ===
 Deleted document
 
 ✓ All CRUD operations completed successfully
-   Compiling ekodb-examples v0.1.0 (/Users/tek/Development/ekoDB/ekodb-client/examples/rust)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.42s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.09s
      Running `target/debug/examples/simple_websocket`
 ✓ Authentication successful
 
 === Inserting Test Data ===
-✓ Inserted test record: "LBF7Gequi0v04qbT1iANWTN-FRO0bYDKvukFbxdX9CO7wYKIchKcISe0P-UObFrpY2NNO2nXY-XcPKH9NW1CkA"
+✓ Inserted test record: "ggUkVE8p-4-sgFujbNnfoo55fNFXQjXjuC4CFyYjUOz6nF6tI0-pZ_LBzcVVwNTxaLqn3-UX4dKYH11ySN0p4A"
 
 === Connecting to WebSocket ===
 ✓ WebSocket connected
@@ -42,7 +39,7 @@ Response: {
           "type": "Boolean",
           "value": true
         },
-        "id": "LBF7Gequi0v04qbT1iANWTN-FRO0bYDKvukFbxdX9CO7wYKIchKcISe0P-UObFrpY2NNO2nXY-XcPKH9NW1CkA",
+        "id": "ggUkVE8p-4-sgFujbNnfoo55fNFXQjXjuC4CFyYjUOz6nF6tI0-pZ_LBzcVVwNTxaLqn3-UX4dKYH11ySN0p4A",
         "name": {
           "type": "String",
           "value": "WebSocket Test Record"
@@ -59,8 +56,7 @@ Response: {
 ✓ Retrieved 1 record(s) via WebSocket
 
 ✓ WebSocket example completed successfully
-   Compiling ekodb-examples v0.1.0 (/Users/tek/Development/ekoDB/ekodb-client/examples/rust)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.32s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.08s
      Running `target/debug/examples/batch_operations`
 ✓ Authentication successful
 
@@ -80,8 +76,7 @@ Created 3 test records
 ✓ Verified: Records successfully deleted (not found)
 
 ✓ All batch operations completed successfully
-   Compiling ekodb-examples v0.1.0 (/Users/tek/Development/ekoDB/ekodb-client/examples/rust)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.32s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.08s
      Running `target/debug/examples/kv_operations`
 ✓ Authentication successful
 
@@ -107,17 +102,16 @@ cache:product:3: Object {"name": String("Product 3"), "price": Number(49.9899999
 ✓ Deleted 3 keys
 
 ✓ All KV operations completed successfully
-   Compiling ekodb-examples v0.1.0 (/Users/tek/Development/ekoDB/ekodb-client/examples/rust)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.31s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.08s
      Running `target/debug/examples/collection_management`
 ✓ Authentication successful
 
 === Create Collection (via insert) ===
-Collection created with first record: "QyeHSH9UzS_oUE3aq2Cf9nxkJcyQxYLhwsxV9WMfp2j3xrn4HT1cBnjO44WidUKlb3VQYL2DSkNPWmfS-NVp7A"
+Collection created with first record: "iBLFeU27B65-LAUkjch8Ry236kJuboeGCmYRT_qMHS-Gx_7IYkUgvXNrZiYnrbQyuSksOLIwnPoNKj4OoEZT3g"
 
 === List Collections ===
 Total collections: 4
-Sample collections: ["websocket_test", "test_collection", "batch_users", "demo_collection"]
+Sample collections: ["websocket_test", "test_collection", "demo_collection", "batch_users"]
 
 === Count Documents ===
 Document count: 1
@@ -129,19 +123,18 @@ Collection deleted successfully
 Collection still exists: false
 
 ✓ All collection management operations completed successfully
-   Compiling ekodb-examples v0.1.0 (/Users/tek/Development/ekoDB/ekodb-client/examples/rust)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.31s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.08s
      Running `target/debug/examples/document_ttl`
 ✓ Authentication successful
 
 === Insert Document with TTL (1 hour) ===
-✓ Inserted document: "0IlTsVbutQW914kYBjmqSV_PL2yZvJqeQ0wOtmCbPvn_Qwe3nlreqfOWpVU-Ob3hDveKLb9ruNf98B1VvGSk7A"
+✓ Inserted document: "WGaAQDYKr1zPiX1naZHlu8Ple9xfptu1FQ6fjHlzbjseBN3uHUoP_ZGNKpQ1HQ1qCnt13eX-c3oT31_e5ibBZQ"
 
 === Insert Document with TTL (5 minutes - integer) ===
-✓ Inserted document: "qNh0jqif6Q3gKokN56aMYB_NVAnFpguT25vXR_V358aRC3i-Gu634e8SL7bfM3IrHdS21AeeQAlafZOsI0ztow"
+✓ Inserted document: "gMV-A-9FlIci23yq2PUjp1Asg8x_oLIwMw09p6GNT-rRev9l7oc2jSj-IDr6Tbgc2LnMNazM9LYmV2PF7-w3Ow"
 
 === Insert Document with TTL (30 minutes - duration string) ===
-✓ Inserted document with duration string TTL: "U2NIV9wo83c-JtmjxbdrHeskmjqSgNwxnxk83qeCx0xvTy_B_DR8gKEEvSEYoeC6gdg1Cqmm15COg7w8XUwyhQ"
+✓ Inserted document with duration string TTL: "C2swj67HYKC47-BiYasc0XPbNLyV3NiVPUztNjDHXYeV6LDepcb9e9Z3ehf2NpZQycoDMORR-bK37zyxxHMDWw"
 
 === Query Documents ===
 ✓ Found 3 documents with TTL
@@ -153,21 +146,19 @@ Collection still exists: false
 ✓ Deleted document
 
 ✓ All document TTL operations completed successfully
-   Compiling ekodb-examples v0.1.0 (/Users/tek/Development/ekoDB/ekodb-client/examples/rust)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.38s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.08s
      Running `target/debug/examples/websocket_ttl`
 ✓ Authentication successful
 
 === Insert Test Data with TTL ===
-✓ Inserted document with TTL: String("h4M-Lj9i-Q9y8QviXLlQCAzf4myMsNLP2Yw_OSuuib6uoz_T3XtzlvTQt8voHUElEeETv-noUebYjXcUR6olRA")
+✓ Inserted document with TTL: String("xayRPxTCGelcgdjWpeBZVA5E-LwihwMPlM9nx3UN1ZUDUc8T6Dbdv_wFqfspO0ldMR78Sk-_H3wzhpLK6KIblA")
 
 === Query via WebSocket ===
 ✓ WebSocket connected
 ✓ Retrieved 1 record(s) via WebSocket
 
 ✓ WebSocket TTL example completed successfully
-   Compiling ekodb-examples v0.1.0 (/Users/tek/Development/ekoDB/ekodb-client/examples/rust)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.36s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.09s
      Running `target/debug/examples/http_functions`
 🚀 ekoDB Scripts Example (Rust/HTTP)
 
@@ -176,23 +167,23 @@ Collection still exists: false
 
 📝 Example 1: Simple Query Function with Filter
 
-✅ Script saved: _0e-Zh3ghrcTkLTAoHNV8jY4gt7fUcSVYw7IoSZDabH6W0f2N2OPbLr78-NW9M20EKOBwqGwKOgGxv2R5JK5JQ
+✅ Script saved: 7DY-tz2oZxENv4cD1dGeFK-y2gV8uRlmpw7QDT6AlWHXWfs-kSzUctILVywXcz9nLYITQYffjaqnVtUG-v78Bg
 📊 Found 5 active users
 
 📝 Example 2: Parameterized Pagination with Limit/Skip
 
-✅ Script saved: "rI70rCE1-wKosyn8u57cBU8eiShjLdfl3UTmkVi_bhAWoX68r9VNyhDt6E_5pMadgILyvyZfOsYscmIlFhqaog"
+✅ Script saved: "fpfPNxdRPCVW1EdP0cREisdsBlWyrI0-wf2kvglS3uq67Z2mEfDe1COWWO7dz48vN3QAfzbAXfeJkHIrSOk_cQ"
 📊 Page 1: Found 3 users (limit=3, skip=0)
 📊 Page 2: Found 2 users (limit=3, skip=3)
 
 📝 Example 3: Complex Filter with Multiple Conditions
 
-✅ Script saved: cqXcxBJ3LYcaFkr85R53G3xiTVRkFSbOi2eZ6rO94WLeYEiveM4XsU5Jhvf2zk7tQeCXwgHdfq9DF1U_dC3ubQ
+✅ Script saved: lQT2qMi5Jqehhm5nufln31uUHkDoB2622lSHUMwToyFt4H9XPENEzeTVBeCusNhoCdPTzP10BVKb8XnvQFuoYw
 📊 Found 3 users (status=active, score>50, sorted by score)
 
 📝 Example 4: Multi-Stage Pipeline (Query → Group → Calculate)
 
-✅ Script saved: t0VeD_ZymAkrJ6eh1-rDfdpH6TUsxhuAVSweP7JapRU-xqxnyCzkRLPPaDYrHxufTgRtRTPzWSb5KfjRnB5vKQ
+✅ Script saved: ba_kubk4Ydvewghy2wuNQJM7N5yiUi0Zg25oHGaVvPgyHgvlGdTVkI1IfZ9VXGPqi5Oidat27HjQuB5SCyWO4Q
 📊 Pipeline Results: Filtered (age>20) → Grouped by status → 2 groups
    {"avg_score":60.0,"count":5,"max_score":100,"status":"active"}
    {"avg_score":50.0,"count":5,"max_score":90,"status":"inactive"}
@@ -208,17 +199,16 @@ Collection still exists: false
 ℹ️  Only CALL can use either ID or label
 
 ✅ All examples completed!
-   Compiling ekodb-examples v0.1.0 (/Users/tek/Development/ekoDB/ekodb-client/examples/rust)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.31s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.08s
      Running `target/debug/examples/transactions`
 ✓ Authentication successful
 
 === Setup: Creating Test Accounts ===
-Created Alice: $1000 - ID: jH95uqiJO1wmOHfWE46STSQ22MT_b9_SxqXrPoiWhYbhfgoFlkn7Lw2wrfbuo-sRSJCeVbzfsklBDQp14773bA
-Created Bob: $500 - ID: vkbtIKTlv7hQzEJIw3pzy16znDh7pmnhv29wxd1bKWRGPHSlTv6wx3r_rDHTL9u4_uyQWEdiXYyo6mS1mTMf6w
+Created Alice: $1000 - ID: 9wACB1pbekZi3fjssy4k8YZ2-0zUoBnF-728ELa69TAv0bDqISP0PYuO9AHf0jqOuej5GB3E74L6kpttrUp0SA
+Created Bob: $500 - ID: adbkXU9hlBJXZZV4HltmV5JeW_RLf_3B99rnZrKygtdzgFxafuj40PnTZTNh1AKET8bpnLCna02Q4dkIxYiDQQ
 
 === Example 1: Begin Transaction ===
-Transaction ID: f8aeaa8d-c0f2-4497-98fa-0a93718ec5d0
+Transaction ID: 62bfda78-de00-4bef-a73f-6e84f67932c3
 
 === Example 2: Operations with transaction_id ===
 Updated Alice: $1000 → $800
@@ -236,7 +226,7 @@ Alice: 800
 Bob: 700
 
 === Example 5: Rollback ===
-New transaction: ccc91aee-33b6-4748-a520-fb89c8e2565b
+New transaction: bf58df6d-dfd8-412e-afab-124dd33b986a
 Updated Bob: $700 → $600 (in transaction)
 ✓ Transaction rolled back
 Bob after rollback: 700
@@ -248,19 +238,18 @@ Bob after rollback: 700
 ✅ [32mRust direct examples complete![0m
 🛠️  [36mBuilding client library...[0m
 cargo build -p ekodb_client
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.15s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.07s
 ✅ [32mClient build complete![0m
 🧪 [36mRunning Rust client library examples...[0m
-   Compiling ekodb-examples v0.1.0 (/Users/tek/Development/ekoDB/ekodb-client/examples/rust)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.87s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.08s
      Running `target/debug/examples/client_simple_crud`
 ✓ Client created (token exchange happens automatically)
 
 === Insert Document ===
-Inserted: Record { fields: {"id": String("LZnyRD8xOZpX5uu-H2z818vWEAEvjHnlmT7rkTWRWD2u86GTwjYLJML7_RMXtHEhHloFPsoiNWFUZYzfK8QlfQ")} }
+Inserted: Record { fields: {"id": String("Aq_EFBG72Uql9xvqFgU3sVYu4g_Rf_MV5G00303YGB6BvxcRjvDPT4DPxfFetzqCYnzl7w2LVmpV6_VugWIuQg")} }
 
 === Find by ID ===
-Found: Record { fields: {"categories": Object({"type": String("Array"), "value": Array([String("electronics"), String("computers")])}), "data": Object({"value": String("aGVsbG8gd29ybGQ="), "type": String("String")}), "price": Object({"value": Float(99.99), "type": String("Float")}), "value": Object({"type": String("Integer"), "value": Integer(42)}), "embedding": Object({"value": Array([Float(0.1), Float(0.2), Float(0.3), Float(0.4), Float(0.5)]), "type": String("Array")}), "active": Object({"value": Boolean(true), "type": String("Boolean")}), "tags": Object({"value": Array([String("tag1"), String("tag2"), String("tag3")]), "type": String("Array")}), "name": Object({"value": String("Test Record"), "type": String("String")}), "user_id": Object({"type": String("String"), "value": String("550e8400-e29b-41d4-a716-446655440000")}), "id": String("LZnyRD8xOZpX5uu-H2z818vWEAEvjHnlmT7rkTWRWD2u86GTwjYLJML7_RMXtHEhHloFPsoiNWFUZYzfK8QlfQ"), "metadata": Object({"value": Object({"nested": Object({"deep": Boolean(true)}), "key": String("value")}), "type": String("Object")}), "created_at": Object({"type": String("DateTime"), "value": String("2026-01-04T19:36:10.709063Z")})} }
+Found: Record { fields: {"user_id": Object({"value": String("550e8400-e29b-41d4-a716-446655440000"), "type": String("String")}), "name": Object({"value": String("Test Record"), "type": String("String")}), "data": Object({"value": String("aGVsbG8gd29ybGQ="), "type": String("String")}), "embedding": Object({"type": String("Array"), "value": Array([Float(0.1), Float(0.2), Float(0.3), Float(0.4), Float(0.5)])}), "created_at": Object({"type": String("DateTime"), "value": String("2026-01-04T22:28:48.883807Z")}), "price": Object({"type": String("Float"), "value": Float(99.99)}), "value": Object({"type": String("Integer"), "value": Integer(42)}), "id": String("Aq_EFBG72Uql9xvqFgU3sVYu4g_Rf_MV5G00303YGB6BvxcRjvDPT4DPxfFetzqCYnzl7w2LVmpV6_VugWIuQg"), "tags": Object({"value": Array([String("tag1"), String("tag2"), String("tag3")]), "type": String("Array")}), "metadata": Object({"type": String("Object"), "value": Object({"key": String("value"), "nested": Object({"deep": Boolean(true)})})}), "categories": Object({"type": String("Array"), "value": Array([String("electronics"), String("computers")])}), "active": Object({"type": String("Boolean"), "value": Boolean(true)})} }
 
 === Extract Field Values (All Types) ===
 Extracted values:
@@ -268,7 +257,7 @@ Extracted values:
   value (Integer): Some(42)
   active (Boolean): Some(true)
   price (Decimal): Some(99.99)
-  created_at (DateTime): Some("2026-01-04T19:36:10.709063Z")
+  created_at (DateTime): Some("2026-01-04T22:28:48.883807Z")
   user_id (UUID): Some("550e8400-e29b-41d4-a716-446655440000")
   tags (Array): 3 items
   metadata (Object): 2 keys
@@ -277,10 +266,10 @@ Extracted values:
   data (Bytes): 11 bytes
 
 === Find with Query ===
-Found documents: [Record { fields: {"metadata": Object({"value": Object({"key": String("value"), "nested": Object({"deep": Boolean(true)})}), "type": String("Object")}), "active": Object({"type": String("Boolean"), "value": Boolean(true)}), "user_id": Object({"value": String("550e8400-e29b-41d4-a716-446655440000"), "type": String("String")}), "id": String("LZnyRD8xOZpX5uu-H2z818vWEAEvjHnlmT7rkTWRWD2u86GTwjYLJML7_RMXtHEhHloFPsoiNWFUZYzfK8QlfQ"), "price": Object({"value": Float(99.99), "type": String("Float")}), "tags": Object({"type": String("Array"), "value": Array([String("tag1"), String("tag2"), String("tag3")])}), "name": Object({"type": String("String"), "value": String("Test Record")}), "data": Object({"value": String("aGVsbG8gd29ybGQ="), "type": String("String")}), "value": Object({"value": Integer(42), "type": String("Integer")}), "embedding": Object({"type": String("Array"), "value": Array([Float(0.1), Float(0.2), Float(0.3), Float(0.4), Float(0.5)])}), "created_at": Object({"value": String("2026-01-04T19:36:10.709063Z"), "type": String("DateTime")}), "categories": Object({"type": String("Array"), "value": Array([String("electronics"), String("computers")])})} }]
+Found documents: [Record { fields: {"categories": Object({"value": Array([String("electronics"), String("computers")]), "type": String("Array")}), "name": Object({"type": String("String"), "value": String("Test Record")}), "metadata": Object({"value": Object({"key": String("value"), "nested": Object({"deep": Boolean(true)})}), "type": String("Object")}), "user_id": Object({"value": String("550e8400-e29b-41d4-a716-446655440000"), "type": String("String")}), "value": Object({"value": Integer(42), "type": String("Integer")}), "active": Object({"type": String("Boolean"), "value": Boolean(true)}), "price": Object({"value": Float(99.99), "type": String("Float")}), "data": Object({"value": String("aGVsbG8gd29ybGQ="), "type": String("String")}), "tags": Object({"value": Array([String("tag1"), String("tag2"), String("tag3")]), "type": String("Array")}), "id": String("Aq_EFBG72Uql9xvqFgU3sVYu4g_Rf_MV5G00303YGB6BvxcRjvDPT4DPxfFetzqCYnzl7w2LVmpV6_VugWIuQg"), "created_at": Object({"value": String("2026-01-04T22:28:48.883807Z"), "type": String("DateTime")}), "embedding": Object({"type": String("Array"), "value": Array([Float(0.1), Float(0.2), Float(0.3), Float(0.4), Float(0.5)])})} }]
 
 === Update Document ===
-Updated: Record { fields: {"value": Object({"value": Integer(100), "type": String("Integer")}), "tags": Object({"type": String("Array"), "value": Array([String("tag1"), String("tag2"), String("tag3")])}), "categories": Object({"value": Array([String("electronics"), String("computers")]), "type": String("Array")}), "user_id": Object({"value": String("550e8400-e29b-41d4-a716-446655440000"), "type": String("String")}), "embedding": Object({"type": String("Array"), "value": Array([Float(0.1), Float(0.2), Float(0.3), Float(0.4), Float(0.5)])}), "created_at": Object({"type": String("DateTime"), "value": String("2026-01-04T19:36:10.709063Z")}), "data": Object({"value": String("aGVsbG8gd29ybGQ="), "type": String("String")}), "name": Object({"type": String("String"), "value": String("Updated Record")}), "active": Object({"type": String("Boolean"), "value": Boolean(true)}), "id": String("LZnyRD8xOZpX5uu-H2z818vWEAEvjHnlmT7rkTWRWD2u86GTwjYLJML7_RMXtHEhHloFPsoiNWFUZYzfK8QlfQ"), "metadata": Object({"type": String("Object"), "value": Object({"key": String("value"), "nested": Object({"deep": Boolean(true)})})}), "price": Object({"type": String("Float"), "value": Float(99.99)})} }
+Updated: Record { fields: {"user_id": Object({"type": String("String"), "value": String("550e8400-e29b-41d4-a716-446655440000")}), "categories": Object({"type": String("Array"), "value": Array([String("electronics"), String("computers")])}), "metadata": Object({"value": Object({"nested": Object({"deep": Boolean(true)}), "key": String("value")}), "type": String("Object")}), "created_at": Object({"value": String("2026-01-04T22:28:48.883807Z"), "type": String("DateTime")}), "id": String("Aq_EFBG72Uql9xvqFgU3sVYu4g_Rf_MV5G00303YGB6BvxcRjvDPT4DPxfFetzqCYnzl7w2LVmpV6_VugWIuQg"), "value": Object({"type": String("Integer"), "value": Integer(100)}), "name": Object({"value": String("Updated Record"), "type": String("String")}), "tags": Object({"value": Array([String("tag1"), String("tag2"), String("tag3")]), "type": String("Array")}), "data": Object({"type": String("String"), "value": String("aGVsbG8gd29ybGQ=")}), "price": Object({"type": String("Float"), "value": Float(99.99)}), "active": Object({"type": String("Boolean"), "value": Boolean(true)}), "embedding": Object({"type": String("Array"), "value": Array([Float(0.1), Float(0.2), Float(0.3), Float(0.4), Float(0.5)])})} }
 
 === Delete Document ===
 Deleted document
@@ -289,8 +278,7 @@ Deleted document
 ✓ Deleted collection
 
 ✓ All CRUD operations completed successfully
-   Compiling ekodb-examples v0.1.0 (/Users/tek/Development/ekoDB/ekodb-client/examples/rust)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.72s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.08s
      Running `target/debug/examples/client_batch_operations`
 ✓ Client created
 
@@ -308,8 +296,7 @@ Deleted document
 ✓ Deleted collection
 
 ✓ All batch operations completed successfully
-   Compiling ekodb-examples v0.1.0 (/Users/tek/Development/ekoDB/ekodb-client/examples/rust)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.57s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.09s
      Running `target/debug/examples/client_kv_operations`
 ✓ Client created
 
@@ -344,17 +331,16 @@ Total keys in store: 4
 ✓ Deleted 3 keys
 
 ✓ All KV operations completed successfully
-   Compiling ekodb-examples v0.1.0 (/Users/tek/Development/ekoDB/ekodb-client/examples/rust)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.72s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.08s
      Running `target/debug/examples/client_collection_management`
 ✓ Client created
 
 === Create Collection (via insert) ===
-Collection created with first record: "aIhRp6TNQV24TZ4dlmn5qyW7O9pPmSe9HsSS4BrnSJF4T-E9hAPQGaX-AeQmieNdzziAMid3USNAfExZKa3PCg"
+Collection created with first record: "sOWZVnNvhia1eFrpnxhRxtnljgaC6PG76B1oMZjy8rLIT5o7QvXdAqJZPd9xMAmGBPuSO3YCzYha4XxGblZERg"
 
 === List Collections ===
 Total collections: 9
-Sample collections: ["ttl_cache", "test_accounts", "client_collection_management_rust", "ws_ttl_test", "websocket_test"]
+Sample collections: ["client_collection_management_rust", "ttl_cache", "users", "websocket_test", "test_collection"]
 
 === Count Documents ===
 Document count: 1
@@ -369,16 +355,15 @@ Collection deleted successfully
 Collection still exists: false
 
 ✓ All collection management operations completed successfully
-   Compiling ekodb-examples v0.1.0 (/Users/tek/Development/ekoDB/ekodb-client/examples/rust)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.69s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.08s
      Running `target/debug/examples/client_document_ttl`
 ✓ Client created
 
 === Insert Document with TTL (1 hour) ===
-✓ Inserted document: "G_GtuB2ZZH2Km8oiXNU7F3JK8Q7nkMvU8R1jfN_hylftF47s7CXp9huRCiHvwkfAvjf4ej_j685MBnqMl-xHGg"
+✓ Inserted document: "W2VBnF2JUFILw2rHIBDoBbPJF0ySeQ3iVzMT8TJwQ03hDLxXXbXEUMtwBhcqavJGdJ9T3e-H0PNxNxV1b5iRTw"
 
 === Insert Document with TTL (5 minutes) ===
-✓ Inserted document: Some(String("ve0ouGMDcP3q1eNaicy5iOvUkGksr4owtb9nn9koyr915FR8wIh0YHIpF8yk_J-322rT080AM85nrH4P7-Zv8A"))
+✓ Inserted document: Some(String("oKv0XoQvtG71VQisdvsJ3mGvFKC3gJNgyZ1ttt6uWrYI6eRVruOYuTExXqTzHWRM5fm9_jdxUUMnxE5-bVj-LQ"))
 
 === Query Documents ===
 ✓ Found 2 documents with TTL
@@ -395,13 +380,12 @@ Collection still exists: false
 ✓ All document TTL operations completed successfully
 
 💡 Note: Documents with TTL will automatically expire after the specified duration
-   Compiling ekodb-examples v0.1.0 (/Users/tek/Development/ekoDB/ekodb-client/examples/rust)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.77s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.09s
      Running `target/debug/examples/client_simple_websocket`
 ✓ Client created
 
 === Inserting Test Data ===
-✓ Inserted test record: SFKzHIyqodJgsRk2GKWHB0FnNKXYi5qZFEMtEKdykfL6i4G7Fk_YySdDECWSrxo-N651-5aUexKAkw8UEdFX0g
+✓ Inserted test record: Q0O8m7BcVhlLkrRZ1Ntlv5yp9-ZTcOB6GxbV-6fE-fI15ZE4olPGqYKkpl8tlyGkZQnpoWDdKwRMyeTtiSONKw
 
 === Connecting to WebSocket ===
 ✓ WebSocket connected
@@ -414,13 +398,12 @@ Collection still exists: false
 ✓ Deleted collection
 
 ✓ WebSocket example completed successfully
-   Compiling ekodb-examples v0.1.0 (/Users/tek/Development/ekoDB/ekodb-client/examples/rust)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.78s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.09s
      Running `target/debug/examples/client_websocket_ttl`
 ✓ Client created
 
 === Insert Test Data with TTL ===
-✓ Inserted document with TTL: Some(String("KUHwSwBgCTieKvBM03RtRkq0DF1G287yvYMuoj1FPo7jKW71cLJoH3ngB9yk6zyJq-3CZTAulSUqv4SB3rj15g"))
+✓ Inserted document with TTL: Some(String("tzhN-kJKIuUHzHQah9SsOkE33mtOl1k6ndYpmCalogMjrWNJqoFDvOgMMsBfAz1o6N6kLT5FOVWzbfDVslkFdA"))
 
 === Query via WebSocket ===
 ✓ WebSocket connected
@@ -433,8 +416,7 @@ Collection still exists: false
 ✓ WebSocket TTL example completed successfully
 
 💡 Note: Documents with TTL will automatically expire after the specified duration
-   Compiling ekodb-examples v0.1.0 (/Users/tek/Development/ekoDB/ekodb-client/examples/rust)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.72s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.08s
      Running `target/debug/examples/client_query_builder`
 === ekoDB Query Builder Example ===
 
@@ -444,20 +426,20 @@ Collection still exists: false
 === Simple Equality Query ===
 ✓ Found 3 active users
   - Some(Object({"type": String("String"), "value": String("Alice")}))
-  - Some(Object({"type": String("String"), "value": String("Bob")}))
+  - Some(Object({"value": String("Bob"), "type": String("String")}))
   - Some(Object({"type": String("String"), "value": String("David")}))
 
 === Range Query (age >= 28 AND age < 35) ===
 ✓ Found 3 users in age range
   - Some(Object({"type": String("String"), "value": String("David")}))
-  - Some(Object({"type": String("String"), "value": String("Eve")}))
-  - Some(Object({"type": String("String"), "value": String("Bob")}))
+  - Some(Object({"value": String("Eve"), "type": String("String")}))
+  - Some(Object({"value": String("Bob"), "type": String("String")}))
 
 === IN Operator ===
 ✓ Found 4 users with status active or pending
-  - Some(Object({"type": String("String"), "value": String("David")}))
-  - Some(Object({"value": String("Eve"), "type": String("String")}))
   - Some(Object({"value": String("Alice"), "type": String("String")}))
+  - Some(Object({"type": String("String"), "value": String("David")}))
+  - Some(Object({"type": String("String"), "value": String("Eve")}))
   - Some(Object({"type": String("String"), "value": String("Bob")}))
 
 === NOT IN Operator ===
@@ -472,18 +454,18 @@ Collection still exists: false
 === Complex Query (active AND age >= 28 AND score > 1500) ===
 ✓ Found 2 users matching all conditions
   - Some(Object({"value": String("David"), "type": String("String")}))
-  - Some(Object({"type": String("String"), "value": String("Bob")}))
+  - Some(Object({"value": String("Bob"), "type": String("String")}))
 
 === OR Query ===
 ✓ Found 2 users with age < 28 OR age > 32
-  - Some(Object({"type": String("String"), "value": String("Alice")}))
+  - Some(Object({"value": String("Alice"), "type": String("String")}))
   - Some(Object({"type": String("String"), "value": String("Charlie")}))
 
 === Sorted Query (by score descending) ===
 ✓ Top 3 users by score:
   1. Some(Object({"type": String("String"), "value": String("Bob")}))
   2. Some(Object({"value": String("David"), "type": String("String")}))
-  3. Some(Object({"type": String("String"), "value": String("Alice")}))
+  3. Some(Object({"value": String("Alice"), "type": String("String")}))
 
 === Pagination (page 2, size 2) ===
 ✓ Page 2 results:
@@ -500,8 +482,7 @@ Collection still exists: false
 ✓ Deleted collection
 
 ✓ All query builder operations completed successfully
-   Compiling ekodb-examples v0.1.0 (/Users/tek/Development/ekoDB/ekodb-client/examples/rust)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.77s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.08s
      Running `target/debug/examples/client_search`
 === ekoDB Search Example ===
 
@@ -524,15 +505,15 @@ Collection still exists: false
 ✓ Found 4 results in title/description
   1. Score: 4.0000
      Title: Some(String("Machine Learning Basics"))
-     Matched: ["title", "title.value", "description", "description.value"]
+     Matched: ["title.value", "title", "description", "description.value"]
   2. Score: 2.0000
      Title: Some(String("Python for Data Science"))
-     Matched: ["description", "description.value"]
+     Matched: ["description.value", "description"]
   3. Score: 1.0000
-     Title: Some(String("Database Design"))
+     Title: Some(String("Rust Programming"))
      Matched: ["description", "description.value"]
   4. Score: 1.0000
-     Title: Some(String("Rust Programming"))
+     Title: Some(String("Database Design"))
      Matched: ["description", "description.value"]
 
 === Weighted Search ===
@@ -553,9 +534,8 @@ Collection still exists: false
 ✓ Deleted collection
 
 ✓ All search operations completed successfully
-Execution time: 2ms
-   Compiling ekodb-examples v0.1.0 (/Users/tek/Development/ekoDB/ekodb-client/examples/rust)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.72s
+Execution time: 1ms
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.08s
      Running `target/debug/examples/client_schema_management`
 === ekoDB Schema Management Example ===
 
@@ -563,28 +543,27 @@ Execution time: 2ms
 ✓ Created collection 'schema_client_rust' with schema
 
 === Inserting Valid Documents ===
-✓ Inserted user 1: Some(String("LNt7u0uPnzI93ZfgxhIJMWOe-sUx0ko68tdOnlZwbNIliQa9UWD66pcI77bJp3x6OW5yaFDAdJK3Wes9ooO6VA"))
-✓ Inserted user 2: Some(String("sQYuhEF0q058HLkVzDTGWkpOzetHmJ07QxrDp1jry6QgPKXWlLOHjkBrlaOSm8Haa3dGNxsgopkI6OCdl0ewng"))
+✓ Inserted user 1: Some(String("sdNTP_n_tFIDcyxImrnS2-ZStel8TJn1kxe4M-5nGJ2w_Yh-c0wHt3BJiDYJnKzdL3kbzsytGMd5lrWDPzOTzQ"))
+✓ Inserted user 2: Some(String("VaDAUBB5vVvhkn9KP2QD1UNeDKkkk1VdyVa8XETlHfPsS7cMIFn7m8HkL7CROuu9Xlzg93ySZOT7xWFMuSyq9w"))
 
 === Getting Schema ===
 ✓ Schema for schema_client_rust:
-  - status: String
   - age: Integer
-  - title: String
-    (required)
   - email: String
+    (required)
+  - status: String
+  - title: String
     (required)
 
 === Listing Collections ===
 ✓ Total collections: 9
-  Sample: ["ttl_cache", "schema_client_rust", "test_accounts", "ws_ttl_test", "websocket_test"]
+  Sample: ["ttl_cache", "users", "websocket_test", "test_collection", "scripts__ek0_testing"]
 
 === Cleanup ===
 ✓ Deleted collection
 
 ✓ All schema management operations completed successfully
-   Compiling ekodb-examples v0.1.0 (/Users/tek/Development/ekoDB/ekodb-client/examples/rust)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.76s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.08s
      Running `target/debug/examples/client_joins`
 === ekoDB Rust Client - Join Operations Example ===
 
@@ -593,8 +572,8 @@ Execution time: 2ms
 
 === Example 1: Single collection join (users with departments) ===
 ✓ Found 2 users with department data
-  - Bob Smith: Sales
   - Alice Johnson: Engineering
+  - Bob Smith: Sales
 
 === Example 2: Join with filtering ===
 ✓ Found 1 users in Engineering
@@ -602,8 +581,8 @@ Execution time: 2ms
 
 === Example 3: Join with user profiles ===
 ✓ Found 2 users with profile data
-  - Bob Smith: Sales Manager
   - Alice Johnson: Senior Software Engineer
+  - Bob Smith: Sales Manager
 
 === Example 4: Join orders with user data ===
 ✓ Found 2 completed orders
@@ -619,8 +598,7 @@ Execution time: 2ms
 ✓ Deleted test collections
 
 ✓ Join operations example completed successfully
-   Compiling ekodb-examples v0.1.0 (/Users/tek/Development/ekoDB/ekodb-client/examples/rust)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.69s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.09s
      Running `target/debug/examples/client_chat_basic`
 === ekoDB Chat Basic Example ===
 
@@ -628,42 +606,41 @@ Execution time: 2ms
 ✓ Inserted 3 sample documents
 
 === Creating Chat Session ===
-✓ Created session: o1-Gof096ND-RPEft85EWug_1lfr_pJ9PK5P-0h1_mparol8lKHJxwGPXtTCJTuOEkqpagS5eun4RH9azwSU_A
+✓ Created session: DhIh4JKtzyz-P_VwbAkLSXZCjZtY0TlcbaSniFvYPnmyL6GKGRUO4aUqqhc3KeIZqzMADTi3NFtcGZeLK9UFTQ
 
 === Sending Chat Message ===
-Message ID: 8wnmJowTa_bjqtLo47D5MpMBaMFM3bRT8PNGVGOFQlPDHTxghUPO6QHf4O1hFiaIe5RxjjjT7KUO9mbXETEuHA
+Message ID: Wr0rmfWIPkOnljs6I3QreuU09Lbxf2Dkc4dJmixi6ZoqzrWzOfEeabVQceZzpLVbuXMilS9XF3lC-jUTZjXIfg
 
 === AI Response ===
-Response 1: ekoDB is a high-performance database that features intelligent caching, real-time capabilities, and AI integration. It has unique features like the AI Chat Integration, which allows you to query your database using natural language and receive AI-powered responses with relevant context. Moreover, ekoDB supports full-text search, vector search, and hybrid search with automatic context retrieval. These features make it a powerful tool for managing and accessing data.
+Response 1: ekoDB is a high-performance database with intelligent caching, real-time capabilities, and AI integration. It has several key features including an AI Chat Integration which allows you to query your database using natural language and get AI-powered responses with relevant context. It also supports full-text search, vector search, and hybrid search with automatic context retrieval, enhancing the user's ability to find and access data conveniently and efficiently.
 
 === Context Used (3 snippets) ===
 
 Snippet 1:
   Collection: client_chat_basic_rust
   Score: 0.6333
-  Matched Fields: ["content", "title", "category"]
-  Record: Object {"category": String("features"), "content": String("The chat feature allows you to query your database using natural language and get AI-powered responses with relevant context."), "id": String("9qdfl__IluO3CimRIBkHeD6JEbAz02CinAA_tkvF7j9LjFboKUzYlMEkaypgQtkAVpwpTp4v98TQM89NpE4nsg"), "title": String("AI Chat Integration")}
+  Matched Fields: ["title", "category", "content"]
+  Record: Object {"category": String("features"), "content": String("The chat feature allows you to query your database using natural language and get AI-powered responses with relevant context."), "id": String("mZ89IpGvwGw6Qf8rMUQe-IDcgkDOknSYUYv-CTP05y7Zt1k25EOIPhm-rnY-gwY49gAlZ5mJyHF3XypJn8UoEw"), "title": String("AI Chat Integration")}
 
 Snippet 2:
   Collection: client_chat_basic_rust
   Score: 0.5222
-  Matched Fields: ["title", "content"]
-  Record: Object {"category": String("documentation"), "content": String("ekoDB is a high-performance database with intelligent caching, real-time capabilities, and AI integration."), "id": String("b7ONrauBCrkWDLkiSrJRGDSmIP8GQ-36Qk9jFWdzQT1upHlOb8WM-MYDk9gSajN5zUMbcK63C4OwMi_wDgGGxA"), "title": String("Introduction to ekoDB")}
+  Matched Fields: ["category", "content", "title"]
+  Record: Object {"category": String("features"), "content": String("ekoDB supports full-text search, vector search, and hybrid search with automatic context retrieval."), "id": String("1uFf4zEb0VYKb8nZK5hZ6aIsi6aRsavz0QuODVAn2Dk7NGAOTtqxelm_cXHR70xMCK-vA4NR_bxJbOTw7eyLPQ"), "title": String("Search Features")}
 
 Snippet 3:
   Collection: client_chat_basic_rust
   Score: 0.5222
-  Matched Fields: ["content", "category", "title"]
-  Record: Object {"category": String("features"), "content": String("ekoDB supports full-text search, vector search, and hybrid search with automatic context retrieval."), "id": String("l2e10LdqupB-Iok474Fwix3n5eLImBrFWhFDtPLZ6LXKrBu7HRXfBxGjDB9lAhvjqF9F62hZmZd3o6dVIKpdCA"), "title": String("Search Features")}
+  Matched Fields: ["content", "title"]
+  Record: Object {"category": String("documentation"), "content": String("ekoDB is a high-performance database with intelligent caching, real-time capabilities, and AI integration."), "id": String("7UZfXCii_qtMZfU-nx2JOXgd1eJZmaSsYwEi5csPAWzPIcpe9qdcOR9ao71tci_-5LX_It3vfE_09wgReETbtA"), "title": String("Introduction to ekoDB")}
 
-Execution Time: 3161ms
+Execution Time: 2702ms
 
 === Cleanup ===
 ✓ Deleted collection
 
 ✓ Chat completed successfully
-   Compiling ekodb-examples v0.1.0 (/Users/tek/Development/ekoDB/ekodb-client/examples/rust)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.73s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.08s
      Running `target/debug/examples/client_chat_sessions`
 === ekoDB Chat Session Management Example ===
 
@@ -671,10 +648,10 @@ Execution Time: 3161ms
 ✓ Inserted sample product
 
 === Creating Chat Session ===
-✓ Created session: Z5AKjIPI2yAcnUe0vBJQ876BWLJQ6XJWcYAMhqakwaXAEkhgRaePkXsgJTBf8TLtVPGSn7RWgBvBAq_zwKXWwA
+✓ Created session: mA61Yn2joaX-S0mdSdsaajZiffk0LtVAs6i9T-bDcik-YewWD2js2py8GGeFemTIxR6pDVrFEWI6WsaCqFGwUA
 === Sending Messages ===
 ✓ Message 1 sent
-  Response: Based on the provided context, the available product is "ekoDB". This is a high-performance database product that comes with AI capabilities. The price of this product is $99.
+  Response: Based on the information provided, the product available is ekoDB. It is a high-performance database product with AI capabilities and it is priced at $99.
 
 ✓ Message 2 sent
   Response: The price of the ekoDB product is $99.
@@ -686,28 +663,27 @@ Execution Time: 3161ms
 ✓ Session updated
 
 === Branching Session ===
-✓ Created branch: qo9HrHE07OyydXN_IfuL6vKok27B2Yfq-8pm4u856Eu1ZRJCx8UGAuJcX3_2gh3-Vv8mEwaPnD_D_7mOMu-T6Q
-  Parent: Z5AKjIPI2yAcnUe0vBJQ876BWLJQ6XJWcYAMhqakwaXAEkhgRaePkXsgJTBf8TLtVPGSn7RWgBvBAq_zwKXWwA
+✓ Created branch: QKHL1Tc7R0FGa65TzZq-oCZhiiqlCxQnyQpjdL-sXDqERqczVN263nuw6oy6uKGNyHjLgSgdCsRiqJ-7c8ws-A
+  Parent: mA61Yn2joaX-S0mdSdsaajZiffk0LtVAs6i9T-bDcik-YewWD2js2py8GGeFemTIxR6pDVrFEWI6WsaCqFGwUA
 
 === Listing Sessions ===
 ✓ Found 3 sessions
-  Session 1: qo9HrHE07OyydXN_IfuL6vKok27B2Yfq-8pm4u856Eu1ZRJCx8UGAuJcX3_2gh3-Vv8mEwaPnD_D_7mOMu-T6Q (Untitled)
-  Session 2: Z5AKjIPI2yAcnUe0vBJQ876BWLJQ6XJWcYAMhqakwaXAEkhgRaePkXsgJTBf8TLtVPGSn7RWgBvBAq_zwKXWwA (Untitled)
-  Session 3: o1-Gof096ND-RPEft85EWug_1lfr_pJ9PK5P-0h1_mparol8lKHJxwGPXtTCJTuOEkqpagS5eun4RH9azwSU_A (Untitled)
+  Session 1: QKHL1Tc7R0FGa65TzZq-oCZhiiqlCxQnyQpjdL-sXDqERqczVN263nuw6oy6uKGNyHjLgSgdCsRiqJ-7c8ws-A (Untitled)
+  Session 2: mA61Yn2joaX-S0mdSdsaajZiffk0LtVAs6i9T-bDcik-YewWD2js2py8GGeFemTIxR6pDVrFEWI6WsaCqFGwUA (Untitled)
+  Session 3: DhIh4JKtzyz-P_VwbAkLSXZCjZtY0TlcbaSniFvYPnmyL6GKGRUO4aUqqhc3KeIZqzMADTi3NFtcGZeLK9UFTQ (Untitled)
 
 === Getting Session Details ===
 ✓ Session details retrieved
   Messages: 4
 
 === Deleting Branch Session ===
-✓ Deleted branch session: qo9HrHE07OyydXN_IfuL6vKok27B2Yfq-8pm4u856Eu1ZRJCx8UGAuJcX3_2gh3-Vv8mEwaPnD_D_7mOMu-T6Q
+✓ Deleted branch session: QKHL1Tc7R0FGa65TzZq-oCZhiiqlCxQnyQpjdL-sXDqERqczVN263nuw6oy6uKGNyHjLgSgdCsRiqJ-7c8ws-A
 
 === Cleanup ===
 ✓ Deleted collection
 
 ✓ All session management operations completed successfully
-   Compiling ekodb-examples v0.1.0 (/Users/tek/Development/ekoDB/ekodb-client/examples/rust)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.81s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.09s
      Running `target/debug/examples/client_chat_advanced`
 === ekoDB Advanced Chat Features Example ===
 
@@ -715,11 +691,11 @@ Execution Time: 3161ms
 ✓ Inserted sample product
 
 === Creating Chat Session ===
-✓ Created session: bc0vuXekplg3ieID4vl4Ol5DvV54J3mDT6Ll0aJ-_6nPbe-XTqNQpfwXboU0x7qtPvMTp0ndcY0O52bOX5dUqw
+✓ Created session: c__ZmnF2c-tw6Om2ikM_V1MX5qS9qc7gZL64DTQB0EOZWv1OhazsTsDybQMw1qTQWnL2It8iEcxwK9Hibf3CrA
 
 === Sending Initial Message ===
 ✓ Message sent
-  Response: Based on the information provided, ekoDB is available. It is a high-performance database product offered at a price of $99.
+  Response: Based on the information available, one of the products we have is "ekoDB", which is a high-performance database product. It is priced at $99.
 
 ✓ Second message sent
 === Feature 1: Regenerate AI Response ===
@@ -735,7 +711,7 @@ Execution Time: 3161ms
 ✓ Message unmarked as forgotten
 
 === Feature 4: Merge Chat Sessions ===
-✓ Created second session: QRhmpERBtntusi1QZ2IH-CYZz8YqvGsUxP5rSLCZFUJV6k9Fh9IzpoKcyUkay5qYqXNuTe4_QsJe4LM3bnFRfg
+✓ Created second session: zgZmlmVFLWGNLEdEB26uHagZbr2ZF7802mz_wjqfZqon0azZ3gofLs6k7o8B_odODTl89yzN_di8oFEaFf0y8g
 ✓ Sent message in second session
 ✓ Sessions merged successfully
   Total messages in merged session: 4
@@ -750,8 +726,7 @@ Execution Time: 3161ms
 ✓ Deleted collection
 
 ✓ All advanced chat features demonstrated successfully!
-   Compiling ekodb-examples v0.1.0 (/Users/tek/Development/ekoDB/ekodb-client/examples/rust)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.78s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.08s
      Running `target/debug/examples/client_functions`
 === ekoDB Rust Client - Scripts Example ===
 
@@ -760,17 +735,17 @@ Execution Time: 3161ms
 
 📝 Example 1: Simple Query Script
 
-✅ Script saved: gZOoCxboe7L_hApKaSbK0dG9SoiKm4-qCNwaWnc43edtdDK-ZlXcu5qIHrsiMaer_tMWMuxc1TOlYWrPMHUFmg
+✅ Script saved: RGzxSzSfk5bgI_WBMyl_z3Pg5iyB7bUSCoPe0Wl8HhcGvN6H5fLkqxnI4cokC8rIo0DDJlN-asb48btDsY2-eQ
 📊 Found 20 active users
 
 📝 Example 2: Parameterized Script
 
-✅ Script saved: puuc2DUxVyAHFAtVibePfsZF1aZLjjgThldT4h1BorPn7TgaefuyBZZWERipdFXXzV_jsjVh-rV7Sgf0Z2a3SA
+✅ Script saved: 4mSrUgmjEW7a5Kd5hUrp6YUmbj7-Jixt4vssVFoTJORG7-dQEIpyC0IZjMGgR5hqkRLLyvtERP4_UE5r4gnqYg
 📊 Found 20 users (limited)
 
 📝 Example 3: Aggregation Script
 
-✅ Script saved: yWmdELsrdrtAmjBrY-ky7UwBmhE1_z8jHnmq5D2rVIonXMSAizskByu5aZMqNDS9qp4Spl2jbN-_svLDzMdgdg
+✅ Script saved: U9cjarjaJPFZRzb87koi_mKBcM25F3laJ-NkaJMrisj8yIKndjlZ5BKLAP6b3BCYXgdBipaicxOspsAkmUVyXA
 📊 Statistics: 2 groups
 
 📝 Example 4: Script Management
@@ -784,17 +759,16 @@ Execution Time: 3161ms
 
 
 ✅ All examples completed!
-   Compiling ekodb-examples v0.1.0 (/Users/tek/Development/ekoDB/ekodb-client/examples/rust)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.69s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.08s
      Running `target/debug/examples/client_transactions`
 ✓ Client created
 
 === Setup: Creating Test Accounts ===
-Created Alice: $1000 - ID: BoUxuRzduKftS7b71IVoZwLCm_pnTiBIfrQerSlZuBaEU19hAo2Texk7Zy-1nfXkQFjELiNlF-8D4DfK9-Pvrg
-Created Bob: $500 - ID: 2GRy-mwRT1PorKe9A7dRxX0CHZHaedychr-Ve3o7OGs2sEHjm0HAs-52TBBmcT05iXWjkcxJ_wCU2ma3xpFpZA
+Created Alice: $1000 - ID: yPwYLSXXNKAIYrElTPqs1FRb9CBR-b2U5xo-5RP_2yNxwEvbOT94e30qzv_plEKq8it3h3u53T2Kowsu-DerAw
+Created Bob: $500 - ID: Qan5_M0D1AKcraVW52dBySZP8au_vsnMFkZ69ivgp0pGBTBbT2fGCYu2ajqqpPfKOHfMRCz_pwdv_jfqoqs2uA
 
 === Example 1: Begin Transaction ===
-Transaction ID: c0e9839b-2d30-4082-9d9f-4913c20c0c28
+Transaction ID: e9237fdd-7ed9-4004-ac5c-cb7c5b6a9498
 
 === Example 2: Operations within Transaction ===
 Updated Alice: $1000 → $800 (simulated)
@@ -808,7 +782,7 @@ Operations: 0
 ✓ Transaction committed
 
 === Example 5: Rollback Demo ===
-New transaction: cdfa6307-fc4d-4c8d-8216-18172f0d4911
+New transaction: f97f7998-80ea-481e-adb5-3995d2873c8d
 Status before rollback: "Active"
 ✓ Transaction rolled back
 

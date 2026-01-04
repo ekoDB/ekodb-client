@@ -20,10 +20,9 @@ yarn install
 
 ### TTL Features
 
-- [Document TTL](ttl-caching/document_ttl.js) - Basic document-level TTL
-  operations
-- [WebSocket TTL](ttl-caching/websocket_ttl.js) - Real-time TTL events via
-  WebSocket
+- [Document TTL](document_ttl.js) - Basic document-level TTL operations
+- [WebSocket TTL](websocket_ttl.js) - Real-time TTL events via WebSocket
+- [TTL Verification Tests](ttl/) - Tests that verify TTL expiration works
 
 ### Basic Operations
 
@@ -39,7 +38,7 @@ yarn install
 3. Run an example:
 
    ```bash
-   node ttl-caching/document_ttl.js
+   node document_ttl.js
    ```
 
 ## Important Notes

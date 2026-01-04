@@ -2,7 +2,7 @@
 """Batch Operations Examples - Using ekodb_client Python library
 
 This example demonstrates batch operations using the Python client library.
-Compare with ttl-caching/batch_operations.py to see the difference!
+Compare with batch_operations.py to see the difference!
 """
 
 import asyncio

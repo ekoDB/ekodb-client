@@ -127,19 +127,20 @@ async def main():
         token = await get_auth_token()
 
         # List of example files to run
-        examples_dir = Path(__file__).parent / "ttl-caching"
+        # Note: Direct API examples are in the main directory
+        # TTL verification tests are in the ttl/ subdirectory
         base_dir = Path(__file__).parent
         examples = [
-            examples_dir / "simple_crud.py",
-            examples_dir / "simple_websocket.py",
-            examples_dir / "batch_operations.py",
-            examples_dir / "kv_operations.py",
-            examples_dir / "collection_management.py",
-            examples_dir / "document_ttl.py",
-            examples_dir / "websocket_ttl.py",
+            base_dir / "simple_crud.py",
+            base_dir / "simple_websocket.py",
             base_dir / "http_functions.py",
+            base_dir / "batch_operations.py",
+            base_dir / "kv_operations.py",
+            base_dir / "collection_management.py",
             base_dir / "transactions.py",
             base_dir / "crud_scripts.py",
+            base_dir / "ttl" / "document_ttl.py",
+            base_dir / "ttl" / "websocket_ttl.py",
         ]
 
         log(f"\n=== Running {len(examples)} Examples ===", "YELLOW")
