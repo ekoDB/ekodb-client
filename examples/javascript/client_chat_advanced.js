@@ -10,6 +10,7 @@
  */
 
 const { EkoDBClient, MergeStrategy } = require("@ekodb/ekodb-client");
+require("dotenv").config();
 
 async function main() {
   console.log("=== ekoDB Advanced Chat Features Example ===\n");

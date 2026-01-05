@@ -15,7 +15,7 @@ YELLOW := \033[33m
 RED := \033[31m
 RESET := \033[0m
 
-.PHONY: all build build-release build-client build-python-client build-typescript-client test test-ci test-client test-examples test-examples-direct test-examples-client test-examples-rust test-examples-python test-examples-go test-examples-typescript test-examples-javascript test-examples-transactions test-examples-scripts test-examples-scripts-crud test-examples-swr test-examples-ts-swr test-examples-py-swr test-examples-go-swr test-examples-rust-swr test-examples-kt-swr clean check fmt fmt-rust fmt-rust-client fmt-rust-examples fmt-python fmt-go fmt-typescript fmt-md format install install-rust install-python install-typescript install-go setup install-hooks deps-check deps-update deploy-client deploy-client-rust deploy-client-py deploy-client-py-simple deploy-client-go deploy-client-ts bump-version bump-client-py docs-client
+.PHONY: all build build-release build-client build-python-client build-typescript-client build-examples test test-ci test-client test-examples test-examples-direct test-examples-client test-examples-rust test-examples-python test-examples-go test-examples-typescript test-examples-javascript test-examples-transactions test-examples-scripts test-examples-scripts-crud test-examples-swr test-examples-ts-swr test-examples-py-swr test-examples-go-swr test-examples-rust-swr test-examples-kt-swr clean check fmt fmt-rust fmt-rust-client fmt-rust-examples fmt-python fmt-go fmt-typescript fmt-md format install install-rust install-python install-typescript install-go setup install-hooks deps-check deps-update deploy-client deploy-client-rust deploy-client-py deploy-client-py-simple deploy-client-go deploy-client-ts bump-version bump-client-py docs-client
 
 # ASCII Banner for ekoDB
 BANNER := \
@@ -174,6 +174,20 @@ build-release:
 	@echo "🚀 $(CYAN)Building release version (Rust client only)...$(RESET)"
 	$(CARGO) build -p ekodb_client --release
 	@echo "✅ $(GREEN)Release build complete!$(RESET)"
+
+# Build all examples across all languages
+build-examples:
+	@echo "🔨 $(CYAN)Building ALL examples...$(RESET)"
+	@echo "🦀 $(CYAN)Building Rust examples...$(RESET)"
+	@cd examples/rust && cargo build --examples
+	@echo "✅ Rust examples built"
+	@echo "📘 $(CYAN)Building TypeScript examples...$(RESET)"
+	@cd examples/typescript && npm install && npm run build
+	@echo "✅ TypeScript examples built"
+	@echo "🔷 $(CYAN)Checking Go examples...$(RESET)"
+	@cd examples/go && go build ./...
+	@echo "✅ Go examples verified"
+	@echo "✅ $(GREEN)All examples built successfully!$(RESET)"
 
 # Client library deployment targets
 deploy-client: deploy-client-rust
@@ -764,7 +778,7 @@ test-examples-kt-swr:
 # ============================================================================
 # TTL Verification Tests (verify TTL expiration actually works)
 # ============================================================================
-.PHONY: test-examples-ttl test-examples-ttl-go test-examples-ttl-js test-examples-ttl-py
+.PHONY: test-examples-ttl test-examples-ttl-rust test-examples-ttl-go test-examples-ttl-js test-examples-ttl-py test-examples-ttl-ts
 
 test-examples-ttl:
 	@echo ""
@@ -773,16 +787,22 @@ test-examples-ttl:
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo ""
 	@echo "$(YELLOW)These tests VERIFY that TTL expiration actually works by:$(RESET)"
-	@echo "  1. Inserting documents with short TTL (2-5 seconds)"
+	@echo "  1. Inserting documents with short TTL (3 seconds)"
 	@echo "  2. Verifying documents exist immediately"
 	@echo "  3. Waiting for TTL to expire"
 	@echo "  4. Verifying documents are GONE"
 	@echo ""
-	@$(MAKE) test-examples-ttl-go test-examples-ttl-js test-examples-ttl-py
+	@$(MAKE) test-examples-ttl-rust test-examples-ttl-go test-examples-ttl-js test-examples-ttl-py test-examples-ttl-ts
 	@echo ""
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "✅ $(GREEN)All TTL Verification Tests Passed!$(RESET)"
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+
+test-examples-ttl-rust: build-client
+	@echo ""
+	@echo "🦀 $(YELLOW)Rust TTL Verification Tests...$(RESET)"
+	@cd examples/rust && cargo run --example ttl_expiration_test
+	@echo "✅ $(GREEN)Rust TTL tests complete!$(RESET)"
 
 test-examples-ttl-go:
 	@echo ""
@@ -805,6 +825,12 @@ test-examples-ttl-py:
 	@cd examples/python/ttl && python3 websocket_ttl.py
 	@echo "✅ $(GREEN)Python TTL tests complete!$(RESET)"
 
+test-examples-ttl-ts: build-typescript-client
+	@echo ""
+	@echo "📘 $(YELLOW)TypeScript TTL Verification Tests...$(RESET)"
+	@cd examples/typescript && npx tsx ttl_expiration_test.ts
+	@echo "✅ $(GREEN)TypeScript TTL tests complete!$(RESET)"
+
 # ============================================================================
 # Rust Examples (both direct + client)
 # ============================================================================
@@ -825,21 +851,30 @@ test-examples-rust-direct:
 test-examples-rust-client: build-client
 	@echo "🧪 $(CYAN)Running Rust client library examples...$(RESET)"
 	@cd examples/rust && cargo run --example client_simple_crud
-	@cd examples/rust && cargo run --example client_batch_operations
-	@cd examples/rust && cargo run --example client_kv_operations
-	@cd examples/rust && cargo run --example client_collection_management
-	@cd examples/rust && cargo run --example client_document_ttl
 	@cd examples/rust && cargo run --example client_simple_websocket
-	@cd examples/rust && cargo run --example client_websocket_ttl
+	@cd examples/rust && cargo run --example client_batch_operations
+	@cd examples/rust && cargo run --example client_collection_management
+	@cd examples/rust && cargo run --example client_kv_operations
+	@cd examples/rust && cargo run --example client_transactions
 	@cd examples/rust && cargo run --example client_query_builder
 	@cd examples/rust && cargo run --example client_search
-	@cd examples/rust && cargo run --example client_schema_management
+	@cd examples/rust && cargo run --example client_schema
 	@cd examples/rust && cargo run --example client_joins
-	@cd examples/rust && cargo run --example client_chat_basic
-	@cd examples/rust && cargo run --example client_chat_sessions
-	@cd examples/rust && cargo run --example client_chat_advanced
+	@cd examples/rust && cargo run --example client_document_ttl
+	@cd examples/rust && cargo run --example client_websocket_ttl
+	@cd examples/rust && cargo run --example client_edge_cache
 	@cd examples/rust && cargo run --example client_functions
-	@cd examples/rust && cargo run --example client_transactions
+	@cd examples/rust && cargo run --example client_function_composition
+	@cd examples/rust && cargo run --example client_functions_complete
+	@cd examples/rust && cargo run --example client_functions_kv_wrapped
+	@cd examples/rust && cargo run --example client_swr_pattern
+	@cd examples/rust && cargo run --example client_functions_advanced
+	@cd examples/rust && cargo run --example client_functions_ai
+	@cd examples/rust && cargo run --example client_functions_crud
+	@cd examples/rust && cargo run --example client_functions_search
+	@cd examples/rust && cargo run --example client_chat_basic
+	@cd examples/rust && cargo run --example client_chat_advanced
+	@cd examples/rust && cargo run --example client_chat_sessions
 	@echo "✅ $(GREEN)Rust client examples complete!$(RESET)"
 
 # ============================================================================
@@ -875,22 +910,30 @@ build-python-client:
 test-examples-python-client: build-python-client
 	@echo "🧪 $(CYAN)Running Python client library examples...$(RESET)"
 	@cd examples/python && python3 client_simple_crud.py
-	@cd examples/python && python3 client_batch_operations.py
-	@cd examples/python && python3 client_kv_operations.py
-	@cd examples/python && python3 client_collection_management.py
-	@cd examples/python && python3 client_document_ttl.py
 	@cd examples/python && python3 client_simple_websocket.py
-	@cd examples/python && python3 client_websocket_ttl.py
+	@cd examples/python && python3 client_batch_operations.py
+	@cd examples/python && python3 client_collection_management.py
+	@cd examples/python && python3 client_kv_operations.py
+	@cd examples/python && python3 client_transactions.py
 	@cd examples/python && python3 client_query_builder.py
 	@cd examples/python && python3 client_search.py
 	@cd examples/python && python3 client_schema.py
 	@cd examples/python && python3 client_joins.py
-	@cd examples/python && python3 client_chat_basic.py
-	@cd examples/python && python3 client_chat_sessions.py
-	@cd examples/python && python3 client_chat_advanced.py
+	@cd examples/python && python3 client_document_ttl.py
+	@cd examples/python && python3 client_websocket_ttl.py
+	@cd examples/python && python3 client_edge_cache.py
 	@cd examples/python && python3 client_functions.py
+	@cd examples/python && python3 client_function_composition.py
 	@cd examples/python && python3 client_functions_complete.py
-	@cd examples/python && python3 client_transactions.py
+	@cd examples/python && python3 client_functions_kv_wrapped.py
+	@cd examples/python && python3 client_swr_pattern.py
+	@cd examples/python && python3 client_functions_advanced.py
+	@cd examples/python && python3 client_functions_ai.py
+	@cd examples/python && python3 client_functions_crud.py
+	@cd examples/python && python3 client_functions_search.py
+	@cd examples/python && python3 client_chat_basic.py
+	@cd examples/python && python3 client_chat_advanced.py
+	@cd examples/python && python3 client_chat_sessions.py
 	@echo "✅ $(GREEN)Python client examples complete!$(RESET)"
 
 # ============================================================================
@@ -909,21 +952,30 @@ test-examples-go-direct:
 test-examples-go-client:
 	@echo "🧪 $(CYAN)Running Go client library examples...$(RESET)"
 	@cd examples/go && go run client_simple_crud.go
-	@cd examples/go && go run client_batch_operations.go
-	@cd examples/go && go run client_kv_operations.go
-	@cd examples/go && go run client_collection_management.go
-	@cd examples/go && go run client_document_ttl.go
 	@cd examples/go && go run client_simple_websocket.go
-	@cd examples/go && go run client_websocket_ttl.go
-	@cd examples/go && go run client_chat_basic.go
-	@cd examples/go && go run client_chat_sessions.go
-	@cd examples/go && go run client_chat_advanced.go
+	@cd examples/go && go run client_batch_operations.go
+	@cd examples/go && go run client_collection_management.go
+	@cd examples/go && go run client_kv_operations.go
+	@cd examples/go && go run client_transactions.go
 	@cd examples/go && go run client_query_builder.go
 	@cd examples/go && go run client_search.go
 	@cd examples/go && go run client_schema.go
 	@cd examples/go && go run client_joins.go
+	@cd examples/go && go run client_document_ttl.go
+	@cd examples/go && go run client_websocket_ttl.go
+	@cd examples/go && go run client_edge_cache.go
 	@cd examples/go && go run client_functions.go
-	@cd examples/go && go run client_transactions.go
+	@cd examples/go && go run client_function_composition.go
+	@cd examples/go && go run client_functions_complete.go
+	@cd examples/go && go run client_functions_kv_wrapped.go
+	@cd examples/go && go run client_swr_pattern.go
+	@cd examples/go && go run client_functions_advanced.go
+	@cd examples/go && go run client_functions_ai.go
+	@cd examples/go && go run client_functions_crud.go
+	@cd examples/go && go run client_functions_search.go
+	@cd examples/go && go run client_chat_basic.go
+	@cd examples/go && go run client_chat_advanced.go
+	@cd examples/go && go run client_chat_sessions.go
 	@echo "✅ $(GREEN)Go client examples complete!$(RESET)"
 
 # ============================================================================
@@ -949,22 +1001,30 @@ test-examples-typescript-client: build-typescript-client
 	@echo "🧪 $(CYAN)Running TypeScript client library examples...$(RESET)"
 	@cd examples/typescript && npm install
 	@cd examples/typescript && npx tsx client_simple_crud.ts
-	@cd examples/typescript && npx tsx client_batch_operations.ts
-	@cd examples/typescript && npx tsx client_kv_operations.ts
-	@cd examples/typescript && npx tsx client_collection_management.ts
-	@cd examples/typescript && npx tsx client_document_ttl.ts
 	@cd examples/typescript && npx tsx client_simple_websocket.ts
-	@cd examples/typescript && npx tsx client_websocket_ttl.ts
-	@cd examples/typescript && npx tsx client_chat_basic.ts
-	@cd examples/typescript && npx tsx client_chat_sessions.ts
-	@cd examples/typescript && npx tsx client_chat_advanced.ts
+	@cd examples/typescript && npx tsx client_batch_operations.ts
+	@cd examples/typescript && npx tsx client_collection_management.ts
+	@cd examples/typescript && npx tsx client_kv_operations.ts
+	@cd examples/typescript && npx tsx client_transactions.ts
 	@cd examples/typescript && npx tsx client_query_builder.ts
 	@cd examples/typescript && npx tsx client_search.ts
 	@cd examples/typescript && npx tsx client_schema.ts
 	@cd examples/typescript && npx tsx client_joins.ts
+	@cd examples/typescript && npx tsx client_document_ttl.ts
+	@cd examples/typescript && npx tsx client_websocket_ttl.ts
+	@cd examples/typescript && npx tsx client_edge_cache.ts
 	@cd examples/typescript && npx tsx client_functions.ts
+	@cd examples/typescript && npx tsx client_function_composition.ts
 	@cd examples/typescript && npx tsx client_functions_complete.ts
-	@cd examples/typescript && npx tsx client_transactions.ts
+	@cd examples/typescript && npx tsx client_functions_kv_wrapped.ts
+	@cd examples/typescript && npx tsx client_swr_pattern.ts
+	@cd examples/typescript && npx tsx client_functions_advanced.ts
+	@cd examples/typescript && npx tsx client_functions_ai.ts
+	@cd examples/typescript && npx tsx client_functions_crud.ts
+	@cd examples/typescript && npx tsx client_functions_search.ts
+	@cd examples/typescript && npx tsx client_chat_basic.ts
+	@cd examples/typescript && npx tsx client_chat_advanced.ts
+	@cd examples/typescript && npx tsx client_chat_sessions.ts
 	@echo "✅ $(GREEN)TypeScript client examples complete!$(RESET)"
 
 # ============================================================================
@@ -988,19 +1048,30 @@ test-examples-javascript-client: build-typescript-client
 	@echo "🧪 $(CYAN)Running JavaScript client library examples...$(RESET)"
 	@cd examples/javascript && npm install
 	@cd examples/javascript && node client_simple_crud.js
-	@cd examples/javascript && node client_batch_operations.js
-	@cd examples/javascript && node client_kv_operations.js
-	@cd examples/javascript && node client_collection_management.js
-	@cd examples/javascript && node client_document_ttl.js
 	@cd examples/javascript && node client_simple_websocket.js
+	@cd examples/javascript && node client_batch_operations.js
+	@cd examples/javascript && node client_collection_management.js
+	@cd examples/javascript && node client_kv_operations.js
+	@cd examples/javascript && node client_transactions.js
+	@cd examples/javascript && node client_query_builder.js
+	@cd examples/javascript && node client_search.js
+	@cd examples/javascript && node client_schema.js
+	@cd examples/javascript && node client_joins.js
+	@cd examples/javascript && node client_document_ttl.js
 	@cd examples/javascript && node client_websocket_ttl.js
-	@cd examples/javascript && node http_functions.js
+	@cd examples/javascript && node client_edge_cache.js
 	@cd examples/javascript && node client_functions.js
-	@cd examples/javascript && node client_functions_advanced.js
+	@cd examples/javascript && node client_function_composition.js
+	@cd examples/javascript && node client_functions_complete.js
+	@cd examples/javascript && node client_functions_kv_wrapped.js
 	@cd examples/javascript && node client_functions_crud.js
 	@cd examples/javascript && node client_functions_search.js
+	@cd examples/javascript && node client_functions_advanced.js
 	@cd examples/javascript && node client_functions_ai.js
-	@cd examples/javascript && node client_transactions.js
+	@cd examples/javascript && node client_swr_pattern.js
+	@cd examples/javascript && node client_chat_basic.js
+	@cd examples/javascript && node client_chat_advanced.js
+	@cd examples/javascript && node client_chat_sessions.js
 	@echo "✅ $(GREEN)JavaScript client examples complete!$(RESET)"
 
 # ============================================================================
@@ -1029,20 +1100,29 @@ test-examples-kotlin-client: build-kotlin-client
 		export JAVA_HOME=$$(/usr/libexec/java_home -v 17) && export PATH=$$JAVA_HOME/bin:$$PATH && \
 		cd examples/kotlin && \
 		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientSimpleCrudKt --no-daemon && \
-		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientBatchOperationsKt --no-daemon && \
-		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientQueryBuilderKt --no-daemon && \
-		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientKvOperationsKt --no-daemon && \
-		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientCollectionManagementKt --no-daemon && \
-		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientDocumentTtlKt --no-daemon && \
 		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientSimpleWebsocketKt --no-daemon && \
-		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientSchemaManagementKt --no-daemon && \
+		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientBatchOperationsKt --no-daemon && \
+		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientCollectionManagementKt --no-daemon && \
+		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientKvOperationsKt --no-daemon && \
+		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientTransactionsKt --no-daemon && \
+		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientQueryBuilderKt --no-daemon && \
 		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientSearchKt --no-daemon && \
-		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientWebsocketTtlKt --no-daemon && \
+		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientSchemaManagementKt --no-daemon && \
 		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientJoinsKt --no-daemon && \
+		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientDocumentTtlKt --no-daemon && \
+		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientWebsocketTtlKt --no-daemon && \
+		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientEdgeCacheKt --no-daemon && \
+		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientFunctionsKt --no-daemon && \
+		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientFunctionsCompleteKt --no-daemon && \
+		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientFunctionsKvWrappedKt --no-daemon && \
+		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientSwrPatternKt --no-daemon && \
+		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientFunctionsAdvancedKt --no-daemon && \
+		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientFunctionsAiKt --no-daemon && \
+		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientFunctionsCrudKt --no-daemon && \
+		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientFunctionsSearchKt --no-daemon && \
 		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientChatBasicKt --no-daemon && \
-		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientChatSessionsKt --no-daemon && \
 		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientChatAdvancedKt --no-daemon && \
-		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=ClientFunctionsKt --no-daemon; \
+		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientChatSessionsKt --no-daemon; \
 	else \
 		echo "$(RED)❌ .env file not found$(RESET)"; \
 		echo "$(YELLOW)💡 Create .env file with API_BASE_URL, WS_BASE_URL, and API_BASE_KEY$(RESET)"; \

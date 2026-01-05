@@ -16,16 +16,16 @@ make test-examples-go
 ✓ Authentication successful
 
 === Insert Document ===
-Inserted: map[id:hoDT7JQ2XpK1kyzMHhtxjFobaIMKbwCpyX8KXxV3CKGFGvZxG3dOwZYpY0teV64fqJAmXvB1VRqQ1_0sULtOqA]
+Inserted: map[id:spQrscJWjGnFhXpz6QrJnEsgOqmx1goTLQSE6OlGCYi57SOE7FJly53b3KwlqMCLRie-9JI8aHOBsCX2TmiudQ]
 
 === Find by ID ===
-Found: map[active:map[type:Boolean value:true] id:hoDT7JQ2XpK1kyzMHhtxjFobaIMKbwCpyX8KXxV3CKGFGvZxG3dOwZYpY0teV64fqJAmXvB1VRqQ1_0sULtOqA name:map[type:String value:Test Record] value:map[type:Integer value:42]]
+Found: map[active:map[type:Boolean value:true] id:spQrscJWjGnFhXpz6QrJnEsgOqmx1goTLQSE6OlGCYi57SOE7FJly53b3KwlqMCLRie-9JI8aHOBsCX2TmiudQ name:map[type:String value:Test Record] value:map[type:Integer value:42]]
 
 === Find with Query ===
 Found documents: map[]
 
 === Update Document ===
-Updated: map[active:map[type:Boolean value:true] id:hoDT7JQ2XpK1kyzMHhtxjFobaIMKbwCpyX8KXxV3CKGFGvZxG3dOwZYpY0teV64fqJAmXvB1VRqQ1_0sULtOqA name:map[type:String value:Updated Record] value:map[type:Integer value:100]]
+Updated: map[active:map[type:Boolean value:true] id:spQrscJWjGnFhXpz6QrJnEsgOqmx1goTLQSE6OlGCYi57SOE7FJly53b3KwlqMCLRie-9JI8aHOBsCX2TmiudQ name:map[type:String value:Updated Record] value:map[type:Integer value:100]]
 
 === Delete Document ===
 Deleted document
@@ -39,7 +39,7 @@ Deleted document
 ✓ Authentication successful
 
 === Inserting Test Data ===
-✓ Inserted test record: US1URz1oElP11pCefhxXASu8-cl5XivMknbWJiWq1kXVtN-5hRHQyja-29vCYjgUA0cRpJ_hJZcKdqayTZhPww
+✓ Inserted test record: gNJIM5t-Z90GX2S83uajBb8Cf_25wpkB7Fp-GaV-ZpiQWf0plIOqYPCcPhkA5i0lNm-RyuZvqPAbCHUrfvb1PQ
 
 === Connecting to WebSocket ===
 ✓ WebSocket connected
@@ -53,7 +53,7 @@ Response: {
           "type": "Boolean",
           "value": true
         },
-        "id": "ggUkVE8p-4-sgFujbNnfoo55fNFXQjXjuC4CFyYjUOz6nF6tI0-pZ_LBzcVVwNTxaLqn3-UX4dKYH11ySN0p4A",
+        "id": "jCqqfNX1CH8oAOspCeoYtlibdQJHNY0vgR73fxLb98lsm2A2lhAlkEWs2K4JJ3fG0iHF4joH55M1tlEJ2xM6hw",
         "name": {
           "type": "String",
           "value": "WebSocket Test Record"
@@ -68,7 +68,7 @@ Response: {
           "type": "Boolean",
           "value": true
         },
-        "id": "d2VJG5iv4Y2GM8EF5v5Bvs8hZucupbWnljtU8V09E6kHsVSL76g8IaS5XdJ9hRAvPBx73kHkr6R-756nGUvxHg",
+        "id": "t72bpt21jeSg4T5Hfo6Fk9U-NA8EZPcpKDWKpNfxWbDNAhHHFhjk2RkrVZVqsb_YoUfIXZy-UOQ7xUd1LDrPFQ",
         "name": {
           "type": "String",
           "value": "WebSocket Test Record"
@@ -83,7 +83,7 @@ Response: {
           "type": "Boolean",
           "value": true
         },
-        "id": "US1URz1oElP11pCefhxXASu8-cl5XivMknbWJiWq1kXVtN-5hRHQyja-29vCYjgUA0cRpJ_hJZcKdqayTZhPww",
+        "id": "gNJIM5t-Z90GX2S83uajBb8Cf_25wpkB7Fp-GaV-ZpiQWf0plIOqYPCcPhkA5i0lNm-RyuZvqPAbCHUrfvb1PQ",
         "name": {
           "type": "String",
           "value": "WebSocket Test Record"
@@ -110,25 +110,25 @@ Response: {
 
 📝 Example 1: Simple Query Function with Filter
 
-✅ Script saved: Jrr9ewxBb2ZA2zGTfgDHMm4q3wYSvZ0uznztg7bGC--MbEP8tfxLSeb-dp8DOt4zIvWI96qXwi-5Vca24q5cfA
-📊 Found 20 active users
+✅ Script saved: Ki31zNLjoj2T_O1HFSR6AU622LSqsSbPN9IoUrSQfZYpeURp8RzL9tw6OSApFm3SmAGj1pmLATFpCBc1qf0mjQ
+📊 Found 25 active users
 
 📝 Example 2: Parameterized Pagination with Limit/Skip
 
-✅ Script saved: IiefJwTNsPNiSZujejg8A7aWd1ra818A6sYjYGzQ_llkvL-xcdpG3mYKXT5gX3agtdvo6flu9-nnyFJ-QPQiJg
+✅ Script saved: ekOS-A0e8fiPtvmsz1VQAy1r-RLWaAQcvhB__24OHOvqfa745vI1SetszGyOLVAftsZwymqHp8o9uvLOb3EmWQ
 📊 Page 1: Found 3 users (limit=3, skip=0)
 📊 Page 2: Found 3 users (limit=3, skip=3)
 
 📝 Example 3: Multi-Stage Pipeline (Query → Group → Calculate)
 
-✅ Script saved: F8Q7zB6I0PNLbfMh8J9fDCj5YmwXmHA-KrIDDDpOKMFrF_HbIZeOuglm65zV6xKSfa7immA8FKJGlyeNw6niMQ
+✅ Script saved: AdcuWyR6fFmHk9idsycvwGktajYbLqBjA6VRIjP-nR6k_chgNdgLSDO_fPQw5433N9PbQRRQXleElQp2_aSdlA
 📊 Pipeline Results: Filtered (age>20) → Grouped by status → 2 groups
-   {"avg_score":50,"count":10,"max_score":90,"status":"inactive"}
    {"avg_score":60,"count":10,"max_score":100,"status":"active"}
+   {"avg_score":50,"count":10,"max_score":90,"status":"inactive"}
 
 📝 Example 4: Function Management
 
-📋 Total scripts: 12
+📋 Total scripts: 28
 🔍 Retrieved script: Get Active Users
 ✏️  Script updated
 🗑️  Script deleted
@@ -195,11 +195,11 @@ cache:product:3: map[name:Product 3 price:49.989999999999995]
 ✓ Authentication successful
 
 === Create Collection (via insert) ===
-Collection created with first record: za2YBWtPRoNpEXlk32vYnPp7IOPRyk6vxVeH2BB_m184IhlnX9U7KgCgORYs06VeORU7ui9j546L_u8sFM5OKg
+Collection created with first record: BqOBnmW9cU0vqOSKuX2ZJ6gx_FRA4aJNoBm2Ew4z2UDBSHqJuPJLcBmZjNgnuQPz_U_zy5774C73S9AsyJ5eew
 
 === List Collections ===
-Total collections: 15
-Sample collections: [ttl_cache users websocket_test chat_messages__ek0_testing test_collection]
+Total collections: 17
+Sample collections: [chat_configurations__ek0_testing schema_documents_client_py schema_users_client_py edge_cache_py ws_ttl_test]
 
 === Delete Collection ===
 Collection deleted successfully
@@ -214,11 +214,11 @@ Collection still exists: false
 ✓ Authentication successful
 
 === Setup: Creating Test Accounts ===
-Created Alice: $1000 - ID: 39s8XrkvJsBubPF_7hjUQet04MLLnED_eNiKlTGGMGDYvHOFAEMorSI_Iq75qus1gBtBNFnwzrWHtSRr7qFmqQ
-Created Bob: $500 - ID: TYcUJPSBhmiM9aa5fmSfaBk4Aii2ImAzq1olE_GAfWRRMe2H2hPEcYmmm2jzBBllhouODuzywUy96BAxzw9-jg
+Created Alice: $1000 - ID: lAfC7G-H6WJfgVQElX7JdBZNYlyQfF5JIdcBUYtjzf0TBV3AuC4suAdzLyXvHbX_qB4T5eoBJ5UM7Wnk2ubM6w
+Created Bob: $500 - ID: 5hCyEcydmSqkAWTlFwjK2OhRmZzlVl-MJX9PZqPof_4lcOUdpuKL9A6U4vGbqV1GkPXE2feOmWL4dHcHprQSaQ
 
 === Example 1: Begin Transaction ===
-Transaction ID: 9ebeb764-60e6-4554-8d73-35fc042a2364
+Transaction ID: e7b7e7f2-d8c3-4053-b813-a3e6161bdf8c
 
 === Example 2: Operations with transaction_id ===
 Updated Alice: $1000 → $800
@@ -236,7 +236,7 @@ Alice: 800
 Bob: 700
 
 === Example 5: Rollback ===
-New transaction: 7cf8bc22-7e25-481e-a367-558adc7e1d22
+New transaction: a749d827-cf87-4b22-bdc7-22c95fd087ff
 Updated Bob: $700 → $600 (in transaction)
 ✓ Transaction rolled back
 Bob after rollback: 700
@@ -264,7 +264,7 @@ Each Script shows Functions chaining with proper verification
 ============================================================
 
 1️⃣ Saving Script...
-   ✅ Script saved: 4ENwO71Wwx9C-KrQT7mbMRDQg4jjT-UxxW5w5jnKW6zesK9HDG3xlL4P-QJ8oEEuJgWmAEVv90RFIpFNtHhwOw
+   ✅ Script saved: 8kZRETBtWbblJMm1CjA2D8ZIOCdTSAJF5NIXnf7oOsdNWWXfgLrtxHZTphPLTGY4PigJIzt_an8qVc2c7cBuhw
 
 2️⃣ Calling Script (Insert + Verify)...
    ✅ Script executed: 2 Functions
@@ -272,7 +272,7 @@ Each Script shows Functions chaining with proper verification
 
 3️⃣ Verification Results:
    ✅ Found 1 record(s)
-   📋 User ID: n8CHzyd_fhTYM_08DmRW6jKdFmg8OYyy3rSKnAhk2KRL80lPc21kQdDIMp809MX761YgXVUXQPVnTRtxXCWmSA
+   📋 User ID: ozLRZOc-4EBKn2sa1eiFBIG13zA78kMsmJ5-uxcETNZI7kSNaJgW3ZSjvMg20C1EKlhPOUyK7oZ3gje8AhNigg
    📋 Name: map[type:String value:Alice Smith]
    📋 Email: map[type:String value:alice@example.com]
    📋 Status: map[type:String value:pending]
@@ -283,7 +283,7 @@ Each Script shows Functions chaining with proper verification
 ============================================================
 
 1️⃣ Saving Script...
-   ✅ Script saved: FtE0581ce19U7QUKeJz0v-DRltdZH5NEkKpFCOH6y5qdMwruAEd_JibfGwZPw4iVreGTWGaknKiL_dABCK5LHA
+   ✅ Script saved: 45zm8yN5LomC17JOiuk_ETgsHQ157ywnWSqRl_uOY0S3g6oWsLfxTh4LdrNzrZTakmNqzNd47OoNetig6UHD4g
 
 2️⃣ Calling Script (Query + Update + Verify)...
    ✅ Script executed: 3 Functions
@@ -299,7 +299,7 @@ Each Script shows Functions chaining with proper verification
 ============================================================
 
 1️⃣ Saving Script...
-   ✅ Script saved: i-gY6g4xGQ0pW3yc7H0AH9B1eHGGP7Md2ikfAzfUktTZAHfftt53U4SIk0OIzEpta9ezX_QKXcA1jOHBCxBJzg
+   ✅ Script saved: Vydq20VY9CUSZZhSSdss9nZWGsC3dTWnCmVVJaDC-czinvyaoLPktVv-bj55eusm0-OzSNQRrv6dRa2j2t8vPg
 
 2️⃣ Calling Script (Query + Update Credits + Verify)...
    ✅ Script executed: 3 Functions
@@ -316,7 +316,7 @@ Each Script shows Functions chaining with proper verification
 ============================================================
 
 1️⃣ Saving Script...
-   ✅ Script saved: JWOtdrh611kMyL5UVOtfNC3nM63RYK5tMmXKLfb1bw1vDKczkFCiN8Zt3u0AMPh3R17eWdbC4thx90KzEp8lOw
+   ✅ Script saved: OFvYV08606AQuQ2Hy_-h8miKLOcgaxzLpW8D0u-I-PjELf3bPUhHDCYe7IgMmPXNssMIw0oMyDxtwOqM6tMBXA
 
 2️⃣ Calling Script (Query + Delete + Verify)...
    ✅ Script executed: 3 Functions
@@ -329,10 +329,10 @@ Each Script shows Functions chaining with proper verification
 ============================================================
 🧹 Cleanup
 ============================================================
-   ✅ Deleted script: 4ENwO71Wwx9C-KrQT7mb...
-   ✅ Deleted script: FtE0581ce19U7QUKeJz0...
-   ✅ Deleted script: i-gY6g4xGQ0pW3yc7H0A...
-   ✅ Deleted script: JWOtdrh611kMyL5UVOtf...
+   ✅ Deleted script: 8kZRETBtWbblJMm1CjA2...
+   ✅ Deleted script: 45zm8yN5LomC17JOiuk_...
+   ✅ Deleted script: Vydq20VY9CUSZZhSSdss...
+   ✅ Deleted script: OFvYV08606AQuQ2Hy_-h...
    ✅ Deleted collection: users
 
 ============================================================
@@ -355,7 +355,7 @@ Each Script shows Functions chaining with proper verification
 This test verifies that document TTL expiration works correctly.
 We will insert documents with short TTL and verify they expire.
 
-2026/01/04 17:30:28 No .env file found, using defaults
+2026/01/05 10:33:51 No .env file found, using defaults
 ✓ Client connected
 
 ═══════════════════════════════════════════════════════════
@@ -365,11 +365,11 @@ TEST 1: Document TTL Expiration
 [Step 1] Insert document with 3 second TTL
   Input: {name: 'TTL Test', value: 'should expire'}
   TTL: 3s
-  Output: Document ID = HxBqnZ-4W4RO6YoHeSFy5CE5ziXshc78UZ6qktf0T6UDeX19zs-nisE86xW0PSBR1ds-91ZUE_BSiWWjiWxONA
+  Output: Document ID = JlOpdZPi5tS8rwbPJlEWb9eyj5J4NyhGrJo66aohE-TQWTgkGA-sR9YLK6-ZD9ukcxtrNV8eC1I5aNCxDJs-dA
   ✓ PASS: Document inserted
 
 [Step 2] Verify document exists immediately
-  Input: FindByID(HxBqnZ-4W4RO6YoHeSFy5CE5ziXshc78UZ6qktf0T6UDeX19zs-nisE86xW0PSBR1ds-91ZUE_BSiWWjiWxONA)
+  Input: FindByID(JlOpdZPi5tS8rwbPJlEWb9eyj5J4NyhGrJo66aohE-TQWTgkGA-sR9YLK6-ZD9ukcxtrNV8eC1I5aNCxDJs-dA)
   Output: Found document with name = map[type:String value:TTL Test]
   ✓ PASS: Document exists
 
@@ -378,26 +378,9 @@ TEST 1: Document TTL Expiration
   ✓ PASS: Wait complete
 
 [Step 4] Verify document has expired
-  Input: FindByID(HxBqnZ-4W4RO6YoHeSFy5CE5ziXshc78UZ6qktf0T6UDeX19zs-nisE86xW0PSBR1ds-91ZUE_BSiWWjiWxONA)
-  Output: Error (expected) - request failed with status 404: ��Record has been deleted
+  Input: FindByID(JlOpdZPi5tS8rwbPJlEWb9eyj5J4NyhGrJo66aohE-TQWTgkGA-sR9YLK6-ZD9ukcxtrNV8eC1I5aNCxDJs-dA)
+  Output: Error (expected) - request failed with status 404: ��Record not found (expired)
   ✓ PASS: Document expired (not found error)
-
-═══════════════════════════════════════════════════════════
-TEST 2: Multiple Documents with Different TTLs
-═══════════════════════════════════════════════════════════
-
-[Step 1] Insert 3 documents with different TTLs
-  Inserted: 3s TTL=04r2kqzI, 10s TTL=pIWo5_iY, Permanent=_idygP-o
-  ✓ PASS: All documents inserted
-
-[Step 2] Wait 5 seconds (3s doc should expire)
-  ✓ PASS: 3s TTL document expired
-  ✓ PASS: 10s TTL document still exists
-  ✓ PASS: Permanent document still exists
-
-[Step 3] Wait 7 more seconds (10s doc should expire)
-  ✓ PASS: 10s TTL document expired
-  ✓ PASS: Permanent document still exists
 
 ═══════════════════════════════════════════════════════════
 CLEANUP
@@ -422,7 +405,7 @@ TTL expiration is working correctly:
 This test verifies TTL expiration works via WebSocket connections.
 We will use WebSocket to insert, query, and verify TTL expiration.
 
-2026/01/04 17:30:47 No .env file found, using defaults
+2026/01/05 10:33:58 No .env file found, using defaults
 ✓ Client connected
 
 ═══════════════════════════════════════════════════════════
@@ -432,11 +415,11 @@ TEST: WebSocket TTL Expiration
 [Step 1] Insert document with 3 second TTL
   Input: {name: 'WS TTL Test', value: 'should expire'}
   TTL: 3s
-  Output: Document ID = vQhAnH3IZOth5rxV1ecfIx1FM_GS1WCKz51BzRkroHx1LkzOXTI6_yhjMO8yf5JEhQeDMhXaiBoQnImBcb6leA
+  Output: Document ID = cGCe6TmfAU371vQxkOhkZGA6RrdoHRoHQHI7QiaCtBFA7t_aP36EFlsJKiZTjqlD0TCxN8W0xua6l_G5jK3H5Q
   ✓ PASS: Document inserted
 
 [Step 2] Query to verify document exists
-  Input: FindByID(vQhAnH3IZOth5rxV1ecfIx1FM_GS1WCKz51BzRkroHx1LkzOXTI6_yhjMO8yf5JEhQeDMhXaiBoQnImBcb6leA)
+  Input: FindByID(cGCe6TmfAU371vQxkOhkZGA6RrdoHRoHQHI7QiaCtBFA7t_aP36EFlsJKiZTjqlD0TCxN8W0xua6l_G5jK3H5Q)
   Output: Found document with name = map[type:String value:WS TTL Test]
   ✓ PASS: Document exists
 
@@ -445,8 +428,8 @@ TEST: WebSocket TTL Expiration
   ✓ PASS: Wait complete
 
 [Step 4] Query to verify document has expired
-  Input: FindByID(vQhAnH3IZOth5rxV1ecfIx1FM_GS1WCKz51BzRkroHx1LkzOXTI6_yhjMO8yf5JEhQeDMhXaiBoQnImBcb6leA)
-  Output: Error (expected) - request failed with status 404: ��Record has been deleted
+  Input: FindByID(cGCe6TmfAU371vQxkOhkZGA6RrdoHRoHQHI7QiaCtBFA7t_aP36EFlsJKiZTjqlD0TCxN8W0xua6l_G5jK3H5Q)
+  Output: Error (expected) - request failed with status 404: ��Record not found (expired)
   ✓ PASS: Document expired (not found error)
 
 ═══════════════════════════════════════════════════════════
@@ -474,10 +457,10 @@ WebSocket TTL expiration is working correctly:
 ✓ Client created (token exchange happens automatically)
 
 === Insert Document ===
-Inserted: map[id:yGn8nPXGLgsRv2r1D1-GqYqV_mu-bQH1xWi-_UAH416YGvx1hnfRvKRepIb7hKNiNOtcr5-XS5t8nec6I28b3A]
+Inserted: map[id:koxA7K_BX4H-m5WNFiZhLUKAH_X2mP-BDva780FU0_mOyPyif0jSSuy09dqGWue2bd2xYxvn_ZNpPagFGnFavw]
 
 === Find by ID ===
-Found: map[active:map[type:Boolean value:true] categories:map[type:Array value:[electronics computers]] created_at:map[type:DateTime value:2026-01-04T22:30:55Z] data:map[type:String value:aGVsbG8gd29ybGQ=] embedding:map[type:Array value:[0.1 0.2 0.3 0.4 0.5]] id:yGn8nPXGLgsRv2r1D1-GqYqV_mu-bQH1xWi-_UAH416YGvx1hnfRvKRepIb7hKNiNOtcr5-XS5t8nec6I28b3A metadata:map[type:Object value:map[key:value nested:map[deep:true]]] name:map[type:String value:Test Record] price:map[type:Float value:99.99] tags:map[type:Array value:[tag1 tag2 tag3]] user_id:map[type:String value:550e8400-e29b-41d4-a716-446655440000] value:map[type:Integer value:42]]
+Found: map[active:map[type:Boolean value:true] categories:map[type:Array value:[electronics computers]] created_at:map[type:DateTime value:2026-01-05T15:34:05Z] data:map[type:String value:aGVsbG8gd29ybGQ=] embedding:map[type:Array value:[0.1 0.2 0.3 0.4 0.5]] id:koxA7K_BX4H-m5WNFiZhLUKAH_X2mP-BDva780FU0_mOyPyif0jSSuy09dqGWue2bd2xYxvn_ZNpPagFGnFavw metadata:map[type:Object value:map[key:value nested:map[deep:true]]] name:map[type:String value:Test Record] price:map[type:Float value:99.99] tags:map[type:Array value:[tag1 tag2 tag3]] user_id:map[type:String value:550e8400-e29b-41d4-a716-446655440000] value:map[type:Integer value:42]]
 
 === Extract Field Values (All Types) ===
 Extracted values:
@@ -485,20 +468,20 @@ Extracted values:
   value (Integer): 0
   active (Boolean): true
   price (Decimal): 99.990000
-  created_at (DateTime): 2026-01-04 22:30:55 +0000 UTC
+  created_at (DateTime): 2026-01-05 15:34:05 +0000 UTC
   user_id (UUID): 550e8400-e29b-41d4-a716-446655440000
   tags (Array): [tag1 tag2 tag3]
   metadata (Object): map[key:value nested:map[deep:true]]
   embedding (Vector): [0.1 0.2 0.3 0.4 0.5]
   categories (Set): [electronics computers]
   data (Bytes): 11 bytes
-Plain record: map[active:true categories:[electronics computers] created_at:2026-01-04T22:30:55Z data:aGVsbG8gd29ybGQ= embedding:[0.1 0.2 0.3 0.4 0.5] id:yGn8nPXGLgsRv2r1D1-GqYqV_mu-bQH1xWi-_UAH416YGvx1hnfRvKRepIb7hKNiNOtcr5-XS5t8nec6I28b3A metadata:map[key:value nested:map[deep:true]] name:Test Record price:99.99 tags:[tag1 tag2 tag3] user_id:550e8400-e29b-41d4-a716-446655440000 value:42]
+Plain record: map[active:true categories:[electronics computers] created_at:2026-01-05T15:34:05Z data:aGVsbG8gd29ybGQ= embedding:[0.1 0.2 0.3 0.4 0.5] id:koxA7K_BX4H-m5WNFiZhLUKAH_X2mP-BDva780FU0_mOyPyif0jSSuy09dqGWue2bd2xYxvn_ZNpPagFGnFavw metadata:map[key:value nested:map[deep:true]] name:Test Record price:99.99 tags:[tag1 tag2 tag3] user_id:550e8400-e29b-41d4-a716-446655440000 value:42]
 
 === Find with Query ===
 Found documents: 1
 
 === Update Document ===
-Updated: map[active:map[type:Boolean value:true] categories:map[type:Array value:[electronics computers]] created_at:map[type:DateTime value:2026-01-04T22:30:55Z] data:map[type:String value:aGVsbG8gd29ybGQ=] embedding:map[type:Array value:[0.1 0.2 0.3 0.4 0.5]] id:yGn8nPXGLgsRv2r1D1-GqYqV_mu-bQH1xWi-_UAH416YGvx1hnfRvKRepIb7hKNiNOtcr5-XS5t8nec6I28b3A metadata:map[type:Object value:map[key:value nested:map[deep:true]]] name:map[type:String value:Updated Record] price:map[type:Float value:99.99] tags:map[type:Array value:[tag1 tag2 tag3]] user_id:map[type:String value:550e8400-e29b-41d4-a716-446655440000] value:map[type:Integer value:100]]
+Updated: map[active:map[type:Boolean value:true] categories:map[type:Array value:[electronics computers]] created_at:map[type:DateTime value:2026-01-05T15:34:05Z] data:map[type:String value:aGVsbG8gd29ybGQ=] embedding:map[type:Array value:[0.1 0.2 0.3 0.4 0.5]] id:koxA7K_BX4H-m5WNFiZhLUKAH_X2mP-BDva780FU0_mOyPyif0jSSuy09dqGWue2bd2xYxvn_ZNpPagFGnFavw metadata:map[type:Object value:map[key:value nested:map[deep:true]]] name:map[type:String value:Updated Record] price:map[type:Float value:99.99] tags:map[type:Array value:[tag1 tag2 tag3]] user_id:map[type:String value:550e8400-e29b-41d4-a716-446655440000] value:map[type:Integer value:100]]
 
 === Delete Document ===
 Deleted document
@@ -507,6 +490,22 @@ Deleted document
 ✓ Deleted collection
 
 ✓ All CRUD operations completed successfully
+✓ Client created
+
+=== Inserting Test Data ===
+✓ Inserted test record: WbEEkYkgJFjG-TDr2voP_TO_R_dqu7BntklZUDSf47sj1Mnw6MaW52ZqgCbuqoATb9og1DfOqDoh5TGcLFn5CA
+
+=== Connecting to WebSocket ===
+✓ WebSocket connected
+
+=== Querying Data via WebSocket ===
+✓ Retrieved 1 record(s) via WebSocket
+  Record 1: 4 fields
+
+=== Cleanup ===
+✓ Deleted collection
+
+✓ WebSocket example completed successfully
 ✓ Client created
 
 === Batch Insert ===
@@ -523,6 +522,25 @@ Deleted document
 ✓ Deleted collection
 
 ✓ All batch operations completed successfully
+✓ Client created
+
+=== Create Collection (via insert) ===
+Collection created with first record: og2n3VqHt6uHiKdCsD1j2ImR2_MwTAeCwWSDtp8d9j7yPpUEqK2dg6fD4tFH-eglHkWWy52Ku702_mMT7RN7EA
+
+=== List Collections ===
+Total collections: 16
+Sample collections: [chat_configurations__ek0_testing schema_documents_client_py schema_users_client_py edge_cache_py ws_ttl_test]
+
+=== Count Documents ===
+Document count: 1
+
+=== Delete Collection ===
+Collection deleted successfully
+
+=== Verify Deletion ===
+Collection still exists: false
+
+✓ All collection management operations completed successfully
 ✓ Client created
 
 === KV Set ===
@@ -558,204 +576,33 @@ Total keys in store: 4
 ✓ All KV operations completed successfully
 ✓ Client created
 
-=== Create Collection (via insert) ===
-Collection created with first record: D0VfzeWpEyAg4mdrr3mB1qGxIzuSrTfl4OKV_xQGSduJzzz7W_FYIHfMvUKJoBOTmFaIJ8XILgUAVTYrI0QYkg
+=== Setup: Creating Test Accounts ===
+Created Alice: $1000 - ID: un1Dbfw_WKN6PBoKUDMc7yNSLOVbeGj7ivrIbDnEBIRM8BjO4FjJokjaPmOIZDgvP19SiLCn_muMsm6mXmMTjg
+Created Bob: $500 - ID: -Mn5pQEMcM4-4AtaG0Y0oKpHjMN_cDsuojNQb7Eexxlegr7R3MjQLjQ_Ur3J1NlE0b661lux_-i0ubyi3gSulw
 
-=== List Collections ===
-Total collections: 14
-Sample collections: [client_collection_management_go ttl_cache websocket_test chat_messages__ek0_testing test_collection]
+=== Example 1: Begin Transaction ===
+Transaction ID: 0d4d3623-d9a8-4da5-b5af-9aeb6dd9a05b
 
-=== Count Documents ===
-Document count: 1
+=== Example 2: Operations within Transaction ===
+Updated Alice: $1000 → $800 (simulated)
+Updated Bob: $500 → $700 (simulated)
 
-=== Delete Collection ===
-Collection deleted successfully
+=== Example 3: Transaction Status ===
+Status: Active
+Operations: 0
 
-=== Verify Deletion ===
-Collection still exists: false
+=== Example 4: Commit Transaction ===
+✓ Transaction committed
 
-✓ All collection management operations completed successfully
-✓ Client created
-
-=== Insert Document with TTL (1 hour) ===
-✓ Inserted document: I59o_ug3zNuxP1qQyG-6XuBmr142W7oR5Uw7IuxM9dosKq56_52JY6SUQmXxaOyg0CjBvJEYsSb7BQATIEeTQQ
-
-=== Insert Document with TTL (5 minutes) ===
-✓ Inserted document: ob9vx1TbMsr1Jgh4POhpJvSeDB2H9w-yJ5fVkqrqkkFZUDhqNRy16UCfqd5c3SuN1qodh8lz2TLNn2-DQCflTw
-
-=== Query Documents ===
-✓ Found 2 documents with TTL
-
-=== Update Document ===
-✓ Updated document
-
-=== Delete Document ===
-✓ Deleted document
+=== Example 5: Rollback Demo ===
+New transaction: 10e152ba-fec8-4429-86c0-9cb97b0f40ed
+Status before rollback: Active
+✓ Transaction rolled back
 
 === Cleanup ===
-✓ Deleted collection
+✓ Deleted test accounts
 
-✓ All document TTL operations completed successfully
-
-💡 Note: Documents with TTL will automatically expire after the specified duration
-✓ Client created
-
-=== Inserting Test Data ===
-✓ Inserted test record: twkefirzEY4ou6HbEmlDW6Vh0DbyWw6RF0HEKKiXK-8JP-sKK8XX8jwTcm5bRxomqGisLEqD-ASLO5mu1sWi5g
-
-=== Connecting to WebSocket ===
-✓ WebSocket connected
-
-=== Querying Data via WebSocket ===
-✓ Retrieved 1 record(s) via WebSocket
-  Record 1: 4 fields
-
-=== Cleanup ===
-✓ Deleted collection
-
-✓ WebSocket example completed successfully
-✓ Client created
-
-=== Insert Test Data with TTL ===
-✓ Inserted document with TTL: Pv7Y3NV2Kzks3BfFE8rmyI9C478HP8b_5VeG95_ftbEfwpEd2KdtG5VooSkW21N9szSNna1qfwp1QN49PwG8Fw
-
-=== Query via WebSocket ===
-✓ WebSocket connected
-✓ Retrieved 1 record(s) via WebSocket
-  Record 1: 5 fields
-
-=== Cleanup ===
-✓ Deleted collection
-
-✓ WebSocket TTL example completed successfully
-
-💡 Note: Documents with TTL will automatically expire after the specified duration
-=== ekoDB Chat Basic Example ===
-
-=== Inserting Sample Data ===
-✓ Inserted 3 sample documents
-
-=== Creating Chat Session ===
-✓ Created session: Qyvsy0PzVbiBeghb9hUiKkm9jkqwn0zqoSrh-sUl0FxvsU7IdcSFGYFMzXIP0bqVZJLQrKxGOYxDiL50740Fuw
-
-=== Sending Chat Message ===
-Message ID: G6qd-a-7T9j5SK2SuPxwqnQmfk6lflQtCZT53MrEbmCPq4MSb8fi_GRMsd-EF2yyHM8p3DG5oqiWyTOX46IWtA
-
-=== AI Response ===
-The available products and their prices are as follows:
-
-1. ekoDB: This is a high-performance database product with AI capabilities. The price of this product is $99.
-
-2. ekoDB Pro: This is an Enterprise edition product with advanced features. It is priced at $299.
-
-3. ekoDB Cloud: This is a fully managed cloud database service product. The cost of this product is $499.
-
-=== Context Used (3 snippets) ===
-  Snippet 1: map[collection:client_chat_basic_go matched_fields:[description] record:map[description:A high-performance database product with AI capabilities id:QHE4Fzf6BzLZ2_7o10QaIxQyowUWJ9B3W0U7sThM_dcz1SP3mLxZYAUBOkMUQAf78lPQ1ClY4GPNrcML4jXlaA name:ekoDB price:99] score:0.1111111111111111]
-  Snippet 2: map[collection:client_chat_basic_go matched_fields:[description] record:map[description:Enterprise edition product with advanced features id:CS0jE23tMSkjekiT6j_VbzyPGE2jFfk_Oof7nwIwTLYkj272DQVk7UgxRTqJEJO26jFJN-jGx3I_32IU8zNq2Q name:ekoDB Pro price:299] score:0.1111111111111111]
-  Snippet 3: map[collection:client_chat_basic_go matched_fields:[description] record:map[description:Fully managed cloud database service product id:QzsmVSm2UEUX5x7--spGpYE1TOst9Hg-OrCb9ZNrOXFCSjslJo_tWCD4KjF7r8QSqxQIyYOk-17YA6t6qpRVlQ name:ekoDB Cloud price:499] score:0.1111111111111111]
-
-Execution Time: 2775ms
-
-=== Token Usage ===
-Prompt tokens: 610
-Completion tokens: 86
-Total tokens: 696
-
-=== Cleanup ===
-✓ Deleted collection
-
-✓ Chat completed successfully
-=== ekoDB Chat Session Management Example ===
-
-=== Inserting Sample Data ===
-✓ Inserted sample product
-
-=== Creating Chat Session ===
-✓ Created session: Gu_xIGD5MefdoNTeJDkJ0I4d3RSsP9ER4PGpxn03S00E8P1XDAGDW9F6VOqwiNH5nVOvIOO25KjqjHwrAQDw4w
-
-=== Sending Messages ===
-✓ Message 1 sent
-  Response: Based on the information provided, the available product is ekoDB. It is a high-performance database product that costs $99.
-
-✓ Message 2 sent
-  Response: The price of the ekoDB, a high-performance database product, is $99.
-
-=== Retrieving Session Messages ===
-✓ Retrieved 4 messages
-
-=== Updating Session ===
-✓ Session updated
-
-=== Branching Session ===
-✓ Created branch: Ss7H6_sdaz85IWQS28SqRuXgfrQ8rlcG5DCeeNeR35czVlG7EMZTAOUG3ln83VYvXAZ5EHObpVmCVb_dLwUJLw
-  Parent: Gu_xIGD5MefdoNTeJDkJ0I4d3RSsP9ER4PGpxn03S00E8P1XDAGDW9F6VOqwiNH5nVOvIOO25KjqjHwrAQDw4w
-
-=== Listing Sessions ===
-✓ Found 9 sessions
-  Session 1: Ss7H6_sdaz85IWQS28SqRuXgfrQ8rlcG5DCeeNeR35czVlG7EMZTAOUG3ln83VYvXAZ5EHObpVmCVb_dLwUJLw (Untitled)
-  Session 2: Gu_xIGD5MefdoNTeJDkJ0I4d3RSsP9ER4PGpxn03S00E8P1XDAGDW9F6VOqwiNH5nVOvIOO25KjqjHwrAQDw4w (Untitled)
-  Session 3: Qyvsy0PzVbiBeghb9hUiKkm9jkqwn0zqoSrh-sUl0FxvsU7IdcSFGYFMzXIP0bqVZJLQrKxGOYxDiL50740Fuw (Untitled)
-  Session 4: Io01vXhsW8BkPYUCUUTLdDWRPT21aGynTNwl8dKLlJ6X24xSeN2mBCOkKES2IJnJ9F6h51vrnyjWWQLYmuyOMQ (Untitled)
-  Session 5: j6jNCKZTN-N6CxuK9wi6SxzdbbBMKWEGWrM8AniwBQpg_SWyD86sGW2NZ5rI63Z7R7RlpXjn8nsPwHQcT3VslQ (Untitled)
-  Session 6: LJ5cZyqHoXs52cGWUxESsBowN9WD_4okFMLRbpD8-ggFUhYqKZPFaRlUDCmTo8J2LkXgnMPzPinMwwzCxLmR8w (Untitled)
-  Session 7: zgZmlmVFLWGNLEdEB26uHagZbr2ZF7802mz_wjqfZqon0azZ3gofLs6k7o8B_odODTl89yzN_di8oFEaFf0y8g (Untitled)
-  Session 8: mA61Yn2joaX-S0mdSdsaajZiffk0LtVAs6i9T-bDcik-YewWD2js2py8GGeFemTIxR6pDVrFEWI6WsaCqFGwUA (Untitled)
-  Session 9: DhIh4JKtzyz-P_VwbAkLSXZCjZtY0TlcbaSniFvYPnmyL6GKGRUO4aUqqhc3KeIZqzMADTi3NFtcGZeLK9UFTQ (Untitled)
-
-=== Getting Session Details ===
-✓ Session details retrieved
-  Messages: 4
-
-=== Deleting Branch Session ===
-✓ Deleted branch session: Ss7H6_sdaz85IWQS28SqRuXgfrQ8rlcG5DCeeNeR35czVlG7EMZTAOUG3ln83VYvXAZ5EHObpVmCVb_dLwUJLw
-
-=== Cleanup ===
-✓ Deleted collection
-
-✓ All session management operations completed successfully
-=== ekoDB Advanced Chat Features Example ===
-
-=== Inserting Sample Data ===
-✓ Inserted sample product
-
-=== Creating Chat Session ===
-✓ Created session: m9jHcYUkhcwOfx9DOjIggjk8gqd0AAOZDufKhLBbQoPqEgPjHX5D1b3NfdrQ7qUD3qxdWrC-J8eUVHIeX3-PKA
-
-=== Sending Initial Message ===
-✓ Message sent
-  Response: Based on the information I have, the available product is "ekoDB", which is a high-performance database product. It is priced at $99.
-
-✓ Second message sent
-
-=== Feature 1: Regenerate AI Response ===
-✓ Message regenerated
-  New response: The price of ekoDB is $99.
-
-=== Feature 2: Edit Message ===
-✓ Message content updated
-
-=== Feature 3: Mark Message as Forgotten ===
-✓ Message marked as forgotten (excluded from LLM context)
-
-✓ Message unmarked as forgotten
-
-=== Feature 4: Merge Chat Sessions ===
-✓ Created second session: NZ3y677q6jvHnfJfB7cTEZQef4i2DBvbBXefm61pJxn-HBf9p7So7p4zJUjILngY864c_I2FcDV6_j51na4qAA
-✓ Sent message in second session
-✓ Sessions merged successfully
-  Total messages in merged session: 4
-
-=== Feature 5: Delete Message ===
-✓ Message deleted
-
-✓ Messages remaining: 3
-
-=== Cleanup ===
-✓ Deleted session
-✓ Deleted collection
-
-✓ All advanced chat features demonstrated successfully!
+✓ All client transaction examples completed
 === Query Builder Examples ===
 
 Setting up test data...
@@ -824,15 +671,15 @@ Found 1 results (matches: work, working, worked)
 
 6. Vector search (semantic search):
 Found 3 semantically similar documents
-  1. Score: 0.763
-  2. Score: 0.761
-  3. Score: 0.748
+  1. Score: 0.781
+  2. Score: 0.774
+  3. Score: 0.729
 
 7. Hybrid search (text + vector):
 Found 3 results using hybrid search (text + vector)
-  1. Score: 2.704
-  2. Score: 1.505
-  3. Score: 0.299
+  1. Score: 2.710
+  2. Score: 1.513
+  3. Score: 0.291
 
 8. Case-sensitive search:
 Found 1 results (case-sensitive)
@@ -897,6 +744,73 @@ Found 2 users with example.com emails
 ✅ Deleted test collections
 
 ✅ Join operations examples completed!
+✓ Client created
+
+=== Insert Document with TTL (1 hour) ===
+✓ Inserted document: Q9V4C9mz1GdMK2u8tz_MxM4bsqFP0Ro9pUxl6ivK1T1QzLi_-nxxzwNRKmJVhftBkJkJO7_W0o_FpeoiXPR0yQ
+
+=== Insert Document with TTL (5 minutes) ===
+✓ Inserted document: ylT5LWc7Lj-gIPQUPTiyBXCw0w49KugxXsrnejlp2vzejjjNcXW0njLHtvSSFerHqmL-9FxtNidFpH9IxJ1-jQ
+
+=== Query Documents ===
+✓ Found 2 documents with TTL
+
+=== Update Document ===
+✓ Updated document
+
+=== Delete Document ===
+✓ Deleted document
+
+=== Cleanup ===
+✓ Deleted collection
+
+✓ All document TTL operations completed successfully
+
+💡 Note: Documents with TTL will automatically expire after the specified duration
+✓ Client created
+
+=== Insert Test Data with TTL ===
+✓ Inserted document with TTL: i6yw9nD8lXyKp1pFxOeoJ3eEGHB9A4jkM-ErcFvvO4gjnF3t0TdxFjl4_ImIrpxXyo0vsJwTm76Onfbpjk1ccg
+
+=== Query via WebSocket ===
+✓ WebSocket connected
+✓ Retrieved 1 record(s) via WebSocket
+  Record 1: 5 fields
+
+=== Cleanup ===
+✓ Deleted collection
+
+✓ WebSocket TTL example completed successfully
+
+💡 Note: Documents with TTL will automatically expire after the specified duration
+=== ekoDB as Edge Cache - Simple Example ===
+
+Setting up edge cache collection...
+✓ Cache entry created
+
+Creating edge cache lookup script...
+✓ Edge cache script created: x3zhVyGeYEAhpU2QITQ0h_IR9rD2mTF-etXbIL6pD2J4sk9AL9-ufalUyZiRiOwkcOaVZk2msnI4t0snzHHq2Q
+
+Call 1: Cache lookup
+Response time: 2ms
+Found 1 cached entries
+
+Call 2: Cache lookup (connection warm)
+Response time: 1ms
+Found 1 cached entries
+
+🧹 Cleaning up...
+✓ Cleanup complete
+
+=== The Magic ===
+- Your DATABASE is your EDGE
+- No Redis needed
+- No CDN needed
+- No cache invalidation logic needed (TTL handles it)
+- With ripples: All nodes auto-sync cache
+- One service: Database + Cache + Edge Functions
+
+✓ Example complete!
 🚀 ekoDB Scripts Example (Go Client)
 
 ✅ Client initialized
@@ -906,7 +820,7 @@ Found 2 users with example.com emails
 
 📝 Example 1: Simple Query Script
 
-✅ Script saved: EfV84tbVU9_UwKIXGOiHykxXJOWEUmkkZ9VPbixL8sNzaz2AV-DhFbBayoUl7bY061IFCLUCIZej7bm1Qd0GTQ
+✅ Script saved: gzOny4Jfb7cx9r8-_pTV9Vh-wK7punwhrBbFuTBeTRu4y2hc4PB6ALPPSplBNMaxqcGlKBA4VvBqWpNXBNy8Xg
 📊 Found 10 records
 ⏱️  Execution time: 0ms
 
@@ -926,7 +840,7 @@ Found 2 users with example.com emails
 
 📝 Example 4: Script Management
 
-📋 Total scripts: 14
+📋 Total scripts: 30
 🔍 Retrieved script: Get Active Users
 ✏️  Script updated
 🗑️  Script deleted
@@ -957,33 +871,159 @@ Found 2 users with example.com emails
    • Automatic token management
    • Type-safe Stage builders
    • Built-in error handling
-✓ Client created
+=== ekoDB Function Composition Examples ===
 
-=== Setup: Creating Test Accounts ===
-Created Alice: $1000 - ID: uAz0RZXUo-aFO2RBl-wyeRH8GHkVVweyPifV6I08F9z46tG6um2kT1csHhc_XYwgjkdbKfbG9glfEzwZYTCxOQ
-Created Bob: $500 - ID: 0INQG-q2NOfpiXhaXmhUfTVQazzJNAyPFFNI1FFplY8iJWRWhoNd2oAdQjTnSguz72ZtnPlW7ZCviaRjCFFAhA
+📋 Setting up test data...
 
-=== Example 1: Begin Transaction ===
-Transaction ID: f9c60b28-d29c-44cf-a739-251c05e091d9
+✅ Test data ready
 
-=== Example 2: Operations within Transaction ===
-Updated Alice: $1000 → $800 (simulated)
-Updated Bob: $500 → $700 (simulated)
+📝 Example 1: Basic Function Composition
 
-=== Example 3: Transaction Status ===
-Status: Active
-Operations: 0
+Building reusable functions that call each other...
 
-=== Example 4: Commit Transaction ===
-✓ Transaction committed
+✅ Saved reusable function: fetch_user
+✅ Saved composed function: get_user_wrapper (calls fetch_user + projects fields)
 
-=== Example 5: Rollback Demo ===
-New transaction: 6046a809-275e-420e-b6b0-9b14e85827a8
-Status before rollback: Active
-✓ Transaction rolled back
+📊 Result from composed function:
+   Records: 1
+   Name: {"type":"String","value":"User 1"}
+   Department: {"type":"String","value":"engineering"}
 
-=== Cleanup ===
-✓ Deleted test accounts
+🎯 Key Benefit: fetch_user can be reused by ANY function!
+   No code duplication, single source of truth
 
-✓ All client transaction examples completed
-✅ [32mGo client examples complete![0m
+📝 Example 2: SWR Pattern with Function Composition
+
+Using CallFunction to replace inline logic in SWR pattern...
+
+✅ Saved reusable function: fetch_and_store_github
+✅ Saved SWR function using composition: swr_github_user
+
+First call (cache miss - will fetch from GitHub):
+   ⏱️  Duration: 136.955041ms
+   📊 Records: 1
+
+Second call (cache hit - from cache):
+   ⏱️  Duration: 85.388417ms
+   📊 Records: 1
+   🚀 Cache speedup: 1.6x faster!
+
+📝 Example 3: Multi-Level Function Composition
+
+Building complex workflows from small, reusable pieces...
+
+✅ Level 1 function: validate_user
+✅ Level 2 function: fetch_slim_user (calls validate_user)
+✅ Level 3 function: count_validated_user (calls fetch_slim_user)
+
+📊 Result from 3-level nested composition:
+   Records: 1
+   Name: null
+   Department: null
+   Record count: 1
+
+🎯 Key Benefit: Each function is independently testable and reusable!
+   - validate_user: Used in 100 different workflows
+   - fetch_slim_user: Used in 50 workflows
+   - count_validated_user: Specific workflow
+
+
+✅ All composition examples completed!
+🚀 ekoDB Go Complete Scripts Example
+
+📋 Demonstrates: FindAll, Group, Count, Multi-stage Pipelines
+
+📋 Setting up complete test data...
+✅ Created 5 products
+
+📝 Example 1: FindAll + Group (Simple Aggregation)
+
+✅ Script saved: fOBGaBu_dtxIQRzXkgWhzdYoq8nfwQayh4s03GvhJCo1lCWI3VRW0vadmaYTytgBOFS41sVicgK4ympkHXyCzA
+📊 Found 2 category stats
+
+📝 Example 2: Simple Product Listing
+
+✅ Script saved
+📊 Found 5 products
+
+📝 Example 3: Count by Category
+
+✅ Script saved
+📊 Found 2 categories
+
+📝 Example 4: Multi-Stage Pipeline (FindAll → Group → Count)
+
+✅ Script saved
+📊 Pipeline executed 3 stages
+
+🧹 Cleaning up...
+✅ Cleanup complete
+
+✅ All complete script examples finished!
+
+💡 This example demonstrates ekoDB's Script system:
+   ✅ FindAll operations
+   ✅ Group aggregations (Count, Average)
+   ✅ Multi-stage pipelines (FindAll → Group → Count)
+   ✅ Script management (save, call, delete)
+🚀 ekoDB Go KV Store & Wrapped Types Example
+
+📋 Demonstrates:
+   • Wrapped type field builders (UUID, Decimal, DateTime, etc.)
+   • KV store operations (get, set, delete, exists, query)
+   • KV operations within scripts
+   • Combined wrapped types + KV workflows
+
+📝 Example 1: Inserting Records with Wrapped Types
+
+✅ Inserted order: Mgc-urQoG1S9LnX3h2rv0udNVVKYvl8YmyS1dyex2QLQrQKsXu04hJMttlAxisiL0zJi5OCLie4hETJi5hcdLg
+✅ Inserted 2 products with wrapped types
+
+📝 Example 2: Script with Wrapped Type Parameters
+
+✅ Script saved: DTroZ1qsT7jgtq6XrhQh_EcchS4-hZs4W_cooVpsDtrisP-VI_5oREgYzEoGdXub0nN1mkJFmZqlcYR_VeIDfw
+📊 Created order via script
+⏱️  Execution time: 0ms
+
+📝 Example 3: Basic KV Store Operations
+
+✅ Set session data
+📊 Retrieved session: map[role:admin userId:user_abc]
+🔍 Key exists: true
+✅ Set cached data with 1 hour TTL
+🗑️  Deleted session
+📝 Example 4: KV Operations in Scripts
+
+✅ Script saved: vPV38SXyes3q4LhkE9kp8_EUKMJ0Ta4f2ygRc5MaXl8DKgnd5trXFdh28pxheSawk5VePoEvTEK6x38r6m6Elw
+📊 Cached and retrieved product data
+⏱️  Execution time: 0ms
+
+📝 Example 5: Combined Wrapped Types + KV Script
+
+✅ Script saved: JhRVo_k9g0mENkRMfSMeY3si_k924a4LK1pcCMP6jmp_Wgb8M5ABUK4OPFlY4yMOcoUFHUbMWb6Kj0QRrvZwpA
+📊 Processed order with caching
+⏱️  Stages executed: 3
+⏱️  Execution time: 0ms
+
+🧹 Cleaning up...
+✅ Cleanup complete
+
+✅ All KV & Wrapped Types examples completed!
+
+💡 Key takeaways:
+   ✅ Use Field* helpers for type-safe wrapped values
+   ✅ FieldDecimal() preserves precision (no floating point errors)
+   ✅ KV store is great for caching and quick lookups
+   ✅ StageKv*() functions work within scripts
+=== ekoDB SWR (Stale-While-Revalidate) Pattern ===
+
+Step 1: Create SWR function that acts as edge cache
+2026/01/05 10:34:08 Save script error: request failed with status 500: Unhandled rejection: ErrorResponse { error: "JSON deserialization error: missing field `then_functions` at line 1 column 844" }
+# command-line-arguments
+./client_functions_advanced.go:73:36: cannot use script1 (variable of type map[string]interface{}) as ekodb.Script value in argument to client.SaveScript
+./client_functions_advanced.go:78:27: invalid operation: cannot index result1 (variable of type *ekodb.FunctionResult)
+./client_functions_advanced.go:81:25: invalid operation: cannot index result1 (variable of type *ekodb.FunctionResult)
+./client_functions_advanced.go:107:36: cannot use script2 (variable of type map[string]interface{}) as ekodb.Script value in argument to client.SaveScript
+./client_functions_advanced.go:113:27: invalid operation: cannot index result2 (variable of type *ekodb.FunctionResult)
+./client_functions_advanced.go:118:25: invalid operation: cannot index result2 (variable of type *ekodb.FunctionResult)
+make[2]: *** [test-examples-go-client] Error 1

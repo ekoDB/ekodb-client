@@ -7,7 +7,9 @@ Demonstrates: KV operations, wrapped type field builders
 
 import asyncio
 import os
-from datetime import datetime
+from datetime import datetime, timezone
+from pathlib import Path
+from dotenv import load_dotenv
 
 from ekodb_client import (
     Client,
@@ -24,9 +26,12 @@ from ekodb_client import (
     field_boolean,
 )
 
+# Load environment variables
+env_path = Path(__file__).parent.parent / ".env"
+load_dotenv(env_path)
 
-BASE_URL = os.environ.get("API_BASE_URL", "http://localhost:8080")
-API_KEY = os.environ.get("API_BASE_KEY", "a-test-api-key-from-ekodb")
+BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8080")
+API_KEY = os.getenv("API_BASE_KEY")
 
 
 # =============================================================================
@@ -42,7 +47,7 @@ async def wrapped_types_insert(client: Client) -> None:
     order = {
         "order_id": field_uuid("550e8400-e29b-41d4-a716-446655440000"),
         "total": field_decimal("1234.56"),  # Precise decimal
-        "created_at": field_datetime(datetime.now()),
+        "created_at": field_datetime(datetime.now(timezone.utc).isoformat()),
         "processing_time": field_duration(3600000),  # 1 hour in ms
         "quantity": field_number(42),
         "tags": field_set(["priority", "express", "international"]),
@@ -124,7 +129,7 @@ async def kv_basic_operations(client: Client) -> None:
     await client.kv_set(
         "cache:product:456",
         {"name": "Cached Product", "price": 99.99},
-        ttl=3600,
+        ttl="1h",
     )
     print("✅ Set cached data with 1 hour TTL")
 
@@ -168,7 +173,7 @@ async def combined_example(client: Client) -> None:
     order = {
         "order_id": field_uuid(order_id),
         "total": field_decimal("299.99"),
-        "created_at": field_datetime(datetime.now()),
+        "created_at": field_datetime(datetime.now(timezone.utc).isoformat()),
         "status": "processing",
     }
 
@@ -180,9 +185,9 @@ async def combined_example(client: Client) -> None:
         f"order:status:{order_id}",
         {
             "status": "processing",
-            "updated_at": datetime.now().isoformat(),
+            "updated_at": datetime.now(timezone.utc).isoformat(),
         },
-        ttl=86400,  # 24 hours
+        ttl="24h",  # 24 hours
     )
     print("✅ Cached order status")
 

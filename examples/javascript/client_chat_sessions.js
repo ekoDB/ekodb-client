@@ -12,6 +12,7 @@
  */
 
 const { EkoDBClient } = require("@ekodb/ekodb-client");
+require("dotenv").config();
 
 async function main() {
   console.log("=== ekoDB Chat Session Management Example ===\n");

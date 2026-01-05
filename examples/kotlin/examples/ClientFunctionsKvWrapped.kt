@@ -4,11 +4,15 @@
  * Demonstrates: KV operations in scripts, wrapped type field builders
  */
 
+package io.ekodb.client.examples
+
 import io.ekodb.client.EkoDBClient
 import io.ekodb.client.functions.Script
 import io.ekodb.client.functions.ParameterDefinition
 import io.ekodb.client.functions.FunctionStageConfig
+import io.ekodb.client.types.FieldType
 import io.ekodb.client.types.Record
+import java.util.UUID
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
@@ -80,16 +84,16 @@ suspend fun wrappedTypesInsert(client: EkoDBClient) {
     val result = client.insert("orders_example", order)
     println("✅ Inserted order: ${result.get("id")}")
 
-    // Insert products
+    // Insert products with proper UUID types
     val product1 = Record.new()
-        .insert("sku", "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11")
+        .insert("sku", FieldType.uuid(UUID.fromString("a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11")))
         .insert("name", "Laptop Pro")
         .insert("price", "1299.99")
         .insert("stock", 15)
         .insert("available", true)
 
     val product2 = Record.new()
-        .insert("sku", "b1ffcd00-0d1c-5fg9-cc7e-7cc0ce491b22")
+        .insert("sku", FieldType.uuid(UUID.fromString("b1ffcd00-0d1c-5f09-cc7e-7cc0ce491b22")))
         .insert("name", "Wireless Mouse")
         .insert("price", "29.99")
         .insert("stock", 150)
@@ -113,24 +117,27 @@ suspend fun wrappedTypesInScript(client: EkoDBClient): String {
                 required = true,
                 default = JsonPrimitive("0.00"),
                 description = "Total amount for the order"
+            ),
+            "order_id" to ParameterDefinition(
+                required = true,
+                description = "Unique order ID"
+            ),
+            "timestamp" to ParameterDefinition(
+                paramType = "DateTime",
+                required = true,
+                description = "Current UTC timestamp (ISO 8601)"
             )
         ),
         functions = listOf(
             FunctionStageConfig.Insert(
                 collection = "script_orders",
                 record = buildJsonObject {
-                    put("order_id", buildJsonObject {
-                        put("type", "UUID")
-                        put("value", "{{\$uuid}}")
-                    })
+                    put("order_id", "{{order_id}}")
                     put("total", buildJsonObject {
                         put("type", "Decimal")
                         put("value", "{{order_total}}")
                     })
-                    put("created_at", buildJsonObject {
-                        put("type", "DateTime")
-                        put("value", "{{\$now}}")
-                    })
+                    put("created_at", "{{timestamp}}")
                     put("status", "pending")
                 }
             )
@@ -142,7 +149,9 @@ suspend fun wrappedTypesInScript(client: EkoDBClient): String {
     println("✅ Script saved: $id")
 
     val result = client.callScript("create_order_with_types_kt", mapOf(
-        "order_total" to JsonPrimitive("599.99")
+        "order_total" to JsonPrimitive("599.99"),
+        "order_id" to JsonPrimitive("order_${System.currentTimeMillis()}"),
+        "timestamp" to JsonPrimitive(java.time.Instant.now().toString())
     ))
     println("📊 Created order via script")
     println("⏱️  Execution time: ${result.stats.execution_time_ms}ms\n")
@@ -250,6 +259,11 @@ suspend fun combinedExample(client: EkoDBClient): String {
                 required = true,
                 default = JsonPrimitive("0.00"),
                 description = "Order total"
+            ),
+            "timestamp" to ParameterDefinition(
+                paramType = "DateTime",
+                required = true,
+                description = "Current UTC timestamp (ISO 8601)"
             )
         ),
         functions = listOf(
@@ -257,28 +271,19 @@ suspend fun combinedExample(client: EkoDBClient): String {
                 key = "order:status:{{order_id}}",
                 value = buildJsonObject {
                     put("status", "processing")
-                    put("updated_at", buildJsonObject {
-                        put("type", "DateTime")
-                        put("value", "{{\$now}}")
-                    })
+                    put("updated_at", "{{timestamp}}")
                 },
                 ttl = 86400
             ),
             FunctionStageConfig.Insert(
                 collection = "processed_orders",
                 record = buildJsonObject {
-                    put("order_id", buildJsonObject {
-                        put("type", "UUID")
-                        put("value", "{{order_id}}")
-                    })
+                    put("order_id", "{{order_id}}")
                     put("total", buildJsonObject {
                         put("type", "Decimal")
                         put("value", "{{total}}")
                     })
-                    put("created_at", buildJsonObject {
-                        put("type", "DateTime")
-                        put("value", "{{\$now}}")
-                    })
+                    put("created_at", "{{timestamp}}")
                     put("status", "processing")
                 }
             ),
@@ -292,7 +297,8 @@ suspend fun combinedExample(client: EkoDBClient): String {
 
     val result = client.callScript("process_order_with_cache_kt", mapOf(
         "order_id" to JsonPrimitive("c2d3e4f5-a1b2-c3d4-e5f6-a1b2c3d4e5f6"),
-        "total" to JsonPrimitive("299.99")
+        "total" to JsonPrimitive("299.99"),
+        "timestamp" to JsonPrimitive(java.time.Instant.now().toString())
     ))
     println("📊 Processed order with caching")
     println("⏱️  Stages executed: ${result.stats.stages_executed}")

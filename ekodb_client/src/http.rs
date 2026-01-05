@@ -635,12 +635,20 @@ impl HttpClient {
     }
 
     /// Set a key-value pair
-    pub async fn kv_set(&self, key: &str, value: serde_json::Value, token: &str) -> Result<()> {
+    pub async fn kv_set(
+        &self,
+        key: &str,
+        value: serde_json::Value,
+        ttl: Option<&str>,
+        token: &str,
+    ) -> Result<()> {
         let url = self.base_url.join(&format!("/api/kv/set/{}", key))?;
 
         #[derive(Serialize)]
         struct KvSetRequest {
             value: serde_json::Value,
+            #[serde(skip_serializing_if = "Option::is_none")]
+            ttl: Option<String>,
         }
 
         self.retry_policy
@@ -652,6 +660,7 @@ impl HttpClient {
                     .header("Accept", "application/json") // KV uses JSON values
                     .json(&KvSetRequest {
                         value: value.clone(),
+                        ttl: ttl.map(|t| t.to_string()),
                     })
                     .send()
                     .await?;

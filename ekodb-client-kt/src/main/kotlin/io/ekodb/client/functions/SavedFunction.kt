@@ -27,7 +27,9 @@ data class Script(
 data class ParameterDefinition(
     val required: Boolean = false,
     val default: kotlinx.serialization.json.JsonElement? = null,
-    val description: String? = null
+    val description: String? = null,
+    @kotlinx.serialization.SerialName("param_type")
+    val paramType: String? = null
 )
 
 // ParameterValue removed - use direct values or string interpolation "{{param}}" instead

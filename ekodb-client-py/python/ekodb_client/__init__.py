@@ -47,6 +47,7 @@ Example:
 """
 
 from ._ekodb_client import Client, RateLimitInfo, RateLimitError
+from .stages import Stage, ChatMessage
 from .utils import (
     get_value,
     get_values,
@@ -85,6 +86,9 @@ __all__ = (
         "Client",
         "RateLimitInfo",
         "RateLimitError",
+        # Stage helpers for script functions
+        "Stage",
+        "ChatMessage",
         # Value extractors
         "get_value",
         "get_values",

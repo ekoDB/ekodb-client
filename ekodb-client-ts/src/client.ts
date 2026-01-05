@@ -254,7 +254,16 @@ export class EkoDBClient {
     });
 
     if (!response.ok) {
-      throw new Error(`Auth failed with status: ${response.status}`);
+      let errorMsg = `Auth failed with status: ${response.status}`;
+      try {
+        const errorBody = (await response.json()) as { error?: string };
+        if (errorBody.error) {
+          errorMsg = errorBody.error;
+        }
+      } catch {
+        // Ignore JSON parse errors, use default message
+      }
+      throw new Error(errorMsg);
     }
 
     const result = (await response.json()) as { token: string };

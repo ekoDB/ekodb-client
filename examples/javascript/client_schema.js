@@ -8,6 +8,7 @@
  * - Validation rules
  */
 
+require("dotenv").config();
 const {
   EkoDBClient,
   SchemaBuilder,

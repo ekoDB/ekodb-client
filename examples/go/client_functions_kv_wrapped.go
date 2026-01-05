@@ -10,10 +10,16 @@ import (
 	"os"
 	"time"
 
-	ekodb "github.com/ekodb/ekodb-client-go"
+	ekodb "github.com/ekoDB/ekodb-client-go"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	// Load environment variables
+	if err := godotenv.Load(); err != nil {
+		log.Println("No .env file found")
+	}
+
 	fmt.Println("🚀 ekoDB Go KV Store & Wrapped Types Example\n")
 	fmt.Println("📋 Demonstrates:")
 	fmt.Println("   • Wrapped type field builders (UUID, Decimal, DateTime, etc.)")
@@ -143,17 +149,23 @@ func wrappedTypesInScript(client *ekodb.Client) (string, error) {
 		Version:     strPtr("1.0"),
 		Parameters: map[string]ekodb.ParameterDefinition{
 			"order_total": {
-				ParamType: "String",
-				Required:  true,
+				Required: true,
+			},
+			"order_id": {
+				Required: true,
+			},
+			"timestamp": {
+				Required:    true,
+				Description: "Current UTC timestamp (ISO 8601)",
 			},
 		},
 		Functions: []ekodb.FunctionStageConfig{
 			ekodb.StageInsert("script_orders", map[string]interface{}{
-				"order_id":   map[string]interface{}{"type": "UUID", "value": "{{$uuid}}"},
+				"order_id":   "{{order_id}}",
 				"total":      map[string]interface{}{"type": "Decimal", "value": "{{order_total}}"},
-				"created_at": map[string]interface{}{"type": "DateTime", "value": "{{$now}}"},
+				"created_at": "{{timestamp}}",
 				"status":     "pending",
-			}, nil, nil),
+			}, false, nil),
 		},
 		Tags: []string{"orders", "wrapped-types"},
 	}
@@ -166,6 +178,8 @@ func wrappedTypesInScript(client *ekodb.Client) (string, error) {
 
 	result, err := client.CallScript("create_order_with_types_go", map[string]interface{}{
 		"order_total": "599.99",
+		"order_id":    fmt.Sprintf("order_%d", time.Now().UnixNano()),
+		"timestamp":   time.Now().Format(time.RFC3339),
 	})
 	if err != nil {
 		return id, err
@@ -184,44 +198,42 @@ func kvBasicOperations(client *ekodb.Client) error {
 	fmt.Println("📝 Example 3: Basic KV Store Operations\n")
 
 	// Set a simple value
-	if err := client.KvSet("user:session:123", map[string]interface{}{
+	if err := client.KVSet("user:session:123", map[string]interface{}{
 		"userId": "user_abc",
 		"role":   "admin",
-	}, nil); err != nil {
+	}); err != nil {
 		return err
 	}
 	fmt.Println("✅ Set session data")
 
 	// Get the value back
-	session, err := client.KvGet("user:session:123")
+	session, err := client.KVGet("user:session:123")
 	if err != nil {
 		return err
 	}
 	fmt.Printf("📊 Retrieved session: %v\n", session)
 
 	// Check if key exists
-	exists, err := client.KvExists("user:session:123")
+	exists, err := client.KVExists("user:session:123")
 	if err != nil {
 		return err
 	}
 	fmt.Printf("🔍 Key exists: %v\n", exists)
 
 	// Set with TTL (1 hour)
-	ttl := int64(3600)
-	if err := client.KvSet("cache:product:456", map[string]interface{}{
+	if err := client.KVSet("cache:product:456", map[string]interface{}{
 		"name":  "Cached Product",
 		"price": 99.99,
-	}, &ttl); err != nil {
+	}); err != nil {
 		return err
 	}
 	fmt.Println("✅ Set cached data with 1 hour TTL")
 
 	// Delete a key
-	deleted, err := client.KvDelete("user:session:123")
-	if err != nil {
+	if err := client.KVDelete("user:session:123"); err != nil {
 		return err
 	}
-	fmt.Printf("🗑️  Deleted session: %v\n\n", deleted)
+	fmt.Println("🗑️  Deleted session")
 
 	return nil
 }
@@ -236,8 +248,8 @@ func kvScriptOperations(client *ekodb.Client) (string, error) {
 		Description: strPtr("Uses KV store for caching within a script"),
 		Version:     strPtr("1.0"),
 		Parameters: map[string]ekodb.ParameterDefinition{
-			"product_key":  {ParamType: "String", Required: true},
-			"product_data": {ParamType: "Object", Required: true},
+			"product_key":  {Required: true},
+			"product_data": {Required: true},
 		},
 		Functions: []ekodb.FunctionStageConfig{
 			ekodb.StageKvSet("{{product_key}}", "{{product_data}}", &ttl),
@@ -279,20 +291,21 @@ func combinedExample(client *ekodb.Client) (string, error) {
 		Description: strPtr("Demonstrates combined KV and wrapped type usage"),
 		Version:     strPtr("1.0"),
 		Parameters: map[string]ekodb.ParameterDefinition{
-			"order_id": {ParamType: "String", Required: true},
-			"total":    {ParamType: "String", Required: true},
+			"order_id":  {Required: true},
+			"total":     {Required: true},
+			"timestamp": {Required: true, Description: "Current UTC timestamp (ISO 8601)"},
 		},
 		Functions: []ekodb.FunctionStageConfig{
 			ekodb.StageKvSet("order:status:{{order_id}}", map[string]interface{}{
 				"status":     "processing",
-				"updated_at": map[string]interface{}{"type": "DateTime", "value": "{{$now}}"},
+				"updated_at": "{{timestamp}}",
 			}, &ttl),
 			ekodb.StageInsert("processed_orders", map[string]interface{}{
-				"order_id":   map[string]interface{}{"type": "UUID", "value": "{{order_id}}"},
+				"order_id":   "{{order_id}}",
 				"total":      map[string]interface{}{"type": "Decimal", "value": "{{total}}"},
-				"created_at": map[string]interface{}{"type": "DateTime", "value": "{{$now}}"},
+				"created_at": "{{timestamp}}",
 				"status":     "processing",
-			}, nil, nil),
+			}, false, nil),
 			ekodb.StageKvGet("order:status:{{order_id}}", nil),
 		},
 		Tags: []string{"orders", "kv", "wrapped-types"},
@@ -305,8 +318,9 @@ func combinedExample(client *ekodb.Client) (string, error) {
 	fmt.Printf("✅ Script saved: %s\n", id)
 
 	result, err := client.CallScript("process_order_with_cache_go", map[string]interface{}{
-		"order_id": "c2d3e4f5-a1b2-c3d4-e5f6-a1b2c3d4e5f6",
-		"total":    "299.99",
+		"order_id":  "c2d3e4f5-a1b2-c3d4-e5f6-a1b2c3d4e5f6",
+		"total":     "299.99",
+		"timestamp": time.Now().Format(time.RFC3339),
 	})
 	if err != nil {
 		return id, err
@@ -334,9 +348,9 @@ func cleanup(client *ekodb.Client, scriptIds []string) {
 	_ = client.DeleteCollection("script_orders")
 	_ = client.DeleteCollection("processed_orders")
 
-	_ = client.KvDelete("cache:product:456")
-	_ = client.KvDelete("product:cache:789")
-	_ = client.KvDelete("order:status:c2d3e4f5-a1b2-c3d4-e5f6-a1b2c3d4e5f6")
+	_ = client.KVDelete("cache:product:456")
+	_ = client.KVDelete("product:cache:789")
+	_ = client.KVDelete("order:status:c2d3e4f5-a1b2-c3d4-e5f6-a1b2c3d4e5f6")
 
 	fmt.Println("✅ Cleanup complete\n")
 }

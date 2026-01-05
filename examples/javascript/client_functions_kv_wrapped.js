@@ -74,12 +74,21 @@ async function wrappedTypesInScript(client) {
         param_type: "String",
         required: true,
       },
+      order_id: {
+        param_type: "String",
+        required: true,
+      },
+      timestamp: {
+        param_type: "DateTime",
+        required: true,
+        description: "Current UTC timestamp (ISO 8601)",
+      },
     },
     functions: [
       Stage.insert("script_orders", {
-        order_id: { type: "UUID", value: "{{$uuid}}" },
+        order_id: "{{order_id}}",
         total: { type: "Decimal", value: "{{order_total}}" },
-        created_at: { type: "DateTime", value: "{{$now}}" },
+        created_at: "{{timestamp}}",
         status: "pending",
       }),
     ],
@@ -91,6 +100,8 @@ async function wrappedTypesInScript(client) {
 
   const result = await client.callScript("create_order_with_types_js", {
     order_total: "599.99",
+    order_id: `order_${Date.now()}`,
+    timestamp: new Date().toISOString(),
   });
   console.log(`📊 Created order via script`);
   console.log(`⏱️  Execution time: ${result.stats.execution_time_ms}ms\n`);
@@ -126,8 +137,8 @@ async function kvBasicOperations(client) {
   console.log("✅ Set cached data with 1 hour TTL");
 
   // Delete a key
-  const deleted = await client.kvDelete("user:session:123");
-  console.log(`🗑️  Deleted session: ${deleted}\n`);
+  await client.kvDelete("user:session:123");
+  console.log(`🗑️  Deleted session\n`);
 }
 
 async function kvScriptOperations(client) {
@@ -209,20 +220,24 @@ async function combinedExample(client) {
         param_type: "String",
         required: true,
       },
+      timestamp: {
+        param_type: "DateTime",
+        required: true,
+      },
     },
     functions: [
       Stage.kvSet(
         "order:status:{{order_id}}",
         {
           status: "processing",
-          updated_at: { type: "DateTime", value: "{{$now}}" },
+          updated_at: "{{timestamp}}",
         },
         86400
       ),
       Stage.insert("processed_orders", {
-        order_id: { type: "UUID", value: "{{order_id}}" },
+        order_id: "{{order_id}}",
         total: { type: "Decimal", value: "{{total}}" },
-        created_at: { type: "DateTime", value: "{{$now}}" },
+        created_at: "{{timestamp}}",
         status: "processing",
       }),
       Stage.kvGet("order:status:{{order_id}}"),
@@ -236,6 +251,7 @@ async function combinedExample(client) {
   const result = await client.callScript("process_order_with_cache_js", {
     order_id: "c2d3e4f5-a1b2-c3d4-e5f6-a1b2c3d4e5f6",
     total: "299.99",
+    timestamp: new Date().toISOString(),
   });
   console.log(`📊 Processed order with caching`);
   console.log(`⏱️  Stages executed: ${result.stats.stages_executed}`);

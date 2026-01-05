@@ -8,6 +8,7 @@
  * - Field weighting and boosting
  */
 
+require("dotenv").config();
 const { EkoDBClient, SearchQueryBuilder } = require("@ekodb/ekodb-client");
 
 async function main() {

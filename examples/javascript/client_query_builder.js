@@ -9,6 +9,9 @@
  */
 
 const { EkoDBClient, QueryBuilder } = require("@ekodb/ekodb-client");
+const dotenv = require("dotenv");
+
+dotenv.config();
 
 async function main() {
   const client = new EkoDBClient(

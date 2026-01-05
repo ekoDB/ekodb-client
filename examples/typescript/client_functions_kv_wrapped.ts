@@ -76,12 +76,21 @@ async function wrappedTypesInScript(client: EkoDBClient): Promise<string> {
         param_type: "String" as const,
         required: true,
       },
+      order_id: {
+        param_type: "String" as const,
+        required: true,
+      },
+      timestamp: {
+        param_type: "DateTime" as const,
+        required: true,
+        description: "Current UTC timestamp (ISO 8601)",
+      },
     },
     functions: [
       Stage.insert("script_orders", {
-        order_id: { type: "UUID", value: "{{$uuid}}" }, // Auto-generate UUID
+        order_id: "{{order_id}}",
         total: { type: "Decimal", value: "{{order_total}}" },
-        created_at: { type: "DateTime", value: "{{$now}}" },
+        created_at: "{{timestamp}}",
         status: "pending",
       }),
     ],
@@ -94,6 +103,8 @@ async function wrappedTypesInScript(client: EkoDBClient): Promise<string> {
   // Execute the script with a decimal parameter
   const result = await client.callScript("create_order_with_types", {
     order_total: "599.99",
+    order_id: `order_${Date.now()}`,
+    timestamp: new Date().toISOString(),
   });
   console.log(`📊 Created order via script`);
   console.log(`⏱️  Execution time: ${result.stats.execution_time_ms}ms\n`);
@@ -219,6 +230,10 @@ async function combinedExample(client: EkoDBClient): Promise<string> {
         param_type: "String" as const,
         required: true,
       },
+      timestamp: {
+        param_type: "DateTime" as const,
+        required: true,
+      },
     },
     functions: [
       // Cache order status in KV for quick lookups
@@ -226,15 +241,15 @@ async function combinedExample(client: EkoDBClient): Promise<string> {
         "order:status:{{order_id}}",
         {
           status: "processing",
-          updated_at: { type: "DateTime", value: "{{$now}}" },
+          updated_at: "{{timestamp}}",
         },
         86400, // 24 hour TTL
       ),
       // Insert full order record with wrapped types
       Stage.insert("processed_orders", {
-        order_id: { type: "UUID", value: "{{order_id}}" },
+        order_id: "{{order_id}}",
         total: { type: "Decimal", value: "{{total}}" },
-        created_at: { type: "DateTime", value: "{{$now}}" },
+        created_at: "{{timestamp}}",
         status: "processing",
       }),
       // Verify the cache entry
@@ -250,6 +265,7 @@ async function combinedExample(client: EkoDBClient): Promise<string> {
   const result = await client.callScript("process_order_with_cache", {
     order_id: "c2d3e4f5-a1b2-c3d4-e5f6-a1b2c3d4e5f6",
     total: "299.99",
+    timestamp: new Date().toISOString(),
   });
   console.log(`📊 Processed order with caching`);
   console.log(`⏱️  Stages executed: ${result.stats.stages_executed}`);
