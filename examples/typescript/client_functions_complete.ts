@@ -276,7 +276,15 @@ async function main() {
   );
 
   const client = new EkoDBClient(BASE_URL, API_KEY);
-  await client.init();
+
+  try {
+    await client.init();
+  } catch (error) {
+    console.error("⚠️  Auth initialization failed, retrying...");
+    // Wait a moment and retry once
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await client.init();
+  }
 
   try {
     await setupTestData(client);

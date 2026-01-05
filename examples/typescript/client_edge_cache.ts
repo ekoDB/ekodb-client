@@ -72,9 +72,8 @@ async function edgeCacheExample() {
   console.log("Call 1: Cache miss (fetches from API)");
   const start1 = Date.now();
   const result1 = await client.callScript("cache_api_call", {
-    cache_key: "weather_nyc",
-    api_url:
-      "https://api.open-meteo.com/v1/forecast?latitude=40.7128&longitude=-74.0060&current=temperature_2m",
+    cache_key: "user_data_1",
+    api_url: "https://jsonplaceholder.typicode.com/users/1",
     ttl_seconds: 300,
   });
   const duration1 = Date.now() - start1;
@@ -85,9 +84,8 @@ async function edgeCacheExample() {
   console.log("\nCall 2: Cache hit (served from ekoDB)");
   const start2 = Date.now();
   const result2 = await client.callScript("cache_api_call", {
-    cache_key: "weather_nyc",
-    api_url:
-      "https://api.open-meteo.com/v1/forecast?latitude=40.7128&longitude=-74.0060&current=temperature_2m",
+    cache_key: "user_data_1",
+    api_url: "https://jsonplaceholder.typicode.com/users/1",
   });
   const duration2 = Date.now() - start2;
   console.log(

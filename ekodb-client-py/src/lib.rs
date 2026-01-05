@@ -716,11 +716,18 @@ impl Client {
     }
 
     /// Set a key-value pair
+    /// 
+    /// Args:
+    ///     key: The key
+    ///     value: The value as a dict
+    ///     ttl: Optional TTL duration (e.g., "30s", "5m", "1h")
+    #[pyo3(signature = (key, value, ttl=None))]
     fn kv_set<'py>(
         &self,
         py: Python<'py>,
         key: String,
         value: &Bound<'py, PyDict>,
+        ttl: Option<String>,
     ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
         // Convert Python dict to JSON value
@@ -731,7 +738,7 @@ impl Client {
 
         future_into_py(py, async move {
             client
-                .kv_set(&key, json_value)
+                .kv_set(&key, json_value, ttl.as_deref())
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("KV set failed: {}", e)))?;
 

@@ -5,6 +5,7 @@
  */
 
 const { EkoDBClient } = require("@ekodb/ekodb-client");
+require("dotenv").config();
 
 async function main() {
   console.log("=== ekoDB Chat Basic Example ===\n");

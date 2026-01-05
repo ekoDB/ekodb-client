@@ -12,6 +12,7 @@
  */
 
 const { EkoDBClient } = require("@ekodb/ekodb-client");
+require("dotenv").config();
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));

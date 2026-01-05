@@ -467,9 +467,15 @@ impl Client {
     ///
     /// * `key` - The key
     /// * `value` - The value (any JSON-serializable type)
-    pub async fn kv_set(&self, key: &str, value: serde_json::Value) -> Result<()> {
+    /// * `ttl` - Optional TTL duration (e.g., "30s", "5m", "1h")
+    pub async fn kv_set(
+        &self,
+        key: &str,
+        value: serde_json::Value,
+        ttl: Option<&str>,
+    ) -> Result<()> {
         let token = self.auth.get_token().await?;
-        self.http.kv_set(key, value, &token).await
+        self.http.kv_set(key, value, ttl, &token).await
     }
 
     /// Get a key-value pair

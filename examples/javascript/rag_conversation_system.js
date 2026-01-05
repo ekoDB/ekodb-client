@@ -17,6 +17,7 @@
  */
 
 const { EkoDBClient } = require("@ekodb/ekodb-client");
+require("dotenv").config();
 
 function extractStringField(record, field) {
   const value = record[field];

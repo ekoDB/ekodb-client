@@ -429,15 +429,13 @@ pub enum Function {
 
     /// AI Chat completion
     Chat {
-        #[serde(skip_serializing_if = "Option::is_none")]
-        provider: Option<String>,
+        messages: Vec<ChatMessage>,
         #[serde(skip_serializing_if = "Option::is_none")]
         model: Option<String>,
         #[serde(skip_serializing_if = "Option::is_none")]
-        system_prompt: Option<String>,
-        messages: Vec<ChatMessage>,
-        #[serde(skip_serializing_if = "Option::is_none")]
         temperature: Option<f32>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        max_tokens: Option<i32>,
     },
 
     /// Generate embeddings for field in records

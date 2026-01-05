@@ -119,8 +119,11 @@ async function main() {
         
         // List of example files to run
         // Note: Direct API examples are in the main directory
+        // Client library examples start with client_
         // TTL verification tests are in the ttl/ subdirectory
         const examples = [
+            // Direct API examples only
+            // Client library examples are run via `make test-examples-javascript-client`
             path.join(__dirname, 'simple_crud.js'),
             path.join(__dirname, 'simple_websocket.js'),
             path.join(__dirname, 'http_functions.js'),
@@ -129,6 +132,7 @@ async function main() {
             path.join(__dirname, 'collection_management.js'),
             path.join(__dirname, 'transactions.js'),
             path.join(__dirname, 'crud_scripts.js'),
+            // TTL verification tests
             path.join(__dirname, 'ttl', 'document_ttl.js'),
             path.join(__dirname, 'ttl', 'websocket_ttl.js'),
         ];

@@ -33,6 +33,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 "userId": 123,
                 "username": "john_doe"
             }),
+            None,
         )
         .await?;
     println!("✓ Set key: session:user123");
@@ -55,6 +56,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     "name": format!("Product {}", i + 1),
                     "price": 29.99 + (i as f64 * 10.0)
                 }),
+                None,
             )
             .await?;
     }

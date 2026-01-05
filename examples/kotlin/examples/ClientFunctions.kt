@@ -5,6 +5,8 @@
  * Covers: FindAll, Group, Project, Count, and Script management operations.
  */
 
+package io.ekodb.client.examples
+
 import io.ekodb.client.EkoDBClient
 import io.ekodb.client.functions.Script
 import io.ekodb.client.functions.ParameterDefinition

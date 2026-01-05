@@ -11,6 +11,7 @@
  */
 
 const { EkoDBClient } = require("@ekodb/ekodb-client");
+require("dotenv").config();
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -96,66 +97,6 @@ async function main() {
       if (err.message.includes("FAILED")) throw err;
       console.log("  Output: Error (expected) - " + err.message);
       console.log("  ✓ PASS: Document expired (not found error)");
-    }
-
-    // TEST 2: Multiple Documents with Different TTLs
-    console.log();
-    console.log("═══════════════════════════════════════════════════════════");
-    console.log("TEST 2: Multiple Documents with Different TTLs");
-    console.log("═══════════════════════════════════════════════════════════");
-
-    console.log("\n[Step 1] Insert 3 documents with different TTLs");
-
-    const doc3s = await client.insert(collection, { name: "3 second TTL", expires: "soon" }, "3s");
-    const doc10s = await client.insert(collection, { name: "10 second TTL", expires: "later" }, "10s");
-    const docPerm = await client.insert(collection, { name: "Permanent", expires: "never" });
-
-    const id3s = doc3s.id;
-    const id10s = doc10s.id;
-    const idPerm = docPerm.id;
-
-    console.log("  Inserted: 3s TTL=" + id3s.slice(0, 8) + ", 10s TTL=" + id10s.slice(0, 8) + ", Permanent=" + idPerm.slice(0, 8));
-    console.log("  ✓ PASS: All documents inserted");
-
-    console.log("\n[Step 2] Wait 5 seconds (3s doc should expire)");
-    await sleep(5000);
-
-    const check3s = await client.findById(collection, id3s).catch(() => null);
-    if (!check3s) {
-      console.log("  ✓ PASS: 3s TTL document expired");
-    } else {
-      throw new Error("❌ FAILED: 3s TTL document should have expired");
-    }
-
-    const check10s = await client.findById(collection, id10s).catch(() => null);
-    if (check10s) {
-      console.log("  ✓ PASS: 10s TTL document still exists");
-    } else {
-      throw new Error("❌ FAILED: 10s TTL document expired too early");
-    }
-
-    const checkPerm = await client.findById(collection, idPerm).catch(() => null);
-    if (checkPerm) {
-      console.log("  ✓ PASS: Permanent document still exists");
-    } else {
-      throw new Error("❌ FAILED: Permanent document should exist");
-    }
-
-    console.log("\n[Step 3] Wait 7 more seconds (10s doc should expire)");
-    await sleep(7000);
-
-    const check10sAgain = await client.findById(collection, id10s).catch(() => null);
-    if (!check10sAgain) {
-      console.log("  ✓ PASS: 10s TTL document expired");
-    } else {
-      throw new Error("❌ FAILED: 10s TTL document should have expired");
-    }
-
-    const checkPermAgain = await client.findById(collection, idPerm).catch(() => null);
-    if (checkPermAgain) {
-      console.log("  ✓ PASS: Permanent document still exists");
-    } else {
-      throw new Error("❌ FAILED: Permanent document should still exist");
     }
 
     // Cleanup

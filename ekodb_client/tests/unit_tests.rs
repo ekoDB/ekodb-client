@@ -469,7 +469,9 @@ async fn test_kv_set_success() {
 
     let client = create_test_client(&server).await;
 
-    let result = client.kv_set("my_key", json!({"data": "value"})).await;
+    let result = client
+        .kv_set("my_key", json!({"data": "value"}), None)
+        .await;
 
     assert!(result.is_ok());
 }

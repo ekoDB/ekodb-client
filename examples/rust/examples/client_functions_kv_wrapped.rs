@@ -1,8 +1,12 @@
 ///! KV Store & Wrapped Types Example for ekoDB Rust Client
 ///!
 ///! Demonstrates: KV operations in scripts, wrapped type field builders
-use ekodb_client::{Client, FieldType, Function, ParameterDefinition, Record, Script};
-use std::{collections::HashMap, env};
+use ekodb_client::{
+    Client, FieldType, Function, ParameterDefinition, Record, Script, SerializationFormat,
+};
+use rust_decimal::Decimal;
+use std::{collections::HashMap, env, str::FromStr};
+use uuid::Uuid;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -22,6 +26,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = Client::builder()
         .base_url(&base_url)
         .api_key(&api_key)
+        .serialization_format(SerializationFormat::Json)
         .build()?;
 
     let mut script_ids = Vec::new();
@@ -69,13 +74,13 @@ async fn wrapped_types_insert(client: &Client) -> Result<(), Box<dyn std::error:
     let mut order = Record::new();
     order.insert(
         "order_id",
-        FieldType::UUID("550e8400-e29b-41d4-a716-446655440000".to_string()),
+        FieldType::UUID(Uuid::parse_str("550e8400-e29b-41d4-a716-446655440000").unwrap()),
     );
-    order.insert("total", FieldType::Decimal("1234.56".to_string()));
     order.insert(
-        "created_at",
-        FieldType::DateTime(chrono::Utc::now().to_rfc3339()),
+        "total",
+        FieldType::Decimal(Decimal::from_str("1234.56").unwrap()),
     );
+    order.insert("created_at", FieldType::DateTime(chrono::Utc::now()));
     order.insert("quantity", FieldType::Integer(42));
     order.insert(
         "tags",
@@ -97,7 +102,10 @@ async fn wrapped_types_insert(client: &Client) -> Result<(), Box<dyn std::error:
     for (name, price, stock, rating, available) in products {
         let mut product = Record::new();
         product.insert("name", FieldType::String(name.to_string()));
-        product.insert("price", FieldType::Decimal(price.to_string()));
+        product.insert(
+            "price",
+            FieldType::Decimal(Decimal::from_str(price).unwrap()),
+        );
         product.insert("stock", FieldType::Integer(stock));
         product.insert("rating", FieldType::Float(rating));
         product.insert("available", FieldType::Boolean(available));
@@ -191,14 +199,14 @@ async fn kv_basic_operations(client: &Client) -> Result<(), Box<dyn std::error::
         .kv_set(
             "cache:product:456",
             serde_json::Value::Object(cache_data.into_iter().collect()),
-            Some(3600),
+            Some("1h"),
         )
         .await?;
-    println!("✅ Set cached data with 1 hour TTL");
+    println!("✅ Set cached data");
 
     // Delete a key
-    let deleted = client.kv_delete("user:session:123").await?;
-    println!("🗑️  Deleted session: {}\n", deleted);
+    client.kv_delete("user:session:123").await?;
+    println!("🗑️  Deleted session\n");
 
     Ok(())
 }
@@ -213,7 +221,7 @@ async fn kv_script_operations(client: &Client) -> Result<String, Box<dyn std::er
         .with_tag("kv")
         .with_tag("caching")
         .with_function(Function::KvGet {
-            key: "{{product_key}}".to_string(),
+            key: serde_json::Value::String("{{product_key}}".to_string()),
             output_field: None,
         });
 
@@ -235,7 +243,7 @@ async fn kv_script_operations(client: &Client) -> Result<String, Box<dyn std::er
         .kv_set(
             "product:cache:789",
             serde_json::Value::Object(product_data.into_iter().collect()),
-            Some(3600),
+            None,
         )
         .await?;
 
@@ -272,7 +280,7 @@ async fn combined_example(client: &Client) -> Result<String, Box<dyn std::error:
     .with_tag("kv")
     .with_tag("wrapped-types")
     .with_function(Function::KvGet {
-        key: "order:status:{{order_id}}".to_string(),
+        key: serde_json::Value::String("order:status:{{order_id}}".to_string()),
         output_field: None,
     });
 
@@ -294,7 +302,7 @@ async fn combined_example(client: &Client) -> Result<String, Box<dyn std::error:
         .kv_set(
             "order:status:c2d3e4f5-a1b2-c3d4-e5f6-a1b2c3d4e5f6",
             serde_json::Value::Object(status_data.into_iter().collect()),
-            Some(86400),
+            None,
         )
         .await?;
 
