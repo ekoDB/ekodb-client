@@ -59,67 +59,57 @@ func main() {
 	fmt.Println("📝 Example 1: List All Documents")
 	fmt.Println()
 
-	script1 := map[string]interface{}{
-		"label":      "list_all_docs_go",
-		"name":       "List All Documents",
-		"version":    "1.0",
-		"parameters": map[string]interface{}{},
-		"functions":  []interface{}{map[string]interface{}{"type": "FindAll", "collection": "search_docs_go"}},
-		"tags":       []string{"search", "list"},
+	script1 := ekodb.Script{
+		Label:      "list_all_docs_go",
+		Name:       "List All Documents",
+		Version:    func() *string { s := "1.0"; return &s }(),
+		Parameters: map[string]ekodb.ParameterDefinition{},
+		Functions:  []ekodb.FunctionStageConfig{ekodb.StageFindAll("search_docs_go")},
+		Tags:       []string{"search", "list"},
 	}
 	scriptID1, _ := client.SaveScript(script1)
 	scriptIDs = append(scriptIDs, scriptID1)
 	fmt.Println("✅ Script saved")
 
 	result1, _ := client.CallScript("list_all_docs_go", nil)
-	if records, ok := result1["records"].([]interface{}); ok {
-		fmt.Printf("📊 Found %d documents\n", len(records))
-		for i, record := range records {
-			if rec, ok := record.(map[string]interface{}); ok {
-				title := rec["title"]
-				category := rec["category"]
-				fmt.Printf("   %d. %v (%v)\n", i+1, title, category)
-			}
+	if result1 != nil {
+		fmt.Printf("📊 Found %d documents\n", len(result1.Records))
+		for i, record := range result1.Records {
+			title := record["title"]
+			category := record["category"]
+			fmt.Printf("   %d. %v (%v)\n", i+1, title, category)
 		}
-	}
-	if stats, ok := result1["stats"].(map[string]interface{}); ok {
-		fmt.Printf("⏱️  Execution time: %vms\n\n", stats["execution_time_ms"])
+		fmt.Printf("⏱️  Execution time: %vms\n\n", result1.Stats.ExecutionTimeMs)
 	}
 
 	// Example 2: Count Documents by Category
 	fmt.Println("📝 Example 2: Count Documents by Category")
 	fmt.Println()
 
-	script2 := map[string]interface{}{
-		"label":      "docs_by_category_go",
-		"name":       "Documents by Category",
-		"version":    "1.0",
-		"parameters": map[string]interface{}{},
-		"functions": []interface{}{
-			map[string]interface{}{"type": "FindAll", "collection": "search_docs_go"},
-			map[string]interface{}{
-				"type":      "Group",
-				"by_fields": []string{"category"},
-				"functions": []interface{}{
-					map[string]interface{}{"output_field": "count", "operation": "Count"},
-				},
-			},
+	script2 := ekodb.Script{
+		Label:      "docs_by_category_go",
+		Name:       "Documents by Category",
+		Version:    func() *string { s := "1.0"; return &s }(),
+		Parameters: map[string]ekodb.ParameterDefinition{},
+		Functions: []ekodb.FunctionStageConfig{
+			ekodb.StageFindAll("search_docs_go"),
+			ekodb.StageGroup([]string{"category"}, []ekodb.GroupFunctionConfig{
+				{OutputField: "count", Operation: "Count"},
+			}),
 		},
-		"tags": []string{"search", "analytics"},
+		Tags: []string{"search", "analytics"},
 	}
 	scriptID2, _ := client.SaveScript(script2)
 	scriptIDs = append(scriptIDs, scriptID2)
 	fmt.Println("✅ Script saved")
 
 	result2, _ := client.CallScript("docs_by_category_go", nil)
-	fmt.Println("📊 Documents by category:")
-	if records, ok := result2["records"].([]interface{}); ok {
-		for _, record := range records {
+	if result2 != nil {
+		fmt.Println("📊 Documents by category:")
+		for _, record := range result2.Records {
 			fmt.Printf("   %v\n", record)
 		}
-	}
-	if stats, ok := result2["stats"].(map[string]interface{}); ok {
-		fmt.Printf("⏱️  Execution time: %vms\n\n", stats["execution_time_ms"])
+		fmt.Printf("⏱️  Execution time: %vms\n\n", result2.Stats.ExecutionTimeMs)
 	}
 
 	// Cleanup

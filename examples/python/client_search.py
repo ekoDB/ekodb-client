@@ -125,9 +125,9 @@ async def main():
 
     # Example 1: Basic full-text search
     print("1. Basic full-text search:")
-    search1 = {"query": "john", "fields": "name,email,bio", "limit": 10}
-
-    results1 = await client.search(users_collection, search1)
+    results1 = await client.search(
+        users_collection, query="john", fields="name,email,bio", limit=10
+    )
     print(f"Found {len(results1.get('results', []))} results")
     for i, result in enumerate(results1.get("results", []), 1):
         score = result.get("score", 0)
@@ -137,15 +137,14 @@ async def main():
 
     # Example 2: Fuzzy search with typo tolerance
     print("2. Fuzzy search (typo tolerance):")
-    search2 = {
-        "query": "enginer",  # Typo: should match "engineer"
-        "fields": "title,bio",
-        "fuzzy": True,
-        "max_edit_distance": 2,
-        "limit": 5,
-    }
-
-    results2 = await client.search(users_collection, search2)
+    results2 = await client.search(
+        users_collection,
+        query="enginer",  # Typo: should match "engineer"
+        fields="title,bio",
+        fuzzy=True,
+        max_edit_distance=2,
+        limit=5,
+    )
     print(f"Found {len(results2.get('results', []))} results with fuzzy matching")
     for i, result in enumerate(results2.get("results", []), 1):
         score = result.get("score", 0)
@@ -155,14 +154,13 @@ async def main():
 
     # Example 3: Search with field weights
     print("3. Search with field weights:")
-    search3 = {
-        "query": "engineer",
-        "fields": "title,bio",
-        "weights": "title:3.0,bio:1.0",
-        "limit": 10,
-    }
-
-    results3 = await client.search(users_collection, search3)
+    results3 = await client.search(
+        users_collection,
+        query="engineer",
+        fields="title,bio",
+        weights="title:3.0,bio:1.0",
+        limit=10,
+    )
     print(f"Found {len(results3.get('results', []))} results with weighted fields")
     for i, result in enumerate(results3.get("results", []), 1):
         score = result.get("score", 0)
@@ -172,14 +170,9 @@ async def main():
 
     # Example 4: Search with minimum score threshold
     print("4. Search with minimum score threshold:")
-    search4 = {
-        "query": "software",
-        "fields": "title,bio",
-        "min_score": 0.3,
-        "limit": 10,
-    }
-
-    results4 = await client.search(users_collection, search4)
+    results4 = await client.search(
+        users_collection, query="software", fields="title,bio", min_score=0.3, limit=10
+    )
     print(f"Found {len(results4.get('results', []))} results with score >= 0.3")
     for i, result in enumerate(results4.get("results", []), 1):
         score = result.get("score", 0)
@@ -189,15 +182,14 @@ async def main():
 
     # Example 5: Search with stemming and exact match boosting
     print("5. Search with stemming and exact match boosting:")
-    search5 = {
-        "query": "running",
-        "fields": "bio",
-        "enable_stemming": True,
-        "boost_exact": True,
-        "limit": 10,
-    }
-
-    results5 = await client.search(users_collection, search5)
+    results5 = await client.search(
+        users_collection,
+        query="running",
+        fields="bio",
+        enable_stemming=True,
+        boost_exact=True,
+        limit=10,
+    )
     print(
         f"Found {len(results5.get('results', []))} results (matches: run, running, runs)"
     )
@@ -210,14 +202,13 @@ async def main():
     # Example 6: Vector search (semantic search)
     print("6. Vector search (semantic search):")
     query_vector = [random.random() for _ in range(384)]
-    search6 = {
-        "query": "",  # Empty query for vector-only search
-        "vector": query_vector,
-        "vector_field": "embedding",
-        "limit": 3,
-    }
-
-    results6 = await client.search(documents_collection, search6)
+    results6 = await client.search(
+        documents_collection,
+        query="",  # Empty query for vector-only search
+        vector=query_vector,
+        vector_field="embedding",
+        limit=3,
+    )
     print(f"Found {len(results6.get('results', []))} semantically similar documents")
     for i, result in enumerate(results6.get("results", []), 1):
         score = result.get("score", 0)
@@ -226,16 +217,16 @@ async def main():
 
     # Example 7: Hybrid search (text + vector)
     print("7. Hybrid search (text + vector):")
-    search7 = {
-        "query": "machine learning",
-        "fields": "title,content",
-        "vector": query_vector,
-        "vector_field": "embedding",
-        "hybrid_alpha": 0.5,  # 50% text, 50% vector
-        "limit": 3,
-    }
-
-    results7 = await client.search(documents_collection, search7)
+    results7 = await client.search(
+        documents_collection,
+        query="machine learning",
+        fields="title,content",
+        vector=query_vector,
+        vector_field="embedding",
+        text_weight=0.5,  # 50% text
+        vector_weight=0.5,  # 50% vector
+        limit=3,
+    )
     print(
         f"Found {len(results7.get('results', []))} results using hybrid search (text + vector)"
     )
@@ -247,14 +238,9 @@ async def main():
 
     # Example 8: Case-sensitive search
     print("8. Case-sensitive search:")
-    search8 = {
-        "query": "Senior",
-        "fields": "title",
-        "case_sensitive": True,
-        "limit": 10,
-    }
-
-    results8 = await client.search(users_collection, search8)
+    results8 = await client.search(
+        users_collection, query="Senior", fields="title", case_sensitive=True, limit=10
+    )
     print(f"Found {len(results8.get('results', []))} results (case-sensitive)")
     for i, result in enumerate(results8.get("results", []), 1):
         score = result.get("score", 0)

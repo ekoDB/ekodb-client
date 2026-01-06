@@ -1144,3 +1144,230 @@ async fn test_get_transaction_status_success() {
 
 // Note: Functions, Chat, Search tests require complex mock setup
 // These are covered by integration tests
+
+// ============================================================================
+// Convenience Methods Tests
+// ============================================================================
+
+#[tokio::test]
+async fn test_upsert_inserts_when_not_found() {
+    let mut server = Server::new_async().await;
+
+    let _token_mock = mock_token_endpoint(&mut server);
+
+    // Mock update endpoint returning 404
+    let _update_mock = server
+        .mock("PUT", "/api/update/users/user123")
+        .with_status(404)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"error": "Not found"}).to_string())
+        .create_async()
+        .await;
+
+    // Mock insert endpoint succeeding
+    let _insert_mock = server
+        .mock("POST", "/api/insert/users")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"id": "user123", "name": "John Doe"}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+
+    let record = Record::new().field("name", "John Doe");
+    let result = client.upsert("users", "user123", record, None).await;
+
+    assert!(result.is_ok());
+}
+
+#[tokio::test]
+async fn test_upsert_updates_when_exists() {
+    let mut server = Server::new_async().await;
+
+    let _token_mock = mock_token_endpoint(&mut server);
+
+    // Mock update endpoint succeeding
+    let _update_mock = server
+        .mock("PUT", "/api/update/users/user123")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"id": "user123", "name": "John Doe Updated"}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+
+    let record = Record::new().field("name", "John Doe Updated");
+    let result = client.upsert("users", "user123", record, None).await;
+
+    assert!(result.is_ok());
+}
+
+#[tokio::test]
+async fn test_find_one_returns_some_when_found() {
+    let mut server = Server::new_async().await;
+
+    let _token_mock = mock_token_endpoint(&mut server);
+
+    let _find_mock = server
+        .mock("POST", "/api/find/users")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!([{"id": "user123", "email": "test@example.com"}]).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+
+    let result = client.find_one("users", "email", "test@example.com").await;
+
+    assert!(result.is_ok());
+    let record = result.unwrap();
+    assert!(record.is_some());
+}
+
+#[tokio::test]
+async fn test_find_one_returns_none_when_not_found() {
+    let mut server = Server::new_async().await;
+
+    let _token_mock = mock_token_endpoint(&mut server);
+
+    let _find_mock = server
+        .mock("POST", "/api/find/users")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!([]).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+
+    let result = client
+        .find_one("users", "email", "notfound@example.com")
+        .await;
+
+    assert!(result.is_ok());
+    assert!(result.unwrap().is_none());
+}
+
+#[tokio::test]
+async fn test_exists_returns_true_when_found() {
+    let mut server = Server::new_async().await;
+
+    let _token_mock = mock_token_endpoint(&mut server);
+
+    let _find_mock = server
+        .mock("GET", "/api/find/users/user123")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"id": "user123", "name": "John"}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+
+    let result = client.exists("users", "user123").await;
+
+    assert!(result.is_ok());
+    assert!(result.unwrap());
+}
+
+#[tokio::test]
+async fn test_exists_returns_false_when_not_found() {
+    let mut server = Server::new_async().await;
+
+    let _token_mock = mock_token_endpoint(&mut server);
+
+    let _find_mock = server
+        .mock("GET", "/api/find/users/user123")
+        .with_status(404)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"error": "Not found"}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+
+    let result = client.exists("users", "user123").await;
+
+    assert!(result.is_ok());
+    assert!(!result.unwrap());
+}
+
+#[tokio::test]
+async fn test_paginate_calculates_skip_correctly() {
+    let mut server = Server::new_async().await;
+
+    let _token_mock = mock_token_endpoint(&mut server);
+
+    // Page 2 with page_size 10 should skip 10 records
+    let _find_mock = server
+        .mock("POST", "/api/find/users")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!([{"id": "user11", "name": "User 11"}]).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+
+    let result = client.paginate("users", 2, 10).await;
+
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap().len(), 1);
+}
+
+#[tokio::test]
+async fn test_paginate_first_page_skips_zero() {
+    let mut server = Server::new_async().await;
+
+    let _token_mock = mock_token_endpoint(&mut server);
+
+    // Page 1 with page_size 10 should skip 0 records
+    let _find_mock = server
+        .mock("POST", "/api/find/users")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!([{"id": "user1", "name": "User 1"}]).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+
+    let result = client.paginate("users", 1, 10).await;
+
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap().len(), 1);
+}
+
+#[test]
+fn test_record_field_builder() {
+    let record = Record::new()
+        .field("name", "John Doe")
+        .field("age", 30)
+        .field("active", true);
+
+    assert_eq!(record.len(), 3);
+    assert!(record.contains_key("name"));
+    assert!(record.contains_key("age"));
+    assert!(record.contains_key("active"));
+}
+
+#[test]
+fn test_record_field_builder_chaining() {
+    let record = Record::new()
+        .field("field1", "value1")
+        .field("field2", 42)
+        .field("field3", true)
+        .field("field4", "value4");
+
+    assert_eq!(record.len(), 4);
+}
+
+#[test]
+fn test_record_field_builder_empty() {
+    let record = Record::new();
+    assert!(record.is_empty());
+    assert_eq!(record.len(), 0);
+}

@@ -399,16 +399,16 @@ async function main() {
   const ownershipResults = await client.textSearch(
     messagesCollection,
     "ownership system",
-    3,
+    { limit: 3 },
   );
   const textDuration = (Date.now() - textStart) / 1000;
   console.log(`  ✓ Text search completed in ${textDuration.toFixed(3)}s`);
 
   console.log(
-    `✓ Found ${ownershipResults.length} messages mentioning ownership:`,
+    `✓ Found ${ownershipResults.results.length} messages mentioning ownership:`,
   );
-  for (let i = 0; i < ownershipResults.length; i++) {
-    const msg = ownershipResults[i];
+  for (let i = 0; i < ownershipResults.results.length; i++) {
+    const msg = ownershipResults.results[i].record;
     const content = extractStringField(msg, "content");
     const convId = extractStringField(msg, "conversation_id");
     console.log(`  ${i + 1}. From ${convId}: ${content}\n`);

@@ -45,7 +45,9 @@ func main() {
 		"name":  "Cache Entry 1",
 		"value": "This will expire in 1 hour",
 	}
-	doc1, err := client.Insert(collection, record1, "1h")
+	doc1, err := client.Insert(collection, record1, ekodb.InsertOptions{
+		TTL: "1h",
+	})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -57,7 +59,9 @@ func main() {
 		"name":  "Cache Entry 2",
 		"value": "This will expire in 5 minutes",
 	}
-	doc2, err := client.Insert(collection, record2, "5m")
+	doc2, err := client.Insert(collection, record2, ekodb.InsertOptions{
+		TTL: "5m",
+	})
 	if err != nil {
 		log.Fatal(err)
 	}

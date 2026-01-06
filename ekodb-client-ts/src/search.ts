@@ -53,6 +53,12 @@ export interface SearchQuery {
   text_weight?: number;
   /** Weight for vector search (0.0-1.0) */
   vector_weight?: number;
+
+  // Field projection parameters
+  /** Only return these fields (plus 'id') */
+  select_fields?: string[];
+  /** Exclude these fields from results */
+  exclude_fields?: string[];
 }
 
 /**
@@ -250,6 +256,22 @@ export class SearchQueryBuilder {
    */
   limit(limit: number): this {
     this.query.limit = limit;
+    return this;
+  }
+
+  /**
+   * Select specific fields to return
+   */
+  selectFields(fields: string[]): this {
+    this.query.select_fields = fields;
+    return this;
+  }
+
+  /**
+   * Exclude specific fields from results
+   */
+  excludeFields(fields: string[]): this {
+    this.query.exclude_fields = fields;
     return this;
   }
 

@@ -51,16 +51,16 @@ async function main() {
   console.log("  Input: {name: 'TTL Test', value: 'should expire'}");
   console.log(`  TTL: ${ttlSeconds}s`);
 
-  const doc = await client.insert(
-    collection,
-    {
-      name: "TTL Test",
-      value: "should expire",
-    },
-    ttlSeconds + "s",
-  );
+  const testDoc = {
+    name: "TTL Test",
+    value: "should expire",
+  };
 
-  const docID = doc.id as string;
+  const insertedDoc = await client.insert(collection, testDoc, {
+    ttl: ttlSeconds + "s",
+  });
+
+  const docID = insertedDoc.id as string;
   console.log("  Output: Document ID = " + docID);
   console.log("  ✓ PASS: Document inserted");
 

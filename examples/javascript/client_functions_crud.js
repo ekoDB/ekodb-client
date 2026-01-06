@@ -144,7 +144,9 @@ async function topUsersScript(client) {
   const result = await client.callScript('top_users');
   console.log(`📊 Users (showing first 5 of ${result.records.length}):`);
   result.records.slice(0, 5).forEach((user, i) => {
-    console.log(`   ${i + 1}. ${user.name?.value || user.name} (${user.email?.value || user.email}) - Score: ${user.score?.value || user.score}`);
+    const name = user.name?.value || user.name || 'Unknown';
+    const score = user.score?.value || user.score || 0;
+    console.log(`   ${i + 1}. ${name} - Score: ${score}`);
   });
   console.log(`⏱️  Execution time: ${result.stats.execution_time_ms}ms\n`);
   

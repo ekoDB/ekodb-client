@@ -62,61 +62,55 @@ func main() {
 	fmt.Println("📝 Example 1: List All Products")
 	fmt.Println()
 
-	script1 := map[string]interface{}{
-		"label":      "list_all_products_adv_go",
-		"name":       "List All Products",
-		"version":    "1.0",
-		"parameters": map[string]interface{}{},
-		"functions":  []interface{}{map[string]interface{}{"type": "FindAll", "collection": "advanced_products_go"}},
-		"tags":       []string{"products", "list"},
+	version1 := "1.0"
+	script1 := ekodb.Script{
+		Label:      "list_all_products_adv_go",
+		Name:       "List All Products",
+		Version:    &version1,
+		Parameters: map[string]ekodb.ParameterDefinition{},
+		Functions:  []ekodb.FunctionStageConfig{ekodb.StageFindAll("advanced_products_go")},
+		Tags:       []string{"products", "list"},
 	}
 	scriptID1, _ := client.SaveScript(script1)
 	scriptIDs = append(scriptIDs, scriptID1)
 	fmt.Println("✅ Script saved")
 
 	result1, _ := client.CallScript("list_all_products_adv_go", nil)
-	if records, ok := result1["records"].([]interface{}); ok {
-		fmt.Printf("📊 Found %d products\n", len(records))
-	}
-	if stats, ok := result1["stats"].(map[string]interface{}); ok {
-		fmt.Printf("⏱️  Execution time: %vms\n\n", stats["execution_time_ms"])
+	if result1 != nil {
+		fmt.Printf("📊 Found %d products\n", len(result1.Records))
+		fmt.Printf("⏱️  Execution time: %vms\n\n", result1.Stats.ExecutionTimeMs)
 	}
 
 	// Example 2: Group Products by Category
 	fmt.Println("📝 Example 2: Group Products by Category")
 	fmt.Println()
 
-	script2 := map[string]interface{}{
-		"label":      "products_by_category_go",
-		"name":       "Products by Category",
-		"version":    "1.0",
-		"parameters": map[string]interface{}{},
-		"functions": []interface{}{
-			map[string]interface{}{"type": "FindAll", "collection": "advanced_products_go"},
-			map[string]interface{}{
-				"type":      "Group",
-				"by_fields": []string{"category"},
-				"functions": []interface{}{
-					map[string]interface{}{"output_field": "count", "operation": "Count"},
-					map[string]interface{}{"output_field": "avg_price", "operation": "Average", "input_field": "price"},
-				},
-			},
+	version2 := "1.0"
+	script2 := ekodb.Script{
+		Label:      "products_by_category_go",
+		Name:       "Products by Category",
+		Version:    &version2,
+		Parameters: map[string]ekodb.ParameterDefinition{},
+		Functions: []ekodb.FunctionStageConfig{
+			ekodb.StageFindAll("advanced_products_go"),
+			ekodb.StageGroup([]string{"category"}, []ekodb.GroupFunctionConfig{
+				{OutputField: "count", Operation: "Count"},
+				{OutputField: "avg_price", Operation: "Average", InputField: strPtr("price")},
+			}),
 		},
-		"tags": []string{"products", "analytics"},
+		Tags: []string{"products", "analytics"},
 	}
 	scriptID2, _ := client.SaveScript(script2)
 	scriptIDs = append(scriptIDs, scriptID2)
 	fmt.Println("✅ Script saved")
 
 	result2, _ := client.CallScript("products_by_category_go", nil)
-	fmt.Println("📊 Category breakdown:")
-	if records, ok := result2["records"].([]interface{}); ok {
-		for _, record := range records {
+	if result2 != nil {
+		fmt.Println("📊 Category breakdown:")
+		for _, record := range result2.Records {
 			fmt.Printf("   %v\n", record)
 		}
-	}
-	if stats, ok := result2["stats"].(map[string]interface{}); ok {
-		fmt.Printf("⏱️  Execution time: %vms\n\n", stats["execution_time_ms"])
+		fmt.Printf("⏱️  Execution time: %vms\n\n", result2.Stats.ExecutionTimeMs)
 	}
 
 	// Cleanup
@@ -128,4 +122,8 @@ func main() {
 	fmt.Println("✅ Cleanup complete")
 	fmt.Println()
 	fmt.Println("✅ All advanced script examples finished!")
+}
+
+func strPtr(s string) *string {
+	return &s
 }

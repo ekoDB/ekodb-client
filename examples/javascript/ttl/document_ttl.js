@@ -51,7 +51,7 @@ async function main() {
     const doc = await client.insert(collection, {
       name: "TTL Test",
       value: "should expire",
-    }, ttlSeconds + "s");
+    }, { ttl: ttlSeconds + "s" });
 
     const docID = doc.id;
     console.log("  Output: Document ID = " + docID);

@@ -237,14 +237,34 @@ class EkoDBClient private constructor(
     /**
      * Insert a record into a collection
      */
-    suspend fun insert(collection: String, record: Record): Record {
+    suspend fun insert(
+        collection: String,
+        record: Record,
+        ttl: String? = null,
+        bypassRipple: Boolean? = null,
+        transactionId: String? = null,
+        bypassCache: Boolean? = null
+    ): Record {
         val token = getToken()
+        // Add TTL to record if provided
+        val finalRecord = if (ttl != null) record.withTtl(ttl) else record
+        
+        // Build query parameters
+        val params = mutableListOf<String>()
+        bypassRipple?.let { params.add("bypass_ripple=$it") }
+        transactionId?.let { params.add("transaction_id=$it") }
+        
+        val url = if (params.isNotEmpty()) {
+            "$baseUrl/api/insert/$collection?${params.joinToString("&")}"
+        } else {
+            "$baseUrl/api/insert/$collection"
+        }
         val response = executeWithRetry {
-            client.post("$baseUrl/api/insert/$collection") {
+            client.post(url) {
                 header("Authorization", "Bearer $token")
                 contentType(getContentTypeForRequest())
                 header("Accept", getContentTypeForRequest().toString())
-                setBodyWithFormat(record)
+                setBody(finalRecord)
             }
         }
         
@@ -308,10 +328,29 @@ class EkoDBClient private constructor(
     /**
      * Update a record
      */
-    suspend fun update(collection: String, id: String, updates: Record): Record {
+    suspend fun update(
+        collection: String,
+        id: String,
+        updates: Record,
+        bypassRipple: Boolean? = null,
+        transactionId: String? = null,
+        bypassCache: Boolean? = null,
+        selectFields: List<String>? = null,
+        excludeFields: List<String>? = null
+    ): Record {
         val token = getToken()
+        // Build query parameters
+        val params = mutableListOf<String>()
+        bypassRipple?.let { params.add("bypass_ripple=$it") }
+        transactionId?.let { params.add("transaction_id=$it") }
+        
+        val url = if (params.isNotEmpty()) {
+            "$baseUrl/api/update/$collection/$id?${params.joinToString("&")}"
+        } else {
+            "$baseUrl/api/update/$collection/$id"
+        }
         val response = executeWithRetry {
-            client.put("$baseUrl/api/update/$collection/$id") {
+            client.put(url) {
                 header("Authorization", "Bearer $token")
                 contentType(getContentTypeForRequest())
                 header("Accept", getContentTypeForRequest().toString())
@@ -324,10 +363,25 @@ class EkoDBClient private constructor(
     /**
      * Delete a record
      */
-    suspend fun delete(collection: String, id: String) {
+    suspend fun delete(
+        collection: String,
+        id: String,
+        bypassRipple: Boolean? = null,
+        transactionId: String? = null
+    ) {
         val token = getToken()
+        // Build query parameters
+        val params = mutableListOf<String>()
+        bypassRipple?.let { params.add("bypass_ripple=$it") }
+        transactionId?.let { params.add("transaction_id=$it") }
+        
+        val url = if (params.isNotEmpty()) {
+            "$baseUrl/api/delete/$collection/$id?${params.joinToString("&")}"
+        } else {
+            "$baseUrl/api/delete/$collection/$id"
+        }
         val response = executeWithRetry {
-            client.delete("$baseUrl/api/delete/$collection/$id") {
+            client.delete(url) {
                 header("Authorization", "Bearer $token")
             }
         }
@@ -341,7 +395,7 @@ class EkoDBClient private constructor(
     /**
      * Batch insert records
      */
-    suspend fun batchInsert(collection: String, records: List<Record>): BatchResult {
+    suspend fun batchInsert(collection: String, records: List<Record>, bypassRipple: Boolean? = null): BatchResult {
         val token = getToken()
         val response = executeWithRetry {
             client.post("$baseUrl/api/batch/insert/$collection") {
@@ -352,6 +406,9 @@ class EkoDBClient private constructor(
                     put("inserts", JsonArray(records.map { record ->
                         buildJsonObject {
                             put("data", Json.encodeToJsonElement(record))
+                            if (bypassRipple != null) {
+                                put("bypass_ripple", bypassRipple)
+                            }
                         }
                     }))
                 })
@@ -378,11 +435,13 @@ class EkoDBClient private constructor(
      * @param collection The collection name
      * @param updates List of (id, data) pairs to update
      * @param transactionId Optional transaction ID for transactional updates
+     * @param bypassRipple Optional flag to bypass ripple effects
      */
     suspend fun batchUpdate(
         collection: String, 
         updates: List<Pair<String, Record>>,
-        transactionId: String? = null
+        transactionId: String? = null,
+        bypassRipple: Boolean? = null
     ): List<Record> {
         val token = getToken()
         val urlPath = if (transactionId != null) {
@@ -400,6 +459,9 @@ class EkoDBClient private constructor(
                         buildJsonObject {
                             put("id", id)
                             put("data", Json.encodeToJsonElement(data))
+                            if (bypassRipple != null) {
+                                put("bypass_ripple", bypassRipple)
+                            }
                         }
                     }))
                 })
@@ -417,7 +479,7 @@ class EkoDBClient private constructor(
     /**
      * Batch delete records by IDs
      */
-    suspend fun batchDelete(collection: String, ids: List<String>): Long {
+    suspend fun batchDelete(collection: String, ids: List<String>, bypassRipple: Boolean? = null): Long {
         val token = getToken()
         val response = executeWithRetry {
             client.delete("$baseUrl/api/batch/delete/$collection") {
@@ -428,6 +490,9 @@ class EkoDBClient private constructor(
                     put("deletes", JsonArray(ids.map { id ->
                         buildJsonObject {
                             put("id", id)
+                            if (bypassRipple != null) {
+                                put("bypass_ripple", bypassRipple)
+                            }
                         }
                     }))
                 })
@@ -437,6 +502,106 @@ class EkoDBClient private constructor(
         val result = response.body<JsonObject>()
         val successful = result["successful"]?.jsonArray ?: JsonArray(emptyList())
         return successful.size.toLong()
+    }
+    
+    // ========== Convenience Methods ==========
+    
+    /**
+     * Insert or update a record (upsert operation)
+     * 
+     * Attempts to update the record first. If the record doesn't exist (404 error),
+     * it will be inserted instead. This provides atomic insert-or-update semantics.
+     * 
+     * @param collection Collection name
+     * @param id Record ID
+     * @param record Record data to insert or update
+     * @param bypassRipple Optional flag to bypass ripple effects
+     * @return The inserted or updated record
+     */
+    suspend fun upsert(
+        collection: String,
+        id: String,
+        record: Record,
+        bypassRipple: Boolean? = null
+    ): Record {
+        return try {
+            // Try update first
+            update(collection, id, record, bypassRipple)
+        } catch (e: Exception) {
+            // Check if it's a NotFound error
+            if (e.message?.contains("404") == true || e.message?.contains("Not found") == true) {
+                // Record doesn't exist, insert it
+                insert(collection, record, ttl = null, bypassRipple = bypassRipple)
+            } else {
+                // Other error, propagate it
+                throw e
+            }
+        }
+    }
+    
+    /**
+     * Find a single record by field value
+     * 
+     * Convenience method for finding one record matching a specific field value.
+     * Returns null if no record matches, or the first matching record.
+     * 
+     * @param collection Collection name
+     * @param field Field name to search
+     * @param value Value to match (any JSON-serializable type)
+     * @return The matching record or null if not found
+     */
+    suspend fun findOne(collection: String, field: String, value: Any): Record? {
+        val query = QueryBuilder()
+            .eq(field, value)
+            .limit(1)
+            .build()
+        
+        val results = find(collection, query)
+        return results.firstOrNull()
+    }
+    
+    /**
+     * Check if a record exists by ID
+     * 
+     * This is more efficient than fetching the record when you only need to check existence.
+     * 
+     * @param collection Collection name
+     * @param id Record ID to check
+     * @return true if the record exists, false if it doesn't
+     */
+    suspend fun exists(collection: String, id: String): Boolean {
+        return try {
+            findById(collection, id)
+            true
+        } catch (e: Exception) {
+            if (e.message?.contains("404") == true || e.message?.contains("Not found") == true) {
+                false
+            } else {
+                throw e
+            }
+        }
+    }
+    
+    /**
+     * Paginate through records
+     * 
+     * Convenience method for pagination with page numbers (1-indexed).
+     * 
+     * @param collection Collection name
+     * @param page Page number (1-indexed, i.e., first page is 1)
+     * @param pageSize Number of records per page
+     * @return List of records for the requested page
+     */
+    suspend fun paginate(collection: String, page: Int, pageSize: Int): List<Record> {
+        // Page 1 = skip 0, Page 2 = skip pageSize, etc.
+        val skip = if (page > 0) (page - 1) * pageSize else 0
+        
+        val query = QueryBuilder()
+            .limit(pageSize)
+            .skip(skip)
+            .build()
+        
+        return find(collection, query)
     }
     
     /**
@@ -1337,9 +1502,9 @@ class EkoDBClient private constructor(
     }
     
     /**
-     * Perform text search without embeddings
+     * Perform full-text search on a collection
      * 
-     * Simplified text search with full-text matching, fuzzy search, and stemming.
+     * Searches documents using keyword matching with fuzzy matching and stemming.
      * 
      * @param collection Collection name to search
      * @param queryText Search query text
@@ -1348,10 +1513,14 @@ class EkoDBClient private constructor(
      * 
      * @example
      * ```kotlin
-     * val results = client.textSearch("documents", "ownership system", 10)
+     * val results = client.textSearch("messages", "ownership system", 10)
      * ```
      */
-    suspend fun textSearch(collection: String, queryText: String, limit: Int): List<JsonObject> {
+    suspend fun textSearch(
+        collection: String,
+        queryText: String,
+        limit: Int
+    ): List<JsonObject> {
         val searchQuery = buildJsonObject {
             put("query", queryText)
             put("limit", limit)

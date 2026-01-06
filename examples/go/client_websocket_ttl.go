@@ -51,7 +51,9 @@ func main() {
 		"value":  42,
 		"active": true,
 	}
-	inserted, err := client.Insert(collection, record, "1h")
+	inserted, err := client.Insert(collection, record, ekodb.InsertOptions{
+		TTL: "1h",
+	})
 	if err != nil {
 		log.Fatal(err)
 	}

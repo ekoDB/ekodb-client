@@ -85,9 +85,11 @@ async def main():
     print("🤖 AI Response:")
     if result1.get("records"):
         response = result1["records"][0]
-        print(
-            f"   {response.get('response', {}).get('value', response.get('response', 'No response'))}"
-        )
+        response_data = response.get("response", "No response")
+        if isinstance(response_data, dict) and "value" in response_data:
+            print(f"   {response_data['value']}")
+        else:
+            print(f"   {response_data}")
     print(f"⏱️  Execution time: {result1['stats']['execution_time_ms']}ms\n")
 
     # Example 2: Embed Generation

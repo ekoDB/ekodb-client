@@ -9,6 +9,7 @@ use ekodb_client::{
     RateLimitInfo as RustRateLimitInfo, Record as RustRecord,
     Script as RustScript, SerializationFormat as RustSerializationFormat,
     UpdateSessionRequest, WebSocketClient as RustWebSocketClient,
+    SearchQuery as RustSearchQuery,
 };
 use serde_json;
 use pyo3::create_exception;
@@ -144,7 +145,10 @@ impl Client {
     ///     collection: Collection name
     ///     record: Document data as a dict
     ///     ttl: Optional TTL duration (e.g., "30s", "5m", "1h", "1d")
-    #[pyo3(signature = (collection, record, ttl=None, bypass_ripple=None))]
+    ///     bypass_ripple: Optional flag to bypass ripple propagation
+    ///     transaction_id: Optional transaction ID for atomic operations
+    ///     bypass_cache: Optional flag to bypass cache
+    #[pyo3(signature = (collection, record, ttl=None, bypass_ripple=None, transaction_id=None, bypass_cache=None))]
     fn insert<'py>(
         &self,
         py: Python<'py>,
@@ -152,7 +156,10 @@ impl Client {
         record: &Bound<'py, PyDict>,
         ttl: Option<String>,
         bypass_ripple: Option<bool>,
+        transaction_id: Option<String>,
+        bypass_cache: Option<bool>,
     ) -> PyResult<Bound<'py, PyAny>> {
+        let _ = (transaction_id, bypass_cache); // Acknowledge unused params
         let mut rust_record = dict_to_record(record)?;
         
         // Add TTL if provided
@@ -246,7 +253,12 @@ impl Client {
     }
 
     /// Update a document
-    #[pyo3(signature = (collection, id, updates, bypass_ripple=None))]
+    ///
+    /// Args:
+    ///     bypass_ripple: Optional flag to bypass ripple propagation
+    ///     transaction_id: Optional transaction ID for atomic operations
+    ///     bypass_cache: Optional flag to bypass cache
+    #[pyo3(signature = (collection, id, updates, bypass_ripple=None, transaction_id=None, bypass_cache=None))]
     fn update<'py>(
         &self,
         py: Python<'py>,
@@ -254,7 +266,10 @@ impl Client {
         id: String,
         updates: &Bound<'py, PyDict>,
         bypass_ripple: Option<bool>,
+        transaction_id: Option<String>,
+        bypass_cache: Option<bool>,
     ) -> PyResult<Bound<'py, PyAny>> {
+        let _ = (transaction_id, bypass_cache); // Acknowledge unused params
         let rust_updates = dict_to_record(updates)?;
         let client = self.inner.clone();
 
@@ -269,14 +284,20 @@ impl Client {
     }
 
     /// Delete a document
-    #[pyo3(signature = (collection, id, bypass_ripple=None))]
+    ///
+    /// Args:
+    ///     bypass_ripple: Optional flag to bypass ripple propagation
+    ///     transaction_id: Optional transaction ID for atomic operations
+    #[pyo3(signature = (collection, id, bypass_ripple=None, transaction_id=None))]
     fn delete<'py>(
         &self,
         py: Python<'py>,
         collection: String,
         id: String,
         bypass_ripple: Option<bool>,
+        transaction_id: Option<String>,
     ) -> PyResult<Bound<'py, PyAny>> {
+        let _ = transaction_id; // Acknowledge unused param
         let client = self.inner.clone();
 
         future_into_py(py, async move {
@@ -440,6 +461,187 @@ impl Client {
         })
     }
 
+    // ========== Convenience Methods ==========
+
+    /// Insert or update a record (upsert operation)
+    /// 
+    /// Attempts to update the record first. If the record doesn't exist (NotFound error),
+    /// it will be inserted instead. This provides atomic insert-or-update semantics.
+    /// 
+    /// Args:
+    ///     collection: Collection name
+    ///     id: Record ID
+    ///     record: Document data as a dict
+    ///     bypass_ripple: Optional flag to bypass ripple effects
+    /// 
+    /// Returns:
+    ///     The inserted or updated record as a dict
+    fn upsert<'py>(
+        &self,
+        py: Python<'py>,
+        collection: String,
+        id: String,
+        record: &Bound<'py, PyDict>,
+        bypass_ripple: Option<bool>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let rust_record = dict_to_record(record)?;
+        let client = self.inner.clone();
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            // Try update first
+            match client.update(&collection, &id, rust_record.clone(), bypass_ripple).await {
+                Ok(updated) => {
+                    Python::attach(|py| record_to_dict(py, &updated))
+                }
+                Err(e) => {
+                    // Check if it's a NotFound error
+                    let error_msg = e.to_string();
+                    if error_msg.contains("Not found") || error_msg.contains("404") {
+                        // Record doesn't exist, insert it
+                        let inserted = client
+                            .insert(&collection, rust_record, bypass_ripple)
+                            .await
+                            .map_err(|e| PyRuntimeError::new_err(format!("Upsert insert failed: {}", e)))?;
+                        Python::attach(|py| record_to_dict(py, &inserted))
+                    } else {
+                        // Other error, propagate it
+                        Err(PyRuntimeError::new_err(format!("Upsert failed: {}", e)))
+                    }
+                }
+            }
+        })
+    }
+
+    /// Find a single record by field value
+    /// 
+    /// Convenience method for finding one record matching a specific field value.
+    /// Returns None if no record matches, or the first matching record.
+    /// 
+    /// Args:
+    ///     collection: Collection name
+    ///     field: Field name to search
+    ///     value: Value to match (any JSON-serializable type)
+    /// 
+    /// Returns:
+    ///     The matching record as a dict, or None if not found
+    fn find_one<'py>(
+        &self,
+        py: Python<'py>,
+        collection: String,
+        field: String,
+        value: Bound<'py, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        
+        // Convert Python value to JSON
+        let json_value = py_to_json(&value)?;
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            // Build query with eq filter and limit 1
+            let filter_json = serde_json::json!({
+                "type": "Condition",
+                "content": {
+                    "field": field,
+                    "operator": "Eq",
+                    "value": json_value
+                }
+            });
+
+            let mut query = RustQuery::new();
+            query.filter = Some(filter_json);
+            query.limit = Some(1);
+
+            let results = client
+                .find(&collection, query, None)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("Find one failed: {}", e)))?;
+
+            Python::attach(|py| {
+                if let Some(record) = results.first() {
+                    record_to_dict(py, record)
+                } else {
+                    Ok(py.None())
+                }
+            })
+        })
+    }
+
+    /// Check if a record exists by ID
+    /// 
+    /// This is more efficient than fetching the record when you only need to check existence.
+    /// 
+    /// Args:
+    ///     collection: Collection name
+    ///     id: Record ID to check
+    /// 
+    /// Returns:
+    ///     True if the record exists, False if it doesn't
+    fn exists<'py>(
+        &self,
+        py: Python<'py>,
+        collection: String,
+        id: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            match client.find_by_id(&collection, &id, None).await {
+                Ok(_) => Python::attach(|py| Ok(PyBool::new(py, true).as_borrowed().to_owned().into())),
+                Err(e) => {
+                    let error_msg = e.to_string().to_lowercase();
+                    if error_msg.contains("not found") || error_msg.contains("404") {
+                        Python::attach(|py| Ok(PyBool::new(py, false).as_borrowed().to_owned().into()))
+                    } else {
+                        Err(PyRuntimeError::new_err(format!("Exists check failed: {}", e)))
+                    }
+                }
+            }
+        })
+    }
+
+    /// Paginate through records
+    /// 
+    /// Convenience method for pagination with page numbers (1-indexed).
+    /// 
+    /// Args:
+    ///     collection: Collection name
+    ///     page: Page number (1-indexed, i.e., first page is 1)
+    ///     page_size: Number of records per page
+    /// 
+    /// Returns:
+    ///     List of records for the requested page
+    fn paginate<'py>(
+        &self,
+        py: Python<'py>,
+        collection: String,
+        page: usize,
+        page_size: usize,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            // Page 1 = skip 0, Page 2 = skip page_size, etc.
+            let skip = if page > 0 { (page - 1) * page_size } else { 0 };
+
+            let mut query = RustQuery::new();
+            query.limit = Some(page_size);
+            query.skip = Some(skip);
+
+            let results = client
+                .find(&collection, query, None)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("Paginate failed: {}", e)))?;
+
+            Python::attach(|py| {
+                let list = PyList::empty(py);
+                for record in results {
+                    list.append(record_to_dict(py, &record)?)?;
+                }
+                Ok(list.into())
+            })
+        })
+    }
+
     /// Restore all deleted records in a collection from trash
     /// 
     /// Args:
@@ -566,25 +768,89 @@ impl Client {
         })
     }
 
-    /// Search documents with full-text, vector, or hybrid search
+    /// Search documents with full-text, vector, or hybrid search with all available parameters
     /// 
     /// Args:
     ///     collection: Collection name
-    ///     search_query: Search query dict with query text, fields, weights, etc.
+    ///     query: Search query text (required)
+    ///     language: Language for stemming (optional)
+    ///     case_sensitive: Case-sensitive search (optional)
+    ///     fuzzy: Enable fuzzy matching (optional)
+    ///     min_score: Minimum score threshold (optional)
+    ///     fields: Fields to search in (optional)
+    ///     weights: Field weights as string "field:weight,field2:weight2" (optional)
+    ///     enable_stemming: Enable stemming (optional)
+    ///     boost_exact: Boost exact matches (optional)
+    ///     max_edit_distance: Maximum edit distance for fuzzy (optional)
+    ///     vector: Query vector for semantic search (optional)
+    ///     vector_field: Field containing vectors (optional)
+    ///     vector_metric: Similarity metric (optional)
+    ///     vector_k: Number of vector results (optional)
+    ///     vector_threshold: Minimum similarity threshold (optional)
+    ///     text_weight: Weight for text search in hybrid (optional)
+    ///     vector_weight: Weight for vector search in hybrid (optional)
+    ///     bypass_ripple: Bypass ripple cache (optional)
+    ///     bypass_cache: Bypass cache (optional)
+    ///     limit: Maximum number of results (optional)
+    ///     select_fields: Fields to include in results (optional)
+    ///     exclude_fields: Fields to exclude from results (optional)
+    #[pyo3(signature = (collection, query, language=None, case_sensitive=None, fuzzy=None, min_score=None, fields=None, weights=None, enable_stemming=None, boost_exact=None, max_edit_distance=None, vector=None, vector_field=None, vector_metric=None, vector_k=None, vector_threshold=None, text_weight=None, vector_weight=None, bypass_ripple=None, bypass_cache=None, limit=None, select_fields=None, exclude_fields=None))]
     fn search<'py>(
         &self,
         py: Python<'py>,
         collection: String,
-        search_query: &Bound<'py, PyDict>,
+        query: String,
+        language: Option<String>,
+        case_sensitive: Option<bool>,
+        fuzzy: Option<bool>,
+        min_score: Option<f64>,
+        fields: Option<String>,
+        weights: Option<String>,
+        enable_stemming: Option<bool>,
+        boost_exact: Option<bool>,
+        max_edit_distance: Option<u32>,
+        vector: Option<Vec<f64>>,
+        vector_field: Option<String>,
+        vector_metric: Option<String>,
+        vector_k: Option<usize>,
+        vector_threshold: Option<f64>,
+        text_weight: Option<f64>,
+        vector_weight: Option<f64>,
+        bypass_ripple: Option<bool>,
+        bypass_cache: Option<bool>,
+        limit: Option<usize>,
+        select_fields: Option<Vec<String>>,
+        exclude_fields: Option<Vec<String>>,
     ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
-        let query_json = dict_to_json(search_query)?;
+
+        // Build SearchQuery with all parameters
+        let search_query = RustSearchQuery {
+            query,
+            language,
+            case_sensitive,
+            fuzzy,
+            min_score,
+            fields,
+            weights,
+            enable_stemming,
+            boost_exact,
+            max_edit_distance,
+            bypass_ripple,
+            bypass_cache,
+            limit,
+            vector,
+            vector_field,
+            vector_metric,
+            vector_k,
+            vector_threshold,
+            text_weight,
+            vector_weight,
+            select_fields,
+            exclude_fields,
+        };
 
         future_into_py(py, async move {
-            let search_query = serde_json::from_value(query_json).map_err(|e| {
-                PyRuntimeError::new_err(format!("Failed to parse search query: {}", e))
-            })?;
-
             let results = client
                 .search(&collection, search_query)
                 .await

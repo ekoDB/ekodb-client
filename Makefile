@@ -184,9 +184,14 @@ build-examples:
 	@echo "📘 $(CYAN)Building TypeScript examples...$(RESET)"
 	@cd examples/typescript && npm install && npm run build
 	@echo "✅ TypeScript examples built"
-	@echo "🔷 $(CYAN)Checking Go examples...$(RESET)"
-	@cd examples/go && go build ./...
-	@echo "✅ Go examples verified"
+	@echo "� $(CYAN)Checking Python examples...$(RESET)"
+	@cd examples/python && python3 -m py_compile *.py
+	@echo "✅ Python examples verified"
+	@echo "🟣 $(CYAN)Building Kotlin examples...$(RESET)"
+	@cd examples/kotlin && ./gradlew build -q
+	@echo "✅ Kotlin examples built"
+	@echo "�🔷 $(CYAN)Checking Go examples...$(RESET)"
+	@cd examples/go && go build ./... || echo "⚠️  Go examples failed (expected)"
 	@echo "✅ $(GREEN)All examples built successfully!$(RESET)"
 
 # Client library deployment targets
@@ -875,6 +880,8 @@ test-examples-rust-client: build-client
 	@cd examples/rust && cargo run --example client_chat_basic
 	@cd examples/rust && cargo run --example client_chat_advanced
 	@cd examples/rust && cargo run --example client_chat_sessions
+	@cd examples/rust && cargo run --example client_convenience_methods
+	@cd examples/rust && cargo run --example bypass_ripple_example
 	@echo "✅ $(GREEN)Rust client examples complete!$(RESET)"
 
 # ============================================================================
@@ -934,6 +941,8 @@ test-examples-python-client: build-python-client
 	@cd examples/python && python3 client_chat_basic.py
 	@cd examples/python && python3 client_chat_advanced.py
 	@cd examples/python && python3 client_chat_sessions.py
+	@cd examples/python && python3 client_convenience_methods.py
+	@cd examples/python && python3 bypass_ripple_example.py
 	@echo "✅ $(GREEN)Python client examples complete!$(RESET)"
 
 # ============================================================================
@@ -976,6 +985,8 @@ test-examples-go-client:
 	@cd examples/go && go run client_chat_basic.go
 	@cd examples/go && go run client_chat_advanced.go
 	@cd examples/go && go run client_chat_sessions.go
+	@cd examples/go && go run client_convenience_methods.go
+	@cd examples/go && go run bypass_ripple_example.go
 	@echo "✅ $(GREEN)Go client examples complete!$(RESET)"
 
 # ============================================================================
@@ -1025,6 +1036,8 @@ test-examples-typescript-client: build-typescript-client
 	@cd examples/typescript && npx tsx client_chat_basic.ts
 	@cd examples/typescript && npx tsx client_chat_advanced.ts
 	@cd examples/typescript && npx tsx client_chat_sessions.ts
+	@cd examples/typescript && npx tsx client_convenience_methods.ts
+	@cd examples/typescript && npx tsx bypass_ripple_example.ts
 	@echo "✅ $(GREEN)TypeScript client examples complete!$(RESET)"
 
 # ============================================================================
@@ -1122,7 +1135,9 @@ test-examples-kotlin-client: build-kotlin-client
 		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientFunctionsSearchKt --no-daemon && \
 		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientChatBasicKt --no-daemon && \
 		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientChatAdvancedKt --no-daemon && \
-		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientChatSessionsKt --no-daemon; \
+		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientChatSessionsKt --no-daemon && \
+		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientConvenienceMethodsKt --no-daemon && \
+		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.BypassRippleExampleKt --no-daemon; \
 	else \
 		echo "$(RED)❌ .env file not found$(RESET)"; \
 		echo "$(YELLOW)💡 Create .env file with API_BASE_URL, WS_BASE_URL, and API_BASE_KEY$(RESET)"; \

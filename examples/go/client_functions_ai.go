@@ -59,55 +59,51 @@ func main() {
 	fmt.Println("📝 Example 1: Simple Chat Completion")
 	fmt.Println()
 
-	script1 := map[string]interface{}{
-		"label":       "ai_assistant_go",
-		"name":        "AI Chat Assistant",
-		"description": "Simple AI chat completion",
-		"version":     "1.0",
-		"parameters":  map[string]interface{}{},
-		"functions": []interface{}{
-			ekodb.Stage.Chat(
-				[]map[string]interface{}{
-					ekodb.ChatMessage.System("You are a helpful database assistant. Be concise."),
-					ekodb.ChatMessage.User("What are the benefits of using vector databases?"),
+	model1 := "gpt-4"
+	temp1 := 0.7
+	script1 := ekodb.Script{
+		Label:       "ai_assistant_go",
+		Name:        "AI Chat Assistant",
+		Description: func() *string { s := "Simple AI chat completion"; return &s }(),
+		Version:     func() *string { s := "1.0"; return &s }(),
+		Parameters:  map[string]ekodb.ParameterDefinition{},
+		Functions: []ekodb.FunctionStageConfig{
+			ekodb.StageChat(
+				[]ekodb.ChatMessage{
+					{Role: "system", Content: "You are a helpful database assistant. Be concise."},
+					{Role: "user", Content: "What are the benefits of using vector databases?"},
 				},
-				"gpt-4",
-				0.7,
+				&model1,
+				&temp1,
 			),
 		},
-		"tags": []string{"ai", "chat"},
+		Tags: []string{"ai", "chat"},
 	}
 	scriptID1, _ := client.SaveScript(script1)
 	scriptIDs = append(scriptIDs, scriptID1)
 	fmt.Println("✅ Chat script saved")
 
 	result1, _ := client.CallScript("ai_assistant_go", nil)
-	fmt.Println("🤖 AI Response:")
-	if records, ok := result1["records"].([]interface{}); ok && len(records) > 0 {
-		if record, ok := records[0].(map[string]interface{}); ok {
-			if response, ok := record["response"]; ok {
-				fmt.Printf("   %v\n", response)
-			}
-		}
-	}
-	if stats, ok := result1["stats"].(map[string]interface{}); ok {
-		fmt.Printf("⏱️  Execution time: %vms\n\n", stats["execution_time_ms"])
+	if result1 != nil {
+		fmt.Println("📊 AI Response generated")
+		fmt.Printf("⏱️  Execution time: %vms\n\n", result1.Stats.ExecutionTimeMs)
 	}
 
 	// Example 2: Embed Generation
 	fmt.Println("📝 Example 2: Generate Embeddings")
 	fmt.Println()
 
-	script2 := map[string]interface{}{
-		"label":       "generate_embedding_go",
-		"name":        "Generate Embedding",
-		"description": "Generate embedding for text",
-		"version":     "1.0",
-		"parameters": map[string]interface{}{
-			"text": map[string]interface{}{"required": true, "description": "Text to embed"},
+	model2 := "text-embedding-3-small"
+	script2 := ekodb.Script{
+		Label:       "generate_embedding_go",
+		Name:        "Generate Embedding",
+		Description: func() *string { s := "Generate embedding for text"; return &s }(),
+		Version:     func() *string { s := "1.0"; return &s }(),
+		Parameters: map[string]ekodb.ParameterDefinition{
+			"text": {Required: true, Description: "Text to embed"},
 		},
-		"functions": []interface{}{ekodb.Stage.Embed("{{text}}")},
-		"tags":      []string{"ai", "embed"},
+		Functions: []ekodb.FunctionStageConfig{ekodb.StageEmbed("{{text}}", &model2)},
+		Tags:      []string{"ai", "embed"},
 	}
 	scriptID2, _ := client.SaveScript(script2)
 	scriptIDs = append(scriptIDs, scriptID2)
@@ -116,9 +112,9 @@ func main() {
 	result2, _ := client.CallScript("generate_embedding_go", map[string]interface{}{
 		"text": "ekoDB is a powerful database",
 	})
-	fmt.Println("📊 Embedding generated")
-	if stats, ok := result2["stats"].(map[string]interface{}); ok {
-		fmt.Printf("⏱️  Execution time: %vms\n\n", stats["execution_time_ms"])
+	if result2 != nil {
+		fmt.Println("📊 Embedding generated")
+		fmt.Printf("⏱️  Execution time: %vms\n\n", result2.Stats.ExecutionTimeMs)
 	}
 
 	// Cleanup

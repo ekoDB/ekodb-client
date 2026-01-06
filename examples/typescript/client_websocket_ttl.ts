@@ -20,7 +20,7 @@ async function main() {
 
   console.log("\n=== Insert Test Data with TTL ===");
   const record = { name: "WebSocket TTL Test", value: 42, active: true };
-  const inserted = await client.insert(collection, record, "1h");
+  const inserted = await client.insert(collection, record, { ttl: "1h" });
   console.log(`✓ Inserted document with TTL: ${inserted.id}`);
 
   console.log("\n=== Query via WebSocket ===");

@@ -78,6 +78,62 @@ export interface BatchOperationResult {
   failed: Array<{ id?: string; error: string }>;
 }
 
+// ========== Operation Options Interfaces ==========
+
+export interface InsertOptions {
+  ttl?: string;
+  bypassRipple?: boolean;
+  transactionId?: string;
+  bypassCache?: boolean;
+}
+
+export interface UpdateOptions {
+  bypassRipple?: boolean;
+  transactionId?: string;
+  bypassCache?: boolean;
+  selectFields?: string[];
+  excludeFields?: string[];
+}
+
+export interface DeleteOptions {
+  bypassRipple?: boolean;
+  transactionId?: string;
+}
+
+export interface UpsertOptions {
+  ttl?: string;
+  bypassRipple?: boolean;
+  transactionId?: string;
+  bypassCache?: boolean;
+}
+
+export interface FindOptions {
+  filter?: any;
+  sort?: any;
+  limit?: number;
+  skip?: number;
+  join?: any;
+  bypassRipple?: boolean;
+  bypassCache?: boolean;
+  selectFields?: string[];
+  excludeFields?: string[];
+}
+
+export interface BatchInsertOptions {
+  bypassRipple?: boolean;
+  transactionId?: string;
+}
+
+export interface BatchUpdateOptions {
+  bypassRipple?: boolean;
+  transactionId?: string;
+}
+
+export interface BatchDeleteOptions {
+  bypassRipple?: boolean;
+  transactionId?: string;
+}
+
 // ========== Chat Interfaces ==========
 
 export interface CollectionConfig {
@@ -452,18 +508,31 @@ export class EkoDBClient {
    * Insert a document into a collection
    * @param collection - Collection name
    * @param record - Document to insert
-   * @param ttl - Optional TTL: duration string ("1h", "30m"), seconds ("3600"), or ISO8601 timestamp
+   * @param options - Optional parameters (ttl, bypassRipple, transactionId, bypassCache)
    */
   async insert(
     collection: string,
     record: Record,
-    ttl?: string,
+    options?: InsertOptions,
   ): Promise<Record> {
     const data = { ...record };
-    if (ttl) {
-      data.ttl = ttl;
+    if (options?.ttl) {
+      data.ttl = options.ttl;
     }
-    return this.makeRequest<Record>("POST", `/api/insert/${collection}`, data);
+
+    const params = new URLSearchParams();
+    if (options?.bypassRipple !== undefined) {
+      params.append("bypass_ripple", String(options.bypassRipple));
+    }
+    if (options?.transactionId) {
+      params.append("transaction_id", options.transactionId);
+    }
+
+    const url = params.toString()
+      ? `/api/insert/${collection}?${params.toString()}`
+      : `/api/insert/${collection}`;
+
+    return this.makeRequest<Record>("POST", url, data);
   }
 
   /**
@@ -509,43 +578,83 @@ export class EkoDBClient {
 
   /**
    * Update a document
+   * @param collection - Collection name
+   * @param id - Document ID
+   * @param record - Update data
+   * @param options - Optional parameters (bypassRipple, transactionId, bypassCache, selectFields, excludeFields)
    */
   async update(
     collection: string,
     id: string,
     record: Record,
+    options?: UpdateOptions,
   ): Promise<Record> {
-    return this.makeRequest<Record>(
-      "PUT",
-      `/api/update/${collection}/${id}`,
-      record,
-    );
+    const params = new URLSearchParams();
+    if (options?.bypassRipple !== undefined) {
+      params.append("bypass_ripple", String(options.bypassRipple));
+    }
+    if (options?.transactionId) {
+      params.append("transaction_id", options.transactionId);
+    }
+
+    const url = params.toString()
+      ? `/api/update/${collection}/${id}?${params.toString()}`
+      : `/api/update/${collection}/${id}`;
+
+    return this.makeRequest<Record>("PUT", url, record);
   }
 
   /**
    * Delete a document
+   * @param collection - Collection name
+   * @param id - Document ID
+   * @param options - Optional parameters (bypassRipple, transactionId)
    */
-  async delete(collection: string, id: string): Promise<void> {
-    await this.makeRequest<void>("DELETE", `/api/delete/${collection}/${id}`);
+  async delete(
+    collection: string,
+    id: string,
+    options?: DeleteOptions,
+  ): Promise<void> {
+    const params = new URLSearchParams();
+    if (options?.bypassRipple !== undefined) {
+      params.append("bypass_ripple", String(options.bypassRipple));
+    }
+    if (options?.transactionId) {
+      params.append("transaction_id", options.transactionId);
+    }
+
+    const url = params.toString()
+      ? `/api/delete/${collection}/${id}?${params.toString()}`
+      : `/api/delete/${collection}/${id}`;
+
+    await this.makeRequest<void>("DELETE", url);
   }
 
   /**
    * Batch insert multiple documents
+   * @param collection - Collection name
+   * @param records - Array of documents to insert
+   * @param options - Optional parameters (bypassRipple, transactionId)
    */
   async batchInsert(
     collection: string,
     records: Record[],
-    bypassRipple?: boolean,
+    options?: BatchInsertOptions,
   ): Promise<BatchOperationResult> {
-    const inserts = records.map((data) => ({
-      data,
-      bypass_ripple: bypassRipple,
-    }));
-    return this.makeRequest<BatchOperationResult>(
-      "POST",
-      `/api/batch/insert/${collection}`,
-      { inserts },
-    );
+    const params = new URLSearchParams();
+    if (options?.bypassRipple !== undefined) {
+      params.append("bypass_ripple", String(options.bypassRipple));
+    }
+    if (options?.transactionId) {
+      params.append("transaction_id", options.transactionId);
+    }
+
+    const inserts = records.map((data) => ({ data }));
+    const url = params.toString()
+      ? `/api/batch/insert/${collection}?${params.toString()}`
+      : `/api/batch/insert/${collection}`;
+
+    return this.makeRequest<BatchOperationResult>("POST", url, { inserts });
   }
 
   /**
@@ -743,6 +852,159 @@ export class EkoDBClient {
     );
   }
 
+  // ============================================================================
+  // Convenience Methods
+  // ============================================================================
+
+  /**
+   * Insert or update a record (upsert operation)
+   *
+   * Attempts to update the record first. If the record doesn't exist (404 error),
+   * it will be inserted instead. This provides atomic insert-or-update semantics.
+   *
+   * @param collection - Collection name
+   * @param id - Record ID
+   * @param record - Record data to insert or update
+   * @param bypassRipple - Optional flag to bypass ripple effects
+   * @returns The inserted or updated record
+   *
+   * @example
+   * ```typescript
+   * const record = { name: "John Doe", email: "john@example.com" };
+   * // Will update if exists, insert if not
+   * const result = await client.upsert("users", "user123", record);
+   * ```
+   */
+  /**
+   * Upsert a document (insert or update)
+   * @param collection - Collection name
+   * @param id - Document ID
+   * @param record - Document data
+   * @param options - Optional parameters (ttl, bypassRipple, transactionId, bypassCache)
+   */
+  async upsert(
+    collection: string,
+    id: string,
+    record: Record,
+    options?: UpsertOptions,
+  ): Promise<Record> {
+    try {
+      // Try update first
+      return await this.update(collection, id, record, {
+        bypassRipple: options?.bypassRipple,
+        transactionId: options?.transactionId,
+        bypassCache: options?.bypassCache,
+      });
+    } catch (error: any) {
+      // If not found, insert instead
+      if (
+        error.message?.includes("404") ||
+        error.message?.includes("Not found")
+      ) {
+        return await this.insert(collection, record, {
+          ttl: options?.ttl,
+          bypassRipple: options?.bypassRipple,
+          transactionId: options?.transactionId,
+          bypassCache: options?.bypassCache,
+        });
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Find a single record by field value
+   *
+   * Convenience method for finding one record matching a specific field value.
+   * Returns null if no record matches, or the first matching record.
+   *
+   * @param collection - Collection name
+   * @param field - Field name to search
+   * @param value - Value to match
+   * @returns The matching record or null if not found
+   *
+   * @example
+   * ```typescript
+   * // Find user by email
+   * const user = await client.findOne("users", "email", "john@example.com");
+   * if (user) {
+   *   console.log("Found user:", user);
+   * }
+   * ```
+   */
+  async findOne(
+    collection: string,
+    field: string,
+    value: any,
+  ): Promise<Record | null> {
+    const query = new QueryBuilder().eq(field, value).limit(1).build();
+    const results = await this.find(collection, query);
+    return results.length > 0 ? results[0] : null;
+  }
+
+  /**
+   * Check if a record exists by ID
+   *
+   * This is more efficient than fetching the record when you only need to check existence.
+   *
+   * @param collection - Collection name
+   * @param id - Record ID to check
+   * @returns true if the record exists, false if it doesn't
+   *
+   * @example
+   * ```typescript
+   * if (await client.exists("users", "user123")) {
+   *   console.log("User exists");
+   * } else {
+   *   console.log("User not found");
+   * }
+   * ```
+   */
+  async exists(collection: string, id: string): Promise<boolean> {
+    try {
+      await this.findById(collection, id);
+      return true;
+    } catch (error: any) {
+      if (
+        error.message?.includes("404") ||
+        error.message?.includes("Not found")
+      ) {
+        return false;
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Paginate through records
+   *
+   * Convenience method for pagination with page numbers (1-indexed).
+   *
+   * @param collection - Collection name
+   * @param page - Page number (1-indexed, i.e., first page is 1)
+   * @param pageSize - Number of records per page
+   * @returns Array of records for the requested page
+   *
+   * @example
+   * ```typescript
+   * // Get page 2 with 10 records per page
+   * const records = await client.paginate("users", 2, 10);
+   * ```
+   */
+  async paginate(
+    collection: string,
+    page: number,
+    pageSize: number,
+  ): Promise<Record[]> {
+    // Page 1 = skip 0, Page 2 = skip pageSize, etc.
+    const skip = page > 0 ? (page - 1) * pageSize : 0;
+    const query: QueryBuilderQuery = {
+      limit: pageSize,
+      skip: skip,
+    };
+    return this.find(collection, query);
+  }
+
   /**
    * List all collections
    */
@@ -899,16 +1161,13 @@ export class EkoDBClient {
    */
   async search(
     collection: string,
-    searchQuery: SearchQuery | SearchQueryBuilder,
+    query: SearchQuery,
   ): Promise<SearchResponse> {
-    const queryObj =
-      searchQuery instanceof SearchQueryBuilder
-        ? searchQuery.build()
-        : searchQuery;
+    // Ensure all parameters from SearchQuery are sent to server
     return this.makeRequest<SearchResponse>(
       "POST",
       `/api/search/${collection}`,
-      queryObj,
+      query,
       0,
       true, // Force JSON for search operations
     );
@@ -1297,31 +1556,33 @@ export class EkoDBClient {
    * Simplified text search with full-text matching, fuzzy search, and stemming.
    *
    * @param collection - Collection name to search
-   * @param queryText - Search query text
-   * @param limit - Maximum number of results to return
-   * @returns Array of matching records
+   * @param query - Search query text
+   * @param options - Additional search options
+   * @returns Search response with results and metadata
    *
    * @example
    * ```typescript
    * const results = await client.textSearch(
    *   "documents",
    *   "ownership system",
-   *   10
+   *   {
+   *     limit: 10,
+   *     select_fields: ["title", "content"],
+   *     exclude_fields: ["author"]
+   *   }
    * );
    * ```
    */
   async textSearch(
     collection: string,
-    queryText: string,
-    limit: number,
-  ): Promise<Record[]> {
+    query: string,
+    options?: Partial<SearchQuery>,
+  ): Promise<SearchResponse> {
     const searchQuery: SearchQuery = {
-      query: queryText,
-      limit,
+      query,
+      ...options,
     };
-
-    const response = await this.search(collection, searchQuery);
-    return response.results.map((r) => r.record);
+    return this.search(collection, searchQuery);
   }
 
   /**
