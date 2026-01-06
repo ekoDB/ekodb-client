@@ -71,7 +71,9 @@ func main() {
 		"name":  "TTL Test",
 		"value": "should expire",
 	}
-	doc, err := client.Insert(collection, record, fmt.Sprintf("%ds", ttlSeconds))
+	doc, err := client.Insert(collection, record, ekodb.InsertOptions{
+		TTL: fmt.Sprintf("%ds", ttlSeconds),
+	})
 	if err != nil {
 		log.Fatalf("❌ FAILED: Could not insert document: %v", err)
 	}

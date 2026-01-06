@@ -40,24 +40,24 @@
 
 mod auth;
 mod batch;
-mod chat;
-mod client;
-mod error;
-mod functions;
+pub mod chat;
+pub mod client;
+pub mod error;
+pub mod functions;
 mod http;
 mod join;
+pub mod options;
 mod query;
 mod query_builder;
-mod retry;
-mod schema;
-mod search;
-#[cfg(test)]
-mod test_utils;
-mod types;
+pub mod retry;
+pub mod schema;
+pub mod search;
+pub mod types;
 mod utils;
 mod websocket;
 
 // Public API exports
+pub use auth::*;
 pub use batch::BatchBuilder;
 pub use chat::{
     ChatMessageRequest, ChatRequest, ChatResponse, ChatSession, ChatSessionResponse,

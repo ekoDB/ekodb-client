@@ -66,8 +66,16 @@ async function main() {
       )
       .build();
 
-    await client.createCollection(usersCollection, userSchema);
-    console.log("✅ User schema created\n");
+    try {
+      await client.createCollection(usersCollection, userSchema);
+      console.log("✅ User schema created\n");
+    } catch (e) {
+      if (e.message?.includes("already exists")) {
+        console.log("⚠️  User schema already exists (skipping)\n");
+      } else {
+        throw e;
+      }
+    }
 
     // Example 2: Schema with text index for full-text search
     console.log("2. Creating product schema with text index:");
@@ -94,8 +102,16 @@ async function main() {
       )
       .build();
 
-    await client.createCollection(productsCollection, productSchema);
-    console.log("✅ Product schema with indexes created\n");
+    try {
+      await client.createCollection(productsCollection, productSchema);
+      console.log("✅ Product schema with indexes created\n");
+    } catch (e) {
+      if (e.message?.includes("already exists")) {
+        console.log("⚠️  Product schema already exists (skipping)\n");
+      } else {
+        throw e;
+      }
+    }
 
     // Example 3: Schema with vector index for semantic search
     console.log("3. Creating document schema with vector index:");
@@ -129,8 +145,16 @@ async function main() {
       )
       .build();
 
-    await client.createCollection(documentsCollection, documentSchema);
-    console.log("✅ Document schema with vector index created\n");
+    try {
+      await client.createCollection(documentsCollection, documentSchema);
+      console.log("✅ Document schema with vector index created\n");
+    } catch (e) {
+      if (e.message?.includes("already exists")) {
+        console.log("⚠️  Document schema already exists (skipping)\n");
+      } else {
+        throw e;
+      }
+    }
 
     // Example 4: Get collection schema
     console.log("4. Retrieving collection schema:");
@@ -182,8 +206,16 @@ async function main() {
       .bypassRipple(false)
       .build();
 
-    await client.createCollection(employeesCollection, employeeSchema);
-    console.log("✅ Employee schema with all constraints created\n");
+    try {
+      await client.createCollection(employeesCollection, employeeSchema);
+      console.log("✅ Employee schema with all constraints created\n");
+    } catch (e) {
+      if (e.message?.includes("already exists")) {
+        console.log("⚠️  Employee schema already exists (skipping)\n");
+      } else {
+        throw e;
+      }
+    }
 
     console.log("✅ Schema management examples completed!");
   } catch (error) {

@@ -28,6 +28,15 @@ async def main():
 
     client = Client.new(BASE_URL, API_KEY)
 
+    # Cleanup any stale collections from previous runs
+    try:
+        await client.delete_collection("github_cache_py")
+    except Exception:
+        pass
+
+    # Create collection without schema to allow any data structure
+    await client.create_collection("github_cache_py", None)
+
     print("=== ekoDB SWR (Stale-While-Revalidate) Pattern ===\n")
 
     print("Step 1: Create SWR function that acts as edge cache")
@@ -65,7 +74,7 @@ async def main():
                         "github_cache_py",
                         {
                             "id": "{{username}}",
-                            "data": "{{http_response}}",
+                            "data": {"type": "Object", "value": "{{http_response}}"},
                             "cached_at": "{{cached_at}}",
                         },
                         False,

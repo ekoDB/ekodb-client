@@ -140,8 +140,8 @@ async function kvBasicOperations(client: EkoDBClient): Promise<void> {
   console.log("✅ Set cached data with 1 hour TTL");
 
   // Delete a key
-  const deleted = await client.kvDelete("user:session:123");
-  console.log(`🗑️  Deleted session: ${deleted}\n`);
+  await client.kvDelete("user:session:123");
+  console.log(`🗑️  Deleted session\n`);
 }
 
 async function kvScriptOperations(client: EkoDBClient): Promise<string> {

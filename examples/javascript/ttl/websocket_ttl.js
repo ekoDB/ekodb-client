@@ -54,7 +54,7 @@ async function main() {
     const doc = await client.insert(collection, {
       name: "WS TTL Test",
       value: "should expire via websocket",
-    }, `${ttlSeconds}s`);
+    }, { ttl: `${ttlSeconds}s` });
 
     const docID = doc.id;
     console.log(`  Output: Document ID = ${docID}`);

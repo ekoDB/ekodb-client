@@ -117,15 +117,15 @@ pub struct SearchQuery {
     pub max_edit_distance: Option<u32>,
 
     /// Bypass ripple cache
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
     pub bypass_ripple: Option<bool>,
 
     /// Bypass cache
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
     pub bypass_cache: Option<bool>,
 
     /// Maximum number of results to return
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
     pub limit: Option<usize>,
 
     // Vector search parameters
@@ -157,6 +157,15 @@ pub struct SearchQuery {
     /// Weight for vector search (0.0-1.0)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub vector_weight: Option<f64>,
+
+    // Field projection
+    /// Select specific fields to return
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub select_fields: Option<Vec<String>>,
+
+    /// Exclude specific fields from results
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub exclude_fields: Option<Vec<String>>,
 }
 
 impl SearchQuery {
@@ -279,6 +288,18 @@ impl SearchQuery {
     /// Set maximum number of results to return
     pub fn limit(mut self, limit: usize) -> Self {
         self.limit = Some(limit);
+        self
+    }
+
+    /// Select specific fields to return
+    pub fn select_fields(mut self, fields: Vec<String>) -> Self {
+        self.select_fields = Some(fields);
+        self
+    }
+
+    /// Exclude specific fields from results
+    pub fn exclude_fields(mut self, fields: Vec<String>) -> Self {
+        self.exclude_fields = Some(fields);
         self
     }
 }

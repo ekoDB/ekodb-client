@@ -22,7 +22,7 @@ async function main() {
     name: "Cache Entry 1",
     value: "This will expire in 1 hour",
   };
-  const doc1 = await client.insert(collection, record1, "1h");
+  const doc1 = await client.insert(collection, record1, { ttl: "1h" });
   console.log(`✓ Inserted document: ${doc1.id}`);
 
   console.log("\n=== Insert Document with TTL (5 minutes) ===");
@@ -30,7 +30,7 @@ async function main() {
     name: "Cache Entry 2",
     value: "This will expire in 5 minutes",
   };
-  const doc2 = await client.insert(collection, record2, "5m");
+  const doc2 = await client.insert(collection, record2, { ttl: "5m" });
   console.log(`✓ Inserted document: ${doc2.id}`);
 
   console.log("\n=== Query Documents ===");

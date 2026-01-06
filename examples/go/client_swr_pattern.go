@@ -38,6 +38,12 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// Cleanup any stale collections from previous runs
+	client.DeleteCollection("github_cache_go")
+
+	// Create collection without schema to allow any data structure
+	client.CreateCollection("github_cache_go", ekodb.Schema{})
+
 	fmt.Println("=== ekoDB SWR (Stale-While-Revalidate) Pattern ===")
 	fmt.Println()
 
@@ -66,10 +72,10 @@ func main() {
 				Stage: "If",
 				Data: map[string]interface{}{
 					"condition": map[string]interface{}{"type": "HasRecords"},
-					"then": []interface{}{
+					"then_functions": []interface{}{
 						ekodb.StageProject([]string{"data", "cached_at"}, false),
 					},
-					"else": []interface{}{
+					"else_functions": []interface{}{
 						ekodb.StageHttpRequest(
 							"https://api.github.com/users/{{username}}",
 							"GET",
@@ -77,8 +83,11 @@ func main() {
 							nil,
 						),
 						ekodb.StageInsert("github_cache_go", map[string]interface{}{
-							"id":        "{{username}}",
-							"data":      "{{http_response}}",
+							"id": "{{username}}",
+							"data": map[string]interface{}{
+								"type":  "Object",
+								"value": "{{http_response}}",
+							},
 							"cached_at": time.Now().Format(time.RFC3339),
 						}, false, nil),
 					},

@@ -803,3 +803,159 @@ describe("EkoDBClient transaction status", () => {
     expect(result).toBeDefined();
   });
 });
+
+// ============================================================================
+// Convenience Methods Tests
+// ============================================================================
+
+describe("Convenience methods", () => {
+  describe("upsert", () => {
+    it("inserts when record not found", async () => {
+      mockTokenResponse();
+      // Mock update returning 404
+      mockErrorResponse(404, "Not found");
+      // Mock insert succeeding
+      mockJsonResponse({ id: "user123", name: "John Doe" });
+
+      const client = createTestClient();
+      await client.init();
+
+      const result = await client.upsert("users", "user123", {
+        name: "John Doe",
+      });
+      expect(result).toEqual({ id: "user123", name: "John Doe" });
+    });
+
+    it("updates when record exists", async () => {
+      mockTokenResponse();
+      // Mock update succeeding
+      mockJsonResponse({ id: "user123", name: "John Doe Updated" });
+
+      const client = createTestClient();
+      await client.init();
+
+      const result = await client.upsert("users", "user123", {
+        name: "John Doe Updated",
+      });
+      expect(result).toEqual({ id: "user123", name: "John Doe Updated" });
+    });
+
+    it("throws on non-404 errors", async () => {
+      mockTokenResponse();
+      // Mock update with server error
+      mockErrorResponse(500, "Internal server error");
+
+      const client = createTestClient();
+      await client.init();
+
+      await expect(
+        client.upsert("users", "user123", { name: "John Doe" }),
+      ).rejects.toThrow();
+    });
+  });
+
+  describe("findOne", () => {
+    it("returns record when found", async () => {
+      mockTokenResponse();
+      mockJsonResponse([
+        { id: "user123", email: "test@example.com", name: "John" },
+      ]);
+
+      const client = createTestClient();
+      await client.init();
+
+      const result = await client.findOne("users", "email", "test@example.com");
+      expect(result).toEqual({
+        id: "user123",
+        email: "test@example.com",
+        name: "John",
+      });
+    });
+
+    it("returns null when not found", async () => {
+      mockTokenResponse();
+      mockJsonResponse([]);
+
+      const client = createTestClient();
+      await client.init();
+
+      const result = await client.findOne(
+        "users",
+        "email",
+        "notfound@example.com",
+      );
+      expect(result).toBeNull();
+    });
+  });
+
+  describe("exists", () => {
+    it("returns true when record exists", async () => {
+      mockTokenResponse();
+      mockJsonResponse({ id: "user123", name: "John" });
+
+      const client = createTestClient();
+      await client.init();
+
+      const result = await client.exists("users", "user123");
+      expect(result).toBe(true);
+    });
+
+    it("returns false when record not found", async () => {
+      mockTokenResponse();
+      mockErrorResponse(404, "Not found");
+
+      const client = createTestClient();
+      await client.init();
+
+      const result = await client.exists("users", "user123");
+      expect(result).toBe(false);
+    });
+
+    it("throws on non-404 errors", async () => {
+      mockTokenResponse();
+      mockErrorResponse(500, "Internal server error");
+
+      const client = createTestClient();
+      await client.init();
+
+      await expect(client.exists("users", "user123")).rejects.toThrow();
+    });
+  });
+
+  describe("paginate", () => {
+    it("calculates skip correctly for page 2", async () => {
+      mockTokenResponse();
+      mockJsonResponse([{ id: "user11", name: "User 11" }]);
+
+      const client = createTestClient();
+      await client.init();
+
+      const result = await client.paginate("users", 2, 10);
+      expect(result).toHaveLength(1);
+      expect(result[0]).toEqual({ id: "user11", name: "User 11" });
+    });
+
+    it("skips zero records for page 1", async () => {
+      mockTokenResponse();
+      mockJsonResponse([{ id: "user1", name: "User 1" }]);
+
+      const client = createTestClient();
+      await client.init();
+
+      const result = await client.paginate("users", 1, 10);
+      expect(result).toHaveLength(1);
+      expect(result[0]).toEqual({ id: "user1", name: "User 1" });
+    });
+
+    it("returns empty array when no records", async () => {
+      mockTokenResponse();
+      mockJsonResponse([]);
+
+      const client = createTestClient();
+      await client.init();
+
+      const result = await client.paginate("users", 5, 10);
+      expect(result).toHaveLength(0);
+    });
+  });
+});

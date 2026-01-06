@@ -162,6 +162,24 @@ impl Record {
         self.fields.insert(key.into(), value.into());
     }
 
+    /// Insert a field and return self for fluent chaining
+    ///
+    /// This is a builder-style method that allows chaining field insertions.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use ekodb_client::Record;
+    /// let record = Record::new()
+    ///     .field("name", "John Doe")
+    ///     .field("age", 30)
+    ///     .field("active", true);
+    /// ```
+    pub fn field(mut self, key: impl Into<String>, value: impl Into<FieldType>) -> Self {
+        self.fields.insert(key.into(), value.into());
+        self
+    }
+
     /// Get a field from the record
     pub fn get(&self, key: &str) -> Option<&FieldType> {
         self.fields.get(key)
@@ -278,8 +296,16 @@ pub struct Query {
     pub join: Option<serde_json::Value>,
 
     /// Bypass cache (optional)
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
     pub bypass_cache: Option<bool>,
+
+    /// Select fields (optional)
+    #[serde(default)]
+    pub select_fields: Option<Vec<String>>,
+
+    /// Exclude fields (optional)
+    #[serde(default)]
+    pub exclude_fields: Option<Vec<String>>,
 
     /// Bypass ripple (optional)
     #[serde(skip_serializing_if = "Option::is_none")]

@@ -306,7 +306,12 @@ func main() {
 		SystemPrompt: &systemPrompt,
 	})
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("❌ Failed to create chat session: %v", err)
+		log.Println("   This likely means:")
+		log.Println("   • OPENAI_API_KEY is not set in ekoDB server environment")
+		log.Println("   • OpenAI API is experiencing issues")
+		log.Println("   • Network connectivity problems")
+		log.Fatal("Cannot continue without AI chat capabilities")
 	}
 
 	// Send the question
@@ -314,7 +319,12 @@ func main() {
 		Message: userQuestion,
 	})
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("❌ Failed to send chat message: %v", err)
+		log.Println("   Possible causes:")
+		log.Println("   • OpenAI API quota exceeded (status 402)")
+		log.Println("   • OpenAI API server error (status 500)")
+		log.Println("   • Invalid API key or permissions")
+		log.Fatal("AI response generation failed")
 	}
 
 	fmt.Println("✓ AI Response (with context from 3 conversations):\n")

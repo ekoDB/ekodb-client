@@ -375,6 +375,204 @@ impl Client {
             .await
     }
 
+    // ========== Convenience Methods ==========
+
+    /// Insert or update a record (upsert operation)
+    ///
+    /// Attempts to update the record first. If the record doesn't exist (NotFound error),
+    /// it will be inserted instead. This provides atomic insert-or-update semantics.
+    ///
+    /// # Arguments
+    ///
+    /// * `collection` - The collection name
+    /// * `id` - The record ID
+    /// * `record` - The record data to insert or update
+    /// * `bypass_ripple` - Optional flag to bypass ripple effects
+    ///
+    /// # Returns
+    ///
+    /// The inserted or updated record with server-generated fields
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # use ekodb_client::{Client, Record};
+    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// let client = Client::builder()
+    ///     .base_url("https://your-instance.ekodb.net")
+    ///     .api_key("your-api-key")
+    ///     .build()?;
+    ///
+    /// let mut record = Record::new();
+    /// record.insert("name", "John Doe");
+    /// record.insert("email", "john@example.com");
+    ///
+    /// // Will update if exists, insert if not
+    /// let result = client.upsert("users", "user123", record, None).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn upsert(
+        &self,
+        collection: &str,
+        id: &str,
+        record: Record,
+        bypass_ripple: Option<bool>,
+    ) -> Result<Record> {
+        // Try update first
+        match self
+            .update(collection, id, record.clone(), bypass_ripple)
+            .await
+        {
+            Ok(updated) => Ok(updated),
+            Err(Error::NotFound) => {
+                // Record doesn't exist, insert it
+                self.insert(collection, record, bypass_ripple).await
+            }
+            Err(e) => Err(e),
+        }
+    }
+
+    /// Find a single record by field value
+    ///
+    /// Convenience method for finding one record matching a specific field value.
+    /// Returns `None` if no record matches, or `Some(Record)` for the first match.
+    ///
+    /// # Arguments
+    ///
+    /// * `collection` - The collection name
+    /// * `field` - The field name to search
+    /// * `value` - The value to match
+    ///
+    /// # Returns
+    ///
+    /// `Some(Record)` if found, `None` if not found
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # use ekodb_client::Client;
+    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// let client = Client::builder()
+    ///     .base_url("https://your-instance.ekodb.net")
+    ///     .api_key("your-api-key")
+    ///     .build()?;
+    ///
+    /// // Find user by email
+    /// if let Some(user) = client.find_one("users", "email", "john@example.com").await? {
+    ///     println!("Found user: {:?}", user);
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn find_one(
+        &self,
+        collection: &str,
+        field: &str,
+        value: impl Into<serde_json::Value>,
+    ) -> Result<Option<Record>> {
+        use crate::query_builder::QueryBuilder;
+
+        let query = QueryBuilder::new().eq(field, value.into()).limit(1).build();
+
+        let mut results = self.find(collection, query, None).await?;
+        Ok(results.pop())
+    }
+
+    /// Check if a record exists by ID
+    ///
+    /// This is more efficient than fetching the record when you only need to check existence.
+    ///
+    /// # Arguments
+    ///
+    /// * `collection` - The collection name
+    /// * `id` - The record ID to check
+    ///
+    /// # Returns
+    ///
+    /// `true` if the record exists, `false` if it doesn't
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # use ekodb_client::Client;
+    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// let client = Client::builder()
+    ///     .base_url("https://your-instance.ekodb.net")
+    ///     .api_key("your-api-key")
+    ///     .build()?;
+    ///
+    /// if client.exists("users", "user123").await? {
+    ///     println!("User exists");
+    /// } else {
+    ///     println!("User not found");
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn exists(&self, collection: &str, id: &str) -> Result<bool> {
+        match self.find_by_id(collection, id, None).await {
+            Ok(_) => Ok(true),
+            Err(Error::NotFound) => Ok(false),
+            Err(e) => Err(e),
+        }
+    }
+
+    /// Paginate through records
+    ///
+    /// Convenience method for pagination with page numbers (1-indexed).
+    ///
+    /// # Arguments
+    ///
+    /// * `collection` - The collection name
+    /// * `page` - The page number (1-indexed, i.e., first page is 1)
+    /// * `page_size` - Number of records per page
+    ///
+    /// # Returns
+    ///
+    /// A vector of records for the requested page
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # use ekodb_client::Client;
+    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// let client = Client::builder()
+    ///     .base_url("https://your-instance.ekodb.net")
+    ///     .api_key("your-api-key")
+    ///     .build()?;
+    ///
+    /// // Get page 2 with 10 records per page
+    /// let records = client.paginate("users", 2, 10).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn paginate(
+        &self,
+        collection: &str,
+        page: usize,
+        page_size: usize,
+    ) -> Result<Vec<Record>> {
+        use crate::types::Query;
+
+        // Page 1 = skip 0, Page 2 = skip page_size, etc.
+        let skip = if page > 0 { (page - 1) * page_size } else { 0 };
+
+        let query = Query {
+            filter: None,
+            sort: None,
+            limit: Some(page_size),
+            skip: Some(skip),
+            join: None,
+            bypass_cache: None,
+            bypass_ripple: None,
+            select_fields: None,
+            exclude_fields: None,
+        };
+
+        self.find(collection, query, None).await
+    }
+
     /// Refresh the authentication token
     ///
     /// Clears the cached token and fetches a new one from the server.
@@ -763,6 +961,8 @@ impl Client {
             join: None,
             bypass_cache: None,
             bypass_ripple: None,
+            select_fields: Some(Vec::new()),
+            exclude_fields: Some(Vec::new()),
         };
 
         self.find(collection, query, None).await
