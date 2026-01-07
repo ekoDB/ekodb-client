@@ -3,7 +3,8 @@
 ///! Demonstrates calling Functions within Functions using CallFunction
 ///! Shows how to build reusable logic blocks and compose complex workflows
 use ekodb_client::{
-    Client, FieldType, Function, ParameterDefinition, Record, Script, ScriptCondition,
+    extract_record, get_int_value, get_string_value, Client, FieldType, Function,
+    ParameterDefinition, Record, Script, ScriptCondition,
 };
 use std::{collections::HashMap, env};
 
@@ -109,8 +110,15 @@ async fn basic_composition_example(client: &Client) -> Result<(), Box<dyn std::e
     println!("📊 Result from composed function:");
     println!("   Records: {}", result.records.len());
     if let Some(record) = result.records.first() {
-        println!("   Name: {:?}", record.get("name"));
-        println!("   Department: {:?}\n", record.get("department"));
+        let record_json = serde_json::to_value(record)?;
+        let extracted = extract_record(&record_json);
+
+        let name = get_string_value(&extracted["name"]).unwrap_or_else(|| "Unknown".to_string());
+        let department =
+            get_string_value(&extracted["department"]).unwrap_or_else(|| "Unknown".to_string());
+
+        println!("   Name: {}", name);
+        println!("   Department: {}\n", department);
     }
 
     println!("🎯 Key Benefit: fetch_user can be reused by ANY function!");
@@ -258,8 +266,8 @@ async fn nested_composition_example(client: &Client) -> Result<(), Box<dyn std::
     client.save_script(fetch_slim).await?;
     println!("✅ Level 2 function: fetch_slim_user (calls validate_user)");
 
-    // Level 3: Calls fetch_slim_user + counts
-    let count_user = Script::new("count_validated_user", "Get validated user and count")
+    // Level 3: Calls fetch_slim_user (demonstrates 3-level nesting)
+    let get_verified_user = Script::new("get_verified_user", "Get verified and validated user")
         .with_parameter(ParameterDefinition::new("user_code").required())
         .with_function(Function::CallFunction {
             function_label: "fetch_slim_user".to_string(),
@@ -268,13 +276,10 @@ async fn nested_composition_example(client: &Client) -> Result<(), Box<dyn std::
                 map.insert("user_code".to_string(), serde_json::json!("{{user_code}}"));
                 map
             }),
-        })
-        .with_function(Function::Count {
-            output_field: "record_count".to_string(),
         });
 
-    client.save_script(count_user).await?;
-    println!("✅ Level 3 function: count_validated_user (calls fetch_slim_user)\n");
+    client.save_script(get_verified_user).await?;
+    println!("✅ Level 3 function: get_verified_user (calls fetch_slim_user)\n");
 
     // Execute the 3-level nested composition
     let mut params = HashMap::new();
@@ -283,14 +288,20 @@ async fn nested_composition_example(client: &Client) -> Result<(), Box<dyn std::
         FieldType::String("user_1".to_string()),
     );
     let result = client
-        .call_script("count_validated_user", Some(params))
+        .call_script("get_verified_user", Some(params))
         .await?;
     println!("📊 Result from 3-level nested composition:");
     println!("   Records: {}", result.records.len());
     if let Some(record) = result.records.first() {
-        println!("   Name: {:?}", record.get("name"));
-        println!("   Department: {:?}", record.get("department"));
-        println!("   Record count: {:?}\n", record.get("record_count"));
+        let record_json = serde_json::to_value(record)?;
+        let extracted = extract_record(&record_json);
+
+        let name = get_string_value(&extracted["name"]).unwrap_or_else(|| "Unknown".to_string());
+        let department =
+            get_string_value(&extracted["department"]).unwrap_or_else(|| "Unknown".to_string());
+
+        println!("   Name: {}", name);
+        println!("   Department: {}\n", department);
     }
 
     println!("🎯 Key Benefit: Each function is independently testable and reusable!");

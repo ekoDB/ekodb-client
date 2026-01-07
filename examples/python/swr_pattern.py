@@ -72,7 +72,7 @@ async def main():
                         "type": "Insert",
                         "collection": "github_cache",
                         "record": {
-                            "id": {"type": "String", "value": "{{username}}"},
+                            "cache_key": {"type": "String", "value": "{{username}}"},
                             "data": {"type": "Object", "value": "{{http_response}}"},
                             "cached_at": {
                                 "type": "String",
@@ -149,7 +149,7 @@ async def main():
                         "type": "Insert",
                         "collection": "product_cache",
                         "record": {
-                            "id": {"type": "String", "value": "{{product_id}}"},
+                            "cache_key": {"type": "String", "value": "{{product_id}}"},
                             "enriched_data": {
                                 "type": "Object",
                                 "value": "{{http_response}}",

@@ -50,12 +50,12 @@ async function createConversation(
   title: string,
 ): Promise<void> {
   const conv = {
-    id: convId,
+    conversation_id: convId,
     title,
     created_at: new Date().toISOString(),
     search_config: {
       collections: ["rag_messages"],
-      search_type: "hybrid",
+      search_type: "hybrid" as const,
       limit: 10,
     },
   };

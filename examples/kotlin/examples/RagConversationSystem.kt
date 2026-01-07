@@ -48,7 +48,7 @@ fun extractStringField(record: JsonObject, field: String): String {
 
 suspend fun createConversation(client: EkoDBClient, collection: String, convId: String, title: String) {
     val record = io.ekodb.client.types.Record()
-    record.insert("id", convId)
+    record.insert("conversation_id", convId)
     record.insert("title", title)
     record.insert("created_at", System.currentTimeMillis().toString())
     

@@ -36,24 +36,24 @@ async function main() {
     version: "1.0",
     tags: ["swr", "github", "cache"],
     functions: [
-      Stage.findById("github_cache_js", "{{username}}"),
+      // Check KV cache for user data
+      Stage.kvGet("github:user:{{username}}"),
       Stage.if(
         { type: "HasRecords" },
-        [Stage.project(["data", "cached_at"], false)],
+        // Cache hit - return cached data
+        [Stage.project(["data"], false)],
+        // Cache miss - fetch from API and cache
         [
           Stage.httpRequest(
             "https://api.github.com/users/{{username}}",
             "GET",
             { "User-Agent": "ekoDB-SWR-Example" }
           ),
-          Stage.insert(
-            "github_cache_js",
-            {
-              id: { type: "String", value: "{{username}}" },
-              data: { type: "Object", value: "{{http_response}}" },
-              cached_at: { type: "String", value: new Date().toISOString() },
-            },
-            false
+          // Store in KV with 5 minute TTL
+          Stage.kvSet(
+            "github:user:{{username}}",
+            "{{http_response}}",
+            300,
           ),
         ]
       ),

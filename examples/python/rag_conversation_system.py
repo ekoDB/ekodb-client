@@ -48,7 +48,7 @@ async def create_conversation(
 ):
     """Create a conversation record"""
     conv = {
-        "id": conv_id,
+        "conversation_id": conv_id,
         "title": title,
         "created_at": datetime.utcnow().isoformat(),
         "search_config": {

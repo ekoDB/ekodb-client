@@ -29,7 +29,7 @@ function extractStringField(record, field) {
 
 async function createConversation(client, collection, convId, title) {
   const conv = {
-    id: convId,
+    conversation_id: convId,
     title,
     created_at: new Date().toISOString(),
     search_config: {

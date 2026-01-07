@@ -45,28 +45,24 @@ async function edgeCacheExample() {
     version: "1.0",
     tags: ["cache", "edge"],
     functions: [
-      // 1. Check cache
-      Stage.findById("edge_cache_js", "{{cache_key}}"),
+      // 1. Check KV cache
+      Stage.kvGet("{{cache_key}}"),
 
       // 2. If cache exists, return it; else fetch from API
       Stage.if(
         { type: "HasRecords" },
         // Cache hit - return cached data
-        [Stage.project(["data", "cached_at"], false)],
-        // Cache miss - fetch external API and store
+        [Stage.project(["data"], false)],
+        // Cache miss - fetch external API and store in KV
         [
           Stage.httpRequest("{{api_url}}", "GET", {
             "User-Agent": "ekoDB-Edge-Cache",
           }),
-          Stage.insert(
-            "edge_cache_js",
-            {
-              id: { type: "String", value: "{{cache_key}}" },
-              data: { type: "Object", value: "{{http_response}}" },
-              cached_at: { type: "String", value: new Date().toISOString() },
-            },
-            false,
-            undefined
+          // Store in KV with 5 minute TTL
+          Stage.kvSet(
+            "{{cache_key}}",
+            "{{http_response}}",
+            300,
           ),
         ]
       ),

@@ -457,7 +457,7 @@ async fn create_conversation(
     title: &str,
 ) -> Result<(), Box<dyn Error>> {
     let mut conv = Record::new();
-    conv.insert("id", conv_id);
+    conv.insert("conversation_id", conv_id);
     conv.insert("title", title);
     conv.insert("created_at", chrono::Utc::now().to_rfc3339());
     conv.insert(

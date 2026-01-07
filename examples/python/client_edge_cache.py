@@ -56,29 +56,23 @@ async def edge_cache_example():
         "version": "1.0",
         "tags": ["cache", "edge"],
         "functions": [
-            # 1. Check cache
-            Stage.find_by_id("edge_cache_py", "{{cache_key}}"),
+            # 1. Check KV cache
+            Stage.kv_get("{{cache_key}}"),
             # 2. If cache exists, return it; else fetch from API
             Stage.if_condition(
                 {"type": "HasRecords"},
                 # Cache hit - return cached data
-                [Stage.project(["data", "cached_at"], False)],
-                # Cache miss - fetch external API and store
+                [Stage.project(["data"], False)],
+                # Cache miss - fetch external API and store in KV
                 [
                     Stage.http_request(
                         "{{api_url}}", "GET", {"User-Agent": "ekoDB-Edge-Cache"}
                     ),
-                    Stage.insert(
-                        "edge_cache_py",
-                        {
-                            "id": {"type": "String", "value": "{{cache_key}}"},
-                            "data": {"type": "Object", "value": "{{http_response}}"},
-                            "cached_at": {
-                                "type": "String",
-                                "value": datetime.now().isoformat(),
-                            },
-                        },
-                        False,
+                    # Store in KV with 5 minute TTL
+                    Stage.kv_set(
+                        "{{cache_key}}",
+                        "{{http_response}}",
+                        300,
                     ),
                 ],
             ),

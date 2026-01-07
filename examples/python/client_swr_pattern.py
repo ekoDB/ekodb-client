@@ -60,24 +60,24 @@ async def main():
         "version": "1.0",
         "tags": ["swr", "github", "cache"],
         "functions": [
-            Stage.find_by_id("github_cache_py", "{{username}}"),
+            # Check KV cache for user data
+            Stage.kv_get("github:user:{{username}}"),
             Stage.if_condition(
                 {"type": "HasRecords"},
-                [Stage.project(["data", "cached_at"], False)],
+                # Cache hit - return cached data
+                [Stage.project(["data"], False)],
+                # Cache miss - fetch from API and cache
                 [
                     Stage.http_request(
                         "https://api.github.com/users/{{username}}",
                         "GET",
                         {"User-Agent": "ekoDB-SWR-Example"},
                     ),
-                    Stage.insert(
-                        "github_cache_py",
-                        {
-                            "id": "{{username}}",
-                            "data": {"type": "Object", "value": "{{http_response}}"},
-                            "cached_at": "{{cached_at}}",
-                        },
-                        False,
+                    # Store in KV with 5 minute TTL
+                    Stage.kv_set(
+                        "github:user:{{username}}",
+                        "{{http_response}}",
+                        300,
                     ),
                 ],
             ),
