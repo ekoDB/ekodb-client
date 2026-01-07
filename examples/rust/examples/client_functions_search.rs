@@ -3,7 +3,8 @@
 //! Demonstrates simple search and query operations using scripts
 
 use ekodb_client::{
-    Client, FieldType, Function, GroupFunctionConfig, GroupFunctionOp, Record, Script,
+    extract_record, get_string_value, Client, FieldType, Function, GroupFunctionConfig,
+    GroupFunctionOp, Record, Script,
 };
 use serde_json::json;
 
@@ -81,14 +82,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let result1 = client.call_script("list_all_docs_rs", None).await?;
     println!("📊 Found {} documents", result1.records.len());
     for (i, record) in result1.records.iter().enumerate() {
-        let title = match record.fields.get("title") {
-            Some(FieldType::String(s)) => s.as_str(),
-            _ => "?",
-        };
-        let category = match record.fields.get("category") {
-            Some(FieldType::String(s)) => s.as_str(),
-            _ => "?",
-        };
+        // Convert Record to JSON and extract values
+        let record_json = serde_json::to_value(record)?;
+        let extracted = extract_record(&record_json);
+
+        let title = get_string_value(&extracted["title"]).unwrap_or_else(|| "?".to_string());
+        let category = get_string_value(&extracted["category"]).unwrap_or_else(|| "?".to_string());
+
         println!("   {}. {} ({})", i + 1, title, category);
     }
     println!(

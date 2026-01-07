@@ -1,4 +1,4 @@
-use ekodb_client::{Client, FieldType, Record};
+use ekodb_client::{extract_record, get_string_value, Client, FieldType, Record};
 use std::env;
 use std::thread;
 use std::time::Duration;
@@ -54,10 +54,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("  Input: find_by_id({})", doc_id);
 
     let found = client.find_by_id(collection, &doc_id, None).await?;
-    let name_val = match found.fields.get("name") {
-        Some(FieldType::String(s)) => s.as_str(),
-        _ => "unknown",
-    };
+    let found_json = serde_json::to_value(&found)?;
+    let extracted = extract_record(&found_json);
+    let name_val = get_string_value(&extracted["name"]).unwrap_or_else(|| "unknown".to_string());
     println!("  Output: Found document with name = {}", name_val);
     println!("  ✓ PASS: Document exists");
 

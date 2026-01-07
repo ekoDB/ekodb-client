@@ -3,7 +3,7 @@
 //! This example shows how to use ekoDB's join functionality to query
 //! related data across multiple collections, similar to SQL joins.
 
-use ekodb_client::{Client, FieldType, QueryBuilder, Record};
+use ekodb_client::{extract_record, get_string_value, Client, FieldType, QueryBuilder, Record};
 use serde_json::json;
 use std::env;
 
@@ -119,28 +119,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let results1 = client.find(users_collection, query1, None).await?;
     println!("✓ Found {} users with department data", results1.len());
     for user in &results1 {
-        let name = if let Some(FieldType::Object(fields)) = user.get("name") {
-            if let Some(FieldType::String(n)) = fields.get("value") {
-                n.clone()
-            } else {
-                "Unknown".to_string()
-            }
-        } else {
-            "Unknown".to_string()
-        };
+        let user_json = serde_json::to_value(user)?;
+        let extracted = extract_record(&user_json);
+
+        let name = get_string_value(&extracted["name"]).unwrap_or_else(|| "Unknown".to_string());
 
         // Join returns an array, get first element
-        let dept_name = if let Some(FieldType::Array(depts)) = user.get("department") {
-            if let Some(FieldType::Object(dept)) = depts.first() {
-                if let Some(FieldType::Object(name_fields)) = dept.get("name") {
-                    if let Some(FieldType::String(dn)) = name_fields.get("value") {
-                        dn.clone()
-                    } else {
-                        "No department".to_string()
-                    }
-                } else {
-                    "No department".to_string()
-                }
+        let dept_name = if let Some(depts) = extracted["department"].as_array() {
+            if let Some(dept) = depts.first() {
+                get_string_value(&dept["name"]).unwrap_or_else(|| "No department".to_string())
             } else {
                 "No department".to_string()
             }
@@ -170,28 +157,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let results2 = client.find(users_collection, query2, None).await?;
     println!("✓ Found {} users in Engineering", results2.len());
     for user in &results2 {
-        let name = if let Some(FieldType::Object(fields)) = user.get("name") {
-            if let Some(FieldType::String(n)) = fields.get("value") {
-                n.clone()
-            } else {
-                "Unknown".to_string()
-            }
-        } else {
-            "Unknown".to_string()
-        };
+        let user_json = serde_json::to_value(user)?;
+        let extracted = extract_record(&user_json);
+
+        let name = get_string_value(&extracted["name"]).unwrap_or_else(|| "Unknown".to_string());
 
         // Join returns an array, get first element
-        let location = if let Some(FieldType::Array(depts)) = user.get("department") {
-            if let Some(FieldType::Object(dept)) = depts.first() {
-                if let Some(FieldType::Object(loc_fields)) = dept.get("location") {
-                    if let Some(FieldType::String(loc)) = loc_fields.get("value") {
-                        loc.clone()
-                    } else {
-                        "Unknown".to_string()
-                    }
-                } else {
-                    "Unknown".to_string()
-                }
+        let location = if let Some(depts) = extracted["department"].as_array() {
+            if let Some(dept) = depts.first() {
+                get_string_value(&dept["location"]).unwrap_or_else(|| "Unknown".to_string())
             } else {
                 "Unknown".to_string()
             }
@@ -229,28 +203,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let results3 = client.find(users_collection, query3, None).await?;
     println!("✓ Found {} users with profile data", results3.len());
     for user in &results3 {
-        let name = if let Some(FieldType::Object(fields)) = user.get("name") {
-            if let Some(FieldType::String(n)) = fields.get("value") {
-                n.clone()
-            } else {
-                "Unknown".to_string()
-            }
-        } else {
-            "Unknown".to_string()
-        };
+        let user_json = serde_json::to_value(user)?;
+        let extracted = extract_record(&user_json);
+
+        let name = get_string_value(&extracted["name"]).unwrap_or_else(|| "Unknown".to_string());
 
         // Join returns an array, get first element
-        let bio = if let Some(FieldType::Array(profiles)) = user.get("profile") {
-            if let Some(FieldType::Object(profile)) = profiles.first() {
-                if let Some(FieldType::Object(bio_fields)) = profile.get("bio") {
-                    if let Some(FieldType::String(b)) = bio_fields.get("value") {
-                        b.clone()
-                    } else {
-                        "N/A".to_string()
-                    }
-                } else {
-                    "N/A".to_string()
-                }
+        let bio = if let Some(profiles) = extracted["profile"].as_array() {
+            if let Some(profile) = profiles.first() {
+                get_string_value(&profile["bio"]).unwrap_or_else(|| "N/A".to_string())
             } else {
                 "N/A".to_string()
             }
@@ -280,38 +241,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let results4 = client.find(orders_collection, query4, None).await?;
     println!("✓ Found {} completed orders", results4.len());
     for order in &results4 {
-        let product = if let Some(FieldType::Object(fields)) = order.get("product") {
-            if let Some(FieldType::String(p)) = fields.get("value") {
-                p.clone()
-            } else {
-                "Unknown".to_string()
-            }
-        } else {
-            "Unknown".to_string()
-        };
+        let order_json = serde_json::to_value(order)?;
+        let extracted = extract_record(&order_json);
 
-        let amount = if let Some(FieldType::Object(fields)) = order.get("amount") {
-            if let Some(FieldType::Integer(a)) = fields.get("value") {
-                *a
-            } else {
-                0
-            }
-        } else {
-            0
-        };
+        let product =
+            get_string_value(&extracted["product"]).unwrap_or_else(|| "Unknown".to_string());
+        let amount = ekodb_client::get_int_value(&extracted["amount"]).unwrap_or(0);
 
         // Join returns an array, get first element
-        let user_name = if let Some(FieldType::Array(users)) = order.get("user") {
-            if let Some(FieldType::Object(user)) = users.first() {
-                if let Some(FieldType::Object(name_fields)) = user.get("name") {
-                    if let Some(FieldType::String(n)) = name_fields.get("value") {
-                        n.clone()
-                    } else {
-                        "Unknown".to_string()
-                    }
-                } else {
-                    "Unknown".to_string()
-                }
+        let user_name = if let Some(users) = extracted["user"].as_array() {
+            if let Some(user) = users.first() {
+                get_string_value(&user["name"]).unwrap_or_else(|| "Unknown".to_string())
             } else {
                 "Unknown".to_string()
             }
@@ -343,38 +283,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let results5 = client.find(users_collection, query5, None).await?;
     println!("✓ Found {} users with example.com emails", results5.len());
     for user in &results5 {
-        let name = if let Some(FieldType::Object(fields)) = user.get("name") {
-            if let Some(FieldType::String(n)) = fields.get("value") {
-                n.clone()
-            } else {
-                "Unknown".to_string()
-            }
-        } else {
-            "Unknown".to_string()
-        };
+        let user_json = serde_json::to_value(user)?;
+        let extracted = extract_record(&user_json);
 
-        let email = if let Some(FieldType::Object(fields)) = user.get("email") {
-            if let Some(FieldType::String(e)) = fields.get("value") {
-                e.clone()
-            } else {
-                "Unknown".to_string()
-            }
-        } else {
-            "Unknown".to_string()
-        };
+        let name = get_string_value(&extracted["name"]).unwrap_or_else(|| "Unknown".to_string());
+        let email = get_string_value(&extracted["email"]).unwrap_or_else(|| "Unknown".to_string());
 
         // Join returns an array, get first element
-        let location = if let Some(FieldType::Array(depts)) = user.get("department") {
-            if let Some(FieldType::Object(dept)) = depts.first() {
-                if let Some(FieldType::Object(loc_fields)) = dept.get("location") {
-                    if let Some(FieldType::String(loc)) = loc_fields.get("value") {
-                        loc.clone()
-                    } else {
-                        "N/A".to_string()
-                    }
-                } else {
-                    "N/A".to_string()
-                }
+        let location = if let Some(depts) = extracted["department"].as_array() {
+            if let Some(dept) = depts.first() {
+                get_string_value(&dept["location"]).unwrap_or_else(|| "N/A".to_string())
             } else {
                 "N/A".to_string()
             }
