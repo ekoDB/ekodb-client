@@ -10,7 +10,7 @@ use crate::error::{Error, Result};
 use crate::retry::RetryPolicy;
 use crate::schema::{CollectionMetadata, Schema};
 use crate::search::{SearchQuery, SearchResponse};
-use crate::types::{Query, Record, SerializationFormat};
+use crate::types::{FieldType, Query, Record, SerializationFormat};
 use reqwest::{Client as ReqwestClient, Response, StatusCode};
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
@@ -438,7 +438,7 @@ impl HttpClient {
             .into_iter()
             .map(|id| {
                 let mut record = Record::new();
-                record.insert("id", id);
+                record.insert("id".to_string(), FieldType::String(id));
                 record
             })
             .collect())
@@ -513,7 +513,7 @@ impl HttpClient {
             .into_iter()
             .map(|id| {
                 let mut record = Record::new();
-                record.insert("id", id);
+                record.insert("id".to_string(), FieldType::String(id));
                 record
             })
             .collect())

@@ -57,7 +57,7 @@ suspend fun createConversation(client: EkoDBClient, collection: String, convId: 
         "search_type" to io.ekodb.client.types.FieldType.string("hybrid"),
         "limit" to io.ekodb.client.types.FieldType.integer(10)
     )
-    record.fields["search_config"] = io.ekodb.client.types.FieldType.obj(searchConfig)
+    record["search_config"] = io.ekodb.client.types.FieldType.obj(searchConfig)
     
     client.insert(collection, record)
 }
@@ -87,7 +87,7 @@ suspend fun storeMessageWithEmbedding(
     msg.insert("conversation_id", conversationId)
     msg.insert("role", role)
     msg.insert("content", content)
-    msg.fields["embedding"] = io.ekodb.client.types.FieldType.array(embedding.map { 
+    msg["embedding"] = io.ekodb.client.types.FieldType.array(embedding.map { 
         io.ekodb.client.types.FieldType.float(it) 
     })
     msg.insert("tags", tags.joinToString(","))

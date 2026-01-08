@@ -64,7 +64,7 @@ fun main() = runBlocking {
         val results3 = client.find(collection, query3)
         println("✓ Top 3 scores:")
         results3.forEach { record ->
-            println("  - Score: ${record.fields["score"]}")
+            println("  - Score: ${record["score"]}")
         }
         println()
         
@@ -99,7 +99,7 @@ fun main() = runBlocking {
         val results6 = client.find(collection, query6)
         println("✓ Page 2 (2 records):")
         results6.forEach { record ->
-            println("  - ${record.fields["name"]}")
+            println("  - ${record["name"]}")
         }
         println()
         

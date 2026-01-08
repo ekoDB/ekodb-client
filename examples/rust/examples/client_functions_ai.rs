@@ -77,7 +77,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let result1 = client.call_script("ai_assistant_rs", None).await?;
     println!("🤖 AI Response:");
     if let Some(first) = result1.records.first() {
-        if let Some(FieldType::String(response)) = first.fields.get("response") {
+        if let Some(FieldType::String(response)) = first.get("response") {
             println!("   {}", response);
         }
     }

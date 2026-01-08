@@ -159,6 +159,14 @@ async fn swr_with_composition_example(client: &Client) -> Result<(), Box<dyn std
             }),
             bypass_ripple: None,
             ttl: Some(serde_json::json!(300)), // 5 minute cache
+        })
+        .with_function(Function::FindById {
+            collection: "github_cache".to_string(),
+            record_id: "{{username}}".to_string(),
+        })
+        .with_function(Function::Project {
+            fields: vec!["data".to_string()],
+            exclude: false,
         });
 
     client.save_script(fetch_and_store).await?;

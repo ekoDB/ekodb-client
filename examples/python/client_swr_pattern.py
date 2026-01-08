@@ -79,6 +79,9 @@ async def main():
                         "{{http_response}}",
                         300,
                     ),
+                    # Retrieve the cached data to return
+                    Stage.kv_get("github:user:{{username}}"),
+                    Stage.project(["data"], False),
                 ],
             ),
         ],

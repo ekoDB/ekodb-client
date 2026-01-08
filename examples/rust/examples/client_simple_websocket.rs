@@ -51,7 +51,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Show the data
     for (i, record) in records.iter().take(3).enumerate() {
         println!("\nRecord {}:", i + 1);
-        for (key, value) in &record.fields {
+        for (key, value) in record.iter() {
             // Handle both direct values and wrapped Object variants with type metadata
             match value {
                 ekodb_client::FieldType::String(s) => println!("  {}: \"{}\"", key, s),

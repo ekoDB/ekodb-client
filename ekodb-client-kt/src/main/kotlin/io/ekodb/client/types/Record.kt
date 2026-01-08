@@ -10,17 +10,12 @@ import kotlinx.serialization.json.*
 
 /**
  * A record in ekoDB
- * Serializes with flattened fields (no "fields" wrapper) to match server's serde(flatten)
+ * Uses operator overloads so you can use record["key"] instead of record.fields["key"]
  */
 @Serializable(with = RecordSerializer::class)
-data class Record(
-    val fields: MutableMap<String, FieldType> = mutableMapOf()
-) {
-    operator fun get(key: String): FieldType? = fields[key]
-    
-    operator fun set(key: String, value: FieldType) {
-        fields[key] = value
-    }
+data class EkoRecord(
+    private val fields: MutableMap<String, FieldType> = mutableMapOf()
+) : MutableMap<String, FieldType> by fields {
     
     fun insert(key: String, value: String) = apply { fields[key] = FieldType.string(value) }
     fun insert(key: String, value: Long) = apply { fields[key] = FieldType.integer(value) }
@@ -28,14 +23,6 @@ data class Record(
     fun insert(key: String, value: Double) = apply { fields[key] = FieldType.float(value) }
     fun insert(key: String, value: Boolean) = apply { fields[key] = FieldType.boolean(value) }
     fun insert(key: String, value: FieldType) = apply { fields[key] = value }
-    
-    fun remove(key: String): FieldType? = fields.remove(key)
-    
-    fun containsKey(key: String): Boolean = fields.containsKey(key)
-    
-    fun size(): Int = fields.size
-    
-    fun isEmpty(): Boolean = fields.isEmpty()
     
     /**
      * Set TTL duration for this record
@@ -54,22 +41,25 @@ data class Record(
     }
     
     companion object {
-        fun new() = Record()
+        fun new() = EkoRecord()
     }
 }
 
-object RecordSerializer : KSerializer<Record> {
+// Type alias for backward compatibility and cleaner API
+typealias Record = EkoRecord
+
+object RecordSerializer : KSerializer<EkoRecord> {
     private val mapSerializer = MapSerializer(String.serializer(), FieldType.serializer())
     
     override val descriptor: SerialDescriptor = mapSerializer.descriptor
     
-    override fun serialize(encoder: Encoder, value: Record) {
-        // Serialize fields directly (flattened) without "fields" wrapper
-        encoder.encodeSerializableValue(mapSerializer, value.fields)
+    override fun serialize(encoder: Encoder, value: EkoRecord) {
+        // Serialize the internal map directly (flattened)
+        encoder.encodeSerializableValue(mapSerializer, value as MutableMap<String, FieldType>)
     }
     
-    override fun deserialize(decoder: Decoder): Record {
+    override fun deserialize(decoder: Decoder): EkoRecord {
         val map = decoder.decodeSerializableValue(mapSerializer)
-        return Record(map.toMutableMap())
+        return EkoRecord(map.toMutableMap())
     }
 }

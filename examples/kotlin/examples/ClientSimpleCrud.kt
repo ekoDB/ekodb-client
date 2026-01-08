@@ -93,7 +93,7 @@ fun main() = runBlocking {
         println("  data (Bytes): ${data?.size ?: 0} bytes")
         
         // Record already contains all fields
-        println("Record fields: ${found.fields.keys}\n")
+        println("Record fields: ${found.keys.joinToString(", ")}\n")
         
         // Update
         println("=== Update ===")
