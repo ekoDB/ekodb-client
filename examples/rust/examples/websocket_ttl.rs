@@ -94,6 +94,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                             "✓ Retrieved {} record(s) via WebSocket",
                                             arr.len()
                                         );
+
+                                        // Show the actual records
+                                        for (i, record) in arr.iter().enumerate() {
+                                            println!("\nRecord {}:", i + 1);
+                                            if let Some(obj) = record.as_object() {
+                                                for (key, value) in obj {
+                                                    println!("  {}: {}", key, value);
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             }

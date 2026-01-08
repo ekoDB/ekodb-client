@@ -520,3 +520,110 @@ class TestExtractRecord:
         result = extract_record(record)
         assert result["name"] == "John"
         assert result["optional"] is None
+
+
+# ============================================================================
+# SWR Function Tests
+# ============================================================================
+
+from ekodb_client import Stage
+
+
+class TestSWRStage:
+    """Tests for SWR stage creation"""
+
+    def test_swr_stage_basic(self):
+        """Test basic SWR stage creation"""
+        stage = Stage.swr(
+            cache_key="user:{{user_id}}",
+            ttl="15m",
+            url="https://api.example.com/users/{{user_id}}",
+            method="GET",
+        )
+
+        assert stage["type"] == "SWR"
+        assert stage["cache_key"] == "user:{{user_id}}"
+        assert stage["ttl"] == "15m"
+        assert stage["url"] == "https://api.example.com/users/{{user_id}}"
+        assert stage["method"] == "GET"
+
+    def test_swr_stage_with_headers(self):
+        """Test SWR stage with custom headers"""
+        headers = {"User-Agent": "ekoDB-Client", "Authorization": "Bearer {{token}}"}
+        stage = Stage.swr(
+            cache_key="api:resource",
+            ttl="1h",
+            url="https://api.example.com/resource",
+            method="GET",
+            headers=headers,
+        )
+
+        assert stage["headers"] == headers
+
+    def test_swr_stage_with_post_body(self):
+        """Test SWR stage with POST body"""
+        body = {"query": "{{search_term}}", "limit": 10}
+        stage = Stage.swr(
+            cache_key="search:{{search_term}}",
+            ttl=900,
+            url="https://api.example.com/search",
+            method="POST",
+            body=body,
+        )
+
+        assert stage["method"] == "POST"
+        assert stage["body"] == body
+        assert stage["ttl"] == 900
+
+    def test_swr_stage_with_audit_collection(self):
+        """Test SWR stage with audit trail collection"""
+        stage = Stage.swr(
+            cache_key="product:{{id}}",
+            ttl="1h",
+            url="https://api.example.com/products/{{id}}",
+            method="GET",
+            output_field="product",
+            collection="swr_audit_trail",
+        )
+
+        assert stage["output_field"] == "product"
+        assert stage["collection"] == "swr_audit_trail"
+
+    def test_swr_stage_with_timeout(self):
+        """Test SWR stage with custom timeout"""
+        stage = Stage.swr(
+            cache_key="slow:api",
+            ttl="5m",
+            url="https://slow-api.example.com/data",
+            method="GET",
+            timeout_seconds=120,
+        )
+
+        assert stage["timeout_seconds"] == 120
+
+    def test_swr_stage_ttl_formats(self):
+        """Test SWR stage supports various TTL formats"""
+        # Duration string
+        stage1 = Stage.swr(
+            cache_key="test", ttl="30m", url="https://example.com", method="GET"
+        )
+        assert stage1["ttl"] == "30m"
+
+        # Integer seconds
+        stage2 = Stage.swr(
+            cache_key="test", ttl=1800, url="https://example.com", method="GET"
+        )
+        assert stage2["ttl"] == 1800
+
+    def test_swr_stage_optional_fields_omitted(self):
+        """Test that optional fields are not included when None"""
+        stage = Stage.swr(
+            cache_key="minimal", ttl="15m", url="https://example.com", method="GET"
+        )
+
+        # Optional fields should not be present when None
+        assert "headers" not in stage
+        assert "body" not in stage
+        assert "timeout_seconds" not in stage
+        assert "output_field" not in stage
+        assert "collection" not in stage

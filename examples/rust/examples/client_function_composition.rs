@@ -3,8 +3,8 @@
 ///! Demonstrates calling Functions within Functions using CallFunction
 ///! Shows how to build reusable logic blocks and compose complex workflows
 use ekodb_client::{
-    extract_record, get_int_value, get_string_value, Client, FieldType, Function,
-    ParameterDefinition, Record, Script, ScriptCondition,
+    extract_record, get_string_value, Client, FieldType, Function, ParameterDefinition, Record,
+    Script, ScriptCondition,
 };
 use std::{collections::HashMap, env};
 

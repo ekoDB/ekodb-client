@@ -873,6 +873,7 @@ test-examples-rust-client: build-client
 	@cd examples/rust && cargo run --example client_functions_complete
 	@cd examples/rust && cargo run --example client_functions_kv_wrapped
 	@cd examples/rust && cargo run --example client_swr_pattern
+	@cd examples/rust && cargo run --example client_swr_native
 	@cd examples/rust && cargo run --example client_functions_advanced
 	@cd examples/rust && cargo run --example client_functions_ai
 	@cd examples/rust && cargo run --example client_functions_crud
