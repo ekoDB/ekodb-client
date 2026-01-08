@@ -47,6 +47,9 @@ async function swrPatternExample() {
           ),
           // Store in KV with 5 minute TTL
           Stage.kvSet("github:user:{{username}}", "{{http_response}}", 300),
+          // Retrieve the cached data to return
+          Stage.kvGet("github:user:{{username}}"),
+          Stage.project(["data"], false),
         ],
       ),
     ],
@@ -107,6 +110,9 @@ async function swrPatternExample() {
           ),
           // Store in KV with 10 minute TTL
           Stage.kvSet("product:{{product_id}}", "{{http_response}}", 600),
+          // Retrieve the cached data to return
+          Stage.kvGet("product:{{product_id}}"),
+          Stage.project(["data"], false),
         ],
       ),
     ],

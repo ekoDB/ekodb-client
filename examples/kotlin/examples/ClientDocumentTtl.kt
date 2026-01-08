@@ -38,7 +38,7 @@ fun main() = runBlocking {
         // Example 2: Verify document exists
         println("=== Verify Document Exists ===")
         val found = client.findById(collection, docId)
-        println("✓ Document found: ${found.fields.keys}\n")
+        println("✓ Document found: ${found.keys.joinToString(", ")}\n")
         
         // Example 3: Insert document with longer TTL
         println("=== Insert with Longer TTL ===")
@@ -59,7 +59,7 @@ fun main() = runBlocking {
         // Example 5: Verify second document still exists
         println("=== Verify Long TTL Document ===")
         val found2 = client.findById(collection, docId2)
-        println("✓ Long TTL document still exists: ${found2.fields.keys}\n")
+        println("✓ Long TTL document still exists: ${found2.keys.joinToString(", ")}\n")
         
         // Example 6: Delete the long TTL document
         println("=== Delete Document ===")

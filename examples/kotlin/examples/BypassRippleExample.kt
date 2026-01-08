@@ -43,7 +43,7 @@ fun main() = runBlocking {
 
     // Update with bypass_ripple
     println("3. Update with bypass_ripple:")
-    val userId = getStringValue(result1.fields["id"]) ?: error("No ID found")
+    val userId = getStringValue(result1["id"]) ?: error("No ID found")
     val updateRecord = Record.new()
         .insert("price", 150)
     val result3 = client.update(collection, userId, updateRecord, bypassRipple = true)
@@ -51,7 +51,7 @@ fun main() = runBlocking {
 
     // Delete with bypass_ripple (use result2's ID since it exists)
     println("4. Delete with bypass_ripple:")
-    val deleteId = getStringValue(result2.fields["id"]) ?: error("No ID found")
+    val deleteId = getStringValue(result2["id"]) ?: error("No ID found")
     client.delete(collection, deleteId, bypassRipple = true)
     println("   Deleted with bypass_ripple\n")
 

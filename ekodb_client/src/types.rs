@@ -141,93 +141,69 @@ impl FieldType {
     }
 }
 
-/// A record in ekoDB
+/// A record in ekoDB - transparently wraps HashMap for convenience methods
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Record {
-    /// Record fields
-    #[serde(flatten)]
-    pub fields: HashMap<String, FieldType>,
-}
+#[serde(transparent)]
+pub struct Record(HashMap<String, FieldType>);
 
 impl Record {
     /// Create a new empty record
     pub fn new() -> Self {
-        Self {
-            fields: HashMap::new(),
-        }
+        Self(HashMap::new())
     }
 
-    /// Insert a field into the record
+    /// Insert a field with automatic type conversion
     pub fn insert(&mut self, key: impl Into<String>, value: impl Into<FieldType>) {
-        self.fields.insert(key.into(), value.into());
+        self.0.insert(key.into(), value.into());
     }
 
     /// Insert a field and return self for fluent chaining
-    ///
-    /// This is a builder-style method that allows chaining field insertions.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// # use ekodb_client::Record;
-    /// let record = Record::new()
-    ///     .field("name", "John Doe")
-    ///     .field("age", 30)
-    ///     .field("active", true);
-    /// ```
     pub fn field(mut self, key: impl Into<String>, value: impl Into<FieldType>) -> Self {
-        self.fields.insert(key.into(), value.into());
+        self.0.insert(key.into(), value.into());
         self
     }
 
     /// Get a field from the record
     pub fn get(&self, key: &str) -> Option<&FieldType> {
-        self.fields.get(key)
+        self.0.get(key)
     }
 
     /// Remove a field from the record
     pub fn remove(&mut self, key: &str) -> Option<FieldType> {
-        self.fields.remove(key)
+        self.0.remove(key)
     }
 
     /// Check if a field exists
     pub fn contains_key(&self, key: &str) -> bool {
-        self.fields.contains_key(key)
+        self.0.contains_key(key)
     }
 
     /// Get the number of fields
     pub fn len(&self) -> usize {
-        self.fields.len()
+        self.0.len()
     }
 
     /// Check if the record is empty
     pub fn is_empty(&self) -> bool {
-        self.fields.is_empty()
+        self.0.is_empty()
     }
 
     /// Set TTL duration for this record
-    ///
-    /// Supported formats:
-    /// - Duration strings: "30s", "5m", "1h", "1d", "2w"
-    /// - Integer seconds as string: "3600"
-    /// - ISO8601 timestamp: "2024-12-31T23:59:59Z"
     pub fn with_ttl(mut self, duration: impl Into<String>) -> Self {
-        self.fields
+        self.0
             .insert("ttl".to_string(), FieldType::String(duration.into()));
         self
     }
 
     /// Set TTL with update-on-access behavior
-    ///
-    /// If true, TTL resets when the record is accessed
     pub fn with_ttl_update_on_access(
         mut self,
         duration: impl Into<String>,
         update_on_access: bool,
     ) -> Self {
-        self.fields
+        self.0
             .insert("ttl".to_string(), FieldType::String(duration.into()));
-        self.fields.insert(
+        self.0.insert(
             "ttl_update_on_access".to_string(),
             FieldType::Boolean(update_on_access),
         );
@@ -238,6 +214,32 @@ impl Record {
 impl Default for Record {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl std::ops::Deref for Record {
+    type Target = HashMap<String, FieldType>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl std::ops::DerefMut for Record {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+impl From<HashMap<String, FieldType>> for Record {
+    fn from(map: HashMap<String, FieldType>) -> Self {
+        Self(map)
+    }
+}
+
+impl From<Record> for HashMap<String, FieldType> {
+    fn from(record: Record) -> Self {
+        record.0
     }
 }
 

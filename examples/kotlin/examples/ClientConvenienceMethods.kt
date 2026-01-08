@@ -38,7 +38,7 @@ fun main() = runBlocking {
     println("✓ Created record: $inserted")
 
     println("\n=== Upsert Operation ===")
-    val userId = inserted.fields["id"]?.toString() ?: throw Exception("No ID returned")
+    val userId = inserted["id"]?.toString() ?: throw Exception("No ID returned")
 
     // First upsert - will update (record exists)
     val user2 = Record.new()

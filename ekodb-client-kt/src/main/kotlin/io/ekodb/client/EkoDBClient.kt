@@ -422,7 +422,7 @@ class EkoDBClient private constructor(
         return BatchResult(
             successful = successful.map { idElement ->
                 val id = idElement.jsonPrimitive.content
-                Record().apply { fields["id"] = FieldType.string(id) }
+                Record().apply { this["id"] = FieldType.string(id) }
             },
             failed = failed.map { errorElement ->
                 BatchError(0, errorElement.toString())
@@ -472,7 +472,7 @@ class EkoDBClient private constructor(
         val successful = result["successful"]?.jsonArray ?: JsonArray(emptyList())
         return successful.map { idElement ->
             val id = idElement.jsonPrimitive.content
-            Record().apply { fields["id"] = FieldType.string(id) }
+            Record().apply { this["id"] = FieldType.string(id) }
         }
     }
     

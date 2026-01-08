@@ -62,6 +62,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     bypass_ripple: None,
                     ttl: None,
                 }),
+                Box::new(Function::FindById {
+                    collection: "github_cache".to_string(),
+                    record_id: "{{username}}".to_string(),
+                }),
+                Box::new(Function::Project {
+                    fields: vec!["data".to_string()],
+                    exclude: false,
+                }),
             ]),
         })
         .with_tag("swr")
@@ -152,6 +160,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     }),
                     bypass_ripple: None,
                     ttl: None,
+                }),
+                Box::new(Function::FindById {
+                    collection: "product_cache".to_string(),
+                    record_id: "{{product_id}}".to_string(),
+                }),
+                Box::new(Function::Project {
+                    fields: vec!["enriched_data".to_string()],
+                    exclude: false,
                 }),
             ]),
         })

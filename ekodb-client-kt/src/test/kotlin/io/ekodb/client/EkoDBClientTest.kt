@@ -251,7 +251,7 @@ class EkoDBClientTest {
         
         val result = client.upsert("users", "user_123", record)
         assertNotNull(result)
-        val idField = result.fields["id"]
+        val idField = result["id"]
         assertTrue(idField is io.ekodb.client.types.FieldType.StringValue)
         assertEquals("user_123", (idField as io.ekodb.client.types.FieldType.StringValue).value)
     }
@@ -305,7 +305,7 @@ class EkoDBClientTest {
         
         val result = client.upsert("users", "nonexistent_id", record)
         assertNotNull(result)
-        val idField = result.fields["id"]
+        val idField = result["id"]
         assertNotNull(idField, "ID field should not be null")
         assertTrue(idField is io.ekodb.client.types.FieldType.StringValue, "ID should be StringValue but was ${idField::class.simpleName}")
         assertEquals("new_user_456", (idField as io.ekodb.client.types.FieldType.StringValue).value)
@@ -318,7 +318,7 @@ class EkoDBClientTest {
         
         val result = client.findOne("users", "email", "alice@example.com")
         assertNotNull(result)
-        val idField = result?.fields?.get("id")
+        val idField = result?.get("id")
         assertTrue(idField is io.ekodb.client.types.FieldType.StringValue)
         assertEquals("user_123", (idField as io.ekodb.client.types.FieldType.StringValue).value)
     }

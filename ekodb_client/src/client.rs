@@ -5,7 +5,7 @@ use crate::error::{Error, Result};
 use crate::http::HttpClient;
 use crate::schema::{CollectionMetadata, Schema};
 use crate::search::{SearchQuery, SearchResponse};
-use crate::types::{Query, Record};
+use crate::types::{FieldType, Query, Record};
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -1222,7 +1222,7 @@ impl Client {
 
         // Insert a temporary record with the text
         let mut temp_record = Record::new();
-        temp_record.insert("text", text);
+        temp_record.insert("text".to_string(), FieldType::String(text.to_string()));
         self.insert(&temp_collection, temp_record, None).await?;
 
         // Create a Script that loads the record, embeds it, and returns it

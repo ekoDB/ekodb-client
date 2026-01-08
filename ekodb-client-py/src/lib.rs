@@ -1963,7 +1963,7 @@ fn dict_to_record(dict: &Bound<'_, PyDict>) -> PyResult<RustRecord> {
     for (key, value) in dict.iter() {
         let key_str: String = key.extract()?;
         let field_value = py_to_field_type(&value)?;
-        record.fields.insert(key_str, field_value);
+        record.insert(key_str, field_value);
     }
 
     Ok(record)
@@ -2003,7 +2003,7 @@ fn field_type_to_py(py: Python, value: &FieldType) -> PyResult<Py<PyAny>> {
 fn record_to_dict(py: Python, record: &RustRecord) -> PyResult<Py<PyAny>> {
     let dict = PyDict::new(py);
 
-    for (key, value) in record.fields.iter() {
+    for (key, value) in record.iter() {
         dict.set_item(key, field_type_to_py(py, value)?)?;
     }
 
