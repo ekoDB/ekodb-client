@@ -114,6 +114,40 @@ These examples show the same operations using the type-safe client library:
   - Context-aware AI responses
   - Self-improving knowledge base
 
+- **[swr_pattern.rs](examples/swr_pattern.rs)** - Manual SWR Pattern (Legacy)
+
+  ```bash
+  cargo run --example swr_pattern
+  ```
+
+  Demonstrates the manual SWR (Stale-While-Revalidate) pattern using function
+  composition:
+  - FindById → If → HttpRequest → Insert pattern
+  - Cache-aside implementation
+
+- **[client_swr_pattern.rs](examples/client_swr_pattern.rs)** - Client SWR
+  Pattern (Legacy)
+
+  ```bash
+  cargo run --example client_swr_pattern
+  ```
+
+  Similar to swr_pattern.rs but using the ekodb_client library
+
+- **[client_swr_native.rs](examples/client_swr_native.rs)** - Native SWR
+  Function (RECOMMENDED)
+
+  ```bash
+  cargo run --example client_swr_native
+  ```
+
+  Demonstrates the new native SWR function that simplifies cache-aside patterns:
+  - Single function call (vs. 4 in manual pattern)
+  - Duration string TTL support ("15m", "1h", "2h")
+  - Optional audit trail collection
+  - Automatic enriched parameter population
+  - Works in both transactional and non-transactional contexts
+
 ## Running Examples
 
 1. Start the ekoDB server

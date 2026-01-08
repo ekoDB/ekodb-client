@@ -411,6 +411,55 @@ class Stage:
         """Release a savepoint."""
         return {"type": "ReleaseSavepoint", "name": name}
 
+    @staticmethod
+    def swr(
+        cache_key: str,
+        ttl: Union[str, int],
+        url: str,
+        method: str = "GET",
+        headers: Optional[Dict[str, str]] = None,
+        body: Optional[Any] = None,
+        timeout_seconds: Optional[int] = None,
+        output_field: Optional[str] = None,
+        collection: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        SWR (Stale-While-Revalidate) pattern for external API caching.
+        Automatically handles: KV cache check → HTTP request → KV cache set → optional audit storage.
+
+        Args:
+            cache_key: KV key for caching (supports parameter substitution like "user:{{user_id}}")
+            ttl: Cache TTL - supports duration strings ("15m", "1h"), integers (seconds), or ISO timestamps
+            url: HTTP URL to fetch from (supports parameter substitution)
+            method: HTTP method (default: "GET")
+            headers: Optional HTTP headers
+            body: Optional HTTP request body
+            timeout_seconds: Optional HTTP timeout
+            output_field: Field name for response in enriched params (default: "response")
+            collection: Optional collection for audit trail storage
+
+        Returns:
+            Dict representing the SWR function stage
+        """
+        stage: Dict[str, Any] = {
+            "type": "SWR",
+            "cache_key": cache_key,
+            "ttl": ttl,
+            "url": url,
+            "method": method,
+        }
+        if headers is not None:
+            stage["headers"] = headers
+        if body is not None:
+            stage["body"] = body
+        if timeout_seconds is not None:
+            stage["timeout_seconds"] = timeout_seconds
+        if output_field is not None:
+            stage["output_field"] = output_field
+        if collection is not None:
+            stage["collection"] = collection
+        return stage
+
 
 class ChatMessage:
     """Helper class for creating chat messages."""

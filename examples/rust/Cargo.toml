@@ -104,3 +104,11 @@ path = "examples/client_functions.rs"
 [[example]]
 name = "swr_pattern"
 path = "examples/swr_pattern.rs"
+
+[[example]]
+name = "client_swr_pattern"
+path = "examples/client_swr_pattern.rs"
+
+[[example]]
+name = "client_swr_native"
+path = "examples/client_swr_native.rs"

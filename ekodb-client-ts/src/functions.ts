@@ -212,6 +212,18 @@ export type FunctionStageConfig =
       type: "KvQuery";
       pattern?: string;
       include_expired?: boolean;
+    }
+  | {
+      type: "SWR";
+      cache_key: string;
+      ttl: string | number;
+      url: string;
+      method: string;
+      headers?: Record<string, string>;
+      body?: any;
+      timeout_seconds?: number;
+      output_field?: string;
+      collection?: string;
     };
 
 export interface ChatMessage {
@@ -630,5 +642,42 @@ export const Stage = {
     type: "KvQuery",
     pattern,
     include_expired,
+  }),
+
+  /**
+   * SWR (Stale-While-Revalidate) pattern for external API caching.
+   * Automatically handles: KV cache check → HTTP request → KV cache set → optional audit storage.
+   *
+   * @param cache_key - KV key for caching (supports parameter substitution like "user:{{user_id}}")
+   * @param ttl - Cache TTL - supports duration strings ("15m", "1h"), integers (seconds), or ISO timestamps
+   * @param url - HTTP URL to fetch from (supports parameter substitution)
+   * @param method - HTTP method (default: "GET")
+   * @param headers - Optional HTTP headers
+   * @param body - Optional HTTP request body
+   * @param timeout_seconds - Optional HTTP timeout
+   * @param output_field - Field name for response in enriched params (default: "response")
+   * @param collection - Optional collection for audit trail storage
+   */
+  swr: (
+    cache_key: string,
+    ttl: string | number,
+    url: string,
+    method: string = "GET",
+    headers?: Record<string, string>,
+    body?: any,
+    timeout_seconds?: number,
+    output_field?: string,
+    collection?: string,
+  ): FunctionStageConfig => ({
+    type: "SWR",
+    cache_key,
+    ttl,
+    url,
+    method,
+    headers,
+    body,
+    timeout_seconds,
+    output_field,
+    collection,
   }),
 };

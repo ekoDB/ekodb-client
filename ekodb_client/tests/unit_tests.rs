@@ -1371,3 +1371,168 @@ fn test_record_field_builder_empty() {
     assert!(record.is_empty());
     assert_eq!(record.len(), 0);
 }
+
+// ============================================================================
+// SWR Function Tests
+// ============================================================================
+
+#[test]
+fn test_swr_function_serialization() {
+    use ekodb_client::Function;
+    use std::collections::HashMap;
+
+    let swr = Function::SWR {
+        cache_key: "user:{{user_id}}".to_string(),
+        ttl: json!("15m"),
+        url: "https://api.example.com/users/{{user_id}}".to_string(),
+        method: "GET".to_string(),
+        headers: Some(HashMap::from([(
+            "User-Agent".to_string(),
+            "ekoDB-Client".to_string(),
+        )])),
+        body: None,
+        timeout_seconds: Some(30),
+        output_field: Some("user_data".to_string()),
+        collection: None,
+    };
+
+    let serialized = serde_json::to_value(&swr).expect("Should serialize");
+
+    assert_eq!(serialized["cache_key"], "user:{{user_id}}");
+    assert_eq!(serialized["ttl"], "15m");
+    assert_eq!(
+        serialized["url"],
+        "https://api.example.com/users/{{user_id}}"
+    );
+    assert_eq!(serialized["method"], "GET");
+    assert_eq!(serialized["timeout_seconds"], 30);
+    assert_eq!(serialized["output_field"], "user_data");
+}
+
+#[test]
+fn test_swr_function_with_audit_collection() {
+    use ekodb_client::Function;
+
+    let swr = Function::SWR {
+        cache_key: "product:{{id}}".to_string(),
+        ttl: json!("1h"),
+        url: "https://api.example.com/products/{{id}}".to_string(),
+        method: "GET".to_string(),
+        headers: None,
+        body: None,
+        timeout_seconds: None,
+        output_field: Some("product".to_string()),
+        collection: Some("swr_audit_trail".to_string()),
+    };
+
+    let serialized = serde_json::to_value(&swr).expect("Should serialize");
+
+    assert_eq!(serialized["collection"], "swr_audit_trail");
+}
+
+#[test]
+fn test_swr_function_with_post_body() {
+    use ekodb_client::Function;
+
+    let swr = Function::SWR {
+        cache_key: "api:{{resource}}".to_string(),
+        ttl: json!(900), // Integer seconds
+        url: "https://api.example.com/resource".to_string(),
+        method: "POST".to_string(),
+        headers: None,
+        body: Some(json!({"query": "{{query}}"})),
+        timeout_seconds: Some(60),
+        output_field: None,
+        collection: None,
+    };
+
+    let serialized = serde_json::to_value(&swr).expect("Should serialize");
+
+    assert_eq!(serialized["method"], "POST");
+    assert_eq!(serialized["body"]["query"], "{{query}}");
+    assert_eq!(serialized["ttl"], 900);
+}
+
+#[test]
+fn test_swr_function_ttl_formats() {
+    use ekodb_client::Function;
+
+    // Duration string
+    let swr1 = Function::SWR {
+        cache_key: "test".to_string(),
+        ttl: json!("30m"),
+        url: "https://example.com".to_string(),
+        method: "GET".to_string(),
+        headers: None,
+        body: None,
+        timeout_seconds: None,
+        output_field: None,
+        collection: None,
+    };
+    let ser1 = serde_json::to_value(&swr1).unwrap();
+    assert_eq!(ser1["ttl"], "30m");
+
+    // Integer seconds
+    let swr2 = Function::SWR {
+        cache_key: "test".to_string(),
+        ttl: json!(1800),
+        url: "https://example.com".to_string(),
+        method: "GET".to_string(),
+        headers: None,
+        body: None,
+        timeout_seconds: None,
+        output_field: None,
+        collection: None,
+    };
+    let ser2 = serde_json::to_value(&swr2).unwrap();
+    assert_eq!(ser2["ttl"], 1800);
+
+    // ISO timestamp
+    let swr3 = Function::SWR {
+        cache_key: "test".to_string(),
+        ttl: json!("2024-12-31T23:59:59Z"),
+        url: "https://example.com".to_string(),
+        method: "GET".to_string(),
+        headers: None,
+        body: None,
+        timeout_seconds: None,
+        output_field: None,
+        collection: None,
+    };
+    let ser3 = serde_json::to_value(&swr3).unwrap();
+    assert_eq!(ser3["ttl"], "2024-12-31T23:59:59Z");
+}
+
+#[test]
+fn test_swr_function_deserialization() {
+    use ekodb_client::Function;
+
+    let json_data = json!({
+        "type": "SWR",
+        "cache_key": "user:123",
+        "ttl": "15m",
+        "url": "https://api.example.com/users/123",
+        "method": "GET",
+        "output_field": "user_data"
+    });
+
+    let function: Function = serde_json::from_value(json_data).expect("Should deserialize");
+
+    match function {
+        Function::SWR {
+            cache_key,
+            ttl,
+            url,
+            method,
+            output_field,
+            ..
+        } => {
+            assert_eq!(cache_key, "user:123");
+            assert_eq!(ttl, json!("15m"));
+            assert_eq!(url, "https://api.example.com/users/123");
+            assert_eq!(method, "GET");
+            assert_eq!(output_field, Some("user_data".to_string()));
+        }
+        _ => panic!("Expected SWR function"),
+    }
+}

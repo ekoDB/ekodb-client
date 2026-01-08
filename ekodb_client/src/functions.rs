@@ -507,6 +507,25 @@ pub enum Function {
         #[serde(default)]
         include_expired: bool,
     },
+
+    /// SWR (Stale-While-Revalidate) pattern for external API caching
+    /// Automatically handles: KV cache check → HTTP request → KV cache set → optional audit storage
+    SWR {
+        cache_key: String,
+        ttl: serde_json::Value,
+        url: String,
+        method: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        headers: Option<HashMap<String, String>>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        body: Option<serde_json::Value>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        timeout_seconds: Option<u64>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        output_field: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        collection: Option<String>,
+    },
 }
 
 fn default_method() -> String {

@@ -48,9 +48,31 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let records = ws_client.find_all(collection).await?;
     println!("✓ Retrieved {} record(s) via WebSocket", records.len());
 
-    // Show some of the data
+    // Show the data
     for (i, record) in records.iter().take(3).enumerate() {
-        println!("  Record {}: {} fields", i + 1, record.len());
+        println!("\nRecord {}:", i + 1);
+        for (key, value) in &record.fields {
+            // Handle both direct values and wrapped Object variants with type metadata
+            match value {
+                ekodb_client::FieldType::String(s) => println!("  {}: \"{}\"", key, s),
+                ekodb_client::FieldType::Integer(n) => println!("  {}: {}", key, n),
+                ekodb_client::FieldType::Boolean(b) => println!("  {}: {}", key, b),
+                ekodb_client::FieldType::Object(map) => {
+                    // Extract value from {"type": "...", "value": ...} structure
+                    if let Some(inner_value) = map.get("value") {
+                        match inner_value {
+                            ekodb_client::FieldType::String(s) => println!("  {}: \"{}\"", key, s),
+                            ekodb_client::FieldType::Integer(n) => println!("  {}: {}", key, n),
+                            ekodb_client::FieldType::Boolean(b) => println!("  {}: {}", key, b),
+                            _ => println!("  {}: {:?}", key, inner_value),
+                        }
+                    } else {
+                        println!("  {}: {{object}}", key);
+                    }
+                }
+                _ => println!("  {}: {:?}", key, value),
+            }
+        }
     }
 
     // Cleanup: Delete the collection

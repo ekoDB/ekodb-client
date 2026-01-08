@@ -305,6 +305,34 @@ sealed class FunctionStageConfig {
         val pattern: String? = null,
         @EncodeDefault val include_expired: Boolean = false
     ) : FunctionStageConfig()
+    
+    /**
+     * SWR (Stale-While-Revalidate) pattern for external API caching.
+     * Automatically handles: KV cache check → HTTP request → KV cache set → optional audit storage.
+     *
+     * @param cache_key KV key for caching (supports parameter substitution like "user:{{user_id}}")
+     * @param ttl Cache TTL - supports duration strings ("15m", "1h"), integers (seconds), or ISO timestamps
+     * @param url HTTP URL to fetch from (supports parameter substitution)
+     * @param method HTTP method (default: "GET")
+     * @param headers Optional HTTP headers
+     * @param body Optional HTTP request body
+     * @param timeout_seconds Optional HTTP timeout
+     * @param output_field Field name for response in enriched params (default: "response")
+     * @param collection Optional collection for audit trail storage
+     */
+    @Serializable
+    @SerialName("SWR")
+    data class SWR(
+        val cache_key: String,
+        val ttl: JsonElement,
+        val url: String,
+        @EncodeDefault val method: String = "GET",
+        val headers: Map<String, String>? = null,
+        val body: JsonElement? = null,
+        val timeout_seconds: Int? = null,
+        val output_field: String? = null,
+        val collection: String? = null
+    ) : FunctionStageConfig()
 }
 
 /**
