@@ -49,52 +49,62 @@ fun main() = runBlocking {
         println("✓ Session value: $sessionValue")
         println("  (Will expire in 10 seconds)\n")
         
-        // Example 5: Set multiple keys
-        println("=== Set Multiple Keys ===")
-        val keys = listOf("config:db", "config:cache", "config:api")
-        keys.forEachIndexed { index, key ->
-            client.kvSet(key, buildJsonObject {
-                put("setting", "value_$index")
-                put("enabled", true)
-            })
+        // Example 5: Batch set multiple keys
+        println("=== KV Batch Set ===")
+        val batchEntries = listOf(
+            Triple("config:db", buildJsonObject { put("host", "localhost"); put("port", 5432) }, null),
+            Triple("config:cache", buildJsonObject { put("ttl", 3600); put("enabled", true) }, null),
+            Triple("config:api", buildJsonObject { put("timeout", 30); put("retries", 3) }, null)
+        )
+        val setResults = client.kvBatchSet(batchEntries)
+        println("✓ Batch set ${setResults.size} keys")
+        setResults.forEach { (key, wasSet) ->
+            println("  $key: ${if (wasSet) "success" else "failed"}")
         }
-        println("✓ Set ${keys.size} configuration keys\n")
+        println()
         
-        // Example 6: Check if key exists
+        // Example 6: Batch get multiple keys
+        println("=== KV Batch Get ===")
+        val keys = listOf("config:db", "config:cache", "config:api")
+        val batchValues = client.kvBatchGet(keys)
+        println("✓ Batch retrieved ${batchValues.size} values")
+        batchValues.forEachIndexed { index, value ->
+            println("  ${keys[index]}: $value")
+        }
+        println()
+        
+        // Example 7: Check if key exists
         println("=== KV Exists ===")
         val exists = client.kvExists("user:123")
         println("✓ Key exists: $exists\n")
         
-        // Example 7: Find keys with pattern
+        // Example 8: Find keys with pattern
         println("=== KV Find (Pattern Query) ===")
         val configResults = client.kvFind(pattern = "config:.*")
         println("✓ Found ${configResults.size} keys matching 'config:.*'\n")
         
-        // Example 8: Query all keys
+        // Example 9: Query all keys
         println("=== KV Query (Alias for Find) ===")
         val allResults = client.kvQuery()
         println("✓ Total keys in store: ${allResults.size}\n")
         
-        // Example 9: Delete a key
+        // Example 10: Delete a key
         println("=== KV Delete ===")
         client.kvDelete("user:123")
         println("✓ Deleted key: user:123\n")
         
-        // Example 10: Verify deletion with kvExists
+        // Example 11: Verify deletion with kvExists
         println("=== Verify Deletion ===")
         val existsAfter = client.kvExists("user:123")
         println("✓ Key exists after delete: $existsAfter\n")
         
-        // Cleanup remaining keys
-        println("=== Cleanup ===")
-        keys.forEach { key ->
-            try {
-                client.kvDelete(key)
-            } catch (e: Exception) {
-                // Ignore errors
-            }
+        // Cleanup with batch delete
+        println("=== KV Batch Delete ===")
+        val deleteResults = client.kvBatchDelete(keys)
+        println("✓ Batch deleted ${deleteResults.size} keys")
+        deleteResults.forEach { (key, wasDeleted) ->
+            println("  $key: ${if (wasDeleted) "deleted" else "not found"}")
         }
-        println("✓ Cleaned up test keys")
         
     } finally {
         client.close()

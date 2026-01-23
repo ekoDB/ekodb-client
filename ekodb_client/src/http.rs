@@ -739,6 +739,107 @@ impl HttpClient {
         }
     }
 
+    /// Batch get multiple keys
+    pub async fn kv_batch_get(&self, keys: Vec<String>, token: &str) -> Result<Vec<Record>> {
+        let url = self.base_url.join("/api/kv/batch/get")?;
+
+        #[derive(Serialize)]
+        struct BatchGetRequest {
+            keys: Vec<String>,
+        }
+
+        self.retry_policy
+            .execute(|| async {
+                let response = self
+                    .client
+                    .post(url.clone())
+                    .header("Authorization", format!("Bearer {}", token))
+                    .header("Accept", "application/json")
+                    .json(&BatchGetRequest { keys: keys.clone() })
+                    .send()
+                    .await?;
+
+                let bytes = response.bytes().await.map_err(Error::Http)?;
+                let results: Vec<Record> =
+                    serde_json::from_slice(&bytes).map_err(Error::Serialization)?;
+                Ok(results)
+            })
+            .await
+    }
+
+    /// Batch set multiple key-value pairs
+    pub async fn kv_batch_set(
+        &self,
+        keys: Vec<String>,
+        values: Vec<Record>,
+        ttl: Option<i64>,
+        token: &str,
+    ) -> Result<Vec<(String, bool)>> {
+        let url = self.base_url.join("/api/kv/batch/set")?;
+
+        #[derive(Serialize)]
+        struct BatchSetRequest {
+            keys: Vec<String>,
+            values: Vec<Record>,
+            #[serde(skip_serializing_if = "Option::is_none")]
+            ttl: Option<i64>,
+        }
+
+        self.retry_policy
+            .execute(|| async {
+                let response = self
+                    .client
+                    .post(url.clone())
+                    .header("Authorization", format!("Bearer {}", token))
+                    .header("Accept", "application/json")
+                    .json(&BatchSetRequest {
+                        keys: keys.clone(),
+                        values: values.clone(),
+                        ttl,
+                    })
+                    .send()
+                    .await?;
+
+                let bytes = response.bytes().await.map_err(Error::Http)?;
+                let results: Vec<(String, bool)> =
+                    serde_json::from_slice(&bytes).map_err(Error::Serialization)?;
+                Ok(results)
+            })
+            .await
+    }
+
+    /// Batch delete multiple keys
+    pub async fn kv_batch_delete(
+        &self,
+        keys: Vec<String>,
+        token: &str,
+    ) -> Result<Vec<(String, bool)>> {
+        let url = self.base_url.join("/api/kv/batch/delete")?;
+
+        #[derive(Serialize)]
+        struct BatchDeleteRequest {
+            keys: Vec<String>,
+        }
+
+        self.retry_policy
+            .execute(|| async {
+                let response = self
+                    .client
+                    .delete(url.clone())
+                    .header("Authorization", format!("Bearer {}", token))
+                    .header("Accept", "application/json")
+                    .json(&BatchDeleteRequest { keys: keys.clone() })
+                    .send()
+                    .await?;
+
+                let bytes = response.bytes().await.map_err(Error::Http)?;
+                let results: Vec<(String, bool)> =
+                    serde_json::from_slice(&bytes).map_err(Error::Serialization)?;
+                Ok(results)
+            })
+            .await
+    }
+
     /// Query/find KV entries with pattern matching
     pub async fn kv_find(
         &self,

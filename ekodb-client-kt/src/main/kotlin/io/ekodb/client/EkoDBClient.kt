@@ -830,6 +830,93 @@ class EkoDBClient private constructor(
     }
     
     /**
+     * Key-Value: Batch get multiple keys
+     */
+    suspend fun kvBatchGet(keys: List<String>): List<JsonElement> {
+        val token = getToken()
+        val body = buildJsonObject {
+            put("keys", JsonArray(keys.map { JsonPrimitive(it) }))
+        }
+        
+        val response = executeWithRetry {
+            client.post("$baseUrl/api/kv/batch/get") {
+                header("Authorization", "Bearer $token")
+                contentType(ContentType.Application.Json)
+                setBody(body)
+            }
+        }
+        
+        if (!response.status.isSuccess()) {
+            val errorBody = response.bodyAsText()
+            throw Exception("KV batch get failed with status ${response.status}: $errorBody")
+        }
+        
+        return response.body<List<JsonElement>>()
+    }
+    
+    /**
+     * Key-Value: Batch set multiple key-value pairs
+     */
+    suspend fun kvBatchSet(entries: List<Triple<String, JsonElement, Int?>>): List<Pair<String, Boolean>> {
+        val token = getToken()
+        val keys = entries.map { it.first }
+        val values = entries.map { buildJsonObject { put("value", it.second) } }
+        val ttl = entries.firstOrNull()?.third
+        
+        val body = buildJsonObject {
+            put("keys", JsonArray(keys.map { JsonPrimitive(it) }))
+            put("values", JsonArray(values))
+            ttl?.let { put("ttl", JsonPrimitive(it)) }
+        }
+        
+        val response = executeWithRetry {
+            client.post("$baseUrl/api/kv/batch/set") {
+                header("Authorization", "Bearer $token")
+                contentType(ContentType.Application.Json)
+                setBody(body)
+            }
+        }
+        
+        if (!response.status.isSuccess()) {
+            val errorBody = response.bodyAsText()
+            throw Exception("KV batch set failed with status ${response.status}: $errorBody")
+        }
+        
+        val result = response.body<List<JsonArray>>()
+        return result.map { arr -> 
+            Pair(arr[0].jsonPrimitive.content, arr[1].jsonPrimitive.boolean)
+        }
+    }
+    
+    /**
+     * Key-Value: Batch delete multiple keys
+     */
+    suspend fun kvBatchDelete(keys: List<String>): List<Pair<String, Boolean>> {
+        val token = getToken()
+        val body = buildJsonObject {
+            put("keys", JsonArray(keys.map { JsonPrimitive(it) }))
+        }
+        
+        val response = executeWithRetry {
+            client.delete("$baseUrl/api/kv/batch/delete") {
+                header("Authorization", "Bearer $token")
+                contentType(ContentType.Application.Json)
+                setBody(body)
+            }
+        }
+        
+        if (!response.status.isSuccess()) {
+            val errorBody = response.bodyAsText()
+            throw Exception("KV batch delete failed with status ${response.status}: $errorBody")
+        }
+        
+        val result = response.body<List<JsonArray>>()
+        return result.map { arr -> 
+            Pair(arr[0].jsonPrimitive.content, arr[1].jsonPrimitive.boolean)
+        }
+    }
+    
+    /**
      * Key-Value: Check if a key exists
      */
     suspend fun kvExists(key: String): Boolean {

@@ -56,28 +56,38 @@ func main() {
 	}
 	fmt.Printf("Retrieved value: %v\n", value)
 
-	// Example 3: Set multiple keys
-	fmt.Println("\n=== Set Multiple Keys ===")
-	keys := []string{"cache:product:1", "cache:product:2", "cache:product:3"}
-	for i, key := range keys {
-		data := map[string]interface{}{
-			"name":  fmt.Sprintf("Product %d", i+1),
-			"price": 29.99 + float64(i*10),
-		}
-		if err := client.KVSet(key, data); err != nil {
-			log.Fatal(err)
-		}
+	// Example 3: Batch set multiple keys
+	fmt.Println("\n=== KV Batch Set ===")
+	batchEntries := []map[string]interface{}{
+		{"key": "cache:product:1", "value": map[string]interface{}{"name": "Product 1", "price": 29.99}},
+		{"key": "cache:product:2", "value": map[string]interface{}{"name": "Product 2", "price": 39.99}},
+		{"key": "cache:product:3", "value": map[string]interface{}{"name": "Product 3", "price": 49.99}},
 	}
-	fmt.Printf("✓ Set %d keys\n", len(keys))
-
-	// Example 4: Get multiple keys
-	fmt.Println("\n=== Get Multiple Keys ===")
-	for _, key := range keys {
-		value, err := client.KVGet(key)
-		if err != nil {
-			log.Fatal(err)
+	setResults, err := client.KVBatchSet(batchEntries)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("✓ Batch set %d keys\n", len(setResults))
+	for _, result := range setResults {
+		key := result[0].(string)
+		wasSet := result[1].(bool)
+		status := "failed"
+		if wasSet {
+			status = "success"
 		}
-		fmt.Printf("%s: %v\n", key, value)
+		fmt.Printf("  %s: %s\n", key, status)
+	}
+
+	// Example 4: Batch get multiple keys
+	fmt.Println("\n=== KV Batch Get ===")
+	keys := []string{"cache:product:1", "cache:product:2", "cache:product:3"}
+	batchValues, err := client.KVBatchGet(keys)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("✓ Batch retrieved %d values\n", len(batchValues))
+	for i, val := range batchValues {
+		fmt.Printf("  %s: %v\n", keys[i], val)
 	}
 
 	// Example 5: Check if key exists
@@ -115,14 +125,22 @@ func main() {
 	existsAfter, _ := client.KVExists("session:user123")
 	fmt.Printf("✓ Verified: Key exists after delete: %v\n", existsAfter)
 
-	// Example 9: Delete multiple keys
-	fmt.Println("\n=== Delete Multiple Keys ===")
-	for _, key := range keys {
-		if err := client.KVDelete(key); err != nil {
-			log.Fatal(err)
-		}
+	// Example 9: Batch delete multiple keys
+	fmt.Println("\n=== KV Batch Delete ===")
+	deleteResults, err := client.KVBatchDelete(keys)
+	if err != nil {
+		log.Fatal(err)
 	}
-	fmt.Printf("✓ Deleted %d keys\n", len(keys))
+	fmt.Printf("✓ Batch deleted %d keys\n", len(deleteResults))
+	for _, result := range deleteResults {
+		key := result[0].(string)
+		wasDeleted := result[1].(bool)
+		status := "not found"
+		if wasDeleted {
+			status = "deleted"
+		}
+		fmt.Printf("  %s: %s\n", key, status)
+	}
 
 	fmt.Println("\n✓ All KV operations completed successfully")
 }

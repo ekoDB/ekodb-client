@@ -15,7 +15,7 @@ use serde_json;
 use pyo3::create_exception;
 use pyo3::exceptions::{PyException, PyRuntimeError, PyValueError};
 use pyo3::prelude::*;
-use pyo3::types::{PyBool, PyDict, PyFloat, PyInt, PyList, PyString};
+use pyo3::types::{PyBool, PyDict, PyFloat, PyInt, PyList, PyString, PyTuple};
 use pyo3_async_runtimes::tokio::future_into_py;
 
 // Create a custom exception for rate limiting
@@ -1058,6 +1058,128 @@ impl Client {
                 .map_err(|e| PyRuntimeError::new_err(format!("KV delete failed: {}", e)))?;
 
             Python::attach(|py| Ok(py.None()))
+        })
+    }
+
+    /// Batch get multiple keys
+    /// 
+    /// Args:
+    ///     keys: List of keys to retrieve
+    /// 
+    /// Returns:
+    ///     List of records corresponding to the keys
+    fn kv_batch_get<'py>(
+        &self,
+        py: Python<'py>,
+        keys: Vec<String>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            let results = client
+                .kv_batch_get(keys)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("KV batch get failed: {}", e)))?;
+
+            Python::attach(|py| {
+                let list = PyList::empty(py);
+                for record in results {
+                    list.append(record_to_dict(py, &record)?)?;
+                }
+                Ok(list.into())
+            })
+        })
+    }
+
+    /// Batch set multiple key-value pairs
+    /// 
+    /// Args:
+    ///     entries: List of dicts with 'key', 'value', and optional 'ttl' fields
+    /// 
+    /// Returns:
+    ///     List of tuples [(key, was_set), ...]
+    fn kv_batch_set<'py>(
+        &self,
+        py: Python<'py>,
+        entries: Vec<Bound<'py, PyDict>>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        
+        let mut keys = Vec::new();
+        let mut values = Vec::new();
+        let mut ttl = None;
+        
+        for entry in entries {
+            let key: String = entry.get_item("key")?
+                .ok_or_else(|| PyValueError::new_err("Entry missing 'key' field"))?
+                .extract()?;
+            let value_bound = entry.get_item("value")?
+                .ok_or_else(|| PyValueError::new_err("Entry missing 'value' field"))?;
+            
+            // Convert value to Record
+            let value_dict = value_bound.cast::<PyDict>()
+                .map_err(|_| PyValueError::new_err("Entry 'value' must be a dict"))?;
+            
+            keys.push(key);
+            values.push(dict_to_record(value_dict)?);
+            
+            // Use TTL from first entry if provided
+            if ttl.is_none() {
+                if let Ok(Some(ttl_val)) = entry.get_item("ttl") {
+                    ttl = Some(ttl_val.extract::<i64>()?);
+                }
+            }
+        }
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            let results = client
+                .kv_batch_set(keys.clone(), values, ttl)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("KV batch set failed: {}", e)))?;
+
+            Python::attach(|py| {
+                let list = PyList::empty(py);
+                for (key, was_set) in results {
+                    let py_key = PyString::new(py, &key);
+                    let py_bool = PyBool::new(py, was_set);
+                    let tuple = PyTuple::new(py, &[py_key.as_any(), py_bool.as_any()])?;
+                    list.append(tuple)?;
+                }
+                Ok(list.into())
+            })
+        })
+    }
+
+    /// Batch delete multiple keys
+    /// 
+    /// Args:
+    ///     keys: List of keys to delete
+    /// 
+    /// Returns:
+    ///     List of tuples [(key, was_deleted), ...]
+    fn kv_batch_delete<'py>(
+        &self,
+        py: Python<'py>,
+        keys: Vec<String>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            let results = client
+                .kv_batch_delete(keys.clone())
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("KV batch delete failed: {}", e)))?;
+
+            Python::attach(|py| {
+                let list = PyList::empty(py);
+                for (key, was_deleted) in results {
+                    let py_key = PyString::new(py, &key);
+                    let py_bool = PyBool::new(py, was_deleted);
+                    let tuple = PyTuple::new(py, &[py_key.as_any(), py_bool.as_any()])?;
+                    list.append(tuple)?;
+                }
+                Ok(list.into())
+            })
         })
     }
 

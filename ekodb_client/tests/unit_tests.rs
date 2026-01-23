@@ -521,6 +521,189 @@ async fn test_kv_delete_success() {
 }
 
 // ============================================================================
+// KV Batch Operations Tests
+// ============================================================================
+
+#[tokio::test]
+async fn test_kv_batch_get_success() {
+    let mut server = Server::new_async().await;
+
+    let _token_mock = mock_token_endpoint(&mut server);
+
+    let _kv_mock = server
+        .mock("POST", "/api/kv/batch/get")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(
+            json!([
+                {"data": "value1"},
+                {"data": "value2"},
+                {"data": "value3"}
+            ])
+            .to_string(),
+        )
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+
+    let keys = vec!["key1".to_string(), "key2".to_string(), "key3".to_string()];
+    let result = client.kv_batch_get(keys).await;
+
+    assert!(result.is_ok());
+    let values = result.unwrap();
+    assert_eq!(values.len(), 3);
+}
+
+#[tokio::test]
+async fn test_kv_batch_set_success() {
+    let mut server = Server::new_async().await;
+
+    let _token_mock = mock_token_endpoint(&mut server);
+
+    let _kv_mock = server
+        .mock("POST", "/api/kv/batch/set")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!([["key1", true], ["key2", true], ["key3", true]]).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+
+    let keys = vec!["key1".to_string(), "key2".to_string(), "key3".to_string()];
+    let mut values = Vec::new();
+    for i in 1..=3 {
+        let mut record = Record::new();
+        record.insert("data".to_string(), FieldType::String(format!("value{}", i)));
+        values.push(record);
+    }
+
+    let result = client.kv_batch_set(keys, values, None).await;
+
+    assert!(result.is_ok());
+    let results = result.unwrap();
+    assert_eq!(results.len(), 3);
+    assert!(results[0].1);
+    assert!(results[1].1);
+    assert!(results[2].1);
+}
+
+#[tokio::test]
+async fn test_kv_batch_set_with_ttl() {
+    let mut server = Server::new_async().await;
+
+    let _token_mock = mock_token_endpoint(&mut server);
+
+    let _kv_mock = server
+        .mock("POST", "/api/kv/batch/set")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!([["key1", true], ["key2", true]]).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+
+    let keys = vec!["key1".to_string(), "key2".to_string()];
+    let mut values = Vec::new();
+    for i in 1..=2 {
+        let mut record = Record::new();
+        record.insert("data".to_string(), FieldType::String(format!("value{}", i)));
+        values.push(record);
+    }
+
+    let result = client.kv_batch_set(keys, values, Some(3600)).await;
+
+    assert!(result.is_ok());
+    let results = result.unwrap();
+    assert_eq!(results.len(), 2);
+}
+
+#[tokio::test]
+async fn test_kv_batch_delete_success() {
+    let mut server = Server::new_async().await;
+
+    let _token_mock = mock_token_endpoint(&mut server);
+
+    let _kv_mock = server
+        .mock("DELETE", "/api/kv/batch/delete")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!([["key1", true], ["key2", true], ["key3", false]]).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+
+    let keys = vec!["key1".to_string(), "key2".to_string(), "key3".to_string()];
+    let result = client.kv_batch_delete(keys).await;
+
+    assert!(result.is_ok());
+    let results = result.unwrap();
+    assert_eq!(results.len(), 3);
+    assert!(results[0].1); // key1 deleted
+    assert!(results[1].1); // key2 deleted
+    assert!(!results[2].1); // key3 not found
+}
+
+#[tokio::test]
+async fn test_kv_batch_get_empty() {
+    let mut server = Server::new_async().await;
+
+    let _token_mock = mock_token_endpoint(&mut server);
+
+    let _kv_mock = server
+        .mock("POST", "/api/kv/batch/get")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!([]).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+
+    let result = client.kv_batch_get(vec![]).await;
+
+    assert!(result.is_ok());
+    let values = result.unwrap();
+    assert_eq!(values.len(), 0);
+}
+
+#[tokio::test]
+async fn test_kv_batch_set_partial_failure() {
+    let mut server = Server::new_async().await;
+
+    let _token_mock = mock_token_endpoint(&mut server);
+
+    let _kv_mock = server
+        .mock("POST", "/api/kv/batch/set")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!([["key1", true], ["key2", false], ["key3", true]]).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+
+    let keys = vec!["key1".to_string(), "key2".to_string(), "key3".to_string()];
+    let mut values = Vec::new();
+    for i in 1..=3 {
+        let mut record = Record::new();
+        record.insert("data".to_string(), FieldType::String(format!("value{}", i)));
+        values.push(record);
+    }
+
+    let result = client.kv_batch_set(keys, values, None).await;
+
+    assert!(result.is_ok());
+    let results = result.unwrap();
+    assert!(results[0].1); // key1 succeeded
+    assert!(!results[1].1); // key2 failed
+    assert!(results[2].1); // key3 succeeded
+}
+
+// ============================================================================
 // Transaction Tests
 // ============================================================================
 
