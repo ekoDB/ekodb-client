@@ -399,44 +399,116 @@ describe("EkoDBClient search", () => {
 });
 
 // ============================================================================
-// Functions/Scripts Tests
+// KV Batch Operations Tests
 // ============================================================================
 
-describe("EkoDBClient functions", () => {
-  it("calls script", async () => {
+describe("EkoDBClient KV batch operations", () => {
+  it("batch gets multiple keys", async () => {
     const client = createTestClient();
-
-    mockTokenResponse();
-    mockJsonResponse({
-      results: [{ id: "user_1", name: "Alice" }],
-    });
-
-    const result = await client.callScript("my_function", { limit: 10 });
-
-    expect(result).toHaveProperty("results");
-  });
-
-  it("lists scripts", async () => {
-    const client = createTestClient();
-
     mockTokenResponse();
     mockJsonResponse([
-      { id: "func_1", label: "function_1" },
-      { id: "func_2", label: "function_2" },
+      { data: "value1" },
+      { data: "value2" },
+      { data: "value3" },
     ]);
 
-    const result = await client.listScripts();
+    const keys = ["key1", "key2", "key3"];
+    const results = await client.kvBatchGet(keys);
 
-    expect(result).toHaveLength(2);
+    expect(results).toHaveLength(3);
+    expect(results[0]).toEqual({ data: "value1" });
+    expect(results[1]).toEqual({ data: "value2" });
+    expect(results[2]).toEqual({ data: "value3" });
   });
 
-  it("deletes script", async () => {
+  it("batch sets multiple keys", async () => {
     const client = createTestClient();
-
     mockTokenResponse();
-    mockJsonResponse({ status: "deleted" });
+    mockJsonResponse([
+      ["key1", true],
+      ["key2", true],
+      ["key3", true],
+    ]);
 
-    await expect(client.deleteScript("func_123")).resolves.not.toThrow();
+    const entries = [
+      { key: "key1", value: { data: "value1" } },
+      { key: "key2", value: { data: "value2" } },
+      { key: "key3", value: { data: "value3" } },
+    ];
+    const results = await client.kvBatchSet(entries);
+
+    expect(results).toHaveLength(3);
+    expect(results[0]).toEqual(["key1", true]);
+    expect(results[1]).toEqual(["key2", true]);
+    expect(results[2]).toEqual(["key3", true]);
+  });
+
+  it("batch sets with TTL", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+    mockJsonResponse([
+      ["key1", true],
+      ["key2", true],
+    ]);
+
+    const entries = [
+      { key: "key1", value: { data: "value1" }, ttl: 3600 },
+      { key: "key2", value: { data: "value2" }, ttl: 3600 },
+    ];
+    const results = await client.kvBatchSet(entries);
+
+    expect(results).toHaveLength(2);
+    expect(results[0][1]).toBe(true);
+    expect(results[1][1]).toBe(true);
+  });
+
+  it("batch deletes multiple keys", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+    mockJsonResponse([
+      ["key1", true],
+      ["key2", true],
+      ["key3", false],
+    ]);
+
+    const keys = ["key1", "key2", "key3"];
+    const results = await client.kvBatchDelete(keys);
+
+    expect(results).toHaveLength(3);
+    expect(results[0]).toEqual(["key1", true]);
+    expect(results[1]).toEqual(["key2", true]);
+    expect(results[2]).toEqual(["key3", false]);
+  });
+
+  it("handles empty batch get", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+    mockJsonResponse([]);
+
+    const results = await client.kvBatchGet([]);
+
+    expect(results).toHaveLength(0);
+  });
+
+  it("handles partial batch set failures", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+    mockJsonResponse([
+      ["key1", true],
+      ["key2", false],
+      ["key3", true],
+    ]);
+
+    const entries = [
+      { key: "key1", value: { data: "value1" } },
+      { key: "key2", value: { data: "value2" } },
+      { key: "key3", value: { data: "value3" } },
+    ];
+    const results = await client.kvBatchSet(entries);
+
+    expect(results[0][1]).toBe(true);
+    expect(results[1][1]).toBe(false);
+    expect(results[2][1]).toBe(true);
   });
 });
 

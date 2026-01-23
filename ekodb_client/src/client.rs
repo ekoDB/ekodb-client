@@ -714,6 +714,55 @@ impl Client {
         self.http.kv_exists(key, &token).await
     }
 
+    /// Batch get multiple keys
+    ///
+    /// # Arguments
+    ///
+    /// * `keys` - Vector of keys to retrieve
+    ///
+    /// # Returns
+    ///
+    /// A vector of records corresponding to the keys
+    pub async fn kv_batch_get(&self, keys: Vec<String>) -> Result<Vec<Record>> {
+        let token = self.auth.get_token().await?;
+        self.http.kv_batch_get(keys, &token).await
+    }
+
+    /// Batch set multiple key-value pairs
+    ///
+    /// # Arguments
+    ///
+    /// * `keys` - Vector of keys
+    /// * `values` - Vector of values (must match length of keys)
+    /// * `ttl` - Optional TTL in seconds (applied to all entries)
+    ///
+    /// # Returns
+    ///
+    /// Vector of tuples (key, was_set) indicating success for each operation
+    pub async fn kv_batch_set(
+        &self,
+        keys: Vec<String>,
+        values: Vec<Record>,
+        ttl: Option<i64>,
+    ) -> Result<Vec<(String, bool)>> {
+        let token = self.auth.get_token().await?;
+        self.http.kv_batch_set(keys, values, ttl, &token).await
+    }
+
+    /// Batch delete multiple keys
+    ///
+    /// # Arguments
+    ///
+    /// * `keys` - Vector of keys to delete
+    ///
+    /// # Returns
+    ///
+    /// Vector of tuples (key, was_deleted) indicating success for each operation
+    pub async fn kv_batch_delete(&self, keys: Vec<String>) -> Result<Vec<(String, bool)>> {
+        let token = self.auth.get_token().await?;
+        self.http.kv_batch_delete(keys, &token).await
+    }
+
     /// Query/find KV entries with pattern matching
     ///
     /// # Arguments

@@ -44,30 +44,34 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("Retrieved value: {:?}", value);
     }
 
-    // Example 3: Set multiple keys
-    println!("\n=== Set Multiple Keys ===");
-    let keys = vec!["cache:product:1", "cache:product:2", "cache:product:3"];
-
-    for (i, key) in keys.iter().enumerate() {
-        client
-            .kv_set(
-                key,
-                json!({
-                    "name": format!("Product {}", i + 1),
-                    "price": 29.99 + (i as f64 * 10.0)
-                }),
-                None,
-            )
-            .await?;
+    // Example 3: Batch set multiple keys
+    println!("\n=== KV Batch Set ===");
+    use ekodb_client::Record;
+    let keys = vec![
+        "cache:product:1".to_string(),
+        "cache:product:2".to_string(),
+        "cache:product:3".to_string(),
+    ];
+    let mut values = Vec::new();
+    for i in 0..3 {
+        let mut record = Record::new();
+        record.insert("name".to_string(), json!(format!("Product {}", i + 1)));
+        record.insert("price".to_string(), json!(29.99 + (i as f64 * 10.0)));
+        values.push(record);
     }
-    println!("✓ Set {} keys", keys.len());
 
-    // Example 4: Get multiple keys
-    println!("\n=== Get Multiple Keys ===");
-    for key in &keys {
-        if let Some(value) = client.kv_get(key).await? {
-            println!("{}: {:?}", key, value);
-        }
+    let set_results = client.kv_batch_set(keys.clone(), values, None).await?;
+    println!("✓ Batch set {} keys", set_results.len());
+    for (key, was_set) in &set_results {
+        println!("  {}: {}", key, if *was_set { "success" } else { "failed" });
+    }
+
+    // Example 4: Batch get multiple keys
+    println!("\n=== KV Batch Get ===");
+    let batch_values = client.kv_batch_get(keys.clone()).await?;
+    println!("✓ Batch retrieved {} values", batch_values.len());
+    for (i, value) in batch_values.iter().enumerate() {
+        println!("  {}: {:?}", keys[i], value);
     }
 
     // Example 5: Check if key exists
@@ -97,12 +101,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let exists_after = client.kv_exists("session:user123").await?;
     println!("✓ Verified: Key exists after delete: {}", exists_after);
 
-    // Example 9: Delete multiple keys
-    println!("\n=== Delete Multiple Keys ===");
-    for key in &keys {
-        client.kv_delete(key).await?;
+    // Example 9: Batch delete multiple keys
+    println!("\n=== KV Batch Delete ===");
+    let delete_results = client.kv_batch_delete(keys.clone()).await?;
+    println!("✓ Batch deleted {} keys", delete_results.len());
+    for (key, was_deleted) in &delete_results {
+        println!(
+            "  {}: {}",
+            key,
+            if *was_deleted { "deleted" } else { "not found" }
+        );
     }
-    println!("✓ Deleted {} keys", keys.len());
 
     println!("\n✓ All KV operations completed successfully");
 

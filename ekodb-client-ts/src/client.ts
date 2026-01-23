@@ -743,6 +743,60 @@ export class EkoDBClient {
   }
 
   /**
+   * Batch get multiple keys
+   * @param keys - Array of keys to retrieve
+   * @returns Array of records corresponding to the keys
+   */
+  async kvBatchGet(keys: string[]): Promise<any[]> {
+    const result = await this.makeRequest<any[]>(
+      "POST",
+      "/api/kv/batch/get",
+      { keys },
+      0,
+      true, // Force JSON for KV operations
+    );
+    return result;
+  }
+
+  /**
+   * Batch set multiple key-value pairs
+   * @param entries - Array of objects with key, value, and optional ttl
+   * @returns Array of tuples [key, wasSet]
+   */
+  async kvBatchSet(
+    entries: Array<{ key: string; value: any; ttl?: number }>,
+  ): Promise<Array<[string, boolean]>> {
+    const keys = entries.map((e) => e.key);
+    const values = entries.map((e) => ({ value: e.value }));
+    const ttl = entries[0]?.ttl; // Use first entry's TTL if provided
+
+    const result = await this.makeRequest<Array<[string, boolean]>>(
+      "POST",
+      "/api/kv/batch/set",
+      { keys, values, ttl },
+      0,
+      true, // Force JSON for KV operations
+    );
+    return result;
+  }
+
+  /**
+   * Batch delete multiple keys
+   * @param keys - Array of keys to delete
+   * @returns Array of tuples [key, wasDeleted]
+   */
+  async kvBatchDelete(keys: string[]): Promise<Array<[string, boolean]>> {
+    const result = await this.makeRequest<Array<[string, boolean]>>(
+      "DELETE",
+      "/api/kv/batch/delete",
+      { keys },
+      0,
+      true, // Force JSON for KV operations
+    );
+    return result;
+  }
+
+  /**
    * Check if a key exists
    * @param key - The key to check
    * @returns true if the key exists, false otherwise

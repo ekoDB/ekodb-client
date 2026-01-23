@@ -1307,7 +1307,7 @@ install-hooks:
 deps-check:
 	@echo "📦 $(CYAN)Checking for outdated Rust dependencies...$(RESET)"
 	@if command -v cargo-outdated > /dev/null; then \
-		cargo outdated; \
+		cargo outdated || echo "$(YELLOW)⚠️  cargo-outdated failed (may require newer Rust/cargo version)$(RESET)"; \
 	else \
 		echo "$(YELLOW)cargo-outdated is not installed.$(RESET)"; \
 		echo "$(YELLOW)Run 'cargo install cargo-outdated' to install it.$(RESET)"; \
@@ -1337,7 +1337,7 @@ deps-check-rust:
 	@echo "📦 Workspace Root & ekodb_client"
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@if command -v cargo-outdated > /dev/null; then \
-		cargo outdated; \
+		cargo outdated || echo "$(YELLOW)⚠️  cargo-outdated failed (may require Rust 1.85+ for edition2024 deps)$(RESET)"; \
 	else \
 		echo "$(RED)❌ cargo-outdated not installed$(RESET)"; \
 		echo "$(YELLOW)Run: cargo install cargo-outdated$(RESET)"; \
@@ -1345,12 +1345,12 @@ deps-check-rust:
 	fi
 	@echo ""
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
-	@echo "📦 Python Bindings (ekodb-client-py)"
+	@echo "📦 Python Client (PyO3)"
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
-	@cd ekodb-client-py && cargo outdated
+	@cd ekodb-client-py && cargo outdated || echo "$(YELLOW)⚠️  cargo-outdated failed$(RESET)"
 	@echo ""
-	@echo "💡 $(YELLOW)Note: Many 'Removed' entries are transitive dependencies - safe to ignore$(RESET)"
-	@echo "💡 $(YELLOW)Focus on direct dependencies with major version updates$(RESET)"
+	@echo "💡 $(YELLOW)Note: Some deps require edition2024 (Rust 1.85+) - editions are backward compatible$(RESET)"
+	@echo "💡 $(YELLOW)Alternative: Use 'cargo tree -d' to check for duplicate dependencies$(RESET)"
 
 # TypeScript dependency checks
 deps-check-typescript:
