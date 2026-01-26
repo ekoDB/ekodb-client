@@ -265,16 +265,18 @@ export interface SortFieldConfig {
   ascending: boolean;
 }
 
+// ScriptCondition uses adjacently-tagged format: { type: "...", value: { ...data } }
+// Unit variants (HasRecords) have no value field
 export type ScriptCondition =
-  | { type: "FieldEquals"; field: string; value: any }
-  | { type: "FieldExists"; field: string }
+  | { type: "FieldEquals"; value: { field: string; value: any } }
+  | { type: "FieldExists"; value: { field: string } }
   | { type: "HasRecords" }
-  | { type: "CountEquals"; count: number }
-  | { type: "CountGreaterThan"; count: number }
-  | { type: "CountLessThan"; count: number }
-  | { type: "And"; conditions: ScriptCondition[] }
-  | { type: "Or"; conditions: ScriptCondition[] }
-  | { type: "Not"; condition: ScriptCondition };
+  | { type: "CountEquals"; value: { count: number } }
+  | { type: "CountGreaterThan"; value: { count: number } }
+  | { type: "CountLessThan"; value: { count: number } }
+  | { type: "And"; value: { conditions: ScriptCondition[] } }
+  | { type: "Or"; value: { conditions: ScriptCondition[] } }
+  | { type: "Not"; value: { condition: ScriptCondition } };
 
 export interface FunctionResult {
   records: Record<string, any>[];

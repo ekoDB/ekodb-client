@@ -111,15 +111,15 @@ func basicCompositionExample(client *ekodb.Client) error {
 
 func swrCompositionExample(client *ekodb.Client) error {
 	fmt.Println("📝 Example 2: SWR Pattern with Function Composition\n")
-	fmt.Println("Using CallFunction to replace inline logic in SWR pattern...\n")
+	fmt.Println("Using KV cache + CallFunction for fast cache-aside pattern...\n")
 
 	// Step 1: Create reusable fetch and store function
 	// Using jsonplaceholder.typicode.com - a reliable free API for testing
-	// This function ONLY fetches and stores - the caller handles retrieval
+	// This function fetches from API and stores in KV cache
 	ttl := int64(300)
 	fetchAndStore := ekodb.Script{
 		Label: "fetch_and_store_user",
-		Name:  "Fetch user from API and cache",
+		Name:  "Fetch user from API and cache in KV",
 		Parameters: map[string]ekodb.ParameterDefinition{
 			"user_id": {Required: true},
 		},
@@ -130,47 +130,41 @@ func swrCompositionExample(client *ekodb.Client) error {
 				map[string]string{"Accept": "application/json"},
 				nil,
 			),
-			ekodb.StageInsert(
-				"user_cache",
-				map[string]interface{}{
-					"id":   map[string]interface{}{"type": "String", "value": "{{user_id}}"},
-					"data": map[string]interface{}{"type": "Object", "value": "{{http_response}}"},
-				},
-				false,
-				&ttl,
-			),
+			// Store in KV cache (much faster than collection for cache lookups)
+			ekodb.StageKvSet("user_cache:{{user_id}}", "{{http_response}}", &ttl),
 		},
 	}
 
 	if _, err := client.SaveScript(fetchAndStore); err != nil {
 		return err
 	}
-	fmt.Println("✅ Saved reusable function: fetch_and_store_user")
+	fmt.Println("✅ Saved reusable function: fetch_and_store_user (uses KV)")
 
 	// Step 2: Create SWR function that CALLS the reusable function
-	// Pattern: Check cache → populate if missing → fetch and return
+	// Pattern: KV cache check → populate if missing → return
 	swrUser := ekodb.Script{
 		Label: "swr_user",
-		Name:  "SWR pattern for user data",
+		Name:  "SWR pattern for user data (KV-based)",
 		Parameters: map[string]ekodb.ParameterDefinition{
 			"user_id": {Required: true},
 		},
 		Functions: []ekodb.FunctionStageConfig{
-			// Check if data exists in cache
-			ekodb.StageFindById("user_cache", "{{user_id}}"),
+			// Check KV cache first (O(1) lookup - much faster than FindById)
+			ekodb.StageKvGet("user_cache:{{user_id}}", nil),
 			ekodb.StageIf(
-				ekodb.ConditionHasRecords(),
+				// KvGet returns { value: ... } on hit, { kv_value: null } on miss
+				// So we check if "value" field exists to detect cache hit
+				ekodb.ConditionFieldExists("value"),
 				[]ekodb.FunctionStageConfig{
-					// Cache hit - just project the data field
-					ekodb.StageProject([]string{"data"}, false),
+					// Cache hit - project the value field
+					ekodb.StageProject([]string{"value"}, false),
 				},
 				[]ekodb.FunctionStageConfig{
 					// Cache miss - call reusable function to fetch and store
-					// params nil - inherits user_id from parent scope
-					ekodb.StageCallFunction("fetch_and_store_user", nil),
-					// Project data from the inserted record
-					// (Insert returns the record it created, no need for FindById)
-					ekodb.StageProject([]string{"data"}, false),
+					// Explicitly pass user_id to avoid polluting with kv_value from KvGet
+					ekodb.StageCallFunction("fetch_and_store_user", map[string]any{
+						"user_id": "{{user_id}}",
+					}),
 				},
 			),
 		},

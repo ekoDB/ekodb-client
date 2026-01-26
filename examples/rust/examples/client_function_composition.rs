@@ -129,68 +129,70 @@ async fn basic_composition_example(client: &Client) -> Result<(), Box<dyn std::e
 
 async fn swr_with_composition_example(client: &Client) -> Result<(), Box<dyn std::error::Error>> {
     println!("📝 Example 2: SWR Pattern with Function Composition\n");
-    println!("Using CallFunction to replace inline logic in SWR pattern...\n");
+    println!("Using KV cache + CallFunction for fast cache-aside pattern...\n");
 
-    // Step 1: Create reusable "fetch_external_data" function
+    // Step 1: Create reusable "fetch_and_store" function
     // Using jsonplaceholder.typicode.com - a reliable free API for testing
-    // This function ONLY fetches and stores - the caller handles retrieval
-    let fetch_and_store = Script::new("fetch_and_store_user", "Fetch user from API and cache")
-        .with_parameter(ParameterDefinition::new("user_id").required())
-        .with_function(Function::HttpRequest {
-            url: "https://jsonplaceholder.typicode.com/users/{{user_id}}".to_string(),
-            method: "GET".to_string(),
-            headers: Some({
-                let mut headers = HashMap::new();
-                headers.insert("Accept".to_string(), "application/json".to_string());
-                headers
-            }),
-            body: None,
-            timeout_seconds: None,
-            output_field: None,
-        })
-        .with_function(Function::Insert {
-            collection: "user_cache".to_string(),
-            record: serde_json::json!({
-                "id": {"type": "String", "value": "{{user_id}}"},
-                "data": {"type": "Object", "value": "{{http_response}}"}
-            }),
-            bypass_ripple: None,
-            ttl: Some(serde_json::json!(300)), // 5 minute cache
-        });
+    // This function fetches from API and stores in KV cache
+    let fetch_and_store = Script::new(
+        "fetch_and_store_user",
+        "Fetch user from API and cache in KV",
+    )
+    .with_parameter(ParameterDefinition::new("user_id").required())
+    .with_function(Function::HttpRequest {
+        url: "https://jsonplaceholder.typicode.com/users/{{user_id}}".to_string(),
+        method: "GET".to_string(),
+        headers: Some({
+            let mut headers = HashMap::new();
+            headers.insert("Accept".to_string(), "application/json".to_string());
+            headers
+        }),
+        body: None,
+        timeout_seconds: None,
+        output_field: None,
+    })
+    // Store in KV cache (much faster than collection for cache lookups)
+    .with_function(Function::KvSet {
+        key: serde_json::json!("user_cache:{{user_id}}"),
+        value: serde_json::json!("{{http_response}}"),
+        ttl: Some(serde_json::json!(300)), // 5 minute cache
+    });
 
     client.save_script(fetch_and_store).await?;
-    println!("✅ Saved reusable function: fetch_and_store_user");
+    println!("✅ Saved reusable function: fetch_and_store_user (uses KV)");
 
     // Step 2: Create SWR function that CALLS the reusable fetch function
-    // Pattern: Check cache → populate if missing → fetch and return
-    let swr_user = Script::new("swr_user", "SWR pattern for user data")
+    // Pattern: KV cache check → populate if missing → return
+    let swr_user = Script::new("swr_user", "SWR pattern for user data (KV-based)")
         .with_parameter(ParameterDefinition::new("user_id").required())
-        // Check if data exists in cache
-        .with_function(Function::FindById {
-            collection: "user_cache".to_string(),
-            record_id: "{{user_id}}".to_string(),
+        // Check KV cache first (O(1) lookup - much faster than FindById)
+        .with_function(Function::KvGet {
+            key: serde_json::json!("user_cache:{{user_id}}"),
+            output_field: None,
         })
         .with_function(Function::If {
-            condition: ScriptCondition::HasRecords,
+            // KvGet returns { value: ... } on hit, { kv_value: null } on miss
+            // So we check if "value" field exists to detect cache hit
+            condition: ScriptCondition::FieldExists {
+                field: "value".to_string(),
+            },
             then_functions: vec![
-                // Cache hit - just project the data field
+                // Cache hit - project the value field
                 Box::new(Function::Project {
-                    fields: vec!["data".to_string()],
+                    fields: vec!["value".to_string()],
                     exclude: false,
                 }),
             ],
             else_functions: Some(vec![
                 // Cache miss - call reusable function to fetch and store
-                // Note: params inherit from parent scope (enriched_params), no need to pass explicitly
+                // Explicitly pass user_id to avoid polluting with kv_value from KvGet
                 Box::new(Function::CallFunction {
                     function_label: "fetch_and_store_user".to_string(),
-                    params: None,
-                }),
-                // Project the data field from the inserted record
-                // (Insert returns the record it created, no need for FindById)
-                Box::new(Function::Project {
-                    fields: vec!["data".to_string()],
-                    exclude: false,
+                    params: Some({
+                        let mut p = HashMap::new();
+                        p.insert("user_id".to_string(), serde_json::json!("{{user_id}}"));
+                        p
+                    }),
                 }),
             ]),
         });
