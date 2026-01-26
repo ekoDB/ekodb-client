@@ -86,11 +86,7 @@ async fn basic_composition_example(client: &Client) -> Result<(), Box<dyn std::e
         .with_parameter(ParameterDefinition::new("user_code").required())
         .with_function(Function::CallFunction {
             function_label: "fetch_user".to_string(),
-            params: Some({
-                let mut map = HashMap::new();
-                map.insert("user_code".to_string(), serde_json::json!("{{user_code}}"));
-                map
-            }),
+            params: None, // Inherits user_code from parent scope
         })
         .with_function(Function::Project {
             fields: vec!["name".to_string(), "department".to_string()],
@@ -137,6 +133,7 @@ async fn swr_with_composition_example(client: &Client) -> Result<(), Box<dyn std
 
     // Step 1: Create reusable "fetch_external_data" function
     // Using jsonplaceholder.typicode.com - a reliable free API for testing
+    // This function ONLY fetches and stores - the caller handles retrieval
     let fetch_and_store = Script::new("fetch_and_store_user", "Fetch user from API and cache")
         .with_parameter(ParameterDefinition::new("user_id").required())
         .with_function(Function::HttpRequest {
@@ -159,42 +156,41 @@ async fn swr_with_composition_example(client: &Client) -> Result<(), Box<dyn std
             }),
             bypass_ripple: None,
             ttl: Some(serde_json::json!(300)), // 5 minute cache
-        })
-        .with_function(Function::FindById {
-            collection: "user_cache".to_string(),
-            record_id: "{{user_id}}".to_string(),
-        })
-        .with_function(Function::Project {
-            fields: vec!["data".to_string()],
-            exclude: false,
         });
 
     client.save_script(fetch_and_store).await?;
     println!("✅ Saved reusable function: fetch_and_store_user");
 
     // Step 2: Create SWR function that CALLS the reusable fetch function
-    // Notice how clean this is - no inline HttpRequest or Insert logic!
+    // Pattern: Check cache → populate if missing → fetch and return
     let swr_user = Script::new("swr_user", "SWR pattern for user data")
         .with_parameter(ParameterDefinition::new("user_id").required())
+        // Check if data exists in cache
         .with_function(Function::FindById {
             collection: "user_cache".to_string(),
             record_id: "{{user_id}}".to_string(),
         })
         .with_function(Function::If {
             condition: ScriptCondition::HasRecords,
-            then_functions: vec![Box::new(Function::Project {
-                fields: vec!["data".to_string()],
-                exclude: false,
-            })],
+            then_functions: vec![
+                // Cache hit - just project the data field
+                Box::new(Function::Project {
+                    fields: vec!["data".to_string()],
+                    exclude: false,
+                }),
+            ],
             else_functions: Some(vec![
-                // Instead of inline HttpRequest + Insert, just call the reusable function!
+                // Cache miss - call reusable function to fetch and store
+                // Note: params inherit from parent scope (enriched_params), no need to pass explicitly
                 Box::new(Function::CallFunction {
                     function_label: "fetch_and_store_user".to_string(),
-                    params: Some({
-                        let mut params = HashMap::new();
-                        params.insert("user_id".to_string(), serde_json::json!("{{user_id}}"));
-                        params
-                    }),
+                    params: None,
+                }),
+                // Project the data field from the inserted record
+                // (Insert returns the record it created, no need for FindById)
+                Box::new(Function::Project {
+                    fields: vec!["data".to_string()],
+                    exclude: false,
                 }),
             ]),
         });
@@ -255,11 +251,7 @@ async fn nested_composition_example(client: &Client) -> Result<(), Box<dyn std::
         .with_parameter(ParameterDefinition::new("user_code").required())
         .with_function(Function::CallFunction {
             function_label: "validate_user".to_string(),
-            params: Some({
-                let mut map = HashMap::new();
-                map.insert("user_code".to_string(), serde_json::json!("{{user_code}}"));
-                map
-            }),
+            params: None, // Inherits user_code from parent scope
         })
         .with_function(Function::Project {
             fields: vec!["name".to_string(), "department".to_string()],
@@ -274,11 +266,7 @@ async fn nested_composition_example(client: &Client) -> Result<(), Box<dyn std::
         .with_parameter(ParameterDefinition::new("user_code").required())
         .with_function(Function::CallFunction {
             function_label: "fetch_slim_user".to_string(),
-            params: Some({
-                let mut map = HashMap::new();
-                map.insert("user_code".to_string(), serde_json::json!("{{user_code}}"));
-                map
-            }),
+            params: None, // Inherits user_code from parent scope
         });
 
     client.save_script(get_verified_user).await?;

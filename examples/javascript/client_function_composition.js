@@ -59,9 +59,7 @@ async function basicCompositionExample(client) {
       {
         type: 'CallFunction',
         function_label: 'fetch_user',
-        params: {
-          user_code: '{{user_code}}',
-        },
+        // params omitted - inherits user_code from parent scope
       },
       {
         type: 'Project',
@@ -95,6 +93,7 @@ async function swrCompositionExample(client) {
 
   // Step 1: Create reusable fetch and store function
   // Using jsonplaceholder.typicode.com - a reliable free API for testing
+  // This function ONLY fetches and stores - the caller handles retrieval
   const fetchAndStore = {
     label: 'fetch_and_store_user',
     name: 'Fetch user from API and cache',
@@ -112,7 +111,7 @@ async function swrCompositionExample(client) {
         type: 'Insert',
         collection: 'user_cache',
         record: {
-          cache_key: { type: 'String', value: '{{user_id}}' },
+          id: { type: 'String', value: '{{user_id}}' },
           data: { type: 'Object', value: '{{http_response}}' },
         },
         ttl: 300, // 5 minute cache
@@ -124,11 +123,13 @@ async function swrCompositionExample(client) {
   console.log('✅ Saved reusable function: fetch_and_store_user');
 
   // Step 2: Create SWR function that CALLS the reusable function
+  // Pattern: Check cache → populate if missing → fetch and return
   const swrUser = {
     label: 'swr_user',
     name: 'SWR pattern for user data',
     parameters: { user_id: { required: true } },
     functions: [
+      // Check if data exists in cache
       {
         type: 'FindById',
         collection: 'user_cache',
@@ -140,6 +141,7 @@ async function swrCompositionExample(client) {
           type: 'HasRecords',
         },
         then_functions: [
+          // Cache hit - just project the data field
           {
             type: 'Project',
             fields: ['data'],
@@ -147,12 +149,18 @@ async function swrCompositionExample(client) {
           },
         ],
         else_functions: [
+          // Cache miss - call reusable function to fetch and store
+          // params omitted - inherits user_id from parent scope
           {
             type: 'CallFunction',
             function_label: 'fetch_and_store_user',
-            params: {
-              user_id: '{{user_id}}',
-            },
+          },
+          // Project data from the inserted record
+          // (Insert returns the record it created, no need for FindById)
+          {
+            type: 'Project',
+            fields: ['data'],
+            exclude: false,
           },
         ],
       },
@@ -216,9 +224,7 @@ async function nestedCompositionExample(client) {
       {
         type: 'CallFunction',
         function_label: 'validate_user',
-        params: {
-          user_code: '{{user_code}}',
-        },
+        // params omitted - inherits user_code from parent scope
       },
       {
         type: 'Project',
@@ -240,9 +246,7 @@ async function nestedCompositionExample(client) {
       {
         type: 'CallFunction',
         function_label: 'fetch_slim_user',
-        params: {
-          user_code: '{{user_code}}',
-        },
+        // params omitted - inherits user_code from parent scope
       },
     ],
   };
