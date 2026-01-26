@@ -855,12 +855,15 @@ class EkoDBClient private constructor(
     }
     
     /**
-     * Key-Value: Batch set multiple key-value pairs
+     * Key-Value: Batch set multiple key-value pairs.
+     * Note: TTL from the first entry with a valid TTL is applied to all entries (server limitation).
+     * @param entries List of Triple(key, value, ttl) - ttl from first entry applies to all
      */
     suspend fun kvBatchSet(entries: List<Triple<String, JsonElement, Int?>>): List<Pair<String, Boolean>> {
         val token = getToken()
         val keys = entries.map { it.first }
         val values = entries.map { buildJsonObject { put("value", it.second) } }
+        // Server applies a single TTL to all entries - use first entry's TTL if provided
         val ttl = entries.firstOrNull()?.third
         
         val body = buildJsonObject {

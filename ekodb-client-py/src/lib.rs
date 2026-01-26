@@ -1091,11 +1091,13 @@ impl Client {
         })
     }
 
-    /// Batch set multiple key-value pairs
-    /// 
+    /// Batch set multiple key-value pairs.
+    /// Note: TTL from the first entry with a valid TTL is applied to all entries (server limitation).
+    ///
     /// Args:
     ///     entries: List of dicts with 'key', 'value', and optional 'ttl' fields
-    /// 
+    ///              (ttl from first entry applies to all)
+    ///
     /// Returns:
     ///     List of tuples [(key, was_set), ...]
     fn kv_batch_set<'py>(
@@ -1123,7 +1125,7 @@ impl Client {
             keys.push(key);
             values.push(dict_to_record(value_dict)?);
             
-            // Use TTL from first entry if provided
+            // Server applies a single TTL to all entries - use first entry's TTL if provided
             if ttl.is_none() {
                 if let Ok(Some(ttl_val)) = entry.get_item("ttl") {
                     ttl = Some(ttl_val.extract::<i64>()?);
