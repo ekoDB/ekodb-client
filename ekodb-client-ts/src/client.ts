@@ -759,7 +759,8 @@ export class EkoDBClient {
   }
 
   /**
-   * Batch set multiple key-value pairs
+   * Batch set multiple key-value pairs.
+   * Note: TTL from the first entry with a valid TTL is applied to all entries (server limitation).
    * @param entries - Array of objects with key, value, and optional ttl
    * @returns Array of tuples [key, wasSet]
    */
@@ -768,7 +769,8 @@ export class EkoDBClient {
   ): Promise<Array<[string, boolean]>> {
     const keys = entries.map((e) => e.key);
     const values = entries.map((e) => ({ value: e.value }));
-    const ttl = entries[0]?.ttl; // Use first entry's TTL if provided
+    // Server applies a single TTL to all entries - use first entry's TTL if provided
+    const ttl = entries[0]?.ttl;
 
     const result = await this.makeRequest<Array<[string, boolean]>>(
       "POST",
