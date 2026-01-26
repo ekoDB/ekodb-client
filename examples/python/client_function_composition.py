@@ -100,14 +100,14 @@ async def basic_composition_example(client):
 async def swr_composition_example(client):
     """Example 2: SWR Pattern with Function Composition"""
     print("📝 Example 2: SWR Pattern with Function Composition\n")
-    print("Using CallFunction to replace inline logic in SWR pattern...\n")
+    print("Using KV cache + CallFunction for fast cache-aside pattern...\n")
 
     # Step 1: Create reusable fetch and store function
     # Using jsonplaceholder.typicode.com - a reliable free API for testing
-    # This function ONLY fetches and stores - the caller handles retrieval
+    # This function fetches from API and stores in KV cache
     fetch_and_store = {
         "label": "fetch_and_store_user",
-        "name": "Fetch user from API and cache",
+        "name": "Fetch user from API and cache in KV",
         "parameters": {"user_id": {"required": True}},
         "functions": [
             {
@@ -116,51 +116,48 @@ async def swr_composition_example(client):
                 "method": "GET",
                 "headers": {"Accept": "application/json"},
             },
+            # Store in KV cache (much faster than collection for cache lookups)
             {
-                "type": "Insert",
-                "collection": "user_cache",
-                "record": {
-                    "id": {"type": "String", "value": "{{user_id}}"},
-                    "data": {"type": "Object", "value": "{{http_response}}"},
-                },
+                "type": "KvSet",
+                "key": "user_cache:{{user_id}}",
+                "value": "{{http_response}}",
                 "ttl": 300,  # 5 minute cache
             },
         ],
     }
 
     await client.save_script(fetch_and_store)
-    print("✅ Saved reusable function: fetch_and_store_user")
+    print("✅ Saved reusable function: fetch_and_store_user (uses KV)")
 
     # Step 2: Create SWR function that CALLS the reusable function
-    # Pattern: Check cache → populate if missing → fetch and return
+    # Pattern: KV cache check → populate if missing → return
     swr_user = {
         "label": "swr_user",
-        "name": "SWR pattern for user data",
+        "name": "SWR pattern for user data (KV-based)",
         "parameters": {"user_id": {"required": True}},
         "functions": [
-            # Check if data exists in cache
+            # Check KV cache first (O(1) lookup - much faster than FindById)
             {
-                "type": "FindById",
-                "collection": "user_cache",
-                "record_id": "{{user_id}}",
+                "type": "KvGet",
+                "key": "user_cache:{{user_id}}",
             },
             {
                 "type": "If",
-                "condition": {"type": "HasRecords"},
+                # KvGet returns { value: ... } on hit, { kv_value: null } on miss
+                # So we check if "value" field exists to detect cache hit
+                "condition": {"type": "FieldExists", "value": {"field": "value"}},
                 "then_functions": [
-                    # Cache hit - just project the data field
-                    {"type": "Project", "fields": ["data"], "exclude": False}
+                    # Cache hit - project the value field
+                    {"type": "Project", "fields": ["value"], "exclude": False}
                 ],
                 "else_functions": [
                     # Cache miss - call reusable function to fetch and store
-                    # params omitted - inherits user_id from parent scope
+                    # Explicitly pass user_id to avoid polluting with kv_value from KvGet
                     {
                         "type": "CallFunction",
                         "function_label": "fetch_and_store_user",
+                        "params": {"user_id": "{{user_id}}"},
                     },
-                    # Project data from the inserted record
-                    # (Insert returns the record it created, no need for FindById)
-                    {"type": "Project", "fields": ["data"], "exclude": False},
                 ],
             },
         ],

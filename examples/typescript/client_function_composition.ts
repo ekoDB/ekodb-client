@@ -97,14 +97,16 @@ async function basicCompositionExample(client: EkoDBClient): Promise<void> {
 
 async function swrCompositionExample(client: EkoDBClient): Promise<void> {
   console.log("📝 Example 2: SWR Pattern with Function Composition\n");
-  console.log("Using CallFunction to replace inline logic in SWR pattern...\n");
+  console.log(
+    "Using KV cache + CallFunction for fast cache-aside pattern...\n",
+  );
 
   // Step 1: Create reusable fetch and store function
   // Using jsonplaceholder.typicode.com - a reliable free API for testing
-  // This function ONLY fetches and stores - the caller handles retrieval
+  // This function fetches from API and stores in KV cache
   const fetchAndStore = {
     label: "fetch_and_store_user",
-    name: "Fetch user from API and cache",
+    name: "Fetch user from API and cache in KV",
     parameters: {
       user_id: { required: true },
     },
@@ -117,62 +119,56 @@ async function swrCompositionExample(client: EkoDBClient): Promise<void> {
           Accept: "application/json",
         },
       },
+      // Store in KV cache (much faster than collection for cache lookups)
       {
-        type: "Insert" as const,
-        collection: "user_cache",
-        record: {
-          id: { type: "String", value: "{{user_id}}" },
-          data: { type: "Object", value: "{{http_response}}" },
-        },
+        type: "KvSet" as const,
+        key: "user_cache:{{user_id}}",
+        value: "{{http_response}}",
         ttl: 300, // 5 minute cache
       },
     ],
   };
 
   await client.saveScript(fetchAndStore);
-  console.log("✅ Saved reusable function: fetch_and_store_user");
+  console.log("✅ Saved reusable function: fetch_and_store_user (uses KV)");
 
   // Step 2: Create SWR function that CALLS the reusable function
-  // Pattern: Check cache → populate if missing → fetch and return
+  // Pattern: KV cache check → populate if missing → return
   const swrUser = {
     label: "swr_user",
-    name: "SWR pattern for user data",
+    name: "SWR pattern for user data (KV-based)",
     parameters: {
       user_id: { required: true },
     },
     functions: [
-      // Check if data exists in cache
+      // Check KV cache first (O(1) lookup - much faster than FindById)
       {
-        type: "FindById" as const,
-        collection: "user_cache",
-        record_id: "{{user_id}}",
+        type: "KvGet" as const,
+        key: "user_cache:{{user_id}}",
       },
       {
         type: "If" as const,
         condition: {
-          type: "HasRecords" as const,
+          // KvGet returns { value: ... } on hit, { kv_value: null } on miss
+          // So we check if "value" field exists to detect cache hit
+          type: "FieldExists" as const,
+          value: { field: "value" },
         },
         then_functions: [
-          // Cache hit - just project the data field
+          // Cache hit - project the value field
           {
             type: "Project" as const,
-            fields: ["data"],
+            fields: ["value"],
             exclude: false,
           },
         ],
         else_functions: [
           // Cache miss - call reusable function to fetch and store
-          // params omitted - inherits user_id from parent scope
+          // Explicitly pass user_id to avoid polluting with kv_value from KvGet
           {
             type: "CallFunction" as const,
             function_label: "fetch_and_store_user",
-          },
-          // Project data from the inserted record
-          // (Insert returns the record it created, no need for FindById)
-          {
-            type: "Project" as const,
-            fields: ["data"],
-            exclude: false,
+            params: { user_id: "{{user_id}}" },
           },
         ],
       },

@@ -87,40 +87,68 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ))
         .await?;
 
-    // Wait for response
-    if let Some(msg) = read.next().await {
-        match msg {
-            Ok(msg) => {
-                if let Ok(text) = msg.into_text() {
-                    if !text.is_empty() {
-                        match serde_json::from_str::<Value>(&text) {
-                            Ok(response) => {
-                                println!("Response: {}", serde_json::to_string_pretty(&response)?);
+    // Wait for response - loop to handle potential ping/pong or empty messages
+    let timeout = std::time::Duration::from_secs(5);
+    let start = std::time::Instant::now();
+    let mut received_data = false;
 
-                                // Show the data we got back
-                                if let Some(payload) = response.get("payload") {
-                                    if let Some(data) = payload.get("data") {
-                                        if let Some(arr) = data.as_array() {
+    while start.elapsed() < timeout && !received_data {
+        match tokio::time::timeout(std::time::Duration::from_millis(500), read.next()).await {
+            Ok(Some(msg)) => {
+                match msg {
+                    Ok(msg) => {
+                        if let Ok(text) = msg.into_text() {
+                            if !text.is_empty() {
+                                match serde_json::from_str::<Value>(&text) {
+                                    Ok(response) => {
+                                        // Check if this is a response with data
+                                        if response.get("payload").is_some() {
                                             println!(
-                                                "✓ Retrieved {} record(s) via WebSocket",
-                                                arr.len()
+                                                "Response: {}",
+                                                serde_json::to_string_pretty(&response)?
                                             );
+
+                                            // Show the data we got back
+                                            if let Some(payload) = response.get("payload") {
+                                                if let Some(data) = payload.get("data") {
+                                                    if let Some(arr) = data.as_array() {
+                                                        println!(
+                                                            "✓ Retrieved {} record(s) via WebSocket",
+                                                            arr.len()
+                                                        );
+                                                    }
+                                                }
+                                            }
+                                            received_data = true;
                                         }
+                                    }
+                                    Err(e) => {
+                                        eprintln!("Failed to parse JSON: {}", e);
+                                        eprintln!("Raw message: {}", text);
                                     }
                                 }
                             }
-                            Err(e) => {
-                                eprintln!("Failed to parse JSON: {}", e);
-                                eprintln!("Raw message: {}", text);
-                            }
                         }
+                    }
+                    Err(e) => {
+                        eprintln!("WebSocket error: {}", e);
+                        break;
                     }
                 }
             }
-            Err(e) => {
-                eprintln!("WebSocket error: {}", e);
+            Ok(None) => {
+                // Stream ended
+                break;
+            }
+            Err(_) => {
+                // Timeout on this read, continue looping
+                continue;
             }
         }
+    }
+
+    if !received_data {
+        eprintln!("Warning: No data response received within timeout");
     }
 
     println!("\n✓ WebSocket example completed successfully");

@@ -12,6 +12,8 @@ import io.ekodb.client.functions.*
 import io.ekodb.client.types.FieldType
 import io.github.cdimascio.dotenv.dotenv
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import kotlin.system.measureTimeMillis
 
 fun main() = runBlocking {
@@ -118,14 +120,14 @@ suspend fun basicCompositionExample(client: EkoDBClient) {
 
 suspend fun swrCompositionExample(client: EkoDBClient) {
     println("📝 Example 2: SWR Pattern with Function Composition\n")
-    println("Using CallFunction to replace inline logic in SWR pattern...\n")
+    println("Using KV cache + CallFunction for fast cache-aside pattern...\n")
 
     // Step 1: Create reusable fetch and store function
     // Using jsonplaceholder.typicode.com - a reliable free API for testing
-    // This function ONLY fetches and stores - the caller handles retrieval
+    // This function fetches from API and stores in KV cache
     val fetchAndStore = Script(
         label = "fetch_and_store_user",
-        name = "Fetch user from API and cache",
+        name = "Fetch user from API and cache in KV",
         parameters = mapOf(
             "user_id" to ParameterDefinition(
                 name = "user_id",
@@ -138,25 +140,23 @@ suspend fun swrCompositionExample(client: EkoDBClient) {
                 method = "GET",
                 headers = mapOf("Accept" to "application/json")
             ),
-            Function.Insert(
-                collection = "user_cache",
-                record = mapOf(
-                    "id" to mapOf("type" to "String", "value" to "{{user_id}}"),
-                    "data" to mapOf("type" to "Object", "value" to "{{http_response}}")
-                ),
+            // Store in KV cache (much faster than collection for cache lookups)
+            Function.KvSet(
+                key = "user_cache:{{user_id}}",
+                value = kotlinx.serialization.json.JsonPrimitive("{{http_response}}"),
                 ttl = 300 // 5 minute cache
             )
         )
     )
 
     client.saveScript(fetchAndStore)
-    println("✅ Saved reusable function: fetch_and_store_user")
+    println("✅ Saved reusable function: fetch_and_store_user (uses KV)")
 
     // Step 2: Create SWR function that CALLS the reusable function
-    // Pattern: Check cache → populate if missing → fetch and return
+    // Pattern: KV cache check → populate if missing → return
     val swrUser = Script(
         label = "swr_user",
-        name = "SWR pattern for user data",
+        name = "SWR pattern for user data (KV-based)",
         parameters = mapOf(
             "user_id" to ParameterDefinition(
                 name = "user_id",
@@ -164,32 +164,29 @@ suspend fun swrCompositionExample(client: EkoDBClient) {
             )
         ),
         functions = listOf(
-            // Check if data exists in cache
-            Function.FindById(
-                collection = "user_cache",
-                recordId = "{{user_id}}"
+            // Check KV cache first (O(1) lookup - much faster than FindById)
+            Function.KvGet(
+                key = "user_cache:{{user_id}}"
             ),
             Function.If(
-                condition = ScriptCondition.HasRecords,
+                // KvGet returns { value: ... } on hit, { kv_value: null } on miss
+                // So we check if "value" field exists to detect cache hit
+                condition = ScriptCondition.FieldExists(field = "value"),
                 thenFunctions = listOf(
-                    // Cache hit - just project the data field
+                    // Cache hit - project the value field
                     Function.Project(
-                        fields = listOf("data"),
+                        fields = listOf("value"),
                         exclude = false
                     )
                 ),
                 elseFunctions = listOf(
                     // Cache miss - call reusable function to fetch and store
-                    // params null - inherits user_id from parent scope
+                    // Explicitly pass user_id to avoid polluting with kv_value from KvGet
                     Function.CallFunction(
                         functionLabel = "fetch_and_store_user",
-                        params = null
-                    ),
-                    // Project data from the inserted record
-                    // (Insert returns the record it created, no need for FindById)
-                    Function.Project(
-                        fields = listOf("data"),
-                        exclude = false
+                        params = buildJsonObject {
+                            put("user_id", "{{user_id}}")
+                        }
                     )
                 )
             )
