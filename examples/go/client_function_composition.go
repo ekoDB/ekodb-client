@@ -73,9 +73,8 @@ func basicCompositionExample(client *ekodb.Client) error {
 			"user_code": {Required: true},
 		},
 		Functions: []ekodb.FunctionStageConfig{
-			ekodb.StageCallFunction("fetch_user", map[string]interface{}{
-				"user_code": "{{user_code}}",
-			}),
+			// params nil - inherits user_code from parent scope
+			ekodb.StageCallFunction("fetch_user", nil),
 			ekodb.StageProject([]string{"name", "department"}, false),
 		},
 	}
@@ -116,6 +115,7 @@ func swrCompositionExample(client *ekodb.Client) error {
 
 	// Step 1: Create reusable fetch and store function
 	// Using jsonplaceholder.typicode.com - a reliable free API for testing
+	// This function ONLY fetches and stores - the caller handles retrieval
 	ttl := int64(300)
 	fetchAndStore := ekodb.Script{
 		Label: "fetch_and_store_user",
@@ -148,6 +148,7 @@ func swrCompositionExample(client *ekodb.Client) error {
 	fmt.Println("✅ Saved reusable function: fetch_and_store_user")
 
 	// Step 2: Create SWR function that CALLS the reusable function
+	// Pattern: Check cache → populate if missing → fetch and return
 	swrUser := ekodb.Script{
 		Label: "swr_user",
 		Name:  "SWR pattern for user data",
@@ -155,16 +156,21 @@ func swrCompositionExample(client *ekodb.Client) error {
 			"user_id": {Required: true},
 		},
 		Functions: []ekodb.FunctionStageConfig{
+			// Check if data exists in cache
 			ekodb.StageFindById("user_cache", "{{user_id}}"),
 			ekodb.StageIf(
 				ekodb.ConditionHasRecords(),
 				[]ekodb.FunctionStageConfig{
+					// Cache hit - just project the data field
 					ekodb.StageProject([]string{"data"}, false),
 				},
 				[]ekodb.FunctionStageConfig{
-					ekodb.StageCallFunction("fetch_and_store_user", map[string]interface{}{
-						"user_id": "{{user_id}}",
-					}),
+					// Cache miss - call reusable function to fetch and store
+					// params nil - inherits user_id from parent scope
+					ekodb.StageCallFunction("fetch_and_store_user", nil),
+					// Project data from the inserted record
+					// (Insert returns the record it created, no need for FindById)
+					ekodb.StageProject([]string{"data"}, false),
 				},
 			),
 		},
@@ -240,9 +246,8 @@ func nestedCompositionExample(client *ekodb.Client) error {
 			"user_code": {Required: true},
 		},
 		Functions: []ekodb.FunctionStageConfig{
-			ekodb.StageCallFunction("validate_user", map[string]interface{}{
-				"user_code": "{{user_code}}",
-			}),
+			// params nil - inherits user_code from parent scope
+			ekodb.StageCallFunction("validate_user", nil),
 			ekodb.StageProject([]string{"name", "department"}, false),
 		},
 	}
@@ -260,9 +265,8 @@ func nestedCompositionExample(client *ekodb.Client) error {
 			"user_code": {Required: true},
 		},
 		Functions: []ekodb.FunctionStageConfig{
-			ekodb.StageCallFunction("fetch_slim_user", map[string]interface{}{
-				"user_code": "{{user_code}}",
-			}),
+			// params nil - inherits user_code from parent scope
+			ekodb.StageCallFunction("fetch_slim_user", nil),
 		},
 	}
 

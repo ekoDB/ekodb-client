@@ -88,7 +88,7 @@ suspend fun basicCompositionExample(client: EkoDBClient) {
         functions = listOf(
             Function.CallFunction(
                 functionLabel = "fetch_user",
-                params = mapOf("user_id" to "{{user_id}}")
+                params = null // Inherits user_id from parent scope
             ),
             Function.Project(
                 fields = listOf("name", "department"),
@@ -122,6 +122,7 @@ suspend fun swrCompositionExample(client: EkoDBClient) {
 
     // Step 1: Create reusable fetch and store function
     // Using jsonplaceholder.typicode.com - a reliable free API for testing
+    // This function ONLY fetches and stores - the caller handles retrieval
     val fetchAndStore = Script(
         label = "fetch_and_store_user",
         name = "Fetch user from API and cache",
@@ -140,7 +141,7 @@ suspend fun swrCompositionExample(client: EkoDBClient) {
             Function.Insert(
                 collection = "user_cache",
                 record = mapOf(
-                    "cache_key" to mapOf("type" to "String", "value" to "{{user_id}}"),
+                    "id" to mapOf("type" to "String", "value" to "{{user_id}}"),
                     "data" to mapOf("type" to "Object", "value" to "{{http_response}}")
                 ),
                 ttl = 300 // 5 minute cache
@@ -152,6 +153,7 @@ suspend fun swrCompositionExample(client: EkoDBClient) {
     println("✅ Saved reusable function: fetch_and_store_user")
 
     // Step 2: Create SWR function that CALLS the reusable function
+    // Pattern: Check cache → populate if missing → fetch and return
     val swrUser = Script(
         label = "swr_user",
         name = "SWR pattern for user data",
@@ -162,6 +164,7 @@ suspend fun swrCompositionExample(client: EkoDBClient) {
             )
         ),
         functions = listOf(
+            // Check if data exists in cache
             Function.FindById(
                 collection = "user_cache",
                 recordId = "{{user_id}}"
@@ -169,15 +172,24 @@ suspend fun swrCompositionExample(client: EkoDBClient) {
             Function.If(
                 condition = ScriptCondition.HasRecords,
                 thenFunctions = listOf(
+                    // Cache hit - just project the data field
                     Function.Project(
                         fields = listOf("data"),
                         exclude = false
                     )
                 ),
                 elseFunctions = listOf(
+                    // Cache miss - call reusable function to fetch and store
+                    // params null - inherits user_id from parent scope
                     Function.CallFunction(
                         functionLabel = "fetch_and_store_user",
-                        params = mapOf("user_id" to "{{user_id}}")
+                        params = null
+                    ),
+                    // Project data from the inserted record
+                    // (Insert returns the record it created, no need for FindById)
+                    Function.Project(
+                        fields = listOf("data"),
+                        exclude = false
                     )
                 )
             )
@@ -248,7 +260,7 @@ suspend fun nestedCompositionExample(client: EkoDBClient) {
         functions = listOf(
             Function.CallFunction(
                 functionLabel = "validate_user",
-                params = mapOf("user_id" to "{{user_id}}")
+                params = null // Inherits user_id from parent scope
             ),
             Function.Project(
                 fields = listOf("name", "department"),
@@ -273,7 +285,7 @@ suspend fun nestedCompositionExample(client: EkoDBClient) {
         functions = listOf(
             Function.CallFunction(
                 functionLabel = "fetch_slim_user",
-                params = mapOf("user_id" to "{{user_id}}")
+                params = null // Inherits user_id from parent scope
             )
         )
     )
