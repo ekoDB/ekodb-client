@@ -74,6 +74,7 @@ async function swrPatternExample() {
   });
   const duration = Date.now() - start;
   console.log(`Response time: ${duration}ms (served from cache)`);
+  console.log("Result (cached):", JSON.stringify(result2, null, 2));
   console.log("✓ Lightning fast cache hit\n");
 
   console.log("=== Advanced: SWR with Data Enrichment ===\n");
