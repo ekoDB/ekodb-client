@@ -136,15 +136,15 @@ async fn swr_with_composition_example(client: &Client) -> Result<(), Box<dyn std
     println!("Using CallFunction to replace inline logic in SWR pattern...\n");
 
     // Step 1: Create reusable "fetch_external_data" function
-    // This encapsulates all the logic for fetching and storing external data
-    let fetch_and_store = Script::new("fetch_and_store_github", "Fetch from GitHub and store")
-        .with_parameter(ParameterDefinition::new("username").required())
+    // Using jsonplaceholder.typicode.com - a reliable free API for testing
+    let fetch_and_store = Script::new("fetch_and_store_user", "Fetch user from API and cache")
+        .with_parameter(ParameterDefinition::new("user_id").required())
         .with_function(Function::HttpRequest {
-            url: "https://api.github.com/users/{{username}}".to_string(),
+            url: "https://jsonplaceholder.typicode.com/users/{{user_id}}".to_string(),
             method: "GET".to_string(),
             headers: Some({
                 let mut headers = HashMap::new();
-                headers.insert("User-Agent".to_string(), "ekoDB-Client".to_string());
+                headers.insert("Accept".to_string(), "application/json".to_string());
                 headers
             }),
             body: None,
@@ -152,17 +152,17 @@ async fn swr_with_composition_example(client: &Client) -> Result<(), Box<dyn std
             output_field: None,
         })
         .with_function(Function::Insert {
-            collection: "github_cache".to_string(),
+            collection: "user_cache".to_string(),
             record: serde_json::json!({
-                "id": {"type": "String", "value": "{{username}}"},
+                "id": {"type": "String", "value": "{{user_id}}"},
                 "data": {"type": "Object", "value": "{{http_response}}"}
             }),
             bypass_ripple: None,
             ttl: Some(serde_json::json!(300)), // 5 minute cache
         })
         .with_function(Function::FindById {
-            collection: "github_cache".to_string(),
-            record_id: "{{username}}".to_string(),
+            collection: "user_cache".to_string(),
+            record_id: "{{user_id}}".to_string(),
         })
         .with_function(Function::Project {
             fields: vec!["data".to_string()],
@@ -170,15 +170,15 @@ async fn swr_with_composition_example(client: &Client) -> Result<(), Box<dyn std
         });
 
     client.save_script(fetch_and_store).await?;
-    println!("✅ Saved reusable function: fetch_and_store_github");
+    println!("✅ Saved reusable function: fetch_and_store_user");
 
     // Step 2: Create SWR function that CALLS the reusable fetch function
     // Notice how clean this is - no inline HttpRequest or Insert logic!
-    let swr_github = Script::new("swr_github_user", "SWR pattern using reusable functions")
-        .with_parameter(ParameterDefinition::new("username").required())
+    let swr_user = Script::new("swr_user", "SWR pattern for user data")
+        .with_parameter(ParameterDefinition::new("user_id").required())
         .with_function(Function::FindById {
-            collection: "github_cache".to_string(),
-            record_id: "{{username}}".to_string(),
+            collection: "user_cache".to_string(),
+            record_id: "{{user_id}}".to_string(),
         })
         .with_function(Function::If {
             condition: ScriptCondition::HasRecords,
@@ -189,31 +189,26 @@ async fn swr_with_composition_example(client: &Client) -> Result<(), Box<dyn std
             else_functions: Some(vec![
                 // Instead of inline HttpRequest + Insert, just call the reusable function!
                 Box::new(Function::CallFunction {
-                    function_label: "fetch_and_store_github".to_string(),
+                    function_label: "fetch_and_store_user".to_string(),
                     params: Some({
                         let mut params = HashMap::new();
-                        params.insert("username".to_string(), serde_json::json!("{{username}}"));
+                        params.insert("user_id".to_string(), serde_json::json!("{{user_id}}"));
                         params
                     }),
                 }),
             ]),
         });
 
-    client.save_script(swr_github).await?;
-    println!("✅ Saved SWR function using composition: swr_github_user\n");
+    client.save_script(swr_user).await?;
+    println!("✅ Saved SWR function using composition: swr_user\n");
 
     // Step 3: Test the SWR pattern - First call (cache miss)
-    println!("First call (cache miss - will fetch from GitHub):");
+    println!("First call (cache miss - will fetch from API):");
     let mut params = HashMap::new();
-    params.insert(
-        "username".to_string(),
-        FieldType::String("torvalds".to_string()),
-    );
+    params.insert("user_id".to_string(), FieldType::String("1".to_string()));
 
     let start = std::time::Instant::now();
-    let result1 = client
-        .call_script("swr_github_user", Some(params.clone()))
-        .await?;
+    let result1 = client.call_script("swr_user", Some(params.clone())).await?;
     let duration1 = start.elapsed();
 
     println!("   ⏱️  Duration: {:?}", duration1);
@@ -222,7 +217,7 @@ async fn swr_with_composition_example(client: &Client) -> Result<(), Box<dyn std
     // Step 4: Second call (cache hit)
     println!("Second call (cache hit - from cache):");
     let start = std::time::Instant::now();
-    let result2 = client.call_script("swr_github_user", Some(params)).await?;
+    let result2 = client.call_script("swr_user", Some(params)).await?;
     let duration2 = start.elapsed();
 
     println!("   ⏱️  Duration: {:?}", duration2);

@@ -3,14 +3,16 @@ package io.ekodb.client.examples
 import io.ekodb.client.EkoDBClient
 import io.ekodb.client.types.FieldType
 import io.ekodb.client.types.Record
+import io.github.cdimascio.dotenv.dotenv
 import kotlinx.coroutines.runBlocking
 
 /**
  * Batch operations example - Insert, update, and delete multiple records efficiently
  */
 fun main() = runBlocking {
-    val baseUrl = System.getenv("API_BASE_URL") ?: "http://localhost:8080"
-    val apiKey = System.getenv("API_BASE_KEY") ?: error("API_BASE_KEY environment variable not set")
+    val dotenv = dotenv()
+    val baseUrl = dotenv["API_BASE_URL"] ?: "http://localhost:8080"
+    val apiKey = dotenv["API_BASE_KEY"] ?: "a-test-api-key-from-ekodb"
     
     val client = EkoDBClient.builder()
         .baseUrl(baseUrl)

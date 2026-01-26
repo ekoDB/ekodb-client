@@ -38,6 +38,108 @@ class QueryBuilderTest {
     }
 
     // ========================================================================
+    // Field Projection Tests
+    // ========================================================================
+
+    @Test
+    fun `adds select fields to query`() {
+        val query = QueryBuilder()
+            .eq("status", "active")
+            .selectFields("name", "email", "created_at")
+            .build()
+
+        assertNotNull(query.selectFields)
+        assertEquals(3, query.selectFields?.size)
+        assertTrue(query.selectFields!!.contains("name"))
+        assertTrue(query.selectFields!!.contains("email"))
+        assertTrue(query.selectFields!!.contains("created_at"))
+    }
+
+    @Test
+    fun `adds exclude fields to query`() {
+        val query = QueryBuilder()
+            .eq("user_role", "admin")
+            .excludeFields("password", "api_key", "secret_token")
+            .build()
+
+        assertNotNull(query.excludeFields)
+        assertEquals(3, query.excludeFields?.size)
+        assertTrue(query.excludeFields!!.contains("password"))
+        assertTrue(query.excludeFields!!.contains("api_key"))
+        assertTrue(query.excludeFields!!.contains("secret_token"))
+    }
+
+    @Test
+    fun `supports both select and exclude fields`() {
+        val query = QueryBuilder()
+            .eq("type", "document")
+            .selectFields("id", "title", "content", "metadata")
+            .excludeFields("metadata.internal")
+            .build()
+
+        assertNotNull(query.selectFields)
+        assertNotNull(query.excludeFields)
+        assertEquals(4, query.selectFields?.size)
+        assertEquals(1, query.excludeFields?.size)
+    }
+
+    @Test
+    fun `projection works with complex queries`() {
+        val query = QueryBuilder()
+            .eq("status", "active")
+            .gte("age", 18)
+            .lt("age", 65)
+            .selectFields("id", "name", "email")
+            .sortDesc("created_at")
+            .limit(10)
+            .build()
+
+        assertNotNull(query.filter)
+        assertNotNull(query.selectFields)
+        assertNotNull(query.sort)
+        assertEquals(3, query.selectFields?.size)
+        assertEquals(10, query.limit)
+    }
+
+    @Test
+    fun `projection preserves other query params`() {
+        val query = QueryBuilder()
+            .eq("type", "user")
+            .selectFields("username", "email")
+            .bypassCache(true)
+            .bypassRipple(true)
+            .skip(20)
+            .build()
+
+        assertNotNull(query.filter)
+        assertNotNull(query.selectFields)
+        assertEquals(listOf("username", "email"), query.selectFields)
+        assertEquals(true, query.bypassCache)
+        assertEquals(true, query.bypassRipple)
+        assertEquals(20, query.skip)
+    }
+
+    @Test
+    fun `select fields accepts list`() {
+        val fields = listOf("id", "name", "email")
+        val query = QueryBuilder()
+            .selectFields(fields)
+            .build()
+
+        assertEquals(fields, query.selectFields)
+    }
+
+    @Test
+    fun `exclude fields accepts list`() {
+        val fields = listOf("password", "api_key")
+        val query = QueryBuilder()
+            .excludeFields(fields)
+            .build()
+
+        assertEquals(fields, query.excludeFields)
+    }
+
+    // ========================================================================
     // Equality Operators Tests
     // ========================================================================
 

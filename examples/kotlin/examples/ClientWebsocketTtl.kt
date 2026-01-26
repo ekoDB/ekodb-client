@@ -2,6 +2,7 @@ package io.ekodb.client.examples
 
 import io.ekodb.client.EkoDBClient
 import io.ekodb.client.types.Record
+import io.github.cdimascio.dotenv.dotenv
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 
@@ -9,9 +10,10 @@ import kotlinx.coroutines.withTimeout
  * WebSocket TTL example - WebSocket operations with TTL documents
  */
 fun main() = runBlocking {
-    val baseUrl = System.getenv("API_BASE_URL") ?: "http://localhost:8080"
-    val wsUrl = System.getenv("WS_BASE_URL") ?: "ws://localhost:8080"
-    val apiKey = System.getenv("API_BASE_KEY") ?: error("API_BASE_KEY environment variable not set")
+    val dotenv = dotenv()
+    val baseUrl = dotenv["API_BASE_URL"] ?: "http://localhost:8080"
+    val wsUrl = dotenv["WS_BASE_URL"] ?: "ws://localhost:8080"
+    val apiKey = dotenv["API_BASE_KEY"] ?: "a-test-api-key-from-ekodb"
     
     val client = EkoDBClient.builder()
         .baseUrl(baseUrl)

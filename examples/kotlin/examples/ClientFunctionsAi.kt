@@ -15,14 +15,16 @@ import io.ekodb.client.functions.FunctionStageConfig
 import io.ekodb.client.functions.ChatMessage
 import io.ekodb.client.functions.ParameterDefinition
 import io.ekodb.client.types.Record
+import io.github.cdimascio.dotenv.dotenv
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
 fun main() = runBlocking {
-    val baseUrl = System.getenv("API_BASE_URL") ?: "http://localhost:8080"
-    val apiKey = System.getenv("API_BASE_KEY") ?: error("API_BASE_KEY environment variable not set")
+    val dotenv = dotenv()
+    val baseUrl = dotenv["API_BASE_URL"] ?: "http://localhost:8080"
+    val apiKey = dotenv["API_BASE_KEY"] ?: "a-test-api-key-from-ekodb"
 
     val client = EkoDBClient.builder()
         .baseUrl(baseUrl)

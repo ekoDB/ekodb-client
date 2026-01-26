@@ -2,6 +2,7 @@ package io.ekodb.client.examples
 
 import io.ekodb.client.EkoDBClient
 import io.ekodb.client.types.Record
+import io.github.cdimascio.dotenv.dotenv
 import kotlinx.coroutines.runBlocking
 
 /**
@@ -16,8 +17,9 @@ import kotlinx.coroutines.runBlocking
 fun main() = runBlocking {
     println("=== ekoDB Convenience Methods Example ===\n")
 
-    val baseUrl = System.getenv("API_BASE_URL") ?: "http://localhost:8080"
-    val apiKey = System.getenv("API_BASE_KEY") ?: "a-test-api-key-from-ekodb"
+    val dotenv = dotenv()
+    val baseUrl = dotenv["API_BASE_URL"] ?: "http://localhost:8080"
+    val apiKey = dotenv["API_BASE_KEY"] ?: "a-test-api-key-from-ekodb"
     
     val client = EkoDBClient.builder()
         .baseUrl(baseUrl)

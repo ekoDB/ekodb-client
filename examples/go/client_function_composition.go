@@ -115,24 +115,25 @@ func swrCompositionExample(client *ekodb.Client) error {
 	fmt.Println("Using CallFunction to replace inline logic in SWR pattern...\n")
 
 	// Step 1: Create reusable fetch and store function
+	// Using jsonplaceholder.typicode.com - a reliable free API for testing
 	ttl := int64(300)
 	fetchAndStore := ekodb.Script{
-		Label: "fetch_and_store_github",
-		Name:  "Fetch from GitHub and store",
+		Label: "fetch_and_store_user",
+		Name:  "Fetch user from API and cache",
 		Parameters: map[string]ekodb.ParameterDefinition{
-			"username": {Required: true},
+			"user_id": {Required: true},
 		},
 		Functions: []ekodb.FunctionStageConfig{
 			ekodb.StageHttpRequest(
-				"https://api.github.com/users/{{username}}",
+				"https://jsonplaceholder.typicode.com/users/{{user_id}}",
 				"GET",
-				map[string]string{"User-Agent": "ekoDB-Client"},
+				map[string]string{"Accept": "application/json"},
 				nil,
 			),
 			ekodb.StageInsert(
-				"github_cache",
+				"user_cache",
 				map[string]interface{}{
-					"id":   map[string]interface{}{"type": "String", "value": "{{username}}"},
+					"id":   map[string]interface{}{"type": "String", "value": "{{user_id}}"},
 					"data": map[string]interface{}{"type": "Object", "value": "{{http_response}}"},
 				},
 				false,
@@ -144,44 +145,44 @@ func swrCompositionExample(client *ekodb.Client) error {
 	if _, err := client.SaveScript(fetchAndStore); err != nil {
 		return err
 	}
-	fmt.Println("✅ Saved reusable function: fetch_and_store_github")
+	fmt.Println("✅ Saved reusable function: fetch_and_store_user")
 
 	// Step 2: Create SWR function that CALLS the reusable function
-	swrGithub := ekodb.Script{
-		Label: "swr_github_user",
-		Name:  "SWR pattern using reusable functions",
+	swrUser := ekodb.Script{
+		Label: "swr_user",
+		Name:  "SWR pattern for user data",
 		Parameters: map[string]ekodb.ParameterDefinition{
-			"username": {Required: true},
+			"user_id": {Required: true},
 		},
 		Functions: []ekodb.FunctionStageConfig{
-			ekodb.StageFindById("github_cache", "{{username}}"),
+			ekodb.StageFindById("user_cache", "{{user_id}}"),
 			ekodb.StageIf(
 				ekodb.ConditionHasRecords(),
 				[]ekodb.FunctionStageConfig{
 					ekodb.StageProject([]string{"data"}, false),
 				},
 				[]ekodb.FunctionStageConfig{
-					ekodb.StageCallFunction("fetch_and_store_github", map[string]interface{}{
-						"username": "{{username}}",
+					ekodb.StageCallFunction("fetch_and_store_user", map[string]interface{}{
+						"user_id": "{{user_id}}",
 					}),
 				},
 			),
 		},
 	}
 
-	if _, err := client.SaveScript(swrGithub); err != nil {
+	if _, err := client.SaveScript(swrUser); err != nil {
 		return err
 	}
-	fmt.Println("✅ Saved SWR function using composition: swr_github_user\n")
+	fmt.Println("✅ Saved SWR function using composition: swr_user\n")
 
 	// Step 3: Test cache miss
-	fmt.Println("First call (cache miss - will fetch from GitHub):")
+	fmt.Println("First call (cache miss - will fetch from API):")
 	params := map[string]interface{}{
-		"username": "torvalds",
+		"user_id": "1",
 	}
 
 	start1 := time.Now()
-	result1, err := client.CallScript("swr_github_user", params)
+	result1, err := client.CallScript("swr_user", params)
 	if err != nil {
 		return err
 	}
@@ -193,7 +194,7 @@ func swrCompositionExample(client *ekodb.Client) error {
 	// Step 4: Test cache hit
 	fmt.Println("Second call (cache hit - from cache):")
 	start2 := time.Now()
-	result2, err := client.CallScript("swr_github_user", params)
+	result2, err := client.CallScript("swr_user", params)
 	if err != nil {
 		return err
 	}
@@ -251,10 +252,10 @@ func nestedCompositionExample(client *ekodb.Client) error {
 	}
 	fmt.Println("✅ Level 2 function: fetch_slim_user (calls validate_user)")
 
-	// Level 3: Calls fetch_slim + counts
-	countUser := ekodb.Script{
-		Label: "count_validated_user",
-		Name:  "Get validated user and count",
+	// Level 3: Calls fetch_slim (demonstrates 3-level nesting)
+	getVerifiedUser := ekodb.Script{
+		Label: "get_verified_user",
+		Name:  "Get verified and validated user",
 		Parameters: map[string]ekodb.ParameterDefinition{
 			"user_code": {Required: true},
 		},
@@ -262,20 +263,19 @@ func nestedCompositionExample(client *ekodb.Client) error {
 			ekodb.StageCallFunction("fetch_slim_user", map[string]interface{}{
 				"user_code": "{{user_code}}",
 			}),
-			ekodb.StageCount("record_count"),
 		},
 	}
 
-	if _, err := client.SaveScript(countUser); err != nil {
+	if _, err := client.SaveScript(getVerifiedUser); err != nil {
 		return err
 	}
-	fmt.Println("✅ Level 3 function: count_validated_user (calls fetch_slim_user)\n")
+	fmt.Println("✅ Level 3 function: get_verified_user (calls fetch_slim_user)\n")
 
 	// Execute 3-level nested composition
 	params := map[string]interface{}{
 		"user_code": "user_1",
 	}
-	result, err := client.CallScript("count_validated_user", params)
+	result, err := client.CallScript("get_verified_user", params)
 	if err != nil {
 		return err
 	}
@@ -286,16 +286,14 @@ func nestedCompositionExample(client *ekodb.Client) error {
 		record := result.Records[0]
 		nameJSON, _ := json.Marshal(record["name"])
 		deptJSON, _ := json.Marshal(record["department"])
-		countJSON, _ := json.Marshal(record["record_count"])
 		fmt.Printf("   Name: %s\n", nameJSON)
-		fmt.Printf("   Department: %s\n", deptJSON)
-		fmt.Printf("   Record count: %s\n\n", countJSON)
+		fmt.Printf("   Department: %s\n\n", deptJSON)
 	}
 
 	fmt.Println("🎯 Key Benefit: Each function is independently testable and reusable!")
 	fmt.Println("   - validate_user: Used in 100 different workflows")
 	fmt.Println("   - fetch_slim_user: Used in 50 workflows")
-	fmt.Println("   - count_validated_user: Specific workflow\n")
+	fmt.Println("   - get_verified_user: Specific workflow\n")
 
 	return nil
 }

@@ -16,6 +16,8 @@ pub struct QueryBuilder {
     join: Option<Value>,
     bypass_cache: bool,
     bypass_ripple: bool,
+    select_fields: Option<Vec<String>>,
+    exclude_fields: Option<Vec<String>>,
 }
 
 /// Sort order for query results
@@ -306,9 +308,25 @@ impl QueryBuilder {
         self
     }
 
-    /// Bypass ripple for this query
+    /// Bypass ripple propagation for this query
     pub fn bypass_ripple(mut self, bypass: bool) -> Self {
         self.bypass_ripple = bypass;
+        self
+    }
+
+    // ========================================================================
+    // Field Projection
+    // ========================================================================
+
+    /// Select specific fields to return (plus 'id' which is always included)
+    pub fn select_fields(mut self, fields: Vec<String>) -> Self {
+        self.select_fields = Some(fields);
+        self
+    }
+
+    /// Exclude specific fields from results
+    pub fn exclude_fields(mut self, fields: Vec<String>) -> Self {
+        self.exclude_fields = Some(fields);
         self
     }
 
@@ -355,6 +373,14 @@ impl QueryBuilder {
         query.join = self.join;
         query.bypass_cache = Some(self.bypass_cache);
         query.bypass_ripple = Some(self.bypass_ripple);
+
+        if let Some(fields) = self.select_fields {
+            query.select_fields = Some(fields);
+        }
+
+        if let Some(fields) = self.exclude_fields {
+            query.exclude_fields = Some(fields);
+        }
 
         query
     }

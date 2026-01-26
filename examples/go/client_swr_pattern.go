@@ -39,25 +39,26 @@ func main() {
 	}
 
 	// Cleanup any stale collections from previous runs
-	client.DeleteCollection("github_cache_go")
+	client.DeleteCollection("user_cache_go")
 
 	// Create collection without schema to allow any data structure
-	client.CreateCollection("github_cache_go", ekodb.Schema{})
+	client.CreateCollection("user_cache_go", ekodb.Schema{})
 
 	fmt.Println("=== ekoDB SWR (Stale-While-Revalidate) Pattern ===")
 	fmt.Println()
 
 	fmt.Println("Step 1: Create SWR function that acts as edge cache")
 
+	// Using jsonplaceholder.typicode.com - a reliable free API for testing
 	swrScript := ekodb.Script{
-		Label:       "fetch_github_user_go",
-		Name:        "Fetch GitHub User with Cache",
-		Description: func() *string { s := "SWR pattern: Check cache, fetch from GitHub API if stale"; return &s }(),
+		Label:       "fetch_api_user_go",
+		Name:        "Fetch User with Cache",
+		Description: func() *string { s := "SWR pattern: Check cache, fetch from API if stale"; return &s }(),
 		Version:     func() *string { s := "1.0"; return &s }(),
 		Parameters: map[string]ekodb.ParameterDefinition{
-			"username": {
+			"user_id": {
 				Required:    true,
-				Description: "GitHub username to fetch",
+				Description: "User ID to fetch",
 			},
 			"ttl": {
 				Required:    false,
@@ -65,9 +66,9 @@ func main() {
 				Description: "Cache TTL in seconds",
 			},
 		},
-		Tags: []string{"swr", "github", "cache"},
+		Tags: []string{"swr", "user", "cache"},
 		Functions: []ekodb.FunctionStageConfig{
-			ekodb.StageFindById("github_cache_go", "{{username}}"),
+			ekodb.StageFindById("user_cache_go", "{{user_id}}"),
 			{
 				Stage: "If",
 				Data: map[string]interface{}{
@@ -77,13 +78,13 @@ func main() {
 					},
 					"else_functions": []interface{}{
 						ekodb.StageHttpRequest(
-							"https://api.github.com/users/{{username}}",
+							"https://jsonplaceholder.typicode.com/users/{{user_id}}",
 							"GET",
-							map[string]string{"User-Agent": "ekoDB-SWR-Example"},
+							map[string]string{"Accept": "application/json"},
 							nil,
 						),
-						ekodb.StageInsert("github_cache_go", map[string]interface{}{
-							"id": "{{username}}",
+						ekodb.StageInsert("user_cache_go", map[string]interface{}{
+							"id": "{{user_id}}",
 							"data": map[string]interface{}{
 								"type":  "Object",
 								"value": "{{http_response}}",
@@ -101,12 +102,12 @@ func main() {
 		log.Printf("Save script error: %v", err)
 		return
 	}
-	fmt.Printf("✓ Created SWR script: fetch_github_user_go (%s)\n\n", scriptID)
+	fmt.Printf("✓ Created SWR script: fetch_api_user_go (%s)\n\n", scriptID)
 
-	fmt.Println("Step 2: First call - Cache miss, fetches from GitHub API")
-	result1, err := client.CallScript("fetch_github_user_go", map[string]interface{}{
-		"username": "torvalds",
-		"ttl":      300,
+	fmt.Println("Step 2: First call - Cache miss, fetches from API")
+	result1, err := client.CallScript("fetch_api_user_go", map[string]interface{}{
+		"user_id": "1",
+		"ttl":     300,
 	})
 	if err != nil {
 		log.Printf("Call script error: %v", err)
@@ -118,8 +119,8 @@ func main() {
 
 	fmt.Println("Step 3: Second call - Cache hit, instant response from ekoDB")
 	start := time.Now()
-	_, err = client.CallScript("fetch_github_user_go", map[string]interface{}{
-		"username": "torvalds",
+	_, err = client.CallScript("fetch_api_user_go", map[string]interface{}{
+		"user_id": "1",
 	})
 	duration := time.Since(start)
 	if err != nil {
@@ -132,7 +133,7 @@ func main() {
 	// Cleanup
 	fmt.Println("🧹 Cleaning up...")
 	client.DeleteScript(scriptID)
-	client.DeleteCollection("github_cache_go")
+	client.DeleteCollection("user_cache_go")
 	fmt.Println("✓ Cleanup complete\n")
 
 	fmt.Println("=== SWR Pattern Summary ===")
