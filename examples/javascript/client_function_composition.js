@@ -156,6 +156,16 @@ async function swrCompositionExample(client) {
             function_label: 'fetch_and_store_user',
             params: { user_id: '{{user_id}}' },
           },
+          // After storing, retrieve the cached value to return it
+          {
+            type: 'KvGet',
+            key: 'user_cache:{{user_id}}',
+          },
+          {
+            type: 'Project',
+            fields: ['value'],
+            exclude: false,
+          },
         ],
       },
     ],
@@ -171,7 +181,13 @@ async function swrCompositionExample(client) {
   const duration1 = Date.now() - start1;
 
   console.log(`   ⏱️  Duration: ${duration1}ms`);
-  console.log(`   📊 Records: ${result1.records.length}\n`);
+  console.log(`   📊 Records: ${result1.records.length}`);
+  if (result1.records.length > 0) {
+    const preview = JSON.stringify(result1.records[0], null, 2).substring(0, 200);
+    console.log(`   📦 Data: ${preview}...\n`);
+  } else {
+    console.log();
+  }
 
   // Step 4: Test cache hit
   console.log('Second call (cache hit - from cache):');
@@ -181,6 +197,10 @@ async function swrCompositionExample(client) {
 
   console.log(`   ⏱️  Duration: ${duration2}ms`);
   console.log(`   📊 Records: ${result2.records.length}`);
+  if (result2.records.length > 0) {
+    const preview = JSON.stringify(result2.records[0], null, 2).substring(0, 200);
+    console.log(`   📦 Data: ${preview}...`);
+  }
   if (duration2 > 0) {
     const speedup = duration1 / duration2;
     console.log(`   🚀 Cache speedup: ${speedup.toFixed(1)}x faster!\n`);

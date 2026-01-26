@@ -165,6 +165,9 @@ func swrCompositionExample(client *ekodb.Client) error {
 					ekodb.StageCallFunction("fetch_and_store_user", map[string]any{
 						"user_id": "{{user_id}}",
 					}),
+					// After storing, retrieve the cached value to return it
+					ekodb.StageKvGet("user_cache:{{user_id}}", nil),
+					ekodb.StageProject([]string{"value"}, false),
 				},
 			),
 		},
@@ -189,7 +192,17 @@ func swrCompositionExample(client *ekodb.Client) error {
 	duration1 := time.Since(start1)
 
 	fmt.Printf("   ⏱️  Duration: %v\n", duration1)
-	fmt.Printf("   📊 Records: %d\n\n", len(result1.Records))
+	fmt.Printf("   📊 Records: %d\n", len(result1.Records))
+	if len(result1.Records) > 0 {
+		dataJSON, _ := json.MarshalIndent(result1.Records[0], "      ", "  ")
+		preview := string(dataJSON)
+		if len(preview) > 200 {
+			preview = preview[:200] + "..."
+		}
+		fmt.Printf("   📦 Data: %s\n\n", preview)
+	} else {
+		fmt.Println()
+	}
 
 	// Step 4: Test cache hit
 	fmt.Println("Second call (cache hit - from cache):")
@@ -202,6 +215,14 @@ func swrCompositionExample(client *ekodb.Client) error {
 
 	fmt.Printf("   ⏱️  Duration: %v\n", duration2)
 	fmt.Printf("   📊 Records: %d\n", len(result2.Records))
+	if len(result2.Records) > 0 {
+		dataJSON, _ := json.MarshalIndent(result2.Records[0], "      ", "  ")
+		preview := string(dataJSON)
+		if len(preview) > 200 {
+			preview = preview[:200] + "..."
+		}
+		fmt.Printf("   📦 Data: %s\n", preview)
+	}
 	if duration2.Milliseconds() > 0 {
 		speedup := float64(duration1.Milliseconds()) / float64(duration2.Milliseconds())
 		fmt.Printf("   🚀 Cache speedup: %.1fx faster!\n\n", speedup)

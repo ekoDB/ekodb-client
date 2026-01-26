@@ -194,6 +194,15 @@ async fn swr_with_composition_example(client: &Client) -> Result<(), Box<dyn std
                         p
                     }),
                 }),
+                // After storing, retrieve the cached value to return it
+                Box::new(Function::KvGet {
+                    key: serde_json::json!("user_cache:{{user_id}}"),
+                    output_field: None,
+                }),
+                Box::new(Function::Project {
+                    fields: vec!["value".to_string()],
+                    exclude: false,
+                }),
             ]),
         });
 
@@ -210,7 +219,15 @@ async fn swr_with_composition_example(client: &Client) -> Result<(), Box<dyn std
     let duration1 = start.elapsed();
 
     println!("   ⏱️  Duration: {:?}", duration1);
-    println!("   📊 Records: {}\n", result1.records.len());
+    println!("   📊 Records: {}", result1.records.len());
+    if let Some(record) = result1.records.first() {
+        if let Ok(json) = serde_json::to_string_pretty(record) {
+            let preview: String = json.chars().take(200).collect();
+            println!("   📦 Data: {}...\n", preview);
+        }
+    } else {
+        println!();
+    }
 
     // Step 4: Second call (cache hit)
     println!("Second call (cache hit - from cache):");
@@ -220,6 +237,12 @@ async fn swr_with_composition_example(client: &Client) -> Result<(), Box<dyn std
 
     println!("   ⏱️  Duration: {:?}", duration2);
     println!("   📊 Records: {}", result2.records.len());
+    if let Some(record) = result2.records.first() {
+        if let Ok(json) = serde_json::to_string_pretty(record) {
+            let preview: String = json.chars().take(200).collect();
+            println!("   📦 Data: {}...", preview);
+        }
+    }
     println!(
         "   🚀 Cache speedup: {:.1}x faster!\n",
         duration1.as_millis() as f64 / duration2.as_millis() as f64

@@ -158,6 +158,9 @@ async def swr_composition_example(client):
                         "function_label": "fetch_and_store_user",
                         "params": {"user_id": "{{user_id}}"},
                     },
+                    # After storing, retrieve the cached value to return it
+                    {"type": "KvGet", "key": "user_cache:{{user_id}}"},
+                    {"type": "Project", "fields": ["value"], "exclude": False},
                 ],
             },
         ],
@@ -173,7 +176,11 @@ async def swr_composition_example(client):
     duration1 = time.time() - start
 
     print(f"   ⏱️  Duration: {duration1*1000:.1f}ms")
-    print(f"   📊 Records: {len(result1['records'])}\n")
+    print(f"   📊 Records: {len(result1['records'])}")
+    if result1["records"]:
+        print(f"   📦 Data: {json.dumps(result1['records'][0], indent=6)[:200]}...\n")
+    else:
+        print()
 
     # Step 4: Test cache hit
     print("Second call (cache hit - from cache):")
@@ -183,6 +190,8 @@ async def swr_composition_example(client):
 
     print(f"   ⏱️  Duration: {duration2*1000:.1f}ms")
     print(f"   📊 Records: {len(result2['records'])}")
+    if result2["records"]:
+        print(f"   📦 Data: {json.dumps(result2['records'][0], indent=6)[:200]}...")
     if duration2 > 0:
         speedup = duration1 / duration2
         print(f"   🚀 Cache speedup: {speedup:.1f}x faster!\n")
