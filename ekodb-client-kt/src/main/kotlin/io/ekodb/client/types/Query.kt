@@ -31,7 +31,9 @@ data class Query(
     val skip: Int? = null,
     val join: JsonElement? = null,
     val bypassCache: Boolean? = null,
-    val bypassRipple: Boolean? = null
+    val bypassRipple: Boolean? = null,
+    val selectFields: List<String>? = null,
+    val excludeFields: List<String>? = null
 ) {
     companion object {
         fun new() = Query()

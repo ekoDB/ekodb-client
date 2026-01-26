@@ -266,6 +266,109 @@ describe("QueryBuilder pagination", () => {
     expect(query.skip).toBe(0);
     expect(query.limit).toBe(10);
   });
+
+  it("builds page query", () => {
+    const query = new QueryBuilder().page(2, 20).build();
+
+    expect(query.skip).toBe(40);
+    expect(query.limit).toBe(20);
+  });
+});
+
+// ============================================================================
+// Field Projection Tests
+// ============================================================================
+
+describe("QueryBuilder projection", () => {
+  it("adds select_fields to query", () => {
+    const query = new QueryBuilder()
+      .eq("status", "active")
+      .selectFields("name", "email", "created_at")
+      .build();
+
+    expect(query.select_fields).toBeDefined();
+    expect(query.select_fields).toHaveLength(3);
+    expect(query.select_fields).toContain("name");
+    expect(query.select_fields).toContain("email");
+    expect(query.select_fields).toContain("created_at");
+  });
+
+  it("adds exclude_fields to query", () => {
+    const query = new QueryBuilder()
+      .eq("user_role", "admin")
+      .excludeFields("password", "api_key", "secret_token")
+      .build();
+
+    expect(query.exclude_fields).toBeDefined();
+    expect(query.exclude_fields).toHaveLength(3);
+    expect(query.exclude_fields).toContain("password");
+    expect(query.exclude_fields).toContain("api_key");
+    expect(query.exclude_fields).toContain("secret_token");
+  });
+
+  it("supports both select and exclude fields", () => {
+    const query = new QueryBuilder()
+      .eq("type", "document")
+      .selectFields("id", "title", "content", "metadata")
+      .excludeFields("metadata.internal")
+      .build();
+
+    expect(query.select_fields).toHaveLength(4);
+    expect(query.exclude_fields).toHaveLength(1);
+  });
+
+  it("works with complex queries", () => {
+    const query = new QueryBuilder()
+      .eq("status", "active")
+      .gte("age", 18)
+      .lt("age", 65)
+      .selectFields("id", "name", "email")
+      .sortDesc("created_at")
+      .limit(10)
+      .build();
+
+    expect(query.filter).toBeDefined();
+    expect(query.select_fields).toEqual(["id", "name", "email"]);
+    expect(query.sort).toBeDefined();
+    expect(query.limit).toBe(10);
+  });
+
+  it("preserves bypass flags with projection", () => {
+    const query = new QueryBuilder()
+      .eq("type", "user")
+      .selectFields("username", "email")
+      .bypassCache(true)
+      .bypassRipple(true)
+      .skip(20)
+      .build();
+
+    expect(query.filter).toBeDefined();
+    expect(query.select_fields).toEqual(["username", "email"]);
+    expect(query.bypass_cache).toBe(true);
+    expect(query.bypass_ripple).toBe(true);
+    expect(query.skip).toBe(20);
+  });
+
+  it("works with pagination", () => {
+    const query = new QueryBuilder()
+      .eq("status", "published")
+      .selectFields("id", "title", "summary")
+      .page(2, 20)
+      .build();
+
+    expect(query.select_fields).toEqual(["id", "title", "summary"]);
+    expect(query.limit).toBe(20);
+    expect(query.skip).toBe(40);
+  });
+
+  it("maintains fluent interface", () => {
+    const builder = new QueryBuilder();
+    const result = builder
+      .eq("status", "active")
+      .selectFields("id", "name")
+      .limit(10);
+    expect(result).toBe(builder);
+  });
 });
 
 // ============================================================================

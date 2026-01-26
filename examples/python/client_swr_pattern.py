@@ -30,23 +30,24 @@ async def main():
 
     # Cleanup any stale collections from previous runs
     try:
-        await client.delete_collection("github_cache_py")
+        await client.delete_collection("user_cache_py")
     except Exception:
         pass
 
     # Create collection without schema to allow any data structure
-    await client.create_collection("github_cache_py", None)
+    await client.create_collection("user_cache_py", None)
 
     print("=== ekoDB SWR (Stale-While-Revalidate) Pattern ===\n")
 
     print("Step 1: Create SWR function that acts as edge cache")
 
+    # Using jsonplaceholder.typicode.com - a reliable free API for testing
     swr_script = {
-        "label": "fetch_github_user_py",
-        "name": "Fetch GitHub User with Cache",
-        "description": "SWR pattern: Check cache, fetch from GitHub API if stale",
+        "label": "fetch_api_user_py",
+        "name": "Fetch User with Cache",
+        "description": "SWR pattern: Check cache, fetch from API if stale",
         "parameters": {
-            "username": {"required": True, "description": "GitHub username to fetch"},
+            "user_id": {"required": True, "description": "User ID to fetch"},
             "ttl": {
                 "required": False,
                 "default": 300,
@@ -58,10 +59,10 @@ async def main():
             },
         },
         "version": "1.0",
-        "tags": ["swr", "github", "cache"],
+        "tags": ["swr", "user", "cache"],
         "functions": [
             # Check KV cache for user data
-            Stage.kv_get("github:user:{{username}}"),
+            Stage.kv_get("api:user:{{user_id}}"),
             Stage.if_condition(
                 {"type": "HasRecords"},
                 # Cache hit - return cached data
@@ -69,18 +70,18 @@ async def main():
                 # Cache miss - fetch from API and cache
                 [
                     Stage.http_request(
-                        "https://api.github.com/users/{{username}}",
+                        "https://jsonplaceholder.typicode.com/users/{{user_id}}",
                         "GET",
-                        {"User-Agent": "ekoDB-SWR-Example"},
+                        {"Accept": "application/json"},
                     ),
                     # Store in KV with 5 minute TTL
                     Stage.kv_set(
-                        "github:user:{{username}}",
+                        "api:user:{{user_id}}",
                         "{{http_response}}",
                         300,
                     ),
                     # Retrieve the cached data to return
-                    Stage.kv_get("github:user:{{username}}"),
+                    Stage.kv_get("api:user:{{user_id}}"),
                     Stage.project(["data"], False),
                 ],
             ),
@@ -90,11 +91,11 @@ async def main():
     script_id = await client.save_script(swr_script)
     print(f"✓ Created SWR script: {swr_script['label']} ({script_id})\n")
 
-    print("Step 2: First call - Cache miss, fetches from GitHub API")
+    print("Step 2: First call - Cache miss, fetches from API")
     result1 = await client.call_script(
-        "fetch_github_user_py",
+        "fetch_api_user_py",
         {
-            "username": "torvalds",
+            "user_id": "1",
             "ttl": 300,
             "cached_at": datetime.now().isoformat(),
         },
@@ -105,8 +106,8 @@ async def main():
     print("Step 3: Second call - Cache hit, instant response from ekoDB")
     start = time.time()
     result2 = await client.call_script(
-        "fetch_github_user_py",
-        {"username": "torvalds", "cached_at": datetime.now().isoformat()},
+        "fetch_api_user_py",
+        {"user_id": "1", "cached_at": datetime.now().isoformat()},
     )
     duration = (time.time() - start) * 1000
     print(f"Response time: {duration:.0f}ms (served from cache)")
@@ -116,7 +117,7 @@ async def main():
     print("🧹 Cleaning up...")
     try:
         await client.delete_script(script_id)
-        await client.delete_collection("github_cache_py")
+        await client.delete_collection("user_cache_py")
     except Exception:
         pass
     print("✓ Cleanup complete\n")

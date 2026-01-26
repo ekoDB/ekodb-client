@@ -22,6 +22,8 @@ class QueryBuilder {
     private var joinValue: JsonElement? = null
     private var bypassCacheValue: Boolean? = null
     private var bypassRippleValue: Boolean? = null
+    private var selectFieldsValue: List<String>? = null
+    private var excludeFieldsValue: List<String>? = null
     
     /**
      * Equal to
@@ -216,6 +218,34 @@ class QueryBuilder {
     }
     
     /**
+     * Select specific fields to return (plus 'id' which is always included)
+     */
+    fun selectFields(vararg fields: String) = apply {
+        selectFieldsValue = fields.toList()
+    }
+    
+    /**
+     * Select specific fields to return (plus 'id' which is always included)
+     */
+    fun selectFields(fields: List<String>) = apply {
+        selectFieldsValue = fields
+    }
+    
+    /**
+     * Exclude specific fields from results
+     */
+    fun excludeFields(vararg fields: String) = apply {
+        excludeFieldsValue = fields.toList()
+    }
+    
+    /**
+     * Exclude specific fields from results
+     */
+    fun excludeFields(fields: List<String>) = apply {
+        excludeFieldsValue = fields
+    }
+    
+    /**
      * Add join configuration
      * @param joinConfig Map containing join configuration with keys:
      *   - collection: String - target collection to join
@@ -282,7 +312,9 @@ class QueryBuilder {
             skip = skipValue,
             join = joinValue,
             bypassCache = bypassCacheValue,
-            bypassRipple = bypassRippleValue
+            bypassRipple = bypassRippleValue,
+            selectFields = selectFieldsValue,
+            excludeFields = excludeFieldsValue
         )
     }
     

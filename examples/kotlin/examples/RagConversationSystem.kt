@@ -24,6 +24,7 @@
 package io.ekodb.client.examples
 
 import io.ekodb.client.EkoDBClient
+import io.github.cdimascio.dotenv.dotenv
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.*
 import kotlin.system.measureTimeMillis
@@ -102,8 +103,9 @@ fun main() = runBlocking {
     println("that learns from its own conversation history.\n")
 
     // Create client
-    val baseUrl = System.getenv("API_BASE_URL") ?: "http://localhost:8080"
-    val apiKey = System.getenv("API_BASE_KEY") ?: "a-test-api-key-from-ekodb"
+    val dotenv = dotenv()
+    val baseUrl = dotenv["API_BASE_URL"] ?: "http://localhost:8080"
+    val apiKey = dotenv["API_BASE_KEY"] ?: "a-test-api-key-from-ekodb"
     
     val client = EkoDBClient.builder()
         .baseUrl(baseUrl)

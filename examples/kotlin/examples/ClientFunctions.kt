@@ -14,6 +14,7 @@ import io.ekodb.client.functions.FunctionStageConfig
 import io.ekodb.client.functions.GroupFunctionConfig
 import io.ekodb.client.functions.GroupFunctionOp
 import io.ekodb.client.types.Record
+import io.github.cdimascio.dotenv.dotenv
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
@@ -269,8 +270,9 @@ fun main() = runBlocking {
     println("🚀 ekoDB Scripts Example (Kotlin Client)\n")
 
     try {
-        val baseUrl = System.getenv("API_BASE_URL") ?: "http://localhost:8080"
-        val apiKey = System.getenv("API_BASE_KEY") ?: "a-test-api-key-from-ekodb"
+        val dotenv = dotenv()
+        val baseUrl = dotenv["API_BASE_URL"] ?: "http://localhost:8080"
+        val apiKey = dotenv["API_BASE_KEY"] ?: "a-test-api-key-from-ekodb"
 
         val client = EkoDBClient.builder()
             .baseUrl(baseUrl)

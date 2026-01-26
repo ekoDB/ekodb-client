@@ -13,12 +13,14 @@ import io.ekodb.client.EkoDBClient
 import io.ekodb.client.functions.Script
 import io.ekodb.client.functions.FunctionStageConfig
 import io.ekodb.client.types.Record
+import io.github.cdimascio.dotenv.dotenv
 import kotlinx.coroutines.runBlocking
 import kotlin.system.measureTimeMillis
 
 fun main() = runBlocking {
-    val baseUrl = System.getenv("API_BASE_URL") ?: "http://localhost:8080"
-    val apiKey = System.getenv("API_BASE_KEY") ?: error("API_BASE_KEY environment variable not set")
+    val dotenv = dotenv()
+    val baseUrl = dotenv["API_BASE_URL"] ?: "http://localhost:8080"
+    val apiKey = dotenv["API_BASE_KEY"] ?: "a-test-api-key-from-ekodb"
 
     val client = EkoDBClient.builder()
         .baseUrl(baseUrl)

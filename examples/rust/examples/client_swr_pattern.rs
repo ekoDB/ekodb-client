@@ -28,12 +28,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("Step 1: Create SWR function that acts as edge cache");
 
+    // Using jsonplaceholder.typicode.com - a reliable free API for testing
     let mut parameters = HashMap::new();
     parameters.insert(
-        "username".to_string(),
-        ParameterDefinition::new("username")
+        "user_id".to_string(),
+        ParameterDefinition::new("user_id")
             .required()
-            .with_description("GitHub username to fetch"),
+            .with_description("User ID to fetch"),
     );
     parameters.insert(
         "ttl".to_string(),
@@ -49,15 +50,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     let swr_script = Script {
-        label: "fetch_github_user_rs".to_string(),
-        name: "Fetch GitHub User with Cache".to_string(),
-        description: Some("SWR pattern: Check cache, fetch from GitHub API if stale".to_string()),
+        label: "fetch_api_user_rs".to_string(),
+        name: "Fetch User with Cache".to_string(),
+        description: Some("SWR pattern: Check cache, fetch from API if stale".to_string()),
         version: Some("1.0".to_string()),
         parameters,
         functions: vec![
             Function::FindById {
-                collection: "github_cache_rs".to_string(),
-                record_id: "{{username}}".to_string(),
+                collection: "user_cache_rs".to_string(),
+                record_id: "{{user_id}}".to_string(),
             },
             Function::If {
                 condition: ScriptCondition::HasRecords,
@@ -67,20 +68,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 })],
                 else_functions: Some(vec![
                     Box::new(Function::HttpRequest {
-                        url: "https://api.github.com/users/{{username}}".to_string(),
+                        url: "https://jsonplaceholder.typicode.com/users/{{user_id}}".to_string(),
                         method: "GET".to_string(),
                         headers: Some(HashMap::from([(
-                            "User-Agent".to_string(),
-                            "ekoDB-SWR-Example".to_string(),
+                            "Accept".to_string(),
+                            "application/json".to_string(),
                         )])),
                         body: None,
                         timeout_seconds: None,
                         output_field: None,
                     }),
                     Box::new(Function::Insert {
-                        collection: "github_cache_rs".to_string(),
+                        collection: "user_cache_rs".to_string(),
                         record: json!({
-                            "id": {"type": "String", "value": "{{username}}"},
+                            "id": {"type": "String", "value": "{{user_id}}"},
                             "data": {"type": "Object", "value": "{{http_response}}"},
                             "cached_at": {"type": "String", "value": "{{cached_at}}"}
                         }),
@@ -90,30 +91,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 ]),
             },
         ],
-        tags: vec!["swr".to_string(), "github".to_string(), "cache".to_string()],
+        tags: vec!["swr".to_string(), "user".to_string(), "cache".to_string()],
         created_at: None,
         updated_at: None,
     };
 
     let script_id = client.save_script(swr_script).await?;
-    println!(
-        "✓ Created SWR script: fetch_github_user_rs ({})\n",
-        script_id
-    );
+    println!("✓ Created SWR script: fetch_api_user_rs ({})\n", script_id);
 
-    println!("Step 2: First call - Cache miss, fetches from GitHub API");
+    println!("Step 2: First call - Cache miss, fetches from API");
     let mut params1 = HashMap::new();
-    params1.insert(
-        "username".to_string(),
-        FieldType::String("torvalds".to_string()),
-    );
+    params1.insert("user_id".to_string(), FieldType::String("1".to_string()));
     params1.insert("ttl".to_string(), FieldType::Integer(300));
     params1.insert(
         "cached_at".to_string(),
         FieldType::String(chrono::Utc::now().to_rfc3339()),
     );
     let result1 = client
-        .call_script("fetch_github_user_rs", Some(params1))
+        .call_script("fetch_api_user_rs", Some(params1))
         .await?;
     println!("Result: {:?}", result1.stats);
     println!("✓ Data fetched from external API and cached\n");
@@ -121,17 +116,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Step 3: Second call - Cache hit, instant response from ekoDB");
     let start = Instant::now();
     let mut params2 = HashMap::new();
-    params2.insert(
-        "username".to_string(),
-        FieldType::String("torvalds".to_string()),
-    );
+    params2.insert("user_id".to_string(), FieldType::String("1".to_string()));
     params2.insert("ttl".to_string(), FieldType::Integer(300));
     params2.insert(
         "cached_at".to_string(),
         FieldType::String(chrono::Utc::now().to_rfc3339()),
     );
     let _ = client
-        .call_script("fetch_github_user_rs", Some(params2))
+        .call_script("fetch_api_user_rs", Some(params2))
         .await?;
     let duration = start.elapsed();
     println!(
@@ -143,7 +135,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Cleanup
     println!("🧹 Cleaning up...");
     let _ = client.delete_script(&script_id).await;
-    let _ = client.delete_collection("github_cache_rs").await;
+    let _ = client.delete_collection("user_cache_rs").await;
     println!("✓ Cleanup complete\n");
 
     println!("=== SWR Pattern Summary ===");

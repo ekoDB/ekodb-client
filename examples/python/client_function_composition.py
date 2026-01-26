@@ -103,22 +103,23 @@ async def swr_composition_example(client):
     print("Using CallFunction to replace inline logic in SWR pattern...\n")
 
     # Step 1: Create reusable fetch and store function
+    # Using jsonplaceholder.typicode.com - a reliable free API for testing
     fetch_and_store = {
-        "label": "fetch_and_store_github",
-        "name": "Fetch from GitHub and store",
-        "parameters": {"username": {"required": True}},
+        "label": "fetch_and_store_user",
+        "name": "Fetch user from API and cache",
+        "parameters": {"user_id": {"required": True}},
         "functions": [
             {
                 "type": "HttpRequest",
-                "url": "https://api.github.com/users/{{username}}",
+                "url": "https://jsonplaceholder.typicode.com/users/{{user_id}}",
                 "method": "GET",
-                "headers": {"User-Agent": "ekoDB-Client"},
+                "headers": {"Accept": "application/json"},
             },
             {
                 "type": "Insert",
-                "collection": "github_cache",
+                "collection": "user_cache",
                 "record": {
-                    "cache_key": {"type": "String", "value": "{{username}}"},
+                    "cache_key": {"type": "String", "value": "{{user_id}}"},
                     "data": {"type": "Object", "value": "{{http_response}}"},
                 },
                 "ttl": 300,  # 5 minute cache
@@ -127,18 +128,18 @@ async def swr_composition_example(client):
     }
 
     await client.save_script(fetch_and_store)
-    print("✅ Saved reusable function: fetch_and_store_github")
+    print("✅ Saved reusable function: fetch_and_store_user")
 
     # Step 2: Create SWR function that CALLS the reusable function
-    swr_github = {
-        "label": "swr_github_user",
-        "name": "SWR pattern using reusable functions",
-        "parameters": {"username": {"required": True}},
+    swr_user = {
+        "label": "swr_user",
+        "name": "SWR pattern for user data",
+        "parameters": {"user_id": {"required": True}},
         "functions": [
             {
                 "type": "FindById",
-                "collection": "github_cache",
-                "record_id": "{{username}}",
+                "collection": "user_cache",
+                "record_id": "{{user_id}}",
             },
             {
                 "type": "If",
@@ -149,21 +150,21 @@ async def swr_composition_example(client):
                 "else_functions": [
                     {
                         "type": "CallFunction",
-                        "function_label": "fetch_and_store_github",
-                        "params": {"username": "{{username}}"},
+                        "function_label": "fetch_and_store_user",
+                        "params": {"user_id": "{{user_id}}"},
                     }
                 ],
             },
         ],
     }
 
-    await client.save_script(swr_github)
-    print("✅ Saved SWR function using composition: swr_github_user\n")
+    await client.save_script(swr_user)
+    print("✅ Saved SWR function using composition: swr_user\n")
 
     # Step 3: Test cache miss
-    print("First call (cache miss - will fetch from GitHub):")
+    print("First call (cache miss - will fetch from API):")
     start = time.time()
-    result1 = await client.call_script("swr_github_user", {"username": "torvalds"})
+    result1 = await client.call_script("swr_user", {"user_id": "1"})
     duration1 = time.time() - start
 
     print(f"   ⏱️  Duration: {duration1*1000:.1f}ms")
@@ -172,7 +173,7 @@ async def swr_composition_example(client):
     # Step 4: Test cache hit
     print("Second call (cache hit - from cache):")
     start = time.time()
-    result2 = await client.call_script("swr_github_user", {"username": "torvalds"})
+    result2 = await client.call_script("swr_user", {"user_id": "1"})
     duration2 = time.time() - start
 
     print(f"   ⏱️  Duration: {duration2*1000:.1f}ms")
@@ -223,10 +224,10 @@ async def nested_composition_example(client):
     await client.save_script(fetch_slim)
     print("✅ Level 2 function: fetch_slim_user (calls validate_user)")
 
-    # Level 3: Calls fetch_slim + counts
-    count_user = {
-        "label": "count_validated_user",
-        "name": "Get validated user and count",
+    # Level 3: Calls fetch_slim (demonstrates 3-level nesting)
+    get_verified_user = {
+        "label": "get_verified_user",
+        "name": "Get verified and validated user",
         "parameters": {"user_code": {"required": True}},
         "functions": [
             {
@@ -234,15 +235,14 @@ async def nested_composition_example(client):
                 "function_label": "fetch_slim_user",
                 "params": {"user_code": "{{user_code}}"},
             },
-            {"type": "Count", "output_field": "record_count"},
         ],
     }
 
-    await client.save_script(count_user)
-    print("✅ Level 3 function: count_validated_user (calls fetch_slim_user)\n")
+    await client.save_script(get_verified_user)
+    print("✅ Level 3 function: get_verified_user (calls fetch_slim_user)\n")
 
     # Execute 3-level nested composition
-    result = await client.call_script("count_validated_user", {"user_code": "user_1"})
+    result = await client.call_script("get_verified_user", {"user_code": "user_1"})
 
     print("📊 Result from 3-level nested composition:")
     print(f"   Records: {len(result['records'])}")
@@ -250,32 +250,25 @@ async def nested_composition_example(client):
         record = result["records"][0]
         name_field = record.get("name", {})
         dept_field = record.get("department", {})
-        count_field = record.get("record_count", {})
 
         name = (
             name_field.get("value")
             if isinstance(name_field, dict)
-            else name_field or "N/A"
+            else name_field or "Unknown"
         )
         department = (
             dept_field.get("value")
             if isinstance(dept_field, dict)
-            else dept_field or "N/A"
-        )
-        record_count = (
-            count_field.get("value")
-            if isinstance(count_field, dict)
-            else count_field or 0
+            else dept_field or "Unknown"
         )
 
         print(f"   Name: {name}")
-        print(f"   Department: {department}")
-        print(f"   Record count: {record_count}\n")
+        print(f"   Department: {department}\n")
 
     print("🎯 Key Benefit: Each function is independently testable and reusable!")
     print("   - validate_user: Used in 100 different workflows")
     print("   - fetch_slim_user: Used in 50 workflows")
-    print("   - count_validated_user: Specific workflow\n")
+    print("   - get_verified_user: Specific workflow\n")
 
 
 async def main():

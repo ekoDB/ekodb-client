@@ -102,26 +102,27 @@ async function swrCompositionExample(client: EkoDBClient): Promise<void> {
   console.log("Using CallFunction to replace inline logic in SWR pattern...\n");
 
   // Step 1: Create reusable fetch and store function
+  // Using jsonplaceholder.typicode.com - a reliable free API for testing
   const fetchAndStore = {
-    label: "fetch_and_store_github",
-    name: "Fetch GitHub user and cache",
+    label: "fetch_and_store_user",
+    name: "Fetch user from API and cache",
     parameters: {
-      username: { required: true },
+      user_id: { required: true },
     },
     functions: [
       {
         type: "HttpRequest" as const,
-        url: "https://api.github.com/users/{{username}}",
+        url: "https://jsonplaceholder.typicode.com/users/{{user_id}}",
         method: "GET",
         headers: {
-          "User-Agent": "ekoDB-Client",
+          Accept: "application/json",
         },
       },
       {
         type: "Insert" as const,
-        collection: "github_cache",
+        collection: "user_cache",
         record: {
-          cache_key: { type: "String", value: "{{username}}" },
+          cache_key: { type: "String", value: "{{user_id}}" },
           data: { type: "Object", value: "{{http_response}}" },
         },
         ttl: 300, // 5 minute cache
@@ -130,20 +131,20 @@ async function swrCompositionExample(client: EkoDBClient): Promise<void> {
   };
 
   await client.saveScript(fetchAndStore);
-  console.log("✅ Saved reusable function: fetch_and_store_github");
+  console.log("✅ Saved reusable function: fetch_and_store_user");
 
   // Step 2: Create SWR function that CALLS the reusable function
-  const swrGithub = {
-    label: "swr_github_user",
-    name: "SWR pattern for GitHub user",
+  const swrUser = {
+    label: "swr_user",
+    name: "SWR pattern for user data",
     parameters: {
-      username: { required: true },
+      user_id: { required: true },
     },
     functions: [
       {
         type: "FindById" as const,
-        collection: "github_cache",
-        record_id: "{{username}}",
+        collection: "user_cache",
+        record_id: "{{user_id}}",
       },
       {
         type: "If" as const,
@@ -160,9 +161,9 @@ async function swrCompositionExample(client: EkoDBClient): Promise<void> {
         else_functions: [
           {
             type: "CallFunction" as const,
-            function_label: "fetch_and_store_github",
+            function_label: "fetch_and_store_user",
             params: {
-              username: "{{username}}",
+              user_id: "{{user_id}}",
             },
           },
         ],
@@ -170,14 +171,14 @@ async function swrCompositionExample(client: EkoDBClient): Promise<void> {
     ],
   };
 
-  await client.saveScript(swrGithub);
-  console.log("✅ Saved SWR function using composition: swr_github_user\n");
+  await client.saveScript(swrUser);
+  console.log("✅ Saved SWR function using composition: swr_user\n");
 
   // Step 3: Test cache miss
-  console.log("First call (cache miss - will fetch from GitHub):");
+  console.log("First call (cache miss - will fetch from API):");
   const start1 = Date.now();
-  const result1 = await client.callScript("swr_github_user", {
-    username: "torvalds",
+  const result1 = await client.callScript("swr_user", {
+    user_id: "1",
   });
   const duration1 = Date.now() - start1;
 
@@ -187,8 +188,8 @@ async function swrCompositionExample(client: EkoDBClient): Promise<void> {
   // Step 4: Test cache hit
   console.log("Second call (cache hit - from cache):");
   const start2 = Date.now();
-  const result2 = await client.callScript("swr_github_user", {
-    username: "torvalds",
+  const result2 = await client.callScript("swr_user", {
+    user_id: "1",
   });
   const duration2 = Date.now() - start2;
 
@@ -250,10 +251,10 @@ async function nestedCompositionExample(client: EkoDBClient): Promise<void> {
   await client.saveScript(fetchSlim);
   console.log("✅ Level 2 function: fetch_slim_user (calls validate_user)");
 
-  // Level 3: Calls fetch_slim + counts
-  const countUser = {
-    label: "count_validated_user",
-    name: "Get validated user and count",
+  // Level 3: Calls fetch_slim (demonstrates 3-level nesting)
+  const getVerifiedUser = {
+    label: "get_verified_user",
+    name: "Get verified and validated user",
     parameters: {
       user_code: { required: true },
     },
@@ -265,20 +266,16 @@ async function nestedCompositionExample(client: EkoDBClient): Promise<void> {
           user_code: "{{user_code}}",
         },
       },
-      {
-        type: "Count" as const,
-        output_field: "record_count",
-      },
     ],
   };
 
-  await client.saveScript(countUser);
+  await client.saveScript(getVerifiedUser);
   console.log(
-    "✅ Level 3 function: count_validated_user (calls fetch_slim_user)\n",
+    "✅ Level 3 function: get_verified_user (calls fetch_slim_user)\n",
   );
 
   // Execute 3-level nested composition
-  const result = await client.callScript("count_validated_user", {
+  const result = await client.callScript("get_verified_user", {
     user_code: "user_1",
   });
 
@@ -286,14 +283,11 @@ async function nestedCompositionExample(client: EkoDBClient): Promise<void> {
   console.log(`   Records: ${result.records.length}`);
   if (result.records.length > 0) {
     const record = result.records[0];
-    const name = (record.name as any)?.value || record.name || "N/A";
+    const name = (record.name as any)?.value || record.name || "Unknown";
     const department =
-      (record.department as any)?.value || record.department || "N/A";
-    const recordCount =
-      (record.record_count as any)?.value || record.record_count || 0;
+      (record.department as any)?.value || record.department || "Unknown";
     console.log(`   Name: ${name}`);
-    console.log(`   Department: ${department}`);
-    console.log(`   Record count: ${recordCount}\n`);
+    console.log(`   Department: ${department}\n`);
   }
 
   console.log(
@@ -301,7 +295,7 @@ async function nestedCompositionExample(client: EkoDBClient): Promise<void> {
   );
   console.log("   - validate_user: Used in 100 different workflows");
   console.log("   - fetch_slim_user: Used in 50 workflows");
-  console.log("   - count_validated_user: Specific workflow\n");
+  console.log("   - get_verified_user: Specific workflow\n");
 }
 
 async function main() {

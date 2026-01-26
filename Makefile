@@ -883,6 +883,7 @@ test-examples-rust-client: build-client
 	@cd examples/rust && cargo run --example client_chat_sessions
 	@cd examples/rust && cargo run --example client_convenience_methods
 	@cd examples/rust && cargo run --example bypass_ripple_example
+	@cd examples/rust && cargo run --example projection_example
 	@echo "✅ $(GREEN)Rust client examples complete!$(RESET)"
 
 # ============================================================================
@@ -944,6 +945,7 @@ test-examples-python-client: build-python-client
 	@cd examples/python && python3 client_chat_sessions.py
 	@cd examples/python && python3 client_convenience_methods.py
 	@cd examples/python && python3 bypass_ripple_example.py
+	@cd examples/python && python3 projection_example.py
 	@echo "✅ $(GREEN)Python client examples complete!$(RESET)"
 
 # ============================================================================
@@ -988,6 +990,7 @@ test-examples-go-client:
 	@cd examples/go && go run client_chat_sessions.go
 	@cd examples/go && go run client_convenience_methods.go
 	@cd examples/go && go run bypass_ripple_example.go
+	@cd examples/go && go run projection_example.go
 	@echo "✅ $(GREEN)Go client examples complete!$(RESET)"
 
 # ============================================================================
@@ -1039,6 +1042,7 @@ test-examples-typescript-client: build-typescript-client
 	@cd examples/typescript && npx tsx client_chat_sessions.ts
 	@cd examples/typescript && npx tsx client_convenience_methods.ts
 	@cd examples/typescript && npx tsx bypass_ripple_example.ts
+	@cd examples/typescript && npx tsx projection_example.ts
 	@echo "✅ $(GREEN)TypeScript client examples complete!$(RESET)"
 
 # ============================================================================
@@ -1138,7 +1142,8 @@ test-examples-kotlin-client: build-kotlin-client
 		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientChatAdvancedKt --no-daemon && \
 		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientChatSessionsKt --no-daemon && \
 		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientConvenienceMethodsKt --no-daemon && \
-		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.BypassRippleExampleKt --no-daemon; \
+		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.BypassRippleExampleKt --no-daemon && \
+		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientProjectionKt --no-daemon; \
 	else \
 		echo "$(RED)❌ .env file not found$(RESET)"; \
 		echo "$(YELLOW)💡 Create .env file with API_BASE_URL, WS_BASE_URL, and API_BASE_KEY$(RESET)"; \
