@@ -50,9 +50,10 @@ async function edgeCacheExample() {
 
       // 2. If cache exists, return it; else fetch from API
       Stage.if(
-        { type: "HasRecords" },
+        // KvGet returns {value: ...} on hit, {kv_value: null} on miss
+        { type: "FieldExists", value: { field: "value" } },
         // Cache hit - return cached data
-        [Stage.project(["data"], false)],
+        [Stage.project(["value"], false)],
         // Cache miss - fetch external API and store in KV
         [
           Stage.httpRequest("{{api_url}}", "GET", {
@@ -64,6 +65,9 @@ async function edgeCacheExample() {
             "{{http_response}}",
             300,
           ),
+          // Retrieve the cached data to return
+          Stage.kvGet("{{cache_key}}"),
+          Stage.project(["value"], false),
         ]
       ),
     ],

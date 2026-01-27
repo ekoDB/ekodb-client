@@ -36,9 +36,11 @@ async function swrPatternExample() {
       // Check KV cache for user data
       Stage.kvGet("api:user:{{user_id}}"),
       Stage.if(
-        { type: "HasRecords" },
+        // KvGet returns {value: ...} on hit, {kv_value: null} on miss
+        // So we check if "value" field exists to detect cache hit
+        { type: "FieldExists", value: { field: "value" } },
         // Cache hit - return cached data
-        [Stage.project(["data"], false)],
+        [Stage.project(["value"], false)],
         // Cache miss - fetch from API and cache
         [
           Stage.httpRequest(
@@ -50,7 +52,7 @@ async function swrPatternExample() {
           Stage.kvSet("api:user:{{user_id}}", "{{http_response}}", 300),
           // Retrieve the cached data to return
           Stage.kvGet("api:user:{{user_id}}"),
-          Stage.project(["data"], false),
+          Stage.project(["value"], false),
         ],
       ),
     ],
@@ -101,9 +103,10 @@ async function swrPatternExample() {
       // Check KV cache for product data
       Stage.kvGet("product:{{product_id}}"),
       Stage.if(
-        { type: "HasRecords" },
+        // KvGet returns {value: ...} on hit, {kv_value: null} on miss
+        { type: "FieldExists", value: { field: "value" } },
         // Cache hit - return cached data
-        [Stage.project(["data"], false)],
+        [Stage.project(["value"], false)],
         // Cache miss - fetch from API and cache
         [
           Stage.httpRequest(
@@ -114,7 +117,7 @@ async function swrPatternExample() {
           Stage.kvSet("product:{{product_id}}", "{{http_response}}", 600),
           // Retrieve the cached data to return
           Stage.kvGet("product:{{product_id}}"),
-          Stage.project(["data"], false),
+          Stage.project(["value"], false),
         ],
       ),
     ],

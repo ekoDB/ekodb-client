@@ -1,5 +1,6 @@
 package io.ekodb.client.types
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 
@@ -30,9 +31,13 @@ data class Query(
     val limit: Int? = null,
     val skip: Int? = null,
     val join: JsonElement? = null,
+    @SerialName("bypass_cache")
     val bypassCache: Boolean? = null,
+    @SerialName("bypass_ripple")
     val bypassRipple: Boolean? = null,
+    @SerialName("select_fields")
     val selectFields: List<String>? = null,
+    @SerialName("exclude_fields")
     val excludeFields: List<String>? = null
 ) {
     companion object {
