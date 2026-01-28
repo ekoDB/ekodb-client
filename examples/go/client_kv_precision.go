@@ -149,7 +149,7 @@ func main() {
 
 	if floatMap, ok := floatPrecision.(map[string]interface{}); ok {
 		floatAmount := ekodb.GetFloatValue(floatMap["amount"])
-		fmt.Printf("  Float 0.1 + 0.2 = %v (should be 0.3)\n", floatAmount)
+		fmt.Printf("  Float 0.1 + 0.2 = %.17f (should be 0.3)\n", floatAmount)
 	}
 
 	if decimalMap, ok := decimalPrecision.(map[string]interface{}); ok {
