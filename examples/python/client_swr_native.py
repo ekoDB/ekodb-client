@@ -8,7 +8,7 @@ encapsulates the entire cache-aside pattern in a single operation.
 
 import os
 import time
-from ekodb_client import EkoDBClient, Stage
+from ekodb_client import Client, Stage
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -17,7 +17,7 @@ BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8080")
 API_KEY = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb")
 
 
-async def example_basic_swr(client: EkoDBClient):
+async def example_basic_swr(client: Client):
     """Example 1: Basic Native SWR - Cache Miss → Cache Hit"""
     print("\nExample 1: Basic Native SWR")
     print("─" * 80)
@@ -72,7 +72,7 @@ async def example_basic_swr(client: EkoDBClient):
     return script_id
 
 
-async def example_audit_trail(client: EkoDBClient):
+async def example_audit_trail(client: Client):
     """Example 2: SWR with Audit Trail"""
     print("\nExample 2: SWR with Built-in Audit Trail")
     print("─" * 80)
@@ -117,7 +117,7 @@ async def example_audit_trail(client: EkoDBClient):
     return audit_script_id
 
 
-async def example_pipeline_enrichment(client: EkoDBClient):
+async def example_pipeline_enrichment(client: Client):
     """Example 3: SWR in Multi-Function Pipeline"""
     print("\nExample 3: SWR in Multi-Function Pipeline")
     print("─" * 80)
@@ -173,7 +173,7 @@ async def example_pipeline_enrichment(client: EkoDBClient):
     return pipeline_script_id
 
 
-async def example_dynamic_ttl(client: EkoDBClient):
+async def example_dynamic_ttl(client: Client):
     """Example 4: Parameterized TTL"""
     print("\nExample 4: Dynamic TTL Configuration")
     print("─" * 80)
@@ -222,7 +222,7 @@ async def example_dynamic_ttl(client: EkoDBClient):
     return dynamic_script_id
 
 
-async def cleanup(client: EkoDBClient, script_ids: list):
+async def cleanup(client: Client, script_ids: list):
     """Clean up test scripts"""
     print("\n🧹 Cleaning up...")
     try:
@@ -244,8 +244,7 @@ async def main():
     print("   • Multi-function pipeline integration")
     print("   • Dynamic TTL configuration\n")
 
-    client = EkoDBClient(BASE_URL, API_KEY)
-    await client.init()
+    client = Client.new(BASE_URL, API_KEY)
 
     script_ids = []
 

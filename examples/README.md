@@ -110,9 +110,8 @@ make test-examples-python-client      # Python client library examples
 
 ### Direct API Examples (37 examples)
 
-Located in the main `{language}/` directories and `{language}/ttl/`
-subdirectories. These examples use raw HTTP/WebSocket calls to demonstrate the
-API directly.
+Located in the main `{language}/` directories. These examples use raw
+HTTP/WebSocket calls to demonstrate the API directly.
 
 **Purpose:**
 
@@ -146,11 +145,11 @@ while direct examples use predictable collection names for learning purposes.
 
 ### Direct API Examples (Raw HTTP/WebSocket)
 
-Direct examples are in the main language directories and `ttl/` subdirectories:
+Direct examples are in the main language directories:
 
-- **JavaScript** - 10 examples (8 in `javascript/` + 2 in `javascript/ttl/`)
-- **Python** - 10 examples (8 in `python/` + 2 in `python/ttl/`)
-- **Go** - 10 examples (8 in `go/` + 2 in `go/ttl/`)
+- **JavaScript** - 10 examples in `javascript/`
+- **Python** - 10 examples in `python/`
+- **Go** - 10 examples in `go/`
 - **Rust** - 7 examples in `rust/examples/`
 
 ### Client Library Examples

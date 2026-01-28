@@ -30,10 +30,9 @@ func exampleBasicSWR(client *ekodb.Client) (string, error) {
 	basicSWRScript := ekodb.Script{
 		Label:       "github_user_native",
 		Name:        "GitHub User Lookup (Native SWR)",
-		Description: "Fetches GitHub user data with automatic caching using native SWR",
+		Description: strPtr("Fetches GitHub user data with automatic caching using native SWR"),
 		Parameters: map[string]ekodb.ParameterDefinition{
 			"username": {
-				Type:        "String",
 				Description: "GitHub username to fetch",
 				Required:    true,
 			},
@@ -105,10 +104,9 @@ func exampleAuditTrail(client *ekodb.Client) (string, error) {
 	auditSWRScript := ekodb.Script{
 		Label:       "product_swr_audit",
 		Name:        "Product API with Audit (Native SWR)",
-		Description: "Caches product data and logs all requests automatically",
+		Description: strPtr("Caches product data and logs all requests automatically"),
 		Parameters: map[string]ekodb.ParameterDefinition{
 			"product_id": {
-				Type:        "String",
 				Description: "Product ID to fetch",
 				Required:    true,
 			},
@@ -156,13 +154,13 @@ func examplePipelineEnrichment(client *ekodb.Client) (string, error) {
 
 	outputField := "user_data"
 
+	ttl24h := int64(86400) // 24 hours in seconds
 	pipelineScript := ekodb.Script{
 		Label:       "user_enrichment_pipeline",
 		Name:        "User Data Enrichment Pipeline",
-		Description: "Fetches external API data and stores enriched results",
+		Description: strPtr("Fetches external API data and stores enriched results"),
 		Parameters: map[string]ekodb.ParameterDefinition{
 			"user_id": {
-				Type:        "String",
 				Description: "User ID to enrich",
 				Required:    true,
 			},
@@ -187,8 +185,8 @@ func examplePipelineEnrichment(client *ekodb.Client) (string, error) {
 					"user_id":     map[string]interface{}{"type": "String", "value": "{{user_id}}"},
 					"source_data": map[string]interface{}{"type": "Object", "value": "{{user_data}}"},
 				},
-				false, // bypass_ripple
-				"24h", // ttl
+				false,   // bypass_ripple
+				&ttl24h, // ttl (seconds)
 			),
 		},
 		Tags: []string{"enrichment", "pipeline"},
@@ -222,15 +220,13 @@ func exampleDynamicTTL(client *ekodb.Client) (string, error) {
 	dynamicTTLScript := ekodb.Script{
 		Label:       "flexible_cache",
 		Name:        "Flexible Cache TTL (Native SWR)",
-		Description: "Demonstrates parameterized TTL values",
+		Description: strPtr("Demonstrates parameterized TTL values"),
 		Parameters: map[string]ekodb.ParameterDefinition{
 			"resource_id": {
-				Type:        "String",
 				Description: "Resource to fetch",
 				Required:    true,
 			},
 			"ttl": {
-				Type:        "String",
 				Description: "Cache duration (e.g., '5m', '1h', '30s')",
 				Required:    true,
 			},
@@ -281,6 +277,11 @@ func exampleDynamicTTL(client *ekodb.Client) (string, error) {
 	return dynamicScriptID, nil
 }
 
+// strPtr is a helper to create string pointers
+func strPtr(s string) *string {
+	return &s
+}
+
 func cleanup(client *ekodb.Client, scriptIDs []string) {
 	fmt.Println("\n🧹 Cleaning up...")
 	for _, scriptID := range scriptIDs {
@@ -316,9 +317,9 @@ func main() {
 		apiKey = "a-test-api-key-from-ekodb"
 	}
 
-	client := ekodb.NewClient(baseURL, apiKey)
-	if err := client.Init(); err != nil {
-		log.Fatalf("❌ Failed to initialize client: %v", err)
+	client, err := ekodb.NewClient(baseURL, apiKey)
+	if err != nil {
+		log.Fatalf("❌ Failed to create client: %v", err)
 	}
 
 	var scriptIDs []string

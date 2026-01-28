@@ -812,22 +812,22 @@ test-examples-ttl-rust: build-client
 test-examples-ttl-go:
 	@echo ""
 	@echo "🔷 $(YELLOW)Go TTL Verification Tests...$(RESET)"
-	@cd examples/go/ttl && go run document_ttl.go
-	@cd examples/go/ttl && go run websocket_ttl.go
+	@cd examples/go && go run document_ttl.go
+	@cd examples/go && go run websocket_ttl.go
 	@echo "✅ $(GREEN)Go TTL tests complete!$(RESET)"
 
 test-examples-ttl-js:
 	@echo ""
 	@echo "📦 $(YELLOW)JavaScript TTL Verification Tests...$(RESET)"
-	@cd examples/javascript/ttl && node document_ttl.js
-	@cd examples/javascript/ttl && node websocket_ttl.js
+	@cd examples/javascript && node document_ttl.js
+	@cd examples/javascript && node websocket_ttl.js
 	@echo "✅ $(GREEN)JavaScript TTL tests complete!$(RESET)"
 
 test-examples-ttl-py:
 	@echo ""
 	@echo "🐍 $(YELLOW)Python TTL Verification Tests...$(RESET)"
-	@cd examples/python/ttl && python3 document_ttl.py
-	@cd examples/python/ttl && python3 websocket_ttl.py
+	@cd examples/python && python3 document_ttl.py
+	@cd examples/python && python3 websocket_ttl.py
 	@echo "✅ $(GREEN)Python TTL tests complete!$(RESET)"
 
 test-examples-ttl-ts: build-typescript-client
@@ -936,6 +936,7 @@ test-examples-python-client: build-python-client
 	@cd examples/python && python3 client_functions_complete.py
 	@cd examples/python && python3 client_functions_kv_wrapped.py
 	@cd examples/python && python3 client_swr_pattern.py
+	@cd examples/python && python3 client_swr_native.py
 	@cd examples/python && python3 client_functions_advanced.py
 	@cd examples/python && python3 client_functions_ai.py
 	@cd examples/python && python3 client_functions_crud.py
@@ -946,6 +947,7 @@ test-examples-python-client: build-python-client
 	@cd examples/python && python3 client_convenience_methods.py
 	@cd examples/python && python3 bypass_ripple_example.py
 	@cd examples/python && python3 projection_example.py
+	@cd examples/python && python3 client_kv_precision.py
 	@echo "✅ $(GREEN)Python client examples complete!$(RESET)"
 
 # ============================================================================
@@ -981,6 +983,7 @@ test-examples-go-client:
 	@cd examples/go && go run client_functions_complete.go
 	@cd examples/go && go run client_functions_kv_wrapped.go
 	@cd examples/go && go run client_swr_pattern.go
+	@cd examples/go && go run client_swr_native.go
 	@cd examples/go && go run client_functions_advanced.go
 	@cd examples/go && go run client_functions_ai.go
 	@cd examples/go && go run client_functions_crud.go
@@ -991,6 +994,7 @@ test-examples-go-client:
 	@cd examples/go && go run client_convenience_methods.go
 	@cd examples/go && go run bypass_ripple_example.go
 	@cd examples/go && go run projection_example.go
+	@cd examples/go && go run client_kv_precision.go
 	@echo "✅ $(GREEN)Go client examples complete!$(RESET)"
 
 # ============================================================================
@@ -1033,6 +1037,7 @@ test-examples-typescript-client: build-typescript-client
 	@cd examples/typescript && npx tsx client_functions_complete.ts
 	@cd examples/typescript && npx tsx client_functions_kv_wrapped.ts
 	@cd examples/typescript && npx tsx client_swr_pattern.ts
+	@cd examples/typescript && npx tsx client_swr_native.ts
 	@cd examples/typescript && npx tsx client_functions_advanced.ts
 	@cd examples/typescript && npx tsx client_functions_ai.ts
 	@cd examples/typescript && npx tsx client_functions_crud.ts
@@ -1043,6 +1048,7 @@ test-examples-typescript-client: build-typescript-client
 	@cd examples/typescript && npx tsx client_convenience_methods.ts
 	@cd examples/typescript && npx tsx bypass_ripple_example.ts
 	@cd examples/typescript && npx tsx projection_example.ts
+	@cd examples/typescript && npx tsx client_kv_precision.ts
 	@echo "✅ $(GREEN)TypeScript client examples complete!$(RESET)"
 
 # ============================================================================
@@ -1087,6 +1093,7 @@ test-examples-javascript-client: build-typescript-client
 	@cd examples/javascript && node client_functions_advanced.js
 	@cd examples/javascript && node client_functions_ai.js
 	@cd examples/javascript && node client_swr_pattern.js
+	@cd examples/javascript && node client_swr_native.js
 	@cd examples/javascript && node client_chat_basic.js
 	@cd examples/javascript && node client_chat_advanced.js
 	@cd examples/javascript && node client_chat_sessions.js
@@ -1134,6 +1141,7 @@ test-examples-kotlin-client: build-kotlin-client
 		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientFunctionsCompleteKt --no-daemon && \
 		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientFunctionsKvWrappedKt --no-daemon && \
 		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientSwrPatternKt --no-daemon && \
+		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientSwrNativeKt --no-daemon && \
 		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientFunctionsAdvancedKt --no-daemon && \
 		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientFunctionsAiKt --no-daemon && \
 		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientFunctionsCrudKt --no-daemon && \

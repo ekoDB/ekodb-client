@@ -768,7 +768,7 @@ export class EkoDBClient {
     entries: Array<{ key: string; value: any; ttl?: number }>,
   ): Promise<Array<[string, boolean]>> {
     const keys = entries.map((e) => e.key);
-    const values = entries.map((e) => ({ value: e.value }));
+    const values = entries.map((e) => e.value);
     // Server applies a single TTL to all entries - use first entry's TTL if provided
     const ttl = entries[0]?.ttl;
 
