@@ -1,4 +1,4 @@
-package io.ekodb.examples
+package io.ekodb.client.examples
 
 /**
  * ekoDB Kotlin Client - Native SWR Function Example
@@ -245,7 +245,7 @@ fun exampleDynamicTTL(client: EkoDBClient): String = runBlocking {
     dynamicScriptId
 }
 
-suspend fun cleanup(client: EkoDBClient, scriptIds: List<String>) {
+suspend fun cleanupSwrScripts(client: EkoDBClient, scriptIds: List<String>) {
     println("\n🧹 Cleaning up...")
     try {
         scriptIds.forEach { scriptId ->
@@ -303,7 +303,7 @@ fun main() = runBlocking {
         println("❌ Error: ${e.message}")
         e.printStackTrace()
     } finally {
-        cleanup(client, scriptIds)
+        cleanupSwrScripts(client, scriptIds)
     }
 
     println("\n✅ All examples completed!")

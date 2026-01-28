@@ -129,7 +129,6 @@ async def main():
         # List of example files to run
         # Note: Direct API examples are in the main directory
         # Client library examples start with client_
-        # TTL verification tests are in the ttl/ subdirectory
         base_dir = Path(__file__).parent
         examples = [
             # Direct API examples only
@@ -143,8 +142,8 @@ async def main():
             base_dir / "transactions.py",
             base_dir / "crud_scripts.py",
             # TTL verification tests
-            base_dir / "ttl" / "document_ttl.py",
-            base_dir / "ttl" / "websocket_ttl.py",
+            base_dir / "document_ttl.py",
+            base_dir / "websocket_ttl.py",
         ]
 
         log(f"\n=== Running {len(examples)} Examples ===", "YELLOW")

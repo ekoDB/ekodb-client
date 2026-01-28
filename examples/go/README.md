@@ -16,9 +16,8 @@ go mod download
 
 ### TTL Features
 
-- [Document TTL](document_ttl.go) - Basic document-level TTL operations
+- [Document TTL](document_ttl.go) - TTL expiration verification test
 - [WebSocket TTL](websocket_ttl.go) - Real-time TTL events via WebSocket
-- [TTL Verification Tests](ttl/) - Tests that verify TTL expiration works
 
 ### Basic Operations
 

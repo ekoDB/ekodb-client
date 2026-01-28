@@ -61,9 +61,8 @@ pip install -r requirements.txt
 
 ### TTL Features
 
-- [Document TTL](document_ttl.py) - Basic document-level TTL operations
+- [Document TTL](document_ttl.py) - TTL expiration verification test
 - [WebSocket TTL](websocket_ttl.py) - Real-time TTL events via WebSocket
-- [TTL Verification Tests](ttl/) - Tests that verify TTL expiration works
 
 ### Basic Operations
 
