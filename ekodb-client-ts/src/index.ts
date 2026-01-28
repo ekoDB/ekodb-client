@@ -70,4 +70,6 @@ export type {
   GetMessagesResponse,
   UpdateSessionRequest,
   MergeSessionsRequest,
+  ChatModels,
+  UserFunction,
 } from "./client";

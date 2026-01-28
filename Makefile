@@ -881,6 +881,8 @@ test-examples-rust-client: build-client
 	@cd examples/rust && cargo run --example client_chat_basic
 	@cd examples/rust && cargo run --example client_chat_advanced
 	@cd examples/rust && cargo run --example client_chat_sessions
+	@cd examples/rust && cargo run --example client_chat_models
+	@cd examples/rust && cargo run --example client_user_functions
 	@cd examples/rust && cargo run --example client_convenience_methods
 	@cd examples/rust && cargo run --example bypass_ripple_example
 	@cd examples/rust && cargo run --example projection_example
@@ -948,6 +950,9 @@ test-examples-python-client: build-python-client
 	@cd examples/python && python3 bypass_ripple_example.py
 	@cd examples/python && python3 projection_example.py
 	@cd examples/python && python3 client_kv_precision.py
+	@cd examples/python && python3 client_chat_models.py
+	@cd examples/python && python3 client_user_functions.py
+	@cd examples/python && python3 client_collection_utils.py
 	@echo "✅ $(GREEN)Python client examples complete!$(RESET)"
 
 # ============================================================================
@@ -995,6 +1000,9 @@ test-examples-go-client:
 	@cd examples/go && go run bypass_ripple_example.go
 	@cd examples/go && go run projection_example.go
 	@cd examples/go && go run client_kv_precision.go
+	@cd examples/go && go run client_chat_models.go
+	@cd examples/go && go run client_user_functions.go
+	@cd examples/go && go run client_collection_utils.go
 	@echo "✅ $(GREEN)Go client examples complete!$(RESET)"
 
 # ============================================================================
@@ -1049,6 +1057,9 @@ test-examples-typescript-client: build-typescript-client
 	@cd examples/typescript && npx tsx bypass_ripple_example.ts
 	@cd examples/typescript && npx tsx projection_example.ts
 	@cd examples/typescript && npx tsx client_kv_precision.ts
+	@cd examples/typescript && npx tsx client_chat_models.ts
+	@cd examples/typescript && npx tsx client_user_functions.ts
+	@cd examples/typescript && npx tsx client_collection_utils.ts
 	@echo "✅ $(GREEN)TypeScript client examples complete!$(RESET)"
 
 # ============================================================================
@@ -1149,6 +1160,8 @@ test-examples-kotlin-client: build-kotlin-client
 		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientChatBasicKt --no-daemon && \
 		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientChatAdvancedKt --no-daemon && \
 		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientChatSessionsKt --no-daemon && \
+		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientChatModelsKt --no-daemon && \
+		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientUserFunctionsKt --no-daemon && \
 		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientConvenienceMethodsKt --no-daemon && \
 		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.BypassRippleExampleKt --no-daemon && \
 		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientProjectionKt --no-daemon; \

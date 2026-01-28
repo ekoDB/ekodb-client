@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sort"
 	"time"
 
 	ekodb "github.com/ekoDB/ekodb-client-go"
@@ -115,8 +116,8 @@ func main() {
 	}
 	fmt.Printf("Inserted %d test users\n\n", len(insertedIDs))
 
-	// Example 1: Select specific fields to reduce data transfer
-	fmt.Println("Example 1: Select specific fields")
+	// Example 1: Select specific fields - only get id, name, email
+	fmt.Println("Example 1: Select specific fields (id, name, email only)")
 	usersQuery := ekodb.NewQueryBuilder().
 		Eq("status", "active").
 		SelectFields("id", "name", "email").
@@ -127,10 +128,17 @@ func main() {
 	if err != nil {
 		log.Fatalf("Find failed: %v", err)
 	}
-	fmt.Printf("Fetched %d users with only 3 fields each\n", len(users))
+	fmt.Printf("  Found %d active users\n", len(users))
+	if len(users) > 0 {
+		fields := getFieldNames(users[0])
+		fmt.Printf("  Fields returned: %v\n", fields)
+		name := ekodb.GetStringValue(users[0]["name"])
+		email := ekodb.GetStringValue(users[0]["email"])
+		fmt.Printf("  First user: %s <%s>\n", name, email)
+	}
 
-	// Example 2: Exclude sensitive fields
-	fmt.Println("\nExample 2: Exclude sensitive fields")
+	// Example 2: Exclude sensitive fields - hide password, api_key, secret_token
+	fmt.Println("\nExample 2: Exclude sensitive fields (password, api_key, secret_token)")
 	adminsQuery := ekodb.NewQueryBuilder().
 		Eq("user_role", "admin").
 		ExcludeFields("password", "api_key", "secret_token").
@@ -140,21 +148,27 @@ func main() {
 	if err != nil {
 		log.Fatalf("Find failed: %v", err)
 	}
-	fmt.Printf("Fetched %d admins without sensitive data\n", len(admins))
-	// Verify sensitive fields are excluded
+	fmt.Printf("  Found %d admins\n", len(admins))
 	if len(admins) > 0 {
 		_, hasPassword := admins[0]["password"]
-		fmt.Printf("  Password field excluded: %v\n", !hasPassword)
+		_, hasApiKey := admins[0]["api_key"]
+		_, hasToken := admins[0]["secret_token"]
+		fmt.Println("  Sensitive fields excluded:")
+		fmt.Printf("    - password: %s\n", excludedStatus(hasPassword))
+		fmt.Printf("    - api_key: %s\n", excludedStatus(hasApiKey))
+		fmt.Printf("    - secret_token: %s\n", excludedStatus(hasToken))
+		fields := getFieldNames(admins[0])
+		fmt.Printf("  Fields returned: %v\n", fields)
 	}
 
-	// Example 3: Complex query with projection
-	fmt.Println("\nExample 3: Complex query with projection")
+	// Example 3: Complex query with projection - active users with profile fields
+	fmt.Println("\nExample 3: Complex query with projection (active users, ages 18-65)")
 	activeUsersQuery := ekodb.NewQueryBuilder().
 		Eq("status", "active").
 		Gte("age", 18).
 		Lt("age", 65).
 		SelectFields("id", "name", "email", "age", "created_at").
-		SortDescending("created_at").
+		SortDescending("age").
 		Limit(50).
 		Build()
 
@@ -162,26 +176,32 @@ func main() {
 	if err != nil {
 		log.Fatalf("Find failed: %v", err)
 	}
-	fmt.Printf("Fetched %d active users with profile fields\n", len(activeUsers))
-
-	// Example 4: Find by ID with projection
-	fmt.Println("\nExample 4: Find by ID with projection")
-	if len(insertedIDs) > 0 {
-		userRecord, err := client.FindByIDWithProjection(
-			testCollection,
-			insertedIDs[0],
-			[]string{"id", "name", "email", "bio", "avatar_url"},
-			nil,
-		)
-		if err != nil {
-			log.Fatalf("FindByIDWithProjection failed: %v", err)
-		}
-
-		name := ekodb.GetStringValue(userRecord["name"])
-		fmt.Printf("Fetched user profile: %s\n", name)
+	fmt.Printf("  Found %d active users (ages 18-65)\n", len(activeUsers))
+	for _, user := range activeUsers {
+		name := ekodb.GetStringValue(user["name"])
+		age, _ := ekodb.GetIntValue(user["age"])
+		fmt.Printf("    - %s (age %d)\n", name, age)
 	}
 
-	// Example 5: Compare full vs projected data
+	// Example 4: Query inactive users with profile fields
+	fmt.Println("\nExample 4: Query inactive users with profile fields")
+	inactiveQuery := ekodb.NewQueryBuilder().
+		Eq("status", "inactive").
+		SelectFields("id", "name", "email", "bio").
+		Build()
+
+	inactiveUsers, err := client.Find(testCollection, inactiveQuery)
+	if err != nil {
+		log.Fatalf("Find failed: %v", err)
+	}
+	fmt.Printf("  Found %d inactive users\n", len(inactiveUsers))
+	for _, user := range inactiveUsers {
+		name := ekodb.GetStringValue(user["name"])
+		bio := ekodb.GetStringValue(user["bio"])
+		fmt.Printf("    - %s: %s\n", name, bio)
+	}
+
+	// Example 5: Compare full vs projected data - demonstrates bandwidth savings
 	fmt.Println("\nExample 5: Compare full vs projected data")
 	fullQuery := ekodb.NewQueryBuilder().
 		Eq("status", "active").
@@ -202,17 +222,19 @@ func main() {
 		log.Fatalf("Find failed: %v", err)
 	}
 
-	fullFields := 0
-	if len(fullUsers) > 0 {
-		fullFields = len(fullUsers[0])
-	}
-	projectedFields := 0
-	if len(projectedUsers) > 0 {
-		projectedFields = len(projectedUsers[0])
-	}
+	if len(fullUsers) > 0 && len(projectedUsers) > 0 {
+		fullFields := getFieldNames(fullUsers[0])
+		projectedFields := getFieldNames(projectedUsers[0])
 
-	fmt.Printf("Full query returned %d fields per user\n", fullFields)
-	fmt.Printf("Projected query returned %d fields per user\n", projectedFields)
+		fmt.Println("  Full query:")
+		fmt.Printf("    - %d fields per record\n", len(fullFields))
+		fmt.Printf("    - Fields: %v\n", fullFields)
+		fmt.Println("  Projected query:")
+		fmt.Printf("    - %d fields per record\n", len(projectedFields))
+		fmt.Printf("    - Fields: %v\n", projectedFields)
+		savings := 100 - (len(projectedFields) * 100 / max(len(fullFields), 1))
+		fmt.Printf("  Bandwidth savings: ~%d%% fewer fields\n", savings)
+	}
 
 	// Cleanup
 	fmt.Println("\nCleaning up test data...")
@@ -223,4 +245,30 @@ func main() {
 	}
 
 	fmt.Println("\nAll projection examples completed successfully!")
+}
+
+// Helper function to get sorted field names from a record
+func getFieldNames(record ekodb.Record) []string {
+	fields := make([]string, 0, len(record))
+	for k := range record {
+		fields = append(fields, k)
+	}
+	sort.Strings(fields)
+	return fields
+}
+
+// Helper function to return exclusion status string
+func excludedStatus(present bool) string {
+	if present {
+		return "PRESENT (unexpected!)"
+	}
+	return "excluded"
+}
+
+// Helper function for max
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
 }

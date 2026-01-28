@@ -390,6 +390,8 @@ For complete, runnable examples of all features, see the
 - **ClientChatBasic.kt** - Basic AI chat
 - **ClientChatSessions.kt** - Chat session management
 - **ClientChatAdvanced.kt** - Advanced chat features
+- **ClientChatModels.kt** - Chat models API
+- **ClientUserFunctions.kt** - User functions API
 
 ## API Reference
 
@@ -471,6 +473,21 @@ For complete, runnable examples of all features, see the
 - `updateChatMessage(chatId, messageId, request)` - Edit message
 - `deleteChatMessage(chatId, messageId)` - Delete message
 - `toggleForgottenMessage(chatId, messageId, request)` - Toggle forgotten status
+
+#### Chat Models
+
+- `getChatModels()` - Get all available chat models organized by provider
+- `getChatModel(provider)` - Get models for a specific provider (e.g., "openai",
+  "anthropic")
+
+#### User Functions
+
+- `saveUserFunction(userFunction)` - Create a new user function
+- `getUserFunction(label)` - Get user function by its label
+- `listUserFunctions(tags?)` - List all user functions (optionally filter by
+  tags)
+- `updateUserFunction(label, userFunction)` - Update existing user function
+- `deleteUserFunction(label)` - Delete user function by label
 
 ## Best Practices
 
