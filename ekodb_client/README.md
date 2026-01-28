@@ -292,6 +292,64 @@ println!("AI Response: {}", response.responses[0]);
 println!("Context snippets: {}", response.context_snippets.len());
 ```
 
+### Chat Models API
+
+```rust
+// Get all available chat models by provider
+let models = client.get_chat_models().await?;
+println!("OpenAI models: {:?}", models.openai);
+println!("Anthropic models: {:?}", models.anthropic);
+println!("Perplexity models: {:?}", models.perplexity);
+
+// Get models for a specific provider
+let openai_models = client.get_chat_model("openai").await?;
+for model in openai_models {
+    println!("  - {}", model);
+}
+```
+
+### User Functions API
+
+```rust
+use ekodb_client::{Function, ParameterDefinition, UserFunction};
+
+// Create a user function using the builder pattern
+let user_func = UserFunction::new("get_active_users", "Get Active Users")
+    .with_description("Fetches all users and filters by active status")
+    .with_version("1.0.0")
+    .with_parameter(ParameterDefinition {
+        name: "collection".to_string(),
+        required: true,
+        description: Some("Collection to query".to_string()),
+        default: None,
+    })
+    .with_function(Function::FindAll {
+        collection: "{{collection}}".to_string(),
+    })
+    .with_tag("users")
+    .with_tag("query");
+
+let func_id = client.save_user_function(user_func).await?;
+println!("Created user function: {}", func_id);
+
+// Get a user function by label
+let func = client.get_user_function("get_active_users").await?;
+println!("Retrieved: {} - {}", func.label, func.name);
+
+// List all user functions (optionally filter by tags)
+let all_funcs = client.list_user_functions(None).await?;
+let tagged = client.list_user_functions(Some(vec!["users".to_string()])).await?;
+
+// Update a user function
+let updated_func = UserFunction::new("get_active_users", "Get Active Users")
+    .with_description("Updated description")
+    .with_version("1.0.1");
+client.update_user_function("get_active_users", updated_func).await?;
+
+// Delete a user function
+client.delete_user_function("get_active_users").await?;
+```
+
 ### Schema Management
 
 ```rust
@@ -390,7 +448,7 @@ ekoDB supports the following data types:
 
 ## Running Examples
 
-The library includes 13 comprehensive examples demonstrating all features:
+The library includes 15 comprehensive examples demonstrating all features:
 
 ```bash
 # Set environment variables
@@ -411,39 +469,46 @@ cargo run --example client_schema_management
 cargo run --example client_chat_basic
 cargo run --example client_chat_sessions
 cargo run --example client_chat_advanced
+cargo run --example client_chat_models
+cargo run --example client_user_functions
 ```
 
 ### Available Examples
 
 #### Basic Operations
 
-1. **client_simple_crud** - Basic CRUD operations (Create, Read, Update, Delete)
-2. **client_batch_operations** - Bulk insert, update, and delete operations
-3. **client_kv_operations** - Key-value store operations with TTL
-4. **client_collection_management** - Collection listing, counting, and deletion
-5. **client_document_ttl** - Documents with automatic expiration
+- **client_simple_crud** - Basic CRUD operations (Create, Read, Update, Delete)
+- **client_batch_operations** - Bulk insert, update, and delete operations
+- **client_kv_operations** - Key-value store operations with TTL
+- **client_collection_management** - Collection listing, counting, and deletion
+- **client_document_ttl** - Documents with automatic expiration
 
 #### Real-time & WebSocket
 
-6. **client_simple_websocket** - Real-time queries via WebSocket
-7. **client_websocket_ttl** - WebSocket queries with TTL documents
+- **client_simple_websocket** - Real-time queries via WebSocket
+- **client_websocket_ttl** - WebSocket queries with TTL documents
 
 #### Advanced Queries & Search
 
-8. **client_query_builder** - Complex queries with operators, sorting, and
-   pagination
-9. **client_search** - Full-text search, vector search, and hybrid search
+- **client_query_builder** - Complex queries with operators, sorting, and
+  pagination
+- **client_search** - Full-text search, vector search, and hybrid search
 
 #### Schema & Data Modeling
 
-10. **client_schema_management** - Define and enforce data schemas
+- **client_schema_management** - Define and enforce data schemas
 
 #### AI Chat Integration
 
-11. **client_chat_basic** - Simple AI chat with context search
-12. **client_chat_sessions** - Multi-turn conversations with session management
-13. **client_chat_advanced** - Advanced chat features with streaming and context
-    control
+- **client_chat_basic** - Simple AI chat with context search
+- **client_chat_sessions** - Multi-turn conversations with session management
+- **client_chat_advanced** - Advanced chat features with streaming and context
+  control
+- **client_chat_models** - List available AI models by provider
+
+#### User Functions
+
+- **client_user_functions** - CRUD operations for reusable user functions
 
 All examples are located in `examples/rust/examples/` directory.
 
@@ -501,6 +566,21 @@ All examples are located in `examples/rust/examples/` directory.
 - `update_chat_session(chat_id, request)` - Update session configuration
 - `delete_chat_session(chat_id)` - Delete a chat session
 
+#### Chat Models
+
+- `get_chat_models()` - Get all available chat models by provider
+- `get_chat_model(provider)` - Get models for a specific provider (e.g.,
+  "openai", "anthropic")
+
+#### User Functions
+
+- `save_user_function(user_function)` - Create a new user function
+- `get_user_function(label)` - Get a user function by label
+- `list_user_functions(tags)` - List all user functions (optionally filter by
+  tags)
+- `update_user_function(label, user_function)` - Update a user function
+- `delete_user_function(label)` - Delete a user function
+
 #### Schema Management
 
 - `create_collection(collection, schema)` - Create collection with schema
@@ -548,7 +628,7 @@ let client = Client::builder()
 let client_clone = client.clone();
 ```
 
-### Error Handling
+### Handling Errors Gracefully
 
 ```rust
 use ekodb_client::Error;

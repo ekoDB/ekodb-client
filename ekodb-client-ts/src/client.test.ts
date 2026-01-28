@@ -1031,3 +1031,215 @@ describe("Convenience methods", () => {
     });
   });
 });
+
+// ============================================================================
+// Chat Models Tests
+// ============================================================================
+
+describe("EkoDBClient chat models", () => {
+  it("gets all chat models", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse({
+      openai: ["gpt-4", "gpt-3.5-turbo"],
+      anthropic: ["claude-3-opus", "claude-3-sonnet"],
+      perplexity: ["llama-3.1-sonar-small"],
+    });
+
+    const result = await client.getChatModels();
+
+    expect(result.openai).toHaveLength(2);
+    expect(result.anthropic).toHaveLength(2);
+    expect(result.perplexity).toHaveLength(1);
+  });
+
+  it("gets models for specific provider", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse(["gpt-4", "gpt-3.5-turbo", "gpt-4-turbo"]);
+
+    const result = await client.getChatModel("openai");
+
+    expect(result).toHaveLength(3);
+    expect(result).toContain("gpt-4");
+  });
+
+  it("gets specific chat message", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse({
+      id: "msg_123",
+      role: "user",
+      content: "Hello there",
+      created_at: "2024-01-01T00:00:00Z",
+    });
+
+    const result = await client.getChatMessage("chat_123", "msg_123");
+
+    expect(result).toHaveProperty("id", "msg_123");
+    expect(result).toHaveProperty("content", "Hello there");
+  });
+});
+
+// ============================================================================
+// User Functions Tests
+// ============================================================================
+
+describe("EkoDBClient user functions", () => {
+  it("saves user function", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse({ id: "uf_123" });
+
+    const userFunction = {
+      label: "my_function",
+      name: "My Function",
+      parameters: {},
+      functions: [],
+    };
+    const result = await client.saveUserFunction(userFunction);
+
+    expect(result).toBe("uf_123");
+  });
+
+  it("gets user function by label", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse({
+      label: "my_function",
+      name: "My Function",
+      parameters: {},
+      functions: [],
+      id: "uf_123",
+    });
+
+    const result = await client.getUserFunction("my_function");
+
+    expect(result).toHaveProperty("label", "my_function");
+    expect(result).toHaveProperty("id", "uf_123");
+  });
+
+  it("lists user functions", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse([
+      { label: "func_1", name: "Function 1" },
+      { label: "func_2", name: "Function 2" },
+    ]);
+
+    const result = await client.listUserFunctions();
+
+    expect(result).toHaveLength(2);
+    expect(result[0]).toHaveProperty("label", "func_1");
+  });
+
+  it("lists user functions filtered by tags", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse([{ label: "func_1", name: "Function 1", tags: ["data"] }]);
+
+    const result = await client.listUserFunctions(["data"]);
+
+    expect(result).toHaveLength(1);
+  });
+
+  it("updates user function", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse({ status: "updated" });
+
+    const userFunction = {
+      label: "my_function",
+      name: "Updated Function",
+      parameters: {},
+      functions: [],
+    };
+    await expect(
+      client.updateUserFunction("my_function", userFunction),
+    ).resolves.not.toThrow();
+  });
+
+  it("deletes user function", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse({ status: "deleted" });
+
+    await expect(
+      client.deleteUserFunction("my_function"),
+    ).resolves.not.toThrow();
+  });
+});
+
+// ============================================================================
+// Collection Utility Tests
+// ============================================================================
+
+describe("EkoDBClient collection utilities", () => {
+  it("collectionExists returns true for existing collection", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse({ collections: ["users", "posts", "comments"] });
+
+    const result = await client.collectionExists("users");
+
+    expect(result).toBe(true);
+  });
+
+  it("collectionExists returns false for non-existing collection", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse({ collections: ["users", "posts", "comments"] });
+
+    const result = await client.collectionExists("nonexistent");
+
+    expect(result).toBe(false);
+  });
+
+  it("collectionExists returns false on error", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockErrorResponse(500, "Server error");
+
+    const result = await client.collectionExists("users");
+
+    expect(result).toBe(false);
+  });
+
+  it("countDocuments returns correct count", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse([
+      { id: "1", name: "A" },
+      { id: "2", name: "B" },
+      { id: "3", name: "C" },
+    ]);
+
+    const result = await client.countDocuments("users");
+
+    expect(result).toBe(3);
+  });
+
+  it("countDocuments returns zero for empty collection", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse([]);
+
+    const result = await client.countDocuments("empty_collection");
+
+    expect(result).toBe(0);
+  });
+});

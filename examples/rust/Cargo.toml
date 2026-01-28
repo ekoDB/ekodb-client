@@ -112,3 +112,11 @@ path = "examples/client_swr_pattern.rs"
 [[example]]
 name = "client_swr_native"
 path = "examples/client_swr_native.rs"
+
+[[example]]
+name = "client_user_functions"
+path = "examples/client_user_functions.rs"
+
+[[example]]
+name = "client_chat_models"
+path = "examples/client_chat_models.rs"

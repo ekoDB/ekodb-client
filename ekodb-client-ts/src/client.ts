@@ -247,6 +247,48 @@ export interface MergeSessionsRequest {
   merge_strategy: MergeStrategy;
 }
 
+/**
+ * Available chat models by provider
+ */
+export interface ChatModels {
+  openai: string[];
+  anthropic: string[];
+  perplexity: string[];
+}
+
+/**
+ * User function definition - reusable sequence of Functions that can be called by Scripts
+ */
+export interface UserFunction {
+  label: string;
+  name: string;
+  description?: string;
+  version?: string;
+  parameters: { [key: string]: ParameterDefinition };
+  functions: FunctionStageConfig[];
+  tags?: string[];
+  id?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+/**
+ * Parameter definition for functions
+ */
+export interface ParameterDefinition {
+  required: boolean;
+  default?: any;
+  description?: string;
+}
+
+/**
+ * Function stage configuration for pipelines
+ */
+export interface FunctionStageConfig {
+  type: string;
+  [key: string]: any;
+}
+
 export class EkoDBClient {
   private baseURL: string;
   private apiKey: string;
@@ -1462,6 +1504,51 @@ export class EkoDBClient {
     );
   }
 
+  /**
+   * Get all available chat models from all providers
+   * @returns ChatModels object with models organized by provider
+   */
+  async getChatModels(): Promise<ChatModels> {
+    return this.makeRequest<ChatModels>(
+      "GET",
+      "/api/chat_models",
+      undefined,
+      0,
+      true, // Force JSON for chat operations
+    );
+  }
+
+  /**
+   * Get available models for a specific provider
+   * @param provider - Provider name (e.g., "openai", "anthropic", "perplexity")
+   * @returns Array of model names for the provider
+   */
+  async getChatModel(provider: string): Promise<string[]> {
+    return this.makeRequest<string[]>(
+      "GET",
+      `/api/chat_models/${encodeURIComponent(provider)}`,
+      undefined,
+      0,
+      true, // Force JSON for chat operations
+    );
+  }
+
+  /**
+   * Get a specific chat message by ID
+   * @param sessionId - Chat session ID
+   * @param messageId - Message ID
+   * @returns The chat message record
+   */
+  async getChatMessage(sessionId: string, messageId: string): Promise<Record> {
+    return this.makeRequest<Record>(
+      "GET",
+      `/api/chat/${sessionId}/messages/${messageId}`,
+      undefined,
+      0,
+      true, // Force JSON for chat operations
+    );
+  }
+
   // ========================================================================
   // SCRIPTS API
   // ========================================================================
@@ -1519,6 +1606,118 @@ export class EkoDBClient {
       `/api/functions/${idOrLabel}`,
       params || {},
     );
+  }
+
+  // ========================================================================
+  // USER FUNCTIONS API
+  // ========================================================================
+
+  /**
+   * Save a new user function
+   * @param userFunction - The user function definition
+   * @returns The ID of the created user function
+   */
+  async saveUserFunction(userFunction: UserFunction): Promise<string> {
+    const result = await this.makeRequest<{ id: string }>(
+      "POST",
+      "/api/functions",
+      userFunction,
+      0,
+      true, // Force JSON
+    );
+    return result.id;
+  }
+
+  /**
+   * Get a user function by label
+   * @param label - The user function label
+   * @returns The user function definition
+   */
+  async getUserFunction(label: string): Promise<UserFunction> {
+    return this.makeRequest<UserFunction>(
+      "GET",
+      `/api/functions/${encodeURIComponent(label)}`,
+      undefined,
+      0,
+      true, // Force JSON
+    );
+  }
+
+  /**
+   * List all user functions, optionally filtered by tags
+   * @param tags - Optional array of tags to filter by
+   * @returns Array of user functions
+   */
+  async listUserFunctions(tags?: string[]): Promise<UserFunction[]> {
+    const params = tags ? `?tags=${tags.join(",")}` : "";
+    return this.makeRequest<UserFunction[]>(
+      "GET",
+      `/api/functions${params}`,
+      undefined,
+      0,
+      true, // Force JSON
+    );
+  }
+
+  /**
+   * Update an existing user function by label
+   * @param label - The user function label
+   * @param userFunction - The updated user function definition
+   */
+  async updateUserFunction(
+    label: string,
+    userFunction: UserFunction,
+  ): Promise<void> {
+    await this.makeRequest<void>(
+      "PUT",
+      `/api/functions/${encodeURIComponent(label)}`,
+      userFunction,
+      0,
+      true, // Force JSON
+    );
+  }
+
+  /**
+   * Delete a user function by label
+   * @param label - The user function label
+   */
+  async deleteUserFunction(label: string): Promise<void> {
+    await this.makeRequest<void>(
+      "DELETE",
+      `/api/functions/${encodeURIComponent(label)}`,
+      undefined,
+      0,
+      true, // Force JSON
+    );
+  }
+
+  // ========================================================================
+  // COLLECTION UTILITIES
+  // ========================================================================
+
+  /**
+   * Check if a collection exists
+   * @param collection - Collection name to check
+   * @returns true if the collection exists, false otherwise
+   */
+  async collectionExists(collection: string): Promise<boolean> {
+    try {
+      const collections = await this.listCollections();
+      return collections.includes(collection);
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Count documents in a collection
+   * @param collection - Collection name
+   * @returns Number of documents in the collection
+   */
+  async countDocuments(collection: string): Promise<number> {
+    const query = new QueryBuilder().limit(100000).build();
+    const records = await this.find(collection, query);
+    return records.length;
   }
 
   /**

@@ -299,6 +299,28 @@ const joinResults = await client.find("users", multiQuery);
 
 - `listCollections(): Promise<string[]>`
 - `deleteCollection(collection: string): Promise<void>`
+- `collectionExists(collection: string): Promise<boolean>` - Check if collection
+  exists
+- `countDocuments(collection: string): Promise<number>` - Count documents in
+  collection
+
+#### Chat Models
+
+- `getChatModels(): Promise<Record<string, string[]>>` - Get all available chat
+  models by provider
+- `getChatModel(provider: string): Promise<string[]>` - Get models for a
+  specific provider
+
+#### User Functions
+
+- `saveUserFunction(userFunction: object): Promise<string>` - Create a new user
+  function
+- `getUserFunction(label: string): Promise<object>` - Get user function by label
+- `listUserFunctions(tags?: string[]): Promise<object[]>` - List all user
+  functions (optionally filter by tags)
+- `updateUserFunction(label: string, userFunction: object): Promise<void>` -
+  Update existing user function
+- `deleteUserFunction(label: string): Promise<void>` - Delete user function
 
 #### WebSocket
 
@@ -322,6 +344,8 @@ for complete working examples:
 - `client_joins.ts` - Join operations
 - `client_batch_operations.ts` - Batch operations
 - `client_kv_operations.ts` - Key-value operations
+- `client_chat_models.ts` - Chat models API
+- `client_user_functions.ts` - User functions API
 - And more...
 
 ## License

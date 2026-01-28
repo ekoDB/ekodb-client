@@ -8,7 +8,7 @@ use ekodb_client::{
     ListSessionsQuery, ListSessionsResponse, Query as RustQuery,
     RateLimitInfo as RustRateLimitInfo, Record as RustRecord,
     Script as RustScript, SerializationFormat as RustSerializationFormat,
-    UpdateSessionRequest, WebSocketClient as RustWebSocketClient,
+    UpdateSessionRequest, UserFunction as RustUserFunction, WebSocketClient as RustWebSocketClient,
     SearchQuery as RustSearchQuery,
 };
 use serde_json;
@@ -140,7 +140,7 @@ impl Client {
     }
 
     /// Insert a document into a collection
-    /// 
+    ///
     /// Args:
     ///     collection: Collection name
     ///     record: Document data as a dict
@@ -159,19 +159,33 @@ impl Client {
         transaction_id: Option<String>,
         bypass_cache: Option<bool>,
     ) -> PyResult<Bound<'py, PyAny>> {
-        let _ = (transaction_id, bypass_cache); // Acknowledge unused params
-        let mut rust_record = dict_to_record(record)?;
-        
-        // Add TTL if provided
-        if let Some(ttl_duration) = ttl {
-            rust_record = rust_record.with_ttl(ttl_duration);
-        }
-        
+        let rust_record = dict_to_record(record)?;
+
+        // Build InsertOptions from Python parameters
+        let options = if ttl.is_some() || bypass_ripple.is_some() || transaction_id.is_some() || bypass_cache.is_some() {
+            let mut opts = ekodb_client::options::InsertOptions::new();
+            if let Some(t) = ttl {
+                opts = opts.ttl(t);
+            }
+            if let Some(br) = bypass_ripple {
+                opts = opts.bypass_ripple(br);
+            }
+            if let Some(tx) = transaction_id {
+                opts = opts.transaction_id(tx);
+            }
+            if let Some(bc) = bypass_cache {
+                opts = opts.bypass_cache(bc);
+            }
+            Some(opts)
+        } else {
+            None
+        };
+
         let client = self.inner.clone();
 
         future_into_py::<_, Py<PyAny>>(py, async move {
             let result = client
-                .insert(&collection, rust_record, bypass_ripple)
+                .insert(&collection, rust_record, options)
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("Insert failed: {}", e)))?;
 
@@ -269,13 +283,30 @@ impl Client {
         transaction_id: Option<String>,
         bypass_cache: Option<bool>,
     ) -> PyResult<Bound<'py, PyAny>> {
-        let _ = (transaction_id, bypass_cache); // Acknowledge unused params
         let rust_updates = dict_to_record(updates)?;
+
+        // Build UpdateOptions from Python parameters
+        let options = if bypass_ripple.is_some() || transaction_id.is_some() || bypass_cache.is_some() {
+            let mut opts = ekodb_client::options::UpdateOptions::new();
+            if let Some(br) = bypass_ripple {
+                opts = opts.bypass_ripple(br);
+            }
+            if let Some(tx) = transaction_id {
+                opts = opts.transaction_id(tx);
+            }
+            if let Some(bc) = bypass_cache {
+                opts = opts.bypass_cache(bc);
+            }
+            Some(opts)
+        } else {
+            None
+        };
+
         let client = self.inner.clone();
 
         future_into_py(py, async move {
             let result = client
-                .update(&collection, &id, rust_updates, bypass_ripple)
+                .update(&collection, &id, rust_updates, options)
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("Update failed: {}", e)))?;
 
@@ -464,16 +495,16 @@ impl Client {
     // ========== Convenience Methods ==========
 
     /// Insert or update a record (upsert operation)
-    /// 
+    ///
     /// Attempts to update the record first. If the record doesn't exist (NotFound error),
     /// it will be inserted instead. This provides atomic insert-or-update semantics.
-    /// 
+    ///
     /// Args:
     ///     collection: Collection name
     ///     id: Record ID
     ///     record: Document data as a dict
     ///     bypass_ripple: Optional flag to bypass ripple effects
-    /// 
+    ///
     /// Returns:
     ///     The inserted or updated record as a dict
     fn upsert<'py>(
@@ -487,9 +518,17 @@ impl Client {
         let rust_record = dict_to_record(record)?;
         let client = self.inner.clone();
 
+        // Build options from bypass_ripple
+        let update_options = bypass_ripple.map(|br| {
+            ekodb_client::options::UpdateOptions::new().bypass_ripple(br)
+        });
+        let insert_options = bypass_ripple.map(|br| {
+            ekodb_client::options::InsertOptions::new().bypass_ripple(br)
+        });
+
         future_into_py::<_, Py<PyAny>>(py, async move {
             // Try update first
-            match client.update(&collection, &id, rust_record.clone(), bypass_ripple).await {
+            match client.update(&collection, &id, rust_record.clone(), update_options).await {
                 Ok(updated) => {
                     Python::attach(|py| record_to_dict(py, &updated))
                 }
@@ -499,7 +538,7 @@ impl Client {
                     if error_msg.contains("Not found") || error_msg.contains("404") {
                         // Record doesn't exist, insert it
                         let inserted = client
-                            .insert(&collection, rust_record, bypass_ripple)
+                            .insert(&collection, rust_record, insert_options)
                             .await
                             .map_err(|e| PyRuntimeError::new_err(format!("Upsert insert failed: {}", e)))?;
                         Python::attach(|py| record_to_dict(py, &inserted))
@@ -1851,7 +1890,7 @@ impl Client {
             
             Python::attach(|py| {
                 let dict = PyDict::new(py);
-                
+
                 // Convert records
                 let records_list = PyList::empty(py);
                 for record in &result.records {
@@ -1860,13 +1899,282 @@ impl Client {
                     records_list.append(json_to_pydict(py, &record_value)?)?;
                 }
                 dict.set_item("records", records_list)?;
-                
+
                 // Convert stats (not metadata)
                 let stats = json_to_pydict(py, &serde_json::to_value(&result.stats).unwrap())?;
                 dict.set_item("stats", stats)?;
-                
+
                 Ok(dict.into())
             })
+        })
+    }
+
+    // ========================================================================
+    // CHAT MODELS API
+    // ========================================================================
+
+    /// Get all available chat models from all providers
+    ///
+    /// Returns:
+    ///     Dict with provider names as keys and lists of model names as values
+    fn get_chat_models<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            let models = client
+                .get_chat_models()
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("Get chat models failed: {}", e)))?;
+
+            Python::attach(|py| {
+                let dict = PyDict::new(py);
+                dict.set_item("openai", models.openai)?;
+                dict.set_item("anthropic", models.anthropic)?;
+                dict.set_item("perplexity", models.perplexity)?;
+                Ok(dict.into())
+            })
+        })
+    }
+
+    /// Get available models for a specific provider
+    ///
+    /// Args:
+    ///     provider_name: Name of the provider (e.g., "openai", "anthropic")
+    ///
+    /// Returns:
+    ///     List of model names for the specified provider
+    fn get_chat_model<'py>(
+        &self,
+        py: Python<'py>,
+        provider_name: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            let models = client
+                .get_chat_model(&provider_name)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("Get chat model failed: {}", e)))?;
+
+            Python::attach(|py| {
+                let list = PyList::new(py, &models)?;
+                Ok(list.into())
+            })
+        })
+    }
+
+    /// Get a specific chat message by ID
+    ///
+    /// Args:
+    ///     chat_id: Chat session ID
+    ///     message_id: Message ID
+    ///
+    /// Returns:
+    ///     Message record as a dict
+    fn get_chat_message<'py>(
+        &self,
+        py: Python<'py>,
+        chat_id: String,
+        message_id: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py(py, async move {
+            let message = client
+                .get_chat_message(&chat_id, &message_id)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("Get chat message failed: {}", e)))?;
+
+            Python::attach(|py| record_to_dict(py, &message))
+        })
+    }
+
+    // ========================================================================
+    // USER FUNCTIONS API
+    // ========================================================================
+
+    /// Save a new user function definition
+    ///
+    /// Args:
+    ///     user_function: User function definition as a dict
+    ///
+    /// Returns:
+    ///     User function ID string
+    fn save_user_function<'py>(
+        &self,
+        py: Python<'py>,
+        user_function: &Bound<'py, PyDict>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        let func_json = serde_json::to_string(&pydict_to_json(py, user_function)?)
+            .map_err(|e| PyValueError::new_err(format!("Invalid user function definition: {}", e)))?;
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            let user_func: RustUserFunction = serde_json::from_str(&func_json)
+                .map_err(|e| PyRuntimeError::new_err(format!("Failed to parse user function: {}", e)))?;
+
+            let id = client
+                .save_user_function(user_func)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("Save user function failed: {}", e)))?;
+
+            Python::attach(|py| Ok(PyString::new(py, &id).into()))
+        })
+    }
+
+    /// Get a user function by label
+    ///
+    /// Args:
+    ///     label: User function label (unique identifier)
+    ///
+    /// Returns:
+    ///     User function definition as a dict
+    fn get_user_function<'py>(
+        &self,
+        py: Python<'py>,
+        label: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py(py, async move {
+            let user_func = client
+                .get_user_function(&label)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("Get user function failed: {}", e)))?;
+
+            let json = serde_json::to_value(&user_func)
+                .map_err(|e| PyRuntimeError::new_err(format!("Serialization failed: {}", e)))?;
+
+            Python::attach(|py| json_to_pydict(py, &json))
+        })
+    }
+
+    /// List all user functions, optionally filtered by tags
+    ///
+    /// Args:
+    ///     tags: Optional list of tags to filter by
+    ///
+    /// Returns:
+    ///     List of user function definitions
+    #[pyo3(signature = (tags=None))]
+    fn list_user_functions<'py>(
+        &self,
+        py: Python<'py>,
+        tags: Option<Vec<String>>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py(py, async move {
+            let user_funcs = client
+                .list_user_functions(tags)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("List user functions failed: {}", e)))?;
+
+            let json = serde_json::to_value(&user_funcs)
+                .map_err(|e| PyRuntimeError::new_err(format!("Serialization failed: {}", e)))?;
+
+            Python::attach(|py| json_to_pydict(py, &json))
+        })
+    }
+
+    /// Update an existing user function by label
+    ///
+    /// Args:
+    ///     label: User function label (unique identifier)
+    ///     user_function: Updated user function definition as a dict
+    fn update_user_function<'py>(
+        &self,
+        py: Python<'py>,
+        label: String,
+        user_function: &Bound<'py, PyDict>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        let func_json = serde_json::to_string(&pydict_to_json(py, user_function)?)
+            .map_err(|e| PyValueError::new_err(format!("Invalid user function definition: {}", e)))?;
+
+        future_into_py(py, async move {
+            let user_func: RustUserFunction = serde_json::from_str(&func_json)
+                .map_err(|e| PyRuntimeError::new_err(format!("Failed to parse user function: {}", e)))?;
+
+            client
+                .update_user_function(&label, user_func)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("Update user function failed: {}", e)))?;
+
+            Python::attach(|py| Ok(py.None()))
+        })
+    }
+
+    /// Delete a user function by label
+    ///
+    /// Args:
+    ///     label: User function label (unique identifier)
+    fn delete_user_function<'py>(
+        &self,
+        py: Python<'py>,
+        label: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py(py, async move {
+            client
+                .delete_user_function(&label)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("Delete user function failed: {}", e)))?;
+
+            Python::attach(|py| Ok(py.None()))
+        })
+    }
+
+    // ========================================================================
+    // COLLECTION UTILITIES
+    // ========================================================================
+
+    /// Check if a collection exists
+    ///
+    /// Args:
+    ///     collection: Collection name
+    ///
+    /// Returns:
+    ///     True if the collection exists, False otherwise
+    fn collection_exists<'py>(
+        &self,
+        py: Python<'py>,
+        collection: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            let exists = client
+                .collection_exists(&collection)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("Collection exists check failed: {}", e)))?;
+
+            Python::attach(|py| Ok(PyBool::new(py, exists).as_borrowed().to_owned().into()))
+        })
+    }
+
+    /// Count documents in a collection
+    ///
+    /// Args:
+    ///     collection: Collection name
+    ///
+    /// Returns:
+    ///     Number of documents in the collection
+    fn count_documents<'py>(
+        &self,
+        py: Python<'py>,
+        collection: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            let count = client
+                .count_documents(&collection)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("Count documents failed: {}", e)))?;
+
+            Python::attach(|py| Ok(PyInt::new(py, count as i64).into()))
         })
     }
 
