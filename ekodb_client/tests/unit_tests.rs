@@ -195,7 +195,8 @@ async fn test_insert_with_bypass_ripple() {
     let mut record = Record::new();
     record.insert("name", "Test");
 
-    let result = client.insert("users", record, Some(true)).await;
+    let options = ekodb_client::options::InsertOptions::new().bypass_ripple(true);
+    let result = client.insert("users", record, Some(options)).await;
     assert!(result.is_ok());
 }
 

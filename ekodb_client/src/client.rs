@@ -84,6 +84,7 @@ impl Client {
     ///
     /// * `collection` - The collection name
     /// * `record` - The record to insert
+    /// * `options` - Optional insert options (TTL, bypass_ripple, transaction_id, bypass_cache)
     ///
     /// # Returns
     ///
@@ -93,6 +94,7 @@ impl Client {
     ///
     /// ```no_run
     /// # use ekodb_client::{Client, Record};
+    /// # use ekodb_client::options::InsertOptions;
     /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
     /// let client = Client::builder()
     ///     .base_url("https://your-instance.ekodb.net")
@@ -103,7 +105,12 @@ impl Client {
     /// record.insert("name", "John Doe");
     /// record.insert("age", 30);
     ///
-    /// let result = client.insert("users", record, None).await?;
+    /// // Simple insert
+    /// let result = client.insert("users", record.clone(), None).await?;
+    ///
+    /// // Insert with TTL (expires in 1 hour)
+    /// let options = InsertOptions::new().ttl("1h");
+    /// let result = client.insert("sessions", record, Some(options)).await?;
     /// # Ok(())
     /// # }
     /// ```
@@ -111,7 +118,7 @@ impl Client {
         &self,
         collection: &str,
         record: Record,
-        bypass_ripple: Option<bool>,
+        options: Option<crate::options::InsertOptions>,
     ) -> Result<Record> {
         let collection = collection.to_string();
         let http = self.http.clone();
@@ -119,10 +126,8 @@ impl Client {
             let collection = collection.clone();
             let record = record.clone();
             let http = http.clone();
-            async move {
-                http.insert(&collection, record, bypass_ripple, &token)
-                    .await
-            }
+            let options = options.clone();
+            async move { http.insert(&collection, record, options, &token).await }
         })
         .await
     }
@@ -208,6 +213,7 @@ impl Client {
     /// * `collection` - The collection name
     /// * `id` - The record ID
     /// * `record` - The updated record data
+    /// * `options` - Optional update options (bypass_ripple, transaction_id, bypass_cache)
     ///
     /// # Returns
     ///
@@ -217,11 +223,11 @@ impl Client {
         collection: &str,
         id: &str,
         record: Record,
-        bypass_ripple: Option<bool>,
+        options: Option<crate::options::UpdateOptions>,
     ) -> Result<Record> {
         let token = self.auth.get_token().await?;
         self.http
-            .update(collection, id, record, bypass_ripple, &token)
+            .update(collection, id, record, options, &token)
             .await
     }
 
@@ -387,7 +393,7 @@ impl Client {
     /// * `collection` - The collection name
     /// * `id` - The record ID
     /// * `record` - The record data to insert or update
-    /// * `bypass_ripple` - Optional flag to bypass ripple effects
+    /// * `options` - Optional upsert options (TTL, bypass_ripple, transaction_id, bypass_cache)
     ///
     /// # Returns
     ///
@@ -397,6 +403,7 @@ impl Client {
     ///
     /// ```no_run
     /// # use ekodb_client::{Client, Record};
+    /// # use ekodb_client::options::UpsertOptions;
     /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
     /// let client = Client::builder()
     ///     .base_url("https://your-instance.ekodb.net")
@@ -408,7 +415,11 @@ impl Client {
     /// record.insert("email", "john@example.com");
     ///
     /// // Will update if exists, insert if not
-    /// let result = client.upsert("users", "user123", record, None).await?;
+    /// let result = client.upsert("users", "user123", record.clone(), None).await?;
+    ///
+    /// // With TTL option
+    /// let options = UpsertOptions::new().ttl("1h");
+    /// let result = client.upsert("sessions", "sess123", record, Some(options)).await?;
     /// # Ok(())
     /// # }
     /// ```
@@ -417,17 +428,49 @@ impl Client {
         collection: &str,
         id: &str,
         record: Record,
-        bypass_ripple: Option<bool>,
+        options: Option<crate::options::UpsertOptions>,
     ) -> Result<Record> {
+        // Convert UpsertOptions to UpdateOptions for the update call
+        let update_opts = options.as_ref().map(|o| {
+            let mut opts = crate::options::UpdateOptions::new();
+            if let Some(bypass) = o.bypass_ripple {
+                opts = opts.bypass_ripple(bypass);
+            }
+            if let Some(ref tx_id) = o.transaction_id {
+                opts = opts.transaction_id(tx_id.clone());
+            }
+            if let Some(bypass) = o.bypass_cache {
+                opts = opts.bypass_cache(bypass);
+            }
+            opts
+        });
+
         // Try update first
         match self
-            .update(collection, id, record.clone(), bypass_ripple)
+            .update(collection, id, record.clone(), update_opts)
             .await
         {
             Ok(updated) => Ok(updated),
             Err(Error::NotFound) => {
                 // Record doesn't exist, insert it
-                self.insert(collection, record, bypass_ripple).await
+                // Convert UpsertOptions to InsertOptions
+                let insert_opts = options.map(|o| {
+                    let mut opts = crate::options::InsertOptions::new();
+                    if let Some(ref ttl) = o.ttl {
+                        opts = opts.ttl(ttl.clone());
+                    }
+                    if let Some(bypass) = o.bypass_ripple {
+                        opts = opts.bypass_ripple(bypass);
+                    }
+                    if let Some(ref tx_id) = o.transaction_id {
+                        opts = opts.transaction_id(tx_id.clone());
+                    }
+                    if let Some(bypass) = o.bypass_cache {
+                        opts = opts.bypass_cache(bypass);
+                    }
+                    opts
+                });
+                self.insert(collection, record, insert_opts).await
             }
             Err(e) => Err(e),
         }

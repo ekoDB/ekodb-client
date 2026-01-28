@@ -91,8 +91,8 @@ async fn main() -> Result<()> {
     }
     println!("Inserted {} test users\n", inserted_ids.len());
 
-    // Example 1: Select specific fields
-    println!("Example 1: Select specific fields");
+    // Example 1: Select specific fields - only get id, name, email
+    println!("Example 1: Select specific fields (id, name, email only)");
     let users_query = QueryBuilder::new()
         .eq("status", "active")
         .select_fields(vec![
@@ -104,10 +104,20 @@ async fn main() -> Result<()> {
         .build();
 
     let users = client.find(TEST_COLLECTION, users_query, None).await?;
-    println!("Fetched {} users with only 3 fields each", users.len());
+    println!("  Found {} active users", users.len());
+    if !users.is_empty() {
+        let fields: Vec<&String> = users[0].keys().collect();
+        println!("  Fields returned: {:?}", fields);
+        // Show first user's data
+        if let Some(FieldType::String(name)) = users[0].get("name") {
+            if let Some(FieldType::String(email)) = users[0].get("email") {
+                println!("  First user: {} <{}>", name, email);
+            }
+        }
+    }
 
-    // Example 2: Exclude sensitive fields
-    println!("\nExample 2: Exclude sensitive fields");
+    // Example 2: Exclude sensitive fields - hide password, api_key, secret_token
+    println!("\nExample 2: Exclude sensitive fields (password, api_key, secret_token)");
     let admins_query = QueryBuilder::new()
         .eq("user_role", "admin")
         .exclude_fields(vec![
@@ -118,15 +128,42 @@ async fn main() -> Result<()> {
         .build();
 
     let admins = client.find(TEST_COLLECTION, admins_query, None).await?;
-    println!("Fetched {} admins without sensitive data", admins.len());
-    // Verify sensitive fields are excluded
+    println!("  Found {} admins", admins.len());
     if !admins.is_empty() {
         let has_password = admins[0].get("password").is_some();
-        println!("  Password field excluded: {}", !has_password);
+        let has_api_key = admins[0].get("api_key").is_some();
+        let has_token = admins[0].get("secret_token").is_some();
+        println!("  Sensitive fields excluded:");
+        println!(
+            "    - password: {}",
+            if has_password {
+                "PRESENT (unexpected!)"
+            } else {
+                "excluded"
+            }
+        );
+        println!(
+            "    - api_key: {}",
+            if has_api_key {
+                "PRESENT (unexpected!)"
+            } else {
+                "excluded"
+            }
+        );
+        println!(
+            "    - secret_token: {}",
+            if has_token {
+                "PRESENT (unexpected!)"
+            } else {
+                "excluded"
+            }
+        );
+        let fields: Vec<&String> = admins[0].keys().collect();
+        println!("  Fields returned: {:?}", fields);
     }
 
-    // Example 3: Complex query with projection
-    println!("\nExample 3: Complex query with projection");
+    // Example 3: Complex query with projection - active users with profile fields
+    println!("\nExample 3: Complex query with projection (active users, ages 18-65)");
     let active_users_query = QueryBuilder::new()
         .eq("status", "active")
         .gte("age", 18)
@@ -138,45 +175,45 @@ async fn main() -> Result<()> {
             "age".to_string(),
             "created_at".to_string(),
         ])
-        .sort_desc("created_at")
+        .sort_desc("age")
         .limit(50)
         .build();
 
     let active_users = client
         .find(TEST_COLLECTION, active_users_query, None)
         .await?;
-    println!(
-        "Fetched {} active users with profile fields",
-        active_users.len()
-    );
-
-    // Example 4: Find by ID with projection
-    println!("\nExample 4: Find by ID with projection");
-    if !inserted_ids.is_empty() {
-        let profile_query = QueryBuilder::new()
-            .eq("id", inserted_ids[0].as_str())
-            .select_fields(vec![
-                "id".to_string(),
-                "name".to_string(),
-                "email".to_string(),
-                "bio".to_string(),
-                "avatar_url".to_string(),
-            ])
-            .build();
-
-        let user_profiles = client.find(TEST_COLLECTION, profile_query, None).await?;
-        if !user_profiles.is_empty() {
-            let name = match user_profiles[0].get("name") {
-                Some(FieldType::String(s)) => s.as_str(),
-                _ => "N/A",
-            };
-            println!("Fetched user profile: {}", name);
-        } else {
-            println!("Fetched user profile: N/A");
+    println!("  Found {} active users (ages 18-65)", active_users.len());
+    for user in &active_users {
+        if let (Some(FieldType::String(name)), Some(FieldType::Integer(age))) =
+            (user.get("name"), user.get("age"))
+        {
+            println!("    - {} (age {})", name, age);
         }
     }
 
-    // Example 5: Compare full vs projected data
+    // Example 4: Query with projection by status
+    println!("\nExample 4: Query inactive users with profile fields");
+    let inactive_query = QueryBuilder::new()
+        .eq("status", "inactive")
+        .select_fields(vec![
+            "id".to_string(),
+            "name".to_string(),
+            "email".to_string(),
+            "bio".to_string(),
+        ])
+        .build();
+
+    let inactive_users = client.find(TEST_COLLECTION, inactive_query, None).await?;
+    println!("  Found {} inactive users", inactive_users.len());
+    for user in &inactive_users {
+        if let (Some(FieldType::String(name)), Some(FieldType::String(bio))) =
+            (user.get("name"), user.get("bio"))
+        {
+            println!("    - {}: {}", name, bio);
+        }
+    }
+
+    // Example 5: Compare full vs projected data - demonstrates bandwidth savings
     println!("\nExample 5: Compare full vs projected data");
     let full_query = QueryBuilder::new().eq("status", "active").build();
 
@@ -192,22 +229,21 @@ async fn main() -> Result<()> {
     let full_users = client.find(TEST_COLLECTION, full_query, None).await?;
     let projected_users = client.find(TEST_COLLECTION, projected_query, None).await?;
 
-    let full_fields = if !full_users.is_empty() {
-        full_users[0].len()
-    } else {
-        0
-    };
-    let projected_fields = if !projected_users.is_empty() {
-        projected_users[0].len()
-    } else {
-        0
-    };
+    if !full_users.is_empty() && !projected_users.is_empty() {
+        let full_fields: Vec<&String> = full_users[0].keys().collect();
+        let projected_fields: Vec<&String> = projected_users[0].keys().collect();
 
-    println!("Full query returned {} fields per user", full_fields);
-    println!(
-        "Projected query returned {} fields per user",
-        projected_fields
-    );
+        println!("  Full query:");
+        println!("    - {} fields per record", full_fields.len());
+        println!("    - Fields: {:?}", full_fields);
+        println!("  Projected query:");
+        println!("    - {} fields per record", projected_fields.len());
+        println!("    - Fields: {:?}", projected_fields);
+        println!(
+            "  Bandwidth savings: ~{}% fewer fields",
+            100 - (projected_fields.len() * 100 / full_fields.len().max(1))
+        );
+    }
 
     // Cleanup
     println!("\nCleaning up test data...");
