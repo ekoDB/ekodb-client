@@ -36,9 +36,17 @@ async function swrPatternExample() {
       // Check KV cache for user data
       Stage.kvGet("api:user:{{user_id}}"),
       Stage.if(
-        // KvGet returns {value: ...} on hit, {kv_value: null} on miss
-        // So we check if "value" field exists to detect cache hit
-        { type: "FieldExists", value: { field: "value" } },
+        // KvGet returns {value: ...} on hit, {value: null} on miss
+        // So we check if "value" is not null to detect cache hit
+        {
+          type: "Not",
+          value: {
+            condition: {
+              type: "FieldEquals",
+              value: { field: "value", value: null },
+            },
+          },
+        },
         // Cache hit - return cached data
         [Stage.project(["value"], false)],
         // Cache miss - fetch from API and cache
@@ -103,8 +111,17 @@ async function swrPatternExample() {
       // Check KV cache for product data
       Stage.kvGet("product:{{product_id}}"),
       Stage.if(
-        // KvGet returns {value: ...} on hit, {kv_value: null} on miss
-        { type: "FieldExists", value: { field: "value" } },
+        // KvGet returns {value: ...} on hit, {value: null} on miss
+        // So we check if "value" is not null to detect cache hit
+        {
+          type: "Not",
+          value: {
+            condition: {
+              type: "FieldEquals",
+              value: { field: "value", value: null },
+            },
+          },
+        },
         // Cache hit - return cached data
         [Stage.project(["value"], false)],
         // Cache miss - fetch from API and cache

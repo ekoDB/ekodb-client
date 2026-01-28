@@ -168,13 +168,15 @@ async fn swr_with_composition_example(client: &Client) -> Result<(), Box<dyn std
         // Check KV cache first (O(1) lookup - much faster than FindById)
         .with_function(Function::KvGet {
             key: serde_json::json!("user_cache:{{user_id}}"),
-            output_field: None,
         })
         .with_function(Function::If {
-            // KvGet returns { value: ... } on hit, { kv_value: null } on miss
-            // So we check if "value" field exists to detect cache hit
-            condition: ScriptCondition::FieldExists {
-                field: "value".to_string(),
+            // KvGet returns { value: ... } on hit, { value: null } on miss
+            // So we check if "value" is not null to detect cache hit
+            condition: ScriptCondition::Not {
+                condition: Box::new(ScriptCondition::FieldEquals {
+                    field: "value".to_string(),
+                    value: serde_json::Value::Null,
+                }),
             },
             then_functions: vec![
                 // Cache hit - project the value field
@@ -185,7 +187,6 @@ async fn swr_with_composition_example(client: &Client) -> Result<(), Box<dyn std
             ],
             else_functions: Some(vec![
                 // Cache miss - call reusable function to fetch and store
-                // Explicitly pass user_id to avoid polluting with kv_value from KvGet
                 Box::new(Function::CallFunction {
                     function_label: "fetch_and_store_user".to_string(),
                     params: Some({
@@ -197,7 +198,6 @@ async fn swr_with_composition_example(client: &Client) -> Result<(), Box<dyn std
                 // After storing, retrieve the cached value to return it
                 Box::new(Function::KvGet {
                     key: serde_json::json!("user_cache:{{user_id}}"),
-                    output_field: None,
                 }),
                 Box::new(Function::Project {
                     fields: vec!["value".to_string()],

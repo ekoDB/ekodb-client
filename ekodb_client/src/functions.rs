@@ -476,11 +476,8 @@ pub enum Function {
     // KV Store Operations
     // =========================================================================
     /// Get a value from the KV store
-    KvGet {
-        key: serde_json::Value,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        output_field: Option<String>,
-    },
+    /// Returns {value: <data>} on hit, {value: null} on miss
+    KvGet { key: serde_json::Value },
 
     /// Set a value in the KV store
     KvSet {

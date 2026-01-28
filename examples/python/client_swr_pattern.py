@@ -64,9 +64,17 @@ async def main():
             # Check KV cache for user data
             Stage.kv_get("api:user:{{user_id}}"),
             Stage.if_condition(
-                # KvGet returns {value: ...} on hit, {kv_value: null} on miss
-                # So we check if "value" field exists to detect cache hit
-                {"type": "FieldExists", "value": {"field": "value"}},
+                # KvGet returns {value: ...} on hit, {value: null} on miss
+                # So we check if "value" is not null to detect cache hit
+                {
+                    "type": "Not",
+                    "value": {
+                        "condition": {
+                            "type": "FieldEquals",
+                            "value": {"field": "value", "value": None},
+                        }
+                    },
+                },
                 # Cache hit - return cached data
                 [Stage.project(["value"], False)],
                 # Cache miss - fetch from API and cache

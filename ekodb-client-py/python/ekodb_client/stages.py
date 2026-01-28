@@ -208,12 +208,12 @@ class Stage:
         return {"type": "Group", "by_fields": by_fields, "functions": functions}
 
     @staticmethod
-    def kv_get(key: str, output_field: Optional[str] = None) -> Dict[str, Any]:
-        """Get a value from the KV store."""
-        stage = {"type": "KvGet", "key": key}
-        if output_field:
-            stage["output_field"] = output_field
-        return stage
+    def kv_get(key: str) -> Dict[str, Any]:
+        """Get a value from the KV store.
+
+        Returns {value: <data>} on hit, {value: null} on miss.
+        """
+        return {"type": "KvGet", "key": key}
 
     @staticmethod
     def kv_set(

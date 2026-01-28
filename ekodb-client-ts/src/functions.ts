@@ -189,9 +189,9 @@ export type FunctionStageConfig =
       name: string;
     }
   | {
+      /** Returns {value: <data>} on hit, {value: null} on miss */
       type: "KvGet";
       key: string;
-      output_field?: string;
     }
   | {
       type: "KvSet";
@@ -613,10 +613,10 @@ export const Stage = {
   }),
 
   // KV Store operations - faster than collection lookups for simple key-value data
-  kvGet: (key: string, output_field?: string): FunctionStageConfig => ({
+  // kvGet returns {value: <data>} on hit, {value: null} on miss
+  kvGet: (key: string): FunctionStageConfig => ({
     type: "KvGet",
     key,
-    output_field,
   }),
 
   kvSet: (key: string, value: any, ttl?: number): FunctionStageConfig => ({

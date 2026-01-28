@@ -150,23 +150,22 @@ func swrCompositionExample(client *ekodb.Client) error {
 		},
 		Functions: []ekodb.FunctionStageConfig{
 			// Check KV cache first (O(1) lookup - much faster than FindById)
-			ekodb.StageKvGet("user_cache:{{user_id}}", nil),
+			ekodb.StageKvGet("user_cache:{{user_id}}"),
 			ekodb.StageIf(
-				// KvGet returns { value: ... } on hit, { kv_value: null } on miss
-				// So we check if "value" field exists to detect cache hit
-				ekodb.ConditionFieldExists("value"),
+				// KvGet returns { value: ... } on hit, { value: null } on miss
+				// So we check if "value" is not null to detect cache hit
+				ekodb.ConditionNot(ekodb.ConditionFieldEquals("value", nil)),
 				[]ekodb.FunctionStageConfig{
 					// Cache hit - project the value field
 					ekodb.StageProject([]string{"value"}, false),
 				},
 				[]ekodb.FunctionStageConfig{
 					// Cache miss - call reusable function to fetch and store
-					// Explicitly pass user_id to avoid polluting with kv_value from KvGet
 					ekodb.StageCallFunction("fetch_and_store_user", map[string]any{
 						"user_id": "{{user_id}}",
 					}),
 					// After storing, retrieve the cached value to return it
-					ekodb.StageKvGet("user_cache:{{user_id}}", nil),
+					ekodb.StageKvGet("user_cache:{{user_id}}"),
 					ekodb.StageProject([]string{"value"}, false),
 				},
 			),

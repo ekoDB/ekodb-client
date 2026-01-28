@@ -253,7 +253,7 @@ func kvScriptOperations(client *ekodb.Client) (string, error) {
 		},
 		Functions: []ekodb.FunctionStageConfig{
 			ekodb.StageKvSet("{{product_key}}", "{{product_data}}", &ttl),
-			ekodb.StageKvGet("{{product_key}}", nil),
+			ekodb.StageKvGet("{{product_key}}"),
 		},
 		Tags: []string{"kv", "caching"},
 	}
@@ -306,7 +306,7 @@ func combinedExample(client *ekodb.Client) (string, error) {
 				"created_at": "{{timestamp}}",
 				"status":     "processing",
 			}, false, nil),
-			ekodb.StageKvGet("order:status:{{order_id}}", nil),
+			ekodb.StageKvGet("order:status:{{order_id}}"),
 		},
 		Tags: []string{"orders", "kv", "wrapped-types"},
 	}
