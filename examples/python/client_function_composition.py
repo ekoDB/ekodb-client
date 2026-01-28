@@ -143,16 +143,24 @@ async def swr_composition_example(client):
             },
             {
                 "type": "If",
-                # KvGet returns { value: ... } on hit, { kv_value: null } on miss
-                # So we check if "value" field exists to detect cache hit
-                "condition": {"type": "FieldExists", "value": {"field": "value"}},
+                # KvGet returns { value: ... } on hit, { value: null } on miss
+                # So we check if "value" is not null to detect cache hit
+                "condition": {
+                    "type": "Not",
+                    "value": {
+                        "condition": {
+                            "type": "FieldEquals",
+                            "value": {"field": "value", "value": None},
+                        }
+                    },
+                },
                 "then_functions": [
                     # Cache hit - project the value field
                     {"type": "Project", "fields": ["value"], "exclude": False}
                 ],
                 "else_functions": [
                     # Cache miss - call reusable function to fetch and store
-                    # Explicitly pass user_id to avoid polluting with kv_value from KvGet
+                    # Explicitly pass user_id to the function
                     {
                         "type": "CallFunction",
                         "function_label": "fetch_and_store_user",

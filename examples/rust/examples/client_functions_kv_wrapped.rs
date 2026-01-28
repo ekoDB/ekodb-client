@@ -222,7 +222,6 @@ async fn kv_script_operations(client: &Client) -> Result<String, Box<dyn std::er
         .with_tag("caching")
         .with_function(Function::KvGet {
             key: serde_json::Value::String("{{product_key}}".to_string()),
-            output_field: None,
         });
 
     let id = client.save_script(script).await?;
@@ -281,7 +280,6 @@ async fn combined_example(client: &Client) -> Result<String, Box<dyn std::error:
     .with_tag("wrapped-types")
     .with_function(Function::KvGet {
         key: serde_json::Value::String("order:status:{{order_id}}".to_string()),
-        output_field: None,
     });
 
     let id = client.save_script(script).await?;

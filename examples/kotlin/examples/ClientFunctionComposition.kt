@@ -12,6 +12,7 @@ import io.ekodb.client.functions.*
 import io.ekodb.client.types.FieldType
 import io.github.cdimascio.dotenv.dotenv
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlin.system.measureTimeMillis
@@ -169,9 +170,11 @@ suspend fun swrCompositionExample(client: EkoDBClient) {
                 key = "user_cache:{{user_id}}"
             ),
             Function.If(
-                // KvGet returns { value: ... } on hit, { kv_value: null } on miss
-                // So we check if "value" field exists to detect cache hit
-                condition = ScriptCondition.FieldExists(field = "value"),
+                // KvGet returns { value: ... } on hit, { value: null } on miss
+                // So we check if "value" is not null to detect cache hit
+                condition = ScriptCondition.Not(
+                    ScriptCondition.FieldEquals(field = "value", fieldValue = JsonNull)
+                ),
                 thenFunctions = listOf(
                     // Cache hit - project the value field
                     Function.Project(
@@ -181,7 +184,7 @@ suspend fun swrCompositionExample(client: EkoDBClient) {
                 ),
                 elseFunctions = listOf(
                     // Cache miss - call reusable function to fetch and store
-                    // Explicitly pass user_id to avoid polluting with kv_value from KvGet
+                    // Explicitly pass user_id to the function
                     Function.CallFunction(
                         functionLabel = "fetch_and_store_user",
                         params = buildJsonObject {

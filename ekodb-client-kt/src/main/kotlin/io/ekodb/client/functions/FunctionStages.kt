@@ -276,11 +276,11 @@ sealed class FunctionStageConfig {
     // KV Store Operations
     // =========================================================================
     
+    /** Returns {value: <data>} on hit, {value: null} on miss */
     @Serializable
     @SerialName("KvGet")
     data class KvGet(
-        val key: String,
-        val output_field: String? = null
+        val key: String
     ) : FunctionStageConfig()
     
     @Serializable

@@ -149,10 +149,15 @@ async function swrCompositionExample(client: EkoDBClient): Promise<void> {
       {
         type: "If" as const,
         condition: {
-          // KvGet returns { value: ... } on hit, { kv_value: null } on miss
-          // So we check if "value" field exists to detect cache hit
-          type: "FieldExists" as const,
-          value: { field: "value" },
+          // KvGet returns { value: ... } on hit, { value: null } on miss
+          // So we check if "value" is not null to detect cache hit
+          type: "Not" as const,
+          value: {
+            condition: {
+              type: "FieldEquals" as const,
+              value: { field: "value", value: null },
+            },
+          },
         },
         then_functions: [
           // Cache hit - project the value field
@@ -164,7 +169,7 @@ async function swrCompositionExample(client: EkoDBClient): Promise<void> {
         ],
         else_functions: [
           // Cache miss - call reusable function to fetch and store
-          // Explicitly pass user_id to avoid polluting with kv_value from KvGet
+          // Explicitly pass user_id to the function
           {
             type: "CallFunction" as const,
             function_label: "fetch_and_store_user",
