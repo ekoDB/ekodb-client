@@ -36,7 +36,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-ekodb_client = "0.1"
+ekodb_client = "0.10"
 tokio = { version = "1", features = ["full"] }
 ```
 
