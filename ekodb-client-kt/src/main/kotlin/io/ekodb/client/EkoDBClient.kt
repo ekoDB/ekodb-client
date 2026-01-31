@@ -1515,8 +1515,124 @@ class EkoDBClient private constructor(
         return callScript(label, params)
     }
     
+    // ========================================================================
+    // USER FUNCTIONS API
+    // ========================================================================
+
+    /**
+     * Save a new user function
+     * User functions are reusable sequences of Functions that can be called by Scripts.
+     * @param userFunction The user function definition as JSON
+     * @return The ID of the created user function
+     */
+    suspend fun saveUserFunction(userFunction: JsonObject): String {
+        val token = getToken()
+        val response = executeWithRetry {
+            client.post("$baseUrl/api/functions") {
+                bearerAuth(token)
+                contentType(ContentType.Application.Json)
+                setBody(userFunction)
+            }
+        }
+
+        if (response.status.value >= 400) {
+            val errorText = response.bodyAsText()
+            throw IllegalStateException("Server error ${response.status.value}: $errorText")
+        }
+
+        val result = response.body<JsonObject>()
+        return result["id"]?.jsonPrimitive?.content
+            ?: throw IllegalStateException("No user function ID returned")
+    }
+
+    /**
+     * Get a user function by label
+     * @param label The user function label
+     * @return The user function definition
+     */
+    suspend fun getUserFunction(label: String): JsonObject {
+        val token = getToken()
+        val response = executeWithRetry {
+            client.get("$baseUrl/api/functions/$label") {
+                bearerAuth(token)
+            }
+        }
+
+        if (response.status.value >= 400) {
+            val errorText = response.bodyAsText()
+            throw IllegalStateException("Server error ${response.status.value}: $errorText")
+        }
+
+        return response.body()
+    }
+
+    /**
+     * List all user functions, optionally filtered by tags
+     * @param tags Optional list of tags to filter by
+     * @return List of user functions
+     */
+    suspend fun listUserFunctions(tags: List<String>? = null): List<JsonObject> {
+        val token = getToken()
+        val url = if (tags != null && tags.isNotEmpty()) {
+            "$baseUrl/api/functions?tags=${tags.joinToString(",")}"
+        } else {
+            "$baseUrl/api/functions"
+        }
+        val response = executeWithRetry {
+            client.get(url) {
+                bearerAuth(token)
+            }
+        }
+
+        if (response.status.value >= 400) {
+            val errorText = response.bodyAsText()
+            throw IllegalStateException("Server error ${response.status.value}: $errorText")
+        }
+
+        return response.body<List<JsonObject>>()
+    }
+
+    /**
+     * Update an existing user function by label
+     * @param label The user function label
+     * @param userFunction The updated user function definition
+     */
+    suspend fun updateUserFunction(label: String, userFunction: JsonObject) {
+        val token = getToken()
+        val response = executeWithRetry {
+            client.put("$baseUrl/api/functions/$label") {
+                bearerAuth(token)
+                contentType(ContentType.Application.Json)
+                setBody(userFunction)
+            }
+        }
+
+        if (response.status.value >= 400) {
+            val errorText = response.bodyAsText()
+            throw IllegalStateException("Server error ${response.status.value}: $errorText")
+        }
+    }
+
+    /**
+     * Delete a user function by label
+     * @param label The user function label
+     */
+    suspend fun deleteUserFunction(label: String) {
+        val token = getToken()
+        val response = executeWithRetry {
+            client.delete("$baseUrl/api/functions/$label") {
+                bearerAuth(token)
+            }
+        }
+
+        if (response.status.value >= 400) {
+            val errorText = response.bodyAsText()
+            throw IllegalStateException("Server error ${response.status.value}: $errorText")
+        }
+    }
+
     // ========== RAG Helper Methods ==========
-    
+
     /**
      * Generate embeddings for text using ekoDB's native Functions
      * 

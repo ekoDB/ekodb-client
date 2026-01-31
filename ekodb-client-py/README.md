@@ -385,6 +385,108 @@ Get collection metadata including schema.
 
 - Collection metadata dictionary
 
+#### `await client.collection_exists(collection: str) -> bool`
+
+Check if a collection exists.
+
+**Parameters:**
+
+- `collection`: The collection name
+
+**Returns:**
+
+- True if the collection exists, False otherwise
+
+#### `await client.count_documents(collection: str) -> int`
+
+Count documents in a collection.
+
+**Parameters:**
+
+- `collection`: The collection name
+
+**Returns:**
+
+- Number of documents in the collection
+
+### Chat Models
+
+#### `await client.get_chat_models() -> dict`
+
+Get all available chat models organized by provider.
+
+**Returns:**
+
+- Dictionary mapping provider names to lists of model names
+
+#### `await client.get_chat_model(provider: str) -> list`
+
+Get models for a specific provider.
+
+**Parameters:**
+
+- `provider`: The provider name (e.g., "openai", "anthropic")
+
+**Returns:**
+
+- List of model names for the provider
+
+### User Functions
+
+#### `await client.save_user_function(user_function: dict) -> str`
+
+Create a new user function.
+
+**Parameters:**
+
+- `user_function`: Dictionary containing label, name, parameters, functions,
+  etc.
+
+**Returns:**
+
+- The ID of the created user function
+
+#### `await client.get_user_function(label: str) -> dict`
+
+Get a user function by its label.
+
+**Parameters:**
+
+- `label`: The user function label
+
+**Returns:**
+
+- User function definition dictionary
+
+#### `await client.list_user_functions(tags: Optional[list] = None) -> list`
+
+List all user functions, optionally filtered by tags.
+
+**Parameters:**
+
+- `tags`: Optional list of tags to filter by
+
+**Returns:**
+
+- List of user function dictionaries
+
+#### `await client.update_user_function(label: str, user_function: dict) -> None`
+
+Update an existing user function.
+
+**Parameters:**
+
+- `label`: The user function label
+- `user_function`: Updated user function definition
+
+#### `await client.delete_user_function(label: str) -> None`
+
+Delete a user function by its label.
+
+**Parameters:**
+
+- `label`: The user function label
+
 ## Examples
 
 See the
@@ -398,6 +500,8 @@ for complete working examples:
 - `client_joins.py` - Join operations
 - `client_batch_operations.py` - Batch operations
 - `client_kv_operations.py` - Key-value operations
+- `client_chat_models.py` - Chat models API
+- `client_user_functions.py` - User functions API
 - And more...
 
 ## Development

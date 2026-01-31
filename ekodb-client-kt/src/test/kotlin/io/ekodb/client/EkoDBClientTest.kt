@@ -375,10 +375,78 @@ class EkoDBClientTest {
     fun `paginate handles page 0 as page 1`() = runBlocking {
         val mockEngine = createMockEngine("""[{"id": "1"}, {"id": "2"}]""")
         val client = createTestClient(mockEngine)
-        
+
         val result = client.paginate("users", 0, 10)
         assertNotNull(result)
         // Skip should be 0 for page 0
         assertEquals(2, result.size)
+    }
+
+    // ========================================================================
+    // User Functions Tests
+    // ========================================================================
+
+    @Test
+    fun `saveUserFunction returns ID`() = runBlocking {
+        val mockEngine = createMockEngine("""{"id": "uf_123"}""")
+        val client = createTestClient(mockEngine)
+        val userFunction = buildJsonObject {
+            put("label", "my_function")
+            put("name", "My Function")
+            put("parameters", buildJsonObject {})
+            put("functions", buildJsonArray {})
+        }
+        val result = client.saveUserFunction(userFunction)
+        assertEquals("uf_123", result)
+    }
+
+    @Test
+    fun `getUserFunction returns user function`() = runBlocking {
+        val mockEngine = createMockEngine("""{"label": "my_function", "name": "My Function", "id": "uf_123"}""")
+        val client = createTestClient(mockEngine)
+        val result = client.getUserFunction("my_function")
+        assertNotNull(result)
+        assertEquals("my_function", result["label"]?.jsonPrimitive?.content)
+    }
+
+    @Test
+    fun `listUserFunctions returns list`() = runBlocking {
+        val mockEngine = createMockEngine("""[{"label": "func_1", "name": "Function 1"}, {"label": "func_2", "name": "Function 2"}]""")
+        val client = createTestClient(mockEngine)
+        val result = client.listUserFunctions()
+        assertNotNull(result)
+        assertEquals(2, result.size)
+        assertEquals("func_1", result[0]["label"]?.jsonPrimitive?.content)
+    }
+
+    @Test
+    fun `listUserFunctions with tags returns filtered list`() = runBlocking {
+        val mockEngine = createMockEngine("""[{"label": "func_1", "name": "Function 1", "tags": ["data"]}]""")
+        val client = createTestClient(mockEngine)
+        val result = client.listUserFunctions(listOf("data"))
+        assertNotNull(result)
+        assertEquals(1, result.size)
+    }
+
+    @Test
+    fun `updateUserFunction succeeds`() = runBlocking {
+        val mockEngine = createMockEngine("""{"status": "updated"}""")
+        val client = createTestClient(mockEngine)
+        val userFunction = buildJsonObject {
+            put("label", "my_function")
+            put("name", "Updated Function")
+            put("parameters", buildJsonObject {})
+            put("functions", buildJsonArray {})
+        }
+        // Should not throw
+        client.updateUserFunction("my_function", userFunction)
+    }
+
+    @Test
+    fun `deleteUserFunction succeeds`() = runBlocking {
+        val mockEngine = createMockEngine("""{"status": "deleted"}""")
+        val client = createTestClient(mockEngine)
+        // Should not throw
+        client.deleteUserFunction("my_function")
     }
 }

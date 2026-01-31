@@ -4,6 +4,7 @@
 //! which is useful in multi-node deployments when you want to prevent data from being
 //! automatically replicated to other nodes.
 
+use ekodb_client::options::{InsertOptions, UpdateOptions, UpsertOptions};
 use ekodb_client::{Client, Record, Result};
 use std::env;
 
@@ -33,7 +34,10 @@ async fn main() -> Result<()> {
     // Insert with bypass_ripple
     println!("2. Insert with bypass_ripple:");
     let record2 = Record::new().field("name", "Product 2").field("price", 200);
-    let result2 = client.insert(collection, record2, Some(true)).await?;
+    let insert_opts = InsertOptions::new().bypass_ripple(true);
+    let result2 = client
+        .insert(collection, record2, Some(insert_opts))
+        .await?;
     println!("   Inserted with bypass_ripple: {:?}\n", result2);
 
     // Update with bypass_ripple
@@ -45,8 +49,9 @@ async fn main() -> Result<()> {
         };
 
         let update_record = Record::new().field("price", 150);
+        let update_opts = UpdateOptions::new().bypass_ripple(true);
         let result3 = client
-            .update(collection, &user_id, update_record, Some(true))
+            .update(collection, &user_id, update_record, Some(update_opts))
             .await?;
         println!("   Updated with bypass_ripple: {:?}\n", result3);
 
@@ -73,8 +78,9 @@ async fn main() -> Result<()> {
     let upsert_record = Record::new()
         .field("name", "Upsert Product")
         .field("price", 500);
+    let upsert_opts = UpsertOptions::new().bypass_ripple(true);
     let upsert_result = client
-        .upsert(collection, "custom-id", upsert_record, Some(true))
+        .upsert(collection, "custom-id", upsert_record, Some(upsert_opts))
         .await?;
     println!("   Upserted with bypass_ripple: {:?}\n", upsert_result);
 

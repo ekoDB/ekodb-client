@@ -1,4 +1,83 @@
-# Missing Client Features
+# Feature Parity Comparison Matrix (COMPLETED)
+
+All features below are now implemented across all client libraries (January
+2026).
+
+## Chat Models API
+
+- `getChatModels()` - Rust ✅ | Go ✅ | Python ✅ | TypeScript ✅ | JavaScript
+  ✅ | Kotlin ✅
+- `getChatModel(name)` - Rust ✅ | Go ✅ | Python ✅ | TypeScript ✅ |
+  JavaScript ✅ | Kotlin ✅
+- `getChatMessage(chatId, msgId)` - Rust ✅ | Go ✅ | Python ✅ | TypeScript ✅
+  | JavaScript ✅ | Kotlin ✅
+
+## User Functions API
+
+- `saveUserFunction()` - Rust ✅ | Go ✅ | Python ✅ | TypeScript ✅ |
+  JavaScript ✅ | Kotlin ✅
+- `getUserFunction()` - Rust ✅ | Go ✅ | Python ✅ | TypeScript ✅ | JavaScript
+  ✅ | Kotlin ✅
+- `listUserFunctions()` - Rust ✅ | Go ✅ | Python ✅ | TypeScript ✅ |
+  JavaScript ✅ | Kotlin ✅
+- `updateUserFunction()` - Rust ✅ | Go ✅ | Python ✅ | TypeScript ✅ |
+  JavaScript ✅ | Kotlin ✅
+- `deleteUserFunction()` - Rust ✅ | Go ✅ | Python ✅ | TypeScript ✅ |
+  JavaScript ✅ | Kotlin ✅
+
+## Collection Operations
+
+- `collectionExists()` - Rust ✅ | Go ✅ | Python ✅ | TypeScript ✅ |
+  JavaScript ✅ | Kotlin ✅
+- `countDocuments()` - Rust ✅ | Go ✅ | Python ✅ | TypeScript ✅ | JavaScript
+  ✅ | Kotlin ✅
+
+---
+
+## Completed Implementations - January 2026
+
+**Go Client:**
+
+- GetChatModels(), GetChatModel(name) - Chat Models API
+- CollectionExists(collection), CountDocuments(collection) - Collection
+  utilities
+- Unit tests: `client_test.go`
+- Integration examples: `examples/go/client_chat_models.go`,
+  `examples/go/client_collection_utils.go`
+
+**Python Client:**
+
+- get_chat_models(), get_chat_model(name), get_chat_message() - Chat Models API
+- save_user_function(), get_user_function(), list_user_functions(),
+  update_user_function(), delete_user_function() - User Functions API
+- collection_exists(), count_documents() - Collection utilities
+- Unit tests: `tests/test_chat_user_functions.py`
+- Integration examples: `examples/python/client_chat_models.py`,
+  `examples/python/client_user_functions.py`,
+  `examples/python/client_collection_utils.py`
+
+**TypeScript/JavaScript Client:**
+
+- getChatModels(), getChatModel(name), getChatMessage() - Chat Models API
+- saveUserFunction(), getUserFunction(), listUserFunctions(),
+  updateUserFunction(), deleteUserFunction() - User Functions API
+- collectionExists(), countDocuments() - Collection utilities
+- Unit tests: `src/client.test.ts` (17 new tests)
+- Integration examples: `examples/typescript/client_chat_models.ts`,
+  `examples/typescript/client_user_functions.ts`,
+  `examples/typescript/client_collection_utils.ts`
+
+**Kotlin Client:**
+
+- saveUserFunction(), getUserFunction(), listUserFunctions(),
+  updateUserFunction(), deleteUserFunction() - User Functions API
+- Unit tests: `EkoDBClientTest.kt` (6 new tests)
+
+---
+
+## Beforehand Findings (disregard for now)
+
+## Missing Client Features
 
 This document tracks ekoDB server features that are available via API but not
 yet exposed in client libraries.

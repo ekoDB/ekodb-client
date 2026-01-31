@@ -162,15 +162,34 @@ impl HttpClient {
     pub async fn insert(
         &self,
         collection: &str,
-        record: Record,
-        bypass_ripple: Option<bool>,
+        mut record: Record,
+        options: Option<crate::options::InsertOptions>,
         token: &str,
     ) -> Result<Record> {
-        let url_path = if let Some(bypass) = bypass_ripple {
-            format!("/api/insert/{}?bypass_ripple={}", collection, bypass)
-        } else {
-            format!("/api/insert/{}", collection)
-        };
+        // Add TTL to record if specified
+        if let Some(ref opts) = options {
+            if let Some(ref ttl) = opts.ttl {
+                record.insert("ttl".to_string(), serde_json::Value::String(ttl.clone()));
+            }
+        }
+
+        // Build URL with query parameters
+        let mut url_path = format!("/api/insert/{}", collection);
+        let mut params = vec![];
+
+        if let Some(ref opts) = options {
+            if let Some(bypass) = opts.bypass_ripple {
+                params.push(format!("bypass_ripple={}", bypass));
+            }
+            if let Some(ref tx_id) = opts.transaction_id {
+                params.push(format!("transaction_id={}", tx_id));
+            }
+        }
+
+        if !params.is_empty() {
+            url_path = format!("{}?{}", url_path, params.join("&"));
+        }
+
         let url = self.base_url.join(&url_path)?;
         let body = self.serialize(&url_path, &record)?;
 
@@ -263,14 +282,26 @@ impl HttpClient {
         collection: &str,
         id: &str,
         record: Record,
-        bypass_ripple: Option<bool>,
+        options: Option<crate::options::UpdateOptions>,
         token: &str,
     ) -> Result<Record> {
-        let url_path = if let Some(bypass) = bypass_ripple {
-            format!("/api/update/{}/{}?bypass_ripple={}", collection, id, bypass)
-        } else {
-            format!("/api/update/{}/{}", collection, id)
-        };
+        // Build URL with query parameters
+        let mut url_path = format!("/api/update/{}/{}", collection, id);
+        let mut params = vec![];
+
+        if let Some(ref opts) = options {
+            if let Some(bypass) = opts.bypass_ripple {
+                params.push(format!("bypass_ripple={}", bypass));
+            }
+            if let Some(ref tx_id) = opts.transaction_id {
+                params.push(format!("transaction_id={}", tx_id));
+            }
+        }
+
+        if !params.is_empty() {
+            url_path = format!("{}?{}", url_path, params.join("&"));
+        }
+
         let url = self.base_url.join(&url_path)?;
         let body = self.serialize(&url_path, &record)?;
 
@@ -1952,7 +1983,7 @@ impl HttpClient {
         user_function: crate::functions::UserFunction,
         token: &str,
     ) -> Result<String> {
-        let url = self.base_url.join("/api/user-functions")?;
+        let url = self.base_url.join("/api/functions")?;
 
         self.retry_policy
             .execute(|| async {
@@ -2019,9 +2050,7 @@ impl HttpClient {
         label: &str,
         token: &str,
     ) -> Result<crate::functions::UserFunction> {
-        let url = self
-            .base_url
-            .join(&format!("/api/user-functions/{}", label))?;
+        let url = self.base_url.join(&format!("/api/functions/{}", label))?;
 
         self.retry_policy
             .execute(|| async {
@@ -2045,7 +2074,7 @@ impl HttpClient {
         tags: Option<Vec<String>>,
         token: &str,
     ) -> Result<Vec<crate::functions::UserFunction>> {
-        let mut url = self.base_url.join("/api/user-functions")?;
+        let mut url = self.base_url.join("/api/functions")?;
 
         if let Some(tags) = tags {
             let tags_query = tags.join(",");
@@ -2075,9 +2104,7 @@ impl HttpClient {
         user_function: crate::functions::UserFunction,
         token: &str,
     ) -> Result<()> {
-        let url = self
-            .base_url
-            .join(&format!("/api/user-functions/{}", label))?;
+        let url = self.base_url.join(&format!("/api/functions/{}", label))?;
 
         self.retry_policy
             .execute(|| async {
@@ -2105,9 +2132,7 @@ impl HttpClient {
 
     /// Delete a UserFunction by label
     pub async fn delete_user_function(&self, label: &str, token: &str) -> Result<()> {
-        let url = self
-            .base_url
-            .join(&format!("/api/user-functions/{}", label))?;
+        let url = self.base_url.join(&format!("/api/functions/{}", label))?;
 
         self.retry_policy
             .execute(|| async {
