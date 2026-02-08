@@ -184,6 +184,9 @@ impl HttpClient {
             if let Some(ref tx_id) = opts.transaction_id {
                 params.push(format!("transaction_id={}", tx_id));
             }
+            if let Some(bypass_cache) = opts.bypass_cache {
+                params.push(format!("bypass_cache={}", bypass_cache));
+            }
         }
 
         if !params.is_empty() {
@@ -295,6 +298,9 @@ impl HttpClient {
             }
             if let Some(ref tx_id) = opts.transaction_id {
                 params.push(format!("transaction_id={}", tx_id));
+            }
+            if let Some(bypass_cache) = opts.bypass_cache {
+                params.push(format!("bypass_cache={}", bypass_cache));
             }
         }
 
