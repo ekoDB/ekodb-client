@@ -22,7 +22,7 @@ found 0 vulnerabilities
 ✅ [32mTypeScript client built![0m
 🧪 [36mRunning TypeScript client library examples...[0m
 
-added 1 package, removed 1 package, and audited 13 packages in 809ms
+added 1 package, removed 1 package, and audited 13 packages in 819ms
 
 3 packages are looking for funding
   run `npm fund` for details
@@ -32,23 +32,23 @@ found 0 vulnerabilities
 
 === Insert Document ===
 Inserted: {
-  id: 'ci7vx2TdZ_5DQx15cexi3YWL_M1RndSGfYHlRAkabX5IXi_RF0fLJnOYyPrfSJE9SlA5kxPuEQm60nLqAlrbag'
+  id: 'YNKv8xkytnEU7deWDpKJCxBGxWhjVYOvgZLDlZIgP2kyTLZ86ql0Ii2mIIAAhkyrg3oR94JtZDUYrFXA5i4GJQ'
 }
 
 === Find by ID ===
 Found: {
-  user_id: '550e8400-e29b-41d4-a716-446655440000',
-  price: 99.99,
+  name: 'Test Record',
   tags: [ 'tag1', 'tag2', 'tag3' ],
+  id: 'YNKv8xkytnEU7deWDpKJCxBGxWhjVYOvgZLDlZIgP2kyTLZ86ql0Ii2mIIAAhkyrg3oR94JtZDUYrFXA5i4GJQ',
   value: 42,
-  metadata: { key: 'value', nested: { deep: true } },
-  embedding: [ 0.1, 0.2, 0.3, 0.4, 0.5 ],
+  user_id: '550e8400-e29b-41d4-a716-446655440000',
   active: true,
-  created_at: '2026-01-28T14:44:00.341Z',
-  id: 'ci7vx2TdZ_5DQx15cexi3YWL_M1RndSGfYHlRAkabX5IXi_RF0fLJnOYyPrfSJE9SlA5kxPuEQm60nLqAlrbag',
+  price: 99.99,
+  created_at: '2026-02-08T19:53:29.501Z',
+  embedding: [ 0.1, 0.2, 0.3, 0.4, 0.5 ],
   categories: [ 'electronics', 'computers' ],
-  data: 'aGVsbG8gd29ybGQ=',
-  name: 'Test Record'
+  metadata: { key: 'value', nested: { deep: true } },
+  data: 'aGVsbG8gd29ybGQ='
 }
 
 === Extract Field Values (All Types) ===
@@ -57,7 +57,7 @@ Extracted values:
   value (Integer): 42
   active (Boolean): true
   price (Decimal): 99.99
-  created_at (DateTime): 2026-01-28T14:44:00.341Z
+  created_at (DateTime): 2026-02-08T19:53:29.501Z
   user_id (UUID): 550e8400-e29b-41d4-a716-446655440000
   tags (Array): [ 'tag1', 'tag2', 'tag3' ]
   metadata (Object): { key: 'value', nested: { deep: true } }
@@ -65,18 +65,18 @@ Extracted values:
   categories (Set): [ 'electronics', 'computers' ]
   data (Bytes): 11 bytes
 Plain record: {
-  user_id: '550e8400-e29b-41d4-a716-446655440000',
-  price: 99.99,
+  name: 'Test Record',
   tags: [ 'tag1', 'tag2', 'tag3' ],
+  id: 'YNKv8xkytnEU7deWDpKJCxBGxWhjVYOvgZLDlZIgP2kyTLZ86ql0Ii2mIIAAhkyrg3oR94JtZDUYrFXA5i4GJQ',
   value: 42,
-  metadata: { key: 'value', nested: { deep: true } },
-  embedding: [ 0.1, 0.2, 0.3, 0.4, 0.5 ],
+  user_id: '550e8400-e29b-41d4-a716-446655440000',
   active: true,
-  created_at: '2026-01-28T14:44:00.341Z',
-  id: 'ci7vx2TdZ_5DQx15cexi3YWL_M1RndSGfYHlRAkabX5IXi_RF0fLJnOYyPrfSJE9SlA5kxPuEQm60nLqAlrbag',
+  price: 99.99,
+  created_at: '2026-02-08T19:53:29.501Z',
+  embedding: [ 0.1, 0.2, 0.3, 0.4, 0.5 ],
   categories: [ 'electronics', 'computers' ],
-  data: 'aGVsbG8gd29ybGQ=',
-  name: 'Test Record'
+  metadata: { key: 'value', nested: { deep: true } },
+  data: 'aGVsbG8gd29ybGQ='
 }
 
 === Find with Query ===
@@ -84,18 +84,18 @@ Found documents: 1
 
 === Update Document ===
 Updated: {
+  user_id: { type: 'String', value: '550e8400-e29b-41d4-a716-446655440000' },
+  id: 'YNKv8xkytnEU7deWDpKJCxBGxWhjVYOvgZLDlZIgP2kyTLZ86ql0Ii2mIIAAhkyrg3oR94JtZDUYrFXA5i4GJQ',
+  created_at: { type: 'DateTime', value: '2026-02-08T19:53:29.501Z' },
+  active: { type: 'Boolean', value: true },
+  tags: { value: [ 'tag1', 'tag2', 'tag3' ], type: 'Array' },
+  embedding: { type: 'Array', value: [ 0.1, 0.2, 0.3, 0.4, 0.5 ] },
+  value: { type: 'Integer', value: 100 },
   categories: { type: 'Array', value: [ 'electronics', 'computers' ] },
   name: { value: 'Updated Record', type: 'String' },
-  active: { value: true, type: 'Boolean' },
-  created_at: { type: 'DateTime', value: '2026-01-28T14:44:00.341Z' },
-  embedding: { value: [ 0.1, 0.2, 0.3, 0.4, 0.5 ], type: 'Array' },
-  value: { type: 'Integer', value: 100 },
   data: { type: 'String', value: 'aGVsbG8gd29ybGQ=' },
-  tags: { type: 'Array', value: [ 'tag1', 'tag2', 'tag3' ] },
-  price: { value: 99.99, type: 'Float' },
-  user_id: { type: 'String', value: '550e8400-e29b-41d4-a716-446655440000' },
   metadata: { type: 'Object', value: { key: 'value', nested: [Object] } },
-  id: 'ci7vx2TdZ_5DQx15cexi3YWL_M1RndSGfYHlRAkabX5IXi_RF0fLJnOYyPrfSJE9SlA5kxPuEQm60nLqAlrbag'
+  price: { value: 99.99, type: 'Float' }
 }
 
 === Delete Document ===
@@ -108,7 +108,7 @@ Deleted document
 ✓ Client created
 
 === Inserting Test Data ===
-✓ Inserted test record: S-q1D_q2LxoUZFK6MyEzfYFJNxUK99NC3qYqp6pmG-YLXJzQCrnJElIkz8NjSs5Uf1V-Pu-Tbzr3QCaYhCAfiw
+✓ Inserted test record: hugcK1FYNpUEaVMVboZDPy51_uqW_n-ksd1nWur1xohJ9SDkA2XlX5Muo-nVSELtp5-yllsm3Rteh5g50AywCQ
 
 === Connecting to WebSocket ===
 ✓ WebSocket connected
@@ -140,11 +140,11 @@ Deleted document
 ✓ Client created
 
 === Create Collection (via insert) ===
-Collection created with first record: AKE90m95pJdE6xL7fZqgGoxhj7-HQ5VO5iUkE3JOwre4AQuPI6z4WVwHfUNoiMsDx6fh2rHcBk1QQ5zNNMvAXw
+Collection created with first record: ge1AVuLES4AZVRT2HqZ_U-C2xAxXQoCpWUCSOLalIBY9EHqYQk-angJcBcZzOCPcbhvTcx_-8dH24lqhgVxjmA
 
 === List Collections ===
 Total collections: 21
-Sample collections: test_collection,schema_employees_client_py,schema_products_client_go,chat_messages__ek0_testing,schema_users_client_py
+Sample collections: chat_configurations__ek0_testing,schema_employees_client_go,schema_products_client_go,schema_documents_client_py,ttl_cache
 
 === Count Documents ===
 Document count: 1
@@ -199,11 +199,11 @@ Total keys in store: 12
 ✓ Client created
 
 === Setup: Creating Test Accounts ===
-Created Alice: $1000 - ID: k6qDzVoPhug6fneX53d0Kb4VjWd6GkjINwQYRQ5us7UAx0YXzgd1VdJfbmN_Fo4Pc9LVKxHYkmBYAcav0xxkMw
-Created Bob: $500 - ID: MBuf0lMf072xHQ8GJWcTdvlBm1uyPXK4o3dMlJMgmlSCs-bQgBydmOGLhn90eUOwS2ofGglfCS2IMYJiVGJL7w
+Created Alice: $1000 - ID: Wx3tHUOQEnUKHq49UFlByGEp1-Pcut3UEmuNmBkGkjRS024E1dHtE6_tu-TD__doFqSl8W73TSz-8EY6lvVnVg
+Created Bob: $500 - ID: 2_gZyXRN2krhFCvXarkWnojG7k0A0y6brsUgqb8z5rdOiA2E2ZA8lZqdtnvfS6wMiGLBwMlc-sl46rFLpTtS8Q
 
 === Example 1: Begin Transaction ===
-Transaction ID: e8b7f3e1-00de-41a1-9fc9-884b6196baab
+Transaction ID: c9e41230-e72a-49ec-868b-3841d08a5423
 
 === Example 2: Operations within Transaction ===
 Updated Alice: $1000 → $800 (simulated)
@@ -217,7 +217,7 @@ Operations: 0
 ✓ Transaction committed
 
 === Example 5: Rollback Demo ===
-New transaction: f262b0cc-0b9b-4a4b-8d9f-37f07a4792f5
+New transaction: 0788f3d9-2664-4a15-b17a-23ecf5520879
 Status before rollback: Active
 ✓ Transaction rolled back
 
@@ -265,27 +265,27 @@ Setting up test data...
 
 1. Basic full-text search:
 Found 2 results
-  1. Score: 25.740, Matched: email.value, name.value, email, name
+  1. Score: 25.740, Matched: email, name.value, email.value, name
   2. Score: 12.540, Matched: name, name.value
 
 2. Fuzzy search (typo tolerance):
 Found 4 results with fuzzy matching
-  1. Score: 26.400, Matched: bio.value, title.value, title, bio
-  2. Score: 26.400, Matched: bio, bio.value, title, title.value
-  3. Score: 26.400, Matched: title.value, title, bio.value, bio
-  4. Score: 26.400, Matched: title, title.value, bio.value, bio
+  1. Score: 26.400, Matched: title, bio.value, title.value, bio
+  2. Score: 26.400, Matched: bio, bio.value, title.value, title
+  3. Score: 26.400, Matched: title, bio, bio.value, title.value
+  4. Score: 26.400, Matched: bio.value, bio, title, title.value
 
 3. Search with field weights:
 Found 4 results with weighted fields
-  1. Score: 39.600, Matched: title.value, title, bio, bio.value
+  1. Score: 39.600, Matched: bio.value, bio, title, title.value
   2. Score: 39.600, Matched: title, bio.value, title.value, bio
-  3. Score: 39.600, Matched: title.value, bio.value, title, bio
-  4. Score: 39.600, Matched: title, title.value, bio, bio.value
+  3. Score: 39.600, Matched: bio, title, title.value, bio.value
+  4. Score: 39.600, Matched: title, bio, title.value, bio.value
 
 4. Search with minimum score threshold:
 Found 2 results with score >= 0.3
   1. Score: 13.200, Matched: bio, bio.value
-  2. Score: 13.200, Matched: bio.value, bio
+  2. Score: 13.200, Matched: bio, bio.value
 
 5. Search with stemming and exact match boosting:
 Found 1 results (matches: work, working, worked)
@@ -293,19 +293,19 @@ Found 1 results (matches: work, working, worked)
 
 6. Vector search (semantic search):
 Found 3 semantically similar documents
-  1. Score: 0.768, Matched: 
-  2. Score: 0.756, Matched: 
-  3. Score: 0.749, Matched: 
+  1. Score: 0.771, Matched: 
+  2. Score: 0.752, Matched: 
+  3. Score: 0.740, Matched: 
 
 7. Hybrid search (text + vector):
 Found 3 results using hybrid search (text + vector)
-  1. Score: 2.707, Matched: title, title.value, content, content.value
-  2. Score: 1.502, Matched: content, title, title.value, content.value
-  3. Score: 0.299, Matched: 
+  1. Score: 2.709, Matched: title.value, title, content.value, content
+  2. Score: 1.501, Matched: title, title.value, content, content.value
+  3. Score: 0.296, Matched: 
 
 8. Case-sensitive search:
 Found 1 results (case-sensitive)
-  1. Score: 26.400, Matched: skills, bio.value, skills.value, bio
+  1. Score: 26.400, Matched: bio, skills, bio.value, skills.value
 
 === Cleanup ===
 ✅ Deleted test collections
@@ -369,10 +369,10 @@ Found 2 users with example.com emails:
 ✓ Client created
 
 === Insert Document with TTL (1 hour) ===
-✓ Inserted document: 06ExiMSSeBl56OHpFpZOrfGULARgHv64qkzoiUOdm0zeUXrj4ag4TuDyOZtx7BudoaxyDljiQXC0wer3a7XA_A
+✓ Inserted document: 5gP9B5BbHZJjz777er_fUeBk3oOb-EK8PWOvpeAr-vEOGovVd6AZOZYA59hH6fLlQ9LMF6oCdZ4oNCo6cH5Cyg
 
 === Insert Document with TTL (5 minutes) ===
-✓ Inserted document: 8svFAU4HHyzKYmRK_DoEWBD853V4PY88OmbGEgqW8slaxg3LaK8l_QEbpjU-qAG4eONFc5aIrSAqnyTtw5U_MA
+✓ Inserted document: Vma2QS0ZKz6kOb1FtsSi3q-Vd_F7NyspqpbIW8nPG-S3nqJN2Xj0iYjKj3q8pQUQ5ljDmoZKwyH5OYF0aHbYeg
 
 === Query Documents ===
 ✓ Found 2 documents with TTL
@@ -392,7 +392,7 @@ Found 2 users with example.com emails:
 ✓ Client created
 
 === Insert Test Data with TTL ===
-✓ Inserted document with TTL: r1PwsgP8YOQco2edtrfIct8rUbAAKqv1RBA_OrNOdyKyba8mdpfl-CJebgMKH-kPpP_sRgkU1YhkakVBlw4QrQ
+✓ Inserted document with TTL: XUAtCl5Ox_ht9O3OZwmM3c4Jac2c4N8R476agXQ2_AbUWeYk2Xiq5oLWxqtKKR_avltUDKwOB3Y2fwogQGlVZg
 
 === Query via WebSocket ===
 ✓ WebSocket connected
@@ -408,34 +408,34 @@ Found 2 users with example.com emails:
 === ekoDB as Edge Cache - Simple Example ===
 
 Creating edge cache function...
-✓ Edge cache script created: c3EHnUxJT89-NEAneyooO3hd2dIaLll0z_WgAAiIJZZxgkLLZA5vHJfrdVzRHTLst4dSqyq0IR7Qq9Z7E_g4Jw
+✓ Edge cache script created: Lz066zJ53tm0OTvSvWGJnxTRiokc3fYZVspLlngqVsDvdwzPiOZQ-G-iOpAPqMq8kx4GLTlSNQlVXJ2CEPO9Ag
 
 Call 1: Cache miss (fetches from API)
-Response time: 65ms
+Response time: 70ms
 Result: {
   "records": [
     {
       "value": {
-        "address": {
-          "city": "Gwenborough",
-          "street": "Kulas Light",
-          "zipcode": "92998-3874",
-          "geo": {
-            "lng": "81.1496",
-            "lat": "-37.3159"
-          },
-          "suite": "Apt. 556"
+        "website": "hildegard.org",
+        "email": "Sincere@april.biz",
+        "company": {
+          "catchPhrase": "Multi-layered client-server neural-net",
+          "name": "Romaguera-Crona",
+          "bs": "harness real-time e-markets"
         },
         "name": "Leanne Graham",
         "phone": "1-770-736-8031 x56442",
-        "username": "Bret",
-        "email": "Sincere@april.biz",
-        "website": "hildegard.org",
         "id": 1,
-        "company": {
-          "name": "Romaguera-Crona",
-          "bs": "harness real-time e-markets",
-          "catchPhrase": "Multi-layered client-server neural-net"
+        "username": "Bret",
+        "address": {
+          "city": "Gwenborough",
+          "street": "Kulas Light",
+          "suite": "Apt. 556",
+          "geo": {
+            "lat": "-37.3159",
+            "lng": "81.1496"
+          },
+          "zipcode": "92998-3874"
         }
       }
     }
@@ -450,31 +450,31 @@ Result: {
 }
 
 Call 2: Cache hit (served from ekoDB)
-Response time: 4ms (16.3x faster!)
+Response time: 4ms (17.5x faster!)
 Result: {
   "records": [
     {
       "value": {
-        "address": {
-          "city": "Gwenborough",
-          "street": "Kulas Light",
-          "zipcode": "92998-3874",
-          "geo": {
-            "lng": "81.1496",
-            "lat": "-37.3159"
-          },
-          "suite": "Apt. 556"
+        "website": "hildegard.org",
+        "email": "Sincere@april.biz",
+        "company": {
+          "catchPhrase": "Multi-layered client-server neural-net",
+          "name": "Romaguera-Crona",
+          "bs": "harness real-time e-markets"
         },
         "name": "Leanne Graham",
         "phone": "1-770-736-8031 x56442",
-        "username": "Bret",
-        "email": "Sincere@april.biz",
-        "website": "hildegard.org",
         "id": 1,
-        "company": {
-          "name": "Romaguera-Crona",
-          "bs": "harness real-time e-markets",
-          "catchPhrase": "Multi-layered client-server neural-net"
+        "username": "Bret",
+        "address": {
+          "city": "Gwenborough",
+          "street": "Kulas Light",
+          "suite": "Apt. 556",
+          "geo": {
+            "lat": "-37.3159",
+            "lng": "81.1496"
+          },
+          "zipcode": "92998-3874"
         }
       }
     }
@@ -505,21 +505,21 @@ Result: {
 
 📝 Example 1: Simple Query Script
 
-✅ Script saved: JRnP5elUIQzugmAsVDWh0iNXPIDXeOmi0QX6k9R0V5Lm1B30yvXxk_D0T3xOrSI3N7gtQ-HcCKa37-wOnkRYvA
+✅ Script saved: p68CL5ePxCPAwMthETNLLLRt8OJKLRC0Ek7bfatiozZKMSz3eN5R4YlzMDZOSJzom20g3p07UwLdUj7DBLCGvg
 📊 Found 15 active users
 
 📝 Example 2: Parameterized Script
 
-✅ Script saved: uGBf4a5UHd4829_uzPPy0sq3JD7VpW20SUSM8KqnBkRjwir33jXOxPOJf1yYj25XSxIcVUuKJJZ4M0JskLYLcg
+✅ Script saved: sMNjLQP4CDHGwKcn0dtVm-0_aYT-OYZ6pRcMLgq0wWl7DuUBQUQ2jvUA_yIZE_1CRBN3fQmcnH9bpOOJwGmq9A
 📊 Found 15 users (limited)
 
 📝 Example 3: Aggregation Script
 
-✅ Script saved: 9cB8aSdOHUWGetgUrOUOwdU3GjoI17fR51mnDeP2x75P7lg7XV1tcMG5Cf6HlWqK2GJc5AjCH_Ff1oM37CPMiA
+✅ Script saved: I1RihZjAKB9xgbMKE8wKLGbvclspJdDO98FEmMZc4zqptu_EhP45kSiM-RF4wgD7YtI64Yy2C4zuLWmrZZ7SJA
 📊 Statistics: 3 groups
+   {"status":"active","count":5,"avg_score":60}
    {"count":5,"avg_score":50,"status":"inactive"}
-   {"avg_score":60,"status":"active","count":5}
-   {"status":"null","count":5,"avg_score":60}
+   {"avg_score":60,"status":"null","count":5}
 
 📝 Example 4: Script Management
 
@@ -546,7 +546,7 @@ Building reusable functions that call each other...
 
 📊 Result from composed function:
    Records: 1
-   Name: {"value":"User 1","type":"String"}
+   Name: {"type":"String","value":"User 1"}
    Department: {"type":"String","value":"engineering"}
 
 🎯 Key Benefit: fetch_user can be reused by ANY function!
@@ -560,29 +560,33 @@ Using KV cache + CallFunction for fast cache-aside pattern...
 ✅ Saved SWR function using composition: swr_user
 
 First call (cache miss - will fetch from API):
-   ⏱️  Duration: 2ms
+   ⏱️  Duration: 3ms
    📊 Records: 1
    📦 Data: {
   "value": {
+    "email": "Sincere@april.biz",
     "name": "Leanne Graham",
-    "phone": "1-770-736-8031 x56442",
-    "company": {
-      "name": "Romaguera-Crona",
-      "catchPhrase": "Multi-layered client-server neural-net",
-     ...
+    "username": "Bret",
+    "address": {
+      "street": "Kulas Light",
+      "geo": {
+        "lat": "-37.3159",
+        ...
 
 Second call (cache hit - from cache):
    ⏱️  Duration: 2ms
    📊 Records: 1
    📦 Data: {
   "value": {
+    "email": "Sincere@april.biz",
     "name": "Leanne Graham",
-    "phone": "1-770-736-8031 x56442",
-    "company": {
-      "name": "Romaguera-Crona",
-      "catchPhrase": "Multi-layered client-server neural-net",
-     ...
-   🚀 Cache speedup: 1.0x faster!
+    "username": "Bret",
+    "address": {
+      "street": "Kulas Light",
+      "geo": {
+        "lat": "-37.3159",
+        ...
+   🚀 Cache speedup: 1.5x faster!
 
 📝 Example 3: Multi-Level Function Composition
 
@@ -613,10 +617,10 @@ Building complex workflows from small, reusable pieces...
 
 📝 Example 1: FindAll + Group (Simple Aggregation)
 
-✅ Script saved: 5RMPkbeOq8jlMAF1-45fGHlXJL1unl8hKnHI_FwnMNx3YuR_eu2pMZGN9NGgQB-vzAu_2YioCYBtkU0n5MkSCg
+✅ Script saved: 7UNAXdiMWryJVCOdiAyukX4n22lY7R4NnLoOpNDBdqpa4E887zGbq4uh_WPjQXOio4hVGVqtbNJs5AWmMoDbYA
 📊 Found 2 product groups
+   {"count":2,"category":"Furniture","avg_price":474}
    {"avg_price":575.6666666666666,"count":3,"category":"Electronics"}
-   {"category":"Furniture","avg_price":474,"count":2}
 ⏱️  Execution time: 0ms
 
 📝 Example 2: Simple Product Listing
@@ -630,7 +634,7 @@ Building complex workflows from small, reusable pieces...
 ✅ Script saved
 📊 Found 2 categories
    {"count":3,"category":"Electronics"}
-   {"count":2,"category":"Furniture"}
+   {"category":"Furniture","count":2}
 ⏱️  Execution time: 0ms
 
 📝 Example 4: High Rating Products
@@ -672,12 +676,12 @@ Building complex workflows from small, reusable pieces...
 
 📝 Example 1: Inserting Records with Wrapped Types
 
-✅ Inserted order: hkOIPBbT-cXBOYS8n2qsXdlyCpXqSWWaA_GETJ2umF_cYhGQ3GCoV78APBe9EUAKRJ06Cta9IvpRBzm88Ihmhw
+✅ Inserted order: bGCkOWcHvogdOy4bb67lWwrwtBw-G_lbJfYUWUslSDFZhAvWH84DB8WmvaMzdrzKjV3g54b9LG5jdz_DO6TykA
 ✅ Inserted 2 products with wrapped types
 
 📝 Example 2: Script with Wrapped Type Parameters
 
-✅ Script saved: nOlh2qEL1cfTZi8nXtpqGuH6dYpH-IdP_E7D0h9sMI42ecrnbcqGi7i08Xwuib9p2C5sHzwHwsZVm6T4zBt4hQ
+✅ Script saved: B7VXn5M6EZPmeQer8eZQVStDJPsqULnjWEPN5ikPIeO38zcYKjDGnscOwqtaArW6qd_oMycQQ7Z3qnmCX40Iqg
 📊 Created order via script
 ⏱️  Execution time: 0ms
 
@@ -691,7 +695,7 @@ Building complex workflows from small, reusable pieces...
 
 📝 Example 4: KV Operations in Scripts
 
-✅ Script saved: 6DMftbEydx8ZpCMVOXAM7FRtz7UM1Lb2J077nw7wC-GXUBmWEVd56o4PmRpdpUBG1u-siUqYCjQMbn81v4hSYg
+✅ Script saved: NhhrTqUBfToOlS0xbiBBVbNnP0IORzrCuR8FzgBXhRg2MVhT8Am91y1InnSFduvrlyn-Bg0DUWkSdjcB1Oz1-A
 📊 Cached and retrieved product data
 ⏱️  Execution time: 0ms
 
@@ -703,7 +707,7 @@ Building complex workflows from small, reusable pieces...
 
 📝 Example 6: Combined Wrapped Types + KV Script
 
-✅ Script saved: iSgbAgSy5jE0jwXvlQBK-14YDq7o-0P464-tRYu7NJjZFPzYMNjZbBCKuqSSnMsVHPYyuFCPWzy4ZuxfoEC8Hg
+✅ Script saved: nfKIbMnqPxVCIayIZYopOP9rwIHjw2Jlab0BWnWSZo_Nm_kNhpjQ4pUBX6s0IkqxXhIfIgHkGuW7oZ3iCPD1Cw
 📊 Processed order with caching
 ⏱️  Stages executed: 3
 ⏱️  Execution time: 0ms
@@ -722,33 +726,33 @@ Building complex workflows from small, reusable pieces...
 === ekoDB SWR (Stale-While-Revalidate) Pattern ===
 
 Step 1: Create SWR function that acts as edge cache
-✓ Created SWR script: fetch_api_user (LTGhrYAfpsPxnSeSIJA0Bqbk4Yw9lXcJr_OQ15tAsYlHWy7_pAPDdpMfe0Qj984LprXY7xI12oB_CMdbTNgbZQ)
+✓ Created SWR script: fetch_api_user (3yVbND_OUAnIXJAlHNK1Rr3SdHtlgNkZy5H_dKXWiUeZ8lMzTmK_aJEkdpOPiR88BZR-sEqag2HN5pMf87hRuw)
 
 Step 2: First call - Cache miss, fetches from API
 Result: {
   "records": [
     {
       "value": {
-        "email": "Sincere@april.biz",
         "name": "Leanne Graham",
+        "username": "Bret",
+        "company": {
+          "name": "Romaguera-Crona",
+          "catchPhrase": "Multi-layered client-server neural-net",
+          "bs": "harness real-time e-markets"
+        },
+        "id": 1,
         "address": {
-          "zipcode": "92998-3874",
           "geo": {
             "lng": "81.1496",
             "lat": "-37.3159"
           },
+          "suite": "Apt. 556",
           "city": "Gwenborough",
           "street": "Kulas Light",
-          "suite": "Apt. 556"
+          "zipcode": "92998-3874"
         },
-        "id": 1,
         "phone": "1-770-736-8031 x56442",
-        "company": {
-          "name": "Romaguera-Crona",
-          "bs": "harness real-time e-markets",
-          "catchPhrase": "Multi-layered client-server neural-net"
-        },
-        "username": "Bret",
+        "email": "Sincere@april.biz",
         "website": "hildegard.org"
       }
     }
@@ -769,26 +773,26 @@ Result (cached): {
   "records": [
     {
       "value": {
-        "email": "Sincere@april.biz",
         "name": "Leanne Graham",
+        "username": "Bret",
+        "company": {
+          "name": "Romaguera-Crona",
+          "catchPhrase": "Multi-layered client-server neural-net",
+          "bs": "harness real-time e-markets"
+        },
+        "id": 1,
         "address": {
-          "zipcode": "92998-3874",
           "geo": {
             "lng": "81.1496",
             "lat": "-37.3159"
           },
+          "suite": "Apt. 556",
           "city": "Gwenborough",
           "street": "Kulas Light",
-          "suite": "Apt. 556"
+          "zipcode": "92998-3874"
         },
-        "id": 1,
         "phone": "1-770-736-8031 x56442",
-        "company": {
-          "name": "Romaguera-Crona",
-          "bs": "harness real-time e-markets",
-          "catchPhrase": "Multi-layered client-server neural-net"
-        },
-        "username": "Bret",
+        "email": "Sincere@april.biz",
         "website": "hildegard.org"
       }
     }
@@ -806,71 +810,71 @@ Result (cached): {
 === Advanced: SWR with Data Enrichment ===
 
 Creating product enrichment function...
-✓ Created enrichment script: fetch_product_with_reviews (euuKVNsPf7EQIzZBoE7QL_lQJVuXp5PIzZKcQmG6cKZirMljSvOx94J9-AfXedW5dHcxBMHRWOPRucH4C5vHjw)
+✓ Created enrichment script: fetch_product_with_reviews (f1HZQKJcHsfd3cr9a91vW09t5fVdqsTcq1m4dA68VxXg8IwPTu9y1Vu0zPF-6nilM2rE0mCg__bmBYQVVqx5ow)
 
 Step 4: Call enrichment function - Fetches from 2 APIs + stores merged result
 Enriched data: {
   "records": [
     {
       "value": {
-        "warrantyInformation": "1 week warranty",
-        "minimumOrderQuantity": 48,
-        "returnPolicy": "No return policy",
-        "thumbnail": "https://cdn.dummyjson.com/product-images/beauty/essence-mascara-lash-princess/thumbnail.webp",
-        "description": "The Essence Mascara Lash Princess is a popular mascara known for its volumizing and lengthening effects. Achieve dramatic lashes with this long-lasting and cruelty-free formula.",
         "images": [
           "https://cdn.dummyjson.com/product-images/beauty/essence-mascara-lash-princess/1.webp"
         ],
+        "minimumOrderQuantity": 48,
+        "category": "beauty",
+        "description": "The Essence Mascara Lash Princess is a popular mascara known for its volumizing and lengthening effects. Achieve dramatic lashes with this long-lasting and cruelty-free formula.",
+        "rating": 2.56,
+        "availabilityStatus": "In Stock",
         "reviews": [
           {
-            "reviewerName": "Eleanor Collins",
             "comment": "Would not recommend!",
-            "date": "2025-04-30T09:41:02.053Z",
             "reviewerEmail": "eleanor.collins@x.dummyjson.com",
+            "reviewerName": "Eleanor Collins",
+            "date": "2025-04-30T09:41:02.053Z",
             "rating": 3
           },
           {
             "comment": "Very satisfied!",
-            "reviewerName": "Lucas Gordon",
             "date": "2025-04-30T09:41:02.053Z",
             "reviewerEmail": "lucas.gordon@x.dummyjson.com",
-            "rating": 4
+            "rating": 4,
+            "reviewerName": "Lucas Gordon"
           },
           {
-            "reviewerName": "Eleanor Collins",
+            "rating": 5,
             "comment": "Highly impressed!",
             "reviewerEmail": "eleanor.collins@x.dummyjson.com",
-            "rating": 5,
+            "reviewerName": "Eleanor Collins",
             "date": "2025-04-30T09:41:02.053Z"
           }
         ],
-        "discountPercentage": 10.48,
-        "rating": 2.56,
-        "title": "Essence Mascara Lash Princess",
-        "meta": {
-          "barcode": "5784719087687",
-          "qrCode": "https://cdn.dummyjson.com/public/qr-code.png",
-          "createdAt": "2025-04-30T09:41:02.053Z",
-          "updatedAt": "2025-04-30T09:41:02.053Z"
-        },
-        "category": "beauty",
         "price": 9.99,
+        "discountPercentage": 10.48,
+        "id": 1,
+        "stock": 99,
+        "title": "Essence Mascara Lash Princess",
+        "warrantyInformation": "1 week warranty",
+        "meta": {
+          "updatedAt": "2025-04-30T09:41:02.053Z",
+          "qrCode": "https://cdn.dummyjson.com/public/qr-code.png",
+          "barcode": "5784719087687",
+          "createdAt": "2025-04-30T09:41:02.053Z"
+        },
+        "weight": 4,
+        "thumbnail": "https://cdn.dummyjson.com/product-images/beauty/essence-mascara-lash-princess/thumbnail.webp",
+        "returnPolicy": "No return policy",
+        "brand": "Essence",
+        "dimensions": {
+          "height": 13.08,
+          "width": 15.14,
+          "depth": 22.99
+        },
+        "shippingInformation": "Ships in 3-5 business days",
         "sku": "BEA-ESS-ESS-001",
         "tags": [
           "beauty",
           "mascara"
-        ],
-        "dimensions": {
-          "width": 15.14,
-          "depth": 22.99,
-          "height": 13.08
-        },
-        "shippingInformation": "Ships in 3-5 business days",
-        "availabilityStatus": "In Stock",
-        "id": 1,
-        "weight": 4,
-        "brand": "Essence",
-        "stock": 99
+        ]
       }
     }
   ],
@@ -927,22 +931,22 @@ Enriched data: {
 Example 1: Basic Native SWR
 ────────────────────────────────────────────────────────────────────────────────
 Single function replaces KvGet → If → HttpRequest → KvSet pipeline
-✓ Created native SWR script: github_user_native (uiKY7npk5zURD0gsWZ2n0M82TxRbhemklX1ZOq7dq98yGINuAjQViJhQnUKnk82sLD_HxM6wf832bn4prp97Dw)
+✓ Created native SWR script: github_user_native (N_Amc4NLWY0QQMGivDAtlsJTaaoTvd17B5_AvxS3fDayQPkcvb_hYgv5RAcShWsiWFcWnBw69OhbxISoo-qciw)
 
 First call (cache miss - will fetch from GitHub API):
-  Response time: 3ms
+  Response time: 6ms
   Records returned: 1
 
 Second call (cache hit - instant from KV store):
   Response time: 3ms
-  Speedup: 1.0x faster 🚀
+  Speedup: 2.0x faster 🚀
   Records returned: 1
 
 
 Example 2: SWR with Built-in Audit Trail
 ────────────────────────────────────────────────────────────────────────────────
 Optional collection parameter for automatic request logging
-✓ Created SWR script with audit trail: product_swr_audit (g3SK_R59OWmbqdb45ymz5gOohqkg_qj62OSx__-k3vV1hA3ER3NW8U0Qhk0qlhL8ZuU--sgmTjsEtyU0q36rxA)
+✓ Created SWR script with audit trail: product_swr_audit (36P7zSYlduTJx1GlFw-Tr5zRcz4fZ5QribVErVbYpIkmEG6cCBRssU04UIPzCXcT1GVx4cmhZjLG5rqrhOIxJA)
 
 Fetching product (will create audit trail entry):
   ✓ Product fetched and cached
@@ -953,7 +957,7 @@ Fetching product (will create audit trail entry):
 Example 3: SWR in Multi-Function Pipeline
 ────────────────────────────────────────────────────────────────────────────────
 Fetch external data → Process → Store in collection
-✓ Created enrichment pipeline: user_enrichment_pipeline (qHrBhMmHImIXlqsBWDOK7HBh2S37y-4yZXm2g_De5Wody9LOft6VYtV7qaGk8Bj2qlAq_czTkCCQK_Lt1VDivg)
+✓ Created enrichment pipeline: user_enrichment_pipeline (8IkLsH9xNPDSGP9JytIKLpO2aQ63FU9hYhzTw4WdL3RMTugea_DDUJlvvc1velm4CpsaOaLydyrIck-CmE5DQQ)
 
 Running pipeline:
   ✓ Data fetched from API (cached 30m)
@@ -964,7 +968,7 @@ Running pipeline:
 Example 4: Dynamic TTL Configuration
 ────────────────────────────────────────────────────────────────────────────────
 TTL as parameter - supports duration strings, integers, ISO timestamps
-✓ Created dynamic TTL script: flexible_cache (xotD79c1al16opihe8eQHMOK0RbgoDZIPdnA5vobLPk6mhlvpA63HDcF6y_Nv2n29v_aKZblWawVP-9iKSIdWQ)
+✓ Created dynamic TTL script: flexible_cache (qjO95Y7LJGYqQvK-8ZYl8SUOEh51CG-F-lLCu0q3Zn4-I7_PBSY1C95QovLWvxwT85VKq9mHkR0Lk204GewTMw)
   ✓ Cached with TTL: 5m (5 minutes)
   ✓ Cached with TTL: 1h (1 hour)
   ✓ Cached with TTL: 30s (30 seconds)
@@ -1002,8 +1006,8 @@ Result:         60% fewer functions, cleaner code, same behavior 🎯
 
 ✅ Script saved
 📊 Category breakdown:
+   {"category":"Electronics","count":5,"avg_price":367}
    {"avg_price":365.6666666666667,"category":"Furniture","count":3}
-   {"category":"Electronics","avg_price":367,"count":5}
 ⏱️  Execution time: 0ms
 
 🧹 Cleaning up...
@@ -1019,13 +1023,14 @@ Result:         60% fewer functions, cleaner code, same behavior 🎯
 
 ✅ Chat script saved
 🤖 AI Response:
-   Vector databases have several benefits including:
+   Vector databases offer several benefits including:
 
-1. Precise Representation: They can represent data more precisely, including complex structures like points, lines, and polygons.
-2. Scalability: They allow for easy scaling without loss of detail or accuracy.
-3. Topology: They support topological analysis including adjacency, connectivity, and proximity.
-4. Data Integration: They enable integration of various data types and sources.
-5. Flexibility: They offer flexibility in terms of data manipulation and querying.
+1. High Accuracy: They provide more precise and detailed data representation.
+2. Scalability: They allow for easy scaling without losing data quality.
+3. Flexibility: They support various types of spatial data such as points, lines, and polygons.
+4. Data Integrity: They maintain data consistency and accuracy by using topological information.
+5. Data Manipulation: They allow for advanced spatial operations and queries.
+6. Efficient Use of Space: They only store data points that are part of the spatial feature, leading to efficient space usage.
 ⏱️  Execution time: 0ms
 
 📝 Example 2: Generate Embeddings
@@ -1057,16 +1062,16 @@ Result:         60% fewer functions, cleaner code, same behavior 🎯
 
 ✅ Script saved
 📊 User counts by status:
-   inactive: 3 users
    active: 7 users
+   inactive: 3 users
 ⏱️  Execution time: 0ms
 
 📝 Example 3: Average Score by Role
 
 ✅ Script saved
 📊 Average score by role:
-   {"role":"user","count":7,"avg_score":70}
-   {"count":3,"avg_score":20,"role":"admin"}
+   {"avg_score":20,"role":"admin","count":3}
+   {"avg_score":70,"count":7,"role":"user"}
 ⏱️  Execution time: 0ms
 
 🧹 Cleaning up...
@@ -1082,19 +1087,19 @@ Result:         60% fewer functions, cleaner code, same behavior 🎯
 
 ✅ Script saved
 📊 Found 5 documents
-   1. Getting Started with ekoDB (Database)
-   2. Introduction to Machine Learning (AI)
-   3. Vector Databases Explained (Database)
-   4. Database Design Principles (Database)
-   5. Natural Language Processing (AI)
+   1. Natural Language Processing (AI)
+   2. Database Design Principles (Database)
+   3. Getting Started with ekoDB (Database)
+   4. Introduction to Machine Learning (AI)
+   5. Vector Databases Explained (Database)
 ⏱️  Execution time: 0ms
 
 📝 Example 2: Count Documents by Category
 
 ✅ Script saved
 📊 Documents by category:
-   {"count":3,"category":"Database"}
    {"category":"AI","count":2}
+   {"category":"Database","count":3}
 ⏱️  Execution time: 0ms
 
 🧹 Cleaning up...
@@ -1107,28 +1112,26 @@ Result:         60% fewer functions, cleaner code, same behavior 🎯
 ✓ Inserted 3 sample documents
 
 === Creating Chat Session ===
-✓ Created session: 5VxkK5XqmQNMMNMqnUslIdNje9jUtma8DquZ8oESCZX6aO0IsEeDoYvnjt-Pw0wrm8ML8rvmXXA3AuZJvQs-Pg
+✓ Created session: 711_Gv3IpwDbfh5xZsMHLSptjEFL6xManhhlyvfdqIkqDhkGWMHRLVo9ao6vy1vrExkmZz5g1gEvXwjzgxhckQ
 
 === Sending Chat Message ===
-Message ID: bG_gWzsRoyXE4LENDENS6NWHrcXQNuUxvW37AY0LfQ5TvBflZNd3Uc0pwR--NFITqut30gVgSeyaNhdJg5j8Qw
+Message ID: j_CAHNqY5slTXv2TCxdbIu5sAX28mjnYLgZ3cDg9u-BCnIJ9RjkQJM_TQqk4lQyz1pWAQEiZPF4UHoSH1b1WPw
 
 === AI Response ===
 There are three products available:
 
-1. ekoDB Pro: This is an enterprise edition product with advanced features. The price for this product is $299.
-
-2. ekoDB: This is a high-performance database product with AI capabilities. This product is priced at $99.
-
-3. ekoDB Cloud: This is a fully managed cloud database service product. The price for this product is $499.
+1. ekoDB: This is a high-performance database product with AI capabilities. It is priced at $99.
+2. ekoDB Cloud: This is a fully managed cloud database service product. It is priced at $499.
+3. ekoDB Pro: This is an enterprise edition product with advanced features. It is priced at $299.
 
 === Context Used (3 snippets) ===
   Snippet 1: {
   collection: 'client_chat_basic_ts',
   record: {
-    name: 'ekoDB Pro',
-    price: 299,
-    id: '5PdadvuryCxAz-e6nRoT5scSoacSWO2uIaBmHsNfRUlQ2j-ln9qQevGiE30FYwgrGswzLccGgN80e50FN1BuVA',
-    description: 'Enterprise edition product with advanced features'
+    description: 'A high-performance database product with AI capabilities',
+    name: 'ekoDB',
+    id: 'jnhjhIJd6wFOdULpaUru0-35XDp0x6JOrR-rP7nitVEUFwCLoJxazO61ukODxO3-QNWasxiL7OeYvV0_hV5Ylw',
+    price: 99
   },
   score: 0.1111111111111111,
   matched_fields: [ 'description' ]
@@ -1136,10 +1139,10 @@ There are three products available:
   Snippet 2: {
   collection: 'client_chat_basic_ts',
   record: {
-    name: 'ekoDB',
-    description: 'A high-performance database product with AI capabilities',
-    price: 99,
-    id: 'mOVtBGSIMNDxq3Fvgrv5FwKfE1sSGsbr9j43QpHU0NNDHVV2d8czZpzWsJ-pCpWV1vSKHkUnHBdkCwkGxx0Tdw'
+    description: 'Fully managed cloud database service product',
+    name: 'ekoDB Cloud',
+    price: 499,
+    id: 'MIe4ZAcybExQjkC2VgQdhiO-r1OrAm4KnL4EOlQW_4ZTRfu8kgbksXysN7WYQVrVNxv92ZzLF4MO7ii3dYRScQ'
   },
   score: 0.1111111111111111,
   matched_fields: [ 'description' ]
@@ -1147,20 +1150,20 @@ There are three products available:
   Snippet 3: {
   collection: 'client_chat_basic_ts',
   record: {
-    id: '15dpLHAEUNHa6boeSvjA1PV0SbJmTS2ztdwx0tinEbTCJS2qKmBqLUidvoTrDF6J7dDFBDE22ywXMvdvU0dexQ',
-    price: 499,
-    description: 'Fully managed cloud database service product',
-    name: 'ekoDB Cloud'
+    description: 'Enterprise edition product with advanced features',
+    price: 299,
+    id: 'ThcsVilgCpSoLMcXibc2kWn3xY4G23wsRttpi5927hvK4d-P2KxK_d5k7Man0jyjRk4NhC3BELsJsWVMBC0bdA',
+    name: 'ekoDB Pro'
   },
   score: 0.1111111111111111,
   matched_fields: [ 'description' ]
 }
 
-Execution Time: 3891ms
+Execution Time: 2454ms
 
 === Token Usage ===
-Prompt tokens: 448
-Completion tokens: 83
+Prompt tokens: 453
+Completion tokens: 78
 Total tokens: 531
 
 === Cleanup ===
@@ -1173,17 +1176,17 @@ Total tokens: 531
 ✓ Inserted sample product
 
 === Creating Chat Session ===
-✓ Created session: VxvFrCJXDvWHmVFkejYX9mjUpvjnk5YAvyxSFgdR0PVqece42Y9OEcyl-bR7HXTKSTvkHoYoxg-mSMxz6-Hw_A
+✓ Created session: sO5xylNrD8zabJufG2kHkRhBG0xGj2p9jvOwV8mRdGEpbjdBEmDQzm-AKIpRxWuQlCR2rVo3e2cvvzVCk9JCBw
 
 === Sending Initial Message ===
 ✓ Message sent
-  Response: Based on the information provided, the available product is a high-performance database product named ekoDB. The price of this product is $99.
+  Response: Based on the information provided, one product available is "ekoDB". It is a high-performance database product and is priced at $99.
 
 ✓ Second message sent
 
 === Feature 1: Regenerate AI Response ===
 ✓ Message regenerated
-  New response: The price of ekoDB is $99.
+  New response: The price of the ekoDB high-performance database product is $99.
 
 === Feature 2: Edit Message ===
 ✓ Message content updated
@@ -1194,7 +1197,7 @@ Total tokens: 531
 ✓ Message unmarked as forgotten
 
 === Feature 4: Merge Chat Sessions ===
-✓ Created second session: hmbx1ZZxoOWmGj_0AQLn9Wt9YqAeO0AIij2BjuxQaZLAjfrCUTPC3zXHd38c6P1fQIBtCv9KCmzOYXUAGv5AmQ
+✓ Created second session: TaWmlcFpgzAI2X32v1WlA_fKAn8pDB4nI6foqkoxkgZ5iylNxvrMmUED-JJ1-YD_FXA57C5Iy6b4EFiEj3T1xQ
 ✓ Sent message in second session
 ✓ Sessions merged successfully
   Total messages in merged session: 4
@@ -1215,11 +1218,11 @@ Total tokens: 531
 ✓ Inserted sample product
 
 === Creating Chat Session ===
-✓ Created session: GYHT9zYOVdXgEhk0b__a4zDFK7BlE_ssfCwNvfmSW2frp_PTbUEb9CvLMTtU0EKpKmM865Zjja1r3tcJvKdOxg
+✓ Created session: em9at9-kPduAicETLmP5mx5wtUeopGDOytk3VJme23uMR--8wJI4w3xiHrAMgMFvwRUVLCqk9mQ7Bi2kP4qgsA
 
 === Sending Messages ===
 ✓ Message 1 sent
-  Response: Based on the information available, the product that is available is "ekoDB". This is a high-performance database product. The price of this product is $99.
+  Response: Based on the available information, we have a high-performance database product available named ekoDB. It is priced at $99.
 
 ✓ Message 2 sent
   Response: The price of the ekoDB, a high-performance database product, is $99.
@@ -1231,28 +1234,28 @@ Total tokens: 531
 ✓ Session updated
 
 === Branching Session ===
-✓ Created branch: 9A-8BnzGbqpGP46rLfR3pjNzj-2CN_HXGghuosT90r8MJFNpcIIaaqkFlLlLTq1gwnk7s31lfbUhoEFsCKl9tQ
-  Parent: GYHT9zYOVdXgEhk0b__a4zDFK7BlE_ssfCwNvfmSW2frp_PTbUEb9CvLMTtU0EKpKmM865Zjja1r3tcJvKdOxg
+✓ Created branch: cTdAzoFmw5RlSIgrTpHqbk_MkmnYGlsngygYOuUAUQZCh6XJn3FhSXNrv4Lzd2daRK4QXWIxKl6rxRXktJOilg
+  Parent: em9at9-kPduAicETLmP5mx5wtUeopGDOytk3VJme23uMR--8wJI4w3xiHrAMgMFvwRUVLCqk9mQ7Bi2kP4qgsA
 
 === Listing Sessions ===
 ✓ Found 10 sessions
-  Session 1: 9A-8BnzGbqpGP46rLfR3pjNzj-2CN_HXGghuosT90r8MJFNpcIIaaqkFlLlLTq1gwnk7s31lfbUhoEFsCKl9tQ (Untitled)
-  Session 2: GYHT9zYOVdXgEhk0b__a4zDFK7BlE_ssfCwNvfmSW2frp_PTbUEb9CvLMTtU0EKpKmM865Zjja1r3tcJvKdOxg (Untitled)
-  Session 3: hmbx1ZZxoOWmGj_0AQLn9Wt9YqAeO0AIij2BjuxQaZLAjfrCUTPC3zXHd38c6P1fQIBtCv9KCmzOYXUAGv5AmQ (Untitled)
-  Session 4: 5VxkK5XqmQNMMNMqnUslIdNje9jUtma8DquZ8oESCZX6aO0IsEeDoYvnjt-Pw0wrm8ML8rvmXXA3AuZJvQs-Pg (Untitled)
-  Session 5: qwggQOSdymEFPxI-CDWMeoPhlfjoc_c1TSR2kf9tVaz5J364voZ9PmYnY_vM7b2H8YbjJrJUPoClKCM7UXlxKQ (Untitled)
-  Session 6: 42HtILejTOAtLG-rbpmagdu_I4oYxQIwSEEJMpClKJ4GPCTHbTL1eyQ6kk0UjMjmyOttAupCiyTkqM_E7rjXLg (Untitled)
-  Session 7: Laqlb5tCJrvEV9bzczXZAW85eaZP17Cwy2HXexrLvLAifTB6Psy2cwD0WnEoNgtIgHdpP3Jb-P94S0MsoRE-UA (Untitled)
-  Session 8: sPGFz1pxKMHqtytbF2S3VC_9uARlLrXyILW09b_AhA0I0x5Y8cEGwrMkL4N2OrUftkAzOXJDGpEE9toFKkvkaw (Untitled)
-  Session 9: ZH-TQGGOgKc2eAuwfdVl88A3nXpv_Tl1Nr5J8T1NOkKYel4TOeJPIYe6gKx9IFSkDGJC33fac-ZKKorWwnc4lg (Untitled)
-  Session 10: sahPJix1CZjQI-8zJFD156k6RFBRsC-UV_3q3KGgtuWemXtIe1cBz22bzC8zpB9-49pi4S9dDYXF-Xl7wTTVWg (Untitled)
+  Session 1: cTdAzoFmw5RlSIgrTpHqbk_MkmnYGlsngygYOuUAUQZCh6XJn3FhSXNrv4Lzd2daRK4QXWIxKl6rxRXktJOilg (Untitled)
+  Session 2: em9at9-kPduAicETLmP5mx5wtUeopGDOytk3VJme23uMR--8wJI4w3xiHrAMgMFvwRUVLCqk9mQ7Bi2kP4qgsA (Untitled)
+  Session 3: TaWmlcFpgzAI2X32v1WlA_fKAn8pDB4nI6foqkoxkgZ5iylNxvrMmUED-JJ1-YD_FXA57C5Iy6b4EFiEj3T1xQ (Untitled)
+  Session 4: 711_Gv3IpwDbfh5xZsMHLSptjEFL6xManhhlyvfdqIkqDhkGWMHRLVo9ao6vy1vrExkmZz5g1gEvXwjzgxhckQ (Untitled)
+  Session 5: 2bi4bFjVEYp3gopUAs7-9HnbZl0kK_0rq6DxH8tbBgtzS8kMZ8OAYlOV_SLjMRFySjB8mWJSUEudr0jhRnhLrQ (Untitled)
+  Session 6: sOvC4faavhKMOcYDSecz0ZvSFF65vVLIJvz-JxyDDEAB5GD-TbTjh0CMly_fG3q7Q0sDEbTKsc5-pcRCTYYVSg (Untitled)
+  Session 7: JrK4ENrsy2TE8XO7LDnChGcTVTN-u7HLwY8knOu90tmyPTWUh8hAFfvU2_t-r8iEqtS5ihNvkpWVwPHDiyKKFA (Untitled)
+  Session 8: 0qk3_g1hxPAFkccFSrfSCLDSE7z80pic3ubP9GPWCn75i8ZNrYzr4lAaA2kaBbY1bqzXpLliomhK8bdRouRJ0g (Untitled)
+  Session 9: lgdqx8KlD32BMm6A3L4du4oBOvHE9M7TIMS84d3vS5rIzsffq3obVvG6em3SYhkBFnKqcUqZ3-txSUWw_l12sw (Untitled)
+  Session 10: DPptNhOxlb-eV3tn6FaBuJFaxV3rKcT8ZiF-xySQoQC9TyZmsDaVt0g_3X-wh-57yzcbng6raG_utbQQsa0yAg (Untitled)
 
 === Getting Session Details ===
 ✓ Session details retrieved
   Messages: 4
 
 === Deleting Branch Session ===
-✓ Deleted branch session: 9A-8BnzGbqpGP46rLfR3pjNzj-2CN_HXGghuosT90r8MJFNpcIIaaqkFlLlLTq1gwnk7s31lfbUhoEFsCKl9tQ
+✓ Deleted branch session: cTdAzoFmw5RlSIgrTpHqbk_MkmnYGlsngygYOuUAUQZCh6XJn3FhSXNrv4Lzd2daRK4QXWIxKl6rxRXktJOilg
 
 === Cleanup ===
 ✓ Deleted collection
@@ -1262,28 +1265,28 @@ Total tokens: 531
 
 === Native Object Creation ===
 ✓ Created record with plain object: {
-  id: 'JLuD7cNqPDPV1_uYM9CqFKTMxhEtHwpYrWZewfMP-s7AihtvdonOWTs_cVi-MIlLqlX0xg0J5A_QQDviUKZebg'
+  id: 'HJ6j_z-1wnvh76aXIQfogxbH1s3iwixiXthqPF5qu-Ud-aT3xQxXHWuMfqtZthNGi9TNvmCADN_fFpi4Lcgvfw'
 }
 
 === Upsert Operation ===
 ✓ First upsert (update): {
-  id: 'JLuD7cNqPDPV1_uYM9CqFKTMxhEtHwpYrWZewfMP-s7AihtvdonOWTs_cVi-MIlLqlX0xg0J5A_QQDviUKZebg',
-  active: { value: true, type: 'Boolean' },
-  email: { type: 'String', value: 'alice.j@newdomain.com' },
+  email: { value: 'alice.j@newdomain.com', type: 'String' },
+  age: { type: 'Integer', value: 29 },
+  id: 'HJ6j_z-1wnvh76aXIQfogxbH1s3iwixiXthqPF5qu-Ud-aT3xQxXHWuMfqtZthNGi9TNvmCADN_fFpi4Lcgvfw',
   name: { type: 'String', value: 'Alice Johnson' },
-  age: { type: 'Integer', value: 29 }
+  active: { type: 'Boolean', value: true }
 }
 ✓ Second upsert (insert): {
-  id: 'K7Q1VaG5LtxWThnxvsRTZegDIzd5nI06NorswKLa6bhwzK1-mAB7Q36V-_GcbdUE7w7tUpH2ZYEHMfy8FZB_Fw'
+  id: 'pQ68kZkEHK0tt9udnKCHWj4f0Z02STy4LyaSIOaXIlGVPHPJuf3oaCQAXrAKOeuqST7jFsG9jRX6phj7dVJ0wA'
 }
 
 === Find One Operation ===
 ✓ Found user by email: {
-  id: 'JLuD7cNqPDPV1_uYM9CqFKTMxhEtHwpYrWZewfMP-s7AihtvdonOWTs_cVi-MIlLqlX0xg0J5A_QQDviUKZebg',
-  active: { type: 'Boolean', value: true },
+  active: { value: true, type: 'Boolean' },
+  id: 'HJ6j_z-1wnvh76aXIQfogxbH1s3iwixiXthqPF5qu-Ud-aT3xQxXHWuMfqtZthNGi9TNvmCADN_fFpi4Lcgvfw',
+  email: { type: 'String', value: 'alice.j@newdomain.com' },
   name: { value: 'Alice Johnson', type: 'String' },
-  email: { value: 'alice.j@newdomain.com', type: 'String' },
-  age: { value: 29, type: 'Integer' }
+  age: { type: 'Integer', value: 29 }
 }
 ✓ User not found (as expected)
 
@@ -1304,13 +1307,13 @@ Total tokens: 531
 === Bypass Ripple Example ===
 
 1. Basic insert (ripple enabled):
-   Inserted with ripple: {"id":"I6G42-NRZqxJPZg8cf6pWTRZFenraBSA8VDbFXhL5EehUd9XqpP8X-aFMg4VM5grvZQDZvwZ3M7TbrvA5qMA3g"}
+   Inserted with ripple: {"id":"9xn3PpKjl8So4SUCfRymK6vX2wrw0EPbGDinDIp5AbA-SBtlF4wHCgTx6PXxkBxPjrkPj6TboFRz7wUYJD_sug"}
 
 2. Insert with bypass_ripple:
-   Inserted with bypass_ripple: {"id":"5pyCjJ9YN3JFHHiCj4b1yE6UmoyAkFidRUHVieQUbF9zPAU8opSb9EN08aTNprZNFKDo47p358_ypXoBmjVGUQ"}
+   Inserted with bypass_ripple: {"id":"K649QbjJckI9V48kvkqbkCq2KjxeeoQbVuaXK0iXFIyHxKPh2jf_G7UMkREr0Xudt6XkVO3x71gy1pRpu0WPPA"}
 
 3. Update with bypass_ripple:
-   Updated with bypass_ripple: {"name":{"value":"Product 1","type":"String"},"id":"I6G42-NRZqxJPZg8cf6pWTRZFenraBSA8VDbFXhL5EehUd9XqpP8X-aFMg4VM5grvZQDZvwZ3M7TbrvA5qMA3g","price":{"type":"Integer","value":150}}
+   Updated with bypass_ripple: {"name":{"type":"String","value":"Product 1"},"id":"9xn3PpKjl8So4SUCfRymK6vX2wrw0EPbGDinDIp5AbA-SBtlF4wHCgTx6PXxkBxPjrkPj6TboFRz7wUYJD_sug","price":{"value":150,"type":"Integer"}}
 
 4. Delete with bypass_ripple:
    Deleted with bypass_ripple
@@ -1319,7 +1322,7 @@ Total tokens: 531
    Batch inserted with bypass_ripple: 2 records
 
 6. Upsert with bypass_ripple:
-   Upserted with bypass_ripple: {"id":"2b_ckFLf_mvENe0paPrWALBkETr1zqWLRMJd0CJMMZY4TOgE12JMobPCdk4RzOHHvyNcEdeFLdEM1YrrdcNKFw"}
+   Upserted with bypass_ripple: {"name":{"value":"Upsert Product","type":"String"},"id":"custom-id","price":{"type":"Integer","value":500}}
 
 ✅ All bypass_ripple operations completed successfully!
 Client created
@@ -1329,7 +1332,7 @@ Inserted 4 test users
 
 Example 1: Select specific fields (id, name, email only)
   Found 3 active users
-  Fields returned: ["name","email","id"]
+  Fields returned: ["id","name","email"]
   First user: [object Object] <[object Object]>
 
 Example 2: Exclude sensitive fields (password, api_key, secret_token)
@@ -1338,7 +1341,7 @@ Example 2: Exclude sensitive fields (password, api_key, secret_token)
     - password: excluded
     - api_key: excluded
     - secret_token: excluded
-  Fields returned: ["age","id","name","user_role","email","status","created_at","avatar_url","bio"]
+  Fields returned: ["email","user_role","status","id","avatar_url","age","name","created_at","bio"]
 
 Example 3: Complex query with projection (active users, ages 18-65)
   Found 3 active users (ages 18-65)
@@ -1353,10 +1356,10 @@ Example 4: Query inactive users with profile fields
 Example 5: Compare full vs projected data
   Full query:
     - 12 fields per record
-    - Fields: ["api_key","age","bio","status","id","user_role","avatar_url","created_at","password","email","name","secret_token"]
+    - Fields: ["name","email","avatar_url","age","created_at","secret_token","id","user_role","password","api_key","bio","status"]
   Projected query:
     - 3 fields per record
-    - Fields: ["email","name","id"]
+    - Fields: ["name","id","email"]
   Bandwidth savings: ~75% fewer fields
 
 Cleaning up test data...
@@ -1518,6 +1521,7 @@ Available chat models by provider:
     - whisper-1
     - text-embedding-ada-002
   anthropic:
+    - claude-opus-4-6
     - claude-opus-4-5-20251101
     - claude-haiku-4-5-20251001
     - claude-sonnet-4-5-20250929
@@ -1538,16 +1542,16 @@ Available chat models by provider:
 OpenAI models: gpt-4-0613, gpt-4, gpt-3.5-turbo, gpt-5.2-codex, gpt-4o-mini-tts-2025-12-15, gpt-realtime-mini-2025-12-15, gpt-audio-mini-2025-12-15, chatgpt-image-latest, davinci-002, babbage-002, gpt-3.5-turbo-instruct, gpt-3.5-turbo-instruct-0914, dall-e-3, dall-e-2, gpt-4-1106-preview, gpt-3.5-turbo-1106, tts-1-hd, tts-1-1106, tts-1-hd-1106, text-embedding-3-small, text-embedding-3-large, gpt-4-0125-preview, gpt-4-turbo-preview, gpt-3.5-turbo-0125, gpt-4-turbo, gpt-4-turbo-2024-04-09, gpt-4o, gpt-4o-2024-05-13, gpt-4o-mini-2024-07-18, gpt-4o-mini, gpt-4o-2024-08-06, chatgpt-4o-latest, gpt-4o-audio-preview, gpt-4o-realtime-preview, omni-moderation-latest, omni-moderation-2024-09-26, gpt-4o-realtime-preview-2024-12-17, gpt-4o-audio-preview-2024-12-17, gpt-4o-mini-realtime-preview-2024-12-17, gpt-4o-mini-audio-preview-2024-12-17, o1-2024-12-17, o1, gpt-4o-mini-realtime-preview, gpt-4o-mini-audio-preview, o3-mini, o3-mini-2025-01-31, gpt-4o-2024-11-20, gpt-4o-search-preview-2025-03-11, gpt-4o-search-preview, gpt-4o-mini-search-preview-2025-03-11, gpt-4o-mini-search-preview, gpt-4o-transcribe, gpt-4o-mini-transcribe, o1-pro-2025-03-19, o1-pro, gpt-4o-mini-tts, o3-2025-04-16, o4-mini-2025-04-16, o3, o4-mini, gpt-4.1-2025-04-14, gpt-4.1, gpt-4.1-mini-2025-04-14, gpt-4.1-mini, gpt-4.1-nano-2025-04-14, gpt-4.1-nano, gpt-image-1, codex-mini-latest, gpt-4o-realtime-preview-2025-06-03, gpt-4o-audio-preview-2025-06-03, o4-mini-deep-research, gpt-4o-transcribe-diarize, o4-mini-deep-research-2025-06-26, gpt-5-chat-latest, gpt-5-2025-08-07, gpt-5, gpt-5-mini-2025-08-07, gpt-5-mini, gpt-5-nano-2025-08-07, gpt-5-nano, gpt-audio-2025-08-28, gpt-realtime, gpt-realtime-2025-08-28, gpt-audio, gpt-5-codex, gpt-image-1-mini, gpt-5-pro-2025-10-06, gpt-5-pro, gpt-audio-mini, gpt-audio-mini-2025-10-06, gpt-5-search-api, gpt-realtime-mini, gpt-realtime-mini-2025-10-06, sora-2, sora-2-pro, gpt-5-search-api-2025-10-14, gpt-5.1-chat-latest, gpt-5.1-2025-11-13, gpt-5.1, gpt-5.1-codex, gpt-5.1-codex-mini, gpt-5.1-codex-max, gpt-image-1.5, gpt-5.2-2025-12-11, gpt-5.2, gpt-5.2-pro-2025-12-11, gpt-5.2-pro, gpt-5.2-chat-latest, gpt-4o-mini-transcribe-2025-12-15, gpt-4o-mini-transcribe-2025-03-20, gpt-4o-mini-tts-2025-03-20, gpt-3.5-turbo-16k, tts-1, whisper-1, text-embedding-ada-002
 
 === Get Anthropic Models ===
-Anthropic models: claude-opus-4-5-20251101, claude-haiku-4-5-20251001, claude-sonnet-4-5-20250929, claude-opus-4-1-20250805, claude-opus-4-20250514, claude-sonnet-4-20250514, claude-3-7-sonnet-20250219, claude-3-5-haiku-20241022, claude-3-haiku-20240307
+Anthropic models: claude-opus-4-6, claude-opus-4-5-20251101, claude-haiku-4-5-20251001, claude-sonnet-4-5-20250929, claude-opus-4-1-20250805, claude-opus-4-20250514, claude-sonnet-4-20250514, claude-3-7-sonnet-20250219, claude-3-5-haiku-20241022, claude-3-haiku-20240307
 
 === Get Non-Existent Provider ===
-Expected error for non-existent provider: Error: Request failed with status 500: {"code":500,"message":"Internal Server Error"}
+Expected error for non-existent provider: Error: Request failed with status 405: {"code":405,"message":"Method Not Allowed"}
 
 ✓ Chat Models example complete
 ✓ Client created
 
 === Create User Function ===
-Created user function with ID: PWrznYlsojCKtoi6kqGZVKuq69JQIXE1RT2Eq95gLYj1chdbJalo9KNH31BIEOE4S2hc_8pcSetb64Wt9wvH4A
+Created user function with ID: RnFdkD0Lhfxu1EoKzrELDY6KUo9M0LzqYoWz2A4dY7cjXzkQKKiOsw6aBfk62KN02WoFHVZ4mdyq-0gy76no8w
 
 === Get User Function ===
 Retrieved: get_active_users_ts - Get Active Users
@@ -1555,37 +1559,37 @@ Description: Fetches all users and filters by active status
 
 === List All User Functions ===
 Found 31 user functions:
-  - fetch_user: Fetch user by code
+  - fetch_and_store_user: Fetch user from API and cache in KV
   - fetch_slim_user: Validate and slim down user
   - get_verified_user: Get verified and validated user
-  - fetch_api_user: Fetch User with Cache
-  - swr_user: SWR pattern for user data (KV-based)
-  - swr_user: SWR pattern for user data (KV-based)
-  - validate_user: Check if user exists
-  - validate_user: Check if user exists
-  - get_user_wrapper: Wrapper that calls fetch_user
-  - get_user_wrapper: Wrapper that calls fetch_user
-  - fetch_user: Fetch user by code
   - fetch_and_store_user: Fetch user from API and cache in KV
   - fetch_and_store_user: Fetch user from API and cache in KV
-  - validate_user: Check if user exists
   - fetch_slim_user: Validate and slim down user
-  - fetch_and_store_user: Fetch user from API and cache in KV
+  - fetch_slim_user: Validate and slim down user
   - swr_user: SWR pattern for user data (KV-based)
   - get_active_users_updated: Get Active Users (Updated)
+  - swr_user: SWR pattern for user data (KV-based)
   - fetch_user: Fetch user by code
-  - get_users_by_status: Get Users By Status
-  - fetch_product_with_reviews: Fetch Product with Reviews (Multi-API)
+  - validate_user: Check if user exists
+  - cache_api_call_py: Cache External API Call
+  - get_user_wrapper: Wrapper that calls fetch_user
   - fetch_slim_user: Validate and slim down user
   - get_active_users_ts: Get Active Users
   - swr_user: SWR pattern for user data (KV-based)
-  - fetch_and_store_user: Fetch user from API and cache in KV
-  - get_verified_user: Get verified and validated user
+  - fetch_api_user: Fetch User with Cache
   - validate_user: Check if user exists
-  - fetch_slim_user: Validate and slim down user
+  - get_verified_user: Get verified and validated user
+  - get_user_wrapper: Wrapper that calls fetch_user
   - cache_api_call: Cache External API Call
+  - swr_user: SWR pattern for user data (KV-based)
+  - fetch_and_store_user: Fetch user from API and cache in KV
+  - get_users_by_status: Get Users By Status
   - fetch_user: Fetch user by code
-  - cache_api_call_py: Cache External API Call
+  - fetch_user: Fetch user by code
+  - fetch_product_with_reviews: Fetch Product with Reviews (Multi-API)
+  - fetch_user: Fetch user by code
+  - validate_user: Check if user exists
+  - validate_user: Check if user exists
 
 === Update User Function ===
 User function updated successfully
