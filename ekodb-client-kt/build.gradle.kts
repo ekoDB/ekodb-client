@@ -34,7 +34,7 @@ dependencies {
     implementation("io.ktor:ktor-client-encoding:3.3.3")
     
     // DateTime
-    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.7.1-0.6.x-compat")
     
     // Testing
     testImplementation(kotlin("test"))
