@@ -2,13 +2,13 @@
 
 Official client libraries for ekoDB - a high-performance document database.
 
-[![Examples](https://img.shields.io/badge/Examples-234_Working-success)](examples/)
+[![Examples](https://img.shields.io/badge/Examples-239_Working-success)](examples/)
 [![Languages](https://img.shields.io/badge/Languages-6-blue)](examples/)
 [![Client Libraries](https://img.shields.io/badge/Client_Libraries-5-purple)](examples/)
 
 **🚀 Quick Stats:**
 
-- **234 working examples** - 183 client library + 51 direct API examples
+- **239 working examples** - 188 client library + 51 direct API examples
 - **6 programming languages** - Rust, Python, Go, TypeScript, JavaScript, Kotlin
 - **5 full-featured clients** - Complete feature parity across Rust, Python, Go,
   TypeScript, Kotlin
