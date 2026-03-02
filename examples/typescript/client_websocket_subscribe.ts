@@ -126,11 +126,22 @@ async function main() {
   // Step 6: Unsubscribe
   console.log("\n=== Unsubscribing ===");
 
-  const unsubPromise = new Promise<any>((resolve) => {
-    ws.once("message", (data: Buffer) => {
+  const unsubPromise = new Promise<any>((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      ws.removeListener("message", handler);
+      reject(new Error("Unsubscribe timed out after 5 seconds"));
+    }, 5000);
+
+    function handler(data: Buffer) {
       const msg = JSON.parse(data.toString());
-      if (msg.type === "Success") resolve(msg);
-    });
+      if (msg.type === "Success") {
+        clearTimeout(timeout);
+        ws.removeListener("message", handler);
+        resolve(msg);
+      }
+    }
+
+    ws.on("message", handler);
   });
 
   ws.send(

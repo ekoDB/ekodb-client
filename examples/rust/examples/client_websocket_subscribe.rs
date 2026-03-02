@@ -9,6 +9,7 @@ use futures_util::{SinkExt, StreamExt};
 use serde_json::{json, Value};
 use std::env;
 use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
+use url::Url;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -36,11 +37,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Step 2: Connect to WebSocket
     println!("\n=== Connecting to WebSocket ===");
     let url = format!("{}/api/ws", ws_url);
+    let parsed = Url::parse(&url)?;
+    let host = parsed
+        .host_str()
+        .map(|h| match parsed.port() {
+            Some(p) => format!("{}:{}", h, p),
+            None => h.to_string(),
+        })
+        .unwrap_or_else(|| "localhost:8080".to_string());
 
     let request = tokio_tungstenite::tungstenite::http::Request::builder()
         .uri(&url)
         .header("Authorization", format!("Bearer {}", token))
-        .header("Host", "localhost:8080")
+        .header("Host", &host)
         .header("Connection", "Upgrade")
         .header("Upgrade", "websocket")
         .header("Sec-WebSocket-Version", "13")
