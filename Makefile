@@ -443,7 +443,7 @@ test-ci:
 # Run all examples (all languages, both direct and client, including transactions)
 test-examples: examples-ls-check
 	@echo "make test-examples" > examples/test-examples.md
-	@$(MAKE) test-examples-rust test-examples-python test-examples-go test-examples-typescript test-examples-javascript test-examples-kotlin test-examples-rag test-examples-swr test-examples-fcomp 2>&1 | tee -a examples/test-examples.md
+	@$(MAKE) test-examples-rust test-examples-python test-examples-go test-examples-typescript test-examples-javascript test-examples-kotlin test-examples-rag test-examples-swr test-examples-fcomp test-examples-subscribe 2>&1 | tee -a examples/test-examples.md
 	@echo "✅ $(GREEN)All integration tests complete!$(RESET)"
 
 # Run direct API examples (using raw HTTP/WebSocket calls, including transactions)
@@ -835,6 +835,68 @@ test-examples-ttl-ts: build-typescript-client
 	@echo "📘 $(YELLOW)TypeScript TTL Verification Tests...$(RESET)"
 	@cd examples/typescript && npx tsx ttl_expiration_test.ts
 	@echo "✅ $(GREEN)TypeScript TTL tests complete!$(RESET)"
+
+# ============================================================================
+# WebSocket Subscription Tests (real-time mutation notifications)
+# ============================================================================
+.PHONY: test-examples-subscribe test-examples-subscribe-rust test-examples-subscribe-go test-examples-subscribe-py test-examples-subscribe-ts test-examples-subscribe-kt
+
+test-examples-subscribe:
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "📡 $(CYAN)WebSocket Subscription Tests$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo ""
+	@echo "$(YELLOW)These tests verify real-time WebSocket subscriptions by:$(RESET)"
+	@echo "  1. Authenticating and connecting via WebSocket"
+	@echo "  2. Subscribing to a collection"
+	@echo "  3. Inserting records via REST to trigger notifications"
+	@echo "  4. Verifying MutationNotification push messages arrive"
+	@echo "  5. Unsubscribing and cleaning up"
+	@echo ""
+	@$(MAKE) test-examples-subscribe-rust test-examples-subscribe-go test-examples-subscribe-py test-examples-subscribe-ts test-examples-subscribe-kt
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "✅ $(GREEN)All WebSocket Subscription Tests Passed!$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+
+test-examples-subscribe-rust: build-client
+	@echo ""
+	@echo "🦀 $(YELLOW)Rust WebSocket Subscription Test...$(RESET)"
+	@cd examples/rust && cargo run --example client_websocket_subscribe
+	@echo "✅ $(GREEN)Rust subscription test complete!$(RESET)"
+
+test-examples-subscribe-go:
+	@echo ""
+	@echo "🔷 $(YELLOW)Go WebSocket Subscription Test...$(RESET)"
+	@cd examples/go && go run client_websocket_subscribe.go
+	@echo "✅ $(GREEN)Go subscription test complete!$(RESET)"
+
+test-examples-subscribe-py:
+	@echo ""
+	@echo "🐍 $(YELLOW)Python WebSocket Subscription Test...$(RESET)"
+	@cd examples/python && python3 client_websocket_subscribe.py
+	@echo "✅ $(GREEN)Python subscription test complete!$(RESET)"
+
+test-examples-subscribe-ts: build-typescript-client
+	@echo ""
+	@echo "📘 $(YELLOW)TypeScript WebSocket Subscription Test...$(RESET)"
+	@cd examples/typescript && npx tsx client_websocket_subscribe.ts
+	@echo "✅ $(GREEN)TypeScript subscription test complete!$(RESET)"
+
+test-examples-subscribe-kt:
+	@echo ""
+	@echo "🟣 $(YELLOW)Kotlin WebSocket Subscription Test...$(RESET)"
+	@if [ -f .env ]; then \
+		. ./.env && \
+		export JAVA_HOME=$$(/usr/libexec/java_home -v 17) && export PATH=$$JAVA_HOME/bin:$$PATH && \
+		cd examples/kotlin && \
+		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientWebsocketSubscribeKt --no-daemon; \
+	else \
+		echo "$(RED)✗ .env file not found$(RESET)"; \
+		exit 1; \
+	fi
+	@echo "✅ $(GREEN)Kotlin subscription test complete!$(RESET)"
 
 # ============================================================================
 # Rust Examples (both direct + client)
