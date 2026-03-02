@@ -1,6 +1,6 @@
 plugins {
-    kotlin("jvm") version "2.2.0"
-    kotlin("plugin.serialization") version "2.2.0"
+    kotlin("jvm") version "2.3.0"
+    kotlin("plugin.serialization") version "2.3.0"
     application
 }
 
@@ -24,8 +24,8 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
     
     // Serialization (match client library versions)
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-cbor:1.8.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-cbor:1.9.0")
     
     // Ktor client (match client library versions)
     implementation("io.ktor:ktor-client-core:3.3.3")
@@ -37,7 +37,7 @@ dependencies {
     implementation("io.ktor:ktor-client-encoding:3.3.3")
     
     // DateTime
-    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.7.1-0.6.x-compat")
     
     // Dotenv for environment variables
     implementation("io.github.cdimascio:dotenv-kotlin:6.4.1")
