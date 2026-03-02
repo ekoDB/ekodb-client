@@ -12,71 +12,39 @@ import (
 	"github.com/joho/godotenv"
 )
 
-var (
-	baseURL string
-	wsURL   string
-	apiKey  string
-)
-
-func init() {
+func main() {
 	godotenv.Load()
-	baseURL = os.Getenv("API_BASE_URL")
+
+	baseURL := os.Getenv("API_BASE_URL")
 	if baseURL == "" {
 		baseURL = "http://localhost:8080"
 	}
-	wsURL = os.Getenv("WS_BASE_URL")
+	wsURL := os.Getenv("WS_BASE_URL")
 	if wsURL == "" {
 		wsURL = "ws://localhost:8080"
 	}
-	apiKey = os.Getenv("API_BASE_KEY")
+	apiKey := os.Getenv("API_BASE_KEY")
 	if apiKey == "" {
 		apiKey = "a-test-api-key-from-ekodb"
 	}
-}
 
-func getAuthToken() (string, error) {
-	body, _ := json.Marshal(map[string]string{"api_key": apiKey})
-	resp, err := http.Post(baseURL+"/api/auth/token", "application/json", bytes.NewBuffer(body))
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	var result map[string]interface{}
-	json.NewDecoder(resp.Body).Decode(&result)
-	return result["token"].(string), nil
-}
-
-func insertRecord(token, collection string, record map[string]interface{}) (map[string]interface{}, error) {
-	body, _ := json.Marshal(record)
-	req, _ := http.NewRequest("POST", baseURL+"/api/insert/"+collection, bytes.NewBuffer(body))
-	req.Header.Set("Authorization", "Bearer "+token)
-	req.Header.Set("Content-Type", "application/json")
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	var result map[string]interface{}
-	json.NewDecoder(resp.Body).Decode(&result)
-	return result, nil
-}
-
-func main() {
 	fmt.Println("=== WebSocket Subscription Example (Go) ===")
 	fmt.Println()
 
 	collection := "ws_subscribe_example_go"
 
 	// Step 1: Authenticate
-	token, err := getAuthToken()
+	authBody, _ := json.Marshal(map[string]string{"api_key": apiKey})
+	authResp, err := http.Post(baseURL+"/api/auth/token", "application/json", bytes.NewBuffer(authBody))
 	if err != nil {
 		fmt.Printf("Auth failed: %v\n", err)
 		os.Exit(1)
 	}
+	defer authResp.Body.Close()
+
+	var authResult map[string]interface{}
+	json.NewDecoder(authResp.Body).Decode(&authResult)
+	token := authResult["token"].(string)
 	fmt.Println("✓ Authentication successful")
 
 	// Step 2: Connect to WebSocket
@@ -100,10 +68,16 @@ func main() {
 			"collection": collection,
 		},
 	}
-	conn.WriteJSON(subscribeMsg)
+	if err := conn.WriteJSON(subscribeMsg); err != nil {
+		fmt.Printf("WebSocket subscribe request failed: %v\n", err)
+		os.Exit(1)
+	}
 
 	var subResponse map[string]interface{}
-	conn.ReadJSON(&subResponse)
+	if err := conn.ReadJSON(&subResponse); err != nil {
+		fmt.Printf("WebSocket subscribe response read failed: %v\n", err)
+		os.Exit(1)
+	}
 	payload := subResponse["payload"].(map[string]interface{})
 	data := payload["data"].(map[string]interface{})
 	fmt.Printf("✓ Subscribed (subscription_id: %s)\n", data["subscription_id"])
@@ -123,11 +97,29 @@ func main() {
 		}
 	}()
 
+	// Helper to insert a record via REST API
+	doInsert := func(record map[string]interface{}) (map[string]interface{}, error) {
+		body, _ := json.Marshal(record)
+		req, _ := http.NewRequest("POST", baseURL+"/api/insert/"+collection, bytes.NewBuffer(body))
+		req.Header.Set("Authorization", "Bearer "+token)
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, err := (&http.Client{}).Do(req)
+		if err != nil {
+			return nil, err
+		}
+		defer resp.Body.Close()
+
+		var result map[string]interface{}
+		json.NewDecoder(resp.Body).Decode(&result)
+		return result, nil
+	}
+
 	// Step 5: Insert records via REST API to trigger notifications
 	fmt.Println("\n=== Performing mutations to trigger notifications ===")
 
 	fmt.Println("Inserting record 1...")
-	result1, _ := insertRecord(token, collection, map[string]interface{}{
+	result1, _ := doInsert(map[string]interface{}{
 		"name":   "Alice",
 		"role":   "engineer",
 		"active": true,
@@ -153,7 +145,7 @@ func main() {
 	}
 
 	fmt.Println("\nInserting record 2...")
-	result2, _ := insertRecord(token, collection, map[string]interface{}{
+	result2, _ := doInsert(map[string]interface{}{
 		"name":   "Bob",
 		"role":   "designer",
 		"active": true,
@@ -183,7 +175,10 @@ func main() {
 			"collection": collection,
 		},
 	}
-	conn.WriteJSON(unsubMsg)
+	if err := conn.WriteJSON(unsubMsg); err != nil {
+		fmt.Printf("WebSocket unsubscribe failed: %v\n", err)
+		os.Exit(1)
+	}
 	fmt.Println("✓ Unsubscribed")
 
 	fmt.Println("\n✓ WebSocket subscription example completed successfully")
