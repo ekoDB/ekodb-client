@@ -1181,10 +1181,12 @@ fn test_error_is_retryable() {
     assert!(Error::Timeout.is_retryable());
     assert!(Error::Connection("test".to_string()).is_retryable());
     assert!(Error::ServiceUnavailable("test".to_string()).is_retryable());
-    assert!(Error::RateLimit {
-        retry_after_secs: 30
-    }
-    .is_retryable());
+    assert!(
+        Error::RateLimit {
+            retry_after_secs: 30
+        }
+        .is_retryable()
+    );
 
     assert!(!Error::NotFound.is_retryable());
     assert!(!Error::Auth("test".to_string()).is_retryable());

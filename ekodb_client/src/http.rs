@@ -1547,7 +1547,22 @@ impl HttpClient {
                     .send()
                     .await?;
 
+                let status = response.status();
                 let bytes = response.bytes().await.map_err(Error::Http)?;
+                if !status.is_success() {
+                    // Try to extract error message from response body
+                    if let Ok(err_obj) = serde_json::from_slice::<serde_json::Value>(&bytes) {
+                        let msg = err_obj["error"].as_str().unwrap_or("unknown error");
+                        return Err(Error::Api {
+                            code: status.as_u16(),
+                            message: msg.to_string(),
+                        });
+                    }
+                    return Err(Error::Api {
+                        code: status.as_u16(),
+                        message: format!("chat message failed ({})", status),
+                    });
+                }
                 serde_json::from_slice(&bytes).map_err(Error::Serialization)
             })
             .await

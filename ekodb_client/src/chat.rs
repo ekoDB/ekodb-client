@@ -219,6 +219,10 @@ pub struct ChatMessageRequest {
     pub bypass_ripple: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub force_summarize: Option<bool>,
+    /// Maximum tool-calling iterations for this message.
+    /// Overrides the server/session default when set.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub max_iterations: Option<u32>,
 }
 
 impl ChatMessageRequest {
@@ -228,12 +232,19 @@ impl ChatMessageRequest {
             message: message.into(),
             bypass_ripple: None,
             force_summarize: None,
+            max_iterations: None,
         }
     }
 
     /// Force conversation summarization
     pub fn force_summarize(mut self, force: bool) -> Self {
         self.force_summarize = Some(force);
+        self
+    }
+
+    /// Set maximum tool-calling iterations for this message.
+    pub fn max_iterations(mut self, max: u32) -> Self {
+        self.max_iterations = Some(max);
         self
     }
 }
@@ -355,6 +366,8 @@ pub struct UpdateSessionRequest {
     pub collections: Option<Vec<CollectionConfig>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub memory: Option<serde_json::Value>,
 }
 
 impl UpdateSessionRequest {
@@ -384,6 +397,12 @@ impl UpdateSessionRequest {
     /// Set the collections
     pub fn collections(mut self, collections: Vec<CollectionConfig>) -> Self {
         self.collections = Some(collections);
+        self
+    }
+
+    /// Set the memory object
+    pub fn memory(mut self, memory: serde_json::Value) -> Self {
+        self.memory = Some(memory);
         self
     }
 }

@@ -54,7 +54,7 @@ pub mod schema;
 pub mod search;
 pub mod types;
 mod utils;
-mod websocket;
+pub mod websocket;
 
 // Public API exports
 pub use auth::*;

@@ -631,6 +631,14 @@ impl Client {
     /// # Ok(())
     /// # }
     /// ```
+    /// Get a valid authentication token (JWT).
+    ///
+    /// Returns a cached token if available, otherwise exchanges the API key
+    /// for a new JWT via `/api/auth/token`.
+    pub async fn get_token(&self) -> Result<String> {
+        self.auth.get_token().await
+    }
+
     pub async fn refresh_token(&self) -> Result<String> {
         self.auth.refresh_token().await
     }

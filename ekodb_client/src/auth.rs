@@ -2,7 +2,7 @@
 
 use crate::error::{Error, Result};
 use reqwest::Client;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use tokio::sync::RwLock;
 use url::Url;
 
