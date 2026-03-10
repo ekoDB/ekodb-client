@@ -60,8 +60,8 @@ impl RetryPolicy {
 mod tests {
     use super::*;
     use crate::error::Error;
-    use std::sync::atomic::{AtomicU32, Ordering};
     use std::sync::Arc;
+    use std::sync::atomic::{AtomicU32, Ordering};
 
     #[tokio::test]
     async fn test_retry_success_on_first_attempt() {

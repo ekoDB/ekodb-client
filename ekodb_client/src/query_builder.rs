@@ -4,7 +4,7 @@
 //! logical operators, comparison operators, and advanced filtering.
 
 use crate::types::Query;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 /// Builder for constructing complex queries
 #[derive(Debug, Clone, Default)]

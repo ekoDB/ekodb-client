@@ -8,7 +8,49 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Fixed
+
+- **WebSocket close handshake** — `close()` now sends a proper WS close frame
+  via `SinkExt::close()` before dropping the connection, eliminating "Connection
+  reset without closing handshake" warnings on the server side. Method signature
+  changed from `&mut self` to `&self` for compatibility with shared references.
+
+- **WebSocket deadlock during client tool calls** — `WebSocketClient` used a
+  single `Mutex<Option<(WsWrite, WsRead)>>` for the connection. The spawned
+  reader task held the lock while waiting for frames (`read.next().await`),
+  blocking `send_tool_result()` from acquiring the lock to write. This caused
+  24+ second delays on every client tool round-trip. Split into separate
+  `writer` and `reader` mutexes so writes never block on reads. The reader task
+  now drops the lock after each `read.next()` call before processing the
+  message.
+
 ### Added
+
+- **`memory` field on `UpdateSessionRequest`** — Allows updating the chat-scoped
+  memory object when updating a session. Enables clients to directly set/modify
+  the session memory without going through LLM tool calls.
+
+- **Public token access** — New `get_token()` and `clear_token_cache()` methods
+  on `Client` to expose JWT retrieval and cache invalidation for downstream
+  consumers (e.g., ekodb-claw WebSocket auth).
+
+- **WebSocket chat streaming** — New `chat_send()` method on `WebSocketClient`
+  sends a chat message over WSS and returns a receiver of `ChatStreamEvent`
+  items (`Chunk`, `End`, `Error`) for real-time token streaming from the LLM.
+
+- **Filtered WebSocket subscriptions** — New `subscribe()` method with optional
+  `filter_field` / `filter_value` parameters to narrow mutation notifications to
+  records matching a specific field value (e.g., `chat_id = X`).
+
+- **New WebSocket response types** — `WebSocketResponse` now includes
+  `ChatStreamChunk`, `ChatStreamEnd`, `ChatStreamError`, and
+  `MutationNotification` variants for typed handling of server push messages.
+
+- **Typed wrapper value extraction** — New `as_string()` and `as_bool()` methods
+  on `FieldType` that transparently unwrap both direct values (`String("x")`)
+  and ekoDB's typed wrapper format (`Object({"type": "String", "value": "x"})`).
+  New `get_string()` and `get_bool()` convenience methods on `Record` combine
+  field lookup with extraction in one call.
 
 ### Fixed
 

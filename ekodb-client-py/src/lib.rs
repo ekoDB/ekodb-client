@@ -1427,6 +1427,7 @@ impl Client {
                 message,
                 bypass_ripple: None,
                 force_summarize: None,
+                max_iterations: None,
             };
 
             let result = client
@@ -1525,6 +1526,7 @@ impl Client {
                 llm_model,
                 collections: None,
                 title: None,
+                memory: None,
             };
 
             let result = client
