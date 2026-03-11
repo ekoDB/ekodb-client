@@ -175,7 +175,7 @@ docs-client:
 docs: docs-client
 
 # Build targets - builds all client libraries
-build: build-client build-python-client build-typescript-client build-kotlin-client
+build: ensure-hooks build-client build-python-client build-typescript-client build-kotlin-client
 	@echo "✅ $(GREEN)All client libraries built!$(RESET)"
 
 build-release:
@@ -358,7 +358,7 @@ deploy-client-kt:
 deploy-client-kotlin: deploy-client-kt
 
 # Test targets - runs ALL unit tests across all client libraries
-test:
+test: ensure-hooks examples-ls-check
 	@RUST_COUNT=0; TS_COUNT=0; PY_COUNT=0; KT_COUNT=0; \
 	echo "🦀 $(CYAN)Running Rust client tests...$(RESET)"; \
 	RUST_OUTPUT=$$($(CARGO) test -p ekodb_client 2>&1); \
@@ -1540,6 +1540,14 @@ deps-update-kotlin:
 # Examples Inventory
 # ============================================================================
 
+ensure-hooks:
+	@if [ ! -f .git/hooks/pre-commit ]; then \
+		echo "🔗 $(CYAN)Installing pre-commit hook...$(RESET)"; \
+		ln -s ../../scripts/pre-commit .git/hooks/pre-commit; \
+		chmod +x .git/hooks/pre-commit; \
+		echo "✅ $(GREEN)Pre-commit hook installed$(RESET)"; \
+	fi
+
 examples-ls:
 	@echo "📋 $(CYAN)Generating examples inventory...$(RESET)"
 	@chmod +x scripts/generate_examples_list.sh
@@ -1550,10 +1558,10 @@ examples-ls-check:
 	@echo "🔍 $(CYAN)Checking examples inventory against committed snapshot...$(RESET)"
 	@chmod +x scripts/generate_examples_list.sh
 	@./scripts/generate_examples_list.sh --temp
-	@if ! diff -I "^# Generated:" examples_list.txt examples_list.txt.tmp > /dev/null 2>&1; then \
+	@if ! diff examples_list.txt examples_list.txt.tmp > /dev/null 2>&1; then \
 		echo "$(RED)❌ Examples inventory has changed!$(RESET)"; \
 		echo "$(YELLOW)Differences found:$(RESET)"; \
-		diff -I "^# Generated:" examples_list.txt examples_list.txt.tmp || true; \
+		diff examples_list.txt examples_list.txt.tmp || true; \
 		echo "$(YELLOW)Run 'make examples-ls' to update the snapshot$(RESET)"; \
 		rm -f examples_list.txt.tmp examples_list.json.tmp; \
 		exit 1; \

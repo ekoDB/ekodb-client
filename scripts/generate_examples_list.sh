@@ -27,8 +27,7 @@ echo -e "${CYAN}🔍 Generating comprehensive examples list...${RESET}"
 # Start JSON structure
 echo "[" > "$EXAMPLES_JSON"
 echo "# ekoDB Client Examples Inventory" > "$EXAMPLES_TXT"
-echo "# Generated: $(date)" >> "$EXAMPLES_TXT"
-echo "# " >> "$EXAMPLES_TXT"
+echo "#" >> "$EXAMPLES_TXT"
 
 # Initialize counters
 total_examples=0

@@ -2,12 +2,16 @@
 //!
 //! This module provides WebSocket support for real-time updates, queries,
 //! and streaming chat responses with bidirectional client tool callbacks.
+//!
+//! Uses a single reader loop (dispatcher) that demultiplexes incoming frames
+//! to per-request/per-subscription/per-chat channels, avoiding reader contention.
 
 use crate::Record;
 use crate::error::{Error, Result};
 use futures_util::{SinkExt, StreamExt, stream::SplitSink, stream::SplitStream};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tokio_tungstenite::{
@@ -152,6 +156,9 @@ pub enum WebSocketResponse {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ResponsePayload {
     pub data: Value,
+    /// Server echoes back the message_id for request-response correlation
+    #[serde(rename = "messageId", default)]
+    pub message_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -221,17 +228,28 @@ pub enum ChatStreamEvent {
 type WsWrite = SplitSink<WebSocketStream<MaybeTlsStream<tokio::net::TcpStream>>, Message>;
 type WsRead = SplitStream<WebSocketStream<MaybeTlsStream<tokio::net::TcpStream>>>;
 
+/// Shared state for the dispatcher to route messages
+struct DispatchState {
+    /// One-shot channels for request-response (keyed by message_id)
+    pending_requests: HashMap<String, tokio::sync::oneshot::Sender<WebSocketResponse>>,
+    /// Subscription channels (keyed by collection name)
+    subscription_senders: Vec<tokio::sync::mpsc::Sender<MutationNotificationPayload>>,
+    /// Chat stream channels (keyed by chat_id)
+    chat_senders: HashMap<String, tokio::sync::mpsc::Sender<ChatStreamEvent>>,
+}
+
 /// WebSocket client for real-time communication with persistent connection.
 ///
-/// Read and write halves are held in separate mutexes so that a spawned reader
-/// task never blocks writes (e.g. sending `ClientToolResult` while the reader
-/// is waiting for the next frame).
+/// Uses a single dispatcher task that reads all incoming frames and routes them
+/// to the appropriate consumer (request-response, subscription, or chat stream).
+/// The writer is held in a separate mutex so sends never block on reads.
 #[derive(Clone)]
 pub struct WebSocketClient {
     ws_url: Url,
     token: String,
     writer: Arc<Mutex<Option<WsWrite>>>,
-    reader: Arc<Mutex<Option<WsRead>>>,
+    dispatch: Arc<Mutex<DispatchState>>,
+    connected: Arc<Mutex<bool>>,
 }
 
 impl WebSocketClient {
@@ -242,18 +260,30 @@ impl WebSocketClient {
             ws_url,
             token: token.into(),
             writer: Arc::new(Mutex::new(None)),
-            reader: Arc::new(Mutex::new(None)),
+            dispatch: Arc::new(Mutex::new(DispatchState {
+                pending_requests: HashMap::new(),
+                subscription_senders: Vec::new(),
+                chat_senders: HashMap::new(),
+            })),
+            connected: Arc::new(Mutex::new(false)),
         })
     }
 
     /// Ensure we have an active connection, reconnecting if needed
     async fn ensure_connected(&self) -> Result<()> {
-        // Quick check: if writer exists, we're connected
+        // Quick check: if connected, return
         {
             let w = self.writer.lock().await;
-            if w.is_some() {
+            let c = self.connected.lock().await;
+            if w.is_some() && *c {
                 return Ok(());
             }
+        }
+
+        // Clear stale state if partially connected
+        {
+            *self.writer.lock().await = None;
+            *self.connected.lock().await = false;
         }
 
         // Create new connection - append /api/ws path if not present
@@ -283,8 +313,151 @@ impl WebSocketClient {
 
         let (write, read) = ws_stream.split();
         *self.writer.lock().await = Some(write);
-        *self.reader.lock().await = Some(read);
+        *self.connected.lock().await = true;
+
+        // Spawn the single dispatcher task that reads all incoming frames
+        self.spawn_dispatcher(read);
+
         Ok(())
+    }
+
+    /// Spawn the single reader loop that demultiplexes incoming frames
+    fn spawn_dispatcher(&self, mut read: WsRead) {
+        let dispatch = self.dispatch.clone();
+        let writer = self.writer.clone();
+        let connected = self.connected.clone();
+
+        tokio::spawn(async move {
+            loop {
+                match read.next().await {
+                    Some(Ok(msg)) => {
+                        let text = match msg.into_text() {
+                            Ok(t) if !t.is_empty() => t.to_string(),
+                            _ => continue,
+                        };
+
+                        let response: WebSocketResponse = match serde_json::from_str(&text) {
+                            Ok(r) => r,
+                            Err(_) => continue,
+                        };
+
+                        let mut state = dispatch.lock().await;
+
+                        match &response {
+                            // Request-response: route by message_id
+                            WebSocketResponse::Success { payload } => {
+                                if let Some(mid) = &payload.message_id {
+                                    if let Some(tx) = state.pending_requests.remove(mid) {
+                                        let _ = tx.send(response);
+                                        continue;
+                                    }
+                                }
+                                // No message_id or no pending request — broadcast as generic success
+                                // (for backward compat with servers that don't echo message_id)
+                                // Try all pending requests (FIFO drain for single in-flight)
+                                if state.pending_requests.len() == 1 {
+                                    let key = state.pending_requests.keys().next().cloned().unwrap();
+                                    if let Some(tx) = state.pending_requests.remove(&key) {
+                                        let _ = tx.send(response);
+                                    }
+                                }
+                            }
+                            WebSocketResponse::Error { .. } => {
+                                // Route to the single pending request if there's only one
+                                if state.pending_requests.len() == 1 {
+                                    let key = state.pending_requests.keys().next().cloned().unwrap();
+                                    if let Some(tx) = state.pending_requests.remove(&key) {
+                                        let _ = tx.send(response);
+                                        continue;
+                                    }
+                                }
+                            }
+
+                            // Subscription notifications: broadcast to all subscription listeners
+                            WebSocketResponse::MutationNotification { payload } => {
+                                state.subscription_senders.retain(|tx| !tx.is_closed());
+                                for tx in &state.subscription_senders {
+                                    let _ = tx.try_send(payload.clone());
+                                }
+                            }
+
+                            // Chat stream: route by chat_id
+                            WebSocketResponse::ChatStreamChunk { payload } => {
+                                if let Some(tx) = state.chat_senders.get(&payload.chat_id) {
+                                    let _ = tx
+                                        .send(ChatStreamEvent::Chunk(payload.content.clone()))
+                                        .await;
+                                }
+                            }
+                            WebSocketResponse::ChatStreamEnd { payload } => {
+                                if let Some(tx) = state.chat_senders.remove(&payload.chat_id) {
+                                    let _ = tx
+                                        .send(ChatStreamEvent::End {
+                                            message_id: payload.message_id.clone(),
+                                            token_usage: payload.token_usage.clone(),
+                                            tool_call_history: payload.tool_call_history.clone(),
+                                            execution_time_ms: payload.execution_time_ms,
+                                        })
+                                        .await;
+                                }
+                            }
+                            WebSocketResponse::ChatStreamError { payload } => {
+                                if let Some(tx) = state.chat_senders.remove(&payload.chat_id) {
+                                    let _ = tx
+                                        .send(ChatStreamEvent::Error(payload.error.clone()))
+                                        .await;
+                                }
+                            }
+                            WebSocketResponse::ClientToolCall { payload } => {
+                                if let Some(tx) = state.chat_senders.get(&payload.chat_id) {
+                                    let _ = tx
+                                        .send(ChatStreamEvent::ToolCall {
+                                            call_id: payload.call_id.clone(),
+                                            tool_name: payload.tool_name.clone(),
+                                            arguments: payload.arguments.clone(),
+                                        })
+                                        .await;
+                                }
+                            }
+                        }
+                    }
+                    Some(Err(_)) | None => {
+                        // Connection closed — mark as disconnected and notify all waiters
+                        *writer.lock().await = None;
+                        *connected.lock().await = false;
+
+                        let mut state = dispatch.lock().await;
+                        // Drain pending requests
+                        for (_, tx) in state.pending_requests.drain() {
+                            let _ = tx.send(WebSocketResponse::Error {
+                                code: 0,
+                                message: "Connection closed".to_string(),
+                            });
+                        }
+                        // Notify chat streams
+                        for (_, tx) in state.chat_senders.drain() {
+                            let _ = tx
+                                .send(ChatStreamEvent::Error("Connection closed".to_string()))
+                                .await;
+                        }
+                        // Subscriptions will notice via closed channel
+                        state.subscription_senders.clear();
+                        break;
+                    }
+                }
+            }
+        });
+    }
+
+    /// Generate a unique message ID for request-response correlation
+    fn gen_message_id() -> Result<String> {
+        Ok(format!(
+            "{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map_err(|e| Error::WebSocket(e.to_string()))?
+                .as_nanos()
+        ))
     }
 
     /// Helper: send a message through the writer half
@@ -298,85 +471,60 @@ impl WebSocketClient {
             .await
         {
             *w = None;
+            *self.connected.lock().await = false;
             return Err(Error::WebSocket(format!("Send failed: {}", e)));
         }
         Ok(())
     }
 
-    /// Helper: read the next text frame from the reader half, skipping empty frames
-    async fn ws_recv(&self) -> Result<Option<String>> {
-        let mut r = self.reader.lock().await;
-        let read = r
-            .as_mut()
-            .ok_or_else(|| Error::WebSocket("Not connected".to_string()))?;
-        loop {
-            match read.next().await {
-                Some(Ok(msg)) => {
-                    if let Ok(text) = msg.into_text() {
-                        let text = text.to_string();
-                        if text.is_empty() {
-                            continue;
-                        }
-                        return Ok(Some(text));
-                    }
-                }
-                Some(Err(e)) => {
-                    *r = None;
-                    return Err(Error::WebSocket(format!("Receive failed: {}", e)));
-                }
-                None => {
-                    *r = None;
-                    return Ok(None);
-                }
-            }
+    /// Register a one-shot channel for a request-response and wait for the response
+    async fn send_and_wait(&self, msg: &impl Serialize, message_id: &str) -> Result<WebSocketResponse> {
+        let (tx, rx) = tokio::sync::oneshot::channel();
+
+        {
+            let mut state = self.dispatch.lock().await;
+            state.pending_requests.insert(message_id.to_string(), tx);
         }
+
+        if let Err(e) = self.ws_send(msg).await {
+            // Clean up on send failure
+            let mut state = self.dispatch.lock().await;
+            state.pending_requests.remove(message_id);
+            return Err(e);
+        }
+
+        rx.await.map_err(|_| Error::WebSocket("Response channel closed".to_string()))
     }
 
     /// Find all records in a collection via WebSocket
     pub async fn find_all(&self, collection: &str) -> Result<Vec<Record>> {
         self.ensure_connected().await?;
 
-        let message_id = format!(
-            "{}",
-            std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .map_err(|e| Error::WebSocket(e.to_string()))?
-                .as_nanos()
-        );
+        let message_id = Self::gen_message_id()?;
 
         let request = WebSocketRequest::FindAll {
-            message_id,
+            message_id: message_id.clone(),
             payload: FindAllPayload {
                 collection: collection.to_string(),
             },
         };
 
-        self.ws_send(&request).await?;
+        let response = self.send_and_wait(&request, &message_id).await?;
 
-        // Wait for response
-        loop {
-            let text = self
-                .ws_recv()
-                .await?
-                .ok_or_else(|| Error::WebSocket("Connection closed unexpectedly".to_string()))?;
-
-            let response: WebSocketResponse = serde_json::from_str(&text)?;
-
-            return match response {
-                WebSocketResponse::Success { payload } => {
-                    if let Some(arr) = payload.data.as_array() {
-                        let records: Vec<Record> = arr
-                            .iter()
-                            .filter_map(|v| serde_json::from_value(v.clone()).ok())
-                            .collect();
-                        Ok(records)
-                    } else {
-                        Ok(vec![])
-                    }
+        match response {
+            WebSocketResponse::Success { payload } => {
+                if let Some(arr) = payload.data.as_array() {
+                    let records: Vec<Record> = arr
+                        .iter()
+                        .filter_map(|v| serde_json::from_value(v.clone()).ok())
+                        .collect();
+                    Ok(records)
+                } else {
+                    Ok(vec![])
                 }
-                WebSocketResponse::Error { code, message } => Err(Error::api(code, message)),
-                _ => continue,
-            };
+            }
+            WebSocketResponse::Error { code, message } => Err(Error::api(code, message)),
+            _ => Err(Error::WebSocket("Unexpected response type".to_string())),
         }
     }
 
@@ -391,16 +539,10 @@ impl WebSocketClient {
     ) -> Result<tokio::sync::mpsc::Receiver<MutationNotificationPayload>> {
         self.ensure_connected().await?;
 
-        let message_id = format!(
-            "{}",
-            std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .map_err(|e| Error::WebSocket(e.to_string()))?
-                .as_nanos()
-        );
+        let message_id = Self::gen_message_id()?;
 
         let request = WebSocketRequest::Subscribe {
-            message_id,
+            message_id: message_id.clone(),
             payload: SubscribePayload {
                 collection: collection.to_string(),
                 filter_field: filter_field.map(|s| s.to_string()),
@@ -408,42 +550,20 @@ impl WebSocketClient {
             },
         };
 
-        self.ws_send(&request).await?;
+        // Send subscribe request and wait for ack
+        let response = self.send_and_wait(&request, &message_id).await?;
+        match response {
+            WebSocketResponse::Success { .. } => {}
+            WebSocketResponse::Error { code, message } => return Err(Error::api(code, message)),
+            _ => return Err(Error::WebSocket("Unexpected response to subscribe".to_string())),
+        }
 
+        // Register the subscription channel — dispatcher will route MutationNotifications here
         let (tx, rx) = tokio::sync::mpsc::channel(256);
-
-        // Spawn a listener task — only holds the reader lock
-        let reader = self.reader.clone();
-        tokio::spawn(async move {
-            loop {
-                let mut r = reader.lock().await;
-                let Some(read) = r.as_mut() else {
-                    break;
-                };
-
-                match read.next().await {
-                    Some(Ok(msg)) => {
-                        // Drop the lock before processing so writes aren't blocked
-                        drop(r);
-                        if let Ok(text) = msg.into_text() {
-                            if text.is_empty() {
-                                continue;
-                            }
-                            if let Ok(response) = serde_json::from_str::<WebSocketResponse>(&text) {
-                                if let WebSocketResponse::MutationNotification { payload } =
-                                    response
-                                {
-                                    if tx.send(payload).await.is_err() {
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    Some(Err(_)) | None => break,
-                }
-            }
-        });
+        {
+            let mut state = self.dispatch.lock().await;
+            state.subscription_senders.push(tx);
+        }
 
         Ok(rx)
     }
@@ -494,96 +614,19 @@ impl WebSocketClient {
             },
         };
 
-        self.ws_send(&request).await?;
-
+        // Register the chat stream channel before sending so we don't miss early frames
         let (tx, rx) = tokio::sync::mpsc::channel(256);
-        let target_chat_id = chat_id.to_string();
+        {
+            let mut state = self.dispatch.lock().await;
+            state.chat_senders.insert(chat_id.to_string(), tx);
+        }
 
-        // Spawn a reader task — only holds the reader lock, never the writer lock.
-        // This lets `send_tool_result` write concurrently without blocking.
-        let reader = self.reader.clone();
-        tokio::spawn(async move {
-            loop {
-                let msg = {
-                    let mut r = reader.lock().await;
-                    let Some(read) = r.as_mut() else {
-                        break;
-                    };
-                    read.next().await
-                };
-                // Lock is dropped here — writer is free to send
-
-                match msg {
-                    Some(Ok(msg)) => {
-                        if let Ok(text) = msg.into_text() {
-                            if text.is_empty() {
-                                continue;
-                            }
-                            if let Ok(response) = serde_json::from_str::<WebSocketResponse>(&text) {
-                                match response {
-                                    WebSocketResponse::ChatStreamChunk { payload }
-                                        if payload.chat_id == target_chat_id =>
-                                    {
-                                        if tx
-                                            .send(ChatStreamEvent::Chunk(payload.content))
-                                            .await
-                                            .is_err()
-                                        {
-                                            break;
-                                        }
-                                    }
-                                    WebSocketResponse::ChatStreamEnd { payload }
-                                        if payload.chat_id == target_chat_id =>
-                                    {
-                                        let _ = tx
-                                            .send(ChatStreamEvent::End {
-                                                message_id: payload.message_id,
-                                                token_usage: payload.token_usage,
-                                                tool_call_history: payload.tool_call_history,
-                                                execution_time_ms: payload.execution_time_ms,
-                                            })
-                                            .await;
-                                        break;
-                                    }
-                                    WebSocketResponse::ChatStreamError { payload }
-                                        if payload.chat_id == target_chat_id =>
-                                    {
-                                        let _ =
-                                            tx.send(ChatStreamEvent::Error(payload.error)).await;
-                                        break;
-                                    }
-                                    WebSocketResponse::ClientToolCall { payload }
-                                        if payload.chat_id == target_chat_id =>
-                                    {
-                                        if tx
-                                            .send(ChatStreamEvent::ToolCall {
-                                                call_id: payload.call_id,
-                                                tool_name: payload.tool_name,
-                                                arguments: payload.arguments,
-                                            })
-                                            .await
-                                            .is_err()
-                                        {
-                                            break;
-                                        }
-                                    }
-                                    _ => {
-                                        // Skip non-chat messages (subscriptions, pings, etc.)
-                                        continue;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    Some(Err(_)) | None => {
-                        let _ = tx
-                            .send(ChatStreamEvent::Error("Connection closed".to_string()))
-                            .await;
-                        break;
-                    }
-                }
-            }
-        });
+        if let Err(e) = self.ws_send(&request).await {
+            // Clean up on send failure
+            let mut state = self.dispatch.lock().await;
+            state.chat_senders.remove(chat_id);
+            return Err(e);
+        }
 
         Ok(rx)
     }
@@ -599,6 +642,8 @@ impl WebSocketClient {
     ) -> Result<()> {
         self.ensure_connected().await?;
 
+        let message_id = Self::gen_message_id()?;
+
         let request = WebSocketRequest::RegisterClientTools {
             payload: RegisterClientToolsPayload {
                 chat_id: chat_id.to_string(),
@@ -606,20 +651,29 @@ impl WebSocketClient {
             },
         };
 
-        self.ws_send(&request).await?;
+        // Use the same send-and-wait pattern but we need to wrap it since
+        // RegisterClientTools doesn't have a message_id field in the request.
+        // Send directly and wait for ack via a pending request slot.
+        let (tx, rx_ack) = tokio::sync::oneshot::channel();
+        {
+            let mut state = self.dispatch.lock().await;
+            state.pending_requests.insert(message_id.clone(), tx);
+        }
 
-        // Wait for ack
-        loop {
-            let text = self.ws_recv().await?.ok_or_else(|| {
-                Error::WebSocket("Connection closed before registration ack".to_string())
-            })?;
+        if let Err(e) = self.ws_send(&request).await {
+            let mut state = self.dispatch.lock().await;
+            state.pending_requests.remove(&message_id);
+            return Err(e);
+        }
 
-            let response: WebSocketResponse = serde_json::from_str(&text)?;
-            return match response {
-                WebSocketResponse::Success { .. } => Ok(()),
-                WebSocketResponse::Error { code, message } => Err(Error::api(code, message)),
-                _ => continue,
-            };
+        let response = rx_ack
+            .await
+            .map_err(|_| Error::WebSocket("Response channel closed".to_string()))?;
+
+        match response {
+            WebSocketResponse::Success { .. } => Ok(()),
+            WebSocketResponse::Error { code, message } => Err(Error::api(code, message)),
+            _ => Err(Error::WebSocket("Unexpected response to register_client_tools".to_string())),
         }
     }
 
@@ -635,7 +689,7 @@ impl WebSocketClient {
         result: Option<Value>,
         error: Option<String>,
     ) -> Result<()> {
-        // Only locks the writer — reader task can keep running
+        // Only locks the writer — dispatcher keeps running
         let request = WebSocketRequest::ClientToolResult {
             payload: ClientToolResultPayload {
                 chat_id: chat_id.to_string(),
@@ -656,7 +710,14 @@ impl WebSocketClient {
             let _ = writer.close().await;
         }
         *self.writer.lock().await = None;
-        *self.reader.lock().await = None;
+        *self.connected.lock().await = false;
+
+        // Clean up dispatch state
+        let mut state = self.dispatch.lock().await;
+        state.pending_requests.clear();
+        state.subscription_senders.clear();
+        state.chat_senders.clear();
+
         Ok(())
     }
 }

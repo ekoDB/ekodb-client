@@ -1347,7 +1347,17 @@ impl HttpClient {
                     .send()
                     .await?;
 
+                let status = response.status();
                 let bytes = response.bytes().await.map_err(Error::Http)?;
+
+                if !status.is_success() {
+                    let message = String::from_utf8_lossy(&bytes).to_string();
+                    return Err(Error::Api {
+                        code: status.as_u16(),
+                        message,
+                    });
+                }
+
                 serde_json::from_slice(&bytes).map_err(Error::Serialization)
             })
             .await
