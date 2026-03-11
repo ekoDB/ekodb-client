@@ -134,8 +134,8 @@ async def kv_basic_operations(client: Client) -> None:
     print("✅ Set cached data with 1 hour TTL")
 
     # Delete a key
-    deleted = await client.kv_delete("user:session:123")
-    print(f"🗑️  Deleted session: {deleted}\n")
+    await client.kv_delete("user:session:123")
+    print("🗑️  Deleted session\n")
 
 
 async def kv_pattern_query(client: Client) -> None:

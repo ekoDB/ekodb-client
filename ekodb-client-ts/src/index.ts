@@ -71,5 +71,9 @@ export type {
   UpdateSessionRequest,
   MergeSessionsRequest,
   ChatModels,
+  EmbedRequest,
+  EmbedResponse,
   UserFunction,
+  ToolChoice,
+  ToolConfig,
 } from "./client";

@@ -226,27 +226,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let mut context_messages = Vec::new();
     for (i, msg) in related_messages.iter().enumerate() {
-        let content = msg
-            .get("content")
-            .and_then(|v| {
-                if let ekodb_client::FieldType::String(s) = v {
-                    Some(s.clone())
-                } else {
-                    None
-                }
-            })
-            .unwrap_or_else(|| "N/A".to_string());
+        let content = msg.get_string("content").unwrap_or("N/A").to_string();
 
         let conv_id = msg
-            .get("conversation_id")
-            .and_then(|v| {
-                if let ekodb_client::FieldType::String(s) = v {
-                    Some(s.clone())
-                } else {
-                    None
-                }
-            })
-            .unwrap_or_else(|| "N/A".to_string());
+            .get_string("conversation_id")
+            .unwrap_or("N/A")
+            .to_string();
 
         println!("  {}. From {}", i + 1, conv_id);
         println!("     {}\n", content);
@@ -367,27 +352,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
         ownership_results.len()
     );
     for (i, msg) in ownership_results.iter().enumerate() {
-        let content = msg
-            .get("content")
-            .and_then(|v| {
-                if let ekodb_client::FieldType::String(s) = v {
-                    Some(s.clone())
-                } else {
-                    None
-                }
-            })
-            .unwrap_or_else(|| "N/A".to_string());
+        let content = msg.get_string("content").unwrap_or("N/A").to_string();
 
         let conv_id = msg
-            .get("conversation_id")
-            .and_then(|v| {
-                if let ekodb_client::FieldType::String(s) = v {
-                    Some(s.clone())
-                } else {
-                    None
-                }
-            })
-            .unwrap_or_else(|| "N/A".to_string());
+            .get_string("conversation_id")
+            .unwrap_or("N/A")
+            .to_string();
 
         println!("  {}. From {}: {}\n", i + 1, conv_id, content);
     }

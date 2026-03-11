@@ -1020,8 +1020,38 @@ impl Client {
         })
     }
 
+    /// Generate embeddings for multiple texts in a single batch request
+    ///
+    /// Args:
+    ///     texts: List of texts to generate embeddings for
+    ///     model: The embedding model to use (e.g., "text-embedding-3-small")
+    fn embed_batch<'py>(
+        &self,
+        py: Python<'py>,
+        texts: Vec<String>,
+        model: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            let embeddings = client
+                .embed_batch(texts, &model)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("Embed batch failed: {}", e)))?;
+
+            Python::attach(|py| {
+                let outer = PyList::empty(py);
+                for embedding in &embeddings {
+                    let inner = PyList::new(py, embedding)?;
+                    outer.append(inner)?;
+                }
+                Ok(outer.into())
+            })
+        })
+    }
+
     /// Set a key-value pair
-    /// 
+    ///
     /// Args:
     ///     key: The key
     ///     value: The value as a dict
@@ -1372,7 +1402,7 @@ impl Client {
     // Note: The chat() method has been removed. Use create_chat_session() and chat_message() instead.
 
     /// Create a new chat session
-    #[pyo3(signature = (collections, llm_provider, llm_model=None, system_prompt=None))]
+    #[pyo3(signature = (collections, llm_provider, llm_model=None, system_prompt=None, max_context_messages=None, bypass_ripple=None, max_tokens=None, temperature=None))]
     fn create_chat_session<'py>(
         &self,
         py: Python<'py>,
@@ -1380,6 +1410,10 @@ impl Client {
         llm_provider: String,
         llm_model: Option<String>,
         system_prompt: Option<String>,
+        max_context_messages: Option<usize>,
+        bypass_ripple: Option<bool>,
+        max_tokens: Option<i32>,
+        temperature: Option<f32>,
     ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
 
@@ -1398,10 +1432,13 @@ impl Client {
                 llm_provider,
                 llm_model,
                 system_prompt,
-                bypass_ripple: None,
+                bypass_ripple,
                 parent_id: None,
                 branch_point_idx: None,
-                max_context_messages: None,
+                max_context_messages,
+                max_tokens,
+                temperature,
+                tool_config: None,
             };
 
             let result = client
@@ -1414,20 +1451,25 @@ impl Client {
     }
 
     /// Send a message in an existing chat session
+    #[pyo3(signature = (chat_id, message, bypass_ripple=None, force_summarize=None, max_iterations=None))]
     fn chat_message<'py>(
         &self,
         py: Python<'py>,
         chat_id: String,
         message: String,
+        bypass_ripple: Option<bool>,
+        force_summarize: Option<bool>,
+        max_iterations: Option<u32>,
     ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
 
         future_into_py(py, async move {
             let request = ChatMessageRequest {
                 message,
-                bypass_ripple: None,
-                force_summarize: None,
-                max_iterations: None,
+                bypass_ripple,
+                force_summarize,
+                max_iterations,
+                tool_config: None,
             };
 
             let result = client
@@ -1510,13 +1552,16 @@ impl Client {
     }
 
     /// Update a chat session
-    #[pyo3(signature = (chat_id, system_prompt=None, llm_model=None))]
+    #[pyo3(signature = (chat_id, system_prompt=None, llm_model=None, title=None, max_context_messages=None, bypass_ripple=None))]
     fn update_chat_session<'py>(
         &self,
         py: Python<'py>,
         chat_id: String,
         system_prompt: Option<String>,
         llm_model: Option<String>,
+        title: Option<String>,
+        max_context_messages: Option<usize>,
+        bypass_ripple: Option<bool>,
     ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
 
@@ -1525,7 +1570,9 @@ impl Client {
                 system_prompt,
                 llm_model,
                 collections: None,
-                title: None,
+                max_context_messages,
+                bypass_ripple,
+                title,
                 memory: None,
             };
 
@@ -1575,6 +1622,9 @@ impl Client {
                 parent_id: Some(parent_id),
                 branch_point_idx: Some(branch_point_idx),
                 max_context_messages: None,
+                max_tokens: None,
+                temperature: None,
+                tool_config: None,
             };
 
             let result = client
@@ -1687,29 +1737,33 @@ impl Client {
     }
 
     /// Merge multiple chat sessions into one
+    #[pyo3(signature = (source_chat_ids, target_chat_id, merge_strategy, bypass_ripple=None))]
     fn merge_chat_sessions<'py>(
         &self,
         py: Python<'py>,
         source_chat_ids: Vec<String>,
         target_chat_id: String,
         merge_strategy: String,
+        bypass_ripple: Option<bool>,
     ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
 
         future_into_py::<_, Py<PyAny>>(py, async move {
             use ekodb_client::MergeStrategy;
-            
+
             let strategy = match merge_strategy.as_str() {
                 "Chronological" => MergeStrategy::Chronological,
                 "Summarized" => MergeStrategy::Summarized,
                 "LatestOnly" => MergeStrategy::LatestOnly,
-                _ => return Err(PyRuntimeError::new_err(format!("Invalid merge strategy: {}. Valid options: Chronological, Summarized, LatestOnly", merge_strategy))),
+                "Interleaved" => MergeStrategy::Interleaved,
+                _ => return Err(PyRuntimeError::new_err(format!("Invalid merge strategy: {}. Valid options: Chronological, Summarized, LatestOnly, Interleaved", merge_strategy))),
             };
 
             let request = ekodb_client::MergeSessionsRequest {
                 source_chat_ids: source_chat_ids,
                 target_chat_id: target_chat_id,
                 merge_strategy: strategy,
+                bypass_ripple,
             };
 
             let result = client

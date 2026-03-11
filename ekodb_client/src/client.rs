@@ -5,7 +5,7 @@ use crate::error::{Error, Result};
 use crate::http::HttpClient;
 use crate::schema::{CollectionMetadata, Schema};
 use crate::search::{SearchQuery, SearchResponse};
-use crate::types::{FieldType, Query, Record};
+use crate::types::{Query, Record};
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -1314,75 +1314,42 @@ impl Client {
     /// # }
     /// ```
     pub async fn embed(&self, text: &str, model: &str) -> Result<Vec<f64>> {
-        use crate::functions::{Function, Script};
-        use rust_decimal::prelude::ToPrimitive;
-
-        // Create a temporary collection for embedding generation
-        let temp_collection = format!("embed_temp_{}", uuid::Uuid::new_v4());
-
-        // Insert a temporary record with the text
-        let mut temp_record = Record::new();
-        temp_record.insert("text".to_string(), FieldType::String(text.to_string()));
-        self.insert(&temp_collection, temp_record, None).await?;
-
-        // Create a Script that loads the record, embeds it, and returns it
-        let temp_label = format!("embed_script_{}", uuid::Uuid::new_v4());
-        let script = Script::new(&temp_label, "Generate Embedding")
-            .with_description("Temporary script for embedding generation")
-            .with_function(Function::FindAll {
-                collection: temp_collection.clone(),
+        let token = self.auth.get_token().await?;
+        let request = crate::chat::EmbedRequest {
+            text: Some(text.to_string()),
+            texts: None,
+            model: Some(model.to_string()),
+        };
+        let response = self.http.embed(request, &token).await?;
+        response
+            .embeddings
+            .into_iter()
+            .next()
+            .ok_or(crate::Error::Api {
+                code: 500,
+                message: "No embedding returned".to_string(),
             })
-            .with_function(Function::Embed {
-                input_field: "text".to_string(),
-                output_field: "embedding".to_string(),
-                model: Some(model.to_string()),
-            });
+    }
 
-        // Save and execute the script
-        let script_id = self.save_script(script).await?;
-        let result = self.call_script(&script_id, None).await?;
-
-        // Clean up script and temp collection
-        let _ = self.delete_script(&script_id).await;
-        let _ = self.delete_collection(&temp_collection).await;
-
-        // Extract embedding from result
-        let records = result.records;
-        if !records.is_empty() {
-            if let Some(first_record) = records.first() {
-                // Try to get embedding field
-                if let Some(embedding_field) = first_record.get("embedding") {
-                    // Handle FieldType::Array
-                    if let crate::types::FieldType::Array(arr) = embedding_field {
-                        let embedding: Vec<f64> = arr
-                            .iter()
-                            .filter_map(|v| {
-                                if let crate::types::FieldType::Float(f) = v {
-                                    Some(*f)
-                                } else if let crate::types::FieldType::Number(n) = v {
-                                    match n {
-                                        crate::types::NumberValue::Float(f) => Some(*f),
-                                        crate::types::NumberValue::Integer(i) => Some(*i as f64),
-                                        crate::types::NumberValue::Decimal(d) => d.to_f64(),
-                                    }
-                                } else {
-                                    None
-                                }
-                            })
-                            .collect();
-
-                        if !embedding.is_empty() {
-                            return Ok(embedding);
-                        }
-                    }
-                }
-            }
-        }
-
-        Err(crate::Error::Api {
-            code: 500,
-            message: "Failed to extract embedding from result".to_string(),
-        })
+    /// Generate embeddings for multiple texts in a single batch request
+    ///
+    /// # Arguments
+    ///
+    /// * `texts` - The texts to generate embeddings for
+    /// * `model` - The embedding model to use (e.g., "text-embedding-3-small")
+    ///
+    /// # Returns
+    ///
+    /// A vector of embedding vectors
+    pub async fn embed_batch(&self, texts: Vec<String>, model: &str) -> Result<Vec<Vec<f64>>> {
+        let token = self.auth.get_token().await?;
+        let request = crate::chat::EmbedRequest {
+            text: None,
+            texts: Some(texts),
+            model: Some(model.to_string()),
+        };
+        let response = self.http.embed(request, &token).await?;
+        Ok(response.embeddings)
     }
 
     /// Update a chat message

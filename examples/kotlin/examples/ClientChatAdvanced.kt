@@ -145,7 +145,7 @@ fun main() = runBlocking {
         try {
             val merged = client.mergeChatSessions(mergeRequest)
             println("✓ Merged sessions")
-            println("  Merged session ID: ${merged["chat_id"]}\n")
+            println("  Total messages in merged session: ${merged["message_count"]}\n")
         } catch (e: Exception) {
             println("⚠ Merge failed (may not be supported): ${e.message}\n")
         }
