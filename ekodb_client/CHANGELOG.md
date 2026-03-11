@@ -8,23 +8,62 @@ and this project adheres to
 
 ## [Unreleased]
 
-### Fixed
-
-- **WebSocket close handshake** — `close()` now sends a proper WS close frame
-  via `SinkExt::close()` before dropping the connection, eliminating "Connection
-  reset without closing handshake" warnings on the server side. Method signature
-  changed from `&mut self` to `&self` for compatibility with shared references.
-
-- **WebSocket deadlock during client tool calls** — `WebSocketClient` used a
-  single `Mutex<Option<(WsWrite, WsRead)>>` for the connection. The spawned
-  reader task held the lock while waiting for frames (`read.next().await`),
-  blocking `send_tool_result()` from acquiring the lock to write. This caused
-  24+ second delays on every client tool round-trip. Split into separate
-  `writer` and `reader` mutexes so writes never block on reads. The reader task
-  now drops the lock after each `read.next()` call before processing the
-  message.
-
 ### Added
+
+- **Rust example: `client_collection_utils`** — Demonstrates collection utility
+  methods (`collection_exists`, `count_documents`, `list_collections`,
+  `delete_collection`). Translated from the Python example.
+
+- **Rust example: `client_kv_precision`** — Demonstrates float vs decimal
+  precision in KV operations using `FieldType::decimal()` and `get_value`/
+  `get_string_value` utilities. Translated from the Python example.
+
+- **`POST /api/embed` direct endpoint support** — `embed()` now calls the
+  server's `/api/embed` endpoint directly instead of creating temporary
+  collections and scripts. Much faster and cleaner.
+
+- **`embed_batch()` method** — New method for generating embeddings for multiple
+  texts in a single request. Available in Rust, TypeScript (`embedBatch`),
+  Python (`embed_batch`), Go (`EmbedBatch`), and Kotlin (`embedBatch`).
+
+- **`EmbedRequest` and `EmbedResponse` types** — New types for the embed API,
+  exported from all client libraries.
+
+- **`ToolConfig` and `ToolChoice` types** — New types for configuring tool
+  calling in chat sessions. `ToolConfig` controls enabled tools, allowed
+  collections, max iterations, write permissions, and tool choice strategy.
+  Exported from `ekodb_client` for use by all client languages.
+
+- **`tool_config` on `CreateChatSessionRequest`** — Configure tool calling when
+  creating a new chat session.
+
+- **`max_tokens` and `temperature` on `CreateChatSessionRequest`** — Control LLM
+  generation parameters per session, matching the server API.
+
+- **`tool_config` on `ChatMessageRequest`** — Override session tool config on a
+  per-message basis.
+
+- **`max_context_messages` and `bypass_ripple` on `UpdateSessionRequest`** —
+  Allow updating context window size and ripple sync settings on existing
+  sessions.
+
+- **`Interleaved` merge strategy** — Added `MergeStrategy::Interleaved` for
+  round-robin message merging from source sessions.
+
+- **`bypass_ripple` on `MergeSessionsRequest`** — Control ripple replication
+  during session merge operations.
+
+- **Python bindings: expanded parameters** — `create_chat_session` now accepts
+  `max_context_messages`, `bypass_ripple`, `max_tokens`, `temperature`.
+  `chat_message` now accepts `bypass_ripple`, `force_summarize`,
+  `max_iterations`. `update_chat_session` now accepts `title`,
+  `max_context_messages`, `bypass_ripple`. `merge_chat_sessions` now accepts
+  `bypass_ripple` and `Interleaved` strategy.
+
+- **TypeScript: `ToolConfig`, `ToolChoice` interfaces** — Added interfaces and
+  `max_iterations`, `tool_config` to `ChatMessageRequest`; `bypass_ripple`,
+  `title`, `memory` to `UpdateSessionRequest`; `Interleaved` to `MergeStrategy`;
+  `bypass_ripple` to `MergeSessionsRequest`.
 
 - **`memory` field on `UpdateSessionRequest`** — Allows updating the chat-scoped
   memory object when updating a session. Enables clients to directly set/modify
@@ -54,7 +93,89 @@ and this project adheres to
 
 ### Fixed
 
-### Changed
+- **Kotlin `embed()` used legacy temp collection/script approach** — Updated to
+  call `/api/embed` directly, matching all other client languages.
+
+- **Rust RAG example `N/A` field extraction** — `rag_conversation_system.rs`
+  used manual `FieldType::String` pattern matching which failed with typed
+  wrappers. Replaced with `record.get_string()` which handles all variants.
+
+- **Python `kv_get` precision example returned `None`** — `kv_get()` returns
+  `{"value": "<json_string>"}`, but the example called `get_value()` directly on
+  the wrapper dict. Fixed to parse the JSON string first.
+
+- **Python `kv_delete` printed `None`** — `kv_delete()` returns `None` by
+  design. Fixed example to not print the return value.
+
+- **Kotlin chat merge printed `null` for chat_id** — The merge response contains
+  `message_count`, not `chat_id`. Fixed to print `message_count`.
+
+- **Kotlin client `executeWithRetry` silently returned 4xx error responses** —
+  HTTP 4xx responses (e.g. 404 Not Found) were returned as successful results
+  instead of throwing exceptions. This caused `upsert()` to return error records
+  like `{error: "Record not found"}` instead of falling through to insert, and
+  `getChatModel()` to fail with JSON parsing errors on 405 responses. Added 4xx
+  status check to throw with the error body.
+
+- **Rust `client_convenience_methods` upsert overwrote Alice's record** — The
+  example upserted Bob's data into Alice's ID, then `find_one` for Alice's email
+  correctly returned nothing. Fixed to use a separate ID for Bob's upsert.
+
+- **Kotlin `ClientConvenienceMethods` used `toString()` for ID extraction** —
+  `inserted["id"]?.toString()` produces `StringValue(value=...)` instead of the
+  raw ID string. Fixed to use `getRecordId(inserted)` utility function.
+
+- **WebSocket close handshake** — `close()` now sends a proper WS close frame
+  via `SinkExt::close()` before dropping the connection, eliminating "Connection
+  reset without closing handshake" warnings on the server side. Method signature
+  changed from `&mut self` to `&self` for compatibility with shared references.
+
+- **WebSocket deadlock during client tool calls** — `WebSocketClient` used a
+  single `Mutex<Option<(WsWrite, WsRead)>>` for the connection. The spawned
+  reader task held the lock while waiting for frames (`read.next().await`),
+  blocking `send_tool_result()` from acquiring the lock to write. This caused
+  24+ second delays on every client tool round-trip. Split into separate
+  `writer` and `reader` mutexes so writes never block on reads. The reader task
+  now drops the lock after each `read.next()` call before processing the
+  message.
+
+- **WebSocket reader contention between subscribe/chat tasks** — Multiple
+  spawned reader tasks (subscriptions and chat streams) competed for the shared
+  reader mutex, causing messages to be consumed by the wrong task. Replaced with
+  a single dispatcher loop that demultiplexes incoming frames by message_id,
+  chat_id, or subscription type to the correct channel.
+
+- **WebSocket `find_all()` didn't match `message_id`** — Returned on the first
+  `Success` response without verifying it matched the request's `message_id`.
+  Now uses `send_and_wait()` with message_id correlation.
+
+- **WebSocket `ensure_connected()` only checked writer half** — If the reader
+  was cleared after a receive error but writer was still set, the client
+  wouldn't reconnect. Now checks both writer presence and a `connected` flag
+  maintained by the dispatcher.
+
+- **WebSocket dispatcher held lock during async channel sends** — The dispatcher
+  held the `DispatchState` mutex while awaiting `tx.send().await` on chat stream
+  channels. If a channel was full, this blocked the entire dispatcher. Now
+  clones/extracts senders while holding the lock, drops it, then performs async
+  sends outside the critical section.
+
+- **WebSocket subscription notifications broadcast to all subscribers** —
+  `MutationNotification` events were sent to every subscription receiver
+  regardless of collection. Multiple subscriptions to different collections
+  received unrelated mutations. Now stores `(collection, sender)` tuples and
+  only routes notifications to matching subscribers.
+
+- **WebSocket `register_client_tools` used `pending_requests` without
+  `messageId`** — The WS protocol for `RegisterClientTools` has no `messageId`
+  field, so the ack was routed via the "single pending request" fallback and
+  could misroute if another request was in-flight. Now uses a dedicated
+  `register_tools_ack` oneshot channel in the dispatcher.
+
+- **`embed()` HTTP status not checked before deserialization** — Non-2xx
+  responses were deserialized as `EmbedResponse`, producing confusing
+  serialization errors. Now checks status first and returns `Error::Api` with
+  the status code and response body.
 
 ## [0.8.0] - 2026-01-06
 
