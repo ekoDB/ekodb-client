@@ -1,8 +1,9 @@
 [package]
 name = "ekodb_client"
-version = "0.11.0"
+version = "0.12.0"
 authors = ["Sean M. Vazquez <sean.m.vazquez@gmail.com>"]
 edition = "2024"
+rust-version = "1.85"
 license = "MIT OR Apache-2.0"
 description = "Official Rust client library for ekoDB - A high-performance database"
 repository = "https://github.com/ekoDB/ekodb"
