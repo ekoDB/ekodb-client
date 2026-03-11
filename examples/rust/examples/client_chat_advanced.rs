@@ -210,6 +210,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             source_chat_ids: vec![chat_id2.clone()],
             target_chat_id: chat_id.clone(),
             merge_strategy: MergeStrategy::Chronological,
+            bypass_ripple: None,
         })
         .await?;
     println!("✓ Sessions merged successfully");

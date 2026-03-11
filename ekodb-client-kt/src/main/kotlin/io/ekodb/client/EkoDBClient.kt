@@ -1093,7 +1093,13 @@ class EkoDBClient private constructor(
                         return@repeat
                     }
                 }
-                
+
+                // Throw on client errors (4xx) that weren't handled above
+                if (response.status.value in 400..499) {
+                    val errorBody = response.bodyAsText()
+                    throw Exception("Request failed with status ${response.status.value}: $errorBody")
+                }
+
                 return response
             } catch (e: Exception) {
                 lastException = e
@@ -1653,58 +1659,54 @@ class EkoDBClient private constructor(
      * ```
      */
     suspend fun embed(text: String, model: String): List<Double> {
-        val tempCollection = "embed_temp_${System.currentTimeMillis()}_${(Math.random() * 1000000).toInt()}"
-        
-        try {
-            // Insert temporary record with the text
-            val record = Record()
-            record.insert("text", text)
-            insert(tempCollection, record)
-            
-            // Create Script with FindAll + Embed Functions
-            val tempLabel = "embed_script_${System.currentTimeMillis()}_${(Math.random() * 1000000).toInt()}"
-            val script = io.ekodb.client.functions.Script(
-                label = tempLabel,
-                name = "Generate Embedding",
-                description = "Temporary script for embedding generation",
-                version = "1.0",
-                parameters = emptyMap(),
-                functions = listOf(
-                    io.ekodb.client.functions.FunctionStageConfig.FindAll(
-                        collection = tempCollection
-                    ),
-                    io.ekodb.client.functions.FunctionStageConfig.Embed(
-                        input_field = "text",
-                        output_field = "embedding",
-                        model = JsonPrimitive(model)
-                    )
-                ),
-                tags = emptyList()
-            )
-            
-            // Save and execute the script
-            val scriptId = saveScript(script)
-            val result = callScript(scriptId)
-            
-            // Clean up
-            try { deleteScript(scriptId) } catch (_: Exception) {}
-            try { deleteCollection(tempCollection) } catch (_: Exception) {}
-            
-            // Extract embedding from result
-            if (result.records.isNotEmpty()) {
-                val record = result.records[0]
-                val embedding = record["embedding"]
-                if (embedding is JsonArray) {
-                    return embedding.map { it.jsonPrimitive.double }
-                }
+        val response = embedRequest(buildJsonObject {
+            put("text", text)
+            put("model", model)
+        })
+        val embeddings = response["embeddings"]?.jsonArray
+            ?: throw Exception("No embeddings in response")
+        if (embeddings.isEmpty()) throw Exception("No embedding returned")
+        return embeddings[0].jsonArray.map { it.jsonPrimitive.double }
+    }
+
+    /**
+     * Generate embeddings for multiple texts in a single request
+     *
+     * @param texts List of texts to embed
+     * @param model Embedding model name
+     * @return List of embedding vectors
+     *
+     * ```kotlin
+     * val embeddings = client.embedBatch(listOf("Hello", "World"), "text-embedding-3-small")
+     * println("Generated ${embeddings.size} embeddings")
+     * ```
+     */
+    suspend fun embedBatch(texts: List<String>, model: String): List<List<Double>> {
+        val response = embedRequest(buildJsonObject {
+            putJsonArray("texts") {
+                texts.forEach { add(JsonPrimitive(it)) }
             }
-            
-            throw Exception("Failed to extract embedding from result")
-        } catch (e: Exception) {
-            // Ensure cleanup even on error
-            try { deleteCollection(tempCollection) } catch (_: Exception) {}
-            throw e
+            put("model", model)
+        })
+        val embeddings = response["embeddings"]?.jsonArray
+            ?: throw Exception("No embeddings in response")
+        return embeddings.map { arr -> arr.jsonArray.map { it.jsonPrimitive.double } }
+    }
+
+    private suspend fun embedRequest(body: JsonObject): JsonObject {
+        val token = getToken()
+        val response = executeWithRetry {
+            client.post("$baseUrl/api/embed") {
+                header("Authorization", "Bearer $token")
+                contentType(ContentType.Application.Json)
+                setBody(body)
+            }
         }
+        if (!response.status.isSuccess()) {
+            val errorBody = response.bodyAsText()
+            throw Exception("Embed request failed with status ${response.status}: $errorBody")
+        }
+        return response.body<JsonObject>()
     }
     
     /**

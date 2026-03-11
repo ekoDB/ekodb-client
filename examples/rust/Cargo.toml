@@ -124,3 +124,11 @@ path = "examples/client_chat_models.rs"
 [[example]]
 name = "client_websocket_subscribe"
 path = "examples/client_websocket_subscribe.rs"
+
+[[example]]
+name = "client_collection_utils"
+path = "examples/client_collection_utils.rs"
+
+[[example]]
+name = "client_kv_precision"
+path = "examples/client_kv_precision.rs"

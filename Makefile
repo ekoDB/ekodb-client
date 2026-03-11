@@ -17,26 +17,34 @@ RESET := \033[0m
 
 .PHONY: all build build-release build-client build-python-client build-typescript-client build-examples test test-ci test-client test-examples test-examples-direct test-examples-client test-examples-rust test-examples-python test-examples-go test-examples-typescript test-examples-javascript test-examples-transactions test-examples-scripts test-examples-scripts-crud test-examples-swr test-examples-ts-swr test-examples-py-swr test-examples-go-swr test-examples-rust-swr test-examples-kt-swr clean check fmt fmt-rust fmt-rust-client fmt-rust-examples fmt-python fmt-go fmt-typescript fmt-md format install install-rust install-python install-typescript install-go setup install-hooks deps-check deps-update deploy-client deploy-client-rust deploy-client-py deploy-client-py-simple deploy-client-go deploy-client-ts bump-version bump-client-py docs-client
 
-# ASCII Banner for ekoDB
-BANNER := \
-	\ "███████╗ ██╗  ██═╗██████╗ ██████═╗╔██████╗  " "\n" \
-		"██╔════╝ ██╚██║  ██╔═══██╗██   ██║║██  ██║   " "\n" \
-		"███████╗ ████═╝  ██║   ██║██    ██║███████ " "\n" \
-		"██     ║ ██╔██╗  ██║   ██║██    ██║██   ██ " "\n" \
-		"███████║ ██║  ██ ║██████╔╝███████║║███████ " "\n" \
-		"╚══════╝ ╚═╝  ╚══╝ ╚════╝ ╚══════╝ ╚═════╝  " "\n"
+# Color codes for Worthington jet
+MAGENTA := \033[35m
+PURPLE := \033[35m
+BLUE := \033[34m
+BOLD := \033[1m
+DIM := \033[2m
+
+# Worthington jet
+JET := "                    $(MAGENTA)●$(RESET)\n                    $(PURPLE)█$(RESET)\n                $(BLUE)▄▀▄$(PURPLE)█▀█$(BLUE)▄▀▄$(RESET)"
+
+# ASCII Banner for ekoDB (matches CLI banner)
+BANNER := "$(BOLD) ██████═╗ ██╗  ██╗  ██████╗  ████████╗ ████████╗$(RESET)\n$(BOLD)██╔═══██╝ ██║ ██╔╝ ██╔═══██╗  ██╔═══██║ ██╔═══██╗$(RESET)\n$(BOLD)████████╗ █████╔╝  ██║   ██║  ██║   ██║████████╔╝$(RESET)\n$(BOLD)██╔═════╝ ██╔═██╗  ██║   ██║  ██║   ██║ ██╔═══██╗$(RESET)\n$(BOLD)████████╗ ██║  ██╗ ╚██████╔╝ ████████║ ████████╔╝$(RESET)\n$(BOLD)╚═══════╝ ╚═╝  ╚═╝  ╚═════╝  ╚═══════╝ ╚═══════╝$(RESET)"
 
 # Language Sub-Banner
 LANGUAGES := \
-	"         🦀 Rust  •  🐍 Python  •  📘 TypeScript  •  🟣 Kotlin" "\n"
+	"🦀 Rust  •  🐍 Python  •  📘 TypeScript  •  🟣 Kotlin" "\n"
 
 # Default target
 all: build
 
 help:
+	@echo $(JET)
+	@echo ""
 	@echo $(BANNER)
+	@echo ""
 	@echo $(LANGUAGES)
-	@echo "✨ $(CYAN)Welcome to ekoDB Client Libraries ✨$(RESET)"
+	@echo ""
+	@echo "✨ $(CYAN)ekoDB - Client Libraries ✨$(RESET)"
 	@echo ""
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "📌 $(CYAN)BUILD & DEVELOPMENT$(RESET)"

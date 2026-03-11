@@ -151,6 +151,20 @@ export interface ChatRequest {
   bypass_ripple?: boolean;
 }
 
+export interface ToolChoice {
+  type: "auto" | "none" | "required" | "tool";
+  name?: string;
+}
+
+export interface ToolConfig {
+  enabled: boolean;
+  allowed_tools?: string[];
+  allowed_collections?: string[];
+  max_iterations?: number;
+  allow_write_operations?: boolean;
+  tool_choice?: ToolChoice;
+}
+
 export interface CreateChatSessionRequest {
   collections: CollectionConfig[];
   llm_provider: string;
@@ -160,12 +174,17 @@ export interface CreateChatSessionRequest {
   parent_id?: string;
   branch_point_idx?: number;
   max_context_messages?: number;
+  max_tokens?: number;
+  temperature?: number;
+  tool_config?: ToolConfig;
 }
 
 export interface ChatMessageRequest {
   message: string;
   bypass_ripple?: boolean;
   force_summarize?: boolean;
+  max_iterations?: number;
+  tool_config?: ToolConfig;
 }
 
 export interface TokenUsage {
@@ -233,18 +252,23 @@ export interface UpdateSessionRequest {
   llm_model?: string;
   collections?: CollectionConfig[];
   max_context_messages?: number;
+  bypass_ripple?: boolean;
+  title?: string;
+  memory?: any;
 }
 
 export enum MergeStrategy {
   Chronological = "Chronological",
   Summarized = "Summarized",
   LatestOnly = "LatestOnly",
+  Interleaved = "Interleaved",
 }
 
 export interface MergeSessionsRequest {
   source_chat_ids: string[];
   target_chat_id: string;
   merge_strategy: MergeStrategy;
+  bypass_ripple?: boolean;
 }
 
 /**
@@ -254,6 +278,24 @@ export interface ChatModels {
   openai: string[];
   anthropic: string[];
   perplexity: string[];
+}
+
+/**
+ * Request to generate embeddings
+ */
+export interface EmbedRequest {
+  text?: string;
+  texts?: string[];
+  model?: string;
+}
+
+/**
+ * Response from embedding generation
+ */
+export interface EmbedResponse {
+  embeddings: number[][];
+  model: string;
+  dimensions: number;
 }
 
 /**
@@ -1730,13 +1772,7 @@ export class EkoDBClient {
   // ========== RAG Helper Methods ==========
 
   /**
-   * Generate embeddings for text using ekoDB's native Functions
-   *
-   * This helper simplifies embedding generation by:
-   * 1. Creating a temporary collection with the text
-   * 2. Running a Script with FindAll + Embed Functions
-   * 3. Extracting and returning the embedding vector
-   * 4. Cleaning up temporary resources
+   * Generate embeddings for a single text
    *
    * @param text - The text to generate embeddings for
    * @param model - The embedding model to use (e.g., "text-embedding-3-small")
@@ -1752,57 +1788,36 @@ export class EkoDBClient {
    * ```
    */
   async embed(text: string, model: string): Promise<number[]> {
-    const tempCollection = `embed_temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
-    try {
-      // Insert temporary record with the text
-      await this.insert(tempCollection, { text }, undefined);
-
-      // Create Script with FindAll + Embed Functions
-      const tempLabel = `embed_script_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      const script: Script = {
-        label: tempLabel,
-        name: "Generate Embedding",
-        description: "Temporary script for embedding generation",
-        version: "1.0",
-        parameters: {},
-        functions: [
-          {
-            type: "FindAll",
-            collection: tempCollection,
-          },
-          {
-            type: "Embed",
-            input_field: "text",
-            output_field: "embedding",
-            model: model,
-          } as any,
-        ],
-        tags: [],
-      };
-
-      // Save and execute the script
-      const scriptId = await this.saveScript(script);
-      const result = await this.callScript(scriptId, undefined);
-
-      // Clean up
-      await this.deleteScript(scriptId).catch(() => {});
-      await this.deleteCollection(tempCollection).catch(() => {});
-
-      // Extract embedding from result
-      if (result.records && result.records.length > 0) {
-        const record = result.records[0];
-        if (record.embedding && Array.isArray(record.embedding)) {
-          return record.embedding as number[];
-        }
-      }
-
-      throw new Error("Failed to extract embedding from result");
-    } catch (error) {
-      // Ensure cleanup even on error
-      await this.deleteCollection(tempCollection).catch(() => {});
-      throw error;
+    const response = await this.embedRequest({ text, model });
+    if (response.embeddings.length === 0) {
+      throw new Error("No embedding returned");
     }
+    return response.embeddings[0];
+  }
+
+  /**
+   * Generate embeddings for multiple texts in a single batch request
+   *
+   * @param texts - Array of texts to generate embeddings for
+   * @param model - The embedding model to use
+   * @returns Array of embedding vectors
+   */
+  async embedBatch(texts: string[], model: string): Promise<number[][]> {
+    const response = await this.embedRequest({ texts, model });
+    return response.embeddings;
+  }
+
+  /**
+   * Internal: make embed API request
+   */
+  private async embedRequest(request: EmbedRequest): Promise<EmbedResponse> {
+    return this.makeRequest<EmbedResponse>(
+      "POST",
+      "/api/embed",
+      request,
+      0,
+      true, // Force JSON
+    );
   }
 
   /**

@@ -55,20 +55,15 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // Step 2: Create a chat session
     println!("=== Creating Chat Session ===");
-    let session_request = CreateChatSessionRequest {
-        collections: vec![CollectionConfig {
+    let session_request = CreateChatSessionRequest::new("openai")
+        .model("gpt-4")
+        .system_prompt("You are a helpful assistant for ekoDB documentation.")
+        .max_context_messages(10)
+        .collection(CollectionConfig {
             collection_name: collection.to_string(),
             fields: vec![],
             search_options: None,
-        }],
-        llm_provider: "openai".to_string(),
-        llm_model: Some("gpt-4".to_string()),
-        system_prompt: Some("You are a helpful assistant for ekoDB documentation.".to_string()),
-        parent_id: None,
-        branch_point_idx: None,
-        max_context_messages: Some(10),
-        bypass_ripple: Some(false),
-    };
+        });
 
     let session = client.create_chat_session(session_request).await?;
     let chat_id = &session.chat_id;

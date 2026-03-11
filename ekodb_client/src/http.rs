@@ -1,9 +1,9 @@
 //! HTTP client implementation for ekoDB API
 
 use crate::chat::{
-    ChatMessageRequest, ChatResponse, ChatSessionResponse, CreateChatSessionRequest,
-    GetMessagesQuery, ListSessionsQuery, ListSessionsResponse, MergeSessionsRequest, Models,
-    ToggleForgottenRequest, UpdateMessageRequest, UpdateSessionRequest,
+    ChatMessageRequest, ChatResponse, ChatSessionResponse, CreateChatSessionRequest, EmbedRequest,
+    EmbedResponse, GetMessagesQuery, ListSessionsQuery, ListSessionsResponse, MergeSessionsRequest,
+    Models, ToggleForgottenRequest, UpdateMessageRequest, UpdateSessionRequest,
 };
 use crate::client::RateLimitInfo;
 use crate::error::{Error, Result};
@@ -1323,6 +1323,27 @@ impl HttpClient {
                     .get(url.clone())
                     .header("Authorization", format!("Bearer {}", token))
                     .header("Accept", "application/json")
+                    .send()
+                    .await?;
+
+                let bytes = response.bytes().await.map_err(Error::Http)?;
+                serde_json::from_slice(&bytes).map_err(Error::Serialization)
+            })
+            .await
+    }
+
+    /// Generate embeddings for text(s)
+    pub async fn embed(&self, request: EmbedRequest, token: &str) -> Result<EmbedResponse> {
+        let url = self.base_url.join("/api/embed")?;
+
+        self.retry_policy
+            .execute(|| async {
+                let response = self
+                    .client
+                    .post(url.clone())
+                    .header("Authorization", format!("Bearer {}", token))
+                    .header("Accept", "application/json")
+                    .json(&request)
                     .send()
                     .await?;
 

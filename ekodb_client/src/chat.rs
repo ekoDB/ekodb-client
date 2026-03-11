@@ -6,6 +6,43 @@
 use crate::types::Record;
 use serde::{Deserialize, Serialize};
 
+/// Controls how the LLM decides whether to use tools
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum ToolChoice {
+    /// LLM decides whether to use tools (default)
+    Auto,
+    /// Never use tools, text response only
+    None,
+    /// Must use at least one tool
+    Required,
+    /// Force use of a specific tool by name
+    Tool { name: String },
+}
+
+/// Configuration for which tools are available in a chat session
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct ToolConfig {
+    /// Enable/disable all tools (master switch)
+    #[serde(default)]
+    pub enabled: bool,
+    /// Specific tools to enable (if None, all tools enabled when enabled=true)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub allowed_tools: Option<Vec<String>>,
+    /// Collections the tools can access (if None, uses session's collections)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub allowed_collections: Option<Vec<String>>,
+    /// Maximum iterations for tool calling loop
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_iterations: Option<u32>,
+    /// Whether tools can perform write operations
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub allow_write_operations: Option<bool>,
+    /// Controls how the LLM decides whether to use tools
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tool_choice: Option<ToolChoice>,
+}
+
 /// Available LLM models from different providers
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Models {
@@ -139,6 +176,12 @@ pub struct CreateChatSessionRequest {
     pub branch_point_idx: Option<usize>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub max_context_messages: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub max_tokens: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub temperature: Option<f32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tool_config: Option<ToolConfig>,
 }
 
 impl CreateChatSessionRequest {
@@ -153,6 +196,9 @@ impl CreateChatSessionRequest {
             parent_id: None,
             branch_point_idx: None,
             max_context_messages: None,
+            max_tokens: None,
+            temperature: None,
+            tool_config: None,
         }
     }
 
@@ -184,6 +230,24 @@ impl CreateChatSessionRequest {
     /// Set maximum context messages
     pub fn max_context_messages(mut self, max: usize) -> Self {
         self.max_context_messages = Some(max);
+        self
+    }
+
+    /// Set max tokens for LLM calls
+    pub fn max_tokens(mut self, max: i32) -> Self {
+        self.max_tokens = Some(max);
+        self
+    }
+
+    /// Set temperature for LLM calls
+    pub fn temperature(mut self, temp: f32) -> Self {
+        self.temperature = Some(temp);
+        self
+    }
+
+    /// Set tool configuration
+    pub fn tool_config(mut self, config: ToolConfig) -> Self {
+        self.tool_config = Some(config);
         self
     }
 }
@@ -223,6 +287,9 @@ pub struct ChatMessageRequest {
     /// Overrides the server/session default when set.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub max_iterations: Option<u32>,
+    /// Override session tool config for this message
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tool_config: Option<ToolConfig>,
 }
 
 impl ChatMessageRequest {
@@ -233,6 +300,7 @@ impl ChatMessageRequest {
             bypass_ripple: None,
             force_summarize: None,
             max_iterations: None,
+            tool_config: None,
         }
     }
 
@@ -247,6 +315,12 @@ impl ChatMessageRequest {
         self.max_iterations = Some(max);
         self
     }
+
+    /// Override session tool config for this message.
+    pub fn tool_config(mut self, config: ToolConfig) -> Self {
+        self.tool_config = Some(config);
+        self
+    }
 }
 
 /// Merge strategy for combining chat sessions
@@ -255,6 +329,7 @@ pub enum MergeStrategy {
     Chronological,
     Summarized,
     LatestOnly,
+    Interleaved,
 }
 
 /// Request to merge multiple chat sessions
@@ -263,6 +338,8 @@ pub struct MergeSessionsRequest {
     pub source_chat_ids: Vec<String>,
     pub target_chat_id: String,
     pub merge_strategy: MergeStrategy,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub bypass_ripple: Option<bool>,
 }
 
 /// Response containing messages with pagination metadata
@@ -365,6 +442,10 @@ pub struct UpdateSessionRequest {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub collections: Option<Vec<CollectionConfig>>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub max_context_messages: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub bypass_ripple: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub memory: Option<serde_json::Value>,
@@ -397,6 +478,12 @@ impl UpdateSessionRequest {
     /// Set the collections
     pub fn collections(mut self, collections: Vec<CollectionConfig>) -> Self {
         self.collections = Some(collections);
+        self
+    }
+
+    /// Set maximum context messages
+    pub fn max_context_messages(mut self, max: usize) -> Self {
+        self.max_context_messages = Some(max);
         self
     }
 
@@ -480,4 +567,23 @@ mod tests {
         assert_eq!(request.title, Some("Updated Title".to_string()));
         assert_eq!(request.llm_model, Some("gpt-4-turbo".to_string()));
     }
+}
+
+/// Request to generate embeddings directly
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EmbedRequest {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub text: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub texts: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub model: Option<String>,
+}
+
+/// Response from embedding generation
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EmbedResponse {
+    pub embeddings: Vec<Vec<f64>>,
+    pub model: String,
+    pub dimensions: usize,
 }

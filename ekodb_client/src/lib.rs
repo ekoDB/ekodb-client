@@ -61,10 +61,11 @@ pub use auth::*;
 pub use batch::BatchBuilder;
 pub use chat::{
     ChatMessageRequest, ChatRequest, ChatResponse, ChatSession, ChatSessionResponse,
-    CollectionConfig, ContextSnippet, CreateChatSessionRequest, FieldSearchOptions,
-    GetMessagesQuery, GetMessagesResponse, ListSessionsQuery, ListSessionsResponse,
-    MergeSessionsRequest, MergeStrategy, Models, TextSearchOptions as ChatTextSearchOptions,
-    ToggleForgottenRequest, TokenUsage, UpdateMessageRequest, UpdateSessionRequest,
+    CollectionConfig, ContextSnippet, CreateChatSessionRequest, EmbedRequest, EmbedResponse,
+    FieldSearchOptions, GetMessagesQuery, GetMessagesResponse, ListSessionsQuery,
+    ListSessionsResponse, MergeSessionsRequest, MergeStrategy, Models,
+    TextSearchOptions as ChatTextSearchOptions, ToggleForgottenRequest, TokenUsage, ToolChoice,
+    ToolConfig, UpdateMessageRequest, UpdateSessionRequest,
 };
 pub use client::{Client, ClientBuilder, RateLimitInfo};
 pub use error::{Error, Result};

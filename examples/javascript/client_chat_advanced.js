@@ -145,7 +145,7 @@ async function main() {
     const mergeResult = await client.mergeChatSessions({
       source_chat_ids: [chatId2],
       target_chat_id: chatId,
-      merge_strategy: MergeStrategy ? MergeStrategy.Chronological : "chronological",
+      merge_strategy: MergeStrategy.Chronological,
     });
     console.log("✓ Sessions merged successfully");
     console.log(
