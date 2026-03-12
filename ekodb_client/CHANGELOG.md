@@ -10,6 +10,24 @@ and this project adheres to
 
 ### Added
 
+- **`distinct_values()` method** — New method for retrieving all unique values
+  for a specific field across records in a collection. Supports optional filter
+  expressions, `bypass_ripple`, and `bypass_cache` flags. Returns a
+  `DistinctValuesResponse` with `collection`, `field`, `values` (sorted), and
+  `count`. Available in Rust, TypeScript (`distinctValues`), Python
+  (`distinct_values`), Go (`DistinctValues`), and Kotlin (`distinctValues`).
+
+- **`DistinctValuesQuery` and `DistinctValuesResponse` types** — New types for
+  the distinct values API, exported from all client libraries.
+
+- **Integration examples: `client_distinct_values`** — Demonstrates distinct
+  values queries with and without filters, added for Rust, Python, TypeScript,
+  and Go.
+
+## [0.12.0] - 2026-03-11
+
+### Added
+
 - **Rust example: `client_collection_utils`** — Demonstrates collection utility
   methods (`collection_exists`, `count_documents`, `list_collections`,
   `delete_collection`). Translated from the Python example.
@@ -176,6 +194,80 @@ and this project adheres to
   responses were deserialized as `EmbedResponse`, producing confusing
   serialization errors. Now checks status first and returns `Error::Api` with
   the status code and response body.
+
+## [0.11.0] - 2026-02-08
+
+### Added
+
+- **Chat Models API** — Query available AI models across providers:
+  `get_chat_models()` retrieves all available chat models;
+  `get_chat_model(provider)` retrieves models for a specific provider. Available
+  in all client languages.
+
+- **User Functions API** — Reusable function sequences with lifecycle
+  management: `save_user_function()`, `get_user_function()`,
+  `list_user_functions()`, `update_user_function()`, `delete_user_function()`.
+  Available in all client languages.
+
+- **Collection utilities** — `collection_exists()` and `count_documents()` added
+  to all client libraries.
+
+- **`bypass_cache` on request parameters** — New option to bypass the read cache
+  on find and query requests, forcing a fresh read from storage.
+
+## [0.10.0] - 2026-01-27
+
+### Added
+
+- **TypeScript direct value return** — TypeScript client now returns field
+  values directly instead of in a typed wrapper, matching server semantics.
+
+- **KV precision examples** — New `client_kv_precision` examples demonstrating
+  float vs decimal precision in KV operations across all languages.
+
+- **Array response helpers** — New helper utilities for extracting array values
+  from ekoDB responses.
+
+### Changed
+
+- **Breaking**: `kv_get()` return value semantics updated — Returns the value
+  directly (`{"value": <data>}`) instead of a wrapped format. The `output_field`
+  parameter has been removed.
+
+## [0.9.0] - 2026-01-27
+
+### Added
+
+- **Field Projection** — `select_fields` and `exclude_fields` on query builder
+  and find methods across all client languages. Control which fields are
+  returned in query results.
+
+- **KV Batch Operations** — `kv_batch_get()`, `kv_batch_set()`,
+  `kv_batch_delete()` for efficient multi-key access in single requests.
+
+- **StageSWR (Stale-While-Revalidate)** — New function stage for external API
+  caching with automatic KV cache check → HTTP request → KV cache set workflow.
+  Supports parameter substitution and configurable TTL.
+
+- **ScriptCondition types** — Recursive condition system for function control
+  flow: `ConditionHasRecords`, `ConditionFieldExists`, `ConditionFieldEquals`,
+  `ConditionCountEquals`, `ConditionCountGreaterThan`, `ConditionCountLessThan`,
+  `ConditionAnd`, `ConditionOr`, `ConditionNot`.
+
+- **Query serialization improvements** — Enhanced query builder serialization
+  for more reliable cross-language compatibility.
+
+### Changed
+
+- **Breaking**: `ScriptCondition` JSON serialization now uses adjacently-tagged
+  format to match the Rust server's serde format.
+
+### Fixed
+
+- Collection, KV, and HTTP request data parameter consistency across all client
+  languages.
+- SWR client pattern now correctly uses `FieldExists` instead of `HasRecords`.
+- WebSocket: use `CallFunction` parameter filter; add wait to check message.
 
 ## [0.8.0] - 2026-01-06
 

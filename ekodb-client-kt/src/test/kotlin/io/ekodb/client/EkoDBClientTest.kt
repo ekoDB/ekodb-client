@@ -449,4 +449,57 @@ class EkoDBClientTest {
         // Should not throw
         client.deleteUserFunction("my_function")
     }
+
+    // =========================================================================
+    // Distinct Values Tests
+    // =========================================================================
+
+    @Test
+    fun `distinctValues returns values and count`() = runBlocking {
+        val mockEngine = createMockEngine(
+            """{"collection":"products","field":"category","values":["books","electronics","food"],"count":3}"""
+        )
+        val client = createTestClient(mockEngine)
+        val result = client.distinctValues("products", "category")
+        assertNotNull(result)
+        assertEquals("products", result["collection"]?.jsonPrimitive?.content)
+        assertEquals("category", result["field"]?.jsonPrimitive?.content)
+        assertEquals(3, result["count"]?.jsonPrimitive?.int)
+        val values = result["values"]?.jsonArray
+        assertNotNull(values)
+        assertEquals(3, values.size)
+    }
+
+    @Test
+    fun `distinctValues returns empty list for no matches`() = runBlocking {
+        val mockEngine = createMockEngine(
+            """{"collection":"empty","field":"tag","values":[],"count":0}"""
+        )
+        val client = createTestClient(mockEngine)
+        val result = client.distinctValues("empty", "tag")
+        assertNotNull(result)
+        assertEquals(0, result["count"]?.jsonPrimitive?.int)
+        val values = result["values"]?.jsonArray
+        assertNotNull(values)
+        assertTrue(values.isEmpty())
+    }
+
+    @Test
+    fun `distinctValues with filter sends filter in body`() = runBlocking {
+        val mockEngine = createMockEngine(
+            """{"collection":"orders","field":"status","values":["active","pending"],"count":2}"""
+        )
+        val client = createTestClient(mockEngine)
+        val filter = buildJsonObject {
+            put("type", "Condition")
+            put("content", buildJsonObject {
+                put("field", "region")
+                put("operator", "Eq")
+                put("value", "us")
+            })
+        }
+        val result = client.distinctValues("orders", "status", filter = filter)
+        assertNotNull(result)
+        assertEquals(2, result["count"]?.jsonPrimitive?.int)
+    }
 }

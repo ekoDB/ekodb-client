@@ -4,12 +4,12 @@
 
 use ekodb_client::{
     ChatMessageRequest, ChatResponse, Client as RustClient, CollectionConfig,
-    CreateChatSessionRequest, FieldType, GetMessagesQuery, GetMessagesResponse,
-    ListSessionsQuery, ListSessionsResponse, Query as RustQuery,
-    RateLimitInfo as RustRateLimitInfo, Record as RustRecord,
-    Script as RustScript, SerializationFormat as RustSerializationFormat,
-    UpdateSessionRequest, UserFunction as RustUserFunction, WebSocketClient as RustWebSocketClient,
-    SearchQuery as RustSearchQuery,
+    CreateChatSessionRequest, DistinctValuesQuery as RustDistinctValuesQuery, FieldType,
+    GetMessagesQuery, GetMessagesResponse, ListSessionsQuery, ListSessionsResponse,
+    Query as RustQuery, RateLimitInfo as RustRateLimitInfo, Record as RustRecord,
+    Script as RustScript, SearchQuery as RustSearchQuery,
+    SerializationFormat as RustSerializationFormat, UpdateSessionRequest,
+    UserFunction as RustUserFunction, WebSocketClient as RustWebSocketClient,
 };
 use serde_json;
 use pyo3::create_exception;
@@ -900,6 +900,59 @@ impl Client {
                     PyRuntimeError::new_err(format!("Failed to serialize results: {}", e))
                 })?;
                 json_to_pydict(py, &results_json)
+            })
+        })
+    }
+
+    /// Get distinct (unique) values for a field across a collection.
+    ///
+    /// Returns a dict: { collection, field, values: [...], count: N }
+    ///
+    /// Args:
+    ///     collection: Collection name
+    ///     field: Field to get distinct values for
+    ///     filter: Optional filter dict (same format as find())
+    ///     bypass_ripple: Optional flag to bypass ripple propagation
+    ///     bypass_cache: Optional flag to bypass cache
+    #[pyo3(signature = (collection, field, filter=None, bypass_ripple=None, bypass_cache=None))]
+    fn distinct_values<'py>(
+        &self,
+        py: Python<'py>,
+        collection: String,
+        field: String,
+        filter: Option<&Bound<'py, PyDict>>,
+        bypass_ripple: Option<bool>,
+        bypass_cache: Option<bool>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        let filter_json = if let Some(f) = filter {
+            Some(dict_to_json(f)?)
+        } else {
+            None
+        };
+
+        future_into_py(py, async move {
+            let mut query = RustDistinctValuesQuery::new();
+            if let Some(f) = filter_json {
+                query = query.filter(f);
+            }
+            if let Some(br) = bypass_ripple {
+                query = query.bypass_ripple(br);
+            }
+            if let Some(bc) = bypass_cache {
+                query = query.bypass_cache(bc);
+            }
+
+            let resp = client
+                .distinct_values(&collection, &field, query)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("distinct_values failed: {}", e)))?;
+
+            Python::attach(|py| {
+                let resp_json = serde_json::to_value(&resp).map_err(|e| {
+                    PyRuntimeError::new_err(format!("Failed to serialize response: {}", e))
+                })?;
+                json_to_pydict(py, &resp_json)
             })
         })
     }

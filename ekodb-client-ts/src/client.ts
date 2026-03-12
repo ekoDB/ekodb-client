@@ -134,6 +134,26 @@ export interface BatchDeleteOptions {
   transactionId?: string;
 }
 
+export interface DistinctValuesOptions {
+  /** Optional filter expression (same format as find() filter). */
+  filter?: any;
+  /** Bypass ripple propagation for this query. */
+  bypassRipple?: boolean;
+  /** Bypass cache for this query. */
+  bypassCache?: boolean;
+}
+
+export interface DistinctValuesResponse {
+  /** Collection that was queried. */
+  collection: string;
+  /** Field whose distinct values were returned. */
+  field: string;
+  /** Unique values, sorted alphabetically. */
+  values: any[];
+  /** Number of distinct values. */
+  count: number;
+}
+
 // ========== Chat Interfaces ==========
 
 export interface CollectionConfig {
@@ -1310,6 +1330,51 @@ export class EkoDBClient {
       query,
       0,
       true, // Force JSON for search operations
+    );
+  }
+
+  /**
+   * Get distinct (unique) values for a field across all records in a collection.
+   *
+   * Results are deduplicated and sorted alphabetically. Supports an optional filter
+   * to restrict which records are examined.
+   *
+   * @param collection - Collection name
+   * @param field - Field to get distinct values for
+   * @param options - Optional filter and bypass flags
+   *
+   * @example
+   * // All distinct statuses
+   * const resp = await client.distinctValues("orders", "status");
+   * console.log(resp.values); // ["active", "cancelled", "shipped"]
+   *
+   * // Only statuses for US orders
+   * const resp = await client.distinctValues("orders", "status", {
+   *   filter: { type: "Condition", content: { field: "region", operator: "Eq", value: "us" } }
+   * });
+   */
+  async distinctValues(
+    collection: string,
+    field: string,
+    options: DistinctValuesOptions = {},
+  ): Promise<DistinctValuesResponse> {
+    const body: {
+      filter?: any;
+      bypass_ripple?: boolean;
+      bypass_cache?: boolean;
+    } = {};
+    if (options.filter !== undefined) body.filter = options.filter;
+    if (options.bypassRipple !== undefined)
+      body.bypass_ripple = options.bypassRipple;
+    if (options.bypassCache !== undefined)
+      body.bypass_cache = options.bypassCache;
+
+    return this.makeRequest<DistinctValuesResponse>(
+      "POST",
+      `/api/distinct/${collection}/${field}`,
+      body,
+      0,
+      true, // Force JSON
     );
   }
 

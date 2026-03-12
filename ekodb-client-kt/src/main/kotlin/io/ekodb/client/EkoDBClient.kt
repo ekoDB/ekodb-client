@@ -759,6 +759,59 @@ class EkoDBClient private constructor(
     }
     
     /**
+     * Get distinct (unique) values for a field across a collection.
+     *
+     * Results are deduplicated and sorted alphabetically by the server.
+     *
+     * @param collection Collection name
+     * @param field Field to get distinct values for
+     * @param filter Optional filter expression (same format as find())
+     * @param bypassRipple Optional flag to bypass ripple propagation
+     * @param bypassCache Optional flag to bypass cache
+     * @return JsonObject with keys: collection, field, values (array), count (int)
+     *
+     * Example:
+     * ```kotlin
+     * // All distinct statuses
+     * val resp = client.distinctValues("orders", "status")
+     *
+     * // Statuses for US orders only
+     * val filter = buildJsonObject {
+     *     put("type", "Condition")
+     *     put("content", buildJsonObject {
+     *         put("field", "region")
+     *         put("operator", "Eq")
+     *         put("value", "us")
+     *     })
+     * }
+     * val resp = client.distinctValues("orders", "status", filter = filter)
+     * ```
+     */
+    suspend fun distinctValues(
+        collection: String,
+        field: String,
+        filter: JsonObject? = null,
+        bypassRipple: Boolean? = null,
+        bypassCache: Boolean? = null,
+    ): JsonObject {
+        val token = getToken()
+        val body = buildJsonObject {
+            if (filter != null) put("filter", filter)
+            if (bypassRipple != null) put("bypass_ripple", bypassRipple)
+            if (bypassCache != null) put("bypass_cache", bypassCache)
+        }
+        val response = executeWithRetry {
+            client.post("$baseUrl/api/distinct/$collection/$field") {
+                header("Authorization", "Bearer $token")
+                contentType(ContentType.Application.Json)
+                header("Accept", ContentType.Application.Json.toString())
+                setBody(body)
+            }
+        }
+        return response.body()
+    }
+
+    /**
      * Key-Value: Set a key-value pair
      */
     suspend fun kvSet(key: String, value: JsonElement) {
