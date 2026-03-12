@@ -4,7 +4,7 @@ use crate::auth::AuthManager;
 use crate::error::{Error, Result};
 use crate::http::HttpClient;
 use crate::schema::{CollectionMetadata, Schema};
-use crate::search::{SearchQuery, SearchResponse};
+use crate::search::{DistinctValuesQuery, DistinctValuesResponse, SearchQuery, SearchResponse};
 use crate::types::{Query, Record};
 use std::sync::Arc;
 use std::time::Duration;
@@ -941,6 +941,55 @@ impl Client {
     ) -> Result<SearchResponse> {
         let token = self.auth.get_token().await?;
         self.http.search(collection, search_query, &token).await
+    }
+
+    /// Get distinct (unique) values for a field across all records in a collection.
+    ///
+    /// Results are sorted alphabetically and deduplicated. Supports an optional filter
+    /// to restrict which records are examined.
+    ///
+    /// # Arguments
+    ///
+    /// * `collection` - The collection name
+    /// * `field` - The field to get distinct values for
+    /// * `query` - Optional query with filter and bypass flags
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # use ekodb_client::{Client, DistinctValuesQuery};
+    /// # async fn example(client: &Client) -> Result<(), ekodb_client::Error> {
+    /// // Get all distinct statuses
+    /// let resp = client.distinct_values("orders", "status", DistinctValuesQuery::new()).await?;
+    /// println!("Statuses: {:?}", resp.values);
+    ///
+    /// // With filter
+    /// use serde_json::json;
+    /// let filter = json!({"type":"Condition","content":{"field":"active","operator":"Eq","value":true}});
+    /// let resp = client.distinct_values("users", "role", DistinctValuesQuery::new().filter(filter)).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn distinct_values(
+        &self,
+        collection: &str,
+        field: &str,
+        query: DistinctValuesQuery,
+    ) -> Result<DistinctValuesResponse> {
+        let collection = collection.to_string();
+        let field = field.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let collection = collection.clone();
+            let field = field.clone();
+            let query = query.clone();
+            let http = http.clone();
+            async move {
+                http.distinct_values(&collection, &field, query, &token)
+                    .await
+            }
+        })
+        .await
     }
 
     /// Text-only search (full-text search)

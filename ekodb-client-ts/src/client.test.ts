@@ -1243,3 +1243,86 @@ describe("EkoDBClient collection utilities", () => {
     expect(result).toBe(0);
   });
 });
+
+// ============================================================================
+// Distinct Values Tests
+// ============================================================================
+
+describe("EkoDBClient distinctValues", () => {
+  it("returns distinct values for a field", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse({
+      collection: "products",
+      field: "category",
+      values: ["books", "electronics", "food"],
+      count: 3,
+    });
+
+    const result = await client.distinctValues("products", "category");
+
+    expect(result.collection).toBe("products");
+    expect(result.field).toBe("category");
+    expect(result.count).toBe(3);
+    expect(result.values).toHaveLength(3);
+    expect(result.values).toContain("books");
+  });
+
+  it("sends filter in request body", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse({
+      collection: "orders",
+      field: "status",
+      values: ["active", "pending"],
+      count: 2,
+    });
+
+    const filter = {
+      type: "Condition",
+      content: { field: "region", operator: "Eq", value: "us" },
+    };
+    const result = await client.distinctValues("orders", "status", { filter });
+
+    expect(result.count).toBe(2);
+    expect(result.values).toContain("active");
+  });
+
+  it("returns empty values for collection with no matching records", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse({
+      collection: "empty",
+      field: "tag",
+      values: [],
+      count: 0,
+    });
+
+    const result = await client.distinctValues("empty", "tag");
+
+    expect(result.count).toBe(0);
+    expect(result.values).toHaveLength(0);
+  });
+
+  it("calls correct endpoint", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse({
+      collection: "users",
+      field: "role",
+      values: ["admin", "user"],
+      count: 2,
+    });
+
+    await client.distinctValues("users", "role");
+
+    const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+    const dataCall = calls[1]; // calls[0] is token
+    expect(dataCall[0]).toContain("/api/distinct/users/role");
+    expect(dataCall[1]?.method).toBe("POST");
+  });
+});

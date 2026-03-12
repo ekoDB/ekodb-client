@@ -9,7 +9,7 @@ use crate::client::RateLimitInfo;
 use crate::error::{Error, Result};
 use crate::retry::RetryPolicy;
 use crate::schema::{CollectionMetadata, Schema};
-use crate::search::{SearchQuery, SearchResponse};
+use crate::search::{DistinctValuesQuery, DistinctValuesResponse, SearchQuery, SearchResponse};
 use crate::types::{FieldType, Query, Record, SerializationFormat};
 use reqwest::{Client as ReqwestClient, Response, StatusCode};
 use serde::{Deserialize, Serialize};
@@ -1059,6 +1059,37 @@ impl HttpClient {
                     .await?;
 
                 // Force JSON for search operations
+                let bytes = response.bytes().await.map_err(Error::Http)?;
+                serde_json::from_slice(&bytes).map_err(Error::Serialization)
+            })
+            .await
+    }
+
+    /// Get distinct (unique) values for a field in a collection.
+    ///
+    /// Calls `POST /api/distinct/{collection}/{field}` with an optional filter body.
+    pub async fn distinct_values(
+        &self,
+        collection: &str,
+        field: &str,
+        query: DistinctValuesQuery,
+        token: &str,
+    ) -> Result<DistinctValuesResponse> {
+        let url = self
+            .base_url
+            .join(&format!("/api/distinct/{}/{}", collection, field))?;
+
+        self.retry_policy
+            .execute(|| async {
+                let response = self
+                    .client
+                    .post(url.clone())
+                    .header("Authorization", format!("Bearer {}", token))
+                    .header("Accept", "application/json")
+                    .json(&query)
+                    .send()
+                    .await?;
+
                 let bytes = response.bytes().await.map_err(Error::Http)?;
                 serde_json::from_slice(&bytes).map_err(Error::Serialization)
             })

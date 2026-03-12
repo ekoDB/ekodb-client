@@ -330,6 +330,69 @@ pub struct SearchResponse {
     pub execution_time_ms: u64,
 }
 
+// ============================================================================
+// Distinct Values
+// ============================================================================
+
+/// Query options for the distinct_values endpoint.
+///
+/// Sent as a POST body to `POST /api/distinct/{collection}/{field}`.
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct DistinctValuesQuery {
+    /// Optional filter expression (same format as `Query::filter`).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub filter: Option<serde_json::Value>,
+
+    /// Bypass ripple propagation.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub bypass_ripple: Option<bool>,
+
+    /// Bypass cache.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub bypass_cache: Option<bool>,
+}
+
+impl DistinctValuesQuery {
+    /// Create an empty query (scans all records).
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Restrict which records are examined using a filter expression.
+    pub fn filter(mut self, filter: serde_json::Value) -> Self {
+        self.filter = Some(filter);
+        self
+    }
+
+    /// Bypass ripple propagation for this query.
+    pub fn bypass_ripple(mut self, bypass: bool) -> Self {
+        self.bypass_ripple = Some(bypass);
+        self
+    }
+
+    /// Bypass the cache for this query.
+    pub fn bypass_cache(mut self, bypass: bool) -> Self {
+        self.bypass_cache = Some(bypass);
+        self
+    }
+}
+
+/// Response from `distinct_values`.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DistinctValuesResponse {
+    /// Collection that was queried.
+    pub collection: String,
+
+    /// Field whose distinct values were returned.
+    pub field: String,
+
+    /// Unique values, sorted alphabetically.
+    pub values: Vec<serde_json::Value>,
+
+    /// Number of distinct values.
+    pub count: usize,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -479,5 +542,56 @@ mod tests {
 
         let json = serde_json::to_value(&query).unwrap();
         assert_eq!(json["limit"], 5);
+    }
+
+    // -------------------------------------------------------------------------
+    // DistinctValuesQuery tests
+    // -------------------------------------------------------------------------
+
+    #[test]
+    fn test_distinct_values_query_default_is_empty() {
+        let q = DistinctValuesQuery::new();
+        assert!(q.filter.is_none());
+        assert!(q.bypass_ripple.is_none());
+        assert!(q.bypass_cache.is_none());
+    }
+
+    #[test]
+    fn test_distinct_values_query_builder() {
+        let filter = json!({"type": "Condition", "content": {"field": "status", "operator": "Eq", "value": "active"}});
+        let q = DistinctValuesQuery::new()
+            .filter(filter.clone())
+            .bypass_ripple(true)
+            .bypass_cache(false);
+
+        assert_eq!(q.filter.as_ref().unwrap(), &filter);
+        assert_eq!(q.bypass_ripple, Some(true));
+        assert_eq!(q.bypass_cache, Some(false));
+    }
+
+    #[test]
+    fn test_distinct_values_query_skips_none_fields() {
+        let q = DistinctValuesQuery::new();
+        let json = serde_json::to_value(&q).unwrap();
+        // All optional fields should be absent when None
+        assert!(json.get("filter").is_none());
+        assert!(json.get("bypass_ripple").is_none());
+        assert!(json.get("bypass_cache").is_none());
+    }
+
+    #[test]
+    fn test_distinct_values_response_deserialization() {
+        let raw = json!({
+            "collection": "products",
+            "field": "category",
+            "values": ["books", "electronics", "food"],
+            "count": 3
+        });
+        let resp: DistinctValuesResponse = serde_json::from_value(raw).unwrap();
+        assert_eq!(resp.collection, "products");
+        assert_eq!(resp.field, "category");
+        assert_eq!(resp.count, 3);
+        assert_eq!(resp.values.len(), 3);
+        assert_eq!(resp.values[0].as_str(), Some("books"));
     }
 }

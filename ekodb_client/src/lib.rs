@@ -78,7 +78,9 @@ pub use query_builder::{QueryBuilder, SortOrder};
 pub use schema::{
     CollectionMetadata, DistanceMetric, FieldTypeSchema, IndexConfig, Schema, VectorIndexAlgorithm,
 };
-pub use search::{SearchQuery, SearchResponse, SearchResult};
+pub use search::{
+    DistinctValuesQuery, DistinctValuesResponse, SearchQuery, SearchResponse, SearchResult,
+};
 pub use types::{FieldType, NumberValue, Query, QueryOperator, Record, SerializationFormat};
 pub use utils::{
     extract_record, get_array_value, get_binary_value, get_bool_value, get_bytes_value,
