@@ -87,6 +87,30 @@ class EkoDBClient private constructor(
     }
     
     private var authToken: String? = null
+    private var lastRateLimitInfo: RateLimitInfo? = null
+
+    /**
+     * Get the last observed rate limit information.
+     * Returns null if no rate limit headers have been received yet.
+     */
+    fun getRateLimitInfo(): RateLimitInfo? = lastRateLimitInfo
+
+    /**
+     * Check if the client is near the rate limit threshold (< 10% remaining).
+     */
+    fun isNearRateLimit(): Boolean = lastRateLimitInfo?.isNearLimit() ?: false
+
+    /**
+     * Extract rate limit info from response headers.
+     */
+    private fun extractRateLimitInfo(response: HttpResponse) {
+        val limit = response.headers["X-RateLimit-Limit"]?.toIntOrNull()
+        val remaining = response.headers["X-RateLimit-Remaining"]?.toIntOrNull()
+        val reset = response.headers["X-RateLimit-Reset"]?.toLongOrNull()
+        if (limit != null && remaining != null && reset != null) {
+            lastRateLimitInfo = RateLimitInfo(limit, remaining, reset)
+        }
+    }
     
     /**
      * Get authentication token (exchanges API key for JWT)
@@ -301,7 +325,38 @@ class EkoDBClient private constructor(
         
         return response.body()
     }
-    
+
+    /**
+     * Find a record by ID with field projection.
+     *
+     * @param collection The collection name
+     * @param id The record ID
+     * @param selectFields Fields to include in the result (null for all)
+     * @param excludeFields Fields to exclude from the result (null for none)
+     */
+    suspend fun findByIdWithProjection(
+        collection: String,
+        id: String,
+        selectFields: List<String>? = null,
+        excludeFields: List<String>? = null
+    ): Record {
+        val token = getToken()
+        val response = executeWithRetry {
+            client.get("$baseUrl/api/find/$collection/$id") {
+                header("Authorization", "Bearer $token")
+                selectFields?.let { parameter("select_fields", it.joinToString(",")) }
+                excludeFields?.let { parameter("exclude_fields", it.joinToString(",")) }
+            }
+        }
+
+        if (!response.status.isSuccess()) {
+            val errorBody = response.bodyAsText()
+            throw Exception("Find by ID with projection failed with status ${response.status}: $errorBody")
+        }
+
+        return response.body()
+    }
+
     /**
      * Find records with a query
      */
@@ -1174,7 +1229,10 @@ class EkoDBClient private constructor(
         repeat(maxRetries) { attempt ->
             try {
                 val response = block()
-                
+
+                // Extract rate limit info from headers
+                extractRateLimitInfo(response)
+
                 // Check for unauthorized (401) - try refreshing token once
                 if (response.status == HttpStatusCode.Unauthorized && !tokenRefreshed) {
                     println("Authentication failed, refreshing token...")
@@ -1229,6 +1287,21 @@ class EkoDBClient private constructor(
     /**
      * Get all available chat models
      */
+    /**
+     * Get all built-in server-side chat tool definitions.
+     * Returns a list of tool objects with name, description, and parameters fields.
+     * Used by planning agents to discover available tools dynamically.
+     */
+    suspend fun getChatTools(): JsonArray {
+        val token = getToken()
+        val response = executeWithRetry {
+            client.get("$baseUrl/api/chat/tools") {
+                header("Authorization", "Bearer $token")
+            }
+        }
+        return response.body()
+    }
+
     suspend fun getChatModels(): JsonObject {
         val token = getToken()
         val response = executeWithRetry {
@@ -1928,3 +2001,31 @@ data class BatchError(
     val index: Int,
     val error: String
 )
+
+/**
+ * Rate limit information from the server.
+ * Extracted from X-RateLimit-* response headers.
+ */
+data class RateLimitInfo(
+    /** Maximum requests allowed per window */
+    val limit: Int,
+    /** Remaining requests in current window */
+    val remaining: Int,
+    /** Unix timestamp when the limit resets */
+    val reset: Long
+) {
+    /** True if less than 10% of the rate limit quota remains. */
+    fun isNearLimit(): Boolean {
+        val threshold = (limit * 0.1).toInt()
+        return remaining <= threshold
+    }
+
+    /** True if the rate limit has been exceeded. */
+    fun isExceeded(): Boolean = remaining == 0
+
+    /** Percentage of rate limit quota remaining (0.0 - 100.0). */
+    fun remainingPercentage(): Double {
+        if (limit == 0) return 0.0
+        return (remaining.toDouble() / limit.toDouble()) * 100.0
+    }
+}

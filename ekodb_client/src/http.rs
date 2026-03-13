@@ -1341,6 +1341,26 @@ impl HttpClient {
             .await
     }
 
+    /// Get all built-in server-side chat tool definitions
+    pub async fn get_chat_tools(&self, token: &str) -> Result<Vec<serde_json::Value>> {
+        let url = self.base_url.join("/api/chat/tools")?;
+
+        self.retry_policy
+            .execute(|| async {
+                let response = self
+                    .client
+                    .get(url.clone())
+                    .header("Authorization", format!("Bearer {}", token))
+                    .header("Accept", "application/json")
+                    .send()
+                    .await?;
+
+                let bytes = response.bytes().await.map_err(Error::Http)?;
+                serde_json::from_slice(&bytes).map_err(Error::Serialization)
+            })
+            .await
+    }
+
     /// Get specific chat model info
     pub async fn get_chat_model(&self, model_name: &str, token: &str) -> Result<Vec<String>> {
         let url = self

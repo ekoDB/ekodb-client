@@ -10,6 +10,74 @@ and this project adheres to
 
 ### Added
 
+- **Full WebSocket dispatcher for TypeScript** — Rewrote `WebSocketClient` with
+  a proper message dispatcher that routes incoming frames by type. New methods:
+  `subscribe()` (returns `EventStream<MutationNotification>` for real-time
+  collection change notifications), `chatSend()` (returns streaming
+  `EventStream<ChatStreamEvent>` with chunk/end/toolCall/error events),
+  `registerClientTools()` (registers client-side tool definitions for a chat
+  session), and `sendToolResult()` (returns tool execution results to the
+  server). New types: `MutationNotification`, `ChatStreamEvent`,
+  `ClientToolDefinition`, `ChatSendOptions`, `SubscribeOptions`, `EventStream`.
+  15 new unit tests with mock WebSocket server.
+
+- **Full WebSocket dispatcher for Kotlin** — Expanded `WebSocketClient` with
+  coroutine-based dispatcher using `Flow` for streaming. New methods:
+  `subscribe()` (returns `Flow<MutationNotification>`), `chatSend()` (returns
+  `Flow<ChatStreamEvent>`), `registerClientTools()`, and `sendToolResult()`. New
+  sealed class `ChatStreamEvent` with `Chunk`, `End`, `ToolCall`, `Error`
+  variants. New data classes: `MutationNotification`, `ClientToolDefinition`,
+  `ChatSendOptions`, `SubscribeOptions`. 18 new unit tests.
+
+- **WebSocket subscribe/chat/tools bindings for Python (PyO3)** — Added
+  `subscribe()`, `chat_send()`, `register_client_tools()`, and
+  `send_tool_result()` to the Python `WebSocketClient`. New wrapper classes
+  `SubscriptionReceiver` and `ChatStreamReceiver` with async `recv()` methods
+  that return dicts. 13 new API shape tests.
+
+- **Token management for Python and TypeScript** — Python: added
+  `refresh_token()` and `clear_token_cache()` async methods to `Client`.
+  TypeScript: made `refreshToken()` public and added `clearTokenCache()`. 5 new
+  tests.
+
+- **`SchemaBuilder` and `JoinConfig` for Kotlin** — New `FieldTypeSchemaBuilder`
+  and `SchemaBuilder` classes for fluent collection schema construction with
+  constraints, indexes (text, vector, btree, hash), and validation. New
+  `JoinConfig` data class with `single()` and `multi()` companion factories plus
+  `toJsonObject()` and `toMap()` converters. 23 new tests.
+
+- **`QueryBuilder`, `SchemaBuilder`, and `JoinConfig` for Python** — Pure Python
+  fluent builder classes matching the Rust reference implementation. 52 new
+  tests covering all operators, logical combinations, sorting, pagination,
+  joins, field projection, and schema construction.
+
+- **`RateLimitInfo` for Kotlin** — Data class with `isNearLimit()`,
+  `isExceeded()`, and `remainingPercentage()` methods. Automatically parsed from
+  `X-RateLimit-*` response headers in `executeWithRetry()`. Accessible via
+  `getRateLimitInfo()` and `isNearRateLimit()`. 13 new tests.
+
+- **`findByIdWithProjection()` for TypeScript and Kotlin** — Query a single
+  record by ID with field selection/exclusion. TypeScript uses URL query
+  parameters, Kotlin builds a filtered query with projection. 3 new TS tests.
+
+- **Chat streaming integration examples** — New `client_websocket_chat_stream`
+  examples for Python, TypeScript, Go, and Kotlin demonstrating streaming chat
+  responses with tool calling via WebSocket.
+
+- **`get_chat_tools()` method (all clients)** — Calls `GET /api/chat/tools` and
+  returns the full list of built-in ekoDB server-side chat tool definitions.
+  Returns `Vec<serde_json::Value>` (Rust), `object[]` (TypeScript), `list[dict]`
+  (Python), `JsonArray` (Kotlin). Used by planning agents to dynamically
+  discover all tools available in Chat steps.
+
+- **`Query::select_fields()` and `Query::exclude_fields()` builder methods** —
+  The `Query` struct already had `select_fields` and `exclude_fields` fields but
+  no fluent builder API. These new methods allow callers to construct
+  field-projection queries without manually instantiating the struct. Useful for
+  reducing token usage when querying collections with large schemas: use
+  `select_fields` to return only named fields, or `exclude_fields` to drop
+  specific fields (e.g. large blobs) while returning everything else.
+
 - **`RawCompletionRequest.max_tokens` and `raw_completion()` method** —
   Stateless raw LLM completion via `POST /api/chat/complete` added to all
   clients (Rust, TypeScript `rawCompletion`, Python `raw_completion`, Kotlin

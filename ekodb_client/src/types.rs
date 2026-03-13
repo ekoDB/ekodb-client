@@ -403,6 +403,20 @@ impl Query {
         self.join = Some(join);
         self
     }
+
+    /// Set the fields to include in results (projection). Only the named fields
+    /// are returned; all others are omitted. Reduces token usage for large schemas.
+    pub fn select_fields(mut self, fields: Vec<String>) -> Self {
+        self.select_fields = Some(fields);
+        self
+    }
+
+    /// Set the fields to exclude from results. All fields except the named ones
+    /// are returned. Useful for dropping large blobs while keeping everything else.
+    pub fn exclude_fields(mut self, fields: Vec<String>) -> Self {
+        self.exclude_fields = Some(fields);
+        self
+    }
 }
 
 // Implement From traits for convenient conversions

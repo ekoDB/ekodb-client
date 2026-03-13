@@ -46,8 +46,18 @@ Example:
     ```
 """
 
-from ._ekodb_client import Client, RateLimitInfo, RateLimitError
+from ._ekodb_client import (
+    Client,
+    RateLimitInfo,
+    RateLimitError,
+    WebSocketClient,
+    SubscriptionReceiver,
+    ChatStreamReceiver,
+)
 from .stages import Stage, ChatMessage
+from .query_builder import QueryBuilder
+from .schema_builder import SchemaBuilder, FieldTypeSchemaBuilder
+from .join import JoinConfig
 from .utils import (
     get_value,
     get_values,
@@ -84,11 +94,19 @@ __version__ = "0.1.0"
 __all__ = (
     [
         "Client",
+        "WebSocketClient",
+        "SubscriptionReceiver",
+        "ChatStreamReceiver",
         "RateLimitInfo",
         "RateLimitError",
         # Stage helpers for script functions
         "Stage",
         "ChatMessage",
+        # Query, Schema, and Join builders
+        "QueryBuilder",
+        "SchemaBuilder",
+        "FieldTypeSchemaBuilder",
+        "JoinConfig",
         # Value extractors
         "get_value",
         "get_values",
