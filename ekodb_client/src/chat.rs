@@ -569,6 +569,32 @@ mod tests {
     }
 }
 
+/// Request for POST /api/chat/complete — stateless raw LLM completion.
+/// No session, no history, no RAG context injection.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RawCompletionRequest {
+    /// System prompt passed verbatim to the LLM.
+    pub system_prompt: String,
+    /// User message passed verbatim to the LLM.
+    pub message: String,
+    /// LLM provider. Defaults to server's configured default.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub provider: Option<String>,
+    /// Model name. Defaults to server's configured default.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub model: Option<String>,
+    /// Max tokens for the LLM response. Defaults to server's configured default.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub max_tokens: Option<i32>,
+}
+
+/// Response from POST /api/chat/complete
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RawCompletionResponse {
+    /// Raw LLM response text.
+    pub content: String,
+}
+
 /// Request to generate embeddings directly
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EmbedRequest {

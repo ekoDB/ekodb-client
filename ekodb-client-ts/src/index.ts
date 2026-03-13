@@ -73,6 +73,8 @@ export type {
   ChatModels,
   EmbedRequest,
   EmbedResponse,
+  RawCompletionRequest,
+  RawCompletionResponse,
   UserFunction,
   ToolChoice,
   ToolConfig,

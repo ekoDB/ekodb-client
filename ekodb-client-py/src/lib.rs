@@ -5,6 +5,7 @@
 use ekodb_client::{
     ChatMessageRequest, ChatResponse, Client as RustClient, CollectionConfig,
     CreateChatSessionRequest, DistinctValuesQuery as RustDistinctValuesQuery, FieldType,
+    RawCompletionRequest as RustRawCompletionRequest,
     GetMessagesQuery, GetMessagesResponse, ListSessionsQuery, ListSessionsResponse,
     Query as RustQuery, RateLimitInfo as RustRateLimitInfo, Record as RustRecord,
     Script as RustScript, SearchQuery as RustSearchQuery,
@@ -947,6 +948,52 @@ impl Client {
                 .distinct_values(&collection, &field, query)
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("distinct_values failed: {}", e)))?;
+
+            Python::attach(|py| {
+                let resp_json = serde_json::to_value(&resp).map_err(|e| {
+                    PyRuntimeError::new_err(format!("Failed to serialize response: {}", e))
+                })?;
+                json_to_pydict(py, &resp_json)
+            })
+        })
+    }
+
+    /// Stateless raw LLM completion — no session, no history, no RAG.
+    ///
+    /// Sends a system prompt and user message directly to the LLM via ekoDB
+    /// and returns the raw text response. Returns a dict: { content: "..." }
+    ///
+    /// Args:
+    ///     system_prompt: System prompt passed verbatim to the LLM
+    ///     message: User message passed verbatim to the LLM
+    ///     provider: Optional LLM provider override
+    ///     model: Optional model name override
+    ///     max_tokens: Optional max tokens override
+    #[pyo3(signature = (system_prompt, message, provider=None, model=None, max_tokens=None))]
+    fn raw_completion<'py>(
+        &self,
+        py: Python<'py>,
+        system_prompt: String,
+        message: String,
+        provider: Option<String>,
+        model: Option<String>,
+        max_tokens: Option<i32>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py(py, async move {
+            let request = RustRawCompletionRequest {
+                system_prompt,
+                message,
+                provider,
+                model,
+                max_tokens,
+            };
+
+            let resp = client
+                .raw_completion(request)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("raw_completion failed: {}", e)))?;
 
             Python::attach(|py| {
                 let resp_json = serde_json::to_value(&resp).map_err(|e| {

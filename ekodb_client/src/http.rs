@@ -3,7 +3,8 @@
 use crate::chat::{
     ChatMessageRequest, ChatResponse, ChatSessionResponse, CreateChatSessionRequest, EmbedRequest,
     EmbedResponse, GetMessagesQuery, ListSessionsQuery, ListSessionsResponse, MergeSessionsRequest,
-    Models, ToggleForgottenRequest, UpdateMessageRequest, UpdateSessionRequest,
+    Models, RawCompletionRequest, RawCompletionResponse, ToggleForgottenRequest,
+    UpdateMessageRequest, UpdateSessionRequest,
 };
 use crate::client::RateLimitInfo;
 use crate::error::{Error, Result};
@@ -1386,6 +1387,48 @@ impl HttpClient {
                     return Err(Error::Api {
                         code: status.as_u16(),
                         message,
+                    });
+                }
+
+                serde_json::from_slice(&bytes).map_err(Error::Serialization)
+            })
+            .await
+    }
+
+    /// Stateless raw LLM completion — no session, no history, no RAG.
+    /// Calls POST /api/chat/complete and returns the LLM's raw text response.
+    pub async fn raw_completion(
+        &self,
+        request: RawCompletionRequest,
+        token: &str,
+    ) -> Result<RawCompletionResponse> {
+        let url = self.base_url.join("/api/chat/complete")?;
+
+        self.retry_policy
+            .execute(|| async {
+                let response = self
+                    .client
+                    .post(url.clone())
+                    .header("Authorization", format!("Bearer {}", token))
+                    .header("Accept", "application/json")
+                    .json(&request)
+                    .send()
+                    .await?;
+
+                let status = response.status();
+                let bytes = response.bytes().await.map_err(Error::Http)?;
+
+                if !status.is_success() {
+                    if let Ok(err_obj) = serde_json::from_slice::<serde_json::Value>(&bytes) {
+                        let msg = err_obj["error"].as_str().unwrap_or("unknown error");
+                        return Err(Error::Api {
+                            code: status.as_u16(),
+                            message: msg.to_string(),
+                        });
+                    }
+                    return Err(Error::Api {
+                        code: status.as_u16(),
+                        message: format!("raw completion failed ({})", status),
                     });
                 }
 

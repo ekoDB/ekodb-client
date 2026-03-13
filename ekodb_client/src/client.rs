@@ -1197,6 +1197,20 @@ impl Client {
         self.http.get_chat_model(model_name, &token).await
     }
 
+    /// Stateless raw LLM completion — no session, no history, no RAG.
+    ///
+    /// Sends a system prompt and user message directly to the LLM via ekoDB
+    /// and returns the raw text response without any context injection or
+    /// conversation management. Use this for structured-output tasks such as
+    /// planning where the response must be parsed programmatically.
+    pub async fn raw_completion(
+        &self,
+        request: crate::chat::RawCompletionRequest,
+    ) -> Result<crate::chat::RawCompletionResponse> {
+        let token = self.auth.get_token().await?;
+        self.http.raw_completion(request, &token).await
+    }
+
     /// Create a new chat session
     ///
     /// # Arguments
