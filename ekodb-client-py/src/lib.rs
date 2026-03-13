@@ -2073,6 +2073,35 @@ impl Client {
     ///
     /// Returns:
     ///     Dict with provider names as keys and lists of model names as values
+    /// Get all built-in server-side chat tool definitions.
+    ///
+    /// Returns a list of dicts with name, description, and parameters fields.
+    /// Used by planning agents to discover available tools dynamically.
+    fn get_chat_tools<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            let tools = client
+                .get_chat_tools()
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("Get chat tools failed: {}", e)))?;
+
+            Python::attach(|py| {
+                let list = pyo3::types::PyList::empty(py);
+                for tool in tools {
+                    let json_str = serde_json::to_string(&tool)
+                        .map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
+                    let obj: Py<PyAny> = py
+                        .import("json")?
+                        .call_method1("loads", (json_str,))?
+                        .into();
+                    list.append(obj)?;
+                }
+                Ok(list.into())
+            })
+        })
+    }
+
     fn get_chat_models<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
 
@@ -2357,12 +2386,138 @@ impl Client {
             })
         })
     }
+
+    /// Refresh the authentication token (clears cache and fetches new JWT)
+    fn refresh_token<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            let token = client
+                .refresh_token()
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("Token refresh failed: {}", e)))?;
+            Python::attach(|py| Ok(PyString::new(py, &token).into()))
+        })
+    }
+
+    /// Clear the cached authentication token
+    fn clear_token_cache<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            client.clear_token_cache().await;
+            Python::attach(|py| Ok(py.None()))
+        })
+    }
 }
 
 /// Python wrapper for WebSocket Client
 #[pyclass]
 struct WebSocketClient {
     inner: Option<RustWebSocketClient>,
+}
+
+/// Python wrapper for subscription receiver
+#[pyclass]
+struct SubscriptionReceiver {
+    inner: std::sync::Arc<tokio::sync::Mutex<tokio::sync::mpsc::Receiver<ekodb_client::websocket::MutationNotificationPayload>>>,
+}
+
+/// Python wrapper for chat stream receiver
+#[pyclass]
+struct ChatStreamReceiver {
+    inner: std::sync::Arc<tokio::sync::Mutex<tokio::sync::mpsc::Receiver<ekodb_client::websocket::ChatStreamEvent>>>,
+}
+
+#[pymethods]
+impl SubscriptionReceiver {
+    /// Receive the next mutation notification. Returns None when the subscription ends.
+    fn recv<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let rx = self.inner.clone();
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            let mut guard = rx.lock().await;
+            match guard.recv().await {
+                Some(notification) => {
+                    Python::attach(|py| {
+                        let dict = PyDict::new(py);
+                        dict.set_item("collection", &notification.collection)?;
+                        dict.set_item("event", &notification.event)?;
+                        let ids = PyList::empty(py);
+                        for id in &notification.record_ids {
+                            ids.append(id)?;
+                        }
+                        dict.set_item("record_ids", ids)?;
+                        dict.set_item("timestamp", &notification.timestamp)?;
+                        if let Some(ref records) = notification.records {
+                            dict.set_item("records", json_to_pydict(py, records)?)?;
+                        }
+                        Ok(dict.into())
+                    })
+                }
+                None => {
+                    Python::attach(|py| Ok(py.None()))
+                }
+            }
+        })
+    }
+}
+
+#[pymethods]
+impl ChatStreamReceiver {
+    /// Receive the next chat stream event. Returns None when the stream ends.
+    fn recv<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let rx = self.inner.clone();
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            let mut guard = rx.lock().await;
+            match guard.recv().await {
+                Some(event) => {
+                    Python::attach(|py| {
+                        let dict = PyDict::new(py);
+                        match &event {
+                            ekodb_client::websocket::ChatStreamEvent::Chunk(content) => {
+                                dict.set_item("type", "chunk")?;
+                                dict.set_item("content", content)?;
+                            }
+                            ekodb_client::websocket::ChatStreamEvent::End {
+                                message_id,
+                                token_usage,
+                                tool_call_history,
+                                execution_time_ms,
+                            } => {
+                                dict.set_item("type", "end")?;
+                                dict.set_item("message_id", message_id)?;
+                                dict.set_item("execution_time_ms", *execution_time_ms)?;
+                                if let Some(ref tu) = token_usage {
+                                    dict.set_item("token_usage", json_to_pydict(py, tu)?)?;
+                                }
+                                if let Some(ref tch) = tool_call_history {
+                                    dict.set_item("tool_call_history", json_to_pydict(py, tch)?)?;
+                                }
+                            }
+                            ekodb_client::websocket::ChatStreamEvent::ToolCall {
+                                call_id,
+                                tool_name,
+                                arguments,
+                            } => {
+                                dict.set_item("type", "tool_call")?;
+                                dict.set_item("call_id", call_id)?;
+                                dict.set_item("tool_name", tool_name)?;
+                                dict.set_item("arguments", json_to_pydict(py, arguments)?)?;
+                            }
+                            ekodb_client::websocket::ChatStreamEvent::Error(error) => {
+                                dict.set_item("type", "error")?;
+                                dict.set_item("error", error)?;
+                            }
+                        }
+                        Ok(dict.into())
+                    })
+                }
+                None => {
+                    Python::attach(|py| Ok(py.None()))
+                }
+            }
+        })
+    }
 }
 
 #[pymethods]
@@ -2373,7 +2528,6 @@ impl WebSocketClient {
         py: Python<'py>,
         collection: String,
     ) -> PyResult<Bound<'py, PyAny>> {
-        // Clone the WebSocket client before moving into async block
         let ws_client = match &self.inner {
             Some(client) => client.clone(),
             None => return Err(PyRuntimeError::new_err("WebSocket client not initialized")),
@@ -2392,6 +2546,164 @@ impl WebSocketClient {
                 }
                 Ok(list.into())
             })
+        })
+    }
+
+    /// Subscribe to mutation notifications on a collection.
+    /// Returns a SubscriptionReceiver for receiving events.
+    #[pyo3(signature = (collection, filter_field=None, filter_value=None))]
+    fn subscribe<'py>(
+        &self,
+        py: Python<'py>,
+        collection: String,
+        filter_field: Option<String>,
+        filter_value: Option<String>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let ws_client = match &self.inner {
+            Some(client) => client.clone(),
+            None => return Err(PyRuntimeError::new_err("WebSocket client not initialized")),
+        };
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            let rx = ws_client
+                .subscribe(
+                    &collection,
+                    filter_field.as_deref(),
+                    filter_value.as_deref(),
+                )
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("Subscribe failed: {}", e)))?;
+
+            Python::attach(|py| {
+                let receiver = SubscriptionReceiver {
+                    inner: std::sync::Arc::new(tokio::sync::Mutex::new(rx)),
+                };
+                Ok(Py::new(py, receiver)?.into())
+            })
+        })
+    }
+
+    /// Send a chat message and receive streaming responses.
+    /// Returns a ChatStreamReceiver for receiving events.
+    #[pyo3(signature = (chat_id, message, client_tools=None, max_iterations=None, confirm_tools=None, exclude_tools=None))]
+    fn chat_send<'py>(
+        &self,
+        py: Python<'py>,
+        chat_id: String,
+        message: String,
+        client_tools: Option<Vec<(String, String, Py<PyAny>)>>,
+        max_iterations: Option<u32>,
+        confirm_tools: Option<Vec<String>>,
+        exclude_tools: Option<Vec<String>>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let ws_client = match &self.inner {
+            Some(client) => client.clone(),
+            None => return Err(PyRuntimeError::new_err("WebSocket client not initialized")),
+        };
+
+        // Convert client tools from Python tuples to Rust structs
+        let rust_tools: Option<Vec<ekodb_client::websocket::ClientToolDefinition>> = client_tools.map(|tools| {
+            tools.into_iter().map(|(name, description, params)| {
+                let parameters = Python::attach(|py| {
+                    let params_bound = params.bind(py);
+                    py_to_json(params_bound)
+                }).unwrap_or(serde_json::Value::Object(serde_json::Map::new()));
+
+                ekodb_client::websocket::ClientToolDefinition {
+                    name,
+                    description,
+                    parameters,
+                }
+            }).collect()
+        });
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            let rx = ws_client
+                .chat_send_with_tools(
+                    &chat_id,
+                    &message,
+                    rust_tools,
+                    max_iterations,
+                    confirm_tools,
+                    exclude_tools,
+                )
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("Chat send failed: {}", e)))?;
+
+            Python::attach(|py| {
+                let receiver = ChatStreamReceiver {
+                    inner: std::sync::Arc::new(tokio::sync::Mutex::new(rx)),
+                };
+                Ok(Py::new(py, receiver)?.into())
+            })
+        })
+    }
+
+    /// Register client-side tools for a chat session.
+    fn register_client_tools<'py>(
+        &self,
+        py: Python<'py>,
+        chat_id: String,
+        tools: Vec<(String, String, Py<PyAny>)>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let ws_client = match &self.inner {
+            Some(client) => client.clone(),
+            None => return Err(PyRuntimeError::new_err("WebSocket client not initialized")),
+        };
+
+        let rust_tools: Vec<ekodb_client::websocket::ClientToolDefinition> = tools.into_iter().map(|(name, description, params)| {
+            let parameters = Python::attach(|py| {
+                let params_bound = params.bind(py);
+                py_to_json(params_bound)
+            }).unwrap_or(serde_json::Value::Object(serde_json::Map::new()));
+
+            ekodb_client::websocket::ClientToolDefinition {
+                name,
+                description,
+                parameters,
+            }
+        }).collect();
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            ws_client
+                .register_client_tools(&chat_id, rust_tools)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("Register tools failed: {}", e)))?;
+
+            Python::attach(|py| Ok(py.None()))
+        })
+    }
+
+    /// Send a tool result back to the server during a chat stream.
+    #[pyo3(signature = (chat_id, call_id, success, result=None, error=None))]
+    fn send_tool_result<'py>(
+        &self,
+        py: Python<'py>,
+        chat_id: String,
+        call_id: String,
+        success: bool,
+        result: Option<Py<PyAny>>,
+        error: Option<String>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let ws_client = match &self.inner {
+            Some(client) => client.clone(),
+            None => return Err(PyRuntimeError::new_err("WebSocket client not initialized")),
+        };
+
+        let json_result: Option<serde_json::Value> = result.map(|r| {
+            Python::attach(|py| {
+                let r_bound = r.bind(py);
+                py_to_json(r_bound)
+            }).unwrap_or(serde_json::Value::Null)
+        });
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            ws_client
+                .send_tool_result(&chat_id, &call_id, success, json_result, error)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("Send tool result failed: {}", e)))?;
+
+            Python::attach(|py| Ok(py.None()))
         })
     }
 }
@@ -2699,6 +3011,8 @@ fn pydict_to_fieldtype_map(
 fn _ekodb_client(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Client>()?;
     m.add_class::<WebSocketClient>()?;
+    m.add_class::<SubscriptionReceiver>()?;
+    m.add_class::<ChatStreamReceiver>()?;
     m.add_class::<RateLimitInfo>()?;
     m.add_class::<SerializationFormat>()?;
     m.add("RateLimitError", m.py().get_type::<RateLimitError>())?;

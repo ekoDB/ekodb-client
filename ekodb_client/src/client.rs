@@ -1187,6 +1187,14 @@ impl Client {
         self.http.get_chat_models(&token).await
     }
 
+    /// Get all built-in server-side chat tool definitions.
+    /// Returns a list of tool objects with `name`, `description`, and `parameters` fields.
+    /// Used by planning agents to discover available tools dynamically.
+    pub async fn get_chat_tools(&self) -> Result<Vec<serde_json::Value>> {
+        let token = self.auth.get_token().await?;
+        self.http.get_chat_tools(&token).await
+    }
+
     /// Get specific chat model information
     ///
     /// # Arguments

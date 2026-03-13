@@ -424,7 +424,7 @@ export class EkoDBClient {
   /**
    * Refresh the authentication token
    */
-  private async refreshToken(): Promise<void> {
+  async refreshToken(): Promise<void> {
     const response = await fetch(`${this.baseURL}/api/auth/token`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -446,6 +446,14 @@ export class EkoDBClient {
 
     const result = (await response.json()) as { token: string };
     this.token = result.token;
+  }
+
+  /**
+   * Clear the cached authentication token.
+   * The next request will trigger a fresh token exchange.
+   */
+  clearTokenCache(): void {
+    this.token = null;
   }
 
   /**
@@ -696,6 +704,32 @@ export class EkoDBClient {
    */
   async findById(collection: string, id: string): Promise<Record> {
     return this.makeRequest<Record>("GET", `/api/find/${collection}/${id}`);
+  }
+
+  /**
+   * Find a document by ID with field projection
+   * @param collection - Collection name
+   * @param id - Document ID
+   * @param selectFields - Fields to include in the result
+   * @param excludeFields - Fields to exclude from the result
+   */
+  async findByIdWithProjection(
+    collection: string,
+    id: string,
+    selectFields?: string[],
+    excludeFields?: string[],
+  ): Promise<Record> {
+    const params = new URLSearchParams();
+    if (selectFields?.length) {
+      params.append("select_fields", selectFields.join(","));
+    }
+    if (excludeFields?.length) {
+      params.append("exclude_fields", excludeFields.join(","));
+    }
+    const url = params.toString()
+      ? `/api/find/${collection}/${id}?${params.toString()}`
+      : `/api/find/${collection}/${id}`;
+    return this.makeRequest<Record>("GET", url);
   }
 
   /**
@@ -1672,6 +1706,21 @@ export class EkoDBClient {
   }
 
   /**
+   * Get all built-in server-side chat tool definitions.
+   * Returns a list of tool objects with name, description, and parameters fields.
+   * Used by planning agents to discover available tools dynamically.
+   */
+  async getChatTools(): Promise<object[]> {
+    return this.makeRequest<object[]>(
+      "GET",
+      "/api/chat/tools",
+      undefined,
+      0,
+      true, // Force JSON
+    );
+  }
+
+  /**
    * Get available models for a specific provider
    * @param provider - Provider name (e.g., "openai", "anthropic", "perplexity")
    * @returns Array of model names for the provider
@@ -2027,26 +2076,128 @@ export class EkoDBClient {
   }
 }
 
+/** Mutation notification from a subscription. */
+export interface MutationNotification {
+  collection: string;
+  event: string;
+  recordIds: string[];
+  records?: any;
+  timestamp: string;
+}
+
+/** A chunk/event from a streaming chat response. */
+export type ChatStreamEvent =
+  | { type: "chunk"; content: string }
+  | {
+      type: "end";
+      messageId: string;
+      tokenUsage?: any;
+      toolCallHistory?: any;
+      executionTimeMs: number;
+    }
+  | {
+      type: "toolCall";
+      chatId: string;
+      callId: string;
+      toolName: string;
+      arguments: any;
+    }
+  | { type: "error"; error: string };
+
+/** Definition for a client-side tool the LLM can call. */
+export interface ClientToolDefinition {
+  name: string;
+  description: string;
+  parameters: any;
+}
+
+/** Options for chatSend. */
+export interface ChatSendOptions {
+  bypassRipple?: boolean;
+  clientTools?: ClientToolDefinition[];
+  maxIterations?: number;
+  confirmTools?: string[];
+  excludeTools?: string[];
+}
+
+/** Options for subscribe. */
+export interface SubscribeOptions {
+  filterField?: string;
+  filterValue?: string;
+}
+
+/** EventEmitter-like interface for subscriptions and chat streams. */
+export class EventStream<_T = unknown> {
+  private listeners: Map<string, Array<(data: any) => void>> = new Map();
+  private _closed = false;
+
+  on(event: string, listener: (data: any) => void): this {
+    if (!this.listeners.has(event)) {
+      this.listeners.set(event, []);
+    }
+    this.listeners.get(event)!.push(listener);
+    return this;
+  }
+
+  /** @internal */
+  emit(event: string, data?: any): void {
+    const handlers = this.listeners.get(event);
+    if (handlers) {
+      for (const handler of handlers) {
+        handler(data);
+      }
+    }
+  }
+
+  get closed(): boolean {
+    return this._closed;
+  }
+
+  /** @internal */
+  close(): void {
+    this._closed = true;
+    this.emit("close");
+  }
+}
+
 /**
- * WebSocket client for real-time queries
+ * WebSocket client for real-time queries, subscriptions, and chat streaming.
  */
 export class WebSocketClient {
   private wsURL: string;
   private token: string;
   private ws: any = null;
+  private dispatcherRunning = false;
+
+  // Dispatcher state
+  private pendingRequests: Map<
+    string,
+    { resolve: (value: any) => void; reject: (reason: any) => void }
+  > = new Map();
+  private subscriptions: Map<string, EventStream<MutationNotification>> =
+    new Map();
+  private chatStreams: Map<string, EventStream<ChatStreamEvent>> = new Map();
+  private registerToolsAck: {
+    resolve: (value: any) => void;
+    reject: (reason: any) => void;
+  } | null = null;
 
   constructor(wsURL: string, token: string) {
     this.wsURL = wsURL;
     this.token = token;
   }
 
-  /**
-   * Connect to WebSocket
-   */
-  private async connect(): Promise<void> {
-    if (this.ws) return;
+  private genMessageId(): string {
+    // Nanosecond-precision timestamp (as close as JS allows)
+    return (BigInt(Date.now()) * 1000000n).toString();
+  }
 
-    // Dynamic import for Node.js WebSocket
+  /**
+   * Connect and start the dispatcher.
+   */
+  private async ensureConnected(): Promise<void> {
+    if (this.ws && this.dispatcherRunning) return;
+
     const WebSocket = (await import("ws")).default;
 
     let url = this.wsURL;
@@ -2060,49 +2211,311 @@ export class WebSocketClient {
       },
     });
 
-    return new Promise((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
       this.ws.on("open", () => resolve());
       this.ws.on("error", (err: Error) => reject(err));
     });
+
+    this.spawnDispatcher();
   }
 
-  /**
-   * Find all records in a collection via WebSocket
-   */
-  async findAll(collection: string): Promise<Record[]> {
-    await this.connect();
+  private spawnDispatcher(): void {
+    if (this.dispatcherRunning) return;
+    this.dispatcherRunning = true;
 
-    const messageId = Date.now().toString();
-    const request = {
-      type: "FindAll",
-      messageId,
-      payload: { collection },
-    };
+    this.ws.on("message", (data: Buffer) => {
+      try {
+        const msg = JSON.parse(data.toString());
+        this.routeMessage(msg);
+      } catch {
+        // Ignore malformed messages
+      }
+    });
+
+    this.ws.on("close", () => {
+      this.dispatcherRunning = false;
+      // Notify all pending requests
+      for (const [, pending] of this.pendingRequests) {
+        pending.reject(new Error("WebSocket connection closed"));
+      }
+      this.pendingRequests.clear();
+      // Close all chat streams
+      for (const [, stream] of this.chatStreams) {
+        stream.emit("event", { type: "error", error: "Connection closed" });
+        stream.close();
+      }
+      this.chatStreams.clear();
+      // Close all subscriptions
+      for (const [, stream] of this.subscriptions) {
+        stream.close();
+      }
+      this.subscriptions.clear();
+      this.ws = null;
+    });
+  }
+
+  private routeMessage(msg: any): void {
+    switch (msg.type) {
+      case "Success":
+      case "Error": {
+        const messageId = msg.payload?.message_id || msg.payload?.messageId;
+        if (messageId && this.pendingRequests.has(messageId)) {
+          const pending = this.pendingRequests.get(messageId)!;
+          this.pendingRequests.delete(messageId);
+          if (msg.type === "Error") {
+            pending.reject(new Error(msg.message || "Unknown error"));
+          } else {
+            pending.resolve(msg.payload);
+          }
+        } else if (this.registerToolsAck) {
+          const ack = this.registerToolsAck;
+          this.registerToolsAck = null;
+          if (msg.type === "Error") {
+            ack.reject(new Error(msg.message || "Tool registration failed"));
+          } else {
+            ack.resolve(msg.payload);
+          }
+        } else if (this.pendingRequests.size === 1) {
+          // Fallback: single pending request
+          const entry = this.pendingRequests.entries().next().value!;
+          const key = entry[0];
+          const pending = entry[1];
+          this.pendingRequests.delete(key);
+          if (msg.type === "Error") {
+            pending.reject(new Error(msg.message || "Unknown error"));
+          } else {
+            pending.resolve(msg.payload);
+          }
+        }
+        break;
+      }
+
+      case "MutationNotification": {
+        const payload = msg.payload;
+        const notification: MutationNotification = {
+          collection: payload.collection,
+          event: payload.event,
+          recordIds: payload.record_ids || payload.recordIds || [],
+          records: payload.records,
+          timestamp: payload.timestamp,
+        };
+        for (const [collection, stream] of this.subscriptions) {
+          if (collection === notification.collection) {
+            stream.emit("mutation", notification);
+          }
+        }
+        break;
+      }
+
+      case "ChatStreamChunk": {
+        const chatId = msg.payload?.chat_id || msg.payload?.chatId;
+        const stream = this.chatStreams.get(chatId);
+        if (stream) {
+          stream.emit("event", {
+            type: "chunk",
+            content: msg.payload.content,
+          } as ChatStreamEvent);
+        }
+        break;
+      }
+
+      case "ChatStreamEnd": {
+        const chatId = msg.payload?.chat_id || msg.payload?.chatId;
+        const stream = this.chatStreams.get(chatId);
+        if (stream) {
+          stream.emit("event", {
+            type: "end",
+            messageId: msg.payload.message_id || msg.payload.messageId || "",
+            tokenUsage: msg.payload.token_usage || msg.payload.tokenUsage,
+            toolCallHistory:
+              msg.payload.tool_call_history || msg.payload.toolCallHistory,
+            executionTimeMs:
+              msg.payload.execution_time_ms || msg.payload.executionTimeMs || 0,
+          } as ChatStreamEvent);
+          this.chatStreams.delete(chatId);
+          stream.close();
+        }
+        break;
+      }
+
+      case "ChatStreamError": {
+        const chatId = msg.payload?.chat_id || msg.payload?.chatId;
+        const stream = this.chatStreams.get(chatId);
+        if (stream) {
+          stream.emit("event", {
+            type: "error",
+            error: msg.payload.error || msg.payload.message || "Unknown error",
+          } as ChatStreamEvent);
+          this.chatStreams.delete(chatId);
+          stream.close();
+        }
+        break;
+      }
+
+      case "ClientToolCall": {
+        const chatId = msg.payload?.chat_id || msg.payload?.chatId;
+        const stream = this.chatStreams.get(chatId);
+        if (stream) {
+          stream.emit("event", {
+            type: "toolCall",
+            chatId,
+            callId: msg.payload.call_id || msg.payload.callId,
+            toolName: msg.payload.tool_name || msg.payload.toolName,
+            arguments: msg.payload.arguments,
+          } as ChatStreamEvent);
+        }
+        break;
+      }
+    }
+  }
+
+  private async sendRequest(request: any): Promise<any> {
+    await this.ensureConnected();
+    const messageId = request.messageId || request.message_id;
 
     return new Promise((resolve, reject) => {
+      this.pendingRequests.set(messageId, { resolve, reject });
       this.ws.send(JSON.stringify(request));
-
-      this.ws.once("message", (data: Buffer) => {
-        const response = JSON.parse(data.toString());
-
-        if (response.type === "Error") {
-          reject(new Error(response.message));
-        } else {
-          resolve(response.payload?.data || []);
-        }
-      });
-
-      this.ws.once("error", reject);
     });
   }
 
   /**
-   * Close the WebSocket connection
+   * Find all records in a collection via WebSocket.
+   */
+  async findAll(collection: string): Promise<Record[]> {
+    const messageId = this.genMessageId();
+    const payload = await this.sendRequest({
+      type: "FindAll",
+      messageId,
+      payload: { collection },
+    });
+    return payload?.data || [];
+  }
+
+  /**
+   * Subscribe to mutation notifications on a collection.
+   * Returns an EventStream that emits "mutation" events.
+   */
+  async subscribe(
+    collection: string,
+    options?: SubscribeOptions,
+  ): Promise<EventStream<MutationNotification>> {
+    await this.ensureConnected();
+
+    const messageId = this.genMessageId();
+    const stream = new EventStream<MutationNotification>();
+    this.subscriptions.set(collection, stream);
+
+    const request: any = {
+      type: "Subscribe",
+      messageId,
+      payload: {
+        collection,
+        ...(options?.filterField && { filter_field: options.filterField }),
+        ...(options?.filterValue && { filter_value: options.filterValue }),
+      },
+    };
+
+    // Send subscribe request and wait for ack
+    await this.sendRequest(request);
+    return stream;
+  }
+
+  /**
+   * Send a chat message and receive a streaming response.
+   * Returns an EventStream that emits "event" with ChatStreamEvent objects.
+   */
+  async chatSend(
+    chatId: string,
+    message: string,
+    options?: ChatSendOptions,
+  ): Promise<EventStream<ChatStreamEvent>> {
+    await this.ensureConnected();
+
+    const stream = new EventStream<ChatStreamEvent>();
+    this.chatStreams.set(chatId, stream);
+
+    const request: any = {
+      type: "ChatSend",
+      payload: {
+        chat_id: chatId,
+        message,
+        ...(options?.bypassRipple != null && {
+          bypass_ripple: options.bypassRipple,
+        }),
+        ...(options?.clientTools && { client_tools: options.clientTools }),
+        ...(options?.maxIterations != null && {
+          max_iterations: options.maxIterations,
+        }),
+        ...(options?.confirmTools && { confirm_tools: options.confirmTools }),
+        ...(options?.excludeTools && { exclude_tools: options.excludeTools }),
+      },
+    };
+
+    this.ws.send(JSON.stringify(request));
+    return stream;
+  }
+
+  /**
+   * Register client-side tools for a chat session.
+   */
+  async registerClientTools(
+    chatId: string,
+    tools: ClientToolDefinition[],
+  ): Promise<void> {
+    await this.ensureConnected();
+
+    const request = {
+      type: "RegisterClientTools",
+      payload: {
+        chat_id: chatId,
+        tools,
+      },
+    };
+
+    await new Promise<void>((resolve, reject) => {
+      this.registerToolsAck = {
+        resolve: () => resolve(),
+        reject: (err) => reject(err),
+      };
+      this.ws.send(JSON.stringify(request));
+    });
+  }
+
+  /**
+   * Send a tool result back to the server during a chat stream.
+   */
+  async sendToolResult(
+    chatId: string,
+    callId: string,
+    success: boolean,
+    result?: any,
+    error?: string,
+  ): Promise<void> {
+    await this.ensureConnected();
+
+    const request = {
+      type: "ClientToolResult",
+      payload: {
+        chat_id: chatId,
+        call_id: callId,
+        success,
+        ...(result !== undefined && { result }),
+        ...(error !== undefined && { error }),
+      },
+    };
+
+    this.ws.send(JSON.stringify(request));
+  }
+
+  /**
+   * Close the WebSocket connection.
    */
   close(): void {
     if (this.ws) {
       this.ws.close();
       this.ws = null;
+      this.dispatcherRunning = false;
     }
   }
 }

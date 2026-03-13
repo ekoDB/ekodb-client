@@ -1,6 +1,7 @@
 export {
   EkoDBClient,
   WebSocketClient,
+  EventStream,
   SerializationFormat,
   MergeStrategy,
   RateLimitError,
@@ -50,6 +51,13 @@ export type {
   FunctionStats,
   StageStats,
 } from "./functions";
+export type {
+  MutationNotification,
+  ChatStreamEvent,
+  ClientToolDefinition,
+  ChatSendOptions,
+  SubscribeOptions,
+} from "./client";
 export type {
   Record,
   Query,

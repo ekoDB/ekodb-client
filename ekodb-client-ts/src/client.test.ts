@@ -1406,3 +1406,107 @@ describe("EkoDBClient rawCompletion", () => {
     expect(dataCall[1]?.method).toBe("POST");
   });
 });
+
+// ============================================================================
+// Token Management Tests
+// ============================================================================
+
+describe("refreshToken", () => {
+  it("fetches a new token", async () => {
+    const client = createTestClient();
+
+    // First token fetch (init)
+    mockTokenResponse();
+    mockJsonResponse({ status: "ok" });
+    await client.health();
+
+    // Refresh token
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({ token: "new-jwt-token" }),
+      headers: new Headers(),
+    });
+    await client.refreshToken();
+
+    // Verify it called the token endpoint again
+    const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+    const tokenCalls = calls.filter((c: unknown[]) =>
+      (c[0] as string).includes("/api/auth/token"),
+    );
+    expect(tokenCalls.length).toBe(2);
+  });
+});
+
+describe("clearTokenCache", () => {
+  it("clears the cached token", async () => {
+    const client = createTestClient();
+
+    // Init with token
+    mockTokenResponse();
+    mockJsonResponse({ status: "ok" });
+    await client.health();
+
+    // Clear cache
+    client.clearTokenCache();
+
+    // Next request should fetch a new token
+    mockTokenResponse();
+    mockJsonResponse({ status: "ok" });
+    await client.health();
+
+    const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+    const tokenCalls = calls.filter((c: unknown[]) =>
+      (c[0] as string).includes("/api/auth/token"),
+    );
+    expect(tokenCalls.length).toBe(2);
+  });
+});
+
+// ============================================================================
+// findByIdWithProjection Tests
+// ============================================================================
+
+describe("findByIdWithProjection", () => {
+  it("calls correct endpoint with select_fields", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse({ id: "123", name: "Alice" });
+
+    await client.findByIdWithProjection("users", "123", ["name", "email"]);
+
+    const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+    const dataCall = calls[1];
+    expect(dataCall[0]).toContain("/api/find/users/123");
+    expect(dataCall[0]).toContain("select_fields=name%2Cemail");
+  });
+
+  it("calls correct endpoint with exclude_fields", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse({ id: "123", name: "Alice" });
+
+    await client.findByIdWithProjection("users", "123", undefined, [
+      "password",
+    ]);
+
+    const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+    const dataCall = calls[1];
+    expect(dataCall[0]).toContain("exclude_fields=password");
+  });
+
+  it("calls without params when no projection", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse({ id: "123", name: "Alice" });
+
+    await client.findByIdWithProjection("users", "123");
+
+    const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+    const dataCall = calls[1];
+    expect(dataCall[0]).toBe("http://localhost:8080/api/find/users/123");
+  });
+});
