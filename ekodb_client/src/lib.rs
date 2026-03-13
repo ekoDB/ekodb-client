@@ -63,9 +63,9 @@ pub use chat::{
     ChatMessageRequest, ChatRequest, ChatResponse, ChatSession, ChatSessionResponse,
     CollectionConfig, ContextSnippet, CreateChatSessionRequest, EmbedRequest, EmbedResponse,
     FieldSearchOptions, GetMessagesQuery, GetMessagesResponse, ListSessionsQuery,
-    ListSessionsResponse, MergeSessionsRequest, MergeStrategy, Models,
-    TextSearchOptions as ChatTextSearchOptions, ToggleForgottenRequest, TokenUsage, ToolChoice,
-    ToolConfig, UpdateMessageRequest, UpdateSessionRequest,
+    ListSessionsResponse, MergeSessionsRequest, MergeStrategy, Models, RawCompletionRequest,
+    RawCompletionResponse, TextSearchOptions as ChatTextSearchOptions, ToggleForgottenRequest,
+    TokenUsage, ToolChoice, ToolConfig, UpdateMessageRequest, UpdateSessionRequest,
 };
 pub use client::{Client, ClientBuilder, RateLimitInfo};
 pub use error::{Error, Result};

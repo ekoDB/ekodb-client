@@ -10,6 +10,14 @@ and this project adheres to
 
 ### Added
 
+- **`RawCompletionRequest.max_tokens` and `raw_completion()` method** —
+  Stateless raw LLM completion via `POST /api/chat/complete` added to all
+  clients (Rust, TypeScript `rawCompletion`, Python `raw_completion`, Kotlin
+  `rawCompletion`). `RawCompletionRequest` carries `system_prompt`, `message`,
+  and optional `provider`, `model`, `max_tokens` fields. Useful for
+  structured-output planning tasks that must be parsed programmatically without
+  session/history overhead.
+
 - **`distinct_values()` method** — New method for retrieving all unique values
   for a specific field across records in a collection. Supports optional filter
   expressions, `bypass_ripple`, and `bypass_cache` flags. Returns a

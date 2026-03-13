@@ -502,4 +502,47 @@ class EkoDBClientTest {
         assertNotNull(result)
         assertEquals(2, result["count"]?.jsonPrimitive?.int)
     }
+
+    // =========================================================================
+    // rawCompletion Tests
+    // =========================================================================
+
+    @Test
+    fun `rawCompletion returns content field`() = runBlocking {
+        val mockEngine = createMockEngine("""{"content":"The answer is 42."}""")
+        val client = createTestClient(mockEngine)
+        val result = client.rawCompletion(
+            systemPrompt = "You are a helpful assistant.",
+            message = "What is the answer?"
+        )
+        assertNotNull(result)
+        assertEquals("The answer is 42.", result["content"]?.jsonPrimitive?.content)
+    }
+
+    @Test
+    fun `rawCompletion with all optional fields`() = runBlocking {
+        val mockEngine = createMockEngine("""{"content":"Response."}""")
+        val client = createTestClient(mockEngine)
+        val result = client.rawCompletion(
+            systemPrompt = "System.",
+            message = "User.",
+            provider = "openai",
+            model = "gpt-4o",
+            maxTokens = 512
+        )
+        assertNotNull(result)
+        assertEquals("Response.", result["content"]?.jsonPrimitive?.content)
+    }
+
+    @Test
+    fun `rawCompletion with empty content`() = runBlocking {
+        val mockEngine = createMockEngine("""{"content":""}""")
+        val client = createTestClient(mockEngine)
+        val result = client.rawCompletion(
+            systemPrompt = "S.",
+            message = "M."
+        )
+        assertNotNull(result)
+        assertEquals("", result["content"]?.jsonPrimitive?.content)
+    }
 }

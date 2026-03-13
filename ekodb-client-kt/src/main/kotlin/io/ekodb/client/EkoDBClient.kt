@@ -812,6 +812,57 @@ class EkoDBClient private constructor(
     }
 
     /**
+     * Stateless raw LLM completion — no session, no history, no RAG.
+     *
+     * Sends a system prompt and user message directly to the LLM via ekoDB
+     * and returns the raw text response without any context injection or
+     * conversation management. Use this for structured-output tasks such as
+     * planning where the response must be parsed programmatically.
+     *
+     * @param systemPrompt System prompt passed verbatim to the LLM
+     * @param message User message passed verbatim to the LLM
+     * @param provider Optional LLM provider override
+     * @param model Optional model name override
+     * @param maxTokens Optional max tokens override
+     * @return JsonObject with "content" field containing the LLM response
+     *
+     * @example
+     * ```kotlin
+     * val resp = client.rawCompletion(
+     *     systemPrompt = "You are a helpful assistant.",
+     *     message = "Summarize this in JSON.",
+     *     maxTokens = 2048
+     * )
+     * println(resp["content"]?.jsonPrimitive?.content)
+     * ```
+     */
+    suspend fun rawCompletion(
+        systemPrompt: String,
+        message: String,
+        provider: String? = null,
+        model: String? = null,
+        maxTokens: Int? = null,
+    ): JsonObject {
+        val token = getToken()
+        val body = buildJsonObject {
+            put("system_prompt", systemPrompt)
+            put("message", message)
+            if (provider != null) put("provider", provider)
+            if (model != null) put("model", model)
+            if (maxTokens != null) put("max_tokens", maxTokens)
+        }
+        val response = executeWithRetry {
+            client.post("$baseUrl/api/chat/complete") {
+                header("Authorization", "Bearer $token")
+                contentType(ContentType.Application.Json)
+                header("Accept", ContentType.Application.Json.toString())
+                setBody(body)
+            }
+        }
+        return response.body()
+    }
+
+    /**
      * Key-Value: Set a key-value pair
      */
     suspend fun kvSet(key: String, value: JsonElement) {

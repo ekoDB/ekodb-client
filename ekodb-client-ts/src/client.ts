@@ -319,6 +319,24 @@ export interface EmbedResponse {
 }
 
 /**
+ * Request for stateless raw LLM completion — no session, no history, no RAG.
+ */
+export interface RawCompletionRequest {
+  system_prompt: string;
+  message: string;
+  provider?: string;
+  model?: string;
+  max_tokens?: number;
+}
+
+/**
+ * Response from a raw LLM completion request.
+ */
+export interface RawCompletionResponse {
+  content: string;
+}
+
+/**
  * User function definition - reusable sequence of Functions that can be called by Scripts
  */
 export interface UserFunction {
@@ -1410,6 +1428,34 @@ export class EkoDBClient {
       request,
       0,
       true, // Force JSON for chat operations
+    );
+  }
+
+  /**
+   * Stateless raw LLM completion — no session, no history, no RAG.
+   *
+   * Sends a system prompt and user message directly to the LLM via ekoDB
+   * and returns the raw text response without any context injection or
+   * conversation management. Use this for structured-output tasks such as
+   * planning where the response must be parsed programmatically.
+   *
+   * @example
+   * const resp = await client.rawCompletion({
+   *   system_prompt: "You are a helpful assistant.",
+   *   message: "Summarize this in JSON.",
+   *   max_tokens: 2048,
+   * });
+   * console.log(resp.content);
+   */
+  async rawCompletion(
+    request: RawCompletionRequest,
+  ): Promise<RawCompletionResponse> {
+    return this.makeRequest<RawCompletionResponse>(
+      "POST",
+      "/api/chat/complete",
+      request,
+      0,
+      true, // Force JSON
     );
   }
 

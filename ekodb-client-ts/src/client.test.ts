@@ -1326,3 +1326,83 @@ describe("EkoDBClient distinctValues", () => {
     expect(dataCall[1]?.method).toBe("POST");
   });
 });
+
+// ============================================================================
+// Raw Completion Tests
+// ============================================================================
+
+describe("EkoDBClient rawCompletion", () => {
+  it("returns content from LLM response", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse({ content: "The answer is 42." });
+
+    const result = await client.rawCompletion({
+      system_prompt: "You are a helpful assistant.",
+      message: "What is the answer?",
+    });
+
+    expect(result.content).toBe("The answer is 42.");
+  });
+
+  it("sends all fields in request body", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse({ content: "Response text." });
+
+    await client.rawCompletion({
+      system_prompt: "System.",
+      message: "User.",
+      provider: "openai",
+      model: "gpt-4o",
+      max_tokens: 512,
+    });
+
+    const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+    const dataCall = calls[1]; // calls[0] is token
+    const body = JSON.parse(dataCall[1]?.body as string);
+    expect(body.system_prompt).toBe("System.");
+    expect(body.message).toBe("User.");
+    expect(body.provider).toBe("openai");
+    expect(body.model).toBe("gpt-4o");
+    expect(body.max_tokens).toBe(512);
+  });
+
+  it("omits optional fields when not provided", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse({ content: "Response." });
+
+    await client.rawCompletion({
+      system_prompt: "System.",
+      message: "User.",
+    });
+
+    const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+    const dataCall = calls[1];
+    const body = JSON.parse(dataCall[1]?.body as string);
+    expect(body.provider).toBeUndefined();
+    expect(body.model).toBeUndefined();
+    expect(body.max_tokens).toBeUndefined();
+  });
+
+  it("calls correct endpoint with POST method", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse({ content: "Response." });
+
+    await client.rawCompletion({
+      system_prompt: "System.",
+      message: "User.",
+    });
+
+    const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+    const dataCall = calls[1];
+    expect(dataCall[0]).toContain("/api/chat/complete");
+    expect(dataCall[1]?.method).toBe("POST");
+  });
+});
