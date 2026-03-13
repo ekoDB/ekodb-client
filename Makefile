@@ -132,11 +132,12 @@ help:
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "  🖌️  $(GREEN)make fmt$(RESET)          - Format all code (Rust + Python + Go + TS + Markdown)"
 	@echo "  🖌️  $(GREEN)make format$(RESET)       - Format all code (alias for fmt)"
-	@echo "  📦 $(GREEN)make deps-check-all$(RESET) - Check for outdated dependencies (Rust + TS + Kotlin)"
+	@echo "  📦 $(GREEN)make deps-check-all$(RESET) - Check for outdated dependencies (Rust + Python + TS + Kotlin)"
 	@echo "  📦 $(GREEN)make deps-update-all$(RESET) - Update all dependencies within constraints"
 	@echo "     $(GREEN)make deps-check$(RESET)       - Check Rust dependencies only"
 	@echo "     $(GREEN)make deps-update$(RESET)      - Update Rust dependencies only"
 	@echo "     $(GREEN)make deps-check-rust$(RESET)  - Detailed Rust dependency check"
+	@echo "     $(GREEN)make deps-check-python$(RESET) - Check Python/pip dependencies"
 	@echo "     $(GREEN)make deps-check-typescript$(RESET) - Check TypeScript/npm dependencies"
 	@echo "     $(GREEN)make deps-check-kotlin$(RESET) - Check Kotlin/Gradle dependencies"
 	@echo "  📋 $(GREEN)make examples-ls$(RESET)  - Generate comprehensive examples inventory"
@@ -1418,11 +1419,11 @@ deps-update:
 	@echo "💡 $(YELLOW)Run 'make deps-check' to see if any dependencies still need updating$(RESET)"
 
 # Check all packages for outdated dependencies
-deps-check-all: deps-check-rust deps-check-typescript deps-check-kotlin
+deps-check-all: deps-check-rust deps-check-python deps-check-typescript deps-check-kotlin
 	@echo "✅ $(GREEN)All dependency checks complete!$(RESET)"
 
 # Update all packages' dependencies
-deps-update-all: deps-update-rust deps-update-typescript deps-update-kotlin
+deps-update-all: deps-update-rust deps-update-python deps-update-typescript deps-update-kotlin
 	@echo "✅ $(GREEN)All dependencies updated!$(RESET)"
 
 # Rust dependency checks (detailed)
@@ -1448,6 +1449,18 @@ deps-check-rust:
 	@echo "💡 $(YELLOW)Note: Some deps require edition2024 (Rust 1.85+) - editions are backward compatible$(RESET)"
 	@echo "💡 $(YELLOW)Alternative: Use 'cargo tree -d' to check for duplicate dependencies$(RESET)"
 
+# Python dependency checks
+deps-check-python:
+	@echo "🐍 $(CYAN)Checking Python dependencies...$(RESET)"
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "📦 Python (pip)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@pip3 list --outdated 2>/dev/null || echo "$(YELLOW)⚠️  pip3 not available$(RESET)"
+	@echo ""
+	@echo "$(YELLOW)💡 To update all: pip3 install --upgrade <package>$(RESET)"
+	@echo "$(YELLOW)💡 To update dev deps: pip3 install --upgrade pytest pytest-asyncio$(RESET)"
+
 # TypeScript dependency checks
 deps-check-typescript:
 	@echo "📘 $(CYAN)Checking TypeScript/npm dependencies...$(RESET)"
@@ -1464,7 +1477,7 @@ deps-check-typescript:
 		echo "$(RED)❌ ekodb-client-ts directory not found$(RESET)"; \
 	fi
 
-# Kotlin dependency checks  
+# Kotlin dependency checks
 deps-check-kotlin:
 	@echo "🟣 $(CYAN)Checking Kotlin/Gradle dependencies...$(RESET)"
 	@echo ""
@@ -1503,6 +1516,19 @@ deps-update-rust:
 	@echo ""
 	@echo "✅ $(GREEN)Rust dependencies updated!$(RESET)"
 	@echo "💡 $(YELLOW)Run 'make deps-check-rust' to see remaining updates$(RESET)"
+
+# Python dependency updates
+deps-update-python:
+	@echo "🐍 $(CYAN)Updating Python dependencies...$(RESET)"
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "📦 Python (pip)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@pip3 install --upgrade pip 2>/dev/null || true
+	@pip3 install --upgrade pytest pytest-asyncio maturin 2>/dev/null || true
+	@echo ""
+	@echo "✅ $(GREEN)Python dev dependencies updated!$(RESET)"
+	@echo "💡 $(YELLOW)Run 'make deps-check-python' to see all outdated packages$(RESET)"
 
 # TypeScript dependency updates
 deps-update-typescript:
