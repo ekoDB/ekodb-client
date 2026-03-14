@@ -761,6 +761,52 @@ export class EkoDBClient {
   }
 
   /**
+   * Apply an atomic field action to a single field of a record.
+   *
+   * Use this instead of `update()` for safe concurrent modifications like
+   * incrementing counters, pushing to arrays, or arithmetic operations.
+   *
+   * @param collection - Collection name
+   * @param id - Record ID
+   * @param action - The atomic action: increment, decrement, multiply, divide, modulo,
+   *                 push, pop, shift, unshift, remove, append, clear
+   * @param field - The field name to apply the action to
+   * @param value - The value for the action (omit for pop/shift/clear)
+   */
+  async updateWithAction(
+    collection: string,
+    id: string,
+    action: string,
+    field: string,
+    value?: any,
+  ): Promise<Record> {
+    const url = `/api/update/${collection}/${id}/action/${action}`;
+    return this.makeRequest<Record>("PUT", url, {
+      field,
+      value: value ?? null,
+    });
+  }
+
+  /**
+   * Apply a sequence of atomic field actions to a record in a single request.
+   *
+   * All actions are applied atomically — the record is fetched once, all actions
+   * run in order, and the result is persisted in a single update.
+   *
+   * @param collection - Collection name
+   * @param id - Record ID
+   * @param actions - Array of [action, field, value] tuples
+   */
+  async updateWithActionSequence(
+    collection: string,
+    id: string,
+    actions: [string, string, any][],
+  ): Promise<Record> {
+    const url = `/api/update/sequence/${collection}/${id}`;
+    return this.makeRequest<Record>("PUT", url, actions);
+  }
+
+  /**
    * Delete a document
    * @param collection - Collection name
    * @param id - Document ID

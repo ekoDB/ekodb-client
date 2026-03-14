@@ -17,6 +17,13 @@ use serde::{Deserialize, Serialize};
 use std::time::Duration;
 use url::Url;
 
+/// Body for the single-field atomic action endpoint.
+#[derive(Serialize, Deserialize, Clone)]
+struct UpdateWithActionBody {
+    field: String,
+    value: FieldType,
+}
+
 /// HTTP client for making requests to ekoDB API
 pub struct HttpClient {
     client: ReqwestClient,
@@ -311,6 +318,79 @@ impl HttpClient {
 
         let url = self.base_url.join(&url_path)?;
         let body = self.serialize(&url_path, &record)?;
+
+        self.retry_policy
+            .execute(|| async {
+                let response = self
+                    .add_format_headers(
+                        &url_path,
+                        self.client
+                            .put(url.clone())
+                            .header("Authorization", format!("Bearer {}", token)),
+                    )
+                    .body(body.clone())
+                    .send()
+                    .await?;
+
+                self.handle_response(&url_path, response).await
+            })
+            .await
+    }
+
+    /// Apply an atomic field action to a single field of a record.
+    ///
+    /// Actions: increment, decrement, multiply, divide, modulo, push, pop,
+    /// shift, unshift, remove, append, clear.
+    pub async fn update_with_action(
+        &self,
+        collection: &str,
+        id: &str,
+        action: &str,
+        field: &str,
+        value: FieldType,
+        token: &str,
+    ) -> Result<Record> {
+        let url_path = format!("/api/update/{}/{}/action/{}", collection, id, action);
+        let url = self.base_url.join(&url_path)?;
+        let body = self.serialize(
+            &url_path,
+            &UpdateWithActionBody {
+                field: field.to_string(),
+                value,
+            },
+        )?;
+
+        self.retry_policy
+            .execute(|| async {
+                let response = self
+                    .add_format_headers(
+                        &url_path,
+                        self.client
+                            .put(url.clone())
+                            .header("Authorization", format!("Bearer {}", token)),
+                    )
+                    .body(body.clone())
+                    .send()
+                    .await?;
+
+                self.handle_response(&url_path, response).await
+            })
+            .await
+    }
+
+    /// Apply a sequence of atomic field actions to a record in a single request.
+    ///
+    /// Each action is a tuple of (action_name, field_name, value).
+    pub async fn update_with_action_sequence(
+        &self,
+        collection: &str,
+        id: &str,
+        actions: Vec<(String, String, FieldType)>,
+        token: &str,
+    ) -> Result<Record> {
+        let url_path = format!("/api/update/sequence/{}/{}", collection, id);
+        let url = self.base_url.join(&url_path)?;
+        let body = self.serialize(&url_path, &actions)?;
 
         self.retry_policy
             .execute(|| async {

@@ -5,7 +5,7 @@ use crate::error::{Error, Result};
 use crate::http::HttpClient;
 use crate::schema::{CollectionMetadata, Schema};
 use crate::search::{DistinctValuesQuery, DistinctValuesResponse, SearchQuery, SearchResponse};
-use crate::types::{Query, Record};
+use crate::types::{FieldType, Query, Record};
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -228,6 +228,64 @@ impl Client {
         let token = self.auth.get_token().await?;
         self.http
             .update(collection, id, record, options, &token)
+            .await
+    }
+
+    /// Apply an atomic field action to a single field of a record.
+    ///
+    /// Use this instead of `update()` when you need safe concurrent modifications
+    /// like incrementing counters, pushing to arrays, or arithmetic operations.
+    ///
+    /// # Actions
+    ///
+    /// - `increment` / `decrement` — add or subtract a number
+    /// - `multiply` / `divide` / `modulo` — arithmetic on numeric fields
+    /// - `push` / `unshift` — append or prepend a value to an array
+    /// - `pop` / `shift` — remove last or first element of an array
+    /// - `remove` — remove a specific value from an array
+    /// - `append` — concatenate a string onto a string field
+    /// - `clear` — reset a field to its zero value (0, "", [])
+    ///
+    /// # Arguments
+    ///
+    /// * `collection` - The collection name
+    /// * `id` - The record ID
+    /// * `action` - The atomic action to apply
+    /// * `field` - The field name to apply the action to
+    /// * `value` - The value for the action (use `FieldType::Null` for pop/shift/clear)
+    pub async fn update_with_action(
+        &self,
+        collection: &str,
+        id: &str,
+        action: &str,
+        field: &str,
+        value: FieldType,
+    ) -> Result<Record> {
+        let token = self.auth.get_token().await?;
+        self.http
+            .update_with_action(collection, id, action, field, value, &token)
+            .await
+    }
+
+    /// Apply a sequence of atomic field actions to a record in a single request.
+    ///
+    /// All actions are applied atomically — the record is fetched once, all actions
+    /// run in order, and the result is persisted in a single update.
+    ///
+    /// # Arguments
+    ///
+    /// * `collection` - The collection name
+    /// * `id` - The record ID
+    /// * `actions` - A list of (action, field, value) tuples
+    pub async fn update_with_action_sequence(
+        &self,
+        collection: &str,
+        id: &str,
+        actions: Vec<(String, String, FieldType)>,
+    ) -> Result<Record> {
+        let token = self.auth.get_token().await?;
+        self.http
+            .update_with_action_sequence(collection, id, actions, &token)
             .await
     }
 
