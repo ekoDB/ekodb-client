@@ -1722,3 +1722,213 @@ fn test_swr_function_deserialization() {
         _ => panic!("Expected SWR function"),
     }
 }
+
+// ============================================================================
+// Atomic Field Action Tests
+// ============================================================================
+
+#[tokio::test]
+async fn test_update_with_action_increment() {
+    let mut server = Server::new_async().await;
+
+    let _token_mock = mock_token_endpoint(&mut server);
+
+    let _action_mock = server
+        .mock("PUT", "/api/update/counters/rec_1/action/increment")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(
+            json!({
+                "id": "rec_1",
+                "views": 42
+            })
+            .to_string(),
+        )
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+
+    let result = client
+        .update_with_action(
+            "counters",
+            "rec_1",
+            "increment",
+            "views",
+            FieldType::Number(ekodb_client::NumberValue::Integer(1)),
+        )
+        .await;
+
+    assert!(result.is_ok());
+    let record = result.unwrap();
+    assert_eq!(record.get_string("id").unwrap(), "rec_1");
+}
+
+#[tokio::test]
+async fn test_update_with_action_push() {
+    let mut server = Server::new_async().await;
+
+    let _token_mock = mock_token_endpoint(&mut server);
+
+    let _action_mock = server
+        .mock("PUT", "/api/update/lists/rec_2/action/push")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(
+            json!({
+                "id": "rec_2",
+                "tags": ["rust", "new-tag"]
+            })
+            .to_string(),
+        )
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+
+    let result = client
+        .update_with_action(
+            "lists",
+            "rec_2",
+            "push",
+            "tags",
+            FieldType::String("new-tag".into()),
+        )
+        .await;
+
+    assert!(result.is_ok());
+}
+
+#[tokio::test]
+async fn test_update_with_action_clear() {
+    let mut server = Server::new_async().await;
+
+    let _token_mock = mock_token_endpoint(&mut server);
+
+    let _action_mock = server
+        .mock("PUT", "/api/update/data/rec_3/action/clear")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"id": "rec_3", "temp": 0}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+
+    let result = client
+        .update_with_action("data", "rec_3", "clear", "temp", FieldType::Null)
+        .await;
+
+    assert!(result.is_ok());
+}
+
+#[tokio::test]
+async fn test_update_with_action_not_found() {
+    let mut server = Server::new_async().await;
+
+    let _token_mock = mock_token_endpoint(&mut server);
+
+    let _action_mock = server
+        .mock("PUT", "/api/update/counters/missing/action/increment")
+        .with_status(404)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"error": "Record not found"}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+
+    let result = client
+        .update_with_action(
+            "counters",
+            "missing",
+            "increment",
+            "views",
+            FieldType::Number(ekodb_client::NumberValue::Integer(1)),
+        )
+        .await;
+
+    assert!(result.is_err());
+}
+
+#[tokio::test]
+async fn test_update_with_action_sequence() {
+    let mut server = Server::new_async().await;
+
+    let _token_mock = mock_token_endpoint(&mut server);
+
+    let _seq_mock = server
+        .mock("PUT", "/api/update/sequence/game/player_1")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(
+            json!({
+                "id": "player_1",
+                "score": 110,
+                "lives": 2,
+                "log": ["hit"]
+            })
+            .to_string(),
+        )
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+
+    let actions = vec![
+        (
+            "increment".to_string(),
+            "score".to_string(),
+            FieldType::Number(ekodb_client::NumberValue::Integer(10)),
+        ),
+        (
+            "decrement".to_string(),
+            "lives".to_string(),
+            FieldType::Number(ekodb_client::NumberValue::Integer(1)),
+        ),
+        (
+            "push".to_string(),
+            "log".to_string(),
+            FieldType::String("hit".into()),
+        ),
+    ];
+
+    let result = client
+        .update_with_action_sequence("game", "player_1", actions)
+        .await;
+
+    assert!(result.is_ok());
+    let record = result.unwrap();
+    assert_eq!(record.get_string("id").unwrap(), "player_1");
+}
+
+#[tokio::test]
+async fn test_update_with_action_sequence_error() {
+    let mut server = Server::new_async().await;
+
+    let _token_mock = mock_token_endpoint(&mut server);
+
+    let _seq_mock = server
+        .mock("PUT", "/api/update/sequence/data/rec_x")
+        .with_status(400)
+        .with_header("content-type", "application/json")
+        .with_body(
+            json!({"error": "Failed to apply action 'increment': field not numeric"}).to_string(),
+        )
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+
+    let actions = vec![(
+        "increment".to_string(),
+        "name".to_string(),
+        FieldType::Number(ekodb_client::NumberValue::Integer(1)),
+    )];
+
+    let result = client
+        .update_with_action_sequence("data", "rec_x", actions)
+        .await;
+
+    assert!(result.is_err());
+}

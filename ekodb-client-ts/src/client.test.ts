@@ -191,6 +191,80 @@ describe("EkoDBClient update", () => {
 });
 
 // ============================================================================
+// Atomic Field Action Tests
+// ============================================================================
+
+describe("EkoDBClient updateWithAction", () => {
+  it("increments a field", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse({ id: "rec_1", views: 42 });
+
+    const result = await client.updateWithAction(
+      "counters",
+      "rec_1",
+      "increment",
+      "views",
+      1,
+    );
+
+    expect(result).toHaveProperty("views", 42);
+  });
+
+  it("pushes to an array field", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse({ id: "rec_2", tags: ["rust", "new-tag"] });
+
+    const result = await client.updateWithAction(
+      "lists",
+      "rec_2",
+      "push",
+      "tags",
+      "new-tag",
+    );
+
+    expect(result.tags).toContain("new-tag");
+  });
+
+  it("clears a field without value", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse({ id: "rec_3", temp: 0 });
+
+    const result = await client.updateWithAction(
+      "data",
+      "rec_3",
+      "clear",
+      "temp",
+    );
+
+    expect(result).toHaveProperty("temp", 0);
+  });
+});
+
+describe("EkoDBClient updateWithActionSequence", () => {
+  it("applies multiple actions atomically", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse({ id: "player_1", score: 110, lives: 2 });
+
+    const result = await client.updateWithActionSequence("game", "player_1", [
+      ["increment", "score", 10],
+      ["decrement", "lives", 1],
+      ["push", "log", "hit"],
+    ]);
+
+    expect(result).toHaveProperty("score", 110);
+    expect(result).toHaveProperty("lives", 2);
+  });
+});
+
+// ============================================================================
 // Delete Tests
 // ============================================================================
 

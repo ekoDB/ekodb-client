@@ -416,6 +416,80 @@ class EkoDBClient private constructor(
     }
     
     /**
+     * Apply an atomic field action to a single field of a record.
+     *
+     * Use this instead of [update] for safe concurrent modifications like
+     * incrementing counters, pushing to arrays, or arithmetic operations.
+     *
+     * @param collection Collection name
+     * @param id Record ID
+     * @param action The atomic action: increment, decrement, multiply, divide, modulo,
+     *               push, pop, shift, unshift, remove, append, clear
+     * @param field The field name to apply the action to
+     * @param value The value for the action (null for pop/shift/clear)
+     */
+    suspend fun updateWithAction(
+        collection: String,
+        id: String,
+        action: String,
+        field: String,
+        value: JsonElement? = null
+    ): Record {
+        val token = getToken()
+        val url = "$baseUrl/api/update/$collection/$id/action/$action"
+        val body = buildJsonObject {
+            put("field", field)
+            put("value", value ?: JsonNull)
+        }
+        val response = executeWithRetry {
+            client.put(url) {
+                header("Authorization", "Bearer $token")
+                contentType(getContentTypeForRequest())
+                header("Accept", getContentTypeForRequest().toString())
+                setBody(body)
+            }
+        }
+        return response.body()
+    }
+
+    /**
+     * Apply a sequence of atomic field actions to a record in a single request.
+     *
+     * All actions are applied atomically — the record is fetched once, all actions
+     * run in order, and the result is persisted in a single update.
+     *
+     * @param collection Collection name
+     * @param id Record ID
+     * @param actions List of Triple(action, field, value)
+     */
+    suspend fun updateWithActionSequence(
+        collection: String,
+        id: String,
+        actions: List<Triple<String, String, JsonElement>>
+    ): Record {
+        val token = getToken()
+        val url = "$baseUrl/api/update/sequence/$collection/$id"
+        val body = buildJsonArray {
+            for ((action, field, value) in actions) {
+                add(buildJsonArray {
+                    add(action)
+                    add(field)
+                    add(value)
+                })
+            }
+        }
+        val response = executeWithRetry {
+            client.put(url) {
+                header("Authorization", "Bearer $token")
+                contentType(getContentTypeForRequest())
+                header("Accept", getContentTypeForRequest().toString())
+                setBody(body)
+            }
+        }
+        return response.body()
+    }
+
+    /**
      * Delete a record
      */
     suspend fun delete(

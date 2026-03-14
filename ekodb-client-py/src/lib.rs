@@ -315,6 +315,81 @@ impl Client {
         })
     }
 
+    /// Apply an atomic field action to a single field of a record.
+    ///
+    /// Use this instead of `update()` for safe concurrent modifications like
+    /// incrementing counters, pushing to arrays, or arithmetic operations.
+    ///
+    /// Args:
+    ///     collection: Collection name
+    ///     id: Record ID
+    ///     action: The atomic action (increment, decrement, multiply, divide, modulo,
+    ///             push, pop, shift, unshift, remove, append, clear)
+    ///     field: The field name to apply the action to
+    ///     value: The value for the action (omit for pop/shift/clear)
+    #[pyo3(signature = (collection, id, action, field, value=None))]
+    fn update_with_action<'py>(
+        &self,
+        py: Python<'py>,
+        collection: String,
+        id: String,
+        action: String,
+        field: String,
+        value: Option<&Bound<'py, PyAny>>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let field_value = match value {
+            Some(v) => py_to_field_type(v)?,
+            None => FieldType::Null,
+        };
+        let client = self.inner.clone();
+
+        future_into_py(py, async move {
+            let result = client
+                .update_with_action(&collection, &id, &action, &field, field_value)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("Action failed: {}", e)))?;
+
+            Python::attach(|py| record_to_dict(py, &result))
+        })
+    }
+
+    /// Apply a sequence of atomic field actions to a record in a single request.
+    ///
+    /// All actions are applied atomically — the record is fetched once, all actions
+    /// run in order, and the result is persisted in a single update.
+    ///
+    /// Args:
+    ///     collection: Collection name
+    ///     id: Record ID
+    ///     actions: List of (action, field, value) tuples
+    #[pyo3(signature = (collection, id, actions))]
+    fn update_with_action_sequence<'py>(
+        &self,
+        py: Python<'py>,
+        collection: String,
+        id: String,
+        actions: Vec<(String, String, Bound<'py, PyAny>)>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let rust_actions: Vec<(String, String, FieldType)> = actions
+            .iter()
+            .map(|(action, field, value)| {
+                let fv = py_to_field_type(value)?;
+                Ok((action.clone(), field.clone(), fv))
+            })
+            .collect::<PyResult<Vec<_>>>()?;
+
+        let client = self.inner.clone();
+
+        future_into_py(py, async move {
+            let result = client
+                .update_with_action_sequence(&collection, &id, rust_actions)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("Action sequence failed: {}", e)))?;
+
+            Python::attach(|py| record_to_dict(py, &result))
+        })
+    }
+
     /// Delete a document
     ///
     /// Args:

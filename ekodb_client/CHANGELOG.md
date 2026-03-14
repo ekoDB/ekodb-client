@@ -10,6 +10,16 @@ and this project adheres to
 
 ### Added
 
+- **Atomic field actions** — New `update_with_action()` and
+  `update_with_action_sequence()` methods across all client libraries (Rust,
+  TypeScript, Python, Kotlin). These call the server's atomic field action
+  endpoints (`PUT /api/update/{collection}/{id}/action/{action}` and
+  `PUT /api/update/sequence/{collection}/{id}`) for safe concurrent
+  modifications: increment/decrement counters, push/pop/shift/unshift arrays,
+  multiply/divide/modulo arithmetic, append strings, remove array items, and
+  clear fields. Sequence variant applies multiple actions atomically in a single
+  request. 6 new Rust unit tests, 5 new TypeScript tests.
+
 - **Full WebSocket dispatcher for TypeScript** — Rewrote `WebSocketClient` with
   a proper message dispatcher that routes incoming frames by type. New methods:
   `subscribe()` (returns `EventStream<MutationNotification>` for real-time
