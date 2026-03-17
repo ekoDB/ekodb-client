@@ -2326,17 +2326,6 @@ export class WebSocketClient {
           } else {
             ack.resolve(msg.payload);
           }
-        } else if (this.pendingRequests.size === 1) {
-          // Fallback: single pending request
-          const entry = this.pendingRequests.entries().next().value!;
-          const key = entry[0];
-          const pending = entry[1];
-          this.pendingRequests.delete(key);
-          if (msg.type === "Error") {
-            pending.reject(new Error(msg.message || "Unknown error"));
-          } else {
-            pending.resolve(msg.payload);
-          }
         }
         break;
       }

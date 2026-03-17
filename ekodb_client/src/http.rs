@@ -1514,24 +1514,7 @@ impl HttpClient {
                     .send()
                     .await?;
 
-                let status = response.status();
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-
-                if !status.is_success() {
-                    if let Ok(err_obj) = serde_json::from_slice::<serde_json::Value>(&bytes) {
-                        let msg = err_obj["error"].as_str().unwrap_or("unknown error");
-                        return Err(Error::Api {
-                            code: status.as_u16(),
-                            message: msg.to_string(),
-                        });
-                    }
-                    return Err(Error::Api {
-                        code: status.as_u16(),
-                        message: format!("raw completion failed ({})", status),
-                    });
-                }
-
-                serde_json::from_slice(&bytes).map_err(Error::Serialization)
+                self.handle_response("/api/chat/complete", response).await
             })
             .await
     }
