@@ -253,7 +253,7 @@ class EkoDBClientTest {
         assertNotNull(result)
         val idField = result["id"]
         assertTrue(idField is io.ekodb.client.types.FieldType.StringValue)
-        assertEquals("user_123", (idField as io.ekodb.client.types.FieldType.StringValue).value)
+        assertEquals("user_123", idField.value)
     }
 
     // TODO: Fix mock engine for upsert fallback scenario - token caching makes mock ordering complex
@@ -318,9 +318,9 @@ class EkoDBClientTest {
         
         val result = client.findOne("users", "email", "alice@example.com")
         assertNotNull(result)
-        val idField = result?.get("id")
+        val idField = result.get("id")
         assertTrue(idField is io.ekodb.client.types.FieldType.StringValue)
-        assertEquals("user_123", (idField as io.ekodb.client.types.FieldType.StringValue).value)
+        assertEquals("user_123", idField.value)
     }
 
     @Test

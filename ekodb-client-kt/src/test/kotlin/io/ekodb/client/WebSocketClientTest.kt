@@ -39,8 +39,9 @@ class WebSocketClientTest {
             records = records,
             timestamp = "2026-03-13T00:00:00Z"
         )
-        assertNotNull(notification.records)
-        assertEquals(1, notification.records!!.jsonArray.size)
+        val notifRecords = notification.records
+        assertNotNull(notifRecords)
+        assertEquals(1, notifRecords.jsonArray.size)
     }
 
     @Test
@@ -57,7 +58,6 @@ class WebSocketClientTest {
     @Test
     fun `ChatStreamEvent Chunk`() {
         val event = ChatStreamEvent.Chunk("Hello world")
-        assertTrue(event is ChatStreamEvent.Chunk)
         assertEquals("Hello world", event.content)
     }
 
@@ -72,7 +72,6 @@ class WebSocketClientTest {
             tokenUsage = tokenUsage,
             executionTimeMs = 500
         )
-        assertTrue(event is ChatStreamEvent.End)
         assertEquals("msg-1", event.messageId)
         assertEquals(500, event.executionTimeMs)
         assertNotNull(event.tokenUsage)
@@ -87,7 +86,6 @@ class WebSocketClientTest {
             toolName = "get_weather",
             arguments = args
         )
-        assertTrue(event is ChatStreamEvent.ToolCall)
         assertEquals("get_weather", event.toolName)
         assertEquals("call-123", event.callId)
         assertEquals("chat-1", event.chatId)
@@ -96,7 +94,6 @@ class WebSocketClientTest {
     @Test
     fun `ChatStreamEvent Error`() {
         val event = ChatStreamEvent.Error("Model unavailable")
-        assertTrue(event is ChatStreamEvent.Error)
         assertEquals("Model unavailable", event.error)
     }
 
