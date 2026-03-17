@@ -112,7 +112,7 @@ class TestProjectionIntegration:
 
         # This test confirms the architecture is correct
         try:
-            from ekodb_client import Client
+            from ekodb_client import Client  # noqa: F401
 
             # If Client is available, it uses the Rust core
             assert True

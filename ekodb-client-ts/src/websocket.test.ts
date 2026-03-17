@@ -4,7 +4,7 @@
  * Uses a mock WebSocket server to test the dispatcher pattern.
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { WebSocketServer, WebSocket as WS } from "ws";
 import { WebSocketClient, EventStream } from "./client";
 

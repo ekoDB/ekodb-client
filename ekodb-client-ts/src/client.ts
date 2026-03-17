@@ -4,7 +4,7 @@
 
 import { encode, decode } from "@msgpack/msgpack";
 import { QueryBuilder, Query as QueryBuilderQuery } from "./query-builder";
-import { SearchQuery, SearchQueryBuilder, SearchResponse } from "./search";
+import { SearchQuery, SearchResponse } from "./search";
 import { Schema, SchemaBuilder, CollectionMetadata } from "./schema";
 import { Script, FunctionResult } from "./functions";
 
@@ -375,7 +375,6 @@ export class EkoDBClient {
   private token: string | null = null;
   private shouldRetry: boolean;
   private maxRetries: number;
-  private timeout: number;
   private format: SerializationFormat;
   private rateLimitInfo: RateLimitInfo | null = null;
 
@@ -386,14 +385,12 @@ export class EkoDBClient {
       this.apiKey = apiKey!;
       this.shouldRetry = true;
       this.maxRetries = 3;
-      this.timeout = 30000;
       this.format = SerializationFormat.MessagePack; // Default to MessagePack for 2-3x performance
     } else {
       this.baseURL = config.baseURL;
       this.apiKey = config.apiKey;
       this.shouldRetry = config.shouldRetry ?? true;
       this.maxRetries = config.maxRetries ?? 3;
-      this.timeout = config.timeout ?? 30000;
       this.format = config.format ?? SerializationFormat.MessagePack; // Default to MessagePack for 2-3x performance
     }
   }
@@ -446,6 +443,14 @@ export class EkoDBClient {
 
     const result = (await response.json()) as { token: string };
     this.token = result.token;
+  }
+
+  /**
+   * Get the current authentication token.
+   * Returns null if not yet authenticated. Call refreshToken() first.
+   */
+  getToken(): string | null {
+    return this.token;
   }
 
   /**
@@ -2233,9 +2238,11 @@ export class WebSocketClient {
     this.token = token;
   }
 
+  private messageCounter = 0;
+
   private genMessageId(): string {
-    // Nanosecond-precision timestamp (as close as JS allows)
-    return (BigInt(Date.now()) * 1000000n).toString();
+    const counter = this.messageCounter++;
+    return `${Date.now()}-${counter}-${Math.random().toString(36).slice(2, 8)}`;
   }
 
   /**

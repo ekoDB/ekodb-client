@@ -35,6 +35,20 @@ Homepage = "https://github.com/ekoDB/ekodb"
 Repository = "https://github.com/ekoDB/ekodb"
 Documentation = "https://github.com/ekoDB/ekodb/tree/main/documentation"
 
+[tool.ruff]
+target-version = "py38"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "W"]
+# E = pycodestyle errors, F = pyflakes (unused imports/vars), W = warnings
+ignore = ["W293"]
+# W293 = blank line contains whitespace (cosmetic, handled by formatter)
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+# F401 in __init__.py = re-exports, not unused imports
+
 [tool.maturin]
 python-source = "python"
 module-name = "ekodb_client._ekodb_client"

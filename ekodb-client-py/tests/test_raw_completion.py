@@ -7,8 +7,6 @@ expected response shape, mirroring the Rust RawCompletionRequest struct.
 Run with: pytest tests/test_raw_completion.py -v
 """
 
-import pytest
-
 
 class TestRawCompletionRequestStructure:
     """Verify that the raw_completion request dict is well-formed."""
