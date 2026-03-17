@@ -566,8 +566,8 @@ Each new feature must include:
 
 When implementing these features:
 
-1. **Check server implementation** - Review `/ekodb/ekodb_server/src/main.rs`
-   for endpoint details
+1. **Check server API docs** - Review the ekoDB server API documentation for
+   endpoint details
 2. **Follow existing patterns** - Match style of current client methods
 3. **Add types first** - Define all TypeScript/Rust/etc types before
    implementation

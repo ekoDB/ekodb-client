@@ -18,7 +18,7 @@ The server checks the `Accept-Encoding` header in client requests:
 
 ### Implementation
 
-Server-side compression logic in `ekodb_server/src/compression.rs`:
+Server-side compression logic (handled by ekoDB):
 
 ```rust
 pub fn maybe_compress_response(data: Vec<u8>, headers: &HeaderMap) -> (Vec<u8>, bool) {
@@ -250,8 +250,7 @@ compression.
 
 ### Server-Side
 
-- **Location**: `ekodb_server/src/compression.rs`
-- **Algorithm**: gzip (via `flate2` crate)
+- **Algorithm**: gzip
 - **Compression Level**: Default (balance of speed and ratio)
 - **Fallback**: Returns uncompressed on compression errors
 
