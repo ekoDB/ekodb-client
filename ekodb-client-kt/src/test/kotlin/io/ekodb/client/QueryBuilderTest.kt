@@ -48,11 +48,12 @@ class QueryBuilderTest {
             .selectFields("name", "email", "created_at")
             .build()
 
-        assertNotNull(query.selectFields)
-        assertEquals(3, query.selectFields?.size)
-        assertTrue(query.selectFields!!.contains("name"))
-        assertTrue(query.selectFields!!.contains("email"))
-        assertTrue(query.selectFields!!.contains("created_at"))
+        val selectFields = query.selectFields
+        assertNotNull(selectFields)
+        assertEquals(3, selectFields.size)
+        assertTrue(selectFields.contains("name"))
+        assertTrue(selectFields.contains("email"))
+        assertTrue(selectFields.contains("created_at"))
     }
 
     @Test
@@ -62,11 +63,12 @@ class QueryBuilderTest {
             .excludeFields("password", "api_key", "secret_token")
             .build()
 
-        assertNotNull(query.excludeFields)
-        assertEquals(3, query.excludeFields?.size)
-        assertTrue(query.excludeFields!!.contains("password"))
-        assertTrue(query.excludeFields!!.contains("api_key"))
-        assertTrue(query.excludeFields!!.contains("secret_token"))
+        val excludeFields = query.excludeFields
+        assertNotNull(excludeFields)
+        assertEquals(3, excludeFields.size)
+        assertTrue(excludeFields.contains("password"))
+        assertTrue(excludeFields.contains("api_key"))
+        assertTrue(excludeFields.contains("secret_token"))
     }
 
     @Test
@@ -77,10 +79,12 @@ class QueryBuilderTest {
             .excludeFields("metadata.internal")
             .build()
 
-        assertNotNull(query.selectFields)
-        assertNotNull(query.excludeFields)
-        assertEquals(4, query.selectFields?.size)
-        assertEquals(1, query.excludeFields?.size)
+        val selectFields = query.selectFields
+        val excludeFields = query.excludeFields
+        assertNotNull(selectFields)
+        assertNotNull(excludeFields)
+        assertEquals(4, selectFields.size)
+        assertEquals(1, excludeFields.size)
     }
 
     @Test
@@ -94,10 +98,11 @@ class QueryBuilderTest {
             .limit(10)
             .build()
 
+        val selectFields = query.selectFields
         assertNotNull(query.filter)
-        assertNotNull(query.selectFields)
+        assertNotNull(selectFields)
         assertNotNull(query.sort)
-        assertEquals(3, query.selectFields?.size)
+        assertEquals(3, selectFields.size)
         assertEquals(10, query.limit)
     }
 
