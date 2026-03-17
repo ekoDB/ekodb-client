@@ -2415,7 +2415,12 @@ export class WebSocketClient {
 
     return new Promise((resolve, reject) => {
       this.pendingRequests.set(messageId, { resolve, reject });
-      this.ws.send(JSON.stringify(request));
+      try {
+        this.ws.send(JSON.stringify(request));
+      } catch (err) {
+        this.pendingRequests.delete(messageId);
+        reject(err);
+      }
     });
   }
 
@@ -2461,7 +2466,12 @@ export class WebSocketClient {
     };
 
     // Send subscribe request and wait for ack
-    await this.sendRequest(request);
+    try {
+      await this.sendRequest(request);
+    } catch (err) {
+      this.subscriptions.delete(collection);
+      throw err;
+    }
     return stream;
   }
 

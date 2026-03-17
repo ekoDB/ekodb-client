@@ -91,6 +91,12 @@ class WebSocketClient(
      * Connect to the WebSocket server and start the dispatcher.
      */
     suspend fun connect() {
+        // Cancel any existing dispatcher before reconnecting
+        dispatcherJob?.let {
+            it.cancel()
+            it.join()
+        }
+
         val url = if (wsUrl.contains("/api/ws")) wsUrl else {
             val baseUrl = wsUrl.trimEnd('/')
             "$baseUrl/api/ws"
@@ -439,10 +445,16 @@ class WebSocketClient(
      * Close the WebSocket connection and clean up resources.
      */
     suspend fun close() {
-        dispatcherJob?.cancel()
+        dispatcherJob?.let {
+            it.cancel()
+            it.join()
+        }
+        dispatcherJob = null
         session?.close()
         session = null
-        scope.cancel()
+        pendingRequests.clear()
+        subscriptions.clear()
+        chatStreams.clear()
     }
 }
 

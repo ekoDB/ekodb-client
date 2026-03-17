@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 
@@ -170,6 +169,3 @@ func chatWithClientTools() {
 		}
 	}
 }
-
-// Ensure json is used (for the Arguments field)
-var _ = json.Marshal
