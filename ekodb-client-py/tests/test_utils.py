@@ -5,6 +5,8 @@ Run with: pytest tests/ -v
 """
 
 from datetime import datetime
+
+from ekodb_client import Stage
 from ekodb_client.utils import (
     get_value,
     get_values,
@@ -525,8 +527,6 @@ class TestExtractRecord:
 # ============================================================================
 # SWR Function Tests
 # ============================================================================
-
-from ekodb_client import Stage
 
 
 class TestSWRStage:

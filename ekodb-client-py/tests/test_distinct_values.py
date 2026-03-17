@@ -7,8 +7,6 @@ mirroring how the Rust DistinctValuesQuery struct serializes.
 Run with: pytest tests/test_distinct_values.py -v
 """
 
-import pytest
-
 
 class TestDistinctValuesQueryStructure:
     """Verify that the distinct_values query dict is well-formed."""

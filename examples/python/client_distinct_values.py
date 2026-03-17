@@ -31,7 +31,7 @@ async def main():
     try:
         await client.delete_collection(collection)
     except Exception:
-        pass
+        pass  # Collection may not exist yet
 
     # -------------------------------------------------------------------------
     # Step 1: Insert sample data

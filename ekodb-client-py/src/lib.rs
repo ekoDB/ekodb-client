@@ -2677,20 +2677,24 @@ impl WebSocketClient {
         };
 
         // Convert client tools from Python tuples to Rust structs
-        let rust_tools: Option<Vec<ekodb_client::websocket::ClientToolDefinition>> = client_tools.map(|tools| {
-            tools.into_iter().map(|(name, description, params)| {
-                let parameters = Python::attach(|py| {
-                    let params_bound = params.bind(py);
-                    py_to_json(params_bound)
-                }).unwrap_or(serde_json::Value::Object(serde_json::Map::new()));
-
-                ekodb_client::websocket::ClientToolDefinition {
-                    name,
-                    description,
-                    parameters,
+        let rust_tools: Option<Vec<ekodb_client::websocket::ClientToolDefinition>> = match client_tools {
+            Some(tools) => {
+                let mut converted = Vec::with_capacity(tools.len());
+                for (name, description, params) in tools {
+                    let parameters = Python::attach(|py| {
+                        let params_bound = params.bind(py);
+                        py_to_json(params_bound)
+                    }).map_err(|e| PyRuntimeError::new_err(format!("Failed to convert tool parameters for '{}': {}", name, e)))?;
+                    converted.push(ekodb_client::websocket::ClientToolDefinition {
+                        name,
+                        description,
+                        parameters,
+                    });
                 }
-            }).collect()
-        });
+                Some(converted)
+            }
+            None => None,
+        };
 
         future_into_py::<_, Py<PyAny>>(py, async move {
             let rx = ws_client
@@ -2726,18 +2730,18 @@ impl WebSocketClient {
             None => return Err(PyRuntimeError::new_err("WebSocket client not initialized")),
         };
 
-        let rust_tools: Vec<ekodb_client::websocket::ClientToolDefinition> = tools.into_iter().map(|(name, description, params)| {
+        let mut rust_tools: Vec<ekodb_client::websocket::ClientToolDefinition> = Vec::with_capacity(tools.len());
+        for (name, description, params) in tools {
             let parameters = Python::attach(|py| {
                 let params_bound = params.bind(py);
                 py_to_json(params_bound)
-            }).unwrap_or(serde_json::Value::Object(serde_json::Map::new()));
-
-            ekodb_client::websocket::ClientToolDefinition {
+            }).map_err(|e| PyRuntimeError::new_err(format!("Failed to convert tool parameters for '{}': {}", name, e)))?;
+            rust_tools.push(ekodb_client::websocket::ClientToolDefinition {
                 name,
                 description,
                 parameters,
-            }
-        }).collect();
+            });
+        }
 
         future_into_py::<_, Py<PyAny>>(py, async move {
             ws_client
@@ -2765,12 +2769,16 @@ impl WebSocketClient {
             None => return Err(PyRuntimeError::new_err("WebSocket client not initialized")),
         };
 
-        let json_result: Option<serde_json::Value> = result.map(|r| {
-            Python::attach(|py| {
-                let r_bound = r.bind(py);
-                py_to_json(r_bound)
-            }).unwrap_or(serde_json::Value::Null)
-        });
+        let json_result: Option<serde_json::Value> = match result {
+            Some(r) => {
+                let val = Python::attach(|py| {
+                    let r_bound = r.bind(py);
+                    py_to_json(r_bound)
+                }).map_err(|e| PyRuntimeError::new_err(format!("Failed to convert tool result: {}", e)))?;
+                Some(val)
+            }
+            None => None,
+        };
 
         future_into_py::<_, Py<PyAny>>(py, async move {
             ws_client

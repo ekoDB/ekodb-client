@@ -1341,6 +1341,35 @@ fmt-md:
 # Alias for fmt - formats everything (Rust + Markdown + examples)
 format: fmt
 
+# ============================================================================
+# Linting
+# ============================================================================
+
+# Lint all code
+lint: lint-rust lint-typescript lint-python
+	@echo "✅ $(GREEN)All linting complete!$(RESET)"
+
+# Rust: clippy
+lint-rust:
+	@echo "🦀 $(CYAN)Running clippy on Rust client...$(RESET)"
+	$(CARGO) clippy --all-targets
+	@echo "✅ $(GREEN)Rust lint complete!$(RESET)"
+
+# TypeScript: tsc --noEmit (catches unused imports, type errors)
+lint-typescript:
+	@echo "📘 $(CYAN)Running TypeScript lint...$(RESET)"
+	@cd ekodb-client-ts && npm run lint
+	@echo "✅ $(GREEN)TypeScript lint complete!$(RESET)"
+
+# Python: ruff (catches unused imports, style issues)
+lint-python:
+	@echo "🐍 $(CYAN)Running Python lint...$(RESET)"
+	@if command -v ruff >/dev/null 2>&1; then \
+		ruff check ekodb-client-py/python/ ekodb-client-py/tests/; \
+	else \
+		echo "⚠️  $(YELLOW)ruff not installed, skipping Python lint (pip install ruff)$(RESET)"; \
+	fi
+	@echo "✅ $(GREEN)Python lint complete!$(RESET)"
 
 # Install all client libraries
 install: install-rust install-python install-typescript install-go

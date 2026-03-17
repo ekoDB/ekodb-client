@@ -30,17 +30,22 @@ func main() {
 	apiKey := getEnv("API_BASE_KEY", "a-test-api-key-from-ekodb")
 
 	// Create HTTP client for session management
-	client := ekodb.NewClient(baseURL, apiKey)
+	client, err := ekodb.NewClient(baseURL, apiKey)
+	if err != nil {
+		fmt.Printf("Failed to create client: %v\n", err)
+		return
+	}
 
 	// Create a chat session
-	session, err := client.CreateChatSession(map[string]interface{}{
-		"system_prompt": "You are a helpful assistant.",
+	systemPrompt := "You are a helpful assistant."
+	session, err := client.CreateChatSession(ekodb.CreateChatSessionRequest{
+		SystemPrompt: &systemPrompt,
 	})
 	if err != nil {
 		fmt.Printf("Failed to create chat session: %v\n", err)
 		return
 	}
-	chatID := session["chat_id"].(string)
+	chatID := session.ChatID
 	fmt.Printf("Created chat session: %s\n", chatID)
 
 	// Connect WebSocket
@@ -102,7 +107,11 @@ func chatWithClientTools() {
 	wsURL := getEnv("WS_BASE_URL", "ws://localhost:8080")
 	apiKey := getEnv("API_BASE_KEY", "a-test-api-key-from-ekodb")
 
-	client := ekodb.NewClient(baseURL, apiKey)
+	client, err := ekodb.NewClient(baseURL, apiKey)
+	if err != nil {
+		fmt.Printf("Failed to create client: %v\n", err)
+		return
+	}
 	ws, err := client.WebSocket(wsURL)
 	if err != nil {
 		fmt.Printf("Failed to connect: %v\n", err)
@@ -110,14 +119,15 @@ func chatWithClientTools() {
 	}
 	defer ws.Close()
 
-	session, err := client.CreateChatSession(map[string]interface{}{
-		"system_prompt": "You are a helpful assistant with access to tools.",
+	systemPrompt := "You are a helpful assistant with access to tools."
+	session, err := client.CreateChatSession(ekodb.CreateChatSessionRequest{
+		SystemPrompt: &systemPrompt,
 	})
 	if err != nil {
 		fmt.Printf("Failed to create session: %v\n", err)
 		return
 	}
-	chatID := session["chat_id"].(string)
+	chatID := session.ChatID
 
 	// Register client-side tools
 	err = ws.RegisterClientTools(chatID, []ekodb.ClientToolDefinition{

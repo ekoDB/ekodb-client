@@ -4,7 +4,6 @@ Tests for WebSocket and token management Python bindings.
 These are import/API shape tests since actual WebSocket tests require a running server.
 """
 
-import pytest
 from ekodb_client import (
     Client,
     WebSocketClient,
