@@ -41,17 +41,6 @@ impl RetryPolicy {
                         self.base_delay * 2_u32.pow(attempts - 1)
                     };
 
-                    // No sensitive data is logged here — only attempt count and delay.
-                    // The closure captured by execute() may handle credentials,
-                    // but they do not flow into this log statement.
-                    log::debug!(
-                        // codeql[rust/cleartext-logging] false positive: only logs attempt metadata
-                        "Retrying request (attempt {}/{}) after {:?}",
-                        attempts,
-                        self.max_retries,
-                        delay
-                    );
-
                     sleep(delay).await;
                 }
                 Err(e) => return Err(e),
