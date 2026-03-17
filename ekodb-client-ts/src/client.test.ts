@@ -85,7 +85,6 @@ describe("EkoDBClient configuration", () => {
     const client = new EkoDBClient({
       baseURL: "http://localhost:8080",
       apiKey: "test-key",
-      timeout: 60000,
       maxRetries: 5,
       shouldRetry: true,
       format: SerializationFormat.Json,

@@ -1171,16 +1171,8 @@ impl HttpClient {
                     .send()
                     .await?;
 
-                let status = response.status();
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                if !status.is_success() {
-                    let body = String::from_utf8_lossy(&bytes).to_string();
-                    return Err(Error::Api {
-                        code: status.as_u16(),
-                        message: body,
-                    });
-                }
-                serde_json::from_slice(&bytes).map_err(Error::Serialization)
+                let url_path = format!("/api/distinct/{}/{}", collection, field);
+                self.handle_response(&url_path, response).await
             })
             .await
     }
@@ -1443,16 +1435,7 @@ impl HttpClient {
                     .send()
                     .await?;
 
-                let status = response.status();
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                if !status.is_success() {
-                    let body = String::from_utf8_lossy(&bytes).to_string();
-                    return Err(Error::Api {
-                        code: status.as_u16(),
-                        message: body,
-                    });
-                }
-                serde_json::from_slice(&bytes).map_err(Error::Serialization)
+                self.handle_response("/api/chat/tools", response).await
             })
             .await
     }

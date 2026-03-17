@@ -46,8 +46,6 @@ export interface ClientConfig {
   shouldRetry?: boolean;
   /** Maximum number of retry attempts (default: 3) */
   maxRetries?: number;
-  /** Request timeout in milliseconds (default: 30000) */
-  timeout?: number;
   /** Serialization format (default: MessagePack for best performance, use Json for debugging) */
   format?: SerializationFormat;
 }
@@ -2455,6 +2453,10 @@ export class WebSocketClient {
   ): Promise<EventStream<MutationNotification>> {
     await this.ensureConnected();
 
+    if (this.subscriptions.has(collection)) {
+      throw new Error(`Already subscribed to collection "${collection}"`);
+    }
+
     const messageId = this.genMessageId();
     const stream = new EventStream<MutationNotification>();
     this.subscriptions.set(collection, stream);
@@ -2484,6 +2486,10 @@ export class WebSocketClient {
     options?: ChatSendOptions,
   ): Promise<EventStream<ChatStreamEvent>> {
     await this.ensureConnected();
+
+    if (this.chatStreams.has(chatId)) {
+      throw new Error(`Chat stream already active for chatId "${chatId}"`);
+    }
 
     const stream = new EventStream<ChatStreamEvent>();
     this.chatStreams.set(chatId, stream);

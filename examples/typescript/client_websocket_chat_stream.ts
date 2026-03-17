@@ -125,10 +125,12 @@ async function chatWithClientTools() {
         console.log(
           `\n[Tool Call] ${event.toolName}(${JSON.stringify(event.arguments)})`,
         );
-        await ws.sendToolResult(chatId, event.callId, true, {
-          temperature: "22°C",
-          condition: "Sunny",
-        });
+        await ws
+          .sendToolResult(chatId, event.callId, true, {
+            temperature: "22°C",
+            condition: "Sunny",
+          })
+          .catch((err) => console.error(`Failed to send tool result: ${err}`));
         break;
 
       case "end":
