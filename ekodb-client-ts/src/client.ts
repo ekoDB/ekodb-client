@@ -2394,6 +2394,126 @@ export class EkoDBClient {
   }
 
   // ========================================================================
+  // KV DOCUMENT LINKING
+  // ========================================================================
+
+  /** Get documents linked to a KV key */
+  async kvGetLinks(key: string): Promise<Record> {
+    return this.makeRequest<Record>(
+      "GET",
+      `/api/kv/links/${encodeURIComponent(key)}`,
+      undefined,
+      0,
+      true,
+    );
+  }
+
+  /** Link a document to a KV key */
+  async kvLink(
+    key: string,
+    collection: string,
+    documentId: string,
+  ): Promise<Record> {
+    return this.makeRequest<Record>(
+      "POST",
+      `/api/kv/link`,
+      { key, collection, document_id: documentId },
+      0,
+      true,
+    );
+  }
+
+  /** Unlink a document from a KV key */
+  async kvUnlink(
+    key: string,
+    collection: string,
+    documentId: string,
+  ): Promise<Record> {
+    return this.makeRequest<Record>(
+      "POST",
+      `/api/kv/unlink`,
+      { key, collection, document_id: documentId },
+      0,
+      true,
+    );
+  }
+
+  // ========================================================================
+  // SCHEDULE MANAGEMENT
+  // ========================================================================
+
+  /** Create a new schedule */
+  async createSchedule(data: Record): Promise<Record> {
+    return this.makeRequest<Record>("POST", `/api/schedules`, data, 0, true);
+  }
+
+  /** List all schedules */
+  async listSchedules(): Promise<Record> {
+    return this.makeRequest<Record>(
+      "GET",
+      `/api/schedules`,
+      undefined,
+      0,
+      true,
+    );
+  }
+
+  /** Get a schedule by ID */
+  async getSchedule(id: string): Promise<Record> {
+    return this.makeRequest<Record>(
+      "GET",
+      `/api/schedules/${encodeURIComponent(id)}`,
+      undefined,
+      0,
+      true,
+    );
+  }
+
+  /** Update a schedule */
+  async updateSchedule(id: string, data: Record): Promise<Record> {
+    return this.makeRequest<Record>(
+      "PUT",
+      `/api/schedules/${encodeURIComponent(id)}`,
+      data,
+      0,
+      true,
+    );
+  }
+
+  /** Delete a schedule */
+  async deleteSchedule(id: string): Promise<void> {
+    await this.makeRequest<void>(
+      "DELETE",
+      `/api/schedules/${encodeURIComponent(id)}`,
+      undefined,
+      0,
+      true,
+    );
+  }
+
+  /** Pause a schedule */
+  async pauseSchedule(id: string): Promise<Record> {
+    return this.makeRequest<Record>(
+      "POST",
+      `/api/schedules/${encodeURIComponent(id)}/pause`,
+      undefined,
+      0,
+      true,
+    );
+  }
+
+  /** Resume a schedule */
+  async resumeSchedule(id: string): Promise<Record> {
+    return this.makeRequest<Record>(
+      "POST",
+      `/api/schedules/${encodeURIComponent(id)}/resume`,
+      undefined,
+      0,
+      true,
+    );
+  }
+
+  // ========================================================================
   // COLLECTION UTILITIES
   // ========================================================================
 
@@ -3037,6 +3157,33 @@ export class WebSocketClient {
     };
 
     this.ws.send(JSON.stringify(request));
+  }
+
+  /**
+   * Stateless raw LLM completion via WebSocket.
+   *
+   * Sends a RawComplete message and waits for the Success response.
+   * Preferred over HTTP for deployed instances: the persistent WSS
+   * connection is already authenticated and won't be killed by reverse
+   * proxy timeouts.
+   */
+  async rawCompletion(
+    request: RawCompletionRequest,
+  ): Promise<RawCompletionResponse> {
+    await this.ensureConnected();
+    const messageId = this.genMessageId();
+    const payload = await this.sendRequest({
+      type: "RawComplete",
+      messageId,
+      payload: {
+        system_prompt: request.system_prompt,
+        message: request.message,
+        ...(request.provider && { provider: request.provider }),
+        ...(request.model && { model: request.model }),
+        ...(request.max_tokens != null && { max_tokens: request.max_tokens }),
+      },
+    });
+    return { content: payload?.data?.content || "" };
   }
 
   /**

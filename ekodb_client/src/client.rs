@@ -1980,6 +1980,88 @@ impl Client {
         let token = self.auth.get_token().await?;
         self.http.agents_by_deployment(deployment_id, &token).await
     }
+
+    // ── KV Document Linking ─────────────────────────────────────────────────
+
+    /// Get documents linked to a KV key.
+    pub async fn kv_get_links(&self, key: &str) -> Result<serde_json::Value> {
+        let token = self.auth.get_token().await?;
+        self.http.kv_get_links(key, &token).await
+    }
+
+    /// Link a document to a KV key.
+    pub async fn kv_link(
+        &self,
+        key: &str,
+        collection: &str,
+        document_id: &str,
+    ) -> Result<serde_json::Value> {
+        let token = self.auth.get_token().await?;
+        self.http
+            .kv_link(key, collection, document_id, &token)
+            .await
+    }
+
+    /// Unlink a document from a KV key.
+    pub async fn kv_unlink(
+        &self,
+        key: &str,
+        collection: &str,
+        document_id: &str,
+    ) -> Result<serde_json::Value> {
+        let token = self.auth.get_token().await?;
+        self.http
+            .kv_unlink(key, collection, document_id, &token)
+            .await
+    }
+
+    // ── Schedule Management ─────────────────────────────────────────────────
+
+    /// Create a new schedule.
+    pub async fn create_schedule(&self, data: serde_json::Value) -> Result<serde_json::Value> {
+        let token = self.auth.get_token().await?;
+        self.http.create_schedule(data, &token).await
+    }
+
+    /// List all schedules.
+    pub async fn list_schedules(&self) -> Result<serde_json::Value> {
+        let token = self.auth.get_token().await?;
+        self.http.list_schedules(&token).await
+    }
+
+    /// Get a schedule by ID.
+    pub async fn get_schedule(&self, id: &str) -> Result<serde_json::Value> {
+        let token = self.auth.get_token().await?;
+        self.http.get_schedule(id, &token).await
+    }
+
+    /// Update a schedule by ID.
+    pub async fn update_schedule(
+        &self,
+        id: &str,
+        data: serde_json::Value,
+    ) -> Result<serde_json::Value> {
+        let token = self.auth.get_token().await?;
+        self.http.update_schedule(id, data, &token).await
+    }
+
+    /// Delete a schedule by ID.
+    pub async fn delete_schedule(&self, id: &str) -> Result<()> {
+        let token = self.auth.get_token().await?;
+        self.http.delete_schedule(id, &token).await
+    }
+
+    /// Pause a schedule.
+    pub async fn pause_schedule(&self, id: &str) -> Result<serde_json::Value> {
+        let token = self.auth.get_token().await?;
+        self.http.pause_schedule(id, &token).await
+    }
+
+    /// Resume a schedule.
+    pub async fn resume_schedule(&self, id: &str) -> Result<serde_json::Value> {
+        let token = self.auth.get_token().await?;
+        self.http.resume_schedule(id, &token).await
+    }
 }
 
 /// Builder for creating a Client

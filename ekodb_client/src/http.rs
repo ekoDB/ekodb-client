@@ -3008,6 +3008,163 @@ impl HttpClient {
         self.handle_response("/api/chat/agents/by-deployment/{id}", response)
             .await
     }
+
+    // ── KV Document Linking ─────────────────────────────────────────────────
+
+    pub async fn kv_get_links(&self, key: &str, token: &str) -> Result<serde_json::Value> {
+        let url = self.base_url.join(&format!("/api/kv/links/{}", key))?;
+        let response = self
+            .client
+            .get(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        self.handle_response("/api/kv/links/{key}", response).await
+    }
+
+    pub async fn kv_link(
+        &self,
+        key: &str,
+        collection: &str,
+        document_id: &str,
+        token: &str,
+    ) -> Result<serde_json::Value> {
+        let url = self.base_url.join("/api/kv/link")?;
+        let body = serde_json::json!({
+            "key": key,
+            "collection": collection,
+            "document_id": document_id,
+        });
+        let response = self
+            .client
+            .post(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .json(&body)
+            .send()
+            .await?;
+        self.handle_response("/api/kv/link", response).await
+    }
+
+    pub async fn kv_unlink(
+        &self,
+        key: &str,
+        collection: &str,
+        document_id: &str,
+        token: &str,
+    ) -> Result<serde_json::Value> {
+        let url = self.base_url.join("/api/kv/unlink")?;
+        let body = serde_json::json!({
+            "key": key,
+            "collection": collection,
+            "document_id": document_id,
+        });
+        let response = self
+            .client
+            .post(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .json(&body)
+            .send()
+            .await?;
+        self.handle_response("/api/kv/unlink", response).await
+    }
+
+    // ── Schedule Management ─────────────────────────────────────────────────
+
+    pub async fn create_schedule(
+        &self,
+        data: serde_json::Value,
+        token: &str,
+    ) -> Result<serde_json::Value> {
+        let url = self.base_url.join("/api/schedules")?;
+        let response = self
+            .client
+            .post(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .json(&data)
+            .send()
+            .await?;
+        self.handle_response("/api/schedules", response).await
+    }
+
+    pub async fn list_schedules(&self, token: &str) -> Result<serde_json::Value> {
+        let url = self.base_url.join("/api/schedules")?;
+        let response = self
+            .client
+            .get(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        self.handle_response("/api/schedules", response).await
+    }
+
+    pub async fn get_schedule(&self, id: &str, token: &str) -> Result<serde_json::Value> {
+        let url = self.base_url.join(&format!("/api/schedules/{}", id))?;
+        let response = self
+            .client
+            .get(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        self.handle_response("/api/schedules/{id}", response).await
+    }
+
+    pub async fn update_schedule(
+        &self,
+        id: &str,
+        data: serde_json::Value,
+        token: &str,
+    ) -> Result<serde_json::Value> {
+        let url = self.base_url.join(&format!("/api/schedules/{}", id))?;
+        let response = self
+            .client
+            .put(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .json(&data)
+            .send()
+            .await?;
+        self.handle_response("/api/schedules/{id}", response).await
+    }
+
+    pub async fn delete_schedule(&self, id: &str, token: &str) -> Result<()> {
+        let url = self.base_url.join(&format!("/api/schedules/{}", id))?;
+        let response = self
+            .client
+            .delete(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        self.handle_response::<serde_json::Value>("/api/schedules/{id}", response)
+            .await?;
+        Ok(())
+    }
+
+    pub async fn pause_schedule(&self, id: &str, token: &str) -> Result<serde_json::Value> {
+        let url = self
+            .base_url
+            .join(&format!("/api/schedules/{}/pause", id))?;
+        let response = self
+            .client
+            .post(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        self.handle_response("/api/schedules/{id}/pause", response)
+            .await
+    }
+
+    pub async fn resume_schedule(&self, id: &str, token: &str) -> Result<serde_json::Value> {
+        let url = self
+            .base_url
+            .join(&format!("/api/schedules/{}/resume", id))?;
+        let response = self
+            .client
+            .post(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        self.handle_response("/api/schedules/{id}/resume", response)
+            .await
+    }
 }
 
 #[derive(Deserialize, Serialize)]

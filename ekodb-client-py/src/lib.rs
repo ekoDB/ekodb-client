@@ -3205,6 +3205,208 @@ impl Client {
             Python::attach(|py| json_to_pydict(py, &result))
         })
     }
+
+    // ── KV Document Linking ──────────────────────────────────────────────────
+
+    /// Get documents linked to a KV key
+    ///
+    /// Args:
+    ///     key: The KV key to get links for
+    fn kv_get_links<'py>(
+        &self,
+        py: Python<'py>,
+        key: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            let result = client
+                .kv_get_links(&key)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("kv_get_links failed: {}", e)))?;
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// Link a document to a KV key
+    ///
+    /// Args:
+    ///     key: The KV key
+    ///     collection: Collection containing the document
+    ///     document_id: ID of the document to link
+    fn kv_link<'py>(
+        &self,
+        py: Python<'py>,
+        key: String,
+        collection: String,
+        document_id: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            let result = client
+                .kv_link(&key, &collection, &document_id)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("kv_link failed: {}", e)))?;
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// Unlink a document from a KV key
+    ///
+    /// Args:
+    ///     key: The KV key
+    ///     collection: Collection containing the document
+    ///     document_id: ID of the document to unlink
+    fn kv_unlink<'py>(
+        &self,
+        py: Python<'py>,
+        key: String,
+        collection: String,
+        document_id: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            let result = client
+                .kv_unlink(&key, &collection, &document_id)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("kv_unlink failed: {}", e)))?;
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    // ── Schedule Management ──────────────────────────────────────────────────
+
+    /// Create a new schedule
+    ///
+    /// Args:
+    ///     data: Dict with schedule configuration
+    fn create_schedule<'py>(
+        &self,
+        py: Python<'py>,
+        data: &Bound<'py, PyDict>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        let data_json = py_to_json(data.as_any())?;
+        future_into_py(py, async move {
+            let result = client
+                .create_schedule(data_json)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("create_schedule failed: {}", e)))?;
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// List all schedules
+    fn list_schedules<'py>(
+        &self,
+        py: Python<'py>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            let result = client
+                .list_schedules()
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("list_schedules failed: {}", e)))?;
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// Get a schedule by ID
+    ///
+    /// Args:
+    ///     id: Schedule ID
+    fn get_schedule<'py>(
+        &self,
+        py: Python<'py>,
+        id: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            let result = client
+                .get_schedule(&id)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("get_schedule failed: {}", e)))?;
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// Update a schedule by ID
+    ///
+    /// Args:
+    ///     id: Schedule ID
+    ///     data: Dict with updated schedule data
+    fn update_schedule<'py>(
+        &self,
+        py: Python<'py>,
+        id: String,
+        data: &Bound<'py, PyDict>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        let data_json = py_to_json(data.as_any())?;
+        future_into_py(py, async move {
+            let result = client
+                .update_schedule(&id, data_json)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("update_schedule failed: {}", e)))?;
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// Delete a schedule by ID
+    ///
+    /// Args:
+    ///     id: Schedule ID
+    fn delete_schedule<'py>(
+        &self,
+        py: Python<'py>,
+        id: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            client
+                .delete_schedule(&id)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("delete_schedule failed: {}", e)))?;
+            Python::attach(|py| Ok(py.None()))
+        })
+    }
+
+    /// Pause a schedule
+    ///
+    /// Args:
+    ///     id: Schedule ID
+    fn pause_schedule<'py>(
+        &self,
+        py: Python<'py>,
+        id: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            let result = client
+                .pause_schedule(&id)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("pause_schedule failed: {}", e)))?;
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// Resume a schedule
+    ///
+    /// Args:
+    ///     id: Schedule ID
+    fn resume_schedule<'py>(
+        &self,
+        py: Python<'py>,
+        id: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            let result = client
+                .resume_schedule(&id)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("resume_schedule failed: {}", e)))?;
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
 }
 
 /// Python wrapper for WebSocket Client
@@ -3510,6 +3712,59 @@ impl WebSocketClient {
                 .map_err(|e| PyRuntimeError::new_err(format!("Send tool result failed: {}", e)))?;
 
             Python::attach(|py| Ok(py.None()))
+        })
+    }
+
+    /// Stateless raw LLM completion via WebSocket.
+    ///
+    /// Sends a RawComplete message over the persistent WSS connection.
+    /// Preferred over HTTP: the persistent WSS connection is already
+    /// authenticated and won't be killed by reverse proxy timeouts.
+    ///
+    /// Args:
+    ///     system_prompt: System instructions for the LLM
+    ///     message: User message to send
+    ///     provider: LLM provider (optional)
+    ///     model: Model name (optional)
+    ///     max_tokens: Maximum tokens (optional)
+    ///
+    /// Returns:
+    ///     dict with "content" key containing the LLM response text
+    #[pyo3(signature = (system_prompt, message, provider=None, model=None, max_tokens=None))]
+    fn raw_completion<'py>(
+        &self,
+        py: Python<'py>,
+        system_prompt: String,
+        message: String,
+        provider: Option<String>,
+        model: Option<String>,
+        max_tokens: Option<i32>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let ws_client = match &self.inner {
+            Some(client) => client.clone(),
+            None => return Err(PyRuntimeError::new_err("WebSocket client not initialized")),
+        };
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            let request = RustRawCompletionRequest {
+                system_prompt,
+                message,
+                provider,
+                model,
+                max_tokens,
+            };
+
+            let resp = ws_client
+                .raw_completion(&request)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("WebSocket raw_completion failed: {}", e)))?;
+
+            Python::attach(|py| {
+                let resp_json = serde_json::to_value(&resp).map_err(|e| {
+                    PyRuntimeError::new_err(format!("Failed to serialize response: {}", e))
+                })?;
+                json_to_pydict(py, &resp_json)
+            })
         })
     }
 }

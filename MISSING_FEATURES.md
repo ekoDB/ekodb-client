@@ -86,7 +86,7 @@ yet exposed in client libraries.
 
 ---
 
-## 1. Query Index Management ❌
+## 1. Query Index Management ⛔ (Admin-only — not for client library)
 
 ### Description
 
@@ -160,7 +160,7 @@ suspend fun explainQuery(collection: String, query: Query): QueryPlan
 
 ---
 
-## 2. Search Index Management ❌
+## 2. Search Index Management ⛔ (Admin-only — not for client library)
 
 ### Description
 
@@ -233,7 +233,7 @@ suspend fun explainHybridSearch(collection: String, query: HybridQuery): SearchP
 
 ---
 
-## 3. KV Document Linking ❌
+## 3. KV Document Linking ✅ (Implemented March 2026 — uses regular auth)
 
 ### Description
 
@@ -299,7 +299,7 @@ suspend fun kvUnlink(key: String, collection: String, documentId: String)
 
 ---
 
-## 4. Schedule Management (Cron Jobs) ❌
+## 4. Schedule Management (Cron Jobs) ✅ (Implemented March 2026 — no admin auth required)
 
 ### Description
 
