@@ -1269,12 +1269,45 @@ impl Client {
     /// and returns the raw text response without any context injection or
     /// conversation management. Use this for structured-output tasks such as
     /// planning where the response must be parsed programmatically.
+    ///
+    /// This is the blocking HTTP variant. For deployed instances behind reverse
+    /// proxies, prefer `raw_completion_stream()` (SSE) or use `WebSocketClient::raw_completion()`
+    /// (WSS) to avoid proxy timeouts on long-running LLM calls.
     pub async fn raw_completion(
         &self,
         request: crate::chat::RawCompletionRequest,
     ) -> Result<crate::chat::RawCompletionResponse> {
         let token = self.auth.get_token().await?;
         self.http.raw_completion(request, &token).await
+    }
+
+    /// Stateless raw LLM completion via SSE streaming.
+    ///
+    /// Same as `raw_completion()` but uses Server-Sent Events to keep the
+    /// connection alive. Preferred for deployed instances where reverse proxies
+    /// may kill idle HTTP connections before the LLM responds.
+    pub async fn raw_completion_stream(
+        &self,
+        request: crate::chat::RawCompletionRequest,
+    ) -> Result<crate::chat::RawCompletionResponse> {
+        let token = self.auth.get_token().await?;
+        self.http.raw_completion_stream(request, &token).await
+    }
+
+    /// Stateless raw LLM completion via SSE with incremental token progress.
+    ///
+    /// Same as `raw_completion_stream()` but sends each token through the
+    /// provided channel as it arrives, allowing callers to show real-time
+    /// progress during long-running LLM calls (e.g., goal plan generation).
+    pub async fn raw_completion_stream_with_progress(
+        &self,
+        request: crate::chat::RawCompletionRequest,
+        progress_tx: tokio::sync::mpsc::Sender<String>,
+    ) -> Result<crate::chat::RawCompletionResponse> {
+        let token = self.auth.get_token().await?;
+        self.http
+            .raw_completion_stream_with_progress(request, &token, progress_tx)
+            .await
     }
 
     /// Create a new chat session
@@ -1733,6 +1766,219 @@ impl Client {
     pub async fn delete_user_function(&self, label: &str) -> Result<()> {
         let token = self.auth.get_token().await?;
         self.http.delete_user_function(label, &token).await
+    }
+
+    // ── Goal CRUD ────────────────────────────────────────────────────────────
+
+    pub async fn goal_create(&self, data: serde_json::Value) -> Result<serde_json::Value> {
+        let token = self.auth.get_token().await?;
+        self.http.goal_create(data, &token).await
+    }
+
+    pub async fn goal_list(&self) -> Result<serde_json::Value> {
+        let token = self.auth.get_token().await?;
+        self.http.goal_list(&token).await
+    }
+
+    pub async fn goal_get(&self, id: &str) -> Result<serde_json::Value> {
+        let token = self.auth.get_token().await?;
+        self.http.goal_get(id, &token).await
+    }
+
+    pub async fn goal_update(
+        &self,
+        id: &str,
+        data: serde_json::Value,
+    ) -> Result<serde_json::Value> {
+        let token = self.auth.get_token().await?;
+        self.http.goal_update(id, data, &token).await
+    }
+
+    pub async fn goal_delete(&self, id: &str) -> Result<()> {
+        let token = self.auth.get_token().await?;
+        self.http.goal_delete(id, &token).await
+    }
+
+    pub async fn goal_search(&self, query: &str) -> Result<serde_json::Value> {
+        let token = self.auth.get_token().await?;
+        self.http.goal_search(query, &token).await
+    }
+
+    // ── Goal lifecycle ─────────────────────────────────────────────────────
+
+    /// Atomically mark a goal as complete (status → pending_review).
+    pub async fn goal_complete(
+        &self,
+        id: &str,
+        data: serde_json::Value,
+    ) -> Result<serde_json::Value> {
+        let token = self.auth.get_token().await?;
+        self.http.goal_complete(id, data, &token).await
+    }
+
+    /// Atomically approve a goal (status → in_progress).
+    pub async fn goal_approve(&self, id: &str) -> Result<serde_json::Value> {
+        let token = self.auth.get_token().await?;
+        self.http.goal_approve(id, &token).await
+    }
+
+    /// Atomically reject a goal (status → failed).
+    pub async fn goal_reject(
+        &self,
+        id: &str,
+        data: serde_json::Value,
+    ) -> Result<serde_json::Value> {
+        let token = self.auth.get_token().await?;
+        self.http.goal_reject(id, data, &token).await
+    }
+
+    // ── Goal step lifecycle ──────────────────────────────────────────────────
+
+    /// Atomically mark a goal step as in_progress.
+    pub async fn goal_step_start(&self, id: &str, step_index: usize) -> Result<serde_json::Value> {
+        let token = self.auth.get_token().await?;
+        self.http.goal_step_start(id, step_index, &token).await
+    }
+
+    /// Atomically mark a goal step as completed with result.
+    pub async fn goal_step_complete(
+        &self,
+        id: &str,
+        step_index: usize,
+        data: serde_json::Value,
+    ) -> Result<serde_json::Value> {
+        let token = self.auth.get_token().await?;
+        self.http
+            .goal_step_complete(id, step_index, data, &token)
+            .await
+    }
+
+    /// Atomically mark a goal step as failed with error.
+    pub async fn goal_step_fail(
+        &self,
+        id: &str,
+        step_index: usize,
+        data: serde_json::Value,
+    ) -> Result<serde_json::Value> {
+        let token = self.auth.get_token().await?;
+        self.http.goal_step_fail(id, step_index, data, &token).await
+    }
+
+    // ── Task CRUD ────────────────────────────────────────────────────────────
+
+    pub async fn task_create(&self, data: serde_json::Value) -> Result<serde_json::Value> {
+        let token = self.auth.get_token().await?;
+        self.http.task_create(data, &token).await
+    }
+
+    pub async fn task_list(&self) -> Result<serde_json::Value> {
+        let token = self.auth.get_token().await?;
+        self.http.task_list(&token).await
+    }
+
+    pub async fn task_get(&self, id: &str) -> Result<serde_json::Value> {
+        let token = self.auth.get_token().await?;
+        self.http.task_get(id, &token).await
+    }
+
+    pub async fn task_update(
+        &self,
+        id: &str,
+        data: serde_json::Value,
+    ) -> Result<serde_json::Value> {
+        let token = self.auth.get_token().await?;
+        self.http.task_update(id, data, &token).await
+    }
+
+    pub async fn task_delete(&self, id: &str) -> Result<()> {
+        let token = self.auth.get_token().await?;
+        self.http.task_delete(id, &token).await
+    }
+
+    pub async fn task_due(&self, now: &str) -> Result<serde_json::Value> {
+        let token = self.auth.get_token().await?;
+        self.http.task_due(now, &token).await
+    }
+
+    // ── Task lifecycle ──────────────────────────────────────────────────────
+
+    /// Atomically mark a task as running.
+    pub async fn task_start(&self, id: &str) -> Result<serde_json::Value> {
+        let token = self.auth.get_token().await?;
+        self.http.task_start(id, &token).await
+    }
+
+    /// Atomically mark a task as succeeded (increment run_count, reset failures).
+    pub async fn task_succeed(
+        &self,
+        id: &str,
+        data: serde_json::Value,
+    ) -> Result<serde_json::Value> {
+        let token = self.auth.get_token().await?;
+        self.http.task_succeed(id, data, &token).await
+    }
+
+    /// Atomically mark a task as failed (increment consecutive_failures).
+    pub async fn task_fail(&self, id: &str, data: serde_json::Value) -> Result<serde_json::Value> {
+        let token = self.auth.get_token().await?;
+        self.http.task_fail(id, data, &token).await
+    }
+
+    /// Atomically pause a task (status → paused).
+    pub async fn task_pause(&self, id: &str) -> Result<serde_json::Value> {
+        let token = self.auth.get_token().await?;
+        self.http.task_pause(id, &token).await
+    }
+
+    /// Atomically resume a task (status → active).
+    pub async fn task_resume(
+        &self,
+        id: &str,
+        data: serde_json::Value,
+    ) -> Result<serde_json::Value> {
+        let token = self.auth.get_token().await?;
+        self.http.task_resume(id, data, &token).await
+    }
+
+    // ── Agent CRUD ───────────────────────────────────────────────────────────
+
+    pub async fn agent_create(&self, data: serde_json::Value) -> Result<serde_json::Value> {
+        let token = self.auth.get_token().await?;
+        self.http.agent_create(data, &token).await
+    }
+
+    pub async fn agent_list(&self) -> Result<serde_json::Value> {
+        let token = self.auth.get_token().await?;
+        self.http.agent_list(&token).await
+    }
+
+    pub async fn agent_get(&self, id: &str) -> Result<serde_json::Value> {
+        let token = self.auth.get_token().await?;
+        self.http.agent_get(id, &token).await
+    }
+
+    pub async fn agent_get_by_name(&self, name: &str) -> Result<serde_json::Value> {
+        let token = self.auth.get_token().await?;
+        self.http.agent_get_by_name(name, &token).await
+    }
+
+    pub async fn agent_update(
+        &self,
+        id: &str,
+        data: serde_json::Value,
+    ) -> Result<serde_json::Value> {
+        let token = self.auth.get_token().await?;
+        self.http.agent_update(id, data, &token).await
+    }
+
+    pub async fn agent_delete(&self, id: &str) -> Result<()> {
+        let token = self.auth.get_token().await?;
+        self.http.agent_delete(id, &token).await
+    }
+
+    pub async fn agents_by_deployment(&self, deployment_id: &str) -> Result<serde_json::Value> {
+        let token = self.auth.get_token().await?;
+        self.http.agents_by_deployment(deployment_id, &token).await
     }
 }
 

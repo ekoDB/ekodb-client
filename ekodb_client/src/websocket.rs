@@ -47,6 +47,18 @@ pub enum WebSocketRequest {
     RegisterClientTools { payload: RegisterClientToolsPayload },
     /// Return result of a client-side tool execution
     ClientToolResult { payload: ClientToolResultPayload },
+    /// Stateless raw LLM completion (no session, no history, no RAG).
+    /// Mirrors POST /api/chat/complete. Response: Success { data: { "content": "..." } }.
+    RawComplete {
+        system_prompt: String,
+        message: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        provider: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        model: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        max_tokens: Option<i32>,
+    },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -786,6 +798,46 @@ impl WebSocketClient {
         };
 
         self.ws_send(&request).await
+    }
+
+    /// Stateless raw LLM completion via WebSocket.
+    ///
+    /// Sends a `RawComplete` message and waits for the `Success` response.
+    /// Preferred over HTTP for deployed instances: the persistent WSS connection
+    /// is already authenticated and won't be killed by reverse proxy timeouts.
+    pub async fn raw_completion(
+        &self,
+        request: &crate::chat::RawCompletionRequest,
+    ) -> Result<crate::chat::RawCompletionResponse> {
+        self.ensure_connected().await?;
+
+        let message_id = Self::gen_message_id()?;
+
+        let ws_request = WebSocketRequest::RawComplete {
+            system_prompt: request.system_prompt.clone(),
+            message: request.message.clone(),
+            provider: request.provider.clone(),
+            model: request.model.clone(),
+            max_tokens: request.max_tokens,
+        };
+
+        let response = self.send_and_wait(&ws_request, &message_id).await?;
+
+        match response {
+            WebSocketResponse::Success { payload } => {
+                let content = payload
+                    .data
+                    .get("content")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string();
+                Ok(crate::chat::RawCompletionResponse { content })
+            }
+            WebSocketResponse::Error { code, message } => Err(Error::api(code, message)),
+            _ => Err(Error::WebSocket(
+                "Unexpected response to RawComplete".to_string(),
+            )),
+        }
     }
 
     /// Close the WebSocket connection with a proper close frame.

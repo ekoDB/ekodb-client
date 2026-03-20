@@ -42,8 +42,12 @@ impl HttpClient {
         should_retry: bool,
         format: SerializationFormat,
     ) -> Result<Self> {
+        // Use connect_timeout (not timeout) so streaming responses (SSE, WebSocket)
+        // aren't killed mid-stream. The overall timeout would kill the entire request
+        // including incremental streaming — connect_timeout only limits the initial
+        // TCP connection phase.
         let client = ReqwestClient::builder()
-            .timeout(timeout)
+            .connect_timeout(timeout)
             .gzip(true) // Enable automatic gzip decompression
             .build()
             .map_err(|e| Error::Connection(e.to_string()))?;
@@ -1519,6 +1523,168 @@ impl HttpClient {
             .await
     }
 
+    /// Stateless raw LLM completion via SSE streaming.
+    /// Calls POST /api/chat/complete/stream and collects the full response from SSE events.
+    /// Keeps the connection alive with SSE heartbeats so reverse proxies don't kill it.
+    pub async fn raw_completion_stream(
+        &self,
+        request: RawCompletionRequest,
+        token: &str,
+    ) -> Result<RawCompletionResponse> {
+        let url = self.base_url.join("/api/chat/complete/stream")?;
+
+        let response = self
+            .client
+            .post(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .header("Accept", "text/event-stream")
+            .json(&request)
+            .send()
+            .await?;
+
+        if !response.status().is_success() {
+            let code = response.status().as_u16();
+            let body = response.text().await.unwrap_or_default();
+            return Err(Error::Api {
+                code,
+                message: body,
+            });
+        }
+
+        // Parse SSE events: collect tokens, return content from "done" event
+        let body = response.text().await?;
+        let mut content = String::new();
+        let mut got_done = false;
+        let mut last_error: Option<String> = None;
+
+        for line in body.lines() {
+            if let Some(data_str) = line.strip_prefix("data:") {
+                let data_str = data_str.trim();
+                if data_str.is_empty() {
+                    continue;
+                }
+                if let Ok(event_data) = serde_json::from_str::<serde_json::Value>(data_str) {
+                    if let Some(token_text) = event_data.get("token").and_then(|v| v.as_str()) {
+                        content.push_str(token_text);
+                    }
+                    if let Some(done_content) = event_data.get("content").and_then(|v| v.as_str()) {
+                        content = done_content.to_string();
+                        got_done = true;
+                    }
+                    if let Some(err) = event_data.get("error").and_then(|v| v.as_str()) {
+                        last_error = Some(err.to_string());
+                    }
+                }
+            }
+        }
+
+        if let Some(err) = last_error {
+            return Err(Error::Api {
+                code: 500,
+                message: err,
+            });
+        }
+
+        if !got_done && content.is_empty() {
+            return Err(Error::Api {
+                code: 500,
+                message: "SSE stream ended without a done event".to_string(),
+            });
+        }
+
+        Ok(RawCompletionResponse { content })
+    }
+
+    /// Stateless raw LLM completion via SSE with incremental token progress.
+    ///
+    /// Same as `raw_completion_stream()` but sends each token through the provided
+    /// channel as it arrives, allowing callers to show real-time progress.
+    /// Returns the final complete response.
+    pub async fn raw_completion_stream_with_progress(
+        &self,
+        request: RawCompletionRequest,
+        token: &str,
+        progress_tx: tokio::sync::mpsc::Sender<String>,
+    ) -> Result<RawCompletionResponse> {
+        use futures_util::StreamExt;
+
+        let url = self.base_url.join("/api/chat/complete/stream")?;
+
+        let response = self
+            .client
+            .post(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .header("Accept", "text/event-stream")
+            .json(&request)
+            .send()
+            .await?;
+
+        if !response.status().is_success() {
+            let code = response.status().as_u16();
+            let body = response.text().await.unwrap_or_default();
+            return Err(Error::Api {
+                code,
+                message: body,
+            });
+        }
+
+        // Stream SSE events incrementally using bytes_stream instead of buffering
+        let mut stream = response.bytes_stream();
+        let mut buf = String::new();
+        let mut content = String::new();
+        let mut got_done = false;
+        let mut last_error: Option<String> = None;
+
+        while let Some(chunk_result) = stream.next().await {
+            let chunk = chunk_result?;
+            buf.push_str(&String::from_utf8_lossy(&chunk));
+
+            // Process complete lines from the buffer
+            while let Some(newline_pos) = buf.find('\n') {
+                let line = buf[..newline_pos].to_string();
+                buf = buf[newline_pos + 1..].to_string();
+
+                if let Some(data_str) = line.strip_prefix("data:") {
+                    let data_str = data_str.trim();
+                    if data_str.is_empty() {
+                        continue;
+                    }
+                    if let Ok(event_data) = serde_json::from_str::<serde_json::Value>(data_str) {
+                        if let Some(token_text) = event_data.get("token").and_then(|v| v.as_str()) {
+                            content.push_str(token_text);
+                            let _ = progress_tx.send(token_text.to_string()).await;
+                        }
+                        if let Some(done_content) =
+                            event_data.get("content").and_then(|v| v.as_str())
+                        {
+                            content = done_content.to_string();
+                            got_done = true;
+                        }
+                        if let Some(err) = event_data.get("error").and_then(|v| v.as_str()) {
+                            last_error = Some(err.to_string());
+                        }
+                    }
+                }
+            }
+        }
+
+        if let Some(err) = last_error {
+            return Err(Error::Api {
+                code: 500,
+                message: err,
+            });
+        }
+
+        if !got_done && content.is_empty() {
+            return Err(Error::Api {
+                code: 500,
+                message: "SSE stream ended without a done event".to_string(),
+            });
+        }
+
+        Ok(RawCompletionResponse { content })
+    }
+
     /// Create a new chat session
     pub async fn create_chat_session(
         &self,
@@ -2361,6 +2527,485 @@ impl HttpClient {
                     Err(Error::api(status, error_msg.to_string()))
                 }
             })
+            .await
+    }
+    // ── Goal CRUD ────────────────────────────────────────────────────────────
+
+    pub async fn goal_create(
+        &self,
+        data: serde_json::Value,
+        token: &str,
+    ) -> Result<serde_json::Value> {
+        let url = self.base_url.join("/api/chat/goals")?;
+        let response = self
+            .client
+            .post(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .json(&data)
+            .send()
+            .await?;
+        self.handle_response("/api/chat/goals", response).await
+    }
+
+    pub async fn goal_list(&self, token: &str) -> Result<serde_json::Value> {
+        let url = self.base_url.join("/api/chat/goals")?;
+        let response = self
+            .client
+            .get(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        self.handle_response("/api/chat/goals", response).await
+    }
+
+    pub async fn goal_get(&self, id: &str, token: &str) -> Result<serde_json::Value> {
+        let url = self.base_url.join(&format!("/api/chat/goals/{}", id))?;
+        let response = self
+            .client
+            .get(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        self.handle_response("/api/chat/goals/{id}", response).await
+    }
+
+    pub async fn goal_update(
+        &self,
+        id: &str,
+        data: serde_json::Value,
+        token: &str,
+    ) -> Result<serde_json::Value> {
+        let url = self.base_url.join(&format!("/api/chat/goals/{}", id))?;
+        let response = self
+            .client
+            .put(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .json(&data)
+            .send()
+            .await?;
+        self.handle_response("/api/chat/goals/{id}", response).await
+    }
+
+    pub async fn goal_delete(&self, id: &str, token: &str) -> Result<()> {
+        let url = self.base_url.join(&format!("/api/chat/goals/{}", id))?;
+        let response = self
+            .client
+            .delete(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        self.handle_response::<serde_json::Value>("/api/chat/goals/{id}", response)
+            .await?;
+        Ok(())
+    }
+
+    pub async fn goal_search(&self, query: &str, token: &str) -> Result<serde_json::Value> {
+        let url = self.base_url.join("/api/chat/goals/search")?;
+        let response = self
+            .client
+            .get(url)
+            .query(&[("q", query)])
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        self.handle_response("/api/chat/goals/search", response)
+            .await
+    }
+
+    // ── Goal lifecycle ─────────────────────────────────────────────────────
+
+    pub async fn goal_complete(
+        &self,
+        id: &str,
+        data: serde_json::Value,
+        token: &str,
+    ) -> Result<serde_json::Value> {
+        let url = self
+            .base_url
+            .join(&format!("/api/chat/goals/{}/complete", id))?;
+        let response = self
+            .client
+            .post(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .json(&data)
+            .send()
+            .await?;
+        self.handle_response("/api/chat/goals/{id}/complete", response)
+            .await
+    }
+
+    pub async fn goal_approve(&self, id: &str, token: &str) -> Result<serde_json::Value> {
+        let url = self
+            .base_url
+            .join(&format!("/api/chat/goals/{}/approve", id))?;
+        let response = self
+            .client
+            .post(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        self.handle_response("/api/chat/goals/{id}/approve", response)
+            .await
+    }
+
+    pub async fn goal_reject(
+        &self,
+        id: &str,
+        data: serde_json::Value,
+        token: &str,
+    ) -> Result<serde_json::Value> {
+        let url = self
+            .base_url
+            .join(&format!("/api/chat/goals/{}/reject", id))?;
+        let response = self
+            .client
+            .post(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .json(&data)
+            .send()
+            .await?;
+        self.handle_response("/api/chat/goals/{id}/reject", response)
+            .await
+    }
+
+    // ── Goal step lifecycle ──────────────────────────────────────────────────
+
+    pub async fn goal_step_start(
+        &self,
+        id: &str,
+        step_index: usize,
+        token: &str,
+    ) -> Result<serde_json::Value> {
+        let url = self.base_url.join(&format!(
+            "/api/chat/goals/{}/steps/{}/start",
+            id, step_index
+        ))?;
+        let response = self
+            .client
+            .post(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        self.handle_response("/api/chat/goals/{id}/steps/{index}/start", response)
+            .await
+    }
+
+    pub async fn goal_step_complete(
+        &self,
+        id: &str,
+        step_index: usize,
+        data: serde_json::Value,
+        token: &str,
+    ) -> Result<serde_json::Value> {
+        let url = self.base_url.join(&format!(
+            "/api/chat/goals/{}/steps/{}/complete",
+            id, step_index
+        ))?;
+        let response = self
+            .client
+            .post(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .json(&data)
+            .send()
+            .await?;
+        self.handle_response("/api/chat/goals/{id}/steps/{index}/complete", response)
+            .await
+    }
+
+    pub async fn goal_step_fail(
+        &self,
+        id: &str,
+        step_index: usize,
+        data: serde_json::Value,
+        token: &str,
+    ) -> Result<serde_json::Value> {
+        let url = self
+            .base_url
+            .join(&format!("/api/chat/goals/{}/steps/{}/fail", id, step_index))?;
+        let response = self
+            .client
+            .post(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .json(&data)
+            .send()
+            .await?;
+        self.handle_response("/api/chat/goals/{id}/steps/{index}/fail", response)
+            .await
+    }
+
+    // ── Task CRUD ────────────────────────────────────────────────────────────
+
+    pub async fn task_create(
+        &self,
+        data: serde_json::Value,
+        token: &str,
+    ) -> Result<serde_json::Value> {
+        let url = self.base_url.join("/api/chat/tasks")?;
+        let response = self
+            .client
+            .post(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .json(&data)
+            .send()
+            .await?;
+        self.handle_response("/api/chat/tasks", response).await
+    }
+
+    pub async fn task_list(&self, token: &str) -> Result<serde_json::Value> {
+        let url = self.base_url.join("/api/chat/tasks")?;
+        let response = self
+            .client
+            .get(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        self.handle_response("/api/chat/tasks", response).await
+    }
+
+    pub async fn task_get(&self, id: &str, token: &str) -> Result<serde_json::Value> {
+        let url = self.base_url.join(&format!("/api/chat/tasks/{}", id))?;
+        let response = self
+            .client
+            .get(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        self.handle_response("/api/chat/tasks/{id}", response).await
+    }
+
+    pub async fn task_update(
+        &self,
+        id: &str,
+        data: serde_json::Value,
+        token: &str,
+    ) -> Result<serde_json::Value> {
+        let url = self.base_url.join(&format!("/api/chat/tasks/{}", id))?;
+        let response = self
+            .client
+            .put(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .json(&data)
+            .send()
+            .await?;
+        self.handle_response("/api/chat/tasks/{id}", response).await
+    }
+
+    pub async fn task_delete(&self, id: &str, token: &str) -> Result<()> {
+        let url = self.base_url.join(&format!("/api/chat/tasks/{}", id))?;
+        let response = self
+            .client
+            .delete(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        self.handle_response::<serde_json::Value>("/api/chat/tasks/{id}", response)
+            .await?;
+        Ok(())
+    }
+
+    pub async fn task_due(&self, now: &str, token: &str) -> Result<serde_json::Value> {
+        let url = self.base_url.join("/api/chat/tasks/due")?;
+        let response = self
+            .client
+            .get(url)
+            .query(&[("now", now)])
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        self.handle_response("/api/chat/tasks/due", response).await
+    }
+
+    // ── Task lifecycle ─────────────────────────────────────────────────────
+
+    pub async fn task_start(&self, id: &str, token: &str) -> Result<serde_json::Value> {
+        let url = self
+            .base_url
+            .join(&format!("/api/chat/tasks/{}/start", id))?;
+        let response = self
+            .client
+            .post(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        self.handle_response("/api/chat/tasks/{id}/start", response)
+            .await
+    }
+
+    pub async fn task_succeed(
+        &self,
+        id: &str,
+        data: serde_json::Value,
+        token: &str,
+    ) -> Result<serde_json::Value> {
+        let url = self
+            .base_url
+            .join(&format!("/api/chat/tasks/{}/succeed", id))?;
+        let response = self
+            .client
+            .post(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .json(&data)
+            .send()
+            .await?;
+        self.handle_response("/api/chat/tasks/{id}/succeed", response)
+            .await
+    }
+
+    pub async fn task_fail(
+        &self,
+        id: &str,
+        data: serde_json::Value,
+        token: &str,
+    ) -> Result<serde_json::Value> {
+        let url = self
+            .base_url
+            .join(&format!("/api/chat/tasks/{}/fail", id))?;
+        let response = self
+            .client
+            .post(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .json(&data)
+            .send()
+            .await?;
+        self.handle_response("/api/chat/tasks/{id}/fail", response)
+            .await
+    }
+
+    pub async fn task_pause(&self, id: &str, token: &str) -> Result<serde_json::Value> {
+        let url = self
+            .base_url
+            .join(&format!("/api/chat/tasks/{}/pause", id))?;
+        let response = self
+            .client
+            .post(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        self.handle_response("/api/chat/tasks/{id}/pause", response)
+            .await
+    }
+
+    pub async fn task_resume(
+        &self,
+        id: &str,
+        data: serde_json::Value,
+        token: &str,
+    ) -> Result<serde_json::Value> {
+        let url = self
+            .base_url
+            .join(&format!("/api/chat/tasks/{}/resume", id))?;
+        let response = self
+            .client
+            .post(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .json(&data)
+            .send()
+            .await?;
+        self.handle_response("/api/chat/tasks/{id}/resume", response)
+            .await
+    }
+
+    // ── Agent CRUD ───────────────────────────────────────────────────────────
+
+    pub async fn agent_create(
+        &self,
+        data: serde_json::Value,
+        token: &str,
+    ) -> Result<serde_json::Value> {
+        let url = self.base_url.join("/api/chat/agents")?;
+        let response = self
+            .client
+            .post(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .json(&data)
+            .send()
+            .await?;
+        self.handle_response("/api/chat/agents", response).await
+    }
+
+    pub async fn agent_list(&self, token: &str) -> Result<serde_json::Value> {
+        let url = self.base_url.join("/api/chat/agents")?;
+        let response = self
+            .client
+            .get(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        self.handle_response("/api/chat/agents", response).await
+    }
+
+    pub async fn agent_get(&self, id: &str, token: &str) -> Result<serde_json::Value> {
+        let url = self.base_url.join(&format!("/api/chat/agents/{}", id))?;
+        let response = self
+            .client
+            .get(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        self.handle_response("/api/chat/agents/{id}", response)
+            .await
+    }
+
+    pub async fn agent_get_by_name(&self, name: &str, token: &str) -> Result<serde_json::Value> {
+        let url = self
+            .base_url
+            .join(&format!("/api/chat/agents/by-name/{}", name))?;
+        let response = self
+            .client
+            .get(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        self.handle_response("/api/chat/agents/by-name/{name}", response)
+            .await
+    }
+
+    pub async fn agent_update(
+        &self,
+        id: &str,
+        data: serde_json::Value,
+        token: &str,
+    ) -> Result<serde_json::Value> {
+        let url = self.base_url.join(&format!("/api/chat/agents/{}", id))?;
+        let response = self
+            .client
+            .put(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .json(&data)
+            .send()
+            .await?;
+        self.handle_response("/api/chat/agents/{id}", response)
+            .await
+    }
+
+    pub async fn agent_delete(&self, id: &str, token: &str) -> Result<()> {
+        let url = self.base_url.join(&format!("/api/chat/agents/{}", id))?;
+        let response = self
+            .client
+            .delete(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        self.handle_response::<serde_json::Value>("/api/chat/agents/{id}", response)
+            .await?;
+        Ok(())
+    }
+
+    pub async fn agents_by_deployment(
+        &self,
+        deployment_id: &str,
+        token: &str,
+    ) -> Result<serde_json::Value> {
+        let url = self
+            .base_url
+            .join(&format!("/api/chat/agents/by-deployment/{}", deployment_id))?;
+        let response = self
+            .client
+            .get(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        self.handle_response("/api/chat/agents/by-deployment/{id}", response)
             .await
     }
 }

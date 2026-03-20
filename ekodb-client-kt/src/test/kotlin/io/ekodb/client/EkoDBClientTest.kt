@@ -545,4 +545,261 @@ class EkoDBClientTest {
         assertNotNull(result)
         assertEquals("", result["content"]?.jsonPrimitive?.content)
     }
+
+    // ========================================================================
+    // Goal CRUD Tests
+    // ========================================================================
+
+    @Test
+    fun `goalCreate creates a new goal`() = runBlocking {
+        val mockEngine = createMockEngine("""{"id": "goal_1", "title": "Test Goal", "status": "active"}""")
+        val client = createTestClient(mockEngine)
+        val result = client.goalCreate(buildJsonObject {
+            put("title", "Test Goal")
+        })
+        assertEquals("goal_1", result["id"]?.jsonPrimitive?.content)
+        assertEquals("active", result["status"]?.jsonPrimitive?.content)
+    }
+
+    @Test
+    fun `goalList returns goals`() = runBlocking {
+        val mockEngine = createMockEngine("""{"goals": [{"id": "goal_1"}, {"id": "goal_2"}]}""")
+        val client = createTestClient(mockEngine)
+        val result = client.goalList()
+        assertNotNull(result["goals"])
+    }
+
+    @Test
+    fun `goalGet returns a goal by ID`() = runBlocking {
+        val mockEngine = createMockEngine("""{"id": "goal_1", "title": "Test Goal"}""")
+        val client = createTestClient(mockEngine)
+        val result = client.goalGet("goal_1")
+        assertEquals("goal_1", result["id"]?.jsonPrimitive?.content)
+    }
+
+    @Test
+    fun `goalUpdate updates a goal`() = runBlocking {
+        val mockEngine = createMockEngine("""{"id": "goal_1", "title": "Updated"}""")
+        val client = createTestClient(mockEngine)
+        val result = client.goalUpdate("goal_1", buildJsonObject { put("title", "Updated") })
+        assertEquals("Updated", result["title"]?.jsonPrimitive?.content)
+    }
+
+    @Test
+    fun `goalDelete deletes a goal`() = runBlocking {
+        val mockEngine = createMockEngine("""{"ok": true}""")
+        val client = createTestClient(mockEngine)
+        client.goalDelete("goal_1") // should not throw
+    }
+
+    @Test
+    fun `goalSearch searches goals`() = runBlocking {
+        val mockEngine = createMockEngine("""{"goals": []}""")
+        val client = createTestClient(mockEngine)
+        val result = client.goalSearch("test query")
+        assertNotNull(result["goals"])
+    }
+
+    @Test
+    fun `goalComplete marks goal as complete`() = runBlocking {
+        val mockEngine = createMockEngine("""{"id": "goal_1", "status": "pending_review"}""")
+        val client = createTestClient(mockEngine)
+        val result = client.goalComplete("goal_1", buildJsonObject { put("summary", "Done") })
+        assertEquals("pending_review", result["status"]?.jsonPrimitive?.content)
+    }
+
+    @Test
+    fun `goalApprove approves a goal`() = runBlocking {
+        val mockEngine = createMockEngine("""{"id": "goal_1", "status": "in_progress"}""")
+        val client = createTestClient(mockEngine)
+        val result = client.goalApprove("goal_1")
+        assertEquals("in_progress", result["status"]?.jsonPrimitive?.content)
+    }
+
+    @Test
+    fun `goalReject rejects a goal`() = runBlocking {
+        val mockEngine = createMockEngine("""{"id": "goal_1", "status": "failed"}""")
+        val client = createTestClient(mockEngine)
+        val result = client.goalReject("goal_1", buildJsonObject { put("reason", "Bad plan") })
+        assertEquals("failed", result["status"]?.jsonPrimitive?.content)
+    }
+
+    @Test
+    fun `goalStepStart starts a goal step`() = runBlocking {
+        val mockEngine = createMockEngine("""{"id": "goal_1"}""")
+        val client = createTestClient(mockEngine)
+        val result = client.goalStepStart("goal_1", 0)
+        assertEquals("goal_1", result["id"]?.jsonPrimitive?.content)
+    }
+
+    @Test
+    fun `goalStepComplete completes a goal step`() = runBlocking {
+        val mockEngine = createMockEngine("""{"id": "goal_1"}""")
+        val client = createTestClient(mockEngine)
+        val result = client.goalStepComplete("goal_1", 0, buildJsonObject { put("result", "Done") })
+        assertEquals("goal_1", result["id"]?.jsonPrimitive?.content)
+    }
+
+    @Test
+    fun `goalStepFail fails a goal step`() = runBlocking {
+        val mockEngine = createMockEngine("""{"id": "goal_1"}""")
+        val client = createTestClient(mockEngine)
+        val result = client.goalStepFail("goal_1", 0, buildJsonObject { put("error", "Failed") })
+        assertEquals("goal_1", result["id"]?.jsonPrimitive?.content)
+    }
+
+    // ========================================================================
+    // Task CRUD Tests
+    // ========================================================================
+
+    @Test
+    fun `taskCreate creates a new task`() = runBlocking {
+        val mockEngine = createMockEngine("""{"id": "task_1", "name": "Test Task", "status": "active"}""")
+        val client = createTestClient(mockEngine)
+        val result = client.taskCreate(buildJsonObject {
+            put("name", "Test Task")
+            put("cron", "0 * * * *")
+        })
+        assertEquals("task_1", result["id"]?.jsonPrimitive?.content)
+    }
+
+    @Test
+    fun `taskList returns tasks`() = runBlocking {
+        val mockEngine = createMockEngine("""{"tasks": []}""")
+        val client = createTestClient(mockEngine)
+        val result = client.taskList()
+        assertNotNull(result["tasks"])
+    }
+
+    @Test
+    fun `taskGet returns a task by ID`() = runBlocking {
+        val mockEngine = createMockEngine("""{"id": "task_1", "name": "Test Task"}""")
+        val client = createTestClient(mockEngine)
+        val result = client.taskGet("task_1")
+        assertEquals("task_1", result["id"]?.jsonPrimitive?.content)
+    }
+
+    @Test
+    fun `taskUpdate updates a task`() = runBlocking {
+        val mockEngine = createMockEngine("""{"id": "task_1", "name": "Updated"}""")
+        val client = createTestClient(mockEngine)
+        val result = client.taskUpdate("task_1", buildJsonObject { put("name", "Updated") })
+        assertEquals("Updated", result["name"]?.jsonPrimitive?.content)
+    }
+
+    @Test
+    fun `taskDelete deletes a task`() = runBlocking {
+        val mockEngine = createMockEngine("""{"ok": true}""")
+        val client = createTestClient(mockEngine)
+        client.taskDelete("task_1") // should not throw
+    }
+
+    @Test
+    fun `taskDue returns due tasks`() = runBlocking {
+        val mockEngine = createMockEngine("""{"tasks": []}""")
+        val client = createTestClient(mockEngine)
+        val result = client.taskDue("2026-03-20T00:00:00Z")
+        assertNotNull(result["tasks"])
+    }
+
+    @Test
+    fun `taskStart starts a task`() = runBlocking {
+        val mockEngine = createMockEngine("""{"id": "task_1", "status": "running"}""")
+        val client = createTestClient(mockEngine)
+        val result = client.taskStart("task_1")
+        assertEquals("running", result["status"]?.jsonPrimitive?.content)
+    }
+
+    @Test
+    fun `taskSucceed marks task as succeeded`() = runBlocking {
+        val mockEngine = createMockEngine("""{"id": "task_1", "status": "active"}""")
+        val client = createTestClient(mockEngine)
+        val result = client.taskSucceed("task_1", buildJsonObject { put("output", "OK") })
+        assertEquals("active", result["status"]?.jsonPrimitive?.content)
+    }
+
+    @Test
+    fun `taskFail marks task as failed`() = runBlocking {
+        val mockEngine = createMockEngine("""{"id": "task_1"}""")
+        val client = createTestClient(mockEngine)
+        client.taskFail("task_1", buildJsonObject { put("error", "Timeout") })
+    }
+
+    @Test
+    fun `taskPause pauses a task`() = runBlocking {
+        val mockEngine = createMockEngine("""{"id": "task_1", "status": "paused"}""")
+        val client = createTestClient(mockEngine)
+        val result = client.taskPause("task_1")
+        assertEquals("paused", result["status"]?.jsonPrimitive?.content)
+    }
+
+    @Test
+    fun `taskResume resumes a task`() = runBlocking {
+        val mockEngine = createMockEngine("""{"id": "task_1", "status": "active"}""")
+        val client = createTestClient(mockEngine)
+        val result = client.taskResume("task_1", buildJsonObject {})
+        assertEquals("active", result["status"]?.jsonPrimitive?.content)
+    }
+
+    // ========================================================================
+    // Agent CRUD Tests
+    // ========================================================================
+
+    @Test
+    fun `agentCreate creates a new agent`() = runBlocking {
+        val mockEngine = createMockEngine("""{"id": "agent_1", "name": "TestAgent"}""")
+        val client = createTestClient(mockEngine)
+        val result = client.agentCreate(buildJsonObject {
+            put("name", "TestAgent")
+            put("system_prompt", "You help.")
+        })
+        assertEquals("TestAgent", result["name"]?.jsonPrimitive?.content)
+    }
+
+    @Test
+    fun `agentList returns agents`() = runBlocking {
+        val mockEngine = createMockEngine("""{"agents": []}""")
+        val client = createTestClient(mockEngine)
+        val result = client.agentList()
+        assertNotNull(result["agents"])
+    }
+
+    @Test
+    fun `agentGet returns an agent by ID`() = runBlocking {
+        val mockEngine = createMockEngine("""{"id": "agent_1", "name": "TestAgent"}""")
+        val client = createTestClient(mockEngine)
+        val result = client.agentGet("agent_1")
+        assertEquals("agent_1", result["id"]?.jsonPrimitive?.content)
+    }
+
+    @Test
+    fun `agentGetByName returns an agent by name`() = runBlocking {
+        val mockEngine = createMockEngine("""{"id": "agent_1", "name": "TestAgent"}""")
+        val client = createTestClient(mockEngine)
+        val result = client.agentGetByName("TestAgent")
+        assertEquals("TestAgent", result["name"]?.jsonPrimitive?.content)
+    }
+
+    @Test
+    fun `agentUpdate updates an agent`() = runBlocking {
+        val mockEngine = createMockEngine("""{"id": "agent_1", "name": "Updated"}""")
+        val client = createTestClient(mockEngine)
+        val result = client.agentUpdate("agent_1", buildJsonObject { put("name", "Updated") })
+        assertEquals("Updated", result["name"]?.jsonPrimitive?.content)
+    }
+
+    @Test
+    fun `agentDelete deletes an agent`() = runBlocking {
+        val mockEngine = createMockEngine("""{"ok": true}""")
+        val client = createTestClient(mockEngine)
+        client.agentDelete("agent_1") // should not throw
+    }
+
+    @Test
+    fun `agentsByDeployment returns agents for deployment`() = runBlocking {
+        val mockEngine = createMockEngine("""{"agents": [{"id": "agent_1"}]}""")
+        val client = createTestClient(mockEngine)
+        val result = client.agentsByDeployment("deploy_1")
+        assertNotNull(result["agents"])
+    }
 }

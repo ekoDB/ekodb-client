@@ -1079,6 +1079,57 @@ impl Client {
         })
     }
 
+    /// Stateless raw LLM completion via SSE streaming.
+    ///
+    /// Same as raw_completion() but uses Server-Sent Events to keep the
+    /// connection alive. Preferred for deployed instances where reverse proxies
+    /// may kill idle HTTP connections before the LLM responds.
+    ///
+    /// Args:
+    ///     system_prompt: System instructions for the LLM
+    ///     message: User message to send
+    ///     provider: LLM provider (optional, uses server default)
+    ///     model: Model name (optional, uses server default)
+    ///     max_tokens: Maximum tokens in response (optional)
+    ///
+    /// Returns:
+    ///     dict with "content" key containing the LLM response text
+    fn raw_completion_stream<'py>(
+        &self,
+        py: Python<'py>,
+        system_prompt: String,
+        message: String,
+        provider: Option<String>,
+        model: Option<String>,
+        max_tokens: Option<i32>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py(py, async move {
+            let request = RustRawCompletionRequest {
+                system_prompt,
+                message,
+                provider,
+                model,
+                max_tokens,
+            };
+
+            let resp = client
+                .raw_completion_stream(request)
+                .await
+                .map_err(|e| {
+                    PyRuntimeError::new_err(format!("raw_completion_stream failed: {}", e))
+                })?;
+
+            Python::attach(|py| {
+                let resp_json = serde_json::to_value(&resp).map_err(|e| {
+                    PyRuntimeError::new_err(format!("Failed to serialize response: {}", e))
+                })?;
+                json_to_pydict(py, &resp_json)
+            })
+        })
+    }
+
     /// Text-only search (full-text search helper)
     ///
     /// Args:
@@ -2480,6 +2531,678 @@ impl Client {
         future_into_py::<_, Py<PyAny>>(py, async move {
             client.clear_token_cache().await;
             Python::attach(|py| Ok(py.None()))
+        })
+    }
+
+    // ── Goal CRUD ──────────────────────────────────────────────────────
+
+    /// Create a new goal
+    ///
+    /// Args:
+    ///     data: Goal definition as a dict
+    ///
+    /// Returns:
+    ///     The created goal as a dict
+    fn goal_create<'py>(
+        &self,
+        py: Python<'py>,
+        data: &Bound<'py, PyDict>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        let json_value = py_to_json(data.as_any())?;
+
+        future_into_py(py, async move {
+            let result = client
+                .goal_create(json_value)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("goal_create failed: {}", e)))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// List all goals
+    ///
+    /// Returns:
+    ///     A dict containing the list of goals
+    fn goal_list<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            let result = client
+                .goal_list()
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("goal_list failed: {}", e)))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// Get a goal by ID
+    ///
+    /// Args:
+    ///     id: Goal ID
+    ///
+    /// Returns:
+    ///     The goal as a dict
+    fn goal_get<'py>(&self, py: Python<'py>, id: String) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            let result = client
+                .goal_get(&id)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("goal_get failed: {}", e)))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// Update an existing goal
+    ///
+    /// Args:
+    ///     id: Goal ID
+    ///     data: Updated goal fields as a dict
+    ///
+    /// Returns:
+    ///     The updated goal as a dict
+    fn goal_update<'py>(
+        &self,
+        py: Python<'py>,
+        id: String,
+        data: &Bound<'py, PyDict>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        let json_value = py_to_json(data.as_any())?;
+
+        future_into_py(py, async move {
+            let result = client
+                .goal_update(&id, json_value)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("goal_update failed: {}", e)))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// Delete a goal by ID
+    ///
+    /// Args:
+    ///     id: Goal ID
+    fn goal_delete<'py>(&self, py: Python<'py>, id: String) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            client
+                .goal_delete(&id)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("goal_delete failed: {}", e)))?;
+
+            Python::attach(|py| Ok(py.None()))
+        })
+    }
+
+    /// Search goals by query string
+    ///
+    /// Args:
+    ///     query: Search query
+    ///
+    /// Returns:
+    ///     A dict containing matching goals
+    fn goal_search<'py>(&self, py: Python<'py>, query: String) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            let result = client
+                .goal_search(&query)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("goal_search failed: {}", e)))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    // ── Goal Lifecycle ─────────────────────────────────────────────────
+
+    /// Mark a goal as complete
+    ///
+    /// Args:
+    ///     id: Goal ID
+    ///     data: Completion data as a dict
+    ///
+    /// Returns:
+    ///     The completed goal as a dict
+    fn goal_complete<'py>(
+        &self,
+        py: Python<'py>,
+        id: String,
+        data: &Bound<'py, PyDict>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        let json_value = py_to_json(data.as_any())?;
+
+        future_into_py(py, async move {
+            let result = client
+                .goal_complete(&id, json_value)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("goal_complete failed: {}", e)))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// Approve a goal
+    ///
+    /// Args:
+    ///     id: Goal ID
+    ///
+    /// Returns:
+    ///     The approved goal as a dict
+    fn goal_approve<'py>(&self, py: Python<'py>, id: String) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            let result = client
+                .goal_approve(&id)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("goal_approve failed: {}", e)))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// Reject a goal
+    ///
+    /// Args:
+    ///     id: Goal ID
+    ///     data: Rejection reason/data as a dict
+    ///
+    /// Returns:
+    ///     The rejected goal as a dict
+    fn goal_reject<'py>(
+        &self,
+        py: Python<'py>,
+        id: String,
+        data: &Bound<'py, PyDict>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        let json_value = py_to_json(data.as_any())?;
+
+        future_into_py(py, async move {
+            let result = client
+                .goal_reject(&id, json_value)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("goal_reject failed: {}", e)))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    // ── Goal Step Lifecycle ────────────────────────────────────────────
+
+    /// Start a goal step
+    ///
+    /// Args:
+    ///     id: Goal ID
+    ///     step_index: Index of the step to start
+    ///
+    /// Returns:
+    ///     The updated goal as a dict
+    fn goal_step_start<'py>(
+        &self,
+        py: Python<'py>,
+        id: String,
+        step_index: usize,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            let result = client
+                .goal_step_start(&id, step_index)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("goal_step_start failed: {}", e)))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// Complete a goal step
+    ///
+    /// Args:
+    ///     id: Goal ID
+    ///     step_index: Index of the step to complete
+    ///     data: Step completion data as a dict
+    ///
+    /// Returns:
+    ///     The updated goal as a dict
+    fn goal_step_complete<'py>(
+        &self,
+        py: Python<'py>,
+        id: String,
+        step_index: usize,
+        data: &Bound<'py, PyDict>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        let json_value = py_to_json(data.as_any())?;
+
+        future_into_py(py, async move {
+            let result = client
+                .goal_step_complete(&id, step_index, json_value)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("goal_step_complete failed: {}", e)))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// Fail a goal step
+    ///
+    /// Args:
+    ///     id: Goal ID
+    ///     step_index: Index of the step that failed
+    ///     data: Failure data as a dict
+    ///
+    /// Returns:
+    ///     The updated goal as a dict
+    fn goal_step_fail<'py>(
+        &self,
+        py: Python<'py>,
+        id: String,
+        step_index: usize,
+        data: &Bound<'py, PyDict>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        let json_value = py_to_json(data.as_any())?;
+
+        future_into_py(py, async move {
+            let result = client
+                .goal_step_fail(&id, step_index, json_value)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("goal_step_fail failed: {}", e)))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    // ── Task CRUD ──────────────────────────────────────────────────────
+
+    /// Create a new scheduled task
+    ///
+    /// Args:
+    ///     data: Task definition as a dict
+    ///
+    /// Returns:
+    ///     The created task as a dict
+    fn task_create<'py>(
+        &self,
+        py: Python<'py>,
+        data: &Bound<'py, PyDict>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        let json_value = py_to_json(data.as_any())?;
+
+        future_into_py(py, async move {
+            let result = client
+                .task_create(json_value)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("task_create failed: {}", e)))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// List all scheduled tasks
+    ///
+    /// Returns:
+    ///     A dict containing the list of tasks
+    fn task_list<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            let result = client
+                .task_list()
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("task_list failed: {}", e)))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// Get a task by ID
+    ///
+    /// Args:
+    ///     id: Task ID
+    ///
+    /// Returns:
+    ///     The task as a dict
+    fn task_get<'py>(&self, py: Python<'py>, id: String) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            let result = client
+                .task_get(&id)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("task_get failed: {}", e)))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// Update an existing task
+    ///
+    /// Args:
+    ///     id: Task ID
+    ///     data: Updated task fields as a dict
+    ///
+    /// Returns:
+    ///     The updated task as a dict
+    fn task_update<'py>(
+        &self,
+        py: Python<'py>,
+        id: String,
+        data: &Bound<'py, PyDict>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        let json_value = py_to_json(data.as_any())?;
+
+        future_into_py(py, async move {
+            let result = client
+                .task_update(&id, json_value)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("task_update failed: {}", e)))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// Delete a task by ID
+    ///
+    /// Args:
+    ///     id: Task ID
+    fn task_delete<'py>(&self, py: Python<'py>, id: String) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            client
+                .task_delete(&id)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("task_delete failed: {}", e)))?;
+
+            Python::attach(|py| Ok(py.None()))
+        })
+    }
+
+    /// Get tasks that are due at the given time
+    ///
+    /// Args:
+    ///     now: ISO 8601 timestamp string
+    ///
+    /// Returns:
+    ///     A dict containing due tasks
+    fn task_due<'py>(&self, py: Python<'py>, now: String) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            let result = client
+                .task_due(&now)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("task_due failed: {}", e)))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    // ── Task Lifecycle ─────────────────────────────────────────────────
+
+    /// Start a task
+    ///
+    /// Args:
+    ///     id: Task ID
+    ///
+    /// Returns:
+    ///     The started task as a dict
+    fn task_start<'py>(&self, py: Python<'py>, id: String) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            let result = client
+                .task_start(&id)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("task_start failed: {}", e)))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// Mark a task as succeeded
+    ///
+    /// Args:
+    ///     id: Task ID
+    ///     data: Success data as a dict
+    ///
+    /// Returns:
+    ///     The succeeded task as a dict
+    fn task_succeed<'py>(
+        &self,
+        py: Python<'py>,
+        id: String,
+        data: &Bound<'py, PyDict>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        let json_value = py_to_json(data.as_any())?;
+
+        future_into_py(py, async move {
+            let result = client
+                .task_succeed(&id, json_value)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("task_succeed failed: {}", e)))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// Mark a task as failed
+    ///
+    /// Args:
+    ///     id: Task ID
+    ///     data: Failure data as a dict
+    ///
+    /// Returns:
+    ///     The failed task as a dict
+    fn task_fail<'py>(
+        &self,
+        py: Python<'py>,
+        id: String,
+        data: &Bound<'py, PyDict>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        let json_value = py_to_json(data.as_any())?;
+
+        future_into_py(py, async move {
+            let result = client
+                .task_fail(&id, json_value)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("task_fail failed: {}", e)))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// Pause a task
+    ///
+    /// Args:
+    ///     id: Task ID
+    ///
+    /// Returns:
+    ///     The paused task as a dict
+    fn task_pause<'py>(&self, py: Python<'py>, id: String) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            let result = client
+                .task_pause(&id)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("task_pause failed: {}", e)))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// Resume a paused task
+    ///
+    /// Args:
+    ///     id: Task ID
+    ///     data: Resume data as a dict
+    ///
+    /// Returns:
+    ///     The resumed task as a dict
+    fn task_resume<'py>(
+        &self,
+        py: Python<'py>,
+        id: String,
+        data: &Bound<'py, PyDict>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        let json_value = py_to_json(data.as_any())?;
+
+        future_into_py(py, async move {
+            let result = client
+                .task_resume(&id, json_value)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("task_resume failed: {}", e)))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    // ── Agent CRUD ─────────────────────────────────────────────────────
+
+    /// Create a new agent
+    ///
+    /// Args:
+    ///     data: Agent definition as a dict
+    ///
+    /// Returns:
+    ///     The created agent as a dict
+    fn agent_create<'py>(
+        &self,
+        py: Python<'py>,
+        data: &Bound<'py, PyDict>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        let json_value = py_to_json(data.as_any())?;
+
+        future_into_py(py, async move {
+            let result = client
+                .agent_create(json_value)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("agent_create failed: {}", e)))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// List all agents
+    ///
+    /// Returns:
+    ///     A dict containing the list of agents
+    fn agent_list<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            let result = client
+                .agent_list()
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("agent_list failed: {}", e)))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// Get an agent by ID
+    ///
+    /// Args:
+    ///     id: Agent ID
+    ///
+    /// Returns:
+    ///     The agent as a dict
+    fn agent_get<'py>(&self, py: Python<'py>, id: String) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            let result = client
+                .agent_get(&id)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("agent_get failed: {}", e)))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// Get an agent by name
+    ///
+    /// Args:
+    ///     name: Agent name
+    ///
+    /// Returns:
+    ///     The agent as a dict
+    fn agent_get_by_name<'py>(&self, py: Python<'py>, name: String) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            let result = client
+                .agent_get_by_name(&name)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("agent_get_by_name failed: {}", e)))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// Update an existing agent
+    ///
+    /// Args:
+    ///     id: Agent ID
+    ///     data: Updated agent fields as a dict
+    ///
+    /// Returns:
+    ///     The updated agent as a dict
+    fn agent_update<'py>(
+        &self,
+        py: Python<'py>,
+        id: String,
+        data: &Bound<'py, PyDict>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        let json_value = py_to_json(data.as_any())?;
+
+        future_into_py(py, async move {
+            let result = client
+                .agent_update(&id, json_value)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("agent_update failed: {}", e)))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// Delete an agent by ID
+    ///
+    /// Args:
+    ///     id: Agent ID
+    fn agent_delete<'py>(&self, py: Python<'py>, id: String) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            client
+                .agent_delete(&id)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("agent_delete failed: {}", e)))?;
+
+            Python::attach(|py| Ok(py.None()))
+        })
+    }
+
+    /// Get agents by deployment ID
+    ///
+    /// Args:
+    ///     deployment_id: Deployment ID
+    ///
+    /// Returns:
+    ///     A dict containing agents for the deployment
+    fn agents_by_deployment<'py>(&self, py: Python<'py>, deployment_id: String) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            let result = client
+                .agents_by_deployment(&deployment_id)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("agents_by_deployment failed: {}", e)))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
         })
     }
 }
