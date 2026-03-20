@@ -572,4 +572,104 @@ describe("WebSocketClient", () => {
       expect(closed).toBe(true);
     });
   });
+
+  // --------------------------------------------------------------------------
+  // rawCompletion
+  // --------------------------------------------------------------------------
+
+  describe("rawCompletion", () => {
+    it("sends RawComplete request and returns content", async () => {
+      const client = new WebSocketClient(
+        `ws://localhost:${port}/api/ws`,
+        "test-token",
+      );
+
+      const resultPromise = client.rawCompletion({
+        system_prompt: "You are helpful.",
+        message: "Say hello.",
+      });
+
+      await new Promise((r) => wss.once("connection", r));
+      const ws = getLastConnection();
+      const msg = await waitForMessage(ws);
+
+      expect(msg.type).toBe("RawComplete");
+      expect(msg.payload.system_prompt).toBe("You are helpful.");
+      expect(msg.payload.message).toBe("Say hello.");
+
+      ws.send(
+        JSON.stringify({
+          type: "Success",
+          payload: {
+            data: { content: "Hello! How can I help?" },
+          },
+        }),
+      );
+
+      const result = await resultPromise;
+      expect(result.content).toBe("Hello! How can I help?");
+
+      client.close();
+    });
+
+    it("includes optional fields when provided", async () => {
+      const client = new WebSocketClient(
+        `ws://localhost:${port}/api/ws`,
+        "test-token",
+      );
+
+      const resultPromise = client.rawCompletion({
+        system_prompt: "System.",
+        message: "User.",
+        provider: "openai",
+        model: "gpt-4o-mini",
+        max_tokens: 512,
+      });
+
+      await new Promise((r) => wss.once("connection", r));
+      const ws = getLastConnection();
+      const msg = await waitForMessage(ws);
+
+      expect(msg.payload.provider).toBe("openai");
+      expect(msg.payload.model).toBe("gpt-4o-mini");
+      expect(msg.payload.max_tokens).toBe(512);
+
+      ws.send(
+        JSON.stringify({
+          type: "Success",
+          payload: { data: { content: "Done." } },
+        }),
+      );
+
+      await resultPromise;
+      client.close();
+    });
+
+    it("rejects on error response", async () => {
+      const client = new WebSocketClient(
+        `ws://localhost:${port}/api/ws`,
+        "test-token",
+      );
+
+      const resultPromise = client.rawCompletion({
+        system_prompt: "System.",
+        message: "User.",
+      });
+
+      await new Promise((r) => wss.once("connection", r));
+      const ws = getLastConnection();
+      await waitForMessage(ws);
+
+      ws.send(
+        JSON.stringify({
+          type: "Error",
+          message: "Model not found",
+        }),
+      );
+
+      await expect(resultPromise).rejects.toThrow("Model not found");
+
+      client.close();
+    });
+  });
 });

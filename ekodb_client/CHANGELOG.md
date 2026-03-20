@@ -8,6 +8,20 @@ and this project adheres to
 
 ## [0.14.0] - Unreleased
 
+### Removed
+
+- **Query index management methods (all languages)** — Removed
+  `create_query_index`, `list_query_indexes`, `delete_query_index`,
+  `explain_query` from Rust, Python, TypeScript, and Kotlin clients. These
+  endpoints require admin auth (`admin_filter`) and do not belong in the client
+  library.
+
+- **Search index management methods (all languages)** — Removed
+  `create_search_index`, `explain_text_search`, `explain_vector_search`,
+  `explain_hybrid_search` from Rust, Python, TypeScript, and Kotlin clients.
+  These endpoints require admin auth (`admin_filter`) and do not belong in the
+  client library.
+
 ### Added
 
 - **Streaming raw completion with progress** — New
@@ -16,13 +30,30 @@ and this project adheres to
   a channel/callback as it arrives via SSE, enabling real-time progress display
   during long-running calls (e.g., goal plan generation).
 
+- **Search index management methods (Rust, Python, TypeScript, Kotlin)** —
+  `create_search_index`, `explain_text_search`, `explain_vector_search`,
+  `explain_hybrid_search` for creating search indexes and explaining search query
+  execution plans. Added Rust HTTP/client layer and Python PyO3 bindings.
+
+- **KV document linking methods (Rust, Python, TypeScript, Kotlin)** —
+  `kv_get_links`, `kv_link`, `kv_unlink` for linking and unlinking documents to
+  KV keys. Added Rust HTTP/client layer and Python PyO3 bindings.
+
+- **Schedule management methods (Rust, Python, TypeScript, Kotlin)** —
+  `create_schedule`, `list_schedules`, `get_schedule`, `update_schedule`,
+  `delete_schedule`, `pause_schedule`, `resume_schedule` for full CRUD and
+  lifecycle management of scheduled tasks. Added Rust HTTP/client layer and
+  Python PyO3 bindings.
+
 - **Goal/Task/Agent REST client methods (all languages)** — Full coverage of
   `/api/chat/goals`, `/api/chat/tasks`, and `/api/chat/agents` endpoints
   including CRUD, lifecycle transitions, goal step lifecycle, search, and
   deployment queries. Added to Rust, Python, TypeScript, Kotlin, and Go clients.
 
-- **WebSocket raw completion** — `WebSocketClient::raw_completion()` sends a
-  `RawComplete` message over the persistent WSS connection.
+- **WebSocket raw completion (Kotlin & Python)** — Added `rawCompletion()` to
+  the Kotlin WebSocket client and `raw_completion()` to the Python WebSocket
+  client (PyO3 binding). Both send a `RawComplete` message over the persistent
+  WSS connection, matching the existing Rust implementation.
 
 ### Fixed
 

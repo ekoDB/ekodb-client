@@ -2554,3 +2554,4 @@ async fn test_agent_get_not_found() {
     let result = client.agent_get("nonexistent").await;
     assert!(result.is_err());
 }
+

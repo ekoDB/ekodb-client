@@ -442,6 +442,38 @@ class WebSocketClient(
     }
 
     /**
+     * Stateless raw LLM completion via WebSocket.
+     *
+     * Sends a RawComplete message and waits for the Success response.
+     * Preferred over HTTP: the persistent WSS connection is already
+     * authenticated and won't be killed by reverse proxy timeouts.
+     */
+    suspend fun rawCompletion(
+        systemPrompt: String,
+        message: String,
+        provider: String? = null,
+        model: String? = null,
+        maxTokens: Int? = null,
+    ): String {
+        val messageId = genMessageId()
+        val request = buildJsonObject {
+            put("type", "RawComplete")
+            put("messageId", messageId)
+            put("payload", buildJsonObject {
+                put("system_prompt", systemPrompt)
+                put("message", message)
+                provider?.let { put("provider", it) }
+                model?.let { put("model", it) }
+                maxTokens?.let { put("max_tokens", it) }
+            })
+        }
+        val payload = sendRequest(request)
+        return payload["data"]?.jsonObject
+            ?.get("content")?.jsonPrimitive?.content
+            ?: ""
+    }
+
+    /**
      * Close the WebSocket connection and clean up resources.
      */
     suspend fun close() {

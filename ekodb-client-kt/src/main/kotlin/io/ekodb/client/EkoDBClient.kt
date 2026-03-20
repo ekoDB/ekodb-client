@@ -2769,6 +2769,179 @@ class EkoDBClient private constructor(
         return response.body<JsonObject>()
     }
 
+    // ── KV Document Linking ──────────────────────────────────────────────────
+
+    /** Get documents linked to a KV key */
+    suspend fun kvGetLinks(key: String): JsonObject {
+        val token = getToken()
+        val response = executeWithRetry {
+            client.get("$baseUrl/api/kv/links/$key") {
+                bearerAuth(token)
+            }
+        }
+        if (response.status.value >= 400) {
+            val errorText = response.bodyAsText()
+            throw IllegalStateException("Server error ${response.status.value}: $errorText")
+        }
+        return response.body<JsonObject>()
+    }
+
+    /** Link a document to a KV key */
+    suspend fun kvLink(key: String, collection: String, documentId: String): JsonObject {
+        val token = getToken()
+        val body = buildJsonObject {
+            put("key", key)
+            put("collection", collection)
+            put("document_id", documentId)
+        }
+        val response = executeWithRetry {
+            client.post("$baseUrl/api/kv/link") {
+                bearerAuth(token)
+                contentType(ContentType.Application.Json)
+                setBody(body)
+            }
+        }
+        if (response.status.value >= 400) {
+            val errorText = response.bodyAsText()
+            throw IllegalStateException("Server error ${response.status.value}: $errorText")
+        }
+        return response.body<JsonObject>()
+    }
+
+    /** Unlink a document from a KV key */
+    suspend fun kvUnlink(key: String, collection: String, documentId: String): JsonObject {
+        val token = getToken()
+        val body = buildJsonObject {
+            put("key", key)
+            put("collection", collection)
+            put("document_id", documentId)
+        }
+        val response = executeWithRetry {
+            client.post("$baseUrl/api/kv/unlink") {
+                bearerAuth(token)
+                contentType(ContentType.Application.Json)
+                setBody(body)
+            }
+        }
+        if (response.status.value >= 400) {
+            val errorText = response.bodyAsText()
+            throw IllegalStateException("Server error ${response.status.value}: $errorText")
+        }
+        return response.body<JsonObject>()
+    }
+
+    // ── Schedule Management ──────────────────────────────────────────────────
+
+    /** Create a new schedule */
+    suspend fun createSchedule(data: JsonObject): JsonObject {
+        val token = getToken()
+        val response = executeWithRetry {
+            client.post("$baseUrl/api/schedules") {
+                bearerAuth(token)
+                contentType(ContentType.Application.Json)
+                setBody(data)
+            }
+        }
+        if (response.status.value >= 400) {
+            val errorText = response.bodyAsText()
+            throw IllegalStateException("Server error ${response.status.value}: $errorText")
+        }
+        return response.body<JsonObject>()
+    }
+
+    /** List all schedules */
+    suspend fun listSchedules(): JsonObject {
+        val token = getToken()
+        val response = executeWithRetry {
+            client.get("$baseUrl/api/schedules") {
+                bearerAuth(token)
+            }
+        }
+        if (response.status.value >= 400) {
+            val errorText = response.bodyAsText()
+            throw IllegalStateException("Server error ${response.status.value}: $errorText")
+        }
+        return response.body<JsonObject>()
+    }
+
+    /** Get a schedule by ID */
+    suspend fun getSchedule(id: String): JsonObject {
+        val token = getToken()
+        val response = executeWithRetry {
+            client.get("$baseUrl/api/schedules/$id") {
+                bearerAuth(token)
+            }
+        }
+        if (response.status.value >= 400) {
+            val errorText = response.bodyAsText()
+            throw IllegalStateException("Server error ${response.status.value}: $errorText")
+        }
+        return response.body<JsonObject>()
+    }
+
+    /** Update a schedule */
+    suspend fun updateSchedule(id: String, data: JsonObject): JsonObject {
+        val token = getToken()
+        val response = executeWithRetry {
+            client.put("$baseUrl/api/schedules/$id") {
+                bearerAuth(token)
+                contentType(ContentType.Application.Json)
+                setBody(data)
+            }
+        }
+        if (response.status.value >= 400) {
+            val errorText = response.bodyAsText()
+            throw IllegalStateException("Server error ${response.status.value}: $errorText")
+        }
+        return response.body<JsonObject>()
+    }
+
+    /** Delete a schedule */
+    suspend fun deleteSchedule(id: String) {
+        val token = getToken()
+        val response = executeWithRetry {
+            client.delete("$baseUrl/api/schedules/$id") {
+                bearerAuth(token)
+            }
+        }
+        if (response.status.value >= 400) {
+            val errorText = response.bodyAsText()
+            throw IllegalStateException("Server error ${response.status.value}: $errorText")
+        }
+    }
+
+    /** Pause a schedule */
+    suspend fun pauseSchedule(id: String): JsonObject {
+        val token = getToken()
+        val response = executeWithRetry {
+            client.post("$baseUrl/api/schedules/$id/pause") {
+                bearerAuth(token)
+                contentType(ContentType.Application.Json)
+            }
+        }
+        if (response.status.value >= 400) {
+            val errorText = response.bodyAsText()
+            throw IllegalStateException("Server error ${response.status.value}: $errorText")
+        }
+        return response.body<JsonObject>()
+    }
+
+    /** Resume a schedule */
+    suspend fun resumeSchedule(id: String): JsonObject {
+        val token = getToken()
+        val response = executeWithRetry {
+            client.post("$baseUrl/api/schedules/$id/resume") {
+                bearerAuth(token)
+                contentType(ContentType.Application.Json)
+            }
+        }
+        if (response.status.value >= 400) {
+            val errorText = response.bodyAsText()
+            throw IllegalStateException("Server error ${response.status.value}: $errorText")
+        }
+        return response.body<JsonObject>()
+    }
+
     companion object {
         fun builder() = Builder()
 
