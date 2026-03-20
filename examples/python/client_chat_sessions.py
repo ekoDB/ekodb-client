@@ -46,7 +46,7 @@ async def main():
     session = await client.create_chat_session(
         collections=[(collection, [])],
         llm_provider="openai",
-        llm_model="gpt-4",
+        llm_model="gpt-4o-mini",
         system_prompt="You are a helpful assistant for product information.",
     )
     chat_id = session["chat_id"]
@@ -92,7 +92,7 @@ async def main():
         branch_point_idx=0,
         collections=[("products", [])],
         llm_provider="openai",
-        llm_model="gpt-4",
+        llm_model="gpt-4o-mini",
     )
     branch_id = branched["chat_id"]
     print(f"✓ Created branch: {branch_id}")

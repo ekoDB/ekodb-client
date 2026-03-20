@@ -55,7 +55,7 @@ func main() {
 
 	// Create a chat session
 	fmt.Println("=== Creating Chat Session ===")
-	llmModel := "gpt-4"
+	llmModel := "gpt-4o-mini"
 	systemPrompt := "You are a helpful product assistant."
 
 	session, err := client.CreateChatSession(ekodb.CreateChatSessionRequest{

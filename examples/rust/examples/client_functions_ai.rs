@@ -64,7 +64,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 ChatMessage::system("You are a helpful database assistant. Be concise."),
                 ChatMessage::user("What are the benefits of using vector databases?"),
             ],
-            model: Some("gpt-4".to_string()),
+            model: Some("gpt-4o-mini".to_string()),
             temperature: Some(0.7),
             max_tokens: None,
         })

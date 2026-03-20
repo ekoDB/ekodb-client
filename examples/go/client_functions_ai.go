@@ -59,7 +59,7 @@ func main() {
 	fmt.Println("📝 Example 1: Simple Chat Completion")
 	fmt.Println()
 
-	model1 := "gpt-4"
+	model1 := "gpt-4o-mini"
 	temp1 := 0.7
 	script1 := ekodb.Script{
 		Label:       "ai_assistant_go",

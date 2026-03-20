@@ -67,7 +67,7 @@ fun main() = runBlocking {
                         ChatMessage(role = "system", content = "You are a helpful database assistant. Be concise."),
                         ChatMessage(role = "user", content = "What are the benefits of using vector databases?")
                     ),
-                    model = "gpt-4",
+                    model = "gpt-4o-mini",
                     temperature = 0.7
                 )
             ),
