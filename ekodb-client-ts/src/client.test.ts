@@ -2070,4 +2070,3 @@ describe("EkoDBClient rawCompletionStreamWithProgress", () => {
     ).rejects.toThrow("Model overloaded");
   });
 });
-
