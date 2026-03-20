@@ -73,9 +73,7 @@ class EkoDBClient private constructor(
         }
         
         install(HttpTimeout) {
-            requestTimeoutMillis = timeout * 1000
             connectTimeoutMillis = timeout * 1000
-            socketTimeoutMillis = timeout * 1000
         }
         
         install(Logging) {
@@ -989,6 +987,74 @@ class EkoDBClient private constructor(
             }
         }
         return response.body()
+    }
+
+    /**
+     * Stateless raw LLM completion via SSE streaming.
+     *
+     * Same as [rawCompletion] but uses Server-Sent Events to keep the
+     * connection alive. Preferred for deployed instances where reverse proxies
+     * may kill idle HTTP connections before the LLM responds.
+     *
+     * @param systemPrompt System instructions for the LLM
+     * @param message User message to send
+     * @param provider LLM provider (optional, uses server default)
+     * @param model Model name (optional, uses server default)
+     * @param maxTokens Maximum tokens in response (optional)
+     * @return JsonObject with "content" key containing the LLM response text
+     *
+     * ```kotlin
+     * val resp = client.rawCompletionStream(
+     *     systemPrompt = "You are a helpful assistant.",
+     *     message = "Summarize this in JSON.",
+     *     maxTokens = 2048
+     * )
+     * println(resp["content"]?.jsonPrimitive?.content)
+     * ```
+     */
+    suspend fun rawCompletionStream(
+        systemPrompt: String,
+        message: String,
+        provider: String? = null,
+        model: String? = null,
+        maxTokens: Int? = null,
+    ): JsonObject {
+        val token = getToken()
+        val body = buildJsonObject {
+            put("system_prompt", systemPrompt)
+            put("message", message)
+            if (provider != null) put("provider", provider)
+            if (model != null) put("model", model)
+            if (maxTokens != null) put("max_tokens", maxTokens)
+        }
+        val response = client.post("$baseUrl/api/chat/complete/stream") {
+            header("Authorization", "Bearer $token")
+            contentType(ContentType.Application.Json)
+            header("Accept", ContentType.Text.EventStream.toString())
+            setBody(body)
+        }
+        if (response.status != io.ktor.http.HttpStatusCode.OK) {
+            val errBody = response.bodyAsText()
+            throw RuntimeException("SSE raw completion failed (${response.status}): $errBody")
+        }
+        val sseBody = response.bodyAsText()
+        var content = ""
+        var lastError: String? = null
+        for (line in sseBody.lines()) {
+            if (!line.startsWith("data:")) continue
+            val dataStr = line.removePrefix("data:").trim()
+            if (dataStr.isEmpty()) continue
+            try {
+                val eventData = Json.parseToJsonElement(dataStr).jsonObject
+                eventData["token"]?.jsonPrimitive?.content?.let { content += it }
+                eventData["content"]?.jsonPrimitive?.content?.let { content = it }
+                eventData["error"]?.jsonPrimitive?.content?.let { lastError = it }
+            } catch (_: Exception) {
+                // skip malformed SSE data
+            }
+        }
+        if (lastError != null) throw RuntimeException("LLM error: $lastError")
+        return buildJsonObject { put("content", content) }
     }
 
     /**
@@ -2053,9 +2119,659 @@ class EkoDBClient private constructor(
         return find(collection, query)
     }
     
+    // ========================================================================
+    // ── Goal CRUD ──
+    // ========================================================================
+
+    /**
+     * Create a new goal.
+     *
+     * @param data Goal definition as a JSON object
+     * @return The created goal
+     */
+    suspend fun goalCreate(data: JsonObject): JsonObject {
+        val token = getToken()
+        val response = executeWithRetry {
+            client.post("$baseUrl/api/chat/goals") {
+                bearerAuth(token)
+                contentType(ContentType.Application.Json)
+                setBody(data)
+            }
+        }
+        if (response.status.value >= 400) {
+            val errorText = response.bodyAsText()
+            throw IllegalStateException("Server error ${response.status.value}: $errorText")
+        }
+        return response.body<JsonObject>()
+    }
+
+    /**
+     * List all goals.
+     *
+     * @return A JSON object containing the list of goals
+     */
+    suspend fun goalList(): JsonObject {
+        val token = getToken()
+        val response = executeWithRetry {
+            client.get("$baseUrl/api/chat/goals") {
+                bearerAuth(token)
+            }
+        }
+        if (response.status.value >= 400) {
+            val errorText = response.bodyAsText()
+            throw IllegalStateException("Server error ${response.status.value}: $errorText")
+        }
+        return response.body<JsonObject>()
+    }
+
+    /**
+     * Get a goal by ID.
+     *
+     * @param id Goal ID
+     * @return The goal object
+     */
+    suspend fun goalGet(id: String): JsonObject {
+        val token = getToken()
+        val response = executeWithRetry {
+            client.get("$baseUrl/api/chat/goals/$id") {
+                bearerAuth(token)
+            }
+        }
+        if (response.status.value >= 400) {
+            val errorText = response.bodyAsText()
+            throw IllegalStateException("Server error ${response.status.value}: $errorText")
+        }
+        return response.body<JsonObject>()
+    }
+
+    /**
+     * Update a goal by ID.
+     *
+     * @param id Goal ID
+     * @param data Updated goal fields as a JSON object
+     * @return The updated goal
+     */
+    suspend fun goalUpdate(id: String, data: JsonObject): JsonObject {
+        val token = getToken()
+        val response = executeWithRetry {
+            client.put("$baseUrl/api/chat/goals/$id") {
+                bearerAuth(token)
+                contentType(ContentType.Application.Json)
+                setBody(data)
+            }
+        }
+        if (response.status.value >= 400) {
+            val errorText = response.bodyAsText()
+            throw IllegalStateException("Server error ${response.status.value}: $errorText")
+        }
+        return response.body<JsonObject>()
+    }
+
+    /**
+     * Delete a goal by ID.
+     *
+     * @param id Goal ID
+     */
+    suspend fun goalDelete(id: String) {
+        val token = getToken()
+        val response = executeWithRetry {
+            client.delete("$baseUrl/api/chat/goals/$id") {
+                bearerAuth(token)
+            }
+        }
+        if (response.status.value >= 400) {
+            val errorText = response.bodyAsText()
+            throw IllegalStateException("Server error ${response.status.value}: $errorText")
+        }
+    }
+
+    /**
+     * Search goals by query string.
+     *
+     * @param query Search query
+     * @return Matching goals
+     */
+    suspend fun goalSearch(query: String): JsonObject {
+        val token = getToken()
+        val response = executeWithRetry {
+            client.get("$baseUrl/api/chat/goals/search") {
+                bearerAuth(token)
+                parameter("q", query)
+            }
+        }
+        if (response.status.value >= 400) {
+            val errorText = response.bodyAsText()
+            throw IllegalStateException("Server error ${response.status.value}: $errorText")
+        }
+        return response.body<JsonObject>()
+    }
+
+    // ── Goal Lifecycle ──
+
+    /**
+     * Mark a goal as complete.
+     *
+     * @param id Goal ID
+     * @param data Completion details (e.g., outcome summary)
+     * @return The updated goal
+     */
+    suspend fun goalComplete(id: String, data: JsonObject): JsonObject {
+        val token = getToken()
+        val response = executeWithRetry {
+            client.post("$baseUrl/api/chat/goals/$id/complete") {
+                bearerAuth(token)
+                contentType(ContentType.Application.Json)
+                setBody(data)
+            }
+        }
+        if (response.status.value >= 400) {
+            val errorText = response.bodyAsText()
+            throw IllegalStateException("Server error ${response.status.value}: $errorText")
+        }
+        return response.body<JsonObject>()
+    }
+
+    /**
+     * Approve a completed goal.
+     *
+     * @param id Goal ID
+     * @return The updated goal
+     */
+    suspend fun goalApprove(id: String): JsonObject {
+        val token = getToken()
+        val response = executeWithRetry {
+            client.post("$baseUrl/api/chat/goals/$id/approve") {
+                bearerAuth(token)
+            }
+        }
+        if (response.status.value >= 400) {
+            val errorText = response.bodyAsText()
+            throw IllegalStateException("Server error ${response.status.value}: $errorText")
+        }
+        return response.body<JsonObject>()
+    }
+
+    /**
+     * Reject a completed goal.
+     *
+     * @param id Goal ID
+     * @param data Rejection details (e.g., reason)
+     * @return The updated goal
+     */
+    suspend fun goalReject(id: String, data: JsonObject): JsonObject {
+        val token = getToken()
+        val response = executeWithRetry {
+            client.post("$baseUrl/api/chat/goals/$id/reject") {
+                bearerAuth(token)
+                contentType(ContentType.Application.Json)
+                setBody(data)
+            }
+        }
+        if (response.status.value >= 400) {
+            val errorText = response.bodyAsText()
+            throw IllegalStateException("Server error ${response.status.value}: $errorText")
+        }
+        return response.body<JsonObject>()
+    }
+
+    // ── Goal Step Lifecycle ──
+
+    /**
+     * Start a goal step.
+     *
+     * @param id Goal ID
+     * @param stepIndex Zero-based step index
+     * @return The updated goal
+     */
+    suspend fun goalStepStart(id: String, stepIndex: Int): JsonObject {
+        val token = getToken()
+        val response = executeWithRetry {
+            client.post("$baseUrl/api/chat/goals/$id/steps/$stepIndex/start") {
+                bearerAuth(token)
+            }
+        }
+        if (response.status.value >= 400) {
+            val errorText = response.bodyAsText()
+            throw IllegalStateException("Server error ${response.status.value}: $errorText")
+        }
+        return response.body<JsonObject>()
+    }
+
+    /**
+     * Complete a goal step.
+     *
+     * @param id Goal ID
+     * @param stepIndex Zero-based step index
+     * @param data Completion details for the step
+     * @return The updated goal
+     */
+    suspend fun goalStepComplete(id: String, stepIndex: Int, data: JsonObject): JsonObject {
+        val token = getToken()
+        val response = executeWithRetry {
+            client.post("$baseUrl/api/chat/goals/$id/steps/$stepIndex/complete") {
+                bearerAuth(token)
+                contentType(ContentType.Application.Json)
+                setBody(data)
+            }
+        }
+        if (response.status.value >= 400) {
+            val errorText = response.bodyAsText()
+            throw IllegalStateException("Server error ${response.status.value}: $errorText")
+        }
+        return response.body<JsonObject>()
+    }
+
+    /**
+     * Fail a goal step.
+     *
+     * @param id Goal ID
+     * @param stepIndex Zero-based step index
+     * @param data Failure details for the step
+     * @return The updated goal
+     */
+    suspend fun goalStepFail(id: String, stepIndex: Int, data: JsonObject): JsonObject {
+        val token = getToken()
+        val response = executeWithRetry {
+            client.post("$baseUrl/api/chat/goals/$id/steps/$stepIndex/fail") {
+                bearerAuth(token)
+                contentType(ContentType.Application.Json)
+                setBody(data)
+            }
+        }
+        if (response.status.value >= 400) {
+            val errorText = response.bodyAsText()
+            throw IllegalStateException("Server error ${response.status.value}: $errorText")
+        }
+        return response.body<JsonObject>()
+    }
+
+    // ========================================================================
+    // ── Task CRUD ──
+    // ========================================================================
+
+    /**
+     * Create a new task.
+     *
+     * @param data Task definition as a JSON object
+     * @return The created task
+     */
+    suspend fun taskCreate(data: JsonObject): JsonObject {
+        val token = getToken()
+        val response = executeWithRetry {
+            client.post("$baseUrl/api/chat/tasks") {
+                bearerAuth(token)
+                contentType(ContentType.Application.Json)
+                setBody(data)
+            }
+        }
+        if (response.status.value >= 400) {
+            val errorText = response.bodyAsText()
+            throw IllegalStateException("Server error ${response.status.value}: $errorText")
+        }
+        return response.body<JsonObject>()
+    }
+
+    /**
+     * List all tasks.
+     *
+     * @return A JSON object containing the list of tasks
+     */
+    suspend fun taskList(): JsonObject {
+        val token = getToken()
+        val response = executeWithRetry {
+            client.get("$baseUrl/api/chat/tasks") {
+                bearerAuth(token)
+            }
+        }
+        if (response.status.value >= 400) {
+            val errorText = response.bodyAsText()
+            throw IllegalStateException("Server error ${response.status.value}: $errorText")
+        }
+        return response.body<JsonObject>()
+    }
+
+    /**
+     * Get a task by ID.
+     *
+     * @param id Task ID
+     * @return The task object
+     */
+    suspend fun taskGet(id: String): JsonObject {
+        val token = getToken()
+        val response = executeWithRetry {
+            client.get("$baseUrl/api/chat/tasks/$id") {
+                bearerAuth(token)
+            }
+        }
+        if (response.status.value >= 400) {
+            val errorText = response.bodyAsText()
+            throw IllegalStateException("Server error ${response.status.value}: $errorText")
+        }
+        return response.body<JsonObject>()
+    }
+
+    /**
+     * Update a task by ID.
+     *
+     * @param id Task ID
+     * @param data Updated task fields as a JSON object
+     * @return The updated task
+     */
+    suspend fun taskUpdate(id: String, data: JsonObject): JsonObject {
+        val token = getToken()
+        val response = executeWithRetry {
+            client.put("$baseUrl/api/chat/tasks/$id") {
+                bearerAuth(token)
+                contentType(ContentType.Application.Json)
+                setBody(data)
+            }
+        }
+        if (response.status.value >= 400) {
+            val errorText = response.bodyAsText()
+            throw IllegalStateException("Server error ${response.status.value}: $errorText")
+        }
+        return response.body<JsonObject>()
+    }
+
+    /**
+     * Delete a task by ID.
+     *
+     * @param id Task ID
+     */
+    suspend fun taskDelete(id: String) {
+        val token = getToken()
+        val response = executeWithRetry {
+            client.delete("$baseUrl/api/chat/tasks/$id") {
+                bearerAuth(token)
+            }
+        }
+        if (response.status.value >= 400) {
+            val errorText = response.bodyAsText()
+            throw IllegalStateException("Server error ${response.status.value}: $errorText")
+        }
+    }
+
+    /**
+     * Get tasks that are due.
+     *
+     * @param now ISO-8601 timestamp representing the current time
+     * @return Tasks that are due at or before the given time
+     */
+    suspend fun taskDue(now: String): JsonObject {
+        val token = getToken()
+        val response = executeWithRetry {
+            client.get("$baseUrl/api/chat/tasks/due") {
+                bearerAuth(token)
+                parameter("now", now)
+            }
+        }
+        if (response.status.value >= 400) {
+            val errorText = response.bodyAsText()
+            throw IllegalStateException("Server error ${response.status.value}: $errorText")
+        }
+        return response.body<JsonObject>()
+    }
+
+    // ── Task Lifecycle ──
+
+    /**
+     * Start a task.
+     *
+     * @param id Task ID
+     * @return The updated task
+     */
+    suspend fun taskStart(id: String): JsonObject {
+        val token = getToken()
+        val response = executeWithRetry {
+            client.post("$baseUrl/api/chat/tasks/$id/start") {
+                bearerAuth(token)
+            }
+        }
+        if (response.status.value >= 400) {
+            val errorText = response.bodyAsText()
+            throw IllegalStateException("Server error ${response.status.value}: $errorText")
+        }
+        return response.body<JsonObject>()
+    }
+
+    /**
+     * Mark a task as succeeded.
+     *
+     * @param id Task ID
+     * @param data Success details (e.g., output summary)
+     * @return The updated task
+     */
+    suspend fun taskSucceed(id: String, data: JsonObject): JsonObject {
+        val token = getToken()
+        val response = executeWithRetry {
+            client.post("$baseUrl/api/chat/tasks/$id/succeed") {
+                bearerAuth(token)
+                contentType(ContentType.Application.Json)
+                setBody(data)
+            }
+        }
+        if (response.status.value >= 400) {
+            val errorText = response.bodyAsText()
+            throw IllegalStateException("Server error ${response.status.value}: $errorText")
+        }
+        return response.body<JsonObject>()
+    }
+
+    /**
+     * Mark a task as failed.
+     *
+     * @param id Task ID
+     * @param data Failure details (e.g., error message)
+     * @return The updated task
+     */
+    suspend fun taskFail(id: String, data: JsonObject): JsonObject {
+        val token = getToken()
+        val response = executeWithRetry {
+            client.post("$baseUrl/api/chat/tasks/$id/fail") {
+                bearerAuth(token)
+                contentType(ContentType.Application.Json)
+                setBody(data)
+            }
+        }
+        if (response.status.value >= 400) {
+            val errorText = response.bodyAsText()
+            throw IllegalStateException("Server error ${response.status.value}: $errorText")
+        }
+        return response.body<JsonObject>()
+    }
+
+    /**
+     * Pause a running task.
+     *
+     * @param id Task ID
+     * @return The updated task
+     */
+    suspend fun taskPause(id: String): JsonObject {
+        val token = getToken()
+        val response = executeWithRetry {
+            client.post("$baseUrl/api/chat/tasks/$id/pause") {
+                bearerAuth(token)
+            }
+        }
+        if (response.status.value >= 400) {
+            val errorText = response.bodyAsText()
+            throw IllegalStateException("Server error ${response.status.value}: $errorText")
+        }
+        return response.body<JsonObject>()
+    }
+
+    /**
+     * Resume a paused task.
+     *
+     * @param id Task ID
+     * @param data Resume details
+     * @return The updated task
+     */
+    suspend fun taskResume(id: String, data: JsonObject): JsonObject {
+        val token = getToken()
+        val response = executeWithRetry {
+            client.post("$baseUrl/api/chat/tasks/$id/resume") {
+                bearerAuth(token)
+                contentType(ContentType.Application.Json)
+                setBody(data)
+            }
+        }
+        if (response.status.value >= 400) {
+            val errorText = response.bodyAsText()
+            throw IllegalStateException("Server error ${response.status.value}: $errorText")
+        }
+        return response.body<JsonObject>()
+    }
+
+    // ========================================================================
+    // ── Agent CRUD ──
+    // ========================================================================
+
+    /**
+     * Create a new agent.
+     *
+     * @param data Agent definition as a JSON object
+     * @return The created agent
+     */
+    suspend fun agentCreate(data: JsonObject): JsonObject {
+        val token = getToken()
+        val response = executeWithRetry {
+            client.post("$baseUrl/api/chat/agents") {
+                bearerAuth(token)
+                contentType(ContentType.Application.Json)
+                setBody(data)
+            }
+        }
+        if (response.status.value >= 400) {
+            val errorText = response.bodyAsText()
+            throw IllegalStateException("Server error ${response.status.value}: $errorText")
+        }
+        return response.body<JsonObject>()
+    }
+
+    /**
+     * List all agents.
+     *
+     * @return A JSON object containing the list of agents
+     */
+    suspend fun agentList(): JsonObject {
+        val token = getToken()
+        val response = executeWithRetry {
+            client.get("$baseUrl/api/chat/agents") {
+                bearerAuth(token)
+            }
+        }
+        if (response.status.value >= 400) {
+            val errorText = response.bodyAsText()
+            throw IllegalStateException("Server error ${response.status.value}: $errorText")
+        }
+        return response.body<JsonObject>()
+    }
+
+    /**
+     * Get an agent by ID.
+     *
+     * @param id Agent ID
+     * @return The agent object
+     */
+    suspend fun agentGet(id: String): JsonObject {
+        val token = getToken()
+        val response = executeWithRetry {
+            client.get("$baseUrl/api/chat/agents/$id") {
+                bearerAuth(token)
+            }
+        }
+        if (response.status.value >= 400) {
+            val errorText = response.bodyAsText()
+            throw IllegalStateException("Server error ${response.status.value}: $errorText")
+        }
+        return response.body<JsonObject>()
+    }
+
+    /**
+     * Get an agent by name.
+     *
+     * @param name Agent name
+     * @return The agent object
+     */
+    suspend fun agentGetByName(name: String): JsonObject {
+        val token = getToken()
+        val response = executeWithRetry {
+            client.get("$baseUrl/api/chat/agents/by-name/$name") {
+                bearerAuth(token)
+            }
+        }
+        if (response.status.value >= 400) {
+            val errorText = response.bodyAsText()
+            throw IllegalStateException("Server error ${response.status.value}: $errorText")
+        }
+        return response.body<JsonObject>()
+    }
+
+    /**
+     * Update an agent by ID.
+     *
+     * @param id Agent ID
+     * @param data Updated agent fields as a JSON object
+     * @return The updated agent
+     */
+    suspend fun agentUpdate(id: String, data: JsonObject): JsonObject {
+        val token = getToken()
+        val response = executeWithRetry {
+            client.put("$baseUrl/api/chat/agents/$id") {
+                bearerAuth(token)
+                contentType(ContentType.Application.Json)
+                setBody(data)
+            }
+        }
+        if (response.status.value >= 400) {
+            val errorText = response.bodyAsText()
+            throw IllegalStateException("Server error ${response.status.value}: $errorText")
+        }
+        return response.body<JsonObject>()
+    }
+
+    /**
+     * Delete an agent by ID.
+     *
+     * @param id Agent ID
+     */
+    suspend fun agentDelete(id: String) {
+        val token = getToken()
+        val response = executeWithRetry {
+            client.delete("$baseUrl/api/chat/agents/$id") {
+                bearerAuth(token)
+            }
+        }
+        if (response.status.value >= 400) {
+            val errorText = response.bodyAsText()
+            throw IllegalStateException("Server error ${response.status.value}: $errorText")
+        }
+    }
+
+    /**
+     * List agents by deployment ID.
+     *
+     * @param deploymentId Deployment ID
+     * @return Agents associated with the given deployment
+     */
+    suspend fun agentsByDeployment(deploymentId: String): JsonObject {
+        val token = getToken()
+        val response = executeWithRetry {
+            client.get("$baseUrl/api/chat/agents/by-deployment/$deploymentId") {
+                bearerAuth(token)
+            }
+        }
+        if (response.status.value >= 400) {
+            val errorText = response.bodyAsText()
+            throw IllegalStateException("Server error ${response.status.value}: $errorText")
+        }
+        return response.body<JsonObject>()
+    }
+
     companion object {
         fun builder() = Builder()
-        
+
         const val VERSION = "0.1.0"
     }
 }

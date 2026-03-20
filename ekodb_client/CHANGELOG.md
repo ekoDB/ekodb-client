@@ -6,9 +6,57 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.13.0] - 2026-03-17
+## [0.14.0] - Unreleased
 
 ### Added
+
+- **Streaming raw completion with progress** — New
+  `raw_completion_stream_with_progress()` (Rust),
+  `rawCompletionStreamWithProgress()` (TypeScript) sends each LLM token through
+  a channel/callback as it arrives via SSE, enabling real-time progress display
+  during long-running calls (e.g., goal plan generation).
+
+- **Goal/Task/Agent REST client methods (all languages)** — Full coverage of
+  `/api/chat/goals`, `/api/chat/tasks`, and `/api/chat/agents` endpoints
+  including CRUD, lifecycle transitions, goal step lifecycle, search, and
+  deployment queries. Added to Rust, Python, TypeScript, Kotlin, and Go clients.
+
+- **WebSocket raw completion** — `WebSocketClient::raw_completion()` sends a
+  `RawComplete` message over the persistent WSS connection.
+
+### Fixed
+
+- **HTTP client timeout no longer kills SSE streams** — Changed from full
+  request timeout to connect-only timeout across Rust (`connect_timeout`),
+  Kotlin (`connectTimeoutMillis` only), and Go (`net.Dialer.Timeout`).
+  TypeScript uses `fetch()` which doesn't have this issue. Python inherits the
+  Rust fix via PyO3 bindings.
+
+## [0.13.0] - 2026-03-18
+
+### Added
+
+- **SSE streaming raw completion** — New `raw_completion_stream()` method across
+  all client libraries (Rust, Python, TypeScript `rawCompletionStream()`, Go
+  `RawCompletionStream()`, Kotlin `rawCompletionStream()`). Calls the new
+  `POST /api/chat/complete/stream` SSE endpoint. Keeps the connection alive with
+  heartbeat events, preventing reverse proxy timeouts on deployed instances.
+
+- **WebSocket raw completion** — New `WebSocketClient::raw_completion()` in the
+  Rust client. Sends a `RawComplete` message over an existing WSS connection,
+  avoiding HTTP entirely. Preferred transport when a WebSocket connection is
+  already established.
+
+### Fixed
+
+- **Go client auth in RawCompletionStream** — `RawCompletionStream()` was using
+  the raw API key directly instead of exchanging it for a JWT token via
+  `getToken()`/`refreshToken()`. This would have caused authentication failures
+  on any real deployment.
+
+- **TypeScript client token init in rawCompletionStream** —
+  `rawCompletionStream()` now calls `refreshToken()` if no cached token exists,
+  matching the behavior of all other methods that go through `makeRequest()`.
 
 - **Atomic field actions** — New `update_with_action()` and
   `update_with_action_sequence()` methods across all client libraries (Rust,

@@ -1932,3 +1932,625 @@ async fn test_update_with_action_sequence_error() {
 
     assert!(result.is_err());
 }
+
+// ============================================================================
+// Goal CRUD Tests
+// ============================================================================
+
+#[tokio::test]
+async fn test_goal_create() {
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+    let _mock = server
+        .mock("POST", "/api/chat/goals")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"id": "goal_1", "title": "Test Goal", "status": "active"}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    let result = client.goal_create(json!({"title": "Test Goal"})).await;
+    assert!(result.is_ok());
+    let goal = result.unwrap();
+    assert_eq!(goal["id"], "goal_1");
+    assert_eq!(goal["title"], "Test Goal");
+}
+
+#[tokio::test]
+async fn test_goal_list() {
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+    let _mock = server
+        .mock("GET", "/api/chat/goals")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"goals": [{"id": "goal_1"}, {"id": "goal_2"}]}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    let result = client.goal_list().await;
+    assert!(result.is_ok());
+}
+
+#[tokio::test]
+async fn test_goal_get() {
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+    let _mock = server
+        .mock("GET", "/api/chat/goals/goal_1")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"id": "goal_1", "title": "Test Goal"}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    let result = client.goal_get("goal_1").await;
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap()["id"], "goal_1");
+}
+
+#[tokio::test]
+async fn test_goal_update() {
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+    let _mock = server
+        .mock("PUT", "/api/chat/goals/goal_1")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"id": "goal_1", "title": "Updated"}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    let result = client
+        .goal_update("goal_1", json!({"title": "Updated"}))
+        .await;
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap()["title"], "Updated");
+}
+
+#[tokio::test]
+async fn test_goal_delete() {
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+    let _mock = server
+        .mock("DELETE", "/api/chat/goals/goal_1")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"ok": true}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    let result = client.goal_delete("goal_1").await;
+    assert!(result.is_ok());
+}
+
+#[tokio::test]
+async fn test_goal_search() {
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+    let _mock = server
+        .mock(
+            "GET",
+            Matcher::Regex(r"/api/chat/goals/search\?q=.*".to_string()),
+        )
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"goals": [{"id": "goal_1"}]}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    let result = client.goal_search("test query").await;
+    assert!(result.is_ok());
+}
+
+#[tokio::test]
+async fn test_goal_complete() {
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+    let _mock = server
+        .mock("POST", "/api/chat/goals/goal_1/complete")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"id": "goal_1", "status": "pending_review"}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    let result = client
+        .goal_complete("goal_1", json!({"summary": "Done"}))
+        .await;
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap()["status"], "pending_review");
+}
+
+#[tokio::test]
+async fn test_goal_approve() {
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+    let _mock = server
+        .mock("POST", "/api/chat/goals/goal_1/approve")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"id": "goal_1", "status": "in_progress"}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    let result = client.goal_approve("goal_1").await;
+    assert!(result.is_ok());
+}
+
+#[tokio::test]
+async fn test_goal_reject() {
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+    let _mock = server
+        .mock("POST", "/api/chat/goals/goal_1/reject")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"id": "goal_1", "status": "failed"}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    let result = client
+        .goal_reject("goal_1", json!({"reason": "Bad plan"}))
+        .await;
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap()["status"], "failed");
+}
+
+#[tokio::test]
+async fn test_goal_step_start() {
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+    let _mock = server
+        .mock("POST", "/api/chat/goals/goal_1/steps/0/start")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"id": "goal_1"}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    let result = client.goal_step_start("goal_1", 0).await;
+    assert!(result.is_ok());
+}
+
+#[tokio::test]
+async fn test_goal_step_complete() {
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+    let _mock = server
+        .mock("POST", "/api/chat/goals/goal_1/steps/0/complete")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"id": "goal_1"}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    let result = client
+        .goal_step_complete("goal_1", 0, json!({"result": "Step done"}))
+        .await;
+    assert!(result.is_ok());
+}
+
+#[tokio::test]
+async fn test_goal_step_fail() {
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+    let _mock = server
+        .mock("POST", "/api/chat/goals/goal_1/steps/0/fail")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"id": "goal_1"}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    let result = client
+        .goal_step_fail("goal_1", 0, json!({"error": "Step failed"}))
+        .await;
+    assert!(result.is_ok());
+}
+
+// ============================================================================
+// Task CRUD Tests
+// ============================================================================
+
+#[tokio::test]
+async fn test_task_create() {
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+    let _mock = server
+        .mock("POST", "/api/chat/tasks")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"id": "task_1", "name": "Test Task", "status": "active"}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    let result = client
+        .task_create(json!({"name": "Test Task", "cron": "0 * * * *"}))
+        .await;
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap()["id"], "task_1");
+}
+
+#[tokio::test]
+async fn test_task_list() {
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+    let _mock = server
+        .mock("GET", "/api/chat/tasks")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"tasks": []}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    let result = client.task_list().await;
+    assert!(result.is_ok());
+}
+
+#[tokio::test]
+async fn test_task_get() {
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+    let _mock = server
+        .mock("GET", "/api/chat/tasks/task_1")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"id": "task_1", "name": "Test Task"}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    let result = client.task_get("task_1").await;
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap()["id"], "task_1");
+}
+
+#[tokio::test]
+async fn test_task_update() {
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+    let _mock = server
+        .mock("PUT", "/api/chat/tasks/task_1")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"id": "task_1", "name": "Updated"}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    let result = client
+        .task_update("task_1", json!({"name": "Updated"}))
+        .await;
+    assert!(result.is_ok());
+}
+
+#[tokio::test]
+async fn test_task_delete() {
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+    let _mock = server
+        .mock("DELETE", "/api/chat/tasks/task_1")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"ok": true}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    let result = client.task_delete("task_1").await;
+    assert!(result.is_ok());
+}
+
+#[tokio::test]
+async fn test_task_due() {
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+    let _mock = server
+        .mock(
+            "GET",
+            Matcher::Regex(r"/api/chat/tasks/due\?now=.*".to_string()),
+        )
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"tasks": []}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    let result = client.task_due("2026-03-20T00:00:00Z").await;
+    assert!(result.is_ok());
+}
+
+#[tokio::test]
+async fn test_task_start() {
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+    let _mock = server
+        .mock("POST", "/api/chat/tasks/task_1/start")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"id": "task_1", "status": "running"}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    let result = client.task_start("task_1").await;
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap()["status"], "running");
+}
+
+#[tokio::test]
+async fn test_task_succeed() {
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+    let _mock = server
+        .mock("POST", "/api/chat/tasks/task_1/succeed")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"id": "task_1", "status": "active"}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    let result = client
+        .task_succeed("task_1", json!({"output": "Success"}))
+        .await;
+    assert!(result.is_ok());
+}
+
+#[tokio::test]
+async fn test_task_fail() {
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+    let _mock = server
+        .mock("POST", "/api/chat/tasks/task_1/fail")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"id": "task_1", "status": "active"}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    let result = client
+        .task_fail("task_1", json!({"error": "Timeout"}))
+        .await;
+    assert!(result.is_ok());
+}
+
+#[tokio::test]
+async fn test_task_pause() {
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+    let _mock = server
+        .mock("POST", "/api/chat/tasks/task_1/pause")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"id": "task_1", "status": "paused"}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    let result = client.task_pause("task_1").await;
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap()["status"], "paused");
+}
+
+#[tokio::test]
+async fn test_task_resume() {
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+    let _mock = server
+        .mock("POST", "/api/chat/tasks/task_1/resume")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"id": "task_1", "status": "active"}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    let result = client
+        .task_resume("task_1", json!({"next_run": "2026-03-21T00:00:00Z"}))
+        .await;
+    assert!(result.is_ok());
+}
+
+// ============================================================================
+// Agent CRUD Tests
+// ============================================================================
+
+#[tokio::test]
+async fn test_agent_create() {
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+    let _mock = server
+        .mock("POST", "/api/chat/agents")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"id": "agent_1", "name": "TestAgent"}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    let result = client
+        .agent_create(json!({"name": "TestAgent", "system_prompt": "You help."}))
+        .await;
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap()["name"], "TestAgent");
+}
+
+#[tokio::test]
+async fn test_agent_list() {
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+    let _mock = server
+        .mock("GET", "/api/chat/agents")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"agents": []}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    let result = client.agent_list().await;
+    assert!(result.is_ok());
+}
+
+#[tokio::test]
+async fn test_agent_get() {
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+    let _mock = server
+        .mock("GET", "/api/chat/agents/agent_1")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"id": "agent_1", "name": "TestAgent"}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    let result = client.agent_get("agent_1").await;
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap()["id"], "agent_1");
+}
+
+#[tokio::test]
+async fn test_agent_get_by_name() {
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+    let _mock = server
+        .mock("GET", "/api/chat/agents/by-name/TestAgent")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"id": "agent_1", "name": "TestAgent"}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    let result = client.agent_get_by_name("TestAgent").await;
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap()["name"], "TestAgent");
+}
+
+#[tokio::test]
+async fn test_agent_update() {
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+    let _mock = server
+        .mock("PUT", "/api/chat/agents/agent_1")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"id": "agent_1", "name": "Updated"}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    let result = client
+        .agent_update("agent_1", json!({"name": "Updated"}))
+        .await;
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap()["name"], "Updated");
+}
+
+#[tokio::test]
+async fn test_agent_delete() {
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+    let _mock = server
+        .mock("DELETE", "/api/chat/agents/agent_1")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"ok": true}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    let result = client.agent_delete("agent_1").await;
+    assert!(result.is_ok());
+}
+
+#[tokio::test]
+async fn test_agents_by_deployment() {
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+    let _mock = server
+        .mock("GET", "/api/chat/agents/by-deployment/deploy_1")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"agents": [{"id": "agent_1"}]}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    let result = client.agents_by_deployment("deploy_1").await;
+    assert!(result.is_ok());
+}
+
+// ============================================================================
+// Goal/Task/Agent Error Tests
+// ============================================================================
+
+#[tokio::test]
+async fn test_goal_get_not_found() {
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+    let _mock = server
+        .mock("GET", "/api/chat/goals/nonexistent")
+        .with_status(404)
+        .with_header("content-type", "application/json")
+        .with_body("Not Found")
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    let result = client.goal_get("nonexistent").await;
+    assert!(result.is_err());
+}
+
+#[tokio::test]
+async fn test_task_get_not_found() {
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+    let _mock = server
+        .mock("GET", "/api/chat/tasks/nonexistent")
+        .with_status(404)
+        .with_header("content-type", "application/json")
+        .with_body("Not Found")
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    let result = client.task_get("nonexistent").await;
+    assert!(result.is_err());
+}
+
+#[tokio::test]
+async fn test_agent_get_not_found() {
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+    let _mock = server
+        .mock("GET", "/api/chat/agents/nonexistent")
+        .with_status(404)
+        .with_header("content-type", "application/json")
+        .with_body("Not Found")
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    let result = client.agent_get("nonexistent").await;
+    assert!(result.is_err());
+}

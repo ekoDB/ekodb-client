@@ -1543,6 +1543,123 @@ export class EkoDBClient {
   }
 
   /**
+   * Stateless raw LLM completion via SSE streaming.
+   *
+   * Same as rawCompletion() but uses Server-Sent Events to keep the
+   * connection alive. Preferred for deployed instances where reverse proxies
+   * may kill idle HTTP connections before the LLM responds.
+   */
+  async rawCompletionStream(
+    request: RawCompletionRequest,
+  ): Promise<RawCompletionResponse> {
+    let token = this.getToken();
+    if (!token) {
+      await this.refreshToken();
+      token = this.getToken();
+    }
+    const url = `${this.baseURL}/api/chat/complete/stream`;
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "text/event-stream",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(request),
+    });
+
+    if (!response.ok) {
+      const body = await response.text();
+      throw new Error(
+        `SSE raw completion failed (${response.status}): ${body}`,
+      );
+    }
+
+    const body = await response.text();
+    let content = "";
+    let lastError: string | null = null;
+
+    for (const line of body.split("\n")) {
+      if (line.startsWith("data:")) {
+        const dataStr = line.slice(5).trim();
+        if (!dataStr) continue;
+        try {
+          const eventData = JSON.parse(dataStr);
+          if (eventData.token) content += eventData.token;
+          if (eventData.content) content = eventData.content;
+          if (eventData.error) lastError = eventData.error;
+        } catch {
+          // skip malformed SSE data
+        }
+      }
+    }
+
+    if (lastError) throw new Error(lastError);
+    return { content };
+  }
+
+  /**
+   * Stateless raw LLM completion via SSE streaming with token-level progress.
+   *
+   * Same as rawCompletionStream() but invokes `onToken` with each token as it
+   * arrives, allowing callers to show real-time progress.
+   */
+  async rawCompletionStreamWithProgress(
+    request: RawCompletionRequest,
+    onToken: (token: string) => void,
+  ): Promise<RawCompletionResponse> {
+    let token = this.getToken();
+    if (!token) {
+      await this.refreshToken();
+      token = this.getToken();
+    }
+    const url = `${this.baseURL}/api/chat/complete/stream`;
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "text/event-stream",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(request),
+    });
+
+    if (!response.ok) {
+      const body = await response.text();
+      throw new Error(
+        `SSE raw completion failed (${response.status}): ${body}`,
+      );
+    }
+
+    const body = await response.text();
+    let content = "";
+    let lastError: string | null = null;
+
+    for (const line of body.split("\n")) {
+      if (line.startsWith("data:")) {
+        const dataStr = line.slice(5).trim();
+        if (!dataStr) continue;
+        try {
+          const eventData = JSON.parse(dataStr);
+          if (eventData.token) {
+            content += eventData.token;
+            onToken(eventData.token);
+          }
+          if (eventData.content) content = eventData.content;
+          if (eventData.error) lastError = eventData.error;
+        } catch {
+          // skip malformed SSE data
+        }
+      }
+    }
+
+    if (lastError) throw new Error(lastError);
+    return { content };
+  }
+
+  /**
    * Send a message in an existing chat session
    */
   async chatMessage(
@@ -1939,6 +2056,340 @@ export class EkoDBClient {
       undefined,
       0,
       true, // Force JSON
+    );
+  }
+
+  // ========================================================================
+  // GOAL API
+  // ========================================================================
+
+  /** Create a new goal */
+  async goalCreate(data: Record): Promise<Record> {
+    return this.makeRequest<Record>("POST", "/api/chat/goals", data, 0, true);
+  }
+
+  /** List all goals */
+  async goalList(): Promise<Record> {
+    return this.makeRequest<Record>(
+      "GET",
+      "/api/chat/goals",
+      undefined,
+      0,
+      true,
+    );
+  }
+
+  /** Get a goal by ID */
+  async goalGet(id: string): Promise<Record> {
+    return this.makeRequest<Record>(
+      "GET",
+      `/api/chat/goals/${encodeURIComponent(id)}`,
+      undefined,
+      0,
+      true,
+    );
+  }
+
+  /** Update a goal by ID */
+  async goalUpdate(id: string, data: Record): Promise<Record> {
+    return this.makeRequest<Record>(
+      "PUT",
+      `/api/chat/goals/${encodeURIComponent(id)}`,
+      data,
+      0,
+      true,
+    );
+  }
+
+  /** Delete a goal by ID */
+  async goalDelete(id: string): Promise<void> {
+    await this.makeRequest<void>(
+      "DELETE",
+      `/api/chat/goals/${encodeURIComponent(id)}`,
+      undefined,
+      0,
+      true,
+    );
+  }
+
+  /** Search goals */
+  async goalSearch(query: string): Promise<Record> {
+    const params = new URLSearchParams({ q: query });
+    return this.makeRequest<Record>(
+      "GET",
+      `/api/chat/goals/search?${params}`,
+      undefined,
+      0,
+      true,
+    );
+  }
+
+  /** Mark a goal as complete (status -> pending_review) */
+  async goalComplete(id: string, data: Record): Promise<Record> {
+    return this.makeRequest<Record>(
+      "POST",
+      `/api/chat/goals/${encodeURIComponent(id)}/complete`,
+      data,
+      0,
+      true,
+    );
+  }
+
+  /** Approve a goal (status -> in_progress) */
+  async goalApprove(id: string): Promise<Record> {
+    return this.makeRequest<Record>(
+      "POST",
+      `/api/chat/goals/${encodeURIComponent(id)}/approve`,
+      undefined,
+      0,
+      true,
+    );
+  }
+
+  /** Reject a goal (status -> failed) */
+  async goalReject(id: string, data: Record): Promise<Record> {
+    return this.makeRequest<Record>(
+      "POST",
+      `/api/chat/goals/${encodeURIComponent(id)}/reject`,
+      data,
+      0,
+      true,
+    );
+  }
+
+  /** Start a goal step (status -> in_progress) */
+  async goalStepStart(id: string, stepIndex: number): Promise<Record> {
+    return this.makeRequest<Record>(
+      "POST",
+      `/api/chat/goals/${encodeURIComponent(id)}/steps/${stepIndex}/start`,
+      undefined,
+      0,
+      true,
+    );
+  }
+
+  /** Complete a goal step with result */
+  async goalStepComplete(
+    id: string,
+    stepIndex: number,
+    data: Record,
+  ): Promise<Record> {
+    return this.makeRequest<Record>(
+      "POST",
+      `/api/chat/goals/${encodeURIComponent(id)}/steps/${stepIndex}/complete`,
+      data,
+      0,
+      true,
+    );
+  }
+
+  /** Fail a goal step with error */
+  async goalStepFail(
+    id: string,
+    stepIndex: number,
+    data: Record,
+  ): Promise<Record> {
+    return this.makeRequest<Record>(
+      "POST",
+      `/api/chat/goals/${encodeURIComponent(id)}/steps/${stepIndex}/fail`,
+      data,
+      0,
+      true,
+    );
+  }
+
+  // ========================================================================
+  // TASK API
+  // ========================================================================
+
+  /** Create a new scheduled task */
+  async taskCreate(data: Record): Promise<Record> {
+    return this.makeRequest<Record>("POST", "/api/chat/tasks", data, 0, true);
+  }
+
+  /** List all scheduled tasks */
+  async taskList(): Promise<Record> {
+    return this.makeRequest<Record>(
+      "GET",
+      "/api/chat/tasks",
+      undefined,
+      0,
+      true,
+    );
+  }
+
+  /** Get a task by ID */
+  async taskGet(id: string): Promise<Record> {
+    return this.makeRequest<Record>(
+      "GET",
+      `/api/chat/tasks/${encodeURIComponent(id)}`,
+      undefined,
+      0,
+      true,
+    );
+  }
+
+  /** Update a task by ID */
+  async taskUpdate(id: string, data: Record): Promise<Record> {
+    return this.makeRequest<Record>(
+      "PUT",
+      `/api/chat/tasks/${encodeURIComponent(id)}`,
+      data,
+      0,
+      true,
+    );
+  }
+
+  /** Delete a task by ID */
+  async taskDelete(id: string): Promise<void> {
+    await this.makeRequest<void>(
+      "DELETE",
+      `/api/chat/tasks/${encodeURIComponent(id)}`,
+      undefined,
+      0,
+      true,
+    );
+  }
+
+  /** Get tasks that are due at the given time */
+  async taskDue(now: string): Promise<Record> {
+    const params = new URLSearchParams({ now });
+    return this.makeRequest<Record>(
+      "GET",
+      `/api/chat/tasks/due?${params}`,
+      undefined,
+      0,
+      true,
+    );
+  }
+
+  /** Start a task (status -> running) */
+  async taskStart(id: string): Promise<Record> {
+    return this.makeRequest<Record>(
+      "POST",
+      `/api/chat/tasks/${encodeURIComponent(id)}/start`,
+      undefined,
+      0,
+      true,
+    );
+  }
+
+  /** Mark a task as succeeded */
+  async taskSucceed(id: string, data: Record): Promise<Record> {
+    return this.makeRequest<Record>(
+      "POST",
+      `/api/chat/tasks/${encodeURIComponent(id)}/succeed`,
+      data,
+      0,
+      true,
+    );
+  }
+
+  /** Mark a task as failed */
+  async taskFail(id: string, data: Record): Promise<Record> {
+    return this.makeRequest<Record>(
+      "POST",
+      `/api/chat/tasks/${encodeURIComponent(id)}/fail`,
+      data,
+      0,
+      true,
+    );
+  }
+
+  /** Pause a task */
+  async taskPause(id: string): Promise<Record> {
+    return this.makeRequest<Record>(
+      "POST",
+      `/api/chat/tasks/${encodeURIComponent(id)}/pause`,
+      undefined,
+      0,
+      true,
+    );
+  }
+
+  /** Resume a paused task */
+  async taskResume(id: string, data: Record): Promise<Record> {
+    return this.makeRequest<Record>(
+      "POST",
+      `/api/chat/tasks/${encodeURIComponent(id)}/resume`,
+      data,
+      0,
+      true,
+    );
+  }
+
+  // ========================================================================
+  // AGENT API
+  // ========================================================================
+
+  /** Create a new agent */
+  async agentCreate(data: Record): Promise<Record> {
+    return this.makeRequest<Record>("POST", "/api/chat/agents", data, 0, true);
+  }
+
+  /** List all agents */
+  async agentList(): Promise<Record> {
+    return this.makeRequest<Record>(
+      "GET",
+      "/api/chat/agents",
+      undefined,
+      0,
+      true,
+    );
+  }
+
+  /** Get an agent by ID */
+  async agentGet(id: string): Promise<Record> {
+    return this.makeRequest<Record>(
+      "GET",
+      `/api/chat/agents/${encodeURIComponent(id)}`,
+      undefined,
+      0,
+      true,
+    );
+  }
+
+  /** Get an agent by name */
+  async agentGetByName(name: string): Promise<Record> {
+    return this.makeRequest<Record>(
+      "GET",
+      `/api/chat/agents/by-name/${encodeURIComponent(name)}`,
+      undefined,
+      0,
+      true,
+    );
+  }
+
+  /** Update an agent by ID */
+  async agentUpdate(id: string, data: Record): Promise<Record> {
+    return this.makeRequest<Record>(
+      "PUT",
+      `/api/chat/agents/${encodeURIComponent(id)}`,
+      data,
+      0,
+      true,
+    );
+  }
+
+  /** Delete an agent by ID */
+  async agentDelete(id: string): Promise<void> {
+    await this.makeRequest<void>(
+      "DELETE",
+      `/api/chat/agents/${encodeURIComponent(id)}`,
+      undefined,
+      0,
+      true,
+    );
+  }
+
+  /** Get agents by deployment ID */
+  async agentsByDeployment(deploymentId: string): Promise<Record> {
+    return this.makeRequest<Record>(
+      "GET",
+      `/api/chat/agents/by-deployment/${encodeURIComponent(deploymentId)}`,
+      undefined,
+      0,
+      true,
     );
   }
 
