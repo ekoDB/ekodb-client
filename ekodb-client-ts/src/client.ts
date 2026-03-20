@@ -2760,7 +2760,13 @@ export class WebSocketClient {
     switch (msg.type) {
       case "Success":
       case "Error": {
-        const messageId = msg.payload?.message_id || msg.payload?.messageId;
+        // Try messageId from top-level, then from payload
+        const messageId =
+          msg.messageId ||
+          msg.message_id ||
+          msg.payload?.message_id ||
+          msg.payload?.messageId;
+        let matched = false;
         if (messageId && this.pendingRequests.has(messageId)) {
           const pending = this.pendingRequests.get(messageId)!;
           this.pendingRequests.delete(messageId);
@@ -2769,13 +2775,29 @@ export class WebSocketClient {
           } else {
             pending.resolve(msg.payload);
           }
-        } else if (this.registerToolsAck) {
+          matched = true;
+        }
+        if (!matched && this.registerToolsAck) {
           const ack = this.registerToolsAck;
           this.registerToolsAck = null;
           if (msg.type === "Error") {
             ack.reject(new Error(msg.message || "Tool registration failed"));
           } else {
             ack.resolve(msg.payload);
+          }
+          matched = true;
+        }
+        // Server doesn't echo messageId — if there's exactly one pending
+        // request, deliver the response to it (sequential request/response).
+        if (!matched && this.pendingRequests.size === 1) {
+          const entry = this.pendingRequests.entries().next().value!;
+          const key = entry[0];
+          const pending = entry[1];
+          this.pendingRequests.delete(key);
+          if (msg.type === "Error") {
+            pending.reject(new Error(msg.message || "Unknown error"));
+          } else {
+            pending.resolve(msg.payload);
           }
         }
         break;
