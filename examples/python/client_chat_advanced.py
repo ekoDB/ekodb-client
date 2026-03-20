@@ -44,7 +44,7 @@ async def main():
     session = await client.create_chat_session(
         collections=[(collection, [])],
         llm_provider="openai",
-        llm_model="gpt-4",
+        llm_model="gpt-4o-mini",
         system_prompt="You are a helpful product assistant.",
     )
     chat_id = session["chat_id"]
@@ -136,7 +136,7 @@ async def main():
     session2 = await client.create_chat_session(
         collections=[("products", [])],
         llm_provider="openai",
-        llm_model="gpt-4",
+        llm_model="gpt-4o-mini",
     )
     chat_id2 = session2["chat_id"]
     print(f"✓ Created second session: {chat_id2}")

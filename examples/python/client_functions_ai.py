@@ -71,7 +71,7 @@ async def main():
                         "What are the benefits of using vector databases?"
                     ),
                 ],
-                "gpt-4",
+                "gpt-4o-mini",
                 0.7,
             )
         ],

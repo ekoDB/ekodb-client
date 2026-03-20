@@ -302,7 +302,7 @@ func main() {
 	chatSession, err := client.CreateChatSession(ekodb.CreateChatSessionRequest{
 		Collections:  []ekodb.CollectionConfig{},
 		LLMProvider:  "openai",
-		LLMModel:     strPtr("gpt-4"),
+		LLMModel:     strPtr("gpt-4o-mini"),
 		SystemPrompt: &systemPrompt,
 	})
 	if err != nil {

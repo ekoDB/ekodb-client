@@ -259,7 +259,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let chat_session = client
         .create_chat_session(
             ekodb_client::CreateChatSessionRequest::new("openai")
-                .model("gpt-4")
+                .model("gpt-4o-mini")
                 .system_prompt(&format!(
                     "You are a helpful programming assistant. Use the provided context \
                      to give comprehensive answers that combine knowledge from multiple \
