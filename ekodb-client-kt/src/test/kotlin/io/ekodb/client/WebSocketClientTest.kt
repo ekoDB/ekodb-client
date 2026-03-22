@@ -5,6 +5,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 
 class WebSocketClientTest {
 
@@ -75,6 +76,26 @@ class WebSocketClientTest {
         assertEquals("msg-1", event.messageId)
         assertEquals(500, event.executionTimeMs)
         assertNotNull(event.tokenUsage)
+    }
+
+    @Test
+    fun `ChatStreamEvent End with contextWindow`() {
+        val event = ChatStreamEvent.End(
+            messageId = "msg-cw",
+            executionTimeMs = 250,
+            contextWindow = 128000
+        )
+        assertEquals("msg-cw", event.messageId)
+        assertEquals(128000, event.contextWindow)
+    }
+
+    @Test
+    fun `ChatStreamEvent End without contextWindow defaults to null`() {
+        val event = ChatStreamEvent.End(
+            messageId = "msg-2",
+            executionTimeMs = 100
+        )
+        assertNull(event.contextWindow)
     }
 
     @Test

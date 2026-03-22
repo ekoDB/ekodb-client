@@ -6,7 +6,133 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.14.0] - Unreleased
+## [Unreleased]
+
+### Added
+
+- **JWT expiry-based token caching in Kotlin client** — `getToken()` now decodes
+  the JWT `exp` claim and proactively refreshes 60 seconds before expiry,
+  matching the Rust client's `AuthManager`. Added `extractJWTExpiry()`
+  (internal) for Base64-decoding the JWT payload. `clearTokenCache()` now also
+  resets the expiry. Includes 8 new unit tests covering expiry extraction, cache
+  reuse, proactive refresh, and cache clearing.
+
+- **Proactive token refresh in `AuthManager`** — `get_token()` now decodes the
+  JWT `exp` claim and refreshes 60 seconds before expiry. All callers get a
+  valid token automatically without needing `execute_with_token_refresh`
+  wrappers. Eliminates cascading "Token expired" failures across all client
+  methods.
+
+- **`execute_tool()` dispatch method** — New
+  `Client::execute_tool(tool_name, params)` provides a single dispatch point
+  mapping tool names to REST API calls. Covers 16 tools: `insert_record`,
+  `batch_insert`, `get_record`, `update_record`, `delete_record`,
+  `batch_delete`, `count_records`, `list_collections`, `get_schema`,
+  `create_collection`, `delete_collection`, `distinct_values`,
+  `query_collection`, `batch_update`, `update_record_action`, `kv_get`,
+  `kv_set`, `kv_delete`. Returns `None` for unknown tools so callers can fall
+  back to chat/LLM routing.
+
+### Fixed
+
+- **Token refresh on core CRUD methods** — `find_by_id`, `update`, `delete`,
+  `batch_insert`, `batch_update`, `batch_delete`, `list_collections`,
+  `delete_collection`, `get_schema`, `create_collection`, `update_with_action`
+  now use `execute_with_token_refresh` (was only on `insert`, `find`,
+  `distinct_values`).
+
+- **`count_documents` no longer fetches all records** — Uses
+  `select_fields: ["_id"]` to minimize data transfer. Still no dedicated server
+  count endpoint, but network payload is now ~100x smaller for large
+  collections.
+
+- **`find()` respects `should_retry` flag** — Was calling
+  `retry_policy.execute()` directly, bypassing the `no_retry()` configuration.
+  Now uses `execute_with_retry()` like all other methods.
+
+### Removed
+
+- **`Error::Auth` variant** — Duplicate of `Error::Authentication`. All usages
+  migrated to `Error::Authentication`.
+
+## [0.14.0] - 2026-03-21
+
+### Added
+
+- **TypeScript unit tests: schedules, KV links, text/hybrid search** — Added
+  three new `describe` blocks to `client.test.ts`: `EkoDBClient schedules` (7
+  tests: create, list, get, update, delete, pause, resume),
+  `EkoDBClient kv links` (3 tests: kvGetLinks, kvLink, kvUnlink), and
+  `EkoDBClient text and hybrid search` (2 tests: textSearch, hybridSearch).
+
+- **TypeScript integration example: Goals, Tasks & Agents** — New
+  `client_goals_tasks_agents.ts` exercising the full lifecycle of goals, tasks,
+  and agents matching the Rust example.
+
+- **TypeScript integration example: Schedules** — New `client_schedules.ts`
+  covering create, list, get, update, pause, resume, and delete schedule.
+
+- **TypeScript integration example: KV Links** — New `client_kv_links.ts`
+  demonstrating kvSet, kvLink, kvGetLinks, kvUnlink with document cleanup.
+
+- **TypeScript integration example: Advanced CRUD** — New
+  `client_advanced_crud.ts` covering updateWithAction (increment, push, clear),
+  updateWithActionSequence, restoreRecord, and restoreCollection.
+
+- **Integration example: Goals, Tasks & Agents** — New
+  `client_goals_tasks_agents.rs` example exercising the full lifecycle of goals
+  (create, list, get, update, search, complete, approve, reject, step
+  start/complete/fail, delete), tasks (create, list, get, start, succeed, pause,
+  resume, fail, due, delete), and agents (create, list, get, get_by_name,
+  update, agents_by_deployment, delete).
+
+- **Integration example: Schedules** — New `client_schedules.rs` example
+  covering create_schedule, list_schedules, get_schedule, update_schedule,
+  pause_schedule, resume_schedule, and delete_schedule.
+
+- **Integration example: KV Links** — New `client_kv_links.rs` example
+  demonstrating kv_set, kv_link, kv_get_links, kv_unlink with document
+  insert/cleanup.
+
+- **Integration example: Advanced CRUD** — New `client_advanced_crud.rs` example
+  covering update_with_action (increment, decrement, multiply, push, append,
+  pop, remove), update_with_action_sequence, restore_deleted, and
+  restore_collection.
+
+- **Kotlin `countDocuments` method** — Added `countDocuments(collection)` to the
+  Kotlin client, returning the number of documents in a collection. Calls
+  `GET /api/{collection}/count`. All 5 clients now have this method.
+
+- **`rawCompletionStreamWithProgress` parity** — Added to Kotlin client (with
+  `onToken` callback lambda) and Python client (with `on_token` callable). Both
+  match the existing Go and TypeScript implementations. Enables real-time
+  per-token progress display during stateless LLM completions.
+
+- **Goal template CRUD methods** — New client methods for managing goal
+  templates: `goal_template_create`, `goal_template_list`, `goal_template_get`,
+  `goal_template_update`, `goal_template_delete`. Calls
+  `/api/chat/goal-templates` endpoints on the ekoDB server. Wired through Python
+  PyO3 bindings as async methods on the `EkoDbClient` class.
+
+- **SSE chat message streaming** — New `chatMessageStream()` method in
+  TypeScript and Kotlin clients (Rust: `chat_message_stream()`). Streams chat
+  responses via Server-Sent Events over HTTP. TypeScript returns an
+  `EventStream<ChatStreamEvent>`, Kotlin returns `Flow<ChatStreamEvent>`. Calls
+  `POST /api/chat/{id}/messages/stream`. Works behind reverse proxies that don't
+  support WebSocket upgrades. Python PyO3 binding added as
+  `chat_message_stream()` on the `Client` class, returning a
+  `ChatStreamReceiver` (same receiver type as WebSocket `chat_send`).
+
+- **`context_window` field on `ChatStreamEvent::End`** — The end event now
+  includes the model's context window size in tokens. Supported in all clients:
+  Rust (`Option<u32>`), Python (dict key), TypeScript
+  (`contextWindow?: number`), Kotlin (`contextWindow: Int?`), Go
+  (`ContextWindow uint32`). Allows clients to display context usage and warn
+  when approaching limits.
+
+- **WebSocket unit tests for `context_window`** — Added deserialization and
+  round-trip tests in Rust (6 tests), Go (2 tests), TypeScript (1 test), and
+  Kotlin (2 tests).
 
 ### Removed
 
@@ -32,8 +158,8 @@ and this project adheres to
 
 - **Search index management methods (Rust, Python, TypeScript, Kotlin)** —
   `create_search_index`, `explain_text_search`, `explain_vector_search`,
-  `explain_hybrid_search` for creating search indexes and explaining search query
-  execution plans. Added Rust HTTP/client layer and Python PyO3 bindings.
+  `explain_hybrid_search` for creating search indexes and explaining search
+  query execution plans. Added Rust HTTP/client layer and Python PyO3 bindings.
 
 - **KV document linking methods (Rust, Python, TypeScript, Kotlin)** —
   `kv_get_links`, `kv_link`, `kv_unlink` for linking and unlinking documents to

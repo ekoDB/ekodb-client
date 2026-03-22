@@ -369,7 +369,7 @@ test: ensure-hooks examples-ls-check
 	echo "📘 $(CYAN)Running TypeScript client tests...$(RESET)"; \
 	TS_OUTPUT=$$(cd $(CLIENT_TS_DIR) && npm test 2>&1); \
 	echo "$$TS_OUTPUT"; \
-	TS_COUNT=$$(echo "$$TS_OUTPUT" | grep -oE "Tests\s+[0-9]+ passed" | grep -oE "[0-9]+"); \
+	TS_COUNT=$$(echo "$$TS_OUTPUT" | sed 's/\x1b\[[0-9;]*m//g' | grep -oE "Tests\s+[0-9]+ passed" | grep -oE "[0-9]+" | head -1); \
 	echo "✅ $(GREEN)TypeScript tests complete!$(RESET)"; \
 	echo "🐍 $(CYAN)Running Python client tests...$(RESET)"; \
 	PY_OUTPUT=$$(cd $(CLIENT_PY_DIR) && python3 -m pytest tests/ -v 2>&1); \

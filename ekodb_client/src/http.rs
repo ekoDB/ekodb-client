@@ -241,22 +241,21 @@ impl HttpClient {
         let url = self.base_url.join(&url_path)?;
         let body = self.serialize(&url_path, &query)?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .add_format_headers(
-                        &url_path,
-                        self.client
-                            .post(url.clone())
-                            .header("Authorization", format!("Bearer {}", token)),
-                    )
-                    .body(body.clone())
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .add_format_headers(
+                    &url_path,
+                    self.client
+                        .post(url.clone())
+                        .header("Authorization", format!("Bearer {}", token)),
+                )
+                .body(body.clone())
+                .send()
+                .await?;
 
-                self.handle_response(&url_path, response).await
-            })
-            .await
+            self.handle_response(&url_path, response).await
+        })
+        .await
     }
 
     /// Find a record by ID
@@ -1685,6 +1684,127 @@ impl HttpClient {
         Ok(RawCompletionResponse { content })
     }
 
+    /// Stream a chat message via SSE (Server-Sent Events).
+    ///
+    /// Calls `POST /api/chat/{chat_id}/messages/stream` and yields
+    /// `ChatStreamEvent` items through the returned channel as they arrive.
+    /// Server-side tools execute normally; client-side tools are not supported.
+    pub async fn chat_message_stream(
+        &self,
+        chat_id: &str,
+        request: ChatMessageRequest,
+        token: &str,
+    ) -> Result<tokio::sync::mpsc::Receiver<crate::websocket::ChatStreamEvent>> {
+        use crate::websocket::ChatStreamEvent;
+        use futures_util::StreamExt;
+
+        let url = self
+            .base_url
+            .join(&format!("/api/chat/{}/messages/stream", chat_id))?;
+
+        let response = self
+            .client
+            .post(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .header("Accept", "text/event-stream")
+            .json(&request)
+            .send()
+            .await?;
+
+        if !response.status().is_success() {
+            let code = response.status().as_u16();
+            let body = response.text().await.unwrap_or_default();
+            return Err(Error::Api {
+                code,
+                message: body,
+            });
+        }
+
+        let (tx, rx) = tokio::sync::mpsc::channel::<ChatStreamEvent>(128);
+
+        // Spawn a task to parse SSE events and forward as ChatStreamEvent
+        tokio::spawn(async move {
+            let mut stream = response.bytes_stream();
+            let mut buf = String::new();
+
+            while let Some(chunk_result) = stream.next().await {
+                let chunk = match chunk_result {
+                    Ok(c) => c,
+                    Err(e) => {
+                        let _ = tx.send(ChatStreamEvent::Error(e.to_string())).await;
+                        return;
+                    }
+                };
+                buf.push_str(&String::from_utf8_lossy(&chunk));
+
+                // Process complete lines
+                while let Some(newline_pos) = buf.find('\n') {
+                    let line = buf[..newline_pos].to_string();
+                    buf = buf[newline_pos + 1..].to_string();
+
+                    if let Some(data_str) = line.strip_prefix("data:") {
+                        let data_str = data_str.trim();
+                        if data_str.is_empty() {
+                            continue;
+                        }
+                        if let Ok(event_data) = serde_json::from_str::<serde_json::Value>(data_str)
+                        {
+                            // Token chunk
+                            if let Some(token_text) =
+                                event_data.get("token").and_then(|v| v.as_str())
+                            {
+                                if tx
+                                    .send(ChatStreamEvent::Chunk(token_text.to_string()))
+                                    .await
+                                    .is_err()
+                                {
+                                    return; // receiver dropped
+                                }
+                            }
+                            // Done event
+                            if event_data.get("content").is_some() {
+                                let message_id = event_data
+                                    .get("message_id")
+                                    .and_then(|v| v.as_str())
+                                    .unwrap_or("")
+                                    .to_string();
+                                let exec_ms = event_data
+                                    .get("execution_time_ms")
+                                    .and_then(|v| v.as_u64())
+                                    .unwrap_or(0);
+                                let context_window = event_data
+                                    .get("context_window")
+                                    .and_then(|v| v.as_u64())
+                                    .map(|v| v as u32);
+                                let token_usage = event_data.get("token_usage").cloned();
+                                let tool_call_history =
+                                    event_data.get("tool_call_history").cloned();
+
+                                let _ = tx
+                                    .send(ChatStreamEvent::End {
+                                        message_id,
+                                        token_usage,
+                                        tool_call_history,
+                                        execution_time_ms: exec_ms,
+                                        context_window,
+                                    })
+                                    .await;
+                                return;
+                            }
+                            // Error event
+                            if let Some(err) = event_data.get("error").and_then(|v| v.as_str()) {
+                                let _ = tx.send(ChatStreamEvent::Error(err.to_string())).await;
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        Ok(rx)
+    }
+
     /// Create a new chat session
     pub async fn create_chat_session(
         &self,
@@ -3007,6 +3127,86 @@ impl HttpClient {
             .await?;
         self.handle_response("/api/chat/agents/by-deployment/{id}", response)
             .await
+    }
+
+    // ── Goal Template CRUD ─────────────────────────────────────────────────
+
+    pub async fn goal_template_create(
+        &self,
+        data: serde_json::Value,
+        token: &str,
+    ) -> Result<serde_json::Value> {
+        let url = self.base_url.join("/api/chat/goal-templates")?;
+        let response = self
+            .client
+            .post(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .json(&data)
+            .send()
+            .await?;
+        self.handle_response("/api/chat/goal-templates", response)
+            .await
+    }
+
+    pub async fn goal_template_list(&self, token: &str) -> Result<serde_json::Value> {
+        let url = self.base_url.join("/api/chat/goal-templates")?;
+        let response = self
+            .client
+            .get(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        self.handle_response("/api/chat/goal-templates", response)
+            .await
+    }
+
+    pub async fn goal_template_get(&self, id: &str, token: &str) -> Result<serde_json::Value> {
+        let url = self
+            .base_url
+            .join(&format!("/api/chat/goal-templates/{}", id))?;
+        let response = self
+            .client
+            .get(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        self.handle_response("/api/chat/goal-templates/{id}", response)
+            .await
+    }
+
+    pub async fn goal_template_update(
+        &self,
+        id: &str,
+        data: serde_json::Value,
+        token: &str,
+    ) -> Result<serde_json::Value> {
+        let url = self
+            .base_url
+            .join(&format!("/api/chat/goal-templates/{}", id))?;
+        let response = self
+            .client
+            .put(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .json(&data)
+            .send()
+            .await?;
+        self.handle_response("/api/chat/goal-templates/{id}", response)
+            .await
+    }
+
+    pub async fn goal_template_delete(&self, id: &str, token: &str) -> Result<()> {
+        let url = self
+            .base_url
+            .join(&format!("/api/chat/goal-templates/{}", id))?;
+        let response = self
+            .client
+            .delete(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        self.handle_response::<serde_json::Value>("/api/chat/goal-templates/{id}", response)
+            .await?;
+        Ok(())
     }
 
     // ── KV Document Linking ─────────────────────────────────────────────────

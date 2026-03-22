@@ -18,6 +18,8 @@ import io.ktor.http.content.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.util.*
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import kotlinx.serialization.json.*
 import kotlinx.serialization.cbor.Cbor
 import kotlinx.serialization.encodeToByteArray
@@ -85,6 +87,7 @@ class EkoDBClient private constructor(
     }
     
     private var authToken: String? = null
+    private var tokenExpiry: Long = 0
     private var lastRateLimitInfo: RateLimitInfo? = null
 
     /**
@@ -111,12 +114,23 @@ class EkoDBClient private constructor(
     }
     
     /**
-     * Get authentication token (exchanges API key for JWT)
+     * Get authentication token (exchanges API key for JWT).
+     *
+     * Returns a cached token if it has more than 60 seconds of validity remaining.
+     * Otherwise fetches a new one via `/api/auth/token`. This means callers
+     * never need to handle token refresh themselves -- every `getToken()` call
+     * returns a token that is valid for at least 60 more seconds.
      */
     private suspend fun getToken(): String {
-        // Return cached token if available
-        authToken?.let { return it }
-        
+        // Return cached token if available and not about to expire
+        authToken?.let { cached ->
+            val now = System.currentTimeMillis() / 1000
+            // Refresh 60s before expiry to avoid edge-case races
+            if (now + 60 < tokenExpiry) {
+                return cached
+            }
+        }
+
         // Exchange API key for JWT token
         val response = client.post("$baseUrl/api/auth/token") {
             contentType(getContentTypeForRequest())
@@ -125,18 +139,38 @@ class EkoDBClient private constructor(
                 put("api_key", apiKey)
             })
         }
-        
+
         if (!response.status.isSuccess()) {
             val errorBody = response.bodyAsText()
             throw Exception("Authentication failed: $errorBody")
         }
-        
+
         val tokenData = response.body<JsonObject>()
         val token = tokenData["token"]?.jsonPrimitive?.content
             ?: throw Exception("No token in authentication response")
-        
+
+        // Extract expiry from JWT payload (base64-decode the middle segment)
+        tokenExpiry = extractJWTExpiry(token)
+            ?: (System.currentTimeMillis() / 1000 + 3600) // Fallback: assume 1 hour from now
+
         authToken = token
         return token
+    }
+
+    /**
+     * Extract the `exp` claim from a JWT without verifying the signature.
+     * Returns the Unix timestamp (seconds) of expiry, or null if parsing fails.
+     */
+    internal fun extractJWTExpiry(token: String): Long? {
+        val parts = token.split(".")
+        if (parts.size != 3) return null
+        return try {
+            val payloadBytes = java.util.Base64.getUrlDecoder().decode(parts[1])
+            val payload = Json.parseToJsonElement(String(payloadBytes)).jsonObject
+            payload["exp"]?.jsonPrimitive?.long
+        } catch (_: Exception) {
+            null
+        }
     }
     
     /**
@@ -148,10 +182,11 @@ class EkoDBClient private constructor(
     }
     
     /**
-     * Clear the cached authentication token
+     * Clear the cached authentication token and expiry
      */
     fun clearTokenCache() {
         authToken = null
+        tokenExpiry = 0
     }
     
     /**
@@ -868,6 +903,21 @@ class EkoDBClient private constructor(
             false
         }
     }
+
+    /**
+     * Count documents in a collection
+     */
+    suspend fun countDocuments(collection: String): Long {
+        val token = getToken()
+        val response = executeWithRetry {
+            client.get("$baseUrl/api/$collection/count") {
+                header("Authorization", "Bearer $token")
+            }
+        }
+        val body = response.bodyAsText()
+        val json = Json.parseToJsonElement(body).jsonObject
+        return json["count"]?.jsonPrimitive?.long ?: 0L
+    }
     
     /**
      * Search documents in a collection
@@ -1047,6 +1097,61 @@ class EkoDBClient private constructor(
             try {
                 val eventData = Json.parseToJsonElement(dataStr).jsonObject
                 eventData["token"]?.jsonPrimitive?.content?.let { content += it }
+                eventData["content"]?.jsonPrimitive?.content?.let { content = it }
+                eventData["error"]?.jsonPrimitive?.content?.let { lastError = it }
+            } catch (_: Exception) {
+                // skip malformed SSE data
+            }
+        }
+        if (lastError != null) throw RuntimeException("LLM error: $lastError")
+        return buildJsonObject { put("content", content) }
+    }
+
+    /**
+     * Stateless raw LLM completion via SSE with a per-token callback.
+     *
+     * Identical to [rawCompletionStream] but invokes [onToken] for every
+     * token received, enabling real-time progress display.
+     */
+    suspend fun rawCompletionStreamWithProgress(
+        systemPrompt: String,
+        message: String,
+        provider: String? = null,
+        model: String? = null,
+        maxTokens: Int? = null,
+        onToken: (String) -> Unit,
+    ): JsonObject {
+        val token = getToken()
+        val body = buildJsonObject {
+            put("system_prompt", systemPrompt)
+            put("message", message)
+            if (provider != null) put("provider", provider)
+            if (model != null) put("model", model)
+            if (maxTokens != null) put("max_tokens", maxTokens)
+        }
+        val response = client.post("$baseUrl/api/chat/complete/stream") {
+            header("Authorization", "Bearer $token")
+            contentType(ContentType.Application.Json)
+            header("Accept", ContentType.Text.EventStream.toString())
+            setBody(body)
+        }
+        if (response.status != io.ktor.http.HttpStatusCode.OK) {
+            val errBody = response.bodyAsText()
+            throw RuntimeException("SSE raw completion failed (${response.status}): $errBody")
+        }
+        val sseBody = response.bodyAsText()
+        var content = ""
+        var lastError: String? = null
+        for (line in sseBody.lines()) {
+            if (!line.startsWith("data:")) continue
+            val dataStr = line.removePrefix("data:").trim()
+            if (dataStr.isEmpty()) continue
+            try {
+                val eventData = Json.parseToJsonElement(dataStr).jsonObject
+                eventData["token"]?.jsonPrimitive?.content?.let {
+                    content += it
+                    onToken(it)
+                }
                 eventData["content"]?.jsonPrimitive?.content?.let { content = it }
                 eventData["error"]?.jsonPrimitive?.content?.let { lastError = it }
             } catch (_: Exception) {
@@ -1585,7 +1690,71 @@ class EkoDBClient private constructor(
         }
         return response.body()
     }
-    
+
+    /**
+     * Send a message in an existing chat session via SSE streaming.
+     *
+     * Returns a Flow that emits [ChatStreamEvent] objects as they arrive:
+     * - [ChatStreamEvent.Chunk] for each token
+     * - [ChatStreamEvent.End] when the response is complete
+     * - [ChatStreamEvent.Error] on failure
+     *
+     * Preferred over [chatMessage] for long-running responses where reverse
+     * proxies may kill idle HTTP connections before the LLM responds.
+     *
+     * ```kotlin
+     * client.chatMessageStream(chatId, request).collect { event ->
+     *     when (event) {
+     *         is ChatStreamEvent.Chunk -> print(event.content)
+     *         is ChatStreamEvent.End -> println("\nDone: ${event.messageId}")
+     *         is ChatStreamEvent.Error -> System.err.println(event.error)
+     *         else -> {}
+     *     }
+     * }
+     * ```
+     */
+    fun chatMessageStream(chatId: String, request: JsonObject): Flow<ChatStreamEvent> = flow {
+        val token = getToken()
+        val response = client.post("$baseUrl/api/chat/$chatId/messages/stream") {
+            header("Authorization", "Bearer $token")
+            contentType(ContentType.Application.Json)
+            header("Accept", ContentType.Text.EventStream.toString())
+            setBody(request)
+        }
+        if (response.status != io.ktor.http.HttpStatusCode.OK) {
+            val errBody = response.bodyAsText()
+            emit(ChatStreamEvent.Error("SSE chat message stream failed (${response.status}): $errBody"))
+            return@flow
+        }
+        val sseBody = response.bodyAsText()
+        for (line in sseBody.lines()) {
+            if (!line.startsWith("data:")) continue
+            val dataStr = line.removePrefix("data:").trim()
+            if (dataStr.isEmpty()) continue
+            try {
+                val eventData = Json.parseToJsonElement(dataStr).jsonObject
+                val error = eventData["error"]?.jsonPrimitive?.content
+                if (error != null) {
+                    emit(ChatStreamEvent.Error(error))
+                } else if (eventData.containsKey("message_id") && eventData.containsKey("content")) {
+                    // Done event — has full content + message_id
+                    emit(ChatStreamEvent.End(
+                        messageId = eventData["message_id"]!!.jsonPrimitive.content,
+                        tokenUsage = eventData["token_usage"],
+                        executionTimeMs = eventData["execution_time_ms"]?.jsonPrimitive?.long ?: 0L,
+                        contextWindow = eventData["context_window"]?.jsonPrimitive?.int,
+                    ))
+                } else {
+                    eventData["token"]?.jsonPrimitive?.content?.let {
+                        emit(ChatStreamEvent.Chunk(it))
+                    }
+                }
+            } catch (_: Exception) {
+                // skip malformed SSE data
+            }
+        }
+    }
+
     /**
      * Get messages from a chat session
      */
@@ -2216,6 +2385,110 @@ class EkoDBClient private constructor(
         val token = getToken()
         val response = executeWithRetry {
             client.delete("$baseUrl/api/chat/goals/$id") {
+                bearerAuth(token)
+            }
+        }
+        if (response.status.value >= 400) {
+            val errorText = response.bodyAsText()
+            throw IllegalStateException("Server error ${response.status.value}: $errorText")
+        }
+    }
+
+    // ── Goal Templates ──
+
+    /**
+     * Create a new goal template.
+     *
+     * @param data Template definition as a JSON object
+     * @return The created goal template
+     */
+    suspend fun goalTemplateCreate(data: JsonObject): JsonObject {
+        val token = getToken()
+        val response = executeWithRetry {
+            client.post("$baseUrl/api/chat/goal-templates") {
+                bearerAuth(token)
+                contentType(ContentType.Application.Json)
+                setBody(data)
+            }
+        }
+        if (response.status.value >= 400) {
+            val errorText = response.bodyAsText()
+            throw IllegalStateException("Server error ${response.status.value}: $errorText")
+        }
+        return response.body<JsonObject>()
+    }
+
+    /**
+     * List all goal templates.
+     *
+     * @return A JSON object containing the list of goal templates
+     */
+    suspend fun goalTemplateList(): JsonObject {
+        val token = getToken()
+        val response = executeWithRetry {
+            client.get("$baseUrl/api/chat/goal-templates") {
+                bearerAuth(token)
+            }
+        }
+        if (response.status.value >= 400) {
+            val errorText = response.bodyAsText()
+            throw IllegalStateException("Server error ${response.status.value}: $errorText")
+        }
+        return response.body<JsonObject>()
+    }
+
+    /**
+     * Get a goal template by ID.
+     *
+     * @param id Goal template ID
+     * @return The goal template object
+     */
+    suspend fun goalTemplateGet(id: String): JsonObject {
+        val token = getToken()
+        val response = executeWithRetry {
+            client.get("$baseUrl/api/chat/goal-templates/$id") {
+                bearerAuth(token)
+            }
+        }
+        if (response.status.value >= 400) {
+            val errorText = response.bodyAsText()
+            throw IllegalStateException("Server error ${response.status.value}: $errorText")
+        }
+        return response.body<JsonObject>()
+    }
+
+    /**
+     * Update a goal template by ID.
+     *
+     * @param id Goal template ID
+     * @param data Updated template fields as a JSON object
+     * @return The updated goal template
+     */
+    suspend fun goalTemplateUpdate(id: String, data: JsonObject): JsonObject {
+        val token = getToken()
+        val response = executeWithRetry {
+            client.put("$baseUrl/api/chat/goal-templates/$id") {
+                bearerAuth(token)
+                contentType(ContentType.Application.Json)
+                setBody(data)
+            }
+        }
+        if (response.status.value >= 400) {
+            val errorText = response.bodyAsText()
+            throw IllegalStateException("Server error ${response.status.value}: $errorText")
+        }
+        return response.body<JsonObject>()
+    }
+
+    /**
+     * Delete a goal template by ID.
+     *
+     * @param id Goal template ID
+     */
+    suspend fun goalTemplateDelete(id: String) {
+        val token = getToken()
+        val response = executeWithRetry {
+            client.delete("$baseUrl/api/chat/goal-templates/$id") {
                 bearerAuth(token)
             }
         }

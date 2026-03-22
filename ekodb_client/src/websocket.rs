@@ -188,6 +188,9 @@ pub struct ChatStreamEndPayload {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tool_call_history: Option<Value>,
     pub execution_time_ms: u64,
+    /// Model's context window size in tokens (for client display).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub context_window: Option<u32>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -225,6 +228,7 @@ pub enum ChatStreamEvent {
         token_usage: Option<Value>,
         tool_call_history: Option<Value>,
         execution_time_ms: u64,
+        context_window: Option<u32>,
     },
     /// Server requests the client to execute a tool.
     /// The client must call `send_tool_result()` with the result.
@@ -452,6 +456,7 @@ impl WebSocketClient {
                                                 token_usage: payload.token_usage,
                                                 tool_call_history: payload.tool_call_history,
                                                 execution_time_ms: payload.execution_time_ms,
+                                                context_window: payload.context_window,
                                             },
                                         )
                                     } else {
@@ -856,5 +861,103 @@ impl WebSocketClient {
         state.chat_senders.clear();
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn chat_stream_end_payload_with_context_window() {
+        let json_str = r#"{
+            "chat_id": "chat-1",
+            "message_id": "msg-1",
+            "execution_time_ms": 250,
+            "context_window": 128000
+        }"#;
+        let payload: ChatStreamEndPayload = serde_json::from_str(json_str).unwrap();
+        assert_eq!(payload.context_window, Some(128000));
+        assert_eq!(payload.message_id, "msg-1");
+        assert_eq!(payload.execution_time_ms, 250);
+    }
+
+    #[test]
+    fn chat_stream_end_payload_without_context_window() {
+        let json_str = r#"{
+            "chat_id": "chat-2",
+            "message_id": "msg-2",
+            "execution_time_ms": 100
+        }"#;
+        let payload: ChatStreamEndPayload = serde_json::from_str(json_str).unwrap();
+        assert_eq!(payload.context_window, None);
+    }
+
+    #[test]
+    fn chat_stream_end_payload_serializes_without_context_window() {
+        let payload = ChatStreamEndPayload {
+            chat_id: "c1".into(),
+            message_id: "m1".into(),
+            token_usage: None,
+            tool_call_history: None,
+            execution_time_ms: 100,
+            context_window: None,
+        };
+        let json = serde_json::to_value(&payload).unwrap();
+        assert!(json.get("context_window").is_none());
+    }
+
+    #[test]
+    fn chat_stream_end_payload_serializes_with_context_window() {
+        let payload = ChatStreamEndPayload {
+            chat_id: "c1".into(),
+            message_id: "m1".into(),
+            token_usage: None,
+            tool_call_history: None,
+            execution_time_ms: 100,
+            context_window: Some(200000),
+        };
+        let json = serde_json::to_value(&payload).unwrap();
+        assert_eq!(json["context_window"], 200000);
+    }
+
+    #[test]
+    fn chat_stream_event_end_carries_context_window() {
+        let event = ChatStreamEvent::End {
+            message_id: "m1".into(),
+            token_usage: None,
+            tool_call_history: None,
+            execution_time_ms: 50,
+            context_window: Some(128000),
+        };
+        match event {
+            ChatStreamEvent::End { context_window, .. } => {
+                assert_eq!(context_window, Some(128000));
+            }
+            _ => panic!("expected End variant"),
+        }
+    }
+
+    #[test]
+    fn websocket_response_chat_stream_end_deserializes() {
+        let json_str = r#"{
+            "type": "ChatStreamEnd",
+            "payload": {
+                "chat_id": "chat-1",
+                "message_id": "msg-1",
+                "execution_time_ms": 300,
+                "context_window": 128000,
+                "token_usage": {"prompt_tokens": 100, "completion_tokens": 50}
+            }
+        }"#;
+        let msg: WebSocketResponse = serde_json::from_str(json_str).unwrap();
+        match msg {
+            WebSocketResponse::ChatStreamEnd { payload } => {
+                assert_eq!(payload.context_window, Some(128000));
+                assert_eq!(payload.message_id, "msg-1");
+                assert!(payload.token_usage.is_some());
+            }
+            _ => panic!("expected ChatStreamEnd"),
+        }
     }
 }

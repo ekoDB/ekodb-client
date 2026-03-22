@@ -270,6 +270,43 @@ describe("WebSocketClient", () => {
       client.close();
     });
 
+    it("includes context_window in end event", async () => {
+      const client = new WebSocketClient(
+        `ws://localhost:${port}/api/ws`,
+        "test-token",
+      );
+
+      const streamPromise = client.chatSend("chat-cw", "test");
+
+      await new Promise((r) => wss.once("connection", r));
+      const ws = getLastConnection();
+      await waitForMessage(ws);
+
+      const stream = await streamPromise;
+      const events: any[] = [];
+      stream.on("event", (e) => events.push(e));
+
+      ws.send(
+        JSON.stringify({
+          type: "ChatStreamEnd",
+          payload: {
+            chat_id: "chat-cw",
+            message_id: "msg-cw",
+            execution_time_ms: 100,
+            context_window: 128000,
+          },
+        }),
+      );
+
+      await new Promise((r) => stream.on("close", r));
+
+      expect(events).toHaveLength(1);
+      expect(events[0].type).toBe("end");
+      expect(events[0].contextWindow).toBe(128000);
+
+      client.close();
+    });
+
     it("handles chat stream error", async () => {
       const client = new WebSocketClient(
         `ws://localhost:${port}/api/ws`,

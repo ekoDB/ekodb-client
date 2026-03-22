@@ -28,7 +28,9 @@ sealed class ChatStreamEvent {
         val messageId: String,
         val tokenUsage: JsonElement? = null,
         val toolCallHistory: JsonElement? = null,
-        val executionTimeMs: Long = 0
+        val executionTimeMs: Long = 0,
+        /** Model's context window size in tokens. */
+        val contextWindow: Int? = null
     ) : ChatStreamEvent()
 
     data class ToolCall(
@@ -230,7 +232,8 @@ class WebSocketClient(
             messageId = payload["message_id"]?.jsonPrimitive?.content ?: "",
             tokenUsage = payload["token_usage"],
             toolCallHistory = payload["tool_call_history"],
-            executionTimeMs = payload["execution_time_ms"]?.jsonPrimitive?.long ?: 0
+            executionTimeMs = payload["execution_time_ms"]?.jsonPrimitive?.long ?: 0,
+            contextWindow = payload["context_window"]?.jsonPrimitive?.int
         )
 
         mutex.withLock {

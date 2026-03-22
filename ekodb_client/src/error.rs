@@ -21,10 +21,6 @@ pub enum Error {
         message: String,
     },
 
-    /// Authentication failed
-    #[error("Authentication failed: {0}")]
-    Auth(String),
-
     /// Token expired - can be retried with token refresh
     #[error("Token expired, please refresh")]
     TokenExpired,
@@ -153,10 +149,10 @@ mod tests {
 
     #[test]
     fn test_error_display_auth() {
-        let err = Error::Auth("Invalid credentials".to_string());
+        let err = Error::Authentication("Invalid credentials".to_string());
         assert_eq!(
             format!("{}", err),
-            "Authentication failed: Invalid credentials"
+            "Authentication error: Invalid credentials"
         );
     }
 
@@ -263,7 +259,7 @@ mod tests {
 
     #[test]
     fn test_is_not_retryable_auth() {
-        let err = Error::Auth("Invalid credentials".to_string());
+        let err = Error::Authentication("Invalid credentials".to_string());
         assert!(!err.is_retryable());
     }
 
@@ -349,7 +345,7 @@ mod tests {
 
     #[test]
     fn test_retry_delay_none_for_auth() {
-        let err = Error::Auth("Failed".to_string());
+        let err = Error::Authentication("Failed".to_string());
         assert_eq!(err.retry_delay_secs(), None);
     }
 
@@ -399,8 +395,8 @@ mod tests {
 
     #[test]
     fn test_empty_message_errors() {
-        let err = Error::Auth(String::new());
-        assert_eq!(format!("{}", err), "Authentication failed: ");
+        let err = Error::Authentication(String::new());
+        assert_eq!(format!("{}", err), "Authentication error: ");
 
         let err = Error::Connection(String::new());
         assert_eq!(format!("{}", err), "Connection error: ");

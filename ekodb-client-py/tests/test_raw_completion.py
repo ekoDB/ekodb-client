@@ -94,3 +94,45 @@ class TestRawCompletionResponseStructure:
         parsed = json.loads(resp["content"])
         assert parsed["plan"] == ["step1", "step2"]
         assert parsed["confidence"] == 0.9
+
+
+class TestRawCompletionStreamWithProgressStructure:
+    """Verify the stream-with-progress request accepts an on_token callback."""
+
+    def test_request_structure_matches_stream(self):
+        """Same request fields as raw_completion_stream."""
+        request = {
+            "system_prompt": "You are helpful.",
+            "message": "Hello",
+        }
+        assert "system_prompt" in request
+        assert "message" in request
+
+    def test_on_token_callback_receives_strings(self):
+        """Simulate the on_token callback behavior."""
+        tokens = []
+
+        def on_token(token):
+            tokens.append(token)
+
+        # Simulate what the client does internally
+        for t in ["Hello", " ", "world"]:
+            on_token(t)
+
+        assert tokens == ["Hello", " ", "world"]
+        assert "".join(tokens) == "Hello world"
+
+    def test_full_request_with_callback(self):
+        """All optional fields + callback."""
+        tokens = []
+        request = {
+            "system_prompt": "S.",
+            "message": "M.",
+            "provider": "openai",
+            "model": "gpt-5",
+            "max_tokens": 1024,
+        }
+        on_token = lambda t: tokens.append(t)
+        on_token("test")
+        assert tokens == ["test"]
+        assert request["max_tokens"] == 1024

@@ -1,7 +1,23 @@
-# Feature Parity Comparison Matrix (COMPLETED)
+# Feature Parity Comparison Matrix
 
-All features below are now implemented across all client libraries (January
-2026).
+**Last Updated:** March 20, 2026
+
+## Status: Full Parity Achieved
+
+All core features are implemented across all client libraries (Rust, Python,
+TypeScript, Go, Kotlin). This includes:
+
+- Core CRUD, batch operations, transactions
+- Search (text, vector, hybrid), KV store, document TTL
+- Chat sessions, models, streaming, branching, merging
+- User Functions, Scripts, Query Builder, Schema Builder
+- Goals, Tasks, Agents (full lifecycle)
+- Schedule management (CRUD + pause/resume)
+- KV document linking
+- WebSocket: subscriptions, chat streaming with `context_window`
+- Utility functions, field builders, value extractors
+
+The sections below track the implementation history.
 
 ## Chat Models API
 
@@ -75,14 +91,12 @@ All features below are now implemented across all client libraries (January
 
 ---
 
-## Beforehand Findings (disregard for now)
+## Historical Notes
 
-## Missing Client Features
-
-This document tracks ekoDB server features that are available via API but not
-yet exposed in client libraries.
-
-**Last Updated:** January 23, 2026
+The sections below are preserved for reference. All features listed were
+implemented across all clients as of March 2026 (v0.14.0). The "admin-only"
+designations for Query Index and Search Index management remain correct — these
+are server administration endpoints, not client library features.
 
 ---
 

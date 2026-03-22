@@ -2070,3 +2070,532 @@ describe("EkoDBClient rawCompletionStreamWithProgress", () => {
     ).rejects.toThrow("Model overloaded");
   });
 });
+
+// ============================================================================
+// Goal Template CRUD Tests
+// ============================================================================
+
+describe("EkoDBClient goal templates", () => {
+  it("creates a goal template", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+    mockJsonResponse({ id: "gt_1", title: "Deploy Checklist" });
+
+    const result = await client.goalTemplateCreate({
+      title: "Deploy Checklist",
+      steps: [{ title: "Run tests" }],
+    });
+    expect(result).toHaveProperty("id", "gt_1");
+    expect(result).toHaveProperty("title", "Deploy Checklist");
+  });
+
+  it("creates a goal template and verifies POST method", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+    mockJsonResponse({ id: "gt_2", title: "Onboarding" });
+
+    await client.goalTemplateCreate({ title: "Onboarding" });
+
+    const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+    const dataCall = calls[1]; // calls[0] is token
+    expect(dataCall[0]).toContain("/api/chat/goal-templates");
+    expect(dataCall[1]?.method).toBe("POST");
+  });
+
+  it("lists goal templates", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+    mockJsonResponse({
+      templates: [{ id: "gt_1" }, { id: "gt_2" }],
+    });
+
+    const result = await client.goalTemplateList();
+    expect(result).toHaveProperty("templates");
+  });
+
+  it("lists goal templates and verifies GET method", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+    mockJsonResponse({ templates: [] });
+
+    await client.goalTemplateList();
+
+    const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+    const dataCall = calls[1];
+    expect(dataCall[0]).toContain("/api/chat/goal-templates");
+    expect(dataCall[1]?.method).toBe("GET");
+  });
+
+  it("gets a goal template by ID", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+    mockJsonResponse({ id: "gt_1", title: "Deploy Checklist" });
+
+    const result = await client.goalTemplateGet("gt_1");
+    expect(result).toHaveProperty("id", "gt_1");
+    expect(result).toHaveProperty("title", "Deploy Checklist");
+  });
+
+  it("gets a goal template and verifies endpoint", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+    mockJsonResponse({ id: "gt_1", title: "Deploy Checklist" });
+
+    await client.goalTemplateGet("gt_1");
+
+    const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+    const dataCall = calls[1];
+    expect(dataCall[0]).toContain("/api/chat/goal-templates/gt_1");
+    expect(dataCall[1]?.method).toBe("GET");
+  });
+
+  it("updates a goal template", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+    mockJsonResponse({ id: "gt_1", title: "Updated Checklist" });
+
+    const result = await client.goalTemplateUpdate("gt_1", {
+      title: "Updated Checklist",
+    });
+    expect(result).toHaveProperty("title", "Updated Checklist");
+  });
+
+  it("updates a goal template and verifies PUT method", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+    mockJsonResponse({ id: "gt_1", title: "Updated" });
+
+    await client.goalTemplateUpdate("gt_1", { title: "Updated" });
+
+    const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+    const dataCall = calls[1];
+    expect(dataCall[0]).toContain("/api/chat/goal-templates/gt_1");
+    expect(dataCall[1]?.method).toBe("PUT");
+  });
+
+  it("deletes a goal template", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+    mockJsonResponse({});
+
+    await expect(client.goalTemplateDelete("gt_1")).resolves.not.toThrow();
+  });
+
+  it("deletes a goal template and verifies DELETE method", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+    mockJsonResponse({});
+
+    await client.goalTemplateDelete("gt_1");
+
+    const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+    const dataCall = calls[1];
+    expect(dataCall[0]).toContain("/api/chat/goal-templates/gt_1");
+    expect(dataCall[1]?.method).toBe("DELETE");
+  });
+
+  it("returns error for non-existent goal template", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+    mockErrorResponse(404, "Not Found");
+
+    await expect(client.goalTemplateGet("nonexistent")).rejects.toThrow();
+  });
+});
+
+// ============================================================================
+// chatMessageStream (SSE) Tests
+// ============================================================================
+
+describe("EkoDBClient chatMessageStream", () => {
+  it("emits chunk and end events from SSE stream", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+
+    const sseBody = [
+      'data: {"token":"Hello"}',
+      'data: {"token":" world"}',
+      'data: {"content":"Hello world","message_id":"msg_1","execution_time_ms":42}',
+      "",
+    ].join("\n");
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      text: async () => sseBody,
+      headers: new Headers({ "content-type": "text/event-stream" }),
+    });
+
+    const events: any[] = [];
+    const stream = client.chatMessageStream("chat_123", {
+      message: "Hello",
+    });
+    stream.on("event", (evt: any) => events.push(evt));
+
+    // Wait for the async SSE processing to complete
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    expect(events).toHaveLength(3);
+    expect(events[0]).toEqual({ type: "chunk", content: "Hello" });
+    expect(events[1]).toEqual({ type: "chunk", content: " world" });
+    expect(events[2].type).toBe("end");
+    expect(events[2].messageId).toBe("msg_1");
+    expect(events[2].executionTimeMs).toBe(42);
+  });
+
+  it("emits error event on SSE error", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+
+    const sseBody = 'data: {"error":"LLM timeout"}\n';
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      text: async () => sseBody,
+      headers: new Headers({ "content-type": "text/event-stream" }),
+    });
+
+    const events: any[] = [];
+    const stream = client.chatMessageStream("chat_123", {
+      message: "Hello",
+    });
+    stream.on("event", (evt: any) => events.push(evt));
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    expect(events).toHaveLength(1);
+    expect(events[0]).toEqual({ type: "error", error: "LLM timeout" });
+  });
+
+  it("emits error event on non-200 HTTP response", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      status: 401,
+      text: async () => "Unauthorized",
+      headers: new Headers(),
+    });
+
+    const events: any[] = [];
+    const stream = client.chatMessageStream("chat_123", {
+      message: "Hello",
+    });
+    stream.on("event", (evt: any) => events.push(evt));
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    expect(events).toHaveLength(1);
+    expect(events[0].type).toBe("error");
+    expect(events[0].error).toContain("401");
+  });
+
+  it("calls the correct stream endpoint", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      text: async () => 'data: {"token":"ok"}\n',
+      headers: new Headers({ "content-type": "text/event-stream" }),
+    });
+
+    client.chatMessageStream("chat_456", { message: "Test" });
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+    const dataCall = calls[1];
+    expect(dataCall[0]).toContain("/api/chat/chat_456/messages/stream");
+    expect(dataCall[1]?.method).toBe("POST");
+    expect(dataCall[1]?.headers?.Accept).toBe("text/event-stream");
+  });
+});
+
+// ============================================================================
+// Schedule CRUD Tests
+// ============================================================================
+
+describe("EkoDBClient schedules", () => {
+  it("creates a schedule", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+    mockJsonResponse({
+      id: "sched_1",
+      name: "Nightly Backup",
+      cron: "0 2 * * *",
+      status: "active",
+    });
+
+    const result = await client.createSchedule({
+      name: "Nightly Backup",
+      cron: "0 2 * * *",
+      action: "backup",
+    });
+    expect(result).toHaveProperty("id", "sched_1");
+    expect(result).toHaveProperty("status", "active");
+  });
+
+  it("lists schedules", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+    mockJsonResponse({
+      schedules: [
+        { id: "sched_1", name: "Nightly Backup" },
+        { id: "sched_2", name: "Hourly Sync" },
+      ],
+    });
+
+    const result = await client.listSchedules();
+    expect(result).toHaveProperty("schedules");
+  });
+
+  it("gets a schedule by ID", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+    mockJsonResponse({
+      id: "sched_1",
+      name: "Nightly Backup",
+      cron: "0 2 * * *",
+    });
+
+    const result = await client.getSchedule("sched_1");
+    expect(result).toHaveProperty("id", "sched_1");
+    expect(result).toHaveProperty("name", "Nightly Backup");
+  });
+
+  it("updates a schedule", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+    mockJsonResponse({
+      id: "sched_1",
+      name: "Updated Backup",
+      cron: "0 3 * * *",
+    });
+
+    const result = await client.updateSchedule("sched_1", {
+      name: "Updated Backup",
+      cron: "0 3 * * *",
+    });
+    expect(result).toHaveProperty("name", "Updated Backup");
+    expect(result).toHaveProperty("cron", "0 3 * * *");
+  });
+
+  it("deletes a schedule", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+    mockJsonResponse({});
+
+    await expect(client.deleteSchedule("sched_1")).resolves.not.toThrow();
+  });
+
+  it("pauses a schedule", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+    mockJsonResponse({ id: "sched_1", status: "paused" });
+
+    const result = await client.pauseSchedule("sched_1");
+    expect(result).toHaveProperty("status", "paused");
+  });
+
+  it("resumes a schedule", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+    mockJsonResponse({ id: "sched_1", status: "active" });
+
+    const result = await client.resumeSchedule("sched_1");
+    expect(result).toHaveProperty("status", "active");
+  });
+});
+
+// ============================================================================
+// KV Links Tests
+// ============================================================================
+
+describe("EkoDBClient kv links", () => {
+  it("gets links for a KV key", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+    mockJsonResponse({
+      links: [
+        { collection: "users", document_id: "user_1" },
+        { collection: "orders", document_id: "order_1" },
+      ],
+    });
+
+    const result = await client.kvGetLinks("session:user123");
+    expect(result).toHaveProperty("links");
+  });
+
+  it("links a document to a KV key", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+    mockJsonResponse({ status: "linked" });
+
+    const result = await client.kvLink("session:user123", "users", "user_1");
+    expect(result).toHaveProperty("status", "linked");
+  });
+
+  it("unlinks a document from a KV key", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+    mockJsonResponse({ status: "unlinked" });
+
+    const result = await client.kvUnlink("session:user123", "users", "user_1");
+    expect(result).toHaveProperty("status", "unlinked");
+  });
+});
+
+// ============================================================================
+// Text Search and Hybrid Search Tests
+// ============================================================================
+
+describe("EkoDBClient text and hybrid search", () => {
+  it("performs text search", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+    mockJsonResponse({
+      results: [
+        {
+          record: { id: "doc_1", title: "Ownership Guide" },
+          score: 0.92,
+          matched_fields: ["title"],
+        },
+        {
+          record: { id: "doc_2", title: "Property Ownership" },
+          score: 0.85,
+          matched_fields: ["title"],
+        },
+      ],
+      total: 2,
+      took_ms: 12,
+    });
+
+    const result = await client.textSearch("documents", "ownership", {
+      limit: 10,
+      select_fields: ["title", "content"],
+    });
+
+    expect(result.results).toHaveLength(2);
+    expect(result.total).toBe(2);
+    expect(result.results[0].score).toBe(0.92);
+  });
+
+  it("performs hybrid search", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+    mockJsonResponse({
+      results: [
+        {
+          record: { id: "doc_1", title: "ML Guide", content: "Learn ML" },
+          score: 0.95,
+          matched_fields: ["title", "content"],
+        },
+      ],
+      total: 1,
+      took_ms: 25,
+    });
+
+    const queryVector = [0.1, 0.2, 0.3, 0.4, 0.5];
+    const result = await client.hybridSearch(
+      "documents",
+      "machine learning",
+      queryVector,
+      5,
+    );
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toHaveProperty("id", "doc_1");
+    expect(result[0]).toHaveProperty("title", "ML Guide");
+  });
+});
+
+// ============================================================================
+// Auth Token Management
+// ============================================================================
+
+describe("EkoDBClient auth token management", () => {
+  beforeEach(() => {
+    mockFetch.mockReset();
+  });
+
+  it("getToken auto-refreshes when token is about to expire", async () => {
+    const client = createTestClient();
+
+    // First init — get a token with a short expiry (30s from now)
+    const shortExp = Math.floor(Date.now() / 1000) + 30;
+    const shortPayload = btoa(JSON.stringify({ exp: shortExp }))
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=/g, "");
+    const shortJwt = `eyJhbGciOiJIUzI1NiJ9.${shortPayload}.fakesig`;
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({ token: shortJwt }),
+      headers: new Headers(),
+    });
+    await client.init();
+
+    // Now getToken should see it's about to expire and refresh
+    const newExp = Math.floor(Date.now() / 1000) + 3600;
+    const newPayload = btoa(JSON.stringify({ exp: newExp }))
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=/g, "");
+    const newJwt = `eyJhbGciOiJIUzI1NiJ9.${newPayload}.fakesig`;
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({ token: newJwt }),
+      headers: new Headers(),
+    });
+
+    const token = await client.getToken();
+    expect(token).toBe(newJwt);
+    // 2 fetch calls: init + proactive refresh
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+  });
+
+  it("getToken returns cached token when not expired", async () => {
+    const client = createTestClient();
+
+    // Token with expiry far in the future
+    const farExp = Math.floor(Date.now() / 1000) + 7200;
+    const payload = btoa(JSON.stringify({ exp: farExp }))
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=/g, "");
+    const jwt = `eyJhbGciOiJIUzI1NiJ9.${payload}.fakesig`;
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({ token: jwt }),
+      headers: new Headers(),
+    });
+    await client.init();
+
+    // getToken should return cached — no extra fetch
+    const token = await client.getToken();
+    expect(token).toBe(jwt);
+    expect(mockFetch).toHaveBeenCalledTimes(1); // only init
+  });
+
+  it("clearTokenCache resets token and expiry", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+    await client.init();
+    expect(await client.getToken()).toBeTruthy();
+
+    client.clearTokenCache();
+    // After clear, getToken will auto-refresh (fetch a new token)
+    mockTokenResponse();
+    const token = await client.getToken();
+    expect(token).toBe("test-jwt-token");
+    // 2 fetch calls: init + post-clear getToken refresh
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+  });
+});

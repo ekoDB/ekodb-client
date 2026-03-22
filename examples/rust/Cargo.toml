@@ -132,3 +132,19 @@ path = "examples/client_collection_utils.rs"
 [[example]]
 name = "client_kv_precision"
 path = "examples/client_kv_precision.rs"
+
+[[example]]
+name = "client_goals_tasks_agents"
+path = "examples/client_goals_tasks_agents.rs"
+
+[[example]]
+name = "client_schedules"
+path = "examples/client_schedules.rs"
+
+[[example]]
+name = "client_kv_links"
+path = "examples/client_kv_links.rs"
+
+[[example]]
+name = "client_advanced_crud"
+path = "examples/client_advanced_crud.rs"
