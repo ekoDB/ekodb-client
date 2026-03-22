@@ -12,6 +12,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlin.test.assertFalse
+import kotlin.test.fail
 
 /**
  * Unit tests for ekoDB Kotlin client - EkoDBClient methods
@@ -248,7 +249,7 @@ class EkoDBClientTest {
         val record = io.ekodb.client.types.Record()
             .insert("name", "Alice Updated")
             .insert("email", "alice@example.com")
-        
+
         val result = client.upsert("users", "user_123", record)
         assertNotNull(result)
         val idField = result["id"]
@@ -297,12 +298,12 @@ class EkoDBClientTest {
                 }
             }
         }
-        
+
         val client = createTestClient(mockEngine)
         val record = io.ekodb.client.types.Record()
             .insert("name", "Bob")
             .insert("email", "bob@example.com")
-        
+
         val result = client.upsert("users", "nonexistent_id", record)
         assertNotNull(result)
         val idField = result["id"]
@@ -315,7 +316,7 @@ class EkoDBClientTest {
     fun `findOne returns first matching record`() = runBlocking {
         val mockEngine = createMockEngine("""[{"id": "user_123", "name": "Alice", "email": "alice@example.com"}]""")
         val client = createTestClient(mockEngine)
-        
+
         val result = client.findOne("users", "email", "alice@example.com")
         assertNotNull(result)
         val idField = result.get("id")
@@ -327,7 +328,7 @@ class EkoDBClientTest {
     fun `findOne returns null when no match`() = runBlocking {
         val mockEngine = createMockEngine("""[]""")
         val client = createTestClient(mockEngine)
-        
+
         val result = client.findOne("users", "email", "nonexistent@example.com")
         assertEquals(null, result)
     }
@@ -336,7 +337,7 @@ class EkoDBClientTest {
     fun `exists returns true when record exists`() = runBlocking {
         val mockEngine = createMockEngine("""{"id": "user_123", "name": "Alice"}""")
         val client = createTestClient(mockEngine)
-        
+
         val result = client.exists("users", "user_123")
         assertTrue(result)
     }
@@ -345,7 +346,7 @@ class EkoDBClientTest {
     fun `exists returns false when record not found`() = runBlocking {
         val mockEngine = createMockEngine("""{"error": "Not found"}""", HttpStatusCode.NotFound)
         val client = createTestClient(mockEngine)
-        
+
         val result = client.exists("users", "nonexistent_id")
         assertFalse(result)
     }
@@ -354,7 +355,7 @@ class EkoDBClientTest {
     fun `paginate calculates skip correctly for page 1`() = runBlocking {
         val mockEngine = createMockEngine("""[{"id": "1"}, {"id": "2"}, {"id": "3"}]""")
         val client = createTestClient(mockEngine)
-        
+
         val result = client.paginate("users", 1, 10)
         assertNotNull(result)
         assertEquals(3, result.size)
@@ -364,7 +365,7 @@ class EkoDBClientTest {
     fun `paginate calculates skip correctly for page 2`() = runBlocking {
         val mockEngine = createMockEngine("""[{"id": "11"}, {"id": "12"}]""")
         val client = createTestClient(mockEngine)
-        
+
         val result = client.paginate("users", 2, 10)
         assertNotNull(result)
         // Skip should be (2-1)*10 = 10
@@ -801,5 +802,787 @@ class EkoDBClientTest {
         val client = createTestClient(mockEngine)
         val result = client.agentsByDeployment("deploy_1")
         assertNotNull(result["agents"])
+    }
+
+    // ========================================================================
+    // Goal Template CRUD Tests
+    // ========================================================================
+
+    @Test
+    fun `goalTemplateCreate creates a new goal template`() = runBlocking {
+        val mockEngine = createMockEngine("""{"id": "gt_1", "title": "Deploy Checklist"}""")
+        val client = createTestClient(mockEngine)
+        val result = client.goalTemplateCreate(buildJsonObject {
+            put("title", "Deploy Checklist")
+            putJsonArray("steps") {
+                add(buildJsonObject { put("title", "Run tests") })
+            }
+        })
+        assertEquals("gt_1", result["id"]?.jsonPrimitive?.content)
+        assertEquals("Deploy Checklist", result["title"]?.jsonPrimitive?.content)
+    }
+
+    @Test
+    fun `goalTemplateList returns templates`() = runBlocking {
+        val mockEngine = createMockEngine("""{"templates": [{"id": "gt_1"}, {"id": "gt_2"}]}""")
+        val client = createTestClient(mockEngine)
+        val result = client.goalTemplateList()
+        assertNotNull(result["templates"])
+        val templates = result["templates"]?.jsonArray
+        assertNotNull(templates)
+        assertEquals(2, templates.size)
+    }
+
+    @Test
+    fun `goalTemplateGet returns a template by ID`() = runBlocking {
+        val mockEngine = createMockEngine("""{"id": "gt_1", "title": "Deploy Checklist"}""")
+        val client = createTestClient(mockEngine)
+        val result = client.goalTemplateGet("gt_1")
+        assertEquals("gt_1", result["id"]?.jsonPrimitive?.content)
+        assertEquals("Deploy Checklist", result["title"]?.jsonPrimitive?.content)
+    }
+
+    @Test
+    fun `goalTemplateUpdate updates a template`() = runBlocking {
+        val mockEngine = createMockEngine("""{"id": "gt_1", "title": "Updated Checklist"}""")
+        val client = createTestClient(mockEngine)
+        val result = client.goalTemplateUpdate("gt_1", buildJsonObject {
+            put("title", "Updated Checklist")
+        })
+        assertEquals("Updated Checklist", result["title"]?.jsonPrimitive?.content)
+    }
+
+    @Test
+    fun `goalTemplateDelete deletes a template`() = runBlocking {
+        val mockEngine = createMockEngine("""{"ok": true}""")
+        val client = createTestClient(mockEngine)
+        client.goalTemplateDelete("gt_1") // should not throw
+    }
+
+    // ========================================================================
+    // chatMessageStream Tests
+    // ========================================================================
+
+    @Test
+    fun `chatMessageStream emits chunk and end events`() = runBlocking {
+        val sseBody = listOf(
+            """data: {"token":"Hello"}""",
+            """data: {"token":" world"}""",
+            """data: {"content":"Hello world","message_id":"msg_1","execution_time_ms":42}""",
+            ""
+        ).joinToString("\n")
+
+        val mockEngine = MockEngine { request ->
+            if (request.url.encodedPath.contains("/api/auth/token")) {
+                respond(
+                    content = """{"token": "mock_jwt_token_123"}""",
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                )
+            } else {
+                respond(
+                    content = sseBody,
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Text.EventStream.toString())
+                )
+            }
+        }
+        val client = createTestClient(mockEngine)
+        val request = buildJsonObject { put("message", "Hello") }
+        val events = mutableListOf<ChatStreamEvent>()
+        client.chatMessageStream("chat_123", request).collect { events.add(it) }
+
+        assertEquals(3, events.size)
+        assertTrue(events[0] is ChatStreamEvent.Chunk)
+        assertEquals("Hello", (events[0] as ChatStreamEvent.Chunk).content)
+        assertTrue(events[1] is ChatStreamEvent.Chunk)
+        assertEquals(" world", (events[1] as ChatStreamEvent.Chunk).content)
+        assertTrue(events[2] is ChatStreamEvent.End)
+        assertEquals("msg_1", (events[2] as ChatStreamEvent.End).messageId)
+        assertEquals(42L, (events[2] as ChatStreamEvent.End).executionTimeMs)
+    }
+
+    @Test
+    fun `chatMessageStream emits error on SSE error event`() = runBlocking {
+        val sseBody = """data: {"error":"LLM timeout"}"""
+
+        val mockEngine = MockEngine { request ->
+            if (request.url.encodedPath.contains("/api/auth/token")) {
+                respond(
+                    content = """{"token": "mock_jwt_token_123"}""",
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                )
+            } else {
+                respond(
+                    content = sseBody,
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Text.EventStream.toString())
+                )
+            }
+        }
+        val client = createTestClient(mockEngine)
+        val request = buildJsonObject { put("message", "Hello") }
+        val events = mutableListOf<ChatStreamEvent>()
+        client.chatMessageStream("chat_123", request).collect { events.add(it) }
+
+        assertEquals(1, events.size)
+        assertTrue(events[0] is ChatStreamEvent.Error)
+        assertEquals("LLM timeout", (events[0] as ChatStreamEvent.Error).error)
+    }
+
+    @Test
+    fun `chatMessageStream emits error on non-200 response`() = runBlocking {
+        val mockEngine = MockEngine { request ->
+            if (request.url.encodedPath.contains("/api/auth/token")) {
+                respond(
+                    content = """{"token": "mock_jwt_token_123"}""",
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                )
+            } else {
+                respond(
+                    content = "Unauthorized",
+                    status = HttpStatusCode.Unauthorized,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Text.Plain.toString())
+                )
+            }
+        }
+        val client = createTestClient(mockEngine)
+        val request = buildJsonObject { put("message", "Hello") }
+        val events = mutableListOf<ChatStreamEvent>()
+        client.chatMessageStream("chat_123", request).collect { events.add(it) }
+
+        assertEquals(1, events.size)
+        assertTrue(events[0] is ChatStreamEvent.Error)
+        assertTrue((events[0] as ChatStreamEvent.Error).error.contains("401"))
+    }
+
+    // ========================================================================
+    // countDocuments Tests
+    // ========================================================================
+
+    @Test
+    fun `countDocuments returns count`() = runBlocking {
+        val mockEngine = createMockEngine("""{"count": 42}""")
+        val client = createTestClient(mockEngine)
+        val count = client.countDocuments("users")
+        assertEquals(42L, count)
+    }
+
+    @Test
+    fun `countDocuments returns zero when missing`() = runBlocking {
+        val mockEngine = createMockEngine("""{}""")
+        val client = createTestClient(mockEngine)
+        val count = client.countDocuments("empty_col")
+        assertEquals(0L, count)
+    }
+
+    // ========================================================================
+    // rawCompletionStreamWithProgress Tests
+    // ========================================================================
+
+    @Test
+    fun `rawCompletionStreamWithProgress invokes onToken callback`() = runBlocking {
+        val sseBody = listOf(
+            """data: {"token":"Hello"}""",
+            """data: {"token":" world"}""",
+            """data: {"content":"Hello world"}""",
+            ""
+        ).joinToString("\n")
+
+        val mockEngine = MockEngine { request ->
+            if (request.url.encodedPath.contains("/api/auth/token")) {
+                respond(
+                    content = """{"token": "mock_jwt_token_123"}""",
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                )
+            } else {
+                respond(
+                    content = sseBody,
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Text.EventStream.toString())
+                )
+            }
+        }
+        val client = createTestClient(mockEngine)
+        val tokens = mutableListOf<String>()
+        val result = client.rawCompletionStreamWithProgress(
+            systemPrompt = "You are helpful.",
+            message = "Say hello",
+            onToken = { tokens.add(it) }
+        )
+        assertEquals("Hello world", result["content"]?.jsonPrimitive?.content)
+        assertEquals(listOf("Hello", " world"), tokens)
+    }
+
+    @Test
+    fun `rawCompletionStreamWithProgress throws on error`() = runBlocking {
+        val sseBody = listOf(
+            """data: {"error":"model overloaded"}""",
+            ""
+        ).joinToString("\n")
+
+        val mockEngine = MockEngine { request ->
+            if (request.url.encodedPath.contains("/api/auth/token")) {
+                respond(
+                    content = """{"token": "mock_jwt_token_123"}""",
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                )
+            } else {
+                respond(
+                    content = sseBody,
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Text.EventStream.toString())
+                )
+            }
+        }
+        val client = createTestClient(mockEngine)
+        try {
+            client.rawCompletionStreamWithProgress(
+                systemPrompt = "You are helpful.",
+                message = "Say hello",
+                onToken = { }
+            )
+            fail("Expected RuntimeException")
+        } catch (e: RuntimeException) {
+            assertTrue(e.message!!.contains("model overloaded"))
+        }
+    }
+
+    // ========================================================================
+    // Core CRUD Tests
+    // ========================================================================
+
+    @Test
+    fun `insert sends POST to correct endpoint`() = runBlocking {
+        val mockEngine = createMockEngine("""{"id": "rec_1", "name": "Alice", "email": "alice@example.com"}""")
+        val client = createTestClient(mockEngine)
+        val record = io.ekodb.client.types.Record()
+            .insert("name", "Alice")
+            .insert("email", "alice@example.com")
+        val result = client.insert("users", record)
+        assertNotNull(result)
+        val idField = result["id"]
+        assertTrue(idField is io.ekodb.client.types.FieldType.StringValue)
+        assertEquals("rec_1", (idField as io.ekodb.client.types.FieldType.StringValue).value)
+    }
+
+    @Test
+    fun `findById sends GET to correct endpoint`() = runBlocking {
+        val mockEngine = createMockEngine("""{"id": "rec_1", "name": "Alice"}""")
+        val client = createTestClient(mockEngine)
+        val result = client.findById("users", "rec_1")
+        assertNotNull(result)
+        val idField = result["id"]
+        assertTrue(idField is io.ekodb.client.types.FieldType.StringValue)
+        assertEquals("rec_1", (idField as io.ekodb.client.types.FieldType.StringValue).value)
+    }
+
+    @Test
+    fun `find sends POST query to correct endpoint`() = runBlocking {
+        val mockEngine = createMockEngine("""[{"id": "rec_1", "name": "Alice"}, {"id": "rec_2", "name": "Bob"}]""")
+        val client = createTestClient(mockEngine)
+        val query = io.ekodb.client.types.Query.new()
+        val result = client.find("users", query)
+        assertNotNull(result)
+        assertEquals(2, result.size)
+    }
+
+    @Test
+    fun `update sends PUT to correct endpoint`() = runBlocking {
+        val mockEngine = createMockEngine("""{"id": "rec_1", "name": "Alice Updated", "age": 30}""")
+        val client = createTestClient(mockEngine)
+        val updates = io.ekodb.client.types.Record()
+            .insert("name", "Alice Updated")
+            .insert("age", 30)
+        val result = client.update("users", "rec_1", updates)
+        assertNotNull(result)
+        val nameField = result["name"]
+        assertTrue(nameField is io.ekodb.client.types.FieldType.StringValue)
+        assertEquals("Alice Updated", (nameField as io.ekodb.client.types.FieldType.StringValue).value)
+    }
+
+    @Test
+    fun `delete sends DELETE to correct endpoint`() = runBlocking {
+        val mockEngine = createMockEngine("""{"status": "deleted"}""")
+        val client = createTestClient(mockEngine)
+        // Should not throw
+        client.delete("users", "rec_1")
+    }
+
+    // ========================================================================
+    // Batch Operations Tests
+    // ========================================================================
+
+    @Test
+    fun `batchInsert returns successful and failed counts`() = runBlocking {
+        val mockEngine = createMockEngine("""{"successful": ["id_1", "id_2", "id_3"], "failed": []}""")
+        val client = createTestClient(mockEngine)
+        val records = listOf(
+            io.ekodb.client.types.Record().insert("name", "Alice"),
+            io.ekodb.client.types.Record().insert("name", "Bob"),
+            io.ekodb.client.types.Record().insert("name", "Charlie")
+        )
+        val result = client.batchInsert("users", records)
+        assertEquals(3, result.successful.size)
+        assertEquals(0, result.failed.size)
+    }
+
+    @Test
+    fun `batchUpdate returns updated records`() = runBlocking {
+        val mockEngine = createMockEngine("""{"successful": ["id_1", "id_2"], "failed": []}""")
+        val client = createTestClient(mockEngine)
+        val updates = listOf(
+            "id_1" to io.ekodb.client.types.Record().insert("score", 100),
+            "id_2" to io.ekodb.client.types.Record().insert("score", 200)
+        )
+        val result = client.batchUpdate("users", updates)
+        assertEquals(2, result.size)
+    }
+
+    @Test
+    fun `batchDelete returns deleted count`() = runBlocking {
+        val mockEngine = createMockEngine("""{"successful": ["id_1", "id_2"], "failed": []}""")
+        val client = createTestClient(mockEngine)
+        val result = client.batchDelete("users", listOf("id_1", "id_2"))
+        assertEquals(2L, result)
+    }
+
+    // ========================================================================
+    // KV Operations Tests
+    // ========================================================================
+
+    @Test
+    fun `kvSet does not throw on success`() = runBlocking {
+        val mockEngine = createMockEngine("""{"status": "ok"}""")
+        val client = createTestClient(mockEngine)
+        // Should not throw
+        client.kvSet("test:key", JsonPrimitive("test_value"))
+    }
+
+    @Test
+    fun `kvGet returns stored value`() = runBlocking {
+        val mockEngine = createMockEngine("""{"value": "stored_value"}""")
+        val client = createTestClient(mockEngine)
+        val result = client.kvGet("test:key")
+        assertNotNull(result)
+        assertEquals("stored_value", (result as JsonElement).jsonPrimitive.content)
+    }
+
+    @Test
+    fun `kvDelete does not throw on success`() = runBlocking {
+        val mockEngine = createMockEngine("""{"status": "deleted"}""")
+        val client = createTestClient(mockEngine)
+        // Should not throw
+        client.kvDelete("test:key")
+    }
+
+    @Test
+    fun `kvExists returns true when key exists`() = runBlocking {
+        val mockEngine = createMockEngine("""{"value": "exists"}""")
+        val client = createTestClient(mockEngine)
+        val result = client.kvExists("test:key")
+        assertTrue(result)
+    }
+
+    // ========================================================================
+    // KV Links Tests
+    // ========================================================================
+
+    @Test
+    fun `kvGetLinks returns linked documents`() = runBlocking {
+        val mockEngine = createMockEngine("""{"key": "user:123", "links": [{"collection": "orders", "document_id": "ord_1"}]}""")
+        val client = createTestClient(mockEngine)
+        val result = client.kvGetLinks("user:123")
+        assertNotNull(result)
+        assertEquals("user:123", result["key"]?.jsonPrimitive?.content)
+        assertNotNull(result["links"])
+    }
+
+    @Test
+    fun `kvLink links a document to a key`() = runBlocking {
+        val mockEngine = createMockEngine("""{"status": "linked", "key": "user:123"}""")
+        val client = createTestClient(mockEngine)
+        val result = client.kvLink("user:123", "orders", "ord_1")
+        assertNotNull(result)
+        assertEquals("linked", result["status"]?.jsonPrimitive?.content)
+    }
+
+    @Test
+    fun `kvUnlink removes a document link from a key`() = runBlocking {
+        val mockEngine = createMockEngine("""{"status": "unlinked", "key": "user:123"}""")
+        val client = createTestClient(mockEngine)
+        val result = client.kvUnlink("user:123", "orders", "ord_1")
+        assertNotNull(result)
+        assertEquals("unlinked", result["status"]?.jsonPrimitive?.content)
+    }
+
+    // ========================================================================
+    // Schedule Management Tests
+    // ========================================================================
+
+    @Test
+    fun `createSchedule returns schedule object`() = runBlocking {
+        val mockEngine = createMockEngine("""{"id": "sched_1", "name": "Daily Backup", "cron": "0 0 * * *"}""")
+        val client = createTestClient(mockEngine)
+        val result = client.createSchedule(buildJsonObject {
+            put("name", "Daily Backup")
+            put("cron", "0 0 * * *")
+        })
+        assertEquals("sched_1", result["id"]?.jsonPrimitive?.content)
+        assertEquals("Daily Backup", result["name"]?.jsonPrimitive?.content)
+    }
+
+    @Test
+    fun `listSchedules returns all schedules`() = runBlocking {
+        val mockEngine = createMockEngine("""{"schedules": [{"id": "sched_1"}, {"id": "sched_2"}]}""")
+        val client = createTestClient(mockEngine)
+        val result = client.listSchedules()
+        assertNotNull(result["schedules"])
+        val schedules = result["schedules"]?.jsonArray
+        assertNotNull(schedules)
+        assertEquals(2, schedules.size)
+    }
+
+    @Test
+    fun `getSchedule returns schedule by ID`() = runBlocking {
+        val mockEngine = createMockEngine("""{"id": "sched_1", "name": "Daily Backup", "cron": "0 0 * * *"}""")
+        val client = createTestClient(mockEngine)
+        val result = client.getSchedule("sched_1")
+        assertEquals("sched_1", result["id"]?.jsonPrimitive?.content)
+    }
+
+    @Test
+    fun `updateSchedule updates and returns schedule`() = runBlocking {
+        val mockEngine = createMockEngine("""{"id": "sched_1", "name": "Weekly Backup", "cron": "0 0 * * 0"}""")
+        val client = createTestClient(mockEngine)
+        val result = client.updateSchedule("sched_1", buildJsonObject {
+            put("name", "Weekly Backup")
+            put("cron", "0 0 * * 0")
+        })
+        assertEquals("Weekly Backup", result["name"]?.jsonPrimitive?.content)
+    }
+
+    @Test
+    fun `deleteSchedule does not throw on success`() = runBlocking {
+        val mockEngine = createMockEngine("""{"status": "deleted"}""")
+        val client = createTestClient(mockEngine)
+        // Should not throw
+        client.deleteSchedule("sched_1")
+    }
+
+    @Test
+    fun `pauseSchedule returns paused schedule`() = runBlocking {
+        val mockEngine = createMockEngine("""{"id": "sched_1", "status": "paused"}""")
+        val client = createTestClient(mockEngine)
+        val result = client.pauseSchedule("sched_1")
+        assertEquals("paused", result["status"]?.jsonPrimitive?.content)
+    }
+
+    @Test
+    fun `resumeSchedule returns active schedule`() = runBlocking {
+        val mockEngine = createMockEngine("""{"id": "sched_1", "status": "active"}""")
+        val client = createTestClient(mockEngine)
+        val result = client.resumeSchedule("sched_1")
+        assertEquals("active", result["status"]?.jsonPrimitive?.content)
+    }
+
+    // ========================================================================
+    // Scripts Tests
+    // ========================================================================
+
+    @Test
+    fun `saveScript returns script ID`() = runBlocking {
+        val mockEngine = createMockEngine("""{"id": "script_1"}""")
+        val client = createTestClient(mockEngine)
+        val script = io.ekodb.client.functions.Script(
+            label = "test_script",
+            name = "Test Script",
+            description = "A test script",
+            functions = listOf(
+                io.ekodb.client.functions.FunctionStageConfig.FindAll(collection = "test_col")
+            )
+        )
+        val result = client.saveScript(script)
+        assertEquals("script_1", result)
+    }
+
+    @Test
+    fun `getScript returns script by ID`() = runBlocking {
+        val mockEngine = createMockEngine("""{
+            "label": "test_script",
+            "name": "Test Script",
+            "version": "1.0",
+            "parameters": {},
+            "functions": [{"type": "FindAll", "collection": "test_col"}],
+            "tags": [],
+            "id": "script_1"
+        }""")
+        val client = createTestClient(mockEngine)
+        val result = client.getScript("script_1")
+        assertEquals("test_script", result.label)
+        assertEquals("Test Script", result.name)
+    }
+
+    @Test
+    fun `listScripts returns scripts list`() = runBlocking {
+        val mockEngine = createMockEngine("""[
+            {"label": "s1", "name": "Script 1", "version": "1.0", "parameters": {}, "functions": [{"type": "FindAll", "collection": "c1"}], "tags": []},
+            {"label": "s2", "name": "Script 2", "version": "1.0", "parameters": {}, "functions": [{"type": "FindAll", "collection": "c2"}], "tags": ["etl"]}
+        ]""")
+        val client = createTestClient(mockEngine)
+        val result = client.listScripts()
+        assertEquals(2, result.size)
+        assertEquals("s1", result[0].label)
+        assertEquals("s2", result[1].label)
+    }
+
+    @Test
+    fun `updateScript does not throw on success`() = runBlocking {
+        val mockEngine = createMockEngine("""{"status": "updated"}""")
+        val client = createTestClient(mockEngine)
+        val script = io.ekodb.client.functions.Script(
+            label = "test_script",
+            name = "Updated Script",
+            functions = listOf(
+                io.ekodb.client.functions.FunctionStageConfig.FindAll(collection = "updated_col")
+            )
+        )
+        // Should not throw
+        client.updateScript("script_1", script)
+    }
+
+    @Test
+    fun `deleteScript does not throw on success`() = runBlocking {
+        val mockEngine = createMockEngine("""{"status": "deleted"}""")
+        val client = createTestClient(mockEngine)
+        // Should not throw
+        client.deleteScript("script_1")
+    }
+
+    @Test
+    fun `callScript returns function result`() = runBlocking {
+        val mockEngine = createMockEngine("""{
+            "records": [{"id": "rec_1", "name": "Alice"}],
+            "stats": {
+                "input_count": 10,
+                "output_count": 1,
+                "execution_time_ms": 42,
+                "stages_executed": 1,
+                "stage_stats": [{"stage": "FindAll", "input_count": 0, "output_count": 10, "execution_time_ms": 42}]
+            }
+        }""")
+        val client = createTestClient(mockEngine)
+        val result = client.callScript("test_script", mapOf("limit" to JsonPrimitive(10)))
+        assertEquals(1, result.records.size)
+        assertEquals(1, result.stats.stages_executed)
+        assertEquals(42L, result.stats.execution_time_ms)
+    }
+
+    // ========================================================================
+    // Search Tests (textSearch / hybridSearch)
+    // ========================================================================
+
+    @Test
+    fun `textSearch returns matching records`() = runBlocking {
+        val mockEngine = createMockEngine("""{
+            "results": [
+                {"record": {"id": "doc_1", "title": "Rust Programming"}, "score": 0.95},
+                {"record": {"id": "doc_2", "title": "Rust Async"}, "score": 0.80}
+            ],
+            "total": 2
+        }""")
+        val client = createTestClient(mockEngine)
+        val result = client.textSearch("documents", "rust", 10)
+        assertEquals(2, result.size)
+        assertEquals("doc_1", result[0]["id"]?.jsonPrimitive?.content)
+    }
+
+    @Test
+    fun `hybridSearch returns combined results`() = runBlocking {
+        val mockEngine = createMockEngine("""{
+            "results": [
+                {"record": {"id": "doc_1", "title": "Machine Learning"}, "score": 0.92}
+            ],
+            "total": 1
+        }""")
+        val client = createTestClient(mockEngine)
+        val result = client.hybridSearch("documents", "machine learning", listOf(0.1, 0.2, 0.3), 5)
+        assertEquals(1, result.size)
+        assertEquals("Machine Learning", result[0]["title"]?.jsonPrimitive?.content)
+    }
+
+    // ========================================================================
+    // Auth Token Management Tests
+    // ========================================================================
+
+    /**
+     * Helper to build a fake JWT with a given `exp` claim.
+     * The header and signature are dummy values; only the payload matters.
+     */
+    private fun buildFakeJWT(exp: Long): String {
+        val header = java.util.Base64.getUrlEncoder().withoutPadding()
+            .encodeToString("""{"alg":"HS256","typ":"JWT"}""".toByteArray())
+        val payload = java.util.Base64.getUrlEncoder().withoutPadding()
+            .encodeToString("""{"sub":"user_1","exp":$exp}""".toByteArray())
+        val signature = "fake_signature"
+        return "$header.$payload.$signature"
+    }
+
+    @Test
+    fun `extractJWTExpiry returns expiry from valid JWT`() {
+        val client = createTestClient(createMockEngine("""{}"""))
+        val futureExp = System.currentTimeMillis() / 1000 + 7200 // 2 hours from now
+        val jwt = buildFakeJWT(futureExp)
+        val result = client.extractJWTExpiry(jwt)
+        assertNotNull(result)
+        assertEquals(futureExp, result)
+    }
+
+    @Test
+    fun `extractJWTExpiry returns null for non-JWT string`() {
+        val client = createTestClient(createMockEngine("""{}"""))
+        assertEquals(null, client.extractJWTExpiry("not-a-jwt"))
+    }
+
+    @Test
+    fun `extractJWTExpiry returns null for two-segment string`() {
+        val client = createTestClient(createMockEngine("""{}"""))
+        assertEquals(null, client.extractJWTExpiry("header.payload"))
+    }
+
+    @Test
+    fun `extractJWTExpiry returns null for invalid base64 payload`() {
+        val client = createTestClient(createMockEngine("""{}"""))
+        assertEquals(null, client.extractJWTExpiry("a.!!!invalid.c"))
+    }
+
+    @Test
+    fun `extractJWTExpiry returns null when exp claim is missing`() {
+        val client = createTestClient(createMockEngine("""{}"""))
+        val header = java.util.Base64.getUrlEncoder().withoutPadding()
+            .encodeToString("""{"alg":"HS256"}""".toByteArray())
+        val payload = java.util.Base64.getUrlEncoder().withoutPadding()
+            .encodeToString("""{"sub":"user_1"}""".toByteArray())
+        val jwt = "$header.$payload.sig"
+        assertEquals(null, client.extractJWTExpiry(jwt))
+    }
+
+    @Test
+    fun `getToken returns cached token when not expired`() = runBlocking {
+        // Build a JWT that expires far in the future so the cache should be used
+        val futureExp = System.currentTimeMillis() / 1000 + 7200
+        val fakeJwt = buildFakeJWT(futureExp)
+        var authRequestCount = 0
+
+        val mockEngine = MockEngine { request ->
+            if (request.url.encodedPath.contains("/api/auth/token")) {
+                authRequestCount++
+                respond(
+                    content = """{"token": "$fakeJwt"}""",
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                )
+            } else {
+                respond(
+                    content = """{"collections": ["test"]}""",
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                )
+            }
+        }
+        val client = createTestClient(mockEngine)
+
+        // First call triggers auth + listCollections
+        client.listCollections()
+        assertEquals(1, authRequestCount, "First call should fetch a token")
+
+        // Second call should reuse cached token (not expired)
+        client.listCollections()
+        assertEquals(1, authRequestCount, "Second call should reuse cached token, not fetch again")
+    }
+
+    @Test
+    fun `getToken refreshes when token about to expire`() = runBlocking {
+        // Build a JWT that expires in 30 seconds (within the 60s refresh window)
+        val soonExp = System.currentTimeMillis() / 1000 + 30
+        val soonJwt = buildFakeJWT(soonExp)
+
+        // Build a JWT that expires far in the future for the refresh
+        val futureExp = System.currentTimeMillis() / 1000 + 7200
+        val futureJwt = buildFakeJWT(futureExp)
+
+        var authRequestCount = 0
+
+        val mockEngine = MockEngine { request ->
+            if (request.url.encodedPath.contains("/api/auth/token")) {
+                authRequestCount++
+                // First auth returns soon-to-expire token, subsequent returns long-lived token
+                val jwt = if (authRequestCount == 1) soonJwt else futureJwt
+                respond(
+                    content = """{"token": "$jwt"}""",
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                )
+            } else {
+                respond(
+                    content = """{"collections": ["test"]}""",
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                )
+            }
+        }
+        val client = createTestClient(mockEngine)
+
+        // First call gets the soon-to-expire token
+        client.listCollections()
+        assertEquals(1, authRequestCount, "First call should fetch a token")
+
+        // Second call should detect the token is about to expire and fetch a new one
+        client.listCollections()
+        assertEquals(2, authRequestCount, "Second call should refresh because token expires within 60s")
+
+        // Third call should reuse the new long-lived token
+        client.listCollections()
+        assertEquals(2, authRequestCount, "Third call should reuse the refreshed token")
+    }
+
+    @Test
+    fun `clearTokenCache resets token and expiry`() = runBlocking {
+        val futureExp = System.currentTimeMillis() / 1000 + 7200
+        val fakeJwt = buildFakeJWT(futureExp)
+        var authRequestCount = 0
+
+        val mockEngine = MockEngine { request ->
+            if (request.url.encodedPath.contains("/api/auth/token")) {
+                authRequestCount++
+                respond(
+                    content = """{"token": "$fakeJwt"}""",
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                )
+            } else {
+                respond(
+                    content = """{"collections": ["test"]}""",
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                )
+            }
+        }
+        val client = createTestClient(mockEngine)
+
+        // First call fetches token
+        client.listCollections()
+        assertEquals(1, authRequestCount, "First call should fetch a token")
+
+        // Clear the cache
+        client.clearTokenCache()
+
+        // Next call should need to fetch a new token since cache was cleared
+        client.listCollections()
+        assertEquals(2, authRequestCount, "After clearTokenCache, next call should fetch a new token")
     }
 }

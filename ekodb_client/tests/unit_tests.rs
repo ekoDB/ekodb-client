@@ -1189,7 +1189,7 @@ fn test_error_is_retryable() {
     );
 
     assert!(!Error::NotFound.is_retryable());
-    assert!(!Error::Auth("test".to_string()).is_retryable());
+    assert!(!Error::api(401, "unauthorized").is_retryable());
     assert!(!Error::Validation("test".to_string()).is_retryable());
 }
 

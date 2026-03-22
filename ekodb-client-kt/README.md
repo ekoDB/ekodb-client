@@ -35,7 +35,7 @@ integration, and automatic optimization.
 
 ```kotlin
 dependencies {
-    implementation("io.ekodb:ekodb-client-kt:0.10.0")
+    implementation("io.ekodb:ekodb-client-kt:0.14.0")
 }
 ```
 
@@ -43,7 +43,7 @@ dependencies {
 
 ```groovy
 dependencies {
-    implementation 'io.ekodb:ekodb-client-kt:0.10.0'
+    implementation 'io.ekodb:ekodb-client-kt:0.14.0'
 }
 ```
 
@@ -53,7 +53,7 @@ dependencies {
 <dependency>
     <groupId>io.ekodb</groupId>
     <artifactId>ekodb-client-kt</artifactId>
-    <version>0.10.0</version>
+    <version>0.14.0</version>
 </dependency>
 ```
 
@@ -332,7 +332,7 @@ import kotlinx.serialization.json.putJsonArray
 // Create a chat session
 val sessionRequest = buildJsonObject {
     put("provider", "openai")
-    put("model", "gpt-4")
+    put("model", "gpt-4.1")
     put("system_prompt", "You are a helpful assistant.")
     putJsonArray("collections") {
         add(buildJsonObject {
@@ -531,6 +531,72 @@ try {
 - Kotlin 1.9.22 or higher
 - JVM 17 or higher
 - Coroutines support
+
+### Goals, Tasks, and Agents
+
+```kotlin
+import io.ekodb.client.EkoDBClient
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
+import kotlinx.coroutines.runBlocking
+
+fun main() = runBlocking {
+    val client = EkoDBClient.builder()
+        .baseUrl("http://localhost:8080")
+        .apiKey("your-api-key")
+        .build()
+
+    // Goals
+    val goal = client.goalCreate(buildJsonObject {
+        put("title", "Migrate data")
+        put("status", "active")
+    })
+    val goals = client.goalList()
+    client.goalComplete("goal-id", buildJsonObject { put("summary", "Done") })
+
+    // Agents
+    val agent = client.agentCreate(buildJsonObject {
+        put("name", "processor")
+        put("model", "gpt-4.1")
+    })
+
+    client.close()
+}
+```
+
+### Schedules
+
+```kotlin
+// Create a schedule
+val sched = client.createSchedule(buildJsonObject {
+    put("name", "nightly")
+    put("cron", "0 2 * * *")
+})
+
+// Pause a schedule
+client.pauseSchedule("sched-id")
+```
+
+### WebSocket Chat Streaming
+
+```kotlin
+import io.ekodb.client.types.ChatStreamEvent
+import kotlinx.coroutines.flow.collect
+
+val ws = client.webSocket("ws://localhost:8080")
+
+val events = ws.chatSend(chatId, "What is the capital of France?")
+events.collect { event ->
+    when (event) {
+        is ChatStreamEvent.Chunk -> print(event.content)
+        is ChatStreamEvent.End -> println("\nDone (context: ${event.contextWindow} tokens)")
+        is ChatStreamEvent.ToolCall -> ws.sendToolResult(chatId, event.callId, true, result)
+        is ChatStreamEvent.Error -> println("Error: ${event.error}")
+    }
+}
+
+ws.close()
+```
 
 ## License
 

@@ -209,3 +209,170 @@ class TestAgentResponseStructure:
     def test_agent_by_name_response(self):
         resp = {"id": "agent_1", "name": "CodeReviewer"}
         assert resp["name"] == "CodeReviewer"
+
+
+# ============================================================================
+# Goal Template Tests
+# ============================================================================
+
+
+class TestGoalTemplateCreatePayload:
+    """Verify goal template create request structure."""
+
+    def test_minimal_payload(self):
+        payload = {"title": "Migration Template"}
+        assert "title" in payload
+
+    def test_full_payload(self):
+        payload = {
+            "title": "Data Migration",
+            "description": "Template for schema migrations",
+            "steps": [
+                {"description": "Analyze source"},
+                {"description": "Migrate records"},
+            ],
+        }
+        assert payload["title"] == "Data Migration"
+        assert len(payload["steps"]) == 2
+        assert payload["steps"][0]["description"] == "Analyze source"
+
+
+class TestGoalTemplateResponseStructure:
+    """Verify goal template response shapes."""
+
+    def test_create_response(self):
+        resp = {"id": "tpl_1", "title": "Migration Template"}
+        assert "id" in resp
+        assert resp["title"] == "Migration Template"
+
+    def test_list_response(self):
+        resp = {"templates": [{"id": "tpl_1"}, {"id": "tpl_2"}]}
+        assert isinstance(resp["templates"], list)
+        assert len(resp["templates"]) == 2
+
+    def test_update_response(self):
+        resp = {"id": "tpl_1", "title": "Updated", "description": "New desc"}
+        assert resp["description"] == "New desc"
+
+    def test_delete_response(self):
+        resp = {"ok": True}
+        assert resp["ok"] is True
+
+
+class TestChatStreamEndContextWindow:
+    """Verify context_window appears in chat stream end events."""
+
+    def test_end_event_with_context_window(self):
+        event = {
+            "type": "end",
+            "message_id": "msg-1",
+            "execution_time_ms": 250,
+            "context_window": 128000,
+        }
+        assert event["type"] == "end"
+        assert event["context_window"] == 128000
+
+    def test_end_event_without_context_window(self):
+        event = {
+            "type": "end",
+            "message_id": "msg-2",
+            "execution_time_ms": 100,
+        }
+        assert "context_window" not in event
+
+
+# ============================================================================
+# Goal Template Request Structure Tests
+# ============================================================================
+
+
+class TestGoalTemplateRequestStructure:
+    """Verify goal template request payloads are well-formed."""
+
+    def test_template_create_minimal(self):
+        """A template create needs at least a title."""
+        payload = {"title": "Deploy Template"}
+        assert payload["title"] == "Deploy Template"
+        assert "steps" not in payload
+
+    def test_template_create_with_steps(self):
+        """Template with step definitions."""
+        payload = {
+            "title": "CI/CD Pipeline",
+            "description": "Standard deployment pipeline",
+            "steps": [
+                {"description": "Run tests"},
+                {"description": "Build artifact"},
+                {"description": "Deploy to staging"},
+                {"description": "Deploy to production"},
+            ],
+        }
+        assert len(payload["steps"]) == 4
+        assert payload["steps"][2]["description"] == "Deploy to staging"
+
+    def test_template_update_payload(self):
+        """Template update only sends changed fields."""
+        payload = {"description": "Updated description for template"}
+        assert "title" not in payload
+        assert "steps" not in payload
+        assert payload["description"] == "Updated description for template"
+
+
+# ============================================================================
+# Goal Lifecycle Structure Tests
+# ============================================================================
+
+
+class TestGoalLifecycleStructure:
+    """Verify goal lifecycle payloads (complete, approve, reject)."""
+
+    def test_goal_complete_payload(self):
+        """Goal complete includes a summary."""
+        payload = {"summary": "All 3 steps finished, migration verified"}
+        assert isinstance(payload["summary"], str)
+        assert "summary" in payload
+
+    def test_goal_approve_response(self):
+        """Goal approve returns the goal with completed status."""
+        resp = {"id": "goal_1", "status": "completed", "title": "Migration"}
+        assert resp["status"] == "completed"
+
+    def test_goal_reject_payload(self):
+        """Goal reject includes a reason."""
+        payload = {"reason": "Insufficient resources to proceed"}
+        assert isinstance(payload["reason"], str)
+        assert "reason" in payload
+
+
+# ============================================================================
+# Task Lifecycle Structure Tests
+# ============================================================================
+
+
+class TestTaskLifecycleStructure:
+    """Verify task lifecycle payloads (start, succeed, fail, pause, resume)."""
+
+    def test_task_start_response(self):
+        """Task start returns the task with running status."""
+        resp = {"id": "task_1", "name": "Backup", "status": "running"}
+        assert resp["status"] == "running"
+
+    def test_task_succeed_payload(self):
+        """Task succeed includes output data."""
+        payload = {"output": "Backup completed: 2.4GB written to s3://backups/"}
+        assert isinstance(payload["output"], str)
+
+    def test_task_fail_payload(self):
+        """Task fail includes an error description."""
+        payload = {"error": "Connection to backup server timed out after 30s"}
+        assert isinstance(payload["error"], str)
+
+    def test_task_pause_response(self):
+        """Task pause returns the task with paused status."""
+        resp = {"id": "task_1", "name": "Backup", "status": "paused"}
+        assert resp["status"] == "paused"
+
+    def test_task_resume_payload(self):
+        """Task resume can include a next_run override."""
+        payload = {"next_run": "2026-03-22T02:00:00Z"}
+        assert isinstance(payload["next_run"], str)

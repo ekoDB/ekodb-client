@@ -12,14 +12,14 @@
 
 ## Client Library Examples
 
-  rust: 34 examples
-  python: 35 examples
-  go: 35 examples
-  typescript: 35 examples
+  rust: 41 examples
+  python: 41 examples
+  go: 41 examples
+  typescript: 41 examples
   javascript: 27 examples
-  kotlin: 35 examples
+  kotlin: 41 examples
 
-  Total Client: 201
+  Total Client: 232
 
 ## RAG Conversation System Examples
 
@@ -31,13 +31,13 @@
 
   Total RAG: 5
 
-  Updated Total Client: 206
+  Updated Total Client: 237
 
 ## Summary
 
-  Total Examples: 257
+  Total Examples: 288
   Direct API: 51
-  Client Libraries: 206
+  Client Libraries: 237
 
   Languages: 6 (Rust, Python, Go, TypeScript, JavaScript, Kotlin)
   Full-Featured Clients: 5 (Rust, Python, Go, TypeScript, Kotlin)

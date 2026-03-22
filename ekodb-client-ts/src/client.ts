@@ -371,6 +371,7 @@ export class EkoDBClient {
   private baseURL: string;
   private apiKey: string;
   private token: string | null = null;
+  private tokenExpiry: number = 0;
   private shouldRetry: boolean;
   private maxRetries: number;
   private format: SerializationFormat;
@@ -441,22 +442,74 @@ export class EkoDBClient {
 
     const result = (await response.json()) as { token: string };
     this.token = result.token;
+
+    // Extract and cache JWT expiry for proactive refresh
+    const expiry = this.extractJWTExpiry(result.token);
+    this.tokenExpiry = expiry ?? Math.floor(Date.now() / 1000) + 3600; // fallback: 1 hour
   }
 
   /**
-   * Get the current authentication token.
-   * Returns null if not yet authenticated. Call refreshToken() first.
+   * Get a valid authentication token.
+   *
+   * Returns a cached token if it has more than 60s of validity remaining.
+   * Otherwise fetches a new one via refreshToken(). This means callers
+   * never need to handle token refresh themselves — every getToken() call
+   * returns a token that's valid for at least 60 more seconds.
    */
-  getToken(): string | null {
+  async getToken(): Promise<string | null> {
+    if (this.token) {
+      const now = Math.floor(Date.now() / 1000);
+      if (now + 60 >= this.tokenExpiry) {
+        // Token is about to expire or already expired — refresh proactively
+        await this.refreshToken();
+      }
+    } else {
+      // No token yet — fetch one
+      await this.refreshToken();
+    }
     return this.token;
   }
 
   /**
-   * Clear the cached authentication token.
+   * Clear the cached authentication token and expiry.
    * The next request will trigger a fresh token exchange.
    */
   clearTokenCache(): void {
     this.token = null;
+    this.tokenExpiry = 0;
+  }
+
+  /**
+   * Extract the `exp` claim from a JWT without verifying the signature.
+   * Returns the Unix timestamp (seconds) of expiry, or null if parsing fails.
+   */
+  private extractJWTExpiry(token: string): number | null {
+    try {
+      const parts = token.split(".");
+      if (parts.length !== 3) {
+        return null;
+      }
+
+      // Convert base64url to standard base64
+      let payload = parts[1];
+      payload = payload.replace(/-/g, "+").replace(/_/g, "/");
+
+      // Pad to multiple of 4
+      const pad = payload.length % 4;
+      if (pad) {
+        payload += "=".repeat(4 - pad);
+      }
+
+      const decoded = atob(payload);
+      const claims = JSON.parse(decoded);
+
+      if (typeof claims.exp === "number") {
+        return claims.exp;
+      }
+      return null;
+    } catch {
+      return null;
+    }
   }
 
   /**
@@ -1552,11 +1605,7 @@ export class EkoDBClient {
   async rawCompletionStream(
     request: RawCompletionRequest,
   ): Promise<RawCompletionResponse> {
-    let token = this.getToken();
-    if (!token) {
-      await this.refreshToken();
-      token = this.getToken();
-    }
+    let token = await this.getToken();
     const url = `${this.baseURL}/api/chat/complete/stream`;
 
     const response = await fetch(url, {
@@ -1609,11 +1658,7 @@ export class EkoDBClient {
     request: RawCompletionRequest,
     onToken: (token: string) => void,
   ): Promise<RawCompletionResponse> {
-    let token = this.getToken();
-    if (!token) {
-      await this.refreshToken();
-      token = this.getToken();
-    }
+    let token = await this.getToken();
     const url = `${this.baseURL}/api/chat/complete/stream`;
 
     const response = await fetch(url, {
@@ -1673,6 +1718,96 @@ export class EkoDBClient {
       0,
       true, // Force JSON for chat operations
     );
+  }
+
+  /**
+   * Send a message in an existing chat session via SSE streaming.
+   *
+   * Returns an EventStream that emits ChatStreamEvent objects as they arrive:
+   * - `{ type: "chunk", content: "..." }` for each token
+   * - `{ type: "end", messageId, executionTimeMs, tokenUsage?, contextWindow? }` when complete
+   * - `{ type: "error", error: "..." }` on failure
+   *
+   * Preferred over chatMessage() for long-running responses where reverse
+   * proxies may kill idle HTTP connections before the LLM responds.
+   */
+  chatMessageStream(
+    chatId: string,
+    request: ChatMessageRequest,
+  ): EventStream<ChatStreamEvent> {
+    const stream = new EventStream<ChatStreamEvent>();
+
+    (async () => {
+      try {
+        let token = this.getToken();
+        if (!token) {
+          await this.refreshToken();
+          token = this.getToken();
+        }
+        const url = `${this.baseURL}/api/chat/${chatId}/messages/stream`;
+
+        const response = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "text/event-stream",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(request),
+        });
+
+        if (!response.ok) {
+          const body = await response.text();
+          stream.emit("event", {
+            type: "error",
+            error: `SSE chat message stream failed (${response.status}): ${body}`,
+          } as ChatStreamEvent);
+          stream.close();
+          return;
+        }
+
+        const body = await response.text();
+        for (const line of body.split("\n")) {
+          if (!line.startsWith("data:")) continue;
+          const dataStr = line.slice(5).trim();
+          if (!dataStr) continue;
+          try {
+            const eventData = JSON.parse(dataStr);
+            if (eventData.error) {
+              stream.emit("event", {
+                type: "error",
+                error: eventData.error,
+              } as ChatStreamEvent);
+            } else if (eventData.content && eventData.message_id) {
+              // Done event — has full content + message_id
+              stream.emit("event", {
+                type: "end",
+                messageId: eventData.message_id,
+                executionTimeMs: eventData.execution_time_ms ?? 0,
+                tokenUsage: eventData.token_usage,
+                contextWindow: eventData.context_window,
+              } as ChatStreamEvent);
+            } else if (eventData.token) {
+              stream.emit("event", {
+                type: "chunk",
+                content: eventData.token,
+              } as ChatStreamEvent);
+            }
+          } catch {
+            // skip malformed SSE data
+          }
+        }
+        stream.close();
+      } catch (err: any) {
+        stream.emit("event", {
+          type: "error",
+          error: err.message ?? String(err),
+        } as ChatStreamEvent);
+        stream.close();
+      }
+    })();
+
+    return stream;
   }
 
   /**
@@ -2106,6 +2241,63 @@ export class EkoDBClient {
     await this.makeRequest<void>(
       "DELETE",
       `/api/chat/goals/${encodeURIComponent(id)}`,
+      undefined,
+      0,
+      true,
+    );
+  }
+
+  // ── Goal Templates ──
+
+  /** Create a new goal template */
+  async goalTemplateCreate(data: Record): Promise<Record> {
+    return this.makeRequest<Record>(
+      "POST",
+      "/api/chat/goal-templates",
+      data,
+      0,
+      true,
+    );
+  }
+
+  /** List all goal templates */
+  async goalTemplateList(): Promise<Record> {
+    return this.makeRequest<Record>(
+      "GET",
+      "/api/chat/goal-templates",
+      undefined,
+      0,
+      true,
+    );
+  }
+
+  /** Get a goal template by ID */
+  async goalTemplateGet(id: string): Promise<Record> {
+    return this.makeRequest<Record>(
+      "GET",
+      `/api/chat/goal-templates/${encodeURIComponent(id)}`,
+      undefined,
+      0,
+      true,
+    );
+  }
+
+  /** Update a goal template by ID */
+  async goalTemplateUpdate(id: string, data: Record): Promise<Record> {
+    return this.makeRequest<Record>(
+      "PUT",
+      `/api/chat/goal-templates/${encodeURIComponent(id)}`,
+      data,
+      0,
+      true,
+    );
+  }
+
+  /** Delete a goal template by ID */
+  async goalTemplateDelete(id: string): Promise<void> {
+    await this.makeRequest<void>(
+      "DELETE",
+      `/api/chat/goal-templates/${encodeURIComponent(id)}`,
       undefined,
       0,
       true,
@@ -2714,6 +2906,8 @@ export type ChatStreamEvent =
       tokenUsage?: any;
       toolCallHistory?: any;
       executionTimeMs: number;
+      /** Model's context window size in tokens. */
+      contextWindow?: number;
     }
   | {
       type: "toolCall";
@@ -2964,6 +3158,8 @@ export class WebSocketClient {
               msg.payload.tool_call_history || msg.payload.toolCallHistory,
             executionTimeMs:
               msg.payload.execution_time_ms || msg.payload.executionTimeMs || 0,
+            contextWindow:
+              msg.payload.context_window || msg.payload.contextWindow,
           } as ChatStreamEvent);
           this.chatStreams.delete(chatId);
           stream.close();

@@ -200,10 +200,19 @@ impl Client {
         id: &str,
         bypass_ripple: Option<bool>,
     ) -> Result<Record> {
-        let token = self.auth.get_token().await?;
-        self.http
-            .find_by_id(collection, id, &token, bypass_ripple)
-            .await
+        let collection = collection.to_string();
+        let id = id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let collection = collection.clone();
+            let id = id.clone();
+            let http = http.clone();
+            async move {
+                http.find_by_id(&collection, &id, &token, bypass_ripple)
+                    .await
+            }
+        })
+        .await
     }
 
     /// Update a record by ID
@@ -225,10 +234,18 @@ impl Client {
         record: Record,
         options: Option<crate::options::UpdateOptions>,
     ) -> Result<Record> {
-        let token = self.auth.get_token().await?;
-        self.http
-            .update(collection, id, record, options, &token)
-            .await
+        let collection = collection.to_string();
+        let id = id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let collection = collection.clone();
+            let id = id.clone();
+            let record = record.clone();
+            let options = options.clone();
+            let http = http.clone();
+            async move { http.update(&collection, &id, record, options, &token).await }
+        })
+        .await
     }
 
     /// Apply an atomic field action to a single field of a record.
@@ -261,10 +278,24 @@ impl Client {
         field: &str,
         value: FieldType,
     ) -> Result<Record> {
-        let token = self.auth.get_token().await?;
-        self.http
-            .update_with_action(collection, id, action, field, value, &token)
-            .await
+        let collection = collection.to_string();
+        let id = id.to_string();
+        let action = action.to_string();
+        let field = field.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let collection = collection.clone();
+            let id = id.clone();
+            let action = action.clone();
+            let field = field.clone();
+            let value = value.clone();
+            let http = http.clone();
+            async move {
+                http.update_with_action(&collection, &id, &action, &field, value, &token)
+                    .await
+            }
+        })
+        .await
     }
 
     /// Apply a sequence of atomic field actions to a record in a single request.
@@ -305,10 +336,16 @@ impl Client {
         id: &str,
         bypass_ripple: Option<bool>,
     ) -> Result<()> {
-        let token = self.auth.get_token().await?;
-        self.http
-            .delete(collection, id, &token, bypass_ripple)
-            .await
+        let collection = collection.to_string();
+        let id = id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let collection = collection.clone();
+            let id = id.clone();
+            let http = http.clone();
+            async move { http.delete(&collection, &id, &token, bypass_ripple).await }
+        })
+        .await
     }
 
     /// Restore a deleted record from trash (undelete)
@@ -389,10 +426,18 @@ impl Client {
         records: Vec<Record>,
         bypass_ripple: Option<bool>,
     ) -> Result<Vec<Record>> {
-        let token = self.auth.get_token().await?;
-        self.http
-            .batch_insert(collection, records, &token, bypass_ripple)
-            .await
+        let collection = collection.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let collection = collection.clone();
+            let records = records.clone();
+            let http = http.clone();
+            async move {
+                http.batch_insert(&collection, records, &token, bypass_ripple)
+                    .await
+            }
+        })
+        .await
     }
 
     /// Batch update multiple documents
@@ -411,10 +456,18 @@ impl Client {
         updates: Vec<(String, Record)>,
         bypass_ripple: Option<bool>,
     ) -> Result<Vec<Record>> {
-        let token = self.auth.get_token().await?;
-        self.http
-            .batch_update(collection, updates, &token, bypass_ripple)
-            .await
+        let collection = collection.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let collection = collection.clone();
+            let updates = updates.clone();
+            let http = http.clone();
+            async move {
+                http.batch_update(&collection, updates, &token, bypass_ripple)
+                    .await
+            }
+        })
+        .await
     }
 
     /// Batch delete multiple documents by IDs
@@ -433,10 +486,18 @@ impl Client {
         ids: Vec<String>,
         bypass_ripple: Option<bool>,
     ) -> Result<u64> {
-        let token = self.auth.get_token().await?;
-        self.http
-            .batch_delete(collection, ids, &token, bypass_ripple)
-            .await
+        let collection = collection.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let collection = collection.clone();
+            let ids = ids.clone();
+            let http = http.clone();
+            async move {
+                http.batch_delete(&collection, ids, &token, bypass_ripple)
+                    .await
+            }
+        })
+        .await
     }
 
     // ========== Convenience Methods ==========
@@ -725,8 +786,12 @@ impl Client {
     ///
     /// A vector of collection names
     pub async fn list_collections(&self) -> Result<Vec<String>> {
-        let token = self.auth.get_token().await?;
-        self.http.list_collections(&token).await
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let http = http.clone();
+            async move { http.list_collections(&token).await }
+        })
+        .await
     }
 
     /// Delete a collection
@@ -735,8 +800,14 @@ impl Client {
     ///
     /// * `collection` - The collection name to delete
     pub async fn delete_collection(&self, collection: &str) -> Result<()> {
-        let token = self.auth.get_token().await?;
-        self.http.delete_collection(collection, &token).await
+        let collection = collection.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let collection = collection.clone();
+            let http = http.clone();
+            async move { http.delete_collection(&collection, &token).await }
+        })
+        .await
     }
 
     /// Count documents in a collection
@@ -749,7 +820,12 @@ impl Client {
     ///
     /// The number of documents in the collection
     pub async fn count_documents(&self, collection: &str) -> Result<usize> {
-        let query = Query::new().limit(100000); // Large limit to get all
+        // Use select_fields to return only _id (minimal data transfer).
+        // No dedicated server count endpoint exists, so we fetch IDs only.
+        let query = Query {
+            select_fields: Some(vec!["_id".to_string()]),
+            ..Query::default()
+        };
         let records = self.find(collection, query, None).await?;
         Ok(records.len())
     }
@@ -1197,10 +1273,15 @@ impl Client {
     /// # }
     /// ```
     pub async fn create_collection(&self, collection: &str, schema: Schema) -> Result<()> {
-        let token = self.auth.get_token().await?;
-        self.http
-            .create_collection(collection, schema, &token)
-            .await
+        let collection = collection.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let collection = collection.clone();
+            let schema = schema.clone();
+            let http = http.clone();
+            async move { http.create_collection(&collection, schema, &token).await }
+        })
+        .await
     }
 
     /// Get collection metadata and schema
@@ -1227,8 +1308,248 @@ impl Client {
     ///
     /// The collection schema
     pub async fn get_schema(&self, collection: &str) -> Result<Schema> {
-        let token = self.auth.get_token().await?;
-        self.http.get_schema(collection, &token).await
+        let collection = collection.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let collection = collection.clone();
+            let http = http.clone();
+            async move { http.get_schema(&collection, &token).await }
+        })
+        .await
+    }
+
+    // ========================================================================
+    // Tool Dispatch
+    // ========================================================================
+
+    /// Execute a known ekoDB tool by name with JSON parameters, routing to the
+    /// appropriate REST API method. Returns:
+    /// - `Some(Ok(value))` — tool executed successfully
+    /// - `Some(Err(e))` — tool is known but execution failed
+    /// - `None` — tool name is not a known direct-API tool (caller should
+    ///   fall back to chat/LLM routing)
+    ///
+    /// This provides a single dispatch point for tool-name → REST-API mapping,
+    /// so consumers (claw, agents, etc.) don't duplicate parameter extraction.
+    pub async fn execute_tool(
+        &self,
+        tool_name: &str,
+        params: &serde_json::Value,
+    ) -> Option<Result<serde_json::Value>> {
+        let collection = params.get("collection").and_then(|v| v.as_str());
+
+        match tool_name {
+            "insert_record" => {
+                let col = collection?;
+                let data = params.get("data").or_else(|| params.get("record"))?;
+                let record: Record = serde_json::from_value(data.clone()).ok()?;
+                Some(
+                    self.insert(col, record, None)
+                        .await
+                        .map(|rec| serde_json::to_value(&rec).unwrap_or_default()),
+                )
+            }
+            "batch_insert" => {
+                let col = collection?;
+                let records = params.get("records").and_then(|v| v.as_array())?;
+                let batch: Vec<Record> = records
+                    .iter()
+                    .filter_map(|r| serde_json::from_value(r.clone()).ok())
+                    .collect();
+                if batch.is_empty() {
+                    return Some(Err(crate::Error::Validation(
+                        "no valid records to insert".into(),
+                    )));
+                }
+                Some(
+                    self.batch_insert(col, batch, None)
+                        .await
+                        .map(|recs| serde_json::to_value(&recs).unwrap_or_default()),
+                )
+            }
+            "get_record" => {
+                let col = collection?;
+                let id = params.get("id").and_then(|v| v.as_str())?;
+                Some(
+                    self.find_by_id(col, id, None)
+                        .await
+                        .map(|rec| serde_json::to_value(&rec).unwrap_or_default()),
+                )
+            }
+            "update_record" => {
+                let col = collection?;
+                let id = params.get("id").and_then(|v| v.as_str())?;
+                let data = params.get("data").or_else(|| params.get("updates"))?;
+                let record: Record = serde_json::from_value(data.clone()).ok()?;
+                Some(
+                    self.update(col, id, record, None)
+                        .await
+                        .map(|rec| serde_json::to_value(&rec).unwrap_or_default()),
+                )
+            }
+            "delete_record" => {
+                let col = collection?;
+                let id = params.get("id").and_then(|v| v.as_str())?;
+                Some(
+                    self.delete(col, id, None)
+                        .await
+                        .map(|_| serde_json::json!({"deleted": id})),
+                )
+            }
+            "batch_delete" => {
+                let col = collection?;
+                let ids: Vec<String> = params.get("ids").and_then(|v| v.as_array()).map(|arr| {
+                    arr.iter()
+                        .filter_map(|v| v.as_str().map(String::from))
+                        .collect()
+                })?;
+                if ids.is_empty() {
+                    return Some(Err(crate::Error::Validation("no ids provided".into())));
+                }
+                Some(
+                    self.batch_delete(col, ids, None)
+                        .await
+                        .map(|n| serde_json::json!({"deleted": n})),
+                )
+            }
+            "count_records" => {
+                let col = collection?;
+                Some(
+                    self.count_documents(col)
+                        .await
+                        .map(|n| serde_json::json!({"count": n})),
+                )
+            }
+            "list_collections" => Some(
+                self.list_collections()
+                    .await
+                    .map(|cols| serde_json::json!({"collections": cols})),
+            ),
+            "get_schema" => {
+                let col = collection?;
+                Some(
+                    self.get_schema(col)
+                        .await
+                        .map(|s| serde_json::to_value(&s).unwrap_or_default()),
+                )
+            }
+            "create_collection" => {
+                let col = collection?;
+                let schema_val = params.get("schema")?;
+                let schema: Schema = serde_json::from_value(schema_val.clone()).ok()?;
+                Some(
+                    self.create_collection(col, schema)
+                        .await
+                        .map(|_| serde_json::json!({"created": col})),
+                )
+            }
+            "delete_collection" => {
+                let col = collection?;
+                Some(
+                    self.delete_collection(col)
+                        .await
+                        .map(|_| serde_json::json!({"deleted": col})),
+                )
+            }
+            "distinct_values" => {
+                let col = collection?;
+                let field = params.get("field").and_then(|v| v.as_str())?;
+                Some(
+                    self.distinct_values(col, field, Default::default())
+                        .await
+                        .map(|vals| serde_json::to_value(&vals).unwrap_or_default()),
+                )
+            }
+            "query_collection" => {
+                let col = collection?;
+                let filter = params.get("filter").cloned();
+                let sort = params.get("sort").cloned();
+                let limit = params
+                    .get("limit")
+                    .and_then(|v| v.as_u64())
+                    .map(|v| v as usize);
+                let skip = params
+                    .get("skip")
+                    .and_then(|v| v.as_u64())
+                    .map(|v| v as usize);
+                let mut query = Query::default();
+                query.filter = filter;
+                query.sort = sort;
+                query.limit = limit;
+                query.skip = skip;
+                Some(
+                    self.find(col, query, None)
+                        .await
+                        .map(|recs| serde_json::to_value(&recs).unwrap_or_default()),
+                )
+            }
+            "batch_update" => {
+                let col = collection?;
+                let updates_arr = params.get("updates").and_then(|v| v.as_array())?;
+                let updates: Vec<(String, Record)> = updates_arr
+                    .iter()
+                    .filter_map(|u| {
+                        let id = u.get("id").and_then(|v| v.as_str())?.to_string();
+                        let data = u.get("data")?;
+                        let record: Record = serde_json::from_value(data.clone()).ok()?;
+                        Some((id, record))
+                    })
+                    .collect();
+                if updates.is_empty() {
+                    return Some(Err(crate::Error::Validation(
+                        "no valid updates provided".into(),
+                    )));
+                }
+                Some(
+                    self.batch_update(col, updates, None)
+                        .await
+                        .map(|recs| serde_json::to_value(&recs).unwrap_or_default()),
+                )
+            }
+            "update_record_action" => {
+                let col = collection?;
+                let id = params.get("id").and_then(|v| v.as_str())?;
+                let action = params.get("action").and_then(|v| v.as_str())?;
+                let field = params.get("field").and_then(|v| v.as_str())?;
+                let value_json = params.get("value")?;
+                let value: FieldType = serde_json::from_value(value_json.clone()).ok()?;
+                Some(
+                    self.update_with_action(col, id, action, field, value)
+                        .await
+                        .map(|rec| serde_json::to_value(&rec).unwrap_or_default()),
+                )
+            }
+            "kv_get" => {
+                let key = params.get("key").and_then(|v| v.as_str())?;
+                Some(
+                    self.kv_get(key)
+                        .await
+                        .map(|v| v.unwrap_or(serde_json::Value::Null)),
+                )
+            }
+            "kv_set" => {
+                let key = params.get("key").and_then(|v| v.as_str())?;
+                let value = params.get("value")?;
+                Some(
+                    self.kv_set(
+                        key,
+                        value.clone(),
+                        params.get("ttl").and_then(|v| v.as_str()),
+                    )
+                    .await
+                    .map(|_| serde_json::json!({"set": key})),
+                )
+            }
+            "kv_delete" => {
+                let key = params.get("key").and_then(|v| v.as_str())?;
+                Some(
+                    self.kv_delete(key)
+                        .await
+                        .map(|_| serde_json::json!({"deleted": key})),
+                )
+            }
+            _ => None,
+        }
     }
 
     // ========================================================================
@@ -1419,6 +1740,20 @@ impl Client {
     ) -> Result<crate::chat::ChatResponse> {
         let token = self.auth.get_token().await?;
         self.http.chat_message(chat_id, request, &token).await
+    }
+
+    /// Stream a chat message via SSE (Server-Sent Events).
+    /// Returns a channel that yields `ChatStreamEvent` items as they arrive.
+    /// Server-side tools execute normally; client-side tools are not supported over SSE.
+    pub async fn chat_message_stream(
+        &self,
+        chat_id: &str,
+        request: crate::chat::ChatMessageRequest,
+    ) -> Result<tokio::sync::mpsc::Receiver<crate::websocket::ChatStreamEvent>> {
+        let token = self.auth.get_token().await?;
+        self.http
+            .chat_message_stream(chat_id, request, &token)
+            .await
     }
 
     /// Get messages from a chat session
@@ -1979,6 +2314,37 @@ impl Client {
     pub async fn agents_by_deployment(&self, deployment_id: &str) -> Result<serde_json::Value> {
         let token = self.auth.get_token().await?;
         self.http.agents_by_deployment(deployment_id, &token).await
+    }
+
+    // ── Goal Template CRUD ──────────────────────────────────────────────────
+
+    pub async fn goal_template_create(&self, data: serde_json::Value) -> Result<serde_json::Value> {
+        let token = self.auth.get_token().await?;
+        self.http.goal_template_create(data, &token).await
+    }
+
+    pub async fn goal_template_list(&self) -> Result<serde_json::Value> {
+        let token = self.auth.get_token().await?;
+        self.http.goal_template_list(&token).await
+    }
+
+    pub async fn goal_template_get(&self, id: &str) -> Result<serde_json::Value> {
+        let token = self.auth.get_token().await?;
+        self.http.goal_template_get(id, &token).await
+    }
+
+    pub async fn goal_template_update(
+        &self,
+        id: &str,
+        data: serde_json::Value,
+    ) -> Result<serde_json::Value> {
+        let token = self.auth.get_token().await?;
+        self.http.goal_template_update(id, data, &token).await
+    }
+
+    pub async fn goal_template_delete(&self, id: &str) -> Result<()> {
+        let token = self.auth.get_token().await?;
+        self.http.goal_template_delete(id, &token).await
     }
 
     // ── KV Document Linking ─────────────────────────────────────────────────

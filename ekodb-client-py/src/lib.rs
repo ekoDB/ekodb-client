@@ -1130,6 +1130,75 @@ impl Client {
         })
     }
 
+    /// Stateless raw LLM completion via SSE with per-token progress callback.
+    ///
+    /// Identical to `raw_completion_stream` but invokes `on_token` for each
+    /// token received, enabling real-time progress display.
+    ///
+    /// Args:
+    ///     system_prompt: System prompt
+    ///     message: User message
+    ///     on_token: Callable invoked with each token string
+    ///     provider: Optional provider name
+    ///     model: Optional model name
+    ///     max_tokens: Optional max tokens
+    fn raw_completion_stream_with_progress<'py>(
+        &self,
+        py: Python<'py>,
+        system_prompt: String,
+        message: String,
+        on_token: Py<PyAny>,
+        provider: Option<String>,
+        model: Option<String>,
+        max_tokens: Option<i32>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py(py, async move {
+            let request = RustRawCompletionRequest {
+                system_prompt,
+                message,
+                provider,
+                model,
+                max_tokens,
+            };
+
+            let (tx, mut rx) = tokio::sync::mpsc::channel::<String>(64);
+
+            let handle = tokio::spawn(async move {
+                client
+                    .raw_completion_stream_with_progress(request, tx)
+                    .await
+            });
+
+            // Forward tokens to the Python callback
+            while let Some(token) = rx.recv().await {
+                Python::attach(|py| {
+                    let _ = on_token.call1(py, (token,));
+                });
+            }
+
+            let resp = handle
+                .await
+                .map_err(|e| {
+                    PyRuntimeError::new_err(format!("Task join failed: {}", e))
+                })?
+                .map_err(|e| {
+                    PyRuntimeError::new_err(format!(
+                        "raw_completion_stream_with_progress failed: {}",
+                        e
+                    ))
+                })?;
+
+            Python::attach(|py| {
+                let resp_json = serde_json::to_value(&resp).map_err(|e| {
+                    PyRuntimeError::new_err(format!("Failed to serialize response: {}", e))
+                })?;
+                json_to_pydict(py, &resp_json)
+            })
+        })
+    }
+
     /// Text-only search (full-text search helper)
     ///
     /// Args:
@@ -1704,6 +1773,43 @@ impl Client {
                 .map_err(|e| PyRuntimeError::new_err(format!("Chat message failed: {}", e)))?;
 
             Python::attach(|py| chat_response_to_dict(py, &result))
+        })
+    }
+
+    /// Stream a chat message via SSE (Server-Sent Events).
+    /// Returns a ChatStreamReceiver for receiving events incrementally.
+    #[pyo3(signature = (chat_id, message, bypass_ripple=None, force_summarize=None, max_iterations=None))]
+    fn chat_message_stream<'py>(
+        &self,
+        py: Python<'py>,
+        chat_id: String,
+        message: String,
+        bypass_ripple: Option<bool>,
+        force_summarize: Option<bool>,
+        max_iterations: Option<u32>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            let request = ChatMessageRequest {
+                message,
+                bypass_ripple,
+                force_summarize,
+                max_iterations,
+                tool_config: None,
+            };
+
+            let rx = client
+                .chat_message_stream(&chat_id, request)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("Chat message stream failed: {}", e)))?;
+
+            Python::attach(|py| {
+                let receiver = ChatStreamReceiver {
+                    inner: std::sync::Arc::new(tokio::sync::Mutex::new(rx)),
+                };
+                Ok(Py::new(py, receiver)?.into())
+            })
         })
     }
 
@@ -2818,6 +2924,111 @@ impl Client {
         })
     }
 
+    // ── Goal Template CRUD ──────────────────────────────────────────────
+
+    /// Create a new goal template
+    ///
+    /// Args:
+    ///     data: Goal template definition as a dict
+    ///
+    /// Returns:
+    ///     The created goal template as a dict
+    fn goal_template_create<'py>(
+        &self,
+        py: Python<'py>,
+        data: &Bound<'py, PyDict>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        let json_value = py_to_json(data.as_any())?;
+
+        future_into_py(py, async move {
+            let result = client
+                .goal_template_create(json_value)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("goal_template_create failed: {}", e)))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// List all goal templates
+    ///
+    /// Returns:
+    ///     A dict containing the list of goal templates
+    fn goal_template_list<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            let result = client
+                .goal_template_list()
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("goal_template_list failed: {}", e)))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// Get a goal template by ID
+    ///
+    /// Args:
+    ///     id: Goal template ID
+    ///
+    /// Returns:
+    ///     The goal template as a dict
+    fn goal_template_get<'py>(&self, py: Python<'py>, id: String) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            let result = client
+                .goal_template_get(&id)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("goal_template_get failed: {}", e)))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// Update an existing goal template
+    ///
+    /// Args:
+    ///     id: Goal template ID
+    ///     data: Updated goal template fields as a dict
+    ///
+    /// Returns:
+    ///     The updated goal template as a dict
+    fn goal_template_update<'py>(
+        &self,
+        py: Python<'py>,
+        id: String,
+        data: &Bound<'py, PyDict>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        let json_value = py_to_json(data.as_any())?;
+
+        future_into_py(py, async move {
+            let result = client
+                .goal_template_update(&id, json_value)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("goal_template_update failed: {}", e)))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// Delete a goal template by ID
+    ///
+    /// Args:
+    ///     id: Goal template ID
+    fn goal_template_delete<'py>(&self, py: Python<'py>, id: String) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            client
+                .goal_template_delete(&id)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("goal_template_delete failed: {}", e)))?;
+
+            Python::attach(|py| Ok(py.None()))
+        })
+    }
+
     // ── Task CRUD ──────────────────────────────────────────────────────
 
     /// Create a new scheduled task
@@ -3483,6 +3694,7 @@ impl ChatStreamReceiver {
                                 token_usage,
                                 tool_call_history,
                                 execution_time_ms,
+                                context_window,
                             } => {
                                 dict.set_item("type", "end")?;
                                 dict.set_item("message_id", message_id)?;
@@ -3492,6 +3704,9 @@ impl ChatStreamReceiver {
                                 }
                                 if let Some(ref tch) = tool_call_history {
                                     dict.set_item("tool_call_history", json_to_pydict(py, tch)?)?;
+                                }
+                                if let Some(cw) = context_window {
+                                    dict.set_item("context_window", *cw)?;
                                 }
                             }
                             ekodb_client::websocket::ChatStreamEvent::ToolCall {

@@ -36,7 +36,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-ekodb_client = "0.10"
+ekodb_client = "0.14"
 tokio = { version = "1", features = ["full"] }
 ```
 
@@ -274,7 +274,7 @@ let session_request = CreateChatSessionRequest {
         search_options: None,
     }],
     llm_provider: "openai".to_string(),
-    llm_model: Some("gpt-4".to_string()),
+    llm_model: Some("gpt-4.1".to_string()),
     system_prompt: Some("You are a helpful assistant.".to_string()),
     parent_id: None,
     branch_point_idx: None,
@@ -610,6 +610,128 @@ All examples are located in `examples/rust/examples/` directory.
 - `websocket(url)` - Connect to WebSocket endpoint
 - `ws_client.find(collection, query)` - Query via WebSocket
 - `ws_client.find_all(collection)` - Get all via WebSocket
+
+### Goals, Tasks & Agents
+
+```rust
+use ekodb_client::Client;
+use serde_json::json;
+
+// Create a goal
+let goal = client.goal_create(json!({
+    "title": "Migrate user data",
+    "description": "Move users from legacy to new schema",
+    "status": "active",
+})).await?;
+
+// List goals
+let goals = client.goal_list().await?;
+
+// Complete a goal (moves to pending_review)
+client.goal_complete("goal-id", json!({
+    "summary": "All records migrated"
+})).await?;
+
+// Approve or reject
+client.goal_approve("goal-id").await?;
+client.goal_reject("goal-id", json!({
+    "reason": "Missing validation"
+})).await?;
+
+// Goal step lifecycle
+client.goal_step_start("goal-id", 0).await?;
+client.goal_step_complete("goal-id", 0, json!({
+    "result": "done"
+})).await?;
+
+// Tasks
+let task = client.task_create(json!({
+    "title": "Backup DB",
+    "schedule": "0 0 * * *",
+})).await?;
+client.task_start("task-id").await?;
+client.task_succeed("task-id", json!({
+    "records": 1500
+})).await?;
+client.task_pause("task-id").await?;
+client.task_resume("task-id", None).await?;
+
+// Agents
+let agent = client.agent_create(json!({
+    "name": "data-processor",
+    "model": "gpt-4.1",
+})).await?;
+let agents = client.agent_list().await?;
+client.agent_get_by_name("data-processor").await?;
+client.agents_by_deployment("deploy-id").await?;
+```
+
+### Schedule Management
+
+```rust
+use serde_json::json;
+
+// Create a schedule
+let sched = client.create_schedule(json!({
+    "name": "nightly-backup",
+    "cron": "0 2 * * *",
+    "task_type": "backup",
+})).await?;
+
+// List, get, update
+let schedules = client.list_schedules().await?;
+client.get_schedule("sched-id").await?;
+client.update_schedule("sched-id", json!({
+    "cron": "0 3 * * *"
+})).await?;
+
+// Pause and resume
+client.pause_schedule("sched-id").await?;
+client.resume_schedule("sched-id").await?;
+
+// Delete
+client.delete_schedule("sched-id").await?;
+```
+
+### WebSocket Chat Streaming
+
+```rust
+// Connect to WebSocket
+let ws = client.websocket("ws://localhost:8080/ws").await?;
+
+// Send a chat message and stream events
+let mut event_stream = ws
+    .chat_send(chat_id, "What is the capital of France?")
+    .await?;
+
+while let Some(event) = event_stream.next().await {
+    match event.event_type.as_str() {
+        "chunk" => {
+            print!("{}", event.content);
+        }
+        "end" => {
+            println!(
+                "\nDone in {}ms (context window: {} tokens)",
+                event.execution_time_ms,
+                event.context_window
+            );
+        }
+        "toolCall" => {
+            ws.send_tool_result(
+                chat_id,
+                &event.call_id,
+                true,
+                result,
+                "",
+            ).await?;
+        }
+        "error" => {
+            eprintln!("Error: {}", event.error);
+        }
+        _ => {}
+    }
+}
+```
 
 ## Best Practices
 

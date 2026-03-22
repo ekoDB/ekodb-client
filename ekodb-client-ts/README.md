@@ -348,6 +348,76 @@ for complete working examples:
 - `client_user_functions.ts` - User functions API
 - And more...
 
+### Goals, Tasks, and Agents
+
+```typescript
+import { EkoDBClient } from "@ekodb/ekodb-client";
+
+const client = new EkoDBClient("http://localhost:8080", "your-api-key");
+await client.init();
+
+// Goals
+const goal = await client.goalCreate({
+  title: "Migrate data",
+  status: "active",
+});
+const goals = await client.goalList();
+await client.goalComplete("goal-id", { summary: "Done" });
+await client.goalApprove("goal-id");
+
+// Tasks
+const task = await client.taskCreate({
+  title: "Backup",
+  schedule: "0 0 * * *",
+});
+await client.taskStart("task-id");
+await client.taskSucceed("task-id", { records: 1500 });
+
+// Agents
+const agent = await client.agentCreate({
+  name: "processor",
+  model: "gpt-4.1",
+});
+const agents = await client.agentList();
+```
+
+### Schedules
+
+```typescript
+// Create a schedule
+const sched = await client.createSchedule({
+  name: "nightly",
+  cron: "0 2 * * *",
+});
+
+// Pause a schedule
+await client.pauseSchedule("sched-id");
+```
+
+### WebSocket Chat Streaming
+
+```typescript
+const ws = client.websocket("ws://localhost:8080");
+
+const stream = await ws.chatSend(chatId, "What is the capital of France?");
+stream.on("event", (event) => {
+  switch (event.type) {
+    case "chunk":
+      process.stdout.write(event.content);
+      break;
+    case "end":
+      console.log(`\nDone (context: ${event.contextWindow} tokens)`);
+      break;
+    case "toolCall":
+      ws.sendToolResult(chatId, event.callId, true, result);
+      break;
+    case "error":
+      console.error(event.error);
+      break;
+  }
+});
+```
+
 ## License
 
 MIT

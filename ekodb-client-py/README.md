@@ -529,6 +529,58 @@ pytest
 pytest --cov=ekodb
 ```
 
+### Goals, Tasks, and Agents
+
+```python
+import asyncio
+from ekodb_client import Client
+
+async def main():
+    client = Client.new("http://localhost:8080", "your-api-key")
+
+    # Goals
+    goal = await client.goal_create({"title": "Migrate data", "status": "active"})
+    goals = await client.goal_list()
+    await client.goal_complete("goal-id", {"summary": "Done"})
+
+    # Tasks
+    task = await client.task_create({"title": "Backup", "schedule": "0 0 * * *"})
+    await client.task_start("task-id")
+
+    # Agents
+    agent = await client.agent_create({"name": "processor", "model": "gpt-4.1"})
+
+asyncio.run(main())
+```
+
+### Schedules
+
+```python
+# Create a schedule
+sched = await client.create_schedule({"name": "nightly", "cron": "0 2 * * *"})
+
+# Pause a schedule
+await client.pause_schedule("sched-id")
+```
+
+### WebSocket Chat Streaming
+
+```python
+ws = await client.websocket("ws://localhost:8080")
+
+stream = await ws.chat_send(chat_id, "What is the capital of France?")
+async for event in stream:
+    if event.type == "chunk":
+        print(event.content, end="")
+    elif event.type == "end":
+        print(f"\nDone (context: {event.context_window} tokens)")
+    elif event.type == "tool_call":
+        print(f"[Tool] {event.tool_name}")
+        await ws.send_tool_result(chat_id, event.call_id, True, {"result": "done"})
+    elif event.type == "error":
+        print(f"Error: {event.error}")
+```
+
 ## License
 
 MIT OR Apache-2.0
