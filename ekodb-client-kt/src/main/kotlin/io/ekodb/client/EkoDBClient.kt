@@ -1571,6 +1571,57 @@ class EkoDBClient private constructor(
     }
     
     /**
+     * Execute a tool via ekoDB's server-side tool pipeline.
+     *
+     * Calls POST /api/chat/tools/execute which goes through the same
+     * execute_tool function as the LLM tool-calling loop — with all
+     * collection filtering, permission enforcement, and internal collection
+     * blocking. No LLM round-trip.
+     *
+     * @return The tool result if executed, or null if the server doesn't
+     * support the endpoint (older ekoDB versions).
+     */
+    suspend fun executeTool(
+        toolName: String,
+        params: JsonObject,
+        chatId: String? = null
+    ): JsonObject? {
+        val token = getToken()
+        val body = buildJsonObject {
+            put("tool", toolName)
+            put("params", params)
+            if (chatId != null) {
+                put("chat_id", chatId)
+            }
+        }
+
+        return try {
+            val response = executeWithRetry {
+                client.post("$baseUrl/api/chat/tools/execute") {
+                    header("Authorization", "Bearer $token")
+                    contentType(ContentType.Application.Json)
+                    header("Accept", ContentType.Application.Json.toString())
+                    setBody(body)
+                }
+            }
+            val result: JsonObject = response.body()
+            val success = result["success"]?.jsonPrimitive?.booleanOrNull ?: false
+            if (success) {
+                result["result"]?.jsonObject
+            } else {
+                val error = result["error"]?.jsonPrimitive?.contentOrNull ?: "tool execution failed"
+                throw RuntimeException(error)
+            }
+        } catch (e: Exception) {
+            if (e.message?.contains("404") == true || e.message?.contains("405") == true) {
+                null // Server doesn't have the endpoint (404) or route mismatch (405)
+            } else {
+                throw e
+            }
+        }
+    }
+
+    /**
      * Create a new chat session
      */
     suspend fun createChatSession(request: JsonObject): JsonObject {

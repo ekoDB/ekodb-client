@@ -23,15 +23,31 @@ and this project adheres to
   wrappers. Eliminates cascading "Token expired" failures across all client
   methods.
 
-- **`execute_tool()` dispatch method** — New
-  `Client::execute_tool(tool_name, params)` provides a single dispatch point
-  mapping tool names to REST API calls. Covers 16 tools: `insert_record`,
-  `batch_insert`, `get_record`, `update_record`, `delete_record`,
-  `batch_delete`, `count_records`, `list_collections`, `get_schema`,
-  `create_collection`, `delete_collection`, `distinct_values`,
-  `query_collection`, `batch_update`, `update_record_action`, `kv_get`,
-  `kv_set`, `kv_delete`. Returns `None` for unknown tools so callers can fall
-  back to chat/LLM routing.
+- **Server-side `execute_tool()`** — `Client::execute_tool(tool_name, params,
+  chat_id)` now delegates to ekoDB's `POST /api/chat/tools/execute` endpoint
+  instead of dispatching tools client-side. All collection filtering, permission
+  enforcement, and internal collection blocking happen server-side. Accepts
+  optional `chat_id` for memory-tool context. Returns `None` on 404/405 so
+  callers can fall back to chat/LLM routing.
+
+- **`execute_tool_remote()` HTTP method** — New `HttpClient::execute_tool_remote()`
+  POSTs to `/api/chat/tools/execute` with `{tool, params, chat_id?}` and returns
+  the raw server response.
+
+- **`executeTool` in TypeScript client** — `EkoDBClient.executeTool(toolName,
+  params, chatId?)` calls the server-side tool execute endpoint. Returns `null`
+  on 404/405 for graceful fallback.
+
+- **`executeTool` in Kotlin client** — `EkoDBClient.executeTool(toolName,
+  params, chatId?)` suspend function with `executeWithRetry`. Returns `null`
+  on 404/405.
+
+- **`ExecuteTool` in Go client** — `Client.ExecuteTool(toolName, params,
+  chatID)` with `ExecuteToolRequest`/`ExecuteToolResult` types. Returns
+  `nil, nil` on 404/405.
+
+- **`execute_tool` in Python client** — PyO3 binding delegates to
+  `client.execute_tool()`. Returns `None` on 404/405.
 
 ### Fixed
 

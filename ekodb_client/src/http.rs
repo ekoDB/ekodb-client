@@ -1443,6 +1443,41 @@ impl HttpClient {
             .await
     }
 
+    /// Execute a single tool server-side via POST /api/chat/tools/execute.
+    /// Goes through ekoDB's tool pipeline with all filtering and permissions.
+    pub async fn execute_tool_remote(
+        &self,
+        tool: &str,
+        params: &serde_json::Value,
+        chat_id: Option<&str>,
+        token: &str,
+    ) -> Result<serde_json::Value> {
+        let url = self.base_url.join("/api/chat/tools/execute")?;
+        let mut body = serde_json::json!({
+            "tool": tool,
+            "params": params,
+        });
+        if let Some(cid) = chat_id {
+            body["chat_id"] = serde_json::json!(cid);
+        }
+
+        self.retry_policy
+            .execute(|| async {
+                let response = self
+                    .client
+                    .post(url.clone())
+                    .header("Authorization", format!("Bearer {}", token))
+                    .header("Content-Type", "application/json")
+                    .json(&body)
+                    .send()
+                    .await?;
+
+                self.handle_response("/api/chat/tools/execute", response)
+                    .await
+            })
+            .await
+    }
+
     /// Get specific chat model info
     pub async fn get_chat_model(&self, model_name: &str, token: &str) -> Result<Vec<String>> {
         let url = self

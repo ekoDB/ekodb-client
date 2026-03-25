@@ -168,6 +168,52 @@ class EkoDBClientTest {
     }
 
     // ========================================================================
+    // executeTool Tests
+    // ========================================================================
+
+    @Test
+    fun `executeTool returns result on success`() = runBlocking {
+        val mockEngine = createMockEngine("""{"success": true, "result": {"count": 42}}""")
+        val client = createTestClient(mockEngine)
+        val params = buildJsonObject { put("collection", "users") }
+        val result = client.executeTool("count_records", params)
+        assertNotNull(result)
+        assertEquals(42, result["count"]?.jsonPrimitive?.int)
+    }
+
+    @Test
+    fun `executeTool passes chatId when provided`() = runBlocking {
+        val mockEngine = createMockEngine("""{"success": true, "result": {"value": "hello"}}""")
+        val client = createTestClient(mockEngine)
+        val params = buildJsonObject { put("key", "greeting") }
+        val result = client.executeTool("kv_get", params, "chat_456")
+        assertNotNull(result)
+        assertEquals("hello", result["value"]?.jsonPrimitive?.content)
+    }
+
+    @Test
+    fun `executeTool throws on failure`() = runBlocking {
+        val mockEngine = createMockEngine("""{"success": false, "error": "permission denied"}""")
+        val client = createTestClient(mockEngine)
+        val params = buildJsonObject { put("collection", "system") }
+        try {
+            client.executeTool("delete_collection", params)
+            fail("Expected exception")
+        } catch (e: RuntimeException) {
+            assertTrue(e.message?.contains("permission denied") == true)
+        }
+    }
+
+    @Test
+    fun `executeTool returns null on 404`() = runBlocking {
+        val mockEngine = createMockEngine("""Not Found""", HttpStatusCode.NotFound)
+        val client = createTestClient(mockEngine)
+        val params = buildJsonObject { put("collection", "users") }
+        val result = client.executeTool("count_records", params)
+        assertEquals(null, result)
+    }
+
+    // ========================================================================
     // Chat Tests
     // ========================================================================
 

@@ -1696,6 +1696,40 @@ impl Client {
 
     // Note: The chat() method has been removed. Use create_chat_session() and chat_message() instead.
 
+    /// Execute a tool via ekoDB's server-side tool pipeline.
+    ///
+    /// Calls POST /api/chat/tools/execute which goes through the same
+    /// execute_tool function as the LLM tool-calling loop — with all
+    /// collection filtering, permission enforcement, and internal collection
+    /// blocking. No LLM round-trip.
+    ///
+    /// Returns the tool result dict if executed, None if the server doesn't
+    /// support the endpoint (older ekoDB versions).
+    #[pyo3(signature = (tool_name, params, chat_id=None))]
+    fn execute_tool<'py>(
+        &self,
+        py: Python<'py>,
+        tool_name: String,
+        params: Bound<'py, PyDict>,
+        chat_id: Option<String>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        let params_json = dict_to_json(&params)?;
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            match client.execute_tool(&tool_name, &params_json, chat_id.as_deref()).await {
+                Some(Ok(result)) => {
+                    Python::attach(|py| json_to_pydict(py, &result))
+                }
+                Some(Err(e)) => Err(PyRuntimeError::new_err(format!(
+                    "Tool execution failed: {}",
+                    e
+                ))),
+                None => Python::attach(|py| Ok(py.None().into())),
+            }
+        })
+    }
+
     /// Create a new chat session
     #[pyo3(signature = (collections, llm_provider, llm_model=None, system_prompt=None, max_context_messages=None, bypass_ripple=None, max_tokens=None, temperature=None))]
     fn create_chat_session<'py>(
