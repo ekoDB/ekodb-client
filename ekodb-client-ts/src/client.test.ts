@@ -1106,6 +1106,80 @@ describe("Convenience methods", () => {
 });
 
 // ============================================================================
+// executeTool Tests
+// ============================================================================
+
+describe("EkoDBClient executeTool", () => {
+  it("executes tool successfully", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse({
+      success: true,
+      result: { count: 42 },
+    });
+
+    const result = await client.executeTool("count_records", {
+      collection: "users",
+    });
+
+    expect(result).toEqual({ count: 42 });
+  });
+
+  it("passes chat_id when provided", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse({
+      success: true,
+      result: { value: "hello" },
+    });
+
+    const result = await client.executeTool(
+      "kv_get",
+      { key: "greeting" },
+      "chat_456",
+    );
+
+    expect(result).toEqual({ value: "hello" });
+
+    // Verify the request body included chat_id
+    const lastCall = mockFetch.mock.calls[1];
+    const body = JSON.parse(lastCall[1].body);
+    expect(body.chat_id).toBe("chat_456");
+    expect(body.tool).toBe("kv_get");
+    expect(body.params).toEqual({ key: "greeting" });
+  });
+
+  it("throws on tool execution failure", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse({
+      success: false,
+      error: "permission denied",
+    });
+
+    await expect(
+      client.executeTool("delete_collection", { collection: "system" }),
+    ).rejects.toThrow("permission denied");
+  });
+
+  it("returns null when server does not support endpoint", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockErrorResponse(404, "Not Found");
+
+    const result = await client.executeTool("count_records", {
+      collection: "users",
+    });
+
+    expect(result).toBeNull();
+  });
+});
+
+// ============================================================================
 // Chat Models Tests
 // ============================================================================
 

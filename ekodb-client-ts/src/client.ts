@@ -1553,6 +1553,50 @@ export class EkoDBClient {
   // ========== Chat Methods ==========
 
   /**
+   * Execute a tool via ekoDB's server-side tool pipeline.
+   *
+   * Calls POST /api/chat/tools/execute which goes through the same
+   * execute_tool function as the LLM tool-calling loop — with all
+   * collection filtering, permission enforcement, and internal collection
+   * blocking. No LLM round-trip.
+   *
+   * @returns The tool result if executed, or null if the server doesn't
+   * support the endpoint (older ekoDB versions).
+   */
+  async executeTool(
+    toolName: string,
+    params: { [key: string]: any },
+    chatId?: string,
+  ): Promise<{ [key: string]: any } | null> {
+    const body: { [key: string]: any } = { tool: toolName, params };
+    if (chatId) {
+      body.chat_id = chatId;
+    }
+
+    try {
+      const result = await this.makeRequest<{ [key: string]: any }>(
+        "POST",
+        "/api/chat/tools/execute",
+        body,
+        0,
+        true, // Force JSON for chat operations
+      );
+
+      if (result.success) {
+        return result.result;
+      } else {
+        throw new Error(result.error || "tool execution failed");
+      }
+    } catch (err: any) {
+      // Server doesn't have the endpoint (404) or route mismatch (405)
+      if (err?.message?.includes("404") || err?.message?.includes("405") || err?.status === 404 || err?.status === 405) {
+        return null;
+      }
+      throw err;
+    }
+  }
+
+  /**
    * Create a new chat session
    */
   async createChatSession(

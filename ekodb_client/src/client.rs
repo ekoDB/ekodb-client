@@ -1331,224 +1331,53 @@ impl Client {
     ///
     /// This provides a single dispatch point for tool-name → REST-API mapping,
     /// so consumers (claw, agents, etc.) don't duplicate parameter extraction.
+    /// Execute a tool via ekoDB's server-side tool pipeline.
+    ///
+    /// Calls `POST /api/chat/tools/execute` which goes through the same
+    /// `execute_tool` function as the LLM tool-calling loop — with all
+    /// collection filtering, permission enforcement, and internal collection
+    /// blocking. No LLM round-trip.
+    ///
+    /// Returns `Some(Ok(result))` if the tool was executed,
+    /// `Some(Err(e))` if execution failed, or `None` if the server doesn't
+    /// support the endpoint (older ekoDB versions).
     pub async fn execute_tool(
         &self,
         tool_name: &str,
         params: &serde_json::Value,
+        chat_id: Option<&str>,
     ) -> Option<Result<serde_json::Value>> {
-        let collection = params.get("collection").and_then(|v| v.as_str());
-
-        match tool_name {
-            "insert_record" => {
-                let col = collection?;
-                let data = params.get("data").or_else(|| params.get("record"))?;
-                let record: Record = serde_json::from_value(data.clone()).ok()?;
-                Some(
-                    self.insert(col, record, None)
-                        .await
-                        .map(|rec| serde_json::to_value(&rec).unwrap_or_default()),
-                )
-            }
-            "batch_insert" => {
-                let col = collection?;
-                let records = params.get("records").and_then(|v| v.as_array())?;
-                let batch: Vec<Record> = records
-                    .iter()
-                    .filter_map(|r| serde_json::from_value(r.clone()).ok())
-                    .collect();
-                if batch.is_empty() {
-                    return Some(Err(crate::Error::Validation(
-                        "no valid records to insert".into(),
-                    )));
+        let token = match self.auth.get_token().await {
+            Ok(t) => t,
+            Err(e) => return Some(Err(e)),
+        };
+        match self
+            .http
+            .execute_tool_remote(tool_name, params, chat_id, &token)
+            .await
+        {
+            Ok(result) => {
+                // The server returns a ToolResult with success/result/error fields
+                let success = result["success"].as_bool().unwrap_or(false);
+                if success {
+                    Some(Ok(result["result"].clone()))
+                } else {
+                    let error = result["error"]
+                        .as_str()
+                        .unwrap_or("tool execution failed")
+                        .to_string();
+                    Some(Err(crate::Error::Api {
+                        code: 400,
+                        message: error,
+                    }))
                 }
-                Some(
-                    self.batch_insert(col, batch, None)
-                        .await
-                        .map(|recs| serde_json::to_value(&recs).unwrap_or_default()),
-                )
             }
-            "get_record" => {
-                let col = collection?;
-                let id = params.get("id").and_then(|v| v.as_str())?;
-                Some(
-                    self.find_by_id(col, id, None)
-                        .await
-                        .map(|rec| serde_json::to_value(&rec).unwrap_or_default()),
-                )
+            Err(crate::Error::Api { code: 404 | 405, .. }) => {
+                // Server doesn't have the endpoint (404) or route mismatch (405)
+                // — return None so caller can fall back to chat path
+                None
             }
-            "update_record" => {
-                let col = collection?;
-                let id = params.get("id").and_then(|v| v.as_str())?;
-                let data = params.get("data").or_else(|| params.get("updates"))?;
-                let record: Record = serde_json::from_value(data.clone()).ok()?;
-                Some(
-                    self.update(col, id, record, None)
-                        .await
-                        .map(|rec| serde_json::to_value(&rec).unwrap_or_default()),
-                )
-            }
-            "delete_record" => {
-                let col = collection?;
-                let id = params.get("id").and_then(|v| v.as_str())?;
-                Some(
-                    self.delete(col, id, None)
-                        .await
-                        .map(|_| serde_json::json!({"deleted": id})),
-                )
-            }
-            "batch_delete" => {
-                let col = collection?;
-                let ids: Vec<String> = params.get("ids").and_then(|v| v.as_array()).map(|arr| {
-                    arr.iter()
-                        .filter_map(|v| v.as_str().map(String::from))
-                        .collect()
-                })?;
-                if ids.is_empty() {
-                    return Some(Err(crate::Error::Validation("no ids provided".into())));
-                }
-                Some(
-                    self.batch_delete(col, ids, None)
-                        .await
-                        .map(|n| serde_json::json!({"deleted": n})),
-                )
-            }
-            "count_records" => {
-                let col = collection?;
-                Some(
-                    self.count_documents(col)
-                        .await
-                        .map(|n| serde_json::json!({"count": n})),
-                )
-            }
-            "list_collections" => Some(
-                self.list_collections()
-                    .await
-                    .map(|cols| serde_json::json!({"collections": cols})),
-            ),
-            "get_schema" => {
-                let col = collection?;
-                Some(
-                    self.get_schema(col)
-                        .await
-                        .map(|s| serde_json::to_value(&s).unwrap_or_default()),
-                )
-            }
-            "create_collection" => {
-                let col = collection?;
-                let schema_val = params.get("schema")?;
-                let schema: Schema = serde_json::from_value(schema_val.clone()).ok()?;
-                Some(
-                    self.create_collection(col, schema)
-                        .await
-                        .map(|_| serde_json::json!({"created": col})),
-                )
-            }
-            "delete_collection" => {
-                let col = collection?;
-                Some(
-                    self.delete_collection(col)
-                        .await
-                        .map(|_| serde_json::json!({"deleted": col})),
-                )
-            }
-            "distinct_values" => {
-                let col = collection?;
-                let field = params.get("field").and_then(|v| v.as_str())?;
-                Some(
-                    self.distinct_values(col, field, Default::default())
-                        .await
-                        .map(|vals| serde_json::to_value(&vals).unwrap_or_default()),
-                )
-            }
-            "query_collection" => {
-                let col = collection?;
-                let filter = params.get("filter").cloned();
-                let sort = params.get("sort").cloned();
-                let limit = params
-                    .get("limit")
-                    .and_then(|v| v.as_u64())
-                    .map(|v| v as usize);
-                let skip = params
-                    .get("skip")
-                    .and_then(|v| v.as_u64())
-                    .map(|v| v as usize);
-                let mut query = Query::default();
-                query.filter = filter;
-                query.sort = sort;
-                query.limit = limit;
-                query.skip = skip;
-                Some(
-                    self.find(col, query, None)
-                        .await
-                        .map(|recs| serde_json::to_value(&recs).unwrap_or_default()),
-                )
-            }
-            "batch_update" => {
-                let col = collection?;
-                let updates_arr = params.get("updates").and_then(|v| v.as_array())?;
-                let updates: Vec<(String, Record)> = updates_arr
-                    .iter()
-                    .filter_map(|u| {
-                        let id = u.get("id").and_then(|v| v.as_str())?.to_string();
-                        let data = u.get("data")?;
-                        let record: Record = serde_json::from_value(data.clone()).ok()?;
-                        Some((id, record))
-                    })
-                    .collect();
-                if updates.is_empty() {
-                    return Some(Err(crate::Error::Validation(
-                        "no valid updates provided".into(),
-                    )));
-                }
-                Some(
-                    self.batch_update(col, updates, None)
-                        .await
-                        .map(|recs| serde_json::to_value(&recs).unwrap_or_default()),
-                )
-            }
-            "update_record_action" => {
-                let col = collection?;
-                let id = params.get("id").and_then(|v| v.as_str())?;
-                let action = params.get("action").and_then(|v| v.as_str())?;
-                let field = params.get("field").and_then(|v| v.as_str())?;
-                let value_json = params.get("value")?;
-                let value: FieldType = serde_json::from_value(value_json.clone()).ok()?;
-                Some(
-                    self.update_with_action(col, id, action, field, value)
-                        .await
-                        .map(|rec| serde_json::to_value(&rec).unwrap_or_default()),
-                )
-            }
-            "kv_get" => {
-                let key = params.get("key").and_then(|v| v.as_str())?;
-                Some(
-                    self.kv_get(key)
-                        .await
-                        .map(|v| v.unwrap_or(serde_json::Value::Null)),
-                )
-            }
-            "kv_set" => {
-                let key = params.get("key").and_then(|v| v.as_str())?;
-                let value = params.get("value")?;
-                Some(
-                    self.kv_set(
-                        key,
-                        value.clone(),
-                        params.get("ttl").and_then(|v| v.as_str()),
-                    )
-                    .await
-                    .map(|_| serde_json::json!({"set": key})),
-                )
-            }
-            "kv_delete" => {
-                let key = params.get("key").and_then(|v| v.as_str())?;
-                Some(
-                    self.kv_delete(key)
-                        .await
-                        .map(|_| serde_json::json!({"deleted": key})),
-                )
-            }
-            _ => None,
+            Err(e) => Some(Err(e)),
         }
     }
 

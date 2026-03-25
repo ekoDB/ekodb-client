@@ -302,8 +302,6 @@ dependencies = [
 [[package]]
 name = "ekodb_client"
 version = "0.14.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3c8ce6f2babf06ca1711c4b7a1c2ab4c0c069d4478ae3723caea230bd2640a75"
 dependencies = [
  "async-compression",
  "base64",
