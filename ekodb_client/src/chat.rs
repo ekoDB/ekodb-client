@@ -290,6 +290,11 @@ pub struct ChatMessageRequest {
     /// Override session tool config for this message
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tool_config: Option<ToolConfig>,
+    /// Per-message LLM model override. When set, uses this model instead of the
+    /// session's configured model. Useful for routing simple steps through a
+    /// faster/cheaper model.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub llm_model: Option<String>,
 }
 
 impl ChatMessageRequest {
@@ -301,6 +306,7 @@ impl ChatMessageRequest {
             force_summarize: None,
             max_iterations: None,
             tool_config: None,
+            llm_model: None,
         }
     }
 
@@ -319,6 +325,13 @@ impl ChatMessageRequest {
     /// Override session tool config for this message.
     pub fn tool_config(mut self, config: ToolConfig) -> Self {
         self.tool_config = Some(config);
+        self
+    }
+
+    /// Override the session's LLM model for this message only.
+    /// Useful for routing simple tool-calling steps through a faster model.
+    pub fn llm_model(mut self, model: impl Into<String>) -> Self {
+        self.llm_model = Some(model.into());
         self
     }
 }

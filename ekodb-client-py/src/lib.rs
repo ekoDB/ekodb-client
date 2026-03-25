@@ -1799,6 +1799,7 @@ impl Client {
                 force_summarize,
                 max_iterations,
                 tool_config: None,
+                llm_model: None,
             };
 
             let result = client
@@ -1831,6 +1832,7 @@ impl Client {
                 force_summarize,
                 max_iterations,
                 tool_config: None,
+                llm_model: None,
             };
 
             let rx = client

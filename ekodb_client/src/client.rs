@@ -1372,7 +1372,9 @@ impl Client {
                     }))
                 }
             }
-            Err(crate::Error::Api { code: 404 | 405, .. }) => {
+            Err(crate::Error::Api {
+                code: 404 | 405, ..
+            }) => {
                 // Server doesn't have the endpoint (404) or route mismatch (405)
                 // — return None so caller can fall back to chat path
                 None
