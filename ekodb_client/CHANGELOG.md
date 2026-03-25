@@ -12,8 +12,8 @@ and this project adheres to
 
 - **Fix rustls-webpki CRL vulnerability (3 Dependabot alerts)** — Updated
   `rustls-webpki` from 0.103.7/0.103.9 to 0.103.10 in `ekodb-client-py` and
-  `examples/rust` lock files. Fixes faulty CRL Distribution Point matching
-  logic that could cause CRLs to not be considered authoritative.
+  `examples/rust` lock files. Fixes faulty CRL Distribution Point matching logic
+  that could cause CRLs to not be considered authoritative.
 
 ### Added
 
