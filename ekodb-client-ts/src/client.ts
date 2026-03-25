@@ -203,6 +203,7 @@ export interface ChatMessageRequest {
   force_summarize?: boolean;
   max_iterations?: number;
   tool_config?: ToolConfig;
+  llm_model?: string;
 }
 
 export interface TokenUsage {
@@ -1589,7 +1590,12 @@ export class EkoDBClient {
       }
     } catch (err: any) {
       // Server doesn't have the endpoint (404) or route mismatch (405)
-      if (err?.message?.includes("404") || err?.message?.includes("405") || err?.status === 404 || err?.status === 405) {
+      if (
+        err?.message?.includes("404") ||
+        err?.message?.includes("405") ||
+        err?.status === 404 ||
+        err?.status === 405
+      ) {
         return null;
       }
       throw err;

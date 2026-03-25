@@ -10,6 +10,11 @@ and this project adheres to
 
 ### Added
 
+- **Per-message LLM model override** — `ChatMessageRequest` now supports
+  `.llm_model("model-name")` to override the session's default model for a
+  single message. Enables routing simple tool-calling steps through a faster
+  model while keeping the primary model for interactive chat.
+
 - **JWT expiry-based token caching in Kotlin client** — `getToken()` now decodes
   the JWT `exp` claim and proactively refreshes 60 seconds before expiry,
   matching the Rust client's `AuthManager`. Added `extractJWTExpiry()`
@@ -23,28 +28,29 @@ and this project adheres to
   wrappers. Eliminates cascading "Token expired" failures across all client
   methods.
 
-- **Server-side `execute_tool()`** — `Client::execute_tool(tool_name, params,
-  chat_id)` now delegates to ekoDB's `POST /api/chat/tools/execute` endpoint
-  instead of dispatching tools client-side. All collection filtering, permission
-  enforcement, and internal collection blocking happen server-side. Accepts
-  optional `chat_id` for memory-tool context. Returns `None` on 404/405 so
-  callers can fall back to chat/LLM routing.
+- **Server-side `execute_tool()`** —
+  `Client::execute_tool(tool_name, params, chat_id)` now delegates to ekoDB's
+  `POST /api/chat/tools/execute` endpoint instead of dispatching tools
+  client-side. All collection filtering, permission enforcement, and internal
+  collection blocking happen server-side. Accepts optional `chat_id` for
+  memory-tool context. Returns `None` on 404/405 so callers can fall back to
+  chat/LLM routing.
 
-- **`execute_tool_remote()` HTTP method** — New `HttpClient::execute_tool_remote()`
-  POSTs to `/api/chat/tools/execute` with `{tool, params, chat_id?}` and returns
-  the raw server response.
+- **`execute_tool_remote()` HTTP method** — New
+  `HttpClient::execute_tool_remote()` POSTs to `/api/chat/tools/execute` with
+  `{tool, params, chat_id?}` and returns the raw server response.
 
-- **`executeTool` in TypeScript client** — `EkoDBClient.executeTool(toolName,
-  params, chatId?)` calls the server-side tool execute endpoint. Returns `null`
-  on 404/405 for graceful fallback.
+- **`executeTool` in TypeScript client** —
+  `EkoDBClient.executeTool(toolName, params, chatId?)` calls the server-side
+  tool execute endpoint. Returns `null` on 404/405 for graceful fallback.
 
-- **`executeTool` in Kotlin client** — `EkoDBClient.executeTool(toolName,
-  params, chatId?)` suspend function with `executeWithRetry`. Returns `null`
-  on 404/405.
+- **`executeTool` in Kotlin client** —
+  `EkoDBClient.executeTool(toolName, params, chatId?)` suspend function with
+  `executeWithRetry`. Returns `null` on 404/405.
 
-- **`ExecuteTool` in Go client** — `Client.ExecuteTool(toolName, params,
-  chatID)` with `ExecuteToolRequest`/`ExecuteToolResult` types. Returns
-  `nil, nil` on 404/405.
+- **`ExecuteTool` in Go client** —
+  `Client.ExecuteTool(toolName, params, chatID)` with
+  `ExecuteToolRequest`/`ExecuteToolResult` types. Returns `nil, nil` on 404/405.
 
 - **`execute_tool` in Python client** — PyO3 binding delegates to
   `client.execute_tool()`. Returns `None` on 404/405.
