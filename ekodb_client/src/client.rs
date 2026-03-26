@@ -1322,15 +1322,6 @@ impl Client {
     // Tool Dispatch
     // ========================================================================
 
-    /// Execute a known ekoDB tool by name with JSON parameters, routing to the
-    /// appropriate REST API method. Returns:
-    /// - `Some(Ok(value))` — tool executed successfully
-    /// - `Some(Err(e))` — tool is known but execution failed
-    /// - `None` — tool name is not a known direct-API tool (caller should
-    ///   fall back to chat/LLM routing)
-    ///
-    /// This provides a single dispatch point for tool-name → REST-API mapping,
-    /// so consumers (claw, agents, etc.) don't duplicate parameter extraction.
     /// Execute a tool via ekoDB's server-side tool pipeline.
     ///
     /// Calls `POST /api/chat/tools/execute` which goes through the same
@@ -1347,15 +1338,22 @@ impl Client {
         params: &serde_json::Value,
         chat_id: Option<&str>,
     ) -> Option<Result<serde_json::Value>> {
-        let token = match self.auth.get_token().await {
-            Ok(t) => t,
-            Err(e) => return Some(Err(e)),
-        };
-        match self
-            .http
-            .execute_tool_remote(tool_name, params, chat_id, &token)
-            .await
-        {
+        let tool_name = tool_name.to_string();
+        let params = params.clone();
+        let chat_id = chat_id.map(|s| s.to_string());
+        let result = self
+            .execute_with_token_refresh(|token| {
+                let tool_name = tool_name.clone();
+                let params = params.clone();
+                let chat_id = chat_id.clone();
+                async move {
+                    self.http
+                        .execute_tool_remote(&tool_name, &params, chat_id.as_deref(), &token)
+                        .await
+                }
+            })
+            .await;
+        match result {
             Ok(result) => {
                 // The server returns a ToolResult with success/result/error fields
                 let success = result["success"].as_bool().unwrap_or(false);
@@ -1366,19 +1364,13 @@ impl Client {
                         .as_str()
                         .unwrap_or("tool execution failed")
                         .to_string();
-                    Some(Err(crate::Error::Api {
-                        code: 400,
-                        message: error,
-                    }))
+                    Some(Err(crate::Error::ToolExecution(error)))
                 }
             }
-            Err(crate::Error::Api {
-                code: 404 | 405, ..
-            }) => {
-                // Server doesn't have the endpoint (404) or route mismatch (405)
-                // — return None so caller can fall back to chat path
-                None
-            }
+            // handle_response returns Error::NotFound for 404
+            Err(crate::Error::NotFound) => None,
+            // Also handle Error::Api with 405 (method not allowed)
+            Err(crate::Error::Api { code: 405, .. }) => None,
             Err(e) => Some(Err(e)),
         }
     }

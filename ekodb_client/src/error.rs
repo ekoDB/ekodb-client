@@ -71,6 +71,10 @@ pub enum Error {
     /// Authentication error
     #[error("Authentication error: {0}")]
     Authentication(String),
+
+    /// Tool execution failed (server returned success=false)
+    #[error("Tool execution failed: {0}")]
+    ToolExecution(String),
 }
 
 impl Error {

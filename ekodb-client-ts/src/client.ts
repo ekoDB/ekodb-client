@@ -1590,12 +1590,11 @@ export class EkoDBClient {
       }
     } catch (err: any) {
       // Server doesn't have the endpoint (404) or route mismatch (405)
-      if (
-        err?.message?.includes("404") ||
-        err?.message?.includes("405") ||
-        err?.status === 404 ||
-        err?.status === 405
-      ) {
+      // Parse status from makeRequest error format: "Request failed with status NNN: ..."
+      const message = String(err?.message ?? "");
+      const match = message.match(/Request failed with status (\d+):/);
+      const status = match ? parseInt(match[1], 10) : undefined;
+      if (status === 404 || status === 405) {
         return null;
       }
       throw err;
