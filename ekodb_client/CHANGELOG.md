@@ -8,12 +8,15 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-03-25
+
 ### Security
 
 - **Fix rustls-webpki CRL vulnerability (3 Dependabot alerts)** — Updated
-  `rustls-webpki` from 0.103.7/0.103.9 to 0.103.10 in `ekodb-client-py` and
-  `examples/rust` lock files. Fixes faulty CRL Distribution Point matching logic
-  that could cause CRLs to not be considered authoritative.
+  `rustls-webpki` from 0.103.7/0.103.9 to 0.103.10 in the root `Cargo.lock`,
+  `ekodb-client-py/Cargo.lock`, and `examples/rust/Cargo.lock`. Fixes faulty CRL
+  Distribution Point matching logic that could cause CRLs to not be considered
+  authoritative.
 
 ### Added
 
@@ -62,7 +65,36 @@ and this project adheres to
 - **`execute_tool` in Python client** — PyO3 binding delegates to
   `client.execute_tool()`. Returns `None` on 404/405.
 
+### Changed
+
+- **Kotlin dependency updates** — Ktor 3.3.3 → 3.4.1, kotlinx-serialization
+  1.9.0 → 1.10.0. Python bindings: borsh 1.6.0 → 1.6.1, zerocopy 0.8.42 →
+  0.8.47, winnow 0.7.15 → 1.0.0 (transitive). Kotlin stays at 2.3.0 (2.3.20
+  breaks CodeQL java-kotlin analysis).
+
+- **New `Error::ToolExecution` variant** — Tool execution failures now use a
+  dedicated error variant instead of fabricating `Error::Api { code: 400 }`,
+  which was misleading for downstream error handling.
+
 ### Fixed
+
+- **`execute_tool()` 404/405 fallback was broken (all languages)** — The Rust
+  implementation matched `Error::Api { code: 404 }` but `handle_response()`
+  returns `Error::NotFound` for 404s, so the `None` fallback never triggered.
+  Now correctly matches both `Error::NotFound` and `Error::Api { code: 405 }`.
+  TypeScript and Kotlin used fragile `err.message.includes("404")` string
+  matching which could false-positive on unrelated error bodies; now parses the
+  status code from the known error message prefix. Go used
+  `strings.Contains(err.Error(), "404")` instead of type-asserting `*HTTPError`;
+  now uses `errors.As` with `StatusCode` check.
+
+- **`execute_tool()` bypassed token refresh** — Calls went directly through
+  `get_token()` without `execute_with_token_refresh`, so 401 responses weren't
+  retried with a fresh token. Now wrapped in `execute_with_token_refresh` like
+  all other client methods.
+
+- **`execute_tool_remote()` missing `Accept` header** — Added
+  `Accept: application/json` for consistency with other chat HTTP methods.
 
 - **Token refresh on core CRUD methods** — `find_by_id`, `update`, `delete`,
   `batch_insert`, `batch_update`, `batch_delete`, `list_collections`,

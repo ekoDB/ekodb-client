@@ -1,6 +1,6 @@
 [package]
 name = "ekodb_client"
-version = "0.14.0"
+version = "0.15.0"
 authors = ["Sean M. Vazquez <sean.m.vazquez@gmail.com>"]
 edition = "2024"
 rust-version = "1.85"
