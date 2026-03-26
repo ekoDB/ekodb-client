@@ -1087,9 +1087,7 @@ impl HttpClient {
                 if response.status().is_success() {
                     Ok(())
                 } else {
-                    Err(Error::Http(reqwest::Error::from(
-                        response.error_for_status().unwrap_err(),
-                    )))
+                    Err(Error::Http(response.error_for_status().unwrap_err()))
                 }
             })
             .await
@@ -1113,9 +1111,7 @@ impl HttpClient {
                 if response.status().is_success() {
                     Ok(())
                 } else {
-                    Err(Error::Http(reqwest::Error::from(
-                        response.error_for_status().unwrap_err(),
-                    )))
+                    Err(Error::Http(response.error_for_status().unwrap_err()))
                 }
             })
             .await
@@ -1331,9 +1327,9 @@ impl HttpClient {
                     use tokio_util::io::StreamReader;
 
                     let byte_stream = response.bytes_stream();
-                    let stream_reader = StreamReader::new(byte_stream.map(|result| {
-                        result.map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))
-                    }));
+                    let stream_reader = StreamReader::new(
+                        byte_stream.map(|result| result.map_err(std::io::Error::other)),
+                    );
                     let mut decompressed_reader = GzipDecoder::new(stream_reader);
 
                     let mut decompressed = Vec::new();

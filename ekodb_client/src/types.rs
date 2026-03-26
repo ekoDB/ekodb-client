@@ -34,6 +34,7 @@ pub enum NumberValue {
 /// Field type representing all supported data types in ekoDB
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
+#[allow(clippy::upper_case_acronyms)]
 pub enum FieldType {
     /// String value
     String(String),
@@ -520,7 +521,7 @@ mod tests {
 
     #[test]
     fn test_field_type_float() {
-        let field: FieldType = 3.14f64.into();
+        let field: FieldType = 3.15f64.into();
         assert!(matches!(field, FieldType::Float(_)));
     }
 
@@ -559,7 +560,7 @@ mod tests {
 
     #[test]
     fn test_number_value_float() {
-        let num = NumberValue::Float(3.14);
+        let num = NumberValue::Float(3.15);
         assert!(matches!(num, NumberValue::Float(_)));
     }
 

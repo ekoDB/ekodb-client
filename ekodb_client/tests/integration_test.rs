@@ -89,7 +89,7 @@ fn test_field_type_conversions() {
     let i: FieldType = 42i64.into();
     assert!(matches!(i, FieldType::Integer(42)));
 
-    let f: FieldType = 3.14f64.into();
+    let f: FieldType = 3.15f64.into();
     assert!(matches!(f, FieldType::Float(_)));
 
     let b: FieldType = true.into();
