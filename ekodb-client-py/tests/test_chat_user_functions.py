@@ -199,8 +199,6 @@ class TestExecuteTool:
 
     def test_execute_tool_accepts_params(self, client):
         """Verify execute_tool accepts correct parameter types"""
-        import inspect
-
         # The method should exist and be callable with (tool_name, params, chat_id=None)
         assert hasattr(client, "execute_tool")
 

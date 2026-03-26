@@ -1468,6 +1468,7 @@ impl HttpClient {
                     .post(url.clone())
                     .header("Authorization", format!("Bearer {}", token))
                     .header("Content-Type", "application/json")
+                    .header("Accept", "application/json")
                     .json(&body)
                     .send()
                     .await?;

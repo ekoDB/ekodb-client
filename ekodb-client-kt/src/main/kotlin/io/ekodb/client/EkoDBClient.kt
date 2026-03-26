@@ -1613,8 +1613,12 @@ class EkoDBClient private constructor(
                 throw RuntimeException(error)
             }
         } catch (e: Exception) {
-            if (e.message?.contains("404") == true || e.message?.contains("405") == true) {
-                null // Server doesn't have the endpoint (404) or route mismatch (405)
+            // Server doesn't have the endpoint (404) or route mismatch (405)
+            // Parse status from executeWithRetry error: "Request failed with status NNN: ..."
+            val statusMatch = Regex("""Request failed with status (\d+):""").find(e.message ?: "")
+            val status = statusMatch?.groupValues?.get(1)?.toIntOrNull()
+            if (status == 404 || status == 405) {
+                null
             } else {
                 throw e
             }
