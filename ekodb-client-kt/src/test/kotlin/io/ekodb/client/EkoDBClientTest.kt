@@ -178,7 +178,8 @@ class EkoDBClientTest {
         val params = buildJsonObject { put("collection", "users") }
         val result = client.executeTool("count_records", params)
         assertNotNull(result)
-        assertEquals(42, result["count"]?.jsonPrimitive?.int)
+        val obj = result!!.jsonObject
+        assertEquals(42, obj["count"]?.jsonPrimitive?.int)
     }
 
     @Test
@@ -188,7 +189,8 @@ class EkoDBClientTest {
         val params = buildJsonObject { put("key", "greeting") }
         val result = client.executeTool("kv_get", params, "chat_456")
         assertNotNull(result)
-        assertEquals("hello", result["value"]?.jsonPrimitive?.content)
+        val obj = result!!.jsonObject
+        assertEquals("hello", obj["value"]?.jsonPrimitive?.content)
     }
 
     @Test

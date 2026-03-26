@@ -12,8 +12,8 @@ name = "ekodb_client"
 crate-type = ["cdylib"]
 
 [dependencies]
-# Use published version for external users, path for local development
-ekodb_client = { path = "../ekodb_client", default-features = false }
+# Path for local development; version used when publishing to crates.io
+ekodb_client = { version = "0.14.0", path = "../ekodb_client", default-features = false }
 pyo3 = { version = "0.27", features = ["extension-module", "abi3-py38"] }
 pyo3-async-runtimes = { version = "0.27", features = ["tokio-runtime"] }
 tokio = { version = "1.47", features = ["full"] }

@@ -1585,7 +1585,7 @@ class EkoDBClient private constructor(
         toolName: String,
         params: JsonObject,
         chatId: String? = null
-    ): JsonObject? {
+    ): JsonElement? {
         val body = buildJsonObject {
             put("tool", toolName)
             put("params", params)
@@ -1607,7 +1607,7 @@ class EkoDBClient private constructor(
             val result: JsonObject = response.body()
             val success = result["success"]?.jsonPrimitive?.booleanOrNull ?: false
             if (success) {
-                result["result"]?.jsonObject
+                result["result"]
             } else {
                 val error = result["error"]?.jsonPrimitive?.contentOrNull ?: "tool execution failed"
                 throw RuntimeException(error)
