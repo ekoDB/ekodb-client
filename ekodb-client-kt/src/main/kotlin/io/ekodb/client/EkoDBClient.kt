@@ -1586,7 +1586,6 @@ class EkoDBClient private constructor(
         params: JsonObject,
         chatId: String? = null
     ): JsonObject? {
-        val token = getToken()
         val body = buildJsonObject {
             put("tool", toolName)
             put("params", params)
@@ -1597,6 +1596,7 @@ class EkoDBClient private constructor(
 
         return try {
             val response = executeWithRetry {
+                val token = getToken()
                 client.post("$baseUrl/api/chat/tools/execute") {
                     header("Authorization", "Bearer $token")
                     contentType(ContentType.Application.Json)
