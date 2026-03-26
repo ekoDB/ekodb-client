@@ -1,6 +1,6 @@
 plugins {
-    kotlin("jvm") version "2.3.0"
-    kotlin("plugin.serialization") version "2.3.0"
+    kotlin("jvm") version "2.3.20"
+    kotlin("plugin.serialization") version "2.3.20"
     `maven-publish`
     signing
     id("io.github.gradle-nexus.publish-plugin") version "2.0.0"
@@ -21,17 +21,17 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
     
     // Serialization
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-cbor:1.9.0") // CBOR for binary serialization (similar to MessagePack)
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-cbor:1.10.0") // CBOR for binary serialization (similar to MessagePack)
     
     // HTTP client
-    implementation("io.ktor:ktor-client-core:3.3.3")
-    implementation("io.ktor:ktor-client-cio:3.3.3")
-    implementation("io.ktor:ktor-client-content-negotiation:3.3.3")
-    implementation("io.ktor:ktor-serialization-kotlinx-json:3.3.3")
-    implementation("io.ktor:ktor-client-websockets:3.3.3")
-    implementation("io.ktor:ktor-client-logging:3.3.3")
-    implementation("io.ktor:ktor-client-encoding:3.3.3")
+    implementation("io.ktor:ktor-client-core:3.4.1")
+    implementation("io.ktor:ktor-client-cio:3.4.1")
+    implementation("io.ktor:ktor-client-content-negotiation:3.4.1")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:3.4.1")
+    implementation("io.ktor:ktor-client-websockets:3.4.1")
+    implementation("io.ktor:ktor-client-logging:3.4.1")
+    implementation("io.ktor:ktor-client-encoding:3.4.1")
     
     // DateTime
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.7.1-0.6.x-compat")
@@ -39,7 +39,7 @@ dependencies {
     // Testing
     testImplementation(kotlin("test"))
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
-    testImplementation("io.ktor:ktor-client-mock:3.3.3")
+    testImplementation("io.ktor:ktor-client-mock:3.4.1")
 }
 
 tasks.test {
