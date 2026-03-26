@@ -1568,7 +1568,7 @@ export class EkoDBClient {
     toolName: string,
     params: { [key: string]: any },
     chatId?: string,
-  ): Promise<{ [key: string]: any } | null> {
+  ): Promise<any | null> {
     const body: { [key: string]: any } = { tool: toolName, params };
     if (chatId) {
       body.chat_id = chatId;

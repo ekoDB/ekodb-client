@@ -1721,10 +1721,7 @@ impl Client {
                 Some(Ok(result)) => {
                     Python::attach(|py| json_to_pydict(py, &result))
                 }
-                Some(Err(e)) => Err(PyRuntimeError::new_err(format!(
-                    "Tool execution failed: {}",
-                    e
-                ))),
+                Some(Err(e)) => Err(PyRuntimeError::new_err(e.to_string())),
                 None => Python::attach(|py| Ok(py.None().into())),
             }
         })
