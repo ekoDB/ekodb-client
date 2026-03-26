@@ -59,6 +59,7 @@ fn default_hnsw_ef_construction() -> usize {
 /// Vector index algorithm
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "lowercase")]
+#[allow(clippy::upper_case_acronyms)]
 pub enum VectorIndexAlgorithm {
     /// Simple flat index (brute force)
     Flat,
@@ -338,7 +339,7 @@ mod tests {
         assert!(schema.fields.contains_key("name"));
         assert!(schema.fields.contains_key("email"));
         assert!(schema.fields.contains_key("age"));
-        assert_eq!(schema.bypass_ripple, false);
+        assert!(!schema.bypass_ripple);
     }
 
     #[test]

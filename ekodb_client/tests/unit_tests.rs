@@ -940,9 +940,9 @@ fn test_field_type_i32() {
 
 #[test]
 fn test_field_type_float() {
-    let field: FieldType = 3.14f64.into();
+    let field: FieldType = 3.15f64.into();
     match field {
-        FieldType::Float(f) => assert!((f - 3.14).abs() < f64::EPSILON),
+        FieldType::Float(f) => assert!((f - 3.15).abs() < f64::EPSILON),
         _ => panic!("Expected Float"),
     }
 }
@@ -964,7 +964,7 @@ fn test_field_type_factory_methods() {
     let i = FieldType::integer(42);
     assert!(matches!(i, FieldType::Integer(42)));
 
-    let f = FieldType::float(3.14);
+    let f = FieldType::float(3.15);
     assert!(matches!(f, FieldType::Float(_)));
 
     let b = FieldType::boolean(true);

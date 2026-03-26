@@ -260,6 +260,11 @@ pub enum ScriptCondition {
 /// Function in a Script
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "PascalCase")]
+#[allow(
+    clippy::enum_variant_names,
+    clippy::vec_box,
+    clippy::upper_case_acronyms
+)]
 pub enum Function {
     /// Find all records in collection
     FindAll { collection: String },

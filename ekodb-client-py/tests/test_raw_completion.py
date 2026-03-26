@@ -132,7 +132,10 @@ class TestRawCompletionStreamWithProgressStructure:
             "model": "gpt-5",
             "max_tokens": 1024,
         }
-        on_token = lambda t: tokens.append(t)
+
+        def on_token(t):
+            tokens.append(t)
+
         on_token("test")
         assert tokens == ["test"]
         assert request["max_tokens"] == 1024
