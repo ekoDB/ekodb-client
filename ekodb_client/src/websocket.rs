@@ -302,7 +302,7 @@ impl WebSocketClient {
     }
 
     /// Ensure we have an active connection, reconnecting if needed
-    pub async fn ensure_connected(&self) -> Result<()> {
+    pub(crate) async fn ensure_connected(&self) -> Result<()> {
         // Quick check: if connected, return
         {
             let w = self.writer.lock().await;

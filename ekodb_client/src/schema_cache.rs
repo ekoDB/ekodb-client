@@ -8,7 +8,7 @@
 //! - **LRU eviction**: bounded memory — oldest entries evicted when capacity exceeded
 //! - **TTL expiry**: entries go stale after configurable duration (default 5 min)
 //! - **Realtime invalidation**: `handle_schema_changed()` for WS/SSE push events
-//! - **Thread-safe**: `DashMap` for lock-free concurrent access
+//! - **Thread-safe**: `Mutex`-protected `HashMap`/`VecDeque` (low contention, no extra deps)
 //! - **Zero overhead when disabled**: all methods short-circuit
 
 use std::collections::{HashMap, VecDeque};
