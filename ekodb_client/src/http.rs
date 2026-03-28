@@ -1236,7 +1236,8 @@ impl HttpClient {
     /// Returns typed errors for non-success status codes, consistent with `handle_response`:
     /// - 401 → `Error::TokenExpired`
     /// - 404 → `Error::NotFound`
-    /// - 429 → `Error::RateLimit`
+    /// - 429 → `Error::RateLimit` (retryable)
+    /// - 503 → `Error::ServiceUnavailable` (retryable)
     /// - Other non-success → `Error::Api { code, message }`
     async fn json_body<T: for<'de> serde::Deserialize<'de>>(response: Response) -> Result<T> {
         let status = response.status();
@@ -1254,6 +1255,13 @@ impl HttpClient {
                     Error::RateLimit {
                         retry_after_secs: retry_after,
                     }
+                }
+                StatusCode::SERVICE_UNAVAILABLE => {
+                    let body = response
+                        .text()
+                        .await
+                        .unwrap_or_else(|_| "Service unavailable".to_string());
+                    Error::ServiceUnavailable(body)
                 }
                 _ => {
                     let body = response
