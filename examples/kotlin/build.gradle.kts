@@ -24,17 +24,17 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
     
     // Serialization (match client library versions)
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-cbor:1.9.0")
-    
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-cbor:1.10.0")
+
     // Ktor client (match client library versions)
-    implementation("io.ktor:ktor-client-core:3.3.3")
-    implementation("io.ktor:ktor-client-cio:3.3.3")
-    implementation("io.ktor:ktor-client-content-negotiation:3.3.3")
-    implementation("io.ktor:ktor-serialization-kotlinx-json:3.3.3")
-    implementation("io.ktor:ktor-client-websockets:3.3.3")
-    implementation("io.ktor:ktor-client-logging:3.3.3")
-    implementation("io.ktor:ktor-client-encoding:3.3.3")
+    implementation("io.ktor:ktor-client-core:3.4.1")
+    implementation("io.ktor:ktor-client-cio:3.4.1")
+    implementation("io.ktor:ktor-client-content-negotiation:3.4.1")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:3.4.1")
+    implementation("io.ktor:ktor-client-websockets:3.4.1")
+    implementation("io.ktor:ktor-client-logging:3.4.1")
+    implementation("io.ktor:ktor-client-encoding:3.4.1")
     
     // DateTime
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.7.1-0.6.x-compat")

@@ -178,7 +178,7 @@ class EkoDBClientTest {
         val params = buildJsonObject { put("collection", "users") }
         val result = client.executeTool("count_records", params)
         assertNotNull(result)
-        val obj = result!!.jsonObject
+        val obj = result.jsonObject
         assertEquals(42, obj["count"]?.jsonPrimitive?.int)
     }
 
@@ -189,7 +189,7 @@ class EkoDBClientTest {
         val params = buildJsonObject { put("key", "greeting") }
         val result = client.executeTool("kv_get", params, "chat_456")
         assertNotNull(result)
-        val obj = result!!.jsonObject
+        val obj = result.jsonObject
         assertEquals("hello", obj["value"]?.jsonPrimitive?.content)
     }
 
@@ -1115,7 +1115,7 @@ class EkoDBClientTest {
         assertNotNull(result)
         val idField = result["id"]
         assertTrue(idField is io.ekodb.client.types.FieldType.StringValue)
-        assertEquals("rec_1", (idField as io.ekodb.client.types.FieldType.StringValue).value)
+        assertEquals("rec_1", idField.value)
     }
 
     @Test
@@ -1126,7 +1126,7 @@ class EkoDBClientTest {
         assertNotNull(result)
         val idField = result["id"]
         assertTrue(idField is io.ekodb.client.types.FieldType.StringValue)
-        assertEquals("rec_1", (idField as io.ekodb.client.types.FieldType.StringValue).value)
+        assertEquals("rec_1", idField.value)
     }
 
     @Test
@@ -1150,7 +1150,7 @@ class EkoDBClientTest {
         assertNotNull(result)
         val nameField = result["name"]
         assertTrue(nameField is io.ekodb.client.types.FieldType.StringValue)
-        assertEquals("Alice Updated", (nameField as io.ekodb.client.types.FieldType.StringValue).value)
+        assertEquals("Alice Updated", nameField.value)
     }
 
     @Test
