@@ -2353,8 +2353,8 @@ impl Client {
 
                 // Parse SSE events from buffer (event: ...\ndata: ...\n\n)
                 while let Some(end) = buffer.find("\n\n") {
-                    let event_block = buffer[..end].to_string();
-                    buffer = buffer[end + 2..].to_string();
+                    let event_block = buffer[..end].to_owned();
+                    buffer.drain(..end + 2);
 
                     let mut event_type = String::new();
                     let mut data_lines: Vec<String> = Vec::new();

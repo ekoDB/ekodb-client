@@ -9,7 +9,7 @@
 //! - **TTL expiry**: entries go stale after configurable duration (default 5 min)
 //! - **Realtime invalidation**: `handle_schema_changed()` for WS/SSE push events
 //! - **Thread-safe**: `Mutex`-protected `HashMap`/`VecDeque` (low contention, no extra deps)
-//! - **Zero overhead when disabled**: all methods short-circuit
+//! - **Fast guard when disabled**: lookups and inserts short-circuit via `enabled` flag
 
 use std::collections::{HashMap, VecDeque};
 use std::sync::Mutex;
