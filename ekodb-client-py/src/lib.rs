@@ -4147,11 +4147,7 @@ impl WebSocketClient {
         if let Some(v) = value {
             payload["value"] = Python::attach(|py| -> PyResult<serde_json::Value> {
                 let val = v.bind(py);
-                if let Ok(s) = val.extract::<String>() { return Ok(serde_json::json!(s)); }
-                if let Ok(i) = val.extract::<i64>() { return Ok(serde_json::json!(i)); }
-                if let Ok(f) = val.extract::<f64>() { return Ok(serde_json::json!(f)); }
-                if let Ok(b) = val.extract::<bool>() { return Ok(serde_json::json!(b)); }
-                Ok(serde_json::Value::Null)
+                py_to_json(&val)
             })?;
         }
         self.send_crud(py, "UpdateWithAction", payload)
