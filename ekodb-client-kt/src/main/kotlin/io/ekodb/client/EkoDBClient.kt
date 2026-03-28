@@ -2279,7 +2279,13 @@ class EkoDBClient private constructor(
         val results = response["results"]?.jsonArray ?: return emptyList()
         
         return results.map { result ->
-            result.jsonObject["record"]?.jsonObject ?: buildJsonObject {}
+            val record = result.jsonObject["record"]?.jsonObject ?: buildJsonObject {}
+            val score = result.jsonObject["score"]?.jsonPrimitive?.doubleOrNull ?: 0.0
+            // Inject _score into the record so callers can access it
+            buildJsonObject {
+                record.forEach { (key, value) -> put(key, value) }
+                put("_score", score)
+            }
         }
     }
     
@@ -2317,7 +2323,13 @@ class EkoDBClient private constructor(
         val results = response["results"]?.jsonArray ?: return emptyList()
         
         return results.map { result ->
-            result.jsonObject["record"]?.jsonObject ?: buildJsonObject {}
+            val record = result.jsonObject["record"]?.jsonObject ?: buildJsonObject {}
+            val score = result.jsonObject["score"]?.jsonPrimitive?.doubleOrNull ?: 0.0
+            // Inject _score into the record so callers can access it
+            buildJsonObject {
+                record.forEach { (key, value) -> put(key, value) }
+                put("_score", score)
+            }
         }
     }
     

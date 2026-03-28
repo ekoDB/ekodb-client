@@ -34,8 +34,7 @@ async def main():
     except Exception:
         pass
 
-    # Create collection without schema to allow any data structure
-    await client.create_collection("user_cache_py", None)
+    # No need to create collection — ekoDB creates it on first insert
 
     print("=== ekoDB SWR (Stale-While-Revalidate) Pattern ===\n")
 

@@ -722,8 +722,7 @@ impl HttpClient {
                     .await?;
 
                 // Force JSON deserialization for metadata operations
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                serde_json::from_slice(&bytes).map_err(Error::Serialization)
+                Self::json_body(response).await
             })
             .await?;
 
@@ -747,9 +746,7 @@ impl HttpClient {
                     .await?;
 
                 // Force JSON for metadata operations
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                let _: serde_json::Value =
-                    serde_json::from_slice(&bytes).map_err(Error::Serialization)?;
+                let _: serde_json::Value = Self::json_body(response).await?;
                 Ok(())
             })
             .await
@@ -787,9 +784,7 @@ impl HttpClient {
                     .await?;
 
                 // Force JSON for KV operations (stores serde_json::Value)
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                let _: serde_json::Value =
-                    serde_json::from_slice(&bytes).map_err(Error::Serialization)?;
+                let _: serde_json::Value = Self::json_body(response).await?;
                 Ok(())
             })
             .await
@@ -816,8 +811,7 @@ impl HttpClient {
                     .await?;
 
                 // Force JSON for KV operations (stores serde_json::Value)
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                serde_json::from_slice::<KvGetResponse>(&bytes).map_err(Error::Serialization)
+                Self::json_body::<KvGetResponse>(response).await
             })
             .await
         {
@@ -842,9 +836,7 @@ impl HttpClient {
                     .await?;
 
                 // Force JSON for KV operations
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                let _: serde_json::Value =
-                    serde_json::from_slice(&bytes).map_err(Error::Serialization)?;
+                let _: serde_json::Value = Self::json_body(response).await?;
                 Ok(())
             })
             .await
@@ -880,9 +872,7 @@ impl HttpClient {
                     .send()
                     .await?;
 
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                let results: Vec<Record> =
-                    serde_json::from_slice(&bytes).map_err(Error::Serialization)?;
+                let results: Vec<Record> = Self::json_body(response).await?;
                 Ok(results)
             })
             .await
@@ -921,9 +911,7 @@ impl HttpClient {
                     .send()
                     .await?;
 
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                let results: Vec<(String, bool)> =
-                    serde_json::from_slice(&bytes).map_err(Error::Serialization)?;
+                let results: Vec<(String, bool)> = Self::json_body(response).await?;
                 Ok(results)
             })
             .await
@@ -953,9 +941,7 @@ impl HttpClient {
                     .send()
                     .await?;
 
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                let results: Vec<(String, bool)> =
-                    serde_json::from_slice(&bytes).map_err(Error::Serialization)?;
+                let results: Vec<(String, bool)> = Self::json_body(response).await?;
                 Ok(results)
             })
             .await
@@ -993,9 +979,7 @@ impl HttpClient {
                     .send()
                     .await?;
 
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                let result: Vec<serde_json::Value> =
-                    serde_json::from_slice(&bytes).map_err(Error::Serialization)?;
+                let result: Vec<serde_json::Value> = Self::json_body(response).await?;
                 Ok(result)
             })
             .await
@@ -1025,9 +1009,7 @@ impl HttpClient {
                     .send()
                     .await?;
 
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                let result: serde_json::Value =
-                    serde_json::from_slice(&bytes).map_err(Error::Serialization)?;
+                let result: serde_json::Value = Self::json_body(response).await?;
 
                 result["transaction_id"]
                     .as_str()
@@ -1061,9 +1043,7 @@ impl HttpClient {
                     .send()
                     .await?;
 
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                let result: serde_json::Value =
-                    serde_json::from_slice(&bytes).map_err(Error::Serialization)?;
+                let result: serde_json::Value = Self::json_body(response).await?;
                 Ok(result)
             })
             .await
@@ -1139,8 +1119,7 @@ impl HttpClient {
                     .await?;
 
                 // Force JSON for search operations
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                serde_json::from_slice(&bytes).map_err(Error::Serialization)
+                Self::json_body(response).await
             })
             .await
     }
@@ -1199,9 +1178,7 @@ impl HttpClient {
                     .await?;
 
                 // Force JSON for metadata operations
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                let _: serde_json::Value =
-                    serde_json::from_slice(&bytes).map_err(Error::Serialization)?;
+                let _: serde_json::Value = Self::json_body(response).await?;
                 Ok(())
             })
             .await
@@ -1228,8 +1205,7 @@ impl HttpClient {
                     .await?;
 
                 // Force JSON for metadata operations
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                serde_json::from_slice(&bytes).map_err(Error::Serialization)
+                Self::json_body(response).await
             })
             .await
     }
@@ -1251,10 +1227,48 @@ impl HttpClient {
                     .await?;
 
                 // Force JSON for metadata operations
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                serde_json::from_slice(&bytes).map_err(Error::Serialization)
+                Self::json_body(response).await
             })
             .await
+    }
+
+    /// Check response status and deserialize JSON body.
+    /// Returns typed errors for non-success status codes, consistent with `handle_response`:
+    /// - 401 → `Error::TokenExpired`
+    /// - 404 → `Error::NotFound`
+    /// - 429 → `Error::RateLimit`
+    /// - Other non-success → `Error::Api { code, message }`
+    async fn json_body<T: for<'de> serde::Deserialize<'de>>(response: Response) -> Result<T> {
+        let status = response.status();
+        if !status.is_success() {
+            return Err(match status {
+                StatusCode::UNAUTHORIZED => Error::TokenExpired,
+                StatusCode::NOT_FOUND => Error::NotFound,
+                StatusCode::TOO_MANY_REQUESTS => {
+                    let retry_after = response
+                        .headers()
+                        .get("retry-after")
+                        .and_then(|v| v.to_str().ok())
+                        .and_then(|v| v.parse().ok())
+                        .unwrap_or(60);
+                    Error::RateLimit {
+                        retry_after_secs: retry_after,
+                    }
+                }
+                _ => {
+                    let body = response
+                        .text()
+                        .await
+                        .unwrap_or_else(|_| "unknown error".to_string());
+                    Error::Api {
+                        code: status.as_u16(),
+                        message: body,
+                    }
+                }
+            });
+        }
+        let bytes = response.bytes().await.map_err(Error::Http)?;
+        serde_json::from_slice(&bytes).map_err(Error::Serialization)
     }
 
     /// Extract rate limit information from response headers
@@ -1414,8 +1428,7 @@ impl HttpClient {
                     .send()
                     .await?;
 
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                serde_json::from_slice(&bytes).map_err(Error::Serialization)
+                Self::json_body(response).await
             })
             .await
     }
@@ -1492,8 +1505,7 @@ impl HttpClient {
                     .send()
                     .await?;
 
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                serde_json::from_slice(&bytes).map_err(Error::Serialization)
+                Self::json_body(response).await
             })
             .await
     }
@@ -1857,8 +1869,7 @@ impl HttpClient {
                     .send()
                     .await?;
 
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                serde_json::from_slice(&bytes).map_err(Error::Serialization)
+                Self::json_body(response).await
             })
             .await
     }
@@ -1882,8 +1893,7 @@ impl HttpClient {
                     .send()
                     .await?;
 
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                serde_json::from_slice(&bytes).map_err(Error::Serialization)
+                Self::json_body(response).await
             })
             .await
     }
@@ -1921,8 +1931,7 @@ impl HttpClient {
                     .send()
                     .await?;
 
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                serde_json::from_slice(&bytes).map_err(Error::Serialization)
+                Self::json_body(response).await
             })
             .await
     }
@@ -1948,8 +1957,7 @@ impl HttpClient {
                     .send()
                     .await?;
 
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                serde_json::from_slice(&bytes).map_err(Error::Serialization)
+                Self::json_body(response).await
             })
             .await
     }
@@ -1997,8 +2005,7 @@ impl HttpClient {
                     .send()
                     .await?;
 
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                serde_json::from_slice(&bytes).map_err(Error::Serialization)
+                Self::json_body(response).await
             })
             .await
     }
@@ -2023,8 +2030,7 @@ impl HttpClient {
                     .send()
                     .await?;
 
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                serde_json::from_slice(&bytes).map_err(Error::Serialization)
+                Self::json_body(response).await
             })
             .await
     }
@@ -2109,8 +2115,7 @@ impl HttpClient {
                     .send()
                     .await?;
 
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                serde_json::from_slice(&bytes).map_err(Error::Serialization)
+                Self::json_body(response).await
             })
             .await
     }
@@ -2137,8 +2142,7 @@ impl HttpClient {
                     .send()
                     .await?;
 
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                serde_json::from_slice(&bytes).map_err(Error::Serialization)
+                Self::json_body(response).await
             })
             .await
     }
@@ -2167,8 +2171,7 @@ impl HttpClient {
                     .send()
                     .await?;
 
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                serde_json::from_slice(&bytes).map_err(Error::Serialization)
+                Self::json_body(response).await
             })
             .await
     }
@@ -2228,8 +2231,7 @@ impl HttpClient {
                     .send()
                     .await?;
 
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                serde_json::from_slice(&bytes).map_err(Error::Serialization)
+                Self::json_body(response).await
             })
             .await
     }
@@ -2257,8 +2259,7 @@ impl HttpClient {
                     .send()
                     .await?;
 
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                serde_json::from_slice(&bytes).map_err(Error::Serialization)
+                Self::json_body(response).await
             })
             .await
     }
@@ -2348,8 +2349,7 @@ impl HttpClient {
                     .send()
                     .await?;
 
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                serde_json::from_slice(&bytes).map_err(Error::Serialization)
+                Self::json_body(response).await
             })
             .await
     }
@@ -2377,8 +2377,7 @@ impl HttpClient {
                     .send()
                     .await?;
 
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                serde_json::from_slice(&bytes).map_err(Error::Serialization)
+                Self::json_body(response).await
             })
             .await
     }
@@ -2588,8 +2587,7 @@ impl HttpClient {
                     .send()
                     .await?;
 
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                serde_json::from_slice(&bytes).map_err(Error::Serialization)
+                Self::json_body(response).await
             })
             .await
     }
@@ -2617,8 +2615,7 @@ impl HttpClient {
                     .send()
                     .await?;
 
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                serde_json::from_slice(&bytes).map_err(Error::Serialization)
+                Self::json_body(response).await
             })
             .await
     }
