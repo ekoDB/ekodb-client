@@ -2294,14 +2294,13 @@ impl Client {
         filter_value: Option<&str>,
     ) -> Result<tokio::sync::mpsc::Receiver<crate::websocket::MutationNotificationPayload>> {
         let token = self.auth.get_token().await?;
-        let mut parsed_url = url::Url::parse(&format!(
-            "{}/api/subscribe/{}",
-            self.base_url, collection
-        ))
-        .map_err(|e| Error::Api {
-            code: 0,
-            message: format!("Invalid SSE URL: {}", e),
-        })?;
+        let mut parsed_url =
+            url::Url::parse(&format!("{}/api/subscribe/{}", self.base_url, collection)).map_err(
+                |e| Error::Api {
+                    code: 0,
+                    message: format!("Invalid SSE URL: {}", e),
+                },
+            )?;
 
         {
             let mut pairs = parsed_url.query_pairs_mut();
