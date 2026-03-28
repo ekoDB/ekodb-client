@@ -2914,7 +2914,7 @@ export class EkoDBClient {
     const response = await this.search(collection, searchQuery);
     return response.results.map((r) => ({
       ...r.record,
-      _score: r.score ?? 0,
+      _score: r.score,
     }));
   }
 
