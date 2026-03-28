@@ -158,8 +158,55 @@ pub fn get_values(record: &Value, fields: &[String]) -> HashMap<String, Value> {
     result
 }
 
+/// Common ID field names in ekoDB records, ordered by priority.
+/// The primary_key_alias is configurable per collection (default: "id").
+const ID_CANDIDATES: &[&str] = &["id", "_id"];
+
+/// Extract the record ID from a JSON record (API response).
+///
+/// ekoDB's `primary_key_alias` is configurable per collection, so the ID field
+/// might be `"id"` (default), `"_id"`, `"user_id"`, etc. This function tries
+/// common candidates. For custom aliases, pass them via `extra_candidates`.
+///
+/// # Examples
+///
+/// ```
+/// use ekodb_client::extract_record_id;
+/// use serde_json::json;
+///
+/// let record = json!({"id": "abc123", "name": "Alice"});
+/// assert_eq!(extract_record_id(&record, &[]), Some("abc123".to_string()));
+///
+/// let record = json!({"_id": "def456", "name": "Bob"});
+/// assert_eq!(extract_record_id(&record, &[]), Some("def456".to_string()));
+///
+/// let record = json!({"user_id": "ghi789", "name": "Charlie"});
+/// assert_eq!(extract_record_id(&record, &["user_id"]), Some("ghi789".to_string()));
+/// ```
+pub fn extract_record_id(record: &Value, extra_candidates: &[&str]) -> Option<String> {
+    if let Value::Object(map) = record {
+        // Try extra candidates first (collection-specific alias)
+        for key in extra_candidates {
+            if let Some(val) = map.get(*key) {
+                if let Some(s) = get_string_value(val) {
+                    return Some(s);
+                }
+            }
+        }
+        // Then try common defaults
+        for key in ID_CANDIDATES {
+            if let Some(val) = map.get(*key) {
+                if let Some(s) = get_string_value(val) {
+                    return Some(s);
+                }
+            }
+        }
+    }
+    None
+}
+
 /// Transform an entire record by extracting all field values.
-/// Preserves the 'id' field and extracts values from all other fields.
+/// Preserves the ID field (detected dynamically) and extracts values from all other fields.
 ///
 /// # Examples
 ///
@@ -183,7 +230,8 @@ pub fn extract_record(record: &Value) -> Value {
         let mut result = serde_json::Map::new();
 
         for (key, value) in map {
-            if key == "id" {
+            // Preserve ID fields as-is (don't unwrap typed wrappers)
+            if ID_CANDIDATES.contains(&key.as_str()) {
                 result.insert(key.clone(), value.clone());
             } else {
                 result.insert(key.clone(), get_value(value));
@@ -241,5 +289,58 @@ mod tests {
         assert_eq!(result["id"], "user123");
         assert_eq!(result["email"], "user@example.com");
         assert_eq!(result["age"], 30);
+    }
+
+    #[test]
+    fn test_extract_record_id_default() {
+        let record = json!({"id": "abc123", "name": "Alice"});
+        assert_eq!(extract_record_id(&record, &[]), Some("abc123".to_string()));
+    }
+
+    #[test]
+    fn test_extract_record_id_underscore() {
+        let record = json!({"_id": "def456", "name": "Bob"});
+        assert_eq!(extract_record_id(&record, &[]), Some("def456".to_string()));
+    }
+
+    #[test]
+    fn test_extract_record_id_custom_alias() {
+        let record = json!({"user_id": "ghi789", "name": "Charlie"});
+        assert_eq!(
+            extract_record_id(&record, &["user_id"]),
+            Some("ghi789".to_string())
+        );
+    }
+
+    #[test]
+    fn test_extract_record_id_custom_takes_priority() {
+        // Both "id" and "user_id" exist — custom should win
+        let record = json!({"id": "default", "user_id": "custom", "name": "Dave"});
+        assert_eq!(
+            extract_record_id(&record, &["user_id"]),
+            Some("custom".to_string())
+        );
+    }
+
+    #[test]
+    fn test_extract_record_id_typed_wrapper() {
+        // ID as typed wrapper ({"type": "String", "value": "..."})
+        let record = json!({"id": {"type": "String", "value": "wrapped123"}, "name": "Eve"});
+        assert_eq!(
+            extract_record_id(&record, &[]),
+            Some("wrapped123".to_string())
+        );
+    }
+
+    #[test]
+    fn test_extract_record_id_missing() {
+        let record = json!({"name": "NoId"});
+        assert_eq!(extract_record_id(&record, &[]), None);
+    }
+
+    #[test]
+    fn test_extract_record_id_not_object() {
+        let record = json!("just a string");
+        assert_eq!(extract_record_id(&record, &[]), None);
     }
 }

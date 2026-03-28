@@ -4015,6 +4015,190 @@ impl WebSocketClient {
             })
         })
     }
+
+    // =========================================================================
+    // WS CRUD Methods — Full Parity with Server
+    // =========================================================================
+
+    /// Insert a single record via WebSocket.
+    #[pyo3(signature = (collection, record, bypass_ripple=None))]
+    fn ws_insert<'py>(
+        &self, py: Python<'py>, collection: String, record: Py<PyAny>, bypass_ripple: Option<bool>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let record_json = Python::attach(|py| {
+            let dict = record.bind(py).cast::<PyDict>()?;
+            pydict_to_json(py, dict)
+        })?;
+        let mut payload = serde_json::json!({"collection": collection, "record": record_json});
+        if let Some(br) = bypass_ripple {
+            payload["bypass_ripple"] = serde_json::json!(br);
+        }
+        self.send_crud(py, "Insert", payload)
+    }
+
+    /// Query records via WebSocket.
+    #[pyo3(signature = (collection, filter=None, sort=None, limit=None, skip=None))]
+    fn ws_query<'py>(
+        &self, py: Python<'py>, collection: String,
+        filter: Option<Py<PyAny>>, sort: Option<Py<PyAny>>,
+        limit: Option<u64>, skip: Option<u64>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let mut payload = serde_json::json!({"collection": collection});
+        if let Some(f) = filter {
+            payload["filter"] = Python::attach(|py| pydict_to_json(py, f.bind(py).cast::<PyDict>()?))?;
+        }
+        if let Some(s) = sort {
+            payload["sort"] = Python::attach(|py| pydict_to_json(py, s.bind(py).cast::<PyDict>()?))?;
+        }
+        if let Some(l) = limit { payload["limit"] = serde_json::json!(l); }
+        if let Some(s) = skip { payload["skip"] = serde_json::json!(s); }
+        self.send_crud(py, "Query", payload)
+    }
+
+    /// Find a record by ID via WebSocket.
+    fn ws_find_by_id<'py>(&self, py: Python<'py>, collection: String, id: String) -> PyResult<Bound<'py, PyAny>> {
+        self.send_crud(py, "FindById", serde_json::json!({"collection": collection, "id": id}))
+    }
+
+    /// Update a record by ID via WebSocket.
+    #[pyo3(signature = (collection, id, record, bypass_ripple=None))]
+    fn ws_update<'py>(
+        &self, py: Python<'py>, collection: String, id: String, record: Py<PyAny>, bypass_ripple: Option<bool>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let record_json = Python::attach(|py| pydict_to_json(py, record.bind(py).cast::<PyDict>()?))?;
+        let mut payload = serde_json::json!({"collection": collection, "id": id, "record": record_json});
+        if let Some(br) = bypass_ripple { payload["bypass_ripple"] = serde_json::json!(br); }
+        self.send_crud(py, "Update", payload)
+    }
+
+    /// Delete a record by ID via WebSocket.
+    #[pyo3(signature = (collection, id, bypass_ripple=None))]
+    fn ws_delete<'py>(
+        &self, py: Python<'py>, collection: String, id: String, bypass_ripple: Option<bool>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let mut payload = serde_json::json!({"collection": collection, "id": id});
+        if let Some(br) = bypass_ripple { payload["bypass_ripple"] = serde_json::json!(br); }
+        self.send_crud(py, "Delete", payload)
+    }
+
+    /// Batch insert records via WebSocket.
+    #[pyo3(signature = (collection, records, bypass_ripple=None))]
+    fn ws_batch_insert<'py>(
+        &self, py: Python<'py>, collection: String, records: Py<PyAny>, bypass_ripple: Option<bool>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let records_json = Python::attach(|py| {
+            let list = records.bind(py).cast::<PyList>()?;
+            let mut arr = Vec::new();
+            for item in list.iter() {
+                arr.push(pydict_to_json(py, item.cast::<PyDict>()?)?);
+            }
+            Ok::<_, PyErr>(serde_json::Value::Array(arr))
+        })?;
+        let mut payload = serde_json::json!({"collection": collection, "records": records_json});
+        if let Some(br) = bypass_ripple { payload["bypass_ripple"] = serde_json::json!(br); }
+        self.send_crud(py, "BatchInsert", payload)
+    }
+
+    /// Batch delete records by IDs via WebSocket.
+    #[pyo3(signature = (collection, ids, bypass_ripple=None))]
+    fn ws_batch_delete<'py>(
+        &self, py: Python<'py>, collection: String, ids: Vec<String>, bypass_ripple: Option<bool>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let mut payload = serde_json::json!({"collection": collection, "ids": ids});
+        if let Some(br) = bypass_ripple { payload["bypass_ripple"] = serde_json::json!(br); }
+        self.send_crud(py, "BatchDelete", payload)
+    }
+
+    /// Full-text search via WebSocket.
+    #[pyo3(signature = (collection, query, fields=None, limit=None))]
+    fn ws_text_search<'py>(
+        &self, py: Python<'py>, collection: String, query: String,
+        fields: Option<Vec<String>>, limit: Option<u64>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let mut payload = serde_json::json!({"collection": collection, "query": query});
+        let mut opts = serde_json::Map::new();
+        if let Some(f) = fields { opts.insert("fields".to_string(), serde_json::json!(f)); }
+        if let Some(l) = limit { opts.insert("limit".to_string(), serde_json::json!(l)); }
+        if !opts.is_empty() { payload["options"] = serde_json::Value::Object(opts); }
+        self.send_crud(py, "TextSearch", payload)
+    }
+
+    /// Get distinct values for a field via WebSocket.
+    #[pyo3(signature = (collection, field, filter=None))]
+    fn ws_distinct_values<'py>(
+        &self, py: Python<'py>, collection: String, field: String, filter: Option<Py<PyAny>>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let mut payload = serde_json::json!({"collection": collection, "field": field});
+        if let Some(f) = filter {
+            payload["filter"] = Python::attach(|py| pydict_to_json(py, f.bind(py).cast::<PyDict>()?))?;
+        }
+        self.send_crud(py, "DistinctValues", payload)
+    }
+
+    /// Apply atomic field action via WebSocket.
+    #[pyo3(signature = (collection, id, action, field, value=None))]
+    fn ws_update_with_action<'py>(
+        &self, py: Python<'py>, collection: String, id: String,
+        action: String, field: String, value: Option<Py<PyAny>>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let mut payload = serde_json::json!({
+            "collection": collection, "id": id, "action": action, "field": field
+        });
+        if let Some(v) = value {
+            payload["value"] = Python::attach(|py| -> PyResult<serde_json::Value> {
+                let val = v.bind(py);
+                if let Ok(s) = val.extract::<String>() { return Ok(serde_json::json!(s)); }
+                if let Ok(i) = val.extract::<i64>() { return Ok(serde_json::json!(i)); }
+                if let Ok(f) = val.extract::<f64>() { return Ok(serde_json::json!(f)); }
+                if let Ok(b) = val.extract::<bool>() { return Ok(serde_json::json!(b)); }
+                Ok(serde_json::Value::Null)
+            })?;
+        }
+        self.send_crud(py, "UpdateWithAction", payload)
+    }
+
+    /// Create a collection via WebSocket.
+    #[pyo3(signature = (name, schema=None))]
+    fn ws_create_collection<'py>(
+        &self, py: Python<'py>, name: String, schema: Option<Py<PyAny>>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let schema_json = match schema {
+            Some(s) => Python::attach(|py| pydict_to_json(py, s.bind(py).cast::<PyDict>()?))?,
+            None => serde_json::json!({}),
+        };
+        self.send_crud(py, "CreateCollection", serde_json::json!({"name": name, "schema": schema_json}))
+    }
+
+    /// List all collections via WebSocket.
+    fn ws_list_collections<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        self.send_crud(py, "GetCollections", serde_json::json!({}))
+    }
+
+    /// Delete a collection via WebSocket.
+    fn ws_delete_collection<'py>(&self, py: Python<'py>, name: String) -> PyResult<Bound<'py, PyAny>> {
+        self.send_crud(py, "DeleteCollection", serde_json::json!({"name": name}))
+    }
+}
+
+// Private helpers for WebSocketClient (not exposed to Python)
+impl WebSocketClient {
+    fn send_crud<'py>(
+        &self,
+        py: Python<'py>,
+        msg_type: &'static str,
+        payload: serde_json::Value,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let ws_client = match &self.inner {
+            Some(client) => client.clone(),
+            None => return Err(PyRuntimeError::new_err("WebSocket client not initialized")),
+        };
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            let data = ws_client.send_crud(msg_type, payload).await
+                .map_err(|e| PyRuntimeError::new_err(format!("WS {} failed: {}", msg_type, e)))?;
+            Python::attach(|py| json_to_pydict(py, &data))
+        })
+    }
 }
 
 /// Convert ChatResponse to Python dict

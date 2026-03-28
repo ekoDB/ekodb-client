@@ -188,18 +188,56 @@ println!("Batch completed: {} successful, {} failed",
 ### WebSocket Operations
 
 ```rust
-// Connect to WebSocket
-let ws_client = client.websocket("ws://localhost:8080/ws").await?;
+// Connect via convenience method (derives WS URL, attaches schema cache)
+let ws = client.connect_ws().await?;
 
-// Query via WebSocket
-let results = ws_client.find_all("users").await?;
-println!("Found {} users via WebSocket", results.len());
+// Full CRUD over WebSocket (14 methods — same as REST, zero HTTP overhead)
+let record = ws.insert("users", json!({"name": "Alice", "email": "a@b.com"}), None).await?;
+let results = ws.query("users", Some(json!({"field": "status", "operator": "Eq", "value": "active"})), None, None, None).await?;
+let user = ws.find_by_id("users", "record_id").await?;
+ws.update("users", "record_id", json!({"name": "Updated"}), None).await?;
+ws.delete("users", "record_id", None).await?;
 
-// Query with filters using ekoDB format
-let query = QueryBuilder::new()
-    .eq("status", "active")
-    .build();
-let active_users = ws_client.find("users", query).await?;
+// Batch operations
+ws.batch_insert("logs", vec![json!({"msg": "a"}), json!({"msg": "b"})], None).await?;
+ws.batch_delete("logs", vec!["id1".into(), "id2".into()], None).await?;
+
+// Search + collection management
+let hits = ws.text_search("docs", "rust async", None, Some(10)).await?;
+let collections = ws.list_collections().await?;
+ws.create_collection("new_coll", None).await?;
+
+// Atomic field actions
+ws.update_with_action("counters", "page_views", "increment", "count", Some(json!(1))).await?;
+```
+
+### Schema Cache
+
+```rust
+// Enable at client creation — caches primary_key_alias per collection
+let client = Client::builder()
+    .base_url("https://api.ekodb.net")
+    .api_key("key")
+    .schema_cache(true)           // enable LRU cache (default: off)
+    .schema_cache_ttl(300)        // TTL in seconds (default: 5 min)
+    .schema_cache_max(100)        // max collections (default: 100)
+    .build()?;
+
+// Extract record IDs correctly regardless of primary_key_alias config
+let id = client.extract_id("users", &record);
+
+// Cache auto-invalidates via WS SchemaChanged events when connected
+let ws = client.connect_ws().await?;  // attaches cache automatically
+```
+
+### SSE Subscriptions
+
+```rust
+// Subscribe to mutations via SSE (works behind reverse proxies that block WS)
+let mut rx = client.subscribe_sse("orders", None, None).await?;
+while let Some(event) = rx.recv().await {
+    println!("Mutation: {} on {}", event.event, event.collection);
+}
 ```
 
 ### TTL (Time-To-Live) Support

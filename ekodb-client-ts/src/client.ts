@@ -3026,11 +3026,128 @@ export class EventStream<_T = unknown> {
 /**
  * WebSocket client for real-time queries, subscriptions, and chat streaming.
  */
+/**
+ * In-memory schema cache with TTL for primary_key_alias resolution.
+ */
+export class SchemaCache {
+  private entries: Map<
+    string,
+    { primaryKeyAlias: string; version: number; cachedAt: number }
+  > = new Map();
+  private lruOrder: string[] = [];
+  private enabled: boolean;
+  private maxEntries: number;
+  private ttlMs: number;
+
+  constructor(
+    options: {
+      enabled?: boolean;
+      maxEntries?: number;
+      ttlSeconds?: number;
+    } = {},
+  ) {
+    this.enabled = options.enabled ?? false;
+    this.maxEntries = options.maxEntries ?? 100;
+    this.ttlMs = (options.ttlSeconds ?? 300) * 1000;
+  }
+
+  isEnabled(): boolean {
+    return this.enabled;
+  }
+  setEnabled(enabled: boolean): void {
+    this.enabled = enabled;
+  }
+
+  getAlias(collection: string): string | undefined {
+    if (!this.enabled) return undefined;
+    const entry = this.entries.get(collection);
+    if (!entry) return undefined;
+    if (Date.now() - entry.cachedAt > this.ttlMs) {
+      this.entries.delete(collection);
+      this.lruOrder = this.lruOrder.filter((c) => c !== collection);
+      return undefined;
+    }
+    this.touchLRU(collection);
+    return entry.primaryKeyAlias;
+  }
+
+  insert(collection: string, primaryKeyAlias: string, version: number): void {
+    if (!this.enabled) return;
+    const isNew = !this.entries.has(collection);
+    this.entries.set(collection, {
+      primaryKeyAlias,
+      version,
+      cachedAt: Date.now(),
+    });
+    if (isNew) {
+      this.lruOrder.push(collection);
+      while (this.lruOrder.length > this.maxEntries) {
+        const oldest = this.lruOrder.shift()!;
+        this.entries.delete(oldest);
+      }
+    } else {
+      this.touchLRU(collection);
+    }
+  }
+
+  invalidate(collection: string): void {
+    this.entries.delete(collection);
+    this.lruOrder = this.lruOrder.filter((c) => c !== collection);
+  }
+  invalidateAll(): void {
+    this.entries.clear();
+    this.lruOrder = [];
+  }
+
+  handleSchemaChanged(
+    collection: string,
+    version: number,
+    primaryKeyAlias: string,
+  ): void {
+    if (!this.enabled) return;
+    const existing = this.entries.get(collection);
+    if (existing && version <= existing.version) return;
+    this.insert(collection, primaryKeyAlias, version);
+  }
+
+  get size(): number {
+    return this.entries.size;
+  }
+
+  private touchLRU(collection: string): void {
+    this.lruOrder = this.lruOrder.filter((c) => c !== collection);
+    this.lruOrder.push(collection);
+  }
+}
+
+/**
+ * Extract record ID from a record object, trying custom alias, "id", then "_id".
+ */
+export function extractRecordId(
+  record: Record,
+  extraCandidates: string[] = [],
+): string | undefined {
+  for (const key of extraCandidates) {
+    const val = record[key];
+    if (typeof val === "string") return val;
+    if (val && typeof val === "object" && "value" in val)
+      return String(val.value);
+  }
+  for (const key of ["id", "_id"]) {
+    const val = record[key];
+    if (typeof val === "string") return val;
+    if (val && typeof val === "object" && "value" in val)
+      return String(val.value);
+  }
+  return undefined;
+}
+
 export class WebSocketClient {
   private wsURL: string;
   private token: string;
   private ws: any = null;
   private dispatcherRunning = false;
+  private schemaCache: SchemaCache | null = null;
 
   // Dispatcher state
   private pendingRequests: Map<
@@ -3226,6 +3343,17 @@ export class WebSocketClient {
           } as ChatStreamEvent);
           this.chatStreams.delete(chatId);
           stream.close();
+        }
+        break;
+      }
+
+      case "SchemaChanged": {
+        if (this.schemaCache && msg.payload) {
+          this.schemaCache.handleSchemaChanged(
+            msg.payload.collection,
+            msg.payload.version,
+            msg.payload.primary_key_alias,
+          );
         }
         break;
       }
@@ -3429,6 +3557,200 @@ export class WebSocketClient {
       },
     });
     return { content: payload?.data?.content || "" };
+  }
+
+  /** Attach a schema cache for automatic invalidation on SchemaChanged events. */
+  setSchemaCache(cache: SchemaCache): void {
+    this.schemaCache = cache;
+  }
+
+  /** Extract record ID using the schema cache's primary_key_alias. */
+  extractId(collection: string, record: Record): string | undefined {
+    const alias = this.schemaCache?.getAlias(collection);
+    return extractRecordId(record, alias ? [alias] : []);
+  }
+
+  // =========================================================================
+  // WS CRUD Methods — Full Parity with Server
+  // =========================================================================
+
+  private async sendCRUD(msgType: string, payload: any): Promise<any> {
+    const messageId = this.genMessageId();
+    const response = await this.sendRequest({
+      type: msgType,
+      messageId,
+      payload,
+    });
+    return response?.data ?? response;
+  }
+
+  /** Insert a single record via WebSocket. */
+  async insert(
+    collection: string,
+    record: Record,
+    bypassRipple?: boolean,
+  ): Promise<any> {
+    return this.sendCRUD("Insert", {
+      collection,
+      record,
+      ...(bypassRipple !== undefined && { bypass_ripple: bypassRipple }),
+    });
+  }
+
+  /** Query records via WebSocket. */
+  async query(
+    collection: string,
+    options?: {
+      filter?: any;
+      sort?: any;
+      limit?: number;
+      skip?: number;
+    },
+  ): Promise<any[]> {
+    const data = await this.sendCRUD("Query", {
+      collection,
+      ...options,
+    });
+    return Array.isArray(data) ? data : [];
+  }
+
+  /** Find a record by ID via WebSocket. */
+  async findById(collection: string, id: string): Promise<any> {
+    return this.sendCRUD("FindById", { collection, id });
+  }
+
+  /** Update a record by ID via WebSocket. */
+  async update(
+    collection: string,
+    id: string,
+    record: Record,
+    bypassRipple?: boolean,
+  ): Promise<any> {
+    return this.sendCRUD("Update", {
+      collection,
+      id,
+      record,
+      ...(bypassRipple !== undefined && { bypass_ripple: bypassRipple }),
+    });
+  }
+
+  /** Delete a record by ID via WebSocket. */
+  async delete(
+    collection: string,
+    id: string,
+    bypassRipple?: boolean,
+  ): Promise<void> {
+    await this.sendCRUD("Delete", {
+      collection,
+      id,
+      ...(bypassRipple !== undefined && { bypass_ripple: bypassRipple }),
+    });
+  }
+
+  /** Batch insert multiple records via WebSocket. */
+  async batchInsert(
+    collection: string,
+    records: Record[],
+    bypassRipple?: boolean,
+  ): Promise<any> {
+    return this.sendCRUD("BatchInsert", {
+      collection,
+      records,
+      ...(bypassRipple !== undefined && { bypass_ripple: bypassRipple }),
+    });
+  }
+
+  /** Batch update multiple records via WebSocket. */
+  async batchUpdate(
+    collection: string,
+    updates: [string, Record][],
+    bypassRipple?: boolean,
+  ): Promise<any> {
+    return this.sendCRUD("BatchUpdate", {
+      collection,
+      updates,
+      ...(bypassRipple !== undefined && { bypass_ripple: bypassRipple }),
+    });
+  }
+
+  /** Batch delete records by IDs via WebSocket. */
+  async batchDelete(
+    collection: string,
+    ids: string[],
+    bypassRipple?: boolean,
+  ): Promise<void> {
+    await this.sendCRUD("BatchDelete", {
+      collection,
+      ids,
+      ...(bypassRipple !== undefined && { bypass_ripple: bypassRipple }),
+    });
+  }
+
+  /** Full-text search via WebSocket. */
+  async textSearch(
+    collection: string,
+    query: string,
+    fields?: string[],
+    limit?: number,
+  ): Promise<any[]> {
+    const options: any = {};
+    if (fields) options.fields = fields;
+    if (limit) options.limit = limit;
+    const data = await this.sendCRUD("TextSearch", {
+      collection,
+      query,
+      ...(Object.keys(options).length > 0 && { options }),
+    });
+    return Array.isArray(data) ? data : [];
+  }
+
+  /** Get distinct values for a field via WebSocket. */
+  async distinctValues(
+    collection: string,
+    field: string,
+    filter?: any,
+  ): Promise<any> {
+    return this.sendCRUD("DistinctValues", {
+      collection,
+      field,
+      ...(filter && { filter }),
+    });
+  }
+
+  /** Apply an atomic field action via WebSocket. */
+  async updateWithAction(
+    collection: string,
+    id: string,
+    action: string,
+    field: string,
+    value?: any,
+  ): Promise<any> {
+    return this.sendCRUD("UpdateWithAction", {
+      collection,
+      id,
+      action,
+      field,
+      ...(value !== undefined && { value }),
+    });
+  }
+
+  /** Create a collection with optional schema via WebSocket. */
+  async createCollection(name: string, schema?: any): Promise<void> {
+    await this.sendCRUD("CreateCollection", {
+      name,
+      schema: schema ?? {},
+    });
+  }
+
+  /** List all collections via WebSocket. */
+  async listCollections(): Promise<string[]> {
+    const data = await this.sendCRUD("GetCollections", {});
+    return Array.isArray(data) ? data : [];
+  }
+
+  /** Delete a collection via WebSocket. */
+  async deleteCollection(name: string): Promise<void> {
+    await this.sendCRUD("DeleteCollection", { name });
   }
 
   /**

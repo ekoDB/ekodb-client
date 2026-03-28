@@ -5,6 +5,8 @@ export {
   SerializationFormat,
   MergeStrategy,
   RateLimitError,
+  SchemaCache,
+  extractRecordId,
 } from "./client";
 export { QueryBuilder, SortOrder } from "./query-builder";
 export { SearchQueryBuilder } from "./search";

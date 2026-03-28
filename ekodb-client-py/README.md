@@ -563,11 +563,34 @@ sched = await client.create_schedule({"name": "nightly", "cron": "0 2 * * *"})
 await client.pause_schedule("sched-id")
 ```
 
-### WebSocket Chat Streaming
+### WebSocket Operations
 
 ```python
 ws = await client.websocket("ws://localhost:8080")
 
+# Full CRUD over WebSocket (14 methods)
+result = await ws.ws_insert("users", {"name": "Alice", "email": "a@b.com"})
+results = await ws.ws_query("users", filter={"field": "status", "operator": "Eq", "value": "active"})
+user = await ws.ws_find_by_id("users", "record-id")
+await ws.ws_update("users", "record-id", {"name": "Updated"})
+await ws.ws_delete("users", "record-id")
+
+# Batch operations
+await ws.ws_batch_insert("logs", [{"msg": "a"}, {"msg": "b"}])
+await ws.ws_batch_delete("logs", ["id1", "id2"])
+
+# Search + collection management
+hits = await ws.ws_text_search("docs", "python async", limit=10)
+collections = await ws.ws_list_collections()
+await ws.ws_create_collection("new_coll")
+
+# Atomic field actions
+await ws.ws_update_with_action("counters", "views", "increment", "count", 1)
+```
+
+### WebSocket Chat Streaming
+
+```python
 stream = await ws.chat_send(chat_id, "What is the capital of France?")
 async for event in stream:
     if event.type == "chunk":
@@ -576,7 +599,9 @@ async for event in stream:
         print(f"\nDone (context: {event.context_window} tokens)")
     elif event.type == "tool_call":
         print(f"[Tool] {event.tool_name}")
-        await ws.send_tool_result(chat_id, event.call_id, True, {"result": "done"})
+        await ws.send_tool_result(
+            chat_id, event.call_id, True, {"result": "done"}
+        )
     elif event.type == "error":
         print(f"Error: {event.error}")
 ```

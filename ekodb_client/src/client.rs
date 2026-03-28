@@ -45,6 +45,10 @@ impl RateLimitInfo {
 pub struct Client {
     http: Arc<HttpClient>,
     auth: Arc<AuthManager>,
+    /// Opt-in schema cache for primary_key_alias resolution and field validation.
+    schema_cache: Arc<crate::schema_cache::SchemaCache>,
+    /// Base URL stored for WS URL derivation in connect_ws()
+    base_url: String,
 }
 
 impl Client {
@@ -2251,6 +2255,165 @@ impl Client {
         let token = self.auth.get_token().await?;
         self.http.resume_schedule(id, &token).await
     }
+
+    // =========================================================================
+    // Schema Cache & WebSocket Convenience
+    // =========================================================================
+
+    /// Get a reference to the schema cache.
+    pub fn schema_cache(&self) -> &crate::schema_cache::SchemaCache {
+        &self.schema_cache
+    }
+
+    /// Get the schema cache as an Arc (for sharing with WebSocketClient).
+    pub fn schema_cache_arc(&self) -> Arc<crate::schema_cache::SchemaCache> {
+        self.schema_cache.clone()
+    }
+
+    /// Extract the record ID from a JSON record using the cached primary_key_alias.
+    ///
+    /// If the schema cache has the collection's alias, it's used first.
+    /// Falls back to "id" then "_id" if the cache misses.
+    pub fn extract_id(&self, collection: &str, record: &serde_json::Value) -> Option<String> {
+        let alias = self.schema_cache.get_alias(collection);
+        let extra: Vec<&str> = alias.iter().map(|s| s.as_str()).collect();
+        crate::utils::extract_record_id(record, &extra)
+    }
+
+    /// Subscribe to collection mutations via SSE (Server-Sent Events).
+    ///
+    /// Returns an `mpsc::Receiver` that yields `MutationNotificationPayload` events.
+    /// Also handles `schema_changed` events to auto-invalidate the schema cache.
+    ///
+    /// Use this when WebSocket connections aren't available (e.g. behind reverse
+    /// proxies that block WS upgrades).
+    pub async fn subscribe_sse(
+        &self,
+        collection: &str,
+        filter_field: Option<&str>,
+        filter_value: Option<&str>,
+    ) -> Result<tokio::sync::mpsc::Receiver<crate::websocket::MutationNotificationPayload>> {
+        let token = self.auth.get_token().await?;
+        let mut url = format!("{}/api/subscribe/{}", self.base_url, collection);
+
+        let mut params = vec![];
+        if let Some(ff) = filter_field {
+            params.push(format!("filter_field={}", ff));
+        }
+        if let Some(fv) = filter_value {
+            params.push(format!("filter_value={}", fv));
+        }
+        if !params.is_empty() {
+            url = format!("{}?{}", url, params.join("&"));
+        }
+
+        let client = reqwest::Client::new();
+        let response = client
+            .get(&url)
+            .header("Authorization", format!("Bearer {}", token))
+            .header("Accept", "text/event-stream")
+            .send()
+            .await
+            .map_err(|e| Error::Api {
+                code: 0,
+                message: format!("SSE connection failed: {}", e),
+            })?;
+
+        if !response.status().is_success() {
+            return Err(Error::Api {
+                code: response.status().as_u16(),
+                message: format!("SSE subscribe failed: {}", response.status()),
+            });
+        }
+
+        let (tx, rx) = tokio::sync::mpsc::channel(256);
+        let schema_cache = self.schema_cache.clone();
+
+        // Spawn background task to parse SSE stream
+        tokio::spawn(async move {
+            use futures_util::StreamExt;
+            let mut stream = response.bytes_stream();
+            let mut buffer = String::new();
+
+            while let Some(chunk) = stream.next().await {
+                let chunk = match chunk {
+                    Ok(c) => c,
+                    Err(_) => break,
+                };
+                let text = String::from_utf8_lossy(&chunk);
+                buffer.push_str(&text);
+
+                // Parse SSE events from buffer (event: ...\ndata: ...\n\n)
+                while let Some(end) = buffer.find("\n\n") {
+                    let event_block = buffer[..end].to_string();
+                    buffer = buffer[end + 2..].to_string();
+
+                    let mut event_type = String::new();
+                    let mut event_data = String::new();
+
+                    for line in event_block.lines() {
+                        if let Some(val) = line.strip_prefix("event: ") {
+                            event_type = val.trim().to_string();
+                        } else if let Some(val) = line.strip_prefix("data: ") {
+                            event_data = val.trim().to_string();
+                        }
+                    }
+
+                    match event_type.as_str() {
+                        "mutation" => {
+                            if let Ok(payload) = serde_json::from_str::<
+                                crate::websocket::MutationNotificationPayload,
+                            >(&event_data)
+                            {
+                                if tx.send(payload).await.is_err() {
+                                    return; // Receiver dropped
+                                }
+                            }
+                        }
+                        "schema_changed" => {
+                            if let Ok(sc) = serde_json::from_str::<
+                                crate::websocket::SchemaChangedPayload,
+                            >(&event_data)
+                            {
+                                schema_cache.handle_schema_changed(
+                                    &sc.collection,
+                                    sc.version,
+                                    &sc.primary_key_alias,
+                                );
+                            }
+                        }
+                        _ => {} // ignore subscribed, error, heartbeat
+                    }
+                }
+            }
+        });
+
+        Ok(rx)
+    }
+
+    /// Create a WebSocket client connected to this ekoDB instance.
+    ///
+    /// Derives the WS URL from the base URL (http→ws, https→wss) and uses
+    /// the current auth token. The schema cache is automatically attached
+    /// for realtime invalidation on SchemaChanged events.
+    pub async fn connect_ws(&self) -> Result<crate::websocket::WebSocketClient> {
+        let token = self.auth.get_token().await?;
+
+        // Convert http(s) to ws(s)
+        let ws_url = self
+            .base_url
+            .replace("https://", "wss://")
+            .replace("http://", "ws://");
+
+        let ws = crate::websocket::WebSocketClient::new(&ws_url, token)?;
+
+        // Attach schema cache for auto-invalidation
+        if self.schema_cache.is_enabled() {
+            ws.set_schema_cache(self.schema_cache.clone()).await;
+        }
+
+        Ok(ws)
+    }
 }
 
 /// Builder for creating a Client
@@ -2262,6 +2425,9 @@ pub struct ClientBuilder {
     max_retries: Option<usize>,
     should_retry: Option<bool>,
     serialization_format: Option<crate::types::SerializationFormat>,
+    schema_cache_enabled: bool,
+    schema_cache_ttl: Option<Duration>,
+    schema_cache_max: Option<usize>,
 }
 
 impl ClientBuilder {
@@ -2384,6 +2550,28 @@ impl ClientBuilder {
         self
     }
 
+    /// Enable the in-memory schema cache for primary_key_alias resolution.
+    ///
+    /// When enabled, CRUD results use cached schema metadata to correctly
+    /// extract record IDs regardless of the collection's `primary_key_alias` config.
+    /// The cache is invalidated automatically via WS `SchemaChanged` events.
+    pub fn schema_cache(mut self, enabled: bool) -> Self {
+        self.schema_cache_enabled = enabled;
+        self
+    }
+
+    /// Set the schema cache TTL (time-to-live) in seconds. Default: 300 (5 min).
+    pub fn schema_cache_ttl(mut self, seconds: u64) -> Self {
+        self.schema_cache_ttl = Some(Duration::from_secs(seconds));
+        self
+    }
+
+    /// Set the max number of collections the schema cache holds. Default: 100.
+    pub fn schema_cache_max(mut self, max: usize) -> Self {
+        self.schema_cache_max = Some(max);
+        self
+    }
+
     /// Build the client
     ///
     /// # Errors
@@ -2423,9 +2611,18 @@ impl ClientBuilder {
         // Create auth manager with API key
         let auth = AuthManager::new(api_key, base_url, reqwest_client);
 
+        let schema_cache =
+            crate::schema_cache::SchemaCache::new(crate::schema_cache::SchemaCacheConfig {
+                enabled: self.schema_cache_enabled,
+                max_entries: self.schema_cache_max.unwrap_or(100),
+                ttl: self.schema_cache_ttl.unwrap_or(Duration::from_secs(300)),
+            });
+
         Ok(Client {
             http: Arc::new(http),
             auth: Arc::new(auth),
+            schema_cache: Arc::new(schema_cache),
+            base_url: base_url_str,
         })
     }
 }
