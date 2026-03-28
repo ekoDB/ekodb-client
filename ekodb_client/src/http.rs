@@ -1261,7 +1261,7 @@ impl HttpClient {
                         .text()
                         .await
                         .unwrap_or_else(|_| "Service unavailable".to_string());
-                    Error::ServiceUnavailable(body)
+                    Error::ServiceUnavailable(extract_error_message(&body))
                 }
                 _ => {
                     let body = response
@@ -1270,7 +1270,7 @@ impl HttpClient {
                         .unwrap_or_else(|_| "unknown error".to_string());
                     Error::Api {
                         code: status.as_u16(),
-                        message: body,
+                        message: extract_error_message(&body),
                     }
                 }
             });
@@ -3402,6 +3402,20 @@ impl HttpClient {
         self.handle_response("/api/schedules/{id}/resume", response)
             .await
     }
+}
+
+/// Extract the `"message"` or `"error"` field from a JSON error body,
+/// falling back to the raw string if parsing fails.
+fn extract_error_message(body: &str) -> String {
+    serde_json::from_str::<serde_json::Value>(body)
+        .ok()
+        .and_then(|v| {
+            v.get("message")
+                .or_else(|| v.get("error"))
+                .and_then(|m| m.as_str())
+                .map(str::to_owned)
+        })
+        .unwrap_or_else(|| body.to_string())
 }
 
 #[derive(Deserialize, Serialize)]
