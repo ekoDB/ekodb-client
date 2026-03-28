@@ -28,13 +28,7 @@ async def main():
 
     client = Client.new(BASE_URL, API_KEY)
 
-    # Cleanup any stale collections from previous runs
-    try:
-        await client.delete_collection("user_cache_py")
-    except Exception:
-        pass
-
-    # No need to create collection — ekoDB creates it on first insert
+    # This SWR example uses KV operations (kv_get/kv_set) — no collection needed
 
     print("=== ekoDB SWR (Stale-While-Revalidate) Pattern ===\n")
 
