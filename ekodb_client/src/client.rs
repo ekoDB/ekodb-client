@@ -1158,11 +1158,16 @@ impl Client {
         let search_query = SearchQuery::new(query_text).limit(limit);
         let response = self.search(collection, search_query).await?;
 
-        // Convert SearchResult to Record
+        // Convert SearchResult to Record, injecting _score so callers can access it
         let records: Vec<Record> = response
             .results
             .into_iter()
-            .filter_map(|result| serde_json::from_value(result.record).ok())
+            .filter_map(|result| {
+                let score = result.score;
+                let mut record: Record = serde_json::from_value(result.record).ok()?;
+                record.insert("_score", score);
+                Some(record)
+            })
             .collect();
 
         Ok(records)
@@ -1209,11 +1214,16 @@ impl Client {
 
         let response = self.search(collection, search_query).await?;
 
-        // Convert SearchResult to Record
+        // Convert SearchResult to Record, injecting _score so callers can access it
         let records: Vec<Record> = response
             .results
             .into_iter()
-            .filter_map(|result| serde_json::from_value(result.record).ok())
+            .filter_map(|result| {
+                let score = result.score;
+                let mut record: Record = serde_json::from_value(result.record).ok()?;
+                record.insert("_score", score);
+                Some(record)
+            })
             .collect();
 
         Ok(records)

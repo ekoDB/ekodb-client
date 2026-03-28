@@ -255,7 +255,9 @@ impl CreateChatSessionRequest {
 /// Response containing chat session information
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ChatSessionResponse {
+    #[serde(default)]
     pub session: Record,
+    #[serde(default)]
     pub message_count: usize,
 }
 
