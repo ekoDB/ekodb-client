@@ -328,8 +328,37 @@ const joinResults = await client.find("users", multiQuery);
 
 ### WebSocket Methods
 
-- `findAll(collection: string): Promise<Record[]>`
+**Full CRUD (14 methods):**
+
+- `findAll(collection): Promise<Record[]>`
+- `insert(collection, record, bypassRipple?): Promise<any>`
+- `query(collection, options?): Promise<any[]>`
+- `findById(collection, id): Promise<any>`
+- `update(collection, id, record, bypassRipple?): Promise<any>`
+- `delete(collection, id, bypassRipple?): Promise<void>`
+- `batchInsert(collection, records, bypassRipple?): Promise<any>`
+- `batchUpdate(collection, updates, bypassRipple?): Promise<any>`
+- `batchDelete(collection, ids, bypassRipple?): Promise<void>`
+- `textSearch(collection, query, fields?, limit?): Promise<any[]>`
+- `distinctValues(collection, field, filter?): Promise<any>`
+- `updateWithAction(collection, id, action, field, value?): Promise<any>`
+- `createCollection(name, schema?): Promise<void>`
+- `listCollections(): Promise<string[]>`
+- `deleteCollection(name): Promise<void>`
 - `close(): void`
+
+**Schema Cache:**
+
+```typescript
+import { SchemaCache, extractRecordId } from "@ekodb/ekodb-client";
+
+const cache = new SchemaCache({ enabled: true, ttlSeconds: 300 });
+ws.setSchemaCache(cache);
+
+// Extract IDs correctly with custom primary_key_alias
+const id = extractRecordId(record); // tries "id", "_id"
+const id2 = ws.extractId("users", record); // uses cache
+```
 
 ## Examples
 

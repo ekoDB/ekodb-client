@@ -138,31 +138,31 @@ pub struct ClientToolResultPayload {
 pub enum WebSocketResponse {
     Success {
         payload: ResponsePayload,
+        /// Server-echoed messageId for request-response correlation (top-level)
+        #[serde(rename = "messageId", default)]
+        message_id: Option<String>,
     },
     Error {
         code: u16,
         message: String,
+        /// Server-echoed messageId for request-response correlation (top-level)
+        #[serde(rename = "messageId", default)]
+        message_id: Option<String>,
     },
+    /// Schema change notification from server (collection config changed)
+    SchemaChanged { payload: SchemaChangedPayload },
     /// A streamed text chunk from the LLM
-    ChatStreamChunk {
-        payload: ChatStreamChunkPayload,
-    },
+    ChatStreamChunk { payload: ChatStreamChunkPayload },
     /// Final message after streaming completes
-    ChatStreamEnd {
-        payload: ChatStreamEndPayload,
-    },
+    ChatStreamEnd { payload: ChatStreamEndPayload },
     /// Error during chat streaming
-    ChatStreamError {
-        payload: ChatStreamErrorPayload,
-    },
+    ChatStreamError { payload: ChatStreamErrorPayload },
     /// Mutation notification from a subscription
     MutationNotification {
         payload: MutationNotificationPayload,
     },
     /// Server requests the client to execute a tool
-    ClientToolCall {
-        payload: ClientToolCallPayload,
-    },
+    ClientToolCall { payload: ClientToolCallPayload },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -171,6 +171,13 @@ pub struct ResponsePayload {
     /// Server echoes back the message_id for request-response correlation
     #[serde(rename = "messageId", default)]
     pub message_id: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SchemaChangedPayload {
+    pub collection: String,
+    pub version: u64,
+    pub primary_key_alias: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -257,6 +264,8 @@ struct DispatchState {
     chat_senders: HashMap<String, tokio::sync::mpsc::Sender<ChatStreamEvent>>,
     /// Dedicated ack channel for register_client_tools (protocol has no messageId for this)
     register_tools_ack: Option<tokio::sync::oneshot::Sender<WebSocketResponse>>,
+    /// Optional schema cache to invalidate on SchemaChanged events
+    schema_cache: Option<std::sync::Arc<crate::schema_cache::SchemaCache>>,
 }
 
 /// WebSocket client for real-time communication with persistent connection.
@@ -286,13 +295,14 @@ impl WebSocketClient {
                 subscription_senders: Vec::new(),
                 chat_senders: HashMap::new(),
                 register_tools_ack: None,
+                schema_cache: None,
             })),
             connected: Arc::new(Mutex::new(false)),
         })
     }
 
     /// Ensure we have an active connection, reconnecting if needed
-    async fn ensure_connected(&self) -> Result<()> {
+    pub async fn ensure_connected(&self) -> Result<()> {
         // Quick check: if connected, return
         {
             let w = self.writer.lock().await;
@@ -376,24 +386,18 @@ impl WebSocketClient {
 
                             match response {
                                 // Request-response: route by message_id (oneshot, no async needed)
-                                WebSocketResponse::Success { ref payload } => {
-                                    if let Some(mid) = &payload.message_id {
+                                // Try top-level messageId first, then payload.messageId, then single-pending fallback
+                                WebSocketResponse::Success {
+                                    ref payload,
+                                    ref message_id,
+                                } => {
+                                    let mid = message_id.as_ref().or(payload.message_id.as_ref());
+                                    if let Some(mid) = mid {
                                         if let Some(tx) = state.pending_requests.remove(mid) {
                                             let _ = tx.send(response);
                                             SendAction::None
                                         } else if let Some(tx) = state.register_tools_ack.take() {
                                             let _ = tx.send(response);
-                                            SendAction::None
-                                        } else if state.pending_requests.len() == 1 {
-                                            let key = state
-                                                .pending_requests
-                                                .keys()
-                                                .next()
-                                                .cloned()
-                                                .unwrap();
-                                            if let Some(tx) = state.pending_requests.remove(&key) {
-                                                let _ = tx.send(response);
-                                            }
                                             SendAction::None
                                         } else {
                                             SendAction::None
@@ -402,6 +406,7 @@ impl WebSocketClient {
                                         let _ = tx.send(response);
                                         SendAction::None
                                     } else if state.pending_requests.len() == 1 {
+                                        // Legacy fallback: no messageId, single pending request
                                         let key =
                                             state.pending_requests.keys().next().cloned().unwrap();
                                         if let Some(tx) = state.pending_requests.remove(&key) {
@@ -412,8 +417,12 @@ impl WebSocketClient {
                                         SendAction::None
                                     }
                                 }
-                                WebSocketResponse::Error { .. } => {
-                                    if let Some(tx) = state.register_tools_ack.take() {
+                                WebSocketResponse::Error { ref message_id, .. } => {
+                                    if let Some(mid) = message_id {
+                                        if let Some(tx) = state.pending_requests.remove(mid) {
+                                            let _ = tx.send(response);
+                                        }
+                                    } else if let Some(tx) = state.register_tools_ack.take() {
                                         let _ = tx.send(response);
                                     } else if state.pending_requests.len() == 1 {
                                         let key =
@@ -421,6 +430,18 @@ impl WebSocketClient {
                                         if let Some(tx) = state.pending_requests.remove(&key) {
                                             let _ = tx.send(response);
                                         }
+                                    }
+                                    SendAction::None
+                                }
+
+                                // Schema change: invalidate cached schema
+                                WebSocketResponse::SchemaChanged { ref payload } => {
+                                    if let Some(ref cache) = state.schema_cache {
+                                        cache.handle_schema_changed(
+                                            &payload.collection,
+                                            payload.version,
+                                            &payload.primary_key_alias,
+                                        );
                                     }
                                     SendAction::None
                                 }
@@ -517,12 +538,14 @@ impl WebSocketClient {
                             let _ = tx.send(WebSocketResponse::Error {
                                 code: 0,
                                 message: "Connection closed".to_string(),
+                                message_id: None,
                             });
                         }
                         if let Some(tx) = tools_ack {
                             let _ = tx.send(WebSocketResponse::Error {
                                 code: 0,
                                 message: "Connection closed".to_string(),
+                                message_id: None,
                             });
                         }
                         for (_, tx) in chat_senders {
@@ -605,7 +628,7 @@ impl WebSocketClient {
         let response = self.send_and_wait(&request, &message_id).await?;
 
         match response {
-            WebSocketResponse::Success { payload } => {
+            WebSocketResponse::Success { payload, .. } => {
                 if let Some(arr) = payload.data.as_array() {
                     let records: Vec<Record> = arr
                         .iter()
@@ -616,7 +639,7 @@ impl WebSocketClient {
                     Ok(vec![])
                 }
             }
-            WebSocketResponse::Error { code, message } => Err(Error::api(code, message)),
+            WebSocketResponse::Error { code, message, .. } => Err(Error::api(code, message)),
             _ => Err(Error::WebSocket("Unexpected response type".to_string())),
         }
     }
@@ -647,7 +670,9 @@ impl WebSocketClient {
         let response = self.send_and_wait(&request, &message_id).await?;
         match response {
             WebSocketResponse::Success { .. } => {}
-            WebSocketResponse::Error { code, message } => return Err(Error::api(code, message)),
+            WebSocketResponse::Error { code, message, .. } => {
+                return Err(Error::api(code, message));
+            }
             _ => {
                 return Err(Error::WebSocket(
                     "Unexpected response to subscribe".to_string(),
@@ -772,7 +797,7 @@ impl WebSocketClient {
 
         match response {
             WebSocketResponse::Success { .. } => Ok(()),
-            WebSocketResponse::Error { code, message } => Err(Error::api(code, message)),
+            WebSocketResponse::Error { code, message, .. } => Err(Error::api(code, message)),
             _ => Err(Error::WebSocket(
                 "Unexpected response to register_client_tools".to_string(),
             )),
@@ -829,7 +854,7 @@ impl WebSocketClient {
         let response = self.send_and_wait(&ws_request, &message_id).await?;
 
         match response {
-            WebSocketResponse::Success { payload } => {
+            WebSocketResponse::Success { payload, .. } => {
                 let content = payload
                     .data
                     .get("content")
@@ -838,7 +863,7 @@ impl WebSocketClient {
                     .to_string();
                 Ok(crate::chat::RawCompletionResponse { content })
             }
-            WebSocketResponse::Error { code, message } => Err(Error::api(code, message)),
+            WebSocketResponse::Error { code, message, .. } => Err(Error::api(code, message)),
             _ => Err(Error::WebSocket(
                 "Unexpected response to RawComplete".to_string(),
             )),
@@ -860,6 +885,270 @@ impl WebSocketClient {
         state.subscription_senders.clear();
         state.chat_senders.clear();
 
+        Ok(())
+    }
+
+    /// Attach a schema cache for automatic invalidation on SchemaChanged events.
+    pub async fn set_schema_cache(&self, cache: std::sync::Arc<crate::schema_cache::SchemaCache>) {
+        let mut state = self.dispatch.lock().await;
+        state.schema_cache = Some(cache);
+    }
+
+    // =========================================================================
+    // WS CRUD Methods — Full Parity with Server
+    // =========================================================================
+
+    /// Helper: send a typed WS request as raw JSON and wait for response.
+    /// Attaches messageId at the top level for concurrent correlation.
+    /// Send a typed CRUD request as raw JSON and return the data from the response.
+    pub async fn send_crud(&self, msg_type: &str, payload: Value) -> Result<Value> {
+        self.ensure_connected().await?;
+        let message_id = Self::gen_message_id()?;
+
+        let request = serde_json::json!({
+            "type": msg_type,
+            "messageId": message_id,
+            "payload": payload,
+        });
+
+        // Use raw JSON send (not typed enum) for flexibility
+        let response = self.send_and_wait(&request, &message_id).await?;
+
+        match response {
+            WebSocketResponse::Success { payload, .. } => Ok(payload.data),
+            WebSocketResponse::Error { code, message, .. } => Err(Error::api(code.into(), message)),
+            _ => Err(Error::WebSocket("Unexpected response type".to_string())),
+        }
+    }
+
+    /// Insert a single record into a collection via WebSocket.
+    pub async fn insert(
+        &self,
+        collection: &str,
+        record: Value,
+        bypass_ripple: Option<bool>,
+    ) -> Result<Value> {
+        let mut payload = serde_json::json!({
+            "collection": collection,
+            "record": record,
+        });
+        if let Some(br) = bypass_ripple {
+            payload["bypass_ripple"] = serde_json::json!(br);
+        }
+        self.send_crud("Insert", payload).await
+    }
+
+    /// Query records from a collection via WebSocket.
+    pub async fn query(
+        &self,
+        collection: &str,
+        filter: Option<Value>,
+        sort: Option<Value>,
+        limit: Option<u64>,
+        skip: Option<u64>,
+    ) -> Result<Vec<Value>> {
+        let mut payload = serde_json::json!({"collection": collection});
+        if let Some(f) = filter {
+            payload["filter"] = f;
+        }
+        if let Some(s) = sort {
+            payload["sort"] = s;
+        }
+        if let Some(l) = limit {
+            payload["limit"] = serde_json::json!(l);
+        }
+        if let Some(s) = skip {
+            payload["skip"] = serde_json::json!(s);
+        }
+        let data = self.send_crud("Query", payload).await?;
+        Ok(data.as_array().cloned().unwrap_or_default())
+    }
+
+    /// Find a record by ID via WebSocket.
+    pub async fn find_by_id(&self, collection: &str, id: &str) -> Result<Value> {
+        self.send_crud(
+            "FindById",
+            serde_json::json!({"collection": collection, "id": id}),
+        )
+        .await
+    }
+
+    /// Update a record by ID via WebSocket.
+    pub async fn update(
+        &self,
+        collection: &str,
+        id: &str,
+        record: Value,
+        bypass_ripple: Option<bool>,
+    ) -> Result<Value> {
+        let mut payload = serde_json::json!({
+            "collection": collection,
+            "id": id,
+            "record": record,
+        });
+        if let Some(br) = bypass_ripple {
+            payload["bypass_ripple"] = serde_json::json!(br);
+        }
+        self.send_crud("Update", payload).await
+    }
+
+    /// Delete a record by ID via WebSocket.
+    pub async fn delete(
+        &self,
+        collection: &str,
+        id: &str,
+        bypass_ripple: Option<bool>,
+    ) -> Result<()> {
+        let mut payload = serde_json::json!({"collection": collection, "id": id});
+        if let Some(br) = bypass_ripple {
+            payload["bypass_ripple"] = serde_json::json!(br);
+        }
+        self.send_crud("Delete", payload).await?;
+        Ok(())
+    }
+
+    /// Batch insert multiple records via WebSocket.
+    pub async fn batch_insert(
+        &self,
+        collection: &str,
+        records: Vec<Value>,
+        bypass_ripple: Option<bool>,
+    ) -> Result<Value> {
+        let mut payload = serde_json::json!({
+            "collection": collection,
+            "records": records,
+        });
+        if let Some(br) = bypass_ripple {
+            payload["bypass_ripple"] = serde_json::json!(br);
+        }
+        self.send_crud("BatchInsert", payload).await
+    }
+
+    /// Batch update multiple records via WebSocket.
+    /// Each update is a tuple of (id, record_data).
+    pub async fn batch_update(
+        &self,
+        collection: &str,
+        updates: Vec<(String, Value)>,
+        bypass_ripple: Option<bool>,
+    ) -> Result<Value> {
+        let updates_json: Vec<Value> = updates
+            .into_iter()
+            .map(|(id, data)| serde_json::json!([id, data]))
+            .collect();
+        let mut payload = serde_json::json!({
+            "collection": collection,
+            "updates": updates_json,
+        });
+        if let Some(br) = bypass_ripple {
+            payload["bypass_ripple"] = serde_json::json!(br);
+        }
+        self.send_crud("BatchUpdate", payload).await
+    }
+
+    /// Batch delete multiple records by IDs via WebSocket.
+    pub async fn batch_delete(
+        &self,
+        collection: &str,
+        ids: Vec<String>,
+        bypass_ripple: Option<bool>,
+    ) -> Result<()> {
+        let mut payload = serde_json::json!({"collection": collection, "ids": ids});
+        if let Some(br) = bypass_ripple {
+            payload["bypass_ripple"] = serde_json::json!(br);
+        }
+        self.send_crud("BatchDelete", payload).await?;
+        Ok(())
+    }
+
+    /// Full-text search via WebSocket.
+    pub async fn text_search(
+        &self,
+        collection: &str,
+        query: &str,
+        fields: Option<Vec<String>>,
+        limit: Option<u64>,
+    ) -> Result<Vec<Value>> {
+        let mut options = serde_json::Map::new();
+        if let Some(f) = fields {
+            options.insert("fields".to_string(), serde_json::json!(f));
+        }
+        if let Some(l) = limit {
+            options.insert("limit".to_string(), serde_json::json!(l));
+        }
+        let payload = serde_json::json!({
+            "collection": collection,
+            "query": query,
+            "options": if options.is_empty() { Value::Null } else { Value::Object(options) },
+        });
+        let data = self.send_crud("TextSearch", payload).await?;
+        Ok(data.as_array().cloned().unwrap_or_default())
+    }
+
+    /// Get distinct values for a field via WebSocket.
+    pub async fn distinct_values(
+        &self,
+        collection: &str,
+        field: &str,
+        filter: Option<Value>,
+    ) -> Result<Value> {
+        let mut payload = serde_json::json!({"collection": collection, "field": field});
+        if let Some(f) = filter {
+            payload["filter"] = f;
+        }
+        self.send_crud("DistinctValues", payload).await
+    }
+
+    /// Apply an atomic field action to a record via WebSocket.
+    pub async fn update_with_action(
+        &self,
+        collection: &str,
+        id: &str,
+        action: &str,
+        field: &str,
+        value: Option<Value>,
+    ) -> Result<Value> {
+        let mut payload = serde_json::json!({
+            "collection": collection,
+            "id": id,
+            "action": action,
+            "field": field,
+        });
+        if let Some(v) = value {
+            payload["value"] = v;
+        }
+        self.send_crud("UpdateWithAction", payload).await
+    }
+
+    /// Create a new collection with optional schema via WebSocket.
+    pub async fn create_collection(&self, name: &str, schema: Option<Value>) -> Result<()> {
+        let payload = serde_json::json!({
+            "name": name,
+            "schema": schema.unwrap_or(serde_json::json!({})),
+        });
+        self.send_crud("CreateCollection", payload).await?;
+        Ok(())
+    }
+
+    /// List all collections via WebSocket.
+    pub async fn list_collections(&self) -> Result<Vec<String>> {
+        let data = self
+            .send_crud("GetCollections", serde_json::json!({}))
+            .await?;
+        Ok(data
+            .as_array()
+            .map(|arr| {
+                arr.iter()
+                    .filter_map(|v| v.as_str().map(|s| s.to_string()))
+                    .collect()
+            })
+            .unwrap_or_default())
+    }
+
+    /// Delete a collection via WebSocket.
+    pub async fn delete_collection(&self, name: &str) -> Result<()> {
+        self.send_crud("DeleteCollection", serde_json::json!({"name": name}))
+            .await?;
         Ok(())
     }
 }

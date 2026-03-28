@@ -1,8 +1,8 @@
 # Feature Parity Comparison Matrix
 
-**Last Updated:** March 20, 2026
+**Last Updated:** March 27, 2026
 
-## Status: Full Parity Achieved
+## Status: Full Parity Achieved (including WS CRUD)
 
 All core features are implemented across all client libraries (Rust, Python,
 TypeScript, Go, Kotlin). This includes:
@@ -14,7 +14,11 @@ TypeScript, Go, Kotlin). This includes:
 - Goals, Tasks, Agents (full lifecycle)
 - Schedule management (CRUD + pause/resume)
 - KV document linking
-- WebSocket: subscriptions, chat streaming with `context_window`
+- WebSocket: full CRUD parity (14 methods), subscriptions, chat streaming
+- SSE subscriptions (for clients behind reverse proxies that block WS)
+- Schema cache (in-memory LRU with TTL, realtime invalidation via SchemaChanged)
+- `extractRecordId()` / `ExtractRecordID()` with custom `primary_key_alias`
+  support
 - Utility functions, field builders, value extractors
 
 The sections below track the implementation history.

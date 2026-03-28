@@ -69,6 +69,85 @@ data class SubscribeOptions(
  * WebSocket client for real-time communication with ekoDB.
  * Includes full dispatcher for subscriptions, chat streaming, and tool calling.
  */
+/** In-memory schema cache with TTL for primary_key_alias resolution. */
+class SchemaCache(
+    private val enabled: Boolean = false,
+    private val maxEntries: Int = 100,
+    private val ttlMs: Long = 300_000
+) {
+    private data class Entry(val primaryKeyAlias: String, val version: Long, val cachedAt: Long)
+
+    private val entries = mutableMapOf<String, Entry>()
+    private val lruOrder = mutableListOf<String>()
+
+    fun isEnabled(): Boolean = enabled
+
+    fun getAlias(collection: String): String? {
+        if (!enabled) return null
+        val entry = entries[collection] ?: return null
+        if (System.currentTimeMillis() - entry.cachedAt > ttlMs) {
+            entries.remove(collection)
+            lruOrder.remove(collection)
+            return null
+        }
+        touchLRU(collection)
+        return entry.primaryKeyAlias
+    }
+
+    fun insert(collection: String, primaryKeyAlias: String, version: Long) {
+        if (!enabled) return
+        val isNew = !entries.containsKey(collection)
+        entries[collection] = Entry(primaryKeyAlias, version, System.currentTimeMillis())
+        if (isNew) {
+            lruOrder.add(collection)
+            while (lruOrder.size > maxEntries) {
+                val oldest = lruOrder.removeFirst()
+                entries.remove(oldest)
+            }
+        } else {
+            touchLRU(collection)
+        }
+    }
+
+    fun invalidate(collection: String) {
+        entries.remove(collection)
+        lruOrder.remove(collection)
+    }
+
+    fun invalidateAll() {
+        entries.clear()
+        lruOrder.clear()
+    }
+
+    fun handleSchemaChanged(collection: String, version: Long, primaryKeyAlias: String) {
+        if (!enabled) return
+        val existing = entries[collection]
+        if (existing != null && version <= existing.version) return
+        insert(collection, primaryKeyAlias, version)
+    }
+
+    val size: Int get() = entries.size
+
+    private fun touchLRU(collection: String) {
+        lruOrder.remove(collection)
+        lruOrder.add(collection)
+    }
+}
+
+/** Extract record ID trying custom aliases, then "id", then "_id". */
+fun extractRecordId(record: JsonObject, extraCandidates: List<String> = emptyList()): String? {
+    for (key in extraCandidates + listOf("id", "_id")) {
+        val value = record[key] ?: continue
+        if (value is JsonPrimitive && value.isString) return value.content
+        // Handle typed wrapper {"type":"String","value":"..."}
+        if (value is JsonObject) {
+            val inner = value["value"]
+            if (inner is JsonPrimitive && inner.isString) return inner.content
+        }
+    }
+    return null
+}
+
 class WebSocketClient(
     private val wsUrl: String,
     private val token: String,
@@ -77,6 +156,7 @@ class WebSocketClient(
     private var session: DefaultClientWebSocketSession? = null
     private var dispatcherJob: Job? = null
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    var schemaCache: SchemaCache? = null
 
     // Dispatcher state
     private val mutex = Mutex()
@@ -156,6 +236,16 @@ class WebSocketClient(
             "ChatStreamEnd" -> routeChatStreamEnd(msg)
             "ChatStreamError" -> routeChatStreamError(msg)
             "ClientToolCall" -> routeClientToolCall(msg)
+            "SchemaChanged" -> {
+                val payload = msg["payload"]?.jsonObject
+                if (payload != null) {
+                    schemaCache?.handleSchemaChanged(
+                        payload["collection"]?.jsonPrimitive?.content ?: "",
+                        payload["version"]?.jsonPrimitive?.long ?: 0,
+                        payload["primary_key_alias"]?.jsonPrimitive?.content ?: "id"
+                    )
+                }
+            }
         }
     }
 
@@ -491,6 +581,146 @@ class WebSocketClient(
         subscriptions.clear()
         chatStreams.clear()
     }
+
+    // =========================================================================
+    // WS CRUD Methods — Full Parity with Server
+    // =========================================================================
+
+    private suspend fun sendCRUD(msgType: String, payload: JsonObject): JsonObject {
+        val messageId = genMessageId()
+        val request = buildJsonObject {
+            put("type", msgType)
+            put("messageId", messageId)
+            put("payload", payload)
+        }
+        return sendRequest(request)
+    }
+
+    /** Extract record ID using schema cache alias. */
+    fun extractId(collection: String, record: JsonObject): String? {
+        val alias = schemaCache?.getAlias(collection)
+        return extractRecordId(record, if (alias != null) listOf(alias) else emptyList())
+    }
+
+    /** Insert a single record via WebSocket. */
+    suspend fun insert(collection: String, record: JsonObject, bypassRipple: Boolean? = null): JsonObject =
+        sendCRUD("Insert", buildJsonObject {
+            put("collection", collection)
+            put("record", record)
+            bypassRipple?.let { put("bypass_ripple", it) }
+        })
+
+    /** Query records via WebSocket. */
+    suspend fun query(
+        collection: String,
+        filter: JsonElement? = null,
+        sort: JsonElement? = null,
+        limit: Int? = null,
+        skip: Int? = null
+    ): JsonObject = sendCRUD("Query", buildJsonObject {
+        put("collection", collection)
+        filter?.let { put("filter", it) }
+        sort?.let { put("sort", it) }
+        limit?.let { put("limit", it) }
+        skip?.let { put("skip", it) }
+    })
+
+    /** Find a record by ID via WebSocket. */
+    suspend fun findById(collection: String, id: String): JsonObject =
+        sendCRUD("FindById", buildJsonObject {
+            put("collection", collection)
+            put("id", id)
+        })
+
+    /** Update a record by ID via WebSocket. */
+    suspend fun update(collection: String, id: String, record: JsonObject, bypassRipple: Boolean? = null): JsonObject =
+        sendCRUD("Update", buildJsonObject {
+            put("collection", collection)
+            put("id", id)
+            put("record", record)
+            bypassRipple?.let { put("bypass_ripple", it) }
+        })
+
+    /** Delete a record by ID via WebSocket. */
+    suspend fun delete(collection: String, id: String, bypassRipple: Boolean? = null): JsonObject =
+        sendCRUD("Delete", buildJsonObject {
+            put("collection", collection)
+            put("id", id)
+            bypassRipple?.let { put("bypass_ripple", it) }
+        })
+
+    /** Batch insert multiple records via WebSocket. */
+    suspend fun batchInsert(collection: String, records: List<JsonObject>, bypassRipple: Boolean? = null): JsonObject =
+        sendCRUD("BatchInsert", buildJsonObject {
+            put("collection", collection)
+            put("records", JsonArray(records))
+            bypassRipple?.let { put("bypass_ripple", it) }
+        })
+
+    /** Batch update multiple records via WebSocket. */
+    suspend fun batchUpdate(collection: String, updates: List<JsonArray>, bypassRipple: Boolean? = null): JsonObject =
+        sendCRUD("BatchUpdate", buildJsonObject {
+            put("collection", collection)
+            put("updates", JsonArray(updates))
+            bypassRipple?.let { put("bypass_ripple", it) }
+        })
+
+    /** Batch delete records by IDs via WebSocket. */
+    suspend fun batchDelete(collection: String, ids: List<String>, bypassRipple: Boolean? = null): JsonObject =
+        sendCRUD("BatchDelete", buildJsonObject {
+            put("collection", collection)
+            put("ids", JsonArray(ids.map { JsonPrimitive(it) }))
+            bypassRipple?.let { put("bypass_ripple", it) }
+        })
+
+    /** Full-text search via WebSocket. */
+    suspend fun textSearch(collection: String, query: String, fields: List<String>? = null, limit: Int? = null): JsonObject =
+        sendCRUD("TextSearch", buildJsonObject {
+            put("collection", collection)
+            put("query", query)
+            if (fields != null || limit != null) {
+                put("options", buildJsonObject {
+                    fields?.let { put("fields", JsonArray(it.map { f -> JsonPrimitive(f) })) }
+                    limit?.let { put("limit", it) }
+                })
+            }
+        })
+
+    /** Get distinct values for a field via WebSocket. */
+    suspend fun distinctValues(collection: String, field: String, filter: JsonElement? = null): JsonObject =
+        sendCRUD("DistinctValues", buildJsonObject {
+            put("collection", collection)
+            put("field", field)
+            filter?.let { put("filter", it) }
+        })
+
+    /** Apply an atomic field action via WebSocket. */
+    suspend fun updateWithAction(
+        collection: String, id: String, action: String, field: String, value: JsonElement? = null
+    ): JsonObject = sendCRUD("UpdateWithAction", buildJsonObject {
+        put("collection", collection)
+        put("id", id)
+        put("action", action)
+        put("field", field)
+        value?.let { put("value", it) }
+    })
+
+    /** Create a collection with optional schema via WebSocket. */
+    suspend fun createCollection(name: String, schema: JsonObject? = null): JsonObject =
+        sendCRUD("CreateCollection", buildJsonObject {
+            put("name", name)
+            put("schema", schema ?: buildJsonObject {})
+        })
+
+    /** List all collections via WebSocket. */
+    suspend fun listCollections(): JsonObject =
+        sendCRUD("GetCollections", buildJsonObject {})
+
+    /** Delete a collection via WebSocket. */
+    suspend fun deleteCollection(name: String): JsonObject =
+        sendCRUD("DeleteCollection", buildJsonObject {
+            put("name", name)
+        })
 }
 
 @Serializable

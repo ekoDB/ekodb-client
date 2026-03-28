@@ -454,9 +454,27 @@ For complete, runnable examples of all features, see the
 #### WebSocket Operations
 
 - `websocket(wsUrl)` - Create WebSocket client
-- WebSocket client methods:
-  - `find(collection, query)` - Query via WebSocket
-  - `close()` - Close WebSocket connection
+- WebSocket client methods (full CRUD, 14 methods):
+  - `findAll(collection)` - Get all records
+  - `insert(collection, record, bypassRipple?)` - Insert record
+  - `query(collection, filter?, sort?, limit?, skip?)` - Query
+  - `findById(collection, id)` - Find by ID
+  - `update(collection, id, record, bypassRipple?)` - Update
+  - `delete(collection, id, bypassRipple?)` - Delete
+  - `batchInsert(collection, records, bypassRipple?)` - Batch insert
+  - `batchUpdate(collection, updates, bypassRipple?)` - Batch update
+  - `batchDelete(collection, ids, bypassRipple?)` - Batch delete
+  - `textSearch(collection, query, fields?, limit?)` - Full-text search
+  - `distinctValues(collection, field, filter?)` - Distinct values
+  - `updateWithAction(collection, id, action, field, value?)` - Atomic op
+  - `createCollection(name, schema?)` - Create collection
+  - `listCollections()` - List collections
+  - `deleteCollection(name)` - Delete collection
+  - `close()` - Close connection
+- Schema cache:
+  - `SchemaCache(enabled, maxEntries, ttlMs)` - LRU cache
+  - `extractRecordId(record, extraCandidates)` - Alias-aware ID extraction
+  - `ws.extractId(collection, record)` - Cache-aware extraction
 
 #### AI/Chat Operations
 

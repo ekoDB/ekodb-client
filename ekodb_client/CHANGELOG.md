@@ -8,6 +8,49 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- **Full WebSocket CRUD parity** — 14 new methods on `WebSocketClient`:
+  `insert`, `query`, `find_by_id`, `update`, `delete`, `batch_insert`,
+  `batch_update`, `batch_delete`, `text_search`, `distinct_values`,
+  `update_with_action`, `create_collection`, `list_collections`,
+  `delete_collection`. All use `messageId` for concurrent request correlation.
+
+- **Schema cache** — Opt-in in-memory LRU cache for collection schema metadata
+  (`primary_key_alias`, version). Configurable TTL (default 5min), max entries
+  (default 100). Auto-invalidated via WS `SchemaChanged` events. Enable with
+  `Client::builder().schema_cache(true)`.
+
+- **SSE subscriptions** —
+  `client.subscribe_sse(collection, filter_field?, filter_value?)` for mutation
+  events over Server-Sent Events. Works behind reverse proxies that block
+  WebSocket. Auto-invalidates schema cache on `schema_changed` SSE events.
+
+- **`extract_record_id()`** — Universal ID extractor in `utils.rs`. Handles
+  custom `primary_key_alias` by trying extra candidates first, then `"id"`, then
+  `"_id"`. Also handles typed wrapper format
+  `{"type": "String", "value": "..."}`.
+
+- **`client.extract_id(collection, record)`** — Cache-aware instance method that
+  uses the schema cache's `primary_key_alias` for the collection.
+
+- **`client.connect_ws()`** — Convenience method to create a `WebSocketClient`
+  connected to the same instance. Derives WS URL from base URL (http→ws,
+  https→wss), passes current auth token, and attaches schema cache for
+  auto-invalidation.
+
+- **`SchemaChanged` WS event handling** — Dispatcher automatically invalidates
+  the schema cache when the server pushes a `SchemaChanged` event.
+
+- **Concurrent WS dispatch** — `Success` and `Error` responses now carry
+  top-level `messageId` for proper concurrent request correlation.
+  Backward-compatible single-pending fallback preserved.
+
+### Changed
+
+- **`WebSocketResponse::Error` now includes `message_id`** — Enables per-request
+  error routing instead of broadcast to any pending request.
+
 ## [0.15.0] - 2026-03-25
 
 ### Security
