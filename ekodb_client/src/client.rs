@@ -2294,18 +2294,26 @@ impl Client {
         filter_value: Option<&str>,
     ) -> Result<tokio::sync::mpsc::Receiver<crate::websocket::MutationNotificationPayload>> {
         let token = self.auth.get_token().await?;
-        let mut url = format!("{}/api/subscribe/{}", self.base_url, collection);
+        let mut parsed_url = url::Url::parse(&format!(
+            "{}/api/subscribe/{}",
+            self.base_url, collection
+        ))
+        .map_err(|e| Error::Api {
+            code: 0,
+            message: format!("Invalid SSE URL: {}", e),
+        })?;
 
-        let mut params = vec![];
-        if let Some(ff) = filter_field {
-            params.push(format!("filter_field={}", ff));
+        {
+            let mut pairs = parsed_url.query_pairs_mut();
+            if let Some(ff) = filter_field {
+                pairs.append_pair("filter_field", ff);
+            }
+            if let Some(fv) = filter_value {
+                pairs.append_pair("filter_value", fv);
+            }
         }
-        if let Some(fv) = filter_value {
-            params.push(format!("filter_value={}", fv));
-        }
-        if !params.is_empty() {
-            url = format!("{}?{}", url, params.join("&"));
-        }
+
+        let url = parsed_url.to_string();
 
         let client = reqwest::Client::new();
         let response = client
@@ -2341,7 +2349,8 @@ impl Client {
                     Err(_) => break,
                 };
                 let text = String::from_utf8_lossy(&chunk);
-                buffer.push_str(&text);
+                // Normalize CRLF to LF for cross-platform SSE compatibility
+                buffer.push_str(&text.replace("\r\n", "\n"));
 
                 // Parse SSE events from buffer (event: ...\ndata: ...\n\n)
                 while let Some(end) = buffer.find("\n\n") {
@@ -2349,15 +2358,17 @@ impl Client {
                     buffer = buffer[end + 2..].to_string();
 
                     let mut event_type = String::new();
-                    let mut event_data = String::new();
+                    let mut data_lines: Vec<String> = Vec::new();
 
                     for line in event_block.lines() {
                         if let Some(val) = line.strip_prefix("event: ") {
                             event_type = val.trim().to_string();
                         } else if let Some(val) = line.strip_prefix("data: ") {
-                            event_data = val.trim().to_string();
+                            data_lines.push(val.trim().to_string());
                         }
                     }
+
+                    let event_data = data_lines.join("\n");
 
                     match event_type.as_str() {
                         "mutation" => {

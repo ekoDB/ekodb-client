@@ -206,7 +206,7 @@ pub fn extract_record_id(record: &Value, extra_candidates: &[&str]) -> Option<St
 }
 
 /// Transform an entire record by extracting all field values.
-/// Preserves the ID field (detected dynamically) and extracts values from all other fields.
+/// Preserves known ID fields (`id`, `_id`) as-is and extracts values from all other fields.
 ///
 /// # Examples
 ///
