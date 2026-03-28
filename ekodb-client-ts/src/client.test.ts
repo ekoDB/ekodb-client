@@ -2584,6 +2584,7 @@ describe("EkoDBClient text and hybrid search", () => {
     expect(result).toHaveLength(1);
     expect(result[0]).toHaveProperty("id", "doc_1");
     expect(result[0]).toHaveProperty("title", "ML Guide");
+    expect(result[0]).toHaveProperty("_score", 0.95);
   });
 });
 

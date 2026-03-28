@@ -1447,6 +1447,7 @@ class EkoDBClientTest {
         val result = client.textSearch("documents", "rust", 10)
         assertEquals(2, result.size)
         assertEquals("doc_1", result[0]["id"]?.jsonPrimitive?.content)
+        assertEquals(0.95, result[0]["_score"]?.jsonPrimitive?.double)
     }
 
     @Test
@@ -1461,6 +1462,7 @@ class EkoDBClientTest {
         val result = client.hybridSearch("documents", "machine learning", listOf(0.1, 0.2, 0.3), 5)
         assertEquals(1, result.size)
         assertEquals("Machine Learning", result[0]["title"]?.jsonPrimitive?.content)
+        assertEquals(0.92, result[0]["_score"]?.jsonPrimitive?.double)
     }
 
     // ========================================================================
