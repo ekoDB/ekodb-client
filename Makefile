@@ -133,9 +133,9 @@ help:
 	@echo "  🖌️  $(GREEN)make fmt$(RESET)          - Format all code (Rust + Python + Go + TS + Markdown)"
 	@echo "  🖌️  $(GREEN)make format$(RESET)       - Format all code (alias for fmt)"
 	@echo "  📦 $(GREEN)make deps-check-all$(RESET) - Check for outdated dependencies (Rust + Python + TS + Kotlin)"
-	@echo "  📦 $(GREEN)make deps-update-all$(RESET) - Update all dependencies within constraints"
+	@echo "  📦 $(GREEN)make deps-update-all$(RESET) - Upgrade all dependencies (bumps Cargo.toml)"
 	@echo "     $(GREEN)make deps-check$(RESET)       - Check Rust dependencies only"
-	@echo "     $(GREEN)make deps-update$(RESET)      - Update Rust dependencies only"
+	@echo "     $(GREEN)make deps-update$(RESET)      - Upgrade Rust dependencies only"
 	@echo "     $(GREEN)make deps-check-rust$(RESET)  - Detailed Rust dependency check"
 	@echo "     $(GREEN)make deps-check-python$(RESET) - Check Python/pip dependencies"
 	@echo "     $(GREEN)make deps-check-typescript$(RESET) - Check TypeScript/npm dependencies"
@@ -1440,12 +1440,15 @@ deps-check:
 	fi
 	@echo "✅ $(GREEN)Rust dependencies check complete!$(RESET)"
 
-# Update dependencies within Cargo.toml constraints (Rust only)
+# Update dependencies — bumps Cargo.toml constraints and syncs Cargo.lock
 deps-update:
-	@echo "📦 $(CYAN)Updating Rust dependencies within constraints...$(RESET)"
-	$(CARGO) update
-	@echo "✅ $(GREEN)Rust dependencies updated successfully!$(RESET)"
-	@echo "💡 $(YELLOW)Run 'make deps-check' to see if any dependencies still need updating$(RESET)"
+	@if ! command -v cargo-upgrade >/dev/null 2>&1; then \
+		echo "$(YELLOW)Installing cargo-edit (provides cargo upgrade)...$(RESET)"; \
+		cargo install cargo-edit; \
+	fi
+	@echo "📦 $(CYAN)Upgrading Rust dependencies...$(RESET)"
+	cargo upgrade
+	@echo "✅ $(GREEN)Rust dependencies upgraded!$(RESET)"
 
 # Check all packages for outdated dependencies
 deps-check-all: deps-check-rust deps-check-python deps-check-typescript deps-check-kotlin
@@ -1529,22 +1532,25 @@ deps-check-kotlin:
 		echo "$(RED)❌ ekodb-client-kt directory not found$(RESET)"; \
 	fi
 
-# Rust dependency updates (detailed)
+# Rust dependency updates (detailed — workspace + Python bindings)
 deps-update-rust:
-	@echo "🦀 $(CYAN)Updating Rust workspace dependencies...$(RESET)"
+	@if ! command -v cargo-upgrade >/dev/null 2>&1; then \
+		echo "$(YELLOW)Installing cargo-edit (provides cargo upgrade)...$(RESET)"; \
+		cargo install cargo-edit; \
+	fi
+	@echo "🦀 $(CYAN)Upgrading Rust workspace dependencies...$(RESET)"
 	@echo ""
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "📦 Workspace Root & ekodb_client"
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
-	$(CARGO) update --workspace
+	cargo upgrade
 	@echo ""
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "📦 Python Bindings (ekodb-client-py)"
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
-	@cd ekodb-client-py && cargo update
+	@cd ekodb-client-py && cargo upgrade
 	@echo ""
-	@echo "✅ $(GREEN)Rust dependencies updated!$(RESET)"
-	@echo "💡 $(YELLOW)Run 'make deps-check-rust' to see remaining updates$(RESET)"
+	@echo "✅ $(GREEN)Rust dependencies upgraded!$(RESET)"
 
 # Python dependency updates
 deps-update-python:
