@@ -6,6 +6,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.15.2] - 2026-03-28
+
+### Fixed
+
+- **HTTP status check sweep** — Added `json_body<T>` helper that checks HTTP
+  status before deserializing. All chat, KV, search, collection, and transaction
+  methods now return proper typed errors (`NotFound`, `TokenExpired`,
+  `RateLimit`, `Api`) instead of attempting to deserialize error response bodies
+  as success types. This fixes the "missing field `session`" crash when
+  restoring a deleted chat, and `kv_exists` returning errors instead of `false`
+  after `kv_delete`.
+
+- **`ChatSessionResponse` backward compatibility** — Added `#[serde(default)]`
+  to `session` and `message_count` fields as defense-in-depth for edge cases
+  where the server response shape is unexpected.
+
+- **Search score injection** — `hybrid_search()` and `text_search()` helper
+  methods now inject `_score` into returned records. Previously the score was
+  stripped when mapping `SearchResult` to `Record`, causing all scores to read
+  as 0.000 in RAG examples. Fixed across all clients (Rust, TypeScript, Go,
+  Kotlin; Python inherits from Rust).
+
+- **Python SWR example** — Removed `create_collection("user_cache_py", None)`
+  call that failed with "Schema must contain at least one field". ekoDB
+  auto-creates collections on first insert.
+
 ## [0.15.1] - 2026-03-27
 
 ### Added
