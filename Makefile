@@ -1448,6 +1448,7 @@ deps-update:
 	fi
 	@echo "📦 $(CYAN)Upgrading Rust dependencies...$(RESET)"
 	cargo upgrade
+	cargo update
 	@echo "✅ $(GREEN)Rust dependencies upgraded!$(RESET)"
 
 # Check all packages for outdated dependencies
@@ -1544,11 +1545,12 @@ deps-update-rust:
 	@echo "📦 Workspace Root & ekodb_client"
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	cargo upgrade
+	cargo update
 	@echo ""
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "📦 Python Bindings (ekodb-client-py)"
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
-	@cd ekodb-client-py && cargo upgrade
+	@cd ekodb-client-py && cargo upgrade && cargo update
 	@echo ""
 	@echo "✅ $(GREEN)Rust dependencies upgraded!$(RESET)"
 
