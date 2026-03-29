@@ -37,7 +37,7 @@ tokio-util = { version = "0.7.18", features = ["io"] }  # StreamReader for async
 [dev-dependencies]
 tokio-test = "0.4"
 mockito = "1.7.2"
-env_logger = "0.11.9"
+env_logger = "0.11.10"
 
 [features]
 default = ["rustls"]
