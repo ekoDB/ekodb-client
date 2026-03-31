@@ -798,6 +798,16 @@ impl Client {
         .await
     }
 
+    /// List collections, excluding internal chat/system collections.
+    pub async fn list_user_collections(&self) -> Result<Vec<String>> {
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let http = http.clone();
+            async move { http.list_collections_filtered(&token, true).await }
+        })
+        .await
+    }
+
     /// Delete a collection
     ///
     /// # Arguments
