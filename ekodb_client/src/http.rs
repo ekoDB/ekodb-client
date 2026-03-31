@@ -729,6 +729,40 @@ impl HttpClient {
         Ok(response.collections)
     }
 
+    /// List collections, optionally excluding internal chat/system collections.
+    pub async fn list_collections_filtered(
+        &self,
+        token: &str,
+        exclude_internal: bool,
+    ) -> Result<Vec<String>> {
+        let mut url = self.base_url.join("/api/collections")?;
+        if exclude_internal {
+            url.set_query(Some("exclude_internal=true"));
+        }
+
+        #[derive(Deserialize)]
+        struct CollectionsResponse {
+            collections: Vec<String>,
+        }
+
+        let response: CollectionsResponse = self
+            .retry_policy
+            .execute(|| async {
+                let response = self
+                    .client
+                    .get(url.clone())
+                    .header("Authorization", format!("Bearer {}", token))
+                    .header("Accept", "application/json")
+                    .send()
+                    .await?;
+
+                Self::json_body(response).await
+            })
+            .await?;
+
+        Ok(response.collections)
+    }
+
     /// Delete a collection
     pub async fn delete_collection(&self, collection: &str, token: &str) -> Result<()> {
         let url = self
