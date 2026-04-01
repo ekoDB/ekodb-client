@@ -4,24 +4,24 @@
 
 ## Current State
 
-All 5 clients (Rust, TypeScript, Python, Go, Kotlin) support HTTP REST, WebSocket,
-and SSE. But CRUD-over-WebSocket coverage is inconsistent.
+All 5 clients (Rust, TypeScript, Python, Go, Kotlin) support HTTP REST,
+WebSocket, and SSE. But CRUD-over-WebSocket coverage is inconsistent.
 
 ## Transport Parity Matrix
 
 ### CRUD over WebSocket
 
-| Operation       | Rust | TypeScript | Python | Go      | Kotlin |
-|-----------------|------|------------|--------|---------|--------|
-| Insert          | -    | WS         | -      | WS      | WS     |
-| Find/Query      | WS   | WS         | WS     | WS      | WS     |
-| Update          | -    | WS         | -      | WS      | WS     |
-| Delete          | -    | WS         | -      | WS      | WS     |
-| Batch Insert    | -    | WS         | -      | -       | WS     |
-| Batch Update    | -    | WS         | -      | -       | WS     |
-| Batch Delete    | -    | WS         | -      | -       | WS     |
-| Text Search     | -    | WS         | -      | -       | -      |
-| Distinct Values | -    | WS         | -      | -       | -      |
+| Operation       | Rust | TypeScript | Python | Go  | Kotlin |
+| --------------- | ---- | ---------- | ------ | --- | ------ |
+| Insert          | -    | WS         | -      | WS  | WS     |
+| Find/Query      | WS   | WS         | WS     | WS  | WS     |
+| Update          | -    | WS         | -      | WS  | WS     |
+| Delete          | -    | WS         | -      | WS  | WS     |
+| Batch Insert    | -    | WS         | -      | -   | WS     |
+| Batch Update    | -    | WS         | -      | -   | WS     |
+| Batch Delete    | -    | WS         | -      | -   | WS     |
+| Text Search     | -    | WS         | -      | -   | -      |
+| Distinct Values | -    | WS         | -      | -   | -      |
 
 `-` = HTTP only, `WS` = WebSocket supported
 
@@ -31,8 +31,8 @@ No client supports KV operations over WebSocket. All KV is HTTP-only.
 
 ### Schema/Collection Management over WebSocket
 
-Only Kotlin supports `createCollection`/`deleteCollection` over WS.
-All others are HTTP-only.
+Only Kotlin supports `createCollection`/`deleteCollection` over WS. All others
+are HTTP-only.
 
 ## Tasks
 
