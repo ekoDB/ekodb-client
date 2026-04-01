@@ -1747,6 +1747,33 @@ class EkoDBClient private constructor(
     }
 
     /**
+     * Submit a client tool result for an in-flight SSE chat stream.
+     * Unblocks ekoDB's tool loop so it can feed the result to the LLM.
+     */
+    suspend fun submitChatToolResult(
+        chatId: String,
+        callId: String,
+        success: Boolean,
+        result: JsonObject? = null,
+        error: String? = null,
+    ) {
+        val token = getToken()
+        val body = buildJsonObject {
+            put("call_id", callId)
+            put("success", success)
+            result?.let { put("result", it) }
+            error?.let { put("error", it) }
+        }
+        executeWithRetry {
+            client.post("$baseUrl/api/chat/$chatId/tool-result") {
+                header("Authorization", "Bearer $token")
+                contentType(getContentTypeForRequest())
+                setBody(body)
+            }
+        }
+    }
+
+    /**
      * Send a message in an existing chat session via SSE streaming.
      *
      * Returns a Flow that emits [ChatStreamEvent] objects as they arrive:

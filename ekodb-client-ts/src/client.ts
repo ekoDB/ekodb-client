@@ -205,6 +205,9 @@ export interface ChatMessageRequest {
   max_iterations?: number;
   tool_config?: ToolConfig;
   llm_model?: string;
+  client_tools?: ClientToolDefinition[];
+  confirm_tools?: string[];
+  exclude_tools?: string[];
 }
 
 export interface TokenUsage {
@@ -1768,6 +1771,31 @@ export class EkoDBClient {
       request,
       0,
       true, // Force JSON for chat operations
+    );
+  }
+
+  /**
+   * Submit a client tool result for an in-flight SSE chat stream.
+   * Unblocks ekoDB's tool loop so it can feed the result to the LLM.
+   */
+  async submitChatToolResult(
+    chatId: string,
+    callId: string,
+    success: boolean,
+    result?: any,
+    error?: string,
+  ): Promise<void> {
+    await this.makeRequest(
+      "POST",
+      `/api/chat/${chatId}/tool-result`,
+      {
+        call_id: callId,
+        success,
+        ...(result !== undefined && { result }),
+        ...(error !== undefined && { error }),
+      },
+      0,
+      true,
     );
   }
 

@@ -1778,6 +1778,30 @@ impl Client {
         })
     }
 
+    /// Submit a client tool result for an in-flight SSE chat stream.
+    #[pyo3(signature = (chat_id, call_id, success, result=None, error=None))]
+    fn submit_chat_tool_result<'py>(
+        &self,
+        py: Python<'py>,
+        chat_id: String,
+        call_id: String,
+        success: bool,
+        result: Option<Bound<'py, PyDict>>,
+        error: Option<String>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        let result_json = result.map(|d| dict_to_json(&d)).transpose()?;
+
+        future_into_py(py, async move {
+            client
+                .submit_chat_tool_result(&chat_id, &call_id, success, result_json, error)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("Submit tool result failed: {}", e)))?;
+
+            Python::attach(|py| Ok(py.None()))
+        })
+    }
+
     /// Send a message in an existing chat session
     #[pyo3(signature = (chat_id, message, bypass_ripple=None, force_summarize=None, max_iterations=None))]
     fn chat_message<'py>(
@@ -1799,6 +1823,9 @@ impl Client {
                 max_iterations,
                 tool_config: None,
                 llm_model: None,
+                client_tools: None,
+                confirm_tools: None,
+                exclude_tools: None,
             };
 
             let result = client
@@ -1832,6 +1859,9 @@ impl Client {
                 max_iterations,
                 tool_config: None,
                 llm_model: None,
+                client_tools: None,
+                confirm_tools: None,
+                exclude_tools: None,
             };
 
             let rx = client

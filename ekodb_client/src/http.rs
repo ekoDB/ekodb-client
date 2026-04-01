@@ -1940,6 +1940,52 @@ impl HttpClient {
             .await
     }
 
+    /// Submit a client tool result for an in-flight SSE chat stream.
+    /// This unblocks ekoDB's tool loop so it can feed the result to the LLM.
+    pub async fn submit_chat_tool_result(
+        &self,
+        chat_id: &str,
+        call_id: &str,
+        success: bool,
+        result: Option<serde_json::Value>,
+        error: Option<String>,
+        token: &str,
+    ) -> Result<()> {
+        let url = self
+            .base_url
+            .join(&format!("/api/chat/{}/tool-result", chat_id))?;
+
+        let body = serde_json::json!({
+            "call_id": call_id,
+            "success": success,
+            "result": result,
+            "error": error,
+        });
+
+        self.retry_policy
+            .execute(|| async {
+                let response = self
+                    .client
+                    .post(url.clone())
+                    .header("Authorization", format!("Bearer {}", token))
+                    .header("Content-Type", "application/json")
+                    .json(&body)
+                    .send()
+                    .await?;
+
+                if !response.status().is_success() {
+                    let status = response.status();
+                    let text = response.text().await.unwrap_or_default();
+                    return Err(crate::error::Error::Api {
+                        code: status.as_u16(),
+                        message: format!("tool-result submit failed: {text}"),
+                    });
+                }
+                Ok(())
+            })
+            .await
+    }
+
     /// List all chat sessions
     pub async fn list_chat_sessions(
         &self,

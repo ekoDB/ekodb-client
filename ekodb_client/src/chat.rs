@@ -308,6 +308,24 @@ pub struct ChatMessageRequest {
     /// faster/cheaper model.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub llm_model: Option<String>,
+    /// Client-side tool definitions. When provided over SSE, ekoDB merges these
+    /// with built-in tools and routes calls back via `__client_tool_call` events.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub client_tools: Option<Vec<ClientToolDef>>,
+    /// Tools that require client confirmation before server-side execution.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub confirm_tools: Option<Vec<String>>,
+    /// Tools to exclude from the LLM's tool list.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub exclude_tools: Option<Vec<String>>,
+}
+
+/// Client tool definition sent with chat messages (SSE path).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ClientToolDef {
+    pub name: String,
+    pub description: String,
+    pub parameters: serde_json::Value,
 }
 
 impl ChatMessageRequest {
@@ -320,6 +338,9 @@ impl ChatMessageRequest {
             max_iterations: None,
             tool_config: None,
             llm_model: None,
+            client_tools: None,
+            confirm_tools: None,
+            exclude_tools: None,
         }
     }
 
@@ -345,6 +366,24 @@ impl ChatMessageRequest {
     /// Useful for routing simple tool-calling steps through a faster model.
     pub fn llm_model(mut self, model: impl Into<String>) -> Self {
         self.llm_model = Some(model.into());
+        self
+    }
+
+    /// Set client-side tool definitions for SSE-path tool routing.
+    pub fn client_tools(mut self, tools: Vec<ClientToolDef>) -> Self {
+        self.client_tools = Some(tools);
+        self
+    }
+
+    /// Set tools that require client confirmation before server execution.
+    pub fn confirm_tools(mut self, tools: Vec<String>) -> Self {
+        self.confirm_tools = Some(tools);
+        self
+    }
+
+    /// Set tools to exclude from the LLM's tool list.
+    pub fn exclude_tools(mut self, tools: Vec<String>) -> Self {
+        self.exclude_tools = Some(tools);
         self
     }
 }
