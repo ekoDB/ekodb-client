@@ -233,4 +233,40 @@ class WebSocketClientTest {
         assertEquals("123", msg.messageId)
         assertEquals("test", msg.payload["collection"]?.jsonPrimitive?.content)
     }
+
+    // ========================================================================
+    // ClientToolDef Tests (HTTP path)
+    // ========================================================================
+
+    @Test
+    fun `ClientToolDef construction`() {
+        val params = buildJsonObject { put("type", "object") }
+        val tool = io.ekodb.client.types.ClientToolDef(
+            name = "weather",
+            description = "Get weather",
+            parameters = params,
+        )
+        assertEquals("weather", tool.name)
+        assertEquals("Get weather", tool.description)
+        assertEquals("object", tool.parameters["type"]?.jsonPrimitive?.content)
+    }
+
+    @Test
+    fun `ClientToolDef equality`() {
+        val params = buildJsonObject { put("type", "object") }
+        val t1 = io.ekodb.client.types.ClientToolDef("calc", "Calculator", params)
+        val t2 = io.ekodb.client.types.ClientToolDef("calc", "Calculator", params)
+        assertEquals(t1, t2)
+    }
+
+    @Test
+    fun `ClientToolDef serialization`() {
+        val params = buildJsonObject { put("type", "object") }
+        val tool = io.ekodb.client.types.ClientToolDef("test", "Test tool", params)
+        val json = kotlinx.serialization.json.Json.encodeToString(
+            io.ekodb.client.types.ClientToolDef.serializer(), tool
+        )
+        assertTrue(json.contains("\"name\":\"test\""))
+        assertTrue(json.contains("\"description\":\"Test tool\""))
+    }
 }

@@ -2661,6 +2661,37 @@ impl Client {
         })
     }
 
+    /// Subscribe to collection mutations via SSE (Server-Sent Events).
+    /// Returns a receiver that yields mutation notification dicts.
+    #[pyo3(signature = (collection, filter_field=None, filter_value=None))]
+    fn subscribe_sse<'py>(
+        &self,
+        py: Python<'py>,
+        collection: String,
+        filter_field: Option<String>,
+        filter_value: Option<String>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            let rx = client
+                .subscribe_sse(
+                    &collection,
+                    filter_field.as_deref(),
+                    filter_value.as_deref(),
+                )
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("SSE subscribe failed: {}", e)))?;
+
+            Python::attach(|py| {
+                let wrapper = SubscriptionReceiver {
+                    inner: std::sync::Arc::new(tokio::sync::Mutex::new(rx)),
+                };
+                Ok(Py::new(py, wrapper)?.into())
+            })
+        })
+    }
+
     /// Create a WebSocket connection
     fn websocket<'py>(
         &self,

@@ -1635,4 +1635,166 @@ class EkoDBClientTest {
         client.listCollections()
         assertEquals(2, authRequestCount, "After clearTokenCache, next call should fetch a new token")
     }
+
+    // ========================================================================
+    // agent_id Tests
+    // ========================================================================
+
+    @Test
+    fun `CreateChatSessionRequest includes agent_id`() {
+        val req = io.ekodb.client.types.CreateChatSessionRequest(
+            llmProvider = "openai",
+            agentId = "my-agent",
+        )
+        assertEquals("my-agent", req.agentId)
+        val json = Json.encodeToString(
+            io.ekodb.client.types.CreateChatSessionRequest.serializer(), req
+        )
+        assertTrue(json.contains("\"agent_id\":\"my-agent\""))
+    }
+
+    @Test
+    fun `CreateChatSessionRequest omits agent_id when null`() {
+        val req = io.ekodb.client.types.CreateChatSessionRequest(
+            llmProvider = "openai",
+        )
+        assertEquals(null, req.agentId)
+        val json = Json.encodeToString(
+            io.ekodb.client.types.CreateChatSessionRequest.serializer(), req
+        )
+        assertFalse(json.contains("agent_id"))
+    }
+
+    @Test
+    fun `ChatSession deserializes agent_id`() {
+        val raw = """{"chat_id":"c1","created_at":"t","updated_at":"t","llm_provider":"openai","llm_model":"gpt-4","collections":[],"agent_id":"bot-1","message_count":0}"""
+        val session = Json { ignoreUnknownKeys = true }.decodeFromString(
+            io.ekodb.client.types.ChatSession.serializer(), raw
+        )
+        assertEquals("bot-1", session.agentId)
+    }
+
+    @Test
+    fun `ChatSession handles missing agent_id`() {
+        val raw = """{"chat_id":"c1","created_at":"t","updated_at":"t","llm_provider":"openai","llm_model":"gpt-4","collections":[],"message_count":0}"""
+        val session = Json { ignoreUnknownKeys = true }.decodeFromString(
+            io.ekodb.client.types.ChatSession.serializer(), raw
+        )
+        assertEquals(null, session.agentId)
+    }
+
+    // ========================================================================
+    // ChatMessageRequest tool fields Tests
+    // ========================================================================
+
+    @Test
+    fun `ChatMessageRequest includes client_tools`() {
+        val params = buildJsonObject { put("type", "object") }
+        val req = io.ekodb.client.types.ChatMessageRequest(
+            message = "hello",
+            clientTools = listOf(
+                io.ekodb.client.types.ClientToolDef("weather", "Get weather", params)
+            ),
+            confirmTools = listOf("shell_exec"),
+            excludeTools = listOf("file_delete"),
+        )
+        assertEquals(1, req.clientTools?.size)
+        assertEquals("weather", req.clientTools!![0].name)
+        assertEquals(listOf("shell_exec"), req.confirmTools)
+        assertEquals(listOf("file_delete"), req.excludeTools)
+    }
+
+    @Test
+    fun `ChatMessageRequest serializes tool fields`() {
+        val params = buildJsonObject { put("type", "object") }
+        val req = io.ekodb.client.types.ChatMessageRequest(
+            message = "test",
+            clientTools = listOf(
+                io.ekodb.client.types.ClientToolDef("calc", "Calculator", params)
+            ),
+            confirmTools = listOf("shell"),
+            excludeTools = listOf("rm"),
+        )
+        val json = Json.encodeToString(
+            io.ekodb.client.types.ChatMessageRequest.serializer(), req
+        )
+        assertTrue(json.contains("\"client_tools\""))
+        assertTrue(json.contains("\"confirm_tools\""))
+        assertTrue(json.contains("\"exclude_tools\""))
+        assertTrue(json.contains("\"calc\""))
+    }
+
+    @Test
+    fun `ChatMessageRequest omits tool fields when null`() {
+        val req = io.ekodb.client.types.ChatMessageRequest(message = "hi")
+        val json = Json.encodeToString(
+            io.ekodb.client.types.ChatMessageRequest.serializer(), req
+        )
+        assertFalse(json.contains("client_tools"))
+        assertFalse(json.contains("confirm_tools"))
+        assertFalse(json.contains("exclude_tools"))
+    }
+
+    // ========================================================================
+    // submitChatToolResult Tests
+    // ========================================================================
+
+    @Test
+    fun `submitChatToolResult sends correct request`() = runBlocking {
+        var capturedPath = ""
+        var capturedBody = ""
+        val mockEngine = MockEngine { request ->
+            if (request.url.encodedPath.contains("/api/auth/token")) {
+                respond(
+                    content = """{"token": "mock_jwt_token_123"}""",
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                )
+            } else {
+                capturedPath = request.url.encodedPath
+                capturedBody = String(request.body.toByteArray())
+                respond(
+                    content = "{}",
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                )
+            }
+        }
+        val client = createTestClient(mockEngine)
+
+        val result = buildJsonObject { put("temp", "72F") }
+        client.submitChatToolResult("chat-123", "call-456", true, result)
+
+        assertTrue(capturedPath.contains("/api/chat/chat-123/tool-result"))
+        assertTrue(capturedBody.contains("\"call_id\":\"call-456\""))
+        assertTrue(capturedBody.contains("\"success\":true"))
+        assertTrue(capturedBody.contains("\"temp\":\"72F\""))
+    }
+
+    @Test
+    fun `submitChatToolResult sends error`() = runBlocking {
+        var capturedBody = ""
+        val mockEngine = MockEngine { request ->
+            if (request.url.encodedPath.contains("/api/auth/token")) {
+                respond(
+                    content = """{"token": "mock_jwt_token_123"}""",
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                )
+            } else {
+                capturedBody = String(request.body.toByteArray())
+                respond(
+                    content = "{}",
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                )
+            }
+        }
+        val client = createTestClient(mockEngine)
+
+        client.submitChatToolResult("chat-1", "call-1", false, error = "tool crashed")
+
+        assertTrue(capturedBody.contains("\"success\":false"))
+        assertTrue(capturedBody.contains("\"error\":\"tool crashed\""))
+    }
 }
