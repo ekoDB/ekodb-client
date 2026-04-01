@@ -212,6 +212,16 @@ data class ChatSessionResponse(
 /**
  * Request to send a message in an existing session.
  */
+/**
+ * Client-side tool definition sent with chat messages (HTTP/SSE path).
+ */
+@Serializable
+data class ClientToolDef(
+    val name: String,
+    val description: String,
+    val parameters: JsonObject,
+)
+
 @Serializable
 data class ChatMessageRequest(
     val message: String,
@@ -225,6 +235,12 @@ data class ChatMessageRequest(
     val toolConfig: ToolConfig? = null,
     @SerialName("llm_model")
     val llmModel: String? = null,
+    @SerialName("client_tools")
+    val clientTools: List<ClientToolDef>? = null,
+    @SerialName("confirm_tools")
+    val confirmTools: List<String>? = null,
+    @SerialName("exclude_tools")
+    val excludeTools: List<String>? = null,
 )
 
 /**

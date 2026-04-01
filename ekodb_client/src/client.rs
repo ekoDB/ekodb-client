@@ -1521,6 +1521,21 @@ impl Client {
         self.http.list_chat_sessions(query, &token).await
     }
 
+    /// Submit a client tool result for an in-flight SSE chat stream.
+    pub async fn submit_chat_tool_result(
+        &self,
+        chat_id: &str,
+        call_id: &str,
+        success: bool,
+        result: Option<serde_json::Value>,
+        error: Option<String>,
+    ) -> Result<()> {
+        let token = self.auth.get_token().await?;
+        self.http
+            .submit_chat_tool_result(chat_id, call_id, success, result, error, &token)
+            .await
+    }
+
     /// Update chat session metadata
     ///
     /// # Arguments

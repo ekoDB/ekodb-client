@@ -61,7 +61,7 @@ pub mod websocket;
 pub use auth::*;
 pub use batch::BatchBuilder;
 pub use chat::{
-    ChatMessageRequest, ChatRequest, ChatResponse, ChatSession, ChatSessionResponse,
+    ChatMessageRequest, ChatRequest, ChatResponse, ChatSession, ChatSessionResponse, ClientToolDef,
     CollectionConfig, ContextSnippet, CreateChatSessionRequest, EmbedRequest, EmbedResponse,
     FieldSearchOptions, GetMessagesQuery, GetMessagesResponse, ListSessionsQuery,
     ListSessionsResponse, MergeSessionsRequest, MergeStrategy, Models, RawCompletionRequest,
