@@ -188,6 +188,7 @@ export interface CreateChatSessionRequest {
   llm_provider: string;
   llm_model?: string;
   system_prompt?: string;
+  agent_id?: string;
   bypass_ripple?: boolean;
   parent_id?: string;
   branch_point_idx?: number;
@@ -229,6 +230,7 @@ export interface ChatSession {
   llm_model: string;
   collections: CollectionConfig[];
   system_prompt?: string;
+  agent_id?: string;
   title?: string;
   message_count: number;
 }
