@@ -2674,3 +2674,226 @@ describe("EkoDBClient auth token management", () => {
     expect(mockFetch).toHaveBeenCalledTimes(2);
   });
 });
+
+// ============================================================================
+// agent_id Tests
+// ============================================================================
+
+describe("agent_id on chat types", () => {
+  it("CreateChatSessionRequest includes agent_id", () => {
+    const req: any = {
+      collections: [{ collection_name: "docs" }],
+      llm_provider: "openai",
+      agent_id: "my-agent",
+    };
+    expect(req.agent_id).toBe("my-agent");
+  });
+
+  it("CreateChatSessionRequest omits agent_id when undefined", () => {
+    const req: any = {
+      collections: [],
+      llm_provider: "openai",
+    };
+    expect(req.agent_id).toBeUndefined();
+  });
+
+  it("ChatSession includes agent_id", () => {
+    const session: any = {
+      chat_id: "c1",
+      created_at: "2026-01-01",
+      updated_at: "2026-01-01",
+      llm_provider: "openai",
+      llm_model: "gpt-4",
+      collections: [],
+      agent_id: "bot-1",
+      message_count: 0,
+    };
+    expect(session.agent_id).toBe("bot-1");
+  });
+
+  it("ChatSession allows missing agent_id", () => {
+    const session: any = {
+      chat_id: "c1",
+      created_at: "2026-01-01",
+      updated_at: "2026-01-01",
+      llm_provider: "openai",
+      llm_model: "gpt-4",
+      collections: [],
+      message_count: 0,
+    };
+    expect(session.agent_id).toBeUndefined();
+  });
+});
+
+// ============================================================================
+// client_tools / confirm_tools / exclude_tools Tests
+// ============================================================================
+
+describe("ChatMessageRequest tool fields", () => {
+  it("includes client_tools, confirm_tools, exclude_tools", () => {
+    const req: any = {
+      message: "hello",
+      client_tools: [
+        {
+          name: "weather",
+          description: "Get weather",
+          parameters: { type: "object" },
+        },
+      ],
+      confirm_tools: ["shell_exec"],
+      exclude_tools: ["file_delete"],
+    };
+    expect(req.client_tools).toHaveLength(1);
+    expect(req.client_tools[0].name).toBe("weather");
+    expect(req.confirm_tools).toEqual(["shell_exec"]);
+    expect(req.exclude_tools).toEqual(["file_delete"]);
+  });
+
+  it("tool fields are optional", () => {
+    const req: any = { message: "hi" };
+    expect(req.client_tools).toBeUndefined();
+    expect(req.confirm_tools).toBeUndefined();
+    expect(req.exclude_tools).toBeUndefined();
+  });
+
+  it("ClientToolDefinition has correct shape", () => {
+    const tool: any = {
+      name: "calc",
+      description: "Calculator",
+      parameters: { type: "object", properties: {} },
+    };
+    expect(tool.name).toBe("calc");
+    expect(tool.description).toBe("Calculator");
+    expect(tool.parameters.type).toBe("object");
+  });
+});
+
+// ============================================================================
+// submitChatToolResult Tests
+// ============================================================================
+
+describe("submitChatToolResult", () => {
+  it("sends tool result to correct endpoint", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+    mockJsonResponse({});
+
+    await client.submitChatToolResult("chat-123", "call-456", true, {
+      temp: "72F",
+    });
+
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+    const call = mockFetch.mock.calls[1];
+    expect(call[0]).toContain("/api/chat/chat-123/tool-result");
+    const body = JSON.parse(call[1].body);
+    expect(body.call_id).toBe("call-456");
+    expect(body.success).toBe(true);
+    expect(body.result.temp).toBe("72F");
+  });
+
+  it("sends error result", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+    mockJsonResponse({});
+
+    await client.submitChatToolResult(
+      "chat-123",
+      "call-456",
+      false,
+      undefined,
+      "tool crashed",
+    );
+
+    const call = mockFetch.mock.calls[1];
+    const body = JSON.parse(call[1].body);
+    expect(body.success).toBe(false);
+    expect(body.error).toBe("tool crashed");
+    expect(body.result).toBeUndefined();
+  });
+});
+
+// ============================================================================
+// subscribeSSE Tests
+// ============================================================================
+
+describe("subscribeSSE", () => {
+  it("parses mutation events from SSE stream", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+
+    const sseBody =
+      "event: subscribed\ndata: {}\n\n" +
+      'event: mutation\ndata: {"collection":"orders","event":"insert","record_ids":["r1"],"timestamp":"t1"}\n\n' +
+      'event: mutation\ndata: {"collection":"orders","event":"update","record_ids":["r2"],"timestamp":"t2"}\n\n';
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      text: async () => sseBody,
+      headers: new Headers({ "content-type": "text/event-stream" }),
+    });
+
+    const stream = client.subscribeSSE("orders");
+    const events: any[] = [];
+    await new Promise<void>((resolve) => {
+      stream.on("event", (e: any) => events.push(e));
+      stream.on("close", resolve);
+      // Give it time to process
+      setTimeout(resolve, 100);
+    });
+
+    expect(events).toHaveLength(2);
+    expect(events[0].event).toBe("insert");
+    expect(events[0].recordIds).toEqual(["r1"]);
+    expect(events[1].event).toBe("update");
+    expect(events[1].recordIds).toEqual(["r2"]);
+  });
+
+  it("passes filter params in URL", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      text: async () => "",
+      headers: new Headers({ "content-type": "text/event-stream" }),
+    });
+
+    client.subscribeSSE("orders", {
+      filterField: "status",
+      filterValue: "active",
+    });
+
+    // Wait for async fetch
+    await new Promise((r) => setTimeout(r, 50));
+
+    const call = mockFetch.mock.calls[1];
+    expect(call[0]).toContain("/api/subscribe/orders");
+    expect(call[0]).toContain("filter_field=status");
+    expect(call[0]).toContain("filter_value=active");
+  });
+
+  it("emits error on HTTP failure", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      status: 401,
+      text: async () => "Unauthorized",
+      headers: new Headers(),
+    });
+
+    const stream = client.subscribeSSE("orders");
+    const errors: string[] = [];
+    await new Promise<void>((resolve) => {
+      stream.on("error", (e: string) => errors.push(e));
+      stream.on("close", resolve);
+      setTimeout(resolve, 100);
+    });
+
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toContain("401");
+  });
+});

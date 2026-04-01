@@ -2814,6 +2814,98 @@ export class EkoDBClient {
   }
 
   /**
+   * Subscribe to collection mutations via SSE (Server-Sent Events).
+   *
+   * Returns an EventStream that emits MutationNotification events.
+   * Use this when WebSocket connections aren't available (e.g. behind
+   * reverse proxies that block WS upgrades).
+   */
+  subscribeSSE(
+    collection: string,
+    options?: { filterField?: string; filterValue?: string },
+  ): EventStream<MutationNotification> {
+    const stream = new EventStream<MutationNotification>();
+
+    (async () => {
+      try {
+        let token = this.getToken();
+        if (!token) {
+          await this.refreshToken();
+          token = this.getToken();
+        }
+
+        let url = `${this.baseURL}/api/subscribe/${collection}`;
+        const params: string[] = [];
+        if (options?.filterField)
+          params.push(
+            `filter_field=${encodeURIComponent(options.filterField)}`,
+          );
+        if (options?.filterValue)
+          params.push(
+            `filter_value=${encodeURIComponent(options.filterValue)}`,
+          );
+        if (params.length > 0) url += `?${params.join("&")}`;
+
+        const response = await fetch(url, {
+          method: "GET",
+          headers: {
+            Accept: "text/event-stream",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          const body = await response.text();
+          stream.emit(
+            "error",
+            `SSE subscribe failed (${response.status}): ${body}`,
+          );
+          stream.close();
+          return;
+        }
+
+        const body = await response.text();
+        let eventType = "";
+        let dataLines: string[] = [];
+
+        for (const line of body.split("\n")) {
+          if (line === "") {
+            // End of event block
+            if (eventType === "mutation" && dataLines.length > 0) {
+              try {
+                const payload = JSON.parse(dataLines.join("\n"));
+                stream.emit("event", {
+                  collection: payload.collection,
+                  event: payload.event,
+                  recordIds: payload.record_ids,
+                  records: payload.records,
+                  timestamp: payload.timestamp,
+                } as MutationNotification);
+              } catch {
+                // skip malformed data
+              }
+            }
+            eventType = "";
+            dataLines = [];
+            continue;
+          }
+          if (line.startsWith("event: ")) {
+            eventType = line.slice(7).trim();
+          } else if (line.startsWith("data: ")) {
+            dataLines.push(line.slice(6).trim());
+          }
+        }
+        stream.close();
+      } catch (err: any) {
+        stream.emit("error", err.message ?? String(err));
+        stream.close();
+      }
+    })();
+
+    return stream;
+  }
+
+  /**
    * Create a WebSocket client
    */
   websocket(wsURL: string): WebSocketClient {

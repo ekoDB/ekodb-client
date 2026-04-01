@@ -1923,6 +1923,68 @@ class EkoDBClient private constructor(
     }
     
     /**
+     * Subscribe to collection mutations via SSE (Server-Sent Events).
+     *
+     * Returns a Flow that emits MutationNotification events. Use this when
+     * WebSocket connections aren't available (e.g. behind reverse proxies
+     * that block WS upgrades).
+     */
+    fun subscribeSSE(
+        collection: String,
+        filterField: String? = null,
+        filterValue: String? = null,
+    ): Flow<MutationNotification> = flow {
+        val token = getToken()
+        val params = buildList {
+            filterField?.let { add("filter_field=$it") }
+            filterValue?.let { add("filter_value=$it") }
+        }
+        val query = if (params.isNotEmpty()) "?${params.joinToString("&")}" else ""
+        val url = "$baseUrl/api/subscribe/$collection$query"
+
+        val response = client.get(url) {
+            header("Authorization", "Bearer $token")
+            header("Accept", "text/event-stream")
+        }
+
+        if (response.status != io.ktor.http.HttpStatusCode.OK) {
+            val errBody = response.bodyAsText()
+            throw RuntimeException("SSE subscribe failed (${response.status}): $errBody")
+        }
+
+        val body = response.bodyAsText()
+        var eventType = ""
+        val dataLines = mutableListOf<String>()
+
+        for (line in body.split("\n")) {
+            if (line.isEmpty()) {
+                if (eventType == "mutation" && dataLines.isNotEmpty()) {
+                    try {
+                        val payload = Json.parseToJsonElement(dataLines.joinToString("\n")).jsonObject
+                        emit(MutationNotification(
+                            collection = payload["collection"]?.jsonPrimitive?.content ?: "",
+                            event = payload["event"]?.jsonPrimitive?.content ?: "",
+                            recordIds = payload["record_ids"]?.jsonArray?.map { it.jsonPrimitive.content } ?: emptyList(),
+                            records = payload["records"],
+                            timestamp = payload["timestamp"]?.jsonPrimitive?.content ?: "",
+                        ))
+                    } catch (ignored: Exception) {
+                        // skip malformed data
+                    }
+                }
+                eventType = ""
+                dataLines.clear()
+                continue
+            }
+            if (line.startsWith("event: ")) {
+                eventType = line.removePrefix("event: ").trim()
+            } else if (line.startsWith("data: ")) {
+                dataLines.add(line.removePrefix("data: ").trim())
+            }
+        }
+    }
+
+    /**
      * Create a WebSocket client for real-time operations
      */
     suspend fun websocket(wsUrl: String): WebSocketClient {
