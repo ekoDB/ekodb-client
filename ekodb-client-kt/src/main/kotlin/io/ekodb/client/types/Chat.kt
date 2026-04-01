@@ -155,6 +155,8 @@ data class CreateChatSessionRequest(
     val llmModel: String? = null,
     @SerialName("system_prompt")
     val systemPrompt: String? = null,
+    @SerialName("agent_id")
+    val agentId: String? = null,
     @SerialName("bypass_ripple")
     val bypassRipple: Boolean? = null,
     @SerialName("parent_id")
@@ -188,6 +190,8 @@ data class ChatSession(
     val collections: List<CollectionConfig> = emptyList(),
     @SerialName("system_prompt")
     val systemPrompt: String? = null,
+    @SerialName("agent_id")
+    val agentId: String? = null,
     val title: String? = null,
     @SerialName("message_count")
     val messageCount: Int,

@@ -168,6 +168,8 @@ pub struct CreateChatSessionRequest {
     pub llm_model: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub system_prompt: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agent_id: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub bypass_ripple: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -192,6 +194,7 @@ impl CreateChatSessionRequest {
             llm_provider: llm_provider.into(),
             llm_model: None,
             system_prompt: None,
+            agent_id: None,
             bypass_ripple: None,
             parent_id: None,
             branch_point_idx: None,
@@ -217,6 +220,12 @@ impl CreateChatSessionRequest {
     /// Set a custom system prompt
     pub fn system_prompt(mut self, prompt: impl Into<String>) -> Self {
         self.system_prompt = Some(prompt.into());
+        self
+    }
+
+    /// Set the agent name for this session
+    pub fn agent_id(mut self, id: impl Into<String>) -> Self {
+        self.agent_id = Some(id.into());
         self
     }
 
@@ -272,6 +281,8 @@ pub struct ChatSession {
     pub collections: Vec<CollectionConfig>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub system_prompt: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agent_id: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
     pub message_count: usize,
