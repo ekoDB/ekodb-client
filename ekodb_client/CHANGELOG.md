@@ -6,6 +6,46 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.15.3] - 2026-04-01
+
+### Added
+
+- **`agent_id` field on chat sessions** — `CreateChatSessionRequest` and
+  `ChatSession` now include an optional `agent_id` field to associate a session
+  with a named agent. Rust client includes a `.agent_id()` builder method. Added
+  across all clients (Rust, TypeScript, Go, Kotlin, Python).
+
+- **Client tool fields on `ChatMessageRequest`** — Added `client_tools`,
+  `confirm_tools`, and `exclude_tools` optional fields plus `ClientToolDef`
+  struct for HTTP/SSE chat message requests. When provided, ekoDB merges client
+  tool definitions with built-in tools and routes calls back via
+  `__client_tool_call` SSE events. Includes builder methods in Rust. Added
+  across all clients (Rust, TypeScript, Go, Kotlin, Python).
+
+- **`submit_chat_tool_result()`** — New HTTP method to submit a client tool
+  result for an in-flight SSE chat stream (`POST /api/chat/:id/tool-result`),
+  unblocking ekoDB's tool loop. Added across all clients.
+
+- **`subscribe_sse()`** — Subscribe to collection mutations via SSE (Server-Sent
+  Events). Returns a channel/stream of `MutationNotification` events. Use when
+  WebSocket connections aren't available (e.g. behind reverse proxies). Supports
+  `filter_field`/`filter_value` query params. Added across all clients (Rust,
+  TypeScript, Go, Kotlin, Python).
+
+- **`list_user_collections()`** — New method that lists collections while
+  filtering out internal chat/system collections via `exclude_internal=true`
+  query parameter. Rust client only.
+
+### Changed
+
+- **Dependency management** — `make deps-update` and `make deps-update-rust` now
+  use `cargo upgrade` (from `cargo-edit`) to bump `Cargo.toml` constraints
+  before running `cargo update`, instead of only updating within existing
+  constraints.
+
+- **Updated dependencies** — Bumped dependencies across Rust, Python bindings,
+  and TypeScript client packages.
+
 ## [0.15.2] - 2026-03-28
 
 ### Fixed
