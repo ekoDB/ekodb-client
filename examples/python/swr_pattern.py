@@ -106,8 +106,9 @@ async def main():
     start2 = time.time()
     result2 = await client.call_function("fetch_github_user", {"username": "torvalds"})
     duration2 = (time.time() - start2) * 1000
-    speedup = duration1 / duration2
-    print(f"Response time: {duration2:.0f}ms ({speedup:.1f}x faster!)")
+    speedup = (duration1 / duration2) if duration2 > 0 else float("inf")
+    speedup_text = f"{speedup:.1f}x faster!" if duration2 > 0 else "instant response"
+    print(f"Response time: {duration2:.0f}ms ({speedup_text})")
     print(f"Result: {json.dumps(result2['records'][:1], indent=2)}")
     print("✓ Lightning fast cache hit\n")
 

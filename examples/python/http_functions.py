@@ -251,11 +251,11 @@ async def function_management(session, token, get_active_users_id, user_stats_id
     await request(
         session, "PUT", f"/api/functions/{get_active_users_id}", updated, token
     )
-    print("✏️  function updated")
+    print("✏️  Function updated")
 
     # Delete script (requires encrypted ID)
     await request(session, "DELETE", f"/api/functions/{user_stats_id}", None, token)
-    print("🗑️  function deleted\n")
+    print("🗑️  Function deleted\n")
 
     print("ℹ️  Note: GET/UPDATE/DELETE operations require the encrypted ID")
     print("ℹ️  Only CALL can use either ID or label\n")
