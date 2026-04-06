@@ -703,34 +703,20 @@ impl HttpClient {
 
     /// List all collections
     pub async fn list_collections(&self, token: &str) -> Result<Vec<String>> {
-        let url = self.base_url.join("/api/collections")?;
-
-        #[derive(Deserialize)]
-        struct CollectionsResponse {
-            collections: Vec<String>,
-        }
-
-        let response: CollectionsResponse = self
-            .retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .get(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json") // Force JSON for metadata operations
-                    .send()
-                    .await?;
-
-                // Force JSON deserialization for metadata operations
-                Self::json_body(response).await
-            })
-            .await?;
-
-        Ok(response.collections)
+        self.list_collections_inner(token, false).await
     }
 
     /// List collections, optionally excluding internal chat/system collections.
     pub async fn list_collections_filtered(
+        &self,
+        token: &str,
+        exclude_internal: bool,
+    ) -> Result<Vec<String>> {
+        self.list_collections_inner(token, exclude_internal).await
+    }
+
+    /// Shared implementation for listing collections.
+    async fn list_collections_inner(
         &self,
         token: &str,
         exclude_internal: bool,

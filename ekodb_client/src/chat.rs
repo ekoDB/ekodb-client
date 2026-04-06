@@ -223,7 +223,7 @@ impl CreateChatSessionRequest {
         self
     }
 
-    /// Set the agent name for this session
+    /// Set the agent ID for this session
     pub fn agent_id(mut self, id: impl Into<String>) -> Self {
         self.agent_id = Some(id.into());
         self

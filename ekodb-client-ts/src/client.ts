@@ -2122,7 +2122,7 @@ export class EkoDBClient {
   // ========================================================================
 
   /**
-   * Save a new script definition
+   * Save a new function definition
    */
   async saveFunction(script: UserFunction): Promise<string> {
     const result = await this.makeRequest<{ id: string }>(
@@ -2134,14 +2134,14 @@ export class EkoDBClient {
   }
 
   /**
-   * Get a script by ID
+   * Get a function by ID
    */
   async getFunction(id: string): Promise<UserFunction> {
     return this.makeRequest<UserFunction>("GET", `/api/functions/${id}`);
   }
 
   /**
-   * List all scripts, optionally filtered by tags
+   * List all functions, optionally filtered by tags
    */
   async listFunctions(tags?: string[]): Promise<UserFunction[]> {
     const params = tags ? `?tags=${tags.join(",")}` : "";
@@ -2149,21 +2149,21 @@ export class EkoDBClient {
   }
 
   /**
-   * Update an existing script by ID
+   * Update an existing function by ID
    */
   async updateFunction(id: string, script: UserFunction): Promise<void> {
     await this.makeRequest<void>("PUT", `/api/functions/${id}`, script);
   }
 
   /**
-   * Delete a script by ID
+   * Delete a function by ID
    */
   async deleteFunction(id: string): Promise<void> {
     await this.makeRequest<void>("DELETE", `/api/functions/${id}`);
   }
 
   /**
-   * Call a saved script by ID or label
+   * Call a saved function by ID or label
    */
   async callFunction(
     idOrLabel: string,
