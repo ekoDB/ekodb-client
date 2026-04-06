@@ -41,12 +41,12 @@ pub struct UserFunction {
     #[serde(default)]
     pub tags: Vec<String>,
 
-    /// Creation timestamp (server-managed, don't send from client)
-    #[serde(skip_serializing, skip_deserializing)]
+    /// Creation timestamp (server-managed, read-only)
+    #[serde(skip_serializing)]
     pub created_at: Option<DateTime<Utc>>,
 
-    /// Last update timestamp (server-managed, don't send from client)
-    #[serde(skip_serializing, skip_deserializing)]
+    /// Last update timestamp (server-managed, read-only)
+    #[serde(skip_serializing)]
     pub updated_at: Option<DateTime<Utc>>,
 }
 

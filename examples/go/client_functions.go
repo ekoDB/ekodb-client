@@ -168,23 +168,23 @@ func aggregationScript(client *ekodb.Client) (string, error) {
 }
 
 func scriptManagement(client *ekodb.Client, getActiveUsersID, userStatsID string) error {
-	fmt.Println("📝 Example 4: function Management\n")
+	fmt.Println("📝 Example 4: Function Management\n")
 
-	// List all scripts
-	scripts, err := client.ListFunctions(nil)
+	// List all functions
+	functions, err := client.ListFunctions(nil)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("📋 Total scripts: %d\n", len(scripts))
+	fmt.Printf("📋 Total functions: %d\n", len(functions))
 
-	// Get specific script (use encrypted ID)
-	script, err := client.GetFunction(getActiveUsersID)
+	// Get specific function (use encrypted ID)
+	fn, err := client.GetFunction(getActiveUsersID)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("🔍 Retrieved script: %s\n", script.Name)
+	fmt.Printf("🔍 Retrieved function: %s\n", fn.Name)
 
-	// Update script (use encrypted ID)
+	// Update function (use encrypted ID)
 	updatedVersion := "1.1"
 	updatedScript := ekodb.UserFunction{
 		Label:       "get_active_users",
@@ -200,13 +200,13 @@ func scriptManagement(client *ekodb.Client, getActiveUsersID, userStatsID string
 	if err := client.UpdateFunction(getActiveUsersID, updatedScript); err != nil {
 		return err
 	}
-	fmt.Println("✏️  function updated")
+	fmt.Println("✏️  Function updated")
 
-	// Delete script (use ID) - handle error gracefully
+	// Delete function (use ID) - handle error gracefully
 	if err := client.DeleteFunction(userStatsID); err != nil {
-		fmt.Println("ℹ️  function delete skipped (may not exist)")
+		fmt.Println("ℹ️  Function delete skipped (may not exist)")
 	} else {
-		fmt.Println("🗑️  function deleted")
+		fmt.Println("🗑️  Function deleted")
 	}
 	fmt.Println()
 
