@@ -1799,9 +1799,9 @@ impl Client {
     /// # Returns
     ///
     /// The UserFunction ID assigned by the server
-    pub async fn save_function(&self, script: crate::functions::UserFunction) -> Result<String> {
+    pub async fn save_function(&self, function: crate::functions::UserFunction) -> Result<String> {
         let token = self.auth.get_token().await?;
-        self.http.save_function(script, &token).await
+        self.http.save_function(function, &token).await
     }
 
     /// Get a UserFunction by its ID
@@ -1844,10 +1844,10 @@ impl Client {
     pub async fn update_function(
         &self,
         id: &str,
-        script: crate::functions::UserFunction,
+        function: crate::functions::UserFunction,
     ) -> Result<()> {
         let token = self.auth.get_token().await?;
-        self.http.update_function(id, script, &token).await
+        self.http.update_function(id, function, &token).await
     }
 
     /// Delete a UserFunction by its ID

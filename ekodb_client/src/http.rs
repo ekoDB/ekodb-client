@@ -2352,13 +2352,13 @@ impl HttpClient {
     }
 
     // ========================================================================
-    // SCRIPTS API
+    // FUNCTIONS API
     // ========================================================================
 
     /// Save a UserFunction definition
     pub async fn save_function(
         &self,
-        script: crate::functions::UserFunction,
+        function: crate::functions::UserFunction,
         token: &str,
     ) -> Result<String> {
         let url = self.base_url.join("/api/functions")?;
@@ -2371,7 +2371,7 @@ impl HttpClient {
                     .header("Authorization", format!("Bearer {}", token))
                     .header("Content-Type", "application/json")
                     .header("Accept", "application/json")
-                    .json(&script)
+                    .json(&function)
                     .send()
                     .await?;
 
@@ -2477,7 +2477,7 @@ impl HttpClient {
     pub async fn update_function(
         &self,
         id: &str,
-        script: crate::functions::UserFunction,
+        function: crate::functions::UserFunction,
         token: &str,
     ) -> Result<()> {
         let url = self.base_url.join(&format!("/api/functions/{}", id))?;
@@ -2490,7 +2490,7 @@ impl HttpClient {
                     .header("Authorization", format!("Bearer {}", token))
                     .header("Content-Type", "application/json")
                     .header("Accept", "application/json")
-                    .json(&script)
+                    .json(&function)
                     .send()
                     .await?;
 
