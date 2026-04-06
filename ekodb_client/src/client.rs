@@ -1892,12 +1892,12 @@ impl Client {
     /// ```
     pub async fn call_function(
         &self,
-        script_id_or_label: &str,
+        function_id_or_label: &str,
         params: Option<std::collections::HashMap<String, crate::types::FieldType>>,
     ) -> Result<crate::functions::FunctionResult> {
         let token = self.auth.get_token().await?;
         self.http
-            .call_function(script_id_or_label, params, &token)
+            .call_function(function_id_or_label, params, &token)
             .await
     }
 

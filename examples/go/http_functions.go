@@ -314,24 +314,24 @@ func aggregationFunction() (string, error) {
 func functionManagement(getActiveUsersID, userStatsID string) error {
 	fmt.Println("📝 Example 4: Function Management\n")
 
-	// List all scripts
-	scripts, err := request("GET", "/api/functions", nil)
+	// List all functions
+	functionsResult, err := request("GET", "/api/functions", nil)
 	if err != nil {
 		return err
 	}
 
-	scriptsArray := scripts.([]interface{})
-	fmt.Printf("📋 Total scripts: %d\n", len(scriptsArray))
+	functionsArray := functionsResult.([]interface{})
+	fmt.Printf("📋 Total functions: %d\n", len(functionsArray))
 
-	// Get specific script (requires encrypted ID)
-	scriptResult, err := request("GET", "/api/functions/"+getActiveUsersID, nil)
+	// Get specific function (requires encrypted ID)
+	fnResult, err := request("GET", "/api/functions/"+getActiveUsersID, nil)
 	if err != nil {
 		return err
 	}
-	script := scriptResult.(map[string]interface{})
-	fmt.Printf("🔍 Retrieved script: %s\n", script["name"])
+	fn := fnResult.(map[string]interface{})
+	fmt.Printf("🔍 Retrieved function: %s\n", fn["name"])
 
-	// Update script (requires encrypted ID)
+	// Update function (requires encrypted ID)
 	updated := map[string]interface{}{
 		"label":       "get_active_users",
 		"name":        "Get Active Users (Updated)",
@@ -346,13 +346,13 @@ func functionManagement(getActiveUsersID, userStatsID string) error {
 	if _, err := request("PUT", "/api/functions/"+getActiveUsersID, updated); err != nil {
 		return err
 	}
-	fmt.Println("✏️  function updated")
+	fmt.Println("✏️  Function updated")
 
-	// Delete script (requires encrypted ID)
+	// Delete function (requires encrypted ID)
 	if _, err := request("DELETE", "/api/functions/"+userStatsID, nil); err != nil {
 		return err
 	}
-	fmt.Println("🗑️  function deleted\n")
+	fmt.Println("🗑️  Function deleted\n")
 
 	fmt.Println("ℹ️  Note: GET/UPDATE/DELETE operations require the encrypted ID")
 	fmt.Println("ℹ️  Only CALL can use either ID or label\n")

@@ -2536,13 +2536,13 @@ impl HttpClient {
     /// Call a saved UserFunction by ID or label
     pub async fn call_function(
         &self,
-        script_id_or_label: &str,
+        function_id_or_label: &str,
         params: Option<std::collections::HashMap<String, crate::types::FieldType>>,
         token: &str,
     ) -> Result<crate::functions::FunctionResult> {
         let url = self
             .base_url
-            .join(&format!("/api/functions/{}", script_id_or_label))?;
+            .join(&format!("/api/functions/{}", function_id_or_label))?;
 
         let body = params.unwrap_or_default();
 
