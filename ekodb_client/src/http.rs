@@ -1955,12 +1955,22 @@ impl HttpClient {
             .base_url
             .join(&format!("/api/chat/{}/tool-result", chat_id))?;
 
-        let body = serde_json::json!({
-            "call_id": call_id,
-            "success": success,
-            "result": result,
-            "error": error,
-        });
+        #[derive(serde::Serialize)]
+        struct ToolResultBody {
+            call_id: String,
+            success: bool,
+            #[serde(skip_serializing_if = "Option::is_none")]
+            result: Option<serde_json::Value>,
+            #[serde(skip_serializing_if = "Option::is_none")]
+            error: Option<String>,
+        }
+
+        let body = ToolResultBody {
+            call_id: call_id.to_string(),
+            success,
+            result,
+            error,
+        };
 
         self.retry_policy
             .execute(|| async {
@@ -1973,8 +1983,11 @@ impl HttpClient {
                     .send()
                     .await?;
 
-                if !response.status().is_success() {
-                    let status = response.status();
+                let status = response.status();
+                if status == reqwest::StatusCode::UNAUTHORIZED {
+                    return Err(crate::error::Error::TokenExpired);
+                }
+                if !status.is_success() {
                     let text = response.text().await.unwrap_or_default();
                     return Err(crate::error::Error::Api {
                         code: status.as_u16(),

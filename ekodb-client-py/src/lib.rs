@@ -1728,7 +1728,7 @@ impl Client {
     }
 
     /// Create a new chat session
-    #[pyo3(signature = (collections, llm_provider, llm_model=None, system_prompt=None, agent_id=None, max_context_messages=None, bypass_ripple=None, max_tokens=None, temperature=None))]
+    #[pyo3(signature = (collections, llm_provider, llm_model=None, system_prompt=None, max_context_messages=None, bypass_ripple=None, max_tokens=None, temperature=None, agent_id=None))]
     fn create_chat_session<'py>(
         &self,
         py: Python<'py>,
@@ -1736,11 +1736,11 @@ impl Client {
         llm_provider: String,
         llm_model: Option<String>,
         system_prompt: Option<String>,
-        agent_id: Option<String>,
         max_context_messages: Option<usize>,
         bypass_ripple: Option<bool>,
         max_tokens: Option<i32>,
         temperature: Option<f32>,
+        agent_id: Option<String>,
     ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
 
@@ -1786,11 +1786,11 @@ impl Client {
         chat_id: String,
         call_id: String,
         success: bool,
-        result: Option<Bound<'py, PyDict>>,
+        result: Option<Bound<'py, PyAny>>,
         error: Option<String>,
     ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
-        let result_json = result.map(|d| dict_to_json(&d)).transpose()?;
+        let result_json = result.map(|v| py_to_json(&v)).transpose()?;
 
         future_into_py(py, async move {
             client

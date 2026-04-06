@@ -14,6 +14,7 @@ import io.ktor.client.plugins.websocket.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
+import io.ktor.utils.io.*
 import io.ktor.http.content.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.util.*
@@ -1936,50 +1937,52 @@ class EkoDBClient private constructor(
     ): Flow<MutationNotification> = flow {
         val token = getToken()
         val params = buildList {
-            filterField?.let { add("filter_field=$it") }
-            filterValue?.let { add("filter_value=$it") }
+            filterField?.let { add("filter_field=${it.encodeURLQueryComponent()}") }
+            filterValue?.let { add("filter_value=${it.encodeURLQueryComponent()}") }
         }
         val query = if (params.isNotEmpty()) "?${params.joinToString("&")}" else ""
-        val url = "$baseUrl/api/subscribe/$collection$query"
+        val url = "$baseUrl/api/subscribe/${collection.encodeURLPathPart()}$query"
 
-        val response = client.get(url) {
+        client.prepareGet(url) {
             header("Authorization", "Bearer $token")
             header("Accept", "text/event-stream")
-        }
-
-        if (response.status != io.ktor.http.HttpStatusCode.OK) {
-            val errBody = response.bodyAsText()
-            throw RuntimeException("SSE subscribe failed (${response.status}): $errBody")
-        }
-
-        val body = response.bodyAsText()
-        var eventType = ""
-        val dataLines = mutableListOf<String>()
-
-        for (line in body.split("\n")) {
-            if (line.isEmpty()) {
-                if (eventType == "mutation" && dataLines.isNotEmpty()) {
-                    try {
-                        val payload = Json.parseToJsonElement(dataLines.joinToString("\n")).jsonObject
-                        emit(MutationNotification(
-                            collection = payload["collection"]?.jsonPrimitive?.content ?: "",
-                            event = payload["event"]?.jsonPrimitive?.content ?: "",
-                            recordIds = payload["record_ids"]?.jsonArray?.map { it.jsonPrimitive.content } ?: emptyList(),
-                            records = payload["records"],
-                            timestamp = payload["timestamp"]?.jsonPrimitive?.content ?: "",
-                        ))
-                    } catch (ignored: Exception) {
-                        // skip malformed data
-                    }
-                }
-                eventType = ""
-                dataLines.clear()
-                continue
+        }.execute { response ->
+            if (response.status != HttpStatusCode.OK) {
+                val errBody = response.bodyAsText()
+                throw RuntimeException("SSE subscribe failed (${response.status}): $errBody")
             }
-            if (line.startsWith("event: ")) {
-                eventType = line.removePrefix("event: ").trim()
-            } else if (line.startsWith("data: ")) {
-                dataLines.add(line.removePrefix("data: ").trim())
+
+            val channel = response.bodyAsChannel()
+            var eventType = ""
+            val dataLines = mutableListOf<String>()
+
+            while (!channel.isClosedForRead) {
+                val line = channel.readLine() ?: break
+
+                if (line.isEmpty()) {
+                    if (eventType == "mutation" && dataLines.isNotEmpty()) {
+                        try {
+                            val payload = Json.parseToJsonElement(dataLines.joinToString("\n")).jsonObject
+                            emit(MutationNotification(
+                                collection = payload["collection"]?.jsonPrimitive?.content ?: "",
+                                event = payload["event"]?.jsonPrimitive?.content ?: "",
+                                recordIds = payload["record_ids"]?.jsonArray?.map { it.jsonPrimitive.content } ?: emptyList(),
+                                records = payload["records"],
+                                timestamp = payload["timestamp"]?.jsonPrimitive?.content ?: "",
+                            ))
+                        } catch (ignored: Exception) {
+                            // skip malformed data
+                        }
+                    }
+                    eventType = ""
+                    dataLines.clear()
+                    continue
+                }
+                if (line.startsWith("event: ")) {
+                    eventType = line.removePrefix("event: ").trim()
+                } else if (line.startsWith("data: ")) {
+                    dataLines.add(line.removePrefix("data: ").trim())
+                }
             }
         }
     }

@@ -1530,10 +1530,21 @@ impl Client {
         result: Option<serde_json::Value>,
         error: Option<String>,
     ) -> Result<()> {
-        let token = self.auth.get_token().await?;
-        self.http
-            .submit_chat_tool_result(chat_id, call_id, success, result, error, &token)
-            .await
+        let chat_id = chat_id.to_string();
+        let call_id = call_id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let chat_id = chat_id.clone();
+            let call_id = call_id.clone();
+            let result = result.clone();
+            let error = error.clone();
+            let http = http.clone();
+            async move {
+                http.submit_chat_tool_result(&chat_id, &call_id, success, result, error, &token)
+                    .await
+            }
+        })
+        .await
     }
 
     /// Update chat session metadata
