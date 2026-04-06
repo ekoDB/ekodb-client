@@ -1974,7 +1974,8 @@ impl HttpClient {
                     return Err(crate::error::Error::TokenExpired);
                 }
                 if !status.is_success() {
-                    let text = response.text().await.unwrap_or_default();
+                    let mut text = response.text().await.unwrap_or_default();
+                    text.truncate(512);
                     return Err(crate::error::Error::Api {
                         code: status.as_u16(),
                         message: format!("tool-result submit failed: {text}"),

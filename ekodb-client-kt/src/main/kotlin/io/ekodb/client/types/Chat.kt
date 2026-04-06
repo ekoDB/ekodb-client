@@ -219,6 +219,9 @@ data class ClientToolDef(
     val parameters: JsonObject,
 )
 
+/**
+ * Request to send a message in an existing chat session.
+ */
 @Serializable
 data class ChatMessageRequest(
     val message: String,
