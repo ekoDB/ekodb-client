@@ -1659,7 +1659,7 @@ class EkoDBClientTest {
             llmProvider = "openai",
         )
         assertEquals(null, req.agentId)
-        val json = Json.encodeToString(
+        val json = Json { explicitNulls = false }.encodeToString(
             io.ekodb.client.types.CreateChatSessionRequest.serializer(), req
         )
         assertFalse(json.contains("agent_id"))
@@ -1727,7 +1727,7 @@ class EkoDBClientTest {
     @Test
     fun `ChatMessageRequest omits tool fields when null`() {
         val req = io.ekodb.client.types.ChatMessageRequest(message = "hi")
-        val json = Json.encodeToString(
+        val json = Json { explicitNulls = false }.encodeToString(
             io.ekodb.client.types.ChatMessageRequest.serializer(), req
         )
         assertFalse(json.contains("client_tools"))
