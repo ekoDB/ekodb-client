@@ -1,5 +1,5 @@
 /**
- * CRUD Scripts Example - Basic Data Operations
+ * CRUD Functions Example - Basic Data Operations
  *
  * Demonstrates basic CRUD operations using scripts:
  * - FindAll queries
@@ -18,7 +18,7 @@ const API_KEY = process.env.API_BASE_KEY || "a-test-api-key-from-ekodb";
 async function main() {
   const client = new EkoDBClient(BASE_URL, API_KEY);
 
-  console.log("🚀 ekoDB TypeScript CRUD Scripts Example\n");
+  console.log("🚀 ekoDB TypeScript CRUD Functions Example\n");
 
   // Setup test data
   console.log("📋 Setting up test data...");
@@ -49,11 +49,11 @@ async function main() {
     functions: [Stage.findAll("crud_users_ts")],
     tags: ["users", "list"],
   };
-  const scriptId1 = await client.saveScript(script1);
+  const scriptId1 = await client.saveFunction(script1);
   scriptIds.push(scriptId1);
-  console.log("✅ Script saved");
+  console.log("✅ Function saved");
 
-  const result1 = await client.callScript("list_all_users_ts");
+  const result1 = await client.callFunction("list_all_users_ts");
   console.log(`📊 Found ${result1.records?.length || 0} users`);
   console.log(`⏱️  Execution time: ${result1.stats?.execution_time_ms}ms\n`);
 
@@ -70,11 +70,11 @@ async function main() {
     ],
     tags: ["users", "analytics"],
   };
-  const scriptId2 = await client.saveScript(script2);
+  const scriptId2 = await client.saveFunction(script2);
   scriptIds.push(scriptId2);
-  console.log("✅ Script saved");
+  console.log("✅ Function saved");
 
-  const result2 = await client.callScript("users_by_status_ts");
+  const result2 = await client.callFunction("users_by_status_ts");
   console.log("📊 User counts by status:");
   result2.records?.forEach((group: any) => {
     const status = group.status?.value || group.status;
@@ -106,11 +106,11 @@ async function main() {
     ],
     tags: ["users", "analytics"],
   };
-  const scriptId3 = await client.saveScript(script3);
+  const scriptId3 = await client.saveFunction(script3);
   scriptIds.push(scriptId3);
-  console.log("✅ Script saved");
+  console.log("✅ Function saved");
 
-  const result3 = await client.callScript("avg_score_by_role_ts");
+  const result3 = await client.callFunction("avg_score_by_role_ts");
   console.log("📊 Average score by role:");
   result3.records?.forEach((group: any) =>
     console.log(`   ${JSON.stringify(group)}`),
@@ -121,7 +121,7 @@ async function main() {
   console.log("🧹 Cleaning up...");
   for (const scriptId of scriptIds) {
     try {
-      await client.deleteScript(scriptId);
+      await client.deleteFunction(scriptId);
     } catch (e) {}
   }
   try {

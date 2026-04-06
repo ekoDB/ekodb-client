@@ -1,5 +1,5 @@
 """
-AI Scripts Example - Chat and Embed Operations
+AI Functions Example - Chat and Embed Operations
 
 Demonstrates AI operations in scripts:
 - Chat completions with context
@@ -25,7 +25,7 @@ async def main():
 
     client = Client.new(BASE_URL, API_KEY)
 
-    print("🚀 ekoDB Python AI Scripts Example\n")
+    print("🚀 ekoDB Python AI Functions Example\n")
 
     # Setup test data
     print("📋 Setting up test data...")
@@ -77,11 +77,11 @@ async def main():
         ],
         "tags": ["ai", "chat"],
     }
-    script_id1 = await client.save_script(script1)
+    script_id1 = await client.save_function(script1)
     script_ids.append(script_id1)
     print("✅ Chat script saved")
 
-    result1 = await client.call_script("ai_assistant_py", None)
+    result1 = await client.call_function("ai_assistant_py", None)
     print("🤖 AI Response:")
     if result1.get("records"):
         response = result1["records"][0]
@@ -105,11 +105,11 @@ async def main():
         "functions": [Stage.embed("text", "embedding")],
         "tags": ["ai", "embed"],
     }
-    script_id2 = await client.save_script(script2)
+    script_id2 = await client.save_function(script2)
     script_ids.append(script_id2)
     print("✅ Embed script saved")
 
-    result2 = await client.call_script(
+    result2 = await client.call_function(
         "generate_embedding_py", {"text": "ekoDB is a powerful database"}
     )
     print("📊 Embedding generated")
@@ -124,7 +124,7 @@ async def main():
     print("🧹 Cleaning up...")
     for script_id in script_ids:
         try:
-            await client.delete_script(script_id)
+            await client.delete_function(script_id)
         except Exception:
             pass
     try:

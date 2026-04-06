@@ -1,7 +1,7 @@
 /**
- * CRUD Scripts Example - Basic Data Operations
+ * CRUD Functions Example - Basic Data Operations
  * 
- * Demonstrates basic CRUD operations using scripts:
+ * Demonstrates basic CRUD operations using functions:
  * - FindAll queries
  * - Group aggregations
  * - Simple data transformations
@@ -52,10 +52,10 @@ async function listUsersScript(client) {
     tags: ['users', 'list'],
   };
   
-  const scriptId = await client.saveScript(script);
-  console.log('✅ Script saved');
+  const scriptId = await client.saveFunction(script);
+  console.log('✅ Function saved');
   
-  const result = await client.callScript('list_all_users');
+  const result = await client.callFunction('list_all_users');
   console.log(`📊 Found ${result.records.length} users`);
   console.log(`⏱️  Execution time: ${result.stats.execution_time_ms}ms\n`);
   
@@ -79,10 +79,10 @@ async function countByStatusScript(client) {
     tags: ['users', 'analytics'],
   };
   
-  const scriptId = await client.saveScript(script);
-  console.log('✅ Script saved');
+  const scriptId = await client.saveFunction(script);
+  console.log('✅ Function saved');
   
-  const result = await client.callScript('users_by_status');
+  const result = await client.callFunction('users_by_status');
   console.log(`📊 User counts by status:`);
   result.records.forEach((group) => {
     console.log(`   ${group.status?.value || group.status}: ${group.count?.value || group.count} users`);
@@ -110,10 +110,10 @@ async function avgScoreByRoleScript(client) {
     tags: ['users', 'analytics'],
   };
   
-  const scriptId = await client.saveScript(script);
-  console.log('✅ Script saved');
+  const scriptId = await client.saveFunction(script);
+  console.log('✅ Function saved');
   
-  const result = await client.callScript('avg_score_by_role');
+  const result = await client.callFunction('avg_score_by_role');
   console.log(`📊 Average scores by role:`);
   result.records.forEach((group) => {
     console.log(`   ${group.role?.value || group.role}: ${(group.avg_score?.value || group.avg_score).toFixed(1)} (${group.count?.value || group.count} users)`);
@@ -138,10 +138,10 @@ async function topUsersScript(client) {
     tags: ['users', 'leaderboard'],
   };
   
-  const scriptId = await client.saveScript(script);
-  console.log('✅ Script saved');
+  const scriptId = await client.saveFunction(script);
+  console.log('✅ Function saved');
   
-  const result = await client.callScript('top_users');
+  const result = await client.callFunction('top_users');
   console.log(`📊 Users (showing first 5 of ${result.records.length}):`);
   result.records.slice(0, 5).forEach((user, i) => {
     const name = user.name?.value || user.name || 'Unknown';
@@ -171,10 +171,10 @@ async function userSummaryScript(client) {
     tags: ['users', 'analytics', 'summary'],
   };
   
-  const scriptId = await client.saveScript(script);
-  console.log('✅ Script saved');
+  const scriptId = await client.saveFunction(script);
+  console.log('✅ Function saved');
   
-  const result = await client.callScript('user_summary');
+  const result = await client.callFunction('user_summary');
   console.log(`📊 User summary (${result.records.length} groups):`);
   result.records.forEach((group) => {
     // Debug: log raw group to see structure
@@ -195,7 +195,7 @@ async function cleanup(client, scriptIds) {
   
   try {
     for (const id of scriptIds) {
-      await client.deleteScript(id);
+      await client.deleteFunction(id);
     }
     await client.deleteCollection('crud_users');
     console.log('✅ Cleanup complete\n');
@@ -205,7 +205,7 @@ async function cleanup(client, scriptIds) {
 }
 
 async function main() {
-  console.log('🚀 ekoDB CRUD Scripts Example\n');
+  console.log('🚀 ekoDB CRUD Functions Example\n');
   
   const client = new EkoDBClient(BASE_URL, API_KEY);
   await client.init();
@@ -220,7 +220,7 @@ async function main() {
     scriptIds.push(await userSummaryScript(client));
     await cleanup(client, scriptIds);
     
-    console.log('✅ All CRUD script examples completed!');
+    console.log('✅ All CRUD function examples completed!');
   } catch (error) {
     console.error('❌ Error:', error.message);
     process.exit(1);

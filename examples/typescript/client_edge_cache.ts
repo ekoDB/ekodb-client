@@ -70,13 +70,13 @@ async function edgeCacheExample() {
     ],
   };
 
-  const scriptId = await client.saveScript(cacheScript);
+  const scriptId = await client.saveFunction(cacheScript);
   console.log(`✓ Edge cache script created: ${scriptId}\n`);
 
   // Test it - First call hits API
   console.log("Call 1: Cache miss (fetches from API)");
   const start1 = Date.now();
-  const result1 = await client.callScript("cache_api_call", {
+  const result1 = await client.callFunction("cache_api_call", {
     cache_key: "user_data_1",
     api_url: "https://jsonplaceholder.typicode.com/users/1",
     ttl_seconds: 300,
@@ -88,7 +88,7 @@ async function edgeCacheExample() {
   // Test it again - Second call hits cache
   console.log("\nCall 2: Cache hit (served from ekoDB)");
   const start2 = Date.now();
-  const result2 = await client.callScript("cache_api_call", {
+  const result2 = await client.callFunction("cache_api_call", {
     cache_key: "user_data_1",
     api_url: "https://jsonplaceholder.typicode.com/users/1",
   });

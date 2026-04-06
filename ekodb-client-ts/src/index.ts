@@ -44,7 +44,7 @@ export type {
 } from "./schema";
 export type { JoinConfig } from "./join";
 export type {
-  Script,
+  UserFunction,
   ParameterDefinition,
   FunctionStageConfig,
   GroupFunctionConfig,
@@ -85,7 +85,6 @@ export type {
   EmbedResponse,
   RawCompletionRequest,
   RawCompletionResponse,
-  UserFunction,
   ToolChoice,
   ToolConfig,
 } from "./client";

@@ -140,9 +140,9 @@ func wrappedTypesInsert(client *ekodb.Client) error {
 }
 
 func wrappedTypesInScript(client *ekodb.Client) (string, error) {
-	fmt.Println("📝 Example 2: Script with Wrapped Type Parameters\n")
+	fmt.Println("📝 Example 2: function with Wrapped Type Parameters\n")
 
-	script := ekodb.Script{
+	script := ekodb.UserFunction{
 		Label:       "create_order_with_types_go",
 		Name:        "Create Order with Wrapped Types (Go)",
 		Description: strPtr("Demonstrates wrapped types in script insert operations"),
@@ -170,13 +170,13 @@ func wrappedTypesInScript(client *ekodb.Client) (string, error) {
 		Tags: []string{"orders", "wrapped-types"},
 	}
 
-	id, err := client.SaveScript(script)
+	id, err := client.SaveFunction(script)
 	if err != nil {
 		return "", err
 	}
-	fmt.Printf("✅ Script saved: %s\n", id)
+	fmt.Printf("✅ Function saved: %s\n", id)
 
-	result, err := client.CallScript("create_order_with_types_go", map[string]interface{}{
+	result, err := client.CallFunction("create_order_with_types_go", map[string]interface{}{
 		"order_total": "599.99",
 		"order_id":    fmt.Sprintf("order_%d", time.Now().UnixNano()),
 		"timestamp":   time.Now().Format(time.RFC3339),
@@ -239,10 +239,10 @@ func kvBasicOperations(client *ekodb.Client) error {
 }
 
 func kvScriptOperations(client *ekodb.Client) (string, error) {
-	fmt.Println("📝 Example 4: KV Operations in Scripts\n")
+	fmt.Println("📝 Example 4: KV Operations in Functions\n")
 
 	ttl := int64(3600)
-	script := ekodb.Script{
+	script := ekodb.UserFunction{
 		Label:       "cached_product_lookup_go",
 		Name:        "Cached Product Lookup (Go)",
 		Description: strPtr("Uses KV store for caching within a script"),
@@ -258,13 +258,13 @@ func kvScriptOperations(client *ekodb.Client) (string, error) {
 		Tags: []string{"kv", "caching"},
 	}
 
-	id, err := client.SaveScript(script)
+	id, err := client.SaveFunction(script)
 	if err != nil {
 		return "", err
 	}
-	fmt.Printf("✅ Script saved: %s\n", id)
+	fmt.Printf("✅ Function saved: %s\n", id)
 
-	result, err := client.CallScript("cached_product_lookup_go", map[string]interface{}{
+	result, err := client.CallFunction("cached_product_lookup_go", map[string]interface{}{
 		"product_key":  "product:cache:789",
 		"product_data": map[string]interface{}{"name": "Test Product", "price": 49.99},
 	})
@@ -282,10 +282,10 @@ func kvScriptOperations(client *ekodb.Client) (string, error) {
 // =============================================================================
 
 func combinedExample(client *ekodb.Client) (string, error) {
-	fmt.Println("📝 Example 5: Combined Wrapped Types + KV Script\n")
+	fmt.Println("📝 Example 5: Combined Wrapped Types + KV Function\n")
 
 	ttl := int64(86400) // 24 hours
-	script := ekodb.Script{
+	script := ekodb.UserFunction{
 		Label:       "process_order_with_cache_go",
 		Name:        "Process Order with Cache (Go)",
 		Description: strPtr("Demonstrates combined KV and wrapped type usage"),
@@ -311,13 +311,13 @@ func combinedExample(client *ekodb.Client) (string, error) {
 		Tags: []string{"orders", "kv", "wrapped-types"},
 	}
 
-	id, err := client.SaveScript(script)
+	id, err := client.SaveFunction(script)
 	if err != nil {
 		return "", err
 	}
-	fmt.Printf("✅ Script saved: %s\n", id)
+	fmt.Printf("✅ Function saved: %s\n", id)
 
-	result, err := client.CallScript("process_order_with_cache_go", map[string]interface{}{
+	result, err := client.CallFunction("process_order_with_cache_go", map[string]interface{}{
 		"order_id":  "c2d3e4f5-a1b2-c3d4-e5f6-a1b2c3d4e5f6",
 		"total":     "299.99",
 		"timestamp": time.Now().Format(time.RFC3339),
@@ -340,7 +340,7 @@ func cleanup(client *ekodb.Client, scriptIds []string) {
 	fmt.Println("🧹 Cleaning up...")
 
 	for _, id := range scriptIds {
-		_ = client.DeleteScript(id)
+		_ = client.DeleteFunction(id)
 	}
 
 	_ = client.DeleteCollection("orders_example")

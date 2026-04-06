@@ -1,5 +1,5 @@
 /*
-Scripts Example using Direct HTTP Requests
+Functions Example using Direct HTTP Requests
 
 Demonstrates using scripts with raw HTTP/reqwest API
 No client library required
@@ -127,7 +127,7 @@ async fn simple_query_function() -> Result<String, Box<dyn std::error::Error>> {
     // Save script
     let save_result = request("POST", "/api/functions", Some(function1)).await?;
     let id = save_result["id"].as_str().unwrap();
-    println!("✅ Script saved: {}", id);
+    println!("✅ Function saved: {}", id);
 
     // Call script (can use label)
     let call_result = request("POST", "/api/functions/get_active_users", Some(json!({}))).await?;
@@ -175,7 +175,7 @@ async fn parameterized_pagination_function() -> Result<(), Box<dyn std::error::E
     });
 
     let save_result = request("POST", "/api/functions", Some(function2)).await?;
-    println!("✅ Script saved: {}", save_result["id"]);
+    println!("✅ Function saved: {}", save_result["id"]);
 
     // Call with page 1 (first 3 users)
     let call_result = request(
@@ -248,7 +248,7 @@ async fn complex_filter_function() -> Result<(), Box<dyn std::error::Error>> {
 
     let save_result = request("POST", "/api/functions", Some(function2)).await?;
     let id = save_result["id"].as_str().unwrap();
-    println!("✅ Script saved: {}", id);
+    println!("✅ Function saved: {}", id);
 
     // Call the function
     let call_result = request(
@@ -310,7 +310,7 @@ async fn aggregation_function() -> Result<String, Box<dyn std::error::Error>> {
 
     let save_result = request("POST", "/api/functions", Some(function3)).await?;
     let id = save_result["id"].as_str().unwrap();
-    println!("✅ Script saved: {}", id);
+    println!("✅ Function saved: {}", id);
 
     let call_result = request("POST", "/api/functions/user_stats", Some(json!({}))).await?;
     let records = call_result["records"].as_array().unwrap();
@@ -365,11 +365,11 @@ async fn function_management(
         Some(updated),
     )
     .await?;
-    println!("✏️  Script updated");
+    println!("✏️  function updated");
 
     // Delete script (requires encrypted ID)
     request("DELETE", &format!("/api/functions/{}", user_stats_id), None).await?;
-    println!("🗑️  Script deleted\n");
+    println!("🗑️  function deleted\n");
 
     println!("ℹ️  Note: GET/UPDATE/DELETE operations require the encrypted ID");
     println!("ℹ️  Only CALL can use either ID or label\n");
@@ -379,7 +379,7 @@ async fn function_management(
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    println!("🚀 ekoDB Scripts Example (Rust/HTTP)\n");
+    println!("🚀 ekoDB Functions Example (Rust/HTTP)\n");
 
     dotenv::dotenv().ok();
 

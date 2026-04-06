@@ -91,11 +91,11 @@ async def main():
         ],
     }
 
-    script_id = await client.save_script(swr_script)
+    script_id = await client.save_function(swr_script)
     print(f"✓ Created SWR script: {swr_script['label']} ({script_id})\n")
 
     print("Step 2: First call - Cache miss, fetches from API")
-    result1 = await client.call_script(
+    result1 = await client.call_function(
         "fetch_api_user_py",
         {
             "user_id": "1",
@@ -108,7 +108,7 @@ async def main():
 
     print("Step 3: Second call - Cache hit, instant response from ekoDB")
     start = time.time()
-    result2 = await client.call_script(
+    result2 = await client.call_function(
         "fetch_api_user_py",
         {"user_id": "1", "cached_at": datetime.now().isoformat()},
     )
@@ -119,7 +119,7 @@ async def main():
     # Cleanup
     print("🧹 Cleaning up...")
     try:
-        await client.delete_script(script_id)
+        await client.delete_function(script_id)
         await client.delete_collection("user_cache_py")
     except Exception:
         pass

@@ -43,13 +43,13 @@ async function exampleBasicSWR(client) {
     tags: ["github", "swr", "native"],
   };
 
-  const scriptId = await client.saveScript(basicSWRScript);
+  const scriptId = await client.saveFunction(basicSWRScript);
   console.log(`✓ Created native SWR script: github_user_native (${scriptId})`);
 
   // First call - cache miss
   console.log("\nFirst call (cache miss - will fetch from GitHub API):");
   const start1 = Date.now();
-  const result1 = await client.callScript("github_user_native", {
+  const result1 = await client.callFunction("github_user_native", {
     username: "torvalds",
   });
   const duration1 = Date.now() - start1;
@@ -59,7 +59,7 @@ async function exampleBasicSWR(client) {
   // Second call - cache hit
   console.log("\nSecond call (cache hit - instant from KV store):");
   const start2 = Date.now();
-  const result2 = await client.callScript("github_user_native", {
+  const result2 = await client.callFunction("github_user_native", {
     username: "torvalds",
   });
   const duration2 = Date.now() - start2;
@@ -104,13 +104,13 @@ async function exampleAuditTrail(client) {
     tags: ["products", "audit"],
   };
 
-  const auditScriptId = await client.saveScript(auditSWRScript);
+  const auditScriptId = await client.saveFunction(auditSWRScript);
   console.log(
     `✓ Created SWR script with audit trail: product_swr_audit (${auditScriptId})`
   );
 
   console.log("\nFetching product (will create audit trail entry):");
-  const productResult = await client.callScript("product_swr_audit", {
+  const productResult = await client.callFunction("product_swr_audit", {
     product_id: "1",
   });
   console.log("  ✓ Product fetched and cached");
@@ -163,13 +163,13 @@ async function examplePipelineEnrichment(client) {
     tags: ["enrichment", "pipeline"],
   };
 
-  const pipelineScriptId = await client.saveScript(pipelineScript);
+  const pipelineScriptId = await client.saveFunction(pipelineScript);
   console.log(
     `✓ Created enrichment pipeline: user_enrichment_pipeline (${pipelineScriptId})`
   );
 
   console.log("\nRunning pipeline:");
-  const enrichResult = await client.callScript("user_enrichment_pipeline", {
+  const enrichResult = await client.callFunction("user_enrichment_pipeline", {
     user_id: "1",
   });
   console.log("  ✓ Data fetched from API (cached 30m)");
@@ -212,7 +212,7 @@ async function exampleDynamicTTL(client) {
     tags: ["dynamic"],
   };
 
-  const dynamicScriptId = await client.saveScript(dynamicTTLScript);
+  const dynamicScriptId = await client.saveFunction(dynamicTTLScript);
   console.log(`✓ Created dynamic TTL script: flexible_cache (${dynamicScriptId})`);
 
   // Test with different TTLs
@@ -223,7 +223,7 @@ async function exampleDynamicTTL(client) {
   ];
 
   for (const test of ttlTests) {
-    await client.callScript("flexible_cache", {
+    await client.callFunction("flexible_cache", {
       resource_id: "test",
       ttl: test.value,
     });
@@ -237,9 +237,9 @@ async function cleanup(client, scriptIds) {
   console.log("\n🧹 Cleaning up...");
   try {
     for (const scriptId of scriptIds) {
-      await client.deleteScript(scriptId);
+      await client.deleteFunction(scriptId);
     }
-    console.log(`✓ Deleted ${scriptIds.length} test scripts`);
+    console.log(`✓ Deleted ${scriptIds.length} test functions`);
   } catch (error) {
     console.log(`⚠ Cleanup error (non-critical): ${error}`);
   }

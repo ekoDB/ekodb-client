@@ -1,5 +1,5 @@
 /**
- * AI Scripts Example - Chat and Embed Operations
+ * AI Functions Example - Chat and Embed Operations
  *
  * Demonstrates AI operations in scripts:
  * - Chat completions with context
@@ -18,7 +18,7 @@ const API_KEY = process.env.API_BASE_KEY || "a-test-api-key-from-ekodb";
 async function main() {
   const client = new EkoDBClient(BASE_URL, API_KEY);
 
-  console.log("🚀 ekoDB TypeScript AI Scripts Example\n");
+  console.log("🚀 ekoDB TypeScript AI Functions Example\n");
 
   // Setup test data
   console.log("📋 Setting up test data...");
@@ -68,11 +68,11 @@ async function main() {
     ],
     tags: ["ai", "chat"],
   };
-  const scriptId1 = await client.saveScript(script1);
+  const scriptId1 = await client.saveFunction(script1);
   scriptIds.push(scriptId1);
   console.log("✅ Chat script saved");
 
-  const result1 = await client.callScript("ai_assistant_ts");
+  const result1 = await client.callFunction("ai_assistant_ts");
   console.log("🤖 AI Response:");
   if (result1.records && result1.records[0]) {
     const response =
@@ -94,11 +94,11 @@ async function main() {
     functions: [Stage.embed("text", "embedding")],
     tags: ["ai", "embed"],
   };
-  const scriptId2 = await client.saveScript(script2);
+  const scriptId2 = await client.saveFunction(script2);
   scriptIds.push(scriptId2);
   console.log("✅ Embed script saved");
 
-  const result2 = await client.callScript("generate_embedding_ts", {
+  const result2 = await client.callFunction("generate_embedding_ts", {
     text: "ekoDB is a powerful database",
   });
   console.log("📊 Embedding generated");
@@ -115,7 +115,7 @@ async function main() {
   console.log("🧹 Cleaning up...");
   for (const scriptId of scriptIds) {
     try {
-      await client.deleteScript(scriptId);
+      await client.deleteFunction(scriptId);
     } catch (e) {}
   }
   try {

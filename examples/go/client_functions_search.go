@@ -1,4 +1,4 @@
-// Search Scripts Example - Basic Search Operations
+// Search Functions Example - Basic Search Operations
 //
 // Demonstrates simple search and query operations using scripts
 
@@ -33,7 +33,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Println("🚀 ekoDB Go Search Scripts Example")
+	fmt.Println("🚀 ekoDB Go Search Functions Example")
 	fmt.Println()
 
 	// Setup test data
@@ -59,7 +59,7 @@ func main() {
 	fmt.Println("📝 Example 1: List All Documents")
 	fmt.Println()
 
-	script1 := ekodb.Script{
+	script1 := ekodb.UserFunction{
 		Label:      "list_all_docs_go",
 		Name:       "List All Documents",
 		Version:    func() *string { s := "1.0"; return &s }(),
@@ -67,11 +67,11 @@ func main() {
 		Functions:  []ekodb.FunctionStageConfig{ekodb.StageFindAll("search_docs_go")},
 		Tags:       []string{"search", "list"},
 	}
-	scriptID1, _ := client.SaveScript(script1)
+	scriptID1, _ := client.SaveFunction(script1)
 	scriptIDs = append(scriptIDs, scriptID1)
-	fmt.Println("✅ Script saved")
+	fmt.Println("✅ Function saved")
 
-	result1, _ := client.CallScript("list_all_docs_go", nil)
+	result1, _ := client.CallFunction("list_all_docs_go", nil)
 	if result1 != nil {
 		fmt.Printf("📊 Found %d documents\n", len(result1.Records))
 		for i, record := range result1.Records {
@@ -86,7 +86,7 @@ func main() {
 	fmt.Println("📝 Example 2: Count Documents by Category")
 	fmt.Println()
 
-	script2 := ekodb.Script{
+	script2 := ekodb.UserFunction{
 		Label:      "docs_by_category_go",
 		Name:       "Documents by Category",
 		Version:    func() *string { s := "1.0"; return &s }(),
@@ -99,11 +99,11 @@ func main() {
 		},
 		Tags: []string{"search", "analytics"},
 	}
-	scriptID2, _ := client.SaveScript(script2)
+	scriptID2, _ := client.SaveFunction(script2)
 	scriptIDs = append(scriptIDs, scriptID2)
-	fmt.Println("✅ Script saved")
+	fmt.Println("✅ Function saved")
 
-	result2, _ := client.CallScript("docs_by_category_go", nil)
+	result2, _ := client.CallFunction("docs_by_category_go", nil)
 	if result2 != nil {
 		fmt.Println("📊 Documents by category:")
 		for _, record := range result2.Records {
@@ -115,7 +115,7 @@ func main() {
 	// Cleanup
 	fmt.Println("🧹 Cleaning up...")
 	for _, scriptID := range scriptIDs {
-		client.DeleteScript(scriptID)
+		client.DeleteFunction(scriptID)
 	}
 	client.DeleteCollection("search_docs_go")
 	fmt.Println("✅ Cleanup complete")

@@ -1,5 +1,5 @@
 """
-Advanced Scripts Example - Query, Sort, Limit, Group
+Advanced Functions Example - Query, Sort, Limit, Group
 
 Demonstrates advanced query and aggregation operations using simple patterns
 """
@@ -22,7 +22,7 @@ async def main():
 
     client = Client.new(BASE_URL, API_KEY)
 
-    print("🚀 ekoDB Python Advanced Scripts Example\n")
+    print("🚀 ekoDB Python Advanced Functions Example\n")
 
     # Setup test data
     print("📋 Setting up test data...")
@@ -106,11 +106,11 @@ async def main():
         "functions": [{"type": "FindAll", "collection": "advanced_products_py"}],
         "tags": ["products", "list"],
     }
-    script_id1 = await client.save_script(script1)
+    script_id1 = await client.save_function(script1)
     script_ids.append(script_id1)
-    print("✅ Script saved")
+    print("✅ Function saved")
 
-    result1 = await client.call_script("list_all_products_adv_py", None)
+    result1 = await client.call_function("list_all_products_adv_py", None)
     print(f"📊 Found {len(result1['records'])} products")
     print(f"⏱️  Execution time: {result1['stats']['execution_time_ms']}ms\n")
 
@@ -138,11 +138,11 @@ async def main():
         ],
         "tags": ["products", "analytics"],
     }
-    script_id2 = await client.save_script(script2)
+    script_id2 = await client.save_function(script2)
     script_ids.append(script_id2)
-    print("✅ Script saved")
+    print("✅ Function saved")
 
-    result2 = await client.call_script("products_by_category_py", None)
+    result2 = await client.call_function("products_by_category_py", None)
     print(f"📊 Category breakdown:")
     for record in result2["records"]:
         print(f"   {record}")
@@ -161,11 +161,11 @@ async def main():
         ],
         "tags": ["products", "count"],
     }
-    script_id3 = await client.save_script(script3)
+    script_id3 = await client.save_function(script3)
     script_ids.append(script_id3)
-    print("✅ Script saved")
+    print("✅ Function saved")
 
-    result3 = await client.call_script("count_products_py", None)
+    result3 = await client.call_function("count_products_py", None)
     print(f"📊 Total products: {result3['records']}")
     print(f"⏱️  Execution time: {result3['stats']['execution_time_ms']}ms\n")
 
@@ -173,7 +173,7 @@ async def main():
     print("🧹 Cleaning up...")
     for script_id in script_ids:
         try:
-            await client.delete_script(script_id)
+            await client.delete_function(script_id)
         except Exception:
             pass
     try:

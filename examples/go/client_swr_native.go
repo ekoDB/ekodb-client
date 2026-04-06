@@ -27,7 +27,7 @@ func exampleBasicSWR(client *ekodb.Client) (string, error) {
 	headers := map[string]string{"User-Agent": "ekoDB-Client"}
 	outputField := "user_data"
 
-	basicSWRScript := ekodb.Script{
+	basicSWRScript := ekodb.UserFunction{
 		Label:       "github_user_native",
 		Name:        "GitHub User Lookup (Native SWR)",
 		Description: strPtr("Fetches GitHub user data with automatic caching using native SWR"),
@@ -53,7 +53,7 @@ func exampleBasicSWR(client *ekodb.Client) (string, error) {
 		Tags: []string{"github", "swr", "native"},
 	}
 
-	scriptID, err := client.SaveScript(basicSWRScript)
+	scriptID, err := client.SaveFunction(basicSWRScript)
 	if err != nil {
 		return "", fmt.Errorf("failed to save script: %w", err)
 	}
@@ -62,7 +62,7 @@ func exampleBasicSWR(client *ekodb.Client) (string, error) {
 	// First call - cache miss
 	fmt.Println("\nFirst call (cache miss - will fetch from GitHub API):")
 	start1 := time.Now()
-	result1, err := client.CallScript("github_user_native", map[string]interface{}{
+	result1, err := client.CallFunction("github_user_native", map[string]interface{}{
 		"username": "torvalds",
 	})
 	if err != nil {
@@ -75,7 +75,7 @@ func exampleBasicSWR(client *ekodb.Client) (string, error) {
 	// Second call - cache hit
 	fmt.Println("\nSecond call (cache hit - instant from KV store):")
 	start2 := time.Now()
-	result2, err := client.CallScript("github_user_native", map[string]interface{}{
+	result2, err := client.CallFunction("github_user_native", map[string]interface{}{
 		"username": "torvalds",
 	})
 	if err != nil {
@@ -101,7 +101,7 @@ func exampleAuditTrail(client *ekodb.Client) (string, error) {
 	outputField := "product"
 	collection := "swr_audit_trail"
 
-	auditSWRScript := ekodb.Script{
+	auditSWRScript := ekodb.UserFunction{
 		Label:       "product_swr_audit",
 		Name:        "Product API with Audit (Native SWR)",
 		Description: strPtr("Caches product data and logs all requests automatically"),
@@ -127,14 +127,14 @@ func exampleAuditTrail(client *ekodb.Client) (string, error) {
 		Tags: []string{"products", "audit"},
 	}
 
-	auditScriptID, err := client.SaveScript(auditSWRScript)
+	auditScriptID, err := client.SaveFunction(auditSWRScript)
 	if err != nil {
 		return "", fmt.Errorf("failed to save audit script: %w", err)
 	}
 	fmt.Printf("✓ Created SWR script with audit trail: product_swr_audit (%s)\n", auditScriptID)
 
 	fmt.Println("\nFetching product (will create audit trail entry):")
-	productResult, err := client.CallScript("product_swr_audit", map[string]interface{}{
+	productResult, err := client.CallFunction("product_swr_audit", map[string]interface{}{
 		"product_id": "1",
 	})
 	if err != nil {
@@ -155,7 +155,7 @@ func examplePipelineEnrichment(client *ekodb.Client) (string, error) {
 	outputField := "user_data"
 
 	ttl24h := int64(86400) // 24 hours in seconds
-	pipelineScript := ekodb.Script{
+	pipelineScript := ekodb.UserFunction{
 		Label:       "user_enrichment_pipeline",
 		Name:        "User Data Enrichment Pipeline",
 		Description: strPtr("Fetches external API data and stores enriched results"),
@@ -192,14 +192,14 @@ func examplePipelineEnrichment(client *ekodb.Client) (string, error) {
 		Tags: []string{"enrichment", "pipeline"},
 	}
 
-	pipelineScriptID, err := client.SaveScript(pipelineScript)
+	pipelineScriptID, err := client.SaveFunction(pipelineScript)
 	if err != nil {
 		return "", fmt.Errorf("failed to save pipeline script: %w", err)
 	}
 	fmt.Printf("✓ Created enrichment pipeline: user_enrichment_pipeline (%s)\n", pipelineScriptID)
 
 	fmt.Println("\nRunning pipeline:")
-	enrichResult, err := client.CallScript("user_enrichment_pipeline", map[string]interface{}{
+	enrichResult, err := client.CallFunction("user_enrichment_pipeline", map[string]interface{}{
 		"user_id": "1",
 	})
 	if err != nil {
@@ -217,7 +217,7 @@ func exampleDynamicTTL(client *ekodb.Client) (string, error) {
 	fmt.Println(strings.Repeat("─", 80))
 	fmt.Println("TTL as parameter - supports duration strings, integers, ISO timestamps")
 
-	dynamicTTLScript := ekodb.Script{
+	dynamicTTLScript := ekodb.UserFunction{
 		Label:       "flexible_cache",
 		Name:        "Flexible Cache TTL (Native SWR)",
 		Description: strPtr("Demonstrates parameterized TTL values"),
@@ -247,7 +247,7 @@ func exampleDynamicTTL(client *ekodb.Client) (string, error) {
 		Tags: []string{"dynamic"},
 	}
 
-	dynamicScriptID, err := client.SaveScript(dynamicTTLScript)
+	dynamicScriptID, err := client.SaveFunction(dynamicTTLScript)
 	if err != nil {
 		return "", fmt.Errorf("failed to save dynamic TTL script: %w", err)
 	}
@@ -264,7 +264,7 @@ func exampleDynamicTTL(client *ekodb.Client) (string, error) {
 	}
 
 	for _, test := range ttlTests {
-		_, err := client.CallScript("flexible_cache", map[string]interface{}{
+		_, err := client.CallFunction("flexible_cache", map[string]interface{}{
 			"resource_id": "test",
 			"ttl":         test.value,
 		})
@@ -285,7 +285,7 @@ func strPtr(s string) *string {
 func cleanup(client *ekodb.Client, scriptIDs []string) {
 	fmt.Println("\n🧹 Cleaning up...")
 	for _, scriptID := range scriptIDs {
-		if err := client.DeleteScript(scriptID); err != nil {
+		if err := client.DeleteFunction(scriptID); err != nil {
 			log.Printf("⚠ Cleanup error (non-critical): %v", err)
 		}
 	}

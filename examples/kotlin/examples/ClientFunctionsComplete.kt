@@ -1,12 +1,12 @@
 /**
- * Complete Scripts Example - ekoDB Scripts
+ * Complete Functions Example - ekoDB Functions
  * Demonstrates: FindAll, Group, Count, Multi-stage Pipelines
  */
 
 package io.ekodb.client.examples
 
 import io.ekodb.client.EkoDBClient
-import io.ekodb.client.functions.Script
+import io.ekodb.client.functions.UserFunction
 import io.ekodb.client.functions.FunctionStageConfig
 import io.ekodb.client.functions.GroupFunctionConfig
 import io.ekodb.client.functions.GroupFunctionOp
@@ -24,7 +24,7 @@ fun main() = runBlocking {
         .apiKey(apiKey)
         .build()
 
-    println("🚀 ekoDB Kotlin Complete Scripts Example")
+    println("🚀 ekoDB Kotlin Complete Functions Example")
     println()
     println("📋 Demonstrates: FindAll, Group, Count, Multi-stage Pipelines")
     println()
@@ -46,14 +46,14 @@ fun main() = runBlocking {
     }
     println("✅ Created ${products.size} products\n")
 
-    val scriptIds = mutableListOf<String>()
+    val funcIds = mutableListOf<String>()
 
     try {
         // Example 1: FindAll + Group (Simple Aggregation)
         println("📝 Example 1: FindAll + Group (Simple Aggregation)")
         println()
 
-        val script1 = Script(
+        val func1 = UserFunction(
             label = "product_stats_kt",
             name = "Product Statistics",
             version = "1.0",
@@ -71,18 +71,18 @@ fun main() = runBlocking {
             tags = listOf("products", "analytics")
         )
 
-        val scriptId1 = client.saveScript(script1)
-        println("✅ Script saved: $scriptId1")
-        scriptIds.add(scriptId1)
+        val funcId1 = client.saveFunction(func1)
+        println("✅ Function saved: $funcId1")
+        funcIds.add(funcId1)
 
-        val result1 = client.callScript("product_stats_kt")
+        val result1 = client.callFunction("product_stats_kt")
         println("📊 Found ${result1.records.size} category groups\n")
 
         // Example 2: Simple Product Listing
         println("📝 Example 2: Simple Product Listing")
         println()
 
-        val script2 = Script(
+        val func2 = UserFunction(
             label = "list_all_products_kt",
             name = "List All Products",
             version = "1.0",
@@ -93,18 +93,18 @@ fun main() = runBlocking {
             tags = listOf("products", "list")
         )
 
-        val scriptId2 = client.saveScript(script2)
-        println("✅ Script saved")
-        scriptIds.add(scriptId2)
+        val funcId2 = client.saveFunction(func2)
+        println("✅ Function saved")
+        funcIds.add(funcId2)
 
-        val result2 = client.callScript("list_all_products_kt")
+        val result2 = client.callFunction("list_all_products_kt")
         println("📊 Found ${result2.records.size} products\n")
 
         // Example 3: Count by Category
         println("📝 Example 3: Count by Category")
         println()
 
-        val script3 = Script(
+        val func3 = UserFunction(
             label = "count_by_category_kt",
             name = "Count Products by Category",
             version = "1.0",
@@ -121,18 +121,18 @@ fun main() = runBlocking {
             tags = listOf("products", "analytics")
         )
 
-        val scriptId3 = client.saveScript(script3)
-        println("✅ Script saved")
-        scriptIds.add(scriptId3)
+        val funcId3 = client.saveFunction(func3)
+        println("✅ Function saved")
+        funcIds.add(funcId3)
 
-        val result3 = client.callScript("count_by_category_kt")
+        val result3 = client.callFunction("count_by_category_kt")
         println("📊 Found ${result3.records.size} categories\n")
 
         // Example 4: Multi-Stage Pipeline
         println("📝 Example 4: Multi-Stage Pipeline (FindAll → Group → Count)")
         println()
 
-        val script4 = Script(
+        val func4 = UserFunction(
             label = "product_summary_kt",
             name = "Product Summary Report",
             version = "1.0",
@@ -151,18 +151,18 @@ fun main() = runBlocking {
             tags = listOf("products", "analytics")
         )
 
-        val scriptId4 = client.saveScript(script4)
-        println("✅ Script saved")
-        scriptIds.add(scriptId4)
+        val funcId4 = client.saveFunction(func4)
+        println("✅ Function saved")
+        funcIds.add(funcId4)
 
-        val result4 = client.callScript("product_summary_kt")
+        val result4 = client.callFunction("product_summary_kt")
         println("📊 Pipeline executed with ${result4.records.size} results\n")
 
         // Cleanup
         println("🧹 Cleaning up...")
-        for (scriptId in scriptIds) {
+        for (funcId in funcIds) {
             try {
-                client.deleteScript(scriptId)
+                client.deleteFunction(funcId)
             } catch (e: Exception) {
                 // Ignore cleanup errors
             }
@@ -175,13 +175,13 @@ fun main() = runBlocking {
         println("✅ Cleanup complete")
 
         println()
-        println("✅ All complete script examples finished!")
+        println("✅ All complete function examples finished!")
         println()
-        println("💡 This example demonstrates ekoDB's Script system:")
+        println("💡 This example demonstrates ekoDB's function system:")
         println("   ✅ FindAll operations")
         println("   ✅ Group aggregations (Count, Average)")
         println("   ✅ Multi-stage pipelines (FindAll → Group → Count)")
-        println("   ✅ Script management (save, call, delete)")
+        println("   ✅ Function management (save, call, delete)")
 
     } catch (e: Exception) {
         println("❌ Error: ${e.message}")

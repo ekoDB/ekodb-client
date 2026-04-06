@@ -60,7 +60,7 @@ async def basic_composition_example(client):
         ],
     }
 
-    await client.save_script(fetch_user)
+    await client.save_function(fetch_user)
     print("✅ Saved reusable function: fetch_user")
 
     # Step 2: Create wrapper that CALLS fetch_user
@@ -78,13 +78,13 @@ async def basic_composition_example(client):
         ],
     }
 
-    await client.save_script(get_user_wrapper)
+    await client.save_function(get_user_wrapper)
     print(
         "✅ Saved composed function: get_user_wrapper (calls fetch_user + projects fields)\n"
     )
 
     # Step 3: Call the composed function
-    result = await client.call_script("get_user_wrapper", {"user_code": "user_1"})
+    result = await client.call_function("get_user_wrapper", {"user_code": "user_1"})
 
     print("📊 Result from composed function:")
     print(f"   Records: {len(result['records'])}")
@@ -126,7 +126,7 @@ async def swr_composition_example(client):
         ],
     }
 
-    await client.save_script(fetch_and_store)
+    await client.save_function(fetch_and_store)
     print("✅ Saved reusable function: fetch_and_store_user (uses KV)")
 
     # Step 2: Create SWR function that CALLS the reusable function
@@ -174,13 +174,13 @@ async def swr_composition_example(client):
         ],
     }
 
-    await client.save_script(swr_user)
+    await client.save_function(swr_user)
     print("✅ Saved SWR function using composition: swr_user\n")
 
     # Step 3: Test cache miss
     print("First call (cache miss - will fetch from API):")
     start = time.time()
-    result1 = await client.call_script("swr_user", {"user_id": "1"})
+    result1 = await client.call_function("swr_user", {"user_id": "1"})
     duration1 = time.time() - start
 
     print(f"   ⏱️  Duration: {duration1*1000:.1f}ms")
@@ -193,7 +193,7 @@ async def swr_composition_example(client):
     # Step 4: Test cache hit
     print("Second call (cache hit - from cache):")
     start = time.time()
-    result2 = await client.call_script("swr_user", {"user_id": "1"})
+    result2 = await client.call_function("swr_user", {"user_id": "1"})
     duration2 = time.time() - start
 
     print(f"   ⏱️  Duration: {duration2*1000:.1f}ms")
@@ -225,7 +225,7 @@ async def nested_composition_example(client):
         ],
     }
 
-    await client.save_script(validate_user)
+    await client.save_function(validate_user)
     print("✅ Level 1 function: validate_user")
 
     # Level 2: Calls validate_user + projects
@@ -243,7 +243,7 @@ async def nested_composition_example(client):
         ],
     }
 
-    await client.save_script(fetch_slim)
+    await client.save_function(fetch_slim)
     print("✅ Level 2 function: fetch_slim_user (calls validate_user)")
 
     # Level 3: Calls fetch_slim (demonstrates 3-level nesting)
@@ -260,11 +260,11 @@ async def nested_composition_example(client):
         ],
     }
 
-    await client.save_script(get_verified_user)
+    await client.save_function(get_verified_user)
     print("✅ Level 3 function: get_verified_user (calls fetch_slim_user)\n")
 
     # Execute 3-level nested composition
-    result = await client.call_script("get_verified_user", {"user_code": "user_1"})
+    result = await client.call_function("get_verified_user", {"user_code": "user_1"})
 
     print("📊 Result from 3-level nested composition:")
     print(f"   Records: {len(result['records'])}")

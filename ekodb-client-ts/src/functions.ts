@@ -1,8 +1,10 @@
 /**
- * Scripts API for ekoDB TypeScript client
+ * Functions API for ekoDB TypeScript client
  */
 
-export interface Script {
+/** A reusable sequence of Functions stored in ekoDB. */
+export interface UserFunction {
+  id?: string;
   label: string;
   name: string;
   description?: string;
@@ -146,7 +148,7 @@ export type FunctionStageConfig =
     }
   | {
       type: "If";
-      condition: ScriptCondition;
+      condition: FunctionCondition;
       then_functions: FunctionStageConfig[];
       else_functions?: FunctionStageConfig[];
     }
@@ -265,18 +267,18 @@ export interface SortFieldConfig {
   ascending: boolean;
 }
 
-// ScriptCondition uses adjacently-tagged format: { type: "...", value: { ...data } }
+// FunctionCondition uses adjacently-tagged format: { type: "...", value: { ...data } }
 // Unit variants (HasRecords) have no value field
-export type ScriptCondition =
+export type FunctionCondition =
   | { type: "FieldEquals"; value: { field: string; value: any } }
   | { type: "FieldExists"; value: { field: string } }
   | { type: "HasRecords" }
   | { type: "CountEquals"; value: { count: number } }
   | { type: "CountGreaterThan"; value: { count: number } }
   | { type: "CountLessThan"; value: { count: number } }
-  | { type: "And"; value: { conditions: ScriptCondition[] } }
-  | { type: "Or"; value: { conditions: ScriptCondition[] } }
-  | { type: "Not"; value: { condition: ScriptCondition } };
+  | { type: "And"; value: { conditions: FunctionCondition[] } }
+  | { type: "Or"; value: { conditions: FunctionCondition[] } }
+  | { type: "Not"; value: { condition: FunctionCondition } };
 
 export interface FunctionResult {
   records: Record<string, any>[];
@@ -541,7 +543,7 @@ export const Stage = {
   }),
 
   if: (
-    condition: ScriptCondition,
+    condition: FunctionCondition,
     thenFunctions: FunctionStageConfig[],
     elseFunctions?: FunctionStageConfig[],
   ): FunctionStageConfig => ({

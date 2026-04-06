@@ -1339,30 +1339,30 @@ class EkoDBClientTest {
     }
 
     // ========================================================================
-    // Scripts Tests
+    // Functions Tests
     // ========================================================================
 
     @Test
-    fun `saveScript returns script ID`() = runBlocking {
+    fun `saveFunction returns script ID`() = runBlocking {
         val mockEngine = createMockEngine("""{"id": "script_1"}""")
         val client = createTestClient(mockEngine)
-        val script = io.ekodb.client.functions.Script(
+        val script = io.ekodb.client.functions.UserFunction(
             label = "test_script",
-            name = "Test Script",
+            name = "Test Function",
             description = "A test script",
             functions = listOf(
                 io.ekodb.client.functions.FunctionStageConfig.FindAll(collection = "test_col")
             )
         )
-        val result = client.saveScript(script)
+        val result = client.saveFunction(script)
         assertEquals("script_1", result)
     }
 
     @Test
-    fun `getScript returns script by ID`() = runBlocking {
+    fun `getFunction returns script by ID`() = runBlocking {
         val mockEngine = createMockEngine("""{
             "label": "test_script",
-            "name": "Test Script",
+            "name": "Test Function",
             "version": "1.0",
             "parameters": {},
             "functions": [{"type": "FindAll", "collection": "test_col"}],
@@ -1370,49 +1370,49 @@ class EkoDBClientTest {
             "id": "script_1"
         }""")
         val client = createTestClient(mockEngine)
-        val result = client.getScript("script_1")
+        val result = client.getFunction("script_1")
         assertEquals("test_script", result.label)
-        assertEquals("Test Script", result.name)
+        assertEquals("Test Function", result.name)
     }
 
     @Test
-    fun `listScripts returns scripts list`() = runBlocking {
+    fun `listFunctions returns scripts list`() = runBlocking {
         val mockEngine = createMockEngine("""[
-            {"label": "s1", "name": "Script 1", "version": "1.0", "parameters": {}, "functions": [{"type": "FindAll", "collection": "c1"}], "tags": []},
-            {"label": "s2", "name": "Script 2", "version": "1.0", "parameters": {}, "functions": [{"type": "FindAll", "collection": "c2"}], "tags": ["etl"]}
+            {"label": "s1", "name": "Function 1", "version": "1.0", "parameters": {}, "functions": [{"type": "FindAll", "collection": "c1"}], "tags": []},
+            {"label": "s2", "name": "Function 2", "version": "1.0", "parameters": {}, "functions": [{"type": "FindAll", "collection": "c2"}], "tags": ["etl"]}
         ]""")
         val client = createTestClient(mockEngine)
-        val result = client.listScripts()
+        val result = client.listFunctions()
         assertEquals(2, result.size)
         assertEquals("s1", result[0].label)
         assertEquals("s2", result[1].label)
     }
 
     @Test
-    fun `updateScript does not throw on success`() = runBlocking {
+    fun `updateFunction does not throw on success`() = runBlocking {
         val mockEngine = createMockEngine("""{"status": "updated"}""")
         val client = createTestClient(mockEngine)
-        val script = io.ekodb.client.functions.Script(
+        val script = io.ekodb.client.functions.UserFunction(
             label = "test_script",
-            name = "Updated Script",
+            name = "Updated Function",
             functions = listOf(
                 io.ekodb.client.functions.FunctionStageConfig.FindAll(collection = "updated_col")
             )
         )
         // Should not throw
-        client.updateScript("script_1", script)
+        client.updateFunction("script_1", script)
     }
 
     @Test
-    fun `deleteScript does not throw on success`() = runBlocking {
+    fun `deleteFunction does not throw on success`() = runBlocking {
         val mockEngine = createMockEngine("""{"status": "deleted"}""")
         val client = createTestClient(mockEngine)
         // Should not throw
-        client.deleteScript("script_1")
+        client.deleteFunction("script_1")
     }
 
     @Test
-    fun `callScript returns function result`() = runBlocking {
+    fun `callFunction returns function result`() = runBlocking {
         val mockEngine = createMockEngine("""{
             "records": [{"id": "rec_1", "name": "Alice"}],
             "stats": {
@@ -1424,7 +1424,7 @@ class EkoDBClientTest {
             }
         }""")
         val client = createTestClient(mockEngine)
-        val result = client.callScript("test_script", mapOf("limit" to JsonPrimitive(10)))
+        val result = client.callFunction("test_script", mapOf("limit" to JsonPrimitive(10)))
         assertEquals(1, result.records.size)
         assertEquals(1, result.stats.stages_executed)
         assertEquals(42L, result.stats.execution_time_ms)

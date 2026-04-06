@@ -5,7 +5,7 @@
  * encapsulates the entire cache-aside pattern in a single operation.
  */
 
-import { EkoDBClient, Stage, Script } from "@ekodb/ekodb-client";
+import { EkoDBClient, Stage, UserFunction } from "@ekodb/ekodb-client";
 import * as dotenv from "dotenv";
 
 dotenv.config();
@@ -21,7 +21,7 @@ async function exampleBasicSWR(client: EkoDBClient): Promise<string> {
   );
 
   // Create script with native SWR function
-  const basicSWRScript: Script = {
+  const basicSWRScript: UserFunction = {
     label: "github_user_native",
     name: "GitHub User Lookup (Native SWR)",
     description:
@@ -48,13 +48,13 @@ async function exampleBasicSWR(client: EkoDBClient): Promise<string> {
     tags: ["github", "swr", "native"],
   };
 
-  const scriptId = await client.saveScript(basicSWRScript);
+  const scriptId = await client.saveFunction(basicSWRScript);
   console.log(`✓ Created native SWR script: github_user_native (${scriptId})`);
 
   // First call - cache miss
   console.log("\nFirst call (cache miss - will fetch from GitHub API):");
   const start1 = Date.now();
-  const result1 = await client.callScript("github_user_native", {
+  const result1 = await client.callFunction("github_user_native", {
     username: "torvalds",
   });
   const duration1 = Date.now() - start1;
@@ -64,7 +64,7 @@ async function exampleBasicSWR(client: EkoDBClient): Promise<string> {
   // Second call - cache hit
   console.log("\nSecond call (cache hit - instant from KV store):");
   const start2 = Date.now();
-  const result2 = await client.callScript("github_user_native", {
+  const result2 = await client.callFunction("github_user_native", {
     username: "torvalds",
   });
   const duration2 = Date.now() - start2;
@@ -82,7 +82,7 @@ async function exampleAuditTrail(client: EkoDBClient): Promise<string> {
   console.log("Optional collection parameter for automatic request logging");
 
   // Create script with audit trail
-  const auditSWRScript: Script = {
+  const auditSWRScript: UserFunction = {
     label: "product_swr_audit",
     name: "Product API with Audit (Native SWR)",
     description: "Caches product data and logs all requests automatically",
@@ -109,13 +109,13 @@ async function exampleAuditTrail(client: EkoDBClient): Promise<string> {
     tags: ["products", "audit"],
   };
 
-  const auditScriptId = await client.saveScript(auditSWRScript);
+  const auditScriptId = await client.saveFunction(auditSWRScript);
   console.log(
     `✓ Created SWR script with audit trail: product_swr_audit (${auditScriptId})`,
   );
 
   console.log("\nFetching product (will create audit trail entry):");
-  const productResult = await client.callScript("product_swr_audit", {
+  const productResult = await client.callFunction("product_swr_audit", {
     product_id: "1",
   });
   console.log("  ✓ Product fetched and cached");
@@ -131,7 +131,7 @@ async function examplePipelineEnrichment(client: EkoDBClient): Promise<string> {
   console.log("Fetch external data → Process → Store in collection");
 
   // Create enrichment pipeline
-  const pipelineScript: Script = {
+  const pipelineScript: UserFunction = {
     label: "user_enrichment_pipeline",
     name: "User Data Enrichment Pipeline",
     description: "Fetches external API data and stores enriched results",
@@ -168,13 +168,13 @@ async function examplePipelineEnrichment(client: EkoDBClient): Promise<string> {
     tags: ["enrichment", "pipeline"],
   };
 
-  const pipelineScriptId = await client.saveScript(pipelineScript);
+  const pipelineScriptId = await client.saveFunction(pipelineScript);
   console.log(
     `✓ Created enrichment pipeline: user_enrichment_pipeline (${pipelineScriptId})`,
   );
 
   console.log("\nRunning pipeline:");
-  const enrichResult = await client.callScript("user_enrichment_pipeline", {
+  const enrichResult = await client.callFunction("user_enrichment_pipeline", {
     user_id: "1",
   });
   console.log("  ✓ Data fetched from API (cached 30m)");
@@ -194,7 +194,7 @@ async function exampleDynamicTTL(client: EkoDBClient): Promise<string> {
   );
 
   // Create script with dynamic TTL
-  const dynamicTTLScript: Script = {
+  const dynamicTTLScript: UserFunction = {
     label: "flexible_cache",
     name: "Flexible Cache TTL (Native SWR)",
     description: "Demonstrates parameterized TTL values",
@@ -221,7 +221,7 @@ async function exampleDynamicTTL(client: EkoDBClient): Promise<string> {
     tags: ["dynamic"],
   };
 
-  const dynamicScriptId = await client.saveScript(dynamicTTLScript);
+  const dynamicScriptId = await client.saveFunction(dynamicTTLScript);
   console.log(
     `✓ Created dynamic TTL script: flexible_cache (${dynamicScriptId})`,
   );
@@ -234,7 +234,7 @@ async function exampleDynamicTTL(client: EkoDBClient): Promise<string> {
   ];
 
   for (const test of ttlTests) {
-    await client.callScript("flexible_cache", {
+    await client.callFunction("flexible_cache", {
       resource_id: "test",
       ttl: test.value,
     });
@@ -251,7 +251,7 @@ async function cleanup(
   console.log("\n🧹 Cleaning up...");
   try {
     for (const scriptId of scriptIds) {
-      await client.deleteScript(scriptId);
+      await client.deleteFunction(scriptId);
     }
     console.log(`✓ Deleted ${scriptIds.length} test scripts`);
   } catch (error) {

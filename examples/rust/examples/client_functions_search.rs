@@ -1,10 +1,10 @@
-//! Search Scripts Example - Basic Search Operations
+//! Search Functions Example - Basic Search Operations
 //!
 //! Demonstrates simple search and query operations using scripts
 
 use ekodb_client::{
     extract_record, get_string_value, Client, FieldType, Function, GroupFunctionConfig,
-    GroupFunctionOp, Record, Script,
+    GroupFunctionOp, Record, UserFunction,
 };
 use serde_json::json;
 
@@ -22,7 +22,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .api_key(&api_key)
         .build()?;
 
-    println!("🚀 ekoDB Rust Search Scripts Example\n");
+    println!("🚀 ekoDB Rust Search Functions Example\n");
 
     // Setup test data
     println!("📋 Setting up test data...");
@@ -68,18 +68,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Example 1: List All Documents
     println!("📝 Example 1: List All Documents\n");
-    let script1 = Script::new("list_all_docs_rs", "List All Documents")
+    let script1 = UserFunction::new("list_all_docs_rs", "List All Documents")
         .with_version("1.0")
         .with_function(Function::FindAll {
             collection: "search_docs_rs".to_string(),
         })
         .with_tag("search")
         .with_tag("list");
-    let script_id1 = client.save_script(script1).await?;
+    let script_id1 = client.save_function(script1).await?;
     script_ids.push(script_id1);
-    println!("✅ Script saved");
+    println!("✅ Function saved");
 
-    let result1 = client.call_script("list_all_docs_rs", None).await?;
+    let result1 = client.call_function("list_all_docs_rs", None).await?;
     println!("📊 Found {} documents", result1.records.len());
     for (i, record) in result1.records.iter().enumerate() {
         // Convert Record to JSON and extract values
@@ -98,7 +98,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Example 2: Count Documents by Category
     println!("📝 Example 2: Count Documents by Category\n");
-    let script2 = Script::new("docs_by_category_rs", "Documents by Category")
+    let script2 = UserFunction::new("docs_by_category_rs", "Documents by Category")
         .with_version("1.0")
         .with_function(Function::FindAll {
             collection: "search_docs_rs".to_string(),
@@ -109,11 +109,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         })
         .with_tag("search")
         .with_tag("analytics");
-    let script_id2 = client.save_script(script2).await?;
+    let script_id2 = client.save_function(script2).await?;
     script_ids.push(script_id2);
-    println!("✅ Script saved");
+    println!("✅ Function saved");
 
-    let result2 = client.call_script("docs_by_category_rs", None).await?;
+    let result2 = client.call_function("docs_by_category_rs", None).await?;
     println!("📊 Documents by category:");
     for record in &result2.records {
         println!("   {:?}", record);
@@ -126,7 +126,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Cleanup
     println!("🧹 Cleaning up...");
     for script_id in script_ids {
-        let _ = client.delete_script(&script_id).await;
+        let _ = client.delete_function(&script_id).await;
     }
     let _ = client.delete_collection("search_docs_rs").await;
     println!("✅ Cleanup complete\n");

@@ -1,5 +1,5 @@
 /*
-Complete CRUD Scripts Example using Direct HTTP Requests
+Complete CRUD Functions Example using Direct HTTP Requests
 
 Demonstrates:
   • Insert + Verify (using Query)
@@ -7,7 +7,7 @@ Demonstrates:
   • Query + Update Credits + Verify
   • Query Before Delete + Delete + Verify Gone
 
-Each Script shows Functions chaining with proper verification using parameterized {{param}} syntax
+Each function shows Functions chaining with proper verification using parameterized {{param}} syntax
 */
 
 use serde_json::{json, Value};
@@ -84,7 +84,7 @@ async fn request(
 
 async fn script_1_insert_and_verify() -> Result<(String, String), Box<dyn std::error::Error>> {
     println!("\n{}", "=".repeat(60));
-    println!("📝 Script 1: Insert + Verify");
+    println!("📝 function 1: Insert + Verify");
     println!("{}", "=".repeat(60));
 
     let script = json!({
@@ -131,12 +131,12 @@ async fn script_1_insert_and_verify() -> Result<(String, String), Box<dyn std::e
         "tags": ["crud", "insert", "verification"]
     });
 
-    println!("\n1️⃣ Saving Script...");
+    println!("\n1️⃣ Saving Function...");
     let save_result = request("POST", "/api/functions", Some(script)).await?;
     let script_id = save_result["id"].as_str().unwrap().to_string();
-    println!("   ✅ Script saved: {}", script_id);
+    println!("   ✅ Function saved: {}", script_id);
 
-    println!("\n2️⃣ Calling Script (Insert + Verify)...");
+    println!("\n2️⃣ Calling function (Insert + Verify)...");
     let params = json!({
         "user_name": "Alice Smith",
         "user_email": "alice@example.com"
@@ -145,7 +145,7 @@ async fn script_1_insert_and_verify() -> Result<(String, String), Box<dyn std::e
 
     let stats = &call_result["stats"];
     println!(
-        "   ✅ Script executed: {} Functions",
+        "   ✅ function executed: {} Functions",
         stats["stages_executed"]
     );
     println!("   ⏱️  Execution time: {}ms", stats["execution_time_ms"]);
@@ -175,7 +175,7 @@ async fn script_1_insert_and_verify() -> Result<(String, String), Box<dyn std::e
 
 async fn script_2_query_update_verify() -> Result<String, Box<dyn std::error::Error>> {
     println!("\n{}", "=".repeat(60));
-    println!("📝 Script 2: Query + Update + Verify");
+    println!("📝 function 2: Query + Update + Verify");
     println!("{}", "=".repeat(60));
 
     let script = json!({
@@ -240,12 +240,12 @@ async fn script_2_query_update_verify() -> Result<String, Box<dyn std::error::Er
         "tags": ["crud", "update", "verification"]
     });
 
-    println!("\n1️⃣ Saving Script...");
+    println!("\n1️⃣ Saving Function...");
     let save_result = request("POST", "/api/functions", Some(script)).await?;
     let script_id = save_result["id"].as_str().unwrap().to_string();
-    println!("   ✅ Script saved: {}", script_id);
+    println!("   ✅ Function saved: {}", script_id);
 
-    println!("\n2️⃣ Calling Script (Query + Update + Verify)...");
+    println!("\n2️⃣ Calling function (Query + Update + Verify)...");
     let params = json!({
         "user_email": "alice@example.com",
         "new_status": "active"
@@ -254,7 +254,7 @@ async fn script_2_query_update_verify() -> Result<String, Box<dyn std::error::Er
 
     let stats = &call_result["stats"];
     println!(
-        "   ✅ Script executed: {} Functions",
+        "   ✅ function executed: {} Functions",
         stats["stages_executed"]
     );
     println!("   ⏱️  Execution time: {}ms", stats["execution_time_ms"]);
@@ -272,7 +272,7 @@ async fn script_2_query_update_verify() -> Result<String, Box<dyn std::error::Er
 
 async fn script_3_query_update_credits() -> Result<String, Box<dyn std::error::Error>> {
     println!("\n{}", "=".repeat(60));
-    println!("📝 Script 3: Query + Update Credits + Verify");
+    println!("📝 function 3: Query + Update Credits + Verify");
     println!("{}", "=".repeat(60));
 
     let script = json!({
@@ -337,12 +337,12 @@ async fn script_3_query_update_credits() -> Result<String, Box<dyn std::error::E
         "tags": ["crud", "update", "verification"]
     });
 
-    println!("\n1️⃣ Saving Script...");
+    println!("\n1️⃣ Saving Function...");
     let save_result = request("POST", "/api/functions", Some(script)).await?;
     let script_id = save_result["id"].as_str().unwrap().to_string();
-    println!("   ✅ Script saved: {}", script_id);
+    println!("   ✅ Function saved: {}", script_id);
 
-    println!("\n2️⃣ Calling Script (Query + Update Credits + Verify)...");
+    println!("\n2️⃣ Calling function (Query + Update Credits + Verify)...");
     let params = json!({
         "user_email": "alice@example.com",
         "credits": 100
@@ -351,7 +351,7 @@ async fn script_3_query_update_credits() -> Result<String, Box<dyn std::error::E
 
     let stats = &call_result["stats"];
     println!(
-        "   ✅ Script executed: {} Functions",
+        "   ✅ function executed: {} Functions",
         stats["stages_executed"]
     );
     println!("   ⏱️  Execution time: {}ms", stats["execution_time_ms"]);
@@ -370,7 +370,7 @@ async fn script_3_query_update_credits() -> Result<String, Box<dyn std::error::E
 
 async fn script_4_delete_and_verify() -> Result<String, Box<dyn std::error::Error>> {
     println!("\n{}", "=".repeat(60));
-    println!("📝 Script 4: Query Before Delete + Delete + Verify");
+    println!("📝 function 4: Query Before Delete + Delete + Verify");
     println!("{}", "=".repeat(60));
 
     let script = json!({
@@ -426,12 +426,12 @@ async fn script_4_delete_and_verify() -> Result<String, Box<dyn std::error::Erro
         "tags": ["crud", "delete", "verification"]
     });
 
-    println!("\n1️⃣ Saving Script...");
+    println!("\n1️⃣ Saving Function...");
     let save_result = request("POST", "/api/functions", Some(script)).await?;
     let script_id = save_result["id"].as_str().unwrap().to_string();
-    println!("   ✅ Script saved: {}", script_id);
+    println!("   ✅ Function saved: {}", script_id);
 
-    println!("\n2️⃣ Calling Script (Query + Delete + Verify)...");
+    println!("\n2️⃣ Calling function (Query + Delete + Verify)...");
     let params = json!({
         "user_email": "alice@example.com"
     });
@@ -439,7 +439,7 @@ async fn script_4_delete_and_verify() -> Result<String, Box<dyn std::error::Erro
 
     let stats = &call_result["stats"];
     println!(
-        "   ✅ Script executed: {} Functions",
+        "   ✅ function executed: {} Functions",
         stats["stages_executed"]
     );
     println!("   ⏱️  Execution time: {}ms", stats["execution_time_ms"]);
@@ -487,7 +487,7 @@ async fn cleanup(script_ids: Vec<String>) {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv::dotenv().ok();
 
-    println!("🚀 ekoDB Complete CRUD Scripts Example");
+    println!("🚀 ekoDB Complete CRUD Functions Example");
     println!("{}", "=".repeat(60));
     println!("Demonstrates:");
     println!("  • Insert + Verify (using Query)");
@@ -495,10 +495,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("  • Query + Update Credits + Verify");
     println!("  • Query Before Delete + Delete + Verify Gone");
     println!();
-    println!("Each Script shows Functions chaining with proper verification");
+    println!("Each function shows Functions chaining with proper verification");
     println!("{}", "=".repeat(60));
 
-    // Run all CRUD Scripts in sequence
+    // Run all CRUD Functions in sequence
     let (_user_id, script1_id) = script_1_insert_and_verify().await?;
     let mut script_ids = vec![script1_id];
 
@@ -515,14 +515,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     cleanup(script_ids).await;
 
     println!("\n{}", "=".repeat(60));
-    println!("✅ Complete CRUD Scripts Example Finished!");
+    println!("✅ Complete CRUD Functions Example Finished!");
     println!("{}", "=".repeat(60));
     println!("\n💡 Key Takeaways:");
-    println!("   ✅ Scripts chain Functions together");
-    println!("   ✅ Each Script demonstrates operation + verification");
-    println!("   ✅ Parameters make Scripts reusable");
-    println!("   ✅ Verification is built into the Script itself");
-    println!("   ✅ Complete CRUD lifecycle in 4 focused Scripts");
+    println!("   ✅ Functions chain Functions together");
+    println!("   ✅ Each function demonstrates operation + verification");
+    println!("   ✅ Parameters make functions reusable");
+    println!("   ✅ Verification is built into the function itself");
+    println!("   ✅ Complete CRUD lifecycle in 4 focused functions");
 
     Ok(())
 }

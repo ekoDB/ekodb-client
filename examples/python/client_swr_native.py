@@ -48,13 +48,13 @@ async def example_basic_swr(client: Client):
         "tags": ["github", "swr", "native"],
     }
 
-    script_id = await client.save_script(basic_swr_script)
+    script_id = await client.save_function(basic_swr_script)
     print(f"✓ Created native SWR script: github_user_native ({script_id})")
 
     # First call - cache miss
     print("\nFirst call (cache miss - will fetch from GitHub API):")
     start1 = time.time()
-    result1 = await client.call_script("github_user_native", {"username": "torvalds"})
+    result1 = await client.call_function("github_user_native", {"username": "torvalds"})
     duration1 = (time.time() - start1) * 1000
     print(f"  Response time: {duration1:.0f}ms")
     print(f"  Records returned: {len(result1.get('records', []))}")
@@ -62,7 +62,7 @@ async def example_basic_swr(client: Client):
     # Second call - cache hit
     print("\nSecond call (cache hit - instant from KV store):")
     start2 = time.time()
-    result2 = await client.call_script("github_user_native", {"username": "torvalds"})
+    result2 = await client.call_function("github_user_native", {"username": "torvalds"})
     duration2 = (time.time() - start2) * 1000
     speedup = duration1 / duration2 if duration2 > 0 else 0
     print(f"  Response time: {duration2:.0f}ms")
@@ -103,13 +103,15 @@ async def example_audit_trail(client: Client):
         "tags": ["products", "audit"],
     }
 
-    audit_script_id = await client.save_script(audit_swr_script)
+    audit_script_id = await client.save_function(audit_swr_script)
     print(
         f"✓ Created SWR script with audit trail: product_swr_audit ({audit_script_id})"
     )
 
     print("\nFetching product (will create audit trail entry):")
-    product_result = await client.call_script("product_swr_audit", {"product_id": "1"})
+    product_result = await client.call_function(
+        "product_swr_audit", {"product_id": "1"}
+    )
     print("  ✓ Product fetched and cached")
     print("  ✓ Audit record created in 'swr_audit_trail' collection")
     print(f"  Records: {len(product_result.get('records', []))}\n")
@@ -157,13 +159,13 @@ async def example_pipeline_enrichment(client: Client):
         "tags": ["enrichment", "pipeline"],
     }
 
-    pipeline_script_id = await client.save_script(pipeline_script)
+    pipeline_script_id = await client.save_function(pipeline_script)
     print(
         f"✓ Created enrichment pipeline: user_enrichment_pipeline ({pipeline_script_id})"
     )
 
     print("\nRunning pipeline:")
-    enrich_result = await client.call_script(
+    enrich_result = await client.call_function(
         "user_enrichment_pipeline", {"user_id": "1"}
     )
     print("  ✓ Data fetched from API (cached 30m)")
@@ -207,14 +209,14 @@ async def example_dynamic_ttl(client: Client):
         "tags": ["dynamic"],
     }
 
-    dynamic_script_id = await client.save_script(dynamic_ttl_script)
+    dynamic_script_id = await client.save_function(dynamic_ttl_script)
     print(f"✓ Created dynamic TTL script: flexible_cache ({dynamic_script_id})")
 
     # Test with different TTLs
     ttl_tests = [("5m", "5 minutes"), ("1h", "1 hour"), ("30s", "30 seconds")]
 
     for ttl_value, description in ttl_tests:
-        await client.call_script(
+        await client.call_function(
             "flexible_cache", {"resource_id": "test", "ttl": ttl_value}
         )
         print(f"  ✓ Cached with TTL: {ttl_value} ({description})")
@@ -227,7 +229,7 @@ async def cleanup(client: Client, script_ids: list):
     print("\n🧹 Cleaning up...")
     try:
         for script_id in script_ids:
-            await client.delete_script(script_id)
+            await client.delete_function(script_id)
         print(f"✓ Deleted {len(script_ids)} test scripts")
     except Exception as e:
         print(f"⚠ Cleanup error (non-critical): {e}")

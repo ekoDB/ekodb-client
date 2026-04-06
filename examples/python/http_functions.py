@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Scripts Example using Direct HTTP Requests
+Functions Example using Direct HTTP Requests
 
 Demonstrates using scripts with raw HTTP/requests API
 No client library required
@@ -92,7 +92,7 @@ async def simple_query_function(session, token):
 
     # Save script
     save_result = await request(session, "POST", "/api/functions", function1, token)
-    print(f"✅ Script saved: {save_result['id']}")
+    print(f"✅ Function saved: {save_result['id']}")
 
     # Call script (can use label)
     call_result = await request(
@@ -144,7 +144,7 @@ async def parameterized_pagination_function(session, token):
     }
 
     save_result = await request(session, "POST", "/api/functions", function2, token)
-    print(f"✅ Script saved: {save_result['id']}")
+    print(f"✅ Function saved: {save_result['id']}")
 
     # Call with page 1 (first 3 users)
     call_result = await request(
@@ -211,7 +211,7 @@ async def aggregation_function(session, token):
     }
 
     save_result = await request(session, "POST", "/api/functions", function3, token)
-    print(f"✅ Script saved: {save_result['id']}")
+    print(f"✅ Function saved: {save_result['id']}")
 
     call_result = await request(session, "POST", "/api/functions/user_stats", {}, token)
     print(
@@ -251,11 +251,11 @@ async def function_management(session, token, get_active_users_id, user_stats_id
     await request(
         session, "PUT", f"/api/functions/{get_active_users_id}", updated, token
     )
-    print("✏️  Script updated")
+    print("✏️  function updated")
 
     # Delete script (requires encrypted ID)
     await request(session, "DELETE", f"/api/functions/{user_stats_id}", None, token)
-    print("🗑️  Script deleted\n")
+    print("🗑️  function deleted\n")
 
     print("ℹ️  Note: GET/UPDATE/DELETE operations require the encrypted ID")
     print("ℹ️  Only CALL can use either ID or label\n")
@@ -263,7 +263,7 @@ async def function_management(session, token, get_active_users_id, user_stats_id
 
 async def main():
     """Main function"""
-    print("🚀 ekoDB Scripts Example (Python/HTTP)\n")
+    print("🚀 ekoDB Functions Example (Python/HTTP)\n")
 
     try:
         async with aiohttp.ClientSession() as session:

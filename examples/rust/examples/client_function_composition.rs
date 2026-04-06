@@ -3,8 +3,8 @@
 ///! Demonstrates calling Functions within Functions using CallFunction
 ///! Shows how to build reusable logic blocks and compose complex workflows
 use ekodb_client::{
-    extract_record, get_string_value, Client, FieldType, Function, ParameterDefinition, Record,
-    Script, ScriptCondition,
+    extract_record, get_string_value, Client, FieldType, Function, FunctionCondition,
+    ParameterDefinition, Record, UserFunction,
 };
 use std::{collections::HashMap, env};
 
@@ -69,7 +69,7 @@ async fn basic_composition_example(client: &Client) -> Result<(), Box<dyn std::e
 
     // Step 1: Create a reusable "fetch_user" function
     // This is a simple, reusable building block
-    let fetch_user = Script::new("fetch_user", "Fetch user by code")
+    let fetch_user = UserFunction::new("fetch_user", "Fetch user by code")
         .with_parameter(ParameterDefinition::new("user_code").required())
         .with_function(Function::FindOne {
             collection: "users".to_string(),
@@ -77,12 +77,12 @@ async fn basic_composition_example(client: &Client) -> Result<(), Box<dyn std::e
             value: serde_json::json!("{{user_code}}"),
         });
 
-    client.save_script(fetch_user).await?;
+    client.save_function(fetch_user).await?;
     println!("✅ Saved reusable function: fetch_user");
 
     // Step 2: Create a wrapper function that CALLS the base function
     // This demonstrates composability - reusing logic instead of duplicating it
-    let get_user_wrapper = Script::new("get_user_wrapper", "Wrapper that calls fetch_user")
+    let get_user_wrapper = UserFunction::new("get_user_wrapper", "Wrapper that calls fetch_user")
         .with_parameter(ParameterDefinition::new("user_code").required())
         .with_function(Function::CallFunction {
             function_label: "fetch_user".to_string(),
@@ -93,7 +93,7 @@ async fn basic_composition_example(client: &Client) -> Result<(), Box<dyn std::e
             exclude: false,
         });
 
-    client.save_script(get_user_wrapper).await?;
+    client.save_function(get_user_wrapper).await?;
     println!("✅ Saved composed function: get_user_wrapper (calls fetch_user + projects fields)\n");
 
     // Step 3: Call the composed function
@@ -102,7 +102,9 @@ async fn basic_composition_example(client: &Client) -> Result<(), Box<dyn std::e
         "user_code".to_string(),
         FieldType::String("user_1".to_string()),
     );
-    let result = client.call_script("get_user_wrapper", Some(params)).await?;
+    let result = client
+        .call_function("get_user_wrapper", Some(params))
+        .await?;
     println!("📊 Result from composed function:");
     println!("   Records: {}", result.records.len());
     if let Some(record) = result.records.first() {
@@ -134,7 +136,7 @@ async fn swr_with_composition_example(client: &Client) -> Result<(), Box<dyn std
     // Step 1: Create reusable "fetch_and_store" function
     // Using jsonplaceholder.typicode.com - a reliable free API for testing
     // This function fetches from API and stores in KV cache
-    let fetch_and_store = Script::new(
+    let fetch_and_store = UserFunction::new(
         "fetch_and_store_user",
         "Fetch user from API and cache in KV",
     )
@@ -158,12 +160,12 @@ async fn swr_with_composition_example(client: &Client) -> Result<(), Box<dyn std
         ttl: Some(serde_json::json!(300)), // 5 minute cache
     });
 
-    client.save_script(fetch_and_store).await?;
+    client.save_function(fetch_and_store).await?;
     println!("✅ Saved reusable function: fetch_and_store_user (uses KV)");
 
     // Step 2: Create SWR function that CALLS the reusable fetch function
     // Pattern: KV cache check → populate if missing → return
-    let swr_user = Script::new("swr_user", "SWR pattern for user data (KV-based)")
+    let swr_user = UserFunction::new("swr_user", "SWR pattern for user data (KV-based)")
         .with_parameter(ParameterDefinition::new("user_id").required())
         // Check KV cache first (O(1) lookup - much faster than FindById)
         .with_function(Function::KvGet {
@@ -172,8 +174,8 @@ async fn swr_with_composition_example(client: &Client) -> Result<(), Box<dyn std
         .with_function(Function::If {
             // KvGet returns { value: ... } on hit, { value: null } on miss
             // So we check if "value" is not null to detect cache hit
-            condition: ScriptCondition::Not {
-                condition: Box::new(ScriptCondition::FieldEquals {
+            condition: FunctionCondition::Not {
+                condition: Box::new(FunctionCondition::FieldEquals {
                     field: "value".to_string(),
                     value: serde_json::Value::Null,
                 }),
@@ -206,7 +208,7 @@ async fn swr_with_composition_example(client: &Client) -> Result<(), Box<dyn std
             ]),
         });
 
-    client.save_script(swr_user).await?;
+    client.save_function(swr_user).await?;
     println!("✅ Saved SWR function using composition: swr_user\n");
 
     // Step 3: Test the SWR pattern - First call (cache miss)
@@ -215,7 +217,9 @@ async fn swr_with_composition_example(client: &Client) -> Result<(), Box<dyn std
     params.insert("user_id".to_string(), FieldType::String("1".to_string()));
 
     let start = std::time::Instant::now();
-    let result1 = client.call_script("swr_user", Some(params.clone())).await?;
+    let result1 = client
+        .call_function("swr_user", Some(params.clone()))
+        .await?;
     let duration1 = start.elapsed();
 
     println!("   ⏱️  Duration: {:?}", duration1);
@@ -232,7 +236,7 @@ async fn swr_with_composition_example(client: &Client) -> Result<(), Box<dyn std
     // Step 4: Second call (cache hit)
     println!("Second call (cache hit - from cache):");
     let start = std::time::Instant::now();
-    let result2 = client.call_script("swr_user", Some(params)).await?;
+    let result2 = client.call_function("swr_user", Some(params)).await?;
     let duration2 = start.elapsed();
 
     println!("   ⏱️  Duration: {:?}", duration2);
@@ -260,7 +264,7 @@ async fn nested_composition_example(client: &Client) -> Result<(), Box<dyn std::
     println!("Building complex workflows from small, reusable pieces...\n");
 
     // Level 1: Base function - validate user exists
-    let validate_user = Script::new("validate_user", "Check if user exists")
+    let validate_user = UserFunction::new("validate_user", "Check if user exists")
         .with_parameter(ParameterDefinition::new("user_code").required())
         .with_function(Function::FindOne {
             collection: "users".to_string(),
@@ -268,11 +272,11 @@ async fn nested_composition_example(client: &Client) -> Result<(), Box<dyn std::
             value: serde_json::json!("{{user_code}}"),
         });
 
-    client.save_script(validate_user).await?;
+    client.save_function(validate_user).await?;
     println!("✅ Level 1 function: validate_user");
 
     // Level 2: Calls validate_user + projects fields
-    let fetch_slim = Script::new("fetch_slim_user", "Validate and slim down user")
+    let fetch_slim = UserFunction::new("fetch_slim_user", "Validate and slim down user")
         .with_parameter(ParameterDefinition::new("user_code").required())
         .with_function(Function::CallFunction {
             function_label: "validate_user".to_string(),
@@ -283,18 +287,19 @@ async fn nested_composition_example(client: &Client) -> Result<(), Box<dyn std::
             exclude: false,
         });
 
-    client.save_script(fetch_slim).await?;
+    client.save_function(fetch_slim).await?;
     println!("✅ Level 2 function: fetch_slim_user (calls validate_user)");
 
     // Level 3: Calls fetch_slim_user (demonstrates 3-level nesting)
-    let get_verified_user = Script::new("get_verified_user", "Get verified and validated user")
-        .with_parameter(ParameterDefinition::new("user_code").required())
-        .with_function(Function::CallFunction {
-            function_label: "fetch_slim_user".to_string(),
-            params: None, // Inherits user_code from parent scope
-        });
+    let get_verified_user =
+        UserFunction::new("get_verified_user", "Get verified and validated user")
+            .with_parameter(ParameterDefinition::new("user_code").required())
+            .with_function(Function::CallFunction {
+                function_label: "fetch_slim_user".to_string(),
+                params: None, // Inherits user_code from parent scope
+            });
 
-    client.save_script(get_verified_user).await?;
+    client.save_function(get_verified_user).await?;
     println!("✅ Level 3 function: get_verified_user (calls fetch_slim_user)\n");
 
     // Execute the 3-level nested composition
@@ -304,7 +309,7 @@ async fn nested_composition_example(client: &Client) -> Result<(), Box<dyn std::
         FieldType::String("user_1".to_string()),
     );
     let result = client
-        .call_script("get_verified_user", Some(params))
+        .call_function("get_verified_user", Some(params))
         .await?;
     println!("📊 Result from 3-level nested composition:");
     println!("   Records: {}", result.records.len());

@@ -1,4 +1,6 @@
-use ekodb_client::{Client, FieldType, Function, ParameterDefinition, Script, ScriptCondition};
+use ekodb_client::{
+    Client, FieldType, Function, FunctionCondition, ParameterDefinition, UserFunction,
+};
 use std::collections::HashMap;
 use std::env;
 use std::time::Instant;
@@ -21,7 +23,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Step 1: Create SWR script for GitHub user caching
     println!("Step 1: Create SWR function that acts as edge cache");
 
-    let swr_script = Script::new("fetch_github_user", "Fetch GitHub User with Cache")
+    let swr_script = UserFunction::new("fetch_github_user", "Fetch GitHub User with Cache")
         .with_description(
             "SWR pattern: Check cache, fetch from GitHub API if stale, auto-update with TTL",
         )
@@ -36,7 +38,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             record_id: "{{username}}".to_string(),
         })
         .with_function(Function::If {
-            condition: ScriptCondition::HasRecords,
+            condition: FunctionCondition::HasRecords,
             then_functions: vec![Box::new(Function::Project {
                 fields: vec!["data".to_string()],
                 exclude: false,
@@ -76,7 +78,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with_tag("github")
         .with_tag("cache");
 
-    let script_id = client.save_script(swr_script).await?;
+    let script_id = client.save_function(swr_script).await?;
     println!("✓ Created SWR script: fetch_github_user ({})\n", script_id);
 
     // Step 2: First call - Cache miss
@@ -90,7 +92,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     params1.insert("ttl".to_string(), FieldType::Integer(300));
 
     let result1 = client
-        .call_script("fetch_github_user", Some(params1))
+        .call_function("fetch_github_user", Some(params1))
         .await?;
     let duration1 = start1.elapsed();
     println!("Response time: {}ms", duration1.as_millis());
@@ -110,7 +112,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     let _result2 = client
-        .call_script("fetch_github_user", Some(params2))
+        .call_function("fetch_github_user", Some(params2))
         .await?;
     let duration2 = start2.elapsed();
     let speedup = duration1.as_millis() as f64 / duration2.as_millis() as f64;
@@ -125,57 +127,60 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== Advanced: SWR with Data Enrichment ===\n");
     println!("Creating product enrichment function...");
 
-    let enrich_script = Script::new("fetch_product_enriched", "Fetch Product with Enrichment")
-        .with_description("Demonstrates calling external API and enriching data")
-        .with_parameter(
-            ParameterDefinition::new("product_id")
-                .required()
-                .with_description("Product ID"),
-        )
-        .with_parameter(ParameterDefinition::new("ttl").with_description("Cache TTL (10 minutes)"))
-        .with_function(Function::FindById {
-            collection: "product_cache".to_string(),
-            record_id: "{{product_id}}".to_string(),
-        })
-        .with_function(Function::If {
-            condition: ScriptCondition::HasRecords,
-            then_functions: vec![Box::new(Function::Project {
-                fields: vec!["enriched_data".to_string()],
-                exclude: false,
-            })],
-            else_functions: Some(vec![
-                Box::new(Function::HttpRequest {
-                    url: "https://dummyjson.com/products/{{product_id}}".to_string(),
-                    method: "GET".to_string(),
-                    headers: None,
-                    body: None,
-                    timeout_seconds: None,
-                    output_field: None,
-                }),
-                Box::new(Function::Insert {
-                    collection: "product_cache".to_string(),
-                    record: serde_json::json!({
-                        "id": {"type": "String", "value": "{{product_id}}"},
-                        "enriched_data": {"type": "Object", "value": "{{http_response}}"}
-                    }),
-                    bypass_ripple: None,
-                    ttl: None,
-                }),
-                Box::new(Function::FindById {
-                    collection: "product_cache".to_string(),
-                    record_id: "{{product_id}}".to_string(),
-                }),
-                Box::new(Function::Project {
+    let enrich_script =
+        UserFunction::new("fetch_product_enriched", "Fetch Product with Enrichment")
+            .with_description("Demonstrates calling external API and enriching data")
+            .with_parameter(
+                ParameterDefinition::new("product_id")
+                    .required()
+                    .with_description("Product ID"),
+            )
+            .with_parameter(
+                ParameterDefinition::new("ttl").with_description("Cache TTL (10 minutes)"),
+            )
+            .with_function(Function::FindById {
+                collection: "product_cache".to_string(),
+                record_id: "{{product_id}}".to_string(),
+            })
+            .with_function(Function::If {
+                condition: FunctionCondition::HasRecords,
+                then_functions: vec![Box::new(Function::Project {
                     fields: vec!["enriched_data".to_string()],
                     exclude: false,
-                }),
-            ]),
-        })
-        .with_tag("enrichment")
-        .with_tag("product")
-        .with_tag("cache");
+                })],
+                else_functions: Some(vec![
+                    Box::new(Function::HttpRequest {
+                        url: "https://dummyjson.com/products/{{product_id}}".to_string(),
+                        method: "GET".to_string(),
+                        headers: None,
+                        body: None,
+                        timeout_seconds: None,
+                        output_field: None,
+                    }),
+                    Box::new(Function::Insert {
+                        collection: "product_cache".to_string(),
+                        record: serde_json::json!({
+                            "id": {"type": "String", "value": "{{product_id}}"},
+                            "enriched_data": {"type": "Object", "value": "{{http_response}}"}
+                        }),
+                        bypass_ripple: None,
+                        ttl: None,
+                    }),
+                    Box::new(Function::FindById {
+                        collection: "product_cache".to_string(),
+                        record_id: "{{product_id}}".to_string(),
+                    }),
+                    Box::new(Function::Project {
+                        fields: vec!["enriched_data".to_string()],
+                        exclude: false,
+                    }),
+                ]),
+            })
+            .with_tag("enrichment")
+            .with_tag("product")
+            .with_tag("cache");
 
-    let enrich_script_id = client.save_script(enrich_script).await?;
+    let enrich_script_id = client.save_function(enrich_script).await?;
     println!(
         "✓ Created enrichment script: fetch_product_enriched ({})\n",
         enrich_script_id
@@ -187,7 +192,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     enrich_params.insert("ttl".to_string(), FieldType::Integer(600));
 
     let enriched = client
-        .call_script("fetch_product_enriched", Some(enrich_params))
+        .call_function("fetch_product_enriched", Some(enrich_params))
         .await?;
     println!(
         "Enriched data: {}",

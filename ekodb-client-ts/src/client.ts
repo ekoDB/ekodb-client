@@ -6,7 +6,7 @@ import { encode, decode } from "@msgpack/msgpack";
 import { QueryBuilder, Query as QueryBuilderQuery } from "./query-builder";
 import { SearchQuery, SearchResponse } from "./search";
 import { Schema, SchemaBuilder, CollectionMetadata } from "./schema";
-import { Script, FunctionResult } from "./functions";
+import { UserFunction, FunctionResult } from "./functions";
 
 export interface Record {
   [key: string]: any;
@@ -340,21 +340,7 @@ export interface RawCompletionResponse {
   content: string;
 }
 
-/**
- * User function definition - reusable sequence of Functions that can be called by Scripts
- */
-export interface UserFunction {
-  label: string;
-  name: string;
-  description?: string;
-  version?: string;
-  parameters: { [key: string]: ParameterDefinition };
-  functions: FunctionStageConfig[];
-  tags?: string[];
-  id?: string;
-  created_at?: string;
-  updated_at?: string;
-}
+// UserFunction is defined in functions.ts and re-exported from there.
 
 /**
  * Parameter definition for functions
@@ -2138,7 +2124,7 @@ export class EkoDBClient {
   /**
    * Save a new script definition
    */
-  async saveScript(script: Script): Promise<string> {
+  async saveFunction(script: UserFunction): Promise<string> {
     const result = await this.makeRequest<{ id: string }>(
       "POST",
       "/api/functions",
@@ -2150,36 +2136,36 @@ export class EkoDBClient {
   /**
    * Get a script by ID
    */
-  async getScript(id: string): Promise<Script> {
-    return this.makeRequest<Script>("GET", `/api/functions/${id}`);
+  async getFunction(id: string): Promise<UserFunction> {
+    return this.makeRequest<UserFunction>("GET", `/api/functions/${id}`);
   }
 
   /**
    * List all scripts, optionally filtered by tags
    */
-  async listScripts(tags?: string[]): Promise<Script[]> {
+  async listFunctions(tags?: string[]): Promise<UserFunction[]> {
     const params = tags ? `?tags=${tags.join(",")}` : "";
-    return this.makeRequest<Script[]>("GET", `/api/functions${params}`);
+    return this.makeRequest<UserFunction[]>("GET", `/api/functions${params}`);
   }
 
   /**
    * Update an existing script by ID
    */
-  async updateScript(id: string, script: Script): Promise<void> {
+  async updateFunction(id: string, script: UserFunction): Promise<void> {
     await this.makeRequest<void>("PUT", `/api/functions/${id}`, script);
   }
 
   /**
    * Delete a script by ID
    */
-  async deleteScript(id: string): Promise<void> {
+  async deleteFunction(id: string): Promise<void> {
     await this.makeRequest<void>("DELETE", `/api/functions/${id}`);
   }
 
   /**
    * Call a saved script by ID or label
    */
-  async callScript(
+  async callFunction(
     idOrLabel: string,
     params?: { [key: string]: any },
   ): Promise<FunctionResult> {

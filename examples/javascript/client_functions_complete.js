@@ -1,5 +1,5 @@
 /**
- * Complete Scripts Example - ekoDB Scripts
+ * Complete Functions Example - ekoDB Functions
  * Demonstrates: FindAll, Group, Count, Multi-stage Pipelines
  */
 
@@ -49,10 +49,10 @@ async function advancedQueryFunction(client) {
     tags: ["products", "analytics"],
   };
 
-  const scriptId = await client.saveScript(script);
-  console.log(`✅ Script saved: ${scriptId}`);
+  const scriptId = await client.saveFunction(script);
+  console.log(`✅ Function saved: ${scriptId}`);
 
-  const result = await client.callScript("product_stats_js", null);
+  const result = await client.callFunction("product_stats_js", null);
 
   console.log(`📊 Found ${result.records?.length || 0} product groups`);
   if (result.records) {
@@ -75,10 +75,10 @@ async function listProductsScript(client) {
     tags: ["products", "list"],
   };
 
-  const scriptId = await client.saveScript(script);
-  console.log("✅ Script saved");
+  const scriptId = await client.saveFunction(script);
+  console.log("✅ Function saved");
 
-  const result = await client.callScript("list_all_products_js", null);
+  const result = await client.callFunction("list_all_products_js", null);
 
   console.log(`📊 Found ${result.records?.length || 0} products`);
   console.log(`⏱️  Execution time: ${result.stats?.execution_time_ms}ms\n`);
@@ -105,10 +105,10 @@ async function categoryCountScript(client) {
     tags: ["products", "analytics"],
   };
 
-  const scriptId = await client.saveScript(script);
-  console.log("✅ Script saved");
+  const scriptId = await client.saveFunction(script);
+  console.log("✅ Function saved");
 
-  const result = await client.callScript("count_by_category_js", null);
+  const result = await client.callFunction("count_by_category_js", null);
 
   console.log(`📊 Found ${result.records?.length || 0} categories`);
   if (result.records) {
@@ -131,10 +131,10 @@ async function topRatedScript(client) {
     tags: ["products", "quality"],
   };
 
-  const scriptId = await client.saveScript(script);
-  console.log("✅ Script saved");
+  const scriptId = await client.saveFunction(script);
+  console.log("✅ Function saved");
 
-  const result = await client.callScript("top_rated_products_js", null);
+  const result = await client.callFunction("top_rated_products_js", null);
 
   console.log(`📊 Found ${result.records?.length || 0} products`);
   console.log(`⏱️  Execution time: ${result.stats?.execution_time_ms}ms\n`);
@@ -143,7 +143,7 @@ async function topRatedScript(client) {
 }
 
 async function scriptWithParameter(client) {
-  console.log("📝 Example 5: Script with Parameter Definition\n");
+  console.log("📝 Example 5: Function with Parameter Definition\n");
 
   const script = {
     label: "list_with_limit_js",
@@ -160,10 +160,10 @@ async function scriptWithParameter(client) {
     tags: ["products", "list"],
   };
 
-  const scriptId = await client.saveScript(script);
-  console.log("✅ Script saved");
+  const scriptId = await client.saveFunction(script);
+  console.log("✅ Function saved");
 
-  const result = await client.callScript("list_with_limit_js", { max_items: 3 });
+  const result = await client.callFunction("list_with_limit_js", { max_items: 3 });
 
   console.log(`📊 Found ${result.records?.length || 0} products`);
   console.log(`⏱️  Execution time: ${result.stats?.execution_time_ms}ms\n`);
@@ -194,10 +194,10 @@ async function multiStagePipeline(client) {
     tags: ["products", "analytics"],
   };
 
-  const scriptId = await client.saveScript(script);
-  console.log("✅ Script saved");
+  const scriptId = await client.saveFunction(script);
+  console.log("✅ Function saved");
 
-  const result = await client.callScript("product_summary_js", null);
+  const result = await client.callFunction("product_summary_js", null);
 
   console.log(`📊 Pipeline executed ${result.stats?.stages_executed} stages`);
   console.log(`⏱️  Total execution time: ${result.stats?.execution_time_ms}ms\n`);
@@ -210,7 +210,7 @@ async function cleanup(client, scriptIds) {
 
   try {
     for (const scriptId of scriptIds) {
-      await client.deleteScript(scriptId);
+      await client.deleteFunction(scriptId);
     }
     await client.deleteCollection("complete_products_js");
     console.log("✅ Cleanup complete\n");
@@ -220,7 +220,7 @@ async function cleanup(client, scriptIds) {
 }
 
 async function main() {
-  console.log("🚀 ekoDB JavaScript Complete Scripts Example\n");
+  console.log("🚀 ekoDB JavaScript Complete Functions Example\n");
   console.log("📋 Demonstrates: FindAll, Group, Count, Multi-stage Pipelines\n");
 
   const client = new EkoDBClient(BASE_URL, API_KEY);
@@ -239,13 +239,13 @@ async function main() {
 
     await cleanup(client, scriptIds);
 
-    console.log("✅ All complete script examples finished!");
-    console.log("\n💡 This example demonstrates ekoDB's Script system:");
+    console.log("✅ All complete function examples finished!");
+    console.log("\n💡 This example demonstrates ekoDB's Function system:");
     console.log("   ✅ FindAll operations");
     console.log("   ✅ Group aggregations (Count, Average)");
     console.log("   ✅ Multi-stage pipelines (FindAll → Group → Count)");
     console.log("   ✅ Parameter definitions");
-    console.log("   ✅ Script management (save, call, delete)");
+    console.log("   ✅ Function management (save, call, delete)");
   } catch (e) {
     console.error(`❌ Error: ${e.message}`);
   }

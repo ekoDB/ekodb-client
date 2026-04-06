@@ -1,4 +1,4 @@
-// Complete Scripts Example - ekoDB Scripts
+// Complete Functions Example - ekoDB Functions
 // Demonstrates: FindAll, Group, Count, Multi-stage Pipelines
 
 package main
@@ -37,7 +37,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Println("🚀 ekoDB Go Complete Scripts Example")
+	fmt.Println("🚀 ekoDB Go Complete Functions Example")
 	fmt.Println()
 	fmt.Println("📋 Demonstrates: FindAll, Group, Count, Multi-stage Pipelines")
 	fmt.Println()
@@ -68,7 +68,7 @@ func main() {
 	fmt.Println()
 
 	version := "1.0"
-	script1 := ekodb.Script{
+	script1 := ekodb.UserFunction{
 		Label:      "product_stats_go",
 		Name:       "Product Statistics",
 		Version:    &version,
@@ -83,14 +83,14 @@ func main() {
 		Tags: []string{"products", "analytics"},
 	}
 
-	scriptID1, err := client.SaveScript(script1)
+	scriptID1, err := client.SaveFunction(script1)
 	if err != nil {
 		log.Printf("Save script error: %v", err)
 	} else {
-		fmt.Printf("✅ Script saved: %s\n", scriptID1)
+		fmt.Printf("✅ Function saved: %s\n", scriptID1)
 		scriptIDs = append(scriptIDs, scriptID1)
 
-		result1, err := client.CallScript("product_stats_go", nil)
+		result1, err := client.CallFunction("product_stats_go", nil)
 		if err != nil {
 			log.Printf("Call script error: %v", err)
 		} else {
@@ -102,7 +102,7 @@ func main() {
 	fmt.Println("📝 Example 2: Simple Product Listing")
 	fmt.Println()
 
-	script2 := ekodb.Script{
+	script2 := ekodb.UserFunction{
 		Label:      "list_all_products_go",
 		Name:       "List All Products",
 		Version:    &version,
@@ -113,14 +113,14 @@ func main() {
 		Tags: []string{"products", "list"},
 	}
 
-	scriptID2, err := client.SaveScript(script2)
+	scriptID2, err := client.SaveFunction(script2)
 	if err != nil {
 		log.Printf("Save script error: %v", err)
 	} else {
-		fmt.Println("✅ Script saved")
+		fmt.Println("✅ Function saved")
 		scriptIDs = append(scriptIDs, scriptID2)
 
-		result2, err := client.CallScript("list_all_products_go", nil)
+		result2, err := client.CallFunction("list_all_products_go", nil)
 		if err != nil {
 			log.Printf("Call script error: %v", err)
 		} else {
@@ -132,7 +132,7 @@ func main() {
 	fmt.Println("📝 Example 3: Count by Category")
 	fmt.Println()
 
-	script3 := ekodb.Script{
+	script3 := ekodb.UserFunction{
 		Label:      "count_by_category_go",
 		Name:       "Count Products by Category",
 		Version:    &version,
@@ -146,14 +146,14 @@ func main() {
 		Tags: []string{"products", "analytics"},
 	}
 
-	scriptID3, err := client.SaveScript(script3)
+	scriptID3, err := client.SaveFunction(script3)
 	if err != nil {
 		log.Printf("Save script error: %v", err)
 	} else {
-		fmt.Println("✅ Script saved")
+		fmt.Println("✅ Function saved")
 		scriptIDs = append(scriptIDs, scriptID3)
 
-		result3, err := client.CallScript("count_by_category_go", nil)
+		result3, err := client.CallFunction("count_by_category_go", nil)
 		if err != nil {
 			log.Printf("Call script error: %v", err)
 		} else {
@@ -165,7 +165,7 @@ func main() {
 	fmt.Println("📝 Example 4: Multi-Stage Pipeline (FindAll → Group → Count)")
 	fmt.Println()
 
-	script4 := ekodb.Script{
+	script4 := ekodb.UserFunction{
 		Label:      "product_summary_go",
 		Name:       "Product Summary Report",
 		Version:    &version,
@@ -181,14 +181,14 @@ func main() {
 		Tags: []string{"products", "analytics"},
 	}
 
-	scriptID4, err := client.SaveScript(script4)
+	scriptID4, err := client.SaveFunction(script4)
 	if err != nil {
 		log.Printf("Save script error: %v", err)
 	} else {
-		fmt.Println("✅ Script saved")
+		fmt.Println("✅ Function saved")
 		scriptIDs = append(scriptIDs, scriptID4)
 
-		result4, err := client.CallScript("product_summary_go", nil)
+		result4, err := client.CallFunction("product_summary_go", nil)
 		if err != nil {
 			log.Printf("Call script error: %v", err)
 		} else {
@@ -199,7 +199,7 @@ func main() {
 	// Cleanup
 	fmt.Println("🧹 Cleaning up...")
 	for _, scriptID := range scriptIDs {
-		client.DeleteScript(scriptID)
+		client.DeleteFunction(scriptID)
 	}
 	client.DeleteCollection("complete_products_go")
 	fmt.Println("✅ Cleanup complete")
@@ -207,9 +207,9 @@ func main() {
 	fmt.Println()
 	fmt.Println("✅ All complete script examples finished!")
 	fmt.Println()
-	fmt.Println("💡 This example demonstrates ekoDB's Script system:")
+	fmt.Println("💡 This example demonstrates ekoDB's function system:")
 	fmt.Println("   ✅ FindAll operations")
 	fmt.Println("   ✅ Group aggregations (Count, Average)")
 	fmt.Println("   ✅ Multi-stage pipelines (FindAll → Group → Count)")
-	fmt.Println("   ✅ Script management (save, call, delete)")
+	fmt.Println("   ✅ Function management (save, call, delete)")
 }

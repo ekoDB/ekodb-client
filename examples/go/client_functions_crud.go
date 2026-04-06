@@ -1,4 +1,4 @@
-// CRUD Scripts Example - Basic Data Operations
+// CRUD Functions Example - Basic Data Operations
 //
 // Demonstrates basic CRUD operations using scripts:
 // - FindAll queries
@@ -36,7 +36,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Println("🚀 ekoDB Go CRUD Scripts Example")
+	fmt.Println("🚀 ekoDB Go CRUD Functions Example")
 	fmt.Println()
 
 	// Setup test data
@@ -68,7 +68,7 @@ func main() {
 	fmt.Println("📝 Example 1: List All Users")
 	fmt.Println()
 
-	script1 := ekodb.Script{
+	script1 := ekodb.UserFunction{
 		Label:      "list_all_users_go",
 		Name:       "List All Users",
 		Version:    func() *string { s := "1.0"; return &s }(),
@@ -79,11 +79,11 @@ func main() {
 		},
 		Tags: []string{"users", "query"},
 	}
-	scriptID1, _ := client.SaveScript(script1)
+	scriptID1, _ := client.SaveFunction(script1)
 	scriptIDs = append(scriptIDs, scriptID1)
-	fmt.Println("✅ Script saved")
+	fmt.Println("✅ Function saved")
 
-	result1, _ := client.CallScript("list_all_users_go", nil)
+	result1, _ := client.CallFunction("list_all_users_go", nil)
 	if result1 != nil {
 		fmt.Printf("📊 Found %d users\n", len(result1.Records))
 		fmt.Printf("⏱️  Execution time: %vms\n\n", result1.Stats.ExecutionTimeMs)
@@ -93,7 +93,7 @@ func main() {
 	fmt.Println("📝 Example 2: Count Users by Status")
 	fmt.Println()
 
-	script2 := ekodb.Script{
+	script2 := ekodb.UserFunction{
 		Label:      "users_by_status_go",
 		Name:       "Users by Status",
 		Version:    func() *string { s := "1.0"; return &s }(),
@@ -106,11 +106,11 @@ func main() {
 		},
 		Tags: []string{"users", "analytics"},
 	}
-	scriptID2, _ := client.SaveScript(script2)
+	scriptID2, _ := client.SaveFunction(script2)
 	scriptIDs = append(scriptIDs, scriptID2)
-	fmt.Println("✅ Script saved")
+	fmt.Println("✅ Function saved")
 
-	result2, _ := client.CallScript("users_by_status_go", nil)
+	result2, _ := client.CallFunction("users_by_status_go", nil)
 	if result2 != nil {
 		fmt.Println("📊 User counts by status:")
 		for _, record := range result2.Records {
@@ -122,7 +122,7 @@ func main() {
 	// Cleanup
 	fmt.Println("🧹 Cleaning up...")
 	for _, scriptID := range scriptIDs {
-		client.DeleteScript(scriptID)
+		client.DeleteFunction(scriptID)
 	}
 	client.DeleteCollection("crud_users_go")
 	fmt.Println("✅ Cleanup complete")
