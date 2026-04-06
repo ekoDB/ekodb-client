@@ -1444,11 +1444,11 @@ deps-check:
 deps-update:
 	@if ! command -v cargo-upgrade >/dev/null 2>&1; then \
 		echo "$(YELLOW)Installing cargo-edit (provides cargo upgrade)...$(RESET)"; \
-		cargo install cargo-edit; \
+		$(CARGO) install cargo-edit; \
 	fi
 	@echo "📦 $(CYAN)Upgrading Rust dependencies...$(RESET)"
-	cargo upgrade
-	cargo update
+	$(CARGO) upgrade
+	$(CARGO) update
 	@echo "✅ $(GREEN)Rust dependencies upgraded!$(RESET)"
 
 # Check all packages for outdated dependencies
@@ -1537,20 +1537,20 @@ deps-check-kotlin:
 deps-update-rust:
 	@if ! command -v cargo-upgrade >/dev/null 2>&1; then \
 		echo "$(YELLOW)Installing cargo-edit (provides cargo upgrade)...$(RESET)"; \
-		cargo install cargo-edit; \
+		$(CARGO) install cargo-edit; \
 	fi
 	@echo "🦀 $(CYAN)Upgrading Rust workspace dependencies...$(RESET)"
 	@echo ""
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "📦 Workspace Root & ekodb_client"
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
-	cargo upgrade
-	cargo update
+	$(CARGO) upgrade
+	$(CARGO) update
 	@echo ""
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "📦 Python Bindings (ekodb-client-py)"
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
-	@cd ekodb-client-py && cargo upgrade && cargo update
+	@cd ekodb-client-py && $(CARGO) upgrade && $(CARGO) update
 	@echo ""
 	@echo "✅ $(GREEN)Rust dependencies upgraded!$(RESET)"
 

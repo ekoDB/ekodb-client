@@ -108,6 +108,7 @@ async def main():
     duration2 = (time.time() - start2) * 1000
     speedup = duration1 / duration2
     print(f"Response time: {duration2:.0f}ms ({speedup:.1f}x faster!)")
+    print(f"Result: {json.dumps(result2['records'][:1], indent=2)}")
     print("✓ Lightning fast cache hit\n")
 
     # Advanced example: Data enrichment

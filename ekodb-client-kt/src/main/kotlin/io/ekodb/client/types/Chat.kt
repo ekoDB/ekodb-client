@@ -210,9 +210,6 @@ data class ChatSessionResponse(
 // ========== Message Operations ==========
 
 /**
- * Request to send a message in an existing session.
- */
-/**
  * Client-side tool definition sent with chat messages (HTTP/SSE path).
  */
 @Serializable

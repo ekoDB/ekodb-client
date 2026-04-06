@@ -2814,13 +2814,13 @@ export class EkoDBClient {
 
     (async () => {
       try {
-        let token = this.getToken();
+        let token = await this.getToken();
         if (!token) {
           await this.refreshToken();
-          token = this.getToken();
+          token = await this.getToken();
         }
 
-        let url = `${this.baseURL}/api/subscribe/${collection}`;
+        let url = `${this.baseURL}/api/subscribe/${encodeURIComponent(collection)}`;
         const params: string[] = [];
         if (options?.filterField)
           params.push(
@@ -2850,35 +2850,52 @@ export class EkoDBClient {
           return;
         }
 
-        const body = await response.text();
+        const reader = response.body?.getReader();
+        if (!reader) {
+          stream.emit("error", "SSE subscribe failed: streaming not supported");
+          stream.close();
+          return;
+        }
+
+        const decoder = new TextDecoder("utf-8");
+        let buffer = "";
         let eventType = "";
         let dataLines: string[] = [];
 
-        for (const line of body.split("\n")) {
-          if (line === "") {
-            // End of event block
-            if (eventType === "mutation" && dataLines.length > 0) {
-              try {
-                const payload = JSON.parse(dataLines.join("\n"));
-                stream.emit("event", {
-                  collection: payload.collection,
-                  event: payload.event,
-                  recordIds: payload.record_ids,
-                  records: payload.records,
-                  timestamp: payload.timestamp,
-                } as MutationNotification);
-              } catch {
-                // skip malformed data
+        while (!stream.closed) {
+          const { value, done } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() ?? "";
+
+          for (const line of lines) {
+            if (line === "") {
+              // End of event block
+              if (eventType === "mutation" && dataLines.length > 0) {
+                try {
+                  const payload = JSON.parse(dataLines.join("\n"));
+                  stream.emit("event", {
+                    collection: payload.collection,
+                    event: payload.event,
+                    recordIds: payload.record_ids,
+                    records: payload.records,
+                    timestamp: payload.timestamp,
+                  } as MutationNotification);
+                } catch {
+                  // skip malformed data
+                }
               }
+              eventType = "";
+              dataLines = [];
+              continue;
             }
-            eventType = "";
-            dataLines = [];
-            continue;
-          }
-          if (line.startsWith("event: ")) {
-            eventType = line.slice(7).trim();
-          } else if (line.startsWith("data: ")) {
-            dataLines.push(line.slice(6).trim());
+            if (line.startsWith("event: ")) {
+              eventType = line.slice(7).trim();
+            } else if (line.startsWith("data: ")) {
+              dataLines.push(line.slice(6).trim());
+            }
           }
         }
         stream.close();

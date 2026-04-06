@@ -2817,6 +2817,24 @@ describe("submitChatToolResult", () => {
 // ============================================================================
 
 describe("subscribeSSE", () => {
+  /** Create a mock ReadableStream from a string */
+  function mockReadableStream(data: string) {
+    const encoder = new TextEncoder();
+    const bytes = encoder.encode(data);
+    let sent = false;
+    return {
+      getReader: () => ({
+        read: async () => {
+          if (!sent) {
+            sent = true;
+            return { value: bytes, done: false };
+          }
+          return { value: undefined, done: true };
+        },
+      }),
+    };
+  }
+
   it("parses mutation events from SSE stream", async () => {
     const client = createTestClient();
     mockTokenResponse();
@@ -2829,7 +2847,7 @@ describe("subscribeSSE", () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       status: 200,
-      text: async () => sseBody,
+      body: mockReadableStream(sseBody),
       headers: new Headers({ "content-type": "text/event-stream" }),
     });
 
@@ -2838,7 +2856,6 @@ describe("subscribeSSE", () => {
     await new Promise<void>((resolve) => {
       stream.on("event", (e: any) => events.push(e));
       stream.on("close", resolve);
-      // Give it time to process
       setTimeout(resolve, 100);
     });
 
@@ -2856,7 +2873,7 @@ describe("subscribeSSE", () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       status: 200,
-      text: async () => "",
+      body: mockReadableStream(""),
       headers: new Headers({ "content-type": "text/event-stream" }),
     });
 

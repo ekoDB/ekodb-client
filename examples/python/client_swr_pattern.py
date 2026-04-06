@@ -114,6 +114,7 @@ async def main():
     )
     duration = (time.time() - start) * 1000
     print(f"Response time: {duration:.0f}ms (served from cache)")
+    print(f"Result: {json.dumps(result2, indent=2)}")
     print("✓ Lightning fast cache hit\n")
 
     # Cleanup
