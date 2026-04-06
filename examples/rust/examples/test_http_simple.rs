@@ -34,7 +34,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Function JSON:\n{}\n", json1);
 
     let id1 = client.save_function(script1).await?;
-    println!("✓ Saved script: {}\n", id1);
+    println!("✓ Saved function: {}\n", id1);
 
     let result1 = client.call_function("test_http_static", None).await?;
     println!("✓ Called successfully");
@@ -61,7 +61,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Function JSON:\n{}\n", json2);
 
     let id2 = client.save_function(script2).await?;
-    println!("✓ Saved script: {}\n", id2);
+    println!("✓ Saved function: {}\n", id2);
 
     let mut params = HashMap::new();
     params.insert(

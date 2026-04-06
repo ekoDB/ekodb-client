@@ -1794,7 +1794,7 @@ impl Client {
     ///
     /// # Arguments
     ///
-    /// * `script` - The UserFunction definition to save
+    /// * `function` - The UserFunction definition to save
     ///
     /// # Returns
     ///
@@ -1840,7 +1840,7 @@ impl Client {
     /// # Arguments
     ///
     /// * `id` - The UserFunction ID to update
-    /// * `script` - The updated UserFunction definition
+    /// * `function` - The updated UserFunction definition
     pub async fn update_function(
         &self,
         id: &str,

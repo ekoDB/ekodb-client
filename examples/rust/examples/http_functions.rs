@@ -1,7 +1,7 @@
 /*
 Functions Example using Direct HTTP Requests
 
-Demonstrates using scripts with raw HTTP/reqwest API
+Demonstrates using functions with raw HTTP/reqwest API
 No client library required
 */
 
@@ -365,11 +365,11 @@ async fn function_management(
         Some(updated),
     )
     .await?;
-    println!("✏️  function updated");
+    println!("✏️  Function updated");
 
     // Delete script (requires encrypted ID)
     request("DELETE", &format!("/api/functions/{}", user_stats_id), None).await?;
-    println!("🗑️  function deleted\n");
+    println!("🗑️  Function deleted\n");
 
     println!("ℹ️  Note: GET/UPDATE/DELETE operations require the encrypted ID");
     println!("ℹ️  Only CALL can use either ID or label\n");
