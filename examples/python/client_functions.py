@@ -138,17 +138,17 @@ async def aggregation_script(client):
 
 async def script_management(client, get_active_users_id, user_stats_id):
     """Example 4: Function management operations"""
-    print("📝 Example 4: function Management\n")
+    print("📝 Example 4: Function Management\n")
 
-    # List all scripts
-    scripts = await client.list_functions(None)
-    print(f"📋 Total scripts: {len(scripts)}")
+    # List all functions
+    functions = await client.list_functions(None)
+    print(f"📋 Total functions: {len(functions)}")
 
-    # Get specific script by ID
-    script = await client.get_function(get_active_users_id)
-    print(f"🔍 Retrieved script: {script['name']}")
+    # Get specific function by ID
+    function = await client.get_function(get_active_users_id)
+    print(f"🔍 Retrieved function: {function['name']}")
 
-    # Update script by ID
+    # Update function by ID
     updated = {
         "label": "get_active_users_updated",
         "name": "Get Active Users (Updated)",
@@ -161,11 +161,11 @@ async def script_management(client, get_active_users_id, user_stats_id):
         "tags": ["users"],
     }
     await client.update_function(get_active_users_id, updated)
-    print("✏️  function updated")
+    print("✏️  Function updated")
 
-    # Delete script by ID
+    # Delete function by ID
     await client.delete_function(user_stats_id)
-    print("🗑️  function deleted\n")
+    print("🗑️  Function deleted\n")
 
     print("ℹ️  Note: GET/UPDATE/DELETE use IDs. Only CALL supports labels.\n")
 
