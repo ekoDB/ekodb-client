@@ -1,5 +1,5 @@
 /**
- * Advanced Scripts Example - Query, Sort, Limit, Group
+ * Advanced Functions Example - Query, Sort, Limit, Group
  * 
  * Demonstrates advanced query and aggregation operations using simple patterns
  */
@@ -53,10 +53,10 @@ async function listAllScript(client) {
     tags: ['products', 'list'],
   };
   
-  const scriptId = await client.saveScript(script);
-  console.log('✅ Script saved');
+  const scriptId = await client.saveFunction(script);
+  console.log('✅ Function saved');
   
-  const result = await client.callScript('list_all_products');
+  const result = await client.callFunction('list_all_products');
   console.log(`📊 Found ${result.records.length} products`);
   console.log(`⏱️  Execution time: ${result.stats.execution_time_ms}ms\n`);
   
@@ -81,10 +81,10 @@ async function groupByCategoryScript(client) {
     tags: ['products', 'analytics'],
   };
   
-  const scriptId = await client.saveScript(script);
-  console.log('✅ Script saved');
+  const scriptId = await client.saveFunction(script);
+  console.log('✅ Function saved');
   
-  const result = await client.callScript('products_by_category');
+  const result = await client.callFunction('products_by_category');
   console.log(`📊 Found ${result.records.length} categories`);
   result.records.forEach((cat) => {
     console.log(`   ${cat.category?.value || cat.category}: ${cat.count?.value || cat.count} items (avg $${(cat.avg_price?.value || cat.avg_price).toFixed(2)})`);
@@ -109,10 +109,10 @@ async function countProductsScript(client) {
     tags: ['products', 'count'],
   };
   
-  const scriptId = await client.saveScript(script);
-  console.log('✅ Script saved');
+  const scriptId = await client.saveFunction(script);
+  console.log('✅ Function saved');
   
-  const result = await client.callScript('count_products');
+  const result = await client.callFunction('count_products');
   console.log(`📊 Total products: ${result.records[0]?.count?.value || result.records[0]?.count || 0}`);
   console.log(`⏱️  Execution time: ${result.stats.execution_time_ms}ms\n`);
   
@@ -138,10 +138,10 @@ async function multiStageAggregationScript(client) {
     tags: ['products', 'analytics', 'multi-stage'],
   };
   
-  const scriptId = await client.saveScript(script);
-  console.log('✅ Script saved');
+  const scriptId = await client.saveFunction(script);
+  console.log('✅ Function saved');
   
-  const result = await client.callScript('category_analysis');
+  const result = await client.callFunction('category_analysis');
   console.log(`📊 Category analysis (${result.records.length} categories):`);
   result.records.forEach((cat) => {
     console.log(`   ${cat.category?.value || cat.category}:`);
@@ -172,10 +172,10 @@ async function projectFieldsScript(client) {
     tags: ['products', 'projection'],
   };
   
-  const scriptId = await client.saveScript(script);
-  console.log('✅ Script saved');
+  const scriptId = await client.saveFunction(script);
+  console.log('✅ Function saved');
   
-  const result = await client.callScript('product_summary');
+  const result = await client.callFunction('product_summary');
   console.log(`📊 Product summaries (${result.records.length} items, showing first 3):`);
   result.records.slice(0, 3).forEach((p, i) => {
     console.log(`   ${i + 1}. ${p.name?.value || p.name} - $${p.price?.value || p.price} (⭐${p.rating?.value || p.rating})`);
@@ -190,7 +190,7 @@ async function cleanup(client, scriptIds) {
   
   try {
     for (const id of scriptIds) {
-      await client.deleteScript(id);
+      await client.deleteFunction(id);
     }
     await client.deleteCollection('advanced_products');
     console.log('✅ Cleanup complete\n');
@@ -200,7 +200,7 @@ async function cleanup(client, scriptIds) {
 }
 
 async function main() {
-  console.log('🚀 ekoDB Advanced Scripts Example\n');
+  console.log('🚀 ekoDB Advanced Functions Example\n');
   
   const client = new EkoDBClient(BASE_URL, API_KEY);
   await client.init();
@@ -215,7 +215,7 @@ async function main() {
     scriptIds.push(await projectFieldsScript(client));
     await cleanup(client, scriptIds);
     
-    console.log('✅ All advanced script examples completed!');
+    console.log('✅ All advanced function examples completed!');
   } catch (error) {
     console.error('❌ Error:', error.message);
     process.exit(1);

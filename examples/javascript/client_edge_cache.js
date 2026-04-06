@@ -82,13 +82,13 @@ async function edgeCacheExample() {
     ],
   };
 
-  const scriptId = await client.saveScript(cacheScript);
+  const scriptId = await client.saveFunction(cacheScript);
   console.log(`✓ Edge cache script created: ${scriptId}\n`);
 
   // Test it - First call hits API
   console.log("Call 1: Cache miss (fetches from API)");
   const start1 = Date.now();
-  const result1 = await client.callScript("cache_api_call_js", {
+  const result1 = await client.callFunction("cache_api_call_js", {
     cache_key: "weather_nyc",
     api_url:
       "https://api.open-meteo.com/v1/forecast?latitude=40.7128&longitude=-74.0060&current=temperature_2m",
@@ -101,7 +101,7 @@ async function edgeCacheExample() {
   // Test it again - Second call hits cache
   console.log("\nCall 2: Cache hit (served from ekoDB)");
   const start2 = Date.now();
-  const result2 = await client.callScript("cache_api_call_js", {
+  const result2 = await client.callFunction("cache_api_call_js", {
     cache_key: "weather_nyc",
     api_url:
       "https://api.open-meteo.com/v1/forecast?latitude=40.7128&longitude=-74.0060&current=temperature_2m",

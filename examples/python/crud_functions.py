@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-Complete CRUD Scripts Example - ekoDB
+Complete CRUD Functions Example - ekoDB
 
-Demonstrates the full CRUD lifecycle using Scripts with verification:
+Demonstrates the full CRUD lifecycle using functions with verification:
 1. Insert + Verify (using Query)
 2. Query + Update + Verify
 3. FindById + Update + Verify  
 4. Delete + Verify
 
-Each Script shows how Functions chain together with proper verification.
+Each function shows how Functions chain together with proper verification.
 """
 
 import asyncio
@@ -54,14 +54,14 @@ async def request(session, method, path, body=None, token=None):
 
 async def script_1_insert_and_verify(session, token):
     """
-    Script 1: Insert + Verify
+    function 1: Insert + Verify
 
     Functions:
     1. Insert - Create a new user record
     2. Query - Verify the record was created
     """
     print("=" * 60)
-    print("📝 Script 1: Insert + Verify")
+    print("📝 function 1: Insert + Verify")
     print("=" * 60)
 
     script = {
@@ -109,13 +109,13 @@ async def script_1_insert_and_verify(session, token):
     }
 
     # Save script
-    print("\n1️⃣ Saving Script...")
+    print("\n1️⃣ Saving Function...")
     save_result = await request(session, "POST", "/api/functions", script, token)
     script_id = save_result["id"]
-    print(f"   ✅ Script saved: {script_id}")
+    print(f"   ✅ Function saved: {script_id}")
 
     # Call script with parameters
-    print("\n2️⃣ Calling Script (Insert + Verify)...")
+    print("\n2️⃣ Calling function (Insert + Verify)...")
     params = {"user_name": "Alice Smith", "user_email": "alice@example.com"}
     call_result = await request(
         session,
@@ -125,7 +125,9 @@ async def script_1_insert_and_verify(session, token):
         token,
     )
 
-    print(f"   ✅ Script executed: {call_result['stats']['stages_executed']} Functions")
+    print(
+        f"   ✅ function executed: {call_result['stats']['stages_executed']} Functions"
+    )
     print(f"   ⏱️  Execution time: {call_result['stats']['execution_time_ms']}ms")
 
     # Show results from verification Query
@@ -147,7 +149,7 @@ async def script_1_insert_and_verify(session, token):
 
 async def script_2_query_update_verify(session, token):
     """
-    Script 2: Query + Update + Verify
+    function 2: Query + Update + Verify
 
     Functions:
     1. Query - Find the user by email filter
@@ -155,7 +157,7 @@ async def script_2_query_update_verify(session, token):
     3. Query - Verify the update worked
     """
     print("\n" + "=" * 60)
-    print("📝 Script 2: Query + Update + Verify")
+    print("📝 function 2: Query + Update + Verify")
     print("=" * 60)
 
     script = {
@@ -218,12 +220,12 @@ async def script_2_query_update_verify(session, token):
         "tags": ["crud", "update", "verification"],
     }
 
-    print("\n1️⃣ Saving Script...")
+    print("\n1️⃣ Saving Function...")
     save_result = await request(session, "POST", "/api/functions", script, token)
     script_id = save_result["id"]
-    print(f"   ✅ Script saved: {script_id}")
+    print(f"   ✅ Function saved: {script_id}")
 
-    print("\n2️⃣ Calling Script (Query + Update + Verify)...")
+    print("\n2️⃣ Calling function (Query + Update + Verify)...")
     params = {"user_email": "alice@example.com", "new_status": "active"}
     call_result = await request(
         session,
@@ -233,7 +235,9 @@ async def script_2_query_update_verify(session, token):
         token,
     )
 
-    print(f"   ✅ Script executed: {call_result['stats']['stages_executed']} Functions")
+    print(
+        f"   ✅ function executed: {call_result['stats']['stages_executed']} Functions"
+    )
     print(f"   ⏱️  Execution time: {call_result['stats']['execution_time_ms']}ms")
 
     records = call_result["records"]
@@ -250,7 +254,7 @@ async def script_2_query_update_verify(session, token):
 
 async def script_3_query_update_credits(session, token):
     """
-    Script 3: Query by Email + Update Credits + Verify
+    function 3: Query by Email + Update Credits + Verify
 
     Functions:
     1. Query - Find user by email
@@ -258,7 +262,7 @@ async def script_3_query_update_credits(session, token):
     3. Query - Verify the credits were added
     """
     print("\n" + "=" * 60)
-    print("📝 Script 3: Query + Update Credits + Verify")
+    print("📝 function 3: Query + Update Credits + Verify")
     print("=" * 60)
 
     script = {
@@ -321,12 +325,12 @@ async def script_3_query_update_credits(session, token):
         "tags": ["crud", "update", "verification"],
     }
 
-    print("\n1️⃣ Saving Script...")
+    print("\n1️⃣ Saving Function...")
     save_result = await request(session, "POST", "/api/functions", script, token)
     script_id = save_result["id"]
-    print(f"   ✅ Script saved: {script_id}")
+    print(f"   ✅ Function saved: {script_id}")
 
-    print(f"\n2️⃣ Calling Script (Query + Update Credits + Verify)...")
+    print(f"\n2️⃣ Calling function (Query + Update Credits + Verify)...")
     params = {"user_email": "alice@example.com", "credits": 100}
     call_result = await request(
         session,
@@ -336,7 +340,9 @@ async def script_3_query_update_credits(session, token):
         token,
     )
 
-    print(f"   ✅ Script executed: {call_result['stats']['stages_executed']} Functions")
+    print(
+        f"   ✅ function executed: {call_result['stats']['stages_executed']} Functions"
+    )
     print(f"   ⏱️  Execution time: {call_result['stats']['execution_time_ms']}ms")
 
     records = call_result["records"]
@@ -354,7 +360,7 @@ async def script_3_query_update_credits(session, token):
 
 async def script_4_delete_and_verify(session, token):
     """
-    Script 4: Query Before Delete + Delete + Verify Gone
+    function 4: Query Before Delete + Delete + Verify Gone
 
     Functions:
     1. Query - Find and show the record before deletion
@@ -362,7 +368,7 @@ async def script_4_delete_and_verify(session, token):
     3. Query - Verify the user no longer exists
     """
     print("\n" + "=" * 60)
-    print("📝 Script 4: Query Before Delete + Delete + Verify")
+    print("📝 function 4: Query Before Delete + Delete + Verify")
     print("=" * 60)
 
     script = {
@@ -418,12 +424,12 @@ async def script_4_delete_and_verify(session, token):
         "tags": ["crud", "delete", "verification"],
     }
 
-    print("\n1️⃣ Saving Script...")
+    print("\n1️⃣ Saving Function...")
     save_result = await request(session, "POST", "/api/functions", script, token)
     script_id = save_result["id"]
-    print(f"   ✅ Script saved: {script_id}")
+    print(f"   ✅ Function saved: {script_id}")
 
-    print("\n2️⃣ Calling Script (Query + Delete + Verify)...")
+    print("\n2️⃣ Calling function (Query + Delete + Verify)...")
     params = {"user_email": "alice@example.com"}
     call_result = await request(
         session,
@@ -433,7 +439,9 @@ async def script_4_delete_and_verify(session, token):
         token,
     )
 
-    print(f"   ✅ Script executed: {call_result['stats']['stages_executed']} Functions")
+    print(
+        f"   ✅ function executed: {call_result['stats']['stages_executed']} Functions"
+    )
     print(f"   ⏱️  Execution time: {call_result['stats']['execution_time_ms']}ms")
 
     # The result will be from the final Query (after delete)
@@ -473,8 +481,8 @@ async def cleanup(session, token, script_ids):
 
 
 async def main():
-    """Main function - runs all CRUD Scripts in sequence"""
-    print("🚀 ekoDB Complete CRUD Scripts Example")
+    """Main function - runs all CRUD Functions in sequence"""
+    print("🚀 ekoDB Complete CRUD Functions Example")
     print("=" * 60)
     print("Demonstrates:")
     print("  • Insert + Verify (using Query)")
@@ -482,7 +490,7 @@ async def main():
     print("  • Query + Update Credits + Verify")
     print("  • Query Before Delete + Delete + Verify Gone")
     print()
-    print("Each Script shows Functions chaining with proper verification")
+    print("Each function shows Functions chaining with proper verification")
     print("=" * 60)
 
     async with aiohttp.ClientSession() as session:
@@ -490,7 +498,7 @@ async def main():
             # Get auth token
             token = await get_auth_token(session)
 
-            # Run all CRUD Scripts in sequence
+            # Run all CRUD Functions in sequence
             user_id, script1_id = await script_1_insert_and_verify(session, token)
             script_ids = [script1_id]
 
@@ -504,14 +512,14 @@ async def main():
             await cleanup(session, token, script_ids)
 
             print("\n" + "=" * 60)
-            print("✅ Complete CRUD Scripts Example Finished!")
+            print("✅ Complete CRUD Functions Example Finished!")
             print("=" * 60)
             print("\n💡 Key Takeaways:")
-            print("   ✅ Scripts chain Functions together")
-            print("   ✅ Each Script demonstrates operation + verification")
-            print("   ✅ Parameters make Scripts reusable")
-            print("   ✅ Verification is built into the Script itself")
-            print("   ✅ Complete CRUD lifecycle in 4 focused Scripts")
+            print("   ✅ Functions chain Functions together")
+            print("   ✅ Each function demonstrates operation + verification")
+            print("   ✅ Parameters make functions reusable")
+            print("   ✅ Verification is built into the function itself")
+            print("   ✅ Complete CRUD lifecycle in 4 focused functions")
 
         except Exception as e:
             print(f"\n❌ Error: {e}")

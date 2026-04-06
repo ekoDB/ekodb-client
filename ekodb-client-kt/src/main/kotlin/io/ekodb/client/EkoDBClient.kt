@@ -2037,15 +2037,15 @@ class EkoDBClient private constructor(
     // ========================================================================
     
     /**
-     * Save a new script definition
+     * Save a new function definition
      */
-    suspend fun saveScript(script: io.ekodb.client.functions.Script): String {
+    suspend fun saveFunction(function: io.ekodb.client.functions.UserFunction): String {
         val token = getToken()
         val response = executeWithRetry {
             client.post("$baseUrl/api/functions") {
                 bearerAuth(token)
                 contentType(ContentType.Application.Json)
-                setBody(script)
+                setBody(function)
             }
         }
         
@@ -2057,26 +2057,26 @@ class EkoDBClient private constructor(
         
         val result = response.body<JsonObject>()
         return result["id"]?.jsonPrimitive?.content 
-            ?: throw IllegalStateException("No script ID returned")
+            ?: throw IllegalStateException("No function ID returned")
     }
     
     /**
-     * Get a script by ID
+     * Get a function by ID
      */
-    suspend fun getScript(id: String): io.ekodb.client.functions.Script {
+    suspend fun getFunction(id: String): io.ekodb.client.functions.UserFunction {
         val token = getToken()
         val response = executeWithRetry {
             client.get("$baseUrl/api/functions/$id") {
                 bearerAuth(token)
             }
         }
-        return response.body<io.ekodb.client.functions.Script>()
+        return response.body<io.ekodb.client.functions.UserFunction>()
     }
     
     /**
-     * List all scripts, optionally filtered by tags
+     * List all functions, optionally filtered by tags
      */
-    suspend fun listScripts(tags: List<String>? = null): List<io.ekodb.client.functions.Script> {
+    suspend fun listFunctions(tags: List<String>? = null): List<io.ekodb.client.functions.UserFunction> {
         val token = getToken()
         val url = if (tags != null) {
             "$baseUrl/api/functions?tags=${tags.joinToString(",")}"
@@ -2088,27 +2088,27 @@ class EkoDBClient private constructor(
                 bearerAuth(token)
             }
         }
-        return response.body<List<io.ekodb.client.functions.Script>>()
+        return response.body<List<io.ekodb.client.functions.UserFunction>>()
     }
     
     /**
-     * Update an existing script by ID
+     * Update an existing function by ID
      */
-    suspend fun updateScript(id: String, script: io.ekodb.client.functions.Script) {
+    suspend fun updateFunction(id: String, function: io.ekodb.client.functions.UserFunction) {
         val token = getToken()
         executeWithRetry {
             client.put("$baseUrl/api/functions/$id") {
                 bearerAuth(token)
                 contentType(ContentType.Application.Json)
-                setBody(script)
+                setBody(function)
             }
         }
     }
     
     /**
-     * Delete a script by ID
+     * Delete a function by ID
      */
-    suspend fun deleteScript(id: String) {
+    suspend fun deleteFunction(id: String) {
         val token = getToken()
         executeWithRetry {
             client.delete("$baseUrl/api/functions/$id") {
@@ -2118,11 +2118,11 @@ class EkoDBClient private constructor(
     }
     
     /**
-     * Call a script by label or ID
-     * @param labelOrId Script label or encrypted ID
-     * @param params Optional parameters for the script
+     * Call a function by label or ID
+     * @param labelOrId Function label or encrypted ID
+     * @param params Optional parameters for the function
      */
-    suspend fun callScript(
+    suspend fun callFunction(
         labelOrId: String,
         params: Map<String, JsonElement>? = null
     ): io.ekodb.client.functions.FunctionResult {
@@ -2139,16 +2139,16 @@ class EkoDBClient private constructor(
     }
     
     /**
-     * Call a script (deprecated - use callScript with labelOrId)
-     * @deprecated Use callScript(labelOrId, params) instead
+     * Call a function (deprecated - use callFunction with labelOrId)
+     * @deprecated Use callFunction(labelOrId, params) instead
      */
-    @Deprecated("Collection parameter is not used for scripts", ReplaceWith("callScript(label, params)"))
-    suspend fun callScript(
+    @Deprecated("Collection parameter is not used for functions", ReplaceWith("callFunction(label, params)"))
+    suspend fun callFunction(
         collection: String,
         label: String,
         params: Map<String, JsonElement>? = null
     ): io.ekodb.client.functions.FunctionResult {
-        return callScript(label, params)
+        return callFunction(label, params)
     }
     
     // ========================================================================
@@ -2157,7 +2157,7 @@ class EkoDBClient private constructor(
 
     /**
      * Save a new user function
-     * User functions are reusable sequences of Functions that can be called by Scripts.
+     * User functions are reusable sequences of Functions that can be called by functions.
      * @param userFunction The user function definition as JSON
      * @return The ID of the created user function
      */
@@ -2274,7 +2274,7 @@ class EkoDBClient private constructor(
      * 
      * This helper simplifies embedding generation by:
      * 1. Creating a temporary collection with the text
-     * 2. Running a Script with FindAll + Embed Functions
+     * 2. Running a function with FindAll + Embed Functions
      * 3. Extracting and returning the embedding vector
      * 4. Cleaning up temporary resources
      * 

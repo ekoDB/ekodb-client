@@ -5,7 +5,9 @@
 //! - On cache miss, fetch from external API
 //! - Store result with TTL for auto-expiration
 
-use ekodb_client::{Client, FieldType, Function, ParameterDefinition, Script, ScriptCondition};
+use ekodb_client::{
+    Client, FieldType, Function, FunctionCondition, ParameterDefinition, UserFunction,
+};
 use serde_json::json;
 use std::collections::HashMap;
 use std::time::Instant;
@@ -49,7 +51,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .with_description("UTC timestamp when cached"),
     );
 
-    let swr_script = Script {
+    let swr_script = UserFunction {
+        id: None,
         label: "fetch_api_user_rs".to_string(),
         name: "Fetch User with Cache".to_string(),
         description: Some("SWR pattern: Check cache, fetch from API if stale".to_string()),
@@ -61,7 +64,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 record_id: "{{user_id}}".to_string(),
             },
             Function::If {
-                condition: ScriptCondition::HasRecords,
+                condition: FunctionCondition::HasRecords,
                 then_functions: vec![Box::new(Function::Project {
                     fields: vec!["data".to_string(), "cached_at".to_string()],
                     exclude: false,
@@ -96,7 +99,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         updated_at: None,
     };
 
-    let script_id = client.save_script(swr_script).await?;
+    let script_id = client.save_function(swr_script).await?;
     println!("✓ Created SWR script: fetch_api_user_rs ({})\n", script_id);
 
     println!("Step 2: First call - Cache miss, fetches from API");
@@ -108,7 +111,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         FieldType::String(chrono::Utc::now().to_rfc3339()),
     );
     let result1 = client
-        .call_script("fetch_api_user_rs", Some(params1))
+        .call_function("fetch_api_user_rs", Some(params1))
         .await?;
     println!("Result: {:?}", result1.stats);
     println!("✓ Data fetched from external API and cached\n");
@@ -123,7 +126,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         FieldType::String(chrono::Utc::now().to_rfc3339()),
     );
     let _ = client
-        .call_script("fetch_api_user_rs", Some(params2))
+        .call_function("fetch_api_user_rs", Some(params2))
         .await?;
     let duration = start.elapsed();
     println!(
@@ -134,7 +137,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Cleanup
     println!("🧹 Cleaning up...");
-    let _ = client.delete_script(&script_id).await;
+    let _ = client.delete_function(&script_id).await;
     let _ = client.delete_collection("user_cache_rs").await;
     println!("✓ Cleanup complete\n");
 

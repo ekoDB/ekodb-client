@@ -74,11 +74,11 @@ async function main() {
     ],
   };
 
-  const scriptId = await client.saveScript(swrScript);
+  const scriptId = await client.saveFunction(swrScript);
   console.log(`✓ Created SWR script: ${swrScript.label} (${scriptId})\n`);
 
   console.log("Step 2: First call - Cache miss, fetches from API");
-  const result1 = await client.callScript("fetch_api_user_js", {
+  const result1 = await client.callFunction("fetch_api_user_js", {
     user_id: "1",
     ttl: 300,
   });
@@ -87,7 +87,7 @@ async function main() {
 
   console.log("Step 3: Second call - Cache hit, instant response from ekoDB");
   const start = Date.now();
-  await client.callScript("fetch_api_user_js", { user_id: "1" });
+  await client.callFunction("fetch_api_user_js", { user_id: "1" });
   const duration = Date.now() - start;
   console.log(`Response time: ${duration}ms (served from cache)`);
   console.log("✓ Lightning fast cache hit\n");
@@ -95,7 +95,7 @@ async function main() {
   // Cleanup
   console.log("🧹 Cleaning up...");
   try {
-    await client.deleteScript(scriptId);
+    await client.deleteFunction(scriptId);
     await client.deleteCollection("user_cache_js");
   } catch (e) {
     // Ignore cleanup errors

@@ -4,10 +4,11 @@ import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
 
 /**
- * Script definition with function stages and parameters
+ * A reusable sequence of Functions stored in ekoDB.
+ * Called by label via the call_function chat tool or REST API.
  */
 @Serializable
-data class Script(
+data class UserFunction(
     val label: String,
     val name: String,
     val description: String? = null,
@@ -19,6 +20,7 @@ data class Script(
     val created_at: String? = null,
     val updated_at: String? = null
 )
+
 
 /**
  * Parameter definition for a function
@@ -35,7 +37,7 @@ data class ParameterDefinition(
 // ParameterValue removed - use direct values or string interpolation "{{param}}" instead
 
 /**
- * Script execution result
+ * Function execution result
  */
 @Serializable
 data class FunctionResult(
@@ -44,7 +46,7 @@ data class FunctionResult(
 )
 
 /**
- * Script execution statistics
+ * Function execution statistics
  */
 @Serializable
 data class FunctionStats(

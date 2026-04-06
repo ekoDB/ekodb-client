@@ -1,7 +1,7 @@
 package main
 
 /*
-Scripts Example using Direct HTTP Requests
+Functions Example using Direct HTTP Requests
 
 Demonstrates using scripts with raw HTTP/net/http API
 No client library required
@@ -156,7 +156,7 @@ func simpleQueryFunction() (string, error) {
 		return "", err
 	}
 	saveResult := saveResultRaw.(map[string]interface{})
-	fmt.Printf("✅ Script saved: %s\n", saveResult["id"])
+	fmt.Printf("✅ Function saved: %s\n", saveResult["id"])
 
 	// Call script (can use label)
 	callResultRaw, err := request("POST", "/api/functions/get_active_users", map[string]interface{}{})
@@ -215,7 +215,7 @@ func parameterizedPaginationFunction() error {
 		return err
 	}
 	saveResult := saveResultRaw.(map[string]interface{})
-	fmt.Printf("✅ Script saved: %s\n", saveResult["id"])
+	fmt.Printf("✅ Function saved: %s\n", saveResult["id"])
 
 	// Call with page 1 (first 3 users)
 	callResultRaw, err := request("POST", "/api/functions/get_active_users_paginated", map[string]interface{}{
@@ -291,7 +291,7 @@ func aggregationFunction() (string, error) {
 		return "", err
 	}
 	saveResult := saveResultRaw.(map[string]interface{})
-	fmt.Printf("✅ Script saved: %s\n", saveResult["id"])
+	fmt.Printf("✅ Function saved: %s\n", saveResult["id"])
 
 	// Call script
 	callResultRaw, err := request("POST", "/api/functions/user_stats", map[string]interface{}{})
@@ -346,13 +346,13 @@ func functionManagement(getActiveUsersID, userStatsID string) error {
 	if _, err := request("PUT", "/api/functions/"+getActiveUsersID, updated); err != nil {
 		return err
 	}
-	fmt.Println("✏️  Script updated")
+	fmt.Println("✏️  function updated")
 
 	// Delete script (requires encrypted ID)
 	if _, err := request("DELETE", "/api/functions/"+userStatsID, nil); err != nil {
 		return err
 	}
-	fmt.Println("🗑️  Script deleted\n")
+	fmt.Println("🗑️  function deleted\n")
 
 	fmt.Println("ℹ️  Note: GET/UPDATE/DELETE operations require the encrypted ID")
 	fmt.Println("ℹ️  Only CALL can use either ID or label\n")
@@ -361,7 +361,7 @@ func functionManagement(getActiveUsersID, userStatsID string) error {
 }
 
 func main() {
-	fmt.Println("🚀 ekoDB Scripts Example (Go/HTTP)\n")
+	fmt.Println("🚀 ekoDB Functions Example (Go/HTTP)\n")
 
 	if err := setupTestData(); err != nil {
 		fmt.Printf("❌ Error: %v\n", err)

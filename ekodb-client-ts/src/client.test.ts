@@ -800,7 +800,7 @@ describe("EkoDBClient scripts advanced", () => {
       parameters: {},
       functions: [],
     };
-    const result = await client.saveScript(script);
+    const result = await client.saveFunction(script);
 
     expect(result).toBeDefined();
   });
@@ -811,7 +811,7 @@ describe("EkoDBClient scripts advanced", () => {
     mockTokenResponse();
     mockJsonResponse({ id: "func_123", label: "my_function" });
 
-    const result = await client.getScript("func_123");
+    const result = await client.getFunction("func_123");
 
     expect(result).toBeDefined();
   });
@@ -829,7 +829,7 @@ describe("EkoDBClient scripts advanced", () => {
       functions: [],
     };
     await expect(
-      client.updateScript("func_123", script),
+      client.updateFunction("func_123", script),
     ).resolves.not.toThrow();
   });
 });

@@ -2,7 +2,7 @@
 ///!
 ///! Demonstrates: KV operations in scripts, wrapped type field builders
 use ekodb_client::{
-    Client, FieldType, Function, ParameterDefinition, Record, Script, SerializationFormat,
+    Client, FieldType, Function, ParameterDefinition, Record, SerializationFormat, UserFunction,
 };
 use rust_decimal::Decimal;
 use std::{collections::HashMap, env, str::FromStr};
@@ -118,9 +118,9 @@ async fn wrapped_types_insert(client: &Client) -> Result<(), Box<dyn std::error:
 }
 
 async fn wrapped_types_in_script(client: &Client) -> Result<String, Box<dyn std::error::Error>> {
-    println!("📝 Example 2: Script with Wrapped Type Parameters\n");
+    println!("📝 Example 2: function with Wrapped Type Parameters\n");
 
-    let script = Script::new(
+    let script = UserFunction::new(
         "create_order_with_types_rs",
         "Create Order with Wrapped Types (Rust)",
     )
@@ -131,8 +131,8 @@ async fn wrapped_types_in_script(client: &Client) -> Result<String, Box<dyn std:
         collection: "products_example_rs".to_string(),
     });
 
-    let id = client.save_script(script).await?;
-    println!("✅ Script saved: {}", id);
+    let id = client.save_function(script).await?;
+    println!("✅ Function saved: {}", id);
 
     let mut params = HashMap::new();
     params.insert(
@@ -141,9 +141,9 @@ async fn wrapped_types_in_script(client: &Client) -> Result<String, Box<dyn std:
     );
 
     let result = client
-        .call_script("create_order_with_types_rs", Some(params))
+        .call_function("create_order_with_types_rs", Some(params))
         .await?;
-    println!("📊 Script executed");
+    println!("📊 function executed");
     println!("⏱️  Execution time: {}ms\n", result.stats.execution_time_ms);
 
     Ok(id)
@@ -212,9 +212,9 @@ async fn kv_basic_operations(client: &Client) -> Result<(), Box<dyn std::error::
 }
 
 async fn kv_script_operations(client: &Client) -> Result<String, Box<dyn std::error::Error>> {
-    println!("📝 Example 4: KV Operations in Scripts\n");
+    println!("📝 Example 4: KV Operations in Functions\n");
 
-    let script = Script::new("cached_product_lookup_rs", "Cached Product Lookup (Rust)")
+    let script = UserFunction::new("cached_product_lookup_rs", "Cached Product Lookup (Rust)")
         .with_description("Uses KV store for caching within a script")
         .with_version("1.0")
         .with_parameter(ParameterDefinition::new("product_key").required())
@@ -224,8 +224,8 @@ async fn kv_script_operations(client: &Client) -> Result<String, Box<dyn std::er
             key: serde_json::Value::String("{{product_key}}".to_string()),
         });
 
-    let id = client.save_script(script).await?;
-    println!("✅ Script saved: {}", id);
+    let id = client.save_function(script).await?;
+    println!("✅ Function saved: {}", id);
 
     // First set some data to retrieve
     let mut product_data = HashMap::new();
@@ -253,7 +253,7 @@ async fn kv_script_operations(client: &Client) -> Result<String, Box<dyn std::er
     );
 
     let result = client
-        .call_script("cached_product_lookup_rs", Some(params))
+        .call_function("cached_product_lookup_rs", Some(params))
         .await?;
     println!("📊 Cached and retrieved product data");
     println!("⏱️  Execution time: {}ms\n", result.stats.execution_time_ms);
@@ -266,9 +266,9 @@ async fn kv_script_operations(client: &Client) -> Result<String, Box<dyn std::er
 // =============================================================================
 
 async fn combined_example(client: &Client) -> Result<String, Box<dyn std::error::Error>> {
-    println!("📝 Example 5: Combined Wrapped Types + KV Script\n");
+    println!("📝 Example 5: Combined Wrapped Types + KV Function\n");
 
-    let script = Script::new(
+    let script = UserFunction::new(
         "process_order_with_cache_rs",
         "Process Order with Cache (Rust)",
     )
@@ -282,8 +282,8 @@ async fn combined_example(client: &Client) -> Result<String, Box<dyn std::error:
         key: serde_json::Value::String("order:status:{{order_id}}".to_string()),
     });
 
-    let id = client.save_script(script).await?;
-    println!("✅ Script saved: {}", id);
+    let id = client.save_function(script).await?;
+    println!("✅ Function saved: {}", id);
 
     // Set order status in KV store
     let mut status_data = HashMap::new();
@@ -311,7 +311,7 @@ async fn combined_example(client: &Client) -> Result<String, Box<dyn std::error:
     );
 
     let result = client
-        .call_script("process_order_with_cache_rs", Some(params))
+        .call_function("process_order_with_cache_rs", Some(params))
         .await?;
     println!("📊 Processed order with caching");
     println!("⏱️  Stages executed: {}", result.stats.stages_executed);
@@ -328,7 +328,7 @@ async fn cleanup(client: &Client, script_ids: &[String]) -> Result<(), Box<dyn s
     println!("🧹 Cleaning up...");
 
     for id in script_ids {
-        let _ = client.delete_script(id).await;
+        let _ = client.delete_function(id).await;
     }
 
     let _ = client.delete_collection("orders_example_rs").await;

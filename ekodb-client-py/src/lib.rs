@@ -8,7 +8,7 @@ use ekodb_client::{
     RawCompletionRequest as RustRawCompletionRequest,
     GetMessagesQuery, GetMessagesResponse, ListSessionsQuery, ListSessionsResponse,
     Query as RustQuery, RateLimitInfo as RustRateLimitInfo, Record as RustRecord,
-    Script as RustScript, SearchQuery as RustSearchQuery,
+     SearchQuery as RustSearchQuery,
     SerializationFormat as RustSerializationFormat, UpdateSessionRequest,
     UserFunction as RustUserFunction, WebSocketClient as RustWebSocketClient,
 };
@@ -2185,11 +2185,11 @@ impl Client {
     /// Save a new script definition
     ///
     /// Args:
-    ///     script: Script definition as a dict
+    ///     function: Function definition as a dict
     ///
     /// Returns:
-    ///     Script ID string
-    fn save_script<'py>(
+    ///     Function ID string
+    fn save_function<'py>(
         &self,
         py: Python<'py>,
         script: &Bound<'py, PyDict>,
@@ -2199,11 +2199,11 @@ impl Client {
             .map_err(|e| PyValueError::new_err(format!("Invalid script definition: {}", e)))?;
         
         future_into_py::<_, Py<PyAny>>(py, async move {
-            let script: RustScript = serde_json::from_str(&script_json)
+            let script: RustUserFunction = serde_json::from_str(&script_json)
                 .map_err(|e| PyRuntimeError::new_err(format!("Failed to parse script: {}", e)))?;
             
             let id = client
-                .save_script(script)
+                .save_function(script)
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("Save script failed: {}", e)))?;
             
@@ -2214,11 +2214,11 @@ impl Client {
     /// Get a script by ID
     ///
     /// Args:
-    ///     id: Script ID
+    ///     id: Function ID
     ///
     /// Returns:
-    ///     Script definition as a dict
-    fn get_script<'py>(
+    ///     Function definition as a dict
+    fn get_function<'py>(
         &self,
         py: Python<'py>,
         id: String,
@@ -2227,7 +2227,7 @@ impl Client {
         
         future_into_py(py, async move {
             let script = client
-                .get_script(&id)
+                .get_function(&id)
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("Get script failed: {}", e)))?;
             
@@ -2245,7 +2245,7 @@ impl Client {
     ///
     /// Returns:
     ///     List of script definitions
-    fn list_scripts<'py>(
+    fn list_functions<'py>(
         &self,
         py: Python<'py>,
         tags: Option<Vec<String>>,
@@ -2254,7 +2254,7 @@ impl Client {
         
         future_into_py(py, async move {
             let scripts = client
-                .list_scripts(tags)
+                .list_functions(tags)
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("List scripts failed: {}", e)))?;
             
@@ -2268,9 +2268,9 @@ impl Client {
     /// Update an existing script
     ///
     /// Args:
-    ///     id: Script ID
+    ///     id: Function ID
     ///     script: Updated script definition as a dict
-    fn update_script<'py>(
+    fn update_function<'py>(
         &self,
         py: Python<'py>,
         script_id: String,
@@ -2281,11 +2281,11 @@ impl Client {
             .map_err(|e| PyValueError::new_err(format!("Invalid script definition: {}", e)))?;
         
         future_into_py(py, async move {
-            let script: RustScript = serde_json::from_str(&script_json)
+            let script: RustUserFunction = serde_json::from_str(&script_json)
                 .map_err(|e| PyRuntimeError::new_err(format!("Failed to parse script: {}", e)))?;
             
             client
-                .update_script(&script_id, script)
+                .update_function(&script_id, script)
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("Update script failed: {}", e)))?;
             
@@ -2296,8 +2296,8 @@ impl Client {
     /// Delete a script by ID
     ///
     /// Args:
-    ///     id: Script ID
-    fn delete_script<'py>(
+    ///     id: Function ID
+    fn delete_function<'py>(
         &self,
         py: Python<'py>,
         id: String,
@@ -2306,7 +2306,7 @@ impl Client {
         
         future_into_py(py, async move {
             client
-                .delete_script(&id)
+                .delete_function(&id)
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("Delete script failed: {}", e)))?;
             
@@ -2317,13 +2317,13 @@ impl Client {
     /// Call a saved script by ID or label
     ///
     /// Args:
-    ///     script_id_or_label: Script ID or label name
+    ///     script_id_or_label: Function ID or label name
     ///     params: Optional parameters as a dict
     ///
     /// Returns:
-    ///     Script execution result with records and metadata
+    ///     Function execution result with records and metadata
     #[pyo3(signature = (script_id_or_label, params=None))]
-    fn call_script<'py>(
+    fn call_function<'py>(
         &self,
         py: Python<'py>,
         script_id_or_label: String,
@@ -2338,7 +2338,7 @@ impl Client {
         
         future_into_py::<_, Py<PyAny>>(py, async move {
             let result = client
-                .call_script(&script_id_or_label, params_map)
+                .call_function(&script_id_or_label, params_map)
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("Call script failed: {}", e)))?;
             

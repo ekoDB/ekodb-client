@@ -1,7 +1,7 @@
 //! User Functions API Example - Using ekodb_client library
 //!
 //! This example demonstrates CRUD operations for User Functions.
-//! User Functions are reusable sequences of Functions that can be called by Scripts.
+//! User Functions are reusable sequences of Functions that can be called by functions.
 
 use ekodb_client::{Client, Function, ParameterDefinition, UserFunction};
 use std::env;

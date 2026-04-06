@@ -1,5 +1,5 @@
 /**
- * Advanced Scripts Example - Query, Sort, Limit, Group
+ * Advanced Functions Example - Query, Sort, Limit, Group
  *
  * Demonstrates advanced query and aggregation operations using simple patterns
  */
@@ -15,7 +15,7 @@ const API_KEY = process.env.API_BASE_KEY || "a-test-api-key-from-ekodb";
 async function main() {
   const client = new EkoDBClient(BASE_URL, API_KEY);
 
-  console.log("🚀 ekoDB TypeScript Advanced Scripts Example\n");
+  console.log("🚀 ekoDB TypeScript Advanced Functions Example\n");
 
   // Setup test data
   console.log("📋 Setting up test data...");
@@ -101,11 +101,11 @@ async function main() {
     functions: [Stage.findAll("advanced_products_ts")],
     tags: ["products", "list"],
   };
-  const scriptId1 = await client.saveScript(script1);
+  const scriptId1 = await client.saveFunction(script1);
   scriptIds.push(scriptId1);
-  console.log("✅ Script saved");
+  console.log("✅ Function saved");
 
-  const result1 = await client.callScript("list_all_products_adv_ts");
+  const result1 = await client.callFunction("list_all_products_adv_ts");
   console.log(`📊 Found ${result1.records?.length || 0} products`);
   console.log(`⏱️  Execution time: ${result1.stats?.execution_time_ms}ms\n`);
 
@@ -132,11 +132,11 @@ async function main() {
     ],
     tags: ["products", "analytics"],
   };
-  const scriptId2 = await client.saveScript(script2);
+  const scriptId2 = await client.saveFunction(script2);
   scriptIds.push(scriptId2);
-  console.log("✅ Script saved");
+  console.log("✅ Function saved");
 
-  const result2 = await client.callScript("products_by_category_ts");
+  const result2 = await client.callFunction("products_by_category_ts");
   console.log("📊 Category breakdown:");
   result2.records?.forEach((record: any) =>
     console.log(`   ${JSON.stringify(record)}`),
@@ -147,7 +147,7 @@ async function main() {
   console.log("🧹 Cleaning up...");
   for (const scriptId of scriptIds) {
     try {
-      await client.deleteScript(scriptId);
+      await client.deleteFunction(scriptId);
     } catch (e) {}
   }
   try {

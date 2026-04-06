@@ -8,7 +8,7 @@
 //!
 //! Compare this with client_swr_pattern.rs to see how much simpler the native function is!
 
-use ekodb_client::{Client, FieldType, Function, ParameterDefinition, Script};
+use ekodb_client::{Client, FieldType, Function, ParameterDefinition, UserFunction};
 use serde_json::json;
 use std::collections::HashMap;
 use std::time::Instant;
@@ -35,7 +35,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Example 1: Basic GitHub User Cache with Native SWR");
     println!("─────────────────────────────────────────────────────\n");
 
-    let basic_swr_script = Script::new("github_user_native", "Native SWR GitHub User Cache")
+    let basic_swr_script = UserFunction::new("github_user_native", "Native SWR GitHub User Cache")
         .with_description("Demonstrates native SWR function with cache-aside pattern")
         .with_parameter(
             ParameterDefinition::new("username")
@@ -60,7 +60,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with_tag("native")
         .with_tag("github");
 
-    let script_id = client.save_script(basic_swr_script).await?;
+    let script_id = client.save_function(basic_swr_script).await?;
     println!(
         "✓ Created native SWR script: github_user_native ({})",
         script_id
@@ -76,7 +76,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     let result1 = client
-        .call_script("github_user_native", Some(params1))
+        .call_function("github_user_native", Some(params1))
         .await?;
     let duration1 = start1.elapsed();
     println!("  Response time: {}ms", duration1.as_millis());
@@ -93,7 +93,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     let _result2 = client
-        .call_script("github_user_native", Some(params2))
+        .call_function("github_user_native", Some(params2))
         .await?;
     let duration2 = start2.elapsed();
     let speedup = if duration2.as_millis() > 0 {
@@ -109,7 +109,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("\nExample 2: SWR with Audit Trail Collection");
     println!("─────────────────────────────────────────────────────\n");
 
-    let audit_swr_script = Script::new("product_swr_audit", "Product Cache with Audit Trail")
+    let audit_swr_script = UserFunction::new("product_swr_audit", "Product Cache with Audit Trail")
         .with_description("Native SWR with audit collection for debugging")
         .with_parameter(
             ParameterDefinition::new("product_id")
@@ -130,7 +130,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with_tag("swr")
         .with_tag("audit");
 
-    let audit_script_id = client.save_script(audit_swr_script).await?;
+    let audit_script_id = client.save_function(audit_swr_script).await?;
     println!(
         "✓ Created SWR script with audit trail: product_swr_audit ({})",
         audit_script_id
@@ -141,7 +141,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     product_params.insert("product_id".to_string(), FieldType::String("1".to_string()));
 
     let product_result = client
-        .call_script("product_swr_audit", Some(product_params))
+        .call_function("product_swr_audit", Some(product_params))
         .await?;
     println!("  ✓ Product fetched and cached");
     println!("  ✓ Audit record created in 'swr_audit_trail' collection");
@@ -152,39 +152,40 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("─────────────────────────────────────────────────────\n");
     println!("Fetch external data → Process → Store in collection");
 
-    let pipeline_script = Script::new("user_enrichment_pipeline", "User Data Enrichment Pipeline")
-        .with_description("Fetch from API, enrich with SWR, store processed result")
-        .with_parameter(
-            ParameterDefinition::new("user_id")
-                .required()
-                .with_description("User ID to enrich"),
-        )
-        // Step 1: Fetch user data with SWR caching
-        .with_function(Function::SWR {
-            cache_key: "user_api:{{user_id}}".to_string(),
-            ttl: json!("30m"),
-            url: "https://jsonplaceholder.typicode.com/users/{{user_id}}".to_string(),
-            method: "GET".to_string(),
-            headers: None,
-            body: None,
-            timeout_seconds: None,
-            output_field: Some("user_data".to_string()), // Populates enriched params
-            collection: None,
-        })
-        // Step 2: Insert enriched data into permanent collection
-        .with_function(Function::Insert {
-            collection: "enriched_users".to_string(),
-            record: json!({
-                "user_id": {"type": "String", "value": "{{user_id}}"},
-                "source_data": {"type": "Object", "value": "{{user_data}}"} // Uses enriched param from SWR
-            }),
-            bypass_ripple: None,
-            ttl: Some(json!("24h")), // Different TTL for permanent storage
-        })
-        .with_tag("enrichment")
-        .with_tag("pipeline");
+    let pipeline_script =
+        UserFunction::new("user_enrichment_pipeline", "User Data Enrichment Pipeline")
+            .with_description("Fetch from API, enrich with SWR, store processed result")
+            .with_parameter(
+                ParameterDefinition::new("user_id")
+                    .required()
+                    .with_description("User ID to enrich"),
+            )
+            // Step 1: Fetch user data with SWR caching
+            .with_function(Function::SWR {
+                cache_key: "user_api:{{user_id}}".to_string(),
+                ttl: json!("30m"),
+                url: "https://jsonplaceholder.typicode.com/users/{{user_id}}".to_string(),
+                method: "GET".to_string(),
+                headers: None,
+                body: None,
+                timeout_seconds: None,
+                output_field: Some("user_data".to_string()), // Populates enriched params
+                collection: None,
+            })
+            // Step 2: Insert enriched data into permanent collection
+            .with_function(Function::Insert {
+                collection: "enriched_users".to_string(),
+                record: json!({
+                    "user_id": {"type": "String", "value": "{{user_id}}"},
+                    "source_data": {"type": "Object", "value": "{{user_data}}"} // Uses enriched param from SWR
+                }),
+                bypass_ripple: None,
+                ttl: Some(json!("24h")), // Different TTL for permanent storage
+            })
+            .with_tag("enrichment")
+            .with_tag("pipeline");
 
-    let pipeline_script_id = client.save_script(pipeline_script).await?;
+    let pipeline_script_id = client.save_function(pipeline_script).await?;
     println!(
         "✓ Created enrichment pipeline: user_enrichment_pipeline ({})",
         pipeline_script_id
@@ -195,7 +196,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     enrich_params.insert("user_id".to_string(), FieldType::String("1".to_string()));
 
     let enrich_result = client
-        .call_script("user_enrichment_pipeline", Some(enrich_params))
+        .call_function("user_enrichment_pipeline", Some(enrich_params))
         .await?;
     println!("  ✓ Data fetched from API (cached 30m)");
     println!("  ✓ Enriched data stored in 'enriched_users' (TTL 24h)");
@@ -208,7 +209,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("\nExample 4: Dynamic TTL Configuration");
     println!("─────────────────────────────────────────────────────\n");
 
-    let dynamic_ttl_script = Script::new("flexible_cache", "Flexible Cache with Dynamic TTL")
+    let dynamic_ttl_script = UserFunction::new("flexible_cache", "Flexible Cache with Dynamic TTL")
         .with_description("SWR function with user-controlled TTL")
         .with_parameter(
             ParameterDefinition::new("resource_id")
@@ -233,7 +234,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         })
         .with_tag("dynamic");
 
-    let dynamic_script_id = client.save_script(dynamic_ttl_script).await?;
+    let dynamic_script_id = client.save_function(dynamic_ttl_script).await?;
     println!(
         "✓ Created dynamic TTL script: flexible_cache ({})",
         dynamic_script_id
@@ -251,7 +252,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         dynamic_params.insert("ttl".to_string(), FieldType::String(ttl_value.to_string()));
 
         let _ = client
-            .call_script("flexible_cache", Some(dynamic_params))
+            .call_function("flexible_cache", Some(dynamic_params))
             .await?;
         println!("  ✓ Cached with TTL: {} ({})", ttl_value, description);
     }
@@ -273,10 +274,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Cleanup
     println!("🧹 Cleaning up test data...");
-    let _ = client.delete_script(&script_id).await;
-    let _ = client.delete_script(&audit_script_id).await;
-    let _ = client.delete_script(&pipeline_script_id).await;
-    let _ = client.delete_script(&dynamic_script_id).await;
+    let _ = client.delete_function(&script_id).await;
+    let _ = client.delete_function(&audit_script_id).await;
+    let _ = client.delete_function(&pipeline_script_id).await;
+    let _ = client.delete_function(&dynamic_script_id).await;
     let _ = client.delete_collection("swr_audit_trail").await;
     let _ = client.delete_collection("enriched_users").await;
     println!("✓ Cleanup complete\n");

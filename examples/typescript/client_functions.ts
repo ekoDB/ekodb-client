@@ -1,5 +1,5 @@
 /**
- * Scripts Example for ekoDB TypeScript Client
+ * Functions Example for ekoDB TypeScript Client
  *
  * Demonstrates creating, managing, and executing scripts
  */
@@ -26,7 +26,7 @@ async function setupTestData(client: EkoDBClient): Promise<void> {
 }
 
 async function simpleQueryScript(client: EkoDBClient): Promise<string> {
-  console.log("📝 Example 1: Simple Query Script\n");
+  console.log("📝 Example 1: Simple Query Function\n");
 
   const script = {
     label: "get_active_users",
@@ -38,17 +38,17 @@ async function simpleQueryScript(client: EkoDBClient): Promise<string> {
     tags: ["users", "query"],
   };
 
-  const id = await client.saveScript(script);
-  console.log(`✅ Script saved: ${id}`);
+  const id = await client.saveFunction(script);
+  console.log(`✅ Function saved: ${id}`);
 
-  const result = await client.callScript("get_active_users");
+  const result = await client.callFunction("get_active_users");
   console.log(`📊 Found ${result.records.length} active users\n`);
 
   return id;
 }
 
 async function parameterizedScript(client: EkoDBClient): Promise<string> {
-  console.log("📝 Example 2: Parameterized Script\n");
+  console.log("📝 Example 2: Parameterized Function\n");
 
   const script = {
     label: "get_users_by_status",
@@ -70,18 +70,18 @@ async function parameterizedScript(client: EkoDBClient): Promise<string> {
     tags: ["users", "parameterized"],
   };
 
-  const id = await client.saveScript(script);
-  console.log(`✅ Script saved: ${id}`);
+  const id = await client.saveFunction(script);
+  console.log(`✅ Function saved: ${id}`);
 
   const params = { status: "active", limit: 3 };
-  const result = await client.callScript("get_users_by_status", params);
+  const result = await client.callFunction("get_users_by_status", params);
   console.log(`📊 Found ${result.records.length} users (limited)\n`);
 
   return id;
 }
 
 async function aggregationScript(client: EkoDBClient): Promise<string> {
-  console.log("📝 Example 3: Aggregation Script\n");
+  console.log("📝 Example 3: Aggregation Function\n");
 
   const script = {
     label: "user_stats",
@@ -106,10 +106,10 @@ async function aggregationScript(client: EkoDBClient): Promise<string> {
     tags: ["analytics"],
   };
 
-  const id = await client.saveScript(script);
-  console.log(`✅ Script saved: ${id}`);
+  const id = await client.saveFunction(script);
+  console.log(`✅ Function saved: ${id}`);
 
-  const result = await client.callScript("user_stats");
+  const result = await client.callFunction("user_stats");
   console.log(`📊 Statistics: ${result.records.length} groups`);
   result.records.forEach((record) =>
     console.log(`   ${JSON.stringify(record)}`),
@@ -125,14 +125,14 @@ async function scriptManagement(
   getUsersByStatusId: string,
   userStatsId: string,
 ): Promise<void> {
-  console.log("📝 Example 4: Script Management\n");
+  console.log("📝 Example 4: UserFunction Management\n");
 
   // List all scripts
-  const scripts = await client.listScripts();
+  const scripts = await client.listFunctions();
   console.log(`📋 Total scripts: ${scripts.length}`);
 
   // Get specific script by ID
-  const script = await client.getScript(getActiveUsersId);
+  const script = await client.getFunction(getActiveUsersId);
   console.log(`🔍 Retrieved script: ${script.name}`);
 
   // Update script by ID
@@ -145,12 +145,12 @@ async function scriptManagement(
     functions: [Stage.findAll("users")],
     tags: ["users"],
   };
-  await client.updateScript(getActiveUsersId, updated);
-  console.log("✏️  Script updated");
+  await client.updateFunction(getActiveUsersId, updated);
+  console.log("✏️  function updated");
 
   // Delete script by ID
-  await client.deleteScript(userStatsId);
-  console.log("🗑️  Script deleted\n");
+  await client.deleteFunction(userStatsId);
+  console.log("🗑️  function deleted\n");
 
   console.log(
     "ℹ️  Note: GET/UPDATE/DELETE use IDs. Only CALL supports labels.\n",
@@ -158,7 +158,7 @@ async function scriptManagement(
 }
 
 async function main(): Promise<void> {
-  console.log("🚀 ekoDB Scripts Example (TypeScript)\n");
+  console.log("🚀 ekoDB Functions Example (TypeScript)\n");
 
   const baseUrl = process.env.API_BASE_URL || "http://localhost:8080";
   const apiKey = process.env.API_BASE_KEY;

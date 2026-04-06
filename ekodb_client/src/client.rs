@@ -1779,35 +1779,35 @@ impl Client {
             .await
     }
 
-    /// Save a new Script
+    /// Save a new function
     ///
     /// # Arguments
     ///
-    /// * `script` - The Script definition to save
+    /// * `script` - The UserFunction definition to save
     ///
     /// # Returns
     ///
-    /// The Script ID assigned by the server
-    pub async fn save_script(&self, script: crate::functions::Script) -> Result<String> {
+    /// The UserFunction ID assigned by the server
+    pub async fn save_function(&self, script: crate::functions::UserFunction) -> Result<String> {
         let token = self.auth.get_token().await?;
-        self.http.save_script(script, &token).await
+        self.http.save_function(script, &token).await
     }
 
-    /// Get a Script by its ID
+    /// Get a UserFunction by its ID
     ///
     /// # Arguments
     ///
-    /// * `id` - The Script ID (from save_script)
+    /// * `id` - The UserFunction ID (from save_function)
     ///
     /// # Returns
     ///
-    /// The saved Script definition
-    pub async fn get_script(&self, id: &str) -> Result<crate::functions::Script> {
+    /// The saved UserFunction definition
+    pub async fn get_function(&self, id: &str) -> Result<crate::functions::UserFunction> {
         let token = self.auth.get_token().await?;
-        self.http.get_script(id, &token).await
+        self.http.get_function(id, &token).await
     }
 
-    /// List all saved Scripts, optionally filtered by tags
+    /// List all saved functions, optionally filtered by tags
     ///
     /// # Arguments
     ///
@@ -1815,46 +1815,50 @@ impl Client {
     ///
     /// # Returns
     ///
-    /// Vector of saved Scripts
-    pub async fn list_scripts(
+    /// Vector of saved functions
+    pub async fn list_functions(
         &self,
         tags: Option<Vec<String>>,
-    ) -> Result<Vec<crate::functions::Script>> {
+    ) -> Result<Vec<crate::functions::UserFunction>> {
         let token = self.auth.get_token().await?;
-        self.http.list_scripts(tags, &token).await
+        self.http.list_functions(tags, &token).await
     }
 
-    /// Update an existing Script
+    /// Update an existing function
     ///
     /// # Arguments
     ///
-    /// * `id` - The Script ID to update
-    /// * `script` - The updated Script definition
-    pub async fn update_script(&self, id: &str, script: crate::functions::Script) -> Result<()> {
+    /// * `id` - The UserFunction ID to update
+    /// * `script` - The updated UserFunction definition
+    pub async fn update_function(
+        &self,
+        id: &str,
+        script: crate::functions::UserFunction,
+    ) -> Result<()> {
         let token = self.auth.get_token().await?;
-        self.http.update_script(id, script, &token).await
+        self.http.update_function(id, script, &token).await
     }
 
-    /// Delete a Script by its ID
+    /// Delete a UserFunction by its ID
     ///
     /// # Arguments
     ///
-    /// * `id` - The Script ID to delete
-    pub async fn delete_script(&self, id: &str) -> Result<()> {
+    /// * `id` - The UserFunction ID to delete
+    pub async fn delete_function(&self, id: &str) -> Result<()> {
         let token = self.auth.get_token().await?;
-        self.http.delete_script(id, &token).await
+        self.http.delete_function(id, &token).await
     }
 
-    /// Call a saved Script
+    /// Call a saved function
     ///
     /// # Arguments
     ///
-    /// * `label` - The Script label to execute
-    /// * `params` - Optional parameters to pass to the Script
+    /// * `label` - The UserFunction label to execute
+    /// * `params` - Optional parameters to pass to the function
     ///
     /// # Returns
     ///
-    /// Script execution result containing records and metadata
+    /// UserFunction execution result containing records and metadata
     ///
     /// # Example
     ///
@@ -1870,19 +1874,19 @@ impl Client {
     /// let mut params = HashMap::new();
     /// params.insert("status".to_string(), FieldType::String("active".to_string()));
     ///
-    /// let result = client.call_script("get_active_users", Some(params)).await?;
+    /// let result = client.call_function("get_active_users", Some(params)).await?;
     /// println!("Found {} records", result.records.len());
     /// # Ok(())
     /// # }
     /// ```
-    pub async fn call_script(
+    pub async fn call_function(
         &self,
         script_id_or_label: &str,
         params: Option<std::collections::HashMap<String, crate::types::FieldType>>,
     ) -> Result<crate::functions::FunctionResult> {
         let token = self.auth.get_token().await?;
         self.http
-            .call_script(script_id_or_label, params, &token)
+            .call_function(script_id_or_label, params, &token)
             .await
     }
 

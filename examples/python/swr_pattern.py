@@ -87,13 +87,13 @@ async def main():
         "tags": ["swr", "github", "cache"],
     }
 
-    script_id = await client.save_script(swr_script)
+    script_id = await client.save_function(swr_script)
     print(f"✓ Created SWR script: {swr_script['label']} ({script_id})\n")
 
     # Step 2: First call - Cache miss
     print("Step 2: First call - Cache miss, fetches from GitHub API")
     start1 = time.time()
-    result1 = await client.call_script(
+    result1 = await client.call_function(
         "fetch_github_user", {"username": "torvalds", "ttl": 300}
     )
     duration1 = (time.time() - start1) * 1000
@@ -104,7 +104,7 @@ async def main():
     # Step 3: Second call - Cache hit
     print("Step 3: Second call - Cache hit, instant response from ekoDB")
     start2 = time.time()
-    result2 = await client.call_script("fetch_github_user", {"username": "torvalds"})
+    result2 = await client.call_function("fetch_github_user", {"username": "torvalds"})
     duration2 = (time.time() - start2) * 1000
     speedup = duration1 / duration2
     print(f"Response time: {duration2:.0f}ms ({speedup:.1f}x faster!)")
@@ -167,7 +167,7 @@ async def main():
         "tags": ["enrichment", "product", "cache"],
     }
 
-    enrich_script_id = await client.save_script(enrich_script)
+    enrich_script_id = await client.save_function(enrich_script)
     print(
         f"✓ Created enrichment script: {enrich_script['label']} ({enrich_script_id})\n"
     )
@@ -175,7 +175,7 @@ async def main():
     print(
         "Step 4: Call enrichment function - Fetches from API + stores enriched result"
     )
-    enriched = await client.call_script(
+    enriched = await client.call_function(
         "fetch_product_enriched", {"product_id": "1", "ttl": 600}
     )
     print(f"Enriched data: {json.dumps(enriched['records'][:1], indent=2)}")

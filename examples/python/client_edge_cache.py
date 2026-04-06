@@ -92,13 +92,13 @@ async def edge_cache_example():
         ],
     }
 
-    script_id = await client.save_script(cache_script)
+    script_id = await client.save_function(cache_script)
     print(f"✓ Edge cache script created: {script_id}\n")
 
     # Test it - First call hits API
     print("Call 1: Cache miss (fetches from API)")
     start1 = time.time()
-    result1 = await client.call_script(
+    result1 = await client.call_function(
         "cache_api_call_py",
         {
             "cache_key": "weather_nyc",
@@ -113,7 +113,7 @@ async def edge_cache_example():
     # Test it again - Second call hits cache
     print("\nCall 2: Cache hit (served from ekoDB)")
     start2 = time.time()
-    result2 = await client.call_script(
+    result2 = await client.call_function(
         "cache_api_call_py",
         {
             "cache_key": "weather_nyc",

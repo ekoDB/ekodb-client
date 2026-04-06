@@ -31,7 +31,7 @@ func main() {
 	fmt.Println("Step 1: Create SWR function that acts as edge cache")
 
 	version := "1.0"
-	swrScript := ekodb.Script{
+	swrScript := ekodb.UserFunction{
 		Label:       "fetch_github_user",
 		Name:        "Fetch GitHub User with Cache",
 		Description: strPtr("SWR pattern: Check cache, fetch from GitHub API if stale, auto-update with TTL"),
@@ -90,7 +90,7 @@ func main() {
 		Tags: []string{"swr", "github", "cache"},
 	}
 
-	scriptID, err := client.SaveScript(swrScript)
+	scriptID, err := client.SaveFunction(swrScript)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -99,7 +99,7 @@ func main() {
 	// Test the SWR pattern
 	fmt.Println("Step 2: First call - Cache miss, fetches from GitHub API")
 	start1 := time.Now()
-	result1, err := client.CallScript("fetch_github_user", map[string]interface{}{
+	result1, err := client.CallFunction("fetch_github_user", map[string]interface{}{
 		"username": "torvalds",
 		"ttl":      300,
 	})
@@ -115,7 +115,7 @@ func main() {
 	// Second call - should hit cache
 	fmt.Println("Step 3: Second call - Cache hit, instant response from ekoDB")
 	start2 := time.Now()
-	_, err = client.CallScript("fetch_github_user", map[string]interface{}{
+	_, err = client.CallFunction("fetch_github_user", map[string]interface{}{
 		"username": "torvalds",
 	})
 	if err != nil {
@@ -131,7 +131,7 @@ func main() {
 	fmt.Println("Creating product enrichment function...")
 
 	version2 := "1.0"
-	enrichScript := ekodb.Script{
+	enrichScript := ekodb.UserFunction{
 		Label:       "fetch_product_enriched",
 		Name:        "Fetch Product with Enrichment",
 		Description: strPtr("Demonstrates calling external API and enriching data"),
@@ -186,14 +186,14 @@ func main() {
 		Tags: []string{"enrichment", "product", "cache"},
 	}
 
-	enrichScriptID, err := client.SaveScript(enrichScript)
+	enrichScriptID, err := client.SaveFunction(enrichScript)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Printf("✓ Created enrichment script: %s (%s)\n\n", enrichScript.Label, enrichScriptID)
 
 	fmt.Println("Step 4: Call enrichment function - Fetches from API + stores enriched result")
-	enriched, err := client.CallScript("fetch_product_enriched", map[string]interface{}{
+	enriched, err := client.CallFunction("fetch_product_enriched", map[string]interface{}{
 		"product_id": "1",
 		"ttl":        600,
 	})

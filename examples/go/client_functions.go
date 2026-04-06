@@ -1,8 +1,8 @@
 /**
- * Scripts Example for ekoDB Go Client
+ * Functions Example for ekoDB Go Client
  *
  * Demonstrates creating, managing, and executing scripts with the Go client.
- * Covers: FindAll, Group, Project, Count, and Script management operations.
+ * Covers: FindAll, Group, Project, Count, and Function management operations.
  */
 
 package main
@@ -42,10 +42,10 @@ func setupTestData(client *ekodb.Client) error {
 }
 
 func simpleQueryScript(client *ekodb.Client) (string, error) {
-	fmt.Println("📝 Example 1: Simple Query Script\n")
+	fmt.Println("📝 Example 1: Simple Query Function\n")
 
 	version := "1.0"
-	script := ekodb.Script{
+	script := ekodb.UserFunction{
 		Label:       "get_active_users",
 		Name:        "Get Active Users",
 		Description: strPtr("Retrieve all active users"),
@@ -57,13 +57,13 @@ func simpleQueryScript(client *ekodb.Client) (string, error) {
 		Tags: []string{"users", "query"},
 	}
 
-	scriptID, err := client.SaveScript(script)
+	scriptID, err := client.SaveFunction(script)
 	if err != nil {
 		return "", err
 	}
-	fmt.Printf("✅ Script saved: %s\n", scriptID)
+	fmt.Printf("✅ Function saved: %s\n", scriptID)
 
-	result, err := client.CallScript("get_active_users", nil)
+	result, err := client.CallFunction("get_active_users", nil)
 	if err != nil {
 		return "", err
 	}
@@ -74,10 +74,10 @@ func simpleQueryScript(client *ekodb.Client) (string, error) {
 }
 
 func parameterizedScript(client *ekodb.Client) error {
-	fmt.Println("📝 Example 2: Parameterized Script\n")
+	fmt.Println("📝 Example 2: Parameterized Function\n")
 
 	version := "1.0"
-	script := ekodb.Script{
+	script := ekodb.UserFunction{
 		Label:   "get_users_by_status",
 		Name:    "Get Users By Status",
 		Version: &version,
@@ -99,17 +99,17 @@ func parameterizedScript(client *ekodb.Client) error {
 		Tags: []string{"users", "parameterized"},
 	}
 
-	_, err := client.SaveScript(script)
+	_, err := client.SaveFunction(script)
 	if err != nil {
 		return err
 	}
-	fmt.Println("✅ Script saved")
+	fmt.Println("✅ Function saved")
 
 	params := map[string]interface{}{
 		"status": "active",
 		"limit":  3,
 	}
-	result, err := client.CallScript("get_users_by_status", params)
+	result, err := client.CallFunction("get_users_by_status", params)
 	if err != nil {
 		return err
 	}
@@ -120,10 +120,10 @@ func parameterizedScript(client *ekodb.Client) error {
 }
 
 func aggregationScript(client *ekodb.Client) (string, error) {
-	fmt.Println("📝 Example 3: Aggregation Script\n")
+	fmt.Println("📝 Example 3: Aggregation Function\n")
 
 	version := "1.0"
-	script := ekodb.Script{
+	script := ekodb.UserFunction{
 		Label:      "user_stats",
 		Name:       "User Statistics",
 		Version:    &version,
@@ -148,13 +148,13 @@ func aggregationScript(client *ekodb.Client) (string, error) {
 		Tags: []string{"analytics"},
 	}
 
-	scriptID, err := client.SaveScript(script)
+	scriptID, err := client.SaveFunction(script)
 	if err != nil {
 		return "", err
 	}
-	fmt.Println("✅ Script saved")
+	fmt.Println("✅ Function saved")
 
-	result, err := client.CallScript("user_stats", nil)
+	result, err := client.CallFunction("user_stats", nil)
 	if err != nil {
 		return "", err
 	}
@@ -168,17 +168,17 @@ func aggregationScript(client *ekodb.Client) (string, error) {
 }
 
 func scriptManagement(client *ekodb.Client, getActiveUsersID, userStatsID string) error {
-	fmt.Println("📝 Example 4: Script Management\n")
+	fmt.Println("📝 Example 4: function Management\n")
 
 	// List all scripts
-	scripts, err := client.ListScripts(nil)
+	scripts, err := client.ListFunctions(nil)
 	if err != nil {
 		return err
 	}
 	fmt.Printf("📋 Total scripts: %d\n", len(scripts))
 
 	// Get specific script (use encrypted ID)
-	script, err := client.GetScript(getActiveUsersID)
+	script, err := client.GetFunction(getActiveUsersID)
 	if err != nil {
 		return err
 	}
@@ -186,7 +186,7 @@ func scriptManagement(client *ekodb.Client, getActiveUsersID, userStatsID string
 
 	// Update script (use encrypted ID)
 	updatedVersion := "1.1"
-	updatedScript := ekodb.Script{
+	updatedScript := ekodb.UserFunction{
 		Label:       "get_active_users",
 		Name:        "Get Active Users (Updated)",
 		Description: strPtr("Updated description"),
@@ -197,16 +197,16 @@ func scriptManagement(client *ekodb.Client, getActiveUsersID, userStatsID string
 		},
 		Tags: []string{"users"},
 	}
-	if err := client.UpdateScript(getActiveUsersID, updatedScript); err != nil {
+	if err := client.UpdateFunction(getActiveUsersID, updatedScript); err != nil {
 		return err
 	}
-	fmt.Println("✏️  Script updated")
+	fmt.Println("✏️  function updated")
 
 	// Delete script (use ID) - handle error gracefully
-	if err := client.DeleteScript(userStatsID); err != nil {
-		fmt.Println("ℹ️  Script delete skipped (may not exist)")
+	if err := client.DeleteFunction(userStatsID); err != nil {
+		fmt.Println("ℹ️  function delete skipped (may not exist)")
 	} else {
-		fmt.Println("🗑️  Script deleted")
+		fmt.Println("🗑️  function deleted")
 	}
 	fmt.Println()
 
@@ -220,7 +220,7 @@ func multiStageScript(client *ekodb.Client) error {
 	fmt.Println("📝 Example 5: Multi-Stage Pipeline\n")
 
 	version := "1.0"
-	script := ekodb.Script{
+	script := ekodb.UserFunction{
 		Label:   "top_users",
 		Name:    "Top Performing Users",
 		Version: &version,
@@ -237,14 +237,14 @@ func multiStageScript(client *ekodb.Client) error {
 		Tags: []string{"analytics", "reporting"},
 	}
 
-	_, err := client.SaveScript(script)
+	_, err := client.SaveFunction(script)
 	if err != nil {
 		return err
 	}
 	fmt.Println("✅ Multi-stage script saved")
 
 	params := map[string]interface{}{"min_score": 50}
-	result, err := client.CallScript("top_users", params)
+	result, err := client.CallFunction("top_users", params)
 	if err != nil {
 		return err
 	}
@@ -264,7 +264,7 @@ func countScript(client *ekodb.Client) error {
 	fmt.Println("📝 Example 6: Count Users\n")
 
 	version := "1.0"
-	script := ekodb.Script{
+	script := ekodb.UserFunction{
 		Label:      "count_users",
 		Name:       "Count All Users",
 		Version:    &version,
@@ -276,13 +276,13 @@ func countScript(client *ekodb.Client) error {
 		Tags: []string{"users", "count"},
 	}
 
-	_, err := client.SaveScript(script)
+	_, err := client.SaveFunction(script)
 	if err != nil {
 		return err
 	}
 	fmt.Println("✅ Count script saved")
 
-	result, err := client.CallScript("count_users", nil)
+	result, err := client.CallFunction("count_users", nil)
 	if err != nil {
 		return err
 	}
@@ -310,7 +310,7 @@ func cleanup(client *ekodb.Client) error {
 	fmt.Println("✅ Deleted collection")
 
 	// List and delete all test scripts
-	scripts, err := client.ListScripts(nil)
+	scripts, err := client.ListFunctions(nil)
 	if err != nil {
 		return err
 	}
@@ -318,7 +318,7 @@ func cleanup(client *ekodb.Client) error {
 		if len(script.Label) > 4 && (script.Label[:4] == "get_" || script.Label[:5] == "user_" ||
 			script.Label[:4] == "top_" || script.Label[:6] == "count_") {
 			if script.ID != nil {
-				_ = client.DeleteScript(*script.ID)
+				_ = client.DeleteFunction(*script.ID)
 			}
 		}
 	}
@@ -328,7 +328,7 @@ func cleanup(client *ekodb.Client) error {
 }
 
 func main() {
-	fmt.Println("🚀 ekoDB Scripts Example (Go Client)\n")
+	fmt.Println("🚀 ekoDB Functions Example (Go Client)\n")
 
 	// Load environment variables from .env file
 	_ = godotenv.Load()

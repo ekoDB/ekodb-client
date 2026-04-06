@@ -1,5 +1,5 @@
 /**
- * AI Scripts Example - Chat and Embed Operations
+ * AI Functions Example - Chat and Embed Operations
  * 
  * Demonstrates AI operations in scripts:
  * - Chat completions with context
@@ -65,10 +65,10 @@ async function chatCompletionScript(client) {
     tags: ['ai', 'chat'],
   };
   
-  const scriptId = await client.saveScript(script);
-  console.log('✅ Chat script saved');
+  const scriptId = await client.saveFunction(script);
+  console.log('✅ Chat function saved');
   
-  const result = await client.callScript('ai_assistant');
+  const result = await client.callFunction('ai_assistant');
   
   console.log('🤖 AI Response:');
   console.log(`   ${result.records[0]?.response?.value || result.records[0]?.response || 'No response'}`);
@@ -93,10 +93,10 @@ async function embedGenerationScript(client) {
     tags: ['ai', 'embeddings'],
   };
   
-  const scriptId = await client.saveScript(script);
-  console.log('✅ Embedding script saved');
+  const scriptId = await client.saveFunction(script);
+  console.log('✅ Embedding function saved');
   
-  const result = await client.callScript('generate_embeddings');
+  const result = await client.callFunction('generate_embeddings');
   
   console.log(`📊 Generated embeddings for ${result.records.length} articles`);
   result.records.forEach((article, i) => {
@@ -120,10 +120,10 @@ async function listArticlesScript(client) {
     tags: ['articles'],
   };
   
-  const scriptId = await client.saveScript(script);
-  console.log('✅ Script saved');
+  const scriptId = await client.saveFunction(script);
+  console.log('✅ Function saved');
   
-  const result = await client.callScript('list_articles');
+  const result = await client.callFunction('list_articles');
   console.log(`📊 Found ${result.records.length} articles`);
   console.log(`⏱️  Execution time: ${result.stats.execution_time_ms}ms\n`);
   
@@ -135,7 +135,7 @@ async function cleanup(client, scriptIds) {
   
   try {
     for (const id of scriptIds) {
-      await client.deleteScript(id);
+      await client.deleteFunction(id);
     }
     await client.deleteCollection('ai_articles');
     console.log('✅ Cleanup complete\n');
@@ -145,7 +145,7 @@ async function cleanup(client, scriptIds) {
 }
 
 async function main() {
-  console.log('🚀 ekoDB AI Scripts Example\n');
+  console.log('🚀 ekoDB AI Functions Example\n');
   console.log('⚠️  Note: These examples require AI API credentials (OpenAI, etc.)\n');
   
   const client = new EkoDBClient(BASE_URL, API_KEY);

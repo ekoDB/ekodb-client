@@ -1,6 +1,6 @@
-//! Scripts API for ekoDB client
+//! Functions API for ekoDB client
 //!
-//! This module provides types and methods for working with Scripts,
+//! This module provides types and methods for working with functions,
 //! allowing you to create, manage, and execute server-side sequences of Functions.
 
 use crate::types::FieldType;
@@ -8,9 +8,14 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-/// A Script definition with Functions and parameters
+/// A reusable sequence of Functions stored in ekoDB.
+/// Called by label via the `call_function` chat tool or REST API.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Script {
+pub struct UserFunction {
+    /// Unique identifier (ekoDB-generated)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+
     /// User-defined label (unique identifier)
     pub label: String,
 
@@ -41,93 +46,6 @@ pub struct Script {
     pub created_at: Option<DateTime<Utc>>,
 
     /// Last update timestamp (server-managed, don't send from client)
-    #[serde(skip_serializing, skip_deserializing)]
-    pub updated_at: Option<DateTime<Utc>>,
-}
-
-impl Script {
-    /// Create a new Script
-    pub fn new(label: impl Into<String>, name: impl Into<String>) -> Self {
-        Self {
-            label: label.into(),
-            name: name.into(),
-            description: None,
-            version: None,
-            parameters: HashMap::new(),
-            functions: Vec::new(),
-            tags: Vec::new(),
-            created_at: None, // Server will set this
-            updated_at: None, // Server will set this
-        }
-    }
-
-    /// Set the description
-    pub fn with_description(mut self, description: impl Into<String>) -> Self {
-        self.description = Some(description.into());
-        self
-    }
-
-    /// Set the version
-    pub fn with_version(mut self, version: impl Into<String>) -> Self {
-        self.version = Some(version.into());
-        self
-    }
-
-    /// Add a parameter definition
-    pub fn with_parameter(mut self, param: ParameterDefinition) -> Self {
-        self.parameters.insert(param.name.clone(), param);
-        self
-    }
-
-    /// Add a Function to the Script
-    pub fn with_function(mut self, function: Function) -> Self {
-        self.functions.push(function);
-        self
-    }
-
-    /// Add a tag
-    pub fn with_tag(mut self, tag: impl Into<String>) -> Self {
-        self.tags.push(tag.into());
-        self
-    }
-}
-
-/// A UserFunction is a reusable sequence of Functions that can be called by Scripts
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct UserFunction {
-    /// Unique identifier (ekoDB-generated)
-    pub id: Option<String>,
-
-    /// User-defined label (unique identifier)
-    pub label: String,
-
-    /// Human-readable name
-    pub name: String,
-
-    /// Optional description
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-
-    /// Version string (optional)
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub version: Option<String>,
-
-    /// Parameter definitions
-    #[serde(default)]
-    pub parameters: HashMap<String, ParameterDefinition>,
-
-    /// Functions to execute in sequence
-    pub functions: Vec<Function>,
-
-    /// Tags for categorization
-    #[serde(default)]
-    pub tags: Vec<String>,
-
-    /// Creation timestamp (server-managed)
-    #[serde(skip_serializing, skip_deserializing)]
-    pub created_at: Option<DateTime<Utc>>,
-
-    /// Last update timestamp (server-managed)
     #[serde(skip_serializing, skip_deserializing)]
     pub updated_at: Option<DateTime<Utc>>,
 }
@@ -230,10 +148,10 @@ impl ParameterDefinition {
     }
 }
 
-/// Condition evaluation for Script control flow (If statements)
+/// Condition evaluation for function control flow (If statements)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", content = "value")]
-pub enum ScriptCondition {
+pub enum FunctionCondition {
     /// Check if field equals value in current records
     FieldEquals {
         field: String,
@@ -250,14 +168,14 @@ pub enum ScriptCondition {
     /// Check if record count < N
     CountLessThan { count: usize },
     /// Logical AND
-    And { conditions: Vec<ScriptCondition> },
+    And { conditions: Vec<FunctionCondition> },
     /// Logical OR
-    Or { conditions: Vec<ScriptCondition> },
+    Or { conditions: Vec<FunctionCondition> },
     /// Logical NOT
-    Not { condition: Box<ScriptCondition> },
+    Not { condition: Box<FunctionCondition> },
 }
 
-/// Function in a Script
+/// Function step in a pipeline
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "PascalCase")]
 #[allow(
@@ -453,7 +371,7 @@ pub enum Function {
 
     /// Conditional execution
     If {
-        condition: ScriptCondition,
+        condition: FunctionCondition,
         then_functions: Vec<Box<Function>>,
         #[serde(skip_serializing_if = "Option::is_none")]
         else_functions: Option<Vec<Box<Function>>>,

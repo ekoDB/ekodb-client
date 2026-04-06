@@ -140,7 +140,7 @@ async def main():
             base_dir / "kv_operations.py",
             base_dir / "collection_management.py",
             base_dir / "transactions.py",
-            base_dir / "crud_scripts.py",
+            base_dir / "crud_functions.py",
             # TTL verification tests
             base_dir / "document_ttl.py",
             base_dir / "websocket_ttl.py",

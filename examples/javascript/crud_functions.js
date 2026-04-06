@@ -1,5 +1,5 @@
 /**
- * Complete CRUD Scripts Example using Direct HTTP Requests
+ * Complete CRUD Functions Example using Direct HTTP Requests
  *
  * Demonstrates:
  *   • Insert + Verify (using Query)
@@ -7,7 +7,7 @@
  *   • Query + Update Credits + Verify
  *   • Query Before Delete + Delete + Verify Gone
  *
- * Each Script shows Functions chaining with proper verification using parameterized {{param}} syntax
+ * Each function shows Functions chaining with proper verification using parameterized {{param}} syntax
  */
 
 const dotenv = require("dotenv");
@@ -63,7 +63,7 @@ async function request(method, path, body = null) {
 
 async function script1InsertAndVerify() {
   console.log("\n" + "=".repeat(60));
-  console.log("📝 Script 1: Insert + Verify");
+  console.log("📝 Function 1: Insert + Verify");
   console.log("=".repeat(60));
 
   const script = {
@@ -110,19 +110,19 @@ async function script1InsertAndVerify() {
     tags: ["crud", "insert", "verification"],
   };
 
-  console.log("\n1️⃣ Saving Script...");
+  console.log("\n1️⃣ Saving Function...");
   const saveResult = await request("POST", "/api/functions", script);
   const scriptId = saveResult.id;
-  console.log(`   ✅ Script saved: ${scriptId}`);
+  console.log(`   ✅ Function saved: ${scriptId}`);
 
-  console.log("\n2️⃣ Calling Script (Insert + Verify)...");
+  console.log("\n2️⃣ Calling Function (Insert + Verify)...");
   const params = {
     user_name: "Alice Smith",
     user_email: "alice@example.com",
   };
   const callResult = await request("POST", "/api/functions/insert_and_verify", params);
 
-  console.log(`   ✅ Script executed: ${callResult.stats.stages_executed} Functions`);
+  console.log(`   ✅ Function executed: ${callResult.stats.stages_executed} Functions`);
   console.log(`   ⏱️  Execution time: ${callResult.stats.execution_time_ms}ms`);
 
   const records = callResult.records;
@@ -145,7 +145,7 @@ async function script1InsertAndVerify() {
 
 async function script2QueryUpdateVerify() {
   console.log("\n" + "=".repeat(60));
-  console.log("📝 Script 2: Query + Update + Verify");
+  console.log("📝 Function 2: Query + Update + Verify");
   console.log("=".repeat(60));
 
   const script = {
@@ -208,19 +208,19 @@ async function script2QueryUpdateVerify() {
     tags: ["crud", "update", "verification"],
   };
 
-  console.log("\n1️⃣ Saving Script...");
+  console.log("\n1️⃣ Saving Function...");
   const saveResult = await request("POST", "/api/functions", script);
   const scriptId = saveResult.id;
-  console.log(`   ✅ Script saved: ${scriptId}`);
+  console.log(`   ✅ Function saved: ${scriptId}`);
 
-  console.log("\n2️⃣ Calling Script (Query + Update + Verify)...");
+  console.log("\n2️⃣ Calling Function (Query + Update + Verify)...");
   const params = {
     user_email: "alice@example.com",
     new_status: "active",
   };
   const callResult = await request("POST", "/api/functions/query_update_verify", params);
 
-  console.log(`   ✅ Script executed: ${callResult.stats.stages_executed} Functions`);
+  console.log(`   ✅ Function executed: ${callResult.stats.stages_executed} Functions`);
   console.log(`   ⏱️  Execution time: ${callResult.stats.execution_time_ms}ms`);
 
   const records = callResult.records;
@@ -237,7 +237,7 @@ async function script2QueryUpdateVerify() {
 
 async function script3QueryUpdateCredits() {
   console.log("\n" + "=".repeat(60));
-  console.log("📝 Script 3: Query + Update Credits + Verify");
+  console.log("📝 Function 3: Query + Update Credits + Verify");
   console.log("=".repeat(60));
 
   const script = {
@@ -300,19 +300,19 @@ async function script3QueryUpdateCredits() {
     tags: ["crud", "update", "verification"],
   };
 
-  console.log("\n1️⃣ Saving Script...");
+  console.log("\n1️⃣ Saving Function...");
   const saveResult = await request("POST", "/api/functions", script);
   const scriptId = saveResult.id;
-  console.log(`   ✅ Script saved: ${scriptId}`);
+  console.log(`   ✅ Function saved: ${scriptId}`);
 
-  console.log("\n2️⃣ Calling Script (Query + Update Credits + Verify)...");
+  console.log("\n2️⃣ Calling Function (Query + Update Credits + Verify)...");
   const params = {
     user_email: "alice@example.com",
     credits: 100,
   };
   const callResult = await request("POST", "/api/functions/query_update_credits", params);
 
-  console.log(`   ✅ Script executed: ${callResult.stats.stages_executed} Functions`);
+  console.log(`   ✅ Function executed: ${callResult.stats.stages_executed} Functions`);
   console.log(`   ⏱️  Execution time: ${callResult.stats.execution_time_ms}ms`);
 
   const records = callResult.records;
@@ -330,7 +330,7 @@ async function script3QueryUpdateCredits() {
 
 async function script4DeleteAndVerify() {
   console.log("\n" + "=".repeat(60));
-  console.log("📝 Script 4: Query Before Delete + Delete + Verify");
+  console.log("📝 Function 4: Query Before Delete + Delete + Verify");
   console.log("=".repeat(60));
 
   const script = {
@@ -386,18 +386,18 @@ async function script4DeleteAndVerify() {
     tags: ["crud", "delete", "verification"],
   };
 
-  console.log("\n1️⃣ Saving Script...");
+  console.log("\n1️⃣ Saving Function...");
   const saveResult = await request("POST", "/api/functions", script);
   const scriptId = saveResult.id;
-  console.log(`   ✅ Script saved: ${scriptId}`);
+  console.log(`   ✅ Function saved: ${scriptId}`);
 
-  console.log("\n2️⃣ Calling Script (Query + Delete + Verify)...");
+  console.log("\n2️⃣ Calling Function (Query + Delete + Verify)...");
   const params = {
     user_email: "alice@example.com",
   };
   const callResult = await request("POST", "/api/functions/delete_and_verify", params);
 
-  console.log(`   ✅ Script executed: ${callResult.stats.stages_executed} Functions`);
+  console.log(`   ✅ Function executed: ${callResult.stats.stages_executed} Functions`);
   console.log(`   ⏱️  Execution time: ${callResult.stats.execution_time_ms}ms`);
 
   const records = callResult.records;
@@ -422,9 +422,9 @@ async function cleanup(scriptIds) {
     try {
       await request("DELETE", `/api/functions/${scriptId}`);
       const truncatedId = scriptId.length > 20 ? scriptId.substring(0, 20) + "..." : scriptId;
-      console.log(`   ✅ Deleted script: ${truncatedId}`);
+      console.log(`   ✅ Deleted function: ${truncatedId}`);
     } catch (error) {
-      console.log(`   ⚠️  Could not delete script: ${error.message}`);
+      console.log(`   ⚠️  Could not delete function: ${error.message}`);
     }
   }
 
@@ -437,7 +437,7 @@ async function cleanup(scriptIds) {
 }
 
 async function main() {
-  console.log("🚀 ekoDB Complete CRUD Scripts Example");
+  console.log("🚀 ekoDB Complete CRUD Functions Example");
   console.log("=".repeat(60));
   console.log("Demonstrates:");
   console.log("  • Insert + Verify (using Query)");
@@ -445,11 +445,11 @@ async function main() {
   console.log("  • Query + Update Credits + Verify");
   console.log("  • Query Before Delete + Delete + Verify Gone");
   console.log();
-  console.log("Each Script shows Functions chaining with proper verification");
+  console.log("Each function shows Functions chaining with proper verification");
   console.log("=".repeat(60));
 
   try {
-    // Run all CRUD Scripts in sequence
+    // Run all CRUD Functions in sequence
     const { userId, scriptId: script1Id } = await script1InsertAndVerify();
     const scriptIds = [script1Id];
 
@@ -464,14 +464,14 @@ async function main() {
     await cleanup(scriptIds);
 
     console.log("\n" + "=".repeat(60));
-    console.log("✅ Complete CRUD Scripts Example Finished!");
+    console.log("✅ Complete CRUD Functions Example Finished!");
     console.log("=".repeat(60));
     console.log("\n💡 Key Takeaways:");
-    console.log("   ✅ Scripts chain Functions together");
-    console.log("   ✅ Each Script demonstrates operation + verification");
-    console.log("   ✅ Parameters make Scripts reusable");
-    console.log("   ✅ Verification is built into the Script itself");
-    console.log("   ✅ Complete CRUD lifecycle in 4 focused Scripts");
+    console.log("   ✅ Functions chain Functions together");
+    console.log("   ✅ Each function demonstrates operation + verification");
+    console.log("   ✅ Parameters make functions reusable");
+    console.log("   ✅ Verification is built into the function itself");
+    console.log("   ✅ Complete CRUD lifecycle in 4 focused functions");
   } catch (error) {
     console.error("\n❌ Error:", error.message);
     process.exit(1);

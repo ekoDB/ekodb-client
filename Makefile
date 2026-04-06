@@ -95,8 +95,8 @@ help:
 	@echo "     $(GREEN)make test-examples-js-direct$(RESET) - JavaScript direct HTTP/WebSocket"
 	@echo "     $(GREEN)make test-examples-js-client$(RESET) - JavaScript client library"
 	@echo "  💳 $(GREEN)make test-examples-transactions$(RESET) - Run transaction examples (Python, Go, JS, Rust, Kotlin)"
-	@echo "  📜 $(GREEN)make test-examples-scripts$(RESET) - Run all Scripts/Functions examples (http_functions + crud_scripts)"
-	@echo "  📚 $(GREEN)make test-examples-scripts-crud$(RESET) - Run CRUD Scripts examples only (all languages)"
+	@echo "  📜 $(GREEN)make test-examples-functions(RESET) - Run all Functions examples (http_functions + crud_functions)"
+	@echo "  📚 $(GREEN)make test-examples-functions-crud$(RESET) - Run CRUD Functions examples only (all languages)"
 	@echo "  🤖 $(GREEN)make test-examples-rag$(RESET) - Run RAG Conversation System examples (Rust, Python, TypeScript)"
 	@echo "  🌐 $(GREEN)make test-examples-swr$(RESET) - Run SWR (Stale-While-Revalidate) edge cache examples (all languages)"
 	@echo "     $(GREEN)make test-examples-ts-swr$(RESET) - TypeScript SWR examples only"
@@ -490,48 +490,48 @@ test-examples-transactions:
 	@echo "✅ $(GREEN)All transaction examples completed successfully!$(RESET)"
 
 # ============================================================================
-# Scripts/Functions Examples (http_functions + crud_scripts)
+# Functions Examples (http_functions + crud_functions)
 # ============================================================================
-test-examples-scripts:
+test-examples-functions:
 	@echo ""
-	@echo "📜 $(CYAN)Running Scripts/Functions Examples (Direct API)...$(RESET)"
+	@echo "📜 $(CYAN)Running Functions Examples (Direct API)...$(RESET)"
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo ""
-	@echo "🐍 $(YELLOW)Python Scripts (http_functions + crud_scripts)...$(RESET)"
-	@cd examples/python && python3 http_functions.py && python3 crud_scripts.py
+	@echo "🐍 $(YELLOW)Python Functions (http_functions + crud_functions)...$(RESET)"
+	@cd examples/python && python3 http_functions.py && python3 crud_functions.py
 	@echo ""
-	@echo "🔷 $(YELLOW)Go Scripts (http_functions + crud_scripts)...$(RESET)"
-	@cd examples/go && go run http_functions.go && go run crud_scripts.go
+	@echo "🔷 $(YELLOW)Go Functions (http_functions + crud_functions)...$(RESET)"
+	@cd examples/go && go run http_functions.go && go run crud_functions.go
 	@echo ""
-	@echo "📦 $(YELLOW)JavaScript Scripts (http_functions + crud_scripts)...$(RESET)"
-	@cd examples/javascript && node http_functions.js && node crud_scripts.js
+	@echo "📦 $(YELLOW)JavaScript Functions (http_functions + crud_functions)...$(RESET)"
+	@cd examples/javascript && node http_functions.js && node crud_functions.js
 	@echo ""
-	@echo "🦀 $(YELLOW)Rust Scripts (http_functions + crud_scripts)...$(RESET)"
-	@cd examples/rust && cargo run --example http_functions --quiet && cargo run --example crud_scripts --quiet
+	@echo "🦀 $(YELLOW)Rust Functions (http_functions + crud_functions)...$(RESET)"
+	@cd examples/rust && cargo run --example http_functions --quiet && cargo run --example crud_functions --quiet
 	@echo ""
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
-	@echo "✅ $(GREEN)All Scripts/Functions examples completed successfully!$(RESET)"
+	@echo "✅ $(GREEN)All Functions examples completed successfully!$(RESET)"
 
-# Run only CRUD Scripts examples
-test-examples-scripts-crud:
+# Run only CRUD Functions examples
+test-examples-functions-crud:
 	@echo ""
-	@echo "📚 $(CYAN)Running CRUD Scripts Examples (Direct API)...$(RESET)"
+	@echo "📚 $(CYAN)Running CRUD Functions Examples (Direct API)...$(RESET)"
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo ""
-	@echo "🐍 $(YELLOW)Python CRUD Scripts...$(RESET)"
-	@cd examples/python && python3 crud_scripts.py
+	@echo "🐍 $(YELLOW)Python CRUD Functions...$(RESET)"
+	@cd examples/python && python3 crud_functions.py
 	@echo ""
-	@echo "🔷 $(YELLOW)Go CRUD Scripts...$(RESET)"
-	@cd examples/go && go run crud_scripts.go
+	@echo "🔷 $(YELLOW)Go CRUD Functions...$(RESET)"
+	@cd examples/go && go run crud_functions.go
 	@echo ""
-	@echo "📦 $(YELLOW)JavaScript CRUD Scripts...$(RESET)"
-	@cd examples/javascript && node crud_scripts.js
+	@echo "📦 $(YELLOW)JavaScript CRUD Functions...$(RESET)"
+	@cd examples/javascript && node crud_functions.js
 	@echo ""
-	@echo "🦀 $(YELLOW)Rust CRUD Scripts...$(RESET)"
-	@cd examples/rust && cargo run --example crud_scripts --quiet
+	@echo "🦀 $(YELLOW)Rust CRUD Functions...$(RESET)"
+	@cd examples/rust && cargo run --example crud_functions --quiet
 	@echo ""
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
-	@echo "✅ $(GREEN)All CRUD Scripts examples completed successfully!$(RESET)"
+	@echo "✅ $(GREEN)All CRUD Functions examples completed successfully!$(RESET)"
 
 # ============================================================================
 # RAG Conversation System Examples
@@ -715,8 +715,8 @@ test-examples-fcomp:
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo ""
 	@echo "$(GREEN)What you just saw - CallFunction composability:$(RESET)"
-	@echo "  ✓ Reusable Script building blocks"
-	@echo "  ✓ Scripts calling other Scripts"
+	@echo "  ✓ Reusable Function building blocks"
+	@echo "  ✓ Functions calling other Functions"
 	@echo "  ✓ Clean SWR patterns via composition"
 	@echo "  ✓ Multi-level nesting (arbitrary depth)"
 	@echo "  ✓ No code duplication"

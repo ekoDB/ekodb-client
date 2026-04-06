@@ -2356,10 +2356,10 @@ impl HttpClient {
     // SCRIPTS API
     // ========================================================================
 
-    /// Save a Script definition
-    pub async fn save_script(
+    /// Save a UserFunction definition
+    pub async fn save_function(
         &self,
-        script: crate::functions::Script,
+        script: crate::functions::UserFunction,
         token: &str,
     ) -> Result<String> {
         let url = self.base_url.join("/api/functions")?;
@@ -2423,8 +2423,12 @@ impl HttpClient {
             .await
     }
 
-    /// Get a Script by ID
-    pub async fn get_script(&self, id: &str, token: &str) -> Result<crate::functions::Script> {
+    /// Get a UserFunction by ID
+    pub async fn get_function(
+        &self,
+        id: &str,
+        token: &str,
+    ) -> Result<crate::functions::UserFunction> {
         let url = self.base_url.join(&format!("/api/functions/{}", id))?;
 
         self.retry_policy
@@ -2442,12 +2446,12 @@ impl HttpClient {
             .await
     }
 
-    /// List all Scripts (optionally filtered by tags)
-    pub async fn list_scripts(
+    /// List all functions (optionally filtered by tags)
+    pub async fn list_functions(
         &self,
         tags: Option<Vec<String>>,
         token: &str,
-    ) -> Result<Vec<crate::functions::Script>> {
+    ) -> Result<Vec<crate::functions::UserFunction>> {
         let mut url = self.base_url.join("/api/functions")?;
 
         if let Some(tags) = tags {
@@ -2470,11 +2474,11 @@ impl HttpClient {
             .await
     }
 
-    /// Update an existing Script by ID
-    pub async fn update_script(
+    /// Update an existing UserFunction by ID
+    pub async fn update_function(
         &self,
         id: &str,
-        script: crate::functions::Script,
+        script: crate::functions::UserFunction,
         token: &str,
     ) -> Result<()> {
         let url = self.base_url.join(&format!("/api/functions/{}", id))?;
@@ -2503,8 +2507,8 @@ impl HttpClient {
             .await
     }
 
-    /// Delete a Script by ID
-    pub async fn delete_script(&self, id: &str, token: &str) -> Result<()> {
+    /// Delete a UserFunction by ID
+    pub async fn delete_function(&self, id: &str, token: &str) -> Result<()> {
         let url = self.base_url.join(&format!("/api/functions/{}", id))?;
 
         self.retry_policy
@@ -2529,8 +2533,8 @@ impl HttpClient {
             .await
     }
 
-    /// Call a saved Script by ID or label
-    pub async fn call_script(
+    /// Call a saved UserFunction by ID or label
+    pub async fn call_function(
         &self,
         script_id_or_label: &str,
         params: Option<std::collections::HashMap<String, crate::types::FieldType>>,

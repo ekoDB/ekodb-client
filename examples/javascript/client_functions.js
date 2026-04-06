@@ -1,8 +1,8 @@
 /**
- * Scripts Example - Using @ekodb/ekodb-client library
+ * Functions Example - Using @ekodb/ekodb-client library
  * 
- * Demonstrates creating, managing, and executing scripts with the JavaScript client.
- * Covers: FindAll, Group, Sort, Limit, Count, and Script management operations.
+ * Demonstrates creating, managing, and executing functions with the JavaScript client.
+ * Covers: FindAll, Group, Sort, Limit, Count, and Function management operations.
  */
 
 const { EkoDBClient, Stage, ChatMessage } = require('@ekodb/ekodb-client');
@@ -31,7 +31,7 @@ async function setupTestData(client) {
 }
 
 async function simpleQueryScript(client) {
-  console.log('📝 Example 1: Simple Query Script\n');
+  console.log('📝 Example 1: Simple Query Function\n');
   
   const script = {
     label: 'get_active_users',
@@ -46,11 +46,11 @@ async function simpleQueryScript(client) {
   };
   
   // Save script
-  const scriptId = await client.saveScript(script);
-  console.log(`✅ Script saved: ${scriptId}`);
+  const scriptId = await client.saveFunction(script);
+  console.log(`✅ Function saved: ${scriptId}`);
   
   // Call script (use label)
-  const result = await client.callScript('get_active_users');
+  const result = await client.callFunction('get_active_users');
   console.log(`📊 Found ${result.records.length} records`);
   console.log(`⏱️  Execution time: ${result.stats.execution_time_ms}ms\n`);
   
@@ -58,7 +58,7 @@ async function simpleQueryScript(client) {
 }
 
 async function parameterizedScript(client) {
-  console.log('📝 Example 2: Parameterized Script\n');
+  console.log('📝 Example 2: Parameterized Function\n');
   
   const script = {
     label: 'get_users_by_status',
@@ -82,11 +82,11 @@ async function parameterizedScript(client) {
     tags: ['users', 'parameterized'],
   };
   
-  await client.saveScript(script);
-  console.log('✅ Script saved');
+  await client.saveFunction(script);
+  console.log('✅ Function saved');
   
   // Call with parameters
-  const result = await client.callScript('get_users_by_status', {
+  const result = await client.callFunction('get_users_by_status', {
     status: 'active',
     limit: 3
   });
@@ -95,7 +95,7 @@ async function parameterizedScript(client) {
 }
 
 async function aggregationScript(client) {
-  console.log('📝 Example 3: Aggregation Script\n');
+  console.log('📝 Example 3: Aggregation Function\n');
   
   const script = {
     label: 'user_stats',
@@ -119,10 +119,10 @@ async function aggregationScript(client) {
     tags: ['analytics'],
   };
   
-  const scriptId = await client.saveScript(script);
-  console.log('✅ Script saved');
+  const scriptId = await client.saveFunction(script);
+  console.log('✅ Function saved');
   
-  const result = await client.callScript('user_stats');
+  const result = await client.callFunction('user_stats');
   console.log(`📊 Statistics: ${result.records.length} groups`);
   result.records.forEach((record) => {
     console.log(`   ${JSON.stringify(record)}`);
@@ -133,15 +133,15 @@ async function aggregationScript(client) {
 }
 
 async function scriptManagement(client, getActiveUsersId, userStatsId) {
-  console.log('📝 Example 4: Script Management\n');
+  console.log('📝 Example 4: Function Management\n');
   
   // List all scripts
-  const scripts = await client.listScripts();
-  console.log(`📋 Total scripts: ${scripts.length}`);
+  const scripts = await client.listFunctions();
+  console.log(`📋 Total functions: ${scripts.length}`);
   
   // Get specific script (use encrypted ID)
-  const script = await client.getScript(getActiveUsersId);
-  console.log(`🔍 Retrieved script: ${script.name}`);
+  const script = await client.getFunction(getActiveUsersId);
+  console.log(`🔍 Retrieved function: ${script.name}`);
   
   // Update script (use encrypted ID)
   const updated = {
@@ -153,15 +153,15 @@ async function scriptManagement(client, getActiveUsersId, userStatsId) {
     functions: [Stage.findAll('users')],
     tags: ['users'],
   };
-  await client.updateScript(getActiveUsersId, updated);
-  console.log('✏️  Script updated');
+  await client.updateFunction(getActiveUsersId, updated);
+  console.log('✏️  Function updated');
   
   // Delete script (use ID) - handle error gracefully
   try {
-    await client.deleteScript(userStatsId);
-    console.log('🗑️  Script deleted');
+    await client.deleteFunction(userStatsId);
+    console.log('🗑️  Function deleted');
   } catch (error) {
-    console.log('ℹ️  Script delete skipped (may not exist)');
+    console.log('ℹ️  Function delete skipped (may not exist)');
   }
   console.log();
   
@@ -189,10 +189,10 @@ async function multiStageScript(client) {
     tags: ['analytics', 'reporting'],
   };
   
-  await client.saveScript(script);
-  console.log('✅ Multi-stage script saved');
+  await client.saveFunction(script);
+  console.log('✅ Multi-stage function saved');
   
-  const result = await client.callScript('top_users', { min_score: 50 });
+  const result = await client.callFunction('top_users', { min_score: 50 });
   console.log(`📊 Pipeline executed ${result.stats.stages_executed} stages`);
   console.log(`⏱️  Total execution time: ${result.stats.execution_time_ms}ms`);
   console.log('📈 Stage breakdown:');
@@ -217,10 +217,10 @@ async function countScript(client) {
     tags: ['users', 'count'],
   };
   
-  await client.saveScript(script);
-  console.log('✅ Count script saved');
+  await client.saveFunction(script);
+  console.log('✅ Count function saved');
   
-  const result = await client.callScript('count_users');
+  const result = await client.callFunction('count_users');
   console.log(`📊 Total user count: ${result.records[0]?.count?.value || result.records[0]?.count || 0}`);
   console.log(`⏱️  Execution time: ${result.stats.execution_time_ms}ms\n`);
 }
@@ -232,23 +232,23 @@ async function cleanup(client) {
   await client.deleteCollection('users');
   console.log('✅ Deleted collection');
   
-  // List and delete all test scripts
-  const scripts = await client.listScripts();
+  // List and delete all test functions
+  const scripts = await client.listFunctions();
   for (const script of scripts) {
     if (script.label.startsWith('get_') || script.label.startsWith('user_') || 
         script.label.startsWith('top_') || script.label.startsWith('create_')) {
       try {
-        await client.deleteScript(script.id);
+        await client.deleteFunction(script.id);
       } catch (error) {
-        // Script might already be deleted
+        // Function might already be deleted
       }
     }
   }
-  console.log('✅ Deleted test scripts\n');
+  console.log('✅ Deleted test functions\n');
 }
 
 async function main() {
-  console.log('🚀 ekoDB Scripts Example (JavaScript Client)\n');
+  console.log('🚀 ekoDB Functions Example (JavaScript Client)\n');
   
   try {
     // Create and initialize ekoDB client

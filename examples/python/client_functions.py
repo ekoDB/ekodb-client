@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Scripts Example for ekoDB Python Client
+Functions Example for ekoDB Python Client
 
-Demonstrates creating, managing, and executing Scripts
+Demonstrates creating, managing, and executing functions
 """
 
 import asyncio
@@ -39,7 +39,7 @@ async def setup_test_data(client):
 
 async def simple_query_script(client):
     """Example 1: Simple query script"""
-    print("📝 Example 1: Simple Query Script\n")
+    print("📝 Example 1: Simple Query Function\n")
 
     script = {
         "label": "get_active_users",
@@ -53,18 +53,18 @@ async def simple_query_script(client):
         "tags": ["users", "query"],
     }
 
-    script_id = await client.save_script(script)
-    print(f"✅ Script saved: {script_id}")
+    script_id = await client.save_function(script)
+    print(f"✅ Function saved: {script_id}")
 
-    result = await client.call_script("get_active_users", None)
+    result = await client.call_function("get_active_users", None)
     print(f"📊 Found {len(result['records'])} active users\n")
 
     return script_id
 
 
 async def parameterized_script(client):
-    """Example 2: Script with parameters"""
-    print("📝 Example 2: Parameterized Script\n")
+    """Example 2: function with parameters"""
+    print("📝 Example 2: Parameterized Function\n")
 
     script = {
         "label": "get_users_by_status",
@@ -88,11 +88,11 @@ async def parameterized_script(client):
         "tags": ["users", "parameterized"],
     }
 
-    script_id = await client.save_script(script)
-    print(f"✅ Script saved: {script_id}")
+    script_id = await client.save_function(script)
+    print(f"✅ Function saved: {script_id}")
 
     params = {"status": "active", "limit": 3}
-    result = await client.call_script("get_users_by_status", params)
+    result = await client.call_function("get_users_by_status", params)
     print(f"📊 Found {len(result['records'])} users (limited)\n")
 
     return script_id
@@ -100,7 +100,7 @@ async def parameterized_script(client):
 
 async def aggregation_script(client):
     """Example 3: Aggregation script"""
-    print("📝 Example 3: Aggregation Script\n")
+    print("📝 Example 3: Aggregation Function\n")
 
     script = {
         "label": "user_stats",
@@ -125,10 +125,10 @@ async def aggregation_script(client):
         "tags": ["analytics"],
     }
 
-    script_id = await client.save_script(script)
-    print(f"✅ Script saved: {script_id}")
+    script_id = await client.save_function(script)
+    print(f"✅ Function saved: {script_id}")
 
-    result = await client.call_script("user_stats", None)
+    result = await client.call_function("user_stats", None)
     print(f"📊 Statistics: {len(result['records'])} groups")
     for record in result["records"]:
         print(f"   {record}\n")
@@ -137,15 +137,15 @@ async def aggregation_script(client):
 
 
 async def script_management(client, get_active_users_id, user_stats_id):
-    """Example 4: Script management operations"""
-    print("📝 Example 4: Script Management\n")
+    """Example 4: Function management operations"""
+    print("📝 Example 4: function Management\n")
 
     # List all scripts
-    scripts = await client.list_scripts(None)
+    scripts = await client.list_functions(None)
     print(f"📋 Total scripts: {len(scripts)}")
 
     # Get specific script by ID
-    script = await client.get_script(get_active_users_id)
+    script = await client.get_function(get_active_users_id)
     print(f"🔍 Retrieved script: {script['name']}")
 
     # Update script by ID
@@ -160,19 +160,19 @@ async def script_management(client, get_active_users_id, user_stats_id):
         ],
         "tags": ["users"],
     }
-    await client.update_script(get_active_users_id, updated)
-    print("✏️  Script updated")
+    await client.update_function(get_active_users_id, updated)
+    print("✏️  function updated")
 
     # Delete script by ID
-    await client.delete_script(user_stats_id)
-    print("🗑️  Script deleted\n")
+    await client.delete_function(user_stats_id)
+    print("🗑️  function deleted\n")
 
     print("ℹ️  Note: GET/UPDATE/DELETE use IDs. Only CALL supports labels.\n")
 
 
 async def main():
     """Main execution"""
-    print("🚀 ekoDB Scripts Example (Python)\n")
+    print("🚀 ekoDB Functions Example (Python)\n")
 
     client = Client.new(BASE_URL, API_KEY)
 

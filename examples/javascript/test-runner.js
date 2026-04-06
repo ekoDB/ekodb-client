@@ -130,7 +130,7 @@ async function main() {
             path.join(__dirname, 'kv_operations.js'),
             path.join(__dirname, 'collection_management.js'),
             path.join(__dirname, 'transactions.js'),
-            path.join(__dirname, 'crud_scripts.js'),
+            path.join(__dirname, 'crud_functions.js'),
             // TTL verification tests
             path.join(__dirname, 'document_ttl.js'),
             path.join(__dirname, 'websocket_ttl.js'),

@@ -1,5 +1,5 @@
 """
-Complete Scripts Example - ekoDB Scripts
+Complete Functions Example - ekoDB Functions
 Demonstrates: Query (consolidated), Update, Delete, Batch Ops, TextSearch, Group, Count
 """
 
@@ -99,10 +99,10 @@ async def advanced_query_function(client):
         "tags": ["products", "analytics"],
     }
 
-    script_id = await client.save_script(script)
-    print(f"✅ Script saved: {script_id}")
+    script_id = await client.save_function(script)
+    print(f"✅ Function saved: {script_id}")
 
-    result = await client.call_script("product_stats", None)
+    result = await client.call_function("product_stats", None)
 
     print(f"📊 Found {len(result['records'])} product groups")
     for record in result["records"]:
@@ -127,10 +127,10 @@ async def list_products_script(client):
         "tags": ["products", "list"],
     }
 
-    script_id = await client.save_script(script)
-    print("✅ Script saved")
+    script_id = await client.save_function(script)
+    print("✅ Function saved")
 
-    result = await client.call_script("list_all_products", None)
+    result = await client.call_function("list_all_products", None)
 
     print(f"📊 Found {len(result['records'])} products")
     print(f"⏱️  Execution time: {result['stats']['execution_time_ms']}ms\n")
@@ -158,10 +158,10 @@ async def category_count_script(client):
         "tags": ["products", "analytics"],
     }
 
-    script_id = await client.save_script(script)
-    print("✅ Script saved")
+    script_id = await client.save_function(script)
+    print("✅ Function saved")
 
-    result = await client.call_script("count_by_category", None)
+    result = await client.call_function("count_by_category", None)
 
     print(f"📊 Found {len(result['records'])} categories")
     for record in result["records"]:
@@ -186,10 +186,10 @@ async def top_rated_script(client):
         "tags": ["products", "quality"],
     }
 
-    script_id = await client.save_script(script)
-    print("✅ Script saved")
+    script_id = await client.save_function(script)
+    print("✅ Function saved")
 
-    result = await client.call_script("top_rated_products", None)
+    result = await client.call_function("top_rated_products", None)
 
     print(f"📊 Found {len(result['records'])} products")
     print(f"⏱️  Execution time: {result['stats']['execution_time_ms']}ms\n")
@@ -198,8 +198,8 @@ async def top_rated_script(client):
 
 
 async def script_with_parameter(client):
-    """Example 5: Script with Parameter Definition"""
-    print("📝 Example 5: Script with Parameter Definition\n")
+    """Example 5: function with Parameter Definition"""
+    print("📝 Example 5: function with Parameter Definition\n")
 
     script = {
         "label": "list_with_limit",
@@ -218,10 +218,10 @@ async def script_with_parameter(client):
         "tags": ["products", "list"],
     }
 
-    script_id = await client.save_script(script)
-    print("✅ Script saved")
+    script_id = await client.save_function(script)
+    print("✅ Function saved")
 
-    result = await client.call_script("list_with_limit", {"max_items": 3})
+    result = await client.call_function("list_with_limit", {"max_items": 3})
 
     print(f"📊 Found {len(result['records'])} products")
     print(f"⏱️  Execution time: {result['stats']['execution_time_ms']}ms\n")
@@ -257,10 +257,10 @@ async def multi_stage_pipeline(client):
         "tags": ["products", "analytics"],
     }
 
-    script_id = await client.save_script(script)
-    print("✅ Script saved")
+    script_id = await client.save_function(script)
+    print("✅ Function saved")
 
-    result = await client.call_script("product_summary", None)
+    result = await client.call_function("product_summary", None)
 
     print(f"📊 Pipeline executed {result['stats']['stages_executed']} stages")
     print(f"⏱️  Total execution time: {result['stats']['execution_time_ms']}ms")
@@ -275,7 +275,7 @@ async def cleanup(client, script_ids):
 
     try:
         for script_id in script_ids:
-            await client.delete_script(script_id)
+            await client.delete_function(script_id)
         await client.delete_collection("complete_products")
         print("✅ Cleanup complete\n")
     except Exception as e:
@@ -284,7 +284,7 @@ async def cleanup(client, script_ids):
 
 async def main():
     """Main function"""
-    print("🚀 ekoDB Python Complete Scripts Example\n")
+    print("🚀 ekoDB Python Complete Functions Example\n")
     print("📋 Demonstrates: FindAll, Group, Count, Multi-stage Pipelines\n")
 
     # Import client (assuming it's available)
@@ -308,12 +308,12 @@ async def main():
         await cleanup(client, script_ids)
 
         print("✅ All complete script examples finished!")
-        print("\n💡 This example demonstrates ekoDB's Script system:")
+        print("\n💡 This example demonstrates ekoDB's function system:")
         print("   ✅ FindAll operations")
         print("   ✅ Group aggregations (Count, Average)")
         print("   ✅ Multi-stage pipelines (FindAll → Group → Count)")
         print("   ✅ Parameter definitions")
-        print("   ✅ Script management (save, call, delete)")
+        print("   ✅ Function management (save, call, delete)")
     except Exception as e:
         print(f"❌ Error: {e}")
 

@@ -61,7 +61,7 @@ async function wrappedTypesInsert(client) {
 }
 
 async function wrappedTypesInScript(client) {
-  console.log("📝 Example 2: Script with Wrapped Type Parameters\n");
+  console.log("📝 Example 2: Function with Wrapped Type Parameters\n");
 
   // Create a script that inserts records with wrapped types
   const script = {
@@ -95,10 +95,10 @@ async function wrappedTypesInScript(client) {
     tags: ["orders", "wrapped-types"],
   };
 
-  const id = await client.saveScript(script);
-  console.log(`✅ Script saved: ${id}`);
+  const id = await client.saveFunction(script);
+  console.log(`✅ Function saved: ${id}`);
 
-  const result = await client.callScript("create_order_with_types_js", {
+  const result = await client.callFunction("create_order_with_types_js", {
     order_total: "599.99",
     order_id: `order_${Date.now()}`,
     timestamp: new Date().toISOString(),
@@ -142,7 +142,7 @@ async function kvBasicOperations(client) {
 }
 
 async function kvScriptOperations(client) {
-  console.log("📝 Example 4: KV Operations in Scripts\n");
+  console.log("📝 Example 4: KV Operations in Functions\n");
 
   const script = {
     label: "cached_product_lookup_js",
@@ -166,10 +166,10 @@ async function kvScriptOperations(client) {
     tags: ["kv", "caching"],
   };
 
-  const id = await client.saveScript(script);
-  console.log(`✅ Script saved: ${id}`);
+  const id = await client.saveFunction(script);
+  console.log(`✅ Function saved: ${id}`);
 
-  const result = await client.callScript("cached_product_lookup_js", {
+  const result = await client.callFunction("cached_product_lookup_js", {
     product_key: "product:cache:789",
     product_data: { name: "Test Product", price: 49.99 },
   });
@@ -204,7 +204,7 @@ async function kvPatternQuery(client) {
 // =============================================================================
 
 async function combinedExample(client) {
-  console.log("📝 Example 6: Combined Wrapped Types + KV Script\n");
+  console.log("📝 Example 6: Combined Wrapped Types + KV Function\n");
 
   const script = {
     label: "process_order_with_cache_js",
@@ -245,10 +245,10 @@ async function combinedExample(client) {
     tags: ["orders", "kv", "wrapped-types", "combined"],
   };
 
-  const id = await client.saveScript(script);
-  console.log(`✅ Script saved: ${id}`);
+  const id = await client.saveFunction(script);
+  console.log(`✅ Function saved: ${id}`);
 
-  const result = await client.callScript("process_order_with_cache_js", {
+  const result = await client.callFunction("process_order_with_cache_js", {
     order_id: "c2d3e4f5-a1b2-c3d4-e5f6-a1b2c3d4e5f6",
     total: "299.99",
     timestamp: new Date().toISOString(),
@@ -269,7 +269,7 @@ async function cleanup(client, scriptIds) {
 
   try {
     for (const id of scriptIds) {
-      await client.deleteScript(id);
+      await client.deleteFunction(id);
     }
 
     await client.deleteCollection("orders_example");

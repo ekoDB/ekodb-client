@@ -236,7 +236,7 @@ sealed class FunctionStageConfig {
     @Serializable
     @SerialName("If")
     data class If(
-        val condition: ScriptCondition,
+        val condition: FunctionCondition,
         val then_functions: List<FunctionStageConfig>,
         val else_functions: List<FunctionStageConfig>? = null
     ) : FunctionStageConfig()
@@ -341,83 +341,83 @@ sealed class FunctionStageConfig {
 }
 
 /**
- * Condition for Script control flow (If statements)
+ * Condition for function control flow (If statements)
  * Uses adjacently-tagged format: { "type": "...", "value": { ...data } }
  * Unit variants (HasRecords) have no value field.
  */
-@Serializable(with = ScriptConditionSerializer::class)
-sealed class ScriptCondition {
-    object HasRecords : ScriptCondition()
-    data class FieldEquals(val field: String, val fieldValue: JsonElement) : ScriptCondition()
-    data class FieldExists(val field: String) : ScriptCondition()
-    data class CountEquals(val count: Int) : ScriptCondition()
-    data class CountGreaterThan(val count: Int) : ScriptCondition()
-    data class CountLessThan(val count: Int) : ScriptCondition()
-    data class And(val conditions: List<ScriptCondition>) : ScriptCondition()
-    data class Or(val conditions: List<ScriptCondition>) : ScriptCondition()
-    data class Not(val condition: ScriptCondition) : ScriptCondition()
+@Serializable(with = FunctionConditionSerializer::class)
+sealed class FunctionCondition {
+    object HasRecords : FunctionCondition()
+    data class FieldEquals(val field: String, val fieldValue: JsonElement) : FunctionCondition()
+    data class FieldExists(val field: String) : FunctionCondition()
+    data class CountEquals(val count: Int) : FunctionCondition()
+    data class CountGreaterThan(val count: Int) : FunctionCondition()
+    data class CountLessThan(val count: Int) : FunctionCondition()
+    data class And(val conditions: List<FunctionCondition>) : FunctionCondition()
+    data class Or(val conditions: List<FunctionCondition>) : FunctionCondition()
+    data class Not(val condition: FunctionCondition) : FunctionCondition()
 }
 
 /**
- * Custom serializer for ScriptCondition that produces adjacently-tagged format.
+ * Custom serializer for FunctionCondition that produces adjacently-tagged format.
  */
-object ScriptConditionSerializer : kotlinx.serialization.KSerializer<ScriptCondition> {
+object FunctionConditionSerializer : kotlinx.serialization.KSerializer<FunctionCondition> {
     override val descriptor: kotlinx.serialization.descriptors.SerialDescriptor =
-        kotlinx.serialization.descriptors.buildClassSerialDescriptor("ScriptCondition") {
+        kotlinx.serialization.descriptors.buildClassSerialDescriptor("FunctionCondition") {
             element("type", kotlinx.serialization.descriptors.PrimitiveSerialDescriptor("type", kotlinx.serialization.descriptors.PrimitiveKind.STRING))
             element("value", JsonObject.serializer().descriptor, isOptional = true)
         }
 
-    override fun serialize(encoder: kotlinx.serialization.encoding.Encoder, value: ScriptCondition) {
+    override fun serialize(encoder: kotlinx.serialization.encoding.Encoder, value: FunctionCondition) {
         val jsonEncoder = encoder as kotlinx.serialization.json.JsonEncoder
         val jsonObject = when (value) {
-            is ScriptCondition.HasRecords -> buildJsonObject { put("type", "HasRecords") }
-            is ScriptCondition.FieldEquals -> buildJsonObject {
+            is FunctionCondition.HasRecords -> buildJsonObject { put("type", "HasRecords") }
+            is FunctionCondition.FieldEquals -> buildJsonObject {
                 put("type", "FieldEquals")
                 put("value", buildJsonObject {
                     put("field", value.field)
                     put("value", value.fieldValue)
                 })
             }
-            is ScriptCondition.FieldExists -> buildJsonObject {
+            is FunctionCondition.FieldExists -> buildJsonObject {
                 put("type", "FieldExists")
                 put("value", buildJsonObject { put("field", value.field) })
             }
-            is ScriptCondition.CountEquals -> buildJsonObject {
+            is FunctionCondition.CountEquals -> buildJsonObject {
                 put("type", "CountEquals")
                 put("value", buildJsonObject { put("count", value.count) })
             }
-            is ScriptCondition.CountGreaterThan -> buildJsonObject {
+            is FunctionCondition.CountGreaterThan -> buildJsonObject {
                 put("type", "CountGreaterThan")
                 put("value", buildJsonObject { put("count", value.count) })
             }
-            is ScriptCondition.CountLessThan -> buildJsonObject {
+            is FunctionCondition.CountLessThan -> buildJsonObject {
                 put("type", "CountLessThan")
                 put("value", buildJsonObject { put("count", value.count) })
             }
-            is ScriptCondition.And -> buildJsonObject {
+            is FunctionCondition.And -> buildJsonObject {
                 put("type", "And")
                 put("value", buildJsonObject {
                     put("conditions", kotlinx.serialization.json.Json.encodeToJsonElement(
-                        kotlinx.serialization.builtins.ListSerializer(ScriptConditionSerializer),
+                        kotlinx.serialization.builtins.ListSerializer(FunctionConditionSerializer),
                         value.conditions
                     ))
                 })
             }
-            is ScriptCondition.Or -> buildJsonObject {
+            is FunctionCondition.Or -> buildJsonObject {
                 put("type", "Or")
                 put("value", buildJsonObject {
                     put("conditions", kotlinx.serialization.json.Json.encodeToJsonElement(
-                        kotlinx.serialization.builtins.ListSerializer(ScriptConditionSerializer),
+                        kotlinx.serialization.builtins.ListSerializer(FunctionConditionSerializer),
                         value.conditions
                     ))
                 })
             }
-            is ScriptCondition.Not -> buildJsonObject {
+            is FunctionCondition.Not -> buildJsonObject {
                 put("type", "Not")
                 put("value", buildJsonObject {
                     put("condition", kotlinx.serialization.json.Json.encodeToJsonElement(
-                        ScriptConditionSerializer,
+                        FunctionConditionSerializer,
                         value.condition
                     ))
                 })
@@ -426,60 +426,60 @@ object ScriptConditionSerializer : kotlinx.serialization.KSerializer<ScriptCondi
         jsonEncoder.encodeJsonElement(jsonObject)
     }
 
-    override fun deserialize(decoder: kotlinx.serialization.encoding.Decoder): ScriptCondition {
+    override fun deserialize(decoder: kotlinx.serialization.encoding.Decoder): FunctionCondition {
         val jsonDecoder = decoder as kotlinx.serialization.json.JsonDecoder
         val jsonObject = jsonDecoder.decodeJsonElement().jsonObject
         val type = jsonObject["type"]?.jsonPrimitive?.content ?: error("Missing type field")
         val valueObj = jsonObject["value"]?.jsonObject
 
         return when (type) {
-            "HasRecords" -> ScriptCondition.HasRecords
+            "HasRecords" -> FunctionCondition.HasRecords
             "FieldEquals" -> {
                 val v = valueObj ?: error("Missing value for FieldEquals")
-                ScriptCondition.FieldEquals(
+                FunctionCondition.FieldEquals(
                     v["field"]?.jsonPrimitive?.content ?: error("Missing field"),
                     v["value"] ?: error("Missing value")
                 )
             }
             "FieldExists" -> {
                 val v = valueObj ?: error("Missing value for FieldExists")
-                ScriptCondition.FieldExists(v["field"]?.jsonPrimitive?.content ?: error("Missing field"))
+                FunctionCondition.FieldExists(v["field"]?.jsonPrimitive?.content ?: error("Missing field"))
             }
             "CountEquals" -> {
                 val v = valueObj ?: error("Missing value for CountEquals")
-                ScriptCondition.CountEquals(v["count"]?.jsonPrimitive?.int ?: error("Missing count"))
+                FunctionCondition.CountEquals(v["count"]?.jsonPrimitive?.int ?: error("Missing count"))
             }
             "CountGreaterThan" -> {
                 val v = valueObj ?: error("Missing value for CountGreaterThan")
-                ScriptCondition.CountGreaterThan(v["count"]?.jsonPrimitive?.int ?: error("Missing count"))
+                FunctionCondition.CountGreaterThan(v["count"]?.jsonPrimitive?.int ?: error("Missing count"))
             }
             "CountLessThan" -> {
                 val v = valueObj ?: error("Missing value for CountLessThan")
-                ScriptCondition.CountLessThan(v["count"]?.jsonPrimitive?.int ?: error("Missing count"))
+                FunctionCondition.CountLessThan(v["count"]?.jsonPrimitive?.int ?: error("Missing count"))
             }
             "And" -> {
                 val v = valueObj ?: error("Missing value for And")
                 val conditions = kotlinx.serialization.json.Json.decodeFromJsonElement(
-                    kotlinx.serialization.builtins.ListSerializer(ScriptConditionSerializer),
+                    kotlinx.serialization.builtins.ListSerializer(FunctionConditionSerializer),
                     v["conditions"] ?: error("Missing conditions")
                 )
-                ScriptCondition.And(conditions)
+                FunctionCondition.And(conditions)
             }
             "Or" -> {
                 val v = valueObj ?: error("Missing value for Or")
                 val conditions = kotlinx.serialization.json.Json.decodeFromJsonElement(
-                    kotlinx.serialization.builtins.ListSerializer(ScriptConditionSerializer),
+                    kotlinx.serialization.builtins.ListSerializer(FunctionConditionSerializer),
                     v["conditions"] ?: error("Missing conditions")
                 )
-                ScriptCondition.Or(conditions)
+                FunctionCondition.Or(conditions)
             }
             "Not" -> {
                 val v = valueObj ?: error("Missing value for Not")
                 val condition = kotlinx.serialization.json.Json.decodeFromJsonElement(
-                    ScriptConditionSerializer,
+                    FunctionConditionSerializer,
                     v["condition"] ?: error("Missing condition")
                 )
-                ScriptCondition.Not(condition)
+                FunctionCondition.Not(condition)
             }
             else -> error("Unknown condition type: $type")
         }

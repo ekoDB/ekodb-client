@@ -66,11 +66,11 @@ async function swrPatternExample() {
     ],
   };
 
-  const scriptId = await client.saveScript(swrScript);
+  const scriptId = await client.saveFunction(swrScript);
   console.log(`✓ Created SWR script: ${swrScript.label} (${scriptId})\n`);
 
   console.log("Step 2: First call - Cache miss, fetches from API");
-  const result1 = await client.callScript("fetch_api_user", {
+  const result1 = await client.callFunction("fetch_api_user", {
     user_id: "1",
     ttl: 300,
   });
@@ -79,7 +79,7 @@ async function swrPatternExample() {
 
   console.log("Step 3: Second call - Cache hit, instant response from ekoDB");
   const start = Date.now();
-  const result2 = await client.callScript("fetch_api_user", {
+  const result2 = await client.callFunction("fetch_api_user", {
     user_id: "1",
   });
   const duration = Date.now() - start;
@@ -140,7 +140,7 @@ async function swrPatternExample() {
     ],
   };
 
-  const enrichScriptId = await client.saveScript(enrichScript);
+  const enrichScriptId = await client.saveFunction(enrichScript);
   console.log(
     `✓ Created enrichment script: ${enrichScript.label} (${enrichScriptId})\n`,
   );
@@ -148,7 +148,7 @@ async function swrPatternExample() {
   console.log(
     "Step 4: Call enrichment function - Fetches from 2 APIs + stores merged result",
   );
-  const enriched = await client.callScript("fetch_product_with_reviews", {
+  const enriched = await client.callFunction("fetch_product_with_reviews", {
     product_id: "1",
     ttl: 600,
   });
