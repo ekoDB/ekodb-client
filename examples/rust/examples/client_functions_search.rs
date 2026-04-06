@@ -1,6 +1,6 @@
 //! Search Functions Example - Basic Search Operations
 //!
-//! Demonstrates simple search and query operations using scripts
+//! Demonstrates simple search and query operations using user functions
 
 use ekodb_client::{
     extract_record, get_string_value, Client, FieldType, Function, GroupFunctionConfig,
