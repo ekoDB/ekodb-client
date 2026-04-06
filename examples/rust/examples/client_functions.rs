@@ -142,17 +142,17 @@ async fn script_management(
     _get_users_by_status_id: &str,
     user_stats_id: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    println!("📝 Example 4: function Management\n");
+    println!("📝 Example 4: Function Management\n");
 
-    // List all scripts
-    let scripts = client.list_functions(None).await?;
-    println!("📋 Total scripts: {}", scripts.len());
+    // List all functions
+    let functions = client.list_functions(None).await?;
+    println!("📋 Total functions: {}", functions.len());
 
-    // Get specific script by ID
-    let script = client.get_function(get_active_users_id).await?;
-    println!("🔍 Retrieved script: {}", script.name);
+    // Get specific function by ID
+    let function = client.get_function(get_active_users_id).await?;
+    println!("🔍 Retrieved function: {}", function.name);
 
-    // Update script by ID
+    // Update function by ID
     let updated = UserFunction::new("get_active_users_updated", "Get Active Users (Updated)")
         .with_description("Updated description")
         .with_version("1.1")
@@ -162,11 +162,11 @@ async fn script_management(
         .with_tag("users");
 
     client.update_function(get_active_users_id, updated).await?;
-    println!("✏️  function updated");
+    println!("✏️  Function updated");
 
-    // Delete script by ID
+    // Delete function by ID
     client.delete_function(user_stats_id).await?;
-    println!("🗑️  function deleted\n");
+    println!("🗑️  Function deleted\n");
 
     println!("ℹ️  Note: GET/UPDATE/DELETE use IDs. Only CALL supports labels.");
 
