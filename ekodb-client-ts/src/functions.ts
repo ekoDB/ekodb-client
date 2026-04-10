@@ -226,6 +226,37 @@ export type FunctionStageConfig =
       timeout_seconds?: number;
       output_field?: string;
       collection?: string;
+    }
+  | {
+      /**
+       * Bcrypt-hash a plaintext value and add the result to every record in
+       * the working data as `output_field`. Requires ekoDB >= 0.41.0.
+       */
+      type: "BcryptHash";
+      plain: string;
+      cost?: number;
+      output_field: string;
+    }
+  | {
+      /**
+       * Verify a plaintext against a bcrypt hash stored on the first record
+       * in the working data and write a boolean result into `output_field`.
+       * Pair with an `If` stage for login flows. Requires ekoDB >= 0.41.0.
+       */
+      type: "BcryptVerify";
+      plain: string;
+      hash_field: string;
+      output_field: string;
+    }
+  | {
+      /**
+       * Generate a cryptographically-random token and add it to every
+       * record in the working data. Requires ekoDB >= 0.41.0.
+       */
+      type: "RandomToken";
+      bytes: number;
+      encoding?: "hex" | "base64" | "base64url";
+      output_field: string;
     };
 
 export interface ChatMessage {
@@ -300,8 +331,49 @@ export interface StageStats {
   execution_time_ms: number;
 }
 
+/**
+ * Reference a call-time function parameter inside a stored-function stage
+ * body (Insert.record, Update.updates, UpdateById.updates,
+ * FindOneAndUpdate.updates, BatchInsert.records, or any nested JSON value).
+ *
+ * Returns the structural placeholder `{"type": "Parameter", "name": "<name>"}`.
+ * ekoDB's `resolve_json_parameters` recognizes this shape and substitutes the
+ * actual parameter value at execution time, preserving the original FieldType
+ * (Binary, DateTime, UUID, Decimal, Duration, Number, Set, Vector) via the
+ * `{type,value}` wrapped form. Safe to use for any type.
+ *
+ * This is the structural alternative to the text-level `"{{name}}"` form;
+ * both are accepted but structural placeholders are preferred when the
+ * parameter is a whole-object Record or a value whose type would be lost in
+ * raw JSON.
+ *
+ * @example
+ * ```ts
+ * const createUser: UserFunction = {
+ *   label: "users_create",
+ *   name: "Create user",
+ *   parameters: {
+ *     record: { required: true },
+ *   },
+ *   functions: [
+ *     Stage.insert("users", Stage.param("record")),
+ *   ],
+ * };
+ * ```
+ */
+export function parameterRef(name: string): Record<string, string> {
+  return { type: "Parameter", name };
+}
+
 // Stage builder functions
 export const Stage = {
+  /**
+   * Shorthand for `parameterRef(name)` — builds the structural placeholder
+   * `{"type": "Parameter", "name": name}`. See `parameterRef` for the full
+   * explanation and example.
+   */
+  param: (name: string): Record<string, string> => parameterRef(name),
+
   findAll: (collection: string): FunctionStageConfig => ({
     type: "FindAll",
     collection,
@@ -683,5 +755,67 @@ export const Stage = {
     timeout_seconds,
     output_field,
     collection,
+  }),
+
+  /**
+   * Bcrypt-hash a plaintext value and write the result into every record
+   * in the working data as `output_field`. Requires ekoDB >= 0.41.0.
+   *
+   * @param plain - Plaintext to hash. Typically a `"{{password}}"`
+   *   placeholder that the substituter replaces with the call-time param
+   *   before this stage runs.
+   * @param output_field - Field name to write the bcrypt hash into.
+   * @param cost - bcrypt cost factor (4..=31). Defaults to 12 when undefined.
+   */
+  bcryptHash: (
+    plain: string,
+    output_field: string,
+    cost?: number,
+  ): FunctionStageConfig => ({
+    type: "BcryptHash",
+    plain,
+    cost,
+    output_field,
+  }),
+
+  /**
+   * Verify a plaintext against a bcrypt hash stored on the first record in
+   * the working data. Writes a boolean into `output_field` on every
+   * working record. Pair with `Stage.if` to branch on success / failure.
+   * Requires ekoDB >= 0.41.0.
+   *
+   * @param plain - Plaintext to verify (typically `"{{password}}"`).
+   * @param hash_field - Name of the field on the current record that
+   *   holds the stored bcrypt hash (e.g. `"password_hash"`).
+   * @param output_field - Field name to write the boolean result into.
+   */
+  bcryptVerify: (
+    plain: string,
+    hash_field: string,
+    output_field: string,
+  ): FunctionStageConfig => ({
+    type: "BcryptVerify",
+    plain,
+    hash_field,
+    output_field,
+  }),
+
+  /**
+   * Generate a cryptographically-random token and add it to every record
+   * in the working data. Requires ekoDB >= 0.41.0.
+   *
+   * @param bytes - Number of random bytes to draw (1..=1024).
+   * @param output_field - Field name to write the encoded token into.
+   * @param encoding - `"hex"` (default) | `"base64"` | `"base64url"`.
+   */
+  randomToken: (
+    bytes: number,
+    output_field: string,
+    encoding?: "hex" | "base64" | "base64url",
+  ): FunctionStageConfig => ({
+    type: "RandomToken",
+    bytes,
+    encoding,
+    output_field,
   }),
 };

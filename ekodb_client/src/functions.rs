@@ -8,6 +8,39 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+/// Build the structural placeholder `{"type": "Parameter", "name": <name>}`
+/// that ekoDB's `resolve_json_parameters` recognizes inside
+/// `Function::Insert.record`, `Function::Update.updates`,
+/// `Function::UpdateById.updates`, `Function::FindOneAndUpdate.updates`,
+/// `Function::BatchInsert.records`, and any `QueryExpression` filter value.
+///
+/// This is the structural alternative to the text-level `"{{name}}"`
+/// placeholder form — use it when the parameter is a whole-object record or
+/// a value whose type would be lost on a raw-JSON round-trip (Binary,
+/// DateTime, UUID, Decimal, Duration, Number, Set, Vector). Requires
+/// ekoDB >= 0.41.0 for the mutation-stage parameter-resolution
+/// consistency fix.
+///
+/// # Example
+///
+/// ```
+/// use ekodb_client::{parameter_ref, Function, UserFunction};
+///
+/// let create = UserFunction::new("items_create", "Create item")
+///     .with_function(Function::Insert {
+///         collection: "items".to_string(),
+///         record: parameter_ref("record"),
+///         bypass_ripple: None,
+///         ttl: None,
+///     });
+/// ```
+pub fn parameter_ref(name: impl Into<String>) -> serde_json::Value {
+    serde_json::json!({
+        "type": "Parameter",
+        "name": name.into(),
+    })
+}
+
 /// A reusable sequence of Functions stored in ekoDB.
 /// Called by label via the `call_function` chat tool or REST API.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -445,6 +478,46 @@ pub enum Function {
         output_field: Option<String>,
         #[serde(skip_serializing_if = "Option::is_none")]
         collection: Option<String>,
+    },
+
+    /// Bcrypt-hash a plaintext value and write the result onto every
+    /// record in the working data (creates a single result record if the
+    /// working set is empty). Use in a compound `users_register` function.
+    /// Requires ekoDB >= 0.41.0.
+    BcryptHash {
+        /// Plaintext to hash, typically `"{{password}}"`.
+        plain: String,
+        /// bcrypt cost factor (4..=31). Defaults to 12 when None.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        cost: Option<u32>,
+        /// Field name to write the bcrypt hash string into.
+        output_field: String,
+    },
+
+    /// Verify a plaintext against a bcrypt hash stored on the first
+    /// record in the working data; writes a boolean result into
+    /// `output_field`. Pair with an `If` stage for login flows.
+    /// Requires ekoDB >= 0.41.0.
+    BcryptVerify {
+        /// Plaintext to verify, typically `"{{password}}"`.
+        plain: String,
+        /// Name of the field on the current record holding the stored
+        /// bcrypt hash (e.g. `"password_hash"`).
+        hash_field: String,
+        /// Field name to write the boolean result into.
+        output_field: String,
+    },
+
+    /// Generate a cryptographically-random token and add it to every
+    /// record in the working data. Requires ekoDB >= 0.41.0.
+    RandomToken {
+        /// Number of random bytes (1..=1024).
+        bytes: usize,
+        /// "hex" | "base64" | "base64url" (default "hex").
+        #[serde(skip_serializing_if = "Option::is_none")]
+        encoding: Option<String>,
+        /// Field name to write the encoded token into.
+        output_field: String,
     },
 }
 

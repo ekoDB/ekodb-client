@@ -14,6 +14,42 @@ import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.int
 
 /**
+ * Build the structural placeholder `{"type": "Parameter", "name": <name>}`
+ * that ekoDB's `resolve_json_parameters` recognizes inside
+ * [FunctionStageConfig.Insert.record], [FunctionStageConfig.Update.updates],
+ * [FunctionStageConfig.UpdateById.updates],
+ * [FunctionStageConfig.FindOneAndUpdate.updates],
+ * [FunctionStageConfig.BatchInsert.records], and any QueryExpression
+ * filter value.
+ *
+ * This is the structural alternative to the text-level `"{{name}}"`
+ * placeholder form — use it when the parameter is a whole-object record
+ * or a value whose type would be lost on a raw-JSON round-trip (Binary,
+ * DateTime, UUID, Decimal, Duration, Number, Set, Vector). Requires
+ * ekoDB >= 0.41.0 for the mutation-stage parameter-resolution
+ * consistency fix.
+ *
+ * Example — items_create function:
+ * ```kotlin
+ * val createItem = UserFunction(
+ *     label = "items_create",
+ *     name = "Create item",
+ *     parameters = mapOf("record" to ParameterDefinition(required = true)),
+ *     functions = listOf(
+ *         FunctionStageConfig.Insert(
+ *             collection = "items",
+ *             record = parameterRef("record"),
+ *         ),
+ *     ),
+ * )
+ * ```
+ */
+fun parameterRef(name: String): JsonObject = buildJsonObject {
+    put("type", "Parameter")
+    put("name", name)
+}
+
+/**
  * Function pipeline stage configuration
  * Using polymorphic serialization with "type" as discriminator
  */
@@ -337,6 +373,62 @@ sealed class FunctionStageConfig {
         val timeout_seconds: Int? = null,
         val output_field: String? = null,
         val collection: String? = null
+    ) : FunctionStageConfig()
+
+    /**
+     * Bcrypt-hash a plaintext value and write the result into every record
+     * in the working data as [output_field]. Use in a compound
+     * `users_register` function between input validation and Insert.
+     *
+     * [plain] is typically a `"{{password}}"` placeholder — the substituter
+     * replaces it with the call-time param before this stage runs. [cost]
+     * is the bcrypt work factor (4..=31); leave null for the ekoDB
+     * default (12).
+     *
+     * Requires ekoDB >= 0.41.0.
+     */
+    @Serializable
+    @SerialName("BcryptHash")
+    data class BcryptHash(
+        val plain: String,
+        val cost: Int? = null,
+        val output_field: String
+    ) : FunctionStageConfig()
+
+    /**
+     * Verify a plaintext against a bcrypt hash stored on the first record
+     * in the working data. Writes a boolean result into [output_field] on
+     * every working record. Pair with [FunctionCondition.FieldEquals] inside
+     * an If stage to branch on login success / failure.
+     *
+     * [plain] is typically `"{{password}}"`. [hash_field] is the name of
+     * the field on the current record holding the stored bcrypt hash
+     * (e.g. `"password_hash"`).
+     *
+     * Requires ekoDB >= 0.41.0.
+     */
+    @Serializable
+    @SerialName("BcryptVerify")
+    data class BcryptVerify(
+        val plain: String,
+        val hash_field: String,
+        val output_field: String
+    ) : FunctionStageConfig()
+
+    /**
+     * Generate a cryptographically-random token and add it to every record
+     * in the working data. [bytes] must be in 1..=1024. [encoding] is one
+     * of `"hex"` (default), `"base64"`, or `"base64url"`; leave null to
+     * accept the server default.
+     *
+     * Requires ekoDB >= 0.41.0.
+     */
+    @Serializable
+    @SerialName("RandomToken")
+    data class RandomToken(
+        val bytes: Int,
+        val encoding: String? = null,
+        val output_field: String
     ) : FunctionStageConfig()
 }
 

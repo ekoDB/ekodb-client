@@ -6,6 +6,94 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Three new crypto-primitive function stages across every language client** —
+  Rust, TypeScript, Python, and Kotlin now expose typed bindings
+  - builder helpers for ekoDB 0.41.0's new `BcryptHash`, `BcryptVerify`, and
+    `RandomToken` stored-function stages. Lets callers build a pure
+    stored-function auth flow
+    (`users_register = Validate + BcryptHash + Insert`,
+    `users_login = FindOne + BcryptVerify + If`) and have ekoDB do the password
+    hashing, verification, and session-token minting instead of hosting those
+    primitives in every app layer. All four helpers produce identical JSON on
+    the wire. Helper API by language:
+  * **Rust** (`ekodb_client`): new
+    `Function::BcryptHash { plain, cost, output_field }`,
+    `Function::BcryptVerify { plain, hash_field, output_field }`, and
+    `Function::RandomToken { bytes, encoding, output_field }` variants. 6 new
+    tests in `ekodb_client/tests/unit_tests.rs`
+    (`test_bcrypt_hash_stage_serializes_with_text_placeholder`,
+    `test_bcrypt_hash_stage_omits_cost_when_none`,
+    `test_bcrypt_verify_stage_serializes`,
+    `test_random_token_stage_serializes_with_hex_default`,
+    `test_random_token_stage_omits_encoding_when_none`,
+    `test_crypto_stages_roundtrip_through_serde`).
+  * **TypeScript** (`@ekodb/ekodb-client`): new
+    `Stage.bcryptHash(plain, output_field, cost?)`,
+    `Stage.bcryptVerify(plain, hash_field, output_field)`, and
+    `Stage.randomToken(bytes, output_field, encoding?)` builders plus the
+    matching `FunctionStageConfig` union members. 9 new tests in
+    `ekodb-client-ts/src/functions.test.ts` — full TS suite: 347/347 passing.
+  * **Python** (`ekodb_client`): new
+    `Stage.bcrypt_hash(plain, output_field, cost=None)`,
+    `Stage.bcrypt_verify(plain, hash_field, output_field)`, and
+    `Stage.random_token(bytes, output_field, encoding=None)` methods on
+    `ekodb_client.stages.Stage`. 7 new tests in
+    `ekodb-client-py/tests/test_stages.py`.
+  * **Kotlin** (`io.ekodb.client.functions`): new
+    `FunctionStageConfig.BcryptHash`, `FunctionStageConfig.BcryptVerify`, and
+    `FunctionStageConfig.RandomToken` `@SerialName`'d data classes. 6 new tests
+    in
+    `ekodb-client-kt/src/test/kotlin/io/ekodb/client/functions/FunctionStagesTest.kt`
+    — full suite: 13/13 passing.
+
+  **Requires ekoDB >= 0.41.0.** Sensitive runtime inputs (the password the user
+  just typed) flow through the existing text-level `"{{password}}"` placeholder
+  substituted by `substitute_parameters` at stage-execution time. Operator-owned
+  secrets (peppers, data keys) continue to use `"{{env.NAME}}"` sourced from
+  ekoDB's `environment_vars` config whitelist.
+
+- **Structural parameter placeholder helper added to every language client** —
+  Rust, TypeScript, Python, and Kotlin now expose a helper that builds the
+  `{"type": "Parameter", "name": <name>}` shape ekoDB's
+  `resolve_json_parameters` recognizes inside `Insert.record`, `Update.updates`,
+  `UpdateById.updates`, `FindOneAndUpdate.updates`, `BatchInsert.records`, and
+  any `QueryExpression` filter value. This is the structural alternative to the
+  text-level `"{{name}}"` placeholder form — use it when the parameter is a
+  whole-object record or a value whose type would otherwise be lost on a
+  raw-JSON round-trip (Binary, DateTime, UUID, Decimal, Duration, Number, Set,
+  Vector). Requires ekoDB >= 0.41.0 for the mutation-stage parameter-resolution
+  consistency fix. Helper API by language:
+  - **Rust** (`ekodb_client`):
+    `parameter_ref(name: impl Into<String>) -> serde_json::Value`, re-exported
+    from the crate root. Covered by 7 new tests in
+    `ekodb_client/tests/unit_tests.rs` (`test_parameter_ref_shape`,
+    `test_parameter_ref_arbitrary_name`,
+    `test_insert_function_accepts_structural_parameter`,
+    `test_insert_function_accepts_per_field_placeholders`,
+    `test_update_by_id_accepts_structural_parameter`,
+    `test_update_with_structural_filter_and_updates`,
+    `test_batch_insert_accepts_per_record_structural_parameters`), plus a
+    doctest on the function itself.
+  - **TypeScript** (`@ekodb/ekodb-client`): top-level `parameterRef(name)` and
+    `Stage.param(name)` shorthand. Covered by 11 new tests in
+    `ekodb-client-ts/src/functions.test.ts` spanning Insert, UpdateById, Update
+    (filter-based), BatchInsert, and JSON wire-format round-trip.
+  - **Python** (`ekodb_client`): top-level `parameter_ref(name)` and
+    `Stage.param(name)` shorthand in `ekodb_client.stages`. Covered by 9 tests
+    in `ekodb-client-py/tests/test_stages.py` mirroring the TS coverage.
+  - **Kotlin** (`io.ekodb.client.functions`): top-level
+    `parameterRef(name): JsonObject` in `FunctionStages.kt`. Covered by 7 tests
+    in
+    `ekodb-client-kt/src/test/kotlin/io/ekodb/client/functions/FunctionStagesTest.kt`.
+
+  All four helpers produce identical JSON on the wire and are interoperable with
+  any of the ekoDB client libraries — an app can define its stored functions in
+  one language and call them from another.
+
 ## [0.16.0] - 2026-04-01
 
 ### Added
