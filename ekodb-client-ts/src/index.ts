@@ -17,7 +17,7 @@ export {
   DistanceMetric,
 } from "./schema";
 export { JoinBuilder } from "./join";
-export { Stage, ChatMessage } from "./functions";
+export { Stage, ChatMessage, parameterRef } from "./functions";
 export {
   getValue,
   getValues,

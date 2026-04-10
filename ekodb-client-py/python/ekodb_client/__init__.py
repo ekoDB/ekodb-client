@@ -54,7 +54,7 @@ from ._ekodb_client import (
     SubscriptionReceiver,
     ChatStreamReceiver,
 )
-from .stages import Stage, ChatMessage
+from .stages import Stage, ChatMessage, parameter_ref
 from .query_builder import QueryBuilder
 from .schema_builder import SchemaBuilder, FieldTypeSchemaBuilder
 from .join import JoinConfig
@@ -102,6 +102,7 @@ __all__ = (
         # Stage helpers for script functions
         "Stage",
         "ChatMessage",
+        "parameter_ref",
         # Query, Schema, and Join builders
         "QueryBuilder",
         "SchemaBuilder",

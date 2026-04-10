@@ -2554,3 +2554,259 @@ async fn test_agent_get_not_found() {
     let result = client.agent_get("nonexistent").await;
     assert!(result.is_err());
 }
+
+// ============================================================================
+// parameter_ref helper — structural placeholders across mutation stages
+// ============================================================================
+//
+// Feature parity with Stage.param (TS), Parameter (Go), parameter_ref
+// (Python), and Parameter (Kotlin). Verifies the JSON shape + that
+// Function::Insert, UpdateById, Update, and BatchInsert accept a structural
+// parameter placeholder in their record/updates/filter fields.
+// Requires ekoDB >= 0.41.0 for the server to actually resolve these.
+
+#[test]
+fn test_parameter_ref_shape() {
+    use ekodb_client::parameter_ref;
+    let v = parameter_ref("record");
+    assert_eq!(v["type"], "Parameter");
+    assert_eq!(v["name"], "record");
+}
+
+#[test]
+fn test_parameter_ref_arbitrary_name() {
+    use ekodb_client::parameter_ref;
+    assert_eq!(parameter_ref("user_id")["name"], "user_id");
+    assert_eq!(parameter_ref("updates")["name"], "updates");
+}
+
+#[test]
+fn test_insert_function_accepts_structural_parameter() {
+    use ekodb_client::{Function, parameter_ref};
+    let stage = Function::Insert {
+        collection: "users".to_string(),
+        record: parameter_ref("record"),
+        bypass_ripple: None,
+        ttl: None,
+    };
+
+    let json = serde_json::to_value(&stage).expect("serialize");
+    assert_eq!(json["type"], "Insert");
+    assert_eq!(json["collection"], "users");
+    assert_eq!(json["record"]["type"], "Parameter");
+    assert_eq!(json["record"]["name"], "record");
+}
+
+#[test]
+fn test_insert_function_accepts_per_field_placeholders() {
+    use ekodb_client::{Function, parameter_ref};
+    let stage = Function::Insert {
+        collection: "items".to_string(),
+        record: serde_json::json!({
+            "label": "{{label}}",
+            "parent_id": parameter_ref("parent_id"),
+            "kind": "item",
+            "tags": parameter_ref("tags"),
+        }),
+        bypass_ripple: None,
+        ttl: None,
+    };
+
+    let json = serde_json::to_value(&stage).expect("serialize");
+    let record = &json["record"];
+    assert_eq!(record["label"], "{{label}}");
+    assert_eq!(record["kind"], "item");
+    assert_eq!(record["parent_id"]["type"], "Parameter");
+    assert_eq!(record["parent_id"]["name"], "parent_id");
+    assert_eq!(record["tags"]["type"], "Parameter");
+    assert_eq!(record["tags"]["name"], "tags");
+}
+
+#[test]
+fn test_update_by_id_accepts_structural_parameter() {
+    use ekodb_client::{Function, parameter_ref};
+    let stage = Function::UpdateById {
+        collection: "items".to_string(),
+        record_id: "{{id}}".to_string(),
+        updates: parameter_ref("updates"),
+        bypass_ripple: None,
+        ttl: None,
+    };
+
+    let json = serde_json::to_value(&stage).expect("serialize");
+    assert_eq!(json["type"], "UpdateById");
+    assert_eq!(json["record_id"], "{{id}}");
+    assert_eq!(json["updates"]["type"], "Parameter");
+    assert_eq!(json["updates"]["name"], "updates");
+}
+
+#[test]
+fn test_update_with_structural_filter_and_updates() {
+    use ekodb_client::{Function, parameter_ref};
+    let filter = serde_json::json!({
+        "type": "Condition",
+        "content": {
+            "field": "id",
+            "operator": "Eq",
+            "value": parameter_ref("id"),
+        }
+    });
+    let stage = Function::Update {
+        collection: "items".to_string(),
+        filter,
+        updates: parameter_ref("updates"),
+        bypass_ripple: None,
+        ttl: None,
+    };
+
+    let json = serde_json::to_value(&stage).expect("serialize");
+    let filter_value = &json["filter"]["content"]["value"];
+    assert_eq!(filter_value["type"], "Parameter");
+    assert_eq!(filter_value["name"], "id");
+    assert_eq!(json["updates"]["type"], "Parameter");
+    assert_eq!(json["updates"]["name"], "updates");
+}
+
+#[test]
+fn test_batch_insert_accepts_per_record_structural_parameters() {
+    use ekodb_client::{Function, parameter_ref};
+    let stage = Function::BatchInsert {
+        collection: "audit_log".to_string(),
+        records: serde_json::json!([
+            {
+                "actor": parameter_ref("user_id"),
+                "at": "{{now}}",
+                "message": "created"
+            },
+            {
+                "actor": parameter_ref("user_id"),
+                "at": "{{now}}",
+                "message": "initialized"
+            },
+        ]),
+        bypass_ripple: None,
+    };
+
+    let json = serde_json::to_value(&stage).expect("serialize");
+    assert_eq!(json["type"], "BatchInsert");
+    let records = json["records"].as_array().expect("records is array");
+    assert_eq!(records.len(), 2);
+    assert_eq!(records[0]["actor"]["name"], "user_id");
+    assert_eq!(records[0]["at"], "{{now}}");
+    assert_eq!(records[1]["message"], "initialized");
+}
+
+// ============================================================================
+// Crypto primitives: BcryptHash, BcryptVerify, RandomToken (ekoDB >= 0.41.0)
+// ============================================================================
+//
+// Serialization-shape tests only — runtime behavior is covered by the
+// server-side tests in `ekodb/ekodb_server/tests/function_parameters_tests.rs`.
+
+#[test]
+fn test_bcrypt_hash_stage_serializes_with_text_placeholder() {
+    use ekodb_client::Function;
+    let stage = Function::BcryptHash {
+        plain: "{{password}}".to_string(),
+        cost: Some(12),
+        output_field: "password_hash".to_string(),
+    };
+    let json = serde_json::to_value(&stage).expect("serialize");
+    assert_eq!(json["type"], "BcryptHash");
+    assert_eq!(json["plain"], "{{password}}");
+    assert_eq!(json["cost"], 12);
+    assert_eq!(json["output_field"], "password_hash");
+}
+
+#[test]
+fn test_bcrypt_hash_stage_omits_cost_when_none() {
+    use ekodb_client::Function;
+    let stage = Function::BcryptHash {
+        plain: "{{password}}".to_string(),
+        cost: None,
+        output_field: "pw_hash".to_string(),
+    };
+    let json = serde_json::to_value(&stage).expect("serialize");
+    assert!(
+        json.get("cost").is_none() || json["cost"].is_null(),
+        "cost must be omitted when None, got {:?}",
+        json.get("cost")
+    );
+}
+
+#[test]
+fn test_bcrypt_verify_stage_serializes() {
+    use ekodb_client::Function;
+    let stage = Function::BcryptVerify {
+        plain: "{{password}}".to_string(),
+        hash_field: "password_hash".to_string(),
+        output_field: "valid".to_string(),
+    };
+    let json = serde_json::to_value(&stage).expect("serialize");
+    assert_eq!(json["type"], "BcryptVerify");
+    assert_eq!(json["plain"], "{{password}}");
+    assert_eq!(json["hash_field"], "password_hash");
+    assert_eq!(json["output_field"], "valid");
+}
+
+#[test]
+fn test_random_token_stage_serializes_with_hex_default() {
+    use ekodb_client::Function;
+    let stage = Function::RandomToken {
+        bytes: 32,
+        encoding: Some("hex".to_string()),
+        output_field: "session_token".to_string(),
+    };
+    let json = serde_json::to_value(&stage).expect("serialize");
+    assert_eq!(json["type"], "RandomToken");
+    assert_eq!(json["bytes"], 32);
+    assert_eq!(json["encoding"], "hex");
+    assert_eq!(json["output_field"], "session_token");
+}
+
+#[test]
+fn test_random_token_stage_omits_encoding_when_none() {
+    use ekodb_client::Function;
+    let stage = Function::RandomToken {
+        bytes: 16,
+        encoding: None,
+        output_field: "token".to_string(),
+    };
+    let json = serde_json::to_value(&stage).expect("serialize");
+    assert!(
+        json.get("encoding").is_none() || json["encoding"].is_null(),
+        "encoding must be omitted when None",
+    );
+}
+
+#[test]
+fn test_crypto_stages_roundtrip_through_serde() {
+    use ekodb_client::Function;
+    let stages = [
+        Function::BcryptHash {
+            plain: "{{password}}".to_string(),
+            cost: Some(12),
+            output_field: "password_hash".to_string(),
+        },
+        Function::BcryptVerify {
+            plain: "{{password}}".to_string(),
+            hash_field: "password_hash".to_string(),
+            output_field: "valid".to_string(),
+        },
+        Function::RandomToken {
+            bytes: 32,
+            encoding: Some("base64url".to_string()),
+            output_field: "token".to_string(),
+        },
+    ];
+
+    for stage in stages {
+        let json = serde_json::to_value(&stage).expect("serialize");
+        let back: Function = serde_json::from_value(json.clone()).expect("deserialize");
+        let json2 = serde_json::to_value(&back).expect("re-serialize");
+        assert_eq!(
+            json, json2,
+            "crypto stage must round-trip through serde unchanged"
+        );
+    }
+}

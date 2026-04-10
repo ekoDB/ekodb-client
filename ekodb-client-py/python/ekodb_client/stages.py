@@ -8,8 +8,38 @@ that can be used in script definitions.
 from typing import Any, Dict, List, Optional, Union
 
 
+def parameter_ref(name: str) -> Dict[str, str]:
+    """Build the structural placeholder ``{"type": "Parameter", "name": name}``
+    that ekoDB's ``resolve_json_parameters`` recognizes inside
+    ``Insert.record``, ``Update.updates``, ``UpdateById.updates``,
+    ``FindOneAndUpdate.updates``, ``BatchInsert.records``, and any
+    ``QueryExpression`` filter value.
+
+    This is the structural alternative to the text-level ``"{{name}}"``
+    placeholder — use it when the parameter is a whole-object record or a
+    value whose type would be lost on a raw-JSON round-trip (Binary,
+    DateTime, UUID, Decimal, Duration, Number, Set, Vector). Requires
+    ekoDB >= 0.41.0 for the mutation-stage parameter-resolution
+    consistency fix.
+
+    Example:
+        >>> stage = Stage.insert("items", parameter_ref("record"))
+        >>> stage["record"]
+        {'type': 'Parameter', 'name': 'record'}
+    """
+    return {"type": "Parameter", "name": name}
+
+
 class Stage:
     """Helper class for creating function stage configurations."""
+
+    @staticmethod
+    def param(name: str) -> Dict[str, str]:
+        """Shorthand for :func:`parameter_ref`.
+
+        See :func:`parameter_ref` for the full explanation and example.
+        """
+        return parameter_ref(name)
 
     @staticmethod
     def find_all(collection: str) -> Dict[str, Any]:
@@ -458,6 +488,78 @@ class Stage:
             stage["output_field"] = output_field
         if collection is not None:
             stage["collection"] = collection
+        return stage
+
+    @staticmethod
+    def bcrypt_hash(
+        plain: str,
+        output_field: str,
+        cost: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """Bcrypt-hash a plaintext and write the result into every record in
+        the working data as ``output_field``. Use in a compound
+        ``users_register`` function between input validation and Insert.
+
+        ``plain`` is typically a ``"{{password}}"`` placeholder — the
+        substituter replaces it with the call-time param before this stage
+        runs. ``cost`` is the bcrypt work factor (4..=31); leave ``None``
+        for the ekoDB default (12).
+
+        Requires ekoDB >= 0.41.0.
+        """
+        stage: Dict[str, Any] = {
+            "type": "BcryptHash",
+            "plain": plain,
+            "output_field": output_field,
+        }
+        if cost is not None:
+            stage["cost"] = cost
+        return stage
+
+    @staticmethod
+    def bcrypt_verify(
+        plain: str,
+        hash_field: str,
+        output_field: str,
+    ) -> Dict[str, Any]:
+        """Verify a plaintext against a bcrypt hash stored on the first
+        record in the working data; writes a boolean result into
+        ``output_field``. Pair with an ``If`` stage to branch on success
+        / failure.
+
+        ``plain`` is typically ``"{{password}}"``; ``hash_field`` is the
+        name of the field on the current record holding the stored hash
+        (e.g. ``"password_hash"``).
+
+        Requires ekoDB >= 0.41.0.
+        """
+        return {
+            "type": "BcryptVerify",
+            "plain": plain,
+            "hash_field": hash_field,
+            "output_field": output_field,
+        }
+
+    @staticmethod
+    def random_token(
+        bytes: int,
+        output_field: str,
+        encoding: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Generate a cryptographically-random token and add it to every
+        record in the working data. ``bytes`` must be in 1..=1024.
+        ``encoding`` is one of ``"hex"`` (default), ``"base64"``, or
+        ``"base64url"``.
+
+        Requires ekoDB >= 0.41.0.
+        """
+        stage: Dict[str, Any] = {
+            "type": "RandomToken",
+            "bytes": bytes,
+            "output_field": output_field,
+        }
+        if encoding is not None:
+            stage["encoding"] = encoding
         return stage
 
 
