@@ -6,9 +6,41 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.17.0] - 2026-04-12
 
 ### Added
+
+- **Five new function stage variants across Rust, TypeScript, Python, and Kotlin
+  clients** — `TryCatch`, `Parallel`, `Sleep`, `Return`, and `Validate` stages
+  that the server already supported were missing from all client-side `Function`
+  enums / stage builders. This caused `list_functions` to fail with
+  `unknown variant 'Return'` when any stored function used these stages, because
+  the client couldn't deserialize the server response.
+  - **Rust**: `Function::TryCatch`, `Function::Parallel`, `Function::Sleep`,
+    `Function::Return`, `Function::Validate` variants with full serde
+    round-trip. 8 new unit tests.
+  - **TypeScript**: `FunctionStageConfig` union members + `Stage.tryCatch()`,
+    `Stage.parallel()`, `Stage.sleep()`, `Stage.returnResponse()`,
+    `Stage.validate()` builders. 16 new tests.
+  - **Python**: `Stage.try_catch()`, `Stage.parallel()`, `Stage.sleep()`,
+    `Stage.return_response()`, `Stage.validate()` helpers. 12 new tests.
+  - **Kotlin**: `FunctionStageConfig.TryCatch`, `.Parallel`, `.Sleep`,
+    `.Return`, `.Validate` sealed subclasses with kotlinx.serialization. 10 new
+    tests.
+
+- **Improved `ParameterRef` type safety (TypeScript)** — `parameterRef()` and
+  `Stage.param()` now return a `ParameterRef` interface
+  (`{ type: "Parameter"; name: string }`) instead of `Record<string, string>`,
+  catching misuse at compile time. Stage methods that accept records/updates now
+  accept `Record<string, any> | ParameterRef`.
+
+### Fixed
+
+- **Wire-format test for `ttl: undefined` (TypeScript)** — The JSON
+  serialization round-trip test asserted `ttl: undefined` in the wire object,
+  but `JSON.parse(JSON.stringify(...))` drops `undefined` keys entirely.
+  Replaced with explicit `stage.ttl` undefined check + `"ttl" in wire` absence
+  check.
 
 - **Three new crypto-primitive function stages across every language client** —
   Rust, TypeScript, Python, and Kotlin now expose typed bindings
