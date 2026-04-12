@@ -152,7 +152,7 @@ def test_update_by_id_json_serialization():
 
 
 # ---------------------------------------------------------------------------
-# Crypto primitives: BcryptHash, BcryptVerify, RandomToken (ekoDB >= 0.42.0)
+# Crypto primitives: BcryptHash, BcryptVerify, RandomToken (ekoDB >= 0.41.0)
 # ---------------------------------------------------------------------------
 
 
