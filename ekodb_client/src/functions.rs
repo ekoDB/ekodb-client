@@ -519,6 +519,50 @@ pub enum Function {
         /// Field name to write the encoded token into.
         output_field: String,
     },
+
+    // =========================================================================
+    // Error Handling & Control Flow
+    // =========================================================================
+    /// Try/Catch error handling for graceful failure recovery.
+    /// Executes try_functions, and if any fail, executes catch_functions.
+    TryCatch {
+        try_functions: Vec<Box<Function>>,
+        catch_functions: Vec<Box<Function>>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        output_error_field: Option<String>,
+    },
+
+    /// Execute multiple functions in parallel (concurrently).
+    /// All functions run simultaneously, results are merged.
+    Parallel {
+        functions: Vec<Box<Function>>,
+        wait_for_all: bool,
+    },
+
+    /// Sleep/delay execution for rate limiting or timing control.
+    Sleep { duration_ms: serde_json::Value },
+
+    // =========================================================================
+    // Response Formatting
+    // =========================================================================
+    /// Return a shaped response (final output formatting).
+    /// Constructs the final response object from current execution context.
+    Return {
+        fields: HashMap<String, serde_json::Value>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        status_code: Option<u16>,
+    },
+
+    // =========================================================================
+    // Data Validation
+    // =========================================================================
+    /// Validate data against a JSON schema before processing.
+    Validate {
+        schema: serde_json::Value,
+        data_field: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        on_error: Option<Vec<Box<Function>>>,
+    },
 }
 
 fn default_method() -> String {
@@ -675,4 +719,197 @@ pub struct StageStats {
 
     /// Execution time for this stage in milliseconds
     pub execution_time_ms: u128,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn try_catch_round_trip() {
+        let stage = Function::TryCatch {
+            try_functions: vec![Box::new(Function::FindAll {
+                collection: "users".to_string(),
+            })],
+            catch_functions: vec![Box::new(Function::Insert {
+                collection: "errors".to_string(),
+                record: json!({"msg": "failed"}),
+                bypass_ripple: None,
+                ttl: None,
+            })],
+            output_error_field: Some("api_error".to_string()),
+        };
+        let json = serde_json::to_string(&stage).unwrap();
+        let parsed: Function = serde_json::from_str(&json).unwrap();
+        match parsed {
+            Function::TryCatch {
+                try_functions,
+                catch_functions,
+                output_error_field,
+            } => {
+                assert_eq!(try_functions.len(), 1);
+                assert_eq!(catch_functions.len(), 1);
+                assert_eq!(output_error_field, Some("api_error".to_string()));
+            }
+            other => panic!("Expected TryCatch, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn parallel_round_trip() {
+        let stage = Function::Parallel {
+            functions: vec![
+                Box::new(Function::FindAll {
+                    collection: "a".to_string(),
+                }),
+                Box::new(Function::FindAll {
+                    collection: "b".to_string(),
+                }),
+            ],
+            wait_for_all: false,
+        };
+        let json = serde_json::to_string(&stage).unwrap();
+        let parsed: Function = serde_json::from_str(&json).unwrap();
+        match parsed {
+            Function::Parallel {
+                functions,
+                wait_for_all,
+            } => {
+                assert_eq!(functions.len(), 2);
+                assert!(!wait_for_all);
+            }
+            other => panic!("Expected Parallel, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn sleep_round_trip() {
+        let stage = Function::Sleep {
+            duration_ms: json!(1000),
+        };
+        let json = serde_json::to_string(&stage).unwrap();
+        let parsed: Function = serde_json::from_str(&json).unwrap();
+        match parsed {
+            Function::Sleep { duration_ms } => {
+                assert_eq!(duration_ms, json!(1000));
+            }
+            other => panic!("Expected Sleep, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn sleep_with_placeholder() {
+        let stage = Function::Sleep {
+            duration_ms: json!("{{delay}}"),
+        };
+        let json = serde_json::to_string(&stage).unwrap();
+        assert!(json.contains("{{delay}}"));
+        let parsed: Function = serde_json::from_str(&json).unwrap();
+        match parsed {
+            Function::Sleep { duration_ms } => {
+                assert_eq!(duration_ms, json!("{{delay}}"));
+            }
+            other => panic!("Expected Sleep, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn return_round_trip() {
+        let mut fields = HashMap::new();
+        fields.insert("message".to_string(), json!("ok"));
+        fields.insert("user_id".to_string(), json!("{{id}}"));
+        let stage = Function::Return {
+            fields,
+            status_code: Some(201),
+        };
+        let json = serde_json::to_string(&stage).unwrap();
+        let parsed: Function = serde_json::from_str(&json).unwrap();
+        match parsed {
+            Function::Return {
+                fields,
+                status_code,
+            } => {
+                assert_eq!(fields.get("message"), Some(&json!("ok")));
+                assert_eq!(status_code, Some(201));
+            }
+            other => panic!("Expected Return, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn return_omits_status_code_when_none() {
+        let mut fields = HashMap::new();
+        fields.insert("success".to_string(), json!(true));
+        let stage = Function::Return {
+            fields,
+            status_code: None,
+        };
+        let json = serde_json::to_string(&stage).unwrap();
+        assert!(!json.contains("status_code"));
+    }
+
+    #[test]
+    fn validate_round_trip() {
+        let stage = Function::Validate {
+            schema: json!({"type": "object", "required": ["name"]}),
+            data_field: "{{input}}".to_string(),
+            on_error: Some(vec![Box::new(Function::FindAll {
+                collection: "errors".to_string(),
+            })]),
+        };
+        let json = serde_json::to_string(&stage).unwrap();
+        let parsed: Function = serde_json::from_str(&json).unwrap();
+        match parsed {
+            Function::Validate {
+                schema,
+                data_field,
+                on_error,
+            } => {
+                assert_eq!(schema, json!({"type": "object", "required": ["name"]}));
+                assert_eq!(data_field, "{{input}}");
+                assert_eq!(on_error.unwrap().len(), 1);
+            }
+            other => panic!("Expected Validate, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn validate_omits_on_error_when_none() {
+        let stage = Function::Validate {
+            schema: json!({"type": "object"}),
+            data_field: "record".to_string(),
+            on_error: None,
+        };
+        let json = serde_json::to_string(&stage).unwrap();
+        assert!(!json.contains("on_error"));
+    }
+
+    /// Regression test: the server may store functions with newer stage types
+    /// (Return, TryCatch, etc.). When the client deserializes a list of
+    /// UserFunctions, it must not choke on these variants.
+    #[test]
+    fn deserialize_user_function_with_return_stage() {
+        let json = r#"{
+            "id": "abc123",
+            "label": "api_handler",
+            "name": "API Handler",
+            "functions": [
+                {"type": "FindAll", "collection": "users"},
+                {"type": "Return", "fields": {"data": "{{result}}"}, "status_code": 200}
+            ]
+        }"#;
+        let uf: UserFunction = serde_json::from_str(json).unwrap();
+        assert_eq!(uf.functions.len(), 2);
+        match &uf.functions[1] {
+            Function::Return {
+                fields,
+                status_code,
+            } => {
+                assert!(fields.contains_key("data"));
+                assert_eq!(*status_code, Some(200));
+            }
+            other => panic!("Expected Return, got {:?}", other),
+        }
+    }
 }

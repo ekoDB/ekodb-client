@@ -430,6 +430,75 @@ sealed class FunctionStageConfig {
         val encoding: String? = null,
         val output_field: String
     ) : FunctionStageConfig()
+
+    /**
+     * Try/Catch error handling for graceful failure recovery.
+     * Executes [try_functions], and if any fail, executes [catch_functions].
+     *
+     * [output_error_field] is the field name to store error details (default: "error").
+     */
+    @Serializable
+    @SerialName("TryCatch")
+    data class TryCatch(
+        val try_functions: List<FunctionStageConfig>,
+        val catch_functions: List<FunctionStageConfig>,
+        val output_error_field: String? = null
+    ) : FunctionStageConfig()
+
+    /**
+     * Execute multiple functions in parallel (concurrently).
+     * All functions run simultaneously, results are merged.
+     *
+     * If [wait_for_all] is true, waits for all to complete; if false, returns
+     * on first completion.
+     */
+    @Serializable
+    @SerialName("Parallel")
+    data class Parallel(
+        val functions: List<FunctionStageConfig>,
+        @EncodeDefault val wait_for_all: Boolean = true
+    ) : FunctionStageConfig()
+
+    /**
+     * Sleep/delay execution for rate limiting or timing control.
+     *
+     * [duration_ms] is the duration in milliseconds — an integer or a
+     * `"{{delay_param}}"` placeholder string.
+     */
+    @Serializable
+    @SerialName("Sleep")
+    data class Sleep(
+        val duration_ms: JsonElement
+    ) : FunctionStageConfig()
+
+    /**
+     * Return a shaped response (final output formatting).
+     * Constructs the final response object from current execution context.
+     *
+     * [fields] are the fields to include in the response (supports `{{param}}`
+     * substitution). [status_code] is the HTTP status code (default: 200).
+     */
+    @Serializable
+    @SerialName("Return")
+    data class Return(
+        val fields: Map<String, JsonElement>,
+        val status_code: Int? = null
+    ) : FunctionStageConfig()
+
+    /**
+     * Validate data against a JSON schema before processing.
+     *
+     * [schema] is the JSON Schema to validate against. [data_field] is the
+     * field containing data to validate. [on_error] are optional functions to
+     * execute on validation failure.
+     */
+    @Serializable
+    @SerialName("Validate")
+    data class Validate(
+        val schema: JsonElement,
+        val data_field: String,
+        val on_error: List<FunctionStageConfig>? = null
+    ) : FunctionStageConfig()
 }
 
 /**
