@@ -18,6 +18,7 @@ export {
 } from "./schema";
 export { JoinBuilder } from "./join";
 export { Stage, ChatMessage, parameterRef } from "./functions";
+export type { ParameterRef } from "./functions";
 export {
   getValue,
   getValues,
