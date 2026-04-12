@@ -361,7 +361,12 @@ export interface StageStats {
  * };
  * ```
  */
-export function parameterRef(name: string): Record<string, string> {
+export interface ParameterRef {
+  type: "Parameter";
+  name: string;
+}
+
+export function parameterRef(name: string): ParameterRef {
   return { type: "Parameter", name };
 }
 
@@ -372,7 +377,7 @@ export const Stage = {
    * `{"type": "Parameter", "name": name}`. See `parameterRef` for the full
    * explanation and example.
    */
-  param: (name: string): Record<string, string> => parameterRef(name),
+  param: (name: string): ParameterRef => parameterRef(name),
 
   findAll: (collection: string): FunctionStageConfig => ({
     type: "FindAll",
@@ -416,7 +421,7 @@ export const Stage = {
 
   insert: (
     collection: string,
-    record: Record<string, any>,
+    record: Record<string, any> | ParameterRef,
     bypassRipple = false,
     ttl?: number,
   ): FunctionStageConfig => ({
@@ -430,7 +435,7 @@ export const Stage = {
   update: (
     collection: string,
     filter: Record<string, any>,
-    updates: Record<string, any>,
+    updates: Record<string, any> | ParameterRef,
     bypassRipple = false,
     ttl?: number,
   ): FunctionStageConfig => ({
@@ -445,7 +450,7 @@ export const Stage = {
   updateById: (
     collection: string,
     record_id: string,
-    updates: Record<string, any>,
+    updates: Record<string, any> | ParameterRef,
     bypassRipple = false,
     ttl?: number,
   ): FunctionStageConfig => ({
@@ -642,7 +647,7 @@ export const Stage = {
   findOneAndUpdate: (
     collection: string,
     record_id: string,
-    updates: Record<string, any>,
+    updates: Record<string, any> | ParameterRef,
     bypassRipple = false,
     ttl?: number,
   ): FunctionStageConfig => ({

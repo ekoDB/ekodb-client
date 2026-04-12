@@ -134,12 +134,13 @@ describe("JSON serialization round-trip (what actually goes on the wire)", () =>
   it("serializes a structural placeholder exactly as ekoDB expects", () => {
     const stage = Stage.insert("users", Stage.param("record"));
     const wire = JSON.parse(JSON.stringify(stage));
+    expect((stage as any).ttl).toBeUndefined();
+    expect("ttl" in wire).toBe(false);
     expect(wire).toEqual({
       type: "Insert",
       collection: "users",
       record: { type: "Parameter", name: "record" },
       bypass_ripple: false,
-      ttl: undefined,
     });
   });
 });
