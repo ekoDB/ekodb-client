@@ -253,3 +253,192 @@ describe("Crypto stages JSON wire format", () => {
     });
   });
 });
+
+// ============================================================================
+// Error Handling & Control Flow: TryCatch, Parallel, Sleep (ekoDB >= 0.42.0)
+// ============================================================================
+
+describe("Stage.tryCatch", () => {
+  it("produces a TryCatch stage with try/catch function lists", () => {
+    const stage = Stage.tryCatch(
+      [Stage.httpRequest("https://api.example.com/data")],
+      [Stage.insert("fallback_log", { error: "{{error}}" })],
+      "api_error",
+    ) as Extract<FunctionStageConfig, { type: "TryCatch" }>;
+    expect(stage.type).toBe("TryCatch");
+    expect(stage.try_functions).toHaveLength(1);
+    expect(stage.catch_functions).toHaveLength(1);
+    expect(stage.output_error_field).toBe("api_error");
+  });
+
+  it("leaves output_error_field undefined when omitted", () => {
+    const stage = Stage.tryCatch(
+      [Stage.findAll("users")],
+      [Stage.insert("errors", { msg: "failed" })],
+    ) as Extract<FunctionStageConfig, { type: "TryCatch" }>;
+    expect(stage.output_error_field).toBeUndefined();
+  });
+});
+
+describe("Stage.parallel", () => {
+  it("produces a Parallel stage with functions and wait_for_all", () => {
+    const stage = Stage.parallel(
+      [Stage.findAll("users"), Stage.findAll("orders")],
+      true,
+    ) as Extract<FunctionStageConfig, { type: "Parallel" }>;
+    expect(stage.type).toBe("Parallel");
+    expect(stage.functions).toHaveLength(2);
+    expect(stage.wait_for_all).toBe(true);
+  });
+
+  it("defaults wait_for_all to true", () => {
+    const stage = Stage.parallel([Stage.findAll("users")]) as Extract<
+      FunctionStageConfig,
+      { type: "Parallel" }
+    >;
+    expect(stage.wait_for_all).toBe(true);
+  });
+
+  it("accepts wait_for_all = false for race semantics", () => {
+    const stage = Stage.parallel(
+      [Stage.findAll("users"), Stage.findAll("cache")],
+      false,
+    ) as Extract<FunctionStageConfig, { type: "Parallel" }>;
+    expect(stage.wait_for_all).toBe(false);
+  });
+});
+
+describe("Stage.sleep", () => {
+  it("produces a Sleep stage with numeric duration", () => {
+    const stage = Stage.sleep(1000) as Extract<
+      FunctionStageConfig,
+      { type: "Sleep" }
+    >;
+    expect(stage.type).toBe("Sleep");
+    expect(stage.duration_ms).toBe(1000);
+  });
+
+  it("accepts a text placeholder for parameter substitution", () => {
+    const stage = Stage.sleep("{{delay}}") as Extract<
+      FunctionStageConfig,
+      { type: "Sleep" }
+    >;
+    expect(stage.duration_ms).toBe("{{delay}}");
+  });
+});
+
+// ============================================================================
+// Response Formatting: Return (ekoDB >= 0.42.0)
+// ============================================================================
+
+describe("Stage.returnResponse", () => {
+  it("produces a Return stage with fields and status_code", () => {
+    const stage = Stage.returnResponse(
+      { message: "ok", user_id: "{{id}}" },
+      201,
+    ) as Extract<FunctionStageConfig, { type: "Return" }>;
+    expect(stage.type).toBe("Return");
+    expect(stage.fields).toEqual({ message: "ok", user_id: "{{id}}" });
+    expect(stage.status_code).toBe(201);
+  });
+
+  it("leaves status_code undefined when omitted (server defaults to 200)", () => {
+    const stage = Stage.returnResponse({ success: true }) as Extract<
+      FunctionStageConfig,
+      { type: "Return" }
+    >;
+    expect(stage.status_code).toBeUndefined();
+  });
+});
+
+// ============================================================================
+// Data Validation: Validate (ekoDB >= 0.42.0)
+// ============================================================================
+
+describe("Stage.validate", () => {
+  it("produces a Validate stage with schema, data_field, and on_error", () => {
+    const schema = {
+      type: "object",
+      required: ["name", "email"],
+      properties: {
+        name: { type: "string" },
+        email: { type: "string", format: "email" },
+      },
+    };
+    const stage = Stage.validate(schema, "{{input}}", [
+      Stage.returnResponse({ error: "validation failed" }, 400),
+    ]) as Extract<FunctionStageConfig, { type: "Validate" }>;
+    expect(stage.type).toBe("Validate");
+    expect(stage.schema).toEqual(schema);
+    expect(stage.data_field).toBe("{{input}}");
+    expect(stage.on_error).toHaveLength(1);
+  });
+
+  it("leaves on_error undefined when omitted", () => {
+    const stage = Stage.validate({ type: "object" }, "record") as Extract<
+      FunctionStageConfig,
+      { type: "Validate" }
+    >;
+    expect(stage.on_error).toBeUndefined();
+  });
+});
+
+// ============================================================================
+// New stages JSON wire format
+// ============================================================================
+
+describe("New stages JSON wire format", () => {
+  it("TryCatch round-trips through JSON unchanged", () => {
+    const stage = Stage.tryCatch(
+      [Stage.findAll("users")],
+      [Stage.insert("errors", { msg: "failed" })],
+      "err",
+    );
+    const wire = JSON.parse(JSON.stringify(stage));
+    expect(wire.type).toBe("TryCatch");
+    expect(wire.try_functions).toHaveLength(1);
+    expect(wire.catch_functions).toHaveLength(1);
+    expect(wire.output_error_field).toBe("err");
+  });
+
+  it("Parallel round-trips through JSON unchanged", () => {
+    const stage = Stage.parallel(
+      [Stage.findAll("a"), Stage.findAll("b")],
+      false,
+    );
+    const wire = JSON.parse(JSON.stringify(stage));
+    expect(wire).toEqual({
+      type: "Parallel",
+      functions: [
+        { type: "FindAll", collection: "a" },
+        { type: "FindAll", collection: "b" },
+      ],
+      wait_for_all: false,
+    });
+  });
+
+  it("Sleep round-trips through JSON unchanged", () => {
+    const wire = JSON.parse(JSON.stringify(Stage.sleep(500)));
+    expect(wire).toEqual({ type: "Sleep", duration_ms: 500 });
+  });
+
+  it("Return round-trips through JSON unchanged", () => {
+    const stage = Stage.returnResponse({ ok: true }, 201);
+    const wire = JSON.parse(JSON.stringify(stage));
+    expect(wire).toEqual({
+      type: "Return",
+      fields: { ok: true },
+      status_code: 201,
+    });
+  });
+
+  it("Validate round-trips through JSON unchanged", () => {
+    const stage = Stage.validate({ type: "object" }, "data");
+    const wire = JSON.parse(JSON.stringify(stage));
+    expect(wire).toEqual({
+      type: "Validate",
+      schema: { type: "object" },
+      data_field: "data",
+    });
+  });
+});

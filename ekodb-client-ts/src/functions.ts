@@ -257,6 +257,49 @@ export type FunctionStageConfig =
       bytes: number;
       encoding?: "hex" | "base64" | "base64url";
       output_field: string;
+    }
+  | {
+      /**
+       * Try/Catch error handling for graceful failure recovery.
+       * Executes try_functions, and if any fail, executes catch_functions.
+       */
+      type: "TryCatch";
+      try_functions: FunctionStageConfig[];
+      catch_functions: FunctionStageConfig[];
+      output_error_field?: string;
+    }
+  | {
+      /**
+       * Execute multiple functions in parallel (concurrently).
+       * All functions run simultaneously, results are merged.
+       */
+      type: "Parallel";
+      functions: FunctionStageConfig[];
+      wait_for_all: boolean;
+    }
+  | {
+      /** Sleep/delay execution for rate limiting or timing control. */
+      type: "Sleep";
+      duration_ms: string | number;
+    }
+  | {
+      /**
+       * Return a shaped response (final output formatting).
+       * Constructs the final response object from current execution context.
+       */
+      type: "Return";
+      fields: Record<string, any>;
+      status_code?: number;
+    }
+  | {
+      /**
+       * Validate data against a JSON schema before processing.
+       * Prevents invalid data from corrupting database or causing errors downstream.
+       */
+      type: "Validate";
+      schema: Record<string, any>;
+      data_field: string;
+      on_error?: FunctionStageConfig[];
     };
 
 export interface ChatMessage {
@@ -822,5 +865,84 @@ export const Stage = {
     bytes,
     encoding,
     output_field,
+  }),
+
+  /**
+   * Try/Catch error handling for graceful failure recovery.
+   * Executes tryFunctions, and if any fail, executes catchFunctions.
+   *
+   * @param tryFunctions - Functions to attempt.
+   * @param catchFunctions - Functions to execute on failure.
+   * @param outputErrorField - Field name to store error details (default: "error").
+   */
+  tryCatch: (
+    tryFunctions: FunctionStageConfig[],
+    catchFunctions: FunctionStageConfig[],
+    outputErrorField?: string,
+  ): FunctionStageConfig => ({
+    type: "TryCatch",
+    try_functions: tryFunctions,
+    catch_functions: catchFunctions,
+    output_error_field: outputErrorField,
+  }),
+
+  /**
+   * Execute multiple functions in parallel (concurrently).
+   * All functions run simultaneously, results are merged.
+   *
+   * @param functions - Functions to execute concurrently.
+   * @param waitForAll - true = wait for all to complete, false = return on first completion.
+   */
+  parallel: (
+    functions: FunctionStageConfig[],
+    waitForAll = true,
+  ): FunctionStageConfig => ({
+    type: "Parallel",
+    functions,
+    wait_for_all: waitForAll,
+  }),
+
+  /**
+   * Sleep/delay execution for rate limiting or timing control.
+   *
+   * @param durationMs - Duration in milliseconds: `1000` or `"{{delay_param}}"`.
+   */
+  sleep: (durationMs: string | number): FunctionStageConfig => ({
+    type: "Sleep",
+    duration_ms: durationMs,
+  }),
+
+  /**
+   * Return a shaped response (final output formatting).
+   * Constructs the final response object from current execution context.
+   *
+   * @param fields - Fields to include in response with `{{param}}` substitution.
+   * @param statusCode - HTTP status code (default: 200).
+   */
+  returnResponse: (
+    fields: Record<string, any>,
+    statusCode?: number,
+  ): FunctionStageConfig => ({
+    type: "Return",
+    fields,
+    status_code: statusCode,
+  }),
+
+  /**
+   * Validate data against a JSON schema before processing.
+   *
+   * @param schema - JSON Schema to validate against.
+   * @param dataField - Field containing data to validate.
+   * @param onError - Functions to execute on validation failure.
+   */
+  validate: (
+    schema: Record<string, any>,
+    dataField: string,
+    onError?: FunctionStageConfig[],
+  ): FunctionStageConfig => ({
+    type: "Validate",
+    schema,
+    data_field: dataField,
+    on_error: onError,
   }),
 };

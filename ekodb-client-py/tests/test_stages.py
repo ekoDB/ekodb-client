@@ -209,3 +209,126 @@ def test_crypto_stages_json_round_trip():
         wire = json.loads(json.dumps(stage))
         assert wire == stage, f"JSON round-trip changed {stage}"
         assert wire["type"] in ("BcryptHash", "BcryptVerify", "RandomToken")
+
+
+# ---------------------------------------------------------------------------
+# Error Handling & Control Flow: TryCatch, Parallel, Sleep
+# ---------------------------------------------------------------------------
+
+
+def test_try_catch_basic():
+    stage = Stage.try_catch(
+        try_functions=[Stage.http_request("https://api.example.com")],
+        catch_functions=[Stage.insert("errors", {"msg": "failed"})],
+        output_error_field="api_error",
+    )
+    assert stage["type"] == "TryCatch"
+    assert len(stage["try_functions"]) == 1
+    assert len(stage["catch_functions"]) == 1
+    assert stage["output_error_field"] == "api_error"
+
+
+def test_try_catch_omits_output_error_field_when_none():
+    stage = Stage.try_catch(
+        try_functions=[Stage.find_all("users")],
+        catch_functions=[Stage.insert("errors", {"msg": "fail"})],
+    )
+    assert "output_error_field" not in stage
+
+
+def test_parallel_basic():
+    stage = Stage.parallel(
+        functions=[Stage.find_all("users"), Stage.find_all("orders")],
+        wait_for_all=True,
+    )
+    assert stage["type"] == "Parallel"
+    assert len(stage["functions"]) == 2
+    assert stage["wait_for_all"] is True
+
+
+def test_parallel_defaults_wait_for_all_true():
+    stage = Stage.parallel(functions=[Stage.find_all("users")])
+    assert stage["wait_for_all"] is True
+
+
+def test_parallel_race_mode():
+    stage = Stage.parallel(
+        functions=[Stage.find_all("a"), Stage.find_all("b")],
+        wait_for_all=False,
+    )
+    assert stage["wait_for_all"] is False
+
+
+def test_sleep_numeric():
+    stage = Stage.sleep(1000)
+    assert stage["type"] == "Sleep"
+    assert stage["duration_ms"] == 1000
+
+
+def test_sleep_placeholder():
+    stage = Stage.sleep("{{delay}}")
+    assert stage["duration_ms"] == "{{delay}}"
+
+
+# ---------------------------------------------------------------------------
+# Response Formatting: Return
+# ---------------------------------------------------------------------------
+
+
+def test_return_response_with_status():
+    stage = Stage.return_response(
+        fields={"message": "ok", "user_id": "{{id}}"},
+        status_code=201,
+    )
+    assert stage["type"] == "Return"
+    assert stage["fields"]["message"] == "ok"
+    assert stage["status_code"] == 201
+
+
+def test_return_response_omits_status_code_when_none():
+    stage = Stage.return_response(fields={"success": True})
+    assert "status_code" not in stage
+
+
+# ---------------------------------------------------------------------------
+# Data Validation: Validate
+# ---------------------------------------------------------------------------
+
+
+def test_validate_basic():
+    schema = {"type": "object", "required": ["name"]}
+    stage = Stage.validate(
+        schema=schema,
+        data_field="{{input}}",
+        on_error=[Stage.return_response({"error": "invalid"}, 400)],
+    )
+    assert stage["type"] == "Validate"
+    assert stage["schema"] == schema
+    assert stage["data_field"] == "{{input}}"
+    assert len(stage["on_error"]) == 1
+
+
+def test_validate_omits_on_error_when_none():
+    stage = Stage.validate(schema={"type": "object"}, data_field="record")
+    assert "on_error" not in stage
+
+
+# ---------------------------------------------------------------------------
+# New stages JSON round-trip
+# ---------------------------------------------------------------------------
+
+
+def test_new_stages_json_round_trip():
+    import json
+
+    stages = [
+        Stage.try_catch([Stage.find_all("a")], [Stage.find_all("b")], "err"),
+        Stage.parallel([Stage.find_all("a")], True),
+        Stage.sleep(500),
+        Stage.return_response({"ok": True}, 200),
+        Stage.validate({"type": "object"}, "data"),
+    ]
+    for stage in stages:
+        wire = json.loads(json.dumps(stage))
+        assert wire == stage, f"JSON round-trip changed {stage}"
+        assert wire["type"] in ("TryCatch", "Parallel", "Sleep", "Return", "Validate")

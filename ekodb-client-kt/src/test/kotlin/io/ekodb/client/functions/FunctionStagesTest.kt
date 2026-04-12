@@ -3,6 +3,7 @@ package io.ekodb.client.functions
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -10,6 +11,8 @@ import kotlinx.serialization.json.put
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 /**
  * Unit tests for stored-function Stage helpers and the [parameterRef]
@@ -305,6 +308,200 @@ class FunctionStagesTest {
                 wire,
                 wireAgain,
                 "crypto stage round-trip lost data: $stage",
+            )
+        }
+    }
+
+    // =========================================================================
+    // Error Handling & Control Flow: TryCatch, Parallel, Sleep
+    // =========================================================================
+
+    @Test
+    fun `TryCatch serializes with try and catch function lists`() {
+        val stage = FunctionStageConfig.TryCatch(
+            try_functions = listOf(FunctionStageConfig.FindAll(collection = "users")),
+            catch_functions = listOf(FunctionStageConfig.FindAll(collection = "errors")),
+            output_error_field = "api_error",
+        )
+        val wire = json.encodeToString<FunctionStageConfig>(stage)
+        val decoded = Json.parseToJsonElement(wire).jsonObject
+
+        assertEquals("TryCatch", decoded["type"].toString().trim('"'))
+        assertEquals(1, decoded["try_functions"]?.jsonArray?.size)
+        assertEquals(1, decoded["catch_functions"]?.jsonArray?.size)
+        assertEquals("api_error", decoded["output_error_field"].toString().trim('"'))
+    }
+
+    @Test
+    fun `TryCatch omits output_error_field when null`() {
+        val stage = FunctionStageConfig.TryCatch(
+            try_functions = listOf(FunctionStageConfig.FindAll(collection = "a")),
+            catch_functions = listOf(FunctionStageConfig.FindAll(collection = "b")),
+        )
+        val wire = json.encodeToString<FunctionStageConfig>(stage)
+        val decoded = Json.parseToJsonElement(wire).jsonObject
+
+        val field = decoded["output_error_field"]
+        assertTrue(
+            field == null || field.toString() == "null",
+            "output_error_field should be omitted or null, got $field",
+        )
+    }
+
+    @Test
+    fun `Parallel serializes with functions and wait_for_all`() {
+        val stage = FunctionStageConfig.Parallel(
+            functions = listOf(
+                FunctionStageConfig.FindAll(collection = "a"),
+                FunctionStageConfig.FindAll(collection = "b"),
+            ),
+            wait_for_all = false,
+        )
+        val wire = json.encodeToString<FunctionStageConfig>(stage)
+        val decoded = Json.parseToJsonElement(wire).jsonObject
+
+        assertEquals("Parallel", decoded["type"].toString().trim('"'))
+        assertEquals(2, decoded["functions"]?.jsonArray?.size)
+        assertEquals("false", decoded["wait_for_all"].toString())
+    }
+
+    @Test
+    fun `Parallel defaults wait_for_all to true`() {
+        val stage = FunctionStageConfig.Parallel(
+            functions = listOf(FunctionStageConfig.FindAll(collection = "a")),
+        )
+        val wire = json.encodeToString<FunctionStageConfig>(stage)
+        val decoded = Json.parseToJsonElement(wire).jsonObject
+
+        assertEquals("true", decoded["wait_for_all"].toString())
+    }
+
+    @Test
+    fun `Sleep serializes with numeric duration_ms`() {
+        val stage = FunctionStageConfig.Sleep(duration_ms = JsonPrimitive(1000))
+        val wire = json.encodeToString<FunctionStageConfig>(stage)
+        val decoded = Json.parseToJsonElement(wire).jsonObject
+
+        assertEquals("Sleep", decoded["type"].toString().trim('"'))
+        assertEquals("1000", decoded["duration_ms"].toString())
+    }
+
+    @Test
+    fun `Sleep accepts placeholder string`() {
+        val stage = FunctionStageConfig.Sleep(duration_ms = JsonPrimitive("{{delay}}"))
+        val wire = json.encodeToString<FunctionStageConfig>(stage)
+
+        assertTrue(wire.contains("{{delay}}"))
+    }
+
+    // =========================================================================
+    // Response Formatting: Return
+    // =========================================================================
+
+    @Test
+    fun `Return serializes with fields and status_code`() {
+        val stage = FunctionStageConfig.Return(
+            fields = mapOf(
+                "message" to JsonPrimitive("ok"),
+                "user_id" to JsonPrimitive("{{id}}"),
+            ),
+            status_code = 201,
+        )
+        val wire = json.encodeToString<FunctionStageConfig>(stage)
+        val decoded = Json.parseToJsonElement(wire).jsonObject
+
+        assertEquals("Return", decoded["type"].toString().trim('"'))
+        assertNotNull(decoded["fields"])
+        assertEquals("201", decoded["status_code"].toString())
+    }
+
+    @Test
+    fun `Return omits status_code when null`() {
+        val stage = FunctionStageConfig.Return(
+            fields = mapOf("success" to JsonPrimitive(true)),
+        )
+        val wire = json.encodeToString<FunctionStageConfig>(stage)
+        val decoded = Json.parseToJsonElement(wire).jsonObject
+
+        val field = decoded["status_code"]
+        assertTrue(
+            field == null || field.toString() == "null",
+            "status_code should be omitted or null, got $field",
+        )
+    }
+
+    // =========================================================================
+    // Data Validation: Validate
+    // =========================================================================
+
+    @Test
+    fun `Validate serializes with schema, data_field, and on_error`() {
+        val schema = buildJsonObject {
+            put("type", "object")
+        }
+        val stage = FunctionStageConfig.Validate(
+            schema = schema,
+            data_field = "{{input}}",
+            on_error = listOf(FunctionStageConfig.FindAll(collection = "errors")),
+        )
+        val wire = json.encodeToString<FunctionStageConfig>(stage)
+        val decoded = Json.parseToJsonElement(wire).jsonObject
+
+        assertEquals("Validate", decoded["type"].toString().trim('"'))
+        assertEquals("{{input}}", decoded["data_field"].toString().trim('"'))
+        assertEquals(1, decoded["on_error"]?.jsonArray?.size)
+    }
+
+    @Test
+    fun `Validate omits on_error when null`() {
+        val stage = FunctionStageConfig.Validate(
+            schema = buildJsonObject { put("type", "object") },
+            data_field = "record",
+        )
+        val wire = json.encodeToString<FunctionStageConfig>(stage)
+        val decoded = Json.parseToJsonElement(wire).jsonObject
+
+        val field = decoded["on_error"]
+        assertTrue(
+            field == null || field.toString() == "null",
+            "on_error should be omitted or null, got $field",
+        )
+    }
+
+    // =========================================================================
+    // New stages JSON round-trip
+    // =========================================================================
+
+    @Test
+    fun `New stages round-trip through JSON`() {
+        val stages: List<FunctionStageConfig> = listOf(
+            FunctionStageConfig.TryCatch(
+                try_functions = listOf(FunctionStageConfig.FindAll("a")),
+                catch_functions = listOf(FunctionStageConfig.FindAll("b")),
+                output_error_field = "err",
+            ),
+            FunctionStageConfig.Parallel(
+                functions = listOf(FunctionStageConfig.FindAll("a")),
+                wait_for_all = true,
+            ),
+            FunctionStageConfig.Sleep(duration_ms = JsonPrimitive(500)),
+            FunctionStageConfig.Return(
+                fields = mapOf("ok" to JsonPrimitive(true)),
+                status_code = 200,
+            ),
+            FunctionStageConfig.Validate(
+                schema = buildJsonObject { put("type", "object") },
+                data_field = "data",
+            ),
+        )
+        for (stage in stages) {
+            val wire = json.encodeToString<FunctionStageConfig>(stage)
+            val back = json.decodeFromString<FunctionStageConfig>(wire)
+            val wireAgain = json.encodeToString<FunctionStageConfig>(back)
+            assertEquals(
+                wire,
+                wireAgain,
+                "new stage round-trip lost data: $stage",
             )
         }
     }

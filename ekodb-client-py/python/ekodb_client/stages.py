@@ -562,6 +562,95 @@ class Stage:
             stage["encoding"] = encoding
         return stage
 
+    @staticmethod
+    def try_catch(
+        try_functions: List[Dict[str, Any]],
+        catch_functions: List[Dict[str, Any]],
+        output_error_field: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Try/Catch error handling for graceful failure recovery.
+        Executes ``try_functions``, and if any fail, executes ``catch_functions``.
+
+        Args:
+            try_functions: Functions to attempt.
+            catch_functions: Functions to execute on failure.
+            output_error_field: Field name to store error details (default: "error").
+        """
+        stage: Dict[str, Any] = {
+            "type": "TryCatch",
+            "try_functions": try_functions,
+            "catch_functions": catch_functions,
+        }
+        if output_error_field is not None:
+            stage["output_error_field"] = output_error_field
+        return stage
+
+    @staticmethod
+    def parallel(
+        functions: List[Dict[str, Any]],
+        wait_for_all: bool = True,
+    ) -> Dict[str, Any]:
+        """Execute multiple functions in parallel (concurrently).
+        All functions run simultaneously, results are merged.
+
+        Args:
+            functions: Functions to execute concurrently.
+            wait_for_all: True = wait for all to complete, False = return on first completion.
+        """
+        return {
+            "type": "Parallel",
+            "functions": functions,
+            "wait_for_all": wait_for_all,
+        }
+
+    @staticmethod
+    def sleep(duration_ms: Union[str, int]) -> Dict[str, Any]:
+        """Sleep/delay execution for rate limiting or timing control.
+
+        Args:
+            duration_ms: Duration in milliseconds: ``1000`` or ``"{{delay_param}}"``.
+        """
+        return {"type": "Sleep", "duration_ms": duration_ms}
+
+    @staticmethod
+    def return_response(
+        fields: Dict[str, Any],
+        status_code: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """Return a shaped response (final output formatting).
+        Constructs the final response object from current execution context.
+
+        Args:
+            fields: Fields to include in response with ``{{param}}`` substitution.
+            status_code: HTTP status code (default: 200).
+        """
+        stage: Dict[str, Any] = {"type": "Return", "fields": fields}
+        if status_code is not None:
+            stage["status_code"] = status_code
+        return stage
+
+    @staticmethod
+    def validate(
+        schema: Dict[str, Any],
+        data_field: str,
+        on_error: Optional[List[Dict[str, Any]]] = None,
+    ) -> Dict[str, Any]:
+        """Validate data against a JSON schema before processing.
+
+        Args:
+            schema: JSON Schema to validate against.
+            data_field: Field containing data to validate.
+            on_error: Functions to execute on validation failure.
+        """
+        stage: Dict[str, Any] = {
+            "type": "Validate",
+            "schema": schema,
+            "data_field": data_field,
+        }
+        if on_error is not None:
+            stage["on_error"] = on_error
+        return stage
+
 
 class ChatMessage:
     """Helper class for creating chat messages."""
