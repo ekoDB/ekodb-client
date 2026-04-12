@@ -1638,3 +1638,19 @@ examples-ls-badge:
 	@chmod +x scripts/update_examples_badge.sh
 	@./scripts/update_examples_badge.sh
 	@echo "✅ $(GREEN)README badge updated!$(RESET)"
+
+# Count lines of code (across all client languages)
+count:
+	@echo "🔢 $(CYAN)Counting lines of code...$(RESET)"
+	@find ./ekodb_client/src ./ekodb_client/tests ./ekodb-client-ts/src ./ekodb-client-ts/tests ./ekodb-client-py/ekodb_client ./ekodb-client-py/tests ./ekodb-client-kt/src ./examples \
+		-type f \( -name '*.rs' -o -name '*.ts' -o -name '*.py' -o -name '*.kt' -o -name '*.go' \) 2>/dev/null | xargs wc -l
+
+count-detailed:
+	@echo "📊 $(CYAN)Detailed code statistics with tokei...$(RESET)"
+	@if command -v tokei > /dev/null; then \
+		tokei ./ekodb_client ./ekodb-client-ts ./ekodb-client-py ./ekodb-client-kt ./examples \
+			--exclude target --exclude node_modules --exclude dist --exclude build --exclude __pycache__; \
+	else \
+		echo "$(RED)tokei is not installed. Please install tokei for detailed statistics.$(RESET)"; \
+		echo "$(YELLOW)Run 'cargo install tokei' to install tokei.$(RESET)"; \
+	fi
