@@ -1,0 +1,19 @@
+# Pin the Rust toolchain so local builds, contributors, and CI all use the
+# same compiler + clippy lint set. Without this, CI's `dtolnay/rust-toolchain`
+# action used to track @stable, which silently bumped the lint set whenever
+# rust-lang shipped a new version — a clean local `cargo clippy` could fail
+# CI for lints that didn't exist locally yet.
+#
+# Pinned to 1.95.0 to match ekodb and ekodb-claw so a developer working
+# across all three repos doesn't have to switch toolchains. Bumping is now
+# an explicit, reviewable change to this file — run
+# `cargo clippy --all-targets -- -D warnings` after editing to surface any
+# new lints before they hit CI.
+#
+# Note: the Cargo.toml `rust-version = "1.85"` MSRV is still honored by
+# downstream consumers; this only pins the toolchain used for local
+# development and CI in this repo.
+[toolchain]
+channel = "1.95.0"
+components = ["rustfmt", "clippy"]
+profile = "minimal"
