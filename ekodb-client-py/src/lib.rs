@@ -1826,6 +1826,7 @@ impl Client {
                 client_tools: None,
                 confirm_tools: None,
                 exclude_tools: None,
+                attachments: None,
             };
 
             let result = client
@@ -1862,6 +1863,7 @@ impl Client {
                 client_tools: None,
                 confirm_tools: None,
                 exclude_tools: None,
+                attachments: None,
             };
 
             let rx = client

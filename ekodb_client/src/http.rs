@@ -1863,6 +1863,43 @@ impl HttpClient {
                                     .await;
                                 return;
                             }
+                            // Tool-progress event (server emits when a
+                            // server-side tool dispatch starts or
+                            // finishes — frames carry an `"event":
+                            // "tool_call"` or `"tool_result"` discriminator).
+                            // We surface tool_call as ChatStreamEvent::ToolCall
+                            // so the GUI can render mid-stream "searching X…"
+                            // pills. tool_result is dropped here today: the
+                            // existing GUI tool-status display already
+                            // updates from the tool_call_history arriving
+                            // in the End frame, so re-emitting result
+                            // events would just duplicate.
+                            if let Some(evt_name) = event_data.get("event").and_then(|v| v.as_str())
+                                && evt_name == "tool_call"
+                            {
+                                let tool_name = event_data
+                                    .get("tool")
+                                    .and_then(|v| v.as_str())
+                                    .unwrap_or("")
+                                    .to_string();
+                                let call_id = event_data
+                                    .get("call_id")
+                                    .and_then(|v| v.as_str())
+                                    .unwrap_or("")
+                                    .to_string();
+                                let arguments = event_data
+                                    .get("args")
+                                    .cloned()
+                                    .unwrap_or(serde_json::Value::Null);
+                                let _ = tx
+                                    .send(ChatStreamEvent::ToolCall {
+                                        call_id,
+                                        tool_name,
+                                        arguments,
+                                    })
+                                    .await;
+                                continue;
+                            }
                             // Error event
                             if let Some(err) = event_data.get("error").and_then(|v| v.as_str()) {
                                 let _ = tx.send(ChatStreamEvent::Error(err.to_string())).await;

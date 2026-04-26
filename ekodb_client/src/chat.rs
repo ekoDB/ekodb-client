@@ -288,6 +288,17 @@ pub struct ChatSession {
     pub message_count: usize,
 }
 
+/// Inline multimodal attachment for a chat message. `mime_type`
+/// follows IANA (`image/png`, `application/pdf`, etc); `data` is
+/// the base64-encoded payload. ekoDB routes large files through
+/// per-provider File APIs server-side, so the client always sends
+/// base64 regardless of size.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Attachment {
+    pub mime_type: String,
+    pub data: String,
+}
+
 /// Request to send a message in an existing session
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ChatMessageRequest {
@@ -318,6 +329,12 @@ pub struct ChatMessageRequest {
     /// Tools to exclude from the LLM's tool list.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub exclude_tools: Option<Vec<String>>,
+    /// Multimodal attachments sent with this turn. Under ~20 MB each
+    /// stay inline; larger ones are routed through the provider's
+    /// File API on the server side. Wire format matches the server's
+    /// `AgentChatRequest.attachments`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub attachments: Option<Vec<Attachment>>,
 }
 
 /// Client tool definition sent with chat messages (SSE path).
@@ -341,7 +358,16 @@ impl ChatMessageRequest {
             client_tools: None,
             confirm_tools: None,
             exclude_tools: None,
+            attachments: None,
         }
+    }
+
+    /// Attach multimodal inputs (images, PDFs, audio). Each item is
+    /// base64-encoded; large items are routed through the provider's
+    /// File API server-side.
+    pub fn attachments(mut self, attachments: Vec<Attachment>) -> Self {
+        self.attachments = Some(attachments);
+        self
     }
 
     /// Force conversation summarization
