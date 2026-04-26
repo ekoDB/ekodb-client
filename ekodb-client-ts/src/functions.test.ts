@@ -255,6 +255,138 @@ describe("Crypto stages JSON wire format", () => {
 });
 
 // ============================================================================
+// JWT primitives: JwtSign, JwtVerify (ekoDB >= 0.43.0)
+// ============================================================================
+
+describe("Stage.jwtSign", () => {
+  it("produces a JwtSign stage with claims, expiry, and algorithm", () => {
+    const stage = Stage.jwtSign(
+      { sub: "{{user_id}}", role: "admin" },
+      "{{env.JWT_SECRET}}",
+      "token",
+      3600,
+      "HS256",
+    ) as Extract<FunctionStageConfig, { type: "JwtSign" }>;
+    expect(stage.type).toBe("JwtSign");
+    expect(stage.claims).toEqual({ sub: "{{user_id}}", role: "admin" });
+    expect(stage.secret).toBe("{{env.JWT_SECRET}}");
+    expect(stage.expires_in_secs).toBe(3600);
+    expect(stage.algorithm).toBe("HS256");
+    expect(stage.output_field).toBe("token");
+  });
+
+  it("leaves algorithm and expires_in_secs undefined when omitted", () => {
+    const stage = Stage.jwtSign(
+      { sub: "u" },
+      "{{env.JWT_SECRET}}",
+      "t",
+    ) as Extract<FunctionStageConfig, { type: "JwtSign" }>;
+    expect(stage.algorithm).toBeUndefined();
+    expect(stage.expires_in_secs).toBeUndefined();
+  });
+});
+
+describe("Stage.jwtVerify", () => {
+  it("produces a JwtVerify stage wiring token_field and output_field", () => {
+    const stage = Stage.jwtVerify(
+      "auth_token",
+      "{{env.JWT_SECRET}}",
+      "claims",
+      "HS512",
+    ) as Extract<FunctionStageConfig, { type: "JwtVerify" }>;
+    expect(stage.type).toBe("JwtVerify");
+    expect(stage.token_field).toBe("auth_token");
+    expect(stage.secret).toBe("{{env.JWT_SECRET}}");
+    expect(stage.algorithm).toBe("HS512");
+    expect(stage.output_field).toBe("claims");
+  });
+});
+
+describe("JWT stages JSON wire format", () => {
+  it("JwtSign round-trips through JSON unchanged", () => {
+    const stage = Stage.jwtSign(
+      { sub: "user-1" },
+      "{{env.JWT_SECRET}}",
+      "token",
+      3600,
+      "HS256",
+    );
+    const wire = JSON.parse(JSON.stringify(stage));
+    expect(wire).toEqual({
+      type: "JwtSign",
+      claims: { sub: "user-1" },
+      secret: "{{env.JWT_SECRET}}",
+      algorithm: "HS256",
+      expires_in_secs: 3600,
+      output_field: "token",
+    });
+  });
+
+  it("JwtVerify round-trips through JSON unchanged", () => {
+    const stage = Stage.jwtVerify(
+      "token",
+      "{{env.JWT_SECRET}}",
+      "claims",
+      "HS256",
+    );
+    const wire = JSON.parse(JSON.stringify(stage));
+    expect(wire).toEqual({
+      type: "JwtVerify",
+      token_field: "token",
+      secret: "{{env.JWT_SECRET}}",
+      algorithm: "HS256",
+      output_field: "claims",
+    });
+  });
+});
+
+// ============================================================================
+// EmailSend (ekoDB >= 0.43.0)
+// ============================================================================
+
+describe("Stage.emailSend", () => {
+  it("produces a SendGrid EmailSend stage with full payload", () => {
+    const stage = Stage.emailSend(
+      "alice@example.com",
+      "Welcome",
+      "<p>Hi Alice</p>",
+      "bot@example.com",
+      "{{env.SENDGRID_API_KEY}}",
+      {
+        reply_to: "support@example.com",
+        provider: "sendgrid",
+        html: true,
+        output_field: "send_result",
+      },
+    ) as Extract<FunctionStageConfig, { type: "EmailSend" }>;
+    expect(stage.type).toBe("EmailSend");
+    expect(stage.to).toBe("alice@example.com");
+    expect(stage.subject).toBe("Welcome");
+    expect(stage.body).toBe("<p>Hi Alice</p>");
+    expect(stage.from).toBe("bot@example.com");
+    expect(stage.reply_to).toBe("support@example.com");
+    expect(stage.api_key).toBe("{{env.SENDGRID_API_KEY}}");
+    expect(stage.provider).toBe("sendgrid");
+    expect(stage.html).toBe(true);
+    expect(stage.output_field).toBe("send_result");
+  });
+
+  it("leaves optional fields undefined when omitted", () => {
+    const stage = Stage.emailSend(
+      "x@example.com",
+      "s",
+      "b",
+      "f@example.com",
+      "k",
+    ) as Extract<FunctionStageConfig, { type: "EmailSend" }>;
+    expect(stage.reply_to).toBeUndefined();
+    expect(stage.provider).toBeUndefined();
+    expect(stage.html).toBeUndefined();
+    expect(stage.output_field).toBeUndefined();
+  });
+});
+
+// ============================================================================
 // Error Handling & Control Flow: TryCatch, Parallel, Sleep (ekoDB >= 0.42.0)
 // ============================================================================
 

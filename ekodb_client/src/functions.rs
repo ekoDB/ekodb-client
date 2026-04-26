@@ -81,6 +81,18 @@ pub struct UserFunction {
     /// Last update timestamp (server-managed, read-only)
     #[serde(skip_serializing)]
     pub updated_at: Option<DateTime<Utc>>,
+
+    /// REST method this function answers (`"GET"`, `"POST"`, etc.).
+    /// Pair with `http_path` to expose the function under the
+    /// path-routed dispatcher. Requires ekoDB >= 0.43.0.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub http_method: Option<String>,
+
+    /// REST path pattern (e.g. `/users/:id`). Path segments
+    /// prefixed with `:` are extracted into the function's params
+    /// map. Requires ekoDB >= 0.43.0.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub http_path: Option<String>,
 }
 
 impl UserFunction {
@@ -97,7 +109,19 @@ impl UserFunction {
             tags: Vec::new(),
             created_at: None,
             updated_at: None,
+            http_method: None,
+            http_path: None,
         }
+    }
+
+    /// Expose this function under the REST path-router. `method` is
+    /// e.g. `"GET"` / `"POST"`; `path` is a pattern like
+    /// `"/users/:id"` (path segments starting with `:` become params
+    /// at call time). Requires ekoDB >= 0.43.0.
+    pub fn with_http_route(mut self, method: impl Into<String>, path: impl Into<String>) -> Self {
+        self.http_method = Some(method.into());
+        self.http_path = Some(path.into());
+        self
     }
 
     /// Set the description
@@ -518,6 +542,78 @@ pub enum Function {
         encoding: Option<String>,
         /// Field name to write the encoded token into.
         output_field: String,
+    },
+
+    /// Sign a JWT and write the resulting token to every working
+    /// record. `claims` is the payload; `iat` and `exp` are
+    /// auto-stamped when `expires_in_secs` is set. Pair with
+    /// `BcryptVerify` to issue a session token after login. Use
+    /// `"{{env.JWT_SECRET}}"` for `secret` so the LLM never sees
+    /// the operator-owned signing key. Requires ekoDB >= 0.43.0.
+    JwtSign {
+        /// JWT payload claims (raw JSON values).
+        claims: HashMap<String, serde_json::Value>,
+        /// Signing secret. Typically `"{{env.JWT_SECRET}}"`.
+        secret: String,
+        /// "HS256" | "HS384" | "HS512" (default "HS256").
+        #[serde(skip_serializing_if = "Option::is_none")]
+        algorithm: Option<String>,
+        /// Lifetime in seconds. Auto-stamps `iat` + `exp` when set.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        expires_in_secs: Option<i64>,
+        /// Field name to write the signed JWT into.
+        output_field: String,
+    },
+
+    /// Verify a JWT held in `token_field` on the first working
+    /// record. On success, writes the decoded claims object into
+    /// `output_field`. On failure (invalid signature, malformed,
+    /// expired, missing token), writes `null`. Branch with
+    /// `If { FieldEquals { field: output_field, value: null } }` to
+    /// reject. Requires ekoDB >= 0.43.0.
+    JwtVerify {
+        /// Field on the working record holding the JWT string.
+        token_field: String,
+        /// Verification secret. Must match the signing secret.
+        secret: String,
+        /// Expected algorithm (default "HS256").
+        #[serde(skip_serializing_if = "Option::is_none")]
+        algorithm: Option<String>,
+        /// Field name to write the decoded claims object into.
+        output_field: String,
+    },
+
+    /// Send a transactional email through a provider's REST API.
+    /// Today only `provider = "sendgrid"` is supported. Pull the
+    /// API key from `{{env.SENDGRID_API_KEY}}` so the LLM never
+    /// sees the operator-owned secret. Result envelope
+    /// `{provider_status, provider_message, provider}` is written
+    /// to `output_field` (defaults to `"email_send"`).
+    /// Requires ekoDB >= 0.43.0.
+    EmailSend {
+        /// Recipient email.
+        to: String,
+        /// Subject line.
+        subject: String,
+        /// Plain-text or HTML body (set `html: Some(true)` for HTML).
+        body: String,
+        /// Sender email (must be verified with the provider).
+        from: String,
+        /// Optional reply-to header.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        reply_to: Option<String>,
+        /// Provider API key (typically `"{{env.SENDGRID_API_KEY}}"`).
+        api_key: String,
+        /// Provider name. `None` defaults to `"sendgrid"`.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        provider: Option<String>,
+        /// When true, body is sent as `text/html`. Default: false.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        html: Option<bool>,
+        /// Field name for the result envelope. Defaults to
+        /// `"email_send"`.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        output_field: Option<String>,
     },
 
     // =========================================================================

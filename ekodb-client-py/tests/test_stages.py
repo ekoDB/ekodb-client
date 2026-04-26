@@ -212,6 +212,127 @@ def test_crypto_stages_json_round_trip():
 
 
 # ---------------------------------------------------------------------------
+# JWT primitives: JwtSign, JwtVerify (ekoDB >= 0.43.0)
+# ---------------------------------------------------------------------------
+
+
+def test_jwt_sign_with_claims_expiry_and_algorithm():
+    stage = Stage.jwt_sign(
+        {"sub": "{{user_id}}", "role": "admin"},
+        "{{env.JWT_SECRET}}",
+        "token",
+        expires_in_secs=3600,
+        algorithm="HS256",
+    )
+    assert stage["type"] == "JwtSign"
+    assert stage["claims"] == {"sub": "{{user_id}}", "role": "admin"}
+    assert stage["secret"] == "{{env.JWT_SECRET}}"
+    assert stage["expires_in_secs"] == 3600
+    assert stage["algorithm"] == "HS256"
+    assert stage["output_field"] == "token"
+
+
+def test_jwt_sign_omits_optional_fields_when_none():
+    stage = Stage.jwt_sign({"sub": "u"}, "{{env.JWT_SECRET}}", "t")
+    assert "algorithm" not in stage
+    assert "expires_in_secs" not in stage
+
+
+def test_jwt_verify_wires_all_fields():
+    stage = Stage.jwt_verify(
+        "auth_token",
+        "{{env.JWT_SECRET}}",
+        "claims",
+        algorithm="HS512",
+    )
+    assert stage["type"] == "JwtVerify"
+    assert stage["token_field"] == "auth_token"
+    assert stage["secret"] == "{{env.JWT_SECRET}}"
+    assert stage["algorithm"] == "HS512"
+    assert stage["output_field"] == "claims"
+
+
+def test_jwt_stages_json_round_trip():
+    import json
+
+    stages = [
+        Stage.jwt_sign(
+            {"sub": "user-1"},
+            "{{env.JWT_SECRET}}",
+            "token",
+            expires_in_secs=900,
+            algorithm="HS256",
+        ),
+        Stage.jwt_verify(
+            "token",
+            "{{env.JWT_SECRET}}",
+            "claims",
+            algorithm="HS256",
+        ),
+    ]
+    for stage in stages:
+        wire = json.loads(json.dumps(stage))
+        assert wire == stage, f"JSON round-trip changed {stage}"
+        assert wire["type"] in ("JwtSign", "JwtVerify")
+
+
+# ---------------------------------------------------------------------------
+# EmailSend (ekoDB >= 0.43.0)
+# ---------------------------------------------------------------------------
+
+
+def test_email_send_with_full_payload():
+    stage = Stage.email_send(
+        to="alice@example.com",
+        subject="Welcome",
+        body="<p>Hi Alice</p>",
+        from_="bot@example.com",
+        api_key="{{env.SENDGRID_API_KEY}}",
+        reply_to="support@example.com",
+        provider="sendgrid",
+        html=True,
+        output_field="send_result",
+    )
+    assert stage["type"] == "EmailSend"
+    assert stage["to"] == "alice@example.com"
+    assert stage["subject"] == "Welcome"
+    assert stage["from"] == "bot@example.com"
+    assert stage["reply_to"] == "support@example.com"
+    assert stage["api_key"] == "{{env.SENDGRID_API_KEY}}"
+    assert stage["provider"] == "sendgrid"
+    assert stage["html"] is True
+    assert stage["output_field"] == "send_result"
+
+
+def test_email_send_omits_optional_fields_when_none():
+    stage = Stage.email_send(
+        to="x@example.com",
+        subject="s",
+        body="b",
+        from_="f@example.com",
+        api_key="k",
+    )
+    for k in ("reply_to", "provider", "html", "output_field"):
+        assert k not in stage, f"{k} must be omitted"
+
+
+def test_email_send_json_round_trip():
+    import json
+
+    stage = Stage.email_send(
+        to="u@example.com",
+        subject="Hi",
+        body="<p>Hi</p>",
+        from_="f@example.com",
+        api_key="{{env.SENDGRID_API_KEY}}",
+        provider="sendgrid",
+        html=True,
+    )
+    wire = json.loads(json.dumps(stage))
+    assert wire == stage
+
+
+# ---------------------------------------------------------------------------
 # Error Handling & Control Flow: TryCatch, Parallel, Sleep
 # ---------------------------------------------------------------------------
 

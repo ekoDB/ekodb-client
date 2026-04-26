@@ -432,6 +432,70 @@ sealed class FunctionStageConfig {
     ) : FunctionStageConfig()
 
     /**
+     * Sign a JWT and write the resulting token to every working
+     * record. Pair with [BcryptVerify] to issue a session token
+     * after login. Use `"{{env.JWT_SECRET}}"` for [secret] so the
+     * LLM never sees the operator-owned signing key. `iat` and
+     * `exp` are auto-stamped when [expires_in_secs] is set.
+     *
+     * [algorithm] is one of `"HS256"` (default), `"HS384"`,
+     * `"HS512"`; leave null to accept the server default.
+     *
+     * Requires ekoDB >= 0.43.0.
+     */
+    @Serializable
+    @SerialName("JwtSign")
+    data class JwtSign(
+        val claims: Map<String, kotlinx.serialization.json.JsonElement>,
+        val secret: String,
+        val algorithm: String? = null,
+        val expires_in_secs: Long? = null,
+        val output_field: String
+    ) : FunctionStageConfig()
+
+    /**
+     * Verify a JWT held in [token_field] on the first working
+     * record. On success writes the decoded claims object into
+     * [output_field]; on failure writes JSON `null`. Branch with
+     * [FunctionCondition.FieldEquals] matching `null` to reject.
+     *
+     * Requires ekoDB >= 0.43.0.
+     */
+    @Serializable
+    @SerialName("JwtVerify")
+    data class JwtVerify(
+        val token_field: String,
+        val secret: String,
+        val algorithm: String? = null,
+        val output_field: String
+    ) : FunctionStageConfig()
+
+    /**
+     * Send a transactional email through a provider's REST API.
+     * Today only `provider = "sendgrid"` is supported. Use
+     * `"{{env.SENDGRID_API_KEY}}"` for [api_key] so the LLM never
+     * sees the operator-owned secret. Set [html] to true to send
+     * `text/html`. The result envelope `{provider_status,
+     * provider_message, provider}` is written to [output_field]
+     * (default `"email_send"`).
+     *
+     * Requires ekoDB >= 0.43.0.
+     */
+    @Serializable
+    @SerialName("EmailSend")
+    data class EmailSend(
+        val to: String,
+        val subject: String,
+        val body: String,
+        val from: String,
+        val reply_to: String? = null,
+        val api_key: String,
+        val provider: String? = null,
+        val html: Boolean? = null,
+        val output_field: String? = null
+    ) : FunctionStageConfig()
+
+    /**
      * Try/Catch error handling for graceful failure recovery.
      * Executes [try_functions], and if any fail, executes [catch_functions].
      *

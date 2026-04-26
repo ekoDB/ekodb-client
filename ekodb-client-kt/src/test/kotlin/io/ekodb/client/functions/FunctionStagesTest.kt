@@ -312,6 +312,189 @@ class FunctionStagesTest {
         }
     }
 
+    // ------------------------------------------------------------------
+    // JWT primitives: JwtSign, JwtVerify (ekoDB >= 0.43.0)
+    // ------------------------------------------------------------------
+
+    @Test
+    fun `JwtSign serializes with claims expiry and algorithm`() {
+        val stage = FunctionStageConfig.JwtSign(
+            claims = mapOf(
+                "sub" to kotlinx.serialization.json.JsonPrimitive("{{user_id}}"),
+                "role" to kotlinx.serialization.json.JsonPrimitive("admin"),
+            ),
+            secret = "{{env.JWT_SECRET}}",
+            algorithm = "HS256",
+            expires_in_secs = 3600L,
+            output_field = "token",
+        )
+        val wire = json.encodeToString<FunctionStageConfig>(stage)
+        val decoded = Json.parseToJsonElement(wire).jsonObject
+
+        assertEquals("JwtSign", decoded["type"]?.toString()?.trim('"'))
+        assertEquals("{{env.JWT_SECRET}}", decoded["secret"]?.toString()?.trim('"'))
+        assertEquals("HS256", decoded["algorithm"]?.toString()?.trim('"'))
+        assertEquals("3600", decoded["expires_in_secs"]?.toString())
+        assertEquals("token", decoded["output_field"]?.toString()?.trim('"'))
+    }
+
+    @Test
+    fun `JwtSign omits optional fields when null`() {
+        val stage = FunctionStageConfig.JwtSign(
+            claims = mapOf("sub" to kotlinx.serialization.json.JsonPrimitive("u")),
+            secret = "{{env.JWT_SECRET}}",
+            algorithm = null,
+            expires_in_secs = null,
+            output_field = "t",
+        )
+        val wire = json.encodeToString<FunctionStageConfig>(stage)
+        val decoded = Json.parseToJsonElement(wire).jsonObject
+
+        val alg = decoded["algorithm"]
+        val exp = decoded["expires_in_secs"]
+        assertEquals(
+            true,
+            alg == null || alg.toString() == "null",
+            "algorithm should be omitted or null, got $alg",
+        )
+        assertEquals(
+            true,
+            exp == null || exp.toString() == "null",
+            "expires_in_secs should be omitted or null, got $exp",
+        )
+    }
+
+    @Test
+    fun `JwtVerify wires token_field secret and output_field`() {
+        val stage = FunctionStageConfig.JwtVerify(
+            token_field = "auth_token",
+            secret = "{{env.JWT_SECRET}}",
+            algorithm = "HS512",
+            output_field = "claims",
+        )
+        val wire = json.encodeToString<FunctionStageConfig>(stage)
+        val decoded = Json.parseToJsonElement(wire).jsonObject
+
+        assertEquals("JwtVerify", decoded["type"]?.toString()?.trim('"'))
+        assertEquals("auth_token", decoded["token_field"]?.toString()?.trim('"'))
+        assertEquals(
+            "{{env.JWT_SECRET}}",
+            decoded["secret"]?.toString()?.trim('"'),
+        )
+        assertEquals("HS512", decoded["algorithm"]?.toString()?.trim('"'))
+        assertEquals("claims", decoded["output_field"]?.toString()?.trim('"'))
+    }
+
+    @Test
+    fun `JWT stages round-trip through JSON`() {
+        val stages: List<FunctionStageConfig> = listOf(
+            FunctionStageConfig.JwtSign(
+                claims = mapOf(
+                    "sub" to kotlinx.serialization.json.JsonPrimitive("u-1"),
+                ),
+                secret = "{{env.JWT_SECRET}}",
+                algorithm = "HS256",
+                expires_in_secs = 900L,
+                output_field = "token",
+            ),
+            FunctionStageConfig.JwtVerify(
+                token_field = "token",
+                secret = "{{env.JWT_SECRET}}",
+                algorithm = null,
+                output_field = "claims",
+            ),
+        )
+        for (stage in stages) {
+            val wire = json.encodeToString<FunctionStageConfig>(stage)
+            val back = json.decodeFromString<FunctionStageConfig>(wire)
+            val wireAgain = json.encodeToString<FunctionStageConfig>(back)
+            assertEquals(
+                wire,
+                wireAgain,
+                "JWT stage round-trip lost data: $stage",
+            )
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // EmailSend (ekoDB >= 0.43.0)
+    // ------------------------------------------------------------------
+
+    @Test
+    fun `EmailSend serializes with full payload`() {
+        val stage = FunctionStageConfig.EmailSend(
+            to = "alice@example.com",
+            subject = "Welcome",
+            body = "<p>Hi Alice</p>",
+            from = "bot@example.com",
+            reply_to = "support@example.com",
+            api_key = "{{env.SENDGRID_API_KEY}}",
+            provider = "sendgrid",
+            html = true,
+            output_field = "send_result",
+        )
+        val wire = json.encodeToString<FunctionStageConfig>(stage)
+        val decoded = Json.parseToJsonElement(wire).jsonObject
+
+        assertEquals("EmailSend", decoded["type"]?.toString()?.trim('"'))
+        assertEquals("alice@example.com", decoded["to"]?.toString()?.trim('"'))
+        assertEquals("Welcome", decoded["subject"]?.toString()?.trim('"'))
+        assertEquals("bot@example.com", decoded["from"]?.toString()?.trim('"'))
+        assertEquals("support@example.com", decoded["reply_to"]?.toString()?.trim('"'))
+        assertEquals(
+            "{{env.SENDGRID_API_KEY}}",
+            decoded["api_key"]?.toString()?.trim('"'),
+        )
+        assertEquals("sendgrid", decoded["provider"]?.toString()?.trim('"'))
+        assertEquals("true", decoded["html"]?.toString())
+        assertEquals("send_result", decoded["output_field"]?.toString()?.trim('"'))
+    }
+
+    @Test
+    fun `EmailSend omits optional fields when null`() {
+        val stage = FunctionStageConfig.EmailSend(
+            to = "x@example.com",
+            subject = "s",
+            body = "b",
+            from = "f@example.com",
+            reply_to = null,
+            api_key = "k",
+            provider = null,
+            html = null,
+            output_field = null,
+        )
+        val wire = json.encodeToString<FunctionStageConfig>(stage)
+        val decoded = Json.parseToJsonElement(wire).jsonObject
+
+        for (k in listOf("reply_to", "provider", "html", "output_field")) {
+            val value = decoded[k]
+            assertEquals(
+                true,
+                value == null || value.toString() == "null",
+                "$k should be omitted or null, got $value",
+            )
+        }
+    }
+
+    @Test
+    fun `EmailSend round-trips through JSON`() {
+        val stage = FunctionStageConfig.EmailSend(
+            to = "u@example.com",
+            subject = "Hi",
+            body = "<p>Hi</p>",
+            from = "f@example.com",
+            reply_to = null,
+            api_key = "{{env.SENDGRID_API_KEY}}",
+            provider = "sendgrid",
+            html = true,
+            output_field = null,
+        )
+        val wire = json.encodeToString<FunctionStageConfig>(stage)
+        val back = json.decodeFromString<FunctionStageConfig>(wire)
+        val wireAgain = json.encodeToString<FunctionStageConfig>(back)
+        assertEquals(wire, wireAgain, "EmailSend round-trip lost data")
+    }
+
     // =========================================================================
     // Error Handling & Control Flow: TryCatch, Parallel, Sleep
     // =========================================================================
