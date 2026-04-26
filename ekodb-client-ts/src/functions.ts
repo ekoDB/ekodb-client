@@ -14,6 +14,19 @@ export interface UserFunction {
   tags?: string[];
   created_at?: string;
   updated_at?: string;
+  /**
+   * REST method this function answers — `"GET"`, `"POST"`, etc.
+   * Pair with `http_path` to expose the function under the
+   * path-routed dispatcher at `/api/route/{path}`.
+   * Requires ekoDB >= 0.43.0.
+   */
+  http_method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+  /**
+   * REST path pattern (e.g. `"/users/:id"`). Path segments
+   * starting with `:` are extracted into the function's params
+   * map at call time. Requires ekoDB >= 0.43.0.
+   */
+  http_path?: string;
 }
 
 export interface ParameterDefinition {
@@ -257,6 +270,57 @@ export type FunctionStageConfig =
       bytes: number;
       encoding?: "hex" | "base64" | "base64url";
       output_field: string;
+    }
+  | {
+      /**
+       * Sign a JWT and write the resulting token to every working
+       * record. Pair with `BcryptVerify` to issue a session token
+       * after login. Use `"{{env.JWT_SECRET}}"` for `secret` so the
+       * LLM never sees the operator-owned signing key. `iat` and
+       * `exp` are auto-stamped when `expires_in_secs` is set.
+       * Requires ekoDB >= 0.43.0.
+       */
+      type: "JwtSign";
+      claims: Record<string, unknown>;
+      secret: string;
+      algorithm?: "HS256" | "HS384" | "HS512";
+      expires_in_secs?: number;
+      output_field: string;
+    }
+  | {
+      /**
+       * Verify a JWT held in `token_field` on the first working
+       * record. On success, writes the decoded claims object into
+       * `output_field`. On failure, writes `null` so callers can
+       * branch with `If { FieldEquals { value: null } }` to reject.
+       * Requires ekoDB >= 0.43.0.
+       */
+      type: "JwtVerify";
+      token_field: string;
+      secret: string;
+      algorithm?: "HS256" | "HS384" | "HS512";
+      output_field: string;
+    }
+  | {
+      /**
+       * Send a transactional email through a provider's REST API.
+       * Today only `provider = "sendgrid"` is supported. Pull the
+       * API key from `"{{env.SENDGRID_API_KEY}}"` so the LLM never
+       * sees the operator-owned secret. Result envelope
+       * `{provider_status, provider_message, provider}` is written
+       * to `output_field` (defaults to `"email_send"`).
+       * Requires ekoDB >= 0.43.0.
+       */
+      type: "EmailSend";
+      to: string;
+      subject: string;
+      body: string;
+      from: string;
+      reply_to?: string;
+      api_key: string;
+      provider?: "sendgrid";
+      html?: boolean;
+      output_field?: string;
     }
   | {
       /**
@@ -865,6 +929,93 @@ export const Stage = {
     bytes,
     encoding,
     output_field,
+  }),
+
+  /**
+   * Sign a JWT and write the resulting token to every working
+   * record. Pair with `Stage.bcryptVerify` to issue a session
+   * token after login. Use `"{{env.JWT_SECRET}}"` for `secret` so
+   * the LLM never sees the operator-owned signing key. `iat` and
+   * `exp` are auto-stamped when `expires_in_secs` is set.
+   * Requires ekoDB >= 0.43.0.
+   *
+   * @param claims - JWT payload claims.
+   * @param secret - Signing secret (typically `"{{env.JWT_SECRET}}"`).
+   * @param output_field - Field name to write the signed JWT into.
+   * @param expires_in_secs - Lifetime in seconds (auto-stamps `iat` + `exp`).
+   * @param algorithm - `"HS256"` (default) | `"HS384"` | `"HS512"`.
+   */
+  jwtSign: (
+    claims: Record<string, unknown>,
+    secret: string,
+    output_field: string,
+    expires_in_secs?: number,
+    algorithm?: "HS256" | "HS384" | "HS512",
+  ): FunctionStageConfig => ({
+    type: "JwtSign",
+    claims,
+    secret,
+    algorithm,
+    expires_in_secs,
+    output_field,
+  }),
+
+  /**
+   * Verify a JWT held in `token_field` on the first working record.
+   * On success writes the decoded claims object into `output_field`;
+   * on failure writes `null`. Branch with `Stage.if` matching
+   * `output_field == null` to reject. Requires ekoDB >= 0.43.0.
+   *
+   * @param token_field - Field on the working record holding the JWT.
+   * @param secret - Verification secret (must match the signing secret).
+   * @param output_field - Field name to write decoded claims into.
+   * @param algorithm - Expected algorithm (default `"HS256"`).
+   */
+  jwtVerify: (
+    token_field: string,
+    secret: string,
+    output_field: string,
+    algorithm?: "HS256" | "HS384" | "HS512",
+  ): FunctionStageConfig => ({
+    type: "JwtVerify",
+    token_field,
+    secret,
+    algorithm,
+    output_field,
+  }),
+
+  /**
+   * Send a transactional email. Today only the `"sendgrid"`
+   * provider is supported. Use `"{{env.SENDGRID_API_KEY}}"` for
+   * `api_key` so the LLM never sees the operator-owned secret.
+   * Set `html: true` to send `text/html`. The result envelope
+   * (`{provider_status, provider_message, provider}`) is written
+   * to `output_field` (default `"email_send"`).
+   * Requires ekoDB >= 0.43.0.
+   */
+  emailSend: (
+    to: string,
+    subject: string,
+    body: string,
+    from: string,
+    api_key: string,
+    options?: {
+      reply_to?: string;
+      provider?: "sendgrid";
+      html?: boolean;
+      output_field?: string;
+    },
+  ): FunctionStageConfig => ({
+    type: "EmailSend",
+    to,
+    subject,
+    body,
+    from,
+    reply_to: options?.reply_to,
+    api_key,
+    provider: options?.provider,
+    html: options?.html,
+    output_field: options?.output_field,
   }),
 
   /**

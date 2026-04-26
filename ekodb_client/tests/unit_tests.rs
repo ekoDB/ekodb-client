@@ -2810,3 +2810,184 @@ fn test_crypto_stages_roundtrip_through_serde() {
         );
     }
 }
+
+// ============================================================================
+// JWT primitives: JwtSign, JwtVerify (ekoDB >= 0.43.0)
+// ============================================================================
+//
+// Serialization-shape tests only — runtime behavior is covered by the
+// server-side tests in `ekodb/ekodb_server/tests/function_parameters_tests.rs`.
+
+#[test]
+fn test_jwt_sign_stage_serializes_with_text_placeholders() {
+    use ekodb_client::Function;
+    let mut claims = std::collections::HashMap::new();
+    claims.insert(
+        "sub".to_string(),
+        serde_json::Value::String("{{user_id}}".to_string()),
+    );
+    let stage = Function::JwtSign {
+        claims,
+        secret: "{{env.JWT_SECRET}}".to_string(),
+        algorithm: Some("HS256".to_string()),
+        expires_in_secs: Some(3600),
+        output_field: "token".to_string(),
+    };
+    let json = serde_json::to_value(&stage).expect("serialize");
+    assert_eq!(json["type"], "JwtSign");
+    assert_eq!(json["claims"]["sub"], "{{user_id}}");
+    assert_eq!(json["secret"], "{{env.JWT_SECRET}}");
+    assert_eq!(json["algorithm"], "HS256");
+    assert_eq!(json["expires_in_secs"], 3600);
+    assert_eq!(json["output_field"], "token");
+}
+
+#[test]
+fn test_jwt_sign_stage_omits_optional_fields_when_none() {
+    use ekodb_client::Function;
+    let stage = Function::JwtSign {
+        claims: std::collections::HashMap::new(),
+        secret: "x".to_string(),
+        algorithm: None,
+        expires_in_secs: None,
+        output_field: "t".to_string(),
+    };
+    let json = serde_json::to_value(&stage).expect("serialize");
+    assert!(
+        json.get("algorithm").is_none() || json["algorithm"].is_null(),
+        "algorithm must be omitted when None"
+    );
+    assert!(
+        json.get("expires_in_secs").is_none() || json["expires_in_secs"].is_null(),
+        "expires_in_secs must be omitted when None"
+    );
+}
+
+#[test]
+fn test_jwt_verify_stage_serializes() {
+    use ekodb_client::Function;
+    let stage = Function::JwtVerify {
+        token_field: "auth_token".to_string(),
+        secret: "{{env.JWT_SECRET}}".to_string(),
+        algorithm: Some("HS512".to_string()),
+        output_field: "claims".to_string(),
+    };
+    let json = serde_json::to_value(&stage).expect("serialize");
+    assert_eq!(json["type"], "JwtVerify");
+    assert_eq!(json["token_field"], "auth_token");
+    assert_eq!(json["secret"], "{{env.JWT_SECRET}}");
+    assert_eq!(json["algorithm"], "HS512");
+    assert_eq!(json["output_field"], "claims");
+}
+
+#[test]
+fn test_jwt_stages_roundtrip_through_serde() {
+    use ekodb_client::Function;
+    let mut claims = std::collections::HashMap::new();
+    claims.insert(
+        "sub".to_string(),
+        serde_json::Value::String("u-1".to_string()),
+    );
+    claims.insert(
+        "role".to_string(),
+        serde_json::Value::String("admin".to_string()),
+    );
+    let stages = [
+        Function::JwtSign {
+            claims,
+            secret: "{{env.JWT_SECRET}}".to_string(),
+            algorithm: Some("HS256".to_string()),
+            expires_in_secs: Some(900),
+            output_field: "token".to_string(),
+        },
+        Function::JwtVerify {
+            token_field: "token".to_string(),
+            secret: "{{env.JWT_SECRET}}".to_string(),
+            algorithm: None,
+            output_field: "claims".to_string(),
+        },
+    ];
+
+    for stage in stages {
+        let json = serde_json::to_value(&stage).expect("serialize");
+        let back: Function = serde_json::from_value(json.clone()).expect("deserialize");
+        let json2 = serde_json::to_value(&back).expect("re-serialize");
+        assert_eq!(
+            json, json2,
+            "JWT stage must round-trip through serde unchanged"
+        );
+    }
+}
+
+// ============================================================================
+// EmailSend (ekoDB >= 0.43.0)
+// ============================================================================
+
+#[test]
+fn test_email_send_stage_serializes_with_full_payload() {
+    use ekodb_client::Function;
+    let stage = Function::EmailSend {
+        to: "alice@example.com".to_string(),
+        subject: "Welcome".to_string(),
+        body: "Hi Alice".to_string(),
+        from: "bot@example.com".to_string(),
+        reply_to: Some("support@example.com".to_string()),
+        api_key: "{{env.SENDGRID_API_KEY}}".to_string(),
+        provider: Some("sendgrid".to_string()),
+        html: Some(true),
+        output_field: Some("send_result".to_string()),
+    };
+    let json = serde_json::to_value(&stage).expect("serialize");
+    assert_eq!(json["type"], "EmailSend");
+    assert_eq!(json["to"], "alice@example.com");
+    assert_eq!(json["subject"], "Welcome");
+    assert_eq!(json["from"], "bot@example.com");
+    assert_eq!(json["reply_to"], "support@example.com");
+    assert_eq!(json["api_key"], "{{env.SENDGRID_API_KEY}}");
+    assert_eq!(json["provider"], "sendgrid");
+    assert_eq!(json["html"], true);
+    assert_eq!(json["output_field"], "send_result");
+}
+
+#[test]
+fn test_email_send_stage_omits_optional_fields_when_none() {
+    use ekodb_client::Function;
+    let stage = Function::EmailSend {
+        to: "x@example.com".to_string(),
+        subject: "s".to_string(),
+        body: "b".to_string(),
+        from: "f@example.com".to_string(),
+        reply_to: None,
+        api_key: "x".to_string(),
+        provider: None,
+        html: None,
+        output_field: None,
+    };
+    let json = serde_json::to_value(&stage).expect("serialize");
+    for k in &["reply_to", "provider", "html", "output_field"] {
+        assert!(
+            json.get(*k).is_none() || json[*k].is_null(),
+            "{k} must be omitted when None"
+        );
+    }
+}
+
+#[test]
+fn test_email_send_stage_roundtrips_through_serde() {
+    use ekodb_client::Function;
+    let stage = Function::EmailSend {
+        to: "u@example.com".to_string(),
+        subject: "Hi".to_string(),
+        body: "<p>Hi</p>".to_string(),
+        from: "f@example.com".to_string(),
+        reply_to: None,
+        api_key: "{{env.SENDGRID_API_KEY}}".to_string(),
+        provider: Some("sendgrid".to_string()),
+        html: Some(true),
+        output_field: None,
+    };
+    let json = serde_json::to_value(&stage).expect("serialize");
+    let back: Function = serde_json::from_value(json.clone()).expect("deserialize");
+    let json2 = serde_json::to_value(&back).expect("re-serialize");
+    assert_eq!(json, json2);
+}

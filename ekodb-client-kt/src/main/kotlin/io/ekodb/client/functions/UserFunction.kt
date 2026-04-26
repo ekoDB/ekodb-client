@@ -16,6 +16,8 @@ data class UserFunction(
     val parameters: Map<String, ParameterDefinition> = emptyMap(),
     val functions: List<FunctionStageConfig>,
     val tags: List<String> = emptyList(),
+    val http_method: String? = null,
+    val http_path: String? = null,
     val id: String? = null,
     val created_at: String? = null,
     val updated_at: String? = null

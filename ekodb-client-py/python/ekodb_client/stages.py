@@ -563,6 +563,107 @@ class Stage:
         return stage
 
     @staticmethod
+    def jwt_sign(
+        claims: Dict[str, Any],
+        secret: str,
+        output_field: str,
+        expires_in_secs: Optional[int] = None,
+        algorithm: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Sign a JWT and write the resulting token to every working
+        record. Pair with ``Stage.bcrypt_verify`` to issue a session
+        token after login. Use ``"{{env.JWT_SECRET}}"`` for ``secret``
+        so the LLM never sees the operator-owned signing key. ``iat``
+        and ``exp`` are auto-stamped when ``expires_in_secs`` is set.
+
+        ``algorithm`` is one of ``"HS256"`` (default), ``"HS384"``,
+        ``"HS512"``.
+
+        Requires ekoDB >= 0.43.0.
+        """
+        stage: Dict[str, Any] = {
+            "type": "JwtSign",
+            "claims": claims,
+            "secret": secret,
+            "output_field": output_field,
+        }
+        if algorithm is not None:
+            stage["algorithm"] = algorithm
+        if expires_in_secs is not None:
+            stage["expires_in_secs"] = expires_in_secs
+        return stage
+
+    @staticmethod
+    def jwt_verify(
+        token_field: str,
+        secret: str,
+        output_field: str,
+        algorithm: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Verify a JWT held in ``token_field`` on the first working
+        record. On success writes the decoded claims object into
+        ``output_field``; on failure writes ``None`` (JSON ``null``).
+        Branch with ``Stage.if_`` matching ``output_field == None`` to
+        reject.
+
+        Requires ekoDB >= 0.43.0.
+        """
+        stage: Dict[str, Any] = {
+            "type": "JwtVerify",
+            "token_field": token_field,
+            "secret": secret,
+            "output_field": output_field,
+        }
+        if algorithm is not None:
+            stage["algorithm"] = algorithm
+        return stage
+
+    @staticmethod
+    def email_send(
+        to: str,
+        subject: str,
+        body: str,
+        from_: str,
+        api_key: str,
+        reply_to: Optional[str] = None,
+        provider: Optional[str] = None,
+        html: Optional[bool] = None,
+        output_field: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Send a transactional email through a provider's REST API.
+        Today only ``provider="sendgrid"`` is supported.
+
+        Use ``"{{env.SENDGRID_API_KEY}}"`` for ``api_key`` so the LLM
+        never sees the operator-owned secret. Set ``html=True`` to
+        send ``text/html``. The result envelope ``{provider_status,
+        provider_message, provider}`` is written to ``output_field``
+        (default ``"email_send"``).
+
+        Note: ``from_`` is named with a trailing underscore because
+        ``from`` is a Python reserved word; on the wire the JSON key
+        is `"from"`.
+
+        Requires ekoDB >= 0.43.0.
+        """
+        stage: Dict[str, Any] = {
+            "type": "EmailSend",
+            "to": to,
+            "subject": subject,
+            "body": body,
+            "from": from_,
+            "api_key": api_key,
+        }
+        if reply_to is not None:
+            stage["reply_to"] = reply_to
+        if provider is not None:
+            stage["provider"] = provider
+        if html is not None:
+            stage["html"] = html
+        if output_field is not None:
+            stage["output_field"] = output_field
+        return stage
+
+    @staticmethod
     def try_catch(
         try_functions: List[Dict[str, Any]],
         catch_functions: List[Dict[str, Any]],
