@@ -617,6 +617,139 @@ pub enum Function {
     },
 
     // =========================================================================
+    // Crypto Primitives (Hmac, AES, UUID, TOTP, Base64, Hex, Slugify)
+    // =========================================================================
+    /// HMAC-SHA256/384/512 message authentication. Pair with
+    /// `HmacVerify` for inbound webhook signing or pre-signed URL
+    /// generation. Requires ekoDB >= 0.43.0.
+    HmacSign {
+        input: String,
+        secret: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        algorithm: Option<String>,
+        output_field: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        encoding: Option<String>,
+    },
+    /// HMAC verification (constant-time). Writes a boolean.
+    HmacVerify {
+        input: String,
+        provided_mac: String,
+        secret: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        algorithm: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        encoding: Option<String>,
+        output_field: String,
+    },
+    /// AES-256-GCM authenticated encryption. Writes
+    /// `{ciphertext, nonce}` (both base64) to `output_field`.
+    AesEncrypt {
+        plaintext: String,
+        key: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        key_encoding: Option<String>,
+        output_field: String,
+    },
+    /// AES-256-GCM authenticated decryption. Reads the envelope
+    /// from `ciphertext_field`, writes the recovered plaintext or
+    /// `null` (fail-closed).
+    AesDecrypt {
+        ciphertext_field: String,
+        key: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        key_encoding: Option<String>,
+        output_field: String,
+    },
+    /// Generate a v4 UUID into `output_field`.
+    UuidGenerate { output_field: String },
+    /// Generate a TOTP code (RFC 6238) from a base32 secret.
+    TotpGenerate {
+        secret: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        digits: Option<u32>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        period: Option<u64>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        algorithm: Option<String>,
+        output_field: String,
+    },
+    /// Verify a user-submitted TOTP code; tolerates `skew`
+    /// time-steps either side (default 1).
+    TotpVerify {
+        code: String,
+        secret: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        digits: Option<u32>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        period: Option<u64>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        algorithm: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        skew: Option<u8>,
+        output_field: String,
+    },
+    /// Base64 encode (`url_safe = Some(true)` for URL-safe / no-pad).
+    Base64Encode {
+        input: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        url_safe: Option<bool>,
+        output_field: String,
+    },
+    /// Base64 decode → UTF-8 string. Fail-closed.
+    Base64Decode {
+        input: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        url_safe: Option<bool>,
+        output_field: String,
+    },
+    /// Hex encode (lowercase).
+    HexEncode { input: String, output_field: String },
+    /// Hex decode → UTF-8 string. Fail-closed.
+    HexDecode { input: String, output_field: String },
+    /// URL-friendly slug.
+    Slugify { input: String, output_field: String },
+
+    // =========================================================================
+    // Concurrency Primitives (idempotency / rate limit / lock)
+    // =========================================================================
+    /// Idempotency-key claim. Atomically claims the key (KV SETNX
+    /// with TTL); on first call writes `{claimed: true, key}`, on
+    /// replay writes `{claimed: false, key, response}`.
+    /// Requires ekoDB >= 0.43.0.
+    IdempotencyClaim {
+        key: String,
+        ttl_secs: u64,
+        output_field: String,
+    },
+    /// Fixed-window rate-limit gate. Increments a counter under
+    /// `rate:<key>:<window-floor>`; over-limit either errors
+    /// (`on_exceed = "fail"`, default) or writes `allowed: false`
+    /// (`on_exceed = "skip"`).
+    RateLimit {
+        key: String,
+        limit: u64,
+        window_secs: u64,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        on_exceed: Option<String>,
+        output_field: String,
+    },
+    /// Distributed-lock acquire (token-fenced). On success writes
+    /// `{acquired: true, token}`; pass that token to `LockRelease`.
+    LockAcquire {
+        key: String,
+        ttl_secs: u64,
+        output_field: String,
+    },
+    /// Distributed-lock release; only deletes the key when the
+    /// stored token matches `token` (prevents foreign release).
+    LockRelease {
+        key: String,
+        token: String,
+        output_field: String,
+    },
+
+    // =========================================================================
     // Error Handling & Control Flow
     // =========================================================================
     /// Try/Catch error handling for graceful failure recovery.

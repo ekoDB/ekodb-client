@@ -9,6 +9,7 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.put
 import kotlin.test.Test
+import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -687,5 +688,89 @@ class FunctionStagesTest {
                 "new stage round-trip lost data: $stage",
             )
         }
+    }
+
+    // ===== Crypto + concurrency stages =====
+
+    @Test
+    fun `HmacSign serializes with all fields and round-trips`() {
+        val stage = FunctionStageConfig.HmacSign(
+            input = "{{p}}",
+            secret = "{{env.K}}",
+            algorithm = "sha256",
+            output_field = "mac",
+            encoding = "hex",
+        )
+        val wire = json.encodeToString<FunctionStageConfig>(stage)
+        assertContains(wire, "\"type\":\"HmacSign\"")
+        assertContains(wire, "\"algorithm\":\"sha256\"")
+        val back = json.decodeFromString<FunctionStageConfig>(wire)
+        assertEquals(stage, back)
+    }
+
+    @Test
+    fun `HmacVerify wires required fields and round-trips`() {
+        val stage = FunctionStageConfig.HmacVerify(
+            input = "{{p}}",
+            provided_mac = "{{m}}",
+            secret = "{{env.K}}",
+            output_field = "ok",
+        )
+        val wire = json.encodeToString<FunctionStageConfig>(stage)
+        assertContains(wire, "\"type\":\"HmacVerify\"")
+        assertContains(wire, "\"provided_mac\":\"{{m}}\"")
+        // algorithm is nullable and defaults to null — server `serde`
+        // accepts both omission and explicit null.
+        val back = json.decodeFromString<FunctionStageConfig>(wire)
+        assertEquals(stage, back)
+    }
+
+    @Test
+    fun `Aes Uuid Totp stages serialize`() {
+        val enc = FunctionStageConfig.AesEncrypt("p", "k", "hex", "envelope")
+        assertContains(json.encodeToString<FunctionStageConfig>(enc), "\"type\":\"AesEncrypt\"")
+        val dec = FunctionStageConfig.AesDecrypt("envelope", "k", null, "plain")
+        assertContains(json.encodeToString<FunctionStageConfig>(dec), "\"type\":\"AesDecrypt\"")
+        val uid = FunctionStageConfig.UuidGenerate("id")
+        assertContains(json.encodeToString<FunctionStageConfig>(uid), "\"type\":\"UuidGenerate\"")
+        val totp = FunctionStageConfig.TotpGenerate(
+            secret = "{{env.T}}",
+            digits = 6,
+            period = 30L,
+            algorithm = "sha1",
+            output_field = "code",
+        )
+        assertContains(json.encodeToString<FunctionStageConfig>(totp), "\"type\":\"TotpGenerate\"")
+    }
+
+    @Test
+    fun `Base64 Hex Slugify stages serialize`() {
+        val b = FunctionStageConfig.Base64Encode("{{x}}", true, "b")
+        val w = json.encodeToString<FunctionStageConfig>(b)
+        assertContains(w, "\"type\":\"Base64Encode\"")
+        assertContains(w, "\"url_safe\":true")
+
+        val h = FunctionStageConfig.HexEncode("{{x}}", "h")
+        assertContains(json.encodeToString<FunctionStageConfig>(h), "\"type\":\"HexEncode\"")
+
+        val s = FunctionStageConfig.Slugify("{{title}}", "slug")
+        assertContains(json.encodeToString<FunctionStageConfig>(s), "\"type\":\"Slugify\"")
+    }
+
+    @Test
+    fun `IdempotencyClaim RateLimit and Lock stages serialize and round-trip`() {
+        val idem = FunctionStageConfig.IdempotencyClaim("{{ikey}}", 60L, "claim")
+        val rl = FunctionStageConfig.RateLimit("{{user}}", 100L, 60L, "skip", "rl")
+        val lockA = FunctionStageConfig.LockAcquire("{{r}}", 30L, "lock")
+        val lockR = FunctionStageConfig.LockRelease("{{r}}", "{{lock.token}}", "rel")
+
+        for (stage in listOf<FunctionStageConfig>(idem, rl, lockA, lockR)) {
+            val wire = json.encodeToString<FunctionStageConfig>(stage)
+            val back = json.decodeFromString<FunctionStageConfig>(wire)
+            assertEquals(stage, back, "round-trip lost data for $stage")
+        }
+        // Spot-check the wire format too.
+        val rlWire = json.encodeToString<FunctionStageConfig>(rl)
+        assertContains(rlWire, "\"on_exceed\":\"skip\"")
     }
 }

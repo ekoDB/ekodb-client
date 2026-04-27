@@ -664,6 +664,250 @@ class Stage:
         return stage
 
     @staticmethod
+    def hmac_sign(
+        input: str,
+        secret: str,
+        output_field: str,
+        algorithm: Optional[str] = None,
+        encoding: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """HMAC-SHA256/384/512 sign. Requires ekoDB >= 0.43.0."""
+        stage: Dict[str, Any] = {
+            "type": "HmacSign",
+            "input": input,
+            "secret": secret,
+            "output_field": output_field,
+        }
+        if algorithm is not None:
+            stage["algorithm"] = algorithm
+        if encoding is not None:
+            stage["encoding"] = encoding
+        return stage
+
+    @staticmethod
+    def hmac_verify(
+        input: str,
+        provided_mac: str,
+        secret: str,
+        output_field: str,
+        algorithm: Optional[str] = None,
+        encoding: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """HMAC verify (constant-time). Writes a boolean."""
+        stage: Dict[str, Any] = {
+            "type": "HmacVerify",
+            "input": input,
+            "provided_mac": provided_mac,
+            "secret": secret,
+            "output_field": output_field,
+        }
+        if algorithm is not None:
+            stage["algorithm"] = algorithm
+        if encoding is not None:
+            stage["encoding"] = encoding
+        return stage
+
+    @staticmethod
+    def aes_encrypt(
+        plaintext: str,
+        key: str,
+        output_field: str,
+        key_encoding: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """AES-256-GCM encrypt; writes ``{ciphertext, nonce}`` envelope."""
+        stage: Dict[str, Any] = {
+            "type": "AesEncrypt",
+            "plaintext": plaintext,
+            "key": key,
+            "output_field": output_field,
+        }
+        if key_encoding is not None:
+            stage["key_encoding"] = key_encoding
+        return stage
+
+    @staticmethod
+    def aes_decrypt(
+        ciphertext_field: str,
+        key: str,
+        output_field: str,
+        key_encoding: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """AES-256-GCM decrypt; reads envelope from ``ciphertext_field``."""
+        stage: Dict[str, Any] = {
+            "type": "AesDecrypt",
+            "ciphertext_field": ciphertext_field,
+            "key": key,
+            "output_field": output_field,
+        }
+        if key_encoding is not None:
+            stage["key_encoding"] = key_encoding
+        return stage
+
+    @staticmethod
+    def uuid_generate(output_field: str) -> Dict[str, Any]:
+        """Generate a v4 UUID into ``output_field``."""
+        return {"type": "UuidGenerate", "output_field": output_field}
+
+    @staticmethod
+    def totp_generate(
+        secret: str,
+        output_field: str,
+        digits: Optional[int] = None,
+        period: Optional[int] = None,
+        algorithm: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """TOTP code generation (RFC 6238)."""
+        stage: Dict[str, Any] = {
+            "type": "TotpGenerate",
+            "secret": secret,
+            "output_field": output_field,
+        }
+        if digits is not None:
+            stage["digits"] = digits
+        if period is not None:
+            stage["period"] = period
+        if algorithm is not None:
+            stage["algorithm"] = algorithm
+        return stage
+
+    @staticmethod
+    def totp_verify(
+        code: str,
+        secret: str,
+        output_field: str,
+        digits: Optional[int] = None,
+        period: Optional[int] = None,
+        algorithm: Optional[str] = None,
+        skew: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """TOTP verify; tolerates ``skew`` time-steps either side (default 1)."""
+        stage: Dict[str, Any] = {
+            "type": "TotpVerify",
+            "code": code,
+            "secret": secret,
+            "output_field": output_field,
+        }
+        if digits is not None:
+            stage["digits"] = digits
+        if period is not None:
+            stage["period"] = period
+        if algorithm is not None:
+            stage["algorithm"] = algorithm
+        if skew is not None:
+            stage["skew"] = skew
+        return stage
+
+    @staticmethod
+    def base64_encode(
+        input: str,
+        output_field: str,
+        url_safe: Optional[bool] = None,
+    ) -> Dict[str, Any]:
+        """Base64 encode. ``url_safe=True`` for URL-safe / no-pad."""
+        stage: Dict[str, Any] = {
+            "type": "Base64Encode",
+            "input": input,
+            "output_field": output_field,
+        }
+        if url_safe is not None:
+            stage["url_safe"] = url_safe
+        return stage
+
+    @staticmethod
+    def base64_decode(
+        input: str,
+        output_field: str,
+        url_safe: Optional[bool] = None,
+    ) -> Dict[str, Any]:
+        """Base64 decode → UTF-8. Fail-closed."""
+        stage: Dict[str, Any] = {
+            "type": "Base64Decode",
+            "input": input,
+            "output_field": output_field,
+        }
+        if url_safe is not None:
+            stage["url_safe"] = url_safe
+        return stage
+
+    @staticmethod
+    def hex_encode(input: str, output_field: str) -> Dict[str, Any]:
+        """Hex encode (lowercase)."""
+        return {"type": "HexEncode", "input": input, "output_field": output_field}
+
+    @staticmethod
+    def hex_decode(input: str, output_field: str) -> Dict[str, Any]:
+        """Hex decode → UTF-8. Fail-closed."""
+        return {"type": "HexDecode", "input": input, "output_field": output_field}
+
+    @staticmethod
+    def slugify(input: str, output_field: str) -> Dict[str, Any]:
+        """URL-friendly slug."""
+        return {"type": "Slugify", "input": input, "output_field": output_field}
+
+    @staticmethod
+    def idempotency_claim(key: str, ttl_secs: int, output_field: str) -> Dict[str, Any]:
+        """Idempotency-key claim (KV SETNX with TTL).
+
+        On first call, writes ``{claimed: true, key}`` to
+        ``output_field``. On subsequent calls within ``ttl_secs``,
+        writes ``{claimed: false, key, response}`` so the caller
+        can short-circuit. Requires ekoDB >= 0.43.0.
+        """
+        return {
+            "type": "IdempotencyClaim",
+            "key": key,
+            "ttl_secs": ttl_secs,
+            "output_field": output_field,
+        }
+
+    @staticmethod
+    def rate_limit(
+        key: str,
+        limit: int,
+        window_secs: int,
+        output_field: str,
+        on_exceed: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Fixed-window rate-limit gate. ``on_exceed`` either ``"fail"`` (default
+        — stage errors and stops the pipeline) or ``"skip"`` (writes
+        ``allowed: false`` and lets downstream stages branch).
+        """
+        stage: Dict[str, Any] = {
+            "type": "RateLimit",
+            "key": key,
+            "limit": limit,
+            "window_secs": window_secs,
+            "output_field": output_field,
+        }
+        if on_exceed is not None:
+            stage["on_exceed"] = on_exceed
+        return stage
+
+    @staticmethod
+    def lock_acquire(key: str, ttl_secs: int, output_field: str) -> Dict[str, Any]:
+        """Distributed-lock acquire (token-fenced).
+
+        On success writes ``{acquired: true, token}`` to
+        ``output_field``; pass that token back to ``lock_release``.
+        """
+        return {
+            "type": "LockAcquire",
+            "key": key,
+            "ttl_secs": ttl_secs,
+            "output_field": output_field,
+        }
+
+    @staticmethod
+    def lock_release(key: str, token: str, output_field: str) -> Dict[str, Any]:
+        """Distributed-lock release; only deletes the key on token match."""
+        return {
+            "type": "LockRelease",
+            "key": key,
+            "token": token,
+            "output_field": output_field,
+        }
+
+    @staticmethod
     def try_catch(
         try_functions: List[Dict[str, Any]],
         catch_functions: List[Dict[str, Any]],

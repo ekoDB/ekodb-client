@@ -453,3 +453,116 @@ def test_new_stages_json_round_trip():
         wire = json.loads(json.dumps(stage))
         assert wire == stage, f"JSON round-trip changed {stage}"
         assert wire["type"] in ("TryCatch", "Parallel", "Sleep", "Return", "Validate")
+
+
+# ---------------------------------------------------------------------------
+# Crypto + concurrency stages
+# ---------------------------------------------------------------------------
+
+
+def test_hmac_sign_and_verify_build_correctly():
+    sign = Stage.hmac_sign(
+        "{{p}}", "{{env.K}}", "mac", algorithm="sha256", encoding="hex"
+    )
+    assert sign == {
+        "type": "HmacSign",
+        "input": "{{p}}",
+        "secret": "{{env.K}}",
+        "output_field": "mac",
+        "algorithm": "sha256",
+        "encoding": "hex",
+    }
+    verify = Stage.hmac_verify("{{p}}", "{{m}}", "{{env.K}}", "ok")
+    assert verify["type"] == "HmacVerify"
+    assert "algorithm" not in verify
+    assert "encoding" not in verify
+
+
+def test_aes_uuid_totp_stages_build():
+    enc = Stage.aes_encrypt("{{plain}}", "{{env.K}}", "envelope", key_encoding="hex")
+    assert enc["type"] == "AesEncrypt"
+    assert enc["key_encoding"] == "hex"
+
+    dec = Stage.aes_decrypt("envelope", "{{env.K}}", "plain")
+    assert dec["type"] == "AesDecrypt"
+    assert "key_encoding" not in dec
+
+    assert Stage.uuid_generate("id") == {"type": "UuidGenerate", "output_field": "id"}
+
+    totp = Stage.totp_generate(
+        "{{env.T}}", "code", digits=6, period=30, algorithm="sha1"
+    )
+    assert totp["type"] == "TotpGenerate"
+    assert totp["digits"] == 6
+    assert totp["period"] == 30
+
+
+def test_base64_hex_slugify_stages_build():
+    assert Stage.base64_encode("{{x}}", "b", url_safe=True) == {
+        "type": "Base64Encode",
+        "input": "{{x}}",
+        "output_field": "b",
+        "url_safe": True,
+    }
+    assert Stage.base64_decode("{{b}}", "x") == {
+        "type": "Base64Decode",
+        "input": "{{b}}",
+        "output_field": "x",
+    }
+    assert Stage.hex_encode("{{x}}", "h") == {
+        "type": "HexEncode",
+        "input": "{{x}}",
+        "output_field": "h",
+    }
+    assert Stage.hex_decode("{{h}}", "x") == {
+        "type": "HexDecode",
+        "input": "{{h}}",
+        "output_field": "x",
+    }
+    assert Stage.slugify("{{title}}", "slug") == {
+        "type": "Slugify",
+        "input": "{{title}}",
+        "output_field": "slug",
+    }
+
+
+def test_concurrency_stages_build():
+    assert Stage.idempotency_claim("{{ikey}}", 60, "claim") == {
+        "type": "IdempotencyClaim",
+        "key": "{{ikey}}",
+        "ttl_secs": 60,
+        "output_field": "claim",
+    }
+    rl = Stage.rate_limit("{{user}}", 100, 60, "rl", on_exceed="skip")
+    assert rl["type"] == "RateLimit"
+    assert rl["on_exceed"] == "skip"
+    assert Stage.lock_acquire("{{r}}", 30, "lock") == {
+        "type": "LockAcquire",
+        "key": "{{r}}",
+        "ttl_secs": 30,
+        "output_field": "lock",
+    }
+    assert Stage.lock_release("{{r}}", "{{lock.token}}", "rel") == {
+        "type": "LockRelease",
+        "key": "{{r}}",
+        "token": "{{lock.token}}",
+        "output_field": "rel",
+    }
+
+
+def test_crypto_concurrency_stages_json_round_trip():
+    import json
+
+    stages = [
+        Stage.hmac_sign("a", "k", "m", algorithm="sha256"),
+        Stage.aes_encrypt("p", "k", "e", key_encoding="hex"),
+        Stage.uuid_generate("id"),
+        Stage.totp_generate("s", "c", digits=6),
+        Stage.base64_encode("x", "b"),
+        Stage.idempotency_claim("k", 60, "c"),
+        Stage.rate_limit("k", 5, 60, "r"),
+        Stage.lock_acquire("r", 60, "l"),
+    ]
+    for stage in stages:
+        wire = json.loads(json.dumps(stage))
+        assert wire == stage

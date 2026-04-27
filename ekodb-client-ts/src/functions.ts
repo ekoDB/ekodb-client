@@ -323,6 +323,135 @@ export type FunctionStageConfig =
       output_field?: string;
     }
   | {
+      /** HMAC-SHA256/384/512 sign. Requires ekoDB >= 0.43.0. */
+      type: "HmacSign";
+      input: string;
+      secret: string;
+      algorithm?: "sha256" | "sha384" | "sha512";
+      output_field: string;
+      encoding?: "hex" | "base64";
+    }
+  | {
+      /** HMAC verify (constant-time). Writes a boolean. */
+      type: "HmacVerify";
+      input: string;
+      provided_mac: string;
+      secret: string;
+      algorithm?: "sha256" | "sha384" | "sha512";
+      encoding?: "hex" | "base64";
+      output_field: string;
+    }
+  | {
+      /** AES-256-GCM authenticated encryption. */
+      type: "AesEncrypt";
+      plaintext: string;
+      key: string;
+      key_encoding?: "hex" | "base64" | "base64url";
+      output_field: string;
+    }
+  | {
+      /** AES-256-GCM decrypt. Reads `{ciphertext, nonce}` envelope from `ciphertext_field`. */
+      type: "AesDecrypt";
+      ciphertext_field: string;
+      key: string;
+      key_encoding?: "hex" | "base64" | "base64url";
+      output_field: string;
+    }
+  | {
+      /** Generate a v4 UUID into `output_field`. */
+      type: "UuidGenerate";
+      output_field: string;
+    }
+  | {
+      /** TOTP code generation (RFC 6238). */
+      type: "TotpGenerate";
+      secret: string;
+      digits?: 6 | 8;
+      period?: number;
+      algorithm?: "sha1" | "sha256" | "sha512";
+      output_field: string;
+    }
+  | {
+      /** TOTP verify; tolerates `skew` time-steps either side. */
+      type: "TotpVerify";
+      code: string;
+      secret: string;
+      digits?: 6 | 8;
+      period?: number;
+      algorithm?: "sha1" | "sha256" | "sha512";
+      skew?: number;
+      output_field: string;
+    }
+  | {
+      /** Base64 encode (`url_safe = true` for URL-safe / no-pad). */
+      type: "Base64Encode";
+      input: string;
+      url_safe?: boolean;
+      output_field: string;
+    }
+  | {
+      /** Base64 decode → UTF-8 string. Fail-closed. */
+      type: "Base64Decode";
+      input: string;
+      url_safe?: boolean;
+      output_field: string;
+    }
+  | {
+      /** Hex encode (lowercase). */
+      type: "HexEncode";
+      input: string;
+      output_field: string;
+    }
+  | {
+      /** Hex decode → UTF-8 string. Fail-closed. */
+      type: "HexDecode";
+      input: string;
+      output_field: string;
+    }
+  | {
+      /** URL-friendly slug. */
+      type: "Slugify";
+      input: string;
+      output_field: string;
+    }
+  | {
+      /**
+       * Idempotency-key claim (KV SETNX with TTL). Writes
+       * `{claimed: true, key}` on first call, `{claimed: false, key,
+       * response}` on replay. Requires ekoDB >= 0.43.0.
+       */
+      type: "IdempotencyClaim";
+      key: string;
+      ttl_secs: number;
+      output_field: string;
+    }
+  | {
+      /**
+       * Fixed-window rate-limit gate. `on_exceed` either errors
+       * (`"fail"`, default) or writes `allowed: false` (`"skip"`).
+       */
+      type: "RateLimit";
+      key: string;
+      limit: number;
+      window_secs: number;
+      on_exceed?: "fail" | "skip";
+      output_field: string;
+    }
+  | {
+      /** Distributed-lock acquire (token-fenced). */
+      type: "LockAcquire";
+      key: string;
+      ttl_secs: number;
+      output_field: string;
+    }
+  | {
+      /** Distributed-lock release; token-fenced (no foreign release). */
+      type: "LockRelease";
+      key: string;
+      token: string;
+      output_field: string;
+    }
+  | {
       /**
        * Try/Catch error handling for graceful failure recovery.
        * Executes try_functions, and if any fail, executes catch_functions.
@@ -1095,5 +1224,226 @@ export const Stage = {
     schema,
     data_field: dataField,
     on_error: onError,
+  }),
+
+  /**
+   * HMAC-SHA256/384/512 sign. Use for outbound webhook signing or
+   * pre-signed URL generation. Requires ekoDB >= 0.43.0.
+   */
+  hmacSign: (
+    input: string,
+    secret: string,
+    output_field: string,
+    options?: {
+      algorithm?: "sha256" | "sha384" | "sha512";
+      encoding?: "hex" | "base64";
+    },
+  ): FunctionStageConfig => ({
+    type: "HmacSign",
+    input,
+    secret,
+    algorithm: options?.algorithm,
+    output_field,
+    encoding: options?.encoding,
+  }),
+
+  /** HMAC verify (constant-time). Writes a boolean. */
+  hmacVerify: (
+    input: string,
+    provided_mac: string,
+    secret: string,
+    output_field: string,
+    options?: {
+      algorithm?: "sha256" | "sha384" | "sha512";
+      encoding?: "hex" | "base64";
+    },
+  ): FunctionStageConfig => ({
+    type: "HmacVerify",
+    input,
+    provided_mac,
+    secret,
+    algorithm: options?.algorithm,
+    encoding: options?.encoding,
+    output_field,
+  }),
+
+  /** AES-256-GCM encrypt; writes `{ciphertext, nonce}` envelope. */
+  aesEncrypt: (
+    plaintext: string,
+    key: string,
+    output_field: string,
+    key_encoding?: "hex" | "base64" | "base64url",
+  ): FunctionStageConfig => ({
+    type: "AesEncrypt",
+    plaintext,
+    key,
+    key_encoding,
+    output_field,
+  }),
+
+  /** AES-256-GCM decrypt; reads envelope from `ciphertext_field`. */
+  aesDecrypt: (
+    ciphertext_field: string,
+    key: string,
+    output_field: string,
+    key_encoding?: "hex" | "base64" | "base64url",
+  ): FunctionStageConfig => ({
+    type: "AesDecrypt",
+    ciphertext_field,
+    key,
+    key_encoding,
+    output_field,
+  }),
+
+  /** Generate a v4 UUID into `output_field`. */
+  uuidGenerate: (output_field: string): FunctionStageConfig => ({
+    type: "UuidGenerate",
+    output_field,
+  }),
+
+  /** TOTP code generation (RFC 6238). */
+  totpGenerate: (
+    secret: string,
+    output_field: string,
+    options?: {
+      digits?: 6 | 8;
+      period?: number;
+      algorithm?: "sha1" | "sha256" | "sha512";
+    },
+  ): FunctionStageConfig => ({
+    type: "TotpGenerate",
+    secret,
+    digits: options?.digits,
+    period: options?.period,
+    algorithm: options?.algorithm,
+    output_field,
+  }),
+
+  /** TOTP verify; tolerates `skew` time-steps either side (default 1). */
+  totpVerify: (
+    code: string,
+    secret: string,
+    output_field: string,
+    options?: {
+      digits?: 6 | 8;
+      period?: number;
+      algorithm?: "sha1" | "sha256" | "sha512";
+      skew?: number;
+    },
+  ): FunctionStageConfig => ({
+    type: "TotpVerify",
+    code,
+    secret,
+    digits: options?.digits,
+    period: options?.period,
+    algorithm: options?.algorithm,
+    skew: options?.skew,
+    output_field,
+  }),
+
+  /** Base64 encode (`url_safe = true` for URL-safe / no-pad). */
+  base64Encode: (
+    input: string,
+    output_field: string,
+    url_safe?: boolean,
+  ): FunctionStageConfig => ({
+    type: "Base64Encode",
+    input,
+    url_safe,
+    output_field,
+  }),
+
+  /** Base64 decode → UTF-8 string. Fail-closed. */
+  base64Decode: (
+    input: string,
+    output_field: string,
+    url_safe?: boolean,
+  ): FunctionStageConfig => ({
+    type: "Base64Decode",
+    input,
+    url_safe,
+    output_field,
+  }),
+
+  /** Hex encode (lowercase). */
+  hexEncode: (input: string, output_field: string): FunctionStageConfig => ({
+    type: "HexEncode",
+    input,
+    output_field,
+  }),
+
+  /** Hex decode → UTF-8 string. Fail-closed. */
+  hexDecode: (input: string, output_field: string): FunctionStageConfig => ({
+    type: "HexDecode",
+    input,
+    output_field,
+  }),
+
+  /** URL-friendly slug. */
+  slugify: (input: string, output_field: string): FunctionStageConfig => ({
+    type: "Slugify",
+    input,
+    output_field,
+  }),
+
+  /**
+   * Idempotency-key claim (KV SETNX with TTL). Pass an idempotency
+   * key (typically `"{{idempotency_key}}"`) and a TTL; first call
+   * writes `{claimed: true, key}`, subsequent calls within the TTL
+   * write `{claimed: false, key, response}` so the caller can
+   * short-circuit. Requires ekoDB >= 0.43.0.
+   */
+  idempotencyClaim: (
+    key: string,
+    ttl_secs: number,
+    output_field: string,
+  ): FunctionStageConfig => ({
+    type: "IdempotencyClaim",
+    key,
+    ttl_secs,
+    output_field,
+  }),
+
+  /**
+   * Fixed-window rate-limit gate. `on_exceed` either errors
+   * (`"fail"`, default) or writes `allowed: false` (`"skip"`).
+   */
+  rateLimit: (
+    key: string,
+    limit: number,
+    window_secs: number,
+    output_field: string,
+    on_exceed?: "fail" | "skip",
+  ): FunctionStageConfig => ({
+    type: "RateLimit",
+    key,
+    limit,
+    window_secs,
+    on_exceed,
+    output_field,
+  }),
+
+  /** Distributed-lock acquire (token-fenced). */
+  lockAcquire: (
+    key: string,
+    ttl_secs: number,
+    output_field: string,
+  ): FunctionStageConfig => ({
+    type: "LockAcquire",
+    key,
+    ttl_secs,
+    output_field,
+  }),
+
+  /** Distributed-lock release; only releases on token match. */
+  lockRelease: (
+    key: string,
+    token: string,
+    output_field: string,
+  ): FunctionStageConfig => ({
+    type: "LockRelease",
+    key,
+    token,
+    output_field,
   }),
 };

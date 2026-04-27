@@ -957,6 +957,10 @@ test-examples-rust-client: build-client
 	@cd examples/rust && cargo run --example client_convenience_methods
 	@cd examples/rust && cargo run --example bypass_ripple_example
 	@cd examples/rust && cargo run --example projection_example
+	@cd examples/rust && cargo run --example client_jwt_auth_flow
+	@cd examples/rust && cargo run --example client_crypto_stages
+	@cd examples/rust && cargo run --example client_concurrency_stages
+	@cd examples/rust && cargo run --example client_path_routed_function
 	@echo "✅ $(GREEN)Rust client examples complete!$(RESET)"
 
 # ============================================================================
@@ -1024,6 +1028,10 @@ test-examples-python-client: build-python-client
 	@cd examples/python && python3 client_chat_models.py
 	@cd examples/python && python3 client_user_functions.py
 	@cd examples/python && python3 client_collection_utils.py
+	@cd examples/python && python3 client_jwt_auth_flow.py
+	@cd examples/python && python3 client_crypto_stages.py
+	@cd examples/python && python3 client_concurrency_stages.py
+	@cd examples/python && python3 client_path_routed_function.py
 	@echo "✅ $(GREEN)Python client examples complete!$(RESET)"
 
 # ============================================================================
@@ -1074,6 +1082,10 @@ test-examples-go-client:
 	@cd examples/go && go run client_chat_models.go
 	@cd examples/go && go run client_user_functions.go
 	@cd examples/go && go run client_collection_utils.go
+	@cd examples/go && go run client_jwt_auth_flow.go
+	@cd examples/go && go run client_crypto_stages.go
+	@cd examples/go && go run client_concurrency_stages.go
+	@cd examples/go && go run client_path_routed_function.go
 	@echo "✅ $(GREEN)Go client examples complete!$(RESET)"
 
 # ============================================================================
@@ -1131,6 +1143,10 @@ test-examples-typescript-client: build-typescript-client
 	@cd examples/typescript && npx tsx client_chat_models.ts
 	@cd examples/typescript && npx tsx client_user_functions.ts
 	@cd examples/typescript && npx tsx client_collection_utils.ts
+	@cd examples/typescript && npx tsx client_jwt_auth_flow.ts
+	@cd examples/typescript && npx tsx client_crypto_stages.ts
+	@cd examples/typescript && npx tsx client_concurrency_stages.ts
+	@cd examples/typescript && npx tsx client_path_routed_function.ts
 	@echo "✅ $(GREEN)TypeScript client examples complete!$(RESET)"
 
 # ============================================================================
@@ -1235,7 +1251,11 @@ test-examples-kotlin-client: build-kotlin-client
 		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientUserFunctionsKt --no-daemon && \
 		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientConvenienceMethodsKt --no-daemon && \
 		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.BypassRippleExampleKt --no-daemon && \
-		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientProjectionKt --no-daemon; \
+		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientProjectionKt --no-daemon && \
+		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientJwtAuthFlowKt --no-daemon && \
+		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientCryptoStagesKt --no-daemon && \
+		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientConcurrencyStagesKt --no-daemon && \
+		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientPathRoutedFunctionKt --no-daemon; \
 	else \
 		echo "$(RED)❌ .env file not found$(RESET)"; \
 		echo "$(YELLOW)💡 Create .env file with API_BASE_URL, WS_BASE_URL, and API_BASE_KEY$(RESET)"; \
