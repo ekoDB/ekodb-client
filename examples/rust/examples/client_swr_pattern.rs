@@ -95,6 +95,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             },
         ],
         tags: vec!["swr".to_string(), "user".to_string(), "cache".to_string()],
+        http_method: None,
+        http_path: None,
         created_at: None,
         updated_at: None,
     };

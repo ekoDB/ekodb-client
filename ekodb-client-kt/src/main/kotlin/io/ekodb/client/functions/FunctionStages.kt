@@ -495,6 +495,151 @@ sealed class FunctionStageConfig {
         val output_field: String? = null
     ) : FunctionStageConfig()
 
+    /** HMAC-SHA256/384/512 sign. Requires ekoDB >= 0.43.0. */
+    @Serializable
+    @SerialName("HmacSign")
+    data class HmacSign(
+        val input: String,
+        val secret: String,
+        val algorithm: String? = null,
+        val output_field: String,
+        val encoding: String? = null
+    ) : FunctionStageConfig()
+
+    /** HMAC verify (constant-time). Writes a boolean. */
+    @Serializable
+    @SerialName("HmacVerify")
+    data class HmacVerify(
+        val input: String,
+        val provided_mac: String,
+        val secret: String,
+        val algorithm: String? = null,
+        val encoding: String? = null,
+        val output_field: String
+    ) : FunctionStageConfig()
+
+    /** AES-256-GCM encrypt; writes `{ciphertext, nonce}` envelope. */
+    @Serializable
+    @SerialName("AesEncrypt")
+    data class AesEncrypt(
+        val plaintext: String,
+        val key: String,
+        val key_encoding: String? = null,
+        val output_field: String
+    ) : FunctionStageConfig()
+
+    /** AES-256-GCM decrypt; reads envelope from `ciphertext_field`. */
+    @Serializable
+    @SerialName("AesDecrypt")
+    data class AesDecrypt(
+        val ciphertext_field: String,
+        val key: String,
+        val key_encoding: String? = null,
+        val output_field: String
+    ) : FunctionStageConfig()
+
+    /** Generate a v4 UUID into `output_field`. */
+    @Serializable
+    @SerialName("UuidGenerate")
+    data class UuidGenerate(val output_field: String) : FunctionStageConfig()
+
+    /** TOTP code generation (RFC 6238). */
+    @Serializable
+    @SerialName("TotpGenerate")
+    data class TotpGenerate(
+        val secret: String,
+        val digits: Int? = null,
+        val period: Long? = null,
+        val algorithm: String? = null,
+        val output_field: String
+    ) : FunctionStageConfig()
+
+    /** TOTP verify; tolerates `skew` time-steps either side (default 1). */
+    @Serializable
+    @SerialName("TotpVerify")
+    data class TotpVerify(
+        val code: String,
+        val secret: String,
+        val digits: Int? = null,
+        val period: Long? = null,
+        val algorithm: String? = null,
+        val skew: Int? = null,
+        val output_field: String
+    ) : FunctionStageConfig()
+
+    /** Base64 encode (`url_safe = true` for URL-safe / no-pad). */
+    @Serializable
+    @SerialName("Base64Encode")
+    data class Base64Encode(
+        val input: String,
+        val url_safe: Boolean? = null,
+        val output_field: String
+    ) : FunctionStageConfig()
+
+    /** Base64 decode → UTF-8. Fail-closed. */
+    @Serializable
+    @SerialName("Base64Decode")
+    data class Base64Decode(
+        val input: String,
+        val url_safe: Boolean? = null,
+        val output_field: String
+    ) : FunctionStageConfig()
+
+    /** Hex encode (lowercase). */
+    @Serializable
+    @SerialName("HexEncode")
+    data class HexEncode(val input: String, val output_field: String) : FunctionStageConfig()
+
+    /** Hex decode → UTF-8. Fail-closed. */
+    @Serializable
+    @SerialName("HexDecode")
+    data class HexDecode(val input: String, val output_field: String) : FunctionStageConfig()
+
+    /** URL-friendly slug. */
+    @Serializable
+    @SerialName("Slugify")
+    data class Slugify(val input: String, val output_field: String) : FunctionStageConfig()
+
+    /**
+     * Idempotency-key claim (KV SETNX with TTL). Requires ekoDB >= 0.43.0.
+     */
+    @Serializable
+    @SerialName("IdempotencyClaim")
+    data class IdempotencyClaim(
+        val key: String,
+        val ttl_secs: Long,
+        val output_field: String
+    ) : FunctionStageConfig()
+
+    /** Fixed-window rate-limit gate. */
+    @Serializable
+    @SerialName("RateLimit")
+    data class RateLimit(
+        val key: String,
+        val limit: Long,
+        val window_secs: Long,
+        val on_exceed: String? = null,
+        val output_field: String
+    ) : FunctionStageConfig()
+
+    /** Distributed-lock acquire (token-fenced). */
+    @Serializable
+    @SerialName("LockAcquire")
+    data class LockAcquire(
+        val key: String,
+        val ttl_secs: Long,
+        val output_field: String
+    ) : FunctionStageConfig()
+
+    /** Distributed-lock release; only releases on token match. */
+    @Serializable
+    @SerialName("LockRelease")
+    data class LockRelease(
+        val key: String,
+        val token: String,
+        val output_field: String
+    ) : FunctionStageConfig()
+
     /**
      * Try/Catch error handling for graceful failure recovery.
      * Executes [try_functions], and if any fail, executes [catch_functions].

@@ -148,3 +148,19 @@ path = "examples/client_kv_links.rs"
 [[example]]
 name = "client_advanced_crud"
 path = "examples/client_advanced_crud.rs"
+
+[[example]]
+name = "client_jwt_auth_flow"
+path = "examples/client_jwt_auth_flow.rs"
+
+[[example]]
+name = "client_crypto_stages"
+path = "examples/client_crypto_stages.rs"
+
+[[example]]
+name = "client_concurrency_stages"
+path = "examples/client_concurrency_stages.rs"
+
+[[example]]
+name = "client_path_routed_function"
+path = "examples/client_path_routed_function.rs"

@@ -2991,3 +2991,132 @@ fn test_email_send_stage_roundtrips_through_serde() {
     let json2 = serde_json::to_value(&back).expect("re-serialize");
     assert_eq!(json, json2);
 }
+
+// ===== Crypto + concurrency stages =====
+
+#[test]
+fn test_hmac_stages_serialize_and_round_trip() {
+    use ekodb_client::Function;
+    let sign = Function::HmacSign {
+        input: "{{payload}}".to_string(),
+        secret: "{{env.SIGNING_KEY}}".to_string(),
+        algorithm: Some("sha256".to_string()),
+        output_field: "mac".to_string(),
+        encoding: Some("hex".to_string()),
+    };
+    let json = serde_json::to_value(&sign).unwrap();
+    assert_eq!(json["type"], "HmacSign");
+    assert_eq!(json["algorithm"], "sha256");
+    let back: Function = serde_json::from_value(json.clone()).unwrap();
+    assert_eq!(serde_json::to_value(&back).unwrap(), json);
+
+    let verify = Function::HmacVerify {
+        input: "{{payload}}".to_string(),
+        provided_mac: "{{mac}}".to_string(),
+        secret: "{{env.SIGNING_KEY}}".to_string(),
+        algorithm: None,
+        encoding: None,
+        output_field: "ok".to_string(),
+    };
+    let json = serde_json::to_value(&verify).unwrap();
+    assert_eq!(json["type"], "HmacVerify");
+    // optional algorithm + encoding omitted when None
+    assert!(json.get("algorithm").is_none() || json["algorithm"].is_null());
+}
+
+#[test]
+fn test_aes_uuid_totp_stages_serialize() {
+    use ekodb_client::Function;
+    let enc = Function::AesEncrypt {
+        plaintext: "{{secret_payload}}".to_string(),
+        key: "{{env.DATA_KEY}}".to_string(),
+        key_encoding: Some("hex".to_string()),
+        output_field: "envelope".to_string(),
+    };
+    assert_eq!(serde_json::to_value(&enc).unwrap()["type"], "AesEncrypt");
+
+    let dec = Function::AesDecrypt {
+        ciphertext_field: "envelope".to_string(),
+        key: "{{env.DATA_KEY}}".to_string(),
+        key_encoding: None,
+        output_field: "plain".to_string(),
+    };
+    assert_eq!(serde_json::to_value(&dec).unwrap()["type"], "AesDecrypt");
+
+    let uid = Function::UuidGenerate {
+        output_field: "id".to_string(),
+    };
+    assert_eq!(serde_json::to_value(&uid).unwrap()["type"], "UuidGenerate");
+
+    let totp = Function::TotpGenerate {
+        secret: "{{env.TOTP_SECRET}}".to_string(),
+        digits: Some(6),
+        period: Some(30),
+        algorithm: Some("sha1".to_string()),
+        output_field: "code".to_string(),
+    };
+    assert_eq!(serde_json::to_value(&totp).unwrap()["type"], "TotpGenerate");
+}
+
+#[test]
+fn test_base64_hex_slugify_stages_serialize() {
+    use ekodb_client::Function;
+    let b = Function::Base64Encode {
+        input: "{{txt}}".to_string(),
+        url_safe: Some(true),
+        output_field: "b64".to_string(),
+    };
+    let j = serde_json::to_value(&b).unwrap();
+    assert_eq!(j["type"], "Base64Encode");
+    assert_eq!(j["url_safe"], true);
+
+    let h = Function::HexEncode {
+        input: "{{txt}}".to_string(),
+        output_field: "hex".to_string(),
+    };
+    assert_eq!(serde_json::to_value(&h).unwrap()["type"], "HexEncode");
+
+    let s = Function::Slugify {
+        input: "{{title}}".to_string(),
+        output_field: "slug".to_string(),
+    };
+    assert_eq!(serde_json::to_value(&s).unwrap()["type"], "Slugify");
+}
+
+#[test]
+fn test_idempotency_rate_limit_lock_stages_serialize() {
+    use ekodb_client::Function;
+    let idem = Function::IdempotencyClaim {
+        key: "{{idempotency_key}}".to_string(),
+        ttl_secs: 3600,
+        output_field: "claim".to_string(),
+    };
+    let j = serde_json::to_value(&idem).unwrap();
+    assert_eq!(j["type"], "IdempotencyClaim");
+    assert_eq!(j["ttl_secs"], 3600);
+
+    let rl = Function::RateLimit {
+        key: "user-{{user_id}}".to_string(),
+        limit: 100,
+        window_secs: 60,
+        on_exceed: Some("skip".to_string()),
+        output_field: "rl".to_string(),
+    };
+    let j = serde_json::to_value(&rl).unwrap();
+    assert_eq!(j["type"], "RateLimit");
+    assert_eq!(j["on_exceed"], "skip");
+
+    let acq = Function::LockAcquire {
+        key: "{{resource_id}}".to_string(),
+        ttl_secs: 30,
+        output_field: "lock".to_string(),
+    };
+    assert_eq!(serde_json::to_value(&acq).unwrap()["type"], "LockAcquire");
+
+    let rel = Function::LockRelease {
+        key: "{{resource_id}}".to_string(),
+        token: "{{lock.token}}".to_string(),
+        output_field: "rel".to_string(),
+    };
+    assert_eq!(serde_json::to_value(&rel).unwrap()["type"], "LockRelease");
+}

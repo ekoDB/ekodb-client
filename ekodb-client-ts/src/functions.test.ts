@@ -574,3 +574,153 @@ describe("New stages JSON wire format", () => {
     });
   });
 });
+
+describe("Crypto and concurrency stages", () => {
+  it("hmacSign builds a stage with explicit algorithm and encoding", () => {
+    const s = Stage.hmacSign("{{payload}}", "{{env.KEY}}", "mac", {
+      algorithm: "sha256",
+      encoding: "hex",
+    });
+    expect(s).toEqual({
+      type: "HmacSign",
+      input: "{{payload}}",
+      secret: "{{env.KEY}}",
+      algorithm: "sha256",
+      output_field: "mac",
+      encoding: "hex",
+    });
+  });
+
+  it("hmacVerify wires all fields", () => {
+    const s = Stage.hmacVerify("{{p}}", "{{m}}", "{{env.K}}", "ok");
+    expect(s).toMatchObject({
+      type: "HmacVerify",
+      input: "{{p}}",
+      provided_mac: "{{m}}",
+      secret: "{{env.K}}",
+      output_field: "ok",
+    });
+  });
+
+  it("aesEncrypt and aesDecrypt build matching envelope contracts", () => {
+    const enc = Stage.aesEncrypt(
+      "{{plain}}",
+      "{{env.DATA_KEY}}",
+      "envelope",
+      "hex",
+    );
+    expect(enc).toMatchObject({
+      type: "AesEncrypt",
+      plaintext: "{{plain}}",
+      key: "{{env.DATA_KEY}}",
+      key_encoding: "hex",
+      output_field: "envelope",
+    });
+    const dec = Stage.aesDecrypt(
+      "envelope",
+      "{{env.DATA_KEY}}",
+      "plain",
+      "hex",
+    );
+    expect(dec).toMatchObject({
+      type: "AesDecrypt",
+      ciphertext_field: "envelope",
+      output_field: "plain",
+    });
+  });
+
+  it("uuidGenerate is a single-field stage", () => {
+    expect(Stage.uuidGenerate("id")).toEqual({
+      type: "UuidGenerate",
+      output_field: "id",
+    });
+  });
+
+  it("totpGenerate and totpVerify build with all options", () => {
+    const gen = Stage.totpGenerate("{{env.TOTP}}", "code", {
+      digits: 6,
+      period: 30,
+      algorithm: "sha1",
+    });
+    expect(gen.type).toBe("TotpGenerate");
+    const ver = Stage.totpVerify("{{user_code}}", "{{env.TOTP}}", "ok", {
+      skew: 1,
+    });
+    expect(ver.type).toBe("TotpVerify");
+  });
+
+  it("base64Encode/Decode and hexEncode/Decode build correctly", () => {
+    expect(Stage.base64Encode("{{x}}", "b", true)).toMatchObject({
+      type: "Base64Encode",
+      url_safe: true,
+    });
+    expect(Stage.base64Decode("{{b}}", "x")).toMatchObject({
+      type: "Base64Decode",
+    });
+    expect(Stage.hexEncode("{{x}}", "h")).toEqual({
+      type: "HexEncode",
+      input: "{{x}}",
+      output_field: "h",
+    });
+    expect(Stage.hexDecode("{{h}}", "x")).toEqual({
+      type: "HexDecode",
+      input: "{{h}}",
+      output_field: "x",
+    });
+  });
+
+  it("slugify builds a stage", () => {
+    expect(Stage.slugify("{{title}}", "slug")).toEqual({
+      type: "Slugify",
+      input: "{{title}}",
+      output_field: "slug",
+    });
+  });
+
+  it("idempotencyClaim, rateLimit, lockAcquire, lockRelease build correctly", () => {
+    expect(Stage.idempotencyClaim("{{ikey}}", 3600, "claim")).toEqual({
+      type: "IdempotencyClaim",
+      key: "{{ikey}}",
+      ttl_secs: 3600,
+      output_field: "claim",
+    });
+    expect(Stage.rateLimit("{{user}}", 100, 60, "rl", "skip")).toMatchObject({
+      type: "RateLimit",
+      limit: 100,
+      window_secs: 60,
+      on_exceed: "skip",
+    });
+    expect(Stage.lockAcquire("{{r}}", 30, "lock")).toEqual({
+      type: "LockAcquire",
+      key: "{{r}}",
+      ttl_secs: 30,
+      output_field: "lock",
+    });
+    expect(Stage.lockRelease("{{r}}", "{{lock.token}}", "rel")).toEqual({
+      type: "LockRelease",
+      key: "{{r}}",
+      token: "{{lock.token}}",
+      output_field: "rel",
+    });
+  });
+
+  it("crypto + concurrency stages round-trip through JSON unchanged", () => {
+    const stages = [
+      Stage.hmacSign("a", "k", "m", { algorithm: "sha256", encoding: "hex" }),
+      Stage.aesEncrypt("p", "k", "e", "hex"),
+      Stage.uuidGenerate("id"),
+      Stage.totpGenerate("s", "c", {
+        digits: 6,
+        period: 30,
+        algorithm: "sha1",
+      }),
+      Stage.idempotencyClaim("k", 60, "f"),
+      Stage.rateLimit("k", 5, 60, "rl"),
+      Stage.lockAcquire("r", 60, "l"),
+    ];
+    for (const s of stages) {
+      const wire = JSON.parse(JSON.stringify(s));
+      expect(wire.type).toBe(s.type);
+    }
+  });
+});
