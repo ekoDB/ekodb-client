@@ -579,7 +579,7 @@ class Stage:
         ``algorithm`` is one of ``"HS256"`` (default), ``"HS384"``,
         ``"HS512"``.
 
-        Requires ekoDB >= 0.43.0.
+        Requires ekoDB >= 0.42.0.
         """
         stage: Dict[str, Any] = {
             "type": "JwtSign",
@@ -606,7 +606,7 @@ class Stage:
         Branch with ``Stage.if_`` matching ``output_field == None`` to
         reject.
 
-        Requires ekoDB >= 0.43.0.
+        Requires ekoDB >= 0.42.0.
         """
         stage: Dict[str, Any] = {
             "type": "JwtVerify",
@@ -643,7 +643,7 @@ class Stage:
         ``from`` is a Python reserved word; on the wire the JSON key
         is `"from"`.
 
-        Requires ekoDB >= 0.43.0.
+        Requires ekoDB >= 0.42.0.
         """
         stage: Dict[str, Any] = {
             "type": "EmailSend",
@@ -671,7 +671,7 @@ class Stage:
         algorithm: Optional[str] = None,
         encoding: Optional[str] = None,
     ) -> Dict[str, Any]:
-        """HMAC-SHA256/384/512 sign. Requires ekoDB >= 0.43.0."""
+        """HMAC-SHA256/384/512 sign. Requires ekoDB >= 0.42.0."""
         stage: Dict[str, Any] = {
             "type": "HmacSign",
             "input": input,
@@ -851,7 +851,7 @@ class Stage:
         On first call, writes ``{claimed: true, key}`` to
         ``output_field``. On subsequent calls within ``ttl_secs``,
         writes ``{claimed: false, key, response}`` so the caller
-        can short-circuit. Requires ekoDB >= 0.43.0.
+        can short-circuit. Requires ekoDB >= 0.42.0.
         """
         return {
             "type": "IdempotencyClaim",

@@ -11,7 +11,7 @@ Routing rules:
   - lowest "specificity score" (fewest ``:placeholder``) wins on ties
   - body params merge OVER path params on collision
 
-Requires ekoDB >= 0.43.0.
+Requires ekoDB >= 0.42.0.
 """
 
 import asyncio

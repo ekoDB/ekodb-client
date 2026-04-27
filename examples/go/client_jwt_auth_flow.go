@@ -10,7 +10,7 @@
 // {{env.JWT_SECRET}} so they never enter the function definition or
 // the LLM context window.
 //
-// Requires ekoDB >= 0.43.0.
+// Requires ekoDB >= 0.42.0.
 
 package main
 

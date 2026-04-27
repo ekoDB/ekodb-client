@@ -441,7 +441,7 @@ sealed class FunctionStageConfig {
      * [algorithm] is one of `"HS256"` (default), `"HS384"`,
      * `"HS512"`; leave null to accept the server default.
      *
-     * Requires ekoDB >= 0.43.0.
+     * Requires ekoDB >= 0.42.0.
      */
     @Serializable
     @SerialName("JwtSign")
@@ -459,7 +459,7 @@ sealed class FunctionStageConfig {
      * [output_field]; on failure writes JSON `null`. Branch with
      * [FunctionCondition.FieldEquals] matching `null` to reject.
      *
-     * Requires ekoDB >= 0.43.0.
+     * Requires ekoDB >= 0.42.0.
      */
     @Serializable
     @SerialName("JwtVerify")
@@ -479,7 +479,7 @@ sealed class FunctionStageConfig {
      * provider_message, provider}` is written to [output_field]
      * (default `"email_send"`).
      *
-     * Requires ekoDB >= 0.43.0.
+     * Requires ekoDB >= 0.42.0.
      */
     @Serializable
     @SerialName("EmailSend")
@@ -495,7 +495,7 @@ sealed class FunctionStageConfig {
         val output_field: String? = null
     ) : FunctionStageConfig()
 
-    /** HMAC-SHA256/384/512 sign. Requires ekoDB >= 0.43.0. */
+    /** HMAC-SHA256/384/512 sign. Requires ekoDB >= 0.42.0. */
     @Serializable
     @SerialName("HmacSign")
     data class HmacSign(
@@ -601,7 +601,7 @@ sealed class FunctionStageConfig {
     data class Slugify(val input: String, val output_field: String) : FunctionStageConfig()
 
     /**
-     * Idempotency-key claim (KV SETNX with TTL). Requires ekoDB >= 0.43.0.
+     * Idempotency-key claim (KV SETNX with TTL). Requires ekoDB >= 0.42.0.
      */
     @Serializable
     @SerialName("IdempotencyClaim")

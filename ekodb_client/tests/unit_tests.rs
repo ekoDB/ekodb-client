@@ -2812,7 +2812,7 @@ fn test_crypto_stages_roundtrip_through_serde() {
 }
 
 // ============================================================================
-// JWT primitives: JwtSign, JwtVerify (ekoDB >= 0.43.0)
+// JWT primitives: JwtSign, JwtVerify (ekoDB >= 0.42.0)
 // ============================================================================
 //
 // Serialization-shape tests only — runtime behavior is covered by the
@@ -2923,7 +2923,7 @@ fn test_jwt_stages_roundtrip_through_serde() {
 }
 
 // ============================================================================
-// EmailSend (ekoDB >= 0.43.0)
+// EmailSend (ekoDB >= 0.42.0)
 // ============================================================================
 
 #[test]

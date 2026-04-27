@@ -14,7 +14,7 @@
 //!   - body params merge OVER path params on collision (so a POST body
 //!     can augment URL placeholders)
 //!
-//! Requires ekoDB >= 0.43.0.
+//! Requires ekoDB >= 0.42.0.
 
 use ekodb_client::{Client, Function, ParameterDefinition, UserFunction};
 use std::collections::HashMap;

@@ -255,7 +255,7 @@ describe("Crypto stages JSON wire format", () => {
 });
 
 // ============================================================================
-// JWT primitives: JwtSign, JwtVerify (ekoDB >= 0.43.0)
+// JWT primitives: JwtSign, JwtVerify (ekoDB >= 0.42.0)
 // ============================================================================
 
 describe("Stage.jwtSign", () => {
@@ -341,7 +341,7 @@ describe("JWT stages JSON wire format", () => {
 });
 
 // ============================================================================
-// EmailSend (ekoDB >= 0.43.0)
+// EmailSend (ekoDB >= 0.42.0)
 // ============================================================================
 
 describe("Stage.emailSend", () => {

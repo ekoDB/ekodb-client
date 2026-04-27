@@ -18,13 +18,13 @@ export interface UserFunction {
    * REST method this function answers — `"GET"`, `"POST"`, etc.
    * Pair with `http_path` to expose the function under the
    * path-routed dispatcher at `/api/route/{path}`.
-   * Requires ekoDB >= 0.43.0.
+   * Requires ekoDB >= 0.42.0.
    */
   http_method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   /**
    * REST path pattern (e.g. `"/users/:id"`). Path segments
    * starting with `:` are extracted into the function's params
-   * map at call time. Requires ekoDB >= 0.43.0.
+   * map at call time. Requires ekoDB >= 0.42.0.
    */
   http_path?: string;
 }
@@ -278,7 +278,7 @@ export type FunctionStageConfig =
        * after login. Use `"{{env.JWT_SECRET}}"` for `secret` so the
        * LLM never sees the operator-owned signing key. `iat` and
        * `exp` are auto-stamped when `expires_in_secs` is set.
-       * Requires ekoDB >= 0.43.0.
+       * Requires ekoDB >= 0.42.0.
        */
       type: "JwtSign";
       claims: Record<string, unknown>;
@@ -293,7 +293,7 @@ export type FunctionStageConfig =
        * record. On success, writes the decoded claims object into
        * `output_field`. On failure, writes `null` so callers can
        * branch with `If { FieldEquals { value: null } }` to reject.
-       * Requires ekoDB >= 0.43.0.
+       * Requires ekoDB >= 0.42.0.
        */
       type: "JwtVerify";
       token_field: string;
@@ -309,7 +309,7 @@ export type FunctionStageConfig =
        * sees the operator-owned secret. Result envelope
        * `{provider_status, provider_message, provider}` is written
        * to `output_field` (defaults to `"email_send"`).
-       * Requires ekoDB >= 0.43.0.
+       * Requires ekoDB >= 0.42.0.
        */
       type: "EmailSend";
       to: string;
@@ -323,7 +323,7 @@ export type FunctionStageConfig =
       output_field?: string;
     }
   | {
-      /** HMAC-SHA256/384/512 sign. Requires ekoDB >= 0.43.0. */
+      /** HMAC-SHA256/384/512 sign. Requires ekoDB >= 0.42.0. */
       type: "HmacSign";
       input: string;
       secret: string;
@@ -418,7 +418,7 @@ export type FunctionStageConfig =
       /**
        * Idempotency-key claim (KV SETNX with TTL). Writes
        * `{claimed: true, key}` on first call, `{claimed: false, key,
-       * response}` on replay. Requires ekoDB >= 0.43.0.
+       * response}` on replay. Requires ekoDB >= 0.42.0.
        */
       type: "IdempotencyClaim";
       key: string;
@@ -1066,7 +1066,7 @@ export const Stage = {
    * token after login. Use `"{{env.JWT_SECRET}}"` for `secret` so
    * the LLM never sees the operator-owned signing key. `iat` and
    * `exp` are auto-stamped when `expires_in_secs` is set.
-   * Requires ekoDB >= 0.43.0.
+   * Requires ekoDB >= 0.42.0.
    *
    * @param claims - JWT payload claims.
    * @param secret - Signing secret (typically `"{{env.JWT_SECRET}}"`).
@@ -1093,7 +1093,7 @@ export const Stage = {
    * Verify a JWT held in `token_field` on the first working record.
    * On success writes the decoded claims object into `output_field`;
    * on failure writes `null`. Branch with `Stage.if` matching
-   * `output_field == null` to reject. Requires ekoDB >= 0.43.0.
+   * `output_field == null` to reject. Requires ekoDB >= 0.42.0.
    *
    * @param token_field - Field on the working record holding the JWT.
    * @param secret - Verification secret (must match the signing secret).
@@ -1120,7 +1120,7 @@ export const Stage = {
    * Set `html: true` to send `text/html`. The result envelope
    * (`{provider_status, provider_message, provider}`) is written
    * to `output_field` (default `"email_send"`).
-   * Requires ekoDB >= 0.43.0.
+   * Requires ekoDB >= 0.42.0.
    */
   emailSend: (
     to: string,
@@ -1228,7 +1228,7 @@ export const Stage = {
 
   /**
    * HMAC-SHA256/384/512 sign. Use for outbound webhook signing or
-   * pre-signed URL generation. Requires ekoDB >= 0.43.0.
+   * pre-signed URL generation. Requires ekoDB >= 0.42.0.
    */
   hmacSign: (
     input: string,
@@ -1391,7 +1391,7 @@ export const Stage = {
    * key (typically `"{{idempotency_key}}"`) and a TTL; first call
    * writes `{claimed: true, key}`, subsequent calls within the TTL
    * write `{claimed: false, key, response}` so the caller can
-   * short-circuit. Requires ekoDB >= 0.43.0.
+   * short-circuit. Requires ekoDB >= 0.42.0.
    */
   idempotencyClaim: (
     key: string,
