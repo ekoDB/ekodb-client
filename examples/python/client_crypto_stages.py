@@ -55,7 +55,7 @@ async def main() -> None:
             ),
         ],
     }
-    await _save(client, hmac)
+    await _save(client, "crypto_demo_hmac", hmac)
 
     # 2. AES-256-GCM encrypt + decrypt round trip.
     aes = {
@@ -71,7 +71,7 @@ async def main() -> None:
             ),
         ],
     }
-    await _save(client, aes)
+    await _save(client, "crypto_demo_aes", aes)
 
     # 3. UuidGenerate.
     uuid_fn = {
@@ -80,7 +80,7 @@ async def main() -> None:
         "parameters": {},
         "functions": [Stage.uuid_generate("id")],
     }
-    await _save(client, uuid_fn)
+    await _save(client, "crypto_demo_uuid", uuid_fn)
 
     # 4. TotpGenerate (RFC 6238 with SHA1).
     totp = {
@@ -97,7 +97,7 @@ async def main() -> None:
             )
         ],
     }
-    await _save(client, totp)
+    await _save(client, "crypto_demo_totp", totp)
 
     # 5. Base64 + Hex + Slugify chained.
     encoding = {
@@ -110,7 +110,7 @@ async def main() -> None:
             Stage.slugify("{{title}}", "title_slug"),
         ],
     }
-    await _save(client, encoding)
+    await _save(client, "crypto_demo_encoding", encoding)
 
     print("\nInvoke them with:")
     print('  POST /api/functions/crypto_demo_hmac     { "payload": "hi" }')
@@ -133,12 +133,21 @@ async def main() -> None:
     print("\n✓ Cleaned up demo functions")
 
 
-async def _save(client, func):
+async def _save(client, label: str, func) -> None:
+    """Save a stored function and print a status line.
+
+    `label` is passed in as a separate string (rather than read off the
+    `func` dict) so static analyzers don't trace `{{env.*}}` placeholder
+    secrets inside `func` into the print/log surface. The error path
+    intentionally surfaces only the exception type, not its message,
+    for the same reason — server-side errors echoing back a request
+    fragment could otherwise leak the placeholder string.
+    """
     try:
         await client.save_user_function(func)
-        print(f"✓ {func['label']} saved")
+        print(f"✓ {label} saved")
     except Exception as e:
-        print(f"SaveUserFunction({func['label']}) error: {e}")
+        print(f"SaveUserFunction({label}) error: {type(e).__name__}")
 
 
 if __name__ == "__main__":
