@@ -2728,8 +2728,8 @@ fn test_bcrypt_hash_stage_omits_cost_when_none() {
     };
     let json = serde_json::to_value(&stage).expect("serialize");
     assert!(
-        json.get("cost").is_none() || json["cost"].is_null(),
-        "cost must be omitted when None, got {:?}",
+        json.get("cost").is_none(),
+        "cost must be absent (not even serialized as null) when None, got {:?}",
         json.get("cost")
     );
 }
@@ -2774,8 +2774,8 @@ fn test_random_token_stage_omits_encoding_when_none() {
     };
     let json = serde_json::to_value(&stage).expect("serialize");
     assert!(
-        json.get("encoding").is_none() || json["encoding"].is_null(),
-        "encoding must be omitted when None",
+        json.get("encoding").is_none(),
+        "encoding must be absent (not even serialized as null) when None",
     );
 }
 
@@ -2853,13 +2853,16 @@ fn test_jwt_sign_stage_omits_optional_fields_when_none() {
         output_field: "t".to_string(),
     };
     let json = serde_json::to_value(&stage).expect("serialize");
+    // Strict absence — `#[serde(skip_serializing_if = "Option::is_none")]`
+    // means a `None` field should not appear in the JSON at all. An
+    // explicit `null` would be a regression.
     assert!(
-        json.get("algorithm").is_none() || json["algorithm"].is_null(),
-        "algorithm must be omitted when None"
+        json.get("algorithm").is_none(),
+        "algorithm must be absent when None"
     );
     assert!(
-        json.get("expires_in_secs").is_none() || json["expires_in_secs"].is_null(),
-        "expires_in_secs must be omitted when None"
+        json.get("expires_in_secs").is_none(),
+        "expires_in_secs must be absent when None"
     );
 }
 
@@ -2964,10 +2967,12 @@ fn test_email_send_stage_omits_optional_fields_when_none() {
         output_field: None,
     };
     let json = serde_json::to_value(&stage).expect("serialize");
+    // Strict absence — these fields use `#[serde(skip_serializing_if =
+    // "Option::is_none")]`, so an explicit `null` would be a regression.
     for k in &["reply_to", "provider", "html", "output_field"] {
         assert!(
-            json.get(*k).is_none() || json[*k].is_null(),
-            "{k} must be omitted when None"
+            json.get(*k).is_none(),
+            "{k} must be absent (not even serialized as null) when None"
         );
     }
 }
