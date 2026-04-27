@@ -916,7 +916,7 @@ impl WebSocketClient {
 
         match response {
             WebSocketResponse::Success { payload, .. } => Ok(payload.data),
-            WebSocketResponse::Error { code, message, .. } => Err(Error::api(code.into(), message)),
+            WebSocketResponse::Error { code, message, .. } => Err(Error::api(code, message)),
             _ => Err(Error::WebSocket("Unexpected response type".to_string())),
         }
     }

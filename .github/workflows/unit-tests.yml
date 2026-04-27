@@ -75,6 +75,11 @@ jobs:
         with:
           python-version: '3.11'
 
+      # Toolchain pinned to match rust-toolchain.toml so cargo doesn't try
+      # to re-resolve from the toml mid-build (which would re-trigger the
+      # rustfmt-preview component install conflict). The duplication with
+      # rust-toolchain.toml is intentional here — see RUSTUP_TOOLCHAIN
+      # comment on the maturin step below.
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -89,11 +94,21 @@ jobs:
           pip install maturin pytest pytest-asyncio
 
       - name: Build and install Python client
+        # `RUSTUP_TOOLCHAIN` short-circuits cargo's rust-toolchain.toml
+        # lookup. Without it, maturin's nested cargo invocation triggers
+        # `rustup component add rustfmt-preview`, which conflicts with the
+        # GitHub runner image's pre-installed `cargo-fmt`:
+        #   error: failed to install component: 'rustfmt-preview',
+        #          detected conflict: 'bin/cargo-fmt'
+        env:
+          RUSTUP_TOOLCHAIN: 1.95.0
         run: |
           source .venv/bin/activate
           maturin develop
 
       - name: Run Python tests
+        env:
+          RUSTUP_TOOLCHAIN: 1.95.0
         run: |
           source .venv/bin/activate
           python -m pytest tests/ -v

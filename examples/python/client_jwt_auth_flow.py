@@ -53,7 +53,10 @@ async def main() -> None:
         await client.save_user_function(register)
         print("✓ py_users_register saved")
     except Exception as e:
-        print(f"SaveUserFunction error: {e}")
+        # Surface only the exception type — server errors echoing the
+        # request fragment back could otherwise expose `{{env.JWT_SECRET}}`
+        # placeholder strings to CI logs / static analyzers.
+        print(f"SaveUserFunction error: {type(e).__name__}")
 
     # 2. Login: find user, verify bcrypt, sign JWT on success.
     login = {
@@ -95,7 +98,10 @@ async def main() -> None:
         await client.save_user_function(login)
         print("✓ py_users_login saved")
     except Exception as e:
-        print(f"SaveUserFunction error: {e}")
+        # Surface only the exception type — server errors echoing the
+        # request fragment back could otherwise expose `{{env.JWT_SECRET}}`
+        # placeholder strings to CI logs / static analyzers.
+        print(f"SaveUserFunction error: {type(e).__name__}")
 
     # 3. Verify a JWT — fail-closed when claims is null.
     verify = {
@@ -124,7 +130,10 @@ async def main() -> None:
         await client.save_user_function(verify)
         print("✓ py_users_verify_token saved")
     except Exception as e:
-        print(f"SaveUserFunction error: {e}")
+        # Surface only the exception type — server errors echoing the
+        # request fragment back could otherwise expose `{{env.JWT_SECRET}}`
+        # placeholder strings to CI logs / static analyzers.
+        print(f"SaveUserFunction error: {type(e).__name__}")
 
     print("\n=== Auth flow defined as pure stored functions ===")
     print("Call them like:")
