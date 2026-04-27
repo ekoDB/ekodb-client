@@ -1877,27 +1877,41 @@ impl HttpClient {
                             if let Some(evt_name) = event_data.get("event").and_then(|v| v.as_str())
                                 && evt_name == "tool_call"
                             {
-                                let tool_name = event_data
-                                    .get("tool")
-                                    .and_then(|v| v.as_str())
-                                    .unwrap_or("")
-                                    .to_string();
-                                let call_id = event_data
-                                    .get("call_id")
-                                    .and_then(|v| v.as_str())
-                                    .unwrap_or("")
-                                    .to_string();
+                                // Both `tool` and `call_id` must be present
+                                // and non-empty — emitting a ToolCall with
+                                // empty identifiers makes downstream handling
+                                // ambiguous (e.g. submit_chat_tool_result
+                                // would land under the wrong call_id). Skip
+                                // malformed frames rather than synthesizing
+                                // an empty-string ID.
+                                let tool_name =
+                                    match event_data.get("tool").and_then(|v| v.as_str()) {
+                                        Some(s) if !s.is_empty() => s.to_string(),
+                                        _ => continue,
+                                    };
+                                let call_id =
+                                    match event_data.get("call_id").and_then(|v| v.as_str()) {
+                                        Some(s) if !s.is_empty() => s.to_string(),
+                                        _ => continue,
+                                    };
                                 let arguments = event_data
                                     .get("args")
                                     .cloned()
                                     .unwrap_or(serde_json::Value::Null);
-                                let _ = tx
+                                // Match the chunk branch's behavior: a
+                                // failed send means the receiver dropped, so
+                                // exit the read loop instead of spinning.
+                                if tx
                                     .send(ChatStreamEvent::ToolCall {
                                         call_id,
                                         tool_name,
                                         arguments,
                                     })
-                                    .await;
+                                    .await
+                                    .is_err()
+                                {
+                                    return;
+                                }
                                 continue;
                             }
                             // Error event

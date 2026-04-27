@@ -3,7 +3,7 @@
 //! This module provides Python bindings for the ekoDB Rust client library using PyO3.
 
 use ekodb_client::{
-    ChatMessageRequest, ChatResponse, Client as RustClient, CollectionConfig,
+    Attachment, ChatMessageRequest, ChatResponse, Client as RustClient, CollectionConfig,
     CreateChatSessionRequest, DistinctValuesQuery as RustDistinctValuesQuery, FieldType,
     RawCompletionRequest as RustRawCompletionRequest,
     GetMessagesQuery, GetMessagesResponse, ListSessionsQuery, ListSessionsResponse,
@@ -1802,8 +1802,14 @@ impl Client {
         })
     }
 
-    /// Send a message in an existing chat session
-    #[pyo3(signature = (chat_id, message, bypass_ripple=None, force_summarize=None, max_iterations=None))]
+    /// Send a message in an existing chat session.
+    ///
+    /// `attachments` (optional) is a list of dicts of the shape
+    /// `{"mime_type": "image/png", "data": "<base64>"}`, mirroring the
+    /// `Attachment` struct on the Rust side. Under ~20 MB stays inline;
+    /// larger files are routed through the provider's File API on the
+    /// server side.
+    #[pyo3(signature = (chat_id, message, bypass_ripple=None, force_summarize=None, max_iterations=None, attachments=None))]
     fn chat_message<'py>(
         &self,
         py: Python<'py>,
@@ -1812,8 +1818,10 @@ impl Client {
         bypass_ripple: Option<bool>,
         force_summarize: Option<bool>,
         max_iterations: Option<u32>,
+        attachments: Option<Bound<'py, PyAny>>,
     ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
+        let attachments = py_to_attachments(attachments.as_ref())?;
 
         future_into_py(py, async move {
             let request = ChatMessageRequest {
@@ -1826,7 +1834,7 @@ impl Client {
                 client_tools: None,
                 confirm_tools: None,
                 exclude_tools: None,
-                attachments: None,
+                attachments,
             };
 
             let result = client
@@ -1840,7 +1848,9 @@ impl Client {
 
     /// Stream a chat message via SSE (Server-Sent Events).
     /// Returns a ChatStreamReceiver for receiving events incrementally.
-    #[pyo3(signature = (chat_id, message, bypass_ripple=None, force_summarize=None, max_iterations=None))]
+    ///
+    /// `attachments` accepts the same shape as `chat_message`.
+    #[pyo3(signature = (chat_id, message, bypass_ripple=None, force_summarize=None, max_iterations=None, attachments=None))]
     fn chat_message_stream<'py>(
         &self,
         py: Python<'py>,
@@ -1849,8 +1859,10 @@ impl Client {
         bypass_ripple: Option<bool>,
         force_summarize: Option<bool>,
         max_iterations: Option<u32>,
+        attachments: Option<Bound<'py, PyAny>>,
     ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
+        let attachments = py_to_attachments(attachments.as_ref())?;
 
         future_into_py::<_, Py<PyAny>>(py, async move {
             let request = ChatMessageRequest {
@@ -1863,7 +1875,7 @@ impl Client {
                 client_tools: None,
                 confirm_tools: None,
                 exclude_tools: None,
-                attachments: None,
+                attachments,
             };
 
             let rx = client
@@ -4261,6 +4273,36 @@ impl WebSocketClient {
             Python::attach(|py| json_to_pydict(py, &data))
         })
     }
+}
+
+/// Convert a Python `Optional[List[Dict[str, str]]]` of `{mime_type, data}`
+/// into the Rust `Option<Vec<Attachment>>` shape that
+/// `ChatMessageRequest.attachments` expects. Each dict must carry the
+/// two string fields; anything else is a TypeError.
+fn py_to_attachments(value: Option<&Bound<'_, PyAny>>) -> PyResult<Option<Vec<Attachment>>> {
+    let Some(obj) = value else { return Ok(None); };
+    if obj.is_none() {
+        return Ok(None);
+    }
+    let list = obj
+        .cast::<PyList>()
+        .map_err(|_| PyValueError::new_err("attachments must be a list of dicts"))?;
+    let mut out: Vec<Attachment> = Vec::with_capacity(list.len());
+    for item in list.iter() {
+        let dict = item
+            .cast::<PyDict>()
+            .map_err(|_| PyValueError::new_err("each attachment must be a dict"))?;
+        let mime_type: String = dict
+            .get_item("mime_type")?
+            .ok_or_else(|| PyValueError::new_err("attachment missing 'mime_type'"))?
+            .extract()?;
+        let data: String = dict
+            .get_item("data")?
+            .ok_or_else(|| PyValueError::new_err("attachment missing 'data'"))?
+            .extract()?;
+        out.push(Attachment { mime_type, data });
+    }
+    Ok(Some(out))
 }
 
 /// Convert ChatResponse to Python dict
