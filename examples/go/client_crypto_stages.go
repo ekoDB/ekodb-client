@@ -1,5 +1,5 @@
 // Crypto stages — comprehensive demo of every primitive added in
-// ekoDB 0.43.0 (HMAC, AES-GCM, UUID, TOTP, Base64, Hex, Slugify).
+// ekoDB 0.42.0 (HMAC, AES-GCM, UUID, TOTP, Base64, Hex, Slugify).
 //
 //	crypto_demo_hmac      HmacSign + HmacVerify (round trip)
 //	crypto_demo_aes       AesEncrypt + AesDecrypt (round trip)
@@ -10,7 +10,7 @@
 // Operator-owned secrets flow through {{env.NAME}} so they never land
 // in the function definition stored on disk.
 //
-// Requires ekoDB >= 0.43.0.
+// Requires ekoDB >= 0.42.0.
 
 package main
 

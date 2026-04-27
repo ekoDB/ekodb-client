@@ -1,7 +1,7 @@
 //! Crypto stages — comprehensive demo of every primitive.
 //!
 //! Builds and saves five small stored functions covering the full
-//! crypto-stage surface added in ekoDB 0.43.0:
+//! crypto-stage surface added in ekoDB 0.42.0:
 //!
 //!   - `crypto_demo_hmac`     HmacSign + HmacVerify (round trip)
 //!   - `crypto_demo_aes`      AesEncrypt + AesDecrypt (round trip)
@@ -15,7 +15,7 @@
 //! (the value being signed, the data being encrypted, etc.) flow
 //! through ordinary `{{param}}` placeholders.
 //!
-//! Requires ekoDB >= 0.43.0.
+//! Requires ekoDB >= 0.42.0.
 
 use ekodb_client::{Client, Function, ParameterDefinition, UserFunction};
 use std::env;

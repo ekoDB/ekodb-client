@@ -84,13 +84,13 @@ pub struct UserFunction {
 
     /// REST method this function answers (`"GET"`, `"POST"`, etc.).
     /// Pair with `http_path` to expose the function under the
-    /// path-routed dispatcher. Requires ekoDB >= 0.43.0.
+    /// path-routed dispatcher. Requires ekoDB >= 0.42.0.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub http_method: Option<String>,
 
     /// REST path pattern (e.g. `/users/:id`). Path segments
     /// prefixed with `:` are extracted into the function's params
-    /// map. Requires ekoDB >= 0.43.0.
+    /// map. Requires ekoDB >= 0.42.0.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub http_path: Option<String>,
 }
@@ -117,7 +117,7 @@ impl UserFunction {
     /// Expose this function under the REST path-router. `method` is
     /// e.g. `"GET"` / `"POST"`; `path` is a pattern like
     /// `"/users/:id"` (path segments starting with `:` become params
-    /// at call time). Requires ekoDB >= 0.43.0.
+    /// at call time). Requires ekoDB >= 0.42.0.
     pub fn with_http_route(mut self, method: impl Into<String>, path: impl Into<String>) -> Self {
         self.http_method = Some(method.into());
         self.http_path = Some(path.into());
@@ -549,7 +549,7 @@ pub enum Function {
     /// auto-stamped when `expires_in_secs` is set. Pair with
     /// `BcryptVerify` to issue a session token after login. Use
     /// `"{{env.JWT_SECRET}}"` for `secret` so the LLM never sees
-    /// the operator-owned signing key. Requires ekoDB >= 0.43.0.
+    /// the operator-owned signing key. Requires ekoDB >= 0.42.0.
     JwtSign {
         /// JWT payload claims (raw JSON values).
         claims: HashMap<String, serde_json::Value>,
@@ -570,7 +570,7 @@ pub enum Function {
     /// `output_field`. On failure (invalid signature, malformed,
     /// expired, missing token), writes `null`. Branch with
     /// `If { FieldEquals { field: output_field, value: null } }` to
-    /// reject. Requires ekoDB >= 0.43.0.
+    /// reject. Requires ekoDB >= 0.42.0.
     JwtVerify {
         /// Field on the working record holding the JWT string.
         token_field: String,
@@ -589,7 +589,7 @@ pub enum Function {
     /// sees the operator-owned secret. Result envelope
     /// `{provider_status, provider_message, provider}` is written
     /// to `output_field` (defaults to `"email_send"`).
-    /// Requires ekoDB >= 0.43.0.
+    /// Requires ekoDB >= 0.42.0.
     EmailSend {
         /// Recipient email.
         to: String,
@@ -621,7 +621,7 @@ pub enum Function {
     // =========================================================================
     /// HMAC-SHA256/384/512 message authentication. Pair with
     /// `HmacVerify` for inbound webhook signing or pre-signed URL
-    /// generation. Requires ekoDB >= 0.43.0.
+    /// generation. Requires ekoDB >= 0.42.0.
     HmacSign {
         input: String,
         secret: String,
@@ -716,7 +716,7 @@ pub enum Function {
     /// Idempotency-key claim. Atomically claims the key (KV SETNX
     /// with TTL); on first call writes `{claimed: true, key}`, on
     /// replay writes `{claimed: false, key, response}`.
-    /// Requires ekoDB >= 0.43.0.
+    /// Requires ekoDB >= 0.42.0.
     IdempotencyClaim {
         key: String,
         ttl_secs: u64,

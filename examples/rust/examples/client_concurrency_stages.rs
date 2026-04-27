@@ -17,7 +17,7 @@
 //!     when the token matches (prevents foreign release after a lease
 //!     expired).
 //!
-//! Requires ekoDB >= 0.43.0.
+//! Requires ekoDB >= 0.42.0.
 
 use ekodb_client::{Client, Function, FunctionCondition, ParameterDefinition, UserFunction};
 use serde_json::json;

@@ -1,6 +1,6 @@
 /**
  * Crypto stages — comprehensive demo of every primitive added in
- * ekoDB 0.43.0 (HMAC, AES-GCM, UUID, TOTP, Base64, Hex, Slugify).
+ * ekoDB 0.42.0 (HMAC, AES-GCM, UUID, TOTP, Base64, Hex, Slugify).
  *
  * Each stored function exercises one primitive (or a sign/verify
  * pair) so callers can copy whichever pattern they need.
@@ -14,7 +14,7 @@
  * Operator-owned secrets flow through `{{env.NAME}}` so they never
  * land in the function definition stored on disk.
  *
- * Requires ekoDB >= 0.43.0.
+ * Requires ekoDB >= 0.42.0.
  */
 
 import { EkoDBClient, Stage, type UserFunction } from "@ekodb/ekodb-client";

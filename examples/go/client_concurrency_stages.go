@@ -1,7 +1,7 @@
 // Concurrency stages — IdempotencyClaim, RateLimit, LockAcquire/Release.
 //
 // These three primitives wrap ekoDB's atomic KV layer with the right
-// semantics for common server-side patterns. Requires ekoDB >= 0.43.0.
+// semantics for common server-side patterns. Requires ekoDB >= 0.42.0.
 
 package main
 

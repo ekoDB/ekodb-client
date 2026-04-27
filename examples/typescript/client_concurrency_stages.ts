@@ -8,7 +8,7 @@
  *   - RateLimit         — fixed-window counter; "fail" or "skip" mode.
  *   - LockAcquire/Release — token-fenced distributed lock.
  *
- * Requires ekoDB >= 0.43.0.
+ * Requires ekoDB >= 0.42.0.
  */
 
 import { EkoDBClient, Stage, type UserFunction } from "@ekodb/ekodb-client";

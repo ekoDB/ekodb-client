@@ -14,7 +14,7 @@
 //! enter the LLM context window or the function definition stored on
 //! disk.
 //!
-//! Requires ekoDB >= 0.43.0.
+//! Requires ekoDB >= 0.42.0.
 
 use ekodb_client::{Client, Function, FunctionCondition, ParameterDefinition, UserFunction};
 use serde_json::json;
