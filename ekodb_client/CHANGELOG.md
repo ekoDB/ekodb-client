@@ -8,6 +8,64 @@ and this project adheres to
 
 ## [0.17.0] - 2026-04-12
 
+### Added (2026-04-26 — crypto + concurrency stage variants)
+
+- **11 new crypto stage variants** across Rust, TypeScript, Python, and Kotlin
+  clients: `HmacSign`, `HmacVerify`, `AesEncrypt`, `AesDecrypt`, `UuidGenerate`,
+  `TotpGenerate`, `TotpVerify`, `Base64Encode`, `Base64Decode`, `HexEncode`,
+  `HexDecode`, `Slugify`. Each gained a builder helper:
+  - **Rust**: `Function::HmacSign { ... }` etc. enum variants.
+  - **TypeScript**: `Stage.hmacSign(...)`, `Stage.aesEncrypt(...)`,
+    `Stage.uuidGenerate(...)`, `Stage.totpGenerate(...)`,
+    `Stage.base64Encode(...)`, `Stage.hexEncode(...)`, `Stage.slugify(...)`,
+    plus the matching verify/decode/decrypt builders.
+  - **Python**: `Stage.hmac_sign(...)`, `Stage.aes_encrypt(...)`,
+    `Stage.uuid_generate(...)`, `Stage.totp_generate(...)`,
+    `Stage.base64_encode(...)`, `Stage.hex_encode(...)`, `Stage.slugify(...)`,
+    etc.
+  - **Kotlin**: `FunctionStageConfig.HmacSign` etc. sealed subclasses with
+    `@SerialName`-tagged kotlinx.serialization encoding.
+- **4 new concurrency stage variants** for idempotency, rate limiting, and
+  distributed locks: `IdempotencyClaim`, `RateLimit`, `LockAcquire`,
+  `LockRelease`. Builders mirror the crypto naming pattern across all four
+  clients.
+- **Tests** — 4 new test functions per client (~30 assertions total per client)
+  cover happy-path serialization, optional-field omission, and JSON round-trip
+  equivalence.
+
+**Requires ekoDB >= 0.42.0** for any of these stages to execute on the server.
+Older servers will reject the function definition with "unknown variant" at
+insertion time.
+
+### Added (2026-04-26 — JWT + EmailSend + path-routed function fields)
+
+- **`Function::JwtSign` / `Function::JwtVerify` variants** — bindings for
+  ekoDB's HMAC JWT stages (HS256 / HS384 / HS512). `JwtSign` takes a claims
+  object, secret, optional `expires_in_secs` (auto-stamps `iat` + `exp`), and
+  writes the token to `output_field`. `JwtVerify` writes either decoded claims
+  or `null` to `output_field` so callers can branch with `If { FieldEquals }`.
+- **`Function::EmailSend` variant** — binding for the SendGrid v3 `mail/send`
+  integration stage. Carries `to`, `subject`, `body`, `from`, optional
+  `reply_to`, `api_key` (use `{{env.SENDGRID_API_KEY}}`), optional `provider`
+  (defaults to `"sendgrid"`), `html` flag, and `output_field`.
+- **`http_method` + `http_path` on `UserFunction`** plus a
+  `with_http_route(method, path)` builder. Lets a stored function answer to a
+  REST-style URL (`GET /api/route/users/:id`) via the ekoDB server's path-routed
+  dispatcher. Both fields are optional and serialize with
+  `skip_serializing_if = "Option::is_none"`, preserving wire compatibility for
+  existing definitions.
+- **Tests** — 4 JWT round-trip / reject cases and 3 EmailSend shape cases.
+
+### Added (2026-04-25)
+
+- **`Attachment` struct + `attachments: Option<Vec<Attachment>>` on
+  `ChatMessageRequest`** — pairs with ekoDB's Anthropic / OpenAI / Gemini File
+  API support. Pure addition; existing callers unaffected (default `None`).
+- **`ChatStreamEvent::ToolCall` SSE variant** — recognized when the server emits
+  `event: tool_call` mid-stream (set by ekoDB's `TOOL_PROGRESS_TX` task-local).
+  Lets streaming consumers display in-flight tool calls before the assistant
+  token stream resumes.
+
 ### Added
 
 - **Five new function stage variants across Rust, TypeScript, Python, and Kotlin
