@@ -6,6 +6,46 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.18.1] - 2026-04-29
+
+### Added
+
+- **No-op semantics**: cancelling a `chat_id` with no in-flight stream is safe
+  and does not error.
+- **`WebSocketClient::cancel_chat()` auto-reconnects via `ensure_connected()`**
+  so callers don't have to keep the original streaming WS handle alive just to
+  send a cancel — matches the connection contract every other public WS-RPC
+  method on `WebSocketClient` already follows.
+- **Wire-format tests for `WebSocketRequest::CancelChat`** —
+  `cancel_chat_request_serializes_with_expected_shape` pins the
+  `type: "CancelChat"` tag and `payload.chat_id` field name (both load-bearing
+  on the server), and `cancel_chat_payload_deserializes_from_wire` exercises the
+  inverse path. Catches accidental rename / shape drift across version
+  boundaries.
+
+### Dependencies
+
+- Lockfile + version-string sweep across `Cargo.lock`,
+  `ekodb-client-py/Cargo.lock`, `ekodb-client-ts/package-lock.json`,
+  `ekodb-client-kt/build.gradle.kts`, and the `examples/` lockfiles to pin to
+  0.18.1.
+
+## [0.18.0] - 2026-04-29
+
+### Added — Server-side chat cancel
+
+- **`WebSocketClient::cancel_chat(chat_id)`** new method that sends
+  `WebSocketRequest::CancelChat { CancelChatPayload }` over the WS. The server
+  fires the matching `CancellationToken` and the in-flight LLM call inside
+  `chat_message_streaming` aborts via `tokio::select!` — the assistant message
+  is NOT persisted. Pre-fix, dropping the receiver only halted client-side chunk
+  delivery; the LLM kept generating server-side and the "cancelled" turn still
+  landed in `/history`.
+- New `CancelChatPayload { chat_id: String }` and `WebSocketRequest::CancelChat`
+  variant. Server matches a process-wide token registry keyed by `chat_id`, so
+  the cancel works regardless of which WS connection sends it (claw's typical
+  pattern uses a fresh `connect_ws()` for cancel).
+
 ## [0.17.0] - 2026-04-12
 
 ### Added (2026-04-26 — crypto + concurrency stage variants)
