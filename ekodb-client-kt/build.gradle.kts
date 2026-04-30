@@ -4,6 +4,7 @@ plugins {
     `maven-publish`
     signing
     id("io.github.gradle-nexus.publish-plugin") version "2.0.0"
+    id("com.github.ben-manes.versions") version "0.54.0"
 }
 
 group = "io.ekodb"

@@ -47,6 +47,11 @@ pub enum WebSocketRequest {
     RegisterClientTools { payload: RegisterClientToolsPayload },
     /// Return result of a client-side tool execution
     ClientToolResult { payload: ClientToolResultPayload },
+    /// Cancel an in-flight chat stream. Server fires the matching
+    /// `CancellationToken`, aborts the LLM HTTP call, and skips
+    /// persisting the assistant message. No-op if no stream is
+    /// currently in flight for the given chat_id.
+    CancelChat { payload: CancelChatPayload },
     /// Stateless raw LLM completion (no session, no history, no RAG).
     /// Mirrors POST /api/chat/complete. Response: Success { data: { "content": "..." } }.
     RawComplete {
@@ -130,6 +135,14 @@ pub struct ClientToolResultPayload {
     pub result: Option<Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
+}
+
+/// Payload for the `CancelChat` WS request. Mirrors the server-side
+/// `WebSocketMessage::CancelChat` shape so a single chat_id field
+/// is enough to address the in-flight stream.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CancelChatPayload {
+    pub chat_id: String,
 }
 
 /// WebSocket response types from the server
@@ -802,6 +815,22 @@ impl WebSocketClient {
                 "Unexpected response to register_client_tools".to_string(),
             )),
         }
+    }
+
+    /// Cancel an in-flight chat stream by chat_id. Fires the
+    /// server-side cancellation token, which aborts the LLM HTTP
+    /// call AND skips persisting the assistant message. Use this
+    /// instead of just dropping the receiver — pre-fix, dropping
+    /// only halted chunk delivery; the LLM kept generating
+    /// server-side and the assistant turn still landed in storage.
+    /// No-op if the server has no in-flight stream for `chat_id`.
+    pub async fn cancel_chat(&self, chat_id: &str) -> Result<()> {
+        let request = WebSocketRequest::CancelChat {
+            payload: CancelChatPayload {
+                chat_id: chat_id.to_string(),
+            },
+        };
+        self.ws_send(&request).await
     }
 
     /// Send the result of a client-side tool execution back to ekoDB.

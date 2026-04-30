@@ -2,15 +2,14 @@
 
 **Last Updated:** April 28, 2026
 
-**Client version:** 0.18.0 (Rust, Python, TypeScript, Kotlin);
-standalone Go client tracks the same release line.
+**Client version:** 0.18.0 (Rust, Python, TypeScript, Kotlin); standalone Go
+client tracks the same release line.
 
-> Renamed from `MISSING_FEATURES.md` (April 28, 2026) to reflect the
-> current intent: a parity tracker, not a missing-features checklist.
-> Inbound links from `AUDIT_*.md` files are historical snapshots and
-> intentionally left pointing at the old path. The companion
-> `documentation/CLIENT_LIBRARY_GAPS.md` was removed in the same pass
-> (it duplicated this file at a stale revision).
+> Renamed from `MISSING_FEATURES.md` (April 28, 2026) to reflect the current
+> intent: a parity tracker, not a missing-features checklist. Inbound links from
+> `AUDIT_*.md` files are historical snapshots and intentionally left pointing at
+> the old path. The companion `documentation/CLIENT_LIBRARY_GAPS.md` was removed
+> in the same pass (it duplicated this file at a stale revision).
 
 ## Status: Full Parity Maintained Through v0.18.0
 
@@ -30,25 +29,23 @@ TypeScript, Go, Kotlin). This includes:
 - `extractRecordId()` / `ExtractRecordID()` with custom `primary_key_alias`
   support
 - Utility functions, field builders, value extractors
-- Crypto stages: HMAC sign/verify, AES-256-GCM encrypt/decrypt, UUID v4,
-  TOTP generate/verify, Base64/Hex encode/decode, Slugify (v0.18.0)
-- Concurrency stages: IdempotencyClaim (SETNX + TTL), RateLimit
-  (fixed-window via atomic increment), LockAcquire/Release (token-fenced)
+- Crypto stages: HMAC sign/verify, AES-256-GCM encrypt/decrypt, UUID v4, TOTP
+  generate/verify, Base64/Hex encode/decode, Slugify (v0.18.0)
+- Concurrency stages: IdempotencyClaim (SETNX + TTL), RateLimit (fixed-window
+  via atomic increment), LockAcquire/Release (token-fenced)
 
-**Admin-only endpoints intentionally excluded from clients:** query
-index management (`create_query_index`, `list_query_indexes`,
-`delete_query_index`, `explain_query`) and the four search-index
-explain helpers (`explain_text_search`, `explain_vector_search`,
-`explain_hybrid_search`). These require `admin_filter` auth and live
-on the server-side admin surface. See ekodb_client/CHANGELOG.md
-"Removed" section under v0.16.0 for the rationale.
+**Admin-only endpoints intentionally excluded from clients:** query index
+management (`create_query_index`, `list_query_indexes`, `delete_query_index`,
+`explain_query`) and the four search-index explain helpers
+(`explain_text_search`, `explain_vector_search`, `explain_hybrid_search`). These
+require `admin_filter` auth and live on the server-side admin surface. See
+ekodb_client/CHANGELOG.md "Removed" section under v0.16.0 for the rationale.
 
-**Atomic KV primitives intentionally not exposed as direct client
-methods:** `kv_increment` and `kv_set_if_absent` exist on the server
-but are reachable only through stored-function concurrency stages
-(`IdempotencyClaim`, `RateLimit`, `LockAcquire`). The stage path
-bundles TTL, fence-token, and idempotent-retry semantics that direct
-client access would lose. Revisit if a customer asks.
+**Atomic KV primitives intentionally not exposed as direct client methods:**
+`kv_increment` and `kv_set_if_absent` exist on the server but are reachable only
+through stored-function concurrency stages (`IdempotencyClaim`, `RateLimit`,
+`LockAcquire`). The stage path bundles TTL, fence-token, and idempotent-retry
+semantics that direct client access would lose. Revisit if a customer asks.
 
 The sections below track the implementation history.
 
