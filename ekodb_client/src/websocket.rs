@@ -823,8 +823,15 @@ impl WebSocketClient {
     /// instead of just dropping the receiver — pre-fix, dropping
     /// only halted chunk delivery; the LLM kept generating
     /// server-side and the assistant turn still landed in storage.
-    /// No-op if the server has no in-flight stream for `chat_id`.
+    ///
+    /// Connection: requires an active WS. If the client isn't
+    /// connected, this auto-reconnects via `ensure_connected()`
+    /// (matching every other WS-RPC method on this client).
+    /// Once delivered to the server, the cancel itself is a
+    /// no-op when no in-flight stream matches `chat_id` —
+    /// callers can fire it speculatively without checking.
     pub async fn cancel_chat(&self, chat_id: &str) -> Result<()> {
+        self.ensure_connected().await?;
         let request = WebSocketRequest::CancelChat {
             payload: CancelChatPayload {
                 chat_id: chat_id.to_string(),
@@ -1253,6 +1260,47 @@ mod tests {
                 assert_eq!(context_window, Some(128000));
             }
             _ => panic!("expected End variant"),
+        }
+    }
+
+    #[test]
+    fn cancel_chat_request_serializes_with_expected_shape() {
+        // Wire-format guard for the server-side cancel path.
+        // The ekoDB server matches on the literal `type` tag
+        // `"CancelChat"` and the nested `payload.chat_id` field —
+        // any rename here silently breaks cancellation across the
+        // version boundary, so pin the JSON shape in a test rather
+        // than relying on serde defaults staying stable.
+        let req = WebSocketRequest::CancelChat {
+            payload: CancelChatPayload {
+                chat_id: "chat-xyz".into(),
+            },
+        };
+        let v = serde_json::to_value(&req).expect("serialize");
+        assert_eq!(v["type"], "CancelChat", "request tag must be CancelChat");
+        assert_eq!(
+            v["payload"]["chat_id"], "chat-xyz",
+            "payload.chat_id must round-trip"
+        );
+        // Payload should carry exactly chat_id and nothing else
+        // — adding fields here would force a wire-compat shim on
+        // older servers, so guard it.
+        let payload_obj = v["payload"].as_object().expect("payload must be an object");
+        assert_eq!(payload_obj.len(), 1, "payload should have only chat_id");
+    }
+
+    #[test]
+    fn cancel_chat_payload_deserializes_from_wire() {
+        // Inverse of the serialization test: a server- or
+        // peer-emitted CancelChat must deserialize back into our
+        // typed enum without a `serde(other)` fallback.
+        let json_str = r#"{"type":"CancelChat","payload":{"chat_id":"abc"}}"#;
+        let req: WebSocketRequest = serde_json::from_str(json_str).expect("deserialize");
+        match req {
+            WebSocketRequest::CancelChat { payload } => {
+                assert_eq!(payload.chat_id, "abc");
+            }
+            other => panic!("expected CancelChat, got {other:?}"),
         }
     }
 
