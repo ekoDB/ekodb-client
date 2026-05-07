@@ -184,6 +184,15 @@ pub struct CreateChatSessionRequest {
     pub temperature: Option<f32>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tool_config: Option<ToolConfig>,
+    /// Trusted-upstream "on behalf of" user identity (e.g. claw's
+    /// Auth0 `sub`). Set this from your own validated identity
+    /// context before forwarding the request to ekoDB; ekoDB stores
+    /// it on the session and uses it to enforce the cross-tenant
+    /// `call_agent` owner-scope guard. Leave `None` for direct
+    /// api-key callers without an upstream user identity — the guard
+    /// treats either-side empty as "allow" for back-compat.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub user_id: Option<String>,
 }
 
 impl CreateChatSessionRequest {
@@ -202,7 +211,16 @@ impl CreateChatSessionRequest {
             max_tokens: None,
             temperature: None,
             tool_config: None,
+            user_id: None,
         }
+    }
+
+    /// Stamp the trusted-upstream user identity onto this request. See
+    /// the [`CreateChatSessionRequest::user_id`] field doc-comment for
+    /// the trust contract.
+    pub fn user_id(mut self, user_id: impl Into<String>) -> Self {
+        self.user_id = Some(user_id.into());
+        self
     }
 
     /// Add a collection to search

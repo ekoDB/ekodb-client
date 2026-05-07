@@ -196,6 +196,16 @@ export interface CreateChatSessionRequest {
   max_tokens?: number;
   temperature?: number;
   tool_config?: ToolConfig;
+  /**
+   * Trusted-upstream "on behalf of" user identity (e.g. an Auth0
+   * `sub`). Set this from your own validated identity context before
+   * forwarding the request to ekoDB; ekoDB stores it on the session
+   * and uses it to enforce the cross-tenant `call_agent` owner-scope
+   * guard. Leave undefined for direct api-key callers without an
+   * upstream user identity — the guard treats either-side empty as
+   * "allow" for back-compat.
+   */
+  user_id?: string;
 }
 
 export interface ChatMessageRequest {

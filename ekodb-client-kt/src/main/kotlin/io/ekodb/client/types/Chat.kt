@@ -145,6 +145,14 @@ data class ChatResponse(
 
 /**
  * Request to create a new chat session.
+ *
+ * `userId` is a trusted-upstream "on behalf of" user identity (e.g.
+ * an Auth0 `sub`). Set it from your own validated identity context
+ * before forwarding the request to ekoDB; ekoDB stores it on the
+ * session and uses it to enforce the cross-tenant `call_agent`
+ * owner-scope guard. Leave `null` for direct api-key callers without
+ * an upstream user identity — the guard treats either-side empty as
+ * "allow" for back-compat.
  */
 @Serializable
 data class CreateChatSessionRequest(
@@ -170,6 +178,8 @@ data class CreateChatSessionRequest(
     val temperature: Float? = null,
     @SerialName("tool_config")
     val toolConfig: ToolConfig? = null,
+    @SerialName("user_id")
+    val userId: String? = null,
 )
 
 /**

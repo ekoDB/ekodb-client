@@ -1767,6 +1767,14 @@ impl Client {
                 max_tokens,
                 temperature,
                 tool_config: None,
+                // The Python wrapper does not currently expose a
+                // trusted-upstream identity. Direct Python callers go
+                // through ekoDB's api_key trust boundary; the
+                // owner-scope guard treats `None` as the legacy
+                // "either-side empty allows" path. Wrappers that
+                // proxy authenticated end-user traffic should set
+                // this from their own JWT context.
+                user_id: None,
             };
 
             let result = client
@@ -2037,6 +2045,13 @@ impl Client {
                 max_tokens: None,
                 temperature: None,
                 tool_config: None,
+                // See `create_chat_session` above for the trust-model
+                // rationale. ekoDB's branch handler will inherit the
+                // parent session's user_id when the caller sends
+                // `None`, which is the right semantic for the Python
+                // wrapper (a branch from an existing chat carries the
+                // parent's owner forward).
+                user_id: None,
             };
 
             let result = client
