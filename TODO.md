@@ -107,3 +107,57 @@ don't have to hand-build the parameter wrappers (especially the
       README — which scopes to set on the API key, what error
       shape to expect on scope failure (`missing_hardware_scope`),
       and the audit-log-everything contract.
+
+### Phase 6: Typed clients + structured errors (Phases 18 & 22 of language backlog)
+
+Pairs with `ekodb/documentation/TODO.md → Function Language
+Completeness (Phases 18-22)` and the full handoff at
+`internal-documentation/FUNCTION_LANGUAGE_BACKLOG.md`. The
+client-library surface needs three coordinated changes as the
+language backlog lands:
+
+- [ ] **Surface `FieldType::Error` as a typed exception/result in
+      each language** (depends on language Phase 18). Rust: a new
+      `EkodbError` enum carrying `{code, message, source_stage,
+      caused_by, details}`. TypeScript: a `StructuredError` class
+      that extends `Error` with the same fields. Python: subclass
+      of `EkodbException`. Go: `StructuredError` struct
+      implementing `error`. Kotlin: sealed class. ALL clients must
+      preserve the `caused_by` chain across the wire — never
+      collapse it into a flat string.
+- [ ] **Generate typed function wrappers from saved
+      function signatures** (depends on language Phase 22 +
+      post-Phase-5 Phase 17 SDK codegen). When a deployment has
+      stored functions with `parameter_types` and `return_type`
+      declared, `ekodb generate --client <lang>` emits typed
+      function-call wrappers: e.g. `client.functions.auth.signup({
+      email: string, password: string }) → Promise<{user_id: string,
+      token: string}>`. Untyped functions (existing or `Any`-typed)
+      fall back to the generic `client.callFunction(label, params)`
+      signature. The codegen runs against `listUserFunctions` at
+      build time.
+- [ ] **Namespace-aware function browser API**
+      (depends on language Phase 22). `client.functions.list({
+      namespace, tag, visibility }) → FunctionMetadata[]` filters
+      the catalog by Phase 22's namespace prefixes. Used by
+      ekodb-app's namespace tree and by the typed wrapper codegen.
+      `FunctionMetadata` carries `{label, namespace, visibility,
+      version, parameter_types, return_type, requires, tags,
+      description}`.
+- [ ] **Higher-order function-call helper** (depends on language
+      Phase 21). `client.callDynamic(function_ref, params)` for the
+      `CallDynamic` server-side dispatch pattern; the client
+      surface mirrors the server's runtime-label dispatch so the
+      LLM-emits-tool-name pattern works without a server round-trip
+      through a wrapping function. Verify type-checking happens
+      server-side regardless — clients are thin in this dimension.
+- [ ] **Trigger management API** (depends on language Phase 21).
+      `client.triggers.register({...})` / `.unregister(id)` /
+      `.list({collection?})`. Mirror the stored-function variants
+      from § 5.21B of the language backlog. Returns typed
+      `TriggerMetadata` records.
+- [ ] **Integration tests covering the new error shape across all
+      five languages**. Hit a deployment with a deliberately-failing
+      function, assert the caught exception/result carries the same
+      `code` / `caused_by` chain in every language. No client
+      collapses structured errors to strings.
