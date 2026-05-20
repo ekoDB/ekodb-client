@@ -160,6 +160,7 @@ make deploy-client-go
 
 # Deploy Kotlin client to Maven Central
 cd ekodb-client-kt && ./gradlew publish
+
 ```
 
 ## License
