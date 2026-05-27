@@ -6,7 +6,36 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.18.2] - 2026-05-26
+
+### Security — Dependabot sweep (ekodb-client#118)
+
+Lockfile bumps across all three workspaces (`Cargo.lock`,
+`ekodb-client-py/Cargo.lock`, `examples/rust/Cargo.lock`) to clear 14 open
+Dependabot alerts (7 HIGH severity). No source changes; transport / TLS stacks
+pull patched versions transitively.
+
+- **openssl 0.10.73 / 0.10.78 → 0.10.80** (with `openssl-sys` 0.9.114 / 0.9.109
+  → 0.9.116). Resolves GHSA-xv59-967r-8726 (heap buffer overflow in AES
+  key-wrap-with-padding, MEDIUM), GHSA-xp3w-r5p5-63rr (undefined behavior in
+  `X509Ref::ocsp_responders` for non-UTF-8 OCSP URLs, HIGH), GHSA-pqf5-4pqq-29f5
+  (`Deriver::derive` / `PkeyCtxRef::derive` buffer overflow on OpenSSL 1.1.1,
+  HIGH), GHSA-xmgf-hq76-4vx2 (out-of-bounds read in PEM password callback, LOW),
+  GHSA-8c75-8mhr-p7r9 (incorrect bounds assertion in AES key wrap, HIGH),
+  GHSA-hppc-g8h3-xhp3 (PSK/cookie trampoline length leaks adjacent memory to
+  peer, HIGH), GHSA-ghm9-cr32-g9qj (`MdCtxRef::digest_final` writes past caller
+  buffer, HIGH).
+- **rustls-webpki 0.103.10 → 0.103.13** in `examples/rust/Cargo.lock`. Resolves
+  GHSA-82j2-j2ch-gfr8 (denial of service via panic on malformed CRL
+  `BIT STRING`, HIGH).
+- **rand 0.8.5 → 0.8.6** and **rand 0.9.2 → 0.9.4** in
+  `examples/rust/Cargo.lock`. Resolves GHSA-cq8v-f236-94qc (unsound behavior
+  with a custom logger using `rand::rng()`, LOW) on both major lines.
+
+All bumps are transitive — pulled via `cargo update -p <pkg>` with no manifest
+edits. `cargo check`, `cargo clippy -p ekodb_client -- -D warnings`, and
+`make test-rust` (222 + 3 + 8 + 145 unit/integration + 28 doctests, all passing)
+verified clean.
 
 ### Tests — un-ignored stale `#[ignore]` on `test_client_builder`
 
