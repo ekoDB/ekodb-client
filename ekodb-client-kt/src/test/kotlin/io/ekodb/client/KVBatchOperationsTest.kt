@@ -14,7 +14,7 @@ import kotlin.test.*
  */
 class KVBatchOperationsTest {
 
-    private val testBaseUrl = "https://test.ekodb.io"
+    private val testBaseUrl = "https://test.ekodb.net"
     private val testApiKey = "test_api_key_123"
 
     private fun createMockEngine(responseBody: String, statusCode: HttpStatusCode = HttpStatusCode.OK): MockEngine {

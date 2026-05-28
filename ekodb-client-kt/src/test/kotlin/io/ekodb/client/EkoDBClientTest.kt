@@ -20,7 +20,7 @@ import kotlin.test.fail
  */
 class EkoDBClientTest {
 
-    private val testBaseUrl = "https://test.ekodb.io"
+    private val testBaseUrl = "https://test.ekodb.net"
     private val testApiKey = "test_api_key_123"
 
     // Helper to create mock engine that returns token first, then the actual response

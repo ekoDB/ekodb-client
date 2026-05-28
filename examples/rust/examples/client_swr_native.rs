@@ -224,7 +224,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with_function(Function::SWR {
             cache_key: "resource:{{resource_id}}".to_string(),
             ttl: json!("{{ttl}}"), // User-provided TTL
-            url: "https://app.ekodb.io/api/health".to_string(),
+            url: "https://api.ekodb.net/api/health".to_string(),
             method: "GET".to_string(),
             headers: None,
             body: None,

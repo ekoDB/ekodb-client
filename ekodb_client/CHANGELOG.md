@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed — Doc/test base URLs aligned to `.ekodb.net` (ekodb-app#232)
+
+Three remaining `.ekodb.io` examples that referenced deployed-database URLs
+(rather than external/marketing surfaces) were updated to `.ekodb.net`, matching
+the convention used everywhere else in the client docs and the ekodb-app
+deployment UI.
+
+- `ekodb-client-kt/src/test/kotlin/io/ekodb/client/KVBatchOperationsTest.kt:17`
+  and `EkoDBClientTest.kt:23` — test fixture `testBaseUrl` is now
+  `https://test.ekodb.net`.
+- `examples/rust/examples/client_swr_native.rs:227` — the SWR fetch example now
+  targets `https://api.ekodb.net/api/health` instead of
+  `https://app.ekodb.io/api/health` (the dashboard URL was used by mistake).
+
 ## [0.18.2] - 2026-05-26
 
 ### Security — Dependabot sweep (ekodb-client#118)
