@@ -1659,6 +1659,33 @@ impl Client {
             .await
     }
 
+    /// Compact a chat session's history on demand.
+    ///
+    /// Folds the older messages into a single summary message and marks the
+    /// originals "forgotten" so they stop being replayed — reclaiming
+    /// context-window budget while keeping a faithful summary in the prompt.
+    ///
+    /// # Arguments
+    ///
+    /// * `chat_id` - The session ID
+    /// * `keep_recent` - How many most-recent messages to keep verbatim.
+    ///   `None` uses the session's `max_context_messages` (or 50). `Some(0)`
+    ///   compacts the entire history.
+    pub async fn compact_chat(
+        &self,
+        chat_id: &str,
+        keep_recent: Option<usize>,
+    ) -> Result<crate::chat::CompactChatResponse> {
+        let token = self.auth.get_token().await?;
+        let request = crate::chat::CompactChatRequest {
+            keep_recent,
+            bypass_ripple: None,
+        };
+        self.http
+            .compact_chat_session(chat_id, request, &token)
+            .await
+    }
+
     /// Generate embeddings for text using AI (via ekoDB Functions)
     ///
     /// Uses ekoDB's AI integration to generate vector embeddings for semantic search.

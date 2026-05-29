@@ -665,6 +665,51 @@ describe("EkoDBClient chat", () => {
 
     await expect(client.deleteChatSession("chat_123")).resolves.not.toThrow();
   });
+
+  it("compacts chat history", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse({
+      folded: 12,
+      kept_recent: 8,
+      summary_chars: 1024,
+      summary_message_id: "msg_summary_001",
+      already_compact: false,
+    });
+
+    const result = await client.compactChat("chat_123", 8);
+
+    expect(result).toHaveProperty("folded", 12);
+    expect(result).toHaveProperty("kept_recent", 8);
+    expect(result).toHaveProperty("summary_message_id", "msg_summary_001");
+    expect(result).toHaveProperty("already_compact", false);
+
+    const [, init] = mockFetch.mock.calls[1];
+    expect(init.method).toBe("POST");
+    expect(JSON.parse(init.body as string)).toEqual({ keep_recent: 8 });
+  });
+
+  it("compacts chat history without keepRecent", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse({
+      folded: 0,
+      kept_recent: 0,
+      summary_chars: 0,
+      summary_message_id: null,
+      already_compact: true,
+    });
+
+    const result = await client.compactChat("chat_123");
+
+    expect(result.already_compact).toBe(true);
+    expect(result.summary_message_id).toBeNull();
+
+    const [, init] = mockFetch.mock.calls[1];
+    expect(JSON.parse(init.body as string)).toEqual({});
+  });
 });
 
 // ============================================================================

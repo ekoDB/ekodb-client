@@ -1,10 +1,10 @@
 //! HTTP client implementation for ekoDB API
 
 use crate::chat::{
-    ChatMessageRequest, ChatResponse, ChatSessionResponse, CreateChatSessionRequest, EmbedRequest,
-    EmbedResponse, GetMessagesQuery, ListSessionsQuery, ListSessionsResponse, MergeSessionsRequest,
-    Models, RawCompletionRequest, RawCompletionResponse, ToggleForgottenRequest,
-    UpdateMessageRequest, UpdateSessionRequest,
+    ChatMessageRequest, ChatResponse, ChatSessionResponse, CompactChatRequest, CompactChatResponse,
+    CreateChatSessionRequest, EmbedRequest, EmbedResponse, GetMessagesQuery, ListSessionsQuery,
+    ListSessionsResponse, MergeSessionsRequest, Models, RawCompletionRequest,
+    RawCompletionResponse, ToggleForgottenRequest, UpdateMessageRequest, UpdateSessionRequest,
 };
 use crate::client::RateLimitInfo;
 use crate::error::{Error, Result};
@@ -2364,6 +2364,34 @@ impl HttpClient {
                 let response = self
                     .client
                     .patch(url.clone())
+                    .header("Authorization", format!("Bearer {}", token))
+                    .header("Accept", "application/json")
+                    .json(&request)
+                    .send()
+                    .await?;
+
+                Self::json_body(response).await
+            })
+            .await
+    }
+
+    /// Compact a chat session's history on demand (POST /api/chat/{id}/compact)
+    pub async fn compact_chat_session(
+        &self,
+        chat_id: &str,
+        request: CompactChatRequest,
+        token: &str,
+    ) -> Result<CompactChatResponse> {
+        let url = self
+            .base_url
+            .join(&format!("/api/chat/{}/compact", chat_id))?;
+
+        // Force JSON for chat operations
+        self.retry_policy
+            .execute(|| async {
+                let response = self
+                    .client
+                    .post(url.clone())
                     .header("Authorization", format!("Bearer {}", token))
                     .header("Accept", "application/json")
                     .json(&request)

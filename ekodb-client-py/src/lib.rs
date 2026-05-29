@@ -2148,6 +2148,49 @@ impl Client {
         })
     }
 
+    /// Compact a chat session's history on demand.
+    ///
+    /// Folds older messages into a single summary message and marks the
+    /// originals "forgotten" so they stop being replayed, reclaiming
+    /// context-window budget while keeping a faithful summary in the prompt.
+    ///
+    /// Args:
+    ///     chat_id: The chat session ID
+    ///     keep_recent: How many most-recent messages to keep verbatim.
+    ///         None uses the session's max_context_messages (or 50).
+    ///         0 compacts the entire history.
+    ///
+    /// Returns:
+    ///     A dict with keys: folded (int), kept_recent (int),
+    ///     summary_chars (int), summary_message_id (str | None),
+    ///     already_compact (bool).
+    #[pyo3(signature = (chat_id, keep_recent=None))]
+    fn compact_chat<'py>(
+        &self,
+        py: Python<'py>,
+        chat_id: String,
+        keep_recent: Option<usize>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            let result = client
+                .compact_chat(&chat_id, keep_recent)
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("Compact chat failed: {}", e)))?;
+
+            Python::attach(|py| {
+                let dict = PyDict::new(py);
+                dict.set_item("folded", result.folded)?;
+                dict.set_item("kept_recent", result.kept_recent)?;
+                dict.set_item("summary_chars", result.summary_chars)?;
+                dict.set_item("summary_message_id", result.summary_message_id)?;
+                dict.set_item("already_compact", result.already_compact)?;
+                Ok(dict.into())
+            })
+        })
+    }
+
     /// Merge multiple chat sessions into one
     #[pyo3(signature = (source_chat_ids, target_chat_id, merge_strategy, bypass_ripple=None))]
     fn merge_chat_sessions<'py>(
