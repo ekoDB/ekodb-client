@@ -305,6 +305,25 @@ export interface ChatModels {
 }
 
 /**
+ * Request to compact a chat session's history on demand.
+ */
+export interface CompactChatRequest {
+  keep_recent?: number;
+  bypass_ripple?: boolean;
+}
+
+/**
+ * Result of an on-demand chat history compaction.
+ */
+export interface CompactChatResponse {
+  folded: number;
+  kept_recent: number;
+  summary_chars: number;
+  summary_message_id: string | null;
+  already_compact: boolean;
+}
+
+/**
  * Request to generate embeddings
  */
 export interface EmbedRequest {
@@ -2037,6 +2056,33 @@ export class EkoDBClient {
       "PATCH",
       `/api/chat/${sessionId}/messages/${messageId}/forgotten`,
       { forgotten },
+      0,
+      true, // Force JSON for chat operations
+    );
+  }
+
+  /**
+   * Compact a chat session's history on demand.
+   *
+   * Folds older messages into a summary while preserving the most recent
+   * messages verbatim, reducing context size for long-running sessions.
+   *
+   * @param chatId - Chat session ID
+   * @param keepRecent - Number of recent messages to preserve verbatim (optional)
+   * @returns Compaction result with counts and the summary message ID
+   */
+  async compactChat(
+    chatId: string,
+    keepRecent?: number,
+  ): Promise<CompactChatResponse> {
+    const body: CompactChatRequest = {};
+    if (keepRecent !== undefined) {
+      body.keep_recent = keepRecent;
+    }
+    return this.makeRequest<CompactChatResponse>(
+      "POST",
+      `/api/chat/${chatId}/compact`,
+      body,
       0,
       true, // Force JSON for chat operations
     );

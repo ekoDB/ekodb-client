@@ -62,11 +62,12 @@ pub use auth::*;
 pub use batch::BatchBuilder;
 pub use chat::{
     Attachment, ChatMessageRequest, ChatRequest, ChatResponse, ChatSession, ChatSessionResponse,
-    ClientToolDef, CollectionConfig, ContextSnippet, CreateChatSessionRequest, EmbedRequest,
-    EmbedResponse, FieldSearchOptions, GetMessagesQuery, GetMessagesResponse, ListSessionsQuery,
-    ListSessionsResponse, MergeSessionsRequest, MergeStrategy, Models, RawCompletionRequest,
-    RawCompletionResponse, TextSearchOptions as ChatTextSearchOptions, ToggleForgottenRequest,
-    TokenUsage, ToolChoice, ToolConfig, UpdateMessageRequest, UpdateSessionRequest,
+    ClientToolDef, CollectionConfig, CompactChatRequest, CompactChatResponse, ContextSnippet,
+    CreateChatSessionRequest, EmbedRequest, EmbedResponse, FieldSearchOptions, GetMessagesQuery,
+    GetMessagesResponse, ListSessionsQuery, ListSessionsResponse, MergeSessionsRequest,
+    MergeStrategy, Models, RawCompletionRequest, RawCompletionResponse,
+    TextSearchOptions as ChatTextSearchOptions, ToggleForgottenRequest, TokenUsage, ToolChoice,
+    ToolConfig, UpdateMessageRequest, UpdateSessionRequest,
 };
 pub use client::{Client, ClientBuilder, RateLimitInfo};
 pub use error::{Error, Result};

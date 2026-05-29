@@ -39,6 +39,11 @@ class TestChatModels:
         assert hasattr(client, "get_chat_message")
         assert callable(client.get_chat_message)
 
+    def test_client_has_compact_chat_method(self, client):
+        """Verify compact_chat method exists"""
+        assert hasattr(client, "compact_chat")
+        assert callable(client.compact_chat)
+
 
 class TestUserFunctions:
     """Test user function related methods"""

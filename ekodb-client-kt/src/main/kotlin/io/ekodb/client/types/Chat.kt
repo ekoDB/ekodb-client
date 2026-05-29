@@ -277,6 +277,36 @@ data class ToggleForgottenRequest(
     val forgotten: Boolean,
 )
 
+/**
+ * Request to compact a chat session's history on demand.
+ *
+ * Folds older, non-forgotten messages into a single synthetic summary and
+ * marks the originals forgotten so they stop being replayed.
+ */
+@Serializable
+data class CompactChatRequest(
+    @SerialName("keep_recent")
+    val keepRecent: Int? = null,
+    @SerialName("bypass_ripple")
+    val bypassRipple: Boolean? = null,
+)
+
+/**
+ * Response from compacting a chat session's history.
+ */
+@Serializable
+data class CompactChatResponse(
+    val folded: Int,
+    @SerialName("kept_recent")
+    val keptRecent: Int,
+    @SerialName("summary_chars")
+    val summaryChars: Int,
+    @SerialName("summary_message_id")
+    val summaryMessageId: String? = null,
+    @SerialName("already_compact")
+    val alreadyCompact: Boolean,
+)
+
 // ========== Query Parameters ==========
 
 /**

@@ -82,6 +82,8 @@ export type {
   UpdateSessionRequest,
   MergeSessionsRequest,
   ChatModels,
+  CompactChatRequest,
+  CompactChatResponse,
   EmbedRequest,
   EmbedResponse,
   RawCompletionRequest,

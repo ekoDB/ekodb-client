@@ -1,5 +1,6 @@
 package io.ekodb.client
 
+import io.ekodb.client.types.CompactChatResponse
 import io.ekodb.client.types.FieldType
 import io.ekodb.client.types.Query
 import io.ekodb.client.types.Record
@@ -1922,7 +1923,41 @@ class EkoDBClient private constructor(
         }
         return response.body()
     }
-    
+
+    /**
+     * Compact a chat session's history on demand.
+     *
+     * Folds older, non-forgotten messages into a single synthetic summary
+     * message and marks the folded originals forgotten so they stop being
+     * replayed, reclaiming context window.
+     *
+     * @param chatId the chat session to compact
+     * @param keepRecent number of most-recent messages to keep verbatim;
+     *   defaults server-side to the session's `max_context_messages` (or 50)
+     *   when null. `0` compacts the entire history.
+     * @param bypassRipple skip ripple sync for the resulting writes when true
+     */
+    suspend fun compactChat(
+        chatId: String,
+        keepRecent: Int? = null,
+        bypassRipple: Boolean? = null,
+    ): CompactChatResponse {
+        val token = getToken()
+        val body = buildJsonObject {
+            keepRecent?.let { put("keep_recent", it) }
+            bypassRipple?.let { put("bypass_ripple", it) }
+        }
+        val response = executeWithRetry {
+            client.post("$baseUrl/api/chat/$chatId/compact") {
+                header("Authorization", "Bearer $token")
+                contentType(getContentTypeForRequest())
+                header("Accept", getContentTypeForRequest().toString())
+                setBody(body)
+            }
+        }
+        return response.body()
+    }
+
     /**
      * Subscribe to collection mutations via SSE (Server-Sent Events).
      *

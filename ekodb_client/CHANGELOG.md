@@ -8,6 +8,30 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added — On-demand chat compaction: `compact_chat` (ekodb #43)
+
+All clients gained a method to compact a chat session's history on demand via
+the new server endpoint `POST /api/chat/{id}/compact`: it folds the older
+messages into a summary message and marks the originals forgotten, reclaiming
+context-window budget. Returns
+`{folded, kept_recent, summary_chars, summary_message_id, already_compact}`.
+
+- **Rust** (`ekodb_client`):
+  `client.compact_chat(chat_id, keep_recent: Option<usize>)` →
+  `CompactChatResponse` (new `CompactChatRequest` / `CompactChatResponse` types,
+  exported from the crate root).
+- **TypeScript**: `client.compactChat(chatId, keepRecent?)` →
+  `CompactChatResponse`.
+- **Python** (PyO3 binding): `client.compact_chat(chat_id, keep_recent=None)` →
+  dict.
+- **Kotlin**: `client.compactChat(chatId, keepRecent?, bypassRipple?)` →
+  `CompactChatResponse`.
+
+`keep_recent` defaults server-side to the session's `max_context_messages` (or
+50); `0` compacts the entire history. Each client mirrors its existing
+chat-method conventions (auth, retry, serialization) and ships with unit tests
+for the new method.
+
 ### Fixed — Doc/test base URLs aligned to `.ekodb.net` (ekodb-app#232)
 
 Three remaining `.ekodb.io` examples that referenced deployed-database URLs

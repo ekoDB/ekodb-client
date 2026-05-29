@@ -597,6 +597,37 @@ pub struct ToggleForgottenRequest {
     pub forgotten: bool,
 }
 
+/// Request to compact a chat session's history on demand.
+///
+/// Folds the older messages of the session into a single summary message and
+/// marks the originals "forgotten" so they stop being replayed, reclaiming
+/// context-window budget while keeping a faithful summary in the prompt.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct CompactChatRequest {
+    /// Number of most-recent messages to keep verbatim. Everything older is
+    /// folded into the summary. Defaults server-side to the session's
+    /// `max_context_messages` (or 50). `0` compacts the entire history.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub keep_recent: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub bypass_ripple: Option<bool>,
+}
+
+/// Result of compacting a chat session.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CompactChatResponse {
+    /// Number of older messages folded into the summary (marked forgotten).
+    pub folded: usize,
+    /// Number of recent messages kept verbatim.
+    pub kept_recent: usize,
+    /// Character length of the inserted summary (0 when nothing was folded).
+    pub summary_chars: usize,
+    /// ID of the inserted synthetic summary message (None when nothing folded).
+    pub summary_message_id: Option<String>,
+    /// True when there was nothing to fold (history already within keep_recent).
+    pub already_compact: bool,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

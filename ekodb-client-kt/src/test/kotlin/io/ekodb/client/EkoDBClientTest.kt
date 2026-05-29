@@ -251,6 +251,35 @@ class EkoDBClientTest {
         assertNotNull(result)
     }
 
+    @Test
+    fun `compactChat returns compaction result`() = runBlocking {
+        val mockEngine = createMockEngine(
+            """{"folded": 12, "kept_recent": 8, "summary_chars": 1024, "summary_message_id": "msg_summary_1", "already_compact": false}"""
+        )
+        val client = createTestClient(mockEngine)
+        val result = client.compactChat("chat_123", keepRecent = 8)
+        assertNotNull(result)
+        assertEquals(12, result.folded)
+        assertEquals(8, result.keptRecent)
+        assertEquals(1024, result.summaryChars)
+        assertEquals("msg_summary_1", result.summaryMessageId)
+        assertFalse(result.alreadyCompact)
+    }
+
+    @Test
+    fun `compactChat handles already-compact response with null summary id`() = runBlocking {
+        val mockEngine = createMockEngine(
+            """{"folded": 0, "kept_recent": 3, "summary_chars": 0, "summary_message_id": null, "already_compact": true}"""
+        )
+        val client = createTestClient(mockEngine)
+        val result = client.compactChat("chat_123")
+        assertNotNull(result)
+        assertEquals(0, result.folded)
+        assertEquals(3, result.keptRecent)
+        assertTrue(result.alreadyCompact)
+        assertEquals(null, result.summaryMessageId)
+    }
+
     // ========================================================================
     // Search Tests
     // ========================================================================
