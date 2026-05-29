@@ -609,8 +609,8 @@ pub struct CompactChatRequest {
     /// `max_context_messages` (or 50). `0` compacts the entire history.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub keep_recent: Option<usize>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub bypass_ripple: Option<bool>,
+    // No `bypass_ripple`: compaction writes chat-message records, which the
+    // server does not ripple (same convention as all chat-message writes).
 }
 
 /// Result of compacting a chat session.

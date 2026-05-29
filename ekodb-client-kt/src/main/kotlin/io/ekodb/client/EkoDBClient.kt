@@ -1935,17 +1935,14 @@ class EkoDBClient private constructor(
      * @param keepRecent number of most-recent messages to keep verbatim;
      *   defaults server-side to the session's `max_context_messages` (or 50)
      *   when null. `0` compacts the entire history.
-     * @param bypassRipple skip ripple sync for the resulting writes when true
      */
     suspend fun compactChat(
         chatId: String,
         keepRecent: Int? = null,
-        bypassRipple: Boolean? = null,
     ): CompactChatResponse {
         val token = getToken()
         val body = buildJsonObject {
             keepRecent?.let { put("keep_recent", it) }
-            bypassRipple?.let { put("bypass_ripple", it) }
         }
         val response = executeWithRetry {
             client.post("$baseUrl/api/chat/$chatId/compact") {
