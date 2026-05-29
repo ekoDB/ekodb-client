@@ -1677,10 +1677,7 @@ impl Client {
         keep_recent: Option<usize>,
     ) -> Result<crate::chat::CompactChatResponse> {
         let token = self.auth.get_token().await?;
-        let request = crate::chat::CompactChatRequest {
-            keep_recent,
-            bypass_ripple: None,
-        };
+        let request = crate::chat::CompactChatRequest { keep_recent };
         self.http
             .compact_chat_session(chat_id, request, &token)
             .await

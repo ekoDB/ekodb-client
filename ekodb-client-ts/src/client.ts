@@ -309,7 +309,8 @@ export interface ChatModels {
  */
 export interface CompactChatRequest {
   keep_recent?: number;
-  bypass_ripple?: boolean;
+  // No bypass_ripple: compaction writes chat-message records, which the server
+  // does not ripple (same convention as all chat-message writes).
 }
 
 /**

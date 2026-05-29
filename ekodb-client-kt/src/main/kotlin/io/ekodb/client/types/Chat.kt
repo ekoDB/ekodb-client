@@ -287,8 +287,8 @@ data class ToggleForgottenRequest(
 data class CompactChatRequest(
     @SerialName("keep_recent")
     val keepRecent: Int? = null,
-    @SerialName("bypass_ripple")
-    val bypassRipple: Boolean? = null,
+    // No bypass_ripple: compaction writes chat-message records, which the
+    // server does not ripple (same convention as all chat-message writes).
 )
 
 /**
