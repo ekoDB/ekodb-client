@@ -110,8 +110,8 @@ Each client also includes language-specific features:
   repository
 - [TypeScript Client Documentation](./ekodb-client-ts/README.md)
 - [Kotlin Client Documentation](./ekodb-client-kt/README.md)
-- [Examples](./examples/) - Code examples across all available languages (14
-  examples per client)
+- [Examples](./examples/) - Code examples across all available languages (45
+  client-library examples per client)
 
 ## 🛠️ Development
 
