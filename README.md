@@ -12,8 +12,8 @@ Official client libraries for ekoDB - a high-performance document database.
 - **6 programming languages** - Rust, Python, Go, TypeScript, JavaScript, Kotlin
 - **5 full-featured clients** - Complete feature parity across Rust, Python, Go,
   TypeScript, Kotlin
-- **14 examples per client** - CRUD, batch ops, queries, joins, search,
-  WebSocket, AI/chat, and more
+- **45 client-library examples per client** - CRUD, batch ops, queries, joins,
+  search, WebSocket, AI/chat, and more
 - **100% tested** - All examples run in CI/CD
 
 ## 📦 Available Clients
@@ -63,7 +63,7 @@ npm install @ekodb/ekodb-client
 
 ```kotlin
 // Gradle (Kotlin DSL)
-implementation("io.ekodb:ekodb-client-kt:0.1.0")
+implementation("io.ekodb:ekodb-client-kt:0.18.2")
 ```
 
 **Features:**
@@ -75,7 +75,7 @@ implementation("io.ekodb:ekodb-client-kt:0.1.0")
 - ✅ AI/Chat integration
 - ✅ Schema management
 - ✅ Full-text search
-- ✅ 14 comprehensive examples
+- ✅ 45 comprehensive client-library examples (+ 1 RAG example)
 
 ## Features
 
