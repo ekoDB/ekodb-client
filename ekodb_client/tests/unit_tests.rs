@@ -3125,3 +3125,80 @@ fn test_idempotency_rate_limit_lock_stages_serialize() {
     };
     assert_eq!(serde_json::to_value(&rel).unwrap()["type"], "LockRelease");
 }
+
+// ============================================================================
+// Chat Compaction Tests (POST /api/chat/{id}/compact)
+// ============================================================================
+
+#[tokio::test]
+async fn test_compact_chat_success() {
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+
+    // Verifies method, path, that `keep_recent` is sent in the JSON body, and
+    // that the full response shape decodes into `CompactChatResponse`.
+    let compact_mock = server
+        .mock("POST", "/api/chat/chat_123/compact")
+        .match_header("authorization", "Bearer test-jwt-token")
+        .match_body(Matcher::Json(json!({ "keep_recent": 10 })))
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(
+            json!({
+                "folded": 7,
+                "kept_recent": 10,
+                "summary_chars": 512,
+                "summary_message_id": "msg_summary_1",
+                "already_compact": false
+            })
+            .to_string(),
+        )
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    let result = client.compact_chat("chat_123", Some(10)).await;
+
+    compact_mock.assert_async().await;
+    let resp = result.expect("compact_chat should succeed");
+    assert_eq!(resp.folded, 7);
+    assert_eq!(resp.kept_recent, 10);
+    assert_eq!(resp.summary_chars, 512);
+    assert_eq!(resp.summary_message_id.as_deref(), Some("msg_summary_1"));
+    assert!(!resp.already_compact);
+}
+
+#[tokio::test]
+async fn test_compact_chat_already_compact_omits_keep_recent() {
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+
+    // `None` keep_recent must be omitted from the body (serde skips it), and the
+    // "nothing to fold" response decodes with a null summary_message_id.
+    let compact_mock = server
+        .mock("POST", "/api/chat/chat_abc/compact")
+        .match_body(Matcher::Json(json!({})))
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(
+            json!({
+                "folded": 0,
+                "kept_recent": 3,
+                "summary_chars": 0,
+                "summary_message_id": null,
+                "already_compact": true
+            })
+            .to_string(),
+        )
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    let result = client.compact_chat("chat_abc", None).await;
+
+    compact_mock.assert_async().await;
+    let resp = result.expect("compact_chat should succeed");
+    assert_eq!(resp.folded, 0);
+    assert!(resp.already_compact);
+    assert!(resp.summary_message_id.is_none());
+}
