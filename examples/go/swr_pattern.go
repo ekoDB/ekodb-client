@@ -25,11 +25,13 @@ func saveOrUpdateFunction(client *ekodb.Client, fn ekodb.UserFunction) (string, 
 	}
 	var httpErr *ekodb.HTTPError
 	if errors.As(err, &httpErr) && httpErr.StatusCode == 409 {
-		if uerr := client.UpdateUserFunction(fn.Label, fn); uerr != nil {
+		if uerr := client.UpdateFunction(fn.Label, fn); uerr != nil {
 			return "", uerr
 		}
 		fmt.Printf("Function '%s' already existed — updated instead\n", fn.Label)
-		return "", nil
+		// Return the label as a usable identifier (PUT does not echo the
+		// encrypted id, and the server accepts label wherever an id is taken).
+		return fn.Label, nil
 	}
 	return "", err
 }

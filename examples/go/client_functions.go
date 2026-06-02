@@ -34,11 +34,11 @@ func saveOrUpdateScript(client *ekodb.Client, script ekodb.UserFunction) (string
 	}
 	var httpErr *ekodb.HTTPError
 	if errors.As(err, &httpErr) && httpErr.StatusCode == 409 {
-		if uerr := client.UpdateUserFunction(script.Label, script); uerr != nil {
+		if uerr := client.UpdateFunction(script.Label, script); uerr != nil {
 			return "", uerr
 		}
 		fmt.Printf("ℹ️  Function '%s' already existed — updated instead\n", script.Label)
-		existing, gerr := client.GetUserFunction(script.Label)
+		existing, gerr := client.GetFunction(script.Label)
 		if gerr != nil {
 			return "", gerr
 		}

@@ -23,11 +23,11 @@ func saveOrUpdateFn(client *ekodb.Client, fn ekodb.UserFunction) (string, error)
 	}
 	var httpErr *ekodb.HTTPError
 	if errors.As(err, &httpErr) && httpErr.StatusCode == 409 {
-		if uerr := client.UpdateUserFunction(fn.Label, fn); uerr != nil {
+		if uerr := client.UpdateFunction(fn.Label, fn); uerr != nil {
 			return "", uerr
 		}
 		fmt.Printf("Function '%s' already existed — updated instead\n", fn.Label)
-		existing, gerr := client.GetUserFunction(fn.Label)
+		existing, gerr := client.GetFunction(fn.Label)
 		if gerr != nil {
 			return "", gerr
 		}
