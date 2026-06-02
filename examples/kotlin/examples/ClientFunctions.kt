@@ -19,6 +19,40 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 
+/**
+ * Detect the server's "label already exists" rejection.
+ *
+ * The server now returns HTTP 409 Conflict when POST /api/functions is called
+ * with a label that already exists. The client surfaces that as an exception
+ * whose message contains both "status 409" and "already exists".
+ */
+private fun isAlreadyExistsError(e: Exception): Boolean {
+    val msg = e.message ?: return false
+    return msg.contains("status 409") || msg.contains("already exists")
+}
+
+/**
+ * Idempotent save: create the function, or PUT-update it if its label already
+ * exists. Returns the function's encrypted ID either way (looked up by label on
+ * the update path), so downstream get/update/delete-by-id keeps working.
+ */
+private suspend fun saveOrUpdate(client: EkoDBClient, func: UserFunction): String {
+    return try {
+        client.saveFunction(func)
+    } catch (e: Exception) {
+        if (isAlreadyExistsError(e)) {
+            // Label already exists — update the existing definition (PUT by label).
+            client.updateFunction(func.label, func)
+            println("ℹ️  Function '${func.label}' already existed — updated instead")
+            // Resolve the encrypted ID by label so cleanup-by-id still works.
+            client.getFunction(func.label).id
+                ?: throw IllegalStateException("No ID returned for function '${func.label}'")
+        } else {
+            throw e
+        }
+    }
+}
+
 suspend fun setupTestData(client: EkoDBClient) {
     println("📋 Setting up test data...")
 
@@ -49,7 +83,7 @@ suspend fun simpleQueryScript(client: EkoDBClient): String {
         tags = listOf("users", "query")
     )
 
-    val funcId = client.saveFunction(func)
+    val funcId = saveOrUpdate(client, func)
     println("✅ Function saved: $funcId")
 
     val result = client.callFunction("get_active_users")
@@ -84,7 +118,7 @@ suspend fun parameterizedScript(client: EkoDBClient) {
         tags = listOf("users", "parameterized")
     )
 
-    client.saveFunction(func)
+    saveOrUpdate(client, func)
     println("✅ Function saved")
 
     val params = mapOf(
@@ -124,7 +158,7 @@ suspend fun aggregationScript(client: EkoDBClient): String {
         tags = listOf("analytics")
     )
 
-    val funcId = client.saveFunction(func)
+    val funcId = saveOrUpdate(client, func)
     println("✅ Function saved")
 
     val result = client.callFunction("user_stats")
@@ -203,7 +237,7 @@ suspend fun multiStageScript(client: EkoDBClient) {
         tags = listOf("analytics", "reporting")
     )
 
-    client.saveFunction(func)
+    saveOrUpdate(client, func)
     println("✅ Multi-stage function saved")
 
     val result = client.callFunction("top_users", mapOf("min_score" to JsonPrimitive(50)))
@@ -231,7 +265,7 @@ suspend fun countScript(client: EkoDBClient) {
         tags = listOf("users", "count")
     )
 
-    client.saveFunction(func)
+    saveOrUpdate(client, func)
     println("✅ Count function saved")
 
     val result = client.callFunction("count_users")

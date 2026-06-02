@@ -17,6 +17,26 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlin.system.measureTimeMillis
 
+private fun isAlreadyExistsError(e: Exception): Boolean {
+    val msg = e.message ?: return false
+    return msg.contains("status 409") || msg.contains("already exists")
+}
+
+private suspend fun saveOrUpdate(client: EkoDBClient, func: UserFunction): String {
+    return try {
+        client.saveFunction(func)
+    } catch (e: Exception) {
+        if (isAlreadyExistsError(e)) {
+            client.updateFunction(func.label, func)
+            println("ℹ️  Function '${func.label}' already existed — updated instead")
+            client.getFunction(func.label).id
+                ?: throw IllegalStateException("No ID returned for function '${func.label}'")
+        } else {
+            throw e
+        }
+    }
+}
+
 fun exampleBasicSWR(client: EkoDBClient): String = runBlocking {
     println("\nExample 1: Basic Native SWR")
     println("─".repeat(80))
@@ -50,7 +70,7 @@ fun exampleBasicSWR(client: EkoDBClient): String = runBlocking {
         tags = listOf("github", "swr", "native")
     )
 
-    val funcId = client.saveFunction(basicSWRScript)
+    val funcId = saveOrUpdate(client, basicSWRScript)
     println("✓ Created native SWR function: github_user_native ($funcId)")
 
     // First call - cache miss
@@ -109,7 +129,7 @@ fun exampleAuditTrail(client: EkoDBClient): String = runBlocking {
         tags = listOf("products", "audit")
     )
 
-    val auditFuncId = client.saveFunction(auditSWRScript)
+    val auditFuncId = saveOrUpdate(client, auditSWRScript)
     println("✓ Created SWR function with audit trail: product_swr_audit ($auditFuncId)")
 
     println("\nFetching product (will create audit trail entry):")
@@ -171,7 +191,7 @@ fun examplePipelineEnrichment(client: EkoDBClient): String = runBlocking {
         tags = listOf("enrichment", "pipeline")
     )
 
-    val pipelineScriptId = client.saveFunction(pipelineScript)
+    val pipelineScriptId = saveOrUpdate(client, pipelineScript)
     println("✓ Created enrichment pipeline: user_enrichment_pipeline ($pipelineScriptId)")
 
     println("\nRunning pipeline:")
@@ -221,7 +241,7 @@ fun exampleDynamicTTL(client: EkoDBClient): String = runBlocking {
         tags = listOf("dynamic")
     )
 
-    val dynamicFuncId = client.saveFunction(dynamicTTLScript)
+    val dynamicFuncId = saveOrUpdate(client, dynamicTTLScript)
     println("✓ Created dynamic TTL function: flexible_cache ($dynamicFuncId)")
 
     // Test with different TTLs

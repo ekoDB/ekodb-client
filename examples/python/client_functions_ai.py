@@ -20,6 +20,25 @@ BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8080")
 API_KEY = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb")
 
 
+def _is_already_exists_error(err):
+    """Detect the server's 409 'function already exists' response."""
+    msg = str(err)
+    return "409" in msg or "already exists" in msg
+
+
+async def save_or_update(client, script):
+    """Save a function, falling back to an update if its label already exists."""
+    label = script["label"]
+    try:
+        return await client.save_function(script)
+    except Exception as e:
+        if not _is_already_exists_error(e):
+            raise
+        await client.update_function(label, script)
+        print(f"ℹ️  Function '{label}' already existed — updated instead")
+        return label
+
+
 async def main():
     from ekodb_client import Client, Stage, ChatMessage
 
@@ -77,7 +96,7 @@ async def main():
         ],
         "tags": ["ai", "chat"],
     }
-    script_id1 = await client.save_function(script1)
+    script_id1 = await save_or_update(client, script1)
     script_ids.append(script_id1)
     print("✅ Chat script saved")
 
@@ -105,7 +124,7 @@ async def main():
         "functions": [Stage.embed("text", "embedding")],
         "tags": ["ai", "embed"],
     }
-    script_id2 = await client.save_function(script2)
+    script_id2 = await save_or_update(client, script2)
     script_ids.append(script_id2)
     print("✅ Embed script saved")
 

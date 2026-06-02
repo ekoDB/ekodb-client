@@ -15,6 +15,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/joho/godotenv"
 )
@@ -101,6 +102,46 @@ func request(method, path string, body interface{}) (interface{}, error) {
 	return result, nil
 }
 
+// saveOrUpdateFunctionHTTP saves a function via POST /api/functions, or — if a
+// function with the same label already exists (HTTP 409) — updates it in place
+// via PUT /api/functions/{label}. This makes the example idempotent across
+// repeated runs while still exercising both the create and update paths.
+//
+// It returns the function's encrypted ID so downstream GET/UPDATE/DELETE calls
+// (which require the encrypted ID, not the label) keep working: on a fresh
+// create the ID comes from the POST response; on the 409→update path it is
+// recovered with a GET /api/functions/{label} (the server accepts the label).
+func saveOrUpdateFunctionHTTP(function map[string]interface{}) (string, error) {
+	label, _ := function["label"].(string)
+
+	saveResultRaw, err := request("POST", "/api/functions", function)
+	if err == nil {
+		saveResult := saveResultRaw.(map[string]interface{})
+		return saveResult["id"].(string), nil
+	}
+
+	// The request helper formats 4xx/5xx errors as "HTTP <code>: <body>".
+	if !strings.Contains(err.Error(), "HTTP 409") {
+		return "", err
+	}
+
+	if _, perr := request("PUT", "/api/functions/"+label, function); perr != nil {
+		return "", perr
+	}
+	fmt.Printf("ℹ️  Function '%s' already existed — updated instead\n", label)
+
+	fnRaw, gerr := request("GET", "/api/functions/"+label, nil)
+	if gerr != nil {
+		return "", gerr
+	}
+	fn := fnRaw.(map[string]interface{})
+	id, ok := fn["id"].(string)
+	if !ok {
+		return "", fmt.Errorf("function %q has no id after update", label)
+	}
+	return id, nil
+}
+
 func setupTestData() error {
 	fmt.Println("📋 Setting up test data...")
 
@@ -150,13 +191,12 @@ func simpleQueryFunction() (string, error) {
 		"tags": []string{"users", "query"},
 	}
 
-	// Save script
-	saveResultRaw, err := request("POST", "/api/functions", function1)
+	// Save script (idempotent: update in place if the label already exists)
+	functionID, err := saveOrUpdateFunctionHTTP(function1)
 	if err != nil {
 		return "", err
 	}
-	saveResult := saveResultRaw.(map[string]interface{})
-	fmt.Printf("✅ Function saved: %s\n", saveResult["id"])
+	fmt.Printf("✅ Function saved: %s\n", functionID)
 
 	// Call script (can use label)
 	callResultRaw, err := request("POST", "/api/functions/get_active_users", map[string]interface{}{})
@@ -168,7 +208,7 @@ func simpleQueryFunction() (string, error) {
 	records := callResult["records"].([]interface{})
 	fmt.Printf("📊 Found %d active users\n\n", len(records))
 
-	return saveResult["id"].(string), nil
+	return functionID, nil
 }
 
 func parameterizedPaginationFunction() error {
@@ -210,12 +250,11 @@ func parameterizedPaginationFunction() error {
 		"tags": []string{"users", "pagination"},
 	}
 
-	saveResultRaw, err := request("POST", "/api/functions", function2)
+	functionID, err := saveOrUpdateFunctionHTTP(function2)
 	if err != nil {
 		return err
 	}
-	saveResult := saveResultRaw.(map[string]interface{})
-	fmt.Printf("✅ Function saved: %s\n", saveResult["id"])
+	fmt.Printf("✅ Function saved: %s\n", functionID)
 
 	// Call with page 1 (first 3 users)
 	callResultRaw, err := request("POST", "/api/functions/get_active_users_paginated", map[string]interface{}{
@@ -286,12 +325,11 @@ func aggregationFunction() (string, error) {
 		"tags": []string{"analytics", "pipeline"},
 	}
 
-	saveResultRaw, err := request("POST", "/api/functions", function3)
+	functionID, err := saveOrUpdateFunctionHTTP(function3)
 	if err != nil {
 		return "", err
 	}
-	saveResult := saveResultRaw.(map[string]interface{})
-	fmt.Printf("✅ Function saved: %s\n", saveResult["id"])
+	fmt.Printf("✅ Function saved: %s\n", functionID)
 
 	// Call script
 	callResultRaw, err := request("POST", "/api/functions/user_stats", map[string]interface{}{})
@@ -308,7 +346,7 @@ func aggregationFunction() (string, error) {
 	}
 	fmt.Println()
 
-	return saveResult["id"].(string), nil
+	return functionID, nil
 }
 
 func functionManagement(getActiveUsersID, userStatsID string) error {

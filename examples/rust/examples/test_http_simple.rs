@@ -2,6 +2,25 @@ use ekodb_client::{Client, FieldType, Function, UserFunction};
 use std::collections::HashMap;
 use std::env;
 
+/// Save a function idempotently: if the label already exists (HTTP 409),
+/// update the existing definition instead, then return its id.
+async fn save_or_update(
+    client: &Client,
+    function: UserFunction,
+) -> Result<String, Box<dyn std::error::Error>> {
+    let label = function.label.clone();
+    match client.save_function(function.clone()).await {
+        Ok(id) => Ok(id),
+        Err(ekodb_client::Error::Api { code: 409, .. }) => {
+            client.update_function(&label, function).await?;
+            println!("ℹ️  Function '{}' already existed — updated instead", label);
+            let existing = client.get_function(&label).await?;
+            Ok(existing.id.unwrap_or(label))
+        }
+        Err(e) => Err(Box::new(e)),
+    }
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv::dotenv().ok();
@@ -33,7 +52,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let json1 = serde_json::to_string_pretty(&script1)?;
     println!("Function JSON:\n{}\n", json1);
 
-    let id1 = client.save_function(script1).await?;
+    let id1 = save_or_update(&client, script1).await?;
     println!("✓ Saved function: {}\n", id1);
 
     let result1 = client.call_function("test_http_static", None).await?;
@@ -60,7 +79,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let json2 = serde_json::to_string_pretty(&script2)?;
     println!("Function JSON:\n{}\n", json2);
 
-    let id2 = client.save_function(script2).await?;
+    let id2 = save_or_update(&client, script2).await?;
     println!("✓ Saved function: {}\n", id2);
 
     let mut params = HashMap::new();

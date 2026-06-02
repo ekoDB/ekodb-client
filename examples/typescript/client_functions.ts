@@ -4,10 +4,38 @@
  * Demonstrates creating, managing, and executing scripts
  */
 
-import { EkoDBClient, Stage } from "@ekodb/ekodb-client";
+import { EkoDBClient, Stage, UserFunction } from "@ekodb/ekodb-client";
 import * as dotenv from "dotenv";
 
 dotenv.config();
+
+/** True when a save failed because the function label already exists (HTTP 409). */
+function isAlreadyExistsError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.includes("status 409") || message.includes("already exists");
+}
+
+/**
+ * Idempotent save: create the function, or update it in place if a function
+ * with the same label already exists. Returns the function's id either way so
+ * the rest of the example (get/update/delete by id) keeps working.
+ */
+async function saveOrUpdate(
+  client: EkoDBClient,
+  script: UserFunction,
+): Promise<string> {
+  try {
+    return await client.saveFunction(script);
+  } catch (error) {
+    if (!isAlreadyExistsError(error)) throw error;
+    await client.updateFunction(script.label, script);
+    console.log(
+      `ℹ️  Function '${script.label}' already existed — updated instead`,
+    );
+    const existing = await client.getFunction(script.label);
+    return existing.id ?? script.label;
+  }
+}
 
 async function setupTestData(client: EkoDBClient): Promise<void> {
   console.log("📋 Setting up test data...");
@@ -38,7 +66,7 @@ async function simpleQueryScript(client: EkoDBClient): Promise<string> {
     tags: ["users", "query"],
   };
 
-  const id = await client.saveFunction(script);
+  const id = await saveOrUpdate(client, script);
   console.log(`✅ Function saved: ${id}`);
 
   const result = await client.callFunction("get_active_users");
@@ -70,7 +98,7 @@ async function parameterizedScript(client: EkoDBClient): Promise<string> {
     tags: ["users", "parameterized"],
   };
 
-  const id = await client.saveFunction(script);
+  const id = await saveOrUpdate(client, script);
   console.log(`✅ Function saved: ${id}`);
 
   const params = { status: "active", limit: 3 };
@@ -106,7 +134,7 @@ async function aggregationScript(client: EkoDBClient): Promise<string> {
     tags: ["analytics"],
   };
 
-  const id = await client.saveFunction(script);
+  const id = await saveOrUpdate(client, script);
   console.log(`✅ Function saved: ${id}`);
 
   const result = await client.callFunction("user_stats");

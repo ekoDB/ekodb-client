@@ -13,6 +13,32 @@ dotenv.config();
 const BASE_URL = process.env.API_BASE_URL || 'http://localhost:8080';
 const API_KEY = process.env.API_BASE_KEY || 'a-test-api-key-from-ekodb';
 
+/**
+ * Save a function idempotently.
+ *
+ * The server returns HTTP 409 ("A function with label 'X' already exists.")
+ * when a function with the same fixed label already exists. On that error we
+ * UPDATE the existing function via PUT /api/functions/{label} (the server's
+ * GET/PUT/DELETE routes accept either the encrypted ID or the label), then
+ * resolve and return its encrypted ID so the rest of the example keeps working.
+ * Any other error is propagated.
+ */
+async function saveOrUpdate(client, script) {
+  try {
+    return await client.saveFunction(script);
+  } catch (error) {
+    if (error.message && error.message.includes('already exists')) {
+      // updateFunction accepts the label (server resolves id-or-label)
+      await client.updateFunction(script.label, script);
+      console.log(`ℹ️  Function '${script.label}' already existed — updated instead`);
+      // Resolve the encrypted ID by label for downstream GET/UPDATE/DELETE
+      const existing = await client.getFunction(script.label);
+      return existing.id;
+    }
+    throw error;
+  }
+}
+
 async function setupTestData(client) {
   console.log('📋 Setting up test data...');
   
@@ -46,9 +72,9 @@ async function simpleQueryScript(client) {
   };
   
   // Save script
-  const scriptId = await client.saveFunction(script);
+  const scriptId = await saveOrUpdate(client, script);
   console.log(`✅ Function saved: ${scriptId}`);
-  
+
   // Call script (use label)
   const result = await client.callFunction('get_active_users');
   console.log(`📊 Found ${result.records.length} records`);
@@ -82,9 +108,9 @@ async function parameterizedScript(client) {
     tags: ['users', 'parameterized'],
   };
   
-  await client.saveFunction(script);
+  await saveOrUpdate(client, script);
   console.log('✅ Function saved');
-  
+
   // Call with parameters
   const result = await client.callFunction('get_users_by_status', {
     status: 'active',
@@ -119,9 +145,9 @@ async function aggregationScript(client) {
     tags: ['analytics'],
   };
   
-  const scriptId = await client.saveFunction(script);
+  const scriptId = await saveOrUpdate(client, script);
   console.log('✅ Function saved');
-  
+
   const result = await client.callFunction('user_stats');
   console.log(`📊 Statistics: ${result.records.length} groups`);
   result.records.forEach((record) => {
@@ -189,7 +215,7 @@ async function multiStageScript(client) {
     tags: ['analytics', 'reporting'],
   };
   
-  await client.saveFunction(script);
+  await saveOrUpdate(client, script);
   console.log('✅ Multi-stage function saved');
   
   const result = await client.callFunction('top_users', { min_score: 50 });
@@ -217,7 +243,7 @@ async function countScript(client) {
     tags: ['users', 'count'],
   };
   
-  await client.saveFunction(script);
+  await saveOrUpdate(client, script);
   console.log('✅ Count function saved');
   
   const result = await client.callFunction('count_users');

@@ -21,6 +21,24 @@ use serde_json::json;
 use std::collections::HashMap;
 use std::env;
 
+/// Save a user function idempotently: if the label already exists (HTTP 409),
+/// update the existing definition instead.
+async fn save_or_update_user(
+    client: &Client,
+    function: UserFunction,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let label = function.label.clone();
+    match client.save_user_function(function.clone()).await {
+        Ok(_) => Ok(()),
+        Err(ekodb_client::Error::Api { code: 409, .. }) => {
+            client.update_user_function(&label, function).await?;
+            println!("ℹ️  Function '{}' already existed — updated instead", label);
+            Ok(())
+        }
+        Err(e) => Err(Box::new(e)),
+    }
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv::dotenv().ok();
@@ -55,7 +73,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             bypass_ripple: None,
             ttl: None,
         });
-    let _ = client.save_user_function(register).await;
+    save_or_update_user(&client, register).await?;
     println!("✓ rs_users_register saved");
 
     // Stage 2: login — find the user, verify bcrypt, sign a JWT on success.
@@ -108,7 +126,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 status_code: Some(401),
             })]),
         });
-    let _ = client.save_user_function(login).await;
+    save_or_update_user(&client, login).await?;
     println!("✓ rs_users_login saved");
 
     // Stage 3: verify — read the token off the request, decode + validate
@@ -145,7 +163,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 status_code: Some(200),
             })]),
         });
-    let _ = client.save_user_function(verify).await;
+    save_or_update_user(&client, verify).await?;
     println!("✓ rs_users_verify_token saved");
 
     println!("\n=== Auth flow defined as pure stored functions ===");

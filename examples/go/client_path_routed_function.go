@@ -15,6 +15,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -128,11 +129,21 @@ func main() {
 }
 
 func saveFn(client *ekodb.Client, f ekodb.UserFunction) {
-	if _, err := client.SaveUserFunction(f); err != nil {
-		fmt.Printf("SaveUserFunction(%s) error: %v\n", f.Label, err)
+	_, err := client.SaveUserFunction(f)
+	if err == nil {
+		fmt.Printf("✓ %s saved\n", f.Label)
 		return
 	}
-	fmt.Printf("✓ %s saved\n", f.Label)
+	var httpErr *ekodb.HTTPError
+	if errors.As(err, &httpErr) && httpErr.StatusCode == 409 {
+		if uerr := client.UpdateUserFunction(f.Label, f); uerr != nil {
+			fmt.Printf("UpdateUserFunction(%s) error: %v\n", f.Label, uerr)
+			return
+		}
+		fmt.Printf("✓ %s already existed — updated instead\n", f.Label)
+		return
+	}
+	fmt.Printf("SaveUserFunction(%s) error: %v\n", f.Label, err)
 }
 
 func getenv(key, fallback string) string {

@@ -20,6 +20,24 @@
 use ekodb_client::{Client, Function, ParameterDefinition, UserFunction};
 use std::env;
 
+/// Save a user function idempotently: if the label already exists (HTTP 409),
+/// update the existing definition instead.
+async fn save_or_update_user(
+    client: &Client,
+    function: UserFunction,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let label = function.label.clone();
+    match client.save_user_function(function.clone()).await {
+        Ok(_) => Ok(()),
+        Err(ekodb_client::Error::Api { code: 409, .. }) => {
+            client.update_user_function(&label, function).await?;
+            println!("ℹ️  Function '{}' already existed — updated instead", label);
+            Ok(())
+        }
+        Err(e) => Err(Box::new(e)),
+    }
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv::dotenv().ok();
@@ -54,7 +72,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             encoding: Some("hex".to_string()),
             output_field: "verified".to_string(),
         });
-    let _ = client.save_user_function(hmac).await;
+    save_or_update_user(&client, hmac).await?;
     println!("✓ crypto_demo_hmac saved");
 
     // 2. AES-256-GCM encrypt + decrypt round trip. Decrypt reads the
@@ -74,7 +92,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             key_encoding: Some("hex".to_string()),
             output_field: "recovered".to_string(),
         });
-    let _ = client.save_user_function(aes).await;
+    save_or_update_user(&client, aes).await?;
     println!("✓ crypto_demo_aes saved");
 
     // 3. UuidGenerate — single-shot ID minting inside a pipeline.
@@ -83,7 +101,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             output_field: "id".to_string(),
         },
     );
-    let _ = client.save_user_function(uuid_fn).await;
+    save_or_update_user(&client, uuid_fn).await?;
     println!("✓ crypto_demo_uuid saved");
 
     // 4. TotpGenerate — RFC 6238 with the canonical reference secret.
@@ -98,7 +116,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             output_field: "code".to_string(),
         },
     );
-    let _ = client.save_user_function(totp).await;
+    save_or_update_user(&client, totp).await?;
     println!("✓ crypto_demo_totp saved");
 
     // 5. Encoding bag — base64 + hex + slugify chained on one call.
@@ -119,7 +137,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             input: "{{title}}".to_string(),
             output_field: "title_slug".to_string(),
         });
-    let _ = client.save_user_function(encoding).await;
+    save_or_update_user(&client, encoding).await?;
     println!("✓ crypto_demo_encoding saved");
 
     println!("\nAll crypto-stage demos defined. Invoke any of them with:");

@@ -24,6 +24,13 @@ from ekodb_client import Client, Stage
 env_path = Path(__file__).parent.parent / ".env"
 load_dotenv(env_path)
 
+
+def _is_already_exists_error(err):
+    """Detect the server's 409 'function already exists' response."""
+    msg = str(err)
+    return "409" in msg or "already exists" in msg
+
+
 BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8080")
 API_KEY = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb")
 
@@ -53,10 +60,16 @@ async def main() -> None:
         await client.save_user_function(register)
         print("✓ py_users_register saved")
     except Exception as e:
-        # Surface only the exception type — server errors echoing the
-        # request fragment back could otherwise expose `{{env.JWT_SECRET}}`
-        # placeholder strings to CI logs / static analyzers.
-        print(f"SaveUserFunction error: {type(e).__name__}")
+        if _is_already_exists_error(e):
+            await client.update_user_function(register["label"], register)
+            print(
+                f"ℹ️  Function '{register['label']}' already existed — updated instead"
+            )
+        else:
+            # Surface only the exception type — server errors echoing the
+            # request fragment back could otherwise expose `{{env.JWT_SECRET}}`
+            # placeholder strings to CI logs / static analyzers.
+            print(f"SaveUserFunction error: {type(e).__name__}")
 
     # 2. Login: find user, verify bcrypt, sign JWT on success.
     login = {
@@ -98,10 +111,14 @@ async def main() -> None:
         await client.save_user_function(login)
         print("✓ py_users_login saved")
     except Exception as e:
-        # Surface only the exception type — server errors echoing the
-        # request fragment back could otherwise expose `{{env.JWT_SECRET}}`
-        # placeholder strings to CI logs / static analyzers.
-        print(f"SaveUserFunction error: {type(e).__name__}")
+        if _is_already_exists_error(e):
+            await client.update_user_function(login["label"], login)
+            print(f"ℹ️  Function '{login['label']}' already existed — updated instead")
+        else:
+            # Surface only the exception type — server errors echoing the
+            # request fragment back could otherwise expose `{{env.JWT_SECRET}}`
+            # placeholder strings to CI logs / static analyzers.
+            print(f"SaveUserFunction error: {type(e).__name__}")
 
     # 3. Verify a JWT — fail-closed when claims is null.
     verify = {
@@ -130,10 +147,14 @@ async def main() -> None:
         await client.save_user_function(verify)
         print("✓ py_users_verify_token saved")
     except Exception as e:
-        # Surface only the exception type — server errors echoing the
-        # request fragment back could otherwise expose `{{env.JWT_SECRET}}`
-        # placeholder strings to CI logs / static analyzers.
-        print(f"SaveUserFunction error: {type(e).__name__}")
+        if _is_already_exists_error(e):
+            await client.update_user_function(verify["label"], verify)
+            print(f"ℹ️  Function '{verify['label']}' already existed — updated instead")
+        else:
+            # Surface only the exception type — server errors echoing the
+            # request fragment back could otherwise expose `{{env.JWT_SECRET}}`
+            # placeholder strings to CI logs / static analyzers.
+            print(f"SaveUserFunction error: {type(e).__name__}")
 
     print("\n=== Auth flow defined as pure stored functions ===")
     print("Call them like:")

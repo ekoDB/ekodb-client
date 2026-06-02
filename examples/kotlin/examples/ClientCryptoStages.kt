@@ -163,6 +163,11 @@ fun main() = runBlocking {
     println("\n✓ Cleaned up demo functions")
 }
 
+private fun isAlreadyExistsError(e: Exception): Boolean {
+    val msg = e.message ?: return false
+    return msg.contains("status 409") || msg.contains("already exists")
+}
+
 private suspend fun saveCryptoFn(
     client: EkoDBClient,
     fn: kotlinx.serialization.json.JsonObject,
@@ -172,6 +177,11 @@ private suspend fun saveCryptoFn(
         client.saveUserFunction(fn)
         println("✓ $label saved")
     } catch (e: Exception) {
-        println("SaveUserFunction($label) error: ${e.message}")
+        if (isAlreadyExistsError(e)) {
+            client.updateUserFunction(label, fn)
+            println("ℹ️  Function '$label' already existed — updated instead")
+        } else {
+            println("SaveUserFunction($label) error: ${e.message}")
+        }
     }
 }

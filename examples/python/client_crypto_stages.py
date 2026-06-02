@@ -133,6 +133,12 @@ async def main() -> None:
     print("\n✓ Cleaned up demo functions")
 
 
+def _is_already_exists_error(err):
+    """Detect the server's 409 'function already exists' response."""
+    msg = str(err)
+    return "409" in msg or "already exists" in msg
+
+
 async def _save(client, label: str, func) -> None:
     """Save a stored function and print a status line.
 
@@ -142,12 +148,19 @@ async def _save(client, label: str, func) -> None:
     intentionally surfaces only the exception type, not its message,
     for the same reason — server-side errors echoing back a request
     fragment could otherwise leak the placeholder string.
+
+    On HTTP 409 (label already exists) the definition is updated via PUT
+    so the example is idempotent across runs.
     """
     try:
         await client.save_user_function(func)
         print(f"✓ {label} saved")
     except Exception as e:
-        print(f"SaveUserFunction({label}) error: {type(e).__name__}")
+        if not _is_already_exists_error(e):
+            print(f"SaveUserFunction({label}) error: {type(e).__name__}")
+            return
+        await client.update_user_function(label, func)
+        print(f"ℹ️  Function '{label}' already existed — updated instead")
 
 
 if __name__ == "__main__":

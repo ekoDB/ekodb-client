@@ -8,6 +8,25 @@ use rust_decimal::Decimal;
 use std::{collections::HashMap, env, str::FromStr};
 use uuid::Uuid;
 
+/// Save a function idempotently: if the label already exists (HTTP 409),
+/// update the existing definition instead, then return its id.
+async fn save_or_update(
+    client: &Client,
+    function: UserFunction,
+) -> Result<String, Box<dyn std::error::Error>> {
+    let label = function.label.clone();
+    match client.save_function(function.clone()).await {
+        Ok(id) => Ok(id),
+        Err(ekodb_client::Error::Api { code: 409, .. }) => {
+            client.update_function(&label, function).await?;
+            println!("ℹ️  Function '{}' already existed — updated instead", label);
+            let existing = client.get_function(&label).await?;
+            Ok(existing.id.unwrap_or(label))
+        }
+        Err(e) => Err(Box::new(e)),
+    }
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv::dotenv().ok();
@@ -131,7 +150,7 @@ async fn wrapped_types_in_script(client: &Client) -> Result<String, Box<dyn std:
         collection: "products_example_rs".to_string(),
     });
 
-    let id = client.save_function(script).await?;
+    let id = save_or_update(client, script).await?;
     println!("✅ Function saved: {}", id);
 
     let mut params = HashMap::new();
@@ -224,7 +243,7 @@ async fn kv_script_operations(client: &Client) -> Result<String, Box<dyn std::er
             key: serde_json::Value::String("{{product_key}}".to_string()),
         });
 
-    let id = client.save_function(script).await?;
+    let id = save_or_update(client, script).await?;
     println!("✅ Function saved: {}", id);
 
     // First set some data to retrieve
@@ -282,7 +301,7 @@ async fn combined_example(client: &Client) -> Result<String, Box<dyn std::error:
         key: serde_json::Value::String("order:status:{{order_id}}".to_string()),
     });
 
-    let id = client.save_function(script).await?;
+    let id = save_or_update(client, script).await?;
     println!("✅ Function saved: {}", id);
 
     // Set order status in KV store

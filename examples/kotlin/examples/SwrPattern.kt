@@ -10,6 +10,36 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.*
 import kotlin.system.measureTimeMillis
 
+/**
+ * Detect the server's "label already exists" rejection (HTTP 409 Conflict on
+ * POST /api/functions). The client surfaces it as an exception whose message
+ * contains "status 409" and/or "already exists".
+ */
+private fun isAlreadyExistsError(e: Exception): Boolean {
+    val msg = e.message ?: return false
+    return msg.contains("status 409") || msg.contains("already exists")
+}
+
+/**
+ * Idempotent save: create the function, or PUT-update it by label if it already
+ * exists. Returns the encrypted ID either way (resolved by label on the update
+ * path).
+ */
+private suspend fun saveOrUpdate(client: EkoDBClient, func: UserFunction): String {
+    return try {
+        client.saveFunction(func)
+    } catch (e: Exception) {
+        if (isAlreadyExistsError(e)) {
+            client.updateFunction(func.label, func)
+            println("ℹ️  Function '${func.label}' already existed — updated instead")
+            client.getFunction(func.label).id
+                ?: throw IllegalStateException("No ID returned for function '${func.label}'")
+        } else {
+            throw e
+        }
+    }
+}
+
 fun main() = runBlocking {
     val dotenv = dotenv()
     val baseUrl = dotenv["API_BASE_URL"] ?: "http://localhost:8080"
@@ -89,7 +119,7 @@ fun main() = runBlocking {
         tags = listOf("swr", "github", "cache")
     )
 
-    val funcId = client.saveFunction(swrScript)
+    val funcId = saveOrUpdate(client, swrScript)
     println("✓ Created SWR function: ${swrScript.label} ($funcId)\n")
 
     // Step 2: First call - Cache miss
@@ -183,7 +213,7 @@ fun main() = runBlocking {
         tags = listOf("enrichment", "product", "cache")
     )
 
-    val enrichFuncId = client.saveFunction(enrichFunc)
+    val enrichFuncId = saveOrUpdate(client, enrichFunc)
     println("✓ Created enrichment function: ${enrichFunc.label} ($enrichFuncId)\n")
 
     println("Step 4: Call enrichment function - Fetches from API + stores enriched result")

@@ -70,8 +70,28 @@ async function edgeCacheExample() {
     ],
   };
 
-  const scriptId = await client.saveFunction(cacheScript);
-  console.log(`✓ Edge cache script created: ${scriptId}\n`);
+  let scriptId: string;
+  try {
+    scriptId = await client.saveFunction(cacheScript);
+    console.log(`✓ Edge cache script created: ${scriptId}\n`);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (
+      !message.includes("status 409") &&
+      !message.includes("already exists")
+    ) {
+      throw error;
+    }
+    // Function already exists from a previous run — update it in place so the
+    // example is idempotent and proves both the create and update paths.
+    await client.updateFunction(cacheScript.label, cacheScript);
+    const existing = await client.getFunction(cacheScript.label);
+    scriptId = existing.id ?? cacheScript.label;
+    console.log(
+      `ℹ️  Function '${cacheScript.label}' already existed — updated instead`,
+    );
+    console.log(`✓ Edge cache script updated: ${scriptId}\n`);
+  }
 
   // Test it - First call hits API
   console.log("Call 1: Cache miss (fetches from API)");

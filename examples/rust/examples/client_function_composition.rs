@@ -8,6 +8,25 @@ use ekodb_client::{
 };
 use std::{collections::HashMap, env};
 
+/// Save a function idempotently: if the label already exists (HTTP 409),
+/// update the existing definition instead, then return its id.
+async fn save_or_update(
+    client: &Client,
+    function: UserFunction,
+) -> Result<String, Box<dyn std::error::Error>> {
+    let label = function.label.clone();
+    match client.save_function(function.clone()).await {
+        Ok(id) => Ok(id),
+        Err(ekodb_client::Error::Api { code: 409, .. }) => {
+            client.update_function(&label, function).await?;
+            println!("ℹ️  Function '{}' already existed — updated instead", label);
+            let existing = client.get_function(&label).await?;
+            Ok(existing.id.unwrap_or(label))
+        }
+        Err(e) => Err(Box::new(e)),
+    }
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv::dotenv().ok();
@@ -77,7 +96,7 @@ async fn basic_composition_example(client: &Client) -> Result<(), Box<dyn std::e
             value: serde_json::json!("{{user_code}}"),
         });
 
-    client.save_function(fetch_user).await?;
+    save_or_update(client, fetch_user).await?;
     println!("✅ Saved reusable function: fetch_user");
 
     // Step 2: Create a wrapper function that CALLS the base function
@@ -93,7 +112,7 @@ async fn basic_composition_example(client: &Client) -> Result<(), Box<dyn std::e
             exclude: false,
         });
 
-    client.save_function(get_user_wrapper).await?;
+    save_or_update(client, get_user_wrapper).await?;
     println!("✅ Saved composed function: get_user_wrapper (calls fetch_user + projects fields)\n");
 
     // Step 3: Call the composed function
@@ -160,7 +179,7 @@ async fn swr_with_composition_example(client: &Client) -> Result<(), Box<dyn std
         ttl: Some(serde_json::json!(300)), // 5 minute cache
     });
 
-    client.save_function(fetch_and_store).await?;
+    save_or_update(client, fetch_and_store).await?;
     println!("✅ Saved reusable function: fetch_and_store_user (uses KV)");
 
     // Step 2: Create SWR function that CALLS the reusable fetch function
@@ -208,7 +227,7 @@ async fn swr_with_composition_example(client: &Client) -> Result<(), Box<dyn std
             ]),
         });
 
-    client.save_function(swr_user).await?;
+    save_or_update(client, swr_user).await?;
     println!("✅ Saved SWR function using composition: swr_user\n");
 
     // Step 3: Test the SWR pattern - First call (cache miss)
@@ -272,7 +291,7 @@ async fn nested_composition_example(client: &Client) -> Result<(), Box<dyn std::
             value: serde_json::json!("{{user_code}}"),
         });
 
-    client.save_function(validate_user).await?;
+    save_or_update(client, validate_user).await?;
     println!("✅ Level 1 function: validate_user");
 
     // Level 2: Calls validate_user + projects fields
@@ -287,7 +306,7 @@ async fn nested_composition_example(client: &Client) -> Result<(), Box<dyn std::
             exclude: false,
         });
 
-    client.save_function(fetch_slim).await?;
+    save_or_update(client, fetch_slim).await?;
     println!("✅ Level 2 function: fetch_slim_user (calls validate_user)");
 
     // Level 3: Calls fetch_slim_user (demonstrates 3-level nesting)
@@ -299,7 +318,7 @@ async fn nested_composition_example(client: &Client) -> Result<(), Box<dyn std::
                 params: None, // Inherits user_code from parent scope
             });
 
-    client.save_function(get_verified_user).await?;
+    save_or_update(client, get_verified_user).await?;
     println!("✅ Level 3 function: get_verified_user (calls fetch_slim_user)\n");
 
     // Execute the 3-level nested composition

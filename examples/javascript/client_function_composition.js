@@ -13,6 +13,30 @@ dotenv.config();
 const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:8080';
 const API_BASE_KEY = process.env.API_BASE_KEY || 'a-test-api-key-from-ekodb';
 
+/**
+ * Save a function idempotently.
+ *
+ * The server returns HTTP 409 ("A function with label 'X' already exists.")
+ * when a function with the same fixed label already exists. On that error we
+ * UPDATE the existing function via PUT /api/functions/{label} (the server's
+ * GET/PUT/DELETE routes accept either the encrypted ID or the label), then
+ * resolve and return its encrypted ID so the rest of the example keeps working.
+ * Any other error is propagated.
+ */
+async function saveOrUpdate(client, script) {
+  try {
+    return await client.saveFunction(script);
+  } catch (error) {
+    if (error.message && error.message.includes('already exists')) {
+      await client.updateFunction(script.label, script);
+      console.log(`ℹ️  Function '${script.label}' already existed — updated instead`);
+      const existing = await client.getFunction(script.label);
+      return existing.id;
+    }
+    throw error;
+  }
+}
+
 async function setupTestData(client) {
   console.log('📋 Setting up test data...\n');
 
@@ -47,7 +71,7 @@ async function basicCompositionExample(client) {
     ],
   };
 
-  await client.saveFunction(fetchUser);
+  await saveOrUpdate(client, fetchUser);
   console.log('✅ Saved reusable function: fetch_user');
 
   // Step 2: Create wrapper that CALLS fetch_user
@@ -69,7 +93,7 @@ async function basicCompositionExample(client) {
     ],
   };
 
-  await client.saveFunction(getUserWrapper);
+  await saveOrUpdate(client, getUserWrapper);
   console.log('✅ Saved composed function: get_user_wrapper (calls fetch_user + projects fields)\n');
 
   // Step 3: Call the composed function
@@ -117,7 +141,7 @@ async function swrCompositionExample(client) {
     ],
   };
 
-  await client.saveFunction(fetchAndStore);
+  await saveOrUpdate(client, fetchAndStore);
   console.log('✅ Saved reusable function: fetch_and_store_user (uses KV)');
 
   // Step 2: Create SWR function that CALLS the reusable function
@@ -176,7 +200,7 @@ async function swrCompositionExample(client) {
     ],
   };
 
-  await client.saveFunction(swrUser);
+  await saveOrUpdate(client, swrUser);
   console.log('✅ Saved SWR function using composition: swr_user\n');
 
   // Step 3: Test cache miss
@@ -231,7 +255,7 @@ async function nestedCompositionExample(client) {
     ],
   };
 
-  await client.saveFunction(validateUser);
+  await saveOrUpdate(client, validateUser);
   console.log('✅ Level 1 function: validate_user');
 
   // Level 2: Calls validate_user + projects
@@ -253,7 +277,7 @@ async function nestedCompositionExample(client) {
     ],
   };
 
-  await client.saveFunction(fetchSlim);
+  await saveOrUpdate(client, fetchSlim);
   console.log('✅ Level 2 function: fetch_slim_user (calls validate_user)');
 
   // Level 3: Calls fetch_slim (demonstrates 3-level nesting)
@@ -270,7 +294,7 @@ async function nestedCompositionExample(client) {
     ],
   };
 
-  await client.saveFunction(getVerifiedUser);
+  await saveOrUpdate(client, getVerifiedUser);
   console.log('✅ Level 3 function: get_verified_user (calls fetch_slim_user)\n');
 
   // Execute 3-level nested composition

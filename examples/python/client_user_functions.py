@@ -48,7 +48,15 @@ async def user_functions_examples():
         func_id = await client.save_user_function(user_func)
         print(f"Created user function with ID: {func_id}")
     except Exception as e:
-        print(f"SaveUserFunction error: {e}")
+        # The server returns HTTP 409 when a function with this label already
+        # exists. Fall back to updating it (PUT by label) so the example is
+        # idempotent and exercises both the create and update paths.
+        if "409" in str(e) or "already exists" in str(e):
+            label = user_func["label"]
+            await client.update_user_function(label, user_func)
+            print(f"Function '{label}' already existed — updated instead")
+        else:
+            print(f"SaveUserFunction error: {e}")
 
     # Example 2: Get User Function by label
     print("\n=== Get User Function ===")

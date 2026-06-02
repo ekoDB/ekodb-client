@@ -9,6 +9,30 @@ require("dotenv").config();
 const BASE_URL = process.env.API_BASE_URL || "http://localhost:8080";
 const API_KEY = process.env.API_BASE_KEY || "a-test-api-key-from-ekodb";
 
+/**
+ * Save a function idempotently.
+ *
+ * The server returns HTTP 409 ("A function with label 'X' already exists.")
+ * when a function with the same fixed label already exists. On that error we
+ * UPDATE the existing function via PUT /api/functions/{label} (the server's
+ * GET/PUT/DELETE routes accept either the encrypted ID or the label), then
+ * resolve and return its encrypted ID so the rest of the example keeps working.
+ * Any other error is propagated.
+ */
+async function saveOrUpdate(client, script) {
+  try {
+    return await client.saveFunction(script);
+  } catch (error) {
+    if (error.message && error.message.includes("already exists")) {
+      await client.updateFunction(script.label, script);
+      console.log(`ℹ️  Function '${script.label}' already existed — updated instead`);
+      const existing = await client.getFunction(script.label);
+      return existing.id;
+    }
+    throw error;
+  }
+}
+
 async function setupTestData(client) {
   console.log("📋 Setting up complete test data...");
 
@@ -49,7 +73,7 @@ async function advancedQueryFunction(client) {
     tags: ["products", "analytics"],
   };
 
-  const scriptId = await client.saveFunction(script);
+  const scriptId = await saveOrUpdate(client, script);
   console.log(`✅ Function saved: ${scriptId}`);
 
   const result = await client.callFunction("product_stats_js", null);
@@ -75,7 +99,7 @@ async function listProductsScript(client) {
     tags: ["products", "list"],
   };
 
-  const scriptId = await client.saveFunction(script);
+  const scriptId = await saveOrUpdate(client, script);
   console.log("✅ Function saved");
 
   const result = await client.callFunction("list_all_products_js", null);
@@ -105,7 +129,7 @@ async function categoryCountScript(client) {
     tags: ["products", "analytics"],
   };
 
-  const scriptId = await client.saveFunction(script);
+  const scriptId = await saveOrUpdate(client, script);
   console.log("✅ Function saved");
 
   const result = await client.callFunction("count_by_category_js", null);
@@ -131,7 +155,7 @@ async function topRatedScript(client) {
     tags: ["products", "quality"],
   };
 
-  const scriptId = await client.saveFunction(script);
+  const scriptId = await saveOrUpdate(client, script);
   console.log("✅ Function saved");
 
   const result = await client.callFunction("top_rated_products_js", null);
@@ -160,7 +184,7 @@ async function scriptWithParameter(client) {
     tags: ["products", "list"],
   };
 
-  const scriptId = await client.saveFunction(script);
+  const scriptId = await saveOrUpdate(client, script);
   console.log("✅ Function saved");
 
   const result = await client.callFunction("list_with_limit_js", { max_items: 3 });
@@ -194,7 +218,7 @@ async function multiStagePipeline(client) {
     tags: ["products", "analytics"],
   };
 
-  const scriptId = await client.saveFunction(script);
+  const scriptId = await saveOrUpdate(client, script);
   console.log("✅ Function saved");
 
   const result = await client.callFunction("product_summary_js", null);

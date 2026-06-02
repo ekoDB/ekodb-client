@@ -19,6 +19,25 @@ BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8080")
 API_KEY = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb")
 
 
+def _is_already_exists_error(err):
+    """Detect the server's 409 'function already exists' response."""
+    msg = str(err)
+    return "409" in msg or "already exists" in msg
+
+
+async def save_or_update(client, script):
+    """Save a function, falling back to an update if its label already exists."""
+    label = script["label"]
+    try:
+        return await client.save_function(script)
+    except Exception as e:
+        if not _is_already_exists_error(e):
+            raise
+        await client.update_function(label, script)
+        print(f"ℹ️  Function '{label}' already existed — updated instead")
+        return label
+
+
 def generate_mock_embedding(size: int) -> list:
     """Generate mock embedding vector"""
     return [random.random() * 0.1 + (i % 100) / 100.0 for i in range(size)]
@@ -99,7 +118,7 @@ async def advanced_query_function(client):
         "tags": ["products", "analytics"],
     }
 
-    script_id = await client.save_function(script)
+    script_id = await save_or_update(client, script)
     print(f"✅ Function saved: {script_id}")
 
     result = await client.call_function("product_stats", None)
@@ -127,7 +146,7 @@ async def list_products_script(client):
         "tags": ["products", "list"],
     }
 
-    script_id = await client.save_function(script)
+    script_id = await save_or_update(client, script)
     print("✅ Function saved")
 
     result = await client.call_function("list_all_products", None)
@@ -158,7 +177,7 @@ async def category_count_script(client):
         "tags": ["products", "analytics"],
     }
 
-    script_id = await client.save_function(script)
+    script_id = await save_or_update(client, script)
     print("✅ Function saved")
 
     result = await client.call_function("count_by_category", None)
@@ -186,7 +205,7 @@ async def top_rated_script(client):
         "tags": ["products", "quality"],
     }
 
-    script_id = await client.save_function(script)
+    script_id = await save_or_update(client, script)
     print("✅ Function saved")
 
     result = await client.call_function("top_rated_products", None)
@@ -218,7 +237,7 @@ async def script_with_parameter(client):
         "tags": ["products", "list"],
     }
 
-    script_id = await client.save_function(script)
+    script_id = await save_or_update(client, script)
     print("✅ Function saved")
 
     result = await client.call_function("list_with_limit", {"max_items": 3})
@@ -257,7 +276,7 @@ async def multi_stage_pipeline(client):
         "tags": ["products", "analytics"],
     }
 
-    script_id = await client.save_function(script)
+    script_id = await save_or_update(client, script)
     print("✅ Function saved")
 
     result = await client.call_function("product_summary", None)

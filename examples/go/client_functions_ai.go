@@ -8,6 +8,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -15,6 +16,31 @@ import (
 	ekodb "github.com/ekoDB/ekodb-client-go"
 	"github.com/joho/godotenv"
 )
+
+// saveOrUpdateFn saves a function, or — if the label already exists (HTTP 409)
+// — updates it in place and recovers the encrypted ID via a GET by label.
+func saveOrUpdateFn(client *ekodb.Client, fn ekodb.UserFunction) (string, error) {
+	id, err := client.SaveFunction(fn)
+	if err == nil {
+		return id, nil
+	}
+	var httpErr *ekodb.HTTPError
+	if errors.As(err, &httpErr) && httpErr.StatusCode == 409 {
+		if uerr := client.UpdateUserFunction(fn.Label, fn); uerr != nil {
+			return "", uerr
+		}
+		fmt.Printf("Function '%s' already existed — updated instead\n", fn.Label)
+		existing, gerr := client.GetUserFunction(fn.Label)
+		if gerr != nil {
+			return "", gerr
+		}
+		if existing.ID == nil {
+			return "", fmt.Errorf("function %q has no id after update", fn.Label)
+		}
+		return *existing.ID, nil
+	}
+	return "", err
+}
 
 func main() {
 	if err := godotenv.Load(); err != nil {
@@ -79,7 +105,7 @@ func main() {
 		},
 		Tags: []string{"ai", "chat"},
 	}
-	scriptID1, _ := client.SaveFunction(script1)
+	scriptID1, _ := saveOrUpdateFn(client, script1)
 	scriptIDs = append(scriptIDs, scriptID1)
 	fmt.Println("✅ Chat script saved")
 
@@ -105,7 +131,7 @@ func main() {
 		Functions: []ekodb.FunctionStageConfig{ekodb.StageEmbed("{{text}}", &model2)},
 		Tags:      []string{"ai", "embed"},
 	}
-	scriptID2, _ := client.SaveFunction(script2)
+	scriptID2, _ := saveOrUpdateFn(client, script2)
 	scriptIDs = append(scriptIDs, scriptID2)
 	fmt.Println("✅ Embed script saved")
 

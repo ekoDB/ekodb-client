@@ -22,6 +22,26 @@ dotenv.config();
 const BASE_URL = process.env.API_BASE_URL || "http://localhost:8080";
 const API_KEY = process.env.API_BASE_KEY || "a-test-api-key-from-ekodb";
 
+/** True when a save failed because the function label already exists (HTTP 409). */
+function isAlreadyExistsError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.includes("status 409") || message.includes("already exists");
+}
+
+/** Idempotent save: create the function, or update it in place on 409. */
+async function saveOrUpdateUserFunction(
+  client: EkoDBClient,
+  fn: UserFunction,
+): Promise<void> {
+  try {
+    await client.saveUserFunction(fn);
+  } catch (error) {
+    if (!isAlreadyExistsError(error)) throw error;
+    await client.updateUserFunction(fn.label, fn);
+    console.log(`Function '${fn.label}' already existed — updated instead`);
+  }
+}
+
 async function main() {
   const client = new EkoDBClient(BASE_URL, API_KEY);
   await client.init();
@@ -44,7 +64,7 @@ async function main() {
       }),
     ],
   };
-  await client.saveUserFunction(register).catch(() => {});
+  await saveOrUpdateUserFunction(client, register);
   console.log("✓ ts_users_register saved");
 
   // 2. Login: find user, verify bcrypt, sign JWT on success.
@@ -75,7 +95,7 @@ async function main() {
       ),
     ],
   };
-  await client.saveUserFunction(login).catch(() => {});
+  await saveOrUpdateUserFunction(client, login);
   console.log("✓ ts_users_login saved");
 
   // 3. Verify a JWT — fail-closed when claims is null.
@@ -94,7 +114,7 @@ async function main() {
       ),
     ],
   };
-  await client.saveUserFunction(verify).catch(() => {});
+  await saveOrUpdateUserFunction(client, verify);
   console.log("✓ ts_users_verify_token saved");
 
   console.log("\n=== Auth flow defined as pure stored functions ===");

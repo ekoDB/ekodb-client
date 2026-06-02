@@ -9,6 +9,25 @@ use ekodb_client::{
     Client, FieldType, Function, GroupFunctionConfig, GroupFunctionOp, Record, UserFunction,
 };
 
+/// Save a function idempotently: if the label already exists (HTTP 409),
+/// update the existing definition instead, then return its id.
+async fn save_or_update(
+    client: &Client,
+    function: UserFunction,
+) -> Result<String, Box<dyn std::error::Error>> {
+    let label = function.label.clone();
+    match client.save_function(function.clone()).await {
+        Ok(id) => Ok(id),
+        Err(ekodb_client::Error::Api { code: 409, .. }) => {
+            client.update_function(&label, function).await?;
+            println!("ℹ️  Function '{}' already existed — updated instead", label);
+            let existing = client.get_function(&label).await?;
+            Ok(existing.id.unwrap_or(label))
+        }
+        Err(e) => Err(Box::new(e)),
+    }
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv::dotenv().ok();
@@ -53,7 +72,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         })
         .with_tag("users")
         .with_tag("list");
-    let script_id1 = client.save_function(script1).await?;
+    let script_id1 = save_or_update(&client, script1).await?;
     script_ids.push(script_id1);
     println!("✅ Function saved");
 
@@ -77,7 +96,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         })
         .with_tag("users")
         .with_tag("analytics");
-    let script_id2 = client.save_function(script2).await?;
+    let script_id2 = save_or_update(&client, script2).await?;
     script_ids.push(script_id2);
     println!("✅ Function saved");
 

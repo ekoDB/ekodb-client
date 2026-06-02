@@ -13,6 +13,26 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
+def _is_already_exists_error(err):
+    """Detect the server's 409 'function already exists' response."""
+    msg = str(err)
+    return "409" in msg or "already exists" in msg
+
+
+async def save_or_update(client, script):
+    """Save a function, falling back to an update if its label already exists."""
+    label = script["label"]
+    try:
+        return await client.save_function(script)
+    except Exception as e:
+        if not _is_already_exists_error(e):
+            raise
+        await client.update_function(label, script)
+        print(f"ℹ️  Function '{label}' already existed — updated instead")
+        return label
+
+
 BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8080")
 API_KEY = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb")
 
@@ -48,7 +68,7 @@ async def example_basic_swr(client: Client):
         "tags": ["github", "swr", "native"],
     }
 
-    script_id = await client.save_function(basic_swr_script)
+    script_id = await save_or_update(client, basic_swr_script)
     print(f"✓ Created native SWR script: github_user_native ({script_id})")
 
     # First call - cache miss
@@ -103,7 +123,7 @@ async def example_audit_trail(client: Client):
         "tags": ["products", "audit"],
     }
 
-    audit_script_id = await client.save_function(audit_swr_script)
+    audit_script_id = await save_or_update(client, audit_swr_script)
     print(
         f"✓ Created SWR script with audit trail: product_swr_audit ({audit_script_id})"
     )
@@ -159,7 +179,7 @@ async def example_pipeline_enrichment(client: Client):
         "tags": ["enrichment", "pipeline"],
     }
 
-    pipeline_script_id = await client.save_function(pipeline_script)
+    pipeline_script_id = await save_or_update(client, pipeline_script)
     print(
         f"✓ Created enrichment pipeline: user_enrichment_pipeline ({pipeline_script_id})"
     )
@@ -209,7 +229,7 @@ async def example_dynamic_ttl(client: Client):
         "tags": ["dynamic"],
     }
 
-    dynamic_script_id = await client.save_function(dynamic_ttl_script)
+    dynamic_script_id = await save_or_update(client, dynamic_ttl_script)
     print(f"✓ Created dynamic TTL script: flexible_cache ({dynamic_script_id})")
 
     # Test with different TTLs

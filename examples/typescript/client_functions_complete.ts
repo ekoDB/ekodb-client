@@ -4,13 +4,39 @@
  * Demonstrates: FindAll, Group, Count, Multi-stage Pipelines
  */
 
-import { EkoDBClient, Stage } from "@ekodb/ekodb-client";
+import { EkoDBClient, Stage, UserFunction } from "@ekodb/ekodb-client";
 import * as dotenv from "dotenv";
 
 dotenv.config();
 
 const BASE_URL = process.env.API_BASE_URL || "http://localhost:8080";
 const API_KEY = process.env.API_BASE_KEY || "a-test-api-key-from-ekodb";
+
+/** True when a save failed because the function label already exists (HTTP 409). */
+function isAlreadyExistsError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.includes("status 409") || message.includes("already exists");
+}
+
+/**
+ * Idempotent save: create the function, or update it in place if a function
+ * with the same label already exists. Returns the function's id so downstream
+ * cleanup-by-id continues to work.
+ */
+async function saveOrUpdate(
+  client: EkoDBClient,
+  script: UserFunction,
+): Promise<string> {
+  try {
+    return await client.saveFunction(script);
+  } catch (error) {
+    if (!isAlreadyExistsError(error)) throw error;
+    await client.updateFunction(script.label, script);
+    console.log(`Function '${script.label}' already existed — updated instead`);
+    const existing = await client.getFunction(script.label);
+    return existing.id ?? script.label;
+  }
+}
 
 interface Product {
   name: string;
@@ -93,7 +119,7 @@ async function productStatsScript(client: EkoDBClient): Promise<string> {
     tags: ["products", "analytics"],
   };
 
-  const id = await client.saveFunction(script);
+  const id = await saveOrUpdate(client, script);
   console.log(`✅ Function saved: ${id}`);
 
   const result = await client.callFunction("product_stats");
@@ -119,7 +145,7 @@ async function listProductsScript(client: EkoDBClient): Promise<string> {
     tags: ["products", "list"],
   };
 
-  const id = await client.saveFunction(script);
+  const id = await saveOrUpdate(client, script);
   console.log("✅ Function saved");
 
   const result = await client.callFunction("list_all_products");
@@ -148,7 +174,7 @@ async function categoryCountScript(client: EkoDBClient): Promise<string> {
     tags: ["products", "analytics"],
   };
 
-  const id = await client.saveFunction(script);
+  const id = await saveOrUpdate(client, script);
   console.log("✅ Function saved");
 
   const result = await client.callFunction("count_by_category");
@@ -174,7 +200,7 @@ async function topRatedScript(client: EkoDBClient): Promise<string> {
     tags: ["products", "quality"],
   };
 
-  const id = await client.saveFunction(script);
+  const id = await saveOrUpdate(client, script);
   console.log("✅ Function saved");
 
   const result = await client.callFunction("top_rated_products");
@@ -203,7 +229,7 @@ async function scriptWithParameter(client: EkoDBClient): Promise<string> {
     tags: ["products", "list"],
   };
 
-  const id = await client.saveFunction(script);
+  const id = await saveOrUpdate(client, script);
   console.log("✅ Function saved");
 
   const result = await client.callFunction("list_with_limit", { max_items: 3 });
@@ -240,7 +266,7 @@ async function multiStagePipeline(client: EkoDBClient): Promise<string> {
     tags: ["products", "analytics"],
   };
 
-  const id = await client.saveFunction(script);
+  const id = await saveOrUpdate(client, script);
   console.log("✅ Function saved");
 
   const result = await client.callFunction("product_summary");

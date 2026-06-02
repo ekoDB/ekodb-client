@@ -9,6 +9,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -17,6 +18,31 @@ import (
 	ekodb "github.com/ekoDB/ekodb-client-go"
 	"github.com/joho/godotenv"
 )
+
+// saveOrUpdateFn saves a function, or — if the label already exists (HTTP 409)
+// — updates it in place and recovers the encrypted ID via a GET by label.
+func saveOrUpdateFn(client *ekodb.Client, fn ekodb.UserFunction) (string, error) {
+	id, err := client.SaveFunction(fn)
+	if err == nil {
+		return id, nil
+	}
+	var httpErr *ekodb.HTTPError
+	if errors.As(err, &httpErr) && httpErr.StatusCode == 409 {
+		if uerr := client.UpdateUserFunction(fn.Label, fn); uerr != nil {
+			return "", uerr
+		}
+		fmt.Printf("Function '%s' already existed — updated instead\n", fn.Label)
+		existing, gerr := client.GetUserFunction(fn.Label)
+		if gerr != nil {
+			return "", gerr
+		}
+		if existing.ID == nil {
+			return "", fmt.Errorf("function %q has no id after update", fn.Label)
+		}
+		return *existing.ID, nil
+	}
+	return "", err
+}
 
 func setupTestData(client *ekodb.Client) error {
 	fmt.Println("📋 Setting up test data...\n")
@@ -60,7 +86,7 @@ func basicCompositionExample(client *ekodb.Client) error {
 		Tags: []string{},
 	}
 
-	if _, err := client.SaveFunction(fetchUser); err != nil {
+	if _, err := saveOrUpdateFn(client, fetchUser); err != nil {
 		return err
 	}
 	fmt.Println("✅ Saved reusable function: fetch_user")
@@ -79,7 +105,7 @@ func basicCompositionExample(client *ekodb.Client) error {
 		},
 	}
 
-	if _, err := client.SaveFunction(getUserWrapper); err != nil {
+	if _, err := saveOrUpdateFn(client, getUserWrapper); err != nil {
 		return err
 	}
 	fmt.Println("✅ Saved composed function: get_user_wrapper (calls fetch_user + projects fields)\n")
@@ -135,7 +161,7 @@ func swrCompositionExample(client *ekodb.Client) error {
 		},
 	}
 
-	if _, err := client.SaveFunction(fetchAndStore); err != nil {
+	if _, err := saveOrUpdateFn(client, fetchAndStore); err != nil {
 		return err
 	}
 	fmt.Println("✅ Saved reusable function: fetch_and_store_user (uses KV)")
@@ -172,7 +198,7 @@ func swrCompositionExample(client *ekodb.Client) error {
 		},
 	}
 
-	if _, err := client.SaveFunction(swrUser); err != nil {
+	if _, err := saveOrUpdateFn(client, swrUser); err != nil {
 		return err
 	}
 	fmt.Println("✅ Saved SWR function using composition: swr_user\n")
@@ -247,7 +273,7 @@ func nestedCompositionExample(client *ekodb.Client) error {
 		Tags: []string{},
 	}
 
-	if _, err := client.SaveFunction(validateUser); err != nil {
+	if _, err := saveOrUpdateFn(client, validateUser); err != nil {
 		return err
 	}
 	fmt.Println("✅ Level 1 function: validate_user")
@@ -266,7 +292,7 @@ func nestedCompositionExample(client *ekodb.Client) error {
 		},
 	}
 
-	if _, err := client.SaveFunction(fetchSlim); err != nil {
+	if _, err := saveOrUpdateFn(client, fetchSlim); err != nil {
 		return err
 	}
 	fmt.Println("✅ Level 2 function: fetch_slim_user (calls validate_user)")
@@ -284,7 +310,7 @@ func nestedCompositionExample(client *ekodb.Client) error {
 		},
 	}
 
-	if _, err := client.SaveFunction(getVerifiedUser); err != nil {
+	if _, err := saveOrUpdateFn(client, getVerifiedUser); err != nil {
 		return err
 	}
 	fmt.Println("✅ Level 3 function: get_verified_user (calls fetch_slim_user)\n")

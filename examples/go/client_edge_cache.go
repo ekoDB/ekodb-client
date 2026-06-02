@@ -8,6 +8,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -73,7 +74,7 @@ func main() {
 		Tags: []string{"cache", "edge"},
 	}
 
-	scriptID, err := client.SaveFunction(cacheScript)
+	scriptID, err := saveOrUpdateFn(client, cacheScript)
 	if err != nil {
 		log.Fatalf("Failed to save script: %v", err)
 	}
@@ -116,6 +117,31 @@ func main() {
 	fmt.Println("- One service: Database + Cache + Edge Functions")
 
 	fmt.Println("\n✓ Example complete!")
+}
+
+// saveOrUpdateFn saves a function, or — if the label already exists (HTTP 409)
+// — updates it in place and recovers the encrypted ID via a GET by label.
+func saveOrUpdateFn(client *ekodb.Client, fn ekodb.UserFunction) (string, error) {
+	id, err := client.SaveFunction(fn)
+	if err == nil {
+		return id, nil
+	}
+	var httpErr *ekodb.HTTPError
+	if errors.As(err, &httpErr) && httpErr.StatusCode == 409 {
+		if uerr := client.UpdateUserFunction(fn.Label, fn); uerr != nil {
+			return "", uerr
+		}
+		fmt.Printf("Function '%s' already existed — updated instead\n", fn.Label)
+		existing, gerr := client.GetUserFunction(fn.Label)
+		if gerr != nil {
+			return "", gerr
+		}
+		if existing.ID == nil {
+			return "", fmt.Errorf("function %q has no id after update", fn.Label)
+		}
+		return *existing.ID, nil
+	}
+	return "", err
 }
 
 func strPtr(s string) *string {
