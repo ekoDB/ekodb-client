@@ -4,6 +4,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -14,6 +15,31 @@ import (
 
 func strPtr(s string) *string {
 	return &s
+}
+
+// saveOrUpdateFn saves a function, or — if the label already exists (HTTP 409)
+// — updates it in place and recovers the encrypted ID via a GET by label.
+func saveOrUpdateFn(client *ekodb.Client, fn ekodb.UserFunction) (string, error) {
+	id, err := client.SaveFunction(fn)
+	if err == nil {
+		return id, nil
+	}
+	var httpErr *ekodb.HTTPError
+	if errors.As(err, &httpErr) && httpErr.StatusCode == 409 {
+		if uerr := client.UpdateUserFunction(fn.Label, fn); uerr != nil {
+			return "", uerr
+		}
+		fmt.Printf("Function '%s' already existed — updated instead\n", fn.Label)
+		existing, gerr := client.GetUserFunction(fn.Label)
+		if gerr != nil {
+			return "", gerr
+		}
+		if existing.ID == nil {
+			return "", fmt.Errorf("function %q has no id after update", fn.Label)
+		}
+		return *existing.ID, nil
+	}
+	return "", err
 }
 
 func main() {
@@ -83,7 +109,7 @@ func main() {
 		Tags: []string{"products", "analytics"},
 	}
 
-	scriptID1, err := client.SaveFunction(script1)
+	scriptID1, err := saveOrUpdateFn(client, script1)
 	if err != nil {
 		log.Printf("Save script error: %v", err)
 	} else {
@@ -113,7 +139,7 @@ func main() {
 		Tags: []string{"products", "list"},
 	}
 
-	scriptID2, err := client.SaveFunction(script2)
+	scriptID2, err := saveOrUpdateFn(client, script2)
 	if err != nil {
 		log.Printf("Save script error: %v", err)
 	} else {
@@ -146,7 +172,7 @@ func main() {
 		Tags: []string{"products", "analytics"},
 	}
 
-	scriptID3, err := client.SaveFunction(script3)
+	scriptID3, err := saveOrUpdateFn(client, script3)
 	if err != nil {
 		log.Printf("Save script error: %v", err)
 	} else {
@@ -181,7 +207,7 @@ func main() {
 		Tags: []string{"products", "analytics"},
 	}
 
-	scriptID4, err := client.SaveFunction(script4)
+	scriptID4, err := saveOrUpdateFn(client, script4)
 	if err != nil {
 		log.Printf("Save script error: %v", err)
 	} else {

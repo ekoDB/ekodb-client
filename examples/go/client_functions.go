@@ -8,6 +8,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -15,6 +16,39 @@ import (
 	ekodb "github.com/ekoDB/ekodb-client-go"
 	"github.com/joho/godotenv"
 )
+
+// saveOrUpdateScript saves a function, or — if a function with the same label
+// already exists (HTTP 409) — updates it in place via PUT by label, making the
+// example idempotent across repeated runs while still exercising both the
+// create and update paths.
+//
+// It always returns the function's encrypted ID so downstream GET/UPDATE/DELETE
+// calls (which require the encrypted ID, not the label) keep working: on a
+// fresh create the ID comes straight from the save response; on the 409→update
+// path it is recovered by looking the function up by label (the server's GET
+// /api/functions/{id_or_label} accepts the label).
+func saveOrUpdateScript(client *ekodb.Client, script ekodb.UserFunction) (string, error) {
+	id, err := client.SaveFunction(script)
+	if err == nil {
+		return id, nil
+	}
+	var httpErr *ekodb.HTTPError
+	if errors.As(err, &httpErr) && httpErr.StatusCode == 409 {
+		if uerr := client.UpdateUserFunction(script.Label, script); uerr != nil {
+			return "", uerr
+		}
+		fmt.Printf("ℹ️  Function '%s' already existed — updated instead\n", script.Label)
+		existing, gerr := client.GetUserFunction(script.Label)
+		if gerr != nil {
+			return "", gerr
+		}
+		if existing.ID == nil {
+			return "", fmt.Errorf("function %q has no id after update", script.Label)
+		}
+		return *existing.ID, nil
+	}
+	return "", err
+}
 
 func setupTestData(client *ekodb.Client) error {
 	fmt.Println("📋 Setting up test data...")
@@ -57,7 +91,7 @@ func simpleQueryScript(client *ekodb.Client) (string, error) {
 		Tags: []string{"users", "query"},
 	}
 
-	scriptID, err := client.SaveFunction(script)
+	scriptID, err := saveOrUpdateScript(client, script)
 	if err != nil {
 		return "", err
 	}
@@ -99,7 +133,7 @@ func parameterizedScript(client *ekodb.Client) error {
 		Tags: []string{"users", "parameterized"},
 	}
 
-	_, err := client.SaveFunction(script)
+	_, err := saveOrUpdateScript(client, script)
 	if err != nil {
 		return err
 	}
@@ -148,7 +182,7 @@ func aggregationScript(client *ekodb.Client) (string, error) {
 		Tags: []string{"analytics"},
 	}
 
-	scriptID, err := client.SaveFunction(script)
+	scriptID, err := saveOrUpdateScript(client, script)
 	if err != nil {
 		return "", err
 	}
@@ -237,7 +271,7 @@ func multiStageScript(client *ekodb.Client) error {
 		Tags: []string{"analytics", "reporting"},
 	}
 
-	_, err := client.SaveFunction(script)
+	_, err := saveOrUpdateScript(client, script)
 	if err != nil {
 		return err
 	}
@@ -276,7 +310,7 @@ func countScript(client *ekodb.Client) error {
 		Tags: []string{"users", "count"},
 	}
 
-	_, err := client.SaveFunction(script)
+	_, err := saveOrUpdateScript(client, script)
 	if err != nil {
 		return err
 	}

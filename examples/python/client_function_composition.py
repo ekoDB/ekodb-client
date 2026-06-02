@@ -22,6 +22,30 @@ BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8080")
 API_KEY = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb")
 
 
+def _is_already_exists_error(err):
+    """Detect the server's 409 'function already exists' response."""
+    msg = str(err)
+    return "409" in msg or "already exists" in msg
+
+
+async def save_or_update(client, script):
+    """Save a function, falling back to an update if its label already exists.
+
+    The server returns HTTP 409 when a function with the same label is already
+    saved. In that case we update the existing definition (PUT by label) and
+    return the label as the identifier so the example is idempotent.
+    """
+    label = script["label"]
+    try:
+        return await client.save_function(script)
+    except Exception as e:
+        if not _is_already_exists_error(e):
+            raise
+        await client.update_function(label, script)
+        print(f"ℹ️  Function '{label}' already existed — updated instead")
+        return label
+
+
 async def setup_test_data(client):
     """Create test users"""
     print("📋 Setting up test data...\n")
@@ -60,7 +84,7 @@ async def basic_composition_example(client):
         ],
     }
 
-    await client.save_function(fetch_user)
+    await save_or_update(client, fetch_user)
     print("✅ Saved reusable function: fetch_user")
 
     # Step 2: Create wrapper that CALLS fetch_user
@@ -78,7 +102,7 @@ async def basic_composition_example(client):
         ],
     }
 
-    await client.save_function(get_user_wrapper)
+    await save_or_update(client, get_user_wrapper)
     print(
         "✅ Saved composed function: get_user_wrapper (calls fetch_user + projects fields)\n"
     )
@@ -126,7 +150,7 @@ async def swr_composition_example(client):
         ],
     }
 
-    await client.save_function(fetch_and_store)
+    await save_or_update(client, fetch_and_store)
     print("✅ Saved reusable function: fetch_and_store_user (uses KV)")
 
     # Step 2: Create SWR function that CALLS the reusable function
@@ -174,7 +198,7 @@ async def swr_composition_example(client):
         ],
     }
 
-    await client.save_function(swr_user)
+    await save_or_update(client, swr_user)
     print("✅ Saved SWR function using composition: swr_user\n")
 
     # Step 3: Test cache miss
@@ -225,7 +249,7 @@ async def nested_composition_example(client):
         ],
     }
 
-    await client.save_function(validate_user)
+    await save_or_update(client, validate_user)
     print("✅ Level 1 function: validate_user")
 
     # Level 2: Calls validate_user + projects
@@ -243,7 +267,7 @@ async def nested_composition_example(client):
         ],
     }
 
-    await client.save_function(fetch_slim)
+    await save_or_update(client, fetch_slim)
     print("✅ Level 2 function: fetch_slim_user (calls validate_user)")
 
     # Level 3: Calls fetch_slim (demonstrates 3-level nesting)
@@ -260,7 +284,7 @@ async def nested_composition_example(client):
         ],
     }
 
-    await client.save_function(get_verified_user)
+    await save_or_update(client, get_verified_user)
     print("✅ Level 3 function: get_verified_user (calls fetch_slim_user)\n")
 
     # Execute 3-level nested composition

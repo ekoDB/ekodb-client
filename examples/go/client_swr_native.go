@@ -8,6 +8,7 @@ encapsulates the entire cache-aside pattern in a single operation.
 */
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -17,6 +18,31 @@ import (
 	ekodb "github.com/ekoDB/ekodb-client-go"
 	"github.com/joho/godotenv"
 )
+
+// saveOrUpdateFn saves a function, or — if the label already exists (HTTP 409)
+// — updates it in place and recovers the encrypted ID via a GET by label.
+func saveOrUpdateFn(client *ekodb.Client, fn ekodb.UserFunction) (string, error) {
+	id, err := client.SaveFunction(fn)
+	if err == nil {
+		return id, nil
+	}
+	var httpErr *ekodb.HTTPError
+	if errors.As(err, &httpErr) && httpErr.StatusCode == 409 {
+		if uerr := client.UpdateUserFunction(fn.Label, fn); uerr != nil {
+			return "", uerr
+		}
+		fmt.Printf("Function '%s' already existed — updated instead\n", fn.Label)
+		existing, gerr := client.GetUserFunction(fn.Label)
+		if gerr != nil {
+			return "", gerr
+		}
+		if existing.ID == nil {
+			return "", fmt.Errorf("function %q has no id after update", fn.Label)
+		}
+		return *existing.ID, nil
+	}
+	return "", err
+}
 
 func exampleBasicSWR(client *ekodb.Client) (string, error) {
 	fmt.Println("\nExample 1: Basic Native SWR")
@@ -53,7 +79,7 @@ func exampleBasicSWR(client *ekodb.Client) (string, error) {
 		Tags: []string{"github", "swr", "native"},
 	}
 
-	scriptID, err := client.SaveFunction(basicSWRScript)
+	scriptID, err := saveOrUpdateFn(client, basicSWRScript)
 	if err != nil {
 		return "", fmt.Errorf("failed to save script: %w", err)
 	}
@@ -127,7 +153,7 @@ func exampleAuditTrail(client *ekodb.Client) (string, error) {
 		Tags: []string{"products", "audit"},
 	}
 
-	auditScriptID, err := client.SaveFunction(auditSWRScript)
+	auditScriptID, err := saveOrUpdateFn(client, auditSWRScript)
 	if err != nil {
 		return "", fmt.Errorf("failed to save audit script: %w", err)
 	}
@@ -192,7 +218,7 @@ func examplePipelineEnrichment(client *ekodb.Client) (string, error) {
 		Tags: []string{"enrichment", "pipeline"},
 	}
 
-	pipelineScriptID, err := client.SaveFunction(pipelineScript)
+	pipelineScriptID, err := saveOrUpdateFn(client, pipelineScript)
 	if err != nil {
 		return "", fmt.Errorf("failed to save pipeline script: %w", err)
 	}
@@ -247,7 +273,7 @@ func exampleDynamicTTL(client *ekodb.Client) (string, error) {
 		Tags: []string{"dynamic"},
 	}
 
-	dynamicScriptID, err := client.SaveFunction(dynamicTTLScript)
+	dynamicScriptID, err := saveOrUpdateFn(client, dynamicTTLScript)
 	if err != nil {
 		return "", fmt.Errorf("failed to save dynamic TTL script: %w", err)
 	}

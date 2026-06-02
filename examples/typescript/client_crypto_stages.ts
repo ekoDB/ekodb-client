@@ -25,6 +25,26 @@ dotenv.config();
 const BASE_URL = process.env.API_BASE_URL || "http://localhost:8080";
 const API_KEY = process.env.API_BASE_KEY || "a-test-api-key-from-ekodb";
 
+/** True when a save failed because the function label already exists (HTTP 409). */
+function isAlreadyExistsError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.includes("status 409") || message.includes("already exists");
+}
+
+/** Idempotent save: create the function, or update it in place on 409. */
+async function saveOrUpdateUserFunction(
+  client: EkoDBClient,
+  fn: UserFunction,
+): Promise<void> {
+  try {
+    await client.saveUserFunction(fn);
+  } catch (error) {
+    if (!isAlreadyExistsError(error)) throw error;
+    await client.updateUserFunction(fn.label, fn);
+    console.log(`Function '${fn.label}' already existed — updated instead`);
+  }
+}
+
 async function main() {
   const client = new EkoDBClient(BASE_URL, API_KEY);
   await client.init();
@@ -52,7 +72,7 @@ async function main() {
       ),
     ],
   };
-  await client.saveUserFunction(hmac).catch(() => {});
+  await saveOrUpdateUserFunction(client, hmac);
   console.log("✓ crypto_demo_hmac saved");
 
   // 2. AES-256-GCM encrypt + decrypt.
@@ -65,7 +85,7 @@ async function main() {
       Stage.aesDecrypt("envelope", "{{env.DATA_KEY}}", "recovered", "hex"),
     ],
   };
-  await client.saveUserFunction(aes).catch(() => {});
+  await saveOrUpdateUserFunction(client, aes);
   console.log("✓ crypto_demo_aes saved");
 
   // 3. UuidGenerate — fresh ID every call.
@@ -75,7 +95,7 @@ async function main() {
     parameters: {},
     functions: [Stage.uuidGenerate("id")],
   };
-  await client.saveUserFunction(uuidFn).catch(() => {});
+  await saveOrUpdateUserFunction(client, uuidFn);
   console.log("✓ crypto_demo_uuid saved");
 
   // 4. TotpGenerate — RFC 6238 with SHA1 (most authenticator apps).
@@ -91,7 +111,7 @@ async function main() {
       }),
     ],
   };
-  await client.saveUserFunction(totp).catch(() => {});
+  await saveOrUpdateUserFunction(client, totp);
   console.log("✓ crypto_demo_totp saved");
 
   // 5. Base64 + Hex + Slugify chained on one input.
@@ -105,7 +125,7 @@ async function main() {
       Stage.slugify("{{title}}", "title_slug"),
     ],
   };
-  await client.saveUserFunction(encoding).catch(() => {});
+  await saveOrUpdateUserFunction(client, encoding);
   console.log("✓ crypto_demo_encoding saved");
 
   console.log("\nInvoke them with:");

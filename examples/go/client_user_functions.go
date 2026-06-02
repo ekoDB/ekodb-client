@@ -6,6 +6,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -13,6 +14,13 @@ import (
 	ekodb "github.com/ekoDB/ekodb-client-go"
 	"github.com/joho/godotenv"
 )
+
+// isAlreadyExists reports whether err is a 409 Conflict (the function label
+// already exists) returned by the ekoDB functions API.
+func isAlreadyExists(err error) bool {
+	var httpErr *ekodb.HTTPError
+	return errors.As(err, &httpErr) && httpErr.StatusCode == 409
+}
 
 func main() {
 	// Load environment variables
@@ -59,7 +67,14 @@ func main() {
 	}
 
 	funcID, err := client.SaveUserFunction(userFunc)
-	if err != nil {
+	if isAlreadyExists(err) {
+		// Idempotent: the label already exists, so update it instead (PUT by label).
+		if uerr := client.UpdateUserFunction(userFunc.Label, userFunc); uerr != nil {
+			log.Printf("UpdateUserFunction error: %v", uerr)
+		} else {
+			fmt.Printf("User function '%s' already existed — updated instead\n", userFunc.Label)
+		}
+	} else if err != nil {
 		log.Printf("SaveUserFunction error: %v", err)
 	} else {
 		fmt.Printf("Created user function with ID: %s\n", funcID)

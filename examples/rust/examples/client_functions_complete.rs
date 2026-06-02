@@ -7,6 +7,25 @@ use ekodb_client::{
 };
 use std::{collections::HashMap, env};
 
+/// Save a function idempotently: if the label already exists (HTTP 409),
+/// update the existing definition instead, then return its id.
+async fn save_or_update(
+    client: &Client,
+    function: UserFunction,
+) -> Result<String, Box<dyn std::error::Error>> {
+    let label = function.label.clone();
+    match client.save_function(function.clone()).await {
+        Ok(id) => Ok(id),
+        Err(ekodb_client::Error::Api { code: 409, .. }) => {
+            client.update_function(&label, function).await?;
+            println!("ℹ️  Function '{}' already existed — updated instead", label);
+            let existing = client.get_function(&label).await?;
+            Ok(existing.id.unwrap_or(label))
+        }
+        Err(e) => Err(Box::new(e)),
+    }
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv::dotenv().ok();
@@ -93,7 +112,7 @@ async fn product_stats_script(client: &Client) -> Result<String, Box<dyn std::er
             ],
         });
 
-    let id = client.save_function(script).await?;
+    let id = save_or_update(client, script).await?;
     println!("✅ Function saved: {}", id);
 
     let result = client.call_function("product_stats_rs", None).await?;
@@ -116,7 +135,7 @@ async fn list_products_script(client: &Client) -> Result<String, Box<dyn std::er
             collection: "complete_products_rs".to_string(),
         });
 
-    let id = client.save_function(script).await?;
+    let id = save_or_update(client, script).await?;
     println!("✅ Function saved");
 
     let result = client.call_function("list_all_products_rs", None).await?;
@@ -140,7 +159,7 @@ async fn category_count_script(client: &Client) -> Result<String, Box<dyn std::e
             functions: vec![GroupFunctionConfig::new("count", GroupFunctionOp::Count)],
         });
 
-    let id = client.save_function(script).await?;
+    let id = save_or_update(client, script).await?;
     println!("✅ Function saved");
 
     let result = client.call_function("count_by_category_rs", None).await?;
@@ -163,7 +182,7 @@ async fn top_rated_script(client: &Client) -> Result<String, Box<dyn std::error:
             collection: "complete_products_rs".to_string(),
         });
 
-    let id = client.save_function(script).await?;
+    let id = save_or_update(client, script).await?;
     println!("✅ Function saved");
 
     let result = client.call_function("top_rated_products_rs", None).await?;
@@ -184,7 +203,7 @@ async fn script_with_parameter(client: &Client) -> Result<String, Box<dyn std::e
             collection: "complete_products_rs".to_string(),
         });
 
-    let id = client.save_function(script).await?;
+    let id = save_or_update(client, script).await?;
     println!("✅ Function saved");
 
     let mut params = HashMap::new();
@@ -220,7 +239,7 @@ async fn multi_stage_pipeline(client: &Client) -> Result<String, Box<dyn std::er
             output_field: "total_categories".to_string(),
         });
 
-    let id = client.save_function(script).await?;
+    let id = save_or_update(client, script).await?;
     println!("✅ Function saved");
 
     let result = client.call_function("product_summary_rs", None).await?;

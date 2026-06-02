@@ -17,6 +17,26 @@ import io.github.cdimascio.dotenv.dotenv
 import kotlinx.coroutines.runBlocking
 import kotlin.system.measureTimeMillis
 
+private fun isAlreadyExistsError(e: Exception): Boolean {
+    val msg = e.message ?: return false
+    return msg.contains("status 409") || msg.contains("already exists")
+}
+
+private suspend fun saveOrUpdate(client: EkoDBClient, func: UserFunction): String {
+    return try {
+        client.saveFunction(func)
+    } catch (e: Exception) {
+        if (isAlreadyExistsError(e)) {
+            client.updateFunction(func.label, func)
+            println("ℹ️  Function '${func.label}' already existed — updated instead")
+            client.getFunction(func.label).id
+                ?: throw IllegalStateException("No ID returned for function '${func.label}'")
+        } else {
+            throw e
+        }
+    }
+}
+
 fun main() = runBlocking {
     val dotenv = dotenv()
     val baseUrl = dotenv["API_BASE_URL"] ?: "http://localhost:8080"
@@ -56,7 +76,7 @@ fun main() = runBlocking {
         tags = listOf("cache", "edge")
     )
 
-    val funcId = client.saveFunction(cacheFunc)
+    val funcId = saveOrUpdate(client, cacheFunc)
     println("✓ Edge cache function created: $funcId\n")
 
     // Test it - First call

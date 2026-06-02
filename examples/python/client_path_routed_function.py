@@ -105,12 +105,23 @@ async def main() -> None:
     print("\n✓ Cleaned up demo functions")
 
 
+def _is_already_exists_error(err):
+    """Detect the server's 409 'function already exists' response."""
+    msg = str(err)
+    return "409" in msg or "already exists" in msg
+
+
 async def _save(client, func):
+    label = func["label"]
     try:
         await client.save_user_function(func)
-        print(f"✓ {func['label']} saved")
+        print(f"✓ {label} saved")
     except Exception as e:
-        print(f"SaveUserFunction({func['label']}) error: {e}")
+        if not _is_already_exists_error(e):
+            print(f"SaveUserFunction({label}) error: {e}")
+            return
+        await client.update_user_function(label, func)
+        print(f"ℹ️  Function '{label}' already existed — updated instead")
 
 
 if __name__ == "__main__":

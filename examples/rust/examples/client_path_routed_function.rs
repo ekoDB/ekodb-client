@@ -20,6 +20,24 @@ use ekodb_client::{Client, Function, ParameterDefinition, UserFunction};
 use std::collections::HashMap;
 use std::env;
 
+/// Save a user function idempotently: if the label already exists (HTTP 409),
+/// update the existing definition instead.
+async fn save_or_update_user(
+    client: &Client,
+    function: UserFunction,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let label = function.label.clone();
+    match client.save_user_function(function.clone()).await {
+        Ok(_) => Ok(()),
+        Err(ekodb_client::Error::Api { code: 409, .. }) => {
+            client.update_user_function(&label, function).await?;
+            println!("ℹ️  Function '{}' already existed — updated instead", label);
+            Ok(())
+        }
+        Err(e) => Err(Box::new(e)),
+    }
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv::dotenv().ok();
@@ -47,7 +65,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             )]),
             status_code: Some(200),
         });
-    let _ = client.save_user_function(admin).await;
+    save_or_update_user(&client, admin).await?;
     println!("✓ rs_route_admin → GET /api/route/users/admin");
 
     // Single-placeholder route — `:id` lands in params.id at call time.
@@ -61,7 +79,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             )]),
             status_code: Some(200),
         });
-    let _ = client.save_user_function(by_id).await;
+    save_or_update_user(&client, by_id).await?;
     println!("✓ rs_route_user_by_id → GET /api/route/users/:id");
 
     // Two-placeholder nested route — both segments extracted.
@@ -82,7 +100,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             ]),
             status_code: Some(200),
         });
-    let _ = client.save_user_function(posts).await;
+    save_or_update_user(&client, posts).await?;
     println!("✓ rs_route_user_posts → GET /api/route/users/:id/posts/:post_id");
 
     // POST route demonstrating the body-over-path-params merge.
@@ -106,7 +124,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             ]),
             status_code: Some(201),
         });
-    let _ = client.save_user_function(create).await;
+    save_or_update_user(&client, create).await?;
     println!("✓ rs_route_org_create_member → POST /api/route/orgs/:org/members");
 
     println!("\nTry them with curl:");

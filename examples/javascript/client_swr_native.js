@@ -11,6 +11,30 @@ require("dotenv").config();
 const BASE_URL = process.env.API_BASE_URL || "http://localhost:8080";
 const API_KEY = process.env.API_BASE_KEY || "a-test-api-key-from-ekodb";
 
+/**
+ * Save a function idempotently.
+ *
+ * The server returns HTTP 409 ("A function with label 'X' already exists.")
+ * when a function with the same fixed label already exists. On that error we
+ * UPDATE the existing function via PUT /api/functions/{label} (the server's
+ * GET/PUT/DELETE routes accept either the encrypted ID or the label), then
+ * resolve and return its encrypted ID so the rest of the example keeps working.
+ * Any other error is propagated.
+ */
+async function saveOrUpdate(client, script) {
+  try {
+    return await client.saveFunction(script);
+  } catch (error) {
+    if (error.message && error.message.includes("already exists")) {
+      await client.updateFunction(script.label, script);
+      console.log(`ℹ️  Function '${script.label}' already existed — updated instead`);
+      const existing = await client.getFunction(script.label);
+      return existing.id;
+    }
+    throw error;
+  }
+}
+
 async function exampleBasicSWR(client) {
   console.log("\nExample 1: Basic Native SWR");
   console.log("─".repeat(80));
@@ -43,7 +67,7 @@ async function exampleBasicSWR(client) {
     tags: ["github", "swr", "native"],
   };
 
-  const scriptId = await client.saveFunction(basicSWRScript);
+  const scriptId = await saveOrUpdate(client, basicSWRScript);
   console.log(`✓ Created native SWR script: github_user_native (${scriptId})`);
 
   // First call - cache miss
@@ -104,7 +128,7 @@ async function exampleAuditTrail(client) {
     tags: ["products", "audit"],
   };
 
-  const auditScriptId = await client.saveFunction(auditSWRScript);
+  const auditScriptId = await saveOrUpdate(client, auditSWRScript);
   console.log(
     `✓ Created SWR script with audit trail: product_swr_audit (${auditScriptId})`
   );
@@ -163,7 +187,7 @@ async function examplePipelineEnrichment(client) {
     tags: ["enrichment", "pipeline"],
   };
 
-  const pipelineScriptId = await client.saveFunction(pipelineScript);
+  const pipelineScriptId = await saveOrUpdate(client, pipelineScript);
   console.log(
     `✓ Created enrichment pipeline: user_enrichment_pipeline (${pipelineScriptId})`
   );
@@ -212,7 +236,7 @@ async function exampleDynamicTTL(client) {
     tags: ["dynamic"],
   };
 
-  const dynamicScriptId = await client.saveFunction(dynamicTTLScript);
+  const dynamicScriptId = await saveOrUpdate(client, dynamicTTLScript);
   console.log(`✓ Created dynamic TTL script: flexible_cache (${dynamicScriptId})`);
 
   // Test with different TTLs

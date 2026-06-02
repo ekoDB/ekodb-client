@@ -26,6 +26,30 @@ BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8080")
 API_KEY = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb")
 
 
+def _is_already_exists_error(err):
+    """Detect the server's 409 'function already exists' response."""
+    msg = str(err)
+    return "409" in msg or "already exists" in msg
+
+
+async def save_or_update(client, script):
+    """Save a function, updating it instead if its label already exists.
+
+    The server returns HTTP 409 for a duplicate label; we then PUT the
+    definition by label (which the server's id-or-label route accepts) and
+    return the label as the identifier.
+    """
+    label = script["label"]
+    try:
+        return await client.save_function(script)
+    except Exception as e:
+        if not _is_already_exists_error(e):
+            raise
+        await client.update_function(label, script)
+        print(f"ℹ️  Function '{label}' already existed — updated instead")
+        return label
+
+
 async def edge_cache_example():
     client = Client.new(BASE_URL, API_KEY)
 
@@ -92,7 +116,7 @@ async def edge_cache_example():
         ],
     }
 
-    script_id = await client.save_function(cache_script)
+    script_id = await save_or_update(client, cache_script)
     print(f"✓ Edge cache script created: {script_id}\n")
 
     # Test it - First call hits API

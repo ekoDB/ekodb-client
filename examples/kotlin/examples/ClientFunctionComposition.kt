@@ -17,6 +17,26 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlin.system.measureTimeMillis
 
+private fun isAlreadyExistsError(e: Exception): Boolean {
+    val msg = e.message ?: return false
+    return msg.contains("status 409") || msg.contains("already exists")
+}
+
+private suspend fun saveOrUpdate(client: EkoDBClient, func: UserFunction): String {
+    return try {
+        client.saveFunction(func)
+    } catch (e: Exception) {
+        if (isAlreadyExistsError(e)) {
+            client.updateFunction(func.label, func)
+            println("ℹ️  Function '${func.label}' already existed — updated instead")
+            client.getFunction(func.label).id
+                ?: throw IllegalStateException("No ID returned for function '${func.label}'")
+        } else {
+            throw e
+        }
+    }
+}
+
 fun main() = runBlocking {
     val dotenv = dotenv()
     val baseUrl = dotenv["API_BASE_URL"] ?: "http://localhost:8080"
@@ -75,7 +95,7 @@ suspend fun basicCompositionExample(client: EkoDBClient) {
         )
     )
 
-    client.saveFunction(fetchUser)
+    saveOrUpdate(client, fetchUser)
     println("✅ Saved reusable function: fetch_user")
 
     // Step 2: Create wrapper that CALLS fetch_user
@@ -100,7 +120,7 @@ suspend fun basicCompositionExample(client: EkoDBClient) {
         )
     )
 
-    client.saveFunction(getUserWrapper)
+    saveOrUpdate(client, getUserWrapper)
     println("✅ Saved composed function: get_user_wrapper (calls fetch_user + projects fields)\n")
 
     // Step 3: Call the composed function
@@ -150,7 +170,7 @@ suspend fun swrCompositionExample(client: EkoDBClient) {
         )
     )
 
-    client.saveFunction(fetchAndStore)
+    saveOrUpdate(client, fetchAndStore)
     println("✅ Saved reusable function: fetch_and_store_user (uses KV)")
 
     // Step 2: Create SWR function that CALLS the reusable function
@@ -196,7 +216,7 @@ suspend fun swrCompositionExample(client: EkoDBClient) {
         )
     )
 
-    client.saveFunction(swrUser)
+    saveOrUpdate(client, swrUser)
     println("✅ Saved SWR function using composition: swr_user\n")
 
     // Step 3: Test cache miss
@@ -244,7 +264,7 @@ suspend fun nestedCompositionExample(client: EkoDBClient) {
         )
     )
 
-    client.saveFunction(validateUser)
+    saveOrUpdate(client, validateUser)
     println("✅ Level 1 function: validate_user")
 
     // Level 2: Calls validate_user + projects
@@ -269,7 +289,7 @@ suspend fun nestedCompositionExample(client: EkoDBClient) {
         )
     )
 
-    client.saveFunction(fetchSlim)
+    saveOrUpdate(client, fetchSlim)
     println("✅ Level 2 function: fetch_slim_user (calls validate_user)")
 
     // Level 3: Calls fetch_slim (demonstrates 3-level nesting)
@@ -290,7 +310,7 @@ suspend fun nestedCompositionExample(client: EkoDBClient) {
         )
     )
 
-    client.saveFunction(getVerifiedUser)
+    saveOrUpdate(client, getVerifiedUser)
     println("✅ Level 3 function: get_verified_user (calls fetch_slim_user)\n")
 
     // Execute 3-level nested composition

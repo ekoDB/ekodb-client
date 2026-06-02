@@ -17,6 +17,30 @@ env_path = Path(__file__).parent.parent / ".env"
 load_dotenv(env_path)
 
 
+def _is_already_exists_error(err):
+    """Detect the server's 409 'function already exists' response."""
+    msg = str(err)
+    return "409" in msg or "already exists" in msg
+
+
+async def save_or_update(client, script):
+    """Save a function, updating it instead if its label already exists.
+
+    The server returns HTTP 409 for a duplicate label; we then PUT the
+    definition by label (which the server's id-or-label route accepts) and
+    return the label as the identifier.
+    """
+    label = script["label"]
+    try:
+        return await client.save_function(script)
+    except Exception as e:
+        if not _is_already_exists_error(e):
+            raise
+        await client.update_function(label, script)
+        print(f"ℹ️  Function '{label}' already existed — updated instead")
+        return label
+
+
 async def main():
     base_url = os.getenv("API_BASE_URL", "http://localhost:8080")
     api_key = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb")
@@ -87,7 +111,7 @@ async def main():
         "tags": ["swr", "github", "cache"],
     }
 
-    script_id = await client.save_function(swr_script)
+    script_id = await save_or_update(client, swr_script)
     print(f"✓ Created SWR script: {swr_script['label']} ({script_id})\n")
 
     # Step 2: First call - Cache miss
@@ -169,7 +193,7 @@ async def main():
         "tags": ["enrichment", "product", "cache"],
     }
 
-    enrich_script_id = await client.save_function(enrich_script)
+    enrich_script_id = await save_or_update(client, enrich_script)
     print(
         f"✓ Created enrichment script: {enrich_script['label']} ({enrich_script_id})\n"
     )

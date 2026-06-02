@@ -21,6 +21,31 @@ BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8080")
 API_KEY = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb")
 
 
+def _is_already_exists_error(err):
+    """Detect the server's 409 'function already exists' response."""
+    msg = str(err)
+    return "409" in msg or "already exists" in msg
+
+
+async def save_or_update(client, script):
+    """Save a function, falling back to an update if its label already exists.
+
+    The server returns HTTP 409 when a function with the same label is already
+    saved. In that case we update the existing definition (PUT by label) and
+    return the label as the identifier — GET/UPDATE/DELETE all accept either an
+    encrypted ID or a label, so callers can use it the same way as a fresh ID.
+    """
+    label = script["label"]
+    try:
+        return await client.save_function(script)
+    except Exception as e:
+        if not _is_already_exists_error(e):
+            raise
+        await client.update_function(label, script)
+        print(f"ℹ️  Function '{label}' already existed — updated instead")
+        return label
+
+
 async def setup_test_data(client):
     """Insert test data"""
     print("📋 Setting up test data...")
@@ -53,7 +78,7 @@ async def simple_query_script(client):
         "tags": ["users", "query"],
     }
 
-    script_id = await client.save_function(script)
+    script_id = await save_or_update(client, script)
     print(f"✅ Function saved: {script_id}")
 
     result = await client.call_function("get_active_users", None)
@@ -88,7 +113,7 @@ async def parameterized_script(client):
         "tags": ["users", "parameterized"],
     }
 
-    script_id = await client.save_function(script)
+    script_id = await save_or_update(client, script)
     print(f"✅ Function saved: {script_id}")
 
     params = {"status": "active", "limit": 3}
@@ -125,7 +150,7 @@ async def aggregation_script(client):
         "tags": ["analytics"],
     }
 
-    script_id = await client.save_function(script)
+    script_id = await save_or_update(client, script)
     print(f"✅ Function saved: {script_id}")
 
     result = await client.call_function("user_stats", None)

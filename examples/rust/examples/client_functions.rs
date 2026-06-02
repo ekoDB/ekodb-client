@@ -42,6 +42,27 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+/// Save a function idempotently: if the label already exists (HTTP 409),
+/// update the existing definition instead, then return its id so the rest of
+/// the example (get/update/delete by id) continues to work unchanged.
+async fn save_or_update(
+    client: &Client,
+    function: UserFunction,
+) -> Result<String, Box<dyn std::error::Error>> {
+    let label = function.label.clone();
+    match client.save_function(function.clone()).await {
+        Ok(id) => Ok(id),
+        Err(ekodb_client::Error::Api { code: 409, .. }) => {
+            client.update_function(&label, function).await?;
+            println!("ℹ️  Function '{}' already existed — updated instead", label);
+            // We don't get a fresh id back from update; fetch by label to recover it.
+            let existing = client.get_function(&label).await?;
+            Ok(existing.id.unwrap_or(label))
+        }
+        Err(e) => Err(Box::new(e)),
+    }
+}
+
 async fn setup_test_data(client: &Client) -> Result<(), Box<dyn std::error::Error>> {
     println!("📋 Setting up test data...");
 
@@ -71,7 +92,7 @@ async fn simple_query_script(client: &Client) -> Result<String, Box<dyn std::err
         },
     );
 
-    let id = client.save_function(script).await?;
+    let id = save_or_update(client, script).await?;
     println!("✅ Function saved: {}", id);
 
     let result = client.call_function("get_active_users", None).await?;
@@ -93,7 +114,7 @@ async fn parameterized_script(client: &Client) -> Result<String, Box<dyn std::er
             collection: "users".to_string(),
         });
 
-    let id = client.save_function(script).await?;
+    let id = save_or_update(client, script).await?;
     println!("✅ Function saved: {}", id);
 
     let mut params = HashMap::new();
@@ -127,7 +148,7 @@ async fn aggregation_script(client: &Client) -> Result<String, Box<dyn std::erro
             ],
         });
 
-    let id = client.save_function(script).await?;
+    let id = save_or_update(client, script).await?;
     println!("✅ Function saved: {}", id);
 
     let result = client.call_function("user_stats", None).await?;

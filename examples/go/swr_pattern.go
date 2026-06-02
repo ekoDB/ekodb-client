@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -10,6 +11,28 @@ import (
 	ekodb "github.com/ekoDB/ekodb-client-go"
 	"github.com/joho/godotenv"
 )
+
+// saveOrUpdateFunction saves a function, or — if a function with the same
+// label already exists (HTTP 409) — updates it in place via PUT by label.
+// This makes the example idempotent across repeated runs and exercises both
+// the create and the update paths. It returns the saved function's ID on a
+// fresh create, or an empty string when it fell back to update (the server
+// does not return the ID on PUT).
+func saveOrUpdateFunction(client *ekodb.Client, fn ekodb.UserFunction) (string, error) {
+	id, err := client.SaveFunction(fn)
+	if err == nil {
+		return id, nil
+	}
+	var httpErr *ekodb.HTTPError
+	if errors.As(err, &httpErr) && httpErr.StatusCode == 409 {
+		if uerr := client.UpdateUserFunction(fn.Label, fn); uerr != nil {
+			return "", uerr
+		}
+		fmt.Printf("Function '%s' already existed — updated instead\n", fn.Label)
+		return "", nil
+	}
+	return "", err
+}
 
 func main() {
 	// Load environment variables
@@ -90,7 +113,7 @@ func main() {
 		Tags: []string{"swr", "github", "cache"},
 	}
 
-	scriptID, err := client.SaveFunction(swrScript)
+	scriptID, err := saveOrUpdateFunction(client, swrScript)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -186,7 +209,7 @@ func main() {
 		Tags: []string{"enrichment", "product", "cache"},
 	}
 
-	enrichScriptID, err := client.SaveFunction(enrichScript)
+	enrichScriptID, err := saveOrUpdateFunction(client, enrichScript)
 	if err != nil {
 		log.Fatal(err)
 	}

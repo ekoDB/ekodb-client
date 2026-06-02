@@ -13,6 +13,25 @@ use serde_json::json;
 use std::collections::HashMap;
 use std::time::Instant;
 
+/// Save a function idempotently: if the label already exists (HTTP 409),
+/// update the existing definition instead, then return its id.
+async fn save_or_update(
+    client: &Client,
+    function: UserFunction,
+) -> Result<String, Box<dyn std::error::Error>> {
+    let label = function.label.clone();
+    match client.save_function(function.clone()).await {
+        Ok(id) => Ok(id),
+        Err(ekodb_client::Error::Api { code: 409, .. }) => {
+            client.update_function(&label, function).await?;
+            println!("ℹ️  Function '{}' already existed — updated instead", label);
+            let existing = client.get_function(&label).await?;
+            Ok(existing.id.unwrap_or(label))
+        }
+        Err(e) => Err(Box::new(e)),
+    }
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv::dotenv().ok();
@@ -60,7 +79,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with_tag("native")
         .with_tag("github");
 
-    let script_id = client.save_function(basic_swr_script).await?;
+    let script_id = save_or_update(&client, basic_swr_script).await?;
     println!(
         "✓ Created native SWR script: github_user_native ({})",
         script_id
@@ -130,7 +149,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with_tag("swr")
         .with_tag("audit");
 
-    let audit_script_id = client.save_function(audit_swr_script).await?;
+    let audit_script_id = save_or_update(&client, audit_swr_script).await?;
     println!(
         "✓ Created SWR script with audit trail: product_swr_audit ({})",
         audit_script_id
@@ -185,7 +204,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .with_tag("enrichment")
             .with_tag("pipeline");
 
-    let pipeline_script_id = client.save_function(pipeline_script).await?;
+    let pipeline_script_id = save_or_update(&client, pipeline_script).await?;
     println!(
         "✓ Created enrichment pipeline: user_enrichment_pipeline ({})",
         pipeline_script_id
@@ -224,7 +243,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with_function(Function::SWR {
             cache_key: "resource:{{resource_id}}".to_string(),
             ttl: json!("{{ttl}}"), // User-provided TTL
-            url: "https://api.ekodb.net/api/health".to_string(),
+            url: "https://jsonplaceholder.typicode.com/posts/{{resource_id}}".to_string(),
             method: "GET".to_string(),
             headers: None,
             body: None,
@@ -234,7 +253,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         })
         .with_tag("dynamic");
 
-    let dynamic_script_id = client.save_function(dynamic_ttl_script).await?;
+    let dynamic_script_id = save_or_update(&client, dynamic_ttl_script).await?;
     println!(
         "✓ Created dynamic TTL script: flexible_cache ({})",
         dynamic_script_id

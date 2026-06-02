@@ -80,6 +80,46 @@ async fn request(
     Ok(data)
 }
 
+/// Save a stored function idempotently over raw HTTP.
+///
+/// POSTs the definition to `/api/functions`; if the server responds 409
+/// (label already exists), PUTs the same definition to
+/// `/api/functions/{label}` (the endpoint accepts id-or-label) and returns the
+/// existing function's id so the caller's later GET/UPDATE/DELETE-by-id flow
+/// keeps working. `label` must match the `label` field in `function`.
+async fn save_or_update(
+    function: Value,
+    label: &str,
+) -> Result<String, Box<dyn std::error::Error>> {
+    let base_url = get_base_url();
+    let token = get_auth_token().await?;
+    let client = reqwest::Client::new();
+
+    let response = client
+        .post(format!("{}/api/functions", base_url))
+        .header("Authorization", format!("Bearer {}", token))
+        .json(&function)
+        .send()
+        .await?;
+
+    if response.status() == reqwest::StatusCode::CONFLICT {
+        // Label already exists — update via PUT and recover the id by label.
+        request("PUT", &format!("/api/functions/{}", label), Some(function)).await?;
+        println!("ℹ️  Function '{}' already existed — updated instead", label);
+        let existing = request("GET", &format!("/api/functions/{}", label), None).await?;
+        return Ok(existing["id"].as_str().unwrap_or(label).to_string());
+    }
+
+    if !response.status().is_success() {
+        let status = response.status();
+        let text = response.text().await?;
+        return Err(format!("HTTP {}: {}", status, text).into());
+    }
+
+    let data: Value = response.json().await?;
+    Ok(data["id"].as_str().unwrap_or(label).to_string())
+}
+
 async fn setup_test_data() -> Result<(), Box<dyn std::error::Error>> {
     println!("📋 Setting up test data...");
 
@@ -124,9 +164,8 @@ async fn simple_query_function() -> Result<String, Box<dyn std::error::Error>> {
         "tags": ["users", "query"],
     });
 
-    // Save script
-    let save_result = request("POST", "/api/functions", Some(function1)).await?;
-    let id = save_result["id"].as_str().unwrap();
+    // Save script (idempotent: update if the label already exists)
+    let id = save_or_update(function1, "get_active_users").await?;
     println!("✅ Function saved: {}", id);
 
     // Call script (can use label)
@@ -134,7 +173,7 @@ async fn simple_query_function() -> Result<String, Box<dyn std::error::Error>> {
     let records = call_result["records"].as_array().unwrap();
     println!("📊 Found {} active users\n", records.len());
 
-    Ok(id.to_string())
+    Ok(id)
 }
 
 async fn parameterized_pagination_function() -> Result<(), Box<dyn std::error::Error>> {
@@ -174,8 +213,8 @@ async fn parameterized_pagination_function() -> Result<(), Box<dyn std::error::E
         "tags": ["users", "pagination"]
     });
 
-    let save_result = request("POST", "/api/functions", Some(function2)).await?;
-    println!("✅ Function saved: {}", save_result["id"]);
+    let id = save_or_update(function2, "get_active_users_paginated").await?;
+    println!("✅ Function saved: {}", id);
 
     // Call with page 1 (first 3 users)
     let call_result = request(
@@ -246,8 +285,7 @@ async fn complex_filter_function() -> Result<(), Box<dyn std::error::Error>> {
         "tags": ["users", "filter"],
     });
 
-    let save_result = request("POST", "/api/functions", Some(function2)).await?;
-    let id = save_result["id"].as_str().unwrap();
+    let id = save_or_update(function2, "get_high_scoring_active_users").await?;
     println!("✅ Function saved: {}", id);
 
     // Call the function
@@ -308,8 +346,7 @@ async fn aggregation_function() -> Result<String, Box<dyn std::error::Error>> {
         "tags": ["analytics", "pipeline"],
     });
 
-    let save_result = request("POST", "/api/functions", Some(function3)).await?;
-    let id = save_result["id"].as_str().unwrap();
+    let id = save_or_update(function3, "user_stats").await?;
     println!("✅ Function saved: {}", id);
 
     let call_result = request("POST", "/api/functions/user_stats", Some(json!({}))).await?;
@@ -323,7 +360,7 @@ async fn aggregation_function() -> Result<String, Box<dyn std::error::Error>> {
     }
     println!();
 
-    Ok(id.to_string())
+    Ok(id)
 }
 
 async fn function_management(

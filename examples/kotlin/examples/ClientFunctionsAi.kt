@@ -21,6 +21,26 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
+private fun isAlreadyExistsError(e: Exception): Boolean {
+    val msg = e.message ?: return false
+    return msg.contains("status 409") || msg.contains("already exists")
+}
+
+private suspend fun saveOrUpdate(client: EkoDBClient, func: UserFunction): String {
+    return try {
+        client.saveFunction(func)
+    } catch (e: Exception) {
+        if (isAlreadyExistsError(e)) {
+            client.updateFunction(func.label, func)
+            println("ℹ️  Function '${func.label}' already existed — updated instead")
+            client.getFunction(func.label).id
+                ?: throw IllegalStateException("No ID returned for function '${func.label}'")
+        } else {
+            throw e
+        }
+    }
+}
+
 fun main() = runBlocking {
     val dotenv = dotenv()
     val baseUrl = dotenv["API_BASE_URL"] ?: "http://localhost:8080"
@@ -73,7 +93,7 @@ fun main() = runBlocking {
             ),
             tags = listOf("ai", "chat")
         )
-        val funcId1 = client.saveFunction(func1)
+        val funcId1 = saveOrUpdate(client, func1)
         funcIds.add(funcId1)
         println("✅ Chat function saved")
 
@@ -107,7 +127,7 @@ fun main() = runBlocking {
             ),
             tags = listOf("ai", "embed")
         )
-        val funcId2 = client.saveFunction(func2)
+        val funcId2 = saveOrUpdate(client, func2)
         funcIds.add(funcId2)
         println("✅ Embed function saved")
 

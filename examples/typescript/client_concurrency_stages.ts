@@ -19,6 +19,26 @@ dotenv.config();
 const BASE_URL = process.env.API_BASE_URL || "http://localhost:8080";
 const API_KEY = process.env.API_BASE_KEY || "a-test-api-key-from-ekodb";
 
+/** True when a save failed because the function label already exists (HTTP 409). */
+function isAlreadyExistsError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.includes("status 409") || message.includes("already exists");
+}
+
+/** Idempotent save: create the function, or update it in place on 409. */
+async function saveOrUpdateUserFunction(
+  client: EkoDBClient,
+  fn: UserFunction,
+): Promise<void> {
+  try {
+    await client.saveUserFunction(fn);
+  } catch (error) {
+    if (!isAlreadyExistsError(error)) throw error;
+    await client.updateUserFunction(fn.label, fn);
+    console.log(`Function '${fn.label}' already existed — updated instead`);
+  }
+}
+
 async function main() {
   const client = new EkoDBClient(BASE_URL, API_KEY);
   await client.init();
@@ -55,7 +75,7 @@ async function main() {
       ),
     ],
   };
-  await client.saveUserFunction(pay).catch(() => {});
+  await saveOrUpdateUserFunction(client, pay);
   console.log("✓ conc_demo_pay saved");
 
   // 2. Rate-limited endpoint (fail mode — gate is authoritative).
@@ -68,7 +88,7 @@ async function main() {
       Stage.returnResponse({ ok: true }, 200),
     ],
   };
-  await client.saveUserFunction(rlFail).catch(() => {});
+  await saveOrUpdateUserFunction(client, rlFail);
   console.log("✓ conc_demo_rl_fail saved");
 
   // 3. Rate-limited endpoint (skip mode — pipeline keeps running, branch on result).
@@ -85,7 +105,7 @@ async function main() {
       ),
     ],
   };
-  await client.saveUserFunction(rlSkip).catch(() => {});
+  await saveOrUpdateUserFunction(client, rlSkip);
   console.log("✓ conc_demo_rl_skip saved");
 
   // 4. Distributed lock — acquire + critical section + release (token-fenced).
@@ -114,7 +134,7 @@ async function main() {
       ),
     ],
   };
-  await client.saveUserFunction(lock).catch(() => {});
+  await saveOrUpdateUserFunction(client, lock);
   console.log("✓ conc_demo_lock saved");
 
   console.log("\nInvoke them like:");

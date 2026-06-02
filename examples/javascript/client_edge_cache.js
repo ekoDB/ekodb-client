@@ -13,6 +13,29 @@ require("dotenv").config();
 const BASE_URL = process.env.API_BASE_URL || "http://localhost:8080";
 const API_KEY = process.env.API_BASE_KEY || "a-test-api-key-from-ekodb";
 
+/**
+ * Save a function idempotently.
+ *
+ * The server returns HTTP 409 ("A function with label 'X' already exists.")
+ * when a function with the same fixed label already exists. On that error we
+ * UPDATE the existing function via PUT /api/functions/{label} (the server's
+ * PUT route accepts either the encrypted ID or the label), then resolve and
+ * return its encrypted ID. Any other error is propagated.
+ */
+async function saveOrUpdate(client, script) {
+  try {
+    return await client.saveFunction(script);
+  } catch (error) {
+    if (error.message && error.message.includes("already exists")) {
+      await client.updateFunction(script.label, script);
+      console.log(`ℹ️  Function '${script.label}' already existed — updated instead`);
+      const existing = await client.getFunction(script.label);
+      return existing.id;
+    }
+    throw error;
+  }
+}
+
 async function edgeCacheExample() {
   const client = new EkoDBClient(BASE_URL, API_KEY);
   await client.init();
@@ -82,7 +105,7 @@ async function edgeCacheExample() {
     ],
   };
 
-  const scriptId = await client.saveFunction(cacheScript);
+  const scriptId = await saveOrUpdate(client, cacheScript);
   console.log(`✓ Edge cache script created: ${scriptId}\n`);
 
   // Test it - First call hits API

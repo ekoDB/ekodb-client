@@ -13,6 +13,32 @@ dotenv.config();
 const BASE_URL = process.env.API_BASE_URL || "http://localhost:8080";
 const API_KEY = process.env.API_BASE_KEY || "a-test-api-key-from-ekodb";
 
+/** True when a save failed because the function label already exists (HTTP 409). */
+function isAlreadyExistsError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.includes("status 409") || message.includes("already exists");
+}
+
+/**
+ * Idempotent save: create the function, or update it in place if a function
+ * with the same label already exists. Returns the function's id so downstream
+ * cleanup-by-id continues to work.
+ */
+async function saveOrUpdate(
+  client: EkoDBClient,
+  script: UserFunction,
+): Promise<string> {
+  try {
+    return await client.saveFunction(script);
+  } catch (error) {
+    if (!isAlreadyExistsError(error)) throw error;
+    await client.updateFunction(script.label, script);
+    console.log(`Function '${script.label}' already existed — updated instead`);
+    const existing = await client.getFunction(script.label);
+    return existing.id ?? script.label;
+  }
+}
+
 async function exampleBasicSWR(client: EkoDBClient): Promise<string> {
   console.log("\nExample 1: Basic Native SWR");
   console.log("─".repeat(80));
@@ -48,7 +74,7 @@ async function exampleBasicSWR(client: EkoDBClient): Promise<string> {
     tags: ["github", "swr", "native"],
   };
 
-  const scriptId = await client.saveFunction(basicSWRScript);
+  const scriptId = await saveOrUpdate(client, basicSWRScript);
   console.log(`✓ Created native SWR script: github_user_native (${scriptId})`);
 
   // First call - cache miss
@@ -109,7 +135,7 @@ async function exampleAuditTrail(client: EkoDBClient): Promise<string> {
     tags: ["products", "audit"],
   };
 
-  const auditScriptId = await client.saveFunction(auditSWRScript);
+  const auditScriptId = await saveOrUpdate(client, auditSWRScript);
   console.log(
     `✓ Created SWR script with audit trail: product_swr_audit (${auditScriptId})`,
   );
@@ -168,7 +194,7 @@ async function examplePipelineEnrichment(client: EkoDBClient): Promise<string> {
     tags: ["enrichment", "pipeline"],
   };
 
-  const pipelineScriptId = await client.saveFunction(pipelineScript);
+  const pipelineScriptId = await saveOrUpdate(client, pipelineScript);
   console.log(
     `✓ Created enrichment pipeline: user_enrichment_pipeline (${pipelineScriptId})`,
   );
@@ -221,7 +247,7 @@ async function exampleDynamicTTL(client: EkoDBClient): Promise<string> {
     tags: ["dynamic"],
   };
 
-  const dynamicScriptId = await client.saveFunction(dynamicTTLScript);
+  const dynamicScriptId = await saveOrUpdate(client, dynamicTTLScript);
   console.log(
     `✓ Created dynamic TTL script: flexible_cache (${dynamicScriptId})`,
   );

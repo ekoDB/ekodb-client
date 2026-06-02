@@ -3,12 +3,48 @@ package io.ekodb.client.examples
 import io.ekodb.client.EkoDBClient
 import io.github.cdimascio.dotenv.dotenv
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
+
+/**
+ * Detect the server's "label already exists" rejection (HTTP 409 Conflict on
+ * POST /api/functions). The client surfaces it as an exception whose message
+ * contains "status 409" and/or "already exists".
+ */
+private fun isAlreadyExistsError(e: Exception): Boolean {
+    val msg = e.message ?: return false
+    return msg.contains("status 409") || msg.contains("already exists")
+}
+
+/**
+ * Idempotent save for a JSON-object user function: create it, or PUT-update it
+ * by label if it already exists. Returns the function ID on the create path, or
+ * null when it fell back to update (the example only logs the ID).
+ */
+private suspend fun saveOrUpdateUserFunction(
+    client: EkoDBClient,
+    userFunction: JsonObject
+): String? {
+    return try {
+        client.saveUserFunction(userFunction)
+    } catch (e: Exception) {
+        if (isAlreadyExistsError(e)) {
+            val label = userFunction["label"]?.jsonPrimitive?.content
+                ?: throw IllegalStateException("User function JSON is missing a 'label'")
+            client.updateUserFunction(label, userFunction)
+            println("Function '$label' already existed — updated instead")
+            null
+        } else {
+            throw e
+        }
+    }
+}
 
 /**
  * User Functions API Example - Using ekoDB Kotlin client library
@@ -56,8 +92,10 @@ fun main() = runBlocking {
         }
 
         try {
-            val funcId = client.saveUserFunction(userFunction)
-            println("Created user function with ID: $funcId")
+            val funcId = saveOrUpdateUserFunction(client, userFunction)
+            if (funcId != null) {
+                println("Created user function with ID: $funcId")
+            }
         } catch (e: Exception) {
             println("SaveUserFunction error: ${e.message}")
         }

@@ -47,6 +47,37 @@ async def request(session, method, path, body=None, token=None):
         return await response.json()
 
 
+async def save_or_update_function(session, token, function):
+    """Save a function via POST, updating it via PUT if the label already exists.
+
+    POST /api/functions returns HTTP 409 when a function with the same label is
+    already saved. In that case we PUT the definition to
+    /api/functions/{label} (the route accepts an ID or a label) and return the
+    label as the identifier — GET/PUT/DELETE all accept it the same way as a
+    fresh encrypted ID.
+    """
+    label = function["label"]
+    async with session.post(
+        f"{BASE_URL}/api/functions",
+        json=function,
+        headers={
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+        },
+    ) as response:
+        if response.ok:
+            data = await response.json()
+            return data["id"]
+        if response.status != 409:
+            text = await response.text()
+            raise Exception(f"HTTP {response.status}: {text}")
+
+    # 409: label already exists — update the existing definition instead.
+    await request(session, "PUT", f"/api/functions/{label}", function, token)
+    print(f"ℹ️  Function '{label}' already existed — updated instead")
+    return label
+
+
 async def setup_test_data(session, token):
     """Setup test data"""
     print("📋 Setting up test data...")
@@ -90,9 +121,9 @@ async def simple_query_function(session, token):
         "tags": ["users", "query"],
     }
 
-    # Save script
-    save_result = await request(session, "POST", "/api/functions", function1, token)
-    print(f"✅ Function saved: {save_result['id']}")
+    # Save script (idempotent: updates if the label already exists)
+    function_id = await save_or_update_function(session, token, function1)
+    print(f"✅ Function saved: {function_id}")
 
     # Call script (can use label)
     call_result = await request(
@@ -100,7 +131,7 @@ async def simple_query_function(session, token):
     )
     print(f"📊 Found {len(call_result['records'])} active users\n")
 
-    return save_result["id"]
+    return function_id
 
 
 async def parameterized_pagination_function(session, token):
@@ -143,8 +174,8 @@ async def parameterized_pagination_function(session, token):
         "tags": ["users", "pagination"],
     }
 
-    save_result = await request(session, "POST", "/api/functions", function2, token)
-    print(f"✅ Function saved: {save_result['id']}")
+    function_id = await save_or_update_function(session, token, function2)
+    print(f"✅ Function saved: {function_id}")
 
     # Call with page 1 (first 3 users)
     call_result = await request(
@@ -210,8 +241,8 @@ async def aggregation_function(session, token):
         "tags": ["analytics", "pipeline"],
     }
 
-    save_result = await request(session, "POST", "/api/functions", function3, token)
-    print(f"✅ Function saved: {save_result['id']}")
+    function_id = await save_or_update_function(session, token, function3)
+    print(f"✅ Function saved: {function_id}")
 
     call_result = await request(session, "POST", "/api/functions/user_stats", {}, token)
     print(
@@ -221,7 +252,7 @@ async def aggregation_function(session, token):
         print(f"   {record}")
     print()
 
-    return save_result["id"]
+    return function_id
 
 
 async def function_management(session, token, get_active_users_id, user_stats_id):

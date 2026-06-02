@@ -24,6 +24,24 @@ use serde_json::json;
 use std::collections::HashMap;
 use std::env;
 
+/// Save a user function idempotently: if the label already exists (HTTP 409),
+/// update the existing definition instead.
+async fn save_or_update_user(
+    client: &Client,
+    function: UserFunction,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let label = function.label.clone();
+    match client.save_user_function(function.clone()).await {
+        Ok(_) => Ok(()),
+        Err(ekodb_client::Error::Api { code: 409, .. }) => {
+            client.update_user_function(&label, function).await?;
+            println!("ℹ️  Function '{}' already existed — updated instead", label);
+            Ok(())
+        }
+        Err(e) => Err(Box::new(e)),
+    }
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv::dotenv().ok();
@@ -92,7 +110,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }),
             ]),
         });
-    let _ = client.save_user_function(pay).await;
+    save_or_update_user(&client, pay).await?;
     println!("✓ conc_demo_pay saved");
 
     // 2. Rate-limited public endpoint — fail mode (RateLimit errors out).
@@ -111,7 +129,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             fields: HashMap::from([("ok".to_string(), serde_json::Value::Bool(true))]),
             status_code: Some(200),
         });
-    let _ = client.save_user_function(public_fail).await;
+    save_or_update_user(&client, public_fail).await?;
     println!("✓ conc_demo_rl_fail saved");
 
     // 3. Rate-limited public endpoint — skip mode + If branch.
@@ -147,7 +165,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 status_code: Some(200),
             })]),
         });
-    let _ = client.save_user_function(public_skip).await;
+    save_or_update_user(&client, public_skip).await?;
     println!("✓ conc_demo_rl_skip saved");
 
     // 4. Distributed lock — acquire + critical section + release.
@@ -199,7 +217,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }),
             ]),
         });
-    let _ = client.save_user_function(lock).await;
+    save_or_update_user(&client, lock).await?;
     println!("✓ conc_demo_lock saved");
 
     println!("\nInvoke them like:");

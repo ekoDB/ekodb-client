@@ -24,6 +24,26 @@ dotenv.config();
 const BASE_URL = process.env.API_BASE_URL || "http://localhost:8080";
 const API_KEY = process.env.API_BASE_KEY || "a-test-api-key-from-ekodb";
 
+/** True when a save failed because the function label already exists (HTTP 409). */
+function isAlreadyExistsError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.includes("status 409") || message.includes("already exists");
+}
+
+/** Idempotent save: create the function, or update it in place on 409. */
+async function saveOrUpdateUserFunction(
+  client: EkoDBClient,
+  fn: UserFunction,
+): Promise<void> {
+  try {
+    await client.saveUserFunction(fn);
+  } catch (error) {
+    if (!isAlreadyExistsError(error)) throw error;
+    await client.updateUserFunction(fn.label, fn);
+    console.log(`Function '${fn.label}' already existed — updated instead`);
+  }
+}
+
 async function main() {
   const client = new EkoDBClient(BASE_URL, API_KEY);
   await client.init();
@@ -39,7 +59,7 @@ async function main() {
     parameters: {},
     functions: [Stage.returnResponse({ role: "admin" }, 200)],
   };
-  await client.saveUserFunction(admin).catch(() => {});
+  await saveOrUpdateUserFunction(client, admin);
   console.log("✓ ts_route_admin → GET /api/route/users/admin");
 
   // Single-placeholder route.
@@ -51,7 +71,7 @@ async function main() {
     parameters: { id: { required: true } },
     functions: [Stage.returnResponse({ requested_id: "{{id}}" }, 200)],
   };
-  await client.saveUserFunction(byId).catch(() => {});
+  await saveOrUpdateUserFunction(client, byId);
   console.log("✓ ts_route_user_by_id → GET /api/route/users/:id");
 
   // Two-placeholder nested route.
@@ -65,7 +85,7 @@ async function main() {
       Stage.returnResponse({ user_id: "{{id}}", post_id: "{{post_id}}" }, 200),
     ],
   };
-  await client.saveUserFunction(posts).catch(() => {});
+  await saveOrUpdateUserFunction(client, posts);
   console.log(
     "✓ ts_route_user_posts → GET /api/route/users/:id/posts/:post_id",
   );
@@ -84,7 +104,7 @@ async function main() {
       ),
     ],
   };
-  await client.saveUserFunction(create).catch(() => {});
+  await saveOrUpdateUserFunction(client, create);
   console.log(
     "✓ ts_route_org_create_member → POST /api/route/orgs/:org/members",
   );

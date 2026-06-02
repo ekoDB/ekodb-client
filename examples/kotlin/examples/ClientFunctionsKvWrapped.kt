@@ -19,6 +19,26 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
+private fun isAlreadyExistsError(e: Exception): Boolean {
+    val msg = e.message ?: return false
+    return msg.contains("status 409") || msg.contains("already exists")
+}
+
+private suspend fun saveOrUpdate(client: EkoDBClient, func: UserFunction): String {
+    return try {
+        client.saveFunction(func)
+    } catch (e: Exception) {
+        if (isAlreadyExistsError(e)) {
+            client.updateFunction(func.label, func)
+            println("ℹ️  Function '${func.label}' already existed — updated instead")
+            client.getFunction(func.label).id
+                ?: throw IllegalStateException("No ID returned for function '${func.label}'")
+        } else {
+            throw e
+        }
+    }
+}
+
 fun main() = runBlocking {
     println("🚀 ekoDB Kotlin KV Store & Wrapped Types Example\n")
     println("📋 Demonstrates:")
@@ -147,7 +167,7 @@ suspend fun wrappedTypesInScript(client: EkoDBClient): String {
         tags = listOf("orders", "wrapped-types")
     )
 
-    val id = client.saveFunction(func)
+    val id = saveOrUpdate(client, func)
     println("✅ Function saved: $id")
 
     val result = client.callFunction("create_order_with_types_kt", mapOf(
@@ -226,7 +246,7 @@ suspend fun kvScriptOperations(client: EkoDBClient): String {
         tags = listOf("kv", "caching")
     )
 
-    val id = client.saveFunction(func)
+    val id = saveOrUpdate(client, func)
     println("✅ Function saved: $id")
 
     val result = client.callFunction("cached_product_lookup_kt", mapOf(
@@ -294,7 +314,7 @@ suspend fun combinedExample(client: EkoDBClient): String {
         tags = listOf("orders", "kv", "wrapped-types")
     )
 
-    val id = client.saveFunction(func)
+    val id = saveOrUpdate(client, func)
     println("✅ Function saved: $id")
 
     val result = client.callFunction("process_order_with_cache_kt", mapOf(
