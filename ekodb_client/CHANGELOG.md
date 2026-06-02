@@ -6,7 +6,42 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.19.0] - 2026-06-02
+
+### Fixed — Function examples now save-or-update on `409 Conflict`
+
+The ekoDB server now makes `POST /api/functions` create-only, returning **409
+Conflict** when a `label` already exists (use `PUT /api/functions/:label` to
+update). Examples that save a fixed-label stored function therefore failed on a
+re-run against a server that already held the label
+(`A function with label 'get_active_users' already exists ...`). Every affected
+example across all six languages now does **save-or-update**: it `POST`s the
+function, and on a 409 it `PUT`s the same definition by label and continues,
+exercising both the create and update paths. Where the example later needs the
+function id (for by-id management or cleanup), it resolves the id by label via
+`GET /api/functions/:label` on the 409 path, so the existing end-of-example
+cleanup is unchanged. This was applied to **every** function-saving example (95
+files across `examples/{rust,python,typescript,javascript,go,kotlin}` — the
+`client_functions*`, `http_functions`, `client_user_functions`,
+`client_function_composition`,
+`client_functions_{advanced,ai,complete,crud,kv_wrapped,search}`,
+`client_{concurrency,crypto}_stages`, `client_jwt_auth_flow`,
+`client_path_routed_function`, `client_edge_cache`, `client_swr_native`,
+`client_swr_pattern`, and `swr_pattern` variants). Each per-language build /
+typecheck passes (`cargo build --examples`, `tsc --noEmit`, `go build`,
+`node --check`, `py_compile`, `gradlew compileKotlin`). No client-library code
+changed; each example carries a small local `save_or_update` helper. A few
+TypeScript examples that previously swallowed save errors with
+`.catch(() => {})` now surface non-409 failures properly.
+
+### Security — Bump `ws` to `^8.20.1` (TypeScript client + example projects)
+
+Bumped the `ws` floor to `^8.20.1` (resolves to `ws` 8.21.0) in the TypeScript
+client and both bundled example projects (`examples/typescript` was `^8.18.0`,
+`examples/javascript` was `^8.5.0`), patching GHSA-58qx-3vcg-4xpx — a moderate
+uninitialized-memory-disclosure issue affecting `ws` 8.0.0–8.20.0. `npm audit`
+reports zero vulnerabilities across all three; the client build and full vitest
+suite (381 tests) pass.
 
 ### Added — On-demand chat compaction: `compact_chat` (ekodb #43)
 
@@ -24,17 +59,37 @@ context-window budget. Returns
   `CompactChatResponse`.
 - **Python** (PyO3 binding): `client.compact_chat(chat_id, keep_recent=None)` →
   dict.
-- **Kotlin**: `client.compactChat(chatId, keepRecent?, bypassRipple?)` →
-  `CompactChatResponse`.
+- **Kotlin**: `client.compactChat(chatId, keepRecent?)` → `CompactChatResponse`.
 
 `keep_recent` defaults server-side to the session's `max_context_messages` (or
 50); `0` compacts the entire history. Each client mirrors its existing
 chat-method conventions (auth, retry, serialization) and ships with unit tests
 for the new method.
 
+### Fixed — Rust SWR `flexible_cache` example pointed at a non-resolving host (ekodb-client)
+
+The Rust `client_swr_native` example's `flexible_cache` (dynamic-TTL) function
+set its server-side SWR fetch URL to `https://api.ekodb.net/api/health`, a host
+that does not resolve. The server's fetch failed with
+`400 HTTP request failed: error sending request`, and because the example uses
+`?` on the call it **aborted the entire Rust example run**
+(`make test-examples-rust-client` exited non-zero), which is why a single bad
+line cascaded into "a lot of fails". Every other language's `flexible_cache`
+(Go, Python, TypeScript, JavaScript, Kotlin) already used
+`https://jsonplaceholder.typicode.com/posts/{{resource_id}}`; the Rust example
+(`examples/rust/examples/client_swr_native.rs:227`) now matches, restoring
+cross-language parity and unblocking the suite. (Net change versus 0.18.2: the
+URL went from `https://app.ekodb.io/api/health` → the broken `api.ekodb.net`
+host → the reachable jsonplaceholder endpoint used everywhere else.)
+
+Note: saved functions are keyed by `label` and resolved by first match, so the
+stale Rust definition could win label resolution for later same-server runs,
+surfacing the same `api.ekodb.net` error in the Python/TypeScript example logs.
+Aligning the URL removes that cross-run poisoning.
+
 ### Fixed — Doc/test base URLs aligned to `.ekodb.net` (ekodb-app#232)
 
-Three remaining `.ekodb.io` examples that referenced deployed-database URLs
+Two remaining `.ekodb.io` examples that referenced deployed-database URLs
 (rather than external/marketing surfaces) were updated to `.ekodb.net`, matching
 the convention used everywhere else in the client docs and the ekodb-app
 deployment UI.
@@ -42,9 +97,6 @@ deployment UI.
 - `ekodb-client-kt/src/test/kotlin/io/ekodb/client/KVBatchOperationsTest.kt:17`
   and `EkoDBClientTest.kt:23` — test fixture `testBaseUrl` is now
   `https://test.ekodb.net`.
-- `examples/rust/examples/client_swr_native.rs:227` — the SWR fetch example now
-  targets `https://api.ekodb.net/api/health` instead of
-  `https://app.ekodb.io/api/health` (the dashboard URL was used by mistake).
 
 ## [0.18.2] - 2026-05-26
 

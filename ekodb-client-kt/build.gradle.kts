@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "io.ekodb"
-version = "0.18.2"
+version = "0.19.0"
 
 repositories {
     mavenCentral()
