@@ -1001,16 +1001,30 @@ python-example-deps: venv
 	@echo "📦 $(CYAN)Ensuring Python example dependencies in .venv...$(RESET)"
 	@$(VENV_PY) -m pip install --quiet -r examples/requirements.txt
 
-# Verify a JVM is available to launch Gradle. The JDK 17 *toolchain* used to compile
-# is auto-provisioned by the foojay plugin (settings.gradle.kts); this only checks the
+# Verify a Java 17+ runtime is available to launch Gradle (the wrapper is pinned to
+# Gradle 8.11, which requires JDK 17+ to run). The JDK 17 *toolchain* used to compile
+# is auto-provisioned by the foojay plugin (settings.gradle.kts); this checks the
 # launcher JVM, which must already exist on a fresh machine.
 ensure-jvm:
-	@command -v java >/dev/null 2>&1 || [ -x "$$JAVA_HOME/bin/java" ] || { \
+	@JAVA_CMD=""; \
+	if command -v java >/dev/null 2>&1; then JAVA_CMD=java; \
+	elif [ -n "$$JAVA_HOME" ] && [ -x "$$JAVA_HOME/bin/java" ]; then JAVA_CMD="$$JAVA_HOME/bin/java"; fi; \
+	if [ -z "$$JAVA_CMD" ]; then \
 		echo "$(RED)No Java runtime found — Gradle needs a JVM to launch.$(RESET)"; \
 		echo "$(YELLOW)  Ubuntu/Debian: sudo apt install openjdk-17-jdk$(RESET)"; \
 		echo "$(YELLOW)  macOS:         brew install openjdk@17$(RESET)"; \
 		exit 1; \
-	}
+	fi; \
+	VER=$$("$$JAVA_CMD" -version 2>&1 | awk -F'"' '/version/ {print $$2; exit}'); \
+	MAJOR=$${VER%%.*}; \
+	if [ "$$MAJOR" = "1" ]; then MAJOR=$$(echo "$$VER" | cut -d. -f2); fi; \
+	case "$$MAJOR" in ''|*[!0-9]*) MAJOR=0 ;; esac; \
+	if [ "$$MAJOR" -lt 17 ]; then \
+		echo "$(RED)Java 17+ is required to run Gradle 8.11 (found '$$VER').$(RESET)"; \
+		echo "$(YELLOW)  Ubuntu/Debian: sudo apt install openjdk-17-jdk$(RESET)"; \
+		echo "$(YELLOW)  macOS:         brew install openjdk@17$(RESET)"; \
+		exit 1; \
+	fi
 
 # Verify the Rust toolchain (cargo) is available — maturin compiles the native
 # Python extension with it, so building the wheel fails without it.
