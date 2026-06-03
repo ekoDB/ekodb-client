@@ -3747,9 +3747,12 @@ export class WebSocketClient {
           }
           matched = true;
         }
-        // Server doesn't echo messageId — if there's exactly one pending
+        // Server doesn't echo messageId at all — if there's exactly one pending
         // request, deliver the response to it (sequential request/response).
-        if (!matched && this.pendingRequests.size === 1) {
+        // Only when messageId is absent: a present-but-unmatched id means a late
+        // response for an already-settled/timed-out request, which must NOT be
+        // misrouted to whatever request happens to still be pending.
+        if (!matched && !messageId && this.pendingRequests.size === 1) {
           const key = this.pendingRequests.keys().next().value!;
           this.settlePending(key, msg.type === "Error", msg);
         }

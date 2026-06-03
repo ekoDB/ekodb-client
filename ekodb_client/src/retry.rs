@@ -5,10 +5,12 @@ use std::future::Future;
 use std::time::Duration;
 use tokio::time::sleep;
 
-/// Hard cap on any single backoff sleep, so an exponential schedule (or a
-/// hostile server `Retry-After`) can never produce an unbounded delay.
+/// Hard cap on a single *exponential-backoff* sleep, so the computed schedule
+/// can never produce an unbounded delay. A server-supplied `Retry-After` is
+/// honored on its own, higher ceiling (`MAX_RETRY_AFTER_SECS`) rather than this
+/// one, matching the other ekoDB clients.
 const MAX_BACKOFF: Duration = Duration::from_secs(30);
-/// Hard cap on a server-supplied `Retry-After`.
+/// Hard cap on a server-supplied `Retry-After`, bounding even a hostile value.
 const MAX_RETRY_AFTER_SECS: u64 = 60;
 /// Cap on the backoff exponent so `2^exp` can never overflow.
 const MAX_BACKOFF_EXPONENT: u32 = 16;
