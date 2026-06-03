@@ -269,6 +269,136 @@ class QueryBuilderTest {
         assertEquals("@example.com", content?.get("value")?.jsonPrimitive?.content)
     }
 
+    @Test
+    fun `builds startsWith filter`() {
+        val query = QueryBuilder()
+            .startsWith("email", "admin")
+            .build()
+
+        val filter = query.filter as JsonObject
+        val content = filter["content"]?.jsonObject
+        assertEquals("Condition", filter["type"]?.jsonPrimitive?.content)
+        assertEquals("email", content?.get("field")?.jsonPrimitive?.content)
+        assertEquals("StartsWith", content?.get("operator")?.jsonPrimitive?.content)
+        assertEquals("admin", content?.get("value")?.jsonPrimitive?.content)
+    }
+
+    @Test
+    fun `builds endsWith filter`() {
+        val query = QueryBuilder()
+            .endsWith("email", "@example.com")
+            .build()
+
+        val filter = query.filter as JsonObject
+        val content = filter["content"]?.jsonObject
+        assertEquals("Condition", filter["type"]?.jsonPrimitive?.content)
+        assertEquals("email", content?.get("field")?.jsonPrimitive?.content)
+        assertEquals("EndsWith", content?.get("operator")?.jsonPrimitive?.content)
+        assertEquals("@example.com", content?.get("value")?.jsonPrimitive?.content)
+    }
+
+    // ========================================================================
+    // Logical Operator Tests
+    // ========================================================================
+
+    @Test
+    fun `condition builds a canonical standalone condition`() {
+        val cond = QueryBuilder.condition("status", "Eq", "active")
+        assertEquals("Condition", cond["type"]?.jsonPrimitive?.content)
+        val content = cond["content"]?.jsonObject
+        assertEquals("status", content?.get("field")?.jsonPrimitive?.content)
+        assertEquals("Eq", content?.get("operator")?.jsonPrimitive?.content)
+        assertEquals("active", content?.get("value")?.jsonPrimitive?.content)
+    }
+
+    @Test
+    fun `builds or filter from conditions`() {
+        val query = QueryBuilder()
+            .or(listOf(
+                QueryBuilder.condition("status", "Eq", "active"),
+                QueryBuilder.condition("status", "Eq", "pending")
+            ))
+            .build()
+
+        val filter = query.filter as JsonObject
+        assertEquals("Logical", filter["type"]?.jsonPrimitive?.content)
+        val content = filter["content"]?.jsonObject
+        assertEquals("Or", content?.get("operator")?.jsonPrimitive?.content)
+        val expressions = content?.get("expressions")?.jsonArray
+        assertEquals(2, expressions?.size)
+        assertEquals(
+            "active",
+            expressions?.get(0)?.jsonObject?.get("content")?.jsonObject
+                ?.get("value")?.jsonPrimitive?.content
+        )
+    }
+
+    @Test
+    fun `builds and filter from conditions`() {
+        val query = QueryBuilder()
+            .and(listOf(
+                QueryBuilder.condition("age", "Gte", 18),
+                QueryBuilder.condition("age", "Lt", 65)
+            ))
+            .build()
+
+        val filter = query.filter as JsonObject
+        assertEquals("Logical", filter["type"]?.jsonPrimitive?.content)
+        val content = filter["content"]?.jsonObject
+        assertEquals("And", content?.get("operator")?.jsonPrimitive?.content)
+        assertEquals(2, content?.get("expressions")?.jsonArray?.size)
+    }
+
+    @Test
+    fun `builds not filter from a single condition`() {
+        val query = QueryBuilder()
+            .not(QueryBuilder.condition("status", "Eq", "archived"))
+            .build()
+
+        val filter = query.filter as JsonObject
+        assertEquals("Logical", filter["type"]?.jsonPrimitive?.content)
+        val content = filter["content"]?.jsonObject
+        assertEquals("Not", content?.get("operator")?.jsonPrimitive?.content)
+        val expressions = content?.get("expressions")?.jsonArray
+        assertEquals(1, expressions?.size)
+        assertEquals(
+            "archived",
+            expressions?.get(0)?.jsonObject?.get("content")?.jsonObject
+                ?.get("value")?.jsonPrimitive?.content
+        )
+    }
+
+    @Test
+    fun `rawFilter passes a pre-built expression through unchanged`() {
+        val raw = QueryBuilder.condition("custom", "Eq", "value")
+        val query = QueryBuilder()
+            .rawFilter(raw)
+            .build()
+
+        // Single filter is emitted as-is, not wrapped in a Logical And.
+        assertEquals(raw, query.filter)
+    }
+
+    @Test
+    fun `page sets skip and limit from zero-based page number`() {
+        val query = QueryBuilder()
+            .page(2, 25)
+            .build()
+
+        assertEquals(50, query.skip)
+        assertEquals(25, query.limit)
+    }
+
+    @Test
+    fun `page zero starts at the first record`() {
+        val query = QueryBuilder()
+            .page(0, 10)
+            .build()
+
+        assertEquals(0, query.skip)
+        assertEquals(10, query.limit)
+    }
+
     // ========================================================================
     // Multiple Filters (Auto AND) Tests
     // ========================================================================

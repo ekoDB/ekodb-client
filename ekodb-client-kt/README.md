@@ -423,9 +423,17 @@ For complete, runnable examples of all features, see the
 - `.inArray(field, values)` - In array
 - `.nin(field, values)` - Not in array
 - `.contains(field, substring)` - Contains substring
+- `.startsWith(field, prefix)` - String starts with prefix
+- `.endsWith(field, suffix)` - String ends with suffix
+- `.and(conditions)` / `.or(conditions)` - Combine conditions with AND / OR
+- `.not(condition)` - Negate a condition
+- `QueryBuilder.condition(field, operator, value)` - Build a standalone
+  condition for use with `.and` / `.or` / `.not`
+- `.rawFilter(filter)` - Add a pre-built filter expression
 - `.sortAsc(field)` / `.sortDesc(field)` - Sorting
 - `.sortAscending(field)` / `.sortDescending(field)` - Sorting (aliases)
 - `.limit(n)` / `.skip(n)` - Pagination
+- `.page(page, pageSize)` - Pagination by zero-based page number
 - `.join(joinConfig)` - Add join configuration
 - `.joinWith(collection, localField, foreignField, alias)` - Simple join helper
 - `.build()` - Build the query
