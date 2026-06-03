@@ -3598,7 +3598,10 @@ export class WebSocketClient {
     this.reconnecting = true;
 
     const attempt = async (): Promise<void> => {
-      if (this.closed) {
+      // Bail if the client was closed, or if every subscription was torn down
+      // (e.g. unsubscribed) while a reconnect was in-flight — reconnect was only
+      // opted into because subscriptions existed, so there's nothing to restore.
+      if (this.closed || this.subscriptionParams.size === 0) {
         this.reconnecting = false;
         return;
       }
@@ -3621,7 +3624,9 @@ export class WebSocketClient {
       this.reconnectAttempts++;
       await new Promise((r) => setTimeout(r, delay));
 
-      if (this.closed) {
+      // Re-check after the backoff delay: close() or a full unsubscribe may have
+      // happened while we were waiting, in which case skip reopening the socket.
+      if (this.closed || this.subscriptionParams.size === 0) {
         this.reconnecting = false;
         return;
       }
