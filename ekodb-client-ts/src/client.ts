@@ -3557,7 +3557,13 @@ export class WebSocketClient {
     if (this.dispatcherRunning) return;
     this.dispatcherRunning = true;
 
-    this.ws.on("message", (data: Buffer) => {
+    // Capture the socket this dispatcher is bound to. After a reconnect, the old
+    // socket may still emit late close/error events; ignore them so they don't
+    // tear down the replacement connection.
+    const socket = this.ws;
+
+    socket.on("message", (data: Buffer) => {
+      if (this.ws !== socket) return;
       try {
         const msg = JSON.parse(data.toString());
         this.routeMessage(msg);
@@ -3566,9 +3572,15 @@ export class WebSocketClient {
       }
     });
 
-    this.ws.on("close", () => {
+    // Both "close" and "error" mean this socket is dead. ws typically emits
+    // "error" followed by "close", so route both through one handler and let the
+    // identity check dedupe: the first to fire nulls this.ws, the second no-ops.
+    const onDown = () => {
+      if (this.ws !== socket) return;
       this.handleDisconnect();
-    });
+    };
+    socket.on("close", onDown);
+    socket.on("error", onDown);
   }
 
   /**
