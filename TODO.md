@@ -1,42 +1,44 @@
-# ekodb-client Transport Parity TODO
+# ekodb-client Transport TODO
 
-**Created:** April 1, 2026
+**Created:** April 1, 2026 **Updated:** June 3, 2026 — CRUD-over-WS parity
+verified complete in code; stale tasks removed.
 
 ## Current State
 
 All 5 clients (Rust, TypeScript, Python, Go, Kotlin) support HTTP REST,
-WebSocket, and SSE. But CRUD-over-WebSocket coverage is inconsistent.
+WebSocket, and SSE. **CRUD-over-WebSocket parity is complete** — every client
+exposes insert/update/delete, batch insert/update/delete, find/query,
+`text_search`, and `distinct_values` over WS (verified against source; see
+`PARITY_MATRIX.md`). The earlier "inconsistent coverage" matrix was stale.
 
 ## Transport Parity Matrix
 
-### CRUD over WebSocket
+### CRUD over WebSocket — ✅ complete
 
-| Operation       | Rust | TypeScript | Python | Go  | Kotlin |
-| --------------- | ---- | ---------- | ------ | --- | ------ |
-| Insert          | -    | WS         | -      | WS  | WS     |
-| Find/Query      | WS   | WS         | WS     | WS  | WS     |
-| Update          | -    | WS         | -      | WS  | WS     |
-| Delete          | -    | WS         | -      | WS  | WS     |
-| Batch Insert    | -    | WS         | -      | -   | WS     |
-| Batch Update    | -    | WS         | -      | -   | WS     |
-| Batch Delete    | -    | WS         | -      | -   | WS     |
-| Text Search     | -    | WS         | -      | -   | -      |
-| Distinct Values | -    | WS         | -      | -   | -      |
+| Operation                  | Rust | TypeScript | Python | Go  | Kotlin |
+| -------------------------- | ---- | ---------- | ------ | --- | ------ |
+| Insert / Update / Delete   | WS   | WS         | WS     | WS  | WS     |
+| Find / Query               | WS   | WS         | WS     | WS  | WS     |
+| Batch Insert/Update/Delete | WS   | WS         | WS     | WS  | WS     |
+| Text Search                | WS   | WS         | WS     | WS  | WS     |
+| Distinct Values            | WS   | WS         | WS     | WS  | WS     |
 
-`-` = HTTP only, `WS` = WebSocket supported
+`WS` = WebSocket supported. Python exposes these as `ws_*` methods on its WS
+wrapper.
+
+### Collection management over WebSocket — ✅ complete
+
+All five clients support `create` / `delete` / `list` collections over WS
+(TypeScript via `sendCRUD` in its `WebSocketClient`).
 
 ### KV over WebSocket
 
-No client supports KV operations over WebSocket. All KV is HTTP-only.
+No client supports KV over WS — all KV is HTTP-only. Whether to add a WS variant
+is an open decision (lean: keep HTTP-only unless a real latency case appears).
 
-### Schema/Collection Management over WebSocket
+## Open work
 
-Only Kotlin supports `createCollection`/`deleteCollection` over WS. All others
-are HTTP-only.
-
-## Tasks
-
-### Blob storage + imports API (all 4 clients)
+### Blob storage + imports API (all clients)
 
 > Tracked: [#121](https://github.com/ekoDB/ekodb-client/issues/121) · Go client
 > [ekodb-client-go#32](https://github.com/ekoDB/ekodb-client-go/issues/32)
@@ -44,7 +46,7 @@ are HTTP-only.
 Expose the server blob primitive + imports ingest with matching ergonomics
 across Rust, Python, TypeScript, and Kotlin (clients do not extract text —
 `text` is supplied by the caller). Pairs with server-side blob storage + ingest
-endpoints tracked internally; start once those endpoints are available:
+endpoints tracked internally; **start once those endpoints are available**:
 
 - [ ] `client.blob.*`: `put` / `get` / `get_stream` / `presign_url` / `delete` /
       `list` → `PUT/GET/DELETE /api/blob/{bucket}/{key}`
@@ -56,32 +58,8 @@ endpoints tracked internally; start once those endpoints are available:
 - [ ] Versions synced (`make sync-versions`); unit tests per language + a Rust
       integration round-trip
 
-### Rust WS CRUD (Python gets it for free)
+### KV over WebSocket — decision
 
-- [ ] Add WS insert (single) to Rust client
-- [ ] Add WS update (single) to Rust client
-- [ ] Add WS delete (single) to Rust client
-- [ ] Add WS batch insert to Rust client
-- [ ] Add WS batch update to Rust client
-- [ ] Add WS batch delete to Rust client
-- [ ] Add WS text search to Rust client
-- [ ] Add WS distinct values to Rust client
-- [ ] Verify Python client inherits all WS CRUD from Rust
+> Tracked: [#112](https://github.com/ekoDB/ekodb-client/issues/112)
 
-### Go WS Batch Operations
-
-- [ ] Add WS batch insert to Go client
-- [ ] Add WS batch update to Go client
-- [ ] Add WS batch delete to Go client
-- [ ] Add WS text search to Go client
-- [ ] Add WS distinct values to Go client
-
-### Kotlin Remaining WS Operations
-
-- [ ] Add WS text search to Kotlin client
-- [ ] Add WS distinct values to Kotlin client
-
-### KV over WebSocket (all clients)
-
-- [ ] Decide if KV over WS is needed (currently HTTP-only everywhere)
-- [ ] If yes, implement in Rust → Python, then TypeScript, Go, Kotlin
+- [ ] Decide whether KV needs a WS variant (HTTP-only today). Lean: no.
