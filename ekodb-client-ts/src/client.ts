@@ -3489,6 +3489,10 @@ export class WebSocketClient {
     if (this.ws && this.dispatcherRunning) return;
     // Coalesce concurrent connect attempts onto a single in-flight promise.
     if (this.connectPromise) return this.connectPromise;
+    // Clear the intentional-close flag only for user-initiated connects. During
+    // a reconnect cycle this stays untouched so a concurrent close() can't be
+    // undone and have the reconnect proceed against the user's intent.
+    if (!this.reconnecting) this.closed = false;
     this.connectPromise = this.openSocket().finally(() => {
       this.connectPromise = null;
     });
@@ -3496,8 +3500,6 @@ export class WebSocketClient {
   }
 
   private async openSocket(): Promise<void> {
-    this.closed = false;
-
     const WebSocket = (await import("ws")).default;
 
     let url = this.wsURL;
@@ -3632,8 +3634,11 @@ export class WebSocketClient {
       }
 
       try {
-        await this.openSocket();
-        // close() may have been called while openSocket() was in-flight; if so,
+        // Route through ensureConnected() so a request-driven connect and this
+        // reconnect share one in-flight connectPromise/socket — opening two live
+        // sockets would misroute responses.
+        await this.ensureConnected();
+        // close() may have been called while the connect was in-flight; if so,
         // tear down the freshly-opened socket instead of leaving it orphaned.
         if (this.closed) {
           try {
