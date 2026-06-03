@@ -18,7 +18,7 @@ YELLOW := \033[33m
 RED := \033[31m
 RESET := \033[0m
 
-.PHONY: all build build-release build-client build-python-client build-typescript-client build-examples test test-ci test-client test-examples test-examples-direct test-examples-client test-examples-rust test-examples-python test-examples-go test-examples-typescript test-examples-javascript test-examples-transactions test-examples-scripts test-examples-scripts-crud test-examples-swr test-examples-ts-swr test-examples-py-swr test-examples-go-swr test-examples-rust-swr test-examples-kt-swr clean check fmt fmt-rust fmt-rust-client fmt-rust-examples fmt-python fmt-go fmt-typescript fmt-md format install install-rust install-python install-typescript install-go venv python-example-deps ensure-jvm check-toolchains setup install-hooks deps-check deps-update deploy-client deploy-client-rust deploy-client-py deploy-client-py-simple deploy-client-go deploy-client-ts bump-version bump-client-py docs-client
+.PHONY: all build build-release build-client build-python-client build-typescript-client build-examples test test-ci test-client test-examples test-examples-direct test-examples-client test-examples-rust test-examples-python test-examples-go test-examples-typescript test-examples-javascript test-examples-transactions test-examples-scripts test-examples-scripts-crud test-examples-swr test-examples-ts-swr test-examples-py-swr test-examples-go-swr test-examples-rust-swr test-examples-kt-swr clean check fmt fmt-rust fmt-rust-client fmt-rust-examples fmt-python fmt-go fmt-typescript fmt-md format install install-rust install-python install-typescript install-go venv python-example-deps ensure-jvm ensure-cargo check-toolchains setup install-hooks deps-check deps-update deploy-client deploy-client-rust deploy-client-py deploy-client-py-simple deploy-client-go deploy-client-ts bump-version bump-client-py docs-client
 
 # Color codes for Worthington jet
 MAGENTA := \033[35m
@@ -1005,10 +1005,20 @@ python-example-deps: venv
 # is auto-provisioned by the foojay plugin (settings.gradle.kts); this only checks the
 # launcher JVM, which must already exist on a fresh machine.
 ensure-jvm:
-	@command -v java >/dev/null 2>&1 || [ -n "$$JAVA_HOME" ] || { \
+	@command -v java >/dev/null 2>&1 || [ -x "$$JAVA_HOME/bin/java" ] || { \
 		echo "$(RED)No Java runtime found — Gradle needs a JVM to launch.$(RESET)"; \
 		echo "$(YELLOW)  Ubuntu/Debian: sudo apt install openjdk-17-jdk$(RESET)"; \
 		echo "$(YELLOW)  macOS:         brew install openjdk@17$(RESET)"; \
+		exit 1; \
+	}
+
+# Verify the Rust toolchain (cargo) is available — maturin compiles the native
+# Python extension with it, so building the wheel fails without it.
+ensure-cargo:
+	@command -v cargo >/dev/null 2>&1 || { \
+		echo "$(RED)Rust toolchain not found — maturin needs cargo to build the native extension.$(RESET)"; \
+		echo "$(YELLOW)  Install via rustup (recommended, all platforms): https://rustup.rs$(RESET)"; \
+		echo "$(YELLOW)  Ubuntu/Debian alt: sudo apt install cargo$(RESET)"; \
 		exit 1; \
 	}
 
@@ -1031,7 +1041,7 @@ check-toolchains:
 	fi
 	@echo "✅ $(GREEN)All required toolchains present.$(RESET)"
 
-build-python-client: venv
+build-python-client: venv ensure-cargo
 	@echo "🐍 $(CYAN)Building Python client package...$(RESET)"
 	@echo "🔧 $(CYAN)Ensuring maturin is available in .venv...$(RESET)"
 	@$(VENV_PY) -m pip install --quiet --upgrade maturin || { \
@@ -1460,7 +1470,7 @@ install-rust:
 	@cd ekodb_client && cargo build --release
 	@echo "✅ $(GREEN)Rust client installed!$(RESET)"
 
-install-python: venv
+install-python: venv ensure-cargo
 	@echo "🐍 $(CYAN)Installing Python client...$(RESET)"
 	@echo "🔧 $(CYAN)Ensuring maturin is available in .venv...$(RESET)"
 	@$(VENV_PY) -m pip install --quiet --upgrade maturin || { \
