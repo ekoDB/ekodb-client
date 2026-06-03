@@ -8,6 +8,9 @@ CLIENT_TS_DIR := ekodb-client-ts
 CLIENT_GO_DIR := ekodb-client-go
 CLIENT_KT_DIR := ekodb-client-kt
 
+# Project-local virtualenv interpreter (absolute, so it survives `cd` into subdirs)
+VENV_PY := $(CURDIR)/.venv/bin/python
+
 # Color codes for pretty output
 CYAN := \033[36m
 GREEN := \033[32m
@@ -15,7 +18,7 @@ YELLOW := \033[33m
 RED := \033[31m
 RESET := \033[0m
 
-.PHONY: all build build-release build-client build-python-client build-typescript-client build-examples test test-ci test-client test-examples test-examples-direct test-examples-client test-examples-rust test-examples-python test-examples-go test-examples-typescript test-examples-javascript test-examples-transactions test-examples-scripts test-examples-scripts-crud test-examples-swr test-examples-ts-swr test-examples-py-swr test-examples-go-swr test-examples-rust-swr test-examples-kt-swr clean check fmt fmt-rust fmt-rust-client fmt-rust-examples fmt-python fmt-go fmt-typescript fmt-md format install install-rust install-python install-typescript install-go setup install-hooks deps-check deps-update deploy-client deploy-client-rust deploy-client-py deploy-client-py-simple deploy-client-go deploy-client-ts bump-version bump-client-py docs-client
+.PHONY: all build build-release build-client build-python-client build-typescript-client build-examples test test-ci test-client test-examples test-examples-direct test-examples-client test-examples-rust test-examples-python test-examples-go test-examples-typescript test-examples-javascript test-examples-transactions test-examples-scripts test-examples-scripts-crud test-examples-swr test-examples-ts-swr test-examples-py-swr test-examples-go-swr test-examples-rust-swr test-examples-kt-swr clean check fmt fmt-rust fmt-rust-client fmt-rust-examples fmt-python fmt-go fmt-typescript fmt-md format install install-rust install-python install-typescript install-go venv python-example-deps setup install-hooks deps-check deps-update deploy-client deploy-client-rust deploy-client-py deploy-client-py-simple deploy-client-go deploy-client-ts bump-version bump-client-py docs-client
 
 # Color codes for Worthington jet
 MAGENTA := \033[35m
@@ -466,13 +469,13 @@ test-examples-client: test-examples-rust-client test-examples-python-client test
 	@echo "✅ $(GREEN)All client library examples complete!$(RESET)"
 
 # Run transaction examples (all languages with direct API support)
-test-examples-transactions:
+test-examples-transactions: python-example-deps
 	@echo ""
 	@echo "💳 $(CYAN)Running Transaction Examples (Direct API)...$(RESET)"
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo ""
 	@echo "🐍 $(YELLOW)Python Transactions...$(RESET)"
-	@cd examples/python && python3 transactions.py
+	@cd examples/python && $(VENV_PY) transactions.py
 	@echo ""
 	@echo "🔷 $(YELLOW)Go Transactions...$(RESET)"
 	@cd examples/go && go run transactions.go
@@ -494,13 +497,13 @@ test-examples-transactions:
 # ============================================================================
 # Functions Examples (http_functions + crud_functions)
 # ============================================================================
-test-examples-functions:
+test-examples-functions: python-example-deps
 	@echo ""
 	@echo "📜 $(CYAN)Running Functions Examples (Direct API)...$(RESET)"
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo ""
 	@echo "🐍 $(YELLOW)Python Functions (http_functions + crud_functions)...$(RESET)"
-	@cd examples/python && python3 http_functions.py && python3 crud_functions.py
+	@cd examples/python && $(VENV_PY) http_functions.py && $(VENV_PY) crud_functions.py
 	@echo ""
 	@echo "🔷 $(YELLOW)Go Functions (http_functions + crud_functions)...$(RESET)"
 	@cd examples/go && go run http_functions.go && go run crud_functions.go
@@ -515,13 +518,13 @@ test-examples-functions:
 	@echo "✅ $(GREEN)All Functions examples completed successfully!$(RESET)"
 
 # Run only CRUD Functions examples
-test-examples-functions-crud:
+test-examples-functions-crud: python-example-deps
 	@echo ""
 	@echo "📚 $(CYAN)Running CRUD Functions Examples (Direct API)...$(RESET)"
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo ""
 	@echo "🐍 $(YELLOW)Python CRUD Functions...$(RESET)"
-	@cd examples/python && python3 crud_functions.py
+	@cd examples/python && $(VENV_PY) crud_functions.py
 	@echo ""
 	@echo "🔷 $(YELLOW)Go CRUD Functions...$(RESET)"
 	@cd examples/go && go run crud_functions.go
@@ -543,7 +546,7 @@ test-examples-rag:
 	@$(MAKE) run-rag-examples 2>&1 | tee -a test-examples-rag.md
 	@echo "✅ $(GREEN)All RAG examples complete! Output saved to test-examples-rag.md$(RESET)"
 
-run-rag-examples:
+run-rag-examples: build-python-client python-example-deps
 	@echo ""
 	@echo "🤖 $(CYAN)RAG Conversation System Examples$(RESET)"
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
@@ -597,7 +600,7 @@ run-rag-examples:
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "$(CYAN)Running Python RAG Example...$(RESET)"
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
-	@cd examples/python && python3 rag_conversation_system.py
+	@cd examples/python && $(VENV_PY) rag_conversation_system.py
 	@echo ""
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "$(CYAN)Running TypeScript RAG Example...$(RESET)"
@@ -665,12 +668,12 @@ test-examples-ts-swr: build-typescript-client
 	@cd examples/typescript && npx tsx client_edge_cache.ts
 	@echo "✅ $(GREEN)TypeScript SWR examples complete!$(RESET)"
 
-test-examples-py-swr: build-python-client
+test-examples-py-swr: build-python-client python-example-deps
 	@echo ""
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "$(CYAN)Running Python SWR Examples...$(RESET)"
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
-	@cd examples/python && python3 swr_pattern.py
+	@cd examples/python && $(VENV_PY) swr_pattern.py
 	@echo "✅ $(GREEN)Python SWR examples complete!$(RESET)"
 
 test-examples-go-swr:
@@ -735,12 +738,12 @@ test-examples-ts-fcomp: build-typescript-client
 	@cd examples/typescript && npx tsx client_function_composition.ts
 	@echo "✅ $(GREEN)TypeScript function composition examples complete!$(RESET)"
 
-test-examples-py-fcomp: build-python-client
+test-examples-py-fcomp: build-python-client python-example-deps
 	@echo ""
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "$(CYAN)Running Python Function Composition Examples...$(RESET)"
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
-	@cd examples/python && python3 client_function_composition.py
+	@cd examples/python && $(VENV_PY) client_function_composition.py
 	@echo "✅ $(GREEN)Python function composition examples complete!$(RESET)"
 
 test-examples-go-fcomp:
@@ -834,11 +837,11 @@ test-examples-ttl-js:
 	@cd examples/javascript && node websocket_ttl.js
 	@echo "✅ $(GREEN)JavaScript TTL tests complete!$(RESET)"
 
-test-examples-ttl-py:
+test-examples-ttl-py: build-python-client python-example-deps
 	@echo ""
 	@echo "🐍 $(YELLOW)Python TTL Verification Tests...$(RESET)"
-	@cd examples/python && python3 document_ttl.py
-	@cd examples/python && python3 websocket_ttl.py
+	@cd examples/python && $(VENV_PY) document_ttl.py
+	@cd examples/python && $(VENV_PY) websocket_ttl.py
 	@echo "✅ $(GREEN)Python TTL tests complete!$(RESET)"
 
 test-examples-ttl-ts: build-typescript-client
@@ -883,10 +886,10 @@ test-examples-subscribe-go:
 	@cd examples/go && go run client_websocket_subscribe.go
 	@echo "✅ $(GREEN)Go subscription test complete!$(RESET)"
 
-test-examples-subscribe-py:
+test-examples-subscribe-py: python-example-deps
 	@echo ""
 	@echo "🐍 $(YELLOW)Python WebSocket Subscription Test...$(RESET)"
-	@cd examples/python && python3 client_websocket_subscribe.py
+	@cd examples/python && $(VENV_PY) client_websocket_subscribe.py
 	@echo "✅ $(GREEN)Python subscription test complete!$(RESET)"
 
 test-examples-subscribe-ts: build-typescript-client
@@ -977,13 +980,13 @@ test-examples-py: test-examples-python
 test-examples-py-direct: test-examples-python-direct
 test-examples-py-client: test-examples-python-client
 
-test-examples-python-direct:
+test-examples-python-direct: python-example-deps
 	@echo "🧪 $(CYAN)Running Python examples (direct HTTP/WebSocket)...$(RESET)"
-	@cd examples/python && python3 test_runner.py
+	@cd examples/python && $(VENV_PY) test_runner.py
 	@echo "✅ $(GREEN)Python direct examples complete!$(RESET)"
 
-build-python-client:
-	@echo "🐍 $(CYAN)Building Python client package...$(RESET)"
+# Create the project-local .venv if missing (portable across macOS and Ubuntu)
+venv:
 	@if [ ! -d .venv ]; then \
 		python3 -m venv .venv || { \
 			rm -rf .venv; \
@@ -993,6 +996,15 @@ build-python-client:
 			exit 1; \
 		}; \
 	fi
+
+# Ensure third-party deps required to RUN the Python examples are present in .venv.
+# The ekodb_client package itself is installed separately by build-python-client.
+python-example-deps: venv
+	@echo "📦 $(CYAN)Ensuring Python example dependencies in .venv...$(RESET)"
+	@$(VENV_PY) -m pip install --quiet aiohttp websockets python-dotenv requests
+
+build-python-client: venv
+	@echo "🐍 $(CYAN)Building Python client package...$(RESET)"
 	@echo "🔧 $(CYAN)Ensuring maturin is available in .venv...$(RESET)"
 	@.venv/bin/python -m pip install --quiet --upgrade maturin || { \
 		echo "$(RED)Failed to install maturin into .venv$(RESET)"; \
@@ -1010,45 +1022,45 @@ build-python-client:
 	fi
 	@echo "✅ $(GREEN)Python client package built and installed!$(RESET)"
 
-test-examples-python-client: build-python-client
+test-examples-python-client: build-python-client python-example-deps
 	@echo "🧪 $(CYAN)Running Python client library examples...$(RESET)"
-	@cd examples/python && python3 client_simple_crud.py
-	@cd examples/python && python3 client_simple_websocket.py
-	@cd examples/python && python3 client_batch_operations.py
-	@cd examples/python && python3 client_collection_management.py
-	@cd examples/python && python3 client_kv_operations.py
-	@cd examples/python && python3 client_transactions.py
-	@cd examples/python && python3 client_query_builder.py
-	@cd examples/python && python3 client_search.py
-	@cd examples/python && python3 client_schema.py
-	@cd examples/python && python3 client_joins.py
-	@cd examples/python && python3 client_document_ttl.py
-	@cd examples/python && python3 client_websocket_ttl.py
-	@cd examples/python && python3 client_edge_cache.py
-	@cd examples/python && python3 client_functions.py
-	@cd examples/python && python3 client_function_composition.py
-	@cd examples/python && python3 client_functions_complete.py
-	@cd examples/python && python3 client_functions_kv_wrapped.py
-	@cd examples/python && python3 client_swr_pattern.py
-	@cd examples/python && python3 client_swr_native.py
-	@cd examples/python && python3 client_functions_advanced.py
-	@cd examples/python && python3 client_functions_ai.py
-	@cd examples/python && python3 client_functions_crud.py
-	@cd examples/python && python3 client_functions_search.py
-	@cd examples/python && python3 client_chat_basic.py
-	@cd examples/python && python3 client_chat_advanced.py
-	@cd examples/python && python3 client_chat_sessions.py
-	@cd examples/python && python3 client_convenience_methods.py
-	@cd examples/python && python3 bypass_ripple_example.py
-	@cd examples/python && python3 projection_example.py
-	@cd examples/python && python3 client_kv_precision.py
-	@cd examples/python && python3 client_chat_models.py
-	@cd examples/python && python3 client_user_functions.py
-	@cd examples/python && python3 client_collection_utils.py
-	@cd examples/python && python3 client_jwt_auth_flow.py
-	@cd examples/python && python3 client_crypto_stages.py
-	@cd examples/python && python3 client_concurrency_stages.py
-	@cd examples/python && python3 client_path_routed_function.py
+	@cd examples/python && $(VENV_PY) client_simple_crud.py
+	@cd examples/python && $(VENV_PY) client_simple_websocket.py
+	@cd examples/python && $(VENV_PY) client_batch_operations.py
+	@cd examples/python && $(VENV_PY) client_collection_management.py
+	@cd examples/python && $(VENV_PY) client_kv_operations.py
+	@cd examples/python && $(VENV_PY) client_transactions.py
+	@cd examples/python && $(VENV_PY) client_query_builder.py
+	@cd examples/python && $(VENV_PY) client_search.py
+	@cd examples/python && $(VENV_PY) client_schema.py
+	@cd examples/python && $(VENV_PY) client_joins.py
+	@cd examples/python && $(VENV_PY) client_document_ttl.py
+	@cd examples/python && $(VENV_PY) client_websocket_ttl.py
+	@cd examples/python && $(VENV_PY) client_edge_cache.py
+	@cd examples/python && $(VENV_PY) client_functions.py
+	@cd examples/python && $(VENV_PY) client_function_composition.py
+	@cd examples/python && $(VENV_PY) client_functions_complete.py
+	@cd examples/python && $(VENV_PY) client_functions_kv_wrapped.py
+	@cd examples/python && $(VENV_PY) client_swr_pattern.py
+	@cd examples/python && $(VENV_PY) client_swr_native.py
+	@cd examples/python && $(VENV_PY) client_functions_advanced.py
+	@cd examples/python && $(VENV_PY) client_functions_ai.py
+	@cd examples/python && $(VENV_PY) client_functions_crud.py
+	@cd examples/python && $(VENV_PY) client_functions_search.py
+	@cd examples/python && $(VENV_PY) client_chat_basic.py
+	@cd examples/python && $(VENV_PY) client_chat_advanced.py
+	@cd examples/python && $(VENV_PY) client_chat_sessions.py
+	@cd examples/python && $(VENV_PY) client_convenience_methods.py
+	@cd examples/python && $(VENV_PY) bypass_ripple_example.py
+	@cd examples/python && $(VENV_PY) projection_example.py
+	@cd examples/python && $(VENV_PY) client_kv_precision.py
+	@cd examples/python && $(VENV_PY) client_chat_models.py
+	@cd examples/python && $(VENV_PY) client_user_functions.py
+	@cd examples/python && $(VENV_PY) client_collection_utils.py
+	@cd examples/python && $(VENV_PY) client_jwt_auth_flow.py
+	@cd examples/python && $(VENV_PY) client_crypto_stages.py
+	@cd examples/python && $(VENV_PY) client_concurrency_stages.py
+	@cd examples/python && $(VENV_PY) client_path_routed_function.py
 	@echo "✅ $(GREEN)Python client examples complete!$(RESET)"
 
 # ============================================================================
@@ -1420,17 +1432,8 @@ install-rust:
 	@cd ekodb_client && cargo build --release
 	@echo "✅ $(GREEN)Rust client installed!$(RESET)"
 
-install-python:
+install-python: venv
 	@echo "🐍 $(CYAN)Installing Python client...$(RESET)"
-	@if [ ! -d .venv ]; then \
-		python3 -m venv .venv || { \
-			rm -rf .venv; \
-			echo "$(RED)Could not create .venv — Python's venv module is unavailable.$(RESET)"; \
-			echo "$(YELLOW)  Ubuntu/Debian: sudo apt install python3-venv$(RESET)"; \
-			echo "$(YELLOW)  macOS:         brew install python (or use the python.org installer)$(RESET)"; \
-			exit 1; \
-		}; \
-	fi
 	@echo "🔧 $(CYAN)Ensuring maturin is available in .venv...$(RESET)"
 	@.venv/bin/python -m pip install --quiet --upgrade maturin || { \
 		echo "$(RED)Failed to install maturin into .venv$(RESET)"; \
