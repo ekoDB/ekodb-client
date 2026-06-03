@@ -414,7 +414,7 @@ test-python:
 	@cd $(CLIENT_PY_DIR) && python3 -m pytest tests/ -v
 	@echo "✅ $(GREEN)Python tests complete!$(RESET)"
 
-test-kotlin:
+test-kotlin: ensure-jvm
 	@echo "🟣 $(CYAN)Running Kotlin client tests...$(RESET)"
 	@cd $(CLIENT_KT_DIR) && ./gradlew test --quiet
 	@echo "✅ $(GREEN)Kotlin tests complete!$(RESET)"
@@ -469,7 +469,7 @@ test-examples-client: test-examples-rust-client test-examples-python-client test
 	@echo "✅ $(GREEN)All client library examples complete!$(RESET)"
 
 # Run transaction examples (all languages with direct API support)
-test-examples-transactions: python-example-deps
+test-examples-transactions: python-example-deps ensure-jvm
 	@echo ""
 	@echo "💳 $(CYAN)Running Transaction Examples (Direct API)...$(RESET)"
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
@@ -546,7 +546,7 @@ test-examples-rag:
 	@$(MAKE) run-rag-examples 2>&1 | tee -a test-examples-rag.md
 	@echo "✅ $(GREEN)All RAG examples complete! Output saved to test-examples-rag.md$(RESET)"
 
-run-rag-examples: build-python-client python-example-deps
+run-rag-examples: build-python-client python-example-deps ensure-jvm
 	@echo ""
 	@echo "🤖 $(CYAN)RAG Conversation System Examples$(RESET)"
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
@@ -762,7 +762,7 @@ test-examples-js-fcomp: build-javascript-client
 	@cd examples/javascript && node client_function_composition.js
 	@echo "✅ $(GREEN)JavaScript function composition examples complete!$(RESET)"
 
-test-examples-kt-fcomp:
+test-examples-kt-fcomp: ensure-jvm
 	@echo ""
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "$(CYAN)Running Kotlin Function Composition Examples...$(RESET)"
@@ -778,7 +778,7 @@ test-examples-kt-fcomp:
 	fi
 	@echo "✅ $(GREEN)Kotlin function composition examples complete!$(RESET)"
 
-test-examples-kt-swr:
+test-examples-kt-swr: ensure-jvm
 	@echo ""
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "$(CYAN)Running Kotlin SWR Examples...$(RESET)"
@@ -898,7 +898,7 @@ test-examples-subscribe-ts: build-typescript-client
 	@cd examples/typescript && npx tsx client_websocket_subscribe.ts
 	@echo "✅ $(GREEN)TypeScript subscription test complete!$(RESET)"
 
-test-examples-subscribe-kt:
+test-examples-subscribe-kt: ensure-jvm
 	@echo ""
 	@echo "🟣 $(YELLOW)Kotlin WebSocket Subscription Test...$(RESET)"
 	@if [ -f .env ]; then \
@@ -1260,7 +1260,7 @@ test-examples-javascript-client: build-typescript-client
 # ============================================================================
 # Kotlin Examples (client + transactions)
 # ============================================================================
-test-examples-kotlin:
+test-examples-kotlin: ensure-jvm
 	@echo "make test-examples-kotlin" > examples/kotlin/test-examples-kt.md
 	@$(MAKE) test-examples-kotlin-client 2>&1 | tee -a examples/kotlin/test-examples-kt.md
 	@echo "🟣 $(YELLOW)Kotlin Transactions...$(RESET)"
@@ -1276,7 +1276,7 @@ build-kotlin-client: ensure-jvm
 	@cd ekodb-client-kt && { JH=$$(/usr/libexec/java_home -v 17 2>/dev/null) && export JAVA_HOME=$$JH && export PATH=$$JH/bin:$$PATH || true; } && ./gradlew build --no-daemon
 	@echo "✅ $(GREEN)Kotlin client built!$(RESET)"
 
-test-examples-kotlin-client: build-kotlin-client
+test-examples-kotlin-client: build-kotlin-client ensure-jvm
 	@echo "🧪 $(CYAN)Running Kotlin client library examples...$(RESET)"
 	@if [ -f .env ]; then \
 		. ./.env && \
@@ -1597,7 +1597,7 @@ deps-check-typescript:
 	fi
 
 # Kotlin dependency checks
-deps-check-kotlin:
+deps-check-kotlin: ensure-jvm
 	@echo "🟣 $(CYAN)Checking Kotlin/Gradle dependencies...$(RESET)"
 	@echo ""
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
@@ -1670,7 +1670,7 @@ deps-update-typescript:
 	fi
 
 # Kotlin dependency updates
-deps-update-kotlin:
+deps-update-kotlin: ensure-jvm
 	@echo "🟣 $(CYAN)Updating Kotlin/Gradle dependencies...$(RESET)"
 	@echo ""
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"

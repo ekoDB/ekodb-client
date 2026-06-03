@@ -1677,3 +1677,59 @@ Status before rollback: Active
 ✓ Deleted test accounts
 
 ✓ All client transaction examples completed
+make[1]: Entering directory '/home/shyd0w/dev/ekodb-client'
+command -v java >/dev/null 2>&1 || [ -n "$JAVA_HOME" ] || { \
+	echo "\033[31mNo Java runtime found — Gradle needs a JVM to launch.\033[0m"; \
+	echo "\033[33m  Ubuntu/Debian: sudo apt install openjdk-17-jdk\033[0m"; \
+	echo "\033[33m  macOS:         brew install openjdk@17\033[0m"; \
+	exit 1; \
+}
+echo "🟣 \033[36mBuilding Kotlin client library...\033[0m"
+cd ekodb-client-kt && { JH=$(/usr/libexec/java_home -v 17 2>/dev/null) && export JAVA_HOME=$JH && export PATH=$JH/bin:$PATH || true; } && ./gradlew build --no-daemon
+echo "✅ \033[32mKotlin client built!\033[0m"
+echo "🧪 \033[36mRunning Kotlin client library examples...\033[0m"
+if [ -f .env ]; then \
+	. ./.env && \
+	{ JH=$(/usr/libexec/java_home -v 17 2>/dev/null) && export JAVA_HOME=$JH && export PATH=$JH/bin:$PATH || true; } && \
+	cd examples/kotlin && \
+	API_BASE_URL=$API_BASE_URL WS_BASE_URL=$WS_BASE_URL API_BASE_KEY=$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientSimpleCrudKt --no-daemon && \
+	API_BASE_URL=$API_BASE_URL WS_BASE_URL=$WS_BASE_URL API_BASE_KEY=$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientSimpleWebsocketKt --no-daemon && \
+	API_BASE_URL=$API_BASE_URL WS_BASE_URL=$WS_BASE_URL API_BASE_KEY=$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientBatchOperationsKt --no-daemon && \
+	API_BASE_URL=$API_BASE_URL WS_BASE_URL=$WS_BASE_URL API_BASE_KEY=$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientCollectionManagementKt --no-daemon && \
+	API_BASE_URL=$API_BASE_URL WS_BASE_URL=$WS_BASE_URL API_BASE_KEY=$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientKvOperationsKt --no-daemon && \
+	API_BASE_URL=$API_BASE_URL WS_BASE_URL=$WS_BASE_URL API_BASE_KEY=$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientTransactionsKt --no-daemon && \
+	API_BASE_URL=$API_BASE_URL WS_BASE_URL=$WS_BASE_URL API_BASE_KEY=$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientQueryBuilderKt --no-daemon && \
+	API_BASE_URL=$API_BASE_URL WS_BASE_URL=$WS_BASE_URL API_BASE_KEY=$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientSearchKt --no-daemon && \
+	API_BASE_URL=$API_BASE_URL WS_BASE_URL=$WS_BASE_URL API_BASE_KEY=$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientSchemaManagementKt --no-daemon && \
+	API_BASE_URL=$API_BASE_URL WS_BASE_URL=$WS_BASE_URL API_BASE_KEY=$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientJoinsKt --no-daemon && \
+	API_BASE_URL=$API_BASE_URL WS_BASE_URL=$WS_BASE_URL API_BASE_KEY=$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientDocumentTtlKt --no-daemon && \
+	API_BASE_URL=$API_BASE_URL WS_BASE_URL=$WS_BASE_URL API_BASE_KEY=$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientWebsocketTtlKt --no-daemon && \
+	API_BASE_URL=$API_BASE_URL WS_BASE_URL=$WS_BASE_URL API_BASE_KEY=$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientEdgeCacheKt --no-daemon && \
+	API_BASE_URL=$API_BASE_URL WS_BASE_URL=$WS_BASE_URL API_BASE_KEY=$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientFunctionsKt --no-daemon && \
+	API_BASE_URL=$API_BASE_URL WS_BASE_URL=$WS_BASE_URL API_BASE_KEY=$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientFunctionsCompleteKt --no-daemon && \
+	API_BASE_URL=$API_BASE_URL WS_BASE_URL=$WS_BASE_URL API_BASE_KEY=$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientFunctionsKvWrappedKt --no-daemon && \
+	API_BASE_URL=$API_BASE_URL WS_BASE_URL=$WS_BASE_URL API_BASE_KEY=$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientSwrPatternKt --no-daemon && \
+	API_BASE_URL=$API_BASE_URL WS_BASE_URL=$WS_BASE_URL API_BASE_KEY=$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientSwrNativeKt --no-daemon && \
+	API_BASE_URL=$API_BASE_URL WS_BASE_URL=$WS_BASE_URL API_BASE_KEY=$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientFunctionsAdvancedKt --no-daemon && \
+	API_BASE_URL=$API_BASE_URL WS_BASE_URL=$WS_BASE_URL API_BASE_KEY=$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientFunctionsAiKt --no-daemon && \
+	API_BASE_URL=$API_BASE_URL WS_BASE_URL=$WS_BASE_URL API_BASE_KEY=$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientFunctionsCrudKt --no-daemon && \
+	API_BASE_URL=$API_BASE_URL WS_BASE_URL=$WS_BASE_URL API_BASE_KEY=$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientFunctionsSearchKt --no-daemon && \
+	API_BASE_URL=$API_BASE_URL WS_BASE_URL=$WS_BASE_URL API_BASE_KEY=$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientChatBasicKt --no-daemon && \
+	API_BASE_URL=$API_BASE_URL WS_BASE_URL=$WS_BASE_URL API_BASE_KEY=$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientChatAdvancedKt --no-daemon && \
+	API_BASE_URL=$API_BASE_URL WS_BASE_URL=$WS_BASE_URL API_BASE_KEY=$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientChatSessionsKt --no-daemon && \
+	API_BASE_URL=$API_BASE_URL WS_BASE_URL=$WS_BASE_URL API_BASE_KEY=$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientChatModelsKt --no-daemon && \
+	API_BASE_URL=$API_BASE_URL WS_BASE_URL=$WS_BASE_URL API_BASE_KEY=$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientUserFunctionsKt --no-daemon && \
+	API_BASE_URL=$API_BASE_URL WS_BASE_URL=$WS_BASE_URL API_BASE_KEY=$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientConvenienceMethodsKt --no-daemon && \
+	API_BASE_URL=$API_BASE_URL WS_BASE_URL=$WS_BASE_URL API_BASE_KEY=$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.BypassRippleExampleKt --no-daemon && \
+	API_BASE_URL=$API_BASE_URL WS_BASE_URL=$WS_BASE_URL API_BASE_KEY=$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientProjectionKt --no-daemon && \
+	API_BASE_URL=$API_BASE_URL WS_BASE_URL=$WS_BASE_URL API_BASE_KEY=$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientJwtAuthFlowKt --no-daemon && \
+	API_BASE_URL=$API_BASE_URL WS_BASE_URL=$WS_BASE_URL API_BASE_KEY=$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientCryptoStagesKt --no-daemon && \
+	API_BASE_URL=$API_BASE_URL WS_BASE_URL=$WS_BASE_URL API_BASE_KEY=$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientConcurrencyStagesKt --no-daemon && \
+	API_BASE_URL=$API_BASE_URL WS_BASE_URL=$WS_BASE_URL API_BASE_KEY=$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientPathRoutedFunctionKt --no-daemon; \
+else \
+	echo "\033[31m❌ .env file not found\033[0m"; \
+	echo "\033[33m💡 Create .env file with API_BASE_URL, WS_BASE_URL, and API_BASE_KEY\033[0m"; \
+	exit 1; \
+fi
+echo "✅ \033[32mKotlin client examples complete!\033[0m"
+make[1]: Leaving directory '/home/shyd0w/dev/ekodb-client'
