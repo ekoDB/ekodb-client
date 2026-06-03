@@ -4260,6 +4260,21 @@ export class WebSocketClient {
     this.subscriptions.clear();
     this.subscriptionParams.clear();
 
+    // Reject any in-flight tool registration ack. Done here (not just in the
+    // ws "close" handler) so it's cleaned up even when this.ws is already null.
+    if (this.registerToolsAck) {
+      this.registerToolsAck.reject(new Error("WebSocket connection closed"));
+      this.registerToolsAck = null;
+    }
+
+    // Tear down chat streams immediately; they are one-shot and not replayed,
+    // and we can't rely on the underlying ws "close" event having fired.
+    for (const [, stream] of this.chatStreams) {
+      stream.emit("event", { type: "error", error: "Connection closed" });
+      stream.close();
+    }
+    this.chatStreams.clear();
+
     if (this.ws) {
       this.ws.close();
       this.ws = null;

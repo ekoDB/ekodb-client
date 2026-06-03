@@ -422,7 +422,6 @@ For complete, runnable examples of all features, see the
 - `.lte(field, value)` - Less than or equal
 - `.inArray(field, values)` - In array
 - `.nin(field, values)` - Not in array
-- `.regex(field, pattern)` - Regex match
 - `.contains(field, substring)` - Contains substring
 - `.sortAsc(field)` / `.sortDesc(field)` - Sorting
 - `.sortAscending(field)` / `.sortDescending(field)` - Sorting (aliases)

@@ -269,7 +269,6 @@ const joinResults = await client.find("users", multiQuery);
 - `.contains(field, value)` - String contains
 - `.startsWith(field, value)` - String starts with
 - `.endsWith(field, value)` - String ends with
-- `.regex(field, pattern)` - Regex match
 - `.sortAsc(field)` / `.sortDesc(field)` - Sorting
 - `.limit(n)` / `.skip(n)` - Pagination
 - `.join(joinConfig)` - Add join configuration
