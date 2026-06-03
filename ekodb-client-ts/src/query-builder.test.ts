@@ -123,12 +123,6 @@ describe("QueryBuilder string operators", () => {
 
     expect(query.filter.content.operator).toBe("EndsWith");
   });
-
-  it("builds regex filter", () => {
-    const query = new QueryBuilder().regex("phone", "^\\+1").build();
-
-    expect(query.filter.content.operator).toBe("Regex");
-  });
 });
 
 // ============================================================================
@@ -464,7 +458,6 @@ describe("QueryBuilder chaining", () => {
     expect(qb.contains("i", "j")).toBe(qb);
     expect(qb.startsWith("k", "l")).toBe(qb);
     expect(qb.endsWith("m", "n")).toBe(qb);
-    expect(qb.regex("o", "p")).toBe(qb);
     expect(qb.sortAsc("q")).toBe(qb);
     expect(qb.sortDesc("r")).toBe(qb);
     expect(qb.limit(1)).toBe(qb);

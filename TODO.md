@@ -36,7 +36,27 @@ are HTTP-only.
 
 ## Tasks
 
-### Phase 1: Rust WS CRUD (Python gets it for free)
+### Blob storage + imports API (all 4 clients)
+
+> Tracked: [#121](https://github.com/ekoDB/ekodb-client/issues/121) · Go client
+> [ekodb-client-go#32](https://github.com/ekoDB/ekodb-client-go/issues/32)
+
+Expose the server blob primitive + imports ingest with matching ergonomics
+across Rust, Python, TypeScript, and Kotlin (clients do not extract text —
+`text` is supplied by the caller). Pairs with server-side blob storage + ingest
+endpoints tracked internally; start once those endpoints are available:
+
+- [ ] `client.blob.*`: `put` / `get` / `get_stream` / `presign_url` / `delete` /
+      `list` → `PUT/GET/DELETE /api/blob/{bucket}/{key}`
+- [ ] `upload_file(...)` → `POST /api/uploads`, returns `upload_id` (body:
+      `{bytes, text, filename, content_type, size}`)
+- [ ] `get_upload(upload_id)` → `GET /api/uploads/{id}` (imports record)
+- [ ] `get_upload_download_url(upload_id)` → `GET /api/uploads/{id}/download`
+      (signed GET URL)
+- [ ] Versions synced (`make sync-versions`); unit tests per language + a Rust
+      integration round-trip
+
+### Rust WS CRUD (Python gets it for free)
 
 - [ ] Add WS insert (single) to Rust client
 - [ ] Add WS update (single) to Rust client
@@ -48,7 +68,7 @@ are HTTP-only.
 - [ ] Add WS distinct values to Rust client
 - [ ] Verify Python client inherits all WS CRUD from Rust
 
-### Phase 2: Go WS Batch Operations
+### Go WS Batch Operations
 
 - [ ] Add WS batch insert to Go client
 - [ ] Add WS batch update to Go client
@@ -56,12 +76,12 @@ are HTTP-only.
 - [ ] Add WS text search to Go client
 - [ ] Add WS distinct values to Go client
 
-### Phase 3: Kotlin Remaining WS Operations
+### Kotlin Remaining WS Operations
 
 - [ ] Add WS text search to Kotlin client
 - [ ] Add WS distinct values to Kotlin client
 
-### Phase 4: KV over WebSocket (all clients)
+### KV over WebSocket (all clients)
 
 - [ ] Decide if KV over WS is needed (currently HTTP-only everywhere)
 - [ ] If yes, implement in Rust → Python, then TypeScript, Go, Kotlin

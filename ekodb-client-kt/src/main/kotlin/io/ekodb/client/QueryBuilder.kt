@@ -137,20 +137,9 @@ class QueryBuilder {
         })
     }
     
-    /**
-     * Regex match
-     */
-    fun regex(field: String, pattern: String) = apply {
-        filters.add(buildJsonObject {
-            put("type", "Condition")
-            put("content", buildJsonObject {
-                put("field", field)
-                put("operator", "Regex")
-                put("value", JsonPrimitive(pattern))
-            })
-        })
-    }
-    
+    // Note: regex filtering is pending server-side support. The server has no
+    // Regex filter operator; use contains/startsWith/endsWith instead.
+
     /**
      * Contains substring
      */

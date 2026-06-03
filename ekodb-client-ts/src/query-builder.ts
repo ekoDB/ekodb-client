@@ -216,20 +216,8 @@ export class QueryBuilder {
     return this;
   }
 
-  /**
-   * Add a regex filter
-   */
-  regex(field: string, pattern: string): this {
-    this.filters.push({
-      type: "Condition",
-      content: {
-        field,
-        operator: "Regex",
-        value: pattern,
-      },
-    });
-    return this;
-  }
+  // Note: regex filtering is pending server-side support. The server has no
+  // Regex filter operator; use contains/startsWith/endsWith instead.
 
   // ========================================================================
   // Logical Operators

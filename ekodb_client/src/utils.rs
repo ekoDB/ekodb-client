@@ -20,9 +20,14 @@ use std::collections::HashMap;
 /// assert_eq!(value, plain);
 /// ```
 pub fn get_value(field: &Value) -> Value {
+    // Only unwrap a genuine typed wrapper — one carrying BOTH a "type"
+    // discriminator and a "value". A user object that merely has a "value" key
+    // (e.g. {"value": 1, "currency": "USD"}) must pass through untouched.
     if let Value::Object(map) = field {
-        if let Some(value) = map.get("value") {
-            return value.clone();
+        if map.contains_key("type") {
+            if let Some(value) = map.get("value") {
+                return value.clone();
+            }
         }
     }
     field.clone()
@@ -261,6 +266,15 @@ mod tests {
         let field = json!("direct_value");
         let result = get_value(&field);
         assert_eq!(result, json!("direct_value"));
+    }
+
+    #[test]
+    fn test_get_value_passes_through_user_object_with_value_key() {
+        // Regression for #134: an object that has a "value" key but no "type"
+        // discriminator is a user object, not a typed wrapper — pass it through.
+        let field = json!({"value": 1, "currency": "USD"});
+        let result = get_value(&field);
+        assert_eq!(result, field);
     }
 
     #[test]

@@ -151,7 +151,7 @@ let results = client.find("users", query).await?;
 // Complex queries with sorting and pagination
 let query = QueryBuilder::new()
     .in_array("status", vec![json!("active"), json!("pending")])
-    .regex("email", r".*@example\.com$")
+    .ends_with("email", "@example.com")
     .sort_desc("created_at")
     .limit(20)
     .skip(0)
@@ -581,7 +581,6 @@ All examples are located in `examples/rust/examples/` directory.
 - `.lte(field, value)` - Less than or equal
 - `.in_array(field, values)` - In array
 - `.nin(field, values)` - Not in array
-- `.regex(field, pattern)` - Regex match
 - `.sort_asc(field)` / `.sort_desc(field)` - Sorting
 - `.limit(n)` / `.skip(n)` - Pagination
 - `.build()` - Build the query

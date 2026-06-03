@@ -2,8 +2,7 @@
 
 Feature parity with the TS, Go, Rust, and Kotlin clients' equivalent
 helpers. Server-side behavior for structural parameter placeholders is
-covered by the Rust integration tests in
-`ekodb/ekodb_server/tests/function_parameters_tests.rs`.
+covered by the server-side integration tests.
 """
 
 from ekodb_client import Stage, parameter_ref
