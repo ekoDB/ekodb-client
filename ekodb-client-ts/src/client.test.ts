@@ -3033,3 +3033,34 @@ describe("subscribeSSE", () => {
     expect(errors[0]).toContain("401");
   });
 });
+
+describe("baseURL normalization", () => {
+  it("strips a trailing slash so request URLs have no double slash", async () => {
+    mockTokenResponse();
+    const client = new EkoDBClient({
+      baseURL: "http://localhost:8080/",
+      apiKey: "test-api-key",
+      format: SerializationFormat.Json,
+      shouldRetry: false,
+    });
+    await client.init();
+
+    const url = mockFetch.mock.calls[0][0] as string;
+    expect(url).toBe("http://localhost:8080/api/auth/token");
+    expect(url).not.toContain("//api");
+  });
+
+  it("leaves a URL without a trailing slash unchanged", async () => {
+    mockTokenResponse();
+    const client = new EkoDBClient({
+      baseURL: "http://localhost:8080",
+      apiKey: "test-api-key",
+      format: SerializationFormat.Json,
+      shouldRetry: false,
+    });
+    await client.init();
+
+    const url = mockFetch.mock.calls[0][0] as string;
+    expect(url).toBe("http://localhost:8080/api/auth/token");
+  });
+});
