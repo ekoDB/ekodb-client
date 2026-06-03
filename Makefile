@@ -457,7 +457,7 @@ test-ci:
 # Run all examples (all languages, both direct and client, including transactions)
 test-examples: examples-ls-check
 	@echo "make test-examples" > examples/test-examples.md
-	@$(MAKE) test-examples-rust test-examples-python test-examples-go test-examples-typescript test-examples-javascript test-examples-kotlin test-examples-rag test-examples-swr test-examples-fcomp test-examples-subscribe 2>&1 | tee -a examples/test-examples.md
+	@$(MAKE) --no-print-directory --silent test-examples-rust test-examples-python test-examples-go test-examples-typescript test-examples-javascript test-examples-kotlin test-examples-rag test-examples-swr test-examples-fcomp test-examples-subscribe 2>&1 | tee -a examples/test-examples.md
 	@echo "✅ $(GREEN)All integration tests complete!$(RESET)"
 
 # Run direct API examples (using raw HTTP/WebSocket calls, including transactions)
@@ -543,7 +543,7 @@ test-examples-functions-crud: python-example-deps
 # ============================================================================
 test-examples-rag:
 	@echo "make test-examples-rag" > test-examples-rag.md
-	@$(MAKE) run-rag-examples 2>&1 | tee -a test-examples-rag.md
+	@$(MAKE) --no-print-directory --silent run-rag-examples 2>&1 | tee -a test-examples-rag.md
 	@echo "✅ $(GREEN)All RAG examples complete! Output saved to test-examples-rag.md$(RESET)"
 
 run-rag-examples: build-python-client python-example-deps ensure-jvm
@@ -560,10 +560,7 @@ run-rag-examples: build-python-client python-example-deps ensure-jvm
 	@cd ekodb_client && cargo build --release --quiet
 	@echo "✓ Rust client built"
 	@echo ""
-	@echo "$(CYAN)Building Python client bindings...$(RESET)"
-	@cd ekodb-client-py && maturin build --release --quiet
-	@pip3 install --force-reinstall --quiet $$(ls -t ekodb-client-py/target/wheels/ekodb_client-*.whl | head -n 1)
-	@echo "✓ Python client built and installed"
+	@echo "✓ Python client built and installed into .venv (via build-python-client prerequisite)"
 	@echo ""
 	@echo "$(CYAN)Building TypeScript client library...$(RESET)"
 	@cd ekodb-client-ts && npm run build --silent
@@ -917,7 +914,7 @@ test-examples-subscribe-kt: ensure-jvm
 # ============================================================================
 test-examples-rust:
 	@echo "make test-examples-rust" > examples/rust/test-examples-rs.md
-	@$(MAKE) test-examples-rust-direct test-examples-rust-client 2>&1 | tee -a examples/rust/test-examples-rs.md
+	@$(MAKE) --no-print-directory --silent test-examples-rust-direct test-examples-rust-client 2>&1 | tee -a examples/rust/test-examples-rs.md
 	@echo "✅ $(GREEN)All Rust integration tests complete!$(RESET)"
 
 test-examples-rs: test-examples-rust
@@ -973,7 +970,7 @@ test-examples-rust-client: build-client
 # ============================================================================
 test-examples-python:
 	@echo "make test-examples-python" > examples/python/text-examples-py.md
-	@$(MAKE) test-examples-python-direct test-examples-python-client 2>&1 | tee -a examples/python/text-examples-py.md
+	@$(MAKE) --no-print-directory --silent test-examples-python-direct test-examples-python-client 2>&1 | tee -a examples/python/text-examples-py.md
 	@echo "✅ $(GREEN)All Python integration tests complete!$(RESET)"
 
 test-examples-py: test-examples-python
@@ -1099,7 +1096,7 @@ test-examples-python-client: build-python-client python-example-deps
 # ============================================================================
 test-examples-go:
 	@echo "make test-examples-go" > examples/go/test-examples-go.md
-	@$(MAKE) test-examples-go-direct test-examples-go-client 2>&1 | tee -a examples/go/test-examples-go.md
+	@$(MAKE) --no-print-directory --silent test-examples-go-direct test-examples-go-client 2>&1 | tee -a examples/go/test-examples-go.md
 	@echo "✅ $(GREEN)All Go integration tests complete!$(RESET)"
 
 test-examples-go-direct:
@@ -1153,7 +1150,7 @@ test-examples-go-client:
 # ============================================================================
 test-examples-typescript:
 	@echo "make test-examples-typescript" > examples/typescript/test-examples-ts.md
-	@$(MAKE) test-examples-typescript-client 2>&1 | tee -a examples/typescript/test-examples-ts.md
+	@$(MAKE) --no-print-directory --silent test-examples-typescript-client 2>&1 | tee -a examples/typescript/test-examples-ts.md
 	@echo "✅ $(GREEN)All TypeScript integration tests complete!$(RESET)"
 
 test-examples-ts: test-examples-typescript
@@ -1214,7 +1211,7 @@ test-examples-typescript-client: build-typescript-client
 # ============================================================================
 test-examples-javascript:
 	@echo "make test-examples-javascript" > examples/javascript/test-examples-js.md
-	@$(MAKE) test-examples-javascript-direct test-examples-javascript-client 2>&1 | tee -a examples/javascript/test-examples-js.md
+	@$(MAKE) --no-print-directory --silent test-examples-javascript-direct test-examples-javascript-client 2>&1 | tee -a examples/javascript/test-examples-js.md
 	@echo "✅ $(GREEN)All JavaScript integration tests complete!$(RESET)"
 
 test-examples-js: test-examples-javascript
@@ -1262,7 +1259,7 @@ test-examples-javascript-client: build-typescript-client
 # ============================================================================
 test-examples-kotlin: ensure-jvm
 	@echo "make test-examples-kotlin" > examples/kotlin/test-examples-kt.md
-	@$(MAKE) test-examples-kotlin-client 2>&1 | tee -a examples/kotlin/test-examples-kt.md
+	@$(MAKE) --no-print-directory --silent test-examples-kotlin-client 2>&1 | tee -a examples/kotlin/test-examples-kt.md
 	@echo "🟣 $(YELLOW)Kotlin Transactions...$(RESET)"
 	@if [ -f .env ]; then . ./.env; fi && \
 		{ JH=$$(/usr/libexec/java_home -v 17 2>/dev/null) && export JAVA_HOME=$$JH && export PATH=$$JH/bin:$$PATH || true; } && \
