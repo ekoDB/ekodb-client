@@ -6,12 +6,14 @@ import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.json.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlin.test.assertFalse
+import kotlin.test.assertFailsWith
 import kotlin.test.fail
 
 /**
@@ -1825,5 +1827,80 @@ class EkoDBClientTest {
 
         assertTrue(capturedBody.contains("\"success\":false"))
         assertTrue(capturedBody.contains("\"error\":\"tool crashed\""))
+    }
+
+    // ========================================================================
+    // Auth hardening: 401 -> refresh -> retry uses the refreshed token
+    // ========================================================================
+
+    @Test
+    fun `401 retry uses refreshed token on retried request`() = runBlocking {
+        var tokenIssueCount = 0
+        val retriedAuthHeaders = mutableListOf<String?>()
+        var dataRequestCount = 0
+
+        val mockEngine = MockEngine { request ->
+            if (request.url.encodedPath.contains("/api/auth/token")) {
+                tokenIssueCount++
+                // First token issuance returns token_1, refresh returns token_2.
+                val token = if (tokenIssueCount == 1) "token_1" else "token_2"
+                respond(
+                    content = """{"token": "$token"}""",
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                )
+            } else {
+                dataRequestCount++
+                retriedAuthHeaders.add(request.headers[HttpHeaders.Authorization])
+                if (dataRequestCount == 1) {
+                    // First data request: simulate stale/expired token.
+                    respond(
+                        content = "Unauthorized",
+                        status = HttpStatusCode.Unauthorized,
+                        headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                    )
+                } else {
+                    respond(
+                        content = """{"collections": ["users"]}""",
+                        status = HttpStatusCode.OK,
+                        headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                    )
+                }
+            }
+        }
+        val client = createTestClient(mockEngine)
+
+        val result = client.listCollections()
+
+        assertEquals(listOf("users"), result)
+        // Two data attempts were made.
+        assertEquals(2, dataRequestCount)
+        // First attempt used the original token, retried attempt used the refreshed one.
+        assertEquals("Bearer token_1", retriedAuthHeaders[0])
+        assertEquals("Bearer token_2", retriedAuthHeaders[1])
+    }
+
+    @Test
+    fun `executeWithRetry rethrows CancellationException without retrying`() = runBlocking {
+        var dataRequestCount = 0
+        val mockEngine = MockEngine { request ->
+            if (request.url.encodedPath.contains("/api/auth/token")) {
+                respond(
+                    content = """{"token": "mock_jwt_token_123"}""",
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                )
+            } else {
+                dataRequestCount++
+                throw CancellationException("coroutine cancelled")
+            }
+        }
+        val client = createTestClient(mockEngine)
+
+        assertFailsWith<CancellationException> {
+            client.listCollections()
+        }
+        // CancellationException must propagate on the first attempt, not be retried.
+        assertEquals(1, dataRequestCount)
     }
 }

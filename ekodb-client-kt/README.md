@@ -153,7 +153,7 @@ val results = client.find("users", query)
 // Complex queries with sorting and pagination
 val complexQuery = QueryBuilder.new()
     .inArray("status", listOf("active", "pending"))
-    .regex("email", ".*@example\\.com$")
+    .endsWith("email", "@example.com")
     .sortDesc("created_at")
     .limit(20)
     .skip(0)

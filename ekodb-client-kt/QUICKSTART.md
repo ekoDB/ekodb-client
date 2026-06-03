@@ -303,7 +303,7 @@ fun main() = runBlocking {
 - [Full API Documentation](README.md)
 - [Examples](../examples/kotlin/examples/)
 - [Publishing Guide](PUBLISHING.md)
-- [ekoDB Documentation](https://github.com/ekoDB/ekodb)
+- [ekoDB Documentation](https://docs.ekodb.io)
 
 ## Support
 

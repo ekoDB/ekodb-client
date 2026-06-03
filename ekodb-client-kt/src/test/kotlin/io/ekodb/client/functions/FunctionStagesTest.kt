@@ -21,9 +21,8 @@ import kotlin.test.assertTrue
  *
  * Feature parity with TS (Stage.param), Go (Parameter), Rust
  * (parameter_ref), and Python (Stage.param / parameter_ref). Server-side
- * behavior for structural parameter placeholders is covered by the Rust
- * integration tests in
- * `ekodb/ekodb_server/tests/function_parameters_tests.rs`.
+ * behavior for structural parameter placeholders is covered by the
+ * server-side integration tests.
  *
  * Requires ekoDB >= 0.41.0 for the server to actually resolve these
  * placeholders across every mutation stage.
@@ -191,8 +190,8 @@ class FunctionStagesTest {
     // ------------------------------------------------------------------
     //
     // Shape tests for the three stored-function crypto stages added in
-    // ekoDB 0.41.0. Runtime behavior is covered server-side in
-    // `ekodb/ekodb_server/tests/function_parameters_tests.rs`.
+    // ekoDB 0.41.0. Runtime behavior is covered by the server-side
+    // integration tests.
 
     @Test
     fun `BcryptHash serializes with explicit cost`() {

@@ -709,4 +709,238 @@ describe("WebSocketClient", () => {
       client.close();
     });
   });
+
+  // --------------------------------------------------------------------------
+  // Per-request timeout
+  // --------------------------------------------------------------------------
+
+  describe("per-request timeout", () => {
+    it("rejects a pending request when no response arrives", async () => {
+      const client = new WebSocketClient(
+        `ws://localhost:${port}/api/ws`,
+        "test-token",
+        { requestTimeoutMs: 50, autoReconnect: false },
+      );
+
+      const resultPromise = client.findAll("users");
+
+      await new Promise((r) => wss.once("connection", r));
+      const ws = getLastConnection();
+      await waitForMessage(ws); // receive FindAll but never respond
+
+      await expect(resultPromise).rejects.toThrow(/timed out after 50ms/);
+
+      client.close();
+    });
+
+    it("does not time out when a response arrives in time", async () => {
+      const client = new WebSocketClient(
+        `ws://localhost:${port}/api/ws`,
+        "test-token",
+        { requestTimeoutMs: 500, autoReconnect: false },
+      );
+
+      const resultPromise = client.findAll("users");
+
+      await new Promise((r) => wss.once("connection", r));
+      const ws = getLastConnection();
+      const msg = await waitForMessage(ws);
+      ws.send(
+        JSON.stringify({
+          type: "Success",
+          payload: { message_id: msg.messageId, data: [{ id: "1" }] },
+        }),
+      );
+
+      await expect(resultPromise).resolves.toEqual([{ id: "1" }]);
+      client.close();
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // Reject pending requests on disconnect
+  // --------------------------------------------------------------------------
+
+  describe("disconnect handling", () => {
+    it("rejects in-flight requests when the socket drops", async () => {
+      const client = new WebSocketClient(
+        `ws://localhost:${port}/api/ws`,
+        "test-token",
+        { autoReconnect: false },
+      );
+
+      const resultPromise = client.findAll("users");
+
+      await new Promise((r) => wss.once("connection", r));
+      const ws = getLastConnection();
+      await waitForMessage(ws); // FindAll received, never answered
+
+      // Server drops the connection.
+      ws.close();
+
+      await expect(resultPromise).rejects.toThrow(/connection closed/i);
+
+      client.close();
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // Backoff helper
+  // --------------------------------------------------------------------------
+
+  describe("computeBackoff", () => {
+    it("grows exponentially, stays within jittered bounds, and caps", () => {
+      const client = new WebSocketClient(
+        `ws://localhost:${port}/api/ws`,
+        "test-token",
+        { reconnectInitialDelayMs: 200, reconnectMaxDelayMs: 5000 },
+      );
+
+      // attempt 0 -> base 200, +/-25% => [150, 250]
+      for (let i = 0; i < 20; i++) {
+        const d0 = client.computeBackoff(0);
+        expect(d0).toBeGreaterThanOrEqual(150);
+        expect(d0).toBeLessThanOrEqual(250);
+      }
+
+      // attempt 3 -> base 1600, +/-25% => [1200, 2000]
+      const d3 = client.computeBackoff(3);
+      expect(d3).toBeGreaterThanOrEqual(1200);
+      expect(d3).toBeLessThanOrEqual(2000);
+
+      // attempt 20 -> capped at 5000, +/-25% => [3750, 6250]
+      const dBig = client.computeBackoff(20);
+      expect(dBig).toBeGreaterThanOrEqual(3750);
+      expect(dBig).toBeLessThanOrEqual(6250);
+
+      client.close();
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // Auto-reconnect + re-subscribe + fresh token
+  // --------------------------------------------------------------------------
+
+  describe("auto-reconnect", () => {
+    it("re-subscribes after a socket drop and re-evaluates the token", async () => {
+      // Token provider returns a new token each call so we can assert the
+      // reconnect used a freshly-obtained token (not a stale snapshot).
+      let tokenCalls = 0;
+      const tokenProvider = () => `token-${++tokenCalls}`;
+
+      const client = new WebSocketClient(
+        `ws://localhost:${port}/api/ws`,
+        tokenProvider,
+        {
+          autoReconnect: true,
+          reconnectInitialDelayMs: 10,
+          reconnectMaxDelayMs: 30,
+        },
+      );
+
+      // Establish the subscription on the first connection.
+      const streamPromise = client.subscribe("orders");
+      await new Promise((r) => wss.once("connection", r));
+      const ws1 = getLastConnection();
+      const sub1 = await waitForMessage(ws1);
+      expect(sub1.type).toBe("Subscribe");
+      expect(sub1.payload.collection).toBe("orders");
+      ws1.send(
+        JSON.stringify({
+          type: "Success",
+          payload: { message_id: sub1.messageId, status: "subscribed" },
+        }),
+      );
+      const stream = await streamPromise;
+      expect(tokenCalls).toBe(1);
+
+      // Arm the next-connection handler BEFORE dropping so we don't miss it.
+      const nextConn = new Promise<WS>((resolve) => {
+        wss.once("connection", (ws: WS) => resolve(ws));
+      });
+
+      // Simulate a transient drop: server closes the socket.
+      ws1.close();
+
+      // The client should auto-reconnect (new connection) and re-send Subscribe.
+      const ws2 = await nextConn;
+      const sub2 = await waitForMessage(ws2);
+      expect(sub2.type).toBe("Subscribe");
+      expect(sub2.payload.collection).toBe("orders");
+
+      // Reconnect re-evaluated the token provider.
+      expect(tokenCalls).toBeGreaterThanOrEqual(2);
+
+      // Ack the re-subscribe.
+      ws2.send(
+        JSON.stringify({
+          type: "Success",
+          payload: { message_id: sub2.messageId, status: "subscribed" },
+        }),
+      );
+
+      // The SAME stream still delivers mutations over the new socket.
+      const mutationPromise = new Promise<any>((resolve) => {
+        stream.on("mutation", resolve);
+      });
+      ws2.send(
+        JSON.stringify({
+          type: "MutationNotification",
+          payload: {
+            collection: "orders",
+            event: "insert",
+            record_ids: ["order-9"],
+            timestamp: "2026-06-02T00:00:00Z",
+          },
+        }),
+      );
+      const mutation = await mutationPromise;
+      expect(mutation.recordIds).toEqual(["order-9"]);
+      expect(stream.closed).toBe(false);
+
+      client.close();
+    });
+
+    it("does not reconnect after an intentional close()", async () => {
+      const client = new WebSocketClient(
+        `ws://localhost:${port}/api/ws`,
+        "test-token",
+        { autoReconnect: true, reconnectInitialDelayMs: 10 },
+      );
+
+      const streamPromise = client.subscribe("widgets");
+      await new Promise((r) => wss.once("connection", r));
+      const ws = getLastConnection();
+      const sub = await waitForMessage(ws);
+      ws.send(
+        JSON.stringify({
+          type: "Success",
+          payload: { message_id: sub.messageId, status: "subscribed" },
+        }),
+      );
+      await streamPromise;
+
+      const connectionsBefore = serverConnections.length;
+
+      // Intentional close: must NOT reconnect.
+      client.close();
+
+      // Give any erroneous reconnect time to land.
+      await new Promise((r) => setTimeout(r, 80));
+      expect(serverConnections.length).toBe(connectionsBefore);
+    });
+  });
+
+  describe("auth token validation", () => {
+    it("rejects connect when the token provider returns null (no Bearer null)", async () => {
+      const client = new WebSocketClient(
+        `ws://localhost:${port}/api/ws`,
+        () => null,
+      );
+      await expect(client.findAll("users")).rejects.toThrow(
+        /token is unavailable/i,
+      );
+      client.close();
+    });
+  });
 });

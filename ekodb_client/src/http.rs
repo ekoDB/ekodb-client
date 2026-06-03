@@ -66,11 +66,8 @@ impl HttpClient {
 
     /// Health Check
     pub async fn health_check(&self) -> Result<()> {
-        let response = self
-            .client
-            .get(self.base_url.join("/api/health").unwrap())
-            .send()
-            .await?;
+        let url = self.base_url.join("/api/health")?;
+        let response = self.client.get(url).send().await?;
         if response.status().is_success() {
             Ok(())
         } else {
@@ -273,21 +270,20 @@ impl HttpClient {
         };
         let url = self.base_url.join(&url_path)?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .add_format_headers(
-                        &url_path,
-                        self.client
-                            .get(url.clone())
-                            .header("Authorization", format!("Bearer {}", token)),
-                    )
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .add_format_headers(
+                    &url_path,
+                    self.client
+                        .get(url.clone())
+                        .header("Authorization", format!("Bearer {}", token)),
+                )
+                .send()
+                .await?;
 
-                self.handle_response(&url_path, response).await
-            })
-            .await
+            self.handle_response(&url_path, response).await
+        })
+        .await
     }
 
     /// Update a record
@@ -322,22 +318,21 @@ impl HttpClient {
         let url = self.base_url.join(&url_path)?;
         let body = self.serialize(&url_path, &record)?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .add_format_headers(
-                        &url_path,
-                        self.client
-                            .put(url.clone())
-                            .header("Authorization", format!("Bearer {}", token)),
-                    )
-                    .body(body.clone())
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .add_format_headers(
+                    &url_path,
+                    self.client
+                        .put(url.clone())
+                        .header("Authorization", format!("Bearer {}", token)),
+                )
+                .body(body.clone())
+                .send()
+                .await?;
 
-                self.handle_response(&url_path, response).await
-            })
-            .await
+            self.handle_response(&url_path, response).await
+        })
+        .await
     }
 
     /// Apply an atomic field action to a single field of a record.
@@ -363,22 +358,21 @@ impl HttpClient {
             },
         )?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .add_format_headers(
-                        &url_path,
-                        self.client
-                            .put(url.clone())
-                            .header("Authorization", format!("Bearer {}", token)),
-                    )
-                    .body(body.clone())
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .add_format_headers(
+                    &url_path,
+                    self.client
+                        .put(url.clone())
+                        .header("Authorization", format!("Bearer {}", token)),
+                )
+                .body(body.clone())
+                .send()
+                .await?;
 
-                self.handle_response(&url_path, response).await
-            })
-            .await
+            self.handle_response(&url_path, response).await
+        })
+        .await
     }
 
     /// Apply a sequence of atomic field actions to a record in a single request.
@@ -395,22 +389,21 @@ impl HttpClient {
         let url = self.base_url.join(&url_path)?;
         let body = self.serialize(&url_path, &actions)?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .add_format_headers(
-                        &url_path,
-                        self.client
-                            .put(url.clone())
-                            .header("Authorization", format!("Bearer {}", token)),
-                    )
-                    .body(body.clone())
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .add_format_headers(
+                    &url_path,
+                    self.client
+                        .put(url.clone())
+                        .header("Authorization", format!("Bearer {}", token)),
+                )
+                .body(body.clone())
+                .send()
+                .await?;
 
-                self.handle_response(&url_path, response).await
-            })
-            .await
+            self.handle_response(&url_path, response).await
+        })
+        .await
     }
 
     /// Delete a record
@@ -428,23 +421,23 @@ impl HttpClient {
         };
         let url = self.base_url.join(&url_path)?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .add_format_headers(
-                        &url_path,
-                        self.client
-                            .delete(url.clone())
-                            .header("Authorization", format!("Bearer {}", token)),
-                    )
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .add_format_headers(
+                    &url_path,
+                    self.client
+                        .delete(url.clone())
+                        .header("Authorization", format!("Bearer {}", token)),
+                )
+                .send()
+                .await?;
 
-                // Server returns the deleted record, but we discard it
-                let _deleted: Record = self.handle_response(&url_path, response).await?;
-                Ok(())
-            })
-            .await
+            // Server returns the deleted record; we validate the response
+            // shape but discard the value.
+            let _: Record = self.handle_response(&url_path, response).await?;
+            Ok(())
+        })
+        .await
     }
 
     /// Restore a deleted record from trash
@@ -452,22 +445,21 @@ impl HttpClient {
         let url_path = format!("/api/trash/{}/{}", collection, id);
         let url = self.base_url.join(&url_path)?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .post(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .post(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .send()
+                .await?;
 
-                let result: serde_json::Value = self.handle_response(&url_path, response).await?;
-                Ok(result
-                    .get("restored")
-                    .and_then(|v| v.as_bool())
-                    .unwrap_or(false))
-            })
-            .await
+            let result: serde_json::Value = self.handle_response(&url_path, response).await?;
+            Ok(result
+                .get("restored")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false))
+        })
+        .await
     }
 
     /// Restore all deleted records in a collection from trash
@@ -475,22 +467,21 @@ impl HttpClient {
         let url_path = format!("/api/trash/{}", collection);
         let url = self.base_url.join(&url_path)?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .post(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .post(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .send()
+                .await?;
 
-                let result: serde_json::Value = self.handle_response(&url_path, response).await?;
-                Ok(result
-                    .get("records_restored")
-                    .and_then(|v| v.as_u64())
-                    .unwrap_or(0) as usize)
-            })
-            .await
+            let result: serde_json::Value = self.handle_response(&url_path, response).await?;
+            Ok(result
+                .get("records_restored")
+                .and_then(|v| v.as_u64())
+                .unwrap_or(0) as usize)
+        })
+        .await
     }
 
     /// Batch insert records
@@ -536,8 +527,7 @@ impl HttpClient {
         let body = self.serialize(&url_path, &batch_data)?;
 
         let result: BatchOperationResult = self
-            .retry_policy
-            .execute(|| async {
+            .execute_with_retry(|| async {
                 let response = self
                     .add_format_headers(
                         &url_path,
@@ -611,8 +601,7 @@ impl HttpClient {
         let body = self.serialize(&url_path, &batch_data)?;
 
         let result: BatchOperationResult = self
-            .retry_policy
-            .execute(|| async {
+            .execute_with_retry(|| async {
                 let response = self
                     .add_format_headers(
                         &url_path,
@@ -681,8 +670,7 @@ impl HttpClient {
         let body = self.serialize(&url_path, &batch_data)?;
 
         let result: BatchOperationResult = self
-            .retry_policy
-            .execute(|| async {
+            .execute_with_retry(|| async {
                 let response = self
                     .add_format_headers(
                         &url_path,
@@ -732,8 +720,7 @@ impl HttpClient {
         }
 
         let response: CollectionsResponse = self
-            .retry_policy
-            .execute(|| async {
+            .execute_with_retry(|| async {
                 let response = self
                     .client
                     .get(url.clone())
@@ -755,21 +742,20 @@ impl HttpClient {
             .base_url
             .join(&format!("/api/collections/{}", collection))?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .delete(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .delete(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .send()
+                .await?;
 
-                // Force JSON for metadata operations
-                let _: serde_json::Value = Self::json_body(response).await?;
-                Ok(())
-            })
-            .await
+            // Force JSON for metadata operations
+            let _: serde_json::Value = Self::json_body(response).await?;
+            Ok(())
+        })
+        .await
     }
 
     /// Set a key-value pair
@@ -789,25 +775,24 @@ impl HttpClient {
             ttl: Option<String>,
         }
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .post(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json") // KV uses JSON values
-                    .json(&KvSetRequest {
-                        value: value.clone(),
-                        ttl: ttl.map(|t| t.to_string()),
-                    })
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .post(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json") // KV uses JSON values
+                .json(&KvSetRequest {
+                    value: value.clone(),
+                    ttl: ttl.map(|t| t.to_string()),
+                })
+                .send()
+                .await?;
 
-                // Force JSON for KV operations (stores serde_json::Value)
-                let _: serde_json::Value = Self::json_body(response).await?;
-                Ok(())
-            })
-            .await
+            // Force JSON for KV operations (stores serde_json::Value)
+            let _: serde_json::Value = Self::json_body(response).await?;
+            Ok(())
+        })
+        .await
     }
 
     /// Get a key-value pair
@@ -820,8 +805,7 @@ impl HttpClient {
         }
 
         match self
-            .retry_policy
-            .execute(|| async {
+            .execute_with_retry(|| async {
                 let response = self
                     .client
                     .get(url.clone())
@@ -845,21 +829,20 @@ impl HttpClient {
     pub async fn kv_delete(&self, key: &str, token: &str) -> Result<()> {
         let url = self.base_url.join(&format!("/api/kv/delete/{}", key))?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .delete(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json") // KV uses JSON values
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .delete(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json") // KV uses JSON values
+                .send()
+                .await?;
 
-                // Force JSON for KV operations
-                let _: serde_json::Value = Self::json_body(response).await?;
-                Ok(())
-            })
-            .await
+            // Force JSON for KV operations
+            let _: serde_json::Value = Self::json_body(response).await?;
+            Ok(())
+        })
+        .await
     }
 
     /// Check if a key exists in the KV store
@@ -881,21 +864,20 @@ impl HttpClient {
             keys: Vec<String>,
         }
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .post(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .json(&BatchGetRequest { keys: keys.clone() })
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .post(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .json(&BatchGetRequest { keys: keys.clone() })
+                .send()
+                .await?;
 
-                let results: Vec<Record> = Self::json_body(response).await?;
-                Ok(results)
-            })
-            .await
+            let results: Vec<Record> = Self::json_body(response).await?;
+            Ok(results)
+        })
+        .await
     }
 
     /// Batch set multiple key-value pairs
@@ -916,25 +898,24 @@ impl HttpClient {
             ttl: Option<i64>,
         }
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .post(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .json(&BatchSetRequest {
-                        keys: keys.clone(),
-                        values: values.clone(),
-                        ttl,
-                    })
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .post(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .json(&BatchSetRequest {
+                    keys: keys.clone(),
+                    values: values.clone(),
+                    ttl,
+                })
+                .send()
+                .await?;
 
-                let results: Vec<(String, bool)> = Self::json_body(response).await?;
-                Ok(results)
-            })
-            .await
+            let results: Vec<(String, bool)> = Self::json_body(response).await?;
+            Ok(results)
+        })
+        .await
     }
 
     /// Batch delete multiple keys
@@ -950,21 +931,20 @@ impl HttpClient {
             keys: Vec<String>,
         }
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .delete(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .json(&BatchDeleteRequest { keys: keys.clone() })
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .delete(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .json(&BatchDeleteRequest { keys: keys.clone() })
+                .send()
+                .await?;
 
-                let results: Vec<(String, bool)> = Self::json_body(response).await?;
-                Ok(results)
-            })
-            .await
+            let results: Vec<(String, bool)> = Self::json_body(response).await?;
+            Ok(results)
+        })
+        .await
     }
 
     /// Query/find KV entries with pattern matching
@@ -988,21 +968,20 @@ impl HttpClient {
             include_expired,
         };
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .post(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .json(&request)
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .post(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .json(&request)
+                .send()
+                .await?;
 
-                let result: Vec<serde_json::Value> = Self::json_body(response).await?;
-                Ok(result)
-            })
-            .await
+            let result: Vec<serde_json::Value> = Self::json_body(response).await?;
+            Ok(result)
+        })
+        .await
     }
 
     // ========== Transaction Methods ==========
@@ -1018,29 +997,26 @@ impl HttpClient {
 
         let request = BeginTransactionRequest { isolation_level };
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .post(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .json(&request)
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .post(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .json(&request)
+                .send()
+                .await?;
 
-                let result: serde_json::Value = Self::json_body(response).await?;
+            let result: serde_json::Value = Self::json_body(response).await?;
 
-                result["transaction_id"]
-                    .as_str()
-                    .map(|s| s.to_string())
-                    .ok_or_else(|| {
-                        Error::Serialization(serde::de::Error::custom(
-                            "No transaction_id in response",
-                        ))
-                    })
-            })
-            .await
+            result["transaction_id"]
+                .as_str()
+                .map(|s| s.to_string())
+                .ok_or_else(|| {
+                    Error::Serialization(serde::de::Error::custom("No transaction_id in response"))
+                })
+        })
+        .await
     }
 
     /// Get transaction status
@@ -1053,20 +1029,19 @@ impl HttpClient {
             .base_url
             .join(&format!("/api/transactions/{}", transaction_id))?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .get(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .get(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .send()
+                .await?;
 
-                let result: serde_json::Value = Self::json_body(response).await?;
-                Ok(result)
-            })
-            .await
+            let result: serde_json::Value = Self::json_body(response).await?;
+            Ok(result)
+        })
+        .await
     }
 
     /// Commit a transaction
@@ -1075,22 +1050,21 @@ impl HttpClient {
             .base_url
             .join(&format!("/api/transactions/{}/commit", transaction_id))?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .post(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .post(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .send()
+                .await?;
 
-                if response.status().is_success() {
-                    Ok(())
-                } else {
-                    Err(Error::Http(response.error_for_status().unwrap_err()))
-                }
-            })
-            .await
+            if response.status().is_success() {
+                Ok(())
+            } else {
+                Err(Error::Http(response.error_for_status().unwrap_err()))
+            }
+        })
+        .await
     }
 
     /// Rollback a transaction
@@ -1099,22 +1073,21 @@ impl HttpClient {
             .base_url
             .join(&format!("/api/transactions/{}/rollback", transaction_id))?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .post(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .post(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .send()
+                .await?;
 
-                if response.status().is_success() {
-                    Ok(())
-                } else {
-                    Err(Error::Http(response.error_for_status().unwrap_err()))
-                }
-            })
-            .await
+            if response.status().is_success() {
+                Ok(())
+            } else {
+                Err(Error::Http(response.error_for_status().unwrap_err()))
+            }
+        })
+        .await
     }
 
     /// Perform a full-text search
@@ -1127,21 +1100,20 @@ impl HttpClient {
         let url = self.base_url.join(&format!("/api/search/{}", collection))?;
 
         // Temporarily use JSON for search until MessagePack issue is resolved
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .post(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .json(&search_query)
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .post(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .json(&search_query)
+                .send()
+                .await?;
 
-                // Force JSON for search operations
-                Self::json_body(response).await
-            })
-            .await
+            // Force JSON for search operations
+            Self::json_body(response).await
+        })
+        .await
     }
 
     /// Get distinct (unique) values for a field in a collection.
@@ -1158,21 +1130,20 @@ impl HttpClient {
             .base_url
             .join(&format!("/api/distinct/{}/{}", collection, field))?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .post(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .json(&query)
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .post(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .json(&query)
+                .send()
+                .await?;
 
-                let url_path = format!("/api/distinct/{}/{}", collection, field);
-                self.handle_response(&url_path, response).await
-            })
-            .await
+            let url_path = format!("/api/distinct/{}/{}", collection, field);
+            self.handle_response(&url_path, response).await
+        })
+        .await
     }
 
     /// Create a collection with schema
@@ -1186,22 +1157,21 @@ impl HttpClient {
             .base_url
             .join(&format!("/api/collections/{}", collection))?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .post(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .json(&schema)
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .post(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .json(&schema)
+                .send()
+                .await?;
 
-                // Force JSON for metadata operations
-                let _: serde_json::Value = Self::json_body(response).await?;
-                Ok(())
-            })
-            .await
+            // Force JSON for metadata operations
+            let _: serde_json::Value = Self::json_body(response).await?;
+            Ok(())
+        })
+        .await
     }
 
     /// Get collection metadata and schema
@@ -1214,20 +1184,19 @@ impl HttpClient {
             .base_url
             .join(&format!("/api/collections/{}", collection))?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .get(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .get(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .send()
+                .await?;
 
-                // Force JSON for metadata operations
-                Self::json_body(response).await
-            })
-            .await
+            // Force JSON for metadata operations
+            Self::json_body(response).await
+        })
+        .await
     }
 
     /// Get collection schema
@@ -1236,20 +1205,19 @@ impl HttpClient {
             .base_url
             .join(&format!("/api/schemas/{}", collection))?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .get(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .get(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .send()
+                .await?;
 
-                // Force JSON for metadata operations
-                Self::json_body(response).await
-            })
-            .await
+            // Force JSON for metadata operations
+            Self::json_body(response).await
+        })
+        .await
     }
 
     /// Check response status and deserialize JSON body.
@@ -1446,38 +1414,36 @@ impl HttpClient {
         let url = self.base_url.join("/api/chat_models")?;
 
         // Force JSON for chat operations
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .get(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .get(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .send()
+                .await?;
 
-                Self::json_body(response).await
-            })
-            .await
+            Self::json_body(response).await
+        })
+        .await
     }
 
     /// Get all built-in server-side chat tool definitions
     pub async fn get_chat_tools(&self, token: &str) -> Result<Vec<serde_json::Value>> {
         let url = self.base_url.join("/api/chat/tools")?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .get(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .get(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .send()
+                .await?;
 
-                self.handle_response("/api/chat/tools", response).await
-            })
-            .await
+            self.handle_response("/api/chat/tools", response).await
+        })
+        .await
     }
 
     /// Execute a single tool server-side via POST /api/chat/tools/execute.
@@ -1498,22 +1464,21 @@ impl HttpClient {
             body["chat_id"] = serde_json::json!(cid);
         }
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .post(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Content-Type", "application/json")
-                    .header("Accept", "application/json")
-                    .json(&body)
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .post(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Content-Type", "application/json")
+                .header("Accept", "application/json")
+                .json(&body)
+                .send()
+                .await?;
 
-                self.handle_response("/api/chat/tools/execute", response)
-                    .await
-            })
-            .await
+            self.handle_response("/api/chat/tools/execute", response)
+                .await
+        })
+        .await
     }
 
     /// Get specific chat model info
@@ -1523,50 +1488,48 @@ impl HttpClient {
             .join(&format!("/api/chat_models/{}", model_name))?;
 
         // Force JSON for chat operations
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .get(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .get(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .send()
+                .await?;
 
-                Self::json_body(response).await
-            })
-            .await
+            Self::json_body(response).await
+        })
+        .await
     }
 
     /// Generate embeddings for text(s)
     pub async fn embed(&self, request: EmbedRequest, token: &str) -> Result<EmbedResponse> {
         let url = self.base_url.join("/api/embed")?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .post(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .json(&request)
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .post(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .json(&request)
+                .send()
+                .await?;
 
-                let status = response.status();
-                let bytes = response.bytes().await.map_err(Error::Http)?;
+            let status = response.status();
+            let bytes = response.bytes().await.map_err(Error::Http)?;
 
-                if !status.is_success() {
-                    let message = String::from_utf8_lossy(&bytes).to_string();
-                    return Err(Error::Api {
-                        code: status.as_u16(),
-                        message,
-                    });
-                }
+            if !status.is_success() {
+                let message = String::from_utf8_lossy(&bytes).to_string();
+                return Err(Error::Api {
+                    code: status.as_u16(),
+                    message,
+                });
+            }
 
-                serde_json::from_slice(&bytes).map_err(Error::Serialization)
-            })
-            .await
+            serde_json::from_slice(&bytes).map_err(Error::Serialization)
+        })
+        .await
     }
 
     /// Stateless raw LLM completion — no session, no history, no RAG.
@@ -1578,20 +1541,19 @@ impl HttpClient {
     ) -> Result<RawCompletionResponse> {
         let url = self.base_url.join("/api/chat/complete")?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .post(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .json(&request)
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .post(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .json(&request)
+                .send()
+                .await?;
 
-                self.handle_response("/api/chat/complete", response).await
-            })
-            .await
+            self.handle_response("/api/chat/complete", response).await
+        })
+        .await
     }
 
     /// Stateless raw LLM completion via SSE streaming.
@@ -1937,20 +1899,19 @@ impl HttpClient {
         let url = self.base_url.join("/api/chat")?;
 
         // Force JSON for chat operations
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .post(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .json(&request)
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .post(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .json(&request)
+                .send()
+                .await?;
 
-                Self::json_body(response).await
-            })
-            .await
+            Self::json_body(response).await
+        })
+        .await
     }
 
     /// Get a chat session by ID
@@ -1962,19 +1923,18 @@ impl HttpClient {
         let url = self.base_url.join(&format!("/api/chat/{}", chat_id))?;
 
         // Force JSON for chat operations
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .get(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .get(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .send()
+                .await?;
 
-                Self::json_body(response).await
-            })
-            .await
+            Self::json_body(response).await
+        })
+        .await
     }
 
     /// Submit a client tool result for an in-flight SSE chat stream.
@@ -2009,32 +1969,31 @@ impl HttpClient {
             error,
         };
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .post(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Content-Type", "application/json")
-                    .json(&body)
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .post(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Content-Type", "application/json")
+                .json(&body)
+                .send()
+                .await?;
 
-                let status = response.status();
-                if status == reqwest::StatusCode::UNAUTHORIZED {
-                    return Err(crate::error::Error::TokenExpired);
-                }
-                if !status.is_success() {
-                    let mut text = response.text().await.unwrap_or_default();
-                    text.truncate(512);
-                    return Err(crate::error::Error::Api {
-                        code: status.as_u16(),
-                        message: format!("tool-result submit failed: {text}"),
-                    });
-                }
-                Ok(())
-            })
-            .await
+            let status = response.status();
+            if status == reqwest::StatusCode::UNAUTHORIZED {
+                return Err(crate::error::Error::TokenExpired);
+            }
+            if !status.is_success() {
+                let mut text = response.text().await.unwrap_or_default();
+                text.truncate(512);
+                return Err(crate::error::Error::Api {
+                    code: status.as_u16(),
+                    message: format!("tool-result submit failed: {text}"),
+                });
+            }
+            Ok(())
+        })
+        .await
     }
 
     /// List all chat sessions
@@ -2060,19 +2019,18 @@ impl HttpClient {
         }
 
         // Force JSON for chat operations
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .get(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .get(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .send()
+                .await?;
 
-                Self::json_body(response).await
-            })
-            .await
+            Self::json_body(response).await
+        })
+        .await
     }
 
     /// Update chat session metadata
@@ -2085,43 +2043,41 @@ impl HttpClient {
         let url = self.base_url.join(&format!("/api/chat/{}", chat_id))?;
 
         // Force JSON for chat operations
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .put(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .json(&request)
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .put(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .json(&request)
+                .send()
+                .await?;
 
-                Self::json_body(response).await
-            })
-            .await
+            Self::json_body(response).await
+        })
+        .await
     }
 
     /// Delete a chat session
     pub async fn delete_chat_session(&self, chat_id: &str, token: &str) -> Result<()> {
         let url = self.base_url.join(&format!("/api/chat/{}", chat_id))?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .delete(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .delete(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .send()
+                .await?;
 
-                if response.status().is_success() {
-                    Ok(())
-                } else {
-                    let error: ErrorResponse = response.json().await?;
-                    Err(Error::api(error.code, error.message))
-                }
-            })
-            .await
+            if response.status().is_success() {
+                Ok(())
+            } else {
+                let error: ErrorResponse = response.json().await?;
+                Err(Error::api(error.code, error.message))
+            }
+        })
+        .await
     }
 
     /// Branch a chat session from an existing one
@@ -2133,20 +2089,19 @@ impl HttpClient {
         let url = self.base_url.join("/api/chat/branch")?;
 
         // Force JSON for chat operations
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .post(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .json(&request)
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .post(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .json(&request)
+                .send()
+                .await?;
 
-                Self::json_body(response).await
-            })
-            .await
+            Self::json_body(response).await
+        })
+        .await
     }
 
     /// Merge multiple chat sessions
@@ -2158,20 +2113,19 @@ impl HttpClient {
         let url = self.base_url.join("/api/chat/merge")?;
 
         // Force JSON for chat operations
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .post(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .json(&request)
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .post(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .json(&request)
+                .send()
+                .await?;
 
-                Self::json_body(response).await
-            })
-            .await
+            Self::json_body(response).await
+        })
+        .await
     }
 
     /// Send a message in an existing chat session
@@ -2186,36 +2140,35 @@ impl HttpClient {
             .join(&format!("/api/chat/{}/messages", chat_id))?;
 
         // Force JSON for chat operations
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .post(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .json(&request)
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .post(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .json(&request)
+                .send()
+                .await?;
 
-                let status = response.status();
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                if !status.is_success() {
-                    // Try to extract error message from response body
-                    if let Ok(err_obj) = serde_json::from_slice::<serde_json::Value>(&bytes) {
-                        let msg = err_obj["error"].as_str().unwrap_or("unknown error");
-                        return Err(Error::Api {
-                            code: status.as_u16(),
-                            message: msg.to_string(),
-                        });
-                    }
+            let status = response.status();
+            let bytes = response.bytes().await.map_err(Error::Http)?;
+            if !status.is_success() {
+                // Try to extract error message from response body
+                if let Ok(err_obj) = serde_json::from_slice::<serde_json::Value>(&bytes) {
+                    let msg = err_obj["error"].as_str().unwrap_or("unknown error");
                     return Err(Error::Api {
                         code: status.as_u16(),
-                        message: format!("chat message failed ({})", status),
+                        message: msg.to_string(),
                     });
                 }
-                serde_json::from_slice(&bytes).map_err(Error::Serialization)
-            })
-            .await
+                return Err(Error::Api {
+                    code: status.as_u16(),
+                    message: format!("chat message failed ({})", status),
+                });
+            }
+            serde_json::from_slice(&bytes).map_err(Error::Serialization)
+        })
+        .await
     }
 
     /// Get messages from a chat session
@@ -2244,19 +2197,18 @@ impl HttpClient {
         }
 
         // Force JSON for chat operations
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .get(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .get(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .send()
+                .await?;
 
-                Self::json_body(response).await
-            })
-            .await
+            Self::json_body(response).await
+        })
+        .await
     }
 
     /// Get a specific message by ID
@@ -2271,19 +2223,18 @@ impl HttpClient {
             .join(&format!("/api/chat/{}/messages/{}", chat_id, message_id))?;
 
         // Force JSON for chat operations
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .get(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .get(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .send()
+                .await?;
 
-                Self::json_body(response).await
-            })
-            .await
+            Self::json_body(response).await
+        })
+        .await
     }
 
     /// Update a chat message
@@ -2299,20 +2250,19 @@ impl HttpClient {
             .join(&format!("/api/chat/{}/messages/{}", chat_id, message_id))?;
 
         // Force JSON for chat operations
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .put(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .json(&request)
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .put(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .json(&request)
+                .send()
+                .await?;
 
-                Self::json_body(response).await
-            })
-            .await
+            Self::json_body(response).await
+        })
+        .await
     }
 
     /// Delete a chat message
@@ -2326,23 +2276,22 @@ impl HttpClient {
             .base_url
             .join(&format!("/api/chat/{}/messages/{}", chat_id, message_id))?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .delete(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .delete(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .send()
+                .await?;
 
-                if response.status().is_success() {
-                    Ok(())
-                } else {
-                    let error: ErrorResponse = response.json().await?;
-                    Err(Error::api(error.code, error.message))
-                }
-            })
-            .await
+            if response.status().is_success() {
+                Ok(())
+            } else {
+                let error: ErrorResponse = response.json().await?;
+                Err(Error::api(error.code, error.message))
+            }
+        })
+        .await
     }
 
     /// Toggle message forgotten status
@@ -2359,20 +2308,19 @@ impl HttpClient {
         ))?;
 
         // Force JSON for chat operations
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .patch(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .json(&request)
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .patch(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .json(&request)
+                .send()
+                .await?;
 
-                Self::json_body(response).await
-            })
-            .await
+            Self::json_body(response).await
+        })
+        .await
     }
 
     /// Compact a chat session's history on demand (POST /api/chat/{id}/compact)
@@ -2387,20 +2335,19 @@ impl HttpClient {
             .join(&format!("/api/chat/{}/compact", chat_id))?;
 
         // Force JSON for chat operations
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .post(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .json(&request)
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .post(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .json(&request)
+                .send()
+                .await?;
 
-                Self::json_body(response).await
-            })
-            .await
+            Self::json_body(response).await
+        })
+        .await
     }
 
     /// Regenerate a chat message
@@ -2416,19 +2363,18 @@ impl HttpClient {
         ))?;
 
         // Force JSON for chat operations
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .post(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .post(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .send()
+                .await?;
 
-                Self::json_body(response).await
-            })
-            .await
+            Self::json_body(response).await
+        })
+        .await
     }
 
     // ========================================================================
@@ -2443,63 +2389,62 @@ impl HttpClient {
     ) -> Result<String> {
         let url = self.base_url.join("/api/functions")?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .post(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Content-Type", "application/json")
-                    .header("Accept", "application/json")
-                    .json(&function)
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .post(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Content-Type", "application/json")
+                .header("Accept", "application/json")
+                .json(&function)
+                .send()
+                .await?;
 
-                let status = response.status();
-                let bytes = response.bytes().await.map_err(Error::Http)?;
+            let status = response.status();
+            let bytes = response.bytes().await.map_err(Error::Http)?;
 
-                if !status.is_success() {
-                    let error_msg = String::from_utf8_lossy(&bytes);
-                    return Err(Error::api(
-                        status.as_u16(),
-                        format!("Server error: {}", error_msg),
-                    ));
-                }
+            if !status.is_success() {
+                let error_msg = String::from_utf8_lossy(&bytes);
+                return Err(Error::api(
+                    status.as_u16(),
+                    format!("Server error: {}", error_msg),
+                ));
+            }
 
-                if bytes.is_empty() {
-                    return Err(Error::api(
-                        status.as_u16(),
-                        "Empty response from server".to_string(),
-                    ));
-                }
+            if bytes.is_empty() {
+                return Err(Error::api(
+                    status.as_u16(),
+                    "Empty response from server".to_string(),
+                ));
+            }
 
-                #[derive(Deserialize)]
-                struct FunctionResponse {
-                    status: String,
-                    id: String,
-                }
+            #[derive(Deserialize)]
+            struct FunctionResponse {
+                status: String,
+                id: String,
+            }
 
-                let result: FunctionResponse = serde_json::from_slice(&bytes).map_err(|e| {
-                    Error::api(
-                        500,
-                        format!(
-                            "Failed to parse response: {} (body: {})",
-                            e,
-                            String::from_utf8_lossy(&bytes)
-                        ),
-                    )
-                })?;
+            let result: FunctionResponse = serde_json::from_slice(&bytes).map_err(|e| {
+                Error::api(
+                    500,
+                    format!(
+                        "Failed to parse response: {} (body: {})",
+                        e,
+                        String::from_utf8_lossy(&bytes)
+                    ),
+                )
+            })?;
 
-                if result.status != "success" {
-                    return Err(Error::api(
-                        500,
-                        format!("Failed to save script: status={}", result.status),
-                    ));
-                }
+            if result.status != "success" {
+                return Err(Error::api(
+                    500,
+                    format!("Failed to save script: status={}", result.status),
+                ));
+            }
 
-                Ok(result.id)
-            })
-            .await
+            Ok(result.id)
+        })
+        .await
     }
 
     /// Get a UserFunction by ID
@@ -2510,19 +2455,18 @@ impl HttpClient {
     ) -> Result<crate::functions::UserFunction> {
         let url = self.base_url.join(&format!("/api/functions/{}", id))?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .get(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .get(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .send()
+                .await?;
 
-                Self::json_body(response).await
-            })
-            .await
+            Self::json_body(response).await
+        })
+        .await
     }
 
     /// List all functions (optionally filtered by tags)
@@ -2538,19 +2482,18 @@ impl HttpClient {
             url.set_query(Some(&format!("tags={}", tags_query)));
         }
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .get(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .get(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .send()
+                .await?;
 
-                Self::json_body(response).await
-            })
-            .await
+            Self::json_body(response).await
+        })
+        .await
     }
 
     /// Update an existing UserFunction by ID
@@ -2562,54 +2505,52 @@ impl HttpClient {
     ) -> Result<()> {
         let url = self.base_url.join(&format!("/api/functions/{}", id))?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .put(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Content-Type", "application/json")
-                    .header("Accept", "application/json")
-                    .json(&function)
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .put(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Content-Type", "application/json")
+                .header("Accept", "application/json")
+                .json(&function)
+                .send()
+                .await?;
 
-                if response.status().is_success() {
-                    Ok(())
-                } else {
-                    let status = response.status().as_u16();
-                    let bytes = response.bytes().await.map_err(Error::Http)?;
-                    let error_msg = String::from_utf8_lossy(&bytes);
-                    Err(Error::api(status, error_msg.to_string()))
-                }
-            })
-            .await
+            if response.status().is_success() {
+                Ok(())
+            } else {
+                let status = response.status().as_u16();
+                let bytes = response.bytes().await.map_err(Error::Http)?;
+                let error_msg = String::from_utf8_lossy(&bytes);
+                Err(Error::api(status, error_msg.to_string()))
+            }
+        })
+        .await
     }
 
     /// Delete a UserFunction by ID
     pub async fn delete_function(&self, id: &str, token: &str) -> Result<()> {
         let url = self.base_url.join(&format!("/api/functions/{}", id))?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .delete(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .delete(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .send()
+                .await?;
 
-                if response.status().is_success() {
-                    Ok(())
-                } else {
-                    let status = response.status().as_u16();
-                    let bytes = response.bytes().await.map_err(Error::Http)?;
-                    let error_msg = String::from_utf8_lossy(&bytes);
-                    Err(Error::api(status, error_msg.to_string()))
-                }
-            })
-            .await
+            if response.status().is_success() {
+                Ok(())
+            } else {
+                let status = response.status().as_u16();
+                let bytes = response.bytes().await.map_err(Error::Http)?;
+                let error_msg = String::from_utf8_lossy(&bytes);
+                Err(Error::api(status, error_msg.to_string()))
+            }
+        })
+        .await
     }
 
     /// Call a saved UserFunction by ID or label
@@ -2625,48 +2566,47 @@ impl HttpClient {
 
         let body = params.unwrap_or_default();
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .post(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Content-Type", "application/json")
-                    .header("Accept", "application/json")
-                    .json(&body)
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .post(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Content-Type", "application/json")
+                .header("Accept", "application/json")
+                .json(&body)
+                .send()
+                .await?;
 
-                let status = response.status();
-                let bytes = response.bytes().await.map_err(Error::Http)?;
+            let status = response.status();
+            let bytes = response.bytes().await.map_err(Error::Http)?;
 
-                if !status.is_success() {
-                    let error_msg = String::from_utf8_lossy(&bytes);
-                    return Err(Error::api(
-                        status.as_u16(),
-                        format!("Server error: {}", error_msg),
-                    ));
-                }
+            if !status.is_success() {
+                let error_msg = String::from_utf8_lossy(&bytes);
+                return Err(Error::api(
+                    status.as_u16(),
+                    format!("Server error: {}", error_msg),
+                ));
+            }
 
-                if bytes.is_empty() {
-                    return Err(Error::api(
-                        status.as_u16(),
-                        "Empty response from server".to_string(),
-                    ));
-                }
+            if bytes.is_empty() {
+                return Err(Error::api(
+                    status.as_u16(),
+                    "Empty response from server".to_string(),
+                ));
+            }
 
-                serde_json::from_slice(&bytes).map_err(|e| {
-                    Error::api(
-                        500,
-                        format!(
-                            "Failed to parse response: {} (body: {})",
-                            e,
-                            String::from_utf8_lossy(&bytes)
-                        ),
-                    )
-                })
+            serde_json::from_slice(&bytes).map_err(|e| {
+                Error::api(
+                    500,
+                    format!(
+                        "Failed to parse response: {} (body: {})",
+                        e,
+                        String::from_utf8_lossy(&bytes)
+                    ),
+                )
             })
-            .await
+        })
+        .await
     }
 
     // ========================================================================
@@ -2681,63 +2621,62 @@ impl HttpClient {
     ) -> Result<String> {
         let url = self.base_url.join("/api/functions")?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .post(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Content-Type", "application/json")
-                    .header("Accept", "application/json")
-                    .json(&user_function)
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .post(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Content-Type", "application/json")
+                .header("Accept", "application/json")
+                .json(&user_function)
+                .send()
+                .await?;
 
-                let status = response.status();
-                let bytes = response.bytes().await.map_err(Error::Http)?;
+            let status = response.status();
+            let bytes = response.bytes().await.map_err(Error::Http)?;
 
-                if !status.is_success() {
-                    let error_msg = String::from_utf8_lossy(&bytes);
-                    return Err(Error::api(
-                        status.as_u16(),
-                        format!("Server error: {}", error_msg),
-                    ));
-                }
+            if !status.is_success() {
+                let error_msg = String::from_utf8_lossy(&bytes);
+                return Err(Error::api(
+                    status.as_u16(),
+                    format!("Server error: {}", error_msg),
+                ));
+            }
 
-                if bytes.is_empty() {
-                    return Err(Error::api(
-                        status.as_u16(),
-                        "Empty response from server".to_string(),
-                    ));
-                }
+            if bytes.is_empty() {
+                return Err(Error::api(
+                    status.as_u16(),
+                    "Empty response from server".to_string(),
+                ));
+            }
 
-                #[derive(Deserialize)]
-                struct FunctionResponse {
-                    status: String,
-                    id: String,
-                }
+            #[derive(Deserialize)]
+            struct FunctionResponse {
+                status: String,
+                id: String,
+            }
 
-                let result: FunctionResponse = serde_json::from_slice(&bytes).map_err(|e| {
-                    Error::api(
-                        500,
-                        format!(
-                            "Failed to parse response: {} (body: {})",
-                            e,
-                            String::from_utf8_lossy(&bytes)
-                        ),
-                    )
-                })?;
+            let result: FunctionResponse = serde_json::from_slice(&bytes).map_err(|e| {
+                Error::api(
+                    500,
+                    format!(
+                        "Failed to parse response: {} (body: {})",
+                        e,
+                        String::from_utf8_lossy(&bytes)
+                    ),
+                )
+            })?;
 
-                if result.status != "success" {
-                    return Err(Error::api(
-                        500,
-                        format!("Failed to save user function: status={}", result.status),
-                    ));
-                }
+            if result.status != "success" {
+                return Err(Error::api(
+                    500,
+                    format!("Failed to save user function: status={}", result.status),
+                ));
+            }
 
-                Ok(result.id)
-            })
-            .await
+            Ok(result.id)
+        })
+        .await
     }
 
     /// Get a UserFunction by label
@@ -2748,19 +2687,18 @@ impl HttpClient {
     ) -> Result<crate::functions::UserFunction> {
         let url = self.base_url.join(&format!("/api/functions/{}", label))?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .get(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .get(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .send()
+                .await?;
 
-                Self::json_body(response).await
-            })
-            .await
+            Self::json_body(response).await
+        })
+        .await
     }
 
     /// List all UserFunctions (optionally filtered by tags)
@@ -2776,19 +2714,18 @@ impl HttpClient {
             url.set_query(Some(&format!("tags={}", tags_query)));
         }
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .get(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .get(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .send()
+                .await?;
 
-                Self::json_body(response).await
-            })
-            .await
+            Self::json_body(response).await
+        })
+        .await
     }
 
     /// Update an existing UserFunction
@@ -2800,54 +2737,52 @@ impl HttpClient {
     ) -> Result<()> {
         let url = self.base_url.join(&format!("/api/functions/{}", label))?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .put(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Content-Type", "application/json")
-                    .header("Accept", "application/json")
-                    .json(&user_function)
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .put(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Content-Type", "application/json")
+                .header("Accept", "application/json")
+                .json(&user_function)
+                .send()
+                .await?;
 
-                if response.status().is_success() {
-                    Ok(())
-                } else {
-                    let status = response.status().as_u16();
-                    let bytes = response.bytes().await.map_err(Error::Http)?;
-                    let error_msg = String::from_utf8_lossy(&bytes);
-                    Err(Error::api(status, error_msg.to_string()))
-                }
-            })
-            .await
+            if response.status().is_success() {
+                Ok(())
+            } else {
+                let status = response.status().as_u16();
+                let bytes = response.bytes().await.map_err(Error::Http)?;
+                let error_msg = String::from_utf8_lossy(&bytes);
+                Err(Error::api(status, error_msg.to_string()))
+            }
+        })
+        .await
     }
 
     /// Delete a UserFunction by label
     pub async fn delete_user_function(&self, label: &str, token: &str) -> Result<()> {
         let url = self.base_url.join(&format!("/api/functions/{}", label))?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .delete(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .delete(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .send()
+                .await?;
 
-                if response.status().is_success() {
-                    Ok(())
-                } else {
-                    let status = response.status().as_u16();
-                    let bytes = response.bytes().await.map_err(Error::Http)?;
-                    let error_msg = String::from_utf8_lossy(&bytes);
-                    Err(Error::api(status, error_msg.to_string()))
-                }
-            })
-            .await
+            if response.status().is_success() {
+                Ok(())
+            } else {
+                let status = response.status().as_u16();
+                let bytes = response.bytes().await.map_err(Error::Http)?;
+                let error_msg = String::from_utf8_lossy(&bytes);
+                Err(Error::api(status, error_msg.to_string()))
+            }
+        })
+        .await
     }
     // ── Goal CRUD ────────────────────────────────────────────────────────────
 
@@ -3585,4 +3520,104 @@ fn extract_error_message(body: &str) -> String {
 struct ErrorResponse {
     code: u16,
     message: String,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::Arc;
+    use std::sync::atomic::{AtomicU32, Ordering};
+
+    fn test_client(should_retry: bool, max_retries: u32) -> HttpClient {
+        HttpClient::new(
+            "http://localhost:9",
+            Duration::from_millis(50),
+            max_retries,
+            should_retry,
+            SerializationFormat::Json,
+        )
+        .expect("client builds")
+    }
+
+    /// With `should_retry(false)`, `execute_with_retry` must invoke the
+    /// operation exactly once even when the error is retryable — the
+    /// retry policy is bypassed entirely.
+    #[tokio::test]
+    async fn test_execute_with_retry_disabled_does_not_retry() {
+        let client = test_client(false, 5);
+        let calls = Arc::new(AtomicU32::new(0));
+        let calls_clone = calls.clone();
+
+        let result: Result<()> = client
+            .execute_with_retry(move || {
+                let calls = calls_clone.clone();
+                async move {
+                    calls.fetch_add(1, Ordering::SeqCst);
+                    // Timeout is retryable; if the gate were ignored this
+                    // would be retried up to max_retries times.
+                    Err(Error::Timeout)
+                }
+            })
+            .await;
+
+        assert!(matches!(result, Err(Error::Timeout)));
+        assert_eq!(
+            calls.load(Ordering::SeqCst),
+            1,
+            "should_retry(false) must not retry a retryable error"
+        );
+    }
+
+    /// With `should_retry(true)`, a retryable error is retried and the
+    /// operation eventually succeeds — the closure runs more than once.
+    #[tokio::test]
+    async fn test_execute_with_retry_enabled_retries_until_success() {
+        let client = test_client(true, 5);
+        let calls = Arc::new(AtomicU32::new(0));
+        let calls_clone = calls.clone();
+
+        let result: Result<u32> = client
+            .execute_with_retry(move || {
+                let calls = calls_clone.clone();
+                async move {
+                    let n = calls.fetch_add(1, Ordering::SeqCst) + 1;
+                    if n < 2 {
+                        // Connection error is retryable.
+                        Err(Error::Connection("transient".to_string()))
+                    } else {
+                        Ok(n)
+                    }
+                }
+            })
+            .await;
+
+        assert_eq!(result.expect("eventually succeeds"), 2);
+        assert_eq!(
+            calls.load(Ordering::SeqCst),
+            2,
+            "should_retry(true) must retry the retryable error once before succeeding"
+        );
+    }
+
+    /// With `should_retry(true)`, a non-retryable error surfaces immediately
+    /// without extra attempts.
+    #[tokio::test]
+    async fn test_execute_with_retry_enabled_passes_through_non_retryable() {
+        let client = test_client(true, 5);
+        let calls = Arc::new(AtomicU32::new(0));
+        let calls_clone = calls.clone();
+
+        let result: Result<()> = client
+            .execute_with_retry(move || {
+                let calls = calls_clone.clone();
+                async move {
+                    calls.fetch_add(1, Ordering::SeqCst);
+                    Err(Error::NotFound)
+                }
+            })
+            .await;
+
+        assert!(matches!(result, Err(Error::NotFound)));
+        assert_eq!(calls.load(Ordering::SeqCst), 1);
+    }
 }

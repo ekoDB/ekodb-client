@@ -1,8 +1,8 @@
 # Client Library Parity Matrix
 
-**Last Updated:** April 28, 2026
+**Last Updated:** June 2, 2026
 
-**Client version:** 0.18.0 (Rust, Python, TypeScript, Kotlin); standalone Go
+**Client version:** 0.19.0 (Rust, Python, TypeScript, Kotlin); standalone Go
 client tracks the same release line.
 
 > Renamed from `MISSING_FEATURES.md` (April 28, 2026) to reflect the current
@@ -12,6 +12,15 @@ client tracks the same release line.
 > in the same pass (it duplicated this file at a stale revision).
 
 ## Status: Full Parity Maintained Through v0.18.0
+
+> v0.19.0 parity re-verification is in progress. A few per-client correctness
+> issues are open and tracked as issues in this repo (e.g. Python typed-value
+> handling, Kotlin primary-key-alias resolution); this matrix will move to
+> "through v0.19.0" once they close.
+>
+> Note: the query-builder `regex()` filter has been removed from all clients
+> until server-side regex filtering is available (tracked internally). Use
+> `contains` / `startsWith` / `endsWith` instead.
 
 All core features are implemented across all client libraries (Rust, Python,
 TypeScript, Go, Kotlin). This includes:
@@ -457,7 +466,7 @@ POST /api/replication/wal                       - Receive WAL shipment from peer
 
 ## Implementation Roadmap
 
-### Phase 1: Query & Search Index Management
+### Query & Search Index Management
 
 **Target:** Q1 2026
 
@@ -466,7 +475,7 @@ POST /api/replication/wal                       - Receive WAL shipment from peer
 - Add comprehensive tests for all index operations
 - Update examples showing index usage
 
-### Phase 2: KV Document Linking
+### KV Document Linking
 
 **Target:** Q2 2026
 
@@ -474,7 +483,7 @@ POST /api/replication/wal                       - Receive WAL shipment from peer
 - Add tests for link operations
 - Create examples demonstrating cache-to-document relationships
 
-### Phase 3: Schedules & Advanced Features
+### Schedules & Advanced Features
 
 **Target:** Q2-Q3 2026
 

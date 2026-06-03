@@ -53,10 +53,6 @@ class TestQueryBuilderComparison:
         query = QueryBuilder().ends_with("email", "@example.com").build()
         assert query["filter"]["content"]["operator"] == "EndsWith"
 
-    def test_regex(self):
-        query = QueryBuilder().regex("email", "^.*@example\\.com$").build()
-        assert query["filter"]["content"]["operator"] == "Contains"
-
 
 class TestQueryBuilderLogical:
     def test_and(self):

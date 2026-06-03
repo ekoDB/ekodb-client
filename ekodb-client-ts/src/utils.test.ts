@@ -50,6 +50,11 @@ describe("getValue", () => {
     expect(getValue(field)).toBeNull();
   });
 
+  it("passes through a user object that has a value key but no type (regression #134)", () => {
+    const field = { value: 1, currency: "USD" };
+    expect(getValue(field)).toEqual(field);
+  });
+
   it("returns plain string as-is", () => {
     expect(getValue("plain string")).toBe("plain string");
   });

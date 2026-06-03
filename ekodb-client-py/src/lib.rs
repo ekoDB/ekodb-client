@@ -16,11 +16,26 @@ use serde_json;
 use pyo3::create_exception;
 use pyo3::exceptions::{PyException, PyRuntimeError, PyValueError};
 use pyo3::prelude::*;
-use pyo3::types::{PyBool, PyDict, PyFloat, PyInt, PyList, PyString, PyTuple};
+use pyo3::types::{PyBool, PyBytes, PyDict, PyFloat, PyInt, PyList, PyString, PyTuple};
 use pyo3_async_runtimes::tokio::future_into_py;
 
 // Create a custom exception for rate limiting
 create_exception!(ekodb_client, RateLimitError, PyException, "Rate limit exceeded");
+
+/// Map an `ekodb_client::Error` to the most specific Python exception.
+///
+/// A `RateLimit` error (HTTP 429) is surfaced as `RateLimitError`, carrying the
+/// server-provided `retry_after_secs` as the first argument so Python callers can
+/// read `exc.args[0]` to back off. Every other error becomes a `RuntimeError`
+/// with `"{context}: {error}"` for backwards-compatible messages.
+fn map_client_err(context: &str, e: ekodb_client::Error) -> PyErr {
+    match e {
+        ekodb_client::Error::RateLimit { retry_after_secs } => {
+            RateLimitError::new_err((retry_after_secs,))
+        }
+        other => PyRuntimeError::new_err(format!("{context}: {other}")),
+    }
+}
 
 /// Serialization format for client-server communication
 #[pyclass]
@@ -188,7 +203,7 @@ impl Client {
             let result = client
                 .insert(&collection, rust_record, options)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Insert failed: {}", e)))?;
+                .map_err(|e| map_client_err("Insert failed", e))?;
 
             Ok(Python::attach(|py| record_to_dict(py, &result))?)
         })
@@ -209,7 +224,7 @@ impl Client {
             let result = client
                 .find_by_id(&collection, &id, bypass_ripple)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Find failed: {}", e)))?;
+                .map_err(|e| map_client_err("Find failed", e))?;
 
             Python::attach(|py| record_to_dict(py, &result))
         })
@@ -255,7 +270,7 @@ impl Client {
             let results = client
                 .find(&collection, rust_query, bypass_ripple)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Find failed: {}", e)))?;
+                .map_err(|e| map_client_err("Find failed", e))?;
 
             Python::attach(|py| {
                 let list = PyList::empty(py);
@@ -309,7 +324,7 @@ impl Client {
             let result = client
                 .update(&collection, &id, rust_updates, options)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Update failed: {}", e)))?;
+                .map_err(|e| map_client_err("Update failed", e))?;
 
             Python::attach(|py| record_to_dict(py, &result))
         })
@@ -347,7 +362,7 @@ impl Client {
             let result = client
                 .update_with_action(&collection, &id, &action, &field, field_value)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Action failed: {}", e)))?;
+                .map_err(|e| map_client_err("Action failed", e))?;
 
             Python::attach(|py| record_to_dict(py, &result))
         })
@@ -384,7 +399,7 @@ impl Client {
             let result = client
                 .update_with_action_sequence(&collection, &id, rust_actions)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Action sequence failed: {}", e)))?;
+                .map_err(|e| map_client_err("Action sequence failed", e))?;
 
             Python::attach(|py| record_to_dict(py, &result))
         })
@@ -411,7 +426,7 @@ impl Client {
             client
                 .delete(&collection, &id, bypass_ripple)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Delete failed: {}", e)))?;
+                .map_err(|e| map_client_err("Delete failed", e))?;
 
             Python::attach(|py| Ok(py.None()))
         })
@@ -425,7 +440,7 @@ impl Client {
             let collections = client
                 .list_collections()
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("List collections failed: {}", e)))?;
+                .map_err(|e| map_client_err("List collections failed", e))?;
 
             Python::attach(|py| {
                 let list = PyList::empty(py);
@@ -457,7 +472,7 @@ impl Client {
             let results = client
                 .batch_insert(&collection, rust_records, bypass_ripple)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Batch insert failed: {}", e)))?;
+                .map_err(|e| map_client_err("Batch insert failed", e))?;
 
             Python::attach(|py| {
                 let list = PyList::empty(py);
@@ -489,7 +504,7 @@ impl Client {
             let results = client
                 .batch_update(&collection, rust_updates, bypass_ripple)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Batch update failed: {}", e)))?;
+                .map_err(|e| map_client_err("Batch update failed", e))?;
 
             Python::attach(|py| {
                 let list = PyList::empty(py);
@@ -516,7 +531,7 @@ impl Client {
             let deleted_count = client
                 .batch_delete(&collection, ids, bypass_ripple)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Batch delete failed: {}", e)))?;
+                .map_err(|e| map_client_err("Batch delete failed", e))?;
 
             Python::attach(|py| Ok(PyInt::new(py, deleted_count).into()))
         })
@@ -534,7 +549,7 @@ impl Client {
             client
                 .delete_collection(&collection)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Delete collection failed: {}", e)))?;
+                .map_err(|e| map_client_err("Delete collection failed", e))?;
 
             Python::attach(|py| Ok(py.None()))
         })
@@ -560,7 +575,7 @@ impl Client {
             let restored = client
                 .restore_deleted(&collection, &id)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Restore deleted failed: {}", e)))?;
+                .map_err(|e| map_client_err("Restore deleted failed", e))?;
 
             Python::attach(|py| {
                 Ok(PyBool::new(py, restored).as_borrowed().to_owned().into())
@@ -616,11 +631,11 @@ impl Client {
                         let inserted = client
                             .insert(&collection, rust_record, insert_options)
                             .await
-                            .map_err(|e| PyRuntimeError::new_err(format!("Upsert insert failed: {}", e)))?;
+                            .map_err(|e| map_client_err("Upsert insert failed", e))?;
                         Python::attach(|py| record_to_dict(py, &inserted))
                     } else {
                         // Other error, propagate it
-                        Err(PyRuntimeError::new_err(format!("Upsert failed: {}", e)))
+                        Err(map_client_err("Upsert failed", e))
                     }
                 }
             }
@@ -669,7 +684,7 @@ impl Client {
             let results = client
                 .find(&collection, query, None)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Find one failed: {}", e)))?;
+                .map_err(|e| map_client_err("Find one failed", e))?;
 
             Python::attach(|py| {
                 if let Some(record) = results.first() {
@@ -707,7 +722,7 @@ impl Client {
                     if error_msg.contains("not found") || error_msg.contains("404") {
                         Python::attach(|py| Ok(PyBool::new(py, false).as_borrowed().to_owned().into()))
                     } else {
-                        Err(PyRuntimeError::new_err(format!("Exists check failed: {}", e)))
+                        Err(map_client_err("Exists check failed", e))
                     }
                 }
             }
@@ -745,7 +760,7 @@ impl Client {
             let results = client
                 .find(&collection, query, None)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Paginate failed: {}", e)))?;
+                .map_err(|e| map_client_err("Paginate failed", e))?;
 
             Python::attach(|py| {
                 let list = PyList::empty(py);
@@ -775,7 +790,7 @@ impl Client {
             let count = client
                 .restore_collection(&collection)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Restore collection failed: {}", e)))?;
+                .map_err(|e| map_client_err("Restore collection failed", e))?;
 
             Python::attach(|py| Ok(PyInt::new(py, count as i64).into()))
         })
@@ -825,7 +840,7 @@ impl Client {
             client
                 .create_collection(&collection, schema_config)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Create collection failed: {}", e)))?;
+                .map_err(|e| map_client_err("Create collection failed", e))?;
 
             Python::attach(|py| Ok(py.None()))
         })
@@ -846,7 +861,7 @@ impl Client {
             let schema = client
                 .get_schema(&collection)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Get schema failed: {}", e)))?;
+                .map_err(|e| map_client_err("Get schema failed", e))?;
 
             Python::attach(|py| {
                 let schema_json = serde_json::to_value(&schema).map_err(|e| {
@@ -872,7 +887,7 @@ impl Client {
             let metadata = client
                 .get_collection(&collection)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Get collection failed: {}", e)))?;
+                .map_err(|e| map_client_err("Get collection failed", e))?;
 
             Python::attach(|py| {
                 let metadata_json = serde_json::to_value(&metadata).map_err(|e| {
@@ -969,7 +984,7 @@ impl Client {
             let results = client
                 .search(&collection, search_query)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Search failed: {}", e)))?;
+                .map_err(|e| map_client_err("Search failed", e))?;
 
             Python::attach(|py| {
                 let results_json = serde_json::to_value(&results).map_err(|e| {
@@ -1022,7 +1037,7 @@ impl Client {
             let resp = client
                 .distinct_values(&collection, &field, query)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("distinct_values failed: {}", e)))?;
+                .map_err(|e| map_client_err("distinct_values failed", e))?;
 
             Python::attach(|py| {
                 let resp_json = serde_json::to_value(&resp).map_err(|e| {
@@ -1068,7 +1083,7 @@ impl Client {
             let resp = client
                 .raw_completion(request)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("raw_completion failed: {}", e)))?;
+                .map_err(|e| map_client_err("raw_completion failed", e))?;
 
             Python::attach(|py| {
                 let resp_json = serde_json::to_value(&resp).map_err(|e| {
@@ -1117,9 +1132,7 @@ impl Client {
             let resp = client
                 .raw_completion_stream(request)
                 .await
-                .map_err(|e| {
-                    PyRuntimeError::new_err(format!("raw_completion_stream failed: {}", e))
-                })?;
+                .map_err(|e| map_client_err("raw_completion_stream failed", e))?;
 
             Python::attach(|py| {
                 let resp_json = serde_json::to_value(&resp).map_err(|e| {
@@ -1183,12 +1196,7 @@ impl Client {
                 .map_err(|e| {
                     PyRuntimeError::new_err(format!("Task join failed: {}", e))
                 })?
-                .map_err(|e| {
-                    PyRuntimeError::new_err(format!(
-                        "raw_completion_stream_with_progress failed: {}",
-                        e
-                    ))
-                })?;
+                .map_err(|e| map_client_err("raw_completion_stream_with_progress failed", e))?;
 
             Python::attach(|py| {
                 let resp_json = serde_json::to_value(&resp).map_err(|e| {
@@ -1218,7 +1226,7 @@ impl Client {
             let results = client
                 .text_search(&collection, &query_text, limit)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Text search failed: {}", e)))?;
+                .map_err(|e| map_client_err("Text search failed", e))?;
 
             Python::attach(|py| {
                 let results_json = serde_json::to_value(&results).map_err(|e| {
@@ -1250,7 +1258,7 @@ impl Client {
             let results = client
                 .hybrid_search(&collection, &query_text, query_vector, limit)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Hybrid search failed: {}", e)))?;
+                .map_err(|e| map_client_err("Hybrid search failed", e))?;
 
             Python::attach(|py| {
                 let results_json = serde_json::to_value(&results).map_err(|e| {
@@ -1278,7 +1286,7 @@ impl Client {
             let results = client
                 .find_all(&collection, limit)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Find all failed: {}", e)))?;
+                .map_err(|e| map_client_err("Find all failed", e))?;
 
             Python::attach(|py| {
                 let results_json = serde_json::to_value(&results).map_err(|e| {
@@ -1306,7 +1314,7 @@ impl Client {
             let embedding = client
                 .embed(&text, &model)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Embed failed: {}", e)))?;
+                .map_err(|e| map_client_err("Embed failed", e))?;
 
             Python::attach(|py| {
                 let list = PyList::new(py, &embedding)?;
@@ -1332,7 +1340,7 @@ impl Client {
             let embeddings = client
                 .embed_batch(texts, &model)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Embed batch failed: {}", e)))?;
+                .map_err(|e| map_client_err("Embed batch failed", e))?;
 
             Python::attach(|py| {
                 let outer = PyList::empty(py);
@@ -1370,7 +1378,7 @@ impl Client {
             client
                 .kv_set(&key, json_value, ttl.as_deref())
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("KV set failed: {}", e)))?;
+                .map_err(|e| map_client_err("KV set failed", e))?;
 
             Python::attach(|py| Ok(py.None()))
         })
@@ -1388,7 +1396,7 @@ impl Client {
             let result = client
                 .kv_get(&key)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("KV get failed: {}", e)))?;
+                .map_err(|e| map_client_err("KV get failed", e))?;
 
             Python::attach(|py| {
                 match result {
@@ -1419,7 +1427,7 @@ impl Client {
             client
                 .kv_delete(&key)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("KV delete failed: {}", e)))?;
+                .map_err(|e| map_client_err("KV delete failed", e))?;
 
             Python::attach(|py| Ok(py.None()))
         })
@@ -1443,7 +1451,7 @@ impl Client {
             let results = client
                 .kv_batch_get(keys)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("KV batch get failed: {}", e)))?;
+                .map_err(|e| map_client_err("KV batch get failed", e))?;
 
             Python::attach(|py| {
                 let list = PyList::empty(py);
@@ -1501,7 +1509,7 @@ impl Client {
             let results = client
                 .kv_batch_set(keys.clone(), values, ttl)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("KV batch set failed: {}", e)))?;
+                .map_err(|e| map_client_err("KV batch set failed", e))?;
 
             Python::attach(|py| {
                 let list = PyList::empty(py);
@@ -1534,7 +1542,7 @@ impl Client {
             let results = client
                 .kv_batch_delete(keys.clone())
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("KV batch delete failed: {}", e)))?;
+                .map_err(|e| map_client_err("KV batch delete failed", e))?;
 
             Python::attach(|py| {
                 let list = PyList::empty(py);
@@ -1561,7 +1569,7 @@ impl Client {
             let exists = client
                 .kv_exists(&key)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("KV exists failed: {}", e)))?;
+                .map_err(|e| map_client_err("KV exists failed", e))?;
 
             Python::attach(|py| {
                 Ok(PyBool::new(py, exists).as_borrowed().to_owned().into())
@@ -1583,7 +1591,7 @@ impl Client {
             let result = client
                 .kv_find(pattern.as_deref(), include_expired)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("KV find failed: {}", e)))?;
+                .map_err(|e| map_client_err("KV find failed", e))?;
 
             Python::attach(|py| {
                 let list = PyList::empty(py);
@@ -1623,7 +1631,7 @@ impl Client {
             let result = client
                 .begin_transaction(&isolation_level)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Begin transaction failed: {}", e)))?;
+                .map_err(|e| map_client_err("Begin transaction failed", e))?;
 
             Ok(result)
         })
@@ -1641,7 +1649,7 @@ impl Client {
             let result = client
                 .get_transaction_status(&transaction_id)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Get transaction status failed: {}", e)))?;
+                .map_err(|e| map_client_err("Get transaction status failed", e))?;
 
             Python::attach(|py| {
                 let dict = PyDict::new(py);
@@ -1668,7 +1676,7 @@ impl Client {
             client
                 .commit_transaction(&transaction_id)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Commit transaction failed: {}", e)))?;
+                .map_err(|e| map_client_err("Commit transaction failed", e))?;
 
             Python::attach(|py| Ok(py.None()))
         })
@@ -1686,7 +1694,7 @@ impl Client {
             client
                 .rollback_transaction(&transaction_id)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Rollback transaction failed: {}", e)))?;
+                .map_err(|e| map_client_err("Rollback transaction failed", e))?;
 
             Python::attach(|py| Ok(py.None()))
         })
@@ -1772,7 +1780,7 @@ impl Client {
             let result = client
                 .create_chat_session(request)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Create session failed: {}", e)))?;
+                .map_err(|e| map_client_err("Create session failed", e))?;
 
             Python::attach(|py| chat_response_to_dict(py, &result))
         })
@@ -1796,7 +1804,7 @@ impl Client {
             client
                 .submit_chat_tool_result(&chat_id, &call_id, success, result_json, error)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Submit tool result failed: {}", e)))?;
+                .map_err(|e| map_client_err("Submit tool result failed", e))?;
 
             Python::attach(|py| Ok(py.None()))
         })
@@ -1840,7 +1848,7 @@ impl Client {
             let result = client
                 .chat_message(&chat_id, request)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Chat message failed: {}", e)))?;
+                .map_err(|e| map_client_err("Chat message failed", e))?;
 
             Python::attach(|py| chat_response_to_dict(py, &result))
         })
@@ -1881,7 +1889,7 @@ impl Client {
             let rx = client
                 .chat_message_stream(&chat_id, request)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Chat message stream failed: {}", e)))?;
+                .map_err(|e| map_client_err("Chat message stream failed", e))?;
 
             Python::attach(|py| {
                 let receiver = ChatStreamReceiver {
@@ -1909,7 +1917,7 @@ impl Client {
             let result = client
                 .list_chat_sessions(query)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("List sessions failed: {}", e)))?;
+                .map_err(|e| map_client_err("List sessions failed", e))?;
 
             Python::attach(|py| list_sessions_response_to_dict(py, &result))
         })
@@ -1933,7 +1941,7 @@ impl Client {
             let result = client
                 .get_chat_session_messages(&chat_id, query)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Get messages failed: {}", e)))?;
+                .map_err(|e| map_client_err("Get messages failed", e))?;
 
             Python::attach(|py| get_messages_response_to_dict(py, &result))
         })
@@ -1951,7 +1959,7 @@ impl Client {
             let result = client
                 .get_chat_session(&chat_id)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Get session failed: {}", e)))?;
+                .map_err(|e| map_client_err("Get session failed", e))?;
 
             Python::attach(|py| {
                 let dict = PyDict::new(py);
@@ -1990,7 +1998,7 @@ impl Client {
             let result = client
                 .update_chat_session(&chat_id, request)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Update session failed: {}", e)))?;
+                .map_err(|e| map_client_err("Update session failed", e))?;
 
             Python::attach(|py| {
                 let dict = PyDict::new(py);
@@ -2042,7 +2050,7 @@ impl Client {
             let result = client
                 .branch_chat_session(request)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Branch session failed: {}", e)))?;
+                .map_err(|e| map_client_err("Branch session failed", e))?;
 
             Python::attach(|py| chat_response_to_dict(py, &result))
         })
@@ -2060,7 +2068,7 @@ impl Client {
             client
                 .delete_chat_session(&chat_id)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Delete session failed: {}", e)))?;
+                .map_err(|e| map_client_err("Delete session failed", e))?;
 
             Python::attach(|py| Ok(py.None()))
         })
@@ -2079,7 +2087,7 @@ impl Client {
             let result = client
                 .regenerate_chat_message(&chat_id, &message_id)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Regenerate message failed: {}", e)))?;
+                .map_err(|e| map_client_err("Regenerate message failed", e))?;
 
             Python::attach(|py| chat_response_to_dict(py, &result))
         })
@@ -2101,7 +2109,7 @@ impl Client {
             client
                 .update_chat_message(&chat_id, &message_id, request)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Update message failed: {}", e)))?;
+                .map_err(|e| map_client_err("Update message failed", e))?;
 
             Python::attach(|py| Ok(py.None()))
         })
@@ -2120,7 +2128,7 @@ impl Client {
             client
                 .delete_chat_message(&chat_id, &message_id)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Delete message failed: {}", e)))?;
+                .map_err(|e| map_client_err("Delete message failed", e))?;
 
             Python::attach(|py| Ok(py.None()))
         })
@@ -2142,7 +2150,7 @@ impl Client {
             client
                 .toggle_forgotten_message(&chat_id, &message_id, request)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Toggle forgotten failed: {}", e)))?;
+                .map_err(|e| map_client_err("Toggle forgotten failed", e))?;
 
             Python::attach(|py| Ok(py.None()))
         })
@@ -2177,7 +2185,7 @@ impl Client {
             let result = client
                 .compact_chat(&chat_id, keep_recent)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Compact chat failed: {}", e)))?;
+                .map_err(|e| map_client_err("Compact chat failed", e))?;
 
             Python::attach(|py| {
                 let dict = PyDict::new(py);
@@ -2224,7 +2232,7 @@ impl Client {
             let result = client
                 .merge_chat_sessions(request)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Merge sessions failed: {}", e)))?;
+                .map_err(|e| map_client_err("Merge sessions failed", e))?;
 
             Python::attach(|py| {
                 let dict = PyDict::new(py);
@@ -2262,7 +2270,7 @@ impl Client {
             let id = client
                 .save_function(script)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Save script failed: {}", e)))?;
+                .map_err(|e| map_client_err("Save script failed", e))?;
             
             Python::attach(|py| Ok(PyString::new(py, &id).into()))
         })
@@ -2286,7 +2294,7 @@ impl Client {
             let script = client
                 .get_function(&id)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Get script failed: {}", e)))?;
+                .map_err(|e| map_client_err("Get script failed", e))?;
             
             let json = serde_json::to_value(&script)
                 .map_err(|e| PyRuntimeError::new_err(format!("Serialization failed: {}", e)))?;
@@ -2313,7 +2321,7 @@ impl Client {
             let scripts = client
                 .list_functions(tags)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("List scripts failed: {}", e)))?;
+                .map_err(|e| map_client_err("List scripts failed", e))?;
             
             let json = serde_json::to_value(&scripts)
                 .map_err(|e| PyRuntimeError::new_err(format!("Serialization failed: {}", e)))?;
@@ -2344,7 +2352,7 @@ impl Client {
             client
                 .update_function(&script_id, script)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Update script failed: {}", e)))?;
+                .map_err(|e| map_client_err("Update script failed", e))?;
             
             Python::attach(|py| Ok(py.None()))
         })
@@ -2365,7 +2373,7 @@ impl Client {
             client
                 .delete_function(&id)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Delete script failed: {}", e)))?;
+                .map_err(|e| map_client_err("Delete script failed", e))?;
             
             Python::attach(|py| Ok(py.None()))
         })
@@ -2397,7 +2405,7 @@ impl Client {
             let result = client
                 .call_function(&script_id_or_label, params_map)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Call script failed: {}", e)))?;
+                .map_err(|e| map_client_err("Call script failed", e))?;
             
             Python::attach(|py| {
                 let dict = PyDict::new(py);
@@ -2439,7 +2447,7 @@ impl Client {
             let tools = client
                 .get_chat_tools()
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Get chat tools failed: {}", e)))?;
+                .map_err(|e| map_client_err("Get chat tools failed", e))?;
 
             Python::attach(|py| {
                 let list = pyo3::types::PyList::empty(py);
@@ -2464,7 +2472,7 @@ impl Client {
             let models = client
                 .get_chat_models()
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Get chat models failed: {}", e)))?;
+                .map_err(|e| map_client_err("Get chat models failed", e))?;
 
             Python::attach(|py| {
                 let dict = PyDict::new(py);
@@ -2494,7 +2502,7 @@ impl Client {
             let models = client
                 .get_chat_model(&provider_name)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Get chat model failed: {}", e)))?;
+                .map_err(|e| map_client_err("Get chat model failed", e))?;
 
             Python::attach(|py| {
                 let list = PyList::new(py, &models)?;
@@ -2523,7 +2531,7 @@ impl Client {
             let message = client
                 .get_chat_message(&chat_id, &message_id)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Get chat message failed: {}", e)))?;
+                .map_err(|e| map_client_err("Get chat message failed", e))?;
 
             Python::attach(|py| record_to_dict(py, &message))
         })
@@ -2556,7 +2564,7 @@ impl Client {
             let id = client
                 .save_user_function(user_func)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Save user function failed: {}", e)))?;
+                .map_err(|e| map_client_err("Save user function failed", e))?;
 
             Python::attach(|py| Ok(PyString::new(py, &id).into()))
         })
@@ -2580,7 +2588,7 @@ impl Client {
             let user_func = client
                 .get_user_function(&label)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Get user function failed: {}", e)))?;
+                .map_err(|e| map_client_err("Get user function failed", e))?;
 
             let json = serde_json::to_value(&user_func)
                 .map_err(|e| PyRuntimeError::new_err(format!("Serialization failed: {}", e)))?;
@@ -2608,7 +2616,7 @@ impl Client {
             let user_funcs = client
                 .list_user_functions(tags)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("List user functions failed: {}", e)))?;
+                .map_err(|e| map_client_err("List user functions failed", e))?;
 
             let json = serde_json::to_value(&user_funcs)
                 .map_err(|e| PyRuntimeError::new_err(format!("Serialization failed: {}", e)))?;
@@ -2639,7 +2647,7 @@ impl Client {
             client
                 .update_user_function(&label, user_func)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Update user function failed: {}", e)))?;
+                .map_err(|e| map_client_err("Update user function failed", e))?;
 
             Python::attach(|py| Ok(py.None()))
         })
@@ -2660,7 +2668,7 @@ impl Client {
             client
                 .delete_user_function(&label)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Delete user function failed: {}", e)))?;
+                .map_err(|e| map_client_err("Delete user function failed", e))?;
 
             Python::attach(|py| Ok(py.None()))
         })
@@ -2688,7 +2696,7 @@ impl Client {
             let exists = client
                 .collection_exists(&collection)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Collection exists check failed: {}", e)))?;
+                .map_err(|e| map_client_err("Collection exists check failed", e))?;
 
             Python::attach(|py| Ok(PyBool::new(py, exists).as_borrowed().to_owned().into()))
         })
@@ -2712,7 +2720,7 @@ impl Client {
             let count = client
                 .count_documents(&collection)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Count documents failed: {}", e)))?;
+                .map_err(|e| map_client_err("Count documents failed", e))?;
 
             Python::attach(|py| Ok(PyInt::new(py, count as i64).into()))
         })
@@ -2738,7 +2746,7 @@ impl Client {
                     filter_value.as_deref(),
                 )
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("SSE subscribe failed: {}", e)))?;
+                .map_err(|e| map_client_err("SSE subscribe failed", e))?;
 
             Python::attach(|py| {
                 let wrapper = SubscriptionReceiver {
@@ -2761,7 +2769,7 @@ impl Client {
             let ws_client = client
                 .websocket(&ws_url)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("WebSocket connection failed: {}", e)))?;
+                .map_err(|e| map_client_err("WebSocket connection failed", e))?;
 
             Python::attach(|py| {
                 // Return a WebSocketClient wrapper
@@ -2780,7 +2788,7 @@ impl Client {
             let token = client
                 .refresh_token()
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Token refresh failed: {}", e)))?;
+                .map_err(|e| map_client_err("Token refresh failed", e))?;
             Python::attach(|py| Ok(PyString::new(py, &token).into()))
         })
     }
@@ -2815,7 +2823,7 @@ impl Client {
             let result = client
                 .goal_create(json_value)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("goal_create failed: {}", e)))?;
+                .map_err(|e| map_client_err("goal_create failed", e))?;
 
             Python::attach(|py| json_to_pydict(py, &result))
         })
@@ -2831,7 +2839,7 @@ impl Client {
             let result = client
                 .goal_list()
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("goal_list failed: {}", e)))?;
+                .map_err(|e| map_client_err("goal_list failed", e))?;
 
             Python::attach(|py| json_to_pydict(py, &result))
         })
@@ -2850,7 +2858,7 @@ impl Client {
             let result = client
                 .goal_get(&id)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("goal_get failed: {}", e)))?;
+                .map_err(|e| map_client_err("goal_get failed", e))?;
 
             Python::attach(|py| json_to_pydict(py, &result))
         })
@@ -2877,7 +2885,7 @@ impl Client {
             let result = client
                 .goal_update(&id, json_value)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("goal_update failed: {}", e)))?;
+                .map_err(|e| map_client_err("goal_update failed", e))?;
 
             Python::attach(|py| json_to_pydict(py, &result))
         })
@@ -2893,7 +2901,7 @@ impl Client {
             client
                 .goal_delete(&id)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("goal_delete failed: {}", e)))?;
+                .map_err(|e| map_client_err("goal_delete failed", e))?;
 
             Python::attach(|py| Ok(py.None()))
         })
@@ -2912,7 +2920,7 @@ impl Client {
             let result = client
                 .goal_search(&query)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("goal_search failed: {}", e)))?;
+                .map_err(|e| map_client_err("goal_search failed", e))?;
 
             Python::attach(|py| json_to_pydict(py, &result))
         })
@@ -2941,7 +2949,7 @@ impl Client {
             let result = client
                 .goal_complete(&id, json_value)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("goal_complete failed: {}", e)))?;
+                .map_err(|e| map_client_err("goal_complete failed", e))?;
 
             Python::attach(|py| json_to_pydict(py, &result))
         })
@@ -2960,7 +2968,7 @@ impl Client {
             let result = client
                 .goal_approve(&id)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("goal_approve failed: {}", e)))?;
+                .map_err(|e| map_client_err("goal_approve failed", e))?;
 
             Python::attach(|py| json_to_pydict(py, &result))
         })
@@ -2987,7 +2995,7 @@ impl Client {
             let result = client
                 .goal_reject(&id, json_value)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("goal_reject failed: {}", e)))?;
+                .map_err(|e| map_client_err("goal_reject failed", e))?;
 
             Python::attach(|py| json_to_pydict(py, &result))
         })
@@ -3014,7 +3022,7 @@ impl Client {
             let result = client
                 .goal_step_start(&id, step_index)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("goal_step_start failed: {}", e)))?;
+                .map_err(|e| map_client_err("goal_step_start failed", e))?;
 
             Python::attach(|py| json_to_pydict(py, &result))
         })
@@ -3043,7 +3051,7 @@ impl Client {
             let result = client
                 .goal_step_complete(&id, step_index, json_value)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("goal_step_complete failed: {}", e)))?;
+                .map_err(|e| map_client_err("goal_step_complete failed", e))?;
 
             Python::attach(|py| json_to_pydict(py, &result))
         })
@@ -3072,7 +3080,7 @@ impl Client {
             let result = client
                 .goal_step_fail(&id, step_index, json_value)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("goal_step_fail failed: {}", e)))?;
+                .map_err(|e| map_client_err("goal_step_fail failed", e))?;
 
             Python::attach(|py| json_to_pydict(py, &result))
         })
@@ -3099,7 +3107,7 @@ impl Client {
             let result = client
                 .goal_template_create(json_value)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("goal_template_create failed: {}", e)))?;
+                .map_err(|e| map_client_err("goal_template_create failed", e))?;
 
             Python::attach(|py| json_to_pydict(py, &result))
         })
@@ -3115,7 +3123,7 @@ impl Client {
             let result = client
                 .goal_template_list()
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("goal_template_list failed: {}", e)))?;
+                .map_err(|e| map_client_err("goal_template_list failed", e))?;
 
             Python::attach(|py| json_to_pydict(py, &result))
         })
@@ -3134,7 +3142,7 @@ impl Client {
             let result = client
                 .goal_template_get(&id)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("goal_template_get failed: {}", e)))?;
+                .map_err(|e| map_client_err("goal_template_get failed", e))?;
 
             Python::attach(|py| json_to_pydict(py, &result))
         })
@@ -3161,7 +3169,7 @@ impl Client {
             let result = client
                 .goal_template_update(&id, json_value)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("goal_template_update failed: {}", e)))?;
+                .map_err(|e| map_client_err("goal_template_update failed", e))?;
 
             Python::attach(|py| json_to_pydict(py, &result))
         })
@@ -3177,7 +3185,7 @@ impl Client {
             client
                 .goal_template_delete(&id)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("goal_template_delete failed: {}", e)))?;
+                .map_err(|e| map_client_err("goal_template_delete failed", e))?;
 
             Python::attach(|py| Ok(py.None()))
         })
@@ -3204,7 +3212,7 @@ impl Client {
             let result = client
                 .task_create(json_value)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("task_create failed: {}", e)))?;
+                .map_err(|e| map_client_err("task_create failed", e))?;
 
             Python::attach(|py| json_to_pydict(py, &result))
         })
@@ -3220,7 +3228,7 @@ impl Client {
             let result = client
                 .task_list()
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("task_list failed: {}", e)))?;
+                .map_err(|e| map_client_err("task_list failed", e))?;
 
             Python::attach(|py| json_to_pydict(py, &result))
         })
@@ -3239,7 +3247,7 @@ impl Client {
             let result = client
                 .task_get(&id)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("task_get failed: {}", e)))?;
+                .map_err(|e| map_client_err("task_get failed", e))?;
 
             Python::attach(|py| json_to_pydict(py, &result))
         })
@@ -3266,7 +3274,7 @@ impl Client {
             let result = client
                 .task_update(&id, json_value)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("task_update failed: {}", e)))?;
+                .map_err(|e| map_client_err("task_update failed", e))?;
 
             Python::attach(|py| json_to_pydict(py, &result))
         })
@@ -3282,7 +3290,7 @@ impl Client {
             client
                 .task_delete(&id)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("task_delete failed: {}", e)))?;
+                .map_err(|e| map_client_err("task_delete failed", e))?;
 
             Python::attach(|py| Ok(py.None()))
         })
@@ -3301,7 +3309,7 @@ impl Client {
             let result = client
                 .task_due(&now)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("task_due failed: {}", e)))?;
+                .map_err(|e| map_client_err("task_due failed", e))?;
 
             Python::attach(|py| json_to_pydict(py, &result))
         })
@@ -3322,7 +3330,7 @@ impl Client {
             let result = client
                 .task_start(&id)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("task_start failed: {}", e)))?;
+                .map_err(|e| map_client_err("task_start failed", e))?;
 
             Python::attach(|py| json_to_pydict(py, &result))
         })
@@ -3349,7 +3357,7 @@ impl Client {
             let result = client
                 .task_succeed(&id, json_value)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("task_succeed failed: {}", e)))?;
+                .map_err(|e| map_client_err("task_succeed failed", e))?;
 
             Python::attach(|py| json_to_pydict(py, &result))
         })
@@ -3376,7 +3384,7 @@ impl Client {
             let result = client
                 .task_fail(&id, json_value)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("task_fail failed: {}", e)))?;
+                .map_err(|e| map_client_err("task_fail failed", e))?;
 
             Python::attach(|py| json_to_pydict(py, &result))
         })
@@ -3395,7 +3403,7 @@ impl Client {
             let result = client
                 .task_pause(&id)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("task_pause failed: {}", e)))?;
+                .map_err(|e| map_client_err("task_pause failed", e))?;
 
             Python::attach(|py| json_to_pydict(py, &result))
         })
@@ -3422,7 +3430,7 @@ impl Client {
             let result = client
                 .task_resume(&id, json_value)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("task_resume failed: {}", e)))?;
+                .map_err(|e| map_client_err("task_resume failed", e))?;
 
             Python::attach(|py| json_to_pydict(py, &result))
         })
@@ -3449,7 +3457,7 @@ impl Client {
             let result = client
                 .agent_create(json_value)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("agent_create failed: {}", e)))?;
+                .map_err(|e| map_client_err("agent_create failed", e))?;
 
             Python::attach(|py| json_to_pydict(py, &result))
         })
@@ -3465,7 +3473,7 @@ impl Client {
             let result = client
                 .agent_list()
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("agent_list failed: {}", e)))?;
+                .map_err(|e| map_client_err("agent_list failed", e))?;
 
             Python::attach(|py| json_to_pydict(py, &result))
         })
@@ -3484,7 +3492,7 @@ impl Client {
             let result = client
                 .agent_get(&id)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("agent_get failed: {}", e)))?;
+                .map_err(|e| map_client_err("agent_get failed", e))?;
 
             Python::attach(|py| json_to_pydict(py, &result))
         })
@@ -3503,7 +3511,7 @@ impl Client {
             let result = client
                 .agent_get_by_name(&name)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("agent_get_by_name failed: {}", e)))?;
+                .map_err(|e| map_client_err("agent_get_by_name failed", e))?;
 
             Python::attach(|py| json_to_pydict(py, &result))
         })
@@ -3530,7 +3538,7 @@ impl Client {
             let result = client
                 .agent_update(&id, json_value)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("agent_update failed: {}", e)))?;
+                .map_err(|e| map_client_err("agent_update failed", e))?;
 
             Python::attach(|py| json_to_pydict(py, &result))
         })
@@ -3546,7 +3554,7 @@ impl Client {
             client
                 .agent_delete(&id)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("agent_delete failed: {}", e)))?;
+                .map_err(|e| map_client_err("agent_delete failed", e))?;
 
             Python::attach(|py| Ok(py.None()))
         })
@@ -3565,7 +3573,7 @@ impl Client {
             let result = client
                 .agents_by_deployment(&deployment_id)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("agents_by_deployment failed: {}", e)))?;
+                .map_err(|e| map_client_err("agents_by_deployment failed", e))?;
 
             Python::attach(|py| json_to_pydict(py, &result))
         })
@@ -3587,7 +3595,7 @@ impl Client {
             let result = client
                 .kv_get_links(&key)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("kv_get_links failed: {}", e)))?;
+                .map_err(|e| map_client_err("kv_get_links failed", e))?;
             Python::attach(|py| json_to_pydict(py, &result))
         })
     }
@@ -3610,7 +3618,7 @@ impl Client {
             let result = client
                 .kv_link(&key, &collection, &document_id)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("kv_link failed: {}", e)))?;
+                .map_err(|e| map_client_err("kv_link failed", e))?;
             Python::attach(|py| json_to_pydict(py, &result))
         })
     }
@@ -3633,7 +3641,7 @@ impl Client {
             let result = client
                 .kv_unlink(&key, &collection, &document_id)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("kv_unlink failed: {}", e)))?;
+                .map_err(|e| map_client_err("kv_unlink failed", e))?;
             Python::attach(|py| json_to_pydict(py, &result))
         })
     }
@@ -3655,7 +3663,7 @@ impl Client {
             let result = client
                 .create_schedule(data_json)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("create_schedule failed: {}", e)))?;
+                .map_err(|e| map_client_err("create_schedule failed", e))?;
             Python::attach(|py| json_to_pydict(py, &result))
         })
     }
@@ -3670,7 +3678,7 @@ impl Client {
             let result = client
                 .list_schedules()
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("list_schedules failed: {}", e)))?;
+                .map_err(|e| map_client_err("list_schedules failed", e))?;
             Python::attach(|py| json_to_pydict(py, &result))
         })
     }
@@ -3689,7 +3697,7 @@ impl Client {
             let result = client
                 .get_schedule(&id)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("get_schedule failed: {}", e)))?;
+                .map_err(|e| map_client_err("get_schedule failed", e))?;
             Python::attach(|py| json_to_pydict(py, &result))
         })
     }
@@ -3711,7 +3719,7 @@ impl Client {
             let result = client
                 .update_schedule(&id, data_json)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("update_schedule failed: {}", e)))?;
+                .map_err(|e| map_client_err("update_schedule failed", e))?;
             Python::attach(|py| json_to_pydict(py, &result))
         })
     }
@@ -3730,7 +3738,7 @@ impl Client {
             client
                 .delete_schedule(&id)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("delete_schedule failed: {}", e)))?;
+                .map_err(|e| map_client_err("delete_schedule failed", e))?;
             Python::attach(|py| Ok(py.None()))
         })
     }
@@ -3749,7 +3757,7 @@ impl Client {
             let result = client
                 .pause_schedule(&id)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("pause_schedule failed: {}", e)))?;
+                .map_err(|e| map_client_err("pause_schedule failed", e))?;
             Python::attach(|py| json_to_pydict(py, &result))
         })
     }
@@ -3768,7 +3776,7 @@ impl Client {
             let result = client
                 .resume_schedule(&id)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("resume_schedule failed: {}", e)))?;
+                .map_err(|e| map_client_err("resume_schedule failed", e))?;
             Python::attach(|py| json_to_pydict(py, &result))
         })
     }
@@ -3906,7 +3914,7 @@ impl WebSocketClient {
             let records = ws_client
                 .find_all(&collection)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("WebSocket find_all failed: {}", e)))?;
+                .map_err(|e| map_client_err("WebSocket find_all failed", e))?;
 
             Python::attach(|py| {
                 let list = PyList::empty(py);
@@ -3941,7 +3949,7 @@ impl WebSocketClient {
                     filter_value.as_deref(),
                 )
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Subscribe failed: {}", e)))?;
+                .map_err(|e| map_client_err("Subscribe failed", e))?;
 
             Python::attach(|py| {
                 let receiver = SubscriptionReceiver {
@@ -4001,7 +4009,7 @@ impl WebSocketClient {
                     exclude_tools,
                 )
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Chat send failed: {}", e)))?;
+                .map_err(|e| map_client_err("Chat send failed", e))?;
 
             Python::attach(|py| {
                 let receiver = ChatStreamReceiver {
@@ -4041,7 +4049,7 @@ impl WebSocketClient {
             ws_client
                 .register_client_tools(&chat_id, rust_tools)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Register tools failed: {}", e)))?;
+                .map_err(|e| map_client_err("Register tools failed", e))?;
 
             Python::attach(|py| Ok(py.None()))
         })
@@ -4078,7 +4086,7 @@ impl WebSocketClient {
             ws_client
                 .send_tool_result(&chat_id, &call_id, success, json_result, error)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Send tool result failed: {}", e)))?;
+                .map_err(|e| map_client_err("Send tool result failed", e))?;
 
             Python::attach(|py| Ok(py.None()))
         })
@@ -4126,7 +4134,7 @@ impl WebSocketClient {
             let resp = ws_client
                 .raw_completion(&request)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("WebSocket raw_completion failed: {}", e)))?;
+                .map_err(|e| map_client_err("WebSocket raw_completion failed", e))?;
 
             Python::attach(|py| {
                 let resp_json = serde_json::to_value(&resp).map_err(|e| {
@@ -4312,7 +4320,7 @@ impl WebSocketClient {
 
         future_into_py::<_, Py<PyAny>>(py, async move {
             let data = ws_client.send_crud(msg_type, payload).await
-                .map_err(|e| PyRuntimeError::new_err(format!("WS {} failed: {}", msg_type, e)))?;
+                .map_err(|e| map_client_err(&format!("WS {} failed", msg_type), e))?;
             Python::attach(|py| json_to_pydict(py, &data))
         })
     }
@@ -4464,9 +4472,18 @@ fn dict_to_json(dict: &Bound<'_, PyDict>) -> PyResult<serde_json::Value> {
 
 /// Convert Python value to FieldType recursively
 fn py_to_field_type(value: &Bound<'_, PyAny>) -> PyResult<FieldType> {
+    use std::str::FromStr;
+
     // Check bool BEFORE int (Python bool is subclass of int)
     if let Ok(b) = value.extract::<bool>() {
         Ok(FieldType::Boolean(b))
+    } else if is_instance_of(value, "decimal", "Decimal") {
+        // Must run BEFORE the f64 extract: decimal.Decimal defines __float__,
+        // so `extract::<f64>()` would otherwise lossily capture it as a Float.
+        let s: String = value.str()?.extract()?;
+        let d = rust_decimal::Decimal::from_str(&s)
+            .map_err(|e| PyValueError::new_err(format!("Failed to parse Decimal '{s}': {e}")))?;
+        Ok(FieldType::Decimal(d))
     } else if let Ok(s) = value.extract::<String>() {
         Ok(FieldType::String(s))
     } else if let Ok(i) = value.extract::<i64>() {
@@ -4475,6 +4492,44 @@ fn py_to_field_type(value: &Bound<'_, PyAny>) -> PyResult<FieldType> {
         Ok(FieldType::Float(f))
     } else if value.is_none() {
         Ok(FieldType::Null)
+    } else if let Ok(bytes) = value.cast::<PyBytes>() {
+        // Python bytes -> Binary
+        Ok(FieldType::Binary(bytes.as_bytes().to_vec()))
+    } else if let Ok(ba) = value.cast::<pyo3::types::PyByteArray>() {
+        // Python bytearray -> Binary
+        Ok(FieldType::Binary(ba.to_vec()))
+    } else if is_instance_of(value, "datetime", "datetime") {
+        // Python datetime.datetime -> DateTime (UTC). Use isoformat() and parse
+        // into chrono. Naive datetimes are interpreted as UTC.
+        let iso: String = value.call_method0("isoformat")?.extract()?;
+        let dt = chrono::DateTime::parse_from_rfc3339(&iso)
+            .map(|d| d.with_timezone(&chrono::Utc))
+            .or_else(|_| {
+                // Naive (no tz offset): parse without offset, assume UTC.
+                chrono::NaiveDateTime::parse_from_str(&iso, "%Y-%m-%dT%H:%M:%S%.f")
+                    .map(|ndt| chrono::DateTime::<chrono::Utc>::from_naive_utc_and_offset(ndt, chrono::Utc))
+            })
+            .map_err(|e| {
+                PyValueError::new_err(format!("Failed to parse datetime '{iso}': {e}"))
+            })?;
+        Ok(FieldType::DateTime(dt))
+    } else if is_instance_of(value, "uuid", "UUID") {
+        let s: String = value.str()?.extract()?;
+        let u = uuid::Uuid::parse_str(&s)
+            .map_err(|e| PyValueError::new_err(format!("Failed to parse UUID '{s}': {e}")))?;
+        Ok(FieldType::UUID(u))
+    } else if let Ok(set) = value.cast::<pyo3::types::PySet>() {
+        let mut items = Vec::new();
+        for item in set.iter() {
+            items.push(py_to_field_type(&item)?);
+        }
+        Ok(FieldType::Set(items))
+    } else if let Ok(fset) = value.cast::<pyo3::types::PyFrozenSet>() {
+        let mut items = Vec::new();
+        for item in fset.iter() {
+            items.push(py_to_field_type(&item)?);
+        }
+        Ok(FieldType::Set(items))
     } else if let Ok(list) = value.cast::<PyList>() {
         let mut arr = Vec::new();
         for item in list.iter() {
@@ -4494,6 +4549,22 @@ fn py_to_field_type(value: &Bound<'_, PyAny>) -> PyResult<FieldType> {
             value.get_type().name()
         )))
     }
+}
+
+/// Returns true if `value` is an instance of `module.class_name`.
+///
+/// Imports the module and checks via `isinstance`. Used to detect stdlib types
+/// (datetime, uuid.UUID, decimal.Decimal) without pulling in their C extensions
+/// at the Rust level. Any import/lookup failure is treated as "not an instance".
+fn is_instance_of(value: &Bound<'_, PyAny>, module: &str, class_name: &str) -> bool {
+    let py = value.py();
+    let Ok(m) = py.import(module) else {
+        return false;
+    };
+    let Ok(cls) = m.getattr(class_name) else {
+        return false;
+    };
+    value.is_instance(&cls).unwrap_or(false)
 }
 
 /// Convert Python dict to Rust Record
@@ -4531,12 +4602,69 @@ fn field_type_to_py(py: Python, value: &FieldType) -> PyResult<Py<PyAny>> {
             }
             Ok(dict.into())
         }
-        // For all other complex types, convert to string representation
-        _ => {
-            let value_str = format!("{:?}", value);
-            Ok(PyString::new(py, &value_str).into())
+        FieldType::Number(n) => match n {
+            ekodb_client::NumberValue::Integer(i) => Ok(PyInt::new(py, *i).into()),
+            ekodb_client::NumberValue::Float(f) => Ok(PyFloat::new(py, *f).into()),
+            ekodb_client::NumberValue::Decimal(d) => decimal_to_py(py, &d.to_string()),
+        },
+        FieldType::Decimal(d) => decimal_to_py(py, &d.to_string()),
+        FieldType::Binary(v) | FieldType::Bytes(v) => Ok(PyBytes::new(py, v).into()),
+        FieldType::DateTime(dt) => {
+            // Build a timezone-aware UTC datetime. fromtimestamp(..., tz=utc) is
+            // robust across Python versions (unlike fromisoformat offset parsing
+            // pre-3.11). Pass fractional seconds so sub-second precision survives.
+            let datetime_mod = py.import("datetime")?;
+            let utc = datetime_mod.getattr("timezone")?.getattr("utc")?;
+            // total seconds as float, including the sub-second component
+            let secs = dt.timestamp() as f64
+                + (dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0);
+            let parsed = datetime_mod
+                .getattr("datetime")?
+                .call_method1("fromtimestamp", (secs, utc))?;
+            Ok(parsed.into())
+        }
+        FieldType::UUID(u) => {
+            let uuid_mod = py.import("uuid")?;
+            let py_uuid = uuid_mod.getattr("UUID")?.call1((u.to_string(),))?;
+            Ok(py_uuid.into())
+        }
+        FieldType::Duration(d) => {
+            // std::time::Duration -> datetime.timedelta via total seconds (f64
+            // preserves sub-second precision).
+            let datetime_mod = py.import("datetime")?;
+            let kwargs = PyDict::new(py);
+            kwargs.set_item("seconds", d.as_secs_f64())?;
+            let td = datetime_mod
+                .getattr("timedelta")?
+                .call((), Some(&kwargs))?;
+            Ok(td.into())
+        }
+        FieldType::Set(items) => {
+            // Try to build a Python set; fall back to a list if any item is unhashable.
+            let py_items = PyList::empty(py);
+            for item in items {
+                py_items.append(field_type_to_py(py, item)?)?;
+            }
+            match pyo3::types::PySet::new(py, py_items.iter()) {
+                Ok(set) => Ok(set.into()),
+                Err(_) => Ok(py_items.into()),
+            }
+        }
+        FieldType::Vector(items) => {
+            let list = PyList::empty(py);
+            for item in items {
+                list.append(field_type_to_py(py, item)?)?;
+            }
+            Ok(list.into())
         }
     }
+}
+
+/// Build a Python `decimal.Decimal` from a decimal string, preserving precision.
+fn decimal_to_py(py: Python, s: &str) -> PyResult<Py<PyAny>> {
+    let decimal_mod = py.import("decimal")?;
+    let dec = decimal_mod.getattr("Decimal")?.call1((s,))?;
+    Ok(dec.into())
 }
 
 /// Convert Rust Record to Python dict
@@ -4657,4 +4785,270 @@ fn _ekodb_client(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<SerializationFormat>()?;
     m.add("RateLimitError", m.py().get_type::<RateLimitError>())?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::str::FromStr;
+
+    // These tests require a real Python interpreter. Run with:
+    //   cargo test --no-default-features --features rustls,test-support
+    // (test-support enables pyo3/auto-initialize; default-off extension-module
+    //  is skipped so libpython is linked.)
+
+    /// Helper: assert a Python value round-trips py -> FieldType -> py unchanged,
+    /// returning the FieldType for variant assertions.
+    fn to_field(py: Python, code: &str) -> FieldType {
+        let val = py
+            .eval(&std::ffi::CString::new(code).unwrap(), None, None)
+            .unwrap_or_else(|e| panic!("eval {code} failed: {e}"));
+        py_to_field_type(&val).unwrap_or_else(|e| panic!("py_to_field_type({code}) failed: {e}"))
+    }
+
+    #[test]
+    fn test_bytes_roundtrip() {
+        Python::attach(|py| {
+            let ft = to_field(py, "b'\\x00\\x01\\xff'");
+            assert!(matches!(ft, FieldType::Binary(ref v) if v == &vec![0u8, 1, 255]));
+            let back = field_type_to_py(py, &ft).unwrap();
+            let bound = back.bind(py);
+            assert!(bound.is_instance_of::<PyBytes>());
+            let bytes = bound.cast::<PyBytes>().unwrap();
+            assert_eq!(bytes.as_bytes(), &[0u8, 1, 255]);
+        });
+    }
+
+    #[test]
+    fn test_bytearray_to_binary() {
+        Python::attach(|py| {
+            let ft = to_field(py, "bytearray(b'abc')");
+            assert!(matches!(ft, FieldType::Binary(ref v) if v == &b"abc".to_vec()));
+        });
+    }
+
+    #[test]
+    fn test_datetime_roundtrip() {
+        Python::attach(|py| {
+            let code = "__import__('datetime').datetime(2024, 1, 2, 3, 4, 5, \
+                        123456, tzinfo=__import__('datetime').timezone.utc)";
+            let ft = to_field(py, code);
+            let dt = match ft {
+                FieldType::DateTime(d) => d,
+                other => panic!("expected DateTime, got {other:?}"),
+            };
+            assert_eq!(dt.to_rfc3339(), "2024-01-02T03:04:05.123456+00:00");
+
+            // Round-trip back to Python and compare the timestamp.
+            let back = field_type_to_py(py, &FieldType::DateTime(dt)).unwrap();
+            let bound = back.bind(py);
+            let dt_mod = py.import("datetime").unwrap();
+            let dt_cls = dt_mod.getattr("datetime").unwrap();
+            assert!(bound.is_instance(&dt_cls).unwrap());
+            let ts: f64 = bound.call_method0("timestamp").unwrap().extract().unwrap();
+            assert!((ts - dt.timestamp() as f64 - 0.123456).abs() < 1e-3);
+            // tzinfo must be set (timezone-aware)
+            assert!(!bound.getattr("tzinfo").unwrap().is_none());
+        });
+    }
+
+    #[test]
+    fn test_naive_datetime_treated_as_utc() {
+        Python::attach(|py| {
+            let code = "__import__('datetime').datetime(2024, 1, 2, 3, 4, 5)";
+            let ft = to_field(py, code);
+            match ft {
+                FieldType::DateTime(d) => {
+                    assert_eq!(d.to_rfc3339(), "2024-01-02T03:04:05+00:00")
+                }
+                other => panic!("expected DateTime, got {other:?}"),
+            }
+        });
+    }
+
+    #[test]
+    fn test_uuid_roundtrip() {
+        Python::attach(|py| {
+            let code = "__import__('uuid').UUID('12345678-1234-5678-1234-567812345678')";
+            let ft = to_field(py, code);
+            let u = match ft {
+                FieldType::UUID(u) => u,
+                other => panic!("expected UUID, got {other:?}"),
+            };
+            assert_eq!(u.to_string(), "12345678-1234-5678-1234-567812345678");
+
+            let back = field_type_to_py(py, &FieldType::UUID(u)).unwrap();
+            let bound = back.bind(py);
+            let uuid_cls = py.import("uuid").unwrap().getattr("UUID").unwrap();
+            assert!(bound.is_instance(&uuid_cls).unwrap());
+            let s: String = bound.str().unwrap().extract().unwrap();
+            assert_eq!(s, "12345678-1234-5678-1234-567812345678");
+        });
+    }
+
+    #[test]
+    fn test_decimal_roundtrip_preserves_precision() {
+        Python::attach(|py| {
+            let code = "__import__('decimal').Decimal('123.456000789')";
+            let ft = to_field(py, code);
+            let d = match ft {
+                FieldType::Decimal(d) => d,
+                other => panic!("expected Decimal, got {other:?}"),
+            };
+            assert_eq!(d, rust_decimal::Decimal::from_str("123.456000789").unwrap());
+
+            let back = field_type_to_py(py, &FieldType::Decimal(d)).unwrap();
+            let bound = back.bind(py);
+            let dec_cls = py.import("decimal").unwrap().getattr("Decimal").unwrap();
+            assert!(bound.is_instance(&dec_cls).unwrap());
+            let s: String = bound.str().unwrap().extract().unwrap();
+            assert_eq!(s, "123.456000789");
+        });
+    }
+
+    #[test]
+    fn test_number_decimal_read_path() {
+        Python::attach(|py| {
+            // FieldType::Number(Decimal) should also surface as a Python Decimal.
+            let d = rust_decimal::Decimal::from_str("9.99").unwrap();
+            let back = field_type_to_py(py, &FieldType::Number(ekodb_client::NumberValue::Decimal(d))).unwrap();
+            let bound = back.bind(py);
+            let dec_cls = py.import("decimal").unwrap().getattr("Decimal").unwrap();
+            assert!(bound.is_instance(&dec_cls).unwrap());
+            let s: String = bound.str().unwrap().extract().unwrap();
+            assert_eq!(s, "9.99");
+        });
+    }
+
+    #[test]
+    fn test_number_int_and_float_read_path() {
+        Python::attach(|py| {
+            let i = field_type_to_py(py, &FieldType::Number(ekodb_client::NumberValue::Integer(7))).unwrap();
+            assert_eq!(i.bind(py).extract::<i64>().unwrap(), 7);
+            let f = field_type_to_py(py, &FieldType::Number(ekodb_client::NumberValue::Float(1.5))).unwrap();
+            assert_eq!(f.bind(py).extract::<f64>().unwrap(), 1.5);
+        });
+    }
+
+    #[test]
+    fn test_duration_read_path() {
+        Python::attach(|py| {
+            let d = std::time::Duration::from_millis(1500);
+            let back = field_type_to_py(py, &FieldType::Duration(d)).unwrap();
+            let bound = back.bind(py);
+            let td_cls = py.import("datetime").unwrap().getattr("timedelta").unwrap();
+            assert!(bound.is_instance(&td_cls).unwrap());
+            let secs: f64 = bound
+                .call_method0("total_seconds")
+                .unwrap()
+                .extract()
+                .unwrap();
+            assert!((secs - 1.5).abs() < 1e-9);
+        });
+    }
+
+    #[test]
+    fn test_set_roundtrip() {
+        Python::attach(|py| {
+            let ft = to_field(py, "{1, 2, 3}");
+            let items = match &ft {
+                FieldType::Set(items) => items,
+                other => panic!("expected Set, got {other:?}"),
+            };
+            assert_eq!(items.len(), 3);
+
+            let back = field_type_to_py(py, &ft).unwrap();
+            let bound = back.bind(py);
+            assert!(bound.is_instance_of::<pyo3::types::PySet>());
+            assert_eq!(bound.len().unwrap(), 3);
+        });
+    }
+
+    #[test]
+    fn test_frozenset_to_set() {
+        Python::attach(|py| {
+            let ft = to_field(py, "frozenset({'a', 'b'})");
+            assert!(matches!(ft, FieldType::Set(ref items) if items.len() == 2));
+        });
+    }
+
+    #[test]
+    fn test_set_with_unhashable_falls_back_to_list() {
+        Python::attach(|py| {
+            // A Set whose converted items are unhashable (dicts) must become a list.
+            let mut obj = std::collections::HashMap::new();
+            obj.insert("k".to_string(), FieldType::Integer(1));
+            let ft = FieldType::Set(vec![FieldType::Object(obj)]);
+            let back = field_type_to_py(py, &ft).unwrap();
+            let bound = back.bind(py);
+            assert!(bound.is_instance_of::<PyList>());
+            assert_eq!(bound.len().unwrap(), 1);
+        });
+    }
+
+    #[test]
+    fn test_vector_read_path() {
+        Python::attach(|py| {
+            let ft = FieldType::Vector(vec![
+                FieldType::Float(1.0),
+                FieldType::Float(2.0),
+                FieldType::Float(3.0),
+            ]);
+            let back = field_type_to_py(py, &ft).unwrap();
+            let bound = back.bind(py);
+            assert!(bound.is_instance_of::<PyList>());
+            assert_eq!(bound.len().unwrap(), 3);
+            let first: f64 = bound.get_item(0).unwrap().extract().unwrap();
+            assert_eq!(first, 1.0);
+        });
+    }
+
+    #[test]
+    fn test_scalars_still_work() {
+        Python::attach(|py| {
+            assert!(matches!(to_field(py, "True"), FieldType::Boolean(true)));
+            assert!(matches!(to_field(py, "42"), FieldType::Integer(42)));
+            assert!(matches!(to_field(py, "'hi'"), FieldType::String(ref s) if s == "hi"));
+            assert!(matches!(to_field(py, "None"), FieldType::Null));
+            assert!(matches!(to_field(py, "[1, 2]"), FieldType::Array(_)));
+            assert!(matches!(to_field(py, "{'a': 1}"), FieldType::Object(_)));
+        });
+    }
+
+    // ---- Ticket #123: map_client_err ----
+
+    #[test]
+    fn test_map_client_err_ratelimit_maps_to_ratelimit_error() {
+        Python::attach(|py| {
+            let err = map_client_err(
+                "Insert failed",
+                ekodb_client::Error::RateLimit {
+                    retry_after_secs: 42,
+                },
+            );
+            // It must be a RateLimitError, not a generic RuntimeError.
+            assert!(err.is_instance_of::<RateLimitError>(py));
+            assert!(!err.is_instance_of::<PyRuntimeError>(py));
+            // And it must carry retry_after as the first arg.
+            let value = err.value(py);
+            let args = value.getattr("args").unwrap();
+            let retry: u64 = args.get_item(0).unwrap().extract().unwrap();
+            assert_eq!(retry, 42);
+        });
+    }
+
+    #[test]
+    fn test_map_client_err_other_maps_to_runtime_error() {
+        Python::attach(|py| {
+            let err = map_client_err(
+                "Find failed",
+                ekodb_client::Error::Validation("boom".to_string()),
+            );
+            assert!(err.is_instance_of::<PyRuntimeError>(py));
+            assert!(!err.is_instance_of::<RateLimitError>(py));
+            let msg = err.value(py).str().unwrap().to_string();
+            assert!(msg.contains("Find failed"), "msg was: {msg}");
+            assert!(msg.contains("boom"), "msg was: {msg}");
+        });
+    }
 }

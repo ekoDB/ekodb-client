@@ -573,15 +573,15 @@ impl WebSocketClient {
         });
     }
 
-    /// Generate a unique message ID for request-response correlation
-    fn gen_message_id() -> Result<String> {
-        Ok(format!(
-            "{}",
-            std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .map_err(|e| Error::WebSocket(e.to_string()))?
-                .as_nanos()
-        ))
+    /// Generate a unique message ID for request-response correlation.
+    ///
+    /// Uses a process-wide monotonic counter so that two requests issued within
+    /// the same clock tick can never collide (a nanosecond timestamp could, and
+    /// a collision would mis-route or hang a caller).
+    fn gen_message_id() -> String {
+        use std::sync::atomic::{AtomicU64, Ordering};
+        static COUNTER: AtomicU64 = AtomicU64::new(0);
+        format!("msg-{}", COUNTER.fetch_add(1, Ordering::Relaxed))
     }
 
     /// Helper: send a message through the writer half
@@ -629,7 +629,7 @@ impl WebSocketClient {
     pub async fn find_all(&self, collection: &str) -> Result<Vec<Record>> {
         self.ensure_connected().await?;
 
-        let message_id = Self::gen_message_id()?;
+        let message_id = Self::gen_message_id();
 
         let request = WebSocketRequest::FindAll {
             message_id: message_id.clone(),
@@ -668,7 +668,7 @@ impl WebSocketClient {
     ) -> Result<tokio::sync::mpsc::Receiver<MutationNotificationPayload>> {
         self.ensure_connected().await?;
 
-        let message_id = Self::gen_message_id()?;
+        let message_id = Self::gen_message_id();
 
         let request = WebSocketRequest::Subscribe {
             message_id: message_id.clone(),
@@ -877,7 +877,7 @@ impl WebSocketClient {
     ) -> Result<crate::chat::RawCompletionResponse> {
         self.ensure_connected().await?;
 
-        let message_id = Self::gen_message_id()?;
+        let message_id = Self::gen_message_id();
 
         let ws_request = WebSocketRequest::RawComplete {
             system_prompt: request.system_prompt.clone(),
@@ -939,7 +939,7 @@ impl WebSocketClient {
     /// Send a typed CRUD request as raw JSON and return the data from the response.
     pub async fn send_crud(&self, msg_type: &str, payload: Value) -> Result<Value> {
         self.ensure_connected().await?;
-        let message_id = Self::gen_message_id()?;
+        let message_id = Self::gen_message_id();
 
         let request = serde_json::json!({
             "type": msg_type,

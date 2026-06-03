@@ -3,8 +3,7 @@
  *
  * These tests cover the pure-data construction helpers and the structural
  * parameter placeholder. They don't hit a running ekoDB — server-side
- * behavior is covered by the Rust integration tests in
- * `ekodb/ekodb_server/tests/function_parameters_tests.rs`.
+ * behavior is covered by the server-side integration tests.
  */
 
 import { describe, it, expect } from "vitest";

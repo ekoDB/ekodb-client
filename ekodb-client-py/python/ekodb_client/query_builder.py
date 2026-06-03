@@ -96,9 +96,8 @@ class QueryBuilder:
         """Add an ends-with filter."""
         return self._add_condition(field, "EndsWith", value)
 
-    def regex(self, field: str, pattern: str) -> "QueryBuilder":
-        """Add a regex filter (uses Contains operator)."""
-        return self._add_condition(field, "Contains", pattern)
+    # Note: regex filtering is pending server-side support. The server has no
+    # Regex filter operator; use contains/starts_with/ends_with instead.
 
     # =========================================================================
     # Logical Operators

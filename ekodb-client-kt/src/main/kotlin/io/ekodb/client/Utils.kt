@@ -303,16 +303,43 @@ fun getObjectValue(field: Any?): Map<String, Any?>? {
  * val ids = records.successful.mapNotNull { getRecordId(it) }
  * ```
  */
-fun getRecordId(record: Map<String, Any?>): String? {
-    val idField = record["id"] ?: return null
-    
-    // Handle FieldType.StringValue from Kotlin client
-    if (idField is io.ekodb.client.types.FieldType.StringValue) {
-        return idField.value
+fun getRecordId(record: Map<String, Any?>): String? = getRecordId(record, *emptyArray())
+
+/**
+ * Extract record ID from a record, honoring a collection's primary_key_alias.
+ *
+ * Collections may rename the primary key via `primary_key_alias` (e.g. `_id`,
+ * `<collection>_id`). This overload tries each supplied alias candidate first,
+ * then falls back to the canonical `id`, then `_id`. The first present key is
+ * extracted via the same FieldType.StringValue / map-structure logic as the
+ * no-argument form.
+ *
+ * @param record The record object from ekoDB
+ * @param aliasCandidates Optional primary-key alias keys to try before `id`/`_id`
+ * @return The extracted ID string, or null if no candidate key is present
+ *
+ * Example:
+ * ```kotlin
+ * // Collection whose primary_key_alias is "users_id"
+ * val id = getRecordId(record, "users_id")
+ * ```
+ */
+fun getRecordId(record: Map<String, Any?>, vararg aliasCandidates: String): String? {
+    val keys = aliasCandidates.toList() + listOf("id", "_id")
+    for (key in keys) {
+        if (!record.containsKey(key)) continue
+        val idField = record[key] ?: continue
+
+        // Handle FieldType.StringValue from Kotlin client
+        if (idField is io.ekodb.client.types.FieldType.StringValue) {
+            return idField.value
+        }
+
+        // Handle direct string or map structure
+        val extracted = getStringValue(idField)
+        if (extracted != null) return extracted
     }
-    
-    // Handle direct string or map structure
-    return getStringValue(idField)
+    return null
 }
 
 /**

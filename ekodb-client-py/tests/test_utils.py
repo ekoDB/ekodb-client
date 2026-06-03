@@ -52,6 +52,12 @@ class TestGetValue:
         field = {"type": "String", "value": "hello world"}
         assert get_value(field) == "hello world"
 
+    def test_get_value_passes_through_user_object_with_value_key(self):
+        """Regression #134: an object with a 'value' key but no 'type' is a user
+        object, not a typed wrapper, and must pass through untouched."""
+        field = {"value": 1, "currency": "USD"}
+        assert get_value(field) == field
+
     def test_get_value_from_wrapped_integer(self):
         """Extract integer from wrapped field"""
         field = {"type": "Integer", "value": 42}
