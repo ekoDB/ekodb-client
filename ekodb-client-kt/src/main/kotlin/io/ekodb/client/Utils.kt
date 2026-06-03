@@ -38,10 +38,15 @@ inline fun <reified T> getValue(field: Any?): T? {
         return convertValue<T>(extracted)
     }
     
-    // Try to extract from map structure
+    // Try to extract from map structure.
+    // Only unwrap a genuine typed wrapper — one carrying BOTH a "type"
+    // discriminator and a "value". A user object that merely has a "value" key
+    // (e.g. {"value": 1, "currency": "USD"}) must pass through untouched.
     if (field is Map<*, *>) {
-        val value = field["value"]
-        return convertValue<T>(value)
+        if (field.containsKey("type") && field.containsKey("value")) {
+            return convertValue<T>(field["value"])
+        }
+        return convertValue<T>(field)
     }
     
     return convertValue<T>(field)

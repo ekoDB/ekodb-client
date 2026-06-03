@@ -91,6 +91,33 @@ class UtilsTest {
         assertEquals(true, getValue<Boolean>(field))
     }
 
+    @Test
+    fun `getValue does not unwrap user object that has value but no type`() {
+        // A genuine user object that merely happens to carry a "value" key
+        // (e.g. a money amount) must pass through untouched — only real
+        // {"type", "value"} wrappers are unwrapped.
+        val userObject = mapOf("value" to 1, "currency" to "USD")
+        val result = getValue<Map<*, *>>(userObject)
+        assertEquals(userObject, result)
+    }
+
+    @Test
+    fun `getValue does not unwrap user object that has type but no value`() {
+        // "type" alone is not a wrapper; without a "value" key the object is
+        // returned as-is.
+        val userObject = mapOf("type" to "premium", "tier" to 3)
+        val result = getValue<Map<*, *>>(userObject)
+        assertEquals(userObject, result)
+    }
+
+    @Test
+    fun `getValue unwraps wrapper whose value is null`() {
+        // {"type": "Null", "value": null} carries both keys, so it is a real
+        // wrapper and unwraps to null even though the inner value is null.
+        val field = mapOf("type" to "Null", "value" to null)
+        assertNull(getValue<Any>(field))
+    }
+
     // ========================================================================
     // getStringValue Tests
     // ========================================================================
