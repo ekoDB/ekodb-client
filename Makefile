@@ -18,7 +18,7 @@ YELLOW := \033[33m
 RED := \033[31m
 RESET := \033[0m
 
-.PHONY: all build build-release build-client build-python-client build-typescript-client build-examples test test-ci test-client test-examples test-examples-direct test-examples-client test-examples-rust test-examples-python test-examples-go test-examples-typescript test-examples-javascript test-examples-transactions test-examples-scripts test-examples-scripts-crud test-examples-swr test-examples-ts-swr test-examples-py-swr test-examples-go-swr test-examples-rust-swr test-examples-kt-swr clean check fmt fmt-rust fmt-rust-client fmt-rust-examples fmt-python fmt-go fmt-typescript fmt-md format install install-rust install-python install-typescript install-go venv python-example-deps setup install-hooks deps-check deps-update deploy-client deploy-client-rust deploy-client-py deploy-client-py-simple deploy-client-go deploy-client-ts bump-version bump-client-py docs-client
+.PHONY: all build build-release build-client build-python-client build-typescript-client build-examples test test-ci test-client test-examples test-examples-direct test-examples-client test-examples-rust test-examples-python test-examples-go test-examples-typescript test-examples-javascript test-examples-transactions test-examples-scripts test-examples-scripts-crud test-examples-swr test-examples-ts-swr test-examples-py-swr test-examples-go-swr test-examples-rust-swr test-examples-kt-swr clean check fmt fmt-rust fmt-rust-client fmt-rust-examples fmt-python fmt-go fmt-typescript fmt-md format install install-rust install-python install-typescript install-go venv python-example-deps ensure-jvm check-toolchains setup install-hooks deps-check deps-update deploy-client deploy-client-rust deploy-client-py deploy-client-py-simple deploy-client-go deploy-client-ts bump-version bump-client-py docs-client
 
 # Color codes for Worthington jet
 MAGENTA := \033[35m
@@ -188,7 +188,7 @@ build-release:
 	@echo "✅ $(GREEN)Release build complete!$(RESET)"
 
 # Build all examples across all languages
-build-examples:
+build-examples: check-toolchains ensure-jvm
 	@echo "🔨 $(CYAN)Building ALL examples...$(RESET)"
 	@echo "🦀 $(CYAN)Building Rust examples...$(RESET)"
 	@cd examples/rust && cargo build --examples
@@ -488,7 +488,7 @@ test-examples-transactions: python-example-deps
 	@echo ""
 	@echo "🟣 $(YELLOW)Kotlin Transactions...$(RESET)"
 	@if [ -f .env ]; then . ./.env; fi && \
-		export JAVA_HOME=$$(/usr/libexec/java_home -v 17) && export PATH=$$JAVA_HOME/bin:$$PATH && \
+		{ JH=$$(/usr/libexec/java_home -v 17 2>/dev/null) && export JAVA_HOME=$$JH && export PATH=$$JH/bin:$$PATH || true; } && \
 		cd examples/kotlin && API_BASE_URL=$$API_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass="io.ekodb.client.examples.ClientTransactionsKt" --quiet
 	@echo ""
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
@@ -769,7 +769,7 @@ test-examples-kt-fcomp:
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@if [ -f .env ]; then \
 		. ./.env && \
-		export JAVA_HOME=$$(/usr/libexec/java_home -v 17) && export PATH=$$JAVA_HOME/bin:$$PATH && \
+		{ JH=$$(/usr/libexec/java_home -v 17 2>/dev/null) && export JAVA_HOME=$$JH && export PATH=$$JH/bin:$$PATH || true; } && \
 		cd examples/kotlin && \
 		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientFunctionCompositionKt --no-daemon; \
 	else \
@@ -785,7 +785,7 @@ test-examples-kt-swr:
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@if [ -f .env ]; then \
 		. ./.env && \
-		export JAVA_HOME=$$(/usr/libexec/java_home -v 17) && export PATH=$$JAVA_HOME/bin:$$PATH && \
+		{ JH=$$(/usr/libexec/java_home -v 17 2>/dev/null) && export JAVA_HOME=$$JH && export PATH=$$JH/bin:$$PATH || true; } && \
 		cd examples/kotlin && \
 		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.SwrPatternKt --no-daemon; \
 	else \
@@ -903,7 +903,7 @@ test-examples-subscribe-kt:
 	@echo "🟣 $(YELLOW)Kotlin WebSocket Subscription Test...$(RESET)"
 	@if [ -f .env ]; then \
 		. ./.env && \
-		export JAVA_HOME=$$(/usr/libexec/java_home -v 17) && export PATH=$$JAVA_HOME/bin:$$PATH && \
+		{ JH=$$(/usr/libexec/java_home -v 17 2>/dev/null) && export JAVA_HOME=$$JH && export PATH=$$JH/bin:$$PATH || true; } && \
 		cd examples/kotlin && \
 		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientWebsocketSubscribeKt --no-daemon; \
 	else \
@@ -998,24 +998,55 @@ venv:
 	fi
 
 # Ensure third-party deps required to RUN the Python examples are present in .venv.
-# The ekodb_client package itself is installed separately by build-python-client.
+# Canonical list lives in examples/requirements.txt (which excludes ekodb_client —
+# that is installed separately from source by build-python-client).
 python-example-deps: venv
 	@echo "📦 $(CYAN)Ensuring Python example dependencies in .venv...$(RESET)"
-	@$(VENV_PY) -m pip install --quiet aiohttp websockets python-dotenv requests
+	@$(VENV_PY) -m pip install --quiet -r examples/requirements.txt
+
+# Verify a JVM is available to launch Gradle. The JDK 17 *toolchain* used to compile
+# is auto-provisioned by the foojay plugin (settings.gradle.kts); this only checks the
+# launcher JVM, which must already exist on a fresh machine.
+ensure-jvm:
+	@command -v java >/dev/null 2>&1 || [ -n "$$JAVA_HOME" ] || { \
+		echo "$(RED)No Java runtime found — Gradle needs a JVM to launch.$(RESET)"; \
+		echo "$(YELLOW)  Ubuntu/Debian: sudo apt install openjdk-17-jdk$(RESET)"; \
+		echo "$(YELLOW)  macOS:         brew install openjdk@17$(RESET)"; \
+		exit 1; \
+	}
+
+# Verify the language toolchains the build needs are installed, with OS-specific
+# guidance when something is missing. Makes a from-scratch machine fail fast and clear.
+check-toolchains:
+	@MISSING=""; \
+	for tool in cargo python3 npm go; do \
+		command -v $$tool >/dev/null 2>&1 || MISSING="$$MISSING $$tool"; \
+	done; \
+	if [ -n "$$MISSING" ]; then \
+		echo "$(RED)Missing required toolchain(s):$$MISSING$(RESET)"; \
+		if [ "$$(uname)" = "Darwin" ]; then \
+			echo "$(YELLOW)  macOS (Homebrew): brew install rust python node go$(RESET)"; \
+		else \
+			echo "$(YELLOW)  Ubuntu/Debian:    sudo apt install python3 python3-venv npm golang-go$(RESET)"; \
+			echo "$(YELLOW)  Rust:             install via rustup — https://rustup.rs$(RESET)"; \
+		fi; \
+		exit 1; \
+	fi
+	@echo "✅ $(GREEN)All required toolchains present.$(RESET)"
 
 build-python-client: venv
 	@echo "🐍 $(CYAN)Building Python client package...$(RESET)"
 	@echo "🔧 $(CYAN)Ensuring maturin is available in .venv...$(RESET)"
-	@.venv/bin/python -m pip install --quiet --upgrade maturin || { \
+	@$(VENV_PY) -m pip install --quiet --upgrade maturin || { \
 		echo "$(RED)Failed to install maturin into .venv$(RESET)"; \
 		exit 1; \
 	}
 	@echo "🔨 $(CYAN)Building wheel...$(RESET)"
-	@cd ekodb-client-py && ../.venv/bin/python -m maturin build --release
+	@cd ekodb-client-py && $(VENV_PY) -m maturin build --release
 	@echo "📦 $(CYAN)Installing Python wheel into .venv...$(RESET)"
 	@WHEEL=$$(ls -t ekodb-client-py/target/wheels/*.whl | head -1); \
 	if [ -n "$$WHEEL" ]; then \
-		.venv/bin/python -m pip install --force-reinstall "$$WHEEL"; \
+		$(VENV_PY) -m pip install --force-reinstall "$$WHEEL"; \
 	else \
 		echo "$(RED)No compatible wheel found for current platform$(RESET)"; \
 		exit 1; \
@@ -1234,22 +1265,22 @@ test-examples-kotlin:
 	@$(MAKE) test-examples-kotlin-client 2>&1 | tee -a examples/kotlin/test-examples-kt.md
 	@echo "🟣 $(YELLOW)Kotlin Transactions...$(RESET)"
 	@if [ -f .env ]; then . ./.env; fi && \
-		export JAVA_HOME=$$(/usr/libexec/java_home -v 17) && export PATH=$$JAVA_HOME/bin:$$PATH && \
+		{ JH=$$(/usr/libexec/java_home -v 17 2>/dev/null) && export JAVA_HOME=$$JH && export PATH=$$JH/bin:$$PATH || true; } && \
 		cd examples/kotlin && API_BASE_URL=$$API_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass="io.ekodb.client.examples.ClientTransactionsKt" --quiet 2>&1 | tee -a test-examples-kt.md
 	@echo "✅ $(GREEN)All Kotlin integration tests complete!$(RESET)"
 
 test-examples-kt: test-examples-kotlin
 
-build-kotlin-client:
+build-kotlin-client: ensure-jvm
 	@echo "🟣 $(CYAN)Building Kotlin client library...$(RESET)"
-	@cd ekodb-client-kt && export JAVA_HOME=$$(/usr/libexec/java_home -v 17) && export PATH=$$JAVA_HOME/bin:$$PATH && ./gradlew build --no-daemon
+	@cd ekodb-client-kt && { JH=$$(/usr/libexec/java_home -v 17 2>/dev/null) && export JAVA_HOME=$$JH && export PATH=$$JH/bin:$$PATH || true; } && ./gradlew build --no-daemon
 	@echo "✅ $(GREEN)Kotlin client built!$(RESET)"
 
 test-examples-kotlin-client: build-kotlin-client
 	@echo "🧪 $(CYAN)Running Kotlin client library examples...$(RESET)"
 	@if [ -f .env ]; then \
 		. ./.env && \
-		export JAVA_HOME=$$(/usr/libexec/java_home -v 17) && export PATH=$$JAVA_HOME/bin:$$PATH && \
+		{ JH=$$(/usr/libexec/java_home -v 17 2>/dev/null) && export JAVA_HOME=$$JH && export PATH=$$JH/bin:$$PATH || true; } && \
 		cd examples/kotlin && \
 		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientSimpleCrudKt --no-daemon && \
 		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientSimpleWebsocketKt --no-daemon && \
@@ -1421,7 +1452,7 @@ lint-python:
 	@echo "✅ $(GREEN)Python lint complete!$(RESET)"
 
 # Install all client libraries
-install: install-rust install-python install-typescript install-go
+install: check-toolchains install-rust install-python install-typescript install-go
 	@echo "🔧 $(CYAN)Making scripts executable...$(RESET)"
 	@chmod +x scripts/*.sh
 	@echo "✅ $(GREEN)All client libraries installed!$(RESET)"
@@ -1435,16 +1466,16 @@ install-rust:
 install-python: venv
 	@echo "🐍 $(CYAN)Installing Python client...$(RESET)"
 	@echo "🔧 $(CYAN)Ensuring maturin is available in .venv...$(RESET)"
-	@.venv/bin/python -m pip install --quiet --upgrade maturin || { \
+	@$(VENV_PY) -m pip install --quiet --upgrade maturin || { \
 		echo "$(RED)Failed to install maturin into .venv$(RESET)"; \
 		exit 1; \
 	}
 	@echo "🔨 $(CYAN)Building wheel...$(RESET)"
-	@cd ekodb-client-py && ../.venv/bin/python -m maturin build --release
+	@cd ekodb-client-py && $(VENV_PY) -m maturin build --release
 	@echo "📦 $(CYAN)Installing Python wheel into .venv...$(RESET)"
 	@WHEEL=$$(ls -t ekodb-client-py/target/wheels/*.whl | head -1); \
 	if [ -n "$$WHEEL" ]; then \
-		.venv/bin/python -m pip install --force-reinstall "$$WHEEL"; \
+		$(VENV_PY) -m pip install --force-reinstall "$$WHEEL"; \
 	else \
 		echo "$(RED)No compatible wheel found for current platform$(RESET)"; \
 		exit 1; \
