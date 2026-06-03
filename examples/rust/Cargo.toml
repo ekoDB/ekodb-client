@@ -6,8 +6,8 @@ edition = "2021"
 [dependencies]
 # Raw HTTP/WebSocket examples
 tokio = { version = "1.0", features = ["full"] }
-reqwest = { version = "0.11", features = ["json"] }
-tokio-tungstenite = { version = "0.20", features = ["native-tls"] }
+reqwest = { version = "0.11", default-features = false, features = ["json", "rustls-tls"] }
+tokio-tungstenite = { version = "0.20", features = ["rustls-tls-webpki-roots"] }
 futures = "0.3"
 futures-util = "0.3"
 serde = { version = "1.0", features = ["derive"] }
