@@ -196,6 +196,8 @@ build-examples:
 	@echo "� $(CYAN)Checking Python examples...$(RESET)"
 	@cd examples/python && python3 -m py_compile *.py
 	@echo "✅ Python examples verified"
+	@echo "🟣 $(CYAN)Building Kotlin client library (required by examples)...$(RESET)"
+	@cd ekodb-client-kt && ./gradlew jar -q
 	@echo "🟣 $(CYAN)Building Kotlin examples...$(RESET)"
 	@cd examples/kotlin && ./gradlew build -q
 	@echo "✅ Kotlin examples built"
@@ -982,11 +984,26 @@ test-examples-python-direct:
 
 build-python-client:
 	@echo "🐍 $(CYAN)Building Python client package...$(RESET)"
-	@cd ekodb-client-py && python3 -m maturin build --release
-	@echo "📦 $(CYAN)Installing Python wheel for current platform...$(RESET)"
-	@WHEEL=$$(ls -t ekodb-client-py/target/wheels/*.whl | grep -v manylinux | grep -v musllinux | head -1); \
+	@if [ ! -d .venv ]; then \
+		python3 -m venv .venv || { \
+			rm -rf .venv; \
+			echo "$(RED)Could not create .venv — Python's venv module is unavailable.$(RESET)"; \
+			echo "$(YELLOW)  Ubuntu/Debian: sudo apt install python3-venv$(RESET)"; \
+			echo "$(YELLOW)  macOS:         brew install python (or use the python.org installer)$(RESET)"; \
+			exit 1; \
+		}; \
+	fi
+	@echo "🔧 $(CYAN)Ensuring maturin is available in .venv...$(RESET)"
+	@.venv/bin/python -m pip install --quiet --upgrade maturin || { \
+		echo "$(RED)Failed to install maturin into .venv$(RESET)"; \
+		exit 1; \
+	}
+	@echo "🔨 $(CYAN)Building wheel...$(RESET)"
+	@cd ekodb-client-py && ../.venv/bin/python -m maturin build --release
+	@echo "📦 $(CYAN)Installing Python wheel into .venv...$(RESET)"
+	@WHEEL=$$(ls -t ekodb-client-py/target/wheels/*.whl | head -1); \
 	if [ -n "$$WHEEL" ]; then \
-		python3 -m pip install --force-reinstall "$$WHEEL" --user; \
+		.venv/bin/python -m pip install --force-reinstall "$$WHEEL"; \
 	else \
 		echo "$(RED)No compatible wheel found for current platform$(RESET)"; \
 		exit 1; \
@@ -1405,16 +1422,31 @@ install-rust:
 
 install-python:
 	@echo "🐍 $(CYAN)Installing Python client...$(RESET)"
-	@cd ekodb-client-py && python3 -m maturin build --release
-	@echo "📦 $(CYAN)Installing Python wheel for current platform...$(RESET)"
-	@WHEEL=$$(ls -t ekodb-client-py/target/wheels/*.whl | grep -v manylinux | grep -v musllinux | head -1); \
+	@if [ ! -d .venv ]; then \
+		python3 -m venv .venv || { \
+			rm -rf .venv; \
+			echo "$(RED)Could not create .venv — Python's venv module is unavailable.$(RESET)"; \
+			echo "$(YELLOW)  Ubuntu/Debian: sudo apt install python3-venv$(RESET)"; \
+			echo "$(YELLOW)  macOS:         brew install python (or use the python.org installer)$(RESET)"; \
+			exit 1; \
+		}; \
+	fi
+	@echo "🔧 $(CYAN)Ensuring maturin is available in .venv...$(RESET)"
+	@.venv/bin/python -m pip install --quiet --upgrade maturin || { \
+		echo "$(RED)Failed to install maturin into .venv$(RESET)"; \
+		exit 1; \
+	}
+	@echo "🔨 $(CYAN)Building wheel...$(RESET)"
+	@cd ekodb-client-py && ../.venv/bin/python -m maturin build --release
+	@echo "📦 $(CYAN)Installing Python wheel into .venv...$(RESET)"
+	@WHEEL=$$(ls -t ekodb-client-py/target/wheels/*.whl | head -1); \
 	if [ -n "$$WHEEL" ]; then \
-		python3 -m pip install --force-reinstall "$$WHEEL" --user; \
+		.venv/bin/python -m pip install --force-reinstall "$$WHEEL"; \
 	else \
 		echo "$(RED)No compatible wheel found for current platform$(RESET)"; \
 		exit 1; \
 	fi
-	@echo "✅ $(GREEN)Python client installed!$(RESET)"
+	@echo "✅ $(GREEN)Python client installed! Activate with: $(CYAN)source .venv/bin/activate$(RESET)"
 
 install-typescript:
 	@echo "📘 $(CYAN)Installing TypeScript client...$(RESET)"
