@@ -8,7 +8,7 @@ version = "0.19.0"
 description = "Python client for ekoDB - a high-performance document database"
 readme = "README.md"
 requires-python = ">=3.8"
-license = { text = "MIT OR Apache-2.0" }
+license = { text = "MIT" }
 keywords = ["database", "ekodb", "document-database", "nosql"]
 authors = [
     { name = "ekoDB Team" }
@@ -31,9 +31,9 @@ classifiers = [
 dev = ["pytest>=7.0.0", "pytest-asyncio>=0.21.0"]
 
 [project.urls]
-Homepage = "https://github.com/ekoDB/ekodb"
-Repository = "https://github.com/ekoDB/ekodb"
-Documentation = "https://github.com/ekoDB/ekodb/tree/main/documentation"
+Homepage = "https://github.com/ekoDB/ekodb-client"
+Repository = "https://github.com/ekoDB/ekodb-client"
+Documentation = "https://docs.ekodb.io"
 
 [tool.ruff]
 target-version = "py38"

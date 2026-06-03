@@ -2701,7 +2701,7 @@ fn test_batch_insert_accepts_per_record_structural_parameters() {
 // ============================================================================
 //
 // Serialization-shape tests only — runtime behavior is covered by the
-// server-side tests in `ekodb/ekodb_server/tests/function_parameters_tests.rs`.
+// server-side integration tests.
 
 #[test]
 fn test_bcrypt_hash_stage_serializes_with_text_placeholder() {
@@ -2816,7 +2816,7 @@ fn test_crypto_stages_roundtrip_through_serde() {
 // ============================================================================
 //
 // Serialization-shape tests only — runtime behavior is covered by the
-// server-side tests in `ekodb/ekodb_server/tests/function_parameters_tests.rs`.
+// server-side integration tests.
 
 #[test]
 fn test_jwt_sign_stage_serializes_with_text_placeholders() {

@@ -556,6 +556,18 @@ export class EkoDBClient {
   }
 
   /**
+   * Backoff delay (in seconds) for a 0-indexed retry attempt: a capped
+   * exponential schedule (0.2s → 5s) with full jitter, so concurrent clients
+   * don't retry in lockstep. Returns a value in [d/2, d].
+   */
+  private backoffSeconds(attempt: number): number {
+    const base = 0.2;
+    const max = 5;
+    const d = Math.min(base * Math.pow(2, Math.max(0, attempt)), max);
+    return d / 2 + Math.random() * (d / 2);
+  }
+
+  /**
    * Helper to determine if a path should use JSON
    * Only CRUD operations (insert/update/delete/batch) use MessagePack
    * Everything else uses JSON for compatibility
@@ -646,8 +658,11 @@ export class EkoDBClient {
         );
 
         if (this.shouldRetry && attempt < this.maxRetries) {
-          console.log(`Rate limited. Retrying after ${retryAfter} seconds...`);
-          await this.sleep(retryAfter);
+          // Honor the server's Retry-After, but cap it so a hostile/large value
+          // can't pin the client for minutes.
+          const wait = Math.min(retryAfter, 60);
+          console.log(`Rate limited. Retrying after ${wait} seconds...`);
+          await this.sleep(wait);
           return this.makeRequest<T>(
             method,
             path,
@@ -674,9 +689,9 @@ export class EkoDBClient {
         this.shouldRetry &&
         attempt < this.maxRetries
       ) {
-        const retryDelay = 10;
+        const retryDelay = this.backoffSeconds(attempt);
         console.log(
-          `Service unavailable. Retrying after ${retryDelay} seconds...`,
+          `Service unavailable. Retrying after ${retryDelay.toFixed(2)}s...`,
         );
         await this.sleep(retryDelay);
         return this.makeRequest<T>(method, path, data, attempt + 1, forceJson);
@@ -692,8 +707,10 @@ export class EkoDBClient {
         this.shouldRetry &&
         attempt < this.maxRetries
       ) {
-        const retryDelay = 3;
-        console.log(`Network error. Retrying after ${retryDelay} seconds...`);
+        const retryDelay = this.backoffSeconds(attempt);
+        console.log(
+          `Network error. Retrying after ${retryDelay.toFixed(2)}s...`,
+        );
         await this.sleep(retryDelay);
         return this.makeRequest<T>(method, path, data, attempt + 1, forceJson);
       }
@@ -1824,10 +1841,10 @@ export class EkoDBClient {
 
     (async () => {
       try {
-        let token = this.getToken();
+        let token = await this.getToken();
         if (!token) {
           await this.refreshToken();
-          token = this.getToken();
+          token = await this.getToken();
         }
         const url = `${this.baseURL}/api/chat/${chatId}/messages/stream`;
 
@@ -1851,11 +1868,10 @@ export class EkoDBClient {
           return;
         }
 
-        const body = await response.text();
-        for (const line of body.split("\n")) {
-          if (!line.startsWith("data:")) continue;
+        const emitLine = (line: string) => {
+          if (!line.startsWith("data:")) return;
           const dataStr = line.slice(5).trim();
-          if (!dataStr) continue;
+          if (!dataStr) return;
           try {
             const eventData = JSON.parse(dataStr);
             if (eventData.error) {
@@ -1881,6 +1897,30 @@ export class EkoDBClient {
           } catch {
             // skip malformed SSE data
           }
+        };
+
+        const reader = response.body?.getReader?.();
+        if (reader) {
+          // True incremental streaming: decode and emit each SSE line as soon as
+          // it arrives, rather than buffering the entire response body first.
+          const decoder = new TextDecoder();
+          let buffer = "";
+          for (;;) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            let nl: number;
+            while ((nl = buffer.indexOf("\n")) >= 0) {
+              emitLine(buffer.slice(0, nl));
+              buffer = buffer.slice(nl + 1);
+            }
+          }
+          buffer += decoder.decode();
+          if (buffer) emitLine(buffer);
+        } else {
+          // Fallback for environments/tests without a readable body stream.
+          const body = await response.text();
+          for (const line of body.split("\n")) emitLine(line);
         }
         stream.close();
       } catch (err: any) {
@@ -2956,10 +2996,18 @@ export class EkoDBClient {
   }
 
   /**
-   * Create a WebSocket client
+   * Create a WebSocket client.
+   *
+   * The token is supplied as a provider bound to this client's
+   * {@link getToken}, so every (re)connect re-evaluates (and proactively
+   * refreshes) the auth token instead of snapshotting it once. This means a
+   * reconnect after a token rotation uses the current token.
+   *
+   * @param wsURL - The WebSocket URL (e.g. `wss://host`); `/api/ws` is appended if absent.
+   * @param options - Optional reconnect/timeout tunables.
    */
-  websocket(wsURL: string): WebSocketClient {
-    return new WebSocketClient(wsURL, this.token!);
+  websocket(wsURL: string, options?: WebSocketClientOptions): WebSocketClient {
+    return new WebSocketClient(wsURL, () => this.getToken(), options);
   }
 
   // ========== RAG Helper Methods ==========
@@ -3164,6 +3212,39 @@ export interface SubscribeOptions {
   filterValue?: string;
 }
 
+/**
+ * A token provider: either a static token string, or a (possibly async)
+ * function that returns a fresh token. When a function is supplied it is
+ * re-invoked on every (re)connect, so a rotated/refreshed token is always
+ * used for the new socket instead of a stale snapshot captured once.
+ */
+export type TokenProvider =
+  | string
+  | (() => string | null | Promise<string | null>);
+
+/** Tunables for the WebSocket client's reconnect + request-timeout behavior. */
+export interface WebSocketClientOptions {
+  /**
+   * Auto-reconnect after an unexpected socket close/error (not an explicit
+   * `close()`/unsubscribe). Defaults to true.
+   */
+  autoReconnect?: boolean;
+  /** Initial backoff delay in ms before the first reconnect attempt. Default 200. */
+  reconnectInitialDelayMs?: number;
+  /** Maximum backoff delay in ms (the cap for exponential growth). Default 5000. */
+  reconnectMaxDelayMs?: number;
+  /**
+   * Maximum number of consecutive reconnect attempts before giving up.
+   * 0 or undefined means unlimited. Default unlimited.
+   */
+  reconnectMaxAttempts?: number;
+  /**
+   * Per-request timeout in ms for request/response WS calls. If no response
+   * arrives in this window the pending promise rejects. Default 30000.
+   */
+  requestTimeoutMs?: number;
+}
+
 /** EventEmitter-like interface for subscriptions and chat streams. */
 export class EventStream<_T = unknown> {
   private listeners: Map<string, Array<(data: any) => void>> = new Map();
@@ -3319,17 +3400,38 @@ export function extractRecordId(
 
 export class WebSocketClient {
   private wsURL: string;
-  private token: string;
+  private tokenProvider: () => string | null | Promise<string | null>;
   private ws: any = null;
   private dispatcherRunning = false;
   private schemaCache: SchemaCache | null = null;
 
+  // Reconnect config
+  private autoReconnect: boolean;
+  private reconnectInitialDelayMs: number;
+  private reconnectMaxDelayMs: number;
+  private reconnectMaxAttempts: number;
+  private requestTimeoutMs: number;
+
+  // Reconnect state
+  /** Set while close() is in progress so the close handler doesn't reconnect. */
+  private closed = false;
+  private reconnectAttempts = 0;
+  private reconnecting = false;
+  private connectPromise: Promise<void> | null = null;
+
   // Dispatcher state
   private pendingRequests: Map<
     string,
-    { resolve: (value: any) => void; reject: (reason: any) => void }
+    {
+      resolve: (value: any) => void;
+      reject: (reason: any) => void;
+      timer?: ReturnType<typeof setTimeout>;
+    }
   > = new Map();
   private subscriptions: Map<string, EventStream<MutationNotification>> =
+    new Map();
+  /** Bookkeeping so subscriptions can be replayed on reconnect. */
+  private subscriptionParams: Map<string, SubscribeOptions | undefined> =
     new Map();
   private chatStreams: Map<string, EventStream<ChatStreamEvent>> = new Map();
   private registerToolsAck: {
@@ -3337,9 +3439,24 @@ export class WebSocketClient {
     reject: (reason: any) => void;
   } | null = null;
 
-  constructor(wsURL: string, token: string) {
+  /**
+   * @param wsURL - WebSocket URL; `/api/ws` is appended if absent.
+   * @param token - A static token string OR a {@link TokenProvider} function
+   *   re-evaluated on every (re)connect (so a refreshed token is used after a drop).
+   * @param options - Optional reconnect/timeout tunables.
+   */
+  constructor(
+    wsURL: string,
+    token: TokenProvider,
+    options: WebSocketClientOptions = {},
+  ) {
     this.wsURL = wsURL;
-    this.token = token;
+    this.tokenProvider = typeof token === "function" ? token : () => token;
+    this.autoReconnect = options.autoReconnect ?? true;
+    this.reconnectInitialDelayMs = options.reconnectInitialDelayMs ?? 200;
+    this.reconnectMaxDelayMs = options.reconnectMaxDelayMs ?? 5000;
+    this.reconnectMaxAttempts = options.reconnectMaxAttempts ?? 0;
+    this.requestTimeoutMs = options.requestTimeoutMs ?? 30000;
   }
 
   private messageCounter = 0;
@@ -3350,10 +3467,36 @@ export class WebSocketClient {
   }
 
   /**
-   * Connect and start the dispatcher.
+   * Compute the capped exponential backoff (with jitter) for a reconnect
+   * attempt. attempt 0 -> ~initial, growing x2 each time up to the max cap.
+   * Jitter is +/-25% to avoid thundering-herd reconnect storms.
+   * @internal exposed for testing
+   */
+  computeBackoff(attempt: number): number {
+    const base = Math.min(
+      this.reconnectInitialDelayMs * 2 ** attempt,
+      this.reconnectMaxDelayMs,
+    );
+    const jitter = base * 0.25 * (Math.random() * 2 - 1);
+    return Math.max(0, Math.round(base + jitter));
+  }
+
+  /**
+   * Connect and start the dispatcher. Re-evaluates the token provider so the
+   * current/refreshed token is used for this socket.
    */
   private async ensureConnected(): Promise<void> {
     if (this.ws && this.dispatcherRunning) return;
+    // Coalesce concurrent connect attempts onto a single in-flight promise.
+    if (this.connectPromise) return this.connectPromise;
+    this.connectPromise = this.openSocket().finally(() => {
+      this.connectPromise = null;
+    });
+    return this.connectPromise;
+  }
+
+  private async openSocket(): Promise<void> {
+    this.closed = false;
 
     const WebSocket = (await import("ws")).default;
 
@@ -3362,9 +3505,12 @@ export class WebSocketClient {
       url += "/api/ws";
     }
 
+    // Re-evaluate the token on every (re)connect — never a stale snapshot.
+    const token = await this.tokenProvider();
+
     this.ws = new WebSocket(url, {
       headers: {
-        Authorization: `Bearer ${this.token}`,
+        Authorization: `Bearer ${token}`,
       },
     });
 
@@ -3390,25 +3536,126 @@ export class WebSocketClient {
     });
 
     this.ws.on("close", () => {
-      this.dispatcherRunning = false;
-      // Notify all pending requests
-      for (const [, pending] of this.pendingRequests) {
-        pending.reject(new Error("WebSocket connection closed"));
-      }
-      this.pendingRequests.clear();
-      // Close all chat streams
-      for (const [, stream] of this.chatStreams) {
-        stream.emit("event", { type: "error", error: "Connection closed" });
-        stream.close();
-      }
-      this.chatStreams.clear();
-      // Close all subscriptions
+      this.handleDisconnect();
+    });
+  }
+
+  /**
+   * Reject in-flight requests and tear down the dead socket. If the close was
+   * unexpected (not an explicit `close()`) and auto-reconnect is enabled,
+   * schedule a reconnect that re-sends the active subscriptions.
+   */
+  private handleDisconnect(): void {
+    this.dispatcherRunning = false;
+    this.ws = null;
+
+    // Reject all in-flight pending requests so callers don't hang forever.
+    for (const [, pending] of this.pendingRequests) {
+      if (pending.timer) clearTimeout(pending.timer);
+      pending.reject(new Error("WebSocket connection closed"));
+    }
+    this.pendingRequests.clear();
+    if (this.registerToolsAck) {
+      this.registerToolsAck.reject(new Error("WebSocket connection closed"));
+      this.registerToolsAck = null;
+    }
+    // Close all chat streams (they are one-shot; not replayed on reconnect).
+    for (const [, stream] of this.chatStreams) {
+      stream.emit("event", { type: "error", error: "Connection closed" });
+      stream.close();
+    }
+    this.chatStreams.clear();
+
+    const shouldReconnect =
+      this.autoReconnect && !this.closed && this.subscriptionParams.size > 0;
+
+    if (shouldReconnect) {
+      this.scheduleReconnect();
+    } else {
+      // No reconnect: tear down subscriptions too.
       for (const [, stream] of this.subscriptions) {
         stream.close();
       }
       this.subscriptions.clear();
-      this.ws = null;
-    });
+      this.subscriptionParams.clear();
+    }
+  }
+
+  /**
+   * Reconnect with capped exponential backoff + jitter, then re-send the
+   * subscribe messages for every active subscription so the SAME EventStream
+   * keeps delivering mutations after a transient drop.
+   */
+  private scheduleReconnect(): void {
+    if (this.reconnecting) return;
+    this.reconnecting = true;
+
+    const attempt = async (): Promise<void> => {
+      if (this.closed) {
+        this.reconnecting = false;
+        return;
+      }
+      if (
+        this.reconnectMaxAttempts > 0 &&
+        this.reconnectAttempts >= this.reconnectMaxAttempts
+      ) {
+        // Give up: tear down subscriptions and notify consumers.
+        this.reconnecting = false;
+        for (const [, stream] of this.subscriptions) {
+          stream.emit("error", "WebSocket reconnect failed");
+          stream.close();
+        }
+        this.subscriptions.clear();
+        this.subscriptionParams.clear();
+        return;
+      }
+
+      const delay = this.computeBackoff(this.reconnectAttempts);
+      this.reconnectAttempts++;
+      await new Promise((r) => setTimeout(r, delay));
+
+      if (this.closed) {
+        this.reconnecting = false;
+        return;
+      }
+
+      try {
+        await this.openSocket();
+        // Success — reset backoff and replay subscriptions.
+        this.reconnectAttempts = 0;
+        this.reconnecting = false;
+        await this.resubscribeAll();
+      } catch {
+        // Connect failed — try again with the next backoff step.
+        await attempt();
+      }
+    };
+
+    void attempt();
+  }
+
+  /** Re-send Subscribe frames for every tracked subscription after a reconnect. */
+  private async resubscribeAll(): Promise<void> {
+    for (const [collection, options] of this.subscriptionParams) {
+      const stream = this.subscriptions.get(collection);
+      if (!stream || stream.closed) continue;
+      const messageId = this.genMessageId();
+      const request: any = {
+        type: "Subscribe",
+        messageId,
+        payload: {
+          collection,
+          ...(options?.filterField && { filter_field: options.filterField }),
+          ...(options?.filterValue && { filter_value: options.filterValue }),
+        },
+      };
+      try {
+        await this.sendRequest(request);
+      } catch {
+        // If the re-subscribe ack fails, leave it tracked; the next
+        // disconnect/reconnect cycle will attempt it again.
+      }
+    }
   }
 
   private routeMessage(msg: any): void {
@@ -3423,14 +3670,7 @@ export class WebSocketClient {
           msg.payload?.messageId;
         let matched = false;
         if (messageId && this.pendingRequests.has(messageId)) {
-          const pending = this.pendingRequests.get(messageId)!;
-          this.pendingRequests.delete(messageId);
-          if (msg.type === "Error") {
-            pending.reject(new Error(msg.message || "Unknown error"));
-          } else {
-            pending.resolve(msg.payload);
-          }
-          matched = true;
+          matched = this.settlePending(messageId, msg.type === "Error", msg);
         }
         if (!matched && this.registerToolsAck) {
           const ack = this.registerToolsAck;
@@ -3445,15 +3685,8 @@ export class WebSocketClient {
         // Server doesn't echo messageId — if there's exactly one pending
         // request, deliver the response to it (sequential request/response).
         if (!matched && this.pendingRequests.size === 1) {
-          const entry = this.pendingRequests.entries().next().value!;
-          const key = entry[0];
-          const pending = entry[1];
-          this.pendingRequests.delete(key);
-          if (msg.type === "Error") {
-            pending.reject(new Error(msg.message || "Unknown error"));
-          } else {
-            pending.resolve(msg.payload);
-          }
+          const key = this.pendingRequests.keys().next().value!;
+          this.settlePending(key, msg.type === "Error", msg);
         }
         break;
       }
@@ -3555,14 +3788,50 @@ export class WebSocketClient {
     const messageId = request.messageId || request.message_id;
 
     return new Promise((resolve, reject) => {
-      this.pendingRequests.set(messageId, { resolve, reject });
+      // Per-request timeout: reject if no response arrives in the window so a
+      // dropped/never-answered response can't leave the promise pending forever.
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      if (this.requestTimeoutMs > 0) {
+        timer = setTimeout(() => {
+          if (this.pendingRequests.delete(messageId)) {
+            reject(
+              new Error(
+                `WebSocket request "${request.type}" timed out after ${this.requestTimeoutMs}ms`,
+              ),
+            );
+          }
+        }, this.requestTimeoutMs);
+        // Don't keep the process alive just for this timer.
+        (timer as any)?.unref?.();
+      }
+
+      this.pendingRequests.set(messageId, { resolve, reject, timer });
       try {
         this.ws.send(JSON.stringify(request));
       } catch (err) {
         this.pendingRequests.delete(messageId);
+        if (timer) clearTimeout(timer);
         reject(err);
       }
     });
+  }
+
+  /** Resolve/reject a pending request, clearing its timeout timer. */
+  private settlePending(
+    messageId: string,
+    isError: boolean,
+    msg: any,
+  ): boolean {
+    const pending = this.pendingRequests.get(messageId);
+    if (!pending) return false;
+    this.pendingRequests.delete(messageId);
+    if (pending.timer) clearTimeout(pending.timer);
+    if (isError) {
+      pending.reject(new Error(msg.message || "Unknown error"));
+    } else {
+      pending.resolve(msg.payload);
+    }
+    return true;
   }
 
   /**
@@ -3595,6 +3864,8 @@ export class WebSocketClient {
     const messageId = this.genMessageId();
     const stream = new EventStream<MutationNotification>();
     this.subscriptions.set(collection, stream);
+    // Track params so the subscription can be replayed on reconnect.
+    this.subscriptionParams.set(collection, options);
 
     const request: any = {
       type: "Subscribe",
@@ -3611,9 +3882,23 @@ export class WebSocketClient {
       await this.sendRequest(request);
     } catch (err) {
       this.subscriptions.delete(collection);
+      this.subscriptionParams.delete(collection);
       throw err;
     }
     return stream;
+  }
+
+  /**
+   * Unsubscribe from a collection's mutation notifications. This is an
+   * intentional teardown, so the subscription is NOT replayed on reconnect.
+   */
+  unsubscribe(collection: string): void {
+    const stream = this.subscriptions.get(collection);
+    this.subscriptions.delete(collection);
+    this.subscriptionParams.delete(collection);
+    if (stream && !stream.closed) {
+      stream.close();
+    }
   }
 
   /**
@@ -3930,8 +4215,30 @@ export class WebSocketClient {
 
   /**
    * Close the WebSocket connection.
+   *
+   * This is an INTENTIONAL close: it disables auto-reconnect, rejects any
+   * in-flight requests, and tears down all subscriptions/chat streams so
+   * nothing is replayed afterward.
    */
   close(): void {
+    // Mark intentional so the close handler doesn't trigger a reconnect.
+    this.closed = true;
+    this.reconnecting = false;
+
+    // Reject any in-flight requests and clear their timers.
+    for (const [, pending] of this.pendingRequests) {
+      if (pending.timer) clearTimeout(pending.timer);
+      pending.reject(new Error("WebSocket connection closed"));
+    }
+    this.pendingRequests.clear();
+
+    // Tear down subscriptions + their replay bookkeeping.
+    for (const [, stream] of this.subscriptions) {
+      if (!stream.closed) stream.close();
+    }
+    this.subscriptions.clear();
+    this.subscriptionParams.clear();
+
     if (this.ws) {
       this.ws.close();
       this.ws = null;

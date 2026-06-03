@@ -2432,6 +2432,80 @@ describe("EkoDBClient chatMessageStream", () => {
     expect(dataCall[1]?.method).toBe("POST");
     expect(dataCall[1]?.headers?.Accept).toBe("text/event-stream");
   });
+
+  it("sends a resolved Bearer token, not a Promise (regression #124)", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      text: async () => 'data: {"token":"ok"}\n',
+      headers: new Headers({ "content-type": "text/event-stream" }),
+    });
+
+    client.chatMessageStream("chat_789", { message: "Test" });
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+    const auth = (calls[1][1]?.headers as Record<string, string>)
+      ?.Authorization;
+    expect(auth).toBe("Bearer test-jwt-token");
+    expect(auth).not.toContain("[object Promise]");
+  });
+
+  it("streams SSE events incrementally from response.body, reassembling split lines (regression #125)", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+
+    // A data line is deliberately split across chunk boundaries to exercise the
+    // incremental buffer (the old code buffered the whole body via text()).
+    const enc = new TextEncoder();
+    const chunks = [
+      'data: {"token":"He"}\nda',
+      'ta: {"token":"llo"}\n',
+      'data: {"content":"Hello","message_id":"m1","execution_time_ms":1}\n',
+    ];
+    const body = new ReadableStream({
+      start(controller) {
+        for (const c of chunks) controller.enqueue(enc.encode(c));
+        controller.close();
+      },
+    });
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      body,
+      text: async () => chunks.join(""),
+      headers: new Headers({ "content-type": "text/event-stream" }),
+    });
+
+    const events: any[] = [];
+    const stream = client.chatMessageStream("chat_s", { message: "Hi" });
+    stream.on("event", (evt: any) => events.push(evt));
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    expect(
+      events.filter((e) => e.type === "chunk").map((e) => e.content),
+    ).toEqual(["He", "llo"]);
+    expect(events[events.length - 1].type).toBe("end");
+    expect(events[events.length - 1].messageId).toBe("m1");
+  });
+});
+
+describe("EkoDBClient retry backoff", () => {
+  it("backoffSeconds grows, caps at 5s, and jitters within [d/2, d] (#126)", () => {
+    const client = createTestClient() as any;
+    for (let attempt = 0; attempt < 10; attempt++) {
+      const d = Math.min(0.2 * 2 ** attempt, 5);
+      for (let i = 0; i < 50; i++) {
+        const v = client.backoffSeconds(attempt);
+        expect(v).toBeGreaterThanOrEqual(d / 2);
+        expect(v).toBeLessThanOrEqual(d);
+      }
+    }
+  });
 });
 
 // ============================================================================

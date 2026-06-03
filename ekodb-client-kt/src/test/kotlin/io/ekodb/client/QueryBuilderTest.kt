@@ -269,17 +269,6 @@ class QueryBuilderTest {
         assertEquals("@example.com", content?.get("value")?.jsonPrimitive?.content)
     }
 
-    @Test
-    fun `builds regex filter`() {
-        val query = QueryBuilder()
-            .regex("phone", "^\\+1")
-            .build()
-
-        val filter = query.filter as JsonObject
-        val content = filter["content"]?.jsonObject
-        assertEquals("Regex", content?.get("operator")?.jsonPrimitive?.content)
-    }
-
     // ========================================================================
     // Multiple Filters (Auto AND) Tests
     // ========================================================================
@@ -534,7 +523,6 @@ class QueryBuilderTest {
         assertTrue(qb.inArray("g", listOf(7)) === qb)
         assertTrue(qb.nin("h", listOf(8)) === qb)
         assertTrue(qb.contains("i", "j") === qb)
-        assertTrue(qb.regex("k", "l") === qb)
         assertTrue(qb.sortAsc("m") === qb)
         assertTrue(qb.sortDesc("n") === qb)
         assertTrue(qb.limit(1) === qb)

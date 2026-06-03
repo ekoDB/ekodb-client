@@ -186,20 +186,8 @@ impl QueryBuilder {
         self
     }
 
-    /// Add a regex filter (Note: not directly supported by server, use contains/starts_with/ends_with instead)
-    pub fn regex(mut self, field: impl Into<String>, pattern: impl Into<String>) -> Self {
-        // Regex is not in the server's FilterOperator enum
-        // We'll use Contains as a fallback
-        self.filters.push(json!({
-            "type": "Condition",
-            "content": {
-                "field": field.into(),
-                "operator": "Contains",
-                "value": pattern.into()
-            }
-        }));
-        self
-    }
+    // Note: regex filtering is pending server-side support. The server's
+    // FilterOperator enum has no Regex variant; use contains/starts_with/ends_with.
 
     // Note: Array operators like elem_match and exists are not supported by the server's FilterOperator enum
 
@@ -471,14 +459,6 @@ mod tests {
     }
 
     // test_exists_operator removed - Exists is not supported by server's FilterOperator enum
-
-    #[test]
-    fn test_regex_operator() {
-        let query = QueryBuilder::new()
-            .regex("email", "^.*@example\\.com$")
-            .build();
-        assert!(query.filter.is_some());
-    }
 
     #[test]
     fn test_starts_with() {
