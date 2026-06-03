@@ -6,7 +6,7 @@ automatic optimization.
 
 [![Crates.io](https://img.shields.io/crates/v/ekodb_client.svg)](https://crates.io/crates/ekodb_client)
 [![Documentation](https://docs.rs/ekodb_client/badge.svg)](https://docs.rs/ekodb_client)
-[![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 ## Features
 
@@ -865,13 +865,8 @@ if let Err(Error::RateLimit { retry_after_secs }) = result {
 
 ## License
 
-This project is licensed under either of:
-
-- MIT License ([LICENSE-MIT](LICENSE-MIT) or http://opensource.org/licenses/MIT)
-- Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE) or
-  http://www.apache.org/licenses/LICENSE-2.0)
-
-at your option.
+This project is licensed under the MIT License ([LICENSE](LICENSE) or
+[opensource.org/licenses/MIT](http://opensource.org/licenses/MIT)).
 
 ## Contributing
 
