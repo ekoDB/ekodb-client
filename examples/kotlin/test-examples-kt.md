@@ -1677,7 +1677,6 @@ Status before rollback: Active
 ✓ Deleted test accounts
 
 ✓ All client transaction examples completed
-make[1]: Entering directory '/home/shyd0w/dev/ekodb-client'
 command -v java >/dev/null 2>&1 || [ -n "$JAVA_HOME" ] || { \
 	echo "\033[31mNo Java runtime found — Gradle needs a JVM to launch.\033[0m"; \
 	echo "\033[33m  Ubuntu/Debian: sudo apt install openjdk-17-jdk\033[0m"; \
@@ -1732,4 +1731,3 @@ else \
 	exit 1; \
 fi
 echo "✅ \033[32mKotlin client examples complete!\033[0m"
-make[1]: Leaving directory '/home/shyd0w/dev/ekodb-client'
