@@ -3507,6 +3507,13 @@ export class WebSocketClient {
 
     // Re-evaluate the token on every (re)connect — never a stale snapshot.
     const token = await this.tokenProvider();
+    if (!token) {
+      // Fail fast with a clear error instead of sending `Bearer null`, which
+      // would surface as a confusing 401 from the server.
+      throw new Error(
+        "WebSocket auth token is unavailable (the token provider returned null/empty)",
+      );
+    }
 
     this.ws = new WebSocket(url, {
       headers: {
@@ -3621,13 +3628,27 @@ export class WebSocketClient {
 
       try {
         await this.openSocket();
+        // close() may have been called while openSocket() was in-flight; if so,
+        // tear down the freshly-opened socket instead of leaving it orphaned.
+        if (this.closed) {
+          try {
+            this.ws?.close?.();
+          } catch {
+            /* already closing */
+          }
+          this.ws = null;
+          this.dispatcherRunning = false;
+          this.reconnecting = false;
+          return;
+        }
         // Success — reset backoff and replay subscriptions.
         this.reconnectAttempts = 0;
         this.reconnecting = false;
         await this.resubscribeAll();
       } catch {
-        // Connect failed — try again with the next backoff step.
-        await attempt();
+        // Connect failed — schedule the next attempt WITHOUT recursive await so
+        // a prolonged outage can't build an unbounded promise chain.
+        setTimeout(() => void attempt(), 0);
       }
     };
 

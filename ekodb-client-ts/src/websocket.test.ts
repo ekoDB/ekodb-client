@@ -930,4 +930,17 @@ describe("WebSocketClient", () => {
       expect(serverConnections.length).toBe(connectionsBefore);
     });
   });
+
+  describe("auth token validation", () => {
+    it("rejects connect when the token provider returns null (no Bearer null)", async () => {
+      const client = new WebSocketClient(
+        `ws://localhost:${port}/api/ws`,
+        () => null,
+      );
+      await expect(client.findAll("users")).rejects.toThrow(
+        /token is unavailable/i,
+      );
+      client.close();
+    });
+  });
 });
