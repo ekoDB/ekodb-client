@@ -392,13 +392,15 @@ export class EkoDBClient {
   constructor(config: string | ClientConfig, apiKey?: string) {
     // Support both old (baseURL, apiKey) and new (config object) signatures
     if (typeof config === "string") {
-      this.baseURL = config;
+      // Strip trailing slashes so `${baseURL}/api/...` never produces a
+      // double-slash path (some servers/proxies reject `//api/...`).
+      this.baseURL = config.replace(/\/+$/, "");
       this.apiKey = apiKey!;
       this.shouldRetry = true;
       this.maxRetries = 3;
       this.format = SerializationFormat.MessagePack; // Default to MessagePack for 2-3x performance
     } else {
-      this.baseURL = config.baseURL;
+      this.baseURL = config.baseURL.replace(/\/+$/, "");
       this.apiKey = config.apiKey;
       this.shouldRetry = config.shouldRetry ?? true;
       this.maxRetries = config.maxRetries ?? 3;
@@ -3472,7 +3474,9 @@ export class WebSocketClient {
     token: TokenProvider,
     options: WebSocketClientOptions = {},
   ) {
-    this.wsURL = wsURL;
+    // Strip trailing slashes so appending `/api/ws` can't yield `//api/ws`,
+    // which warp's exact path match (`api / ws`) would reject.
+    this.wsURL = wsURL.replace(/\/+$/, "");
     this.tokenProvider = typeof token === "function" ? token : () => token;
     this.autoReconnect = options.autoReconnect ?? true;
     this.reconnectInitialDelayMs = options.reconnectInitialDelayMs ?? 200;

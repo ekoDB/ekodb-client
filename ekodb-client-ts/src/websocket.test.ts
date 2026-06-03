@@ -123,6 +123,45 @@ describe("WebSocketClient", () => {
   });
 
   // --------------------------------------------------------------------------
+  // URL normalization
+  // --------------------------------------------------------------------------
+
+  describe("URL normalization", () => {
+    function captureRequestPath(): Promise<string> {
+      return new Promise((resolve) => {
+        wss.once("connection", (_ws, req) => resolve(req.url ?? ""));
+      });
+    }
+
+    it("appends /api/ws without a double slash when the base URL has a trailing slash", async () => {
+      const pathPromise = captureRequestPath();
+      const client = new WebSocketClient(
+        `ws://localhost:${port}/`,
+        "test-token",
+      );
+      // Trigger a connect; we only assert the path the server receives.
+      client.findAll("users").catch(() => {});
+
+      expect(await pathPromise).toBe("/api/ws");
+
+      client.close();
+    });
+
+    it("does not duplicate /api/ws when the URL already ends with it plus a trailing slash", async () => {
+      const pathPromise = captureRequestPath();
+      const client = new WebSocketClient(
+        `ws://localhost:${port}/api/ws/`,
+        "test-token",
+      );
+      client.findAll("users").catch(() => {});
+
+      expect(await pathPromise).toBe("/api/ws");
+
+      client.close();
+    });
+  });
+
+  // --------------------------------------------------------------------------
   // subscribe
   // --------------------------------------------------------------------------
 
