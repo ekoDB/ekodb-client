@@ -608,7 +608,7 @@ async for event in stream:
 
 ## License
 
-MIT OR Apache-2.0
+MIT
 
 ## Links
 
