@@ -379,6 +379,20 @@ export interface FunctionStageConfig {
   [key: string]: any;
 }
 
+/**
+ * Strip trailing slashes from a base URL so path concatenation
+ * (`${base}/api/...`) never yields a double-slash path. Uses a linear scan
+ * rather than a regex like `/\/+$/`, which CodeQL flags as polynomial-time
+ * backtracking on caller-supplied input.
+ */
+function stripTrailingSlashes(url: string): string {
+  let end = url.length;
+  while (end > 0 && url.charCodeAt(end - 1) === 47 /* "/" */) {
+    end--;
+  }
+  return end === url.length ? url : url.slice(0, end);
+}
+
 export class EkoDBClient {
   private baseURL: string;
   private apiKey: string;
@@ -394,13 +408,13 @@ export class EkoDBClient {
     if (typeof config === "string") {
       // Strip trailing slashes so `${baseURL}/api/...` never produces a
       // double-slash path (some servers/proxies reject `//api/...`).
-      this.baseURL = config.replace(/\/+$/, "");
+      this.baseURL = stripTrailingSlashes(config);
       this.apiKey = apiKey!;
       this.shouldRetry = true;
       this.maxRetries = 3;
       this.format = SerializationFormat.MessagePack; // Default to MessagePack for 2-3x performance
     } else {
-      this.baseURL = config.baseURL.replace(/\/+$/, "");
+      this.baseURL = stripTrailingSlashes(config.baseURL);
       this.apiKey = config.apiKey;
       this.shouldRetry = config.shouldRetry ?? true;
       this.maxRetries = config.maxRetries ?? 3;
@@ -3410,13 +3424,17 @@ export function extractRecordId(
   for (const key of extraCandidates) {
     const val = record[key];
     if (typeof val === "string") return val;
-    if (val && typeof val === "object" && "value" in val)
+    // Unwrap only a genuine typed wrapper (both "type" and "value"), matching
+    // getValue's rule so a user object like { value: 1 } isn't mistaken for one.
+    if (val && typeof val === "object" && "type" in val && "value" in val)
       return String(val.value);
   }
   for (const key of ["id", "_id"]) {
     const val = record[key];
     if (typeof val === "string") return val;
-    if (val && typeof val === "object" && "value" in val)
+    // Unwrap only a genuine typed wrapper (both "type" and "value"), matching
+    // getValue's rule so a user object like { value: 1 } isn't mistaken for one.
+    if (val && typeof val === "object" && "type" in val && "value" in val)
       return String(val.value);
   }
   return undefined;
@@ -3476,7 +3494,7 @@ export class WebSocketClient {
   ) {
     // Strip trailing slashes so appending `/api/ws` can't yield `//api/ws`,
     // which warp's exact path match (`api / ws`) would reject.
-    this.wsURL = wsURL.replace(/\/+$/, "");
+    this.wsURL = stripTrailingSlashes(wsURL);
     this.tokenProvider = typeof token === "function" ? token : () => token;
     this.autoReconnect = options.autoReconnect ?? true;
     this.reconnectInitialDelayMs = options.reconnectInitialDelayMs ?? 200;
