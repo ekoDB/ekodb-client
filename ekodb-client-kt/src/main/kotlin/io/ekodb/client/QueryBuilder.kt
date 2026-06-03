@@ -153,7 +153,85 @@ class QueryBuilder {
             })
         })
     }
-    
+
+    /**
+     * String starts with prefix
+     */
+    fun startsWith(field: String, prefix: String) = apply {
+        filters.add(buildJsonObject {
+            put("type", "Condition")
+            put("content", buildJsonObject {
+                put("field", field)
+                put("operator", "StartsWith")
+                put("value", JsonPrimitive(prefix))
+            })
+        })
+    }
+
+    /**
+     * String ends with suffix
+     */
+    fun endsWith(field: String, suffix: String) = apply {
+        filters.add(buildJsonObject {
+            put("type", "Condition")
+            put("content", buildJsonObject {
+                put("field", field)
+                put("operator", "EndsWith")
+                put("value", JsonPrimitive(suffix))
+            })
+        })
+    }
+
+    /**
+     * Combine conditions with AND logic. Build the operand conditions with
+     * [QueryBuilder.condition].
+     */
+    fun and(conditions: List<JsonElement>) = apply {
+        filters.add(buildJsonObject {
+            put("type", "Logical")
+            put("content", buildJsonObject {
+                put("operator", "And")
+                put("expressions", JsonArray(conditions))
+            })
+        })
+    }
+
+    /**
+     * Combine conditions with OR logic. Build the operand conditions with
+     * [QueryBuilder.condition].
+     */
+    fun or(conditions: List<JsonElement>) = apply {
+        filters.add(buildJsonObject {
+            put("type", "Logical")
+            put("content", buildJsonObject {
+                put("operator", "Or")
+                put("expressions", JsonArray(conditions))
+            })
+        })
+    }
+
+    /**
+     * Negate a condition. Build the operand condition with
+     * [QueryBuilder.condition].
+     */
+    fun not(condition: JsonElement) = apply {
+        filters.add(buildJsonObject {
+            put("type", "Logical")
+            put("content", buildJsonObject {
+                put("operator", "Not")
+                put("expressions", JsonArray(listOf(condition)))
+            })
+        })
+    }
+
+    /**
+     * Add a raw, pre-built filter expression. Use when a query shape isn't
+     * expressible through the typed builder methods.
+     */
+    fun rawFilter(filter: JsonElement) = apply {
+        filters.add(filter)
+    }
+
     /**
      * Sort ascending
      */
@@ -190,6 +268,15 @@ class QueryBuilder {
      */
     fun skip(skip: Int) = apply {
         skipValue = skip
+    }
+
+    /**
+     * Set pagination by page number and page size (convenience for skip/limit).
+     * Page numbers are zero-based: page 0 is the first page.
+     */
+    fun page(page: Int, pageSize: Int) = apply {
+        skipValue = page * pageSize
+        limitValue = pageSize
     }
     
     /**
@@ -307,13 +394,7 @@ class QueryBuilder {
         )
     }
     
-    private fun convertToJsonElement(value: Any): JsonElement = when (value) {
-        is String -> JsonPrimitive(value)
-        is Number -> JsonPrimitive(value)
-        is Boolean -> JsonPrimitive(value)
-        is JsonElement -> value
-        else -> JsonPrimitive(value.toString())
-    }
+    private fun convertToJsonElement(value: Any): JsonElement = valueToJsonElement(value)
     
     private fun convertMapToJsonElement(map: Map<String, Any>): JsonElement {
         return buildJsonObject {
@@ -338,5 +419,36 @@ class QueryBuilder {
     
     companion object {
         fun new() = QueryBuilder()
+
+        /**
+         * Create a standalone condition for use with [and], [or], and [not].
+         *
+         * Example:
+         * ```kotlin
+         * val query = QueryBuilder()
+         *     .or(listOf(
+         *         QueryBuilder.condition("status", "Eq", "active"),
+         *         QueryBuilder.condition("status", "Eq", "pending")
+         *     ))
+         *     .build()
+         * ```
+         */
+        fun condition(field: String, operator: String, value: Any): JsonObject =
+            buildJsonObject {
+                put("type", "Condition")
+                put("content", buildJsonObject {
+                    put("field", field)
+                    put("operator", operator)
+                    put("value", valueToJsonElement(value))
+                })
+            }
+
+        private fun valueToJsonElement(value: Any): JsonElement = when (value) {
+            is String -> JsonPrimitive(value)
+            is Number -> JsonPrimitive(value)
+            is Boolean -> JsonPrimitive(value)
+            is JsonElement -> value
+            else -> JsonPrimitive(value.toString())
+        }
     }
 }

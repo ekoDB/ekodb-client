@@ -17,7 +17,8 @@ sealed class QueryOperator {
     @Serializable data class Lte(val value: FieldType) : QueryOperator()
     @Serializable data class In(val values: List<FieldType>) : QueryOperator()
     @Serializable data class NotIn(val values: List<FieldType>) : QueryOperator()
-    @Serializable data class Regex(val pattern: String) : QueryOperator()
+    // No Regex variant: the server's filter operator set has none. Use
+    // Contains/StartsWith/EndsWith via the query builder instead.
     @Serializable data class Exists(val exists: Boolean) : QueryOperator()
 }
 
