@@ -556,6 +556,29 @@ export class EkoDBClient {
   }
 
   /**
+   * Parse a `Retry-After` header into a non-negative delay in seconds.
+   *
+   * Per RFC 9110 the value is either delay-seconds (an integer) or an
+   * HTTP-date. Anything that doesn't resolve to a finite, non-negative number
+   * (missing header, garbage, a past date) falls back to `defaultSecs`.
+   */
+  private parseRetryAfter(header: string | null, defaultSecs = 60): number {
+    if (!header) return defaultSecs;
+
+    // delay-seconds form: a bare integer.
+    const secs = Number(header.trim());
+    if (Number.isFinite(secs)) return Math.max(0, secs);
+
+    // HTTP-date form: compute the delay from now.
+    const dateMs = Date.parse(header);
+    if (Number.isFinite(dateMs)) {
+      return Math.max(0, (dateMs - Date.now()) / 1000);
+    }
+
+    return defaultSecs;
+  }
+
+  /**
    * Backoff delay (in seconds) for a 0-indexed retry attempt: a capped
    * exponential schedule (0.2s → 5s) with full jitter, so concurrent clients
    * don't retry in lockstep. Returns a value in [d/2, d].
@@ -652,9 +675,8 @@ export class EkoDBClient {
 
       // Handle rate limiting (429)
       if (response.status === 429) {
-        const retryAfter = parseInt(
-          response.headers.get("retry-after") || "60",
-          10,
+        const retryAfter = this.parseRetryAfter(
+          response.headers.get("retry-after"),
         );
 
         if (this.shouldRetry && attempt < this.maxRetries) {
