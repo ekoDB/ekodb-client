@@ -196,7 +196,7 @@ build-examples: check-toolchains ensure-jvm
 	@echo "📘 $(CYAN)Building TypeScript examples...$(RESET)"
 	@cd examples/typescript && npm install && npm run build
 	@echo "✅ TypeScript examples built"
-	@echo "� $(CYAN)Checking Python examples...$(RESET)"
+	@echo "🐍 $(CYAN)Checking Python examples...$(RESET)"
 	@cd examples/python && python3 -m py_compile *.py
 	@echo "✅ Python examples verified"
 	@echo "🟣 $(CYAN)Building Kotlin client library (required by examples)...$(RESET)"
