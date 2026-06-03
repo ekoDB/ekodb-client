@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
-import { EkoDBClient, SerializationFormat } from "./client";
+import { EkoDBClient, SerializationFormat, extractRecordId } from "./client";
 
 // Mock fetch globally
 const mockFetch = vi.fn();
@@ -3062,5 +3062,49 @@ describe("baseURL normalization", () => {
 
     const url = mockFetch.mock.calls[0][0] as string;
     expect(url).toBe("http://localhost:8080/api/auth/token");
+  });
+});
+
+describe("extractRecordId", () => {
+  it("returns a plain string id", () => {
+    expect(extractRecordId({ id: "abc" })).toBe("abc");
+  });
+
+  it("unwraps a genuine typed wrapper id", () => {
+    expect(extractRecordId({ id: { type: "String", value: "abc" } })).toBe(
+      "abc",
+    );
+  });
+
+  it("stringifies a wrapped numeric id", () => {
+    expect(extractRecordId({ id: { type: "Integer", value: 123 } })).toBe(
+      "123",
+    );
+  });
+
+  it("does not treat a user object with a value key (no type) as the id", () => {
+    // Regression for #134: { value: 1, currency: "USD" } is a user object,
+    // not a typed wrapper, so it must not be unwrapped into the id.
+    expect(
+      extractRecordId({ id: { value: 1, currency: "USD" } }),
+    ).toBeUndefined();
+  });
+
+  it("prefers an alias candidate over id", () => {
+    expect(extractRecordId({ users_id: "u1", id: "x" }, ["users_id"])).toBe(
+      "u1",
+    );
+  });
+
+  it("ignores a non-wrapper alias object and falls back to id", () => {
+    expect(
+      extractRecordId({ users_id: { value: 7, label: "lvl" }, id: "real" }, [
+        "users_id",
+      ]),
+    ).toBe("real");
+  });
+
+  it("falls back to _id", () => {
+    expect(extractRecordId({ _id: "underscore" })).toBe("underscore");
   });
 });
