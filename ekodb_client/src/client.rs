@@ -219,6 +219,40 @@ impl Client {
         .await
     }
 
+    /// Find a record by ID, returning only a projection of its fields.
+    ///
+    /// `select_fields` keeps only the named fields (plus the primary key);
+    /// `exclude_fields` removes the named fields. Pass `None`/empty for either.
+    pub async fn find_by_id_with_projection(
+        &self,
+        collection: &str,
+        id: &str,
+        select_fields: Option<Vec<String>>,
+        exclude_fields: Option<Vec<String>>,
+    ) -> Result<Record> {
+        let collection = collection.to_string();
+        let id = id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let collection = collection.clone();
+            let id = id.clone();
+            let select_fields = select_fields.clone();
+            let exclude_fields = exclude_fields.clone();
+            let http = http.clone();
+            async move {
+                http.find_by_id_with_projection(
+                    &collection,
+                    &id,
+                    select_fields.as_deref(),
+                    exclude_fields.as_deref(),
+                    &token,
+                )
+                .await
+            }
+        })
+        .await
+    }
+
     /// Update a record by ID
     ///
     /// # Arguments
@@ -940,6 +974,16 @@ impl Client {
             let key = key.clone();
             let http = http.clone();
             async move { http.kv_delete(&key, &token).await }
+        })
+        .await
+    }
+
+    /// Clear the entire KV store (all keys in the namespace).
+    pub async fn kv_clear(&self) -> Result<()> {
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let http = http.clone();
+            async move { http.kv_clear(&token).await }
         })
         .await
     }

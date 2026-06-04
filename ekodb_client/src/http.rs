@@ -286,6 +286,51 @@ impl HttpClient {
         .await
     }
 
+    /// Find a record by ID returning only a projection of its fields.
+    /// `select_fields` / `exclude_fields` are comma-joined into the
+    /// `select_fields` / `exclude_fields` query params.
+    pub async fn find_by_id_with_projection(
+        &self,
+        collection: &str,
+        id: &str,
+        select_fields: Option<&[String]>,
+        exclude_fields: Option<&[String]>,
+        token: &str,
+    ) -> Result<Record> {
+        let mut query: Vec<String> = Vec::new();
+        if let Some(sel) = select_fields {
+            if !sel.is_empty() {
+                query.push(format!("select_fields={}", sel.join(",")));
+            }
+        }
+        if let Some(exc) = exclude_fields {
+            if !exc.is_empty() {
+                query.push(format!("exclude_fields={}", exc.join(",")));
+            }
+        }
+        let url_path = if query.is_empty() {
+            format!("/api/find/{}/{}", collection, id)
+        } else {
+            format!("/api/find/{}/{}?{}", collection, id, query.join("&"))
+        };
+        let url = self.base_url.join(&url_path)?;
+
+        self.execute_with_retry(|| async {
+            let response = self
+                .add_format_headers(
+                    &url_path,
+                    self.client
+                        .get(url.clone())
+                        .header("Authorization", format!("Bearer {}", token)),
+                )
+                .send()
+                .await?;
+
+            self.handle_response(&url_path, response).await
+        })
+        .await
+    }
+
     /// Update a record
     pub async fn update(
         &self,
@@ -839,6 +884,25 @@ impl HttpClient {
                 .await?;
 
             // Force JSON for KV operations
+            let _: serde_json::Value = Self::json_body(response).await?;
+            Ok(())
+        })
+        .await
+    }
+
+    /// Clear the entire KV store (all keys in the namespace).
+    pub async fn kv_clear(&self, token: &str) -> Result<()> {
+        let url = self.base_url.join("/api/kv/clear")?;
+
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .delete(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .send()
+                .await?;
+
             let _: serde_json::Value = Self::json_body(response).await?;
             Ok(())
         })

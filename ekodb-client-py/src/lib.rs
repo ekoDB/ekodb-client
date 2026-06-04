@@ -230,6 +230,34 @@ impl Client {
         })
     }
 
+    /// Find a record by ID returning only a projection of its fields.
+    ///
+    /// Args:
+    ///     collection: Collection name
+    ///     id: Record ID
+    ///     select_fields: Optional list of field names to keep (plus the primary key)
+    ///     exclude_fields: Optional list of field names to remove
+    #[pyo3(signature = (collection, id, select_fields=None, exclude_fields=None))]
+    fn find_by_id_with_projection<'py>(
+        &self,
+        py: Python<'py>,
+        collection: String,
+        id: String,
+        select_fields: Option<Vec<String>>,
+        exclude_fields: Option<Vec<String>>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py(py, async move {
+            let result = client
+                .find_by_id_with_projection(&collection, &id, select_fields, exclude_fields)
+                .await
+                .map_err(|e| map_client_err("Find failed", e))?;
+
+            Python::attach(|py| record_to_dict(py, &result))
+        })
+    }
+
     /// Find documents matching a query
     /// 
     /// Args:
@@ -441,6 +469,26 @@ impl Client {
                 .list_collections()
                 .await
                 .map_err(|e| map_client_err("List collections failed", e))?;
+
+            Python::attach(|py| {
+                let list = PyList::empty(py);
+                for name in collections {
+                    list.append(name)?;
+                }
+                Ok(list.into())
+            })
+        })
+    }
+
+    /// List collections, excluding internal chat/system collections.
+    fn list_user_collections<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            let collections = client
+                .list_user_collections()
+                .await
+                .map_err(|e| map_client_err("List user collections failed", e))?;
 
             Python::attach(|py| {
                 let list = PyList::empty(py);
@@ -1428,6 +1476,20 @@ impl Client {
                 .kv_delete(&key)
                 .await
                 .map_err(|e| map_client_err("KV delete failed", e))?;
+
+            Python::attach(|py| Ok(py.None()))
+        })
+    }
+
+    /// Clear the entire KV store (all keys in the namespace).
+    fn kv_clear<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py(py, async move {
+            client
+                .kv_clear()
+                .await
+                .map_err(|e| map_client_err("KV clear failed", e))?;
 
             Python::attach(|py| Ok(py.None()))
         })
@@ -4092,6 +4154,26 @@ impl WebSocketClient {
         })
     }
 
+    /// Cancel an in-flight streaming chat (fire-and-forget).
+    ///
+    /// Args:
+    ///     chat_id: The chat whose generation should be cancelled.
+    fn cancel_chat<'py>(&self, py: Python<'py>, chat_id: String) -> PyResult<Bound<'py, PyAny>> {
+        let ws_client = match &self.inner {
+            Some(client) => client.clone(),
+            None => return Err(PyRuntimeError::new_err("WebSocket client not initialized")),
+        };
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            ws_client
+                .cancel_chat(&chat_id)
+                .await
+                .map_err(|e| map_client_err("Cancel chat failed", e))?;
+
+            Python::attach(|py| Ok(py.None()))
+        })
+    }
+
     /// Stateless raw LLM completion via WebSocket.
     ///
     /// Sends a RawComplete message over the persistent WSS connection.
@@ -4236,6 +4318,25 @@ impl WebSocketClient {
         let mut payload = serde_json::json!({"collection": collection, "ids": ids});
         if let Some(br) = bypass_ripple { payload["bypass_ripple"] = serde_json::json!(br); }
         self.send_crud(py, "BatchDelete", payload)
+    }
+
+    /// Batch update records (list of (id, record) pairs) via WebSocket.
+    #[pyo3(signature = (collection, updates, bypass_ripple=None))]
+    fn ws_batch_update<'py>(
+        &self, py: Python<'py>, collection: String,
+        updates: Vec<(String, Bound<'py, PyDict>)>, bypass_ripple: Option<bool>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let mut arr = Vec::new();
+        for (id, d) in &updates {
+            let data = pydict_to_json(py, d)?;
+            arr.push(serde_json::json!([id, data]));
+        }
+        let mut payload = serde_json::json!({
+            "collection": collection,
+            "updates": serde_json::Value::Array(arr),
+        });
+        if let Some(br) = bypass_ripple { payload["bypass_ripple"] = serde_json::json!(br); }
+        self.send_crud(py, "BatchUpdate", payload)
     }
 
     /// Full-text search via WebSocket.

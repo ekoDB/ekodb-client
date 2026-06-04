@@ -111,6 +111,16 @@ class EkoDBClientTest {
     }
 
     @Test
+    fun `listUserCollections returns collection names`() = runBlocking {
+        val mockEngine = createMockEngine("""{"collections": ["users", "orders"]}""")
+        val client = createTestClient(mockEngine)
+        val result = client.listUserCollections()
+        assertNotNull(result)
+        assertEquals(2, result.size)
+        assertTrue(result.contains("users"))
+    }
+
+    @Test
     fun `collectionExists returns true for existing collection`() = runBlocking {
         val mockEngine = createMockEngine("""{"collections": ["users", "orders"]}""")
         val client = createTestClient(mockEngine)
@@ -1257,6 +1267,14 @@ class EkoDBClientTest {
         val client = createTestClient(mockEngine)
         // Should not throw
         client.kvDelete("test:key")
+    }
+
+    @Test
+    fun `kvClear does not throw on success`() = runBlocking {
+        val mockEngine = createMockEngine("""{"message": "success"}""")
+        val client = createTestClient(mockEngine)
+        // Should not throw
+        client.kvClear()
     }
 
     @Test

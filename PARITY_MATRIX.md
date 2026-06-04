@@ -1,8 +1,8 @@
 # Client Library Parity Matrix
 
-**Last Updated:** June 2, 2026
+**Last Updated:** June 4, 2026
 
-**Client version:** 0.19.0 (Rust, Python, TypeScript, Kotlin); standalone Go
+**Client version:** 0.20.0 (Rust, Python, TypeScript, Kotlin); standalone Go
 client tracks the same release line.
 
 > Renamed from `MISSING_FEATURES.md` (April 28, 2026) to reflect the current
@@ -11,12 +11,26 @@ client tracks the same release line.
 > the old path. The companion `documentation/CLIENT_LIBRARY_GAPS.md` was removed
 > in the same pass (it duplicated this file at a stale revision).
 
-## Status: Full Parity Maintained Through v0.18.0
+## Status: Core parity verified through v0.20.0
 
-> v0.19.0 parity re-verification is in progress. A few per-client correctness
-> issues are open and tracked as issues in this repo (e.g. Python typed-value
-> handling, Kotlin primary-key-alias resolution); this matrix will move to
-> "through v0.19.0" once they close.
+> The v0.20.0 parity pass closed a set of per-client method gaps. Newly brought
+> to parity:
+>
+> - **`kv_clear`** — now on Rust, Python, TypeScript, Kotlin, and Go.
+> - **`find_by_id_with_projection`** — added to Rust and Python (already in
+>   TypeScript, Kotlin, Go).
+> - **WebSocket `cancelChat`** — added to TypeScript, Kotlin, and Python
+>   (already in Rust and Go).
+> - **`list_user_collections`** — added to Python, TypeScript, Kotlin (already
+>   in Rust; Go has `ListCollections`).
+> - **Python WebSocket `ws_batch_update`** — added (WS find-all is already
+>   provided by the existing `find_all`, so no `ws_find_all` alias was added).
+>
+> **Known remaining difference (tracked):** an explicit WebSocket `unsubscribe`
+> method that sends a server-side Unsubscribe frame exists in TypeScript and Go;
+> the Rust, Python, and Kotlin WebSocket clients do not currently expose an
+> `unsubscribe` method (teardown happens by dropping the subscription receiver).
+> Adding one to those three is a follow-up.
 >
 > Note: the query-builder `regex()` filter has been removed from all clients
 > until server-side regex filtering is available (tracked internally). Use

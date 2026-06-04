@@ -286,6 +286,32 @@ async fn test_find_by_id_success() {
     assert!(record.get("id").is_some());
 }
 
+#[tokio::test]
+async fn test_find_by_id_with_projection_success() {
+    let mut server = Server::new_async().await;
+
+    let _token_mock = mock_token_endpoint(&mut server);
+
+    let _find_mock = server
+        .mock("GET", "/api/find/users/user_123")
+        .match_query(Matcher::UrlEncoded("select_fields".into(), "name".into()))
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"id": "user_123", "name": "Alice"}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+
+    let result = client
+        .find_by_id_with_projection("users", "user_123", Some(vec!["name".to_string()]), None)
+        .await;
+
+    assert!(result.is_ok());
+    let record = result.unwrap();
+    assert!(record.get("name").is_some());
+}
+
 // ============================================================================
 // Update Tests
 // ============================================================================
@@ -517,6 +543,27 @@ async fn test_kv_delete_success() {
     let client = create_test_client(&server).await;
 
     let result = client.kv_delete("my_key").await;
+
+    assert!(result.is_ok());
+}
+
+#[tokio::test]
+async fn test_kv_clear_success() {
+    let mut server = Server::new_async().await;
+
+    let _token_mock = mock_token_endpoint(&mut server);
+
+    let _kv_mock = server
+        .mock("DELETE", "/api/kv/clear")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"message": "success"}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+
+    let result = client.kv_clear().await;
 
     assert!(result.is_ok());
 }

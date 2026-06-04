@@ -535,6 +535,23 @@ class WebSocketClient(
     }
 
     /**
+     * Cancel an in-flight streaming chat. Fire-and-forget: tells the server to
+     * stop generating tokens for the given chat.
+     */
+    suspend fun cancelChat(chatId: String) {
+        val s = session ?: throw IllegalStateException("Not connected. Call connect() first.")
+
+        val request = buildJsonObject {
+            put("type", "CancelChat")
+            put("payload", buildJsonObject {
+                put("chat_id", chatId)
+            })
+        }
+
+        s.send(Frame.Text(request.toString()))
+    }
+
+    /**
      * Stateless raw LLM completion via WebSocket.
      *
      * Sends a RawComplete message and waits for the Success response.
