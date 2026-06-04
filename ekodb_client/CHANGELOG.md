@@ -6,6 +6,183 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Kotlin: query builder gains `startsWith` / `endsWith`** (#129). The Kotlin
+  `QueryBuilder` only had `contains`, even though the README already showed an
+  `.endsWith(...)` example and the server exposes `StartsWith`/`EndsWith` filter
+  operators. The two methods are now implemented (matching the Rust, TypeScript,
+  Python, and Go builders), so the regex-removal guidance ("use
+  contains/startsWith/endsWith") is actually actionable in Kotlin. README API
+  reference updated; tests added.
+- **Kotlin: query builder gains logical operators, `page`, and `rawFilter`.**
+  The Kotlin `QueryBuilder` was missing the `and` / `or` / `not` logical
+  combinators, the `page(page, pageSize)` pagination helper, and the `rawFilter`
+  escape hatch that the Rust, TypeScript, Python, and Go builders all expose —
+  so a Kotlin caller could not express an OR query (or any nested logical group)
+  through the builder at all and could only AND conditions implicitly. Added all
+  of them, plus a `QueryBuilder.condition(field, operator, value)` companion
+  factory (mirroring Python's `condition`) for constructing the standalone
+  operands that `and` / `or` / `not` take. README API reference updated; tests
+  added.
+
+### Removed
+
+- **Removed the query-builder `regex()` filter** from all clients — the server
+  has no regex filter operator, so it 400'd (or, in Rust, silently fell back to
+  substring `Contains`). Removed until server-side regex filtering is available
+  (tracked internally). Breaking: callers using `regex()` should switch to
+  `contains` / `startsWith` / `endsWith`. Also removed the unreachable
+  `QueryOperator.Regex` variant from the Kotlin `types/Query.kt` sealed class so
+  no client type advertises a server operator that does not exist.
+
+### Fixed
+
+- **Python WebSocket examples updated for `websockets` >= 14.** The raw
+  `websockets` example scripts (`examples/python/client_websocket_subscribe.py`
+  and `simple_websocket.py`) passed `extra_headers=` to `websockets.connect`,
+  which was removed in `websockets` 14 (renamed to `additional_headers`), so
+  they raised `TypeError: ... unexpected keyword argument 'extra_headers'` on
+  the installed `websockets` 16. Switched to `additional_headers` and bumped the
+  examples' `requirements.txt` floor to `websockets>=14.0` so the pin matches
+  the code. (Examples only — the Python client library is a Rust/pyo3 binding
+  and does not use the `websockets` package.)
+- **TypeScript: base URLs with a trailing slash no longer break requests.** The
+  client appended paths by plain string concatenation (`${baseURL}${path}` for
+  REST, `wsURL + "/api/ws"` for WebSocket), so a base URL passed with a trailing
+  slash (e.g. `wss://host/`) produced a double-slash path (`//api/ws`). The
+  server matches WS on the exact `api / ws` route, so the empty leading segment
+  caused the connection to fail (and some proxies reject `//api/...` for REST
+  too). Both the `EkoDBClient` and `WebSocketClient` constructors now strip
+  trailing slashes from the supplied URL via a shared linear-scan helper (rather
+  than a `/\/+$/` regex, which CodeQL flags as polynomial-time backtracking on
+  caller-supplied input). Tests assert the request path is `/api/ws` (and the
+  REST auth URL has no `//api`) for trailing-slash inputs.
+- **TypeScript: WebSocket subscriptions now auto-reconnect and requests no
+  longer hang forever** (#127). The WS client previously snapshotted the auth
+  token once at construction, never reconnected after a transient socket drop,
+  and registered request/response promises with no timeout — a response that
+  never arrived left the promise pending indefinitely. Now: (1) the token is
+  re-evaluated on every (re)connect via the client's existing
+  `getToken()`/`refreshToken()` path, so a reconnect after a token rotation uses
+  the current token instead of a stale one; (2) an unexpected close/error
+  (anything other than an explicit `close()`/`unsubscribe()`) triggers an
+  automatic reconnect with capped exponential backoff plus jitter (200ms → ~5s)
+  that re-sends the `Subscribe` frames so the same `EventStream` keeps
+  delivering mutations; and (3) every request/response call has a configurable
+  per-request timeout (default 30s) that rejects with a clear error, and all
+  in-flight requests are rejected on disconnect so callers fail fast rather than
+  hang. Reconnect/timeout tunables are configurable via the new
+  `WebSocketClientOptions` argument to `client.websocket(url, options)`.
+
+- **Rust: all network ops now route through token auto-refresh** (#131). A 401
+  refreshes the token and retries the operation once instead of surfacing
+  `TokenExpired` to the caller — previously only 18 of the high-level `Client`
+  methods did this and the rest leaked the error. In the same fix,
+  `should_retry(false)` is now honored by every op: the low-level `HttpClient`
+  request methods called the retry policy directly, ignoring the gate, so
+  retries always ran; they now go through `execute_with_retry`, which disables
+  retries when `should_retry` is false.
+
+- **Python: complex `FieldType` values now read and write as native Python
+  types** (#122). On read, the binding Debug-stringified every variant beyond
+  String/Integer/Float/Boolean/Array/Object, returning garbage like
+  `"Binary([255, 216, ...])"`. It now returns faithful native types:
+  `Binary`/`Bytes` → `bytes`, `DateTime` → timezone-aware `datetime.datetime`
+  (UTC), `UUID` → `uuid.UUID`, `Decimal`/`Number(Decimal)` → `decimal.Decimal`
+  (precision-preserving), `Duration` → `datetime.timedelta`,
+  `Number(Integer/Float)` → `int`/`float`, `Set` → `set` (falling back to a
+  `list` when an item is unhashable), and `Vector` → `list`. On write,
+  `py_to_field_type` now accepts `bytes`/`bytearray` → `Binary`,
+  `datetime.datetime` → `DateTime`, `uuid.UUID` → `UUID`, `decimal.Decimal` →
+  `Decimal`, and `set`/`frozenset` → `Set`, in addition to the existing
+  scalar/list/dict handling. Covered by Rust round-trip tests over a live
+  interpreter.
+- **Python: rate-limited (HTTP 429) operations now raise `RateLimitError`**
+  (#123). The custom `RateLimitError` exception was exported but never thrown —
+  every network op wrapped errors in a generic `RuntimeError`, so callers could
+  not distinguish a 429 or read the retry-after. A new `map_client_err` helper
+  maps `Error::RateLimit { retry_after_secs }` to `RateLimitError(retry_after)`
+  (the retry-after is the first exception arg) and all other errors to
+  `RuntimeError`, and it is wired into every network call site
+  (insert/find/update/delete/batch/paginate/exists/upsert/search/chat/WS/etc.).
+  Covered by unit tests asserting the exception type and retry-after.
+- **TypeScript: `chatMessageStream` streams incrementally** (#125). It buffered
+  the entire response via `await response.text()` before emitting, so `chunk`
+  events only fired once the whole reply had arrived. It now reads
+  `response.body` and emits each SSE event as it arrives (reassembling lines
+  split across chunk boundaries), with a `text()` fallback for environments
+  without a readable body stream. Regression test added.
+- **TypeScript: retries use exponential backoff with jitter** (#126). The 503
+  and network-error retries used fixed 10s / 3s delays; they now use a capped
+  exponential schedule (0.2s → 5s) with full jitter, and the 429 `Retry-After`
+  is capped at 60s. Covered by a backoff-bounds test.
+- **`getValue` no longer corrupts user objects** (#134). Across the Rust,
+  TypeScript, Python, and Kotlin clients, `getValue` unwrapped any object that
+  had a `value` key; a legitimate object like `{ value: 1, currency: "USD" }`
+  lost its sibling fields on read. In the Kotlin client this affected the raw
+  `Map` path in `getValue` (the `FieldType.ObjectValue` path already guarded on
+  both keys). The TypeScript `extractRecordId` helper had the same unguarded
+  unwrap in a separate code path (it pulled `.value` off any object when
+  resolving a record's id/alias) and is now held to the same `type`+`value`
+  rule, matching how the Rust and Kotlin id extractors already delegate to the
+  guarded `get_value`/`getValue`. All now only unwrap a genuine typed wrapper
+  (both `type` and `value` present) and pass every other object through
+  untouched. Regression tests added per language. (The Go client had the same
+  `getValue` bug, fixed separately; Python and Go have no separate id-extractor
+  helper.)
+- **Rust: WebSocket request IDs are now collision-free** (#132).
+  `gen_message_id` used a nanosecond wall-clock value, so two requests in the
+  same tick could collide and hang/mis-route a caller. It now uses a
+  process-wide monotonic atomic counter.
+- **Rust: retry backoff is capped and overflow-safe** (#133). The exponential
+  backoff could overflow (`2^attempt`) and an unbounded server `Retry-After` was
+  honored verbatim. Backoff now uses a bounded exponent + saturating math
+  clamped to 30s, and `Retry-After` is capped at 60s (`TestRetryPolicy` backoff
+  test). Also replaced a network-path `.unwrap()` in `health_check` with error
+  propagation and removed an `_`-prefixed binding.
+- **TypeScript: `chatMessageStream` now awaits `getToken()`** (#124). The token
+  was read without `await`, so the SSE chat request sent
+  `Authorization: Bearer [object Promise]` and every streamed chat 401'd (the
+  `if (!token)` refresh branch was also dead, since a Promise is always truthy).
+  Added a regression test asserting the request carries the resolved Bearer
+  token.
+- **Kotlin: 401 retry now uses the refreshed token** (#128). Request methods
+  captured the token once before `executeWithRetry`, so a 401 that triggered
+  `refreshToken()` still retried with the stale token and never recovered.
+  `executeWithRetry` now fetches the token fresh on every attempt and passes it
+  into the request block, so the retried attempt carries the refreshed token.
+  The same path also no longer swallows `CancellationException` (it is rethrown
+  so structured coroutine cancellation keeps working), and the `Logging` plugin
+  redacts the `Authorization` header as defense-in-depth (INFO level already
+  omits headers and bodies). Regression tests added (401→refresh→retry asserts
+  the new bearer token; cancellation rethrow asserts no retry).
+- **Kotlin: `getRecordId` resolves `primary_key_alias` / `_id`** (#130). It
+  hardcoded `record["id"]`, so collections with a custom primary-key alias
+  returned `null`. A new overload accepts alias candidates and tries them in
+  order, then `id`, then `_id`; the no-argument form now also falls back to
+  `_id`. Unit tests added for alias, `_id`, wrapped-value, and plain-`id`
+  resolution.
+
+### Changed
+
+- **Python client now requires Python >= 3.9** (was `>= 3.8`). Python 3.8
+  reached end-of-life in October 2024, and the modern `websockets` library used
+  by the examples dropped 3.8 in v14. Bumped `requires-python` and removed the
+  `Python :: 3.8` classifier in `ekodb-client-py/pyproject.toml` so the
+  published support matrix is accurate. The pyo3 binding itself is unaffected;
+  this is a metadata/support-policy change.
+- **Repository metadata, license, and hygiene** (#135): pointed the
+  `ekodb_client` crate `repository` field at the public `ekoDB/ekodb-client`;
+  corrected the declared license to `MIT` in the Rust and Python manifests (only
+  a MIT `LICENSE` file ships, matching the TypeScript and Kotlin clients);
+  removed two committed compiled Go example binaries and added ignore rules for
+  them; removed internal server-path references from test comments; refreshed
+  `PARITY_MATRIX.md` to the current 0.19.0 line (parity re-verification for
+  0.19.0 noted as in progress).
+
 ## [0.19.0] - 2026-06-02
 
 ### Fixed — Function examples now save-or-update on `409 Conflict`
