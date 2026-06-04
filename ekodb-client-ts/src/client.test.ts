@@ -350,6 +350,15 @@ describe("EkoDBClient KV store", () => {
     await expect(client.kvDelete("my_key")).resolves.not.toThrow();
   });
 
+  it("clears KV store", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse({ message: "success" });
+
+    await expect(client.kvClear()).resolves.not.toThrow();
+  });
+
   it("checks KV exists", async () => {
     const client = createTestClient();
 
@@ -412,6 +421,17 @@ describe("EkoDBClient collections", () => {
 
     expect(result).toContain("users");
     expect(result).toHaveLength(3);
+  });
+
+  it("lists user collections (excludes internal)", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse({ collections: ["users", "posts"] });
+
+    const result = await client.listUserCollections();
+
+    expect(result).toEqual(["users", "posts"]);
   });
 
   it("deletes collection", async () => {

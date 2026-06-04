@@ -1068,6 +1068,19 @@ export class EkoDBClient {
   }
 
   /**
+   * Clear the entire KV store (all keys in the namespace).
+   */
+  async kvClear(): Promise<void> {
+    await this.makeRequest<void>(
+      "DELETE",
+      "/api/kv/clear",
+      undefined,
+      0,
+      true, // Force JSON for KV operations
+    );
+  }
+
+  /**
    * Batch get multiple keys
    * @param keys - Array of keys to retrieve
    * @returns Array of records corresponding to the keys
@@ -1393,6 +1406,20 @@ export class EkoDBClient {
     const result = await this.makeRequest<{ collections: string[] }>(
       "GET",
       "/api/collections",
+      undefined,
+      0,
+      true, // Force JSON for metadata operations
+    );
+    return result.collections;
+  }
+
+  /**
+   * List collections, excluding internal chat/system collections.
+   */
+  async listUserCollections(): Promise<string[]> {
+    const result = await this.makeRequest<{ collections: string[] }>(
+      "GET",
+      "/api/collections?exclude_internal=true",
       undefined,
       0,
       true, // Force JSON for metadata operations
@@ -3989,6 +4016,20 @@ export class WebSocketClient {
     if (stream && !stream.closed) {
       stream.close();
     }
+    // Best-effort: tell the server to stop streaming this collection (the
+    // server already handles an Unsubscribe frame). If the socket isn't open
+    // the local teardown above suffices, since the server drops subscriptions
+    // when the connection closes. A unique messageId is attached so the
+    // server's Success ack is matched-and-dropped rather than misrouted.
+    if (this.ws && this.ws.readyState === 1 /* WebSocket.OPEN */) {
+      this.ws.send(
+        JSON.stringify({
+          type: "Unsubscribe",
+          messageId: this.genMessageId(),
+          payload: { collection },
+        }),
+      );
+    }
   }
 
   /**
@@ -4077,6 +4118,21 @@ export class WebSocketClient {
         ...(result !== undefined && { result }),
         ...(error !== undefined && { error }),
       },
+    };
+
+    this.ws.send(JSON.stringify(request));
+  }
+
+  /**
+   * Cancel an in-flight streaming chat. Fire-and-forget: tells the server to
+   * stop generating tokens for the given chat.
+   */
+  async cancelChat(chatId: string): Promise<void> {
+    await this.ensureConnected();
+
+    const request = {
+      type: "CancelChat",
+      payload: { chat_id: chatId },
     };
 
     this.ws.send(JSON.stringify(request));

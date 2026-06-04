@@ -51,6 +51,11 @@ class TestWebSocketClientMethods:
     def test_has_find_all(self):
         assert hasattr(WebSocketClient, "find_all")
 
+    def test_has_ws_batch_update(self):
+        # ws_batch_update fills the WS batch-update gap (#146); find_all already
+        # covers WS find-all, so no separate ws_find_all is added (no duplicate).
+        assert hasattr(WebSocketClient, "ws_batch_update")
+
     def test_has_subscribe(self):
         assert hasattr(WebSocketClient, "subscribe")
 
@@ -62,6 +67,10 @@ class TestWebSocketClientMethods:
 
     def test_has_send_tool_result(self):
         assert hasattr(WebSocketClient, "send_tool_result")
+
+    def test_has_cancel_chat(self):
+        # WS chat-cancel parity (#144); Rust/Go already had it.
+        assert hasattr(WebSocketClient, "cancel_chat")
 
 
 class TestSubscriptionReceiverMethods:

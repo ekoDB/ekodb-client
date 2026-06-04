@@ -788,6 +788,20 @@ class EkoDBClient private constructor(
         val collections = result["collections"]?.jsonArray ?: JsonArray(emptyList())
         return collections.map { it.jsonPrimitive.content }
     }
+
+    /**
+     * List collections, excluding internal chat/system collections.
+     */
+    suspend fun listUserCollections(): List<String> {
+        val response = executeWithRetry { token ->
+            client.get("$baseUrl/api/collections?exclude_internal=true") {
+                header("Authorization", "Bearer $token")
+            }
+        }
+        val result = response.body<JsonObject>()
+        val collections = result["collections"]?.jsonArray ?: JsonArray(emptyList())
+        return collections.map { it.jsonPrimitive.content }
+    }
     
     /**
      * Delete a collection
@@ -1211,7 +1225,23 @@ class EkoDBClient private constructor(
             throw Exception("KV delete failed with status ${response.status}: $errorBody")
         }
     }
-    
+
+    /**
+     * Key-Value: Clear the entire KV store (all keys in the namespace).
+     */
+    suspend fun kvClear() {
+        val response = executeWithRetry { token ->
+            client.delete("$baseUrl/api/kv/clear") {
+                header("Authorization", "Bearer $token")
+            }
+        }
+
+        if (!response.status.isSuccess()) {
+            val errorBody = response.bodyAsText()
+            throw Exception("KV clear failed with status ${response.status}: $errorBody")
+        }
+    }
+
     /**
      * Key-Value: Batch get multiple keys
      */
@@ -1462,15 +1492,18 @@ class EkoDBClient private constructor(
                 
                 // Check for rate limiting
                 if (response.status == HttpStatusCode.TooManyRequests) {
-                    val retryAfter = response.headers["Retry-After"]?.toLongOrNull() ?: 1
+                    // Clamp the server-supplied Retry-After so a hostile or
+                    // misconfigured value can't sleep the caller indefinitely.
+                    val retryAfter = clampRetryAfterSeconds(response.headers["Retry-After"]?.toLongOrNull())
                     delay(retryAfter.seconds)
                     return@repeat
                 }
-                
+
                 // Check for server errors that should be retried
                 if (response.status.value in 500..599) {
                     if (attempt < maxRetries - 1) {
-                        delay((2.0.pow(attempt) * 1000).toLong())
+                        // Clamp the exponential backoff to a fixed ceiling.
+                        delay(clampBackoffMs(attempt))
                         return@repeat
                     }
                 }
@@ -3308,6 +3341,33 @@ class EkoDBClient private constructor(
         fun builder() = Builder()
 
         const val VERSION = "0.1.0"
+
+        /**
+         * Upper bound on a server-supplied `Retry-After` (seconds). A hostile or
+         * misconfigured value would otherwise sleep the caller for an unbounded
+         * time. Mirrors the Rust client's `MAX_RETRY_AFTER_SECS`.
+         */
+        const val MAX_RETRY_AFTER_SECONDS = 60L
+
+        /**
+         * Upper bound on a single exponential-backoff sleep (milliseconds) for
+         * retried 5xx responses. Mirrors the Rust client's `MAX_BACKOFF` (30s).
+         */
+        const val MAX_BACKOFF_MS = 30_000L
+
+        /**
+         * Clamp a server-supplied `Retry-After` (seconds) to `[0, MAX_RETRY_AFTER_SECONDS]`.
+         * A missing/unparseable value defaults to 1s.
+         */
+        internal fun clampRetryAfterSeconds(rawSeconds: Long?): Long =
+            (rawSeconds ?: 1L).coerceIn(0L, MAX_RETRY_AFTER_SECONDS)
+
+        /**
+         * Exponential backoff (milliseconds) for the given 0-based retry
+         * attempt, clamped to `MAX_BACKOFF_MS`.
+         */
+        internal fun clampBackoffMs(attempt: Int): Long =
+            (Math.pow(2.0, attempt.toDouble()) * 1000).toLong().coerceAtMost(MAX_BACKOFF_MS)
     }
 }
 

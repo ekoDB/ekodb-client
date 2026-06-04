@@ -460,6 +460,68 @@ describe("WebSocketClient", () => {
   });
 
   // --------------------------------------------------------------------------
+  // unsubscribe
+  // --------------------------------------------------------------------------
+
+  describe("unsubscribe", () => {
+    it("sends an Unsubscribe frame to the server", async () => {
+      const client = new WebSocketClient(
+        `ws://localhost:${port}/api/ws`,
+        "test-token",
+      );
+
+      const streamPromise = client.subscribe("orders");
+      await new Promise((r) => wss.once("connection", r));
+      const ws = getLastConnection();
+      const subMsg = await waitForMessage(ws);
+      expect(subMsg.type).toBe("Subscribe");
+      ws.send(
+        JSON.stringify({
+          type: "Success",
+          payload: { message_id: subMsg.messageId, status: "subscribed" },
+        }),
+      );
+      await streamPromise;
+
+      const unsubMsg = waitForMessage(ws);
+      client.unsubscribe("orders");
+
+      const sent = await unsubMsg;
+      expect(sent.type).toBe("Unsubscribe");
+      expect(sent.payload.collection).toBe("orders");
+
+      client.close();
+    });
+  });
+
+  // cancelChat
+  // --------------------------------------------------------------------------
+
+  describe("cancelChat", () => {
+    it("sends CancelChat frame", async () => {
+      const client = new WebSocketClient(
+        `ws://localhost:${port}/api/ws`,
+        "test-token",
+      );
+
+      // Open the connection via a chat stream first.
+      const streamPromise = client.chatSend("chat-1", "test");
+      await new Promise((r) => wss.once("connection", r));
+      const ws = getLastConnection();
+      await waitForMessage(ws); // ChatSend
+      await streamPromise;
+
+      const cancelMsg = waitForMessage(ws);
+      await client.cancelChat("chat-1");
+
+      const sent = await cancelMsg;
+      expect(sent.type).toBe("CancelChat");
+      expect(sent.payload.chat_id).toBe("chat-1");
+
+      client.close();
+    });
+  });
+
   // sendToolResult
   // --------------------------------------------------------------------------
 
