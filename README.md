@@ -97,7 +97,7 @@ All clients provide:
 Each client also includes language-specific features:
 
 - **Rust**: Tokio async runtime, strong type safety, zero-cost abstractions
-- **Python**: Async/await support, type hints, modern Python 3.8+
+- **Python**: Async/await support, type hints, modern Python 3.9+
 - **Go**: Context support, idiomatic error handling, goroutines
 - **TypeScript/JavaScript**: TypeScript support, Promises, Node.js compatibility
 - **Kotlin**: Coroutines, null safety, extension functions, fluent APIs
