@@ -4020,7 +4020,9 @@ export class WebSocketClient {
     // server already handles an Unsubscribe frame). If the socket isn't open
     // the local teardown above suffices, since the server drops subscriptions
     // when the connection closes. A unique messageId is attached so the
-    // server's Success ack is matched-and-dropped rather than misrouted.
+    // server's Success ack carries a correlation id: it has no pending request
+    // to match, so it is simply ignored — and because the id is present, the
+    // single-pending fallback can't misroute it to an unrelated request.
     if (this.ws && this.ws.readyState === 1 /* WebSocket.OPEN */) {
       this.ws.send(
         JSON.stringify({
