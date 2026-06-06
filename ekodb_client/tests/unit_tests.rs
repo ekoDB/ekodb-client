@@ -312,6 +312,44 @@ async fn test_find_by_id_with_projection_success() {
     assert!(record.get("name").is_some());
 }
 
+#[tokio::test]
+async fn test_find_by_id_with_projection_encodes_reserved_chars() {
+    // Field names with reserved characters (spaces, commas) must be
+    // percent-encoded on the wire and decode back to the exact comma-joined
+    // value. Matcher::UrlEncoded decodes the query before matching, so this
+    // asserts the round-trip the server relies on.
+    let mut server = Server::new_async().await;
+
+    let _token_mock = mock_token_endpoint(&mut server);
+
+    let _find_mock = server
+        .mock("GET", "/api/find/users/user_123")
+        .match_query(Matcher::AllOf(vec![
+            Matcher::UrlEncoded("select_fields".into(), "first name,email".into()),
+            Matcher::UrlEncoded("exclude_fields".into(), "secret&token".into()),
+        ]))
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"id": "user_123", "first name": "Alice"}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+
+    let result = client
+        .find_by_id_with_projection(
+            "users",
+            "user_123",
+            Some(vec!["first name".to_string(), "email".to_string()]),
+            Some(vec!["secret&token".to_string()]),
+        )
+        .await;
+
+    assert!(result.is_ok(), "projection request failed: {:?}", result);
+    let record = result.unwrap();
+    assert!(record.get("first name").is_some());
+}
+
 // ============================================================================
 // Update Tests
 // ============================================================================
