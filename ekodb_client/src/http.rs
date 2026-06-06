@@ -297,23 +297,26 @@ impl HttpClient {
         exclude_fields: Option<&[String]>,
         token: &str,
     ) -> Result<Record> {
-        let mut query: Vec<String> = Vec::new();
-        if let Some(sel) = select_fields {
-            if !sel.is_empty() {
-                query.push(format!("select_fields={}", sel.join(",")));
+        let url_path = format!("/api/find/{}/{}", collection, id);
+        let mut url = self.base_url.join(&url_path)?;
+        // Build the query with proper percent-encoding so field names containing
+        // reserved characters (',', '&', '=', spaces, …) round-trip correctly,
+        // matching the URLSearchParams-based encoding the other clients use. The
+        // comma-joined value is the wire format the server expects; the comma is
+        // percent-encoded here and decoded server-side before the split.
+        {
+            let mut pairs = url.query_pairs_mut();
+            if let Some(sel) = select_fields {
+                if !sel.is_empty() {
+                    pairs.append_pair("select_fields", &sel.join(","));
+                }
+            }
+            if let Some(exc) = exclude_fields {
+                if !exc.is_empty() {
+                    pairs.append_pair("exclude_fields", &exc.join(","));
+                }
             }
         }
-        if let Some(exc) = exclude_fields {
-            if !exc.is_empty() {
-                query.push(format!("exclude_fields={}", exc.join(",")));
-            }
-        }
-        let url_path = if query.is_empty() {
-            format!("/api/find/{}/{}", collection, id)
-        } else {
-            format!("/api/find/{}/{}?{}", collection, id, query.join("&"))
-        };
-        let url = self.base_url.join(&url_path)?;
 
         self.execute_with_retry(|| async {
             let response = self
