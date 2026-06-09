@@ -4110,6 +4110,32 @@ impl WebSocketClient {
         })
     }
 
+    /// Stop receiving mutation notifications for a collection.
+    ///
+    /// Intentional teardown: drops the local subscription (so a held
+    /// SubscriptionReceiver stops being fed) and sends a best-effort
+    /// `Unsubscribe` frame to the server so it stops streaming this collection
+    /// on this connection. Safe to call for a collection that is not currently
+    /// subscribed (no-op).
+    fn ws_unsubscribe<'py>(
+        &self,
+        py: Python<'py>,
+        collection: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let ws_client = match &self.inner {
+            Some(client) => client.clone(),
+            None => return Err(PyRuntimeError::new_err("WebSocket client not initialized")),
+        };
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            ws_client
+                .unsubscribe(&collection)
+                .await
+                .map_err(|e| map_client_err("Unsubscribe failed", e))?;
+            Python::attach(|py| Ok(py.None()))
+        })
+    }
+
     /// Send a chat message and receive streaming responses.
     /// Returns a ChatStreamReceiver for receiving events.
     #[pyo3(signature = (chat_id, message, client_tools=None, max_iterations=None, confirm_tools=None, exclude_tools=None))]

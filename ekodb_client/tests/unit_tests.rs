@@ -853,6 +853,152 @@ async fn test_rollback_transaction_success() {
     assert!(result.is_ok());
 }
 
+#[tokio::test]
+async fn test_create_savepoint_success() {
+    let mut server = Server::new_async().await;
+
+    let _token_mock = mock_token_endpoint(&mut server);
+
+    // POST /api/transactions/{tx}/savepoints with {"name": <savepoint>} body.
+    let _sp_mock = server
+        .mock("POST", "/api/transactions/tx_123/savepoints")
+        .match_body(Matcher::Json(json!({ "name": "sp1" })))
+        .with_status(200)
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+
+    let result = client.create_savepoint("tx_123", "sp1").await;
+
+    assert!(result.is_ok());
+}
+
+#[tokio::test]
+async fn test_rollback_to_savepoint_success() {
+    let mut server = Server::new_async().await;
+
+    let _token_mock = mock_token_endpoint(&mut server);
+
+    // POST /api/transactions/{tx}/savepoints/{name}/rollback — savepoint in URL.
+    let _sp_mock = server
+        .mock("POST", "/api/transactions/tx_123/savepoints/sp1/rollback")
+        .with_status(200)
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+
+    let result = client.rollback_to_savepoint("tx_123", "sp1").await;
+
+    assert!(result.is_ok());
+}
+
+#[tokio::test]
+async fn test_release_savepoint_success() {
+    let mut server = Server::new_async().await;
+
+    let _token_mock = mock_token_endpoint(&mut server);
+
+    // DELETE /api/transactions/{tx}/savepoints/{name} — release forgets it.
+    let _sp_mock = server
+        .mock("DELETE", "/api/transactions/tx_123/savepoints/sp1")
+        .with_status(200)
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+
+    let result = client.release_savepoint("tx_123", "sp1").await;
+
+    assert!(result.is_ok());
+}
+
+#[tokio::test]
+async fn test_find_in_transaction_success() {
+    let mut server = Server::new_async().await;
+
+    let _token_mock = mock_token_endpoint(&mut server);
+
+    // POST /api/find/{collection}?transaction_id=<tx> — read-your-writes find.
+    let _find_mock = server
+        .mock("POST", "/api/find/users")
+        .match_query(Matcher::UrlEncoded(
+            "transaction_id".into(),
+            "tx_123".into(),
+        ))
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!([{"id": "user_1", "name": "Alice"}]).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+
+    let query = Query::new();
+    let result = client.find_in_transaction("users", query, "tx_123").await;
+
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap().len(), 1);
+}
+
+#[tokio::test]
+async fn test_find_by_id_in_transaction_success() {
+    let mut server = Server::new_async().await;
+
+    let _token_mock = mock_token_endpoint(&mut server);
+
+    // GET /api/find/{collection}/{id}?transaction_id=<tx> — read-your-writes by id.
+    let _find_mock = server
+        .mock("GET", "/api/find/users/user_123")
+        .match_query(Matcher::UrlEncoded(
+            "transaction_id".into(),
+            "tx_123".into(),
+        ))
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"id": "user_123", "name": "Alice"}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+
+    let result = client
+        .find_by_id_in_transaction("users", "user_123", "tx_123")
+        .await;
+
+    assert!(result.is_ok());
+}
+
+#[tokio::test]
+async fn test_delete_with_options_transactional() {
+    let mut server = Server::new_async().await;
+
+    let _token_mock = mock_token_endpoint(&mut server);
+
+    // DELETE /api/delete/{collection}/{id}?transaction_id=<tx> — staged delete.
+    let _delete_mock = server
+        .mock("DELETE", "/api/delete/users/user_123")
+        .match_query(Matcher::UrlEncoded(
+            "transaction_id".into(),
+            "tx_123".into(),
+        ))
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"id": "user_123", "deleted": true}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+
+    let options = ekodb_client::options::DeleteOptions::new().transaction_id("tx_123");
+    let result = client
+        .delete_with_options("users", "user_123", options)
+        .await;
+
+    assert!(result.is_ok());
+}
+
 // ============================================================================
 // Authentication Tests
 // ============================================================================

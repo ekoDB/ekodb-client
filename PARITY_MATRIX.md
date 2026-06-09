@@ -25,12 +25,11 @@ client tracks the same release line.
 >   in Rust; Go has `ListCollections`).
 > - **Python WebSocket `ws_batch_update`** — added (WS find-all is already
 >   provided by the existing `find_all`, so no `ws_find_all` alias was added).
->
-> **Known remaining difference (tracked):** an explicit WebSocket `unsubscribe`
-> method that sends a server-side Unsubscribe frame exists in TypeScript and Go;
-> the Rust, Python, and Kotlin WebSocket clients do not currently expose an
-> `unsubscribe` method (teardown happens by dropping the subscription receiver).
-> Adding one to those three is a follow-up.
+> - **WebSocket `unsubscribe`** — added to Rust, Python (`ws_unsubscribe`), and
+>   Kotlin (already in TypeScript and Go). All five clients now send the
+>   server-side `Unsubscribe` frame (`{type, messageId, payload.collection}`) in
+>   addition to tearing down the local subscription, so subscriptions are
+>   stopped explicitly rather than only on receiver drop / connection close.
 >
 > Note: the query-builder `regex()` filter has been removed from all clients
 > until server-side regex filtering is available (tracked internally). Use
