@@ -72,6 +72,11 @@ class TestWebSocketClientMethods:
         # WS chat-cancel parity (#144); Rust/Go already had it.
         assert hasattr(WebSocketClient, "cancel_chat")
 
+    def test_has_ws_unsubscribe(self):
+        # Explicit WS unsubscribe: sends a server-side Unsubscribe frame and
+        # tears down the local subscription. Brings parity with TypeScript/Go.
+        assert hasattr(WebSocketClient, "ws_unsubscribe")
+
 
 class TestSubscriptionReceiverMethods:
     """Test SubscriptionReceiver API."""

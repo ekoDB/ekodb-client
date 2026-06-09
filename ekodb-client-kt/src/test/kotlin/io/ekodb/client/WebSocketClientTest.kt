@@ -1,5 +1,7 @@
 package io.ekodb.client
 
+import io.ktor.client.*
+import io.ktor.client.engine.mock.*
 import kotlinx.serialization.json.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -224,6 +226,31 @@ class WebSocketClientTest {
     // ========================================================================
     // WebSocketMessage Tests
     // ========================================================================
+
+    // ========================================================================
+    // Unsubscribe frame Tests
+    // ========================================================================
+
+    private fun newWsClient(): WebSocketClient {
+        // The mock engine is never driven here: buildUnsubscribeFrame is a pure
+        // frame builder that needs no live connection.
+        val mockHttpClient = HttpClient(MockEngine { respond("") })
+        return WebSocketClient("ws://localhost/api/ws", "test-token", mockHttpClient)
+    }
+
+    @Test
+    fun `unsubscribe frame has expected wire shape`() {
+        // Wire-format guard mirroring the TypeScript/Go Unsubscribe frame:
+        // type tag "Unsubscribe", a top-level messageId, and payload.collection.
+        val frame = newWsClient().buildUnsubscribeFrame("orders", "msg-unsub-1")
+        assertEquals("Unsubscribe", frame["type"]?.jsonPrimitive?.content)
+        assertEquals("msg-unsub-1", frame["messageId"]?.jsonPrimitive?.content)
+        val payload = frame["payload"]?.jsonObject
+        assertNotNull(payload)
+        assertEquals("orders", payload["collection"]?.jsonPrimitive?.content)
+        // payload carries exactly the collection and nothing else.
+        assertEquals(1, payload.size)
+    }
 
     @Test
     fun `WebSocketMessage data class`() {

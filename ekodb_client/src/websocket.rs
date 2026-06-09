@@ -41,6 +41,15 @@ pub enum WebSocketRequest {
         message_id: String,
         payload: SubscribePayload,
     },
+    /// Stop receiving mutation notifications for a collection. Best-effort:
+    /// the server stops streaming this collection on this connection. The
+    /// `messageId` is attached purely so the server's ack carries a correlation
+    /// id; it registers no pending request, so the ack is discarded.
+    Unsubscribe {
+        #[serde(rename = "messageId")]
+        message_id: String,
+        payload: UnsubscribePayload,
+    },
     /// Send a chat message for streaming response
     ChatSend { payload: ChatSendPayload },
     /// Register client-side tools for a chat session
@@ -85,6 +94,11 @@ pub struct SubscribePayload {
     pub filter_field: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub filter_value: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UnsubscribePayload {
+    pub collection: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -705,6 +719,44 @@ impl WebSocketClient {
         Ok(rx)
     }
 
+    /// Stop receiving mutation notifications for a collection.
+    ///
+    /// This is an intentional teardown: it drops the local subscription
+    /// sender(s) for `collection` (so dropped receivers stop being fed) and
+    /// sends a best-effort `Unsubscribe` frame to the server so it stops
+    /// streaming this collection on this connection. If the socket is already
+    /// gone the local teardown suffices, since the server drops all
+    /// subscriptions when the connection closes. Safe to call for a collection
+    /// that is not currently subscribed (no-op).
+    ///
+    /// A unique `messageId` is attached to the frame purely so the server's
+    /// ack carries a correlation id: `Unsubscribe` registers no pending
+    /// request, so the dispatcher finds no match and silently discards the ack.
+    /// The id stops that unmatched ack from being misrouted to an unrelated
+    /// in-flight request.
+    pub async fn unsubscribe(&self, collection: &str) -> Result<()> {
+        // Local teardown: drop the subscription sender(s) for this collection.
+        // Dropping the sender closes the receiver the caller holds.
+        {
+            let mut state = self.dispatch.lock().await;
+            state
+                .subscription_senders
+                .retain(|(name, _)| name != collection);
+        }
+
+        // Best-effort server frame. If we're not connected the local teardown
+        // above is sufficient, so a send failure is not propagated as an error.
+        let request = WebSocketRequest::Unsubscribe {
+            message_id: Self::gen_message_id(),
+            payload: UnsubscribePayload {
+                collection: collection.to_string(),
+            },
+        };
+        let _ = self.ws_send(&request).await;
+
+        Ok(())
+    }
+
     /// Send a chat message and receive streaming responses with client tool support.
     ///
     /// Returns a receiver that yields `ChatStreamEvent` items:
@@ -1301,6 +1353,51 @@ mod tests {
                 assert_eq!(payload.chat_id, "abc");
             }
             other => panic!("expected CancelChat, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn unsubscribe_request_serializes_with_expected_shape() {
+        // Wire-format guard for the server-side unsubscribe path. The ekoDB
+        // server (and the TypeScript + Go clients this mirrors) match on the
+        // literal `type` tag `"Unsubscribe"`, a top-level `messageId`, and the
+        // nested `payload.collection` field. Pin the JSON shape so a rename
+        // can't silently break unsubscribe across the version boundary.
+        let req = WebSocketRequest::Unsubscribe {
+            message_id: "msg-unsub-1".into(),
+            payload: UnsubscribePayload {
+                collection: "orders".into(),
+            },
+        };
+        let v = serde_json::to_value(&req).expect("serialize");
+        assert_eq!(v["type"], "Unsubscribe", "request tag must be Unsubscribe");
+        assert_eq!(
+            v["messageId"], "msg-unsub-1",
+            "messageId must be serialized at the top level"
+        );
+        assert_eq!(
+            v["payload"]["collection"], "orders",
+            "payload.collection must round-trip"
+        );
+        // Payload should carry exactly the collection and nothing else.
+        let payload_obj = v["payload"].as_object().expect("payload must be an object");
+        assert_eq!(payload_obj.len(), 1, "payload should have only collection");
+    }
+
+    #[test]
+    fn unsubscribe_request_deserializes_from_wire() {
+        let json_str =
+            r#"{"type":"Unsubscribe","messageId":"m1","payload":{"collection":"orders"}}"#;
+        let req: WebSocketRequest = serde_json::from_str(json_str).expect("deserialize");
+        match req {
+            WebSocketRequest::Unsubscribe {
+                message_id,
+                payload,
+            } => {
+                assert_eq!(message_id, "m1");
+                assert_eq!(payload.collection, "orders");
+            }
+            other => panic!("expected Unsubscribe, got {other:?}"),
         }
     }
 

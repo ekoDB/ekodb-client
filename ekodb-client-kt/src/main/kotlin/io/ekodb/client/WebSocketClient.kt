@@ -426,6 +426,50 @@ class WebSocketClient(
     }
 
     /**
+     * Build the `Unsubscribe` wire frame. Factored out so the exact JSON shape
+     * (`type` tag, top-level `messageId`, nested `payload.collection`) can be
+     * asserted in a unit test without a live socket. This mirrors the frame the
+     * TypeScript and Go clients send.
+     */
+    internal fun buildUnsubscribeFrame(collection: String, messageId: String): JsonObject =
+        buildJsonObject {
+            put("type", "Unsubscribe")
+            put("messageId", messageId)
+            put("payload", buildJsonObject {
+                put("collection", collection)
+            })
+        }
+
+    /**
+     * Stop receiving mutation notifications for a collection.
+     *
+     * Intentional teardown: closes and drops the local subscription channel (so
+     * a collected Flow completes) and sends a best-effort `Unsubscribe` frame to
+     * the server so it stops streaming this collection on this connection. If
+     * the socket is already gone the local teardown suffices, since the server
+     * drops all subscriptions when the connection closes. Safe to call for a
+     * collection that is not currently subscribed (no-op).
+     *
+     * A unique `messageId` is attached to the frame purely so the server's ack
+     * carries a correlation id: `Unsubscribe` registers no pending request, so
+     * the dispatcher finds no match and silently discards the ack.
+     */
+    suspend fun unsubscribe(collection: String) {
+        // Local teardown: close and remove the subscription channel so any
+        // collector of the returned Flow completes.
+        val channel = mutex.withLock {
+            subscriptions.remove(collection)
+        }
+        channel?.close()
+
+        // Best-effort server frame. If we're not connected the local teardown
+        // above is sufficient, so absence of a session is a silent no-op.
+        val s = session ?: return
+        val request = buildUnsubscribeFrame(collection, genMessageId())
+        s.send(Frame.Text(request.toString()))
+    }
+
+    /**
      * Send a chat message and receive a streaming response.
      * Returns a Flow that emits ChatStreamEvent objects.
      */
