@@ -1431,11 +1431,11 @@ class EkoDBClient private constructor(
     suspend fun getTransactionStatus(transactionId: String): Map<String, Any?> {
         
         val response = executeWithRetry { token ->
-            client.get("$baseUrl/api/transactions/$transactionId") {
+            client.get("$baseUrl/api/transactions/${transactionId.encodeURLPathPart()}") {
                 header("Authorization", "Bearer $token")
             }
         }
-        
+
         if (!response.status.isSuccess()) {
             val errorBody = response.bodyAsText()
             throw Exception("Get transaction status failed with status ${response.status}: $errorBody")
@@ -1464,7 +1464,7 @@ class EkoDBClient private constructor(
     suspend fun commitTransaction(transactionId: String) {
 
         val response = executeWithRetry { token ->
-            client.post("$baseUrl/api/transactions/$transactionId/commit") {
+            client.post("$baseUrl/api/transactions/${transactionId.encodeURLPathPart()}/commit") {
                 header("Authorization", "Bearer $token")
             }
         }
@@ -1482,7 +1482,7 @@ class EkoDBClient private constructor(
     suspend fun rollbackTransaction(transactionId: String) {
 
         val response = executeWithRetry { token ->
-            client.post("$baseUrl/api/transactions/$transactionId/rollback") {
+            client.post("$baseUrl/api/transactions/${transactionId.encodeURLPathPart()}/rollback") {
                 header("Authorization", "Bearer $token")
             }
         }
@@ -1499,7 +1499,7 @@ class EkoDBClient private constructor(
      */
     suspend fun createSavepoint(transactionId: String, name: String) {
         val response = executeWithRetry { token ->
-            client.post("$baseUrl/api/transactions/$transactionId/savepoints") {
+            client.post("$baseUrl/api/transactions/${transactionId.encodeURLPathPart()}/savepoints") {
                 header("Authorization", "Bearer $token")
                 contentType(getContentTypeForRequest())
                 setBody(buildJsonObject { put("name", name) })
@@ -1516,7 +1516,7 @@ class EkoDBClient private constructor(
      */
     suspend fun rollbackToSavepoint(transactionId: String, name: String) {
         val response = executeWithRetry { token ->
-            client.post("$baseUrl/api/transactions/$transactionId/savepoints/$name/rollback") {
+            client.post("$baseUrl/api/transactions/${transactionId.encodeURLPathPart()}/savepoints/${name.encodeURLPathPart()}/rollback") {
                 header("Authorization", "Bearer $token")
             }
         }
@@ -1531,7 +1531,7 @@ class EkoDBClient private constructor(
      */
     suspend fun releaseSavepoint(transactionId: String, name: String) {
         val response = executeWithRetry { token ->
-            client.delete("$baseUrl/api/transactions/$transactionId/savepoints/$name") {
+            client.delete("$baseUrl/api/transactions/${transactionId.encodeURLPathPart()}/savepoints/${name.encodeURLPathPart()}") {
                 header("Authorization", "Bearer $token")
             }
         }
@@ -1599,20 +1599,16 @@ class EkoDBClient private constructor(
                 if (e is kotlinx.coroutines.CancellationException) throw e
                 lastException = e
                 if (attempt < maxRetries - 1) {
-                    delay((2.0.pow(attempt) * 1000).toLong())
+                    // Share the same clamped exponential backoff as the 5xx and
+                    // Retry-After paths so no retry path can sleep unbounded.
+                    delay(clampBackoffMs(attempt))
                 }
             }
         }
 
         throw lastException ?: Exception("Request failed after $maxRetries attempts")
     }
-    
-    private fun Double.pow(n: Int): Double {
-        var result = 1.0
-        repeat(n) { result *= this }
-        return result
-    }
-    
+
     // ========================================================================
     // Chat/AI Methods
     // ========================================================================

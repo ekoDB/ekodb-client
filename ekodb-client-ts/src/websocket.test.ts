@@ -517,6 +517,37 @@ describe("WebSocketClient", () => {
       const sent = await cancelMsg;
       expect(sent.type).toBe("CancelChat");
       expect(sent.payload.chat_id).toBe("chat-1");
+      // A correlation id must be attached so a Success ack can't be misrouted by
+      // the dispatcher's single-pending fallback.
+      expect(typeof sent.messageId).toBe("string");
+      expect(sent.messageId.length).toBeGreaterThan(0);
+
+      client.close();
+    });
+
+    it("attaches a unique messageId on each CancelChat frame", async () => {
+      const client = new WebSocketClient(
+        `ws://localhost:${port}/api/ws`,
+        "test-token",
+      );
+
+      const streamPromise = client.chatSend("chat-1", "test");
+      await new Promise((r) => wss.once("connection", r));
+      const ws = getLastConnection();
+      await waitForMessage(ws); // ChatSend
+      await streamPromise;
+
+      const first = waitForMessage(ws);
+      await client.cancelChat("chat-1");
+      const firstSent = await first;
+
+      const second = waitForMessage(ws);
+      await client.cancelChat("chat-1");
+      const secondSent = await second;
+
+      expect(firstSent.messageId).toBeTruthy();
+      expect(secondSent.messageId).toBeTruthy();
+      expect(firstSent.messageId).not.toBe(secondSent.messageId);
 
       client.close();
     });

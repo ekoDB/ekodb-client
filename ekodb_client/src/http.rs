@@ -142,6 +142,31 @@ impl HttpClient {
 
     /// Add format headers (Content-Type and Accept) to a request builder
     /// Note: reqwest automatically handles gzip compression with the gzip feature enabled
+    /// Build an absolute API URL from already-decoded path segments, percent-encoding
+    /// each segment for safe inclusion in the URL path.
+    ///
+    /// Transaction ids and savepoint names are caller-supplied and may contain
+    /// characters that are reserved in a URL path (`/`, space, `?`, `#`, ...). Pushing
+    /// them through `Url::path_segments_mut()` encodes each segment correctly for the
+    /// path component (space becomes `%20`, not `+` as a query encoder would produce,
+    /// and `/` becomes `%2F` so it can't be misread as a path separator).
+    fn api_path_url(&self, segments: &[&str]) -> Result<Url> {
+        let mut url = self.base_url.clone();
+        {
+            let mut path = url
+                .path_segments_mut()
+                .map_err(|_| Error::Connection("base URL cannot be a base".to_string()))?;
+            // Reset to the origin so the api segments form an absolute path, matching
+            // the behavior of `base_url.join("/api/...")` used elsewhere.
+            path.clear();
+            path.push("api");
+            for seg in segments {
+                path.push(seg);
+            }
+        }
+        Ok(url)
+    }
+
     fn add_format_headers(
         &self,
         path: &str,
@@ -497,19 +522,22 @@ impl HttpClient {
         token: &str,
         opts: &crate::options::DeleteOptions,
     ) -> Result<()> {
-        let mut params: Vec<String> = Vec::new();
-        if let Some(bypass) = opts.bypass_ripple {
-            params.push(format!("bypass_ripple={}", bypass));
+        // url_path is used only for content-type/format detection (it matches on the
+        // `/api/delete/` prefix), so it carries the path without the query string. The
+        // query parameters are appended to the parsed URL via `query_pairs_mut()` so
+        // that values such as `transaction_id` are correctly percent-encoded (a value
+        // containing `&`, space, or `=` would otherwise corrupt the query string).
+        let url_path = format!("/api/delete/{}/{}", collection, id);
+        let mut url = self.base_url.join(&url_path)?;
+        {
+            let mut query = url.query_pairs_mut();
+            if let Some(bypass) = opts.bypass_ripple {
+                query.append_pair("bypass_ripple", &bypass.to_string());
+            }
+            if let Some(ref tx) = opts.transaction_id {
+                query.append_pair("transaction_id", tx);
+            }
         }
-        if let Some(ref tx) = opts.transaction_id {
-            params.push(format!("transaction_id={}", tx));
-        }
-        let url_path = if params.is_empty() {
-            format!("/api/delete/{}/{}", collection, id)
-        } else {
-            format!("/api/delete/{}/{}?{}", collection, id, params.join("&"))
-        };
-        let url = self.base_url.join(&url_path)?;
 
         self.execute_with_retry(|| async {
             let response = self
@@ -1131,9 +1159,7 @@ impl HttpClient {
         transaction_id: &str,
         token: &str,
     ) -> Result<serde_json::Value> {
-        let url = self
-            .base_url
-            .join(&format!("/api/transactions/{}", transaction_id))?;
+        let url = self.api_path_url(&["transactions", transaction_id])?;
 
         self.execute_with_retry(|| async {
             let response = self
@@ -1152,9 +1178,7 @@ impl HttpClient {
 
     /// Commit a transaction
     pub async fn commit_transaction(&self, transaction_id: &str, token: &str) -> Result<()> {
-        let url = self
-            .base_url
-            .join(&format!("/api/transactions/{}/commit", transaction_id))?;
+        let url = self.api_path_url(&["transactions", transaction_id, "commit"])?;
 
         self.execute_with_retry(|| async {
             let response = self
@@ -1175,9 +1199,7 @@ impl HttpClient {
 
     /// Rollback a transaction
     pub async fn rollback_transaction(&self, transaction_id: &str, token: &str) -> Result<()> {
-        let url = self
-            .base_url
-            .join(&format!("/api/transactions/{}/rollback", transaction_id))?;
+        let url = self.api_path_url(&["transactions", transaction_id, "rollback"])?;
 
         self.execute_with_retry(|| async {
             let response = self
@@ -1203,9 +1225,7 @@ impl HttpClient {
         name: &str,
         token: &str,
     ) -> Result<()> {
-        let url = self
-            .base_url
-            .join(&format!("/api/transactions/{}/savepoints", transaction_id))?;
+        let url = self.api_path_url(&["transactions", transaction_id, "savepoints"])?;
         let body = serde_json::json!({ "name": name });
         self.execute_with_retry(|| async {
             let response = self
@@ -1231,10 +1251,13 @@ impl HttpClient {
         name: &str,
         token: &str,
     ) -> Result<()> {
-        let url = self.base_url.join(&format!(
-            "/api/transactions/{}/savepoints/{}/rollback",
-            transaction_id, name
-        ))?;
+        let url = self.api_path_url(&[
+            "transactions",
+            transaction_id,
+            "savepoints",
+            name,
+            "rollback",
+        ])?;
         self.execute_with_retry(|| async {
             let response = self
                 .client
@@ -1258,10 +1281,7 @@ impl HttpClient {
         name: &str,
         token: &str,
     ) -> Result<()> {
-        let url = self.base_url.join(&format!(
-            "/api/transactions/{}/savepoints/{}",
-            transaction_id, name
-        ))?;
+        let url = self.api_path_url(&["transactions", transaction_id, "savepoints", name])?;
         self.execute_with_retry(|| async {
             let response = self
                 .client

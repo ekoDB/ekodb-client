@@ -3433,3 +3433,109 @@ async fn test_compact_chat_already_compact_omits_keep_recent() {
     assert!(resp.already_compact);
     assert!(resp.summary_message_id.is_none());
 }
+
+// ============================================================================
+// Transaction path-encoding Tests
+// ============================================================================
+
+#[tokio::test]
+async fn test_create_savepoint_encodes_reserved_chars_in_path() {
+    // The transaction id and savepoint name are caller-supplied. A name with a
+    // space or a `/` must be percent-encoded into the path (space -> %20, `/` ->
+    // %2F), never as `+` (which a query encoder would produce) and never raw
+    // (which would corrupt the path structure). The transaction id only appears
+    // in the path; the name is carried in the JSON body for create.
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+
+    // mockito matches the raw (percent-encoded) request path.
+    let sp_mock = server
+        .mock("POST", "/api/transactions/tx%20a%2Fb/savepoints")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"ok": true}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    let result = client.create_savepoint("tx a/b", "sp 1/x").await;
+
+    sp_mock.assert_async().await;
+    assert!(result.is_ok(), "create_savepoint failed: {:?}", result);
+}
+
+#[tokio::test]
+async fn test_rollback_to_savepoint_encodes_reserved_chars_in_path() {
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+
+    // Space -> %20 (NOT +), `/` -> %2F, for both the transaction id and the
+    // user-supplied savepoint name.
+    let sp_mock = server
+        .mock(
+            "POST",
+            "/api/transactions/tx%20a%2Fb/savepoints/sp%201%2Fx/rollback",
+        )
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"ok": true}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    let result = client.rollback_to_savepoint("tx a/b", "sp 1/x").await;
+
+    sp_mock.assert_async().await;
+    assert!(result.is_ok(), "rollback_to_savepoint failed: {:?}", result);
+}
+
+#[tokio::test]
+async fn test_release_savepoint_encodes_reserved_chars_in_path() {
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+
+    let sp_mock = server
+        .mock(
+            "DELETE",
+            "/api/transactions/tx%20a%2Fb/savepoints/sp%201%2Fx",
+        )
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"ok": true}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    let result = client.release_savepoint("tx a/b", "sp 1/x").await;
+
+    sp_mock.assert_async().await;
+    assert!(result.is_ok(), "release_savepoint failed: {:?}", result);
+}
+
+#[tokio::test]
+async fn test_delete_with_options_encodes_transaction_id_in_query() {
+    // A transaction id containing reserved query chars (`&`, space) must be
+    // percent-encoded into the query string. Matcher::UrlEncoded decodes the
+    // query before matching, so this asserts the value round-trips exactly.
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+
+    let delete_mock = server
+        .mock("DELETE", "/api/delete/users/user_123")
+        .match_query(Matcher::UrlEncoded(
+            "transaction_id".into(),
+            "tx a&b".into(),
+        ))
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"id": "user_123"}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    let opts = ekodb_client::options::DeleteOptions::new().transaction_id("tx a&b");
+    let result = client.delete_with_options("users", "user_123", opts).await;
+
+    delete_mock.assert_async().await;
+    assert!(result.is_ok(), "delete_with_options failed: {:?}", result);
+}
