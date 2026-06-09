@@ -313,7 +313,7 @@ class EkoDBClientTest {
 
         // Recovered after the throw (proves the catch path retried).
         assertTrue(result.isNotEmpty())
-        assertTrue(nonAuthCalls > 0, "expected at least one non-auth call")
+        assertEquals(2, nonAuthCalls, "expected one failed non-auth call and one successful retry")
         // attempt-0 backoff is the clamped 1000ms; assert it never blew past the
         // clamp ceiling (an unclamped overflow path could sleep far longer).
         assertTrue(
