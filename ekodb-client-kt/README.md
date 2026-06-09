@@ -35,7 +35,7 @@ integration, and automatic optimization.
 
 ```kotlin
 dependencies {
-    implementation("io.ekodb:ekodb-client-kt:0.18.2")
+    implementation("io.ekodb:ekodb-client-kt:0.21.0")
 }
 ```
 
@@ -43,7 +43,7 @@ dependencies {
 
 ```groovy
 dependencies {
-    implementation 'io.ekodb:ekodb-client-kt:0.18.2'
+    implementation 'io.ekodb:ekodb-client-kt:0.21.0'
 }
 ```
 
@@ -53,7 +53,7 @@ dependencies {
 <dependency>
     <groupId>io.ekodb</groupId>
     <artifactId>ekodb-client-kt</artifactId>
-    <version>0.18.2</version>
+    <version>0.21.0</version>
 </dependency>
 ```
 
@@ -444,10 +444,13 @@ For complete, runnable examples of all features, see the
 - `kvSetWithTtl(key, value, ttl)` - Set with expiration
 - `kvGet(key)` - Get value by key
 - `kvDelete(key)` - Delete a key
+- `kvClear()` - Clear the entire KV store
 
 #### Collection Operations
 
 - `listCollections()` - List all collections
+- `listUserCollections()` - List collections excluding internal chat/system
+  collections
 - `count(collection)` - Count documents in collection
 - `collectionExists(collection)` - Check if collection exists
 - `deleteCollection(collection)` - Delete entire collection
@@ -457,6 +460,22 @@ For complete, runnable examples of all features, see the
 #### Search Operations
 
 - `search(collection, query)` - Full-text search across collection
+
+#### Transactions
+
+Buffered, read-your-writes transactions. Statements issued with a
+`transactionId` are staged and applied atomically at commit.
+
+- `beginTransaction(isolationLevel?)` - Start a transaction, returns its id
+- `commitTransaction(transactionId)` - Apply staged writes (may return a
+  retryable HTTP 409 conflict)
+- `rollbackTransaction(transactionId)` - Discard staged writes
+- `createSavepoint(transactionId, name)` - Create a savepoint
+- `rollbackToSavepoint(transactionId, name)` - Roll back to a savepoint
+- `releaseSavepoint(transactionId, name)` - Release a savepoint
+
+Pass the `transactionId` parameter on reads/writes (insert / update / delete /
+find / findById) to read and write within the transaction (read-your-writes).
 
 #### WebSocket Operations
 
@@ -477,6 +496,9 @@ For complete, runnable examples of all features, see the
   - `createCollection(name, schema?)` - Create collection
   - `listCollections()` - List collections
   - `deleteCollection(name)` - Delete collection
+  - `subscribe(collection, ...)` - Subscribe to mutation notifications
+  - `unsubscribe(collection)` - Tear down a subscription
+  - `cancelChat(chatId)` - Cancel an in-flight streaming chat
   - `close()` - Close connection
 - Schema cache:
   - `SchemaCache(enabled, maxEntries, ttlMs)` - LRU cache

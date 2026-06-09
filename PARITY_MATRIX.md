@@ -2,7 +2,7 @@
 
 **Last Updated:** June 4, 2026
 
-**Client version:** 0.20.0 (Rust, Python, TypeScript, Kotlin); standalone Go
+**Client version:** 0.21.0 (Rust, Python, TypeScript, Kotlin); standalone Go
 client tracks the same release line.
 
 > Renamed from `MISSING_FEATURES.md` (April 28, 2026) to reflect the current
@@ -11,9 +11,9 @@ client tracks the same release line.
 > the old path. The companion `documentation/CLIENT_LIBRARY_GAPS.md` was removed
 > in the same pass (it duplicated this file at a stale revision).
 
-## Status: Core parity verified through v0.20.0
+## Status: Core parity verified through v0.21.0
 
-> The v0.20.0 parity pass closed a set of per-client method gaps. Newly brought
+> The v0.21.0 parity pass closed a set of per-client method gaps. Newly brought
 > to parity:
 >
 > - **`kv_clear`** — now on Rust, Python, TypeScript, Kotlin, and Go.
@@ -638,12 +638,12 @@ When implementing these features:
 3. **Add types first** - Define all TypeScript/Rust/etc types before
    implementation
 4. **Test thoroughly** - Unit tests + integration tests + examples
-5. **Update docs** - CLIENT_LIBRARY_GAPS.md and language-specific READMEs
+5. **Update docs** - language-specific READMEs
 
 ---
 
 ## Questions?
 
-- **Server API Documentation:** See `/ekodb/API.md`
-- **Current Client Status:** See `/documentation/CLIENT_LIBRARY_GAPS.md`
+- **Server API Documentation:** See the ekoDB server documentation
+- **Current Client Status:** See this parity matrix
 - **Implementation Examples:** Review existing methods in client source files

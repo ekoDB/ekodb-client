@@ -286,6 +286,21 @@ Find a document by ID.
 
 - The found document
 
+#### `await client.find_by_id_with_projection(collection: str, id: str, select_fields: Optional[list] = None, exclude_fields: Optional[list] = None) -> dict`
+
+Find a document by ID, returning only the projected fields.
+
+**Parameters:**
+
+- `collection`: The collection name
+- `id`: The document ID
+- `select_fields`: Optional list of fields to include
+- `exclude_fields`: Optional list of fields to exclude
+
+**Returns:**
+
+- The found document with field projection applied
+
 #### `await client.find(collection: str, limit: Optional[int] = None) -> List[dict]`
 
 Find documents in a collection.
@@ -487,6 +502,82 @@ Delete a user function by its label.
 
 - `label`: The user function label
 
+### Key-Value
+
+#### `await client.kv_set(key: str, value: dict, ttl: Optional[str] = None) -> None`
+
+Set a key-value pair, optionally with an expiration.
+
+**Parameters:**
+
+- `key`: The key
+- `value`: A dictionary value to store
+- `ttl`: Optional expiration (e.g. `"60s"`)
+
+#### `await client.kv_get(key: str) -> Optional[dict]`
+
+Get a value by key.
+
+**Parameters:**
+
+- `key`: The key
+
+**Returns:**
+
+- The stored value, or `None` if the key does not exist
+
+#### `await client.kv_delete(key: str) -> None`
+
+Delete a key.
+
+**Parameters:**
+
+- `key`: The key
+
+#### `await client.kv_clear() -> None`
+
+Clear the entire KV store (all keys in the namespace).
+
+### Collections
+
+#### `await client.list_user_collections() -> List[str]`
+
+List collections, excluding internal chat/system collections.
+
+**Returns:**
+
+- List of user collection names
+
+### Transactions
+
+Buffered, read-your-writes transactions. Operations issued with a
+`transaction_id` kwarg (accepted on `insert`, `find`, `find_by_id`, `update`,
+`delete`) are staged and applied atomically at commit.
+
+#### `await client.begin_transaction(isolation_level: str = "ReadCommitted") -> str`
+
+Start a transaction and return its id.
+
+#### `await client.commit_transaction(transaction_id: str) -> None`
+
+Apply the staged writes. May raise a retryable conflict (HTTP 409).
+
+#### `await client.rollback_transaction(transaction_id: str) -> None`
+
+Discard the staged writes.
+
+#### `await client.create_savepoint(transaction_id: str, name: str) -> None`
+
+Create a savepoint within the transaction.
+
+#### `await client.rollback_to_savepoint(transaction_id: str, name: str) -> None`
+
+Roll the transaction back to a savepoint.
+
+#### `await client.release_savepoint(transaction_id: str, name: str) -> None`
+
+Release (forget) a savepoint.
+
 ## Examples
 
 See the
@@ -577,6 +668,7 @@ await ws.ws_delete("users", "record-id")
 
 # Batch operations
 await ws.ws_batch_insert("logs", [{"msg": "a"}, {"msg": "b"}])
+await ws.ws_batch_update("logs", [("id1", {"msg": "x"}), ("id2", {"msg": "y"})])
 await ws.ws_batch_delete("logs", ["id1", "id2"])
 
 # Search + collection management
@@ -586,6 +678,10 @@ await ws.ws_create_collection("new_coll")
 
 # Atomic field actions
 await ws.ws_update_with_action("counters", "views", "increment", "count", 1)
+
+# Subscriptions + chat
+await ws.ws_unsubscribe("users")
+await ws.cancel_chat("chat-id")
 ```
 
 ### WebSocket Chat Streaming

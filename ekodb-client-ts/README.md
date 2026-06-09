@@ -254,6 +254,7 @@ const joinResults = await client.find("users", multiQuery);
 - `kvSet(key: string, value: any): Promise<void>`
 - `kvGet(key: string): Promise<any>`
 - `kvDelete(key: string): Promise<void>`
+- `kvClear(): Promise<void>` - Clear the entire KV store
 
 #### Query Builder
 
@@ -297,6 +298,8 @@ const joinResults = await client.find("users", multiQuery);
 #### Collection Management
 
 - `listCollections(): Promise<string[]>`
+- `listUserCollections(): Promise<string[]>` - List collections excluding
+  internal chat/system collections
 - `deleteCollection(collection: string): Promise<void>`
 - `collectionExists(collection: string): Promise<boolean>` - Check if collection
   exists
@@ -346,6 +349,14 @@ const joinResults = await client.find("users", multiQuery);
 - `deleteCollection(name): Promise<void>`
 - `close(): void`
 
+**Subscriptions & chat:**
+
+- `subscribe(collection, options?): Promise<EventStream<MutationNotification>>`
+  - Subscribe to a collection's mutation notifications
+- `unsubscribe(collection): void` - Tear down a subscription (not replayed on
+  reconnect)
+- `cancelChat(chatId): Promise<void>` - Cancel an in-flight streaming chat
+
 **Schema Cache:**
 
 ```typescript
@@ -358,6 +369,23 @@ ws.setSchemaCache(cache);
 const id = extractRecordId(record); // tries "id", "_id"
 const id2 = ws.extractId("users", record); // uses cache
 ```
+
+### Transactions
+
+Buffered, read-your-writes transactions. Statements issued with a
+`transactionId` are staged and applied atomically at commit.
+
+- `beginTransaction(isolationLevel?): Promise<string>` - Start a transaction and
+  return its id
+- `commitTransaction(transactionId): Promise<void>` - Apply staged writes. May
+  reject with a retryable conflict (HTTP 409)
+- `rollbackTransaction(transactionId): Promise<void>` - Discard staged writes
+- `createSavepoint(transactionId, name): Promise<void>`
+- `rollbackToSavepoint(transactionId, name): Promise<void>`
+- `releaseSavepoint(transactionId, name): Promise<void>`
+
+Pass `transactionId` in the options of `insert` / `update` / `delete` / `find` /
+`findById` to read and write within the transaction (read-your-writes).
 
 ## Examples
 
