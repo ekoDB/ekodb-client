@@ -559,10 +559,14 @@ All examples are located in `examples/rust/examples/` directory.
 - `insert(collection, record)` - Insert a document
 - `insert_with_ttl(collection, record, ttl)` - Insert with expiration
 - `find_by_id(collection, id)` - Find document by ID
+- `find_by_id_with_projection(collection, id, select_fields, exclude_fields)` -
+  Find by ID with field projection
 - `find(collection, query)` - Query documents with filters
 - `find_all(collection)` - Get all documents in collection
 - `update(collection, id, updates)` - Update a document
 - `delete(collection, id)` - Delete a document
+- `delete_with_options(collection, id, options)` - Delete with options (e.g.
+  bypass ripple, transaction id)
 
 #### Batch Operations
 
@@ -634,19 +638,40 @@ All examples are located in `examples/rust/examples/` directory.
 - `kv_set_with_ttl(key, value, ttl)` - Set with expiration
 - `kv_get(key)` - Get value by key
 - `kv_delete(key)` - Delete a key
+- `kv_clear()` - Clear the entire KV store
 
 #### Collection Operations
 
 - `list_collections()` - List all collections
+- `list_user_collections()` - List collections excluding internal chat/system
+  collections
 - `count(collection)` - Count documents in collection
 - `collection_exists(collection)` - Check if collection exists
 - `delete_collection(collection)` - Delete entire collection
+
+#### Transactions
+
+Buffered, read-your-writes transactions. Statements issued with a
+`transaction_id` are staged and applied atomically at commit.
+
+- `begin_transaction(isolation_level)` - Start a transaction, returns its id
+- `commit_transaction(transaction_id)` - Apply staged writes (may return a
+  retryable HTTP 409 conflict)
+- `rollback_transaction(transaction_id)` - Discard staged writes
+- `create_savepoint(transaction_id, name)` - Create a savepoint
+- `rollback_to_savepoint(transaction_id, name)` - Roll back to a savepoint
+- `release_savepoint(transaction_id, name)` - Release a savepoint
+
+Pass a `transaction_id` on reads/writes to read and write within the transaction
+(read-your-writes).
 
 #### WebSocket Operations
 
 - `websocket(url)` - Connect to WebSocket endpoint
 - `ws_client.find(collection, query)` - Query via WebSocket
 - `ws_client.find_all(collection)` - Get all via WebSocket
+- `ws_client.unsubscribe(collection)` - Tear down a subscription
+- `ws_client.cancel_chat(chat_id)` - Cancel an in-flight streaming chat
 
 ### Goals, Tasks & Agents
 
