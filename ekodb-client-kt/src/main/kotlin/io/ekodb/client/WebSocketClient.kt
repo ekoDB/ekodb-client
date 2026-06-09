@@ -441,6 +441,20 @@ class WebSocketClient(
         }
 
     /**
+     * Build the CancelChat frame. Extracted so its wire shape (`type` tag,
+     * top-level `messageId`, nested `payload.chat_id`) can be asserted in a unit
+     * test without a live socket.
+     */
+    internal fun buildCancelChatFrame(chatId: String, messageId: String): JsonObject =
+        buildJsonObject {
+            put("type", "CancelChat")
+            put("messageId", messageId)
+            put("payload", buildJsonObject {
+                put("chat_id", chatId)
+            })
+        }
+
+    /**
      * Stop receiving mutation notifications for a collection.
      *
      * Intentional teardown: closes and drops the local subscription channel (so
@@ -585,12 +599,12 @@ class WebSocketClient(
     suspend fun cancelChat(chatId: String) {
         val s = session ?: throw IllegalStateException("Not connected. Call connect() first.")
 
-        val request = buildJsonObject {
-            put("type", "CancelChat")
-            put("payload", buildJsonObject {
-                put("chat_id", chatId)
-            })
-        }
+        // Include a messageId so any server ack carries a correlation id. Without
+        // it, the dispatcher's single-pending fallback could misroute a
+        // CancelChat ack to an unrelated pending request (same reason unsubscribe
+        // attaches one). This frame is fire-and-forget, so the ack is simply
+        // ignorable once it can be correlated.
+        val request = buildCancelChatFrame(chatId, genMessageId())
 
         s.send(Frame.Text(request.toString()))
     }
