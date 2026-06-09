@@ -253,6 +253,20 @@ class WebSocketClientTest {
     }
 
     @Test
+    fun `cancelChat frame carries a messageId for ack correlation`() {
+        // Regression guard: the CancelChat frame must include a top-level
+        // messageId so a server ack can be correlated (and safely ignored)
+        // rather than misrouted by the dispatcher's single-pending fallback.
+        val frame = newWsClient().buildCancelChatFrame("chat-42", "msg-cancel-1")
+        assertEquals("CancelChat", frame["type"]?.jsonPrimitive?.content)
+        assertEquals("msg-cancel-1", frame["messageId"]?.jsonPrimitive?.content)
+        val payload = frame["payload"]?.jsonObject
+        assertNotNull(payload)
+        assertEquals("chat-42", payload["chat_id"]?.jsonPrimitive?.content)
+        assertEquals(1, payload.size)
+    }
+
+    @Test
     fun `WebSocketMessage data class`() {
         val payload = buildJsonObject { put("collection", "test") }
         val msg = WebSocketMessage("FindAll", "123", payload)
