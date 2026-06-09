@@ -4229,8 +4229,13 @@ export class WebSocketClient {
   async cancelChat(chatId: string): Promise<void> {
     await this.ensureConnected();
 
+    // Attach a unique messageId (same generator as unsubscribe). Any Success ack
+    // from the server then carries a correlation id: it has no pending request to
+    // match, so it is ignored — and because the id is present, the dispatcher's
+    // single-pending fallback can't misroute the ack to an unrelated request.
     const request = {
       type: "CancelChat",
+      messageId: this.genMessageId(),
       payload: { chat_id: chatId },
     };
 

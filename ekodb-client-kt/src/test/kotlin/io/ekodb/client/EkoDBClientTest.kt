@@ -179,6 +179,149 @@ class EkoDBClientTest {
         assertTrue(result.isNotEmpty())
     }
 
+    @Test
+    fun `createSavepoint percent-encodes reserved chars in path`() = runBlocking {
+        // The transaction id and savepoint name are caller-supplied. A space or
+        // `/` in either must be percent-encoded into the path (space -> %20,
+        // `/` -> %2F), never raw and never `+`.
+        var capturedPath: String? = null
+        val mockEngine = MockEngine { request ->
+            if (request.url.encodedPath.contains("/api/auth/token")) {
+                respond(
+                    content = """{"token": "mock_jwt_token_123"}""",
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                )
+            } else {
+                capturedPath = request.url.encodedPath
+                respond(
+                    content = """{"ok": true}""",
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                )
+            }
+        }
+        val client = createTestClient(mockEngine)
+        client.createSavepoint("tx a/b", "sp 1/x")
+
+        assertEquals("/api/transactions/tx%20a%2Fb/savepoints", capturedPath)
+    }
+
+    @Test
+    fun `rollbackToSavepoint percent-encodes reserved chars in path`() = runBlocking {
+        var capturedPath: String? = null
+        val mockEngine = MockEngine { request ->
+            if (request.url.encodedPath.contains("/api/auth/token")) {
+                respond(
+                    content = """{"token": "mock_jwt_token_123"}""",
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                )
+            } else {
+                capturedPath = request.url.encodedPath
+                respond(
+                    content = """{"ok": true}""",
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                )
+            }
+        }
+        val client = createTestClient(mockEngine)
+        client.rollbackToSavepoint("tx a/b", "sp 1/x")
+
+        // Space -> %20 (NOT +), `/` -> %2F, for both segments.
+        assertEquals(
+            "/api/transactions/tx%20a%2Fb/savepoints/sp%201%2Fx/rollback",
+            capturedPath
+        )
+    }
+
+    @Test
+    fun `releaseSavepoint percent-encodes reserved chars in path`() = runBlocking {
+        var capturedPath: String? = null
+        val mockEngine = MockEngine { request ->
+            if (request.url.encodedPath.contains("/api/auth/token")) {
+                respond(
+                    content = """{"token": "mock_jwt_token_123"}""",
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                )
+            } else {
+                capturedPath = request.url.encodedPath
+                respond(
+                    content = """{"ok": true}""",
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                )
+            }
+        }
+        val client = createTestClient(mockEngine)
+        client.releaseSavepoint("tx a/b", "sp 1/x")
+
+        assertEquals(
+            "/api/transactions/tx%20a%2Fb/savepoints/sp%201%2Fx",
+            capturedPath
+        )
+    }
+
+    @Test
+    fun `exception retry path recovers and is bounded by clamped backoff`() = runBlocking {
+        // The generic exception-retry catch path uses clampBackoffMs(attempt) (the
+        // same clamped backoff as the 5xx and Retry-After paths). attempt 0 backs
+        // off 1000ms, so a single recover-after-throw completes well under the
+        // unclamped-overflow ceiling. This proves the catch path retries (rather
+        // than failing fast) and shares the bounded backoff.
+        var nonAuthCalls = 0
+        val mockEngine = MockEngine { request ->
+            if (request.url.encodedPath.contains("/api/auth/token")) {
+                respond(
+                    content = """{"token": "mock_jwt_token_123"}""",
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                )
+            } else {
+                nonAuthCalls++
+                if (nonAuthCalls == 1) {
+                    // First attempt throws -> hits the generic exception catch path.
+                    throw java.io.IOException("simulated transient network failure")
+                }
+                respond(
+                    content = """{"transaction_id": "tx_after_retry", "status": "active"}""",
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                )
+            }
+        }
+        val mockHttpClient = HttpClient(mockEngine) {
+            install(ContentNegotiation) {
+                json(Json {
+                    ignoreUnknownKeys = true
+                    isLenient = true
+                })
+            }
+        }
+        val client = EkoDBClient.builder()
+            .baseUrl(testBaseUrl)
+            .apiKey(testApiKey)
+            .maxRetries(3)
+            .httpClient(mockHttpClient)
+            .build()
+
+        val start = System.currentTimeMillis()
+        val result = client.getTransactionStatus("tx_after_retry")
+        val elapsed = System.currentTimeMillis() - start
+
+        // Recovered after the throw (proves the catch path retried).
+        assertTrue(result.isNotEmpty())
+        assertTrue(nonAuthCalls >= 2, "expected a retry after the thrown failure")
+        // attempt-0 backoff is the clamped 1000ms; assert it never blew past the
+        // clamp ceiling (an unclamped overflow path could sleep far longer).
+        assertTrue(
+            elapsed < EkoDBClient.MAX_BACKOFF_MS,
+            "retry backoff should be bounded by the clamp, took ${elapsed}ms"
+        )
+    }
+
     // ========================================================================
     // executeTool Tests
     // ========================================================================
