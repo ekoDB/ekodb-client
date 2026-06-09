@@ -346,20 +346,30 @@ class EkoDBClient private constructor(
     }
     
     /**
-     * Find a record by ID
+     * Find a record by ID.
+     *
+     * @param transactionId Optional transaction ID for read-your-writes — the
+     *   read is served from the transaction's own view (its uncommitted staged
+     *   writes, else the committed store) and recorded in its read set for
+     *   commit-time conflict detection.
      */
-    suspend fun findById(collection: String, id: String): Record {
+    suspend fun findById(
+        collection: String,
+        id: String,
+        transactionId: String? = null
+    ): Record {
         val response = executeWithRetry { token ->
             client.get("$baseUrl/api/find/$collection/$id") {
                 header("Authorization", "Bearer $token")
+                transactionId?.let { parameter("transaction_id", it) }
             }
         }
-        
+
         if (!response.status.isSuccess()) {
             val errorBody = response.bodyAsText()
             throw Exception("Find by ID failed with status ${response.status}: $errorBody")
         }
-        
+
         return response.body()
     }
 
@@ -370,18 +380,21 @@ class EkoDBClient private constructor(
      * @param id The record ID
      * @param selectFields Fields to include in the result (null for all)
      * @param excludeFields Fields to exclude from the result (null for none)
+     * @param transactionId Optional transaction ID for read-your-writes
      */
     suspend fun findByIdWithProjection(
         collection: String,
         id: String,
         selectFields: List<String>? = null,
-        excludeFields: List<String>? = null
+        excludeFields: List<String>? = null,
+        transactionId: String? = null
     ): Record {
         val response = executeWithRetry { token ->
             client.get("$baseUrl/api/find/$collection/$id") {
                 header("Authorization", "Bearer $token")
                 selectFields?.let { parameter("select_fields", it.joinToString(",")) }
                 excludeFields?.let { parameter("exclude_fields", it.joinToString(",")) }
+                transactionId?.let { parameter("transaction_id", it) }
             }
         }
 
@@ -394,14 +407,22 @@ class EkoDBClient private constructor(
     }
 
     /**
-     * Find records with a query
+     * Find records with a query.
+     *
+     * @param transactionId Optional transaction ID for read-your-writes over the
+     *   matched records.
      */
-    suspend fun find(collection: String, query: Query): List<Record> {
+    suspend fun find(
+        collection: String,
+        query: Query,
+        transactionId: String? = null
+    ): List<Record> {
         val response = executeWithRetry { token ->
             client.post("$baseUrl/api/find/$collection") {
                 header("Authorization", "Bearer $token")
                 contentType(getContentTypeForRequest())
                 header("Accept", getContentTypeForRequest().toString())
+                transactionId?.let { parameter("transaction_id", it) }
                 setBody(query)
             }
         }
@@ -1428,41 +1449,98 @@ class EkoDBClient private constructor(
     }
     
     /**
-     * Commit a transaction
+     * Commit a transaction.
+     *
+     * Transactions are buffered: statements issued with this transaction ID (via
+     * the `transactionId` parameter on insert/update/delete/find/findById/…) are
+     * staged and applied atomically here. They are invisible to others until
+     * commit, and visible to this transaction's own reads (read-your-writes) only
+     * when those reads also pass the transaction ID. Commit may fail (HTTP 409)
+     * if a record this transaction read or wrote was changed by another committed
+     * transaction — retry the transaction in that case.
+     *
      * @param transactionId The transaction ID to commit
      */
     suspend fun commitTransaction(transactionId: String) {
-        
+
         val response = executeWithRetry { token ->
             client.post("$baseUrl/api/transactions/$transactionId/commit") {
                 header("Authorization", "Bearer $token")
             }
         }
-        
+
         if (!response.status.isSuccess()) {
             val errorBody = response.bodyAsText()
             throw Exception("Commit transaction failed with status ${response.status}: $errorBody")
         }
     }
-    
+
     /**
-     * Rollback a transaction
+     * Rollback a transaction, discarding all staged writes (nothing was applied).
      * @param transactionId The transaction ID to rollback
      */
     suspend fun rollbackTransaction(transactionId: String) {
-        
+
         val response = executeWithRetry { token ->
             client.post("$baseUrl/api/transactions/$transactionId/rollback") {
                 header("Authorization", "Bearer $token")
             }
         }
-        
+
         if (!response.status.isSuccess()) {
             val errorBody = response.bodyAsText()
             throw Exception("Rollback transaction failed with status ${response.status}: $errorBody")
         }
     }
-    
+
+    /**
+     * Create a savepoint within a transaction. A later [rollbackToSavepoint]
+     * discards everything staged after it.
+     */
+    suspend fun createSavepoint(transactionId: String, name: String) {
+        val response = executeWithRetry { token ->
+            client.post("$baseUrl/api/transactions/$transactionId/savepoints") {
+                header("Authorization", "Bearer $token")
+                contentType(getContentTypeForRequest())
+                setBody(buildJsonObject { put("name", name) })
+            }
+        }
+        if (!response.status.isSuccess()) {
+            val errorBody = response.bodyAsText()
+            throw Exception("Create savepoint failed with status ${response.status}: $errorBody")
+        }
+    }
+
+    /**
+     * Roll the transaction back to a savepoint, discarding writes staged after it.
+     */
+    suspend fun rollbackToSavepoint(transactionId: String, name: String) {
+        val response = executeWithRetry { token ->
+            client.post("$baseUrl/api/transactions/$transactionId/savepoints/$name/rollback") {
+                header("Authorization", "Bearer $token")
+            }
+        }
+        if (!response.status.isSuccess()) {
+            val errorBody = response.bodyAsText()
+            throw Exception("Rollback to savepoint failed with status ${response.status}: $errorBody")
+        }
+    }
+
+    /**
+     * Release (forget) a savepoint. Staged work is unaffected.
+     */
+    suspend fun releaseSavepoint(transactionId: String, name: String) {
+        val response = executeWithRetry { token ->
+            client.delete("$baseUrl/api/transactions/$transactionId/savepoints/$name") {
+                header("Authorization", "Bearer $token")
+            }
+        }
+        if (!response.status.isSuccess()) {
+            val errorBody = response.bodyAsText()
+            throw Exception("Release savepoint failed with status ${response.status}: $errorBody")
+        }
+    }
+
     /**
      * Execute request with retry logic
      */

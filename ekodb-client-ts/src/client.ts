@@ -115,6 +115,23 @@ export interface FindOptions {
   bypassCache?: boolean;
   selectFields?: string[];
   excludeFields?: string[];
+  /**
+   * Read within a transaction (read-your-writes). When set, the read is served
+   * from the transaction's own view — its uncommitted staged writes, else the
+   * committed store — and recorded in the transaction's read set for
+   * commit-time conflict detection. Omit for an ordinary committed read.
+   */
+  transactionId?: string;
+}
+
+/**
+ * Options for a point read by id. `transactionId` enables read-your-writes
+ * within a transaction (see {@link FindOptions.transactionId}).
+ */
+export interface FindByIdOptions {
+  selectFields?: string[];
+  excludeFields?: string[];
+  transactionId?: string;
 }
 
 export interface BatchInsertOptions {
@@ -813,20 +830,41 @@ export class EkoDBClient {
   async find(
     collection: string,
     query: Query | QueryBuilder = {},
+    options?: { transactionId?: string },
   ): Promise<Record[]> {
     const queryObj = query instanceof QueryBuilder ? query.build() : query;
-    return this.makeRequest<Record[]>(
-      "POST",
-      `/api/find/${collection}`,
-      queryObj,
-    );
+    // transaction_id is a query parameter (read in the transaction's view),
+    // not part of the filter body.
+    const url = options?.transactionId
+      ? `/api/find/${collection}?transaction_id=${encodeURIComponent(options.transactionId)}`
+      : `/api/find/${collection}`;
+    return this.makeRequest<Record[]>("POST", url, queryObj);
   }
 
   /**
-   * Find a document by ID
+   * Find a document by ID.
+   * @param options - Optional read options. `transactionId` reads within a
+   *   transaction (read-your-writes); see {@link FindByIdOptions}.
    */
-  async findById(collection: string, id: string): Promise<Record> {
-    return this.makeRequest<Record>("GET", `/api/find/${collection}/${id}`);
+  async findById(
+    collection: string,
+    id: string,
+    options?: FindByIdOptions,
+  ): Promise<Record> {
+    const params = new URLSearchParams();
+    if (options?.selectFields?.length) {
+      params.append("select_fields", options.selectFields.join(","));
+    }
+    if (options?.excludeFields?.length) {
+      params.append("exclude_fields", options.excludeFields.join(","));
+    }
+    if (options?.transactionId) {
+      params.append("transaction_id", options.transactionId);
+    }
+    const url = params.toString()
+      ? `/api/find/${collection}/${id}?${params.toString()}`
+      : `/api/find/${collection}/${id}`;
+    return this.makeRequest<Record>("GET", url);
   }
 
   /**
@@ -835,12 +873,14 @@ export class EkoDBClient {
    * @param id - Document ID
    * @param selectFields - Fields to include in the result
    * @param excludeFields - Fields to exclude from the result
+   * @param transactionId - Read within a transaction (read-your-writes)
    */
   async findByIdWithProjection(
     collection: string,
     id: string,
     selectFields?: string[],
     excludeFields?: string[],
+    transactionId?: string,
   ): Promise<Record> {
     const params = new URLSearchParams();
     if (selectFields?.length) {
@@ -848,6 +888,9 @@ export class EkoDBClient {
     }
     if (excludeFields?.length) {
       params.append("exclude_fields", excludeFields.join(","));
+    }
+    if (transactionId) {
+      params.append("transaction_id", transactionId);
     }
     const url = params.toString()
       ? `/api/find/${collection}/${id}?${params.toString()}`
@@ -1184,7 +1227,18 @@ export class EkoDBClient {
   // ============================================================================
 
   /**
-   * Begin a new transaction
+   * Begin a new transaction.
+   *
+   * Transactions are buffered: statements issued with this `transactionId`
+   * (passed via the `transactionId` option on insert/update/delete/find/…) are
+   * staged and applied atomically only at {@link commitTransaction}. They are
+   * invisible to everyone else until commit, and visible to this transaction's
+   * own reads (read-your-writes) only when those reads also carry the
+   * `transactionId`. {@link rollbackTransaction} discards the staged writes.
+   * `commitTransaction` may reject with a conflict (HTTP 409) if a record this
+   * transaction read or wrote was changed by another committed transaction —
+   * retry the transaction in that case.
+   *
    * @param isolationLevel - Transaction isolation level (default: "ReadCommitted")
    * @returns Transaction ID
    */
@@ -1233,13 +1287,56 @@ export class EkoDBClient {
   }
 
   /**
-   * Rollback a transaction
+   * Rollback a transaction (discards all staged writes; nothing was applied).
    * @param transactionId - The transaction ID to rollback
    */
   async rollbackTransaction(transactionId: string): Promise<void> {
     await this.makeRequest<void>(
       "POST",
       `/api/transactions/${encodeURIComponent(transactionId)}/rollback`,
+      undefined,
+      0,
+      true,
+    );
+  }
+
+  /**
+   * Create a savepoint within a transaction. A later
+   * {@link rollbackToSavepoint} discards everything staged after it.
+   */
+  async createSavepoint(transactionId: string, name: string): Promise<void> {
+    await this.makeRequest<void>(
+      "POST",
+      `/api/transactions/${encodeURIComponent(transactionId)}/savepoints`,
+      { name },
+      0,
+      true,
+    );
+  }
+
+  /**
+   * Roll the transaction back to a savepoint, discarding writes staged after it.
+   */
+  async rollbackToSavepoint(
+    transactionId: string,
+    name: string,
+  ): Promise<void> {
+    await this.makeRequest<void>(
+      "POST",
+      `/api/transactions/${encodeURIComponent(transactionId)}/savepoints/${encodeURIComponent(name)}/rollback`,
+      undefined,
+      0,
+      true,
+    );
+  }
+
+  /**
+   * Release (forget) a savepoint. Staged work is unaffected.
+   */
+  async releaseSavepoint(transactionId: string, name: string): Promise<void> {
+    await this.makeRequest<void>(
+      "DELETE",
+      `/api/transactions/${encodeURIComponent(transactionId)}/savepoints/${encodeURIComponent(name)}`,
       undefined,
       0,
       true,

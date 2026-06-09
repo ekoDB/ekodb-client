@@ -209,22 +209,38 @@ impl Client {
         })
     }
 
-    /// Find a document by ID
-    #[pyo3(signature = (collection, id, bypass_ripple=None))]
+    /// Find a document by ID.
+    ///
+    /// Args:
+    ///     collection: Collection name
+    ///     id: Record ID
+    ///     bypass_ripple: Optional ripple bypass
+    ///     transaction_id: Optional transaction ID for read-your-writes — the
+    ///         read is served from the transaction's own view (its uncommitted
+    ///         staged writes, else the committed store) and recorded in its read
+    ///         set for commit-time conflict detection.
+    #[pyo3(signature = (collection, id, bypass_ripple=None, transaction_id=None))]
     fn find_by_id<'py>(
         &self,
         py: Python<'py>,
         collection: String,
         id: String,
         bypass_ripple: Option<bool>,
+        transaction_id: Option<String>,
     ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
 
         future_into_py(py, async move {
-            let result = client
-                .find_by_id(&collection, &id, bypass_ripple)
-                .await
-                .map_err(|e| map_client_err("Find failed", e))?;
+            let result = match transaction_id {
+                Some(tx) => client
+                    .find_by_id_in_transaction(&collection, &id, &tx)
+                    .await
+                    .map_err(|e| map_client_err("Find failed", e))?,
+                None => client
+                    .find_by_id(&collection, &id, bypass_ripple)
+                    .await
+                    .map_err(|e| map_client_err("Find failed", e))?,
+            };
 
             Python::attach(|py| record_to_dict(py, &result))
         })
@@ -264,7 +280,7 @@ impl Client {
     ///     collection: Collection name
     ///     query: Optional query dict with filters, joins, etc.
     ///     limit: Optional limit (deprecated, use query dict instead)
-    #[pyo3(signature = (collection, query=None, limit=None, bypass_ripple=None))]
+    #[pyo3(signature = (collection, query=None, limit=None, bypass_ripple=None, transaction_id=None))]
     fn find<'py>(
         &self,
         py: Python<'py>,
@@ -272,6 +288,7 @@ impl Client {
         query: Option<&Bound<'py, PyDict>>,
         limit: Option<usize>,
         bypass_ripple: Option<bool>,
+        transaction_id: Option<String>,
     ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
         let query_json = if let Some(q) = query {
@@ -282,12 +299,12 @@ impl Client {
 
         future_into_py::<_, Py<PyAny>>(py, async move {
             let mut rust_query = RustQuery::new();
-            
+
             // Apply limit from parameter if provided (for backward compatibility)
             if let Some(l) = limit {
                 rust_query = rust_query.limit(l);
             }
-            
+
             // Parse query dict if provided
             if let Some(q) = query_json {
                 rust_query = serde_json::from_value(q).map_err(|e| {
@@ -295,10 +312,16 @@ impl Client {
                 })?;
             }
 
-            let results = client
-                .find(&collection, rust_query, bypass_ripple)
-                .await
-                .map_err(|e| map_client_err("Find failed", e))?;
+            let results = match transaction_id {
+                Some(tx) => client
+                    .find_in_transaction(&collection, rust_query, &tx)
+                    .await
+                    .map_err(|e| map_client_err("Find failed", e))?,
+                None => client
+                    .find(&collection, rust_query, bypass_ripple)
+                    .await
+                    .map_err(|e| map_client_err("Find failed", e))?,
+            };
 
             Python::attach(|py| {
                 let list = PyList::empty(py);
@@ -447,14 +470,27 @@ impl Client {
         bypass_ripple: Option<bool>,
         transaction_id: Option<String>,
     ) -> PyResult<Bound<'py, PyAny>> {
-        let _ = transaction_id; // Acknowledge unused param
         let client = self.inner.clone();
 
         future_into_py(py, async move {
-            client
-                .delete(&collection, &id, bypass_ripple)
-                .await
-                .map_err(|e| map_client_err("Delete failed", e))?;
+            match transaction_id {
+                Some(tx) => {
+                    let mut opts = ekodb_client::options::DeleteOptions::new().transaction_id(tx);
+                    if let Some(b) = bypass_ripple {
+                        opts = opts.bypass_ripple(b);
+                    }
+                    client
+                        .delete_with_options(&collection, &id, opts)
+                        .await
+                        .map_err(|e| map_client_err("Delete failed", e))?;
+                }
+                None => {
+                    client
+                        .delete(&collection, &id, bypass_ripple)
+                        .await
+                        .map_err(|e| map_client_err("Delete failed", e))?;
+                }
+            }
 
             Python::attach(|py| Ok(py.None()))
         })
@@ -1758,6 +1794,58 @@ impl Client {
                 .await
                 .map_err(|e| map_client_err("Rollback transaction failed", e))?;
 
+            Python::attach(|py| Ok(py.None()))
+        })
+    }
+
+    /// Create a savepoint within a transaction. A later rollback_to_savepoint
+    /// discards everything staged after it.
+    fn create_savepoint<'py>(
+        &self,
+        py: Python<'py>,
+        transaction_id: String,
+        name: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            client
+                .create_savepoint(&transaction_id, &name)
+                .await
+                .map_err(|e| map_client_err("Create savepoint failed", e))?;
+            Python::attach(|py| Ok(py.None()))
+        })
+    }
+
+    /// Roll a transaction back to a savepoint, discarding writes staged after it.
+    fn rollback_to_savepoint<'py>(
+        &self,
+        py: Python<'py>,
+        transaction_id: String,
+        name: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            client
+                .rollback_to_savepoint(&transaction_id, &name)
+                .await
+                .map_err(|e| map_client_err("Rollback to savepoint failed", e))?;
+            Python::attach(|py| Ok(py.None()))
+        })
+    }
+
+    /// Release (forget) a savepoint. Staged work is unaffected.
+    fn release_savepoint<'py>(
+        &self,
+        py: Python<'py>,
+        transaction_id: String,
+        name: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            client
+                .release_savepoint(&transaction_id, &name)
+                .await
+                .map_err(|e| map_client_err("Release savepoint failed", e))?;
             Python::attach(|py| Ok(py.None()))
         })
     }
