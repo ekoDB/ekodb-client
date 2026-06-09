@@ -396,6 +396,30 @@ impl Client {
         .await
     }
 
+    /// Delete a record with options — notably `transaction_id` for a staged,
+    /// buffered transactional delete (applied at commit).
+    pub async fn delete_with_options(
+        &self,
+        collection: &str,
+        id: &str,
+        options: crate::options::DeleteOptions,
+    ) -> Result<()> {
+        let collection = collection.to_string();
+        let id = id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let collection = collection.clone();
+            let id = id.clone();
+            let options = options.clone();
+            let http = http.clone();
+            async move {
+                http.delete_with_options(&collection, &id, &token, &options)
+                    .await
+            }
+        })
+        .await
+    }
+
     /// Restore a deleted record from trash (undelete)
     ///
     /// # Arguments
@@ -1168,7 +1192,7 @@ impl Client {
         .await
     }
 
-    /// Rollback a transaction
+    /// Rollback a transaction, discarding all staged writes (nothing was applied).
     ///
     /// # Arguments
     ///
@@ -1180,6 +1204,104 @@ impl Client {
             let transaction_id = transaction_id.clone();
             let http = http.clone();
             async move { http.rollback_transaction(&transaction_id, &token).await }
+        })
+        .await
+    }
+
+    /// Create a savepoint within a transaction. A later
+    /// [`rollback_to_savepoint`](Self::rollback_to_savepoint) discards everything
+    /// staged after it.
+    pub async fn create_savepoint(&self, transaction_id: &str, name: &str) -> Result<()> {
+        let transaction_id = transaction_id.to_string();
+        let name = name.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let transaction_id = transaction_id.clone();
+            let name = name.clone();
+            let http = http.clone();
+            async move { http.create_savepoint(&transaction_id, &name, &token).await }
+        })
+        .await
+    }
+
+    /// Roll a transaction back to a savepoint, discarding writes staged after it.
+    pub async fn rollback_to_savepoint(&self, transaction_id: &str, name: &str) -> Result<()> {
+        let transaction_id = transaction_id.to_string();
+        let name = name.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let transaction_id = transaction_id.clone();
+            let name = name.clone();
+            let http = http.clone();
+            async move {
+                http.rollback_to_savepoint(&transaction_id, &name, &token)
+                    .await
+            }
+        })
+        .await
+    }
+
+    /// Release (forget) a savepoint. Staged work is unaffected.
+    pub async fn release_savepoint(&self, transaction_id: &str, name: &str) -> Result<()> {
+        let transaction_id = transaction_id.to_string();
+        let name = name.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let transaction_id = transaction_id.clone();
+            let name = name.clone();
+            let http = http.clone();
+            async move { http.release_savepoint(&transaction_id, &name, &token).await }
+        })
+        .await
+    }
+
+    /// Find a record by ID within a transaction (read-your-writes): the read is
+    /// served from the transaction's own view — its uncommitted staged writes,
+    /// else the committed store — and recorded in its read set for commit-time
+    /// conflict detection. Use the plain [`find_by_id`](Self::find_by_id) for an
+    /// ordinary committed read.
+    pub async fn find_by_id_in_transaction(
+        &self,
+        collection: &str,
+        id: &str,
+        transaction_id: &str,
+    ) -> Result<Record> {
+        let collection = collection.to_string();
+        let id = id.to_string();
+        let transaction_id = transaction_id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let collection = collection.clone();
+            let id = id.clone();
+            let transaction_id = transaction_id.clone();
+            let http = http.clone();
+            async move {
+                http.find_by_id_in_transaction(&collection, &id, &transaction_id, &token)
+                    .await
+            }
+        })
+        .await
+    }
+
+    /// Find records within a transaction (read-your-writes for the matched ids).
+    pub async fn find_in_transaction(
+        &self,
+        collection: &str,
+        query: Query,
+        transaction_id: &str,
+    ) -> Result<Vec<Record>> {
+        let collection = collection.to_string();
+        let transaction_id = transaction_id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let collection = collection.clone();
+            let query = query.clone();
+            let transaction_id = transaction_id.clone();
+            let http = http.clone();
+            async move {
+                http.find_in_transaction(&collection, query, &transaction_id, &token)
+                    .await
+            }
         })
         .await
     }

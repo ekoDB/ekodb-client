@@ -488,6 +488,45 @@ impl HttpClient {
         .await
     }
 
+    /// Delete a record with options (bypass_ripple and/or a transaction_id for a
+    /// staged, buffered transactional delete).
+    pub async fn delete_with_options(
+        &self,
+        collection: &str,
+        id: &str,
+        token: &str,
+        opts: &crate::options::DeleteOptions,
+    ) -> Result<()> {
+        let mut params: Vec<String> = Vec::new();
+        if let Some(bypass) = opts.bypass_ripple {
+            params.push(format!("bypass_ripple={}", bypass));
+        }
+        if let Some(ref tx) = opts.transaction_id {
+            params.push(format!("transaction_id={}", tx));
+        }
+        let url_path = if params.is_empty() {
+            format!("/api/delete/{}/{}", collection, id)
+        } else {
+            format!("/api/delete/{}/{}?{}", collection, id, params.join("&"))
+        };
+        let url = self.base_url.join(&url_path)?;
+
+        self.execute_with_retry(|| async {
+            let response = self
+                .add_format_headers(
+                    &url_path,
+                    self.client
+                        .delete(url.clone())
+                        .header("Authorization", format!("Bearer {}", token)),
+                )
+                .send()
+                .await?;
+            let _: Record = self.handle_response(&url_path, response).await?;
+            Ok(())
+        })
+        .await
+    }
+
     /// Restore a deleted record from trash
     pub async fn restore_deleted(&self, collection: &str, id: &str, token: &str) -> Result<bool> {
         let url_path = format!("/api/trash/{}/{}", collection, id);
@@ -1153,6 +1192,145 @@ impl HttpClient {
             } else {
                 Err(Error::Http(response.error_for_status().unwrap_err()))
             }
+        })
+        .await
+    }
+
+    /// Create a savepoint within a transaction.
+    pub async fn create_savepoint(
+        &self,
+        transaction_id: &str,
+        name: &str,
+        token: &str,
+    ) -> Result<()> {
+        let url = self
+            .base_url
+            .join(&format!("/api/transactions/{}/savepoints", transaction_id))?;
+        let body = serde_json::json!({ "name": name });
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .post(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .json(&body)
+                .send()
+                .await?;
+            if response.status().is_success() {
+                Ok(())
+            } else {
+                Err(Error::Http(response.error_for_status().unwrap_err()))
+            }
+        })
+        .await
+    }
+
+    /// Roll a transaction back to a savepoint, discarding writes staged after it.
+    pub async fn rollback_to_savepoint(
+        &self,
+        transaction_id: &str,
+        name: &str,
+        token: &str,
+    ) -> Result<()> {
+        let url = self.base_url.join(&format!(
+            "/api/transactions/{}/savepoints/{}/rollback",
+            transaction_id, name
+        ))?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .post(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .send()
+                .await?;
+            if response.status().is_success() {
+                Ok(())
+            } else {
+                Err(Error::Http(response.error_for_status().unwrap_err()))
+            }
+        })
+        .await
+    }
+
+    /// Release (forget) a savepoint. Staged work is unaffected.
+    pub async fn release_savepoint(
+        &self,
+        transaction_id: &str,
+        name: &str,
+        token: &str,
+    ) -> Result<()> {
+        let url = self.base_url.join(&format!(
+            "/api/transactions/{}/savepoints/{}",
+            transaction_id, name
+        ))?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .delete(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .send()
+                .await?;
+            if response.status().is_success() {
+                Ok(())
+            } else {
+                Err(Error::Http(response.error_for_status().unwrap_err()))
+            }
+        })
+        .await
+    }
+
+    /// Find a record by ID within a transaction (read-your-writes): served from
+    /// the transaction's own view and recorded in its read set.
+    pub async fn find_by_id_in_transaction(
+        &self,
+        collection: &str,
+        id: &str,
+        transaction_id: &str,
+        token: &str,
+    ) -> Result<Record> {
+        let url_path = format!("/api/find/{}/{}", collection, id);
+        let mut url = self.base_url.join(&url_path)?;
+        url.query_pairs_mut()
+            .append_pair("transaction_id", transaction_id);
+        self.execute_with_retry(|| async {
+            let response = self
+                .add_format_headers(
+                    &url_path,
+                    self.client
+                        .get(url.clone())
+                        .header("Authorization", format!("Bearer {}", token)),
+                )
+                .send()
+                .await?;
+            self.handle_response(&url_path, response).await
+        })
+        .await
+    }
+
+    /// Find records within a transaction (read-your-writes for the matched ids).
+    pub async fn find_in_transaction(
+        &self,
+        collection: &str,
+        query: Query,
+        transaction_id: &str,
+        token: &str,
+    ) -> Result<Vec<Record>> {
+        let url_path = format!("/api/find/{}", collection);
+        let mut url = self.base_url.join(&url_path)?;
+        url.query_pairs_mut()
+            .append_pair("transaction_id", transaction_id);
+        let body = self.serialize(&url_path, &query)?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .add_format_headers(
+                    &url_path,
+                    self.client
+                        .post(url.clone())
+                        .header("Authorization", format!("Bearer {}", token)),
+                )
+                .body(body.clone())
+                .send()
+                .await?;
+            self.handle_response(&url_path, response).await
         })
         .await
     }
