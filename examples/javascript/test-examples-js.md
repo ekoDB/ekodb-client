@@ -22,7 +22,7 @@ found 0 vulnerabilities
 [33m
 === Running 10 Examples ===[0m
 [34m
-=== Running /Users/tek/Development/ekoDB/ekodb-client/examples/javascript/simple_crud.js ===[0m
+=== Running ekoDB/ekodb-client/examples/javascript/simple_crud.js ===[0m
 === Simple CRUD Operations (Direct HTTP) ===
 
 ✓ Authentication successful
@@ -64,7 +64,7 @@ Deleted document
 ✓ All CRUD operations completed successfully
 [32m✓ simple_crud.js completed successfully[0m
 [34m
-=== Running /Users/tek/Development/ekoDB/ekodb-client/examples/javascript/simple_websocket.js ===[0m
+=== Running ekoDB/ekodb-client/examples/javascript/simple_websocket.js ===[0m
 === Simple WebSocket Operations (Direct API) ===
 
 ✓ Authentication successful
@@ -150,7 +150,7 @@ Response: {
 WebSocket closed
 [32m✓ simple_websocket.js completed successfully[0m
 [34m
-=== Running /Users/tek/Development/ekoDB/ekodb-client/examples/javascript/http_functions.js ===[0m
+=== Running ekoDB/ekodb-client/examples/javascript/http_functions.js ===[0m
 🚀 ekoDB Functions Example (JavaScript/HTTP)
 
 📋 Setting up test data...
@@ -187,7 +187,7 @@ WebSocket closed
 ✅ All examples completed!
 [32m✓ http_functions.js completed successfully[0m
 [34m
-=== Running /Users/tek/Development/ekoDB/ekodb-client/examples/javascript/batch_operations.js ===[0m
+=== Running ekoDB/ekodb-client/examples/javascript/batch_operations.js ===[0m
 === Batch Operations (Direct HTTP) ===
 
 ✓ Authentication successful
@@ -210,7 +210,7 @@ Created 3 test records
 ✓ All batch operations completed successfully
 [32m✓ batch_operations.js completed successfully[0m
 [34m
-=== Running /Users/tek/Development/ekoDB/ekodb-client/examples/javascript/kv_operations.js ===[0m
+=== Running ekoDB/ekodb-client/examples/javascript/kv_operations.js ===[0m
 === Key-Value Operations (Direct HTTP) ===
 
 ✓ Authentication successful
@@ -239,7 +239,7 @@ cache:product:3: { price: 49.989999999999995, name: 'Product 3' }
 ✓ All KV operations completed successfully
 [32m✓ kv_operations.js completed successfully[0m
 [34m
-=== Running /Users/tek/Development/ekoDB/ekodb-client/examples/javascript/collection_management.js ===[0m
+=== Running ekoDB/ekodb-client/examples/javascript/collection_management.js ===[0m
 === Collection Management (Direct HTTP) ===
 
 ✓ Authentication successful
@@ -269,7 +269,7 @@ Collection still exists: false
 ✓ All collection management operations completed successfully
 [32m✓ collection_management.js completed successfully[0m
 [34m
-=== Running /Users/tek/Development/ekoDB/ekodb-client/examples/javascript/transactions.js ===[0m
+=== Running ekoDB/ekodb-client/examples/javascript/transactions.js ===[0m
 ✓ Authentication successful
 
 === Setup: Creating Test Accounts ===
@@ -306,7 +306,7 @@ Bob after rollback: {"type":"Integer","value":700}
 ✓ All transaction examples completed
 [32m✓ transactions.js completed successfully[0m
 [34m
-=== Running /Users/tek/Development/ekoDB/ekodb-client/examples/javascript/crud_functions.js ===[0m
+=== Running ekoDB/ekodb-client/examples/javascript/crud_functions.js ===[0m
 🚀 ekoDB Complete CRUD Functions Example
 ============================================================
 Demonstrates:
@@ -405,7 +405,7 @@ Each function shows Functions chaining with proper verification
    ✅ Complete CRUD lifecycle in 4 focused functions
 [32m✓ crud_functions.js completed successfully[0m
 [34m
-=== Running /Users/tek/Development/ekoDB/ekodb-client/examples/javascript/document_ttl.js ===[0m
+=== Running ekoDB/ekodb-client/examples/javascript/document_ttl.js ===[0m
 ╔════════════════════════════════════════════════════════╗
 ║     TTL EXPIRATION VERIFICATION TEST                   ║
 ╚════════════════════════════════════════════════════════╝
@@ -454,7 +454,7 @@ TTL expiration is working correctly:
   • Different TTL durations are handled correctly
 [32m✓ document_ttl.js completed successfully[0m
 [34m
-=== Running /Users/tek/Development/ekoDB/ekodb-client/examples/javascript/websocket_ttl.js ===[0m
+=== Running ekoDB/ekodb-client/examples/javascript/websocket_ttl.js ===[0m
 ╔════════════════════════════════════════════════════════╗
 ║   WEBSOCKET TTL EXPIRATION VERIFICATION TEST           ║
 ╚════════════════════════════════════════════════════════╝
