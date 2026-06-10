@@ -140,8 +140,6 @@ impl HttpClient {
         }
     }
 
-    /// Add format headers (Content-Type and Accept) to a request builder
-    /// Note: reqwest automatically handles gzip compression with the gzip feature enabled
     /// Build an absolute API URL from already-decoded path segments, percent-encoding
     /// each segment for safe inclusion in the URL path.
     ///
@@ -167,6 +165,8 @@ impl HttpClient {
         Ok(url)
     }
 
+    /// Add format headers (Content-Type and Accept) to a request builder.
+    /// Note: reqwest automatically handles gzip compression with the gzip feature enabled.
     fn add_format_headers(
         &self,
         path: &str,
