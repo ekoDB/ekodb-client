@@ -1324,6 +1324,61 @@ class EkoDBClientTest {
     }
 
     @Test
+    fun `findById sends bypass_ripple and transaction_id together as query params`() = runBlocking {
+        var capturedQuery: io.ktor.http.Parameters? = null
+        val mockEngine = MockEngine { request ->
+            if (request.url.encodedPath.contains("/api/auth/token")) {
+                respond(
+                    content = """{"token": "mock_jwt_token_123"}""",
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                )
+            } else {
+                capturedQuery = request.url.parameters
+                respond(
+                    content = """{"id": "rec_1", "name": "Alice"}""",
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                )
+            }
+        }
+        val client = createTestClient(mockEngine)
+        client.findById("users", "rec_1", bypassRipple = true, transactionId = "tx_123")
+
+        assertEquals("true", capturedQuery?.get("bypass_ripple"))
+        assertEquals("tx_123", capturedQuery?.get("transaction_id"))
+    }
+
+    @Test
+    fun `find sends bypass_ripple in body and transaction_id in query together`() = runBlocking {
+        var capturedQuery: io.ktor.http.Parameters? = null
+        var capturedBody: String? = null
+        val mockEngine = MockEngine { request ->
+            if (request.url.encodedPath.contains("/api/auth/token")) {
+                respond(
+                    content = """{"token": "mock_jwt_token_123"}""",
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                )
+            } else {
+                capturedQuery = request.url.parameters
+                capturedBody = (request.body as io.ktor.http.content.TextContent).text
+                respond(
+                    content = """[{"id": "rec_1", "name": "Alice"}]""",
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                )
+            }
+        }
+        val client = createTestClient(mockEngine)
+        val query = io.ekodb.client.types.Query.new()
+        client.find("users", query, bypassRipple = true, transactionId = "tx_123")
+
+        assertEquals("tx_123", capturedQuery?.get("transaction_id"))
+        assertTrue(capturedBody?.contains("\"bypass_ripple\":true") == true)
+    }
+
+    @Test
     fun `update sends PUT to correct endpoint`() = runBlocking {
         val mockEngine = createMockEngine("""{"id": "rec_1", "name": "Alice Updated", "age": 30}""")
         val client = createTestClient(mockEngine)

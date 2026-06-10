@@ -936,7 +936,40 @@ async fn test_find_in_transaction_success() {
     let client = create_test_client(&server).await;
 
     let query = Query::new();
-    let result = client.find_in_transaction("users", query, "tx_123").await;
+    let result = client
+        .find_in_transaction("users", query, "tx_123", None)
+        .await;
+
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap().len(), 1);
+}
+
+#[tokio::test]
+async fn test_find_in_transaction_with_bypass_ripple() {
+    let mut server = Server::new_async().await;
+
+    let _token_mock = mock_token_endpoint(&mut server);
+
+    // POST /api/find/{collection}?transaction_id=<tx>&bypass_ripple=true —
+    // both query params must ride together on the transactional read.
+    let _find_mock = server
+        .mock("POST", "/api/find/users")
+        .match_query(Matcher::AllOf(vec![
+            Matcher::UrlEncoded("transaction_id".into(), "tx_123".into()),
+            Matcher::UrlEncoded("bypass_ripple".into(), "true".into()),
+        ]))
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!([{"id": "user_1", "name": "Alice"}]).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+
+    let query = Query::new();
+    let result = client
+        .find_in_transaction("users", query, "tx_123", Some(true))
+        .await;
 
     assert!(result.is_ok());
     assert_eq!(result.unwrap().len(), 1);
@@ -964,7 +997,36 @@ async fn test_find_by_id_in_transaction_success() {
     let client = create_test_client(&server).await;
 
     let result = client
-        .find_by_id_in_transaction("users", "user_123", "tx_123")
+        .find_by_id_in_transaction("users", "user_123", "tx_123", None)
+        .await;
+
+    assert!(result.is_ok());
+}
+
+#[tokio::test]
+async fn test_find_by_id_in_transaction_with_bypass_ripple() {
+    let mut server = Server::new_async().await;
+
+    let _token_mock = mock_token_endpoint(&mut server);
+
+    // GET /api/find/{collection}/{id}?transaction_id=<tx>&bypass_ripple=true —
+    // both query params must ride together on the transactional by-id read.
+    let _find_mock = server
+        .mock("GET", "/api/find/users/user_123")
+        .match_query(Matcher::AllOf(vec![
+            Matcher::UrlEncoded("transaction_id".into(), "tx_123".into()),
+            Matcher::UrlEncoded("bypass_ripple".into(), "true".into()),
+        ]))
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"id": "user_123", "name": "Alice"}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+
+    let result = client
+        .find_by_id_in_transaction("users", "user_123", "tx_123", Some(true))
         .await;
 
     assert!(result.is_ok());

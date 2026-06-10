@@ -348,6 +348,10 @@ class EkoDBClient private constructor(
     /**
      * Find a record by ID.
      *
+     * @param bypassRipple Optional flag to bypass ripple propagation for this
+     *   read; sent as the `bypass_ripple` GET query param, the same way the
+     *   non-transactional read carries it, and rides alongside `transaction_id`
+     *   when both are set.
      * @param transactionId Optional transaction ID for read-your-writes — the
      *   read is served from the transaction's own view (its uncommitted staged
      *   writes, else the committed store) and recorded in its read set for
@@ -356,11 +360,13 @@ class EkoDBClient private constructor(
     suspend fun findById(
         collection: String,
         id: String,
+        bypassRipple: Boolean? = null,
         transactionId: String? = null
     ): Record {
         val response = executeWithRetry { token ->
             client.get("$baseUrl/api/find/$collection/$id") {
                 header("Authorization", "Bearer $token")
+                bypassRipple?.let { parameter("bypass_ripple", it) }
                 transactionId?.let { parameter("transaction_id", it) }
             }
         }
@@ -409,21 +415,28 @@ class EkoDBClient private constructor(
     /**
      * Find records with a query.
      *
+     * @param bypassRipple Optional flag to bypass ripple propagation for this
+     *   read; carried in the POST body (the server's `bypass_ripple` field) the
+     *   same way the non-transactional read carries it. When set it overrides
+     *   any value already on the query object and rides alongside
+     *   `transaction_id` when both are provided.
      * @param transactionId Optional transaction ID for read-your-writes over the
      *   matched records.
      */
     suspend fun find(
         collection: String,
         query: Query,
+        bypassRipple: Boolean? = null,
         transactionId: String? = null
     ): List<Record> {
+        val effectiveQuery = bypassRipple?.let { query.withBypassRipple(it) } ?: query
         val response = executeWithRetry { token ->
             client.post("$baseUrl/api/find/$collection") {
                 header("Authorization", "Bearer $token")
                 contentType(getContentTypeForRequest())
                 header("Accept", getContentTypeForRequest().toString())
                 transactionId?.let { parameter("transaction_id", it) }
-                setBody(query)
+                setBody(effectiveQuery)
             }
         }
         return response.body()
@@ -3413,8 +3426,6 @@ class EkoDBClient private constructor(
 
     companion object {
         fun builder() = Builder()
-
-        const val VERSION = "0.1.0"
 
         /**
          * Upper bound on a server-supplied `Retry-After` (seconds). A hostile or

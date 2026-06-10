@@ -1014,6 +1014,64 @@ describe("EkoDBClient transaction status", () => {
   });
 });
 
+describe("bypass_ripple on the transactional read path", () => {
+  it("findById sends bypass_ripple AND transaction_id together (query params)", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse({ id: "user_123", name: "Alice" });
+
+    await client.findById("users", "user_123", {
+      bypassRipple: true,
+      transactionId: "tx_123",
+    });
+
+    const [url, init] = mockFetch.mock.calls[1];
+    expect(init.method).toBe("GET");
+    const parsed = new URL(url as string);
+    expect(parsed.searchParams.get("bypass_ripple")).toBe("true");
+    expect(parsed.searchParams.get("transaction_id")).toBe("tx_123");
+  });
+
+  it("findById sends bypass_ripple=false explicitly alongside transaction_id", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse({ id: "user_123", name: "Alice" });
+
+    await client.findById("users", "user_123", {
+      bypassRipple: false,
+      transactionId: "tx_123",
+    });
+
+    const [url] = mockFetch.mock.calls[1];
+    const parsed = new URL(url as string);
+    expect(parsed.searchParams.get("bypass_ripple")).toBe("false");
+    expect(parsed.searchParams.get("transaction_id")).toBe("tx_123");
+  });
+
+  it("find sends bypass_ripple in the body AND transaction_id in the query", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse([{ id: "user_1", name: "Alice" }]);
+
+    await client.find(
+      "users",
+      { limit: 10 },
+      { bypassRipple: true, transactionId: "tx_123" },
+    );
+
+    const [url, init] = mockFetch.mock.calls[1];
+    expect(init.method).toBe("POST");
+    const parsed = new URL(url as string);
+    expect(parsed.searchParams.get("transaction_id")).toBe("tx_123");
+    const body = JSON.parse(init.body as string);
+    expect(body.bypass_ripple).toBe(true);
+    expect(body.limit).toBe(10);
+  });
+});
+
 // ============================================================================
 // Convenience Methods Tests
 // ============================================================================
