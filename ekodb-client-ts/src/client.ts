@@ -4135,13 +4135,19 @@ export class WebSocketClient {
     // to match, so it is simply ignored — and because the id is present, the
     // single-pending fallback can't misroute it to an unrelated request.
     if (this.ws && this.ws.readyState === 1 /* WebSocket.OPEN */) {
-      this.ws.send(
-        JSON.stringify({
-          type: "Unsubscribe",
-          messageId: this.genMessageId(),
-          payload: { collection },
-        }),
-      );
+      try {
+        this.ws.send(
+          JSON.stringify({
+            type: "Unsubscribe",
+            messageId: this.genMessageId(),
+            payload: { collection },
+          }),
+        );
+      } catch {
+        // Best-effort: the socket can close between the readyState check and the
+        // send. Local teardown already happened, so swallow the failure rather
+        // than throw out of a void teardown call.
+      }
     }
   }
 
