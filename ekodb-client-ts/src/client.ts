@@ -3,7 +3,7 @@
  */
 
 import { encode, decode } from "@msgpack/msgpack";
-import { QueryBuilder, Query as QueryBuilderQuery } from "./query-builder";
+import { QueryBuilder, Query } from "./query-builder";
 import { SearchQuery, SearchResponse } from "./search";
 import { Schema, SchemaBuilder, CollectionMetadata } from "./schema";
 import { UserFunction, FunctionResult } from "./functions";
@@ -65,11 +65,11 @@ export class RateLimitError extends Error {
   }
 }
 
-export interface Query {
-  limit?: number;
-  offset?: number;
-  filter?: Record;
-}
+// `Query` is the canonical find/query body shape — the server's FindBody —
+// re-exported from the query builder so the whole client shares a single type
+// (`filter`, `sort`, `limit`, `skip`, `join`, `select_fields`, `exclude_fields`,
+// matching the server exactly). `QueryBuilder.build()` returns this same type.
+export type { Query };
 
 export interface BatchOperationResult {
   successful: string[];
@@ -830,7 +830,7 @@ export class EkoDBClient {
    */
   async find(
     collection: string,
-    query: QueryBuilderQuery | QueryBuilder = {},
+    query: Query | QueryBuilder = {},
     options?: { bypassRipple?: boolean; transactionId?: string },
   ): Promise<Record[]> {
     const queryObj = query instanceof QueryBuilder ? query.build() : query;
@@ -1503,7 +1503,7 @@ export class EkoDBClient {
   ): Promise<Record[]> {
     // Page 1 = skip 0, Page 2 = skip pageSize, etc.
     const skip = page > 0 ? (page - 1) * pageSize : 0;
-    const query: QueryBuilderQuery = {
+    const query: Query = {
       limit: pageSize,
       skip: skip,
     };
