@@ -1265,6 +1265,7 @@ impl Client {
         collection: &str,
         id: &str,
         transaction_id: &str,
+        bypass_ripple: Option<bool>,
     ) -> Result<Record> {
         let collection = collection.to_string();
         let id = id.to_string();
@@ -1276,8 +1277,14 @@ impl Client {
             let transaction_id = transaction_id.clone();
             let http = http.clone();
             async move {
-                http.find_by_id_in_transaction(&collection, &id, &transaction_id, &token)
-                    .await
+                http.find_by_id_in_transaction(
+                    &collection,
+                    &id,
+                    &transaction_id,
+                    &token,
+                    bypass_ripple,
+                )
+                .await
             }
         })
         .await
@@ -1289,6 +1296,7 @@ impl Client {
         collection: &str,
         query: Query,
         transaction_id: &str,
+        bypass_ripple: Option<bool>,
     ) -> Result<Vec<Record>> {
         let collection = collection.to_string();
         let transaction_id = transaction_id.to_string();
@@ -1299,7 +1307,7 @@ impl Client {
             let transaction_id = transaction_id.clone();
             let http = http.clone();
             async move {
-                http.find_in_transaction(&collection, query, &transaction_id, &token)
+                http.find_in_transaction(&collection, query, &transaction_id, &token, bypass_ripple)
                     .await
             }
         })

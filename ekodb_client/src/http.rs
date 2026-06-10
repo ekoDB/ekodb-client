@@ -1306,11 +1306,16 @@ impl HttpClient {
         id: &str,
         transaction_id: &str,
         token: &str,
+        bypass_ripple: Option<bool>,
     ) -> Result<Record> {
         let url_path = format!("/api/find/{}/{}", collection, id);
         let mut url = self.base_url.join(&url_path)?;
         url.query_pairs_mut()
             .append_pair("transaction_id", transaction_id);
+        if let Some(bypass) = bypass_ripple {
+            url.query_pairs_mut()
+                .append_pair("bypass_ripple", &bypass.to_string());
+        }
         self.execute_with_retry(|| async {
             let response = self
                 .add_format_headers(
@@ -1333,11 +1338,16 @@ impl HttpClient {
         query: Query,
         transaction_id: &str,
         token: &str,
+        bypass_ripple: Option<bool>,
     ) -> Result<Vec<Record>> {
         let url_path = format!("/api/find/{}", collection);
         let mut url = self.base_url.join(&url_path)?;
         url.query_pairs_mut()
             .append_pair("transaction_id", transaction_id);
+        if let Some(bypass) = bypass_ripple {
+            url.query_pairs_mut()
+                .append_pair("bypass_ripple", &bypass.to_string());
+        }
         let body = self.serialize(&url_path, &query)?;
         self.execute_with_retry(|| async {
             let response = self

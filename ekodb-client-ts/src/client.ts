@@ -131,6 +131,7 @@ export interface FindOptions {
 export interface FindByIdOptions {
   selectFields?: string[];
   excludeFields?: string[];
+  bypassRipple?: boolean;
   transactionId?: string;
 }
 
@@ -830,15 +831,23 @@ export class EkoDBClient {
   async find(
     collection: string,
     query: Query | QueryBuilder = {},
-    options?: { transactionId?: string },
+    options?: { bypassRipple?: boolean; transactionId?: string },
   ): Promise<Record[]> {
     const queryObj = query instanceof QueryBuilder ? query.build() : query;
+    // bypass_ripple rides in the POST body (the server's FindBody), the same
+    // way the non-transactional find carries it. An explicit option overrides
+    // any value already present on the query object so both the transactional
+    // and non-transactional paths send it identically.
+    const body: any =
+      options?.bypassRipple !== undefined
+        ? { ...queryObj, bypass_ripple: options.bypassRipple }
+        : queryObj;
     // transaction_id is a query parameter (read in the transaction's view),
     // not part of the filter body.
     const url = options?.transactionId
       ? `/api/find/${collection}?transaction_id=${encodeURIComponent(options.transactionId)}`
       : `/api/find/${collection}`;
-    return this.makeRequest<Record[]>("POST", url, queryObj);
+    return this.makeRequest<Record[]>("POST", url, body);
   }
 
   /**
@@ -857,6 +866,11 @@ export class EkoDBClient {
     }
     if (options?.excludeFields?.length) {
       params.append("exclude_fields", options.excludeFields.join(","));
+    }
+    // bypass_ripple is a GET query param, the same way the non-transactional
+    // findById carries it; it rides alongside transaction_id when both are set.
+    if (options?.bypassRipple !== undefined) {
+      params.append("bypass_ripple", String(options.bypassRipple));
     }
     if (options?.transactionId) {
       params.append("transaction_id", options.transactionId);

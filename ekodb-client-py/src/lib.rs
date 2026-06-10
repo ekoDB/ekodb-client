@@ -233,7 +233,7 @@ impl Client {
         future_into_py(py, async move {
             let result = match transaction_id {
                 Some(tx) => client
-                    .find_by_id_in_transaction(&collection, &id, &tx)
+                    .find_by_id_in_transaction(&collection, &id, &tx, bypass_ripple)
                     .await
                     .map_err(|e| map_client_err("Find failed", e))?,
                 None => client
@@ -314,7 +314,7 @@ impl Client {
 
             let results = match transaction_id {
                 Some(tx) => client
-                    .find_in_transaction(&collection, rust_query, &tx)
+                    .find_in_transaction(&collection, rust_query, &tx, bypass_ripple)
                     .await
                     .map_err(|e| map_client_err("Find failed", e))?,
                 None => client
