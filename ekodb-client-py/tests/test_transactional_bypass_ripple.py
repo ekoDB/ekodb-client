@@ -71,7 +71,7 @@ class TestTransactionalBypassRipple:
         except TypeError as exc:  # pragma: no cover - failure path
             pytest.fail(f"find_by_id() rejected bypass_ripple/transaction_id: {exc}")
         except Exception:
-            pass
+            pass  # non-TypeError (e.g. no running event loop) => kwargs bound
 
     def test_find_methods_exposed(self):
         client = _client()
