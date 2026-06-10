@@ -830,7 +830,7 @@ export class EkoDBClient {
    */
   async find(
     collection: string,
-    query: Query | QueryBuilder = {},
+    query: QueryBuilderQuery | QueryBuilder = {},
     options?: { bypassRipple?: boolean; transactionId?: string },
   ): Promise<Record[]> {
     const queryObj = query instanceof QueryBuilder ? query.build() : query;
