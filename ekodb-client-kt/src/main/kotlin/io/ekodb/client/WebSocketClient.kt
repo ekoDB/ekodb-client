@@ -480,7 +480,14 @@ class WebSocketClient(
         // above is sufficient, so absence of a session is a silent no-op.
         val s = session ?: return
         val request = buildUnsubscribeFrame(collection, genMessageId())
-        s.send(Frame.Text(request.toString()))
+        try {
+            s.send(Frame.Text(request.toString()))
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Throwable) {
+            // Best-effort: the socket may be closing. Local teardown already
+            // happened, so ignore the send failure rather than fail teardown.
+        }
     }
 
     /**
