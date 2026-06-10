@@ -16,8 +16,11 @@ VENV_PY := $(CURDIR)/.venv/bin/python
 # example output (`make test-examples*`) is piped through SCRUB_PATHS before being
 # written to the checked-in `.md` logs, so a developer's home directory never
 # leaks into the repo — paths come out monorepo-relative (e.g. `ekoDB/...`).
+# The prefix is passed via the environment and matched LITERALLY (perl `\Q…\E`),
+# not as a regex, so metacharacters in a developer's path (a dotted username, a
+# `+`, etc.) can neither over-match nor break the substitution.
 SCRUB_PREFIX := $(dir $(patsubst %/,%,$(dir $(CURDIR))))
-SCRUB_PATHS = sed "s|$(SCRUB_PREFIX)||g"
+SCRUB_PATHS = SCRUB_PREFIX='$(SCRUB_PREFIX)' perl -pe 's/\Q$$ENV{SCRUB_PREFIX}\E//g'
 
 # Color codes for pretty output
 CYAN := \033[36m
