@@ -275,11 +275,16 @@ impl Client {
     }
 
     /// Find documents matching a query
-    /// 
+    ///
     /// Args:
     ///     collection: Collection name
     ///     query: Optional query dict with filters, joins, etc.
     ///     limit: Optional limit (deprecated, use query dict instead)
+    ///     bypass_ripple: Optional; skip ripple propagation for this read. Sent
+    ///         as the `bypass_ripple` query parameter (the same way every other
+    ///         method carries it), not in the request body.
+    ///     transaction_id: Optional; read within a transaction (read-your-writes)
+    ///         over the matched records.
     #[pyo3(signature = (collection, query=None, limit=None, bypass_ripple=None, transaction_id=None))]
     fn find<'py>(
         &self,
