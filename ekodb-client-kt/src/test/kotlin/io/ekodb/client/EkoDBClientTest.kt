@@ -1350,7 +1350,7 @@ class EkoDBClientTest {
     }
 
     @Test
-    fun `find sends bypass_ripple in body and transaction_id in query together`() = runBlocking {
+    fun `find sends bypass_ripple and transaction_id together as query params`() = runBlocking {
         var capturedQuery: io.ktor.http.Parameters? = null
         var capturedBody: String? = null
         val mockEngine = MockEngine { request ->
@@ -1375,7 +1375,9 @@ class EkoDBClientTest {
         client.find("users", query, bypassRipple = true, transactionId = "tx_123")
 
         assertEquals("tx_123", capturedQuery?.get("transaction_id"))
-        assertTrue(capturedBody?.contains("\"bypass_ripple\":true") == true)
+        // bypass_ripple is a query param (like every other method), not in the body.
+        assertEquals("true", capturedQuery?.get("bypass_ripple"))
+        assertTrue(capturedBody?.contains("bypass_ripple") != true)
     }
 
     @Test

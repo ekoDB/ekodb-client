@@ -429,14 +429,17 @@ class EkoDBClient private constructor(
         bypassRipple: Boolean? = null,
         transactionId: String? = null
     ): List<Record> {
-        val effectiveQuery = bypassRipple?.let { query.withBypassRipple(it) } ?: query
         val response = executeWithRetry { token ->
             client.post("$baseUrl/api/find/$collection") {
                 header("Authorization", "Bearer $token")
                 contentType(getContentTypeForRequest())
                 header("Accept", getContentTypeForRequest().toString())
+                // bypass_ripple and transaction_id are query parameters — the same
+                // way every other method (insert/update/findById) carries
+                // bypass_ripple — not part of the FindBody.
+                bypassRipple?.let { parameter("bypass_ripple", it) }
                 transactionId?.let { parameter("transaction_id", it) }
-                setBody(effectiveQuery)
+                setBody(query)
             }
         }
         return response.body()
