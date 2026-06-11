@@ -836,17 +836,28 @@ export class EkoDBClient {
     const queryObj = query instanceof QueryBuilder ? query.build() : query;
     // bypass_ripple and transaction_id are query parameters — the same way every
     // other method (insert/update/findById) carries bypass_ripple — not part of
-    // the FindBody. The body is just the query object.
+    // the FindBody. Hoist any bypass_ripple carried on the query object (e.g. from
+    // QueryBuilder.bypassRipple()) out of the body so it is ALWAYS sent as a query
+    // param; an explicit options.bypassRipple wins.
+    let body: unknown = queryObj;
+    let bypassRipple = options?.bypassRipple;
+    if (body && typeof body === "object" && "bypass_ripple" in body) {
+      const { bypass_ripple, ...rest } = body as Record & {
+        bypass_ripple?: boolean;
+      };
+      body = rest;
+      if (bypassRipple === undefined) bypassRipple = bypass_ripple;
+    }
     const params = new URLSearchParams();
     if (options?.transactionId)
       params.append("transaction_id", options.transactionId);
-    if (options?.bypassRipple !== undefined)
-      params.append("bypass_ripple", String(options.bypassRipple));
+    if (bypassRipple !== undefined)
+      params.append("bypass_ripple", String(bypassRipple));
     const qs = params.toString();
     const url = qs
       ? `/api/find/${collection}?${qs}`
       : `/api/find/${collection}`;
-    return this.makeRequest<Record[]>("POST", url, queryObj);
+    return this.makeRequest<Record[]>("POST", url, body);
   }
 
   /**

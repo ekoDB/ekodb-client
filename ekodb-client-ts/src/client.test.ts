@@ -1072,6 +1072,24 @@ describe("bypass_ripple on the transactional read path", () => {
     expect(body.bypass_ripple).toBeUndefined();
     expect(body.limit).toBe(10);
   });
+
+  it("find hoists bypass_ripple from the query object into the query string", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse([]);
+
+    // A query object carrying bypass_ripple, as QueryBuilder.bypassRipple() builds.
+    await client.find("users", { limit: 5, bypass_ripple: true } as any);
+
+    const [url, init] = mockFetch.mock.calls[1];
+    const parsed = new URL(url as string);
+    // Hoisted to the query string, removed from the body.
+    expect(parsed.searchParams.get("bypass_ripple")).toBe("true");
+    const body = JSON.parse(init.body as string);
+    expect(body.bypass_ripple).toBeUndefined();
+    expect(body.limit).toBe(5);
+  });
 });
 
 // ============================================================================

@@ -416,10 +416,10 @@ class EkoDBClient private constructor(
      * Find records with a query.
      *
      * @param bypassRipple Optional flag to bypass ripple propagation for this
-     *   read; carried in the POST body (the server's `bypass_ripple` field) the
-     *   same way the non-transactional read carries it. When set it overrides
-     *   any value already on the query object and rides alongside
-     *   `transaction_id` when both are provided.
+     *   read; sent as the `bypass_ripple` query parameter (not part of the JSON
+     *   Find body), the same way every other method carries it. When set it
+     *   overrides any `bypass_ripple` carried on the query object, and rides
+     *   alongside `transaction_id` when both are provided.
      * @param transactionId Optional transaction ID for read-your-writes over the
      *   matched records.
      */
@@ -429,17 +429,21 @@ class EkoDBClient private constructor(
         bypassRipple: Boolean? = null,
         transactionId: String? = null
     ): List<Record> {
+        // bypass_ripple and transaction_id are query parameters — the same way
+        // every other method (insert/update/findById) carries bypass_ripple — not
+        // part of the FindBody. Hoist any bypass_ripple carried on the query object
+        // (Query.bypassRipple) out of the body so it is ALWAYS sent as a query
+        // param; the explicit bypassRipple parameter wins.
+        val effectiveBypassRipple = bypassRipple ?: query.bypassRipple
+        val bodyQuery = if (query.bypassRipple != null) query.copy(bypassRipple = null) else query
         val response = executeWithRetry { token ->
             client.post("$baseUrl/api/find/$collection") {
                 header("Authorization", "Bearer $token")
                 contentType(getContentTypeForRequest())
                 header("Accept", getContentTypeForRequest().toString())
-                // bypass_ripple and transaction_id are query parameters — the same
-                // way every other method (insert/update/findById) carries
-                // bypass_ripple — not part of the FindBody.
-                bypassRipple?.let { parameter("bypass_ripple", it) }
+                effectiveBypassRipple?.let { parameter("bypass_ripple", it) }
                 transactionId?.let { parameter("transaction_id", it) }
-                setBody(query)
+                setBody(bodyQuery)
             }
         }
         return response.body()
