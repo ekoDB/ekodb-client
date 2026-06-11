@@ -1050,7 +1050,7 @@ describe("bypass_ripple on the transactional read path", () => {
     expect(parsed.searchParams.get("transaction_id")).toBe("tx_123");
   });
 
-  it("find sends bypass_ripple in the body AND transaction_id in the query", async () => {
+  it("find sends bypass_ripple AND transaction_id together as query params", async () => {
     const client = createTestClient();
 
     mockTokenResponse();
@@ -1065,9 +1065,11 @@ describe("bypass_ripple on the transactional read path", () => {
     const [url, init] = mockFetch.mock.calls[1];
     expect(init.method).toBe("POST");
     const parsed = new URL(url as string);
+    // bypass_ripple is a query param (like every other method), not in the body.
     expect(parsed.searchParams.get("transaction_id")).toBe("tx_123");
+    expect(parsed.searchParams.get("bypass_ripple")).toBe("true");
     const body = JSON.parse(init.body as string);
-    expect(body.bypass_ripple).toBe(true);
+    expect(body.bypass_ripple).toBeUndefined();
     expect(body.limit).toBe(10);
   });
 });
