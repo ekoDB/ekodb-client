@@ -222,7 +222,10 @@ class WebSocketClient(
         val s = session ?: return
         try {
             s.send(Frame.Text("""{"type":"Hello","payload":{"formats":["msgpack","json"]}}"""))
-            val frame = withTimeoutOrNull(5000) { s.incoming.receive() }
+            // Only caps the wait when no Welcome comes (a silent/old server); it
+            // returns immediately when one does. 2s comfortably exceeds the
+            // handshake round-trip even on high-latency links.
+            val frame = withTimeoutOrNull(2000) { s.incoming.receive() }
             if (frame is Frame.Text) {
                 val msg = Json.parseToJsonElement(frame.readText()).jsonObject
                 val type = msg["type"]?.jsonPrimitive?.content
