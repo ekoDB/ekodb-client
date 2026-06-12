@@ -1589,16 +1589,28 @@ class EkoDBClient private constructor(
                 // Extract rate limit info from headers
                 extractRateLimitInfo(response)
 
-                // Check for unauthorized (401) - try refreshing token once
-                if (response.status == HttpStatusCode.Unauthorized && !tokenRefreshed) {
+                // Check for unauthorized (401) - try refreshing token once.
+                // Only refresh + retry if another attempt will follow (same
+                // guard as the 5xx branch below): refreshing on the final
+                // attempt would waste the call and then throw a generic error.
+                // On the final attempt this falls through to the 400..499 branch
+                // and throws the real status + body instead.
+                if (response.status == HttpStatusCode.Unauthorized &&
+                    !tokenRefreshed &&
+                    attempt < maxRetries - 1
+                ) {
                     println("Authentication failed, refreshing token...")
                     refreshToken()
                     tokenRefreshed = true
                     return@repeat
                 }
-                
-                // Check for rate limiting
-                if (response.status == HttpStatusCode.TooManyRequests) {
+
+                // Check for rate limiting — same "only if a retry follows" guard,
+                // so the final attempt reports the real 429 (with body) instead of
+                // sleeping pointlessly and throwing a generic error.
+                if (response.status == HttpStatusCode.TooManyRequests &&
+                    attempt < maxRetries - 1
+                ) {
                     // Clamp the server-supplied Retry-After so a hostile or
                     // misconfigured value can't sleep the caller indefinitely.
                     val retryAfter = clampRetryAfterSeconds(response.headers["Retry-After"]?.toLongOrNull())

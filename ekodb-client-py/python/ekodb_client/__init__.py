@@ -91,7 +91,17 @@ from .utils import (
     field_boolean,
 )
 
-__version__ = "0.1.0"
+# Derive the version from the installed distribution metadata (maturin sets it
+# from pyproject.toml / Cargo.toml) so __version__ never drifts from the real
+# package version. Falls back to a literal only when running from source without
+# an installed distribution.
+from importlib.metadata import version as _dist_version, PackageNotFoundError
+
+try:
+    __version__ = _dist_version("ekodb_client")
+except PackageNotFoundError:
+    __version__ = "0.21.0"
+
 __all__ = [
     "Client",
     "WebSocketClient",
