@@ -12,7 +12,8 @@ CLIENT_KT_DIR := ekodb-client-kt
 VENV_PY := $(CURDIR)/.venv/bin/python
 
 # Absolute path one level above the monorepo root (e.g. /Users/<you>/Development/),
-# derived from this Makefile's location so it is correct on any machine. Captured
+# derived dynamically from $(CURDIR) (make's working directory, the ekodb-client
+# dir when invoked normally) so it is correct on any machine. Captured
 # example output (`make test-examples*`) is piped through SCRUB_PATHS before being
 # written to the checked-in `.md` logs, so a developer's home directory never
 # leaks into the repo — paths come out monorepo-relative (e.g. `ekoDB/...`).
