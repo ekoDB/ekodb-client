@@ -411,8 +411,12 @@ impl WebSocketClient {
     /// or a timeout — returns false (stay on JSON text). Bounded by a short timeout
     /// so a server that silently ignores the Hello can't hang the connect.
     async fn read_welcome_acks_msgpack(read: &mut WsRead) -> bool {
+        // The read returns as soon as the Welcome arrives, so this only caps the
+        // wait when NO Welcome comes (a silent/old server). 2s comfortably exceeds
+        // the handshake round-trip even on high-latency links while keeping that
+        // stall short.
         let Ok(Some(Ok(msg))) =
-            tokio::time::timeout(std::time::Duration::from_secs(5), read.next()).await
+            tokio::time::timeout(std::time::Duration::from_secs(2), read.next()).await
         else {
             return false;
         };

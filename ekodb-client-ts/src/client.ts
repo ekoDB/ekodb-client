@@ -3754,10 +3754,13 @@ export class WebSocketClient {
           resolve(null);
         }
       };
+      // Only caps the wait when no Welcome comes (a silent/old server); the
+      // listener resolves immediately when it does arrive. 2s comfortably exceeds
+      // the handshake round-trip even on high-latency links.
       const timer = setTimeout(() => {
         socket.off("message", onMsg);
         resolve(null);
-      }, 5000);
+      }, 2000);
       socket.once("message", onMsg);
       try {
         socket.send(
