@@ -53,6 +53,7 @@ from ._ekodb_client import (
     WebSocketClient,
     SubscriptionReceiver,
     ChatStreamReceiver,
+    extract_record_id,
 )
 from .stages import Stage, ChatMessage, parameter_ref
 from .query_builder import QueryBuilder
@@ -91,52 +92,51 @@ from .utils import (
 )
 
 __version__ = "0.1.0"
-__all__ = (
-    [
-        "Client",
-        "WebSocketClient",
-        "SubscriptionReceiver",
-        "ChatStreamReceiver",
-        "RateLimitInfo",
-        "RateLimitError",
-        # Stage helpers for script functions
-        "Stage",
-        "ChatMessage",
-        "parameter_ref",
-        # Query, Schema, and Join builders
-        "QueryBuilder",
-        "SchemaBuilder",
-        "FieldTypeSchemaBuilder",
-        "JoinConfig",
-        # Value extractors
-        "get_value",
-        "get_values",
-        "extract_record",
-        "get_datetime_value",
-        "get_uuid_value",
-        "get_decimal_value",
-        "get_duration_value",
-        "get_bytes_value",
-        "get_binary_value",
-        "get_array_value",
-        "get_set_value",
-        "get_vector_value",
-        "get_object_value",
-        # Field builders
-        "field_uuid",
-        "field_decimal",
-        "field_datetime",
-        "field_duration",
-        "field_number",
-        "field_set",
-        "field_vector",
-        "field_binary",
-        "field_bytes",
-        "field_array",
-        "field_object",
-        "field_string",
-        "field_integer",
-        "field_float",
-        "field_boolean",
-    ],
-)
+__all__ = [
+    "Client",
+    "WebSocketClient",
+    "SubscriptionReceiver",
+    "ChatStreamReceiver",
+    "RateLimitInfo",
+    "RateLimitError",
+    # Stage helpers for script functions
+    "Stage",
+    "ChatMessage",
+    "parameter_ref",
+    # Query, Schema, and Join builders
+    "QueryBuilder",
+    "SchemaBuilder",
+    "FieldTypeSchemaBuilder",
+    "JoinConfig",
+    # Value extractors
+    "get_value",
+    "get_values",
+    "extract_record",
+    "extract_record_id",
+    "get_datetime_value",
+    "get_uuid_value",
+    "get_decimal_value",
+    "get_duration_value",
+    "get_bytes_value",
+    "get_binary_value",
+    "get_array_value",
+    "get_set_value",
+    "get_vector_value",
+    "get_object_value",
+    # Field builders
+    "field_uuid",
+    "field_decimal",
+    "field_datetime",
+    "field_duration",
+    "field_number",
+    "field_set",
+    "field_vector",
+    "field_binary",
+    "field_bytes",
+    "field_array",
+    "field_object",
+    "field_string",
+    "field_integer",
+    "field_float",
+    "field_boolean",
+]

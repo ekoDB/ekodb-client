@@ -3594,6 +3594,13 @@ export class WebSocketClient {
   private ws: any = null;
   private dispatcherRunning = false;
   private schemaCache: SchemaCache | null = null;
+  /**
+   * Per-connection wire format, set by negotiateFormat() on every (re)connect:
+   * true once the server has Welcomed msgpack, so frames are sent/received as
+   * binary msgpack; false (JSON text) otherwise, including against an older
+   * server that never Welcomes. Keeps the transport fully back-compatible.
+   */
+  private binary = false;
 
   // Reconnect config
   private autoReconnect: boolean;
@@ -3720,7 +3727,67 @@ export class WebSocketClient {
       this.ws.on("error", (err: Error) => reject(err));
     });
 
+    // Negotiate the wire format before the dispatcher starts so the Welcome is
+    // consumed here (not by routeMessage), and before any real frame is sent
+    // (resubscribeAll runs only after this resolves).
+    await this.negotiateFormat(this.ws);
+
     this.spawnDispatcher();
+  }
+
+  /**
+   * Additive capability handshake: offer msgpack and, if the server Welcomes
+   * it, switch this connection to binary msgpack frames; otherwise stay on JSON
+   * text. The Welcome (a text frame) is read with a one-shot listener and a
+   * timeout so an older server that never answers — or answers with an Error —
+   * simply leaves the connection on JSON. Best-effort and never throws: JSON
+   * always works.
+   */
+  private async negotiateFormat(socket: any): Promise<void> {
+    this.binary = false;
+    const welcome = await new Promise<any | null>((resolve) => {
+      const onMsg = (data: Buffer) => {
+        clearTimeout(timer);
+        try {
+          resolve(JSON.parse(data.toString()));
+        } catch {
+          resolve(null);
+        }
+      };
+      const timer = setTimeout(() => {
+        socket.off("message", onMsg);
+        resolve(null);
+      }, 5000);
+      socket.once("message", onMsg);
+      try {
+        socket.send(
+          JSON.stringify({
+            type: "Hello",
+            payload: { formats: ["msgpack", "json"] },
+          }),
+        );
+      } catch {
+        clearTimeout(timer);
+        socket.off("message", onMsg);
+        resolve(null);
+      }
+    });
+    if (
+      welcome &&
+      welcome.type === "Welcome" &&
+      welcome.payload?.format === "msgpack"
+    ) {
+      this.binary = true;
+    }
+  }
+
+  /**
+   * Send a request object on the active socket using the negotiated format:
+   * binary msgpack when the server Welcomed it, JSON text otherwise. The single
+   * write point so every request honors the negotiated transport.
+   */
+  private sendFrame(obj: any): void {
+    this.ws.send(this.binary ? encode(obj) : JSON.stringify(obj));
   }
 
   private spawnDispatcher(): void {
@@ -3732,10 +3799,15 @@ export class WebSocketClient {
     // tear down the replacement connection.
     const socket = this.ws;
 
-    socket.on("message", (data: Buffer) => {
+    socket.on("message", (data: Buffer, isBinary: boolean) => {
       if (this.ws !== socket) return;
       try {
-        const msg = JSON.parse(data.toString());
+        // A binary frame is msgpack (the server only sends binary once it has
+        // Welcomed msgpack); a text frame is JSON. Decode by frame type so the
+        // routed value is identical regardless of negotiated transport.
+        const msg = isBinary
+          ? (decode(data) as any)
+          : JSON.parse(data.toString());
         this.routeMessage(msg);
       } catch {
         // Ignore malformed messages
@@ -4045,7 +4117,7 @@ export class WebSocketClient {
 
       this.pendingRequests.set(messageId, { resolve, reject, timer });
       try {
-        this.ws.send(JSON.stringify(request));
+        this.sendFrame(request);
       } catch (err) {
         this.pendingRequests.delete(messageId);
         if (timer) clearTimeout(timer);
@@ -4146,13 +4218,11 @@ export class WebSocketClient {
     // single-pending fallback can't misroute it to an unrelated request.
     if (this.ws && this.ws.readyState === 1 /* WebSocket.OPEN */) {
       try {
-        this.ws.send(
-          JSON.stringify({
-            type: "Unsubscribe",
-            messageId: this.genMessageId(),
-            payload: { collection },
-          }),
-        );
+        this.sendFrame({
+          type: "Unsubscribe",
+          messageId: this.genMessageId(),
+          payload: { collection },
+        });
       } catch {
         // Best-effort: the socket can close between the readyState check and the
         // send. Local teardown already happened, so swallow the failure rather
@@ -4196,7 +4266,7 @@ export class WebSocketClient {
       },
     };
 
-    this.ws.send(JSON.stringify(request));
+    this.sendFrame(request);
     return stream;
   }
 
@@ -4222,7 +4292,7 @@ export class WebSocketClient {
         resolve: () => resolve(),
         reject: (err) => reject(err),
       };
-      this.ws.send(JSON.stringify(request));
+      this.sendFrame(request);
     });
   }
 
@@ -4249,7 +4319,7 @@ export class WebSocketClient {
       },
     };
 
-    this.ws.send(JSON.stringify(request));
+    this.sendFrame(request);
   }
 
   /**
@@ -4269,7 +4339,7 @@ export class WebSocketClient {
       payload: { chat_id: chatId },
     };
 
-    this.ws.send(JSON.stringify(request));
+    this.sendFrame(request);
   }
 
   /**

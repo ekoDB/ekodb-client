@@ -310,4 +310,60 @@ class WebSocketClientTest {
         assertTrue(json.contains("\"name\":\"test\""))
         assertTrue(json.contains("\"description\":\"Test tool\""))
     }
+
+    // ========================================================================
+    // MessagePack transcoding (WebSocket binary transport)
+    // ========================================================================
+
+    @Test
+    fun `msgpack round-trips a request object identically to JSON`() {
+        val request = buildJsonObject {
+            put("type", "FindAll")
+            put("messageId", "m1")
+            putJsonObject("payload") {
+                put("collection", "users")
+                put("limit", 42)
+                put("active", true)
+                put("ratio", 1.5)
+                put("note", JsonNull)
+                putJsonArray("tags") { add("x"); add("y") }
+            }
+        }
+
+        val bytes = jsonElementToMsgpack(request)
+        val decoded = msgpackToJsonElement(bytes).jsonObject
+
+        assertEquals("FindAll", decoded["type"]?.jsonPrimitive?.content)
+        assertEquals("m1", decoded["messageId"]?.jsonPrimitive?.content)
+        val payload = decoded["payload"]!!.jsonObject
+        assertEquals("users", payload["collection"]?.jsonPrimitive?.content)
+        assertEquals(42L, payload["limit"]?.jsonPrimitive?.long)
+        assertEquals(true, payload["active"]?.jsonPrimitive?.boolean)
+        assertEquals(1.5, payload["ratio"]?.jsonPrimitive?.double)
+        assertTrue(payload["note"] is JsonNull)
+        assertEquals(2, payload["tags"]!!.jsonArray.size)
+        assertEquals("x", payload["tags"]!!.jsonArray[0].jsonPrimitive.content)
+    }
+
+    @Test
+    fun `msgpack binary field decodes to a number array matching the JSON wire shape`() {
+        // The server sends a Binary field as a msgpack bin; the client must
+        // surface it as a number array (not base64), identical to the JSON
+        // transport, so decoded data is the same regardless of transport.
+        val packer = org.msgpack.core.MessagePack.newDefaultBufferPacker()
+        packer.packMapHeader(1)
+        packer.packString("photo")
+        val raw = byteArrayOf(255.toByte(), 216.toByte(), 255.toByte())
+        packer.packBinaryHeader(raw.size)
+        packer.writePayload(raw)
+        val bytes = packer.toByteArray()
+        packer.close()
+
+        val decoded = msgpackToJsonElement(bytes).jsonObject
+        val photo = decoded["photo"]!!.jsonArray
+        assertEquals(3, photo.size)
+        assertEquals(255, photo[0].jsonPrimitive.int)
+        assertEquals(216, photo[1].jsonPrimitive.int)
+        assertEquals(255, photo[2].jsonPrimitive.int)
+    }
 }

@@ -307,6 +307,12 @@ pub struct WebSocketClient {
     writer: Arc<Mutex<Option<WsWrite>>>,
     dispatch: Arc<Mutex<DispatchState>>,
     connected: Arc<Mutex<bool>>,
+    /// Negotiated wire format for the live connection: `true` once the server has
+    /// acked MessagePack via the Hello/Welcome handshake, otherwise JSON text.
+    /// Set per-connection in `ensure_connected`; read by the send + dispatch paths.
+    /// Defaults to text, so against an older server (which never acks msgpack) the
+    /// client stays on JSON — fully back-compatible.
+    binary: Arc<std::sync::atomic::AtomicBool>,
 }
 
 impl WebSocketClient {
@@ -325,6 +331,7 @@ impl WebSocketClient {
                 schema_cache: None,
             })),
             connected: Arc::new(Mutex::new(false)),
+            binary: Arc::new(std::sync::atomic::AtomicBool::new(false)),
         })
     }
 
@@ -370,7 +377,26 @@ impl WebSocketClient {
             .await
             .map_err(|e| Error::WebSocket(e.to_string()))?;
 
-        let (write, read) = ws_stream.split();
+        let (mut write, mut read) = ws_stream.split();
+
+        // Capability handshake (transparent to callers): offer msgpack and, if the
+        // server welcomes it, use binary frames for the life of this connection.
+        // Fully back-compatible — an older server replies with an Error (not a
+        // Welcome), or anything we can't read as a `Welcome { format: "msgpack" }`,
+        // and the connection stays on JSON text. The Welcome (or the old server's
+        // Error) is the first frame and is consumed here, before the dispatcher
+        // starts, so it never leaks into the response stream.
+        let hello = serde_json::json!({"type":"Hello","payload":{"formats":["msgpack","json"]}});
+        let negotiated_binary = match write
+            .send(Message::Text(serde_json::to_string(&hello)?.into()))
+            .await
+        {
+            Ok(()) => Self::read_welcome_acks_msgpack(&mut read).await,
+            Err(_) => false,
+        };
+        self.binary
+            .store(negotiated_binary, std::sync::atomic::Ordering::Relaxed);
+
         *self.writer.lock().await = Some(write);
         *self.connected.lock().await = true;
 
@@ -378,6 +404,29 @@ impl WebSocketClient {
         self.spawn_dispatcher(read);
 
         Ok(())
+    }
+
+    /// Read the first frame and report whether it is a `Welcome` that acks msgpack.
+    /// Any other outcome — an old server's Error, a non-Welcome, a closed stream,
+    /// or a timeout — returns false (stay on JSON text). Bounded by a short timeout
+    /// so a server that silently ignores the Hello can't hang the connect.
+    async fn read_welcome_acks_msgpack(read: &mut WsRead) -> bool {
+        let Ok(Some(Ok(msg))) =
+            tokio::time::timeout(std::time::Duration::from_secs(5), read.next()).await
+        else {
+            return false;
+        };
+        let text = match msg.into_text() {
+            Ok(t) => t.to_string(),
+            Err(_) => return false,
+        };
+        matches!(
+            serde_json::from_str::<serde_json::Value>(&text),
+            Ok(v) if v.get("type").and_then(|t| t.as_str()) == Some("Welcome")
+                && v.get("payload")
+                    .and_then(|p| p.get("format"))
+                    .and_then(|f| f.as_str()) == Some("msgpack")
+        )
     }
 
     /// Spawn the single reader loop that demultiplexes incoming frames
@@ -390,14 +439,23 @@ impl WebSocketClient {
             loop {
                 match read.next().await {
                     Some(Ok(msg)) => {
-                        let text = match msg.into_text() {
-                            Ok(t) if !t.is_empty() => t.to_string(),
-                            _ => continue,
-                        };
-
-                        let response: WebSocketResponse = match serde_json::from_str(&text) {
-                            Ok(r) => r,
-                            Err(_) => continue,
+                        // Decode the response from either a binary (msgpack) or a
+                        // text (JSON) frame — the connection's negotiated format,
+                        // handled defensively for both.
+                        let response: WebSocketResponse = if msg.is_binary() {
+                            match rmp_serde::from_slice(&msg.into_data()) {
+                                Ok(r) => r,
+                                Err(_) => continue,
+                            }
+                        } else {
+                            let text = match msg.into_text() {
+                                Ok(t) if !t.is_empty() => t.to_string(),
+                                _ => continue,
+                            };
+                            match serde_json::from_str(&text) {
+                                Ok(r) => r,
+                                Err(_) => continue,
+                            }
                         };
 
                         // Collect send targets while holding the lock, then drop
@@ -600,14 +658,24 @@ impl WebSocketClient {
 
     /// Helper: send a message through the writer half
     async fn ws_send(&self, msg: &impl Serialize) -> Result<()> {
+        // Encode in the connection's negotiated format: msgpack binary frame when
+        // the handshake acked it, otherwise JSON text. Same message shape either
+        // way — the server decodes a binary frame as msgpack into the identical
+        // value it would parse from JSON.
+        let frame = if self.binary.load(std::sync::atomic::Ordering::Relaxed) {
+            Message::Binary(
+                rmp_serde::to_vec_named(msg)
+                    .map_err(|e| Error::WebSocket(format!("msgpack encode failed: {}", e)))?
+                    .into(),
+            )
+        } else {
+            Message::Text(serde_json::to_string(msg)?.into())
+        };
         let mut w = self.writer.lock().await;
         let write = w
             .as_mut()
             .ok_or_else(|| Error::WebSocket("Not connected".to_string()))?;
-        if let Err(e) = write
-            .send(Message::Text(serde_json::to_string(msg)?.into()))
-            .await
-        {
+        if let Err(e) = write.send(frame).await {
             *w = None;
             *self.connected.lock().await = false;
             return Err(Error::WebSocket(format!("Send failed: {}", e)));
@@ -1244,6 +1312,59 @@ impl WebSocketClient {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // When the connection negotiates msgpack, the server sends responses as
+    // MessagePack maps `{type, payload, messageId}` and the dispatcher decodes
+    // them via `rmp_serde::from_slice::<WebSocketResponse>`. Prove the
+    // internally-tagged enum + nested payload survive the msgpack round-trip
+    // (the JSON text path is already exercised by the other tests). This decodes
+    // both the canonical `WebSocketResponse` encoding and the server's
+    // hand-built envelope shape.
+    #[test]
+    fn websocket_response_decodes_from_msgpack() {
+        // 1) Canonical round-trip of a Success response.
+        let resp = WebSocketResponse::Success {
+            payload: ResponsePayload {
+                data: serde_json::json!({ "data": "hello" }),
+                message_id: None,
+            },
+            message_id: Some("m1".to_string()),
+        };
+        let bytes = rmp_serde::to_vec_named(&resp).expect("encode");
+        match rmp_serde::from_slice::<WebSocketResponse>(&bytes).expect("decode") {
+            WebSocketResponse::Success {
+                payload,
+                message_id,
+            } => {
+                assert_eq!(payload.data, serde_json::json!({ "data": "hello" }));
+                assert_eq!(message_id.as_deref(), Some("m1"));
+            }
+            other => panic!("expected Success, got {other:?}"),
+        }
+
+        // 2) The server's hand-built envelope shape (a serde_json::Value encoded
+        // with to_vec_named, exactly as `serialize_ws_response` does on the
+        // server) must decode the same way.
+        let server_envelope = serde_json::json!({
+            "type": "Error",
+            "code": 404,
+            "message": "not found",
+            "messageId": "m2",
+        });
+        let bytes = rmp_serde::to_vec_named(&server_envelope).expect("encode envelope");
+        match rmp_serde::from_slice::<WebSocketResponse>(&bytes).expect("decode envelope") {
+            WebSocketResponse::Error {
+                code,
+                message,
+                message_id,
+            } => {
+                assert_eq!(code, 404);
+                assert_eq!(message, "not found");
+                assert_eq!(message_id.as_deref(), Some("m2"));
+            }
+            other => panic!("expected Error, got {other:?}"),
+        }
+    }
 
     #[test]
     fn chat_stream_end_payload_with_context_window() {

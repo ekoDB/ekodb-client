@@ -11,6 +11,10 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
+import org.msgpack.core.MessagePack
+import org.msgpack.core.MessageBufferPacker
+import org.msgpack.core.MessageUnpacker
+import org.msgpack.value.ValueType
 
 /** Mutation notification from a subscription. */
 data class MutationNotification(
@@ -156,6 +160,17 @@ class WebSocketClient(
     private var session: DefaultClientWebSocketSession? = null
     private var dispatcherJob: Job? = null
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+    /**
+     * Per-connection wire format, set by [negotiateFormat] on every [connect]:
+     * true once the server has Welcomed msgpack, so frames are sent/received as
+     * binary msgpack; false (JSON text) otherwise, including against an older
+     * server that never Welcomes. `@Volatile` for visibility across the
+     * connect, send, and dispatcher coroutines. Keeps the transport fully
+     * back-compatible.
+     */
+    @Volatile
+    private var binary = false
     var schemaCache: SchemaCache? = null
 
     // Dispatcher state
@@ -188,7 +203,37 @@ class WebSocketClient(
             headers.append("Authorization", "Bearer $token")
         }
 
+        // Negotiate the wire format before the dispatcher starts so the Welcome
+        // frame is consumed here, not routed as a response.
+        negotiateFormat()
+
         spawnDispatcher()
+    }
+
+    /**
+     * Additive capability handshake: offer msgpack and, if the server Welcomes
+     * it, switch this connection to binary msgpack frames; otherwise stay on
+     * JSON text. The Welcome (a text frame) is read with a timeout so an older
+     * server that never answers — or answers with an Error — simply leaves the
+     * connection on JSON. Best-effort and never throws: JSON always works.
+     */
+    private suspend fun negotiateFormat() {
+        binary = false
+        val s = session ?: return
+        try {
+            s.send(Frame.Text("""{"type":"Hello","payload":{"formats":["msgpack","json"]}}"""))
+            val frame = withTimeoutOrNull(5000) { s.incoming.receive() }
+            if (frame is Frame.Text) {
+                val msg = Json.parseToJsonElement(frame.readText()).jsonObject
+                val type = msg["type"]?.jsonPrimitive?.content
+                val format = msg["payload"]?.jsonObject?.get("format")?.jsonPrimitive?.content
+                if (type == "Welcome" && format == "msgpack") {
+                    binary = true
+                }
+            }
+        } catch (_: Exception) {
+            binary = false
+        }
     }
 
     private fun spawnDispatcher() {
@@ -196,14 +241,24 @@ class WebSocketClient(
         dispatcherJob = scope.launch {
             try {
                 for (frame in currentSession.incoming) {
-                    if (frame is Frame.Text) {
-                        try {
-                            val msg = Json.parseToJsonElement(frame.readText()).jsonObject
-                            routeMessage(msg)
+                    // A binary frame is msgpack (the server only sends binary
+                    // once it has Welcomed msgpack); a text frame is JSON.
+                    // Decode by frame type so the routed object is identical
+                    // regardless of negotiated transport.
+                    val msg: JsonObject? = when (frame) {
+                        is Frame.Text -> try {
+                            Json.parseToJsonElement(frame.readText()).jsonObject
                         } catch (_: Exception) {
-                            // Ignore malformed messages
+                            null
                         }
+                        is Frame.Binary -> try {
+                            msgpackToJsonElement(frame.readBytes()).jsonObject
+                        } catch (_: Exception) {
+                            null
+                        }
+                        else -> null
                     }
+                    if (msg != null) routeMessage(msg)
                 }
             } finally {
                 // Connection closed — notify all waiters
@@ -373,8 +428,21 @@ class WebSocketClient(
             pendingRequests[messageId] = deferred
         }
 
-        s.send(Frame.Text(request.toString()))
+        sendFrame(s, request)
         return deferred.await()
+    }
+
+    /**
+     * Send a request on the active session using the negotiated format: binary
+     * msgpack when the server Welcomed it, JSON text otherwise. The single write
+     * point so every request honors the negotiated transport.
+     */
+    private suspend fun sendFrame(s: DefaultClientWebSocketSession, request: JsonObject) {
+        if (binary) {
+            s.send(Frame.Binary(true, jsonElementToMsgpack(request)))
+        } else {
+            s.send(Frame.Text(request.toString()))
+        }
     }
 
     /**
@@ -481,7 +549,7 @@ class WebSocketClient(
         val s = session ?: return
         val request = buildUnsubscribeFrame(collection, genMessageId())
         try {
-            s.send(Frame.Text(request.toString()))
+            sendFrame(s, request)
         } catch (e: CancellationException) {
             throw e
         } catch (_: Throwable) {
@@ -533,7 +601,7 @@ class WebSocketClient(
             })
         }
 
-        s.send(Frame.Text(request.toString()))
+        sendFrame(s, request)
 
         return flow {
             for (event in channel) {
@@ -569,7 +637,7 @@ class WebSocketClient(
             })
         }
 
-        s.send(Frame.Text(request.toString()))
+        sendFrame(s, request)
         deferred.await()
     }
 
@@ -596,7 +664,7 @@ class WebSocketClient(
             })
         }
 
-        s.send(Frame.Text(request.toString()))
+        sendFrame(s, request)
     }
 
     /**
@@ -613,7 +681,7 @@ class WebSocketClient(
         // ignorable once it can be correlated.
         val request = buildCancelChatFrame(chatId, genMessageId())
 
-        s.send(Frame.Text(request.toString()))
+        sendFrame(s, request)
     }
 
     /**
@@ -811,3 +879,103 @@ data class WebSocketMessage(
     val messageId: String,
     val payload: JsonObject
 )
+
+// ============================================================================
+// MessagePack <-> JSON transcoding for the WebSocket binary transport.
+//
+// `internal` (not private) and top-level (no instance state) so the round-trip
+// can be unit-tested directly. The wire shape is value-identical to JSON: a
+// msgpack bin (a Binary field) decodes to a number array, matching the server's
+// JSON representation of binary fields, so decoded data is the same regardless
+// of the negotiated transport.
+// ============================================================================
+
+/**
+ * Pack a [JsonElement] into a MessagePack byte array. Maps use string keys
+ * (matching the server's named-field encoding). Numbers are packed as integers
+ * when they have no fractional part, else as doubles.
+ */
+internal fun jsonElementToMsgpack(element: JsonElement): ByteArray {
+    val packer = MessagePack.newDefaultBufferPacker()
+    packElement(packer, element)
+    val bytes = packer.toByteArray()
+    packer.close()
+    return bytes
+}
+
+private fun packElement(packer: MessageBufferPacker, el: JsonElement) {
+    when (el) {
+        is JsonNull -> packer.packNil()
+        is JsonObject -> {
+            packer.packMapHeader(el.size)
+            for ((k, v) in el) {
+                packer.packString(k)
+                packElement(packer, v)
+            }
+        }
+        is JsonArray -> {
+            packer.packArrayHeader(el.size)
+            for (v in el) packElement(packer, v)
+        }
+        is JsonPrimitive -> {
+            when {
+                el.isString -> packer.packString(el.content)
+                el.booleanOrNull != null -> packer.packBoolean(el.boolean)
+                el.longOrNull != null -> packer.packLong(el.long)
+                el.doubleOrNull != null -> packer.packDouble(el.double)
+                else -> packer.packString(el.content)
+            }
+        }
+    }
+}
+
+/**
+ * Unpack a MessagePack byte array into a [JsonElement], value-identical to the
+ * JSON wire shape. A msgpack bin (a Binary field) is decoded as a number array
+ * — matching the server's JSON representation of binary fields.
+ */
+internal fun msgpackToJsonElement(bytes: ByteArray): JsonElement {
+    val unpacker = MessagePack.newDefaultUnpacker(bytes)
+    val el = unpackValue(unpacker)
+    unpacker.close()
+    return el
+}
+
+private fun unpackValue(unpacker: MessageUnpacker): JsonElement {
+    return when (unpacker.nextFormat.valueType) {
+        ValueType.NIL -> {
+            unpacker.unpackNil()
+            JsonNull
+        }
+        ValueType.BOOLEAN -> JsonPrimitive(unpacker.unpackBoolean())
+        ValueType.INTEGER -> JsonPrimitive(unpacker.unpackLong())
+        ValueType.FLOAT -> JsonPrimitive(unpacker.unpackDouble())
+        ValueType.STRING -> JsonPrimitive(unpacker.unpackString())
+        ValueType.BINARY -> {
+            val len = unpacker.unpackBinaryHeader()
+            val arr = ByteArray(len)
+            unpacker.readPayload(arr)
+            JsonArray(arr.map { JsonPrimitive(it.toInt() and 0xFF) })
+        }
+        ValueType.ARRAY -> {
+            val len = unpacker.unpackArrayHeader()
+            val list = ArrayList<JsonElement>(len)
+            repeat(len) { list.add(unpackValue(unpacker)) }
+            JsonArray(list)
+        }
+        ValueType.MAP -> {
+            val len = unpacker.unpackMapHeader()
+            val map = LinkedHashMap<String, JsonElement>(len)
+            repeat(len) {
+                val key = unpackValue(unpacker)
+                val keyStr = (key as? JsonPrimitive)?.content ?: key.toString()
+                map[keyStr] = unpackValue(unpacker)
+            }
+            JsonObject(map)
+        }
+        else -> {
+            unpacker.skipValue()
+            JsonNull
+        }
+    }
+}
