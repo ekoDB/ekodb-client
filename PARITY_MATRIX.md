@@ -1,6 +1,6 @@
 # Client Library Parity Matrix
 
-**Last Updated:** June 4, 2026
+**Last Updated:** June 12, 2026
 
 **Client version:** 0.21.0 (Rust, Python, TypeScript, Kotlin); standalone Go
 client tracks the same release line.
@@ -21,8 +21,9 @@ client tracks the same release line.
 >   TypeScript, Kotlin, Go).
 > - **WebSocket `cancelChat`** — added to TypeScript, Kotlin, and Python
 >   (already in Rust and Go).
-> - **`list_user_collections`** — added to Python, TypeScript, Kotlin (already
->   in Rust; Go has `ListCollections`).
+> - **`list_user_collections`** — now on all five clients: Python, TypeScript,
+>   Kotlin, and Go (`ListUserCollections`, passing `exclude_internal=true`);
+>   already in Rust.
 > - **Python WebSocket `ws_batch_update`** — added (WS find-all is already
 >   provided by the existing `find_all`, so no `ws_find_all` alias was added).
 > - **WebSocket `unsubscribe`** — added to Rust, Python (`ws_unsubscribe`), and
@@ -30,6 +31,19 @@ client tracks the same release line.
 >   server-side `Unsubscribe` frame (`{type, messageId, payload.collection}`) in
 >   addition to tearing down the local subscription, so subscriptions are
 >   stopped explicitly rather than only on receiver drop / connection close.
+> - **WebSocket msgpack binary transport** — all five clients now perform the
+>   additive `Hello`/`Welcome` handshake and transparently switch to binary
+>   msgpack frames when the server welcomes it (else stay JSON text). Internal,
+>   back-compatible, no public API change.
+> - **`extract_record_id`** — added to Python (already in Rust, TypeScript, Go,
+>   Kotlin), so all five resolve a record's id by alias → `id` → `_id`.
+> - **WebSocket `close()`** — added to Python (already in Rust, TypeScript, Go,
+>   Kotlin) for deterministic teardown.
+> - **Schema cache** — now first-class in Python (`Client.new(schema_cache=…)`)
+>   and Kotlin (`Builder.schemaCache(…)`), each auto-wiring the cache into the
+>   WebSocket client; matches the enable-then-auto-wire ergonomics of Rust/Go.
+> - **`refresh_token`** — added to Go as public `RefreshToken` (already in Rust,
+>   TypeScript, Python, Kotlin), so all five expose an eager token refresh.
 >
 > Note: the query-builder `regex()` filter has been removed from all clients
 > until server-side regex filtering is available (tracked internally). Use

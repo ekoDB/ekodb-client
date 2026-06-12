@@ -322,6 +322,98 @@ class EkoDBClientTest {
         )
     }
 
+    @Test
+    fun `401 on the final attempt throws the real status, not a generic error`() = runBlocking {
+        val mockEngine = MockEngine { request ->
+            if (request.url.encodedPath.contains("/api/auth/token")) {
+                respond(
+                    content = """{"token": "mock_jwt_token"}""",
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                )
+            } else {
+                respond(content = "unauthorized", status = HttpStatusCode.Unauthorized)
+            }
+        }
+        val mockHttpClient = HttpClient(mockEngine) {
+            install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true; isLenient = true }) }
+        }
+        val client = EkoDBClient.builder()
+            .baseUrl(testBaseUrl).apiKey(testApiKey).maxRetries(1).httpClient(mockHttpClient).build()
+
+        // On the final attempt the 401 branch is skipped (no retry to follow), so
+        // it falls through to the 400..499 branch and reports the real status
+        // rather than the generic "Request failed after N attempts".
+        val ex = assertFailsWith<Exception> { client.listCollections() }
+        assertTrue(ex.message?.contains("401") == true, "expected 401 in message, got: ${ex.message}")
+        assertFalse(
+            ex.message?.contains("Request failed after") == true,
+            "should not be the generic retry-exhausted error: ${ex.message}"
+        )
+    }
+
+    @Test
+    fun `429 on the final attempt throws the real status, not a generic error`() = runBlocking {
+        val mockEngine = MockEngine { request ->
+            if (request.url.encodedPath.contains("/api/auth/token")) {
+                respond(
+                    content = """{"token": "mock_jwt_token"}""",
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                )
+            } else {
+                respond(content = "rate limited", status = HttpStatusCode.TooManyRequests)
+            }
+        }
+        val mockHttpClient = HttpClient(mockEngine) {
+            install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true; isLenient = true }) }
+        }
+        val client = EkoDBClient.builder()
+            .baseUrl(testBaseUrl).apiKey(testApiKey).maxRetries(1).httpClient(mockHttpClient).build()
+
+        val ex = assertFailsWith<Exception> { client.listCollections() }
+        assertTrue(ex.message?.contains("429") == true, "expected 429 in message, got: ${ex.message}")
+        assertFalse(
+            ex.message?.contains("Request failed after") == true,
+            "should not be the generic retry-exhausted error: ${ex.message}"
+        )
+    }
+
+    @Test
+    fun `401 on a non-final attempt refreshes the token and retries`() = runBlocking {
+        var dataCalls = 0
+        val mockEngine = MockEngine { request ->
+            if (request.url.encodedPath.contains("/api/auth/token")) {
+                respond(
+                    content = """{"token": "mock_jwt_token"}""",
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                )
+            } else {
+                dataCalls++
+                if (dataCalls == 1) {
+                    respond(content = "unauthorized", status = HttpStatusCode.Unauthorized)
+                } else {
+                    respond(
+                        content = """{"collections": ["users"]}""",
+                        status = HttpStatusCode.OK,
+                        headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                    )
+                }
+            }
+        }
+        val mockHttpClient = HttpClient(mockEngine) {
+            install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true; isLenient = true }) }
+        }
+        val client = EkoDBClient.builder()
+            .baseUrl(testBaseUrl).apiKey(testApiKey).maxRetries(2).httpClient(mockHttpClient).build()
+
+        // The 401 on attempt 0 (not the final attempt) still refreshes + retries.
+        val result = client.listCollections()
+        assertEquals(2, dataCalls, "expected one 401 then one successful retry after refresh")
+        assertTrue(result.isNotEmpty())
+    }
+
     // ========================================================================
     // executeTool Tests
     // ========================================================================
