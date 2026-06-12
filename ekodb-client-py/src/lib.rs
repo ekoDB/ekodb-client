@@ -4693,7 +4693,6 @@ fn get_messages_response_to_dict(py: Python, response: &GetMessagesResponse) -> 
     Ok(dict.into())
 }
 
-/// Convert Python value to JSON recursively
 /// Resolve a record's id, trying custom aliases first, then "id", then "_id".
 ///
 /// Mirrors ``ekodb_client::extract_record_id`` (and the other clients'
@@ -4720,6 +4719,7 @@ fn extract_record_id(
     Ok(ekodb_client::extract_record_id(&value, &extra_refs))
 }
 
+/// Convert Python value to JSON recursively
 fn py_to_json(value: &Bound<'_, PyAny>) -> PyResult<serde_json::Value> {
     use serde_json::json;
     

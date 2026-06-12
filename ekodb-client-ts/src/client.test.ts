@@ -1919,6 +1919,26 @@ describe("findByIdWithProjection", () => {
     const dataCall = calls[1];
     expect(dataCall[0]).toBe("http://localhost:8080/api/find/users/123");
   });
+
+  it("appends transaction_id when a transactionId is given", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse({ id: "123", name: "Alice" });
+
+    await client.findByIdWithProjection(
+      "users",
+      "123",
+      ["name"],
+      undefined,
+      "txn-abc",
+    );
+
+    const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+    const dataCall = calls[1];
+    expect(dataCall[0]).toContain("transaction_id=txn-abc");
+    expect(dataCall[0]).toContain("select_fields=name");
+  });
 });
 
 // ============================================================================
