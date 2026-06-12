@@ -2121,4 +2121,30 @@ class EkoDBClientTest {
         // CancellationException must propagate on the first attempt, not be retried.
         assertEquals(1, dataRequestCount)
     }
+
+    // ========================================================================
+    // Schema cache builder options (parity)
+    // ========================================================================
+
+    @Test
+    fun `builder accepts schema cache options and builds`() {
+        val client = EkoDBClient.builder()
+            .baseUrl(testBaseUrl)
+            .apiKey(testApiKey)
+            .schemaCache(true)
+            .schemaCacheTtlMs(60_000)
+            .schemaCacheMax(50)
+            .build()
+        assertNotNull(client)
+    }
+
+    @Test
+    fun `builder schema cache defaults keep working`() {
+        // Omitting the schema-cache options must still build (back-compat).
+        val client = EkoDBClient.builder()
+            .baseUrl(testBaseUrl)
+            .apiKey(testApiKey)
+            .build()
+        assertNotNull(client)
+    }
 }

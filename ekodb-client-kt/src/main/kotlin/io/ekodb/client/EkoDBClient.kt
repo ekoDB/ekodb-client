@@ -52,8 +52,17 @@ class EkoDBClient private constructor(
     private val timeout: Long = 30,
     private val maxRetries: Int = 3,
     private val format: SerializationFormat = SerializationFormat.JSON, // Default to JSON (CBOR has serialization compatibility issues)
+    schemaCacheEnabled: Boolean = false,
+    schemaCacheTtlMs: Long = 300_000,
+    schemaCacheMax: Int = 100,
     injectedClient: HttpClient? = null // Optional injected client for testing
 ) {
+    // Schema cache for primary_key_alias resolution (parity with the other
+    // clients). Always created; a no-op when disabled. Shared with every
+    // WebSocket client created via websocket() so WS CRUD is alias-aware and
+    // SchemaChanged events invalidate the same cache.
+    private val schemaCache = SchemaCache(schemaCacheEnabled, schemaCacheMax, schemaCacheTtlMs)
+
     // CBOR serializer for MessagePack format
     private val cbor = Cbor {
         ignoreUnknownKeys = true
@@ -2106,7 +2115,11 @@ class EkoDBClient private constructor(
      */
     suspend fun websocket(wsUrl: String): WebSocketClient {
         val token = getToken()
-        return WebSocketClient(wsUrl, token, client)
+        val ws = WebSocketClient(wsUrl, token, client)
+        // Share the client's schema cache so WS CRUD is alias-aware and
+        // SchemaChanged events invalidate the same cache (no-op when disabled).
+        ws.schemaCache = schemaCache
+        return ws
     }
     
     /**
@@ -2125,13 +2138,28 @@ class EkoDBClient private constructor(
         private var timeout: Long = 30
         private var maxRetries: Int = 3
         private var format: SerializationFormat = SerializationFormat.JSON // Default to JSON (CBOR has compatibility issues)
+        private var schemaCacheEnabled: Boolean = false
+        private var schemaCacheTtlMs: Long = 300_000
+        private var schemaCacheMax: Int = 100
         private var httpClient: HttpClient? = null // For testing
-        
+
         fun baseUrl(url: String) = apply { this.baseUrl = url }
         fun apiKey(key: String) = apply { this.apiKey = key }
         fun timeout(seconds: Long) = apply { this.timeout = seconds }
         fun maxRetries(retries: Int) = apply { this.maxRetries = retries }
-        
+
+        /**
+         * Enable the in-memory schema cache for primary_key_alias resolution.
+         * When enabled, the cache is shared with WebSocket clients created via
+         * [websocket] so WS CRUD resolves record ids correctly regardless of a
+         * collection's primary_key_alias. Parity with the other clients.
+         */
+        fun schemaCache(enabled: Boolean) = apply { this.schemaCacheEnabled = enabled }
+        /** Schema cache TTL in milliseconds (default 300000). */
+        fun schemaCacheTtlMs(ms: Long) = apply { this.schemaCacheTtlMs = ms }
+        /** Max collections the schema cache holds (default 100). */
+        fun schemaCacheMax(max: Int) = apply { this.schemaCacheMax = max }
+
         /**
          * Set serialization format (default: JSON for compatibility, MESSAGEPACK experimental)
          * MESSAGEPACK uses CBOR encoding which is faster but has compatibility issues with custom types
@@ -2145,7 +2173,10 @@ class EkoDBClient private constructor(
         
         fun build(): EkoDBClient {
             require(apiKey.isNotEmpty()) { "API key is required" }
-            return EkoDBClient(baseUrl, apiKey, timeout, maxRetries, format, httpClient)
+            return EkoDBClient(
+                baseUrl, apiKey, timeout, maxRetries, format,
+                schemaCacheEnabled, schemaCacheTtlMs, schemaCacheMax, httpClient
+            )
         }
     }
     
