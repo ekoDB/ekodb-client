@@ -24,6 +24,10 @@ dependencies {
     // Serialization
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-cbor:1.10.0") // CBOR for binary serialization (similar to MessagePack)
+    // MessagePack core, for the WebSocket binary transport negotiated with the
+    // server. CBOR above is NOT wire-compatible with the server's msgpack, so a
+    // real msgpack codec is required.
+    implementation("org.msgpack:msgpack-core:0.9.8")
     
     // HTTP client
     implementation("io.ktor:ktor-client-core:3.4.1")
