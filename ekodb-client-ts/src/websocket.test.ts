@@ -6,6 +6,7 @@
 
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { WebSocketServer, WebSocket as WS } from "ws";
+import { encode, decode } from "@msgpack/msgpack";
 import { WebSocketClient, EventStream } from "./client";
 
 // ============================================================================
@@ -16,11 +17,62 @@ let wss: WebSocketServer;
 let port: number;
 let serverConnections: WS[] = [];
 
+// Format the mock server Welcomes during the handshake. Default "json" keeps
+// the existing tests on the text transport they assert against; the binary
+// negotiation test sets "msgpack" before connecting.
+let welcomeFormat: "json" | "msgpack" = "json";
+
+// Per-connection receive state. The connection handler is the SOLE message
+// consumer: it answers the client's Hello (so tests never see it) and buffers
+// every subsequent frame, which waitForMessage() drains. This is race-free —
+// unlike a per-test ws.once("message"), which would fire on the Hello that
+// arrives (as loopback I/O) after the test's listener is registered.
+interface RecvState {
+  queue: any[];
+  waiters: ((m: any) => void)[];
+  handshakeDone: boolean;
+  // Frame type of the most recently received real (post-handshake) message, so
+  // a test can assert the client actually sent binary vs text.
+  lastBinary: boolean;
+}
+const recvState = new Map<WS, RecvState>();
+
 function startServer(): Promise<number> {
   return new Promise((resolve) => {
     wss = new WebSocketServer({ port: 0 });
     wss.on("connection", (ws) => {
       serverConnections.push(ws);
+      const state: RecvState = {
+        queue: [],
+        waiters: [],
+        handshakeDone: false,
+        lastBinary: false,
+      };
+      recvState.set(ws, state);
+      ws.on("message", (data: Buffer, isBinary: boolean) => {
+        let msg: any;
+        try {
+          msg = isBinary ? decode(data) : JSON.parse(data.toString());
+        } catch {
+          return;
+        }
+        // Answer the additive Hello handshake exactly like the real server, and
+        // never surface it to the test. The Hello is always text.
+        if (!state.handshakeDone && msg?.type === "Hello") {
+          state.handshakeDone = true;
+          ws.send(
+            JSON.stringify({
+              type: "Welcome",
+              payload: { format: welcomeFormat },
+            }),
+          );
+          return;
+        }
+        state.lastBinary = isBinary;
+        const waiter = state.waiters.shift();
+        if (waiter) waiter(msg);
+        else state.queue.push(msg);
+      });
     });
     wss.on("listening", () => {
       const addr = wss.address();
@@ -33,12 +85,14 @@ function getLastConnection(): WS {
   return serverConnections[serverConnections.length - 1];
 }
 
+// Resolve with the next real (post-handshake) frame, draining any already
+// buffered. Decoded per the negotiated frame type, so it works for both JSON
+// and msgpack connections without the caller caring which.
 function waitForMessage(ws: WS): Promise<any> {
-  return new Promise((resolve) => {
-    ws.once("message", (data) => {
-      resolve(JSON.parse(data.toString()));
-    });
-  });
+  const state = recvState.get(ws)!;
+  const queued = state.queue.shift();
+  if (queued !== undefined) return Promise.resolve(queued);
+  return new Promise((resolve) => state.waiters.push(resolve));
 }
 
 // ============================================================================
@@ -48,6 +102,8 @@ function waitForMessage(ws: WS): Promise<any> {
 describe("WebSocketClient", () => {
   beforeEach(async () => {
     serverConnections = [];
+    recvState.clear();
+    welcomeFormat = "json";
     port = await startServer();
   });
 
@@ -1072,6 +1128,77 @@ describe("WebSocketClient", () => {
       await expect(client.findAll("users")).rejects.toThrow(
         /token is unavailable/i,
       );
+      client.close();
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // Binary (msgpack) negotiation
+  // --------------------------------------------------------------------------
+
+  describe("msgpack negotiation", () => {
+    it("negotiates msgpack and round-trips a binary request/response", async () => {
+      welcomeFormat = "msgpack";
+      const client = new WebSocketClient(
+        `ws://localhost:${port}/api/ws`,
+        "test-token",
+      );
+
+      const resultPromise = client.findAll("users");
+
+      await new Promise((r) => wss.once("connection", r));
+      const ws = getLastConnection();
+      const msg = await waitForMessage(ws);
+
+      // The request arrived as a binary msgpack frame, decoded to the same
+      // object shape as JSON would produce.
+      expect(recvState.get(ws)!.lastBinary).toBe(true);
+      expect(msg.type).toBe("FindAll");
+      expect(msg.payload.collection).toBe("users");
+
+      // Respond with a binary msgpack frame; the client must decode it
+      // transparently.
+      ws.send(
+        encode({
+          type: "Success",
+          payload: {
+            message_id: msg.messageId,
+            data: [{ id: "1", name: "Alice" }],
+          },
+        }),
+      );
+
+      const result = await resultPromise;
+      expect(result).toEqual([{ id: "1", name: "Alice" }]);
+
+      client.close();
+    });
+
+    it("stays on JSON text when the server welcomes only json", async () => {
+      welcomeFormat = "json";
+      const client = new WebSocketClient(
+        `ws://localhost:${port}/api/ws`,
+        "test-token",
+      );
+
+      const resultPromise = client.findAll("users");
+
+      await new Promise((r) => wss.once("connection", r));
+      const ws = getLastConnection();
+      const msg = await waitForMessage(ws);
+
+      // The request is a JSON text frame, not binary.
+      expect(recvState.get(ws)!.lastBinary).toBe(false);
+      expect(msg.type).toBe("FindAll");
+
+      ws.send(
+        JSON.stringify({
+          type: "Success",
+          payload: { message_id: msg.messageId, data: [] },
+        }),
+      );
+
+      await resultPromise;
       client.close();
     });
   });

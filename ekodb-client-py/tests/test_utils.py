@@ -6,7 +6,7 @@ Run with: pytest tests/ -v
 
 from datetime import datetime
 
-from ekodb_client import Stage
+from ekodb_client import Stage, extract_record_id
 from ekodb_client.utils import (
     get_value,
     get_values,
@@ -633,3 +633,40 @@ class TestSWRStage:
         assert "timeout_seconds" not in stage
         assert "output_field" not in stage
         assert "collection" not in stage
+
+
+# ============================================================================
+# extract_record_id Tests
+# ============================================================================
+
+
+class TestExtractRecordId:
+    """Tests for extract_record_id (parity with the other clients).
+
+    Resolves a record's id trying custom aliases first, then "id", then "_id",
+    handling both raw and typed-wrapper id fields, so callers never hardcode
+    "id"/"_id" (which the schema's primary_key_alias may rename).
+    """
+
+    def test_raw_id(self):
+        assert extract_record_id({"id": "abc", "name": "x"}) == "abc"
+
+    def test_typed_wrapper_id(self):
+        assert (
+            extract_record_id({"id": {"type": "String", "value": "wrapped"}})
+            == "wrapped"
+        )
+
+    def test_underscore_id_fallback(self):
+        assert extract_record_id({"_id": "underscore"}) == "underscore"
+
+    def test_custom_alias_tried_first(self):
+        assert (
+            extract_record_id({"user_id": "u1", "id": "ignored"}, ["user_id"]) == "u1"
+        )
+
+    def test_alias_miss_falls_through_to_id(self):
+        assert extract_record_id({"id": "fallback"}, ["missing"]) == "fallback"
+
+    def test_no_id_returns_none(self):
+        assert extract_record_id({"name": "x"}) is None

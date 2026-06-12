@@ -90,3 +90,34 @@ class TestChatStreamReceiverMethods:
 
     def test_has_recv(self):
         assert hasattr(ChatStreamReceiver, "recv")
+
+
+class TestWebSocketCloseAndSchemaCache:
+    """Parity: WS close() + schema-cache construction options."""
+
+    def test_websocket_has_close(self):
+        # Deterministic teardown, matching every other WS client.
+        assert hasattr(WebSocketClient, "close")
+        assert callable(WebSocketClient.close)
+
+    def test_client_accepts_schema_cache_options(self):
+        # Schema cache enabled with ttl/max (parity with the other clients).
+        client = Client.new(
+            "http://localhost:8080",
+            "test-api-key",
+            should_retry=False,
+            schema_cache=True,
+            schema_cache_ttl_secs=60,
+            schema_cache_max=50,
+        )
+        assert client is not None
+
+    def test_client_schema_cache_defaults_disabled(self):
+        # Omitting the options keeps the previous behaviour (cache disabled).
+        client = Client.new("http://localhost:8080", "test-api-key", should_retry=False)
+        assert client is not None
+
+    def test_client_construction_backcompat_positional(self):
+        # Existing positional construction must still work unchanged.
+        client = Client.new("http://localhost:8080", "test-api-key", True, 3, 30, None)
+        assert client is not None

@@ -129,7 +129,7 @@ impl Client {
     /// Returns:
     ///     A new Client instance
     #[staticmethod]
-    #[pyo3(signature = (base_url, api_key, should_retry=true, max_retries=3, timeout_secs=30, format=None))]
+    #[pyo3(signature = (base_url, api_key, should_retry=true, max_retries=3, timeout_secs=30, format=None, schema_cache=false, schema_cache_ttl_secs=None, schema_cache_max=None))]
     fn new(
         base_url: String,
         api_key: String,
@@ -137,6 +137,9 @@ impl Client {
         max_retries: usize,
         timeout_secs: u64,
         format: Option<SerializationFormat>,
+        schema_cache: bool,
+        schema_cache_ttl_secs: Option<u64>,
+        schema_cache_max: Option<usize>,
     ) -> PyResult<Self> {
         let mut builder = RustClient::builder()
             .base_url(&base_url)
@@ -144,11 +147,22 @@ impl Client {
             .should_retry(should_retry)
             .max_retries(max_retries)
             .timeout(std::time::Duration::from_secs(timeout_secs));
-        
+
         if let Some(fmt) = format {
             builder = builder.serialization_format(fmt.into());
         }
-        
+
+        // Schema cache for primary_key_alias resolution (parity with the other
+        // clients). Enabling it lets CRUD results resolve record ids correctly
+        // regardless of a collection's primary_key_alias.
+        builder = builder.schema_cache(schema_cache);
+        if let Some(ttl) = schema_cache_ttl_secs {
+            builder = builder.schema_cache_ttl(ttl);
+        }
+        if let Some(max) = schema_cache_max {
+            builder = builder.schema_cache_max(max);
+        }
+
         let client = builder.build()
             .map_err(|e| PyRuntimeError::new_err(format!("Failed to create client: {}", e)))?;
 
@@ -2926,6 +2940,13 @@ impl Client {
                 .await
                 .map_err(|e| map_client_err("WebSocket connection failed", e))?;
 
+            // Share the client's schema cache with the WS so WS CRUD is
+            // alias-aware and SchemaChanged events (delivered over WS)
+            // invalidate the same cache. Harmless when the cache is disabled
+            // (a no-op cache). Mirrors the other clients' set_schema_cache,
+            // wired automatically here rather than exposing the opaque Arc.
+            ws_client.set_schema_cache(client.schema_cache_arc()).await;
+
             Python::attach(|py| {
                 // Return a WebSocketClient wrapper
                 let ws_wrapper = WebSocketClient {
@@ -4293,6 +4314,28 @@ impl WebSocketClient {
         })
     }
 
+    /// Close the WebSocket connection and stop the dispatcher.
+    ///
+    /// Rejects any in-flight requests and tears down the socket so long-lived
+    /// apps can release it deterministically rather than waiting for GC. After
+    /// close() the client must not be reused. Mirrors the close()/Close()
+    /// exposed by the other WebSocket clients.
+    fn close<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let ws_client = match &self.inner {
+            Some(client) => client.clone(),
+            None => return Err(PyRuntimeError::new_err("WebSocket client not initialized")),
+        };
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            ws_client
+                .close()
+                .await
+                .map_err(|e| map_client_err("WebSocket close failed", e))?;
+
+            Python::attach(|py| Ok(py.None()))
+        })
+    }
+
     /// Stateless raw LLM completion via WebSocket.
     ///
     /// Sends a RawComplete message over the persistent WSS connection.
@@ -4651,6 +4694,32 @@ fn get_messages_response_to_dict(py: Python, response: &GetMessagesResponse) -> 
 }
 
 /// Convert Python value to JSON recursively
+/// Resolve a record's id, trying custom aliases first, then "id", then "_id".
+///
+/// Mirrors ``ekodb_client::extract_record_id`` (and the other clients'
+/// ``extract_record_id``) so Python callers never hardcode "id"/"_id" — a
+/// collection's schema may rename the primary key via ``primary_key_alias``.
+/// Handles both raw and typed-wrapper (``{"type":"String","value":...}``) id
+/// fields.
+///
+/// Args:
+///     record: the record dict (as returned by a query/find)
+///     extra_candidates: optional alias names to try before "id"/"_id"
+///
+/// Returns:
+///     the id string, or None if no id-like field is present
+#[pyfunction]
+#[pyo3(signature = (record, extra_candidates=None))]
+fn extract_record_id(
+    record: &Bound<'_, PyAny>,
+    extra_candidates: Option<Vec<String>>,
+) -> PyResult<Option<String>> {
+    let value = py_to_json(record)?;
+    let extras = extra_candidates.unwrap_or_default();
+    let extra_refs: Vec<&str> = extras.iter().map(String::as_str).collect();
+    Ok(ekodb_client::extract_record_id(&value, &extra_refs))
+}
+
 fn py_to_json(value: &Bound<'_, PyAny>) -> PyResult<serde_json::Value> {
     use serde_json::json;
     
@@ -5004,6 +5073,7 @@ fn _ekodb_client(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<RateLimitInfo>()?;
     m.add_class::<SerializationFormat>()?;
     m.add("RateLimitError", m.py().get_type::<RateLimitError>())?;
+    m.add_function(wrap_pyfunction!(extract_record_id, m)?)?;
     Ok(())
 }
 
