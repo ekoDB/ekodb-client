@@ -3226,3 +3226,129 @@ describe("extractRecordId", () => {
     expect(extractRecordId({ _id: "underscore" })).toBe("underscore");
   });
 });
+
+// ============================================================================
+// URL Path Segment Encoding Tests
+//
+// Every caller-supplied path segment (collection, id, function label, chat
+// model/provider, session/message ids, etc.) must be percent-encoded so a
+// reserved char (`/`, space, `#`, `?`) can't break the URL. This matches the
+// Rust and Go clients. Query parameters are NOT path segments and go through
+// URLSearchParams, so they are out of scope here.
+// ============================================================================
+
+describe("EkoDBClient URL path segment encoding", () => {
+  it("findById encodes a reserved-char id (a/b -> a%2Fb)", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse({ id: "a/b", name: "Alice" });
+
+    await client.findById("users", "a/b");
+
+    const [url] = mockFetch.mock.calls[1];
+    expect(url as string).toContain("/api/find/users/a%2Fb");
+    expect(url as string).not.toContain("/api/find/users/a/b");
+  });
+
+  it("findById encodes a reserved-char collection", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse({ id: "user_123" });
+
+    await client.findById("my coll", "user_123");
+
+    const [url] = mockFetch.mock.calls[1];
+    expect(url as string).toContain("/api/find/my%20coll/user_123");
+  });
+
+  it("findById leaves a normal id unchanged (/api/find/users/123)", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse({ id: "123", name: "Alice" });
+
+    await client.findById("users", "123");
+
+    const [url] = mockFetch.mock.calls[1];
+    expect(url as string).toContain("/api/find/users/123");
+    expect(url as string).not.toContain("%2F");
+    expect(url as string).not.toContain("%20");
+  });
+
+  it("callFunction encodes a label containing a slash (anthropic/claude)", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse({ result: { ok: true } });
+
+    await client.callFunction("anthropic/claude", {});
+
+    const [url] = mockFetch.mock.calls[1];
+    expect(url as string).toContain("/api/functions/anthropic%2Fclaude");
+    expect(url as string).not.toContain("/api/functions/anthropic/claude");
+  });
+
+  it("getUserFunction encodes a label containing reserved chars", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse({ label: "items get/by id" });
+
+    await client.getUserFunction("items get/by id");
+
+    const [url] = mockFetch.mock.calls[1];
+    expect(url as string).toContain("/api/functions/items%20get%2Fby%20id");
+  });
+
+  it("getChatModel encodes a provider containing a slash (anthropic/claude)", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse(["claude-3"]);
+
+    await client.getChatModel("anthropic/claude");
+
+    const [url] = mockFetch.mock.calls[1];
+    expect(url as string).toContain("/api/chat_models/anthropic%2Fclaude");
+    expect(url as string).not.toContain("/api/chat_models/anthropic/claude");
+  });
+
+  it("deleteCollection encodes a reserved-char collection", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse({ status: "deleted" });
+
+    await client.deleteCollection("a/b");
+
+    const [url] = mockFetch.mock.calls[1];
+    expect(url as string).toContain("/api/collections/a%2Fb");
+  });
+
+  it("getChatSessionMessages encodes the session id path segment", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse({ messages: [], total: 0 });
+
+    await client.getChatSessionMessages("sess/1");
+
+    const [url] = mockFetch.mock.calls[1];
+    expect(url as string).toContain("/api/chat/sess%2F1/messages");
+    expect(url as string).not.toContain("/api/chat/sess/1/messages");
+  });
+
+  it("chatMessage encodes the session id and leaves a normal one unchanged", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse({ message_id: "m1", content: "hi" });
+
+    await client.chatMessage("sess#1", { message: "hi" });
+
+    const [url] = mockFetch.mock.calls[1];
+    expect(url as string).toContain("/api/chat/sess%231/messages");
+  });
+});

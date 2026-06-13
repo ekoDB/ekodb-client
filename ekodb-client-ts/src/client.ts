@@ -800,8 +800,8 @@ export class EkoDBClient {
     }
 
     const url = params.toString()
-      ? `/api/insert/${collection}?${params.toString()}`
-      : `/api/insert/${collection}`;
+      ? `/api/insert/${encodeURIComponent(collection)}?${params.toString()}`
+      : `/api/insert/${encodeURIComponent(collection)}`;
 
     return this.makeRequest<Record>("POST", url, data);
   }
@@ -855,8 +855,8 @@ export class EkoDBClient {
       params.append("bypass_ripple", String(bypassRipple));
     const qs = params.toString();
     const url = qs
-      ? `/api/find/${collection}?${qs}`
-      : `/api/find/${collection}`;
+      ? `/api/find/${encodeURIComponent(collection)}?${qs}`
+      : `/api/find/${encodeURIComponent(collection)}`;
     return this.makeRequest<Record[]>("POST", url, body);
   }
 
@@ -886,8 +886,8 @@ export class EkoDBClient {
       params.append("transaction_id", options.transactionId);
     }
     const url = params.toString()
-      ? `/api/find/${collection}/${id}?${params.toString()}`
-      : `/api/find/${collection}/${id}`;
+      ? `/api/find/${encodeURIComponent(collection)}/${encodeURIComponent(id)}?${params.toString()}`
+      : `/api/find/${encodeURIComponent(collection)}/${encodeURIComponent(id)}`;
     return this.makeRequest<Record>("GET", url);
   }
 
@@ -917,8 +917,8 @@ export class EkoDBClient {
       params.append("transaction_id", transactionId);
     }
     const url = params.toString()
-      ? `/api/find/${collection}/${id}?${params.toString()}`
-      : `/api/find/${collection}/${id}`;
+      ? `/api/find/${encodeURIComponent(collection)}/${encodeURIComponent(id)}?${params.toString()}`
+      : `/api/find/${encodeURIComponent(collection)}/${encodeURIComponent(id)}`;
     return this.makeRequest<Record>("GET", url);
   }
 
@@ -944,8 +944,8 @@ export class EkoDBClient {
     }
 
     const url = params.toString()
-      ? `/api/update/${collection}/${id}?${params.toString()}`
-      : `/api/update/${collection}/${id}`;
+      ? `/api/update/${encodeURIComponent(collection)}/${encodeURIComponent(id)}?${params.toString()}`
+      : `/api/update/${encodeURIComponent(collection)}/${encodeURIComponent(id)}`;
 
     return this.makeRequest<Record>("PUT", url, record);
   }
@@ -970,7 +970,7 @@ export class EkoDBClient {
     field: string,
     value?: any,
   ): Promise<Record> {
-    const url = `/api/update/${collection}/${id}/action/${action}`;
+    const url = `/api/update/${encodeURIComponent(collection)}/${encodeURIComponent(id)}/action/${encodeURIComponent(action)}`;
     return this.makeRequest<Record>("PUT", url, {
       field,
       value: value ?? null,
@@ -992,7 +992,7 @@ export class EkoDBClient {
     id: string,
     actions: [string, string, any][],
   ): Promise<Record> {
-    const url = `/api/update/sequence/${collection}/${id}`;
+    const url = `/api/update/sequence/${encodeURIComponent(collection)}/${encodeURIComponent(id)}`;
     return this.makeRequest<Record>("PUT", url, actions);
   }
 
@@ -1016,8 +1016,8 @@ export class EkoDBClient {
     }
 
     const url = params.toString()
-      ? `/api/delete/${collection}/${id}?${params.toString()}`
-      : `/api/delete/${collection}/${id}`;
+      ? `/api/delete/${encodeURIComponent(collection)}/${encodeURIComponent(id)}?${params.toString()}`
+      : `/api/delete/${encodeURIComponent(collection)}/${encodeURIComponent(id)}`;
 
     await this.makeRequest<void>("DELETE", url);
   }
@@ -1043,8 +1043,8 @@ export class EkoDBClient {
 
     const inserts = records.map((data) => ({ data }));
     const url = params.toString()
-      ? `/api/batch/insert/${collection}?${params.toString()}`
-      : `/api/batch/insert/${collection}`;
+      ? `/api/batch/insert/${encodeURIComponent(collection)}?${params.toString()}`
+      : `/api/batch/insert/${encodeURIComponent(collection)}`;
 
     return this.makeRequest<BatchOperationResult>("POST", url, { inserts });
   }
@@ -1063,7 +1063,7 @@ export class EkoDBClient {
     }));
     return this.makeRequest<BatchOperationResult>(
       "PUT",
-      `/api/batch/update/${collection}`,
+      `/api/batch/update/${encodeURIComponent(collection)}`,
       { updates: formattedUpdates },
     );
   }
@@ -1082,7 +1082,7 @@ export class EkoDBClient {
     }));
     return this.makeRequest<BatchOperationResult>(
       "DELETE",
-      `/api/batch/delete/${collection}`,
+      `/api/batch/delete/${encodeURIComponent(collection)}`,
       { deletes },
     );
   }
@@ -1554,7 +1554,7 @@ export class EkoDBClient {
   async deleteCollection(collection: string): Promise<void> {
     await this.makeRequest<void>(
       "DELETE",
-      `/api/collections/${collection}`,
+      `/api/collections/${encodeURIComponent(collection)}`,
       undefined,
       0,
       true, // Force JSON for metadata operations
@@ -1572,7 +1572,7 @@ export class EkoDBClient {
   async restoreRecord(collection: string, id: string): Promise<boolean> {
     const result = await this.makeRequest<{ status: string }>(
       "POST",
-      `/api/trash/${collection}/${id}`,
+      `/api/trash/${encodeURIComponent(collection)}/${encodeURIComponent(id)}`,
       undefined,
       0,
       true,
@@ -1594,7 +1594,13 @@ export class EkoDBClient {
       status: string;
       collection: string;
       records_restored: number;
-    }>("POST", `/api/trash/${collection}`, undefined, 0, true);
+    }>(
+      "POST",
+      `/api/trash/${encodeURIComponent(collection)}`,
+      undefined,
+      0,
+      true,
+    );
     return { recordsRestored: result.records_restored };
   }
 
@@ -1621,7 +1627,7 @@ export class EkoDBClient {
     const schemaObj = schema instanceof SchemaBuilder ? schema.build() : schema;
     await this.makeRequest<void>(
       "POST",
-      `/api/collections/${collection}`,
+      `/api/collections/${encodeURIComponent(collection)}`,
       schemaObj,
       0,
       true, // Force JSON for metadata operations
@@ -1637,7 +1643,7 @@ export class EkoDBClient {
   async getCollection(collection: string): Promise<CollectionMetadata> {
     return this.makeRequest<CollectionMetadata>(
       "GET",
-      `/api/collections/${collection}`,
+      `/api/collections/${encodeURIComponent(collection)}`,
       undefined,
       0,
       true, // Force JSON for metadata operations
@@ -1695,7 +1701,7 @@ export class EkoDBClient {
     // Ensure all parameters from SearchQuery are sent to server
     return this.makeRequest<SearchResponse>(
       "POST",
-      `/api/search/${collection}`,
+      `/api/search/${encodeURIComponent(collection)}`,
       query,
       0,
       true, // Force JSON for search operations
@@ -1740,7 +1746,7 @@ export class EkoDBClient {
 
     return this.makeRequest<DistinctValuesResponse>(
       "POST",
-      `/api/distinct/${collection}/${field}`,
+      `/api/distinct/${encodeURIComponent(collection)}/${encodeURIComponent(field)}`,
       body,
       0,
       true, // Force JSON
@@ -1976,7 +1982,7 @@ export class EkoDBClient {
   ): Promise<ChatResponse> {
     return this.makeRequest<ChatResponse>(
       "POST",
-      `/api/chat/${sessionId}/messages`,
+      `/api/chat/${encodeURIComponent(sessionId)}/messages`,
       request,
       0,
       true, // Force JSON for chat operations
@@ -1996,7 +2002,7 @@ export class EkoDBClient {
   ): Promise<void> {
     await this.makeRequest(
       "POST",
-      `/api/chat/${chatId}/tool-result`,
+      `/api/chat/${encodeURIComponent(chatId)}/tool-result`,
       {
         call_id: callId,
         success,
@@ -2032,7 +2038,7 @@ export class EkoDBClient {
           await this.refreshToken();
           token = await this.getToken();
         }
-        const url = `${this.baseURL}/api/chat/${chatId}/messages/stream`;
+        const url = `${this.baseURL}/api/chat/${encodeURIComponent(chatId)}/messages/stream`;
 
         const response = await fetch(url, {
           method: "POST",
@@ -2127,7 +2133,7 @@ export class EkoDBClient {
   async getChatSession(sessionId: string): Promise<ChatSessionResponse> {
     return this.makeRequest<ChatSessionResponse>(
       "GET",
-      `/api/chat/${sessionId}`,
+      `/api/chat/${encodeURIComponent(sessionId)}`,
       undefined,
       0,
       true, // Force JSON for chat operations
@@ -2170,8 +2176,8 @@ export class EkoDBClient {
 
     const queryString = params.toString();
     const path = queryString
-      ? `/api/chat/${sessionId}/messages?${queryString}`
-      : `/api/chat/${sessionId}/messages`;
+      ? `/api/chat/${encodeURIComponent(sessionId)}/messages?${queryString}`
+      : `/api/chat/${encodeURIComponent(sessionId)}/messages`;
     return this.makeRequest<GetMessagesResponse>(
       "GET",
       path,
@@ -2190,7 +2196,7 @@ export class EkoDBClient {
   ): Promise<ChatSessionResponse> {
     return this.makeRequest<ChatSessionResponse>(
       "PUT",
-      `/api/chat/${sessionId}`,
+      `/api/chat/${encodeURIComponent(sessionId)}`,
       request,
       0,
       true, // Force JSON for chat operations
@@ -2218,7 +2224,7 @@ export class EkoDBClient {
   async deleteChatSession(sessionId: string): Promise<void> {
     await this.makeRequest<void>(
       "DELETE",
-      `/api/chat/${sessionId}`,
+      `/api/chat/${encodeURIComponent(sessionId)}`,
       undefined,
       0,
       true, // Force JSON for chat operations
@@ -2234,7 +2240,7 @@ export class EkoDBClient {
   ): Promise<ChatResponse> {
     return this.makeRequest<ChatResponse>(
       "POST",
-      `/api/chat/${sessionId}/messages/${messageId}/regenerate`,
+      `/api/chat/${encodeURIComponent(sessionId)}/messages/${encodeURIComponent(messageId)}/regenerate`,
       undefined,
       0,
       true, // Force JSON for chat operations
@@ -2251,7 +2257,7 @@ export class EkoDBClient {
   ): Promise<void> {
     await this.makeRequest<void>(
       "PUT",
-      `/api/chat/${sessionId}/messages/${messageId}`,
+      `/api/chat/${encodeURIComponent(sessionId)}/messages/${encodeURIComponent(messageId)}`,
       { content },
       0,
       true, // Force JSON for chat operations
@@ -2264,7 +2270,7 @@ export class EkoDBClient {
   async deleteChatMessage(sessionId: string, messageId: string): Promise<void> {
     await this.makeRequest<void>(
       "DELETE",
-      `/api/chat/${sessionId}/messages/${messageId}`,
+      `/api/chat/${encodeURIComponent(sessionId)}/messages/${encodeURIComponent(messageId)}`,
       undefined,
       0,
       true, // Force JSON for chat operations
@@ -2281,7 +2287,7 @@ export class EkoDBClient {
   ): Promise<void> {
     await this.makeRequest<void>(
       "PATCH",
-      `/api/chat/${sessionId}/messages/${messageId}/forgotten`,
+      `/api/chat/${encodeURIComponent(sessionId)}/messages/${encodeURIComponent(messageId)}/forgotten`,
       { forgotten },
       0,
       true, // Force JSON for chat operations
@@ -2308,7 +2314,7 @@ export class EkoDBClient {
     }
     return this.makeRequest<CompactChatResponse>(
       "POST",
-      `/api/chat/${chatId}/compact`,
+      `/api/chat/${encodeURIComponent(chatId)}/compact`,
       body,
       0,
       true, // Force JSON for chat operations
@@ -2383,7 +2389,7 @@ export class EkoDBClient {
   async getChatMessage(sessionId: string, messageId: string): Promise<Record> {
     return this.makeRequest<Record>(
       "GET",
-      `/api/chat/${sessionId}/messages/${messageId}`,
+      `/api/chat/${encodeURIComponent(sessionId)}/messages/${encodeURIComponent(messageId)}`,
       undefined,
       0,
       true, // Force JSON for chat operations
@@ -2410,7 +2416,10 @@ export class EkoDBClient {
    * Get a function by ID
    */
   async getFunction(id: string): Promise<UserFunction> {
-    return this.makeRequest<UserFunction>("GET", `/api/functions/${id}`);
+    return this.makeRequest<UserFunction>(
+      "GET",
+      `/api/functions/${encodeURIComponent(id)}`,
+    );
   }
 
   /**
@@ -2425,14 +2434,21 @@ export class EkoDBClient {
    * Update an existing function by ID
    */
   async updateFunction(id: string, script: UserFunction): Promise<void> {
-    await this.makeRequest<void>("PUT", `/api/functions/${id}`, script);
+    await this.makeRequest<void>(
+      "PUT",
+      `/api/functions/${encodeURIComponent(id)}`,
+      script,
+    );
   }
 
   /**
    * Delete a function by ID
    */
   async deleteFunction(id: string): Promise<void> {
-    await this.makeRequest<void>("DELETE", `/api/functions/${id}`);
+    await this.makeRequest<void>(
+      "DELETE",
+      `/api/functions/${encodeURIComponent(id)}`,
+    );
   }
 
   /**
@@ -2444,7 +2460,7 @@ export class EkoDBClient {
   ): Promise<FunctionResult> {
     return this.makeRequest<FunctionResult>(
       "POST",
-      `/api/functions/${idOrLabel}`,
+      `/api/functions/${encodeURIComponent(idOrLabel)}`,
       params || {},
     );
   }
@@ -2691,7 +2707,7 @@ export class EkoDBClient {
   async goalStepStart(id: string, stepIndex: number): Promise<Record> {
     return this.makeRequest<Record>(
       "POST",
-      `/api/chat/goals/${encodeURIComponent(id)}/steps/${stepIndex}/start`,
+      `/api/chat/goals/${encodeURIComponent(id)}/steps/${encodeURIComponent(String(stepIndex))}/start`,
       undefined,
       0,
       true,
@@ -2706,7 +2722,7 @@ export class EkoDBClient {
   ): Promise<Record> {
     return this.makeRequest<Record>(
       "POST",
-      `/api/chat/goals/${encodeURIComponent(id)}/steps/${stepIndex}/complete`,
+      `/api/chat/goals/${encodeURIComponent(id)}/steps/${encodeURIComponent(String(stepIndex))}/complete`,
       data,
       0,
       true,
@@ -2721,7 +2737,7 @@ export class EkoDBClient {
   ): Promise<Record> {
     return this.makeRequest<Record>(
       "POST",
-      `/api/chat/goals/${encodeURIComponent(id)}/steps/${stepIndex}/fail`,
+      `/api/chat/goals/${encodeURIComponent(id)}/steps/${encodeURIComponent(String(stepIndex))}/fail`,
       data,
       0,
       true,
