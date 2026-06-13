@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "io.ekodb"
-version = "0.20.0"
+version = "0.21.0"
 
 repositories {
     mavenCentral()
@@ -19,24 +19,24 @@ dependencies {
     implementation(kotlin("stdlib"))
     
     // Coroutines for async operations
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
     
     // Serialization
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-cbor:1.10.0") // CBOR for binary serialization (similar to MessagePack)
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-cbor:1.11.0") // CBOR for binary serialization (similar to MessagePack)
     // MessagePack core, for the WebSocket binary transport negotiated with the
     // server. CBOR above is NOT wire-compatible with the server's msgpack, so a
     // real msgpack codec is required.
     implementation("org.msgpack:msgpack-core:0.9.8")
     
     // HTTP client
-    implementation("io.ktor:ktor-client-core:3.4.1")
-    implementation("io.ktor:ktor-client-cio:3.4.1")
-    implementation("io.ktor:ktor-client-content-negotiation:3.4.1")
-    implementation("io.ktor:ktor-serialization-kotlinx-json:3.4.1")
-    implementation("io.ktor:ktor-client-websockets:3.4.1")
-    implementation("io.ktor:ktor-client-logging:3.4.1")
-    implementation("io.ktor:ktor-client-encoding:3.4.1")
+    implementation("io.ktor:ktor-client-core:3.5.0")
+    implementation("io.ktor:ktor-client-cio:3.5.0")
+    implementation("io.ktor:ktor-client-content-negotiation:3.5.0")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:3.5.0")
+    implementation("io.ktor:ktor-client-websockets:3.5.0")
+    implementation("io.ktor:ktor-client-logging:3.5.0")
+    implementation("io.ktor:ktor-client-encoding:3.5.0")
     
     // DateTime
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.7.1-0.6.x-compat")
@@ -44,7 +44,7 @@ dependencies {
     // Testing
     testImplementation(kotlin("test"))
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
-    testImplementation("io.ktor:ktor-client-mock:3.4.1")
+    testImplementation("io.ktor:ktor-client-mock:3.5.0")
 }
 
 tasks.test {

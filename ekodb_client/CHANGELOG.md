@@ -6,6 +6,203 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.21.0] - 2026-06-09
+
+### Fixed — examples test harness
+
+- **Python example requirements no longer pin an impossible version.**
+  `examples/python/requirements.txt` and `requirements-dev.txt` pinned
+  `python-dotenv>=2.8.0`, but `python-dotenv`'s latest release is `1.2.2` (there
+  is no 2.x — the `2.x` line is the unrelated Node `dotenv` package), so
+  `pip install -r requirements.txt` failed to resolve. Corrected to
+  `python-dotenv>=1.0.0` (installs the real latest, `1.2.2`) and aligned
+  `websockets>=14.0` to match the client's requirement and the sibling
+  `examples/requirements.txt`.
+
+- **Dependency refresh.** Kotlin client + its examples: ktor `3.4.1 → 3.5.0`,
+  kotlinx-coroutines `1.10.2 → 1.11.0`, kotlinx-serialization (json + cbor)
+  `1.10.0 → 1.11.0` (Kotlin compiler is 2.3.0, comfortably compatible; full
+  Kotlin test suite green). TypeScript examples: `@types/node` and `tsx` updated
+  within their existing caret ranges (tsc clean).
+
+- **Python direct examples no longer fail with `ModuleNotFoundError`.** The
+  example test runner (`examples/python/test_runner.py`) launched each example
+  with the hardcoded system `python3` instead of the interpreter running the
+  runner. Since `make test-examples` runs it via the project `.venv` (which has
+  `requests` / `aiohttp` / `python-dotenv` from `examples/requirements.txt`),
+  the system interpreter lacked those deps and all 10 Python direct examples
+  failed even though the venv was set up correctly. It now uses
+  `sys.executable`. (`examples/test-examples.md` still shows the old failures
+  until `make test-examples` is re-run against a server.)
+
+### Added
+
+- **Client parity fills (Python).** Closed the gaps where Python lagged the
+  other clients:
+  - The WebSocket client now exposes `close()` for deterministic teardown
+    (matching every other WS client).
+  - A module-level `extract_record_id(record, extra_candidates=None)` resolves a
+    record's id trying custom aliases first, then `id`, then `_id` (handling
+    typed-wrapper id fields) — backed by the canonical
+    `ekodb_client::extract_record_id`, so Python callers never hardcode
+    `id`/`_id`.
+  - The **schema cache** is now reachable from Python: `Client.new(...)` accepts
+    `schema_cache` / `schema_cache_ttl_secs` / `schema_cache_max`, and a
+    WebSocket client created from a cache-enabled client automatically shares
+    that cache (so WS CRUD is alias-aware and `SchemaChanged` events invalidate
+    it). (#152)
+  - Fixed a malformed `__all__` (`([...],)` — a tuple wrapping the list) that
+    broke `from ekodb_client import *`; it is now a flat list of names.
+
+- **Schema cache is now first-class in the Kotlin client.**
+  `EkoDBClient.Builder` gained `schemaCache(enabled)` / `schemaCacheTtlMs(ms)` /
+  `schemaCacheMax(max)`, and `EkoDBClient.websocket(url)` auto-wires the
+  client's cache into the WebSocket client (so WS CRUD is alias-aware and
+  `SchemaChanged` events invalidate it) — matching the enable-then-auto-wire
+  ergonomics of the Rust, Python, and Go clients (previously a Kotlin user had
+  to assign `ws.schemaCache` by hand).
+
+- **WebSocket msgpack negotiation across all clients (transparent binary
+  transport).** On every WS (re)connect each client now performs an additive
+  `Hello`/`Welcome` handshake: it offers msgpack and, if the server welcomes it,
+  transparently switches that connection to binary msgpack frames for both
+  requests and responses; otherwise it stays on JSON text. The negotiation is
+  internal — no public API changes — so callers (including ekodb-claw, which
+  rides the Rust client) are unaffected. Fully back-compatible: a server that
+  does not welcome msgpack (or an older server that never answers) leaves the
+  connection on JSON. Incoming binary frames decode value-identically to JSON
+  (binary fields stay number arrays, not base64), so decoded data is the same
+  regardless of negotiated transport. Implemented in the Rust client (and thus
+  the Python binding), TypeScript, and Kotlin; the Kotlin client gains a
+  `msgpack-core` dependency since CBOR is not wire-compatible with the server's
+  msgpack. (The Go client carries the same change in its own repository.)
+
+- **Buffered-transaction support across all clients (read-your-writes +
+  savepoints).** ekoDB transactions are now enforced and buffered server-side:
+  statements carrying a `transaction_id` are staged and applied atomically at
+  statements carrying a `transaction_id` are staged and applied atomically at
+  commit (invisible to others until then). The clients now expose the full
+  lifecycle and, critically, let **reads** join a transaction so they see the
+  transaction's own staged writes (read-your-writes):
+  - Reads accept a transaction id: Rust `find_by_id_in_transaction` /
+    `find_in_transaction`; TypeScript `findById(c, id, { transactionId })` and
+    `find(c, q, { transactionId })`; Python `find_by_id(…, transaction_id=…)` /
+    `find(…, transaction_id=…)`; Kotlin `findById(c, id, transactionId=…)` /
+    `find(c, q, transactionId=…)`.
+  - Savepoints on every client: `create_savepoint` / `rollback_to_savepoint` /
+    `release_savepoint` (camelCase per language).
+  - Transactional **delete** now works in Rust/Python (added
+    `delete_with_options`); the Python `delete(transaction_id=…)` previously
+    accepted the argument but silently discarded it — fixed.
+  - `commit` may surface a retryable conflict (HTTP 409) when a record the
+    transaction read or wrote was changed by another committed transaction;
+    documented on each client's begin/commit.
+
+- **`kv_clear` on all clients (#148).** Clears the entire KV store via
+  `DELETE /api/kv/clear`. Added to Rust (`kv_clear`), Python (`kv_clear`),
+  TypeScript (`kvClear`), and Kotlin (`kvClear`); pairs with the Go client's
+  `KVClear`.
+- **`find_by_id_with_projection` on Rust and Python (#145).** Field-projection
+  find-by-id (`select_fields` / `exclude_fields`) was already in TS/Kotlin/Go;
+  added the Rust (`find_by_id_with_projection`) and Python
+  (`find_by_id_with_projection`) equivalents for parity.
+- **Python WebSocket `ws_batch_update` (#146).** The Python `WebSocketClient`
+  could not batch-update over WS. (No `ws_find_all` was added: WS find-all is
+  already provided by the existing `find_all` method, so a second name would
+  duplicate it.)
+- **WebSocket `cancelChat` on TypeScript, Kotlin, Python (#144).** Aborting an
+  in-flight streaming chat over WSS was only possible from Rust and Go; the
+  three remaining clients now send the same `CancelChat` frame.
+- **`list_user_collections` on Python, TypeScript, Kotlin (#147).** Lists
+  collections excluding internal chat/system collections
+  (`GET /api/collections?exclude_internal=true`); previously Rust-only.
+- **WebSocket `unsubscribe` now on all clients (#149).** Previously only the
+  TypeScript (and Go) client sent a server-side `Unsubscribe` frame; the Rust,
+  Python, and Kotlin WebSocket clients now expose `unsubscribe` and send the
+  same best-effort `Unsubscribe` frame (with a unique messageId so the ack is
+  dropped, not misrouted), so a client can tell the server to stop streaming a
+  collection's mutations instead of relying on connection teardown. Full
+  WebSocket unsubscribe parity across Rust / Python / TypeScript / Kotlin / Go.
+  Frame-shape tests added per client.
+
+### Fixed
+
+- **All clients now percent-encode URL path segments (#153).** Request paths
+  that interpolated a caller-supplied segment (collection, id, KV key, function
+  label, chat model name, agent name, …) did NOT encode reserved characters — so
+  a KV key like `session/abc` or a model name like `anthropic/claude-3` (both
+  perfectly normal) produced a malformed URL the server 404'd. This was a
+  **cross-client correctness + parity bug**: each client only encoded _some_
+  paths (Rust none, TypeScript only KV, Kotlin only a few), none complete. Now
+  every caller path segment is encoded in all of them — **Rust** routes all 59
+  sites through the `api_path_url` helper; **TypeScript** wraps every path
+  segment in `encodeURIComponent`; **Kotlin** uses ktor's `encodeURLPathPart()`;
+  the **Python** binding inherits the Rust fix. (The standalone **Go** client is
+  fixed in its own repo.) Behavior is unchanged for segments without reserved
+  characters. Each client adds reserved-char encoding tests (`/`→`%2F`,
+  space→`%20`, `#`, `?`).
+
+- **Python `ekodb_client.__version__` is no longer stale.** It was hardcoded to
+  `"0.1.0"` while the package was `0.21.0` (nothing synced it). It now derives
+  from the installed distribution metadata (set by maturin from
+  pyproject/Cargo), so it always matches the real package version. Covered by
+  `tests/test_version.py`.
+
+- **Kotlin `executeWithRetry` no longer wastes work — or hides the real status —
+  on the final attempt.** A 401 (token refresh) or 429 (Retry-After sleep) on
+  the last attempt would `return@repeat`, fall out of the loop without retrying,
+  and then throw a generic "Request failed after N attempts" with no underlying
+  cause — wasting a token refresh / sleeping the caller for nothing. The 401/429
+  branches now guard on `attempt < maxRetries - 1` (matching the 5xx branch), so
+  the final attempt falls through to the `4xx` handler and surfaces the real
+  status + body. Covered by `401`/`429`-on-final-attempt tests plus a non-final
+  401 refresh-and-retry test.
+
+- **WebSocket `unsubscribe` tells the server to stop streaming (#149).** It sent
+  only a local teardown, so the server kept streaming mutations for the
+  collection until the connection dropped; it now also sends the best-effort
+  `Unsubscribe` frame (see Added above for the cross-client parity work).
+- **Kotlin: retry delays are now bounded (#142).** A server `Retry-After` is
+  clamped to `MAX_RETRY_AFTER_SECONDS = 60` and 5xx/exception backoff to
+  `MAX_BACKOFF_MS = 30_000`. The generic exception-retry path previously used an
+  uncapped exponential delay; it now shares the same `clampBackoffMs` helper, so
+  every retry path is bounded.
+- **Rust `find_by_id_with_projection` now URL-encodes projection fields.** The
+  `select_fields` / `exclude_fields` query was built by raw string
+  concatenation, so a field name containing a reserved character (`,`, `&`, `=`,
+  spaces, …) produced an ambiguous URL and the server received the wrong
+  projection. It now builds the query with `Url::query_pairs_mut()` for proper
+  percent-encoding, matching the `URLSearchParams` encoding the TypeScript
+  client uses (the Python binding inherits the fix). Covered by
+  `test_find_by_id_with_projection_encodes_reserved_chars`.
+
+### Security
+
+- **Transaction API path segments are now percent-encoded.** `transaction_id`
+  and the user-supplied savepoint `name` were interpolated raw into request
+  paths, so a name containing a reserved character (`/`, space, `?`, `#`, …)
+  produced a malformed or wrong path (a `/` could escape its segment). Rust now
+  builds these paths via `Url::path_segments_mut()` and Kotlin via
+  `encodeURLPathPart()` (the Go client uses `url.PathEscape`), encoding space as
+  `%20` and `/` as `%2F`, across create / rollback-to / release savepoint and
+  the commit / rollback / status endpoints. The Python binding inherits the Rust
+  fix. Tests added per client.
+- **Rust `delete_with_options` now percent-encodes its query.** It built the
+  `transaction_id` / `bypass_ripple` query by raw string concatenation; it now
+  uses `Url::query_pairs_mut()`, matching the find methods.
+- **WebSocket `cancelChat` now carries a `messageId` (TypeScript, Kotlin).** The
+  `CancelChat` frame had no correlation id, so a server ack could be misrouted
+  to an unrelated pending request by the dispatcher's single-pending fallback.
+  It now includes a unique messageId (same pattern as `unsubscribe`), so the ack
+  is safely correlatable and ignorable. Tests added.
+
+### Documentation
+
+- **Refreshed `PARITY_MATRIX.md` (#143)** — replaced the blanket "full parity"
+  claim with the actual state and recorded the v0.21.0 parity additions,
+  including WebSocket `unsubscribe` now present on all five clients (the one
+  previously known remaining difference, now resolved).
+
 ## [0.20.0] - 2026-06-04
 
 ### Added
