@@ -207,33 +207,31 @@ impl HttpClient {
             }
         }
 
-        // Build URL with query parameters
-        let mut url_path = format!("/api/insert/{}", collection);
-        let mut params = vec![];
+        // Path used only for content-type/format detection (matches the
+        // `/api/insert/` prefix); query params are appended to the parsed URL
+        // via `query_pairs_mut()` so reserved characters are encoded correctly.
+        let url_path = "/api/insert/";
+        let mut url = self.api_path_url(&["insert", collection])?;
 
         if let Some(ref opts) = options {
+            let mut params = url.query_pairs_mut();
             if let Some(bypass) = opts.bypass_ripple {
-                params.push(format!("bypass_ripple={}", bypass));
+                params.append_pair("bypass_ripple", &bypass.to_string());
             }
             if let Some(ref tx_id) = opts.transaction_id {
-                params.push(format!("transaction_id={}", tx_id));
+                params.append_pair("transaction_id", tx_id);
             }
             if let Some(bypass_cache) = opts.bypass_cache {
-                params.push(format!("bypass_cache={}", bypass_cache));
+                params.append_pair("bypass_cache", &bypass_cache.to_string());
             }
         }
 
-        if !params.is_empty() {
-            url_path = format!("{}?{}", url_path, params.join("&"));
-        }
-
-        let url = self.base_url.join(&url_path)?;
-        let body = self.serialize(&url_path, &record)?;
+        let body = self.serialize(url_path, &record)?;
 
         self.execute_with_retry(|| async {
             let response = self
                 .add_format_headers(
-                    &url_path,
+                    url_path,
                     self.client
                         .post(url.clone())
                         .header("Authorization", format!("Bearer {}", token)),
@@ -242,7 +240,7 @@ impl HttpClient {
                 .send()
                 .await?;
 
-            self.handle_response(&url_path, response).await
+            self.handle_response(url_path, response).await
         })
         .await
     }
@@ -255,18 +253,18 @@ impl HttpClient {
         token: &str,
         bypass_ripple: Option<bool>,
     ) -> Result<Vec<Record>> {
-        let url_path = if let Some(bypass) = bypass_ripple {
-            format!("/api/find/{}?bypass_ripple={}", collection, bypass)
-        } else {
-            format!("/api/find/{}", collection)
-        };
-        let url = self.base_url.join(&url_path)?;
-        let body = self.serialize(&url_path, &query)?;
+        let url_path = "/api/find/";
+        let mut url = self.api_path_url(&["find", collection])?;
+        if let Some(bypass) = bypass_ripple {
+            url.query_pairs_mut()
+                .append_pair("bypass_ripple", &bypass.to_string());
+        }
+        let body = self.serialize(url_path, &query)?;
 
         self.execute_with_retry(|| async {
             let response = self
                 .add_format_headers(
-                    &url_path,
+                    url_path,
                     self.client
                         .post(url.clone())
                         .header("Authorization", format!("Bearer {}", token)),
@@ -275,7 +273,7 @@ impl HttpClient {
                 .send()
                 .await?;
 
-            self.handle_response(&url_path, response).await
+            self.handle_response(url_path, response).await
         })
         .await
     }
@@ -288,17 +286,17 @@ impl HttpClient {
         token: &str,
         bypass_ripple: Option<bool>,
     ) -> Result<Record> {
-        let url_path = if let Some(bypass) = bypass_ripple {
-            format!("/api/find/{}/{}?bypass_ripple={}", collection, id, bypass)
-        } else {
-            format!("/api/find/{}/{}", collection, id)
-        };
-        let url = self.base_url.join(&url_path)?;
+        let url_path = "/api/find/";
+        let mut url = self.api_path_url(&["find", collection, id])?;
+        if let Some(bypass) = bypass_ripple {
+            url.query_pairs_mut()
+                .append_pair("bypass_ripple", &bypass.to_string());
+        }
 
         self.execute_with_retry(|| async {
             let response = self
                 .add_format_headers(
-                    &url_path,
+                    url_path,
                     self.client
                         .get(url.clone())
                         .header("Authorization", format!("Bearer {}", token)),
@@ -306,7 +304,7 @@ impl HttpClient {
                 .send()
                 .await?;
 
-            self.handle_response(&url_path, response).await
+            self.handle_response(url_path, response).await
         })
         .await
     }
@@ -322,8 +320,8 @@ impl HttpClient {
         exclude_fields: Option<&[String]>,
         token: &str,
     ) -> Result<Record> {
-        let url_path = format!("/api/find/{}/{}", collection, id);
-        let mut url = self.base_url.join(&url_path)?;
+        let url_path = "/api/find/";
+        let mut url = self.api_path_url(&["find", collection, id])?;
         // Build the query with proper percent-encoding so field names containing
         // reserved characters (',', '&', '=', spaces, …) round-trip correctly,
         // matching the URLSearchParams-based encoding the other clients use. The
@@ -346,7 +344,7 @@ impl HttpClient {
         self.execute_with_retry(|| async {
             let response = self
                 .add_format_headers(
-                    &url_path,
+                    url_path,
                     self.client
                         .get(url.clone())
                         .header("Authorization", format!("Bearer {}", token)),
@@ -354,7 +352,7 @@ impl HttpClient {
                 .send()
                 .await?;
 
-            self.handle_response(&url_path, response).await
+            self.handle_response(url_path, response).await
         })
         .await
     }
@@ -368,33 +366,31 @@ impl HttpClient {
         options: Option<crate::options::UpdateOptions>,
         token: &str,
     ) -> Result<Record> {
-        // Build URL with query parameters
-        let mut url_path = format!("/api/update/{}/{}", collection, id);
-        let mut params = vec![];
+        // Path used only for content-type/format detection (matches the
+        // `/api/update/` prefix); query params are appended to the parsed URL
+        // via `query_pairs_mut()` so reserved characters are encoded correctly.
+        let url_path = "/api/update/";
+        let mut url = self.api_path_url(&["update", collection, id])?;
 
         if let Some(ref opts) = options {
+            let mut params = url.query_pairs_mut();
             if let Some(bypass) = opts.bypass_ripple {
-                params.push(format!("bypass_ripple={}", bypass));
+                params.append_pair("bypass_ripple", &bypass.to_string());
             }
             if let Some(ref tx_id) = opts.transaction_id {
-                params.push(format!("transaction_id={}", tx_id));
+                params.append_pair("transaction_id", tx_id);
             }
             if let Some(bypass_cache) = opts.bypass_cache {
-                params.push(format!("bypass_cache={}", bypass_cache));
+                params.append_pair("bypass_cache", &bypass_cache.to_string());
             }
         }
 
-        if !params.is_empty() {
-            url_path = format!("{}?{}", url_path, params.join("&"));
-        }
-
-        let url = self.base_url.join(&url_path)?;
-        let body = self.serialize(&url_path, &record)?;
+        let body = self.serialize(url_path, &record)?;
 
         self.execute_with_retry(|| async {
             let response = self
                 .add_format_headers(
-                    &url_path,
+                    url_path,
                     self.client
                         .put(url.clone())
                         .header("Authorization", format!("Bearer {}", token)),
@@ -403,7 +399,7 @@ impl HttpClient {
                 .send()
                 .await?;
 
-            self.handle_response(&url_path, response).await
+            self.handle_response(url_path, response).await
         })
         .await
     }
@@ -421,10 +417,10 @@ impl HttpClient {
         value: FieldType,
         token: &str,
     ) -> Result<Record> {
-        let url_path = format!("/api/update/{}/{}/action/{}", collection, id, action);
-        let url = self.base_url.join(&url_path)?;
+        let url_path = "/api/update/";
+        let url = self.api_path_url(&["update", collection, id, "action", action])?;
         let body = self.serialize(
-            &url_path,
+            url_path,
             &UpdateWithActionBody {
                 field: field.to_string(),
                 value,
@@ -434,7 +430,7 @@ impl HttpClient {
         self.execute_with_retry(|| async {
             let response = self
                 .add_format_headers(
-                    &url_path,
+                    url_path,
                     self.client
                         .put(url.clone())
                         .header("Authorization", format!("Bearer {}", token)),
@@ -443,7 +439,7 @@ impl HttpClient {
                 .send()
                 .await?;
 
-            self.handle_response(&url_path, response).await
+            self.handle_response(url_path, response).await
         })
         .await
     }
@@ -458,14 +454,14 @@ impl HttpClient {
         actions: Vec<(String, String, FieldType)>,
         token: &str,
     ) -> Result<Record> {
-        let url_path = format!("/api/update/sequence/{}/{}", collection, id);
-        let url = self.base_url.join(&url_path)?;
-        let body = self.serialize(&url_path, &actions)?;
+        let url_path = "/api/update/";
+        let url = self.api_path_url(&["update", "sequence", collection, id])?;
+        let body = self.serialize(url_path, &actions)?;
 
         self.execute_with_retry(|| async {
             let response = self
                 .add_format_headers(
-                    &url_path,
+                    url_path,
                     self.client
                         .put(url.clone())
                         .header("Authorization", format!("Bearer {}", token)),
@@ -474,7 +470,7 @@ impl HttpClient {
                 .send()
                 .await?;
 
-            self.handle_response(&url_path, response).await
+            self.handle_response(url_path, response).await
         })
         .await
     }
@@ -487,17 +483,17 @@ impl HttpClient {
         token: &str,
         bypass_ripple: Option<bool>,
     ) -> Result<()> {
-        let url_path = if let Some(bypass) = bypass_ripple {
-            format!("/api/delete/{}/{}?bypass_ripple={}", collection, id, bypass)
-        } else {
-            format!("/api/delete/{}/{}", collection, id)
-        };
-        let url = self.base_url.join(&url_path)?;
+        let url_path = "/api/delete/";
+        let mut url = self.api_path_url(&["delete", collection, id])?;
+        if let Some(bypass) = bypass_ripple {
+            url.query_pairs_mut()
+                .append_pair("bypass_ripple", &bypass.to_string());
+        }
 
         self.execute_with_retry(|| async {
             let response = self
                 .add_format_headers(
-                    &url_path,
+                    url_path,
                     self.client
                         .delete(url.clone())
                         .header("Authorization", format!("Bearer {}", token)),
@@ -507,7 +503,7 @@ impl HttpClient {
 
             // Server returns the deleted record; we validate the response
             // shape but discard the value.
-            let _: Record = self.handle_response(&url_path, response).await?;
+            let _: Record = self.handle_response(url_path, response).await?;
             Ok(())
         })
         .await
@@ -527,8 +523,8 @@ impl HttpClient {
         // query parameters are appended to the parsed URL via `query_pairs_mut()` so
         // that values such as `transaction_id` are correctly percent-encoded (a value
         // containing `&`, space, or `=` would otherwise corrupt the query string).
-        let url_path = format!("/api/delete/{}/{}", collection, id);
-        let mut url = self.base_url.join(&url_path)?;
+        let url_path = "/api/delete/";
+        let mut url = self.api_path_url(&["delete", collection, id])?;
         {
             let mut query = url.query_pairs_mut();
             if let Some(bypass) = opts.bypass_ripple {
@@ -542,14 +538,14 @@ impl HttpClient {
         self.execute_with_retry(|| async {
             let response = self
                 .add_format_headers(
-                    &url_path,
+                    url_path,
                     self.client
                         .delete(url.clone())
                         .header("Authorization", format!("Bearer {}", token)),
                 )
                 .send()
                 .await?;
-            let _: Record = self.handle_response(&url_path, response).await?;
+            let _: Record = self.handle_response(url_path, response).await?;
             Ok(())
         })
         .await
@@ -557,8 +553,8 @@ impl HttpClient {
 
     /// Restore a deleted record from trash
     pub async fn restore_deleted(&self, collection: &str, id: &str, token: &str) -> Result<bool> {
-        let url_path = format!("/api/trash/{}/{}", collection, id);
-        let url = self.base_url.join(&url_path)?;
+        let url_path = "/api/trash/";
+        let url = self.api_path_url(&["trash", collection, id])?;
 
         self.execute_with_retry(|| async {
             let response = self
@@ -568,7 +564,7 @@ impl HttpClient {
                 .send()
                 .await?;
 
-            let result: serde_json::Value = self.handle_response(&url_path, response).await?;
+            let result: serde_json::Value = self.handle_response(url_path, response).await?;
             Ok(result
                 .get("restored")
                 .and_then(|v| v.as_bool())
@@ -579,8 +575,8 @@ impl HttpClient {
 
     /// Restore all deleted records in a collection from trash
     pub async fn restore_collection(&self, collection: &str, token: &str) -> Result<usize> {
-        let url_path = format!("/api/trash/{}", collection);
-        let url = self.base_url.join(&url_path)?;
+        let url_path = "/api/trash/";
+        let url = self.api_path_url(&["trash", collection])?;
 
         self.execute_with_retry(|| async {
             let response = self
@@ -590,7 +586,7 @@ impl HttpClient {
                 .send()
                 .await?;
 
-            let result: serde_json::Value = self.handle_response(&url_path, response).await?;
+            let result: serde_json::Value = self.handle_response(url_path, response).await?;
             Ok(result
                 .get("records_restored")
                 .and_then(|v| v.as_u64())
@@ -607,8 +603,8 @@ impl HttpClient {
         token: &str,
         bypass_ripple: Option<bool>,
     ) -> Result<Vec<Record>> {
-        let url_path = format!("/api/batch/insert/{}", collection);
-        let url = self.base_url.join(&url_path)?;
+        let url_path = "/api/batch/insert/";
+        let url = self.api_path_url(&["batch", "insert", collection])?;
 
         // Convert to the format the server expects
         #[derive(Serialize)]
@@ -639,13 +635,13 @@ impl HttpClient {
             failed: Vec<serde_json::Value>,
         }
 
-        let body = self.serialize(&url_path, &batch_data)?;
+        let body = self.serialize(url_path, &batch_data)?;
 
         let result: BatchOperationResult = self
             .execute_with_retry(|| async {
                 let response = self
                     .add_format_headers(
-                        &url_path,
+                        url_path,
                         self.client
                             .post(url.clone())
                             .header("Authorization", format!("Bearer {}", token)),
@@ -654,7 +650,7 @@ impl HttpClient {
                     .send()
                     .await?;
 
-                self.handle_response(&url_path, response).await
+                self.handle_response(url_path, response).await
             })
             .await?;
 
@@ -678,8 +674,8 @@ impl HttpClient {
         token: &str,
         bypass_ripple: Option<bool>,
     ) -> Result<Vec<Record>> {
-        let url_path = format!("/api/batch/update/{}", collection);
-        let url = self.base_url.join(&url_path)?;
+        let url_path = "/api/batch/update/";
+        let url = self.api_path_url(&["batch", "update", collection])?;
 
         // Convert to the format the server expects
         #[derive(Serialize)]
@@ -713,13 +709,13 @@ impl HttpClient {
             failed: Vec<serde_json::Value>,
         }
 
-        let body = self.serialize(&url_path, &batch_data)?;
+        let body = self.serialize(url_path, &batch_data)?;
 
         let result: BatchOperationResult = self
             .execute_with_retry(|| async {
                 let response = self
                     .add_format_headers(
-                        &url_path,
+                        url_path,
                         self.client
                             .put(url.clone())
                             .header("Authorization", format!("Bearer {}", token)),
@@ -728,7 +724,7 @@ impl HttpClient {
                     .send()
                     .await?;
 
-                self.handle_response(&url_path, response).await
+                self.handle_response(url_path, response).await
             })
             .await?;
 
@@ -752,8 +748,8 @@ impl HttpClient {
         token: &str,
         bypass_ripple: Option<bool>,
     ) -> Result<u64> {
-        let url_path = format!("/api/batch/delete/{}", collection);
-        let url = self.base_url.join(&url_path)?;
+        let url_path = "/api/batch/delete/";
+        let url = self.api_path_url(&["batch", "delete", collection])?;
 
         // Convert to the format the server expects
         #[derive(Serialize)]
@@ -782,13 +778,13 @@ impl HttpClient {
             failed: Vec<serde_json::Value>,
         }
 
-        let body = self.serialize(&url_path, &batch_data)?;
+        let body = self.serialize(url_path, &batch_data)?;
 
         let result: BatchOperationResult = self
             .execute_with_retry(|| async {
                 let response = self
                     .add_format_headers(
-                        &url_path,
+                        url_path,
                         self.client
                             .delete(url.clone())
                             .header("Authorization", format!("Bearer {}", token)),
@@ -797,7 +793,7 @@ impl HttpClient {
                     .send()
                     .await?;
 
-                self.handle_response(&url_path, response).await
+                self.handle_response(url_path, response).await
             })
             .await?;
 
@@ -853,9 +849,7 @@ impl HttpClient {
 
     /// Delete a collection
     pub async fn delete_collection(&self, collection: &str, token: &str) -> Result<()> {
-        let url = self
-            .base_url
-            .join(&format!("/api/collections/{}", collection))?;
+        let url = self.api_path_url(&["collections", collection])?;
 
         self.execute_with_retry(|| async {
             let response = self
@@ -881,7 +875,7 @@ impl HttpClient {
         ttl: Option<&str>,
         token: &str,
     ) -> Result<()> {
-        let url = self.base_url.join(&format!("/api/kv/set/{}", key))?;
+        let url = self.api_path_url(&["kv", "set", key])?;
 
         #[derive(Serialize)]
         struct KvSetRequest {
@@ -912,7 +906,7 @@ impl HttpClient {
 
     /// Get a key-value pair
     pub async fn kv_get(&self, key: &str, token: &str) -> Result<Option<serde_json::Value>> {
-        let url = self.base_url.join(&format!("/api/kv/get/{}", key))?;
+        let url = self.api_path_url(&["kv", "get", key])?;
 
         #[derive(Deserialize)]
         struct KvGetResponse {
@@ -942,7 +936,7 @@ impl HttpClient {
 
     /// Delete a key-value pair
     pub async fn kv_delete(&self, key: &str, token: &str) -> Result<()> {
-        let url = self.base_url.join(&format!("/api/kv/delete/{}", key))?;
+        let url = self.api_path_url(&["kv", "delete", key])?;
 
         self.execute_with_retry(|| async {
             let response = self
@@ -1308,8 +1302,8 @@ impl HttpClient {
         token: &str,
         bypass_ripple: Option<bool>,
     ) -> Result<Record> {
-        let url_path = format!("/api/find/{}/{}", collection, id);
-        let mut url = self.base_url.join(&url_path)?;
+        let url_path = "/api/find/";
+        let mut url = self.api_path_url(&["find", collection, id])?;
         url.query_pairs_mut()
             .append_pair("transaction_id", transaction_id);
         if let Some(bypass) = bypass_ripple {
@@ -1319,14 +1313,14 @@ impl HttpClient {
         self.execute_with_retry(|| async {
             let response = self
                 .add_format_headers(
-                    &url_path,
+                    url_path,
                     self.client
                         .get(url.clone())
                         .header("Authorization", format!("Bearer {}", token)),
                 )
                 .send()
                 .await?;
-            self.handle_response(&url_path, response).await
+            self.handle_response(url_path, response).await
         })
         .await
     }
@@ -1340,19 +1334,19 @@ impl HttpClient {
         token: &str,
         bypass_ripple: Option<bool>,
     ) -> Result<Vec<Record>> {
-        let url_path = format!("/api/find/{}", collection);
-        let mut url = self.base_url.join(&url_path)?;
+        let url_path = "/api/find/";
+        let mut url = self.api_path_url(&["find", collection])?;
         url.query_pairs_mut()
             .append_pair("transaction_id", transaction_id);
         if let Some(bypass) = bypass_ripple {
             url.query_pairs_mut()
                 .append_pair("bypass_ripple", &bypass.to_string());
         }
-        let body = self.serialize(&url_path, &query)?;
+        let body = self.serialize(url_path, &query)?;
         self.execute_with_retry(|| async {
             let response = self
                 .add_format_headers(
-                    &url_path,
+                    url_path,
                     self.client
                         .post(url.clone())
                         .header("Authorization", format!("Bearer {}", token)),
@@ -1360,7 +1354,7 @@ impl HttpClient {
                 .body(body.clone())
                 .send()
                 .await?;
-            self.handle_response(&url_path, response).await
+            self.handle_response(url_path, response).await
         })
         .await
     }
@@ -1372,7 +1366,7 @@ impl HttpClient {
         search_query: SearchQuery,
         token: &str,
     ) -> Result<SearchResponse> {
-        let url = self.base_url.join(&format!("/api/search/{}", collection))?;
+        let url = self.api_path_url(&["search", collection])?;
 
         // Temporarily use JSON for search until MessagePack issue is resolved
         self.execute_with_retry(|| async {
@@ -1401,9 +1395,7 @@ impl HttpClient {
         query: DistinctValuesQuery,
         token: &str,
     ) -> Result<DistinctValuesResponse> {
-        let url = self
-            .base_url
-            .join(&format!("/api/distinct/{}/{}", collection, field))?;
+        let url = self.api_path_url(&["distinct", collection, field])?;
 
         self.execute_with_retry(|| async {
             let response = self
@@ -1415,8 +1407,7 @@ impl HttpClient {
                 .send()
                 .await?;
 
-            let url_path = format!("/api/distinct/{}/{}", collection, field);
-            self.handle_response(&url_path, response).await
+            self.handle_response("/api/distinct/", response).await
         })
         .await
     }
@@ -1428,9 +1419,7 @@ impl HttpClient {
         schema: Schema,
         token: &str,
     ) -> Result<()> {
-        let url = self
-            .base_url
-            .join(&format!("/api/collections/{}", collection))?;
+        let url = self.api_path_url(&["collections", collection])?;
 
         self.execute_with_retry(|| async {
             let response = self
@@ -1455,9 +1444,7 @@ impl HttpClient {
         collection: &str,
         token: &str,
     ) -> Result<CollectionMetadata> {
-        let url = self
-            .base_url
-            .join(&format!("/api/collections/{}", collection))?;
+        let url = self.api_path_url(&["collections", collection])?;
 
         self.execute_with_retry(|| async {
             let response = self
@@ -1476,9 +1463,7 @@ impl HttpClient {
 
     /// Get collection schema
     pub async fn get_schema(&self, collection: &str, token: &str) -> Result<Schema> {
-        let url = self
-            .base_url
-            .join(&format!("/api/schemas/{}", collection))?;
+        let url = self.api_path_url(&["schemas", collection])?;
 
         self.execute_with_retry(|| async {
             let response = self
@@ -1758,9 +1743,7 @@ impl HttpClient {
 
     /// Get specific chat model info
     pub async fn get_chat_model(&self, model_name: &str, token: &str) -> Result<Vec<String>> {
-        let url = self
-            .base_url
-            .join(&format!("/api/chat_models/{}", model_name))?;
+        let url = self.api_path_url(&["chat_models", model_name])?;
 
         // Force JSON for chat operations
         self.execute_with_retry(|| async {
@@ -2007,9 +1990,7 @@ impl HttpClient {
         use crate::websocket::ChatStreamEvent;
         use futures_util::StreamExt;
 
-        let url = self
-            .base_url
-            .join(&format!("/api/chat/{}/messages/stream", chat_id))?;
+        let url = self.api_path_url(&["chat", chat_id, "messages", "stream"])?;
 
         let response = self
             .client
@@ -2195,7 +2176,7 @@ impl HttpClient {
         chat_id: &str,
         token: &str,
     ) -> Result<ChatSessionResponse> {
-        let url = self.base_url.join(&format!("/api/chat/{}", chat_id))?;
+        let url = self.api_path_url(&["chat", chat_id])?;
 
         // Force JSON for chat operations
         self.execute_with_retry(|| async {
@@ -2223,9 +2204,7 @@ impl HttpClient {
         error: Option<String>,
         token: &str,
     ) -> Result<()> {
-        let url = self
-            .base_url
-            .join(&format!("/api/chat/{}/tool-result", chat_id))?;
+        let url = self.api_path_url(&["chat", chat_id, "tool-result"])?;
 
         #[derive(serde::Serialize)]
         struct ToolResultBody {
@@ -2315,7 +2294,7 @@ impl HttpClient {
         request: UpdateSessionRequest,
         token: &str,
     ) -> Result<ChatSessionResponse> {
-        let url = self.base_url.join(&format!("/api/chat/{}", chat_id))?;
+        let url = self.api_path_url(&["chat", chat_id])?;
 
         // Force JSON for chat operations
         self.execute_with_retry(|| async {
@@ -2335,7 +2314,7 @@ impl HttpClient {
 
     /// Delete a chat session
     pub async fn delete_chat_session(&self, chat_id: &str, token: &str) -> Result<()> {
-        let url = self.base_url.join(&format!("/api/chat/{}", chat_id))?;
+        let url = self.api_path_url(&["chat", chat_id])?;
 
         self.execute_with_retry(|| async {
             let response = self
@@ -2410,9 +2389,7 @@ impl HttpClient {
         request: ChatMessageRequest,
         token: &str,
     ) -> Result<ChatResponse> {
-        let url = self
-            .base_url
-            .join(&format!("/api/chat/{}/messages", chat_id))?;
+        let url = self.api_path_url(&["chat", chat_id, "messages"])?;
 
         // Force JSON for chat operations
         self.execute_with_retry(|| async {
@@ -2453,9 +2430,7 @@ impl HttpClient {
         query: GetMessagesQuery,
         token: &str,
     ) -> Result<crate::chat::GetMessagesResponse> {
-        let mut url = self
-            .base_url
-            .join(&format!("/api/chat/{}/messages", chat_id))?;
+        let mut url = self.api_path_url(&["chat", chat_id, "messages"])?;
 
         // Add query parameters
         {
@@ -2493,9 +2468,7 @@ impl HttpClient {
         message_id: &str,
         token: &str,
     ) -> Result<Record> {
-        let url = self
-            .base_url
-            .join(&format!("/api/chat/{}/messages/{}", chat_id, message_id))?;
+        let url = self.api_path_url(&["chat", chat_id, "messages", message_id])?;
 
         // Force JSON for chat operations
         self.execute_with_retry(|| async {
@@ -2520,9 +2493,7 @@ impl HttpClient {
         request: UpdateMessageRequest,
         token: &str,
     ) -> Result<Record> {
-        let url = self
-            .base_url
-            .join(&format!("/api/chat/{}/messages/{}", chat_id, message_id))?;
+        let url = self.api_path_url(&["chat", chat_id, "messages", message_id])?;
 
         // Force JSON for chat operations
         self.execute_with_retry(|| async {
@@ -2547,9 +2518,7 @@ impl HttpClient {
         message_id: &str,
         token: &str,
     ) -> Result<()> {
-        let url = self
-            .base_url
-            .join(&format!("/api/chat/{}/messages/{}", chat_id, message_id))?;
+        let url = self.api_path_url(&["chat", chat_id, "messages", message_id])?;
 
         self.execute_with_retry(|| async {
             let response = self
@@ -2577,10 +2546,7 @@ impl HttpClient {
         request: ToggleForgottenRequest,
         token: &str,
     ) -> Result<Record> {
-        let url = self.base_url.join(&format!(
-            "/api/chat/{}/messages/{}/forgotten",
-            chat_id, message_id
-        ))?;
+        let url = self.api_path_url(&["chat", chat_id, "messages", message_id, "forgotten"])?;
 
         // Force JSON for chat operations
         self.execute_with_retry(|| async {
@@ -2605,9 +2571,7 @@ impl HttpClient {
         request: CompactChatRequest,
         token: &str,
     ) -> Result<CompactChatResponse> {
-        let url = self
-            .base_url
-            .join(&format!("/api/chat/{}/compact", chat_id))?;
+        let url = self.api_path_url(&["chat", chat_id, "compact"])?;
 
         // Force JSON for chat operations
         self.execute_with_retry(|| async {
@@ -2632,10 +2596,7 @@ impl HttpClient {
         message_id: &str,
         token: &str,
     ) -> Result<ChatResponse> {
-        let url = self.base_url.join(&format!(
-            "/api/chat/{}/messages/{}/regenerate",
-            chat_id, message_id
-        ))?;
+        let url = self.api_path_url(&["chat", chat_id, "messages", message_id, "regenerate"])?;
 
         // Force JSON for chat operations
         self.execute_with_retry(|| async {
@@ -2728,7 +2689,7 @@ impl HttpClient {
         id: &str,
         token: &str,
     ) -> Result<crate::functions::UserFunction> {
-        let url = self.base_url.join(&format!("/api/functions/{}", id))?;
+        let url = self.api_path_url(&["functions", id])?;
 
         self.execute_with_retry(|| async {
             let response = self
@@ -2778,7 +2739,7 @@ impl HttpClient {
         function: crate::functions::UserFunction,
         token: &str,
     ) -> Result<()> {
-        let url = self.base_url.join(&format!("/api/functions/{}", id))?;
+        let url = self.api_path_url(&["functions", id])?;
 
         self.execute_with_retry(|| async {
             let response = self
@@ -2805,7 +2766,7 @@ impl HttpClient {
 
     /// Delete a UserFunction by ID
     pub async fn delete_function(&self, id: &str, token: &str) -> Result<()> {
-        let url = self.base_url.join(&format!("/api/functions/{}", id))?;
+        let url = self.api_path_url(&["functions", id])?;
 
         self.execute_with_retry(|| async {
             let response = self
@@ -2835,9 +2796,7 @@ impl HttpClient {
         params: Option<std::collections::HashMap<String, crate::types::FieldType>>,
         token: &str,
     ) -> Result<crate::functions::FunctionResult> {
-        let url = self
-            .base_url
-            .join(&format!("/api/functions/{}", function_id_or_label))?;
+        let url = self.api_path_url(&["functions", function_id_or_label])?;
 
         let body = params.unwrap_or_default();
 
@@ -2960,7 +2919,7 @@ impl HttpClient {
         label: &str,
         token: &str,
     ) -> Result<crate::functions::UserFunction> {
-        let url = self.base_url.join(&format!("/api/functions/{}", label))?;
+        let url = self.api_path_url(&["functions", label])?;
 
         self.execute_with_retry(|| async {
             let response = self
@@ -3010,7 +2969,7 @@ impl HttpClient {
         user_function: crate::functions::UserFunction,
         token: &str,
     ) -> Result<()> {
-        let url = self.base_url.join(&format!("/api/functions/{}", label))?;
+        let url = self.api_path_url(&["functions", label])?;
 
         self.execute_with_retry(|| async {
             let response = self
@@ -3037,7 +2996,7 @@ impl HttpClient {
 
     /// Delete a UserFunction by label
     pub async fn delete_user_function(&self, label: &str, token: &str) -> Result<()> {
-        let url = self.base_url.join(&format!("/api/functions/{}", label))?;
+        let url = self.api_path_url(&["functions", label])?;
 
         self.execute_with_retry(|| async {
             let response = self
@@ -3089,7 +3048,7 @@ impl HttpClient {
     }
 
     pub async fn goal_get(&self, id: &str, token: &str) -> Result<serde_json::Value> {
-        let url = self.base_url.join(&format!("/api/chat/goals/{}", id))?;
+        let url = self.api_path_url(&["chat", "goals", id])?;
         let response = self
             .client
             .get(url)
@@ -3105,7 +3064,7 @@ impl HttpClient {
         data: serde_json::Value,
         token: &str,
     ) -> Result<serde_json::Value> {
-        let url = self.base_url.join(&format!("/api/chat/goals/{}", id))?;
+        let url = self.api_path_url(&["chat", "goals", id])?;
         let response = self
             .client
             .put(url)
@@ -3117,7 +3076,7 @@ impl HttpClient {
     }
 
     pub async fn goal_delete(&self, id: &str, token: &str) -> Result<()> {
-        let url = self.base_url.join(&format!("/api/chat/goals/{}", id))?;
+        let url = self.api_path_url(&["chat", "goals", id])?;
         let response = self
             .client
             .delete(url)
@@ -3150,9 +3109,7 @@ impl HttpClient {
         data: serde_json::Value,
         token: &str,
     ) -> Result<serde_json::Value> {
-        let url = self
-            .base_url
-            .join(&format!("/api/chat/goals/{}/complete", id))?;
+        let url = self.api_path_url(&["chat", "goals", id, "complete"])?;
         let response = self
             .client
             .post(url)
@@ -3165,9 +3122,7 @@ impl HttpClient {
     }
 
     pub async fn goal_approve(&self, id: &str, token: &str) -> Result<serde_json::Value> {
-        let url = self
-            .base_url
-            .join(&format!("/api/chat/goals/{}/approve", id))?;
+        let url = self.api_path_url(&["chat", "goals", id, "approve"])?;
         let response = self
             .client
             .post(url)
@@ -3184,9 +3139,7 @@ impl HttpClient {
         data: serde_json::Value,
         token: &str,
     ) -> Result<serde_json::Value> {
-        let url = self
-            .base_url
-            .join(&format!("/api/chat/goals/{}/reject", id))?;
+        let url = self.api_path_url(&["chat", "goals", id, "reject"])?;
         let response = self
             .client
             .post(url)
@@ -3206,10 +3159,8 @@ impl HttpClient {
         step_index: usize,
         token: &str,
     ) -> Result<serde_json::Value> {
-        let url = self.base_url.join(&format!(
-            "/api/chat/goals/{}/steps/{}/start",
-            id, step_index
-        ))?;
+        let step_index_str = step_index.to_string();
+        let url = self.api_path_url(&["chat", "goals", id, "steps", &step_index_str, "start"])?;
         let response = self
             .client
             .post(url)
@@ -3227,10 +3178,9 @@ impl HttpClient {
         data: serde_json::Value,
         token: &str,
     ) -> Result<serde_json::Value> {
-        let url = self.base_url.join(&format!(
-            "/api/chat/goals/{}/steps/{}/complete",
-            id, step_index
-        ))?;
+        let step_index_str = step_index.to_string();
+        let url =
+            self.api_path_url(&["chat", "goals", id, "steps", &step_index_str, "complete"])?;
         let response = self
             .client
             .post(url)
@@ -3249,9 +3199,8 @@ impl HttpClient {
         data: serde_json::Value,
         token: &str,
     ) -> Result<serde_json::Value> {
-        let url = self
-            .base_url
-            .join(&format!("/api/chat/goals/{}/steps/{}/fail", id, step_index))?;
+        let step_index_str = step_index.to_string();
+        let url = self.api_path_url(&["chat", "goals", id, "steps", &step_index_str, "fail"])?;
         let response = self
             .client
             .post(url)
@@ -3293,7 +3242,7 @@ impl HttpClient {
     }
 
     pub async fn task_get(&self, id: &str, token: &str) -> Result<serde_json::Value> {
-        let url = self.base_url.join(&format!("/api/chat/tasks/{}", id))?;
+        let url = self.api_path_url(&["chat", "tasks", id])?;
         let response = self
             .client
             .get(url)
@@ -3309,7 +3258,7 @@ impl HttpClient {
         data: serde_json::Value,
         token: &str,
     ) -> Result<serde_json::Value> {
-        let url = self.base_url.join(&format!("/api/chat/tasks/{}", id))?;
+        let url = self.api_path_url(&["chat", "tasks", id])?;
         let response = self
             .client
             .put(url)
@@ -3321,7 +3270,7 @@ impl HttpClient {
     }
 
     pub async fn task_delete(&self, id: &str, token: &str) -> Result<()> {
-        let url = self.base_url.join(&format!("/api/chat/tasks/{}", id))?;
+        let url = self.api_path_url(&["chat", "tasks", id])?;
         let response = self
             .client
             .delete(url)
@@ -3348,9 +3297,7 @@ impl HttpClient {
     // ── Task lifecycle ─────────────────────────────────────────────────────
 
     pub async fn task_start(&self, id: &str, token: &str) -> Result<serde_json::Value> {
-        let url = self
-            .base_url
-            .join(&format!("/api/chat/tasks/{}/start", id))?;
+        let url = self.api_path_url(&["chat", "tasks", id, "start"])?;
         let response = self
             .client
             .post(url)
@@ -3367,9 +3314,7 @@ impl HttpClient {
         data: serde_json::Value,
         token: &str,
     ) -> Result<serde_json::Value> {
-        let url = self
-            .base_url
-            .join(&format!("/api/chat/tasks/{}/succeed", id))?;
+        let url = self.api_path_url(&["chat", "tasks", id, "succeed"])?;
         let response = self
             .client
             .post(url)
@@ -3387,9 +3332,7 @@ impl HttpClient {
         data: serde_json::Value,
         token: &str,
     ) -> Result<serde_json::Value> {
-        let url = self
-            .base_url
-            .join(&format!("/api/chat/tasks/{}/fail", id))?;
+        let url = self.api_path_url(&["chat", "tasks", id, "fail"])?;
         let response = self
             .client
             .post(url)
@@ -3402,9 +3345,7 @@ impl HttpClient {
     }
 
     pub async fn task_pause(&self, id: &str, token: &str) -> Result<serde_json::Value> {
-        let url = self
-            .base_url
-            .join(&format!("/api/chat/tasks/{}/pause", id))?;
+        let url = self.api_path_url(&["chat", "tasks", id, "pause"])?;
         let response = self
             .client
             .post(url)
@@ -3421,9 +3362,7 @@ impl HttpClient {
         data: serde_json::Value,
         token: &str,
     ) -> Result<serde_json::Value> {
-        let url = self
-            .base_url
-            .join(&format!("/api/chat/tasks/{}/resume", id))?;
+        let url = self.api_path_url(&["chat", "tasks", id, "resume"])?;
         let response = self
             .client
             .post(url)
@@ -3465,7 +3404,7 @@ impl HttpClient {
     }
 
     pub async fn agent_get(&self, id: &str, token: &str) -> Result<serde_json::Value> {
-        let url = self.base_url.join(&format!("/api/chat/agents/{}", id))?;
+        let url = self.api_path_url(&["chat", "agents", id])?;
         let response = self
             .client
             .get(url)
@@ -3477,9 +3416,7 @@ impl HttpClient {
     }
 
     pub async fn agent_get_by_name(&self, name: &str, token: &str) -> Result<serde_json::Value> {
-        let url = self
-            .base_url
-            .join(&format!("/api/chat/agents/by-name/{}", name))?;
+        let url = self.api_path_url(&["chat", "agents", "by-name", name])?;
         let response = self
             .client
             .get(url)
@@ -3496,7 +3433,7 @@ impl HttpClient {
         data: serde_json::Value,
         token: &str,
     ) -> Result<serde_json::Value> {
-        let url = self.base_url.join(&format!("/api/chat/agents/{}", id))?;
+        let url = self.api_path_url(&["chat", "agents", id])?;
         let response = self
             .client
             .put(url)
@@ -3509,7 +3446,7 @@ impl HttpClient {
     }
 
     pub async fn agent_delete(&self, id: &str, token: &str) -> Result<()> {
-        let url = self.base_url.join(&format!("/api/chat/agents/{}", id))?;
+        let url = self.api_path_url(&["chat", "agents", id])?;
         let response = self
             .client
             .delete(url)
@@ -3526,9 +3463,7 @@ impl HttpClient {
         deployment_id: &str,
         token: &str,
     ) -> Result<serde_json::Value> {
-        let url = self
-            .base_url
-            .join(&format!("/api/chat/agents/by-deployment/{}", deployment_id))?;
+        let url = self.api_path_url(&["chat", "agents", "by-deployment", deployment_id])?;
         let response = self
             .client
             .get(url)
@@ -3571,9 +3506,7 @@ impl HttpClient {
     }
 
     pub async fn goal_template_get(&self, id: &str, token: &str) -> Result<serde_json::Value> {
-        let url = self
-            .base_url
-            .join(&format!("/api/chat/goal-templates/{}", id))?;
+        let url = self.api_path_url(&["chat", "goal-templates", id])?;
         let response = self
             .client
             .get(url)
@@ -3590,9 +3523,7 @@ impl HttpClient {
         data: serde_json::Value,
         token: &str,
     ) -> Result<serde_json::Value> {
-        let url = self
-            .base_url
-            .join(&format!("/api/chat/goal-templates/{}", id))?;
+        let url = self.api_path_url(&["chat", "goal-templates", id])?;
         let response = self
             .client
             .put(url)
@@ -3605,9 +3536,7 @@ impl HttpClient {
     }
 
     pub async fn goal_template_delete(&self, id: &str, token: &str) -> Result<()> {
-        let url = self
-            .base_url
-            .join(&format!("/api/chat/goal-templates/{}", id))?;
+        let url = self.api_path_url(&["chat", "goal-templates", id])?;
         let response = self
             .client
             .delete(url)
@@ -3622,7 +3551,7 @@ impl HttpClient {
     // ── KV Document Linking ─────────────────────────────────────────────────
 
     pub async fn kv_get_links(&self, key: &str, token: &str) -> Result<serde_json::Value> {
-        let url = self.base_url.join(&format!("/api/kv/links/{}", key))?;
+        let url = self.api_path_url(&["kv", "links", key])?;
         let response = self
             .client
             .get(url)
@@ -3708,7 +3637,7 @@ impl HttpClient {
     }
 
     pub async fn get_schedule(&self, id: &str, token: &str) -> Result<serde_json::Value> {
-        let url = self.base_url.join(&format!("/api/schedules/{}", id))?;
+        let url = self.api_path_url(&["schedules", id])?;
         let response = self
             .client
             .get(url)
@@ -3724,7 +3653,7 @@ impl HttpClient {
         data: serde_json::Value,
         token: &str,
     ) -> Result<serde_json::Value> {
-        let url = self.base_url.join(&format!("/api/schedules/{}", id))?;
+        let url = self.api_path_url(&["schedules", id])?;
         let response = self
             .client
             .put(url)
@@ -3736,7 +3665,7 @@ impl HttpClient {
     }
 
     pub async fn delete_schedule(&self, id: &str, token: &str) -> Result<()> {
-        let url = self.base_url.join(&format!("/api/schedules/{}", id))?;
+        let url = self.api_path_url(&["schedules", id])?;
         let response = self
             .client
             .delete(url)
@@ -3749,9 +3678,7 @@ impl HttpClient {
     }
 
     pub async fn pause_schedule(&self, id: &str, token: &str) -> Result<serde_json::Value> {
-        let url = self
-            .base_url
-            .join(&format!("/api/schedules/{}/pause", id))?;
+        let url = self.api_path_url(&["schedules", id, "pause"])?;
         let response = self
             .client
             .post(url)
@@ -3763,9 +3690,7 @@ impl HttpClient {
     }
 
     pub async fn resume_schedule(&self, id: &str, token: &str) -> Result<serde_json::Value> {
-        let url = self
-            .base_url
-            .join(&format!("/api/schedules/{}/resume", id))?;
+        let url = self.api_path_url(&["schedules", id, "resume"])?;
         let response = self
             .client
             .post(url)
@@ -3894,5 +3819,95 @@ mod tests {
 
         assert!(matches!(result, Err(Error::NotFound)));
         assert_eq!(calls.load(Ordering::SeqCst), 1);
+    }
+
+    // ── URL path-segment encoding (regression for the raw-format! path bug) ──
+    //
+    // Before the fix, `format!("/api/kv/get/{}", key)` spliced caller-supplied
+    // segments straight into the path, so a KV key like `session/abc` became two
+    // path segments (`/api/kv/get/session/abc`) and 404'd on the server. Routing
+    // every segment through `api_path_url` percent-encodes each one, so a `/`
+    // inside a single logical segment becomes `%2F` and stays one segment.
+
+    #[test]
+    fn test_api_path_url_encodes_slash_in_kv_key() {
+        let client = test_client(false, 0);
+        let url = client
+            .api_path_url(&["kv", "get", "session/abc"])
+            .expect("builds url");
+        // The `/` in the key must be percent-encoded so it is a single segment,
+        // NOT split into `/session/abc`.
+        assert_eq!(url.path(), "/api/kv/get/session%2Fabc");
+        assert_ne!(url.path(), "/api/kv/get/session/abc");
+    }
+
+    #[test]
+    fn test_api_path_url_encodes_space_in_collection() {
+        let client = test_client(false, 0);
+        let url = client
+            .api_path_url(&["find", "my collection"])
+            .expect("builds url");
+        // A space in a path segment encodes to `%20` (path encoding), not `+`
+        // (which is what a query-string encoder would produce).
+        assert_eq!(url.path(), "/api/find/my%20collection");
+        assert!(!url.path().contains('+'));
+    }
+
+    #[test]
+    fn test_api_path_url_normal_segments_unchanged() {
+        let client = test_client(false, 0);
+        // Normal segments (no reserved characters) must produce the exact same
+        // URL the old `base_url.join("/api/find/users/123")` produced.
+        let url = client
+            .api_path_url(&["find", "users", "123"])
+            .expect("builds url");
+        assert_eq!(url.path(), "/api/find/users/123");
+        assert_eq!(url.as_str(), "http://localhost:9/api/find/users/123");
+
+        let joined = client
+            .base_url
+            .join("/api/find/users/123")
+            .expect("join works");
+        assert_eq!(url, joined);
+    }
+
+    #[test]
+    fn test_api_path_url_encodes_multiple_reserved_chars() {
+        let client = test_client(false, 0);
+        // KV keys are fully arbitrary: `/`, `?`, `#`, and space must all be
+        // encoded so they cannot be misread as path separators or the start of
+        // a query/fragment.
+        let url = client
+            .api_path_url(&["kv", "set", "a/b?c#d e"])
+            .expect("builds url");
+        assert_eq!(url.path(), "/api/kv/set/a%2Fb%3Fc%23d%20e");
+        // No query or fragment leaked out of the key.
+        assert!(url.query().is_none());
+        assert!(url.fragment().is_none());
+    }
+
+    #[test]
+    fn test_api_path_url_encodes_slash_in_function_label() {
+        let client = test_client(false, 0);
+        // Function labels are caller-supplied and may contain `/`; it must be
+        // percent-encoded so the label stays a single path segment instead of
+        // splitting `/api/functions/my/label` into two.
+        let url = client
+            .api_path_url(&["functions", "my/label"])
+            .expect("builds url");
+        assert_eq!(url.path(), "/api/functions/my%2Flabel");
+        assert_ne!(url.path(), "/api/functions/my/label");
+    }
+
+    #[test]
+    fn test_api_path_url_encodes_slash_in_chat_model_name() {
+        let client = test_client(false, 0);
+        // Chat model names like `anthropic/claude` contain a `/` that must be
+        // encoded so the model stays one segment under `/api/chat_models/`.
+        let url = client
+            .api_path_url(&["chat_models", "anthropic/claude"])
+            .expect("builds url");
+        assert_eq!(url.path(), "/api/chat_models/anthropic%2Fclaude");
+        assert_ne!(url.path(), "/api/chat_models/anthropic/claude");
     }
 }
