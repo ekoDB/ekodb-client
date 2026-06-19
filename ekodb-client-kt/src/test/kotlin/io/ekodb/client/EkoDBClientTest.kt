@@ -556,7 +556,7 @@ class EkoDBClientTest {
                     headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
                 )
             } else {
-                capturedBody = (request.body as? TextContent)?.text
+                capturedBody = (request.body as TextContent).text
                 respond(
                     content = """{"results": [], "total": 0}""",
                     status = HttpStatusCode.OK,
