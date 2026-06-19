@@ -99,26 +99,30 @@ func main() {
 		return vec
 	}
 
+	// The "category" field is used to demonstrate metadata pre-filtering.
 	documents := []ekodb.Record{
 		{
-			"title":   "Introduction to Machine Learning",
-			"content": "Machine learning is a subset of artificial intelligence...",
+			"title":    "Introduction to Machine Learning",
+			"content":  "Machine learning is a subset of artificial intelligence...",
+			"category": "ml",
 			"embedding": map[string]interface{}{
 				"type":  "Vector",
 				"value": generateVector(),
 			},
 		},
 		{
-			"title":   "Deep Learning Fundamentals",
-			"content": "Deep learning uses neural networks with multiple layers...",
+			"title":    "Deep Learning Fundamentals",
+			"content":  "Deep learning uses neural networks with multiple layers...",
+			"category": "ml",
 			"embedding": map[string]interface{}{
 				"type":  "Vector",
 				"value": generateVector(),
 			},
 		},
 		{
-			"title":   "Natural Language Processing",
-			"content": "NLP enables computers to understand human language...",
+			"title":    "Natural Language Processing",
+			"content":  "NLP enables computers to understand human language...",
+			"category": "nlp",
 			"embedding": map[string]interface{}{
 				"type":  "Vector",
 				"value": generateVector(),
@@ -320,6 +324,39 @@ func main() {
 		fmt.Printf("Found %d results (case-sensitive)\n", results8.Total)
 		for i, result := range results8.Results {
 			fmt.Printf("  %d. Score: %.3f\n", i+1, result.Score)
+		}
+	}
+	fmt.Println()
+
+	// Example 9: Vector search with a metadata pre-filter
+	fmt.Println("9. Vector search with a metadata pre-filter (category = ml):")
+	mlFilter := map[string]interface{}{
+		"type": "Condition",
+		"content": map[string]interface{}{
+			"field":    "category",
+			"operator": "Eq",
+			"value":    "ml",
+		},
+	}
+	search9 := ekodb.SearchQuery{
+		Query:           "",
+		Vector:          queryVector,
+		VectorField:     &vectorField,
+		VectorMetric:    &vectorMetric,
+		VectorK:         &vectorK,
+		VectorThreshold: &vectorThreshold,
+		Filters:         mlFilter, // only "ml" documents are candidates
+	}
+
+	results9, err := client.Search(documentsCollection, search9)
+	if err != nil {
+		log.Printf("Error: %v", err)
+	} else {
+		fmt.Printf("Found %d documents in category \"ml\" (NLP excluded)\n", results9.Total)
+		for i, result := range results9.Results {
+			title := ekodb.GetStringValue(result.Record["title"])
+			category := ekodb.GetStringValue(result.Record["category"])
+			fmt.Printf("  %d. %s (category: %s)\n", i+1, title, category)
 		}
 	}
 	fmt.Println()

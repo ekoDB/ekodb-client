@@ -13,7 +13,7 @@ import os
 import random
 from pathlib import Path
 from dotenv import load_dotenv
-from ekodb_client import Client
+from ekodb_client import Client, get_value
 
 # Load environment variables
 env_path = Path(__file__).parent.parent / ".env"
@@ -93,12 +93,14 @@ async def main():
         },
     )
 
-    # Insert documents with vector embeddings for vector/hybrid search
+    # Insert documents with vector embeddings for vector/hybrid search.
+    # The "category" field is used to demonstrate metadata pre-filtering.
     await client.insert(
         documents_collection,
         {
             "title": "Introduction to Machine Learning",
             "content": "Machine learning is a subset of artificial intelligence...",
+            "category": "ml",
             "embedding": [random.random() for _ in range(384)],
         },
     )
@@ -108,6 +110,7 @@ async def main():
         {
             "title": "Deep Learning Fundamentals",
             "content": "Deep learning uses neural networks with multiple layers...",
+            "category": "ml",
             "embedding": [random.random() for _ in range(384)],
         },
     )
@@ -117,6 +120,7 @@ async def main():
         {
             "title": "Natural Language Processing",
             "content": "NLP enables computers to understand human language...",
+            "category": "nlp",
             "embedding": [random.random() for _ in range(384)],
         },
     )
@@ -246,6 +250,30 @@ async def main():
         score = result.get("score", 0)
         matched = result.get("matched_fields", [])
         print(f"  {i}. Score: {score:.3f}, Matched: {', '.join(matched)}")
+    print()
+
+    # Example 9: Vector search with a metadata pre-filter
+    print("9. Vector search with a metadata pre-filter (category = ml):")
+    ml_filter = {
+        "type": "Condition",
+        "content": {"field": "category", "operator": "Eq", "value": "ml"},
+    }
+    results9 = await client.search(
+        documents_collection,
+        query="",
+        vector=query_vector,
+        vector_field="embedding",
+        vector_k=10,
+        filters=ml_filter,  # only "ml" documents are candidates
+    )
+    print(
+        f"Found {len(results9.get('results', []))} documents in category \"ml\" (NLP excluded)"
+    )
+    for i, result in enumerate(results9.get("results", []), 1):
+        record = result.get("record", {})
+        title = get_value(record.get("title"))
+        category = get_value(record.get("category"))
+        print(f"  {i}. {title} (category: {category})")
     print()
 
     # Cleanup

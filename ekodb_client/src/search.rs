@@ -166,6 +166,12 @@ pub struct SearchQuery {
     /// Exclude specific fields from results
     #[serde(skip_serializing_if = "Option::is_none")]
     pub exclude_fields: Option<Vec<String>>,
+
+    /// Metadata pre-filter for vector/hybrid search (canonical `QueryExpression`
+    /// JSON, same format as `Query::filter`). Only records matching the filter
+    /// are considered as candidates before similarity ranking.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub filters: Option<serde_json::Value>,
 }
 
 impl SearchQuery {
@@ -300,6 +306,14 @@ impl SearchQuery {
     /// Exclude specific fields from results
     pub fn exclude_fields(mut self, fields: Vec<String>) -> Self {
         self.exclude_fields = Some(fields);
+        self
+    }
+
+    /// Set a metadata pre-filter for vector/hybrid search. Accepts a canonical
+    /// `QueryExpression` (same JSON shape as `Query::filter`); only records
+    /// matching the filter are considered before similarity ranking.
+    pub fn filters(mut self, filter: serde_json::Value) -> Self {
+        self.filters = Some(filter);
         self
     }
 }
@@ -542,6 +556,30 @@ mod tests {
 
         let json = serde_json::to_value(&query).unwrap();
         assert_eq!(json["limit"], 5);
+    }
+
+    #[test]
+    fn test_filters_builder_and_serialization() {
+        let filter = json!({
+            "type": "Condition",
+            "content": {"field": "category", "operator": "Eq", "value": "ml"}
+        });
+        let query = SearchQuery::new("test")
+            .vector(vec![0.1, 0.2, 0.3])
+            .filters(filter.clone());
+
+        assert_eq!(query.filters.as_ref(), Some(&filter));
+
+        let json = serde_json::to_value(&query).unwrap();
+        assert_eq!(json["filters"]["type"], "Condition");
+        assert_eq!(json["filters"]["content"]["field"], "category");
+    }
+
+    #[test]
+    fn test_filters_absent_when_unset() {
+        let query = SearchQuery::new("test");
+        let json = serde_json::to_value(&query).unwrap();
+        assert!(json.get("filters").is_none());
     }
 
     // -------------------------------------------------------------------------

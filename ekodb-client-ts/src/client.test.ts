@@ -7,6 +7,7 @@
 
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import { EkoDBClient, SerializationFormat, extractRecordId } from "./client";
+import { SearchQueryBuilder } from "./search";
 
 // Mock fetch globally
 const mockFetch = vi.fn();
@@ -489,6 +490,25 @@ describe("EkoDBClient search", () => {
   });
 
   // Note: textSearch and hybridSearch require specific mock setup - covered by integration tests
+
+  it("builds a vector search query with a metadata filter", () => {
+    const filter = {
+      type: "Condition",
+      content: { field: "category", operator: "Eq", value: "ml" },
+    };
+    const query = new SearchQueryBuilder("test")
+      .vector([0.1, 0.2, 0.3])
+      .filters(filter)
+      .build();
+
+    expect(query.filters).toEqual(filter);
+    expect(query.vector).toEqual([0.1, 0.2, 0.3]);
+  });
+
+  it("omits filters when not set", () => {
+    const query = new SearchQueryBuilder("test").build();
+    expect(query.filters).toBeUndefined();
+  });
 });
 
 // ============================================================================
