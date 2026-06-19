@@ -1027,9 +1027,9 @@ impl Client {
     ///     limit: Maximum number of results (optional)
     ///     select_fields: Fields to include in results (optional)
     ///     exclude_fields: Fields to exclude from results (optional)
-    ///     filters: Metadata pre-filter for vector/hybrid search as a canonical
+    ///     filters: Metadata pre-filter for text/vector/hybrid search as a canonical
     ///         QueryExpression dict (same format as find()); only matching
-    ///         records are candidates before similarity ranking (optional)
+    ///         records are candidates before ranking (optional)
     #[pyo3(signature = (collection, query, language=None, case_sensitive=None, fuzzy=None, min_score=None, fields=None, weights=None, enable_stemming=None, boost_exact=None, max_edit_distance=None, vector=None, vector_field=None, vector_metric=None, vector_k=None, vector_threshold=None, text_weight=None, vector_weight=None, bypass_ripple=None, bypass_cache=None, limit=None, select_fields=None, exclude_fields=None, filters=None))]
     #[allow(clippy::too_many_arguments)]
     fn search<'py>(
@@ -1062,7 +1062,7 @@ impl Client {
     ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
 
-        // Metadata pre-filter for vector/hybrid search: a canonical
+        // Metadata pre-filter for text/vector/hybrid search: a canonical
         // QueryExpression dict (same format as find()/distinct_values()).
         let filters_json = if let Some(f) = filters {
             Some(dict_to_json(f)?)

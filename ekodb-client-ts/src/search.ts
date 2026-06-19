@@ -62,9 +62,9 @@ export interface SearchQuery {
 
   // Metadata pre-filter
   /**
-   * Metadata pre-filter for vector/hybrid search. A canonical QueryExpression
+   * Metadata pre-filter for text/vector/hybrid search. A canonical QueryExpression
    * (the same shape produced by `QueryBuilder.build().filter`); only records
-   * matching the filter are considered as candidates before similarity ranking.
+   * matching the filter are considered as candidates before ranking.
    */
   filters?: any;
 }
@@ -284,9 +284,9 @@ export class SearchQueryBuilder {
   }
 
   /**
-   * Set a metadata pre-filter for vector/hybrid search. Accepts a canonical
+   * Set a metadata pre-filter for text/vector/hybrid search. Accepts a canonical
    * QueryExpression (the same shape produced by `QueryBuilder.build().filter`);
-   * only records matching the filter are considered before similarity ranking.
+   * only records matching the filter are considered before ranking.
    */
   filters(filter: any): this {
     this.query.filters = filter;
