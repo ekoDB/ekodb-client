@@ -167,9 +167,9 @@ pub struct SearchQuery {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub exclude_fields: Option<Vec<String>>,
 
-    /// Metadata pre-filter for vector/hybrid search (canonical `QueryExpression`
+    /// Metadata pre-filter for text/vector/hybrid search (canonical `QueryExpression`
     /// JSON, same format as `Query::filter`). Only records matching the filter
-    /// are considered as candidates before similarity ranking.
+    /// are considered as candidates before ranking.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub filters: Option<serde_json::Value>,
 }
@@ -309,9 +309,9 @@ impl SearchQuery {
         self
     }
 
-    /// Set a metadata pre-filter for vector/hybrid search. Accepts a canonical
+    /// Set a metadata pre-filter for text/vector/hybrid search. Accepts a canonical
     /// `QueryExpression` (same JSON shape as `Query::filter`); only records
-    /// matching the filter are considered before similarity ranking.
+    /// matching the filter are considered before ranking.
     pub fn filters(mut self, filter: serde_json::Value) -> Self {
         self.filters = Some(filter);
         self
