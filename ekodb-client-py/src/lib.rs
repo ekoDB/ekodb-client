@@ -1027,7 +1027,11 @@ impl Client {
     ///     limit: Maximum number of results (optional)
     ///     select_fields: Fields to include in results (optional)
     ///     exclude_fields: Fields to exclude from results (optional)
-    #[pyo3(signature = (collection, query, language=None, case_sensitive=None, fuzzy=None, min_score=None, fields=None, weights=None, enable_stemming=None, boost_exact=None, max_edit_distance=None, vector=None, vector_field=None, vector_metric=None, vector_k=None, vector_threshold=None, text_weight=None, vector_weight=None, bypass_ripple=None, bypass_cache=None, limit=None, select_fields=None, exclude_fields=None))]
+    ///     filters: Metadata pre-filter for vector/hybrid search as a canonical
+    ///         QueryExpression dict (same format as find()); only matching
+    ///         records are candidates before similarity ranking (optional)
+    #[pyo3(signature = (collection, query, language=None, case_sensitive=None, fuzzy=None, min_score=None, fields=None, weights=None, enable_stemming=None, boost_exact=None, max_edit_distance=None, vector=None, vector_field=None, vector_metric=None, vector_k=None, vector_threshold=None, text_weight=None, vector_weight=None, bypass_ripple=None, bypass_cache=None, limit=None, select_fields=None, exclude_fields=None, filters=None))]
+    #[allow(clippy::too_many_arguments)]
     fn search<'py>(
         &self,
         py: Python<'py>,
@@ -1054,8 +1058,17 @@ impl Client {
         limit: Option<usize>,
         select_fields: Option<Vec<String>>,
         exclude_fields: Option<Vec<String>>,
+        filters: Option<&Bound<'py, PyDict>>,
     ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
+
+        // Metadata pre-filter for vector/hybrid search: a canonical
+        // QueryExpression dict (same format as find()/distinct_values()).
+        let filters_json = if let Some(f) = filters {
+            Some(dict_to_json(f)?)
+        } else {
+            None
+        };
 
         // Build SearchQuery with all parameters
         let search_query = RustSearchQuery {
@@ -1081,6 +1094,7 @@ impl Client {
             vector_weight,
             select_fields,
             exclude_fields,
+            filters: filters_json,
         };
 
         future_into_py(py, async move {

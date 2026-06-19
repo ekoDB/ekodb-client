@@ -59,6 +59,14 @@ export interface SearchQuery {
   select_fields?: string[];
   /** Exclude these fields from results */
   exclude_fields?: string[];
+
+  // Metadata pre-filter
+  /**
+   * Metadata pre-filter for vector/hybrid search. A canonical QueryExpression
+   * (the same shape produced by `QueryBuilder.build().filter`); only records
+   * matching the filter are considered as candidates before similarity ranking.
+   */
+  filters?: any;
 }
 
 /**
@@ -272,6 +280,16 @@ export class SearchQueryBuilder {
    */
   excludeFields(fields: string[]): this {
     this.query.exclude_fields = fields;
+    return this;
+  }
+
+  /**
+   * Set a metadata pre-filter for vector/hybrid search. Accepts a canonical
+   * QueryExpression (the same shape produced by `QueryBuilder.build().filter`);
+   * only records matching the filter are considered before similarity ranking.
+   */
+  filters(filter: any): this {
+    this.query.filters = filter;
     return this;
   }
 

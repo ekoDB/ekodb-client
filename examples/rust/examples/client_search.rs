@@ -34,40 +34,47 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // Step 1: Insert sample documents
     println!("=== Inserting Sample Documents ===");
 
+    // The `category` field is used to demonstrate metadata pre-filtering.
     let docs = vec![
         (
             "Rust Programming",
             "Learn Rust programming language with hands-on examples and best practices.",
             vec!["programming", "rust", "tutorial"],
+            "programming",
         ),
         (
             "Python for Data Science",
             "Master Python for data analysis, machine learning, and visualization.",
             vec!["programming", "python", "data-science"],
+            "programming",
         ),
         (
             "JavaScript Web Development",
             "Build modern web applications using JavaScript, React, and Node.js.",
             vec!["programming", "javascript", "web"],
+            "programming",
         ),
         (
             "Database Design",
             "Learn database design principles, normalization, and query optimization.",
             vec!["database", "design", "sql"],
+            "database",
         ),
         (
             "Machine Learning Basics",
             "Introduction to machine learning algorithms and neural networks.",
             vec!["ai", "machine-learning", "python"],
+            "ai",
         ),
     ];
 
     let doc_count = docs.len();
-    for (title, description, tags) in docs {
+    for (title, description, tags, category) in docs {
         let mut doc = Record::new();
         doc.insert("title", title);
         doc.insert("description", description);
         doc.insert("tags", tags.join(",")); // Store as comma-separated string
+        doc.insert("category", category);
         doc.insert("views", (rand::random::<u32>() % 1000) as i64);
         client.insert(collection, doc, None).await?;
     }
@@ -197,6 +204,35 @@ async fn main() -> Result<(), Box<dyn Error>> {
             i + 1,
             result.score,
             result.record.get("title")
+        );
+    }
+    println!();
+
+    // Search with a metadata pre-filter (works on text, vector, and hybrid).
+    // The same query is restricted to documents in the "programming" category.
+    println!("=== Search with a metadata pre-filter (category = programming) ===");
+    let filtered_search = SearchQuery::new("learn")
+        .min_score(0.1)
+        .filters(serde_json::json!({
+            "type": "Condition",
+            "content": {
+                "field": "category",
+                "operator": "Eq",
+                "value": "programming"
+            }
+        }));
+
+    let filtered_results = client.search(collection, filtered_search).await?;
+    println!(
+        "✓ Found {} results in category 'programming' (database/ai excluded)",
+        filtered_results.results.len()
+    );
+    for (i, result) in filtered_results.results.iter().enumerate() {
+        println!(
+            "  {}. {:?} (category: {:?})",
+            i + 1,
+            result.record.get("title"),
+            result.record.get("category")
         );
     }
     println!();

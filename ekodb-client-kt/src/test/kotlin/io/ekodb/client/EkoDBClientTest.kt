@@ -4,6 +4,7 @@ import io.ktor.client.*
 import io.ktor.client.engine.mock.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.http.*
+import io.ktor.http.content.TextContent
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.CancellationException
@@ -540,6 +541,46 @@ class EkoDBClientTest {
         }
         val result = client.search("documents", searchQuery)
         assertNotNull(result)
+    }
+
+    @Test
+    fun `search forwards metadata filters in request body`() = runBlocking {
+        // #475: the search transport forwards an arbitrary JsonObject, so a
+        // `filters` metadata pre-filter reaches the server unchanged.
+        var capturedBody: String? = null
+        val mockEngine = MockEngine { request ->
+            if (request.url.encodedPath.contains("/api/auth/token")) {
+                respond(
+                    content = """{"token": "mock_jwt_token_123"}""",
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                )
+            } else {
+                capturedBody = (request.body as? TextContent)?.text
+                respond(
+                    content = """{"results": [], "total": 0}""",
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                )
+            }
+        }
+        val client = createTestClient(mockEngine)
+        val searchQuery = buildJsonObject {
+            put("query", "test")
+            put("filters", buildJsonObject {
+                put("type", "Condition")
+                put("content", buildJsonObject {
+                    put("field", "category")
+                    put("operator", "Eq")
+                    put("value", "ml")
+                })
+            })
+        }
+        client.search("documents", searchQuery)
+        assertNotNull(capturedBody)
+        assertTrue(capturedBody!!.contains("filters"))
+        assertTrue(capturedBody!!.contains("category"))
+        assertTrue(capturedBody!!.contains("Condition"))
     }
 
     // ========================================================================
