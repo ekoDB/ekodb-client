@@ -2015,6 +2015,29 @@ export class EkoDBClient {
   }
 
   /**
+   * Send a client tool keepalive (liveness ping) for an in-flight SSE chat stream.
+   *
+   * This is NOT a result: it does not unblock the tool loop or feed anything to the
+   * LLM. It simply resets the server's per-tool wait deadline (governed by
+   * `client_tool_timeout_secs`, default 60s) so that slow user confirmations or
+   * long-running client tools don't get the turn timed out before
+   * {@link submitChatToolResult} arrives. Send it periodically while a client tool
+   * is still working. See ekoDB#530.
+   */
+  async submitChatToolKeepalive(chatId: string, callId: string): Promise<void> {
+    await this.makeRequest(
+      "POST",
+      `/api/chat/${encodeURIComponent(chatId)}/tool-result`,
+      {
+        call_id: callId,
+        keepalive: true,
+      },
+      0,
+      true,
+    );
+  }
+
+  /**
    * Send a message in an existing chat session via SSE streaming.
    *
    * Returns an EventStream that emits ChatStreamEvent objects as they arrive:

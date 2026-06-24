@@ -1993,6 +1993,30 @@ impl Client {
         })
     }
 
+    /// Submit a client tool keepalive for an in-flight SSE chat stream.
+    ///
+    /// This is a liveness ping, NOT a result: it resets the server's
+    /// per-tool wait deadline so a long-running client tool isn't timed
+    /// out before it can submit its result (ekoDB#530).
+    #[pyo3(signature = (chat_id, call_id))]
+    fn submit_chat_tool_keepalive<'py>(
+        &self,
+        py: Python<'py>,
+        chat_id: String,
+        call_id: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py(py, async move {
+            client
+                .submit_chat_tool_keepalive(&chat_id, &call_id)
+                .await
+                .map_err(|e| map_client_err("Submit tool keepalive failed", e))?;
+
+            Python::attach(|py| Ok(py.None()))
+        })
+    }
+
     /// Send a message in an existing chat session.
     ///
     /// `attachments` (optional) is a list of dicts of the shape

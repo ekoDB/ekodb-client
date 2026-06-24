@@ -2250,6 +2250,59 @@ impl HttpClient {
         .await
     }
 
+    /// Send a liveness keepalive for a pending client tool to the chat
+    /// stream's tool-result endpoint. This is NOT a result — it tells the
+    /// server "the client is alive and still working on this tool" (a pending
+    /// human confirmation, or a long-running client tool) so the server resets
+    /// its per-tool wait deadline instead of timing the turn out mid-response.
+    /// Call periodically (well under the server's `client_tool_timeout_secs`,
+    /// default 60s) while a confirmation prompt is shown or a tool is running.
+    pub async fn submit_chat_tool_keepalive(
+        &self,
+        chat_id: &str,
+        call_id: &str,
+        token: &str,
+    ) -> Result<()> {
+        let url = self.api_path_url(&["chat", chat_id, "tool-result"])?;
+
+        #[derive(serde::Serialize)]
+        struct KeepaliveBody {
+            call_id: String,
+            keepalive: bool,
+        }
+
+        let body = KeepaliveBody {
+            call_id: call_id.to_string(),
+            keepalive: true,
+        };
+
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .post(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Content-Type", "application/json")
+                .json(&body)
+                .send()
+                .await?;
+
+            let status = response.status();
+            if status == reqwest::StatusCode::UNAUTHORIZED {
+                return Err(crate::error::Error::TokenExpired);
+            }
+            if !status.is_success() {
+                let mut text = response.text().await.unwrap_or_default();
+                text.truncate(512);
+                return Err(crate::error::Error::Api {
+                    code: status.as_u16(),
+                    message: format!("tool keepalive failed: {text}"),
+                });
+            }
+            Ok(())
+        })
+        .await
+    }
+
     /// List all chat sessions
     pub async fn list_chat_sessions(
         &self,

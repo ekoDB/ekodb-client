@@ -1872,6 +1872,28 @@ impl Client {
         .await
     }
 
+    /// Send a liveness keepalive for a pending client tool on an in-flight SSE
+    /// chat stream. Not a result — it resets the server's per-tool wait
+    /// deadline so a pending human confirmation or a long-running client tool
+    /// doesn't get the turn timed out mid-response. Call periodically (well
+    /// under the server's `client_tool_timeout_secs`, default 60s) while a
+    /// confirmation prompt is shown or a tool is executing.
+    pub async fn submit_chat_tool_keepalive(&self, chat_id: &str, call_id: &str) -> Result<()> {
+        let chat_id = chat_id.to_string();
+        let call_id = call_id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let chat_id = chat_id.clone();
+            let call_id = call_id.clone();
+            let http = http.clone();
+            async move {
+                http.submit_chat_tool_keepalive(&chat_id, &call_id, &token)
+                    .await
+            }
+        })
+        .await
+    }
+
     /// Update chat session metadata
     ///
     /// # Arguments

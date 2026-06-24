@@ -3070,6 +3070,29 @@ describe("submitChatToolResult", () => {
 });
 
 // ============================================================================
+// submitChatToolKeepalive Tests
+// ============================================================================
+
+describe("submitChatToolKeepalive", () => {
+  it("sends keepalive to correct endpoint", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+    mockJsonResponse({});
+
+    await client.submitChatToolKeepalive("chat-123", "call-456");
+
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+    const call = mockFetch.mock.calls[1];
+    expect(call[0]).toContain("/api/chat/chat-123/tool-result");
+    const body = JSON.parse(call[1].body);
+    expect(body.call_id).toBe("call-456");
+    expect(body.keepalive).toBe(true);
+    expect(body.success).toBeUndefined();
+    expect(body.result).toBeUndefined();
+  });
+});
+
+// ============================================================================
 // subscribeSSE Tests
 // ============================================================================
 
