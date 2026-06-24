@@ -6,6 +6,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Client-tool keepalive for in-flight SSE chats, across all clients
+  (ekoDB#530).** Sends a liveness keepalive (not a result) for a pending client
+  tool on an active SSE chat stream, so a slow human confirmation or a
+  long-running client tool resets the server's per-tool wait deadline
+  (`client_tool_timeout_secs`, default 60s) instead of letting the turn time out
+  mid-response. Call periodically (well under the timeout) while a confirmation
+  prompt is shown or a tool is executing. Added with full parity across the
+  language clients (mirrors each one's `submit_chat_tool_result`):
+  - Rust: `Client::submit_chat_tool_keepalive(chat_id, call_id)`
+  - Python: `Client.submit_chat_tool_keepalive(chat_id, call_id)`
+  - TypeScript: `submitChatToolKeepalive(chatId, callId)`
+  - Kotlin: `submitChatToolKeepalive(chatId, callId)`
+  - (Go client is versioned separately — see ekodb-client-go
+    `SubmitChatToolKeepalive`.)
+- **Metadata pre-filter for text, vector, and hybrid search (#475).** Search now
+  carries an optional `filters` field holding a canonical `QueryExpression` (the
+  same AST as `find`); only records matching the filter are considered as
+  candidates before ranking. Exposed as `.filters(...)` on the search query
+  builder in the Rust, TypeScript, and Go clients, a `filters=` keyword argument
+  on the Python client's `search`, and forwarded transparently by the Kotlin
+  client's JSON-object `search`. Applies uniformly to text, vector, and hybrid
+  search (including the indexed HNSW path). Each client's `examples/` search
+  example now demonstrates a filtered search.
+
 ## [0.21.0] - 2026-06-09
 
 ### Fixed — examples test harness
