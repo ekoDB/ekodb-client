@@ -45,6 +45,20 @@ class TestClientWebSocketMethod:
         assert hasattr(Client, "websocket")
 
 
+class TestClientChatToolMethods:
+    """Test that SSE client-tool methods exist on Client."""
+
+    def test_client_has_submit_chat_tool_result(self):
+        """Client should have a submit_chat_tool_result method."""
+        assert hasattr(Client, "submit_chat_tool_result")
+
+    def test_client_has_submit_chat_tool_keepalive(self):
+        # Keepalive is a liveness ping (not a result) that resets the
+        # server's per-tool wait deadline for an in-flight SSE chat
+        # stream (ekoDB#530); mirrors submit_chat_tool_result.
+        assert hasattr(Client, "submit_chat_tool_keepalive")
+
+
 class TestWebSocketClientMethods:
     """Test that all WebSocket methods exist."""
 

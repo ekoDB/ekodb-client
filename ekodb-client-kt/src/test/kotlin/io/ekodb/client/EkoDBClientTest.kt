@@ -2181,6 +2181,40 @@ class EkoDBClientTest {
     }
 
     // ========================================================================
+    // submitChatToolKeepalive Tests
+    // ========================================================================
+
+    @Test
+    fun `submitChatToolKeepalive sends correct request`() = runBlocking {
+        var capturedPath = ""
+        var capturedBody = ""
+        val mockEngine = MockEngine { request ->
+            if (request.url.encodedPath.contains("/api/auth/token")) {
+                respond(
+                    content = """{"token": "mock_jwt_token_123"}""",
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                )
+            } else {
+                capturedPath = request.url.encodedPath
+                capturedBody = String(request.body.toByteArray())
+                respond(
+                    content = "{}",
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                )
+            }
+        }
+        val client = createTestClient(mockEngine)
+
+        client.submitChatToolKeepalive("chat-123", "call-456")
+
+        assertTrue(capturedPath.contains("/api/chat/chat-123/tool-result"))
+        assertTrue(capturedBody.contains("\"call_id\":\"call-456\""))
+        assertTrue(capturedBody.contains("\"keepalive\":true"))
+    }
+
+    // ========================================================================
     // Auth hardening: 401 -> refresh -> retry uses the refreshed token
     // ========================================================================
 

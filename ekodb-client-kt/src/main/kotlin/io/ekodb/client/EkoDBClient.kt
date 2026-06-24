@@ -1886,6 +1886,29 @@ class EkoDBClient private constructor(
     }
 
     /**
+     * Submit a client tool keepalive for an in-flight SSE chat stream.
+     *
+     * This is a liveness ping, NOT a result: it resets the server's
+     * `client_tool_timeout_secs` (default 60s) wait deadline without counting
+     * as a result, so slow confirmations or long-running client tools don't get
+     * the turn timed out mid-response (ekoDB#530). Posts to the same
+     * `/tool-result` endpoint as [submitChatToolResult] with `keepalive: true`.
+     */
+    suspend fun submitChatToolKeepalive(chatId: String, callId: String) {
+        val body = buildJsonObject {
+            put("call_id", callId)
+            put("keepalive", true)
+        }
+        executeWithRetry { token ->
+            client.post("$baseUrl/api/chat/${chatId.encodeURLPathPart()}/tool-result") {
+                header("Authorization", "Bearer $token")
+                contentType(getContentTypeForRequest())
+                setBody(body)
+            }
+        }
+    }
+
+    /**
      * Send a message in an existing chat session via SSE streaming.
      *
      * Returns a Flow that emits [ChatStreamEvent] objects as they arrive:
