@@ -23,8 +23,8 @@ ekodb_client = { version = "0.22.0", path = "../ekodb_client", default-features 
 # `extension-module` is enabled by default (the maturin build) but turned OFF
 # for `cargo test --no-default-features --features test-support` so the test
 # binary can link libpython and use `auto-initialize`.
-pyo3 = { version = "0.27", features = ["abi3-py38"] }
-pyo3-async-runtimes = { version = "0.27", features = ["tokio-runtime"] }
+pyo3 = { version = "0.29", features = ["abi3-py38"] }
+pyo3-async-runtimes = { version = "0.29", features = ["tokio-runtime"] }
 tokio = { version = "1.52", features = ["full"] }
 serde_json = "1.0"
 chrono = "0.4.45"
@@ -32,7 +32,7 @@ rust_decimal = "1.42.1"
 uuid = { version = "1.23.3", features = ["v4"] }
 
 [build-dependencies]
-pyo3-build-config = "0.27"
+pyo3-build-config = "0.29"
 
 [features]
 default = ["rustls", "extension-module"]

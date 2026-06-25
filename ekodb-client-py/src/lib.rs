@@ -38,7 +38,11 @@ fn map_client_err(context: &str, e: ekodb_client::Error) -> PyErr {
 }
 
 /// Serialization format for client-server communication
-#[pyclass]
+//
+// `from_py_object` is opt-in as of pyo3 0.29 for `#[pyclass]` types that derive
+// `Clone`. This enum is accepted as a Python->Rust argument (e.g. the `format`
+// parameter on `Client.new`), so it must keep the `FromPyObject` derive.
+#[pyclass(from_py_object)]
 #[derive(Clone, Copy)]
 enum SerializationFormat {
     /// JSON format (default, human-readable)
@@ -57,7 +61,12 @@ impl From<SerializationFormat> for RustSerializationFormat {
 }
 
 /// Rate limit information from the server
-#[pyclass]
+//
+// `skip_from_py_object` opts out of the auto `FromPyObject` derive (opt-in as of
+// pyo3 0.29 for `Clone` `#[pyclass]` types). This struct is only constructed in
+// Rust and returned to Python; it is never accepted as a Python->Rust argument,
+// so it does not need a `FromPyObject` impl.
+#[pyclass(skip_from_py_object)]
 #[derive(Clone)]
 struct RateLimitInfo {
     /// Maximum requests allowed per window

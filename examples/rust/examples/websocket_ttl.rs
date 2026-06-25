@@ -85,7 +85,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     "collection": "ws_ttl_test"
                 }
             })
-            .to_string(),
+            .to_string()
+            .into(),
         ))
         .await?;
 
