@@ -8,6 +8,37 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Security
+
+- **Bumped `quinn-proto` 0.11.14 → 0.11.15 in the Python client lockfile
+  (`ekodb-client-py/Cargo.lock`), resolving RUSTSEC-2026-0185 (high — remote
+  memory exhaustion in QUIC connection handling).** Transitive via
+  `reqwest` → `quinn`; the shared `ekodb_client` lockfile already carried
+  0.11.15, so only the Python client's lock was behind. Lockfile-only patch
+  bump (no manifest or source change); `cargo audit` clean (exit 0) and
+  `cargo check` green afterward.
+- **Bumped `pyo3` 0.27 → 0.29 in the Python client (`ekodb-client-py`),
+  resolving two Dependabot alerts (GHSA-36hh-v3qg-5jq4 high,
+  GHSA-chgr-c6px-7xpp medium).** The caret `"0.27"` constraint capped below the
+  0.29.0 patch, so the floor was raised — `pyo3`, `pyo3-async-runtimes`, and
+  `pyo3-build-config` moved in lockstep to `"0.29"` (`pyo3-async-runtimes` is
+  version-coupled to `pyo3`) and the lockfile updated to 0.29.0. The native
+  extension required two minor pyo3-0.29 migration touch-ups in `src/lib.rs` for
+  the now-opt-in `FromPyObject` derive on `Clone` `#[pyclass]` types:
+  `SerializationFormat` opts in via `from_py_object` (it is accepted as a
+  Python→Rust argument); `RateLimitInfo` opts out via `skip_from_py_object` (it
+  is only ever returned to Python). All 329 Python client tests pass.
+- **examples/rust: bump `tokio-tungstenite` (0.20 → 0.28) and `reqwest`
+  (0.11 → 0.12) to pull `rustls-webpki` ≥ 0.103.13
+  (GHSA-82j2-j2ch-gfr8, GHSA-xgp8-3hg3-c2mh, GHSA-965h-392x-2mh5).** The
+  examples project's own direct deps were dragging in the vulnerable
+  `rustls 0.21` → `rustls-webpki 0.101.7` transitively (via both the old
+  `tokio-tungstenite 0.20` and `reqwest 0.11`). Aligning both to the
+  versions the `ekodb_client` library already uses (`rustls 0.23` →
+  `rustls-webpki 0.103.13`) removes the 0.101.x copy entirely. Migrated the
+  raw-WebSocket examples for the tungstenite 0.28 `Message::Text` /
+  `Utf8Bytes` API change. Examples-only; no library or wire change.
+
 ### Added
 
 - **Client-tool keepalive for in-flight SSE chats, across all clients
