@@ -323,7 +323,7 @@ class EkoDBClient private constructor(
         // Build query parameters
         val params = mutableListOf<String>()
         bypassRipple?.let { params.add("bypass_ripple=$it") }
-        transactionId?.let { params.add("transaction_id=$it") }
+        transactionId?.let { params.add("transaction_id=${it.encodeURLQueryComponent()}") }
         
         val url = if (params.isNotEmpty()) {
             "$baseUrl/api/insert/${collection.encodeURLPathPart()}?${params.joinToString("&")}"
@@ -481,7 +481,7 @@ class EkoDBClient private constructor(
         // Build query parameters
         val params = mutableListOf<String>()
         bypassRipple?.let { params.add("bypass_ripple=$it") }
-        transactionId?.let { params.add("transaction_id=$it") }
+        transactionId?.let { params.add("transaction_id=${it.encodeURLQueryComponent()}") }
         
         val url = if (params.isNotEmpty()) {
             "$baseUrl/api/update/${collection.encodeURLPathPart()}/${id.encodeURLPathPart()}?${params.joinToString("&")}"
@@ -583,7 +583,7 @@ class EkoDBClient private constructor(
         // Build query parameters
         val params = mutableListOf<String>()
         bypassRipple?.let { params.add("bypass_ripple=$it") }
-        transactionId?.let { params.add("transaction_id=$it") }
+        transactionId?.let { params.add("transaction_id=${it.encodeURLQueryComponent()}") }
         
         val url = if (params.isNotEmpty()) {
             "$baseUrl/api/delete/${collection.encodeURLPathPart()}/${id.encodeURLPathPart()}?${params.joinToString("&")}"
@@ -618,7 +618,7 @@ class EkoDBClient private constructor(
         transactionId: String? = null
     ): BatchResult {
         val params = mutableListOf<String>()
-        transactionId?.let { params.add("transaction_id=$it") }
+        transactionId?.let { params.add("transaction_id=${it.encodeURLQueryComponent()}") }
         val url = if (params.isNotEmpty()) {
             "$baseUrl/api/batch/insert/${collection.encodeURLPathPart()}?${params.joinToString("&")}"
         } else {
@@ -671,7 +671,7 @@ class EkoDBClient private constructor(
         bypassRipple: Boolean? = null
     ): List<Record> {
         val urlPath = if (transactionId != null) {
-            "$baseUrl/api/batch/update/${collection.encodeURLPathPart()}?transaction_id=$transactionId"
+            "$baseUrl/api/batch/update/${collection.encodeURLPathPart()}?transaction_id=${transactionId.encodeURLQueryComponent()}"
         } else {
             "$baseUrl/api/batch/update/${collection.encodeURLPathPart()}"
         }
@@ -718,7 +718,7 @@ class EkoDBClient private constructor(
         transactionId: String? = null
     ): Long {
         val params = mutableListOf<String>()
-        transactionId?.let { params.add("transaction_id=$it") }
+        transactionId?.let { params.add("transaction_id=${it.encodeURLQueryComponent()}") }
         val url = if (params.isNotEmpty()) {
             "$baseUrl/api/batch/delete/${collection.encodeURLPathPart()}?${params.joinToString("&")}"
         } else {
