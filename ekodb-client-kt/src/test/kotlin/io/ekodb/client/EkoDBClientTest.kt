@@ -2314,4 +2314,89 @@ class EkoDBClientTest {
             .build()
         assertNotNull(client)
     }
+
+    // ========================================================================
+    // Batch transaction_id query param (parity with single-record ops)
+    // ========================================================================
+
+    // Captures the non-token request's URL and returns a canned batch response.
+    private fun captureBatchUrl(
+        responseBody: String,
+        onCapture: (io.ktor.http.Url) -> Unit
+    ): MockEngine = MockEngine { request ->
+        if (request.url.encodedPath.contains("/api/auth/token")) {
+            respond(
+                content = """{"token": "mock_jwt_token_123"}""",
+                status = HttpStatusCode.OK,
+                headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+            )
+        } else {
+            onCapture(request.url)
+            respond(
+                content = responseBody,
+                status = HttpStatusCode.OK,
+                headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+            )
+        }
+    }
+
+    @Test
+    fun `batchInsert sends transaction_id as a query param`() = runBlocking {
+        var capturedUrl: io.ktor.http.Url? = null
+        val mockEngine = captureBatchUrl("""{"successful": ["id_1"], "failed": []}""") {
+            capturedUrl = it
+        }
+        val client = createTestClient(mockEngine)
+
+        val record = io.ekodb.client.types.Record().insert("name", "A")
+        client.batchInsert("users", listOf(record), transactionId = "tx_123")
+
+        assertEquals("/api/batch/insert/users", capturedUrl?.encodedPath)
+        assertEquals("tx_123", capturedUrl?.parameters?.get("transaction_id"))
+    }
+
+    @Test
+    fun `batchUpdate sends transaction_id as a query param`() = runBlocking {
+        var capturedUrl: io.ktor.http.Url? = null
+        val mockEngine = captureBatchUrl("""{"successful": ["id_1"], "failed": []}""") {
+            capturedUrl = it
+        }
+        val client = createTestClient(mockEngine)
+
+        val record = io.ekodb.client.types.Record().insert("name", "B")
+        client.batchUpdate("users", listOf("id_1" to record), transactionId = "tx_123")
+
+        assertEquals("/api/batch/update/users", capturedUrl?.encodedPath)
+        assertEquals("tx_123", capturedUrl?.parameters?.get("transaction_id"))
+    }
+
+    @Test
+    fun `batchDelete sends transaction_id as a query param`() = runBlocking {
+        var capturedUrl: io.ktor.http.Url? = null
+        val mockEngine = captureBatchUrl("""{"successful": ["id_1", "id_2"], "failed": []}""") {
+            capturedUrl = it
+        }
+        val client = createTestClient(mockEngine)
+
+        client.batchDelete("users", listOf("id_1", "id_2"), transactionId = "tx_123")
+
+        assertEquals("/api/batch/delete/users", capturedUrl?.encodedPath)
+        assertEquals("tx_123", capturedUrl?.parameters?.get("transaction_id"))
+    }
+
+    @Test
+    fun `batch ops without transaction_id send no such query param (additive)`() = runBlocking {
+        var capturedUrl: io.ktor.http.Url? = null
+        val mockEngine = captureBatchUrl("""{"successful": ["id_1"], "failed": []}""") {
+            capturedUrl = it
+        }
+        val client = createTestClient(mockEngine)
+
+        val record = io.ekodb.client.types.Record().insert("name", "A")
+        // Legacy call site: no transactionId argument at all.
+        client.batchInsert("users", listOf(record))
+
+        assertEquals("/api/batch/insert/users", capturedUrl?.encodedPath)
+        assertEquals(null, capturedUrl?.parameters?.get("transaction_id"))
+    }
 }

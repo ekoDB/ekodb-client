@@ -519,8 +519,44 @@ impl Client {
             let records = records.clone();
             let http = http.clone();
             async move {
-                http.batch_insert(&collection, records, &token, bypass_ripple)
+                http.batch_insert(&collection, records, &token, bypass_ripple, None)
                     .await
+            }
+        })
+        .await
+    }
+
+    /// Batch insert with options (`bypass_ripple` and/or a `transaction_id` to
+    /// stage the inserts into an MVCC transaction instead of committing them
+    /// immediately).
+    ///
+    /// # Arguments
+    ///
+    /// * `collection` - The collection name
+    /// * `records` - Vector of records to insert
+    /// * `options` - Batch insert options (`bypass_ripple`, `transaction_id`)
+    pub async fn batch_insert_with_options(
+        &self,
+        collection: &str,
+        records: Vec<Record>,
+        options: crate::options::BatchInsertOptions,
+    ) -> Result<Vec<Record>> {
+        let collection = collection.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let collection = collection.clone();
+            let records = records.clone();
+            let http = http.clone();
+            let options = options.clone();
+            async move {
+                http.batch_insert(
+                    &collection,
+                    records,
+                    &token,
+                    options.bypass_ripple,
+                    options.transaction_id.as_deref(),
+                )
+                .await
             }
         })
         .await
@@ -549,8 +585,44 @@ impl Client {
             let updates = updates.clone();
             let http = http.clone();
             async move {
-                http.batch_update(&collection, updates, &token, bypass_ripple)
+                http.batch_update(&collection, updates, &token, bypass_ripple, None)
                     .await
+            }
+        })
+        .await
+    }
+
+    /// Batch update with options (`bypass_ripple` and/or a `transaction_id` to
+    /// stage the updates into an MVCC transaction instead of committing them
+    /// immediately).
+    ///
+    /// # Arguments
+    ///
+    /// * `collection` - The collection name
+    /// * `updates` - Vector of (id, record) pairs to update
+    /// * `options` - Batch update options (`bypass_ripple`, `transaction_id`)
+    pub async fn batch_update_with_options(
+        &self,
+        collection: &str,
+        updates: Vec<(String, Record)>,
+        options: crate::options::BatchUpdateOptions,
+    ) -> Result<Vec<Record>> {
+        let collection = collection.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let collection = collection.clone();
+            let updates = updates.clone();
+            let http = http.clone();
+            let options = options.clone();
+            async move {
+                http.batch_update(
+                    &collection,
+                    updates,
+                    &token,
+                    options.bypass_ripple,
+                    options.transaction_id.as_deref(),
+                )
+                .await
             }
         })
         .await
@@ -579,8 +651,44 @@ impl Client {
             let ids = ids.clone();
             let http = http.clone();
             async move {
-                http.batch_delete(&collection, ids, &token, bypass_ripple)
+                http.batch_delete(&collection, ids, &token, bypass_ripple, None)
                     .await
+            }
+        })
+        .await
+    }
+
+    /// Batch delete with options (`bypass_ripple` and/or a `transaction_id` to
+    /// stage the deletes into an MVCC transaction instead of committing them
+    /// immediately).
+    ///
+    /// # Arguments
+    ///
+    /// * `collection` - The collection name
+    /// * `ids` - Vector of document IDs to delete
+    /// * `options` - Batch delete options (`bypass_ripple`, `transaction_id`)
+    pub async fn batch_delete_with_options(
+        &self,
+        collection: &str,
+        ids: Vec<String>,
+        options: crate::options::BatchDeleteOptions,
+    ) -> Result<u64> {
+        let collection = collection.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let collection = collection.clone();
+            let ids = ids.clone();
+            let http = http.clone();
+            let options = options.clone();
+            async move {
+                http.batch_delete(
+                    &collection,
+                    ids,
+                    &token,
+                    options.bypass_ripple,
+                    options.transaction_id.as_deref(),
+                )
+                .await
             }
         })
         .await

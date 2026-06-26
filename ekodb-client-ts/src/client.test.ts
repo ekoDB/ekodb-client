@@ -313,6 +313,72 @@ describe("EkoDBClient batch operations", () => {
 
     expect(result.successful).toHaveLength(2);
   });
+
+  it("batchInsert sends transaction_id as a query param", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse({ successful: ["id_1"], failed: [] });
+
+    await client.batchInsert("users", [{ name: "A" }], {
+      transactionId: "tx_123",
+    });
+
+    const [url, init] = mockFetch.mock.calls[1];
+    expect(init.method).toBe("POST");
+    const parsed = new URL(url as string);
+    expect(parsed.pathname).toBe("/api/batch/insert/users");
+    expect(parsed.searchParams.get("transaction_id")).toBe("tx_123");
+  });
+
+  it("batchUpdate sends transaction_id as a query param", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse({ successful: ["id_1"], failed: [] });
+
+    await client.batchUpdate("users", [{ id: "id_1", data: { name: "B" } }], {
+      transactionId: "tx_123",
+    });
+
+    const [url, init] = mockFetch.mock.calls[1];
+    expect(init.method).toBe("PUT");
+    const parsed = new URL(url as string);
+    expect(parsed.pathname).toBe("/api/batch/update/users");
+    expect(parsed.searchParams.get("transaction_id")).toBe("tx_123");
+  });
+
+  it("batchDelete sends transaction_id as a query param", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse({ successful: ["id_1", "id_2"], failed: [] });
+
+    await client.batchDelete("users", ["id_1", "id_2"], undefined, {
+      transactionId: "tx_123",
+    });
+
+    const [url, init] = mockFetch.mock.calls[1];
+    expect(init.method).toBe("DELETE");
+    const parsed = new URL(url as string);
+    expect(parsed.pathname).toBe("/api/batch/delete/users");
+    expect(parsed.searchParams.get("transaction_id")).toBe("tx_123");
+  });
+
+  it("batch ops without transaction_id send no such query param (additive)", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse({ successful: ["id_1"], failed: [] });
+
+    // Legacy call sites: no options object at all.
+    await client.batchUpdate("users", [{ id: "id_1", data: { name: "B" } }]);
+
+    const [url] = mockFetch.mock.calls[1];
+    const parsed = new URL(url as string);
+    expect(parsed.searchParams.get("transaction_id")).toBeNull();
+    expect(parsed.search).toBe("");
+  });
 });
 
 // ============================================================================

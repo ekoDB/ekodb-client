@@ -4,8 +4,8 @@
 # rust-lang shipped a new version — a clean local `cargo clippy` could fail
 # CI for lints that didn't exist locally yet.
 #
-# Pinned to 1.95.0 to match ekodb and ekodb-claw so a developer working
-# across all three repos doesn't have to switch toolchains. Bumping is now
+# Pinned to 1.95.0 to match the toolchain used across the broader workspace so
+# a developer doesn't have to switch toolchains between projects. Bumping is now
 # an explicit, reviewable change to this file — run
 # `cargo clippy --all-targets -- -D warnings` after editing to surface any
 # new lints before they hit CI.
