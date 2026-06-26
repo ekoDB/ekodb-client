@@ -1051,40 +1051,77 @@ export class EkoDBClient {
 
   /**
    * Batch update multiple documents
+   * @param collection - Collection name
+   * @param updates - Array of updates ({ id, data, bypassRipple? })
+   * @param options - Optional parameters (bypassRipple, transactionId). When
+   *   `transactionId` is set, the batch is staged into that MVCC transaction
+   *   (sent as the `transaction_id` query param) instead of committed
+   *   immediately — mirrors the single-record update.
    */
   async batchUpdate(
     collection: string,
     updates: Array<{ id: string; data: Record; bypassRipple?: boolean }>,
+    options?: BatchUpdateOptions,
   ): Promise<BatchOperationResult> {
+    const params = new URLSearchParams();
+    if (options?.bypassRipple !== undefined) {
+      params.append("bypass_ripple", String(options.bypassRipple));
+    }
+    if (options?.transactionId) {
+      params.append("transaction_id", options.transactionId);
+    }
+
     const formattedUpdates = updates.map((u) => ({
       id: u.id,
       data: u.data,
       bypass_ripple: u.bypassRipple,
     }));
-    return this.makeRequest<BatchOperationResult>(
-      "PUT",
-      `/api/batch/update/${encodeURIComponent(collection)}`,
-      { updates: formattedUpdates },
-    );
+    const url = params.toString()
+      ? `/api/batch/update/${encodeURIComponent(collection)}?${params.toString()}`
+      : `/api/batch/update/${encodeURIComponent(collection)}`;
+
+    return this.makeRequest<BatchOperationResult>("PUT", url, {
+      updates: formattedUpdates,
+    });
   }
 
   /**
    * Batch delete multiple documents
+   * @param collection - Collection name
+   * @param ids - Document IDs to delete
+   * @param bypassRipple - Optional flag to bypass ripple propagation (legacy
+   *   positional form, kept for back-compat)
+   * @param options - Optional parameters (bypassRipple, transactionId). When
+   *   `transactionId` is set, the batch is staged into that MVCC transaction
+   *   (sent as the `transaction_id` query param) instead of committed
+   *   immediately — mirrors the single-record delete.
    */
   async batchDelete(
     collection: string,
     ids: string[],
     bypassRipple?: boolean,
+    options?: BatchDeleteOptions,
   ): Promise<BatchOperationResult> {
+    // bypass_ripple is sent per-item in the body (existing behavior). The
+    // effective value prefers the explicit positional arg, falling back to the
+    // options object so callers can use either form.
+    const effectiveBypassRipple =
+      bypassRipple !== undefined ? bypassRipple : options?.bypassRipple;
+
+    const params = new URLSearchParams();
+    if (options?.transactionId) {
+      params.append("transaction_id", options.transactionId);
+    }
+
     const deletes = ids.map((id) => ({
       id: id,
-      bypass_ripple: bypassRipple,
+      bypass_ripple: effectiveBypassRipple,
     }));
-    return this.makeRequest<BatchOperationResult>(
-      "DELETE",
-      `/api/batch/delete/${encodeURIComponent(collection)}`,
-      { deletes },
-    );
+    const url = params.toString()
+      ? `/api/batch/delete/${encodeURIComponent(collection)}?${params.toString()}`
+      : `/api/batch/delete/${encodeURIComponent(collection)}`;
+
+    return this.makeRequest<BatchOperationResult>("DELETE", url, { deletes });
   }
 
   /**

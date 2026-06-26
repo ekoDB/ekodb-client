@@ -602,9 +602,18 @@ impl HttpClient {
         records: Vec<Record>,
         token: &str,
         bypass_ripple: Option<bool>,
+        transaction_id: Option<&str>,
     ) -> Result<Vec<Record>> {
         let url_path = "/api/batch/insert/";
-        let url = self.api_path_url(&["batch", "insert", collection])?;
+        let mut url = self.api_path_url(&["batch", "insert", collection])?;
+
+        // `transaction_id` is a query param — the same way the single-record
+        // insert carries it — appended via `query_pairs_mut()` so the value is
+        // correctly percent-encoded. When set, the batch is staged into the
+        // named MVCC transaction instead of committed immediately.
+        if let Some(tx_id) = transaction_id {
+            url.query_pairs_mut().append_pair("transaction_id", tx_id);
+        }
 
         // Convert to the format the server expects
         #[derive(Serialize)]
@@ -673,9 +682,15 @@ impl HttpClient {
         updates: Vec<(String, Record)>, // Vec of (id, record) pairs
         token: &str,
         bypass_ripple: Option<bool>,
+        transaction_id: Option<&str>,
     ) -> Result<Vec<Record>> {
         let url_path = "/api/batch/update/";
-        let url = self.api_path_url(&["batch", "update", collection])?;
+        let mut url = self.api_path_url(&["batch", "update", collection])?;
+
+        // `transaction_id` is a query param — mirrors single-record update.
+        if let Some(tx_id) = transaction_id {
+            url.query_pairs_mut().append_pair("transaction_id", tx_id);
+        }
 
         // Convert to the format the server expects
         #[derive(Serialize)]
@@ -747,9 +762,15 @@ impl HttpClient {
         ids: Vec<String>,
         token: &str,
         bypass_ripple: Option<bool>,
+        transaction_id: Option<&str>,
     ) -> Result<u64> {
         let url_path = "/api/batch/delete/";
-        let url = self.api_path_url(&["batch", "delete", collection])?;
+        let mut url = self.api_path_url(&["batch", "delete", collection])?;
+
+        // `transaction_id` is a query param — mirrors single-record delete.
+        if let Some(tx_id) = transaction_id {
+            url.query_pairs_mut().append_pair("transaction_id", tx_id);
+        }
 
         // Convert to the format the server expects
         #[derive(Serialize)]

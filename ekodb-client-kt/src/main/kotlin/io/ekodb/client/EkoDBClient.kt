@@ -604,10 +604,28 @@ class EkoDBClient private constructor(
     
     /**
      * Batch insert records
+     * @param collection The collection name
+     * @param records List of records to insert
+     * @param bypassRipple Optional flag to bypass ripple effects
+     * @param transactionId Optional transaction ID — when set, the batch is
+     *   staged into that MVCC transaction (sent as the `transaction_id` query
+     *   param) instead of committed immediately. Mirrors single-record insert.
      */
-    suspend fun batchInsert(collection: String, records: List<Record>, bypassRipple: Boolean? = null): BatchResult {
+    suspend fun batchInsert(
+        collection: String,
+        records: List<Record>,
+        bypassRipple: Boolean? = null,
+        transactionId: String? = null
+    ): BatchResult {
+        val params = mutableListOf<String>()
+        transactionId?.let { params.add("transaction_id=$it") }
+        val url = if (params.isNotEmpty()) {
+            "$baseUrl/api/batch/insert/${collection.encodeURLPathPart()}?${params.joinToString("&")}"
+        } else {
+            "$baseUrl/api/batch/insert/${collection.encodeURLPathPart()}"
+        }
         val response = executeWithRetry { token ->
-            client.post("$baseUrl/api/batch/insert/${collection.encodeURLPathPart()}") {
+            client.post(url) {
                 header("Authorization", "Bearer $token")
                 contentType(getContentTypeForRequest())
                 header("Accept", getContentTypeForRequest().toString())
@@ -686,10 +704,28 @@ class EkoDBClient private constructor(
     
     /**
      * Batch delete records by IDs
+     * @param collection The collection name
+     * @param ids List of record IDs to delete
+     * @param bypassRipple Optional flag to bypass ripple effects
+     * @param transactionId Optional transaction ID — when set, the batch is
+     *   staged into that MVCC transaction (sent as the `transaction_id` query
+     *   param) instead of committed immediately. Mirrors single-record delete.
      */
-    suspend fun batchDelete(collection: String, ids: List<String>, bypassRipple: Boolean? = null): Long {
+    suspend fun batchDelete(
+        collection: String,
+        ids: List<String>,
+        bypassRipple: Boolean? = null,
+        transactionId: String? = null
+    ): Long {
+        val params = mutableListOf<String>()
+        transactionId?.let { params.add("transaction_id=$it") }
+        val url = if (params.isNotEmpty()) {
+            "$baseUrl/api/batch/delete/${collection.encodeURLPathPart()}?${params.joinToString("&")}"
+        } else {
+            "$baseUrl/api/batch/delete/${collection.encodeURLPathPart()}"
+        }
         val response = executeWithRetry { token ->
-            client.delete("$baseUrl/api/batch/delete/${collection.encodeURLPathPart()}") {
+            client.delete(url) {
                 header("Authorization", "Bearer $token")
                 contentType(getContentTypeForRequest())
                 header("Accept", getContentTypeForRequest().toString())

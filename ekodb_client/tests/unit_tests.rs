@@ -481,6 +481,106 @@ async fn test_batch_delete_success() {
     assert_eq!(result.unwrap(), 2);
 }
 
+#[tokio::test]
+async fn test_batch_insert_with_transaction_id_sends_query_param() {
+    let mut server = Server::new_async().await;
+
+    let _token_mock = mock_token_endpoint(&mut server);
+
+    // The mock only matches when `transaction_id=tx_123` is present in the
+    // query string; if the client failed to forward it, the request would
+    // 501-not-matched and the call would error.
+    let _batch_mock = server
+        .mock("POST", "/api/batch/insert/users")
+        .match_query(Matcher::UrlEncoded(
+            "transaction_id".into(),
+            "tx_123".into(),
+        ))
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({ "successful": ["id_1"], "failed": [] }).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+
+    let mut r = Record::new();
+    r.insert("name", "Alice");
+    let opts = ekodb_client::options::BatchInsertOptions::new().transaction_id("tx_123");
+    let result = client
+        .batch_insert_with_options("users", vec![r], opts)
+        .await;
+
+    assert!(
+        result.is_ok(),
+        "batch_insert_with_options failed: {result:?}"
+    );
+}
+
+#[tokio::test]
+async fn test_batch_update_with_transaction_id_sends_query_param() {
+    let mut server = Server::new_async().await;
+
+    let _token_mock = mock_token_endpoint(&mut server);
+
+    let _batch_mock = server
+        .mock("PUT", "/api/batch/update/users")
+        .match_query(Matcher::UrlEncoded(
+            "transaction_id".into(),
+            "tx_123".into(),
+        ))
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({ "successful": ["id_1"], "failed": [] }).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+
+    let mut r = Record::new();
+    r.insert("name", "Bob");
+    let opts = ekodb_client::options::BatchUpdateOptions::new().transaction_id("tx_123");
+    let result = client
+        .batch_update_with_options("users", vec![("id_1".to_string(), r)], opts)
+        .await;
+
+    assert!(
+        result.is_ok(),
+        "batch_update_with_options failed: {result:?}"
+    );
+}
+
+#[tokio::test]
+async fn test_batch_delete_with_transaction_id_sends_query_param() {
+    let mut server = Server::new_async().await;
+
+    let _token_mock = mock_token_endpoint(&mut server);
+
+    let _batch_mock = server
+        .mock("DELETE", "/api/batch/delete/users")
+        .match_query(Matcher::UrlEncoded(
+            "transaction_id".into(),
+            "tx_123".into(),
+        ))
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({ "successful": ["id_1", "id_2"], "failed": [] }).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+
+    let ids = vec!["id_1".to_string(), "id_2".to_string()];
+    let opts = ekodb_client::options::BatchDeleteOptions::new().transaction_id("tx_123");
+    let result = client.batch_delete_with_options("users", ids, opts).await;
+
+    assert!(
+        result.is_ok(),
+        "batch_delete_with_options failed: {result:?}"
+    );
+    assert_eq!(result.unwrap(), 2);
+}
+
 // ============================================================================
 // Collections Tests
 // ============================================================================
