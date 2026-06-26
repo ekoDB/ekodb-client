@@ -2788,8 +2788,9 @@ impl HttpClient {
         let mut url = self.base_url.join("/api/functions")?;
 
         if let Some(tags) = tags {
-            let tags_query = tags.join(",");
-            url.set_query(Some(&format!("tags={}", tags_query)));
+            // append_pair percent-encodes the value (`&`/`=`/`,`), so a tag
+            // containing query-reserved characters can't smuggle extra params.
+            url.query_pairs_mut().append_pair("tags", &tags.join(","));
         }
 
         self.execute_with_retry(|| async {
@@ -3018,8 +3019,9 @@ impl HttpClient {
         let mut url = self.base_url.join("/api/functions")?;
 
         if let Some(tags) = tags {
-            let tags_query = tags.join(",");
-            url.set_query(Some(&format!("tags={}", tags_query)));
+            // append_pair percent-encodes the value (`&`/`=`/`,`), so a tag
+            // containing query-reserved characters can't smuggle extra params.
+            url.query_pairs_mut().append_pair("tags", &tags.join(","));
         }
 
         self.execute_with_retry(|| async {

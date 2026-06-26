@@ -3347,6 +3347,23 @@ describe("extractRecordId", () => {
 // ============================================================================
 
 describe("EkoDBClient URL path segment encoding", () => {
+  it("listUserFunctions percent-encodes reserved chars in the tags query param", async () => {
+    // A tag with query-reserved characters must be percent-encoded, not
+    // concatenated raw into `?tags=...`. Without encoding, `a&injected=1`
+    // splits into tags="a" plus a smuggled `injected=1` query param.
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse([]);
+
+    await client.listUserFunctions(["a&injected=1", "b"]);
+
+    const [url] = mockFetch.mock.calls[1];
+    const parsed = new URL(url as string);
+    expect(parsed.searchParams.get("tags")).toBe("a&injected=1,b");
+    expect(parsed.searchParams.has("injected")).toBe(false);
+  });
+
   it("findById encodes a reserved-char id (a/b -> a%2Fb)", async () => {
     const client = createTestClient();
 

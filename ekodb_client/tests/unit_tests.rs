@@ -350,6 +350,33 @@ async fn test_find_by_id_with_projection_encodes_reserved_chars() {
     assert!(record.get("first name").is_some());
 }
 
+#[tokio::test]
+async fn test_list_user_functions_encodes_reserved_chars_in_tags() {
+    // A tag containing query-reserved characters must be percent-encoded and
+    // decode back to the exact comma-joined value, never split into extra query
+    // params. Matcher::UrlEncoded decodes the query before matching, so this
+    // fails if the client interpolates the tag raw into `?tags=...`.
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+
+    let _list_mock = server
+        .mock("GET", "/api/functions")
+        .match_query(Matcher::UrlEncoded("tags".into(), "a&injected=1,b".into()))
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!([]).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+
+    let result = client
+        .list_user_functions(Some(vec!["a&injected=1".to_string(), "b".to_string()]))
+        .await;
+
+    assert!(result.is_ok(), "list_user_functions failed: {:?}", result);
+}
+
 // ============================================================================
 // Update Tests
 // ============================================================================

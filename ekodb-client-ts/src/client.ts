@@ -2486,7 +2486,11 @@ export class EkoDBClient {
    * List all functions, optionally filtered by tags
    */
   async listFunctions(tags?: string[]): Promise<UserFunction[]> {
-    const params = tags ? `?tags=${tags.join(",")}` : "";
+    // URLSearchParams percent-encodes the value (`&`/`=`/`,`), so a tag
+    // containing query-reserved characters can't smuggle extra params.
+    const params = tags
+      ? `?${new URLSearchParams({ tags: tags.join(",") }).toString()}`
+      : "";
     return this.makeRequest<UserFunction[]>("GET", `/api/functions${params}`);
   }
 
@@ -2566,7 +2570,11 @@ export class EkoDBClient {
    * @returns Array of user functions
    */
   async listUserFunctions(tags?: string[]): Promise<UserFunction[]> {
-    const params = tags ? `?tags=${tags.join(",")}` : "";
+    // URLSearchParams percent-encodes the value (`&`/`=`/`,`), so a tag
+    // containing query-reserved characters can't smuggle extra params.
+    const params = tags
+      ? `?${new URLSearchParams({ tags: tags.join(",") }).toString()}`
+      : "";
     return this.makeRequest<UserFunction[]>(
       "GET",
       `/api/functions${params}`,

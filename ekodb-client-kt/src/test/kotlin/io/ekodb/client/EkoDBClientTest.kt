@@ -795,6 +795,26 @@ class EkoDBClientTest {
     }
 
     @Test
+    fun `listUserFunctions percent-encodes reserved chars in the tags query param`() = runBlocking {
+        // A tag containing query-reserved characters must be percent-encoded, not
+        // concatenated raw into `?tags=...`. Without encoding, `a&injected=1`
+        // splits into tags="a" plus a smuggled `injected=1` query param.
+        var capturedUrl: io.ktor.http.Url? = null
+        val mockEngine = captureBatchUrl("""[]""") { capturedUrl = it }
+        val client = createTestClient(mockEngine)
+
+        client.listUserFunctions(listOf("a&injected=1", "b"))
+
+        assertEquals("/api/functions", capturedUrl?.encodedPath)
+        assertEquals("a&injected=1,b", capturedUrl?.parameters?.get("tags"))
+        assertEquals(
+            null,
+            capturedUrl?.parameters?.get("injected"),
+            "reserved chars in a tag must be encoded, not split into extra query params"
+        )
+    }
+
+    @Test
     fun `updateUserFunction succeeds`() = runBlocking {
         val mockEngine = createMockEngine("""{"status": "updated"}""")
         val client = createTestClient(mockEngine)
@@ -2398,5 +2418,39 @@ class EkoDBClientTest {
 
         assertEquals("/api/batch/insert/users", capturedUrl?.encodedPath)
         assertEquals(null, capturedUrl?.parameters?.get("transaction_id"))
+    }
+
+    @Test
+    fun `batch ops percent-encode reserved chars in the transaction_id query param`() = runBlocking {
+        // A caller-supplied transaction id containing query-reserved characters
+        // (`&`, `=`) must be percent-encoded, never interpolated raw. Without
+        // encoding, `tx&injected=1` splits into transaction_id="tx" plus a
+        // smuggled `injected=1` query param. Round-tripping the decoded value AND
+        // asserting no extra param leaked is what fails without
+        // `encodeURLQueryComponent()` on the batch write paths.
+        val reservedTxId = "tx&injected=1"
+        val record = io.ekodb.client.types.Record().insert("name", "A")
+
+        var insertUrl: io.ktor.http.Url? = null
+        createTestClient(captureBatchUrl("""{"successful": ["id_1"], "failed": []}""") { insertUrl = it })
+            .batchInsert("users", listOf(record), transactionId = reservedTxId)
+        assertEquals(reservedTxId, insertUrl?.parameters?.get("transaction_id"))
+        assertEquals(
+            null,
+            insertUrl?.parameters?.get("injected"),
+            "reserved chars must be encoded, not split into extra query params"
+        )
+
+        var updateUrl: io.ktor.http.Url? = null
+        createTestClient(captureBatchUrl("""{"successful": ["id_1"], "failed": []}""") { updateUrl = it })
+            .batchUpdate("users", listOf("id_1" to record), transactionId = reservedTxId)
+        assertEquals(reservedTxId, updateUrl?.parameters?.get("transaction_id"))
+        assertEquals(null, updateUrl?.parameters?.get("injected"))
+
+        var deleteUrl: io.ktor.http.Url? = null
+        createTestClient(captureBatchUrl("""{"successful": ["id_1"], "failed": []}""") { deleteUrl = it })
+            .batchDelete("users", listOf("id_1"), transactionId = reservedTxId)
+        assertEquals(reservedTxId, deleteUrl?.parameters?.get("transaction_id"))
+        assertEquals(null, deleteUrl?.parameters?.get("injected"))
     }
 }
