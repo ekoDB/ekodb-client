@@ -47,6 +47,16 @@ async def main():
 
     client = Client.new(base_url, api_key)
 
+    # Start clean: drop any github_cache left over from a prior run so the
+    # collection's schema is inferred fresh from this run's cached response.
+    # A stale schema from an earlier run can disagree with the current value's
+    # inferred type and reject the insert. Guarded because the collection does
+    # not exist yet on a fresh database.
+    try:
+        await client.delete_collection("github_cache")
+    except Exception:
+        pass
+
     print("=== ekoDB SWR (Stale-While-Revalidate) Pattern ===\n")
 
     # Step 1: Create SWR script for GitHub user caching

@@ -50,6 +50,11 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// Start clean: drop stale cache collections from a prior run so their schema
+	// is inferred fresh and a stale schema can't reject the insert.
+	client.DeleteCollection("github_cache")
+	client.DeleteCollection("product_cache")
+
 	fmt.Println("=== ekoDB SWR (Stale-While-Revalidate) Pattern ===\n")
 
 	// Create SWR script for GitHub user caching

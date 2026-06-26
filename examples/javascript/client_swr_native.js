@@ -282,6 +282,11 @@ async function main() {
   const client = new EkoDBClient(BASE_URL, API_KEY);
   await client.init();
 
+  // Start clean: drop stale collections from a prior run so their schema is
+  // inferred fresh and a stale schema can't reject the insert.
+  try { await client.deleteCollection("enriched_users"); } catch (e) { /* not present yet */ }
+  try { await client.deleteCollection("swr_audit_trail"); } catch (e) { /* not present yet */ }
+
   const scriptIds = [];
 
   try {

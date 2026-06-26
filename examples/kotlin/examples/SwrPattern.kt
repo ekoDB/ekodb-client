@@ -50,6 +50,11 @@ fun main() = runBlocking {
         .apiKey(apiKey)
         .build()
 
+    // Start clean: drop stale cache collections from a prior run so their schema
+    // is inferred fresh and a stale schema can't reject the insert.
+    try { client.deleteCollection("github_cache") } catch (e: Exception) {}
+    try { client.deleteCollection("product_cache") } catch (e: Exception) {}
+
     println("=== ekoDB SWR (Stale-While-Revalidate) Pattern ===\n")
 
     // Step 1: Create SWR function for GitHub user caching
