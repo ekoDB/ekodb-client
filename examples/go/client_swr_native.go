@@ -348,6 +348,11 @@ func main() {
 		log.Fatalf("❌ Failed to create client: %v", err)
 	}
 
+	// Start clean: drop stale collections from a prior run so their schema is
+	// inferred fresh and a stale schema can't reject the insert.
+	client.DeleteCollection("enriched_users")
+	client.DeleteCollection("swr_audit_trail")
+
 	var scriptIDs []string
 
 	// Run examples

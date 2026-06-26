@@ -38,6 +38,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .api_key(&api_key)
         .build()?;
 
+    // Start clean: drop stale cache collections from a prior run so their schema
+    // is inferred fresh and a stale schema can't reject the insert.
+    let _ = client.delete_collection("github_cache").await;
+    let _ = client.delete_collection("product_cache").await;
+
     println!("=== ekoDB SWR (Stale-While-Revalidate) Pattern ===\n");
 
     // Step 1: Create SWR script for GitHub user caching

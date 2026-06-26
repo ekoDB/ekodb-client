@@ -268,6 +268,14 @@ async def main():
 
     client = Client.new(BASE_URL, API_KEY)
 
+    # Start clean: drop stale collections from a prior run so their schema is
+    # inferred fresh and a stale schema can't reject the insert.
+    for _c in ("enriched_users", "swr_audit_trail"):
+        try:
+            await client.delete_collection(_c)
+        except Exception:
+            pass
+
     script_ids = []
 
     try:
