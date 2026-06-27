@@ -6,38 +6,74 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.23.0] - 2026-06-27
 
 ### Security
 
 - **Bumped `quinn-proto` 0.11.14 → 0.11.15 in the Python client lockfile
   (`ekodb-client-py/Cargo.lock`), resolving RUSTSEC-2026-0185 (high — remote
-  memory exhaustion in QUIC connection handling).** Transitive via
-  `reqwest` → `quinn`; the shared `ekodb_client` lockfile already carried
-  0.11.15, so only the Python client's lock was behind. Lockfile-only patch
-  bump (no manifest or source change); `cargo audit` clean (exit 0) and
-  `cargo check` green afterward.
+  memory exhaustion in QUIC connection handling).** Transitive via `reqwest` →
+  `quinn`; the shared `ekodb_client` lockfile already carried 0.11.15, so only
+  the Python client's lock was behind. Lockfile-only patch bump (no manifest or
+  source change); `cargo audit` clean (exit 0) and `cargo check` green
+  afterward.
 - **Bumped `pyo3` 0.27 → 0.29 in the Python client (`ekodb-client-py`),
-  resolving two Dependabot alerts (GHSA-36hh-v3qg-5jq4 high,
-  GHSA-chgr-c6px-7xpp medium).** The caret `"0.27"` constraint capped below the
-  0.29.0 patch, so the floor was raised — `pyo3`, `pyo3-async-runtimes`, and
-  `pyo3-build-config` moved in lockstep to `"0.29"` (`pyo3-async-runtimes` is
-  version-coupled to `pyo3`) and the lockfile updated to 0.29.0. The native
-  extension required two minor pyo3-0.29 migration touch-ups in `src/lib.rs` for
-  the now-opt-in `FromPyObject` derive on `Clone` `#[pyclass]` types:
-  `SerializationFormat` opts in via `from_py_object` (it is accepted as a
-  Python→Rust argument); `RateLimitInfo` opts out via `skip_from_py_object` (it
-  is only ever returned to Python). All 329 Python client tests pass.
-- **examples/rust: bump `tokio-tungstenite` (0.20 → 0.28) and `reqwest`
-  (0.11 → 0.12) to pull `rustls-webpki` ≥ 0.103.13
-  (GHSA-82j2-j2ch-gfr8, GHSA-xgp8-3hg3-c2mh, GHSA-965h-392x-2mh5).** The
-  examples project's own direct deps were dragging in the vulnerable
-  `rustls 0.21` → `rustls-webpki 0.101.7` transitively (via both the old
-  `tokio-tungstenite 0.20` and `reqwest 0.11`). Aligning both to the
-  versions the `ekodb_client` library already uses (`rustls 0.23` →
-  `rustls-webpki 0.103.13`) removes the 0.101.x copy entirely. Migrated the
-  raw-WebSocket examples for the tungstenite 0.28 `Message::Text` /
+  resolving two Dependabot alerts (GHSA-36hh-v3qg-5jq4 high, GHSA-chgr-c6px-7xpp
+  medium).** The caret `"0.27"` constraint capped below the 0.29.0 patch, so the
+  floor was raised — `pyo3`, `pyo3-async-runtimes`, and `pyo3-build-config`
+  moved in lockstep to `"0.29"` (`pyo3-async-runtimes` is version-coupled to
+  `pyo3`) and the lockfile updated to 0.29.0. The native extension required two
+  minor pyo3-0.29 migration touch-ups in `src/lib.rs` for the now-opt-in
+  `FromPyObject` derive on `Clone` `#[pyclass]` types: `SerializationFormat`
+  opts in via `from_py_object` (it is accepted as a Python→Rust argument);
+  `RateLimitInfo` opts out via `skip_from_py_object` (it is only ever returned
+  to Python). All 329 Python client tests pass.
+- **examples/rust: bump `tokio-tungstenite` (0.20 → 0.28) and `reqwest` (0.11 →
+  0.12) to pull `rustls-webpki` ≥ 0.103.13 (GHSA-82j2-j2ch-gfr8,
+  GHSA-xgp8-3hg3-c2mh, GHSA-965h-392x-2mh5).** The examples project's own direct
+  deps were dragging in the vulnerable `rustls 0.21` → `rustls-webpki 0.101.7`
+  transitively (via both the old `tokio-tungstenite 0.20` and `reqwest 0.11`).
+  Aligning both to the versions the `ekodb_client` library already uses
+  (`rustls 0.23` → `rustls-webpki 0.103.13`) removes the 0.101.x copy entirely.
+  Migrated the raw-WebSocket examples for the tungstenite 0.28 `Message::Text` /
   `Utf8Bytes` API change. Examples-only; no library or wire change.
+
+### Added
+
+- **Batch insert/update/delete now forward `transaction_id` across all clients,
+  enabling transactional batch writes.** When a `transaction_id` is supplied to
+  a batch operation, the client appends it as the `transaction_id` URL query
+  parameter on `/api/batch/{insert,update,delete}/{collection}` — exactly
+  mirroring the single-record write path — so the batch is staged into the named
+  MVCC transaction (begin → stage → commit) instead of being committed
+  immediately. The change is additive and opt-in on every client: existing batch
+  call sites that pass no transaction id are unchanged. Rust adds
+  `batch_insert_with_options` / `batch_update_with_options` /
+  `batch_delete_with_options` consuming the existing `Batch*Options` structs
+  (the previously-unwired `transaction_id` field is now live); Python adds an
+  optional `transaction_id=None` kwarg to `batch_insert` / `batch_update` /
+  `batch_delete`; TypeScript wires `transactionId` through `batchUpdate` /
+  `batchDelete` (REST) via the existing `BatchUpdateOptions` /
+  `BatchDeleteOptions` (`batchInsert` already supported it); Kotlin adds an
+  optional `transactionId` parameter to `batchInsert` / `batchDelete`
+  (`batchUpdate` already supported it). Brings the Rust, Python, TypeScript, and
+  Kotlin clients to parity with the Go client.
+
+### Fixed
+
+- **Kotlin client now URL-encodes the `transaction_id` query parameter on every
+  write path.** `transactionId` was interpolated raw into the request URL
+  (`?transaction_id=$it`) in `insert`, `update`, `delete`, `batchInsert`,
+  `batchUpdate`, and `batchDelete`, while the same file already encoded the
+  `collection` path segment and the other clients encode automatically
+  (TypeScript via `URLSearchParams`, ktor's `parameter(...)` DSL on the find
+  paths). Server-issued transaction ids are URL-safe UUIDs, so no malformed URL
+  could occur in practice today, but the raw interpolation was inconsistent and
+  would mishandle any value containing reserved characters. All six sites now
+  use `encodeURLQueryComponent()`. Defense-in-depth + cross-client consistency;
+  no behavior change for existing UUID transaction ids.
+
+## [0.22.0] - 2026-06-23
 
 ### Added
 
