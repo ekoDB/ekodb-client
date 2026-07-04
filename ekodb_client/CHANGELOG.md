@@ -162,15 +162,15 @@ and this project adheres to
   `Hello`/`Welcome` handshake: it offers msgpack and, if the server welcomes it,
   transparently switches that connection to binary msgpack frames for both
   requests and responses; otherwise it stays on JSON text. The negotiation is
-  internal — no public API changes — so callers (including ekodb-claw, which
-  rides the Rust client) are unaffected. Fully back-compatible: a server that
-  does not welcome msgpack (or an older server that never answers) leaves the
-  connection on JSON. Incoming binary frames decode value-identically to JSON
-  (binary fields stay number arrays, not base64), so decoded data is the same
-  regardless of negotiated transport. Implemented in the Rust client (and thus
-  the Python binding), TypeScript, and Kotlin; the Kotlin client gains a
-  `msgpack-core` dependency since CBOR is not wire-compatible with the server's
-  msgpack. (The Go client carries the same change in its own repository.)
+  internal — no public API changes — so downstream consumers of the Rust client
+  are unaffected. Fully back-compatible: a server that does not welcome msgpack
+  (or an older server that never answers) leaves the connection on JSON.
+  Incoming binary frames decode value-identically to JSON (binary fields stay
+  number arrays, not base64), so decoded data is the same regardless of
+  negotiated transport. Implemented in the Rust client (and thus the Python
+  binding), TypeScript, and Kotlin; the Kotlin client gains a `msgpack-core`
+  dependency since CBOR is not wire-compatible with the server's msgpack. (The
+  Go client carries the same change in its own repository.)
 
 - **Buffered-transaction support across all clients (read-your-writes +
   savepoints).** ekoDB transactions are now enforced and buffered server-side:
@@ -556,12 +556,12 @@ stale Rust definition could win label resolution for later same-server runs,
 surfacing the same `api.ekodb.net` error in the Python/TypeScript example logs.
 Aligning the URL removes that cross-run poisoning.
 
-### Fixed — Doc/test base URLs aligned to `.ekodb.net` (ekodb-app#232)
+### Fixed — Doc/test base URLs aligned to `.ekodb.net`
 
 Two remaining `.ekodb.io` examples that referenced deployed-database URLs
 (rather than external/marketing surfaces) were updated to `.ekodb.net`, matching
-the convention used everywhere else in the client docs and the ekodb-app
-deployment UI.
+the convention used everywhere else in the client docs and the deployment
+dashboard.
 
 - `ekodb-client-kt/src/test/kotlin/io/ekodb/client/KVBatchOperationsTest.kt:17`
   and `EkoDBClientTest.kt:23` — test fixture `testBaseUrl` is now
@@ -1373,7 +1373,7 @@ insertion time.
 
 - **Public token access** — New `get_token()` and `clear_token_cache()` methods
   on `Client` to expose JWT retrieval and cache invalidation for downstream
-  consumers (e.g., ekodb-claw WebSocket auth).
+  consumers (e.g., WebSocket auth in embedding applications).
 
 - **WebSocket chat streaming** — New `chat_send()` method on `WebSocketClient`
   sends a chat message over WSS and returns a receiver of `ChatStreamEvent`
