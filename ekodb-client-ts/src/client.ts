@@ -37,6 +37,13 @@ export interface RateLimitInfo {
 /**
  * Client configuration options
  */
+/**
+ * Default per-request timeout (ms) for REST calls, matching the Rust and Go
+ * clients' 30s default. Applied to every non-streaming request; long-lived
+ * streaming/SSE calls are intentionally not bounded by it.
+ */
+export const DEFAULT_REQUEST_TIMEOUT_MS = 30000;
+
 export interface ClientConfig {
   /** Base URL of the ekoDB server */
   baseURL: string;
@@ -48,6 +55,13 @@ export interface ClientConfig {
   maxRetries?: number;
   /** Serialization format (default: MessagePack for best performance, use Json for debugging) */
   format?: SerializationFormat;
+  /**
+   * Per-request timeout in milliseconds for REST calls (default: 30000).
+   * A slow or unreachable server aborts with a timeout error instead of hanging
+   * the caller. Streaming/SSE calls are not bounded by it. Matches the Rust and
+   * Go clients.
+   */
+  timeout?: number;
 }
 
 /**
@@ -419,6 +433,7 @@ export class EkoDBClient {
   private shouldRetry: boolean;
   private maxRetries: number;
   private format: SerializationFormat;
+  private requestTimeoutMs: number;
   private rateLimitInfo: RateLimitInfo | null = null;
 
   constructor(config: string | ClientConfig, apiKey?: string) {
@@ -431,12 +446,14 @@ export class EkoDBClient {
       this.shouldRetry = true;
       this.maxRetries = 3;
       this.format = SerializationFormat.MessagePack; // Default to MessagePack for 2-3x performance
+      this.requestTimeoutMs = DEFAULT_REQUEST_TIMEOUT_MS;
     } else {
       this.baseURL = stripTrailingSlashes(config.baseURL);
       this.apiKey = config.apiKey;
       this.shouldRetry = config.shouldRetry ?? true;
       this.maxRetries = config.maxRetries ?? 3;
       this.format = config.format ?? SerializationFormat.MessagePack; // Default to MessagePack for 2-3x performance
+      this.requestTimeoutMs = config.timeout ?? DEFAULT_REQUEST_TIMEOUT_MS;
     }
   }
 
@@ -471,6 +488,7 @@ export class EkoDBClient {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ api_key: this.apiKey }),
+      signal: AbortSignal.timeout(this.requestTimeoutMs),
     });
 
     if (!response.ok) {
@@ -683,6 +701,10 @@ export class EkoDBClient {
         "Content-Type": contentType,
         Accept: contentType,
       },
+      // Bound every REST request so a slow/unreachable server aborts instead of
+      // hanging the caller. A fresh signal per attempt is correct here because
+      // makeRequest recurses on retry, rebuilding `options` each time.
+      signal: AbortSignal.timeout(this.requestTimeoutMs),
     };
 
     if (data) {
@@ -757,6 +779,20 @@ export class EkoDBClient {
       const text = await response.text();
       throw new Error(`Request failed with status ${response.status}: ${text}`);
     } catch (error) {
+      // A fired request-timeout (AbortSignal.timeout) surfaces as a DOMException
+      // named "TimeoutError" (or "AbortError" in some runtimes). Convert it to a
+      // clear error and do NOT retry — retrying would multiply the wait beyond
+      // the configured bound.
+      const errName =
+        error && typeof error === "object" && "name" in error
+          ? (error as { name?: string }).name
+          : undefined;
+      if (errName === "TimeoutError" || errName === "AbortError") {
+        throw new Error(
+          `Request timed out after ${this.requestTimeoutMs}ms: ${method} ${path}`,
+        );
+      }
+
       // Handle network errors with retry
       if (
         error instanceof TypeError &&

@@ -6,7 +6,12 @@
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
-import { EkoDBClient, SerializationFormat, extractRecordId } from "./client";
+import {
+  EkoDBClient,
+  SerializationFormat,
+  extractRecordId,
+  DEFAULT_REQUEST_TIMEOUT_MS,
+} from "./client";
 import { SearchQueryBuilder } from "./search";
 
 // Mock fetch globally
@@ -3476,5 +3481,40 @@ describe("EkoDBClient URL path segment encoding", () => {
 
     const [url] = mockFetch.mock.calls[1];
     expect(url as string).toContain("/api/chat/sess%231/messages");
+  });
+});
+
+describe("request timeout", () => {
+  it("defaults to a 30s request timeout", () => {
+    expect(DEFAULT_REQUEST_TIMEOUT_MS).toBe(30000);
+  });
+
+  it("aborts a request that exceeds the configured timeout", async () => {
+    const client = new EkoDBClient({
+      baseURL: "http://localhost:8080",
+      apiKey: "test-api-key",
+      format: SerializationFormat.Json,
+      shouldRetry: false,
+      timeout: 20,
+    });
+
+    // Token fetch resolves immediately...
+    mockTokenResponse();
+    // ...but the actual request hangs until the request-timeout signal aborts
+    // it. The mock honors the AbortSignal the client attaches, rejecting with
+    // its reason (a "TimeoutError" DOMException) exactly like real fetch.
+    mockFetch.mockImplementationOnce(
+      (_url: string, opts: RequestInit) =>
+        new Promise((_resolve, reject) => {
+          const signal = opts.signal as AbortSignal | undefined;
+          signal?.addEventListener("abort", () => {
+            reject(
+              signal.reason ?? new DOMException("timed out", "TimeoutError"),
+            );
+          });
+        }),
+    );
+
+    await expect(client.find("users")).rejects.toThrow(/timed out after 20ms/);
   });
 });
