@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.23.1] - 2026-07-05
+
+### Fixed
+
+- **TypeScript client: REST requests now have a 30s default timeout (parity with
+  the Rust and Go clients).** The TS REST client issued bare `fetch()` calls
+  with no timeout, no `AbortController`, and no config option, so a slow or
+  unreachable server could hang the caller indefinitely. Every non-streaming
+  request (CRUD + token refresh) is now bounded via `AbortSignal.timeout()`,
+  defaulting to 30s and configurable with a new `timeout` field on
+  `ClientConfig` (default exported as `DEFAULT_REQUEST_TIMEOUT_MS`).
+  Streaming/SSE calls are intentionally left unbounded. A fired timeout surfaces
+  as a clear "Request timed out after Nms" error and is not retried. Covered by
+  a unit test. Per-call override (all clients) and the request-timeout gap in
+  the Kotlin client are tracked as follow-ups (ekodb-client #162-#165,
+  ekodb-client-go #53).
+
 ## [0.23.0] - 2026-06-27
 
 ### Security
