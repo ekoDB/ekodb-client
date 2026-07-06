@@ -1,6 +1,5 @@
 package io.ekodb.client.functions
 
-import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
 
 /**
@@ -22,7 +21,6 @@ data class UserFunction(
     val created_at: String? = null,
     val updated_at: String? = null
 )
-
 
 /**
  * Parameter definition for a function

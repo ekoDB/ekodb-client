@@ -10,7 +10,6 @@ import kotlin.test.assertTrue
  * unbounded time, matching the Rust client's bounded retry policy.
  */
 class RetryClampTest {
-
     @Test
     fun `clampRetryAfterSeconds bounds hostile and missing values`() {
         // Hostile/huge value is capped at the maximum.

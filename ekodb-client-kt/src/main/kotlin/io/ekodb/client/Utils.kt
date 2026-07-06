@@ -31,13 +31,13 @@ data class FieldValue(
  */
 inline fun <reified T> getValue(field: Any?): T? {
     if (field == null) return null
-    
+
     // Handle FieldType sealed class instances
     if (field is FieldType) {
         val extracted = extractFieldTypeValue(field)
         return convertValue<T>(extracted)
     }
-    
+
     // Try to extract from map structure.
     // Only unwrap a genuine typed wrapper — one carrying BOTH a "type"
     // discriminator and a "value". A user object that merely has a "value" key
@@ -48,7 +48,7 @@ inline fun <reified T> getValue(field: Any?): T? {
         }
         return convertValue<T>(field)
     }
-    
+
     return convertValue<T>(field)
 }
 
@@ -58,7 +58,7 @@ inline fun <reified T> getValue(field: Any?): T? {
 inline fun <reified T> convertValue(value: Any?): T? {
     if (value == null) return null
     if (value is T) return value
-    
+
     // Handle numeric conversions
     if (value is Number) {
         return when (T::class) {
@@ -69,7 +69,7 @@ inline fun <reified T> convertValue(value: Any?): T? {
             else -> value as? T
         }
     }
-    
+
     return value as? T
 }
 
@@ -168,7 +168,7 @@ fun getValues(record: Map<String, Any?>, fields: List<String>): Map<String, Any?
  * Extract a Date value from an ekoDB DateTime field
  */
 fun getDateTimeValue(field: Any?): java.util.Date? {
-    val val_= getValue<Any>(field) ?: return null
+    val val_ = getValue<Any>(field) ?: return null
     if (val_ is java.util.Date) return val_
     if (val_ is String) {
         // Try multiple date formats
@@ -177,7 +177,7 @@ fun getDateTimeValue(field: Any?): java.util.Date? {
             "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
             "yyyy-MM-dd'T'HH:mm:ss'Z'",
             "yyyy-MM-dd'T'HH:mm:ss",
-            "EEE MMM dd HH:mm:ss zzz yyyy"  // Java Date.toString() format
+            "EEE MMM dd HH:mm:ss zzz yyyy" // Java Date.toString() format
         )
         for (format in formats) {
             try {
@@ -276,14 +276,16 @@ fun getSetValue(field: Any?): List<Any?>? {
 fun getVectorValue(field: Any?): List<Double>? {
     val val_ = getValue<Any>(field) ?: return null
     return if (val_ is List<*>) {
-        val_.mapNotNull { 
+        val_.mapNotNull {
             when (it) {
                 is Double -> it
                 is Number -> it.toDouble()
                 else -> null
             }
         }
-    } else null
+    } else {
+        null
+    }
 }
 
 /**
@@ -434,7 +436,7 @@ fun fieldVector(values: List<Double>): Map<String, Any> = mapOf("type" to "Vecto
 /**
  * Create a Binary field value from bytes
  */
-fun fieldBinary(value: ByteArray): Map<String, Any> = 
+fun fieldBinary(value: ByteArray): Map<String, Any> =
     mapOf("type" to "Binary", "value" to java.util.Base64.getEncoder().encodeToString(value))
 
 /**
@@ -445,7 +447,7 @@ fun fieldBinaryBase64(value: String): Map<String, Any> = mapOf("type" to "Binary
 /**
  * Create a Bytes field value from bytes
  */
-fun fieldBytes(value: ByteArray): Map<String, Any> = 
+fun fieldBytes(value: ByteArray): Map<String, Any> =
     mapOf("type" to "Bytes", "value" to java.util.Base64.getEncoder().encodeToString(value))
 
 /**

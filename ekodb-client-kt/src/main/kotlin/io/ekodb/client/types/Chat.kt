@@ -15,8 +15,8 @@ import kotlinx.serialization.json.*
  */
 @Serializable
 data class ToolChoice(
-    val type: String,    // "auto", "none", "required", "tool"
-    val name: String? = null  // only used when type is "tool"
+    val type: String, // "auto", "none", "required", "tool"
+    val name: String? = null // only used when type is "tool"
 )
 
 /**
@@ -358,10 +358,17 @@ data class ListSessionsResponse(
  */
 @Serializable
 enum class MergeStrategy {
-    @SerialName("Chronological") Chronological,
-    @SerialName("Summarized") Summarized,
-    @SerialName("LatestOnly") LatestOnly,
-    @SerialName("Interleaved") Interleaved,
+    @SerialName("Chronological")
+    Chronological,
+
+    @SerialName("Summarized")
+    Summarized,
+
+    @SerialName("LatestOnly")
+    LatestOnly,
+
+    @SerialName("Interleaved")
+    Interleaved,
 }
 
 /**

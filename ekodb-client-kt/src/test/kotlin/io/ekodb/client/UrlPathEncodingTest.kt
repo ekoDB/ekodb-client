@@ -23,7 +23,6 @@ import kotlin.test.assertTrue
  * encoded path the engine received.
  */
 class UrlPathEncodingTest {
-
     private val testBaseUrl = "https://test.ekodb.net"
     private val testApiKey = "test_api_key_123"
 

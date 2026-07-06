@@ -11,7 +11,6 @@ import kotlin.test.assertTrue
  * Unit tests for ekoDB Kotlin client utility functions
  */
 class UtilsTest {
-
     // ========================================================================
     // getValue Tests
     // ========================================================================

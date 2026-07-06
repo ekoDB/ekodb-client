@@ -16,14 +16,13 @@ import kotlinx.serialization.json.*
 data class EkoRecord(
     private val fields: MutableMap<String, FieldType> = mutableMapOf()
 ) : MutableMap<String, FieldType> by fields {
-    
     fun insert(key: String, value: String) = apply { fields[key] = FieldType.string(value) }
     fun insert(key: String, value: Long) = apply { fields[key] = FieldType.integer(value) }
     fun insert(key: String, value: Int) = apply { fields[key] = FieldType.integer(value.toLong()) }
     fun insert(key: String, value: Double) = apply { fields[key] = FieldType.float(value) }
     fun insert(key: String, value: Boolean) = apply { fields[key] = FieldType.boolean(value) }
     fun insert(key: String, value: FieldType) = apply { fields[key] = value }
-    
+
     /**
      * Set TTL duration for this record
      * Supported formats: "30s", "5m", "1h", "1d", "2w", seconds ("3600"), or ISO8601
@@ -31,7 +30,7 @@ data class EkoRecord(
     fun withTtl(duration: String) = apply {
         fields["ttl"] = FieldType.string(duration)
     }
-    
+
     /**
      * Set TTL with update-on-access behavior
      */
@@ -39,7 +38,7 @@ data class EkoRecord(
         fields["ttl"] = FieldType.string(duration)
         fields["ttl_update_on_access"] = FieldType.boolean(updateOnAccess)
     }
-    
+
     companion object {
         fun new() = EkoRecord()
     }
@@ -50,14 +49,14 @@ typealias Record = EkoRecord
 
 object RecordSerializer : KSerializer<EkoRecord> {
     private val mapSerializer = MapSerializer(String.serializer(), FieldType.serializer())
-    
+
     override val descriptor: SerialDescriptor = mapSerializer.descriptor
-    
+
     override fun serialize(encoder: Encoder, value: EkoRecord) {
         // Serialize the internal map directly (flattened)
         encoder.encodeSerializableValue(mapSerializer, value as MutableMap<String, FieldType>)
     }
-    
+
     override fun deserialize(decoder: Decoder): EkoRecord {
         val map = decoder.decodeSerializableValue(mapSerializer)
         return EkoRecord(map.toMutableMap())

@@ -85,9 +85,9 @@ help:
 	@echo "🧪 $(CYAN)UNIT TESTING$(RESET)"
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "  🧪 $(GREEN)make test$(RESET)           - Run ALL unit tests (Rust+TS+Python+Kotlin = 527 tests)"
-	@echo "  🦀 $(GREEN)make test-rust$(RESET)      - Run Rust client tests (253 tests)"
-	@echo "  📘 $(GREEN)make test-typescript$(RESET) - Run TypeScript client tests (108 tests)"
-	@echo "  🐍 $(GREEN)make test-python$(RESET)    - Run Python client tests (66 tests)"
+	@echo "  🦀 $(GREEN)make test-rust$(RESET)      - Run Rust client tests (442 tests)"
+	@echo "  📘 $(GREEN)make test-typescript$(RESET) - Run TypeScript client tests (433 tests)"
+	@echo "  🐍 $(GREEN)make test-python$(RESET)    - Run Python client tests (333 tests)"
 	@echo "  🟣 $(GREEN)make test-kotlin$(RESET)    - Run Kotlin client tests (100 tests)"
 	@echo "  🤖 $(GREEN)make test-ci$(RESET)        - Run optimized CI tests"
 	@echo ""
@@ -389,9 +389,10 @@ test: ensure-hooks examples-ls-check
 	TS_COUNT=$$(echo "$$TS_OUTPUT" | sed 's/\x1b\[[0-9;]*m//g' | grep -oE "Tests\s+[0-9]+ passed" | grep -oE "[0-9]+" | head -1); \
 	echo "✅ $(GREEN)TypeScript tests complete!$(RESET)"; \
 	echo "🐍 $(CYAN)Running Python client tests...$(RESET)"; \
-	PY_OUTPUT=$$(cd $(CLIENT_PY_DIR) && python3 -m pytest tests/ -v 2>&1); \
+	PY_OUTPUT=$$(cd $(CLIENT_PY_DIR) && $(VENV_PY) -m pytest tests/ -v 2>&1); PY_STATUS=$$?; \
 	echo "$$PY_OUTPUT"; \
 	PY_COUNT=$$(echo "$$PY_OUTPUT" | grep -oE "[0-9]+ passed" | grep -oE "[0-9]+"); \
+	if [ $$PY_STATUS -ne 0 ]; then echo "❌ $(RED)Python tests FAILED (exit $$PY_STATUS)$(RESET)"; exit $$PY_STATUS; fi; \
 	echo "✅ $(GREEN)Python tests complete!$(RESET)"; \
 	echo "🟣 $(CYAN)Running Kotlin client tests...$(RESET)"; \
 	(cd $(CLIENT_KT_DIR) && ./gradlew test --quiet); \
@@ -423,7 +424,7 @@ test-typescript:
 
 test-python:
 	@echo "🐍 $(CYAN)Running Python client tests...$(RESET)"
-	@cd $(CLIENT_PY_DIR) && python3 -m pytest tests/ -v
+	@cd $(CLIENT_PY_DIR) && $(VENV_PY) -m pytest tests/ -v
 	@echo "✅ $(GREEN)Python tests complete!$(RESET)"
 
 test-kotlin: ensure-jvm
@@ -1459,13 +1460,13 @@ format: fmt
 # ============================================================================
 
 # Lint all code
-lint: lint-rust lint-typescript lint-python
+lint: lint-rust lint-typescript lint-python lint-kotlin
 	@echo "✅ $(GREEN)All linting complete!$(RESET)"
 
 # Rust: clippy
 lint-rust:
 	@echo "🦀 $(CYAN)Running clippy on Rust client...$(RESET)"
-	$(CARGO) clippy --all-targets
+	$(CARGO) clippy --all-targets -- -D warnings
 	@echo "✅ $(GREEN)Rust lint complete!$(RESET)"
 
 # TypeScript: tsc --noEmit (catches unused imports, type errors)
@@ -1475,6 +1476,8 @@ lint-typescript:
 	@echo "✅ $(GREEN)TypeScript lint complete!$(RESET)"
 
 # Python: ruff (catches unused imports, style issues)
+# ruff version is pinned in ekodb-client-py/pyproject.toml [project.optional-dependencies].dev
+# (install with `pip install -e ".[dev]"`) so local and CI run the same lint set.
 lint-python:
 	@echo "🐍 $(CYAN)Running Python lint...$(RESET)"
 	@if command -v ruff >/dev/null 2>&1; then \
@@ -1483,6 +1486,13 @@ lint-python:
 		echo "⚠️  $(YELLOW)ruff not installed, skipping Python lint (pip install ruff)$(RESET)"; \
 	fi
 	@echo "✅ $(GREEN)Python lint complete!$(RESET)"
+
+# Kotlin: ktlint (relaxed ruleset in ekodb-client-kt/.editorconfig; engine
+# version pinned in build.gradle.kts). `ktlintFormat` autofixes.
+lint-kotlin:
+	@echo "🟣 $(CYAN)Running ktlint on Kotlin client...$(RESET)"
+	@cd ekodb-client-kt && ./gradlew ktlintCheck --console=plain
+	@echo "✅ $(GREEN)Kotlin lint complete!$(RESET)"
 
 # Install all client libraries
 install: check-toolchains install-rust install-python install-typescript install-go
