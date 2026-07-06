@@ -42,7 +42,7 @@ YELLOW := \033[33m
 RED := \033[31m
 RESET := \033[0m
 
-.PHONY: all build build-release build-client build-python-client build-typescript-client build-examples test test-ls test-ls-check test-ci test-client test-examples test-examples-direct test-examples-client test-examples-rust test-examples-python test-examples-go test-examples-typescript test-examples-javascript test-examples-transactions test-examples-scripts test-examples-scripts-crud test-examples-swr test-examples-ts-swr test-examples-py-swr test-examples-go-swr test-examples-rust-swr test-examples-kt-swr clean check fmt fmt-rust fmt-rust-client fmt-rust-examples fmt-python fmt-go fmt-typescript fmt-md format install install-rust install-python install-typescript install-go venv python-example-deps ensure-jvm ensure-cargo check-toolchains setup install-hooks deps-check deps-update deploy-client deploy-client-rust deploy-client-py deploy-client-py-simple deploy-client-go deploy-client-ts bump-version bump-client-py docs-client
+.PHONY: all build build-release build-client build-python-client build-typescript-client build-examples test test-ls test-ls-check test-ci test-client test-examples test-examples-direct test-examples-client test-examples-rust test-examples-python test-examples-go test-examples-typescript test-examples-javascript test-examples-transactions test-examples-scripts test-examples-scripts-crud test-examples-swr test-examples-ts-swr test-examples-py-swr test-examples-go-swr test-examples-rust-swr test-examples-kt-swr clean check fmt fmt-rust fmt-rust-client fmt-rust-examples fmt-python fmt-go fmt-typescript fmt-md format install install-rust install-python install-typescript install-go venv python-example-deps ensure-jvm ensure-cargo check-toolchains setup install-hooks deps-check deps-update deploy-client deploy-client-rust deploy-client-py deploy-client-py-simple deploy-client-go deploy-client-ts bump-version sync-versions bump-client-py docs-client
 
 # Color codes for Worthington jet
 MAGENTA := \033[35m
@@ -144,6 +144,7 @@ help:
 	@echo "  🟣 $(GREEN)make deploy-client-kt$(RESET)   - Deploy Kotlin client to Maven Central (uses scripts/publish-kotlin.sh)"
 	@echo "  🔷 $(GREEN)make deploy-client-go$(RESET)   - Show Go client deployment instructions"
 	@echo "  🔢 $(GREEN)make bump-version$(RESET)       - Bump version for ALL clients (Rust + Python + TS + Kotlin)"
+	@echo "  🔁 $(GREEN)make sync-versions$(RESET)      - Propagate the Rust source-of-truth version to all manifests + README snippets (runs on 'make fmt')"
 	@echo "  🔢 $(GREEN)make bump-client-py$(RESET)     - Bump Python client version only"
 	@echo ""
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
@@ -1411,8 +1412,17 @@ check:
 	@echo "✅ $(GREEN)Check complete!$(RESET)"
 
 # Format all code (Rust + Python + Go + TypeScript + Markdown) - this is the main formatting target
-fmt: examples-ls examples-ls-badge fmt-rust fmt-python fmt-go fmt-typescript fmt-md
+fmt: sync-versions examples-ls examples-ls-badge fmt-rust fmt-python fmt-go fmt-typescript fmt-md
 	@echo "✅ $(GREEN)All formatting complete!$(RESET)"
+
+# Propagate the Rust source-of-truth version to every client manifest and README
+# install snippet. Non-interactive and idempotent (see scripts/sync-versions.sh),
+# so it is safe as a `fmt` prerequisite: a synced tree is unchanged and any drift
+# surfaces as a diff. To CHANGE the version, edit ekodb_client/Cargo.toml or run
+# the interactive `make bump-version`, then `make fmt`.
+sync-versions:
+	@chmod +x scripts/sync-versions.sh
+	@./scripts/sync-versions.sh
 
 # Format all Rust code (client + examples)
 fmt-rust: fmt-rust-client fmt-rust-examples
