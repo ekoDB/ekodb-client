@@ -11,6 +11,18 @@ CLIENT_KT_DIR := ekodb-client-kt
 # Project-local virtualenv interpreter (absolute, so it survives `cd` into subdirs)
 VENV_PY := $(CURDIR)/.venv/bin/python
 
+# Test inventory: the exact per-language + total test counts, written by
+# `make test` (which runs the suites and parses each framework's real count) and
+# validated by `make test-ls-check`. Everything that shows a count (this help,
+# the CI summary) reads from here instead of hardcoding, so the numbers can
+# never drift. `?` if the inventory hasn't been generated yet.
+TESTS_INVENTORY := tests_list.txt
+RUST_TEST_COUNT  := $(shell awk -F': ' '/^Rust:/{print $$2}'       $(TESTS_INVENTORY) 2>/dev/null)
+TS_TEST_COUNT    := $(shell awk -F': ' '/^TypeScript:/{print $$2}' $(TESTS_INVENTORY) 2>/dev/null)
+PY_TEST_COUNT    := $(shell awk -F': ' '/^Python:/{print $$2}'     $(TESTS_INVENTORY) 2>/dev/null)
+KT_TEST_COUNT    := $(shell awk -F': ' '/^Kotlin:/{print $$2}'     $(TESTS_INVENTORY) 2>/dev/null)
+TOTAL_TEST_COUNT := $(shell awk -F': ' '/^Total:/{print $$2}'      $(TESTS_INVENTORY) 2>/dev/null)
+
 # Absolute path one level above the monorepo root (e.g. /Users/<you>/Development/),
 # derived dynamically from $(CURDIR) (make's working directory, the ekodb-client
 # dir when invoked normally) so it is correct on any machine. Captured
@@ -30,7 +42,7 @@ YELLOW := \033[33m
 RED := \033[31m
 RESET := \033[0m
 
-.PHONY: all build build-release build-client build-python-client build-typescript-client build-examples test test-ci test-client test-examples test-examples-direct test-examples-client test-examples-rust test-examples-python test-examples-go test-examples-typescript test-examples-javascript test-examples-transactions test-examples-scripts test-examples-scripts-crud test-examples-swr test-examples-ts-swr test-examples-py-swr test-examples-go-swr test-examples-rust-swr test-examples-kt-swr clean check fmt fmt-rust fmt-rust-client fmt-rust-examples fmt-python fmt-go fmt-typescript fmt-md format install install-rust install-python install-typescript install-go venv python-example-deps ensure-jvm ensure-cargo check-toolchains setup install-hooks deps-check deps-update deploy-client deploy-client-rust deploy-client-py deploy-client-py-simple deploy-client-go deploy-client-ts bump-version bump-client-py docs-client
+.PHONY: all build build-release build-client build-python-client build-typescript-client build-examples test test-ls test-ls-check test-ci test-client test-examples test-examples-direct test-examples-client test-examples-rust test-examples-python test-examples-go test-examples-typescript test-examples-javascript test-examples-transactions test-examples-scripts test-examples-scripts-crud test-examples-swr test-examples-ts-swr test-examples-py-swr test-examples-go-swr test-examples-rust-swr test-examples-kt-swr clean check fmt fmt-rust fmt-rust-client fmt-rust-examples fmt-python fmt-go fmt-typescript fmt-md format install install-rust install-python install-typescript install-go venv python-example-deps ensure-jvm ensure-cargo check-toolchains setup install-hooks deps-check deps-update deploy-client deploy-client-rust deploy-client-py deploy-client-py-simple deploy-client-go deploy-client-ts bump-version bump-client-py docs-client
 
 # Color codes for Worthington jet
 MAGENTA := \033[35m
@@ -76,7 +88,7 @@ help:
 	@echo "  🐍 $(GREEN)make build-python-client$(RESET) - Build Python client only"
 	@echo "  📘 $(GREEN)make build-typescript-client$(RESET) - Build TypeScript client only"
 	@echo "  🟣 $(GREEN)make build-kotlin-client$(RESET) - Build Kotlin client only"
-	@echo "  🧪 $(GREEN)make test$(RESET)               - Run Rust client tests"
+	@echo "  🧪 $(GREEN)make test$(RESET)               - Run ALL unit tests (all client languages)"
 	@echo "  📚 $(GREEN)make docs$(RESET)               - Generate Rust client documentation"
 	@echo "  🖌️  $(GREEN)make fmt$(RESET)                - Format all code (Rust + Python + Go + TS + Markdown)"
 
@@ -84,12 +96,13 @@ help:
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "🧪 $(CYAN)UNIT TESTING$(RESET)"
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
-	@echo "  🧪 $(GREEN)make test$(RESET)           - Run ALL unit tests (Rust+TS+Python+Kotlin = 1308 tests)"
-	@echo "  🦀 $(GREEN)make test-rust$(RESET)      - Run Rust client tests (442 tests)"
-	@echo "  📘 $(GREEN)make test-typescript$(RESET) - Run TypeScript client tests (433 tests)"
-	@echo "  🐍 $(GREEN)make test-python$(RESET)    - Run Python client tests (333 tests)"
-	@echo "  🟣 $(GREEN)make test-kotlin$(RESET)    - Run Kotlin client tests (100 tests)"
+	@echo "  🧪 $(GREEN)make test$(RESET)           - Run ALL unit tests (Rust+TS+Python+Kotlin = $(or $(TOTAL_TEST_COUNT),?) tests)"
+	@echo "  🦀 $(GREEN)make test-rust$(RESET)      - Run Rust client tests ($(or $(RUST_TEST_COUNT),?) tests)"
+	@echo "  📘 $(GREEN)make test-typescript$(RESET) - Run TypeScript client tests ($(or $(TS_TEST_COUNT),?) tests)"
+	@echo "  🐍 $(GREEN)make test-python$(RESET)    - Run Python client tests ($(or $(PY_TEST_COUNT),?) tests)"
+	@echo "  🟣 $(GREEN)make test-kotlin$(RESET)    - Run Kotlin client tests ($(or $(KT_TEST_COUNT),?) tests)"
 	@echo "  🤖 $(GREEN)make test-ci$(RESET)        - Run optimized CI tests"
+	@echo "  📋 $(GREEN)make test-ls-check$(RESET)  - Validate the test inventory ($(TESTS_INVENTORY))"
 	@echo ""
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "🔗 $(CYAN)INTEGRATION TESTING$(RESET)"
@@ -404,6 +417,11 @@ test: ensure-hooks examples-ls-check build-python-client
 	echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"; \
 	RUST_COUNT=$${RUST_COUNT:-0}; TS_COUNT=$${TS_COUNT:-0}; PY_COUNT=$${PY_COUNT:-0}; KT_COUNT=$${KT_COUNT:-0}; \
 	TOTAL=$$((RUST_COUNT + TS_COUNT + PY_COUNT + KT_COUNT)); \
+	{ echo "# ekodb-client test inventory — generated by 'make test'; do NOT hand-edit."; \
+	  echo "# Exact per-framework pass counts (Rust includes doc tests). Validated by"; \
+	  echo "# 'make test-ls-check'. The Makefile help and CI summary read from this."; \
+	  echo "Rust: $$RUST_COUNT"; echo "TypeScript: $$TS_COUNT"; echo "Python: $$PY_COUNT"; \
+	  echo "Kotlin: $$KT_COUNT"; echo "Total: $$TOTAL"; } > $(TESTS_INVENTORY); \
 	printf "  🦀 Rust:       %3d tests\n" "$$RUST_COUNT"; \
 	printf "  📘 TypeScript: %3d tests\n" "$$TS_COUNT"; \
 	printf "  🐍 Python:     %3d tests\n" "$$PY_COUNT"; \
@@ -411,6 +429,27 @@ test: ensure-hooks examples-ls-check build-python-client
 	echo "  ─────────────────────"; \
 	printf "  📊 Total:      %3d tests\n" "$$TOTAL"; \
 	echo ""
+
+# Regenerate the test inventory (runs the suites; `make test` does this as a
+# side effect — this is just an explicit alias).
+test-ls: test
+
+# Sanity-check the committed inventory: present, all count lines, and the total
+# equals the sum. (A full count check happens whenever `make test` regenerates
+# it.) Cheap enough to run in CI without the toolchains.
+test-ls-check:
+	@test -f $(TESTS_INVENTORY) || { echo "$(RED)$(TESTS_INVENTORY) missing — run 'make test'.$(RESET)"; exit 1; }
+	@R=$$(awk -F': ' '/^Rust:/{print $$2}' $(TESTS_INVENTORY)); \
+	 T=$$(awk -F': ' '/^TypeScript:/{print $$2}' $(TESTS_INVENTORY)); \
+	 P=$$(awk -F': ' '/^Python:/{print $$2}' $(TESTS_INVENTORY)); \
+	 K=$$(awk -F': ' '/^Kotlin:/{print $$2}' $(TESTS_INVENTORY)); \
+	 TT=$$(awk -F': ' '/^Total:/{print $$2}' $(TESTS_INVENTORY)); \
+	 if [ -z "$$R" ] || [ -z "$$T" ] || [ -z "$$P" ] || [ -z "$$K" ] || [ -z "$$TT" ]; then \
+	   echo "$(RED)$(TESTS_INVENTORY) is malformed (missing a count line).$(RESET)"; exit 1; fi; \
+	 S=$$((R + T + P + K)); \
+	 if [ "$$S" != "$$TT" ]; then \
+	   echo "$(RED)Inventory Total ($$TT) != sum of per-language ($$S) — run 'make test' to regenerate.$(RESET)"; exit 1; fi; \
+	 echo "✅ $(GREEN)Test inventory OK (Total $$TT = $$R+$$T+$$P+$$K).$(RESET)"
 
 test-rust:
 	@echo "🦀 $(CYAN)Running Rust client tests...$(RESET)"
