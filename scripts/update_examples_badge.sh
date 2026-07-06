@@ -28,24 +28,46 @@ fi
 total_examples=$(grep "Total Examples:" "$EXAMPLES_LIST" | awk '{print $3}')
 total_direct=$(grep "Direct API:" "$EXAMPLES_LIST" | awk '{print $3}')
 total_client=$(grep "Client Libraries:" "$EXAMPLES_LIST" | awk '{print $3}')
+total_languages=$(grep "Languages:" "$EXAMPLES_LIST" | grep -o '[0-9]\+' | head -1)
+total_clients=$(grep "Full-Featured Clients:" "$EXAMPLES_LIST" | grep -o '[0-9]\+' | head -1)
+# Per-client example count (a single number, or a MIN-MAX range if the clients
+# ever diverge from parity). Kept as the emitted string so a range flows through.
+per_client=$(grep "Examples Per Client:" "$EXAMPLES_LIST" | awk -F': ' '{print $2}' | tr -d ' ')
 
 echo -e "  Found counts:"
 echo -e "    Total: ${GREEN}$total_examples${RESET}"
 echo -e "    Direct: ${GREEN}$total_direct${RESET}"
 echo -e "    Client: ${GREEN}$total_client${RESET}"
+echo -e "    Languages: ${GREEN}$total_languages${RESET}"
+echo -e "    Clients: ${GREEN}$total_clients${RESET}"
 
-# Update the badge in README.md
+# Rewrite prose numbers between HTML-comment markers (<!--ex:NAME-->value<!--
+# /ex:NAME-->). Markers render invisibly and make injection wording-independent,
+# so re-phrasing a Quick Stats line can never orphan the updater. (The previous
+# broad regexes — e.g. s/**N working examples**/ — would silently stop matching
+# the moment that phrasing changed, drifting the counts. This is the same
+# marker convention the ekodb server uses in scripts/update_test_docs.sh.)
+inject_stat() { # $1=file  $2=marker-name  $3=value
+    sed -i.bak -E "s|<!--$2-->[^<]*<!--/$2-->|<!--$2-->$3<!--/$2-->|g" "$1"
+    rm -f "$1.bak"
+}
+
 if [ -f "$README" ]; then
-    # Update Examples badge
+    # Badges live inside shields.io image URLs, which cannot hold a comment
+    # marker, so they are still matched by their fixed URL shape.
     sed -i.bak "s/Examples-[0-9]*_Working/Examples-${total_examples}_Working/g" "$README"
-    
-    # Update Quick Stats section
-    sed -i.bak "s/\*\*[0-9]* working examples\*\*/\*\*$total_examples working examples\*\*/g" "$README"
-    sed -i.bak "s/[0-9]* client library + [0-9]* direct API examples/$total_client client library + $total_direct direct API examples/g" "$README"
-    
-    # Remove backup file
+    sed -i.bak "s/Languages-[0-9]*-blue/Languages-${total_languages}-blue/g" "$README"
+    sed -i.bak "s/Client_Libraries-[0-9]*-purple/Client_Libraries-${total_clients}-purple/g" "$README"
     rm -f "${README}.bak"
-    
+
+    # Prose Quick Stats numbers via markers.
+    inject_stat "$README" "ex:total"     "$total_examples"
+    inject_stat "$README" "ex:client"    "$total_client"
+    inject_stat "$README" "ex:direct"    "$total_direct"
+    inject_stat "$README" "ex:languages" "$total_languages"
+    inject_stat "$README" "ex:clients"   "$total_clients"
+    inject_stat "$README" "ex:perclient" "$per_client"
+
     echo -e "${GREEN}✅ README.md updated successfully!${RESET}"
     echo -e "  Badge: Examples-${total_examples}_Working"
     echo -e "  Stats: $total_examples total ($total_client client + $total_direct direct)"

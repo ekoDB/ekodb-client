@@ -8,12 +8,16 @@ Official client libraries for ekoDB - a high-performance document database.
 
 **🚀 Quick Stats:**
 
-- **308 working examples** - 257 client library + 51 direct API examples
-- **6 programming languages** - Rust, Python, Go, TypeScript, JavaScript, Kotlin
-- **5 full-featured clients** - Complete feature parity across Rust, Python, Go,
-  TypeScript, Kotlin
-- **45 client-library examples per client** - CRUD, batch ops, queries, joins,
-  search, WebSocket, AI/chat, and more
+- **<!--ex:total-->308<!--/ex:total--> working examples** -
+  <!--ex:client-->257<!--/ex:client--> client library +
+  <!--ex:direct-->51<!--/ex:direct--> direct API examples
+- **<!--ex:languages-->6<!--/ex:languages--> programming languages** - Rust,
+  Python, Go, TypeScript, JavaScript, Kotlin
+- **<!--ex:clients-->5<!--/ex:clients--> full-featured clients** - Complete
+  feature parity across Rust, Python, Go, TypeScript, Kotlin
+- **<!--ex:perclient-->45<!--/ex:perclient--> client-library examples per
+  client** - CRUD, batch ops, queries, joins, search, WebSocket, AI/chat, and
+  more
 - **100% tested** - All examples run in CI/CD
 
 ## 📦 Available Clients
@@ -63,7 +67,7 @@ npm install @ekodb/ekodb-client
 
 ```kotlin
 // Gradle (Kotlin DSL)
-implementation("io.ekodb:ekodb-client-kt:0.21.0")
+implementation("io.ekodb:ekodb-client-kt:0.23.1")
 ```
 
 **Features:**
@@ -75,7 +79,8 @@ implementation("io.ekodb:ekodb-client-kt:0.21.0")
 - ✅ AI/Chat integration
 - ✅ Schema management
 - ✅ Full-text search
-- ✅ 45 comprehensive client-library examples (+ 1 RAG example)
+- ✅ <!--ex:perclient-->45<!--/ex:perclient--> comprehensive client-library
+  examples (+ 1 RAG example)
 
 ## Features
 
@@ -110,8 +115,8 @@ Each client also includes language-specific features:
   repository
 - [TypeScript Client Documentation](./ekodb-client-ts/README.md)
 - [Kotlin Client Documentation](./ekodb-client-kt/README.md)
-- [Examples](./examples/) - Code examples across all available languages (45
-  client-library examples per client)
+- [Examples](./examples/) - Code examples across all available languages
+  (<!--ex:perclient-->45<!--/ex:perclient--> client-library examples per client)
 
 ## 🛠️ Development
 

@@ -255,8 +255,33 @@ echo "  Total Examples: $total_all" >> "$EXAMPLES_TXT"
 echo "  Direct API: $total_direct" >> "$EXAMPLES_TXT"
 echo "  Client Libraries: $total_client" >> "$EXAMPLES_TXT"
 echo "" >> "$EXAMPLES_TXT"
-echo "  Languages: 6 (Rust, Python, Go, TypeScript, JavaScript, Kotlin)" >> "$EXAMPLES_TXT"
-echo "  Full-Featured Clients: 5 (Rust, Python, Go, TypeScript, Kotlin)" >> "$EXAMPLES_TXT"
+
+# Counts are derived from the declared language/client sets rather than hardcoded
+# literals: adding or removing a language/SDK is a single-list edit here that
+# flows to the inventory, the README badges, and the README Quick Stats.
+example_languages="Rust Python Go TypeScript JavaScript Kotlin"
+full_featured_clients="Rust Python Go TypeScript Kotlin"
+num_languages=$(echo "$example_languages" | wc -w | tr -d ' ')
+num_clients=$(echo "$full_featured_clients" | wc -w | tr -d ' ')
+echo "  Languages: $num_languages ($(echo "$example_languages" | sed 's/ /, /g'))" >> "$EXAMPLES_TXT"
+echo "  Full-Featured Clients: $num_clients ($(echo "$full_featured_clients" | sed 's/ /, /g'))" >> "$EXAMPLES_TXT"
+
+# Client-library examples per full-featured client. Rust/Python/Go/TypeScript/
+# Kotlin are mirrored for parity, so this is normally a single number; emit a
+# MIN-MAX range if they ever diverge so the README stays honest without a
+# hardcoded literal.
+per_client_min=$rust_client_count
+per_client_max=$rust_client_count
+for c in $python_client_count $go_client_count $ts_client_count $kotlin_client_count; do
+    [ "$c" -lt "$per_client_min" ] && per_client_min=$c
+    [ "$c" -gt "$per_client_max" ] && per_client_max=$c
+done
+if [ "$per_client_min" -eq "$per_client_max" ]; then
+    per_client_display="$per_client_min"
+else
+    per_client_display="${per_client_min}-${per_client_max}"
+fi
+echo "  Examples Per Client: $per_client_display" >> "$EXAMPLES_TXT"
 
 echo -e "${GREEN}✅ Examples list generated!${RESET}"
 echo -e "  Total: ${GREEN}$total_all${RESET} examples"
