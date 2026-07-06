@@ -84,7 +84,7 @@ help:
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "🧪 $(CYAN)UNIT TESTING$(RESET)"
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
-	@echo "  🧪 $(GREEN)make test$(RESET)           - Run ALL unit tests (Rust+TS+Python+Kotlin = 527 tests)"
+	@echo "  🧪 $(GREEN)make test$(RESET)           - Run ALL unit tests (Rust+TS+Python+Kotlin = 1308 tests)"
 	@echo "  🦀 $(GREEN)make test-rust$(RESET)      - Run Rust client tests (442 tests)"
 	@echo "  📘 $(GREEN)make test-typescript$(RESET) - Run TypeScript client tests (433 tests)"
 	@echo "  🐍 $(GREEN)make test-python$(RESET)    - Run Python client tests (333 tests)"
@@ -1489,9 +1489,9 @@ lint-python:
 
 # Kotlin: ktlint (relaxed ruleset in ekodb-client-kt/.editorconfig; engine
 # version pinned in build.gradle.kts). `ktlintFormat` autofixes.
-lint-kotlin:
+lint-kotlin: ensure-jvm
 	@echo "🟣 $(CYAN)Running ktlint on Kotlin client...$(RESET)"
-	@cd ekodb-client-kt && ./gradlew ktlintCheck --console=plain
+	@cd $(CLIENT_KT_DIR) && ./gradlew ktlintCheck --console=plain
 	@echo "✅ $(GREEN)Kotlin lint complete!$(RESET)"
 
 # Install all client libraries
