@@ -393,14 +393,16 @@ deploy-client-kotlin: deploy-client-kt
 test: ensure-hooks examples-ls-check build-python-client
 	@RUST_COUNT=0; TS_COUNT=0; PY_COUNT=0; KT_COUNT=0; \
 	echo "🦀 $(CYAN)Running Rust client tests...$(RESET)"; \
-	RUST_OUTPUT=$$($(CARGO) test -p ekodb_client 2>&1); \
+	RUST_OUTPUT=$$($(CARGO) test -p ekodb_client 2>&1); RUST_STATUS=$$?; \
 	echo "$$RUST_OUTPUT"; \
 	RUST_COUNT=$$(echo "$$RUST_OUTPUT" | grep -E "^test result:" | grep -oE "[0-9]+ passed" | awk '{sum+=$$1} END {print sum}'); \
+	if [ $$RUST_STATUS -ne 0 ]; then echo "❌ $(RED)Rust tests FAILED (exit $$RUST_STATUS)$(RESET)"; exit $$RUST_STATUS; fi; \
 	echo "✅ $(GREEN)Rust tests complete!$(RESET)"; \
 	echo "📘 $(CYAN)Running TypeScript client tests...$(RESET)"; \
-	TS_OUTPUT=$$(cd $(CLIENT_TS_DIR) && npm test 2>&1); \
+	TS_OUTPUT=$$(cd $(CLIENT_TS_DIR) && npm test 2>&1); TS_STATUS=$$?; \
 	echo "$$TS_OUTPUT"; \
 	TS_COUNT=$$(echo "$$TS_OUTPUT" | sed 's/\x1b\[[0-9;]*m//g' | grep -oE "Tests\s+[0-9]+ passed" | grep -oE "[0-9]+" | head -1); \
+	if [ $$TS_STATUS -ne 0 ]; then echo "❌ $(RED)TypeScript tests FAILED (exit $$TS_STATUS)$(RESET)"; exit $$TS_STATUS; fi; \
 	echo "✅ $(GREEN)TypeScript tests complete!$(RESET)"; \
 	echo "🐍 $(CYAN)Running Python client tests...$(RESET)"; \
 	PY_OUTPUT=$$(cd $(CLIENT_PY_DIR) && $(VENV_PY) -m pytest tests/ -v 2>&1); PY_STATUS=$$?; \
@@ -409,8 +411,9 @@ test: ensure-hooks examples-ls-check build-python-client
 	if [ $$PY_STATUS -ne 0 ]; then echo "❌ $(RED)Python tests FAILED (exit $$PY_STATUS)$(RESET)"; exit $$PY_STATUS; fi; \
 	echo "✅ $(GREEN)Python tests complete!$(RESET)"; \
 	echo "🟣 $(CYAN)Running Kotlin client tests...$(RESET)"; \
-	(cd $(CLIENT_KT_DIR) && ./gradlew test --quiet); \
+	(cd $(CLIENT_KT_DIR) && ./gradlew test --quiet); KT_STATUS=$$?; \
 	KT_COUNT=$$(grep -rh "@Test" ./$(CLIENT_KT_DIR)/src/test --include="*.kt" 2>/dev/null | wc -l | tr -d ' '); \
+	if [ $$KT_STATUS -ne 0 ]; then echo "❌ $(RED)Kotlin tests FAILED (exit $$KT_STATUS)$(RESET)"; exit $$KT_STATUS; fi; \
 	echo "✅ $(GREEN)Kotlin tests complete!$(RESET)"; \
 	echo ""; \
 	echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"; \
