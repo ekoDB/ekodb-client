@@ -34,6 +34,13 @@ jobs:
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
+      # Gates on the exact clippy invocation developers run locally
+      # (`make lint-rust`): `-D warnings` turns every lint into an error so a
+      # warning can't pass locally and be ignored in CI. The 1.95.0 toolchain
+      # (pinned above + in rust-toolchain.toml) fixes the lint set on both sides.
+      - name: Clippy (lint)
+        run: cargo clippy --all-targets -- -D warnings
+
       - name: Run Rust tests
         run: cargo test -p ekodb_client --no-fail-fast
         env:
@@ -57,6 +64,12 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      # Same target developers run locally (`make lint-typescript` -> `npm run
+      # lint` -> `tsc --noEmit`). Catches unused imports / type errors that
+      # `npm test` (vitest) does not, so a type error can't slip past CI.
+      - name: Lint (tsc --noEmit)
+        run: npm run lint
 
       - name: Run TypeScript tests
         run: npm test
@@ -91,7 +104,15 @@ jobs:
       - name: Install maturin and test dependencies
         run: |
           source .venv/bin/activate
-          pip install maturin pytest pytest-asyncio
+          pip install maturin pytest pytest-asyncio "ruff==0.15.7"
+
+      # Same check developers run locally (`make lint-python` -> `ruff check`).
+      # ruff is pinned (== here and in pyproject dev deps) so the lint set is
+      # identical on both sides; config lives in pyproject.toml [tool.ruff].
+      - name: Lint (ruff)
+        run: |
+          source .venv/bin/activate
+          ruff check python/ tests/
 
       - name: Build and install Python client
         # `RUSTUP_TOOLCHAIN` short-circuits cargo's rust-toolchain.toml
@@ -130,6 +151,13 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
+
+      # Same gate developers run locally (`make lint-kotlin` -> ktlintCheck).
+      # The enabled rule subset lives in ekodb-client-kt/.editorconfig and the
+      # ktlint engine version is pinned in build.gradle.kts, so CI and local
+      # evaluate an identical ruleset.
+      - name: Lint (ktlint)
+        run: ./gradlew ktlintCheck
 
       - name: Run Kotlin tests
         run: ./gradlew test

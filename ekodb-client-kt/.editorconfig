@@ -1,0 +1,55 @@
+root = true
+
+# ktlint configuration for the Kotlin client.
+#
+# We run ktlint as a lint gate (local `make lint-kotlin` and CI both call the
+# ktlint gradle plugin), scoped to a HIGH-VALUE subset of the standard ruleset:
+# unused imports, wildcard imports, import ordering, trailing whitespace, and
+# basic spacing. The aggressive line-reflow / wrapping / trailing-comma
+# "house-style" rules are disabled — they would reformat nearly every file
+# (2674 findings) without catching a single correctness issue. This mirrors how
+# the Python client scopes ruff to E/F/W rather than full reformatting.
+#
+# To adopt a reflow rule later, delete its `= disabled` line and run
+# `./gradlew ktlintFormat`.
+[*.{kt,kts}]
+charset = utf-8
+indent_size = 4
+indent_style = space
+insert_final_newline = true
+
+# Disabled: line-reflow / wrapping / trailing-comma house-style opinions.
+ktlint_standard_multiline-expression-wrapping = disabled
+ktlint_standard_function-signature = disabled
+ktlint_standard_wrapping = disabled
+ktlint_standard_blank-line-before-declaration = disabled
+ktlint_standard_trailing-comma-on-call-site = disabled
+ktlint_standard_trailing-comma-on-declaration-site = disabled
+ktlint_standard_chain-method-continuation = disabled
+ktlint_standard_class-signature = disabled
+ktlint_standard_argument-list-wrapping = disabled
+ktlint_standard_statement-wrapping = disabled
+ktlint_standard_function-expression-body = disabled
+ktlint_standard_property-wrapping = disabled
+ktlint_standard_if-else-wrapping = disabled
+ktlint_standard_condition-wrapping = disabled
+ktlint_standard_parameter-list-wrapping = disabled
+ktlint_standard_max-line-length = disabled
+
+# Disabled: flags the deliberate `val val_` idiom (a workaround for the `val`
+# keyword) on local variables; not worth 9 cross-scope renames.
+ktlint_standard_property-naming = disabled
+
+# Disabled: no-wildcard-imports is NOT autofixable (ktlint has no type
+# resolution to expand `import x.*` into the used symbols), and every wildcard
+# here is a ktor or kotlinx.serialization DSL package whose extension-function
+# heavy API is idiomatically imported with a wildcard — hand-expanding risks
+# silently dropping an extension and breaking compilation.
+ktlint_standard_no-wildcard-imports = disabled
+
+# Disabled: comment-placement opinions. value-parameter-comment would move
+# useful inline enum-value hints (e.g. `val type: String, // "auto", "none"`)
+# onto separate lines, reducing readability; no-consecutive-comments flags
+# deliberate adjacent KDoc blocks. Neither is a correctness issue.
+ktlint_standard_value-parameter-comment = disabled
+ktlint_standard_no-consecutive-comments = disabled

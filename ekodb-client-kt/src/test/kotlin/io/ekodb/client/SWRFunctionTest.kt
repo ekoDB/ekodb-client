@@ -1,16 +1,15 @@
 package io.ekodb.client
 
 import io.ekodb.client.functions.FunctionStageConfig
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import org.junit.jupiter.api.Test
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Test
 
 class SWRFunctionTest {
-
-    private val json = Json { 
+    private val json = Json {
         prettyPrint = true
         ignoreUnknownKeys = true
     }
@@ -158,7 +157,7 @@ class SWRFunctionTest {
         )
 
         val serialized = json.encodeToString(swr)
-        
+
         assertTrue(serialized.contains("user:{{user_id}}:profile:{{profile_id}}"))
         assertTrue(serialized.contains("{{resource}}/{{id}}"))
     }
@@ -182,7 +181,7 @@ class SWRFunctionTest {
 
         assertTrue(deserialized is FunctionStageConfig.SWR)
         val swrDeserialized = deserialized as FunctionStageConfig.SWR
-        
+
         assertEquals("user:{{user_id}}", swrDeserialized.cache_key)
         assertEquals("GET", swrDeserialized.method)
         assertEquals(30, swrDeserialized.timeout_seconds)
@@ -208,7 +207,7 @@ class SWRFunctionTest {
         assertEquals(JsonPrimitive("15m"), swr.ttl)
         assertEquals("https://example.com", swr.url)
         assertEquals("GET", swr.method)
-        
+
         // Optional fields should be null
         assertNull(swr.headers)
         assertNull(swr.body)

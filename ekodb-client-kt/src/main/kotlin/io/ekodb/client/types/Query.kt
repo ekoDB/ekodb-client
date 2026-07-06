@@ -10,13 +10,21 @@ import kotlinx.serialization.json.JsonElement
 @Serializable
 sealed class QueryOperator {
     @Serializable data class Eq(val value: FieldType) : QueryOperator()
+
     @Serializable data class Ne(val value: FieldType) : QueryOperator()
+
     @Serializable data class Gt(val value: FieldType) : QueryOperator()
+
     @Serializable data class Gte(val value: FieldType) : QueryOperator()
+
     @Serializable data class Lt(val value: FieldType) : QueryOperator()
+
     @Serializable data class Lte(val value: FieldType) : QueryOperator()
+
     @Serializable data class In(val values: List<FieldType>) : QueryOperator()
+
     @Serializable data class NotIn(val values: List<FieldType>) : QueryOperator()
+
     // No Regex variant: the server's filter operator set has none. Use
     // Contains/StartsWith/EndsWith via the query builder instead.
     @Serializable data class Exists(val exists: Boolean) : QueryOperator()
@@ -44,7 +52,7 @@ data class Query(
     companion object {
         fun new() = Query()
     }
-    
+
     fun withFilter(filter: JsonElement) = copy(filter = filter)
     fun withSort(sort: JsonElement) = copy(sort = sort)
     fun withLimit(limit: Int) = copy(limit = limit)

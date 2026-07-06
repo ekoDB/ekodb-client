@@ -13,7 +13,6 @@ import kotlin.test.*
  * Unit tests for KV batch operations in Kotlin client
  */
 class KVBatchOperationsTest {
-
     private val testBaseUrl = "https://test.ekodb.net"
     private val testApiKey = "test_api_key_123"
 
@@ -168,9 +167,9 @@ class KVBatchOperationsTest {
         val results = client.kvBatchSet(entries)
 
         assertEquals(3, results.size)
-        assertTrue(results[0].second)  // key1 succeeded
+        assertTrue(results[0].second) // key1 succeeded
         assertFalse(results[1].second) // key2 failed
-        assertTrue(results[2].second)  // key3 succeeded
+        assertTrue(results[2].second) // key3 succeeded
     }
 
     @Test

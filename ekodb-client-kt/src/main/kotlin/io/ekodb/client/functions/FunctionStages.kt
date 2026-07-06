@@ -1,17 +1,17 @@
 package io.ekodb.client.functions
 
+import kotlinx.serialization.EncodeDefault
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.EncodeDefault
+import kotlinx.serialization.json.JsonClassDiscriminator
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonClassDiscriminator
 import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.put
+import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.int
+import kotlinx.serialization.json.put
 
 /**
  * Build the structural placeholder `{"type": "Parameter", "name": <name>}`
@@ -57,13 +57,12 @@ fun parameterRef(name: String): JsonObject = buildJsonObject {
 @Serializable
 @JsonClassDiscriminator("type")
 sealed class FunctionStageConfig {
-    
     @Serializable
     @SerialName("FindAll")
     data class FindAll(
         val collection: String
     ) : FunctionStageConfig()
-    
+
     @Serializable
     @SerialName("Query")
     data class Query(
@@ -73,27 +72,27 @@ sealed class FunctionStageConfig {
         val limit: Int? = null,
         val skip: Int? = null
     ) : FunctionStageConfig()
-    
+
     @Serializable
     @SerialName("Project")
     data class Project(
         val fields: List<String>,
         @EncodeDefault val exclude: Boolean = false
     ) : FunctionStageConfig()
-    
+
     @Serializable
     @SerialName("Group")
     data class Group(
         val by_fields: List<String>,
         val functions: List<GroupFunctionConfig>
     ) : FunctionStageConfig()
-    
+
     @Serializable
     @SerialName("Count")
     data class Count(
         @EncodeDefault val output_field: String = "count"
     ) : FunctionStageConfig()
-    
+
     @Serializable
     @SerialName("Insert")
     data class Insert(
@@ -102,7 +101,7 @@ sealed class FunctionStageConfig {
         @EncodeDefault val bypass_ripple: Boolean = false,
         val ttl: Long? = null
     ) : FunctionStageConfig()
-    
+
     @Serializable
     @SerialName("Update")
     data class Update(
@@ -112,7 +111,7 @@ sealed class FunctionStageConfig {
         @EncodeDefault val bypass_ripple: Boolean = false,
         val ttl: Long? = null
     ) : FunctionStageConfig()
-    
+
     @Serializable
     @SerialName("UpdateById")
     data class UpdateById(
@@ -122,7 +121,7 @@ sealed class FunctionStageConfig {
         @EncodeDefault val bypass_ripple: Boolean = false,
         val ttl: Long? = null
     ) : FunctionStageConfig()
-    
+
     @Serializable
     @SerialName("Delete")
     data class Delete(
@@ -130,7 +129,7 @@ sealed class FunctionStageConfig {
         val filter: JsonObject,
         @EncodeDefault val bypass_ripple: Boolean = false
     ) : FunctionStageConfig()
-    
+
     @Serializable
     @SerialName("DeleteById")
     data class DeleteById(
@@ -138,7 +137,7 @@ sealed class FunctionStageConfig {
         val record_id: String,
         @EncodeDefault val bypass_ripple: Boolean = false
     ) : FunctionStageConfig()
-    
+
     @Serializable
     @SerialName("BatchInsert")
     data class BatchInsert(
@@ -146,7 +145,7 @@ sealed class FunctionStageConfig {
         val records: List<JsonObject>,
         @EncodeDefault val bypass_ripple: Boolean = false
     ) : FunctionStageConfig()
-    
+
     @Serializable
     @SerialName("BatchDelete")
     data class BatchDelete(
@@ -154,31 +153,31 @@ sealed class FunctionStageConfig {
         val record_ids: List<String>,
         @EncodeDefault val bypass_ripple: Boolean = false
     ) : FunctionStageConfig()
-    
+
     @Serializable
     @SerialName("Filter")
     data class Filter(
         val filter: JsonObject
     ) : FunctionStageConfig()
-    
+
     @Serializable
     @SerialName("Sort")
     data class Sort(
         val sort: List<SortFieldConfig>
     ) : FunctionStageConfig()
-    
+
     @Serializable
     @SerialName("Limit")
     data class Limit(
         val limit: Int
     ) : FunctionStageConfig()
-    
+
     @Serializable
     @SerialName("Skip")
     data class Skip(
         val skip: Int
     ) : FunctionStageConfig()
-    
+
     @Serializable
     @SerialName("HttpRequest")
     data class HttpRequest(
@@ -187,7 +186,7 @@ sealed class FunctionStageConfig {
         val headers: Map<String, String>? = null,
         val body: JsonElement? = null
     ) : FunctionStageConfig()
-    
+
     @Serializable
     @SerialName("VectorSearch")
     data class VectorSearch(
@@ -196,7 +195,7 @@ sealed class FunctionStageConfig {
         val limit: Int? = null,
         val threshold: Double? = null
     ) : FunctionStageConfig()
-    
+
     @Serializable
     @SerialName("TextSearch")
     data class TextSearch(
@@ -206,7 +205,7 @@ sealed class FunctionStageConfig {
         val limit: Int? = null,
         val fuzzy: Boolean? = null
     ) : FunctionStageConfig()
-    
+
     @Serializable
     @SerialName("HybridSearch")
     data class HybridSearch(
@@ -215,7 +214,7 @@ sealed class FunctionStageConfig {
         val query_vector: List<Double>? = null,
         val limit: Int? = null
     ) : FunctionStageConfig()
-    
+
     @Serializable
     @SerialName("Chat")
     data class Chat(
@@ -224,22 +223,22 @@ sealed class FunctionStageConfig {
         val temperature: Double? = null,
         val max_tokens: Int? = null
     ) : FunctionStageConfig()
-    
+
     @Serializable
     @SerialName("Embed")
     data class Embed(
         val input_field: String,
         val output_field: String,
-        val model: JsonElement? = null  // Flexible like TypeScript - accepts any JSON
+        val model: JsonElement? = null // Flexible like TypeScript - accepts any JSON
     ) : FunctionStageConfig()
-    
+
     @Serializable
     @SerialName("FindById")
     data class FindById(
         val collection: String,
         val record_id: String
     ) : FunctionStageConfig()
-    
+
     @Serializable
     @SerialName("FindOne")
     data class FindOne(
@@ -247,7 +246,7 @@ sealed class FunctionStageConfig {
         val key: String,
         val value: JsonElement
     ) : FunctionStageConfig()
-    
+
     @Serializable
     @SerialName("FindOneAndUpdate")
     data class FindOneAndUpdate(
@@ -257,7 +256,7 @@ sealed class FunctionStageConfig {
         @EncodeDefault val bypass_ripple: Boolean = false,
         val ttl: Long? = null
     ) : FunctionStageConfig()
-    
+
     @Serializable
     @SerialName("UpdateWithAction")
     data class UpdateWithAction(
@@ -268,7 +267,7 @@ sealed class FunctionStageConfig {
         val value: JsonElement,
         @EncodeDefault val bypass_ripple: Boolean = false
     ) : FunctionStageConfig()
-    
+
     @Serializable
     @SerialName("If")
     data class If(
@@ -276,49 +275,49 @@ sealed class FunctionStageConfig {
         val then_functions: List<FunctionStageConfig>,
         val else_functions: List<FunctionStageConfig>? = null
     ) : FunctionStageConfig()
-    
+
     @Serializable
     @SerialName("ForEach")
     data class ForEach(
         val functions: List<FunctionStageConfig>
     ) : FunctionStageConfig()
-    
+
     @Serializable
     @SerialName("CallFunction")
     data class CallFunction(
         val function_label: String,
         val params: JsonObject? = null
     ) : FunctionStageConfig()
-    
+
     @Serializable
     @SerialName("CreateSavepoint")
     data class CreateSavepoint(
         val name: String
     ) : FunctionStageConfig()
-    
+
     @Serializable
     @SerialName("RollbackToSavepoint")
     data class RollbackToSavepoint(
         val name: String
     ) : FunctionStageConfig()
-    
+
     @Serializable
     @SerialName("ReleaseSavepoint")
     data class ReleaseSavepoint(
         val name: String
     ) : FunctionStageConfig()
-    
+
     // =========================================================================
     // KV Store Operations
     // =========================================================================
-    
+
     /** Returns {value: <data>} on hit, {value: null} on miss */
     @Serializable
     @SerialName("KvGet")
     data class KvGet(
         val key: String
     ) : FunctionStageConfig()
-    
+
     @Serializable
     @SerialName("KvSet")
     data class KvSet(
@@ -326,27 +325,27 @@ sealed class FunctionStageConfig {
         val value: JsonElement,
         val ttl: Long? = null
     ) : FunctionStageConfig()
-    
+
     @Serializable
     @SerialName("KvDelete")
     data class KvDelete(
         val key: String
     ) : FunctionStageConfig()
-    
+
     @Serializable
     @SerialName("KvExists")
     data class KvExists(
         val key: String,
         val output_field: String? = null
     ) : FunctionStageConfig()
-    
+
     @Serializable
     @SerialName("KvQuery")
     data class KvQuery(
         val pattern: String? = null,
         @EncodeDefault val include_expired: Boolean = false
     ) : FunctionStageConfig()
-    
+
     /**
      * SWR (Stale-While-Revalidate) pattern for external API caching.
      * Automatically handles: KV cache check → HTTP request → KV cache set → optional audit storage.

@@ -15,18 +15,18 @@ import io.ktor.client.plugins.websocket.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
-import io.ktor.utils.io.*
 import io.ktor.http.content.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.util.*
+import io.ktor.utils.io.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import kotlinx.serialization.json.*
-import kotlinx.serialization.cbor.Cbor
-import kotlinx.serialization.encodeToByteArray
-import kotlinx.serialization.decodeFromByteArray
 import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.cbor.Cbor
+import kotlinx.serialization.decodeFromByteArray
+import kotlinx.serialization.encodeToByteArray
+import kotlinx.serialization.json.*
 import kotlin.time.Duration.Companion.seconds
 
 /**
@@ -35,13 +35,14 @@ import kotlin.time.Duration.Companion.seconds
 enum class SerializationFormat {
     /** JSON format (default, human-readable, fully supported) */
     JSON,
+
     /** MessagePack format (binary, experimental) - uses CBOR encoding. Has compatibility issues with custom types. */
     MESSAGEPACK
 }
 
 /**
  * ekoDB Client for Kotlin
- * 
+ *
  * Official Kotlin client library for ekoDB - A high-performance database with
  * intelligent caching, real-time capabilities, and automatic optimization.
  */
@@ -67,7 +68,7 @@ class EkoDBClient private constructor(
     private val cbor = Cbor {
         ignoreUnknownKeys = true
     }
-    
+
     private val client: HttpClient = injectedClient ?: HttpClient(CIO) {
         install(ContentNegotiation) {
             json(Json {
@@ -77,18 +78,18 @@ class EkoDBClient private constructor(
                 // No global classDiscriminator - let sealed classes define their own
             })
         }
-        
+
         // Enable compression with proper content negotiation
         // Client sends Accept-Encoding: gzip, server compresses only if it accepts
         install(ContentEncoding) {
             gzip()
             deflate()
         }
-        
+
         install(HttpTimeout) {
             connectTimeoutMillis = timeout * 1000
         }
-        
+
         install(Logging) {
             logger = Logger.DEFAULT
             level = LogLevel.INFO
@@ -97,10 +98,10 @@ class EkoDBClient private constructor(
             // is later raised to HEADERS/ALL.
             sanitizeHeader { header -> header.equals(HttpHeaders.Authorization, ignoreCase = true) }
         }
-        
+
         install(WebSockets)
     }
-    
+
     private var authToken: String? = null
     private var tokenExpiry: Long = 0
     private var lastRateLimitInfo: RateLimitInfo? = null
@@ -127,7 +128,7 @@ class EkoDBClient private constructor(
             lastRateLimitInfo = RateLimitInfo(limit, remaining, reset)
         }
     }
-    
+
     /**
      * Get authentication token (exchanges API key for JWT).
      *
@@ -187,7 +188,7 @@ class EkoDBClient private constructor(
             null
         }
     }
-    
+
     /**
      * Refresh the authentication token
      */
@@ -195,7 +196,7 @@ class EkoDBClient private constructor(
         clearTokenCache()
         return getToken()
     }
-    
+
     /**
      * Clear the cached authentication token and expiry
      */
@@ -203,7 +204,7 @@ class EkoDBClient private constructor(
         authToken = null
         tokenExpiry = 0
     }
-    
+
     /**
      * Determine if a path should always use JSON (metadata endpoints)
      * CRUD operations support MessagePack/CBOR, but metadata/KV/auth/chat endpoints are JSON-only
@@ -220,12 +221,12 @@ class EkoDBClient private constructor(
             "/api/ripples",
             "/api/chat"
         )
-        
+
         return jsonOnlyPaths.any { prefix ->
             path == prefix || path.startsWith("$prefix/")
         }
     }
-    
+
     /**
      * Get the ContentType based on the serialization format and request URL
      */
@@ -240,7 +241,7 @@ class EkoDBClient private constructor(
             }
         }
     }
-    
+
     /**
      * Set request body with proper serialization based on format and request URL
      */
@@ -248,7 +249,7 @@ class EkoDBClient private constructor(
         // Get path from the request URL
         val path = url.encodedPath
         val forceJSON = shouldUseJSON(path)
-        
+
         when {
             forceJSON || this@EkoDBClient.format == SerializationFormat.JSON -> {
                 // Use JSON serialization
@@ -257,7 +258,7 @@ class EkoDBClient private constructor(
                         val jsonString = Json.encodeToString(JsonElement.serializer(), data)
                         setBody(TextContent(jsonString, ContentType.Application.Json))
                     }
-                    else -> setBody(data)  // Let ContentNegotiation handle @Serializable types
+                    else -> setBody(data) // Let ContentNegotiation handle @Serializable types
                 }
             }
             this@EkoDBClient.format == SerializationFormat.MESSAGEPACK -> {
@@ -282,8 +283,8 @@ class EkoDBClient private constructor(
                         // For other types, throw clear error instead of attempting dynamic resolution
                         throw IllegalArgumentException(
                             "MessagePack/CBOR serialization only supports Record, Query, and JsonElement types. " +
-                            "Received unsupported type: ${data::class.qualifiedName}. " +
-                            "Use SerializationFormat.JSON instead or ensure your type is @Serializable and explicitly handled."
+                                "Received unsupported type: ${data::class.qualifiedName}. " +
+                                "Use SerializationFormat.JSON instead or ensure your type is @Serializable and explicitly handled."
                         )
                     }
                 }
@@ -291,7 +292,7 @@ class EkoDBClient private constructor(
             }
         }
     }
-    
+
     /**
      * Parse response body based on format
      */
@@ -305,7 +306,7 @@ class EkoDBClient private constructor(
             }
         }
     }
-    
+
     /**
      * Insert a record into a collection
      */
@@ -319,12 +320,12 @@ class EkoDBClient private constructor(
     ): Record {
         // Add TTL to record if provided
         val finalRecord = if (ttl != null) record.withTtl(ttl) else record
-        
+
         // Build query parameters
         val params = mutableListOf<String>()
         bypassRipple?.let { params.add("bypass_ripple=$it") }
         transactionId?.let { params.add("transaction_id=${it.encodeURLQueryComponent(encodeFull = true)}") }
-        
+
         val url = if (params.isNotEmpty()) {
             "$baseUrl/api/insert/${collection.encodeURLPathPart()}?${params.joinToString("&")}"
         } else {
@@ -338,22 +339,22 @@ class EkoDBClient private constructor(
                 setBody(finalRecord)
             }
         }
-        
+
         if (!response.status.isSuccess()) {
             val errorBody = response.bodyAsText()
             throw Exception("Insert failed with status ${response.status}: $errorBody")
         }
-        
+
         return response.bodyWithFormat()
     }
-    
+
     /**
      * Insert a record with TTL
      */
     suspend fun insertWithTtl(collection: String, record: Record, ttl: String): Record {
         return insert(collection, record.withTtl(ttl))
     }
-    
+
     /**
      * Find a record by ID.
      *
@@ -457,14 +458,14 @@ class EkoDBClient private constructor(
         }
         return response.body()
     }
-    
+
     /**
      * Find all records in a collection
      */
     suspend fun findAll(collection: String): List<Record> {
         return find(collection, Query.new())
     }
-    
+
     /**
      * Update a record
      */
@@ -482,7 +483,7 @@ class EkoDBClient private constructor(
         val params = mutableListOf<String>()
         bypassRipple?.let { params.add("bypass_ripple=$it") }
         transactionId?.let { params.add("transaction_id=${it.encodeURLQueryComponent(encodeFull = true)}") }
-        
+
         val url = if (params.isNotEmpty()) {
             "$baseUrl/api/update/${collection.encodeURLPathPart()}/${id.encodeURLPathPart()}?${params.joinToString("&")}"
         } else {
@@ -498,7 +499,7 @@ class EkoDBClient private constructor(
         }
         return response.body()
     }
-    
+
     /**
      * Apply an atomic field action to a single field of a record.
      *
@@ -584,7 +585,7 @@ class EkoDBClient private constructor(
         val params = mutableListOf<String>()
         bypassRipple?.let { params.add("bypass_ripple=$it") }
         transactionId?.let { params.add("transaction_id=${it.encodeURLQueryComponent(encodeFull = true)}") }
-        
+
         val url = if (params.isNotEmpty()) {
             "$baseUrl/api/delete/${collection.encodeURLPathPart()}/${id.encodeURLPathPart()}?${params.joinToString("&")}"
         } else {
@@ -595,13 +596,13 @@ class EkoDBClient private constructor(
                 header("Authorization", "Bearer $token")
             }
         }
-        
+
         if (!response.status.isSuccess()) {
             val errorBody = response.bodyAsText()
             throw Exception("Delete failed with status ${response.status}: $errorBody")
         }
     }
-    
+
     /**
      * Batch insert records
      * @param collection The collection name
@@ -641,11 +642,11 @@ class EkoDBClient private constructor(
                 })
             }
         }
-        
+
         val result = response.body<JsonObject>()
         val successful = result["successful"]?.jsonArray ?: JsonArray(emptyList())
         val failed = result["failed"]?.jsonArray ?: JsonArray(emptyList())
-        
+
         return BatchResult(
             successful = successful.map { idElement ->
                 val id = idElement.jsonPrimitive.content
@@ -656,7 +657,7 @@ class EkoDBClient private constructor(
             }
         )
     }
-    
+
     /**
      * Batch update records
      * @param collection The collection name
@@ -665,7 +666,7 @@ class EkoDBClient private constructor(
      * @param bypassRipple Optional flag to bypass ripple effects
      */
     suspend fun batchUpdate(
-        collection: String, 
+        collection: String,
         updates: List<Pair<String, Record>>,
         transactionId: String? = null,
         bypassRipple: Boolean? = null
@@ -693,7 +694,7 @@ class EkoDBClient private constructor(
                 })
             }
         }
-        
+
         val result = response.body<JsonObject>()
         val successful = result["successful"]?.jsonArray ?: JsonArray(emptyList())
         return successful.map { idElement ->
@@ -701,7 +702,7 @@ class EkoDBClient private constructor(
             Record().apply { this["id"] = FieldType.string(id) }
         }
     }
-    
+
     /**
      * Batch delete records by IDs
      * @param collection The collection name
@@ -741,20 +742,20 @@ class EkoDBClient private constructor(
                 })
             }
         }
-        
+
         val result = response.body<JsonObject>()
         val successful = result["successful"]?.jsonArray ?: JsonArray(emptyList())
         return successful.size.toLong()
     }
-    
+
     // ========== Convenience Methods ==========
-    
+
     /**
      * Insert or update a record (upsert operation)
-     * 
+     *
      * Attempts to update the record first. If the record doesn't exist (404 error),
      * it will be inserted instead. This provides atomic insert-or-update semantics.
-     * 
+     *
      * @param collection Collection name
      * @param id Record ID
      * @param record Record data to insert or update
@@ -781,13 +782,13 @@ class EkoDBClient private constructor(
             }
         }
     }
-    
+
     /**
      * Find a single record by field value
-     * 
+     *
      * Convenience method for finding one record matching a specific field value.
      * Returns null if no record matches, or the first matching record.
-     * 
+     *
      * @param collection Collection name
      * @param field Field name to search
      * @param value Value to match (any JSON-serializable type)
@@ -798,16 +799,16 @@ class EkoDBClient private constructor(
             .eq(field, value)
             .limit(1)
             .build()
-        
+
         val results = find(collection, query)
         return results.firstOrNull()
     }
-    
+
     /**
      * Check if a record exists by ID
-     * 
+     *
      * This is more efficient than fetching the record when you only need to check existence.
-     * 
+     *
      * @param collection Collection name
      * @param id Record ID to check
      * @return true if the record exists, false if it doesn't
@@ -824,12 +825,12 @@ class EkoDBClient private constructor(
             }
         }
     }
-    
+
     /**
      * Paginate through records
-     * 
+     *
      * Convenience method for pagination with page numbers (1-indexed).
-     * 
+     *
      * @param collection Collection name
      * @param page Page number (1-indexed, i.e., first page is 1)
      * @param pageSize Number of records per page
@@ -838,15 +839,15 @@ class EkoDBClient private constructor(
     suspend fun paginate(collection: String, page: Int, pageSize: Int): List<Record> {
         // Page 1 = skip 0, Page 2 = skip pageSize, etc.
         val skip = if (page > 0) (page - 1) * pageSize else 0
-        
+
         val query = QueryBuilder()
             .limit(pageSize)
             .skip(skip)
             .build()
-        
+
         return find(collection, query)
     }
-    
+
     /**
      * Count documents in a collection
      */
@@ -860,7 +861,7 @@ class EkoDBClient private constructor(
         val json = response.body<JsonObject>()
         return json["count"].toString().toLong()
     }
-    
+
     /**
      * List all collections
      */
@@ -888,7 +889,7 @@ class EkoDBClient private constructor(
         val collections = result["collections"]?.jsonArray ?: JsonArray(emptyList())
         return collections.map { it.jsonPrimitive.content }
     }
-    
+
     /**
      * Delete a collection
      */
@@ -913,7 +914,7 @@ class EkoDBClient private constructor(
         val result: JsonObject = response.body()
         return result["status"]?.toString()?.contains("restored") == true
     }
-    
+
     /**
      * Restore all deleted records in a collection from trash
      * Returns the number of records restored
@@ -927,7 +928,7 @@ class EkoDBClient private constructor(
         val result: JsonObject = response.body()
         return result["records_restored"]?.toString()?.toLongOrNull() ?: 0L
     }
-    
+
     /**
      * Health check - verify the ekoDB server is responding
      */
@@ -940,7 +941,7 @@ class EkoDBClient private constructor(
             false
         }
     }
-    
+
     /**
      * Create a collection with schema
      */
@@ -954,7 +955,7 @@ class EkoDBClient private constructor(
             }
         }
     }
-    
+
     /**
      * Get collection metadata
      */
@@ -978,7 +979,7 @@ class EkoDBClient private constructor(
         }
         return response.body()
     }
-    
+
     /**
      * Check if a collection exists
      */
@@ -1004,7 +1005,7 @@ class EkoDBClient private constructor(
         val json = Json.parseToJsonElement(body).jsonObject
         return json["count"]?.jsonPrimitive?.long ?: 0L
     }
-    
+
     /**
      * Search documents in a collection
      */
@@ -1019,7 +1020,7 @@ class EkoDBClient private constructor(
         }
         return response.body()
     }
-    
+
     /**
      * Get distinct (unique) values for a field across a collection.
      *
@@ -1277,7 +1278,7 @@ class EkoDBClient private constructor(
             }
         }
     }
-    
+
     /**
      * Key-Value: Get a value
      */
@@ -1287,15 +1288,15 @@ class EkoDBClient private constructor(
                 header("Authorization", "Bearer $token")
             }
         }
-        
+
         if (response.status == HttpStatusCode.NotFound) {
             return null
         }
-        
+
         val result = response.body<JsonObject>()
         return result["value"]
     }
-    
+
     /**
      * Key-Value: Delete a key
      */
@@ -1305,7 +1306,7 @@ class EkoDBClient private constructor(
                 header("Authorization", "Bearer $token")
             }
         }
-        
+
         if (!response.status.isSuccess() && response.status != HttpStatusCode.NotFound) {
             val errorBody = response.bodyAsText()
             throw Exception("KV delete failed with status ${response.status}: $errorBody")
@@ -1335,7 +1336,7 @@ class EkoDBClient private constructor(
         val body = buildJsonObject {
             put("keys", JsonArray(keys.map { JsonPrimitive(it) }))
         }
-        
+
         val response = executeWithRetry { token ->
             client.post("$baseUrl/api/kv/batch/get") {
                 header("Authorization", "Bearer $token")
@@ -1343,15 +1344,15 @@ class EkoDBClient private constructor(
                 setBody(body)
             }
         }
-        
+
         if (!response.status.isSuccess()) {
             val errorBody = response.bodyAsText()
             throw Exception("KV batch get failed with status ${response.status}: $errorBody")
         }
-        
+
         return response.body<List<JsonElement>>()
     }
-    
+
     /**
      * Key-Value: Batch set multiple key-value pairs.
      * Note: TTL from the first entry with a valid TTL is applied to all entries (server limitation).
@@ -1362,13 +1363,13 @@ class EkoDBClient private constructor(
         val values = entries.map { buildJsonObject { put("value", it.second) } }
         // Server applies a single TTL to all entries - use first entry's TTL if provided
         val ttl = entries.firstOrNull()?.third
-        
+
         val body = buildJsonObject {
             put("keys", JsonArray(keys.map { JsonPrimitive(it) }))
             put("values", JsonArray(values))
             ttl?.let { put("ttl", JsonPrimitive(it)) }
         }
-        
+
         val response = executeWithRetry { token ->
             client.post("$baseUrl/api/kv/batch/set") {
                 header("Authorization", "Bearer $token")
@@ -1376,18 +1377,18 @@ class EkoDBClient private constructor(
                 setBody(body)
             }
         }
-        
+
         if (!response.status.isSuccess()) {
             val errorBody = response.bodyAsText()
             throw Exception("KV batch set failed with status ${response.status}: $errorBody")
         }
-        
+
         val result = response.body<List<JsonArray>>()
-        return result.map { arr -> 
+        return result.map { arr ->
             Pair(arr[0].jsonPrimitive.content, arr[1].jsonPrimitive.boolean)
         }
     }
-    
+
     /**
      * Key-Value: Batch delete multiple keys
      */
@@ -1395,7 +1396,7 @@ class EkoDBClient private constructor(
         val body = buildJsonObject {
             put("keys", JsonArray(keys.map { JsonPrimitive(it) }))
         }
-        
+
         val response = executeWithRetry { token ->
             client.delete("$baseUrl/api/kv/batch/delete") {
                 header("Authorization", "Bearer $token")
@@ -1403,18 +1404,18 @@ class EkoDBClient private constructor(
                 setBody(body)
             }
         }
-        
+
         if (!response.status.isSuccess()) {
             val errorBody = response.bodyAsText()
             throw Exception("KV batch delete failed with status ${response.status}: $errorBody")
         }
-        
+
         val result = response.body<List<JsonArray>>()
-        return result.map { arr -> 
+        return result.map { arr ->
             Pair(arr[0].jsonPrimitive.content, arr[1].jsonPrimitive.boolean)
         }
     }
-    
+
     /**
      * Key-Value: Check if a key exists
      */
@@ -1426,7 +1427,7 @@ class EkoDBClient private constructor(
             false
         }
     }
-    
+
     /**
      * Key-Value: Find/query entries with pattern matching
      */
@@ -1435,7 +1436,7 @@ class EkoDBClient private constructor(
             pattern?.let { put("pattern", it) }
             put("include_expired", includeExpired)
         }
-        
+
         val response = executeWithRetry { token ->
             client.post("$baseUrl/api/kv/find") {
                 header("Authorization", "Bearer $token")
@@ -1443,33 +1444,32 @@ class EkoDBClient private constructor(
                 setBody(body)
             }
         }
-        
+
         if (!response.status.isSuccess()) {
             val errorBody = response.bodyAsText()
             throw Exception("KV find failed with status ${response.status}: $errorBody")
         }
-        
+
         return response.body<List<JsonElement>>()
     }
-    
+
     /**
      * Key-Value: Query entries with pattern (alias for kvFind)
      */
     suspend fun kvQuery(pattern: String? = null, includeExpired: Boolean = false): List<JsonElement> {
         return kvFind(pattern, includeExpired)
     }
-    
+
     // ============================================================================
     // Transaction Operations
     // ============================================================================
-    
+
     /**
      * Begin a new transaction
      * @param isolationLevel Transaction isolation level (default: "ReadCommitted")
      * @return Transaction ID
      */
     suspend fun beginTransaction(isolationLevel: String = "ReadCommitted"): String {
-        
         val response = executeWithRetry { token ->
             client.post("$baseUrl/api/transactions") {
                 header("Authorization", "Bearer $token")
@@ -1477,24 +1477,23 @@ class EkoDBClient private constructor(
                 setBody(mapOf("isolation_level" to isolationLevel))
             }
         }
-        
+
         if (!response.status.isSuccess()) {
             val errorBody = response.bodyAsText()
             throw Exception("Begin transaction failed with status ${response.status}: $errorBody")
         }
-        
+
         val result = response.body<JsonElement>()
         return result.jsonObject["transaction_id"]?.jsonPrimitive?.content
             ?: throw Exception("No transaction_id in response")
     }
-    
+
     /**
      * Get transaction status
      * @param transactionId The transaction ID
      * @return Transaction status map
      */
     suspend fun getTransactionStatus(transactionId: String): Map<String, Any?> {
-        
         val response = executeWithRetry { token ->
             client.get("$baseUrl/api/transactions/${transactionId.encodeURLPathPart()}") {
                 header("Authorization", "Bearer $token")
@@ -1505,14 +1504,14 @@ class EkoDBClient private constructor(
             val errorBody = response.bodyAsText()
             throw Exception("Get transaction status failed with status ${response.status}: $errorBody")
         }
-        
+
         val result = response.body<JsonElement>()
         return mapOf(
             "state" to result.jsonObject["state"]?.jsonPrimitive?.content,
             "operations_count" to result.jsonObject["operations_count"]?.jsonPrimitive?.int
         )
     }
-    
+
     /**
      * Commit a transaction.
      *
@@ -1527,7 +1526,6 @@ class EkoDBClient private constructor(
      * @param transactionId The transaction ID to commit
      */
     suspend fun commitTransaction(transactionId: String) {
-
         val response = executeWithRetry { token ->
             client.post("$baseUrl/api/transactions/${transactionId.encodeURLPathPart()}/commit") {
                 header("Authorization", "Bearer $token")
@@ -1545,7 +1543,6 @@ class EkoDBClient private constructor(
      * @param transactionId The transaction ID to rollback
      */
     suspend fun rollbackTransaction(transactionId: String) {
-
         val response = executeWithRetry { token ->
             client.post("$baseUrl/api/transactions/${transactionId.encodeURLPathPart()}/rollback") {
                 header("Authorization", "Bearer $token")
@@ -1689,7 +1686,7 @@ class EkoDBClient private constructor(
     // ========================================================================
     // Chat/AI Methods
     // ========================================================================
-    
+
     /**
      * Get all available chat models
      */
@@ -1715,7 +1712,7 @@ class EkoDBClient private constructor(
         }
         return response.body()
     }
-    
+
     /**
      * Get specific chat model info
      */
@@ -1727,7 +1724,7 @@ class EkoDBClient private constructor(
         }
         return response.body()
     }
-    
+
     /**
      * Execute a tool via ekoDB's server-side tool pipeline.
      *
@@ -1796,7 +1793,7 @@ class EkoDBClient private constructor(
         }
         return response.body()
     }
-    
+
     /**
      * Get a chat session by ID
      */
@@ -1823,7 +1820,7 @@ class EkoDBClient private constructor(
         }
         return response.body()
     }
-    
+
     /**
      * Update chat session metadata
      */
@@ -1838,7 +1835,7 @@ class EkoDBClient private constructor(
         }
         return response.body()
     }
-    
+
     /**
      * Delete a chat session
      */
@@ -1849,7 +1846,7 @@ class EkoDBClient private constructor(
             }
         }
     }
-    
+
     /**
      * Branch a chat session from an existing one
      */
@@ -1864,7 +1861,7 @@ class EkoDBClient private constructor(
         }
         return response.body()
     }
-    
+
     /**
      * Merge multiple chat sessions
      */
@@ -1879,7 +1876,7 @@ class EkoDBClient private constructor(
         }
         return response.body()
     }
-    
+
     /**
      * Send a message in an existing chat session
      */
@@ -2022,7 +2019,7 @@ class EkoDBClient private constructor(
         }
         return response.body()
     }
-    
+
     /**
      * Get a specific message by ID
      */
@@ -2034,7 +2031,7 @@ class EkoDBClient private constructor(
         }
         return response.body()
     }
-    
+
     /**
      * Update a chat message
      */
@@ -2048,7 +2045,7 @@ class EkoDBClient private constructor(
             }
         }
     }
-    
+
     /**
      * Delete a chat message
      */
@@ -2059,7 +2056,7 @@ class EkoDBClient private constructor(
             }
         }
     }
-    
+
     /**
      * Regenerate a chat message
      */
@@ -2071,7 +2068,7 @@ class EkoDBClient private constructor(
         }
         return response.body()
     }
-    
+
     /**
      * Toggle forgotten status of a message
      */
@@ -2192,14 +2189,14 @@ class EkoDBClient private constructor(
         ws.schemaCache = schemaCache
         return ws
     }
-    
+
     /**
      * Close the client and release resources
      */
     fun close() {
         client.close()
     }
-    
+
     /**
      * Builder for creating EkoDBClient instances
      */
@@ -2226,8 +2223,10 @@ class EkoDBClient private constructor(
          * collection's primary_key_alias. Parity with the other clients.
          */
         fun schemaCache(enabled: Boolean) = apply { this.schemaCacheEnabled = enabled }
+
         /** Schema cache TTL in milliseconds (default 300000). */
         fun schemaCacheTtlMs(ms: Long) = apply { this.schemaCacheTtlMs = ms }
+
         /** Max collections the schema cache holds (default 100). */
         fun schemaCacheMax(max: Int) = apply { this.schemaCacheMax = max }
 
@@ -2236,12 +2235,12 @@ class EkoDBClient private constructor(
          * MESSAGEPACK uses CBOR encoding which is faster but has compatibility issues with custom types
          */
         fun format(format: SerializationFormat) = apply { this.format = format }
-        
+
         /**
          * Set a custom HTTP client (for testing with mock engines)
          */
         fun httpClient(client: HttpClient) = apply { this.httpClient = client }
-        
+
         fun build(): EkoDBClient {
             require(apiKey.isNotEmpty()) { "API key is required" }
             return EkoDBClient(
@@ -2250,11 +2249,11 @@ class EkoDBClient private constructor(
             )
         }
     }
-    
+
     // ========================================================================
     // SCRIPTS API
     // ========================================================================
-    
+
     /**
      * Save a new function definition
      */
@@ -2266,18 +2265,18 @@ class EkoDBClient private constructor(
                 setBody(function)
             }
         }
-        
+
         // Check for error response
         if (response.status.value >= 400) {
             val errorText = response.bodyAsText()
             throw IllegalStateException("Server error ${response.status.value}: $errorText")
         }
-        
+
         val result = response.body<JsonObject>()
-        return result["id"]?.jsonPrimitive?.content 
+        return result["id"]?.jsonPrimitive?.content
             ?: throw IllegalStateException("No function ID returned")
     }
-    
+
     /**
      * Get a function by ID
      */
@@ -2289,7 +2288,7 @@ class EkoDBClient private constructor(
         }
         return response.body<io.ekodb.client.functions.UserFunction>()
     }
-    
+
     /**
      * List all functions, optionally filtered by tags
      */
@@ -2306,7 +2305,7 @@ class EkoDBClient private constructor(
         }
         return response.body<List<io.ekodb.client.functions.UserFunction>>()
     }
-    
+
     /**
      * Update an existing function by ID
      */
@@ -2319,7 +2318,7 @@ class EkoDBClient private constructor(
             }
         }
     }
-    
+
     /**
      * Delete a function by ID
      */
@@ -2330,7 +2329,7 @@ class EkoDBClient private constructor(
             }
         }
     }
-    
+
     /**
      * Call a function by label or ID
      * @param labelOrId Function label or encrypted ID
@@ -2350,7 +2349,7 @@ class EkoDBClient private constructor(
         }
         return response.body<io.ekodb.client.functions.FunctionResult>()
     }
-    
+
     /**
      * Call a function (deprecated - use callFunction with labelOrId)
      * @deprecated Use callFunction(labelOrId, params) instead
@@ -2363,7 +2362,7 @@ class EkoDBClient private constructor(
     ): io.ekodb.client.functions.FunctionResult {
         return callFunction(label, params)
     }
-    
+
     // ========================================================================
     // USER FUNCTIONS API
     // ========================================================================
@@ -2479,17 +2478,17 @@ class EkoDBClient private constructor(
 
     /**
      * Generate embeddings for text using ekoDB's native Functions
-     * 
+     *
      * This helper simplifies embedding generation by:
      * 1. Creating a temporary collection with the text
      * 2. Running a function with FindAll + Embed Functions
      * 3. Extracting and returning the embedding vector
      * 4. Cleaning up temporary resources
-     * 
+     *
      * @param text The text to generate embeddings for
      * @param model The embedding model to use (e.g., "text-embedding-3-small")
      * @return List of floats representing the embedding vector
-     * 
+     *
      * @example
      * ```kotlin
      * val embedding = client.embed("Hello world", "text-embedding-3-small")
@@ -2545,17 +2544,17 @@ class EkoDBClient private constructor(
         }
         return response.body<JsonObject>()
     }
-    
+
     /**
      * Perform full-text search on a collection
-     * 
+     *
      * Searches documents using keyword matching with fuzzy matching and stemming.
-     * 
+     *
      * @param collection Collection name to search
      * @param queryText Search query text
      * @param limit Maximum number of results to return
      * @return List of matching records
-     * 
+     *
      * @example
      * ```kotlin
      * val results = client.textSearch("messages", "ownership system", 10)
@@ -2570,10 +2569,10 @@ class EkoDBClient private constructor(
             put("query", queryText)
             put("limit", limit)
         }
-        
+
         val response = search(collection, searchQuery)
         val results = response["results"]?.jsonArray ?: return emptyList()
-        
+
         return results.map { result ->
             val record = result.jsonObject["record"]?.jsonObject ?: buildJsonObject {}
             val score = result.jsonObject["score"]?.jsonPrimitive?.doubleOrNull ?: 0.0
@@ -2584,19 +2583,19 @@ class EkoDBClient private constructor(
             }
         }
     }
-    
+
     /**
      * Perform hybrid search combining text and vector search
-     * 
+     *
      * Combines semantic similarity (vector search) with keyword matching (text search)
      * for more accurate and relevant results.
-     * 
+     *
      * @param collection Collection name to search
      * @param queryText Search query text
      * @param queryVector Embedding vector for semantic search
      * @param limit Maximum number of results to return
      * @return List of matching records
-     * 
+     *
      * @example
      * ```kotlin
      * val embedding = client.embed(query, "text-embedding-3-small")
@@ -2614,10 +2613,10 @@ class EkoDBClient private constructor(
             put("vector", JsonArray(queryVector.map { JsonPrimitive(it) }))
             put("limit", limit)
         }
-        
+
         val response = search(collection, searchQuery)
         val results = response["results"]?.jsonArray ?: return emptyList()
-        
+
         return results.map { result ->
             val record = result.jsonObject["record"]?.jsonObject ?: buildJsonObject {}
             val score = result.jsonObject["score"]?.jsonPrimitive?.doubleOrNull ?: 0.0
@@ -2628,16 +2627,16 @@ class EkoDBClient private constructor(
             }
         }
     }
-    
+
     /**
      * Find all records in a collection with a limit
-     * 
+     *
      * Simplified method to query all documents in a collection.
-     * 
+     *
      * @param collection Collection name
      * @param limit Maximum number of records to return
      * @return List of records
-     * 
+     *
      * @example
      * ```kotlin
      * val allMessages = client.findAllWithLimit("messages", 1000)
@@ -2650,7 +2649,7 @@ class EkoDBClient private constructor(
             .build()
         return find(collection, query)
     }
-    
+
     // ========================================================================
     // ── Goal CRUD ──
     // ========================================================================

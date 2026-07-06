@@ -26,7 +26,10 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=7.0.0", "pytest-asyncio>=0.21.0"]
+# ruff is pinned (==) so local `make lint-python` and CI run the identical lint
+# set — an unpinned ruff would silently gain/drop lints across versions and
+# desync local vs CI. Keep this in lockstep with the CI job's `ruff==` pin.
+dev = ["pytest>=7.0.0", "pytest-asyncio>=0.21.0", "ruff==0.15.7"]
 
 [project.urls]
 Homepage = "https://github.com/ekoDB/ekodb-client"

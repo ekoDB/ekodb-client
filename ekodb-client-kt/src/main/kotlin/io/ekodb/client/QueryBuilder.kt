@@ -1,6 +1,5 @@
 package io.ekodb.client
 
-import io.ekodb.client.types.FieldType
 import io.ekodb.client.types.Query
 import kotlinx.serialization.json.*
 
@@ -8,7 +7,8 @@ import kotlinx.serialization.json.*
  * Sort order for query results
  */
 enum class SortOrder {
-    ASC, DESC
+    ASC,
+    DESC
 }
 
 /**
@@ -24,7 +24,7 @@ class QueryBuilder {
     private var bypassRippleValue: Boolean? = null
     private var selectFieldsValue: List<String>? = null
     private var excludeFieldsValue: List<String>? = null
-    
+
     /**
      * Equal to
      */
@@ -38,7 +38,7 @@ class QueryBuilder {
             })
         })
     }
-    
+
     /**
      * Not equal to
      */
@@ -52,7 +52,7 @@ class QueryBuilder {
             })
         })
     }
-    
+
     /**
      * Greater than
      */
@@ -66,7 +66,7 @@ class QueryBuilder {
             })
         })
     }
-    
+
     /**
      * Greater than or equal
      */
@@ -80,7 +80,7 @@ class QueryBuilder {
             })
         })
     }
-    
+
     /**
      * Less than
      */
@@ -94,7 +94,7 @@ class QueryBuilder {
             })
         })
     }
-    
+
     /**
      * Less than or equal
      */
@@ -108,7 +108,7 @@ class QueryBuilder {
             })
         })
     }
-    
+
     /**
      * In array
      */
@@ -122,7 +122,7 @@ class QueryBuilder {
             })
         })
     }
-    
+
     /**
      * Not in array
      */
@@ -136,7 +136,7 @@ class QueryBuilder {
             })
         })
     }
-    
+
     // Note: regex filtering is pending server-side support. The server has no
     // Regex filter operator; use contains/startsWith/endsWith instead.
 
@@ -238,31 +238,31 @@ class QueryBuilder {
     fun sortAsc(field: String) = apply {
         sorts.add(field to true)
     }
-    
+
     /**
      * Sort ascending (alias)
      */
     fun sortAscending(field: String) = sortAsc(field)
-    
+
     /**
      * Sort descending
      */
     fun sortDesc(field: String) = apply {
         sorts.add(field to false)
     }
-    
+
     /**
      * Sort descending (alias)
      */
     fun sortDescending(field: String) = sortDesc(field)
-    
+
     /**
      * Limit number of results
      */
     fun limit(limit: Int) = apply {
         limitValue = limit
     }
-    
+
     /**
      * Skip number of results for pagination
      */
@@ -278,49 +278,49 @@ class QueryBuilder {
         skipValue = page * pageSize
         limitValue = pageSize
     }
-    
+
     /**
      * Bypass cache
      */
     fun bypassCache(bypass: Boolean = true) = apply {
         bypassCacheValue = bypass
     }
-    
+
     /**
      * Bypass ripple
      */
     fun bypassRipple(bypass: Boolean = true) = apply {
         bypassRippleValue = bypass
     }
-    
+
     /**
      * Select specific fields to return (plus 'id' which is always included)
      */
     fun selectFields(vararg fields: String) = apply {
         selectFieldsValue = fields.toList()
     }
-    
+
     /**
      * Select specific fields to return (plus 'id' which is always included)
      */
     fun selectFields(fields: List<String>) = apply {
         selectFieldsValue = fields
     }
-    
+
     /**
      * Exclude specific fields from results
      */
     fun excludeFields(vararg fields: String) = apply {
         excludeFieldsValue = fields.toList()
     }
-    
+
     /**
      * Exclude specific fields from results
      */
     fun excludeFields(fields: List<String>) = apply {
         excludeFieldsValue = fields
     }
-    
+
     /**
      * Add join configuration
      * @param joinConfig Map containing join configuration with keys:
@@ -332,7 +332,7 @@ class QueryBuilder {
     fun join(joinConfig: Map<String, Any>) = apply {
         joinValue = convertMapToJsonElement(joinConfig)
     }
-    
+
     /**
      * Add a simple join with another collection
      * @param collection Target collection to join
@@ -353,7 +353,7 @@ class QueryBuilder {
             put("as", alias)
         }
     }
-    
+
     /**
      * Build the query
      */
@@ -370,7 +370,7 @@ class QueryBuilder {
                 })
             }
         }
-        
+
         // Build sort as array of {field, ascending} objects
         val sortJson = if (sorts.isNotEmpty()) {
             JsonArray(sorts.map { (field, ascending) ->
@@ -379,8 +379,10 @@ class QueryBuilder {
                     put("ascending", ascending)
                 }
             })
-        } else null
-        
+        } else {
+            null
+        }
+
         return Query(
             filter = filterJson,
             sort = sortJson,
@@ -393,9 +395,9 @@ class QueryBuilder {
             excludeFields = excludeFieldsValue
         )
     }
-    
+
     private fun convertToJsonElement(value: Any): JsonElement = valueToJsonElement(value)
-    
+
     private fun convertMapToJsonElement(map: Map<String, Any>): JsonElement {
         return buildJsonObject {
             map.forEach { (key, value) ->
@@ -404,7 +406,7 @@ class QueryBuilder {
                     is Number -> put(key, value)
                     is Boolean -> put(key, value)
                     is Map<*, *> -> put(key, convertMapToJsonElement(value as Map<String, Any>))
-                    is List<*> -> put(key, JsonArray(value.map { 
+                    is List<*> -> put(key, JsonArray(value.map {
                         when (it) {
                             is Map<*, *> -> convertMapToJsonElement(it as Map<String, Any>)
                             else -> convertToJsonElement(it!!)
@@ -416,7 +418,7 @@ class QueryBuilder {
             }
         }
     }
-    
+
     companion object {
         fun new() = QueryBuilder()
 

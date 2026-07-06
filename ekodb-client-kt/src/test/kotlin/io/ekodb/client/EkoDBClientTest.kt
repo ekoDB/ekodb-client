@@ -6,15 +6,15 @@ import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.http.*
 import io.ktor.http.content.TextContent
 import io.ktor.serialization.kotlinx.json.*
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
-import kotlin.test.assertFalse
-import kotlin.test.assertFailsWith
 import kotlin.test.fail
 
 /**
@@ -22,7 +22,6 @@ import kotlin.test.fail
  * Tests client methods with mock HTTP responses
  */
 class EkoDBClientTest {
-
     private val testBaseUrl = "https://test.ekodb.net"
     private val testApiKey = "test_api_key_123"
 

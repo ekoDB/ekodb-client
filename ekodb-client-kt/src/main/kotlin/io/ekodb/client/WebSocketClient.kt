@@ -11,8 +11,8 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
-import org.msgpack.core.MessagePack
 import org.msgpack.core.MessageBufferPacker
+import org.msgpack.core.MessagePack
 import org.msgpack.core.MessageUnpacker
 import org.msgpack.value.ValueType
 
@@ -194,7 +194,9 @@ class WebSocketClient(
             it.join()
         }
 
-        val url = if (wsUrl.contains("/api/ws")) wsUrl else {
+        val url = if (wsUrl.contains("/api/ws")) {
+            wsUrl
+        } else {
             val baseUrl = wsUrl.trimEnd('/')
             "$baseUrl/api/ws"
         }

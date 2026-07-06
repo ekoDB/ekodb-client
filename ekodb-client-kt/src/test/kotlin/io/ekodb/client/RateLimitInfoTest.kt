@@ -2,11 +2,10 @@ package io.ekodb.client
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class RateLimitInfoTest {
-
     @Test
     fun `basic construction`() {
         val info = RateLimitInfo(limit = 1000, remaining = 500, reset = 1234567890L)

@@ -6,7 +6,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class JoinConfigTest {
-
     @Test
     fun `single collection join`() {
         val join = JoinConfig.single("users", "user_id", "id", "user")
