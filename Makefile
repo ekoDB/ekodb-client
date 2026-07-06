@@ -376,7 +376,7 @@ deploy-client-kt:
 deploy-client-kotlin: deploy-client-kt
 
 # Test targets - runs ALL unit tests across all client libraries
-test: ensure-hooks examples-ls-check
+test: ensure-hooks examples-ls-check build-python-client
 	@RUST_COUNT=0; TS_COUNT=0; PY_COUNT=0; KT_COUNT=0; \
 	echo "🦀 $(CYAN)Running Rust client tests...$(RESET)"; \
 	RUST_OUTPUT=$$($(CARGO) test -p ekodb_client 2>&1); \
@@ -422,7 +422,7 @@ test-typescript:
 	@cd $(CLIENT_TS_DIR) && npm test
 	@echo "✅ $(GREEN)TypeScript tests complete!$(RESET)"
 
-test-python:
+test-python: build-python-client
 	@echo "🐍 $(CYAN)Running Python client tests...$(RESET)"
 	@cd $(CLIENT_PY_DIR) && $(VENV_PY) -m pytest tests/ -v
 	@echo "✅ $(GREEN)Python tests complete!$(RESET)"
@@ -1477,7 +1477,9 @@ lint-typescript:
 
 # Python: ruff (catches unused imports, style issues)
 # ruff version is pinned in ekodb-client-py/pyproject.toml [project.optional-dependencies].dev
-# (install with `pip install -e ".[dev]"`) so local and CI run the same lint set.
+# and in the CI lint step. This target lints with whatever `ruff` is on PATH
+# (and skips if none is installed), so install the pinned dev deps
+# (`pip install -e ".[dev]"`) to lint with the same version CI uses.
 lint-python:
 	@echo "🐍 $(CYAN)Running Python lint...$(RESET)"
 	@if command -v ruff >/dev/null 2>&1; then \
