@@ -4,8 +4,9 @@ root = true
 #
 # We run ktlint as a lint gate (local `make lint-kotlin` and CI both call the
 # ktlint gradle plugin), scoped to a HIGH-VALUE subset of the standard ruleset:
-# unused imports, wildcard imports, import ordering, trailing whitespace, and
-# basic spacing. The aggressive line-reflow / wrapping / trailing-comma
+# unused imports, import ordering, trailing whitespace, and basic spacing.
+# (no-wildcard-imports is intentionally disabled below — see its note.)
+# The aggressive line-reflow / wrapping / trailing-comma
 # "house-style" rules are disabled — they would reformat nearly every file
 # (2674 findings) without catching a single correctness issue. This mirrors how
 # the Python client scopes ruff to E/F/W rather than full reformatting.

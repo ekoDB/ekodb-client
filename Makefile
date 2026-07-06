@@ -1085,6 +1085,8 @@ build-python-client: venv ensure-cargo
 		echo "$(RED)No compatible wheel found for current platform$(RESET)"; \
 		exit 1; \
 	fi
+	@echo "🧪 $(CYAN)Ensuring test dependencies (pytest) in .venv...$(RESET)"
+	@$(VENV_PY) -m pip install --quiet pytest pytest-asyncio
 	@echo "✅ $(GREEN)Python client package built and installed!$(RESET)"
 
 test-examples-python-client: build-python-client python-example-deps
