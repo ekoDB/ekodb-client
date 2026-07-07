@@ -4,5 +4,5 @@
 Rust: 442
 TypeScript: 433
 Python: 333
-Kotlin: 407
-Total: 1615
+Kotlin: 393
+Total: 1601
