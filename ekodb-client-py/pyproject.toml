@@ -28,7 +28,9 @@ classifiers = [
 [project.optional-dependencies]
 # ruff is pinned (==) so local `make lint-python` and CI run the identical lint
 # set — an unpinned ruff would silently gain/drop lints across versions and
-# desync local vs CI. Keep this in lockstep with the CI job's `ruff==` pin.
+# desync local vs CI. This is the SINGLE source of truth for the ruff version:
+# the Makefile's `ensure-ruff` reads it from here, and CI's lint step runs
+# `make lint-python`, so there is no second pin to keep in lockstep.
 dev = ["pytest>=7.0.0", "pytest-asyncio>=0.21.0", "ruff==0.15.7"]
 
 [project.urls]

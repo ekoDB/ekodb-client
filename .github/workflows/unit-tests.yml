@@ -104,15 +104,15 @@ jobs:
       - name: Install maturin and test dependencies
         run: |
           source .venv/bin/activate
-          pip install maturin pytest pytest-asyncio "ruff==0.15.7"
+          pip install maturin pytest pytest-asyncio
 
-      # Same check developers run locally (`make lint-python` -> `ruff check`).
-      # ruff is pinned (== here and in pyproject dev deps) so the lint set is
-      # identical on both sides; config lives in pyproject.toml [tool.ruff].
-      - name: Lint (ruff)
-        run: |
-          source .venv/bin/activate
-          ruff check python/ tests/
+      # Runs the exact target developers run locally, from the repo root, so the
+      # lint set cannot drift: `make lint-python` provisions the pinned ruff
+      # (single source of truth: ekodb-client-py/pyproject.toml [dev]) into a venv
+      # and runs it unconditionally. No hardcoded ruff version in CI.
+      - name: Lint (make lint-python)
+        working-directory: ${{ github.workspace }}
+        run: make lint-python
 
       - name: Build and install Python client
         # `RUSTUP_TOOLCHAIN` short-circuits cargo's rust-toolchain.toml
