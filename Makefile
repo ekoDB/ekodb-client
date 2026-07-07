@@ -1538,6 +1538,10 @@ lint-typescript:
 RUFF_VERSION := $(shell grep -oE 'ruff==[0-9.]+' $(CLIENT_PY_DIR)/pyproject.toml | head -1 | cut -d= -f3)
 
 ensure-ruff: venv
+	@if [ -z "$(RUFF_VERSION)" ]; then \
+		echo "❌ $(RED)Could not read the pinned ruff version from $(CLIENT_PY_DIR)/pyproject.toml [dev].$(RESET)"; \
+		echo "$(YELLOW)   Expected a line like: ruff==X.Y.Z$(RESET)"; exit 1; \
+	fi
 	@if ! $(VENV_PY) -m ruff --version 2>/dev/null | grep -qwF "$(RUFF_VERSION)"; then \
 		echo "📦 $(YELLOW)Installing ruff $(RUFF_VERSION) into .venv...$(RESET)"; \
 		$(VENV_PY) -m pip install --quiet "ruff==$(RUFF_VERSION)"; \
