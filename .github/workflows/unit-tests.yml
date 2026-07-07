@@ -24,6 +24,10 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: 1.95.0
+          # This job runs `cargo clippy`; the pinned toolchain override does not
+          # pick up rust-toolchain.toml's components, so install them explicitly
+          # (matches rust-toolchain.toml: rustfmt + clippy).
+          components: clippy, rustfmt
 
       - name: Cache cargo registry
         uses: actions/cache@v4
