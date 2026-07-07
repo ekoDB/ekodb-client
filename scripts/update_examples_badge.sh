@@ -56,7 +56,7 @@ echo -e "    Clients: ${GREEN}$total_clients${RESET}"
 # so re-phrasing a Quick Stats line can never orphan the updater. (The previous
 # broad regexes — e.g. s/**N working examples**/ — would silently stop matching
 # the moment that phrasing changed, drifting the counts. This is the same
-# marker convention the ekodb server uses in scripts/update_test_docs.sh.)
+# marker convention used by the sibling test-inventory updater.)
 inject_stat() { # $1=file  $2=marker-name  $3=value
     sed -i.bak -E "s|<!--$2-->[^<]*<!--/$2-->|<!--$2-->$3<!--/$2-->|g" "$1"
     rm -f "$1.bak"
