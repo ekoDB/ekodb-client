@@ -6,6 +6,137 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **`make test` now fails when the Rust, TypeScript, or Kotlin suite fails.**
+  Only the Python step checked its exit status, so a non-zero Rust, TypeScript,
+  or Kotlin run still produced a green `make test` (the recipe continued to the
+  count summary). Each language now captures and checks its exit status and
+  exits non-zero on failure, matching the Python step. The CI test-summary job
+  also fails loudly if `tests_list.txt` is missing or malformed instead of
+  rendering blank counts. `make test` now also preflights the JVM (`ensure-jvm`)
+  so the Kotlin leg gives clear setup guidance instead of a raw Gradle error,
+  and the Kotlin count is derived from the JUnit XML Gradle emits (actually
+  executed cases, including parameterized) rather than grepping `@Test` source
+  annotations, so the inventory's Kotlin count is exact.
+
+- **`make lint` can no longer pass with Python lint silently skipped.**
+  `lint-python` previously ran `ruff` only if it happened to be on `PATH` and
+  otherwise printed a warning and returned success, so `make lint` could go
+  green without linting Python at all. A new `ensure-ruff` target installs the
+  pinned `ruff` (single source of truth: `ekodb-client-py/pyproject.toml`
+  `[dev]`) into `.venv` on demand, and `lint-python` now depends on it and runs
+  `ruff` unconditionally via the venv. The gate provisions its own pinned
+  linter, so it never skips and local matches CI — mirroring the Go repos'
+  `ensure-golangci-lint` and this Makefile's `ensure-jvm` preflight. CI's Python
+  job now runs `make lint-python` instead of a hardcoded `ruff==0.15.7` install,
+  so the pin has exactly one source of truth (`pyproject.toml [dev]`) with no
+  second copy to drift.
+
+- **`make test` / `make test-python` now run the Python suite against the
+  freshly-built wheel in `.venv` instead of a stale global install.** Both
+  targets invoked bare `python3 -m pytest`, which resolved `ekodb_client` from
+  the user site-packages (an older build) rather than `$(VENV_PY)` where
+  `build-python-client` installs the current wheel. On a machine with an
+  out-of-date global install this failed collection (e.g.
+  `ImportError: cannot import name 'extract_record_id'`) even though the client
+  code was correct, and the aggregate `make test` silently reported "Python: 0
+  tests" while still printing success. The aggregate now also captures pytest's
+  exit status and fails loudly (instead of green-on-error) if the Python suite
+  does not pass. Stale per-language test counts in the `make help` output were
+  refreshed to current actuals (Rust 442, TypeScript 433, Python 333).
+
+### Changed
+
+- **TypeScript client: `@types/node` dev dependency aligned to Node 24**
+  (`^25.3.5` to `^24.13.2`), matching the Node 24 runtime used across the
+  monorepo. Dev-only (type definitions); no change to the published package or
+  its runtime behavior, and the client keeps no `engines` constraint so it still
+  supports the full range of consumer Node versions. The TypeScript example was
+  aligned the same way (`^22.0.0` to `^24.13.2`).
+
+### Infrastructure
+
+- **Lint now gates CI for every client language, matching what runs locally.**
+  Previously the per-language linters (Rust clippy, TypeScript `tsc --noEmit`,
+  Python ruff) existed only as local `make lint-*` targets and never ran in the
+  `Unit Tests` workflow, so a clean local lint was not a precondition for a
+  green CI run (and vice versa). Each `unit-tests.yml` job now runs its
+  language's lint before its tests: Rust runs
+  `cargo clippy --all-targets -- -D warnings` (parity with `make lint-rust`;
+  warnings are hard errors), TypeScript runs `npm run lint` (`tsc --noEmit`),
+  Python runs `ruff check`, and Kotlin runs `./gradlew ktlintCheck`.
+  `make lint-rust` also gained `-D warnings` so a warning fails locally exactly
+  as it does in CI. ruff is pinned (`==0.15.7` in `pyproject.toml` dev deps and
+  the CI job) so both sides run the identical lint set. The 1.95.0 toolchain pin
+  in `rust-toolchain.toml` keeps the clippy lint set identical across local and
+  CI.
+- **Added ktlint to the Kotlin client (it previously had no linter).** The
+  `org.jlleitschuh.gradle.ktlint` plugin runs via `make lint-kotlin` and the new
+  CI step, with the ktlint engine pinned in `build.gradle.kts` (1.5.0) so local
+  and CI evaluate the same rules. The enabled rule set is a deliberately relaxed
+  subset configured in `ekodb-client-kt/.editorconfig`: the aggressive
+  line-reflow / wrapping / trailing-comma "house-style" rules are disabled (they
+  would reformat nearly every file — ~2300 findings — without catching a
+  correctness issue), keeping the high-value checks (trailing whitespace, unused
+  imports, import ordering, spacing). `no-wildcard-imports` is also disabled
+  because the client's ktor / kotlinx.serialization DSL imports are
+  idiomatically wildcards and ktlint cannot safely auto-expand them. The
+  existing source was auto-formatted to satisfy the enabled rules (whitespace,
+  spacing, and three unused-import removals; no behavior change).
+
+- **Test counts are now a generated inventory instead of hardcoded numbers.**
+  The per-language and total test counts in `make help` and the CI summary were
+  hand-maintained literals that drifted (the Kotlin count was stale at 100 while
+  the suite had grown to 407, so the advertised total was wrong). `make test`
+  now writes the exact per-framework counts it already computes to a committed
+  `tests_list.txt`, and both the Makefile help and the CI `Test Summary` read
+  from that file — nothing is hardcoded, so the numbers cannot drift.
+  `make test-ls-check` validates the inventory (present, complete, and the total
+  equals the sum), and `make test-ls` regenerates it. Modeled on the ekoDB
+  server's `tests_list.txt` inventory.
+
+- **README example statistics are now injected via wording-independent markers
+  instead of broad regexes.** `scripts/update_examples_badge.sh` rewrote the
+  Quick Stats counts by matching surrounding prose (e.g.
+  `**N working examples**`), which silently stops matching the moment that
+  phrasing is reworded, letting the counts drift. The numbers are now wrapped in
+  HTML-comment markers (`<!--ex:total-->…<!--/ex:total-->`, plus `ex:client`,
+  `ex:direct`, `ex:languages`, `ex:clients`, `ex:perclient`) that render
+  invisibly, and the updater rewrites only the value between each marker pair.
+  The three shields.io badges (which cannot hold a marker inside their image
+  URL) are still matched by their fixed URL shape, and the Languages and Client
+  Libraries badges are now kept current too. The three "45 client-library
+  examples per client" literals in the README are now driven by a new
+  `Examples Per Client` value that `generate_examples_list.sh` computes across
+  the five full-featured clients (emitting a `MIN-MAX` range if they ever
+  diverge from parity, so the number stays honest without a literal). The
+  generator's own `Languages: 6` / `Full-Featured Clients: 5` summary lines,
+  which feed those badges, are now derived from declared language/client lists
+  instead of hardcoded literals. Same marker convention as the ekoDB server's
+  `update_test_docs.sh`.
+
+- **New `make sync-versions` propagates the source-of-truth version to every
+  client and every README install snippet, and now runs as part of `make fmt`.**
+  The Rust workspace version in `ekodb_client/Cargo.toml` is the single source
+  of truth. The only prior version tool, `make bump-version`, is interactive (so
+  it cannot run in `fmt`) and wrote the four language manifests but never the
+  README install snippets, so those drifted silently: the Kotlin Maven
+  coordinate in three README spots was stuck at `0.21.0` and the Rust crate
+  snippet at `0.14` while every manifest was at `0.23.1`.
+  `scripts/sync-versions.sh` is non-interactive and idempotent — it reads the
+  Rust version and enforces it across the downstream manifests
+  (`ekodb-client-py` Cargo.toml + pyproject.toml, `ekodb-client-ts`
+  package.json, `ekodb-client-kt` build.gradle.kts) and the README install
+  snippets (matched by package coordinate, since a comment marker would render
+  literally inside a code fence). Wired into `fmt`, so drift now shows up as a
+  diff on the normal lint/fmt/build/test cycle instead of shipping stale. The
+  npm and crates.io shields badges are left alone because they fetch the live
+  published version already. To change the released version, edit the Rust
+  manifest or run the interactive `make bump-version`, then `make fmt`.
+
 ## [0.23.1] - 2026-07-05
 
 ### Fixed
