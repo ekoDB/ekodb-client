@@ -34,6 +34,16 @@ total_clients=$(grep "Full-Featured Clients:" "$EXAMPLES_LIST" | grep -o '[0-9]\
 # ever diverge from parity). Kept as the emitted string so a range flows through.
 per_client=$(grep "Examples Per Client:" "$EXAMPLES_LIST" | awk -F': ' '{print $2}' | tr -d ' ')
 
+# Fail fast if any value came back empty (e.g. a line was renamed in
+# examples_list.txt) — otherwise the sed steps below would rewrite the README
+# stats and badges with blanks. set -e does not catch this on its own.
+if [ -z "$total_examples" ] || [ -z "$total_direct" ] || [ -z "$total_client" ] || \
+   [ -z "$total_languages" ] || [ -z "$total_clients" ] || [ -z "$per_client" ]; then
+    echo -e "${RED}❌ Failed to parse one or more counts from $EXAMPLES_LIST (a line may have been renamed).${RESET}"
+    echo -e "${YELLOW}   Aborting so the README is not rewritten with blanks — run 'make examples-ls' to regenerate.${RESET}"
+    exit 1
+fi
+
 echo -e "  Found counts:"
 echo -e "    Total: ${GREEN}$total_examples${RESET}"
 echo -e "    Direct: ${GREEN}$total_direct${RESET}"
