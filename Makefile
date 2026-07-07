@@ -42,7 +42,7 @@ YELLOW := \033[33m
 RED := \033[31m
 RESET := \033[0m
 
-.PHONY: all build build-release build-client build-python-client build-typescript-client build-examples test test-ls test-ls-check test-ci test-client test-examples test-examples-direct test-examples-client test-examples-rust test-examples-python test-examples-go test-examples-typescript test-examples-javascript test-examples-transactions test-examples-scripts test-examples-scripts-crud test-examples-swr test-examples-ts-swr test-examples-py-swr test-examples-go-swr test-examples-rust-swr test-examples-kt-swr clean check fmt fmt-rust fmt-rust-client fmt-rust-examples fmt-python fmt-go fmt-typescript fmt-md format install install-rust install-python install-typescript install-go venv python-example-deps ensure-jvm ensure-cargo check-toolchains setup install-hooks deps-check deps-update deploy-client deploy-client-rust deploy-client-py deploy-client-py-simple deploy-client-go deploy-client-ts bump-version sync-versions bump-client-py docs-client
+.PHONY: all build build-release build-client build-python-client build-typescript-client build-examples test test-ls test-ls-check test-ci test-client test-examples test-examples-direct test-examples-client test-examples-rust test-examples-python test-examples-go test-examples-typescript test-examples-javascript test-examples-transactions test-examples-scripts test-examples-scripts-crud test-examples-swr test-examples-ts-swr test-examples-py-swr test-examples-go-swr test-examples-rust-swr test-examples-kt-swr clean check fmt fmt-rust fmt-rust-client fmt-rust-examples fmt-python fmt-go fmt-typescript fmt-md format install install-rust install-python install-typescript install-go venv python-example-deps ensure-jvm ensure-ruff ensure-cargo check-toolchains setup install-hooks deps-check deps-update deploy-client deploy-client-rust deploy-client-py deploy-client-py-simple deploy-client-go deploy-client-ts bump-version sync-versions bump-client-py docs-client
 
 # Color codes for Worthington jet
 MAGENTA := \033[35m
@@ -390,7 +390,7 @@ deploy-client-kt:
 deploy-client-kotlin: deploy-client-kt
 
 # Test targets - runs ALL unit tests across all client libraries
-test: ensure-hooks examples-ls-check build-python-client
+test: ensure-hooks examples-ls-check build-python-client ensure-jvm
 	@RUST_COUNT=0; TS_COUNT=0; PY_COUNT=0; KT_COUNT=0; \
 	echo "🦀 $(CYAN)Running Rust client tests...$(RESET)"; \
 	RUST_OUTPUT=$$($(CARGO) test -p ekodb_client 2>&1); RUST_STATUS=$$?; \
@@ -412,7 +412,7 @@ test: ensure-hooks examples-ls-check build-python-client
 	echo "✅ $(GREEN)Python tests complete!$(RESET)"; \
 	echo "🟣 $(CYAN)Running Kotlin client tests...$(RESET)"; \
 	(cd $(CLIENT_KT_DIR) && ./gradlew test --quiet); KT_STATUS=$$?; \
-	KT_COUNT=$$(grep -rh "@Test" ./$(CLIENT_KT_DIR)/src/test --include="*.kt" 2>/dev/null | wc -l | tr -d ' '); \
+	KT_COUNT=$$(find $(CLIENT_KT_DIR)/build/test-results/test -name '*.xml' -exec grep -o "<testcase " {} \; 2>/dev/null | wc -l | tr -d ' '); \
 	if [ $$KT_STATUS -ne 0 ]; then echo "❌ $(RED)Kotlin tests FAILED (exit $$KT_STATUS)$(RESET)"; exit $$KT_STATUS; fi; \
 	echo "✅ $(GREEN)Kotlin tests complete!$(RESET)"; \
 	echo ""; \
@@ -1530,17 +1530,22 @@ lint-typescript:
 	@echo "✅ $(GREEN)TypeScript lint complete!$(RESET)"
 
 # Python: ruff (catches unused imports, style issues)
-# ruff version is pinned in ekodb-client-py/pyproject.toml [project.optional-dependencies].dev
-# and in the CI lint step. This target lints with whatever `ruff` is on PATH
-# (and skips if none is installed), so install the pinned dev deps
-# (`pip install -e ".[dev]"`) to lint with the same version CI uses.
-lint-python:
-	@echo "🐍 $(CYAN)Running Python lint...$(RESET)"
-	@if command -v ruff >/dev/null 2>&1; then \
-		ruff check ekodb-client-py/python/ ekodb-client-py/tests/; \
-	else \
-		echo "⚠️  $(YELLOW)ruff not installed, skipping Python lint (pip install ruff)$(RESET)"; \
+# The pinned ruff version, sourced from ekodb-client-py/pyproject.toml [dev] so
+# there is one source of truth. `ensure-ruff` installs exactly that version into
+# .venv on demand, so `make lint` provisions its own linter and can never
+# silently skip Python lint — mirroring the Go repos' `ensure-golangci-lint` and
+# this Makefile's `ensure-jvm` preflight, and giving local == CI for free.
+RUFF_VERSION := $(shell grep -oE 'ruff==[0-9.]+' $(CLIENT_PY_DIR)/pyproject.toml | head -1 | cut -d= -f3)
+
+ensure-ruff: venv
+	@if ! $(VENV_PY) -m ruff --version 2>/dev/null | grep -qwF "$(RUFF_VERSION)"; then \
+		echo "📦 $(YELLOW)Installing ruff $(RUFF_VERSION) into .venv...$(RESET)"; \
+		$(VENV_PY) -m pip install --quiet "ruff==$(RUFF_VERSION)"; \
 	fi
+
+lint-python: ensure-ruff
+	@echo "🐍 $(CYAN)Running Python lint (ruff $(RUFF_VERSION), pinned)...$(RESET)"
+	@$(VENV_PY) -m ruff check $(CLIENT_PY_DIR)/python/ $(CLIENT_PY_DIR)/tests/
 	@echo "✅ $(GREEN)Python lint complete!$(RESET)"
 
 # Kotlin: ktlint (relaxed ruleset in ekodb-client-kt/.editorconfig; engine
