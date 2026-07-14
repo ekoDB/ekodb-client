@@ -44,6 +44,7 @@ pub mod chat;
 pub mod client;
 pub mod error;
 pub mod functions;
+pub mod health;
 mod http;
 mod join;
 pub mod options;
@@ -74,6 +75,9 @@ pub use error::{Error, Result};
 pub use functions::{
     ChatMessage, Function, FunctionCondition, FunctionResult, FunctionStats, GroupFunctionConfig,
     GroupFunctionOp, ParameterDefinition, SortFieldConfig, StageStats, UserFunction, parameter_ref,
+};
+pub use health::{
+    HEALTH_DEGRADED, HEALTH_OK, HEALTH_UNKNOWN, HealthState, HealthStatus, parse_health_status,
 };
 pub use join::JoinConfig;
 pub use query_builder::{QueryBuilder, SortOrder};

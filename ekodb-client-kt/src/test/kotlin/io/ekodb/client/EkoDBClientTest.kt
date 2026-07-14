@@ -96,6 +96,98 @@ class EkoDBClientTest {
         assertFalse(result)
     }
 
+    @Test
+    fun `health returns true for a reachable degraded server (bug fix)`() = runBlocking {
+        val mockEngine = MockEngine { request ->
+            respond(
+                content = """{"status": "degraded", "integrity_ok": false}""",
+                status = HttpStatusCode.OK,
+                headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+            )
+        }
+        val client = createTestClient(mockEngine)
+        assertTrue(client.health())
+    }
+
+    @Test
+    fun `healthStatus surfaces degraded without failing`() = runBlocking {
+        val mockEngine = MockEngine { request ->
+            respond(
+                content = """{"status": "degraded", "integrity_ok": false}""",
+                status = HttpStatusCode.OK,
+                headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+            )
+        }
+        val client = createTestClient(mockEngine)
+        val hs = client.healthStatus()
+        assertTrue(hs.reachable)
+        assertEquals(HealthState.DEGRADED, hs.status)
+        assertFalse(hs.integrityOk)
+    }
+
+    @Test
+    fun `healthStatus unreachable yields unknown snapshot`() = runBlocking {
+        val mockEngine = MockEngine { request ->
+            respond(
+                content = """{"error": "down"}""",
+                status = HttpStatusCode.ServiceUnavailable,
+                headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+            )
+        }
+        val client = createTestClient(mockEngine)
+        val hs = client.healthStatus()
+        assertFalse(hs.reachable)
+        assertEquals(HealthState.UNKNOWN, hs.status)
+    }
+
+    @Test
+    fun `parseHealthStatus reads integrity from the admin nested shape`() {
+        val body = Json.parseToJsonElement(
+            """{"status":"ok","integrity":{"healthy":true,"manifest_load_failed":[]}}"""
+        ).jsonObject
+        val hs = parseHealthStatus(body)
+        assertEquals(HealthState.OK, hs.status)
+        assertTrue(hs.integrityOk)
+    }
+
+    @Test
+    fun `parseHealthStatus fails safe to degraded on a missing status`() {
+        val body = Json.parseToJsonElement("""{"integrity_ok":true}""").jsonObject
+        val hs = parseHealthStatus(body)
+        assertTrue(hs.reachable)
+        assertEquals(HealthState.DEGRADED, hs.status)
+    }
+
+    @Test
+    fun `toJsonObject is a safe summary that excludes detail`() {
+        val body = Json.parseToJsonElement(
+            """{"status":"degraded","integrity":{"healthy":false,"manifest_load_failed":["secret_collection"]}}"""
+        ).jsonObject
+        val summary = parseHealthStatus(body).toJsonObject().toString()
+        assertFalse(summary.contains("detail"))
+        assertFalse(summary.contains("secret_collection"))
+        assertTrue(summary.contains("degraded"))
+    }
+
+    @Test
+    fun `parseHealthStatus does not throw on non-primitive fields`() {
+        val body = Json.parseToJsonElement(
+            """{"status":{"nested":1},"integrity_ok":{"x":1}}""",
+        ).jsonObject
+        // Must degrade gracefully rather than throw on a malformed body.
+        val hs = parseHealthStatus(body)
+        assertTrue(hs.reachable)
+        assertEquals(HealthState.DEGRADED, hs.status)
+        assertFalse(hs.integrityOk)
+    }
+
+    @Test
+    fun `parseHealthStatus preserves a raw off-contract status`() {
+        // Matches the Go client: a non-empty string status is kept verbatim.
+        val body = Json.parseToJsonElement("""{"status":"healthy"}""").jsonObject
+        assertEquals("healthy", parseHealthStatus(body).status)
+    }
+
     // ========================================================================
     // Collection Tests
     // ========================================================================

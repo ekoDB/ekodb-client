@@ -57,9 +57,16 @@ impl Client {
         ClientBuilder::default()
     }
 
-    /// Health check
+    /// Health check — reports whether the server is reachable (tolerates a
+    /// `degraded` HTTP 200). Use [`health_status`](Self::health_status) for the
+    /// ok/degraded distinction.
     pub async fn health_check(&self) -> Result<()> {
         self.http.health_check().await
+    }
+
+    /// Structured, degraded-tolerant health snapshot.
+    pub async fn health_status(&self) -> crate::health::HealthStatus {
+        self.http.health_status().await
     }
 
     /// Execute an operation with automatic token refresh on TokenExpired errors

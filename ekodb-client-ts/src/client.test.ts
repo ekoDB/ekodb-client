@@ -11,6 +11,7 @@ import {
   SerializationFormat,
   extractRecordId,
   DEFAULT_REQUEST_TIMEOUT_MS,
+  parseHealthStatus,
 } from "./client";
 import { SearchQueryBuilder } from "./search";
 
@@ -3516,5 +3517,101 @@ describe("request timeout", () => {
     );
 
     await expect(client.find("users")).rejects.toThrow(/timed out after 20ms/);
+  });
+});
+
+// ============================================================================
+// Health Contract Tests
+// ============================================================================
+
+describe("health / healthStatus", () => {
+  it("health() returns true for a reachable degraded server (bug fix)", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+    mockJsonResponse({ status: "degraded", integrity_ok: false });
+    expect(await client.health()).toBe(true);
+  });
+
+  it("health() returns false when unreachable", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+    mockErrorResponse(503, "unavailable");
+    expect(await client.health()).toBe(false);
+  });
+
+  it("healthStatus() surfaces degraded without erroring", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+    mockJsonResponse({ status: "degraded", integrity_ok: false });
+    const hs = await client.healthStatus();
+    expect(hs.reachable).toBe(true);
+    expect(hs.status).toBe("degraded");
+    expect(hs.integrityOk).toBe(false);
+  });
+
+  it("healthStatus() unreachable -> reachable=false, status=unknown", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+    mockErrorResponse(503, "unavailable");
+    const hs = await client.healthStatus();
+    expect(hs.reachable).toBe(false);
+    expect(hs.status).toBe("unknown");
+  });
+
+  it("healthStatus() reads integrity from the admin nested shape", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+    mockJsonResponse({
+      status: "ok",
+      integrity: { healthy: true, manifest_load_failed: [] },
+    });
+    const hs = await client.healthStatus();
+    expect(hs.status).toBe("ok");
+    expect(hs.integrityOk).toBe(true);
+  });
+
+  it("parseHealthStatus fails safe to degraded on a missing status", () => {
+    const hs = parseHealthStatus({ integrity_ok: true });
+    expect(hs.reachable).toBe(true);
+    expect(hs.status).toBe("degraded");
+  });
+
+  it("parseHealthStatus yields an unknown snapshot for a non-object body", () => {
+    const hs = parseHealthStatus("not json");
+    expect(hs.reachable).toBe(false);
+    expect(hs.status).toBe("unknown");
+  });
+
+  it("JSON serialization is a safe summary that excludes detail", () => {
+    const hs = parseHealthStatus({
+      status: "degraded",
+      integrity: {
+        healthy: false,
+        manifest_load_failed: ["secret_collection"],
+      },
+    });
+    const json = JSON.stringify(hs);
+    expect(json).not.toContain("detail");
+    expect(json).not.toContain("secret_collection");
+    const parsed = JSON.parse(json);
+    expect(parsed).toEqual({
+      reachable: true,
+      status: "degraded",
+      integrity_ok: false,
+    });
+    // detail is still readable in-process
+    expect(hs.detail).toBeDefined();
+  });
+
+  it("parseHealthStatus preserves a raw off-contract status (matches Go)", () => {
+    expect(parseHealthStatus({ status: "healthy" }).status).toBe("healthy");
+    expect(parseHealthStatus({ status: "ok" }).status).toBe("ok");
+    expect(parseHealthStatus({ status: "degraded" }).status).toBe("degraded");
+  });
+
+  it("parseHealthStatus fails safe to degraded on a non-string status", () => {
+    expect(parseHealthStatus({ status: { nested: 1 } }).status).toBe(
+      "degraded",
+    );
   });
 });

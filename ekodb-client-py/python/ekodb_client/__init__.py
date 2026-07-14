@@ -53,7 +53,9 @@ from ._ekodb_client import (
     WebSocketClient,
     SubscriptionReceiver,
     ChatStreamReceiver,
+    HealthStatus,
     extract_record_id,
+    parse_health_status,
 )
 from .stages import Stage, ChatMessage, parameter_ref
 from .query_builder import QueryBuilder
@@ -109,6 +111,8 @@ __all__ = [
     "ChatStreamReceiver",
     "RateLimitInfo",
     "RateLimitError",
+    "HealthStatus",
+    "parse_health_status",
     # Stage helpers for script functions
     "Stage",
     "ChatMessage",

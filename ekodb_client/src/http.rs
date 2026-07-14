@@ -8,6 +8,7 @@ use crate::chat::{
 };
 use crate::client::RateLimitInfo;
 use crate::error::{Error, Result};
+use crate::health::{HealthStatus, parse_health_status};
 use crate::retry::RetryPolicy;
 use crate::schema::{CollectionMetadata, Schema};
 use crate::search::{DistinctValuesQuery, DistinctValuesResponse, SearchQuery, SearchResponse};
@@ -64,7 +65,11 @@ impl HttpClient {
         })
     }
 
-    /// Health Check
+    /// Health Check — reports whether the server is reachable.
+    ///
+    /// Returns `Ok(())` on any 2xx (INCLUDING a `degraded` HTTP 200), so a
+    /// degraded-but-serving instance is not treated as down. Use
+    /// [`health_status`](Self::health_status) for the ok/degraded distinction.
     pub async fn health_check(&self) -> Result<()> {
         let url = self.base_url.join("/api/health")?;
         let response = self.client.get(url).send().await?;
@@ -75,6 +80,26 @@ impl HttpClient {
                 "Health check failed: {}",
                 response.status()
             )))
+        }
+    }
+
+    /// Structured, degraded-tolerant health snapshot. An unreachable/unparseable
+    /// probe yields `{ reachable: false, status: Unknown }` rather than an error.
+    pub async fn health_status(&self) -> HealthStatus {
+        let url = match self.base_url.join("/api/health") {
+            Ok(u) => u,
+            Err(_) => return HealthStatus::unreachable(),
+        };
+        let response = match self.client.get(url).send().await {
+            Ok(r) => r,
+            Err(_) => return HealthStatus::unreachable(),
+        };
+        if !response.status().is_success() {
+            return HealthStatus::unreachable();
+        }
+        match response.json::<serde_json::Value>().await {
+            Ok(body) => parse_health_status(&body),
+            Err(_) => HealthStatus::unreachable(),
         }
     }
 

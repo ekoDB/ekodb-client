@@ -46,6 +46,70 @@ enum class SerializationFormat {
  * Official Kotlin client library for ekoDB - A high-performance database with
  * intelligent caching, real-time capabilities, and automatic optimization.
  */
+/** Possible [HealthStatus.status] values. */
+/**
+ * Canonical [HealthStatus.status] values. Like the Go client, `status` is a
+ * String, so an off-contract status reported by the server is preserved verbatim.
+ */
+object HealthState {
+    const val OK = "ok"
+    const val DEGRADED = "degraded"
+    const val UNKNOWN = "unknown"
+}
+
+/**
+ * A snapshot of an ekoDB /api/health probe.
+ *
+ * Degraded-tolerant: a reachable server that reports `degraded` is a successful
+ * snapshot (`reachable = true`, `status = "degraded"`), NOT an error. An
+ * unreachable/unparseable probe yields `{ reachable = false, status = "unknown" }`.
+ * A missing/non-string status on a reachable body fails safe to `"degraded"`; a
+ * non-empty string status is preserved verbatim. Consumers base liveness on
+ * [reachable] and treat degraded as a warning, never a fatal.
+ *
+ * [detail] (the full admin body, which includes internal metrics and collection
+ * names) is excluded from the JSON summary; use [toJsonObject] to surface the
+ * snapshot safely, and read [detail] in-process when the raw body is needed.
+ */
+data class HealthStatus(
+    val reachable: Boolean,
+    val status: String,
+    val integrityOk: Boolean,
+    val detail: JsonObject? = null,
+) {
+    /** A safe JSON summary (`reachable` / `status` / `integrity_ok`) that excludes [detail]. */
+    fun toJsonObject(): JsonObject = buildJsonObject {
+        put("reachable", reachable)
+        put("status", status)
+        put("integrity_ok", integrityOk)
+    }
+}
+
+/**
+ * Interprets a parsed /api/health body per the shared health contract. A
+ * missing/non-string `status` on a reachable body fails safe to `"degraded"`; a
+ * non-empty string status is preserved verbatim (matching the Go client).
+ * `integrity_ok` is read from the top-level field (public) or nested
+ * `integrity.healthy` (admin). A null body yields an unreachable `"unknown"` snapshot.
+ */
+fun parseHealthStatus(body: JsonObject?): HealthStatus {
+    if (body == null) {
+        return HealthStatus(false, HealthState.UNKNOWN, false, null)
+    }
+    // Safe casts (as? JsonPrimitive) so a malformed (non-primitive) field
+    // degrades gracefully; isString ensures only a real string status is kept.
+    val statusPrim = body["status"] as? JsonPrimitive
+    val status = if (statusPrim != null && statusPrim.isString && statusPrim.content.isNotEmpty()) {
+        statusPrim.content
+    } else {
+        HealthState.DEGRADED
+    }
+    val integrityOk = (body["integrity_ok"] as? JsonPrimitive)?.booleanOrNull
+        ?: ((body["integrity"] as? JsonObject)?.get("healthy") as? JsonPrimitive)?.booleanOrNull
+        ?: false
+    return HealthStatus(true, status, integrityOk, body)
+}
+
 @OptIn(ExperimentalSerializationApi::class)
 class EkoDBClient private constructor(
     private val baseUrl: String,
@@ -933,12 +997,27 @@ class EkoDBClient private constructor(
      * Health check - verify the ekoDB server is responding
      */
     suspend fun health(): Boolean {
+        return healthStatus().reachable
+    }
+
+    /**
+     * Structured, degraded-tolerant health. Returns a [HealthStatus] snapshot.
+     * A reachable server that reports `degraded` yields `reachable = true`
+     * (the server returns HTTP 200 while degraded on purpose, so it must not be
+     * treated as down); an unreachable server yields
+     * `{ reachable = false, status = UNKNOWN }`.
+     */
+    suspend fun healthStatus(): HealthStatus {
         return try {
             val response = client.get("$baseUrl/api/health")
-            val result: JsonObject = response.body()
-            result["status"]?.toString()?.contains("ok") == true
+            if (!response.status.isSuccess()) {
+                HealthStatus(false, HealthState.UNKNOWN, false, null)
+            } else {
+                val body: JsonObject = response.body()
+                parseHealthStatus(body)
+            }
         } catch (e: Exception) {
-            false
+            HealthStatus(false, HealthState.UNKNOWN, false, null)
         }
     }
 
