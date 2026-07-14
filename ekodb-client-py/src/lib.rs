@@ -993,6 +993,23 @@ impl Client {
         })
     }
 
+    /// Structured, degraded-tolerant health.
+    ///
+    /// Returns:
+    ///     A HealthStatus with .reachable, .status, .integrity_ok, and .detail.
+    ///     A reachable server that reports "degraded" has reachable=True (it is
+    ///     NOT treated as down); an unreachable server yields reachable=False,
+    ///     status="unknown". Use .to_dict() for a safe summary that excludes the
+    ///     internal .detail body.
+    fn health_status<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            let hs = client.health_status().await;
+            Python::attach(|py| Ok(Py::new(py, PyHealthStatus::from_core(hs))?.into_any()))
+        })
+    }
+
     /// Create a collection with optional schema
     ///
     /// Args:
@@ -5239,6 +5256,92 @@ fn pydict_to_fieldtype_map(
         .map_err(|e| PyValueError::new_err(format!("Failed to convert to FieldType map: {}", e)))
 }
 
+/// A snapshot of an ekoDB /api/health probe (mirrors the other clients).
+///
+/// Degraded-tolerant: a reachable server that reports "degraded" has
+/// reachable=True; an unreachable/unparseable probe yields reachable=False,
+/// status="unknown". A non-empty string status is preserved verbatim; a
+/// missing/odd status on a reachable body fails safe to "degraded".
+#[pyclass(name = "HealthStatus", skip_from_py_object)]
+#[derive(Clone)]
+struct PyHealthStatus {
+    reachable: bool,
+    status: String,
+    integrity_ok: bool,
+    detail: Option<serde_json::Value>,
+}
+
+impl PyHealthStatus {
+    fn from_core(hs: ekodb_client::HealthStatus) -> Self {
+        PyHealthStatus {
+            reachable: hs.reachable,
+            status: hs.status,
+            integrity_ok: hs.integrity_ok,
+            detail: hs.detail,
+        }
+    }
+}
+
+#[pymethods]
+impl PyHealthStatus {
+    #[getter]
+    fn reachable(&self) -> bool {
+        self.reachable
+    }
+
+    #[getter]
+    fn status(&self) -> String {
+        self.status.clone()
+    }
+
+    #[getter]
+    fn integrity_ok(&self) -> bool {
+        self.integrity_ok
+    }
+
+    /// The full parsed /api/health body, or None. Not included in `to_dict()`
+    /// (it can carry internal metrics / collection names); read it directly when
+    /// you need the raw body.
+    #[getter]
+    fn detail(&self, py: Python<'_>) -> PyResult<Py<PyAny>> {
+        match &self.detail {
+            Some(v) => json_to_pydict(py, v),
+            None => Ok(py.None()),
+        }
+    }
+
+    /// A safe summary dict `{reachable, status, integrity_ok}` that excludes
+    /// `detail`, matching the serialized form of the other clients.
+    fn to_dict<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyDict>> {
+        let d = PyDict::new(py);
+        d.set_item("reachable", self.reachable)?;
+        d.set_item("status", &self.status)?;
+        d.set_item("integrity_ok", self.integrity_ok)?;
+        Ok(d)
+    }
+
+    fn __repr__(&self) -> String {
+        format!(
+            "HealthStatus(reachable={}, status='{}', integrity_ok={})",
+            self.reachable, self.status, self.integrity_ok
+        )
+    }
+}
+
+/// Interpret a parsed /api/health body per the shared health contract.
+///
+/// Args:
+///     body: The /api/health response as a dict.
+/// Returns:
+///     A HealthStatus snapshot.
+#[pyfunction]
+fn parse_health_status(py: Python<'_>, body: &Bound<'_, PyDict>) -> PyResult<PyHealthStatus> {
+    let value = pydict_to_json(py, body)?;
+    Ok(PyHealthStatus::from_core(
+        ekodb_client::parse_health_status(&value),
+    ))
+}
+
 /// ekoDB Python module
 #[pymodule]
 fn _ekodb_client(m: &Bound<'_, PyModule>) -> PyResult<()> {
@@ -5248,8 +5351,10 @@ fn _ekodb_client(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<ChatStreamReceiver>()?;
     m.add_class::<RateLimitInfo>()?;
     m.add_class::<SerializationFormat>()?;
+    m.add_class::<PyHealthStatus>()?;
     m.add("RateLimitError", m.py().get_type::<RateLimitError>())?;
     m.add_function(wrap_pyfunction!(extract_record_id, m)?)?;
+    m.add_function(wrap_pyfunction!(parse_health_status, m)?)?;
     Ok(())
 }
 

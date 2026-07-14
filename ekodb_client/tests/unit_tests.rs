@@ -136,6 +136,61 @@ async fn test_health_check_failure() {
     assert!(result.is_err());
 }
 
+#[tokio::test]
+async fn test_health_status_degraded_is_reachable() {
+    let mut server = Server::new_async().await;
+    let _m = server
+        .mock("GET", "/api/health")
+        .with_status(200)
+        .with_body(json!({"status": "degraded", "integrity_ok": false}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    let hs = client.health_status().await;
+
+    assert!(hs.reachable);
+    assert_eq!(hs.status.as_str(), ekodb_client::HEALTH_DEGRADED);
+    assert!(!hs.integrity_ok);
+}
+
+#[tokio::test]
+async fn test_health_status_unreachable_is_unknown() {
+    let mut server = Server::new_async().await;
+    let _m = server
+        .mock("GET", "/api/health")
+        .with_status(503)
+        .with_body("Service Unavailable")
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    let hs = client.health_status().await;
+
+    assert!(!hs.reachable);
+    assert_eq!(hs.status.as_str(), ekodb_client::HEALTH_UNKNOWN);
+}
+
+#[tokio::test]
+async fn test_health_status_admin_integrity_shape() {
+    let mut server = Server::new_async().await;
+    let _m = server
+        .mock("GET", "/api/health")
+        .with_status(200)
+        .with_body(
+            json!({"status": "ok", "integrity": {"healthy": true, "manifest_load_failed": []}})
+                .to_string(),
+        )
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    let hs = client.health_status().await;
+
+    assert_eq!(hs.status.as_str(), ekodb_client::HEALTH_OK);
+    assert!(hs.integrity_ok);
+}
+
 // ============================================================================
 // Insert Tests
 // ============================================================================

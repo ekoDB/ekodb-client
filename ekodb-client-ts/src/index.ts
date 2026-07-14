@@ -7,7 +7,13 @@ export {
   RateLimitError,
   SchemaCache,
   extractRecordId,
+  HealthStatus,
+  parseHealthStatus,
+  HealthOK,
+  HealthDegraded,
+  HealthUnknown,
 } from "./client";
+export type { HealthState } from "./client";
 export { QueryBuilder, SortOrder } from "./query-builder";
 export { SearchQueryBuilder } from "./search";
 export {

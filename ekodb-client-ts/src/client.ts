@@ -119,6 +119,94 @@ export interface UpsertOptions {
   bypassCache?: boolean;
 }
 
+/**
+ * A health status value. Like the Go client's `HealthState` (a string type), an
+ * off-contract status reported by the server is preserved verbatim.
+ */
+export type HealthState = string;
+
+/** Canonical {@link HealthStatus.status} values. */
+export const HealthOK = "ok";
+export const HealthDegraded = "degraded";
+export const HealthUnknown = "unknown";
+
+/**
+ * A snapshot of an ekoDB /api/health probe.
+ *
+ * It is degraded-tolerant: a reachable server that reports `degraded` is a
+ * successful snapshot (`reachable: true`, `status: "degraded"`), NOT an error.
+ * An unreachable/unparseable probe yields `{ reachable: false, status: "unknown" }`.
+ *
+ * Consumers base liveness on `reachable` and treat `degraded` as a warning,
+ * never as a fatal. `detail` (the full admin body, which includes internal
+ * metrics and collection names) is excluded from JSON via `toJSON()` so
+ * surfacing the snapshot cannot leak internals; read it in-process when needed.
+ */
+export class HealthStatus {
+  reachable: boolean;
+  status: HealthState;
+  integrityOk: boolean;
+  detail?: { [key: string]: any };
+
+  constructor(init: {
+    reachable: boolean;
+    status: HealthState;
+    integrityOk: boolean;
+    detail?: { [key: string]: any };
+  }) {
+    this.reachable = init.reachable;
+    this.status = init.status;
+    this.integrityOk = init.integrityOk;
+    this.detail = init.detail;
+  }
+
+  toJSON(): { reachable: boolean; status: HealthState; integrity_ok: boolean } {
+    return {
+      reachable: this.reachable,
+      status: this.status,
+      integrity_ok: this.integrityOk,
+    };
+  }
+}
+
+/**
+ * Interprets a parsed /api/health body per the shared health contract. A
+ * missing/odd `status` on a reachable body fails safe to `degraded`; a
+ * non-object body yields an unreachable `unknown` snapshot. `integrity_ok` is
+ * read from the top-level field (public) or nested `integrity.healthy` (admin).
+ */
+export function parseHealthStatus(body: any): HealthStatus {
+  if (body === null || typeof body !== "object") {
+    return new HealthStatus({
+      reachable: false,
+      status: HealthUnknown,
+      integrityOk: false,
+    });
+  }
+  // Default to degraded; a non-empty string status is kept verbatim (matches
+  // the Go client). A missing/non-string status fails safe to degraded.
+  let status: HealthState = HealthDegraded;
+  if (typeof body.status === "string" && body.status !== "") {
+    status = body.status;
+  }
+  let integrityOk = false;
+  if (typeof body.integrity_ok === "boolean") {
+    integrityOk = body.integrity_ok;
+  } else if (
+    body.integrity &&
+    typeof body.integrity === "object" &&
+    typeof body.integrity.healthy === "boolean"
+  ) {
+    integrityOk = body.integrity.healthy;
+  }
+  return new HealthStatus({
+    reachable: true,
+    status,
+    integrityOk,
+    detail: body,
+  });
+}
+
 export interface FindOptions {
   filter?: any;
   sort?: any;
@@ -1827,20 +1915,39 @@ export class EkoDBClient {
   }
 
   /**
-   * Health check - verify the ekoDB server is responding
+   * Health check - reports whether the ekoDB server is reachable.
+   *
+   * Returns `true` whenever the server responds (INCLUDING when it reports
+   * `degraded`) and `false` only when it is unreachable. The ekoDB server
+   * returns HTTP 200 while degraded on purpose, so gating on `status === "ok"`
+   * would treat a degraded-but-serving server as down. Use {@link healthStatus}
+   * for the ok/degraded distinction.
    */
   async health(): Promise<boolean> {
+    return (await this.healthStatus()).reachable;
+  }
+
+  /**
+   * Structured, degraded-tolerant health. Returns a {@link HealthStatus}
+   * snapshot; an unreachable server yields `{ reachable: false, status:
+   * "unknown" }` rather than throwing.
+   */
+  async healthStatus(): Promise<HealthStatus> {
     try {
-      const result = await this.makeRequest<{ status: string }>(
+      const body = await this.makeRequest<any>(
         "GET",
         "/api/health",
         undefined,
         0,
         true,
       );
-      return result.status === "ok";
+      return parseHealthStatus(body);
     } catch {
-      return false;
+      return new HealthStatus({
+        reachable: false,
+        status: HealthUnknown,
+        integrityOk: false,
+      });
     }
   }
 
