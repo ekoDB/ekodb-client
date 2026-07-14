@@ -48,3 +48,9 @@ def test_to_dict_excludes_detail_but_detail_is_accessible():
     # detail is still readable in-process (the full body)
     assert hs.detail is not None
     assert "integrity" in hs.detail
+
+
+def test_status_constants_exposed():
+    assert ekodb_client.HEALTH_OK == "ok"
+    assert ekodb_client.HEALTH_DEGRADED == "degraded"
+    assert ekodb_client.HEALTH_UNKNOWN == "unknown"

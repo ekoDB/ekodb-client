@@ -191,6 +191,23 @@ async fn test_health_status_admin_integrity_shape() {
     assert!(hs.integrity_ok);
 }
 
+#[tokio::test]
+async fn test_health_and_health_status_agree_on_unparseable_body() {
+    let mut server = Server::new_async().await;
+    let _m = server
+        .mock("GET", "/api/health")
+        .with_status(200)
+        .with_body("not json")
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    // health() is derived from health_status(): a 2xx with an unparseable body
+    // is NOT reachable, and health() must agree (matches the Go client).
+    assert!(!client.health_status().await.reachable);
+    assert!(client.health().await.is_err());
+}
+
 // ============================================================================
 // Insert Tests
 // ============================================================================
