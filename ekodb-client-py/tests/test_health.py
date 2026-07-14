@@ -5,7 +5,7 @@ import ekodb_client
 
 def test_client_exposes_health_status_and_check():
     assert hasattr(ekodb_client.Client, "health_status")
-    assert hasattr(ekodb_client.Client, "health_check")
+    assert hasattr(ekodb_client.Client, "health")
 
 
 def test_parse_health_status_degraded_is_reachable():

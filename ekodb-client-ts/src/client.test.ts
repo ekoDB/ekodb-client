@@ -3614,4 +3614,9 @@ describe("health / healthStatus", () => {
       "degraded",
     );
   });
+
+  it("parseHealthStatus treats a non-object (array) body as unknown", () => {
+    expect(parseHealthStatus([1, 2, 3]).reachable).toBe(false);
+    expect(parseHealthStatus([1, 2, 3]).status).toBe("unknown");
+  });
 });

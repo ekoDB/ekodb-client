@@ -70,7 +70,7 @@ impl HttpClient {
     /// Returns `Ok(())` on any 2xx (INCLUDING a `degraded` HTTP 200), so a
     /// degraded-but-serving instance is not treated as down. Use
     /// [`health_status`](Self::health_status) for the ok/degraded distinction.
-    pub async fn health_check(&self) -> Result<()> {
+    pub async fn health(&self) -> Result<()> {
         let url = self.base_url.join("/api/health")?;
         let response = self.client.get(url).send().await?;
         if response.status().is_success() {
