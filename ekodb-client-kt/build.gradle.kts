@@ -9,7 +9,7 @@ plugins {
 }
 
 group = "io.ekodb"
-version = "0.24.0"
+version = "0.25.0"
 
 // ktlint lint gate. The enabled rule subset is configured in .editorconfig
 // (aggressive reflow/wrapping opinions are disabled — see that file). The
