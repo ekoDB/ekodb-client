@@ -176,7 +176,7 @@ export class HealthStatus {
  * read from the top-level field (public) or nested `integrity.healthy` (admin).
  */
 export function parseHealthStatus(body: any): HealthStatus {
-  if (body === null || typeof body !== "object") {
+  if (body === null || typeof body !== "object" || Array.isArray(body)) {
     return new HealthStatus({
       reachable: false,
       status: HealthUnknown,

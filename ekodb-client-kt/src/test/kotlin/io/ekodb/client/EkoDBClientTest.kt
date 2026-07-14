@@ -188,6 +188,13 @@ class EkoDBClientTest {
         assertEquals("healthy", parseHealthStatus(body).status)
     }
 
+    @Test
+    fun `parseHealthStatus ignores a non-boolean integrity_ok`() {
+        // A string "true" is not a real boolean; integrityOk stays false (matches Go).
+        val body = Json.parseToJsonElement("""{"status":"ok","integrity_ok":"true"}""").jsonObject
+        assertFalse(parseHealthStatus(body).integrityOk)
+    }
+
     // ========================================================================
     // Collection Tests
     // ========================================================================

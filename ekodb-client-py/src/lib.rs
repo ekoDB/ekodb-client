@@ -974,15 +974,16 @@ impl Client {
         })
     }
 
-    /// Health check - verify the ekoDB server is responding
+    /// Health check - reports whether the server is reachable (tolerates a
+    /// `degraded` HTTP 200). Use `health_status()` for the ok/degraded distinction.
     ///
     /// Returns:
-    ///     True if the server is healthy, False otherwise
-    fn health_check<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+    ///     True if the server is reachable, False otherwise
+    fn health<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
 
         future_into_py::<_, Py<PyAny>>(py, async move {
-            let result = client.health_check().await;
+            let result = client.health().await;
 
             Python::attach(|py| {
                 Ok(PyBool::new(py, result.is_ok())

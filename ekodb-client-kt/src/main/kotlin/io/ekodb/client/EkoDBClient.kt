@@ -104,8 +104,9 @@ fun parseHealthStatus(body: JsonObject?): HealthStatus {
     } else {
         HealthState.DEGRADED
     }
-    val integrityOk = (body["integrity_ok"] as? JsonPrimitive)?.booleanOrNull
-        ?: ((body["integrity"] as? JsonObject)?.get("healthy") as? JsonPrimitive)?.booleanOrNull
+    // Require an actual JSON boolean (exclude string primitives) to match Go.
+    val integrityOk = (body["integrity_ok"] as? JsonPrimitive)?.takeIf { !it.isString }?.booleanOrNull
+        ?: ((body["integrity"] as? JsonObject)?.get("healthy") as? JsonPrimitive)?.takeIf { !it.isString }?.booleanOrNull
         ?: false
     return HealthStatus(true, status, integrityOk, body)
 }

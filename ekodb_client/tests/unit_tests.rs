@@ -103,7 +103,7 @@ fn test_client_builder_accepts_all_options() {
 // ============================================================================
 
 #[tokio::test]
-async fn test_health_check_success() {
+async fn test_health_success() {
     let mut server = Server::new_async().await;
 
     let _m = server
@@ -114,13 +114,13 @@ async fn test_health_check_success() {
         .await;
 
     let client = create_test_client(&server).await;
-    let result = client.health_check().await;
+    let result = client.health().await;
 
     assert!(result.is_ok());
 }
 
 #[tokio::test]
-async fn test_health_check_failure() {
+async fn test_health_failure() {
     let mut server = Server::new_async().await;
 
     let _m = server
@@ -131,7 +131,7 @@ async fn test_health_check_failure() {
         .await;
 
     let client = create_test_client(&server).await;
-    let result = client.health_check().await;
+    let result = client.health().await;
 
     assert!(result.is_err());
 }

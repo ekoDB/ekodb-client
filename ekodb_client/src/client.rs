@@ -60,8 +60,8 @@ impl Client {
     /// Health check — reports whether the server is reachable (tolerates a
     /// `degraded` HTTP 200). Use [`health_status`](Self::health_status) for the
     /// ok/degraded distinction.
-    pub async fn health_check(&self) -> Result<()> {
-        self.http.health_check().await
+    pub async fn health(&self) -> Result<()> {
+        self.http.health().await
     }
 
     /// Structured, degraded-tolerant health snapshot.
