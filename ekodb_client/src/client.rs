@@ -58,10 +58,17 @@ impl Client {
     }
 
     /// Health check — reports whether the server is reachable (tolerates a
-    /// `degraded` HTTP 200). Use [`health_status`](Self::health_status) for the
-    /// ok/degraded distinction.
+    /// `degraded` HTTP 200). Derived from [`health_status`](Self::health_status)
+    /// so the two never disagree; use `health_status` for the ok/degraded
+    /// distinction.
     pub async fn health(&self) -> Result<()> {
-        self.http.health().await
+        if self.health_status().await.reachable {
+            Ok(())
+        } else {
+            Err(crate::error::Error::Connection(
+                "health check failed".to_string(),
+            ))
+        }
     }
 
     /// Structured, degraded-tolerant health snapshot.

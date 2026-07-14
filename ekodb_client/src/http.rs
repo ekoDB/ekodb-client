@@ -65,24 +65,6 @@ impl HttpClient {
         })
     }
 
-    /// Health Check — reports whether the server is reachable.
-    ///
-    /// Returns `Ok(())` on any 2xx (INCLUDING a `degraded` HTTP 200), so a
-    /// degraded-but-serving instance is not treated as down. Use
-    /// [`health_status`](Self::health_status) for the ok/degraded distinction.
-    pub async fn health(&self) -> Result<()> {
-        let url = self.base_url.join("/api/health")?;
-        let response = self.client.get(url).send().await?;
-        if response.status().is_success() {
-            Ok(())
-        } else {
-            Err(Error::Connection(format!(
-                "Health check failed: {}",
-                response.status()
-            )))
-        }
-    }
-
     /// Structured, degraded-tolerant health snapshot. An unreachable/unparseable
     /// probe yields `{ reachable: false, status: Unknown }` rather than an error.
     pub async fn health_status(&self) -> HealthStatus {
