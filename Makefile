@@ -1559,6 +1559,39 @@ lint-kotlin: ensure-jvm
 	@cd $(CLIENT_KT_DIR) && ./gradlew ktlintCheck --console=plain
 	@echo "✅ $(GREEN)Kotlin lint complete!$(RESET)"
 
+# ============================================================================
+# Lint auto-fix
+# ============================================================================
+
+# Apply every linter's auto-fixes across all languages, then run `make lint` to
+# verify and `make fmt` to format. NOTE: not everything is auto-fixable, e.g.
+# ruff E402 (import not at top of file) and `tsc` type errors need a manual edit;
+# `make lint` will still flag those, so always run it afterwards.
+lint-fix: lint-fix-rust lint-fix-python lint-fix-kotlin lint-fix-typescript
+	@echo "✅ $(GREEN)Lint auto-fixes applied. Run 'make lint' to verify (some issues are not auto-fixable) and 'make fmt' to format.$(RESET)"
+
+lint-fix-rust:
+	@echo "🦀 $(CYAN)Auto-fixing Rust (clippy --fix)...$(RESET)"
+	$(CARGO) clippy --all-targets --fix --allow-dirty --allow-staged
+	@echo "✅ $(GREEN)Rust lint-fix complete!$(RESET)"
+
+lint-fix-python: ensure-ruff
+	@echo "🐍 $(CYAN)Auto-fixing Python (ruff check --fix, $(RUFF_VERSION))...$(RESET)"
+	-@$(VENV_PY) -m ruff check --fix $(CLIENT_PY_DIR)/python/ $(CLIENT_PY_DIR)/tests/
+	@echo "💡 $(YELLOW)Note: some ruff rules (e.g. E402 import-not-at-top) are NOT auto-fixable; run 'make lint-python' to see what remains.$(RESET)"
+	@echo "✅ $(GREEN)Python lint-fix complete!$(RESET)"
+
+lint-fix-kotlin: ensure-jvm
+	@echo "🟣 $(CYAN)Auto-fixing Kotlin (ktlintFormat)...$(RESET)"
+	@cd $(CLIENT_KT_DIR) && ./gradlew ktlintFormat --console=plain
+	@echo "✅ $(GREEN)Kotlin lint-fix complete!$(RESET)"
+
+# TypeScript lint is `tsc --noEmit` (type checking) and has no auto-fixer;
+# type errors need a manual edit. Formatting (prettier) is handled by `make fmt`,
+# so lint-fix leaves TS alone rather than reformatting unrelated files.
+lint-fix-typescript:
+	@echo "📘 $(YELLOW)TypeScript lint is type-only (tsc); nothing to auto-fix. Run 'make lint-typescript' for type errors and 'make fmt' to format.$(RESET)"
+
 # Install all client libraries
 install: check-toolchains install-rust install-python install-typescript install-go
 	@echo "🔧 $(CYAN)Making scripts executable...$(RESET)"

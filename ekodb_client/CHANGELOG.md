@@ -6,7 +6,62 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.25.0] - 2026-07-14
+
+### Added
+
+- **Degraded-tolerant health contract across all four clients (parity with
+  ekodb-client-go v0.25.0, #170).** Each client now exposes a structured health
+  snapshot in addition to the existing reachability check:
+  - Rust: `Client::health_status() -> HealthStatus`, plus the exported
+    `HealthState`, `HealthStatus`, `parse_health_status`, and the `HEALTH_OK` /
+    `HEALTH_DEGRADED` / `HEALTH_UNKNOWN` constants.
+  - Python: `client.health_status()` returning a `HealthStatus` object
+    (`.reachable` / `.status` / `.integrity_ok` / `.detail`, plus `.to_dict()`),
+    and a module-level `parse_health_status(body)`.
+  - TypeScript: `client.healthStatus()`, plus exported `HealthStatus`,
+    `HealthState`, `parseHealthStatus`, and the `HealthOK` / `HealthDegraded` /
+    `HealthUnknown` constants.
+  - Kotlin: `client.healthStatus()`, plus `HealthStatus`, `HealthState`, and
+    `parseHealthStatus`.
+
+  The shape and behavior match the `ekodb-client-go` client exactly. The
+  snapshot separates liveness (`reachable`) from readiness (`status`): a
+  reachable server that reports `degraded` (HTTP 200) is a successful snapshot,
+  not an error, and an unreachable or unparseable probe yields
+  `{ reachable: false, status: unknown }`. `status` is a plain string, so a
+  non-empty string status reported by the server is preserved verbatim; a
+  missing or non-string status on a reachable body fails safe to `degraded`.
+  `integrity_ok` is read from the top-level `integrity_ok` field (public
+  response) or nested `integrity.healthy` (admin response). The full parsed body
+  (`detail`) is accessible but excluded from the serialized summary so surfacing
+  the snapshot cannot leak internal metrics or collection names. Covered by
+  unit/integration tests in every client.
+
+### Changed
+
+- **Renamed the reachability check `health_check()` -> `health()` in the Rust
+  and Python clients for cross-client parity (#170).** The Go, TypeScript, and
+  Kotlin clients already named it `health`; Rust and Python used `health_check`.
+  All five now expose `health` (reachability, tolerates a `degraded` HTTP 200)
+  plus `health_status` for the structured snapshot, and in every client `health`
+  is derived from `health_status` so the two can never disagree (matching Go).
+  **BREAKING** for Rust/Python callers of `health_check` (renamed with no alias,
+  to avoid a per-client naming difference); update calls to `health()`.
+
+### Fixed
+
+- **TypeScript and Kotlin `health()` no longer report a degraded-but-serving
+  ekoDB as down (#170).** `health()` gated on the body (`status === "ok"` in TS,
+  `status.contains("ok")` in Kotlin), so a `degraded` HTTP-200 response, which
+  ekoDB returns on purpose so liveness probes don't restart a recoverable
+  instance, made `health()` return `false`. Both now report reachability
+  (`healthStatus().reachable`), returning `true` whenever the server responds
+  and `false` only when it is unreachable; use `healthStatus()` for the
+  ok/degraded distinction. (Rust/Python already gated on HTTP status, so they
+  were unaffected.)
+
+## [0.24.0] - 2026-07-07
 
 ### Fixed
 
