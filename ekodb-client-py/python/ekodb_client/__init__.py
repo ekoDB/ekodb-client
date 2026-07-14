@@ -58,12 +58,6 @@ from ._ekodb_client import (
     parse_health_status,
 )
 
-# Canonical HealthStatus.status values (status is a plain string; an
-# off-contract value reported by the server is preserved verbatim).
-HEALTH_OK = "ok"
-HEALTH_DEGRADED = "degraded"
-HEALTH_UNKNOWN = "unknown"
-
 from .stages import Stage, ChatMessage, parameter_ref
 from .query_builder import QueryBuilder
 from .schema_builder import SchemaBuilder, FieldTypeSchemaBuilder
@@ -110,6 +104,12 @@ try:
     __version__ = _dist_version("ekodb_client")
 except PackageNotFoundError:
     __version__ = "0.21.0"
+
+# Canonical HealthStatus.status values (status is a plain string; an
+# off-contract value reported by the server is preserved verbatim).
+HEALTH_OK = "ok"
+HEALTH_DEGRADED = "degraded"
+HEALTH_UNKNOWN = "unknown"
 
 __all__ = [
     "Client",
