@@ -71,6 +71,7 @@ sync_readme() { # $1=file  $2=sed-expression
 for f in README.md ekodb-client-kt/README.md; do
     sync_readme "$f" "s/(ekodb-client-kt:)[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.]+)?/\1$VERSION/g"
 done
+sync_readme "ekodb-client-kt/README.md" "s|(<version>)[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.]+)?(</version>)|\1$VERSION\3|g"
 
 # Rust crate install: ekodb_client = "X[.Y[.Z]]"  (the "{ version = ... }" form in
 # manifests is a different shape and is handled by set_manifest above).

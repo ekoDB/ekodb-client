@@ -53,7 +53,7 @@ dependencies {
 <dependency>
     <groupId>io.ekodb</groupId>
     <artifactId>ekodb-client-kt</artifactId>
-    <version>0.21.0</version>
+    <version>0.25.0</version>
 </dependency>
 ```
 

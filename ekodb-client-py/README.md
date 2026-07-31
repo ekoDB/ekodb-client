@@ -27,7 +27,7 @@ native Python interface.
 ## Installation
 
 ```bash
-pip install ekodb
+pip install ekodb-client
 ```
 
 Or install from source:
