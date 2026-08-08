@@ -254,6 +254,7 @@ const joinResults = await client.find("users", multiQuery);
 - `kvSet(key: string, value: any): Promise<void>`
 - `kvGet(key: string): Promise<any>`
 - `kvDelete(key: string): Promise<void>`
+- `kvClear(): Promise<void>` - Clear the entire KV store
 
 #### Query Builder
 
@@ -269,7 +270,6 @@ const joinResults = await client.find("users", multiQuery);
 - `.contains(field, value)` - String contains
 - `.startsWith(field, value)` - String starts with
 - `.endsWith(field, value)` - String ends with
-- `.regex(field, pattern)` - Regex match
 - `.sortAsc(field)` / `.sortDesc(field)` - Sorting
 - `.limit(n)` / `.skip(n)` - Pagination
 - `.join(joinConfig)` - Add join configuration
@@ -298,7 +298,31 @@ const joinResults = await client.find("users", multiQuery);
 #### Collection Management
 
 - `listCollections(): Promise<string[]>`
+- `listUserCollections(): Promise<string[]>` - List collections excluding
+  internal chat/system collections
 - `deleteCollection(collection: string): Promise<void>`
+- `collectionExists(collection: string): Promise<boolean>` - Check if collection
+  exists
+- `countDocuments(collection: string): Promise<number>` - Count documents in
+  collection
+
+#### Chat Models
+
+- `getChatModels(): Promise<Record<string, string[]>>` - Get all available chat
+  models by provider
+- `getChatModel(provider: string): Promise<string[]>` - Get models for a
+  specific provider
+
+#### User Functions
+
+- `saveUserFunction(userFunction: object): Promise<string>` - Create a new user
+  function
+- `getUserFunction(label: string): Promise<object>` - Get user function by label
+- `listUserFunctions(tags?: string[]): Promise<object[]>` - List all user
+  functions (optionally filter by tags)
+- `updateUserFunction(label: string, userFunction: object): Promise<void>` -
+  Update existing user function
+- `deleteUserFunction(label: string): Promise<void>` - Delete user function
 
 #### WebSocket
 
@@ -306,8 +330,62 @@ const joinResults = await client.find("users", multiQuery);
 
 ### WebSocket Methods
 
-- `findAll(collection: string): Promise<Record[]>`
+**Full CRUD (14 methods):**
+
+- `findAll(collection): Promise<Record[]>`
+- `insert(collection, record, bypassRipple?): Promise<any>`
+- `query(collection, options?): Promise<any[]>`
+- `findById(collection, id): Promise<any>`
+- `update(collection, id, record, bypassRipple?): Promise<any>`
+- `delete(collection, id, bypassRipple?): Promise<void>`
+- `batchInsert(collection, records, bypassRipple?): Promise<any>`
+- `batchUpdate(collection, updates, bypassRipple?): Promise<any>`
+- `batchDelete(collection, ids, bypassRipple?): Promise<void>`
+- `textSearch(collection, query, fields?, limit?): Promise<any[]>`
+- `distinctValues(collection, field, filter?): Promise<any>`
+- `updateWithAction(collection, id, action, field, value?): Promise<any>`
+- `createCollection(name, schema?): Promise<void>`
+- `listCollections(): Promise<string[]>`
+- `deleteCollection(name): Promise<void>`
 - `close(): void`
+
+**Subscriptions & chat:**
+
+- `subscribe(collection, options?): Promise<EventStream<MutationNotification>>`
+  - Subscribe to a collection's mutation notifications
+- `unsubscribe(collection): void` - Tear down a subscription (not replayed on
+  reconnect)
+- `cancelChat(chatId): Promise<void>` - Cancel an in-flight streaming chat
+
+**Schema Cache:**
+
+```typescript
+import { SchemaCache, extractRecordId } from "@ekodb/ekodb-client";
+
+const cache = new SchemaCache({ enabled: true, ttlSeconds: 300 });
+ws.setSchemaCache(cache);
+
+// Extract IDs correctly with custom primary_key_alias
+const id = extractRecordId(record); // tries "id", "_id"
+const id2 = ws.extractId("users", record); // uses cache
+```
+
+### Transactions
+
+Buffered, read-your-writes transactions. Statements issued with a
+`transactionId` are staged and applied atomically at commit.
+
+- `beginTransaction(isolationLevel?): Promise<string>` - Start a transaction and
+  return its id
+- `commitTransaction(transactionId): Promise<void>` - Apply staged writes. May
+  reject with a retryable conflict (HTTP 409)
+- `rollbackTransaction(transactionId): Promise<void>` - Discard staged writes
+- `createSavepoint(transactionId, name): Promise<void>`
+- `rollbackToSavepoint(transactionId, name): Promise<void>`
+- `releaseSavepoint(transactionId, name): Promise<void>`
+
+Pass `transactionId` in the options of `insert` / `update` / `delete` / `find` /
+`findById` to read and write within the transaction (read-your-writes).
 
 ## Examples
 
@@ -322,7 +400,79 @@ for complete working examples:
 - `client_joins.ts` - Join operations
 - `client_batch_operations.ts` - Batch operations
 - `client_kv_operations.ts` - Key-value operations
+- `client_chat_models.ts` - Chat models API
+- `client_user_functions.ts` - User functions API
 - And more...
+
+### Goals, Tasks, and Agents
+
+```typescript
+import { EkoDBClient } from "@ekodb/ekodb-client";
+
+const client = new EkoDBClient("http://localhost:8080", "your-api-key");
+await client.init();
+
+// Goals
+const goal = await client.goalCreate({
+  title: "Migrate data",
+  status: "active",
+});
+const goals = await client.goalList();
+await client.goalComplete("goal-id", { summary: "Done" });
+await client.goalApprove("goal-id");
+
+// Tasks
+const task = await client.taskCreate({
+  title: "Backup",
+  schedule: "0 0 * * *",
+});
+await client.taskStart("task-id");
+await client.taskSucceed("task-id", { records: 1500 });
+
+// Agents
+const agent = await client.agentCreate({
+  name: "processor",
+  model: "gpt-4.1",
+});
+const agents = await client.agentList();
+```
+
+### Schedules
+
+```typescript
+// Create a schedule
+const sched = await client.createSchedule({
+  name: "nightly",
+  cron: "0 2 * * *",
+});
+
+// Pause a schedule
+await client.pauseSchedule("sched-id");
+```
+
+### WebSocket Chat Streaming
+
+```typescript
+const ws = client.websocket("ws://localhost:8080");
+
+const stream = await ws.chatSend(chatId, "What is the capital of France?");
+stream.on("event", (event) => {
+  switch (event.type) {
+    case "chunk":
+      process.stdout.write(event.content);
+      break;
+    case "end":
+      console.log(`\nDone (context: ${event.contextWindow} tokens)`);
+      break;
+    case "toolCall":
+      ws.sendToolResult(chatId, event.callId, true, result);
+      break;
+    case "error":
+      console.error(event.error);
+      break;
+  }
+});
+```
 
 ## License
 

@@ -1,11 +1,30 @@
-///! Complete Scripts Example for ekoDB Rust Client
+///! Complete Functions Example for ekoDB Rust Client
 ///!
 ///! Demonstrates: FindAll, Group, Count, Multi-stage Pipelines
 use ekodb_client::{
     Client, FieldType, Function, GroupFunctionConfig, GroupFunctionOp, ParameterDefinition, Record,
-    Script,
+    UserFunction,
 };
 use std::{collections::HashMap, env};
+
+/// Save a function idempotently: if the label already exists (HTTP 409),
+/// update the existing definition instead, then return its id.
+async fn save_or_update(
+    client: &Client,
+    function: UserFunction,
+) -> Result<String, Box<dyn std::error::Error>> {
+    let label = function.label.clone();
+    match client.save_function(function.clone()).await {
+        Ok(id) => Ok(id),
+        Err(ekodb_client::Error::Api { code: 409, .. }) => {
+            client.update_function(&label, function).await?;
+            println!("ℹ️  Function '{}' already existed — updated instead", label);
+            let existing = client.get_function(&label).await?;
+            Ok(existing.id.unwrap_or(label))
+        }
+        Err(e) => Err(Box::new(e)),
+    }
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -15,7 +34,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let api_key =
         env::var("API_BASE_KEY").unwrap_or_else(|_| "a-test-api-key-from-ekodb".to_string());
 
-    println!("🚀 ekoDB Rust Complete Scripts Example\n");
+    println!("🚀 ekoDB Rust Complete Functions Example\n");
     println!("📋 Demonstrates: FindAll, Group, Count, Multi-stage Pipelines\n");
 
     let client = Client::builder()
@@ -40,12 +59,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     cleanup(&client, &script_ids).await?;
 
     println!("✅ All complete script examples finished!");
-    println!("\n💡 This example demonstrates ekoDB's Script system:");
+    println!("\n💡 This example demonstrates ekoDB's function system:");
     println!("   ✅ FindAll operations");
     println!("   ✅ Group aggregations (Count, Average)");
     println!("   ✅ Multi-stage pipelines (FindAll → Group → Count)");
     println!("   ✅ Parameter definitions");
-    println!("   ✅ Script management (save, call, delete)");
+    println!("   ✅ Function management (save, call, delete)");
 
     Ok(())
 }
@@ -78,7 +97,7 @@ async fn setup_test_data(client: &Client) -> Result<(), Box<dyn std::error::Erro
 async fn product_stats_script(client: &Client) -> Result<String, Box<dyn std::error::Error>> {
     println!("📝 Example 1: FindAll + Group (Simple Aggregation)\n");
 
-    let script = Script::new("product_stats_rs", "Product Statistics")
+    let script = UserFunction::new("product_stats_rs", "Product Statistics")
         .with_tag("products")
         .with_tag("analytics")
         .with_function(Function::FindAll {
@@ -93,10 +112,10 @@ async fn product_stats_script(client: &Client) -> Result<String, Box<dyn std::er
             ],
         });
 
-    let id = client.save_script(script).await?;
-    println!("✅ Script saved: {}", id);
+    let id = save_or_update(client, script).await?;
+    println!("✅ Function saved: {}", id);
 
-    let result = client.call_script("product_stats_rs", None).await?;
+    let result = client.call_function("product_stats_rs", None).await?;
     println!("📊 Found {} product groups", result.records.len());
     for record in &result.records {
         println!("   {:?}", record);
@@ -109,17 +128,17 @@ async fn product_stats_script(client: &Client) -> Result<String, Box<dyn std::er
 async fn list_products_script(client: &Client) -> Result<String, Box<dyn std::error::Error>> {
     println!("📝 Example 2: Simple Product Listing\n");
 
-    let script = Script::new("list_all_products_rs", "List All Products")
+    let script = UserFunction::new("list_all_products_rs", "List All Products")
         .with_tag("products")
         .with_tag("list")
         .with_function(Function::FindAll {
             collection: "complete_products_rs".to_string(),
         });
 
-    let id = client.save_script(script).await?;
-    println!("✅ Script saved");
+    let id = save_or_update(client, script).await?;
+    println!("✅ Function saved");
 
-    let result = client.call_script("list_all_products_rs", None).await?;
+    let result = client.call_function("list_all_products_rs", None).await?;
     println!("📊 Found {} products", result.records.len());
     println!("⏱️  Execution time: {}ms\n", result.stats.execution_time_ms);
 
@@ -129,7 +148,7 @@ async fn list_products_script(client: &Client) -> Result<String, Box<dyn std::er
 async fn category_count_script(client: &Client) -> Result<String, Box<dyn std::error::Error>> {
     println!("📝 Example 3: Count by Category\n");
 
-    let script = Script::new("count_by_category_rs", "Count Products by Category")
+    let script = UserFunction::new("count_by_category_rs", "Count Products by Category")
         .with_tag("products")
         .with_tag("analytics")
         .with_function(Function::FindAll {
@@ -140,10 +159,10 @@ async fn category_count_script(client: &Client) -> Result<String, Box<dyn std::e
             functions: vec![GroupFunctionConfig::new("count", GroupFunctionOp::Count)],
         });
 
-    let id = client.save_script(script).await?;
-    println!("✅ Script saved");
+    let id = save_or_update(client, script).await?;
+    println!("✅ Function saved");
 
-    let result = client.call_script("count_by_category_rs", None).await?;
+    let result = client.call_function("count_by_category_rs", None).await?;
     println!("📊 Found {} categories", result.records.len());
     for record in &result.records {
         println!("   {:?}", record);
@@ -156,17 +175,17 @@ async fn category_count_script(client: &Client) -> Result<String, Box<dyn std::e
 async fn top_rated_script(client: &Client) -> Result<String, Box<dyn std::error::Error>> {
     println!("📝 Example 4: High Rating Products\n");
 
-    let script = Script::new("top_rated_products_rs", "Top Rated Products")
+    let script = UserFunction::new("top_rated_products_rs", "Top Rated Products")
         .with_tag("products")
         .with_tag("quality")
         .with_function(Function::FindAll {
             collection: "complete_products_rs".to_string(),
         });
 
-    let id = client.save_script(script).await?;
-    println!("✅ Script saved");
+    let id = save_or_update(client, script).await?;
+    println!("✅ Function saved");
 
-    let result = client.call_script("top_rated_products_rs", None).await?;
+    let result = client.call_function("top_rated_products_rs", None).await?;
     println!("📊 Found {} products", result.records.len());
     println!("⏱️  Execution time: {}ms\n", result.stats.execution_time_ms);
 
@@ -174,9 +193,9 @@ async fn top_rated_script(client: &Client) -> Result<String, Box<dyn std::error:
 }
 
 async fn script_with_parameter(client: &Client) -> Result<String, Box<dyn std::error::Error>> {
-    println!("📝 Example 5: Script with Parameter Definition\n");
+    println!("📝 Example 5: function with Parameter Definition\n");
 
-    let script = Script::new("list_with_limit_rs", "List Products with Limit")
+    let script = UserFunction::new("list_with_limit_rs", "List Products with Limit")
         .with_tag("products")
         .with_tag("list")
         .with_parameter(ParameterDefinition::new("max_items").with_default(FieldType::Integer(5)))
@@ -184,14 +203,14 @@ async fn script_with_parameter(client: &Client) -> Result<String, Box<dyn std::e
             collection: "complete_products_rs".to_string(),
         });
 
-    let id = client.save_script(script).await?;
-    println!("✅ Script saved");
+    let id = save_or_update(client, script).await?;
+    println!("✅ Function saved");
 
     let mut params = HashMap::new();
     params.insert("max_items".to_string(), FieldType::Integer(3));
 
     let result = client
-        .call_script("list_with_limit_rs", Some(params))
+        .call_function("list_with_limit_rs", Some(params))
         .await?;
     println!("📊 Found {} products", result.records.len());
     println!("⏱️  Execution time: {}ms\n", result.stats.execution_time_ms);
@@ -202,7 +221,7 @@ async fn script_with_parameter(client: &Client) -> Result<String, Box<dyn std::e
 async fn multi_stage_pipeline(client: &Client) -> Result<String, Box<dyn std::error::Error>> {
     println!("📝 Example 6: Multi-Stage Pipeline (FindAll → Group → Count)\n");
 
-    let script = Script::new("product_summary_rs", "Product Summary Report")
+    let script = UserFunction::new("product_summary_rs", "Product Summary Report")
         .with_tag("products")
         .with_tag("analytics")
         .with_function(Function::FindAll {
@@ -220,10 +239,10 @@ async fn multi_stage_pipeline(client: &Client) -> Result<String, Box<dyn std::er
             output_field: "total_categories".to_string(),
         });
 
-    let id = client.save_script(script).await?;
-    println!("✅ Script saved");
+    let id = save_or_update(client, script).await?;
+    println!("✅ Function saved");
 
-    let result = client.call_script("product_summary_rs", None).await?;
+    let result = client.call_function("product_summary_rs", None).await?;
     println!(
         "📊 Pipeline executed {} stages",
         result.stats.stages_executed
@@ -240,7 +259,7 @@ async fn cleanup(client: &Client, script_ids: &[String]) -> Result<(), Box<dyn s
     println!("🧹 Cleaning up...");
 
     for id in script_ids {
-        let _ = client.delete_script(id).await;
+        let _ = client.delete_function(id).await;
     }
 
     let _ = client.delete_collection("complete_products_rs").await;

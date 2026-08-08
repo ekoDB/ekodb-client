@@ -1,5 +1,5 @@
 """
-AI Scripts Example - Chat and Embed Operations
+AI Functions Example - Chat and Embed Operations
 
 Demonstrates AI operations in scripts:
 - Chat completions with context
@@ -20,12 +20,31 @@ BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8080")
 API_KEY = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb")
 
 
+def _is_already_exists_error(err):
+    """Detect the server's 409 'function already exists' response."""
+    msg = str(err)
+    return "409" in msg or "already exists" in msg
+
+
+async def save_or_update(client, script):
+    """Save a function, falling back to an update if its label already exists."""
+    label = script["label"]
+    try:
+        return await client.save_function(script)
+    except Exception as e:
+        if not _is_already_exists_error(e):
+            raise
+        await client.update_function(label, script)
+        print(f"ℹ️  Function '{label}' already existed — updated instead")
+        return label
+
+
 async def main():
     from ekodb_client import Client, Stage, ChatMessage
 
     client = Client.new(BASE_URL, API_KEY)
 
-    print("🚀 ekoDB Python AI Scripts Example\n")
+    print("🚀 ekoDB Python AI Functions Example\n")
 
     # Setup test data
     print("📋 Setting up test data...")
@@ -71,17 +90,17 @@ async def main():
                         "What are the benefits of using vector databases?"
                     ),
                 ],
-                "gpt-4",
+                "gpt-4o-mini",
                 0.7,
             )
         ],
         "tags": ["ai", "chat"],
     }
-    script_id1 = await client.save_script(script1)
+    script_id1 = await save_or_update(client, script1)
     script_ids.append(script_id1)
     print("✅ Chat script saved")
 
-    result1 = await client.call_script("ai_assistant_py", None)
+    result1 = await client.call_function("ai_assistant_py", None)
     print("🤖 AI Response:")
     if result1.get("records"):
         response = result1["records"][0]
@@ -105,11 +124,11 @@ async def main():
         "functions": [Stage.embed("text", "embedding")],
         "tags": ["ai", "embed"],
     }
-    script_id2 = await client.save_script(script2)
+    script_id2 = await save_or_update(client, script2)
     script_ids.append(script_id2)
     print("✅ Embed script saved")
 
-    result2 = await client.call_script(
+    result2 = await client.call_function(
         "generate_embedding_py", {"text": "ekoDB is a powerful database"}
     )
     print("📊 Embedding generated")
@@ -124,7 +143,7 @@ async def main():
     print("🧹 Cleaning up...")
     for script_id in script_ids:
         try:
-            await client.delete_script(script_id)
+            await client.delete_function(script_id)
         except Exception:
             pass
     try:

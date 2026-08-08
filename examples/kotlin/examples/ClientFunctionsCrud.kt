@@ -1,7 +1,7 @@
 /**
- * CRUD Scripts Example - Basic Data Operations
+ * CRUD Functions Example - Basic Data Operations
  *
- * Demonstrates basic CRUD operations using scripts:
+ * Demonstrates basic CRUD operations using functions:
  * - FindAll queries
  * - Group aggregations
  * - Simple data transformations
@@ -10,13 +10,33 @@
 package io.ekodb.client.examples
 
 import io.ekodb.client.EkoDBClient
-import io.ekodb.client.functions.Script
+import io.ekodb.client.functions.UserFunction
 import io.ekodb.client.functions.FunctionStageConfig
 import io.ekodb.client.functions.GroupFunctionConfig
 import io.ekodb.client.functions.GroupFunctionOp
 import io.ekodb.client.types.Record
 import io.github.cdimascio.dotenv.dotenv
 import kotlinx.coroutines.runBlocking
+
+private fun isAlreadyExistsError(e: Exception): Boolean {
+    val msg = e.message ?: return false
+    return msg.contains("status 409") || msg.contains("already exists")
+}
+
+private suspend fun saveOrUpdate(client: EkoDBClient, func: UserFunction): String {
+    return try {
+        client.saveFunction(func)
+    } catch (e: Exception) {
+        if (isAlreadyExistsError(e)) {
+            client.updateFunction(func.label, func)
+            println("ℹ️  Function '${func.label}' already existed — updated instead")
+            client.getFunction(func.label).id
+                ?: throw IllegalStateException("No ID returned for function '${func.label}'")
+        } else {
+            throw e
+        }
+    }
+}
 
 fun main() = runBlocking {
     val dotenv = dotenv()
@@ -28,7 +48,7 @@ fun main() = runBlocking {
         .apiKey(apiKey)
         .build()
 
-    println("🚀 ekoDB Kotlin CRUD Scripts Example")
+    println("🚀 ekoDB Kotlin CRUD Functions Example")
     println()
 
     // Setup test data
@@ -48,14 +68,14 @@ fun main() = runBlocking {
     }
     println("✅ Created 10 test users\n")
 
-    val scriptIds = mutableListOf<String>()
+    val funcIds = mutableListOf<String>()
 
     try {
         // Example 1: List All Users
         println("📝 Example 1: List All Users")
         println()
 
-        val script1 = Script(
+        val func1 = UserFunction(
             label = "list_all_users_kt",
             name = "List All Users",
             version = "1.0",
@@ -65,11 +85,11 @@ fun main() = runBlocking {
             ),
             tags = listOf("users", "list")
         )
-        val scriptId1 = client.saveScript(script1)
-        scriptIds.add(scriptId1)
-        println("✅ Script saved")
+        val funcId1 = saveOrUpdate(client, func1)
+        funcIds.add(funcId1)
+        println("✅ Function saved")
 
-        val result1 = client.callScript("list_all_users_kt")
+        val result1 = client.callFunction("list_all_users_kt")
         println("📊 Found ${result1.records.size} users")
         println("⏱️  Execution time: ${result1.stats.execution_time_ms}ms\n")
 
@@ -77,7 +97,7 @@ fun main() = runBlocking {
         println("📝 Example 2: Count Users by Status")
         println()
 
-        val script2 = Script(
+        val func2 = UserFunction(
             label = "users_by_status_kt",
             name = "Users by Status",
             version = "1.0",
@@ -93,25 +113,25 @@ fun main() = runBlocking {
             ),
             tags = listOf("users", "analytics")
         )
-        val scriptId2 = client.saveScript(script2)
-        scriptIds.add(scriptId2)
-        println("✅ Script saved")
+        val funcId2 = saveOrUpdate(client, func2)
+        funcIds.add(funcId2)
+        println("✅ Function saved")
 
-        val result2 = client.callScript("users_by_status_kt")
+        val result2 = client.callFunction("users_by_status_kt")
         println("📊 User counts by status:")
         result2.records.forEach { println("   $it") }
         println("⏱️  Execution time: ${result2.stats.execution_time_ms}ms\n")
 
         // Cleanup
         println("🧹 Cleaning up...")
-        for (scriptId in scriptIds) {
-            try { client.deleteScript(scriptId) } catch (e: Exception) {}
+        for (funcId in funcIds) {
+            try { client.deleteFunction(funcId) } catch (e: Exception) {}
         }
         try { client.deleteCollection("crud_users_kt") } catch (e: Exception) {}
         println("✅ Cleanup complete")
 
         println()
-        println("✅ All CRUD script examples finished!")
+        println("✅ All CRUD function examples finished!")
 
     } catch (e: Exception) {
         println("❌ Error: ${e.message}")

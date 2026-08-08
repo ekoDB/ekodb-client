@@ -102,8 +102,8 @@ async def main():
         inserted_ids.append(result["id"])
     print(f"Inserted {len(inserted_ids)} test users\n")
 
-    # Example 1: Select specific fields to reduce data transfer
-    print("Example 1: Select specific fields")
+    # Example 1: Select specific fields - only get id, name, email
+    print("Example 1: Select specific fields (id, name, email only)")
     users_query = {
         "filter": {
             "type": "Condition",
@@ -114,10 +114,17 @@ async def main():
     }
 
     users = await client.find(TEST_COLLECTION, users_query)
-    print(f"Fetched {len(users)} users with only 3 fields each")
+    print(f"  Found {len(users)} active users")
+    if len(users) > 0:
+        fields = list(users[0].keys())
+        print(f"  Fields returned: {fields}")
+        # Show first user's data
+        name = users[0].get("name", "N/A")
+        email = users[0].get("email", "N/A")
+        print(f"  First user: {name} <{email}>")
 
-    # Example 2: Exclude sensitive fields
-    print("\nExample 2: Exclude sensitive fields")
+    # Example 2: Exclude sensitive fields - hide password, api_key, secret_token
+    print("\nExample 2: Exclude sensitive fields (password, api_key, secret_token)")
     admins_query = {
         "filter": {
             "type": "Condition",
@@ -127,14 +134,26 @@ async def main():
     }
 
     admins = await client.find(TEST_COLLECTION, admins_query)
-    print(f"Fetched {len(admins)} admins without sensitive data")
-    # Verify sensitive fields are excluded
+    print(f"  Found {len(admins)} admins")
     if len(admins) > 0:
         has_password = "password" in admins[0]
-        print(f"  Password field excluded: {not has_password}")
+        has_api_key = "api_key" in admins[0]
+        has_token = "secret_token" in admins[0]
+        print("  Sensitive fields excluded:")
+        print(
+            f"    - password: {'PRESENT (unexpected!)' if has_password else 'excluded'}"
+        )
+        print(
+            f"    - api_key: {'PRESENT (unexpected!)' if has_api_key else 'excluded'}"
+        )
+        print(
+            f"    - secret_token: {'PRESENT (unexpected!)' if has_token else 'excluded'}"
+        )
+        fields = list(admins[0].keys())
+        print(f"  Fields returned: {fields}")
 
-    # Example 3: Complex query with projection
-    print("\nExample 3: Complex query with projection")
+    # Example 3: Complex query with projection - active users with profile fields
+    print("\nExample 3: Complex query with projection (active users, ages 18-65)")
     active_users_query = {
         "filter": {
             "type": "Logical",
@@ -161,31 +180,35 @@ async def main():
             },
         },
         "select_fields": ["id", "name", "email", "age", "created_at"],
-        "sort": [{"field": "created_at", "ascending": False}],
+        "sort": [{"field": "age", "ascending": False}],
         "limit": 50,
     }
 
     active_users = await client.find(TEST_COLLECTION, active_users_query)
-    print(f"Fetched {len(active_users)} active users with profile fields")
+    print(f"  Found {len(active_users)} active users (ages 18-65)")
+    for user in active_users:
+        name = user.get("name", "N/A")
+        age = user.get("age", "N/A")
+        print(f"    - {name} (age {age})")
 
-    # Example 4: Find by ID with projection
-    print("\nExample 4: Find by ID with projection")
-    profile_query = {
+    # Example 4: Query inactive users with profile fields
+    print("\nExample 4: Query inactive users with profile fields")
+    inactive_query = {
         "filter": {
             "type": "Condition",
-            "content": {"field": "id", "operator": "Eq", "value": inserted_ids[0]},
+            "content": {"field": "status", "operator": "Eq", "value": "inactive"},
         },
-        "select_fields": ["id", "name", "email", "bio", "avatar_url"],
+        "select_fields": ["id", "name", "email", "bio"],
     }
 
-    user_profiles = await client.find(TEST_COLLECTION, profile_query)
-    if len(user_profiles) > 0:
-        user_profile = user_profiles[0]
-        print(f"Fetched user profile: {user_profile.get('name', 'N/A')}")
-    else:
-        print("Fetched user profile: N/A")
+    inactive_users = await client.find(TEST_COLLECTION, inactive_query)
+    print(f"  Found {len(inactive_users)} inactive users")
+    for user in inactive_users:
+        name = user.get("name", "N/A")
+        bio = user.get("bio", "N/A")
+        print(f"    - {name}: {bio}")
 
-    # Example 5: Compare full vs projected data
+    # Example 5: Compare full vs projected data - demonstrates bandwidth savings
     print("\nExample 5: Compare full vs projected data")
     full_query = {
         "filter": {
@@ -205,11 +228,18 @@ async def main():
     full_users = await client.find(TEST_COLLECTION, full_query)
     projected_users = await client.find(TEST_COLLECTION, projected_query)
 
-    full_fields = len(full_users[0].keys()) if len(full_users) > 0 else 0
-    projected_fields = len(projected_users[0].keys()) if len(projected_users) > 0 else 0
+    if len(full_users) > 0 and len(projected_users) > 0:
+        full_fields = list(full_users[0].keys())
+        projected_fields = list(projected_users[0].keys())
 
-    print(f"Full query returned {full_fields} fields per user")
-    print(f"Projected query returned {projected_fields} fields per user")
+        print("  Full query:")
+        print(f"    - {len(full_fields)} fields per record")
+        print(f"    - Fields: {full_fields}")
+        print("  Projected query:")
+        print(f"    - {len(projected_fields)} fields per record")
+        print(f"    - Fields: {projected_fields}")
+        savings = 100 - (len(projected_fields) * 100 // max(len(full_fields), 1))
+        print(f"  Bandwidth savings: ~{savings}% fewer fields")
 
     # Cleanup
     print("\nCleaning up test data...")

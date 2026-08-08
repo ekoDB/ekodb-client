@@ -117,7 +117,7 @@ func main() {
 		"kv_operations.go",
 		"collection_management.go",
 		"transactions.go",
-		"crud_scripts.go",
+		"crud_functions.go",
 		// TTL verification tests
 		"document_ttl.go",
 		"websocket_ttl.go",

@@ -48,7 +48,7 @@ ekodb-client>=0.1.0
 
 ## Prerequisites
 
-- Python 3.8 or higher
+- Python 3.9 or higher
 - pip (Python package manager)
 
 ## Installation

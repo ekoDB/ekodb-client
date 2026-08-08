@@ -13,6 +13,26 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
+def _is_already_exists_error(err):
+    """Detect the server's 409 'function already exists' response."""
+    msg = str(err)
+    return "409" in msg or "already exists" in msg
+
+
+async def save_or_update(client, script):
+    """Save a function, falling back to an update if its label already exists."""
+    label = script["label"]
+    try:
+        return await client.save_function(script)
+    except Exception as e:
+        if not _is_already_exists_error(e):
+            raise
+        await client.update_function(label, script)
+        print(f"ℹ️  Function '{label}' already existed — updated instead")
+        return label
+
+
 BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8080")
 API_KEY = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb")
 
@@ -48,13 +68,13 @@ async def example_basic_swr(client: Client):
         "tags": ["github", "swr", "native"],
     }
 
-    script_id = await client.save_script(basic_swr_script)
+    script_id = await save_or_update(client, basic_swr_script)
     print(f"✓ Created native SWR script: github_user_native ({script_id})")
 
     # First call - cache miss
     print("\nFirst call (cache miss - will fetch from GitHub API):")
     start1 = time.time()
-    result1 = await client.call_script("github_user_native", {"username": "torvalds"})
+    result1 = await client.call_function("github_user_native", {"username": "torvalds"})
     duration1 = (time.time() - start1) * 1000
     print(f"  Response time: {duration1:.0f}ms")
     print(f"  Records returned: {len(result1.get('records', []))}")
@@ -62,7 +82,7 @@ async def example_basic_swr(client: Client):
     # Second call - cache hit
     print("\nSecond call (cache hit - instant from KV store):")
     start2 = time.time()
-    result2 = await client.call_script("github_user_native", {"username": "torvalds"})
+    result2 = await client.call_function("github_user_native", {"username": "torvalds"})
     duration2 = (time.time() - start2) * 1000
     speedup = duration1 / duration2 if duration2 > 0 else 0
     print(f"  Response time: {duration2:.0f}ms")
@@ -103,13 +123,15 @@ async def example_audit_trail(client: Client):
         "tags": ["products", "audit"],
     }
 
-    audit_script_id = await client.save_script(audit_swr_script)
+    audit_script_id = await save_or_update(client, audit_swr_script)
     print(
         f"✓ Created SWR script with audit trail: product_swr_audit ({audit_script_id})"
     )
 
     print("\nFetching product (will create audit trail entry):")
-    product_result = await client.call_script("product_swr_audit", {"product_id": "1"})
+    product_result = await client.call_function(
+        "product_swr_audit", {"product_id": "1"}
+    )
     print("  ✓ Product fetched and cached")
     print("  ✓ Audit record created in 'swr_audit_trail' collection")
     print(f"  Records: {len(product_result.get('records', []))}\n")
@@ -157,13 +179,13 @@ async def example_pipeline_enrichment(client: Client):
         "tags": ["enrichment", "pipeline"],
     }
 
-    pipeline_script_id = await client.save_script(pipeline_script)
+    pipeline_script_id = await save_or_update(client, pipeline_script)
     print(
         f"✓ Created enrichment pipeline: user_enrichment_pipeline ({pipeline_script_id})"
     )
 
     print("\nRunning pipeline:")
-    enrich_result = await client.call_script(
+    enrich_result = await client.call_function(
         "user_enrichment_pipeline", {"user_id": "1"}
     )
     print("  ✓ Data fetched from API (cached 30m)")
@@ -207,14 +229,14 @@ async def example_dynamic_ttl(client: Client):
         "tags": ["dynamic"],
     }
 
-    dynamic_script_id = await client.save_script(dynamic_ttl_script)
+    dynamic_script_id = await save_or_update(client, dynamic_ttl_script)
     print(f"✓ Created dynamic TTL script: flexible_cache ({dynamic_script_id})")
 
     # Test with different TTLs
     ttl_tests = [("5m", "5 minutes"), ("1h", "1 hour"), ("30s", "30 seconds")]
 
     for ttl_value, description in ttl_tests:
-        await client.call_script(
+        await client.call_function(
             "flexible_cache", {"resource_id": "test", "ttl": ttl_value}
         )
         print(f"  ✓ Cached with TTL: {ttl_value} ({description})")
@@ -227,7 +249,7 @@ async def cleanup(client: Client, script_ids: list):
     print("\n🧹 Cleaning up...")
     try:
         for script_id in script_ids:
-            await client.delete_script(script_id)
+            await client.delete_function(script_id)
         print(f"✓ Deleted {len(script_ids)} test scripts")
     except Exception as e:
         print(f"⚠ Cleanup error (non-critical): {e}")
@@ -245,6 +267,14 @@ async def main():
     print("   • Dynamic TTL configuration\n")
 
     client = Client.new(BASE_URL, API_KEY)
+
+    # Start clean: drop stale collections from a prior run so their schema is
+    # inferred fresh and a stale schema can't reject the insert.
+    for _c in ("enriched_users", "swr_audit_trail"):
+        try:
+            await client.delete_collection(_c)
+        except Exception:
+            pass
 
     script_ids = []
 

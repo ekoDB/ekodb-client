@@ -10,20 +10,40 @@ package io.ekodb.client.examples
 import io.ekodb.client.EkoDBClient
 import io.ekodb.client.functions.FunctionStageConfig
 import io.ekodb.client.functions.ParameterDefinition
-import io.ekodb.client.functions.Script
+import io.ekodb.client.functions.UserFunction
 import io.github.cdimascio.dotenv.dotenv
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlin.system.measureTimeMillis
 
+private fun isAlreadyExistsError(e: Exception): Boolean {
+    val msg = e.message ?: return false
+    return msg.contains("status 409") || msg.contains("already exists")
+}
+
+private suspend fun saveOrUpdate(client: EkoDBClient, func: UserFunction): String {
+    return try {
+        client.saveFunction(func)
+    } catch (e: Exception) {
+        if (isAlreadyExistsError(e)) {
+            client.updateFunction(func.label, func)
+            println("ℹ️  Function '${func.label}' already existed — updated instead")
+            client.getFunction(func.label).id
+                ?: throw IllegalStateException("No ID returned for function '${func.label}'")
+        } else {
+            throw e
+        }
+    }
+}
+
 fun exampleBasicSWR(client: EkoDBClient): String = runBlocking {
     println("\nExample 1: Basic Native SWR")
     println("─".repeat(80))
     println("Single function replaces KvGet → If → HttpRequest → KvSet pipeline")
 
-    // Create script with native SWR function
-    val basicSWRScript = Script(
+    // Create function with native SWR function
+    val basicSWRScript = UserFunction(
         label = "github_user_native",
         name = "GitHub User Lookup (Native SWR)",
         description = "Fetches GitHub user data with automatic caching using native SWR",
@@ -50,14 +70,14 @@ fun exampleBasicSWR(client: EkoDBClient): String = runBlocking {
         tags = listOf("github", "swr", "native")
     )
 
-    val scriptId = client.saveScript(basicSWRScript)
-    println("✓ Created native SWR script: github_user_native ($scriptId)")
+    val funcId = saveOrUpdate(client, basicSWRScript)
+    println("✓ Created native SWR function: github_user_native ($funcId)")
 
     // First call - cache miss
     println("\nFirst call (cache miss - will fetch from GitHub API):")
     var recordCount1 = 0
     val duration1 = measureTimeMillis {
-        val result1 = client.callScript("github_user_native", mapOf("username" to JsonPrimitive("torvalds")))
+        val result1 = client.callFunction("github_user_native", mapOf("username" to JsonPrimitive("torvalds")))
         recordCount1 = result1.records.size
     }
     println("  Response time: ${duration1}ms")
@@ -66,14 +86,14 @@ fun exampleBasicSWR(client: EkoDBClient): String = runBlocking {
     // Second call - cache hit
     println("\nSecond call (cache hit - instant from KV store):")
     val duration2 = measureTimeMillis {
-        client.callScript("github_user_native", mapOf("username" to JsonPrimitive("torvalds")))
+        client.callFunction("github_user_native", mapOf("username" to JsonPrimitive("torvalds")))
     }
     println("  Response time: ${duration2}ms")
     val speedup = if (duration2 > 0) duration1.toDouble() / duration2.toDouble() else 0.0
     println("  Speedup: ${"%.1f".format(speedup)}x faster 🚀")
     println()
 
-    scriptId
+    funcId
 }
 
 fun exampleAuditTrail(client: EkoDBClient): String = runBlocking {
@@ -81,8 +101,8 @@ fun exampleAuditTrail(client: EkoDBClient): String = runBlocking {
     println("─".repeat(80))
     println("Optional collection parameter for automatic request logging")
 
-    // Create script with audit trail
-    val auditSWRScript = Script(
+    // Create function with audit trail
+    val auditSWRScript = UserFunction(
         label = "product_swr_audit",
         name = "Product API with Audit (Native SWR)",
         description = "Caches product data and logs all requests automatically",
@@ -109,16 +129,16 @@ fun exampleAuditTrail(client: EkoDBClient): String = runBlocking {
         tags = listOf("products", "audit")
     )
 
-    val auditScriptId = client.saveScript(auditSWRScript)
-    println("✓ Created SWR script with audit trail: product_swr_audit ($auditScriptId)")
+    val auditFuncId = saveOrUpdate(client, auditSWRScript)
+    println("✓ Created SWR function with audit trail: product_swr_audit ($auditFuncId)")
 
     println("\nFetching product (will create audit trail entry):")
-    val productResult = client.callScript("product_swr_audit", mapOf("product_id" to JsonPrimitive("1")))
+    val productResult = client.callFunction("product_swr_audit", mapOf("product_id" to JsonPrimitive("1")))
     println("  ✓ Product fetched and cached")
     println("  ✓ Audit record created in 'swr_audit_trail' collection")
     println("  Records: ${productResult.records.size}\n")
 
-    auditScriptId
+    auditFuncId
 }
 
 fun examplePipelineEnrichment(client: EkoDBClient): String = runBlocking {
@@ -127,7 +147,7 @@ fun examplePipelineEnrichment(client: EkoDBClient): String = runBlocking {
     println("Fetch external data → Process → Store in collection")
 
     // Create enrichment pipeline
-    val pipelineScript = Script(
+    val pipelineScript = UserFunction(
         label = "user_enrichment_pipeline",
         name = "User Data Enrichment Pipeline",
         description = "Fetches external API data and stores enriched results",
@@ -171,11 +191,11 @@ fun examplePipelineEnrichment(client: EkoDBClient): String = runBlocking {
         tags = listOf("enrichment", "pipeline")
     )
 
-    val pipelineScriptId = client.saveScript(pipelineScript)
+    val pipelineScriptId = saveOrUpdate(client, pipelineScript)
     println("✓ Created enrichment pipeline: user_enrichment_pipeline ($pipelineScriptId)")
 
     println("\nRunning pipeline:")
-    val enrichResult = client.callScript("user_enrichment_pipeline", mapOf("user_id" to JsonPrimitive("1")))
+    val enrichResult = client.callFunction("user_enrichment_pipeline", mapOf("user_id" to JsonPrimitive("1")))
     println("  ✓ Data fetched from API (cached 30m)")
     println("  ✓ Enriched data stored in 'enriched_users' (TTL 24h)")
     println("  Pipeline returned ${enrichResult.records.size} records\n")
@@ -188,8 +208,8 @@ fun exampleDynamicTTL(client: EkoDBClient): String = runBlocking {
     println("─".repeat(80))
     println("TTL as parameter - supports duration strings, integers, ISO timestamps")
 
-    // Create script with dynamic TTL
-    val dynamicTTLScript = Script(
+    // Create function with dynamic TTL
+    val dynamicTTLScript = UserFunction(
         label = "flexible_cache",
         name = "Flexible Cache TTL (Native SWR)",
         description = "Demonstrates parameterized TTL values",
@@ -221,8 +241,8 @@ fun exampleDynamicTTL(client: EkoDBClient): String = runBlocking {
         tags = listOf("dynamic")
     )
 
-    val dynamicScriptId = client.saveScript(dynamicTTLScript)
-    println("✓ Created dynamic TTL script: flexible_cache ($dynamicScriptId)")
+    val dynamicFuncId = saveOrUpdate(client, dynamicTTLScript)
+    println("✓ Created dynamic TTL function: flexible_cache ($dynamicFuncId)")
 
     // Test with different TTLs
     val ttlTests = listOf(
@@ -232,7 +252,7 @@ fun exampleDynamicTTL(client: EkoDBClient): String = runBlocking {
     )
 
     for ((ttlValue, description) in ttlTests) {
-        client.callScript(
+        client.callFunction(
             "flexible_cache",
             mapOf(
                 "resource_id" to JsonPrimitive("test"),
@@ -242,16 +262,16 @@ fun exampleDynamicTTL(client: EkoDBClient): String = runBlocking {
         println("  ✓ Cached with TTL: $ttlValue ($description)")
     }
 
-    dynamicScriptId
+    dynamicFuncId
 }
 
-suspend fun cleanupSwrScripts(client: EkoDBClient, scriptIds: List<String>) {
+suspend fun cleanupSwrFunctions(client: EkoDBClient, funcIds: List<String>) {
     println("\n🧹 Cleaning up...")
     try {
-        scriptIds.forEach { scriptId ->
-            client.deleteScript(scriptId)
+        funcIds.forEach { funcId ->
+            client.deleteFunction(funcId)
         }
-        println("✓ Deleted ${scriptIds.size} test scripts")
+        println("✓ Deleted ${funcIds.size} test functions")
     } catch (e: Exception) {
         println("⚠ Cleanup error (non-critical): ${e.message}")
     }
@@ -276,14 +296,14 @@ fun main() = runBlocking {
         .apiKey(apiKey)
         .build()
 
-    val scriptIds = mutableListOf<String>()
+    val funcIds = mutableListOf<String>()
 
     try {
         // Run examples
-        scriptIds.add(exampleBasicSWR(client))
-        scriptIds.add(exampleAuditTrail(client))
-        scriptIds.add(examplePipelineEnrichment(client))
-        scriptIds.add(exampleDynamicTTL(client))
+        funcIds.add(exampleBasicSWR(client))
+        funcIds.add(exampleAuditTrail(client))
+        funcIds.add(examplePipelineEnrichment(client))
+        funcIds.add(exampleDynamicTTL(client))
 
         // Summary
         println("\n${"=".repeat(80)}")
@@ -303,7 +323,7 @@ fun main() = runBlocking {
         println("❌ Error: ${e.message}")
         e.printStackTrace()
     } finally {
-        cleanupSwrScripts(client, scriptIds)
+        cleanupSwrFunctions(client, funcIds)
     }
 
     println("\n✅ All examples completed!")

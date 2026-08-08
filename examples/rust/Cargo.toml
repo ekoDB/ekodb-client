@@ -6,8 +6,8 @@ edition = "2021"
 [dependencies]
 # Raw HTTP/WebSocket examples
 tokio = { version = "1.0", features = ["full"] }
-reqwest = { version = "0.11", features = ["json"] }
-tokio-tungstenite = { version = "0.20", features = ["native-tls"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+tokio-tungstenite = { version = "0.28", features = ["connect", "rustls-tls-webpki-roots"] }
 futures = "0.3"
 futures-util = "0.3"
 serde = { version = "1.0", features = ["derive"] }
@@ -112,3 +112,55 @@ path = "examples/client_swr_pattern.rs"
 [[example]]
 name = "client_swr_native"
 path = "examples/client_swr_native.rs"
+
+[[example]]
+name = "client_user_functions"
+path = "examples/client_user_functions.rs"
+
+[[example]]
+name = "client_chat_models"
+path = "examples/client_chat_models.rs"
+
+[[example]]
+name = "client_websocket_subscribe"
+path = "examples/client_websocket_subscribe.rs"
+
+[[example]]
+name = "client_collection_utils"
+path = "examples/client_collection_utils.rs"
+
+[[example]]
+name = "client_kv_precision"
+path = "examples/client_kv_precision.rs"
+
+[[example]]
+name = "client_goals_tasks_agents"
+path = "examples/client_goals_tasks_agents.rs"
+
+[[example]]
+name = "client_schedules"
+path = "examples/client_schedules.rs"
+
+[[example]]
+name = "client_kv_links"
+path = "examples/client_kv_links.rs"
+
+[[example]]
+name = "client_advanced_crud"
+path = "examples/client_advanced_crud.rs"
+
+[[example]]
+name = "client_jwt_auth_flow"
+path = "examples/client_jwt_auth_flow.rs"
+
+[[example]]
+name = "client_crypto_stages"
+path = "examples/client_crypto_stages.rs"
+
+[[example]]
+name = "client_concurrency_stages"
+path = "examples/client_concurrency_stages.rs"
+
+[[example]]
+name = "client_path_routed_function"
+path = "examples/client_path_routed_function.rs"

@@ -295,7 +295,7 @@ async def main():
     chat_session = await client.create_chat_session(
         collections=[],  # No collections needed for this chat
         llm_provider="openai",
-        llm_model="gpt-4",
+        llm_model="gpt-4o-mini",
         system_prompt=(
             f"You are a helpful programming assistant. Use the provided context "
             f"to give comprehensive answers that combine knowledge from multiple "

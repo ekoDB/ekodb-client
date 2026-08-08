@@ -11,7 +11,6 @@ import kotlin.test.assertTrue
  * Unit tests for ekoDB Kotlin client QueryBuilder
  */
 class QueryBuilderTest {
-
     // ========================================================================
     // Basic Tests
     // ========================================================================
@@ -48,11 +47,12 @@ class QueryBuilderTest {
             .selectFields("name", "email", "created_at")
             .build()
 
-        assertNotNull(query.selectFields)
-        assertEquals(3, query.selectFields?.size)
-        assertTrue(query.selectFields!!.contains("name"))
-        assertTrue(query.selectFields!!.contains("email"))
-        assertTrue(query.selectFields!!.contains("created_at"))
+        val selectFields = query.selectFields
+        assertNotNull(selectFields)
+        assertEquals(3, selectFields.size)
+        assertTrue(selectFields.contains("name"))
+        assertTrue(selectFields.contains("email"))
+        assertTrue(selectFields.contains("created_at"))
     }
 
     @Test
@@ -62,11 +62,12 @@ class QueryBuilderTest {
             .excludeFields("password", "api_key", "secret_token")
             .build()
 
-        assertNotNull(query.excludeFields)
-        assertEquals(3, query.excludeFields?.size)
-        assertTrue(query.excludeFields!!.contains("password"))
-        assertTrue(query.excludeFields!!.contains("api_key"))
-        assertTrue(query.excludeFields!!.contains("secret_token"))
+        val excludeFields = query.excludeFields
+        assertNotNull(excludeFields)
+        assertEquals(3, excludeFields.size)
+        assertTrue(excludeFields.contains("password"))
+        assertTrue(excludeFields.contains("api_key"))
+        assertTrue(excludeFields.contains("secret_token"))
     }
 
     @Test
@@ -77,10 +78,12 @@ class QueryBuilderTest {
             .excludeFields("metadata.internal")
             .build()
 
-        assertNotNull(query.selectFields)
-        assertNotNull(query.excludeFields)
-        assertEquals(4, query.selectFields?.size)
-        assertEquals(1, query.excludeFields?.size)
+        val selectFields = query.selectFields
+        val excludeFields = query.excludeFields
+        assertNotNull(selectFields)
+        assertNotNull(excludeFields)
+        assertEquals(4, selectFields.size)
+        assertEquals(1, excludeFields.size)
     }
 
     @Test
@@ -94,10 +97,11 @@ class QueryBuilderTest {
             .limit(10)
             .build()
 
+        val selectFields = query.selectFields
         assertNotNull(query.filter)
-        assertNotNull(query.selectFields)
+        assertNotNull(selectFields)
         assertNotNull(query.sort)
-        assertEquals(3, query.selectFields?.size)
+        assertEquals(3, selectFields.size)
         assertEquals(10, query.limit)
     }
 
@@ -265,14 +269,133 @@ class QueryBuilderTest {
     }
 
     @Test
-    fun `builds regex filter`() {
+    fun `builds startsWith filter`() {
         val query = QueryBuilder()
-            .regex("phone", "^\\+1")
+            .startsWith("email", "admin")
             .build()
 
         val filter = query.filter as JsonObject
         val content = filter["content"]?.jsonObject
-        assertEquals("Regex", content?.get("operator")?.jsonPrimitive?.content)
+        assertEquals("Condition", filter["type"]?.jsonPrimitive?.content)
+        assertEquals("email", content?.get("field")?.jsonPrimitive?.content)
+        assertEquals("StartsWith", content?.get("operator")?.jsonPrimitive?.content)
+        assertEquals("admin", content?.get("value")?.jsonPrimitive?.content)
+    }
+
+    @Test
+    fun `builds endsWith filter`() {
+        val query = QueryBuilder()
+            .endsWith("email", "@example.com")
+            .build()
+
+        val filter = query.filter as JsonObject
+        val content = filter["content"]?.jsonObject
+        assertEquals("Condition", filter["type"]?.jsonPrimitive?.content)
+        assertEquals("email", content?.get("field")?.jsonPrimitive?.content)
+        assertEquals("EndsWith", content?.get("operator")?.jsonPrimitive?.content)
+        assertEquals("@example.com", content?.get("value")?.jsonPrimitive?.content)
+    }
+
+    // ========================================================================
+    // Logical Operator Tests
+    // ========================================================================
+
+    @Test
+    fun `condition builds a canonical standalone condition`() {
+        val cond = QueryBuilder.condition("status", "Eq", "active")
+        assertEquals("Condition", cond["type"]?.jsonPrimitive?.content)
+        val content = cond["content"]?.jsonObject
+        assertEquals("status", content?.get("field")?.jsonPrimitive?.content)
+        assertEquals("Eq", content?.get("operator")?.jsonPrimitive?.content)
+        assertEquals("active", content?.get("value")?.jsonPrimitive?.content)
+    }
+
+    @Test
+    fun `builds or filter from conditions`() {
+        val query = QueryBuilder()
+            .or(listOf(
+                QueryBuilder.condition("status", "Eq", "active"),
+                QueryBuilder.condition("status", "Eq", "pending")
+            ))
+            .build()
+
+        val filter = query.filter as JsonObject
+        assertEquals("Logical", filter["type"]?.jsonPrimitive?.content)
+        val content = filter["content"]?.jsonObject
+        assertEquals("Or", content?.get("operator")?.jsonPrimitive?.content)
+        val expressions = content?.get("expressions")?.jsonArray
+        assertEquals(2, expressions?.size)
+        assertEquals(
+            "active",
+            expressions?.get(0)?.jsonObject?.get("content")?.jsonObject
+                ?.get("value")?.jsonPrimitive?.content
+        )
+    }
+
+    @Test
+    fun `builds and filter from conditions`() {
+        val query = QueryBuilder()
+            .and(listOf(
+                QueryBuilder.condition("age", "Gte", 18),
+                QueryBuilder.condition("age", "Lt", 65)
+            ))
+            .build()
+
+        val filter = query.filter as JsonObject
+        assertEquals("Logical", filter["type"]?.jsonPrimitive?.content)
+        val content = filter["content"]?.jsonObject
+        assertEquals("And", content?.get("operator")?.jsonPrimitive?.content)
+        assertEquals(2, content?.get("expressions")?.jsonArray?.size)
+    }
+
+    @Test
+    fun `builds not filter from a single condition`() {
+        val query = QueryBuilder()
+            .not(QueryBuilder.condition("status", "Eq", "archived"))
+            .build()
+
+        val filter = query.filter as JsonObject
+        assertEquals("Logical", filter["type"]?.jsonPrimitive?.content)
+        val content = filter["content"]?.jsonObject
+        assertEquals("Not", content?.get("operator")?.jsonPrimitive?.content)
+        val expressions = content?.get("expressions")?.jsonArray
+        assertEquals(1, expressions?.size)
+        assertEquals(
+            "archived",
+            expressions?.get(0)?.jsonObject?.get("content")?.jsonObject
+                ?.get("value")?.jsonPrimitive?.content
+        )
+    }
+
+    @Test
+    fun `rawFilter passes a pre-built expression through unchanged`() {
+        val raw = QueryBuilder.condition("custom", "Eq", "value")
+        val query = QueryBuilder()
+            .rawFilter(raw)
+            .build()
+
+        // Single filter is emitted as-is, not wrapped in a Logical And.
+        assertEquals(raw, query.filter)
+    }
+
+    @Test
+    fun `page sets skip and limit from zero-based page number`() {
+        val query = QueryBuilder()
+            .page(2, 25)
+            .build()
+
+        assertEquals(50, query.skip)
+        assertEquals(25, query.limit)
+    }
+
+    @Test
+    fun `page zero starts at the first record`() {
+        val query = QueryBuilder()
+            .page(0, 10)
+            .build()
+
+        assertEquals(0, query.skip)
+        assertEquals(10, query.limit)
     }
 
     // ========================================================================
@@ -529,7 +652,6 @@ class QueryBuilderTest {
         assertTrue(qb.inArray("g", listOf(7)) === qb)
         assertTrue(qb.nin("h", listOf(8)) === qb)
         assertTrue(qb.contains("i", "j") === qb)
-        assertTrue(qb.regex("k", "l") === qb)
         assertTrue(qb.sortAsc("m") === qb)
         assertTrue(qb.sortDesc("n") === qb)
         assertTrue(qb.limit(1) === qb)

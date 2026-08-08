@@ -93,8 +93,18 @@ def run_example(file_path, token):
     )
 
     try:
+        # Launch each example with the SAME interpreter running this runner
+        # (the Makefile invokes it via the project's .venv, which has the
+        # example deps from examples/requirements.txt installed). Hardcoding
+        # "python3" here ran the examples under the SYSTEM python instead, which
+        # lacks requests/aiohttp/python-dotenv and made every example fail with
+        # ModuleNotFoundError even though the venv was set up correctly.
         result = subprocess.run(
-            ["python3", file_path], env=env, capture_output=False, text=True, timeout=60
+            [sys.executable, file_path],
+            env=env,
+            capture_output=False,
+            text=True,
+            timeout=60,
         )
 
         if result.returncode == 0:
@@ -140,7 +150,7 @@ async def main():
             base_dir / "kv_operations.py",
             base_dir / "collection_management.py",
             base_dir / "transactions.py",
-            base_dir / "crud_scripts.py",
+            base_dir / "crud_functions.py",
             # TTL verification tests
             base_dir / "document_ttl.py",
             base_dir / "websocket_ttl.py",

@@ -46,7 +46,7 @@ async function main() {
         },
       ],
       llm_provider: "openai",
-      llm_model: "gpt-4",
+      llm_model: "gpt-4o-mini",
       system_prompt: "You are a helpful assistant for product information.",
     });
     const chatId = session.chat_id;
@@ -91,7 +91,7 @@ async function main() {
         },
       ],
       llm_provider: "openai",
-      llm_model: "gpt-4",
+      llm_model: "gpt-4o-mini",
       parent_id: chatId,
       branch_point_idx: 0,
     });

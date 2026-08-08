@@ -1,7 +1,7 @@
 /**
- * Scripts Example using Direct HTTP Requests
+ * Functions Example using Direct HTTP Requests
  *
- * Demonstrates using scripts with raw HTTP/fetch API
+ * Demonstrates using functions with raw HTTP/fetch API
  * No client library required
  */
 
@@ -59,6 +59,39 @@ async function request(method, path, body = null) {
   return response.json();
 }
 
+// Helper: Save a function idempotently via raw HTTP.
+//
+// The server returns HTTP 409 ("A function with label 'X' already exists.")
+// when a function with the same fixed label already exists. On a 409 we issue
+// PUT /api/functions/{label} with the same body (the GET/PUT/DELETE routes
+// accept either the encrypted ID or the label), then GET it back by label so
+// the caller still receives the function (including its encrypted `id`) for the
+// downstream management flow. Non-409 errors are propagated.
+async function saveOrUpdateFunction(func) {
+  const token = await getAuthToken();
+  const response = await fetch(`${BASE_URL}/api/functions`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(func),
+  });
+
+  if (response.ok) {
+    return response.json();
+  }
+
+  if (response.status === 409) {
+    // Update the existing function by label, then read it back by label.
+    await request("PUT", `/api/functions/${func.label}`, func);
+    console.log(`ℹ️  Function '${func.label}' already existed — updated instead`);
+    return request("GET", `/api/functions/${func.label}`);
+  }
+
+  throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+}
+
 async function setupTestData() {
   console.log("📋 Setting up test data...");
 
@@ -102,9 +135,9 @@ async function simpleQueryFunction() {
     tags: ["users", "query"],
   };
 
-  // Save script
-  const saveResult = await request("POST", "/api/functions", function1);
-  console.log(`✅ Script saved: ${saveResult.id}`);
+  // Save script (idempotent: updates by label on a 409 "already exists")
+  const saveResult = await saveOrUpdateFunction(function1);
+  console.log(`✅ Function saved: ${saveResult.id}`);
 
   // Call script (can use label)
   const callResult = await request(
@@ -156,8 +189,8 @@ async function parameterizedPaginationFunction() {
     tags: ["users", "pagination"],
   };
 
-  const saveResult = await request("POST", "/api/functions", function2);
-  console.log(`✅ Script saved: ${saveResult.id}`);
+  const saveResult = await saveOrUpdateFunction(function2);
+  console.log(`✅ Function saved: ${saveResult.id}`);
 
   // Call with page 1 (first 3 users)
   let callResult = await request(
@@ -222,8 +255,8 @@ async function aggregationFunction() {
     tags: ["analytics", "pipeline"],
   };
 
-  const saveResult = await request("POST", "/api/functions", function3);
-  console.log(`✅ Script saved: ${saveResult.id}`);
+  const saveResult = await saveOrUpdateFunction(function3);
+  console.log(`✅ Function saved: ${saveResult.id}`);
 
   const callResult = await request("POST", "/api/functions/user_stats", {});
   console.log(
@@ -242,11 +275,11 @@ async function functionManagement(getActiveUsersId, userStatsId) {
 
   // List all scripts
   const scripts = await request("GET", "/api/functions");
-  console.log(`📋 Total scripts: ${scripts.length}`);
+  console.log(`📋 Total functions: ${scripts.length}`);
 
   // Get specific script (requires encrypted ID)
   const script = await request("GET", `/api/functions/${getActiveUsersId}`);
-  console.log(`🔍 Retrieved script: ${script.name}`);
+  console.log(`🔍 Retrieved function: ${script.name}`);
 
   // Update script (requires encrypted ID)
   const updated = {
@@ -259,18 +292,18 @@ async function functionManagement(getActiveUsersId, userStatsId) {
     tags: ["users"],
   };
   await request("PUT", `/api/functions/${getActiveUsersId}`, updated);
-  console.log("✏️  Script updated");
+  console.log("✏️  Function updated");
 
   // Delete script (requires encrypted ID)
   await request("DELETE", `/api/functions/${userStatsId}`);
-  console.log("🗑️  Script deleted\n");
+  console.log("🗑️  Function deleted\n");
 
   console.log("ℹ️  Note: GET/UPDATE/DELETE operations require the encrypted ID");
   console.log("ℹ️  Only CALL can use either ID or label\n");
 }
 
 async function main() {
-  console.log("🚀 ekoDB Scripts Example (JavaScript/HTTP)\n");
+  console.log("🚀 ekoDB Functions Example (JavaScript/HTTP)\n");
 
   try {
     await setupTestData();

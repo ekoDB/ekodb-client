@@ -4,11 +4,11 @@ build-backend = "maturin"
 
 [project]
 name = "ekodb_client"
-version = "0.10.0"
+version = "0.25.0"
 description = "Python client for ekoDB - a high-performance document database"
 readme = "README.md"
-requires-python = ">=3.8"
-license = { text = "MIT OR Apache-2.0" }
+requires-python = ">=3.9"
+license = { text = "MIT" }
 keywords = ["database", "ekodb", "document-database", "nosql"]
 authors = [
     { name = "ekoDB Team" }
@@ -17,9 +17,7 @@ classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
-    "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -28,12 +26,31 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=7.0.0", "pytest-asyncio>=0.21.0"]
+# ruff is pinned (==) so local `make lint-python` and CI run the identical lint
+# set — an unpinned ruff would silently gain/drop lints across versions and
+# desync local vs CI. This is the SINGLE source of truth for the ruff version:
+# the Makefile's `ensure-ruff` reads it from here, and CI's lint step runs
+# `make lint-python`, so there is no second pin to keep in lockstep.
+dev = ["pytest>=7.0.0", "pytest-asyncio>=0.21.0", "ruff==0.15.7"]
 
 [project.urls]
-Homepage = "https://github.com/ekoDB/ekodb"
-Repository = "https://github.com/ekoDB/ekodb"
-Documentation = "https://github.com/ekoDB/ekodb/tree/main/documentation"
+Homepage = "https://github.com/ekoDB/ekodb-client"
+Repository = "https://github.com/ekoDB/ekodb-client"
+Documentation = "https://docs.ekodb.io"
+
+[tool.ruff]
+target-version = "py38"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "W"]
+# E = pycodestyle errors, F = pyflakes (unused imports/vars), W = warnings
+ignore = ["W293"]
+# W293 = blank line contains whitespace (cosmetic, handled by formatter)
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+# F401 in __init__.py = re-exports, not unused imports
 
 [tool.maturin]
 python-source = "python"

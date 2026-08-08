@@ -10,12 +10,32 @@
 package io.ekodb.client.examples
 
 import io.ekodb.client.EkoDBClient
-import io.ekodb.client.functions.Script
+import io.ekodb.client.functions.UserFunction
 import io.ekodb.client.functions.FunctionStageConfig
 import io.ekodb.client.types.Record
 import io.github.cdimascio.dotenv.dotenv
 import kotlinx.coroutines.runBlocking
 import kotlin.system.measureTimeMillis
+
+private fun isAlreadyExistsError(e: Exception): Boolean {
+    val msg = e.message ?: return false
+    return msg.contains("status 409") || msg.contains("already exists")
+}
+
+private suspend fun saveOrUpdate(client: EkoDBClient, func: UserFunction): String {
+    return try {
+        client.saveFunction(func)
+    } catch (e: Exception) {
+        if (isAlreadyExistsError(e)) {
+            client.updateFunction(func.label, func)
+            println("ℹ️  Function '${func.label}' already existed — updated instead")
+            client.getFunction(func.label).id
+                ?: throw IllegalStateException("No ID returned for function '${func.label}'")
+        } else {
+            throw e
+        }
+    }
+}
 
 fun main() = runBlocking {
     val dotenv = dotenv()
@@ -42,9 +62,9 @@ fun main() = runBlocking {
     client.insert("swr_cache_kt", cacheRecord)
     println("✓ Cache entry created\n")
 
-    // Create a simple cache lookup script
-    println("Step 2: Create SWR cache lookup script")
-    val swrScript = Script(
+    // Create a simple cache lookup function
+    println("Step 2: Create SWR cache lookup function")
+    val swrScript = UserFunction(
         label = "swr_cache_lookup_kt",
         name = "SWR Cache Lookup",
         description = "Simple cache lookup for SWR pattern",
@@ -56,19 +76,19 @@ fun main() = runBlocking {
         tags = listOf("swr", "cache")
     )
 
-    val scriptId = client.saveScript(swrScript)
-    println("✓ Created SWR script: swr_cache_lookup_kt ($scriptId)\n")
+    val funcId = saveOrUpdate(client, swrScript)
+    println("✓ Created SWR function: swr_cache_lookup_kt ($funcId)\n")
 
     // First call - demonstrates cache lookup
     println("Step 3: First call - Cache lookup")
-    val result1 = client.callScript("swr_cache_lookup_kt")
+    val result1 = client.callFunction("swr_cache_lookup_kt")
     println("Found ${result1.records.size} cached entries")
     println("✓ Cache lookup complete\n")
 
     // Second call - demonstrates fast response
     println("Step 4: Second call - Fast cache hit")
     val duration = measureTimeMillis {
-        client.callScript("swr_cache_lookup_kt")
+        client.callFunction("swr_cache_lookup_kt")
     }
     println("Response time: ${duration}ms (served from cache)")
     println("✓ Lightning fast cache hit\n")
@@ -76,7 +96,7 @@ fun main() = runBlocking {
     // Cleanup
     println("🧹 Cleaning up...")
     try {
-        client.deleteScript(scriptId)
+        client.deleteFunction(funcId)
         client.deleteCollection("swr_cache_kt")
     } catch (e: Exception) {
         // Ignore cleanup errors

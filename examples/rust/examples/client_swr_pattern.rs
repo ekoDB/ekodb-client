@@ -5,10 +5,31 @@
 //! - On cache miss, fetch from external API
 //! - Store result with TTL for auto-expiration
 
-use ekodb_client::{Client, FieldType, Function, ParameterDefinition, Script, ScriptCondition};
+use ekodb_client::{
+    Client, FieldType, Function, FunctionCondition, ParameterDefinition, UserFunction,
+};
 use serde_json::json;
 use std::collections::HashMap;
 use std::time::Instant;
+
+/// Save a function idempotently: if the label already exists (HTTP 409),
+/// update the existing definition instead, then return its id.
+async fn save_or_update(
+    client: &Client,
+    function: UserFunction,
+) -> Result<String, Box<dyn std::error::Error>> {
+    let label = function.label.clone();
+    match client.save_function(function.clone()).await {
+        Ok(id) => Ok(id),
+        Err(ekodb_client::Error::Api { code: 409, .. }) => {
+            client.update_function(&label, function).await?;
+            println!("ℹ️  Function '{}' already existed — updated instead", label);
+            let existing = client.get_function(&label).await?;
+            Ok(existing.id.unwrap_or(label))
+        }
+        Err(e) => Err(Box::new(e)),
+    }
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -49,7 +70,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .with_description("UTC timestamp when cached"),
     );
 
-    let swr_script = Script {
+    let swr_script = UserFunction {
+        id: None,
         label: "fetch_api_user_rs".to_string(),
         name: "Fetch User with Cache".to_string(),
         description: Some("SWR pattern: Check cache, fetch from API if stale".to_string()),
@@ -61,7 +83,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 record_id: "{{user_id}}".to_string(),
             },
             Function::If {
-                condition: ScriptCondition::HasRecords,
+                condition: FunctionCondition::HasRecords,
                 then_functions: vec![Box::new(Function::Project {
                     fields: vec!["data".to_string(), "cached_at".to_string()],
                     exclude: false,
@@ -92,11 +114,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             },
         ],
         tags: vec!["swr".to_string(), "user".to_string(), "cache".to_string()],
+        http_method: None,
+        http_path: None,
         created_at: None,
         updated_at: None,
     };
 
-    let script_id = client.save_script(swr_script).await?;
+    let script_id = save_or_update(&client, swr_script).await?;
     println!("✓ Created SWR script: fetch_api_user_rs ({})\n", script_id);
 
     println!("Step 2: First call - Cache miss, fetches from API");
@@ -108,7 +132,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         FieldType::String(chrono::Utc::now().to_rfc3339()),
     );
     let result1 = client
-        .call_script("fetch_api_user_rs", Some(params1))
+        .call_function("fetch_api_user_rs", Some(params1))
         .await?;
     println!("Result: {:?}", result1.stats);
     println!("✓ Data fetched from external API and cached\n");
@@ -123,7 +147,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         FieldType::String(chrono::Utc::now().to_rfc3339()),
     );
     let _ = client
-        .call_script("fetch_api_user_rs", Some(params2))
+        .call_function("fetch_api_user_rs", Some(params2))
         .await?;
     let duration = start.elapsed();
     println!(
@@ -134,7 +158,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Cleanup
     println!("🧹 Cleaning up...");
-    let _ = client.delete_script(&script_id).await;
+    let _ = client.delete_function(&script_id).await;
     let _ = client.delete_collection("user_cache_rs").await;
     println!("✓ Cleanup complete\n");
 
