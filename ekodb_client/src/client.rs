@@ -4,8 +4,8 @@ use crate::auth::AuthManager;
 use crate::error::{Error, Result};
 use crate::http::HttpClient;
 use crate::schema::{CollectionMetadata, Schema};
-use crate::search::{SearchQuery, SearchResponse};
-use crate::types::{Query, Record};
+use crate::search::{DistinctValuesQuery, DistinctValuesResponse, SearchQuery, SearchResponse};
+use crate::types::{FieldType, Query, Record};
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -45,6 +45,10 @@ impl RateLimitInfo {
 pub struct Client {
     http: Arc<HttpClient>,
     auth: Arc<AuthManager>,
+    /// Opt-in schema cache for primary_key_alias resolution and field validation.
+    schema_cache: Arc<crate::schema_cache::SchemaCache>,
+    /// Base URL stored for WS URL derivation in connect_ws()
+    base_url: String,
 }
 
 impl Client {
@@ -53,9 +57,23 @@ impl Client {
         ClientBuilder::default()
     }
 
-    /// Health check
-    pub async fn health_check(&self) -> Result<()> {
-        self.http.health_check().await
+    /// Health check — reports whether the server is reachable (tolerates a
+    /// `degraded` HTTP 200). Derived from [`health_status`](Self::health_status)
+    /// so the two never disagree; use `health_status` for the ok/degraded
+    /// distinction.
+    pub async fn health(&self) -> Result<()> {
+        if self.health_status().await.reachable {
+            Ok(())
+        } else {
+            Err(crate::error::Error::Connection(
+                "health check failed".to_string(),
+            ))
+        }
+    }
+
+    /// Structured, degraded-tolerant health snapshot.
+    pub async fn health_status(&self) -> crate::health::HealthStatus {
+        self.http.health_status().await
     }
 
     /// Execute an operation with automatic token refresh on TokenExpired errors
@@ -84,6 +102,7 @@ impl Client {
     ///
     /// * `collection` - The collection name
     /// * `record` - The record to insert
+    /// * `options` - Optional insert options (TTL, bypass_ripple, transaction_id, bypass_cache)
     ///
     /// # Returns
     ///
@@ -93,6 +112,7 @@ impl Client {
     ///
     /// ```no_run
     /// # use ekodb_client::{Client, Record};
+    /// # use ekodb_client::options::InsertOptions;
     /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
     /// let client = Client::builder()
     ///     .base_url("https://your-instance.ekodb.net")
@@ -103,7 +123,12 @@ impl Client {
     /// record.insert("name", "John Doe");
     /// record.insert("age", 30);
     ///
-    /// let result = client.insert("users", record, None).await?;
+    /// // Simple insert
+    /// let result = client.insert("users", record.clone(), None).await?;
+    ///
+    /// // Insert with TTL (expires in 1 hour)
+    /// let options = InsertOptions::new().ttl("1h");
+    /// let result = client.insert("sessions", record, Some(options)).await?;
     /// # Ok(())
     /// # }
     /// ```
@@ -111,7 +136,7 @@ impl Client {
         &self,
         collection: &str,
         record: Record,
-        bypass_ripple: Option<bool>,
+        options: Option<crate::options::InsertOptions>,
     ) -> Result<Record> {
         let collection = collection.to_string();
         let http = self.http.clone();
@@ -119,10 +144,8 @@ impl Client {
             let collection = collection.clone();
             let record = record.clone();
             let http = http.clone();
-            async move {
-                http.insert(&collection, record, bypass_ripple, &token)
-                    .await
-            }
+            let options = options.clone();
+            async move { http.insert(&collection, record, options, &token).await }
         })
         .await
     }
@@ -195,10 +218,53 @@ impl Client {
         id: &str,
         bypass_ripple: Option<bool>,
     ) -> Result<Record> {
-        let token = self.auth.get_token().await?;
-        self.http
-            .find_by_id(collection, id, &token, bypass_ripple)
-            .await
+        let collection = collection.to_string();
+        let id = id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let collection = collection.clone();
+            let id = id.clone();
+            let http = http.clone();
+            async move {
+                http.find_by_id(&collection, &id, &token, bypass_ripple)
+                    .await
+            }
+        })
+        .await
+    }
+
+    /// Find a record by ID, returning only a projection of its fields.
+    ///
+    /// `select_fields` keeps only the named fields (plus the primary key);
+    /// `exclude_fields` removes the named fields. Pass `None`/empty for either.
+    pub async fn find_by_id_with_projection(
+        &self,
+        collection: &str,
+        id: &str,
+        select_fields: Option<Vec<String>>,
+        exclude_fields: Option<Vec<String>>,
+    ) -> Result<Record> {
+        let collection = collection.to_string();
+        let id = id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let collection = collection.clone();
+            let id = id.clone();
+            let select_fields = select_fields.clone();
+            let exclude_fields = exclude_fields.clone();
+            let http = http.clone();
+            async move {
+                http.find_by_id_with_projection(
+                    &collection,
+                    &id,
+                    select_fields.as_deref(),
+                    exclude_fields.as_deref(),
+                    &token,
+                )
+                .await
+            }
+        })
+        .await
     }
 
     /// Update a record by ID
@@ -208,6 +274,7 @@ impl Client {
     /// * `collection` - The collection name
     /// * `id` - The record ID
     /// * `record` - The updated record data
+    /// * `options` - Optional update options (bypass_ripple, transaction_id, bypass_cache)
     ///
     /// # Returns
     ///
@@ -217,12 +284,102 @@ impl Client {
         collection: &str,
         id: &str,
         record: Record,
-        bypass_ripple: Option<bool>,
+        options: Option<crate::options::UpdateOptions>,
     ) -> Result<Record> {
-        let token = self.auth.get_token().await?;
-        self.http
-            .update(collection, id, record, bypass_ripple, &token)
-            .await
+        let collection = collection.to_string();
+        let id = id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let collection = collection.clone();
+            let id = id.clone();
+            let record = record.clone();
+            let options = options.clone();
+            let http = http.clone();
+            async move { http.update(&collection, &id, record, options, &token).await }
+        })
+        .await
+    }
+
+    /// Apply an atomic field action to a single field of a record.
+    ///
+    /// Use this instead of `update()` when you need safe concurrent modifications
+    /// like incrementing counters, pushing to arrays, or arithmetic operations.
+    ///
+    /// # Actions
+    ///
+    /// - `increment` / `decrement` — add or subtract a number
+    /// - `multiply` / `divide` / `modulo` — arithmetic on numeric fields
+    /// - `push` / `unshift` — append or prepend a value to an array
+    /// - `pop` / `shift` — remove last or first element of an array
+    /// - `remove` — remove a specific value from an array
+    /// - `append` — concatenate a string onto a string field
+    /// - `clear` — reset a field to its zero value (0, "", [])
+    ///
+    /// # Arguments
+    ///
+    /// * `collection` - The collection name
+    /// * `id` - The record ID
+    /// * `action` - The atomic action to apply
+    /// * `field` - The field name to apply the action to
+    /// * `value` - The value for the action (use `FieldType::Null` for pop/shift/clear)
+    pub async fn update_with_action(
+        &self,
+        collection: &str,
+        id: &str,
+        action: &str,
+        field: &str,
+        value: FieldType,
+    ) -> Result<Record> {
+        let collection = collection.to_string();
+        let id = id.to_string();
+        let action = action.to_string();
+        let field = field.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let collection = collection.clone();
+            let id = id.clone();
+            let action = action.clone();
+            let field = field.clone();
+            let value = value.clone();
+            let http = http.clone();
+            async move {
+                http.update_with_action(&collection, &id, &action, &field, value, &token)
+                    .await
+            }
+        })
+        .await
+    }
+
+    /// Apply a sequence of atomic field actions to a record in a single request.
+    ///
+    /// All actions are applied atomically — the record is fetched once, all actions
+    /// run in order, and the result is persisted in a single update.
+    ///
+    /// # Arguments
+    ///
+    /// * `collection` - The collection name
+    /// * `id` - The record ID
+    /// * `actions` - A list of (action, field, value) tuples
+    pub async fn update_with_action_sequence(
+        &self,
+        collection: &str,
+        id: &str,
+        actions: Vec<(String, String, FieldType)>,
+    ) -> Result<Record> {
+        let collection = collection.to_string();
+        let id = id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let collection = collection.clone();
+            let id = id.clone();
+            let actions = actions.clone();
+            let http = http.clone();
+            async move {
+                http.update_with_action_sequence(&collection, &id, actions, &token)
+                    .await
+            }
+        })
+        .await
     }
 
     /// Delete a record by ID
@@ -241,10 +398,40 @@ impl Client {
         id: &str,
         bypass_ripple: Option<bool>,
     ) -> Result<()> {
-        let token = self.auth.get_token().await?;
-        self.http
-            .delete(collection, id, &token, bypass_ripple)
-            .await
+        let collection = collection.to_string();
+        let id = id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let collection = collection.clone();
+            let id = id.clone();
+            let http = http.clone();
+            async move { http.delete(&collection, &id, &token, bypass_ripple).await }
+        })
+        .await
+    }
+
+    /// Delete a record with options — notably `transaction_id` for a staged,
+    /// buffered transactional delete (applied at commit).
+    pub async fn delete_with_options(
+        &self,
+        collection: &str,
+        id: &str,
+        options: crate::options::DeleteOptions,
+    ) -> Result<()> {
+        let collection = collection.to_string();
+        let id = id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let collection = collection.clone();
+            let id = id.clone();
+            let options = options.clone();
+            let http = http.clone();
+            async move {
+                http.delete_with_options(&collection, &id, &token, &options)
+                    .await
+            }
+        })
+        .await
     }
 
     /// Restore a deleted record from trash (undelete)
@@ -280,8 +467,16 @@ impl Client {
     /// # }
     /// ```
     pub async fn restore_deleted(&self, collection: &str, id: &str) -> Result<bool> {
-        let token = self.auth.get_token().await?;
-        self.http.restore_deleted(collection, id, &token).await
+        let collection = collection.to_string();
+        let id = id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let collection = collection.clone();
+            let id = id.clone();
+            let http = http.clone();
+            async move { http.restore_deleted(&collection, &id, &token).await }
+        })
+        .await
     }
 
     /// Restore all deleted records in a collection from trash
@@ -305,8 +500,14 @@ impl Client {
     /// # }
     /// ```
     pub async fn restore_collection(&self, collection: &str) -> Result<usize> {
-        let token = self.auth.get_token().await?;
-        self.http.restore_collection(collection, &token).await
+        let collection = collection.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let collection = collection.clone();
+            let http = http.clone();
+            async move { http.restore_collection(&collection, &token).await }
+        })
+        .await
     }
 
     /// Batch insert multiple documents
@@ -325,10 +526,54 @@ impl Client {
         records: Vec<Record>,
         bypass_ripple: Option<bool>,
     ) -> Result<Vec<Record>> {
-        let token = self.auth.get_token().await?;
-        self.http
-            .batch_insert(collection, records, &token, bypass_ripple)
-            .await
+        let collection = collection.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let collection = collection.clone();
+            let records = records.clone();
+            let http = http.clone();
+            async move {
+                http.batch_insert(&collection, records, &token, bypass_ripple, None)
+                    .await
+            }
+        })
+        .await
+    }
+
+    /// Batch insert with options (`bypass_ripple` and/or a `transaction_id` to
+    /// stage the inserts into an MVCC transaction instead of committing them
+    /// immediately).
+    ///
+    /// # Arguments
+    ///
+    /// * `collection` - The collection name
+    /// * `records` - Vector of records to insert
+    /// * `options` - Batch insert options (`bypass_ripple`, `transaction_id`)
+    pub async fn batch_insert_with_options(
+        &self,
+        collection: &str,
+        records: Vec<Record>,
+        options: crate::options::BatchInsertOptions,
+    ) -> Result<Vec<Record>> {
+        let collection = collection.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let collection = collection.clone();
+            let records = records.clone();
+            let http = http.clone();
+            let options = options.clone();
+            async move {
+                http.batch_insert(
+                    &collection,
+                    records,
+                    &token,
+                    options.bypass_ripple,
+                    options.transaction_id.as_deref(),
+                )
+                .await
+            }
+        })
+        .await
     }
 
     /// Batch update multiple documents
@@ -347,10 +592,54 @@ impl Client {
         updates: Vec<(String, Record)>,
         bypass_ripple: Option<bool>,
     ) -> Result<Vec<Record>> {
-        let token = self.auth.get_token().await?;
-        self.http
-            .batch_update(collection, updates, &token, bypass_ripple)
-            .await
+        let collection = collection.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let collection = collection.clone();
+            let updates = updates.clone();
+            let http = http.clone();
+            async move {
+                http.batch_update(&collection, updates, &token, bypass_ripple, None)
+                    .await
+            }
+        })
+        .await
+    }
+
+    /// Batch update with options (`bypass_ripple` and/or a `transaction_id` to
+    /// stage the updates into an MVCC transaction instead of committing them
+    /// immediately).
+    ///
+    /// # Arguments
+    ///
+    /// * `collection` - The collection name
+    /// * `updates` - Vector of (id, record) pairs to update
+    /// * `options` - Batch update options (`bypass_ripple`, `transaction_id`)
+    pub async fn batch_update_with_options(
+        &self,
+        collection: &str,
+        updates: Vec<(String, Record)>,
+        options: crate::options::BatchUpdateOptions,
+    ) -> Result<Vec<Record>> {
+        let collection = collection.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let collection = collection.clone();
+            let updates = updates.clone();
+            let http = http.clone();
+            let options = options.clone();
+            async move {
+                http.batch_update(
+                    &collection,
+                    updates,
+                    &token,
+                    options.bypass_ripple,
+                    options.transaction_id.as_deref(),
+                )
+                .await
+            }
+        })
+        .await
     }
 
     /// Batch delete multiple documents by IDs
@@ -369,10 +658,54 @@ impl Client {
         ids: Vec<String>,
         bypass_ripple: Option<bool>,
     ) -> Result<u64> {
-        let token = self.auth.get_token().await?;
-        self.http
-            .batch_delete(collection, ids, &token, bypass_ripple)
-            .await
+        let collection = collection.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let collection = collection.clone();
+            let ids = ids.clone();
+            let http = http.clone();
+            async move {
+                http.batch_delete(&collection, ids, &token, bypass_ripple, None)
+                    .await
+            }
+        })
+        .await
+    }
+
+    /// Batch delete with options (`bypass_ripple` and/or a `transaction_id` to
+    /// stage the deletes into an MVCC transaction instead of committing them
+    /// immediately).
+    ///
+    /// # Arguments
+    ///
+    /// * `collection` - The collection name
+    /// * `ids` - Vector of document IDs to delete
+    /// * `options` - Batch delete options (`bypass_ripple`, `transaction_id`)
+    pub async fn batch_delete_with_options(
+        &self,
+        collection: &str,
+        ids: Vec<String>,
+        options: crate::options::BatchDeleteOptions,
+    ) -> Result<u64> {
+        let collection = collection.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let collection = collection.clone();
+            let ids = ids.clone();
+            let http = http.clone();
+            let options = options.clone();
+            async move {
+                http.batch_delete(
+                    &collection,
+                    ids,
+                    &token,
+                    options.bypass_ripple,
+                    options.transaction_id.as_deref(),
+                )
+                .await
+            }
+        })
+        .await
     }
 
     // ========== Convenience Methods ==========
@@ -387,7 +720,7 @@ impl Client {
     /// * `collection` - The collection name
     /// * `id` - The record ID
     /// * `record` - The record data to insert or update
-    /// * `bypass_ripple` - Optional flag to bypass ripple effects
+    /// * `options` - Optional upsert options (TTL, bypass_ripple, transaction_id, bypass_cache)
     ///
     /// # Returns
     ///
@@ -397,6 +730,7 @@ impl Client {
     ///
     /// ```no_run
     /// # use ekodb_client::{Client, Record};
+    /// # use ekodb_client::options::UpsertOptions;
     /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
     /// let client = Client::builder()
     ///     .base_url("https://your-instance.ekodb.net")
@@ -408,7 +742,11 @@ impl Client {
     /// record.insert("email", "john@example.com");
     ///
     /// // Will update if exists, insert if not
-    /// let result = client.upsert("users", "user123", record, None).await?;
+    /// let result = client.upsert("users", "user123", record.clone(), None).await?;
+    ///
+    /// // With TTL option
+    /// let options = UpsertOptions::new().ttl("1h");
+    /// let result = client.upsert("sessions", "sess123", record, Some(options)).await?;
     /// # Ok(())
     /// # }
     /// ```
@@ -417,17 +755,49 @@ impl Client {
         collection: &str,
         id: &str,
         record: Record,
-        bypass_ripple: Option<bool>,
+        options: Option<crate::options::UpsertOptions>,
     ) -> Result<Record> {
+        // Convert UpsertOptions to UpdateOptions for the update call
+        let update_opts = options.as_ref().map(|o| {
+            let mut opts = crate::options::UpdateOptions::new();
+            if let Some(bypass) = o.bypass_ripple {
+                opts = opts.bypass_ripple(bypass);
+            }
+            if let Some(ref tx_id) = o.transaction_id {
+                opts = opts.transaction_id(tx_id.clone());
+            }
+            if let Some(bypass) = o.bypass_cache {
+                opts = opts.bypass_cache(bypass);
+            }
+            opts
+        });
+
         // Try update first
         match self
-            .update(collection, id, record.clone(), bypass_ripple)
+            .update(collection, id, record.clone(), update_opts)
             .await
         {
             Ok(updated) => Ok(updated),
             Err(Error::NotFound) => {
                 // Record doesn't exist, insert it
-                self.insert(collection, record, bypass_ripple).await
+                // Convert UpsertOptions to InsertOptions
+                let insert_opts = options.map(|o| {
+                    let mut opts = crate::options::InsertOptions::new();
+                    if let Some(ref ttl) = o.ttl {
+                        opts = opts.ttl(ttl.clone());
+                    }
+                    if let Some(bypass) = o.bypass_ripple {
+                        opts = opts.bypass_ripple(bypass);
+                    }
+                    if let Some(ref tx_id) = o.transaction_id {
+                        opts = opts.transaction_id(tx_id.clone());
+                    }
+                    if let Some(bypass) = o.bypass_cache {
+                        opts = opts.bypass_cache(bypass);
+                    }
+                    opts
+                });
+                self.insert(collection, record, insert_opts).await
             }
             Err(e) => Err(e),
         }
@@ -588,6 +958,14 @@ impl Client {
     /// # Ok(())
     /// # }
     /// ```
+    /// Get a valid authentication token (JWT).
+    ///
+    /// Returns a cached token if available, otherwise exchanges the API key
+    /// for a new JWT via `/api/auth/token`.
+    pub async fn get_token(&self) -> Result<String> {
+        self.auth.get_token().await
+    }
+
     pub async fn refresh_token(&self) -> Result<String> {
         self.auth.refresh_token().await
     }
@@ -616,8 +994,22 @@ impl Client {
     ///
     /// A vector of collection names
     pub async fn list_collections(&self) -> Result<Vec<String>> {
-        let token = self.auth.get_token().await?;
-        self.http.list_collections(&token).await
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let http = http.clone();
+            async move { http.list_collections(&token).await }
+        })
+        .await
+    }
+
+    /// List collections, excluding internal chat/system collections.
+    pub async fn list_user_collections(&self) -> Result<Vec<String>> {
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let http = http.clone();
+            async move { http.list_collections_filtered(&token, true).await }
+        })
+        .await
     }
 
     /// Delete a collection
@@ -626,8 +1018,14 @@ impl Client {
     ///
     /// * `collection` - The collection name to delete
     pub async fn delete_collection(&self, collection: &str) -> Result<()> {
-        let token = self.auth.get_token().await?;
-        self.http.delete_collection(collection, &token).await
+        let collection = collection.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let collection = collection.clone();
+            let http = http.clone();
+            async move { http.delete_collection(&collection, &token).await }
+        })
+        .await
     }
 
     /// Count documents in a collection
@@ -640,7 +1038,12 @@ impl Client {
     ///
     /// The number of documents in the collection
     pub async fn count_documents(&self, collection: &str) -> Result<usize> {
-        let query = Query::new().limit(100000); // Large limit to get all
+        // Use select_fields to return only _id (minimal data transfer).
+        // No dedicated server count endpoint exists, so we fetch IDs only.
+        let query = Query {
+            select_fields: Some(vec!["_id".to_string()]),
+            ..Query::default()
+        };
         let records = self.find(collection, query, None).await?;
         Ok(records.len())
     }
@@ -672,8 +1075,17 @@ impl Client {
         value: serde_json::Value,
         ttl: Option<&str>,
     ) -> Result<()> {
-        let token = self.auth.get_token().await?;
-        self.http.kv_set(key, value, ttl, &token).await
+        let key = key.to_string();
+        let ttl = ttl.map(|s| s.to_string());
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let key = key.clone();
+            let value = value.clone();
+            let ttl = ttl.clone();
+            let http = http.clone();
+            async move { http.kv_set(&key, value, ttl.as_deref(), &token).await }
+        })
+        .await
     }
 
     /// Get a key-value pair
@@ -686,8 +1098,14 @@ impl Client {
     ///
     /// The value if found, or `None` if not found
     pub async fn kv_get(&self, key: &str) -> Result<Option<serde_json::Value>> {
-        let token = self.auth.get_token().await?;
-        self.http.kv_get(key, &token).await
+        let key = key.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let key = key.clone();
+            let http = http.clone();
+            async move { http.kv_get(&key, &token).await }
+        })
+        .await
     }
 
     /// Delete a key-value pair
@@ -696,8 +1114,24 @@ impl Client {
     ///
     /// * `key` - The key to delete
     pub async fn kv_delete(&self, key: &str) -> Result<()> {
-        let token = self.auth.get_token().await?;
-        self.http.kv_delete(key, &token).await
+        let key = key.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let key = key.clone();
+            let http = http.clone();
+            async move { http.kv_delete(&key, &token).await }
+        })
+        .await
+    }
+
+    /// Clear the entire KV store (all keys in the namespace).
+    pub async fn kv_clear(&self) -> Result<()> {
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let http = http.clone();
+            async move { http.kv_clear(&token).await }
+        })
+        .await
     }
 
     /// Check if a key exists in the KV store
@@ -710,8 +1144,79 @@ impl Client {
     ///
     /// `true` if the key exists, `false` otherwise
     pub async fn kv_exists(&self, key: &str) -> Result<bool> {
-        let token = self.auth.get_token().await?;
-        self.http.kv_exists(key, &token).await
+        let key = key.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let key = key.clone();
+            let http = http.clone();
+            async move { http.kv_exists(&key, &token).await }
+        })
+        .await
+    }
+
+    /// Batch get multiple keys
+    ///
+    /// # Arguments
+    ///
+    /// * `keys` - Vector of keys to retrieve
+    ///
+    /// # Returns
+    ///
+    /// A vector of records corresponding to the keys
+    pub async fn kv_batch_get(&self, keys: Vec<String>) -> Result<Vec<Record>> {
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let keys = keys.clone();
+            let http = http.clone();
+            async move { http.kv_batch_get(keys, &token).await }
+        })
+        .await
+    }
+
+    /// Batch set multiple key-value pairs
+    ///
+    /// # Arguments
+    ///
+    /// * `keys` - Vector of keys
+    /// * `values` - Vector of values (must match length of keys)
+    /// * `ttl` - Optional TTL in seconds (applied to all entries)
+    ///
+    /// # Returns
+    ///
+    /// Vector of tuples (key, was_set) indicating success for each operation
+    pub async fn kv_batch_set(
+        &self,
+        keys: Vec<String>,
+        values: Vec<Record>,
+        ttl: Option<i64>,
+    ) -> Result<Vec<(String, bool)>> {
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let keys = keys.clone();
+            let values = values.clone();
+            let http = http.clone();
+            async move { http.kv_batch_set(keys, values, ttl, &token).await }
+        })
+        .await
+    }
+
+    /// Batch delete multiple keys
+    ///
+    /// # Arguments
+    ///
+    /// * `keys` - Vector of keys to delete
+    ///
+    /// # Returns
+    ///
+    /// Vector of tuples (key, was_deleted) indicating success for each operation
+    pub async fn kv_batch_delete(&self, keys: Vec<String>) -> Result<Vec<(String, bool)>> {
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let keys = keys.clone();
+            let http = http.clone();
+            async move { http.kv_batch_delete(keys, &token).await }
+        })
+        .await
     }
 
     /// Query/find KV entries with pattern matching
@@ -729,8 +1234,17 @@ impl Client {
         pattern: Option<&str>,
         include_expired: bool,
     ) -> Result<Vec<serde_json::Value>> {
-        let token = self.auth.get_token().await?;
-        self.http.kv_find(pattern, include_expired, &token).await
+        let pattern = pattern.map(|s| s.to_string());
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let pattern = pattern.clone();
+            let http = http.clone();
+            async move {
+                http.kv_find(pattern.as_deref(), include_expired, &token)
+                    .await
+            }
+        })
+        .await
     }
 
     /// Alias for kv_find - query KV store with pattern
@@ -754,8 +1268,14 @@ impl Client {
     ///
     /// The transaction ID
     pub async fn begin_transaction(&self, isolation_level: &str) -> Result<String> {
-        let token = self.auth.get_token().await?;
-        self.http.begin_transaction(isolation_level, &token).await
+        let isolation_level = isolation_level.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let isolation_level = isolation_level.clone();
+            let http = http.clone();
+            async move { http.begin_transaction(&isolation_level, &token).await }
+        })
+        .await
     }
 
     /// Get transaction status
@@ -768,10 +1288,14 @@ impl Client {
     ///
     /// Transaction status including state and operations count
     pub async fn get_transaction_status(&self, transaction_id: &str) -> Result<serde_json::Value> {
-        let token = self.auth.get_token().await?;
-        self.http
-            .get_transaction_status(transaction_id, &token)
-            .await
+        let transaction_id = transaction_id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let transaction_id = transaction_id.clone();
+            let http = http.clone();
+            async move { http.get_transaction_status(&transaction_id, &token).await }
+        })
+        .await
     }
 
     /// Commit a transaction
@@ -780,18 +1304,136 @@ impl Client {
     ///
     /// * `transaction_id` - The transaction ID to commit
     pub async fn commit_transaction(&self, transaction_id: &str) -> Result<()> {
-        let token = self.auth.get_token().await?;
-        self.http.commit_transaction(transaction_id, &token).await
+        let transaction_id = transaction_id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let transaction_id = transaction_id.clone();
+            let http = http.clone();
+            async move { http.commit_transaction(&transaction_id, &token).await }
+        })
+        .await
     }
 
-    /// Rollback a transaction
+    /// Rollback a transaction, discarding all staged writes (nothing was applied).
     ///
     /// # Arguments
     ///
     /// * `transaction_id` - The transaction ID to rollback
     pub async fn rollback_transaction(&self, transaction_id: &str) -> Result<()> {
-        let token = self.auth.get_token().await?;
-        self.http.rollback_transaction(transaction_id, &token).await
+        let transaction_id = transaction_id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let transaction_id = transaction_id.clone();
+            let http = http.clone();
+            async move { http.rollback_transaction(&transaction_id, &token).await }
+        })
+        .await
+    }
+
+    /// Create a savepoint within a transaction. A later
+    /// [`rollback_to_savepoint`](Self::rollback_to_savepoint) discards everything
+    /// staged after it.
+    pub async fn create_savepoint(&self, transaction_id: &str, name: &str) -> Result<()> {
+        let transaction_id = transaction_id.to_string();
+        let name = name.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let transaction_id = transaction_id.clone();
+            let name = name.clone();
+            let http = http.clone();
+            async move { http.create_savepoint(&transaction_id, &name, &token).await }
+        })
+        .await
+    }
+
+    /// Roll a transaction back to a savepoint, discarding writes staged after it.
+    pub async fn rollback_to_savepoint(&self, transaction_id: &str, name: &str) -> Result<()> {
+        let transaction_id = transaction_id.to_string();
+        let name = name.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let transaction_id = transaction_id.clone();
+            let name = name.clone();
+            let http = http.clone();
+            async move {
+                http.rollback_to_savepoint(&transaction_id, &name, &token)
+                    .await
+            }
+        })
+        .await
+    }
+
+    /// Release (forget) a savepoint. Staged work is unaffected.
+    pub async fn release_savepoint(&self, transaction_id: &str, name: &str) -> Result<()> {
+        let transaction_id = transaction_id.to_string();
+        let name = name.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let transaction_id = transaction_id.clone();
+            let name = name.clone();
+            let http = http.clone();
+            async move { http.release_savepoint(&transaction_id, &name, &token).await }
+        })
+        .await
+    }
+
+    /// Find a record by ID within a transaction (read-your-writes): the read is
+    /// served from the transaction's own view — its uncommitted staged writes,
+    /// else the committed store — and recorded in its read set for commit-time
+    /// conflict detection. Use the plain [`find_by_id`](Self::find_by_id) for an
+    /// ordinary committed read.
+    pub async fn find_by_id_in_transaction(
+        &self,
+        collection: &str,
+        id: &str,
+        transaction_id: &str,
+        bypass_ripple: Option<bool>,
+    ) -> Result<Record> {
+        let collection = collection.to_string();
+        let id = id.to_string();
+        let transaction_id = transaction_id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let collection = collection.clone();
+            let id = id.clone();
+            let transaction_id = transaction_id.clone();
+            let http = http.clone();
+            async move {
+                http.find_by_id_in_transaction(
+                    &collection,
+                    &id,
+                    &transaction_id,
+                    &token,
+                    bypass_ripple,
+                )
+                .await
+            }
+        })
+        .await
+    }
+
+    /// Find records within a transaction (read-your-writes for the matched ids).
+    pub async fn find_in_transaction(
+        &self,
+        collection: &str,
+        query: Query,
+        transaction_id: &str,
+        bypass_ripple: Option<bool>,
+    ) -> Result<Vec<Record>> {
+        let collection = collection.to_string();
+        let transaction_id = transaction_id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let collection = collection.clone();
+            let query = query.clone();
+            let transaction_id = transaction_id.clone();
+            let http = http.clone();
+            async move {
+                http.find_in_transaction(&collection, query, &transaction_id, &token, bypass_ripple)
+                    .await
+            }
+        })
+        .await
     }
 
     /// Connect to WebSocket endpoint
@@ -839,8 +1481,64 @@ impl Client {
         collection: &str,
         search_query: SearchQuery,
     ) -> Result<SearchResponse> {
-        let token = self.auth.get_token().await?;
-        self.http.search(collection, search_query, &token).await
+        let collection = collection.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let collection = collection.clone();
+            let search_query = search_query.clone();
+            let http = http.clone();
+            async move { http.search(&collection, search_query, &token).await }
+        })
+        .await
+    }
+
+    /// Get distinct (unique) values for a field across all records in a collection.
+    ///
+    /// Results are sorted alphabetically and deduplicated. Supports an optional filter
+    /// to restrict which records are examined.
+    ///
+    /// # Arguments
+    ///
+    /// * `collection` - The collection name
+    /// * `field` - The field to get distinct values for
+    /// * `query` - Optional query with filter and bypass flags
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # use ekodb_client::{Client, DistinctValuesQuery};
+    /// # async fn example(client: &Client) -> Result<(), ekodb_client::Error> {
+    /// // Get all distinct statuses
+    /// let resp = client.distinct_values("orders", "status", DistinctValuesQuery::new()).await?;
+    /// println!("Statuses: {:?}", resp.values);
+    ///
+    /// // With filter
+    /// use serde_json::json;
+    /// let filter = json!({"type":"Condition","content":{"field":"active","operator":"Eq","value":true}});
+    /// let resp = client.distinct_values("users", "role", DistinctValuesQuery::new().filter(filter)).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn distinct_values(
+        &self,
+        collection: &str,
+        field: &str,
+        query: DistinctValuesQuery,
+    ) -> Result<DistinctValuesResponse> {
+        let collection = collection.to_string();
+        let field = field.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let collection = collection.clone();
+            let field = field.clone();
+            let query = query.clone();
+            let http = http.clone();
+            async move {
+                http.distinct_values(&collection, &field, query, &token)
+                    .await
+            }
+        })
+        .await
     }
 
     /// Text-only search (full-text search)
@@ -871,11 +1569,16 @@ impl Client {
         let search_query = SearchQuery::new(query_text).limit(limit);
         let response = self.search(collection, search_query).await?;
 
-        // Convert SearchResult to Record
+        // Convert SearchResult to Record, injecting _score so callers can access it
         let records: Vec<Record> = response
             .results
             .into_iter()
-            .filter_map(|result| serde_json::from_value(result.record).ok())
+            .filter_map(|result| {
+                let score = result.score;
+                let mut record: Record = serde_json::from_value(result.record).ok()?;
+                record.insert("_score", score);
+                Some(record)
+            })
             .collect();
 
         Ok(records)
@@ -922,11 +1625,16 @@ impl Client {
 
         let response = self.search(collection, search_query).await?;
 
-        // Convert SearchResult to Record
+        // Convert SearchResult to Record, injecting _score so callers can access it
         let records: Vec<Record> = response
             .results
             .into_iter()
-            .filter_map(|result| serde_json::from_value(result.record).ok())
+            .filter_map(|result| {
+                let score = result.score;
+                let mut record: Record = serde_json::from_value(result.record).ok()?;
+                record.insert("_score", score);
+                Some(record)
+            })
             .collect();
 
         Ok(records)
@@ -990,10 +1698,15 @@ impl Client {
     /// # }
     /// ```
     pub async fn create_collection(&self, collection: &str, schema: Schema) -> Result<()> {
-        let token = self.auth.get_token().await?;
-        self.http
-            .create_collection(collection, schema, &token)
-            .await
+        let collection = collection.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let collection = collection.clone();
+            let schema = schema.clone();
+            let http = http.clone();
+            async move { http.create_collection(&collection, schema, &token).await }
+        })
+        .await
     }
 
     /// Get collection metadata and schema
@@ -1006,8 +1719,14 @@ impl Client {
     ///
     /// Collection metadata including schema and analytics
     pub async fn get_collection(&self, collection: &str) -> Result<CollectionMetadata> {
-        let token = self.auth.get_token().await?;
-        self.http.get_collection(collection, &token).await
+        let collection = collection.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let collection = collection.clone();
+            let http = http.clone();
+            async move { http.get_collection(&collection, &token).await }
+        })
+        .await
     }
 
     /// Get collection schema
@@ -1020,8 +1739,71 @@ impl Client {
     ///
     /// The collection schema
     pub async fn get_schema(&self, collection: &str) -> Result<Schema> {
-        let token = self.auth.get_token().await?;
-        self.http.get_schema(collection, &token).await
+        let collection = collection.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let collection = collection.clone();
+            let http = http.clone();
+            async move { http.get_schema(&collection, &token).await }
+        })
+        .await
+    }
+
+    // ========================================================================
+    // Tool Dispatch
+    // ========================================================================
+
+    /// Execute a tool via ekoDB's server-side tool pipeline.
+    ///
+    /// Calls `POST /api/chat/tools/execute` which goes through the same
+    /// `execute_tool` function as the LLM tool-calling loop — with all
+    /// collection filtering, permission enforcement, and internal collection
+    /// blocking. No LLM round-trip.
+    ///
+    /// Returns `Some(Ok(result))` if the tool was executed,
+    /// `Some(Err(e))` if execution failed, or `None` if the server doesn't
+    /// support the endpoint (older ekoDB versions).
+    pub async fn execute_tool(
+        &self,
+        tool_name: &str,
+        params: &serde_json::Value,
+        chat_id: Option<&str>,
+    ) -> Option<Result<serde_json::Value>> {
+        let tool_name = tool_name.to_string();
+        let params = params.clone();
+        let chat_id = chat_id.map(|s| s.to_string());
+        let result = self
+            .execute_with_token_refresh(|token| {
+                let tool_name = tool_name.clone();
+                let params = params.clone();
+                let chat_id = chat_id.clone();
+                async move {
+                    self.http
+                        .execute_tool_remote(&tool_name, &params, chat_id.as_deref(), &token)
+                        .await
+                }
+            })
+            .await;
+        match result {
+            Ok(result) => {
+                // The server returns a ToolResult with success/result/error fields
+                let success = result["success"].as_bool().unwrap_or(false);
+                if success {
+                    Some(Ok(result["result"].clone()))
+                } else {
+                    let error = result["error"]
+                        .as_str()
+                        .unwrap_or("tool execution failed")
+                        .to_string();
+                    Some(Err(crate::Error::ToolExecution(error)))
+                }
+            }
+            // handle_response returns Error::NotFound for 404
+            Err(crate::Error::NotFound) => None,
+            // Also handle Error::Api with 405 (method not allowed)
+            Err(crate::Error::Api { code: 405, .. }) => None,
+            Err(e) => Some(Err(e)),
+        }
     }
 
     // ========================================================================
@@ -1034,8 +1816,24 @@ impl Client {
     ///
     /// List of available models from all providers
     pub async fn get_chat_models(&self) -> Result<crate::chat::Models> {
-        let token = self.auth.get_token().await?;
-        self.http.get_chat_models(&token).await
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let http = http.clone();
+            async move { http.get_chat_models(&token).await }
+        })
+        .await
+    }
+
+    /// Get all built-in server-side chat tool definitions.
+    /// Returns a list of tool objects with `name`, `description`, and `parameters` fields.
+    /// Used by planning agents to discover available tools dynamically.
+    pub async fn get_chat_tools(&self) -> Result<Vec<serde_json::Value>> {
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let http = http.clone();
+            async move { http.get_chat_tools(&token).await }
+        })
+        .await
     }
 
     /// Get specific chat model information
@@ -1044,8 +1842,71 @@ impl Client {
     ///
     /// * `model_name` - Name of the model provider (e.g., "openai", "anthropic")
     pub async fn get_chat_model(&self, model_name: &str) -> Result<Vec<String>> {
+        let model_name = model_name.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let model_name = model_name.clone();
+            let http = http.clone();
+            async move { http.get_chat_model(&model_name, &token).await }
+        })
+        .await
+    }
+
+    /// Stateless raw LLM completion — no session, no history, no RAG.
+    ///
+    /// Sends a system prompt and user message directly to the LLM via ekoDB
+    /// and returns the raw text response without any context injection or
+    /// conversation management. Use this for structured-output tasks such as
+    /// planning where the response must be parsed programmatically.
+    ///
+    /// This is the blocking HTTP variant. For deployed instances behind reverse
+    /// proxies, prefer `raw_completion_stream()` (SSE) or use `WebSocketClient::raw_completion()`
+    /// (WSS) to avoid proxy timeouts on long-running LLM calls.
+    pub async fn raw_completion(
+        &self,
+        request: crate::chat::RawCompletionRequest,
+    ) -> Result<crate::chat::RawCompletionResponse> {
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let request = request.clone();
+            let http = http.clone();
+            async move { http.raw_completion(request, &token).await }
+        })
+        .await
+    }
+
+    /// Stateless raw LLM completion via SSE streaming.
+    ///
+    /// Same as `raw_completion()` but uses Server-Sent Events to keep the
+    /// connection alive. Preferred for deployed instances where reverse proxies
+    /// may kill idle HTTP connections before the LLM responds.
+    pub async fn raw_completion_stream(
+        &self,
+        request: crate::chat::RawCompletionRequest,
+    ) -> Result<crate::chat::RawCompletionResponse> {
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let request = request.clone();
+            let http = http.clone();
+            async move { http.raw_completion_stream(request, &token).await }
+        })
+        .await
+    }
+
+    /// Stateless raw LLM completion via SSE with incremental token progress.
+    ///
+    /// Same as `raw_completion_stream()` but sends each token through the
+    /// provided channel as it arrives, allowing callers to show real-time
+    /// progress during long-running LLM calls (e.g., goal plan generation).
+    pub async fn raw_completion_stream_with_progress(
+        &self,
+        request: crate::chat::RawCompletionRequest,
+        progress_tx: tokio::sync::mpsc::Sender<String>,
+    ) -> Result<crate::chat::RawCompletionResponse> {
         let token = self.auth.get_token().await?;
-        self.http.get_chat_model(model_name, &token).await
+        self.http
+            .raw_completion_stream_with_progress(request, &token, progress_tx)
+            .await
     }
 
     /// Create a new chat session
@@ -1061,8 +1922,13 @@ impl Client {
         &self,
         request: crate::chat::CreateChatSessionRequest,
     ) -> Result<crate::chat::ChatResponse> {
-        let token = self.auth.get_token().await?;
-        self.http.create_chat_session(request, &token).await
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let request = request.clone();
+            let http = http.clone();
+            async move { http.create_chat_session(request, &token).await }
+        })
+        .await
     }
 
     /// Get a chat session by ID
@@ -1074,8 +1940,14 @@ impl Client {
         &self,
         chat_id: &str,
     ) -> Result<crate::chat::ChatSessionResponse> {
-        let token = self.auth.get_token().await?;
-        self.http.get_chat_session(chat_id, &token).await
+        let chat_id = chat_id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let chat_id = chat_id.clone();
+            let http = http.clone();
+            async move { http.get_chat_session(&chat_id, &token).await }
+        })
+        .await
     }
 
     /// List all chat sessions
@@ -1087,8 +1959,61 @@ impl Client {
         &self,
         query: crate::chat::ListSessionsQuery,
     ) -> Result<crate::chat::ListSessionsResponse> {
-        let token = self.auth.get_token().await?;
-        self.http.list_chat_sessions(query, &token).await
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let query = query.clone();
+            let http = http.clone();
+            async move { http.list_chat_sessions(query, &token).await }
+        })
+        .await
+    }
+
+    /// Submit a client tool result for an in-flight SSE chat stream.
+    pub async fn submit_chat_tool_result(
+        &self,
+        chat_id: &str,
+        call_id: &str,
+        success: bool,
+        result: Option<serde_json::Value>,
+        error: Option<String>,
+    ) -> Result<()> {
+        let chat_id = chat_id.to_string();
+        let call_id = call_id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let chat_id = chat_id.clone();
+            let call_id = call_id.clone();
+            let result = result.clone();
+            let error = error.clone();
+            let http = http.clone();
+            async move {
+                http.submit_chat_tool_result(&chat_id, &call_id, success, result, error, &token)
+                    .await
+            }
+        })
+        .await
+    }
+
+    /// Send a liveness keepalive for a pending client tool on an in-flight SSE
+    /// chat stream. Not a result — it resets the server's per-tool wait
+    /// deadline so a pending human confirmation or a long-running client tool
+    /// doesn't get the turn timed out mid-response. Call periodically (well
+    /// under the server's `client_tool_timeout_secs`, default 60s) while a
+    /// confirmation prompt is shown or a tool is executing.
+    pub async fn submit_chat_tool_keepalive(&self, chat_id: &str, call_id: &str) -> Result<()> {
+        let chat_id = chat_id.to_string();
+        let call_id = call_id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let chat_id = chat_id.clone();
+            let call_id = call_id.clone();
+            let http = http.clone();
+            async move {
+                http.submit_chat_tool_keepalive(&chat_id, &call_id, &token)
+                    .await
+            }
+        })
+        .await
     }
 
     /// Update chat session metadata
@@ -1102,10 +2027,15 @@ impl Client {
         chat_id: &str,
         request: crate::chat::UpdateSessionRequest,
     ) -> Result<crate::chat::ChatSessionResponse> {
-        let token = self.auth.get_token().await?;
-        self.http
-            .update_chat_session(chat_id, request, &token)
-            .await
+        let chat_id = chat_id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let chat_id = chat_id.clone();
+            let request = request.clone();
+            let http = http.clone();
+            async move { http.update_chat_session(&chat_id, request, &token).await }
+        })
+        .await
     }
 
     /// Delete a chat session
@@ -1114,8 +2044,14 @@ impl Client {
     ///
     /// * `chat_id` - The session ID to delete
     pub async fn delete_chat_session(&self, chat_id: &str) -> Result<()> {
-        let token = self.auth.get_token().await?;
-        self.http.delete_chat_session(chat_id, &token).await
+        let chat_id = chat_id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let chat_id = chat_id.clone();
+            let http = http.clone();
+            async move { http.delete_chat_session(&chat_id, &token).await }
+        })
+        .await
     }
 
     /// Branch a chat session from an existing one
@@ -1127,8 +2063,13 @@ impl Client {
         &self,
         request: crate::chat::CreateChatSessionRequest,
     ) -> Result<crate::chat::ChatResponse> {
-        let token = self.auth.get_token().await?;
-        self.http.branch_chat_session(request, &token).await
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let request = request.clone();
+            let http = http.clone();
+            async move { http.branch_chat_session(request, &token).await }
+        })
+        .await
     }
 
     /// Merge multiple chat sessions
@@ -1140,8 +2081,13 @@ impl Client {
         &self,
         request: crate::chat::MergeSessionsRequest,
     ) -> Result<crate::chat::ChatSessionResponse> {
-        let token = self.auth.get_token().await?;
-        self.http.merge_chat_sessions(request, &token).await
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let request = request.clone();
+            let http = http.clone();
+            async move { http.merge_chat_sessions(request, &token).await }
+        })
+        .await
     }
 
     /// Send a message in an existing chat session
@@ -1155,8 +2101,29 @@ impl Client {
         chat_id: &str,
         request: crate::chat::ChatMessageRequest,
     ) -> Result<crate::chat::ChatResponse> {
+        let chat_id = chat_id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let chat_id = chat_id.clone();
+            let request = request.clone();
+            let http = http.clone();
+            async move { http.chat_message(&chat_id, request, &token).await }
+        })
+        .await
+    }
+
+    /// Stream a chat message via SSE (Server-Sent Events).
+    /// Returns a channel that yields `ChatStreamEvent` items as they arrive.
+    /// Server-side tools execute normally; client-side tools are not supported over SSE.
+    pub async fn chat_message_stream(
+        &self,
+        chat_id: &str,
+        request: crate::chat::ChatMessageRequest,
+    ) -> Result<tokio::sync::mpsc::Receiver<crate::websocket::ChatStreamEvent>> {
         let token = self.auth.get_token().await?;
-        self.http.chat_message(chat_id, request, &token).await
+        self.http
+            .chat_message_stream(chat_id, request, &token)
+            .await
     }
 
     /// Get messages from a chat session
@@ -1170,10 +2137,18 @@ impl Client {
         chat_id: &str,
         query: crate::chat::GetMessagesQuery,
     ) -> Result<crate::chat::GetMessagesResponse> {
-        let token = self.auth.get_token().await?;
-        self.http
-            .get_chat_session_messages(chat_id, query, &token)
-            .await
+        let chat_id = chat_id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let chat_id = chat_id.clone();
+            let query = query.clone();
+            let http = http.clone();
+            async move {
+                http.get_chat_session_messages(&chat_id, query, &token)
+                    .await
+            }
+        })
+        .await
     }
 
     /// Get a specific message by ID
@@ -1183,10 +2158,46 @@ impl Client {
     /// * `chat_id` - The session ID
     /// * `message_id` - The message ID
     pub async fn get_chat_message(&self, chat_id: &str, message_id: &str) -> Result<Record> {
-        let token = self.auth.get_token().await?;
-        self.http
-            .get_chat_message(chat_id, message_id, &token)
-            .await
+        let chat_id = chat_id.to_string();
+        let message_id = message_id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let chat_id = chat_id.clone();
+            let message_id = message_id.clone();
+            let http = http.clone();
+            async move { http.get_chat_message(&chat_id, &message_id, &token).await }
+        })
+        .await
+    }
+
+    /// Compact a chat session's history on demand.
+    ///
+    /// Folds the older messages into a single summary message and marks the
+    /// originals "forgotten" so they stop being replayed — reclaiming
+    /// context-window budget while keeping a faithful summary in the prompt.
+    ///
+    /// # Arguments
+    ///
+    /// * `chat_id` - The session ID
+    /// * `keep_recent` - How many most-recent messages to keep verbatim.
+    ///   `None` uses the session's `max_context_messages` (or 50). `Some(0)`
+    ///   compacts the entire history.
+    pub async fn compact_chat(
+        &self,
+        chat_id: &str,
+        keep_recent: Option<usize>,
+    ) -> Result<crate::chat::CompactChatResponse> {
+        let chat_id = chat_id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let chat_id = chat_id.clone();
+            let http = http.clone();
+            async move {
+                let request = crate::chat::CompactChatRequest { keep_recent };
+                http.compact_chat_session(&chat_id, request, &token).await
+            }
+        })
+        .await
     }
 
     /// Generate embeddings for text using AI (via ekoDB Functions)
@@ -1214,75 +2225,63 @@ impl Client {
     /// # }
     /// ```
     pub async fn embed(&self, text: &str, model: &str) -> Result<Vec<f64>> {
-        use crate::functions::{Function, Script};
-        use rust_decimal::prelude::ToPrimitive;
-
-        // Create a temporary collection for embedding generation
-        let temp_collection = format!("embed_temp_{}", uuid::Uuid::new_v4());
-
-        // Insert a temporary record with the text
-        let mut temp_record = Record::new();
-        temp_record.insert("text", text);
-        self.insert(&temp_collection, temp_record, None).await?;
-
-        // Create a Script that loads the record, embeds it, and returns it
-        let temp_label = format!("embed_script_{}", uuid::Uuid::new_v4());
-        let script = Script::new(&temp_label, "Generate Embedding")
-            .with_description("Temporary script for embedding generation")
-            .with_function(Function::FindAll {
-                collection: temp_collection.clone(),
-            })
-            .with_function(Function::Embed {
-                input_field: "text".to_string(),
-                output_field: "embedding".to_string(),
-                model: Some(model.to_string()),
-            });
-
-        // Save and execute the script
-        let script_id = self.save_script(script).await?;
-        let result = self.call_script(&script_id, None).await?;
-
-        // Clean up script and temp collection
-        let _ = self.delete_script(&script_id).await;
-        let _ = self.delete_collection(&temp_collection).await;
-
-        // Extract embedding from result
-        let records = result.records;
-        if !records.is_empty() {
-            if let Some(first_record) = records.first() {
-                // Try to get embedding field
-                if let Some(embedding_field) = first_record.get("embedding") {
-                    // Handle FieldType::Array
-                    if let crate::types::FieldType::Array(arr) = embedding_field {
-                        let embedding: Vec<f64> = arr
-                            .iter()
-                            .filter_map(|v| {
-                                if let crate::types::FieldType::Float(f) = v {
-                                    Some(*f)
-                                } else if let crate::types::FieldType::Number(n) = v {
-                                    match n {
-                                        crate::types::NumberValue::Float(f) => Some(*f),
-                                        crate::types::NumberValue::Integer(i) => Some(*i as f64),
-                                        crate::types::NumberValue::Decimal(d) => d.to_f64(),
-                                    }
-                                } else {
-                                    None
-                                }
-                            })
-                            .collect();
-
-                        if !embedding.is_empty() {
-                            return Ok(embedding);
-                        }
-                    }
+        let text = text.to_string();
+        let model = model.to_string();
+        let http = self.http.clone();
+        let response = self
+            .execute_with_token_refresh(move |token| {
+                let text = text.clone();
+                let model = model.clone();
+                let http = http.clone();
+                async move {
+                    let request = crate::chat::EmbedRequest {
+                        text: Some(text),
+                        texts: None,
+                        model: Some(model),
+                    };
+                    http.embed(request, &token).await
                 }
-            }
-        }
+            })
+            .await?;
+        response
+            .embeddings
+            .into_iter()
+            .next()
+            .ok_or(crate::Error::Api {
+                code: 500,
+                message: "No embedding returned".to_string(),
+            })
+    }
 
-        Err(crate::Error::Api {
-            code: 500,
-            message: "Failed to extract embedding from result".to_string(),
-        })
+    /// Generate embeddings for multiple texts in a single batch request
+    ///
+    /// # Arguments
+    ///
+    /// * `texts` - The texts to generate embeddings for
+    /// * `model` - The embedding model to use (e.g., "text-embedding-3-small")
+    ///
+    /// # Returns
+    ///
+    /// A vector of embedding vectors
+    pub async fn embed_batch(&self, texts: Vec<String>, model: &str) -> Result<Vec<Vec<f64>>> {
+        let model = model.to_string();
+        let http = self.http.clone();
+        let response = self
+            .execute_with_token_refresh(move |token| {
+                let texts = texts.clone();
+                let model = model.clone();
+                let http = http.clone();
+                async move {
+                    let request = crate::chat::EmbedRequest {
+                        text: None,
+                        texts: Some(texts),
+                        model: Some(model),
+                    };
+                    http.embed(request, &token).await
+                }
+            })
+            .await?;
+        Ok(response.embeddings)
     }
 
     /// Update a chat message
@@ -1298,10 +2297,20 @@ impl Client {
         message_id: &str,
         request: crate::chat::UpdateMessageRequest,
     ) -> Result<Record> {
-        let token = self.auth.get_token().await?;
-        self.http
-            .update_chat_message(chat_id, message_id, request, &token)
-            .await
+        let chat_id = chat_id.to_string();
+        let message_id = message_id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let chat_id = chat_id.clone();
+            let message_id = message_id.clone();
+            let request = request.clone();
+            let http = http.clone();
+            async move {
+                http.update_chat_message(&chat_id, &message_id, request, &token)
+                    .await
+            }
+        })
+        .await
     }
 
     /// Delete a chat message
@@ -1311,10 +2320,19 @@ impl Client {
     /// * `chat_id` - The session ID
     /// * `message_id` - The message ID to delete
     pub async fn delete_chat_message(&self, chat_id: &str, message_id: &str) -> Result<()> {
-        let token = self.auth.get_token().await?;
-        self.http
-            .delete_chat_message(chat_id, message_id, &token)
-            .await
+        let chat_id = chat_id.to_string();
+        let message_id = message_id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let chat_id = chat_id.clone();
+            let message_id = message_id.clone();
+            let http = http.clone();
+            async move {
+                http.delete_chat_message(&chat_id, &message_id, &token)
+                    .await
+            }
+        })
+        .await
     }
 
     /// Toggle message forgotten status
@@ -1330,10 +2348,20 @@ impl Client {
         message_id: &str,
         request: crate::chat::ToggleForgottenRequest,
     ) -> Result<Record> {
-        let token = self.auth.get_token().await?;
-        self.http
-            .toggle_forgotten_message(chat_id, message_id, request, &token)
-            .await
+        let chat_id = chat_id.to_string();
+        let message_id = message_id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let chat_id = chat_id.clone();
+            let message_id = message_id.clone();
+            let request = request.clone();
+            let http = http.clone();
+            async move {
+                http.toggle_forgotten_message(&chat_id, &message_id, request, &token)
+                    .await
+            }
+        })
+        .await
     }
 
     /// Regenerate a chat message
@@ -1347,41 +2375,61 @@ impl Client {
         chat_id: &str,
         message_id: &str,
     ) -> Result<crate::chat::ChatResponse> {
-        let token = self.auth.get_token().await?;
-        self.http
-            .regenerate_chat_message(chat_id, message_id, &token)
-            .await
+        let chat_id = chat_id.to_string();
+        let message_id = message_id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let chat_id = chat_id.clone();
+            let message_id = message_id.clone();
+            let http = http.clone();
+            async move {
+                http.regenerate_chat_message(&chat_id, &message_id, &token)
+                    .await
+            }
+        })
+        .await
     }
 
-    /// Save a new Script
+    /// Save a new function
     ///
     /// # Arguments
     ///
-    /// * `script` - The Script definition to save
+    /// * `function` - The UserFunction definition to save
     ///
     /// # Returns
     ///
-    /// The Script ID assigned by the server
-    pub async fn save_script(&self, script: crate::functions::Script) -> Result<String> {
-        let token = self.auth.get_token().await?;
-        self.http.save_script(script, &token).await
+    /// The UserFunction ID assigned by the server
+    pub async fn save_function(&self, function: crate::functions::UserFunction) -> Result<String> {
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let function = function.clone();
+            let http = http.clone();
+            async move { http.save_function(function, &token).await }
+        })
+        .await
     }
 
-    /// Get a Script by its ID
+    /// Get a UserFunction by its ID
     ///
     /// # Arguments
     ///
-    /// * `id` - The Script ID (from save_script)
+    /// * `id` - The UserFunction ID (from save_function)
     ///
     /// # Returns
     ///
-    /// The saved Script definition
-    pub async fn get_script(&self, id: &str) -> Result<crate::functions::Script> {
-        let token = self.auth.get_token().await?;
-        self.http.get_script(id, &token).await
+    /// The saved UserFunction definition
+    pub async fn get_function(&self, id: &str) -> Result<crate::functions::UserFunction> {
+        let id = id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let id = id.clone();
+            let http = http.clone();
+            async move { http.get_function(&id, &token).await }
+        })
+        .await
     }
 
-    /// List all saved Scripts, optionally filtered by tags
+    /// List all saved functions, optionally filtered by tags
     ///
     /// # Arguments
     ///
@@ -1389,46 +2437,68 @@ impl Client {
     ///
     /// # Returns
     ///
-    /// Vector of saved Scripts
-    pub async fn list_scripts(
+    /// Vector of saved functions
+    pub async fn list_functions(
         &self,
         tags: Option<Vec<String>>,
-    ) -> Result<Vec<crate::functions::Script>> {
-        let token = self.auth.get_token().await?;
-        self.http.list_scripts(tags, &token).await
+    ) -> Result<Vec<crate::functions::UserFunction>> {
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let tags = tags.clone();
+            let http = http.clone();
+            async move { http.list_functions(tags, &token).await }
+        })
+        .await
     }
 
-    /// Update an existing Script
+    /// Update an existing function
     ///
     /// # Arguments
     ///
-    /// * `id` - The Script ID to update
-    /// * `script` - The updated Script definition
-    pub async fn update_script(&self, id: &str, script: crate::functions::Script) -> Result<()> {
-        let token = self.auth.get_token().await?;
-        self.http.update_script(id, script, &token).await
+    /// * `id` - The UserFunction ID to update
+    /// * `function` - The updated UserFunction definition
+    pub async fn update_function(
+        &self,
+        id: &str,
+        function: crate::functions::UserFunction,
+    ) -> Result<()> {
+        let id = id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let id = id.clone();
+            let function = function.clone();
+            let http = http.clone();
+            async move { http.update_function(&id, function, &token).await }
+        })
+        .await
     }
 
-    /// Delete a Script by its ID
+    /// Delete a UserFunction by its ID
     ///
     /// # Arguments
     ///
-    /// * `id` - The Script ID to delete
-    pub async fn delete_script(&self, id: &str) -> Result<()> {
-        let token = self.auth.get_token().await?;
-        self.http.delete_script(id, &token).await
+    /// * `id` - The UserFunction ID to delete
+    pub async fn delete_function(&self, id: &str) -> Result<()> {
+        let id = id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let id = id.clone();
+            let http = http.clone();
+            async move { http.delete_function(&id, &token).await }
+        })
+        .await
     }
 
-    /// Call a saved Script
+    /// Call a saved function
     ///
     /// # Arguments
     ///
-    /// * `label` - The Script label to execute
-    /// * `params` - Optional parameters to pass to the Script
+    /// * `label` - The UserFunction label to execute
+    /// * `params` - Optional parameters to pass to the function
     ///
     /// # Returns
     ///
-    /// Script execution result containing records and metadata
+    /// UserFunction execution result containing records and metadata
     ///
     /// # Example
     ///
@@ -1444,20 +2514,28 @@ impl Client {
     /// let mut params = HashMap::new();
     /// params.insert("status".to_string(), FieldType::String("active".to_string()));
     ///
-    /// let result = client.call_script("get_active_users", Some(params)).await?;
+    /// let result = client.call_function("get_active_users", Some(params)).await?;
     /// println!("Found {} records", result.records.len());
     /// # Ok(())
     /// # }
     /// ```
-    pub async fn call_script(
+    pub async fn call_function(
         &self,
-        script_id_or_label: &str,
+        function_id_or_label: &str,
         params: Option<std::collections::HashMap<String, crate::types::FieldType>>,
     ) -> Result<crate::functions::FunctionResult> {
-        let token = self.auth.get_token().await?;
-        self.http
-            .call_script(script_id_or_label, params, &token)
-            .await
+        let function_id_or_label = function_id_or_label.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let function_id_or_label = function_id_or_label.clone();
+            let params = params.clone();
+            let http = http.clone();
+            async move {
+                http.call_function(&function_id_or_label, params, &token)
+                    .await
+            }
+        })
+        .await
     }
 
     // ========================================================================
@@ -1477,8 +2555,13 @@ impl Client {
         &self,
         user_function: crate::functions::UserFunction,
     ) -> Result<String> {
-        let token = self.auth.get_token().await?;
-        self.http.save_user_function(user_function, &token).await
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let user_function = user_function.clone();
+            let http = http.clone();
+            async move { http.save_user_function(user_function, &token).await }
+        })
+        .await
     }
 
     /// Get a UserFunction by its label
@@ -1491,8 +2574,14 @@ impl Client {
     ///
     /// The saved UserFunction definition
     pub async fn get_user_function(&self, label: &str) -> Result<crate::functions::UserFunction> {
-        let token = self.auth.get_token().await?;
-        self.http.get_user_function(label, &token).await
+        let label = label.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let label = label.clone();
+            let http = http.clone();
+            async move { http.get_user_function(&label, &token).await }
+        })
+        .await
     }
 
     /// List all saved UserFunctions, optionally filtered by tags
@@ -1508,8 +2597,13 @@ impl Client {
         &self,
         tags: Option<Vec<String>>,
     ) -> Result<Vec<crate::functions::UserFunction>> {
-        let token = self.auth.get_token().await?;
-        self.http.list_user_functions(tags, &token).await
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let tags = tags.clone();
+            let http = http.clone();
+            async move { http.list_user_functions(tags, &token).await }
+        })
+        .await
     }
 
     /// Update an existing UserFunction
@@ -1523,10 +2617,18 @@ impl Client {
         label: &str,
         user_function: crate::functions::UserFunction,
     ) -> Result<()> {
-        let token = self.auth.get_token().await?;
-        self.http
-            .update_user_function(label, user_function, &token)
-            .await
+        let label = label.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let label = label.clone();
+            let user_function = user_function.clone();
+            let http = http.clone();
+            async move {
+                http.update_user_function(&label, user_function, &token)
+                    .await
+            }
+        })
+        .await
     }
 
     /// Delete a UserFunction by its label
@@ -1535,8 +2637,781 @@ impl Client {
     ///
     /// * `label` - The UserFunction label to delete
     pub async fn delete_user_function(&self, label: &str) -> Result<()> {
+        let label = label.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let label = label.clone();
+            let http = http.clone();
+            async move { http.delete_user_function(&label, &token).await }
+        })
+        .await
+    }
+
+    // ── Goal CRUD ────────────────────────────────────────────────────────────
+
+    pub async fn goal_create(&self, data: serde_json::Value) -> Result<serde_json::Value> {
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let data = data.clone();
+            let http = http.clone();
+            async move { http.goal_create(data, &token).await }
+        })
+        .await
+    }
+
+    pub async fn goal_list(&self) -> Result<serde_json::Value> {
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let http = http.clone();
+            async move { http.goal_list(&token).await }
+        })
+        .await
+    }
+
+    pub async fn goal_get(&self, id: &str) -> Result<serde_json::Value> {
+        let id = id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let id = id.clone();
+            let http = http.clone();
+            async move { http.goal_get(&id, &token).await }
+        })
+        .await
+    }
+
+    pub async fn goal_update(
+        &self,
+        id: &str,
+        data: serde_json::Value,
+    ) -> Result<serde_json::Value> {
+        let id = id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let id = id.clone();
+            let data = data.clone();
+            let http = http.clone();
+            async move { http.goal_update(&id, data, &token).await }
+        })
+        .await
+    }
+
+    pub async fn goal_delete(&self, id: &str) -> Result<()> {
+        let id = id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let id = id.clone();
+            let http = http.clone();
+            async move { http.goal_delete(&id, &token).await }
+        })
+        .await
+    }
+
+    pub async fn goal_search(&self, query: &str) -> Result<serde_json::Value> {
+        let query = query.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let query = query.clone();
+            let http = http.clone();
+            async move { http.goal_search(&query, &token).await }
+        })
+        .await
+    }
+
+    // ── Goal lifecycle ─────────────────────────────────────────────────────
+
+    /// Atomically mark a goal as complete (status → pending_review).
+    pub async fn goal_complete(
+        &self,
+        id: &str,
+        data: serde_json::Value,
+    ) -> Result<serde_json::Value> {
+        let id = id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let id = id.clone();
+            let data = data.clone();
+            let http = http.clone();
+            async move { http.goal_complete(&id, data, &token).await }
+        })
+        .await
+    }
+
+    /// Atomically approve a goal (status → in_progress).
+    pub async fn goal_approve(&self, id: &str) -> Result<serde_json::Value> {
+        let id = id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let id = id.clone();
+            let http = http.clone();
+            async move { http.goal_approve(&id, &token).await }
+        })
+        .await
+    }
+
+    /// Atomically reject a goal (status → failed).
+    pub async fn goal_reject(
+        &self,
+        id: &str,
+        data: serde_json::Value,
+    ) -> Result<serde_json::Value> {
+        let id = id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let id = id.clone();
+            let data = data.clone();
+            let http = http.clone();
+            async move { http.goal_reject(&id, data, &token).await }
+        })
+        .await
+    }
+
+    // ── Goal step lifecycle ──────────────────────────────────────────────────
+
+    /// Atomically mark a goal step as in_progress.
+    pub async fn goal_step_start(&self, id: &str, step_index: usize) -> Result<serde_json::Value> {
+        let id = id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let id = id.clone();
+            let http = http.clone();
+            async move { http.goal_step_start(&id, step_index, &token).await }
+        })
+        .await
+    }
+
+    /// Atomically mark a goal step as completed with result.
+    pub async fn goal_step_complete(
+        &self,
+        id: &str,
+        step_index: usize,
+        data: serde_json::Value,
+    ) -> Result<serde_json::Value> {
+        let id = id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let id = id.clone();
+            let data = data.clone();
+            let http = http.clone();
+            async move { http.goal_step_complete(&id, step_index, data, &token).await }
+        })
+        .await
+    }
+
+    /// Atomically mark a goal step as failed with error.
+    pub async fn goal_step_fail(
+        &self,
+        id: &str,
+        step_index: usize,
+        data: serde_json::Value,
+    ) -> Result<serde_json::Value> {
+        let id = id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let id = id.clone();
+            let data = data.clone();
+            let http = http.clone();
+            async move { http.goal_step_fail(&id, step_index, data, &token).await }
+        })
+        .await
+    }
+
+    // ── Task CRUD ────────────────────────────────────────────────────────────
+
+    pub async fn task_create(&self, data: serde_json::Value) -> Result<serde_json::Value> {
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let data = data.clone();
+            let http = http.clone();
+            async move { http.task_create(data, &token).await }
+        })
+        .await
+    }
+
+    pub async fn task_list(&self) -> Result<serde_json::Value> {
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let http = http.clone();
+            async move { http.task_list(&token).await }
+        })
+        .await
+    }
+
+    pub async fn task_get(&self, id: &str) -> Result<serde_json::Value> {
+        let id = id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let id = id.clone();
+            let http = http.clone();
+            async move { http.task_get(&id, &token).await }
+        })
+        .await
+    }
+
+    pub async fn task_update(
+        &self,
+        id: &str,
+        data: serde_json::Value,
+    ) -> Result<serde_json::Value> {
+        let id = id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let id = id.clone();
+            let data = data.clone();
+            let http = http.clone();
+            async move { http.task_update(&id, data, &token).await }
+        })
+        .await
+    }
+
+    pub async fn task_delete(&self, id: &str) -> Result<()> {
+        let id = id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let id = id.clone();
+            let http = http.clone();
+            async move { http.task_delete(&id, &token).await }
+        })
+        .await
+    }
+
+    pub async fn task_due(&self, now: &str) -> Result<serde_json::Value> {
+        let now = now.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let now = now.clone();
+            let http = http.clone();
+            async move { http.task_due(&now, &token).await }
+        })
+        .await
+    }
+
+    // ── Task lifecycle ──────────────────────────────────────────────────────
+
+    /// Atomically mark a task as running.
+    pub async fn task_start(&self, id: &str) -> Result<serde_json::Value> {
+        let id = id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let id = id.clone();
+            let http = http.clone();
+            async move { http.task_start(&id, &token).await }
+        })
+        .await
+    }
+
+    /// Atomically mark a task as succeeded (increment run_count, reset failures).
+    pub async fn task_succeed(
+        &self,
+        id: &str,
+        data: serde_json::Value,
+    ) -> Result<serde_json::Value> {
+        let id = id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let id = id.clone();
+            let data = data.clone();
+            let http = http.clone();
+            async move { http.task_succeed(&id, data, &token).await }
+        })
+        .await
+    }
+
+    /// Atomically mark a task as failed (increment consecutive_failures).
+    pub async fn task_fail(&self, id: &str, data: serde_json::Value) -> Result<serde_json::Value> {
+        let id = id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let id = id.clone();
+            let data = data.clone();
+            let http = http.clone();
+            async move { http.task_fail(&id, data, &token).await }
+        })
+        .await
+    }
+
+    /// Atomically pause a task (status → paused).
+    pub async fn task_pause(&self, id: &str) -> Result<serde_json::Value> {
+        let id = id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let id = id.clone();
+            let http = http.clone();
+            async move { http.task_pause(&id, &token).await }
+        })
+        .await
+    }
+
+    /// Atomically resume a task (status → active).
+    pub async fn task_resume(
+        &self,
+        id: &str,
+        data: serde_json::Value,
+    ) -> Result<serde_json::Value> {
+        let id = id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let id = id.clone();
+            let data = data.clone();
+            let http = http.clone();
+            async move { http.task_resume(&id, data, &token).await }
+        })
+        .await
+    }
+
+    // ── Agent CRUD ───────────────────────────────────────────────────────────
+
+    pub async fn agent_create(&self, data: serde_json::Value) -> Result<serde_json::Value> {
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let data = data.clone();
+            let http = http.clone();
+            async move { http.agent_create(data, &token).await }
+        })
+        .await
+    }
+
+    pub async fn agent_list(&self) -> Result<serde_json::Value> {
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let http = http.clone();
+            async move { http.agent_list(&token).await }
+        })
+        .await
+    }
+
+    pub async fn agent_get(&self, id: &str) -> Result<serde_json::Value> {
+        let id = id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let id = id.clone();
+            let http = http.clone();
+            async move { http.agent_get(&id, &token).await }
+        })
+        .await
+    }
+
+    pub async fn agent_get_by_name(&self, name: &str) -> Result<serde_json::Value> {
+        let name = name.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let name = name.clone();
+            let http = http.clone();
+            async move { http.agent_get_by_name(&name, &token).await }
+        })
+        .await
+    }
+
+    pub async fn agent_update(
+        &self,
+        id: &str,
+        data: serde_json::Value,
+    ) -> Result<serde_json::Value> {
+        let id = id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let id = id.clone();
+            let data = data.clone();
+            let http = http.clone();
+            async move { http.agent_update(&id, data, &token).await }
+        })
+        .await
+    }
+
+    pub async fn agent_delete(&self, id: &str) -> Result<()> {
+        let id = id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let id = id.clone();
+            let http = http.clone();
+            async move { http.agent_delete(&id, &token).await }
+        })
+        .await
+    }
+
+    pub async fn agents_by_deployment(&self, deployment_id: &str) -> Result<serde_json::Value> {
+        let deployment_id = deployment_id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let deployment_id = deployment_id.clone();
+            let http = http.clone();
+            async move { http.agents_by_deployment(&deployment_id, &token).await }
+        })
+        .await
+    }
+
+    // ── Goal Template CRUD ──────────────────────────────────────────────────
+
+    pub async fn goal_template_create(&self, data: serde_json::Value) -> Result<serde_json::Value> {
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let data = data.clone();
+            let http = http.clone();
+            async move { http.goal_template_create(data, &token).await }
+        })
+        .await
+    }
+
+    pub async fn goal_template_list(&self) -> Result<serde_json::Value> {
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let http = http.clone();
+            async move { http.goal_template_list(&token).await }
+        })
+        .await
+    }
+
+    pub async fn goal_template_get(&self, id: &str) -> Result<serde_json::Value> {
+        let id = id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let id = id.clone();
+            let http = http.clone();
+            async move { http.goal_template_get(&id, &token).await }
+        })
+        .await
+    }
+
+    pub async fn goal_template_update(
+        &self,
+        id: &str,
+        data: serde_json::Value,
+    ) -> Result<serde_json::Value> {
+        let id = id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let id = id.clone();
+            let data = data.clone();
+            let http = http.clone();
+            async move { http.goal_template_update(&id, data, &token).await }
+        })
+        .await
+    }
+
+    pub async fn goal_template_delete(&self, id: &str) -> Result<()> {
+        let id = id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let id = id.clone();
+            let http = http.clone();
+            async move { http.goal_template_delete(&id, &token).await }
+        })
+        .await
+    }
+
+    // ── KV Document Linking ─────────────────────────────────────────────────
+
+    /// Get documents linked to a KV key.
+    pub async fn kv_get_links(&self, key: &str) -> Result<serde_json::Value> {
+        let key = key.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let key = key.clone();
+            let http = http.clone();
+            async move { http.kv_get_links(&key, &token).await }
+        })
+        .await
+    }
+
+    /// Link a document to a KV key.
+    pub async fn kv_link(
+        &self,
+        key: &str,
+        collection: &str,
+        document_id: &str,
+    ) -> Result<serde_json::Value> {
+        let key = key.to_string();
+        let collection = collection.to_string();
+        let document_id = document_id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let key = key.clone();
+            let collection = collection.clone();
+            let document_id = document_id.clone();
+            let http = http.clone();
+            async move { http.kv_link(&key, &collection, &document_id, &token).await }
+        })
+        .await
+    }
+
+    /// Unlink a document from a KV key.
+    pub async fn kv_unlink(
+        &self,
+        key: &str,
+        collection: &str,
+        document_id: &str,
+    ) -> Result<serde_json::Value> {
+        let key = key.to_string();
+        let collection = collection.to_string();
+        let document_id = document_id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let key = key.clone();
+            let collection = collection.clone();
+            let document_id = document_id.clone();
+            let http = http.clone();
+            async move {
+                http.kv_unlink(&key, &collection, &document_id, &token)
+                    .await
+            }
+        })
+        .await
+    }
+
+    // ── Schedule Management ─────────────────────────────────────────────────
+
+    /// Create a new schedule.
+    pub async fn create_schedule(&self, data: serde_json::Value) -> Result<serde_json::Value> {
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let data = data.clone();
+            let http = http.clone();
+            async move { http.create_schedule(data, &token).await }
+        })
+        .await
+    }
+
+    /// List all schedules.
+    pub async fn list_schedules(&self) -> Result<serde_json::Value> {
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let http = http.clone();
+            async move { http.list_schedules(&token).await }
+        })
+        .await
+    }
+
+    /// Get a schedule by ID.
+    pub async fn get_schedule(&self, id: &str) -> Result<serde_json::Value> {
+        let id = id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let id = id.clone();
+            let http = http.clone();
+            async move { http.get_schedule(&id, &token).await }
+        })
+        .await
+    }
+
+    /// Update a schedule by ID.
+    pub async fn update_schedule(
+        &self,
+        id: &str,
+        data: serde_json::Value,
+    ) -> Result<serde_json::Value> {
+        let id = id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let id = id.clone();
+            let data = data.clone();
+            let http = http.clone();
+            async move { http.update_schedule(&id, data, &token).await }
+        })
+        .await
+    }
+
+    /// Delete a schedule by ID.
+    pub async fn delete_schedule(&self, id: &str) -> Result<()> {
+        let id = id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let id = id.clone();
+            let http = http.clone();
+            async move { http.delete_schedule(&id, &token).await }
+        })
+        .await
+    }
+
+    /// Pause a schedule.
+    pub async fn pause_schedule(&self, id: &str) -> Result<serde_json::Value> {
+        let id = id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let id = id.clone();
+            let http = http.clone();
+            async move { http.pause_schedule(&id, &token).await }
+        })
+        .await
+    }
+
+    /// Resume a schedule.
+    pub async fn resume_schedule(&self, id: &str) -> Result<serde_json::Value> {
+        let id = id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let id = id.clone();
+            let http = http.clone();
+            async move { http.resume_schedule(&id, &token).await }
+        })
+        .await
+    }
+
+    // =========================================================================
+    // Schema Cache & WebSocket Convenience
+    // =========================================================================
+
+    /// Get a reference to the schema cache.
+    pub fn schema_cache(&self) -> &crate::schema_cache::SchemaCache {
+        &self.schema_cache
+    }
+
+    /// Get the schema cache as an Arc (for sharing with WebSocketClient).
+    pub fn schema_cache_arc(&self) -> Arc<crate::schema_cache::SchemaCache> {
+        self.schema_cache.clone()
+    }
+
+    /// Extract the record ID from a JSON record using the cached primary_key_alias.
+    ///
+    /// If the schema cache has the collection's alias, it's used first.
+    /// Falls back to "id" then "_id" if the cache misses.
+    pub fn extract_id(&self, collection: &str, record: &serde_json::Value) -> Option<String> {
+        let alias = self.schema_cache.get_alias(collection);
+        let extra: Vec<&str> = alias.iter().map(|s| s.as_str()).collect();
+        crate::utils::extract_record_id(record, &extra)
+    }
+
+    /// Subscribe to collection mutations via SSE (Server-Sent Events).
+    ///
+    /// Returns an `mpsc::Receiver` that yields `MutationNotificationPayload` events.
+    /// Also handles `schema_changed` events to auto-invalidate the schema cache.
+    ///
+    /// Use this when WebSocket connections aren't available (e.g. behind reverse
+    /// proxies that block WS upgrades).
+    pub async fn subscribe_sse(
+        &self,
+        collection: &str,
+        filter_field: Option<&str>,
+        filter_value: Option<&str>,
+    ) -> Result<tokio::sync::mpsc::Receiver<crate::websocket::MutationNotificationPayload>> {
         let token = self.auth.get_token().await?;
-        self.http.delete_user_function(label, &token).await
+        let mut parsed_url =
+            url::Url::parse(&format!("{}/api/subscribe/{}", self.base_url, collection)).map_err(
+                |e| Error::Api {
+                    code: 0,
+                    message: format!("Invalid SSE URL: {}", e),
+                },
+            )?;
+
+        {
+            let mut pairs = parsed_url.query_pairs_mut();
+            if let Some(ff) = filter_field {
+                pairs.append_pair("filter_field", ff);
+            }
+            if let Some(fv) = filter_value {
+                pairs.append_pair("filter_value", fv);
+            }
+        }
+
+        let url = parsed_url.to_string();
+
+        let client = reqwest::Client::new();
+        let response = client
+            .get(&url)
+            .header("Authorization", format!("Bearer {}", token))
+            .header("Accept", "text/event-stream")
+            .send()
+            .await
+            .map_err(|e| Error::Api {
+                code: 0,
+                message: format!("SSE connection failed: {}", e),
+            })?;
+
+        if !response.status().is_success() {
+            return Err(Error::Api {
+                code: response.status().as_u16(),
+                message: format!("SSE subscribe failed: {}", response.status()),
+            });
+        }
+
+        let (tx, rx) = tokio::sync::mpsc::channel(256);
+        let schema_cache = self.schema_cache.clone();
+
+        // Spawn background task to parse SSE stream
+        tokio::spawn(async move {
+            use futures_util::StreamExt;
+            let mut stream = response.bytes_stream();
+            let mut buffer = String::new();
+
+            while let Some(chunk) = stream.next().await {
+                let chunk = match chunk {
+                    Ok(c) => c,
+                    Err(_) => break,
+                };
+                let text = String::from_utf8_lossy(&chunk);
+                // Normalize CRLF to LF for cross-platform SSE compatibility
+                buffer.push_str(&text.replace("\r\n", "\n"));
+
+                // Parse SSE events from buffer (event: ...\ndata: ...\n\n)
+                while let Some(end) = buffer.find("\n\n") {
+                    let event_block = buffer[..end].to_owned();
+                    buffer.drain(..end + 2);
+
+                    let mut event_type = String::new();
+                    let mut data_lines: Vec<String> = Vec::new();
+
+                    for line in event_block.lines() {
+                        if let Some(val) = line.strip_prefix("event: ") {
+                            event_type = val.trim().to_string();
+                        } else if let Some(val) = line.strip_prefix("data: ") {
+                            data_lines.push(val.trim().to_string());
+                        }
+                    }
+
+                    let event_data = data_lines.join("\n");
+
+                    match event_type.as_str() {
+                        "mutation" => {
+                            if let Ok(payload) = serde_json::from_str::<
+                                crate::websocket::MutationNotificationPayload,
+                            >(&event_data)
+                            {
+                                if tx.send(payload).await.is_err() {
+                                    return; // Receiver dropped
+                                }
+                            }
+                        }
+                        "schema_changed" => {
+                            if let Ok(sc) = serde_json::from_str::<
+                                crate::websocket::SchemaChangedPayload,
+                            >(&event_data)
+                            {
+                                schema_cache.handle_schema_changed(
+                                    &sc.collection,
+                                    sc.version,
+                                    &sc.primary_key_alias,
+                                );
+                            }
+                        }
+                        _ => {} // ignore subscribed, error, heartbeat
+                    }
+                }
+            }
+        });
+
+        Ok(rx)
+    }
+
+    /// Create a WebSocket client connected to this ekoDB instance.
+    ///
+    /// Derives the WS URL from the base URL (http→ws, https→wss) and uses
+    /// the current auth token. The schema cache is automatically attached
+    /// for realtime invalidation on SchemaChanged events.
+    pub async fn connect_ws(&self) -> Result<crate::websocket::WebSocketClient> {
+        let token = self.auth.get_token().await?;
+
+        // Convert http(s) to ws(s)
+        let ws_url = self
+            .base_url
+            .replace("https://", "wss://")
+            .replace("http://", "ws://");
+
+        let ws = crate::websocket::WebSocketClient::new(&ws_url, token)?;
+
+        // Attach schema cache for auto-invalidation
+        if self.schema_cache.is_enabled() {
+            ws.set_schema_cache(self.schema_cache.clone()).await;
+        }
+
+        Ok(ws)
     }
 }
 
@@ -1549,6 +3424,9 @@ pub struct ClientBuilder {
     max_retries: Option<usize>,
     should_retry: Option<bool>,
     serialization_format: Option<crate::types::SerializationFormat>,
+    schema_cache_enabled: bool,
+    schema_cache_ttl: Option<Duration>,
+    schema_cache_max: Option<usize>,
 }
 
 impl ClientBuilder {
@@ -1671,6 +3549,28 @@ impl ClientBuilder {
         self
     }
 
+    /// Enable the in-memory schema cache for primary_key_alias resolution.
+    ///
+    /// When enabled, CRUD results use cached schema metadata to correctly
+    /// extract record IDs regardless of the collection's `primary_key_alias` config.
+    /// The cache is invalidated automatically via WS `SchemaChanged` events.
+    pub fn schema_cache(mut self, enabled: bool) -> Self {
+        self.schema_cache_enabled = enabled;
+        self
+    }
+
+    /// Set the schema cache TTL (time-to-live) in seconds. Default: 300 (5 min).
+    pub fn schema_cache_ttl(mut self, seconds: u64) -> Self {
+        self.schema_cache_ttl = Some(Duration::from_secs(seconds));
+        self
+    }
+
+    /// Set the max number of collections the schema cache holds. Default: 100.
+    pub fn schema_cache_max(mut self, max: usize) -> Self {
+        self.schema_cache_max = Some(max);
+        self
+    }
+
     /// Build the client
     ///
     /// # Errors
@@ -1710,9 +3610,18 @@ impl ClientBuilder {
         // Create auth manager with API key
         let auth = AuthManager::new(api_key, base_url, reqwest_client);
 
+        let schema_cache =
+            crate::schema_cache::SchemaCache::new(crate::schema_cache::SchemaCacheConfig {
+                enabled: self.schema_cache_enabled,
+                max_entries: self.schema_cache_max.unwrap_or(100),
+                ttl: self.schema_cache_ttl.unwrap_or(Duration::from_secs(300)),
+            });
+
         Ok(Client {
             http: Arc::new(http),
             auth: Arc::new(auth),
+            schema_cache: Arc::new(schema_cache),
+            base_url: base_url_str,
         })
     }
 }
@@ -2005,5 +3914,83 @@ mod tests {
         let removed = record.remove("name");
         assert!(removed.is_some());
         assert!(!record.contains_key("name"));
+    }
+
+    /// Build a JWT-shaped token whose `exp` claim is far in the future so the
+    /// auth manager treats the cached token as valid.
+    fn far_future_jwt() -> String {
+        use base64::Engine;
+        let exp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs()
+            + 3600;
+        let header = base64::engine::general_purpose::URL_SAFE_NO_PAD
+            .encode(serde_json::to_vec(&serde_json::json!({"typ":"JWT","alg":"HS256"})).unwrap());
+        let payload = base64::engine::general_purpose::URL_SAFE_NO_PAD
+            .encode(serde_json::to_vec(&serde_json::json!({"exp": exp, "sub":"test"})).unwrap());
+        format!("{header}.{payload}.sig")
+    }
+
+    /// End-to-end proof that a network method auto-refreshes on `TokenExpired`:
+    /// the find endpoint returns 401 on the first call (→ `TokenExpired`),
+    /// the client refreshes its token, and the retried call succeeds.
+    #[tokio::test]
+    async fn test_find_by_id_auto_refreshes_on_token_expired() {
+        let mut server = mockito::Server::new_async().await;
+        let jwt = far_future_jwt();
+
+        // Token endpoint: hit once for the initial get_token() and again for the
+        // refresh_token() triggered by the 401.
+        let token_mock = server
+            .mock("POST", "/api/auth/token")
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(serde_json::json!({ "token": jwt }).to_string())
+            .expect(2)
+            .create_async()
+            .await;
+
+        // First find returns 401 → TokenExpired.
+        let unauthorized = server
+            .mock("GET", "/api/find/users/u1")
+            .with_status(401)
+            .with_header("content-type", "application/json")
+            .with_body(r#"{"code":401,"message":"token expired"}"#)
+            .expect(1)
+            .create_async()
+            .await;
+
+        // Retried find (after refresh) succeeds.
+        let success = server
+            .mock("GET", "/api/find/users/u1")
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(r#"{"id":"u1","name":"Alice"}"#)
+            .expect(1)
+            .create_async()
+            .await;
+
+        let client = Client::builder()
+            .base_url(server.url())
+            .api_key("test-key")
+            .build()
+            .expect("client builds");
+
+        let record = client
+            .find_by_id("users", "u1", None)
+            .await
+            .expect("auto-refresh should make the retried call succeed");
+
+        assert_eq!(
+            record.get("name").and_then(|v| v.as_string()),
+            Some("Alice")
+        );
+
+        // The token endpoint was hit twice (initial + refresh), the 401 once,
+        // and the successful retry once — proving the refresh-and-retry path.
+        token_mock.assert_async().await;
+        unauthorized.assert_async().await;
+        success.assert_async().await;
     }
 }

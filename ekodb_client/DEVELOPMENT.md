@@ -137,8 +137,6 @@ pub async fn new_operation(&self, param: &str) -> Result<Response> {
 
 ```bash
 # Start ekoDB server
-cd ekodb_server
-cargo run
 
 # In another terminal, run integration tests
 export API_BASE_URL="http://localhost:8080"

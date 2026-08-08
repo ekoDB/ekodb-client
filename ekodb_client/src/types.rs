@@ -34,6 +34,7 @@ pub enum NumberValue {
 /// Field type representing all supported data types in ekoDB
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
+#[allow(clippy::upper_case_acronyms)]
 pub enum FieldType {
     /// String value
     String(String),
@@ -139,95 +140,113 @@ impl FieldType {
     pub fn null() -> Self {
         FieldType::Null
     }
+
+    /// Extract the inner string value, handling both direct `String("x")`
+    /// and ekoDB's typed wrapper format `Object({"type": "String", "value": "x"})`.
+    pub fn as_string(&self) -> Option<&str> {
+        match self {
+            FieldType::String(s) => Some(s),
+            FieldType::Object(map) => {
+                if let Some(FieldType::String(v)) = map.get("value") {
+                    Some(v)
+                } else {
+                    None
+                }
+            }
+            _ => None,
+        }
+    }
+
+    /// Extract the inner boolean value, handling both direct `Boolean(x)`
+    /// and ekoDB's typed wrapper format `Object({"type": "Boolean", "value": true})`.
+    pub fn as_bool(&self) -> Option<bool> {
+        match self {
+            FieldType::Boolean(b) => Some(*b),
+            FieldType::Object(map) => {
+                if let Some(FieldType::Boolean(b)) = map.get("value") {
+                    Some(*b)
+                } else {
+                    None
+                }
+            }
+            _ => None,
+        }
+    }
 }
 
-/// A record in ekoDB
+/// A record in ekoDB - transparently wraps HashMap for convenience methods
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Record {
-    /// Record fields
-    #[serde(flatten)]
-    pub fields: HashMap<String, FieldType>,
-}
+#[serde(transparent)]
+pub struct Record(HashMap<String, FieldType>);
 
 impl Record {
     /// Create a new empty record
     pub fn new() -> Self {
-        Self {
-            fields: HashMap::new(),
-        }
+        Self(HashMap::new())
     }
 
-    /// Insert a field into the record
+    /// Insert a field with automatic type conversion
     pub fn insert(&mut self, key: impl Into<String>, value: impl Into<FieldType>) {
-        self.fields.insert(key.into(), value.into());
+        self.0.insert(key.into(), value.into());
     }
 
     /// Insert a field and return self for fluent chaining
-    ///
-    /// This is a builder-style method that allows chaining field insertions.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// # use ekodb_client::Record;
-    /// let record = Record::new()
-    ///     .field("name", "John Doe")
-    ///     .field("age", 30)
-    ///     .field("active", true);
-    /// ```
     pub fn field(mut self, key: impl Into<String>, value: impl Into<FieldType>) -> Self {
-        self.fields.insert(key.into(), value.into());
+        self.0.insert(key.into(), value.into());
         self
     }
 
     /// Get a field from the record
     pub fn get(&self, key: &str) -> Option<&FieldType> {
-        self.fields.get(key)
+        self.0.get(key)
+    }
+
+    /// Get a field's string value, unwrapping ekoDB's typed wrapper if needed.
+    pub fn get_string(&self, key: &str) -> Option<&str> {
+        self.0.get(key).and_then(|f| f.as_string())
+    }
+
+    /// Get a field's boolean value, unwrapping ekoDB's typed wrapper if needed.
+    pub fn get_bool(&self, key: &str) -> Option<bool> {
+        self.0.get(key).and_then(|f| f.as_bool())
     }
 
     /// Remove a field from the record
     pub fn remove(&mut self, key: &str) -> Option<FieldType> {
-        self.fields.remove(key)
+        self.0.remove(key)
     }
 
     /// Check if a field exists
     pub fn contains_key(&self, key: &str) -> bool {
-        self.fields.contains_key(key)
+        self.0.contains_key(key)
     }
 
     /// Get the number of fields
     pub fn len(&self) -> usize {
-        self.fields.len()
+        self.0.len()
     }
 
     /// Check if the record is empty
     pub fn is_empty(&self) -> bool {
-        self.fields.is_empty()
+        self.0.is_empty()
     }
 
     /// Set TTL duration for this record
-    ///
-    /// Supported formats:
-    /// - Duration strings: "30s", "5m", "1h", "1d", "2w"
-    /// - Integer seconds as string: "3600"
-    /// - ISO8601 timestamp: "2024-12-31T23:59:59Z"
     pub fn with_ttl(mut self, duration: impl Into<String>) -> Self {
-        self.fields
+        self.0
             .insert("ttl".to_string(), FieldType::String(duration.into()));
         self
     }
 
     /// Set TTL with update-on-access behavior
-    ///
-    /// If true, TTL resets when the record is accessed
     pub fn with_ttl_update_on_access(
         mut self,
         duration: impl Into<String>,
         update_on_access: bool,
     ) -> Self {
-        self.fields
+        self.0
             .insert("ttl".to_string(), FieldType::String(duration.into()));
-        self.fields.insert(
+        self.0.insert(
             "ttl_update_on_access".to_string(),
             FieldType::Boolean(update_on_access),
         );
@@ -238,6 +257,32 @@ impl Record {
 impl Default for Record {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl std::ops::Deref for Record {
+    type Target = HashMap<String, FieldType>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl std::ops::DerefMut for Record {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+impl From<HashMap<String, FieldType>> for Record {
+    fn from(map: HashMap<String, FieldType>) -> Self {
+        Self(map)
+    }
+}
+
+impl From<Record> for HashMap<String, FieldType> {
+    fn from(record: Record) -> Self {
+        record.0
     }
 }
 
@@ -264,8 +309,6 @@ pub enum QueryOperator {
     /// Not in array
     #[serde(rename = "NotIn")]
     Nin(Vec<FieldType>),
-    /// Regex match
-    Regex(String),
     /// Exists
     Exists(bool),
 }
@@ -357,6 +400,20 @@ impl Query {
     /// Set join configuration
     pub fn join(mut self, join: serde_json::Value) -> Self {
         self.join = Some(join);
+        self
+    }
+
+    /// Set the fields to include in results (projection). Only the named fields
+    /// are returned; all others are omitted. Reduces token usage for large schemas.
+    pub fn select_fields(mut self, fields: Vec<String>) -> Self {
+        self.select_fields = Some(fields);
+        self
+    }
+
+    /// Set the fields to exclude from results. All fields except the named ones
+    /// are returned. Useful for dropping large blobs while keeping everything else.
+    pub fn exclude_fields(mut self, fields: Vec<String>) -> Self {
+        self.exclude_fields = Some(fields);
         self
     }
 }
@@ -462,7 +519,7 @@ mod tests {
 
     #[test]
     fn test_field_type_float() {
-        let field: FieldType = 3.14f64.into();
+        let field: FieldType = 3.15f64.into();
         assert!(matches!(field, FieldType::Float(_)));
     }
 
@@ -501,7 +558,7 @@ mod tests {
 
     #[test]
     fn test_number_value_float() {
-        let num = NumberValue::Float(3.14);
+        let num = NumberValue::Float(3.15);
         assert!(matches!(num, NumberValue::Float(_)));
     }
 
@@ -558,12 +615,6 @@ mod tests {
     fn test_query_operator_nin() {
         let op = QueryOperator::Nin(vec![FieldType::Integer(1), FieldType::Integer(2)]);
         assert!(matches!(op, QueryOperator::Nin(_)));
-    }
-
-    #[test]
-    fn test_query_operator_regex() {
-        let op = QueryOperator::Regex("^test".to_string());
-        assert!(matches!(op, QueryOperator::Regex(_)));
     }
 
     #[test]
@@ -626,5 +677,75 @@ mod tests {
         let record: Record = serde_json::from_value(json).unwrap();
         assert!(record.contains_key("name"));
         assert!(record.contains_key("age"));
+    }
+
+    #[test]
+    fn test_as_string_direct() {
+        let field = FieldType::String("hello".into());
+        assert_eq!(field.as_string(), Some("hello"));
+    }
+
+    #[test]
+    fn test_as_string_typed_wrapper() {
+        // ekoDB returns fields as {"type": "String", "value": "hello"}
+        let field = FieldType::Object(
+            [
+                ("type".into(), FieldType::String("String".into())),
+                ("value".into(), FieldType::String("hello".into())),
+            ]
+            .into_iter()
+            .collect(),
+        );
+        assert_eq!(field.as_string(), Some("hello"));
+    }
+
+    #[test]
+    fn test_as_string_non_string() {
+        let field = FieldType::Integer(42);
+        assert_eq!(field.as_string(), None);
+    }
+
+    #[test]
+    fn test_as_bool_direct() {
+        assert_eq!(FieldType::Boolean(true).as_bool(), Some(true));
+        assert_eq!(FieldType::Boolean(false).as_bool(), Some(false));
+    }
+
+    #[test]
+    fn test_as_bool_typed_wrapper() {
+        let field = FieldType::Object(
+            [
+                ("type".into(), FieldType::String("Boolean".into())),
+                ("value".into(), FieldType::Boolean(true)),
+            ]
+            .into_iter()
+            .collect(),
+        );
+        assert_eq!(field.as_bool(), Some(true));
+    }
+
+    #[test]
+    fn test_record_get_string() {
+        let record = Record::new().field("name", "direct").field(
+            "wrapped",
+            FieldType::Object(
+                [
+                    ("type".into(), FieldType::String("String".into())),
+                    ("value".into(), FieldType::String("wrapped_val".into())),
+                ]
+                .into_iter()
+                .collect(),
+            ),
+        );
+        assert_eq!(record.get_string("name"), Some("direct"));
+        assert_eq!(record.get_string("wrapped"), Some("wrapped_val"));
+        assert_eq!(record.get_string("missing"), None);
+    }
+
+    #[test]
+    fn test_record_get_bool() {
+        let record = Record::new().field("flag", true);
+        assert_eq!(record.get_bool("flag"), Some(true));
+        assert_eq!(record.get_bool("missing"), None);
     }
 }

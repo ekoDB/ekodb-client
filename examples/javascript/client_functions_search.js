@@ -1,7 +1,7 @@
 /**
- * Search Scripts Example - Basic Search Operations
+ * Search Functions Example - Basic Search Operations
  * 
- * Demonstrates simple search and query operations using scripts
+ * Demonstrates simple search and query operations using functions
  */
 
 const { EkoDBClient, Stage } = require('@ekodb/ekodb-client');
@@ -11,6 +11,30 @@ dotenv.config();
 
 const BASE_URL = process.env.API_BASE_URL || 'http://localhost:8080';
 const API_KEY = process.env.API_BASE_KEY || 'a-test-api-key-from-ekodb';
+
+/**
+ * Save a function idempotently.
+ *
+ * The server returns HTTP 409 ("A function with label 'X' already exists.")
+ * when a function with the same fixed label already exists. On that error we
+ * UPDATE the existing function via PUT /api/functions/{label} (the server's
+ * GET/PUT/DELETE routes accept either the encrypted ID or the label), then
+ * resolve and return its encrypted ID so the rest of the example keeps working.
+ * Any other error is propagated.
+ */
+async function saveOrUpdate(client, script) {
+  try {
+    return await client.saveFunction(script);
+  } catch (error) {
+    if (error.message && error.message.includes('already exists')) {
+      await client.updateFunction(script.label, script);
+      console.log(`ℹ️  Function '${script.label}' already existed — updated instead`);
+      const existing = await client.getFunction(script.label);
+      return existing.id;
+    }
+    throw error;
+  }
+}
 
 async function setupTestData(client) {
   console.log('📋 Setting up test data...');
@@ -73,10 +97,10 @@ async function listAllDocsScript(client) {
     tags: ['search', 'list'],
   };
   
-  const scriptId = await client.saveScript(script);
-  console.log('✅ Script saved');
+  const scriptId = await saveOrUpdate(client, script);
+  console.log('✅ Function saved');
   
-  const result = await client.callScript('list_all_docs');
+  const result = await client.callFunction('list_all_docs');
   console.log(`📊 Found ${result.records.length} documents`);
   result.records.forEach((doc, i) => {
     console.log(`   ${i + 1}. ${doc.title?.value || doc.title} (${doc.category?.value || doc.category})`);
@@ -103,10 +127,10 @@ async function groupByCategoryScript(client) {
     tags: ['search', 'analytics'],
   };
   
-  const scriptId = await client.saveScript(script);
-  console.log('✅ Script saved');
+  const scriptId = await saveOrUpdate(client, script);
+  console.log('✅ Function saved');
   
-  const result = await client.callScript('docs_by_category');
+  const result = await client.callFunction('docs_by_category');
   console.log(`📊 Documents by category:`);
   result.records.forEach((cat) => {
     console.log(`   ${cat.category?.value || cat.category}: ${cat.count?.value || cat.count} documents`);
@@ -131,10 +155,10 @@ async function selectFieldsScript(client) {
     tags: ['search', 'projection'],
   };
   
-  const scriptId = await client.saveScript(script);
-  console.log('✅ Script saved');
+  const scriptId = await saveOrUpdate(client, script);
+  console.log('✅ Function saved');
   
-  const result = await client.callScript('doc_titles');
+  const result = await client.callFunction('doc_titles');
   console.log(`📊 Document titles (${result.records.length} docs):`);
   result.records.forEach((doc, i) => {
     console.log(`   ${i + 1}. ${doc.title?.value || doc.title}`);
@@ -159,10 +183,10 @@ async function projectDocsScript(client) {
     tags: ['search', 'projection'],
   };
   
-  const scriptId = await client.saveScript(script);
-  console.log('✅ Script saved');
+  const scriptId = await saveOrUpdate(client, script);
+  console.log('✅ Function saved');
   
-  const result = await client.callScript('project_docs');
+  const result = await client.callFunction('project_docs');
   console.log(`📊 Projected documents (showing first 3):`);
   result.records.slice(0, 3).forEach((doc, i) => {
     console.log(`   ${i + 1}. ${doc.title?.value || doc.title}`);
@@ -186,10 +210,10 @@ async function allFieldsScript(client) {
     tags: ['search', 'all'],
   };
   
-  const scriptId = await client.saveScript(script);
-  console.log('✅ Script saved');
+  const scriptId = await saveOrUpdate(client, script);
+  console.log('✅ Function saved');
   
-  const result = await client.callScript('all_docs');
+  const result = await client.callFunction('all_docs');
   console.log(`📊 All documents (${result.records.length} total, showing first 2):`);
   result.records.slice(0, 2).forEach((doc, i) => {
     console.log(`   ${i + 1}. ${doc.title?.value || doc.title} (${doc.category?.value || doc.category})`);
@@ -204,7 +228,7 @@ async function cleanup(client, scriptIds) {
   
   try {
     for (const id of scriptIds) {
-      await client.deleteScript(id);
+      await client.deleteFunction(id);
     }
     await client.deleteCollection('search_docs');
     console.log('✅ Cleanup complete\n');
@@ -214,7 +238,7 @@ async function cleanup(client, scriptIds) {
 }
 
 async function main() {
-  console.log('🚀 ekoDB Search Scripts Example\n');
+  console.log('🚀 ekoDB Search Functions Example\n');
   
   const client = new EkoDBClient(BASE_URL, API_KEY);
   await client.init();
@@ -229,7 +253,7 @@ async function main() {
     scriptIds.push(await allFieldsScript(client));
     await cleanup(client, scriptIds);
     
-    console.log('✅ All search script examples completed!');
+    console.log('✅ All search function examples completed!');
   } catch (error) {
     console.error('❌ Error:', error.message);
     process.exit(1);

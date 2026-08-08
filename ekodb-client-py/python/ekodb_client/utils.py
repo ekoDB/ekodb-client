@@ -24,7 +24,10 @@ def get_value(field: Any) -> Any:
         >>> email = get_value(user["email"])  # Extracts string from {"type": "String", "value": "user@example.com"}
         >>> age = get_value(user["age"])      # Extracts int from {"type": "Integer", "value": 25}
     """
-    if isinstance(field, dict) and "value" in field:
+    # Only unwrap a genuine typed wrapper — one carrying BOTH a "type"
+    # discriminator and a "value". A user object that merely has a "value" key
+    # (e.g. {"value": 1, "currency": "USD"}) must pass through untouched.
+    if isinstance(field, dict) and "type" in field and "value" in field:
         return field["value"]
     return field
 

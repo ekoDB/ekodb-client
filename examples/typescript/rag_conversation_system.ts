@@ -50,12 +50,12 @@ async function createConversation(
   title: string,
 ): Promise<void> {
   const conv = {
-    id: convId,
+    conversation_id: convId,
     title,
     created_at: new Date().toISOString(),
     search_config: {
       collections: ["rag_messages"],
-      search_type: "hybrid",
+      search_type: "hybrid" as const,
       limit: 10,
     },
   };
@@ -326,7 +326,7 @@ async function main() {
   const chatSession = await client.createChatSession({
     collections: [],
     llm_provider: "openai",
-    llm_model: "gpt-4",
+    llm_model: "gpt-4o-mini",
     system_prompt:
       "You are a helpful programming assistant. Use the provided context " +
       "to give comprehensive answers that combine knowledge from multiple " +

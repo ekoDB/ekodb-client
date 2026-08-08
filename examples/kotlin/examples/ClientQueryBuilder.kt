@@ -3,14 +3,16 @@ package io.ekodb.client.examples
 import io.ekodb.client.EkoDBClient
 import io.ekodb.client.QueryBuilder
 import io.ekodb.client.types.Record
+import io.github.cdimascio.dotenv.dotenv
 import kotlinx.coroutines.runBlocking
 
 /**
  * Query builder example - Build complex queries with filters, sorting, and pagination
  */
 fun main() = runBlocking {
-    val baseUrl = System.getenv("API_BASE_URL") ?: "http://localhost:8080"
-    val apiKey = System.getenv("API_BASE_KEY") ?: error("API_BASE_KEY environment variable not set")
+    val dotenv = dotenv()
+    val baseUrl = dotenv["API_BASE_URL"] ?: "http://localhost:8080"
+    val apiKey = dotenv["API_BASE_KEY"] ?: "a-test-api-key-from-ekodb"
     
     val client = EkoDBClient.builder()
         .baseUrl(baseUrl)
@@ -64,7 +66,7 @@ fun main() = runBlocking {
         val results3 = client.find(collection, query3)
         println("✓ Top 3 scores:")
         results3.forEach { record ->
-            println("  - Score: ${record.fields["score"]}")
+            println("  - Score: ${record["score"]}")
         }
         println()
         
@@ -99,7 +101,7 @@ fun main() = runBlocking {
         val results6 = client.find(collection, query6)
         println("✓ Page 2 (2 records):")
         results6.forEach { record ->
-            println("  - ${record.fields["name"]}")
+            println("  - ${record["name"]}")
         }
         println()
         

@@ -20,9 +20,8 @@ yarn install
 
 ### TTL Features
 
-- [Document TTL](document_ttl.js) - Basic document-level TTL operations
+- [Document TTL](document_ttl.js) - TTL expiration verification test
 - [WebSocket TTL](websocket_ttl.js) - Real-time TTL events via WebSocket
-- [TTL Verification Tests](ttl/) - Tests that verify TTL expiration works
 
 ### Basic Operations
 

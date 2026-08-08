@@ -3,9 +3,29 @@
 ///! Demonstrates calling Functions within Functions using CallFunction
 ///! Shows how to build reusable logic blocks and compose complex workflows
 use ekodb_client::{
-    Client, FieldType, Function, ParameterDefinition, Record, Script, ScriptCondition,
+    extract_record, get_string_value, Client, FieldType, Function, FunctionCondition,
+    ParameterDefinition, Record, UserFunction,
 };
 use std::{collections::HashMap, env};
+
+/// Save a function idempotently: if the label already exists (HTTP 409),
+/// update the existing definition instead, then return its id.
+async fn save_or_update(
+    client: &Client,
+    function: UserFunction,
+) -> Result<String, Box<dyn std::error::Error>> {
+    let label = function.label.clone();
+    match client.save_function(function.clone()).await {
+        Ok(id) => Ok(id),
+        Err(ekodb_client::Error::Api { code: 409, .. }) => {
+            client.update_function(&label, function).await?;
+            println!("ℹ️  Function '{}' already existed — updated instead", label);
+            let existing = client.get_function(&label).await?;
+            Ok(existing.id.unwrap_or(label))
+        }
+        Err(e) => Err(Box::new(e)),
+    }
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -68,7 +88,7 @@ async fn basic_composition_example(client: &Client) -> Result<(), Box<dyn std::e
 
     // Step 1: Create a reusable "fetch_user" function
     // This is a simple, reusable building block
-    let fetch_user = Script::new("fetch_user", "Fetch user by code")
+    let fetch_user = UserFunction::new("fetch_user", "Fetch user by code")
         .with_parameter(ParameterDefinition::new("user_code").required())
         .with_function(Function::FindOne {
             collection: "users".to_string(),
@@ -76,27 +96,23 @@ async fn basic_composition_example(client: &Client) -> Result<(), Box<dyn std::e
             value: serde_json::json!("{{user_code}}"),
         });
 
-    client.save_script(fetch_user).await?;
+    save_or_update(client, fetch_user).await?;
     println!("✅ Saved reusable function: fetch_user");
 
     // Step 2: Create a wrapper function that CALLS the base function
     // This demonstrates composability - reusing logic instead of duplicating it
-    let get_user_wrapper = Script::new("get_user_wrapper", "Wrapper that calls fetch_user")
+    let get_user_wrapper = UserFunction::new("get_user_wrapper", "Wrapper that calls fetch_user")
         .with_parameter(ParameterDefinition::new("user_code").required())
         .with_function(Function::CallFunction {
             function_label: "fetch_user".to_string(),
-            params: Some({
-                let mut map = HashMap::new();
-                map.insert("user_code".to_string(), serde_json::json!("{{user_code}}"));
-                map
-            }),
+            params: None, // Inherits user_code from parent scope
         })
         .with_function(Function::Project {
             fields: vec!["name".to_string(), "department".to_string()],
             exclude: false,
         });
 
-    client.save_script(get_user_wrapper).await?;
+    save_or_update(client, get_user_wrapper).await?;
     println!("✅ Saved composed function: get_user_wrapper (calls fetch_user + projects fields)\n");
 
     // Step 3: Call the composed function
@@ -105,12 +121,21 @@ async fn basic_composition_example(client: &Client) -> Result<(), Box<dyn std::e
         "user_code".to_string(),
         FieldType::String("user_1".to_string()),
     );
-    let result = client.call_script("get_user_wrapper", Some(params)).await?;
+    let result = client
+        .call_function("get_user_wrapper", Some(params))
+        .await?;
     println!("📊 Result from composed function:");
     println!("   Records: {}", result.records.len());
     if let Some(record) = result.records.first() {
-        println!("   Name: {:?}", record.get("name"));
-        println!("   Department: {:?}\n", record.get("department"));
+        let record_json = serde_json::to_value(record)?;
+        let extracted = extract_record(&record_json);
+
+        let name = get_string_value(&extracted["name"]).unwrap_or_else(|| "Unknown".to_string());
+        let department =
+            get_string_value(&extracted["department"]).unwrap_or_else(|| "Unknown".to_string());
+
+        println!("   Name: {}", name);
+        println!("   Department: {}\n", department);
     }
 
     println!("🎯 Key Benefit: fetch_user can be reused by ANY function!");
@@ -125,92 +150,122 @@ async fn basic_composition_example(client: &Client) -> Result<(), Box<dyn std::e
 
 async fn swr_with_composition_example(client: &Client) -> Result<(), Box<dyn std::error::Error>> {
     println!("📝 Example 2: SWR Pattern with Function Composition\n");
-    println!("Using CallFunction to replace inline logic in SWR pattern...\n");
+    println!("Using KV cache + CallFunction for fast cache-aside pattern...\n");
 
-    // Step 1: Create reusable "fetch_external_data" function
-    // This encapsulates all the logic for fetching and storing external data
-    let fetch_and_store = Script::new("fetch_and_store_github", "Fetch from GitHub and store")
-        .with_parameter(ParameterDefinition::new("username").required())
-        .with_function(Function::HttpRequest {
-            url: "https://api.github.com/users/{{username}}".to_string(),
-            method: "GET".to_string(),
-            headers: Some({
-                let mut headers = HashMap::new();
-                headers.insert("User-Agent".to_string(), "ekoDB-Client".to_string());
-                headers
-            }),
-            body: None,
-            timeout_seconds: None,
-            output_field: None,
-        })
-        .with_function(Function::Insert {
-            collection: "github_cache".to_string(),
-            record: serde_json::json!({
-                "id": {"type": "String", "value": "{{username}}"},
-                "data": {"type": "Object", "value": "{{http_response}}"}
-            }),
-            bypass_ripple: None,
-            ttl: Some(serde_json::json!(300)), // 5 minute cache
-        });
+    // Step 1: Create reusable "fetch_and_store" function
+    // Using jsonplaceholder.typicode.com - a reliable free API for testing
+    // This function fetches from API and stores in KV cache
+    let fetch_and_store = UserFunction::new(
+        "fetch_and_store_user",
+        "Fetch user from API and cache in KV",
+    )
+    .with_parameter(ParameterDefinition::new("user_id").required())
+    .with_function(Function::HttpRequest {
+        url: "https://jsonplaceholder.typicode.com/users/{{user_id}}".to_string(),
+        method: "GET".to_string(),
+        headers: Some({
+            let mut headers = HashMap::new();
+            headers.insert("Accept".to_string(), "application/json".to_string());
+            headers
+        }),
+        body: None,
+        timeout_seconds: None,
+        output_field: None,
+    })
+    // Store in KV cache (much faster than collection for cache lookups)
+    .with_function(Function::KvSet {
+        key: serde_json::json!("user_cache:{{user_id}}"),
+        value: serde_json::json!("{{http_response}}"),
+        ttl: Some(serde_json::json!(300)), // 5 minute cache
+    });
 
-    client.save_script(fetch_and_store).await?;
-    println!("✅ Saved reusable function: fetch_and_store_github");
+    save_or_update(client, fetch_and_store).await?;
+    println!("✅ Saved reusable function: fetch_and_store_user (uses KV)");
 
     // Step 2: Create SWR function that CALLS the reusable fetch function
-    // Notice how clean this is - no inline HttpRequest or Insert logic!
-    let swr_github = Script::new("swr_github_user", "SWR pattern using reusable functions")
-        .with_parameter(ParameterDefinition::new("username").required())
-        .with_function(Function::FindById {
-            collection: "github_cache".to_string(),
-            record_id: "{{username}}".to_string(),
+    // Pattern: KV cache check → populate if missing → return
+    let swr_user = UserFunction::new("swr_user", "SWR pattern for user data (KV-based)")
+        .with_parameter(ParameterDefinition::new("user_id").required())
+        // Check KV cache first (O(1) lookup - much faster than FindById)
+        .with_function(Function::KvGet {
+            key: serde_json::json!("user_cache:{{user_id}}"),
         })
         .with_function(Function::If {
-            condition: ScriptCondition::HasRecords,
-            then_functions: vec![Box::new(Function::Project {
-                fields: vec!["data".to_string()],
-                exclude: false,
-            })],
+            // KvGet returns { value: ... } on hit, { value: null } on miss
+            // So we check if "value" is not null to detect cache hit
+            condition: FunctionCondition::Not {
+                condition: Box::new(FunctionCondition::FieldEquals {
+                    field: "value".to_string(),
+                    value: serde_json::Value::Null,
+                }),
+            },
+            then_functions: vec![
+                // Cache hit - project the value field
+                Box::new(Function::Project {
+                    fields: vec!["value".to_string()],
+                    exclude: false,
+                }),
+            ],
             else_functions: Some(vec![
-                // Instead of inline HttpRequest + Insert, just call the reusable function!
+                // Cache miss - call reusable function to fetch and store
                 Box::new(Function::CallFunction {
-                    function_label: "fetch_and_store_github".to_string(),
+                    function_label: "fetch_and_store_user".to_string(),
                     params: Some({
-                        let mut params = HashMap::new();
-                        params.insert("username".to_string(), serde_json::json!("{{username}}"));
-                        params
+                        let mut p = HashMap::new();
+                        p.insert("user_id".to_string(), serde_json::json!("{{user_id}}"));
+                        p
                     }),
+                }),
+                // After storing, retrieve the cached value to return it
+                Box::new(Function::KvGet {
+                    key: serde_json::json!("user_cache:{{user_id}}"),
+                }),
+                Box::new(Function::Project {
+                    fields: vec!["value".to_string()],
+                    exclude: false,
                 }),
             ]),
         });
 
-    client.save_script(swr_github).await?;
-    println!("✅ Saved SWR function using composition: swr_github_user\n");
+    save_or_update(client, swr_user).await?;
+    println!("✅ Saved SWR function using composition: swr_user\n");
 
     // Step 3: Test the SWR pattern - First call (cache miss)
-    println!("First call (cache miss - will fetch from GitHub):");
+    println!("First call (cache miss - will fetch from API):");
     let mut params = HashMap::new();
-    params.insert(
-        "username".to_string(),
-        FieldType::String("torvalds".to_string()),
-    );
+    params.insert("user_id".to_string(), FieldType::String("1".to_string()));
 
     let start = std::time::Instant::now();
     let result1 = client
-        .call_script("swr_github_user", Some(params.clone()))
+        .call_function("swr_user", Some(params.clone()))
         .await?;
     let duration1 = start.elapsed();
 
     println!("   ⏱️  Duration: {:?}", duration1);
-    println!("   📊 Records: {}\n", result1.records.len());
+    println!("   📊 Records: {}", result1.records.len());
+    if let Some(record) = result1.records.first() {
+        if let Ok(json) = serde_json::to_string_pretty(record) {
+            let preview: String = json.chars().take(200).collect();
+            println!("   📦 Data: {}...\n", preview);
+        }
+    } else {
+        println!();
+    }
 
     // Step 4: Second call (cache hit)
     println!("Second call (cache hit - from cache):");
     let start = std::time::Instant::now();
-    let result2 = client.call_script("swr_github_user", Some(params)).await?;
+    let result2 = client.call_function("swr_user", Some(params)).await?;
     let duration2 = start.elapsed();
 
     println!("   ⏱️  Duration: {:?}", duration2);
     println!("   📊 Records: {}", result2.records.len());
+    if let Some(record) = result2.records.first() {
+        if let Ok(json) = serde_json::to_string_pretty(record) {
+            let preview: String = json.chars().take(200).collect();
+            println!("   📦 Data: {}...", preview);
+        }
+    }
     println!(
         "   🚀 Cache speedup: {:.1}x faster!\n",
         duration1.as_millis() as f64 / duration2.as_millis() as f64
@@ -228,7 +283,7 @@ async fn nested_composition_example(client: &Client) -> Result<(), Box<dyn std::
     println!("Building complex workflows from small, reusable pieces...\n");
 
     // Level 1: Base function - validate user exists
-    let validate_user = Script::new("validate_user", "Check if user exists")
+    let validate_user = UserFunction::new("validate_user", "Check if user exists")
         .with_parameter(ParameterDefinition::new("user_code").required())
         .with_function(Function::FindOne {
             collection: "users".to_string(),
@@ -236,45 +291,35 @@ async fn nested_composition_example(client: &Client) -> Result<(), Box<dyn std::
             value: serde_json::json!("{{user_code}}"),
         });
 
-    client.save_script(validate_user).await?;
+    save_or_update(client, validate_user).await?;
     println!("✅ Level 1 function: validate_user");
 
     // Level 2: Calls validate_user + projects fields
-    let fetch_slim = Script::new("fetch_slim_user", "Validate and slim down user")
+    let fetch_slim = UserFunction::new("fetch_slim_user", "Validate and slim down user")
         .with_parameter(ParameterDefinition::new("user_code").required())
         .with_function(Function::CallFunction {
             function_label: "validate_user".to_string(),
-            params: Some({
-                let mut map = HashMap::new();
-                map.insert("user_code".to_string(), serde_json::json!("{{user_code}}"));
-                map
-            }),
+            params: None, // Inherits user_code from parent scope
         })
         .with_function(Function::Project {
             fields: vec!["name".to_string(), "department".to_string()],
             exclude: false,
         });
 
-    client.save_script(fetch_slim).await?;
+    save_or_update(client, fetch_slim).await?;
     println!("✅ Level 2 function: fetch_slim_user (calls validate_user)");
 
-    // Level 3: Calls fetch_slim_user + counts
-    let count_user = Script::new("count_validated_user", "Get validated user and count")
-        .with_parameter(ParameterDefinition::new("user_code").required())
-        .with_function(Function::CallFunction {
-            function_label: "fetch_slim_user".to_string(),
-            params: Some({
-                let mut map = HashMap::new();
-                map.insert("user_code".to_string(), serde_json::json!("{{user_code}}"));
-                map
-            }),
-        })
-        .with_function(Function::Count {
-            output_field: "record_count".to_string(),
-        });
+    // Level 3: Calls fetch_slim_user (demonstrates 3-level nesting)
+    let get_verified_user =
+        UserFunction::new("get_verified_user", "Get verified and validated user")
+            .with_parameter(ParameterDefinition::new("user_code").required())
+            .with_function(Function::CallFunction {
+                function_label: "fetch_slim_user".to_string(),
+                params: None, // Inherits user_code from parent scope
+            });
 
-    client.save_script(count_user).await?;
-    println!("✅ Level 3 function: count_validated_user (calls fetch_slim_user)\n");
+    save_or_update(client, get_verified_user).await?;
+    println!("✅ Level 3 function: get_verified_user (calls fetch_slim_user)\n");
 
     // Execute the 3-level nested composition
     let mut params = HashMap::new();
@@ -283,14 +328,20 @@ async fn nested_composition_example(client: &Client) -> Result<(), Box<dyn std::
         FieldType::String("user_1".to_string()),
     );
     let result = client
-        .call_script("count_validated_user", Some(params))
+        .call_function("get_verified_user", Some(params))
         .await?;
     println!("📊 Result from 3-level nested composition:");
     println!("   Records: {}", result.records.len());
     if let Some(record) = result.records.first() {
-        println!("   Name: {:?}", record.get("name"));
-        println!("   Department: {:?}", record.get("department"));
-        println!("   Record count: {:?}\n", record.get("record_count"));
+        let record_json = serde_json::to_value(record)?;
+        let extracted = extract_record(&record_json);
+
+        let name = get_string_value(&extracted["name"]).unwrap_or_else(|| "Unknown".to_string());
+        let department =
+            get_string_value(&extracted["department"]).unwrap_or_else(|| "Unknown".to_string());
+
+        println!("   Name: {}", name);
+        println!("   Department: {}\n", department);
     }
 
     println!("🎯 Key Benefit: Each function is independently testable and reusable!");

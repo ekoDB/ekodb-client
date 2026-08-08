@@ -26,6 +26,30 @@ BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8080")
 API_KEY = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb")
 
 
+def _is_already_exists_error(err):
+    """Detect the server's 409 'function already exists' response."""
+    msg = str(err)
+    return "409" in msg or "already exists" in msg
+
+
+async def save_or_update(client, script):
+    """Save a function, updating it instead if its label already exists.
+
+    The server returns HTTP 409 for a duplicate label; we then PUT the
+    definition by label (which the server's id-or-label route accepts) and
+    return the label as the identifier.
+    """
+    label = script["label"]
+    try:
+        return await client.save_function(script)
+    except Exception as e:
+        if not _is_already_exists_error(e):
+            raise
+        await client.update_function(label, script)
+        print(f"ℹ️  Function '{label}' already existed — updated instead")
+        return label
+
+
 async def edge_cache_example():
     client = Client.new(BASE_URL, API_KEY)
 
@@ -56,42 +80,49 @@ async def edge_cache_example():
         "version": "1.0",
         "tags": ["cache", "edge"],
         "functions": [
-            # 1. Check cache
-            Stage.find_by_id("edge_cache_py", "{{cache_key}}"),
+            # 1. Check KV cache
+            Stage.kv_get("{{cache_key}}"),
             # 2. If cache exists, return it; else fetch from API
             Stage.if_condition(
-                {"type": "HasRecords"},
+                # KvGet returns {value: ...} on hit, {value: null} on miss
+                # So we check if "value" is not null to detect cache hit
+                {
+                    "type": "Not",
+                    "value": {
+                        "condition": {
+                            "type": "FieldEquals",
+                            "value": {"field": "value", "value": None},
+                        }
+                    },
+                },
                 # Cache hit - return cached data
-                [Stage.project(["data", "cached_at"], False)],
-                # Cache miss - fetch external API and store
+                [Stage.project(["value"], False)],
+                # Cache miss - fetch external API and store in KV
                 [
                     Stage.http_request(
                         "{{api_url}}", "GET", {"User-Agent": "ekoDB-Edge-Cache"}
                     ),
-                    Stage.insert(
-                        "edge_cache_py",
-                        {
-                            "id": {"type": "String", "value": "{{cache_key}}"},
-                            "data": {"type": "Object", "value": "{{http_response}}"},
-                            "cached_at": {
-                                "type": "String",
-                                "value": datetime.now().isoformat(),
-                            },
-                        },
-                        False,
+                    # Store in KV with 5 minute TTL
+                    Stage.kv_set(
+                        "{{cache_key}}",
+                        "{{http_response}}",
+                        300,
                     ),
+                    # Retrieve the cached data to return
+                    Stage.kv_get("{{cache_key}}"),
+                    Stage.project(["value"], False),
                 ],
             ),
         ],
     }
 
-    script_id = await client.save_script(cache_script)
+    script_id = await save_or_update(client, cache_script)
     print(f"✓ Edge cache script created: {script_id}\n")
 
     # Test it - First call hits API
     print("Call 1: Cache miss (fetches from API)")
     start1 = time.time()
-    result1 = await client.call_script(
+    result1 = await client.call_function(
         "cache_api_call_py",
         {
             "cache_key": "weather_nyc",
@@ -106,7 +137,7 @@ async def edge_cache_example():
     # Test it again - Second call hits cache
     print("\nCall 2: Cache hit (served from ekoDB)")
     start2 = time.time()
-    result2 = await client.call_script(
+    result2 = await client.call_function(
         "cache_api_call_py",
         {
             "cache_key": "weather_nyc",

@@ -1,7 +1,9 @@
 package io.ekodb.client.examples
 
 import io.ekodb.client.EkoDBClient
+import io.ekodb.client.getRecordId
 import io.ekodb.client.types.Record
+import io.github.cdimascio.dotenv.dotenv
 import kotlinx.coroutines.runBlocking
 
 /**
@@ -16,8 +18,9 @@ import kotlinx.coroutines.runBlocking
 fun main() = runBlocking {
     println("=== ekoDB Convenience Methods Example ===\n")
 
-    val baseUrl = System.getenv("API_BASE_URL") ?: "http://localhost:8080"
-    val apiKey = System.getenv("API_BASE_KEY") ?: "a-test-api-key-from-ekodb"
+    val dotenv = dotenv()
+    val baseUrl = dotenv["API_BASE_URL"] ?: "http://localhost:8080"
+    val apiKey = dotenv["API_BASE_KEY"] ?: "a-test-api-key-from-ekodb"
     
     val client = EkoDBClient.builder()
         .baseUrl(baseUrl)
@@ -38,7 +41,7 @@ fun main() = runBlocking {
     println("✓ Created record: $inserted")
 
     println("\n=== Upsert Operation ===")
-    val userId = inserted.fields["id"]?.toString() ?: throw Exception("No ID returned")
+    val userId = getRecordId(inserted) ?: throw Exception("No ID returned")
 
     // First upsert - will update (record exists)
     val user2 = Record.new()
@@ -59,10 +62,12 @@ fun main() = runBlocking {
     println("✓ Second upsert (insert): $upserted2")
 
     println("\n=== Find One Operation ===")
-    // Find a single record by any field
+    // Find a single record by any field (Alice's email was updated by upsert)
     val foundUser = client.findOne(collection, "email", "alice.j@newdomain.com")
     if (foundUser != null) {
         println("✓ Found user by email: $foundUser")
+    } else {
+        println("✗ User not found")
     }
 
     // Try finding a non-existent user

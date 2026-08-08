@@ -13,6 +13,29 @@ require("dotenv").config();
 const BASE_URL = process.env.API_BASE_URL || "http://localhost:8080";
 const API_KEY = process.env.API_BASE_KEY || "a-test-api-key-from-ekodb";
 
+/**
+ * Save a function idempotently.
+ *
+ * The server returns HTTP 409 ("A function with label 'X' already exists.")
+ * when a function with the same fixed label already exists. On that error we
+ * UPDATE the existing function via PUT /api/functions/{label} (the server's
+ * PUT route accepts either the encrypted ID or the label), then resolve and
+ * return its encrypted ID. Any other error is propagated.
+ */
+async function saveOrUpdate(client, script) {
+  try {
+    return await client.saveFunction(script);
+  } catch (error) {
+    if (error.message && error.message.includes("already exists")) {
+      await client.updateFunction(script.label, script);
+      console.log(`ℹ️  Function '${script.label}' already existed — updated instead`);
+      const existing = await client.getFunction(script.label);
+      return existing.id;
+    }
+    throw error;
+  }
+}
+
 async function edgeCacheExample() {
   const client = new EkoDBClient(BASE_URL, API_KEY);
   await client.init();
@@ -45,41 +68,50 @@ async function edgeCacheExample() {
     version: "1.0",
     tags: ["cache", "edge"],
     functions: [
-      // 1. Check cache
-      Stage.findById("edge_cache_js", "{{cache_key}}"),
+      // 1. Check KV cache
+      Stage.kvGet("{{cache_key}}"),
 
       // 2. If cache exists, return it; else fetch from API
       Stage.if(
-        { type: "HasRecords" },
+        // KvGet returns {value: ...} on hit, {value: null} on miss
+        // So we check if "value" is not null to detect cache hit
+        {
+          type: "Not",
+          value: {
+            condition: {
+              type: "FieldEquals",
+              value: { field: "value", value: null },
+            },
+          },
+        },
         // Cache hit - return cached data
-        [Stage.project(["data", "cached_at"], false)],
-        // Cache miss - fetch external API and store
+        [Stage.project(["value"], false)],
+        // Cache miss - fetch external API and store in KV
         [
           Stage.httpRequest("{{api_url}}", "GET", {
             "User-Agent": "ekoDB-Edge-Cache",
           }),
-          Stage.insert(
-            "edge_cache_js",
-            {
-              id: { type: "String", value: "{{cache_key}}" },
-              data: { type: "Object", value: "{{http_response}}" },
-              cached_at: { type: "String", value: new Date().toISOString() },
-            },
-            false,
-            undefined
+          // Store in KV with 5 minute TTL
+          Stage.kvSet(
+            "{{cache_key}}",
+            "{{http_response}}",
+            300,
           ),
+          // Retrieve the cached data to return
+          Stage.kvGet("{{cache_key}}"),
+          Stage.project(["value"], false),
         ]
       ),
     ],
   };
 
-  const scriptId = await client.saveScript(cacheScript);
+  const scriptId = await saveOrUpdate(client, cacheScript);
   console.log(`✓ Edge cache script created: ${scriptId}\n`);
 
   // Test it - First call hits API
   console.log("Call 1: Cache miss (fetches from API)");
   const start1 = Date.now();
-  const result1 = await client.callScript("cache_api_call_js", {
+  const result1 = await client.callFunction("cache_api_call_js", {
     cache_key: "weather_nyc",
     api_url:
       "https://api.open-meteo.com/v1/forecast?latitude=40.7128&longitude=-74.0060&current=temperature_2m",
@@ -92,7 +124,7 @@ async function edgeCacheExample() {
   // Test it again - Second call hits cache
   console.log("\nCall 2: Cache hit (served from ekoDB)");
   const start2 = Date.now();
-  const result2 = await client.callScript("cache_api_call_js", {
+  const result2 = await client.callFunction("cache_api_call_js", {
     cache_key: "weather_nyc",
     api_url:
       "https://api.open-meteo.com/v1/forecast?latitude=40.7128&longitude=-74.0060&current=temperature_2m",

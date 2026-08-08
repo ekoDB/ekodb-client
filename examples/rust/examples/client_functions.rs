@@ -1,9 +1,9 @@
-///! Scripts Example for ekoDB Rust Client
+///! Functions Example for ekoDB Rust Client
 ///!
-///! Demonstrates creating, managing, and executing Scripts
+///! Demonstrates creating, managing, and executing functions
 use ekodb_client::{
     Client, FieldType, Function, GroupFunctionConfig, GroupFunctionOp, ParameterDefinition, Record,
-    Script,
+    UserFunction,
 };
 use std::{collections::HashMap, env};
 
@@ -21,7 +21,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .api_key(&api_key)
         .build()?;
 
-    println!("=== ekoDB Rust Client - Scripts Example ===\n");
+    println!("=== ekoDB Rust Client - Functions Example ===\n");
 
     // Setup test data
     setup_test_data(&client).await?;
@@ -40,6 +40,27 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("\n✅ All examples completed!");
     Ok(())
+}
+
+/// Save a function idempotently: if the label already exists (HTTP 409),
+/// update the existing definition instead, then return its id so the rest of
+/// the example (get/update/delete by id) continues to work unchanged.
+async fn save_or_update(
+    client: &Client,
+    function: UserFunction,
+) -> Result<String, Box<dyn std::error::Error>> {
+    let label = function.label.clone();
+    match client.save_function(function.clone()).await {
+        Ok(id) => Ok(id),
+        Err(ekodb_client::Error::Api { code: 409, .. }) => {
+            client.update_function(&label, function).await?;
+            println!("ℹ️  Function '{}' already existed — updated instead", label);
+            // We don't get a fresh id back from update; fetch by label to recover it.
+            let existing = client.get_function(&label).await?;
+            Ok(existing.id.unwrap_or(label))
+        }
+        Err(e) => Err(Box::new(e)),
+    }
 }
 
 async fn setup_test_data(client: &Client) -> Result<(), Box<dyn std::error::Error>> {
@@ -62,27 +83,28 @@ async fn setup_test_data(client: &Client) -> Result<(), Box<dyn std::error::Erro
 }
 
 async fn simple_query_script(client: &Client) -> Result<String, Box<dyn std::error::Error>> {
-    println!("📝 Example 1: Simple Query Script\n");
+    println!("📝 Example 1: Simple Query Function\n");
 
     // Test absolute minimum - just FindAll
-    let script =
-        Script::new("get_active_users", "Get Active Users").with_function(Function::FindAll {
+    let script = UserFunction::new("get_active_users", "Get Active Users").with_function(
+        Function::FindAll {
             collection: "users".to_string(),
-        });
+        },
+    );
 
-    let id = client.save_script(script).await?;
-    println!("✅ Script saved: {}", id);
+    let id = save_or_update(client, script).await?;
+    println!("✅ Function saved: {}", id);
 
-    let result = client.call_script("get_active_users", None).await?;
+    let result = client.call_function("get_active_users", None).await?;
     println!("📊 Found {} active users\n", result.records.len());
 
     Ok(id)
 }
 
 async fn parameterized_script(client: &Client) -> Result<String, Box<dyn std::error::Error>> {
-    println!("📝 Example 2: Parameterized Script\n");
+    println!("📝 Example 2: Parameterized Function\n");
 
-    let script = Script::new("get_users_by_status", "Get Users By Status")
+    let script = UserFunction::new("get_users_by_status", "Get Users By Status")
         .with_parameter(
             ParameterDefinition::new("status")
                 .with_default(FieldType::String("active".to_string())),
@@ -92,8 +114,8 @@ async fn parameterized_script(client: &Client) -> Result<String, Box<dyn std::er
             collection: "users".to_string(),
         });
 
-    let id = client.save_script(script).await?;
-    println!("✅ Script saved: {}", id);
+    let id = save_or_update(client, script).await?;
+    println!("✅ Function saved: {}", id);
 
     let mut params = HashMap::new();
     params.insert(
@@ -103,7 +125,7 @@ async fn parameterized_script(client: &Client) -> Result<String, Box<dyn std::er
     params.insert("limit".to_string(), FieldType::Integer(3));
 
     let result = client
-        .call_script("get_users_by_status", Some(params))
+        .call_function("get_users_by_status", Some(params))
         .await?;
     println!("📊 Found {} users (limited)\n", result.records.len());
 
@@ -111,9 +133,9 @@ async fn parameterized_script(client: &Client) -> Result<String, Box<dyn std::er
 }
 
 async fn aggregation_script(client: &Client) -> Result<String, Box<dyn std::error::Error>> {
-    println!("📝 Example 3: Aggregation Script\n");
+    println!("📝 Example 3: Aggregation Function\n");
 
-    let script = Script::new("user_stats", "User Statistics")
+    let script = UserFunction::new("user_stats", "User Statistics")
         .with_function(Function::FindAll {
             collection: "users".to_string(),
         })
@@ -126,10 +148,10 @@ async fn aggregation_script(client: &Client) -> Result<String, Box<dyn std::erro
             ],
         });
 
-    let id = client.save_script(script).await?;
-    println!("✅ Script saved: {}", id);
+    let id = save_or_update(client, script).await?;
+    println!("✅ Function saved: {}", id);
 
-    let result = client.call_script("user_stats", None).await?;
+    let result = client.call_function("user_stats", None).await?;
     println!("📊 Statistics: {} groups\n", result.records.len());
 
     Ok(id)
@@ -141,18 +163,18 @@ async fn script_management(
     _get_users_by_status_id: &str,
     user_stats_id: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    println!("📝 Example 4: Script Management\n");
+    println!("📝 Example 4: Function Management\n");
 
-    // List all scripts
-    let scripts = client.list_scripts(None).await?;
-    println!("📋 Total scripts: {}", scripts.len());
+    // List all functions
+    let functions = client.list_functions(None).await?;
+    println!("📋 Total functions: {}", functions.len());
 
-    // Get specific script by ID
-    let script = client.get_script(get_active_users_id).await?;
-    println!("🔍 Retrieved script: {}", script.name);
+    // Get specific function by ID
+    let function = client.get_function(get_active_users_id).await?;
+    println!("🔍 Retrieved function: {}", function.name);
 
-    // Update script by ID
-    let updated = Script::new("get_active_users_updated", "Get Active Users (Updated)")
+    // Update function by ID
+    let updated = UserFunction::new("get_active_users_updated", "Get Active Users (Updated)")
         .with_description("Updated description")
         .with_version("1.1")
         .with_function(Function::FindAll {
@@ -160,12 +182,12 @@ async fn script_management(
         })
         .with_tag("users");
 
-    client.update_script(get_active_users_id, updated).await?;
-    println!("✏️  Script updated");
+    client.update_function(get_active_users_id, updated).await?;
+    println!("✏️  Function updated");
 
-    // Delete script by ID
-    client.delete_script(user_stats_id).await?;
-    println!("🗑️  Script deleted\n");
+    // Delete function by ID
+    client.delete_function(user_stats_id).await?;
+    println!("🗑️  Function deleted\n");
 
     println!("ℹ️  Note: GET/UPDATE/DELETE use IDs. Only CALL supports labels.");
 

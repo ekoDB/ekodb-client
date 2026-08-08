@@ -48,7 +48,7 @@ ekodb-client>=0.1.0
 
 ## Prerequisites
 
-- Python 3.8 or higher
+- Python 3.9 or higher
 - pip (Python package manager)
 
 ## Installation
@@ -61,9 +61,8 @@ pip install -r requirements.txt
 
 ### TTL Features
 
-- [Document TTL](document_ttl.py) - Basic document-level TTL operations
+- [Document TTL](document_ttl.py) - TTL expiration verification test
 - [WebSocket TTL](websocket_ttl.py) - Real-time TTL events via WebSocket
-- [TTL Verification Tests](ttl/) - Tests that verify TTL expiration works
 
 ### Basic Operations
 

@@ -1,11 +1,31 @@
-//! Search Scripts Example - Basic Search Operations
+//! Search Functions Example - Basic Search Operations
 //!
-//! Demonstrates simple search and query operations using scripts
+//! Demonstrates simple search and query operations using user functions
 
 use ekodb_client::{
-    Client, FieldType, Function, GroupFunctionConfig, GroupFunctionOp, Record, Script,
+    extract_record, get_string_value, Client, FieldType, Function, GroupFunctionConfig,
+    GroupFunctionOp, Record, UserFunction,
 };
 use serde_json::json;
+
+/// Save a function idempotently: if the label already exists (HTTP 409),
+/// update the existing definition instead, then return its id.
+async fn save_or_update(
+    client: &Client,
+    function: UserFunction,
+) -> Result<String, Box<dyn std::error::Error>> {
+    let label = function.label.clone();
+    match client.save_function(function.clone()).await {
+        Ok(id) => Ok(id),
+        Err(ekodb_client::Error::Api { code: 409, .. }) => {
+            client.update_function(&label, function).await?;
+            println!("ℹ️  Function '{}' already existed — updated instead", label);
+            let existing = client.get_function(&label).await?;
+            Ok(existing.id.unwrap_or(label))
+        }
+        Err(e) => Err(Box::new(e)),
+    }
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -21,7 +41,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .api_key(&api_key)
         .build()?;
 
-    println!("🚀 ekoDB Rust Search Scripts Example\n");
+    println!("🚀 ekoDB Rust Search Functions Example\n");
 
     // Setup test data
     println!("📋 Setting up test data...");
@@ -67,28 +87,27 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Example 1: List All Documents
     println!("📝 Example 1: List All Documents\n");
-    let script1 = Script::new("list_all_docs_rs", "List All Documents")
+    let script1 = UserFunction::new("list_all_docs_rs", "List All Documents")
         .with_version("1.0")
         .with_function(Function::FindAll {
             collection: "search_docs_rs".to_string(),
         })
         .with_tag("search")
         .with_tag("list");
-    let script_id1 = client.save_script(script1).await?;
+    let script_id1 = save_or_update(&client, script1).await?;
     script_ids.push(script_id1);
-    println!("✅ Script saved");
+    println!("✅ Function saved");
 
-    let result1 = client.call_script("list_all_docs_rs", None).await?;
+    let result1 = client.call_function("list_all_docs_rs", None).await?;
     println!("📊 Found {} documents", result1.records.len());
     for (i, record) in result1.records.iter().enumerate() {
-        let title = match record.fields.get("title") {
-            Some(FieldType::String(s)) => s.as_str(),
-            _ => "?",
-        };
-        let category = match record.fields.get("category") {
-            Some(FieldType::String(s)) => s.as_str(),
-            _ => "?",
-        };
+        // Convert Record to JSON and extract values
+        let record_json = serde_json::to_value(record)?;
+        let extracted = extract_record(&record_json);
+
+        let title = get_string_value(&extracted["title"]).unwrap_or_else(|| "?".to_string());
+        let category = get_string_value(&extracted["category"]).unwrap_or_else(|| "?".to_string());
+
         println!("   {}. {} ({})", i + 1, title, category);
     }
     println!(
@@ -98,7 +117,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Example 2: Count Documents by Category
     println!("📝 Example 2: Count Documents by Category\n");
-    let script2 = Script::new("docs_by_category_rs", "Documents by Category")
+    let script2 = UserFunction::new("docs_by_category_rs", "Documents by Category")
         .with_version("1.0")
         .with_function(Function::FindAll {
             collection: "search_docs_rs".to_string(),
@@ -109,11 +128,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         })
         .with_tag("search")
         .with_tag("analytics");
-    let script_id2 = client.save_script(script2).await?;
+    let script_id2 = save_or_update(&client, script2).await?;
     script_ids.push(script_id2);
-    println!("✅ Script saved");
+    println!("✅ Function saved");
 
-    let result2 = client.call_script("docs_by_category_rs", None).await?;
+    let result2 = client.call_function("docs_by_category_rs", None).await?;
     println!("📊 Documents by category:");
     for record in &result2.records {
         println!("   {:?}", record);
@@ -126,7 +145,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Cleanup
     println!("🧹 Cleaning up...");
     for script_id in script_ids {
-        let _ = client.delete_script(&script_id).await;
+        let _ = client.delete_function(&script_id).await;
     }
     let _ = client.delete_collection("search_docs_rs").await;
     println!("✅ Cleanup complete\n");

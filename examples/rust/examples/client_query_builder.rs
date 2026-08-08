@@ -110,17 +110,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
     println!("✓ Found {} users with @example.com email", results.len());
     println!();
 
-    // Step 7: Regex query
-    println!("=== Regex Query ===");
+    // Step 7: Prefix query (regex filtering is pending server-side support)
+    println!("=== Prefix Query (StartsWith) ===");
     let query = QueryBuilder::new()
-        .regex("name", "^[A-C]") // Names starting with A, B, or C
+        .starts_with("name", "A") // Names starting with A
         .build();
 
     let results = client.find(collection, query, None).await?;
-    println!(
-        "✓ Found {} users with names starting with A-C",
-        results.len()
-    );
+    println!("✓ Found {} users with names starting with A", results.len());
     for user in &results {
         println!("  - {:?}", user.get("name"));
     }

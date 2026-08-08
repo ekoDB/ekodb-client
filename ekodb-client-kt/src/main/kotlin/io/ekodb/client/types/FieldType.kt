@@ -32,11 +32,11 @@ sealed class FieldType {
             if (other !is BinaryValue) return false
             return value.contentEquals(other.value)
         }
-        
+
         override fun hashCode(): Int = value.contentHashCode()
     }
     object NullValue : FieldType()
-    
+
     companion object {
         fun string(value: String) = StringValue(value)
         fun integer(value: Long) = IntegerValue(value)
@@ -56,7 +56,7 @@ sealed class FieldType {
 
 object FieldTypeSerializer : KSerializer<FieldType> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("FieldType")
-    
+
     override fun serialize(encoder: Encoder, value: FieldType) {
         // Format-agnostic serialization - works with both JSON and CBOR
         when (value) {
@@ -95,7 +95,7 @@ object FieldTypeSerializer : KSerializer<FieldType> {
             is FieldType.NullValue -> encoder.encodeNull()
         }
     }
-    
+
     override fun deserialize(decoder: Decoder): FieldType {
         // For deserialization, we need to peek at the structure
         // Since we can't easily do that in a format-agnostic way, we'll use JsonDecoder when available
@@ -108,7 +108,7 @@ object FieldTypeSerializer : KSerializer<FieldType> {
             decoder.decodeString().let { FieldType.StringValue(it) }
         }
     }
-    
+
     private fun deserializeElement(element: JsonElement): FieldType {
         return when (element) {
             is JsonNull -> FieldType.NullValue

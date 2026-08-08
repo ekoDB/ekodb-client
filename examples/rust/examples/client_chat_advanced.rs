@@ -44,7 +44,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let session = client
         .create_chat_session(
             ekodb_client::CreateChatSessionRequest::new("openai")
-                .model("gpt-4")
+                .model("gpt-4o-mini")
                 .collection(ekodb_client::CollectionConfig {
                     collection_name: collection.to_string(),
                     fields: vec![],
@@ -184,7 +184,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let session2 = client
         .create_chat_session(
             ekodb_client::CreateChatSessionRequest::new("openai")
-                .model("gpt-4")
+                .model("gpt-4o-mini")
                 .collection(ekodb_client::CollectionConfig {
                     collection_name: "products".to_string(),
                     fields: vec![],
@@ -210,6 +210,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             source_chat_ids: vec![chat_id2.clone()],
             target_chat_id: chat_id.clone(),
             merge_strategy: MergeStrategy::Chronological,
+            bypass_ripple: None,
         })
         .await?;
     println!("✓ Sessions merged successfully");

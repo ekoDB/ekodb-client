@@ -3,26 +3,50 @@
 //! This module provides Python bindings for the ekoDB Rust client library using PyO3.
 
 use ekodb_client::{
-    ChatMessageRequest, ChatResponse, Client as RustClient, CollectionConfig,
-    CreateChatSessionRequest, FieldType, GetMessagesQuery, GetMessagesResponse,
-    ListSessionsQuery, ListSessionsResponse, Query as RustQuery,
-    RateLimitInfo as RustRateLimitInfo, Record as RustRecord,
-    Script as RustScript, SerializationFormat as RustSerializationFormat,
-    UpdateSessionRequest, WebSocketClient as RustWebSocketClient,
-    SearchQuery as RustSearchQuery,
+    Attachment, ChatMessageRequest, ChatResponse, Client as RustClient, CollectionConfig,
+    CreateChatSessionRequest, DistinctValuesQuery as RustDistinctValuesQuery, FieldType,
+    GetMessagesQuery, GetMessagesResponse, ListSessionsQuery, ListSessionsResponse,
+    Query as RustQuery, RateLimitInfo as RustRateLimitInfo,
+    RawCompletionRequest as RustRawCompletionRequest, Record as RustRecord,
+    SearchQuery as RustSearchQuery, SerializationFormat as RustSerializationFormat,
+    UpdateSessionRequest, UserFunction as RustUserFunction, WebSocketClient as RustWebSocketClient,
 };
-use serde_json;
 use pyo3::create_exception;
 use pyo3::exceptions::{PyException, PyRuntimeError, PyValueError};
 use pyo3::prelude::*;
-use pyo3::types::{PyBool, PyDict, PyFloat, PyInt, PyList, PyString};
+use pyo3::types::{PyBool, PyBytes, PyDict, PyFloat, PyInt, PyList, PyString, PyTuple};
 use pyo3_async_runtimes::tokio::future_into_py;
+use serde_json;
 
 // Create a custom exception for rate limiting
-create_exception!(ekodb_client, RateLimitError, PyException, "Rate limit exceeded");
+create_exception!(
+    ekodb_client,
+    RateLimitError,
+    PyException,
+    "Rate limit exceeded"
+);
+
+/// Map an `ekodb_client::Error` to the most specific Python exception.
+///
+/// A `RateLimit` error (HTTP 429) is surfaced as `RateLimitError`, carrying the
+/// server-provided `retry_after_secs` as the first argument so Python callers can
+/// read `exc.args[0]` to back off. Every other error becomes a `RuntimeError`
+/// with `"{context}: {error}"` for backwards-compatible messages.
+fn map_client_err(context: &str, e: ekodb_client::Error) -> PyErr {
+    match e {
+        ekodb_client::Error::RateLimit { retry_after_secs } => {
+            RateLimitError::new_err((retry_after_secs,))
+        }
+        other => PyRuntimeError::new_err(format!("{context}: {other}")),
+    }
+}
 
 /// Serialization format for client-server communication
-#[pyclass]
+//
+// `from_py_object` is opt-in as of pyo3 0.29 for `#[pyclass]` types that derive
+// `Clone`. This enum is accepted as a Python->Rust argument (e.g. the `format`
+// parameter on `Client.new`), so it must keep the `FromPyObject` derive.
+#[pyclass(from_py_object)]
 #[derive(Clone, Copy)]
 enum SerializationFormat {
     /// JSON format (default, human-readable)
@@ -41,7 +65,12 @@ impl From<SerializationFormat> for RustSerializationFormat {
 }
 
 /// Rate limit information from the server
-#[pyclass]
+//
+// `skip_from_py_object` opts out of the auto `FromPyObject` derive (opt-in as of
+// pyo3 0.29 for `Clone` `#[pyclass]` types). This struct is only constructed in
+// Rust and returned to Python; it is never accepted as a Python->Rust argument,
+// so it does not need a `FromPyObject` impl.
+#[pyclass(skip_from_py_object)]
 #[derive(Clone)]
 struct RateLimitInfo {
     /// Maximum requests allowed per window
@@ -113,7 +142,7 @@ impl Client {
     /// Returns:
     ///     A new Client instance
     #[staticmethod]
-    #[pyo3(signature = (base_url, api_key, should_retry=true, max_retries=3, timeout_secs=30, format=None))]
+    #[pyo3(signature = (base_url, api_key, should_retry=true, max_retries=3, timeout_secs=30, format=None, schema_cache=false, schema_cache_ttl_secs=None, schema_cache_max=None))]
     fn new(
         base_url: String,
         api_key: String,
@@ -121,6 +150,9 @@ impl Client {
         max_retries: usize,
         timeout_secs: u64,
         format: Option<SerializationFormat>,
+        schema_cache: bool,
+        schema_cache_ttl_secs: Option<u64>,
+        schema_cache_max: Option<usize>,
     ) -> PyResult<Self> {
         let mut builder = RustClient::builder()
             .base_url(&base_url)
@@ -128,19 +160,31 @@ impl Client {
             .should_retry(should_retry)
             .max_retries(max_retries)
             .timeout(std::time::Duration::from_secs(timeout_secs));
-        
+
         if let Some(fmt) = format {
             builder = builder.serialization_format(fmt.into());
         }
-        
-        let client = builder.build()
+
+        // Schema cache for primary_key_alias resolution (parity with the other
+        // clients). Enabling it lets CRUD results resolve record ids correctly
+        // regardless of a collection's primary_key_alias.
+        builder = builder.schema_cache(schema_cache);
+        if let Some(ttl) = schema_cache_ttl_secs {
+            builder = builder.schema_cache_ttl(ttl);
+        }
+        if let Some(max) = schema_cache_max {
+            builder = builder.schema_cache_max(max);
+        }
+
+        let client = builder
+            .build()
             .map_err(|e| PyRuntimeError::new_err(format!("Failed to create client: {}", e)))?;
 
         Ok(Client { inner: client })
     }
 
     /// Insert a document into a collection
-    /// 
+    ///
     /// Args:
     ///     collection: Collection name
     ///     record: Document data as a dict
@@ -159,54 +203,121 @@ impl Client {
         transaction_id: Option<String>,
         bypass_cache: Option<bool>,
     ) -> PyResult<Bound<'py, PyAny>> {
-        let _ = (transaction_id, bypass_cache); // Acknowledge unused params
-        let mut rust_record = dict_to_record(record)?;
-        
-        // Add TTL if provided
-        if let Some(ttl_duration) = ttl {
-            rust_record = rust_record.with_ttl(ttl_duration);
-        }
-        
+        let rust_record = dict_to_record(record)?;
+
+        // Build InsertOptions from Python parameters
+        let options = if ttl.is_some()
+            || bypass_ripple.is_some()
+            || transaction_id.is_some()
+            || bypass_cache.is_some()
+        {
+            let mut opts = ekodb_client::options::InsertOptions::new();
+            if let Some(t) = ttl {
+                opts = opts.ttl(t);
+            }
+            if let Some(br) = bypass_ripple {
+                opts = opts.bypass_ripple(br);
+            }
+            if let Some(tx) = transaction_id {
+                opts = opts.transaction_id(tx);
+            }
+            if let Some(bc) = bypass_cache {
+                opts = opts.bypass_cache(bc);
+            }
+            Some(opts)
+        } else {
+            None
+        };
+
         let client = self.inner.clone();
 
         future_into_py::<_, Py<PyAny>>(py, async move {
             let result = client
-                .insert(&collection, rust_record, bypass_ripple)
+                .insert(&collection, rust_record, options)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Insert failed: {}", e)))?;
+                .map_err(|e| map_client_err("Insert failed", e))?;
 
             Ok(Python::attach(|py| record_to_dict(py, &result))?)
         })
     }
 
-    /// Find a document by ID
-    #[pyo3(signature = (collection, id, bypass_ripple=None))]
+    /// Find a document by ID.
+    ///
+    /// Args:
+    ///     collection: Collection name
+    ///     id: Record ID
+    ///     bypass_ripple: Optional ripple bypass
+    ///     transaction_id: Optional transaction ID for read-your-writes — the
+    ///         read is served from the transaction's own view (its uncommitted
+    ///         staged writes, else the committed store) and recorded in its read
+    ///         set for commit-time conflict detection.
+    #[pyo3(signature = (collection, id, bypass_ripple=None, transaction_id=None))]
     fn find_by_id<'py>(
         &self,
         py: Python<'py>,
         collection: String,
         id: String,
         bypass_ripple: Option<bool>,
+        transaction_id: Option<String>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py(py, async move {
+            let result = match transaction_id {
+                Some(tx) => client
+                    .find_by_id_in_transaction(&collection, &id, &tx, bypass_ripple)
+                    .await
+                    .map_err(|e| map_client_err("Find failed", e))?,
+                None => client
+                    .find_by_id(&collection, &id, bypass_ripple)
+                    .await
+                    .map_err(|e| map_client_err("Find failed", e))?,
+            };
+
+            Python::attach(|py| record_to_dict(py, &result))
+        })
+    }
+
+    /// Find a record by ID returning only a projection of its fields.
+    ///
+    /// Args:
+    ///     collection: Collection name
+    ///     id: Record ID
+    ///     select_fields: Optional list of field names to keep (plus the primary key)
+    ///     exclude_fields: Optional list of field names to remove
+    #[pyo3(signature = (collection, id, select_fields=None, exclude_fields=None))]
+    fn find_by_id_with_projection<'py>(
+        &self,
+        py: Python<'py>,
+        collection: String,
+        id: String,
+        select_fields: Option<Vec<String>>,
+        exclude_fields: Option<Vec<String>>,
     ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
 
         future_into_py(py, async move {
             let result = client
-                .find_by_id(&collection, &id, bypass_ripple)
+                .find_by_id_with_projection(&collection, &id, select_fields, exclude_fields)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Find failed: {}", e)))?;
+                .map_err(|e| map_client_err("Find failed", e))?;
 
             Python::attach(|py| record_to_dict(py, &result))
         })
     }
 
     /// Find documents matching a query
-    /// 
+    ///
     /// Args:
     ///     collection: Collection name
     ///     query: Optional query dict with filters, joins, etc.
     ///     limit: Optional limit (deprecated, use query dict instead)
-    #[pyo3(signature = (collection, query=None, limit=None, bypass_ripple=None))]
+    ///     bypass_ripple: Optional; skip ripple propagation for this read. Sent
+    ///         as the `bypass_ripple` query parameter (the same way every other
+    ///         method carries it), not in the request body.
+    ///     transaction_id: Optional; read within a transaction (read-your-writes)
+    ///         over the matched records.
+    #[pyo3(signature = (collection, query=None, limit=None, bypass_ripple=None, transaction_id=None))]
     fn find<'py>(
         &self,
         py: Python<'py>,
@@ -214,6 +325,7 @@ impl Client {
         query: Option<&Bound<'py, PyDict>>,
         limit: Option<usize>,
         bypass_ripple: Option<bool>,
+        transaction_id: Option<String>,
     ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
         let query_json = if let Some(q) = query {
@@ -224,12 +336,12 @@ impl Client {
 
         future_into_py::<_, Py<PyAny>>(py, async move {
             let mut rust_query = RustQuery::new();
-            
+
             // Apply limit from parameter if provided (for backward compatibility)
             if let Some(l) = limit {
                 rust_query = rust_query.limit(l);
             }
-            
+
             // Parse query dict if provided
             if let Some(q) = query_json {
                 rust_query = serde_json::from_value(q).map_err(|e| {
@@ -237,10 +349,16 @@ impl Client {
                 })?;
             }
 
-            let results = client
-                .find(&collection, rust_query, bypass_ripple)
-                .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Find failed: {}", e)))?;
+            let results = match transaction_id {
+                Some(tx) => client
+                    .find_in_transaction(&collection, rust_query, &tx, bypass_ripple)
+                    .await
+                    .map_err(|e| map_client_err("Find failed", e))?,
+                None => client
+                    .find(&collection, rust_query, bypass_ripple)
+                    .await
+                    .map_err(|e| map_client_err("Find failed", e))?,
+            };
 
             Python::attach(|py| {
                 let list = PyList::empty(py);
@@ -269,15 +387,108 @@ impl Client {
         transaction_id: Option<String>,
         bypass_cache: Option<bool>,
     ) -> PyResult<Bound<'py, PyAny>> {
-        let _ = (transaction_id, bypass_cache); // Acknowledge unused params
         let rust_updates = dict_to_record(updates)?;
+
+        // Build UpdateOptions from Python parameters
+        let options =
+            if bypass_ripple.is_some() || transaction_id.is_some() || bypass_cache.is_some() {
+                let mut opts = ekodb_client::options::UpdateOptions::new();
+                if let Some(br) = bypass_ripple {
+                    opts = opts.bypass_ripple(br);
+                }
+                if let Some(tx) = transaction_id {
+                    opts = opts.transaction_id(tx);
+                }
+                if let Some(bc) = bypass_cache {
+                    opts = opts.bypass_cache(bc);
+                }
+                Some(opts)
+            } else {
+                None
+            };
+
         let client = self.inner.clone();
 
         future_into_py(py, async move {
             let result = client
-                .update(&collection, &id, rust_updates, bypass_ripple)
+                .update(&collection, &id, rust_updates, options)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Update failed: {}", e)))?;
+                .map_err(|e| map_client_err("Update failed", e))?;
+
+            Python::attach(|py| record_to_dict(py, &result))
+        })
+    }
+
+    /// Apply an atomic field action to a single field of a record.
+    ///
+    /// Use this instead of `update()` for safe concurrent modifications like
+    /// incrementing counters, pushing to arrays, or arithmetic operations.
+    ///
+    /// Args:
+    ///     collection: Collection name
+    ///     id: Record ID
+    ///     action: The atomic action (increment, decrement, multiply, divide, modulo,
+    ///             push, pop, shift, unshift, remove, append, clear)
+    ///     field: The field name to apply the action to
+    ///     value: The value for the action (omit for pop/shift/clear)
+    #[pyo3(signature = (collection, id, action, field, value=None))]
+    fn update_with_action<'py>(
+        &self,
+        py: Python<'py>,
+        collection: String,
+        id: String,
+        action: String,
+        field: String,
+        value: Option<&Bound<'py, PyAny>>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let field_value = match value {
+            Some(v) => py_to_field_type(v)?,
+            None => FieldType::Null,
+        };
+        let client = self.inner.clone();
+
+        future_into_py(py, async move {
+            let result = client
+                .update_with_action(&collection, &id, &action, &field, field_value)
+                .await
+                .map_err(|e| map_client_err("Action failed", e))?;
+
+            Python::attach(|py| record_to_dict(py, &result))
+        })
+    }
+
+    /// Apply a sequence of atomic field actions to a record in a single request.
+    ///
+    /// All actions are applied atomically — the record is fetched once, all actions
+    /// run in order, and the result is persisted in a single update.
+    ///
+    /// Args:
+    ///     collection: Collection name
+    ///     id: Record ID
+    ///     actions: List of (action, field, value) tuples
+    #[pyo3(signature = (collection, id, actions))]
+    fn update_with_action_sequence<'py>(
+        &self,
+        py: Python<'py>,
+        collection: String,
+        id: String,
+        actions: Vec<(String, String, Bound<'py, PyAny>)>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let rust_actions: Vec<(String, String, FieldType)> = actions
+            .iter()
+            .map(|(action, field, value)| {
+                let fv = py_to_field_type(value)?;
+                Ok((action.clone(), field.clone(), fv))
+            })
+            .collect::<PyResult<Vec<_>>>()?;
+
+        let client = self.inner.clone();
+
+        future_into_py(py, async move {
+            let result = client
+                .update_with_action_sequence(&collection, &id, rust_actions)
+                .await
+                .map_err(|e| map_client_err("Action sequence failed", e))?;
 
             Python::attach(|py| record_to_dict(py, &result))
         })
@@ -297,14 +508,27 @@ impl Client {
         bypass_ripple: Option<bool>,
         transaction_id: Option<String>,
     ) -> PyResult<Bound<'py, PyAny>> {
-        let _ = transaction_id; // Acknowledge unused param
         let client = self.inner.clone();
 
         future_into_py(py, async move {
-            client
-                .delete(&collection, &id, bypass_ripple)
-                .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Delete failed: {}", e)))?;
+            match transaction_id {
+                Some(tx) => {
+                    let mut opts = ekodb_client::options::DeleteOptions::new().transaction_id(tx);
+                    if let Some(b) = bypass_ripple {
+                        opts = opts.bypass_ripple(b);
+                    }
+                    client
+                        .delete_with_options(&collection, &id, opts)
+                        .await
+                        .map_err(|e| map_client_err("Delete failed", e))?;
+                }
+                None => {
+                    client
+                        .delete(&collection, &id, bypass_ripple)
+                        .await
+                        .map_err(|e| map_client_err("Delete failed", e))?;
+                }
+            }
 
             Python::attach(|py| Ok(py.None()))
         })
@@ -318,7 +542,27 @@ impl Client {
             let collections = client
                 .list_collections()
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("List collections failed: {}", e)))?;
+                .map_err(|e| map_client_err("List collections failed", e))?;
+
+            Python::attach(|py| {
+                let list = PyList::empty(py);
+                for name in collections {
+                    list.append(name)?;
+                }
+                Ok(list.into())
+            })
+        })
+    }
+
+    /// List collections, excluding internal chat/system collections.
+    fn list_user_collections<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            let collections = client
+                .list_user_collections()
+                .await
+                .map_err(|e| map_client_err("List user collections failed", e))?;
 
             Python::attach(|py| {
                 let list = PyList::empty(py);
@@ -331,26 +575,43 @@ impl Client {
     }
 
     /// Batch insert multiple documents
-    #[pyo3(signature = (collection, records, bypass_ripple=None))]
+    ///
+    /// Args:
+    ///     bypass_ripple: Optional flag to bypass ripple propagation
+    ///     transaction_id: Optional transaction ID to stage the inserts into an
+    ///         MVCC transaction instead of committing them immediately
+    #[pyo3(signature = (collection, records, bypass_ripple=None, transaction_id=None))]
     fn batch_insert<'py>(
         &self,
         py: Python<'py>,
         collection: String,
         records: Vec<Bound<'py, PyDict>>,
         bypass_ripple: Option<bool>,
+        transaction_id: Option<String>,
     ) -> PyResult<Bound<'py, PyAny>> {
-        let rust_records: Result<Vec<RustRecord>, _> = records
-            .iter()
-            .map(|d| dict_to_record(d))
-            .collect();
+        let rust_records: Result<Vec<RustRecord>, _> =
+            records.iter().map(|d| dict_to_record(d)).collect();
         let rust_records = rust_records?;
         let client = self.inner.clone();
 
         future_into_py::<_, Py<PyAny>>(py, async move {
-            let results = client
-                .batch_insert(&collection, rust_records, bypass_ripple)
-                .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Batch insert failed: {}", e)))?;
+            let results = match transaction_id {
+                Some(tx) => {
+                    let mut opts =
+                        ekodb_client::options::BatchInsertOptions::new().transaction_id(tx);
+                    if let Some(b) = bypass_ripple {
+                        opts = opts.bypass_ripple(b);
+                    }
+                    client
+                        .batch_insert_with_options(&collection, rust_records, opts)
+                        .await
+                        .map_err(|e| map_client_err("Batch insert failed", e))?
+                }
+                None => client
+                    .batch_insert(&collection, rust_records, bypass_ripple)
+                    .await
+                    .map_err(|e| map_client_err("Batch insert failed", e))?,
+            };
 
             Python::attach(|py| {
                 let list = PyList::empty(py);
@@ -363,13 +624,19 @@ impl Client {
     }
 
     /// Batch update multiple documents
-    #[pyo3(signature = (collection, updates, bypass_ripple=None))]
+    ///
+    /// Args:
+    ///     bypass_ripple: Optional flag to bypass ripple propagation
+    ///     transaction_id: Optional transaction ID to stage the updates into an
+    ///         MVCC transaction instead of committing them immediately
+    #[pyo3(signature = (collection, updates, bypass_ripple=None, transaction_id=None))]
     fn batch_update<'py>(
         &self,
         py: Python<'py>,
         collection: String,
         updates: Vec<(String, Bound<'py, PyDict>)>, // Vec of (id, record) pairs
         bypass_ripple: Option<bool>,
+        transaction_id: Option<String>,
     ) -> PyResult<Bound<'py, PyAny>> {
         let rust_updates: Result<Vec<(String, RustRecord)>, PyErr> = updates
             .iter()
@@ -379,10 +646,23 @@ impl Client {
         let client = self.inner.clone();
 
         future_into_py::<_, Py<PyAny>>(py, async move {
-            let results = client
-                .batch_update(&collection, rust_updates, bypass_ripple)
-                .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Batch update failed: {}", e)))?;
+            let results = match transaction_id {
+                Some(tx) => {
+                    let mut opts =
+                        ekodb_client::options::BatchUpdateOptions::new().transaction_id(tx);
+                    if let Some(b) = bypass_ripple {
+                        opts = opts.bypass_ripple(b);
+                    }
+                    client
+                        .batch_update_with_options(&collection, rust_updates, opts)
+                        .await
+                        .map_err(|e| map_client_err("Batch update failed", e))?
+                }
+                None => client
+                    .batch_update(&collection, rust_updates, bypass_ripple)
+                    .await
+                    .map_err(|e| map_client_err("Batch update failed", e))?,
+            };
 
             Python::attach(|py| {
                 let list = PyList::empty(py);
@@ -395,21 +675,40 @@ impl Client {
     }
 
     /// Batch delete multiple documents by IDs
-    #[pyo3(signature = (collection, ids, bypass_ripple=None))]
+    ///
+    /// Args:
+    ///     bypass_ripple: Optional flag to bypass ripple propagation
+    ///     transaction_id: Optional transaction ID to stage the deletes into an
+    ///         MVCC transaction instead of committing them immediately
+    #[pyo3(signature = (collection, ids, bypass_ripple=None, transaction_id=None))]
     fn batch_delete<'py>(
         &self,
         py: Python<'py>,
         collection: String,
         ids: Vec<String>,
         bypass_ripple: Option<bool>,
+        transaction_id: Option<String>,
     ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
 
         future_into_py::<_, Py<PyAny>>(py, async move {
-            let deleted_count = client
-                .batch_delete(&collection, ids, bypass_ripple)
-                .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Batch delete failed: {}", e)))?;
+            let deleted_count = match transaction_id {
+                Some(tx) => {
+                    let mut opts =
+                        ekodb_client::options::BatchDeleteOptions::new().transaction_id(tx);
+                    if let Some(b) = bypass_ripple {
+                        opts = opts.bypass_ripple(b);
+                    }
+                    client
+                        .batch_delete_with_options(&collection, ids, opts)
+                        .await
+                        .map_err(|e| map_client_err("Batch delete failed", e))?
+                }
+                None => client
+                    .batch_delete(&collection, ids, bypass_ripple)
+                    .await
+                    .map_err(|e| map_client_err("Batch delete failed", e))?,
+            };
 
             Python::attach(|py| Ok(PyInt::new(py, deleted_count).into()))
         })
@@ -427,18 +726,18 @@ impl Client {
             client
                 .delete_collection(&collection)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Delete collection failed: {}", e)))?;
+                .map_err(|e| map_client_err("Delete collection failed", e))?;
 
             Python::attach(|py| Ok(py.None()))
         })
     }
 
     /// Restore a deleted record from trash
-    /// 
+    ///
     /// Args:
     ///     collection: Collection name
     ///     id: Record ID to restore
-    /// 
+    ///
     /// Returns:
     ///     True if the record was restored, False if not found
     fn restore_deleted<'py>(
@@ -453,27 +752,25 @@ impl Client {
             let restored = client
                 .restore_deleted(&collection, &id)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Restore deleted failed: {}", e)))?;
+                .map_err(|e| map_client_err("Restore deleted failed", e))?;
 
-            Python::attach(|py| {
-                Ok(PyBool::new(py, restored).as_borrowed().to_owned().into())
-            })
+            Python::attach(|py| Ok(PyBool::new(py, restored).as_borrowed().to_owned().into()))
         })
     }
 
     // ========== Convenience Methods ==========
 
     /// Insert or update a record (upsert operation)
-    /// 
+    ///
     /// Attempts to update the record first. If the record doesn't exist (NotFound error),
     /// it will be inserted instead. This provides atomic insert-or-update semantics.
-    /// 
+    ///
     /// Args:
     ///     collection: Collection name
     ///     id: Record ID
     ///     record: Document data as a dict
     ///     bypass_ripple: Optional flag to bypass ripple effects
-    /// 
+    ///
     /// Returns:
     ///     The inserted or updated record as a dict
     fn upsert<'py>(
@@ -487,25 +784,32 @@ impl Client {
         let rust_record = dict_to_record(record)?;
         let client = self.inner.clone();
 
+        // Build options from bypass_ripple
+        let update_options =
+            bypass_ripple.map(|br| ekodb_client::options::UpdateOptions::new().bypass_ripple(br));
+        let insert_options =
+            bypass_ripple.map(|br| ekodb_client::options::InsertOptions::new().bypass_ripple(br));
+
         future_into_py::<_, Py<PyAny>>(py, async move {
             // Try update first
-            match client.update(&collection, &id, rust_record.clone(), bypass_ripple).await {
-                Ok(updated) => {
-                    Python::attach(|py| record_to_dict(py, &updated))
-                }
+            match client
+                .update(&collection, &id, rust_record.clone(), update_options)
+                .await
+            {
+                Ok(updated) => Python::attach(|py| record_to_dict(py, &updated)),
                 Err(e) => {
                     // Check if it's a NotFound error
                     let error_msg = e.to_string();
                     if error_msg.contains("Not found") || error_msg.contains("404") {
                         // Record doesn't exist, insert it
                         let inserted = client
-                            .insert(&collection, rust_record, bypass_ripple)
+                            .insert(&collection, rust_record, insert_options)
                             .await
-                            .map_err(|e| PyRuntimeError::new_err(format!("Upsert insert failed: {}", e)))?;
+                            .map_err(|e| map_client_err("Upsert insert failed", e))?;
                         Python::attach(|py| record_to_dict(py, &inserted))
                     } else {
                         // Other error, propagate it
-                        Err(PyRuntimeError::new_err(format!("Upsert failed: {}", e)))
+                        Err(map_client_err("Upsert failed", e))
                     }
                 }
             }
@@ -513,15 +817,15 @@ impl Client {
     }
 
     /// Find a single record by field value
-    /// 
+    ///
     /// Convenience method for finding one record matching a specific field value.
     /// Returns None if no record matches, or the first matching record.
-    /// 
+    ///
     /// Args:
     ///     collection: Collection name
     ///     field: Field name to search
     ///     value: Value to match (any JSON-serializable type)
-    /// 
+    ///
     /// Returns:
     ///     The matching record as a dict, or None if not found
     fn find_one<'py>(
@@ -532,7 +836,7 @@ impl Client {
         value: Bound<'py, PyAny>,
     ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
-        
+
         // Convert Python value to JSON
         let json_value = py_to_json(&value)?;
 
@@ -554,7 +858,7 @@ impl Client {
             let results = client
                 .find(&collection, query, None)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Find one failed: {}", e)))?;
+                .map_err(|e| map_client_err("Find one failed", e))?;
 
             Python::attach(|py| {
                 if let Some(record) = results.first() {
@@ -567,13 +871,13 @@ impl Client {
     }
 
     /// Check if a record exists by ID
-    /// 
+    ///
     /// This is more efficient than fetching the record when you only need to check existence.
-    /// 
+    ///
     /// Args:
     ///     collection: Collection name
     ///     id: Record ID to check
-    /// 
+    ///
     /// Returns:
     ///     True if the record exists, False if it doesn't
     fn exists<'py>(
@@ -586,13 +890,17 @@ impl Client {
 
         future_into_py::<_, Py<PyAny>>(py, async move {
             match client.find_by_id(&collection, &id, None).await {
-                Ok(_) => Python::attach(|py| Ok(PyBool::new(py, true).as_borrowed().to_owned().into())),
+                Ok(_) => {
+                    Python::attach(|py| Ok(PyBool::new(py, true).as_borrowed().to_owned().into()))
+                }
                 Err(e) => {
                     let error_msg = e.to_string().to_lowercase();
                     if error_msg.contains("not found") || error_msg.contains("404") {
-                        Python::attach(|py| Ok(PyBool::new(py, false).as_borrowed().to_owned().into()))
+                        Python::attach(|py| {
+                            Ok(PyBool::new(py, false).as_borrowed().to_owned().into())
+                        })
                     } else {
-                        Err(PyRuntimeError::new_err(format!("Exists check failed: {}", e)))
+                        Err(map_client_err("Exists check failed", e))
                     }
                 }
             }
@@ -600,14 +908,14 @@ impl Client {
     }
 
     /// Paginate through records
-    /// 
+    ///
     /// Convenience method for pagination with page numbers (1-indexed).
-    /// 
+    ///
     /// Args:
     ///     collection: Collection name
     ///     page: Page number (1-indexed, i.e., first page is 1)
     ///     page_size: Number of records per page
-    /// 
+    ///
     /// Returns:
     ///     List of records for the requested page
     fn paginate<'py>(
@@ -630,7 +938,7 @@ impl Client {
             let results = client
                 .find(&collection, query, None)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Paginate failed: {}", e)))?;
+                .map_err(|e| map_client_err("Paginate failed", e))?;
 
             Python::attach(|py| {
                 let list = PyList::empty(py);
@@ -643,10 +951,10 @@ impl Client {
     }
 
     /// Restore all deleted records in a collection from trash
-    /// 
+    ///
     /// Args:
     ///     collection: Collection name
-    /// 
+    ///
     /// Returns:
     ///     Number of records restored
     fn restore_collection<'py>(
@@ -660,32 +968,51 @@ impl Client {
             let count = client
                 .restore_collection(&collection)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Restore collection failed: {}", e)))?;
+                .map_err(|e| map_client_err("Restore collection failed", e))?;
 
             Python::attach(|py| Ok(PyInt::new(py, count as i64).into()))
         })
     }
 
-    /// Health check - verify the ekoDB server is responding
-    /// 
+    /// Health check - reports whether the server is reachable (tolerates a
+    /// `degraded` HTTP 200). Use `health_status()` for the ok/degraded distinction.
+    ///
     /// Returns:
-    ///     True if the server is healthy, False otherwise
-    fn health_check<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+    ///     True if the server is reachable, False otherwise
+    fn health<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
 
         future_into_py::<_, Py<PyAny>>(py, async move {
-            let result = client
-                .health_check()
-                .await;
+            let result = client.health().await;
 
             Python::attach(|py| {
-                Ok(PyBool::new(py, result.is_ok()).as_borrowed().to_owned().into())
+                Ok(PyBool::new(py, result.is_ok())
+                    .as_borrowed()
+                    .to_owned()
+                    .into())
             })
         })
     }
 
+    /// Structured, degraded-tolerant health.
+    ///
+    /// Returns:
+    ///     A HealthStatus with .reachable, .status, .integrity_ok, and .detail.
+    ///     A reachable server that reports "degraded" has reachable=True (it is
+    ///     NOT treated as down); an unreachable server yields reachable=False,
+    ///     status="unknown". Use .to_dict() for a safe summary that excludes the
+    ///     internal .detail body.
+    fn health_status<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            let hs = client.health_status().await;
+            Python::attach(|py| Ok(Py::new(py, PyHealthStatus::from_core(hs))?.into_any()))
+        })
+    }
+
     /// Create a collection with optional schema
-    /// 
+    ///
     /// Args:
     ///     collection: Collection name
     ///     schema: Optional schema dict with field definitions
@@ -699,9 +1026,8 @@ impl Client {
         let client = self.inner.clone();
         let schema_config = if let Some(s) = schema {
             let schema_json = dict_to_json(s)?;
-            serde_json::from_value(schema_json).map_err(|e| {
-                PyValueError::new_err(format!("Failed to parse schema: {}", e))
-            })?
+            serde_json::from_value(schema_json)
+                .map_err(|e| PyValueError::new_err(format!("Failed to parse schema: {}", e)))?
         } else {
             ekodb_client::Schema::default()
         };
@@ -710,28 +1036,24 @@ impl Client {
             client
                 .create_collection(&collection, schema_config)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Create collection failed: {}", e)))?;
+                .map_err(|e| map_client_err("Create collection failed", e))?;
 
             Python::attach(|py| Ok(py.None()))
         })
     }
 
     /// Get collection schema
-    /// 
+    ///
     /// Args:
     ///     collection: Collection name
-    fn get_schema<'py>(
-        &self,
-        py: Python<'py>,
-        collection: String,
-    ) -> PyResult<Bound<'py, PyAny>> {
+    fn get_schema<'py>(&self, py: Python<'py>, collection: String) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
 
         future_into_py(py, async move {
             let schema = client
                 .get_schema(&collection)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Get schema failed: {}", e)))?;
+                .map_err(|e| map_client_err("Get schema failed", e))?;
 
             Python::attach(|py| {
                 let schema_json = serde_json::to_value(&schema).map_err(|e| {
@@ -743,7 +1065,7 @@ impl Client {
     }
 
     /// Get collection metadata
-    /// 
+    ///
     /// Args:
     ///     collection: Collection name
     fn get_collection<'py>(
@@ -757,7 +1079,7 @@ impl Client {
             let metadata = client
                 .get_collection(&collection)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Get collection failed: {}", e)))?;
+                .map_err(|e| map_client_err("Get collection failed", e))?;
 
             Python::attach(|py| {
                 let metadata_json = serde_json::to_value(&metadata).map_err(|e| {
@@ -769,7 +1091,7 @@ impl Client {
     }
 
     /// Search documents with full-text, vector, or hybrid search with all available parameters
-    /// 
+    ///
     /// Args:
     ///     collection: Collection name
     ///     query: Search query text (required)
@@ -794,7 +1116,11 @@ impl Client {
     ///     limit: Maximum number of results (optional)
     ///     select_fields: Fields to include in results (optional)
     ///     exclude_fields: Fields to exclude from results (optional)
-    #[pyo3(signature = (collection, query, language=None, case_sensitive=None, fuzzy=None, min_score=None, fields=None, weights=None, enable_stemming=None, boost_exact=None, max_edit_distance=None, vector=None, vector_field=None, vector_metric=None, vector_k=None, vector_threshold=None, text_weight=None, vector_weight=None, bypass_ripple=None, bypass_cache=None, limit=None, select_fields=None, exclude_fields=None))]
+    ///     filters: Metadata pre-filter for text/vector/hybrid search as a canonical
+    ///         QueryExpression dict (same format as find()); only matching
+    ///         records are candidates before ranking (optional)
+    #[pyo3(signature = (collection, query, language=None, case_sensitive=None, fuzzy=None, min_score=None, fields=None, weights=None, enable_stemming=None, boost_exact=None, max_edit_distance=None, vector=None, vector_field=None, vector_metric=None, vector_k=None, vector_threshold=None, text_weight=None, vector_weight=None, bypass_ripple=None, bypass_cache=None, limit=None, select_fields=None, exclude_fields=None, filters=None))]
+    #[allow(clippy::too_many_arguments)]
     fn search<'py>(
         &self,
         py: Python<'py>,
@@ -821,8 +1147,17 @@ impl Client {
         limit: Option<usize>,
         select_fields: Option<Vec<String>>,
         exclude_fields: Option<Vec<String>>,
+        filters: Option<&Bound<'py, PyDict>>,
     ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
+
+        // Metadata pre-filter for text/vector/hybrid search: a canonical
+        // QueryExpression dict (same format as find()/distinct_values()).
+        let filters_json = if let Some(f) = filters {
+            Some(dict_to_json(f)?)
+        } else {
+            None
+        };
 
         // Build SearchQuery with all parameters
         let search_query = RustSearchQuery {
@@ -848,19 +1183,230 @@ impl Client {
             vector_weight,
             select_fields,
             exclude_fields,
+            filters: filters_json,
         };
 
         future_into_py(py, async move {
             let results = client
                 .search(&collection, search_query)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Search failed: {}", e)))?;
+                .map_err(|e| map_client_err("Search failed", e))?;
 
             Python::attach(|py| {
                 let results_json = serde_json::to_value(&results).map_err(|e| {
                     PyRuntimeError::new_err(format!("Failed to serialize results: {}", e))
                 })?;
                 json_to_pydict(py, &results_json)
+            })
+        })
+    }
+
+    /// Get distinct (unique) values for a field across a collection.
+    ///
+    /// Returns a dict: { collection, field, values: [...], count: N }
+    ///
+    /// Args:
+    ///     collection: Collection name
+    ///     field: Field to get distinct values for
+    ///     filter: Optional filter dict (same format as find())
+    ///     bypass_ripple: Optional flag to bypass ripple propagation
+    ///     bypass_cache: Optional flag to bypass cache
+    #[pyo3(signature = (collection, field, filter=None, bypass_ripple=None, bypass_cache=None))]
+    fn distinct_values<'py>(
+        &self,
+        py: Python<'py>,
+        collection: String,
+        field: String,
+        filter: Option<&Bound<'py, PyDict>>,
+        bypass_ripple: Option<bool>,
+        bypass_cache: Option<bool>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        let filter_json = if let Some(f) = filter {
+            Some(dict_to_json(f)?)
+        } else {
+            None
+        };
+
+        future_into_py(py, async move {
+            let mut query = RustDistinctValuesQuery::new();
+            if let Some(f) = filter_json {
+                query = query.filter(f);
+            }
+            if let Some(br) = bypass_ripple {
+                query = query.bypass_ripple(br);
+            }
+            if let Some(bc) = bypass_cache {
+                query = query.bypass_cache(bc);
+            }
+
+            let resp = client
+                .distinct_values(&collection, &field, query)
+                .await
+                .map_err(|e| map_client_err("distinct_values failed", e))?;
+
+            Python::attach(|py| {
+                let resp_json = serde_json::to_value(&resp).map_err(|e| {
+                    PyRuntimeError::new_err(format!("Failed to serialize response: {}", e))
+                })?;
+                json_to_pydict(py, &resp_json)
+            })
+        })
+    }
+
+    /// Stateless raw LLM completion — no session, no history, no RAG.
+    ///
+    /// Sends a system prompt and user message directly to the LLM via ekoDB
+    /// and returns the raw text response. Returns a dict: { content: "..." }
+    ///
+    /// Args:
+    ///     system_prompt: System prompt passed verbatim to the LLM
+    ///     message: User message passed verbatim to the LLM
+    ///     provider: Optional LLM provider override
+    ///     model: Optional model name override
+    ///     max_tokens: Optional max tokens override
+    #[pyo3(signature = (system_prompt, message, provider=None, model=None, max_tokens=None))]
+    fn raw_completion<'py>(
+        &self,
+        py: Python<'py>,
+        system_prompt: String,
+        message: String,
+        provider: Option<String>,
+        model: Option<String>,
+        max_tokens: Option<i32>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py(py, async move {
+            let request = RustRawCompletionRequest {
+                system_prompt,
+                message,
+                provider,
+                model,
+                max_tokens,
+            };
+
+            let resp = client
+                .raw_completion(request)
+                .await
+                .map_err(|e| map_client_err("raw_completion failed", e))?;
+
+            Python::attach(|py| {
+                let resp_json = serde_json::to_value(&resp).map_err(|e| {
+                    PyRuntimeError::new_err(format!("Failed to serialize response: {}", e))
+                })?;
+                json_to_pydict(py, &resp_json)
+            })
+        })
+    }
+
+    /// Stateless raw LLM completion via SSE streaming.
+    ///
+    /// Same as raw_completion() but uses Server-Sent Events to keep the
+    /// connection alive. Preferred for deployed instances where reverse proxies
+    /// may kill idle HTTP connections before the LLM responds.
+    ///
+    /// Args:
+    ///     system_prompt: System instructions for the LLM
+    ///     message: User message to send
+    ///     provider: LLM provider (optional, uses server default)
+    ///     model: Model name (optional, uses server default)
+    ///     max_tokens: Maximum tokens in response (optional)
+    ///
+    /// Returns:
+    ///     dict with "content" key containing the LLM response text
+    fn raw_completion_stream<'py>(
+        &self,
+        py: Python<'py>,
+        system_prompt: String,
+        message: String,
+        provider: Option<String>,
+        model: Option<String>,
+        max_tokens: Option<i32>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py(py, async move {
+            let request = RustRawCompletionRequest {
+                system_prompt,
+                message,
+                provider,
+                model,
+                max_tokens,
+            };
+
+            let resp = client
+                .raw_completion_stream(request)
+                .await
+                .map_err(|e| map_client_err("raw_completion_stream failed", e))?;
+
+            Python::attach(|py| {
+                let resp_json = serde_json::to_value(&resp).map_err(|e| {
+                    PyRuntimeError::new_err(format!("Failed to serialize response: {}", e))
+                })?;
+                json_to_pydict(py, &resp_json)
+            })
+        })
+    }
+
+    /// Stateless raw LLM completion via SSE with per-token progress callback.
+    ///
+    /// Identical to `raw_completion_stream` but invokes `on_token` for each
+    /// token received, enabling real-time progress display.
+    ///
+    /// Args:
+    ///     system_prompt: System prompt
+    ///     message: User message
+    ///     on_token: Callable invoked with each token string
+    ///     provider: Optional provider name
+    ///     model: Optional model name
+    ///     max_tokens: Optional max tokens
+    fn raw_completion_stream_with_progress<'py>(
+        &self,
+        py: Python<'py>,
+        system_prompt: String,
+        message: String,
+        on_token: Py<PyAny>,
+        provider: Option<String>,
+        model: Option<String>,
+        max_tokens: Option<i32>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py(py, async move {
+            let request = RustRawCompletionRequest {
+                system_prompt,
+                message,
+                provider,
+                model,
+                max_tokens,
+            };
+
+            let (tx, mut rx) = tokio::sync::mpsc::channel::<String>(64);
+
+            let handle = tokio::spawn(async move {
+                client
+                    .raw_completion_stream_with_progress(request, tx)
+                    .await
+            });
+
+            // Forward tokens to the Python callback
+            while let Some(token) = rx.recv().await {
+                Python::attach(|py| {
+                    let _ = on_token.call1(py, (token,));
+                });
+            }
+
+            let resp = handle
+                .await
+                .map_err(|e| PyRuntimeError::new_err(format!("Task join failed: {}", e)))?
+                .map_err(|e| map_client_err("raw_completion_stream_with_progress failed", e))?;
+
+            Python::attach(|py| {
+                let resp_json = serde_json::to_value(&resp).map_err(|e| {
+                    PyRuntimeError::new_err(format!("Failed to serialize response: {}", e))
+                })?;
+                json_to_pydict(py, &resp_json)
             })
         })
     }
@@ -884,7 +1430,7 @@ impl Client {
             let results = client
                 .text_search(&collection, &query_text, limit)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Text search failed: {}", e)))?;
+                .map_err(|e| map_client_err("Text search failed", e))?;
 
             Python::attach(|py| {
                 let results_json = serde_json::to_value(&results).map_err(|e| {
@@ -916,7 +1462,7 @@ impl Client {
             let results = client
                 .hybrid_search(&collection, &query_text, query_vector, limit)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Hybrid search failed: {}", e)))?;
+                .map_err(|e| map_client_err("Hybrid search failed", e))?;
 
             Python::attach(|py| {
                 let results_json = serde_json::to_value(&results).map_err(|e| {
@@ -944,7 +1490,7 @@ impl Client {
             let results = client
                 .find_all(&collection, limit)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Find all failed: {}", e)))?;
+                .map_err(|e| map_client_err("Find all failed", e))?;
 
             Python::attach(|py| {
                 let results_json = serde_json::to_value(&results).map_err(|e| {
@@ -972,7 +1518,7 @@ impl Client {
             let embedding = client
                 .embed(&text, &model)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Embed failed: {}", e)))?;
+                .map_err(|e| map_client_err("Embed failed", e))?;
 
             Python::attach(|py| {
                 let list = PyList::new(py, &embedding)?;
@@ -981,8 +1527,38 @@ impl Client {
         })
     }
 
+    /// Generate embeddings for multiple texts in a single batch request
+    ///
+    /// Args:
+    ///     texts: List of texts to generate embeddings for
+    ///     model: The embedding model to use (e.g., "text-embedding-3-small")
+    fn embed_batch<'py>(
+        &self,
+        py: Python<'py>,
+        texts: Vec<String>,
+        model: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            let embeddings = client
+                .embed_batch(texts, &model)
+                .await
+                .map_err(|e| map_client_err("Embed batch failed", e))?;
+
+            Python::attach(|py| {
+                let outer = PyList::empty(py);
+                for embedding in &embeddings {
+                    let inner = PyList::new(py, embedding)?;
+                    outer.append(inner)?;
+                }
+                Ok(outer.into())
+            })
+        })
+    }
+
     /// Set a key-value pair
-    /// 
+    ///
     /// Args:
     ///     key: The key
     ///     value: The value as a dict
@@ -1006,25 +1582,21 @@ impl Client {
             client
                 .kv_set(&key, json_value, ttl.as_deref())
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("KV set failed: {}", e)))?;
+                .map_err(|e| map_client_err("KV set failed", e))?;
 
             Python::attach(|py| Ok(py.None()))
         })
     }
 
     /// Get a value by key
-    fn kv_get<'py>(
-        &self,
-        py: Python<'py>,
-        key: String,
-    ) -> PyResult<Bound<'py, PyAny>> {
+    fn kv_get<'py>(&self, py: Python<'py>, key: String) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
 
         future_into_py(py, async move {
             let result = client
                 .kv_get(&key)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("KV get failed: {}", e)))?;
+                .map_err(|e| map_client_err("KV get failed", e))?;
 
             Python::attach(|py| {
                 match result {
@@ -1044,40 +1616,167 @@ impl Client {
     }
 
     /// Delete a key
-    fn kv_delete<'py>(
-        &self,
-        py: Python<'py>,
-        key: String,
-    ) -> PyResult<Bound<'py, PyAny>> {
+    fn kv_delete<'py>(&self, py: Python<'py>, key: String) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
 
         future_into_py(py, async move {
             client
                 .kv_delete(&key)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("KV delete failed: {}", e)))?;
+                .map_err(|e| map_client_err("KV delete failed", e))?;
 
             Python::attach(|py| Ok(py.None()))
         })
     }
 
-    /// Check if a key exists
-    fn kv_exists<'py>(
+    /// Clear the entire KV store (all keys in the namespace).
+    fn kv_clear<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py(py, async move {
+            client
+                .kv_clear()
+                .await
+                .map_err(|e| map_client_err("KV clear failed", e))?;
+
+            Python::attach(|py| Ok(py.None()))
+        })
+    }
+
+    /// Batch get multiple keys
+    ///
+    /// Args:
+    ///     keys: List of keys to retrieve
+    ///
+    /// Returns:
+    ///     List of records corresponding to the keys
+    fn kv_batch_get<'py>(&self, py: Python<'py>, keys: Vec<String>) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            let results = client
+                .kv_batch_get(keys)
+                .await
+                .map_err(|e| map_client_err("KV batch get failed", e))?;
+
+            Python::attach(|py| {
+                let list = PyList::empty(py);
+                for record in results {
+                    list.append(record_to_dict(py, &record)?)?;
+                }
+                Ok(list.into())
+            })
+        })
+    }
+
+    /// Batch set multiple key-value pairs.
+    /// Note: TTL from the first entry with a valid TTL is applied to all entries (server limitation).
+    ///
+    /// Args:
+    ///     entries: List of dicts with 'key', 'value', and optional 'ttl' fields
+    ///              (ttl from first entry applies to all)
+    ///
+    /// Returns:
+    ///     List of tuples [(key, was_set), ...]
+    fn kv_batch_set<'py>(
         &self,
         py: Python<'py>,
-        key: String,
+        entries: Vec<Bound<'py, PyDict>>,
     ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        let mut keys = Vec::new();
+        let mut values = Vec::new();
+        let mut ttl = None;
+
+        for entry in entries {
+            let key: String = entry
+                .get_item("key")?
+                .ok_or_else(|| PyValueError::new_err("Entry missing 'key' field"))?
+                .extract()?;
+            let value_bound = entry
+                .get_item("value")?
+                .ok_or_else(|| PyValueError::new_err("Entry missing 'value' field"))?;
+
+            // Convert value to Record
+            let value_dict = value_bound
+                .cast::<PyDict>()
+                .map_err(|_| PyValueError::new_err("Entry 'value' must be a dict"))?;
+
+            keys.push(key);
+            values.push(dict_to_record(value_dict)?);
+
+            // Server applies a single TTL to all entries - use first entry's TTL if provided
+            if ttl.is_none() {
+                if let Ok(Some(ttl_val)) = entry.get_item("ttl") {
+                    ttl = Some(ttl_val.extract::<i64>()?);
+                }
+            }
+        }
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            let results = client
+                .kv_batch_set(keys.clone(), values, ttl)
+                .await
+                .map_err(|e| map_client_err("KV batch set failed", e))?;
+
+            Python::attach(|py| {
+                let list = PyList::empty(py);
+                for (key, was_set) in results {
+                    let py_key = PyString::new(py, &key);
+                    let py_bool = PyBool::new(py, was_set);
+                    let tuple = PyTuple::new(py, &[py_key.as_any(), py_bool.as_any()])?;
+                    list.append(tuple)?;
+                }
+                Ok(list.into())
+            })
+        })
+    }
+
+    /// Batch delete multiple keys
+    ///
+    /// Args:
+    ///     keys: List of keys to delete
+    ///
+    /// Returns:
+    ///     List of tuples [(key, was_deleted), ...]
+    fn kv_batch_delete<'py>(
+        &self,
+        py: Python<'py>,
+        keys: Vec<String>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            let results = client
+                .kv_batch_delete(keys.clone())
+                .await
+                .map_err(|e| map_client_err("KV batch delete failed", e))?;
+
+            Python::attach(|py| {
+                let list = PyList::empty(py);
+                for (key, was_deleted) in results {
+                    let py_key = PyString::new(py, &key);
+                    let py_bool = PyBool::new(py, was_deleted);
+                    let tuple = PyTuple::new(py, &[py_key.as_any(), py_bool.as_any()])?;
+                    list.append(tuple)?;
+                }
+                Ok(list.into())
+            })
+        })
+    }
+
+    /// Check if a key exists
+    fn kv_exists<'py>(&self, py: Python<'py>, key: String) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
 
         future_into_py::<_, Py<PyAny>>(py, async move {
             let exists = client
                 .kv_exists(&key)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("KV exists failed: {}", e)))?;
+                .map_err(|e| map_client_err("KV exists failed", e))?;
 
-            Python::attach(|py| {
-                Ok(PyBool::new(py, exists).as_borrowed().to_owned().into())
-            })
+            Python::attach(|py| Ok(PyBool::new(py, exists).as_borrowed().to_owned().into()))
         })
     }
 
@@ -1095,7 +1794,7 @@ impl Client {
             let result = client
                 .kv_find(pattern.as_deref(), include_expired)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("KV find failed: {}", e)))?;
+                .map_err(|e| map_client_err("KV find failed", e))?;
 
             Python::attach(|py| {
                 let list = PyList::empty(py);
@@ -1135,7 +1834,7 @@ impl Client {
             let result = client
                 .begin_transaction(&isolation_level)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Begin transaction failed: {}", e)))?;
+                .map_err(|e| map_client_err("Begin transaction failed", e))?;
 
             Ok(result)
         })
@@ -1153,7 +1852,7 @@ impl Client {
             let result = client
                 .get_transaction_status(&transaction_id)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Get transaction status failed: {}", e)))?;
+                .map_err(|e| map_client_err("Get transaction status failed", e))?;
 
             Python::attach(|py| {
                 let dict = PyDict::new(py);
@@ -1180,7 +1879,7 @@ impl Client {
             client
                 .commit_transaction(&transaction_id)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Commit transaction failed: {}", e)))?;
+                .map_err(|e| map_client_err("Commit transaction failed", e))?;
 
             Python::attach(|py| Ok(py.None()))
         })
@@ -1198,8 +1897,60 @@ impl Client {
             client
                 .rollback_transaction(&transaction_id)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Rollback transaction failed: {}", e)))?;
+                .map_err(|e| map_client_err("Rollback transaction failed", e))?;
 
+            Python::attach(|py| Ok(py.None()))
+        })
+    }
+
+    /// Create a savepoint within a transaction. A later rollback_to_savepoint
+    /// discards everything staged after it.
+    fn create_savepoint<'py>(
+        &self,
+        py: Python<'py>,
+        transaction_id: String,
+        name: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            client
+                .create_savepoint(&transaction_id, &name)
+                .await
+                .map_err(|e| map_client_err("Create savepoint failed", e))?;
+            Python::attach(|py| Ok(py.None()))
+        })
+    }
+
+    /// Roll a transaction back to a savepoint, discarding writes staged after it.
+    fn rollback_to_savepoint<'py>(
+        &self,
+        py: Python<'py>,
+        transaction_id: String,
+        name: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            client
+                .rollback_to_savepoint(&transaction_id, &name)
+                .await
+                .map_err(|e| map_client_err("Rollback to savepoint failed", e))?;
+            Python::attach(|py| Ok(py.None()))
+        })
+    }
+
+    /// Release (forget) a savepoint. Staged work is unaffected.
+    fn release_savepoint<'py>(
+        &self,
+        py: Python<'py>,
+        transaction_id: String,
+        name: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            client
+                .release_savepoint(&transaction_id, &name)
+                .await
+                .map_err(|e| map_client_err("Release savepoint failed", e))?;
             Python::attach(|py| Ok(py.None()))
         })
     }
@@ -1208,8 +1959,40 @@ impl Client {
 
     // Note: The chat() method has been removed. Use create_chat_session() and chat_message() instead.
 
+    /// Execute a tool via ekoDB's server-side tool pipeline.
+    ///
+    /// Calls POST /api/chat/tools/execute which goes through the same
+    /// execute_tool function as the LLM tool-calling loop — with all
+    /// collection filtering, permission enforcement, and internal collection
+    /// blocking. No LLM round-trip.
+    ///
+    /// Returns the tool result dict if executed, None if the server doesn't
+    /// support the endpoint (older ekoDB versions).
+    #[pyo3(signature = (tool_name, params, chat_id=None))]
+    fn execute_tool<'py>(
+        &self,
+        py: Python<'py>,
+        tool_name: String,
+        params: Bound<'py, PyDict>,
+        chat_id: Option<String>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        let params_json = dict_to_json(&params)?;
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            match client
+                .execute_tool(&tool_name, &params_json, chat_id.as_deref())
+                .await
+            {
+                Some(Ok(result)) => Python::attach(|py| json_to_pydict(py, &result)),
+                Some(Err(e)) => Err(PyRuntimeError::new_err(e.to_string())),
+                None => Python::attach(|py| Ok(py.None().into())),
+            }
+        })
+    }
+
     /// Create a new chat session
-    #[pyo3(signature = (collections, llm_provider, llm_model=None, system_prompt=None))]
+    #[pyo3(signature = (collections, llm_provider, llm_model=None, system_prompt=None, max_context_messages=None, bypass_ripple=None, max_tokens=None, temperature=None, agent_id=None))]
     fn create_chat_session<'py>(
         &self,
         py: Python<'py>,
@@ -1217,6 +2000,11 @@ impl Client {
         llm_provider: String,
         llm_model: Option<String>,
         system_prompt: Option<String>,
+        max_context_messages: Option<usize>,
+        bypass_ripple: Option<bool>,
+        max_tokens: Option<i32>,
+        temperature: Option<f32>,
+        agent_id: Option<String>,
     ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
 
@@ -1235,43 +2023,160 @@ impl Client {
                 llm_provider,
                 llm_model,
                 system_prompt,
-                bypass_ripple: None,
+                agent_id,
+                bypass_ripple,
                 parent_id: None,
                 branch_point_idx: None,
-                max_context_messages: None,
+                max_context_messages,
+                max_tokens,
+                temperature,
+                tool_config: None,
             };
 
             let result = client
                 .create_chat_session(request)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Create session failed: {}", e)))?;
+                .map_err(|e| map_client_err("Create session failed", e))?;
 
             Python::attach(|py| chat_response_to_dict(py, &result))
         })
     }
 
-    /// Send a message in an existing chat session
+    /// Submit a client tool result for an in-flight SSE chat stream.
+    #[pyo3(signature = (chat_id, call_id, success, result=None, error=None))]
+    fn submit_chat_tool_result<'py>(
+        &self,
+        py: Python<'py>,
+        chat_id: String,
+        call_id: String,
+        success: bool,
+        result: Option<Bound<'py, PyAny>>,
+        error: Option<String>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        let result_json = result.map(|v| py_to_json(&v)).transpose()?;
+
+        future_into_py(py, async move {
+            client
+                .submit_chat_tool_result(&chat_id, &call_id, success, result_json, error)
+                .await
+                .map_err(|e| map_client_err("Submit tool result failed", e))?;
+
+            Python::attach(|py| Ok(py.None()))
+        })
+    }
+
+    /// Submit a client tool keepalive for an in-flight SSE chat stream.
+    ///
+    /// This is a liveness ping, NOT a result: it resets the server's
+    /// per-tool wait deadline so a long-running client tool isn't timed
+    /// out before it can submit its result (ekoDB#530).
+    #[pyo3(signature = (chat_id, call_id))]
+    fn submit_chat_tool_keepalive<'py>(
+        &self,
+        py: Python<'py>,
+        chat_id: String,
+        call_id: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py(py, async move {
+            client
+                .submit_chat_tool_keepalive(&chat_id, &call_id)
+                .await
+                .map_err(|e| map_client_err("Submit tool keepalive failed", e))?;
+
+            Python::attach(|py| Ok(py.None()))
+        })
+    }
+
+    /// Send a message in an existing chat session.
+    ///
+    /// `attachments` (optional) is a list of dicts of the shape
+    /// `{"mime_type": "image/png", "data": "<base64>"}`, mirroring the
+    /// `Attachment` struct on the Rust side. Under ~20 MB stays inline;
+    /// larger files are routed through the provider's File API on the
+    /// server side.
+    #[pyo3(signature = (chat_id, message, bypass_ripple=None, force_summarize=None, max_iterations=None, attachments=None))]
     fn chat_message<'py>(
         &self,
         py: Python<'py>,
         chat_id: String,
         message: String,
+        bypass_ripple: Option<bool>,
+        force_summarize: Option<bool>,
+        max_iterations: Option<u32>,
+        attachments: Option<Bound<'py, PyAny>>,
     ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
+        let attachments = py_to_attachments(attachments.as_ref())?;
 
         future_into_py(py, async move {
             let request = ChatMessageRequest {
                 message,
-                bypass_ripple: None,
-                force_summarize: None,
+                bypass_ripple,
+                force_summarize,
+                max_iterations,
+                tool_config: None,
+                llm_model: None,
+                client_tools: None,
+                confirm_tools: None,
+                exclude_tools: None,
+                attachments,
             };
 
             let result = client
                 .chat_message(&chat_id, request)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Chat message failed: {}", e)))?;
+                .map_err(|e| map_client_err("Chat message failed", e))?;
 
             Python::attach(|py| chat_response_to_dict(py, &result))
+        })
+    }
+
+    /// Stream a chat message via SSE (Server-Sent Events).
+    /// Returns a ChatStreamReceiver for receiving events incrementally.
+    ///
+    /// `attachments` accepts the same shape as `chat_message`.
+    #[pyo3(signature = (chat_id, message, bypass_ripple=None, force_summarize=None, max_iterations=None, attachments=None))]
+    fn chat_message_stream<'py>(
+        &self,
+        py: Python<'py>,
+        chat_id: String,
+        message: String,
+        bypass_ripple: Option<bool>,
+        force_summarize: Option<bool>,
+        max_iterations: Option<u32>,
+        attachments: Option<Bound<'py, PyAny>>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        let attachments = py_to_attachments(attachments.as_ref())?;
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            let request = ChatMessageRequest {
+                message,
+                bypass_ripple,
+                force_summarize,
+                max_iterations,
+                tool_config: None,
+                llm_model: None,
+                client_tools: None,
+                confirm_tools: None,
+                exclude_tools: None,
+                attachments,
+            };
+
+            let rx = client
+                .chat_message_stream(&chat_id, request)
+                .await
+                .map_err(|e| map_client_err("Chat message stream failed", e))?;
+
+            Python::attach(|py| {
+                let receiver = ChatStreamReceiver {
+                    inner: std::sync::Arc::new(tokio::sync::Mutex::new(rx)),
+                };
+                Ok(Py::new(py, receiver)?.into())
+            })
         })
     }
 
@@ -1292,7 +2197,7 @@ impl Client {
             let result = client
                 .list_chat_sessions(query)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("List sessions failed: {}", e)))?;
+                .map_err(|e| map_client_err("List sessions failed", e))?;
 
             Python::attach(|py| list_sessions_response_to_dict(py, &result))
         })
@@ -1316,7 +2221,7 @@ impl Client {
             let result = client
                 .get_chat_session_messages(&chat_id, query)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Get messages failed: {}", e)))?;
+                .map_err(|e| map_client_err("Get messages failed", e))?;
 
             Python::attach(|py| get_messages_response_to_dict(py, &result))
         })
@@ -1334,7 +2239,7 @@ impl Client {
             let result = client
                 .get_chat_session(&chat_id)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Get session failed: {}", e)))?;
+                .map_err(|e| map_client_err("Get session failed", e))?;
 
             Python::attach(|py| {
                 let dict = PyDict::new(py);
@@ -1346,13 +2251,16 @@ impl Client {
     }
 
     /// Update a chat session
-    #[pyo3(signature = (chat_id, system_prompt=None, llm_model=None))]
+    #[pyo3(signature = (chat_id, system_prompt=None, llm_model=None, title=None, max_context_messages=None, bypass_ripple=None))]
     fn update_chat_session<'py>(
         &self,
         py: Python<'py>,
         chat_id: String,
         system_prompt: Option<String>,
         llm_model: Option<String>,
+        title: Option<String>,
+        max_context_messages: Option<usize>,
+        bypass_ripple: Option<bool>,
     ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
 
@@ -1361,13 +2269,16 @@ impl Client {
                 system_prompt,
                 llm_model,
                 collections: None,
-                title: None,
+                max_context_messages,
+                bypass_ripple,
+                title,
+                memory: None,
             };
 
             let result = client
                 .update_chat_session(&chat_id, request)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Update session failed: {}", e)))?;
+                .map_err(|e| map_client_err("Update session failed", e))?;
 
             Python::attach(|py| {
                 let dict = PyDict::new(py);
@@ -1406,16 +2317,20 @@ impl Client {
                 llm_provider,
                 llm_model,
                 system_prompt: None,
+                agent_id: None,
                 bypass_ripple: None,
                 parent_id: Some(parent_id),
                 branch_point_idx: Some(branch_point_idx),
                 max_context_messages: None,
+                max_tokens: None,
+                temperature: None,
+                tool_config: None,
             };
 
             let result = client
                 .branch_chat_session(request)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Branch session failed: {}", e)))?;
+                .map_err(|e| map_client_err("Branch session failed", e))?;
 
             Python::attach(|py| chat_response_to_dict(py, &result))
         })
@@ -1433,7 +2348,7 @@ impl Client {
             client
                 .delete_chat_session(&chat_id)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Delete session failed: {}", e)))?;
+                .map_err(|e| map_client_err("Delete session failed", e))?;
 
             Python::attach(|py| Ok(py.None()))
         })
@@ -1452,7 +2367,7 @@ impl Client {
             let result = client
                 .regenerate_chat_message(&chat_id, &message_id)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Regenerate message failed: {}", e)))?;
+                .map_err(|e| map_client_err("Regenerate message failed", e))?;
 
             Python::attach(|py| chat_response_to_dict(py, &result))
         })
@@ -1470,11 +2385,11 @@ impl Client {
 
         future_into_py(py, async move {
             let request = ekodb_client::UpdateMessageRequest { content };
-            
+
             client
                 .update_chat_message(&chat_id, &message_id, request)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Update message failed: {}", e)))?;
+                .map_err(|e| map_client_err("Update message failed", e))?;
 
             Python::attach(|py| Ok(py.None()))
         })
@@ -1493,7 +2408,7 @@ impl Client {
             client
                 .delete_chat_message(&chat_id, &message_id)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Delete message failed: {}", e)))?;
+                .map_err(|e| map_client_err("Delete message failed", e))?;
 
             Python::attach(|py| Ok(py.None()))
         })
@@ -1511,46 +2426,93 @@ impl Client {
 
         future_into_py(py, async move {
             let request = ekodb_client::ToggleForgottenRequest { forgotten };
-            
+
             client
                 .toggle_forgotten_message(&chat_id, &message_id, request)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Toggle forgotten failed: {}", e)))?;
+                .map_err(|e| map_client_err("Toggle forgotten failed", e))?;
 
             Python::attach(|py| Ok(py.None()))
         })
     }
 
+    /// Compact a chat session's history on demand.
+    ///
+    /// Folds older messages into a single summary message and marks the
+    /// originals "forgotten" so they stop being replayed, reclaiming
+    /// context-window budget while keeping a faithful summary in the prompt.
+    ///
+    /// Args:
+    ///     chat_id: The chat session ID
+    ///     keep_recent: How many most-recent messages to keep verbatim.
+    ///         None uses the session's max_context_messages (or 50).
+    ///         0 compacts the entire history.
+    ///
+    /// Returns:
+    ///     A dict with keys: folded (int), kept_recent (int),
+    ///     summary_chars (int), summary_message_id (str | None),
+    ///     already_compact (bool).
+    #[pyo3(signature = (chat_id, keep_recent=None))]
+    fn compact_chat<'py>(
+        &self,
+        py: Python<'py>,
+        chat_id: String,
+        keep_recent: Option<usize>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            let result = client
+                .compact_chat(&chat_id, keep_recent)
+                .await
+                .map_err(|e| map_client_err("Compact chat failed", e))?;
+
+            Python::attach(|py| {
+                let dict = PyDict::new(py);
+                dict.set_item("folded", result.folded)?;
+                dict.set_item("kept_recent", result.kept_recent)?;
+                dict.set_item("summary_chars", result.summary_chars)?;
+                dict.set_item("summary_message_id", result.summary_message_id)?;
+                dict.set_item("already_compact", result.already_compact)?;
+                Ok(dict.into())
+            })
+        })
+    }
+
     /// Merge multiple chat sessions into one
+    #[pyo3(signature = (source_chat_ids, target_chat_id, merge_strategy, bypass_ripple=None))]
     fn merge_chat_sessions<'py>(
         &self,
         py: Python<'py>,
         source_chat_ids: Vec<String>,
         target_chat_id: String,
         merge_strategy: String,
+        bypass_ripple: Option<bool>,
     ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
 
         future_into_py::<_, Py<PyAny>>(py, async move {
             use ekodb_client::MergeStrategy;
-            
+
             let strategy = match merge_strategy.as_str() {
                 "Chronological" => MergeStrategy::Chronological,
                 "Summarized" => MergeStrategy::Summarized,
                 "LatestOnly" => MergeStrategy::LatestOnly,
-                _ => return Err(PyRuntimeError::new_err(format!("Invalid merge strategy: {}. Valid options: Chronological, Summarized, LatestOnly", merge_strategy))),
+                "Interleaved" => MergeStrategy::Interleaved,
+                _ => return Err(PyRuntimeError::new_err(format!("Invalid merge strategy: {}. Valid options: Chronological, Summarized, LatestOnly, Interleaved", merge_strategy))),
             };
 
             let request = ekodb_client::MergeSessionsRequest {
                 source_chat_ids: source_chat_ids,
                 target_chat_id: target_chat_id,
                 merge_strategy: strategy,
+                bypass_ripple,
             };
 
             let result = client
                 .merge_chat_sessions(request)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Merge sessions failed: {}", e)))?;
+                .map_err(|e| map_client_err("Merge sessions failed", e))?;
 
             Python::attach(|py| {
                 let dict = PyDict::new(py);
@@ -1568,11 +2530,11 @@ impl Client {
     /// Save a new script definition
     ///
     /// Args:
-    ///     script: Script definition as a dict
+    ///     function: Function definition as a dict
     ///
     /// Returns:
-    ///     Script ID string
-    fn save_script<'py>(
+    ///     Function ID string
+    fn save_function<'py>(
         &self,
         py: Python<'py>,
         script: &Bound<'py, PyDict>,
@@ -1580,16 +2542,16 @@ impl Client {
         let client = self.inner.clone();
         let script_json = serde_json::to_string(&pydict_to_json(py, script)?)
             .map_err(|e| PyValueError::new_err(format!("Invalid script definition: {}", e)))?;
-        
+
         future_into_py::<_, Py<PyAny>>(py, async move {
-            let script: RustScript = serde_json::from_str(&script_json)
+            let script: RustUserFunction = serde_json::from_str(&script_json)
                 .map_err(|e| PyRuntimeError::new_err(format!("Failed to parse script: {}", e)))?;
-            
+
             let id = client
-                .save_script(script)
+                .save_function(script)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Save script failed: {}", e)))?;
-            
+                .map_err(|e| map_client_err("Save script failed", e))?;
+
             Python::attach(|py| Ok(PyString::new(py, &id).into()))
         })
     }
@@ -1597,26 +2559,22 @@ impl Client {
     /// Get a script by ID
     ///
     /// Args:
-    ///     id: Script ID
+    ///     id: Function ID
     ///
     /// Returns:
-    ///     Script definition as a dict
-    fn get_script<'py>(
-        &self,
-        py: Python<'py>,
-        id: String,
-    ) -> PyResult<Bound<'py, PyAny>> {
+    ///     Function definition as a dict
+    fn get_function<'py>(&self, py: Python<'py>, id: String) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
-        
+
         future_into_py(py, async move {
             let script = client
-                .get_script(&id)
+                .get_function(&id)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Get script failed: {}", e)))?;
-            
+                .map_err(|e| map_client_err("Get script failed", e))?;
+
             let json = serde_json::to_value(&script)
                 .map_err(|e| PyRuntimeError::new_err(format!("Serialization failed: {}", e)))?;
-            
+
             Python::attach(|py| json_to_pydict(py, &json))
         })
     }
@@ -1628,22 +2586,22 @@ impl Client {
     ///
     /// Returns:
     ///     List of script definitions
-    fn list_scripts<'py>(
+    fn list_functions<'py>(
         &self,
         py: Python<'py>,
         tags: Option<Vec<String>>,
     ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
-        
+
         future_into_py(py, async move {
             let scripts = client
-                .list_scripts(tags)
+                .list_functions(tags)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("List scripts failed: {}", e)))?;
-            
+                .map_err(|e| map_client_err("List scripts failed", e))?;
+
             let json = serde_json::to_value(&scripts)
                 .map_err(|e| PyRuntimeError::new_err(format!("Serialization failed: {}", e)))?;
-            
+
             Python::attach(|py| json_to_pydict(py, &json))
         })
     }
@@ -1651,9 +2609,9 @@ impl Client {
     /// Update an existing script
     ///
     /// Args:
-    ///     id: Script ID
+    ///     id: Function ID
     ///     script: Updated script definition as a dict
-    fn update_script<'py>(
+    fn update_function<'py>(
         &self,
         py: Python<'py>,
         script_id: String,
@@ -1662,16 +2620,16 @@ impl Client {
         let client = self.inner.clone();
         let script_json = serde_json::to_string(&pydict_to_json(py, data)?)
             .map_err(|e| PyValueError::new_err(format!("Invalid script definition: {}", e)))?;
-        
+
         future_into_py(py, async move {
-            let script: RustScript = serde_json::from_str(&script_json)
+            let script: RustUserFunction = serde_json::from_str(&script_json)
                 .map_err(|e| PyRuntimeError::new_err(format!("Failed to parse script: {}", e)))?;
-            
+
             client
-                .update_script(&script_id, script)
+                .update_function(&script_id, script)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Update script failed: {}", e)))?;
-            
+                .map_err(|e| map_client_err("Update script failed", e))?;
+
             Python::attach(|py| Ok(py.None()))
         })
     }
@@ -1679,20 +2637,16 @@ impl Client {
     /// Delete a script by ID
     ///
     /// Args:
-    ///     id: Script ID
-    fn delete_script<'py>(
-        &self,
-        py: Python<'py>,
-        id: String,
-    ) -> PyResult<Bound<'py, PyAny>> {
+    ///     id: Function ID
+    fn delete_function<'py>(&self, py: Python<'py>, id: String) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
-        
+
         future_into_py(py, async move {
             client
-                .delete_script(&id)
+                .delete_function(&id)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Delete script failed: {}", e)))?;
-            
+                .map_err(|e| map_client_err("Delete script failed", e))?;
+
             Python::attach(|py| Ok(py.None()))
         })
     }
@@ -1700,13 +2654,13 @@ impl Client {
     /// Call a saved script by ID or label
     ///
     /// Args:
-    ///     script_id_or_label: Script ID or label name
+    ///     script_id_or_label: Function ID or label name
     ///     params: Optional parameters as a dict
     ///
     /// Returns:
-    ///     Script execution result with records and metadata
+    ///     Function execution result with records and metadata
     #[pyo3(signature = (script_id_or_label, params=None))]
-    fn call_script<'py>(
+    fn call_function<'py>(
         &self,
         py: Python<'py>,
         script_id_or_label: String,
@@ -1718,16 +2672,16 @@ impl Client {
         } else {
             None
         };
-        
+
         future_into_py::<_, Py<PyAny>>(py, async move {
             let result = client
-                .call_script(&script_id_or_label, params_map)
+                .call_function(&script_id_or_label, params_map)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("Call script failed: {}", e)))?;
-            
+                .map_err(|e| map_client_err("Call script failed", e))?;
+
             Python::attach(|py| {
                 let dict = PyDict::new(py);
-                
+
                 // Convert records
                 let records_list = PyList::empty(py);
                 for record in &result.records {
@@ -1736,29 +2690,367 @@ impl Client {
                     records_list.append(json_to_pydict(py, &record_value)?)?;
                 }
                 dict.set_item("records", records_list)?;
-                
+
                 // Convert stats (not metadata)
                 let stats = json_to_pydict(py, &serde_json::to_value(&result.stats).unwrap())?;
                 dict.set_item("stats", stats)?;
-                
+
                 Ok(dict.into())
             })
         })
     }
 
-    /// Create a WebSocket connection
-    fn websocket<'py>(
+    // ========================================================================
+    // CHAT MODELS API
+    // ========================================================================
+
+    /// Get all available chat models from all providers
+    ///
+    /// Returns:
+    ///     Dict with provider names as keys and lists of model names as values
+    /// Get all built-in server-side chat tool definitions.
+    ///
+    /// Returns a list of dicts with name, description, and parameters fields.
+    /// Used by planning agents to discover available tools dynamically.
+    fn get_chat_tools<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            let tools = client
+                .get_chat_tools()
+                .await
+                .map_err(|e| map_client_err("Get chat tools failed", e))?;
+
+            Python::attach(|py| {
+                let list = pyo3::types::PyList::empty(py);
+                for tool in tools {
+                    let json_str = serde_json::to_string(&tool)
+                        .map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
+                    let obj: Py<PyAny> = py
+                        .import("json")?
+                        .call_method1("loads", (json_str,))?
+                        .into();
+                    list.append(obj)?;
+                }
+                Ok(list.into())
+            })
+        })
+    }
+
+    fn get_chat_models<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            let models = client
+                .get_chat_models()
+                .await
+                .map_err(|e| map_client_err("Get chat models failed", e))?;
+
+            Python::attach(|py| {
+                let dict = PyDict::new(py);
+                dict.set_item("openai", models.openai)?;
+                dict.set_item("anthropic", models.anthropic)?;
+                dict.set_item("perplexity", models.perplexity)?;
+                Ok(dict.into())
+            })
+        })
+    }
+
+    /// Get available models for a specific provider
+    ///
+    /// Args:
+    ///     provider_name: Name of the provider (e.g., "openai", "anthropic")
+    ///
+    /// Returns:
+    ///     List of model names for the specified provider
+    fn get_chat_model<'py>(
         &self,
         py: Python<'py>,
-        ws_url: String,
+        provider_name: String,
     ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            let models = client
+                .get_chat_model(&provider_name)
+                .await
+                .map_err(|e| map_client_err("Get chat model failed", e))?;
+
+            Python::attach(|py| {
+                let list = PyList::new(py, &models)?;
+                Ok(list.into())
+            })
+        })
+    }
+
+    /// Get a specific chat message by ID
+    ///
+    /// Args:
+    ///     chat_id: Chat session ID
+    ///     message_id: Message ID
+    ///
+    /// Returns:
+    ///     Message record as a dict
+    fn get_chat_message<'py>(
+        &self,
+        py: Python<'py>,
+        chat_id: String,
+        message_id: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py(py, async move {
+            let message = client
+                .get_chat_message(&chat_id, &message_id)
+                .await
+                .map_err(|e| map_client_err("Get chat message failed", e))?;
+
+            Python::attach(|py| record_to_dict(py, &message))
+        })
+    }
+
+    // ========================================================================
+    // USER FUNCTIONS API
+    // ========================================================================
+
+    /// Save a new user function definition
+    ///
+    /// Args:
+    ///     user_function: User function definition as a dict
+    ///
+    /// Returns:
+    ///     User function ID string
+    fn save_user_function<'py>(
+        &self,
+        py: Python<'py>,
+        user_function: &Bound<'py, PyDict>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        let func_json =
+            serde_json::to_string(&pydict_to_json(py, user_function)?).map_err(|e| {
+                PyValueError::new_err(format!("Invalid user function definition: {}", e))
+            })?;
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            let user_func: RustUserFunction = serde_json::from_str(&func_json).map_err(|e| {
+                PyRuntimeError::new_err(format!("Failed to parse user function: {}", e))
+            })?;
+
+            let id = client
+                .save_user_function(user_func)
+                .await
+                .map_err(|e| map_client_err("Save user function failed", e))?;
+
+            Python::attach(|py| Ok(PyString::new(py, &id).into()))
+        })
+    }
+
+    /// Get a user function by label
+    ///
+    /// Args:
+    ///     label: User function label (unique identifier)
+    ///
+    /// Returns:
+    ///     User function definition as a dict
+    fn get_user_function<'py>(
+        &self,
+        py: Python<'py>,
+        label: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py(py, async move {
+            let user_func = client
+                .get_user_function(&label)
+                .await
+                .map_err(|e| map_client_err("Get user function failed", e))?;
+
+            let json = serde_json::to_value(&user_func)
+                .map_err(|e| PyRuntimeError::new_err(format!("Serialization failed: {}", e)))?;
+
+            Python::attach(|py| json_to_pydict(py, &json))
+        })
+    }
+
+    /// List all user functions, optionally filtered by tags
+    ///
+    /// Args:
+    ///     tags: Optional list of tags to filter by
+    ///
+    /// Returns:
+    ///     List of user function definitions
+    #[pyo3(signature = (tags=None))]
+    fn list_user_functions<'py>(
+        &self,
+        py: Python<'py>,
+        tags: Option<Vec<String>>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py(py, async move {
+            let user_funcs = client
+                .list_user_functions(tags)
+                .await
+                .map_err(|e| map_client_err("List user functions failed", e))?;
+
+            let json = serde_json::to_value(&user_funcs)
+                .map_err(|e| PyRuntimeError::new_err(format!("Serialization failed: {}", e)))?;
+
+            Python::attach(|py| json_to_pydict(py, &json))
+        })
+    }
+
+    /// Update an existing user function by label
+    ///
+    /// Args:
+    ///     label: User function label (unique identifier)
+    ///     user_function: Updated user function definition as a dict
+    fn update_user_function<'py>(
+        &self,
+        py: Python<'py>,
+        label: String,
+        user_function: &Bound<'py, PyDict>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        let func_json =
+            serde_json::to_string(&pydict_to_json(py, user_function)?).map_err(|e| {
+                PyValueError::new_err(format!("Invalid user function definition: {}", e))
+            })?;
+
+        future_into_py(py, async move {
+            let user_func: RustUserFunction = serde_json::from_str(&func_json).map_err(|e| {
+                PyRuntimeError::new_err(format!("Failed to parse user function: {}", e))
+            })?;
+
+            client
+                .update_user_function(&label, user_func)
+                .await
+                .map_err(|e| map_client_err("Update user function failed", e))?;
+
+            Python::attach(|py| Ok(py.None()))
+        })
+    }
+
+    /// Delete a user function by label
+    ///
+    /// Args:
+    ///     label: User function label (unique identifier)
+    fn delete_user_function<'py>(
+        &self,
+        py: Python<'py>,
+        label: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py(py, async move {
+            client
+                .delete_user_function(&label)
+                .await
+                .map_err(|e| map_client_err("Delete user function failed", e))?;
+
+            Python::attach(|py| Ok(py.None()))
+        })
+    }
+
+    // ========================================================================
+    // COLLECTION UTILITIES
+    // ========================================================================
+
+    /// Check if a collection exists
+    ///
+    /// Args:
+    ///     collection: Collection name
+    ///
+    /// Returns:
+    ///     True if the collection exists, False otherwise
+    fn collection_exists<'py>(
+        &self,
+        py: Python<'py>,
+        collection: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            let exists = client
+                .collection_exists(&collection)
+                .await
+                .map_err(|e| map_client_err("Collection exists check failed", e))?;
+
+            Python::attach(|py| Ok(PyBool::new(py, exists).as_borrowed().to_owned().into()))
+        })
+    }
+
+    /// Count documents in a collection
+    ///
+    /// Args:
+    ///     collection: Collection name
+    ///
+    /// Returns:
+    ///     Number of documents in the collection
+    fn count_documents<'py>(
+        &self,
+        py: Python<'py>,
+        collection: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            let count = client
+                .count_documents(&collection)
+                .await
+                .map_err(|e| map_client_err("Count documents failed", e))?;
+
+            Python::attach(|py| Ok(PyInt::new(py, count as i64).into()))
+        })
+    }
+
+    /// Subscribe to collection mutations via SSE (Server-Sent Events).
+    /// Returns a receiver that yields mutation notification dicts.
+    #[pyo3(signature = (collection, filter_field=None, filter_value=None))]
+    fn subscribe_sse<'py>(
+        &self,
+        py: Python<'py>,
+        collection: String,
+        filter_field: Option<String>,
+        filter_value: Option<String>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            let rx = client
+                .subscribe_sse(
+                    &collection,
+                    filter_field.as_deref(),
+                    filter_value.as_deref(),
+                )
+                .await
+                .map_err(|e| map_client_err("SSE subscribe failed", e))?;
+
+            Python::attach(|py| {
+                let wrapper = SubscriptionReceiver {
+                    inner: std::sync::Arc::new(tokio::sync::Mutex::new(rx)),
+                };
+                Ok(Py::new(py, wrapper)?.into())
+            })
+        })
+    }
+
+    /// Create a WebSocket connection
+    fn websocket<'py>(&self, py: Python<'py>, ws_url: String) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
 
         future_into_py::<_, Py<PyAny>>(py, async move {
             let ws_client = client
                 .websocket(&ws_url)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("WebSocket connection failed: {}", e)))?;
+                .map_err(|e| map_client_err("WebSocket connection failed", e))?;
+
+            // Share the client's schema cache with the WS so WS CRUD is
+            // alias-aware and SchemaChanged events (delivered over WS)
+            // invalidate the same cache. Harmless when the cache is disabled
+            // (a no-op cache). Mirrors the other clients' set_schema_cache,
+            // wired automatically here rather than exposing the opaque Arc.
+            ws_client.set_schema_cache(client.schema_cache_arc()).await;
 
             Python::attach(|py| {
                 // Return a WebSocketClient wrapper
@@ -1769,6 +3061,991 @@ impl Client {
             })
         })
     }
+
+    /// Refresh the authentication token (clears cache and fetches new JWT)
+    fn refresh_token<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            let token = client
+                .refresh_token()
+                .await
+                .map_err(|e| map_client_err("Token refresh failed", e))?;
+            Python::attach(|py| Ok(PyString::new(py, &token).into()))
+        })
+    }
+
+    /// Clear the cached authentication token
+    fn clear_token_cache<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            client.clear_token_cache().await;
+            Python::attach(|py| Ok(py.None()))
+        })
+    }
+
+    // ── Goal CRUD ──────────────────────────────────────────────────────
+
+    /// Create a new goal
+    ///
+    /// Args:
+    ///     data: Goal definition as a dict
+    ///
+    /// Returns:
+    ///     The created goal as a dict
+    fn goal_create<'py>(
+        &self,
+        py: Python<'py>,
+        data: &Bound<'py, PyDict>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        let json_value = py_to_json(data.as_any())?;
+
+        future_into_py(py, async move {
+            let result = client
+                .goal_create(json_value)
+                .await
+                .map_err(|e| map_client_err("goal_create failed", e))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// List all goals
+    ///
+    /// Returns:
+    ///     A dict containing the list of goals
+    fn goal_list<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            let result = client
+                .goal_list()
+                .await
+                .map_err(|e| map_client_err("goal_list failed", e))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// Get a goal by ID
+    ///
+    /// Args:
+    ///     id: Goal ID
+    ///
+    /// Returns:
+    ///     The goal as a dict
+    fn goal_get<'py>(&self, py: Python<'py>, id: String) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            let result = client
+                .goal_get(&id)
+                .await
+                .map_err(|e| map_client_err("goal_get failed", e))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// Update an existing goal
+    ///
+    /// Args:
+    ///     id: Goal ID
+    ///     data: Updated goal fields as a dict
+    ///
+    /// Returns:
+    ///     The updated goal as a dict
+    fn goal_update<'py>(
+        &self,
+        py: Python<'py>,
+        id: String,
+        data: &Bound<'py, PyDict>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        let json_value = py_to_json(data.as_any())?;
+
+        future_into_py(py, async move {
+            let result = client
+                .goal_update(&id, json_value)
+                .await
+                .map_err(|e| map_client_err("goal_update failed", e))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// Delete a goal by ID
+    ///
+    /// Args:
+    ///     id: Goal ID
+    fn goal_delete<'py>(&self, py: Python<'py>, id: String) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            client
+                .goal_delete(&id)
+                .await
+                .map_err(|e| map_client_err("goal_delete failed", e))?;
+
+            Python::attach(|py| Ok(py.None()))
+        })
+    }
+
+    /// Search goals by query string
+    ///
+    /// Args:
+    ///     query: Search query
+    ///
+    /// Returns:
+    ///     A dict containing matching goals
+    fn goal_search<'py>(&self, py: Python<'py>, query: String) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            let result = client
+                .goal_search(&query)
+                .await
+                .map_err(|e| map_client_err("goal_search failed", e))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    // ── Goal Lifecycle ─────────────────────────────────────────────────
+
+    /// Mark a goal as complete
+    ///
+    /// Args:
+    ///     id: Goal ID
+    ///     data: Completion data as a dict
+    ///
+    /// Returns:
+    ///     The completed goal as a dict
+    fn goal_complete<'py>(
+        &self,
+        py: Python<'py>,
+        id: String,
+        data: &Bound<'py, PyDict>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        let json_value = py_to_json(data.as_any())?;
+
+        future_into_py(py, async move {
+            let result = client
+                .goal_complete(&id, json_value)
+                .await
+                .map_err(|e| map_client_err("goal_complete failed", e))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// Approve a goal
+    ///
+    /// Args:
+    ///     id: Goal ID
+    ///
+    /// Returns:
+    ///     The approved goal as a dict
+    fn goal_approve<'py>(&self, py: Python<'py>, id: String) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            let result = client
+                .goal_approve(&id)
+                .await
+                .map_err(|e| map_client_err("goal_approve failed", e))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// Reject a goal
+    ///
+    /// Args:
+    ///     id: Goal ID
+    ///     data: Rejection reason/data as a dict
+    ///
+    /// Returns:
+    ///     The rejected goal as a dict
+    fn goal_reject<'py>(
+        &self,
+        py: Python<'py>,
+        id: String,
+        data: &Bound<'py, PyDict>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        let json_value = py_to_json(data.as_any())?;
+
+        future_into_py(py, async move {
+            let result = client
+                .goal_reject(&id, json_value)
+                .await
+                .map_err(|e| map_client_err("goal_reject failed", e))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    // ── Goal Step Lifecycle ────────────────────────────────────────────
+
+    /// Start a goal step
+    ///
+    /// Args:
+    ///     id: Goal ID
+    ///     step_index: Index of the step to start
+    ///
+    /// Returns:
+    ///     The updated goal as a dict
+    fn goal_step_start<'py>(
+        &self,
+        py: Python<'py>,
+        id: String,
+        step_index: usize,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            let result = client
+                .goal_step_start(&id, step_index)
+                .await
+                .map_err(|e| map_client_err("goal_step_start failed", e))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// Complete a goal step
+    ///
+    /// Args:
+    ///     id: Goal ID
+    ///     step_index: Index of the step to complete
+    ///     data: Step completion data as a dict
+    ///
+    /// Returns:
+    ///     The updated goal as a dict
+    fn goal_step_complete<'py>(
+        &self,
+        py: Python<'py>,
+        id: String,
+        step_index: usize,
+        data: &Bound<'py, PyDict>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        let json_value = py_to_json(data.as_any())?;
+
+        future_into_py(py, async move {
+            let result = client
+                .goal_step_complete(&id, step_index, json_value)
+                .await
+                .map_err(|e| map_client_err("goal_step_complete failed", e))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// Fail a goal step
+    ///
+    /// Args:
+    ///     id: Goal ID
+    ///     step_index: Index of the step that failed
+    ///     data: Failure data as a dict
+    ///
+    /// Returns:
+    ///     The updated goal as a dict
+    fn goal_step_fail<'py>(
+        &self,
+        py: Python<'py>,
+        id: String,
+        step_index: usize,
+        data: &Bound<'py, PyDict>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        let json_value = py_to_json(data.as_any())?;
+
+        future_into_py(py, async move {
+            let result = client
+                .goal_step_fail(&id, step_index, json_value)
+                .await
+                .map_err(|e| map_client_err("goal_step_fail failed", e))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    // ── Goal Template CRUD ──────────────────────────────────────────────
+
+    /// Create a new goal template
+    ///
+    /// Args:
+    ///     data: Goal template definition as a dict
+    ///
+    /// Returns:
+    ///     The created goal template as a dict
+    fn goal_template_create<'py>(
+        &self,
+        py: Python<'py>,
+        data: &Bound<'py, PyDict>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        let json_value = py_to_json(data.as_any())?;
+
+        future_into_py(py, async move {
+            let result = client
+                .goal_template_create(json_value)
+                .await
+                .map_err(|e| map_client_err("goal_template_create failed", e))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// List all goal templates
+    ///
+    /// Returns:
+    ///     A dict containing the list of goal templates
+    fn goal_template_list<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            let result = client
+                .goal_template_list()
+                .await
+                .map_err(|e| map_client_err("goal_template_list failed", e))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// Get a goal template by ID
+    ///
+    /// Args:
+    ///     id: Goal template ID
+    ///
+    /// Returns:
+    ///     The goal template as a dict
+    fn goal_template_get<'py>(&self, py: Python<'py>, id: String) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            let result = client
+                .goal_template_get(&id)
+                .await
+                .map_err(|e| map_client_err("goal_template_get failed", e))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// Update an existing goal template
+    ///
+    /// Args:
+    ///     id: Goal template ID
+    ///     data: Updated goal template fields as a dict
+    ///
+    /// Returns:
+    ///     The updated goal template as a dict
+    fn goal_template_update<'py>(
+        &self,
+        py: Python<'py>,
+        id: String,
+        data: &Bound<'py, PyDict>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        let json_value = py_to_json(data.as_any())?;
+
+        future_into_py(py, async move {
+            let result = client
+                .goal_template_update(&id, json_value)
+                .await
+                .map_err(|e| map_client_err("goal_template_update failed", e))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// Delete a goal template by ID
+    ///
+    /// Args:
+    ///     id: Goal template ID
+    fn goal_template_delete<'py>(
+        &self,
+        py: Python<'py>,
+        id: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            client
+                .goal_template_delete(&id)
+                .await
+                .map_err(|e| map_client_err("goal_template_delete failed", e))?;
+
+            Python::attach(|py| Ok(py.None()))
+        })
+    }
+
+    // ── Task CRUD ──────────────────────────────────────────────────────
+
+    /// Create a new scheduled task
+    ///
+    /// Args:
+    ///     data: Task definition as a dict
+    ///
+    /// Returns:
+    ///     The created task as a dict
+    fn task_create<'py>(
+        &self,
+        py: Python<'py>,
+        data: &Bound<'py, PyDict>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        let json_value = py_to_json(data.as_any())?;
+
+        future_into_py(py, async move {
+            let result = client
+                .task_create(json_value)
+                .await
+                .map_err(|e| map_client_err("task_create failed", e))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// List all scheduled tasks
+    ///
+    /// Returns:
+    ///     A dict containing the list of tasks
+    fn task_list<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            let result = client
+                .task_list()
+                .await
+                .map_err(|e| map_client_err("task_list failed", e))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// Get a task by ID
+    ///
+    /// Args:
+    ///     id: Task ID
+    ///
+    /// Returns:
+    ///     The task as a dict
+    fn task_get<'py>(&self, py: Python<'py>, id: String) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            let result = client
+                .task_get(&id)
+                .await
+                .map_err(|e| map_client_err("task_get failed", e))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// Update an existing task
+    ///
+    /// Args:
+    ///     id: Task ID
+    ///     data: Updated task fields as a dict
+    ///
+    /// Returns:
+    ///     The updated task as a dict
+    fn task_update<'py>(
+        &self,
+        py: Python<'py>,
+        id: String,
+        data: &Bound<'py, PyDict>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        let json_value = py_to_json(data.as_any())?;
+
+        future_into_py(py, async move {
+            let result = client
+                .task_update(&id, json_value)
+                .await
+                .map_err(|e| map_client_err("task_update failed", e))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// Delete a task by ID
+    ///
+    /// Args:
+    ///     id: Task ID
+    fn task_delete<'py>(&self, py: Python<'py>, id: String) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            client
+                .task_delete(&id)
+                .await
+                .map_err(|e| map_client_err("task_delete failed", e))?;
+
+            Python::attach(|py| Ok(py.None()))
+        })
+    }
+
+    /// Get tasks that are due at the given time
+    ///
+    /// Args:
+    ///     now: ISO 8601 timestamp string
+    ///
+    /// Returns:
+    ///     A dict containing due tasks
+    fn task_due<'py>(&self, py: Python<'py>, now: String) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            let result = client
+                .task_due(&now)
+                .await
+                .map_err(|e| map_client_err("task_due failed", e))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    // ── Task Lifecycle ─────────────────────────────────────────────────
+
+    /// Start a task
+    ///
+    /// Args:
+    ///     id: Task ID
+    ///
+    /// Returns:
+    ///     The started task as a dict
+    fn task_start<'py>(&self, py: Python<'py>, id: String) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            let result = client
+                .task_start(&id)
+                .await
+                .map_err(|e| map_client_err("task_start failed", e))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// Mark a task as succeeded
+    ///
+    /// Args:
+    ///     id: Task ID
+    ///     data: Success data as a dict
+    ///
+    /// Returns:
+    ///     The succeeded task as a dict
+    fn task_succeed<'py>(
+        &self,
+        py: Python<'py>,
+        id: String,
+        data: &Bound<'py, PyDict>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        let json_value = py_to_json(data.as_any())?;
+
+        future_into_py(py, async move {
+            let result = client
+                .task_succeed(&id, json_value)
+                .await
+                .map_err(|e| map_client_err("task_succeed failed", e))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// Mark a task as failed
+    ///
+    /// Args:
+    ///     id: Task ID
+    ///     data: Failure data as a dict
+    ///
+    /// Returns:
+    ///     The failed task as a dict
+    fn task_fail<'py>(
+        &self,
+        py: Python<'py>,
+        id: String,
+        data: &Bound<'py, PyDict>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        let json_value = py_to_json(data.as_any())?;
+
+        future_into_py(py, async move {
+            let result = client
+                .task_fail(&id, json_value)
+                .await
+                .map_err(|e| map_client_err("task_fail failed", e))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// Pause a task
+    ///
+    /// Args:
+    ///     id: Task ID
+    ///
+    /// Returns:
+    ///     The paused task as a dict
+    fn task_pause<'py>(&self, py: Python<'py>, id: String) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            let result = client
+                .task_pause(&id)
+                .await
+                .map_err(|e| map_client_err("task_pause failed", e))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// Resume a paused task
+    ///
+    /// Args:
+    ///     id: Task ID
+    ///     data: Resume data as a dict
+    ///
+    /// Returns:
+    ///     The resumed task as a dict
+    fn task_resume<'py>(
+        &self,
+        py: Python<'py>,
+        id: String,
+        data: &Bound<'py, PyDict>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        let json_value = py_to_json(data.as_any())?;
+
+        future_into_py(py, async move {
+            let result = client
+                .task_resume(&id, json_value)
+                .await
+                .map_err(|e| map_client_err("task_resume failed", e))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    // ── Agent CRUD ─────────────────────────────────────────────────────
+
+    /// Create a new agent
+    ///
+    /// Args:
+    ///     data: Agent definition as a dict
+    ///
+    /// Returns:
+    ///     The created agent as a dict
+    fn agent_create<'py>(
+        &self,
+        py: Python<'py>,
+        data: &Bound<'py, PyDict>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        let json_value = py_to_json(data.as_any())?;
+
+        future_into_py(py, async move {
+            let result = client
+                .agent_create(json_value)
+                .await
+                .map_err(|e| map_client_err("agent_create failed", e))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// List all agents
+    ///
+    /// Returns:
+    ///     A dict containing the list of agents
+    fn agent_list<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            let result = client
+                .agent_list()
+                .await
+                .map_err(|e| map_client_err("agent_list failed", e))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// Get an agent by ID
+    ///
+    /// Args:
+    ///     id: Agent ID
+    ///
+    /// Returns:
+    ///     The agent as a dict
+    fn agent_get<'py>(&self, py: Python<'py>, id: String) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            let result = client
+                .agent_get(&id)
+                .await
+                .map_err(|e| map_client_err("agent_get failed", e))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// Get an agent by name
+    ///
+    /// Args:
+    ///     name: Agent name
+    ///
+    /// Returns:
+    ///     The agent as a dict
+    fn agent_get_by_name<'py>(&self, py: Python<'py>, name: String) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            let result = client
+                .agent_get_by_name(&name)
+                .await
+                .map_err(|e| map_client_err("agent_get_by_name failed", e))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// Update an existing agent
+    ///
+    /// Args:
+    ///     id: Agent ID
+    ///     data: Updated agent fields as a dict
+    ///
+    /// Returns:
+    ///     The updated agent as a dict
+    fn agent_update<'py>(
+        &self,
+        py: Python<'py>,
+        id: String,
+        data: &Bound<'py, PyDict>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        let json_value = py_to_json(data.as_any())?;
+
+        future_into_py(py, async move {
+            let result = client
+                .agent_update(&id, json_value)
+                .await
+                .map_err(|e| map_client_err("agent_update failed", e))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// Delete an agent by ID
+    ///
+    /// Args:
+    ///     id: Agent ID
+    fn agent_delete<'py>(&self, py: Python<'py>, id: String) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            client
+                .agent_delete(&id)
+                .await
+                .map_err(|e| map_client_err("agent_delete failed", e))?;
+
+            Python::attach(|py| Ok(py.None()))
+        })
+    }
+
+    /// Get agents by deployment ID
+    ///
+    /// Args:
+    ///     deployment_id: Deployment ID
+    ///
+    /// Returns:
+    ///     A dict containing agents for the deployment
+    fn agents_by_deployment<'py>(
+        &self,
+        py: Python<'py>,
+        deployment_id: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            let result = client
+                .agents_by_deployment(&deployment_id)
+                .await
+                .map_err(|e| map_client_err("agents_by_deployment failed", e))?;
+
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    // ── KV Document Linking ──────────────────────────────────────────────────
+
+    /// Get documents linked to a KV key
+    ///
+    /// Args:
+    ///     key: The KV key to get links for
+    fn kv_get_links<'py>(&self, py: Python<'py>, key: String) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            let result = client
+                .kv_get_links(&key)
+                .await
+                .map_err(|e| map_client_err("kv_get_links failed", e))?;
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// Link a document to a KV key
+    ///
+    /// Args:
+    ///     key: The KV key
+    ///     collection: Collection containing the document
+    ///     document_id: ID of the document to link
+    fn kv_link<'py>(
+        &self,
+        py: Python<'py>,
+        key: String,
+        collection: String,
+        document_id: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            let result = client
+                .kv_link(&key, &collection, &document_id)
+                .await
+                .map_err(|e| map_client_err("kv_link failed", e))?;
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// Unlink a document from a KV key
+    ///
+    /// Args:
+    ///     key: The KV key
+    ///     collection: Collection containing the document
+    ///     document_id: ID of the document to unlink
+    fn kv_unlink<'py>(
+        &self,
+        py: Python<'py>,
+        key: String,
+        collection: String,
+        document_id: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            let result = client
+                .kv_unlink(&key, &collection, &document_id)
+                .await
+                .map_err(|e| map_client_err("kv_unlink failed", e))?;
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    // ── Schedule Management ──────────────────────────────────────────────────
+
+    /// Create a new schedule
+    ///
+    /// Args:
+    ///     data: Dict with schedule configuration
+    fn create_schedule<'py>(
+        &self,
+        py: Python<'py>,
+        data: &Bound<'py, PyDict>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        let data_json = py_to_json(data.as_any())?;
+        future_into_py(py, async move {
+            let result = client
+                .create_schedule(data_json)
+                .await
+                .map_err(|e| map_client_err("create_schedule failed", e))?;
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// List all schedules
+    fn list_schedules<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            let result = client
+                .list_schedules()
+                .await
+                .map_err(|e| map_client_err("list_schedules failed", e))?;
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// Get a schedule by ID
+    ///
+    /// Args:
+    ///     id: Schedule ID
+    fn get_schedule<'py>(&self, py: Python<'py>, id: String) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            let result = client
+                .get_schedule(&id)
+                .await
+                .map_err(|e| map_client_err("get_schedule failed", e))?;
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// Update a schedule by ID
+    ///
+    /// Args:
+    ///     id: Schedule ID
+    ///     data: Dict with updated schedule data
+    fn update_schedule<'py>(
+        &self,
+        py: Python<'py>,
+        id: String,
+        data: &Bound<'py, PyDict>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        let data_json = py_to_json(data.as_any())?;
+        future_into_py(py, async move {
+            let result = client
+                .update_schedule(&id, data_json)
+                .await
+                .map_err(|e| map_client_err("update_schedule failed", e))?;
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// Delete a schedule by ID
+    ///
+    /// Args:
+    ///     id: Schedule ID
+    fn delete_schedule<'py>(&self, py: Python<'py>, id: String) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            client
+                .delete_schedule(&id)
+                .await
+                .map_err(|e| map_client_err("delete_schedule failed", e))?;
+            Python::attach(|py| Ok(py.None()))
+        })
+    }
+
+    /// Pause a schedule
+    ///
+    /// Args:
+    ///     id: Schedule ID
+    fn pause_schedule<'py>(&self, py: Python<'py>, id: String) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            let result = client
+                .pause_schedule(&id)
+                .await
+                .map_err(|e| map_client_err("pause_schedule failed", e))?;
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
+
+    /// Resume a schedule
+    ///
+    /// Args:
+    ///     id: Schedule ID
+    fn resume_schedule<'py>(&self, py: Python<'py>, id: String) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            let result = client
+                .resume_schedule(&id)
+                .await
+                .map_err(|e| map_client_err("resume_schedule failed", e))?;
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
 }
 
 /// Python wrapper for WebSocket Client
@@ -1777,15 +4054,117 @@ struct WebSocketClient {
     inner: Option<RustWebSocketClient>,
 }
 
+/// Python wrapper for subscription receiver
+#[pyclass]
+struct SubscriptionReceiver {
+    inner: std::sync::Arc<
+        tokio::sync::Mutex<
+            tokio::sync::mpsc::Receiver<ekodb_client::websocket::MutationNotificationPayload>,
+        >,
+    >,
+}
+
+/// Python wrapper for chat stream receiver
+#[pyclass]
+struct ChatStreamReceiver {
+    inner: std::sync::Arc<
+        tokio::sync::Mutex<tokio::sync::mpsc::Receiver<ekodb_client::websocket::ChatStreamEvent>>,
+    >,
+}
+
+#[pymethods]
+impl SubscriptionReceiver {
+    /// Receive the next mutation notification. Returns None when the subscription ends.
+    fn recv<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let rx = self.inner.clone();
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            let mut guard = rx.lock().await;
+            match guard.recv().await {
+                Some(notification) => Python::attach(|py| {
+                    let dict = PyDict::new(py);
+                    dict.set_item("collection", &notification.collection)?;
+                    dict.set_item("event", &notification.event)?;
+                    let ids = PyList::empty(py);
+                    for id in &notification.record_ids {
+                        ids.append(id)?;
+                    }
+                    dict.set_item("record_ids", ids)?;
+                    dict.set_item("timestamp", &notification.timestamp)?;
+                    if let Some(ref records) = notification.records {
+                        dict.set_item("records", json_to_pydict(py, records)?)?;
+                    }
+                    Ok(dict.into())
+                }),
+                None => Python::attach(|py| Ok(py.None())),
+            }
+        })
+    }
+}
+
+#[pymethods]
+impl ChatStreamReceiver {
+    /// Receive the next chat stream event. Returns None when the stream ends.
+    fn recv<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let rx = self.inner.clone();
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            let mut guard = rx.lock().await;
+            match guard.recv().await {
+                Some(event) => Python::attach(|py| {
+                    let dict = PyDict::new(py);
+                    match &event {
+                        ekodb_client::websocket::ChatStreamEvent::Chunk(content) => {
+                            dict.set_item("type", "chunk")?;
+                            dict.set_item("content", content)?;
+                        }
+                        ekodb_client::websocket::ChatStreamEvent::End {
+                            message_id,
+                            token_usage,
+                            tool_call_history,
+                            execution_time_ms,
+                            context_window,
+                        } => {
+                            dict.set_item("type", "end")?;
+                            dict.set_item("message_id", message_id)?;
+                            dict.set_item("execution_time_ms", *execution_time_ms)?;
+                            if let Some(ref tu) = token_usage {
+                                dict.set_item("token_usage", json_to_pydict(py, tu)?)?;
+                            }
+                            if let Some(ref tch) = tool_call_history {
+                                dict.set_item("tool_call_history", json_to_pydict(py, tch)?)?;
+                            }
+                            if let Some(cw) = context_window {
+                                dict.set_item("context_window", *cw)?;
+                            }
+                        }
+                        ekodb_client::websocket::ChatStreamEvent::ToolCall {
+                            call_id,
+                            tool_name,
+                            arguments,
+                        } => {
+                            dict.set_item("type", "tool_call")?;
+                            dict.set_item("call_id", call_id)?;
+                            dict.set_item("tool_name", tool_name)?;
+                            dict.set_item("arguments", json_to_pydict(py, arguments)?)?;
+                        }
+                        ekodb_client::websocket::ChatStreamEvent::Error(error) => {
+                            dict.set_item("type", "error")?;
+                            dict.set_item("error", error)?;
+                        }
+                    }
+                    Ok(dict.into())
+                }),
+                None => Python::attach(|py| Ok(py.None())),
+            }
+        })
+    }
+}
+
 #[pymethods]
 impl WebSocketClient {
     /// Find all records in a collection via WebSocket
-    fn find_all<'py>(
-        &self,
-        py: Python<'py>,
-        collection: String,
-    ) -> PyResult<Bound<'py, PyAny>> {
-        // Clone the WebSocket client before moving into async block
+    fn find_all<'py>(&self, py: Python<'py>, collection: String) -> PyResult<Bound<'py, PyAny>> {
         let ws_client = match &self.inner {
             Some(client) => client.clone(),
             None => return Err(PyRuntimeError::new_err("WebSocket client not initialized")),
@@ -1795,7 +4174,7 @@ impl WebSocketClient {
             let records = ws_client
                 .find_all(&collection)
                 .await
-                .map_err(|e| PyRuntimeError::new_err(format!("WebSocket find_all failed: {}", e)))?;
+                .map_err(|e| map_client_err("WebSocket find_all failed", e))?;
 
             Python::attach(|py| {
                 let list = PyList::empty(py);
@@ -1806,6 +4185,629 @@ impl WebSocketClient {
             })
         })
     }
+
+    /// Subscribe to mutation notifications on a collection.
+    /// Returns a SubscriptionReceiver for receiving events.
+    #[pyo3(signature = (collection, filter_field=None, filter_value=None))]
+    fn subscribe<'py>(
+        &self,
+        py: Python<'py>,
+        collection: String,
+        filter_field: Option<String>,
+        filter_value: Option<String>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let ws_client = match &self.inner {
+            Some(client) => client.clone(),
+            None => return Err(PyRuntimeError::new_err("WebSocket client not initialized")),
+        };
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            let rx = ws_client
+                .subscribe(
+                    &collection,
+                    filter_field.as_deref(),
+                    filter_value.as_deref(),
+                )
+                .await
+                .map_err(|e| map_client_err("Subscribe failed", e))?;
+
+            Python::attach(|py| {
+                let receiver = SubscriptionReceiver {
+                    inner: std::sync::Arc::new(tokio::sync::Mutex::new(rx)),
+                };
+                Ok(Py::new(py, receiver)?.into())
+            })
+        })
+    }
+
+    /// Stop receiving mutation notifications for a collection.
+    ///
+    /// Intentional teardown: drops the local subscription (so a held
+    /// SubscriptionReceiver stops being fed) and sends a best-effort
+    /// `Unsubscribe` frame to the server so it stops streaming this collection
+    /// on this connection. Safe to call for a collection that is not currently
+    /// subscribed (no-op).
+    fn ws_unsubscribe<'py>(
+        &self,
+        py: Python<'py>,
+        collection: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let ws_client = match &self.inner {
+            Some(client) => client.clone(),
+            None => return Err(PyRuntimeError::new_err("WebSocket client not initialized")),
+        };
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            ws_client
+                .unsubscribe(&collection)
+                .await
+                .map_err(|e| map_client_err("Unsubscribe failed", e))?;
+            Python::attach(|py| Ok(py.None()))
+        })
+    }
+
+    /// Send a chat message and receive streaming responses.
+    /// Returns a ChatStreamReceiver for receiving events.
+    #[pyo3(signature = (chat_id, message, client_tools=None, max_iterations=None, confirm_tools=None, exclude_tools=None))]
+    fn chat_send<'py>(
+        &self,
+        py: Python<'py>,
+        chat_id: String,
+        message: String,
+        client_tools: Option<Vec<(String, String, Py<PyAny>)>>,
+        max_iterations: Option<u32>,
+        confirm_tools: Option<Vec<String>>,
+        exclude_tools: Option<Vec<String>>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let ws_client = match &self.inner {
+            Some(client) => client.clone(),
+            None => return Err(PyRuntimeError::new_err("WebSocket client not initialized")),
+        };
+
+        // Convert client tools from Python tuples to Rust structs
+        let rust_tools: Option<Vec<ekodb_client::websocket::ClientToolDefinition>> =
+            match client_tools {
+                Some(tools) => {
+                    let mut converted = Vec::with_capacity(tools.len());
+                    for (name, description, params) in tools {
+                        let parameters = Python::attach(|py| {
+                            let params_bound = params.bind(py);
+                            py_to_json(params_bound)
+                        })
+                        .map_err(|e| {
+                            PyRuntimeError::new_err(format!(
+                                "Failed to convert tool parameters for '{}': {}",
+                                name, e
+                            ))
+                        })?;
+                        converted.push(ekodb_client::websocket::ClientToolDefinition {
+                            name,
+                            description,
+                            parameters,
+                        });
+                    }
+                    Some(converted)
+                }
+                None => None,
+            };
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            let rx = ws_client
+                .chat_send_with_tools(
+                    &chat_id,
+                    &message,
+                    rust_tools,
+                    max_iterations,
+                    confirm_tools,
+                    exclude_tools,
+                )
+                .await
+                .map_err(|e| map_client_err("Chat send failed", e))?;
+
+            Python::attach(|py| {
+                let receiver = ChatStreamReceiver {
+                    inner: std::sync::Arc::new(tokio::sync::Mutex::new(rx)),
+                };
+                Ok(Py::new(py, receiver)?.into())
+            })
+        })
+    }
+
+    /// Register client-side tools for a chat session.
+    fn register_client_tools<'py>(
+        &self,
+        py: Python<'py>,
+        chat_id: String,
+        tools: Vec<(String, String, Py<PyAny>)>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let ws_client = match &self.inner {
+            Some(client) => client.clone(),
+            None => return Err(PyRuntimeError::new_err("WebSocket client not initialized")),
+        };
+
+        let mut rust_tools: Vec<ekodb_client::websocket::ClientToolDefinition> =
+            Vec::with_capacity(tools.len());
+        for (name, description, params) in tools {
+            let parameters = Python::attach(|py| {
+                let params_bound = params.bind(py);
+                py_to_json(params_bound)
+            })
+            .map_err(|e| {
+                PyRuntimeError::new_err(format!(
+                    "Failed to convert tool parameters for '{}': {}",
+                    name, e
+                ))
+            })?;
+            rust_tools.push(ekodb_client::websocket::ClientToolDefinition {
+                name,
+                description,
+                parameters,
+            });
+        }
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            ws_client
+                .register_client_tools(&chat_id, rust_tools)
+                .await
+                .map_err(|e| map_client_err("Register tools failed", e))?;
+
+            Python::attach(|py| Ok(py.None()))
+        })
+    }
+
+    /// Send a tool result back to the server during a chat stream.
+    #[pyo3(signature = (chat_id, call_id, success, result=None, error=None))]
+    fn send_tool_result<'py>(
+        &self,
+        py: Python<'py>,
+        chat_id: String,
+        call_id: String,
+        success: bool,
+        result: Option<Py<PyAny>>,
+        error: Option<String>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let ws_client = match &self.inner {
+            Some(client) => client.clone(),
+            None => return Err(PyRuntimeError::new_err("WebSocket client not initialized")),
+        };
+
+        let json_result: Option<serde_json::Value> = match result {
+            Some(r) => {
+                let val = Python::attach(|py| {
+                    let r_bound = r.bind(py);
+                    py_to_json(r_bound)
+                })
+                .map_err(|e| {
+                    PyRuntimeError::new_err(format!("Failed to convert tool result: {}", e))
+                })?;
+                Some(val)
+            }
+            None => None,
+        };
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            ws_client
+                .send_tool_result(&chat_id, &call_id, success, json_result, error)
+                .await
+                .map_err(|e| map_client_err("Send tool result failed", e))?;
+
+            Python::attach(|py| Ok(py.None()))
+        })
+    }
+
+    /// Cancel an in-flight streaming chat (fire-and-forget).
+    ///
+    /// Args:
+    ///     chat_id: The chat whose generation should be cancelled.
+    fn cancel_chat<'py>(&self, py: Python<'py>, chat_id: String) -> PyResult<Bound<'py, PyAny>> {
+        let ws_client = match &self.inner {
+            Some(client) => client.clone(),
+            None => return Err(PyRuntimeError::new_err("WebSocket client not initialized")),
+        };
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            ws_client
+                .cancel_chat(&chat_id)
+                .await
+                .map_err(|e| map_client_err("Cancel chat failed", e))?;
+
+            Python::attach(|py| Ok(py.None()))
+        })
+    }
+
+    /// Close the WebSocket connection and stop the dispatcher.
+    ///
+    /// Rejects any in-flight requests and tears down the socket so long-lived
+    /// apps can release it deterministically rather than waiting for GC. After
+    /// close() the client must not be reused. Mirrors the close()/Close()
+    /// exposed by the other WebSocket clients.
+    fn close<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let ws_client = match &self.inner {
+            Some(client) => client.clone(),
+            None => return Err(PyRuntimeError::new_err("WebSocket client not initialized")),
+        };
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            ws_client
+                .close()
+                .await
+                .map_err(|e| map_client_err("WebSocket close failed", e))?;
+
+            Python::attach(|py| Ok(py.None()))
+        })
+    }
+
+    /// Stateless raw LLM completion via WebSocket.
+    ///
+    /// Sends a RawComplete message over the persistent WSS connection.
+    /// Preferred over HTTP: the persistent WSS connection is already
+    /// authenticated and won't be killed by reverse proxy timeouts.
+    ///
+    /// Args:
+    ///     system_prompt: System instructions for the LLM
+    ///     message: User message to send
+    ///     provider: LLM provider (optional)
+    ///     model: Model name (optional)
+    ///     max_tokens: Maximum tokens (optional)
+    ///
+    /// Returns:
+    ///     dict with "content" key containing the LLM response text
+    #[pyo3(signature = (system_prompt, message, provider=None, model=None, max_tokens=None))]
+    fn raw_completion<'py>(
+        &self,
+        py: Python<'py>,
+        system_prompt: String,
+        message: String,
+        provider: Option<String>,
+        model: Option<String>,
+        max_tokens: Option<i32>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let ws_client = match &self.inner {
+            Some(client) => client.clone(),
+            None => return Err(PyRuntimeError::new_err("WebSocket client not initialized")),
+        };
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            let request = RustRawCompletionRequest {
+                system_prompt,
+                message,
+                provider,
+                model,
+                max_tokens,
+            };
+
+            let resp = ws_client
+                .raw_completion(&request)
+                .await
+                .map_err(|e| map_client_err("WebSocket raw_completion failed", e))?;
+
+            Python::attach(|py| {
+                let resp_json = serde_json::to_value(&resp).map_err(|e| {
+                    PyRuntimeError::new_err(format!("Failed to serialize response: {}", e))
+                })?;
+                json_to_pydict(py, &resp_json)
+            })
+        })
+    }
+
+    // =========================================================================
+    // WS CRUD Methods — Full Parity with Server
+    // =========================================================================
+
+    /// Insert a single record via WebSocket.
+    #[pyo3(signature = (collection, record, bypass_ripple=None))]
+    fn ws_insert<'py>(
+        &self,
+        py: Python<'py>,
+        collection: String,
+        record: Py<PyAny>,
+        bypass_ripple: Option<bool>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let record_json = Python::attach(|py| {
+            let dict = record.bind(py).cast::<PyDict>()?;
+            pydict_to_json(py, dict)
+        })?;
+        let mut payload = serde_json::json!({"collection": collection, "record": record_json});
+        if let Some(br) = bypass_ripple {
+            payload["bypass_ripple"] = serde_json::json!(br);
+        }
+        self.send_crud(py, "Insert", payload)
+    }
+
+    /// Query records via WebSocket.
+    #[pyo3(signature = (collection, filter=None, sort=None, limit=None, skip=None))]
+    fn ws_query<'py>(
+        &self,
+        py: Python<'py>,
+        collection: String,
+        filter: Option<Py<PyAny>>,
+        sort: Option<Py<PyAny>>,
+        limit: Option<u64>,
+        skip: Option<u64>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let mut payload = serde_json::json!({"collection": collection});
+        if let Some(f) = filter {
+            payload["filter"] =
+                Python::attach(|py| pydict_to_json(py, f.bind(py).cast::<PyDict>()?))?;
+        }
+        if let Some(s) = sort {
+            payload["sort"] =
+                Python::attach(|py| pydict_to_json(py, s.bind(py).cast::<PyDict>()?))?;
+        }
+        if let Some(l) = limit {
+            payload["limit"] = serde_json::json!(l);
+        }
+        if let Some(s) = skip {
+            payload["skip"] = serde_json::json!(s);
+        }
+        self.send_crud(py, "Query", payload)
+    }
+
+    /// Find a record by ID via WebSocket.
+    fn ws_find_by_id<'py>(
+        &self,
+        py: Python<'py>,
+        collection: String,
+        id: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        self.send_crud(
+            py,
+            "FindById",
+            serde_json::json!({"collection": collection, "id": id}),
+        )
+    }
+
+    /// Update a record by ID via WebSocket.
+    #[pyo3(signature = (collection, id, record, bypass_ripple=None))]
+    fn ws_update<'py>(
+        &self,
+        py: Python<'py>,
+        collection: String,
+        id: String,
+        record: Py<PyAny>,
+        bypass_ripple: Option<bool>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let record_json =
+            Python::attach(|py| pydict_to_json(py, record.bind(py).cast::<PyDict>()?))?;
+        let mut payload =
+            serde_json::json!({"collection": collection, "id": id, "record": record_json});
+        if let Some(br) = bypass_ripple {
+            payload["bypass_ripple"] = serde_json::json!(br);
+        }
+        self.send_crud(py, "Update", payload)
+    }
+
+    /// Delete a record by ID via WebSocket.
+    #[pyo3(signature = (collection, id, bypass_ripple=None))]
+    fn ws_delete<'py>(
+        &self,
+        py: Python<'py>,
+        collection: String,
+        id: String,
+        bypass_ripple: Option<bool>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let mut payload = serde_json::json!({"collection": collection, "id": id});
+        if let Some(br) = bypass_ripple {
+            payload["bypass_ripple"] = serde_json::json!(br);
+        }
+        self.send_crud(py, "Delete", payload)
+    }
+
+    /// Batch insert records via WebSocket.
+    #[pyo3(signature = (collection, records, bypass_ripple=None))]
+    fn ws_batch_insert<'py>(
+        &self,
+        py: Python<'py>,
+        collection: String,
+        records: Py<PyAny>,
+        bypass_ripple: Option<bool>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let records_json = Python::attach(|py| {
+            let list = records.bind(py).cast::<PyList>()?;
+            let mut arr = Vec::new();
+            for item in list.iter() {
+                arr.push(pydict_to_json(py, item.cast::<PyDict>()?)?);
+            }
+            Ok::<_, PyErr>(serde_json::Value::Array(arr))
+        })?;
+        let mut payload = serde_json::json!({"collection": collection, "records": records_json});
+        if let Some(br) = bypass_ripple {
+            payload["bypass_ripple"] = serde_json::json!(br);
+        }
+        self.send_crud(py, "BatchInsert", payload)
+    }
+
+    /// Batch delete records by IDs via WebSocket.
+    #[pyo3(signature = (collection, ids, bypass_ripple=None))]
+    fn ws_batch_delete<'py>(
+        &self,
+        py: Python<'py>,
+        collection: String,
+        ids: Vec<String>,
+        bypass_ripple: Option<bool>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let mut payload = serde_json::json!({"collection": collection, "ids": ids});
+        if let Some(br) = bypass_ripple {
+            payload["bypass_ripple"] = serde_json::json!(br);
+        }
+        self.send_crud(py, "BatchDelete", payload)
+    }
+
+    /// Batch update records (list of (id, record) pairs) via WebSocket.
+    #[pyo3(signature = (collection, updates, bypass_ripple=None))]
+    fn ws_batch_update<'py>(
+        &self,
+        py: Python<'py>,
+        collection: String,
+        updates: Vec<(String, Bound<'py, PyDict>)>,
+        bypass_ripple: Option<bool>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let mut arr = Vec::new();
+        for (id, d) in &updates {
+            let data = pydict_to_json(py, d)?;
+            arr.push(serde_json::json!([id, data]));
+        }
+        let mut payload = serde_json::json!({
+            "collection": collection,
+            "updates": serde_json::Value::Array(arr),
+        });
+        if let Some(br) = bypass_ripple {
+            payload["bypass_ripple"] = serde_json::json!(br);
+        }
+        self.send_crud(py, "BatchUpdate", payload)
+    }
+
+    /// Full-text search via WebSocket.
+    #[pyo3(signature = (collection, query, fields=None, limit=None))]
+    fn ws_text_search<'py>(
+        &self,
+        py: Python<'py>,
+        collection: String,
+        query: String,
+        fields: Option<Vec<String>>,
+        limit: Option<u64>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let mut payload = serde_json::json!({"collection": collection, "query": query});
+        let mut opts = serde_json::Map::new();
+        if let Some(f) = fields {
+            opts.insert("fields".to_string(), serde_json::json!(f));
+        }
+        if let Some(l) = limit {
+            opts.insert("limit".to_string(), serde_json::json!(l));
+        }
+        if !opts.is_empty() {
+            payload["options"] = serde_json::Value::Object(opts);
+        }
+        self.send_crud(py, "TextSearch", payload)
+    }
+
+    /// Get distinct values for a field via WebSocket.
+    #[pyo3(signature = (collection, field, filter=None))]
+    fn ws_distinct_values<'py>(
+        &self,
+        py: Python<'py>,
+        collection: String,
+        field: String,
+        filter: Option<Py<PyAny>>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let mut payload = serde_json::json!({"collection": collection, "field": field});
+        if let Some(f) = filter {
+            payload["filter"] =
+                Python::attach(|py| pydict_to_json(py, f.bind(py).cast::<PyDict>()?))?;
+        }
+        self.send_crud(py, "DistinctValues", payload)
+    }
+
+    /// Apply atomic field action via WebSocket.
+    #[pyo3(signature = (collection, id, action, field, value=None))]
+    fn ws_update_with_action<'py>(
+        &self,
+        py: Python<'py>,
+        collection: String,
+        id: String,
+        action: String,
+        field: String,
+        value: Option<Py<PyAny>>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let mut payload = serde_json::json!({
+            "collection": collection, "id": id, "action": action, "field": field
+        });
+        if let Some(v) = value {
+            payload["value"] = Python::attach(|py| -> PyResult<serde_json::Value> {
+                let val = v.bind(py);
+                py_to_json(&val)
+            })?;
+        }
+        self.send_crud(py, "UpdateWithAction", payload)
+    }
+
+    /// Create a collection via WebSocket.
+    #[pyo3(signature = (name, schema=None))]
+    fn ws_create_collection<'py>(
+        &self,
+        py: Python<'py>,
+        name: String,
+        schema: Option<Py<PyAny>>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let schema_json = match schema {
+            Some(s) => Python::attach(|py| pydict_to_json(py, s.bind(py).cast::<PyDict>()?))?,
+            None => serde_json::json!({}),
+        };
+        self.send_crud(
+            py,
+            "CreateCollection",
+            serde_json::json!({"name": name, "schema": schema_json}),
+        )
+    }
+
+    /// List all collections via WebSocket.
+    fn ws_list_collections<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        self.send_crud(py, "GetCollections", serde_json::json!({}))
+    }
+
+    /// Delete a collection via WebSocket.
+    fn ws_delete_collection<'py>(
+        &self,
+        py: Python<'py>,
+        name: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        self.send_crud(py, "DeleteCollection", serde_json::json!({"name": name}))
+    }
+}
+
+// Private helpers for WebSocketClient (not exposed to Python)
+impl WebSocketClient {
+    fn send_crud<'py>(
+        &self,
+        py: Python<'py>,
+        msg_type: &'static str,
+        payload: serde_json::Value,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let ws_client = match &self.inner {
+            Some(client) => client.clone(),
+            None => return Err(PyRuntimeError::new_err("WebSocket client not initialized")),
+        };
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            let data = ws_client
+                .send_crud(msg_type, payload)
+                .await
+                .map_err(|e| map_client_err(&format!("WS {} failed", msg_type), e))?;
+            Python::attach(|py| json_to_pydict(py, &data))
+        })
+    }
+}
+
+/// Convert a Python `Optional[List[Dict[str, str]]]` of `{mime_type, data}`
+/// into the Rust `Option<Vec<Attachment>>` shape that
+/// `ChatMessageRequest.attachments` expects. Each dict must carry the
+/// two string fields; anything else is a TypeError.
+fn py_to_attachments(value: Option<&Bound<'_, PyAny>>) -> PyResult<Option<Vec<Attachment>>> {
+    let Some(obj) = value else {
+        return Ok(None);
+    };
+    if obj.is_none() {
+        return Ok(None);
+    }
+    let list = obj
+        .cast::<PyList>()
+        .map_err(|_| PyValueError::new_err("attachments must be a list of dicts"))?;
+    let mut out: Vec<Attachment> = Vec::with_capacity(list.len());
+    for item in list.iter() {
+        let dict = item
+            .cast::<PyDict>()
+            .map_err(|_| PyValueError::new_err("each attachment must be a dict"))?;
+        let mime_type: String = dict
+            .get_item("mime_type")?
+            .ok_or_else(|| PyValueError::new_err("attachment missing 'mime_type'"))?
+            .extract()?;
+        let data: String = dict
+            .get_item("data")?
+            .ok_or_else(|| PyValueError::new_err("attachment missing 'data'"))?
+            .extract()?;
+        out.push(Attachment { mime_type, data });
+    }
+    Ok(Some(out))
 }
 
 /// Convert ChatResponse to Python dict
@@ -1813,15 +4815,15 @@ fn chat_response_to_dict(py: Python, response: &ChatResponse) -> PyResult<Py<PyA
     let dict = PyDict::new(py);
     dict.set_item("chat_id", &response.chat_id)?;
     dict.set_item("message_id", &response.message_id)?;
-    
+
     let responses_list = PyList::empty(py);
     for r in &response.responses {
         responses_list.append(r)?;
     }
     dict.set_item("responses", responses_list)?;
-    
+
     dict.set_item("execution_time_ms", response.execution_time_ms)?;
-    
+
     if let Some(ref token_usage) = response.token_usage {
         let token_dict = PyDict::new(py);
         token_dict.set_item("prompt_tokens", token_usage.prompt_tokens)?;
@@ -1829,14 +4831,17 @@ fn chat_response_to_dict(py: Python, response: &ChatResponse) -> PyResult<Py<PyA
         token_dict.set_item("total_tokens", token_usage.total_tokens)?;
         dict.set_item("token_usage", token_dict)?;
     }
-    
+
     Ok(dict.into())
 }
 
 /// Convert ListSessionsResponse to Python dict
-fn list_sessions_response_to_dict(py: Python, response: &ListSessionsResponse) -> PyResult<Py<PyAny>> {
+fn list_sessions_response_to_dict(
+    py: Python,
+    response: &ListSessionsResponse,
+) -> PyResult<Py<PyAny>> {
     let dict = PyDict::new(py);
-    
+
     let sessions_list = PyList::empty(py);
     for session in &response.sessions {
         let session_dict = PyDict::new(py);
@@ -1854,23 +4859,26 @@ fn list_sessions_response_to_dict(py: Python, response: &ListSessionsResponse) -
         }
         sessions_list.append(session_dict)?;
     }
-    
+
     dict.set_item("sessions", sessions_list)?;
     dict.set_item("total", response.total)?;
     dict.set_item("returned", response.returned)?;
-    
+
     Ok(dict.into())
 }
 
 /// Convert GetMessagesResponse to Python dict
-fn get_messages_response_to_dict(py: Python, response: &GetMessagesResponse) -> PyResult<Py<PyAny>> {
+fn get_messages_response_to_dict(
+    py: Python,
+    response: &GetMessagesResponse,
+) -> PyResult<Py<PyAny>> {
     let dict = PyDict::new(py);
-    
+
     let messages_list = PyList::empty(py);
     for message in &response.messages {
         messages_list.append(record_to_dict(py, message)?)?;
     }
-    
+
     dict.set_item("messages", messages_list)?;
     dict.set_item("total", response.total)?;
     dict.set_item("skip", response.skip)?;
@@ -1878,14 +4886,40 @@ fn get_messages_response_to_dict(py: Python, response: &GetMessagesResponse) -> 
     if let Some(limit) = response.limit {
         dict.set_item("limit", limit)?;
     }
-    
+
     Ok(dict.into())
+}
+
+/// Resolve a record's id, trying custom aliases first, then "id", then "_id".
+///
+/// Mirrors ``ekodb_client::extract_record_id`` (and the other clients'
+/// ``extract_record_id``) so Python callers never hardcode "id"/"_id" — a
+/// collection's schema may rename the primary key via ``primary_key_alias``.
+/// Handles both raw and typed-wrapper (``{"type":"String","value":...}``) id
+/// fields.
+///
+/// Args:
+///     record: the record dict (as returned by a query/find)
+///     extra_candidates: optional alias names to try before "id"/"_id"
+///
+/// Returns:
+///     the id string, or None if no id-like field is present
+#[pyfunction]
+#[pyo3(signature = (record, extra_candidates=None))]
+fn extract_record_id(
+    record: &Bound<'_, PyAny>,
+    extra_candidates: Option<Vec<String>>,
+) -> PyResult<Option<String>> {
+    let value = py_to_json(record)?;
+    let extras = extra_candidates.unwrap_or_default();
+    let extra_refs: Vec<&str> = extras.iter().map(String::as_str).collect();
+    Ok(ekodb_client::extract_record_id(&value, &extra_refs))
 }
 
 /// Convert Python value to JSON recursively
 fn py_to_json(value: &Bound<'_, PyAny>) -> PyResult<serde_json::Value> {
     use serde_json::json;
-    
+
     // Check bool BEFORE int (Python bool is subclass of int)
     if let Ok(b) = value.extract::<bool>() {
         Ok(json!(b))
@@ -1913,20 +4947,29 @@ fn py_to_json(value: &Bound<'_, PyAny>) -> PyResult<serde_json::Value> {
 /// Convert Python dict to JSON value
 fn dict_to_json(dict: &Bound<'_, PyDict>) -> PyResult<serde_json::Value> {
     let mut map = serde_json::Map::new();
-    
+
     for (key, value) in dict.iter() {
         let key_str: String = key.extract()?;
         map.insert(key_str, py_to_json(&value)?);
     }
-    
+
     Ok(serde_json::Value::Object(map))
 }
 
 /// Convert Python value to FieldType recursively
 fn py_to_field_type(value: &Bound<'_, PyAny>) -> PyResult<FieldType> {
+    use std::str::FromStr;
+
     // Check bool BEFORE int (Python bool is subclass of int)
     if let Ok(b) = value.extract::<bool>() {
         Ok(FieldType::Boolean(b))
+    } else if is_instance_of(value, "decimal", "Decimal") {
+        // Must run BEFORE the f64 extract: decimal.Decimal defines __float__,
+        // so `extract::<f64>()` would otherwise lossily capture it as a Float.
+        let s: String = value.str()?.extract()?;
+        let d = rust_decimal::Decimal::from_str(&s)
+            .map_err(|e| PyValueError::new_err(format!("Failed to parse Decimal '{s}': {e}")))?;
+        Ok(FieldType::Decimal(d))
     } else if let Ok(s) = value.extract::<String>() {
         Ok(FieldType::String(s))
     } else if let Ok(i) = value.extract::<i64>() {
@@ -1935,6 +4978,43 @@ fn py_to_field_type(value: &Bound<'_, PyAny>) -> PyResult<FieldType> {
         Ok(FieldType::Float(f))
     } else if value.is_none() {
         Ok(FieldType::Null)
+    } else if let Ok(bytes) = value.cast::<PyBytes>() {
+        // Python bytes -> Binary
+        Ok(FieldType::Binary(bytes.as_bytes().to_vec()))
+    } else if let Ok(ba) = value.cast::<pyo3::types::PyByteArray>() {
+        // Python bytearray -> Binary
+        Ok(FieldType::Binary(ba.to_vec()))
+    } else if is_instance_of(value, "datetime", "datetime") {
+        // Python datetime.datetime -> DateTime (UTC). Use isoformat() and parse
+        // into chrono. Naive datetimes are interpreted as UTC.
+        let iso: String = value.call_method0("isoformat")?.extract()?;
+        let dt = chrono::DateTime::parse_from_rfc3339(&iso)
+            .map(|d| d.with_timezone(&chrono::Utc))
+            .or_else(|_| {
+                // Naive (no tz offset): parse without offset, assume UTC.
+                chrono::NaiveDateTime::parse_from_str(&iso, "%Y-%m-%dT%H:%M:%S%.f").map(|ndt| {
+                    chrono::DateTime::<chrono::Utc>::from_naive_utc_and_offset(ndt, chrono::Utc)
+                })
+            })
+            .map_err(|e| PyValueError::new_err(format!("Failed to parse datetime '{iso}': {e}")))?;
+        Ok(FieldType::DateTime(dt))
+    } else if is_instance_of(value, "uuid", "UUID") {
+        let s: String = value.str()?.extract()?;
+        let u = uuid::Uuid::parse_str(&s)
+            .map_err(|e| PyValueError::new_err(format!("Failed to parse UUID '{s}': {e}")))?;
+        Ok(FieldType::UUID(u))
+    } else if let Ok(set) = value.cast::<pyo3::types::PySet>() {
+        let mut items = Vec::new();
+        for item in set.iter() {
+            items.push(py_to_field_type(&item)?);
+        }
+        Ok(FieldType::Set(items))
+    } else if let Ok(fset) = value.cast::<pyo3::types::PyFrozenSet>() {
+        let mut items = Vec::new();
+        for item in fset.iter() {
+            items.push(py_to_field_type(&item)?);
+        }
+        Ok(FieldType::Set(items))
     } else if let Ok(list) = value.cast::<PyList>() {
         let mut arr = Vec::new();
         for item in list.iter() {
@@ -1956,14 +5036,30 @@ fn py_to_field_type(value: &Bound<'_, PyAny>) -> PyResult<FieldType> {
     }
 }
 
+/// Returns true if `value` is an instance of `module.class_name`.
+///
+/// Imports the module and checks via `isinstance`. Used to detect stdlib types
+/// (datetime, uuid.UUID, decimal.Decimal) without pulling in their C extensions
+/// at the Rust level. Any import/lookup failure is treated as "not an instance".
+fn is_instance_of(value: &Bound<'_, PyAny>, module: &str, class_name: &str) -> bool {
+    let py = value.py();
+    let Ok(m) = py.import(module) else {
+        return false;
+    };
+    let Ok(cls) = m.getattr(class_name) else {
+        return false;
+    };
+    value.is_instance(&cls).unwrap_or(false)
+}
+
 /// Convert Python dict to Rust Record
 fn dict_to_record(dict: &Bound<'_, PyDict>) -> PyResult<RustRecord> {
     let mut record = RustRecord::default();
-    
+
     for (key, value) in dict.iter() {
         let key_str: String = key.extract()?;
         let field_value = py_to_field_type(&value)?;
-        record.fields.insert(key_str, field_value);
+        record.insert(key_str, field_value);
     }
 
     Ok(record)
@@ -1991,19 +5087,74 @@ fn field_type_to_py(py: Python, value: &FieldType) -> PyResult<Py<PyAny>> {
             }
             Ok(dict.into())
         }
-        // For all other complex types, convert to string representation
-        _ => {
-            let value_str = format!("{:?}", value);
-            Ok(PyString::new(py, &value_str).into())
+        FieldType::Number(n) => match n {
+            ekodb_client::NumberValue::Integer(i) => Ok(PyInt::new(py, *i).into()),
+            ekodb_client::NumberValue::Float(f) => Ok(PyFloat::new(py, *f).into()),
+            ekodb_client::NumberValue::Decimal(d) => decimal_to_py(py, &d.to_string()),
+        },
+        FieldType::Decimal(d) => decimal_to_py(py, &d.to_string()),
+        FieldType::Binary(v) | FieldType::Bytes(v) => Ok(PyBytes::new(py, v).into()),
+        FieldType::DateTime(dt) => {
+            // Build a timezone-aware UTC datetime. fromtimestamp(..., tz=utc) is
+            // robust across Python versions (unlike fromisoformat offset parsing
+            // pre-3.11). Pass fractional seconds so sub-second precision survives.
+            let datetime_mod = py.import("datetime")?;
+            let utc = datetime_mod.getattr("timezone")?.getattr("utc")?;
+            // total seconds as float, including the sub-second component
+            let secs =
+                dt.timestamp() as f64 + (dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0);
+            let parsed = datetime_mod
+                .getattr("datetime")?
+                .call_method1("fromtimestamp", (secs, utc))?;
+            Ok(parsed.into())
+        }
+        FieldType::UUID(u) => {
+            let uuid_mod = py.import("uuid")?;
+            let py_uuid = uuid_mod.getattr("UUID")?.call1((u.to_string(),))?;
+            Ok(py_uuid.into())
+        }
+        FieldType::Duration(d) => {
+            // std::time::Duration -> datetime.timedelta via total seconds (f64
+            // preserves sub-second precision).
+            let datetime_mod = py.import("datetime")?;
+            let kwargs = PyDict::new(py);
+            kwargs.set_item("seconds", d.as_secs_f64())?;
+            let td = datetime_mod.getattr("timedelta")?.call((), Some(&kwargs))?;
+            Ok(td.into())
+        }
+        FieldType::Set(items) => {
+            // Try to build a Python set; fall back to a list if any item is unhashable.
+            let py_items = PyList::empty(py);
+            for item in items {
+                py_items.append(field_type_to_py(py, item)?)?;
+            }
+            match pyo3::types::PySet::new(py, py_items.iter()) {
+                Ok(set) => Ok(set.into()),
+                Err(_) => Ok(py_items.into()),
+            }
+        }
+        FieldType::Vector(items) => {
+            let list = PyList::empty(py);
+            for item in items {
+                list.append(field_type_to_py(py, item)?)?;
+            }
+            Ok(list.into())
         }
     }
+}
+
+/// Build a Python `decimal.Decimal` from a decimal string, preserving precision.
+fn decimal_to_py(py: Python, s: &str) -> PyResult<Py<PyAny>> {
+    let decimal_mod = py.import("decimal")?;
+    let dec = decimal_mod.getattr("Decimal")?.call1((s,))?;
+    Ok(dec.into())
 }
 
 /// Convert Rust Record to Python dict
 fn record_to_dict(py: Python, record: &RustRecord) -> PyResult<Py<PyAny>> {
     let dict = PyDict::new(py);
 
-    for (key, value) in record.fields.iter() {
+    for (key, value) in record.iter() {
         dict.set_item(key, field_type_to_py(py, value)?)?;
     }
 
@@ -2045,7 +5196,7 @@ fn json_to_pydict(py: Python, value: &serde_json::Value) -> PyResult<Py<PyAny>> 
 /// Convert Python dict to JSON value
 fn pydict_to_json(py: Python, dict: &Bound<'_, PyDict>) -> PyResult<serde_json::Value> {
     use pyo3::types::{PyBool, PyFloat, PyInt, PyString};
-    
+
     let mut map = serde_json::Map::new();
     for (key, value) in dict.iter() {
         let key_str: String = key.extract()?;
@@ -2106,13 +5257,382 @@ fn pydict_to_fieldtype_map(
         .map_err(|e| PyValueError::new_err(format!("Failed to convert to FieldType map: {}", e)))
 }
 
+/// A snapshot of an ekoDB /api/health probe (mirrors the other clients).
+///
+/// Degraded-tolerant: a reachable server that reports "degraded" has
+/// reachable=True; an unreachable/unparseable probe yields reachable=False,
+/// status="unknown". A non-empty string status is preserved verbatim; a
+/// missing/odd status on a reachable body fails safe to "degraded".
+#[pyclass(name = "HealthStatus", skip_from_py_object)]
+#[derive(Clone)]
+struct PyHealthStatus {
+    reachable: bool,
+    status: String,
+    integrity_ok: bool,
+    detail: Option<serde_json::Value>,
+}
+
+impl PyHealthStatus {
+    fn from_core(hs: ekodb_client::HealthStatus) -> Self {
+        PyHealthStatus {
+            reachable: hs.reachable,
+            status: hs.status,
+            integrity_ok: hs.integrity_ok,
+            detail: hs.detail,
+        }
+    }
+}
+
+#[pymethods]
+impl PyHealthStatus {
+    #[getter]
+    fn reachable(&self) -> bool {
+        self.reachable
+    }
+
+    #[getter]
+    fn status(&self) -> String {
+        self.status.clone()
+    }
+
+    #[getter]
+    fn integrity_ok(&self) -> bool {
+        self.integrity_ok
+    }
+
+    /// The full parsed /api/health body, or None. Not included in `to_dict()`
+    /// (it can carry internal metrics / collection names); read it directly when
+    /// you need the raw body.
+    #[getter]
+    fn detail(&self, py: Python<'_>) -> PyResult<Py<PyAny>> {
+        match &self.detail {
+            Some(v) => json_to_pydict(py, v),
+            None => Ok(py.None()),
+        }
+    }
+
+    /// A safe summary dict `{reachable, status, integrity_ok}` that excludes
+    /// `detail`, matching the serialized form of the other clients.
+    fn to_dict<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyDict>> {
+        let d = PyDict::new(py);
+        d.set_item("reachable", self.reachable)?;
+        d.set_item("status", &self.status)?;
+        d.set_item("integrity_ok", self.integrity_ok)?;
+        Ok(d)
+    }
+
+    fn __repr__(&self) -> String {
+        format!(
+            "HealthStatus(reachable={}, status='{}', integrity_ok={})",
+            self.reachable, self.status, self.integrity_ok
+        )
+    }
+}
+
+/// Interpret a parsed /api/health body per the shared health contract.
+///
+/// Args:
+///     body: The /api/health response as a dict.
+/// Returns:
+///     A HealthStatus snapshot.
+#[pyfunction]
+fn parse_health_status(py: Python<'_>, body: &Bound<'_, PyDict>) -> PyResult<PyHealthStatus> {
+    let value = pydict_to_json(py, body)?;
+    Ok(PyHealthStatus::from_core(
+        ekodb_client::parse_health_status(&value),
+    ))
+}
+
 /// ekoDB Python module
 #[pymodule]
 fn _ekodb_client(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Client>()?;
     m.add_class::<WebSocketClient>()?;
+    m.add_class::<SubscriptionReceiver>()?;
+    m.add_class::<ChatStreamReceiver>()?;
     m.add_class::<RateLimitInfo>()?;
     m.add_class::<SerializationFormat>()?;
+    m.add_class::<PyHealthStatus>()?;
     m.add("RateLimitError", m.py().get_type::<RateLimitError>())?;
+    m.add_function(wrap_pyfunction!(extract_record_id, m)?)?;
+    m.add_function(wrap_pyfunction!(parse_health_status, m)?)?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::str::FromStr;
+
+    // These tests require a real Python interpreter. Run with:
+    //   cargo test --no-default-features --features rustls,test-support
+    // (test-support enables pyo3/auto-initialize; default-off extension-module
+    //  is skipped so libpython is linked.)
+
+    /// Helper: assert a Python value round-trips py -> FieldType -> py unchanged,
+    /// returning the FieldType for variant assertions.
+    fn to_field(py: Python, code: &str) -> FieldType {
+        let val = py
+            .eval(&std::ffi::CString::new(code).unwrap(), None, None)
+            .unwrap_or_else(|e| panic!("eval {code} failed: {e}"));
+        py_to_field_type(&val).unwrap_or_else(|e| panic!("py_to_field_type({code}) failed: {e}"))
+    }
+
+    #[test]
+    fn test_bytes_roundtrip() {
+        Python::attach(|py| {
+            let ft = to_field(py, "b'\\x00\\x01\\xff'");
+            assert!(matches!(ft, FieldType::Binary(ref v) if v == &vec![0u8, 1, 255]));
+            let back = field_type_to_py(py, &ft).unwrap();
+            let bound = back.bind(py);
+            assert!(bound.is_instance_of::<PyBytes>());
+            let bytes = bound.cast::<PyBytes>().unwrap();
+            assert_eq!(bytes.as_bytes(), &[0u8, 1, 255]);
+        });
+    }
+
+    #[test]
+    fn test_bytearray_to_binary() {
+        Python::attach(|py| {
+            let ft = to_field(py, "bytearray(b'abc')");
+            assert!(matches!(ft, FieldType::Binary(ref v) if v == &b"abc".to_vec()));
+        });
+    }
+
+    #[test]
+    fn test_datetime_roundtrip() {
+        Python::attach(|py| {
+            let code = "__import__('datetime').datetime(2024, 1, 2, 3, 4, 5, \
+                        123456, tzinfo=__import__('datetime').timezone.utc)";
+            let ft = to_field(py, code);
+            let dt = match ft {
+                FieldType::DateTime(d) => d,
+                other => panic!("expected DateTime, got {other:?}"),
+            };
+            assert_eq!(dt.to_rfc3339(), "2024-01-02T03:04:05.123456+00:00");
+
+            // Round-trip back to Python and compare the timestamp.
+            let back = field_type_to_py(py, &FieldType::DateTime(dt)).unwrap();
+            let bound = back.bind(py);
+            let dt_mod = py.import("datetime").unwrap();
+            let dt_cls = dt_mod.getattr("datetime").unwrap();
+            assert!(bound.is_instance(&dt_cls).unwrap());
+            let ts: f64 = bound.call_method0("timestamp").unwrap().extract().unwrap();
+            assert!((ts - dt.timestamp() as f64 - 0.123456).abs() < 1e-3);
+            // tzinfo must be set (timezone-aware)
+            assert!(!bound.getattr("tzinfo").unwrap().is_none());
+        });
+    }
+
+    #[test]
+    fn test_naive_datetime_treated_as_utc() {
+        Python::attach(|py| {
+            let code = "__import__('datetime').datetime(2024, 1, 2, 3, 4, 5)";
+            let ft = to_field(py, code);
+            match ft {
+                FieldType::DateTime(d) => {
+                    assert_eq!(d.to_rfc3339(), "2024-01-02T03:04:05+00:00")
+                }
+                other => panic!("expected DateTime, got {other:?}"),
+            }
+        });
+    }
+
+    #[test]
+    fn test_uuid_roundtrip() {
+        Python::attach(|py| {
+            let code = "__import__('uuid').UUID('12345678-1234-5678-1234-567812345678')";
+            let ft = to_field(py, code);
+            let u = match ft {
+                FieldType::UUID(u) => u,
+                other => panic!("expected UUID, got {other:?}"),
+            };
+            assert_eq!(u.to_string(), "12345678-1234-5678-1234-567812345678");
+
+            let back = field_type_to_py(py, &FieldType::UUID(u)).unwrap();
+            let bound = back.bind(py);
+            let uuid_cls = py.import("uuid").unwrap().getattr("UUID").unwrap();
+            assert!(bound.is_instance(&uuid_cls).unwrap());
+            let s: String = bound.str().unwrap().extract().unwrap();
+            assert_eq!(s, "12345678-1234-5678-1234-567812345678");
+        });
+    }
+
+    #[test]
+    fn test_decimal_roundtrip_preserves_precision() {
+        Python::attach(|py| {
+            let code = "__import__('decimal').Decimal('123.456000789')";
+            let ft = to_field(py, code);
+            let d = match ft {
+                FieldType::Decimal(d) => d,
+                other => panic!("expected Decimal, got {other:?}"),
+            };
+            assert_eq!(d, rust_decimal::Decimal::from_str("123.456000789").unwrap());
+
+            let back = field_type_to_py(py, &FieldType::Decimal(d)).unwrap();
+            let bound = back.bind(py);
+            let dec_cls = py.import("decimal").unwrap().getattr("Decimal").unwrap();
+            assert!(bound.is_instance(&dec_cls).unwrap());
+            let s: String = bound.str().unwrap().extract().unwrap();
+            assert_eq!(s, "123.456000789");
+        });
+    }
+
+    #[test]
+    fn test_number_decimal_read_path() {
+        Python::attach(|py| {
+            // FieldType::Number(Decimal) should also surface as a Python Decimal.
+            let d = rust_decimal::Decimal::from_str("9.99").unwrap();
+            let back = field_type_to_py(
+                py,
+                &FieldType::Number(ekodb_client::NumberValue::Decimal(d)),
+            )
+            .unwrap();
+            let bound = back.bind(py);
+            let dec_cls = py.import("decimal").unwrap().getattr("Decimal").unwrap();
+            assert!(bound.is_instance(&dec_cls).unwrap());
+            let s: String = bound.str().unwrap().extract().unwrap();
+            assert_eq!(s, "9.99");
+        });
+    }
+
+    #[test]
+    fn test_number_int_and_float_read_path() {
+        Python::attach(|py| {
+            let i = field_type_to_py(
+                py,
+                &FieldType::Number(ekodb_client::NumberValue::Integer(7)),
+            )
+            .unwrap();
+            assert_eq!(i.bind(py).extract::<i64>().unwrap(), 7);
+            let f = field_type_to_py(
+                py,
+                &FieldType::Number(ekodb_client::NumberValue::Float(1.5)),
+            )
+            .unwrap();
+            assert_eq!(f.bind(py).extract::<f64>().unwrap(), 1.5);
+        });
+    }
+
+    #[test]
+    fn test_duration_read_path() {
+        Python::attach(|py| {
+            let d = std::time::Duration::from_millis(1500);
+            let back = field_type_to_py(py, &FieldType::Duration(d)).unwrap();
+            let bound = back.bind(py);
+            let td_cls = py.import("datetime").unwrap().getattr("timedelta").unwrap();
+            assert!(bound.is_instance(&td_cls).unwrap());
+            let secs: f64 = bound
+                .call_method0("total_seconds")
+                .unwrap()
+                .extract()
+                .unwrap();
+            assert!((secs - 1.5).abs() < 1e-9);
+        });
+    }
+
+    #[test]
+    fn test_set_roundtrip() {
+        Python::attach(|py| {
+            let ft = to_field(py, "{1, 2, 3}");
+            let items = match &ft {
+                FieldType::Set(items) => items,
+                other => panic!("expected Set, got {other:?}"),
+            };
+            assert_eq!(items.len(), 3);
+
+            let back = field_type_to_py(py, &ft).unwrap();
+            let bound = back.bind(py);
+            assert!(bound.is_instance_of::<pyo3::types::PySet>());
+            assert_eq!(bound.len().unwrap(), 3);
+        });
+    }
+
+    #[test]
+    fn test_frozenset_to_set() {
+        Python::attach(|py| {
+            let ft = to_field(py, "frozenset({'a', 'b'})");
+            assert!(matches!(ft, FieldType::Set(ref items) if items.len() == 2));
+        });
+    }
+
+    #[test]
+    fn test_set_with_unhashable_falls_back_to_list() {
+        Python::attach(|py| {
+            // A Set whose converted items are unhashable (dicts) must become a list.
+            let mut obj = std::collections::HashMap::new();
+            obj.insert("k".to_string(), FieldType::Integer(1));
+            let ft = FieldType::Set(vec![FieldType::Object(obj)]);
+            let back = field_type_to_py(py, &ft).unwrap();
+            let bound = back.bind(py);
+            assert!(bound.is_instance_of::<PyList>());
+            assert_eq!(bound.len().unwrap(), 1);
+        });
+    }
+
+    #[test]
+    fn test_vector_read_path() {
+        Python::attach(|py| {
+            let ft = FieldType::Vector(vec![
+                FieldType::Float(1.0),
+                FieldType::Float(2.0),
+                FieldType::Float(3.0),
+            ]);
+            let back = field_type_to_py(py, &ft).unwrap();
+            let bound = back.bind(py);
+            assert!(bound.is_instance_of::<PyList>());
+            assert_eq!(bound.len().unwrap(), 3);
+            let first: f64 = bound.get_item(0).unwrap().extract().unwrap();
+            assert_eq!(first, 1.0);
+        });
+    }
+
+    #[test]
+    fn test_scalars_still_work() {
+        Python::attach(|py| {
+            assert!(matches!(to_field(py, "True"), FieldType::Boolean(true)));
+            assert!(matches!(to_field(py, "42"), FieldType::Integer(42)));
+            assert!(matches!(to_field(py, "'hi'"), FieldType::String(ref s) if s == "hi"));
+            assert!(matches!(to_field(py, "None"), FieldType::Null));
+            assert!(matches!(to_field(py, "[1, 2]"), FieldType::Array(_)));
+            assert!(matches!(to_field(py, "{'a': 1}"), FieldType::Object(_)));
+        });
+    }
+
+    // ---- Ticket #123: map_client_err ----
+
+    #[test]
+    fn test_map_client_err_ratelimit_maps_to_ratelimit_error() {
+        Python::attach(|py| {
+            let err = map_client_err(
+                "Insert failed",
+                ekodb_client::Error::RateLimit {
+                    retry_after_secs: 42,
+                },
+            );
+            // It must be a RateLimitError, not a generic RuntimeError.
+            assert!(err.is_instance_of::<RateLimitError>(py));
+            assert!(!err.is_instance_of::<PyRuntimeError>(py));
+            // And it must carry retry_after as the first arg.
+            let value = err.value(py);
+            let args = value.getattr("args").unwrap();
+            let retry: u64 = args.get_item(0).unwrap().extract().unwrap();
+            assert_eq!(retry, 42);
+        });
+    }
+
+    #[test]
+    fn test_map_client_err_other_maps_to_runtime_error() {
+        Python::attach(|py| {
+            let err = map_client_err(
+                "Find failed",
+                ekodb_client::Error::Validation("boom".to_string()),
+            );
+            assert!(err.is_instance_of::<PyRuntimeError>(py));
+            assert!(!err.is_instance_of::<RateLimitError>(py));
+            let msg = err.value(py).str().unwrap().to_string();
+            assert!(msg.contains("Find failed"), "msg was: {msg}");
+            assert!(msg.contains("boom"), "msg was: {msg}");
+        });
+    }
 }

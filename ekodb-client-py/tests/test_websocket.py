@@ -1,0 +1,137 @@
+"""
+Tests for WebSocket and token management Python bindings.
+
+These are import/API shape tests since actual WebSocket tests require a running server.
+"""
+
+from ekodb_client import (
+    Client,
+    WebSocketClient,
+    SubscriptionReceiver,
+    ChatStreamReceiver,
+)
+
+
+class TestWebSocketImports:
+    """Test that all WebSocket types are properly exported."""
+
+    def test_websocket_client_exported(self):
+        assert WebSocketClient is not None
+
+    def test_subscription_receiver_exported(self):
+        assert SubscriptionReceiver is not None
+
+    def test_chat_stream_receiver_exported(self):
+        assert ChatStreamReceiver is not None
+
+
+class TestClientTokenMethods:
+    """Test that token management methods exist on Client."""
+
+    def test_client_has_refresh_token(self):
+        """Client should have a refresh_token method."""
+        assert hasattr(Client, "refresh_token")
+
+    def test_client_has_clear_token_cache(self):
+        """Client should have a clear_token_cache method."""
+        assert hasattr(Client, "clear_token_cache")
+
+
+class TestClientWebSocketMethod:
+    """Test that WebSocket method exists on Client."""
+
+    def test_client_has_websocket_method(self):
+        """Client should have a websocket method."""
+        assert hasattr(Client, "websocket")
+
+
+class TestClientChatToolMethods:
+    """Test that SSE client-tool methods exist on Client."""
+
+    def test_client_has_submit_chat_tool_result(self):
+        """Client should have a submit_chat_tool_result method."""
+        assert hasattr(Client, "submit_chat_tool_result")
+
+    def test_client_has_submit_chat_tool_keepalive(self):
+        # Keepalive is a liveness ping (not a result) that resets the
+        # server's per-tool wait deadline for an in-flight SSE chat
+        # stream (ekoDB#530); mirrors submit_chat_tool_result.
+        assert hasattr(Client, "submit_chat_tool_keepalive")
+
+
+class TestWebSocketClientMethods:
+    """Test that all WebSocket methods exist."""
+
+    def test_has_find_all(self):
+        assert hasattr(WebSocketClient, "find_all")
+
+    def test_has_ws_batch_update(self):
+        # ws_batch_update fills the WS batch-update gap (#146); find_all already
+        # covers WS find-all, so no separate ws_find_all is added (no duplicate).
+        assert hasattr(WebSocketClient, "ws_batch_update")
+
+    def test_has_subscribe(self):
+        assert hasattr(WebSocketClient, "subscribe")
+
+    def test_has_chat_send(self):
+        assert hasattr(WebSocketClient, "chat_send")
+
+    def test_has_register_client_tools(self):
+        assert hasattr(WebSocketClient, "register_client_tools")
+
+    def test_has_send_tool_result(self):
+        assert hasattr(WebSocketClient, "send_tool_result")
+
+    def test_has_cancel_chat(self):
+        # WS chat-cancel parity (#144); Rust/Go already had it.
+        assert hasattr(WebSocketClient, "cancel_chat")
+
+    def test_has_ws_unsubscribe(self):
+        # Explicit WS unsubscribe: sends a server-side Unsubscribe frame and
+        # tears down the local subscription. Brings parity with TypeScript/Go.
+        assert hasattr(WebSocketClient, "ws_unsubscribe")
+
+
+class TestSubscriptionReceiverMethods:
+    """Test SubscriptionReceiver API."""
+
+    def test_has_recv(self):
+        assert hasattr(SubscriptionReceiver, "recv")
+
+
+class TestChatStreamReceiverMethods:
+    """Test ChatStreamReceiver API."""
+
+    def test_has_recv(self):
+        assert hasattr(ChatStreamReceiver, "recv")
+
+
+class TestWebSocketCloseAndSchemaCache:
+    """Parity: WS close() + schema-cache construction options."""
+
+    def test_websocket_has_close(self):
+        # Deterministic teardown, matching every other WS client.
+        assert hasattr(WebSocketClient, "close")
+        assert callable(WebSocketClient.close)
+
+    def test_client_accepts_schema_cache_options(self):
+        # Schema cache enabled with ttl/max (parity with the other clients).
+        client = Client.new(
+            "http://localhost:8080",
+            "test-api-key",
+            should_retry=False,
+            schema_cache=True,
+            schema_cache_ttl_secs=60,
+            schema_cache_max=50,
+        )
+        assert client is not None
+
+    def test_client_schema_cache_defaults_disabled(self):
+        # Omitting the options keeps the previous behaviour (cache disabled).
+        client = Client.new("http://localhost:8080", "test-api-key", should_retry=False)
+        assert client is not None
+
+    def test_client_construction_backcompat_positional(self):
+        # Existing positional construction must still work unchanged.
+        client = Client.new("http://localhost:8080", "test-api-key", True, 3, 30, None)
+        assert client is not None

@@ -4,7 +4,7 @@
 //! logical operators, comparison operators, and advanced filtering.
 
 use crate::types::Query;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 /// Builder for constructing complex queries
 #[derive(Debug, Clone, Default)]
@@ -16,6 +16,8 @@ pub struct QueryBuilder {
     join: Option<Value>,
     bypass_cache: bool,
     bypass_ripple: bool,
+    select_fields: Option<Vec<String>>,
+    exclude_fields: Option<Vec<String>>,
 }
 
 /// Sort order for query results
@@ -184,20 +186,8 @@ impl QueryBuilder {
         self
     }
 
-    /// Add a regex filter (Note: not directly supported by server, use contains/starts_with/ends_with instead)
-    pub fn regex(mut self, field: impl Into<String>, pattern: impl Into<String>) -> Self {
-        // Regex is not in the server's FilterOperator enum
-        // We'll use Contains as a fallback
-        self.filters.push(json!({
-            "type": "Condition",
-            "content": {
-                "field": field.into(),
-                "operator": "Contains",
-                "value": pattern.into()
-            }
-        }));
-        self
-    }
+    // Note: regex filtering is pending server-side support. The server's
+    // FilterOperator enum has no Regex variant; use contains/starts_with/ends_with.
 
     // Note: Array operators like elem_match and exists are not supported by the server's FilterOperator enum
 
@@ -306,9 +296,25 @@ impl QueryBuilder {
         self
     }
 
-    /// Bypass ripple for this query
+    /// Bypass ripple propagation for this query
     pub fn bypass_ripple(mut self, bypass: bool) -> Self {
         self.bypass_ripple = bypass;
+        self
+    }
+
+    // ========================================================================
+    // Field Projection
+    // ========================================================================
+
+    /// Select specific fields to return (plus 'id' which is always included)
+    pub fn select_fields(mut self, fields: Vec<String>) -> Self {
+        self.select_fields = Some(fields);
+        self
+    }
+
+    /// Exclude specific fields from results
+    pub fn exclude_fields(mut self, fields: Vec<String>) -> Self {
+        self.exclude_fields = Some(fields);
         self
     }
 
@@ -355,6 +361,14 @@ impl QueryBuilder {
         query.join = self.join;
         query.bypass_cache = Some(self.bypass_cache);
         query.bypass_ripple = Some(self.bypass_ripple);
+
+        if let Some(fields) = self.select_fields {
+            query.select_fields = Some(fields);
+        }
+
+        if let Some(fields) = self.exclude_fields {
+            query.exclude_fields = Some(fields);
+        }
 
         query
     }
@@ -445,14 +459,6 @@ mod tests {
     }
 
     // test_exists_operator removed - Exists is not supported by server's FilterOperator enum
-
-    #[test]
-    fn test_regex_operator() {
-        let query = QueryBuilder::new()
-            .regex("email", "^.*@example\\.com$")
-            .build();
-        assert!(query.filter.is_some());
-    }
 
     #[test]
     fn test_starts_with() {

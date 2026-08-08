@@ -226,27 +226,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let mut context_messages = Vec::new();
     for (i, msg) in related_messages.iter().enumerate() {
-        let content = msg
-            .get("content")
-            .and_then(|v| {
-                if let ekodb_client::FieldType::String(s) = v {
-                    Some(s.clone())
-                } else {
-                    None
-                }
-            })
-            .unwrap_or_else(|| "N/A".to_string());
+        let content = msg.get_string("content").unwrap_or("N/A").to_string();
 
         let conv_id = msg
-            .get("conversation_id")
-            .and_then(|v| {
-                if let ekodb_client::FieldType::String(s) = v {
-                    Some(s.clone())
-                } else {
-                    None
-                }
-            })
-            .unwrap_or_else(|| "N/A".to_string());
+            .get_string("conversation_id")
+            .unwrap_or("N/A")
+            .to_string();
 
         println!("  {}. From {}", i + 1, conv_id);
         println!("     {}\n", content);
@@ -274,7 +259,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let chat_session = client
         .create_chat_session(
             ekodb_client::CreateChatSessionRequest::new("openai")
-                .model("gpt-4")
+                .model("gpt-4o-mini")
                 .system_prompt(&format!(
                     "You are a helpful programming assistant. Use the provided context \
                      to give comprehensive answers that combine knowledge from multiple \
@@ -367,27 +352,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
         ownership_results.len()
     );
     for (i, msg) in ownership_results.iter().enumerate() {
-        let content = msg
-            .get("content")
-            .and_then(|v| {
-                if let ekodb_client::FieldType::String(s) = v {
-                    Some(s.clone())
-                } else {
-                    None
-                }
-            })
-            .unwrap_or_else(|| "N/A".to_string());
+        let content = msg.get_string("content").unwrap_or("N/A").to_string();
 
         let conv_id = msg
-            .get("conversation_id")
-            .and_then(|v| {
-                if let ekodb_client::FieldType::String(s) = v {
-                    Some(s.clone())
-                } else {
-                    None
-                }
-            })
-            .unwrap_or_else(|| "N/A".to_string());
+            .get_string("conversation_id")
+            .unwrap_or("N/A")
+            .to_string();
 
         println!("  {}. From {}: {}\n", i + 1, conv_id, content);
     }
@@ -457,7 +427,7 @@ async fn create_conversation(
     title: &str,
 ) -> Result<(), Box<dyn Error>> {
     let mut conv = Record::new();
-    conv.insert("id", conv_id);
+    conv.insert("conversation_id", conv_id);
     conv.insert("title", title);
     conv.insert("created_at", chrono::Utc::now().to_rfc3339());
     conv.insert(

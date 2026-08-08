@@ -5,9 +5,28 @@
 //! - On cache miss, fetch from external API and store
 //! - On cache hit, return cached data instantly
 
-use ekodb_client::{Client, FieldType, Function, Record, Script};
+use ekodb_client::{Client, FieldType, Function, Record, UserFunction};
 use std::env;
 use std::time::Instant;
+
+/// Save a function idempotently: if the label already exists (HTTP 409),
+/// update the existing definition instead, then return its id.
+async fn save_or_update(
+    client: &Client,
+    function: UserFunction,
+) -> Result<String, Box<dyn std::error::Error>> {
+    let label = function.label.clone();
+    match client.save_function(function.clone()).await {
+        Ok(id) => Ok(id),
+        Err(ekodb_client::Error::Api { code: 409, .. }) => {
+            client.update_function(&label, function).await?;
+            println!("ℹ️  Function '{}' already existed — updated instead", label);
+            let existing = client.get_function(&label).await?;
+            Ok(existing.id.unwrap_or(label))
+        }
+        Err(e) => Err(Box::new(e)),
+    }
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -41,19 +60,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Create a simple cache lookup script
     println!("Creating edge cache lookup script...");
-    let cache_script = Script::new("cache_lookup_rs", "Cache Lookup")
+    let cache_script = UserFunction::new("cache_lookup_rs", "Cache Lookup")
         .with_description("Simple cache lookup by key")
         .with_function(Function::FindAll {
             collection: "edge_cache_rs".to_string(),
         });
 
-    let script_id = client.save_script(cache_script).await?;
+    let script_id = save_or_update(&client, cache_script).await?;
     println!("✓ Edge cache script created: {}\n", script_id);
 
     // Test it - First call
     println!("Call 1: Cache lookup");
     let start1 = Instant::now();
-    let result1 = client.call_script("cache_lookup_rs", None).await?;
+    let result1 = client.call_function("cache_lookup_rs", None).await?;
     let duration1 = start1.elapsed();
     println!("Response time: {}ms", duration1.as_millis());
     println!("Found {} cached entries", result1.records.len());
@@ -61,14 +80,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Test it again - Second call (should be fast due to connection reuse)
     println!("\nCall 2: Cache lookup (connection warm)");
     let start2 = Instant::now();
-    let result2 = client.call_script("cache_lookup_rs", None).await?;
+    let result2 = client.call_function("cache_lookup_rs", None).await?;
     let duration2 = start2.elapsed();
     println!("Response time: {}ms", duration2.as_millis());
     println!("Found {} cached entries", result2.records.len());
 
     // Cleanup
     println!("\n🧹 Cleaning up...");
-    let _ = client.delete_script(&script_id).await;
+    let _ = client.delete_function(&script_id).await;
     let _ = client.delete_collection("edge_cache_rs").await;
     println!("✓ Cleanup complete");
 

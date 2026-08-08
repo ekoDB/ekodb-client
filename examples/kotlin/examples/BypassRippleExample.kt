@@ -3,6 +3,7 @@ package io.ekodb.client.examples
 import io.ekodb.client.EkoDBClient
 import io.ekodb.client.getStringValue
 import io.ekodb.client.types.Record
+import io.github.cdimascio.dotenv.dotenv
 import kotlinx.coroutines.runBlocking
 
 /**
@@ -15,8 +16,9 @@ import kotlinx.coroutines.runBlocking
 fun main() = runBlocking {
     println("=== Bypass Ripple Example ===\n")
 
-    val baseUrl = System.getenv("API_BASE_URL") ?: "http://localhost:8080"
-    val apiKey = System.getenv("API_BASE_KEY") ?: "a-test-api-key-from-ekodb"
+    val dotenv = dotenv()
+    val baseUrl = dotenv["API_BASE_URL"] ?: "http://localhost:8080"
+    val apiKey = dotenv["API_BASE_KEY"] ?: "a-test-api-key-from-ekodb"
 
     val client = EkoDBClient.builder()
         .baseUrl(baseUrl)
@@ -43,7 +45,7 @@ fun main() = runBlocking {
 
     // Update with bypass_ripple
     println("3. Update with bypass_ripple:")
-    val userId = getStringValue(result1.fields["id"]) ?: error("No ID found")
+    val userId = getStringValue(result1["id"]) ?: error("No ID found")
     val updateRecord = Record.new()
         .insert("price", 150)
     val result3 = client.update(collection, userId, updateRecord, bypassRipple = true)
@@ -51,7 +53,7 @@ fun main() = runBlocking {
 
     // Delete with bypass_ripple (use result2's ID since it exists)
     println("4. Delete with bypass_ripple:")
-    val deleteId = getStringValue(result2.fields["id"]) ?: error("No ID found")
+    val deleteId = getStringValue(result2["id"]) ?: error("No ID found")
     client.delete(collection, deleteId, bypassRipple = true)
     println("   Deleted with bypass_ripple\n")
 

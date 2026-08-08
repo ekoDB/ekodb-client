@@ -84,6 +84,43 @@ func request(method, path string, body interface{}) (map[string]interface{}, err
 	return result, nil
 }
 
+func requestArray(method, path string, body interface{}) ([]map[string]interface{}, error) {
+	token, err := getAuthToken()
+	if err != nil {
+		return nil, err
+	}
+
+	var reqBody io.Reader
+	if body != nil {
+		jsonBody, _ := json.Marshal(body)
+		reqBody = bytes.NewBuffer(jsonBody)
+	}
+
+	req, _ := http.NewRequest(method, baseURL+path, reqBody)
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == 404 {
+		return nil, nil
+	}
+
+	respBody, _ := io.ReadAll(resp.Body)
+	if len(respBody) == 0 {
+		return []map[string]interface{}{}, nil
+	}
+
+	var result []map[string]interface{}
+	json.Unmarshal(respBody, &result)
+	return result, nil
+}
+
 func main() {
 	fmt.Println("=== Simple CRUD Operations (Direct HTTP) ===\n")
 
@@ -111,7 +148,7 @@ func main() {
 
 	// Example 3: Find with query
 	fmt.Println("\n=== Find with Query ===")
-	docs, _ := request("POST", "/api/find/test_collection", map[string]interface{}{
+	docs, _ := requestArray("POST", "/api/find/test_collection", map[string]interface{}{
 		"filter": map[string]interface{}{
 			"type": "Condition",
 			"content": map[string]interface{}{

@@ -22,6 +22,30 @@ BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8080")
 API_KEY = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb")
 
 
+def _is_already_exists_error(err):
+    """Detect the server's 409 'function already exists' response."""
+    msg = str(err)
+    return "409" in msg or "already exists" in msg
+
+
+async def save_or_update(client, script):
+    """Save a function, falling back to an update if its label already exists.
+
+    The server returns HTTP 409 when a function with the same label is already
+    saved. In that case we update the existing definition (PUT by label) and
+    return the label as the identifier so the example is idempotent.
+    """
+    label = script["label"]
+    try:
+        return await client.save_function(script)
+    except Exception as e:
+        if not _is_already_exists_error(e):
+            raise
+        await client.update_function(label, script)
+        print(f"ℹ️  Function '{label}' already existed — updated instead")
+        return label
+
+
 async def setup_test_data(client):
     """Create test users"""
     print("📋 Setting up test data...\n")
@@ -60,7 +84,7 @@ async def basic_composition_example(client):
         ],
     }
 
-    await client.save_script(fetch_user)
+    await save_or_update(client, fetch_user)
     print("✅ Saved reusable function: fetch_user")
 
     # Step 2: Create wrapper that CALLS fetch_user
@@ -72,19 +96,19 @@ async def basic_composition_example(client):
             {
                 "type": "CallFunction",
                 "function_label": "fetch_user",
-                "params": {"user_code": "{{user_code}}"},
+                # params omitted - inherits user_code from parent scope
             },
             {"type": "Project", "fields": ["name", "department"], "exclude": False},
         ],
     }
 
-    await client.save_script(get_user_wrapper)
+    await save_or_update(client, get_user_wrapper)
     print(
         "✅ Saved composed function: get_user_wrapper (calls fetch_user + projects fields)\n"
     )
 
     # Step 3: Call the composed function
-    result = await client.call_script("get_user_wrapper", {"user_code": "user_1"})
+    result = await client.call_function("get_user_wrapper", {"user_code": "user_1"})
 
     print("📊 Result from composed function:")
     print(f"   Records: {len(result['records'])}")
@@ -100,83 +124,106 @@ async def basic_composition_example(client):
 async def swr_composition_example(client):
     """Example 2: SWR Pattern with Function Composition"""
     print("📝 Example 2: SWR Pattern with Function Composition\n")
-    print("Using CallFunction to replace inline logic in SWR pattern...\n")
+    print("Using KV cache + CallFunction for fast cache-aside pattern...\n")
 
     # Step 1: Create reusable fetch and store function
+    # Using jsonplaceholder.typicode.com - a reliable free API for testing
+    # This function fetches from API and stores in KV cache
     fetch_and_store = {
-        "label": "fetch_and_store_github",
-        "name": "Fetch from GitHub and store",
-        "parameters": {"username": {"required": True}},
+        "label": "fetch_and_store_user",
+        "name": "Fetch user from API and cache in KV",
+        "parameters": {"user_id": {"required": True}},
         "functions": [
             {
                 "type": "HttpRequest",
-                "url": "https://api.github.com/users/{{username}}",
+                "url": "https://jsonplaceholder.typicode.com/users/{{user_id}}",
                 "method": "GET",
-                "headers": {"User-Agent": "ekoDB-Client"},
+                "headers": {"Accept": "application/json"},
             },
+            # Store in KV cache (much faster than collection for cache lookups)
             {
-                "type": "Insert",
-                "collection": "github_cache",
-                "record": {
-                    "id": {"type": "String", "value": "{{username}}"},
-                    "data": {"type": "Object", "value": "{{http_response}}"},
-                },
+                "type": "KvSet",
+                "key": "user_cache:{{user_id}}",
+                "value": "{{http_response}}",
                 "ttl": 300,  # 5 minute cache
             },
         ],
     }
 
-    await client.save_script(fetch_and_store)
-    print("✅ Saved reusable function: fetch_and_store_github")
+    await save_or_update(client, fetch_and_store)
+    print("✅ Saved reusable function: fetch_and_store_user (uses KV)")
 
     # Step 2: Create SWR function that CALLS the reusable function
-    swr_github = {
-        "label": "swr_github_user",
-        "name": "SWR pattern using reusable functions",
-        "parameters": {"username": {"required": True}},
+    # Pattern: KV cache check → populate if missing → return
+    swr_user = {
+        "label": "swr_user",
+        "name": "SWR pattern for user data (KV-based)",
+        "parameters": {"user_id": {"required": True}},
         "functions": [
+            # Check KV cache first (O(1) lookup - much faster than FindById)
             {
-                "type": "FindById",
-                "collection": "github_cache",
-                "record_id": "{{username}}",
+                "type": "KvGet",
+                "key": "user_cache:{{user_id}}",
             },
             {
                 "type": "If",
-                "condition": {"type": "HasRecords"},
+                # KvGet returns { value: ... } on hit, { value: null } on miss
+                # So we check if "value" is not null to detect cache hit
+                "condition": {
+                    "type": "Not",
+                    "value": {
+                        "condition": {
+                            "type": "FieldEquals",
+                            "value": {"field": "value", "value": None},
+                        }
+                    },
+                },
                 "then_functions": [
-                    {"type": "Project", "fields": ["data"], "exclude": False}
+                    # Cache hit - project the value field
+                    {"type": "Project", "fields": ["value"], "exclude": False}
                 ],
                 "else_functions": [
+                    # Cache miss - call reusable function to fetch and store
+                    # Explicitly pass user_id to the function
                     {
                         "type": "CallFunction",
-                        "function_label": "fetch_and_store_github",
-                        "params": {"username": "{{username}}"},
-                    }
+                        "function_label": "fetch_and_store_user",
+                        "params": {"user_id": "{{user_id}}"},
+                    },
+                    # After storing, retrieve the cached value to return it
+                    {"type": "KvGet", "key": "user_cache:{{user_id}}"},
+                    {"type": "Project", "fields": ["value"], "exclude": False},
                 ],
             },
         ],
     }
 
-    await client.save_script(swr_github)
-    print("✅ Saved SWR function using composition: swr_github_user\n")
+    await save_or_update(client, swr_user)
+    print("✅ Saved SWR function using composition: swr_user\n")
 
     # Step 3: Test cache miss
-    print("First call (cache miss - will fetch from GitHub):")
+    print("First call (cache miss - will fetch from API):")
     start = time.time()
-    result1 = await client.call_script("swr_github_user", {"username": "torvalds"})
+    result1 = await client.call_function("swr_user", {"user_id": "1"})
     duration1 = time.time() - start
 
     print(f"   ⏱️  Duration: {duration1*1000:.1f}ms")
-    print(f"   📊 Records: {len(result1['records'])}\n")
+    print(f"   📊 Records: {len(result1['records'])}")
+    if result1["records"]:
+        print(f"   📦 Data: {json.dumps(result1['records'][0], indent=6)[:200]}...\n")
+    else:
+        print()
 
     # Step 4: Test cache hit
     print("Second call (cache hit - from cache):")
     start = time.time()
-    result2 = await client.call_script("swr_github_user", {"username": "torvalds"})
+    result2 = await client.call_function("swr_user", {"user_id": "1"})
     duration2 = time.time() - start
 
     print(f"   ⏱️  Duration: {duration2*1000:.1f}ms")
     print(f"   📊 Records: {len(result2['records'])}")
+    if result2["records"]:
+        print(f"   📦 Data: {json.dumps(result2['records'][0], indent=6)[:200]}...")
     if duration2 > 0:
         speedup = duration1 / duration2
         print(f"   🚀 Cache speedup: {speedup:.1f}x faster!\n")
@@ -202,7 +249,7 @@ async def nested_composition_example(client):
         ],
     }
 
-    await client.save_script(validate_user)
+    await save_or_update(client, validate_user)
     print("✅ Level 1 function: validate_user")
 
     # Level 2: Calls validate_user + projects
@@ -214,35 +261,34 @@ async def nested_composition_example(client):
             {
                 "type": "CallFunction",
                 "function_label": "validate_user",
-                "params": {"user_code": "{{user_code}}"},
+                # params omitted - inherits user_code from parent scope
             },
             {"type": "Project", "fields": ["name", "department"], "exclude": False},
         ],
     }
 
-    await client.save_script(fetch_slim)
+    await save_or_update(client, fetch_slim)
     print("✅ Level 2 function: fetch_slim_user (calls validate_user)")
 
-    # Level 3: Calls fetch_slim + counts
-    count_user = {
-        "label": "count_validated_user",
-        "name": "Get validated user and count",
+    # Level 3: Calls fetch_slim (demonstrates 3-level nesting)
+    get_verified_user = {
+        "label": "get_verified_user",
+        "name": "Get verified and validated user",
         "parameters": {"user_code": {"required": True}},
         "functions": [
             {
                 "type": "CallFunction",
                 "function_label": "fetch_slim_user",
-                "params": {"user_code": "{{user_code}}"},
+                # params omitted - inherits user_code from parent scope
             },
-            {"type": "Count", "output_field": "record_count"},
         ],
     }
 
-    await client.save_script(count_user)
-    print("✅ Level 3 function: count_validated_user (calls fetch_slim_user)\n")
+    await save_or_update(client, get_verified_user)
+    print("✅ Level 3 function: get_verified_user (calls fetch_slim_user)\n")
 
     # Execute 3-level nested composition
-    result = await client.call_script("count_validated_user", {"user_code": "user_1"})
+    result = await client.call_function("get_verified_user", {"user_code": "user_1"})
 
     print("📊 Result from 3-level nested composition:")
     print(f"   Records: {len(result['records'])}")
@@ -250,32 +296,25 @@ async def nested_composition_example(client):
         record = result["records"][0]
         name_field = record.get("name", {})
         dept_field = record.get("department", {})
-        count_field = record.get("record_count", {})
 
         name = (
             name_field.get("value")
             if isinstance(name_field, dict)
-            else name_field or "N/A"
+            else name_field or "Unknown"
         )
         department = (
             dept_field.get("value")
             if isinstance(dept_field, dict)
-            else dept_field or "N/A"
-        )
-        record_count = (
-            count_field.get("value")
-            if isinstance(count_field, dict)
-            else count_field or 0
+            else dept_field or "Unknown"
         )
 
         print(f"   Name: {name}")
-        print(f"   Department: {department}")
-        print(f"   Record count: {record_count}\n")
+        print(f"   Department: {department}\n")
 
     print("🎯 Key Benefit: Each function is independently testable and reusable!")
     print("   - validate_user: Used in 100 different workflows")
     print("   - fetch_slim_user: Used in 50 workflows")
-    print("   - count_validated_user: Specific workflow\n")
+    print("   - get_verified_user: Specific workflow\n")
 
 
 async def main():

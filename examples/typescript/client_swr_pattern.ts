@@ -1,10 +1,36 @@
-import { EkoDBClient, Stage } from "@ekodb/ekodb-client";
+import { EkoDBClient, Stage, UserFunction } from "@ekodb/ekodb-client";
 import * as dotenv from "dotenv";
 
 dotenv.config();
 
 const BASE_URL = process.env.API_BASE_URL || "http://localhost:8080";
 const API_KEY = process.env.API_BASE_KEY || "a-test-api-key-from-ekodb";
+
+/** True when a save failed because the function label already exists (HTTP 409). */
+function isAlreadyExistsError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.includes("status 409") || message.includes("already exists");
+}
+
+/**
+ * Idempotent save: create the function, or update it in place if a function
+ * with the same label already exists. Returns the function's id so downstream
+ * cleanup-by-id continues to work.
+ */
+async function saveOrUpdate(
+  client: EkoDBClient,
+  script: UserFunction,
+): Promise<string> {
+  try {
+    return await client.saveFunction(script);
+  } catch (error) {
+    if (!isAlreadyExistsError(error)) throw error;
+    await client.updateFunction(script.label, script);
+    console.log(`Function '${script.label}' already existed — updated instead`);
+    const existing = await client.getFunction(script.label);
+    return existing.id ?? script.label;
+  }
+}
 
 async function swrPatternExample() {
   const client = new EkoDBClient(BASE_URL, API_KEY);
@@ -13,15 +39,16 @@ async function swrPatternExample() {
 
   console.log("Step 1: Create SWR function that acts as edge cache");
 
+  // Using jsonplaceholder.typicode.com - a reliable free API for testing
   const swrScript = {
-    label: "fetch_github_user",
-    name: "Fetch GitHub User with Cache",
+    label: "fetch_api_user",
+    name: "Fetch User with Cache",
     description:
-      "SWR pattern: Check cache, fetch from GitHub API if stale, auto-update with TTL",
+      "SWR pattern: Check cache, fetch from API if stale, auto-update with TTL",
     parameters: {
-      username: {
+      user_id: {
         required: true,
-        description: "GitHub username to fetch",
+        description: "User ID to fetch",
       },
       ttl: {
         required: false,
@@ -30,39 +57,47 @@ async function swrPatternExample() {
       },
     },
     version: "1.0",
-    tags: ["swr", "github", "cache"],
+    tags: ["swr", "user", "cache"],
     functions: [
-      Stage.findById("github_cache", "{{username}}"),
+      // Check KV cache for user data
+      Stage.kvGet("api:user:{{user_id}}"),
       Stage.if(
-        { type: "HasRecords" },
-        [Stage.project(["data", "cached_at"], false)],
+        // KvGet returns {value: ...} on hit, {value: null} on miss
+        // So we check if "value" is not null to detect cache hit
+        {
+          type: "Not",
+          value: {
+            condition: {
+              type: "FieldEquals",
+              value: { field: "value", value: null },
+            },
+          },
+        },
+        // Cache hit - return cached data
+        [Stage.project(["value"], false)],
+        // Cache miss - fetch from API and cache
         [
           Stage.httpRequest(
-            "https://api.github.com/users/{{username}}",
+            "https://jsonplaceholder.typicode.com/users/{{user_id}}",
             "GET",
-            { "User-Agent": "ekoDB-SWR-Example" },
+            { Accept: "application/json" },
           ),
-          Stage.insert(
-            "github_cache",
-            {
-              id: { type: "String", value: "{{username}}" },
-              data: { type: "Object", value: "{{http_response}}" },
-              cached_at: { type: "String", value: new Date().toISOString() },
-            },
-            false,
-            undefined,
-          ),
+          // Store in KV with 5 minute TTL
+          Stage.kvSet("api:user:{{user_id}}", "{{http_response}}", 300),
+          // Retrieve the cached data to return
+          Stage.kvGet("api:user:{{user_id}}"),
+          Stage.project(["value"], false),
         ],
       ),
     ],
   };
 
-  const scriptId = await client.saveScript(swrScript);
+  const scriptId = await saveOrUpdate(client, swrScript);
   console.log(`✓ Created SWR script: ${swrScript.label} (${scriptId})\n`);
 
-  console.log("Step 2: First call - Cache miss, fetches from GitHub API");
-  const result1 = await client.callScript("fetch_github_user", {
-    username: "torvalds",
+  console.log("Step 2: First call - Cache miss, fetches from API");
+  const result1 = await client.callFunction("fetch_api_user", {
+    user_id: "1",
     ttl: 300,
   });
   console.log("Result:", JSON.stringify(result1, null, 2));
@@ -70,11 +105,12 @@ async function swrPatternExample() {
 
   console.log("Step 3: Second call - Cache hit, instant response from ekoDB");
   const start = Date.now();
-  const result2 = await client.callScript("fetch_github_user", {
-    username: "torvalds",
+  const result2 = await client.callFunction("fetch_api_user", {
+    user_id: "1",
   });
   const duration = Date.now() - start;
   console.log(`Response time: ${duration}ms (served from cache)`);
+  console.log("Result (cached):", JSON.stringify(result2, null, 2));
   console.log("✓ Lightning fast cache hit\n");
 
   console.log("=== Advanced: SWR with Data Enrichment ===\n");
@@ -98,31 +134,39 @@ async function swrPatternExample() {
     version: "1.0",
     tags: ["enrichment", "product", "cache"],
     functions: [
-      Stage.findById("product_cache", "{{product_id}}"),
+      // Check KV cache for product data
+      Stage.kvGet("product:{{product_id}}"),
       Stage.if(
-        { type: "HasRecords" },
-        [Stage.project(["enriched_data"], false)],
+        // KvGet returns {value: ...} on hit, {value: null} on miss
+        // So we check if "value" is not null to detect cache hit
+        {
+          type: "Not",
+          value: {
+            condition: {
+              type: "FieldEquals",
+              value: { field: "value", value: null },
+            },
+          },
+        },
+        // Cache hit - return cached data
+        [Stage.project(["value"], false)],
+        // Cache miss - fetch from API and cache
         [
           Stage.httpRequest(
             "https://dummyjson.com/products/{{product_id}}",
             "GET",
           ),
-          Stage.insert(
-            "product_cache",
-            {
-              id: { type: "String", value: "{{product_id}}" },
-              enriched_data: { type: "Object", value: "{{http_response}}" },
-              enriched_at: { type: "String", value: new Date().toISOString() },
-            },
-            false,
-            undefined,
-          ),
+          // Store in KV with 10 minute TTL
+          Stage.kvSet("product:{{product_id}}", "{{http_response}}", 600),
+          // Retrieve the cached data to return
+          Stage.kvGet("product:{{product_id}}"),
+          Stage.project(["value"], false),
         ],
       ),
     ],
   };
 
-  const enrichScriptId = await client.saveScript(enrichScript);
+  const enrichScriptId = await saveOrUpdate(client, enrichScript);
   console.log(
     `✓ Created enrichment script: ${enrichScript.label} (${enrichScriptId})\n`,
   );
@@ -130,7 +174,7 @@ async function swrPatternExample() {
   console.log(
     "Step 4: Call enrichment function - Fetches from 2 APIs + stores merged result",
   );
-  const enriched = await client.callScript("fetch_product_with_reviews", {
+  const enriched = await client.callFunction("fetch_product_with_reviews", {
     product_id: "1",
     ttl: 600,
   });
