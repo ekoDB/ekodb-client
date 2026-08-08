@@ -1,13 +1,15 @@
 package io.ekodb.client
 
+import io.ktor.client.*
+import io.ktor.client.engine.mock.*
 import kotlinx.serialization.json.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class WebSocketClientTest {
-
     // ========================================================================
     // MutationNotification Tests
     // ========================================================================
@@ -75,6 +77,26 @@ class WebSocketClientTest {
         assertEquals("msg-1", event.messageId)
         assertEquals(500, event.executionTimeMs)
         assertNotNull(event.tokenUsage)
+    }
+
+    @Test
+    fun `ChatStreamEvent End with contextWindow`() {
+        val event = ChatStreamEvent.End(
+            messageId = "msg-cw",
+            executionTimeMs = 250,
+            contextWindow = 128000
+        )
+        assertEquals("msg-cw", event.messageId)
+        assertEquals(128000, event.contextWindow)
+    }
+
+    @Test
+    fun `ChatStreamEvent End without contextWindow defaults to null`() {
+        val event = ChatStreamEvent.End(
+            messageId = "msg-2",
+            executionTimeMs = 100
+        )
+        assertNull(event.contextWindow)
     }
 
     @Test
@@ -204,6 +226,45 @@ class WebSocketClientTest {
     // WebSocketMessage Tests
     // ========================================================================
 
+    // ========================================================================
+    // Unsubscribe frame Tests
+    // ========================================================================
+
+    private fun newWsClient(): WebSocketClient {
+        // The mock engine is never driven here: buildUnsubscribeFrame is a pure
+        // frame builder that needs no live connection.
+        val mockHttpClient = HttpClient(MockEngine { respond("") })
+        return WebSocketClient("ws://localhost/api/ws", "test-token", mockHttpClient)
+    }
+
+    @Test
+    fun `unsubscribe frame has expected wire shape`() {
+        // Wire-format guard mirroring the TypeScript/Go Unsubscribe frame:
+        // type tag "Unsubscribe", a top-level messageId, and payload.collection.
+        val frame = newWsClient().buildUnsubscribeFrame("orders", "msg-unsub-1")
+        assertEquals("Unsubscribe", frame["type"]?.jsonPrimitive?.content)
+        assertEquals("msg-unsub-1", frame["messageId"]?.jsonPrimitive?.content)
+        val payload = frame["payload"]?.jsonObject
+        assertNotNull(payload)
+        assertEquals("orders", payload["collection"]?.jsonPrimitive?.content)
+        // payload carries exactly the collection and nothing else.
+        assertEquals(1, payload.size)
+    }
+
+    @Test
+    fun `cancelChat frame carries a messageId for ack correlation`() {
+        // Regression guard: the CancelChat frame must include a top-level
+        // messageId so a server ack can be correlated (and safely ignored)
+        // rather than misrouted by the dispatcher's single-pending fallback.
+        val frame = newWsClient().buildCancelChatFrame("chat-42", "msg-cancel-1")
+        assertEquals("CancelChat", frame["type"]?.jsonPrimitive?.content)
+        assertEquals("msg-cancel-1", frame["messageId"]?.jsonPrimitive?.content)
+        val payload = frame["payload"]?.jsonObject
+        assertNotNull(payload)
+        assertEquals("chat-42", payload["chat_id"]?.jsonPrimitive?.content)
+        assertEquals(1, payload.size)
+    }
+
     @Test
     fun `WebSocketMessage data class`() {
         val payload = buildJsonObject { put("collection", "test") }
@@ -211,5 +272,97 @@ class WebSocketClientTest {
         assertEquals("FindAll", msg.type)
         assertEquals("123", msg.messageId)
         assertEquals("test", msg.payload["collection"]?.jsonPrimitive?.content)
+    }
+
+    // ========================================================================
+    // ClientToolDef Tests (HTTP path)
+    // ========================================================================
+
+    @Test
+    fun `ClientToolDef construction`() {
+        val params = buildJsonObject { put("type", "object") }
+        val tool = io.ekodb.client.types.ClientToolDef(
+            name = "weather",
+            description = "Get weather",
+            parameters = params,
+        )
+        assertEquals("weather", tool.name)
+        assertEquals("Get weather", tool.description)
+        assertEquals("object", tool.parameters["type"]?.jsonPrimitive?.content)
+    }
+
+    @Test
+    fun `ClientToolDef equality`() {
+        val params = buildJsonObject { put("type", "object") }
+        val t1 = io.ekodb.client.types.ClientToolDef("calc", "Calculator", params)
+        val t2 = io.ekodb.client.types.ClientToolDef("calc", "Calculator", params)
+        assertEquals(t1, t2)
+    }
+
+    @Test
+    fun `ClientToolDef serialization`() {
+        val params = buildJsonObject { put("type", "object") }
+        val tool = io.ekodb.client.types.ClientToolDef("test", "Test tool", params)
+        val json = kotlinx.serialization.json.Json.encodeToString(
+            io.ekodb.client.types.ClientToolDef.serializer(), tool
+        )
+        assertTrue(json.contains("\"name\":\"test\""))
+        assertTrue(json.contains("\"description\":\"Test tool\""))
+    }
+
+    // ========================================================================
+    // MessagePack transcoding (WebSocket binary transport)
+    // ========================================================================
+
+    @Test
+    fun `msgpack round-trips a request object identically to JSON`() {
+        val request = buildJsonObject {
+            put("type", "FindAll")
+            put("messageId", "m1")
+            putJsonObject("payload") {
+                put("collection", "users")
+                put("limit", 42)
+                put("active", true)
+                put("ratio", 1.5)
+                put("note", JsonNull)
+                putJsonArray("tags") { add("x"); add("y") }
+            }
+        }
+
+        val bytes = jsonElementToMsgpack(request)
+        val decoded = msgpackToJsonElement(bytes).jsonObject
+
+        assertEquals("FindAll", decoded["type"]?.jsonPrimitive?.content)
+        assertEquals("m1", decoded["messageId"]?.jsonPrimitive?.content)
+        val payload = decoded["payload"]!!.jsonObject
+        assertEquals("users", payload["collection"]?.jsonPrimitive?.content)
+        assertEquals(42L, payload["limit"]?.jsonPrimitive?.long)
+        assertEquals(true, payload["active"]?.jsonPrimitive?.boolean)
+        assertEquals(1.5, payload["ratio"]?.jsonPrimitive?.double)
+        assertTrue(payload["note"] is JsonNull)
+        assertEquals(2, payload["tags"]!!.jsonArray.size)
+        assertEquals("x", payload["tags"]!!.jsonArray[0].jsonPrimitive.content)
+    }
+
+    @Test
+    fun `msgpack binary field decodes to a number array matching the JSON wire shape`() {
+        // The server sends a Binary field as a msgpack bin; the client must
+        // surface it as a number array (not base64), identical to the JSON
+        // transport, so decoded data is the same regardless of transport.
+        val packer = org.msgpack.core.MessagePack.newDefaultBufferPacker()
+        packer.packMapHeader(1)
+        packer.packString("photo")
+        val raw = byteArrayOf(255.toByte(), 216.toByte(), 255.toByte())
+        packer.packBinaryHeader(raw.size)
+        packer.writePayload(raw)
+        val bytes = packer.toByteArray()
+        packer.close()
+
+        val decoded = msgpackToJsonElement(bytes).jsonObject
+        val photo = decoded["photo"]!!.jsonArray
+        assertEquals(3, photo.size)
+        assertEquals(255, photo[0].jsonPrimitive.int)
+        assertEquals(216, photo[1].jsonPrimitive.int)
+        assertEquals(255, photo[2].jsonPrimitive.int)
     }
 }

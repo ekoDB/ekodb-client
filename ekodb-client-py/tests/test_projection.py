@@ -20,6 +20,16 @@ class TestProjection:
         )
         assert client is not None
 
+    def test_find_by_id_with_projection_method_exposed(self):
+        """find_by_id_with_projection must be exposed on the client (PyO3 binding
+        parity with the TS/Kotlin/Go clients). HTTP behavior is covered by the
+        Rust client's test_find_by_id_with_projection_success."""
+        client = Client.new(
+            "http://localhost:8080", "test-api-key", should_retry=False, timeout_secs=30
+        )
+        assert hasattr(client, "find_by_id_with_projection")
+        assert callable(client.find_by_id_with_projection)
+
     def test_projection_query_structure(self):
         """Test that projection query structure is correct"""
         # Python client passes queries to Rust core

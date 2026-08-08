@@ -30,7 +30,7 @@ async function main() {
 
   // Get auth token for WebSocket
   await client.refreshToken();
-  const token = client.getToken()!;
+  const token = (await client.getToken())!;
 
   // Connect WebSocket
   const ws = new WebSocketClient(WS_URL, token);
@@ -85,7 +85,7 @@ async function chatWithClientTools() {
 
   const client = new EkoDBClient({ baseURL: BASE_URL, apiKey: API_KEY });
   await client.refreshToken();
-  const token = client.getToken()!;
+  const token = (await client.getToken())!;
 
   const ws = new WebSocketClient(WS_URL, token);
 

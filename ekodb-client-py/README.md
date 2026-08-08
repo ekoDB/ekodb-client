@@ -27,7 +27,7 @@ native Python interface.
 ## Installation
 
 ```bash
-pip install ekodb
+pip install ekodb-client
 ```
 
 Or install from source:
@@ -286,6 +286,21 @@ Find a document by ID.
 
 - The found document
 
+#### `await client.find_by_id_with_projection(collection: str, id: str, select_fields: Optional[list] = None, exclude_fields: Optional[list] = None) -> dict`
+
+Find a document by ID, returning only the projected fields.
+
+**Parameters:**
+
+- `collection`: The collection name
+- `id`: The document ID
+- `select_fields`: Optional list of fields to include
+- `exclude_fields`: Optional list of fields to exclude
+
+**Returns:**
+
+- The found document with field projection applied
+
 #### `await client.find(collection: str, limit: Optional[int] = None) -> List[dict]`
 
 Find documents in a collection.
@@ -487,6 +502,82 @@ Delete a user function by its label.
 
 - `label`: The user function label
 
+### Key-Value
+
+#### `await client.kv_set(key: str, value: dict, ttl: Optional[str] = None) -> None`
+
+Set a key-value pair, optionally with an expiration.
+
+**Parameters:**
+
+- `key`: The key
+- `value`: A dictionary value to store
+- `ttl`: Optional expiration (e.g. `"60s"`)
+
+#### `await client.kv_get(key: str) -> Optional[dict]`
+
+Get a value by key.
+
+**Parameters:**
+
+- `key`: The key
+
+**Returns:**
+
+- The stored value, or `None` if the key does not exist
+
+#### `await client.kv_delete(key: str) -> None`
+
+Delete a key.
+
+**Parameters:**
+
+- `key`: The key
+
+#### `await client.kv_clear() -> None`
+
+Clear the entire KV store (all keys in the namespace).
+
+### Collections
+
+#### `await client.list_user_collections() -> List[str]`
+
+List collections, excluding internal chat/system collections.
+
+**Returns:**
+
+- List of user collection names
+
+### Transactions
+
+Buffered, read-your-writes transactions. Operations issued with a
+`transaction_id` kwarg (accepted on `insert`, `find`, `find_by_id`, `update`,
+`delete`) are staged and applied atomically at commit.
+
+#### `await client.begin_transaction(isolation_level: str = "ReadCommitted") -> str`
+
+Start a transaction and return its id.
+
+#### `await client.commit_transaction(transaction_id: str) -> None`
+
+Apply the staged writes. May raise a retryable conflict (HTTP 409).
+
+#### `await client.rollback_transaction(transaction_id: str) -> None`
+
+Discard the staged writes.
+
+#### `await client.create_savepoint(transaction_id: str, name: str) -> None`
+
+Create a savepoint within the transaction.
+
+#### `await client.rollback_to_savepoint(transaction_id: str, name: str) -> None`
+
+Roll the transaction back to a savepoint.
+
+#### `await client.release_savepoint(transaction_id: str, name: str) -> None`
+
+Release (forget) a savepoint.
+
 ## Examples
 
 See the
@@ -529,9 +620,91 @@ pytest
 pytest --cov=ekodb
 ```
 
+### Goals, Tasks, and Agents
+
+```python
+import asyncio
+from ekodb_client import Client
+
+async def main():
+    client = Client.new("http://localhost:8080", "your-api-key")
+
+    # Goals
+    goal = await client.goal_create({"title": "Migrate data", "status": "active"})
+    goals = await client.goal_list()
+    await client.goal_complete("goal-id", {"summary": "Done"})
+
+    # Tasks
+    task = await client.task_create({"title": "Backup", "schedule": "0 0 * * *"})
+    await client.task_start("task-id")
+
+    # Agents
+    agent = await client.agent_create({"name": "processor", "model": "gpt-4.1"})
+
+asyncio.run(main())
+```
+
+### Schedules
+
+```python
+# Create a schedule
+sched = await client.create_schedule({"name": "nightly", "cron": "0 2 * * *"})
+
+# Pause a schedule
+await client.pause_schedule("sched-id")
+```
+
+### WebSocket Operations
+
+```python
+ws = await client.websocket("ws://localhost:8080")
+
+# Full CRUD over WebSocket (14 methods)
+result = await ws.ws_insert("users", {"name": "Alice", "email": "a@b.com"})
+results = await ws.ws_query("users", filter={"field": "status", "operator": "Eq", "value": "active"})
+user = await ws.ws_find_by_id("users", "record-id")
+await ws.ws_update("users", "record-id", {"name": "Updated"})
+await ws.ws_delete("users", "record-id")
+
+# Batch operations
+await ws.ws_batch_insert("logs", [{"msg": "a"}, {"msg": "b"}])
+await ws.ws_batch_update("logs", [("id1", {"msg": "x"}), ("id2", {"msg": "y"})])
+await ws.ws_batch_delete("logs", ["id1", "id2"])
+
+# Search + collection management
+hits = await ws.ws_text_search("docs", "python async", limit=10)
+collections = await ws.ws_list_collections()
+await ws.ws_create_collection("new_coll")
+
+# Atomic field actions
+await ws.ws_update_with_action("counters", "views", "increment", "count", 1)
+
+# Subscriptions + chat
+await ws.ws_unsubscribe("users")
+await ws.cancel_chat("chat-id")
+```
+
+### WebSocket Chat Streaming
+
+```python
+stream = await ws.chat_send(chat_id, "What is the capital of France?")
+async for event in stream:
+    if event.type == "chunk":
+        print(event.content, end="")
+    elif event.type == "end":
+        print(f"\nDone (context: {event.context_window} tokens)")
+    elif event.type == "tool_call":
+        print(f"[Tool] {event.tool_name}")
+        await ws.send_tool_result(
+            chat_id, event.call_id, True, {"result": "done"}
+        )
+    elif event.type == "error":
+        print(f"Error: {event.error}")
+```
+
 ## License
 
-MIT OR Apache-2.0
+MIT
 
 ## Links
 

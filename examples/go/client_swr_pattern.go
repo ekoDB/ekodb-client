@@ -9,6 +9,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -17,6 +18,31 @@ import (
 	ekodb "github.com/ekoDB/ekodb-client-go"
 	"github.com/joho/godotenv"
 )
+
+// saveOrUpdateFn saves a function, or — if the label already exists (HTTP 409)
+// — updates it in place and recovers the encrypted ID via a GET by label.
+func saveOrUpdateFn(client *ekodb.Client, fn ekodb.UserFunction) (string, error) {
+	id, err := client.SaveFunction(fn)
+	if err == nil {
+		return id, nil
+	}
+	var httpErr *ekodb.HTTPError
+	if errors.As(err, &httpErr) && httpErr.StatusCode == 409 {
+		if uerr := client.UpdateFunction(fn.Label, fn); uerr != nil {
+			return "", uerr
+		}
+		fmt.Printf("Function '%s' already existed — updated instead\n", fn.Label)
+		existing, gerr := client.GetFunction(fn.Label)
+		if gerr != nil {
+			return "", gerr
+		}
+		if existing.ID == nil {
+			return "", fmt.Errorf("function %q has no id after update", fn.Label)
+		}
+		return *existing.ID, nil
+	}
+	return "", err
+}
 
 func main() {
 	if err := godotenv.Load(); err != nil {
@@ -50,7 +76,7 @@ func main() {
 	fmt.Println("Step 1: Create SWR function that acts as edge cache")
 
 	// Using jsonplaceholder.typicode.com - a reliable free API for testing
-	swrScript := ekodb.Script{
+	swrScript := ekodb.UserFunction{
 		Label:       "fetch_api_user_go",
 		Name:        "Fetch User with Cache",
 		Description: func() *string { s := "SWR pattern: Check cache, fetch from API if stale"; return &s }(),
@@ -97,7 +123,7 @@ func main() {
 		},
 	}
 
-	scriptID, err := client.SaveScript(swrScript)
+	scriptID, err := saveOrUpdateFn(client, swrScript)
 	if err != nil {
 		log.Printf("Save script error: %v", err)
 		return
@@ -105,7 +131,7 @@ func main() {
 	fmt.Printf("✓ Created SWR script: fetch_api_user_go (%s)\n\n", scriptID)
 
 	fmt.Println("Step 2: First call - Cache miss, fetches from API")
-	result1, err := client.CallScript("fetch_api_user_go", map[string]interface{}{
+	result1, err := client.CallFunction("fetch_api_user_go", map[string]interface{}{
 		"user_id": "1",
 		"ttl":     300,
 	})
@@ -119,7 +145,7 @@ func main() {
 
 	fmt.Println("Step 3: Second call - Cache hit, instant response from ekoDB")
 	start := time.Now()
-	_, err = client.CallScript("fetch_api_user_go", map[string]interface{}{
+	_, err = client.CallFunction("fetch_api_user_go", map[string]interface{}{
 		"user_id": "1",
 	})
 	duration := time.Since(start)
@@ -132,7 +158,7 @@ func main() {
 
 	// Cleanup
 	fmt.Println("🧹 Cleaning up...")
-	client.DeleteScript(scriptID)
+	client.DeleteFunction(scriptID)
 	client.DeleteCollection("user_cache_go")
 	fmt.Println("✓ Cleanup complete\n")
 

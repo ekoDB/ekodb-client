@@ -18,6 +18,7 @@ impl BatchBuilder {
     }
 
     /// Add a record to the batch
+    #[allow(clippy::should_implement_trait)]
     pub fn add(mut self, record: Record) -> Self {
         self.records.push(record);
         self

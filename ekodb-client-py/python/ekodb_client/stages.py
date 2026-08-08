@@ -8,8 +8,38 @@ that can be used in script definitions.
 from typing import Any, Dict, List, Optional, Union
 
 
+def parameter_ref(name: str) -> Dict[str, str]:
+    """Build the structural placeholder ``{"type": "Parameter", "name": name}``
+    that ekoDB's ``resolve_json_parameters`` recognizes inside
+    ``Insert.record``, ``Update.updates``, ``UpdateById.updates``,
+    ``FindOneAndUpdate.updates``, ``BatchInsert.records``, and any
+    ``QueryExpression`` filter value.
+
+    This is the structural alternative to the text-level ``"{{name}}"``
+    placeholder — use it when the parameter is a whole-object record or a
+    value whose type would be lost on a raw-JSON round-trip (Binary,
+    DateTime, UUID, Decimal, Duration, Number, Set, Vector). Requires
+    ekoDB >= 0.41.0 for the mutation-stage parameter-resolution
+    consistency fix.
+
+    Example:
+        >>> stage = Stage.insert("items", parameter_ref("record"))
+        >>> stage["record"]
+        {'type': 'Parameter', 'name': 'record'}
+    """
+    return {"type": "Parameter", "name": name}
+
+
 class Stage:
     """Helper class for creating function stage configurations."""
+
+    @staticmethod
+    def param(name: str) -> Dict[str, str]:
+        """Shorthand for :func:`parameter_ref`.
+
+        See :func:`parameter_ref` for the full explanation and example.
+        """
+        return parameter_ref(name)
 
     @staticmethod
     def find_all(collection: str) -> Dict[str, Any]:
@@ -458,6 +488,512 @@ class Stage:
             stage["output_field"] = output_field
         if collection is not None:
             stage["collection"] = collection
+        return stage
+
+    @staticmethod
+    def bcrypt_hash(
+        plain: str,
+        output_field: str,
+        cost: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """Bcrypt-hash a plaintext and write the result into every record in
+        the working data as ``output_field``. Use in a compound
+        ``users_register`` function between input validation and Insert.
+
+        ``plain`` is typically a ``"{{password}}"`` placeholder — the
+        substituter replaces it with the call-time param before this stage
+        runs. ``cost`` is the bcrypt work factor (4..=31); leave ``None``
+        for the ekoDB default (12).
+
+        Requires ekoDB >= 0.41.0.
+        """
+        stage: Dict[str, Any] = {
+            "type": "BcryptHash",
+            "plain": plain,
+            "output_field": output_field,
+        }
+        if cost is not None:
+            stage["cost"] = cost
+        return stage
+
+    @staticmethod
+    def bcrypt_verify(
+        plain: str,
+        hash_field: str,
+        output_field: str,
+    ) -> Dict[str, Any]:
+        """Verify a plaintext against a bcrypt hash stored on the first
+        record in the working data; writes a boolean result into
+        ``output_field``. Pair with an ``If`` stage to branch on success
+        / failure.
+
+        ``plain`` is typically ``"{{password}}"``; ``hash_field`` is the
+        name of the field on the current record holding the stored hash
+        (e.g. ``"password_hash"``).
+
+        Requires ekoDB >= 0.41.0.
+        """
+        return {
+            "type": "BcryptVerify",
+            "plain": plain,
+            "hash_field": hash_field,
+            "output_field": output_field,
+        }
+
+    @staticmethod
+    def random_token(
+        bytes: int,
+        output_field: str,
+        encoding: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Generate a cryptographically-random token and add it to every
+        record in the working data. ``bytes`` must be in 1..=1024.
+        ``encoding`` is one of ``"hex"`` (default), ``"base64"``, or
+        ``"base64url"``.
+
+        Requires ekoDB >= 0.41.0.
+        """
+        stage: Dict[str, Any] = {
+            "type": "RandomToken",
+            "bytes": bytes,
+            "output_field": output_field,
+        }
+        if encoding is not None:
+            stage["encoding"] = encoding
+        return stage
+
+    @staticmethod
+    def jwt_sign(
+        claims: Dict[str, Any],
+        secret: str,
+        output_field: str,
+        expires_in_secs: Optional[int] = None,
+        algorithm: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Sign a JWT and write the resulting token to every working
+        record. Pair with ``Stage.bcrypt_verify`` to issue a session
+        token after login. Use ``"{{env.JWT_SECRET}}"`` for ``secret``
+        so the LLM never sees the operator-owned signing key. ``iat``
+        and ``exp`` are auto-stamped when ``expires_in_secs`` is set.
+
+        ``algorithm`` is one of ``"HS256"`` (default), ``"HS384"``,
+        ``"HS512"``.
+
+        Requires ekoDB >= 0.42.0.
+        """
+        stage: Dict[str, Any] = {
+            "type": "JwtSign",
+            "claims": claims,
+            "secret": secret,
+            "output_field": output_field,
+        }
+        if algorithm is not None:
+            stage["algorithm"] = algorithm
+        if expires_in_secs is not None:
+            stage["expires_in_secs"] = expires_in_secs
+        return stage
+
+    @staticmethod
+    def jwt_verify(
+        token_field: str,
+        secret: str,
+        output_field: str,
+        algorithm: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Verify a JWT held in ``token_field`` on the first working
+        record. On success writes the decoded claims object into
+        ``output_field``; on failure writes ``None`` (JSON ``null``).
+        Branch with ``Stage.if_`` matching ``output_field == None`` to
+        reject.
+
+        Requires ekoDB >= 0.42.0.
+        """
+        stage: Dict[str, Any] = {
+            "type": "JwtVerify",
+            "token_field": token_field,
+            "secret": secret,
+            "output_field": output_field,
+        }
+        if algorithm is not None:
+            stage["algorithm"] = algorithm
+        return stage
+
+    @staticmethod
+    def email_send(
+        to: str,
+        subject: str,
+        body: str,
+        from_: str,
+        api_key: str,
+        reply_to: Optional[str] = None,
+        provider: Optional[str] = None,
+        html: Optional[bool] = None,
+        output_field: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Send a transactional email through a provider's REST API.
+        Today only ``provider="sendgrid"`` is supported.
+
+        Use ``"{{env.SENDGRID_API_KEY}}"`` for ``api_key`` so the LLM
+        never sees the operator-owned secret. Set ``html=True`` to
+        send ``text/html``. The result envelope ``{provider_status,
+        provider_message, provider}`` is written to ``output_field``
+        (default ``"email_send"``).
+
+        Note: ``from_`` is named with a trailing underscore because
+        ``from`` is a Python reserved word; on the wire the JSON key
+        is `"from"`.
+
+        Requires ekoDB >= 0.42.0.
+        """
+        stage: Dict[str, Any] = {
+            "type": "EmailSend",
+            "to": to,
+            "subject": subject,
+            "body": body,
+            "from": from_,
+            "api_key": api_key,
+        }
+        if reply_to is not None:
+            stage["reply_to"] = reply_to
+        if provider is not None:
+            stage["provider"] = provider
+        if html is not None:
+            stage["html"] = html
+        if output_field is not None:
+            stage["output_field"] = output_field
+        return stage
+
+    @staticmethod
+    def hmac_sign(
+        input: str,
+        secret: str,
+        output_field: str,
+        algorithm: Optional[str] = None,
+        encoding: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """HMAC-SHA256/384/512 sign. Requires ekoDB >= 0.42.0."""
+        stage: Dict[str, Any] = {
+            "type": "HmacSign",
+            "input": input,
+            "secret": secret,
+            "output_field": output_field,
+        }
+        if algorithm is not None:
+            stage["algorithm"] = algorithm
+        if encoding is not None:
+            stage["encoding"] = encoding
+        return stage
+
+    @staticmethod
+    def hmac_verify(
+        input: str,
+        provided_mac: str,
+        secret: str,
+        output_field: str,
+        algorithm: Optional[str] = None,
+        encoding: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """HMAC verify (constant-time). Writes a boolean."""
+        stage: Dict[str, Any] = {
+            "type": "HmacVerify",
+            "input": input,
+            "provided_mac": provided_mac,
+            "secret": secret,
+            "output_field": output_field,
+        }
+        if algorithm is not None:
+            stage["algorithm"] = algorithm
+        if encoding is not None:
+            stage["encoding"] = encoding
+        return stage
+
+    @staticmethod
+    def aes_encrypt(
+        plaintext: str,
+        key: str,
+        output_field: str,
+        key_encoding: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """AES-256-GCM encrypt; writes ``{ciphertext, nonce}`` envelope."""
+        stage: Dict[str, Any] = {
+            "type": "AesEncrypt",
+            "plaintext": plaintext,
+            "key": key,
+            "output_field": output_field,
+        }
+        if key_encoding is not None:
+            stage["key_encoding"] = key_encoding
+        return stage
+
+    @staticmethod
+    def aes_decrypt(
+        ciphertext_field: str,
+        key: str,
+        output_field: str,
+        key_encoding: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """AES-256-GCM decrypt; reads envelope from ``ciphertext_field``."""
+        stage: Dict[str, Any] = {
+            "type": "AesDecrypt",
+            "ciphertext_field": ciphertext_field,
+            "key": key,
+            "output_field": output_field,
+        }
+        if key_encoding is not None:
+            stage["key_encoding"] = key_encoding
+        return stage
+
+    @staticmethod
+    def uuid_generate(output_field: str) -> Dict[str, Any]:
+        """Generate a v4 UUID into ``output_field``."""
+        return {"type": "UuidGenerate", "output_field": output_field}
+
+    @staticmethod
+    def totp_generate(
+        secret: str,
+        output_field: str,
+        digits: Optional[int] = None,
+        period: Optional[int] = None,
+        algorithm: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """TOTP code generation (RFC 6238)."""
+        stage: Dict[str, Any] = {
+            "type": "TotpGenerate",
+            "secret": secret,
+            "output_field": output_field,
+        }
+        if digits is not None:
+            stage["digits"] = digits
+        if period is not None:
+            stage["period"] = period
+        if algorithm is not None:
+            stage["algorithm"] = algorithm
+        return stage
+
+    @staticmethod
+    def totp_verify(
+        code: str,
+        secret: str,
+        output_field: str,
+        digits: Optional[int] = None,
+        period: Optional[int] = None,
+        algorithm: Optional[str] = None,
+        skew: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """TOTP verify; tolerates ``skew`` time-steps either side (default 1)."""
+        stage: Dict[str, Any] = {
+            "type": "TotpVerify",
+            "code": code,
+            "secret": secret,
+            "output_field": output_field,
+        }
+        if digits is not None:
+            stage["digits"] = digits
+        if period is not None:
+            stage["period"] = period
+        if algorithm is not None:
+            stage["algorithm"] = algorithm
+        if skew is not None:
+            stage["skew"] = skew
+        return stage
+
+    @staticmethod
+    def base64_encode(
+        input: str,
+        output_field: str,
+        url_safe: Optional[bool] = None,
+    ) -> Dict[str, Any]:
+        """Base64 encode. ``url_safe=True`` for URL-safe / no-pad."""
+        stage: Dict[str, Any] = {
+            "type": "Base64Encode",
+            "input": input,
+            "output_field": output_field,
+        }
+        if url_safe is not None:
+            stage["url_safe"] = url_safe
+        return stage
+
+    @staticmethod
+    def base64_decode(
+        input: str,
+        output_field: str,
+        url_safe: Optional[bool] = None,
+    ) -> Dict[str, Any]:
+        """Base64 decode → UTF-8. Fail-closed."""
+        stage: Dict[str, Any] = {
+            "type": "Base64Decode",
+            "input": input,
+            "output_field": output_field,
+        }
+        if url_safe is not None:
+            stage["url_safe"] = url_safe
+        return stage
+
+    @staticmethod
+    def hex_encode(input: str, output_field: str) -> Dict[str, Any]:
+        """Hex encode (lowercase)."""
+        return {"type": "HexEncode", "input": input, "output_field": output_field}
+
+    @staticmethod
+    def hex_decode(input: str, output_field: str) -> Dict[str, Any]:
+        """Hex decode → UTF-8. Fail-closed."""
+        return {"type": "HexDecode", "input": input, "output_field": output_field}
+
+    @staticmethod
+    def slugify(input: str, output_field: str) -> Dict[str, Any]:
+        """URL-friendly slug."""
+        return {"type": "Slugify", "input": input, "output_field": output_field}
+
+    @staticmethod
+    def idempotency_claim(key: str, ttl_secs: int, output_field: str) -> Dict[str, Any]:
+        """Idempotency-key claim (KV SETNX with TTL).
+
+        On first call, writes ``{claimed: true, key}`` to
+        ``output_field``. On subsequent calls within ``ttl_secs``,
+        writes ``{claimed: false, key, response}`` so the caller
+        can short-circuit. Requires ekoDB >= 0.42.0.
+        """
+        return {
+            "type": "IdempotencyClaim",
+            "key": key,
+            "ttl_secs": ttl_secs,
+            "output_field": output_field,
+        }
+
+    @staticmethod
+    def rate_limit(
+        key: str,
+        limit: int,
+        window_secs: int,
+        output_field: str,
+        on_exceed: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Fixed-window rate-limit gate. ``on_exceed`` either ``"fail"`` (default
+        — stage errors and stops the pipeline) or ``"skip"`` (writes
+        ``allowed: false`` and lets downstream stages branch).
+        """
+        stage: Dict[str, Any] = {
+            "type": "RateLimit",
+            "key": key,
+            "limit": limit,
+            "window_secs": window_secs,
+            "output_field": output_field,
+        }
+        if on_exceed is not None:
+            stage["on_exceed"] = on_exceed
+        return stage
+
+    @staticmethod
+    def lock_acquire(key: str, ttl_secs: int, output_field: str) -> Dict[str, Any]:
+        """Distributed-lock acquire (token-fenced).
+
+        On success writes ``{acquired: true, token}`` to
+        ``output_field``; pass that token back to ``lock_release``.
+        """
+        return {
+            "type": "LockAcquire",
+            "key": key,
+            "ttl_secs": ttl_secs,
+            "output_field": output_field,
+        }
+
+    @staticmethod
+    def lock_release(key: str, token: str, output_field: str) -> Dict[str, Any]:
+        """Distributed-lock release; only deletes the key on token match."""
+        return {
+            "type": "LockRelease",
+            "key": key,
+            "token": token,
+            "output_field": output_field,
+        }
+
+    @staticmethod
+    def try_catch(
+        try_functions: List[Dict[str, Any]],
+        catch_functions: List[Dict[str, Any]],
+        output_error_field: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Try/Catch error handling for graceful failure recovery.
+        Executes ``try_functions``, and if any fail, executes ``catch_functions``.
+
+        Args:
+            try_functions: Functions to attempt.
+            catch_functions: Functions to execute on failure.
+            output_error_field: Field name to store error details (default: "error").
+        """
+        stage: Dict[str, Any] = {
+            "type": "TryCatch",
+            "try_functions": try_functions,
+            "catch_functions": catch_functions,
+        }
+        if output_error_field is not None:
+            stage["output_error_field"] = output_error_field
+        return stage
+
+    @staticmethod
+    def parallel(
+        functions: List[Dict[str, Any]],
+        wait_for_all: bool = True,
+    ) -> Dict[str, Any]:
+        """Execute multiple functions in parallel (concurrently).
+        All functions run simultaneously, results are merged.
+
+        Args:
+            functions: Functions to execute concurrently.
+            wait_for_all: True = wait for all to complete, False = return on first completion.
+        """
+        return {
+            "type": "Parallel",
+            "functions": functions,
+            "wait_for_all": wait_for_all,
+        }
+
+    @staticmethod
+    def sleep(duration_ms: Union[str, int]) -> Dict[str, Any]:
+        """Sleep/delay execution for rate limiting or timing control.
+
+        Args:
+            duration_ms: Duration in milliseconds: ``1000`` or ``"{{delay_param}}"``.
+        """
+        return {"type": "Sleep", "duration_ms": duration_ms}
+
+    @staticmethod
+    def return_response(
+        fields: Dict[str, Any],
+        status_code: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """Return a shaped response (final output formatting).
+        Constructs the final response object from current execution context.
+
+        Args:
+            fields: Fields to include in response with ``{{param}}`` substitution.
+            status_code: HTTP status code (default: 200).
+        """
+        stage: Dict[str, Any] = {"type": "Return", "fields": fields}
+        if status_code is not None:
+            stage["status_code"] = status_code
+        return stage
+
+    @staticmethod
+    def validate(
+        schema: Dict[str, Any],
+        data_field: str,
+        on_error: Optional[List[Dict[str, Any]]] = None,
+    ) -> Dict[str, Any]:
+        """Validate data against a JSON schema before processing.
+
+        Args:
+            schema: JSON Schema to validate against.
+            data_field: Field containing data to validate.
+            on_error: Functions to execute on validation failure.
+        """
+        stage: Dict[str, Any] = {
+            "type": "Validate",
+            "schema": schema,
+            "data_field": data_field,
+        }
+        if on_error is not None:
+            stage["on_error"] = on_error
         return stage
 
 

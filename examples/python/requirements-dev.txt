@@ -5,5 +5,5 @@
 
 # Other dependencies
 aiohttp>=3.8.0
-websockets>=10.0
-python-dotenv>=2.8.0
+websockets>=14.0
+python-dotenv>=1.0.0

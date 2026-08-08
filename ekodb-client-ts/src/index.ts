@@ -5,7 +5,15 @@ export {
   SerializationFormat,
   MergeStrategy,
   RateLimitError,
+  SchemaCache,
+  extractRecordId,
+  HealthStatus,
+  parseHealthStatus,
+  HealthOK,
+  HealthDegraded,
+  HealthUnknown,
 } from "./client";
+export type { HealthState } from "./client";
 export { QueryBuilder, SortOrder } from "./query-builder";
 export { SearchQueryBuilder } from "./search";
 export {
@@ -15,7 +23,8 @@ export {
   DistanceMetric,
 } from "./schema";
 export { JoinBuilder } from "./join";
-export { Stage, ChatMessage } from "./functions";
+export { Stage, ChatMessage, parameterRef } from "./functions";
+export type { ParameterRef } from "./functions";
 export {
   getValue,
   getValues,
@@ -42,7 +51,7 @@ export type {
 } from "./schema";
 export type { JoinConfig } from "./join";
 export type {
-  Script,
+  UserFunction,
   ParameterDefinition,
   FunctionStageConfig,
   GroupFunctionConfig,
@@ -79,11 +88,12 @@ export type {
   UpdateSessionRequest,
   MergeSessionsRequest,
   ChatModels,
+  CompactChatRequest,
+  CompactChatResponse,
   EmbedRequest,
   EmbedResponse,
   RawCompletionRequest,
   RawCompletionResponse,
-  UserFunction,
   ToolChoice,
   ToolConfig,
 } from "./client";

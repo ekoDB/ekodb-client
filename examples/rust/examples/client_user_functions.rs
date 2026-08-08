@@ -1,7 +1,7 @@
 //! User Functions API Example - Using ekodb_client library
 //!
 //! This example demonstrates CRUD operations for User Functions.
-//! User Functions are reusable sequences of Functions that can be called by Scripts.
+//! User Functions are reusable sequences of Functions that can be called by other functions or via the Functions API.
 
 use ekodb_client::{Client, Function, ParameterDefinition, UserFunction};
 use std::env;
@@ -42,6 +42,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     match client.save_user_function(user_func.clone()).await {
         Ok(func_id) => println!("Created user function with ID: {}", func_id),
+        Err(ekodb_client::Error::Api { code: 409, .. }) => {
+            // Label already exists — update the existing definition instead.
+            client
+                .update_user_function("get_active_users_rs", user_func.clone())
+                .await?;
+            println!("ℹ️  Function 'get_active_users_rs' already existed — updated instead");
+        }
         Err(e) => println!("SaveUserFunction error: {}", e),
     }
 

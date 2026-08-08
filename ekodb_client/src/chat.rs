@@ -168,6 +168,8 @@ pub struct CreateChatSessionRequest {
     pub llm_model: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub system_prompt: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agent_id: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub bypass_ripple: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -192,6 +194,7 @@ impl CreateChatSessionRequest {
             llm_provider: llm_provider.into(),
             llm_model: None,
             system_prompt: None,
+            agent_id: None,
             bypass_ripple: None,
             parent_id: None,
             branch_point_idx: None,
@@ -217,6 +220,12 @@ impl CreateChatSessionRequest {
     /// Set a custom system prompt
     pub fn system_prompt(mut self, prompt: impl Into<String>) -> Self {
         self.system_prompt = Some(prompt.into());
+        self
+    }
+
+    /// Set the agent ID for this session
+    pub fn agent_id(mut self, id: impl Into<String>) -> Self {
+        self.agent_id = Some(id.into());
         self
     }
 
@@ -255,7 +264,9 @@ impl CreateChatSessionRequest {
 /// Response containing chat session information
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ChatSessionResponse {
+    #[serde(default)]
     pub session: Record,
+    #[serde(default)]
     pub message_count: usize,
 }
 
@@ -270,9 +281,22 @@ pub struct ChatSession {
     pub collections: Vec<CollectionConfig>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub system_prompt: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agent_id: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
     pub message_count: usize,
+}
+
+/// Inline multimodal attachment for a chat message. `mime_type`
+/// follows IANA (`image/png`, `application/pdf`, etc); `data` is
+/// the base64-encoded payload. ekoDB routes large files through
+/// per-provider File APIs server-side, so the client always sends
+/// base64 regardless of size.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Attachment {
+    pub mime_type: String,
+    pub data: String,
 }
 
 /// Request to send a message in an existing session
@@ -290,6 +314,35 @@ pub struct ChatMessageRequest {
     /// Override session tool config for this message
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tool_config: Option<ToolConfig>,
+    /// Per-message LLM model override. When set, uses this model instead of the
+    /// session's configured model. Useful for routing simple steps through a
+    /// faster/cheaper model.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub llm_model: Option<String>,
+    /// Client-side tool definitions. When provided over SSE, ekoDB merges these
+    /// with built-in tools and routes calls back via `__client_tool_call` events.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub client_tools: Option<Vec<ClientToolDef>>,
+    /// Tools that require client confirmation before server-side execution.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub confirm_tools: Option<Vec<String>>,
+    /// Tools to exclude from the LLM's tool list.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub exclude_tools: Option<Vec<String>>,
+    /// Multimodal attachments sent with this turn. Under ~20 MB each
+    /// stay inline; larger ones are routed through the provider's
+    /// File API on the server side. Wire format matches the server's
+    /// `AgentChatRequest.attachments`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub attachments: Option<Vec<Attachment>>,
+}
+
+/// Client tool definition sent with chat messages (SSE path).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ClientToolDef {
+    pub name: String,
+    pub description: String,
+    pub parameters: serde_json::Value,
 }
 
 impl ChatMessageRequest {
@@ -301,7 +354,20 @@ impl ChatMessageRequest {
             force_summarize: None,
             max_iterations: None,
             tool_config: None,
+            llm_model: None,
+            client_tools: None,
+            confirm_tools: None,
+            exclude_tools: None,
+            attachments: None,
         }
+    }
+
+    /// Attach multimodal inputs (images, PDFs, audio). Each item is
+    /// base64-encoded; large items are routed through the provider's
+    /// File API server-side.
+    pub fn attachments(mut self, attachments: Vec<Attachment>) -> Self {
+        self.attachments = Some(attachments);
+        self
     }
 
     /// Force conversation summarization
@@ -319,6 +385,31 @@ impl ChatMessageRequest {
     /// Override session tool config for this message.
     pub fn tool_config(mut self, config: ToolConfig) -> Self {
         self.tool_config = Some(config);
+        self
+    }
+
+    /// Override the session's LLM model for this message only.
+    /// Useful for routing simple tool-calling steps through a faster model.
+    pub fn llm_model(mut self, model: impl Into<String>) -> Self {
+        self.llm_model = Some(model.into());
+        self
+    }
+
+    /// Set client-side tool definitions for SSE-path tool routing.
+    pub fn client_tools(mut self, tools: Vec<ClientToolDef>) -> Self {
+        self.client_tools = Some(tools);
+        self
+    }
+
+    /// Set tools that require client confirmation before server execution.
+    pub fn confirm_tools(mut self, tools: Vec<String>) -> Self {
+        self.confirm_tools = Some(tools);
+        self
+    }
+
+    /// Set tools to exclude from the LLM's tool list.
+    pub fn exclude_tools(mut self, tools: Vec<String>) -> Self {
+        self.exclude_tools = Some(tools);
         self
     }
 }
@@ -504,6 +595,37 @@ pub struct UpdateMessageRequest {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ToggleForgottenRequest {
     pub forgotten: bool,
+}
+
+/// Request to compact a chat session's history on demand.
+///
+/// Folds the older messages of the session into a single summary message and
+/// marks the originals "forgotten" so they stop being replayed, reclaiming
+/// context-window budget while keeping a faithful summary in the prompt.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct CompactChatRequest {
+    /// Number of most-recent messages to keep verbatim. Everything older is
+    /// folded into the summary. Defaults server-side to the session's
+    /// `max_context_messages` (or 50). `0` compacts the entire history.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub keep_recent: Option<usize>,
+    // No `bypass_ripple`: compaction writes chat-message records, which the
+    // server does not ripple (same convention as all chat-message writes).
+}
+
+/// Result of compacting a chat session.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CompactChatResponse {
+    /// Number of older messages folded into the summary (marked forgotten).
+    pub folded: usize,
+    /// Number of recent messages kept verbatim.
+    pub kept_recent: usize,
+    /// Character length of the inserted summary (0 when nothing was folded).
+    pub summary_chars: usize,
+    /// ID of the inserted synthetic summary message (None when nothing folded).
+    pub summary_message_id: Option<String>,
+    /// True when there was nothing to fold (history already within keep_recent).
+    pub already_compact: bool,
 }
 
 #[cfg(test)]

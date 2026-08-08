@@ -1,4 +1,4 @@
-//! CRUD Scripts Example - Basic Data Operations
+//! CRUD Functions Example - Basic Data Operations
 //!
 //! Demonstrates basic CRUD operations using scripts:
 //! - FindAll queries
@@ -6,8 +6,27 @@
 //! - Simple data transformations
 
 use ekodb_client::{
-    Client, FieldType, Function, GroupFunctionConfig, GroupFunctionOp, Record, Script,
+    Client, FieldType, Function, GroupFunctionConfig, GroupFunctionOp, Record, UserFunction,
 };
+
+/// Save a function idempotently: if the label already exists (HTTP 409),
+/// update the existing definition instead, then return its id.
+async fn save_or_update(
+    client: &Client,
+    function: UserFunction,
+) -> Result<String, Box<dyn std::error::Error>> {
+    let label = function.label.clone();
+    match client.save_function(function.clone()).await {
+        Ok(id) => Ok(id),
+        Err(ekodb_client::Error::Api { code: 409, .. }) => {
+            client.update_function(&label, function).await?;
+            println!("ℹ️  Function '{}' already existed — updated instead", label);
+            let existing = client.get_function(&label).await?;
+            Ok(existing.id.unwrap_or(label))
+        }
+        Err(e) => Err(Box::new(e)),
+    }
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -23,7 +42,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .api_key(&api_key)
         .build()?;
 
-    println!("🚀 ekoDB Rust CRUD Scripts Example\n");
+    println!("🚀 ekoDB Rust CRUD Functions Example\n");
 
     // Setup test data
     println!("📋 Setting up test data...");
@@ -46,18 +65,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Example 1: List All Users
     println!("📝 Example 1: List All Users\n");
-    let script1 = Script::new("list_all_users_rs", "List All Users")
+    let script1 = UserFunction::new("list_all_users_rs", "List All Users")
         .with_version("1.0")
         .with_function(Function::FindAll {
             collection: "crud_users_rs".to_string(),
         })
         .with_tag("users")
         .with_tag("list");
-    let script_id1 = client.save_script(script1).await?;
+    let script_id1 = save_or_update(&client, script1).await?;
     script_ids.push(script_id1);
-    println!("✅ Script saved");
+    println!("✅ Function saved");
 
-    let result1 = client.call_script("list_all_users_rs", None).await?;
+    let result1 = client.call_function("list_all_users_rs", None).await?;
     println!("📊 Found {} users", result1.records.len());
     println!(
         "⏱️  Execution time: {}ms\n",
@@ -66,7 +85,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Example 2: Count Users by Status
     println!("📝 Example 2: Count Users by Status\n");
-    let script2 = Script::new("users_by_status_rs", "Users by Status")
+    let script2 = UserFunction::new("users_by_status_rs", "Users by Status")
         .with_version("1.0")
         .with_function(Function::FindAll {
             collection: "crud_users_rs".to_string(),
@@ -77,11 +96,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         })
         .with_tag("users")
         .with_tag("analytics");
-    let script_id2 = client.save_script(script2).await?;
+    let script_id2 = save_or_update(&client, script2).await?;
     script_ids.push(script_id2);
-    println!("✅ Script saved");
+    println!("✅ Function saved");
 
-    let result2 = client.call_script("users_by_status_rs", None).await?;
+    let result2 = client.call_function("users_by_status_rs", None).await?;
     println!("📊 User counts by status:");
     for record in &result2.records {
         println!("   {:?}", record);
@@ -94,7 +113,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Cleanup
     println!("🧹 Cleaning up...");
     for script_id in script_ids {
-        let _ = client.delete_script(&script_id).await;
+        let _ = client.delete_function(&script_id).await;
     }
     let _ = client.delete_collection("crud_users_rs").await;
     println!("✅ Cleanup complete\n");

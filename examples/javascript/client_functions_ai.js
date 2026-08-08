@@ -1,5 +1,5 @@
 /**
- * AI Scripts Example - Chat and Embed Operations
+ * AI Functions Example - Chat and Embed Operations
  * 
  * Demonstrates AI operations in scripts:
  * - Chat completions with context
@@ -14,6 +14,30 @@ dotenv.config();
 
 const BASE_URL = process.env.API_BASE_URL || 'http://localhost:8080';
 const API_KEY = process.env.API_BASE_KEY || 'a-test-api-key-from-ekodb';
+
+/**
+ * Save a function idempotently.
+ *
+ * The server returns HTTP 409 ("A function with label 'X' already exists.")
+ * when a function with the same fixed label already exists. On that error we
+ * UPDATE the existing function via PUT /api/functions/{label} (the server's
+ * GET/PUT/DELETE routes accept either the encrypted ID or the label), then
+ * resolve and return its encrypted ID so the rest of the example keeps working.
+ * Any other error is propagated.
+ */
+async function saveOrUpdate(client, script) {
+  try {
+    return await client.saveFunction(script);
+  } catch (error) {
+    if (error.message && error.message.includes('already exists')) {
+      await client.updateFunction(script.label, script);
+      console.log(`ℹ️  Function '${script.label}' already existed — updated instead`);
+      const existing = await client.getFunction(script.label);
+      return existing.id;
+    }
+    throw error;
+  }
+}
 
 async function setupTestData(client) {
   console.log('📋 Setting up test data...');
@@ -65,10 +89,10 @@ async function chatCompletionScript(client) {
     tags: ['ai', 'chat'],
   };
   
-  const scriptId = await client.saveScript(script);
-  console.log('✅ Chat script saved');
+  const scriptId = await saveOrUpdate(client, script);
+  console.log('✅ Chat function saved');
   
-  const result = await client.callScript('ai_assistant');
+  const result = await client.callFunction('ai_assistant');
   
   console.log('🤖 AI Response:');
   console.log(`   ${result.records[0]?.response?.value || result.records[0]?.response || 'No response'}`);
@@ -93,10 +117,10 @@ async function embedGenerationScript(client) {
     tags: ['ai', 'embeddings'],
   };
   
-  const scriptId = await client.saveScript(script);
-  console.log('✅ Embedding script saved');
+  const scriptId = await saveOrUpdate(client, script);
+  console.log('✅ Embedding function saved');
   
-  const result = await client.callScript('generate_embeddings');
+  const result = await client.callFunction('generate_embeddings');
   
   console.log(`📊 Generated embeddings for ${result.records.length} articles`);
   result.records.forEach((article, i) => {
@@ -120,10 +144,10 @@ async function listArticlesScript(client) {
     tags: ['articles'],
   };
   
-  const scriptId = await client.saveScript(script);
-  console.log('✅ Script saved');
+  const scriptId = await saveOrUpdate(client, script);
+  console.log('✅ Function saved');
   
-  const result = await client.callScript('list_articles');
+  const result = await client.callFunction('list_articles');
   console.log(`📊 Found ${result.records.length} articles`);
   console.log(`⏱️  Execution time: ${result.stats.execution_time_ms}ms\n`);
   
@@ -135,7 +159,7 @@ async function cleanup(client, scriptIds) {
   
   try {
     for (const id of scriptIds) {
-      await client.deleteScript(id);
+      await client.deleteFunction(id);
     }
     await client.deleteCollection('ai_articles');
     console.log('✅ Cleanup complete\n');
@@ -145,7 +169,7 @@ async function cleanup(client, scriptIds) {
 }
 
 async function main() {
-  console.log('🚀 ekoDB AI Scripts Example\n');
+  console.log('🚀 ekoDB AI Functions Example\n');
   console.log('⚠️  Note: These examples require AI API credentials (OpenAI, etc.)\n');
   
   const client = new EkoDBClient(BASE_URL, API_KEY);

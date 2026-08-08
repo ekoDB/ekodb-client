@@ -1,14 +1,14 @@
 /**
- * Scripts Example for ekoDB Kotlin Client
+ * Functions Example for ekoDB Kotlin Client
  *
- * Demonstrates creating, managing, and executing scripts with the Kotlin client.
- * Covers: FindAll, Group, Project, Count, and Script management operations.
+ * Demonstrates creating, managing, and executing functions with the Kotlin client.
+ * Covers: FindAll, Group, Project, Count, and Function management operations.
  */
 
 package io.ekodb.client.examples
 
 import io.ekodb.client.EkoDBClient
-import io.ekodb.client.functions.Script
+import io.ekodb.client.functions.UserFunction
 import io.ekodb.client.functions.ParameterDefinition
 import io.ekodb.client.functions.FunctionStageConfig
 import io.ekodb.client.functions.GroupFunctionConfig
@@ -18,6 +18,40 @@ import io.github.cdimascio.dotenv.dotenv
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
+
+/**
+ * Detect the server's "label already exists" rejection.
+ *
+ * The server now returns HTTP 409 Conflict when POST /api/functions is called
+ * with a label that already exists. The client surfaces that as an exception
+ * whose message contains both "status 409" and "already exists".
+ */
+private fun isAlreadyExistsError(e: Exception): Boolean {
+    val msg = e.message ?: return false
+    return msg.contains("status 409") || msg.contains("already exists")
+}
+
+/**
+ * Idempotent save: create the function, or PUT-update it if its label already
+ * exists. Returns the function's encrypted ID either way (looked up by label on
+ * the update path), so downstream get/update/delete-by-id keeps working.
+ */
+private suspend fun saveOrUpdate(client: EkoDBClient, func: UserFunction): String {
+    return try {
+        client.saveFunction(func)
+    } catch (e: Exception) {
+        if (isAlreadyExistsError(e)) {
+            // Label already exists — update the existing definition (PUT by label).
+            client.updateFunction(func.label, func)
+            println("ℹ️  Function '${func.label}' already existed — updated instead")
+            // Resolve the encrypted ID by label so cleanup-by-id still works.
+            client.getFunction(func.label).id
+                ?: throw IllegalStateException("No ID returned for function '${func.label}'")
+        } else {
+            throw e
+        }
+    }
+}
 
 suspend fun setupTestData(client: EkoDBClient) {
     println("📋 Setting up test data...")
@@ -35,9 +69,9 @@ suspend fun setupTestData(client: EkoDBClient) {
 }
 
 suspend fun simpleQueryScript(client: EkoDBClient): String {
-    println("📝 Example 1: Simple Query Script\n")
+    println("📝 Example 1: Simple Query Function\n")
 
-    val script = Script(
+    val func = UserFunction(
         label = "get_active_users",
         name = "Get Active Users",
         description = "Retrieve all active users",
@@ -49,20 +83,20 @@ suspend fun simpleQueryScript(client: EkoDBClient): String {
         tags = listOf("users", "query")
     )
 
-    val scriptId = client.saveScript(script)
-    println("✅ Script saved: $scriptId")
+    val funcId = saveOrUpdate(client, func)
+    println("✅ Function saved: $funcId")
 
-    val result = client.callScript("get_active_users")
+    val result = client.callFunction("get_active_users")
     println("📊 Found ${result.records.size} records")
     println("⏱️  Execution time: ${result.stats.execution_time_ms}ms\n")
     
-    return scriptId
+    return funcId
 }
 
 suspend fun parameterizedScript(client: EkoDBClient) {
-    println("📝 Example 2: Parameterized Script\n")
+    println("📝 Example 2: Parameterized Function\n")
 
-    val script = Script(
+    val func = UserFunction(
         label = "get_users_by_status",
         name = "Get Users By Status",
         version = "1.0",
@@ -84,22 +118,22 @@ suspend fun parameterizedScript(client: EkoDBClient) {
         tags = listOf("users", "parameterized")
     )
 
-    client.saveScript(script)
-    println("✅ Script saved")
+    saveOrUpdate(client, func)
+    println("✅ Function saved")
 
     val params = mapOf(
         "status" to JsonPrimitive("active"),
         "limit" to JsonPrimitive(3)
     )
-    val result = client.callScript("get_users_by_status", params)
+    val result = client.callFunction("get_users_by_status", params)
     println("📊 Found ${result.records.size} users (limited)")
     println("⏱️  Execution time: ${result.stats.execution_time_ms}ms\n")
 }
 
 suspend fun aggregationScript(client: EkoDBClient): String {
-    println("📝 Example 3: Aggregation Script\n")
+    println("📝 Example 3: Aggregation Function\n")
 
-    val script = Script(
+    val func = UserFunction(
         label = "user_stats",
         name = "User Statistics",
         version = "1.0",
@@ -124,36 +158,36 @@ suspend fun aggregationScript(client: EkoDBClient): String {
         tags = listOf("analytics")
     )
 
-    val scriptId = client.saveScript(script)
-    println("✅ Script saved")
+    val funcId = saveOrUpdate(client, func)
+    println("✅ Function saved")
 
-    val result = client.callScript("user_stats")
+    val result = client.callFunction("user_stats")
     println("📊 Statistics: ${result.records.size} groups")
     result.records.forEach { record ->
         println("   $record")
     }
     println("⏱️  Execution time: ${result.stats.execution_time_ms}ms\n")
     
-    return scriptId
+    return funcId
 }
 
-suspend fun scriptManagement(client: EkoDBClient, getActiveUsersId: String, userStatsId: String) {
-    println("📝 Example 4: Script Management\n")
+suspend fun functionManagement(client: EkoDBClient, getActiveUsersId: String, userStatsId: String) {
+    println("📝 Example 4: function Management\n")
 
-    // List all scripts (skip if deserialization fails due to parameter placeholders)
+    // List all functions (skip if deserialization fails due to parameter placeholders)
     try {
-        val scripts = client.listScripts()
-        println("📋 Total scripts: ${scripts.size}")
+        val funcs = client.listFunctions()
+        println("📋 Total functions: ${funcs.size}")
     } catch (e: Exception) {
-        println("📋 Script listing skipped (some scripts contain parameter placeholders)")
+        println("📋 function listing skipped (some functions contain parameter placeholders)")
     }
 
-    // Get specific script (use encrypted ID)
-    val script = client.getScript(getActiveUsersId)
-    println("🔍 Retrieved script: ${script.name}")
+    // Get specific function (use encrypted ID)
+    val func = client.getFunction(getActiveUsersId)
+    println("🔍 Retrieved function: ${func.name}")
 
-    // Update script (use encrypted ID)
-    val updated = Script(
+    // Update function (use encrypted ID)
+    val updated = UserFunction(
         label = "get_active_users",
         name = "Get Active Users (Updated)",
         description = "Updated description",
@@ -164,15 +198,15 @@ suspend fun scriptManagement(client: EkoDBClient, getActiveUsersId: String, user
         ),
         tags = listOf("users")
     )
-    client.updateScript(getActiveUsersId, updated)
-    println("✏️  Script updated")
+    client.updateFunction(getActiveUsersId, updated)
+    println("✏️  function updated")
 
-    // Delete script (use ID) - handle error gracefully
+    // Delete function (use ID) - handle error gracefully
     try {
-        client.deleteScript(userStatsId)
-        println("🗑️  Script deleted")
+        client.deleteFunction(userStatsId)
+        println("🗑️  function deleted")
     } catch (e: Exception) {
-        println("ℹ️  Script delete skipped (may not exist)")
+        println("ℹ️  function delete skipped (may not exist)")
     }
     println()
     
@@ -183,7 +217,7 @@ suspend fun scriptManagement(client: EkoDBClient, getActiveUsersId: String, user
 suspend fun multiStageScript(client: EkoDBClient) {
     println("📝 Example 5: Multi-Stage Pipeline\n")
 
-    val script = Script(
+    val func = UserFunction(
         label = "top_users",
         name = "Top Performing Users",
         version = "1.0",
@@ -203,10 +237,10 @@ suspend fun multiStageScript(client: EkoDBClient) {
         tags = listOf("analytics", "reporting")
     )
 
-    client.saveScript(script)
-    println("✅ Multi-stage script saved")
+    saveOrUpdate(client, func)
+    println("✅ Multi-stage function saved")
 
-    val result = client.callScript("top_users", mapOf("min_score" to JsonPrimitive(50)))
+    val result = client.callFunction("top_users", mapOf("min_score" to JsonPrimitive(50)))
     println("📊 Pipeline executed ${result.stats.stages_executed} stages")
     println("⏱️  Total execution time: ${result.stats.execution_time_ms}ms")
     println("📈 Stage breakdown:")
@@ -219,7 +253,7 @@ suspend fun multiStageScript(client: EkoDBClient) {
 suspend fun countScript(client: EkoDBClient) {
     println("📝 Example 6: Count Users\n")
 
-    val script = Script(
+    val func = UserFunction(
         label = "count_users",
         name = "Count All Users",
         version = "1.0",
@@ -231,10 +265,10 @@ suspend fun countScript(client: EkoDBClient) {
         tags = listOf("users", "count")
     )
 
-    client.saveScript(script)
-    println("✅ Count script saved")
+    saveOrUpdate(client, func)
+    println("✅ Count function saved")
 
-    val result = client.callScript("count_users")
+    val result = client.callFunction("count_users")
     val count = result.records.firstOrNull()?.get("count")
     println("📊 Total user count: $count")
     println("⏱️  Execution time: ${result.stats.execution_time_ms}ms\n")
@@ -247,27 +281,27 @@ suspend fun cleanup(client: EkoDBClient) {
     client.deleteCollection("users")
     println("✅ Deleted collection")
 
-    // List and delete all test scripts (skip if deserialization fails)
+    // List and delete all test functions (skip if deserialization fails)
     try {
-        val scripts = client.listScripts()
-        for (script in scripts) {
-            if (script.label.startsWith("get_") || script.label.startsWith("user_") ||
-                script.label.startsWith("top_") || script.label.startsWith("count_")) {
+        val funcs = client.listFunctions()
+        for (fn in funcs) {
+            if (fn.label.startsWith("get_") || fn.label.startsWith("user_") ||
+                fn.label.startsWith("top_") || fn.label.startsWith("count_")) {
                 try {
-                    script.id?.let { client.deleteScript(it) }
+                    fn.id?.let { client.deleteFunction(it) }
                 } catch (e: Exception) {
-                    // Script might already be deleted
+                    // function might already be deleted
                 }
             }
         }
-        println("✅ Deleted test scripts\n")
+        println("✅ Deleted test functions\n")
     } catch (e: Exception) {
-        println("⚠️  Script cleanup skipped (some scripts contain parameter placeholders)\n")
+        println("⚠️  function cleanup skipped (some functions contain parameter placeholders)\n")
     }
 }
 
 fun main() = runBlocking {
-    println("🚀 ekoDB Scripts Example (Kotlin Client)\n")
+    println("🚀 ekoDB Functions Example (Kotlin Client)\n")
 
     try {
         val dotenv = dotenv()
@@ -285,7 +319,7 @@ fun main() = runBlocking {
         val getActiveUsersId = simpleQueryScript(client)
         parameterizedScript(client)
         val userStatsId = aggregationScript(client)
-        scriptManagement(client, getActiveUsersId, userStatsId)
+        functionManagement(client, getActiveUsersId, userStatsId)
         multiStageScript(client)
         countScript(client)
         cleanup(client)

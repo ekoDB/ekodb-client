@@ -1,5 +1,5 @@
 /**
- * AI Scripts Example - Chat and Embed Operations
+ * AI Functions Example - Chat and Embed Operations
  *
  * Demonstrates AI operations in scripts:
  * - Chat completions with context
@@ -7,7 +7,12 @@
  * - Simple AI workflows
  */
 
-import { EkoDBClient, Stage, ChatMessage } from "@ekodb/ekodb-client";
+import {
+  EkoDBClient,
+  Stage,
+  ChatMessage,
+  UserFunction,
+} from "@ekodb/ekodb-client";
 import * as dotenv from "dotenv";
 
 dotenv.config();
@@ -15,10 +20,36 @@ dotenv.config();
 const BASE_URL = process.env.API_BASE_URL || "http://localhost:8080";
 const API_KEY = process.env.API_BASE_KEY || "a-test-api-key-from-ekodb";
 
+/** True when a save failed because the function label already exists (HTTP 409). */
+function isAlreadyExistsError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.includes("status 409") || message.includes("already exists");
+}
+
+/**
+ * Idempotent save: create the function, or update it in place if a function
+ * with the same label already exists. Returns the function's id so downstream
+ * cleanup-by-id continues to work.
+ */
+async function saveOrUpdate(
+  client: EkoDBClient,
+  script: UserFunction,
+): Promise<string> {
+  try {
+    return await client.saveFunction(script);
+  } catch (error) {
+    if (!isAlreadyExistsError(error)) throw error;
+    await client.updateFunction(script.label, script);
+    console.log(`Function '${script.label}' already existed — updated instead`);
+    const existing = await client.getFunction(script.label);
+    return existing.id ?? script.label;
+  }
+}
+
 async function main() {
   const client = new EkoDBClient(BASE_URL, API_KEY);
 
-  console.log("🚀 ekoDB TypeScript AI Scripts Example\n");
+  console.log("🚀 ekoDB TypeScript AI Functions Example\n");
 
   // Setup test data
   console.log("📋 Setting up test data...");
@@ -62,17 +93,17 @@ async function main() {
           ),
           ChatMessage.user("What are the benefits of using vector databases?"),
         ],
-        "gpt-4",
+        "gpt-4o-mini",
         0.7,
       ),
     ],
     tags: ["ai", "chat"],
   };
-  const scriptId1 = await client.saveScript(script1);
+  const scriptId1 = await saveOrUpdate(client, script1);
   scriptIds.push(scriptId1);
   console.log("✅ Chat script saved");
 
-  const result1 = await client.callScript("ai_assistant_ts");
+  const result1 = await client.callFunction("ai_assistant_ts");
   console.log("🤖 AI Response:");
   if (result1.records && result1.records[0]) {
     const response =
@@ -94,11 +125,11 @@ async function main() {
     functions: [Stage.embed("text", "embedding")],
     tags: ["ai", "embed"],
   };
-  const scriptId2 = await client.saveScript(script2);
+  const scriptId2 = await saveOrUpdate(client, script2);
   scriptIds.push(scriptId2);
   console.log("✅ Embed script saved");
 
-  const result2 = await client.callScript("generate_embedding_ts", {
+  const result2 = await client.callFunction("generate_embedding_ts", {
     text: "ekoDB is a powerful database",
   });
   console.log("📊 Embedding generated");
@@ -115,7 +146,7 @@ async function main() {
   console.log("🧹 Cleaning up...");
   for (const scriptId of scriptIds) {
     try {
-      await client.deleteScript(scriptId);
+      await client.deleteFunction(scriptId);
     } catch (e) {}
   }
   try {

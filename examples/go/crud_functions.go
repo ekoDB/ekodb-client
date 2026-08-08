@@ -1,7 +1,7 @@
 package main
 
 /*
-Complete CRUD Scripts Example using Direct HTTP Requests
+Complete CRUD Functions Example using Direct HTTP Requests
 
 Demonstrates:
   • Insert + Verify (using Query)
@@ -9,7 +9,7 @@ Demonstrates:
   • Query + Update Credits + Verify
   • Query Before Delete + Delete + Verify Gone
 
-Each Script shows Functions chaining with proper verification using parameterized {{param}} syntax
+Each function shows Functions chaining with proper verification using parameterized {{param}} syntax
 */
 
 import (
@@ -105,7 +105,7 @@ func makeRequest(method, endpoint string, body interface{}, token string) (map[s
 
 func script1InsertAndVerify(token string) (string, string, error) {
 	fmt.Println("\n" + string([]byte(repeat("=", 60))))
-	fmt.Println("📝 Script 1: Insert + Verify")
+	fmt.Println("📝 function 1: Insert + Verify")
 	fmt.Println(string([]byte(repeat("=", 60))))
 
 	script := map[string]interface{}{
@@ -152,15 +152,15 @@ func script1InsertAndVerify(token string) (string, string, error) {
 		"tags": []string{"crud", "insert", "verification"},
 	}
 
-	fmt.Println("\n1️⃣ Saving Script...")
+	fmt.Println("\n1️⃣ Saving Function...")
 	saveResult, err := makeRequest("POST", "/api/functions", script, token)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to save script: %w", err)
 	}
 	scriptID := saveResult["id"].(string)
-	fmt.Printf("   ✅ Script saved: %s\n", scriptID)
+	fmt.Printf("   ✅ Function saved: %s\n", scriptID)
 
-	fmt.Println("\n2️⃣ Calling Script (Insert + Verify)...")
+	fmt.Println("\n2️⃣ Calling function (Insert + Verify)...")
 	params := map[string]interface{}{
 		"user_name":  "Alice Smith",
 		"user_email": "alice@example.com",
@@ -171,7 +171,7 @@ func script1InsertAndVerify(token string) (string, string, error) {
 	}
 
 	stats := callResult["stats"].(map[string]interface{})
-	fmt.Printf("   ✅ Script executed: %.0f Functions\n", stats["stages_executed"])
+	fmt.Printf("   ✅ function executed: %.0f Functions\n", stats["stages_executed"])
 	fmt.Printf("   ⏱️  Execution time: %.0fms\n", stats["execution_time_ms"])
 
 	records := callResult["records"].([]interface{})
@@ -203,7 +203,7 @@ func script1InsertAndVerify(token string) (string, string, error) {
 
 func script2QueryUpdateVerify(token string) (string, error) {
 	fmt.Println("\n" + string([]byte(repeat("=", 60))))
-	fmt.Println("📝 Script 2: Query + Update + Verify")
+	fmt.Println("📝 function 2: Query + Update + Verify")
 	fmt.Println(string([]byte(repeat("=", 60))))
 
 	script := map[string]interface{}{
@@ -268,15 +268,15 @@ func script2QueryUpdateVerify(token string) (string, error) {
 		"tags": []string{"crud", "update", "verification"},
 	}
 
-	fmt.Println("\n1️⃣ Saving Script...")
+	fmt.Println("\n1️⃣ Saving Function...")
 	saveResult, err := makeRequest("POST", "/api/functions", script, token)
 	if err != nil {
 		return "", fmt.Errorf("failed to save script: %w", err)
 	}
 	scriptID := saveResult["id"].(string)
-	fmt.Printf("   ✅ Script saved: %s\n", scriptID)
+	fmt.Printf("   ✅ Function saved: %s\n", scriptID)
 
-	fmt.Println("\n2️⃣ Calling Script (Query + Update + Verify)...")
+	fmt.Println("\n2️⃣ Calling function (Query + Update + Verify)...")
 	params := map[string]interface{}{
 		"user_email": "alice@example.com",
 		"new_status": "active",
@@ -287,7 +287,7 @@ func script2QueryUpdateVerify(token string) (string, error) {
 	}
 
 	stats := callResult["stats"].(map[string]interface{})
-	fmt.Printf("   ✅ Script executed: %.0f Functions\n", stats["stages_executed"])
+	fmt.Printf("   ✅ function executed: %.0f Functions\n", stats["stages_executed"])
 	fmt.Printf("   ⏱️  Execution time: %.0fms\n", stats["execution_time_ms"])
 
 	records := callResult["records"].([]interface{})
@@ -304,7 +304,7 @@ func script2QueryUpdateVerify(token string) (string, error) {
 
 func script3QueryUpdateCredits(token string) (string, error) {
 	fmt.Println("\n" + string([]byte(repeat("=", 60))))
-	fmt.Println("📝 Script 3: Query + Update Credits + Verify")
+	fmt.Println("📝 function 3: Query + Update Credits + Verify")
 	fmt.Println(string([]byte(repeat("=", 60))))
 
 	script := map[string]interface{}{
@@ -369,15 +369,15 @@ func script3QueryUpdateCredits(token string) (string, error) {
 		"tags": []string{"crud", "update", "verification"},
 	}
 
-	fmt.Println("\n1️⃣ Saving Script...")
+	fmt.Println("\n1️⃣ Saving Function...")
 	saveResult, err := makeRequest("POST", "/api/functions", script, token)
 	if err != nil {
 		return "", fmt.Errorf("failed to save script: %w", err)
 	}
 	scriptID := saveResult["id"].(string)
-	fmt.Printf("   ✅ Script saved: %s\n", scriptID)
+	fmt.Printf("   ✅ Function saved: %s\n", scriptID)
 
-	fmt.Println("\n2️⃣ Calling Script (Query + Update Credits + Verify)...")
+	fmt.Println("\n2️⃣ Calling function (Query + Update Credits + Verify)...")
 	params := map[string]interface{}{
 		"user_email": "alice@example.com",
 		"credits":    100,
@@ -388,7 +388,7 @@ func script3QueryUpdateCredits(token string) (string, error) {
 	}
 
 	stats := callResult["stats"].(map[string]interface{})
-	fmt.Printf("   ✅ Script executed: %.0f Functions\n", stats["stages_executed"])
+	fmt.Printf("   ✅ function executed: %.0f Functions\n", stats["stages_executed"])
 	fmt.Printf("   ⏱️  Execution time: %.0fms\n", stats["execution_time_ms"])
 
 	records := callResult["records"].([]interface{})
@@ -406,7 +406,7 @@ func script3QueryUpdateCredits(token string) (string, error) {
 
 func script4DeleteAndVerify(token string) (string, error) {
 	fmt.Println("\n" + string([]byte(repeat("=", 60))))
-	fmt.Println("📝 Script 4: Query Before Delete + Delete + Verify")
+	fmt.Println("📝 function 4: Query Before Delete + Delete + Verify")
 	fmt.Println(string([]byte(repeat("=", 60))))
 
 	script := map[string]interface{}{
@@ -462,15 +462,15 @@ func script4DeleteAndVerify(token string) (string, error) {
 		"tags": []string{"crud", "delete", "verification"},
 	}
 
-	fmt.Println("\n1️⃣ Saving Script...")
+	fmt.Println("\n1️⃣ Saving Function...")
 	saveResult, err := makeRequest("POST", "/api/functions", script, token)
 	if err != nil {
 		return "", fmt.Errorf("failed to save script: %w", err)
 	}
 	scriptID := saveResult["id"].(string)
-	fmt.Printf("   ✅ Script saved: %s\n", scriptID)
+	fmt.Printf("   ✅ Function saved: %s\n", scriptID)
 
-	fmt.Println("\n2️⃣ Calling Script (Query + Delete + Verify)...")
+	fmt.Println("\n2️⃣ Calling function (Query + Delete + Verify)...")
 	params := map[string]interface{}{
 		"user_email": "alice@example.com",
 	}
@@ -480,7 +480,7 @@ func script4DeleteAndVerify(token string) (string, error) {
 	}
 
 	stats := callResult["stats"].(map[string]interface{})
-	fmt.Printf("   ✅ Script executed: %.0f Functions\n", stats["stages_executed"])
+	fmt.Printf("   ✅ function executed: %.0f Functions\n", stats["stages_executed"])
 	fmt.Printf("   ⏱️  Execution time: %.0fms\n", stats["execution_time_ms"])
 
 	records := callResult["records"].([]interface{})
@@ -533,7 +533,7 @@ func repeat(s string, count int) string {
 }
 
 func main() {
-	fmt.Println("🚀 ekoDB Complete CRUD Scripts Example")
+	fmt.Println("🚀 ekoDB Complete CRUD Functions Example")
 	fmt.Println(string([]byte(repeat("=", 60))))
 	fmt.Println("Demonstrates:")
 	fmt.Println("  • Insert + Verify (using Query)")
@@ -541,7 +541,7 @@ func main() {
 	fmt.Println("  • Query + Update Credits + Verify")
 	fmt.Println("  • Query Before Delete + Delete + Verify Gone")
 	fmt.Println()
-	fmt.Println("Each Script shows Functions chaining with proper verification")
+	fmt.Println("Each function shows Functions chaining with proper verification")
 	fmt.Println(string([]byte(repeat("=", 60))))
 
 	token, err := getAuthToken()
@@ -549,28 +549,28 @@ func main() {
 		log.Fatalf("❌ Error: %v", err)
 	}
 
-	// Run all CRUD Scripts in sequence
+	// Run all CRUD Functions in sequence
 	_, script1ID, err := script1InsertAndVerify(token)
 	if err != nil {
-		log.Fatalf("Script 1 failed: %v", err)
+		log.Fatalf("Function 1 failed: %v", err)
 	}
 	scriptIDs := []string{script1ID}
 
 	script2ID, err := script2QueryUpdateVerify(token)
 	if err != nil {
-		log.Fatalf("Script 2 failed: %v", err)
+		log.Fatalf("Function 2 failed: %v", err)
 	}
 	scriptIDs = append(scriptIDs, script2ID)
 
 	script3ID, err := script3QueryUpdateCredits(token)
 	if err != nil {
-		log.Fatalf("Script 3 failed: %v", err)
+		log.Fatalf("Function 3 failed: %v", err)
 	}
 	scriptIDs = append(scriptIDs, script3ID)
 
 	script4ID, err := script4DeleteAndVerify(token)
 	if err != nil {
-		log.Fatalf("Script 4 failed: %v", err)
+		log.Fatalf("Function 4 failed: %v", err)
 	}
 	scriptIDs = append(scriptIDs, script4ID)
 
@@ -578,12 +578,12 @@ func main() {
 	cleanup(token, scriptIDs)
 
 	fmt.Println("\n" + string([]byte(repeat("=", 60))))
-	fmt.Println("✅ Complete CRUD Scripts Example Finished!")
+	fmt.Println("✅ Complete CRUD Functions Example Finished!")
 	fmt.Println(string([]byte(repeat("=", 60))))
 	fmt.Println("\n💡 Key Takeaways:")
-	fmt.Println("   ✅ Scripts chain Functions together")
-	fmt.Println("   ✅ Each Script demonstrates operation + verification")
-	fmt.Println("   ✅ Parameters make Scripts reusable")
-	fmt.Println("   ✅ Verification is built into the Script itself")
-	fmt.Println("   ✅ Complete CRUD lifecycle in 4 focused Scripts")
+	fmt.Println("   ✅ Functions chain steps together")
+	fmt.Println("   ✅ Each function demonstrates operation + verification")
+	fmt.Println("   ✅ Parameters make functions reusable")
+	fmt.Println("   ✅ Verification is built into the function itself")
+	fmt.Println("   ✅ Complete CRUD lifecycle in 4 focused functions")
 }

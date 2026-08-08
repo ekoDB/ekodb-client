@@ -6,7 +6,7 @@ automatic optimization.
 
 [![Crates.io](https://img.shields.io/crates/v/ekodb_client.svg)](https://crates.io/crates/ekodb_client)
 [![Documentation](https://docs.rs/ekodb_client/badge.svg)](https://docs.rs/ekodb_client)
-[![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 ## Features
 
@@ -36,7 +36,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-ekodb_client = "0.10"
+ekodb_client = "0.25.0"
 tokio = { version = "1", features = ["full"] }
 ```
 
@@ -151,7 +151,7 @@ let results = client.find("users", query).await?;
 // Complex queries with sorting and pagination
 let query = QueryBuilder::new()
     .in_array("status", vec![json!("active"), json!("pending")])
-    .regex("email", r".*@example\.com$")
+    .ends_with("email", "@example.com")
     .sort_desc("created_at")
     .limit(20)
     .skip(0)
@@ -188,18 +188,56 @@ println!("Batch completed: {} successful, {} failed",
 ### WebSocket Operations
 
 ```rust
-// Connect to WebSocket
-let ws_client = client.websocket("ws://localhost:8080/ws").await?;
+// Connect via convenience method (derives WS URL, attaches schema cache)
+let ws = client.connect_ws().await?;
 
-// Query via WebSocket
-let results = ws_client.find_all("users").await?;
-println!("Found {} users via WebSocket", results.len());
+// Full CRUD over WebSocket (14 methods — same as REST, zero HTTP overhead)
+let record = ws.insert("users", json!({"name": "Alice", "email": "a@b.com"}), None).await?;
+let results = ws.query("users", Some(json!({"field": "status", "operator": "Eq", "value": "active"})), None, None, None).await?;
+let user = ws.find_by_id("users", "record_id").await?;
+ws.update("users", "record_id", json!({"name": "Updated"}), None).await?;
+ws.delete("users", "record_id", None).await?;
 
-// Query with filters using ekoDB format
-let query = QueryBuilder::new()
-    .eq("status", "active")
-    .build();
-let active_users = ws_client.find("users", query).await?;
+// Batch operations
+ws.batch_insert("logs", vec![json!({"msg": "a"}), json!({"msg": "b"})], None).await?;
+ws.batch_delete("logs", vec!["id1".into(), "id2".into()], None).await?;
+
+// Search + collection management
+let hits = ws.text_search("docs", "rust async", None, Some(10)).await?;
+let collections = ws.list_collections().await?;
+ws.create_collection("new_coll", None).await?;
+
+// Atomic field actions
+ws.update_with_action("counters", "page_views", "increment", "count", Some(json!(1))).await?;
+```
+
+### Schema Cache
+
+```rust
+// Enable at client creation — caches primary_key_alias per collection
+let client = Client::builder()
+    .base_url("https://api.ekodb.net")
+    .api_key("key")
+    .schema_cache(true)           // enable LRU cache (default: off)
+    .schema_cache_ttl(300)        // TTL in seconds (default: 5 min)
+    .schema_cache_max(100)        // max collections (default: 100)
+    .build()?;
+
+// Extract record IDs correctly regardless of primary_key_alias config
+let id = client.extract_id("users", &record);
+
+// Cache auto-invalidates via WS SchemaChanged events when connected
+let ws = client.connect_ws().await?;  // attaches cache automatically
+```
+
+### SSE Subscriptions
+
+```rust
+// Subscribe to mutations via SSE (works behind reverse proxies that block WS)
+let mut rx = client.subscribe_sse("orders", None, None).await?;
+while let Some(event) = rx.recv().await {
+    println!("Mutation: {} on {}", event.event, event.collection);
+}
 ```
 
 ### TTL (Time-To-Live) Support
@@ -274,7 +312,7 @@ let session_request = CreateChatSessionRequest {
         search_options: None,
     }],
     llm_provider: "openai".to_string(),
-    llm_model: Some("gpt-4".to_string()),
+    llm_model: Some("gpt-4.1".to_string()),
     system_prompt: Some("You are a helpful assistant.".to_string()),
     parent_id: None,
     branch_point_idx: None,
@@ -521,10 +559,14 @@ All examples are located in `examples/rust/examples/` directory.
 - `insert(collection, record)` - Insert a document
 - `insert_with_ttl(collection, record, ttl)` - Insert with expiration
 - `find_by_id(collection, id)` - Find document by ID
+- `find_by_id_with_projection(collection, id, select_fields, exclude_fields)` -
+  Find by ID with field projection
 - `find(collection, query)` - Query documents with filters
 - `find_all(collection)` - Get all documents in collection
 - `update(collection, id, updates)` - Update a document
 - `delete(collection, id)` - Delete a document
+- `delete_with_options(collection, id, options)` - Delete with options (e.g.
+  bypass ripple, transaction id)
 
 #### Batch Operations
 
@@ -543,7 +585,6 @@ All examples are located in `examples/rust/examples/` directory.
 - `.lte(field, value)` - Less than or equal
 - `.in_array(field, values)` - In array
 - `.nin(field, values)` - Not in array
-- `.regex(field, pattern)` - Regex match
 - `.sort_asc(field)` / `.sort_desc(field)` - Sorting
 - `.limit(n)` / `.skip(n)` - Pagination
 - `.build()` - Build the query
@@ -597,19 +638,162 @@ All examples are located in `examples/rust/examples/` directory.
 - `kv_set_with_ttl(key, value, ttl)` - Set with expiration
 - `kv_get(key)` - Get value by key
 - `kv_delete(key)` - Delete a key
+- `kv_clear()` - Clear the entire KV store
 
 #### Collection Operations
 
 - `list_collections()` - List all collections
+- `list_user_collections()` - List collections excluding internal chat/system
+  collections
 - `count(collection)` - Count documents in collection
 - `collection_exists(collection)` - Check if collection exists
 - `delete_collection(collection)` - Delete entire collection
+
+#### Transactions
+
+Buffered, read-your-writes transactions. Statements issued with a
+`transaction_id` are staged and applied atomically at commit.
+
+- `begin_transaction(isolation_level)` - Start a transaction, returns its id
+- `commit_transaction(transaction_id)` - Apply staged writes (may return a
+  retryable HTTP 409 conflict)
+- `rollback_transaction(transaction_id)` - Discard staged writes
+- `create_savepoint(transaction_id, name)` - Create a savepoint
+- `rollback_to_savepoint(transaction_id, name)` - Roll back to a savepoint
+- `release_savepoint(transaction_id, name)` - Release a savepoint
+
+Pass a `transaction_id` on reads/writes to read and write within the transaction
+(read-your-writes).
 
 #### WebSocket Operations
 
 - `websocket(url)` - Connect to WebSocket endpoint
 - `ws_client.find(collection, query)` - Query via WebSocket
 - `ws_client.find_all(collection)` - Get all via WebSocket
+- `ws_client.unsubscribe(collection)` - Tear down a subscription
+- `ws_client.cancel_chat(chat_id)` - Cancel an in-flight streaming chat
+
+### Goals, Tasks & Agents
+
+```rust
+use ekodb_client::Client;
+use serde_json::json;
+
+// Create a goal
+let goal = client.goal_create(json!({
+    "title": "Migrate user data",
+    "description": "Move users from legacy to new schema",
+    "status": "active",
+})).await?;
+
+// List goals
+let goals = client.goal_list().await?;
+
+// Complete a goal (moves to pending_review)
+client.goal_complete("goal-id", json!({
+    "summary": "All records migrated"
+})).await?;
+
+// Approve or reject
+client.goal_approve("goal-id").await?;
+client.goal_reject("goal-id", json!({
+    "reason": "Missing validation"
+})).await?;
+
+// Goal step lifecycle
+client.goal_step_start("goal-id", 0).await?;
+client.goal_step_complete("goal-id", 0, json!({
+    "result": "done"
+})).await?;
+
+// Tasks
+let task = client.task_create(json!({
+    "title": "Backup DB",
+    "schedule": "0 0 * * *",
+})).await?;
+client.task_start("task-id").await?;
+client.task_succeed("task-id", json!({
+    "records": 1500
+})).await?;
+client.task_pause("task-id").await?;
+client.task_resume("task-id", None).await?;
+
+// Agents
+let agent = client.agent_create(json!({
+    "name": "data-processor",
+    "model": "gpt-4.1",
+})).await?;
+let agents = client.agent_list().await?;
+client.agent_get_by_name("data-processor").await?;
+client.agents_by_deployment("deploy-id").await?;
+```
+
+### Schedule Management
+
+```rust
+use serde_json::json;
+
+// Create a schedule
+let sched = client.create_schedule(json!({
+    "name": "nightly-backup",
+    "cron": "0 2 * * *",
+    "task_type": "backup",
+})).await?;
+
+// List, get, update
+let schedules = client.list_schedules().await?;
+client.get_schedule("sched-id").await?;
+client.update_schedule("sched-id", json!({
+    "cron": "0 3 * * *"
+})).await?;
+
+// Pause and resume
+client.pause_schedule("sched-id").await?;
+client.resume_schedule("sched-id").await?;
+
+// Delete
+client.delete_schedule("sched-id").await?;
+```
+
+### WebSocket Chat Streaming
+
+```rust
+// Connect to WebSocket
+let ws = client.websocket("ws://localhost:8080/ws").await?;
+
+// Send a chat message and stream events
+let mut event_stream = ws
+    .chat_send(chat_id, "What is the capital of France?")
+    .await?;
+
+while let Some(event) = event_stream.next().await {
+    match event.event_type.as_str() {
+        "chunk" => {
+            print!("{}", event.content);
+        }
+        "end" => {
+            println!(
+                "\nDone in {}ms (context window: {} tokens)",
+                event.execution_time_ms,
+                event.context_window
+            );
+        }
+        "toolCall" => {
+            ws.send_tool_result(
+                chat_id,
+                &event.call_id,
+                true,
+                result,
+                "",
+            ).await?;
+        }
+        "error" => {
+            eprintln!("Error: {}", event.error);
+        }
+        _ => {}
+    }
+}
+```
 
 ## Best Practices
 
@@ -706,13 +890,8 @@ if let Err(Error::RateLimit { retry_after_secs }) = result {
 
 ## License
 
-This project is licensed under either of:
-
-- MIT License ([LICENSE-MIT](LICENSE-MIT) or http://opensource.org/licenses/MIT)
-- Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE) or
-  http://www.apache.org/licenses/LICENSE-2.0)
-
-at your option.
+This project is licensed under the MIT License ([LICENSE](LICENSE) or
+[opensource.org/licenses/MIT](http://opensource.org/licenses/MIT)).
 
 ## Contributing
 

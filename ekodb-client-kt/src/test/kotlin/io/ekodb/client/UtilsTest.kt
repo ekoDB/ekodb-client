@@ -11,7 +11,6 @@ import kotlin.test.assertTrue
  * Unit tests for ekoDB Kotlin client utility functions
  */
 class UtilsTest {
-
     // ========================================================================
     // getValue Tests
     // ========================================================================
@@ -89,6 +88,33 @@ class UtilsTest {
     fun `getValue handles FieldType BooleanValue`() {
         val field = FieldType.BooleanValue(true)
         assertEquals(true, getValue<Boolean>(field))
+    }
+
+    @Test
+    fun `getValue does not unwrap user object that has value but no type`() {
+        // A genuine user object that merely happens to carry a "value" key
+        // (e.g. a money amount) must pass through untouched — only real
+        // {"type", "value"} wrappers are unwrapped.
+        val userObject = mapOf("value" to 1, "currency" to "USD")
+        val result = getValue<Map<*, *>>(userObject)
+        assertEquals(userObject, result)
+    }
+
+    @Test
+    fun `getValue does not unwrap user object that has type but no value`() {
+        // "type" alone is not a wrapper; without a "value" key the object is
+        // returned as-is.
+        val userObject = mapOf("type" to "premium", "tier" to 3)
+        val result = getValue<Map<*, *>>(userObject)
+        assertEquals(userObject, result)
+    }
+
+    @Test
+    fun `getValue unwraps wrapper whose value is null`() {
+        // {"type": "Null", "value": null} carries both keys, so it is a real
+        // wrapper and unwraps to null even though the inner value is null.
+        val field = mapOf("type" to "Null", "value" to null)
+        assertNull(getValue<Any>(field))
     }
 
     // ========================================================================
@@ -521,5 +547,38 @@ class UtilsTest {
     fun `getRecordId returns null for missing id`() {
         val record = mapOf("name" to "John")
         assertNull(getRecordId(record))
+    }
+
+    @Test
+    fun `getRecordId resolves custom primary key alias candidate`() {
+        val record = mapOf<String, Any?>("users_id" to "user_alias_1", "name" to "John")
+        // No "id" key present; only the custom alias.
+        assertNull(getRecordId(record))
+        assertEquals("user_alias_1", getRecordId(record, "users_id"))
+    }
+
+    @Test
+    fun `getRecordId falls back to underscore id`() {
+        val record = mapOf<String, Any?>("_id" to "user_underscore", "name" to "John")
+        assertEquals("user_underscore", getRecordId(record))
+    }
+
+    @Test
+    fun `getRecordId resolves wrapped alias candidate`() {
+        val record = mapOf<String, Any?>("custom_id" to mapOf("type" to "String", "value" to "user_wrapped"))
+        assertEquals("user_wrapped", getRecordId(record, "custom_id"))
+    }
+
+    @Test
+    fun `getRecordId prefers alias candidate over id`() {
+        val record = mapOf<String, Any?>("custom_id" to "from_alias", "id" to "from_id")
+        assertEquals("from_alias", getRecordId(record, "custom_id"))
+    }
+
+    @Test
+    fun `getRecordId still resolves plain id with alias overload`() {
+        val record = mapOf<String, Any?>("id" to "user_123")
+        // Alias candidate absent; should fall back to "id".
+        assertEquals("user_123", getRecordId(record, "missing_alias"))
     }
 }

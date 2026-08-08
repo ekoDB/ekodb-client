@@ -6,6 +6,7 @@
 
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { WebSocketServer, WebSocket as WS } from "ws";
+import { encode, decode } from "@msgpack/msgpack";
 import { WebSocketClient, EventStream } from "./client";
 
 // ============================================================================
@@ -16,11 +17,62 @@ let wss: WebSocketServer;
 let port: number;
 let serverConnections: WS[] = [];
 
+// Format the mock server Welcomes during the handshake. Default "json" keeps
+// the existing tests on the text transport they assert against; the binary
+// negotiation test sets "msgpack" before connecting.
+let welcomeFormat: "json" | "msgpack" = "json";
+
+// Per-connection receive state. The connection handler is the SOLE message
+// consumer: it answers the client's Hello (so tests never see it) and buffers
+// every subsequent frame, which waitForMessage() drains. This is race-free —
+// unlike a per-test ws.once("message"), which would fire on the Hello that
+// arrives (as loopback I/O) after the test's listener is registered.
+interface RecvState {
+  queue: any[];
+  waiters: ((m: any) => void)[];
+  handshakeDone: boolean;
+  // Frame type of the most recently received real (post-handshake) message, so
+  // a test can assert the client actually sent binary vs text.
+  lastBinary: boolean;
+}
+const recvState = new Map<WS, RecvState>();
+
 function startServer(): Promise<number> {
   return new Promise((resolve) => {
     wss = new WebSocketServer({ port: 0 });
     wss.on("connection", (ws) => {
       serverConnections.push(ws);
+      const state: RecvState = {
+        queue: [],
+        waiters: [],
+        handshakeDone: false,
+        lastBinary: false,
+      };
+      recvState.set(ws, state);
+      ws.on("message", (data: Buffer, isBinary: boolean) => {
+        let msg: any;
+        try {
+          msg = isBinary ? decode(data) : JSON.parse(data.toString());
+        } catch {
+          return;
+        }
+        // Answer the additive Hello handshake exactly like the real server, and
+        // never surface it to the test. The Hello is always text.
+        if (!state.handshakeDone && msg?.type === "Hello") {
+          state.handshakeDone = true;
+          ws.send(
+            JSON.stringify({
+              type: "Welcome",
+              payload: { format: welcomeFormat },
+            }),
+          );
+          return;
+        }
+        state.lastBinary = isBinary;
+        const waiter = state.waiters.shift();
+        if (waiter) waiter(msg);
+        else state.queue.push(msg);
+      });
     });
     wss.on("listening", () => {
       const addr = wss.address();
@@ -33,12 +85,14 @@ function getLastConnection(): WS {
   return serverConnections[serverConnections.length - 1];
 }
 
+// Resolve with the next real (post-handshake) frame, draining any already
+// buffered. Decoded per the negotiated frame type, so it works for both JSON
+// and msgpack connections without the caller caring which.
 function waitForMessage(ws: WS): Promise<any> {
-  return new Promise((resolve) => {
-    ws.once("message", (data) => {
-      resolve(JSON.parse(data.toString()));
-    });
-  });
+  const state = recvState.get(ws)!;
+  const queued = state.queue.shift();
+  if (queued !== undefined) return Promise.resolve(queued);
+  return new Promise((resolve) => state.waiters.push(resolve));
 }
 
 // ============================================================================
@@ -48,6 +102,8 @@ function waitForMessage(ws: WS): Promise<any> {
 describe("WebSocketClient", () => {
   beforeEach(async () => {
     serverConnections = [];
+    recvState.clear();
+    welcomeFormat = "json";
     port = await startServer();
   });
 
@@ -117,6 +173,45 @@ describe("WebSocketClient", () => {
       );
 
       await expect(resultPromise).rejects.toThrow("Collection not found");
+
+      client.close();
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // URL normalization
+  // --------------------------------------------------------------------------
+
+  describe("URL normalization", () => {
+    function captureRequestPath(): Promise<string> {
+      return new Promise((resolve) => {
+        wss.once("connection", (_ws, req) => resolve(req.url ?? ""));
+      });
+    }
+
+    it("appends /api/ws without a double slash when the base URL has a trailing slash", async () => {
+      const pathPromise = captureRequestPath();
+      const client = new WebSocketClient(
+        `ws://localhost:${port}/`,
+        "test-token",
+      );
+      // Trigger a connect; we only assert the path the server receives.
+      client.findAll("users").catch(() => {});
+
+      expect(await pathPromise).toBe("/api/ws");
+
+      client.close();
+    });
+
+    it("does not duplicate /api/ws when the URL already ends with it plus a trailing slash", async () => {
+      const pathPromise = captureRequestPath();
+      const client = new WebSocketClient(
+        `ws://localhost:${port}/api/ws/`,
+        "test-token",
+      );
+      client.findAll("users").catch(() => {});
+
+      expect(await pathPromise).toBe("/api/ws");
 
       client.close();
     });
@@ -270,6 +365,43 @@ describe("WebSocketClient", () => {
       client.close();
     });
 
+    it("includes context_window in end event", async () => {
+      const client = new WebSocketClient(
+        `ws://localhost:${port}/api/ws`,
+        "test-token",
+      );
+
+      const streamPromise = client.chatSend("chat-cw", "test");
+
+      await new Promise((r) => wss.once("connection", r));
+      const ws = getLastConnection();
+      await waitForMessage(ws);
+
+      const stream = await streamPromise;
+      const events: any[] = [];
+      stream.on("event", (e) => events.push(e));
+
+      ws.send(
+        JSON.stringify({
+          type: "ChatStreamEnd",
+          payload: {
+            chat_id: "chat-cw",
+            message_id: "msg-cw",
+            execution_time_ms: 100,
+            context_window: 128000,
+          },
+        }),
+      );
+
+      await new Promise((r) => stream.on("close", r));
+
+      expect(events).toHaveLength(1);
+      expect(events[0].type).toBe("end");
+      expect(events[0].contextWindow).toBe(128000);
+
+      client.close();
+    });
+
     it("handles chat stream error", async () => {
       const client = new WebSocketClient(
         `ws://localhost:${port}/api/ws`,
@@ -384,6 +516,99 @@ describe("WebSocketClient", () => {
   });
 
   // --------------------------------------------------------------------------
+  // unsubscribe
+  // --------------------------------------------------------------------------
+
+  describe("unsubscribe", () => {
+    it("sends an Unsubscribe frame to the server", async () => {
+      const client = new WebSocketClient(
+        `ws://localhost:${port}/api/ws`,
+        "test-token",
+      );
+
+      const streamPromise = client.subscribe("orders");
+      await new Promise((r) => wss.once("connection", r));
+      const ws = getLastConnection();
+      const subMsg = await waitForMessage(ws);
+      expect(subMsg.type).toBe("Subscribe");
+      ws.send(
+        JSON.stringify({
+          type: "Success",
+          payload: { message_id: subMsg.messageId, status: "subscribed" },
+        }),
+      );
+      await streamPromise;
+
+      const unsubMsg = waitForMessage(ws);
+      client.unsubscribe("orders");
+
+      const sent = await unsubMsg;
+      expect(sent.type).toBe("Unsubscribe");
+      expect(sent.payload.collection).toBe("orders");
+
+      client.close();
+    });
+  });
+
+  // cancelChat
+  // --------------------------------------------------------------------------
+
+  describe("cancelChat", () => {
+    it("sends CancelChat frame", async () => {
+      const client = new WebSocketClient(
+        `ws://localhost:${port}/api/ws`,
+        "test-token",
+      );
+
+      // Open the connection via a chat stream first.
+      const streamPromise = client.chatSend("chat-1", "test");
+      await new Promise((r) => wss.once("connection", r));
+      const ws = getLastConnection();
+      await waitForMessage(ws); // ChatSend
+      await streamPromise;
+
+      const cancelMsg = waitForMessage(ws);
+      await client.cancelChat("chat-1");
+
+      const sent = await cancelMsg;
+      expect(sent.type).toBe("CancelChat");
+      expect(sent.payload.chat_id).toBe("chat-1");
+      // A correlation id must be attached so a Success ack can't be misrouted by
+      // the dispatcher's single-pending fallback.
+      expect(typeof sent.messageId).toBe("string");
+      expect(sent.messageId.length).toBeGreaterThan(0);
+
+      client.close();
+    });
+
+    it("attaches a unique messageId on each CancelChat frame", async () => {
+      const client = new WebSocketClient(
+        `ws://localhost:${port}/api/ws`,
+        "test-token",
+      );
+
+      const streamPromise = client.chatSend("chat-1", "test");
+      await new Promise((r) => wss.once("connection", r));
+      const ws = getLastConnection();
+      await waitForMessage(ws); // ChatSend
+      await streamPromise;
+
+      const first = waitForMessage(ws);
+      await client.cancelChat("chat-1");
+      const firstSent = await first;
+
+      const second = waitForMessage(ws);
+      await client.cancelChat("chat-1");
+      const secondSent = await second;
+
+      expect(firstSent.messageId).toBeTruthy();
+      expect(secondSent.messageId).toBeTruthy();
+      expect(firstSent.messageId).not.toBe(secondSent.messageId);
+
+      client.close();
+    });
+  });
+
   // sendToolResult
   // --------------------------------------------------------------------------
 
@@ -570,6 +795,411 @@ describe("WebSocketClient", () => {
       });
       stream.close();
       expect(closed).toBe(true);
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // rawCompletion
+  // --------------------------------------------------------------------------
+
+  describe("rawCompletion", () => {
+    it("sends RawComplete request and returns content", async () => {
+      const client = new WebSocketClient(
+        `ws://localhost:${port}/api/ws`,
+        "test-token",
+      );
+
+      const resultPromise = client.rawCompletion({
+        system_prompt: "You are helpful.",
+        message: "Say hello.",
+      });
+
+      await new Promise((r) => wss.once("connection", r));
+      const ws = getLastConnection();
+      const msg = await waitForMessage(ws);
+
+      expect(msg.type).toBe("RawComplete");
+      expect(msg.payload.system_prompt).toBe("You are helpful.");
+      expect(msg.payload.message).toBe("Say hello.");
+
+      ws.send(
+        JSON.stringify({
+          type: "Success",
+          payload: {
+            data: { content: "Hello! How can I help?" },
+          },
+        }),
+      );
+
+      const result = await resultPromise;
+      expect(result.content).toBe("Hello! How can I help?");
+
+      client.close();
+    });
+
+    it("includes optional fields when provided", async () => {
+      const client = new WebSocketClient(
+        `ws://localhost:${port}/api/ws`,
+        "test-token",
+      );
+
+      const resultPromise = client.rawCompletion({
+        system_prompt: "System.",
+        message: "User.",
+        provider: "openai",
+        model: "gpt-4o-mini",
+        max_tokens: 512,
+      });
+
+      await new Promise((r) => wss.once("connection", r));
+      const ws = getLastConnection();
+      const msg = await waitForMessage(ws);
+
+      expect(msg.payload.provider).toBe("openai");
+      expect(msg.payload.model).toBe("gpt-4o-mini");
+      expect(msg.payload.max_tokens).toBe(512);
+
+      ws.send(
+        JSON.stringify({
+          type: "Success",
+          payload: { data: { content: "Done." } },
+        }),
+      );
+
+      await resultPromise;
+      client.close();
+    });
+
+    it("rejects on error response", async () => {
+      const client = new WebSocketClient(
+        `ws://localhost:${port}/api/ws`,
+        "test-token",
+      );
+
+      const resultPromise = client.rawCompletion({
+        system_prompt: "System.",
+        message: "User.",
+      });
+
+      await new Promise((r) => wss.once("connection", r));
+      const ws = getLastConnection();
+      await waitForMessage(ws);
+
+      ws.send(
+        JSON.stringify({
+          type: "Error",
+          message: "Model not found",
+        }),
+      );
+
+      await expect(resultPromise).rejects.toThrow("Model not found");
+
+      client.close();
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // Per-request timeout
+  // --------------------------------------------------------------------------
+
+  describe("per-request timeout", () => {
+    it("rejects a pending request when no response arrives", async () => {
+      const client = new WebSocketClient(
+        `ws://localhost:${port}/api/ws`,
+        "test-token",
+        { requestTimeoutMs: 50, autoReconnect: false },
+      );
+
+      const resultPromise = client.findAll("users");
+
+      await new Promise((r) => wss.once("connection", r));
+      const ws = getLastConnection();
+      await waitForMessage(ws); // receive FindAll but never respond
+
+      await expect(resultPromise).rejects.toThrow(/timed out after 50ms/);
+
+      client.close();
+    });
+
+    it("does not time out when a response arrives in time", async () => {
+      const client = new WebSocketClient(
+        `ws://localhost:${port}/api/ws`,
+        "test-token",
+        { requestTimeoutMs: 500, autoReconnect: false },
+      );
+
+      const resultPromise = client.findAll("users");
+
+      await new Promise((r) => wss.once("connection", r));
+      const ws = getLastConnection();
+      const msg = await waitForMessage(ws);
+      ws.send(
+        JSON.stringify({
+          type: "Success",
+          payload: { message_id: msg.messageId, data: [{ id: "1" }] },
+        }),
+      );
+
+      await expect(resultPromise).resolves.toEqual([{ id: "1" }]);
+      client.close();
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // Reject pending requests on disconnect
+  // --------------------------------------------------------------------------
+
+  describe("disconnect handling", () => {
+    it("rejects in-flight requests when the socket drops", async () => {
+      const client = new WebSocketClient(
+        `ws://localhost:${port}/api/ws`,
+        "test-token",
+        { autoReconnect: false },
+      );
+
+      const resultPromise = client.findAll("users");
+
+      await new Promise((r) => wss.once("connection", r));
+      const ws = getLastConnection();
+      await waitForMessage(ws); // FindAll received, never answered
+
+      // Server drops the connection.
+      ws.close();
+
+      await expect(resultPromise).rejects.toThrow(/connection closed/i);
+
+      client.close();
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // Backoff helper
+  // --------------------------------------------------------------------------
+
+  describe("computeBackoff", () => {
+    it("grows exponentially, stays within jittered bounds, and caps", () => {
+      const client = new WebSocketClient(
+        `ws://localhost:${port}/api/ws`,
+        "test-token",
+        { reconnectInitialDelayMs: 200, reconnectMaxDelayMs: 5000 },
+      );
+
+      // attempt 0 -> base 200, +/-25% => [150, 250]
+      for (let i = 0; i < 20; i++) {
+        const d0 = client.computeBackoff(0);
+        expect(d0).toBeGreaterThanOrEqual(150);
+        expect(d0).toBeLessThanOrEqual(250);
+      }
+
+      // attempt 3 -> base 1600, +/-25% => [1200, 2000]
+      const d3 = client.computeBackoff(3);
+      expect(d3).toBeGreaterThanOrEqual(1200);
+      expect(d3).toBeLessThanOrEqual(2000);
+
+      // attempt 20 -> capped at 5000, +/-25% => [3750, 6250]
+      const dBig = client.computeBackoff(20);
+      expect(dBig).toBeGreaterThanOrEqual(3750);
+      expect(dBig).toBeLessThanOrEqual(6250);
+
+      client.close();
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // Auto-reconnect + re-subscribe + fresh token
+  // --------------------------------------------------------------------------
+
+  describe("auto-reconnect", () => {
+    it("re-subscribes after a socket drop and re-evaluates the token", async () => {
+      // Token provider returns a new token each call so we can assert the
+      // reconnect used a freshly-obtained token (not a stale snapshot).
+      let tokenCalls = 0;
+      const tokenProvider = () => `token-${++tokenCalls}`;
+
+      const client = new WebSocketClient(
+        `ws://localhost:${port}/api/ws`,
+        tokenProvider,
+        {
+          autoReconnect: true,
+          reconnectInitialDelayMs: 10,
+          reconnectMaxDelayMs: 30,
+        },
+      );
+
+      // Establish the subscription on the first connection.
+      const streamPromise = client.subscribe("orders");
+      await new Promise((r) => wss.once("connection", r));
+      const ws1 = getLastConnection();
+      const sub1 = await waitForMessage(ws1);
+      expect(sub1.type).toBe("Subscribe");
+      expect(sub1.payload.collection).toBe("orders");
+      ws1.send(
+        JSON.stringify({
+          type: "Success",
+          payload: { message_id: sub1.messageId, status: "subscribed" },
+        }),
+      );
+      const stream = await streamPromise;
+      expect(tokenCalls).toBe(1);
+
+      // Arm the next-connection handler BEFORE dropping so we don't miss it.
+      const nextConn = new Promise<WS>((resolve) => {
+        wss.once("connection", (ws: WS) => resolve(ws));
+      });
+
+      // Simulate a transient drop: server closes the socket.
+      ws1.close();
+
+      // The client should auto-reconnect (new connection) and re-send Subscribe.
+      const ws2 = await nextConn;
+      const sub2 = await waitForMessage(ws2);
+      expect(sub2.type).toBe("Subscribe");
+      expect(sub2.payload.collection).toBe("orders");
+
+      // Reconnect re-evaluated the token provider.
+      expect(tokenCalls).toBeGreaterThanOrEqual(2);
+
+      // Ack the re-subscribe.
+      ws2.send(
+        JSON.stringify({
+          type: "Success",
+          payload: { message_id: sub2.messageId, status: "subscribed" },
+        }),
+      );
+
+      // The SAME stream still delivers mutations over the new socket.
+      const mutationPromise = new Promise<any>((resolve) => {
+        stream.on("mutation", resolve);
+      });
+      ws2.send(
+        JSON.stringify({
+          type: "MutationNotification",
+          payload: {
+            collection: "orders",
+            event: "insert",
+            record_ids: ["order-9"],
+            timestamp: "2026-06-02T00:00:00Z",
+          },
+        }),
+      );
+      const mutation = await mutationPromise;
+      expect(mutation.recordIds).toEqual(["order-9"]);
+      expect(stream.closed).toBe(false);
+
+      client.close();
+    });
+
+    it("does not reconnect after an intentional close()", async () => {
+      const client = new WebSocketClient(
+        `ws://localhost:${port}/api/ws`,
+        "test-token",
+        { autoReconnect: true, reconnectInitialDelayMs: 10 },
+      );
+
+      const streamPromise = client.subscribe("widgets");
+      await new Promise((r) => wss.once("connection", r));
+      const ws = getLastConnection();
+      const sub = await waitForMessage(ws);
+      ws.send(
+        JSON.stringify({
+          type: "Success",
+          payload: { message_id: sub.messageId, status: "subscribed" },
+        }),
+      );
+      await streamPromise;
+
+      const connectionsBefore = serverConnections.length;
+
+      // Intentional close: must NOT reconnect.
+      client.close();
+
+      // Give any erroneous reconnect time to land.
+      await new Promise((r) => setTimeout(r, 80));
+      expect(serverConnections.length).toBe(connectionsBefore);
+    });
+  });
+
+  describe("auth token validation", () => {
+    it("rejects connect when the token provider returns null (no Bearer null)", async () => {
+      const client = new WebSocketClient(
+        `ws://localhost:${port}/api/ws`,
+        () => null,
+      );
+      await expect(client.findAll("users")).rejects.toThrow(
+        /token is unavailable/i,
+      );
+      client.close();
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // Binary (msgpack) negotiation
+  // --------------------------------------------------------------------------
+
+  describe("msgpack negotiation", () => {
+    it("negotiates msgpack and round-trips a binary request/response", async () => {
+      welcomeFormat = "msgpack";
+      const client = new WebSocketClient(
+        `ws://localhost:${port}/api/ws`,
+        "test-token",
+      );
+
+      const resultPromise = client.findAll("users");
+
+      await new Promise((r) => wss.once("connection", r));
+      const ws = getLastConnection();
+      const msg = await waitForMessage(ws);
+
+      // The request arrived as a binary msgpack frame, decoded to the same
+      // object shape as JSON would produce.
+      expect(recvState.get(ws)!.lastBinary).toBe(true);
+      expect(msg.type).toBe("FindAll");
+      expect(msg.payload.collection).toBe("users");
+
+      // Respond with a binary msgpack frame; the client must decode it
+      // transparently.
+      ws.send(
+        encode({
+          type: "Success",
+          payload: {
+            message_id: msg.messageId,
+            data: [{ id: "1", name: "Alice" }],
+          },
+        }),
+      );
+
+      const result = await resultPromise;
+      expect(result).toEqual([{ id: "1", name: "Alice" }]);
+
+      client.close();
+    });
+
+    it("stays on JSON text when the server welcomes only json", async () => {
+      welcomeFormat = "json";
+      const client = new WebSocketClient(
+        `ws://localhost:${port}/api/ws`,
+        "test-token",
+      );
+
+      const resultPromise = client.findAll("users");
+
+      await new Promise((r) => wss.once("connection", r));
+      const ws = getLastConnection();
+      const msg = await waitForMessage(ws);
+
+      // The request is a JSON text frame, not binary.
+      expect(recvState.get(ws)!.lastBinary).toBe(false);
+      expect(msg.type).toBe("FindAll");
+
+      ws.send(
+        JSON.stringify({
+          type: "Success",
+          payload: { message_id: msg.messageId, data: [] },
+        }),
+      );
+
+      await resultPromise;
+      client.close();
     });
   });
 });

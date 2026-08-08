@@ -41,12 +41,38 @@ pub enum WebSocketRequest {
         message_id: String,
         payload: SubscribePayload,
     },
+    /// Stop receiving mutation notifications for a collection. Best-effort:
+    /// the server stops streaming this collection on this connection. The
+    /// `messageId` is attached purely so the server's ack carries a correlation
+    /// id; it registers no pending request, so the ack is discarded.
+    Unsubscribe {
+        #[serde(rename = "messageId")]
+        message_id: String,
+        payload: UnsubscribePayload,
+    },
     /// Send a chat message for streaming response
     ChatSend { payload: ChatSendPayload },
     /// Register client-side tools for a chat session
     RegisterClientTools { payload: RegisterClientToolsPayload },
     /// Return result of a client-side tool execution
     ClientToolResult { payload: ClientToolResultPayload },
+    /// Cancel an in-flight chat stream. Server fires the matching
+    /// `CancellationToken`, aborts the LLM HTTP call, and skips
+    /// persisting the assistant message. No-op if no stream is
+    /// currently in flight for the given chat_id.
+    CancelChat { payload: CancelChatPayload },
+    /// Stateless raw LLM completion (no session, no history, no RAG).
+    /// Mirrors POST /api/chat/complete. Response: Success { data: { "content": "..." } }.
+    RawComplete {
+        system_prompt: String,
+        message: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        provider: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        model: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        max_tokens: Option<i32>,
+    },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -68,6 +94,11 @@ pub struct SubscribePayload {
     pub filter_field: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub filter_value: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UnsubscribePayload {
+    pub collection: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -120,37 +151,45 @@ pub struct ClientToolResultPayload {
     pub error: Option<String>,
 }
 
+/// Payload for the `CancelChat` WS request. Mirrors the server-side
+/// `WebSocketMessage::CancelChat` shape so a single chat_id field
+/// is enough to address the in-flight stream.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CancelChatPayload {
+    pub chat_id: String,
+}
+
 /// WebSocket response types from the server
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum WebSocketResponse {
     Success {
         payload: ResponsePayload,
+        /// Server-echoed messageId for request-response correlation (top-level)
+        #[serde(rename = "messageId", default)]
+        message_id: Option<String>,
     },
     Error {
         code: u16,
         message: String,
+        /// Server-echoed messageId for request-response correlation (top-level)
+        #[serde(rename = "messageId", default)]
+        message_id: Option<String>,
     },
+    /// Schema change notification from server (collection config changed)
+    SchemaChanged { payload: SchemaChangedPayload },
     /// A streamed text chunk from the LLM
-    ChatStreamChunk {
-        payload: ChatStreamChunkPayload,
-    },
+    ChatStreamChunk { payload: ChatStreamChunkPayload },
     /// Final message after streaming completes
-    ChatStreamEnd {
-        payload: ChatStreamEndPayload,
-    },
+    ChatStreamEnd { payload: ChatStreamEndPayload },
     /// Error during chat streaming
-    ChatStreamError {
-        payload: ChatStreamErrorPayload,
-    },
+    ChatStreamError { payload: ChatStreamErrorPayload },
     /// Mutation notification from a subscription
     MutationNotification {
         payload: MutationNotificationPayload,
     },
     /// Server requests the client to execute a tool
-    ClientToolCall {
-        payload: ClientToolCallPayload,
-    },
+    ClientToolCall { payload: ClientToolCallPayload },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -159,6 +198,13 @@ pub struct ResponsePayload {
     /// Server echoes back the message_id for request-response correlation
     #[serde(rename = "messageId", default)]
     pub message_id: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SchemaChangedPayload {
+    pub collection: String,
+    pub version: u64,
+    pub primary_key_alias: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -176,6 +222,9 @@ pub struct ChatStreamEndPayload {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tool_call_history: Option<Value>,
     pub execution_time_ms: u64,
+    /// Model's context window size in tokens (for client display).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub context_window: Option<u32>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -213,6 +262,7 @@ pub enum ChatStreamEvent {
         token_usage: Option<Value>,
         tool_call_history: Option<Value>,
         execution_time_ms: u64,
+        context_window: Option<u32>,
     },
     /// Server requests the client to execute a tool.
     /// The client must call `send_tool_result()` with the result.
@@ -241,6 +291,8 @@ struct DispatchState {
     chat_senders: HashMap<String, tokio::sync::mpsc::Sender<ChatStreamEvent>>,
     /// Dedicated ack channel for register_client_tools (protocol has no messageId for this)
     register_tools_ack: Option<tokio::sync::oneshot::Sender<WebSocketResponse>>,
+    /// Optional schema cache to invalidate on SchemaChanged events
+    schema_cache: Option<std::sync::Arc<crate::schema_cache::SchemaCache>>,
 }
 
 /// WebSocket client for real-time communication with persistent connection.
@@ -255,6 +307,12 @@ pub struct WebSocketClient {
     writer: Arc<Mutex<Option<WsWrite>>>,
     dispatch: Arc<Mutex<DispatchState>>,
     connected: Arc<Mutex<bool>>,
+    /// Negotiated wire format for the live connection: `true` once the server has
+    /// acked MessagePack via the Hello/Welcome handshake, otherwise JSON text.
+    /// Set per-connection in `ensure_connected`; read by the send + dispatch paths.
+    /// Defaults to text, so against an older server (which never acks msgpack) the
+    /// client stays on JSON — fully back-compatible.
+    binary: Arc<std::sync::atomic::AtomicBool>,
 }
 
 impl WebSocketClient {
@@ -270,13 +328,15 @@ impl WebSocketClient {
                 subscription_senders: Vec::new(),
                 chat_senders: HashMap::new(),
                 register_tools_ack: None,
+                schema_cache: None,
             })),
             connected: Arc::new(Mutex::new(false)),
+            binary: Arc::new(std::sync::atomic::AtomicBool::new(false)),
         })
     }
 
     /// Ensure we have an active connection, reconnecting if needed
-    async fn ensure_connected(&self) -> Result<()> {
+    pub(crate) async fn ensure_connected(&self) -> Result<()> {
         // Quick check: if connected, return
         {
             let w = self.writer.lock().await;
@@ -317,7 +377,26 @@ impl WebSocketClient {
             .await
             .map_err(|e| Error::WebSocket(e.to_string()))?;
 
-        let (write, read) = ws_stream.split();
+        let (mut write, mut read) = ws_stream.split();
+
+        // Capability handshake (transparent to callers): offer msgpack and, if the
+        // server welcomes it, use binary frames for the life of this connection.
+        // Fully back-compatible — an older server replies with an Error (not a
+        // Welcome), or anything we can't read as a `Welcome { format: "msgpack" }`,
+        // and the connection stays on JSON text. The Welcome (or the old server's
+        // Error) is the first frame and is consumed here, before the dispatcher
+        // starts, so it never leaks into the response stream.
+        let hello = serde_json::json!({"type":"Hello","payload":{"formats":["msgpack","json"]}});
+        let negotiated_binary = match write
+            .send(Message::Text(serde_json::to_string(&hello)?.into()))
+            .await
+        {
+            Ok(()) => Self::read_welcome_acks_msgpack(&mut read).await,
+            Err(_) => false,
+        };
+        self.binary
+            .store(negotiated_binary, std::sync::atomic::Ordering::Relaxed);
+
         *self.writer.lock().await = Some(write);
         *self.connected.lock().await = true;
 
@@ -325,6 +404,33 @@ impl WebSocketClient {
         self.spawn_dispatcher(read);
 
         Ok(())
+    }
+
+    /// Read the first frame and report whether it is a `Welcome` that acks msgpack.
+    /// Any other outcome — an old server's Error, a non-Welcome, a closed stream,
+    /// or a timeout — returns false (stay on JSON text). Bounded by a short timeout
+    /// so a server that silently ignores the Hello can't hang the connect.
+    async fn read_welcome_acks_msgpack(read: &mut WsRead) -> bool {
+        // The read returns as soon as the Welcome arrives, so this only caps the
+        // wait when NO Welcome comes (a silent/old server). 2s comfortably exceeds
+        // the handshake round-trip even on high-latency links while keeping that
+        // stall short.
+        let Ok(Some(Ok(msg))) =
+            tokio::time::timeout(std::time::Duration::from_secs(2), read.next()).await
+        else {
+            return false;
+        };
+        let text = match msg.into_text() {
+            Ok(t) => t.to_string(),
+            Err(_) => return false,
+        };
+        matches!(
+            serde_json::from_str::<serde_json::Value>(&text),
+            Ok(v) if v.get("type").and_then(|t| t.as_str()) == Some("Welcome")
+                && v.get("payload")
+                    .and_then(|p| p.get("format"))
+                    .and_then(|f| f.as_str()) == Some("msgpack")
+        )
     }
 
     /// Spawn the single reader loop that demultiplexes incoming frames
@@ -337,14 +443,23 @@ impl WebSocketClient {
             loop {
                 match read.next().await {
                     Some(Ok(msg)) => {
-                        let text = match msg.into_text() {
-                            Ok(t) if !t.is_empty() => t.to_string(),
-                            _ => continue,
-                        };
-
-                        let response: WebSocketResponse = match serde_json::from_str(&text) {
-                            Ok(r) => r,
-                            Err(_) => continue,
+                        // Decode the response from either a binary (msgpack) or a
+                        // text (JSON) frame — the connection's negotiated format,
+                        // handled defensively for both.
+                        let response: WebSocketResponse = if msg.is_binary() {
+                            match rmp_serde::from_slice(&msg.into_data()) {
+                                Ok(r) => r,
+                                Err(_) => continue,
+                            }
+                        } else {
+                            let text = match msg.into_text() {
+                                Ok(t) if !t.is_empty() => t.to_string(),
+                                _ => continue,
+                            };
+                            match serde_json::from_str(&text) {
+                                Ok(r) => r,
+                                Err(_) => continue,
+                            }
                         };
 
                         // Collect send targets while holding the lock, then drop
@@ -360,24 +475,18 @@ impl WebSocketClient {
 
                             match response {
                                 // Request-response: route by message_id (oneshot, no async needed)
-                                WebSocketResponse::Success { ref payload } => {
-                                    if let Some(mid) = &payload.message_id {
+                                // Try top-level messageId first, then payload.messageId, then single-pending fallback
+                                WebSocketResponse::Success {
+                                    ref payload,
+                                    ref message_id,
+                                } => {
+                                    let mid = message_id.as_ref().or(payload.message_id.as_ref());
+                                    if let Some(mid) = mid {
                                         if let Some(tx) = state.pending_requests.remove(mid) {
                                             let _ = tx.send(response);
                                             SendAction::None
                                         } else if let Some(tx) = state.register_tools_ack.take() {
                                             let _ = tx.send(response);
-                                            SendAction::None
-                                        } else if state.pending_requests.len() == 1 {
-                                            let key = state
-                                                .pending_requests
-                                                .keys()
-                                                .next()
-                                                .cloned()
-                                                .unwrap();
-                                            if let Some(tx) = state.pending_requests.remove(&key) {
-                                                let _ = tx.send(response);
-                                            }
                                             SendAction::None
                                         } else {
                                             SendAction::None
@@ -386,6 +495,7 @@ impl WebSocketClient {
                                         let _ = tx.send(response);
                                         SendAction::None
                                     } else if state.pending_requests.len() == 1 {
+                                        // Legacy fallback: no messageId, single pending request
                                         let key =
                                             state.pending_requests.keys().next().cloned().unwrap();
                                         if let Some(tx) = state.pending_requests.remove(&key) {
@@ -396,8 +506,12 @@ impl WebSocketClient {
                                         SendAction::None
                                     }
                                 }
-                                WebSocketResponse::Error { .. } => {
-                                    if let Some(tx) = state.register_tools_ack.take() {
+                                WebSocketResponse::Error { ref message_id, .. } => {
+                                    if let Some(mid) = message_id {
+                                        if let Some(tx) = state.pending_requests.remove(mid) {
+                                            let _ = tx.send(response);
+                                        }
+                                    } else if let Some(tx) = state.register_tools_ack.take() {
                                         let _ = tx.send(response);
                                     } else if state.pending_requests.len() == 1 {
                                         let key =
@@ -405,6 +519,18 @@ impl WebSocketClient {
                                         if let Some(tx) = state.pending_requests.remove(&key) {
                                             let _ = tx.send(response);
                                         }
+                                    }
+                                    SendAction::None
+                                }
+
+                                // Schema change: invalidate cached schema
+                                WebSocketResponse::SchemaChanged { ref payload } => {
+                                    if let Some(ref cache) = state.schema_cache {
+                                        cache.handle_schema_changed(
+                                            &payload.collection,
+                                            payload.version,
+                                            &payload.primary_key_alias,
+                                        );
                                     }
                                     SendAction::None
                                 }
@@ -440,6 +566,7 @@ impl WebSocketClient {
                                                 token_usage: payload.token_usage,
                                                 tool_call_history: payload.tool_call_history,
                                                 execution_time_ms: payload.execution_time_ms,
+                                                context_window: payload.context_window,
                                             },
                                         )
                                     } else {
@@ -500,12 +627,14 @@ impl WebSocketClient {
                             let _ = tx.send(WebSocketResponse::Error {
                                 code: 0,
                                 message: "Connection closed".to_string(),
+                                message_id: None,
                             });
                         }
                         if let Some(tx) = tools_ack {
                             let _ = tx.send(WebSocketResponse::Error {
                                 code: 0,
                                 message: "Connection closed".to_string(),
+                                message_id: None,
                             });
                         }
                         for (_, tx) in chat_senders {
@@ -520,27 +649,37 @@ impl WebSocketClient {
         });
     }
 
-    /// Generate a unique message ID for request-response correlation
-    fn gen_message_id() -> Result<String> {
-        Ok(format!(
-            "{}",
-            std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .map_err(|e| Error::WebSocket(e.to_string()))?
-                .as_nanos()
-        ))
+    /// Generate a unique message ID for request-response correlation.
+    ///
+    /// Uses a process-wide monotonic counter so that two requests issued within
+    /// the same clock tick can never collide (a nanosecond timestamp could, and
+    /// a collision would mis-route or hang a caller).
+    fn gen_message_id() -> String {
+        use std::sync::atomic::{AtomicU64, Ordering};
+        static COUNTER: AtomicU64 = AtomicU64::new(0);
+        format!("msg-{}", COUNTER.fetch_add(1, Ordering::Relaxed))
     }
 
     /// Helper: send a message through the writer half
     async fn ws_send(&self, msg: &impl Serialize) -> Result<()> {
+        // Encode in the connection's negotiated format: msgpack binary frame when
+        // the handshake acked it, otherwise JSON text. Same message shape either
+        // way — the server decodes a binary frame as msgpack into the identical
+        // value it would parse from JSON.
+        let frame = if self.binary.load(std::sync::atomic::Ordering::Relaxed) {
+            Message::Binary(
+                rmp_serde::to_vec_named(msg)
+                    .map_err(|e| Error::WebSocket(format!("msgpack encode failed: {}", e)))?
+                    .into(),
+            )
+        } else {
+            Message::Text(serde_json::to_string(msg)?.into())
+        };
         let mut w = self.writer.lock().await;
         let write = w
             .as_mut()
             .ok_or_else(|| Error::WebSocket("Not connected".to_string()))?;
-        if let Err(e) = write
-            .send(Message::Text(serde_json::to_string(msg)?.into()))
-            .await
-        {
+        if let Err(e) = write.send(frame).await {
             *w = None;
             *self.connected.lock().await = false;
             return Err(Error::WebSocket(format!("Send failed: {}", e)));
@@ -576,7 +715,7 @@ impl WebSocketClient {
     pub async fn find_all(&self, collection: &str) -> Result<Vec<Record>> {
         self.ensure_connected().await?;
 
-        let message_id = Self::gen_message_id()?;
+        let message_id = Self::gen_message_id();
 
         let request = WebSocketRequest::FindAll {
             message_id: message_id.clone(),
@@ -588,7 +727,7 @@ impl WebSocketClient {
         let response = self.send_and_wait(&request, &message_id).await?;
 
         match response {
-            WebSocketResponse::Success { payload } => {
+            WebSocketResponse::Success { payload, .. } => {
                 if let Some(arr) = payload.data.as_array() {
                     let records: Vec<Record> = arr
                         .iter()
@@ -599,7 +738,7 @@ impl WebSocketClient {
                     Ok(vec![])
                 }
             }
-            WebSocketResponse::Error { code, message } => Err(Error::api(code, message)),
+            WebSocketResponse::Error { code, message, .. } => Err(Error::api(code, message)),
             _ => Err(Error::WebSocket("Unexpected response type".to_string())),
         }
     }
@@ -615,7 +754,7 @@ impl WebSocketClient {
     ) -> Result<tokio::sync::mpsc::Receiver<MutationNotificationPayload>> {
         self.ensure_connected().await?;
 
-        let message_id = Self::gen_message_id()?;
+        let message_id = Self::gen_message_id();
 
         let request = WebSocketRequest::Subscribe {
             message_id: message_id.clone(),
@@ -630,7 +769,9 @@ impl WebSocketClient {
         let response = self.send_and_wait(&request, &message_id).await?;
         match response {
             WebSocketResponse::Success { .. } => {}
-            WebSocketResponse::Error { code, message } => return Err(Error::api(code, message)),
+            WebSocketResponse::Error { code, message, .. } => {
+                return Err(Error::api(code, message));
+            }
             _ => {
                 return Err(Error::WebSocket(
                     "Unexpected response to subscribe".to_string(),
@@ -648,6 +789,44 @@ impl WebSocketClient {
         }
 
         Ok(rx)
+    }
+
+    /// Stop receiving mutation notifications for a collection.
+    ///
+    /// This is an intentional teardown: it drops the local subscription
+    /// sender(s) for `collection` (so dropped receivers stop being fed) and
+    /// sends a best-effort `Unsubscribe` frame to the server so it stops
+    /// streaming this collection on this connection. If the socket is already
+    /// gone the local teardown suffices, since the server drops all
+    /// subscriptions when the connection closes. Safe to call for a collection
+    /// that is not currently subscribed (no-op).
+    ///
+    /// A unique `messageId` is attached to the frame purely so the server's
+    /// ack carries a correlation id: `Unsubscribe` registers no pending
+    /// request, so the dispatcher finds no match and silently discards the ack.
+    /// The id stops that unmatched ack from being misrouted to an unrelated
+    /// in-flight request.
+    pub async fn unsubscribe(&self, collection: &str) -> Result<()> {
+        // Local teardown: drop the subscription sender(s) for this collection.
+        // Dropping the sender closes the receiver the caller holds.
+        {
+            let mut state = self.dispatch.lock().await;
+            state
+                .subscription_senders
+                .retain(|(name, _)| name != collection);
+        }
+
+        // Best-effort server frame. If we're not connected the local teardown
+        // above is sufficient, so a send failure is not propagated as an error.
+        let request = WebSocketRequest::Unsubscribe {
+            message_id: Self::gen_message_id(),
+            payload: UnsubscribePayload {
+                collection: collection.to_string(),
+            },
+        };
+        let _ = self.ws_send(&request).await;
+
+        Ok(())
     }
 
     /// Send a chat message and receive streaming responses with client tool support.
@@ -755,11 +934,34 @@ impl WebSocketClient {
 
         match response {
             WebSocketResponse::Success { .. } => Ok(()),
-            WebSocketResponse::Error { code, message } => Err(Error::api(code, message)),
+            WebSocketResponse::Error { code, message, .. } => Err(Error::api(code, message)),
             _ => Err(Error::WebSocket(
                 "Unexpected response to register_client_tools".to_string(),
             )),
         }
+    }
+
+    /// Cancel an in-flight chat stream by chat_id. Fires the
+    /// server-side cancellation token, which aborts the LLM HTTP
+    /// call AND skips persisting the assistant message. Use this
+    /// instead of just dropping the receiver — pre-fix, dropping
+    /// only halted chunk delivery; the LLM kept generating
+    /// server-side and the assistant turn still landed in storage.
+    ///
+    /// Connection: requires an active WS. If the client isn't
+    /// connected, this auto-reconnects via `ensure_connected()`
+    /// (matching every other WS-RPC method on this client).
+    /// Once delivered to the server, the cancel itself is a
+    /// no-op when no in-flight stream matches `chat_id` —
+    /// callers can fire it speculatively without checking.
+    pub async fn cancel_chat(&self, chat_id: &str) -> Result<()> {
+        self.ensure_connected().await?;
+        let request = WebSocketRequest::CancelChat {
+            payload: CancelChatPayload {
+                chat_id: chat_id.to_string(),
+            },
+        };
+        self.ws_send(&request).await
     }
 
     /// Send the result of a client-side tool execution back to ekoDB.
@@ -788,6 +990,46 @@ impl WebSocketClient {
         self.ws_send(&request).await
     }
 
+    /// Stateless raw LLM completion via WebSocket.
+    ///
+    /// Sends a `RawComplete` message and waits for the `Success` response.
+    /// Preferred over HTTP for deployed instances: the persistent WSS connection
+    /// is already authenticated and won't be killed by reverse proxy timeouts.
+    pub async fn raw_completion(
+        &self,
+        request: &crate::chat::RawCompletionRequest,
+    ) -> Result<crate::chat::RawCompletionResponse> {
+        self.ensure_connected().await?;
+
+        let message_id = Self::gen_message_id();
+
+        let ws_request = WebSocketRequest::RawComplete {
+            system_prompt: request.system_prompt.clone(),
+            message: request.message.clone(),
+            provider: request.provider.clone(),
+            model: request.model.clone(),
+            max_tokens: request.max_tokens,
+        };
+
+        let response = self.send_and_wait(&ws_request, &message_id).await?;
+
+        match response {
+            WebSocketResponse::Success { payload, .. } => {
+                let content = payload
+                    .data
+                    .get("content")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string();
+                Ok(crate::chat::RawCompletionResponse { content })
+            }
+            WebSocketResponse::Error { code, message, .. } => Err(Error::api(code, message)),
+            _ => Err(Error::WebSocket(
+                "Unexpected response to RawComplete".to_string(),
+            )),
+        }
+    }
+
     /// Close the WebSocket connection with a proper close frame.
     pub async fn close(&self) -> Result<()> {
         if let Some(writer) = self.writer.lock().await.as_mut() {
@@ -804,5 +1046,506 @@ impl WebSocketClient {
         state.chat_senders.clear();
 
         Ok(())
+    }
+
+    /// Attach a schema cache for automatic invalidation on SchemaChanged events.
+    pub async fn set_schema_cache(&self, cache: std::sync::Arc<crate::schema_cache::SchemaCache>) {
+        let mut state = self.dispatch.lock().await;
+        state.schema_cache = Some(cache);
+    }
+
+    // =========================================================================
+    // WS CRUD Methods — Full Parity with Server
+    // =========================================================================
+
+    /// Helper: send a typed WS request as raw JSON and wait for response.
+    /// Attaches messageId at the top level for concurrent correlation.
+    /// Send a typed CRUD request as raw JSON and return the data from the response.
+    pub async fn send_crud(&self, msg_type: &str, payload: Value) -> Result<Value> {
+        self.ensure_connected().await?;
+        let message_id = Self::gen_message_id();
+
+        let request = serde_json::json!({
+            "type": msg_type,
+            "messageId": message_id,
+            "payload": payload,
+        });
+
+        // Use raw JSON send (not typed enum) for flexibility
+        let response = self.send_and_wait(&request, &message_id).await?;
+
+        match response {
+            WebSocketResponse::Success { payload, .. } => Ok(payload.data),
+            WebSocketResponse::Error { code, message, .. } => Err(Error::api(code, message)),
+            _ => Err(Error::WebSocket("Unexpected response type".to_string())),
+        }
+    }
+
+    /// Insert a single record into a collection via WebSocket.
+    pub async fn insert(
+        &self,
+        collection: &str,
+        record: Value,
+        bypass_ripple: Option<bool>,
+    ) -> Result<Value> {
+        let mut payload = serde_json::json!({
+            "collection": collection,
+            "record": record,
+        });
+        if let Some(br) = bypass_ripple {
+            payload["bypass_ripple"] = serde_json::json!(br);
+        }
+        self.send_crud("Insert", payload).await
+    }
+
+    /// Query records from a collection via WebSocket.
+    pub async fn query(
+        &self,
+        collection: &str,
+        filter: Option<Value>,
+        sort: Option<Value>,
+        limit: Option<u64>,
+        skip: Option<u64>,
+    ) -> Result<Vec<Value>> {
+        let mut payload = serde_json::json!({"collection": collection});
+        if let Some(f) = filter {
+            payload["filter"] = f;
+        }
+        if let Some(s) = sort {
+            payload["sort"] = s;
+        }
+        if let Some(l) = limit {
+            payload["limit"] = serde_json::json!(l);
+        }
+        if let Some(s) = skip {
+            payload["skip"] = serde_json::json!(s);
+        }
+        let data = self.send_crud("Query", payload).await?;
+        Ok(data.as_array().cloned().unwrap_or_default())
+    }
+
+    /// Find a record by ID via WebSocket.
+    pub async fn find_by_id(&self, collection: &str, id: &str) -> Result<Value> {
+        self.send_crud(
+            "FindById",
+            serde_json::json!({"collection": collection, "id": id}),
+        )
+        .await
+    }
+
+    /// Update a record by ID via WebSocket.
+    pub async fn update(
+        &self,
+        collection: &str,
+        id: &str,
+        record: Value,
+        bypass_ripple: Option<bool>,
+    ) -> Result<Value> {
+        let mut payload = serde_json::json!({
+            "collection": collection,
+            "id": id,
+            "record": record,
+        });
+        if let Some(br) = bypass_ripple {
+            payload["bypass_ripple"] = serde_json::json!(br);
+        }
+        self.send_crud("Update", payload).await
+    }
+
+    /// Delete a record by ID via WebSocket.
+    pub async fn delete(
+        &self,
+        collection: &str,
+        id: &str,
+        bypass_ripple: Option<bool>,
+    ) -> Result<()> {
+        let mut payload = serde_json::json!({"collection": collection, "id": id});
+        if let Some(br) = bypass_ripple {
+            payload["bypass_ripple"] = serde_json::json!(br);
+        }
+        self.send_crud("Delete", payload).await?;
+        Ok(())
+    }
+
+    /// Batch insert multiple records via WebSocket.
+    pub async fn batch_insert(
+        &self,
+        collection: &str,
+        records: Vec<Value>,
+        bypass_ripple: Option<bool>,
+    ) -> Result<Value> {
+        let mut payload = serde_json::json!({
+            "collection": collection,
+            "records": records,
+        });
+        if let Some(br) = bypass_ripple {
+            payload["bypass_ripple"] = serde_json::json!(br);
+        }
+        self.send_crud("BatchInsert", payload).await
+    }
+
+    /// Batch update multiple records via WebSocket.
+    /// Each update is a tuple of (id, record_data).
+    pub async fn batch_update(
+        &self,
+        collection: &str,
+        updates: Vec<(String, Value)>,
+        bypass_ripple: Option<bool>,
+    ) -> Result<Value> {
+        let updates_json: Vec<Value> = updates
+            .into_iter()
+            .map(|(id, data)| serde_json::json!([id, data]))
+            .collect();
+        let mut payload = serde_json::json!({
+            "collection": collection,
+            "updates": updates_json,
+        });
+        if let Some(br) = bypass_ripple {
+            payload["bypass_ripple"] = serde_json::json!(br);
+        }
+        self.send_crud("BatchUpdate", payload).await
+    }
+
+    /// Batch delete multiple records by IDs via WebSocket.
+    pub async fn batch_delete(
+        &self,
+        collection: &str,
+        ids: Vec<String>,
+        bypass_ripple: Option<bool>,
+    ) -> Result<()> {
+        let mut payload = serde_json::json!({"collection": collection, "ids": ids});
+        if let Some(br) = bypass_ripple {
+            payload["bypass_ripple"] = serde_json::json!(br);
+        }
+        self.send_crud("BatchDelete", payload).await?;
+        Ok(())
+    }
+
+    /// Full-text search via WebSocket.
+    pub async fn text_search(
+        &self,
+        collection: &str,
+        query: &str,
+        fields: Option<Vec<String>>,
+        limit: Option<u64>,
+    ) -> Result<Vec<Value>> {
+        let mut options = serde_json::Map::new();
+        if let Some(f) = fields {
+            options.insert("fields".to_string(), serde_json::json!(f));
+        }
+        if let Some(l) = limit {
+            options.insert("limit".to_string(), serde_json::json!(l));
+        }
+        let payload = serde_json::json!({
+            "collection": collection,
+            "query": query,
+            "options": if options.is_empty() { Value::Null } else { Value::Object(options) },
+        });
+        let data = self.send_crud("TextSearch", payload).await?;
+        Ok(data.as_array().cloned().unwrap_or_default())
+    }
+
+    /// Get distinct values for a field via WebSocket.
+    pub async fn distinct_values(
+        &self,
+        collection: &str,
+        field: &str,
+        filter: Option<Value>,
+    ) -> Result<Value> {
+        let mut payload = serde_json::json!({"collection": collection, "field": field});
+        if let Some(f) = filter {
+            payload["filter"] = f;
+        }
+        self.send_crud("DistinctValues", payload).await
+    }
+
+    /// Apply an atomic field action to a record via WebSocket.
+    pub async fn update_with_action(
+        &self,
+        collection: &str,
+        id: &str,
+        action: &str,
+        field: &str,
+        value: Option<Value>,
+    ) -> Result<Value> {
+        let mut payload = serde_json::json!({
+            "collection": collection,
+            "id": id,
+            "action": action,
+            "field": field,
+        });
+        if let Some(v) = value {
+            payload["value"] = v;
+        }
+        self.send_crud("UpdateWithAction", payload).await
+    }
+
+    /// Create a new collection with optional schema via WebSocket.
+    pub async fn create_collection(&self, name: &str, schema: Option<Value>) -> Result<()> {
+        let payload = serde_json::json!({
+            "name": name,
+            "schema": schema.unwrap_or(serde_json::json!({})),
+        });
+        self.send_crud("CreateCollection", payload).await?;
+        Ok(())
+    }
+
+    /// List all collections via WebSocket.
+    pub async fn list_collections(&self) -> Result<Vec<String>> {
+        let data = self
+            .send_crud("GetCollections", serde_json::json!({}))
+            .await?;
+        Ok(data
+            .as_array()
+            .map(|arr| {
+                arr.iter()
+                    .filter_map(|v| v.as_str().map(|s| s.to_string()))
+                    .collect()
+            })
+            .unwrap_or_default())
+    }
+
+    /// Delete a collection via WebSocket.
+    pub async fn delete_collection(&self, name: &str) -> Result<()> {
+        self.send_crud("DeleteCollection", serde_json::json!({"name": name}))
+            .await?;
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // When the connection negotiates msgpack, the server sends responses as
+    // MessagePack maps `{type, payload, messageId}` and the dispatcher decodes
+    // them via `rmp_serde::from_slice::<WebSocketResponse>`. Prove the
+    // internally-tagged enum + nested payload survive the msgpack round-trip
+    // (the JSON text path is already exercised by the other tests). This decodes
+    // both the canonical `WebSocketResponse` encoding and the server's
+    // hand-built envelope shape.
+    #[test]
+    fn websocket_response_decodes_from_msgpack() {
+        // 1) Canonical round-trip of a Success response.
+        let resp = WebSocketResponse::Success {
+            payload: ResponsePayload {
+                data: serde_json::json!({ "data": "hello" }),
+                message_id: None,
+            },
+            message_id: Some("m1".to_string()),
+        };
+        let bytes = rmp_serde::to_vec_named(&resp).expect("encode");
+        match rmp_serde::from_slice::<WebSocketResponse>(&bytes).expect("decode") {
+            WebSocketResponse::Success {
+                payload,
+                message_id,
+            } => {
+                assert_eq!(payload.data, serde_json::json!({ "data": "hello" }));
+                assert_eq!(message_id.as_deref(), Some("m1"));
+            }
+            other => panic!("expected Success, got {other:?}"),
+        }
+
+        // 2) The server's hand-built envelope shape (a serde_json::Value encoded
+        // with to_vec_named, exactly as `serialize_ws_response` does on the
+        // server) must decode the same way.
+        let server_envelope = serde_json::json!({
+            "type": "Error",
+            "code": 404,
+            "message": "not found",
+            "messageId": "m2",
+        });
+        let bytes = rmp_serde::to_vec_named(&server_envelope).expect("encode envelope");
+        match rmp_serde::from_slice::<WebSocketResponse>(&bytes).expect("decode envelope") {
+            WebSocketResponse::Error {
+                code,
+                message,
+                message_id,
+            } => {
+                assert_eq!(code, 404);
+                assert_eq!(message, "not found");
+                assert_eq!(message_id.as_deref(), Some("m2"));
+            }
+            other => panic!("expected Error, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn chat_stream_end_payload_with_context_window() {
+        let json_str = r#"{
+            "chat_id": "chat-1",
+            "message_id": "msg-1",
+            "execution_time_ms": 250,
+            "context_window": 128000
+        }"#;
+        let payload: ChatStreamEndPayload = serde_json::from_str(json_str).unwrap();
+        assert_eq!(payload.context_window, Some(128000));
+        assert_eq!(payload.message_id, "msg-1");
+        assert_eq!(payload.execution_time_ms, 250);
+    }
+
+    #[test]
+    fn chat_stream_end_payload_without_context_window() {
+        let json_str = r#"{
+            "chat_id": "chat-2",
+            "message_id": "msg-2",
+            "execution_time_ms": 100
+        }"#;
+        let payload: ChatStreamEndPayload = serde_json::from_str(json_str).unwrap();
+        assert_eq!(payload.context_window, None);
+    }
+
+    #[test]
+    fn chat_stream_end_payload_serializes_without_context_window() {
+        let payload = ChatStreamEndPayload {
+            chat_id: "c1".into(),
+            message_id: "m1".into(),
+            token_usage: None,
+            tool_call_history: None,
+            execution_time_ms: 100,
+            context_window: None,
+        };
+        let json = serde_json::to_value(&payload).unwrap();
+        assert!(json.get("context_window").is_none());
+    }
+
+    #[test]
+    fn chat_stream_end_payload_serializes_with_context_window() {
+        let payload = ChatStreamEndPayload {
+            chat_id: "c1".into(),
+            message_id: "m1".into(),
+            token_usage: None,
+            tool_call_history: None,
+            execution_time_ms: 100,
+            context_window: Some(200000),
+        };
+        let json = serde_json::to_value(&payload).unwrap();
+        assert_eq!(json["context_window"], 200000);
+    }
+
+    #[test]
+    fn chat_stream_event_end_carries_context_window() {
+        let event = ChatStreamEvent::End {
+            message_id: "m1".into(),
+            token_usage: None,
+            tool_call_history: None,
+            execution_time_ms: 50,
+            context_window: Some(128000),
+        };
+        match event {
+            ChatStreamEvent::End { context_window, .. } => {
+                assert_eq!(context_window, Some(128000));
+            }
+            _ => panic!("expected End variant"),
+        }
+    }
+
+    #[test]
+    fn cancel_chat_request_serializes_with_expected_shape() {
+        // Wire-format guard for the server-side cancel path.
+        // The ekoDB server matches on the literal `type` tag
+        // `"CancelChat"` and the nested `payload.chat_id` field —
+        // any rename here silently breaks cancellation across the
+        // version boundary, so pin the JSON shape in a test rather
+        // than relying on serde defaults staying stable.
+        let req = WebSocketRequest::CancelChat {
+            payload: CancelChatPayload {
+                chat_id: "chat-xyz".into(),
+            },
+        };
+        let v = serde_json::to_value(&req).expect("serialize");
+        assert_eq!(v["type"], "CancelChat", "request tag must be CancelChat");
+        assert_eq!(
+            v["payload"]["chat_id"], "chat-xyz",
+            "payload.chat_id must round-trip"
+        );
+        // Payload should carry exactly chat_id and nothing else
+        // — adding fields here would force a wire-compat shim on
+        // older servers, so guard it.
+        let payload_obj = v["payload"].as_object().expect("payload must be an object");
+        assert_eq!(payload_obj.len(), 1, "payload should have only chat_id");
+    }
+
+    #[test]
+    fn cancel_chat_payload_deserializes_from_wire() {
+        // Inverse of the serialization test: a server- or
+        // peer-emitted CancelChat must deserialize back into our
+        // typed enum without a `serde(other)` fallback.
+        let json_str = r#"{"type":"CancelChat","payload":{"chat_id":"abc"}}"#;
+        let req: WebSocketRequest = serde_json::from_str(json_str).expect("deserialize");
+        match req {
+            WebSocketRequest::CancelChat { payload } => {
+                assert_eq!(payload.chat_id, "abc");
+            }
+            other => panic!("expected CancelChat, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn unsubscribe_request_serializes_with_expected_shape() {
+        // Wire-format guard for the server-side unsubscribe path. The ekoDB
+        // server (and the TypeScript + Go clients this mirrors) match on the
+        // literal `type` tag `"Unsubscribe"`, a top-level `messageId`, and the
+        // nested `payload.collection` field. Pin the JSON shape so a rename
+        // can't silently break unsubscribe across the version boundary.
+        let req = WebSocketRequest::Unsubscribe {
+            message_id: "msg-unsub-1".into(),
+            payload: UnsubscribePayload {
+                collection: "orders".into(),
+            },
+        };
+        let v = serde_json::to_value(&req).expect("serialize");
+        assert_eq!(v["type"], "Unsubscribe", "request tag must be Unsubscribe");
+        assert_eq!(
+            v["messageId"], "msg-unsub-1",
+            "messageId must be serialized at the top level"
+        );
+        assert_eq!(
+            v["payload"]["collection"], "orders",
+            "payload.collection must round-trip"
+        );
+        // Payload should carry exactly the collection and nothing else.
+        let payload_obj = v["payload"].as_object().expect("payload must be an object");
+        assert_eq!(payload_obj.len(), 1, "payload should have only collection");
+    }
+
+    #[test]
+    fn unsubscribe_request_deserializes_from_wire() {
+        let json_str =
+            r#"{"type":"Unsubscribe","messageId":"m1","payload":{"collection":"orders"}}"#;
+        let req: WebSocketRequest = serde_json::from_str(json_str).expect("deserialize");
+        match req {
+            WebSocketRequest::Unsubscribe {
+                message_id,
+                payload,
+            } => {
+                assert_eq!(message_id, "m1");
+                assert_eq!(payload.collection, "orders");
+            }
+            other => panic!("expected Unsubscribe, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn websocket_response_chat_stream_end_deserializes() {
+        let json_str = r#"{
+            "type": "ChatStreamEnd",
+            "payload": {
+                "chat_id": "chat-1",
+                "message_id": "msg-1",
+                "execution_time_ms": 300,
+                "context_window": 128000,
+                "token_usage": {"prompt_tokens": 100, "completion_tokens": 50}
+            }
+        }"#;
+        let msg: WebSocketResponse = serde_json::from_str(json_str).unwrap();
+        match msg {
+            WebSocketResponse::ChatStreamEnd { payload } => {
+                assert_eq!(payload.context_window, Some(128000));
+                assert_eq!(payload.message_id, "msg-1");
+                assert!(payload.token_usage.is_some());
+            }
+            _ => panic!("expected ChatStreamEnd"),
+        }
     }
 }

@@ -1,13 +1,14 @@
 //! HTTP client implementation for ekoDB API
 
 use crate::chat::{
-    ChatMessageRequest, ChatResponse, ChatSessionResponse, CreateChatSessionRequest, EmbedRequest,
-    EmbedResponse, GetMessagesQuery, ListSessionsQuery, ListSessionsResponse, MergeSessionsRequest,
-    Models, RawCompletionRequest, RawCompletionResponse, ToggleForgottenRequest,
-    UpdateMessageRequest, UpdateSessionRequest,
+    ChatMessageRequest, ChatResponse, ChatSessionResponse, CompactChatRequest, CompactChatResponse,
+    CreateChatSessionRequest, EmbedRequest, EmbedResponse, GetMessagesQuery, ListSessionsQuery,
+    ListSessionsResponse, MergeSessionsRequest, Models, RawCompletionRequest,
+    RawCompletionResponse, ToggleForgottenRequest, UpdateMessageRequest, UpdateSessionRequest,
 };
 use crate::client::RateLimitInfo;
 use crate::error::{Error, Result};
+use crate::health::{HealthStatus, parse_health_status};
 use crate::retry::RetryPolicy;
 use crate::schema::{CollectionMetadata, Schema};
 use crate::search::{DistinctValuesQuery, DistinctValuesResponse, SearchQuery, SearchResponse};
@@ -42,8 +43,12 @@ impl HttpClient {
         should_retry: bool,
         format: SerializationFormat,
     ) -> Result<Self> {
+        // Use connect_timeout (not timeout) so streaming responses (SSE, WebSocket)
+        // aren't killed mid-stream. The overall timeout would kill the entire request
+        // including incremental streaming — connect_timeout only limits the initial
+        // TCP connection phase.
         let client = ReqwestClient::builder()
-            .timeout(timeout)
+            .connect_timeout(timeout)
             .gzip(true) // Enable automatic gzip decompression
             .build()
             .map_err(|e| Error::Connection(e.to_string()))?;
@@ -60,20 +65,23 @@ impl HttpClient {
         })
     }
 
-    /// Health Check
-    pub async fn health_check(&self) -> Result<()> {
-        let response = self
-            .client
-            .get(self.base_url.join("/api/health").unwrap())
-            .send()
-            .await?;
-        if response.status().is_success() {
-            Ok(())
-        } else {
-            Err(Error::Connection(format!(
-                "Health check failed: {}",
-                response.status()
-            )))
+    /// Structured, degraded-tolerant health snapshot. An unreachable/unparseable
+    /// probe yields `{ reachable: false, status: Unknown }` rather than an error.
+    pub async fn health_status(&self) -> HealthStatus {
+        let url = match self.base_url.join("/api/health") {
+            Ok(u) => u,
+            Err(_) => return HealthStatus::unreachable(),
+        };
+        let response = match self.client.get(url).send().await {
+            Ok(r) => r,
+            Err(_) => return HealthStatus::unreachable(),
+        };
+        if !response.status().is_success() {
+            return HealthStatus::unreachable();
+        }
+        match response.json::<serde_json::Value>().await {
+            Ok(body) => parse_health_status(&body),
+            Err(_) => HealthStatus::unreachable(),
         }
     }
 
@@ -139,8 +147,33 @@ impl HttpClient {
         }
     }
 
-    /// Add format headers (Content-Type and Accept) to a request builder
-    /// Note: reqwest automatically handles gzip compression with the gzip feature enabled
+    /// Build an absolute API URL from already-decoded path segments, percent-encoding
+    /// each segment for safe inclusion in the URL path.
+    ///
+    /// Transaction ids and savepoint names are caller-supplied and may contain
+    /// characters that are reserved in a URL path (`/`, space, `?`, `#`, ...). Pushing
+    /// them through `Url::path_segments_mut()` encodes each segment correctly for the
+    /// path component (space becomes `%20`, not `+` as a query encoder would produce,
+    /// and `/` becomes `%2F` so it can't be misread as a path separator).
+    fn api_path_url(&self, segments: &[&str]) -> Result<Url> {
+        let mut url = self.base_url.clone();
+        {
+            let mut path = url
+                .path_segments_mut()
+                .map_err(|_| Error::Connection("base URL cannot be a base".to_string()))?;
+            // Reset to the origin so the api segments form an absolute path, matching
+            // the behavior of `base_url.join("/api/...")` used elsewhere.
+            path.clear();
+            path.push("api");
+            for seg in segments {
+                path.push(seg);
+            }
+        }
+        Ok(url)
+    }
+
+    /// Add format headers (Content-Type and Accept) to a request builder.
+    /// Note: reqwest automatically handles gzip compression with the gzip feature enabled.
     fn add_format_headers(
         &self,
         path: &str,
@@ -181,33 +214,31 @@ impl HttpClient {
             }
         }
 
-        // Build URL with query parameters
-        let mut url_path = format!("/api/insert/{}", collection);
-        let mut params = vec![];
+        // Path used only for content-type/format detection (matches the
+        // `/api/insert/` prefix); query params are appended to the parsed URL
+        // via `query_pairs_mut()` so reserved characters are encoded correctly.
+        let url_path = "/api/insert/";
+        let mut url = self.api_path_url(&["insert", collection])?;
 
         if let Some(ref opts) = options {
+            let mut params = url.query_pairs_mut();
             if let Some(bypass) = opts.bypass_ripple {
-                params.push(format!("bypass_ripple={}", bypass));
+                params.append_pair("bypass_ripple", &bypass.to_string());
             }
             if let Some(ref tx_id) = opts.transaction_id {
-                params.push(format!("transaction_id={}", tx_id));
+                params.append_pair("transaction_id", tx_id);
             }
             if let Some(bypass_cache) = opts.bypass_cache {
-                params.push(format!("bypass_cache={}", bypass_cache));
+                params.append_pair("bypass_cache", &bypass_cache.to_string());
             }
         }
 
-        if !params.is_empty() {
-            url_path = format!("{}?{}", url_path, params.join("&"));
-        }
-
-        let url = self.base_url.join(&url_path)?;
-        let body = self.serialize(&url_path, &record)?;
+        let body = self.serialize(url_path, &record)?;
 
         self.execute_with_retry(|| async {
             let response = self
                 .add_format_headers(
-                    &url_path,
+                    url_path,
                     self.client
                         .post(url.clone())
                         .header("Authorization", format!("Bearer {}", token)),
@@ -216,7 +247,7 @@ impl HttpClient {
                 .send()
                 .await?;
 
-            self.handle_response(&url_path, response).await
+            self.handle_response(url_path, response).await
         })
         .await
     }
@@ -229,30 +260,29 @@ impl HttpClient {
         token: &str,
         bypass_ripple: Option<bool>,
     ) -> Result<Vec<Record>> {
-        let url_path = if let Some(bypass) = bypass_ripple {
-            format!("/api/find/{}?bypass_ripple={}", collection, bypass)
-        } else {
-            format!("/api/find/{}", collection)
-        };
-        let url = self.base_url.join(&url_path)?;
-        let body = self.serialize(&url_path, &query)?;
+        let url_path = "/api/find/";
+        let mut url = self.api_path_url(&["find", collection])?;
+        if let Some(bypass) = bypass_ripple {
+            url.query_pairs_mut()
+                .append_pair("bypass_ripple", &bypass.to_string());
+        }
+        let body = self.serialize(url_path, &query)?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .add_format_headers(
-                        &url_path,
-                        self.client
-                            .post(url.clone())
-                            .header("Authorization", format!("Bearer {}", token)),
-                    )
-                    .body(body.clone())
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .add_format_headers(
+                    url_path,
+                    self.client
+                        .post(url.clone())
+                        .header("Authorization", format!("Bearer {}", token)),
+                )
+                .body(body.clone())
+                .send()
+                .await?;
 
-                self.handle_response(&url_path, response).await
-            })
-            .await
+            self.handle_response(url_path, response).await
+        })
+        .await
     }
 
     /// Find a record by ID
@@ -263,28 +293,75 @@ impl HttpClient {
         token: &str,
         bypass_ripple: Option<bool>,
     ) -> Result<Record> {
-        let url_path = if let Some(bypass) = bypass_ripple {
-            format!("/api/find/{}/{}?bypass_ripple={}", collection, id, bypass)
-        } else {
-            format!("/api/find/{}/{}", collection, id)
-        };
-        let url = self.base_url.join(&url_path)?;
+        let url_path = "/api/find/";
+        let mut url = self.api_path_url(&["find", collection, id])?;
+        if let Some(bypass) = bypass_ripple {
+            url.query_pairs_mut()
+                .append_pair("bypass_ripple", &bypass.to_string());
+        }
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .add_format_headers(
-                        &url_path,
-                        self.client
-                            .get(url.clone())
-                            .header("Authorization", format!("Bearer {}", token)),
-                    )
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .add_format_headers(
+                    url_path,
+                    self.client
+                        .get(url.clone())
+                        .header("Authorization", format!("Bearer {}", token)),
+                )
+                .send()
+                .await?;
 
-                self.handle_response(&url_path, response).await
-            })
-            .await
+            self.handle_response(url_path, response).await
+        })
+        .await
+    }
+
+    /// Find a record by ID returning only a projection of its fields.
+    /// `select_fields` / `exclude_fields` are comma-joined into the
+    /// `select_fields` / `exclude_fields` query params.
+    pub async fn find_by_id_with_projection(
+        &self,
+        collection: &str,
+        id: &str,
+        select_fields: Option<&[String]>,
+        exclude_fields: Option<&[String]>,
+        token: &str,
+    ) -> Result<Record> {
+        let url_path = "/api/find/";
+        let mut url = self.api_path_url(&["find", collection, id])?;
+        // Build the query with proper percent-encoding so field names containing
+        // reserved characters (',', '&', '=', spaces, …) round-trip correctly,
+        // matching the URLSearchParams-based encoding the other clients use. The
+        // comma-joined value is the wire format the server expects; the comma is
+        // percent-encoded here and decoded server-side before the split.
+        {
+            let mut pairs = url.query_pairs_mut();
+            if let Some(sel) = select_fields {
+                if !sel.is_empty() {
+                    pairs.append_pair("select_fields", &sel.join(","));
+                }
+            }
+            if let Some(exc) = exclude_fields {
+                if !exc.is_empty() {
+                    pairs.append_pair("exclude_fields", &exc.join(","));
+                }
+            }
+        }
+
+        self.execute_with_retry(|| async {
+            let response = self
+                .add_format_headers(
+                    url_path,
+                    self.client
+                        .get(url.clone())
+                        .header("Authorization", format!("Bearer {}", token)),
+                )
+                .send()
+                .await?;
+
+            self.handle_response(url_path, response).await
+        })
+        .await
     }
 
     /// Update a record
@@ -296,45 +373,42 @@ impl HttpClient {
         options: Option<crate::options::UpdateOptions>,
         token: &str,
     ) -> Result<Record> {
-        // Build URL with query parameters
-        let mut url_path = format!("/api/update/{}/{}", collection, id);
-        let mut params = vec![];
+        // Path used only for content-type/format detection (matches the
+        // `/api/update/` prefix); query params are appended to the parsed URL
+        // via `query_pairs_mut()` so reserved characters are encoded correctly.
+        let url_path = "/api/update/";
+        let mut url = self.api_path_url(&["update", collection, id])?;
 
         if let Some(ref opts) = options {
+            let mut params = url.query_pairs_mut();
             if let Some(bypass) = opts.bypass_ripple {
-                params.push(format!("bypass_ripple={}", bypass));
+                params.append_pair("bypass_ripple", &bypass.to_string());
             }
             if let Some(ref tx_id) = opts.transaction_id {
-                params.push(format!("transaction_id={}", tx_id));
+                params.append_pair("transaction_id", tx_id);
             }
             if let Some(bypass_cache) = opts.bypass_cache {
-                params.push(format!("bypass_cache={}", bypass_cache));
+                params.append_pair("bypass_cache", &bypass_cache.to_string());
             }
         }
 
-        if !params.is_empty() {
-            url_path = format!("{}?{}", url_path, params.join("&"));
-        }
+        let body = self.serialize(url_path, &record)?;
 
-        let url = self.base_url.join(&url_path)?;
-        let body = self.serialize(&url_path, &record)?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .add_format_headers(
+                    url_path,
+                    self.client
+                        .put(url.clone())
+                        .header("Authorization", format!("Bearer {}", token)),
+                )
+                .body(body.clone())
+                .send()
+                .await?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .add_format_headers(
-                        &url_path,
-                        self.client
-                            .put(url.clone())
-                            .header("Authorization", format!("Bearer {}", token)),
-                    )
-                    .body(body.clone())
-                    .send()
-                    .await?;
-
-                self.handle_response(&url_path, response).await
-            })
-            .await
+            self.handle_response(url_path, response).await
+        })
+        .await
     }
 
     /// Apply an atomic field action to a single field of a record.
@@ -350,32 +424,31 @@ impl HttpClient {
         value: FieldType,
         token: &str,
     ) -> Result<Record> {
-        let url_path = format!("/api/update/{}/{}/action/{}", collection, id, action);
-        let url = self.base_url.join(&url_path)?;
+        let url_path = "/api/update/";
+        let url = self.api_path_url(&["update", collection, id, "action", action])?;
         let body = self.serialize(
-            &url_path,
+            url_path,
             &UpdateWithActionBody {
                 field: field.to_string(),
                 value,
             },
         )?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .add_format_headers(
-                        &url_path,
-                        self.client
-                            .put(url.clone())
-                            .header("Authorization", format!("Bearer {}", token)),
-                    )
-                    .body(body.clone())
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .add_format_headers(
+                    url_path,
+                    self.client
+                        .put(url.clone())
+                        .header("Authorization", format!("Bearer {}", token)),
+                )
+                .body(body.clone())
+                .send()
+                .await?;
 
-                self.handle_response(&url_path, response).await
-            })
-            .await
+            self.handle_response(url_path, response).await
+        })
+        .await
     }
 
     /// Apply a sequence of atomic field actions to a record in a single request.
@@ -388,26 +461,25 @@ impl HttpClient {
         actions: Vec<(String, String, FieldType)>,
         token: &str,
     ) -> Result<Record> {
-        let url_path = format!("/api/update/sequence/{}/{}", collection, id);
-        let url = self.base_url.join(&url_path)?;
-        let body = self.serialize(&url_path, &actions)?;
+        let url_path = "/api/update/";
+        let url = self.api_path_url(&["update", "sequence", collection, id])?;
+        let body = self.serialize(url_path, &actions)?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .add_format_headers(
-                        &url_path,
-                        self.client
-                            .put(url.clone())
-                            .header("Authorization", format!("Bearer {}", token)),
-                    )
-                    .body(body.clone())
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .add_format_headers(
+                    url_path,
+                    self.client
+                        .put(url.clone())
+                        .header("Authorization", format!("Bearer {}", token)),
+                )
+                .body(body.clone())
+                .send()
+                .await?;
 
-                self.handle_response(&url_path, response).await
-            })
-            .await
+            self.handle_response(url_path, response).await
+        })
+        .await
     }
 
     /// Delete a record
@@ -418,76 +490,116 @@ impl HttpClient {
         token: &str,
         bypass_ripple: Option<bool>,
     ) -> Result<()> {
-        let url_path = if let Some(bypass) = bypass_ripple {
-            format!("/api/delete/{}/{}?bypass_ripple={}", collection, id, bypass)
-        } else {
-            format!("/api/delete/{}/{}", collection, id)
-        };
-        let url = self.base_url.join(&url_path)?;
+        let url_path = "/api/delete/";
+        let mut url = self.api_path_url(&["delete", collection, id])?;
+        if let Some(bypass) = bypass_ripple {
+            url.query_pairs_mut()
+                .append_pair("bypass_ripple", &bypass.to_string());
+        }
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .add_format_headers(
-                        &url_path,
-                        self.client
-                            .delete(url.clone())
-                            .header("Authorization", format!("Bearer {}", token)),
-                    )
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .add_format_headers(
+                    url_path,
+                    self.client
+                        .delete(url.clone())
+                        .header("Authorization", format!("Bearer {}", token)),
+                )
+                .send()
+                .await?;
 
-                // Server returns the deleted record, but we discard it
-                let _deleted: Record = self.handle_response(&url_path, response).await?;
-                Ok(())
-            })
-            .await
+            // Server returns the deleted record; we validate the response
+            // shape but discard the value.
+            let _: Record = self.handle_response(url_path, response).await?;
+            Ok(())
+        })
+        .await
+    }
+
+    /// Delete a record with options (bypass_ripple and/or a transaction_id for a
+    /// staged, buffered transactional delete).
+    pub async fn delete_with_options(
+        &self,
+        collection: &str,
+        id: &str,
+        token: &str,
+        opts: &crate::options::DeleteOptions,
+    ) -> Result<()> {
+        // url_path is used only for content-type/format detection (it matches on the
+        // `/api/delete/` prefix), so it carries the path without the query string. The
+        // query parameters are appended to the parsed URL via `query_pairs_mut()` so
+        // that values such as `transaction_id` are correctly percent-encoded (a value
+        // containing `&`, space, or `=` would otherwise corrupt the query string).
+        let url_path = "/api/delete/";
+        let mut url = self.api_path_url(&["delete", collection, id])?;
+        {
+            let mut query = url.query_pairs_mut();
+            if let Some(bypass) = opts.bypass_ripple {
+                query.append_pair("bypass_ripple", &bypass.to_string());
+            }
+            if let Some(ref tx) = opts.transaction_id {
+                query.append_pair("transaction_id", tx);
+            }
+        }
+
+        self.execute_with_retry(|| async {
+            let response = self
+                .add_format_headers(
+                    url_path,
+                    self.client
+                        .delete(url.clone())
+                        .header("Authorization", format!("Bearer {}", token)),
+                )
+                .send()
+                .await?;
+            let _: Record = self.handle_response(url_path, response).await?;
+            Ok(())
+        })
+        .await
     }
 
     /// Restore a deleted record from trash
     pub async fn restore_deleted(&self, collection: &str, id: &str, token: &str) -> Result<bool> {
-        let url_path = format!("/api/trash/{}/{}", collection, id);
-        let url = self.base_url.join(&url_path)?;
+        let url_path = "/api/trash/";
+        let url = self.api_path_url(&["trash", collection, id])?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .post(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .post(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .send()
+                .await?;
 
-                let result: serde_json::Value = self.handle_response(&url_path, response).await?;
-                Ok(result
-                    .get("restored")
-                    .and_then(|v| v.as_bool())
-                    .unwrap_or(false))
-            })
-            .await
+            let result: serde_json::Value = self.handle_response(url_path, response).await?;
+            Ok(result
+                .get("restored")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false))
+        })
+        .await
     }
 
     /// Restore all deleted records in a collection from trash
     pub async fn restore_collection(&self, collection: &str, token: &str) -> Result<usize> {
-        let url_path = format!("/api/trash/{}", collection);
-        let url = self.base_url.join(&url_path)?;
+        let url_path = "/api/trash/";
+        let url = self.api_path_url(&["trash", collection])?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .post(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .post(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .send()
+                .await?;
 
-                let result: serde_json::Value = self.handle_response(&url_path, response).await?;
-                Ok(result
-                    .get("records_restored")
-                    .and_then(|v| v.as_u64())
-                    .unwrap_or(0) as usize)
-            })
-            .await
+            let result: serde_json::Value = self.handle_response(url_path, response).await?;
+            Ok(result
+                .get("records_restored")
+                .and_then(|v| v.as_u64())
+                .unwrap_or(0) as usize)
+        })
+        .await
     }
 
     /// Batch insert records
@@ -497,9 +609,18 @@ impl HttpClient {
         records: Vec<Record>,
         token: &str,
         bypass_ripple: Option<bool>,
+        transaction_id: Option<&str>,
     ) -> Result<Vec<Record>> {
-        let url_path = format!("/api/batch/insert/{}", collection);
-        let url = self.base_url.join(&url_path)?;
+        let url_path = "/api/batch/insert/";
+        let mut url = self.api_path_url(&["batch", "insert", collection])?;
+
+        // `transaction_id` is a query param — the same way the single-record
+        // insert carries it — appended via `query_pairs_mut()` so the value is
+        // correctly percent-encoded. When set, the batch is staged into the
+        // named MVCC transaction instead of committed immediately.
+        if let Some(tx_id) = transaction_id {
+            url.query_pairs_mut().append_pair("transaction_id", tx_id);
+        }
 
         // Convert to the format the server expects
         #[derive(Serialize)]
@@ -530,14 +651,13 @@ impl HttpClient {
             failed: Vec<serde_json::Value>,
         }
 
-        let body = self.serialize(&url_path, &batch_data)?;
+        let body = self.serialize(url_path, &batch_data)?;
 
         let result: BatchOperationResult = self
-            .retry_policy
-            .execute(|| async {
+            .execute_with_retry(|| async {
                 let response = self
                     .add_format_headers(
-                        &url_path,
+                        url_path,
                         self.client
                             .post(url.clone())
                             .header("Authorization", format!("Bearer {}", token)),
@@ -546,7 +666,7 @@ impl HttpClient {
                     .send()
                     .await?;
 
-                self.handle_response(&url_path, response).await
+                self.handle_response(url_path, response).await
             })
             .await?;
 
@@ -569,9 +689,15 @@ impl HttpClient {
         updates: Vec<(String, Record)>, // Vec of (id, record) pairs
         token: &str,
         bypass_ripple: Option<bool>,
+        transaction_id: Option<&str>,
     ) -> Result<Vec<Record>> {
-        let url_path = format!("/api/batch/update/{}", collection);
-        let url = self.base_url.join(&url_path)?;
+        let url_path = "/api/batch/update/";
+        let mut url = self.api_path_url(&["batch", "update", collection])?;
+
+        // `transaction_id` is a query param — mirrors single-record update.
+        if let Some(tx_id) = transaction_id {
+            url.query_pairs_mut().append_pair("transaction_id", tx_id);
+        }
 
         // Convert to the format the server expects
         #[derive(Serialize)]
@@ -605,14 +731,13 @@ impl HttpClient {
             failed: Vec<serde_json::Value>,
         }
 
-        let body = self.serialize(&url_path, &batch_data)?;
+        let body = self.serialize(url_path, &batch_data)?;
 
         let result: BatchOperationResult = self
-            .retry_policy
-            .execute(|| async {
+            .execute_with_retry(|| async {
                 let response = self
                     .add_format_headers(
-                        &url_path,
+                        url_path,
                         self.client
                             .put(url.clone())
                             .header("Authorization", format!("Bearer {}", token)),
@@ -621,7 +746,7 @@ impl HttpClient {
                     .send()
                     .await?;
 
-                self.handle_response(&url_path, response).await
+                self.handle_response(url_path, response).await
             })
             .await?;
 
@@ -644,9 +769,15 @@ impl HttpClient {
         ids: Vec<String>,
         token: &str,
         bypass_ripple: Option<bool>,
+        transaction_id: Option<&str>,
     ) -> Result<u64> {
-        let url_path = format!("/api/batch/delete/{}", collection);
-        let url = self.base_url.join(&url_path)?;
+        let url_path = "/api/batch/delete/";
+        let mut url = self.api_path_url(&["batch", "delete", collection])?;
+
+        // `transaction_id` is a query param — mirrors single-record delete.
+        if let Some(tx_id) = transaction_id {
+            url.query_pairs_mut().append_pair("transaction_id", tx_id);
+        }
 
         // Convert to the format the server expects
         #[derive(Serialize)]
@@ -675,14 +806,13 @@ impl HttpClient {
             failed: Vec<serde_json::Value>,
         }
 
-        let body = self.serialize(&url_path, &batch_data)?;
+        let body = self.serialize(url_path, &batch_data)?;
 
         let result: BatchOperationResult = self
-            .retry_policy
-            .execute(|| async {
+            .execute_with_retry(|| async {
                 let response = self
                     .add_format_headers(
-                        &url_path,
+                        url_path,
                         self.client
                             .delete(url.clone())
                             .header("Authorization", format!("Bearer {}", token)),
@@ -691,7 +821,7 @@ impl HttpClient {
                     .send()
                     .await?;
 
-                self.handle_response(&url_path, response).await
+                self.handle_response(url_path, response).await
             })
             .await?;
 
@@ -700,7 +830,28 @@ impl HttpClient {
 
     /// List all collections
     pub async fn list_collections(&self, token: &str) -> Result<Vec<String>> {
-        let url = self.base_url.join("/api/collections")?;
+        self.list_collections_inner(token, false).await
+    }
+
+    /// List collections, optionally excluding internal chat/system collections.
+    pub async fn list_collections_filtered(
+        &self,
+        token: &str,
+        exclude_internal: bool,
+    ) -> Result<Vec<String>> {
+        self.list_collections_inner(token, exclude_internal).await
+    }
+
+    /// Shared implementation for listing collections.
+    async fn list_collections_inner(
+        &self,
+        token: &str,
+        exclude_internal: bool,
+    ) -> Result<Vec<String>> {
+        let mut url = self.base_url.join("/api/collections")?;
+        if exclude_internal {
+            url.set_query(Some("exclude_internal=true"));
+        }
 
         #[derive(Deserialize)]
         struct CollectionsResponse {
@@ -708,19 +859,16 @@ impl HttpClient {
         }
 
         let response: CollectionsResponse = self
-            .retry_policy
-            .execute(|| async {
+            .execute_with_retry(|| async {
                 let response = self
                     .client
                     .get(url.clone())
                     .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json") // Force JSON for metadata operations
+                    .header("Accept", "application/json")
                     .send()
                     .await?;
 
-                // Force JSON deserialization for metadata operations
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                serde_json::from_slice(&bytes).map_err(Error::Serialization)
+                Self::json_body(response).await
             })
             .await?;
 
@@ -729,27 +877,22 @@ impl HttpClient {
 
     /// Delete a collection
     pub async fn delete_collection(&self, collection: &str, token: &str) -> Result<()> {
-        let url = self
-            .base_url
-            .join(&format!("/api/collections/{}", collection))?;
+        let url = self.api_path_url(&["collections", collection])?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .delete(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .delete(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .send()
+                .await?;
 
-                // Force JSON for metadata operations
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                let _: serde_json::Value =
-                    serde_json::from_slice(&bytes).map_err(Error::Serialization)?;
-                Ok(())
-            })
-            .await
+            // Force JSON for metadata operations
+            let _: serde_json::Value = Self::json_body(response).await?;
+            Ok(())
+        })
+        .await
     }
 
     /// Set a key-value pair
@@ -760,7 +903,7 @@ impl HttpClient {
         ttl: Option<&str>,
         token: &str,
     ) -> Result<()> {
-        let url = self.base_url.join(&format!("/api/kv/set/{}", key))?;
+        let url = self.api_path_url(&["kv", "set", key])?;
 
         #[derive(Serialize)]
         struct KvSetRequest {
@@ -769,32 +912,29 @@ impl HttpClient {
             ttl: Option<String>,
         }
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .post(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json") // KV uses JSON values
-                    .json(&KvSetRequest {
-                        value: value.clone(),
-                        ttl: ttl.map(|t| t.to_string()),
-                    })
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .post(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json") // KV uses JSON values
+                .json(&KvSetRequest {
+                    value: value.clone(),
+                    ttl: ttl.map(|t| t.to_string()),
+                })
+                .send()
+                .await?;
 
-                // Force JSON for KV operations (stores serde_json::Value)
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                let _: serde_json::Value =
-                    serde_json::from_slice(&bytes).map_err(Error::Serialization)?;
-                Ok(())
-            })
-            .await
+            // Force JSON for KV operations (stores serde_json::Value)
+            let _: serde_json::Value = Self::json_body(response).await?;
+            Ok(())
+        })
+        .await
     }
 
     /// Get a key-value pair
     pub async fn kv_get(&self, key: &str, token: &str) -> Result<Option<serde_json::Value>> {
-        let url = self.base_url.join(&format!("/api/kv/get/{}", key))?;
+        let url = self.api_path_url(&["kv", "get", key])?;
 
         #[derive(Deserialize)]
         struct KvGetResponse {
@@ -802,8 +942,7 @@ impl HttpClient {
         }
 
         match self
-            .retry_policy
-            .execute(|| async {
+            .execute_with_retry(|| async {
                 let response = self
                     .client
                     .get(url.clone())
@@ -813,8 +952,7 @@ impl HttpClient {
                     .await?;
 
                 // Force JSON for KV operations (stores serde_json::Value)
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                serde_json::from_slice::<KvGetResponse>(&bytes).map_err(Error::Serialization)
+                Self::json_body::<KvGetResponse>(response).await
             })
             .await
         {
@@ -826,25 +964,41 @@ impl HttpClient {
 
     /// Delete a key-value pair
     pub async fn kv_delete(&self, key: &str, token: &str) -> Result<()> {
-        let url = self.base_url.join(&format!("/api/kv/delete/{}", key))?;
+        let url = self.api_path_url(&["kv", "delete", key])?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .delete(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json") // KV uses JSON values
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .delete(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json") // KV uses JSON values
+                .send()
+                .await?;
 
-                // Force JSON for KV operations
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                let _: serde_json::Value =
-                    serde_json::from_slice(&bytes).map_err(Error::Serialization)?;
-                Ok(())
-            })
-            .await
+            // Force JSON for KV operations
+            let _: serde_json::Value = Self::json_body(response).await?;
+            Ok(())
+        })
+        .await
+    }
+
+    /// Clear the entire KV store (all keys in the namespace).
+    pub async fn kv_clear(&self, token: &str) -> Result<()> {
+        let url = self.base_url.join("/api/kv/clear")?;
+
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .delete(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .send()
+                .await?;
+
+            let _: serde_json::Value = Self::json_body(response).await?;
+            Ok(())
+        })
+        .await
     }
 
     /// Check if a key exists in the KV store
@@ -866,23 +1020,20 @@ impl HttpClient {
             keys: Vec<String>,
         }
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .post(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .json(&BatchGetRequest { keys: keys.clone() })
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .post(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .json(&BatchGetRequest { keys: keys.clone() })
+                .send()
+                .await?;
 
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                let results: Vec<Record> =
-                    serde_json::from_slice(&bytes).map_err(Error::Serialization)?;
-                Ok(results)
-            })
-            .await
+            let results: Vec<Record> = Self::json_body(response).await?;
+            Ok(results)
+        })
+        .await
     }
 
     /// Batch set multiple key-value pairs
@@ -903,27 +1054,24 @@ impl HttpClient {
             ttl: Option<i64>,
         }
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .post(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .json(&BatchSetRequest {
-                        keys: keys.clone(),
-                        values: values.clone(),
-                        ttl,
-                    })
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .post(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .json(&BatchSetRequest {
+                    keys: keys.clone(),
+                    values: values.clone(),
+                    ttl,
+                })
+                .send()
+                .await?;
 
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                let results: Vec<(String, bool)> =
-                    serde_json::from_slice(&bytes).map_err(Error::Serialization)?;
-                Ok(results)
-            })
-            .await
+            let results: Vec<(String, bool)> = Self::json_body(response).await?;
+            Ok(results)
+        })
+        .await
     }
 
     /// Batch delete multiple keys
@@ -939,23 +1087,20 @@ impl HttpClient {
             keys: Vec<String>,
         }
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .delete(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .json(&BatchDeleteRequest { keys: keys.clone() })
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .delete(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .json(&BatchDeleteRequest { keys: keys.clone() })
+                .send()
+                .await?;
 
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                let results: Vec<(String, bool)> =
-                    serde_json::from_slice(&bytes).map_err(Error::Serialization)?;
-                Ok(results)
-            })
-            .await
+            let results: Vec<(String, bool)> = Self::json_body(response).await?;
+            Ok(results)
+        })
+        .await
     }
 
     /// Query/find KV entries with pattern matching
@@ -979,23 +1124,20 @@ impl HttpClient {
             include_expired,
         };
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .post(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .json(&request)
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .post(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .json(&request)
+                .send()
+                .await?;
 
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                let result: Vec<serde_json::Value> =
-                    serde_json::from_slice(&bytes).map_err(Error::Serialization)?;
-                Ok(result)
-            })
-            .await
+            let result: Vec<serde_json::Value> = Self::json_body(response).await?;
+            Ok(result)
+        })
+        .await
     }
 
     // ========== Transaction Methods ==========
@@ -1011,31 +1153,26 @@ impl HttpClient {
 
         let request = BeginTransactionRequest { isolation_level };
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .post(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .json(&request)
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .post(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .json(&request)
+                .send()
+                .await?;
 
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                let result: serde_json::Value =
-                    serde_json::from_slice(&bytes).map_err(Error::Serialization)?;
+            let result: serde_json::Value = Self::json_body(response).await?;
 
-                result["transaction_id"]
-                    .as_str()
-                    .map(|s| s.to_string())
-                    .ok_or_else(|| {
-                        Error::Serialization(serde::de::Error::custom(
-                            "No transaction_id in response",
-                        ))
-                    })
-            })
-            .await
+            result["transaction_id"]
+                .as_str()
+                .map(|s| s.to_string())
+                .ok_or_else(|| {
+                    Error::Serialization(serde::de::Error::custom("No transaction_id in response"))
+                })
+        })
+        .await
     }
 
     /// Get transaction status
@@ -1044,78 +1181,210 @@ impl HttpClient {
         transaction_id: &str,
         token: &str,
     ) -> Result<serde_json::Value> {
-        let url = self
-            .base_url
-            .join(&format!("/api/transactions/{}", transaction_id))?;
+        let url = self.api_path_url(&["transactions", transaction_id])?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .get(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .get(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .send()
+                .await?;
 
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                let result: serde_json::Value =
-                    serde_json::from_slice(&bytes).map_err(Error::Serialization)?;
-                Ok(result)
-            })
-            .await
+            let result: serde_json::Value = Self::json_body(response).await?;
+            Ok(result)
+        })
+        .await
     }
 
     /// Commit a transaction
     pub async fn commit_transaction(&self, transaction_id: &str, token: &str) -> Result<()> {
-        let url = self
-            .base_url
-            .join(&format!("/api/transactions/{}/commit", transaction_id))?;
+        let url = self.api_path_url(&["transactions", transaction_id, "commit"])?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .post(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .post(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .send()
+                .await?;
 
-                if response.status().is_success() {
-                    Ok(())
-                } else {
-                    Err(Error::Http(reqwest::Error::from(
-                        response.error_for_status().unwrap_err(),
-                    )))
-                }
-            })
-            .await
+            if response.status().is_success() {
+                Ok(())
+            } else {
+                Err(Error::Http(response.error_for_status().unwrap_err()))
+            }
+        })
+        .await
     }
 
     /// Rollback a transaction
     pub async fn rollback_transaction(&self, transaction_id: &str, token: &str) -> Result<()> {
-        let url = self
-            .base_url
-            .join(&format!("/api/transactions/{}/rollback", transaction_id))?;
+        let url = self.api_path_url(&["transactions", transaction_id, "rollback"])?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .post(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .post(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .send()
+                .await?;
 
-                if response.status().is_success() {
-                    Ok(())
-                } else {
-                    Err(Error::Http(reqwest::Error::from(
-                        response.error_for_status().unwrap_err(),
-                    )))
-                }
-            })
-            .await
+            if response.status().is_success() {
+                Ok(())
+            } else {
+                Err(Error::Http(response.error_for_status().unwrap_err()))
+            }
+        })
+        .await
+    }
+
+    /// Create a savepoint within a transaction.
+    pub async fn create_savepoint(
+        &self,
+        transaction_id: &str,
+        name: &str,
+        token: &str,
+    ) -> Result<()> {
+        let url = self.api_path_url(&["transactions", transaction_id, "savepoints"])?;
+        let body = serde_json::json!({ "name": name });
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .post(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .json(&body)
+                .send()
+                .await?;
+            if response.status().is_success() {
+                Ok(())
+            } else {
+                Err(Error::Http(response.error_for_status().unwrap_err()))
+            }
+        })
+        .await
+    }
+
+    /// Roll a transaction back to a savepoint, discarding writes staged after it.
+    pub async fn rollback_to_savepoint(
+        &self,
+        transaction_id: &str,
+        name: &str,
+        token: &str,
+    ) -> Result<()> {
+        let url = self.api_path_url(&[
+            "transactions",
+            transaction_id,
+            "savepoints",
+            name,
+            "rollback",
+        ])?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .post(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .send()
+                .await?;
+            if response.status().is_success() {
+                Ok(())
+            } else {
+                Err(Error::Http(response.error_for_status().unwrap_err()))
+            }
+        })
+        .await
+    }
+
+    /// Release (forget) a savepoint. Staged work is unaffected.
+    pub async fn release_savepoint(
+        &self,
+        transaction_id: &str,
+        name: &str,
+        token: &str,
+    ) -> Result<()> {
+        let url = self.api_path_url(&["transactions", transaction_id, "savepoints", name])?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .delete(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .send()
+                .await?;
+            if response.status().is_success() {
+                Ok(())
+            } else {
+                Err(Error::Http(response.error_for_status().unwrap_err()))
+            }
+        })
+        .await
+    }
+
+    /// Find a record by ID within a transaction (read-your-writes): served from
+    /// the transaction's own view and recorded in its read set.
+    pub async fn find_by_id_in_transaction(
+        &self,
+        collection: &str,
+        id: &str,
+        transaction_id: &str,
+        token: &str,
+        bypass_ripple: Option<bool>,
+    ) -> Result<Record> {
+        let url_path = "/api/find/";
+        let mut url = self.api_path_url(&["find", collection, id])?;
+        url.query_pairs_mut()
+            .append_pair("transaction_id", transaction_id);
+        if let Some(bypass) = bypass_ripple {
+            url.query_pairs_mut()
+                .append_pair("bypass_ripple", &bypass.to_string());
+        }
+        self.execute_with_retry(|| async {
+            let response = self
+                .add_format_headers(
+                    url_path,
+                    self.client
+                        .get(url.clone())
+                        .header("Authorization", format!("Bearer {}", token)),
+                )
+                .send()
+                .await?;
+            self.handle_response(url_path, response).await
+        })
+        .await
+    }
+
+    /// Find records within a transaction (read-your-writes for the matched ids).
+    pub async fn find_in_transaction(
+        &self,
+        collection: &str,
+        query: Query,
+        transaction_id: &str,
+        token: &str,
+        bypass_ripple: Option<bool>,
+    ) -> Result<Vec<Record>> {
+        let url_path = "/api/find/";
+        let mut url = self.api_path_url(&["find", collection])?;
+        url.query_pairs_mut()
+            .append_pair("transaction_id", transaction_id);
+        if let Some(bypass) = bypass_ripple {
+            url.query_pairs_mut()
+                .append_pair("bypass_ripple", &bypass.to_string());
+        }
+        let body = self.serialize(url_path, &query)?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .add_format_headers(
+                    url_path,
+                    self.client
+                        .post(url.clone())
+                        .header("Authorization", format!("Bearer {}", token)),
+                )
+                .body(body.clone())
+                .send()
+                .await?;
+            self.handle_response(url_path, response).await
+        })
+        .await
     }
 
     /// Perform a full-text search
@@ -1125,25 +1394,23 @@ impl HttpClient {
         search_query: SearchQuery,
         token: &str,
     ) -> Result<SearchResponse> {
-        let url = self.base_url.join(&format!("/api/search/{}", collection))?;
+        let url = self.api_path_url(&["search", collection])?;
 
         // Temporarily use JSON for search until MessagePack issue is resolved
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .post(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .json(&search_query)
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .post(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .json(&search_query)
+                .send()
+                .await?;
 
-                // Force JSON for search operations
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                serde_json::from_slice(&bytes).map_err(Error::Serialization)
-            })
-            .await
+            // Force JSON for search operations
+            Self::json_body(response).await
+        })
+        .await
     }
 
     /// Get distinct (unique) values for a field in a collection.
@@ -1156,25 +1423,21 @@ impl HttpClient {
         query: DistinctValuesQuery,
         token: &str,
     ) -> Result<DistinctValuesResponse> {
-        let url = self
-            .base_url
-            .join(&format!("/api/distinct/{}/{}", collection, field))?;
+        let url = self.api_path_url(&["distinct", collection, field])?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .post(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .json(&query)
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .post(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .json(&query)
+                .send()
+                .await?;
 
-                let url_path = format!("/api/distinct/{}/{}", collection, field);
-                self.handle_response(&url_path, response).await
-            })
-            .await
+            self.handle_response("/api/distinct/", response).await
+        })
+        .await
     }
 
     /// Create a collection with schema
@@ -1184,28 +1447,23 @@ impl HttpClient {
         schema: Schema,
         token: &str,
     ) -> Result<()> {
-        let url = self
-            .base_url
-            .join(&format!("/api/collections/{}", collection))?;
+        let url = self.api_path_url(&["collections", collection])?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .post(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .json(&schema)
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .post(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .json(&schema)
+                .send()
+                .await?;
 
-                // Force JSON for metadata operations
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                let _: serde_json::Value =
-                    serde_json::from_slice(&bytes).map_err(Error::Serialization)?;
-                Ok(())
-            })
-            .await
+            // Force JSON for metadata operations
+            let _: serde_json::Value = Self::json_body(response).await?;
+            Ok(())
+        })
+        .await
     }
 
     /// Get collection metadata and schema
@@ -1214,48 +1472,87 @@ impl HttpClient {
         collection: &str,
         token: &str,
     ) -> Result<CollectionMetadata> {
-        let url = self
-            .base_url
-            .join(&format!("/api/collections/{}", collection))?;
+        let url = self.api_path_url(&["collections", collection])?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .get(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .get(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .send()
+                .await?;
 
-                // Force JSON for metadata operations
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                serde_json::from_slice(&bytes).map_err(Error::Serialization)
-            })
-            .await
+            // Force JSON for metadata operations
+            Self::json_body(response).await
+        })
+        .await
     }
 
     /// Get collection schema
     pub async fn get_schema(&self, collection: &str, token: &str) -> Result<Schema> {
-        let url = self
-            .base_url
-            .join(&format!("/api/schemas/{}", collection))?;
+        let url = self.api_path_url(&["schemas", collection])?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .get(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .get(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .send()
+                .await?;
 
-                // Force JSON for metadata operations
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                serde_json::from_slice(&bytes).map_err(Error::Serialization)
-            })
-            .await
+            // Force JSON for metadata operations
+            Self::json_body(response).await
+        })
+        .await
+    }
+
+    /// Check response status and deserialize JSON body.
+    /// Returns typed errors for non-success status codes, consistent with `handle_response`:
+    /// - 401 → `Error::TokenExpired`
+    /// - 404 → `Error::NotFound`
+    /// - 429 → `Error::RateLimit` (retryable)
+    /// - 503 → `Error::ServiceUnavailable` (retryable)
+    /// - Other non-success → `Error::Api { code, message }`
+    async fn json_body<T: for<'de> serde::Deserialize<'de>>(response: Response) -> Result<T> {
+        let status = response.status();
+        if !status.is_success() {
+            return Err(match status {
+                StatusCode::UNAUTHORIZED => Error::TokenExpired,
+                StatusCode::NOT_FOUND => Error::NotFound,
+                StatusCode::TOO_MANY_REQUESTS => {
+                    let retry_after = response
+                        .headers()
+                        .get("retry-after")
+                        .and_then(|v| v.to_str().ok())
+                        .and_then(|v| v.parse().ok())
+                        .unwrap_or(60);
+                    Error::RateLimit {
+                        retry_after_secs: retry_after,
+                    }
+                }
+                StatusCode::SERVICE_UNAVAILABLE => {
+                    let body = response
+                        .text()
+                        .await
+                        .unwrap_or_else(|_| "Service unavailable".to_string());
+                    Error::ServiceUnavailable(extract_error_message(&body))
+                }
+                _ => {
+                    let body = response
+                        .text()
+                        .await
+                        .unwrap_or_else(|_| "unknown error".to_string());
+                    Error::Api {
+                        code: status.as_u16(),
+                        message: extract_error_message(&body),
+                    }
+                }
+            });
+        }
+        let bytes = response.bytes().await.map_err(Error::Http)?;
+        serde_json::from_slice(&bytes).map_err(Error::Serialization)
     }
 
     /// Extract rate limit information from response headers
@@ -1328,9 +1625,9 @@ impl HttpClient {
                     use tokio_util::io::StreamReader;
 
                     let byte_stream = response.bytes_stream();
-                    let stream_reader = StreamReader::new(byte_stream.map(|result| {
-                        result.map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))
-                    }));
+                    let stream_reader = StreamReader::new(
+                        byte_stream.map(|result| result.map_err(std::io::Error::other)),
+                    );
                     let mut decompressed_reader = GzipDecoder::new(stream_reader);
 
                     let mut decompressed = Vec::new();
@@ -1405,93 +1702,120 @@ impl HttpClient {
         let url = self.base_url.join("/api/chat_models")?;
 
         // Force JSON for chat operations
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .get(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .get(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .send()
+                .await?;
 
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                serde_json::from_slice(&bytes).map_err(Error::Serialization)
-            })
-            .await
+            Self::json_body(response).await
+        })
+        .await
     }
 
     /// Get all built-in server-side chat tool definitions
     pub async fn get_chat_tools(&self, token: &str) -> Result<Vec<serde_json::Value>> {
         let url = self.base_url.join("/api/chat/tools")?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .get(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .get(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .send()
+                .await?;
 
-                self.handle_response("/api/chat/tools", response).await
-            })
-            .await
+            self.handle_response("/api/chat/tools", response).await
+        })
+        .await
+    }
+
+    /// Execute a single tool server-side via POST /api/chat/tools/execute.
+    /// Goes through ekoDB's tool pipeline with all filtering and permissions.
+    pub async fn execute_tool_remote(
+        &self,
+        tool: &str,
+        params: &serde_json::Value,
+        chat_id: Option<&str>,
+        token: &str,
+    ) -> Result<serde_json::Value> {
+        let url = self.base_url.join("/api/chat/tools/execute")?;
+        let mut body = serde_json::json!({
+            "tool": tool,
+            "params": params,
+        });
+        if let Some(cid) = chat_id {
+            body["chat_id"] = serde_json::json!(cid);
+        }
+
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .post(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Content-Type", "application/json")
+                .header("Accept", "application/json")
+                .json(&body)
+                .send()
+                .await?;
+
+            self.handle_response("/api/chat/tools/execute", response)
+                .await
+        })
+        .await
     }
 
     /// Get specific chat model info
     pub async fn get_chat_model(&self, model_name: &str, token: &str) -> Result<Vec<String>> {
-        let url = self
-            .base_url
-            .join(&format!("/api/chat_models/{}", model_name))?;
+        let url = self.api_path_url(&["chat_models", model_name])?;
 
         // Force JSON for chat operations
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .get(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .get(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .send()
+                .await?;
 
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                serde_json::from_slice(&bytes).map_err(Error::Serialization)
-            })
-            .await
+            Self::json_body(response).await
+        })
+        .await
     }
 
     /// Generate embeddings for text(s)
     pub async fn embed(&self, request: EmbedRequest, token: &str) -> Result<EmbedResponse> {
         let url = self.base_url.join("/api/embed")?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .post(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .json(&request)
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .post(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .json(&request)
+                .send()
+                .await?;
 
-                let status = response.status();
-                let bytes = response.bytes().await.map_err(Error::Http)?;
+            let status = response.status();
+            let bytes = response.bytes().await.map_err(Error::Http)?;
 
-                if !status.is_success() {
-                    let message = String::from_utf8_lossy(&bytes).to_string();
-                    return Err(Error::Api {
-                        code: status.as_u16(),
-                        message,
-                    });
-                }
+            if !status.is_success() {
+                let message = String::from_utf8_lossy(&bytes).to_string();
+                return Err(Error::Api {
+                    code: status.as_u16(),
+                    message,
+                });
+            }
 
-                serde_json::from_slice(&bytes).map_err(Error::Serialization)
-            })
-            .await
+            serde_json::from_slice(&bytes).map_err(Error::Serialization)
+        })
+        .await
     }
 
     /// Stateless raw LLM completion — no session, no history, no RAG.
@@ -1503,20 +1827,351 @@ impl HttpClient {
     ) -> Result<RawCompletionResponse> {
         let url = self.base_url.join("/api/chat/complete")?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .post(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .json(&request)
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .post(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .json(&request)
+                .send()
+                .await?;
 
-                self.handle_response("/api/chat/complete", response).await
-            })
-            .await
+            self.handle_response("/api/chat/complete", response).await
+        })
+        .await
+    }
+
+    /// Stateless raw LLM completion via SSE streaming.
+    /// Calls POST /api/chat/complete/stream and collects the full response from SSE events.
+    /// Keeps the connection alive with SSE heartbeats so reverse proxies don't kill it.
+    pub async fn raw_completion_stream(
+        &self,
+        request: RawCompletionRequest,
+        token: &str,
+    ) -> Result<RawCompletionResponse> {
+        let url = self.base_url.join("/api/chat/complete/stream")?;
+
+        let response = self
+            .client
+            .post(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .header("Accept", "text/event-stream")
+            .json(&request)
+            .send()
+            .await?;
+
+        if !response.status().is_success() {
+            let code = response.status().as_u16();
+            let body = response.text().await.unwrap_or_default();
+            return Err(Error::Api {
+                code,
+                message: body,
+            });
+        }
+
+        // Parse SSE events: collect tokens, return content from "done" event
+        let body = response.text().await?;
+        let mut content = String::new();
+        let mut got_done = false;
+        let mut last_error: Option<String> = None;
+
+        for line in body.lines() {
+            if let Some(data_str) = line.strip_prefix("data:") {
+                let data_str = data_str.trim();
+                if data_str.is_empty() {
+                    continue;
+                }
+                if let Ok(event_data) = serde_json::from_str::<serde_json::Value>(data_str) {
+                    if let Some(token_text) = event_data.get("token").and_then(|v| v.as_str()) {
+                        content.push_str(token_text);
+                    }
+                    if let Some(done_content) = event_data.get("content").and_then(|v| v.as_str()) {
+                        content = done_content.to_string();
+                        got_done = true;
+                    }
+                    if let Some(err) = event_data.get("error").and_then(|v| v.as_str()) {
+                        last_error = Some(err.to_string());
+                    }
+                }
+            }
+        }
+
+        if let Some(err) = last_error {
+            return Err(Error::Api {
+                code: 500,
+                message: err,
+            });
+        }
+
+        if !got_done && content.is_empty() {
+            return Err(Error::Api {
+                code: 500,
+                message: "SSE stream ended without a done event".to_string(),
+            });
+        }
+
+        Ok(RawCompletionResponse { content })
+    }
+
+    /// Stateless raw LLM completion via SSE with incremental token progress.
+    ///
+    /// Same as `raw_completion_stream()` but sends each token through the provided
+    /// channel as it arrives, allowing callers to show real-time progress.
+    /// Returns the final complete response.
+    pub async fn raw_completion_stream_with_progress(
+        &self,
+        request: RawCompletionRequest,
+        token: &str,
+        progress_tx: tokio::sync::mpsc::Sender<String>,
+    ) -> Result<RawCompletionResponse> {
+        use futures_util::StreamExt;
+
+        let url = self.base_url.join("/api/chat/complete/stream")?;
+
+        let response = self
+            .client
+            .post(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .header("Accept", "text/event-stream")
+            .json(&request)
+            .send()
+            .await?;
+
+        if !response.status().is_success() {
+            let code = response.status().as_u16();
+            let body = response.text().await.unwrap_or_default();
+            return Err(Error::Api {
+                code,
+                message: body,
+            });
+        }
+
+        // Stream SSE events incrementally using bytes_stream instead of buffering
+        let mut stream = response.bytes_stream();
+        let mut buf = String::new();
+        let mut content = String::new();
+        let mut got_done = false;
+        let mut last_error: Option<String> = None;
+
+        while let Some(chunk_result) = stream.next().await {
+            let chunk = chunk_result?;
+            buf.push_str(&String::from_utf8_lossy(&chunk));
+
+            // Process complete lines from the buffer
+            while let Some(newline_pos) = buf.find('\n') {
+                let line = buf[..newline_pos].to_string();
+                buf = buf[newline_pos + 1..].to_string();
+
+                if let Some(data_str) = line.strip_prefix("data:") {
+                    let data_str = data_str.trim();
+                    if data_str.is_empty() {
+                        continue;
+                    }
+                    if let Ok(event_data) = serde_json::from_str::<serde_json::Value>(data_str) {
+                        if let Some(token_text) = event_data.get("token").and_then(|v| v.as_str()) {
+                            content.push_str(token_text);
+                            let _ = progress_tx.send(token_text.to_string()).await;
+                        }
+                        if let Some(done_content) =
+                            event_data.get("content").and_then(|v| v.as_str())
+                        {
+                            content = done_content.to_string();
+                            got_done = true;
+                        }
+                        if let Some(err) = event_data.get("error").and_then(|v| v.as_str()) {
+                            last_error = Some(err.to_string());
+                        }
+                    }
+                }
+            }
+        }
+
+        if let Some(err) = last_error {
+            return Err(Error::Api {
+                code: 500,
+                message: err,
+            });
+        }
+
+        if !got_done && content.is_empty() {
+            return Err(Error::Api {
+                code: 500,
+                message: "SSE stream ended without a done event".to_string(),
+            });
+        }
+
+        Ok(RawCompletionResponse { content })
+    }
+
+    /// Stream a chat message via SSE (Server-Sent Events).
+    ///
+    /// Calls `POST /api/chat/{chat_id}/messages/stream` and yields
+    /// `ChatStreamEvent` items through the returned channel as they arrive.
+    /// Server-side tools execute normally; client-side tools are not supported.
+    pub async fn chat_message_stream(
+        &self,
+        chat_id: &str,
+        request: ChatMessageRequest,
+        token: &str,
+    ) -> Result<tokio::sync::mpsc::Receiver<crate::websocket::ChatStreamEvent>> {
+        use crate::websocket::ChatStreamEvent;
+        use futures_util::StreamExt;
+
+        let url = self.api_path_url(&["chat", chat_id, "messages", "stream"])?;
+
+        let response = self
+            .client
+            .post(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .header("Accept", "text/event-stream")
+            .json(&request)
+            .send()
+            .await?;
+
+        if !response.status().is_success() {
+            let code = response.status().as_u16();
+            let body = response.text().await.unwrap_or_default();
+            return Err(Error::Api {
+                code,
+                message: body,
+            });
+        }
+
+        let (tx, rx) = tokio::sync::mpsc::channel::<ChatStreamEvent>(128);
+
+        // Spawn a task to parse SSE events and forward as ChatStreamEvent
+        tokio::spawn(async move {
+            let mut stream = response.bytes_stream();
+            let mut buf = String::new();
+
+            while let Some(chunk_result) = stream.next().await {
+                let chunk = match chunk_result {
+                    Ok(c) => c,
+                    Err(e) => {
+                        let _ = tx.send(ChatStreamEvent::Error(e.to_string())).await;
+                        return;
+                    }
+                };
+                buf.push_str(&String::from_utf8_lossy(&chunk));
+
+                // Process complete lines
+                while let Some(newline_pos) = buf.find('\n') {
+                    let line = buf[..newline_pos].to_string();
+                    buf = buf[newline_pos + 1..].to_string();
+
+                    if let Some(data_str) = line.strip_prefix("data:") {
+                        let data_str = data_str.trim();
+                        if data_str.is_empty() {
+                            continue;
+                        }
+                        if let Ok(event_data) = serde_json::from_str::<serde_json::Value>(data_str)
+                        {
+                            // Token chunk
+                            if let Some(token_text) =
+                                event_data.get("token").and_then(|v| v.as_str())
+                            {
+                                if tx
+                                    .send(ChatStreamEvent::Chunk(token_text.to_string()))
+                                    .await
+                                    .is_err()
+                                {
+                                    return; // receiver dropped
+                                }
+                            }
+                            // Done event
+                            if event_data.get("content").is_some() {
+                                let message_id = event_data
+                                    .get("message_id")
+                                    .and_then(|v| v.as_str())
+                                    .unwrap_or("")
+                                    .to_string();
+                                let exec_ms = event_data
+                                    .get("execution_time_ms")
+                                    .and_then(|v| v.as_u64())
+                                    .unwrap_or(0);
+                                let context_window = event_data
+                                    .get("context_window")
+                                    .and_then(|v| v.as_u64())
+                                    .map(|v| v as u32);
+                                let token_usage = event_data.get("token_usage").cloned();
+                                let tool_call_history =
+                                    event_data.get("tool_call_history").cloned();
+
+                                let _ = tx
+                                    .send(ChatStreamEvent::End {
+                                        message_id,
+                                        token_usage,
+                                        tool_call_history,
+                                        execution_time_ms: exec_ms,
+                                        context_window,
+                                    })
+                                    .await;
+                                return;
+                            }
+                            // Tool-progress event (server emits when a
+                            // server-side tool dispatch starts or
+                            // finishes — frames carry an `"event":
+                            // "tool_call"` or `"tool_result"` discriminator).
+                            // We surface tool_call as ChatStreamEvent::ToolCall
+                            // so the GUI can render mid-stream "searching X…"
+                            // pills. tool_result is dropped here today: the
+                            // existing GUI tool-status display already
+                            // updates from the tool_call_history arriving
+                            // in the End frame, so re-emitting result
+                            // events would just duplicate.
+                            if let Some(evt_name) = event_data.get("event").and_then(|v| v.as_str())
+                                && evt_name == "tool_call"
+                            {
+                                // Both `tool` and `call_id` must be present
+                                // and non-empty — emitting a ToolCall with
+                                // empty identifiers makes downstream handling
+                                // ambiguous (e.g. submit_chat_tool_result
+                                // would land under the wrong call_id). Skip
+                                // malformed frames rather than synthesizing
+                                // an empty-string ID.
+                                let tool_name =
+                                    match event_data.get("tool").and_then(|v| v.as_str()) {
+                                        Some(s) if !s.is_empty() => s.to_string(),
+                                        _ => continue,
+                                    };
+                                let call_id =
+                                    match event_data.get("call_id").and_then(|v| v.as_str()) {
+                                        Some(s) if !s.is_empty() => s.to_string(),
+                                        _ => continue,
+                                    };
+                                let arguments = event_data
+                                    .get("args")
+                                    .cloned()
+                                    .unwrap_or(serde_json::Value::Null);
+                                // Match the chunk branch's behavior: a
+                                // failed send means the receiver dropped, so
+                                // exit the read loop instead of spinning.
+                                if tx
+                                    .send(ChatStreamEvent::ToolCall {
+                                        call_id,
+                                        tool_name,
+                                        arguments,
+                                    })
+                                    .await
+                                    .is_err()
+                                {
+                                    return;
+                                }
+                                continue;
+                            }
+                            // Error event
+                            if let Some(err) = event_data.get("error").and_then(|v| v.as_str()) {
+                                let _ = tx.send(ChatStreamEvent::Error(err.to_string())).await;
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        Ok(rx)
     }
 
     /// Create a new chat session
@@ -1528,21 +2183,19 @@ impl HttpClient {
         let url = self.base_url.join("/api/chat")?;
 
         // Force JSON for chat operations
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .post(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .json(&request)
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .post(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .json(&request)
+                .send()
+                .await?;
 
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                serde_json::from_slice(&bytes).map_err(Error::Serialization)
-            })
-            .await
+            Self::json_body(response).await
+        })
+        .await
     }
 
     /// Get a chat session by ID
@@ -1551,23 +2204,131 @@ impl HttpClient {
         chat_id: &str,
         token: &str,
     ) -> Result<ChatSessionResponse> {
-        let url = self.base_url.join(&format!("/api/chat/{}", chat_id))?;
+        let url = self.api_path_url(&["chat", chat_id])?;
 
         // Force JSON for chat operations
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .get(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .get(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .send()
+                .await?;
 
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                serde_json::from_slice(&bytes).map_err(Error::Serialization)
-            })
-            .await
+            Self::json_body(response).await
+        })
+        .await
+    }
+
+    /// Submit a client tool result for an in-flight SSE chat stream.
+    /// This unblocks ekoDB's tool loop so it can feed the result to the LLM.
+    pub async fn submit_chat_tool_result(
+        &self,
+        chat_id: &str,
+        call_id: &str,
+        success: bool,
+        result: Option<serde_json::Value>,
+        error: Option<String>,
+        token: &str,
+    ) -> Result<()> {
+        let url = self.api_path_url(&["chat", chat_id, "tool-result"])?;
+
+        #[derive(serde::Serialize)]
+        struct ToolResultBody {
+            call_id: String,
+            success: bool,
+            #[serde(skip_serializing_if = "Option::is_none")]
+            result: Option<serde_json::Value>,
+            #[serde(skip_serializing_if = "Option::is_none")]
+            error: Option<String>,
+        }
+
+        let body = ToolResultBody {
+            call_id: call_id.to_string(),
+            success,
+            result,
+            error,
+        };
+
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .post(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Content-Type", "application/json")
+                .json(&body)
+                .send()
+                .await?;
+
+            let status = response.status();
+            if status == reqwest::StatusCode::UNAUTHORIZED {
+                return Err(crate::error::Error::TokenExpired);
+            }
+            if !status.is_success() {
+                let mut text = response.text().await.unwrap_or_default();
+                text.truncate(512);
+                return Err(crate::error::Error::Api {
+                    code: status.as_u16(),
+                    message: format!("tool-result submit failed: {text}"),
+                });
+            }
+            Ok(())
+        })
+        .await
+    }
+
+    /// Send a liveness keepalive for a pending client tool to the chat
+    /// stream's tool-result endpoint. This is NOT a result — it tells the
+    /// server "the client is alive and still working on this tool" (a pending
+    /// human confirmation, or a long-running client tool) so the server resets
+    /// its per-tool wait deadline instead of timing the turn out mid-response.
+    /// Call periodically (well under the server's `client_tool_timeout_secs`,
+    /// default 60s) while a confirmation prompt is shown or a tool is running.
+    pub async fn submit_chat_tool_keepalive(
+        &self,
+        chat_id: &str,
+        call_id: &str,
+        token: &str,
+    ) -> Result<()> {
+        let url = self.api_path_url(&["chat", chat_id, "tool-result"])?;
+
+        #[derive(serde::Serialize)]
+        struct KeepaliveBody {
+            call_id: String,
+            keepalive: bool,
+        }
+
+        let body = KeepaliveBody {
+            call_id: call_id.to_string(),
+            keepalive: true,
+        };
+
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .post(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Content-Type", "application/json")
+                .json(&body)
+                .send()
+                .await?;
+
+            let status = response.status();
+            if status == reqwest::StatusCode::UNAUTHORIZED {
+                return Err(crate::error::Error::TokenExpired);
+            }
+            if !status.is_success() {
+                let mut text = response.text().await.unwrap_or_default();
+                text.truncate(512);
+                return Err(crate::error::Error::Api {
+                    code: status.as_u16(),
+                    message: format!("tool keepalive failed: {text}"),
+                });
+            }
+            Ok(())
+        })
+        .await
     }
 
     /// List all chat sessions
@@ -1593,20 +2354,18 @@ impl HttpClient {
         }
 
         // Force JSON for chat operations
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .get(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .get(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .send()
+                .await?;
 
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                serde_json::from_slice(&bytes).map_err(Error::Serialization)
-            })
-            .await
+            Self::json_body(response).await
+        })
+        .await
     }
 
     /// Update chat session metadata
@@ -1616,47 +2375,44 @@ impl HttpClient {
         request: UpdateSessionRequest,
         token: &str,
     ) -> Result<ChatSessionResponse> {
-        let url = self.base_url.join(&format!("/api/chat/{}", chat_id))?;
+        let url = self.api_path_url(&["chat", chat_id])?;
 
         // Force JSON for chat operations
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .put(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .json(&request)
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .put(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .json(&request)
+                .send()
+                .await?;
 
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                serde_json::from_slice(&bytes).map_err(Error::Serialization)
-            })
-            .await
+            Self::json_body(response).await
+        })
+        .await
     }
 
     /// Delete a chat session
     pub async fn delete_chat_session(&self, chat_id: &str, token: &str) -> Result<()> {
-        let url = self.base_url.join(&format!("/api/chat/{}", chat_id))?;
+        let url = self.api_path_url(&["chat", chat_id])?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .delete(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .delete(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .send()
+                .await?;
 
-                if response.status().is_success() {
-                    Ok(())
-                } else {
-                    let error: ErrorResponse = response.json().await?;
-                    Err(Error::api(error.code, error.message))
-                }
-            })
-            .await
+            if response.status().is_success() {
+                Ok(())
+            } else {
+                let error: ErrorResponse = response.json().await?;
+                Err(Error::api(error.code, error.message))
+            }
+        })
+        .await
     }
 
     /// Branch a chat session from an existing one
@@ -1668,21 +2424,19 @@ impl HttpClient {
         let url = self.base_url.join("/api/chat/branch")?;
 
         // Force JSON for chat operations
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .post(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .json(&request)
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .post(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .json(&request)
+                .send()
+                .await?;
 
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                serde_json::from_slice(&bytes).map_err(Error::Serialization)
-            })
-            .await
+            Self::json_body(response).await
+        })
+        .await
     }
 
     /// Merge multiple chat sessions
@@ -1694,21 +2448,19 @@ impl HttpClient {
         let url = self.base_url.join("/api/chat/merge")?;
 
         // Force JSON for chat operations
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .post(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .json(&request)
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .post(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .json(&request)
+                .send()
+                .await?;
 
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                serde_json::from_slice(&bytes).map_err(Error::Serialization)
-            })
-            .await
+            Self::json_body(response).await
+        })
+        .await
     }
 
     /// Send a message in an existing chat session
@@ -1718,41 +2470,38 @@ impl HttpClient {
         request: ChatMessageRequest,
         token: &str,
     ) -> Result<ChatResponse> {
-        let url = self
-            .base_url
-            .join(&format!("/api/chat/{}/messages", chat_id))?;
+        let url = self.api_path_url(&["chat", chat_id, "messages"])?;
 
         // Force JSON for chat operations
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .post(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .json(&request)
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .post(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .json(&request)
+                .send()
+                .await?;
 
-                let status = response.status();
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                if !status.is_success() {
-                    // Try to extract error message from response body
-                    if let Ok(err_obj) = serde_json::from_slice::<serde_json::Value>(&bytes) {
-                        let msg = err_obj["error"].as_str().unwrap_or("unknown error");
-                        return Err(Error::Api {
-                            code: status.as_u16(),
-                            message: msg.to_string(),
-                        });
-                    }
+            let status = response.status();
+            let bytes = response.bytes().await.map_err(Error::Http)?;
+            if !status.is_success() {
+                // Try to extract error message from response body
+                if let Ok(err_obj) = serde_json::from_slice::<serde_json::Value>(&bytes) {
+                    let msg = err_obj["error"].as_str().unwrap_or("unknown error");
                     return Err(Error::Api {
                         code: status.as_u16(),
-                        message: format!("chat message failed ({})", status),
+                        message: msg.to_string(),
                     });
                 }
-                serde_json::from_slice(&bytes).map_err(Error::Serialization)
-            })
-            .await
+                return Err(Error::Api {
+                    code: status.as_u16(),
+                    message: format!("chat message failed ({})", status),
+                });
+            }
+            serde_json::from_slice(&bytes).map_err(Error::Serialization)
+        })
+        .await
     }
 
     /// Get messages from a chat session
@@ -1762,9 +2511,7 @@ impl HttpClient {
         query: GetMessagesQuery,
         token: &str,
     ) -> Result<crate::chat::GetMessagesResponse> {
-        let mut url = self
-            .base_url
-            .join(&format!("/api/chat/{}/messages", chat_id))?;
+        let mut url = self.api_path_url(&["chat", chat_id, "messages"])?;
 
         // Add query parameters
         {
@@ -1781,20 +2528,18 @@ impl HttpClient {
         }
 
         // Force JSON for chat operations
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .get(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .get(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .send()
+                .await?;
 
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                serde_json::from_slice(&bytes).map_err(Error::Serialization)
-            })
-            .await
+            Self::json_body(response).await
+        })
+        .await
     }
 
     /// Get a specific message by ID
@@ -1804,25 +2549,21 @@ impl HttpClient {
         message_id: &str,
         token: &str,
     ) -> Result<Record> {
-        let url = self
-            .base_url
-            .join(&format!("/api/chat/{}/messages/{}", chat_id, message_id))?;
+        let url = self.api_path_url(&["chat", chat_id, "messages", message_id])?;
 
         // Force JSON for chat operations
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .get(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .get(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .send()
+                .await?;
 
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                serde_json::from_slice(&bytes).map_err(Error::Serialization)
-            })
-            .await
+            Self::json_body(response).await
+        })
+        .await
     }
 
     /// Update a chat message
@@ -1833,26 +2574,22 @@ impl HttpClient {
         request: UpdateMessageRequest,
         token: &str,
     ) -> Result<Record> {
-        let url = self
-            .base_url
-            .join(&format!("/api/chat/{}/messages/{}", chat_id, message_id))?;
+        let url = self.api_path_url(&["chat", chat_id, "messages", message_id])?;
 
         // Force JSON for chat operations
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .put(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .json(&request)
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .put(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .json(&request)
+                .send()
+                .await?;
 
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                serde_json::from_slice(&bytes).map_err(Error::Serialization)
-            })
-            .await
+            Self::json_body(response).await
+        })
+        .await
     }
 
     /// Delete a chat message
@@ -1862,27 +2599,24 @@ impl HttpClient {
         message_id: &str,
         token: &str,
     ) -> Result<()> {
-        let url = self
-            .base_url
-            .join(&format!("/api/chat/{}/messages/{}", chat_id, message_id))?;
+        let url = self.api_path_url(&["chat", chat_id, "messages", message_id])?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .delete(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .delete(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .send()
+                .await?;
 
-                if response.status().is_success() {
-                    Ok(())
-                } else {
-                    let error: ErrorResponse = response.json().await?;
-                    Err(Error::api(error.code, error.message))
-                }
-            })
-            .await
+            if response.status().is_success() {
+                Ok(())
+            } else {
+                let error: ErrorResponse = response.json().await?;
+                Err(Error::api(error.code, error.message))
+            }
+        })
+        .await
     }
 
     /// Toggle message forgotten status
@@ -1893,27 +2627,47 @@ impl HttpClient {
         request: ToggleForgottenRequest,
         token: &str,
     ) -> Result<Record> {
-        let url = self.base_url.join(&format!(
-            "/api/chat/{}/messages/{}/forgotten",
-            chat_id, message_id
-        ))?;
+        let url = self.api_path_url(&["chat", chat_id, "messages", message_id, "forgotten"])?;
 
         // Force JSON for chat operations
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .patch(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .json(&request)
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .patch(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .json(&request)
+                .send()
+                .await?;
 
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                serde_json::from_slice(&bytes).map_err(Error::Serialization)
-            })
-            .await
+            Self::json_body(response).await
+        })
+        .await
+    }
+
+    /// Compact a chat session's history on demand (POST /api/chat/{id}/compact)
+    pub async fn compact_chat_session(
+        &self,
+        chat_id: &str,
+        request: CompactChatRequest,
+        token: &str,
+    ) -> Result<CompactChatResponse> {
+        let url = self.api_path_url(&["chat", chat_id, "compact"])?;
+
+        // Force JSON for chat operations
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .post(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .json(&request)
+                .send()
+                .await?;
+
+            Self::json_body(response).await
+        })
+        .await
     }
 
     /// Regenerate a chat message
@@ -1923,262 +2677,252 @@ impl HttpClient {
         message_id: &str,
         token: &str,
     ) -> Result<ChatResponse> {
-        let url = self.base_url.join(&format!(
-            "/api/chat/{}/messages/{}/regenerate",
-            chat_id, message_id
-        ))?;
+        let url = self.api_path_url(&["chat", chat_id, "messages", message_id, "regenerate"])?;
 
         // Force JSON for chat operations
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .post(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .post(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .send()
+                .await?;
 
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                serde_json::from_slice(&bytes).map_err(Error::Serialization)
-            })
-            .await
+            Self::json_body(response).await
+        })
+        .await
     }
 
     // ========================================================================
-    // SCRIPTS API
+    // FUNCTIONS API
     // ========================================================================
 
-    /// Save a Script definition
-    pub async fn save_script(
+    /// Save a UserFunction definition
+    pub async fn save_function(
         &self,
-        script: crate::functions::Script,
+        function: crate::functions::UserFunction,
         token: &str,
     ) -> Result<String> {
         let url = self.base_url.join("/api/functions")?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .post(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Content-Type", "application/json")
-                    .header("Accept", "application/json")
-                    .json(&script)
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .post(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Content-Type", "application/json")
+                .header("Accept", "application/json")
+                .json(&function)
+                .send()
+                .await?;
 
-                let status = response.status();
-                let bytes = response.bytes().await.map_err(Error::Http)?;
+            let status = response.status();
+            let bytes = response.bytes().await.map_err(Error::Http)?;
 
-                if !status.is_success() {
-                    let error_msg = String::from_utf8_lossy(&bytes);
-                    return Err(Error::api(
-                        status.as_u16(),
-                        format!("Server error: {}", error_msg),
-                    ));
-                }
+            if !status.is_success() {
+                let error_msg = String::from_utf8_lossy(&bytes);
+                return Err(Error::api(
+                    status.as_u16(),
+                    format!("Server error: {}", error_msg),
+                ));
+            }
 
-                if bytes.is_empty() {
-                    return Err(Error::api(
-                        status.as_u16(),
-                        "Empty response from server".to_string(),
-                    ));
-                }
+            if bytes.is_empty() {
+                return Err(Error::api(
+                    status.as_u16(),
+                    "Empty response from server".to_string(),
+                ));
+            }
 
-                #[derive(Deserialize)]
-                struct FunctionResponse {
-                    status: String,
-                    id: String,
-                }
+            #[derive(Deserialize)]
+            struct FunctionResponse {
+                status: String,
+                id: String,
+            }
 
-                let result: FunctionResponse = serde_json::from_slice(&bytes).map_err(|e| {
-                    Error::api(
-                        500,
-                        format!(
-                            "Failed to parse response: {} (body: {})",
-                            e,
-                            String::from_utf8_lossy(&bytes)
-                        ),
-                    )
-                })?;
+            let result: FunctionResponse = serde_json::from_slice(&bytes).map_err(|e| {
+                Error::api(
+                    500,
+                    format!(
+                        "Failed to parse response: {} (body: {})",
+                        e,
+                        String::from_utf8_lossy(&bytes)
+                    ),
+                )
+            })?;
 
-                if result.status != "success" {
-                    return Err(Error::api(
-                        500,
-                        format!("Failed to save script: status={}", result.status),
-                    ));
-                }
+            if result.status != "success" {
+                return Err(Error::api(
+                    500,
+                    format!("Failed to save script: status={}", result.status),
+                ));
+            }
 
-                Ok(result.id)
-            })
-            .await
+            Ok(result.id)
+        })
+        .await
     }
 
-    /// Get a Script by ID
-    pub async fn get_script(&self, id: &str, token: &str) -> Result<crate::functions::Script> {
-        let url = self.base_url.join(&format!("/api/functions/{}", id))?;
+    /// Get a UserFunction by ID
+    pub async fn get_function(
+        &self,
+        id: &str,
+        token: &str,
+    ) -> Result<crate::functions::UserFunction> {
+        let url = self.api_path_url(&["functions", id])?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .get(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .get(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .send()
+                .await?;
 
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                serde_json::from_slice(&bytes).map_err(Error::Serialization)
-            })
-            .await
+            Self::json_body(response).await
+        })
+        .await
     }
 
-    /// List all Scripts (optionally filtered by tags)
-    pub async fn list_scripts(
+    /// List all functions (optionally filtered by tags)
+    pub async fn list_functions(
         &self,
         tags: Option<Vec<String>>,
         token: &str,
-    ) -> Result<Vec<crate::functions::Script>> {
+    ) -> Result<Vec<crate::functions::UserFunction>> {
         let mut url = self.base_url.join("/api/functions")?;
 
         if let Some(tags) = tags {
-            let tags_query = tags.join(",");
-            url.set_query(Some(&format!("tags={}", tags_query)));
+            // append_pair percent-encodes the value (`&`/`=`/`,`), so a tag
+            // containing query-reserved characters can't smuggle extra params.
+            url.query_pairs_mut().append_pair("tags", &tags.join(","));
         }
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .get(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .get(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .send()
+                .await?;
 
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                serde_json::from_slice(&bytes).map_err(Error::Serialization)
-            })
-            .await
+            Self::json_body(response).await
+        })
+        .await
     }
 
-    /// Update an existing Script by ID
-    pub async fn update_script(
+    /// Update an existing UserFunction by ID
+    pub async fn update_function(
         &self,
         id: &str,
-        script: crate::functions::Script,
+        function: crate::functions::UserFunction,
         token: &str,
     ) -> Result<()> {
-        let url = self.base_url.join(&format!("/api/functions/{}", id))?;
+        let url = self.api_path_url(&["functions", id])?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .put(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Content-Type", "application/json")
-                    .header("Accept", "application/json")
-                    .json(&script)
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .put(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Content-Type", "application/json")
+                .header("Accept", "application/json")
+                .json(&function)
+                .send()
+                .await?;
 
-                if response.status().is_success() {
-                    Ok(())
-                } else {
-                    let status = response.status().as_u16();
-                    let bytes = response.bytes().await.map_err(Error::Http)?;
-                    let error_msg = String::from_utf8_lossy(&bytes);
-                    Err(Error::api(status, error_msg.to_string()))
-                }
-            })
-            .await
+            if response.status().is_success() {
+                Ok(())
+            } else {
+                let status = response.status().as_u16();
+                let bytes = response.bytes().await.map_err(Error::Http)?;
+                let error_msg = String::from_utf8_lossy(&bytes);
+                Err(Error::api(status, error_msg.to_string()))
+            }
+        })
+        .await
     }
 
-    /// Delete a Script by ID
-    pub async fn delete_script(&self, id: &str, token: &str) -> Result<()> {
-        let url = self.base_url.join(&format!("/api/functions/{}", id))?;
+    /// Delete a UserFunction by ID
+    pub async fn delete_function(&self, id: &str, token: &str) -> Result<()> {
+        let url = self.api_path_url(&["functions", id])?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .delete(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .delete(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .send()
+                .await?;
 
-                if response.status().is_success() {
-                    Ok(())
-                } else {
-                    let status = response.status().as_u16();
-                    let bytes = response.bytes().await.map_err(Error::Http)?;
-                    let error_msg = String::from_utf8_lossy(&bytes);
-                    Err(Error::api(status, error_msg.to_string()))
-                }
-            })
-            .await
+            if response.status().is_success() {
+                Ok(())
+            } else {
+                let status = response.status().as_u16();
+                let bytes = response.bytes().await.map_err(Error::Http)?;
+                let error_msg = String::from_utf8_lossy(&bytes);
+                Err(Error::api(status, error_msg.to_string()))
+            }
+        })
+        .await
     }
 
-    /// Call a saved Script by ID or label
-    pub async fn call_script(
+    /// Call a saved UserFunction by ID or label
+    pub async fn call_function(
         &self,
-        script_id_or_label: &str,
+        function_id_or_label: &str,
         params: Option<std::collections::HashMap<String, crate::types::FieldType>>,
         token: &str,
     ) -> Result<crate::functions::FunctionResult> {
-        let url = self
-            .base_url
-            .join(&format!("/api/functions/{}", script_id_or_label))?;
+        let url = self.api_path_url(&["functions", function_id_or_label])?;
 
         let body = params.unwrap_or_default();
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .post(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Content-Type", "application/json")
-                    .header("Accept", "application/json")
-                    .json(&body)
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .post(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Content-Type", "application/json")
+                .header("Accept", "application/json")
+                .json(&body)
+                .send()
+                .await?;
 
-                let status = response.status();
-                let bytes = response.bytes().await.map_err(Error::Http)?;
+            let status = response.status();
+            let bytes = response.bytes().await.map_err(Error::Http)?;
 
-                if !status.is_success() {
-                    let error_msg = String::from_utf8_lossy(&bytes);
-                    return Err(Error::api(
-                        status.as_u16(),
-                        format!("Server error: {}", error_msg),
-                    ));
-                }
+            if !status.is_success() {
+                let error_msg = String::from_utf8_lossy(&bytes);
+                return Err(Error::api(
+                    status.as_u16(),
+                    format!("Server error: {}", error_msg),
+                ));
+            }
 
-                if bytes.is_empty() {
-                    return Err(Error::api(
-                        status.as_u16(),
-                        "Empty response from server".to_string(),
-                    ));
-                }
+            if bytes.is_empty() {
+                return Err(Error::api(
+                    status.as_u16(),
+                    "Empty response from server".to_string(),
+                ));
+            }
 
-                serde_json::from_slice(&bytes).map_err(|e| {
-                    Error::api(
-                        500,
-                        format!(
-                            "Failed to parse response: {} (body: {})",
-                            e,
-                            String::from_utf8_lossy(&bytes)
-                        ),
-                    )
-                })
+            serde_json::from_slice(&bytes).map_err(|e| {
+                Error::api(
+                    500,
+                    format!(
+                        "Failed to parse response: {} (body: {})",
+                        e,
+                        String::from_utf8_lossy(&bytes)
+                    ),
+                )
             })
-            .await
+        })
+        .await
     }
 
     // ========================================================================
@@ -2193,63 +2937,62 @@ impl HttpClient {
     ) -> Result<String> {
         let url = self.base_url.join("/api/functions")?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .post(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Content-Type", "application/json")
-                    .header("Accept", "application/json")
-                    .json(&user_function)
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .post(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Content-Type", "application/json")
+                .header("Accept", "application/json")
+                .json(&user_function)
+                .send()
+                .await?;
 
-                let status = response.status();
-                let bytes = response.bytes().await.map_err(Error::Http)?;
+            let status = response.status();
+            let bytes = response.bytes().await.map_err(Error::Http)?;
 
-                if !status.is_success() {
-                    let error_msg = String::from_utf8_lossy(&bytes);
-                    return Err(Error::api(
-                        status.as_u16(),
-                        format!("Server error: {}", error_msg),
-                    ));
-                }
+            if !status.is_success() {
+                let error_msg = String::from_utf8_lossy(&bytes);
+                return Err(Error::api(
+                    status.as_u16(),
+                    format!("Server error: {}", error_msg),
+                ));
+            }
 
-                if bytes.is_empty() {
-                    return Err(Error::api(
-                        status.as_u16(),
-                        "Empty response from server".to_string(),
-                    ));
-                }
+            if bytes.is_empty() {
+                return Err(Error::api(
+                    status.as_u16(),
+                    "Empty response from server".to_string(),
+                ));
+            }
 
-                #[derive(Deserialize)]
-                struct FunctionResponse {
-                    status: String,
-                    id: String,
-                }
+            #[derive(Deserialize)]
+            struct FunctionResponse {
+                status: String,
+                id: String,
+            }
 
-                let result: FunctionResponse = serde_json::from_slice(&bytes).map_err(|e| {
-                    Error::api(
-                        500,
-                        format!(
-                            "Failed to parse response: {} (body: {})",
-                            e,
-                            String::from_utf8_lossy(&bytes)
-                        ),
-                    )
-                })?;
+            let result: FunctionResponse = serde_json::from_slice(&bytes).map_err(|e| {
+                Error::api(
+                    500,
+                    format!(
+                        "Failed to parse response: {} (body: {})",
+                        e,
+                        String::from_utf8_lossy(&bytes)
+                    ),
+                )
+            })?;
 
-                if result.status != "success" {
-                    return Err(Error::api(
-                        500,
-                        format!("Failed to save user function: status={}", result.status),
-                    ));
-                }
+            if result.status != "success" {
+                return Err(Error::api(
+                    500,
+                    format!("Failed to save user function: status={}", result.status),
+                ));
+            }
 
-                Ok(result.id)
-            })
-            .await
+            Ok(result.id)
+        })
+        .await
     }
 
     /// Get a UserFunction by label
@@ -2258,22 +3001,20 @@ impl HttpClient {
         label: &str,
         token: &str,
     ) -> Result<crate::functions::UserFunction> {
-        let url = self.base_url.join(&format!("/api/functions/{}", label))?;
+        let url = self.api_path_url(&["functions", label])?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .get(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .get(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .send()
+                .await?;
 
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                serde_json::from_slice(&bytes).map_err(Error::Serialization)
-            })
-            .await
+            Self::json_body(response).await
+        })
+        .await
     }
 
     /// List all UserFunctions (optionally filtered by tags)
@@ -2285,24 +3026,23 @@ impl HttpClient {
         let mut url = self.base_url.join("/api/functions")?;
 
         if let Some(tags) = tags {
-            let tags_query = tags.join(",");
-            url.set_query(Some(&format!("tags={}", tags_query)));
+            // append_pair percent-encodes the value (`&`/`=`/`,`), so a tag
+            // containing query-reserved characters can't smuggle extra params.
+            url.query_pairs_mut().append_pair("tags", &tags.join(","));
         }
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .get(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .get(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .send()
+                .await?;
 
-                let bytes = response.bytes().await.map_err(Error::Http)?;
-                serde_json::from_slice(&bytes).map_err(Error::Serialization)
-            })
-            .await
+            Self::json_body(response).await
+        })
+        .await
     }
 
     /// Update an existing UserFunction
@@ -2312,61 +3052,945 @@ impl HttpClient {
         user_function: crate::functions::UserFunction,
         token: &str,
     ) -> Result<()> {
-        let url = self.base_url.join(&format!("/api/functions/{}", label))?;
+        let url = self.api_path_url(&["functions", label])?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .put(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Content-Type", "application/json")
-                    .header("Accept", "application/json")
-                    .json(&user_function)
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .put(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Content-Type", "application/json")
+                .header("Accept", "application/json")
+                .json(&user_function)
+                .send()
+                .await?;
 
-                if response.status().is_success() {
-                    Ok(())
-                } else {
-                    let status = response.status().as_u16();
-                    let bytes = response.bytes().await.map_err(Error::Http)?;
-                    let error_msg = String::from_utf8_lossy(&bytes);
-                    Err(Error::api(status, error_msg.to_string()))
-                }
-            })
-            .await
+            if response.status().is_success() {
+                Ok(())
+            } else {
+                let status = response.status().as_u16();
+                let bytes = response.bytes().await.map_err(Error::Http)?;
+                let error_msg = String::from_utf8_lossy(&bytes);
+                Err(Error::api(status, error_msg.to_string()))
+            }
+        })
+        .await
     }
 
     /// Delete a UserFunction by label
     pub async fn delete_user_function(&self, label: &str, token: &str) -> Result<()> {
-        let url = self.base_url.join(&format!("/api/functions/{}", label))?;
+        let url = self.api_path_url(&["functions", label])?;
 
-        self.retry_policy
-            .execute(|| async {
-                let response = self
-                    .client
-                    .delete(url.clone())
-                    .header("Authorization", format!("Bearer {}", token))
-                    .header("Accept", "application/json")
-                    .send()
-                    .await?;
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .delete(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .send()
+                .await?;
 
-                if response.status().is_success() {
-                    Ok(())
-                } else {
-                    let status = response.status().as_u16();
-                    let bytes = response.bytes().await.map_err(Error::Http)?;
-                    let error_msg = String::from_utf8_lossy(&bytes);
-                    Err(Error::api(status, error_msg.to_string()))
-                }
-            })
+            if response.status().is_success() {
+                Ok(())
+            } else {
+                let status = response.status().as_u16();
+                let bytes = response.bytes().await.map_err(Error::Http)?;
+                let error_msg = String::from_utf8_lossy(&bytes);
+                Err(Error::api(status, error_msg.to_string()))
+            }
+        })
+        .await
+    }
+    // ── Goal CRUD ────────────────────────────────────────────────────────────
+
+    pub async fn goal_create(
+        &self,
+        data: serde_json::Value,
+        token: &str,
+    ) -> Result<serde_json::Value> {
+        let url = self.base_url.join("/api/chat/goals")?;
+        let response = self
+            .client
+            .post(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .json(&data)
+            .send()
+            .await?;
+        self.handle_response("/api/chat/goals", response).await
+    }
+
+    pub async fn goal_list(&self, token: &str) -> Result<serde_json::Value> {
+        let url = self.base_url.join("/api/chat/goals")?;
+        let response = self
+            .client
+            .get(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        self.handle_response("/api/chat/goals", response).await
+    }
+
+    pub async fn goal_get(&self, id: &str, token: &str) -> Result<serde_json::Value> {
+        let url = self.api_path_url(&["chat", "goals", id])?;
+        let response = self
+            .client
+            .get(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        self.handle_response("/api/chat/goals/{id}", response).await
+    }
+
+    pub async fn goal_update(
+        &self,
+        id: &str,
+        data: serde_json::Value,
+        token: &str,
+    ) -> Result<serde_json::Value> {
+        let url = self.api_path_url(&["chat", "goals", id])?;
+        let response = self
+            .client
+            .put(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .json(&data)
+            .send()
+            .await?;
+        self.handle_response("/api/chat/goals/{id}", response).await
+    }
+
+    pub async fn goal_delete(&self, id: &str, token: &str) -> Result<()> {
+        let url = self.api_path_url(&["chat", "goals", id])?;
+        let response = self
+            .client
+            .delete(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        self.handle_response::<serde_json::Value>("/api/chat/goals/{id}", response)
+            .await?;
+        Ok(())
+    }
+
+    pub async fn goal_search(&self, query: &str, token: &str) -> Result<serde_json::Value> {
+        let url = self.base_url.join("/api/chat/goals/search")?;
+        let response = self
+            .client
+            .get(url)
+            .query(&[("q", query)])
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        self.handle_response("/api/chat/goals/search", response)
             .await
     }
+
+    // ── Goal lifecycle ─────────────────────────────────────────────────────
+
+    pub async fn goal_complete(
+        &self,
+        id: &str,
+        data: serde_json::Value,
+        token: &str,
+    ) -> Result<serde_json::Value> {
+        let url = self.api_path_url(&["chat", "goals", id, "complete"])?;
+        let response = self
+            .client
+            .post(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .json(&data)
+            .send()
+            .await?;
+        self.handle_response("/api/chat/goals/{id}/complete", response)
+            .await
+    }
+
+    pub async fn goal_approve(&self, id: &str, token: &str) -> Result<serde_json::Value> {
+        let url = self.api_path_url(&["chat", "goals", id, "approve"])?;
+        let response = self
+            .client
+            .post(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        self.handle_response("/api/chat/goals/{id}/approve", response)
+            .await
+    }
+
+    pub async fn goal_reject(
+        &self,
+        id: &str,
+        data: serde_json::Value,
+        token: &str,
+    ) -> Result<serde_json::Value> {
+        let url = self.api_path_url(&["chat", "goals", id, "reject"])?;
+        let response = self
+            .client
+            .post(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .json(&data)
+            .send()
+            .await?;
+        self.handle_response("/api/chat/goals/{id}/reject", response)
+            .await
+    }
+
+    // ── Goal step lifecycle ──────────────────────────────────────────────────
+
+    pub async fn goal_step_start(
+        &self,
+        id: &str,
+        step_index: usize,
+        token: &str,
+    ) -> Result<serde_json::Value> {
+        let step_index_str = step_index.to_string();
+        let url = self.api_path_url(&["chat", "goals", id, "steps", &step_index_str, "start"])?;
+        let response = self
+            .client
+            .post(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        self.handle_response("/api/chat/goals/{id}/steps/{index}/start", response)
+            .await
+    }
+
+    pub async fn goal_step_complete(
+        &self,
+        id: &str,
+        step_index: usize,
+        data: serde_json::Value,
+        token: &str,
+    ) -> Result<serde_json::Value> {
+        let step_index_str = step_index.to_string();
+        let url =
+            self.api_path_url(&["chat", "goals", id, "steps", &step_index_str, "complete"])?;
+        let response = self
+            .client
+            .post(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .json(&data)
+            .send()
+            .await?;
+        self.handle_response("/api/chat/goals/{id}/steps/{index}/complete", response)
+            .await
+    }
+
+    pub async fn goal_step_fail(
+        &self,
+        id: &str,
+        step_index: usize,
+        data: serde_json::Value,
+        token: &str,
+    ) -> Result<serde_json::Value> {
+        let step_index_str = step_index.to_string();
+        let url = self.api_path_url(&["chat", "goals", id, "steps", &step_index_str, "fail"])?;
+        let response = self
+            .client
+            .post(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .json(&data)
+            .send()
+            .await?;
+        self.handle_response("/api/chat/goals/{id}/steps/{index}/fail", response)
+            .await
+    }
+
+    // ── Task CRUD ────────────────────────────────────────────────────────────
+
+    pub async fn task_create(
+        &self,
+        data: serde_json::Value,
+        token: &str,
+    ) -> Result<serde_json::Value> {
+        let url = self.base_url.join("/api/chat/tasks")?;
+        let response = self
+            .client
+            .post(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .json(&data)
+            .send()
+            .await?;
+        self.handle_response("/api/chat/tasks", response).await
+    }
+
+    pub async fn task_list(&self, token: &str) -> Result<serde_json::Value> {
+        let url = self.base_url.join("/api/chat/tasks")?;
+        let response = self
+            .client
+            .get(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        self.handle_response("/api/chat/tasks", response).await
+    }
+
+    pub async fn task_get(&self, id: &str, token: &str) -> Result<serde_json::Value> {
+        let url = self.api_path_url(&["chat", "tasks", id])?;
+        let response = self
+            .client
+            .get(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        self.handle_response("/api/chat/tasks/{id}", response).await
+    }
+
+    pub async fn task_update(
+        &self,
+        id: &str,
+        data: serde_json::Value,
+        token: &str,
+    ) -> Result<serde_json::Value> {
+        let url = self.api_path_url(&["chat", "tasks", id])?;
+        let response = self
+            .client
+            .put(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .json(&data)
+            .send()
+            .await?;
+        self.handle_response("/api/chat/tasks/{id}", response).await
+    }
+
+    pub async fn task_delete(&self, id: &str, token: &str) -> Result<()> {
+        let url = self.api_path_url(&["chat", "tasks", id])?;
+        let response = self
+            .client
+            .delete(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        self.handle_response::<serde_json::Value>("/api/chat/tasks/{id}", response)
+            .await?;
+        Ok(())
+    }
+
+    pub async fn task_due(&self, now: &str, token: &str) -> Result<serde_json::Value> {
+        let url = self.base_url.join("/api/chat/tasks/due")?;
+        let response = self
+            .client
+            .get(url)
+            .query(&[("now", now)])
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        self.handle_response("/api/chat/tasks/due", response).await
+    }
+
+    // ── Task lifecycle ─────────────────────────────────────────────────────
+
+    pub async fn task_start(&self, id: &str, token: &str) -> Result<serde_json::Value> {
+        let url = self.api_path_url(&["chat", "tasks", id, "start"])?;
+        let response = self
+            .client
+            .post(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        self.handle_response("/api/chat/tasks/{id}/start", response)
+            .await
+    }
+
+    pub async fn task_succeed(
+        &self,
+        id: &str,
+        data: serde_json::Value,
+        token: &str,
+    ) -> Result<serde_json::Value> {
+        let url = self.api_path_url(&["chat", "tasks", id, "succeed"])?;
+        let response = self
+            .client
+            .post(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .json(&data)
+            .send()
+            .await?;
+        self.handle_response("/api/chat/tasks/{id}/succeed", response)
+            .await
+    }
+
+    pub async fn task_fail(
+        &self,
+        id: &str,
+        data: serde_json::Value,
+        token: &str,
+    ) -> Result<serde_json::Value> {
+        let url = self.api_path_url(&["chat", "tasks", id, "fail"])?;
+        let response = self
+            .client
+            .post(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .json(&data)
+            .send()
+            .await?;
+        self.handle_response("/api/chat/tasks/{id}/fail", response)
+            .await
+    }
+
+    pub async fn task_pause(&self, id: &str, token: &str) -> Result<serde_json::Value> {
+        let url = self.api_path_url(&["chat", "tasks", id, "pause"])?;
+        let response = self
+            .client
+            .post(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        self.handle_response("/api/chat/tasks/{id}/pause", response)
+            .await
+    }
+
+    pub async fn task_resume(
+        &self,
+        id: &str,
+        data: serde_json::Value,
+        token: &str,
+    ) -> Result<serde_json::Value> {
+        let url = self.api_path_url(&["chat", "tasks", id, "resume"])?;
+        let response = self
+            .client
+            .post(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .json(&data)
+            .send()
+            .await?;
+        self.handle_response("/api/chat/tasks/{id}/resume", response)
+            .await
+    }
+
+    // ── Agent CRUD ───────────────────────────────────────────────────────────
+
+    pub async fn agent_create(
+        &self,
+        data: serde_json::Value,
+        token: &str,
+    ) -> Result<serde_json::Value> {
+        let url = self.base_url.join("/api/chat/agents")?;
+        let response = self
+            .client
+            .post(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .json(&data)
+            .send()
+            .await?;
+        self.handle_response("/api/chat/agents", response).await
+    }
+
+    pub async fn agent_list(&self, token: &str) -> Result<serde_json::Value> {
+        let url = self.base_url.join("/api/chat/agents")?;
+        let response = self
+            .client
+            .get(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        self.handle_response("/api/chat/agents", response).await
+    }
+
+    pub async fn agent_get(&self, id: &str, token: &str) -> Result<serde_json::Value> {
+        let url = self.api_path_url(&["chat", "agents", id])?;
+        let response = self
+            .client
+            .get(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        self.handle_response("/api/chat/agents/{id}", response)
+            .await
+    }
+
+    pub async fn agent_get_by_name(&self, name: &str, token: &str) -> Result<serde_json::Value> {
+        let url = self.api_path_url(&["chat", "agents", "by-name", name])?;
+        let response = self
+            .client
+            .get(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        self.handle_response("/api/chat/agents/by-name/{name}", response)
+            .await
+    }
+
+    pub async fn agent_update(
+        &self,
+        id: &str,
+        data: serde_json::Value,
+        token: &str,
+    ) -> Result<serde_json::Value> {
+        let url = self.api_path_url(&["chat", "agents", id])?;
+        let response = self
+            .client
+            .put(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .json(&data)
+            .send()
+            .await?;
+        self.handle_response("/api/chat/agents/{id}", response)
+            .await
+    }
+
+    pub async fn agent_delete(&self, id: &str, token: &str) -> Result<()> {
+        let url = self.api_path_url(&["chat", "agents", id])?;
+        let response = self
+            .client
+            .delete(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        self.handle_response::<serde_json::Value>("/api/chat/agents/{id}", response)
+            .await?;
+        Ok(())
+    }
+
+    pub async fn agents_by_deployment(
+        &self,
+        deployment_id: &str,
+        token: &str,
+    ) -> Result<serde_json::Value> {
+        let url = self.api_path_url(&["chat", "agents", "by-deployment", deployment_id])?;
+        let response = self
+            .client
+            .get(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        self.handle_response("/api/chat/agents/by-deployment/{id}", response)
+            .await
+    }
+
+    // ── Goal Template CRUD ─────────────────────────────────────────────────
+
+    pub async fn goal_template_create(
+        &self,
+        data: serde_json::Value,
+        token: &str,
+    ) -> Result<serde_json::Value> {
+        let url = self.base_url.join("/api/chat/goal-templates")?;
+        let response = self
+            .client
+            .post(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .json(&data)
+            .send()
+            .await?;
+        self.handle_response("/api/chat/goal-templates", response)
+            .await
+    }
+
+    pub async fn goal_template_list(&self, token: &str) -> Result<serde_json::Value> {
+        let url = self.base_url.join("/api/chat/goal-templates")?;
+        let response = self
+            .client
+            .get(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        self.handle_response("/api/chat/goal-templates", response)
+            .await
+    }
+
+    pub async fn goal_template_get(&self, id: &str, token: &str) -> Result<serde_json::Value> {
+        let url = self.api_path_url(&["chat", "goal-templates", id])?;
+        let response = self
+            .client
+            .get(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        self.handle_response("/api/chat/goal-templates/{id}", response)
+            .await
+    }
+
+    pub async fn goal_template_update(
+        &self,
+        id: &str,
+        data: serde_json::Value,
+        token: &str,
+    ) -> Result<serde_json::Value> {
+        let url = self.api_path_url(&["chat", "goal-templates", id])?;
+        let response = self
+            .client
+            .put(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .json(&data)
+            .send()
+            .await?;
+        self.handle_response("/api/chat/goal-templates/{id}", response)
+            .await
+    }
+
+    pub async fn goal_template_delete(&self, id: &str, token: &str) -> Result<()> {
+        let url = self.api_path_url(&["chat", "goal-templates", id])?;
+        let response = self
+            .client
+            .delete(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        self.handle_response::<serde_json::Value>("/api/chat/goal-templates/{id}", response)
+            .await?;
+        Ok(())
+    }
+
+    // ── KV Document Linking ─────────────────────────────────────────────────
+
+    pub async fn kv_get_links(&self, key: &str, token: &str) -> Result<serde_json::Value> {
+        let url = self.api_path_url(&["kv", "links", key])?;
+        let response = self
+            .client
+            .get(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        self.handle_response("/api/kv/links/{key}", response).await
+    }
+
+    pub async fn kv_link(
+        &self,
+        key: &str,
+        collection: &str,
+        document_id: &str,
+        token: &str,
+    ) -> Result<serde_json::Value> {
+        let url = self.base_url.join("/api/kv/link")?;
+        let body = serde_json::json!({
+            "key": key,
+            "collection": collection,
+            "document_id": document_id,
+        });
+        let response = self
+            .client
+            .post(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .json(&body)
+            .send()
+            .await?;
+        self.handle_response("/api/kv/link", response).await
+    }
+
+    pub async fn kv_unlink(
+        &self,
+        key: &str,
+        collection: &str,
+        document_id: &str,
+        token: &str,
+    ) -> Result<serde_json::Value> {
+        let url = self.base_url.join("/api/kv/unlink")?;
+        let body = serde_json::json!({
+            "key": key,
+            "collection": collection,
+            "document_id": document_id,
+        });
+        let response = self
+            .client
+            .post(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .json(&body)
+            .send()
+            .await?;
+        self.handle_response("/api/kv/unlink", response).await
+    }
+
+    // ── Schedule Management ─────────────────────────────────────────────────
+
+    pub async fn create_schedule(
+        &self,
+        data: serde_json::Value,
+        token: &str,
+    ) -> Result<serde_json::Value> {
+        let url = self.base_url.join("/api/schedules")?;
+        let response = self
+            .client
+            .post(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .json(&data)
+            .send()
+            .await?;
+        self.handle_response("/api/schedules", response).await
+    }
+
+    pub async fn list_schedules(&self, token: &str) -> Result<serde_json::Value> {
+        let url = self.base_url.join("/api/schedules")?;
+        let response = self
+            .client
+            .get(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        self.handle_response("/api/schedules", response).await
+    }
+
+    pub async fn get_schedule(&self, id: &str, token: &str) -> Result<serde_json::Value> {
+        let url = self.api_path_url(&["schedules", id])?;
+        let response = self
+            .client
+            .get(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        self.handle_response("/api/schedules/{id}", response).await
+    }
+
+    pub async fn update_schedule(
+        &self,
+        id: &str,
+        data: serde_json::Value,
+        token: &str,
+    ) -> Result<serde_json::Value> {
+        let url = self.api_path_url(&["schedules", id])?;
+        let response = self
+            .client
+            .put(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .json(&data)
+            .send()
+            .await?;
+        self.handle_response("/api/schedules/{id}", response).await
+    }
+
+    pub async fn delete_schedule(&self, id: &str, token: &str) -> Result<()> {
+        let url = self.api_path_url(&["schedules", id])?;
+        let response = self
+            .client
+            .delete(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        self.handle_response::<serde_json::Value>("/api/schedules/{id}", response)
+            .await?;
+        Ok(())
+    }
+
+    pub async fn pause_schedule(&self, id: &str, token: &str) -> Result<serde_json::Value> {
+        let url = self.api_path_url(&["schedules", id, "pause"])?;
+        let response = self
+            .client
+            .post(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        self.handle_response("/api/schedules/{id}/pause", response)
+            .await
+    }
+
+    pub async fn resume_schedule(&self, id: &str, token: &str) -> Result<serde_json::Value> {
+        let url = self.api_path_url(&["schedules", id, "resume"])?;
+        let response = self
+            .client
+            .post(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        self.handle_response("/api/schedules/{id}/resume", response)
+            .await
+    }
+}
+
+/// Extract the `"message"` or `"error"` field from a JSON error body,
+/// falling back to the raw string if parsing fails.
+fn extract_error_message(body: &str) -> String {
+    serde_json::from_str::<serde_json::Value>(body)
+        .ok()
+        .and_then(|v| {
+            v.get("message")
+                .or_else(|| v.get("error"))
+                .and_then(|m| m.as_str())
+                .map(str::to_owned)
+        })
+        .unwrap_or_else(|| body.to_string())
 }
 
 #[derive(Deserialize, Serialize)]
 struct ErrorResponse {
     code: u16,
     message: String,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::Arc;
+    use std::sync::atomic::{AtomicU32, Ordering};
+
+    fn test_client(should_retry: bool, max_retries: u32) -> HttpClient {
+        HttpClient::new(
+            "http://localhost:9",
+            Duration::from_millis(50),
+            max_retries,
+            should_retry,
+            SerializationFormat::Json,
+        )
+        .expect("client builds")
+    }
+
+    /// With `should_retry(false)`, `execute_with_retry` must invoke the
+    /// operation exactly once even when the error is retryable — the
+    /// retry policy is bypassed entirely.
+    #[tokio::test]
+    async fn test_execute_with_retry_disabled_does_not_retry() {
+        let client = test_client(false, 5);
+        let calls = Arc::new(AtomicU32::new(0));
+        let calls_clone = calls.clone();
+
+        let result: Result<()> = client
+            .execute_with_retry(move || {
+                let calls = calls_clone.clone();
+                async move {
+                    calls.fetch_add(1, Ordering::SeqCst);
+                    // Timeout is retryable; if the gate were ignored this
+                    // would be retried up to max_retries times.
+                    Err(Error::Timeout)
+                }
+            })
+            .await;
+
+        assert!(matches!(result, Err(Error::Timeout)));
+        assert_eq!(
+            calls.load(Ordering::SeqCst),
+            1,
+            "should_retry(false) must not retry a retryable error"
+        );
+    }
+
+    /// With `should_retry(true)`, a retryable error is retried and the
+    /// operation eventually succeeds — the closure runs more than once.
+    #[tokio::test]
+    async fn test_execute_with_retry_enabled_retries_until_success() {
+        let client = test_client(true, 5);
+        let calls = Arc::new(AtomicU32::new(0));
+        let calls_clone = calls.clone();
+
+        let result: Result<u32> = client
+            .execute_with_retry(move || {
+                let calls = calls_clone.clone();
+                async move {
+                    let n = calls.fetch_add(1, Ordering::SeqCst) + 1;
+                    if n < 2 {
+                        // Connection error is retryable.
+                        Err(Error::Connection("transient".to_string()))
+                    } else {
+                        Ok(n)
+                    }
+                }
+            })
+            .await;
+
+        assert_eq!(result.expect("eventually succeeds"), 2);
+        assert_eq!(
+            calls.load(Ordering::SeqCst),
+            2,
+            "should_retry(true) must retry the retryable error once before succeeding"
+        );
+    }
+
+    /// With `should_retry(true)`, a non-retryable error surfaces immediately
+    /// without extra attempts.
+    #[tokio::test]
+    async fn test_execute_with_retry_enabled_passes_through_non_retryable() {
+        let client = test_client(true, 5);
+        let calls = Arc::new(AtomicU32::new(0));
+        let calls_clone = calls.clone();
+
+        let result: Result<()> = client
+            .execute_with_retry(move || {
+                let calls = calls_clone.clone();
+                async move {
+                    calls.fetch_add(1, Ordering::SeqCst);
+                    Err(Error::NotFound)
+                }
+            })
+            .await;
+
+        assert!(matches!(result, Err(Error::NotFound)));
+        assert_eq!(calls.load(Ordering::SeqCst), 1);
+    }
+
+    // ── URL path-segment encoding (regression for the raw-format! path bug) ──
+    //
+    // Before the fix, `format!("/api/kv/get/{}", key)` spliced caller-supplied
+    // segments straight into the path, so a KV key like `session/abc` became two
+    // path segments (`/api/kv/get/session/abc`) and 404'd on the server. Routing
+    // every segment through `api_path_url` percent-encodes each one, so a `/`
+    // inside a single logical segment becomes `%2F` and stays one segment.
+
+    #[test]
+    fn test_api_path_url_encodes_slash_in_kv_key() {
+        let client = test_client(false, 0);
+        let url = client
+            .api_path_url(&["kv", "get", "session/abc"])
+            .expect("builds url");
+        // The `/` in the key must be percent-encoded so it is a single segment,
+        // NOT split into `/session/abc`.
+        assert_eq!(url.path(), "/api/kv/get/session%2Fabc");
+        assert_ne!(url.path(), "/api/kv/get/session/abc");
+    }
+
+    #[test]
+    fn test_api_path_url_encodes_space_in_collection() {
+        let client = test_client(false, 0);
+        let url = client
+            .api_path_url(&["find", "my collection"])
+            .expect("builds url");
+        // A space in a path segment encodes to `%20` (path encoding), not `+`
+        // (which is what a query-string encoder would produce).
+        assert_eq!(url.path(), "/api/find/my%20collection");
+        assert!(!url.path().contains('+'));
+    }
+
+    #[test]
+    fn test_api_path_url_normal_segments_unchanged() {
+        let client = test_client(false, 0);
+        // Normal segments (no reserved characters) must produce the exact same
+        // URL the old `base_url.join("/api/find/users/123")` produced.
+        let url = client
+            .api_path_url(&["find", "users", "123"])
+            .expect("builds url");
+        assert_eq!(url.path(), "/api/find/users/123");
+        assert_eq!(url.as_str(), "http://localhost:9/api/find/users/123");
+
+        let joined = client
+            .base_url
+            .join("/api/find/users/123")
+            .expect("join works");
+        assert_eq!(url, joined);
+    }
+
+    #[test]
+    fn test_api_path_url_encodes_multiple_reserved_chars() {
+        let client = test_client(false, 0);
+        // KV keys are fully arbitrary: `/`, `?`, `#`, and space must all be
+        // encoded so they cannot be misread as path separators or the start of
+        // a query/fragment.
+        let url = client
+            .api_path_url(&["kv", "set", "a/b?c#d e"])
+            .expect("builds url");
+        assert_eq!(url.path(), "/api/kv/set/a%2Fb%3Fc%23d%20e");
+        // No query or fragment leaked out of the key.
+        assert!(url.query().is_none());
+        assert!(url.fragment().is_none());
+    }
+
+    #[test]
+    fn test_api_path_url_encodes_slash_in_function_label() {
+        let client = test_client(false, 0);
+        // Function labels are caller-supplied and may contain `/`; it must be
+        // percent-encoded so the label stays a single path segment instead of
+        // splitting `/api/functions/my/label` into two.
+        let url = client
+            .api_path_url(&["functions", "my/label"])
+            .expect("builds url");
+        assert_eq!(url.path(), "/api/functions/my%2Flabel");
+        assert_ne!(url.path(), "/api/functions/my/label");
+    }
+
+    #[test]
+    fn test_api_path_url_encodes_slash_in_chat_model_name() {
+        let client = test_client(false, 0);
+        // Chat model names like `anthropic/claude` contain a `/` that must be
+        // encoded so the model stays one segment under `/api/chat_models/`.
+        let url = client
+            .api_path_url(&["chat_models", "anthropic/claude"])
+            .expect("builds url");
+        assert_eq!(url.path(), "/api/chat_models/anthropic%2Fclaude");
+        assert_ne!(url.path(), "/api/chat_models/anthropic/claude");
+    }
 }

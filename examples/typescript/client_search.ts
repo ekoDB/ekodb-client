@@ -5,10 +5,16 @@
  * - Full-text search with fuzzy matching
  * - Vector/semantic search
  * - Hybrid search combining text and vectors
+ * - Vector search with a metadata pre-filter
  * - Field weighting and boosting
  */
 
-import { EkoDBClient, SearchQueryBuilder } from "@ekodb/ekodb-client";
+import {
+  EkoDBClient,
+  SearchQueryBuilder,
+  QueryBuilder,
+  getValue,
+} from "@ekodb/ekodb-client";
 import * as dotenv from "dotenv";
 
 dotenv.config();
@@ -78,10 +84,12 @@ async function main() {
     skills: ["Python", "TensorFlow", "PyTorch", "Machine Learning"],
   });
 
-  // Insert documents with vector embeddings for vector/hybrid search
+  // Insert documents with vector embeddings for vector/hybrid search.
+  // The `category` field is used to demonstrate metadata pre-filtering.
   await client.insert(documentsCollection, {
     title: "Introduction to Machine Learning",
     content: "Machine learning is a subset of artificial intelligence...",
+    category: "ml",
     embedding: {
       type: "Vector",
       value: Array.from({ length: 384 }, () => Math.random()),
@@ -91,6 +99,7 @@ async function main() {
   await client.insert(documentsCollection, {
     title: "Deep Learning Fundamentals",
     content: "Deep learning uses neural networks with multiple layers...",
+    category: "ml",
     embedding: {
       type: "Vector",
       value: Array.from({ length: 384 }, () => Math.random()),
@@ -100,6 +109,7 @@ async function main() {
   await client.insert(documentsCollection, {
     title: "Natural Language Processing",
     content: "NLP enables computers to understand human language...",
+    category: "nlp",
     embedding: {
       type: "Vector",
       value: Array.from({ length: 384 }, () => Math.random()),
@@ -255,6 +265,29 @@ async function main() {
     console.log(
       `  ${i + 1}. Score: ${result.score.toFixed(3)}, Matched: ${result.matched_fields.join(", ")}`,
     );
+  });
+  console.log();
+
+  // Example 9: Vector search with a metadata pre-filter
+  console.log("9. Vector search with a metadata pre-filter (category = ml):");
+  const mlFilter = new QueryBuilder().eq("category", "ml").build().filter;
+  const search9 = new SearchQueryBuilder("")
+    .vector(queryVector)
+    .vectorField("embedding")
+    .vectorMetric("cosine")
+    .vectorK(10)
+    .vectorThreshold(0.0)
+    .filters(mlFilter) // only "ml" documents are candidates
+    .build();
+
+  const results9 = await client.search(documentsCollection, search9);
+  console.log(
+    `Found ${results9.total} documents in category "ml" (NLP excluded)`,
+  );
+  results9.results.forEach((result, i) => {
+    const title = getValue(result.record.title);
+    const category = getValue(result.record.category);
+    console.log(`  ${i + 1}. ${title} (category: ${category})`);
   });
   console.log();
 

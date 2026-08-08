@@ -20,6 +20,14 @@ def test_client_creation(client):
     assert client is not None
 
 
+def test_kv_clear_method_exposed(client):
+    """kv_clear must be exposed on the client (PyO3 binding parity with the
+    other SDKs). HTTP behavior is covered by the Rust client's
+    test_kv_clear_success; this guards the binding surface."""
+    assert hasattr(client, "kv_clear")
+    assert callable(client.kv_clear)
+
+
 # Note: The following tests would require mocking the HTTP layer
 # Since Python client uses Rust via PyO3, we need proper integration tests
 # with a running server or a more sophisticated mocking strategy.

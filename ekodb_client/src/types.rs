@@ -34,6 +34,7 @@ pub enum NumberValue {
 /// Field type representing all supported data types in ekoDB
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
+#[allow(clippy::upper_case_acronyms)]
 pub enum FieldType {
     /// String value
     String(String),
@@ -308,8 +309,6 @@ pub enum QueryOperator {
     /// Not in array
     #[serde(rename = "NotIn")]
     Nin(Vec<FieldType>),
-    /// Regex match
-    Regex(String),
     /// Exists
     Exists(bool),
 }
@@ -520,7 +519,7 @@ mod tests {
 
     #[test]
     fn test_field_type_float() {
-        let field: FieldType = 3.14f64.into();
+        let field: FieldType = 3.15f64.into();
         assert!(matches!(field, FieldType::Float(_)));
     }
 
@@ -559,7 +558,7 @@ mod tests {
 
     #[test]
     fn test_number_value_float() {
-        let num = NumberValue::Float(3.14);
+        let num = NumberValue::Float(3.15);
         assert!(matches!(num, NumberValue::Float(_)));
     }
 
@@ -616,12 +615,6 @@ mod tests {
     fn test_query_operator_nin() {
         let op = QueryOperator::Nin(vec![FieldType::Integer(1), FieldType::Integer(2)]);
         assert!(matches!(op, QueryOperator::Nin(_)));
-    }
-
-    #[test]
-    fn test_query_operator_regex() {
-        let op = QueryOperator::Regex("^test".to_string());
-        assert!(matches!(op, QueryOperator::Regex(_)));
     }
 
     #[test]

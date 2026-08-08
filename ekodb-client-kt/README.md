@@ -35,7 +35,7 @@ integration, and automatic optimization.
 
 ```kotlin
 dependencies {
-    implementation("io.ekodb:ekodb-client-kt:0.10.0")
+    implementation("io.ekodb:ekodb-client-kt:0.25.0")
 }
 ```
 
@@ -43,7 +43,7 @@ dependencies {
 
 ```groovy
 dependencies {
-    implementation 'io.ekodb:ekodb-client-kt:0.10.0'
+    implementation 'io.ekodb:ekodb-client-kt:0.25.0'
 }
 ```
 
@@ -53,7 +53,7 @@ dependencies {
 <dependency>
     <groupId>io.ekodb</groupId>
     <artifactId>ekodb-client-kt</artifactId>
-    <version>0.10.0</version>
+    <version>0.25.0</version>
 </dependency>
 ```
 
@@ -153,7 +153,7 @@ val results = client.find("users", query)
 // Complex queries with sorting and pagination
 val complexQuery = QueryBuilder.new()
     .inArray("status", listOf("active", "pending"))
-    .regex("email", ".*@example\\.com$")
+    .endsWith("email", "@example.com")
     .sortDesc("created_at")
     .limit(20)
     .skip(0)
@@ -332,7 +332,7 @@ import kotlinx.serialization.json.putJsonArray
 // Create a chat session
 val sessionRequest = buildJsonObject {
     put("provider", "openai")
-    put("model", "gpt-4")
+    put("model", "gpt-4.1")
     put("system_prompt", "You are a helpful assistant.")
     putJsonArray("collections") {
         add(buildJsonObject {
@@ -422,11 +422,18 @@ For complete, runnable examples of all features, see the
 - `.lte(field, value)` - Less than or equal
 - `.inArray(field, values)` - In array
 - `.nin(field, values)` - Not in array
-- `.regex(field, pattern)` - Regex match
 - `.contains(field, substring)` - Contains substring
+- `.startsWith(field, prefix)` - String starts with prefix
+- `.endsWith(field, suffix)` - String ends with suffix
+- `.and(conditions)` / `.or(conditions)` - Combine conditions with AND / OR
+- `.not(condition)` - Negate a condition
+- `QueryBuilder.condition(field, operator, value)` - Build a standalone
+  condition for use with `.and` / `.or` / `.not`
+- `.rawFilter(filter)` - Add a pre-built filter expression
 - `.sortAsc(field)` / `.sortDesc(field)` - Sorting
 - `.sortAscending(field)` / `.sortDescending(field)` - Sorting (aliases)
 - `.limit(n)` / `.skip(n)` - Pagination
+- `.page(page, pageSize)` - Pagination by zero-based page number
 - `.join(joinConfig)` - Add join configuration
 - `.joinWith(collection, localField, foreignField, alias)` - Simple join helper
 - `.build()` - Build the query
@@ -437,10 +444,13 @@ For complete, runnable examples of all features, see the
 - `kvSetWithTtl(key, value, ttl)` - Set with expiration
 - `kvGet(key)` - Get value by key
 - `kvDelete(key)` - Delete a key
+- `kvClear()` - Clear the entire KV store
 
 #### Collection Operations
 
 - `listCollections()` - List all collections
+- `listUserCollections()` - List collections excluding internal chat/system
+  collections
 - `count(collection)` - Count documents in collection
 - `collectionExists(collection)` - Check if collection exists
 - `deleteCollection(collection)` - Delete entire collection
@@ -451,12 +461,49 @@ For complete, runnable examples of all features, see the
 
 - `search(collection, query)` - Full-text search across collection
 
+#### Transactions
+
+Buffered, read-your-writes transactions. Statements issued with a
+`transactionId` are staged and applied atomically at commit.
+
+- `beginTransaction(isolationLevel?)` - Start a transaction, returns its id
+- `commitTransaction(transactionId)` - Apply staged writes (may return a
+  retryable HTTP 409 conflict)
+- `rollbackTransaction(transactionId)` - Discard staged writes
+- `createSavepoint(transactionId, name)` - Create a savepoint
+- `rollbackToSavepoint(transactionId, name)` - Roll back to a savepoint
+- `releaseSavepoint(transactionId, name)` - Release a savepoint
+
+Pass the `transactionId` parameter on reads/writes (insert / update / delete /
+find / findById) to read and write within the transaction (read-your-writes).
+
 #### WebSocket Operations
 
 - `websocket(wsUrl)` - Create WebSocket client
-- WebSocket client methods:
-  - `find(collection, query)` - Query via WebSocket
-  - `close()` - Close WebSocket connection
+- WebSocket client methods (full CRUD, 14 methods):
+  - `findAll(collection)` - Get all records
+  - `insert(collection, record, bypassRipple?)` - Insert record
+  - `query(collection, filter?, sort?, limit?, skip?)` - Query
+  - `findById(collection, id)` - Find by ID
+  - `update(collection, id, record, bypassRipple?)` - Update
+  - `delete(collection, id, bypassRipple?)` - Delete
+  - `batchInsert(collection, records, bypassRipple?)` - Batch insert
+  - `batchUpdate(collection, updates, bypassRipple?)` - Batch update
+  - `batchDelete(collection, ids, bypassRipple?)` - Batch delete
+  - `textSearch(collection, query, fields?, limit?)` - Full-text search
+  - `distinctValues(collection, field, filter?)` - Distinct values
+  - `updateWithAction(collection, id, action, field, value?)` - Atomic op
+  - `createCollection(name, schema?)` - Create collection
+  - `listCollections()` - List collections
+  - `deleteCollection(name)` - Delete collection
+  - `subscribe(collection, ...)` - Subscribe to mutation notifications
+  - `unsubscribe(collection)` - Tear down a subscription
+  - `cancelChat(chatId)` - Cancel an in-flight streaming chat
+  - `close()` - Close connection
+- Schema cache:
+  - `SchemaCache(enabled, maxEntries, ttlMs)` - LRU cache
+  - `extractRecordId(record, extraCandidates)` - Alias-aware ID extraction
+  - `ws.extractId(collection, record)` - Cache-aware extraction
 
 #### AI/Chat Operations
 
@@ -531,6 +578,72 @@ try {
 - Kotlin 1.9.22 or higher
 - JVM 17 or higher
 - Coroutines support
+
+### Goals, Tasks, and Agents
+
+```kotlin
+import io.ekodb.client.EkoDBClient
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
+import kotlinx.coroutines.runBlocking
+
+fun main() = runBlocking {
+    val client = EkoDBClient.builder()
+        .baseUrl("http://localhost:8080")
+        .apiKey("your-api-key")
+        .build()
+
+    // Goals
+    val goal = client.goalCreate(buildJsonObject {
+        put("title", "Migrate data")
+        put("status", "active")
+    })
+    val goals = client.goalList()
+    client.goalComplete("goal-id", buildJsonObject { put("summary", "Done") })
+
+    // Agents
+    val agent = client.agentCreate(buildJsonObject {
+        put("name", "processor")
+        put("model", "gpt-4.1")
+    })
+
+    client.close()
+}
+```
+
+### Schedules
+
+```kotlin
+// Create a schedule
+val sched = client.createSchedule(buildJsonObject {
+    put("name", "nightly")
+    put("cron", "0 2 * * *")
+})
+
+// Pause a schedule
+client.pauseSchedule("sched-id")
+```
+
+### WebSocket Chat Streaming
+
+```kotlin
+import io.ekodb.client.types.ChatStreamEvent
+import kotlinx.coroutines.flow.collect
+
+val ws = client.webSocket("ws://localhost:8080")
+
+val events = ws.chatSend(chatId, "What is the capital of France?")
+events.collect { event ->
+    when (event) {
+        is ChatStreamEvent.Chunk -> print(event.content)
+        is ChatStreamEvent.End -> println("\nDone (context: ${event.contextWindow} tokens)")
+        is ChatStreamEvent.ToolCall -> ws.sendToolResult(chatId, event.callId, true, result)
+        is ChatStreamEvent.Error -> println("Error: ${event.error}")
+    }
+}
+
+ws.close()
+```
 
 ## License
 

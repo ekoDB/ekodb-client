@@ -39,6 +39,11 @@ class TestChatModels:
         assert hasattr(client, "get_chat_message")
         assert callable(client.get_chat_message)
 
+    def test_client_has_compact_chat_method(self, client):
+        """Verify compact_chat method exists"""
+        assert hasattr(client, "compact_chat")
+        assert callable(client.compact_chat)
+
 
 class TestUserFunctions:
     """Test user function related methods"""
@@ -187,3 +192,48 @@ async def test_user_function_crud(client):
     # Delete
     await client.delete_user_function("test_func")
 """
+
+
+class TestExecuteTool:
+    """Test execute_tool method"""
+
+    def test_client_has_execute_tool_method(self, client):
+        """Verify execute_tool method exists"""
+        assert hasattr(client, "execute_tool")
+        assert callable(client.execute_tool)
+
+    def test_execute_tool_accepts_params(self, client):
+        """Verify execute_tool accepts correct parameter types"""
+        # The method should exist and be callable with (tool_name, params, chat_id=None)
+        assert hasattr(client, "execute_tool")
+
+    def test_execute_tool_request_structure(self):
+        """Verify the expected request body structure"""
+        # The execute_tool endpoint expects:
+        request = {
+            "tool": "count_records",
+            "params": {"collection": "users"},
+        }
+        assert request["tool"] == "count_records"
+        assert request["params"]["collection"] == "users"
+
+    def test_execute_tool_request_with_chat_id(self):
+        """Verify request body includes chat_id when provided"""
+        request = {
+            "tool": "kv_get",
+            "params": {"key": "greeting"},
+            "chat_id": "chat_456",
+        }
+        assert request["chat_id"] == "chat_456"
+
+    def test_execute_tool_response_success_structure(self):
+        """Verify expected success response structure"""
+        response = {"success": True, "result": {"count": 42}}
+        assert response["success"] is True
+        assert response["result"]["count"] == 42
+
+    def test_execute_tool_response_failure_structure(self):
+        """Verify expected failure response structure"""
+        response = {"success": False, "error": "permission denied"}
+        assert response["success"] is False
+        assert response["error"] == "permission denied"

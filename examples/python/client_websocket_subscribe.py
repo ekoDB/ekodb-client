@@ -58,7 +58,7 @@ async def main():
     headers = {"Authorization": f"Bearer {token}"}
 
     async with websockets.connect(
-        f"{WS_URL}/api/ws", extra_headers=headers
+        f"{WS_URL}/api/ws", additional_headers=headers
     ) as websocket:
         print("✓ WebSocket connected")
 

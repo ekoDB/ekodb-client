@@ -44,7 +44,7 @@ async function main() {
         },
       ],
       llm_provider: "openai",
-      llm_model: "gpt-4",
+      llm_model: "gpt-4o-mini",
       system_prompt: "You are a helpful product assistant.",
     });
     const chatId = session.chat_id;
@@ -130,7 +130,7 @@ async function main() {
         },
       ],
       llm_provider: "openai",
-      llm_model: "gpt-4",
+      llm_model: "gpt-4o-mini",
     });
     const chatId2 = session2.chat_id;
     console.log(`✓ Created second session: ${chatId2}`);

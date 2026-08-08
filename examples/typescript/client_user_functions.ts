@@ -2,7 +2,7 @@
  * User Functions API Example - Using @ekodb/ekodb-client library
  *
  * This example demonstrates CRUD operations for User Functions.
- * User Functions are reusable sequences of Functions that can be called by Scripts.
+ * User Functions are reusable sequences of Functions that can be called by functions.
  */
 
 import { EkoDBClient, UserFunction } from "@ekodb/ekodb-client";
@@ -39,7 +39,17 @@ async function main() {
     const funcId = await client.saveUserFunction(userFunc);
     console.log(`Created user function with ID: ${funcId}`);
   } catch (error) {
-    console.log(`SaveUserFunction error: ${error}`);
+    const message = error instanceof Error ? error.message : String(error);
+    if (message.includes("status 409") || message.includes("already exists")) {
+      // Function already exists from a previous run — update it in place so the
+      // example is idempotent and the create/update paths both get exercised.
+      await client.updateUserFunction(userFunc.label, userFunc);
+      console.log(
+        `Function '${userFunc.label}' already existed — updated instead`,
+      );
+    } else {
+      throw error;
+    }
   }
 
   // Example 2: Get User Function by label
