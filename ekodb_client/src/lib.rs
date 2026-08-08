@@ -44,6 +44,7 @@ pub mod chat;
 pub mod client;
 pub mod error;
 pub mod functions;
+pub mod health;
 mod http;
 mod join;
 pub mod options;
@@ -51,39 +52,48 @@ mod query;
 mod query_builder;
 pub mod retry;
 pub mod schema;
+pub mod schema_cache;
 pub mod search;
 pub mod types;
 mod utils;
-mod websocket;
+pub mod websocket;
 
 // Public API exports
 pub use auth::*;
 pub use batch::BatchBuilder;
 pub use chat::{
-    ChatMessageRequest, ChatRequest, ChatResponse, ChatSession, ChatSessionResponse,
-    CollectionConfig, ContextSnippet, CreateChatSessionRequest, FieldSearchOptions,
-    GetMessagesQuery, GetMessagesResponse, ListSessionsQuery, ListSessionsResponse,
-    MergeSessionsRequest, MergeStrategy, Models, TextSearchOptions as ChatTextSearchOptions,
-    ToggleForgottenRequest, TokenUsage, UpdateMessageRequest, UpdateSessionRequest,
+    Attachment, ChatMessageRequest, ChatRequest, ChatResponse, ChatSession, ChatSessionResponse,
+    ClientToolDef, CollectionConfig, CompactChatRequest, CompactChatResponse, ContextSnippet,
+    CreateChatSessionRequest, EmbedRequest, EmbedResponse, FieldSearchOptions, GetMessagesQuery,
+    GetMessagesResponse, ListSessionsQuery, ListSessionsResponse, MergeSessionsRequest,
+    MergeStrategy, Models, RawCompletionRequest, RawCompletionResponse,
+    TextSearchOptions as ChatTextSearchOptions, ToggleForgottenRequest, TokenUsage, ToolChoice,
+    ToolConfig, UpdateMessageRequest, UpdateSessionRequest,
 };
 pub use client::{Client, ClientBuilder, RateLimitInfo};
 pub use error::{Error, Result};
 pub use functions::{
-    ChatMessage, Function, FunctionResult, FunctionStats, GroupFunctionConfig, GroupFunctionOp,
-    ParameterDefinition, Script, ScriptCondition, SortFieldConfig, StageStats, UserFunction,
+    ChatMessage, Function, FunctionCondition, FunctionResult, FunctionStats, GroupFunctionConfig,
+    GroupFunctionOp, ParameterDefinition, SortFieldConfig, StageStats, UserFunction, parameter_ref,
+};
+pub use health::{
+    HEALTH_DEGRADED, HEALTH_OK, HEALTH_UNKNOWN, HealthState, HealthStatus, parse_health_status,
 };
 pub use join::JoinConfig;
 pub use query_builder::{QueryBuilder, SortOrder};
 pub use schema::{
     CollectionMetadata, DistanceMetric, FieldTypeSchema, IndexConfig, Schema, VectorIndexAlgorithm,
 };
-pub use search::{SearchQuery, SearchResponse, SearchResult};
+pub use schema_cache::{CachedSchema, SchemaCache, SchemaCacheConfig};
+pub use search::{
+    DistinctValuesQuery, DistinctValuesResponse, SearchQuery, SearchResponse, SearchResult,
+};
 pub use types::{FieldType, NumberValue, Query, QueryOperator, Record, SerializationFormat};
 pub use utils::{
-    extract_record, get_array_value, get_binary_value, get_bool_value, get_bytes_value,
-    get_datetime_value, get_decimal_value, get_duration_value, get_float_value, get_int_value,
-    get_object_value, get_set_value, get_string_value, get_uuid_value, get_value, get_values,
-    get_vector_value,
+    extract_record, extract_record_id, get_array_value, get_binary_value, get_bool_value,
+    get_bytes_value, get_datetime_value, get_decimal_value, get_duration_value, get_float_value,
+    get_int_value, get_object_value, get_set_value, get_string_value, get_uuid_value, get_value,
+    get_values, get_vector_value,
 };
 pub use websocket::WebSocketClient;
 

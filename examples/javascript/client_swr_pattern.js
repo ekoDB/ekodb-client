@@ -13,6 +13,30 @@ require("dotenv").config();
 const BASE_URL = process.env.API_BASE_URL || "http://localhost:8080";
 const API_KEY = process.env.API_BASE_KEY || "a-test-api-key-from-ekodb";
 
+/**
+ * Save a function idempotently.
+ *
+ * The server returns HTTP 409 ("A function with label 'X' already exists.")
+ * when a function with the same fixed label already exists. On that error we
+ * UPDATE the existing function via PUT /api/functions/{label} (the server's
+ * GET/PUT/DELETE routes accept either the encrypted ID or the label), then
+ * resolve and return its encrypted ID so the rest of the example keeps working.
+ * Any other error is propagated.
+ */
+async function saveOrUpdate(client, script) {
+  try {
+    return await client.saveFunction(script);
+  } catch (error) {
+    if (error.message && error.message.includes("already exists")) {
+      await client.updateFunction(script.label, script);
+      console.log(`ℹ️  Function '${script.label}' already existed — updated instead`);
+      const existing = await client.getFunction(script.label);
+      return existing.id;
+    }
+    throw error;
+  }
+}
+
 async function main() {
   const client = new EkoDBClient(BASE_URL, API_KEY);
   await client.init();
@@ -74,11 +98,11 @@ async function main() {
     ],
   };
 
-  const scriptId = await client.saveScript(swrScript);
+  const scriptId = await saveOrUpdate(client, swrScript);
   console.log(`✓ Created SWR script: ${swrScript.label} (${scriptId})\n`);
 
   console.log("Step 2: First call - Cache miss, fetches from API");
-  const result1 = await client.callScript("fetch_api_user_js", {
+  const result1 = await client.callFunction("fetch_api_user_js", {
     user_id: "1",
     ttl: 300,
   });
@@ -87,7 +111,7 @@ async function main() {
 
   console.log("Step 3: Second call - Cache hit, instant response from ekoDB");
   const start = Date.now();
-  await client.callScript("fetch_api_user_js", { user_id: "1" });
+  await client.callFunction("fetch_api_user_js", { user_id: "1" });
   const duration = Date.now() - start;
   console.log(`Response time: ${duration}ms (served from cache)`);
   console.log("✓ Lightning fast cache hit\n");
@@ -95,7 +119,7 @@ async function main() {
   // Cleanup
   console.log("🧹 Cleaning up...");
   try {
-    await client.deleteScript(scriptId);
+    await client.deleteFunction(scriptId);
     await client.deleteCollection("user_cache_js");
   } catch (e) {
     // Ignore cleanup errors

@@ -23,19 +23,31 @@ BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8080")
 API_KEY = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb")
 
 
+def _is_already_exists_error(err):
+    """Detect the server's 409 'function already exists' response."""
+    msg = str(err)
+    return "409" in msg or "already exists" in msg
+
+
+async def save_or_update(client, script):
+    """Save a function, falling back to an update if its label already exists."""
+    label = script["label"]
+    try:
+        return await client.save_function(script)
+    except Exception as e:
+        if not _is_already_exists_error(e):
+            raise
+        await client.update_function(label, script)
+        print(f"ℹ️  Function '{label}' already existed — updated instead")
+        return label
+
+
 async def main():
     from ekodb_client import Client, Stage
 
     client = Client.new(BASE_URL, API_KEY)
 
-    # Cleanup any stale collections from previous runs
-    try:
-        await client.delete_collection("user_cache_py")
-    except Exception:
-        pass
-
-    # Create collection without schema to allow any data structure
-    await client.create_collection("user_cache_py", None)
+    # This SWR example uses KV operations (kv_get/kv_set) — no collection needed
 
     print("=== ekoDB SWR (Stale-While-Revalidate) Pattern ===\n")
 
@@ -98,11 +110,11 @@ async def main():
         ],
     }
 
-    script_id = await client.save_script(swr_script)
+    script_id = await save_or_update(client, swr_script)
     print(f"✓ Created SWR script: {swr_script['label']} ({script_id})\n")
 
     print("Step 2: First call - Cache miss, fetches from API")
-    result1 = await client.call_script(
+    result1 = await client.call_function(
         "fetch_api_user_py",
         {
             "user_id": "1",
@@ -115,18 +127,19 @@ async def main():
 
     print("Step 3: Second call - Cache hit, instant response from ekoDB")
     start = time.time()
-    result2 = await client.call_script(
+    result2 = await client.call_function(
         "fetch_api_user_py",
         {"user_id": "1", "cached_at": datetime.now().isoformat()},
     )
     duration = (time.time() - start) * 1000
     print(f"Response time: {duration:.0f}ms (served from cache)")
+    print(f"Result: {json.dumps(result2, indent=2)}")
     print("✓ Lightning fast cache hit\n")
 
     # Cleanup
     print("🧹 Cleaning up...")
     try:
-        await client.delete_script(script_id)
+        await client.delete_function(script_id)
         await client.delete_collection("user_cache_py")
     except Exception:
         pass

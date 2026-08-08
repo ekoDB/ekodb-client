@@ -6,6 +6,43 @@
 use crate::types::Record;
 use serde::{Deserialize, Serialize};
 
+/// Controls how the LLM decides whether to use tools
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum ToolChoice {
+    /// LLM decides whether to use tools (default)
+    Auto,
+    /// Never use tools, text response only
+    None,
+    /// Must use at least one tool
+    Required,
+    /// Force use of a specific tool by name
+    Tool { name: String },
+}
+
+/// Configuration for which tools are available in a chat session
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct ToolConfig {
+    /// Enable/disable all tools (master switch)
+    #[serde(default)]
+    pub enabled: bool,
+    /// Specific tools to enable (if None, all tools enabled when enabled=true)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub allowed_tools: Option<Vec<String>>,
+    /// Collections the tools can access (if None, uses session's collections)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub allowed_collections: Option<Vec<String>>,
+    /// Maximum iterations for tool calling loop
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_iterations: Option<u32>,
+    /// Whether tools can perform write operations
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub allow_write_operations: Option<bool>,
+    /// Controls how the LLM decides whether to use tools
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tool_choice: Option<ToolChoice>,
+}
+
 /// Available LLM models from different providers
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Models {
@@ -131,6 +168,8 @@ pub struct CreateChatSessionRequest {
     pub llm_model: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub system_prompt: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agent_id: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub bypass_ripple: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -139,6 +178,12 @@ pub struct CreateChatSessionRequest {
     pub branch_point_idx: Option<usize>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub max_context_messages: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub max_tokens: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub temperature: Option<f32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tool_config: Option<ToolConfig>,
 }
 
 impl CreateChatSessionRequest {
@@ -149,10 +194,14 @@ impl CreateChatSessionRequest {
             llm_provider: llm_provider.into(),
             llm_model: None,
             system_prompt: None,
+            agent_id: None,
             bypass_ripple: None,
             parent_id: None,
             branch_point_idx: None,
             max_context_messages: None,
+            max_tokens: None,
+            temperature: None,
+            tool_config: None,
         }
     }
 
@@ -174,6 +223,12 @@ impl CreateChatSessionRequest {
         self
     }
 
+    /// Set the agent ID for this session
+    pub fn agent_id(mut self, id: impl Into<String>) -> Self {
+        self.agent_id = Some(id.into());
+        self
+    }
+
     /// Branch from an existing session at a specific message index
     pub fn branch_from(mut self, parent_id: impl Into<String>, branch_point_idx: usize) -> Self {
         self.parent_id = Some(parent_id.into());
@@ -186,12 +241,32 @@ impl CreateChatSessionRequest {
         self.max_context_messages = Some(max);
         self
     }
+
+    /// Set max tokens for LLM calls
+    pub fn max_tokens(mut self, max: i32) -> Self {
+        self.max_tokens = Some(max);
+        self
+    }
+
+    /// Set temperature for LLM calls
+    pub fn temperature(mut self, temp: f32) -> Self {
+        self.temperature = Some(temp);
+        self
+    }
+
+    /// Set tool configuration
+    pub fn tool_config(mut self, config: ToolConfig) -> Self {
+        self.tool_config = Some(config);
+        self
+    }
 }
 
 /// Response containing chat session information
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ChatSessionResponse {
+    #[serde(default)]
     pub session: Record,
+    #[serde(default)]
     pub message_count: usize,
 }
 
@@ -206,9 +281,22 @@ pub struct ChatSession {
     pub collections: Vec<CollectionConfig>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub system_prompt: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agent_id: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
     pub message_count: usize,
+}
+
+/// Inline multimodal attachment for a chat message. `mime_type`
+/// follows IANA (`image/png`, `application/pdf`, etc); `data` is
+/// the base64-encoded payload. ekoDB routes large files through
+/// per-provider File APIs server-side, so the client always sends
+/// base64 regardless of size.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Attachment {
+    pub mime_type: String,
+    pub data: String,
 }
 
 /// Request to send a message in an existing session
@@ -219,6 +307,42 @@ pub struct ChatMessageRequest {
     pub bypass_ripple: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub force_summarize: Option<bool>,
+    /// Maximum tool-calling iterations for this message.
+    /// Overrides the server/session default when set.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub max_iterations: Option<u32>,
+    /// Override session tool config for this message
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tool_config: Option<ToolConfig>,
+    /// Per-message LLM model override. When set, uses this model instead of the
+    /// session's configured model. Useful for routing simple steps through a
+    /// faster/cheaper model.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub llm_model: Option<String>,
+    /// Client-side tool definitions. When provided over SSE, ekoDB merges these
+    /// with built-in tools and routes calls back via `__client_tool_call` events.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub client_tools: Option<Vec<ClientToolDef>>,
+    /// Tools that require client confirmation before server-side execution.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub confirm_tools: Option<Vec<String>>,
+    /// Tools to exclude from the LLM's tool list.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub exclude_tools: Option<Vec<String>>,
+    /// Multimodal attachments sent with this turn. Under ~20 MB each
+    /// stay inline; larger ones are routed through the provider's
+    /// File API on the server side. Wire format matches the server's
+    /// `AgentChatRequest.attachments`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub attachments: Option<Vec<Attachment>>,
+}
+
+/// Client tool definition sent with chat messages (SSE path).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ClientToolDef {
+    pub name: String,
+    pub description: String,
+    pub parameters: serde_json::Value,
 }
 
 impl ChatMessageRequest {
@@ -228,12 +352,64 @@ impl ChatMessageRequest {
             message: message.into(),
             bypass_ripple: None,
             force_summarize: None,
+            max_iterations: None,
+            tool_config: None,
+            llm_model: None,
+            client_tools: None,
+            confirm_tools: None,
+            exclude_tools: None,
+            attachments: None,
         }
+    }
+
+    /// Attach multimodal inputs (images, PDFs, audio). Each item is
+    /// base64-encoded; large items are routed through the provider's
+    /// File API server-side.
+    pub fn attachments(mut self, attachments: Vec<Attachment>) -> Self {
+        self.attachments = Some(attachments);
+        self
     }
 
     /// Force conversation summarization
     pub fn force_summarize(mut self, force: bool) -> Self {
         self.force_summarize = Some(force);
+        self
+    }
+
+    /// Set maximum tool-calling iterations for this message.
+    pub fn max_iterations(mut self, max: u32) -> Self {
+        self.max_iterations = Some(max);
+        self
+    }
+
+    /// Override session tool config for this message.
+    pub fn tool_config(mut self, config: ToolConfig) -> Self {
+        self.tool_config = Some(config);
+        self
+    }
+
+    /// Override the session's LLM model for this message only.
+    /// Useful for routing simple tool-calling steps through a faster model.
+    pub fn llm_model(mut self, model: impl Into<String>) -> Self {
+        self.llm_model = Some(model.into());
+        self
+    }
+
+    /// Set client-side tool definitions for SSE-path tool routing.
+    pub fn client_tools(mut self, tools: Vec<ClientToolDef>) -> Self {
+        self.client_tools = Some(tools);
+        self
+    }
+
+    /// Set tools that require client confirmation before server execution.
+    pub fn confirm_tools(mut self, tools: Vec<String>) -> Self {
+        self.confirm_tools = Some(tools);
+        self
+    }
+
+    /// Set tools to exclude from the LLM's tool list.
+    pub fn exclude_tools(mut self, tools: Vec<String>) -> Self {
+        self.exclude_tools = Some(tools);
         self
     }
 }
@@ -244,6 +420,7 @@ pub enum MergeStrategy {
     Chronological,
     Summarized,
     LatestOnly,
+    Interleaved,
 }
 
 /// Request to merge multiple chat sessions
@@ -252,6 +429,8 @@ pub struct MergeSessionsRequest {
     pub source_chat_ids: Vec<String>,
     pub target_chat_id: String,
     pub merge_strategy: MergeStrategy,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub bypass_ripple: Option<bool>,
 }
 
 /// Response containing messages with pagination metadata
@@ -354,7 +533,13 @@ pub struct UpdateSessionRequest {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub collections: Option<Vec<CollectionConfig>>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub max_context_messages: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub bypass_ripple: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub memory: Option<serde_json::Value>,
 }
 
 impl UpdateSessionRequest {
@@ -386,6 +571,18 @@ impl UpdateSessionRequest {
         self.collections = Some(collections);
         self
     }
+
+    /// Set maximum context messages
+    pub fn max_context_messages(mut self, max: usize) -> Self {
+        self.max_context_messages = Some(max);
+        self
+    }
+
+    /// Set the memory object
+    pub fn memory(mut self, memory: serde_json::Value) -> Self {
+        self.memory = Some(memory);
+        self
+    }
 }
 
 /// Request to update a message
@@ -398,6 +595,37 @@ pub struct UpdateMessageRequest {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ToggleForgottenRequest {
     pub forgotten: bool,
+}
+
+/// Request to compact a chat session's history on demand.
+///
+/// Folds the older messages of the session into a single summary message and
+/// marks the originals "forgotten" so they stop being replayed, reclaiming
+/// context-window budget while keeping a faithful summary in the prompt.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct CompactChatRequest {
+    /// Number of most-recent messages to keep verbatim. Everything older is
+    /// folded into the summary. Defaults server-side to the session's
+    /// `max_context_messages` (or 50). `0` compacts the entire history.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub keep_recent: Option<usize>,
+    // No `bypass_ripple`: compaction writes chat-message records, which the
+    // server does not ripple (same convention as all chat-message writes).
+}
+
+/// Result of compacting a chat session.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CompactChatResponse {
+    /// Number of older messages folded into the summary (marked forgotten).
+    pub folded: usize,
+    /// Number of recent messages kept verbatim.
+    pub kept_recent: usize,
+    /// Character length of the inserted summary (0 when nothing was folded).
+    pub summary_chars: usize,
+    /// ID of the inserted synthetic summary message (None when nothing folded).
+    pub summary_message_id: Option<String>,
+    /// True when there was nothing to fold (history already within keep_recent).
+    pub already_compact: bool,
 }
 
 #[cfg(test)]
@@ -461,4 +689,49 @@ mod tests {
         assert_eq!(request.title, Some("Updated Title".to_string()));
         assert_eq!(request.llm_model, Some("gpt-4-turbo".to_string()));
     }
+}
+
+/// Request for POST /api/chat/complete — stateless raw LLM completion.
+/// No session, no history, no RAG context injection.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RawCompletionRequest {
+    /// System prompt passed verbatim to the LLM.
+    pub system_prompt: String,
+    /// User message passed verbatim to the LLM.
+    pub message: String,
+    /// LLM provider. Defaults to server's configured default.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub provider: Option<String>,
+    /// Model name. Defaults to server's configured default.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub model: Option<String>,
+    /// Max tokens for the LLM response. Defaults to server's configured default.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub max_tokens: Option<i32>,
+}
+
+/// Response from POST /api/chat/complete
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RawCompletionResponse {
+    /// Raw LLM response text.
+    pub content: String,
+}
+
+/// Request to generate embeddings directly
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EmbedRequest {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub text: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub texts: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub model: Option<String>,
+}
+
+/// Response from embedding generation
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EmbedResponse {
+    pub embeddings: Vec<Vec<f64>>,
+    pub model: String,
+    pub dimensions: usize,
 }

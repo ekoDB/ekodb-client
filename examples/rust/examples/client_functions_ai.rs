@@ -1,13 +1,34 @@
-//! AI Scripts Example - Chat and Embed Operations
+//! AI Functions Example - Chat and Embed Operations
 //!
 //! Demonstrates AI operations in scripts:
 //! - Chat completions with context
 //! - Embedding generation
 //! - Simple AI workflows
 
-use ekodb_client::{ChatMessage, Client, FieldType, Function, ParameterDefinition, Record, Script};
+use ekodb_client::{
+    ChatMessage, Client, FieldType, Function, ParameterDefinition, Record, UserFunction,
+};
 use serde_json::json;
 use std::collections::HashMap;
+
+/// Save a function idempotently: if the label already exists (HTTP 409),
+/// update the existing definition instead, then return its id.
+async fn save_or_update(
+    client: &Client,
+    function: UserFunction,
+) -> Result<String, Box<dyn std::error::Error>> {
+    let label = function.label.clone();
+    match client.save_function(function.clone()).await {
+        Ok(id) => Ok(id),
+        Err(ekodb_client::Error::Api { code: 409, .. }) => {
+            client.update_function(&label, function).await?;
+            println!("ℹ️  Function '{}' already existed — updated instead", label);
+            let existing = client.get_function(&label).await?;
+            Ok(existing.id.unwrap_or(label))
+        }
+        Err(e) => Err(Box::new(e)),
+    }
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -23,7 +44,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .api_key(&api_key)
         .build()?;
 
-    println!("🚀 ekoDB Rust AI Scripts Example\n");
+    println!("🚀 ekoDB Rust AI Functions Example\n");
 
     // Setup test data
     println!("📋 Setting up test data...");
@@ -56,7 +77,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Example 1: Simple Chat Completion
     println!("📝 Example 1: Simple Chat Completion\n");
-    let script1 = Script::new("ai_assistant_rs", "AI Chat Assistant")
+    let script1 = UserFunction::new("ai_assistant_rs", "AI Chat Assistant")
         .with_description("Simple AI chat completion")
         .with_version("1.0")
         .with_function(Function::Chat {
@@ -64,17 +85,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 ChatMessage::system("You are a helpful database assistant. Be concise."),
                 ChatMessage::user("What are the benefits of using vector databases?"),
             ],
-            model: Some("gpt-4".to_string()),
+            model: Some("gpt-4o-mini".to_string()),
             temperature: Some(0.7),
             max_tokens: None,
         })
         .with_tag("ai")
         .with_tag("chat");
-    let script_id1 = client.save_script(script1).await?;
+    let script_id1 = save_or_update(&client, script1).await?;
     script_ids.push(script_id1.clone());
     println!("✅ Chat script saved");
 
-    let result1 = client.call_script("ai_assistant_rs", None).await?;
+    let result1 = client.call_function("ai_assistant_rs", None).await?;
     println!("🤖 AI Response:");
     if let Some(first) = result1.records.first() {
         if let Some(FieldType::String(response)) = first.get("response") {
@@ -88,7 +109,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Example 2: Embed Generation
     println!("📝 Example 2: Generate Embeddings\n");
-    let script2 = Script::new("generate_embedding_rs", "Generate Embedding")
+    let script2 = UserFunction::new("generate_embedding_rs", "Generate Embedding")
         .with_description("Generate embedding for text")
         .with_version("1.0")
         .with_parameter(
@@ -103,7 +124,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         })
         .with_tag("ai")
         .with_tag("embed");
-    let script_id2 = client.save_script(script2).await?;
+    let script_id2 = save_or_update(&client, script2).await?;
     script_ids.push(script_id2.clone());
     println!("✅ Embed script saved");
 
@@ -113,7 +134,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         FieldType::String("ekoDB is a powerful database".to_string()),
     );
     let result2 = client
-        .call_script("generate_embedding_rs", Some(params))
+        .call_function("generate_embedding_rs", Some(params))
         .await?;
     println!("📊 Embedding generated");
     println!(
@@ -124,7 +145,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Cleanup
     println!("🧹 Cleaning up...");
     for script_id in script_ids {
-        let _ = client.delete_script(&script_id).await;
+        let _ = client.delete_function(&script_id).await;
     }
     let _ = client.delete_collection("ai_articles_rs").await;
     println!("✅ Cleanup complete\n");

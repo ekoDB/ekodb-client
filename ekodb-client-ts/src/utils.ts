@@ -18,7 +18,15 @@
  * ```
  */
 export function getValue<T = any>(field: any): T {
-  if (field && typeof field === "object" && "value" in field) {
+  // Only unwrap a genuine typed wrapper — one carrying BOTH a "type"
+  // discriminator and a "value". A user object that merely has a "value" key
+  // (e.g. { value: 1, currency: "USD" }) must pass through untouched.
+  if (
+    field &&
+    typeof field === "object" &&
+    "type" in field &&
+    "value" in field
+  ) {
     return field.value as T;
   }
   return field as T;

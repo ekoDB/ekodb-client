@@ -62,7 +62,7 @@ fun main() = runBlocking {
                 })
             }
             put("llm_provider", "openai")
-            put("llm_model", "gpt-4")
+            put("llm_model", "gpt-4o-mini")
             put("system_prompt", "You are a helpful assistant for ekoDB documentation.")
             put("max_context_messages", 10)
             put("bypass_ripple", false)

@@ -49,7 +49,7 @@ fun main() = runBlocking {
                 })
             }
             put("llm_provider", "openai")
-            put("llm_model", "gpt-4")
+            put("llm_model", "gpt-4o-mini")
             put("system_prompt", "You are a helpful assistant for product information.")
         }
         
@@ -107,7 +107,7 @@ fun main() = runBlocking {
                 })
             }
             put("llm_provider", "openai")
-            put("llm_model", "gpt-4")
+            put("llm_model", "gpt-4o-mini")
             put("parent_id", chatId)
         }
         

@@ -122,12 +122,21 @@ async def main():
     float_precision = await client.kv_get("precision:float")
     decimal_precision = await client.kv_get("precision:decimal")
 
-    float_amount = get_value(float_precision.get("amount")) if float_precision else None
+    # kv_get returns {"value": "<json_string>"} — parse the JSON string to get the dict
+    import json as json_mod
+
+    float_parsed = (
+        json_mod.loads(float_precision.get("value", "{}")) if float_precision else None
+    )
+    float_amount = get_value(float_parsed.get("amount")) if float_parsed else None
     print(f"  Float 0.1 + 0.2 = {float_amount} (should be 0.3)")
 
-    decimal_amount = (
-        get_value(decimal_precision.get("amount")) if decimal_precision else None
+    decimal_parsed = (
+        json_mod.loads(decimal_precision.get("value", "{}"))
+        if decimal_precision
+        else None
     )
+    decimal_amount = get_value(decimal_parsed.get("amount")) if decimal_parsed else None
     print(f'  Decimal "0.30" = {decimal_amount} (exact!)')
 
     # =========================================================================

@@ -70,13 +70,33 @@ async function edgeCacheExample() {
     ],
   };
 
-  const scriptId = await client.saveScript(cacheScript);
-  console.log(`✓ Edge cache script created: ${scriptId}\n`);
+  let scriptId: string;
+  try {
+    scriptId = await client.saveFunction(cacheScript);
+    console.log(`✓ Edge cache script created: ${scriptId}\n`);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (
+      !message.includes("status 409") &&
+      !message.includes("already exists")
+    ) {
+      throw error;
+    }
+    // Function already exists from a previous run — update it in place so the
+    // example is idempotent and proves both the create and update paths.
+    await client.updateFunction(cacheScript.label, cacheScript);
+    const existing = await client.getFunction(cacheScript.label);
+    scriptId = existing.id ?? cacheScript.label;
+    console.log(
+      `ℹ️  Function '${cacheScript.label}' already existed — updated instead`,
+    );
+    console.log(`✓ Edge cache script updated: ${scriptId}\n`);
+  }
 
   // Test it - First call hits API
   console.log("Call 1: Cache miss (fetches from API)");
   const start1 = Date.now();
-  const result1 = await client.callScript("cache_api_call", {
+  const result1 = await client.callFunction("cache_api_call", {
     cache_key: "user_data_1",
     api_url: "https://jsonplaceholder.typicode.com/users/1",
     ttl_seconds: 300,
@@ -88,7 +108,7 @@ async function edgeCacheExample() {
   // Test it again - Second call hits cache
   console.log("\nCall 2: Cache hit (served from ekoDB)");
   const start2 = Date.now();
-  const result2 = await client.callScript("cache_api_call", {
+  const result2 = await client.callFunction("cache_api_call", {
     cache_key: "user_data_1",
     api_url: "https://jsonplaceholder.typicode.com/users/1",
   });

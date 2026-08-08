@@ -5,13 +5,39 @@
  * Shows how to build reusable logic blocks and compose complex workflows
  */
 
-import { EkoDBClient } from "@ekodb/ekodb-client";
+import { EkoDBClient, UserFunction } from "@ekodb/ekodb-client";
 import * as dotenv from "dotenv";
 
 dotenv.config();
 
 const API_BASE_URL = process.env.API_BASE_URL || "http://localhost:8080";
 const API_BASE_KEY = process.env.API_BASE_KEY || "a-test-api-key-from-ekodb";
+
+/** True when a save failed because the function label already exists (HTTP 409). */
+function isAlreadyExistsError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.includes("status 409") || message.includes("already exists");
+}
+
+/**
+ * Idempotent save: create the function, or update it in place if a function
+ * with the same label already exists. Returns the function's id so downstream
+ * cleanup-by-id continues to work.
+ */
+async function saveOrUpdate(
+  client: EkoDBClient,
+  script: UserFunction,
+): Promise<string> {
+  try {
+    return await client.saveFunction(script);
+  } catch (error) {
+    if (!isAlreadyExistsError(error)) throw error;
+    await client.updateFunction(script.label, script);
+    console.log(`Function '${script.label}' already existed — updated instead`);
+    const existing = await client.getFunction(script.label);
+    return existing.id ?? script.label;
+  }
+}
 
 async function setupTestData(client: EkoDBClient): Promise<void> {
   console.log("📋 Setting up test data...\n");
@@ -49,7 +75,7 @@ async function basicCompositionExample(client: EkoDBClient): Promise<void> {
     ],
   };
 
-  await client.saveScript(fetchUser);
+  await saveOrUpdate(client, fetchUser);
   console.log("✅ Saved reusable function: fetch_user");
 
   // Step 2: Create wrapper that CALLS fetch_user
@@ -73,13 +99,13 @@ async function basicCompositionExample(client: EkoDBClient): Promise<void> {
     ],
   };
 
-  await client.saveScript(getUserWrapper);
+  await saveOrUpdate(client, getUserWrapper);
   console.log(
     "✅ Saved composed function: get_user_wrapper (calls fetch_user + projects fields)\n",
   );
 
   // Step 3: Call the composed function
-  const result = await client.callScript("get_user_wrapper", {
+  const result = await client.callFunction("get_user_wrapper", {
     user_code: "user_1",
   });
 
@@ -129,7 +155,7 @@ async function swrCompositionExample(client: EkoDBClient): Promise<void> {
     ],
   };
 
-  await client.saveScript(fetchAndStore);
+  await saveOrUpdate(client, fetchAndStore);
   console.log("✅ Saved reusable function: fetch_and_store_user (uses KV)");
 
   // Step 2: Create SWR function that CALLS the reusable function
@@ -190,13 +216,13 @@ async function swrCompositionExample(client: EkoDBClient): Promise<void> {
     ],
   };
 
-  await client.saveScript(swrUser);
+  await saveOrUpdate(client, swrUser);
   console.log("✅ Saved SWR function using composition: swr_user\n");
 
   // Step 3: Test cache miss
   console.log("First call (cache miss - will fetch from API):");
   const start1 = Date.now();
-  const result1 = await client.callScript("swr_user", {
+  const result1 = await client.callFunction("swr_user", {
     user_id: "1",
   });
   const duration1 = Date.now() - start1;
@@ -216,7 +242,7 @@ async function swrCompositionExample(client: EkoDBClient): Promise<void> {
   // Step 4: Test cache hit
   console.log("Second call (cache hit - from cache):");
   const start2 = Date.now();
-  const result2 = await client.callScript("swr_user", {
+  const result2 = await client.callFunction("swr_user", {
     user_id: "1",
   });
   const duration2 = Date.now() - start2;
@@ -257,7 +283,7 @@ async function nestedCompositionExample(client: EkoDBClient): Promise<void> {
     ],
   };
 
-  await client.saveScript(validateUser);
+  await saveOrUpdate(client, validateUser);
   console.log("✅ Level 1 function: validate_user");
 
   // Level 2: Calls validate_user + projects
@@ -281,7 +307,7 @@ async function nestedCompositionExample(client: EkoDBClient): Promise<void> {
     ],
   };
 
-  await client.saveScript(fetchSlim);
+  await saveOrUpdate(client, fetchSlim);
   console.log("✅ Level 2 function: fetch_slim_user (calls validate_user)");
 
   // Level 3: Calls fetch_slim (demonstrates 3-level nesting)
@@ -300,13 +326,13 @@ async function nestedCompositionExample(client: EkoDBClient): Promise<void> {
     ],
   };
 
-  await client.saveScript(getVerifiedUser);
+  await saveOrUpdate(client, getVerifiedUser);
   console.log(
     "✅ Level 3 function: get_verified_user (calls fetch_slim_user)\n",
   );
 
   // Execute 3-level nested composition
-  const result = await client.callScript("get_verified_user", {
+  const result = await client.callFunction("get_verified_user", {
     user_code: "user_1",
   });
 

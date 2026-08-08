@@ -31,19 +31,24 @@ data class FieldValue(
  */
 inline fun <reified T> getValue(field: Any?): T? {
     if (field == null) return null
-    
+
     // Handle FieldType sealed class instances
     if (field is FieldType) {
         val extracted = extractFieldTypeValue(field)
         return convertValue<T>(extracted)
     }
-    
-    // Try to extract from map structure
+
+    // Try to extract from map structure.
+    // Only unwrap a genuine typed wrapper — one carrying BOTH a "type"
+    // discriminator and a "value". A user object that merely has a "value" key
+    // (e.g. {"value": 1, "currency": "USD"}) must pass through untouched.
     if (field is Map<*, *>) {
-        val value = field["value"]
-        return convertValue<T>(value)
+        if (field.containsKey("type") && field.containsKey("value")) {
+            return convertValue<T>(field["value"])
+        }
+        return convertValue<T>(field)
     }
-    
+
     return convertValue<T>(field)
 }
 
@@ -53,7 +58,7 @@ inline fun <reified T> getValue(field: Any?): T? {
 inline fun <reified T> convertValue(value: Any?): T? {
     if (value == null) return null
     if (value is T) return value
-    
+
     // Handle numeric conversions
     if (value is Number) {
         return when (T::class) {
@@ -64,7 +69,7 @@ inline fun <reified T> convertValue(value: Any?): T? {
             else -> value as? T
         }
     }
-    
+
     return value as? T
 }
 
@@ -163,7 +168,7 @@ fun getValues(record: Map<String, Any?>, fields: List<String>): Map<String, Any?
  * Extract a Date value from an ekoDB DateTime field
  */
 fun getDateTimeValue(field: Any?): java.util.Date? {
-    val val_= getValue<Any>(field) ?: return null
+    val val_ = getValue<Any>(field) ?: return null
     if (val_ is java.util.Date) return val_
     if (val_ is String) {
         // Try multiple date formats
@@ -172,7 +177,7 @@ fun getDateTimeValue(field: Any?): java.util.Date? {
             "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
             "yyyy-MM-dd'T'HH:mm:ss'Z'",
             "yyyy-MM-dd'T'HH:mm:ss",
-            "EEE MMM dd HH:mm:ss zzz yyyy"  // Java Date.toString() format
+            "EEE MMM dd HH:mm:ss zzz yyyy" // Java Date.toString() format
         )
         for (format in formats) {
             try {
@@ -271,14 +276,16 @@ fun getSetValue(field: Any?): List<Any?>? {
 fun getVectorValue(field: Any?): List<Double>? {
     val val_ = getValue<Any>(field) ?: return null
     return if (val_ is List<*>) {
-        val_.mapNotNull { 
+        val_.mapNotNull {
             when (it) {
                 is Double -> it
                 is Number -> it.toDouble()
                 else -> null
             }
         }
-    } else null
+    } else {
+        null
+    }
 }
 
 /**
@@ -303,16 +310,43 @@ fun getObjectValue(field: Any?): Map<String, Any?>? {
  * val ids = records.successful.mapNotNull { getRecordId(it) }
  * ```
  */
-fun getRecordId(record: Map<String, Any?>): String? {
-    val idField = record["id"] ?: return null
-    
-    // Handle FieldType.StringValue from Kotlin client
-    if (idField is io.ekodb.client.types.FieldType.StringValue) {
-        return idField.value
+fun getRecordId(record: Map<String, Any?>): String? = getRecordId(record, *emptyArray())
+
+/**
+ * Extract record ID from a record, honoring a collection's primary_key_alias.
+ *
+ * Collections may rename the primary key via `primary_key_alias` (e.g. `_id`,
+ * `<collection>_id`). This overload tries each supplied alias candidate first,
+ * then falls back to the canonical `id`, then `_id`. The first present key is
+ * extracted via the same FieldType.StringValue / map-structure logic as the
+ * no-argument form.
+ *
+ * @param record The record object from ekoDB
+ * @param aliasCandidates Optional primary-key alias keys to try before `id`/`_id`
+ * @return The extracted ID string, or null if no candidate key is present
+ *
+ * Example:
+ * ```kotlin
+ * // Collection whose primary_key_alias is "users_id"
+ * val id = getRecordId(record, "users_id")
+ * ```
+ */
+fun getRecordId(record: Map<String, Any?>, vararg aliasCandidates: String): String? {
+    val keys = aliasCandidates.toList() + listOf("id", "_id")
+    for (key in keys) {
+        if (!record.containsKey(key)) continue
+        val idField = record[key] ?: continue
+
+        // Handle FieldType.StringValue from Kotlin client
+        if (idField is io.ekodb.client.types.FieldType.StringValue) {
+            return idField.value
+        }
+
+        // Handle direct string or map structure
+        val extracted = getStringValue(idField)
+        if (extracted != null) return extracted
     }
-    
-    // Handle direct string or map structure
-    return getStringValue(idField)
+    return null
 }
 
 /**
@@ -402,7 +436,7 @@ fun fieldVector(values: List<Double>): Map<String, Any> = mapOf("type" to "Vecto
 /**
  * Create a Binary field value from bytes
  */
-fun fieldBinary(value: ByteArray): Map<String, Any> = 
+fun fieldBinary(value: ByteArray): Map<String, Any> =
     mapOf("type" to "Binary", "value" to java.util.Base64.getEncoder().encodeToString(value))
 
 /**
@@ -413,7 +447,7 @@ fun fieldBinaryBase64(value: String): Map<String, Any> = mapOf("type" to "Binary
 /**
  * Create a Bytes field value from bytes
  */
-fun fieldBytes(value: ByteArray): Map<String, Any> = 
+fun fieldBytes(value: ByteArray): Map<String, Any> =
     mapOf("type" to "Bytes", "value" to java.util.Base64.getEncoder().encodeToString(value))
 
 /**
