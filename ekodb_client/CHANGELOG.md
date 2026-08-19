@@ -6,6 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Security
+
+- **Dependency audit sweep (#176).** CI unit-tests workflow moved from Node 20
+  (EOL April 2026) to Node 24, matching the org standard. Rust:
+  `tokio-tungstenite` 0.28 -> 0.29, full lockfile refresh within semver for both
+  the workspace and the Python crate (`h2` 0.4.15 -> 0.4.16 fixes
+  RUSTSEC-2026-0258; the one remaining `cargo audit` finding, `rkyv` 0.7.46 via
+  `rust_decimal`, is a lockfile-only optional dependency that is never compiled;
+  `cargo tree -i rkyv` resolves to nothing). TypeScript: `typescript` 5.9.3 ->
+  6.0.3 with the required `tsconfig` migration from the deprecated
+  `moduleResolution: node` to `nodenext` (emitted CJS output unchanged),
+  in-range refreshes (`ws` 8.21.3, `vitest` 4.1.11), and `npm audit fix`
+  clearing the `nanoid` (GHSA-2v37-7h3g-55p8, high) and `postcss`
+  (GHSA-fxqj-rqcc-2cmp, moderate) advisories, leaving 0 npm vulnerabilities.
+  Kotlin was already current (Dependabot #49-#53 are stale, as are #61/#63 for
+  Rust and #97 for vite).
+
 ## [0.25.0] - 2026-07-14
 
 ### Added
