@@ -24,6 +24,20 @@ and this project adheres to
   (GHSA-fxqj-rqcc-2cmp, moderate) advisories, leaving 0 npm vulnerabilities.
   Kotlin was already current (Dependabot #49-#53 are stale, as are #61/#63 for
   Rust and #97 for vite).
+- **Dropped the stale `golang.org/x/net` requirement from `examples/go` (#178),
+  closing the last open Dependabot alert on this repo.** Alert #63
+  (GHSA-5cv4-jp36-h3mw, medium, `runtime` scope) flagged
+  `golang.org/x/net v0.38.0` in `examples/go/go.mod`. The previous sweep read it
+  correctly as not genuinely used, but the manifest entry was left in place, so
+  the alert stayed open against a requirement nothing imports.
+  `go mod why -m golang.org/x/net` reports *"(main module does not need module
+  golang.org/x/net)"*, and the Go client module requires only
+  `gorilla/websocket`, `vmihailenco/msgpack/v5` and `vmihailenco/tagparser/v2`.
+  So the fix is `go mod tidy`, which **removes** the requirement rather than
+  upgrading it — strictly better than bumping to 0.55.0, which would have carried
+  a newer copy of something nothing imports. Verified afterwards that the relative
+  `replace` directive survived, that the Go client module still builds, and that
+  every example still compiles individually.
 
 ## [0.25.0] - 2026-07-14
 
