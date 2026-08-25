@@ -2434,8 +2434,7 @@ impl HttpClient {
             if response.status().is_success() {
                 Ok(())
             } else {
-                let error: ErrorResponse = response.json().await?;
-                Err(Error::api(error.code, error.message))
+                Err(error_from_response(response).await)
             }
         })
         .await
@@ -2638,8 +2637,7 @@ impl HttpClient {
             if response.status().is_success() {
                 Ok(())
             } else {
-                let error: ErrorResponse = response.json().await?;
-                Err(Error::api(error.code, error.message))
+                Err(error_from_response(response).await)
             }
         })
         .await
@@ -3829,6 +3827,31 @@ fn extract_error_message(body: &str) -> String {
 struct ErrorResponse {
     code: u16,
     message: String,
+}
+
+/// Turn a non-success response into an [`Error`] without assuming the body is
+/// JSON.
+///
+/// Not every error carries a JSON envelope: warp renders some rejections with
+/// an empty body, and a proxy in front of the server may return HTML or
+/// nothing at all. Calling `response.json()` on those produced "EOF while
+/// parsing a value at line 1 column 0" — a parse error masquerading as the
+/// real failure, which hid the actual status from the caller. Fall back to the
+/// HTTP status and whatever text arrived.
+async fn error_from_response(response: reqwest::Response) -> Error {
+    let status = response.status();
+    let body = response.text().await.unwrap_or_default();
+    match serde_json::from_str::<ErrorResponse>(&body) {
+        Ok(parsed) => Error::api(parsed.code, parsed.message),
+        Err(_) => {
+            let detail = body.trim();
+            if detail.is_empty() {
+                Error::api(status.as_u16(), status.to_string())
+            } else {
+                Error::api(status.as_u16(), detail.to_string())
+            }
+        }
+    }
 }
 
 #[cfg(test)]
