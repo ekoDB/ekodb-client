@@ -112,6 +112,15 @@ and this project adheres to
   had already read. TypeScript now cancels the body reader and closes the
   stream as soon as the error frame is emitted; Kotlin returns from the flow.
   Nothing after an error reaches the consumer in any of the four clients.
+- **Error responses are no longer assumed to carry a JSON body.** Non-success
+  responses were decoded with `response.json()`, which expects an
+  `ErrorResponse` envelope. Warp renders some rejections with an empty body,
+  and a proxy in front of the server can return HTML or nothing at all — in
+  those cases the caller got `EOF while parsing a value at line 1 column 0`, a
+  parse error standing in for the real failure and hiding the HTTP status
+  entirely. `error_from_response` now falls back to the status and whatever
+  text arrived, so `delete_chat_session` and `branch_chat_session` report what
+  actually happened.
 
 
 ## [0.25.0] - 2026-07-14
