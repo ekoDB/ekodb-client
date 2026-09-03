@@ -230,7 +230,16 @@ pub struct ChatStreamEndPayload {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ChatStreamErrorPayload {
     pub chat_id: String,
-    pub error: String,
+    /// What the server put under `error`: text when the failure has a
+    /// message, but tolerated in any shape — a structured value is still an
+    /// error, read through the same text rule as the SSE route
+    /// ([`ChatStreamError::from`]).
+    #[serde(default)]
+    pub error: Value,
+    /// A message under `message` instead of `error`, when the server sends
+    /// that.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
     /// The provider-failure classification (`provider_auth_failed`, …), when
     /// the failure was the LLM provider's answer. Absent otherwise.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -261,17 +270,24 @@ pub struct ChatStreamError {
     pub retry_after_secs: Option<u64>,
 }
 
+/// The text of a stream error, on every route: the first of `error` /
+/// `message` that is a non-empty string, else a fixed fallback. A structured
+/// `error` value or a blank string is not a message, so the text is never
+/// empty and never a JSON dump.
+fn stream_error_text(error: Option<&Value>, message: Option<&str>) -> String {
+    let text = |value: Option<&str>| value.filter(|s| !s.is_empty()).map(str::to_string);
+    text(error.and_then(Value::as_str))
+        .or_else(|| text(message))
+        .unwrap_or_else(|| "Unknown error".to_string())
+}
+
 impl ChatStreamError {
     /// Read an SSE `error` event's data. `None` when the frame is not an error.
     pub fn from_event(event: &Value) -> Option<Self> {
         // The `error` key is what makes a default-named frame an error;
         // its value is the message only when it is text.
         let error = event.get("error").filter(|value| !value.is_null())?;
-        let message = error
-            .as_str()
-            .or_else(|| event.get("message").and_then(Value::as_str))
-            .unwrap_or("Unknown error")
-            .to_string();
+        let message = stream_error_text(Some(error), event.get("message").and_then(Value::as_str));
         Some(Self::with_message(message, event))
     }
 
@@ -279,11 +295,10 @@ impl ChatStreamError {
     /// `message`, else a fixed fallback — the frame is an error whatever its
     /// payload calls the text.
     pub fn from_error_event(event: &Value) -> Self {
-        let message = ["error", "message"]
-            .iter()
-            .find_map(|key| event.get(key).and_then(Value::as_str))
-            .unwrap_or("Unknown error")
-            .to_string();
+        let message = stream_error_text(
+            event.get("error"),
+            event.get("message").and_then(Value::as_str),
+        );
         Self::with_message(message, event)
     }
 
@@ -323,7 +338,7 @@ impl From<String> for ChatStreamError {
 impl From<ChatStreamErrorPayload> for ChatStreamError {
     fn from(payload: ChatStreamErrorPayload) -> Self {
         Self {
-            message: payload.error,
+            message: stream_error_text(Some(&payload.error), payload.message.as_deref()),
             error_kind: payload.error_kind,
             provider: payload.provider,
             provider_status: payload.provider_status,
@@ -1558,6 +1573,52 @@ mod tests {
         assert_eq!(boxed.to_string(), "Model unavailable");
         let text: String = err.into();
         assert_eq!(text, "Model unavailable");
+    }
+
+    // The WebSocket route tolerates what the SSE route tolerates: a structured
+    // `error` value, a `message` instead of `error`, and empty strings, which
+    // count as absent — the text is always non-empty, never a blank.
+    #[test]
+    fn a_websocket_error_payload_is_read_like_an_sse_frame() {
+        let structured: ChatStreamErrorPayload = serde_json::from_str(
+            r#"{"chat_id":"c1","error":{"code":"upstream_down"},"error_kind":"provider_unavailable","provider":"gemini"}"#,
+        )
+        .expect("a structured error still deserializes");
+        let err = ChatStreamError::from(structured);
+        assert_eq!(err.message, "Unknown error");
+        assert_eq!(err.error_kind.as_deref(), Some("provider_unavailable"));
+        assert!(err.is_provider_failure());
+
+        let by_message: ChatStreamErrorPayload =
+            serde_json::from_str(r#"{"chat_id":"c1","message":"boom"}"#).expect("message-only");
+        assert_eq!(ChatStreamError::from(by_message).message, "boom");
+
+        let blank: ChatStreamErrorPayload =
+            serde_json::from_str(r#"{"chat_id":"c1","error":"","message":""}"#).expect("blank");
+        assert_eq!(ChatStreamError::from(blank).message, "Unknown error");
+    }
+
+    #[test]
+    fn empty_error_text_counts_as_absent_on_every_path() {
+        let event = ChatStreamError::from_event(&serde_json::json!({"error": "", "message": ""}))
+            .expect("an error key is still an error frame");
+        assert_eq!(event.message, "Unknown error");
+        assert_eq!(
+            ChatStreamError::from_event(&serde_json::json!({"error": "", "message": "boom"}))
+                .unwrap()
+                .message,
+            "boom"
+        );
+        assert_eq!(
+            ChatStreamError::from_error_event(&serde_json::json!({"error": "", "message": ""}))
+                .message,
+            "Unknown error"
+        );
+        assert_eq!(
+            ChatStreamError::from_error_event(&serde_json::json!({"error": "", "message": "boom"}))
+                .message,
+            "boom"
+        );
     }
 
     #[test]
