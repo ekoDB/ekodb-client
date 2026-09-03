@@ -3,8 +3,6 @@ package io.ekodb.client.examples
 import io.ekodb.client.EkoDBClient
 import io.github.cdimascio.dotenv.dotenv
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
 /**
