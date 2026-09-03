@@ -23,11 +23,12 @@ and this project adheres to
   `ChatModels.gemini?` and
   `ChatModels.providers?: Record<string, ChatProviderStatus>`. Kotlin:
   `ChatModels.gemini`, `ChatModels.providers: Map<String, ChatProviderStatus>`
-  with `ChatProviderState` (unknown → `UNKNOWN`) and `isUsable`. Python returns
-  the same keys in the dictionary. Every field is optional / defaulted, so a
-  server that predates them still parses. The `client_chat_models` example in
-  each language prints the status beside the lists. Pairs with the server-side
-  change, tracked internally.
+  with `ChatProviderState` (unknown → `UNKNOWN`) and `isUsable`, returned by the
+  new `chatModels()` beside the raw-`JsonObject` `getChatModels()`. Python
+  returns the same keys in the dictionary. Every field is optional / defaulted,
+  so a server that predates them still parses. The `client_chat_models` example
+  in each language prints the status beside the lists. Pairs with the
+  server-side change, tracked internally.
 - **Stream errors carry the provider-failure classification.** When a chat
   stream fails because of the LLM provider, the server now classifies the
   failure — `error_kind` (`provider_auth_failed`, `provider_permission_denied`,
