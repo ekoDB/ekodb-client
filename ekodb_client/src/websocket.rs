@@ -340,6 +340,47 @@ impl std::fmt::Display for ChatStreamError {
 
 impl std::error::Error for ChatStreamError {}
 
+// The error used to be the bare message `String`. These keep the code that
+// treated it as text compiling: `eprintln!("{e}")`, `e.to_string()`,
+// `e == "…"`, `e.contains(..)`, `String::from(e)`, `Box<dyn Error>::from(e)`.
+// Only code that binds the payload AS a `String` by type still changes.
+impl std::ops::Deref for ChatStreamError {
+    type Target = str;
+    fn deref(&self) -> &str {
+        &self.message
+    }
+}
+
+impl AsRef<str> for ChatStreamError {
+    fn as_ref(&self) -> &str {
+        &self.message
+    }
+}
+
+impl PartialEq<str> for ChatStreamError {
+    fn eq(&self, other: &str) -> bool {
+        self.message == other
+    }
+}
+
+impl PartialEq<&str> for ChatStreamError {
+    fn eq(&self, other: &&str) -> bool {
+        self.message == *other
+    }
+}
+
+impl PartialEq<String> for ChatStreamError {
+    fn eq(&self, other: &String) -> bool {
+        &self.message == other
+    }
+}
+
+impl From<ChatStreamError> for String {
+    fn from(err: ChatStreamError) -> Self {
+        err.message
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MutationNotificationPayload {
     pub collection: String,
@@ -1499,6 +1540,24 @@ mod tests {
         // `null` is absence, as is no key at all.
         assert!(ChatStreamError::from_event(&serde_json::json!({"error": null})).is_none());
         assert!(ChatStreamError::from_event(&serde_json::json!({"token": "x"})).is_none());
+    }
+
+    // The payload used to be the bare `String`; everything that read it as
+    // text still compiles and means the same thing.
+    #[test]
+    fn a_chat_stream_error_reads_like_the_string_it_replaced() {
+        let err = ChatStreamError::from("Model unavailable".to_string());
+        assert_eq!(err.to_string(), "Model unavailable");
+        assert_eq!(err, "Model unavailable");
+        assert_eq!(err, *"Model unavailable");
+        assert_eq!(err, "Model unavailable".to_string());
+        assert!(err.contains("unavailable"));
+        assert_eq!(err.len(), "Model unavailable".len());
+        assert_eq!(err.as_ref(), "Model unavailable");
+        let boxed: Box<dyn std::error::Error> = err.clone().into();
+        assert_eq!(boxed.to_string(), "Model unavailable");
+        let text: String = err.into();
+        assert_eq!(text, "Model unavailable");
     }
 
     #[test]
