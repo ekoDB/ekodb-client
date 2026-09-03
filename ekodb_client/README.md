@@ -338,6 +338,12 @@ let models = client.get_chat_models().await?;
 println!("OpenAI models: {:?}", models.openai);
 println!("Anthropic models: {:?}", models.anthropic);
 println!("Perplexity models: {:?}", models.perplexity);
+println!("Gemini models: {:?}", models.gemini);
+// Why each list looks the way it does: a rejected key reports
+// `auth_failed`, a missing one `not_configured`.
+for (provider, status) in &models.providers {
+    println!("{provider}: {:?} (verified: {})", status.status, status.verified);
+}
 
 // Get models for a specific provider
 let openai_models = client.get_chat_model("openai").await?;
@@ -609,7 +615,10 @@ All examples are located in `examples/rust/examples/` directory.
 
 #### Chat Models
 
-- `get_chat_models()` - Get all available chat models by provider
+- `get_chat_models()` - Get all available chat models by provider, with a
+  per-provider `providers` status map (`ok`, `not_configured`, `auth_failed`,
+  `permission_denied`, `billing`, `rate_limited`, `unavailable`, `unreachable`,
+  `request_error`) so a rejected key is distinguishable from a missing one
 - `get_chat_model(provider)` - Get models for a specific provider (e.g.,
   "openai", "anthropic")
 

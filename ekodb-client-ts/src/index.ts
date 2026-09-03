@@ -88,6 +88,8 @@ export type {
   UpdateSessionRequest,
   MergeSessionsRequest,
   ChatModels,
+  ChatProviderState,
+  ChatProviderStatus,
   CompactChatRequest,
   CompactChatResponse,
   EmbedRequest,

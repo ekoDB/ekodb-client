@@ -432,7 +432,12 @@ Get all available chat models organized by provider.
 
 **Returns:**
 
-- Dictionary mapping provider names to lists of model names
+- Dictionary mapping provider names (`openai`, `anthropic`, `perplexity`,
+  `gemini`) to lists of model names, plus a `providers` key: a dictionary of
+  per-provider status (`status` one of `ok`, `not_configured`, `auth_failed`,
+  `permission_denied`, `billing`, `rate_limited`, `unavailable`, `unreachable`,
+  `request_error`; `verified`; `http_status`; `message`; `model_count`) so a
+  rejected key is distinguishable from a missing one
 
 #### `await client.get_chat_model(provider: str) -> list`
 

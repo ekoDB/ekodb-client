@@ -33,6 +33,16 @@ async def chat_models_examples():
         print(f"OpenAI models: {models.get('openai', [])}")
         print(f"Anthropic models: {models.get('anthropic', [])}")
         print(f"Perplexity models: {models.get('perplexity', [])}")
+        print(f"Gemini models: {models.get('gemini', [])}")
+        # Why each list looks the way it does: a rejected key reports
+        # "auth_failed", a missing one "not_configured".
+        for provider, status in models.get("providers", {}).items():
+            detail = status.get("model_count")
+            detail = (
+                f"{detail} models" if detail is not None else status.get("message", "")
+            )
+            verified = "" if status.get("verified") else " (unverified)"
+            print(f"  {provider}: {status['status']}{verified} {detail}")
     except Exception as e:
         print(f"GetChatModels error (expected if no LLM configured): {e}")
 

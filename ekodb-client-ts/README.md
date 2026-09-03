@@ -308,8 +308,11 @@ const joinResults = await client.find("users", multiQuery);
 
 #### Chat Models
 
-- `getChatModels(): Promise<Record<string, string[]>>` - Get all available chat
-  models by provider
+- `getChatModels(): Promise<ChatModels>` - Get all available chat models by
+  provider (`openai`, `anthropic`, `perplexity`, `gemini`), plus a per-provider
+  `providers` status map (`ok`, `not_configured`, `auth_failed`,
+  `permission_denied`, `billing`, `rate_limited`, `unavailable`, `unreachable`,
+  `request_error`) so a rejected key is distinguishable from a missing one
 - `getChatModel(provider: string): Promise<string[]>` - Get models for a
   specific provider
 

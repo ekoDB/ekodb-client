@@ -416,12 +416,55 @@ export interface MergeSessionsRequest {
 }
 
 /**
- * Available chat models by provider
+ * A provider's state on `GET /api/chat_models`. The union lists the states
+ * this client knows; the `string` escape keeps a newer server's status from
+ * failing to type-check.
+ */
+export type ChatProviderState =
+  | "ok"
+  | "not_configured"
+  | "auth_failed"
+  | "permission_denied"
+  | "billing"
+  | "rate_limited"
+  | "unavailable"
+  | "unreachable"
+  | "request_error"
+  | (string & {});
+
+/**
+ * One provider's row in `ChatModels.providers`.
+ */
+export interface ChatProviderStatus {
+  status: ChatProviderState;
+  /**
+   * True when the status is the provider's own answer about the configured
+   * key. A 5xx, a refused connection, or a missing key says nothing about it.
+   */
+  verified: boolean;
+  /** The provider's own HTTP status, when it answered. */
+  http_status?: number;
+  /** The provider's own message, when it answered. */
+  message?: string;
+  /** How many models were listed, when the status is `ok`. */
+  model_count?: number;
+}
+
+/**
+ * Available chat models by provider, and why each list looks the way it does.
  */
 export interface ChatModels {
   openai: string[];
   anthropic: string[];
   perplexity: string[];
+  /** Google Gemini models. Absent from a server that predates the field. */
+  gemini?: string[];
+  /**
+   * Per-provider status keyed by provider name. A rejected key reports
+   * `auth_failed` where a missing one reports `not_configured`, so an empty
+   * list is never ambiguous. Absent from a server that predates the map.
+   */
+  providers?: { [provider: string]: ChatProviderStatus };
 }
 
 /**
@@ -2273,6 +2316,7 @@ export class EkoDBClient {
               stream.emit("event", {
                 type: "error",
                 error: eventData.error,
+                ...providerFailureFields(eventData),
               } as ChatStreamEvent);
             } else if (eventData.content && eventData.message_id) {
               // Done event — has full content + message_id
@@ -3601,7 +3645,50 @@ export type ChatStreamEvent =
       toolName: string;
       arguments: any;
     }
-  | { type: "error"; error: string };
+  | {
+      type: "error";
+      error: string;
+      /**
+       * The provider-failure classification (`provider_auth_failed`,
+       * `provider_permission_denied`, `provider_billing`,
+       * `provider_rate_limited`, `provider_unavailable`,
+       * `provider_unreachable`, `provider_not_configured`,
+       * `provider_request_error`), when the failure was the LLM provider's
+       * answer. Absent for a transport failure or a plain server error.
+       */
+      error_kind?: string;
+      provider?: string;
+      /** The provider's own HTTP status. */
+      provider_status?: number;
+      retry_after_secs?: number;
+    };
+
+/**
+ * The classification fields of an SSE `error` frame, only those present, so
+ * a plain error stays `{ type, error }`.
+ */
+function providerFailureFields(eventData: {
+  error_kind?: unknown;
+  provider?: unknown;
+  provider_status?: unknown;
+  retry_after_secs?: unknown;
+}): {
+  error_kind?: string;
+  provider?: string;
+  provider_status?: number;
+  retry_after_secs?: number;
+} {
+  const fields: ReturnType<typeof providerFailureFields> = {};
+  if (typeof eventData.error_kind === "string")
+    fields.error_kind = eventData.error_kind;
+  if (typeof eventData.provider === "string")
+    fields.provider = eventData.provider;
+  if (typeof eventData.provider_status === "number")
+    fields.provider_status = eventData.provider_status;
+  if (typeof eventData.retry_after_secs === "number")
+    fields.retry_after_secs = eventData.retry_after_secs;
+  return fields;
+}
 
 /** Definition for a client-side tool the LLM can call. */
 export interface ClientToolDefinition {

@@ -26,13 +26,30 @@ async function main() {
     console.log("Available chat models by provider:");
 
     // Iterate over providers
-    for (const [provider, modelList] of Object.entries(models)) {
+    const lists = {
+      openai: models.openai,
+      anthropic: models.anthropic,
+      perplexity: models.perplexity,
+      gemini: models.gemini ?? [],
+    };
+    for (const [provider, modelList] of Object.entries(lists)) {
       if (modelList.length > 0) {
         console.log(`  ${provider}:`);
         for (const modelName of modelList) {
           console.log(`    - ${modelName}`);
         }
       }
+    }
+    // Why each list looks the way it does: a rejected key reports
+    // "auth_failed", a missing one "not_configured".
+    console.log("Provider status:");
+    for (const [provider, status] of Object.entries(models.providers ?? {})) {
+      const detail =
+        status.model_count !== undefined
+          ? `${status.model_count} models`
+          : (status.message ?? "");
+      const verified = status.verified ? "" : " (unverified)";
+      console.log(`  ${provider}: ${status.status}${verified} ${detail}`);
     }
   } catch (error) {
     console.log(`GetChatModels error: ${error}`);

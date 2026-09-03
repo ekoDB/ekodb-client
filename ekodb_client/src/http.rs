@@ -2049,7 +2049,7 @@ impl HttpClient {
                 let chunk = match chunk_result {
                     Ok(c) => c,
                     Err(e) => {
-                        let _ = tx.send(ChatStreamEvent::Error(e.to_string())).await;
+                        let _ = tx.send(ChatStreamEvent::Error(e.to_string().into())).await;
                         return;
                     }
                 };
@@ -2160,9 +2160,12 @@ impl HttpClient {
                                 }
                                 continue;
                             }
-                            // Error event
-                            if let Some(err) = event_data.get("error").and_then(|v| v.as_str()) {
-                                let _ = tx.send(ChatStreamEvent::Error(err.to_string())).await;
+                            // Error event, with the server's provider-failure
+                            // classification when it sent one.
+                            if let Some(err) =
+                                crate::websocket::ChatStreamError::from_event(&event_data)
+                            {
+                                let _ = tx.send(ChatStreamEvent::Error(err)).await;
                                 return;
                             }
                         }

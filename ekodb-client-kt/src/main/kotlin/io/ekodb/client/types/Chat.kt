@@ -1,6 +1,10 @@
 package io.ekodb.client.types
 
 import kotlinx.serialization.*
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.*
 
 // ========== Tool Configuration ==========
@@ -389,13 +393,92 @@ data class MergeSessionsRequest(
 // ========== Models ==========
 
 /**
- * Available LLM models by provider.
+ * A provider's state on `GET /api/chat_models`. A status this client version
+ * does not know decodes to [UNKNOWN], so a newer server cannot break the client.
+ */
+@Serializable(with = ChatProviderStateSerializer::class)
+enum class ChatProviderState(val wire: String) {
+    /** The provider listed its models with the configured key. */
+    OK("ok"),
+
+    /** No key (for an OpenAI-compatible endpoint: no key and no URL). */
+    NOT_CONFIGURED("not_configured"),
+
+    /** The provider rejected the key (401). */
+    AUTH_FAILED("auth_failed"),
+
+    /** The key is accepted but may not use this resource or region (403). */
+    PERMISSION_DENIED("permission_denied"),
+
+    /** The account cannot pay (402, or a quota / spend-limit code). */
+    BILLING("billing"),
+
+    /** The provider is rate limiting the server (429). */
+    RATE_LIMITED("rate_limited"),
+
+    /** The provider answered 5xx or an unusable body. */
+    UNAVAILABLE("unavailable"),
+
+    /** Nothing answered: DNS, connect, TLS, or a timeout. */
+    UNREACHABLE("unreachable"),
+
+    /** The provider refused the request itself (any other 4xx). */
+    REQUEST_ERROR("request_error"),
+
+    /** A status this client version does not know: the server is newer. */
+    UNKNOWN("unknown");
+
+    companion object {
+        fun fromWire(name: String): ChatProviderState =
+            entries.firstOrNull { it.wire == name } ?: UNKNOWN
+    }
+}
+
+object ChatProviderStateSerializer : KSerializer<ChatProviderState> {
+    override val descriptor = PrimitiveSerialDescriptor("ChatProviderState", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: ChatProviderState) = encoder.encodeString(value.wire)
+    override fun deserialize(decoder: Decoder): ChatProviderState =
+        ChatProviderState.fromWire(decoder.decodeString())
+}
+
+/**
+ * One provider's row in [ChatModels.providers].
+ */
+@Serializable
+data class ChatProviderStatus(
+    val status: ChatProviderState,
+    /**
+     * True when the status is the provider's own answer about the configured
+     * key. A 5xx, a refused connection, or a missing key says nothing about it.
+     */
+    val verified: Boolean,
+    /** The provider's own HTTP status, when it answered. */
+    @SerialName("http_status") val httpStatus: Int? = null,
+    /** The provider's own message, when it answered. */
+    val message: String? = null,
+    /** How many models were listed, when the status is `ok`. */
+    @SerialName("model_count") val modelCount: Int? = null,
+) {
+    /** True when the provider listed its models with the configured key. */
+    val isUsable: Boolean get() = status == ChatProviderState.OK
+}
+
+/**
+ * Available LLM models by provider, and why each list looks the way it does.
+ * `gemini` and `providers` are empty from a server that predates them.
  */
 @Serializable
 data class ChatModels(
     val openai: List<String> = emptyList(),
     val anthropic: List<String> = emptyList(),
     val perplexity: List<String> = emptyList(),
+    val gemini: List<String> = emptyList(),
+    /**
+     * Per-provider status keyed by provider name. A rejected key reports
+     * [ChatProviderState.AUTH_FAILED] where a missing one reports
+     * [ChatProviderState.NOT_CONFIGURED], so an empty list is never ambiguous.
+     */
+    val providers: Map<String, ChatProviderStatus> = emptyMap(),
 )
 
 // ========== Raw Completion ==========
