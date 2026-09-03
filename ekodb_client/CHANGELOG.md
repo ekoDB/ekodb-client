@@ -17,7 +17,9 @@ and this project adheres to
   `Models.providers: BTreeMap<String, ProviderStatus>` with
   `ProviderStatus { status: ProviderState, verified, http_status, message, model_count }`
   and `is_usable()`; an unknown status name decodes to `ProviderState::Unknown`
-  rather than failing, so a newer server cannot break the client. TypeScript:
+  rather than failing, so a newer server cannot break the client, and
+  `ProviderState::as_str()` / `Display` print the wire string (`auth_failed`),
+  which is what the README and the example show. TypeScript:
   `ChatModels.gemini?` and
   `ChatModels.providers?: Record<string, ChatProviderStatus>`. Kotlin:
   `ChatModels.gemini`, `ChatModels.providers: Map<String, ChatProviderStatus>`
@@ -41,8 +43,10 @@ and this project adheres to
   the `{ type: "error" }` event carries the same optional fields. Kotlin:
   `ChatStreamEvent.Error` gains `errorKind`, `provider`, `providerStatus`,
   `retryAfterSecs` and `isProviderFailure`, with the one-argument form
-  unchanged. Python: the event dict carries the same keys when present. A
-  transport failure or a plain server error stays a bare message.
+  unchanged; its SSE loop recognises an error frame by its `event: error` name
+  as well as by an `error` key, so a `message`-only payload is an `Error` rather
+  than a skipped frame. Python: the event dict carries the same keys when
+  present. A transport failure or a plain server error stays a bare message.
 
 ### Security
 
