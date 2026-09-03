@@ -43,10 +43,12 @@ and this project adheres to
   the `{ type: "error" }` event carries the same optional fields. Kotlin:
   `ChatStreamEvent.Error` gains `errorKind`, `provider`, `providerStatus`,
   `retryAfterSecs` and `isProviderFailure`, with the one-argument form
-  unchanged; its SSE loop recognises an error frame by its `event: error` name
-  as well as by an `error` key, so a `message`-only payload is an `Error` rather
-  than a skipped frame. Python: the event dict carries the same keys when
-  present. A transport failure or a plain server error stays a bare message.
+  unchanged. Python: the event dict carries the same keys when present. A
+  transport failure or a plain server error stays a bare message. Every SSE
+  loop (Rust, and through it Python; TypeScript; Kotlin) recognises an error
+  frame by its `event: error` name as well as by an `error` key, so a
+  `message`-only payload is an `Error` rather than a skipped frame — Rust
+  exposes that as `ChatStreamError::from_error_event`.
 
 ### Security
 
