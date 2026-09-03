@@ -2325,19 +2325,12 @@ export class EkoDBClient {
             const eventData = JSON.parse(dataStr);
             // An error frame is one the server names `error`, or whose
             // payload carries an `error`; a `message`-only payload is still
-            // the error rather than a frame to skip. The text is the first of
-            // `error` / `message` that is a string — a structured `error`
-            // object is still an error frame, with the fixed fallback, never
-            // a non-string `error`.
-            const text = (value: unknown): string | undefined =>
-              typeof value === "string" && value ? value : undefined;
+            // the error rather than a frame to skip, and the text is always a
+            // string (`streamErrorText`).
             if (eventData.error != null || eventName === "error") {
               stream.emit("event", {
                 type: "error",
-                error:
-                  text(eventData.error) ??
-                  text(eventData.message) ??
-                  "Unknown error",
+                error: streamErrorText(eventData),
                 ...providerFailureFields(eventData),
               } as ChatStreamEvent);
             } else if (eventData.content && eventData.message_id) {
@@ -3686,7 +3679,22 @@ export type ChatStreamEvent =
     };
 
 /**
- * The classification fields of an SSE `error` frame, only those present, so
+ * The text of a stream error frame: the first of `error` / `message` that is
+ * a non-empty string, else a fixed fallback — a structured `error` object is
+ * still an error, never a non-string `error` on the event. Shared by the SSE
+ * and WebSocket routes so the two cannot drift.
+ */
+function streamErrorText(payload: {
+  error?: unknown;
+  message?: unknown;
+}): string {
+  const text = (value: unknown): string | undefined =>
+    typeof value === "string" && value ? value : undefined;
+  return text(payload.error) ?? text(payload.message) ?? "Unknown error";
+}
+
+/**
+ * The classification fields of a stream error frame, only those present, so
  * a plain error stays `{ type, error }`.
  */
 function providerFailureFields(eventData: {
@@ -4394,11 +4402,11 @@ export class WebSocketClient {
         const chatId = msg.payload?.chat_id || msg.payload?.chatId;
         const stream = this.chatStreams.get(chatId);
         if (stream) {
-          // The classification rides on the WebSocket route exactly as on
-          // the SSE route.
+          // The text guard and the classification are the SSE route's,
+          // so the two routes emit the same shape.
           stream.emit("event", {
             type: "error",
-            error: msg.payload.error || msg.payload.message || "Unknown error",
+            error: streamErrorText(msg.payload),
             ...providerFailureFields(msg.payload),
           } as ChatStreamEvent);
           this.chatStreams.delete(chatId);
