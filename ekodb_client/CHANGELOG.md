@@ -48,7 +48,9 @@ and this project adheres to
   (Rust, and through it Python; TypeScript; Kotlin) recognises an error frame by
   its `event: error` name as well as by an `error` key, so a `message`-only
   payload is an `Error` rather than a skipped frame — Rust exposes that as
-  `ChatStreamError::from_error_event`. A structured `error` object in a frame is still an error, with the fixed text: a stream event's `error` is always a string, in every client.
+  `ChatStreamError::from_error_event`. A structured `error` object in a frame is
+  still an error, with the fixed text: a stream event's `error` is always a
+  string, in every client.
 
 ### Security
 
