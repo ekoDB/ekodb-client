@@ -231,7 +231,91 @@ pub struct ChatStreamEndPayload {
 pub struct ChatStreamErrorPayload {
     pub chat_id: String,
     pub error: String,
+    /// The provider-failure classification (`provider_auth_failed`, …), when
+    /// the failure was the LLM provider's answer. Absent otherwise.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error_kind: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub provider: Option<String>,
+    /// The provider's own HTTP status.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub provider_status: Option<u16>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub retry_after_secs: Option<u64>,
 }
+
+/// Why a chat stream failed: the message the stream always carried, plus the
+/// server's classification when the failure was the LLM provider's answer —
+/// `error_kind` (`provider_auth_failed`, `provider_permission_denied`,
+/// `provider_billing`, `provider_rate_limited`, `provider_unavailable`,
+/// `provider_unreachable`, `provider_not_configured`,
+/// `provider_request_error`), `provider`, the provider's own
+/// `provider_status`, and `retry_after_secs` on a rate limit. A transport
+/// failure or a plain server error carries the message alone.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ChatStreamError {
+    pub message: String,
+    pub error_kind: Option<String>,
+    pub provider: Option<String>,
+    pub provider_status: Option<u16>,
+    pub retry_after_secs: Option<u64>,
+}
+
+impl ChatStreamError {
+    /// Read an SSE `error` event's data. `None` when the frame is not an error.
+    pub fn from_event(event: &Value) -> Option<Self> {
+        let message = event.get("error")?.as_str()?.to_string();
+        let text = |key: &str| event.get(key).and_then(Value::as_str).map(str::to_string);
+        Some(Self {
+            message,
+            error_kind: text("error_kind"),
+            provider: text("provider"),
+            provider_status: event
+                .get("provider_status")
+                .and_then(Value::as_u64)
+                .and_then(|status| u16::try_from(status).ok()),
+            retry_after_secs: event.get("retry_after_secs").and_then(Value::as_u64),
+        })
+    }
+
+    /// True when the server classified the failure as the LLM provider's
+    /// answer — the case a caller can act on (fix the key, wait, add credit).
+    pub fn is_provider_failure(&self) -> bool {
+        self.error_kind.is_some()
+    }
+}
+
+impl From<String> for ChatStreamError {
+    fn from(message: String) -> Self {
+        Self {
+            message,
+            error_kind: None,
+            provider: None,
+            provider_status: None,
+            retry_after_secs: None,
+        }
+    }
+}
+
+impl From<ChatStreamErrorPayload> for ChatStreamError {
+    fn from(payload: ChatStreamErrorPayload) -> Self {
+        Self {
+            message: payload.error,
+            error_kind: payload.error_kind,
+            provider: payload.provider,
+            provider_status: payload.provider_status,
+            retry_after_secs: payload.retry_after_secs,
+        }
+    }
+}
+
+impl std::fmt::Display for ChatStreamError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.message)
+    }
+}
+
+impl std::error::Error for ChatStreamError {}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MutationNotificationPayload {
@@ -271,8 +355,10 @@ pub enum ChatStreamEvent {
         tool_name: String,
         arguments: Value,
     },
-    /// An error occurred during streaming
-    Error(String),
+    /// An error occurred during streaming. `Display` is the message; the
+    /// provider-failure classification, when the server sent one, is on the
+    /// fields.
+    Error(ChatStreamError),
 }
 
 type WsWrite = SplitSink<WebSocketStream<MaybeTlsStream<tokio::net::TcpStream>>, Message>;
@@ -577,7 +663,7 @@ impl WebSocketClient {
                                     if let Some(tx) = state.chat_senders.remove(&payload.chat_id) {
                                         SendAction::ChatEvent(
                                             tx,
-                                            ChatStreamEvent::Error(payload.error),
+                                            ChatStreamEvent::Error(payload.into()),
                                         )
                                     } else {
                                         SendAction::None
@@ -639,7 +725,9 @@ impl WebSocketClient {
                         }
                         for (_, tx) in chat_senders {
                             let _ = tx
-                                .send(ChatStreamEvent::Error("Connection closed".to_string()))
+                                .send(ChatStreamEvent::Error(
+                                    "Connection closed".to_string().into(),
+                                ))
                                 .await;
                         }
                         break;
@@ -1316,6 +1404,57 @@ impl WebSocketClient {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // The deployment classifies a provider failure on a stream error
+    // (`error_kind`, `provider`, `provider_status`, `retry_after_secs`). The
+    // event carries every field so a consumer can act on it without
+    // string-matching; a plain error stays a plain error.
+    #[test]
+    fn chat_stream_error_carries_the_provider_failure_classification() {
+        let payload: ChatStreamErrorPayload = serde_json::from_str(
+            r#"{"chat_id":"c1","error":"OpenAI API error 429 Too Many Requests",
+                "error_kind":"provider_rate_limited","provider":"openai",
+                "provider_status":429,"retry_after_secs":7}"#,
+        )
+        .unwrap();
+        let err = ChatStreamError::from(payload);
+        assert_eq!(err.message, "OpenAI API error 429 Too Many Requests");
+        assert_eq!(err.error_kind.as_deref(), Some("provider_rate_limited"));
+        assert_eq!(err.provider.as_deref(), Some("openai"));
+        assert_eq!(err.provider_status, Some(429));
+        assert_eq!(err.retry_after_secs, Some(7));
+        assert!(err.is_provider_failure());
+        assert_eq!(err.to_string(), "OpenAI API error 429 Too Many Requests");
+    }
+
+    #[test]
+    fn chat_stream_error_from_an_sse_event_reads_the_same_fields() {
+        let event = serde_json::json!({
+            "error": "OpenAI API error: Incorrect API key provided",
+            "error_kind": "provider_auth_failed",
+            "provider": "openai",
+            "provider_status": 401
+        });
+        let err = ChatStreamError::from_event(&event).expect("an error event");
+        assert_eq!(err.error_kind.as_deref(), Some("provider_auth_failed"));
+        assert_eq!(err.provider_status, Some(401));
+        assert_eq!(err.retry_after_secs, None);
+        assert!(ChatStreamError::from_event(&serde_json::json!({"token": "hi"})).is_none());
+    }
+
+    #[test]
+    fn a_plain_chat_stream_error_stays_bare() {
+        let payload: ChatStreamErrorPayload =
+            serde_json::from_str(r#"{"chat_id":"c1","error":"Model unavailable"}"#).unwrap();
+        let err = ChatStreamError::from(payload);
+        assert_eq!(err.message, "Model unavailable");
+        assert_eq!(err.error_kind, None);
+        assert!(!err.is_provider_failure());
+        // A message alone still builds one, for transport failures.
+        let transport = ChatStreamError::from("Connection closed".to_string());
+        assert_eq!(transport.to_string(), "Connection closed");
+        assert!(!transport.is_provider_failure());
+    }
 
     // When the connection negotiates msgpack, the server sends responses as
     // MessagePack maps `{type, payload, messageId}` and the dispatcher decodes

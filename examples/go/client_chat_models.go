@@ -45,6 +45,22 @@ func main() {
 		fmt.Printf("OpenAI models: %v\n", models.OpenAI)
 		fmt.Printf("Anthropic models: %v\n", models.Anthropic)
 		fmt.Printf("Perplexity models: %v\n", models.Perplexity)
+		fmt.Printf("Gemini models: %v\n", models.Gemini)
+		// Why each list looks the way it does: a rejected key reports
+		// auth_failed, a missing one not_configured.
+		for provider, status := range models.Providers {
+			detail := ""
+			if status.ModelCount != nil {
+				detail = fmt.Sprintf("%d models", *status.ModelCount)
+			} else if status.Message != nil {
+				detail = *status.Message
+			}
+			verified := ""
+			if !status.Verified {
+				verified = " (unverified)"
+			}
+			fmt.Printf("  %s: %s%s %s\n", provider, status.Status, verified, detail)
+		}
 	}
 
 	// Example 2: Get models for a specific provider

@@ -39,6 +39,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             for model in &models.perplexity {
                 println!("  - {}", model);
             }
+            println!("\nGemini models ({}):", models.gemini.len());
+            for model in &models.gemini {
+                println!("  - {}", model);
+            }
+            // Why each list looks the way it does: a rejected key reports
+            // `auth_failed`, a missing one `not_configured`.
+            println!("\nProvider status:");
+            for (provider, status) in &models.providers {
+                let detail = match status.model_count {
+                    Some(count) => format!("{count} models"),
+                    None => status.message.clone().unwrap_or_default(),
+                };
+                println!(
+                    "  {provider}: {:?}{} {detail}",
+                    status.status,
+                    if status.verified { "" } else { " (unverified)" }
+                );
+            }
         }
         Err(e) => println!("GetChatModels error: {}", e),
     }

@@ -4150,7 +4150,21 @@ impl ChatStreamReceiver {
                         }
                         ekodb_client::websocket::ChatStreamEvent::Error(error) => {
                             dict.set_item("type", "error")?;
-                            dict.set_item("error", error)?;
+                            dict.set_item("error", &error.message)?;
+                            // The provider-failure classification, when the
+                            // server sent one; absent keys mean a plain error.
+                            if let Some(kind) = &error.error_kind {
+                                dict.set_item("error_kind", kind)?;
+                            }
+                            if let Some(provider) = &error.provider {
+                                dict.set_item("provider", provider)?;
+                            }
+                            if let Some(status) = error.provider_status {
+                                dict.set_item("provider_status", status)?;
+                            }
+                            if let Some(secs) = error.retry_after_secs {
+                                dict.set_item("retry_after_secs", secs)?;
+                            }
                         }
                     }
                     Ok(dict.into())

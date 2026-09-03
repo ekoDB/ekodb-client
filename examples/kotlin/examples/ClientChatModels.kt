@@ -4,6 +4,7 @@ import io.ekodb.client.EkoDBClient
 import io.github.cdimascio.dotenv.dotenv
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
 /**
@@ -33,7 +34,8 @@ fun main() = runBlocking {
             println("Available chat models by provider:")
 
             // Iterate over providers
-            for ((provider, modelList) in models) {
+            // `providers` is a status object, not a model list — printed below.
+            for ((provider, modelList) in models.filterKeys { it != "providers" }) {
                 val modelArray = modelList as? JsonArray
                 if (modelArray != null && modelArray.isNotEmpty()) {
                     println("  $provider:")
@@ -41,6 +43,16 @@ fun main() = runBlocking {
                         println("    - ${model.jsonPrimitive.content}")
                     }
                 }
+            }
+            // Why each list looks the way it does: a rejected key reports
+            // "auth_failed", a missing one "not_configured".
+            println("Provider status:")
+            models["providers"]?.jsonObject?.forEach { (provider, status) ->
+                val row = status.jsonObject
+                val detail = row["model_count"]?.jsonPrimitive?.content?.let { "$it models" }
+                    ?: row["message"]?.jsonPrimitive?.content.orEmpty()
+                val verified = if (row["verified"]?.jsonPrimitive?.content == "true") "" else " (unverified)"
+                println("  $provider: ${row["status"]?.jsonPrimitive?.content}$verified $detail")
             }
         } catch (e: Exception) {
             println("GetChatModels error: ${e.message}")

@@ -88,7 +88,7 @@ The sections below track the implementation history.
 ## Chat Models API
 
 - `getChatModels()` - Rust ✅ | Go ✅ | Python ✅ | TypeScript ✅ | JavaScript
-  ✅ | Kotlin ✅
+  ✅ | Kotlin ✅ (incl. `gemini` and the per-provider `providers` status map)
 - `getChatModel(name)` - Rust ✅ | Go ✅ | Python ✅ | TypeScript ✅ |
   JavaScript ✅ | Kotlin ✅
 - `getChatMessage(chatId, msgId)` - Rust ✅ | Go ✅ | Python ✅ | TypeScript ✅

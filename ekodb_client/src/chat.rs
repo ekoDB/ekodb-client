@@ -43,12 +43,74 @@ pub struct ToolConfig {
     pub tool_choice: Option<ToolChoice>,
 }
 
-/// Available LLM models from different providers
+/// Available LLM models from different providers, and why each list looks
+/// the way it does.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Models {
     pub openai: Vec<String>,
     pub anthropic: Vec<String>,
     pub perplexity: Vec<String>,
+    /// Google Gemini models. Empty from a server that predates the field.
+    #[serde(default)]
+    pub gemini: Vec<String>,
+    /// Per-provider status, keyed by provider name (`"openai"`, `"anthropic"`,
+    /// `"perplexity"`, `"gemini"`). A rejected key reports `auth_failed`
+    /// where a missing one reports `not_configured`, so an empty list is
+    /// never ambiguous. Empty from a server that predates the map.
+    #[serde(default)]
+    pub providers: std::collections::BTreeMap<String, ProviderStatus>,
+}
+
+/// A provider's state on `GET /api/chat_models`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ProviderState {
+    /// The provider listed its models with the configured key.
+    Ok,
+    /// No key (for an OpenAI-compatible endpoint: no key and no URL).
+    NotConfigured,
+    /// The provider rejected the key (401).
+    AuthFailed,
+    /// The key is accepted but may not use this resource or region (403).
+    PermissionDenied,
+    /// The account cannot pay (402, or a quota / spend-limit code).
+    Billing,
+    /// The provider is rate limiting the server (429).
+    RateLimited,
+    /// The provider answered 5xx or an unusable body.
+    Unavailable,
+    /// Nothing answered: DNS, connect, TLS, or a timeout.
+    Unreachable,
+    /// The provider refused the request itself (any other 4xx).
+    RequestError,
+    /// A status this client version does not know: the server is newer.
+    #[serde(other)]
+    Unknown,
+}
+
+/// One provider's row in [`Models::providers`].
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ProviderStatus {
+    pub status: ProviderState,
+    /// True when the status is the provider's own answer about the configured
+    /// key. A 5xx, a refused connection, or a missing key says nothing about it.
+    pub verified: bool,
+    /// The provider's own HTTP status, when it answered.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub http_status: Option<u16>,
+    /// The provider's own message, when it answered.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    /// How many models were listed, when the status is `ok`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub model_count: Option<usize>,
+}
+
+impl ProviderStatus {
+    /// True when the provider listed its models with the configured key.
+    pub fn is_usable(&self) -> bool {
+        self.status == ProviderState::Ok
+    }
 }
 
 /// Configuration for searching a specific collection
@@ -631,6 +693,69 @@ pub struct CompactChatResponse {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    const SERVER_WITH_STATUS: &str = r#"{
+        "openai": [],
+        "anthropic": ["claude-sonnet-4-5"],
+        "perplexity": ["sonar"],
+        "gemini": ["gemini-2.5-flash"],
+        "providers": {
+            "anthropic": {"status": "ok", "verified": true, "model_count": 1},
+            "gemini": {"status": "ok", "verified": true, "model_count": 1},
+            "openai": {"status": "auth_failed", "verified": true, "http_status": 401,
+                       "message": "Failed to fetch OpenAI models: 401 Unauthorized"},
+            "perplexity": {"status": "ok", "verified": false,
+                           "message": "static model list; key not verified"}
+        }
+    }"#;
+
+    #[test]
+    fn models_carry_gemini_and_the_per_provider_status() {
+        let models: Models = serde_json::from_str(SERVER_WITH_STATUS).unwrap();
+        assert_eq!(models.gemini, vec!["gemini-2.5-flash"]);
+        let openai = &models.providers["openai"];
+        assert_eq!(openai.status, ProviderState::AuthFailed);
+        assert!(openai.verified);
+        assert_eq!(openai.http_status, Some(401));
+        assert_eq!(
+            openai.message.as_deref(),
+            Some("Failed to fetch OpenAI models: 401 Unauthorized")
+        );
+        assert_eq!(openai.model_count, None);
+        let anthropic = &models.providers["anthropic"];
+        assert_eq!(anthropic.status, ProviderState::Ok);
+        assert_eq!(anthropic.model_count, Some(1));
+        assert!(!models.providers["perplexity"].verified);
+    }
+
+    #[test]
+    fn models_from_a_server_without_status_default_to_empty() {
+        // A server older than the `providers` map still parses.
+        let models: Models =
+            serde_json::from_str(r#"{"openai":["gpt-4o"],"anthropic":[],"perplexity":[]}"#)
+                .unwrap();
+        assert_eq!(models.openai, vec!["gpt-4o"]);
+        assert!(models.gemini.is_empty());
+        assert!(models.providers.is_empty());
+    }
+
+    #[test]
+    fn an_unknown_status_name_is_kept_rather_than_rejected() {
+        // A newer server may add a status; the client must not fail to parse.
+        let status: ProviderStatus =
+            serde_json::from_str(r#"{"status":"brand_new","verified":false}"#).unwrap();
+        assert_eq!(status.status, ProviderState::Unknown);
+    }
+
+    #[test]
+    fn provider_status_usable_means_ok() {
+        let ok: ProviderStatus =
+            serde_json::from_str(r#"{"status":"ok","verified":true,"model_count":3}"#).unwrap();
+        assert!(ok.is_usable());
+        let rejected: ProviderStatus =
+            serde_json::from_str(r#"{"status":"auth_failed","verified":true}"#).unwrap();
+        assert!(!rejected.is_usable());
+    }
 
     #[test]
     fn test_chat_request_builder() {

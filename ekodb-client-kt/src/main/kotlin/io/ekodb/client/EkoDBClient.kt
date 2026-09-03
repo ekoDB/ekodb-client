@@ -2063,9 +2063,8 @@ class EkoDBClient private constructor(
             if (dataStr.isEmpty()) continue
             try {
                 val eventData = Json.parseToJsonElement(dataStr).jsonObject
-                val error = eventData["error"]?.jsonPrimitive?.content
-                if (error != null) {
-                    emit(ChatStreamEvent.Error(error))
+                if (eventData["error"]?.jsonPrimitive?.contentOrNull != null) {
+                    emit(ChatStreamEvent.Error.fromPayload(eventData))
                 } else if (eventData.containsKey("message_id") && eventData.containsKey("content")) {
                     // Done event — has full content + message_id
                     emit(ChatStreamEvent.End(

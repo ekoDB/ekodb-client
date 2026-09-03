@@ -44,7 +44,39 @@ sealed class ChatStreamEvent {
         val arguments: JsonElement
     ) : ChatStreamEvent()
 
-    data class Error(val error: String) : ChatStreamEvent()
+    /**
+     * The stream failed. [error] is the message the stream always carried;
+     * [errorKind] and the fields beside it are the server's classification
+     * when the failure was the LLM provider's answer (`provider_auth_failed`,
+     * `provider_permission_denied`, `provider_billing`, `provider_rate_limited`,
+     * `provider_unavailable`, `provider_unreachable`, `provider_not_configured`,
+     * `provider_request_error`) — absent for a transport failure or a plain
+     * server error.
+     */
+    data class Error(
+        val error: String,
+        val errorKind: String? = null,
+        val provider: String? = null,
+        /** The provider's own HTTP status, when it answered. */
+        val providerStatus: Int? = null,
+        val retryAfterSecs: Long? = null,
+    ) : ChatStreamEvent() {
+        /** True when the server classified the failure as the provider's answer. */
+        val isProviderFailure: Boolean get() = errorKind != null
+
+        companion object {
+            /** Read a `ChatStreamError` payload or an SSE `error` frame. */
+            fun fromPayload(payload: JsonObject): Error = Error(
+                error = payload["error"]?.jsonPrimitive?.contentOrNull
+                    ?: payload["message"]?.jsonPrimitive?.contentOrNull
+                    ?: "Unknown error",
+                errorKind = payload["error_kind"]?.jsonPrimitive?.contentOrNull,
+                provider = payload["provider"]?.jsonPrimitive?.contentOrNull,
+                providerStatus = payload["provider_status"]?.jsonPrimitive?.intOrNull,
+                retryAfterSecs = payload["retry_after_secs"]?.jsonPrimitive?.longOrNull,
+            )
+        }
+    }
 }
 
 /** Definition for a client-side tool the LLM can call. */
@@ -396,13 +428,11 @@ class WebSocketClient(
     private suspend fun routeChatStreamError(msg: JsonObject) {
         val chatId = extractChatId(msg) ?: return
         val payload = msg["payload"]?.jsonObject ?: return
-        val error = payload["error"]?.jsonPrimitive?.content
-            ?: payload["message"]?.jsonPrimitive?.content
-            ?: "Unknown error"
+        val error = ChatStreamEvent.Error.fromPayload(payload)
 
         mutex.withLock {
             val ch = chatStreams.remove(chatId)
-            ch?.trySend(ChatStreamEvent.Error(error))
+            ch?.trySend(error)
             ch?.close()
         }
     }

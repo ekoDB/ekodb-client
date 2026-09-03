@@ -13,6 +13,7 @@ import {
   DEFAULT_REQUEST_TIMEOUT_MS,
   parseHealthStatus,
 } from "./client";
+import type { ChatModels } from "./client";
 import { SearchQueryBuilder } from "./search";
 
 // Mock fetch globally
@@ -1436,6 +1437,55 @@ describe("EkoDBClient chat models", () => {
     expect(result.perplexity).toHaveLength(1);
   });
 
+  it("carries gemini and the per-provider status from the server", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse({
+      openai: [],
+      anthropic: ["claude-sonnet-4-5"],
+      perplexity: ["sonar"],
+      gemini: ["gemini-2.5-flash"],
+      providers: {
+        anthropic: { status: "ok", verified: true, model_count: 1 },
+        gemini: { status: "ok", verified: true, model_count: 1 },
+        openai: {
+          status: "auth_failed",
+          verified: true,
+          http_status: 401,
+          message: "Failed to fetch OpenAI models: 401 Unauthorized",
+        },
+        perplexity: {
+          status: "ok",
+          verified: false,
+          message: "static model list; key not verified",
+        },
+      },
+    });
+
+    const result: ChatModels = await client.getChatModels();
+
+    expect(result.gemini).toEqual(["gemini-2.5-flash"]);
+    expect(result.providers?.openai.status).toBe("auth_failed");
+    expect(result.providers?.openai.http_status).toBe(401);
+    expect(result.providers?.openai.verified).toBe(true);
+    expect(result.providers?.perplexity.verified).toBe(false);
+    expect(result.providers?.anthropic.model_count).toBe(1);
+  });
+
+  it("tolerates a server that predates gemini and providers", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse({ openai: ["gpt-4o"], anthropic: [], perplexity: [] });
+
+    const result: ChatModels = await client.getChatModels();
+
+    expect(result.openai).toEqual(["gpt-4o"]);
+    expect(result.gemini).toBeUndefined();
+    expect(result.providers).toBeUndefined();
+  });
+
   it("gets models for specific provider", async () => {
     const client = createTestClient();
 
@@ -2595,6 +2645,42 @@ describe("EkoDBClient chatMessageStream", () => {
 
     expect(events).toHaveLength(1);
     expect(events[0]).toEqual({ type: "error", error: "LLM timeout" });
+  });
+
+  it("carries the provider failure classification on an error event", async () => {
+    // The deployment classifies a provider failure (`error_kind`, `provider`,
+    // `provider_status`, `retry_after_secs`); the event must carry every
+    // field so a consumer can act on it without string-matching.
+    const client = createTestClient();
+    mockTokenResponse();
+
+    const sseBody =
+      'data: {"error":"OpenAI API error: Incorrect API key provided","error_kind":"provider_auth_failed","provider":"openai","provider_status":401}\n';
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      text: async () => sseBody,
+      headers: new Headers({ "content-type": "text/event-stream" }),
+    });
+
+    const events: any[] = [];
+    const stream = client.chatMessageStream("chat_123", {
+      message: "Hello",
+    });
+    stream.on("event", (evt: any) => events.push(evt));
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    expect(events).toEqual([
+      {
+        type: "error",
+        error: "OpenAI API error: Incorrect API key provided",
+        error_kind: "provider_auth_failed",
+        provider: "openai",
+        provider_status: 401,
+      },
+    ]);
   });
 
   it("emits error event on non-200 HTTP response", async () => {
