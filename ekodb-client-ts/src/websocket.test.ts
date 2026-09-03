@@ -479,6 +479,49 @@ describe("WebSocketClient", () => {
       client.close();
     });
 
+    // A structured `error` value is still an error, with string text — the
+    // WebSocket route guards the shape exactly as the SSE route does.
+    it("keeps the error text a string when the payload's error is an object", async () => {
+      const client = new WebSocketClient(
+        `ws://localhost:${port}/api/ws`,
+        "test-token",
+      );
+
+      const streamPromise = client.chatSend("chat-5", "test");
+
+      await new Promise((r) => wss.once("connection", r));
+      const ws = getLastConnection();
+      await waitForMessage(ws);
+
+      const stream = await streamPromise;
+      const events: any[] = [];
+      stream.on("event", (e) => events.push(e));
+
+      ws.send(
+        JSON.stringify({
+          type: "ChatStreamError",
+          payload: {
+            chat_id: "chat-5",
+            error: { code: "upstream_down", status: 503 },
+            error_kind: "provider_unavailable",
+            provider: "gemini",
+          },
+        }),
+      );
+
+      await new Promise((r) => stream.on("close", r));
+      expect(events).toEqual([
+        {
+          type: "error",
+          error: "Unknown error",
+          errorKind: "provider_unavailable",
+          provider: "gemini",
+        },
+      ]);
+
+      client.close();
+    });
+
     it("sends options with ChatSend", async () => {
       const client = new WebSocketClient(
         `ws://localhost:${port}/api/ws`,
