@@ -2057,13 +2057,28 @@ class EkoDBClient private constructor(
             return@flow
         }
         val sseBody = response.bodyAsText()
+        // The `event:` name applies to the data lines that follow it, until the
+        // blank line that ends the frame.
+        var eventName: String? = null
         for (line in sseBody.lines()) {
+            if (line.startsWith("event:")) {
+                eventName = line.removePrefix("event:").trim()
+                continue
+            }
+            if (line.isBlank()) {
+                eventName = null
+                continue
+            }
             if (!line.startsWith("data:")) continue
             val dataStr = line.removePrefix("data:").trim()
             if (dataStr.isEmpty()) continue
             try {
                 val eventData = Json.parseToJsonElement(dataStr).jsonObject
-                if (eventData["error"]?.jsonPrimitive?.contentOrNull != null) {
+                // An error frame is one the server names `error`, or whose
+                // payload carries an `error`; the classification rides along
+                // when it was sent, and a `message`-only payload is still an
+                // error rather than a frame to skip.
+                if (eventName == "error" || eventData["error"]?.jsonPrimitive?.contentOrNull != null) {
                     emit(ChatStreamEvent.Error.fromPayload(eventData))
                 } else if (eventData.containsKey("message_id") && eventData.containsKey("content")) {
                     // Done event — has full content + message_id

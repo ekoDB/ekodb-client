@@ -52,7 +52,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     None => status.message.clone().unwrap_or_default(),
                 };
                 println!(
-                    "  {provider}: {:?}{} {detail}",
+                    "  {provider}: {}{} {detail}",
                     status.status,
                     if status.verified { "" } else { " (unverified)" }
                 );

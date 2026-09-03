@@ -342,7 +342,7 @@ println!("Gemini models: {:?}", models.gemini);
 // Why each list looks the way it does: a rejected key reports
 // `auth_failed`, a missing one `not_configured`.
 for (provider, status) in &models.providers {
-    println!("{provider}: {:?} (verified: {})", status.status, status.verified);
+    println!("{provider}: {} (verified: {})", status.status, status.verified);
 }
 
 // Get models for a specific provider

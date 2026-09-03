@@ -88,6 +88,31 @@ pub enum ProviderState {
     Unknown,
 }
 
+impl ProviderState {
+    /// The wire string the server sends (`auth_failed`, `not_configured`, …);
+    /// `Unknown` is `unknown`.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Ok => "ok",
+            Self::NotConfigured => "not_configured",
+            Self::AuthFailed => "auth_failed",
+            Self::PermissionDenied => "permission_denied",
+            Self::Billing => "billing",
+            Self::RateLimited => "rate_limited",
+            Self::Unavailable => "unavailable",
+            Self::Unreachable => "unreachable",
+            Self::RequestError => "request_error",
+            Self::Unknown => "unknown",
+        }
+    }
+}
+
+impl std::fmt::Display for ProviderState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
 /// One provider's row in [`Models::providers`].
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ProviderStatus {
@@ -693,6 +718,31 @@ pub struct CompactChatResponse {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // The wire string is what the server sends and what a person reads in a
+    // log or a README; `Display` prints it, and `as_str` round-trips through
+    // serde for every state, `Unknown` included.
+    #[test]
+    fn provider_state_displays_its_wire_string() {
+        assert_eq!(ProviderState::AuthFailed.as_str(), "auth_failed");
+        assert_eq!(ProviderState::NotConfigured.to_string(), "not_configured");
+        assert_eq!(ProviderState::Unknown.to_string(), "unknown");
+        for state in [
+            ProviderState::Ok,
+            ProviderState::NotConfigured,
+            ProviderState::AuthFailed,
+            ProviderState::PermissionDenied,
+            ProviderState::Billing,
+            ProviderState::RateLimited,
+            ProviderState::Unavailable,
+            ProviderState::Unreachable,
+            ProviderState::RequestError,
+        ] {
+            let json = serde_json::to_string(&state).unwrap();
+            assert_eq!(json, format!("\"{}\"", state.as_str()));
+            assert_eq!(serde_json::from_str::<ProviderState>(&json).unwrap(), state);
+        }
+    }
 
     const SERVER_WITH_STATUS: &str = r#"{
         "openai": [],
