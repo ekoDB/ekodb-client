@@ -2676,7 +2676,7 @@ describe("EkoDBClient chatMessageStream", () => {
       {
         type: "error",
         error: "Unknown error",
-        error_kind: "provider_unavailable",
+        errorKind: "provider_unavailable",
         provider: "openai",
       },
     ]);
@@ -2709,8 +2709,9 @@ describe("EkoDBClient chatMessageStream", () => {
 
   it("carries the provider failure classification on an error event", async () => {
     // The deployment classifies a provider failure (`error_kind`, `provider`,
-    // `provider_status`, `retry_after_secs`); the event must carry every
-    // field so a consumer can act on it without string-matching.
+    // `provider_status`, `retry_after_secs` on the wire); the event carries
+    // every one of them, in this shape's camelCase, so a consumer can act on
+    // it without string-matching.
     const client = createTestClient();
     mockTokenResponse();
 
@@ -2736,9 +2737,9 @@ describe("EkoDBClient chatMessageStream", () => {
       {
         type: "error",
         error: "OpenAI API error: Incorrect API key provided",
-        error_kind: "provider_auth_failed",
+        errorKind: "provider_auth_failed",
         provider: "openai",
-        provider_status: 401,
+        providerStatus: 401,
       },
     ]);
   });
