@@ -8,6 +8,42 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- **`ChatModels` carries `gemini` and a per-provider `providers` status map
+  (#183).** `GET /api/chat_models` now says _why_ each provider's list looks the
+  way it does, so a rejected key is distinguishable from a missing one — both
+  were an empty list before. Rust: `Models.gemini` and
+  `Models.providers: BTreeMap<String, ProviderStatus>` with
+  `ProviderStatus { status: ProviderState, verified, http_status, message, model_count }`
+  and `is_usable()`; an unknown status name decodes to `ProviderState::Unknown`
+  rather than failing, so a newer server cannot break the client. TypeScript:
+  `ChatModels.gemini?` and
+  `ChatModels.providers?: Record<string, ChatProviderStatus>`. Kotlin:
+  `ChatModels.gemini`, `ChatModels.providers: Map<String, ChatProviderStatus>`
+  with `ChatProviderState` (unknown → `UNKNOWN`) and `isUsable`. Python returns
+  the same keys in the dictionary. Every field is optional / defaulted, so a
+  server that predates them still parses. The `client_chat_models` example in
+  each language prints the status beside the lists. Pairs with the server-side
+  change, tracked internally.
+- **Stream errors carry the provider-failure classification.** When a chat
+  stream fails because of the LLM provider, the server now classifies the
+  failure — `error_kind` (`provider_auth_failed`, `provider_permission_denied`,
+  `provider_billing`, `provider_rate_limited`, `provider_unavailable`,
+  `provider_unreachable`, `provider_not_configured`, `provider_request_error`),
+  `provider`, the provider's own `provider_status`, and `retry_after_secs` on a
+  rate limit — on both the SSE `error` event and the WebSocket `ChatStreamError`
+  message. Rust: `ChatStreamEvent::Error` now carries a
+  `ChatStreamError { message, error_kind, provider, provider_status, retry_after_secs }`
+  with `is_provider_failure()`; `Display` is the message, so
+  `eprintln!("{err}")` reads as before, but code that used the payload as a
+  `String` must read `.message` (a breaking change on the 0.x line). TypeScript:
+  the `{ type: "error" }` event carries the same optional fields. Kotlin:
+  `ChatStreamEvent.Error` gains `errorKind`, `provider`, `providerStatus`,
+  `retryAfterSecs` and `isProviderFailure`, with the one-argument form
+  unchanged. Python: the event dict carries the same keys when present. A
+  transport failure or a plain server error stays a bare message.
+
 ### Security
 
 - **Dependency audit sweep (#176).** CI unit-tests workflow moved from Node 20
@@ -30,14 +66,14 @@ and this project adheres to
   `golang.org/x/net v0.38.0` in `examples/go/go.mod`. The previous sweep read it
   correctly as not genuinely used, but the manifest entry was left in place, so
   the alert stayed open against a requirement nothing imports.
-  `go mod why -m golang.org/x/net` reports *"(main module does not need module
-  golang.org/x/net)"*, and the Go client module requires only
+  `go mod why -m golang.org/x/net` reports _"(main module does not need module
+  golang.org/x/net)"_, and the Go client module requires only
   `gorilla/websocket`, `vmihailenco/msgpack/v5` and `vmihailenco/tagparser/v2`.
   So the fix is `go mod tidy`, which **removes** the requirement rather than
-  upgrading it — strictly better than bumping to 0.55.0, which would have carried
-  a newer copy of something nothing imports. Verified afterwards that the relative
-  `replace` directive survived, that the Go client module still builds, and that
-  every example still compiles individually.
+  upgrading it — strictly better than bumping to 0.55.0, which would have
+  carried a newer copy of something nothing imports. Verified afterwards that
+  the relative `replace` directive survived, that the Go client module still
+  builds, and that every example still compiles individually.
 
 ## [0.25.0] - 2026-07-14
 
