@@ -67,14 +67,20 @@ sealed class ChatStreamEvent {
         companion object {
             /** Read a `ChatStreamError` payload or an SSE `error` frame. */
             fun fromPayload(payload: JsonObject): Error = Error(
-                error = payload["error"]?.jsonPrimitive?.contentOrNull
-                    ?: payload["message"]?.jsonPrimitive?.contentOrNull
+                // The text is the first of `error` / `message` that is a
+                // string; a structured `error` object still builds the event,
+                // with the fixed fallback, rather than throwing.
+                error = payload.text("error")
+                    ?: payload.text("message")
                     ?: "Unknown error",
-                errorKind = payload["error_kind"]?.jsonPrimitive?.contentOrNull,
-                provider = payload["provider"]?.jsonPrimitive?.contentOrNull,
-                providerStatus = payload["provider_status"]?.jsonPrimitive?.intOrNull,
-                retryAfterSecs = payload["retry_after_secs"]?.jsonPrimitive?.longOrNull,
+                errorKind = payload.text("error_kind"),
+                provider = payload.text("provider"),
+                providerStatus = (payload["provider_status"] as? JsonPrimitive)?.intOrNull,
+                retryAfterSecs = (payload["retry_after_secs"] as? JsonPrimitive)?.longOrNull,
             )
+
+            private fun JsonObject.text(key: String): String? =
+                (this[key] as? JsonPrimitive)?.takeIf { it.isString }?.contentOrNull?.takeIf { it.isNotEmpty() }
         }
     }
 }

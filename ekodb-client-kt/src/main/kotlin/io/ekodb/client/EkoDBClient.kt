@@ -2078,7 +2078,8 @@ class EkoDBClient private constructor(
                 // payload carries an `error`; the classification rides along
                 // when it was sent, and a `message`-only payload is still an
                 // error rather than a frame to skip.
-                if (eventName == "error" || eventData["error"]?.jsonPrimitive?.contentOrNull != null) {
+                val hasError = eventData["error"].let { it != null && it !is JsonNull }
+                if (eventName == "error" || hasError) {
                     emit(ChatStreamEvent.Error.fromPayload(eventData))
                 } else if (eventData.containsKey("message_id") && eventData.containsKey("content")) {
                     // Done event — has full content + message_id
