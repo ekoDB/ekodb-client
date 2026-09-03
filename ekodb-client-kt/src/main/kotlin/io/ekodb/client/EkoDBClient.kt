@@ -1797,10 +1797,11 @@ class EkoDBClient private constructor(
     /**
      * The typed form of [getChatModels]: the four model lists plus the
      * `providers` status map, so a rejected key reads as
-     * [ChatProviderState.AUTH_FAILED] where a missing one reads as
-     * [ChatProviderState.NOT_CONFIGURED]. A status this build does not know
-     * decodes to [ChatProviderState.UNKNOWN]; a server that predates `gemini`
-     * or `providers` yields empty defaults.
+     * [io.ekodb.client.types.ChatProviderState.AUTH_FAILED] where a missing
+     * one reads as [io.ekodb.client.types.ChatProviderState.NOT_CONFIGURED].
+     * A status this build does not know decodes to
+     * [io.ekodb.client.types.ChatProviderState.UNKNOWN]; a server that
+     * predates `gemini` or `providers` yields empty defaults.
      */
     suspend fun chatModels(): ChatModels =
         chatModelsJson.decodeFromJsonElement(ChatModels.serializer(), getChatModels())

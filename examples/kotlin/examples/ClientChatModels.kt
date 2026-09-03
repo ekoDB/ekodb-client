@@ -54,7 +54,7 @@ fun main() = runBlocking {
                 println("  $provider: ${status.status.wire}$verified $detail")
             }
         } catch (e: Exception) {
-            println("GetChatModels error: ${e.message}")
+            println("chatModels error: ${e.message}")
         }
         println()
 
