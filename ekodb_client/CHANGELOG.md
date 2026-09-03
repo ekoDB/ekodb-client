@@ -44,15 +44,17 @@ and this project adheres to
   `eprintln!("{err}")`, `err.to_string()`, `err == "…"`, `err.contains(..)` and
   `String::from(err)` compile and mean what they did — only code that binds the
   payload as a `String` by type reads `.message` now (the one source-level
-  change on the 0.x line). TypeScript: the `{ type: "error" }` event carries the
-  same optional fields. Kotlin: `ChatStreamEvent.Error` gains `errorKind`,
-  `provider`, `providerStatus`, `retryAfterSecs` and `isProviderFailure`, with
-  the one-argument form unchanged. Python: the event dict carries the same keys
-  when present. A transport failure or a plain server error stays a bare
-  message. Every SSE loop (Rust, and through it Python; TypeScript; Kotlin)
-  recognises an error frame by its `event: error` name as well as by an `error`
-  key, so a `message`-only payload is an `Error` rather than a skipped frame —
-  Rust exposes that as `ChatStreamError::from_error_event`. A structured `error`
+  change on the 0.x line). TypeScript: the `{ type: "error" }` event carries
+  them as `errorKind`, `provider`, `providerStatus` and `retryAfterSecs` —
+  camelCase like the rest of the event's shape, mapped from the wire keys.
+  Kotlin: `ChatStreamEvent.Error` gains `errorKind`, `provider`,
+  `providerStatus`, `retryAfterSecs` and `isProviderFailure`, with the
+  one-argument form unchanged. Python: the event dict carries the same keys when
+  present. A transport failure or a plain server error stays a bare message.
+  Every SSE loop (Rust, and through it Python; TypeScript; Kotlin) recognises an
+  error frame by its `event: error` name as well as by an `error` key, so a
+  `message`-only payload is an `Error` rather than a skipped frame — Rust
+  exposes that as `ChatStreamError::from_error_event`. A structured `error`
   object in a frame is still an error, with the fixed text: a stream event's
   `error` is always a string, in every client.
 
