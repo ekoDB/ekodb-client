@@ -1,5 +1,6 @@
 package io.ekodb.client
 
+import io.ekodb.client.types.ChatModels
 import io.ekodb.client.types.CompactChatResponse
 import io.ekodb.client.types.FieldType
 import io.ekodb.client.types.Query
@@ -1792,6 +1793,20 @@ class EkoDBClient private constructor(
         }
         return response.body()
     }
+
+    /**
+     * The typed form of [getChatModels]: the four model lists plus the
+     * `providers` status map, so a rejected key reads as
+     * [ChatProviderState.AUTH_FAILED] where a missing one reads as
+     * [ChatProviderState.NOT_CONFIGURED]. A status this build does not know
+     * decodes to [ChatProviderState.UNKNOWN]; a server that predates `gemini`
+     * or `providers` yields empty defaults.
+     */
+    suspend fun chatModels(): ChatModels =
+        chatModelsJson.decodeFromJsonElement(ChatModels.serializer(), getChatModels())
+
+    /** Lenient decoder for `GET /api/chat_models`: unknown keys are a newer server. */
+    private val chatModelsJson = Json { ignoreUnknownKeys = true }
 
     /**
      * Get specific chat model info
