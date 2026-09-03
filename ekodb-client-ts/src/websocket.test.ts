@@ -432,6 +432,53 @@ describe("WebSocketClient", () => {
       client.close();
     });
 
+    // The WebSocket route carries the provider-failure classification like
+    // the SSE route does, in the event's camelCase shape.
+    it("carries the provider failure classification on a chat stream error", async () => {
+      const client = new WebSocketClient(
+        `ws://localhost:${port}/api/ws`,
+        "test-token",
+      );
+
+      const streamPromise = client.chatSend("chat-4", "test");
+
+      await new Promise((r) => wss.once("connection", r));
+      const ws = getLastConnection();
+      await waitForMessage(ws);
+
+      const stream = await streamPromise;
+      const events: any[] = [];
+      stream.on("event", (e) => events.push(e));
+
+      ws.send(
+        JSON.stringify({
+          type: "ChatStreamError",
+          payload: {
+            chat_id: "chat-4",
+            error: "OpenAI API error 429 Too Many Requests",
+            error_kind: "provider_rate_limited",
+            provider: "openai",
+            provider_status: 429,
+            retry_after_secs: 7,
+          },
+        }),
+      );
+
+      await new Promise((r) => stream.on("close", r));
+      expect(events).toEqual([
+        {
+          type: "error",
+          error: "OpenAI API error 429 Too Many Requests",
+          errorKind: "provider_rate_limited",
+          provider: "openai",
+          providerStatus: 429,
+          retryAfterSecs: 7,
+        },
+      ]);
+
+      client.close();
+    });
+
     it("sends options with ChatSend", async () => {
       const client = new WebSocketClient(
         `ws://localhost:${port}/api/ws`,

@@ -3678,11 +3678,11 @@ export type ChatStreamEvent =
        * `provider_request_error`), when the failure was the LLM provider's
        * answer. Absent for a transport failure or a plain server error.
        */
-      error_kind?: string;
+      errorKind?: string;
       provider?: string;
       /** The provider's own HTTP status. */
-      provider_status?: number;
-      retry_after_secs?: number;
+      providerStatus?: number;
+      retryAfterSecs?: number;
     };
 
 /**
@@ -3695,20 +3695,20 @@ function providerFailureFields(eventData: {
   provider_status?: unknown;
   retry_after_secs?: unknown;
 }): {
-  error_kind?: string;
+  errorKind?: string;
   provider?: string;
-  provider_status?: number;
-  retry_after_secs?: number;
+  providerStatus?: number;
+  retryAfterSecs?: number;
 } {
   const fields: ReturnType<typeof providerFailureFields> = {};
   if (typeof eventData.error_kind === "string")
-    fields.error_kind = eventData.error_kind;
+    fields.errorKind = eventData.error_kind;
   if (typeof eventData.provider === "string")
     fields.provider = eventData.provider;
   if (typeof eventData.provider_status === "number")
-    fields.provider_status = eventData.provider_status;
+    fields.providerStatus = eventData.provider_status;
   if (typeof eventData.retry_after_secs === "number")
-    fields.retry_after_secs = eventData.retry_after_secs;
+    fields.retryAfterSecs = eventData.retry_after_secs;
   return fields;
 }
 
@@ -4394,9 +4394,12 @@ export class WebSocketClient {
         const chatId = msg.payload?.chat_id || msg.payload?.chatId;
         const stream = this.chatStreams.get(chatId);
         if (stream) {
+          // The classification rides on the WebSocket route exactly as on
+          // the SSE route.
           stream.emit("event", {
             type: "error",
             error: msg.payload.error || msg.payload.message || "Unknown error",
+            ...providerFailureFields(msg.payload),
           } as ChatStreamEvent);
           this.chatStreams.delete(chatId);
           stream.close();
