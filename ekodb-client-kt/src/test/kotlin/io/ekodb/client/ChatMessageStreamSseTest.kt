@@ -71,6 +71,18 @@ class ChatMessageStreamSseTest {
     }
 
     @Test
+    fun `a structured error object is an error event with the fixed text`() {
+        val events = events(
+            "data: {\"error\":{\"code\":\"upstream_down\"},\"error_kind\":\"provider_unavailable\",\"provider\":\"openai\"}\n\n",
+        )
+        assertEquals(1, events.size, "$events")
+        val error = events[0] as ChatStreamEvent.Error
+        assertEquals("Unknown error", error.error)
+        assertEquals("provider_unavailable", error.errorKind)
+        assertTrue(error.isProviderFailure)
+    }
+
+    @Test
     fun `an error frame whose payload says message is still an error`() {
         val events = events("event: error\ndata: {\"message\":\"boom\"}\n\n")
         assertEquals(listOf<ChatStreamEvent>(ChatStreamEvent.Error("boom")), events)

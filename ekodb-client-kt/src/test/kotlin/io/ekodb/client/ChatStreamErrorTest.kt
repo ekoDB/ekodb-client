@@ -45,6 +45,19 @@ class ChatStreamErrorTest {
         assertEquals(event, ChatStreamEvent.Error("Model unavailable"))
     }
 
+    // A structured `error` (an object, not text) is not a message; the event
+    // still builds, with the fixed fallback and the classification kept.
+    @Test
+    fun `a structured error object does not throw and keeps the classification`() {
+        val payload = Json.parseToJsonElement(
+            """{"chat_id":"c1","error":{"code":"upstream_down"},"error_kind":"provider_unavailable","provider":"openai"}"""
+        ).jsonObject
+        val event = ChatStreamEvent.Error.fromPayload(payload)
+        assertEquals("Unknown error", event.error)
+        assertEquals("provider_unavailable", event.errorKind)
+        assertEquals("openai", event.provider)
+    }
+
     @Test
     fun `falls back to message when error is absent`() {
         val payload = Json.parseToJsonElement("""{"chat_id":"c1","message":"boom"}""").jsonObject

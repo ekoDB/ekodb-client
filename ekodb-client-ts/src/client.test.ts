@@ -2650,6 +2650,38 @@ describe("EkoDBClient chatMessageStream", () => {
     ]);
   });
 
+  it("keeps the error text a string when the server sends a structured error", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+
+    const sseBody =
+      'event: error\ndata: {"error":{"code":"upstream_down","status":503},"error_kind":"provider_unavailable","provider":"openai"}\n\n';
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      text: async () => sseBody,
+      headers: new Headers({ "content-type": "text/event-stream" }),
+    });
+
+    const events: any[] = [];
+    const stream = client.chatMessageStream("chat_123", {
+      message: "Hello",
+    });
+    stream.on("event", (evt: any) => events.push(evt));
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    expect(events).toEqual([
+      {
+        type: "error",
+        error: "Unknown error",
+        error_kind: "provider_unavailable",
+        provider: "openai",
+      },
+    ]);
+  });
+
   it("emits error event on SSE error", async () => {
     const client = createTestClient();
     mockTokenResponse();

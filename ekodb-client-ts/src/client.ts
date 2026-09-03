@@ -2325,11 +2325,19 @@ export class EkoDBClient {
             const eventData = JSON.parse(dataStr);
             // An error frame is one the server names `error`, or whose
             // payload carries an `error`; a `message`-only payload is still
-            // the error rather than a frame to skip.
-            if (eventData.error || eventName === "error") {
+            // the error rather than a frame to skip. The text is the first of
+            // `error` / `message` that is a string — a structured `error`
+            // object is still an error frame, with the fixed fallback, never
+            // a non-string `error`.
+            const text = (value: unknown): string | undefined =>
+              typeof value === "string" && value ? value : undefined;
+            if (eventData.error != null || eventName === "error") {
               stream.emit("event", {
                 type: "error",
-                error: eventData.error ?? eventData.message ?? "Unknown error",
+                error:
+                  text(eventData.error) ??
+                  text(eventData.message) ??
+                  "Unknown error",
                 ...providerFailureFields(eventData),
               } as ChatStreamEvent);
             } else if (eventData.content && eventData.message_id) {
