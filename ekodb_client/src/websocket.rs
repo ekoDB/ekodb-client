@@ -264,7 +264,14 @@ pub struct ChatStreamError {
 impl ChatStreamError {
     /// Read an SSE `error` event's data. `None` when the frame is not an error.
     pub fn from_event(event: &Value) -> Option<Self> {
-        let message = event.get("error")?.as_str()?.to_string();
+        // The `error` key is what makes a default-named frame an error;
+        // its value is the message only when it is text.
+        let error = event.get("error").filter(|value| !value.is_null())?;
+        let message = error
+            .as_str()
+            .or_else(|| event.get("message").and_then(Value::as_str))
+            .unwrap_or("Unknown error")
+            .to_string();
         Some(Self::with_message(message, event))
     }
 
@@ -1476,6 +1483,22 @@ mod tests {
             "Unknown error"
         );
         assert!(ChatStreamError::from_event(&serde_json::json!({"message": "boom"})).is_none());
+    }
+
+    // A default-named frame whose `error` is an object is still an error
+    // frame: the key is what makes it one, and the text falls back.
+    #[test]
+    fn a_structured_error_value_is_still_an_error_frame() {
+        let err = ChatStreamError::from_event(
+            &serde_json::json!({"error": {"code": "upstream_down"}, "error_kind": "provider_unavailable", "provider": "openai"}),
+        )
+        .expect("an error key makes an error frame");
+        assert_eq!(err.message, "Unknown error");
+        assert_eq!(err.error_kind.as_deref(), Some("provider_unavailable"));
+        assert!(err.is_provider_failure());
+        // `null` is absence, as is no key at all.
+        assert!(ChatStreamError::from_event(&serde_json::json!({"error": null})).is_none());
+        assert!(ChatStreamError::from_event(&serde_json::json!({"token": "x"})).is_none());
     }
 
     #[test]
