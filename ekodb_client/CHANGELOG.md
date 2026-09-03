@@ -54,9 +54,12 @@ and this project adheres to
   Every SSE loop (Rust, and through it Python; TypeScript; Kotlin) recognises an
   error frame by its `event: error` name as well as by an `error` key, so a
   `message`-only payload is an `Error` rather than a skipped frame — Rust
-  exposes that as `ChatStreamError::from_error_event`. A structured `error`
-  object in a frame is still an error, with the fixed text: a stream event's
-  `error` is always a string, in every client.
+  exposes that as `ChatStreamError::from_error_event`. On the WebSocket route
+  `ChatStreamErrorPayload.error` is a JSON value rather than a `String`, so a
+  structured `error` (or a `message` instead of `error`) still deserializes; the
+  text rule is the same on every path, and an empty string counts as absent. A
+  structured `error` object in a frame is still an error, with the fixed text: a
+  stream event's `error` is always a string, in every client.
 
 ### Security
 
