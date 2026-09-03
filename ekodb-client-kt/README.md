@@ -523,11 +523,15 @@ find / findById) to read and write within the transaction (read-your-writes).
 
 #### Chat Models
 
-- `getChatModels()` - Get all available chat models organized by provider; the
-  `providers` object carries each provider's status (`ok`, `not_configured`,
-  `auth_failed`, `permission_denied`, `billing`, `rate_limited`, `unavailable`,
-  `unreachable`, `request_error`) so a rejected key is distinguishable from a
-  missing one (typed as `ChatModels` / `ChatProviderStatus`)
+- `getChatModels()` - Get all available chat models organized by provider as the
+  raw `JsonObject`; the `providers` object carries each provider's status (`ok`,
+  `not_configured`, `auth_failed`, `permission_denied`, `billing`,
+  `rate_limited`, `unavailable`, `unreachable`, `request_error`) so a rejected
+  key is distinguishable from a missing one
+- `chatModels()` - The same, typed: `ChatModels` with the four lists and
+  `providers: Map<String, ChatProviderStatus>` (`status: ChatProviderState`,
+  `verified`, `httpStatus`, `message`, `modelCount`, `isUsable`); a status this
+  build does not know decodes to `ChatProviderState.UNKNOWN`
 - `getChatModel(provider)` - Get models for a specific provider (e.g., "openai",
   "anthropic")
 
