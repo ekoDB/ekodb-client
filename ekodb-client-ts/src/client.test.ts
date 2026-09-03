@@ -2622,6 +2622,34 @@ describe("EkoDBClient chatMessageStream", () => {
     expect(events[2].executionTimeMs).toBe(42);
   });
 
+  it("treats a frame named error as an error even when its payload says message", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+
+    const sseBody =
+      'event: token\ndata: {"token":"Hel"}\n\nevent: error\ndata: {"message":"boom"}\n\n';
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      text: async () => sseBody,
+      headers: new Headers({ "content-type": "text/event-stream" }),
+    });
+
+    const events: any[] = [];
+    const stream = client.chatMessageStream("chat_123", {
+      message: "Hello",
+    });
+    stream.on("event", (evt: any) => events.push(evt));
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    expect(events).toEqual([
+      { type: "chunk", content: "Hel" },
+      { type: "error", error: "boom" },
+    ]);
+  });
+
   it("emits error event on SSE error", async () => {
     const client = createTestClient();
     mockTokenResponse();

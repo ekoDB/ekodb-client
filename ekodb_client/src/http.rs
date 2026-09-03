@@ -2044,6 +2044,7 @@ impl HttpClient {
         tokio::spawn(async move {
             let mut stream = response.bytes_stream();
             let mut buf = String::new();
+            let mut event_name: Option<String> = None;
 
             while let Some(chunk_result) = stream.next().await {
                 let chunk = match chunk_result {
@@ -2060,6 +2061,16 @@ impl HttpClient {
                     let line = buf[..newline_pos].to_string();
                     buf = buf[newline_pos + 1..].to_string();
 
+                    // The `event:` name applies to the data lines that
+                    // follow it, until the blank line that ends the frame.
+                    if let Some(name) = line.strip_prefix("event:") {
+                        event_name = Some(name.trim().to_string());
+                        continue;
+                    }
+                    if line.trim().is_empty() {
+                        event_name = None;
+                        continue;
+                    }
                     if let Some(data_str) = line.strip_prefix("data:") {
                         let data_str = data_str.trim();
                         if data_str.is_empty() {
@@ -2067,6 +2078,18 @@ impl HttpClient {
                         }
                         if let Ok(event_data) = serde_json::from_str::<serde_json::Value>(data_str)
                         {
+                            // A frame the server names `error` is an error
+                            // whatever its payload calls the message.
+                            if event_name.as_deref() == Some("error") {
+                                let _ = tx
+                                    .send(ChatStreamEvent::Error(
+                                        crate::websocket::ChatStreamError::from_error_event(
+                                            &event_data,
+                                        ),
+                                    ))
+                                    .await;
+                                return;
+                            }
                             // Token chunk
                             if let Some(token_text) =
                                 event_data.get("token").and_then(|v| v.as_str())

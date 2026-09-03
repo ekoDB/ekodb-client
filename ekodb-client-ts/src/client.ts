@@ -2306,16 +2306,30 @@ export class EkoDBClient {
           return;
         }
 
+        // The `event:` name applies to the data lines that follow it, until
+        // the blank line that ends the frame.
+        let eventName = "";
         const emitLine = (line: string) => {
+          if (line.startsWith("event:")) {
+            eventName = line.slice(6).trim();
+            return;
+          }
+          if (line.trim() === "") {
+            eventName = "";
+            return;
+          }
           if (!line.startsWith("data:")) return;
           const dataStr = line.slice(5).trim();
           if (!dataStr) return;
           try {
             const eventData = JSON.parse(dataStr);
-            if (eventData.error) {
+            // An error frame is one the server names `error`, or whose
+            // payload carries an `error`; a `message`-only payload is still
+            // the error rather than a frame to skip.
+            if (eventData.error || eventName === "error") {
               stream.emit("event", {
                 type: "error",
-                error: eventData.error,
+                error: eventData.error ?? eventData.message ?? "Unknown error",
                 ...providerFailureFields(eventData),
               } as ChatStreamEvent);
             } else if (eventData.content && eventData.message_id) {

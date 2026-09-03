@@ -265,8 +265,24 @@ impl ChatStreamError {
     /// Read an SSE `error` event's data. `None` when the frame is not an error.
     pub fn from_event(event: &Value) -> Option<Self> {
         let message = event.get("error")?.as_str()?.to_string();
+        Some(Self::with_message(message, event))
+    }
+
+    /// A frame the server named `error`: the message is `error`, else
+    /// `message`, else a fixed fallback — the frame is an error whatever its
+    /// payload calls the text.
+    pub fn from_error_event(event: &Value) -> Self {
+        let message = ["error", "message"]
+            .iter()
+            .find_map(|key| event.get(key).and_then(Value::as_str))
+            .unwrap_or("Unknown error")
+            .to_string();
+        Self::with_message(message, event)
+    }
+
+    fn with_message(message: String, event: &Value) -> Self {
         let text = |key: &str| event.get(key).and_then(Value::as_str).map(str::to_string);
-        Some(Self {
+        Self {
             message,
             error_kind: text("error_kind"),
             provider: text("provider"),
@@ -275,7 +291,7 @@ impl ChatStreamError {
                 .and_then(Value::as_u64)
                 .and_then(|status| u16::try_from(status).ok()),
             retry_after_secs: event.get("retry_after_secs").and_then(Value::as_u64),
-        })
+        }
     }
 
     /// True when the server classified the failure as the LLM provider's
@@ -1440,6 +1456,26 @@ mod tests {
         assert_eq!(err.provider_status, Some(401));
         assert_eq!(err.retry_after_secs, None);
         assert!(ChatStreamError::from_event(&serde_json::json!({"token": "hi"})).is_none());
+    }
+
+    // A frame the server names `error` is an error whatever its payload calls
+    // the message; the key-gated form still says "not an error" for a frame
+    // without `error`, so a token frame is never mistaken for one.
+    #[test]
+    fn a_frame_named_error_is_an_error_whatever_its_payload_calls_the_message() {
+        let err = ChatStreamError::from_error_event(&serde_json::json!({"message": "boom"}));
+        assert_eq!(err.message, "boom");
+        assert!(!err.is_provider_failure());
+        let err = ChatStreamError::from_error_event(
+            &serde_json::json!({"error": "x", "error_kind": "provider_billing", "provider": "anthropic"}),
+        );
+        assert_eq!(err.error_kind.as_deref(), Some("provider_billing"));
+        assert!(err.is_provider_failure());
+        assert_eq!(
+            ChatStreamError::from_error_event(&serde_json::json!({})).message,
+            "Unknown error"
+        );
+        assert!(ChatStreamError::from_event(&serde_json::json!({"message": "boom"})).is_none());
     }
 
     #[test]

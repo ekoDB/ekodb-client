@@ -3800,3 +3800,45 @@ async fn test_delete_with_options_encodes_transaction_id_in_query() {
     delete_mock.assert_async().await;
     assert!(result.is_ok(), "delete_with_options failed: {:?}", result);
 }
+
+// ============================================================================
+// SSE chat stream: error frames
+// ============================================================================
+
+// A frame the server names `error` is an error whatever its payload calls the
+// message — a `message`-only payload is an `Error` event, not a frame to skip.
+#[tokio::test]
+async fn test_sse_frame_named_error_is_an_error_whatever_its_payload_calls_the_message() {
+    use ekodb_client::websocket::ChatStreamEvent;
+    let mut server = Server::new_async().await;
+    let _token = mock_token_endpoint(&mut server);
+    let _stream = server
+        .mock("POST", "/api/chat/c1/messages/stream")
+        .with_status(200)
+        .with_header("content-type", "text/event-stream")
+        .with_body("event: token\ndata: {\"token\":\"Hel\"}\n\nevent: error\ndata: {\"message\":\"boom\"}\n\n")
+        .create();
+    let client = create_test_client(&server).await;
+
+    let mut rx = client
+        .chat_message_stream("c1", ekodb_client::ChatMessageRequest::new("hi"))
+        .await
+        .expect("stream opens");
+    let mut events = Vec::new();
+    while let Some(event) = rx.recv().await {
+        events.push(event);
+    }
+
+    assert_eq!(events.len(), 2, "{events:?}");
+    assert!(
+        matches!(&events[0], ChatStreamEvent::Chunk(content) if content == "Hel"),
+        "{events:?}"
+    );
+    match &events[1] {
+        ChatStreamEvent::Error(err) => {
+            assert_eq!(err.message, "boom");
+            assert!(!err.is_provider_failure());
+        }
+        other => panic!("expected an error event, got {other:?}"),
+    }
+}
