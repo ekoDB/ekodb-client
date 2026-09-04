@@ -87,4 +87,14 @@ class ChatMessageStreamSseTest {
         val events = events("event: error\ndata: {\"message\":\"boom\"}\n\n")
         assertEquals(listOf<ChatStreamEvent>(ChatStreamEvent.Error("boom")), events)
     }
+
+    @Test
+    fun `no event follows an error frame`() {
+        // An error ends the stream: a frame the server sends after it is not
+        // surfaced, matching the Rust and Go clients.
+        val events = events(
+            "event: error\ndata: {\"message\":\"boom\"}\n\nevent: token\ndata: {\"token\":\"late\"}\n\n",
+        )
+        assertEquals(listOf<ChatStreamEvent>(ChatStreamEvent.Error("boom")), events)
+    }
 }

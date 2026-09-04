@@ -2096,7 +2096,10 @@ class EkoDBClient private constructor(
                 // error rather than a frame to skip.
                 val hasError = eventData["error"].let { it != null && it !is JsonNull }
                 if (eventName == "error" || hasError) {
+                    // An error ends the stream: nothing the server sends after
+                    // it is surfaced, matching the Rust and Go clients.
                     emit(ChatStreamEvent.Error.fromPayload(eventData))
+                    return@flow
                 } else if (eventData.containsKey("message_id") && eventData.containsKey("content")) {
                     // Done event — has full content + message_id
                     emit(ChatStreamEvent.End(
