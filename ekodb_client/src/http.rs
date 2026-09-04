@@ -3825,11 +3825,13 @@ fn retry_after_secs(headers: &reqwest::header::HeaderMap) -> u64 {
 /// Turn a non-success response into an [`Error`] without assuming the body is
 /// JSON.
 ///
-/// The typed statuses map exactly as they do in `json_body` and
-/// `handle_response` — 401 → `TokenExpired`, 404 → `NotFound`, 429 →
+/// The typed statuses map to the same variants `json_body` and
+/// `handle_response` produce — 401 → `TokenExpired`, 404 → `NotFound`, 429 →
 /// `RateLimit`, 503 → `ServiceUnavailable` — so a caller wrapped in
 /// `execute_with_retry` still retries a throttled or drained server, and
 /// `NotFound` is still matchable. Everything else becomes `Error::Api`.
+/// (Only the 503 message differs in how it is read: `handle_response` decodes
+/// an `ErrorResponse` envelope first, this function takes the text.)
 ///
 /// Not every error carries a JSON envelope: warp renders some rejections with
 /// an empty body, and a proxy in front of the server may return HTML or
