@@ -31,7 +31,7 @@ classifiers = [
 # desync local vs CI. This is the SINGLE source of truth for the ruff version:
 # the Makefile's `ensure-ruff` reads it from here, and CI's lint step runs
 # `make lint-python`, so there is no second pin to keep in lockstep.
-dev = ["pytest>=7.0.0", "pytest-asyncio>=0.21.0", "ruff==0.15.7"]
+dev = ["pytest>=7.0.0", "pytest-asyncio>=0.21.0", "ruff==0.16.5"]
 
 [project.urls]
 Homepage = "https://github.com/ekoDB/ekodb-client"
