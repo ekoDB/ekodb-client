@@ -102,6 +102,17 @@ and this project adheres to
   exports `PIP_DISABLE_PIP_VERSION_CHECK=1` for every pip invocation, and the
   notice lines were removed from the checked-in transcripts.
 
+### Fixed
+
+- **The TypeScript and Kotlin SSE readers stop at an error frame.** An `error`
+  frame ends a chat stream, and the Rust and Go clients already return on it.
+  TypeScript kept reading the body until the server closed it — a proxy holding
+  the connection open after an error would have hung the caller, and any frame
+  sent after the error was surfaced — and Kotlin kept iterating the frames it
+  had already read. TypeScript now cancels the body reader and closes the
+  stream as soon as the error frame is emitted; Kotlin returns from the flow.
+  Nothing after an error reaches the consumer in any of the four clients.
+
 
 ## [0.25.0] - 2026-07-14
 
