@@ -11,6 +11,11 @@ CLIENT_KT_DIR := ekodb-client-kt
 # Project-local virtualenv interpreter (absolute, so it survives `cd` into subdirs)
 VENV_PY := $(CURDIR)/.venv/bin/python
 
+# pip's "A new release of pip is available" notice depends on the local pip
+# version, so it leaked into the committed example transcripts and churned them
+# on every regeneration. Exported so every pip invocation below inherits it.
+export PIP_DISABLE_PIP_VERSION_CHECK := 1
+
 # Test inventory: the exact per-language + total test counts, written by
 # `make test` (which runs the suites and parses each framework's real count) and
 # validated by `make test-ls-check`. Everything that shows a count (this help,
