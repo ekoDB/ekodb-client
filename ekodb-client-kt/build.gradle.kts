@@ -39,13 +39,13 @@ dependencies {
     implementation("org.msgpack:msgpack-core:0.9.8")
 
     // HTTP client
-    implementation("io.ktor:ktor-client-core:3.5.0")
-    implementation("io.ktor:ktor-client-cio:3.5.0")
-    implementation("io.ktor:ktor-client-content-negotiation:3.5.0")
-    implementation("io.ktor:ktor-serialization-kotlinx-json:3.5.0")
-    implementation("io.ktor:ktor-client-websockets:3.5.0")
-    implementation("io.ktor:ktor-client-logging:3.5.0")
-    implementation("io.ktor:ktor-client-encoding:3.5.0")
+    implementation("io.ktor:ktor-client-core:3.5.2")
+    implementation("io.ktor:ktor-client-cio:3.5.2")
+    implementation("io.ktor:ktor-client-content-negotiation:3.5.2")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:3.5.2")
+    implementation("io.ktor:ktor-client-websockets:3.5.2")
+    implementation("io.ktor:ktor-client-logging:3.5.2")
+    implementation("io.ktor:ktor-client-encoding:3.5.2")
 
     // DateTime
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.7.1-0.6.x-compat")
@@ -53,7 +53,7 @@ dependencies {
     // Testing
     testImplementation(kotlin("test"))
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
-    testImplementation("io.ktor:ktor-client-mock:3.5.0")
+    testImplementation("io.ktor:ktor-client-mock:3.5.2")
 }
 
 tasks.test {
