@@ -1521,17 +1521,9 @@ impl HttpClient {
             return Err(match status {
                 StatusCode::UNAUTHORIZED => Error::TokenExpired,
                 StatusCode::NOT_FOUND => Error::NotFound,
-                StatusCode::TOO_MANY_REQUESTS => {
-                    let retry_after = response
-                        .headers()
-                        .get("retry-after")
-                        .and_then(|v| v.to_str().ok())
-                        .and_then(|v| v.parse().ok())
-                        .unwrap_or(60);
-                    Error::RateLimit {
-                        retry_after_secs: retry_after,
-                    }
-                }
+                StatusCode::TOO_MANY_REQUESTS => Error::RateLimit {
+                    retry_after_secs: retry_after_secs(response.headers()),
+                },
                 StatusCode::SERVICE_UNAVAILABLE => {
                     let body = response
                         .text()
@@ -1656,18 +1648,9 @@ impl HttpClient {
                 Err(Error::TokenExpired)
             }
             StatusCode::NOT_FOUND => Err(Error::NotFound),
-            StatusCode::TOO_MANY_REQUESTS => {
-                let retry_after = response
-                    .headers()
-                    .get("retry-after")
-                    .and_then(|v| v.to_str().ok())
-                    .and_then(|v| v.parse().ok())
-                    .unwrap_or(60);
-
-                Err(Error::RateLimit {
-                    retry_after_secs: retry_after,
-                })
-            }
+            StatusCode::TOO_MANY_REQUESTS => Err(Error::RateLimit {
+                retry_after_secs: retry_after_secs(response.headers()),
+            }),
             StatusCode::SERVICE_UNAVAILABLE => {
                 let error_body: ErrorResponse =
                     response.json().await.unwrap_or_else(|_| ErrorResponse {
@@ -3829,8 +3812,24 @@ struct ErrorResponse {
     message: String,
 }
 
+/// Seconds to wait before retrying a 429, from the server's `Retry-After`
+/// header, defaulting to 60 when the header is absent or not a number.
+fn retry_after_secs(headers: &reqwest::header::HeaderMap) -> u64 {
+    headers
+        .get("retry-after")
+        .and_then(|v| v.to_str().ok())
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(60)
+}
+
 /// Turn a non-success response into an [`Error`] without assuming the body is
 /// JSON.
+///
+/// The typed statuses map exactly as they do in `json_body` and
+/// `handle_response` — 401 → `TokenExpired`, 404 → `NotFound`, 429 →
+/// `RateLimit`, 503 → `ServiceUnavailable` — so a caller wrapped in
+/// `execute_with_retry` still retries a throttled or drained server, and
+/// `NotFound` is still matchable. Everything else becomes `Error::Api`.
 ///
 /// Not every error carries a JSON envelope: warp renders some rejections with
 /// an empty body, and a proxy in front of the server may return HTML or
@@ -3840,7 +3839,25 @@ struct ErrorResponse {
 /// HTTP status and whatever text arrived.
 async fn error_from_response(response: reqwest::Response) -> Error {
     let status = response.status();
+    match status {
+        StatusCode::UNAUTHORIZED => return Error::TokenExpired,
+        StatusCode::NOT_FOUND => return Error::NotFound,
+        StatusCode::TOO_MANY_REQUESTS => {
+            return Error::RateLimit {
+                retry_after_secs: retry_after_secs(response.headers()),
+            };
+        }
+        _ => {}
+    }
     let body = response.text().await.unwrap_or_default();
+    if status == StatusCode::SERVICE_UNAVAILABLE {
+        let message = body.trim();
+        return Error::ServiceUnavailable(if message.is_empty() {
+            "Service unavailable".to_string()
+        } else {
+            extract_error_message(message)
+        });
+    }
     match serde_json::from_str::<ErrorResponse>(&body) {
         Ok(parsed) => Error::api(parsed.code, parsed.message),
         Err(_) => {
@@ -3869,6 +3886,105 @@ mod tests {
             SerializationFormat::Json,
         )
         .expect("client builds")
+    }
+
+    /// A chat delete that fails with an empty-bodied 429 must surface the typed
+    /// `RateLimit` error, carrying the server's `Retry-After`, so the retry
+    /// policy retries it — the same mapping `json_body` and `handle_response`
+    /// apply. Collapsing it into `Error::Api` made the delete non-retryable.
+    #[tokio::test]
+    async fn chat_delete_maps_an_empty_bodied_429_to_rate_limit_and_retries() {
+        let mut server = mockito::Server::new_async().await;
+        let throttled = server
+            .mock("DELETE", "/api/chat/chat-1")
+            .with_status(429)
+            .with_header("retry-after", "0")
+            .expect(2)
+            .create_async()
+            .await;
+        let client = HttpClient::new(
+            &server.url(),
+            Duration::from_secs(5),
+            1,
+            true,
+            SerializationFormat::Json,
+        )
+        .expect("client builds");
+
+        let err = client
+            .delete_chat_session("chat-1", "token")
+            .await
+            .expect_err("a 429 is an error");
+
+        assert!(
+            matches!(
+                err,
+                Error::RateLimit {
+                    retry_after_secs: 0
+                }
+            ),
+            "expected RateLimit {{ retry_after_secs: 0 }}, got {err:?}"
+        );
+        // The original call plus one retry: the error was retryable.
+        throttled.assert_async().await;
+    }
+
+    /// The other typed statuses map the same way as `json_body`, and a JSON
+    /// error envelope on any other status still becomes `Error::Api` with the
+    /// envelope's own code and message.
+    #[tokio::test]
+    async fn chat_delete_maps_typed_statuses_and_keeps_the_envelope_fallback() {
+        let mut server = mockito::Server::new_async().await;
+        let mocks = [
+            server.mock("DELETE", "/api/chat/missing").with_status(404),
+            server
+                .mock("DELETE", "/api/chat/down")
+                .with_status(503)
+                .with_body("upstream drained"),
+            server.mock("DELETE", "/api/chat/expired").with_status(401),
+            server
+                .mock("DELETE", "/api/chat/boom")
+                .with_status(500)
+                .with_header("content-type", "application/json")
+                .with_body(r#"{"code":500,"message":"boom"}"#),
+        ];
+        let mut created = Vec::with_capacity(mocks.len());
+        for mock in mocks {
+            created.push(mock.create_async().await);
+        }
+        let client = HttpClient::new(
+            &server.url(),
+            Duration::from_secs(5),
+            0,
+            false,
+            SerializationFormat::Json,
+        )
+        .expect("client builds");
+
+        let missing = client.delete_chat_session("missing", "token").await;
+        assert!(matches!(missing, Err(Error::NotFound)), "got {missing:?}");
+
+        match client.delete_chat_session("down", "token").await {
+            Err(Error::ServiceUnavailable(message)) => assert_eq!(message, "upstream drained"),
+            other => panic!("expected ServiceUnavailable, got {other:?}"),
+        }
+
+        let expired = client.delete_chat_session("expired", "token").await;
+        assert!(
+            matches!(expired, Err(Error::TokenExpired)),
+            "got {expired:?}"
+        );
+
+        match client.delete_chat_session("boom", "token").await {
+            Err(Error::Api { code, message }) => {
+                assert_eq!(code, 500);
+                assert_eq!(message, "boom");
+            }
+            other => panic!("expected Api {{ 500, boom }}, got {other:?}"),
+        }
+        for mock in created {
+            mock.assert_async().await;
+        }
     }
 
     /// With `should_retry(false)`, `execute_with_retry` must invoke the
