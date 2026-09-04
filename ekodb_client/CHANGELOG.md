@@ -119,14 +119,13 @@ and this project adheres to
   cases the caller got `EOF while parsing a value at line 1 column 0`, a parse
   error standing in for the real failure and hiding the HTTP status entirely.
   `error_from_response` now falls back to the status and whatever text arrived,
-  so `delete_chat_session` and `branch_chat_session` report what actually
-  happened. The typed statuses map exactly as they do in `json_body` and
-  `handle_response` — 401 → `TokenExpired`, 404 → `NotFound`, 429 →
-  `RateLimit` carrying the server's `Retry-After`, 503 →
-  `ServiceUnavailable` — so those two calls, which run under
-  `execute_with_retry`, still retry a throttled or drained server instead of
-  surfacing a non-retryable `Error::Api`; the `Retry-After` parse is one
-  shared helper rather than a third copy.
+  so `delete_chat_session` and `delete_chat_message` report what actually
+  happened. The typed statuses map to the same variants `json_body` and
+  `handle_response` produce — 401 → `TokenExpired`, 404 → `NotFound`, 429 →
+  `RateLimit` carrying the server's `Retry-After`, 503 → `ServiceUnavailable` —
+  so those two calls, which run under `execute_with_retry`, still retry a
+  throttled or drained server instead of surfacing a non-retryable `Error::Api`;
+  the `Retry-After` parse is one shared helper rather than a third copy.
 
 
 ## [0.25.0] - 2026-07-14
