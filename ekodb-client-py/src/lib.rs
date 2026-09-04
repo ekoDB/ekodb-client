@@ -5392,6 +5392,30 @@ mod tests {
         py_to_field_type(&val).unwrap_or_else(|e| panic!("py_to_field_type({code}) failed: {e}"))
     }
 
+    /// Name of a `FieldType` variant for assertion messages. Only the variant is
+    /// reported, never its payload: a mismatch needs to say which type came back,
+    /// and a value that is a credential or an id does not belong in test output.
+    fn variant_name(ft: &FieldType) -> &'static str {
+        match ft {
+            FieldType::String(_) => "String",
+            FieldType::Integer(_) => "Integer",
+            FieldType::Float(_) => "Float",
+            FieldType::Number(_) => "Number",
+            FieldType::Boolean(_) => "Boolean",
+            FieldType::Object(_) => "Object",
+            FieldType::Array(_) => "Array",
+            FieldType::Set(_) => "Set",
+            FieldType::Vector(_) => "Vector",
+            FieldType::DateTime(_) => "DateTime",
+            FieldType::UUID(_) => "UUID",
+            FieldType::Decimal(_) => "Decimal",
+            FieldType::Duration(_) => "Duration",
+            FieldType::Binary(_) => "Binary",
+            FieldType::Bytes(_) => "Bytes",
+            FieldType::Null => "Null",
+        }
+    }
+
     #[test]
     fn test_bytes_roundtrip() {
         Python::attach(|py| {
@@ -5421,7 +5445,7 @@ mod tests {
             let ft = to_field(py, code);
             let dt = match ft {
                 FieldType::DateTime(d) => d,
-                other => panic!("expected DateTime, got {other:?}"),
+                other => panic!("expected DateTime, got {}", variant_name(&other)),
             };
             assert_eq!(dt.to_rfc3339(), "2024-01-02T03:04:05.123456+00:00");
 
@@ -5447,7 +5471,7 @@ mod tests {
                 FieldType::DateTime(d) => {
                     assert_eq!(d.to_rfc3339(), "2024-01-02T03:04:05+00:00")
                 }
-                other => panic!("expected DateTime, got {other:?}"),
+                other => panic!("expected DateTime, got {}", variant_name(&other)),
             }
         });
     }
@@ -5459,7 +5483,7 @@ mod tests {
             let ft = to_field(py, code);
             let u = match ft {
                 FieldType::UUID(u) => u,
-                other => panic!("expected UUID, got {other:?}"),
+                other => panic!("expected UUID, got {}", variant_name(&other)),
             };
             assert_eq!(u.to_string(), "12345678-1234-5678-1234-567812345678");
 
@@ -5479,7 +5503,7 @@ mod tests {
             let ft = to_field(py, code);
             let d = match ft {
                 FieldType::Decimal(d) => d,
-                other => panic!("expected Decimal, got {other:?}"),
+                other => panic!("expected Decimal, got {}", variant_name(&other)),
             };
             assert_eq!(d, rust_decimal::Decimal::from_str("123.456000789").unwrap());
 
@@ -5551,7 +5575,7 @@ mod tests {
             let ft = to_field(py, "{1, 2, 3}");
             let items = match &ft {
                 FieldType::Set(items) => items,
-                other => panic!("expected Set, got {other:?}"),
+                other => panic!("expected Set, got {}", variant_name(other)),
             };
             assert_eq!(items.len(), 3);
 
