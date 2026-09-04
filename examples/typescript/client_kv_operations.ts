@@ -23,21 +23,25 @@ async function main() {
   const value = await client.kvGet("session:user123");
   console.log("Retrieved value:", value);
 
-  console.log("\n=== Set Multiple Keys ===");
-  const keys = ["cache:product:1", "cache:product:2", "cache:product:3"];
-  for (let i = 0; i < keys.length; i++) {
-    await client.kvSet(keys[i], {
-      name: `Product ${i + 1}`,
-      price: 29.99 + i * 10,
-    });
-  }
-  console.log(`✓ Set ${keys.length} keys`);
+  console.log("\n=== KV Batch Set ===");
+  const batchEntries = [
+    { key: "cache:product:1", value: { name: "Product 1", price: 29.99 } },
+    { key: "cache:product:2", value: { name: "Product 2", price: 39.99 } },
+    { key: "cache:product:3", value: { name: "Product 3", price: 49.99 } },
+  ];
+  const setResults = await client.kvBatchSet(batchEntries);
+  console.log(`✓ Batch set ${setResults.length} keys`);
+  setResults.forEach(([key, wasSet]) => {
+    console.log(`  ${key}: ${wasSet ? "success" : "failed"}`);
+  });
 
-  console.log("\n=== Get Multiple Keys ===");
-  for (const key of keys) {
-    const val = await client.kvGet(key);
-    console.log(`${key}:`, val);
-  }
+  console.log("\n=== KV Batch Get ===");
+  const keys = ["cache:product:1", "cache:product:2", "cache:product:3"];
+  const batchValues = await client.kvBatchGet(keys);
+  console.log(`✓ Batch retrieved ${batchValues.length} values`);
+  batchValues.forEach((val, i) => {
+    console.log(`  ${keys[i]}:`, val);
+  });
 
   console.log("\n=== KV Exists ===");
   const exists = await client.kvExists("session:user123");
@@ -59,11 +63,12 @@ async function main() {
   const existsAfterDelete = await client.kvExists("session:user123");
   console.log(`✓ Verified: Key exists after delete: ${existsAfterDelete}`);
 
-  console.log("\n=== Delete Multiple Keys ===");
-  for (const key of keys) {
-    await client.kvDelete(key);
-  }
-  console.log(`✓ Deleted ${keys.length} keys`);
+  console.log("\n=== KV Batch Delete ===");
+  const deleteResults = await client.kvBatchDelete(keys);
+  console.log(`✓ Batch deleted ${deleteResults.length} keys`);
+  deleteResults.forEach(([key, wasDeleted]) => {
+    console.log(`  ${key}: ${wasDeleted ? "deleted" : "not found"}`);
+  });
 
   console.log("\n✓ All KV operations completed successfully");
 }

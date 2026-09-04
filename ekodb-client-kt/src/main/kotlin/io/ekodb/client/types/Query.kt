@@ -1,5 +1,6 @@
 package io.ekodb.client.types
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 
@@ -9,14 +10,23 @@ import kotlinx.serialization.json.JsonElement
 @Serializable
 sealed class QueryOperator {
     @Serializable data class Eq(val value: FieldType) : QueryOperator()
+
     @Serializable data class Ne(val value: FieldType) : QueryOperator()
+
     @Serializable data class Gt(val value: FieldType) : QueryOperator()
+
     @Serializable data class Gte(val value: FieldType) : QueryOperator()
+
     @Serializable data class Lt(val value: FieldType) : QueryOperator()
+
     @Serializable data class Lte(val value: FieldType) : QueryOperator()
+
     @Serializable data class In(val values: List<FieldType>) : QueryOperator()
+
     @Serializable data class NotIn(val values: List<FieldType>) : QueryOperator()
-    @Serializable data class Regex(val pattern: String) : QueryOperator()
+
+    // No Regex variant: the server's filter operator set has none. Use
+    // Contains/StartsWith/EndsWith via the query builder instead.
     @Serializable data class Exists(val exists: Boolean) : QueryOperator()
 }
 
@@ -30,13 +40,19 @@ data class Query(
     val limit: Int? = null,
     val skip: Int? = null,
     val join: JsonElement? = null,
+    @SerialName("bypass_cache")
     val bypassCache: Boolean? = null,
-    val bypassRipple: Boolean? = null
+    @SerialName("bypass_ripple")
+    val bypassRipple: Boolean? = null,
+    @SerialName("select_fields")
+    val selectFields: List<String>? = null,
+    @SerialName("exclude_fields")
+    val excludeFields: List<String>? = null
 ) {
     companion object {
         fun new() = Query()
     }
-    
+
     fun withFilter(filter: JsonElement) = copy(filter = filter)
     fun withSort(sort: JsonElement) = copy(sort = sort)
     fun withLimit(limit: Int) = copy(limit = limit)

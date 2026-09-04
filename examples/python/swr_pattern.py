@@ -17,11 +17,45 @@ env_path = Path(__file__).parent.parent / ".env"
 load_dotenv(env_path)
 
 
+def _is_already_exists_error(err):
+    """Detect the server's 409 'function already exists' response."""
+    msg = str(err)
+    return "409" in msg or "already exists" in msg
+
+
+async def save_or_update(client, script):
+    """Save a function, updating it instead if its label already exists.
+
+    The server returns HTTP 409 for a duplicate label; we then PUT the
+    definition by label (which the server's id-or-label route accepts) and
+    return the label as the identifier.
+    """
+    label = script["label"]
+    try:
+        return await client.save_function(script)
+    except Exception as e:
+        if not _is_already_exists_error(e):
+            raise
+        await client.update_function(label, script)
+        print(f"ℹ️  Function '{label}' already existed — updated instead")
+        return label
+
+
 async def main():
     base_url = os.getenv("API_BASE_URL", "http://localhost:8080")
     api_key = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb")
 
     client = Client.new(base_url, api_key)
+
+    # Start clean: drop any github_cache left over from a prior run so the
+    # collection's schema is inferred fresh from this run's cached response.
+    # A stale schema from an earlier run can disagree with the current value's
+    # inferred type and reject the insert. Guarded because the collection does
+    # not exist yet on a fresh database.
+    try:
+        await client.delete_collection("github_cache")
+    except Exception:
+        pass
 
     print("=== ekoDB SWR (Stale-While-Revalidate) Pattern ===\n")
 
@@ -87,13 +121,13 @@ async def main():
         "tags": ["swr", "github", "cache"],
     }
 
-    script_id = await client.save_script(swr_script)
+    script_id = await save_or_update(client, swr_script)
     print(f"✓ Created SWR script: {swr_script['label']} ({script_id})\n")
 
     # Step 2: First call - Cache miss
     print("Step 2: First call - Cache miss, fetches from GitHub API")
     start1 = time.time()
-    result1 = await client.call_script(
+    result1 = await client.call_function(
         "fetch_github_user", {"username": "torvalds", "ttl": 300}
     )
     duration1 = (time.time() - start1) * 1000
@@ -104,10 +138,12 @@ async def main():
     # Step 3: Second call - Cache hit
     print("Step 3: Second call - Cache hit, instant response from ekoDB")
     start2 = time.time()
-    result2 = await client.call_script("fetch_github_user", {"username": "torvalds"})
+    result2 = await client.call_function("fetch_github_user", {"username": "torvalds"})
     duration2 = (time.time() - start2) * 1000
-    speedup = duration1 / duration2
-    print(f"Response time: {duration2:.0f}ms ({speedup:.1f}x faster!)")
+    speedup = (duration1 / duration2) if duration2 > 0 else float("inf")
+    speedup_text = f"{speedup:.1f}x faster!" if duration2 > 0 else "instant response"
+    print(f"Response time: {duration2:.0f}ms ({speedup_text})")
+    print(f"Result: {json.dumps(result2['records'][:1], indent=2)}")
     print("✓ Lightning fast cache hit\n")
 
     # Advanced example: Data enrichment
@@ -167,7 +203,7 @@ async def main():
         "tags": ["enrichment", "product", "cache"],
     }
 
-    enrich_script_id = await client.save_script(enrich_script)
+    enrich_script_id = await save_or_update(client, enrich_script)
     print(
         f"✓ Created enrichment script: {enrich_script['label']} ({enrich_script_id})\n"
     )
@@ -175,7 +211,7 @@ async def main():
     print(
         "Step 4: Call enrichment function - Fetches from API + stores enriched result"
     )
-    enriched = await client.call_script(
+    enriched = await client.call_function(
         "fetch_product_enriched", {"product_id": "1", "ttl": 600}
     )
     print(f"Enriched data: {json.dumps(enriched['records'][:1], indent=2)}")

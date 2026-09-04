@@ -1,5 +1,5 @@
 """
-Search Scripts Example - Basic Search Operations
+Search Functions Example - Basic Search Operations
 
 Demonstrates simple search and query operations using scripts
 """
@@ -17,12 +17,31 @@ BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8080")
 API_KEY = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb")
 
 
+def _is_already_exists_error(err):
+    """Detect the server's 409 'function already exists' response."""
+    msg = str(err)
+    return "409" in msg or "already exists" in msg
+
+
+async def save_or_update(client, script):
+    """Save a function, falling back to an update if its label already exists."""
+    label = script["label"]
+    try:
+        return await client.save_function(script)
+    except Exception as e:
+        if not _is_already_exists_error(e):
+            raise
+        await client.update_function(label, script)
+        print(f"ℹ️  Function '{label}' already existed — updated instead")
+        return label
+
+
 async def main():
     from ekodb_client import Client, Stage
 
     client = Client.new(BASE_URL, API_KEY)
 
-    print("🚀 ekoDB Python Search Scripts Example\n")
+    print("🚀 ekoDB Python Search Functions Example\n")
 
     # Setup test data
     print("📋 Setting up test data...")
@@ -80,11 +99,11 @@ async def main():
         "functions": [{"type": "FindAll", "collection": "search_docs_py"}],
         "tags": ["search", "list"],
     }
-    script_id1 = await client.save_script(script1)
+    script_id1 = await save_or_update(client, script1)
     script_ids.append(script_id1)
-    print("✅ Script saved")
+    print("✅ Function saved")
 
-    result1 = await client.call_script("list_all_docs_py", None)
+    result1 = await client.call_function("list_all_docs_py", None)
     print(f"📊 Found {len(result1['records'])} documents")
     for i, doc in enumerate(result1["records"]):
         title = doc.get("title", {})
@@ -113,11 +132,11 @@ async def main():
         ],
         "tags": ["search", "analytics"],
     }
-    script_id2 = await client.save_script(script2)
+    script_id2 = await save_or_update(client, script2)
     script_ids.append(script_id2)
-    print("✅ Script saved")
+    print("✅ Function saved")
 
-    result2 = await client.call_script("docs_by_category_py", None)
+    result2 = await client.call_function("docs_by_category_py", None)
     print("📊 Documents by category:")
     for group in result2["records"]:
         print(f"   {group}")
@@ -127,7 +146,7 @@ async def main():
     print("🧹 Cleaning up...")
     for script_id in script_ids:
         try:
-            await client.delete_script(script_id)
+            await client.delete_function(script_id)
         except Exception:
             pass
     try:

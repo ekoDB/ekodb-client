@@ -107,7 +107,6 @@ func main() {
 	// List of examples to run
 	// Note: Direct API examples are in the main directory
 	// Client library examples start with client_
-	// TTL verification tests are in the ttl/ subdirectory
 	examples := []string{
 		// Direct API examples only
 		// Client library examples are run via `make test-examples-go-client`
@@ -118,10 +117,10 @@ func main() {
 		"kv_operations.go",
 		"collection_management.go",
 		"transactions.go",
-		"crud_scripts.go",
+		"crud_functions.go",
 		// TTL verification tests
-		"ttl/document_ttl.go",
-		"ttl/websocket_ttl.go",
+		"document_ttl.go",
+		"websocket_ttl.go",
 	}
 
 	log(fmt.Sprintf("\n=== Running %d Examples ===", len(examples)), colorYellow)

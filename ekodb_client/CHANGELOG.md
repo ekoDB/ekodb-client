@@ -8,11 +8,1786 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Security
+
+- **Dependency audit sweep (#176).** CI unit-tests workflow moved from Node 20
+  (EOL April 2026) to Node 24, matching the org standard. Rust:
+  `tokio-tungstenite` 0.28 -> 0.29, full lockfile refresh within semver for both
+  the workspace and the Python crate (`h2` 0.4.15 -> 0.4.16 fixes
+  RUSTSEC-2026-0258; the one remaining `cargo audit` finding, `rkyv` 0.7.46 via
+  `rust_decimal`, is a lockfile-only optional dependency that is never compiled;
+  `cargo tree -i rkyv` resolves to nothing). TypeScript: `typescript` 5.9.3 ->
+  6.0.3 with the required `tsconfig` migration from the deprecated
+  `moduleResolution: node` to `nodenext` (emitted CJS output unchanged),
+  in-range refreshes (`ws` 8.21.3, `vitest` 4.1.11), and `npm audit fix`
+  clearing the `nanoid` (GHSA-2v37-7h3g-55p8, high) and `postcss`
+  (GHSA-fxqj-rqcc-2cmp, moderate) advisories, leaving 0 npm vulnerabilities.
+  Kotlin was already current (Dependabot #49-#53 are stale, as are #61/#63 for
+  Rust and #97 for vite).
+- **Dropped the stale `golang.org/x/net` requirement from `examples/go` (#178),
+  closing the last open Dependabot alert on this repo.** Alert #63
+  (GHSA-5cv4-jp36-h3mw, medium, `runtime` scope) flagged
+  `golang.org/x/net v0.38.0` in `examples/go/go.mod`. The previous sweep read it
+  correctly as not genuinely used, but the manifest entry was left in place, so
+  the alert stayed open against a requirement nothing imports.
+  `go mod why -m golang.org/x/net` reports *"(main module does not need module
+  golang.org/x/net)"*, and the Go client module requires only
+  `gorilla/websocket`, `vmihailenco/msgpack/v5` and `vmihailenco/tagparser/v2`.
+  So the fix is `go mod tidy`, which **removes** the requirement rather than
+  upgrading it — strictly better than bumping to 0.55.0, which would have carried
+  a newer copy of something nothing imports. Verified afterwards that the relative
+  `replace` directive survived, that the Go client module still builds, and that
+  every example still compiles individually.
+
+## [0.25.0] - 2026-07-14
+
 ### Added
+
+- **Degraded-tolerant health contract across all four clients (parity with
+  ekodb-client-go v0.25.0, #170).** Each client now exposes a structured health
+  snapshot in addition to the existing reachability check:
+  - Rust: `Client::health_status() -> HealthStatus`, plus the exported
+    `HealthState`, `HealthStatus`, `parse_health_status`, and the `HEALTH_OK` /
+    `HEALTH_DEGRADED` / `HEALTH_UNKNOWN` constants.
+  - Python: `client.health_status()` returning a `HealthStatus` object
+    (`.reachable` / `.status` / `.integrity_ok` / `.detail`, plus `.to_dict()`),
+    and a module-level `parse_health_status(body)`.
+  - TypeScript: `client.healthStatus()`, plus exported `HealthStatus`,
+    `HealthState`, `parseHealthStatus`, and the `HealthOK` / `HealthDegraded` /
+    `HealthUnknown` constants.
+  - Kotlin: `client.healthStatus()`, plus `HealthStatus`, `HealthState`, and
+    `parseHealthStatus`.
+
+  The shape and behavior match the `ekodb-client-go` client exactly. The
+  snapshot separates liveness (`reachable`) from readiness (`status`): a
+  reachable server that reports `degraded` (HTTP 200) is a successful snapshot,
+  not an error, and an unreachable or unparseable probe yields
+  `{ reachable: false, status: unknown }`. `status` is a plain string, so a
+  non-empty string status reported by the server is preserved verbatim; a
+  missing or non-string status on a reachable body fails safe to `degraded`.
+  `integrity_ok` is read from the top-level `integrity_ok` field (public
+  response) or nested `integrity.healthy` (admin response). The full parsed body
+  (`detail`) is accessible but excluded from the serialized summary so surfacing
+  the snapshot cannot leak internal metrics or collection names. Covered by
+  unit/integration tests in every client.
+
+### Changed
+
+- **Renamed the reachability check `health_check()` -> `health()` in the Rust
+  and Python clients for cross-client parity (#170).** The Go, TypeScript, and
+  Kotlin clients already named it `health`; Rust and Python used `health_check`.
+  All five now expose `health` (reachability, tolerates a `degraded` HTTP 200)
+  plus `health_status` for the structured snapshot, and in every client `health`
+  is derived from `health_status` so the two can never disagree (matching Go).
+  **BREAKING** for Rust/Python callers of `health_check` (renamed with no alias,
+  to avoid a per-client naming difference); update calls to `health()`.
 
 ### Fixed
 
+- **TypeScript and Kotlin `health()` no longer report a degraded-but-serving
+  ekoDB as down (#170).** `health()` gated on the body (`status === "ok"` in TS,
+  `status.contains("ok")` in Kotlin), so a `degraded` HTTP-200 response, which
+  ekoDB returns on purpose so liveness probes don't restart a recoverable
+  instance, made `health()` return `false`. Both now report reachability
+  (`healthStatus().reachable`), returning `true` whenever the server responds
+  and `false` only when it is unreachable; use `healthStatus()` for the
+  ok/degraded distinction. (Rust/Python already gated on HTTP status, so they
+  were unaffected.)
+
+## [0.24.0] - 2026-07-07
+
+### Fixed
+
+- **`make test` now fails when the Rust, TypeScript, or Kotlin suite fails.**
+  Only the Python step checked its exit status, so a non-zero Rust, TypeScript,
+  or Kotlin run still produced a green `make test` (the recipe continued to the
+  count summary). Each language now captures and checks its exit status and
+  exits non-zero on failure, matching the Python step. The CI test-summary job
+  also fails loudly if `tests_list.txt` is missing or malformed instead of
+  rendering blank counts. `make test` now also preflights the JVM (`ensure-jvm`)
+  so the Kotlin leg gives clear setup guidance instead of a raw Gradle error,
+  and the Kotlin count is derived from the JUnit XML Gradle emits (actually
+  executed cases, including parameterized) rather than grepping `@Test` source
+  annotations, so the inventory's Kotlin count is exact.
+
+- **`make lint` can no longer pass with Python lint silently skipped.**
+  `lint-python` previously ran `ruff` only if it happened to be on `PATH` and
+  otherwise printed a warning and returned success, so `make lint` could go
+  green without linting Python at all. A new `ensure-ruff` target installs the
+  pinned `ruff` (single source of truth: `ekodb-client-py/pyproject.toml`
+  `[dev]`) into `.venv` on demand, and `lint-python` now depends on it and runs
+  `ruff` unconditionally via the venv. The gate provisions its own pinned
+  linter, so it never skips and local matches CI — mirroring the Go repos'
+  `ensure-golangci-lint` and this Makefile's `ensure-jvm` preflight. CI's Python
+  job now runs `make lint-python` instead of a hardcoded `ruff==0.15.7` install,
+  so the pin has exactly one source of truth (`pyproject.toml [dev]`) with no
+  second copy to drift.
+
+- **`make test` / `make test-python` now run the Python suite against the
+  freshly-built wheel in `.venv` instead of a stale global install.** Both
+  targets invoked bare `python3 -m pytest`, which resolved `ekodb_client` from
+  the user site-packages (an older build) rather than `$(VENV_PY)` where
+  `build-python-client` installs the current wheel. On a machine with an
+  out-of-date global install this failed collection (e.g.
+  `ImportError: cannot import name 'extract_record_id'`) even though the client
+  code was correct, and the aggregate `make test` silently reported "Python: 0
+  tests" while still printing success. The aggregate now also captures pytest's
+  exit status and fails loudly (instead of green-on-error) if the Python suite
+  does not pass. Stale per-language test counts in the `make help` output were
+  refreshed to current actuals (Rust 442, TypeScript 433, Python 333).
+
 ### Changed
+
+- **TypeScript client: `@types/node` dev dependency aligned to Node 24**
+  (`^25.3.5` to `^24.13.2`), matching the Node 24 runtime used across the
+  monorepo. Dev-only (type definitions); no change to the published package or
+  its runtime behavior, and the client keeps no `engines` constraint so it still
+  supports the full range of consumer Node versions. The TypeScript example was
+  aligned the same way (`^22.0.0` to `^24.13.2`).
+
+### Infrastructure
+
+- **Lint now gates CI for every client language, matching what runs locally.**
+  Previously the per-language linters (Rust clippy, TypeScript `tsc --noEmit`,
+  Python ruff) existed only as local `make lint-*` targets and never ran in the
+  `Unit Tests` workflow, so a clean local lint was not a precondition for a
+  green CI run (and vice versa). Each `unit-tests.yml` job now runs its
+  language's lint before its tests: Rust runs
+  `cargo clippy --all-targets -- -D warnings` (parity with `make lint-rust`;
+  warnings are hard errors), TypeScript runs `npm run lint` (`tsc --noEmit`),
+  Python runs `ruff check`, and Kotlin runs `./gradlew ktlintCheck`.
+  `make lint-rust` also gained `-D warnings` so a warning fails locally exactly
+  as it does in CI. ruff is pinned (`==0.15.7` in `pyproject.toml` dev deps and
+  the CI job) so both sides run the identical lint set. The 1.95.0 toolchain pin
+  in `rust-toolchain.toml` keeps the clippy lint set identical across local and
+  CI.
+- **Added ktlint to the Kotlin client (it previously had no linter).** The
+  `org.jlleitschuh.gradle.ktlint` plugin runs via `make lint-kotlin` and the new
+  CI step, with the ktlint engine pinned in `build.gradle.kts` (1.5.0) so local
+  and CI evaluate the same rules. The enabled rule set is a deliberately relaxed
+  subset configured in `ekodb-client-kt/.editorconfig`: the aggressive
+  line-reflow / wrapping / trailing-comma "house-style" rules are disabled (they
+  would reformat nearly every file — ~2300 findings — without catching a
+  correctness issue), keeping the high-value checks (trailing whitespace, unused
+  imports, import ordering, spacing). `no-wildcard-imports` is also disabled
+  because the client's ktor / kotlinx.serialization DSL imports are
+  idiomatically wildcards and ktlint cannot safely auto-expand them. The
+  existing source was auto-formatted to satisfy the enabled rules (whitespace,
+  spacing, and three unused-import removals; no behavior change).
+
+- **Test counts are now a generated inventory instead of hardcoded numbers.**
+  The per-language and total test counts in `make help` and the CI summary were
+  hand-maintained literals that drifted (the Kotlin count was stale at 100 while
+  the suite had grown to 407, so the advertised total was wrong). `make test`
+  now writes the exact per-framework counts it already computes to a committed
+  `tests_list.txt`, and both the Makefile help and the CI `Test Summary` read
+  from that file — nothing is hardcoded, so the numbers cannot drift.
+  `make test-ls-check` validates the inventory (present, complete, and the total
+  equals the sum), and `make test-ls` regenerates it. Modeled on the ekoDB
+  server's `tests_list.txt` inventory.
+
+- **README example statistics are now injected via wording-independent markers
+  instead of broad regexes.** `scripts/update_examples_badge.sh` rewrote the
+  Quick Stats counts by matching surrounding prose (e.g.
+  `**N working examples**`), which silently stops matching the moment that
+  phrasing is reworded, letting the counts drift. The numbers are now wrapped in
+  HTML-comment markers (`<!--ex:total-->…<!--/ex:total-->`, plus `ex:client`,
+  `ex:direct`, `ex:languages`, `ex:clients`, `ex:perclient`) that render
+  invisibly, and the updater rewrites only the value between each marker pair.
+  The three shields.io badges (which cannot hold a marker inside their image
+  URL) are still matched by their fixed URL shape, and the Languages and Client
+  Libraries badges are now kept current too. The three "45 client-library
+  examples per client" literals in the README are now driven by a new
+  `Examples Per Client` value that `generate_examples_list.sh` computes across
+  the five full-featured clients (emitting a `MIN-MAX` range if they ever
+  diverge from parity, so the number stays honest without a literal). The
+  generator's own `Languages: 6` / `Full-Featured Clients: 5` summary lines,
+  which feed those badges, are now derived from declared language/client lists
+  instead of hardcoded literals. Same marker convention as the ekoDB server's
+  `update_test_docs.sh`.
+
+- **New `make sync-versions` propagates the source-of-truth version to every
+  client and every README install snippet, and now runs as part of `make fmt`.**
+  The Rust workspace version in `ekodb_client/Cargo.toml` is the single source
+  of truth. The only prior version tool, `make bump-version`, is interactive (so
+  it cannot run in `fmt`) and wrote the four language manifests but never the
+  README install snippets, so those drifted silently: the Kotlin Maven
+  coordinate in three README spots was stuck at `0.21.0` and the Rust crate
+  snippet at `0.14` while every manifest was at `0.23.1`.
+  `scripts/sync-versions.sh` is non-interactive and idempotent — it reads the
+  Rust version and enforces it across the downstream manifests
+  (`ekodb-client-py` Cargo.toml + pyproject.toml, `ekodb-client-ts`
+  package.json, `ekodb-client-kt` build.gradle.kts) and the README install
+  snippets (matched by package coordinate, since a comment marker would render
+  literally inside a code fence). Wired into `fmt`, so drift now shows up as a
+  diff on the normal lint/fmt/build/test cycle instead of shipping stale. The
+  npm and crates.io shields badges are left alone because they fetch the live
+  published version already. To change the released version, edit the Rust
+  manifest or run the interactive `make bump-version`, then `make fmt`.
+
+## [0.23.1] - 2026-07-05
+
+### Fixed
+
+- **TypeScript client: REST requests now have a 30s default timeout (parity with
+  the Rust and Go clients).** The TS REST client issued bare `fetch()` calls
+  with no timeout, no `AbortController`, and no config option, so a slow or
+  unreachable server could hang the caller indefinitely. Every non-streaming
+  request (CRUD + token refresh) is now bounded via `AbortSignal.timeout()`,
+  defaulting to 30s and configurable with a new `timeout` field on
+  `ClientConfig` (default exported as `DEFAULT_REQUEST_TIMEOUT_MS`).
+  Streaming/SSE calls are intentionally left unbounded. A fired timeout surfaces
+  as a clear "Request timed out after Nms" error and is not retried. Covered by
+  a unit test. Per-call override (all clients) and the request-timeout gap in
+  the Kotlin client are tracked as follow-ups (ekodb-client #162-#165,
+  ekodb-client-go #53).
+
+## [0.23.0] - 2026-06-27
+
+### Security
+
+- **Bumped `quinn-proto` 0.11.14 → 0.11.15 in the Python client lockfile
+  (`ekodb-client-py/Cargo.lock`), resolving RUSTSEC-2026-0185 (high — remote
+  memory exhaustion in QUIC connection handling).** Transitive via `reqwest` →
+  `quinn`; the shared `ekodb_client` lockfile already carried 0.11.15, so only
+  the Python client's lock was behind. Lockfile-only patch bump (no manifest or
+  source change); `cargo audit` clean (exit 0) and `cargo check` green
+  afterward.
+- **Bumped `pyo3` 0.27 → 0.29 in the Python client (`ekodb-client-py`),
+  resolving two Dependabot alerts (GHSA-36hh-v3qg-5jq4 high, GHSA-chgr-c6px-7xpp
+  medium).** The caret `"0.27"` constraint capped below the 0.29.0 patch, so the
+  floor was raised — `pyo3`, `pyo3-async-runtimes`, and `pyo3-build-config`
+  moved in lockstep to `"0.29"` (`pyo3-async-runtimes` is version-coupled to
+  `pyo3`) and the lockfile updated to 0.29.0. The native extension required two
+  minor pyo3-0.29 migration touch-ups in `src/lib.rs` for the now-opt-in
+  `FromPyObject` derive on `Clone` `#[pyclass]` types: `SerializationFormat`
+  opts in via `from_py_object` (it is accepted as a Python→Rust argument);
+  `RateLimitInfo` opts out via `skip_from_py_object` (it is only ever returned
+  to Python). All 329 Python client tests pass.
+- **examples/rust: bump `tokio-tungstenite` (0.20 → 0.28) and `reqwest` (0.11 →
+  0.12) to pull `rustls-webpki` ≥ 0.103.13 (GHSA-82j2-j2ch-gfr8,
+  GHSA-xgp8-3hg3-c2mh, GHSA-965h-392x-2mh5).** The examples project's own direct
+  deps were dragging in the vulnerable `rustls 0.21` → `rustls-webpki 0.101.7`
+  transitively (via both the old `tokio-tungstenite 0.20` and `reqwest 0.11`).
+  Aligning both to the versions the `ekodb_client` library already uses
+  (`rustls 0.23` → `rustls-webpki 0.103.13`) removes the 0.101.x copy entirely.
+  Migrated the raw-WebSocket examples for the tungstenite 0.28 `Message::Text` /
+  `Utf8Bytes` API change. Examples-only; no library or wire change.
+
+### Added
+
+- **Batch insert/update/delete now forward `transaction_id` across all clients,
+  enabling transactional batch writes.** When a `transaction_id` is supplied to
+  a batch operation, the client appends it as the `transaction_id` URL query
+  parameter on `/api/batch/{insert,update,delete}/{collection}` — exactly
+  mirroring the single-record write path — so the batch is staged into the named
+  MVCC transaction (begin → stage → commit) instead of being committed
+  immediately. The change is additive and opt-in on every client: existing batch
+  call sites that pass no transaction id are unchanged. Rust adds
+  `batch_insert_with_options` / `batch_update_with_options` /
+  `batch_delete_with_options` consuming the existing `Batch*Options` structs
+  (the previously-unwired `transaction_id` field is now live); Python adds an
+  optional `transaction_id=None` kwarg to `batch_insert` / `batch_update` /
+  `batch_delete`; TypeScript wires `transactionId` through `batchUpdate` /
+  `batchDelete` (REST) via the existing `BatchUpdateOptions` /
+  `BatchDeleteOptions` (`batchInsert` already supported it); Kotlin adds an
+  optional `transactionId` parameter to `batchInsert` / `batchDelete`
+  (`batchUpdate` already supported it). Brings the Rust, Python, TypeScript, and
+  Kotlin clients to parity with the Go client.
+
+### Fixed
+
+- **Kotlin client now URL-encodes the `transaction_id` query parameter on every
+  write path.** `transactionId` was interpolated raw into the request URL
+  (`?transaction_id=$it`) in `insert`, `update`, `delete`, `batchInsert`,
+  `batchUpdate`, and `batchDelete`, while the same file already encoded the
+  `collection` path segment and the other clients encode automatically
+  (TypeScript via `URLSearchParams`, ktor's `parameter(...)` DSL on the find
+  paths). Server-issued transaction ids are URL-safe UUIDs, so no malformed URL
+  could occur in practice today, but the raw interpolation was inconsistent and
+  would mishandle any value containing reserved characters. All six sites now
+  use `encodeURLQueryComponent()`. Defense-in-depth + cross-client consistency;
+  no behavior change for existing UUID transaction ids.
+
+## [0.22.0] - 2026-06-23
+
+### Added
+
+- **Client-tool keepalive for in-flight SSE chats, across all clients
+  (ekoDB#530).** Sends a liveness keepalive (not a result) for a pending client
+  tool on an active SSE chat stream, so a slow human confirmation or a
+  long-running client tool resets the server's per-tool wait deadline
+  (`client_tool_timeout_secs`, default 60s) instead of letting the turn time out
+  mid-response. Call periodically (well under the timeout) while a confirmation
+  prompt is shown or a tool is executing. Added with full parity across the
+  language clients (mirrors each one's `submit_chat_tool_result`):
+  - Rust: `Client::submit_chat_tool_keepalive(chat_id, call_id)`
+  - Python: `Client.submit_chat_tool_keepalive(chat_id, call_id)`
+  - TypeScript: `submitChatToolKeepalive(chatId, callId)`
+  - Kotlin: `submitChatToolKeepalive(chatId, callId)`
+  - (Go client is versioned separately — see ekodb-client-go
+    `SubmitChatToolKeepalive`.)
+- **Metadata pre-filter for text, vector, and hybrid search (#475).** Search now
+  carries an optional `filters` field holding a canonical `QueryExpression` (the
+  same AST as `find`); only records matching the filter are considered as
+  candidates before ranking. Exposed as `.filters(...)` on the search query
+  builder in the Rust, TypeScript, and Go clients, a `filters=` keyword argument
+  on the Python client's `search`, and forwarded transparently by the Kotlin
+  client's JSON-object `search`. Applies uniformly to text, vector, and hybrid
+  search (including the indexed HNSW path). Each client's `examples/` search
+  example now demonstrates a filtered search.
+
+## [0.21.0] - 2026-06-09
+
+### Fixed — examples test harness
+
+- **Python example requirements no longer pin an impossible version.**
+  `examples/python/requirements.txt` and `requirements-dev.txt` pinned
+  `python-dotenv>=2.8.0`, but `python-dotenv`'s latest release is `1.2.2` (there
+  is no 2.x — the `2.x` line is the unrelated Node `dotenv` package), so
+  `pip install -r requirements.txt` failed to resolve. Corrected to
+  `python-dotenv>=1.0.0` (installs the real latest, `1.2.2`) and aligned
+  `websockets>=14.0` to match the client's requirement and the sibling
+  `examples/requirements.txt`.
+
+- **Dependency refresh.** Kotlin client + its examples: ktor `3.4.1 → 3.5.0`,
+  kotlinx-coroutines `1.10.2 → 1.11.0`, kotlinx-serialization (json + cbor)
+  `1.10.0 → 1.11.0` (Kotlin compiler is 2.3.0, comfortably compatible; full
+  Kotlin test suite green). TypeScript examples: `@types/node` and `tsx` updated
+  within their existing caret ranges (tsc clean).
+
+- **Python direct examples no longer fail with `ModuleNotFoundError`.** The
+  example test runner (`examples/python/test_runner.py`) launched each example
+  with the hardcoded system `python3` instead of the interpreter running the
+  runner. Since `make test-examples` runs it via the project `.venv` (which has
+  `requests` / `aiohttp` / `python-dotenv` from `examples/requirements.txt`),
+  the system interpreter lacked those deps and all 10 Python direct examples
+  failed even though the venv was set up correctly. It now uses
+  `sys.executable`. (`examples/test-examples.md` still shows the old failures
+  until `make test-examples` is re-run against a server.)
+
+### Added
+
+- **Client parity fills (Python).** Closed the gaps where Python lagged the
+  other clients:
+  - The WebSocket client now exposes `close()` for deterministic teardown
+    (matching every other WS client).
+  - A module-level `extract_record_id(record, extra_candidates=None)` resolves a
+    record's id trying custom aliases first, then `id`, then `_id` (handling
+    typed-wrapper id fields) — backed by the canonical
+    `ekodb_client::extract_record_id`, so Python callers never hardcode
+    `id`/`_id`.
+  - The **schema cache** is now reachable from Python: `Client.new(...)` accepts
+    `schema_cache` / `schema_cache_ttl_secs` / `schema_cache_max`, and a
+    WebSocket client created from a cache-enabled client automatically shares
+    that cache (so WS CRUD is alias-aware and `SchemaChanged` events invalidate
+    it). (#152)
+  - Fixed a malformed `__all__` (`([...],)` — a tuple wrapping the list) that
+    broke `from ekodb_client import *`; it is now a flat list of names.
+
+- **Schema cache is now first-class in the Kotlin client.**
+  `EkoDBClient.Builder` gained `schemaCache(enabled)` / `schemaCacheTtlMs(ms)` /
+  `schemaCacheMax(max)`, and `EkoDBClient.websocket(url)` auto-wires the
+  client's cache into the WebSocket client (so WS CRUD is alias-aware and
+  `SchemaChanged` events invalidate it) — matching the enable-then-auto-wire
+  ergonomics of the Rust, Python, and Go clients (previously a Kotlin user had
+  to assign `ws.schemaCache` by hand).
+
+- **WebSocket msgpack negotiation across all clients (transparent binary
+  transport).** On every WS (re)connect each client now performs an additive
+  `Hello`/`Welcome` handshake: it offers msgpack and, if the server welcomes it,
+  transparently switches that connection to binary msgpack frames for both
+  requests and responses; otherwise it stays on JSON text. The negotiation is
+  internal — no public API changes — so downstream consumers of the Rust client
+  are unaffected. Fully back-compatible: a server that does not welcome msgpack
+  (or an older server that never answers) leaves the connection on JSON.
+  Incoming binary frames decode value-identically to JSON (binary fields stay
+  number arrays, not base64), so decoded data is the same regardless of
+  negotiated transport. Implemented in the Rust client (and thus the Python
+  binding), TypeScript, and Kotlin; the Kotlin client gains a `msgpack-core`
+  dependency since CBOR is not wire-compatible with the server's msgpack. (The
+  Go client carries the same change in its own repository.)
+
+- **Buffered-transaction support across all clients (read-your-writes +
+  savepoints).** ekoDB transactions are now enforced and buffered server-side:
+  statements carrying a `transaction_id` are staged and applied atomically at
+  statements carrying a `transaction_id` are staged and applied atomically at
+  commit (invisible to others until then). The clients now expose the full
+  lifecycle and, critically, let **reads** join a transaction so they see the
+  transaction's own staged writes (read-your-writes):
+  - Reads accept a transaction id: Rust `find_by_id_in_transaction` /
+    `find_in_transaction`; TypeScript `findById(c, id, { transactionId })` and
+    `find(c, q, { transactionId })`; Python `find_by_id(…, transaction_id=…)` /
+    `find(…, transaction_id=…)`; Kotlin `findById(c, id, transactionId=…)` /
+    `find(c, q, transactionId=…)`.
+  - Savepoints on every client: `create_savepoint` / `rollback_to_savepoint` /
+    `release_savepoint` (camelCase per language).
+  - Transactional **delete** now works in Rust/Python (added
+    `delete_with_options`); the Python `delete(transaction_id=…)` previously
+    accepted the argument but silently discarded it — fixed.
+  - `commit` may surface a retryable conflict (HTTP 409) when a record the
+    transaction read or wrote was changed by another committed transaction;
+    documented on each client's begin/commit.
+
+- **`kv_clear` on all clients (#148).** Clears the entire KV store via
+  `DELETE /api/kv/clear`. Added to Rust (`kv_clear`), Python (`kv_clear`),
+  TypeScript (`kvClear`), and Kotlin (`kvClear`); pairs with the Go client's
+  `KVClear`.
+- **`find_by_id_with_projection` on Rust and Python (#145).** Field-projection
+  find-by-id (`select_fields` / `exclude_fields`) was already in TS/Kotlin/Go;
+  added the Rust (`find_by_id_with_projection`) and Python
+  (`find_by_id_with_projection`) equivalents for parity.
+- **Python WebSocket `ws_batch_update` (#146).** The Python `WebSocketClient`
+  could not batch-update over WS. (No `ws_find_all` was added: WS find-all is
+  already provided by the existing `find_all` method, so a second name would
+  duplicate it.)
+- **WebSocket `cancelChat` on TypeScript, Kotlin, Python (#144).** Aborting an
+  in-flight streaming chat over WSS was only possible from Rust and Go; the
+  three remaining clients now send the same `CancelChat` frame.
+- **`list_user_collections` on Python, TypeScript, Kotlin (#147).** Lists
+  collections excluding internal chat/system collections
+  (`GET /api/collections?exclude_internal=true`); previously Rust-only.
+- **WebSocket `unsubscribe` now on all clients (#149).** Previously only the
+  TypeScript (and Go) client sent a server-side `Unsubscribe` frame; the Rust,
+  Python, and Kotlin WebSocket clients now expose `unsubscribe` and send the
+  same best-effort `Unsubscribe` frame (with a unique messageId so the ack is
+  dropped, not misrouted), so a client can tell the server to stop streaming a
+  collection's mutations instead of relying on connection teardown. Full
+  WebSocket unsubscribe parity across Rust / Python / TypeScript / Kotlin / Go.
+  Frame-shape tests added per client.
+
+### Fixed
+
+- **All clients now percent-encode URL path segments (#153).** Request paths
+  that interpolated a caller-supplied segment (collection, id, KV key, function
+  label, chat model name, agent name, …) did NOT encode reserved characters — so
+  a KV key like `session/abc` or a model name like `anthropic/claude-3` (both
+  perfectly normal) produced a malformed URL the server 404'd. This was a
+  **cross-client correctness + parity bug**: each client only encoded _some_
+  paths (Rust none, TypeScript only KV, Kotlin only a few), none complete. Now
+  every caller path segment is encoded in all of them — **Rust** routes all 59
+  sites through the `api_path_url` helper; **TypeScript** wraps every path
+  segment in `encodeURIComponent`; **Kotlin** uses ktor's `encodeURLPathPart()`;
+  the **Python** binding inherits the Rust fix. (The standalone **Go** client is
+  fixed in its own repo.) Behavior is unchanged for segments without reserved
+  characters. Each client adds reserved-char encoding tests (`/`→`%2F`,
+  space→`%20`, `#`, `?`).
+
+- **Python `ekodb_client.__version__` is no longer stale.** It was hardcoded to
+  `"0.1.0"` while the package was `0.21.0` (nothing synced it). It now derives
+  from the installed distribution metadata (set by maturin from
+  pyproject/Cargo), so it always matches the real package version. Covered by
+  `tests/test_version.py`.
+
+- **Kotlin `executeWithRetry` no longer wastes work — or hides the real status —
+  on the final attempt.** A 401 (token refresh) or 429 (Retry-After sleep) on
+  the last attempt would `return@repeat`, fall out of the loop without retrying,
+  and then throw a generic "Request failed after N attempts" with no underlying
+  cause — wasting a token refresh / sleeping the caller for nothing. The 401/429
+  branches now guard on `attempt < maxRetries - 1` (matching the 5xx branch), so
+  the final attempt falls through to the `4xx` handler and surfaces the real
+  status + body. Covered by `401`/`429`-on-final-attempt tests plus a non-final
+  401 refresh-and-retry test.
+
+- **WebSocket `unsubscribe` tells the server to stop streaming (#149).** It sent
+  only a local teardown, so the server kept streaming mutations for the
+  collection until the connection dropped; it now also sends the best-effort
+  `Unsubscribe` frame (see Added above for the cross-client parity work).
+- **Kotlin: retry delays are now bounded (#142).** A server `Retry-After` is
+  clamped to `MAX_RETRY_AFTER_SECONDS = 60` and 5xx/exception backoff to
+  `MAX_BACKOFF_MS = 30_000`. The generic exception-retry path previously used an
+  uncapped exponential delay; it now shares the same `clampBackoffMs` helper, so
+  every retry path is bounded.
+- **Rust `find_by_id_with_projection` now URL-encodes projection fields.** The
+  `select_fields` / `exclude_fields` query was built by raw string
+  concatenation, so a field name containing a reserved character (`,`, `&`, `=`,
+  spaces, …) produced an ambiguous URL and the server received the wrong
+  projection. It now builds the query with `Url::query_pairs_mut()` for proper
+  percent-encoding, matching the `URLSearchParams` encoding the TypeScript
+  client uses (the Python binding inherits the fix). Covered by
+  `test_find_by_id_with_projection_encodes_reserved_chars`.
+
+### Security
+
+- **Transaction API path segments are now percent-encoded.** `transaction_id`
+  and the user-supplied savepoint `name` were interpolated raw into request
+  paths, so a name containing a reserved character (`/`, space, `?`, `#`, …)
+  produced a malformed or wrong path (a `/` could escape its segment). Rust now
+  builds these paths via `Url::path_segments_mut()` and Kotlin via
+  `encodeURLPathPart()` (the Go client uses `url.PathEscape`), encoding space as
+  `%20` and `/` as `%2F`, across create / rollback-to / release savepoint and
+  the commit / rollback / status endpoints. The Python binding inherits the Rust
+  fix. Tests added per client.
+- **Rust `delete_with_options` now percent-encodes its query.** It built the
+  `transaction_id` / `bypass_ripple` query by raw string concatenation; it now
+  uses `Url::query_pairs_mut()`, matching the find methods.
+- **WebSocket `cancelChat` now carries a `messageId` (TypeScript, Kotlin).** The
+  `CancelChat` frame had no correlation id, so a server ack could be misrouted
+  to an unrelated pending request by the dispatcher's single-pending fallback.
+  It now includes a unique messageId (same pattern as `unsubscribe`), so the ack
+  is safely correlatable and ignorable. Tests added.
+
+### Documentation
+
+- **Refreshed `PARITY_MATRIX.md` (#143)** — replaced the blanket "full parity"
+  claim with the actual state and recorded the v0.21.0 parity additions,
+  including WebSocket `unsubscribe` now present on all five clients (the one
+  previously known remaining difference, now resolved).
+
+## [0.20.0] - 2026-06-04
+
+### Added
+
+- **Kotlin: query builder gains `startsWith` / `endsWith`** (#129). The Kotlin
+  `QueryBuilder` only had `contains`, even though the README already showed an
+  `.endsWith(...)` example and the server exposes `StartsWith`/`EndsWith` filter
+  operators. The two methods are now implemented (matching the Rust, TypeScript,
+  Python, and Go builders), so the regex-removal guidance ("use
+  contains/startsWith/endsWith") is actually actionable in Kotlin. README API
+  reference updated; tests added.
+- **Kotlin: query builder gains logical operators, `page`, and `rawFilter`.**
+  The Kotlin `QueryBuilder` was missing the `and` / `or` / `not` logical
+  combinators, the `page(page, pageSize)` pagination helper, and the `rawFilter`
+  escape hatch that the Rust, TypeScript, Python, and Go builders all expose —
+  so a Kotlin caller could not express an OR query (or any nested logical group)
+  through the builder at all and could only AND conditions implicitly. Added all
+  of them, plus a `QueryBuilder.condition(field, operator, value)` companion
+  factory (mirroring Python's `condition`) for constructing the standalone
+  operands that `and` / `or` / `not` take. README API reference updated; tests
+  added.
+
+### Removed
+
+- **Removed the query-builder `regex()` filter** from all clients — the server
+  has no regex filter operator, so it 400'd (or, in Rust, silently fell back to
+  substring `Contains`). Removed until server-side regex filtering is available
+  (tracked internally). Breaking: callers using `regex()` should switch to
+  `contains` / `startsWith` / `endsWith`. Also removed the unreachable
+  `QueryOperator.Regex` variant from the Kotlin `types/Query.kt` sealed class so
+  no client type advertises a server operator that does not exist.
+
+### Fixed
+
+- **Python WebSocket examples updated for `websockets` >= 14.** The raw
+  `websockets` example scripts (`examples/python/client_websocket_subscribe.py`
+  and `simple_websocket.py`) passed `extra_headers=` to `websockets.connect`,
+  which was removed in `websockets` 14 (renamed to `additional_headers`), so
+  they raised `TypeError: ... unexpected keyword argument 'extra_headers'` on
+  the installed `websockets` 16. Switched to `additional_headers` and bumped the
+  examples' `requirements.txt` floor to `websockets>=14.0` so the pin matches
+  the code. (Examples only — the Python client library is a Rust/pyo3 binding
+  and does not use the `websockets` package.)
+- **TypeScript: base URLs with a trailing slash no longer break requests.** The
+  client appended paths by plain string concatenation (`${baseURL}${path}` for
+  REST, `wsURL + "/api/ws"` for WebSocket), so a base URL passed with a trailing
+  slash (e.g. `wss://host/`) produced a double-slash path (`//api/ws`). The
+  server matches WS on the exact `api / ws` route, so the empty leading segment
+  caused the connection to fail (and some proxies reject `//api/...` for REST
+  too). Both the `EkoDBClient` and `WebSocketClient` constructors now strip
+  trailing slashes from the supplied URL via a shared linear-scan helper (rather
+  than a `/\/+$/` regex, which CodeQL flags as polynomial-time backtracking on
+  caller-supplied input). Tests assert the request path is `/api/ws` (and the
+  REST auth URL has no `//api`) for trailing-slash inputs.
+- **TypeScript: WebSocket subscriptions now auto-reconnect and requests no
+  longer hang forever** (#127). The WS client previously snapshotted the auth
+  token once at construction, never reconnected after a transient socket drop,
+  and registered request/response promises with no timeout — a response that
+  never arrived left the promise pending indefinitely. Now: (1) the token is
+  re-evaluated on every (re)connect via the client's existing
+  `getToken()`/`refreshToken()` path, so a reconnect after a token rotation uses
+  the current token instead of a stale one; (2) an unexpected close/error
+  (anything other than an explicit `close()`/`unsubscribe()`) triggers an
+  automatic reconnect with capped exponential backoff plus jitter (200ms → ~5s)
+  that re-sends the `Subscribe` frames so the same `EventStream` keeps
+  delivering mutations; and (3) every request/response call has a configurable
+  per-request timeout (default 30s) that rejects with a clear error, and all
+  in-flight requests are rejected on disconnect so callers fail fast rather than
+  hang. Reconnect/timeout tunables are configurable via the new
+  `WebSocketClientOptions` argument to `client.websocket(url, options)`.
+
+- **Rust: all network ops now route through token auto-refresh** (#131). A 401
+  refreshes the token and retries the operation once instead of surfacing
+  `TokenExpired` to the caller — previously only 18 of the high-level `Client`
+  methods did this and the rest leaked the error. In the same fix,
+  `should_retry(false)` is now honored by every op: the low-level `HttpClient`
+  request methods called the retry policy directly, ignoring the gate, so
+  retries always ran; they now go through `execute_with_retry`, which disables
+  retries when `should_retry` is false.
+
+- **Python: complex `FieldType` values now read and write as native Python
+  types** (#122). On read, the binding Debug-stringified every variant beyond
+  String/Integer/Float/Boolean/Array/Object, returning garbage like
+  `"Binary([255, 216, ...])"`. It now returns faithful native types:
+  `Binary`/`Bytes` → `bytes`, `DateTime` → timezone-aware `datetime.datetime`
+  (UTC), `UUID` → `uuid.UUID`, `Decimal`/`Number(Decimal)` → `decimal.Decimal`
+  (precision-preserving), `Duration` → `datetime.timedelta`,
+  `Number(Integer/Float)` → `int`/`float`, `Set` → `set` (falling back to a
+  `list` when an item is unhashable), and `Vector` → `list`. On write,
+  `py_to_field_type` now accepts `bytes`/`bytearray` → `Binary`,
+  `datetime.datetime` → `DateTime`, `uuid.UUID` → `UUID`, `decimal.Decimal` →
+  `Decimal`, and `set`/`frozenset` → `Set`, in addition to the existing
+  scalar/list/dict handling. Covered by Rust round-trip tests over a live
+  interpreter.
+- **Python: rate-limited (HTTP 429) operations now raise `RateLimitError`**
+  (#123). The custom `RateLimitError` exception was exported but never thrown —
+  every network op wrapped errors in a generic `RuntimeError`, so callers could
+  not distinguish a 429 or read the retry-after. A new `map_client_err` helper
+  maps `Error::RateLimit { retry_after_secs }` to `RateLimitError(retry_after)`
+  (the retry-after is the first exception arg) and all other errors to
+  `RuntimeError`, and it is wired into every network call site
+  (insert/find/update/delete/batch/paginate/exists/upsert/search/chat/WS/etc.).
+  Covered by unit tests asserting the exception type and retry-after.
+- **TypeScript: `chatMessageStream` streams incrementally** (#125). It buffered
+  the entire response via `await response.text()` before emitting, so `chunk`
+  events only fired once the whole reply had arrived. It now reads
+  `response.body` and emits each SSE event as it arrives (reassembling lines
+  split across chunk boundaries), with a `text()` fallback for environments
+  without a readable body stream. Regression test added.
+- **TypeScript: retries use exponential backoff with jitter** (#126). The 503
+  and network-error retries used fixed 10s / 3s delays; they now use a capped
+  exponential schedule (0.2s → 5s) with full jitter, and the 429 `Retry-After`
+  is capped at 60s. Covered by a backoff-bounds test.
+- **`getValue` no longer corrupts user objects** (#134). Across the Rust,
+  TypeScript, Python, and Kotlin clients, `getValue` unwrapped any object that
+  had a `value` key; a legitimate object like `{ value: 1, currency: "USD" }`
+  lost its sibling fields on read. In the Kotlin client this affected the raw
+  `Map` path in `getValue` (the `FieldType.ObjectValue` path already guarded on
+  both keys). The TypeScript `extractRecordId` helper had the same unguarded
+  unwrap in a separate code path (it pulled `.value` off any object when
+  resolving a record's id/alias) and is now held to the same `type`+`value`
+  rule, matching how the Rust and Kotlin id extractors already delegate to the
+  guarded `get_value`/`getValue`. All now only unwrap a genuine typed wrapper
+  (both `type` and `value` present) and pass every other object through
+  untouched. Regression tests added per language. (The Go client had the same
+  `getValue` bug, fixed separately; Python and Go have no separate id-extractor
+  helper.)
+- **Rust: WebSocket request IDs are now collision-free** (#132).
+  `gen_message_id` used a nanosecond wall-clock value, so two requests in the
+  same tick could collide and hang/mis-route a caller. It now uses a
+  process-wide monotonic atomic counter.
+- **Rust: retry backoff is capped and overflow-safe** (#133). The exponential
+  backoff could overflow (`2^attempt`) and an unbounded server `Retry-After` was
+  honored verbatim. Backoff now uses a bounded exponent + saturating math
+  clamped to 30s, and `Retry-After` is capped at 60s (`TestRetryPolicy` backoff
+  test). Also replaced a network-path `.unwrap()` in `health_check` with error
+  propagation and removed an `_`-prefixed binding.
+- **TypeScript: `chatMessageStream` now awaits `getToken()`** (#124). The token
+  was read without `await`, so the SSE chat request sent
+  `Authorization: Bearer [object Promise]` and every streamed chat 401'd (the
+  `if (!token)` refresh branch was also dead, since a Promise is always truthy).
+  Added a regression test asserting the request carries the resolved Bearer
+  token.
+- **Kotlin: 401 retry now uses the refreshed token** (#128). Request methods
+  captured the token once before `executeWithRetry`, so a 401 that triggered
+  `refreshToken()` still retried with the stale token and never recovered.
+  `executeWithRetry` now fetches the token fresh on every attempt and passes it
+  into the request block, so the retried attempt carries the refreshed token.
+  The same path also no longer swallows `CancellationException` (it is rethrown
+  so structured coroutine cancellation keeps working), and the `Logging` plugin
+  redacts the `Authorization` header as defense-in-depth (INFO level already
+  omits headers and bodies). Regression tests added (401→refresh→retry asserts
+  the new bearer token; cancellation rethrow asserts no retry).
+- **Kotlin: `getRecordId` resolves `primary_key_alias` / `_id`** (#130). It
+  hardcoded `record["id"]`, so collections with a custom primary-key alias
+  returned `null`. A new overload accepts alias candidates and tries them in
+  order, then `id`, then `_id`; the no-argument form now also falls back to
+  `_id`. Unit tests added for alias, `_id`, wrapped-value, and plain-`id`
+  resolution.
+
+### Changed
+
+- **Python client now requires Python >= 3.9** (was `>= 3.8`). Python 3.8
+  reached end-of-life in October 2024, and the modern `websockets` library used
+  by the examples dropped 3.8 in v14. Bumped `requires-python` and removed the
+  `Python :: 3.8` classifier in `ekodb-client-py/pyproject.toml` so the
+  published support matrix is accurate. The pyo3 binding itself is unaffected;
+  this is a metadata/support-policy change.
+- **Repository metadata, license, and hygiene** (#135): pointed the
+  `ekodb_client` crate `repository` field at the public `ekoDB/ekodb-client`;
+  corrected the declared license to `MIT` in the Rust and Python manifests (only
+  a MIT `LICENSE` file ships, matching the TypeScript and Kotlin clients);
+  removed two committed compiled Go example binaries and added ignore rules for
+  them; removed internal server-path references from test comments; refreshed
+  `PARITY_MATRIX.md` to the current 0.19.0 line (parity re-verification for
+  0.19.0 noted as in progress).
+
+## [0.19.0] - 2026-06-02
+
+### Fixed — Function examples now save-or-update on `409 Conflict`
+
+The ekoDB server now makes `POST /api/functions` create-only, returning **409
+Conflict** when a `label` already exists (use `PUT /api/functions/:label` to
+update). Examples that save a fixed-label stored function therefore failed on a
+re-run against a server that already held the label
+(`A function with label 'get_active_users' already exists ...`). Every affected
+example across all six languages now does **save-or-update**: it `POST`s the
+function, and on a 409 it `PUT`s the same definition by label and continues,
+exercising both the create and update paths. Where the example later needs the
+function id (for by-id management or cleanup), it resolves the id by label via
+`GET /api/functions/:label` on the 409 path, so the existing end-of-example
+cleanup is unchanged. This was applied to **every** function-saving example (95
+files across `examples/{rust,python,typescript,javascript,go,kotlin}` — the
+`client_functions*`, `http_functions`, `client_user_functions`,
+`client_function_composition`,
+`client_functions_{advanced,ai,complete,crud,kv_wrapped,search}`,
+`client_{concurrency,crypto}_stages`, `client_jwt_auth_flow`,
+`client_path_routed_function`, `client_edge_cache`, `client_swr_native`,
+`client_swr_pattern`, and `swr_pattern` variants). Each per-language build /
+typecheck passes (`cargo build --examples`, `tsc --noEmit`, `go build`,
+`node --check`, `py_compile`, `gradlew compileKotlin`). No client-library code
+changed; each example carries a small local `save_or_update` helper. A few
+TypeScript examples that previously swallowed save errors with
+`.catch(() => {})` now surface non-409 failures properly.
+
+### Security — Bump `ws` to `^8.20.1` (TypeScript client + example projects)
+
+Bumped the `ws` floor to `^8.20.1` (resolves to `ws` 8.21.0) in the TypeScript
+client and both bundled example projects (`examples/typescript` was `^8.18.0`,
+`examples/javascript` was `^8.5.0`), patching GHSA-58qx-3vcg-4xpx — a moderate
+uninitialized-memory-disclosure issue affecting `ws` 8.0.0–8.20.0. `npm audit`
+reports zero vulnerabilities across all three; the client build and full vitest
+suite (381 tests) pass.
+
+### Added — On-demand chat compaction: `compact_chat` (ekodb #43)
+
+All clients gained a method to compact a chat session's history on demand via
+the new server endpoint `POST /api/chat/{id}/compact`: it folds the older
+messages into a summary message and marks the originals forgotten, reclaiming
+context-window budget. Returns
+`{folded, kept_recent, summary_chars, summary_message_id, already_compact}`.
+
+- **Rust** (`ekodb_client`):
+  `client.compact_chat(chat_id, keep_recent: Option<usize>)` →
+  `CompactChatResponse` (new `CompactChatRequest` / `CompactChatResponse` types,
+  exported from the crate root).
+- **TypeScript**: `client.compactChat(chatId, keepRecent?)` →
+  `CompactChatResponse`.
+- **Python** (PyO3 binding): `client.compact_chat(chat_id, keep_recent=None)` →
+  dict.
+- **Kotlin**: `client.compactChat(chatId, keepRecent?)` → `CompactChatResponse`.
+
+`keep_recent` defaults server-side to the session's `max_context_messages` (or
+50); `0` compacts the entire history. Each client mirrors its existing
+chat-method conventions (auth, retry, serialization) and ships with unit tests
+for the new method.
+
+### Fixed — Rust SWR `flexible_cache` example pointed at a non-resolving host (ekodb-client)
+
+The Rust `client_swr_native` example's `flexible_cache` (dynamic-TTL) function
+set its server-side SWR fetch URL to `https://api.ekodb.net/api/health`, a host
+that does not resolve. The server's fetch failed with
+`400 HTTP request failed: error sending request`, and because the example uses
+`?` on the call it **aborted the entire Rust example run**
+(`make test-examples-rust-client` exited non-zero), which is why a single bad
+line cascaded into "a lot of fails". Every other language's `flexible_cache`
+(Go, Python, TypeScript, JavaScript, Kotlin) already used
+`https://jsonplaceholder.typicode.com/posts/{{resource_id}}`; the Rust example
+(`examples/rust/examples/client_swr_native.rs:227`) now matches, restoring
+cross-language parity and unblocking the suite. (Net change versus 0.18.2: the
+URL went from `https://app.ekodb.io/api/health` → the broken `api.ekodb.net`
+host → the reachable jsonplaceholder endpoint used everywhere else.)
+
+Note: saved functions are keyed by `label` and resolved by first match, so the
+stale Rust definition could win label resolution for later same-server runs,
+surfacing the same `api.ekodb.net` error in the Python/TypeScript example logs.
+Aligning the URL removes that cross-run poisoning.
+
+### Fixed — Doc/test base URLs aligned to `.ekodb.net`
+
+Two remaining `.ekodb.io` examples that referenced deployed-database URLs
+(rather than external/marketing surfaces) were updated to `.ekodb.net`, matching
+the convention used everywhere else in the client docs and the deployment
+dashboard.
+
+- `ekodb-client-kt/src/test/kotlin/io/ekodb/client/KVBatchOperationsTest.kt:17`
+  and `EkoDBClientTest.kt:23` — test fixture `testBaseUrl` is now
+  `https://test.ekodb.net`.
+
+## [0.18.2] - 2026-05-26
+
+### Security — Dependabot sweep (ekodb-client#118)
+
+Lockfile bumps across all three workspaces (`Cargo.lock`,
+`ekodb-client-py/Cargo.lock`, `examples/rust/Cargo.lock`) to clear 14 open
+Dependabot alerts (7 HIGH severity). No source changes; transport / TLS stacks
+pull patched versions transitively.
+
+- **openssl 0.10.73 / 0.10.78 → 0.10.80** (with `openssl-sys` 0.9.114 / 0.9.109
+  → 0.9.116). Resolves GHSA-xv59-967r-8726 (heap buffer overflow in AES
+  key-wrap-with-padding, MEDIUM), GHSA-xp3w-r5p5-63rr (undefined behavior in
+  `X509Ref::ocsp_responders` for non-UTF-8 OCSP URLs, HIGH), GHSA-pqf5-4pqq-29f5
+  (`Deriver::derive` / `PkeyCtxRef::derive` buffer overflow on OpenSSL 1.1.1,
+  HIGH), GHSA-xmgf-hq76-4vx2 (out-of-bounds read in PEM password callback, LOW),
+  GHSA-8c75-8mhr-p7r9 (incorrect bounds assertion in AES key wrap, HIGH),
+  GHSA-hppc-g8h3-xhp3 (PSK/cookie trampoline length leaks adjacent memory to
+  peer, HIGH), GHSA-ghm9-cr32-g9qj (`MdCtxRef::digest_final` writes past caller
+  buffer, HIGH).
+- **rustls-webpki 0.103.10 → 0.103.13** in `examples/rust/Cargo.lock`. Resolves
+  GHSA-82j2-j2ch-gfr8 (denial of service via panic on malformed CRL
+  `BIT STRING`, HIGH).
+- **rand 0.8.5 → 0.8.6** and **rand 0.9.2 → 0.9.4** in
+  `examples/rust/Cargo.lock`. Resolves GHSA-cq8v-f236-94qc (unsound behavior
+  with a custom logger using `rand::rng()`, LOW) on both major lines.
+
+All bumps are transitive — pulled via `cargo update -p <pkg>` with no manifest
+edits. `cargo check`, `cargo clippy -p ekodb_client -- -D warnings`, and
+`make test-rust` (222 + 3 + 8 + 145 unit/integration + 28 doctests, all passing)
+verified clean.
+
+### Tests — un-ignored stale `#[ignore]` on `test_client_builder`
+
+`tests/integration_test.rs::test_client_builder` was tagged
+`#[ignore] // Ignore by default since it requires a running server` but the test
+only exercises `Client::builder().base_url(...).api_key(...).build()` —
+pure-local builder validation, no network I/O, no actual connection. The header
+comment that justified the ignore covered a different test
+(`test_insert_and_find`) that genuinely does need a running ekoDB server. The
+stale ignore is removed so a regression in builder validation fails CI
+immediately. The `test_insert_and_find` ignore stays — converting it requires
+mocking the entire ekoDB wire protocol (auth, ID encryption, schema), which is
+real scope.
+
+## [0.18.1] - 2026-04-29
+
+### Added
+
+- **No-op semantics**: cancelling a `chat_id` with no in-flight stream is safe
+  and does not error.
+- **`WebSocketClient::cancel_chat()` auto-reconnects via `ensure_connected()`**
+  so callers don't have to keep the original streaming WS handle alive just to
+  send a cancel — matches the connection contract every other public WS-RPC
+  method on `WebSocketClient` already follows.
+- **Wire-format tests for `WebSocketRequest::CancelChat`** —
+  `cancel_chat_request_serializes_with_expected_shape` pins the
+  `type: "CancelChat"` tag and `payload.chat_id` field name (both load-bearing
+  on the server), and `cancel_chat_payload_deserializes_from_wire` exercises the
+  inverse path. Catches accidental rename / shape drift across version
+  boundaries.
+
+### Dependencies
+
+- Lockfile + version-string sweep across `Cargo.lock`,
+  `ekodb-client-py/Cargo.lock`, `ekodb-client-ts/package-lock.json`,
+  `ekodb-client-kt/build.gradle.kts`, and the `examples/` lockfiles to pin to
+  0.18.1.
+
+## [0.18.0] - 2026-04-29
+
+### Added — Server-side chat cancel
+
+- **`WebSocketClient::cancel_chat(chat_id)`** new method that sends
+  `WebSocketRequest::CancelChat { CancelChatPayload }` over the WS. The server
+  fires the matching `CancellationToken` and the in-flight LLM call inside
+  `chat_message_streaming` aborts via `tokio::select!` — the assistant message
+  is NOT persisted. Pre-fix, dropping the receiver only halted client-side chunk
+  delivery; the LLM kept generating server-side and the "cancelled" turn still
+  landed in `/history`.
+- New `CancelChatPayload { chat_id: String }` and `WebSocketRequest::CancelChat`
+  variant. Server matches a process-wide token registry keyed by `chat_id`, so
+  the cancel works regardless of which WS connection sends it (claw's typical
+  pattern uses a fresh `connect_ws()` for cancel).
+
+## [0.17.0] - 2026-04-12
+
+### Added (2026-04-26 — crypto + concurrency stage variants)
+
+- **11 new crypto stage variants** across Rust, TypeScript, Python, and Kotlin
+  clients: `HmacSign`, `HmacVerify`, `AesEncrypt`, `AesDecrypt`, `UuidGenerate`,
+  `TotpGenerate`, `TotpVerify`, `Base64Encode`, `Base64Decode`, `HexEncode`,
+  `HexDecode`, `Slugify`. Each gained a builder helper:
+  - **Rust**: `Function::HmacSign { ... }` etc. enum variants.
+  - **TypeScript**: `Stage.hmacSign(...)`, `Stage.aesEncrypt(...)`,
+    `Stage.uuidGenerate(...)`, `Stage.totpGenerate(...)`,
+    `Stage.base64Encode(...)`, `Stage.hexEncode(...)`, `Stage.slugify(...)`,
+    plus the matching verify/decode/decrypt builders.
+  - **Python**: `Stage.hmac_sign(...)`, `Stage.aes_encrypt(...)`,
+    `Stage.uuid_generate(...)`, `Stage.totp_generate(...)`,
+    `Stage.base64_encode(...)`, `Stage.hex_encode(...)`, `Stage.slugify(...)`,
+    etc.
+  - **Kotlin**: `FunctionStageConfig.HmacSign` etc. sealed subclasses with
+    `@SerialName`-tagged kotlinx.serialization encoding.
+- **4 new concurrency stage variants** for idempotency, rate limiting, and
+  distributed locks: `IdempotencyClaim`, `RateLimit`, `LockAcquire`,
+  `LockRelease`. Builders mirror the crypto naming pattern across all four
+  clients.
+- **Tests** — 4 new test functions per client (~30 assertions total per client)
+  cover happy-path serialization, optional-field omission, and JSON round-trip
+  equivalence.
+
+**Requires ekoDB >= 0.42.0** for any of these stages to execute on the server.
+Older servers will reject the function definition with "unknown variant" at
+insertion time.
+
+### Added (2026-04-26 — JWT + EmailSend + path-routed function fields)
+
+- **`Function::JwtSign` / `Function::JwtVerify` variants** — bindings for
+  ekoDB's HMAC JWT stages (HS256 / HS384 / HS512). `JwtSign` takes a claims
+  object, secret, optional `expires_in_secs` (auto-stamps `iat` + `exp`), and
+  writes the token to `output_field`. `JwtVerify` writes either decoded claims
+  or `null` to `output_field` so callers can branch with `If { FieldEquals }`.
+- **`Function::EmailSend` variant** — binding for the SendGrid v3 `mail/send`
+  integration stage. Carries `to`, `subject`, `body`, `from`, optional
+  `reply_to`, `api_key` (use `{{env.SENDGRID_API_KEY}}`), optional `provider`
+  (defaults to `"sendgrid"`), `html` flag, and `output_field`.
+- **`http_method` + `http_path` on `UserFunction`** plus a
+  `with_http_route(method, path)` builder. Lets a stored function answer to a
+  REST-style URL (`GET /api/route/users/:id`) via the ekoDB server's path-routed
+  dispatcher. Both fields are optional and serialize with
+  `skip_serializing_if = "Option::is_none"`, preserving wire compatibility for
+  existing definitions.
+- **Tests** — 4 JWT round-trip / reject cases and 3 EmailSend shape cases.
+
+### Added (2026-04-25)
+
+- **`Attachment` struct + `attachments: Option<Vec<Attachment>>` on
+  `ChatMessageRequest`** — pairs with ekoDB's Anthropic / OpenAI / Gemini File
+  API support. Pure addition; existing callers unaffected (default `None`).
+- **`ChatStreamEvent::ToolCall` SSE variant** — recognized when the server emits
+  `event: tool_call` mid-stream (set by ekoDB's `TOOL_PROGRESS_TX` task-local).
+  Lets streaming consumers display in-flight tool calls before the assistant
+  token stream resumes.
+
+### Added
+
+- **Five new function stage variants across Rust, TypeScript, Python, and Kotlin
+  clients** — `TryCatch`, `Parallel`, `Sleep`, `Return`, and `Validate` stages
+  that the server already supported were missing from all client-side `Function`
+  enums / stage builders. This caused `list_functions` to fail with
+  `unknown variant 'Return'` when any stored function used these stages, because
+  the client couldn't deserialize the server response.
+  - **Rust**: `Function::TryCatch`, `Function::Parallel`, `Function::Sleep`,
+    `Function::Return`, `Function::Validate` variants with full serde
+    round-trip. 8 new unit tests.
+  - **TypeScript**: `FunctionStageConfig` union members + `Stage.tryCatch()`,
+    `Stage.parallel()`, `Stage.sleep()`, `Stage.returnResponse()`,
+    `Stage.validate()` builders. 16 new tests.
+  - **Python**: `Stage.try_catch()`, `Stage.parallel()`, `Stage.sleep()`,
+    `Stage.return_response()`, `Stage.validate()` helpers. 12 new tests.
+  - **Kotlin**: `FunctionStageConfig.TryCatch`, `.Parallel`, `.Sleep`,
+    `.Return`, `.Validate` sealed subclasses with kotlinx.serialization. 10 new
+    tests.
+
+- **Improved `ParameterRef` type safety (TypeScript)** — `parameterRef()` and
+  `Stage.param()` now return a `ParameterRef` interface
+  (`{ type: "Parameter"; name: string }`) instead of `Record<string, string>`,
+  catching misuse at compile time. Stage methods that accept records/updates now
+  accept `Record<string, any> | ParameterRef`.
+
+### Fixed
+
+- **Wire-format test for `ttl: undefined` (TypeScript)** — The JSON
+  serialization round-trip test asserted `ttl: undefined` in the wire object,
+  but `JSON.parse(JSON.stringify(...))` drops `undefined` keys entirely.
+  Replaced with explicit `stage.ttl` undefined check + `"ttl" in wire` absence
+  check.
+
+- **Three new crypto-primitive function stages across every language client** —
+  Rust, TypeScript, Python, and Kotlin now expose typed bindings
+  - builder helpers for ekoDB 0.41.0's new `BcryptHash`, `BcryptVerify`, and
+    `RandomToken` stored-function stages. Lets callers build a pure
+    stored-function auth flow
+    (`users_register = Validate + BcryptHash + Insert`,
+    `users_login = FindOne + BcryptVerify + If`) and have ekoDB do the password
+    hashing, verification, and session-token minting instead of hosting those
+    primitives in every app layer. All four helpers produce identical JSON on
+    the wire. Helper API by language:
+  * **Rust** (`ekodb_client`): new
+    `Function::BcryptHash { plain, cost, output_field }`,
+    `Function::BcryptVerify { plain, hash_field, output_field }`, and
+    `Function::RandomToken { bytes, encoding, output_field }` variants. 6 new
+    tests in `ekodb_client/tests/unit_tests.rs`
+    (`test_bcrypt_hash_stage_serializes_with_text_placeholder`,
+    `test_bcrypt_hash_stage_omits_cost_when_none`,
+    `test_bcrypt_verify_stage_serializes`,
+    `test_random_token_stage_serializes_with_hex_default`,
+    `test_random_token_stage_omits_encoding_when_none`,
+    `test_crypto_stages_roundtrip_through_serde`).
+  * **TypeScript** (`@ekodb/ekodb-client`): new
+    `Stage.bcryptHash(plain, output_field, cost?)`,
+    `Stage.bcryptVerify(plain, hash_field, output_field)`, and
+    `Stage.randomToken(bytes, output_field, encoding?)` builders plus the
+    matching `FunctionStageConfig` union members. 9 new tests in
+    `ekodb-client-ts/src/functions.test.ts` — full TS suite: 347/347 passing.
+  * **Python** (`ekodb_client`): new
+    `Stage.bcrypt_hash(plain, output_field, cost=None)`,
+    `Stage.bcrypt_verify(plain, hash_field, output_field)`, and
+    `Stage.random_token(bytes, output_field, encoding=None)` methods on
+    `ekodb_client.stages.Stage`. 7 new tests in
+    `ekodb-client-py/tests/test_stages.py`.
+  * **Kotlin** (`io.ekodb.client.functions`): new
+    `FunctionStageConfig.BcryptHash`, `FunctionStageConfig.BcryptVerify`, and
+    `FunctionStageConfig.RandomToken` `@SerialName`'d data classes. 6 new tests
+    in
+    `ekodb-client-kt/src/test/kotlin/io/ekodb/client/functions/FunctionStagesTest.kt`
+    — full suite: 13/13 passing.
+
+  **Requires ekoDB >= 0.41.0.** Sensitive runtime inputs (the password the user
+  just typed) flow through the existing text-level `"{{password}}"` placeholder
+  substituted by `substitute_parameters` at stage-execution time. Operator-owned
+  secrets (peppers, data keys) continue to use `"{{env.NAME}}"` sourced from
+  ekoDB's `environment_vars` config whitelist.
+
+- **Structural parameter placeholder helper added to every language client** —
+  Rust, TypeScript, Python, and Kotlin now expose a helper that builds the
+  `{"type": "Parameter", "name": <name>}` shape ekoDB's
+  `resolve_json_parameters` recognizes inside `Insert.record`, `Update.updates`,
+  `UpdateById.updates`, `FindOneAndUpdate.updates`, `BatchInsert.records`, and
+  any `QueryExpression` filter value. This is the structural alternative to the
+  text-level `"{{name}}"` placeholder form — use it when the parameter is a
+  whole-object record or a value whose type would otherwise be lost on a
+  raw-JSON round-trip (Binary, DateTime, UUID, Decimal, Duration, Number, Set,
+  Vector). Requires ekoDB >= 0.41.0 for the mutation-stage parameter-resolution
+  consistency fix. Helper API by language:
+  - **Rust** (`ekodb_client`):
+    `parameter_ref(name: impl Into<String>) -> serde_json::Value`, re-exported
+    from the crate root. Covered by 7 new tests in
+    `ekodb_client/tests/unit_tests.rs` (`test_parameter_ref_shape`,
+    `test_parameter_ref_arbitrary_name`,
+    `test_insert_function_accepts_structural_parameter`,
+    `test_insert_function_accepts_per_field_placeholders`,
+    `test_update_by_id_accepts_structural_parameter`,
+    `test_update_with_structural_filter_and_updates`,
+    `test_batch_insert_accepts_per_record_structural_parameters`), plus a
+    doctest on the function itself.
+  - **TypeScript** (`@ekodb/ekodb-client`): top-level `parameterRef(name)` and
+    `Stage.param(name)` shorthand. Covered by 11 new tests in
+    `ekodb-client-ts/src/functions.test.ts` spanning Insert, UpdateById, Update
+    (filter-based), BatchInsert, and JSON wire-format round-trip.
+  - **Python** (`ekodb_client`): top-level `parameter_ref(name)` and
+    `Stage.param(name)` shorthand in `ekodb_client.stages`. Covered by 9 tests
+    in `ekodb-client-py/tests/test_stages.py` mirroring the TS coverage.
+  - **Kotlin** (`io.ekodb.client.functions`): top-level
+    `parameterRef(name): JsonObject` in `FunctionStages.kt`. Covered by 7 tests
+    in
+    `ekodb-client-kt/src/test/kotlin/io/ekodb/client/functions/FunctionStagesTest.kt`.
+
+  All four helpers produce identical JSON on the wire and are interoperable with
+  any of the ekoDB client libraries — an app can define its stored functions in
+  one language and call them from another.
+
+## [0.16.0] - 2026-04-01
+
+### Added
+
+- **`agent_id` field on chat sessions** — `CreateChatSessionRequest` and
+  `ChatSession` now include an optional `agent_id` field to associate a session
+  with a named agent. Rust client includes a `.agent_id()` builder method. Added
+  across all clients (Rust, TypeScript, Go, Kotlin, Python).
+
+- **Client tool fields on `ChatMessageRequest`** — Added `client_tools`,
+  `confirm_tools`, and `exclude_tools` optional fields plus `ClientToolDef`
+  struct for HTTP/SSE chat message requests. When provided, ekoDB merges client
+  tool definitions with built-in tools and routes calls back via
+  `__client_tool_call` SSE events. Includes builder methods in Rust. Added
+  across all clients (Rust, TypeScript, Go, Kotlin, Python).
+
+- **`submit_chat_tool_result()`** — New HTTP method to submit a client tool
+  result for an in-flight SSE chat stream (`POST /api/chat/:id/tool-result`),
+  unblocking ekoDB's tool loop. Added across all clients.
+
+- **`subscribe_sse()`** — Subscribe to collection mutations via SSE (Server-Sent
+  Events). Returns a channel/stream of `MutationNotification` events. Use when
+  WebSocket connections aren't available (e.g. behind reverse proxies). Supports
+  `filter_field`/`filter_value` query params. Added across all clients (Rust,
+  TypeScript, Go, Kotlin, Python).
+
+- **`list_user_collections()`** — New method that lists collections while
+  filtering out internal chat/system collections via `exclude_internal=true`
+  query parameter. Rust client only.
+
+### Changed
+
+- **Dependency management** — `make deps-update` and `make deps-update-rust` now
+  use `cargo upgrade` (from `cargo-edit`) to bump `Cargo.toml` constraints
+  before running `cargo update`, instead of only updating within existing
+  constraints.
+
+- **Updated dependencies** — Bumped dependencies across Rust, Python bindings,
+  and TypeScript client packages.
+
+## [0.15.2] - 2026-03-28
+
+### Fixed
+
+- **HTTP status check sweep** — Added `json_body<T>` helper that checks HTTP
+  status before deserializing. All chat, KV, search, collection, and transaction
+  methods now return proper typed errors (`NotFound`, `TokenExpired`,
+  `RateLimit`, `Api`) instead of attempting to deserialize error response bodies
+  as success types. This fixes the "missing field `session`" crash when
+  restoring a deleted chat, and `kv_exists` returning errors instead of `false`
+  after `kv_delete`.
+
+- **`ChatSessionResponse` backward compatibility** — Added `#[serde(default)]`
+  to `session` and `message_count` fields as defense-in-depth for edge cases
+  where the server response shape is unexpected.
+
+- **Search score injection** — `hybrid_search()` and `text_search()` helper
+  methods now inject `_score` into returned records. Previously the score was
+  stripped when mapping `SearchResult` to `Record`, causing all scores to read
+  as 0.000 in RAG examples. Fixed across all clients (Rust, TypeScript, Go,
+  Kotlin; Python inherits from Rust).
+
+- **Python SWR example** — Removed `create_collection("user_cache_py", None)`
+  call that failed with "Schema must contain at least one field". ekoDB
+  auto-creates collections on first insert.
+
+## [0.15.1] - 2026-03-27
+
+### Added
+
+- **Full WebSocket CRUD parity** — 14 new methods on `WebSocketClient`:
+  `insert`, `query`, `find_by_id`, `update`, `delete`, `batch_insert`,
+  `batch_update`, `batch_delete`, `text_search`, `distinct_values`,
+  `update_with_action`, `create_collection`, `list_collections`,
+  `delete_collection`. All use `messageId` for concurrent request correlation.
+
+- **Schema cache** — Opt-in in-memory LRU cache for collection schema metadata
+  (`primary_key_alias`, version). Configurable TTL (default 5min), max entries
+  (default 100). Auto-invalidated via WS `SchemaChanged` events. Enable with
+  `Client::builder().schema_cache(true)`.
+
+- **SSE subscriptions** —
+  `client.subscribe_sse(collection, filter_field?, filter_value?)` for mutation
+  events over Server-Sent Events. Works behind reverse proxies that block
+  WebSocket. Auto-invalidates schema cache on `schema_changed` SSE events.
+
+- **`extract_record_id()`** — Universal ID extractor in `utils.rs`. Handles
+  custom `primary_key_alias` by trying extra candidates first, then `"id"`, then
+  `"_id"`. Also handles typed wrapper format
+  `{"type": "String", "value": "..."}`.
+
+- **`client.extract_id(collection, record)`** — Cache-aware instance method that
+  uses the schema cache's `primary_key_alias` for the collection.
+
+- **`client.connect_ws()`** — Convenience method to create a `WebSocketClient`
+  connected to the same instance. Derives WS URL from base URL (http→ws,
+  https→wss), passes current auth token, and attaches schema cache for
+  auto-invalidation.
+
+- **`SchemaChanged` WS event handling** — Dispatcher automatically invalidates
+  the schema cache when the server pushes a `SchemaChanged` event.
+
+- **Concurrent WS dispatch** — `Success` and `Error` responses now carry
+  top-level `messageId` for proper concurrent request correlation.
+  Backward-compatible single-pending fallback preserved.
+
+### Changed
+
+- **`WebSocketResponse::Error` now includes `message_id`** — Enables per-request
+  error routing instead of broadcast to any pending request.
+
+## [0.15.0] - 2026-03-25
+
+### Security
+
+- **Fix rustls-webpki CRL vulnerability (3 Dependabot alerts)** — Updated
+  `rustls-webpki` from 0.103.7/0.103.9 to 0.103.10 in the root `Cargo.lock`,
+  `ekodb-client-py/Cargo.lock`, and `examples/rust/Cargo.lock`. Fixes faulty CRL
+  Distribution Point matching logic that could cause CRLs to not be considered
+  authoritative.
+
+### Added
+
+- **Per-message LLM model override** — `ChatMessageRequest` now supports
+  `.llm_model("model-name")` to override the session's default model for a
+  single message. Enables routing simple tool-calling steps through a faster
+  model while keeping the primary model for interactive chat.
+
+- **JWT expiry-based token caching in Kotlin client** — `getToken()` now decodes
+  the JWT `exp` claim and proactively refreshes 60 seconds before expiry,
+  matching the Rust client's `AuthManager`. Added `extractJWTExpiry()`
+  (internal) for Base64-decoding the JWT payload. `clearTokenCache()` now also
+  resets the expiry. Includes 8 new unit tests covering expiry extraction, cache
+  reuse, proactive refresh, and cache clearing.
+
+- **Proactive token refresh in `AuthManager`** — `get_token()` now decodes the
+  JWT `exp` claim and refreshes 60 seconds before expiry. All callers get a
+  valid token automatically without needing `execute_with_token_refresh`
+  wrappers. Eliminates cascading "Token expired" failures across all client
+  methods.
+
+- **Server-side `execute_tool()`** —
+  `Client::execute_tool(tool_name, params, chat_id)` now delegates to ekoDB's
+  `POST /api/chat/tools/execute` endpoint instead of dispatching tools
+  client-side. All collection filtering, permission enforcement, and internal
+  collection blocking happen server-side. Accepts optional `chat_id` for
+  memory-tool context. Returns `None` on 404/405 so callers can fall back to
+  chat/LLM routing.
+
+- **`execute_tool_remote()` HTTP method** — New
+  `HttpClient::execute_tool_remote()` POSTs to `/api/chat/tools/execute` with
+  `{tool, params, chat_id?}` and returns the raw server response.
+
+- **`executeTool` in TypeScript client** —
+  `EkoDBClient.executeTool(toolName, params, chatId?)` calls the server-side
+  tool execute endpoint. Returns `null` on 404/405 for graceful fallback.
+
+- **`executeTool` in Kotlin client** —
+  `EkoDBClient.executeTool(toolName, params, chatId?)` suspend function with
+  `executeWithRetry`. Returns `null` on 404/405.
+
+- **`ExecuteTool` in Go client** —
+  `Client.ExecuteTool(toolName, params, chatID)` with
+  `ExecuteToolRequest`/`ExecuteToolResult` types. Returns `nil, nil` on 404/405.
+
+- **`execute_tool` in Python client** — PyO3 binding delegates to
+  `client.execute_tool()`. Returns `None` on 404/405.
+
+### Changed
+
+- **Kotlin dependency updates** — Ktor 3.3.3 → 3.4.1, kotlinx-serialization
+  1.9.0 → 1.10.0. Python bindings: borsh 1.6.0 → 1.6.1, zerocopy 0.8.42 →
+  0.8.47, winnow 0.7.15 → 1.0.0 (transitive). Kotlin stays at 2.3.0 (2.3.20
+  breaks CodeQL java-kotlin analysis).
+
+- **New `Error::ToolExecution` variant** — Tool execution failures now use a
+  dedicated error variant instead of fabricating `Error::Api { code: 400 }`,
+  which was misleading for downstream error handling.
+
+### Fixed
+
+- **`execute_tool()` 404/405 fallback was broken (all languages)** — The Rust
+  implementation matched `Error::Api { code: 404 }` but `handle_response()`
+  returns `Error::NotFound` for 404s, so the `None` fallback never triggered.
+  Now correctly matches both `Error::NotFound` and `Error::Api { code: 405 }`.
+  TypeScript and Kotlin used fragile `err.message.includes("404")` string
+  matching which could false-positive on unrelated error bodies; now parses the
+  status code from the known error message prefix. Go used
+  `strings.Contains(err.Error(), "404")` instead of type-asserting `*HTTPError`;
+  now uses `errors.As` with `StatusCode` check.
+
+- **`execute_tool()` bypassed token refresh** — Calls went directly through
+  `get_token()` without `execute_with_token_refresh`, so 401 responses weren't
+  retried with a fresh token. Now wrapped in `execute_with_token_refresh` like
+  all other client methods.
+
+- **`execute_tool_remote()` missing `Accept` header** — Added
+  `Accept: application/json` for consistency with other chat HTTP methods.
+
+- **Token refresh on core CRUD methods** — `find_by_id`, `update`, `delete`,
+  `batch_insert`, `batch_update`, `batch_delete`, `list_collections`,
+  `delete_collection`, `get_schema`, `create_collection`, `update_with_action`
+  now use `execute_with_token_refresh` (was only on `insert`, `find`,
+  `distinct_values`).
+
+- **`count_documents` no longer fetches all records** — Uses
+  `select_fields: ["_id"]` to minimize data transfer. Still no dedicated server
+  count endpoint, but network payload is now ~100x smaller for large
+  collections.
+
+- **`find()` respects `should_retry` flag** — Was calling
+  `retry_policy.execute()` directly, bypassing the `no_retry()` configuration.
+  Now uses `execute_with_retry()` like all other methods.
+
+### Removed
+
+- **`Error::Auth` variant** — Duplicate of `Error::Authentication`. All usages
+  migrated to `Error::Authentication`.
+
+## [0.14.0] - 2026-03-21
+
+### Added
+
+- **TypeScript unit tests: schedules, KV links, text/hybrid search** — Added
+  three new `describe` blocks to `client.test.ts`: `EkoDBClient schedules` (7
+  tests: create, list, get, update, delete, pause, resume),
+  `EkoDBClient kv links` (3 tests: kvGetLinks, kvLink, kvUnlink), and
+  `EkoDBClient text and hybrid search` (2 tests: textSearch, hybridSearch).
+
+- **TypeScript integration example: Goals, Tasks & Agents** — New
+  `client_goals_tasks_agents.ts` exercising the full lifecycle of goals, tasks,
+  and agents matching the Rust example.
+
+- **TypeScript integration example: Schedules** — New `client_schedules.ts`
+  covering create, list, get, update, pause, resume, and delete schedule.
+
+- **TypeScript integration example: KV Links** — New `client_kv_links.ts`
+  demonstrating kvSet, kvLink, kvGetLinks, kvUnlink with document cleanup.
+
+- **TypeScript integration example: Advanced CRUD** — New
+  `client_advanced_crud.ts` covering updateWithAction (increment, push, clear),
+  updateWithActionSequence, restoreRecord, and restoreCollection.
+
+- **Integration example: Goals, Tasks & Agents** — New
+  `client_goals_tasks_agents.rs` example exercising the full lifecycle of goals
+  (create, list, get, update, search, complete, approve, reject, step
+  start/complete/fail, delete), tasks (create, list, get, start, succeed, pause,
+  resume, fail, due, delete), and agents (create, list, get, get_by_name,
+  update, agents_by_deployment, delete).
+
+- **Integration example: Schedules** — New `client_schedules.rs` example
+  covering create_schedule, list_schedules, get_schedule, update_schedule,
+  pause_schedule, resume_schedule, and delete_schedule.
+
+- **Integration example: KV Links** — New `client_kv_links.rs` example
+  demonstrating kv_set, kv_link, kv_get_links, kv_unlink with document
+  insert/cleanup.
+
+- **Integration example: Advanced CRUD** — New `client_advanced_crud.rs` example
+  covering update_with_action (increment, decrement, multiply, push, append,
+  pop, remove), update_with_action_sequence, restore_deleted, and
+  restore_collection.
+
+- **Kotlin `countDocuments` method** — Added `countDocuments(collection)` to the
+  Kotlin client, returning the number of documents in a collection. Calls
+  `GET /api/{collection}/count`. All 5 clients now have this method.
+
+- **`rawCompletionStreamWithProgress` parity** — Added to Kotlin client (with
+  `onToken` callback lambda) and Python client (with `on_token` callable). Both
+  match the existing Go and TypeScript implementations. Enables real-time
+  per-token progress display during stateless LLM completions.
+
+- **Goal template CRUD methods** — New client methods for managing goal
+  templates: `goal_template_create`, `goal_template_list`, `goal_template_get`,
+  `goal_template_update`, `goal_template_delete`. Calls
+  `/api/chat/goal-templates` endpoints on the ekoDB server. Wired through Python
+  PyO3 bindings as async methods on the `EkoDbClient` class.
+
+- **SSE chat message streaming** — New `chatMessageStream()` method in
+  TypeScript and Kotlin clients (Rust: `chat_message_stream()`). Streams chat
+  responses via Server-Sent Events over HTTP. TypeScript returns an
+  `EventStream<ChatStreamEvent>`, Kotlin returns `Flow<ChatStreamEvent>`. Calls
+  `POST /api/chat/{id}/messages/stream`. Works behind reverse proxies that don't
+  support WebSocket upgrades. Python PyO3 binding added as
+  `chat_message_stream()` on the `Client` class, returning a
+  `ChatStreamReceiver` (same receiver type as WebSocket `chat_send`).
+
+- **`context_window` field on `ChatStreamEvent::End`** — The end event now
+  includes the model's context window size in tokens. Supported in all clients:
+  Rust (`Option<u32>`), Python (dict key), TypeScript
+  (`contextWindow?: number`), Kotlin (`contextWindow: Int?`), Go
+  (`ContextWindow uint32`). Allows clients to display context usage and warn
+  when approaching limits.
+
+- **WebSocket unit tests for `context_window`** — Added deserialization and
+  round-trip tests in Rust (6 tests), Go (2 tests), TypeScript (1 test), and
+  Kotlin (2 tests).
+
+### Removed
+
+- **Query index management methods (all languages)** — Removed
+  `create_query_index`, `list_query_indexes`, `delete_query_index`,
+  `explain_query` from Rust, Python, TypeScript, and Kotlin clients. These
+  endpoints require admin auth (`admin_filter`) and do not belong in the client
+  library.
+
+- **Search index management methods (all languages)** — Removed
+  `create_search_index`, `explain_text_search`, `explain_vector_search`,
+  `explain_hybrid_search` from Rust, Python, TypeScript, and Kotlin clients.
+  These endpoints require admin auth (`admin_filter`) and do not belong in the
+  client library.
+
+### Added
+
+- **Streaming raw completion with progress** — New
+  `raw_completion_stream_with_progress()` (Rust),
+  `rawCompletionStreamWithProgress()` (TypeScript) sends each LLM token through
+  a channel/callback as it arrives via SSE, enabling real-time progress display
+  during long-running calls (e.g., goal plan generation).
+
+- **Search index management methods (Rust, Python, TypeScript, Kotlin)** —
+  `create_search_index`, `explain_text_search`, `explain_vector_search`,
+  `explain_hybrid_search` for creating search indexes and explaining search
+  query execution plans. Added Rust HTTP/client layer and Python PyO3 bindings.
+
+- **KV document linking methods (Rust, Python, TypeScript, Kotlin)** —
+  `kv_get_links`, `kv_link`, `kv_unlink` for linking and unlinking documents to
+  KV keys. Added Rust HTTP/client layer and Python PyO3 bindings.
+
+- **Schedule management methods (Rust, Python, TypeScript, Kotlin)** —
+  `create_schedule`, `list_schedules`, `get_schedule`, `update_schedule`,
+  `delete_schedule`, `pause_schedule`, `resume_schedule` for full CRUD and
+  lifecycle management of scheduled tasks. Added Rust HTTP/client layer and
+  Python PyO3 bindings.
+
+- **Goal/Task/Agent REST client methods (all languages)** — Full coverage of
+  `/api/chat/goals`, `/api/chat/tasks`, and `/api/chat/agents` endpoints
+  including CRUD, lifecycle transitions, goal step lifecycle, search, and
+  deployment queries. Added to Rust, Python, TypeScript, Kotlin, and Go clients.
+
+- **WebSocket raw completion (Kotlin & Python)** — Added `rawCompletion()` to
+  the Kotlin WebSocket client and `raw_completion()` to the Python WebSocket
+  client (PyO3 binding). Both send a `RawComplete` message over the persistent
+  WSS connection, matching the existing Rust implementation.
+
+### Fixed
+
+- **HTTP client timeout no longer kills SSE streams** — Changed from full
+  request timeout to connect-only timeout across Rust (`connect_timeout`),
+  Kotlin (`connectTimeoutMillis` only), and Go (`net.Dialer.Timeout`).
+  TypeScript uses `fetch()` which doesn't have this issue. Python inherits the
+  Rust fix via PyO3 bindings.
+
+## [0.13.0] - 2026-03-18
+
+### Added
+
+- **SSE streaming raw completion** — New `raw_completion_stream()` method across
+  all client libraries (Rust, Python, TypeScript `rawCompletionStream()`, Go
+  `RawCompletionStream()`, Kotlin `rawCompletionStream()`). Calls the new
+  `POST /api/chat/complete/stream` SSE endpoint. Keeps the connection alive with
+  heartbeat events, preventing reverse proxy timeouts on deployed instances.
+
+- **WebSocket raw completion** — New `WebSocketClient::raw_completion()` in the
+  Rust client. Sends a `RawComplete` message over an existing WSS connection,
+  avoiding HTTP entirely. Preferred transport when a WebSocket connection is
+  already established.
+
+### Fixed
+
+- **Go client auth in RawCompletionStream** — `RawCompletionStream()` was using
+  the raw API key directly instead of exchanging it for a JWT token via
+  `getToken()`/`refreshToken()`. This would have caused authentication failures
+  on any real deployment.
+
+- **TypeScript client token init in rawCompletionStream** —
+  `rawCompletionStream()` now calls `refreshToken()` if no cached token exists,
+  matching the behavior of all other methods that go through `makeRequest()`.
+
+- **Atomic field actions** — New `update_with_action()` and
+  `update_with_action_sequence()` methods across all client libraries (Rust,
+  TypeScript, Python, Kotlin). These call the server's atomic field action
+  endpoints (`PUT /api/update/{collection}/{id}/action/{action}` and
+  `PUT /api/update/sequence/{collection}/{id}`) for safe concurrent
+  modifications: increment/decrement counters, push/pop/shift/unshift arrays,
+  multiply/divide/modulo arithmetic, append strings, remove array items, and
+  clear fields. Sequence variant applies multiple actions atomically in a single
+  request. 6 new Rust unit tests, 5 new TypeScript tests.
+
+- **Full WebSocket dispatcher for TypeScript** — Rewrote `WebSocketClient` with
+  a proper message dispatcher that routes incoming frames by type. New methods:
+  `subscribe()` (returns `EventStream<MutationNotification>` for real-time
+  collection change notifications), `chatSend()` (returns streaming
+  `EventStream<ChatStreamEvent>` with chunk/end/toolCall/error events),
+  `registerClientTools()` (registers client-side tool definitions for a chat
+  session), and `sendToolResult()` (returns tool execution results to the
+  server). New types: `MutationNotification`, `ChatStreamEvent`,
+  `ClientToolDefinition`, `ChatSendOptions`, `SubscribeOptions`, `EventStream`.
+  15 new unit tests with mock WebSocket server.
+
+- **Full WebSocket dispatcher for Kotlin** — Expanded `WebSocketClient` with
+  coroutine-based dispatcher using `Flow` for streaming. New methods:
+  `subscribe()` (returns `Flow<MutationNotification>`), `chatSend()` (returns
+  `Flow<ChatStreamEvent>`), `registerClientTools()`, and `sendToolResult()`. New
+  sealed class `ChatStreamEvent` with `Chunk`, `End`, `ToolCall`, `Error`
+  variants. New data classes: `MutationNotification`, `ClientToolDefinition`,
+  `ChatSendOptions`, `SubscribeOptions`. 18 new unit tests.
+
+- **WebSocket subscribe/chat/tools bindings for Python (PyO3)** — Added
+  `subscribe()`, `chat_send()`, `register_client_tools()`, and
+  `send_tool_result()` to the Python `WebSocketClient`. New wrapper classes
+  `SubscriptionReceiver` and `ChatStreamReceiver` with async `recv()` methods
+  that return dicts. 13 new API shape tests.
+
+- **Token management for Python and TypeScript** — Python: added
+  `refresh_token()` and `clear_token_cache()` async methods to `Client`.
+  TypeScript: made `refreshToken()` public and added `clearTokenCache()`. 5 new
+  tests.
+
+- **`SchemaBuilder` and `JoinConfig` for Kotlin** — New `FieldTypeSchemaBuilder`
+  and `SchemaBuilder` classes for fluent collection schema construction with
+  constraints, indexes (text, vector, btree, hash), and validation. New
+  `JoinConfig` data class with `single()` and `multi()` companion factories plus
+  `toJsonObject()` and `toMap()` converters. 23 new tests.
+
+- **`QueryBuilder`, `SchemaBuilder`, and `JoinConfig` for Python** — Pure Python
+  fluent builder classes matching the Rust reference implementation. 52 new
+  tests covering all operators, logical combinations, sorting, pagination,
+  joins, field projection, and schema construction.
+
+- **`RateLimitInfo` for Kotlin** — Data class with `isNearLimit()`,
+  `isExceeded()`, and `remainingPercentage()` methods. Automatically parsed from
+  `X-RateLimit-*` response headers in `executeWithRetry()`. Accessible via
+  `getRateLimitInfo()` and `isNearRateLimit()`. 13 new tests.
+
+- **`findByIdWithProjection()` for TypeScript and Kotlin** — Query a single
+  record by ID with field selection/exclusion. TypeScript uses URL query
+  parameters, Kotlin builds a filtered query with projection. 3 new TS tests.
+
+- **Chat streaming integration examples** — New `client_websocket_chat_stream`
+  examples for Python, TypeScript, Go, and Kotlin demonstrating streaming chat
+  responses with tool calling via WebSocket.
+
+- **`get_chat_tools()` method (all clients)** — Calls `GET /api/chat/tools` and
+  returns the full list of built-in ekoDB server-side chat tool definitions.
+  Returns `Vec<serde_json::Value>` (Rust), `object[]` (TypeScript), `list[dict]`
+  (Python), `JsonArray` (Kotlin). Used by planning agents to dynamically
+  discover all tools available in Chat steps.
+
+- **`Query::select_fields()` and `Query::exclude_fields()` builder methods** —
+  The `Query` struct already had `select_fields` and `exclude_fields` fields but
+  no fluent builder API. These new methods allow callers to construct
+  field-projection queries without manually instantiating the struct. Useful for
+  reducing token usage when querying collections with large schemas: use
+  `select_fields` to return only named fields, or `exclude_fields` to drop
+  specific fields (e.g. large blobs) while returning everything else.
+
+- **`RawCompletionRequest.max_tokens` and `raw_completion()` method** —
+  Stateless raw LLM completion via `POST /api/chat/complete` added to all
+  clients (Rust, TypeScript `rawCompletion`, Python `raw_completion`, Kotlin
+  `rawCompletion`). `RawCompletionRequest` carries `system_prompt`, `message`,
+  and optional `provider`, `model`, `max_tokens` fields. Useful for
+  structured-output planning tasks that must be parsed programmatically without
+  session/history overhead.
+
+- **`distinct_values()` method** — New method for retrieving all unique values
+  for a specific field across records in a collection. Supports optional filter
+  expressions, `bypass_ripple`, and `bypass_cache` flags. Returns a
+  `DistinctValuesResponse` with `collection`, `field`, `values` (sorted), and
+  `count`. Available in Rust, TypeScript (`distinctValues`), Python
+  (`distinct_values`), Go (`DistinctValues`), and Kotlin (`distinctValues`).
+
+- **`DistinctValuesQuery` and `DistinctValuesResponse` types** — New types for
+  the distinct values API, exported from all client libraries.
+
+- **Integration examples: `client_distinct_values`** — Demonstrates distinct
+  values queries with and without filters, added for Rust, Python, TypeScript,
+  and Go.
+
+## [0.12.0] - 2026-03-11
+
+### Added
+
+- **Rust example: `client_collection_utils`** — Demonstrates collection utility
+  methods (`collection_exists`, `count_documents`, `list_collections`,
+  `delete_collection`). Translated from the Python example.
+
+- **Rust example: `client_kv_precision`** — Demonstrates float vs decimal
+  precision in KV operations using `FieldType::decimal()` and `get_value`/
+  `get_string_value` utilities. Translated from the Python example.
+
+- **`POST /api/embed` direct endpoint support** — `embed()` now calls the
+  server's `/api/embed` endpoint directly instead of creating temporary
+  collections and scripts. Much faster and cleaner.
+
+- **`embed_batch()` method** — New method for generating embeddings for multiple
+  texts in a single request. Available in Rust, TypeScript (`embedBatch`),
+  Python (`embed_batch`), Go (`EmbedBatch`), and Kotlin (`embedBatch`).
+
+- **`EmbedRequest` and `EmbedResponse` types** — New types for the embed API,
+  exported from all client libraries.
+
+- **`ToolConfig` and `ToolChoice` types** — New types for configuring tool
+  calling in chat sessions. `ToolConfig` controls enabled tools, allowed
+  collections, max iterations, write permissions, and tool choice strategy.
+  Exported from `ekodb_client` for use by all client languages.
+
+- **`tool_config` on `CreateChatSessionRequest`** — Configure tool calling when
+  creating a new chat session.
+
+- **`max_tokens` and `temperature` on `CreateChatSessionRequest`** — Control LLM
+  generation parameters per session, matching the server API.
+
+- **`tool_config` on `ChatMessageRequest`** — Override session tool config on a
+  per-message basis.
+
+- **`max_context_messages` and `bypass_ripple` on `UpdateSessionRequest`** —
+  Allow updating context window size and ripple sync settings on existing
+  sessions.
+
+- **`Interleaved` merge strategy** — Added `MergeStrategy::Interleaved` for
+  round-robin message merging from source sessions.
+
+- **`bypass_ripple` on `MergeSessionsRequest`** — Control ripple replication
+  during session merge operations.
+
+- **Python bindings: expanded parameters** — `create_chat_session` now accepts
+  `max_context_messages`, `bypass_ripple`, `max_tokens`, `temperature`.
+  `chat_message` now accepts `bypass_ripple`, `force_summarize`,
+  `max_iterations`. `update_chat_session` now accepts `title`,
+  `max_context_messages`, `bypass_ripple`. `merge_chat_sessions` now accepts
+  `bypass_ripple` and `Interleaved` strategy.
+
+- **TypeScript: `ToolConfig`, `ToolChoice` interfaces** — Added interfaces and
+  `max_iterations`, `tool_config` to `ChatMessageRequest`; `bypass_ripple`,
+  `title`, `memory` to `UpdateSessionRequest`; `Interleaved` to `MergeStrategy`;
+  `bypass_ripple` to `MergeSessionsRequest`.
+
+- **`memory` field on `UpdateSessionRequest`** — Allows updating the chat-scoped
+  memory object when updating a session. Enables clients to directly set/modify
+  the session memory without going through LLM tool calls.
+
+- **Public token access** — New `get_token()` and `clear_token_cache()` methods
+  on `Client` to expose JWT retrieval and cache invalidation for downstream
+  consumers (e.g., WebSocket auth in embedding applications).
+
+- **WebSocket chat streaming** — New `chat_send()` method on `WebSocketClient`
+  sends a chat message over WSS and returns a receiver of `ChatStreamEvent`
+  items (`Chunk`, `End`, `Error`) for real-time token streaming from the LLM.
+
+- **Filtered WebSocket subscriptions** — New `subscribe()` method with optional
+  `filter_field` / `filter_value` parameters to narrow mutation notifications to
+  records matching a specific field value (e.g., `chat_id = X`).
+
+- **New WebSocket response types** — `WebSocketResponse` now includes
+  `ChatStreamChunk`, `ChatStreamEnd`, `ChatStreamError`, and
+  `MutationNotification` variants for typed handling of server push messages.
+
+- **Typed wrapper value extraction** — New `as_string()` and `as_bool()` methods
+  on `FieldType` that transparently unwrap both direct values (`String("x")`)
+  and ekoDB's typed wrapper format (`Object({"type": "String", "value": "x"})`).
+  New `get_string()` and `get_bool()` convenience methods on `Record` combine
+  field lookup with extraction in one call.
+
+### Fixed
+
+- **Kotlin `embed()` used legacy temp collection/script approach** — Updated to
+  call `/api/embed` directly, matching all other client languages.
+
+- **Rust RAG example `N/A` field extraction** — `rag_conversation_system.rs`
+  used manual `FieldType::String` pattern matching which failed with typed
+  wrappers. Replaced with `record.get_string()` which handles all variants.
+
+- **Python `kv_get` precision example returned `None`** — `kv_get()` returns
+  `{"value": "<json_string>"}`, but the example called `get_value()` directly on
+  the wrapper dict. Fixed to parse the JSON string first.
+
+- **Python `kv_delete` printed `None`** — `kv_delete()` returns `None` by
+  design. Fixed example to not print the return value.
+
+- **Kotlin chat merge printed `null` for chat_id** — The merge response contains
+  `message_count`, not `chat_id`. Fixed to print `message_count`.
+
+- **Kotlin client `executeWithRetry` silently returned 4xx error responses** —
+  HTTP 4xx responses (e.g. 404 Not Found) were returned as successful results
+  instead of throwing exceptions. This caused `upsert()` to return error records
+  like `{error: "Record not found"}` instead of falling through to insert, and
+  `getChatModel()` to fail with JSON parsing errors on 405 responses. Added 4xx
+  status check to throw with the error body.
+
+- **Rust `client_convenience_methods` upsert overwrote Alice's record** — The
+  example upserted Bob's data into Alice's ID, then `find_one` for Alice's email
+  correctly returned nothing. Fixed to use a separate ID for Bob's upsert.
+
+- **Kotlin `ClientConvenienceMethods` used `toString()` for ID extraction** —
+  `inserted["id"]?.toString()` produces `StringValue(value=...)` instead of the
+  raw ID string. Fixed to use `getRecordId(inserted)` utility function.
+
+- **WebSocket close handshake** — `close()` now sends a proper WS close frame
+  via `SinkExt::close()` before dropping the connection, eliminating "Connection
+  reset without closing handshake" warnings on the server side. Method signature
+  changed from `&mut self` to `&self` for compatibility with shared references.
+
+- **WebSocket deadlock during client tool calls** — `WebSocketClient` used a
+  single `Mutex<Option<(WsWrite, WsRead)>>` for the connection. The spawned
+  reader task held the lock while waiting for frames (`read.next().await`),
+  blocking `send_tool_result()` from acquiring the lock to write. This caused
+  24+ second delays on every client tool round-trip. Split into separate
+  `writer` and `reader` mutexes so writes never block on reads. The reader task
+  now drops the lock after each `read.next()` call before processing the
+  message.
+
+- **WebSocket reader contention between subscribe/chat tasks** — Multiple
+  spawned reader tasks (subscriptions and chat streams) competed for the shared
+  reader mutex, causing messages to be consumed by the wrong task. Replaced with
+  a single dispatcher loop that demultiplexes incoming frames by message_id,
+  chat_id, or subscription type to the correct channel.
+
+- **WebSocket `find_all()` didn't match `message_id`** — Returned on the first
+  `Success` response without verifying it matched the request's `message_id`.
+  Now uses `send_and_wait()` with message_id correlation.
+
+- **WebSocket `ensure_connected()` only checked writer half** — If the reader
+  was cleared after a receive error but writer was still set, the client
+  wouldn't reconnect. Now checks both writer presence and a `connected` flag
+  maintained by the dispatcher.
+
+- **WebSocket dispatcher held lock during async channel sends** — The dispatcher
+  held the `DispatchState` mutex while awaiting `tx.send().await` on chat stream
+  channels. If a channel was full, this blocked the entire dispatcher. Now
+  clones/extracts senders while holding the lock, drops it, then performs async
+  sends outside the critical section.
+
+- **WebSocket subscription notifications broadcast to all subscribers** —
+  `MutationNotification` events were sent to every subscription receiver
+  regardless of collection. Multiple subscriptions to different collections
+  received unrelated mutations. Now stores `(collection, sender)` tuples and
+  only routes notifications to matching subscribers.
+
+- **WebSocket `register_client_tools` used `pending_requests` without
+  `messageId`** — The WS protocol for `RegisterClientTools` has no `messageId`
+  field, so the ack was routed via the "single pending request" fallback and
+  could misroute if another request was in-flight. Now uses a dedicated
+  `register_tools_ack` oneshot channel in the dispatcher.
+
+- **`embed()` HTTP status not checked before deserialization** — Non-2xx
+  responses were deserialized as `EmbedResponse`, producing confusing
+  serialization errors. Now checks status first and returns `Error::Api` with
+  the status code and response body.
+
+## [0.11.0] - 2026-02-08
+
+### Added
+
+- **Chat Models API** — Query available AI models across providers:
+  `get_chat_models()` retrieves all available chat models;
+  `get_chat_model(provider)` retrieves models for a specific provider. Available
+  in all client languages.
+
+- **User Functions API** — Reusable function sequences with lifecycle
+  management: `save_user_function()`, `get_user_function()`,
+  `list_user_functions()`, `update_user_function()`, `delete_user_function()`.
+  Available in all client languages.
+
+- **Collection utilities** — `collection_exists()` and `count_documents()` added
+  to all client libraries.
+
+- **`bypass_cache` on request parameters** — New option to bypass the read cache
+  on find and query requests, forcing a fresh read from storage.
+
+## [0.10.0] - 2026-01-27
+
+### Added
+
+- **TypeScript direct value return** — TypeScript client now returns field
+  values directly instead of in a typed wrapper, matching server semantics.
+
+- **KV precision examples** — New `client_kv_precision` examples demonstrating
+  float vs decimal precision in KV operations across all languages.
+
+- **Array response helpers** — New helper utilities for extracting array values
+  from ekoDB responses.
+
+### Changed
+
+- **Breaking**: `kv_get()` return value semantics updated — Returns the value
+  directly (`{"value": <data>}`) instead of a wrapped format. The `output_field`
+  parameter has been removed.
+
+## [0.9.0] - 2026-01-27
+
+### Added
+
+- **Field Projection** — `select_fields` and `exclude_fields` on query builder
+  and find methods across all client languages. Control which fields are
+  returned in query results.
+
+- **KV Batch Operations** — `kv_batch_get()`, `kv_batch_set()`,
+  `kv_batch_delete()` for efficient multi-key access in single requests.
+
+- **StageSWR (Stale-While-Revalidate)** — New function stage for external API
+  caching with automatic KV cache check → HTTP request → KV cache set workflow.
+  Supports parameter substitution and configurable TTL.
+
+- **ScriptCondition types** — Recursive condition system for function control
+  flow: `ConditionHasRecords`, `ConditionFieldExists`, `ConditionFieldEquals`,
+  `ConditionCountEquals`, `ConditionCountGreaterThan`, `ConditionCountLessThan`,
+  `ConditionAnd`, `ConditionOr`, `ConditionNot`.
+
+- **Query serialization improvements** — Enhanced query builder serialization
+  for more reliable cross-language compatibility.
+
+### Changed
+
+- **Breaking**: `ScriptCondition` JSON serialization now uses adjacently-tagged
+  format to match the Rust server's serde format.
+
+### Fixed
+
+- Collection, KV, and HTTP request data parameter consistency across all client
+  languages.
+- SWR client pattern now correctly uses `FieldExists` instead of `HasRecords`.
+- WebSocket: use `CallFunction` parameter filter; add wait to check message.
 
 ## [0.8.0] - 2026-01-06
 

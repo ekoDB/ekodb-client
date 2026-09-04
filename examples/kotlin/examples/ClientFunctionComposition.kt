@@ -10,12 +10,37 @@ package io.ekodb.client.examples
 import io.ekodb.client.EkoDBClient
 import io.ekodb.client.functions.*
 import io.ekodb.client.types.FieldType
+import io.github.cdimascio.dotenv.dotenv
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import kotlin.system.measureTimeMillis
 
+private fun isAlreadyExistsError(e: Exception): Boolean {
+    val msg = e.message ?: return false
+    return msg.contains("status 409") || msg.contains("already exists")
+}
+
+private suspend fun saveOrUpdate(client: EkoDBClient, func: UserFunction): String {
+    return try {
+        client.saveFunction(func)
+    } catch (e: Exception) {
+        if (isAlreadyExistsError(e)) {
+            client.updateFunction(func.label, func)
+            println("ℹ️  Function '${func.label}' already existed — updated instead")
+            client.getFunction(func.label).id
+                ?: throw IllegalStateException("No ID returned for function '${func.label}'")
+        } else {
+            throw e
+        }
+    }
+}
+
 fun main() = runBlocking {
-    val baseUrl = System.getenv("API_BASE_URL") ?: "http://localhost:8080"
-    val apiKey = System.getenv("API_BASE_KEY") ?: "a-test-api-key-from-ekodb"
+    val dotenv = dotenv()
+    val baseUrl = dotenv["API_BASE_URL"] ?: "http://localhost:8080"
+    val apiKey = dotenv["API_BASE_KEY"] ?: "a-test-api-key-from-ekodb"
 
     val client = EkoDBClient.builder()
         .baseUrl(baseUrl)
@@ -53,7 +78,7 @@ suspend fun basicCompositionExample(client: EkoDBClient) {
     println("Building reusable functions that call each other...\n")
 
     // Step 1: Create reusable "fetch_user" function
-    val fetchUser = Script(
+    val fetchUser = UserFunction(
         label = "fetch_user",
         name = "Fetch user by ID",
         parameters = mapOf(
@@ -70,11 +95,11 @@ suspend fun basicCompositionExample(client: EkoDBClient) {
         )
     )
 
-    client.saveScript(fetchUser)
+    saveOrUpdate(client, fetchUser)
     println("✅ Saved reusable function: fetch_user")
 
     // Step 2: Create wrapper that CALLS fetch_user
-    val getUserWrapper = Script(
+    val getUserWrapper = UserFunction(
         label = "get_user_wrapper",
         name = "Wrapper that calls fetch_user",
         parameters = mapOf(
@@ -86,7 +111,7 @@ suspend fun basicCompositionExample(client: EkoDBClient) {
         functions = listOf(
             Function.CallFunction(
                 functionLabel = "fetch_user",
-                params = mapOf("user_id" to "{{user_id}}")
+                params = null // Inherits user_id from parent scope
             ),
             Function.Project(
                 fields = listOf("name", "department"),
@@ -95,12 +120,12 @@ suspend fun basicCompositionExample(client: EkoDBClient) {
         )
     )
 
-    client.saveScript(getUserWrapper)
+    saveOrUpdate(client, getUserWrapper)
     println("✅ Saved composed function: get_user_wrapper (calls fetch_user + projects fields)\n")
 
     // Step 3: Call the composed function
     val params = mapOf("user_id" to FieldType.String("user_1"))
-    val result = client.callScript("get_user_wrapper", params)
+    val result = client.callFunction("get_user_wrapper", params)
 
     println("📊 Result from composed function:")
     println("   Records: ${result.records.size}")
@@ -116,80 +141,90 @@ suspend fun basicCompositionExample(client: EkoDBClient) {
 
 suspend fun swrCompositionExample(client: EkoDBClient) {
     println("📝 Example 2: SWR Pattern with Function Composition\n")
-    println("Using CallFunction to replace inline logic in SWR pattern...\n")
+    println("Using KV cache + CallFunction for fast cache-aside pattern...\n")
 
     // Step 1: Create reusable fetch and store function
-    val fetchAndStore = Script(
-        label = "fetch_and_store_github",
-        name = "Fetch from GitHub and store",
+    // Using jsonplaceholder.typicode.com - a reliable free API for testing
+    // This function fetches from API and stores in KV cache
+    val fetchAndStore = UserFunction(
+        label = "fetch_and_store_user",
+        name = "Fetch user from API and cache in KV",
         parameters = mapOf(
-            "username" to ParameterDefinition(
-                name = "username",
+            "user_id" to ParameterDefinition(
+                name = "user_id",
                 required = true
             )
         ),
         functions = listOf(
             Function.HttpRequest(
-                url = "https://api.github.com/users/{{username}}",
+                url = "https://jsonplaceholder.typicode.com/users/{{user_id}}",
                 method = "GET",
-                headers = mapOf("User-Agent" to "ekoDB-Client")
+                headers = mapOf("Accept" to "application/json")
             ),
-            Function.Insert(
-                collection = "github_cache",
-                record = mapOf(
-                    "id" to mapOf("type" to "String", "value" to "{{username}}"),
-                    "data" to mapOf("type" to "Object", "value" to "{{http_response}}")
-                ),
+            // Store in KV cache (much faster than collection for cache lookups)
+            Function.KvSet(
+                key = "user_cache:{{user_id}}",
+                value = kotlinx.serialization.json.JsonPrimitive("{{http_response}}"),
                 ttl = 300 // 5 minute cache
             )
         )
     )
 
-    client.saveScript(fetchAndStore)
-    println("✅ Saved reusable function: fetch_and_store_github")
+    saveOrUpdate(client, fetchAndStore)
+    println("✅ Saved reusable function: fetch_and_store_user (uses KV)")
 
     // Step 2: Create SWR function that CALLS the reusable function
-    val swrGithub = Script(
-        label = "swr_github_user",
-        name = "SWR pattern using reusable functions",
+    // Pattern: KV cache check → populate if missing → return
+    val swrUser = UserFunction(
+        label = "swr_user",
+        name = "SWR pattern for user data (KV-based)",
         parameters = mapOf(
-            "username" to ParameterDefinition(
-                name = "username",
+            "user_id" to ParameterDefinition(
+                name = "user_id",
                 required = true
             )
         ),
         functions = listOf(
-            Function.FindById(
-                collection = "github_cache",
-                recordId = "{{username}}"
+            // Check KV cache first (O(1) lookup - much faster than FindById)
+            Function.KvGet(
+                key = "user_cache:{{user_id}}"
             ),
             Function.If(
-                condition = ScriptCondition.HasRecords,
+                // KvGet returns { value: ... } on hit, { value: null } on miss
+                // So we check if "value" is not null to detect cache hit
+                condition = FunctionCondition.Not(
+                    FunctionCondition.FieldEquals(field = "value", fieldValue = JsonNull)
+                ),
                 thenFunctions = listOf(
+                    // Cache hit - project the value field
                     Function.Project(
-                        fields = listOf("data"),
+                        fields = listOf("value"),
                         exclude = false
                     )
                 ),
                 elseFunctions = listOf(
+                    // Cache miss - call reusable function to fetch and store
+                    // Explicitly pass user_id to the function
                     Function.CallFunction(
-                        functionLabel = "fetch_and_store_github",
-                        params = mapOf("username" to "{{username}}")
+                        functionLabel = "fetch_and_store_user",
+                        params = buildJsonObject {
+                            put("user_id", "{{user_id}}")
+                        }
                     )
                 )
             )
         )
     )
 
-    client.saveScript(swrGithub)
-    println("✅ Saved SWR function using composition: swr_github_user\n")
+    saveOrUpdate(client, swrUser)
+    println("✅ Saved SWR function using composition: swr_user\n")
 
     // Step 3: Test cache miss
-    println("First call (cache miss - will fetch from GitHub):")
-    val params = mapOf("username" to FieldType.String("torvalds"))
+    println("First call (cache miss - will fetch from API):")
+    val params = mapOf("user_id" to FieldType.String("1"))
 
     val duration1 = measureTimeMillis {
-        val result1 = client.callScript("swr_github_user", params)
+        val result1 = client.callFunction("swr_user", params)
         println("   ⏱️  Duration: ${duration1}ms")
         println("   📊 Records: ${result1.records.size}\n")
     }
@@ -197,7 +232,7 @@ suspend fun swrCompositionExample(client: EkoDBClient) {
     // Step 4: Test cache hit
     println("Second call (cache hit - from cache):")
     val duration2 = measureTimeMillis {
-        val result2 = client.callScript("swr_github_user", params)
+        val result2 = client.callFunction("swr_user", params)
         println("   ⏱️  Duration: ${duration2}ms")
         println("   📊 Records: ${result2.records.size}")
         if (duration2 > 0) {
@@ -212,7 +247,7 @@ suspend fun nestedCompositionExample(client: EkoDBClient) {
     println("Building complex workflows from small, reusable pieces...\n")
 
     // Level 1: Base function
-    val validateUser = Script(
+    val validateUser = UserFunction(
         label = "validate_user",
         name = "Check if user exists",
         parameters = mapOf(
@@ -229,11 +264,11 @@ suspend fun nestedCompositionExample(client: EkoDBClient) {
         )
     )
 
-    client.saveScript(validateUser)
+    saveOrUpdate(client, validateUser)
     println("✅ Level 1 function: validate_user")
 
     // Level 2: Calls validate_user + projects
-    val fetchSlim = Script(
+    val fetchSlim = UserFunction(
         label = "fetch_slim_user",
         name = "Validate and slim down user",
         parameters = mapOf(
@@ -245,7 +280,7 @@ suspend fun nestedCompositionExample(client: EkoDBClient) {
         functions = listOf(
             Function.CallFunction(
                 functionLabel = "validate_user",
-                params = mapOf("user_id" to "{{user_id}}")
+                params = null // Inherits user_id from parent scope
             ),
             Function.Project(
                 fields = listOf("name", "department"),
@@ -254,13 +289,13 @@ suspend fun nestedCompositionExample(client: EkoDBClient) {
         )
     )
 
-    client.saveScript(fetchSlim)
+    saveOrUpdate(client, fetchSlim)
     println("✅ Level 2 function: fetch_slim_user (calls validate_user)")
 
-    // Level 3: Calls fetch_slim + counts
-    val countUser = Script(
-        label = "count_validated_user",
-        name = "Get validated user and count",
+    // Level 3: Calls fetch_slim (demonstrates 3-level nesting)
+    val getVerifiedUser = UserFunction(
+        label = "get_verified_user",
+        name = "Get verified and validated user",
         parameters = mapOf(
             "user_id" to ParameterDefinition(
                 name = "user_id",
@@ -270,32 +305,28 @@ suspend fun nestedCompositionExample(client: EkoDBClient) {
         functions = listOf(
             Function.CallFunction(
                 functionLabel = "fetch_slim_user",
-                params = mapOf("user_id" to "{{user_id}}")
-            ),
-            Function.Count(
-                outputField = "record_count"
+                params = null // Inherits user_id from parent scope
             )
         )
     )
 
-    client.saveScript(countUser)
-    println("✅ Level 3 function: count_validated_user (calls fetch_slim_user)\n")
+    saveOrUpdate(client, getVerifiedUser)
+    println("✅ Level 3 function: get_verified_user (calls fetch_slim_user)\n")
 
     // Execute 3-level nested composition
     val params = mapOf("user_id" to FieldType.String("user_1"))
-    val result = client.callScript("count_validated_user", params)
+    val result = client.callFunction("get_verified_user", params)
 
     println("📊 Result from 3-level nested composition:")
     println("   Records: ${result.records.size}")
     if (result.records.isNotEmpty()) {
         val record = result.records[0]
         println("   Name: ${record["name"]}")
-        println("   Department: ${record["department"]}")
-        println("   Record count: ${record["record_count"]}\n")
+        println("   Department: ${record["department"]}\n")
     }
 
     println("🎯 Key Benefit: Each function is independently testable and reusable!")
     println("   - validate_user: Used in 100 different workflows")
     println("   - fetch_slim_user: Used in 50 workflows")
-    println("   - count_validated_user: Specific workflow\n")
+    println("   - get_verified_user: Specific workflow\n")
 }

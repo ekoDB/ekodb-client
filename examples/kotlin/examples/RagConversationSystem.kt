@@ -24,6 +24,7 @@
 package io.ekodb.client.examples
 
 import io.ekodb.client.EkoDBClient
+import io.github.cdimascio.dotenv.dotenv
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.*
 import kotlin.system.measureTimeMillis
@@ -48,7 +49,7 @@ fun extractStringField(record: JsonObject, field: String): String {
 
 suspend fun createConversation(client: EkoDBClient, collection: String, convId: String, title: String) {
     val record = io.ekodb.client.types.Record()
-    record.insert("id", convId)
+    record.insert("conversation_id", convId)
     record.insert("title", title)
     record.insert("created_at", System.currentTimeMillis().toString())
     
@@ -57,7 +58,7 @@ suspend fun createConversation(client: EkoDBClient, collection: String, convId: 
         "search_type" to io.ekodb.client.types.FieldType.string("hybrid"),
         "limit" to io.ekodb.client.types.FieldType.integer(10)
     )
-    record.fields["search_config"] = io.ekodb.client.types.FieldType.obj(searchConfig)
+    record["search_config"] = io.ekodb.client.types.FieldType.obj(searchConfig)
     
     client.insert(collection, record)
 }
@@ -87,7 +88,7 @@ suspend fun storeMessageWithEmbedding(
     msg.insert("conversation_id", conversationId)
     msg.insert("role", role)
     msg.insert("content", content)
-    msg.fields["embedding"] = io.ekodb.client.types.FieldType.array(embedding.map { 
+    msg["embedding"] = io.ekodb.client.types.FieldType.array(embedding.map { 
         io.ekodb.client.types.FieldType.float(it) 
     })
     msg.insert("tags", tags.joinToString(","))
@@ -102,8 +103,9 @@ fun main() = runBlocking {
     println("that learns from its own conversation history.\n")
 
     // Create client
-    val baseUrl = System.getenv("API_BASE_URL") ?: "http://localhost:8080"
-    val apiKey = System.getenv("API_BASE_KEY") ?: "a-test-api-key-from-ekodb"
+    val dotenv = dotenv()
+    val baseUrl = dotenv["API_BASE_URL"] ?: "http://localhost:8080"
+    val apiKey = dotenv["API_BASE_KEY"] ?: "a-test-api-key-from-ekodb"
     
     val client = EkoDBClient.builder()
         .baseUrl(baseUrl)

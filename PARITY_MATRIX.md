@@ -1,0 +1,663 @@
+# Client Library Parity Matrix
+
+**Last Updated:** June 12, 2026
+
+**Client version:** 0.21.0 (Rust, Python, TypeScript, Kotlin); standalone Go
+client tracks the same release line.
+
+> Renamed from `MISSING_FEATURES.md` (April 28, 2026) to reflect the current
+> intent: a parity tracker, not a missing-features checklist. Inbound links from
+> `AUDIT_*.md` files are historical snapshots and intentionally left pointing at
+> the old path. The companion `documentation/CLIENT_LIBRARY_GAPS.md` was removed
+> in the same pass (it duplicated this file at a stale revision).
+
+## Status: Core parity verified through v0.21.0
+
+> The v0.21.0 parity pass closed a set of per-client method gaps. Newly brought
+> to parity:
+>
+> - **`kv_clear`** — now on Rust, Python, TypeScript, Kotlin, and Go.
+> - **`find_by_id_with_projection`** — added to Rust and Python (already in
+>   TypeScript, Kotlin, Go).
+> - **WebSocket `cancelChat`** — added to TypeScript, Kotlin, and Python
+>   (already in Rust and Go).
+> - **`list_user_collections`** — now on all five clients: Python, TypeScript,
+>   Kotlin, and Go (`ListUserCollections`, passing `exclude_internal=true`);
+>   already in Rust.
+> - **Python WebSocket `ws_batch_update`** — added (WS find-all is already
+>   provided by the existing `find_all`, so no `ws_find_all` alias was added).
+> - **WebSocket `unsubscribe`** — added to Rust, Python (`ws_unsubscribe`), and
+>   Kotlin (already in TypeScript and Go). All five clients now send the
+>   server-side `Unsubscribe` frame (`{type, messageId, payload.collection}`) in
+>   addition to tearing down the local subscription, so subscriptions are
+>   stopped explicitly rather than only on receiver drop / connection close.
+> - **WebSocket msgpack binary transport** — all five clients now perform the
+>   additive `Hello`/`Welcome` handshake and transparently switch to binary
+>   msgpack frames when the server welcomes it (else stay JSON text). Internal,
+>   back-compatible, no public API change.
+> - **`extract_record_id`** — added to Python (already in Rust, TypeScript, Go,
+>   Kotlin), so all five resolve a record's id by alias → `id` → `_id`.
+> - **WebSocket `close()`** — added to Python (already in Rust, TypeScript, Go,
+>   Kotlin) for deterministic teardown.
+> - **Schema cache** — now first-class in Python (`Client.new(schema_cache=…)`)
+>   and Kotlin (`Builder.schemaCache(…)`), each auto-wiring the cache into the
+>   WebSocket client; matches the enable-then-auto-wire ergonomics of Rust/Go.
+> - **`refresh_token`** — added to Go as public `RefreshToken` (already in Rust,
+>   TypeScript, Python, Kotlin), so all five expose an eager token refresh.
+>
+> Note: the query-builder `regex()` filter has been removed from all clients
+> until server-side regex filtering is available (tracked internally). Use
+> `contains` / `startsWith` / `endsWith` instead.
+
+All core features are implemented across all client libraries (Rust, Python,
+TypeScript, Go, Kotlin). This includes:
+
+- Core CRUD, batch operations, transactions
+- Search (text, vector, hybrid), KV store, document TTL
+- Chat sessions, models, streaming, branching, merging
+- User Functions, Scripts, Query Builder, Schema Builder
+- Goals, Tasks, Agents (full lifecycle)
+- Schedule management (CRUD + pause/resume)
+- KV document linking
+- WebSocket: full CRUD parity (14 methods), subscriptions, chat streaming
+- SSE subscriptions (for clients behind reverse proxies that block WS)
+- Schema cache (in-memory LRU with TTL, realtime invalidation via SchemaChanged)
+- `extractRecordId()` / `ExtractRecordID()` with custom `primary_key_alias`
+  support
+- Utility functions, field builders, value extractors
+- Crypto stages: HMAC sign/verify, AES-256-GCM encrypt/decrypt, UUID v4, TOTP
+  generate/verify, Base64/Hex encode/decode, Slugify (v0.18.0)
+- Concurrency stages: IdempotencyClaim (SETNX + TTL), RateLimit (fixed-window
+  via atomic increment), LockAcquire/Release (token-fenced)
+
+**Admin-only endpoints intentionally excluded from clients:** query index
+management (`create_query_index`, `list_query_indexes`, `delete_query_index`,
+`explain_query`) and the four search-index explain helpers
+(`explain_text_search`, `explain_vector_search`, `explain_hybrid_search`). These
+require `admin_filter` auth and live on the server-side admin surface. See
+ekodb_client/CHANGELOG.md "Removed" section under v0.16.0 for the rationale.
+
+**Atomic KV primitives intentionally not exposed as direct client methods:**
+`kv_increment` and `kv_set_if_absent` exist on the server but are reachable only
+through stored-function concurrency stages (`IdempotencyClaim`, `RateLimit`,
+`LockAcquire`). The stage path bundles TTL, fence-token, and idempotent-retry
+semantics that direct client access would lose. Revisit if a customer asks.
+
+The sections below track the implementation history.
+
+## Chat Models API
+
+- `getChatModels()` - Rust ✅ | Go ✅ | Python ✅ | TypeScript ✅ | JavaScript
+  ✅ | Kotlin ✅
+- `getChatModel(name)` - Rust ✅ | Go ✅ | Python ✅ | TypeScript ✅ |
+  JavaScript ✅ | Kotlin ✅
+- `getChatMessage(chatId, msgId)` - Rust ✅ | Go ✅ | Python ✅ | TypeScript ✅
+  | JavaScript ✅ | Kotlin ✅
+
+## User Functions API
+
+- `saveUserFunction()` - Rust ✅ | Go ✅ | Python ✅ | TypeScript ✅ |
+  JavaScript ✅ | Kotlin ✅
+- `getUserFunction()` - Rust ✅ | Go ✅ | Python ✅ | TypeScript ✅ | JavaScript
+  ✅ | Kotlin ✅
+- `listUserFunctions()` - Rust ✅ | Go ✅ | Python ✅ | TypeScript ✅ |
+  JavaScript ✅ | Kotlin ✅
+- `updateUserFunction()` - Rust ✅ | Go ✅ | Python ✅ | TypeScript ✅ |
+  JavaScript ✅ | Kotlin ✅
+- `deleteUserFunction()` - Rust ✅ | Go ✅ | Python ✅ | TypeScript ✅ |
+  JavaScript ✅ | Kotlin ✅
+
+## Collection Operations
+
+- `collectionExists()` - Rust ✅ | Go ✅ | Python ✅ | TypeScript ✅ |
+  JavaScript ✅ | Kotlin ✅
+- `countDocuments()` - Rust ✅ | Go ✅ | Python ✅ | TypeScript ✅ | JavaScript
+  ✅ | Kotlin ✅
+
+---
+
+## Completed Implementations - January 2026
+
+**Go Client:**
+
+- GetChatModels(), GetChatModel(name) - Chat Models API
+- CollectionExists(collection), CountDocuments(collection) - Collection
+  utilities
+- Unit tests: `client_test.go`
+- Integration examples: `examples/go/client_chat_models.go`,
+  `examples/go/client_collection_utils.go`
+
+**Python Client:**
+
+- get_chat_models(), get_chat_model(name), get_chat_message() - Chat Models API
+- save_user_function(), get_user_function(), list_user_functions(),
+  update_user_function(), delete_user_function() - User Functions API
+- collection_exists(), count_documents() - Collection utilities
+- Unit tests: `tests/test_chat_user_functions.py`
+- Integration examples: `examples/python/client_chat_models.py`,
+  `examples/python/client_user_functions.py`,
+  `examples/python/client_collection_utils.py`
+
+**TypeScript/JavaScript Client:**
+
+- getChatModels(), getChatModel(name), getChatMessage() - Chat Models API
+- saveUserFunction(), getUserFunction(), listUserFunctions(),
+  updateUserFunction(), deleteUserFunction() - User Functions API
+- collectionExists(), countDocuments() - Collection utilities
+- Unit tests: `src/client.test.ts` (17 new tests)
+- Integration examples: `examples/typescript/client_chat_models.ts`,
+  `examples/typescript/client_user_functions.ts`,
+  `examples/typescript/client_collection_utils.ts`
+
+**Kotlin Client:**
+
+- saveUserFunction(), getUserFunction(), listUserFunctions(),
+  updateUserFunction(), deleteUserFunction() - User Functions API
+- Unit tests: `EkoDBClientTest.kt` (6 new tests)
+
+---
+
+## Historical Notes
+
+The sections below are preserved for reference. All features listed were
+implemented across all clients as of March 2026 (v0.14.0). The "admin-only"
+designations for Query Index and Search Index management remain correct — these
+are server administration endpoints, not client library features.
+
+---
+
+## 1. Query Index Management ⛔ (Admin-only — not for client library)
+
+### Description
+
+Query indexes optimize database queries by pre-building indexes on specific
+fields. The server supports creating, listing, and deleting query indexes, plus
+query execution plan analysis.
+
+### Server Endpoints
+
+```
+POST   /api/query/{collection}/explain          - Explain query execution plan
+POST   /api/indexes/query/{collection}          - Create query index on field
+GET    /api/indexes/query/{collection}          - List all query indexes
+DELETE /api/indexes/query/{collection}/{field}  - Delete specific index
+```
+
+### Missing Client Methods
+
+**All Languages Need:**
+
+```typescript
+// TypeScript/JavaScript
+createQueryIndex(collection: string, field: string, options?: IndexOptions): Promise<void>
+listQueryIndexes(collection: string): Promise<QueryIndex[]>
+deleteQueryIndex(collection: string, field: string): Promise<void>
+explainQuery(collection: string, query: Query): Promise<QueryPlan>
+```
+
+```go
+// Go
+CreateQueryIndex(collection, field string, options *IndexOptions) error
+ListQueryIndexes(collection string) ([]QueryIndex, error)
+DeleteQueryIndex(collection, field string) error
+ExplainQuery(collection string, query interface{}) (*QueryPlan, error)
+```
+
+```rust
+// Rust
+pub async fn create_query_index(&self, collection: &str, field: &str, options: Option<IndexOptions>) -> Result<()>
+pub async fn list_query_indexes(&self, collection: &str) -> Result<Vec<QueryIndex>>
+pub async fn delete_query_index(&self, collection: &str, field: &str) -> Result<()>
+pub async fn explain_query(&self, collection: &str, query: Query) -> Result<QueryPlan>
+```
+
+```python
+# Python
+def create_query_index(self, collection: str, field: str, options: Optional[IndexOptions] = None) -> None
+def list_query_indexes(self, collection: str) -> List[QueryIndex]
+def delete_query_index(self, collection: str, field: str) -> None
+def explain_query(self, collection: str, query: dict) -> QueryPlan
+```
+
+```kotlin
+// Kotlin
+suspend fun createQueryIndex(collection: String, field: String, options: IndexOptions? = null)
+suspend fun listQueryIndexes(collection: String): List<QueryIndex>
+suspend fun deleteQueryIndex(collection: String, field: String)
+suspend fun explainQuery(collection: String, query: Query): QueryPlan
+```
+
+### Use Cases
+
+- **Performance Optimization:** Create indexes on frequently queried fields
+- **Query Analysis:** Understand query execution plans before running expensive
+  queries
+- **Index Management:** List and remove unused indexes to free resources
+
+### Implementation Priority
+
+🔴 **HIGH** - Critical for production performance optimization
+
+---
+
+## 2. Search Index Management ⛔ (Admin-only — not for client library)
+
+### Description
+
+Search indexes enable full-text search and vector search capabilities. The
+server supports creating text/vector indexes and explaining search execution
+plans.
+
+### Server Endpoints
+
+```
+POST /api/indexes/search/{collection}           - Create search index (text or vector)
+POST /api/search/text/{collection}/explain      - Explain text search execution
+POST /api/search/vector/{collection}/explain    - Explain vector search execution
+POST /api/search/hybrid/{collection}/explain    - Explain hybrid search execution
+```
+
+### Missing Client Methods
+
+**All Languages Need:**
+
+```typescript
+// TypeScript/JavaScript
+createSearchIndex(collection: string, config: SearchIndexConfig): Promise<void>
+explainTextSearch(collection: string, query: string, options?: SearchOptions): Promise<SearchPlan>
+explainVectorSearch(collection: string, vector: number[], options?: SearchOptions): Promise<SearchPlan>
+explainHybridSearch(collection: string, query: HybridQuery): Promise<SearchPlan>
+```
+
+```go
+// Go
+CreateSearchIndex(collection string, config SearchIndexConfig) error
+ExplainTextSearch(collection, query string, options *SearchOptions) (*SearchPlan, error)
+ExplainVectorSearch(collection string, vector []float64, options *SearchOptions) (*SearchPlan, error)
+ExplainHybridSearch(collection string, query HybridQuery) (*SearchPlan, error)
+```
+
+```rust
+// Rust
+pub async fn create_search_index(&self, collection: &str, config: SearchIndexConfig) -> Result<()>
+pub async fn explain_text_search(&self, collection: &str, query: &str, options: Option<SearchOptions>) -> Result<SearchPlan>
+pub async fn explain_vector_search(&self, collection: &str, vector: Vec<f64>, options: Option<SearchOptions>) -> Result<SearchPlan>
+pub async fn explain_hybrid_search(&self, collection: &str, query: HybridQuery) -> Result<SearchPlan>
+```
+
+```python
+# Python
+def create_search_index(self, collection: str, config: SearchIndexConfig) -> None
+def explain_text_search(self, collection: str, query: str, options: Optional[SearchOptions] = None) -> SearchPlan
+def explain_vector_search(self, collection: str, vector: List[float], options: Optional[SearchOptions] = None) -> SearchPlan
+def explain_hybrid_search(self, collection: str, query: HybridQuery) -> SearchPlan
+```
+
+```kotlin
+// Kotlin
+suspend fun createSearchIndex(collection: String, config: SearchIndexConfig)
+suspend fun explainTextSearch(collection: String, query: String, options: SearchOptions? = null): SearchPlan
+suspend fun explainVectorSearch(collection: String, vector: List<Double>, options: SearchOptions? = null): SearchPlan
+suspend fun explainHybridSearch(collection: String, query: HybridQuery): SearchPlan
+```
+
+### Use Cases
+
+- **Search Setup:** Dynamically create text/vector indexes for collections
+- **Performance Tuning:** Analyze search query execution before running
+- **Index Configuration:** Configure HNSW parameters, BM25 settings, etc.
+
+### Implementation Priority
+
+🔴 **HIGH** - Essential for search-heavy applications
+
+---
+
+## 3. KV Document Linking ✅ (Implemented March 2026 — uses regular auth)
+
+### Description
+
+Document linking allows KV store entries to reference collection documents,
+creating relationships between KV cache data and persistent documents.
+
+### Server Endpoints
+
+```
+GET  /api/kv/links/{key}                        - Get all linked documents for key
+POST /api/kv/link                               - Create link between key and document
+POST /api/kv/unlink                             - Remove link between key and document
+```
+
+### Missing Client Methods
+
+**All Languages Need:**
+
+```typescript
+// TypeScript/JavaScript
+kvGetLinks(key: string): Promise<DocumentLink[]>
+kvLink(key: string, collection: string, documentId: string): Promise<void>
+kvUnlink(key: string, collection: string, documentId: string): Promise<void>
+```
+
+```go
+// Go
+KVGetLinks(key string) ([]DocumentLink, error)
+KVLink(key, collection, documentId string) error
+KVUnlink(key, collection, documentId string) error
+```
+
+```rust
+// Rust
+pub async fn kv_get_links(&self, key: &str) -> Result<Vec<DocumentLink>>
+pub async fn kv_link(&self, key: &str, collection: &str, document_id: &str) -> Result<()>
+pub async fn kv_unlink(&self, key: &str, collection: &str, document_id: &str) -> Result<()>
+```
+
+```python
+# Python
+def kv_get_links(self, key: str) -> List[DocumentLink]
+def kv_link(self, key: str, collection: str, document_id: str) -> None
+def kv_unlink(self, key: str, collection: str, document_id: str) -> None
+```
+
+```kotlin
+// Kotlin
+suspend fun kvGetLinks(key: String): List<DocumentLink>
+suspend fun kvLink(key: String, collection: String, documentId: String)
+suspend fun kvUnlink(key: String, collection: String, documentId: String)
+```
+
+### Use Cases
+
+- **Cache Relationships:** Link cached data to source documents
+- **Invalidation:** Track which documents are referenced by cache keys
+- **Consistency:** Maintain relationships between KV store and collections
+
+### Implementation Priority
+
+🟡 **MEDIUM** - Useful for advanced caching patterns
+
+---
+
+## 4. Schedule Management (Cron Jobs) ✅ (Implemented March 2026 — no admin auth required)
+
+### Description
+
+Schedules allow running Functions or Scripts on a cron schedule. Full CRUD
+operations available on server.
+
+### Server Endpoints
+
+```
+POST   /api/schedules                           - Create schedule
+GET    /api/schedules                           - List all schedules
+GET    /api/schedules/{id}                      - Get schedule details
+PUT    /api/schedules/{id}                      - Update schedule
+DELETE /api/schedules/{id}                      - Delete schedule
+POST   /api/schedules/{id}/pause                - Pause schedule
+POST   /api/schedules/{id}/resume               - Resume schedule
+```
+
+### Missing Client Methods
+
+**All Languages Need:**
+
+- `createSchedule(config)` - Create cron job
+- `listSchedules()` - List all schedules
+- `getSchedule(id)` - Get schedule details
+- `updateSchedule(id, config)` - Update schedule
+- `deleteSchedule(id)` - Delete schedule
+- `pauseSchedule(id)` - Pause execution
+- `resumeSchedule(id)` - Resume execution
+
+### Use Cases
+
+- **Automated Tasks:** Run cleanup, aggregations, reports on schedule
+- **Data Processing:** Periodic ETL jobs, batch processing
+- **Maintenance:** Scheduled backups, cache warming
+
+### Implementation Priority
+
+🟡 **MEDIUM** - Important for automation workflows
+
+---
+
+## 5. Advanced Schema Features ❌
+
+### Description
+
+Advanced schema validation and constraint management beyond basic schema
+operations.
+
+### Server Endpoints
+
+```
+PUT /api/schema/{collection}/constraints        - Update schema constraints
+GET /api/schema/{collection}/validate           - Validate records against schema
+```
+
+### Missing Client Methods
+
+**All Languages Need:**
+
+- `updateSchemaConstraints(collection, constraints)` - Set validation rules
+- `validateRecords(collection, records)` - Pre-validate before insert
+
+### Use Cases
+
+- **Data Quality:** Enforce strict validation rules
+- **Migration Safety:** Validate data before schema changes
+- **Compliance:** Ensure data meets regulatory requirements
+
+### Implementation Priority
+
+🟢 **LOW** - Specialized use cases
+
+---
+
+## 6. WAL (Write-Ahead Log) Operations ❌
+
+### Description
+
+Direct access to Write-Ahead Log for replication gap filling and advanced
+debugging.
+
+### Server Endpoints
+
+```
+GET  /api/wal/health                            - Get WAL health status
+POST /api/wal/rotate                            - Force WAL rotation
+GET  /api/wal/entries                           - Get WAL entries in time range
+POST /api/replication/wal                       - Receive WAL shipment from peer
+```
+
+### Missing Client Methods
+
+**All Languages Need:**
+
+- `getWALHealth()` - Check WAL status
+- `rotateWAL()` - Force log rotation
+- `getWALEntries(startTime, endTime)` - Retrieve historical operations
+
+### Use Cases
+
+- **Replication Debugging:** Inspect WAL for replication issues
+- **Audit Logging:** Track all database operations
+- **Disaster Recovery:** Replay WAL entries
+
+### Implementation Priority
+
+🟢 **LOW** - Admin/debugging tool, not typical application use
+
+---
+
+## Implementation Roadmap
+
+### Query & Search Index Management
+
+**Target:** Q1 2026
+
+- Implement query index methods (create, list, delete, explain)
+- Implement search index methods (create, explain variants)
+- Add comprehensive tests for all index operations
+- Update examples showing index usage
+
+### KV Document Linking
+
+**Target:** Q2 2026
+
+- Implement KV link methods (get, link, unlink)
+- Add tests for link operations
+- Create examples demonstrating cache-to-document relationships
+
+### Schedules & Advanced Features
+
+**Target:** Q2-Q3 2026
+
+- Implement schedule CRUD methods
+- Add schema constraint methods
+- Add WAL operation methods (admin-focused)
+- Comprehensive testing and examples
+
+---
+
+## Type Definitions Needed
+
+### Query Index Types
+
+```typescript
+interface IndexOptions {
+  unique?: boolean;
+  sparse?: boolean;
+}
+
+interface QueryIndex {
+  field: string;
+  type: string;
+  unique: boolean;
+  sparse: boolean;
+}
+
+interface QueryPlan {
+  collection: string;
+  indexUsed?: string;
+  estimatedCost: number;
+  stages: PlanStage[];
+}
+```
+
+### Search Index Types
+
+```typescript
+interface SearchIndexConfig {
+  type: "text" | "vector";
+  field: string;
+  textConfig?: {
+    language?: string;
+    stopWords?: string[];
+  };
+  vectorConfig?: {
+    dimensions: number;
+    metric?: "cosine" | "euclidean" | "dot";
+    hnsw?: {
+      m?: number;
+      efConstruction?: number;
+    };
+  };
+}
+
+interface SearchPlan {
+  indexUsed: string;
+  queryType: "text" | "vector" | "hybrid";
+  estimatedResults: number;
+  executionSteps: string[];
+}
+```
+
+### KV Link Types
+
+```typescript
+interface DocumentLink {
+  collection: string;
+  documentId: string;
+  createdAt: string;
+}
+
+interface LinkData {
+  key: string;
+  collection: string;
+  documentId: string;
+}
+```
+
+### Schedule Types
+
+```typescript
+interface Schedule {
+  id: string;
+  name: string;
+  cron: string;
+  functionName?: string;
+  scriptName?: string;
+  paused: boolean;
+  nextRun: string;
+  lastRun?: string;
+}
+
+interface ScheduleConfig {
+  name: string;
+  cron: string;
+  functionName?: string;
+  scriptName?: string;
+  paused?: boolean;
+}
+```
+
+---
+
+## Testing Requirements
+
+Each new feature must include:
+
+1. **Unit Tests**
+   - Success scenarios
+   - Error handling (404, 401, 400)
+   - Edge cases (empty results, invalid input)
+
+2. **Integration Tests**
+   - End-to-end workflows
+   - Cross-feature interactions
+   - Performance under load
+
+3. **Examples**
+   - Basic usage example
+   - Advanced usage with all options
+   - Real-world use case demonstration
+
+4. **Documentation**
+   - Method signatures
+   - Parameter descriptions
+   - Return value documentation
+   - Usage examples in README
+
+---
+
+## Contributing
+
+When implementing these features:
+
+1. **Check server API docs** - Review the ekoDB server API documentation for
+   endpoint details
+2. **Follow existing patterns** - Match style of current client methods
+3. **Add types first** - Define all TypeScript/Rust/etc types before
+   implementation
+4. **Test thoroughly** - Unit tests + integration tests + examples
+5. **Update docs** - language-specific READMEs
+
+---
+
+## Questions?
+
+- **Server API Documentation:** See the ekoDB server documentation
+- **Current Client Status:** See this parity matrix
+- **Implementation Examples:** Review existing methods in client source files

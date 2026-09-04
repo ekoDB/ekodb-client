@@ -2,6 +2,7 @@ package io.ekodb.client.examples
 
 import io.ekodb.client.EkoDBClient
 import io.ekodb.client.types.Record
+import io.github.cdimascio.dotenv.dotenv
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonArray
@@ -15,8 +16,9 @@ import kotlinx.serialization.json.putJsonObject
  * Advanced Chat example - Message regeneration, editing, and advanced features
  */
 fun main() = runBlocking {
-    val baseUrl = System.getenv("API_BASE_URL") ?: "http://localhost:8080"
-    val apiKey = System.getenv("API_BASE_KEY") ?: error("API_BASE_KEY environment variable not set")
+    val dotenv = dotenv()
+    val baseUrl = dotenv["API_BASE_URL"] ?: "http://localhost:8080"
+    val apiKey = dotenv["API_BASE_KEY"] ?: "a-test-api-key-from-ekodb"
     
     val client = EkoDBClient.builder()
         .baseUrl(baseUrl)
@@ -49,7 +51,7 @@ fun main() = runBlocking {
                 })
             }
             put("llm_provider", "openai")
-            put("llm_model", "gpt-4")
+            put("llm_model", "gpt-4o-mini")
             put("system_prompt", "You are a helpful product assistant.")
         }
         
@@ -143,7 +145,7 @@ fun main() = runBlocking {
         try {
             val merged = client.mergeChatSessions(mergeRequest)
             println("✓ Merged sessions")
-            println("  Merged session ID: ${merged["chat_id"]}\n")
+            println("  Total messages in merged session: ${merged["message_count"]}\n")
         } catch (e: Exception) {
             println("⚠ Merge failed (may not be supported): ${e.message}\n")
         }

@@ -2,6 +2,7 @@ package io.ekodb.client.examples
 
 import io.ekodb.client.EkoDBClient
 import io.ekodb.client.types.Record
+import io.github.cdimascio.dotenv.dotenv
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -10,8 +11,9 @@ import kotlinx.serialization.json.put
  * Search example - Full-text search operations
  */
 fun main() = runBlocking {
-    val baseUrl = System.getenv("API_BASE_URL") ?: "http://localhost:8080"
-    val apiKey = System.getenv("API_BASE_KEY") ?: error("API_BASE_KEY environment variable not set")
+    val dotenv = dotenv()
+    val baseUrl = dotenv["API_BASE_URL"] ?: "http://localhost:8080"
+    val apiKey = dotenv["API_BASE_KEY"] ?: "a-test-api-key-from-ekodb"
     
     val client = EkoDBClient.builder()
         .baseUrl(baseUrl)
@@ -46,8 +48,10 @@ fun main() = runBlocking {
                 .insert("title", title)
                 .insert("description", description)
                 .insert("tags", tags.joinToString(","))
+                // First tag doubles as the category for the pre-filter demo below.
+                .insert("category", tags.first())
                 .insert("views", (Math.random() * 1000).toInt())
-            
+
             client.insert(collection, doc)
         }
         println("✓ Inserted ${docs.size} sample documents\n")
@@ -76,7 +80,26 @@ fun main() = runBlocking {
         val mlResults = client.search(collection, mlSearchQuery)
         println("✓ Found results for 'machine learning'")
         println("  $mlResults\n")
-        
+
+        // Step 4: Search with a metadata pre-filter (works for text/vector/hybrid).
+        // The same query is restricted to documents in the "programming" category.
+        println("=== Search with a metadata pre-filter (category = programming) ===")
+        val filteredQuery = buildJsonObject {
+            put("query", "learn")
+            put("min_score", 0.1)
+            put("filters", buildJsonObject {
+                put("type", "Condition")
+                put("content", buildJsonObject {
+                    put("field", "category")
+                    put("operator", "Eq")
+                    put("value", "programming")
+                })
+            })
+        }
+        val filteredResults = client.search(collection, filteredQuery)
+        println("✓ Found results in category 'programming' (database/ai excluded)")
+        println("  $filteredResults\n")
+
     } finally {
         // Cleanup
         println("=== Cleanup ===")

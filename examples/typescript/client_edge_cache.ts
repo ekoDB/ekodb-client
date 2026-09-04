@@ -37,41 +37,66 @@ async function edgeCacheExample() {
     version: "1.0",
     tags: ["cache", "edge"],
     functions: [
-      // 1. Check cache
-      Stage.findById("edge_cache", "{{cache_key}}"),
+      // 1. Check KV cache
+      Stage.kvGet("{{cache_key}}"),
 
       // 2. If cache exists, return it; else fetch from API
       Stage.if(
-        { type: "HasRecords" },
+        // KvGet returns {value: ...} on hit, {value: null} on miss
+        // So we check if "value" is not null to detect cache hit
+        {
+          type: "Not",
+          value: {
+            condition: {
+              type: "FieldEquals",
+              value: { field: "value", value: null },
+            },
+          },
+        },
         // Cache hit - return cached data
-        [Stage.project(["data", "cached_at"], false)],
-        // Cache miss - fetch external API and store
+        [Stage.project(["value"], false)],
+        // Cache miss - fetch external API and store in KV
         [
           Stage.httpRequest("{{api_url}}", "GET", {
             "User-Agent": "ekoDB-Edge-Cache",
           }),
-          Stage.insert(
-            "edge_cache",
-            {
-              id: { type: "String", value: "{{cache_key}}" },
-              data: { type: "Object", value: "{{http_response}}" },
-              cached_at: { type: "String", value: new Date().toISOString() },
-            },
-            false,
-            undefined, // ttl parameter - backend will handle {{ttl_seconds}}
-          ),
+          // Store in KV with 5 minute TTL
+          Stage.kvSet("{{cache_key}}", "{{http_response}}", 300),
+          // Retrieve the cached data to return
+          Stage.kvGet("{{cache_key}}"),
+          Stage.project(["value"], false),
         ],
       ),
     ],
   };
 
-  const scriptId = await client.saveScript(cacheScript);
-  console.log(`✓ Edge cache script created: ${scriptId}\n`);
+  let scriptId: string;
+  try {
+    scriptId = await client.saveFunction(cacheScript);
+    console.log(`✓ Edge cache script created: ${scriptId}\n`);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (
+      !message.includes("status 409") &&
+      !message.includes("already exists")
+    ) {
+      throw error;
+    }
+    // Function already exists from a previous run — update it in place so the
+    // example is idempotent and proves both the create and update paths.
+    await client.updateFunction(cacheScript.label, cacheScript);
+    const existing = await client.getFunction(cacheScript.label);
+    scriptId = existing.id ?? cacheScript.label;
+    console.log(
+      `ℹ️  Function '${cacheScript.label}' already existed — updated instead`,
+    );
+    console.log(`✓ Edge cache script updated: ${scriptId}\n`);
+  }
 
   // Test it - First call hits API
   console.log("Call 1: Cache miss (fetches from API)");
   const start1 = Date.now();
-  const result1 = await client.callScript("cache_api_call", {
+  const result1 = await client.callFunction("cache_api_call", {
     cache_key: "user_data_1",
     api_url: "https://jsonplaceholder.typicode.com/users/1",
     ttl_seconds: 300,
@@ -83,7 +108,7 @@ async function edgeCacheExample() {
   // Test it again - Second call hits cache
   console.log("\nCall 2: Cache hit (served from ekoDB)");
   const start2 = Date.now();
-  const result2 = await client.callScript("cache_api_call", {
+  const result2 = await client.callFunction("cache_api_call", {
     cache_key: "user_data_1",
     api_url: "https://jsonplaceholder.typicode.com/users/1",
   });

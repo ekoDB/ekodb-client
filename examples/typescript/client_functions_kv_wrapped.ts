@@ -4,13 +4,39 @@
  * Demonstrates: KV operations in scripts, wrapped type field builders
  */
 
-import { EkoDBClient, Stage, Field } from "@ekodb/ekodb-client";
+import { EkoDBClient, Stage, Field, UserFunction } from "@ekodb/ekodb-client";
 import * as dotenv from "dotenv";
 
 dotenv.config();
 
 const BASE_URL = process.env.API_BASE_URL || "http://localhost:8080";
 const API_KEY = process.env.API_BASE_KEY || "a-test-api-key-from-ekodb";
+
+/** True when a save failed because the function label already exists (HTTP 409). */
+function isAlreadyExistsError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.includes("status 409") || message.includes("already exists");
+}
+
+/**
+ * Idempotent save: create the function, or update it in place if a function
+ * with the same label already exists. Returns the function's id so downstream
+ * cleanup-by-id continues to work.
+ */
+async function saveOrUpdate(
+  client: EkoDBClient,
+  script: UserFunction,
+): Promise<string> {
+  try {
+    return await client.saveFunction(script);
+  } catch (error) {
+    if (!isAlreadyExistsError(error)) throw error;
+    await client.updateFunction(script.label, script);
+    console.log(`Function '${script.label}' already existed — updated instead`);
+    const existing = await client.getFunction(script.label);
+    return existing.id ?? script.label;
+  }
+}
 
 // =============================================================================
 // Wrapped Types Examples
@@ -63,7 +89,7 @@ async function wrappedTypesInsert(client: EkoDBClient): Promise<void> {
 }
 
 async function wrappedTypesInScript(client: EkoDBClient): Promise<string> {
-  console.log("📝 Example 2: Script with Wrapped Type Parameters\n");
+  console.log("📝 Example 2: UserFunction with Wrapped Type Parameters\n");
 
   // Create a script that inserts records with wrapped types
   const script = {
@@ -97,11 +123,11 @@ async function wrappedTypesInScript(client: EkoDBClient): Promise<string> {
     tags: ["orders", "wrapped-types"],
   };
 
-  const id = await client.saveScript(script);
-  console.log(`✅ Script saved: ${id}`);
+  const id = await saveOrUpdate(client, script);
+  console.log(`✅ Function saved: ${id}`);
 
   // Execute the script with a decimal parameter
-  const result = await client.callScript("create_order_with_types", {
+  const result = await client.callFunction("create_order_with_types", {
     order_total: "599.99",
     order_id: `order_${Date.now()}`,
     timestamp: new Date().toISOString(),
@@ -145,9 +171,9 @@ async function kvBasicOperations(client: EkoDBClient): Promise<void> {
 }
 
 async function kvScriptOperations(client: EkoDBClient): Promise<string> {
-  console.log("📝 Example 4: KV Operations in Scripts\n");
+  console.log("📝 Example 4: KV Operations in Functions\n");
 
-  // Script that uses KV for caching query results
+  // function that uses KV for caching query results
   const script = {
     label: "cached_product_lookup",
     name: "Cached Product Lookup",
@@ -172,11 +198,11 @@ async function kvScriptOperations(client: EkoDBClient): Promise<string> {
     tags: ["kv", "caching"],
   };
 
-  const id = await client.saveScript(script);
-  console.log(`✅ Script saved: ${id}`);
+  const id = await saveOrUpdate(client, script);
+  console.log(`✅ Function saved: ${id}`);
 
   // Execute the caching script
-  const result = await client.callScript("cached_product_lookup", {
+  const result = await client.callFunction("cached_product_lookup", {
     product_key: "product:cache:789",
     product_data: { name: "Test Product", price: 49.99 },
   });
@@ -211,7 +237,7 @@ async function kvPatternQuery(client: EkoDBClient): Promise<void> {
 // =============================================================================
 
 async function combinedExample(client: EkoDBClient): Promise<string> {
-  console.log("📝 Example 6: Combined Wrapped Types + KV Script\n");
+  console.log("📝 Example 6: Combined Wrapped Types + KV Function\n");
 
   // A real-world script that:
   // 1. Stores order metadata in KV for quick access
@@ -258,11 +284,11 @@ async function combinedExample(client: EkoDBClient): Promise<string> {
     tags: ["orders", "kv", "wrapped-types", "combined"],
   };
 
-  const id = await client.saveScript(script);
-  console.log(`✅ Script saved: ${id}`);
+  const id = await saveOrUpdate(client, script);
+  console.log(`✅ Function saved: ${id}`);
 
   // Execute the combined script
-  const result = await client.callScript("process_order_with_cache", {
+  const result = await client.callFunction("process_order_with_cache", {
     order_id: "c2d3e4f5-a1b2-c3d4-e5f6-a1b2c3d4e5f6",
     total: "299.99",
     timestamp: new Date().toISOString(),
@@ -287,7 +313,7 @@ async function cleanup(
   try {
     // Delete scripts
     for (const id of scriptIds) {
-      await client.deleteScript(id);
+      await client.deleteFunction(id);
     }
 
     // Delete collections

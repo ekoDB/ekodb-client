@@ -2,6 +2,7 @@ use futures_util::{SinkExt, StreamExt};
 use serde_json::{json, Value};
 use std::env;
 use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
+use url::Url;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -43,12 +44,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Step 3: Connect to WebSocket with Authorization header
     println!("\n=== Connecting to WebSocket ===");
     let url = format!("{}/api/ws", ws_url);
+    let parsed = Url::parse(&url)?;
+    let host = parsed
+        .host_str()
+        .map(|h| match parsed.port() {
+            Some(p) => format!("{}:{}", h, p),
+            None => h.to_string(),
+        })
+        .unwrap_or_else(|| "localhost:8080".to_string());
 
     // Create request with auth header
     let request = tokio_tungstenite::tungstenite::http::Request::builder()
         .uri(&url)
         .header("Authorization", format!("Bearer {}", token))
-        .header("Host", "localhost:8080")
+        .header("Host", &host)
         .header("Connection", "Upgrade")
         .header("Upgrade", "websocket")
         .header("Sec-WebSocket-Version", "13")
@@ -83,44 +92,73 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     "collection": "websocket_test"
                 }
             })
-            .to_string(),
+            .to_string()
+            .into(),
         ))
         .await?;
 
-    // Wait for response
-    if let Some(msg) = read.next().await {
-        match msg {
-            Ok(msg) => {
-                if let Ok(text) = msg.into_text() {
-                    if !text.is_empty() {
-                        match serde_json::from_str::<Value>(&text) {
-                            Ok(response) => {
-                                println!("Response: {}", serde_json::to_string_pretty(&response)?);
+    // Wait for response - loop to handle potential ping/pong or empty messages
+    let timeout = std::time::Duration::from_secs(5);
+    let start = std::time::Instant::now();
+    let mut received_data = false;
 
-                                // Show the data we got back
-                                if let Some(payload) = response.get("payload") {
-                                    if let Some(data) = payload.get("data") {
-                                        if let Some(arr) = data.as_array() {
+    while start.elapsed() < timeout && !received_data {
+        match tokio::time::timeout(std::time::Duration::from_millis(500), read.next()).await {
+            Ok(Some(msg)) => {
+                match msg {
+                    Ok(msg) => {
+                        if let Ok(text) = msg.into_text() {
+                            if !text.is_empty() {
+                                match serde_json::from_str::<Value>(&text) {
+                                    Ok(response) => {
+                                        // Check if this is a response with data
+                                        if response.get("payload").is_some() {
                                             println!(
-                                                "✓ Retrieved {} record(s) via WebSocket",
-                                                arr.len()
+                                                "Response: {}",
+                                                serde_json::to_string_pretty(&response)?
                                             );
+
+                                            // Show the data we got back
+                                            if let Some(payload) = response.get("payload") {
+                                                if let Some(data) = payload.get("data") {
+                                                    if let Some(arr) = data.as_array() {
+                                                        println!(
+                                                            "✓ Retrieved {} record(s) via WebSocket",
+                                                            arr.len()
+                                                        );
+                                                    }
+                                                }
+                                            }
+                                            received_data = true;
                                         }
+                                    }
+                                    Err(e) => {
+                                        eprintln!("Failed to parse JSON: {}", e);
+                                        eprintln!("Raw message: {}", text);
                                     }
                                 }
                             }
-                            Err(e) => {
-                                eprintln!("Failed to parse JSON: {}", e);
-                                eprintln!("Raw message: {}", text);
-                            }
                         }
+                    }
+                    Err(e) => {
+                        eprintln!("WebSocket error: {}", e);
+                        break;
                     }
                 }
             }
-            Err(e) => {
-                eprintln!("WebSocket error: {}", e);
+            Ok(None) => {
+                // Stream ended
+                break;
+            }
+            Err(_) => {
+                // Timeout on this read, continue looping
+                continue;
             }
         }
+    }
+
+    if !received_data {
+        eprintln!("Warning: No data response received within timeout");
     }
 
     println!("\n✓ WebSocket example completed successfully");

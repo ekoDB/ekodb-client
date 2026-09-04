@@ -22,6 +22,12 @@ jobs:
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.95.0
+          # This job runs `cargo clippy`; the pinned toolchain override does not
+          # pick up rust-toolchain.toml's components, so install them explicitly
+          # (matches rust-toolchain.toml: rustfmt + clippy).
+          components: clippy, rustfmt
 
       - name: Cache cargo registry
         uses: actions/cache@v4
@@ -31,6 +37,13 @@ jobs:
             ~/.cargo/git
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      # Gates on the exact clippy invocation developers run locally
+      # (`make lint-rust`): `-D warnings` turns every lint into an error so a
+      # warning can't pass locally and be ignored in CI. The 1.95.0 toolchain
+      # (pinned above + in rust-toolchain.toml) fixes the lint set on both sides.
+      - name: Clippy (lint)
+        run: cargo clippy --all-targets -- -D warnings
 
       - name: Run Rust tests
         run: cargo test -p ekodb_client --no-fail-fast
@@ -49,12 +62,18 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
           cache-dependency-path: ekodb-client-ts/package-lock.json
 
       - name: Install dependencies
         run: npm ci
+
+      # Same target developers run locally (`make lint-typescript` -> `npm run
+      # lint` -> `tsc --noEmit`). Catches unused imports / type errors that
+      # `npm test` (vitest) does not, so a type error can't slip past CI.
+      - name: Lint (tsc --noEmit)
+        run: npm run lint
 
       - name: Run TypeScript tests
         run: npm test
@@ -73,8 +92,15 @@ jobs:
         with:
           python-version: '3.11'
 
+      # Toolchain pinned to match rust-toolchain.toml so cargo doesn't try
+      # to re-resolve from the toml mid-build (which would re-trigger the
+      # rustfmt-preview component install conflict). The duplication with
+      # rust-toolchain.toml is intentional here — see RUSTUP_TOOLCHAIN
+      # comment on the maturin step below.
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.95.0
 
       - name: Create virtual environment
         run: python -m venv .venv
@@ -84,12 +110,30 @@ jobs:
           source .venv/bin/activate
           pip install maturin pytest pytest-asyncio
 
+      # Runs the exact target developers run locally, from the repo root, so the
+      # lint set cannot drift: `make lint-python` provisions the pinned ruff
+      # (single source of truth: ekodb-client-py/pyproject.toml [dev]) into a venv
+      # and runs it unconditionally. No hardcoded ruff version in CI.
+      - name: Lint (make lint-python)
+        working-directory: ${{ github.workspace }}
+        run: make lint-python
+
       - name: Build and install Python client
+        # `RUSTUP_TOOLCHAIN` short-circuits cargo's rust-toolchain.toml
+        # lookup. Without it, maturin's nested cargo invocation triggers
+        # `rustup component add rustfmt-preview`, which conflicts with the
+        # GitHub runner image's pre-installed `cargo-fmt`:
+        #   error: failed to install component: 'rustfmt-preview',
+        #          detected conflict: 'bin/cargo-fmt'
+        env:
+          RUSTUP_TOOLCHAIN: 1.95.0
         run: |
           source .venv/bin/activate
           maturin develop
 
       - name: Run Python tests
+        env:
+          RUSTUP_TOOLCHAIN: 1.95.0
         run: |
           source .venv/bin/activate
           python -m pytest tests/ -v
@@ -112,6 +156,13 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
+      # Same gate developers run locally (`make lint-kotlin` -> ktlintCheck).
+      # The enabled rule subset lives in ekodb-client-kt/.editorconfig and the
+      # ktlint engine version is pinned in build.gradle.kts, so CI and local
+      # evaluate an identical ruleset.
+      - name: Lint (ktlint)
+        run: ./gradlew ktlintCheck
+
       - name: Run Kotlin tests
         run: ./gradlew test
 
@@ -123,18 +174,40 @@ jobs:
     needs: [rust-tests, typescript-tests, python-tests, kotlin-tests]
     if: always()
     steps:
+      - uses: actions/checkout@v4
       - name: Check test results
         run: |
-          echo "## Unit Test Results" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Client | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "|--------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Rust (253 tests) | ${{ needs.rust-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| TypeScript (108 tests) | ${{ needs.typescript-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Python (66 tests) | ${{ needs.python-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Kotlin (100 tests) | ${{ needs.kotlin-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "_Go client (72 tests) runs in separate repo: ekoDB/ekodb-client-go_" >> $GITHUB_STEP_SUMMARY
+          # Counts come from the committed test inventory (tests_list.txt),
+          # generated by `make test`. Nothing here is hardcoded.
+          # Fail loudly if the inventory is missing or malformed rather than
+          # silently rendering blank counts.
+          if [ ! -f tests_list.txt ]; then
+            echo "::error::tests_list.txt is missing — run 'make test' to regenerate it"; exit 1
+          fi
+          rust=$(awk -F': ' '/^Rust:/{print $2}' tests_list.txt)
+          ts=$(awk -F': ' '/^TypeScript:/{print $2}' tests_list.txt)
+          py=$(awk -F': ' '/^Python:/{print $2}' tests_list.txt)
+          kt=$(awk -F': ' '/^Kotlin:/{print $2}' tests_list.txt)
+          total=$(awk -F': ' '/^Total:/{print $2}' tests_list.txt)
+          if [ -z "$rust" ] || [ -z "$ts" ] || [ -z "$py" ] || [ -z "$kt" ] || [ -z "$total" ]; then
+            echo "::error::tests_list.txt is malformed — a Rust/TypeScript/Python/Kotlin/Total count line is missing"; exit 1
+          fi
+          if [ "$total" != "$((rust + ts + py + kt))" ]; then
+            echo "::error::tests_list.txt Total ($total) != sum of per-language counts ($((rust + ts + py + kt))) — regenerate with 'make test'"; exit 1
+          fi
+          {
+            echo "## Unit Test Results"
+            echo ""
+            echo "| Client | Status |"
+            echo "|--------|--------|"
+            echo "| Rust ($rust tests) | ${{ needs.rust-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |"
+            echo "| TypeScript ($ts tests) | ${{ needs.typescript-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |"
+            echo "| Python ($py tests) | ${{ needs.python-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |"
+            echo "| Kotlin ($kt tests) | ${{ needs.kotlin-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |"
+            echo "| **Total** | **$total tests** |"
+            echo ""
+            echo "_Counts from tests_list.txt (generated by \`make test\`). Go client runs in a separate repo: ekoDB/ekodb-client-go._"
+          } >> $GITHUB_STEP_SUMMARY
 
       - name: Fail if any test failed
         if: |

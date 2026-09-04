@@ -8,6 +8,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -61,7 +62,7 @@ func main() {
 	// Create a simple cache lookup script
 	fmt.Println("Creating edge cache lookup script...")
 	version := "1.0"
-	cacheScript := ekodb.Script{
+	cacheScript := ekodb.UserFunction{
 		Label:       "edge_cache_lookup_go",
 		Name:        "Edge Cache Lookup",
 		Description: strPtr("Simple cache lookup by key"),
@@ -73,7 +74,7 @@ func main() {
 		Tags: []string{"cache", "edge"},
 	}
 
-	scriptID, err := client.SaveScript(cacheScript)
+	scriptID, err := saveOrUpdateFn(client, cacheScript)
 	if err != nil {
 		log.Fatalf("Failed to save script: %v", err)
 	}
@@ -82,9 +83,9 @@ func main() {
 	// Test it - First call
 	fmt.Println("Call 1: Cache lookup")
 	start1 := time.Now()
-	result1, err := client.CallScript("edge_cache_lookup_go", nil)
+	result1, err := client.CallFunction("edge_cache_lookup_go", nil)
 	if err != nil {
-		log.Fatalf("Script call failed: %v", err)
+		log.Fatalf("Function call failed: %v", err)
 	}
 	duration1 := time.Since(start1)
 	fmt.Printf("Response time: %dms\n", duration1.Milliseconds())
@@ -93,9 +94,9 @@ func main() {
 	// Test it again - Second call (should be fast due to connection reuse)
 	fmt.Println("\nCall 2: Cache lookup (connection warm)")
 	start2 := time.Now()
-	result2, err := client.CallScript("edge_cache_lookup_go", nil)
+	result2, err := client.CallFunction("edge_cache_lookup_go", nil)
 	if err != nil {
-		log.Fatalf("Script call failed: %v", err)
+		log.Fatalf("Function call failed: %v", err)
 	}
 	duration2 := time.Since(start2)
 	fmt.Printf("Response time: %dms\n", duration2.Milliseconds())
@@ -103,7 +104,7 @@ func main() {
 
 	// Cleanup
 	fmt.Println("\n🧹 Cleaning up...")
-	_ = client.DeleteScript(scriptID)
+	_ = client.DeleteFunction(scriptID)
 	_ = client.DeleteCollection("edge_cache_go")
 	fmt.Println("✓ Cleanup complete")
 
@@ -116,6 +117,31 @@ func main() {
 	fmt.Println("- One service: Database + Cache + Edge Functions")
 
 	fmt.Println("\n✓ Example complete!")
+}
+
+// saveOrUpdateFn saves a function, or — if the label already exists (HTTP 409)
+// — updates it in place and recovers the encrypted ID via a GET by label.
+func saveOrUpdateFn(client *ekodb.Client, fn ekodb.UserFunction) (string, error) {
+	id, err := client.SaveFunction(fn)
+	if err == nil {
+		return id, nil
+	}
+	var httpErr *ekodb.HTTPError
+	if errors.As(err, &httpErr) && httpErr.StatusCode == 409 {
+		if uerr := client.UpdateFunction(fn.Label, fn); uerr != nil {
+			return "", uerr
+		}
+		fmt.Printf("Function '%s' already existed — updated instead\n", fn.Label)
+		existing, gerr := client.GetFunction(fn.Label)
+		if gerr != nil {
+			return "", gerr
+		}
+		if existing.ID == nil {
+			return "", fmt.Errorf("function %q has no id after update", fn.Label)
+		}
+		return *existing.ID, nil
+	}
+	return "", err
 }
 
 func strPtr(s string) *string {

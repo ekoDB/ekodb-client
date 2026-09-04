@@ -46,29 +46,22 @@ async fn main() -> Result<()> {
         .field("email", "bob@example.com")
         .field("age", 35);
 
-    // First upsert - will insert (doesn't exist yet)
-    if let Some(id) = inserted.get("id") {
-        let user_id = match id {
-            ekodb_client::FieldType::String(s) => s.clone(),
-            _ => panic!("Expected string ID"),
-        };
+    // First upsert - will insert (new ID doesn't exist yet)
+    let upserted1 = client
+        .upsert(collection, "bob-user-id", user2.clone(), None)
+        .await?;
+    println!("✓ First upsert (insert): {:?}", upserted1);
 
-        let upserted1 = client
-            .upsert(collection, &user_id, user2.clone(), None)
-            .await?;
-        println!("✓ First upsert (insert): {:?}", upserted1);
+    // Second upsert - will update (same ID, already exists)
+    let updated_user = Record::new()
+        .field("name", "Bob Smith")
+        .field("email", "bob.smith@newdomain.com")
+        .field("age", 36);
 
-        // Second upsert - will update (already exists)
-        let updated_user = Record::new()
-            .field("name", "Bob Smith")
-            .field("email", "bob.smith@newdomain.com")
-            .field("age", 36);
-
-        let upserted2 = client
-            .upsert(collection, &user_id, updated_user, None)
-            .await?;
-        println!("✓ Second upsert (update): {:?}", upserted2);
-    }
+    let upserted2 = client
+        .upsert(collection, "bob-user-id", updated_user, None)
+        .await?;
+    println!("✓ Second upsert (update): {:?}", upserted2);
 
     println!("\n=== Find One Operation ===");
     // Find a single record by any field

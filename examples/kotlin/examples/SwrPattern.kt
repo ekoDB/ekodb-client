@@ -2,28 +2,65 @@ package io.ekodb.client.examples
 
 import io.ekodb.client.EkoDBClient
 import io.ekodb.client.functions.FunctionStageConfig
-import io.ekodb.client.functions.Script
-import io.ekodb.client.functions.ScriptCondition
+import io.ekodb.client.functions.UserFunction
+import io.ekodb.client.functions.FunctionCondition
 import io.ekodb.client.functions.ParameterDefinition
+import io.github.cdimascio.dotenv.dotenv
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.*
 import kotlin.system.measureTimeMillis
 
+/**
+ * Detect the server's "label already exists" rejection (HTTP 409 Conflict on
+ * POST /api/functions). The client surfaces it as an exception whose message
+ * contains "status 409" and/or "already exists".
+ */
+private fun isAlreadyExistsError(e: Exception): Boolean {
+    val msg = e.message ?: return false
+    return msg.contains("status 409") || msg.contains("already exists")
+}
+
+/**
+ * Idempotent save: create the function, or PUT-update it by label if it already
+ * exists. Returns the encrypted ID either way (resolved by label on the update
+ * path).
+ */
+private suspend fun saveOrUpdate(client: EkoDBClient, func: UserFunction): String {
+    return try {
+        client.saveFunction(func)
+    } catch (e: Exception) {
+        if (isAlreadyExistsError(e)) {
+            client.updateFunction(func.label, func)
+            println("ℹ️  Function '${func.label}' already existed — updated instead")
+            client.getFunction(func.label).id
+                ?: throw IllegalStateException("No ID returned for function '${func.label}'")
+        } else {
+            throw e
+        }
+    }
+}
+
 fun main() = runBlocking {
-    val baseUrl = System.getenv("API_BASE_URL") ?: "http://localhost:8080"
-    val apiKey = System.getenv("API_BASE_KEY") ?: "a-test-api-key-from-ekodb"
+    val dotenv = dotenv()
+    val baseUrl = dotenv["API_BASE_URL"] ?: "http://localhost:8080"
+    val apiKey = dotenv["API_BASE_KEY"] ?: "a-test-api-key-from-ekodb"
 
     val client = EkoDBClient.builder()
         .baseUrl(baseUrl)
         .apiKey(apiKey)
         .build()
 
+    // Start clean: drop stale cache collections from a prior run so their schema
+    // is inferred fresh and a stale schema can't reject the insert.
+    try { client.deleteCollection("github_cache") } catch (e: Exception) {}
+    try { client.deleteCollection("product_cache") } catch (e: Exception) {}
+
     println("=== ekoDB SWR (Stale-While-Revalidate) Pattern ===\n")
 
-    // Step 1: Create SWR script for GitHub user caching
+    // Step 1: Create SWR function for GitHub user caching
     println("Step 1: Create SWR function that acts as edge cache")
 
-    val swrScript = Script(
+    val swrScript = UserFunction(
         label = "fetch_github_user",
         name = "Fetch GitHub User with Cache",
         description = "SWR pattern: Check cache, fetch from GitHub API if stale, auto-update with TTL",
@@ -47,7 +84,7 @@ fun main() = runBlocking {
             ),
             // 2. If cache exists, return it; else fetch from API
             FunctionStageConfig.If(
-                condition = ScriptCondition.HasRecords,
+                condition = FunctionCondition.HasRecords,
                 then_functions = listOf(
                     // Cache hit - return cached data
                     FunctionStageConfig.Project(
@@ -87,13 +124,13 @@ fun main() = runBlocking {
         tags = listOf("swr", "github", "cache")
     )
 
-    val scriptId = client.saveScript(swrScript)
-    println("✓ Created SWR script: ${swrScript.label} ($scriptId)\n")
+    val funcId = saveOrUpdate(client, swrScript)
+    println("✓ Created SWR function: ${swrScript.label} ($funcId)\n")
 
     // Step 2: First call - Cache miss
     println("Step 2: First call - Cache miss, fetches from GitHub API")
     val start1 = System.currentTimeMillis()
-    val result1 = client.callScript(
+    val result1 = client.callFunction(
         "fetch_github_user",
         mapOf(
             "username" to JsonPrimitive("torvalds"),
@@ -108,7 +145,7 @@ fun main() = runBlocking {
     // Step 3: Second call - Cache hit
     println("Step 3: Second call - Cache hit, instant response from ekoDB")
     val start2 = System.currentTimeMillis()
-    val result2 = client.callScript(
+    val result2 = client.callFunction(
         "fetch_github_user",
         mapOf("username" to JsonPrimitive("torvalds"))
     )
@@ -122,7 +159,7 @@ fun main() = runBlocking {
     println("=== Advanced: SWR with Data Enrichment ===\n")
     println("Creating product enrichment function...")
 
-    val enrichScript = Script(
+    val enrichFunc = UserFunction(
         label = "fetch_product_enriched",
         name = "Fetch Product with Enrichment",
         description = "Demonstrates calling external API and enriching data",
@@ -144,7 +181,7 @@ fun main() = runBlocking {
                 record_id = "{{product_id}}"
             ),
             FunctionStageConfig.If(
-                condition = ScriptCondition.HasRecords,
+                condition = FunctionCondition.HasRecords,
                 then_functions = listOf(
                     FunctionStageConfig.Project(
                         fields = listOf("enriched_data"),
@@ -181,11 +218,11 @@ fun main() = runBlocking {
         tags = listOf("enrichment", "product", "cache")
     )
 
-    val enrichScriptId = client.saveScript(enrichScript)
-    println("✓ Created enrichment script: ${enrichScript.label} ($enrichScriptId)\n")
+    val enrichFuncId = saveOrUpdate(client, enrichFunc)
+    println("✓ Created enrichment function: ${enrichFunc.label} ($enrichFuncId)\n")
 
     println("Step 4: Call enrichment function - Fetches from API + stores enriched result")
-    val enriched = client.callScript(
+    val enriched = client.callFunction(
         "fetch_product_enriched",
         mapOf(
             "product_id" to JsonPrimitive("1"),

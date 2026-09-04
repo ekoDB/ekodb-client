@@ -15,6 +15,8 @@ export interface Query {
   join?: any;
   bypass_cache?: boolean;
   bypass_ripple?: boolean;
+  select_fields?: string[];
+  exclude_fields?: string[];
 }
 
 /**
@@ -38,6 +40,8 @@ export class QueryBuilder {
   private _join?: any;
   private _bypassCache: boolean = false;
   private _bypassRipple: boolean = false;
+  private _selectFields?: string[];
+  private _excludeFields?: string[];
 
   // ========================================================================
   // Comparison Operators
@@ -212,20 +216,8 @@ export class QueryBuilder {
     return this;
   }
 
-  /**
-   * Add a regex filter
-   */
-  regex(field: string, pattern: string): this {
-    this.filters.push({
-      type: "Condition",
-      content: {
-        field,
-        operator: "Regex",
-        value: pattern,
-      },
-    });
-    return this;
-  }
+  // Note: regex filtering is pending server-side support. The server has no
+  // Regex filter operator; use contains/startsWith/endsWith instead.
 
   // ========================================================================
   // Logical Operators
@@ -363,6 +355,26 @@ export class QueryBuilder {
   }
 
   // ========================================================================
+  // Field Projection
+  // ========================================================================
+
+  /**
+   * Select specific fields to return (plus 'id' which is always included)
+   */
+  selectFields(...fields: string[]): this {
+    this._selectFields = fields;
+    return this;
+  }
+
+  /**
+   * Exclude specific fields from results
+   */
+  excludeFields(...fields: string[]): this {
+    this._excludeFields = fields;
+    return this;
+  }
+
+  // ========================================================================
   // Build
   // ========================================================================
 
@@ -412,6 +424,14 @@ export class QueryBuilder {
 
     if (this._bypassRipple) {
       query.bypass_ripple = true;
+    }
+
+    if (this._selectFields && this._selectFields.length > 0) {
+      query.select_fields = this._selectFields;
+    }
+
+    if (this._excludeFields && this._excludeFields.length > 0) {
+      query.exclude_fields = this._excludeFields;
     }
 
     return query;

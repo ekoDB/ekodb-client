@@ -1,16 +1,42 @@
 /**
- * Complete Scripts Example for ekoDB TypeScript Client
+ * Complete Functions Example for ekoDB TypeScript Client
  *
  * Demonstrates: FindAll, Group, Count, Multi-stage Pipelines
  */
 
-import { EkoDBClient, Stage } from "@ekodb/ekodb-client";
+import { EkoDBClient, Stage, UserFunction } from "@ekodb/ekodb-client";
 import * as dotenv from "dotenv";
 
 dotenv.config();
 
 const BASE_URL = process.env.API_BASE_URL || "http://localhost:8080";
 const API_KEY = process.env.API_BASE_KEY || "a-test-api-key-from-ekodb";
+
+/** True when a save failed because the function label already exists (HTTP 409). */
+function isAlreadyExistsError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.includes("status 409") || message.includes("already exists");
+}
+
+/**
+ * Idempotent save: create the function, or update it in place if a function
+ * with the same label already exists. Returns the function's id so downstream
+ * cleanup-by-id continues to work.
+ */
+async function saveOrUpdate(
+  client: EkoDBClient,
+  script: UserFunction,
+): Promise<string> {
+  try {
+    return await client.saveFunction(script);
+  } catch (error) {
+    if (!isAlreadyExistsError(error)) throw error;
+    await client.updateFunction(script.label, script);
+    console.log(`Function '${script.label}' already existed — updated instead`);
+    const existing = await client.getFunction(script.label);
+    return existing.id ?? script.label;
+  }
+}
 
 interface Product {
   name: string;
@@ -93,10 +119,10 @@ async function productStatsScript(client: EkoDBClient): Promise<string> {
     tags: ["products", "analytics"],
   };
 
-  const id = await client.saveScript(script);
-  console.log(`✅ Script saved: ${id}`);
+  const id = await saveOrUpdate(client, script);
+  console.log(`✅ Function saved: ${id}`);
 
-  const result = await client.callScript("product_stats");
+  const result = await client.callFunction("product_stats");
 
   console.log(`📊 Found ${result.records.length} product groups`);
   result.records.forEach((record: any) => {
@@ -119,10 +145,10 @@ async function listProductsScript(client: EkoDBClient): Promise<string> {
     tags: ["products", "list"],
   };
 
-  const id = await client.saveScript(script);
-  console.log("✅ Script saved");
+  const id = await saveOrUpdate(client, script);
+  console.log("✅ Function saved");
 
-  const result = await client.callScript("list_all_products");
+  const result = await client.callFunction("list_all_products");
 
   console.log(`📊 Found ${result.records.length} products`);
   console.log(`⏱️  Execution time: ${result.stats.execution_time_ms}ms\n`);
@@ -148,10 +174,10 @@ async function categoryCountScript(client: EkoDBClient): Promise<string> {
     tags: ["products", "analytics"],
   };
 
-  const id = await client.saveScript(script);
-  console.log("✅ Script saved");
+  const id = await saveOrUpdate(client, script);
+  console.log("✅ Function saved");
 
-  const result = await client.callScript("count_by_category");
+  const result = await client.callFunction("count_by_category");
 
   console.log(`📊 Found ${result.records.length} categories`);
   result.records.forEach((record: any) => {
@@ -174,10 +200,10 @@ async function topRatedScript(client: EkoDBClient): Promise<string> {
     tags: ["products", "quality"],
   };
 
-  const id = await client.saveScript(script);
-  console.log("✅ Script saved");
+  const id = await saveOrUpdate(client, script);
+  console.log("✅ Function saved");
 
-  const result = await client.callScript("top_rated_products");
+  const result = await client.callFunction("top_rated_products");
 
   console.log(`📊 Found ${result.records.length} products`);
   console.log(`⏱️  Execution time: ${result.stats.execution_time_ms}ms\n`);
@@ -186,7 +212,7 @@ async function topRatedScript(client: EkoDBClient): Promise<string> {
 }
 
 async function scriptWithParameter(client: EkoDBClient): Promise<string> {
-  console.log("📝 Example 5: Script with Parameter Definition\n");
+  console.log("📝 Example 5: UserFunction with Parameter Definition\n");
 
   const script = {
     label: "list_with_limit",
@@ -203,10 +229,10 @@ async function scriptWithParameter(client: EkoDBClient): Promise<string> {
     tags: ["products", "list"],
   };
 
-  const id = await client.saveScript(script);
-  console.log("✅ Script saved");
+  const id = await saveOrUpdate(client, script);
+  console.log("✅ Function saved");
 
-  const result = await client.callScript("list_with_limit", { max_items: 3 });
+  const result = await client.callFunction("list_with_limit", { max_items: 3 });
 
   console.log(`📊 Found ${result.records.length} products`);
   console.log(`⏱️  Execution time: ${result.stats.execution_time_ms}ms\n`);
@@ -240,10 +266,10 @@ async function multiStagePipeline(client: EkoDBClient): Promise<string> {
     tags: ["products", "analytics"],
   };
 
-  const id = await client.saveScript(script);
-  console.log("✅ Script saved");
+  const id = await saveOrUpdate(client, script);
+  console.log("✅ Function saved");
 
-  const result = await client.callScript("product_summary");
+  const result = await client.callFunction("product_summary");
 
   console.log(`📊 Pipeline executed ${result.stats.stages_executed} stages`);
   console.log(`⏱️  Total execution time: ${result.stats.execution_time_ms}ms`);
@@ -260,7 +286,7 @@ async function cleanup(
 
   try {
     for (const id of scriptIds) {
-      await client.deleteScript(id);
+      await client.deleteFunction(id);
     }
     await client.deleteCollection("complete_products");
     console.log("✅ Cleanup complete\n");
@@ -270,7 +296,7 @@ async function cleanup(
 }
 
 async function main() {
-  console.log("🚀 ekoDB TypeScript Complete Scripts Example\n");
+  console.log("🚀 ekoDB TypeScript Complete Functions Example\n");
   console.log(
     "📋 Demonstrates: FindAll, Group, Count, Multi-stage Pipelines\n",
   );
@@ -298,12 +324,12 @@ async function main() {
     await cleanup(client, scriptIds);
 
     console.log("✅ All complete script examples finished!");
-    console.log("\n💡 This example demonstrates ekoDB's Script system:");
+    console.log("\n💡 This example demonstrates ekoDB's function system:");
     console.log("   ✅ FindAll operations");
     console.log("   ✅ Group aggregations (Count, Average)");
     console.log("   ✅ Multi-stage pipelines (FindAll → Group → Count)");
     console.log("   ✅ Parameter definitions");
-    console.log("   ✅ Script management (save, call, delete)");
+    console.log("   ✅ Function management (save, call, delete)");
   } catch (error) {
     console.error("❌ Error:", error);
     process.exit(1);

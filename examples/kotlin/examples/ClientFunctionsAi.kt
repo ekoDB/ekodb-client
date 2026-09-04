@@ -1,7 +1,7 @@
 /**
- * AI Scripts Example - Chat and Embed Operations
+ * AI Functions Example - Chat and Embed Operations
  *
- * Demonstrates AI operations in scripts:
+ * Demonstrates AI operations in functions:
  * - Chat completions with context
  * - Embedding generation
  * - Simple AI workflows
@@ -10,26 +10,48 @@
 package io.ekodb.client.examples
 
 import io.ekodb.client.EkoDBClient
-import io.ekodb.client.functions.Script
+import io.ekodb.client.functions.UserFunction
 import io.ekodb.client.functions.FunctionStageConfig
 import io.ekodb.client.functions.ChatMessage
 import io.ekodb.client.functions.ParameterDefinition
 import io.ekodb.client.types.Record
+import io.github.cdimascio.dotenv.dotenv
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
+private fun isAlreadyExistsError(e: Exception): Boolean {
+    val msg = e.message ?: return false
+    return msg.contains("status 409") || msg.contains("already exists")
+}
+
+private suspend fun saveOrUpdate(client: EkoDBClient, func: UserFunction): String {
+    return try {
+        client.saveFunction(func)
+    } catch (e: Exception) {
+        if (isAlreadyExistsError(e)) {
+            client.updateFunction(func.label, func)
+            println("ℹ️  Function '${func.label}' already existed — updated instead")
+            client.getFunction(func.label).id
+                ?: throw IllegalStateException("No ID returned for function '${func.label}'")
+        } else {
+            throw e
+        }
+    }
+}
+
 fun main() = runBlocking {
-    val baseUrl = System.getenv("API_BASE_URL") ?: "http://localhost:8080"
-    val apiKey = System.getenv("API_BASE_KEY") ?: error("API_BASE_KEY environment variable not set")
+    val dotenv = dotenv()
+    val baseUrl = dotenv["API_BASE_URL"] ?: "http://localhost:8080"
+    val apiKey = dotenv["API_BASE_KEY"] ?: "a-test-api-key-from-ekodb"
 
     val client = EkoDBClient.builder()
         .baseUrl(baseUrl)
         .apiKey(apiKey)
         .build()
 
-    println("🚀 ekoDB Kotlin AI Scripts Example")
+    println("🚀 ekoDB Kotlin AI Functions Example")
     println()
 
     // Setup test data
@@ -46,14 +68,14 @@ fun main() = runBlocking {
     }
     println("✅ Created ${articles.size} articles\n")
 
-    val scriptIds = mutableListOf<String>()
+    val funcIds = mutableListOf<String>()
 
     try {
         // Example 1: Simple Chat Completion
         println("📝 Example 1: Simple Chat Completion")
         println()
 
-        val script1 = Script(
+        val func1 = UserFunction(
             label = "ai_assistant_kt",
             name = "AI Chat Assistant",
             description = "Simple AI chat completion",
@@ -65,17 +87,17 @@ fun main() = runBlocking {
                         ChatMessage(role = "system", content = "You are a helpful database assistant. Be concise."),
                         ChatMessage(role = "user", content = "What are the benefits of using vector databases?")
                     ),
-                    model = "gpt-4",
+                    model = "gpt-4o-mini",
                     temperature = 0.7
                 )
             ),
             tags = listOf("ai", "chat")
         )
-        val scriptId1 = client.saveScript(script1)
-        scriptIds.add(scriptId1)
-        println("✅ Chat script saved")
+        val funcId1 = saveOrUpdate(client, func1)
+        funcIds.add(funcId1)
+        println("✅ Chat function saved")
 
-        val result1 = client.callScript("ai_assistant_kt")
+        val result1 = client.callFunction("ai_assistant_kt")
         println("🤖 AI Response:")
         if (result1.records.isNotEmpty()) {
             println("   ${result1.records[0]}")
@@ -86,7 +108,7 @@ fun main() = runBlocking {
         println("📝 Example 2: Generate Embeddings")
         println()
 
-        val script2 = Script(
+        val func2 = UserFunction(
             label = "generate_embedding_kt",
             name = "Generate Embedding",
             description = "Generate embedding for text",
@@ -105,27 +127,27 @@ fun main() = runBlocking {
             ),
             tags = listOf("ai", "embed")
         )
-        val scriptId2 = client.saveScript(script2)
-        scriptIds.add(scriptId2)
-        println("✅ Embed script saved")
+        val funcId2 = saveOrUpdate(client, func2)
+        funcIds.add(funcId2)
+        println("✅ Embed function saved")
 
         val params = buildJsonObject {
             put("text", "ekoDB is a powerful database")
         }
-        val result2 = client.callScript("generate_embedding_kt", params)
+        val result2 = client.callFunction("generate_embedding_kt", params)
         println("📊 Embedding generated")
         println("⏱️  Execution time: ${result2.stats.execution_time_ms}ms\n")
 
         // Cleanup
         println("🧹 Cleaning up...")
-        for (scriptId in scriptIds) {
-            try { client.deleteScript(scriptId) } catch (e: Exception) {}
+        for (funcId in funcIds) {
+            try { client.deleteFunction(funcId) } catch (e: Exception) {}
         }
         try { client.deleteCollection("ai_articles_kt") } catch (e: Exception) {}
         println("✅ Cleanup complete")
 
         println()
-        println("✅ All AI script examples finished!")
+        println("✅ All AI function examples finished!")
         println()
         println("💡 This example demonstrates:")
         println("   ✅ Chat completions with system/user messages")

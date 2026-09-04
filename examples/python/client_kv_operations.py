@@ -38,20 +38,25 @@ async def kv_operations_examples():
         result = await client.kv_get("session:user123")
         print(f"Retrieved value: {result}")
 
-        # Example 3: Set multiple keys
-        print("\n=== Set Multiple Keys ===")
-        keys = ["cache:product:1", "cache:product:2", "cache:product:3"]
-        for i, key in enumerate(keys):
-            await client.kv_set(
-                key, {"name": f"Product {i+1}", "price": 29.99 + (i * 10)}
-            )
-        print(f"✓ Set {len(keys)} keys")
+        # Example 3: Batch set multiple keys
+        print("\n=== KV Batch Set ===")
+        batch_entries = [
+            {"key": "cache:product:1", "value": {"name": "Product 1", "price": 29.99}},
+            {"key": "cache:product:2", "value": {"name": "Product 2", "price": 39.99}},
+            {"key": "cache:product:3", "value": {"name": "Product 3", "price": 49.99}},
+        ]
+        set_results = await client.kv_batch_set(batch_entries)
+        print(f"✓ Batch set {len(set_results)} keys")
+        for key, was_set in set_results:
+            print(f"  {key}: {'success' if was_set else 'failed'}")
 
-        # Example 4: Get multiple keys
-        print("\n=== Get Multiple Keys ===")
-        for key in keys:
-            data = await client.kv_get(key)
-            print(f"{key}: {data}")
+        # Example 4: Batch get multiple keys
+        print("\n=== KV Batch Get ===")
+        keys = ["cache:product:1", "cache:product:2", "cache:product:3"]
+        batch_values = await client.kv_batch_get(keys)
+        print(f"✓ Batch retrieved {len(batch_values)} values")
+        for i, val in enumerate(batch_values):
+            print(f"  {keys[i]}: {val}")
 
         # Example 5: Check if key exists
         print("\n=== KV Exists ===")
@@ -77,11 +82,12 @@ async def kv_operations_examples():
         exists_after = await client.kv_exists("session:user123")
         print(f"✓ Verified: Key exists after delete: {exists_after}")
 
-        # Example 9: Delete multiple keys
-        print("\n=== Delete Multiple Keys ===")
-        for key in keys:
-            await client.kv_delete(key)
-        print(f"✓ Deleted {len(keys)} keys")
+        # Example 9: Batch delete multiple keys
+        print("\n=== KV Batch Delete ===")
+        delete_results = await client.kv_batch_delete(keys)
+        print(f"✓ Batch deleted {len(delete_results)} keys")
+        for key, was_deleted in delete_results:
+            print(f"  {key}: {'deleted' if was_deleted else 'not found'}")
 
         print("\n✓ All KV operations completed successfully")
 

@@ -1,8 +1,6 @@
 module github.com/ekodb/examples
 
-go 1.24.0
-
-toolchain go1.24.2
+go 1.25.0
 
 replace github.com/ekoDB/ekodb-client-go => ../../../ekodb-client-go
 
@@ -15,5 +13,4 @@ require (
 require (
 	github.com/vmihailenco/msgpack/v5 v5.4.1 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
-	golang.org/x/net v0.38.0 // indirect
 )

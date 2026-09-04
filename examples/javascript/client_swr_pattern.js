@@ -13,6 +13,30 @@ require("dotenv").config();
 const BASE_URL = process.env.API_BASE_URL || "http://localhost:8080";
 const API_KEY = process.env.API_BASE_KEY || "a-test-api-key-from-ekodb";
 
+/**
+ * Save a function idempotently.
+ *
+ * The server returns HTTP 409 ("A function with label 'X' already exists.")
+ * when a function with the same fixed label already exists. On that error we
+ * UPDATE the existing function via PUT /api/functions/{label} (the server's
+ * GET/PUT/DELETE routes accept either the encrypted ID or the label), then
+ * resolve and return its encrypted ID so the rest of the example keeps working.
+ * Any other error is propagated.
+ */
+async function saveOrUpdate(client, script) {
+  try {
+    return await client.saveFunction(script);
+  } catch (error) {
+    if (error.message && error.message.includes("already exists")) {
+      await client.updateFunction(script.label, script);
+      console.log(`ℹ️  Function '${script.label}' already existed — updated instead`);
+      const existing = await client.getFunction(script.label);
+      return existing.id;
+    }
+    throw error;
+  }
+}
+
 async function main() {
   const client = new EkoDBClient(BASE_URL, API_KEY);
   await client.init();
@@ -21,12 +45,13 @@ async function main() {
 
   console.log("Step 1: Create SWR function that acts as edge cache");
 
+  // Using jsonplaceholder.typicode.com - a reliable free API for testing
   const swrScript = {
-    label: "fetch_github_user_js",
-    name: "Fetch GitHub User with Cache",
-    description: "SWR pattern: Check cache, fetch from GitHub API if stale",
+    label: "fetch_api_user_js",
+    name: "Fetch User with Cache",
+    description: "SWR pattern: Check cache, fetch from API if stale",
     parameters: {
-      username: { required: true, description: "GitHub username to fetch" },
+      user_id: { required: true, description: "User ID to fetch" },
       ttl: {
         required: false,
         default: 300,
@@ -34,38 +59,51 @@ async function main() {
       },
     },
     version: "1.0",
-    tags: ["swr", "github", "cache"],
+    tags: ["swr", "user", "cache"],
     functions: [
-      Stage.findById("github_cache_js", "{{username}}"),
+      // Check KV cache for user data
+      Stage.kvGet("api:user:{{user_id}}"),
       Stage.if(
-        { type: "HasRecords" },
-        [Stage.project(["data", "cached_at"], false)],
+        // KvGet returns {value: ...} on hit, {value: null} on miss
+        // So we check if "value" is not null to detect cache hit
+        {
+          type: "Not",
+          value: {
+            condition: {
+              type: "FieldEquals",
+              value: { field: "value", value: null },
+            },
+          },
+        },
+        // Cache hit - return cached data
+        [Stage.project(["value"], false)],
+        // Cache miss - fetch from API and cache
         [
           Stage.httpRequest(
-            "https://api.github.com/users/{{username}}",
+            "https://jsonplaceholder.typicode.com/users/{{user_id}}",
             "GET",
-            { "User-Agent": "ekoDB-SWR-Example" }
+            { "Accept": "application/json" }
           ),
-          Stage.insert(
-            "github_cache_js",
-            {
-              id: { type: "String", value: "{{username}}" },
-              data: { type: "Object", value: "{{http_response}}" },
-              cached_at: { type: "String", value: new Date().toISOString() },
-            },
-            false
+          // Store in KV with 5 minute TTL
+          Stage.kvSet(
+            "api:user:{{user_id}}",
+            "{{http_response}}",
+            300,
           ),
+          // Retrieve the cached data to return
+          Stage.kvGet("api:user:{{user_id}}"),
+          Stage.project(["value"], false),
         ]
       ),
     ],
   };
 
-  const scriptId = await client.saveScript(swrScript);
+  const scriptId = await saveOrUpdate(client, swrScript);
   console.log(`✓ Created SWR script: ${swrScript.label} (${scriptId})\n`);
 
-  console.log("Step 2: First call - Cache miss, fetches from GitHub API");
-  const result1 = await client.callScript("fetch_github_user_js", {
-    username: "torvalds",
+  console.log("Step 2: First call - Cache miss, fetches from API");
+  const result1 = await client.callFunction("fetch_api_user_js", {
+    user_id: "1",
     ttl: 300,
   });
   console.log("Result:", JSON.stringify(result1, null, 2));
@@ -73,7 +111,7 @@ async function main() {
 
   console.log("Step 3: Second call - Cache hit, instant response from ekoDB");
   const start = Date.now();
-  await client.callScript("fetch_github_user_js", { username: "torvalds" });
+  await client.callFunction("fetch_api_user_js", { user_id: "1" });
   const duration = Date.now() - start;
   console.log(`Response time: ${duration}ms (served from cache)`);
   console.log("✓ Lightning fast cache hit\n");
@@ -81,8 +119,8 @@ async function main() {
   // Cleanup
   console.log("🧹 Cleaning up...");
   try {
-    await client.deleteScript(scriptId);
-    await client.deleteCollection("github_cache_js");
+    await client.deleteFunction(scriptId);
+    await client.deleteCollection("user_cache_js");
   } catch (e) {
     // Ignore cleanup errors
   }
