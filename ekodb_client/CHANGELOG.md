@@ -92,6 +92,17 @@ and this project adheres to
   the relative `replace` directive survived, that the Go client module still
   builds, and that every example still compiles individually.
 
+### Changed
+
+- **Generated example transcripts no longer carry pip's self-update notice.**
+  `make test-examples` writes the per-language transcripts by running the
+  examples through the project venv, and pip's "A new release of pip is
+  available" notice depends on the pip installed locally, so it leaked into the
+  committed logs and churned them on every regeneration. The Makefile now
+  exports `PIP_DISABLE_PIP_VERSION_CHECK=1` for every pip invocation, and the
+  notice lines were removed from the checked-in transcripts.
+
+
 ## [0.25.0] - 2026-07-14
 
 ### Added
