@@ -126,6 +126,17 @@ and this project adheres to
   so those two calls, which run under `execute_with_retry`, still retry a
   throttled or drained server instead of surfacing a non-retryable `Error::Api`;
   the `Retry-After` parse is one shared helper rather than a third copy.
+- **Python crate round-trip tests report only the `FieldType` variant on a
+  mismatch, not the value (#186).** The `expected X, got {other:?}` panics in
+  `ekodb-client-py/src/lib.rs` Debug-printed the whole unexpected `FieldType`;
+  CodeQL traced that back to `FieldType::UUID(..)` and flagged five
+  `rust/cleartext-logging` alerts. A test-module `variant_name()` helper now
+  names the variant and nothing else, so a failing assertion still says what
+  came back. The sixth open alert, `rust/cleartext-transmission` on
+  `chat_message_stream` in `ekodb_client/src/http.rs`, is a false positive: the
+  flagged URL is `base_url` plus path segments and never carries the API key,
+  which CodeQL taints onto the whole `ClientBuilder` and therefore onto
+  `base_url`. It is dismissed with that rationale rather than worked around.
 
 
 ## [0.25.0] - 2026-07-14
