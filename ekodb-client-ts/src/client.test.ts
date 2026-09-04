@@ -2650,6 +2650,78 @@ describe("EkoDBClient chatMessageStream", () => {
     ]);
   });
 
+  it("stops reading after an error frame and emits nothing that follows it", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+
+    const sseBody =
+      'event: error\ndata: {"message":"boom"}\n\nevent: token\ndata: {"token":"late"}\n\n';
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      text: async () => sseBody,
+      headers: new Headers({ "content-type": "text/event-stream" }),
+    });
+
+    const events: any[] = [];
+    const stream = client.chatMessageStream("chat_123", {
+      message: "Hello",
+    });
+    stream.on("event", (evt: any) => events.push(evt));
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    expect(events).toEqual([{ type: "error", error: "boom" }]);
+  });
+
+  it("cancels the body reader after an error frame instead of waiting for the server to close", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+
+    const encoder = new TextEncoder();
+    const chunks = [
+      encoder.encode('event: error\ndata: {"message":"boom"}\n\n'),
+      encoder.encode('event: token\ndata: {"token":"late"}\n\n'),
+    ];
+    const cancel = vi.fn(async () => {});
+    let reads = 0;
+    const reader = {
+      read: vi.fn(async () => {
+        // A server (or proxy) that does not close after the error frame: it
+        // keeps sending frames. Bounded so a client that never stops fails
+        // the assertions below instead of looping forever.
+        if (reads >= 50) return { done: true, value: undefined };
+        const value = chunks[Math.min(reads, chunks.length - 1)];
+        reads += 1;
+        return { done: false, value };
+      }),
+      cancel,
+    };
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      body: { getReader: () => reader },
+      text: async () => "",
+      headers: new Headers({ "content-type": "text/event-stream" }),
+    });
+
+    const events: any[] = [];
+    const stream = client.chatMessageStream("chat_123", {
+      message: "Hello",
+    });
+    stream.on("event", (evt: any) => events.push(evt));
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    expect(events).toEqual([{ type: "error", error: "boom" }]);
+    // One read delivered the error frame; the reader was cancelled rather
+    // than read until the server closed.
+    expect(reader.read).toHaveBeenCalledTimes(1);
+    expect(cancel).toHaveBeenCalledTimes(1);
+  });
+
   it("keeps the error text a string when the server sends a structured error", async () => {
     const client = createTestClient();
     mockTokenResponse();

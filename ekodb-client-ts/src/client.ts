@@ -2307,8 +2307,12 @@ export class EkoDBClient {
         }
 
         // The `event:` name applies to the data lines that follow it, until
-        // the blank line that ends the frame.
+        // the blank line that ends the frame. An error frame ends the stream:
+        // nothing after it is surfaced and the body is not read to the end,
+        // so a server or proxy that keeps the connection open after an error
+        // cannot hang the caller (the Rust and Go clients stop the same way).
         let eventName = "";
+        let stopped = false;
         const emitLine = (line: string) => {
           if (line.startsWith("event:")) {
             eventName = line.slice(6).trim();
@@ -2328,6 +2332,7 @@ export class EkoDBClient {
             // the error rather than a frame to skip, and the text is always a
             // string (`streamErrorText`).
             if (eventData.error != null || eventName === "error") {
+              stopped = true;
               stream.emit("event", {
                 type: "error",
                 error: streamErrorText(eventData),
@@ -2364,17 +2369,26 @@ export class EkoDBClient {
             if (done) break;
             buffer += decoder.decode(value, { stream: true });
             let nl: number;
-            while ((nl = buffer.indexOf("\n")) >= 0) {
+            while (!stopped && (nl = buffer.indexOf("\n")) >= 0) {
               emitLine(buffer.slice(0, nl));
               buffer = buffer.slice(nl + 1);
             }
+            if (stopped) {
+              await reader.cancel?.()?.catch?.(() => {});
+              break;
+            }
           }
-          buffer += decoder.decode();
-          if (buffer) emitLine(buffer);
+          if (!stopped) {
+            buffer += decoder.decode();
+            if (buffer) emitLine(buffer);
+          }
         } else {
           // Fallback for environments/tests without a readable body stream.
           const body = await response.text();
-          for (const line of body.split("\n")) emitLine(line);
+          for (const line of body.split("\n")) {
+            emitLine(line);
+            if (stopped) break;
+          }
         }
         stream.close();
       } catch (err: any) {
