@@ -1,8 +1,6 @@
 make test-examples-python
 📦 [36mEnsuring Python example dependencies in .venv...[0m
 
-[notice] A new release of pip is available: 26.1.2 -> 26.2.1
-[notice] To update, run: ekoDB/ekodb-client/.venv/bin/python -m pip install --upgrade pip
 🧪 [36mRunning Python examples (direct HTTP/WebSocket)...[0m
 === Simple CRUD Operations (Direct HTTP) ===
 
@@ -611,8 +609,6 @@ WebSocket TTL expiration is working correctly:
 🐍 [36mBuilding Python client package...[0m
 🔧 [36mEnsuring maturin is available in .venv...[0m
 
-[notice] A new release of pip is available: 26.1.2 -> 26.2.1
-[notice] To update, run: ekoDB/ekodb-client/.venv/bin/python -m pip install --upgrade pip
 🔨 [36mBuilding wheel...[0m
 🍹 Building a mixed python/rust project
 🐍 Found CPython 3.11 at /Library/Frameworks/Python.framework/Versions/3.11/bin/python3
@@ -629,12 +625,8 @@ Installing collected packages: ekodb-client
       Successfully uninstalled ekodb_client-0.25.0
 Successfully installed ekodb-client-0.25.0
 
-[notice] A new release of pip is available: 26.1.2 -> 26.2.1
-[notice] To update, run: ekoDB/ekodb-client/.venv/bin/python -m pip install --upgrade pip
 🧪 [36mEnsuring test dependencies (pytest) in .venv...[0m
 
-[notice] A new release of pip is available: 26.1.2 -> 26.2.1
-[notice] To update, run: ekoDB/ekodb-client/.venv/bin/python -m pip install --upgrade pip
 ✅ [32mPython client package built and installed![0m
 🧪 [36mRunning Python client library examples...[0m
 ✓ Client created (token exchange happens automatically)
