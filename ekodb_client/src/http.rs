@@ -3670,11 +3670,8 @@ impl HttpClient {
             .json(&body)
             .send()
             .await?;
-        self.handle_response(
-            "/api/kv/{key}/links/{collection}/{document_id}",
-            response,
-        )
-        .await
+        self.handle_response("/api/kv/{key}/links/{collection}/{document_id}", response)
+            .await
     }
 
     pub async fn kv_unlink(
@@ -3692,11 +3689,8 @@ impl HttpClient {
             .header("Authorization", format!("Bearer {}", token))
             .send()
             .await?;
-        self.handle_response(
-            "/api/kv/{key}/links/{collection}/{document_id}",
-            response,
-        )
-        .await
+        self.handle_response("/api/kv/{key}/links/{collection}/{document_id}", response)
+            .await
     }
 
     // ── Schedule Management ─────────────────────────────────────────────────

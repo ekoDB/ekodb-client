@@ -3,6 +3,7 @@ package io.ekodb.client
 import io.ktor.client.*
 import io.ktor.client.engine.mock.*
 import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.client.request.HttpRequestData
 import io.ktor.http.*
 import io.ktor.http.content.TextContent
 import io.ktor.serialization.kotlinx.json.*
@@ -14,6 +15,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.test.fail
 
@@ -46,6 +48,36 @@ class EkoDBClientTest {
             }
         }
     }
+
+    /**
+     * Like [createMockEngine], but records every non-token request so a test can
+     * assert what was actually SENT.
+     *
+     * This exists because response-only assertions let three KV-linking methods
+     * ship pointing at routes that do not exist — every test passed while every
+     * call 404'd, since a mocked response says nothing about the URL requested.
+     */
+    private fun capturingMockEngine(
+        recorded: MutableList<HttpRequestData>,
+        responseBody: String,
+        statusCode: HttpStatusCode = HttpStatusCode.OK,
+    ): MockEngine =
+        MockEngine { request ->
+            if (request.url.encodedPath.contains("/api/auth/token")) {
+                respond(
+                    content = """{"token": "mock_jwt_token_123"}""",
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+                )
+            } else {
+                recorded.add(request)
+                respond(
+                    content = responseBody,
+                    status = statusCode,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+                )
+            }
+        }
 
     // Helper to create test client with mock engine
     private fun createTestClient(mockEngine: MockEngine): EkoDBClient {
@@ -1766,6 +1798,64 @@ class EkoDBClientTest {
         val result = client.kvUnlink("user:123", "orders", "ord_1")
         assertNotNull(result)
         assertEquals("unlinked", result["status"]?.jsonPrimitive?.content)
+    }
+
+    @Test
+    fun `kv link methods target the documented routes and verbs`() = runBlocking {
+        val recorded = mutableListOf<HttpRequestData>()
+
+        var client = createTestClient(capturingMockEngine(recorded, """{"links": []}"""))
+        client.kvGetLinks("user:123")
+        assertEquals("/api/kv/user:123/links", recorded.last().url.encodedPath)
+        assertEquals(HttpMethod.Get, recorded.last().method)
+
+        client = createTestClient(capturingMockEngine(recorded, """{"status": "linked"}"""))
+        client.kvLink("user:123", "orders", "ord_1")
+        // The identifying triple belongs in the PATH, not the body.
+        assertEquals("/api/kv/user:123/links/orders/ord_1", recorded.last().url.encodedPath)
+        assertEquals(HttpMethod.Post, recorded.last().method)
+
+        client = createTestClient(capturingMockEngine(recorded, """{"status": "unlinked"}"""))
+        client.kvUnlink("user:123", "orders", "ord_1")
+        assertEquals("/api/kv/user:123/links/orders/ord_1", recorded.last().url.encodedPath)
+        // DELETE, not POST — the previous implementation used POST and 404'd.
+        assertEquals(HttpMethod.Delete, recorded.last().method)
+    }
+
+    @Test
+    fun `kvSetWithTtl sends ttl in the body, not the query string`() = runBlocking {
+        val recorded = mutableListOf<HttpRequestData>()
+        val client = createTestClient(capturingMockEngine(recorded, """{"status": "ok"}"""))
+
+        client.kvSetWithTtl("session:abc", JsonPrimitive("v"), "30s")
+
+        val sent = recorded.last()
+        // As a query parameter this was silently ignored: the route has no
+        // query filter, so the key took the configured default TTL instead.
+        assertNull(sent.url.parameters["ttl"])
+        val body = (sent.body as TextContent).text
+        assertTrue(body.contains("\"ttl\""), "ttl must travel in the body: $body")
+        assertTrue(body.contains("30s"), "ttl value must survive: $body")
+    }
+
+    @Test
+    fun `pause and resume update the enabled flag instead of calling absent routes`() = runBlocking {
+        val recorded = mutableListOf<HttpRequestData>()
+
+        var client = createTestClient(capturingMockEngine(recorded, """{"id": "sched_1"}"""))
+        client.pauseSchedule("sched_1")
+        var sent = recorded.last()
+        // There is no /pause route; pausing is a partial update.
+        assertEquals("/api/schedules/sched_1", sent.url.encodedPath)
+        assertEquals(HttpMethod.Put, sent.method)
+        assertTrue((sent.body as TextContent).text.contains("\"enabled\":false"))
+
+        client = createTestClient(capturingMockEngine(recorded, """{"id": "sched_1"}"""))
+        client.resumeSchedule("sched_1")
+        sent = recorded.last()
+        assertEquals("/api/schedules/sched_1", sent.url.encodedPath)
+        assertEquals(HttpMethod.Put, sent.method)
+        assertTrue((sent.body as TextContent).text.contains("\"enabled\":true"))
     }
 
     // ========================================================================

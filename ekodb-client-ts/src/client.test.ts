@@ -3050,6 +3050,15 @@ describe("EkoDBClient kv links", () => {
 
     const result = await client.kvGetLinks("session:user123");
     expect(result).toHaveProperty("links");
+
+    // Assert the REQUEST, not just the mocked response. These three methods
+    // shipped pointing at routes that do not exist, and every one of these
+    // tests passed the whole time, because a mocked response says nothing
+    // about the URL the client actually asked for.
+    const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+    const dataCall = calls[1]; // calls[0] is the token exchange
+    expect(dataCall[0]).toContain("/api/kv/session%3Auser123/links");
+    expect(dataCall[1]?.method).toBe("GET");
   });
 
   it("links a document to a KV key", async () => {
@@ -3059,6 +3068,32 @@ describe("EkoDBClient kv links", () => {
 
     const result = await client.kvLink("session:user123", "users", "user_1");
     expect(result).toHaveProperty("status", "linked");
+
+    const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+    const dataCall = calls[1];
+    // The identifying triple belongs in the PATH, not the body.
+    expect(dataCall[0]).toContain(
+      "/api/kv/session%3Auser123/links/users/user_1",
+    );
+    expect(dataCall[1]?.method).toBe("POST");
+  });
+
+  it("passes optional link data in the body", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+    mockJsonResponse({ status: "linked" });
+
+    await client.kvLink("session:user123", "users", "user_1", {
+      field_path: "profile.avatar",
+      metadata: { source: "signup" },
+    });
+
+    const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+    const body = JSON.parse(calls[1][1]?.body as string);
+    expect(body).toEqual({
+      field_path: "profile.avatar",
+      metadata: { source: "signup" },
+    });
   });
 
   it("unlinks a document from a KV key", async () => {
@@ -3068,6 +3103,14 @@ describe("EkoDBClient kv links", () => {
 
     const result = await client.kvUnlink("session:user123", "users", "user_1");
     expect(result).toHaveProperty("status", "unlinked");
+
+    const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+    const dataCall = calls[1];
+    expect(dataCall[0]).toContain(
+      "/api/kv/session%3Auser123/links/users/user_1",
+    );
+    // DELETE, not POST — the previous implementation used POST and 404'd.
+    expect(dataCall[1]?.method).toBe("DELETE");
   });
 });
 
@@ -3093,7 +3136,7 @@ describe("EkoDBClient text and hybrid search", () => {
         },
       ],
       total: 2,
-      took_ms: 12,
+      execution_time_ms: 12,
     });
 
     const result = await client.textSearch("documents", "ownership", {
@@ -3118,7 +3161,7 @@ describe("EkoDBClient text and hybrid search", () => {
         },
       ],
       total: 1,
-      took_ms: 25,
+      execution_time_ms: 25,
     });
 
     const queryVector = [0.1, 0.2, 0.3, 0.4, 0.5];
