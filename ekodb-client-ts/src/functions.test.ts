@@ -722,4 +722,58 @@ describe("Crypto and concurrency stages", () => {
       expect(wire.type).toBe(s.type);
     }
   });
+
+  describe("filter/sort/limit/skip emit Query stages", () => {
+    // These four used to emit { type: "Filter" | "Sort" | "Limit" | "Skip" },
+    // none of which the server has a variant for. Because a function's stage
+    // array deserializes as a unit, a single one of them rejected the ENTIRE
+    // function. They are shorthands for a Query carrying that one field.
+
+    it("filter emits a Query with only the filter set", () => {
+      const wire = JSON.parse(
+        JSON.stringify(Stage.filter("users", { status: "active" })),
+      );
+      expect(wire.type).toBe("Query");
+      expect(wire.collection).toBe("users");
+      expect(wire.filter).toEqual({ status: "active" });
+    });
+
+    it("sort emits a Query with only the sort set", () => {
+      const wire = JSON.parse(
+        JSON.stringify(
+          Stage.sort("users", [{ field: "created_at", ascending: false }]),
+        ),
+      );
+      expect(wire.type).toBe("Query");
+      expect(wire.collection).toBe("users");
+      expect(wire.sort).toEqual([{ field: "created_at", ascending: false }]);
+    });
+
+    it("limit emits a Query with only the limit set", () => {
+      const wire = JSON.parse(JSON.stringify(Stage.limit("users", 10)));
+      expect(wire.type).toBe("Query");
+      expect(wire.collection).toBe("users");
+      expect(wire.limit).toBe(10);
+    });
+
+    it("skip emits a Query with only the skip set", () => {
+      const wire = JSON.parse(JSON.stringify(Stage.skip("users", 5)));
+      expect(wire.type).toBe("Query");
+      expect(wire.collection).toBe("users");
+      expect(wire.skip).toBe(5);
+    });
+
+    it("never emits a stage type the server has no variant for", () => {
+      const wire = [
+        Stage.filter("users", {}),
+        Stage.sort("users", []),
+        Stage.limit("users", 1),
+        Stage.skip("users", 1),
+      ].map((s) => JSON.parse(JSON.stringify(s)).type);
+      expect(wire).not.toContain("Filter");
+      expect(wire).not.toContain("Sort");
+      expect(wire).not.toContain("Limit");
+      expect(wire).not.toContain("Skip");
+    });
+  });
 });

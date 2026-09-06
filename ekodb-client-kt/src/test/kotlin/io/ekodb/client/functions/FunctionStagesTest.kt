@@ -7,6 +7,7 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import kotlin.test.Test
 import kotlin.test.assertContains
@@ -32,6 +33,48 @@ class FunctionStagesTest {
     // ------------------------------------------------------------------
     // parameterRef()
     // ------------------------------------------------------------------
+
+    // ------------------------------------------------------------------
+    // filter / sort / limit / skip -> Query
+    // ------------------------------------------------------------------
+
+    @Test
+    fun `filter sort limit and skip serialize as Query stages`() {
+        val stages = listOf(
+            FunctionStageConfig.filter("users", buildJsonObject { put("status", "active") }),
+            FunctionStageConfig.sort("users", listOf(buildJsonObject { put("field", "created_at") })),
+            FunctionStageConfig.limit("users", 10),
+            FunctionStageConfig.skip("users", 5),
+        )
+
+        for (stage in stages) {
+            val wire = json.encodeToString(FunctionStageConfig.serializer(), stage).let {
+                Json.parseToJsonElement(it).jsonObject
+            }
+            // The server has no Filter/Sort/Limit/Skip variant. Emitting one
+            // rejected the ENTIRE function, because a function's stage array
+            // deserializes as a unit.
+            assertEquals("Query", wire["type"]?.jsonPrimitive?.content)
+            assertEquals("users", wire["collection"]?.jsonPrimitive?.content)
+        }
+    }
+
+    @Test
+    fun `each shorthand carries only its own field`() {
+        fun wireOf(stage: FunctionStageConfig): JsonObject =
+            Json.parseToJsonElement(
+                json.encodeToString(FunctionStageConfig.serializer(), stage),
+            ).jsonObject
+
+        val filtered = wireOf(FunctionStageConfig.filter("users", buildJsonObject { put("a", 1) }))
+        assertNotNull(filtered["filter"])
+
+        val limited = wireOf(FunctionStageConfig.limit("users", 10))
+        assertEquals(10, limited["limit"]?.jsonPrimitive?.content?.toInt())
+
+        val skipped = wireOf(FunctionStageConfig.skip("users", 5))
+        assertEquals(5, skipped["skip"]?.jsonPrimitive?.content?.toInt())
+    }
 
     @Test
     fun `parameterRef produces structural placeholder shape`() {
