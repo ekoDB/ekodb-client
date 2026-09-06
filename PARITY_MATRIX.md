@@ -324,9 +324,9 @@ creating relationships between KV cache data and persistent documents.
 ### Server Endpoints
 
 ```
-GET  /api/kv/links/{key}                        - Get all linked documents for key
-POST /api/kv/link                               - Create link between key and document
-POST /api/kv/unlink                             - Remove link between key and document
+GET    /api/kv/{key}/links                                  - Get all linked documents for key
+POST   /api/kv/{key}/links/{collection}/{document_id}      - Create link (optional body: keys/field_path/metadata)
+DELETE /api/kv/{key}/links/{collection}/{document_id}      - Remove link
 ```
 
 ### Missing Client Methods
@@ -395,8 +395,14 @@ GET    /api/schedules                           - List all schedules
 GET    /api/schedules/{id}                      - Get schedule details
 PUT    /api/schedules/{id}                      - Update schedule
 DELETE /api/schedules/{id}                      - Delete schedule
-POST   /api/schedules/{id}/pause                - Pause schedule
-POST   /api/schedules/{id}/resume               - Resume schedule
+POST   /api/schedules/{id}/trigger              - Run a schedule now
+GET    /api/schedules/stats                     - Schedule execution stats
+
+NOTE: there is no /pause or /resume endpoint. Pause and resume are a partial
+update - PUT /api/schedules/{id} with {"enabled": false|true} - which is what
+the client pauseSchedule/resumeSchedule helpers do. This file previously listed
+POST .../pause and .../resume, and every client implemented them literally; all
+of them 404'd. Keep this table matched to the server's actual route table.
 ```
 
 ### Missing Client Methods

@@ -3021,6 +3021,16 @@ describe("EkoDBClient schedules", () => {
 
     const result = await client.pauseSchedule("sched_1");
     expect(result).toHaveProperty("status", "paused");
+
+    // Assert the REQUEST. There is no /pause route; pausing is a partial
+    // update of `enabled`. A response-only assertion passed for as long as
+    // this method POSTed to a route that does not exist.
+    const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+    const dataCall = calls[1]; // calls[0] is the token exchange
+    expect(dataCall[0]).toContain("/api/schedules/sched_1");
+    expect(dataCall[0]).not.toContain("/pause");
+    expect(dataCall[1]?.method).toBe("PUT");
+    expect(JSON.parse(dataCall[1]?.body as string)).toEqual({ enabled: false });
   });
 
   it("resumes a schedule", async () => {
@@ -3030,6 +3040,13 @@ describe("EkoDBClient schedules", () => {
 
     const result = await client.resumeSchedule("sched_1");
     expect(result).toHaveProperty("status", "active");
+
+    const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+    const dataCall = calls[1];
+    expect(dataCall[0]).toContain("/api/schedules/sched_1");
+    expect(dataCall[0]).not.toContain("/resume");
+    expect(dataCall[1]?.method).toBe("PUT");
+    expect(JSON.parse(dataCall[1]?.body as string)).toEqual({ enabled: true });
   });
 });
 

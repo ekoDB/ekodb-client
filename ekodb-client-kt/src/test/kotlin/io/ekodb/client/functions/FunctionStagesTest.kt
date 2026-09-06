@@ -42,7 +42,7 @@ class FunctionStagesTest {
     fun `filter sort limit and skip serialize as Query stages`() {
         val stages = listOf(
             FunctionStageConfig.filter("users", buildJsonObject { put("status", "active") }),
-            FunctionStageConfig.sort("users", listOf(buildJsonObject { put("field", "created_at") })),
+            FunctionStageConfig.sort("users", listOf(SortFieldConfig("created_at", ascending = false))),
             FunctionStageConfig.limit("users", 10),
             FunctionStageConfig.skip("users", 5),
         )

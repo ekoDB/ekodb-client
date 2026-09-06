@@ -3332,23 +3332,38 @@ export class EkoDBClient {
     );
   }
 
-  /** Pause a schedule */
+  /**
+   * Pause a schedule.
+   *
+   * There is no `/pause` endpoint — pausing is a partial update of the
+   * schedule's `enabled` flag. This previously POSTed to
+   * `/api/schedules/{id}/pause`, which has never existed and always 404'd.
+   */
   async pauseSchedule(id: string): Promise<Record> {
-    return this.makeRequest<Record>(
-      "POST",
-      `/api/schedules/${encodeURIComponent(id)}/pause`,
-      undefined,
-      0,
-      true,
-    );
+    return this.setScheduleEnabled(id, false);
   }
 
-  /** Resume a schedule */
+  /**
+   * Resume a paused schedule. See {@link pauseSchedule} for why this is an
+   * update rather than its own endpoint.
+   */
   async resumeSchedule(id: string): Promise<Record> {
+    return this.setScheduleEnabled(id, true);
+  }
+
+  /**
+   * Shared implementation for pause/resume: a partial update carrying only
+   * `enabled`. The server recomputes the next execution time when `enabled`
+   * changes, so nothing else needs sending.
+   */
+  private async setScheduleEnabled(
+    id: string,
+    enabled: boolean,
+  ): Promise<Record> {
     return this.makeRequest<Record>(
-      "POST",
-      `/api/schedules/${encodeURIComponent(id)}/resume`,
-      undefined,
+      "PUT",
+      `/api/schedules/${encodeURIComponent(id)}`,
+      { enabled },
       0,
       true,
     );

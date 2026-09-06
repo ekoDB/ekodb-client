@@ -4,6 +4,7 @@ import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonClassDiscriminator
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -78,9 +79,18 @@ sealed class FunctionStageConfig {
         fun filter(collection: String, filter: JsonObject): FunctionStageConfig =
             Query(collection = collection, filter = filter)
 
-        /** Sort a collection. Shorthand for a [Query] carrying only `sort`. */
-        fun sort(collection: String, sort: List<JsonObject>): FunctionStageConfig =
-            Query(collection = collection, sort = sort)
+        /**
+         * Sort a collection. Shorthand for a [Query] carrying only `sort`.
+         *
+         * Takes typed [SortFieldConfig] rather than raw JSON so `ascending`
+         * cannot be omitted — the server requires it, and a bare
+         * `{"field": "..."}` is rejected, taking the whole function with it.
+         */
+        fun sort(collection: String, sort: List<SortFieldConfig>): FunctionStageConfig =
+            Query(
+                collection = collection,
+                sort = sort.map { Json.encodeToJsonElement(SortFieldConfig.serializer(), it).jsonObject },
+            )
 
         /** Limit a collection read. Shorthand for a [Query] with only `limit`. */
         fun limit(collection: String, limit: Int): FunctionStageConfig =
