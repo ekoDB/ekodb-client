@@ -325,7 +325,7 @@ creating relationships between KV cache data and persistent documents.
 
 ```
 GET    /api/kv/{key}/links                                  - Get all linked documents for key
-POST   /api/kv/{key}/links/{collection}/{document_id}      - Create link (optional body: keys/field_path/metadata)
+POST   /api/kv/{key}/links/{collection}/{document_id}      - Create link. A body MUST be sent; its fields (keys/field_path/metadata) are all optional, so `{}` is valid
 DELETE /api/kv/{key}/links/{collection}/{document_id}      - Remove link
 ```
 

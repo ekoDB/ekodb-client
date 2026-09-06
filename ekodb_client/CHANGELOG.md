@@ -39,8 +39,12 @@ and this project adheres to
   build a `Query` stage.** They previously emitted `Filter` / `Sort` / `Limit`
   / `Skip`, none of which the server has a variant for; because a function's
   stage array deserializes as a unit, one such stage rejected the **entire**
-  function. Nothing was removed — all four names remain and now produce a
-  stage the server accepts. Callers add the collection as the first argument.
+  function. No stage NAME was removed — all four remain and now produce a stage
+  the server accepts, and callers add the collection as the first argument. The
+  underlying TYPES did change: Kotlin's `FunctionStageConfig.Filter`/`Sort`/
+  `Limit`/`Skip` sealed subclasses and the TypeScript union members are gone, so
+  `FunctionStageConfig.Filter(...)` and an exhaustive `when` over them no longer
+  compile.
 
   In Kotlin these moved from sealed subclasses to companion factories
   (`FunctionStageConfig.filter(collection, json)`), because kotlinx rejects two
