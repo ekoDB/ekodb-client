@@ -109,9 +109,9 @@ and this project adheres to
   TypeScript kept reading the body until the server closed it — a proxy holding
   the connection open after an error would have hung the caller, and any frame
   sent after the error was surfaced — and Kotlin kept iterating the frames it
-  had already read. TypeScript now cancels the body reader and closes the
-  stream as soon as the error frame is emitted; Kotlin returns from the flow.
-  Nothing after an error reaches the consumer in any of the four clients.
+  had already read. TypeScript now cancels the body reader and closes the stream
+  as soon as the error frame is emitted; Kotlin returns from the flow. Nothing
+  after an error reaches the consumer in any of the four clients.
 - **Error responses are no longer assumed to carry a JSON body.** Non-success
   responses were decoded with `response.json()`, which expects an
   `ErrorResponse` envelope. Warp renders some rejections with an empty body, and
@@ -137,7 +137,6 @@ and this project adheres to
   flagged URL is `base_url` plus path segments and never carries the API key,
   which CodeQL taints onto the whole `ClientBuilder` and therefore onto
   `base_url`. It is dismissed with that rationale rather than worked around.
-
 
 ## [0.25.0] - 2026-07-14
 
