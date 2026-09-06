@@ -57,6 +57,40 @@ fun parameterRef(name: String): JsonObject = buildJsonObject {
 @Serializable
 @JsonClassDiscriminator("type")
 sealed class FunctionStageConfig {
+    companion object {
+        /**
+         * Filter a collection.
+         *
+         * Shorthand for a [Query] carrying only `filter`. There is no separate
+         * `Filter` stage server-side — filtering, sorting, limiting and
+         * skipping are all fields on `Query`.
+         *
+         * This replaces a `Filter` subclass that serialized as
+         * `{"type":"Filter"}`, which the server has no variant for. Because a
+         * function's stage array deserializes as a unit, one such stage
+         * rejected the ENTIRE function. It could not simply be retagged
+         * `@SerialName("Query")`, since two subclasses of one sealed hierarchy
+         * cannot share a serial name — hence a factory rather than a class.
+         *
+         * Use [Query] directly when you need more than one of these at once;
+         * it takes them together and produces a single stage.
+         */
+        fun filter(collection: String, filter: JsonObject): FunctionStageConfig =
+            Query(collection = collection, filter = filter)
+
+        /** Sort a collection. Shorthand for a [Query] carrying only `sort`. */
+        fun sort(collection: String, sort: List<JsonObject>): FunctionStageConfig =
+            Query(collection = collection, sort = sort)
+
+        /** Limit a collection read. Shorthand for a [Query] with only `limit`. */
+        fun limit(collection: String, limit: Int): FunctionStageConfig =
+            Query(collection = collection, limit = limit)
+
+        /** Skip rows of a collection read. Shorthand for a [Query] with only `skip`. */
+        fun skip(collection: String, skip: Int): FunctionStageConfig =
+            Query(collection = collection, skip = skip)
+    }
+
     @Serializable
     @SerialName("FindAll")
     data class FindAll(
@@ -152,30 +186,6 @@ sealed class FunctionStageConfig {
         val collection: String,
         val record_ids: List<String>,
         @EncodeDefault val bypass_ripple: Boolean = false
-    ) : FunctionStageConfig()
-
-    @Serializable
-    @SerialName("Filter")
-    data class Filter(
-        val filter: JsonObject
-    ) : FunctionStageConfig()
-
-    @Serializable
-    @SerialName("Sort")
-    data class Sort(
-        val sort: List<SortFieldConfig>
-    ) : FunctionStageConfig()
-
-    @Serializable
-    @SerialName("Limit")
-    data class Limit(
-        val limit: Int
-    ) : FunctionStageConfig()
-
-    @Serializable
-    @SerialName("Skip")
-    data class Skip(
-        val skip: Int
     ) : FunctionStageConfig()
 
     @Serializable

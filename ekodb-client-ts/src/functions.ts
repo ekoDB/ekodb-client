@@ -55,10 +55,6 @@ export type FunctionStageConfig =
       functions: GroupFunctionConfig[];
     }
   | { type: "Count"; output_field: string }
-  | { type: "Filter"; filter: Record<string, any> }
-  | { type: "Sort"; sort: SortFieldConfig[] }
-  | { type: "Limit"; limit: number }
-  | { type: "Skip"; skip: number }
   | {
       type: "Insert";
       collection: string;
@@ -742,23 +738,48 @@ export const Stage = {
     bypass_ripple: bypassRipple,
   }),
 
-  filter: (filter: Record<string, any>): FunctionStageConfig => ({
-    type: "Filter",
+  /**
+   * Filter a collection.
+   *
+   * Shorthand for a `Query` stage carrying only `filter`. There is no separate
+   * `Filter` stage server-side — filtering, sorting, limiting and skipping are
+   * all fields on `Query`. This previously emitted `{ type: "Filter" }`, which
+   * the server has no variant for; because a function's stage array
+   * deserializes as a unit, one such stage rejected the ENTIRE function.
+   *
+   * Use {@link Stage.query} when you need more than one of these at once — it
+   * takes them together and produces a single stage.
+   */
+  filter: (
+    collection: string,
+    filter: Record<string, any>,
+  ): FunctionStageConfig => ({
+    type: "Query",
+    collection,
     filter,
   }),
 
-  sort: (sort: SortFieldConfig[]): FunctionStageConfig => ({
-    type: "Sort",
+  /** Sort a collection. Shorthand for a `Query` carrying only `sort`. */
+  sort: (
+    collection: string,
+    sort: SortFieldConfig[],
+  ): FunctionStageConfig => ({
+    type: "Query",
+    collection,
     sort,
   }),
 
-  limit: (limit: number): FunctionStageConfig => ({
-    type: "Limit",
+  /** Limit a collection read. Shorthand for a `Query` carrying only `limit`. */
+  limit: (collection: string, limit: number): FunctionStageConfig => ({
+    type: "Query",
+    collection,
     limit,
   }),
 
-  skip: (skip: number): FunctionStageConfig => ({
-    type: "Skip",
+  /** Skip rows of a collection read. Shorthand for a `Query` with only `skip`. */
+  skip: (collection: string, skip: number): FunctionStageConfig => ({
+    type: "Query",
+    collection,
     skip,
   }),
 
