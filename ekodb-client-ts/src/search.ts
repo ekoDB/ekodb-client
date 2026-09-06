@@ -90,7 +90,7 @@ export interface SearchResponse {
   /** Total number of results found */
   total: number;
   /** Query execution time in milliseconds */
-  took_ms?: number;
+  execution_time_ms?: number;
 }
 
 /**

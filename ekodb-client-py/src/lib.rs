@@ -4,7 +4,8 @@
 
 use ekodb_client::{
     Attachment, ChatMessageRequest, ChatResponse, Client as RustClient, CollectionConfig,
-    CreateChatSessionRequest, DistinctValuesQuery as RustDistinctValuesQuery, FieldType,
+    CreateChatSessionRequest, DistinctValuesQuery as RustDistinctValuesQuery, FieldSearchOptions,
+    FieldType,
     GetMessagesQuery, GetMessagesResponse, ListSessionsQuery, ListSessionsResponse,
     Query as RustQuery, RateLimitInfo as RustRateLimitInfo,
     RawCompletionRequest as RustRawCompletionRequest, Record as RustRecord,
@@ -2011,9 +2012,19 @@ impl Client {
         future_into_py(py, async move {
             let collection_configs: Vec<CollectionConfig> = collections
                 .into_iter()
-                .map(|(name, _fields)| CollectionConfig {
+                .map(|(name, fields)| CollectionConfig {
                     collection_name: name,
-                    fields: vec![],
+                    // Carry the caller's per-collection field list through.
+                    // This used to discard it (`_fields` + `vec![]`), so
+                    // field-scoped retrieval silently never ran while the API
+                    // still accepted the argument.
+                    fields: fields
+                        .into_iter()
+                        .map(|field| FieldSearchOptions {
+                            field,
+                            search_options: None,
+                        })
+                        .collect(),
                     search_options: None,
                 })
                 .collect();
@@ -2305,9 +2316,19 @@ impl Client {
         future_into_py(py, async move {
             let collection_configs: Vec<CollectionConfig> = collections
                 .into_iter()
-                .map(|(name, _fields)| CollectionConfig {
+                .map(|(name, fields)| CollectionConfig {
                     collection_name: name,
-                    fields: vec![],
+                    // Carry the caller's per-collection field list through.
+                    // This used to discard it (`_fields` + `vec![]`), so
+                    // field-scoped retrieval silently never ran while the API
+                    // still accepted the argument.
+                    fields: fields
+                        .into_iter()
+                        .map(|field| FieldSearchOptions {
+                            field,
+                            search_options: None,
+                        })
+                        .collect(),
                     search_options: None,
                 })
                 .collect();

@@ -150,6 +150,10 @@ pub struct CollectionConfig {
 /// Field-specific search options
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FieldSearchOptions {
+    /// Serialized as `field_name`, which is what the server requires. The Rust
+    /// field keeps the shorter name for ergonomics; before this rename the
+    /// wire form was `field` and any non-empty `fields` list was rejected.
+    #[serde(rename = "field_name")]
     pub field: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub search_options: Option<TextSearchOptions>,
