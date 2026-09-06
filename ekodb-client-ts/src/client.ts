@@ -782,11 +782,11 @@ export class EkoDBClient {
     // ONLY these operations support MessagePack
     const msgpackPaths = [
       "/api/insert/",
-      "/api/batch_insert/",
+      "/api/batch/insert/",
       "/api/update/",
-      "/api/batch_update/",
+      "/api/batch/update/",
       "/api/delete/",
-      "/api/batch_delete/",
+      "/api/batch/delete/",
     ];
 
     // Check if path starts with any MessagePack-supported operation
@@ -3231,38 +3231,49 @@ export class EkoDBClient {
   async kvGetLinks(key: string): Promise<Record> {
     return this.makeRequest<Record>(
       "GET",
-      `/api/kv/links/${encodeURIComponent(key)}`,
+      `/api/kv/${encodeURIComponent(key)}/links`,
       undefined,
       0,
       true,
     );
   }
 
-  /** Link a document to a KV key */
+  /**
+   * Link a document to a KV key.
+   *
+   * The identifying triple goes in the path; the body carries the optional
+   * link payload (`keys`, `field_path`, `metadata`), and an empty object means
+   * "no extra link data".
+   */
   async kvLink(
     key: string,
     collection: string,
     documentId: string,
+    linkData: {
+      keys?: string[];
+      field_path?: string;
+      metadata?: { [key: string]: string };
+    } = {},
   ): Promise<Record> {
     return this.makeRequest<Record>(
       "POST",
-      `/api/kv/link`,
-      { key, collection, document_id: documentId },
+      `/api/kv/${encodeURIComponent(key)}/links/${encodeURIComponent(collection)}/${encodeURIComponent(documentId)}`,
+      linkData,
       0,
       true,
     );
   }
 
-  /** Unlink a document from a KV key */
+  /** Unlink a document from a KV key. DELETE, with the triple in the path. */
   async kvUnlink(
     key: string,
     collection: string,
     documentId: string,
   ): Promise<Record> {
     return this.makeRequest<Record>(
-      "POST",
-      `/api/kv/unlink`,
-      { key, collection, document_id: documentId },
+      "DELETE",
+      `/api/kv/${encodeURIComponent(key)}/links/${encodeURIComponent(collection)}/${encodeURIComponent(documentId)}`,
+      undefined,
       0,
       true,
     );

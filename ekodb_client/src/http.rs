@@ -3641,14 +3641,14 @@ impl HttpClient {
     // ── KV Document Linking ─────────────────────────────────────────────────
 
     pub async fn kv_get_links(&self, key: &str, token: &str) -> Result<serde_json::Value> {
-        let url = self.api_path_url(&["kv", "links", key])?;
+        let url = self.api_path_url(&["kv", key, "links"])?;
         let response = self
             .client
             .get(url)
             .header("Authorization", format!("Bearer {}", token))
             .send()
             .await?;
-        self.handle_response("/api/kv/links/{key}", response).await
+        self.handle_response("/api/kv/{key}/links", response).await
     }
 
     pub async fn kv_link(
@@ -3658,12 +3658,11 @@ impl HttpClient {
         document_id: &str,
         token: &str,
     ) -> Result<serde_json::Value> {
-        let url = self.base_url.join("/api/kv/link")?;
-        let body = serde_json::json!({
-            "key": key,
-            "collection": collection,
-            "document_id": document_id,
-        });
+        let url = self.api_path_url(&["kv", key, "links", collection, document_id])?;
+        // The identifying triple lives in the PATH. The body carries the
+        // optional link payload (`keys`, `field_path`, `metadata`); an empty
+        // object is valid and means "no extra link data".
+        let body = serde_json::json!({});
         let response = self
             .client
             .post(url)
@@ -3671,7 +3670,11 @@ impl HttpClient {
             .json(&body)
             .send()
             .await?;
-        self.handle_response("/api/kv/link", response).await
+        self.handle_response(
+            "/api/kv/{key}/links/{collection}/{document_id}",
+            response,
+        )
+        .await
     }
 
     pub async fn kv_unlink(
@@ -3681,20 +3684,19 @@ impl HttpClient {
         document_id: &str,
         token: &str,
     ) -> Result<serde_json::Value> {
-        let url = self.base_url.join("/api/kv/unlink")?;
-        let body = serde_json::json!({
-            "key": key,
-            "collection": collection,
-            "document_id": document_id,
-        });
+        // DELETE, not POST, and the triple is in the path with no body.
+        let url = self.api_path_url(&["kv", key, "links", collection, document_id])?;
         let response = self
             .client
-            .post(url)
+            .delete(url)
             .header("Authorization", format!("Bearer {}", token))
-            .json(&body)
             .send()
             .await?;
-        self.handle_response("/api/kv/unlink", response).await
+        self.handle_response(
+            "/api/kv/{key}/links/{collection}/{document_id}",
+            response,
+        )
+        .await
     }
 
     // ── Schedule Management ─────────────────────────────────────────────────
@@ -3767,28 +3769,39 @@ impl HttpClient {
         Ok(())
     }
 
+    /// Pause a schedule.
+    ///
+    /// There is no `/pause` endpoint — pausing is expressed by updating the
+    /// schedule's `enabled` flag. This previously POSTed to
+    /// `/api/schedules/{id}/pause`, which has never existed and always 404'd.
     pub async fn pause_schedule(&self, id: &str, token: &str) -> Result<serde_json::Value> {
-        let url = self.api_path_url(&["schedules", id, "pause"])?;
-        let response = self
-            .client
-            .post(url)
-            .header("Authorization", format!("Bearer {}", token))
-            .send()
-            .await?;
-        self.handle_response("/api/schedules/{id}/pause", response)
-            .await
+        self.set_schedule_enabled(id, false, token).await
     }
 
+    /// Resume a paused schedule. See [`Self::pause_schedule`] for why this is
+    /// an update rather than its own endpoint.
     pub async fn resume_schedule(&self, id: &str, token: &str) -> Result<serde_json::Value> {
-        let url = self.api_path_url(&["schedules", id, "resume"])?;
+        self.set_schedule_enabled(id, true, token).await
+    }
+
+    /// Shared implementation for pause/resume: a partial update carrying only
+    /// `enabled`. The server recomputes `next_execution` when `enabled`
+    /// changes, so no other field needs sending.
+    async fn set_schedule_enabled(
+        &self,
+        id: &str,
+        enabled: bool,
+        token: &str,
+    ) -> Result<serde_json::Value> {
+        let url = self.api_path_url(&["schedules", id])?;
         let response = self
             .client
-            .post(url)
+            .put(url)
             .header("Authorization", format!("Bearer {}", token))
+            .json(&serde_json::json!({ "enabled": enabled }))
             .send()
             .await?;
-        self.handle_response("/api/schedules/{id}/resume", response)
-            .await
+        self.handle_response("/api/schedules/{id}", response).await
     }
 }
 
