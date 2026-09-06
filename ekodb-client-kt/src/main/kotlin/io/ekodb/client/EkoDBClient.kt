@@ -1352,9 +1352,13 @@ class EkoDBClient private constructor(
                 header("Authorization", "Bearer $token")
                 contentType(getContentTypeForRequest())
                 header("Accept", getContentTypeForRequest().toString())
-                parameter("ttl", ttl)
+                // `ttl` belongs in the BODY. Sent as a query parameter it was
+                // ignored outright: the route has no query filter, so the call
+                // returned 200 and the key silently took the configured
+                // default TTL instead of the one requested.
                 setBody(buildJsonObject {
                     put("value", value)
+                    put("ttl", ttl)
                 })
             }
         }
@@ -3488,7 +3492,7 @@ class EkoDBClient private constructor(
     /** Get documents linked to a KV key */
     suspend fun kvGetLinks(key: String): JsonObject {
         val response = executeWithRetry { token ->
-            client.get("$baseUrl/api/kv/links/${key.encodeURLPathPart()}") {
+            client.get("$baseUrl/api/kv/${key.encodeURLPathPart()}/links") {
                 bearerAuth(token)
             }
         }
@@ -3500,17 +3504,22 @@ class EkoDBClient private constructor(
     }
 
     /** Link a document to a KV key */
-    suspend fun kvLink(key: String, collection: String, documentId: String): JsonObject {
-        val body = buildJsonObject {
-            put("key", key)
-            put("collection", collection)
-            put("document_id", documentId)
-        }
+    suspend fun kvLink(
+        key: String,
+        collection: String,
+        documentId: String,
+        linkData: JsonObject = buildJsonObject { },
+    ): JsonObject {
+        // The identifying triple belongs in the PATH; the body carries the
+        // optional link payload (keys / field_path / metadata).
+        val path =
+            "$baseUrl/api/kv/${key.encodeURLPathPart()}/links/" +
+                "${collection.encodeURLPathPart()}/${documentId.encodeURLPathPart()}"
         val response = executeWithRetry { token ->
-            client.post("$baseUrl/api/kv/link") {
+            client.post(path) {
                 bearerAuth(token)
                 contentType(ContentType.Application.Json)
-                setBody(body)
+                setBody(linkData)
             }
         }
         if (response.status.value >= 400) {
@@ -3522,16 +3531,14 @@ class EkoDBClient private constructor(
 
     /** Unlink a document from a KV key */
     suspend fun kvUnlink(key: String, collection: String, documentId: String): JsonObject {
-        val body = buildJsonObject {
-            put("key", key)
-            put("collection", collection)
-            put("document_id", documentId)
-        }
+        // DELETE, not POST, and no body — the previous POST to /api/kv/unlink
+        // hit a route that does not exist.
+        val path =
+            "$baseUrl/api/kv/${key.encodeURLPathPart()}/links/" +
+                "${collection.encodeURLPathPart()}/${documentId.encodeURLPathPart()}"
         val response = executeWithRetry { token ->
-            client.post("$baseUrl/api/kv/unlink") {
+            client.delete(path) {
                 bearerAuth(token)
-                contentType(ContentType.Application.Json)
-                setBody(body)
             }
         }
         if (response.status.value >= 400) {
@@ -3616,27 +3623,36 @@ class EkoDBClient private constructor(
         }
     }
 
-    /** Pause a schedule */
-    suspend fun pauseSchedule(id: String): JsonObject {
-        val response = executeWithRetry { token ->
-            client.post("$baseUrl/api/schedules/${id.encodeURLPathPart()}/pause") {
-                bearerAuth(token)
-                contentType(ContentType.Application.Json)
-            }
-        }
-        if (response.status.value >= 400) {
-            val errorText = response.bodyAsText()
-            throw IllegalStateException("Server error ${response.status.value}: $errorText")
-        }
-        return response.body<JsonObject>()
-    }
+    /**
+     * Pause a schedule.
+     *
+     * There is no `/pause` endpoint — pausing is a partial update of the
+     * schedule's `enabled` flag. This previously POSTed to
+     * `/api/schedules/{id}/pause`, which has never existed and always 404'd.
+     */
+    suspend fun pauseSchedule(id: String): JsonObject = setScheduleEnabled(id, false)
 
-    /** Resume a schedule */
-    suspend fun resumeSchedule(id: String): JsonObject {
+    /**
+     * Resume a paused schedule. See [pauseSchedule] for why this is an update
+     * rather than its own endpoint.
+     */
+    suspend fun resumeSchedule(id: String): JsonObject = setScheduleEnabled(id, true)
+
+    /**
+     * Shared implementation for pause/resume: a partial update carrying only
+     * `enabled`. The server recomputes the next execution time when `enabled`
+     * changes, so nothing else needs sending.
+     */
+    private suspend fun setScheduleEnabled(id: String, enabled: Boolean): JsonObject {
         val response = executeWithRetry { token ->
-            client.post("$baseUrl/api/schedules/${id.encodeURLPathPart()}/resume") {
+            client.put("$baseUrl/api/schedules/${id.encodeURLPathPart()}") {
                 bearerAuth(token)
                 contentType(ContentType.Application.Json)
+                setBody(
+                    buildJsonObject {
+                        put("enabled", enabled)
+                    },
+                )
             }
         }
         if (response.status.value >= 400) {
