@@ -216,6 +216,30 @@ pub enum FunctionCondition {
     },
     /// Check if field exists in current records
     FieldExists { field: String },
+    /// Field is strictly greater than `value`.
+    ///
+    /// Comparison follows `serde_json::Value` ordering, so it works for
+    /// numbers, strings and ISO-8601 datetimes alike.
+    FieldGreaterThan {
+        field: String,
+        value: serde_json::Value,
+    },
+    /// Field is strictly less than `value`.
+    FieldLessThan {
+        field: String,
+        value: serde_json::Value,
+    },
+    /// Field is greater than or equal to `value` — the inclusive form that
+    /// expresses "stock >= qty" without an awkward `Not(FieldLessThan)`.
+    FieldGreaterThanOrEqual {
+        field: String,
+        value: serde_json::Value,
+    },
+    /// Field is less than or equal to `value`.
+    FieldLessThanOrEqual {
+        field: String,
+        value: serde_json::Value,
+    },
     /// Check if we have any records
     HasRecords,
     /// Check if record count equals N
@@ -358,9 +382,14 @@ pub enum Function {
         bypass_ripple: Option<bool>,
     },
 
-    /// Batch delete records
+    /// Batch delete records.
+    ///
+    /// The server requires `collection` and `record_ids`; this previously sent
+    /// `ids` with no collection at all, so every `BatchDelete` stage was
+    /// rejected before it ran.
     BatchDelete {
-        ids: serde_json::Value,
+        collection: String,
+        record_ids: Vec<String>,
         #[serde(default)]
         bypass_ripple: bool,
     },
