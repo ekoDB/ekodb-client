@@ -6,6 +6,60 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **Client methods that targeted routes the server does not expose.** KV
+  document linking used `GET /api/kv/links/{key}`, `POST /api/kv/link` and
+  `POST /api/kv/unlink`; the server exposes `GET /api/kv/{key}/links`,
+  `POST /api/kv/{key}/links/{collection}/{document_id}` and **`DELETE`** for
+  unlink. The identifying triple belongs in the path; the body carries the
+  optional link payload, which `kv_link` now accepts instead of discarding.
+  Schedule pause and resume POSTed to `/api/schedules/{id}/pause` and
+  `/resume`, which have never existed — both are now a partial update,
+  `PUT /api/schedules/{id}` with `{"enabled": bool}`, which the server already
+  uses to recompute the next execution time. Every one of these calls 404'd,
+  in every language, while their tests passed.
+
+- **Field names the server rejects.** `BatchDelete` sent `ids` and no
+  collection where the server requires `collection` and `record_ids`.
+  `FieldSearchOptions` serialized `field` where the server requires
+  `field_name`, so any non-empty per-collection field list was refused.
+
+- **`FunctionCondition` was missing all four comparison variants**
+  (`FieldGreaterThan`, `FieldLessThan`, and the two `OrEqual` forms). Numeric
+  and datetime gates were unexpressible, and reading back a function that used
+  one failed to deserialize — so get/edit/update threw on any function
+  authored through another surface.
+
+### Changed
+
+- **BREAKING — `filter`, `sort`, `limit` and `skip` now take a collection and
+  build a `Query` stage.** They previously emitted `Filter` / `Sort` / `Limit`
+  / `Skip`, none of which the server has a variant for; because a function's
+  stage array deserializes as a unit, one such stage rejected the **entire**
+  function. Nothing was removed — all four names remain and now produce a
+  stage the server accepts. Callers add the collection as the first argument.
+
+  In Kotlin these moved from sealed subclasses to companion factories
+  (`FunctionStageConfig.filter(collection, json)`), because kotlinx rejects two
+  subclasses of one sealed hierarchy sharing a serial name and they could not
+  be retagged `Query` while `Query` exists. `sort` takes typed
+  `SortFieldConfig` so `ascending`, which the server requires, cannot be
+  omitted.
+
+- **BREAKING — `kv_link` gained an optional link-payload argument.**
+
+### Notes
+
+Fixed alongside a dependency integration; see the PR for the verification
+matrix. None of these fixes has been exercised against a running server — they
+are verified against the server's route definitions and body structs, and the
+tests assert the request the client emits. A contract test that drives a real
+client against a real server is what would have caught this class in the first
+place, and remains outstanding.
+
 ## [0.26.0] - 2026-09-04
 
 ### Added
