@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.26.2] - 2026-09-08
+
+### Changed
+
+- **Coordinated client patch release.** Align the Rust, Python, TypeScript, and
+  Kotlin client manifests and lockfiles on version `0.26.2` after the Kotlin
+  typed-search and cross-client wire-parity work from #208. The Go client’s
+  corresponding search metadata follow-up is tracked in the separate
+  `ekodb-client-go` repository.
+
 ## [0.26.1] - 2026-09-07
 
 ### Added
