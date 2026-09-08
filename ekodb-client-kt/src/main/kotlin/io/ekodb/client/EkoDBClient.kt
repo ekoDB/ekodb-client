@@ -5,6 +5,8 @@ import io.ekodb.client.types.CompactChatResponse
 import io.ekodb.client.types.FieldType
 import io.ekodb.client.types.Query
 import io.ekodb.client.types.Record
+import io.ekodb.client.types.SearchQuery
+import io.ekodb.client.types.SearchResponse
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*
@@ -1087,15 +1089,28 @@ class EkoDBClient private constructor(
         return json["count"]?.jsonPrimitive?.long ?: 0L
     }
 
+    private val searchJson = Json { ignoreUnknownKeys = true }
+
+    /** Typed text/vector/hybrid search, using the same transport and retries as raw search. */
+    suspend fun search(collection: String, searchQuery: SearchQuery): SearchResponse =
+        searchJson.decodeFromJsonElement(search(collection, searchJson.encodeToJsonElement(searchQuery).jsonObject))
+
+    /** Build a typed search with discoverable options and canonical QueryBuilder filters. */
+    suspend fun search(
+        collection: String,
+        query: String = "",
+        configure: SearchQueryBuilder.() -> Unit = {}
+    ): SearchResponse = search(collection, SearchQueryBuilder(query).apply(configure).build())
+
     /**
-     * Search documents in a collection
+     * Raw search escape hatch. Preserves arbitrary request and response fields.
      */
     suspend fun search(collection: String, searchQuery: JsonObject): JsonObject {
         val response = executeWithRetry { token ->
             client.post("$baseUrl/api/search/${collection.encodeURLPathPart()}") {
                 header("Authorization", "Bearer $token")
-                contentType(getContentTypeForRequest())
-                header("Accept", getContentTypeForRequest().toString())
+                contentType(ContentType.Application.Json)
+                header("Accept", ContentType.Application.Json.toString())
                 setBody(searchQuery)
             }
         }

@@ -1,0 +1,61 @@
+{
+  "filtered_vector": {
+    "query": "",
+    "vector": [
+      0.1,
+      0.2,
+      0.3
+    ],
+    "vector_metric": "cosine",
+    "vector_k": 10,
+    "vector_threshold": 0.25,
+    "filters": {
+      "type": "Condition",
+      "content": {
+        "field": "category",
+        "operator": "Eq",
+        "value": "ml"
+      }
+    },
+    "bypass_ripple": false,
+    "bypass_cache": false,
+    "limit": 10
+  },
+  "hybrid_custom_weights": {
+    "query": "machine learning",
+    "vector": [
+      0.1,
+      0.2,
+      0.3
+    ],
+    "text_weight": 0.7,
+    "vector_weight": 0.3,
+    "bypass_ripple": false,
+    "bypass_cache": false,
+    "limit": 10
+  },
+  "named_vector_field": {
+    "query": "",
+    "vector": [
+      0.1,
+      0.2,
+      0.3
+    ],
+    "vector_field": "title_embedding",
+    "vector_metric": "dotproduct",
+    "vector_k": 10,
+    "bypass_ripple": false,
+    "bypass_cache": false,
+    "limit": 10
+  },
+  "full_text": {
+    "query": "enginer",
+    "fields": "title,body",
+    "weights": "title:2.5,body:1.5",
+    "fuzzy": true,
+    "max_edit_distance": 2,
+    "bypass_ripple": false,
+    "bypass_cache": false,
+    "limit": 10
+  }
+}
