@@ -1,116 +1,81 @@
 package io.ekodb.client.examples
 
 import io.ekodb.client.EkoDBClient
+import io.ekodb.client.types.DistanceMetric
+import io.ekodb.client.types.FieldType
 import io.ekodb.client.types.Record
+import io.ekodb.client.types.SearchQuery
 import io.github.cdimascio.dotenv.dotenv
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
-/**
- * Search example - Full-text search operations
- */
+/** Typed search on current main; requires a local server to run. */
 fun main() = runBlocking {
     val dotenv = dotenv()
-    val baseUrl = dotenv["API_BASE_URL"] ?: "http://localhost:8080"
-    val apiKey = dotenv["API_BASE_KEY"] ?: "a-test-api-key-from-ekodb"
-    
     val client = EkoDBClient.builder()
-        .baseUrl(baseUrl)
-        .apiKey(apiKey)
+        .baseUrl(dotenv["API_BASE_URL"] ?: "http://localhost:8080")
+        .apiKey(dotenv["API_BASE_KEY"] ?: "a-test-api-key-from-ekodb")
         .build()
-    
     val collection = "kotlin_search_example"
-    
-    println("=== ekoDB Kotlin Client - Search Example ===\n")
-    
     try {
-        // Cleanup any existing collection
-        try {
-            client.deleteCollection(collection)
-        } catch (e: Exception) {
-            // Ignore if doesn't exist
-        }
-        
-        // Step 1: Insert sample documents
-        println("=== Inserting Sample Documents ===")
-        
-        val docs = listOf(
-            Triple("Rust Programming", "Learn Rust programming language with hands-on examples and best practices.", listOf("programming", "rust", "tutorial")),
-            Triple("Python for Data Science", "Master Python for data analysis, machine learning, and visualization.", listOf("programming", "python", "data-science")),
-            Triple("JavaScript Web Development", "Build modern web applications using JavaScript, React, and Node.js.", listOf("programming", "javascript", "web")),
-            Triple("Database Design", "Learn database design principles, normalization, and query optimization.", listOf("database", "design", "sql")),
-            Triple("Machine Learning Basics", "Introduction to machine learning algorithms and neural networks.", listOf("ai", "machine-learning", "python"))
+        val documents = listOf(
+            Triple("Rust Programming", "programming", listOf(0.9, 0.1, 0.2)),
+            Triple("Python Programming", "programming", listOf(0.8, 0.2, 0.1)),
+            Triple("Database Design", "database", listOf(0.1, 0.9, 0.3)),
         )
-        
-        for ((title, description, tags) in docs) {
-            val doc = Record.new()
+        for ((title, category, embedding) in documents) {
+            client.insert(collection, Record.new()
                 .insert("title", title)
-                .insert("description", description)
-                .insert("tags", tags.joinToString(","))
-                // First tag doubles as the category for the pre-filter demo below.
-                .insert("category", tags.first())
-                .insert("views", (Math.random() * 1000).toInt())
-
-            client.insert(collection, doc)
+                .insert("category", category)
+                .insert("embedding", FieldType.vector(embedding)))
         }
-        println("✓ Inserted ${docs.size} sample documents\n")
-        
-        // Step 2: Basic text search
-        println("=== Basic Text Search ===")
-        
-        val searchQuery = buildJsonObject {
+
+        val text = client.search(collection, SearchQuery("programming", limit = 10))
+        println("Text results: ${text.total}; execution time: ${text.executionTimeMs} ms")
+        text.results.forEach { println("${it.record["title"]}: score=${it.score}, matched=${it.matchedFields}") }
+
+        // Toy vectors demonstrate the request shape, not semantic embedding quality.
+        // Production query vectors must match the model/dimensions used for documents.
+        val queryVector = listOf(0.85, 0.15, 0.15)
+        val vector = client.search(collection, SearchQuery(
+            vector = queryVector,
+            vectorField = "embedding",
+            vectorMetric = DistanceMetric.COSINE,
+            vectorK = 10,
+            limit = 10,
+        ))
+        println("Vector results: ${vector.total}")
+
+        val filtered = client.search(collection) {
+            vector(queryVector)
+            vectorField("embedding")
+            vectorMetric(DistanceMetric.COSINE)
+            vectorK(10)
+            filters { eq("category", "programming") }
+        }
+        println("Filtered vector results: ${filtered.total}")
+
+        val hybrid = client.search(collection, "programming") {
+            vector(queryVector)
+            fields(listOf("title"))
+            textWeight(0.7)
+            vectorWeight(0.3)
+            limit(10)
+        }
+        println("Custom-weight hybrid results: ${hybrid.total}")
+
+        // Existing raw wire escape hatch preserves unmodeled response metadata.
+        val raw = client.search(collection, buildJsonObject {
             put("query", "programming")
-            put("min_score", 0.1)
-            put("limit", 3)
-        }
-        
-        val results = client.search(collection, searchQuery)
-        println("✓ Search results for 'programming':")
-        println("  $results\n")
-        
-        // Step 3: Search with different term
-        println("=== Search for 'machine learning' ===")
-        
-        val mlSearchQuery = buildJsonObject {
-            put("query", "machine learning")
-            put("limit", 5)
-        }
-        
-        val mlResults = client.search(collection, mlSearchQuery)
-        println("✓ Found results for 'machine learning'")
-        println("  $mlResults\n")
-
-        // Step 4: Search with a metadata pre-filter (works for text/vector/hybrid).
-        // The same query is restricted to documents in the "programming" category.
-        println("=== Search with a metadata pre-filter (category = programming) ===")
-        val filteredQuery = buildJsonObject {
-            put("query", "learn")
-            put("min_score", 0.1)
-            put("filters", buildJsonObject {
-                put("type", "Condition")
-                put("content", buildJsonObject {
-                    put("field", "category")
-                    put("operator", "Eq")
-                    put("value", "programming")
-                })
-            })
-        }
-        val filteredResults = client.search(collection, filteredQuery)
-        println("✓ Found results in category 'programming' (database/ai excluded)")
-        println("  $filteredResults\n")
-
+            put("limit", 10)
+        })
+        println("Raw search: $raw")
     } finally {
-        // Cleanup
-        println("=== Cleanup ===")
         try {
             client.deleteCollection(collection)
-            println("✓ Deleted collection: $collection")
-        } catch (e: Exception) {
-            println("⚠ Could not delete collection: ${e.message}")
+        } finally {
+            client.close()
         }
-        
-        client.close()
-        println("\n✓ All search operations completed successfully")
     }
 }

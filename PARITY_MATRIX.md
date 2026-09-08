@@ -85,6 +85,20 @@ semantics that direct client access would lose. Revisit if a customer asks.
 
 The sections below track the implementation history.
 
+## Kotlin search API quality (current main, 0.26.1)
+
+Core wire capability predates this addition: Kotlin's raw JSON search already
+forwards text, vector, hybrid, projection, and metadata-filter options. Current
+main additionally provides `SearchQuery`, `SearchQueryBuilder`,
+`SearchResult`/`SearchResponse`, and typed `search` overloads for discoverability
+and response metadata. This is not a claim that these additions are published
+in v0.26.0. Raw search and existing record-list helpers remain available.
+
+The four shared cases in `test-fixtures/search-requests.json` compare complete
+Rust/TypeScript/Kotlin request JSON. Rust's unset cache flags and limit remain
+explicit nulls, unlike TypeScript/Kotlin omission; tests document the difference.
+These are source/wire tests, not live-server parity certification.
+
 ## Chat Models API
 
 - `getChatModels()` - Rust ✅ | Go ✅ | Python ✅ | TypeScript ✅ | JavaScript

@@ -259,21 +259,94 @@ client.createCollectionWithSchema("users", schema)
 val currentSchema = client.getCollectionSchema("users")
 ```
 
-### Full-Text Search
+### Typed text, vector, and hybrid search
+
+**Implemented on current main; not available in the v0.26.0 release.** Build the
+local client to use this additive API. Main's version is 0.26.1; a version in
+this README is not evidence of publication to Maven Central.
 
 ```kotlin
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.put
+import io.ekodb.client.types.DistanceMetric
+import io.ekodb.client.types.SearchQuery
 
-// Search across fields
-val searchQuery = buildJsonObject {
-    put("query", "programming")
-    put("limit", 10)
+val text = client.search("articles", SearchQuery(query = "programming", limit = 10))
+println("Found ${text.total} results in ${text.executionTimeMs} ms")
+for (hit in text.results) {
+    println("${hit.record["title"]}: ${hit.score}, fields=${hit.matchedFields}")
 }
 
-val results = client.search("articles", searchQuery)
-println("Found ${results.size} articles")
+// Typed vector search: supply an embedding from your chosen embedding model.
+val embedding = listOf(0.1, 0.2, 0.3) // Illustrative; match your stored vectors.
+val vectors = client.search("articles", SearchQuery(
+    vector = embedding,
+    vectorField = "embedding",
+    vectorMetric = DistanceMetric.COSINE,
+    vectorK = 10,
+    vectorThreshold = 0.25,
+    limit = 10,
+))
+
+// Metadata-filtered vector search reuses the ordinary QueryBuilder filter.
+val filtered = client.search("articles") {
+    vector(embedding)
+    vectorField("embedding")
+    vectorMetric(DistanceMetric.COSINE)
+    vectorK(10)
+    filters { eq("category", "programming") }
+}
+
+// Hybrid search with explicit weights and projection.
+val hybrid = client.search("articles", "programming") {
+    vector(embedding)
+    fields(listOf("title", "body"))
+    weights(mapOf("title" to 2.0, "body" to 1.5))
+    textWeight(0.7)
+    vectorWeight(0.3)
+    selectFields(listOf("title", "body"))
+    limit(10)
+}
 ```
+
+`SearchQuery` exposes all Rust/TypeScript search request fields, including
+`bypassCache` and `bypassRipple`. Kotlin properties serialize as snake_case.
+Unset options are omitted; the vector-only request still includes `query: ""`.
+Use `SearchQueryBuilder(...).build()` for standalone fluent construction, or
+named constructor arguments and `copy()` for value-oriented code. The builder
+normalizes field lists and numeric weight maps to the same strings as the
+Rust/TypeScript builders. `filters` accepts the existing `Query.filter`
+expression; the builder's `filters { ... }` avoids hand-writing its JSON.
+
+Scores and matched fields are available on each `SearchResult`; total and
+optional execution time are on `SearchResponse`. Records remain `JsonObject`
+because document fields are dynamic, as in Rust/TypeScript. Unknown document
+fields (including an existing `_score`) are preserved. Unknown response-envelope
+fields are ignored by typed decoding, following the module's compatibility
+policy; use raw search if you need those fields.
+
+The existing `textSearch(collection, queryText, limit)` and
+`hybridSearch(collection, queryText, queryVector, limit)` still return lists of
+records with injected `_score`. Their defaults are unchanged: Kotlin's hybrid
+helper leaves weights unset. Use typed `search` for custom weights, named vector
+fields, metrics, thresholds, prefilters, and complete response metadata. Index
+selection and ranking semantics belong to the server; these examples do not
+certify recall, exactness, or threshold behavior.
+
+#### Raw wire escape hatch
+
+```kotlin
+import kotlinx.serialization.json.*
+
+val raw = client.search("articles", buildJsonObject {
+    put("query", "programming")
+    put("limit", 10)
+})
+println("Found ${raw["total"]} results")
+```
+
+The raw `search(collection, JsonObject): JsonObject` overload remains available
+for future protocol fields and unmodeled response metadata. Both overloads use
+JSON HTTP transport, including when the client's experimental MessagePack mode
+is selected, matching Rust and TypeScript search.
 
 ### Join Operations
 
@@ -383,7 +456,7 @@ For complete, runnable examples of all features, see the
 - **ClientCollectionManagement.kt** - Collection management
 - **ClientDocumentTtl.kt** - TTL and expiration
 - **ClientSchemaManagement.kt** - Schema definition and validation
-- **ClientSearch.kt** - Full-text search
+- **ClientSearch.kt** - Typed text/vector/hybrid search and raw escape hatch
 - **ClientJoins.kt** - Join operations across collections
 - **ClientSimpleWebsocket.kt** - WebSocket basics
 - **ClientWebsocketTtl.kt** - WebSocket with TTL queries
@@ -459,7 +532,8 @@ For complete, runnable examples of all features, see the
 
 #### Search Operations
 
-- `search(collection, query)` - Full-text search across collection
+- `search(collection, SearchQuery)` / `search(collection, queryText) { ... }` - Typed text/vector/hybrid search
+- `search(collection, JsonObject)` - Raw search request and response
 
 #### Transactions
 
