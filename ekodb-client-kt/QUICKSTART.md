@@ -139,17 +139,24 @@ val usersWithOrders = client.query("users") {
 }
 ```
 
-### Full-Text Search
+### Typed search (current main)
+
+This API is implemented on current main (0.26.1), not in the published v0.26.0
+release. Build the local client to try it. See the [search guide](README.md#typed-text-vector-and-hybrid-search)
+for vector search, metadata prefilters, custom hybrid weights, and the raw JSON
+escape hatch.
 
 ```kotlin
-// Search across all fields
-val results = client.search("users", "alice engineer")
+import io.ekodb.client.types.SearchQuery
 
-// Search with options
+val results = client.search("users", SearchQuery("alice engineer"))
 val searchResults = client.search("users", "alice") {
     limit(10)
     fields(listOf("name", "bio"))
+    fuzzy(true)
 }
+println("Found ${searchResults.total} results")
+searchResults.results.forEach { println("${it.record}: ${it.score}") }
 ```
 
 ### WebSocket Real-Time Queries

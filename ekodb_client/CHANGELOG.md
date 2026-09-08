@@ -8,7 +8,24 @@ and this project adheres to
 
 ## [0.26.1] - 2026-09-07
 
+### Added
+
+- **Kotlin typed search (current main).** Add serializable `SearchQuery`,
+  `SearchResult`/`SearchResponse`, `DistanceMetric`, a fluent builder with existing
+  QueryBuilder prefilters, and typed `search` overloads. All current Rust/TS
+  search fields are expressible, including custom hybrid weights and named
+  vector fields. Raw JSON search and legacy helpers remain source-compatible;
+  helpers retain `_score` injection and their existing defaults. Shared request
+  fixtures protect Rust/TypeScript/Kotlin wire agreement.
+
 ### Fixed
+
+- **Kotlin chat retrieval fields.** Serialize `FieldSearchOptions.field` as
+  `field_name`, matching Rust and the documented server requirement. The Kotlin
+  constructor/property name remains unchanged.
+
+- **Kotlin search JSON transport.** Force JSON request/response negotiation for
+  search even with experimental MessagePack selected, matching Rust/TypeScript.
 
 - **Client methods that targeted routes the server does not expose.** KV
   document linking used `GET /api/kv/links/{key}`, `POST /api/kv/link` and
