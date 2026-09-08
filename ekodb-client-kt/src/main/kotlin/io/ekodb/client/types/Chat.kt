@@ -60,6 +60,7 @@ data class CollectionConfig(
  */
 @Serializable
 data class FieldSearchOptions(
+    @SerialName("field_name")
     val field: String,
     @SerialName("search_options")
     val searchOptions: TextSearchOptions? = null,
