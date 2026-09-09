@@ -203,6 +203,9 @@ cargo test -p ekodb_client --test search_wire
 weights, named vector fields, and weighted fuzzy text search. Each client
 constructs and compares the complete request. Rust's unset cache flags and
 limit serialize as null; Kotlin and TypeScript omit them.
+The shared cases set those options explicitly; separate tests preserve the
+unset-value differences. Comparisons ignore object key order but retain all
+keys, nulls, arrays, and numeric values.
 
 `test-fixtures/schema-probe-0.72.2.json` contains redacted schema responses from
 server 0.72.2, including collection cleanup results. Kotlin schema tests use
