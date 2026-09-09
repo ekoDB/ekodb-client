@@ -251,6 +251,29 @@ client.createCollection("users", schema)
 val currentSchema = client.getSchema("users")
 ```
 
+You can also pass a raw JSON schema:
+
+```kotlin
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonObject
+
+val schema = buildJsonObject {
+    putJsonObject("fields") {
+        putJsonObject("email") {
+            put("field_type", "String")
+            put("required", true)
+        }
+        putJsonObject("age") {
+            put("field_type", "Integer")
+            put("required", false)
+        }
+    }
+}
+
+client.createCollection("users", schema)
+```
+
 Schema field types use server casing, such as `String`, `Integer`, `Boolean`,
 `Vector`, and `Array`. Both `Vector` and `Array` support a vector index; the
 index discriminator is lowercase `vector`. Raw JSON schemas must use these exact
@@ -260,6 +283,7 @@ preserves unknown types for forward compatibility.
 ### Typed text, vector, and hybrid search
 
 Use `SearchQuery` or the search builder for text, vector, and hybrid requests.
+These typed APIs were added after v0.26.0; older clients can use raw JSON search.
 
 ```kotlin
 import io.ekodb.client.types.DistanceMetric
