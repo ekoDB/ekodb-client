@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **Kotlin schema field types.** Canonicalize known type names in
+  `FieldTypeSchemaBuilder`, so lowercase inputs such as `string` and `vector`
+  emit server-compatible `String` and `Vector`. Preserve canonical names,
+  unknown types, and vector-index options. Both `Vector` and `Array` are
+  accepted for vector-indexed fields on server 0.72.2.
+- **Kotlin HTTP errors.** Expose terminal request failures through
+  `EkoDBHttpException`, with `statusCode` and `responseBody`. Preserve the
+  exception message format, stop retrying terminal client errors, and throw on
+  exhausted server errors instead of silently succeeding in collection creation.
+  Authentication refresh and rate-limit retries remain supported.
+
 ## [0.26.2] - 2026-09-08
 
 ### Changed
@@ -20,7 +35,7 @@ and this project adheres to
 
 ### Added
 
-- **Kotlin typed search (current main).** Add serializable `SearchQuery`,
+- **Kotlin typed search.** Add serializable `SearchQuery`,
   `SearchResult`/`SearchResponse`, `DistanceMetric`, a fluent builder with
   existing QueryBuilder prefilters, and typed `search` overloads. All current
   Rust/TS search fields are expressible, including custom hybrid weights and
