@@ -66,6 +66,13 @@ val inserted = client.insert("users", user)
 println("Inserted: ${inserted["id"]}")
 ```
 
+For a schema field of type `Vector`, use
+`record.insert("embedding", FieldType.vector(listOf(1.0, 0.0, 0.0)))` with
+`import io.ekodb.client.types.FieldType`. The unreleased serializer preserves
+the Vector tag; `ArrayValue` remains an ordinary array. See
+[inserting Vector fields](README.md#inserting-vector-fields) for schema setup.
+Search query vectors still take a plain `List<Double>`.
+
 ### 3. Query Documents
 
 ```kotlin

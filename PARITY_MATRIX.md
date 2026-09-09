@@ -117,17 +117,17 @@ ranking, index selection, and ANN recall are not covered by those checks. See
 - HTTP search uses the full `SearchQuery` model. WebSocket text search and
   stored-function search stages have separate request contracts.
 - Kotlin's search model stores `fields` and `weights` as strings; its builder
-  accepts lists/maps and normalizes them. Alternate JSON representations can
-  be sent through raw search. Typed decoding requires `matched_fields`, while
+  accepts lists/maps and normalizes them. Alternate JSON representations can be
+  sent through raw search. Typed decoding requires `matched_fields`, while
   execution time is optional.
-- Chat operations, transaction status, and WebSocket responses still expose
-  raw JSON in parts of the Kotlin API. Typed search does not imply identical
+- Chat operations, transaction status, and WebSocket responses still expose raw
+  JSON in parts of the Kotlin API. Typed search does not imply identical
   response modeling across every client operation.
 - The existing query builder uses `JsonElement` filters and dynamic inputs.
   Vector-index algorithm and metric options remain strings in Kotlin.
 - Some unrelated Quick Start examples still need correction: `client.query`,
-  `deleteWhere`, and `offset` are not current Kotlin APIs, and CRUD methods
-  use `Record` rather than the maps shown in those examples. Use the compiled
+  `deleteWhere`, and `offset` are not current Kotlin APIs, and CRUD methods use
+  `Record` rather than the maps shown in those examples. Use the compiled
   examples in `examples/kotlin/examples` as the reference for those operations.
 
 ## Chat Models API
@@ -176,6 +176,16 @@ server casing, retaining canonical inputs and unknown types. Regression tests
 cover the accepted schema types. Python's builder still passes type strings
 through, so callers must use canonical names despite its lowercase documentation
 examples.
+
+**Vector record values (Kotlin unreleased):** `FieldType.vector` now emits the
+server-accepted type/value envelope, distinct from ordinary arrays. TypeScript
+`Field.vector` and Python `field_vector` construct this envelope; Rust's
+untagged `FieldType::Vector` still emits an array. The Rust golden test uses an
+explicit envelope and does not certify its vector helper. The Kotlin live
+contract verifies insertion, named-field cosine search, one Boolean filter,
+upsert visibility, and cleanup; it does not establish broad prefilter or ANN
+semantics. Earlier schema-only validation did not test record insertion. See
+[contract commands and evidence](COMMANDS.md#search-and-schema-compatibility).
 
 **Kotlin HTTP errors (unreleased):** `EkoDBHttpException` exposes terminal
 status codes and response bodies, including exhausted server errors. See the

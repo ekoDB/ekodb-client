@@ -1,0 +1,67 @@
+{
+  "timestamp": "2026-09-09T06:57:40.921468142Z",
+  "deployment": "[provisioned host redacted]",
+  "collection": "kotlin_vector_contract_e5395817ca0a",
+  "health": {
+    "status": "ok",
+    "version": "UNKNOWN",
+    "commit": null
+  },
+  "authenticated_health": {
+    "status": "ok",
+    "version": "0.72.2",
+    "commit": "b5014f0"
+  },
+  "create_readback": "passed",
+  "insert": "passed",
+  "read_vector": "passed",
+  "nearest_score": 1.0,
+  "vector_search": "passed",
+  "filtered_score": 0.8,
+  "filtered_vector_search": "passed",
+  "upsert_search": "passed",
+  "bad_array_attempts": 1,
+  "bad_array_status": 400,
+  "bad_array_body": "{\"error\":\"Type mismatch for field 'embedding': expected Vector, got Array\"}",
+  "bad_array_insert": "passed",
+  "cleanup_verified_absent": "passed",
+  "baseline": "5184cd69da1efb0510253d891f1c80b7b179b174",
+  "before_fix_regression": {
+    "tests": 1,
+    "failures": 1,
+    "expected": {
+      "embedding": {
+        "type": "Vector",
+        "value": [
+          1.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "actual": {
+      "embedding": [
+        1.0,
+        0.0,
+        0.0
+      ]
+    }
+  },
+  "protocol_probe": {
+    "timestamp": "2026-09-09T06:52:48.904544+00:00",
+    "collection": "kotlin_vector_protocol_b7d29165fee7",
+    "version": "0.72.2",
+    "commit": "b5014f0",
+    "cleanup_verified_absent": true,
+    "tagged_insert_status": 201,
+    "plain_array_insert_status": 400,
+    "empty_tagged_vector_insert_status": 201,
+    "cleanup_note": "GET collection metadata returned an empty schema after deletion; repeated deletion and verified absence via collection listing."
+  },
+  "initial_contract_run": {
+    "timestamp": "2026-09-09T06:56:25.778172926Z",
+    "collection": "kotlin_vector_contract_76dad773fe84",
+    "result": "passed",
+    "cleanup_verified_absent": true
+  }
+}
