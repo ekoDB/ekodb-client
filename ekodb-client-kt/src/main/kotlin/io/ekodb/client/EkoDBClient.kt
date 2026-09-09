@@ -1760,10 +1760,10 @@ class EkoDBClient private constructor(
                     }
                 }
 
-                // Throw on client errors (4xx) that weren't handled above
-                if (response.status.value in 400..499) {
+                // Preserve terminal HTTP failures, including exhausted 5xx retries.
+                if (response.status.value in 400..599) {
                     val errorBody = response.bodyAsText()
-                    throw Exception("Request failed with status ${response.status.value}: $errorBody")
+                    throw EkoDBHttpException(response.status.value, errorBody)
                 }
 
                 return response
@@ -1771,6 +1771,7 @@ class EkoDBClient private constructor(
                 // Never swallow cancellation -- rethrow it so structured
                 // concurrency (coroutine cancellation) keeps working.
                 if (e is kotlinx.coroutines.CancellationException) throw e
+                if (e is EkoDBHttpException) throw e
                 lastException = e
                 if (attempt < maxRetries - 1) {
                     // Share the same clamped exponential backoff as the 5xx and

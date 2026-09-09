@@ -8,7 +8,7 @@ Get started with ekoDB Kotlin client in 5 minutes!
 
 ```kotlin
 dependencies {
-    implementation("io.ekodb:ekodb-client-kt:0.26.1")
+    implementation("io.ekodb:ekodb-client-kt:0.26.2")
 }
 ```
 
@@ -16,7 +16,7 @@ dependencies {
 
 ```groovy
 dependencies {
-    implementation 'io.ekodb:ekodb-client-kt:0.26.1'
+    implementation 'io.ekodb:ekodb-client-kt:0.26.2'
 }
 ```
 
@@ -26,7 +26,7 @@ dependencies {
 <dependency>
     <groupId>io.ekodb</groupId>
     <artifactId>ekodb-client-kt</artifactId>
-    <version>0.26.1</version>
+    <version>0.26.2</version>
 </dependency>
 ```
 
@@ -139,10 +139,9 @@ val usersWithOrders = client.query("users") {
 }
 ```
 
-### Typed search (current main)
+### Typed Search
 
-This API is implemented on current main (0.26.1), not in the published v0.26.0
-release. Build the local client to try it. See the [search guide](README.md#typed-text-vector-and-hybrid-search)
+See the [search guide](README.md#typed-text-vector-and-hybrid-search)
 for vector search, metadata prefilters, custom hybrid weights, and the raw JSON
 escape hatch.
 
@@ -195,15 +194,18 @@ println("AI: ${response.content}")
 ### Schema Management
 
 ```kotlin
-// Define a schema
-val schema = mapOf(
-    "name" to mapOf("type" to "string", "required" to true),
-    "email" to mapOf("type" to "string", "required" to true),
-    "age" to mapOf("type" to "integer", "minimum" to 0)
-)
+import io.ekodb.client.FieldTypeSchemaBuilder
+import io.ekodb.client.SchemaBuilder
 
-// Set schema for collection
-client.setSchema("users", schema)
+// Define a schema
+val schema = SchemaBuilder()
+    .addField("name", FieldTypeSchemaBuilder("String").required())
+    .addField("email", FieldTypeSchemaBuilder("String").required())
+    .addField("age", FieldTypeSchemaBuilder("Integer").range(min = 0))
+    .build()
+
+// Create collection with schema
+client.createCollection("users", schema)
 
 // Get schema
 val currentSchema = client.getSchema("users")
@@ -238,16 +240,19 @@ client.batchDelete("users", ids)
 
 ## Error Handling
 
+The unreleased client provides structured HTTP errors. See
+[error handling](README.md#error-handling) for retry behavior and safe logging.
+
 ```kotlin
-import io.ekodb.client.EkoDBException
+import io.ekodb.client.EkoDBHttpException
 
 try {
     val user = client.findById("users", "invalid-id")
-} catch (e: EkoDBException) {
+} catch (e: EkoDBHttpException) {
     when (e.statusCode) {
         404 -> println("User not found")
         401 -> println("Unauthorized")
-        else -> println("Error: ${e.message}")
+        else -> println("Request failed with HTTP ${e.statusCode}")
     }
 }
 ```
@@ -293,7 +298,7 @@ fun main() = runBlocking {
 
         // Search
         val results = client.search("users", "alice engineer")
-        println("Search found ${results.size} results")
+        println("Search found ${results.total} results")
 
         // Clean up
         client.delete("users", userId)

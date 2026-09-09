@@ -4,6 +4,8 @@ import kotlinx.serialization.json.*
 
 /**
  * Fluent builder for field type schemas with constraints and indexes.
+ * Known type names are emitted in server casing (for example, "string" becomes
+ * "String"). Unknown names are preserved for forward compatibility.
  *
  * Example:
  * ```kotlin
@@ -70,6 +72,7 @@ class FieldTypeSchemaBuilder(private val fieldType: String) {
 
     /**
      * Add a vector similarity search index.
+     * Use field type "Vector" or "Array"; the index type itself is "vector".
      *
      * @param algorithm Index algorithm ("flat", "hnsw", "ivf")
      * @param metric Distance metric ("cosine", "euclidean", "dotproduct")
@@ -103,7 +106,7 @@ class FieldTypeSchemaBuilder(private val fieldType: String) {
 
     /** Build the field type schema as a JsonObject. */
     fun build(): JsonObject = buildJsonObject {
-        put("field_type", fieldType)
+        put("field_type", canonicalFieldTypes.firstOrNull { it.equals(fieldType, ignoreCase = true) } ?: fieldType)
         put("required", required)
         put("unique", unique)
         default?.let { put("default", it) }
@@ -112,6 +115,13 @@ class FieldTypeSchemaBuilder(private val fieldType: String) {
         max?.let { put("max", it) }
         regex?.let { put("regex", it) }
         index?.let { put("index", it) }
+    }
+
+    private companion object {
+        val canonicalFieldTypes = listOf(
+            "String", "Integer", "Float", "Boolean", "DateTime", "UUID", "Array", "Object",
+            "Decimal", "Bytes", "Null", "Number", "Set", "Vector", "Binary", "Duration"
+        )
     }
 }
 
