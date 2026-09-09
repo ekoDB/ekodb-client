@@ -11,7 +11,7 @@ import java.util.UUID
 
 /**
  * Field type representing all supported data types in ekoDB
- * Serializes as raw JSON values (untagged) to match server format
+ * Uses raw values for ordinary JSON types and a type/value envelope for Vector.
  */
 @Serializable(with = FieldTypeSerializer::class)
 sealed class FieldType {
@@ -81,8 +81,12 @@ object FieldTypeSerializer : KSerializer<FieldType> {
                 encoder.encodeSerializableValue(listSerializer, list)
             }
             is FieldType.VectorValue -> {
-                val listSerializer: KSerializer<List<Double>> = kotlinx.serialization.builtins.ListSerializer(Double.serializer())
-                encoder.encodeSerializableValue(listSerializer, value.value)
+                // A bare numeric array is an Array document field, not a Vector.
+                // Reuse the existing map/list encoders to retain the wire tag.
+                serialize(encoder, FieldType.ObjectValue(mapOf(
+                    "type" to FieldType.StringValue("Vector"),
+                    "value" to FieldType.ArrayValue(value.value.map { FieldType.FloatValue(it) })
+                )))
             }
             is FieldType.DateTimeValue -> encoder.encodeString(value.value)
             is FieldType.UUIDValue -> encoder.encodeString(value.value)
@@ -120,7 +124,13 @@ object FieldTypeSerializer : KSerializer<FieldType> {
                 else -> error("Unknown primitive type: $element")
             }
             is JsonArray -> FieldType.ArrayValue(element.map { deserializeElement(it) })
-            is JsonObject -> FieldType.ObjectValue(element.mapValues { deserializeElement(it.value) })
+            is JsonObject -> {
+                if (element.keys == setOf("type", "value") && element["type"] == JsonPrimitive("Vector")) {
+                    FieldType.VectorValue(Json.decodeFromJsonElement(ListSerializer(Double.serializer()), element.getValue("value")))
+                } else {
+                    FieldType.ObjectValue(element.mapValues { deserializeElement(it.value) })
+                }
+            }
             else -> error("Unknown FieldType: $element")
         }
     }

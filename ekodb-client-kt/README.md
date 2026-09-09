@@ -280,10 +280,47 @@ index discriminator is lowercase `vector`. Raw JSON schemas must use these exact
 names. The unreleased builder also normalizes known lowercase type names and
 preserves unknown types for forward compatibility.
 
+### Inserting Vector fields
+
+For a schema field of type `Vector`, insert `FieldType.vector(List<Double>)` (or
+`FieldType.VectorValue`) through `Record`. An ordinary `ArrayValue` has Array
+semantics even when its elements are numeric.
+
+```kotlin
+import io.ekodb.client.FieldTypeSchemaBuilder
+import io.ekodb.client.SchemaBuilder
+import io.ekodb.client.types.FieldType
+import io.ekodb.client.types.Record
+
+client.createCollection("embeddings", SchemaBuilder()
+    .addField("label", FieldTypeSchemaBuilder("String").required())
+    .addField("embedding", FieldTypeSchemaBuilder("Vector").vectorIndex(metric = "cosine"))
+    .build())
+client.insert("embeddings", Record.new()
+    .insert("label", "example")
+    .insert("embedding", FieldType.vector(listOf(1.0, 0.0, 0.0))))
+```
+
+The unreleased fix emits `{"type":"Vector","value":[1.0,0.0,0.0]}` for the
+record field. Earlier Kotlin versions emitted a plain array, rejected by an
+explicit Vector schema with `expected Vector, got Array`. Insert, update, and
+both upsert paths share the fix. Tagged Vector responses decode to
+`VectorValue`, including nested values; ordinary JSON arrays remain
+`ArrayValue`. Unknown envelopes and additional object fields remain supported.
+The unconstrained live schema accepted an empty tagged vector; this does not
+establish meaningful empty-vector search behavior. Default JSON encoding still
+rejects nonfinite coordinates.
+
+Search request `vector` is a separate `List<Double>` contract and remains
+`"vector":[...]`. See the
+[contract commands](../COMMANDS.md#search-and-schema-compatibility) for the
+bounded live test and protocol evidence.
+
 ### Typed text, vector, and hybrid search
 
 Use `SearchQuery` or the search builder for text, vector, and hybrid requests.
-These typed APIs were added after v0.26.0; older clients can use raw JSON search.
+These typed APIs were added after v0.26.0; older clients can use raw JSON
+search.
 
 ```kotlin
 import io.ekodb.client.types.DistanceMetric
