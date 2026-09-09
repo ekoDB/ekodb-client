@@ -195,6 +195,11 @@ cargo test -p ekodb_client --test search_wire
 (cd ekodb-client-ts && npm test -- src/search-wire.test.ts)
 (cd ekodb-client-kt && ./gradlew test --tests io.ekodb.client.SearchTest)
 
+# Shared Vector insertion fixture (ordinary arrays stay distinct)
+cargo test -p ekodb_client --test vector_record_wire
+(cd ekodb-client-ts && npm test -- src/vector-record-wire.test.ts)
+(cd ekodb-client-kt && ./gradlew test --tests io.ekodb.client.VectorRecordTest)
+
 # Kotlin schema types and collection error handling
 (cd ekodb-client-kt && ./gradlew test --tests io.ekodb.client.SchemaBuilderTest --tests io.ekodb.client.CollectionErrorTest)
 ```
@@ -211,6 +216,40 @@ keys, nulls, arrays, and numeric values.
 server 0.72.2, including collection cleanup results. Kotlin schema tests use
 the accepted field types as regression fixtures. These commands run locally
 without a live server; they do not measure ranking or ANN recall.
+
+The document Vector envelope is `{"type":"Vector","value":[...]}`. Protocol
+sources are TypeScript's `Field.vector` (`ekodb-client-ts/src/utils.ts`) and
+Python's `field_vector` (`ekodb-client-py/python/ekodb_client/utils.py`), confirmed
+by live acceptance under an explicit Vector schema. Rust's `FieldType::Vector`
+(`ekodb_client/src/types.rs`) is untagged and currently emits an array; the Rust
+fixture test constructs the envelope explicitly. `test-fixtures/vector-record.json`
+compares complete insertion payloads without collapsing Array and Vector.
+Rust and TypeScript codec tests retain the same distinction in MessagePack;
+this is not a live binary-transport claim. Kotlin HTTP MessagePack/CBOR remains
+experimental and unverified; this fix validates JSON. Search query vectors
+use a separate plain numeric array contract.
+
+```bash
+# Explicit opt-in; provide these through your authorized environment.
+# Creates one unique collection, runs bounded checks, and deletes it in finally.
+: "${EKODB_BASE_URL:?required}" "${EKODB_API_KEY:?required}"
+(cd ekodb-client-kt && ./gradlew vectorLiveTest)
+```
+
+The task fails if credentials are missing; normal `test` never runs it. Review
+`ekodb-client-kt/build/vector-live-contract.json` before saving evidence.
+[Redacted live evidence](test-fixtures/vector-live-contract.json) records the
+2026-09-09 UTC create/readback → public Kotlin insert/fetch → named-field cosine
+search → Boolean-filtered search → upsert/search → bad-array 400 → cleanup run.
+The nearest score was 1.0; filtering it out returned the eligible record at 0.8.
+The invalid Array insert preserved its body and made exactly one request.
+Authenticated `/api/health` exposed version 0.72.2, commit `b5014f0`; the
+unauthenticated response exposed no version. This is separate from the earlier
+schema-only probe, which did **not** test record insertion. The preliminary
+protocol probe also accepted an empty tagged vector on an unconstrained schema.
+Cleanup is verified through collection listing: GET collection metadata can
+return an empty schema after deletion. This bounded test makes no broad
+prefilter, empty-vector search, recall, or ANN guarantees.
 
 ## 📚 Documentation & Formatting
 

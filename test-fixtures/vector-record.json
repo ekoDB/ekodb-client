@@ -1,0 +1,7 @@
+{
+  "label": "vector-golden",
+  "count": 7,
+  "eligible": true,
+  "ordinary": [1.0, 0.0, 0.0],
+  "embedding": { "type": "Vector", "value": [1.0, 0.0, 0.0] }
+}

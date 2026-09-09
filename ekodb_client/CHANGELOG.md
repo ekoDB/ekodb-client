@@ -10,6 +10,13 @@ and this project adheres to
 
 ### Fixed
 
+- **Kotlin Vector record values.** Preserve the `{"type":"Vector","value":[...]}`
+  wire envelope in insert/update/upsert and decode tagged vectors symmetrically,
+  including nested values. Ordinary arrays and search-query vectors retain
+  their existing array representation. Add a shared insertion fixture and an
+  opt-in live create/insert/search/filter/upsert/cleanup contract. Earlier
+  schema-only validation did not exercise insertion.
+
 - **Kotlin schema field types.** Canonicalize known type names in
   `FieldTypeSchemaBuilder`, so lowercase inputs such as `string` and `vector`
   emit server-compatible `String` and `Vector`. Preserve canonical names,

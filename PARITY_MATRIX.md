@@ -175,6 +175,16 @@ tests cover the accepted schema types. Python's builder still passes type
 strings through, so callers must use canonical names despite its lowercase
 documentation examples.
 
+**Vector record values (Kotlin unreleased):** `FieldType.vector` now emits the
+server-accepted type/value envelope, distinct from ordinary arrays. TypeScript
+`Field.vector` and Python `field_vector` construct this envelope; Rust's
+untagged `FieldType::Vector` still emits an array. The Rust golden test uses
+an explicit envelope and does not certify its vector helper. The Kotlin live
+contract verifies insertion, named-field cosine search, one Boolean filter,
+upsert visibility, and cleanup; it does not establish broad prefilter or ANN
+semantics. Earlier schema-only validation did not test record insertion.
+See [contract commands and evidence](COMMANDS.md#search-and-schema-compatibility).
+
 **Kotlin HTTP errors (unreleased):** `EkoDBHttpException` exposes terminal
 status codes and response bodies, including exhausted server errors. See the
 [Kotlin error-handling guide](ekodb-client-kt/README.md#error-handling).
