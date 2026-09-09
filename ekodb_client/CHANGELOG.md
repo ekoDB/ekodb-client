@@ -48,7 +48,8 @@ and this project adheres to
 
 - **Kotlin chat retrieval fields.** Serialize `FieldSearchOptions.field` as
   `field_name`, matching Rust and the documented server requirement. The Kotlin
-  constructor/property name remains unchanged.
+  constructor/property name remains unchanged. Persisted JSON using the old
+  `field` key must be migrated to `field_name`.
 
 - **Kotlin search JSON transport.** Force JSON request/response negotiation for
   search even with experimental MessagePack selected, matching Rust/TypeScript.
