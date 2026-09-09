@@ -187,6 +187,28 @@ make test-examples-go-client
 make test-examples-typescript-client
 ```
 
+### Search and Schema Compatibility
+
+```bash
+# Shared search request fixtures (Rust, TypeScript, Kotlin)
+cargo test -p ekodb_client --test search_wire
+(cd ekodb-client-ts && npm test -- src/search-wire.test.ts)
+(cd ekodb-client-kt && ./gradlew test --tests io.ekodb.client.SearchTest)
+
+# Kotlin schema types and collection error handling
+(cd ekodb-client-kt && ./gradlew test --tests io.ekodb.client.SchemaBuilderTest --tests io.ekodb.client.CollectionErrorTest)
+```
+
+`test-fixtures/search-requests.json` covers filtered vectors, custom hybrid
+weights, named vector fields, and weighted fuzzy text search. Each client
+constructs and compares the complete request. Rust's unset cache flags and limit
+serialize as null; Kotlin and TypeScript omit them.
+
+`test-fixtures/schema-probe-0.72.2.json` contains redacted schema responses from
+server 0.72.2, including collection cleanup results. Kotlin schema tests use the
+accepted field types as regression fixtures. These commands run locally without
+a live server; they do not measure ranking or ANN recall.
+
 ## 📚 Documentation & Formatting
 
 ### Generate Documentation
