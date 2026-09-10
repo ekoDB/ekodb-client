@@ -8,7 +8,7 @@ Get started with ekoDB Kotlin client in 5 minutes!
 
 ```kotlin
 dependencies {
-    implementation("io.ekodb:ekodb-client-kt:0.26.1")
+    implementation("io.ekodb:ekodb-client-kt:0.26.2")
 }
 ```
 
@@ -16,7 +16,7 @@ dependencies {
 
 ```groovy
 dependencies {
-    implementation 'io.ekodb:ekodb-client-kt:0.26.1'
+    implementation 'io.ekodb:ekodb-client-kt:0.26.2'
 }
 ```
 
@@ -26,7 +26,7 @@ dependencies {
 <dependency>
     <groupId>io.ekodb</groupId>
     <artifactId>ekodb-client-kt</artifactId>
-    <version>0.26.1</version>
+    <version>0.26.2</version>
 </dependency>
 ```
 
@@ -142,9 +142,9 @@ val usersWithOrders = client.query("users") {
 ### Typed search (current main)
 
 This API is implemented on current main (0.26.1), not in the published v0.26.0
-release. Build the local client to try it. See the [search guide](README.md#typed-text-vector-and-hybrid-search)
-for vector search, metadata prefilters, custom hybrid weights, and the raw JSON
-escape hatch.
+release. Build the local client to try it. See the
+[search guide](README.md#typed-text-vector-and-hybrid-search) for vector search,
+metadata prefilters, custom hybrid weights, and the raw JSON escape hatch.
 
 ```kotlin
 import io.ekodb.client.types.SearchQuery

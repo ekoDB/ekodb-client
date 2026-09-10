@@ -760,10 +760,7 @@ export const Stage = {
   }),
 
   /** Sort a collection. Shorthand for a `Query` carrying only `sort`. */
-  sort: (
-    collection: string,
-    sort: SortFieldConfig[],
-  ): FunctionStageConfig => ({
+  sort: (collection: string, sort: SortFieldConfig[]): FunctionStageConfig => ({
     type: "Query",
     collection,
     sort,

@@ -98,7 +98,7 @@ Check at:
 
 ```kotlin
 dependencies {
-    implementation("io.ekodb:ekodb-client-kt:0.26.1")
+    implementation("io.ekodb:ekodb-client-kt:0.26.2")
 }
 ```
 
@@ -106,7 +106,7 @@ dependencies {
 
 ```groovy
 dependencies {
-    implementation 'io.ekodb:ekodb-client-kt:0.26.1'
+    implementation 'io.ekodb:ekodb-client-kt:0.26.2'
 }
 ```
 
@@ -116,7 +116,7 @@ dependencies {
 <dependency>
     <groupId>io.ekodb</groupId>
     <artifactId>ekodb-client-kt</artifactId>
-    <version>0.26.1</version>
+    <version>0.26.2</version>
 </dependency>
 ```
 

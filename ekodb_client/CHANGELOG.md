@@ -6,17 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.26.2] - 2026-09-08
+
+### Changed
+
+- **Coordinated client patch release.** Align the Rust, Python, TypeScript, and
+  Kotlin client manifests and lockfiles on version `0.26.2` after the Kotlin
+  typed-search and cross-client wire-parity work from #208. The Go client’s
+  corresponding search metadata follow-up is tracked in the separate
+  `ekodb-client-go` repository.
+
 ## [0.26.1] - 2026-09-07
 
 ### Added
 
 - **Kotlin typed search (current main).** Add serializable `SearchQuery`,
-  `SearchResult`/`SearchResponse`, `DistanceMetric`, a fluent builder with existing
-  QueryBuilder prefilters, and typed `search` overloads. All current Rust/TS
-  search fields are expressible, including custom hybrid weights and named
-  vector fields. Raw JSON search and legacy helpers remain source-compatible;
-  helpers retain `_score` injection and their existing defaults. Shared request
-  fixtures protect Rust/TypeScript/Kotlin wire agreement.
+  `SearchResult`/`SearchResponse`, `DistanceMetric`, a fluent builder with
+  existing QueryBuilder prefilters, and typed `search` overloads. All current
+  Rust/TS search fields are expressible, including custom hybrid weights and
+  named vector fields. Raw JSON search and legacy helpers remain
+  source-compatible; helpers retain `_score` injection and their existing
+  defaults. Shared request fixtures protect Rust/TypeScript/Kotlin wire
+  agreement.
 
 ### Fixed
 
@@ -33,42 +44,41 @@ and this project adheres to
   `POST /api/kv/{key}/links/{collection}/{document_id}` and **`DELETE`** for
   unlink. The identifying triple belongs in the path; the body carries the
   optional link payload, which `kv_link` now accepts instead of discarding.
-  Schedule pause and resume POSTed to `/api/schedules/{id}/pause` and
-  `/resume`, which have never existed — both are now a partial update,
+  Schedule pause and resume POSTed to `/api/schedules/{id}/pause` and `/resume`,
+  which have never existed — both are now a partial update,
   `PUT /api/schedules/{id}` with `{"enabled": bool}`, which the server already
-  uses to recompute the next execution time. Every one of these calls 404'd,
-  in every language, while their tests passed.
+  uses to recompute the next execution time. Every one of these calls 404'd, in
+  every language, while their tests passed.
 
-- **Field names the server rejects.** `BatchDelete` sent `ids` and no
-  collection where the server requires `collection` and `record_ids`.
-  `FieldSearchOptions` serialized `field` where the server requires
-  `field_name`, so any non-empty per-collection field list was refused.
+- **Field names the server rejects.** `BatchDelete` sent `ids` and no collection
+  where the server requires `collection` and `record_ids`. `FieldSearchOptions`
+  serialized `field` where the server requires `field_name`, so any non-empty
+  per-collection field list was refused.
 
 - **`FunctionCondition` was missing all four comparison variants**
   (`FieldGreaterThan`, `FieldLessThan`, and the two `OrEqual` forms). Numeric
   and datetime gates were unexpressible, and reading back a function that used
-  one failed to deserialize — so get/edit/update threw on any function
-  authored through another surface.
+  one failed to deserialize — so get/edit/update threw on any function authored
+  through another surface.
 
 ### Changed
 
 - **BREAKING — `filter`, `sort`, `limit` and `skip` now take a collection and
-  build a `Query` stage.** They previously emitted `Filter` / `Sort` / `Limit`
-  / `Skip`, none of which the server has a variant for; because a function's
-  stage array deserializes as a unit, one such stage rejected the **entire**
-  function. No stage NAME was removed — all four remain and now produce a stage
-  the server accepts, and callers add the collection as the first argument. The
-  underlying TYPES did change: Kotlin's `FunctionStageConfig.Filter`/`Sort`/
-  `Limit`/`Skip` sealed subclasses and the TypeScript union members are gone, so
+  build a `Query` stage.** They previously emitted `Filter` / `Sort` / `Limit` /
+  `Skip`, none of which the server has a variant for; because a function's stage
+  array deserializes as a unit, one such stage rejected the **entire** function.
+  No stage NAME was removed — all four remain and now produce a stage the server
+  accepts, and callers add the collection as the first argument. The underlying
+  TYPES did change: Kotlin's `FunctionStageConfig.Filter`/`Sort`/ `Limit`/`Skip`
+  sealed subclasses and the TypeScript union members are gone, so
   `FunctionStageConfig.Filter(...)` and an exhaustive `when` over them no longer
   compile.
 
   In Kotlin these moved from sealed subclasses to companion factories
   (`FunctionStageConfig.filter(collection, json)`), because kotlinx rejects two
-  subclasses of one sealed hierarchy sharing a serial name and they could not
-  be retagged `Query` while `Query` exists. `sort` takes typed
-  `SortFieldConfig` so `ascending`, which the server requires, cannot be
-  omitted.
+  subclasses of one sealed hierarchy sharing a serial name and they could not be
+  retagged `Query` while `Query` exists. `sort` takes typed `SortFieldConfig` so
+  `ascending`, which the server requires, cannot be omitted.
 
 - **BREAKING — `kv_link` gained an optional link-payload argument.**
 
