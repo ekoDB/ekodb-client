@@ -129,6 +129,7 @@ ranking, index selection, and ANN recall are not covered by those checks. See
   `deleteWhere`, and `offset` are not current Kotlin APIs, and CRUD methods use
   `Record` rather than the maps shown in those examples. Use the compiled
   examples in `examples/kotlin/examples` as the reference for those operations.
+  Tracked in #216.
 
 ## Chat Models API
 

@@ -21,6 +21,7 @@ fn explicit_vector_envelope_matches_complete_insertion_fixture() {
     // Rust's untagged FieldType::Vector currently loses its tag as well.
     // Construct the established envelope explicitly; this test does not claim
     // that Rust's vector helper has been fixed or exercised against the server.
+    // Tracked in ekoDB/ekodb-client#217.
     record.insert(
         "embedding",
         FieldType::Object(HashMap::from([

@@ -103,7 +103,7 @@
   ],
   "health": {
     "status": 200,
-    "body": "{\"active_operations\":{\"by_type\":{},\"has_active\":false,\"total\":0,\"under_stress\":[]},\"adaptive_strategy\":{\"chunk_sizing\":{\"records_1000\":95,\"records_10000\":95},\"parallelism_for_100_items\":{\"disk_io_bound\":2,\"preparation_cpu_bound\":5,\"validation_mixed\":3}},\"batch_settings\":{\"delete_batch_size\":950,\"insert_batch_size\":950,\"parallel_max\":10,\"query_batch_size\":950,\"sequential_max\":95,\"update_batch_size\":950},\"capacity\":{\"can_accept_requests\":true,\"connections_available\":799308,\"retry_after_ms\":0,\"status\":\"available\",\"utilization_percent\":0.0865},\"commit\":\"b5014f0\",\"file_pool\":{\"eviction_count\":0,\"fd_available\":799308,\"fd_in_use\":692,\"fd_max\":800000,\"fd_utilization_percent\":0.0865,\"total_permit_wait_time_ms\":3},\"integrity\":{\"healthy\":true,\"manifest_load_failed\":[],\"pending_checkpoint_records\":0,\"wal_permanent_failures\":0},\"performance_settings\":{\"compression_level\":2,\"max_concurrent_ops\":380,\"operation_timeout_secs\":300},\"retry_after_ms\":null,\"status\":\"ok\",\"storage_limits\":{\"disk_cache_max_size_mb\":1024,\"file_pool_max_size_mb\":1024,\"memory_cache_size_mb\":64,\"wal_max_size_mb\":128},\"system_resources\":{\"cpu_count\":1,\"disk_free_gb\":5,\"total_memory_gb\":0},\"timestamp\":\"2026-09-09T04:17:38.433038918+00:00\",\"uptime_seconds\":1139,\"version\":\"0.72.2\",\"wal_healthy\":true}"
+    "body": "{\"status\": \"ok\", \"version\": \"0.72.2\", \"commit\": \"b5014f0\"}"
   },
   "exactSchema": {
     "fields": {
