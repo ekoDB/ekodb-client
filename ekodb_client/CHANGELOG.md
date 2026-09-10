@@ -8,6 +8,14 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Changed
+
+- **Compatible dependency refresh** (#214). `make deps-update-all` on top of
+  0.26.2, inside existing semver ranges: Rust `uuid` 1.26.1 and
+  `async-compression` 0.4.46 with their lock refresh; TypeScript lockfile `vite`
+  8.3.0, `rolldown` 1.2.8, `@types/node` 26.5.1, `obug` 2.2.1. `pyproject.toml`
+  and the Kotlin manifest unchanged. The Go client needed no change.
+
 ### Fixed
 
 - **Kotlin Vector record values.** Preserve the
