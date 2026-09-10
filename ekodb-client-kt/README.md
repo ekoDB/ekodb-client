@@ -307,6 +307,9 @@ explicit Vector schema with `expected Vector, got Array`. Insert, update, and
 both upsert paths share the fix. Tagged Vector responses decode to
 `VectorValue`, including nested values; ordinary JSON arrays remain
 `ArrayValue`. Unknown envelopes and additional object fields remain supported.
+An object tagged `{"type":"Vector"}` whose `value` is not a numeric array
+fails decoding instead of falling back to `ObjectValue`; that tag is reserved
+for the server envelope.
 The unconstrained live schema accepted an empty tagged vector; this does not
 establish meaningful empty-vector search behavior. Default JSON encoding still
 rejects nonfinite coordinates.
