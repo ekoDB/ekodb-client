@@ -20,7 +20,7 @@ integration, and automatic optimization.
 - ✅ **Key-Value Operations**: Simple key-value store operations with TTL
 - ✅ **Collection Management**: Create, list, count, and delete collections
 - ✅ **Schema Management**: Define and validate collection schemas
-- ✅ **Full-Text Search**: Powerful search capabilities across collections
+- ✅ **Search**: Typed text, vector, and hybrid search with metadata filters
 - ✅ **Join Operations**: Query related data across multiple collections
 - ✅ **WebSocket Support**: Real-time data streaming and queries
 - ✅ **AI/Chat Integration**: Built-in AI chat with context-aware responses
@@ -235,11 +235,29 @@ client.deleteCollection("old_data")
 ### Schema Management
 
 ```kotlin
+import io.ekodb.client.FieldTypeSchemaBuilder
+import io.ekodb.client.SchemaBuilder
+
+// Create a collection with schema
+val schema = SchemaBuilder()
+    .addField("email", FieldTypeSchemaBuilder("String").required())
+    .addField("age", FieldTypeSchemaBuilder("Integer").range(min = 0))
+    .addField("embedding", FieldTypeSchemaBuilder("Vector").vectorIndex())
+    .build()
+
+client.createCollection("users", schema)
+
+// Get collection schema
+val currentSchema = client.getSchema("users")
+```
+
+You can also pass a raw JSON schema:
+
+```kotlin
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonObject
 
-// Create a collection with schema
 val schema = buildJsonObject {
     putJsonObject("fields") {
         putJsonObject("email") {
@@ -253,17 +271,58 @@ val schema = buildJsonObject {
     }
 }
 
-client.createCollectionWithSchema("users", schema)
-
-// Get collection schema
-val currentSchema = client.getCollectionSchema("users")
+client.createCollection("users", schema)
 ```
+
+Schema field types use server casing, such as `String`, `Integer`, `Boolean`,
+`Vector`, and `Array`. Both `Vector` and `Array` support a vector index; the
+index discriminator is lowercase `vector`. Raw JSON schemas must use these exact
+names. The unreleased builder also normalizes known lowercase type names and
+preserves unknown types for forward compatibility.
+
+### Inserting Vector fields
+
+For a schema field of type `Vector`, insert `FieldType.vector(List<Double>)` (or
+`FieldType.VectorValue`) through `Record`. An ordinary `ArrayValue` has Array
+semantics even when its elements are numeric.
+
+```kotlin
+import io.ekodb.client.FieldTypeSchemaBuilder
+import io.ekodb.client.SchemaBuilder
+import io.ekodb.client.types.FieldType
+import io.ekodb.client.types.Record
+
+client.createCollection("embeddings", SchemaBuilder()
+    .addField("label", FieldTypeSchemaBuilder("String").required())
+    .addField("embedding", FieldTypeSchemaBuilder("Vector").vectorIndex(metric = "cosine"))
+    .build())
+client.insert("embeddings", Record.new()
+    .insert("label", "example")
+    .insert("embedding", FieldType.vector(listOf(1.0, 0.0, 0.0))))
+```
+
+The unreleased fix emits `{"type":"Vector","value":[1.0,0.0,0.0]}` for the
+record field. Earlier Kotlin versions emitted a plain array, rejected by an
+explicit Vector schema with `expected Vector, got Array`. Insert, update, and
+both upsert paths share the fix. Tagged Vector responses decode to
+`VectorValue`, including nested values; ordinary JSON arrays remain
+`ArrayValue`. Unknown envelopes and additional object fields remain supported.
+An object tagged `{"type":"Vector"}` whose `value` is not a numeric array fails
+decoding instead of falling back to `ObjectValue`; that tag is reserved for the
+server envelope. The unconstrained live schema accepted an empty tagged vector;
+this does not establish meaningful empty-vector search behavior. Default JSON
+encoding still rejects nonfinite coordinates.
+
+Search request `vector` is a separate `List<Double>` contract and remains
+`"vector":[...]`. See the
+[contract commands](../COMMANDS.md#search-and-schema-compatibility) for the
+bounded live test and protocol evidence.
 
 ### Typed text, vector, and hybrid search
 
-**Implemented on current main; not available in the v0.26.0 release.** Build the
-local client to use this additive API. Main's version is 0.26.1; a version in
-this README is not evidence of publication to Maven Central.
+Use `SearchQuery` or the search builder for text, vector, and hybrid requests.
+These typed APIs were added after v0.26.0; older clients can use raw JSON
+search.
 
 ```kotlin
 import io.ekodb.client.types.DistanceMetric
@@ -527,8 +586,8 @@ For complete, runnable examples of all features, see the
 - `count(collection)` - Count documents in collection
 - `collectionExists(collection)` - Check if collection exists
 - `deleteCollection(collection)` - Delete entire collection
-- `createCollectionWithSchema(collection, schema)` - Create with schema
-- `getCollectionSchema(collection)` - Get collection schema
+- `createCollection(collection, schema)` - Create with schema
+- `getSchema(collection)` - Get collection schema
 
 #### Search Operations
 
@@ -639,15 +698,28 @@ client.close()
 
 ### Error Handling
 
+The unreleased client exposes terminal HTTP errors as `EkoDBHttpException`. Use
+`statusCode` for handling and `responseBody` for server diagnostics. Redact
+credentials and tokens before logging the body or exception message.
+
 ```kotlin
+import io.ekodb.client.EkoDBHttpException
+
 try {
     val result = client.insert("users", record)
     // Handle success
+} catch (e: EkoDBHttpException) {
+    println("Request failed with HTTP ${e.statusCode}")
+    // Inspect e.responseBody; redact sensitive values before logging.
 } catch (e: Exception) {
-    // Handle error
-    println("Error: ${e.message}")
+    // Handle authentication, transport, or decoding failures.
+    println("Request failed: ${e.javaClass.simpleName}")
 }
 ```
+
+Transient server errors are retried with exponential backoff. Terminal client
+errors are thrown immediately, after any applicable authentication refresh or
+rate-limit handling. Exhausted server errors also throw `EkoDBHttpException`.
 
 ### Performance Tips
 

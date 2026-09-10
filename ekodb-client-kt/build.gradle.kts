@@ -139,3 +139,19 @@ nexusPublishing {
     // Use new publishing API
     useStaging.set(false)
 }
+
+// Explicit opt-in: this contract creates and deletes one disposable collection.
+// Missing credentials fail this task; normal unit tests never contact a server.
+tasks.test {
+    exclude("**/VectorLiveContractTest.class")
+}
+
+tasks.register<Test>("vectorLiveTest") {
+    description = "Run the bounded Vector insert/search contract using EKODB_BASE_URL and EKODB_API_KEY"
+    group = "verification"
+    testClassesDirs = sourceSets.test.get().output.classesDirs
+    classpath = sourceSets.test.get().runtimeClasspath
+    include("**/VectorLiveContractTest.class")
+    useJUnitPlatform()
+    outputs.upToDateWhen { false }
+}

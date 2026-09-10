@@ -1,0 +1,226 @@
+{
+  "observedAt": "2026-09-09T04:17:38.333Z",
+  "clientCommit": "6e9804088a37512b831576159dda39b197abca56",
+  "attempts": [
+    {
+      "name": "intent_schema_probe_8ecd6f0ec9764ee29aac90486465c0bf",
+      "fieldType": "vector",
+      "canonicalScalars": false,
+      "beforeStatus": 200,
+      "create": {
+        "status": 400,
+        "body": "{\"error\":\"Invalid field type: 'boolean' - must be one of: String, Integer, Float, Boolean, DateTime, UUID, Array, Object, Decimal, Bytes, Null, Number, Set, Vector, Binary, Duration\"}"
+      },
+      "delete": {
+        "status": 200,
+        "body": "{\"message\":\"Collection deleted successfully\",\"status\":\"success\"}"
+      },
+      "after": {
+        "status": 200,
+        "absent": true
+      }
+    },
+    {
+      "name": "intent_schema_probe_4161366ee16643f7b64544b83115f940",
+      "fieldType": "Array",
+      "canonicalScalars": false,
+      "beforeStatus": 200,
+      "create": {
+        "status": 400,
+        "body": "{\"error\":\"Invalid field type: 'string' - must be one of: String, Integer, Float, Boolean, DateTime, UUID, Array, Object, Decimal, Bytes, Null, Number, Set, Vector, Binary, Duration\"}"
+      },
+      "delete": {
+        "status": 200,
+        "body": "{\"message\":\"Collection deleted successfully\",\"status\":\"success\"}"
+      },
+      "after": {
+        "status": 200,
+        "absent": true
+      }
+    },
+    {
+      "name": "intent_schema_probe_fdefa5353ca94e9fbbfb35ad77713a7d",
+      "fieldType": "vector",
+      "canonicalScalars": true,
+      "beforeStatus": 200,
+      "create": {
+        "status": 400,
+        "body": "{\"error\":\"Invalid field type: 'vector' - must be one of: String, Integer, Float, Boolean, DateTime, UUID, Array, Object, Decimal, Bytes, Null, Number, Set, Vector, Binary, Duration\"}"
+      },
+      "delete": {
+        "status": 200,
+        "body": "{\"message\":\"Collection deleted successfully\",\"status\":\"success\"}"
+      },
+      "after": {
+        "status": 200,
+        "absent": true
+      }
+    },
+    {
+      "name": "intent_schema_probe_f73efc9047a3447f8c810ff81f271e51",
+      "fieldType": "Vector",
+      "canonicalScalars": true,
+      "beforeStatus": 200,
+      "create": {
+        "status": 201,
+        "body": "{\"message\":\"Collection initialized successfully\",\"status\":\"success\"}"
+      },
+      "schema": {
+        "status": 200,
+        "body": "{\"fields\":{\"interaction_id\":{\"field_type\":\"String\",\"default\":null,\"unique\":false,\"required\":true,\"enums\":[],\"max\":null,\"min\":null,\"regex\":null},\"document_revision\":{\"field_type\":\"Integer\",\"default\":null,\"unique\":false,\"required\":true,\"enums\":[],\"max\":null,\"min\":null,\"regex\":null},\"source_revision\":{\"field_type\":\"Integer\",\"default\":null,\"unique\":false,\"required\":true,\"enums\":[],\"max\":null,\"min\":null,\"regex\":null},\"embedding\":{\"field_type\":\"Vector\",\"default\":null,\"unique\":false,\"required\":true,\"enums\":[],\"max\":null,\"min\":null,\"regex\":null,\"index\":{\"type\":\"vector\",\"algorithm\":\"flat\",\"metric\":\"cosine\",\"m\":16,\"ef_construction\":200}},\"active\":{\"field_type\":\"Boolean\",\"default\":null,\"unique\":false,\"required\":true,\"enums\":[],\"max\":null,\"min\":null,\"regex\":null},\"embedding_dimension\":{\"field_type\":\"Integer\",\"default\":null,\"unique\":false,\"required\":true,\"enums\":[],\"max\":null,\"min\":null,\"regex\":null},\"rendered_text\":{\"field_type\":\"String\",\"default\":null,\"unique\":false,\"required\":true,\"enums\":[],\"max\":null,\"min\":null,\"regex\":null},\"embedding_revision\":{\"field_type\":\"String\",\"default\":null,\"unique\":false,\"required\":true,\"enums\":[],\"max\":null,\"min\":null,\"regex\":null},\"current\":{\"field_type\":\"Boolean\",\"default\":null,\"unique\":false,\"required\":true,\"enums\":[],\"max\":null,\"min\":null,\"regex\":null},\"principal_id\":{\"field_type\":\"String\",\"default\":null,\"unique\":false,\"required\":true,\"enums\":[],\"max\":null,\"min\":null,\"regex\":null},\"parent_intent_id\":{\"field_type\":\"String\",\"default\":null,\"unique\":false,\"required\":true,\"enums\":[],\"max\":null,\"min\":null,\"regex\":null},\"evidence_need\":{\"field_type\":\"String\",\"default\":null,\"unique\":false,\"required\":true,\"enums\":[],\"max\":null,\"min\":null,\"regex\":null},\"renderer_version\":{\"field_type\":\"String\",\"default\":null,\"unique\":false,\"required\":true,\"enums\":[],\"max\":null,\"min\":null,\"regex\":null},\"schema_version\":{\"field_type\":\"String\",\"default\":null,\"unique\":false,\"required\":true,\"enums\":[],\"max\":null,\"min\":null,\"regex\":null},\"retrieval_role\":{\"field_type\":\"String\",\"default\":null,\"unique\":false,\"required\":true,\"enums\":[],\"max\":null,\"min\":null,\"regex\":null},\"evidence_ids\":{\"field_type\":\"String\",\"default\":null,\"unique\":false,\"required\":true,\"enums\":[],\"max\":null,\"min\":null,\"regex\":null},\"discovery_role\":{\"field_type\":\"String\",\"default\":null,\"unique\":false,\"required\":true,\"enums\":[],\"max\":null,\"min\":null,\"regex\":null},\"projection_version\":{\"field_type\":\"String\",\"default\":null,\"unique\":false,\"required\":true,\"enums\":[],\"max\":null,\"min\":null,\"regex\":null},\"generation\":{\"field_type\":\"String\",\"default\":null,\"unique\":false,\"required\":true,\"enums\":[],\"max\":null,\"min\":null,\"regex\":null},\"record_id\":{\"field_type\":\"String\",\"default\":null,\"unique\":false,\"required\":true,\"enums\":[],\"max\":null,\"min\":null,\"regex\":null},\"embedding_model\":{\"field_type\":\"String\",\"default\":null,\"unique\":false,\"required\":true,\"enums\":[],\"max\":null,\"min\":null,\"regex\":null}},\"version\":1,\"created_at\":\"2026-09-09T04:17:38.618977492Z\",\"last_modified\":\"2026-09-09T04:17:38.618977675Z\",\"bypass_ripple\":true,\"primary_key_alias\":\"id\"}"
+      },
+      "delete": {
+        "status": 200,
+        "body": "{\"message\":\"Collection deleted successfully\",\"status\":\"success\"}"
+      },
+      "after": {
+        "status": 200,
+        "absent": true
+      }
+    },
+    {
+      "name": "intent_schema_probe_ba32c6aa1f9847cca894a530ca07eaae",
+      "fieldType": "Array",
+      "canonicalScalars": true,
+      "beforeStatus": 200,
+      "create": {
+        "status": 201,
+        "body": "{\"message\":\"Collection initialized successfully\",\"status\":\"success\"}"
+      },
+      "schema": {
+        "status": 200,
+        "body": "{\"fields\":{\"schema_version\":{\"field_type\":\"String\",\"default\":null,\"unique\":false,\"required\":true,\"enums\":[],\"max\":null,\"min\":null,\"regex\":null},\"record_id\":{\"field_type\":\"String\",\"default\":null,\"unique\":false,\"required\":true,\"enums\":[],\"max\":null,\"min\":null,\"regex\":null},\"embedding\":{\"field_type\":\"Array\",\"default\":null,\"unique\":false,\"required\":true,\"enums\":[],\"max\":null,\"min\":null,\"regex\":null,\"index\":{\"type\":\"vector\",\"algorithm\":\"flat\",\"metric\":\"cosine\",\"m\":16,\"ef_construction\":200}},\"projection_version\":{\"field_type\":\"String\",\"default\":null,\"unique\":false,\"required\":true,\"enums\":[],\"max\":null,\"min\":null,\"regex\":null},\"embedding_model\":{\"field_type\":\"String\",\"default\":null,\"unique\":false,\"required\":true,\"enums\":[],\"max\":null,\"min\":null,\"regex\":null},\"interaction_id\":{\"field_type\":\"String\",\"default\":null,\"unique\":false,\"required\":true,\"enums\":[],\"max\":null,\"min\":null,\"regex\":null},\"evidence_need\":{\"field_type\":\"String\",\"default\":null,\"unique\":false,\"required\":true,\"enums\":[],\"max\":null,\"min\":null,\"regex\":null},\"generation\":{\"field_type\":\"String\",\"default\":null,\"unique\":false,\"required\":true,\"enums\":[],\"max\":null,\"min\":null,\"regex\":null},\"discovery_role\":{\"field_type\":\"String\",\"default\":null,\"unique\":false,\"required\":true,\"enums\":[],\"max\":null,\"min\":null,\"regex\":null},\"rendered_text\":{\"field_type\":\"String\",\"default\":null,\"unique\":false,\"required\":true,\"enums\":[],\"max\":null,\"min\":null,\"regex\":null},\"parent_intent_id\":{\"field_type\":\"String\",\"default\":null,\"unique\":false,\"required\":true,\"enums\":[],\"max\":null,\"min\":null,\"regex\":null},\"embedding_dimension\":{\"field_type\":\"Integer\",\"default\":null,\"unique\":false,\"required\":true,\"enums\":[],\"max\":null,\"min\":null,\"regex\":null},\"current\":{\"field_type\":\"Boolean\",\"default\":null,\"unique\":false,\"required\":true,\"enums\":[],\"max\":null,\"min\":null,\"regex\":null},\"document_revision\":{\"field_type\":\"Integer\",\"default\":null,\"unique\":false,\"required\":true,\"enums\":[],\"max\":null,\"min\":null,\"regex\":null},\"embedding_revision\":{\"field_type\":\"String\",\"default\":null,\"unique\":false,\"required\":true,\"enums\":[],\"max\":null,\"min\":null,\"regex\":null},\"source_revision\":{\"field_type\":\"Integer\",\"default\":null,\"unique\":false,\"required\":true,\"enums\":[],\"max\":null,\"min\":null,\"regex\":null},\"evidence_ids\":{\"field_type\":\"String\",\"default\":null,\"unique\":false,\"required\":true,\"enums\":[],\"max\":null,\"min\":null,\"regex\":null},\"principal_id\":{\"field_type\":\"String\",\"default\":null,\"unique\":false,\"required\":true,\"enums\":[],\"max\":null,\"min\":null,\"regex\":null},\"renderer_version\":{\"field_type\":\"String\",\"default\":null,\"unique\":false,\"required\":true,\"enums\":[],\"max\":null,\"min\":null,\"regex\":null},\"retrieval_role\":{\"field_type\":\"String\",\"default\":null,\"unique\":false,\"required\":true,\"enums\":[],\"max\":null,\"min\":null,\"regex\":null},\"active\":{\"field_type\":\"Boolean\",\"default\":null,\"unique\":false,\"required\":true,\"enums\":[],\"max\":null,\"min\":null,\"regex\":null}},\"version\":1,\"created_at\":\"2026-09-09T04:17:38.738136543Z\",\"last_modified\":\"2026-09-09T04:17:38.738136736Z\",\"bypass_ripple\":true,\"primary_key_alias\":\"id\"}"
+      },
+      "delete": {
+        "status": 200,
+        "body": "{\"message\":\"Collection deleted successfully\",\"status\":\"success\"}"
+      },
+      "after": {
+        "status": 200,
+        "absent": true
+      }
+    }
+  ],
+  "health": {
+    "status": 200,
+    "body": "{\"status\": \"ok\", \"version\": \"0.72.2\", \"commit\": \"b5014f0\"}"
+  },
+  "exactSchema": {
+    "fields": {
+      "record_id": {
+        "field_type": "string",
+        "required": true,
+        "unique": false
+      },
+      "parent_intent_id": {
+        "field_type": "string",
+        "required": true,
+        "unique": false
+      },
+      "principal_id": {
+        "field_type": "string",
+        "required": true,
+        "unique": false
+      },
+      "projection_version": {
+        "field_type": "string",
+        "required": true,
+        "unique": false
+      },
+      "interaction_id": {
+        "field_type": "string",
+        "required": true,
+        "unique": false
+      },
+      "retrieval_role": {
+        "field_type": "string",
+        "required": true,
+        "unique": false
+      },
+      "discovery_role": {
+        "field_type": "string",
+        "required": true,
+        "unique": false
+      },
+      "evidence_need": {
+        "field_type": "string",
+        "required": true,
+        "unique": false
+      },
+      "renderer_version": {
+        "field_type": "string",
+        "required": true,
+        "unique": false
+      },
+      "schema_version": {
+        "field_type": "string",
+        "required": true,
+        "unique": false
+      },
+      "embedding_model": {
+        "field_type": "string",
+        "required": true,
+        "unique": false
+      },
+      "embedding_revision": {
+        "field_type": "string",
+        "required": true,
+        "unique": false
+      },
+      "generation": {
+        "field_type": "string",
+        "required": true,
+        "unique": false
+      },
+      "rendered_text": {
+        "field_type": "string",
+        "required": true,
+        "unique": false
+      },
+      "evidence_ids": {
+        "field_type": "string",
+        "required": true,
+        "unique": false
+      },
+      "document_revision": {
+        "field_type": "integer",
+        "required": true,
+        "unique": false
+      },
+      "source_revision": {
+        "field_type": "integer",
+        "required": true,
+        "unique": false
+      },
+      "embedding_dimension": {
+        "field_type": "integer",
+        "required": true,
+        "unique": false
+      },
+      "active": {
+        "field_type": "boolean",
+        "required": true,
+        "unique": false
+      },
+      "current": {
+        "field_type": "boolean",
+        "required": true,
+        "unique": false
+      },
+      "embedding": {
+        "field_type": "vector",
+        "required": true,
+        "unique": false,
+        "index": {
+          "type": "vector",
+          "algorithm": "flat",
+          "metric": "cosine",
+          "m": 16,
+          "ef_construction": 200
+        }
+      }
+    },
+    "version": 1,
+    "bypass_ripple": true
+  }
+}

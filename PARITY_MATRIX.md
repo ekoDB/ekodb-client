@@ -1,9 +1,9 @@
 # Client Library Parity Matrix
 
-**Last Updated:** June 12, 2026
+**Last Updated:** September 8, 2026
 
-**Client version:** 0.21.0 (Rust, Python, TypeScript, Kotlin); standalone Go
-client tracks the same release line.
+**Client version:** 0.26.2 (Rust, Python, TypeScript, Kotlin); Go is maintained
+in the separate `ekodb-client-go` repository.
 
 > Renamed from `MISSING_FEATURES.md` (April 28, 2026) to reflect the current
 > intent: a parity tracker, not a missing-features checklist. Inbound links from
@@ -11,7 +11,10 @@ client tracks the same release line.
 > the old path. The companion `documentation/CLIENT_LIBRARY_GAPS.md` was removed
 > in the same pass (it duplicated this file at a stale revision).
 
-## Status: Core parity verified through v0.21.0
+## Status: Core parity with typed Kotlin search
+
+The core parity baseline below was verified at v0.21.0. Search API coverage was
+updated for v0.26.2; language-specific differences are noted separately.
 
 > The v0.21.0 parity pass closed a set of per-client method gaps. Newly brought
 > to parity:
@@ -72,7 +75,7 @@ TypeScript, Go, Kotlin). This includes:
 
 **Admin-only endpoints intentionally excluded from clients:** query index
 management (`create_query_index`, `list_query_indexes`, `delete_query_index`,
-`explain_query`) and the four search-index explain helpers
+`explain_query`) and the three search-index explain helpers
 (`explain_text_search`, `explain_vector_search`, `explain_hybrid_search`). These
 require `admin_filter` auth and live on the server-side admin surface. See
 ekodb_client/CHANGELOG.md "Removed" section under v0.16.0 for the rationale.
@@ -83,22 +86,50 @@ through stored-function concurrency stages (`IdempotencyClaim`, `RateLimit`,
 `LockAcquire`). The stage path bundles TTL, fence-token, and idempotent-retry
 semantics that direct client access would lose. Revisit if a customer asks.
 
-The sections below track the implementation history.
+## Search API
 
-## Kotlin search API quality (current main, 0.26.1)
+- Text, vector, and hybrid search — Rust ✅ | Go ✅ | Python ✅ | TypeScript ✅
+  | JavaScript ✅ | Kotlin ✅
+- Kotlin provides `SearchQuery`, `SearchQueryBuilder`,
+  `SearchResult`/`SearchResponse`, and typed `search` overloads. The request
+  model covers the Rust/TypeScript search fields, including metadata filters,
+  named vector fields, projections, and custom hybrid weights.
+- Kotlin raw JSON search and record-list helpers remain available. Typed results
+  expose scores, matched fields, totals, and optional execution time.
+- Search uses JSON HTTP transport in Rust, TypeScript, and Kotlin, including
+  when Kotlin's experimental MessagePack format is selected.
 
-Core wire capability predates this addition: Kotlin's raw JSON search already
-forwards text, vector, hybrid, projection, and metadata-filter options. Current
-main additionally provides `SearchQuery`, `SearchQueryBuilder`,
-`SearchResult`/`SearchResponse`, and typed `search` overloads for
-discoverability and response metadata. This is not a claim that these additions
-are published in v0.26.0. Raw search and existing record-list helpers remain
-available.
+**Known API differences:** Rust emits unset cache flags and limit as null;
+TypeScript and Kotlin omit them. Kotlin and TypeScript hybrid helpers leave
+weights unset, while Rust's helper sets 0.5/0.5. Kotlin reuses the existing
+`QueryBuilder` filter representation. Dynamic record fields are preserved;
+unknown response-envelope fields require Kotlin's raw search overload.
 
-The four shared cases in `test-fixtures/search-requests.json` compare complete
-Rust/TypeScript/Kotlin request JSON. Rust's unset cache flags and limit remain
-explicit nulls, unlike TypeScript/Kotlin omission; tests document the
-difference. These are source/wire tests, not live-server parity certification.
+Shared fixtures in `test-fixtures/search-requests.json` verify four complete
+Rust/TypeScript/Kotlin request shapes. The Kotlin search example also passed a
+live integration smoke test during
+[#208](https://github.com/ekoDB/ekodb-client/pull/208#issuecomment-5580501554);
+ranking, index selection, and ANN recall are not covered by those checks. See
+[Testing Commands](COMMANDS.md#search-and-schema-compatibility).
+
+### Kotlin API Differences and Follow-ups
+
+- HTTP search uses the full `SearchQuery` model. WebSocket text search and
+  stored-function search stages have separate request contracts.
+- Kotlin's search model stores `fields` and `weights` as strings; its builder
+  accepts lists/maps and normalizes them. Alternate JSON representations can be
+  sent through raw search. Typed decoding requires `matched_fields`, while
+  execution time is optional.
+- Chat operations, transaction status, and WebSocket responses still expose raw
+  JSON in parts of the Kotlin API. Typed search does not imply identical
+  response modeling across every client operation.
+- The existing query builder uses `JsonElement` filters and dynamic inputs.
+  Vector-index algorithm and metric options remain strings in Kotlin.
+- Some unrelated Quick Start examples still need correction: `client.query`,
+  `deleteWhere`, and `offset` are not current Kotlin APIs, and CRUD methods use
+  `Record` rather than the maps shown in those examples. Use the compiled
+  examples in `examples/kotlin/examples` as the reference for those operations.
+  Tracked in #216.
 
 ## Chat Models API
 
@@ -109,6 +140,9 @@ difference. These are source/wire tests, not live-server parity certification.
   JavaScript ✅ | Kotlin ✅
 - `getChatMessage(chatId, msgId)` - Rust ✅ | Go ✅ | Python ✅ | TypeScript ✅
   | JavaScript ✅ | Kotlin ✅
+
+Kotlin's `FieldSearchOptions.field` serializes as `field_name`, matching the
+server contract. The Kotlin property name is unchanged.
 
 ## User Functions API
 
@@ -129,6 +163,34 @@ difference. These are source/wire tests, not live-server parity certification.
   JavaScript ✅ | Kotlin ✅
 - `countDocuments()` - Rust ✅ | Go ✅ | Python ✅ | TypeScript ✅ | JavaScript
   ✅ | Kotlin ✅
+
+### Schema Compatibility
+
+Schema field types are case-sensitive. Server 0.72.2 accepts both `Vector` and
+`Array` with a vector index; lowercase `vector`, `string`, `integer`, and
+`boolean` are rejected. Index configuration uses lowercase `type: "vector"`.
+Python, Go, and TypeScript schema examples use `Array`; Kotlin's schema example
+uses canonical scalar types.
+
+**Kotlin (unreleased):** `FieldTypeSchemaBuilder` normalizes known type names to
+server casing, retaining canonical inputs and unknown types. Regression tests
+cover the accepted schema types. Python's builder still passes type strings
+through, so callers must use canonical names despite its lowercase documentation
+examples.
+
+**Vector record values (Kotlin unreleased):** `FieldType.vector` now emits the
+server-accepted type/value envelope, distinct from ordinary arrays. TypeScript
+`Field.vector` and Python `field_vector` construct this envelope; Rust's
+untagged `FieldType::Vector` still emits an array. The Rust golden test uses an
+explicit envelope and does not certify its vector helper. The Kotlin live
+contract verifies insertion, named-field cosine search, one Boolean filter,
+upsert visibility, and cleanup; it does not establish broad prefilter or ANN
+semantics. Earlier schema-only validation did not test record insertion. See
+[contract commands and evidence](COMMANDS.md#search-and-schema-compatibility).
+
+**Kotlin HTTP errors (unreleased):** `EkoDBHttpException` exposes terminal
+status codes and response bodies, including exhausted server errors. See the
+[Kotlin error-handling guide](ekodb-client-kt/README.md#error-handling).
 
 ---
 

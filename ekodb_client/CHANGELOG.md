@@ -6,6 +6,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **Kotlin Vector record values.** Preserve the
+  `{"type":"Vector","value":[...]}` wire envelope in insert/update/upsert and
+  decode tagged vectors symmetrically, including nested values. Ordinary arrays
+  and search-query vectors retain their existing array representation. Add a
+  shared insertion fixture and an opt-in live
+  create/insert/search/filter/upsert/cleanup contract. Earlier schema-only
+  validation did not exercise insertion.
+
+- **Kotlin schema field types.** Canonicalize known type names in
+  `FieldTypeSchemaBuilder`, so lowercase inputs such as `string` and `vector`
+  emit server-compatible `String` and `Vector`. Preserve canonical names,
+  unknown types, and vector-index options. Both `Vector` and `Array` are
+  accepted for vector-indexed fields on server 0.72.2.
+- **Kotlin HTTP errors.** Expose terminal request failures through
+  `EkoDBHttpException`, with `statusCode` and `responseBody`. Stop retrying
+  terminal client errors, and throw on exhausted server errors for every
+  request: previously the raw error response was returned, so most methods
+  decoded the error body as their result (collection creation silently
+  succeeded, `update` returned the error body as a `Record`), and the methods
+  that did check status reported the failure with their own prefix. Exhausted
+  5xx now surfaces as `Request failed with status <code>: <body>`; the message
+  format of other failures is unchanged. Authentication refresh and rate-limit
+  retries remain supported.
+
 ## [0.26.2] - 2026-09-08
 
 ### Changed
@@ -20,7 +48,7 @@ and this project adheres to
 
 ### Added
 
-- **Kotlin typed search (current main).** Add serializable `SearchQuery`,
+- **Kotlin typed search.** Add serializable `SearchQuery`,
   `SearchResult`/`SearchResponse`, `DistanceMetric`, a fluent builder with
   existing QueryBuilder prefilters, and typed `search` overloads. All current
   Rust/TS search fields are expressible, including custom hybrid weights and
@@ -33,7 +61,8 @@ and this project adheres to
 
 - **Kotlin chat retrieval fields.** Serialize `FieldSearchOptions.field` as
   `field_name`, matching Rust and the documented server requirement. The Kotlin
-  constructor/property name remains unchanged.
+  constructor/property name remains unchanged. Persisted JSON using the old
+  `field` key must be migrated to `field_name`.
 
 - **Kotlin search JSON transport.** Force JSON request/response negotiation for
   search even with experimental MessagePack selected, matching Rust/TypeScript.
