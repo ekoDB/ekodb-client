@@ -24,10 +24,15 @@ and this project adheres to
   unknown types, and vector-index options. Both `Vector` and `Array` are
   accepted for vector-indexed fields on server 0.72.2.
 - **Kotlin HTTP errors.** Expose terminal request failures through
-  `EkoDBHttpException`, with `statusCode` and `responseBody`. Preserve the
-  exception message format, stop retrying terminal client errors, and throw on
-  exhausted server errors instead of silently succeeding in collection creation.
-  Authentication refresh and rate-limit retries remain supported.
+  `EkoDBHttpException`, with `statusCode` and `responseBody`. Stop retrying
+  terminal client errors, and throw on exhausted server errors for every
+  request: previously the raw error response was returned, so most methods
+  decoded the error body as their result (collection creation silently
+  succeeded, `update` returned the error body as a `Record`), and the methods
+  that did check status reported the failure with their own prefix. Exhausted
+  5xx now surfaces as `Request failed with status <code>: <body>`; the message
+  format of other failures is unchanged. Authentication refresh and rate-limit
+  retries remain supported.
 
 ## [0.26.2] - 2026-09-08
 
