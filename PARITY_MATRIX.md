@@ -2,7 +2,7 @@
 
 **Last Updated:** September 8, 2026
 
-**Client version:** 0.26.2 (Rust, Python, TypeScript, Kotlin); Go is maintained
+**Client version:** 0.26.3 (Rust, Python, TypeScript, Kotlin); Go is maintained
 in the separate `ekodb-client-go` repository.
 
 > Renamed from `MISSING_FEATURES.md` (April 28, 2026) to reflect the current
@@ -14,7 +14,7 @@ in the separate `ekodb-client-go` repository.
 ## Status: Core parity with typed Kotlin search
 
 The core parity baseline below was verified at v0.21.0. Search API coverage was
-updated for v0.26.2; language-specific differences are noted separately.
+updated for v0.26.3; language-specific differences are noted separately.
 
 > The v0.21.0 parity pass closed a set of per-client method gaps. Newly brought
 > to parity:
