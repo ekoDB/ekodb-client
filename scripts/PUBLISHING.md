@@ -106,11 +106,9 @@ Update version in each package manifest:
 version = "0.1.0"
 ```
 
-**Go** (git tag):
-
-```bash
-git tag v0.1.0
-```
+**Go** (`ekodb-client-go`, a separate repository): collapse its `[Unreleased]`
+into `## [X.Y.Z] - <date>` and merge the `chore(*): vX.Y.Z` cap to its `main`;
+CI cuts the tag and publishes the Release. No tag is created by hand.
 
 **Python** (`ekodb-client-py/Cargo.toml`):
 

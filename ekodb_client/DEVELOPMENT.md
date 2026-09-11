@@ -181,7 +181,7 @@ cargo doc -p ekodb_client --document-private-items
 - [ ] Run clippy with no warnings
 - [ ] Update README if needed
 - [ ] Generate and review docs
-- [ ] Create git tag
+- [ ] Merge the version cap (`chore(*): vX.Y.Z`) to `main`; CI cuts the tag and publishes the Release
 - [ ] Publish to crates.io (when ready)
 
 ## Future Enhancements

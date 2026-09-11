@@ -118,7 +118,7 @@ npm login
 # Edit: ekodb_client/Cargo.toml
 # Edit: ekodb-client-py/Cargo.toml
 # Edit: ekodb-client-ts/package.json
-# Git tag for Go: v0.1.0
+# (Go lives in ekodb-client-go: its release is a cap merged there; CI tags it)
 
 # 3. Commit changes
 git add .
