@@ -36,7 +36,7 @@ dependencies {
     // MessagePack core, for the WebSocket binary transport negotiated with the
     // server. CBOR above is NOT wire-compatible with the server's msgpack, so a
     // real msgpack codec is required.
-    implementation("org.msgpack:msgpack-core:0.9.8")
+    implementation("org.msgpack:msgpack-core:0.9.12")
 
     // HTTP client
     implementation("io.ktor:ktor-client-core:3.5.2")
