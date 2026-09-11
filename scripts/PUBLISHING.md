@@ -156,7 +156,8 @@ version = "0.1.0"
 
 ### 5. Post-Release
 
-- [ ] Merge the version cap (`chore(*): vX.Y.Z`) to `main`; CI cuts the tag and publishes the GitHub Release, nothing to do by hand
+- [ ] Merge the version cap (`chore(*): vX.Y.Z`) to `main`; CI cuts the tag and
+      publishes the GitHub Release, nothing to do by hand
 - [ ] Announce on social media/blog
 - [ ] Update documentation website
 - [ ] Monitor for issues
