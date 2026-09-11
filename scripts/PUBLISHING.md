@@ -158,7 +158,7 @@ version = "0.1.0"
 
 ### 5. Post-Release
 
-- [ ] Create GitHub release with tag
+- [ ] Merge the version cap (`chore(*): vX.Y.Z`) to `main`; CI cuts the tag and publishes the GitHub Release, nothing to do by hand
 - [ ] Announce on social media/blog
 - [ ] Update documentation website
 - [ ] Monitor for issues
@@ -178,7 +178,8 @@ cargo publish --allow-dirty
 # Ensure the repository is public and pushed
 git remote -v
 git push origin main
-git push origin v0.1.0
+# The tag is cut by CI when the version cap merges to main; check that
+# repository's release workflow run rather than pushing a tag by hand.
 ```
 
 ### Python: "invalid authentication credentials"

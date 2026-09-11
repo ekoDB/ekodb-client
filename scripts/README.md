@@ -131,9 +131,9 @@ git push
 # 5. Verify
 # Check package registry pages (see links above)
 
-# 6. Create GitHub release
-git tag v0.1.0
-git push origin v0.1.0
+# 6. Release: collapse [Unreleased] in ekodb_client/CHANGELOG.md into
+#    "## [0.1.0] - <date>", commit as "chore(*): v0.1.0", rebase-merge to main.
+#    CI cuts the tag and publishes the GitHub Release; nothing to tag by hand.
 ```
 
 ## 📚 Documentation
