@@ -1,0 +1,19 @@
+name: release
+
+# A chore(*): vX.Y.Z cap merged to main cuts the tag and publishes the Release
+# from ekodb_client/CHANGELOG.md. The version is cross-checked against the
+# Rust manifest, which `make sync-versions` keeps in step with the others.
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  auto-tag:
+    uses: ekoDB/ekodb-workflows-public/.github/workflows/auto-tag.yml@v1
+    with:
+      version-command: grep -m1 '^version' ekodb_client/Cargo.toml | cut -d'"' -f2
+      changelog: ekodb_client/CHANGELOG.md
