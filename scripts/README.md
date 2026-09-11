@@ -132,7 +132,7 @@ git push
 # Check package registry pages (see links above)
 
 # 6. Release: collapse [Unreleased] in ekodb_client/CHANGELOG.md into
-#    "## [0.1.0] - <date>", commit as "chore(*): v0.1.0", rebase-merge to main.
+#    "## [0.1.0] - YYYY-MM-DD", commit as "chore(*): v0.1.0", rebase-merge to main.
 #    CI cuts the tag and publishes the GitHub Release; nothing to tag by hand.
 ```
 

@@ -107,7 +107,7 @@ version = "0.1.0"
 ```
 
 **Go** (`ekodb-client-go`, a separate repository): collapse its `[Unreleased]`
-into `## [X.Y.Z] - <date>` and merge the `chore(*): vX.Y.Z` cap to its `main`;
+into `## [X.Y.Z] - YYYY-MM-DD` and merge the `chore(*): vX.Y.Z` cap to its `main`;
 CI cuts the tag and publishes the Release. No tag is created by hand.
 
 **Python** (`ekodb-client-py/Cargo.toml`):
