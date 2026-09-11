@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- **Tags and Releases are cut by CI on a version cap.** A `chore(*): vX.Y.Z`
+  merge to `main` tags itself and publishes the Release from this file's block;
+  package publishing stays the manual scripts (#220). (#221)
+
 ## [0.26.3] - 2026-09-10
 
 ### Changed
