@@ -22,7 +22,7 @@ make test-ci
 #    - ekodb_client/Cargo.toml
 #    - ekodb-client-py/Cargo.toml
 #    - ekodb-client-ts/package.json
-#    - Git tag for Go (v0.1.0)
+#    - Go: a version cap merged to main in ekodb-client-go (CI tags it)
 
 # 3. Update CHANGELOG.md
 
