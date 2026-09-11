@@ -309,7 +309,7 @@ bump-version:
 	echo "$(YELLOW)💡 Next steps:$(RESET)"; \
 	echo "  1. Review changes: git diff"; \
 	echo "  2. Collapse [Unreleased] in ekodb_client/CHANGELOG.md into '## [$$NEW_VERSION] - YYYY-MM-DD' (that date shape exactly)"; \
-	echo "  3. Commit it all as the cap: git add -A && git commit -m 'chore(*): v$$NEW_VERSION' -- any other subject is not a cap and cuts no tag"; \
+	echo "  3. Commit it all as the cap: git add -A && git commit -m 'chore(*): v$$NEW_VERSION' (any other subject is not a cap and cuts no tag)"; \
 	echo "  4. Rebase-merge the cap to main: CI cuts the tag and publishes the GitHub Release"; \
 	echo "  5. Publish the packages: make deploy-all (or individual deploy commands)"
 

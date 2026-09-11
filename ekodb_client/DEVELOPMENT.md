@@ -181,6 +181,8 @@ cargo doc -p ekodb_client --document-private-items
 - [ ] Run clippy with no warnings
 - [ ] Update README if needed
 - [ ] Generate and review docs
+- [ ] Collapse `[Unreleased]` in `CHANGELOG.md` into `## [X.Y.Z] - YYYY-MM-DD`
+      (that date shape exactly) in the cap commit
 - [ ] Merge the version cap (`chore(*): vX.Y.Z`) to `main`; CI cuts the tag and
       publishes the Release
 - [ ] Publish to crates.io (when ready)
