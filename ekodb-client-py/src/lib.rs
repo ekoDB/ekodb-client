@@ -5,10 +5,9 @@
 use ekodb_client::{
     Attachment, ChatMessageRequest, ChatResponse, Client as RustClient, CollectionConfig,
     CreateChatSessionRequest, DistinctValuesQuery as RustDistinctValuesQuery, FieldSearchOptions,
-    FieldType,
-    GetMessagesQuery, GetMessagesResponse, ListSessionsQuery, ListSessionsResponse,
+    FieldType, GetMessagesQuery, GetMessagesResponse, ListSessionsQuery, ListSessionsResponse,
     Query as RustQuery, RateLimitInfo as RustRateLimitInfo,
-    RawCompletionRequest as RustRawCompletionRequest, Record as RustRecord,
+    RawCompletionRequest as RustRawCompletionRequest, Record as RustRecord, SchemaConstraintUpdate,
     SearchQuery as RustSearchQuery, SerializationFormat as RustSerializationFormat,
     UpdateSessionRequest, UserFunction as RustUserFunction, WebSocketClient as RustWebSocketClient,
 };
@@ -1062,6 +1061,39 @@ impl Client {
                 })?;
                 json_to_pydict(py, &schema_json)
             })
+        })
+    }
+
+    /// Apply a partial update to one or more fields' schema constraints.
+    ///
+    /// Args:
+    ///     collection: Collection name
+    ///     constraints: Dict of field name -> partial constraint-update dict.
+    ///         Recognized attributes: field_type, default, unique, required,
+    ///         enums, max, min, regex. Only the attributes present in a
+    ///         field's dict are sent to the server — an attribute you leave
+    ///         out is left untouched (this is a partial update, not a
+    ///         replacement of the field's constraints).
+    fn update_schema_constraints<'py>(
+        &self,
+        py: Python<'py>,
+        collection: String,
+        constraints: &Bound<'py, PyDict>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        let constraints_json = dict_to_json(constraints)?;
+        let constraints: std::collections::HashMap<String, SchemaConstraintUpdate> =
+            serde_json::from_value(constraints_json).map_err(|e| {
+                PyValueError::new_err(format!("Failed to parse constraints: {}", e))
+            })?;
+
+        future_into_py(py, async move {
+            client
+                .update_schema_constraints(&collection, constraints)
+                .await
+                .map_err(|e| map_client_err("Update schema constraints failed", e))?;
+
+            Python::attach(|py| Ok(py.None()))
         })
     }
 
