@@ -41,4 +41,4 @@
 
   Languages: 6 (Rust, Python, Go, TypeScript, JavaScript, Kotlin)
   Full-Featured Clients: 5 (Rust, Python, Go, TypeScript, Kotlin)
-  Examples Per Client: 46
+  Shared Scenarios Per SDK: 46

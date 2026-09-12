@@ -9,8 +9,8 @@ the current development branches. Go is maintained in the separate
 > Renamed from `MISSING_FEATURES.md` (April 28, 2026) to reflect the current
 > intent: a parity tracker, not a missing-features checklist. Inbound links from
 > `AUDIT_*.md` files are historical snapshots and intentionally left pointing at
-> the old path. The companion `documentation/CLIENT_LIBRARY_GAPS.md` was removed
-> in the same pass (it duplicated this file at a stale revision).
+> the old path. A duplicate companion checklist was removed in the same pass
+> because it had fallen behind this canonical matrix.
 
 ## Status: Core and stored-function contract parity
 

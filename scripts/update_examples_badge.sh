@@ -32,7 +32,7 @@ total_languages=$(grep "Languages:" "$EXAMPLES_LIST" | grep -o '[0-9]\+' | head 
 total_clients=$(grep "Full-Featured Clients:" "$EXAMPLES_LIST" | grep -o '[0-9]\+' | head -1)
 # Per-client example count (a single number, or a MIN-MAX range if the clients
 # ever diverge from parity). Kept as the emitted string so a range flows through.
-per_client=$(grep "Examples Per Client:" "$EXAMPLES_LIST" | awk -F': ' '{print $2}' | tr -d ' ')
+per_client=$(grep "Shared Scenarios Per SDK:" "$EXAMPLES_LIST" | awk -F': ' '{print $2}' | tr -d ' ')
 
 # Fail fast if any value came back empty (e.g. a line was renamed in
 # examples_list.txt) — otherwise the sed steps below would rewrite the README
