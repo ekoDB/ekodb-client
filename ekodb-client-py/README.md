@@ -635,7 +635,7 @@ async def main():
     client = Client.new("http://localhost:8080", "your-api-key")
 
     # Goals
-    goal = await client.goal_create({"title": "Migrate data", "status": "active"})
+    goal = await client.goal_create({"title": "Migrate data", "status": "pending"})
     goals = await client.goal_list()
     await client.goal_complete("goal-id", {"summary": "Done"})
 
@@ -644,7 +644,7 @@ async def main():
     await client.task_start("task-id")
 
     # Agents
-    agent = await client.agent_create({"name": "processor", "model": "gpt-4.1"})
+    agent = await client.agent_create({"name": "processor", "llm_model": "gpt-4.1"})
 
 asyncio.run(main())
 ```

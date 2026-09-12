@@ -692,7 +692,7 @@ use serde_json::json;
 let goal = client.goal_create(json!({
     "title": "Migrate user data",
     "description": "Move users from legacy to new schema",
-    "status": "active",
+    "status": "pending",
 })).await?;
 
 // List goals
@@ -730,7 +730,7 @@ client.task_resume("task-id", None).await?;
 // Agents
 let agent = client.agent_create(json!({
     "name": "data-processor",
-    "model": "gpt-4.1",
+    "llm_model": "gpt-4.1",
 })).await?;
 let agents = client.agent_list().await?;
 client.agent_get_by_name("data-processor").await?;
