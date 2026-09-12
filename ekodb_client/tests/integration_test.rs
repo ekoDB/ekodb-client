@@ -14,7 +14,7 @@
 //!    cargo test -p ekodb_client --test integration_test -- --ignored
 //!    ```
 
-use ekodb_client::{Client, Query, Record};
+use ekodb_client::{Client, Query, Record, Schema, SchemaConstraintUpdate};
 
 #[tokio::test]
 async fn test_client_builder() {
@@ -49,6 +49,46 @@ async fn test_insert_and_find() -> Result<(), Box<dyn std::error::Error>> {
     let query = Query::new();
     let results = client.find("test_collection", query, None).await?;
     assert!(!results.is_empty());
+
+    Ok(())
+}
+
+#[tokio::test]
+#[ignore]
+async fn test_update_schema_constraints_round_trip() -> Result<(), Box<dyn std::error::Error>> {
+    let client = Client::builder()
+        .base_url("http://localhost:8080")
+        .api_key(std::env::var("API_BASE_KEY")?)
+        .build()?;
+
+    // Create a collection with a plain, non-required "email" field.
+    let schema = Schema::new().add_field("email", ekodb_client::FieldTypeSchema::new("string"));
+    client
+        .create_collection("test_schema_constraints", schema)
+        .await?;
+
+    // Tighten the constraint via the endpoint under test.
+    let mut constraints = std::collections::HashMap::new();
+    constraints.insert(
+        "email".to_string(),
+        SchemaConstraintUpdate {
+            required: Some(true),
+            unique: Some(true),
+            ..Default::default()
+        },
+    );
+    client
+        .update_schema_constraints("test_schema_constraints", constraints)
+        .await?;
+
+    // The server-side schema must reflect the partial update.
+    let updated = client.get_schema("test_schema_constraints").await?;
+    let email_field = updated
+        .fields
+        .get("email")
+        .expect("email field should still exist");
+    assert!(email_field.required, "required should now be true");
+    assert!(email_field.unique, "unique should now be true");
 
     Ok(())
 }

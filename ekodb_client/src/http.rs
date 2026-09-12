@@ -10,7 +10,7 @@ use crate::client::RateLimitInfo;
 use crate::error::{Error, Result};
 use crate::health::{HealthStatus, parse_health_status};
 use crate::retry::RetryPolicy;
-use crate::schema::{CollectionMetadata, Schema};
+use crate::schema::{CollectionMetadata, Schema, SchemaConstraintUpdate};
 use crate::search::{DistinctValuesQuery, DistinctValuesResponse, SearchQuery, SearchResponse};
 use crate::types::{FieldType, Query, Record, SerializationFormat};
 use reqwest::{Client as ReqwestClient, Response, StatusCode};
@@ -1504,6 +1504,43 @@ impl HttpClient {
 
             // Force JSON for metadata operations
             Self::json_body(response).await
+        })
+        .await
+    }
+
+    /// Apply a partial update to one or more fields' schema constraints.
+    ///
+    /// Sends `PUT /api/schemas/{collection}` with a body of
+    /// `{"constraints": { <field>: <SchemaConstraintUpdate>, ... }}`, matching
+    /// the server's `SchemaConstraintsUpdate` exactly.
+    pub async fn update_schema_constraints(
+        &self,
+        collection: &str,
+        constraints: &std::collections::HashMap<String, SchemaConstraintUpdate>,
+        token: &str,
+    ) -> Result<()> {
+        let url = self.api_path_url(&["schemas", collection])?;
+
+        #[derive(Serialize)]
+        struct UpdateSchemaConstraintsBody<'a> {
+            constraints: &'a std::collections::HashMap<String, SchemaConstraintUpdate>,
+        }
+
+        let body = UpdateSchemaConstraintsBody { constraints };
+
+        self.execute_with_retry(|| async {
+            let response = self
+                .client
+                .put(url.clone())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Accept", "application/json")
+                .json(&body)
+                .send()
+                .await?;
+
+            // Force JSON for metadata operations
+            let _: serde_json::Value = Self::json_body(response).await?;
+            Ok(())
         })
         .await
     }

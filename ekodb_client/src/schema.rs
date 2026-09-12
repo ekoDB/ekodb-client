@@ -231,6 +231,48 @@ impl Default for Schema {
     }
 }
 
+/// A partial update to a single field's constraints, sent to
+/// `PUT /api/schemas/{collection}`.
+///
+/// Mirrors the server's `SchemaConstraintUpdate`
+/// (`ekodb_server/src/schema.rs`). Every field is optional: only the
+/// attributes that are set are serialized, so a request can adjust one
+/// constraint (e.g. `required`) without resending the others.
+#[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq)]
+pub struct SchemaConstraintUpdate {
+    /// New field type (e.g. "string", "number", "boolean")
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub field_type: Option<String>,
+
+    /// New default value for the field
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub default: Option<serde_json::Value>,
+
+    /// Whether the field must be unique across records
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub unique: Option<bool>,
+
+    /// Whether the field is required
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub required: Option<bool>,
+
+    /// Allowed enum values
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub enums: Option<Vec<serde_json::Value>>,
+
+    /// Maximum value (for numbers/dates)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub max: Option<f64>,
+
+    /// Minimum value (for numbers/dates)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub min: Option<f64>,
+
+    /// Regex pattern for string validation
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub regex: Option<String>,
+}
+
 /// Collection metadata with analytics
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CollectionMetadata {

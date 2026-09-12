@@ -5,7 +5,9 @@
 //!
 //! Run with: `cargo test -p ekodb_client --test unit_tests`
 
-use ekodb_client::{Client, Error, FieldType, Query, QueryBuilder, Record, SearchQuery};
+use ekodb_client::{
+    Client, Error, FieldType, Query, QueryBuilder, Record, SchemaConstraintUpdate, SearchQuery,
+};
 use mockito::{Matcher, Server};
 use serde_json::json;
 
@@ -3841,4 +3843,104 @@ async fn test_sse_frame_named_error_is_an_error_whatever_its_payload_calls_the_m
         }
         other => panic!("expected an error event, got {other:?}"),
     }
+}
+
+// ============================================================================
+// Schema Constraints Tests
+// ============================================================================
+
+// The server's `SchemaConstraintsUpdate` (ekodb_server/src/schema.rs:401-404)
+// has exactly one top-level field: `constraints`. Pin the outgoing wire shape
+// with an exact-match body so a regression back to a `fields` envelope (as
+// docs.ekodb.io mistakenly described for the never-implemented
+// `update_schema`) fails this test rather than shipping silently.
+#[tokio::test]
+async fn test_update_schema_constraints_sends_constraints_envelope() {
+    let mut server = Server::new_async().await;
+
+    let _token_mock = mock_token_endpoint(&mut server);
+
+    let _mock = server
+        .mock("PUT", "/api/schemas/users")
+        .match_body(Matcher::Json(json!({
+            "constraints": {
+                "email": {
+                    "required": true,
+                    "unique": true
+                }
+            }
+        })))
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+
+    let mut constraints = std::collections::HashMap::new();
+    constraints.insert(
+        "email".to_string(),
+        SchemaConstraintUpdate {
+            required: Some(true),
+            unique: Some(true),
+            ..Default::default()
+        },
+    );
+
+    let result = client.update_schema_constraints("users", constraints).await;
+
+    _mock.assert_async().await;
+    assert!(
+        result.is_ok(),
+        "update_schema_constraints failed: {:?}",
+        result
+    );
+}
+
+// A `SchemaConstraintUpdate` with only one field set must serialize with only
+// that field present — proving `skip_serializing_if` actually keeps a partial
+// update partial instead of sending nulls for every other attribute.
+#[tokio::test]
+async fn test_update_schema_constraints_omits_unset_fields() {
+    let mut server = Server::new_async().await;
+
+    let _token_mock = mock_token_endpoint(&mut server);
+
+    let _mock = server
+        .mock("PUT", "/api/schemas/products")
+        .match_body(Matcher::Json(json!({
+            "constraints": {
+                "price": {
+                    "max": 9999.99
+                }
+            }
+        })))
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+
+    let mut constraints = std::collections::HashMap::new();
+    constraints.insert(
+        "price".to_string(),
+        SchemaConstraintUpdate {
+            max: Some(9999.99),
+            ..Default::default()
+        },
+    );
+
+    let result = client
+        .update_schema_constraints("products", constraints)
+        .await;
+
+    _mock.assert_async().await;
+    assert!(
+        result.is_ok(),
+        "update_schema_constraints failed: {:?}",
+        result
+    );
 }

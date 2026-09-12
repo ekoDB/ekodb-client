@@ -82,7 +82,8 @@ pub use health::{
 pub use join::JoinConfig;
 pub use query_builder::{QueryBuilder, SortOrder};
 pub use schema::{
-    CollectionMetadata, DistanceMetric, FieldTypeSchema, IndexConfig, Schema, VectorIndexAlgorithm,
+    CollectionMetadata, DistanceMetric, FieldTypeSchema, IndexConfig, Schema,
+    SchemaConstraintUpdate, VectorIndexAlgorithm,
 };
 pub use schema_cache::{CachedSchema, SchemaCache, SchemaCacheConfig};
 pub use search::{
