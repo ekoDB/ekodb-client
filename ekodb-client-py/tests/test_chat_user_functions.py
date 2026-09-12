@@ -18,12 +18,17 @@ from ekodb_client import Client
 @pytest.fixture
 def client():
     """Create a test client"""
-    return Client.new("http://localhost:8080", "test-api-key", should_retry=False, timeout_secs=30)
+    return Client.new(
+        "http://localhost:8080", "test-api-key", should_retry=False, timeout_secs=30
+    )
 
 
 def test_chat_methods_do_not_expose_retired_force_summarize():
     assert "force_summarize" not in inspect.signature(Client.chat_message).parameters
-    assert "force_summarize" not in inspect.signature(Client.chat_message_stream).parameters
+    assert (
+        "force_summarize"
+        not in inspect.signature(Client.chat_message_stream).parameters
+    )
 
 
 class TestChatModels:

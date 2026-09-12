@@ -7,7 +7,6 @@ covered by the server-side integration tests.
 
 from ekodb_client import Stage, parameter_ref
 
-
 # ---------------------------------------------------------------------------
 # parameter_ref()
 # ---------------------------------------------------------------------------
@@ -169,7 +168,9 @@ def test_corrected_and_new_mutation_stage_shapes():
         Stage.increment("items", "item-1", "count", by=2),
         Stage.push("items", "item-1", "tags", "new"),
         Stage.set_field("active", True),
-        Stage.add_fields([{"field": "total", "expression": {"type": "Literal", "value": 1}}]),
+        Stage.add_fields(
+            [{"field": "total", "expression": {"type": "Literal", "value": 1}}]
+        ),
         Stage.current_datetime("processed_at"),
     ]
 
@@ -513,7 +514,9 @@ def test_new_stages_json_round_trip():
 
 
 def test_hmac_sign_and_verify_build_correctly():
-    sign = Stage.hmac_sign("{{p}}", "{{env.K}}", "mac", algorithm="sha256", encoding="hex")
+    sign = Stage.hmac_sign(
+        "{{p}}", "{{env.K}}", "mac", algorithm="sha256", encoding="hex"
+    )
     assert sign == {
         "type": "HmacSign",
         "input": "{{p}}",
@@ -539,7 +542,9 @@ def test_aes_uuid_totp_stages_build():
 
     assert Stage.uuid_generate("id") == {"type": "UuidGenerate", "output_field": "id"}
 
-    totp = Stage.totp_generate("{{env.T}}", "code", digits=6, period=30, algorithm="sha1")
+    totp = Stage.totp_generate(
+        "{{env.T}}", "code", digits=6, period=30, algorithm="sha1"
+    )
     assert totp["type"] == "TotpGenerate"
     assert totp["digits"] == 6
     assert totp["period"] == 30
