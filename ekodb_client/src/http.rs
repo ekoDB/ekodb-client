@@ -3815,6 +3815,19 @@ impl HttpClient {
         self.set_schedule_enabled(id, true, token).await
     }
 
+    /// Trigger a schedule immediately.
+    pub async fn trigger_schedule(&self, id: &str, token: &str) -> Result<serde_json::Value> {
+        let url = self.api_path_url(&["schedules", id, "trigger"])?;
+        let response = self
+            .client
+            .post(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        self.handle_response("/api/schedules/{id}/trigger", response)
+            .await
+    }
+
     /// Shared implementation for pause/resume: a partial update carrying only
     /// `enabled`. The server recomputes `next_execution` when `enabled`
     /// changes, so no other field needs sending.

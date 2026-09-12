@@ -7,6 +7,12 @@ expected response shapes, mirroring the Rust Schedule endpoints.
 Run with: pytest tests/test_schedules.py -v
 """
 
+import ekodb_client
+
+
+def test_client_exposes_trigger_schedule():
+    assert hasattr(ekodb_client.Client, "trigger_schedule")
+
 
 class TestScheduleRequestStructure:
     """Verify that schedule request dicts are well-formed."""

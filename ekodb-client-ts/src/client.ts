@@ -3388,6 +3388,17 @@ export class EkoDBClient {
     return this.setScheduleEnabled(id, true);
   }
 
+  /** Trigger a schedule immediately. */
+  async triggerSchedule(id: string): Promise<Record> {
+    return this.makeRequest<Record>(
+      "POST",
+      `/api/schedules/${encodeURIComponent(id)}/trigger`,
+      undefined,
+      0,
+      true,
+    );
+  }
+
   /**
    * Shared implementation for pause/resume: a partial update carrying only
    * `enabled`. The server recomputes the next execution time when `enabled`

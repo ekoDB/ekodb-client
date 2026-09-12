@@ -772,11 +772,15 @@ fun main() = runBlocking {
 // Create a schedule
 val sched = client.createSchedule(buildJsonObject {
     put("name", "nightly")
-    put("cron", "0 2 * * *")
+    put("cron_expression", "0 0 2 * * *")
+    put("function_label", "nightly_backup")
 })
 
 // Pause a schedule
 client.pauseSchedule("sched-id")
+
+// Run immediately
+client.triggerSchedule("sched-id")
 ```
 
 ### WebSocket Chat Streaming

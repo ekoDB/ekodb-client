@@ -4099,6 +4099,21 @@ impl Client {
             Python::attach(|py| json_to_pydict(py, &result))
         })
     }
+
+    /// Trigger a schedule immediately
+    ///
+    /// Args:
+    ///     id: Schedule ID
+    fn trigger_schedule<'py>(&self, py: Python<'py>, id: String) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py(py, async move {
+            let result = client
+                .trigger_schedule(&id)
+                .await
+                .map_err(|e| map_client_err("trigger_schedule failed", e))?;
+            Python::attach(|py| json_to_pydict(py, &result))
+        })
+    }
 }
 
 /// Python wrapper for WebSocket Client

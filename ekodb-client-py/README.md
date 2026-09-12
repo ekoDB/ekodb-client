@@ -653,10 +653,17 @@ asyncio.run(main())
 
 ```python
 # Create a schedule
-sched = await client.create_schedule({"name": "nightly", "cron": "0 2 * * *"})
+sched = await client.create_schedule({
+    "name": "nightly",
+    "cron_expression": "0 0 2 * * *",
+    "function_label": "nightly_backup",
+})
 
 # Pause a schedule
 await client.pause_schedule("sched-id")
+
+# Run immediately
+await client.trigger_schedule("sched-id")
 ```
 
 ### WebSocket Operations

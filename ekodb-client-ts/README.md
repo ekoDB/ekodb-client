@@ -446,11 +446,15 @@ const agents = await client.agentList();
 // Create a schedule
 const sched = await client.createSchedule({
   name: "nightly",
-  cron: "0 2 * * *",
+  cron_expression: "0 0 2 * * *",
+  function_label: "nightly_backup",
 });
 
 // Pause a schedule
 await client.pauseSchedule("sched-id");
+
+// Run immediately
+await client.triggerSchedule("sched-id");
 ```
 
 ### WebSocket Chat Streaming

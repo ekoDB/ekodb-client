@@ -745,20 +745,23 @@ use serde_json::json;
 // Create a schedule
 let sched = client.create_schedule(json!({
     "name": "nightly-backup",
-    "cron": "0 2 * * *",
-    "task_type": "backup",
+    "cron_expression": "0 0 2 * * *",
+    "function_label": "nightly_backup",
 })).await?;
 
 // List, get, update
 let schedules = client.list_schedules().await?;
 client.get_schedule("sched-id").await?;
 client.update_schedule("sched-id", json!({
-    "cron": "0 3 * * *"
+    "cron_expression": "0 0 3 * * *"
 })).await?;
 
 // Pause and resume
 client.pause_schedule("sched-id").await?;
 client.resume_schedule("sched-id").await?;
+
+// Run immediately
+client.trigger_schedule("sched-id").await?;
 
 // Delete
 client.delete_schedule("sched-id").await?;
