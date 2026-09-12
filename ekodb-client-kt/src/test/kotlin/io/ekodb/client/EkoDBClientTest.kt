@@ -1774,12 +1774,12 @@ class EkoDBClientTest {
 
     @Test
     fun `kvGetLinks returns linked documents`() = runBlocking {
-        val mockEngine = createMockEngine("""{"key": "user:123", "links": [{"collection": "orders", "document_id": "ord_1"}]}""")
+        val mockEngine = createMockEngine("""[{"collection": "orders", "document_id": "ord_1"}]""")
         val client = createTestClient(mockEngine)
         val result = client.kvGetLinks("user:123")
-        assertNotNull(result)
-        assertEquals("user:123", result["key"]?.jsonPrimitive?.content)
-        assertNotNull(result["links"])
+        assertEquals(1, result.size)
+        assertEquals("orders", result[0].jsonObject["collection"]?.jsonPrimitive?.content)
+        assertEquals("ord_1", result[0].jsonObject["document_id"]?.jsonPrimitive?.content)
     }
 
     @Test
@@ -1804,7 +1804,7 @@ class EkoDBClientTest {
     fun `kv link methods target the documented routes and verbs`() = runBlocking {
         val recorded = mutableListOf<HttpRequestData>()
 
-        var client = createTestClient(capturingMockEngine(recorded, """{"links": []}"""))
+        var client = createTestClient(capturingMockEngine(recorded, """[]"""))
         client.kvGetLinks("user:123")
         assertEquals("/api/kv/user:123/links", recorded.last().url.encodedPath)
         assertEquals(HttpMethod.Get, recorded.last().method)

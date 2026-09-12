@@ -3528,7 +3528,7 @@ class EkoDBClient private constructor(
     // ── KV Document Linking ──────────────────────────────────────────────────
 
     /** Get documents linked to a KV key */
-    suspend fun kvGetLinks(key: String): JsonObject {
+    suspend fun kvGetLinks(key: String): JsonArray {
         val response = executeWithRetry { token ->
             client.get("$baseUrl/api/kv/${key.encodeURLPathPart()}/links") {
                 bearerAuth(token)
@@ -3538,7 +3538,7 @@ class EkoDBClient private constructor(
             val errorText = response.bodyAsText()
             throw IllegalStateException("Server error ${response.status.value}: $errorText")
         }
-        return response.body<JsonObject>()
+        return response.body<JsonArray>()
     }
 
     /** Link a document to a KV key */
