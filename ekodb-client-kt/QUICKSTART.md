@@ -8,7 +8,7 @@ Get started with ekoDB Kotlin client in 5 minutes!
 
 ```kotlin
 dependencies {
-    implementation("io.ekodb:ekodb-client-kt:0.26.3")
+    implementation("io.ekodb:ekodb-client-kt:0.26.4")
 }
 ```
 
@@ -16,7 +16,7 @@ dependencies {
 
 ```groovy
 dependencies {
-    implementation 'io.ekodb:ekodb-client-kt:0.26.3'
+    implementation 'io.ekodb:ekodb-client-kt:0.26.4'
 }
 ```
 
@@ -26,7 +26,7 @@ dependencies {
 <dependency>
     <groupId>io.ekodb</groupId>
     <artifactId>ekodb-client-kt</artifactId>
-    <version>0.26.3</version>
+    <version>0.26.4</version>
 </dependency>
 ```
 

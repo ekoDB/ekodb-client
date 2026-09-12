@@ -6,11 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.26.4] - 2026-09-12
 
 ### Added
 
-- **`update_schema_constraints`/`updateSchemaConstraints` added to all four client languages (Rust, Python, TypeScript, Kotlin).** The schema-update endpoint had no client method at all in any language — only `create_collection`/`get_schema` existed. Each language sends `PUT /api/schemas/{collection}` with a `{"constraints": {...}}` body, where each field's update object (`field_type`, `default`, `unique`, `required`, `enums`, `max`, `min`, `regex`) is optional and only set attributes are serialized (partial-update semantics). (#230)
+- **`update_schema_constraints`/`updateSchemaConstraints` added to all four
+  client languages (Rust, Python, TypeScript, Kotlin).** The schema-update
+  endpoint had no client method at all in any language — only
+  `create_collection`/`get_schema` existed. Each language sends
+  `PUT /api/schemas/{collection}` with a `{"constraints": {...}}` body, where
+  each field's update object (`field_type`, `default`, `unique`, `required`,
+  `enums`, `max`, `min`, `regex`) is optional and only set attributes are
+  serialized (partial-update semantics). (#230)
 
 ### Changed
 
