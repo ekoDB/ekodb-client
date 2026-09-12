@@ -95,6 +95,9 @@ case "$mode:$language" in
             echo "TypeScript examples must be built before running compiled JavaScript." >&2
             exit 1
         }
+        for source in "$root"/examples/javascript/client_*.js; do
+            node "$source"
+        done
         for source in "$root"/examples/typescript/dist/client_*.js \
             "$root"/examples/typescript/dist/bypass_ripple_example.js \
             "$root"/examples/typescript/dist/projection_example.js; do
