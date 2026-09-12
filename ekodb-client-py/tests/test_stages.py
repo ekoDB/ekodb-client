@@ -150,6 +150,48 @@ def test_update_by_id_json_serialization():
     assert wire["updates"] == {"type": "Parameter", "name": "updates"}
 
 
+def test_corrected_and_new_mutation_stage_shapes():
+    stages = [
+        Stage.find_one_and_update("items", "item-1", {"name": "new"}),
+        Stage.update_with_action("items", "item-1", "Increment", "count", 2),
+        Stage.upsert("items", "sku", "A-1", {"name": "new"}),
+        Stage.increment("items", "item-1", "count", by=2),
+        Stage.push("items", "item-1", "tags", "new"),
+        Stage.set_field("active", True),
+        Stage.add_fields([{"field": "total", "expression": {"type": "Literal", "value": 1}}]),
+        Stage.current_datetime("processed_at"),
+    ]
+
+    assert stages[0]["record_id"] == "item-1"
+    assert "filter" not in stages[0]
+    assert stages[1]["action"] == "Increment"
+    assert stages[3]["by"] == 2
+    assert stages[4]["value"] == "new"
+    assert stages[5] == {"type": "SetField", "field": "active", "value": True}
+    assert stages[6]["type"] == "AddFields"
+    assert stages[7] == {"type": "CurrentDatetime", "output_field": "processed_at"}
+
+
+def test_search_stage_shapes_match_the_wire_contract():
+    vector = Stage.vector_search("items", [0.1, 0.2], limit=5, threshold=0.8)
+    hybrid = Stage.hybrid_search("items", "blue", [0.1, 0.2], limit=5)
+
+    assert vector == {
+        "type": "VectorSearch",
+        "collection": "items",
+        "query_vector": [0.1, 0.2],
+        "limit": 5,
+        "threshold": 0.8,
+    }
+    assert hybrid == {
+        "type": "HybridSearch",
+        "collection": "items",
+        "query_text": "blue",
+        "query_vector": [0.1, 0.2],
+        "limit": 5,
+    }
+
+
 # ---------------------------------------------------------------------------
 # Crypto primitives: BcryptHash, BcryptVerify, RandomToken (ekoDB >= 0.41.0)
 # ---------------------------------------------------------------------------
