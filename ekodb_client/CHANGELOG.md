@@ -13,9 +13,10 @@ and this project adheres to
 - **Stored-function contract coverage.** Generate a 67-variant, fully populated
   fixture from the authoritative function enum; enforce exact variant/field
   parity across Rust/Python, TypeScript, and Kotlin; and round-trip every case
-  through each language gate with a non-vacuous coverage floor. Rust, Python,
-  and Kotlin now reject unknown stored-function data rather than silently
-  dropping it, while TypeScript preserves unknown JSON verbatim. (#205)
+  through the primary local and CI gates with a non-vacuous coverage floor.
+  Rust, Python, and Kotlin now reject unknown stored-function data rather than
+  silently dropping it, while TypeScript preserves unknown JSON through an
+  actual get-and-update transport boundary. (#205)
 - **Stored-function stage parity.** Add `AddToSet`, `StandardDeviation`, and
   `ApproxDistinct` group operations (#231); field comparison conditions in
   TypeScript and Kotlin (#232); and `Upsert`, `Increment`, `Push`, `SetField`,
@@ -42,7 +43,8 @@ and this project adheres to
 
 - **Stored-function filter safety.** Add a typed, adjacently-tagged query
   expression representation and validate legacy raw objects at stage
-  construction, so bare filters fail locally instead of invalidating a whole
+  construction, so bare filters, unsupported operators, empty logical groups,
+  and invalid `Not` cardinality fail locally instead of invalidating a whole
   stored function on the server. Correctly tagged raw objects remain supported
   in all four clients. (#202)
 - **Lossless stored-function models.** Preserve Kotlin HTTP timeout/output
@@ -55,6 +57,8 @@ and this project adheres to
 - **Cross-client surface corrections.** Decode Kotlin KV-link results as an
   array (#236), expose the complete TypeScript JWT algorithm set (#237), and
   correct README goal-status, agent-model, and schedule examples (#238).
+- **Worktree hook installation.** Resolve the shared Git hooks directory in
+  linked worktrees and fail loudly on invalid hook state.
 
 ## [0.26.4] - 2026-09-12
 
