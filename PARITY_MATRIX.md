@@ -274,8 +274,8 @@ DELETE /api/indexes/query/{collection}/{field}  - Delete specific index
 
 ### Client status
 
-These methods are intentionally not exposed by the application clients. Use
-the authenticated administration surface or server-side operational tooling.
+These methods are intentionally not exposed by the application clients. Use the
+authenticated administration surface or server-side operational tooling.
 
 ### Use Cases
 
@@ -457,29 +457,19 @@ PUT /api/schemas/{collection}                   - Update schema constraints
 
 ### Description
 
-Direct access to Write-Ahead Log for replication gap filling and advanced
-debugging.
+The WAL is an internal persistence and replication mechanism, not an
+application-client API.
 
-### Server Endpoints
+### Server surface
 
-```
-GET  /api/wal/health                            - Get WAL health status
-POST /api/wal/rotate                            - Force WAL rotation
-GET  /api/wal/entries                           - Get WAL entries in time range
-POST /api/replication/wal                       - Receive WAL shipment from peer
-```
+`POST /api/replication/wal` receives peer WAL shipments on the internal/admin
+replication surface. There are no public WAL health, rotation, or entry-listing
+routes.
 
 ### Client status
 
 Direct WAL controls are intentionally not exposed by the application clients.
-Use authenticated server operations tooling for health, rotation, and entry
-inspection.
-
-### Use Cases
-
-- **Replication Debugging:** Inspect WAL for replication issues
-- **Audit Logging:** Track all database operations
-- **Disaster Recovery:** Replay WAL entries
+Operational health and debugging stay in server-side tooling.
 
 ---
 
@@ -489,51 +479,6 @@ KV document linking, schedule management (including trigger), and schema
 constraint updates are implemented. Query/search index administration and WAL
 operations remain deliberately outside the application SDK surface; future
 server contract additions should be evaluated against that boundary.
-
----
-
-## Representative Shared Types
-
-### KV Link Types
-
-```typescript
-interface DocumentLink {
-  collection: string;
-  documentId: string;
-  createdAt: string;
-}
-
-interface LinkData {
-  key: string;
-  collection: string;
-  documentId: string;
-}
-```
-
-### Schedule Types
-
-```typescript
-interface Schedule {
-  id: string;
-  name: string;
-  cron_expression: string;
-  function_label: string;
-  parameters?: Record<string, unknown>;
-  enabled: boolean;
-  timezone?: string;
-  next_execution?: string;
-  last_execution?: string;
-}
-
-interface ScheduleConfig {
-  name: string;
-  cron_expression: string;
-  function_label: string;
-  parameters?: Record<string, unknown>;
-  enabled?: boolean;
-  timezone?: string;
-}
-```
 
 ---
 
@@ -566,15 +511,16 @@ Each new feature must include:
 
 ## Contributing
 
-When implementing these features:
+When changing a client contract:
 
-1. **Check server API docs** - Review the ekoDB server API documentation for
-   endpoint details
-2. **Follow existing patterns** - Match style of current client methods
-3. **Add types first** - Define all TypeScript/Rust/etc types before
-   implementation
-4. **Test thoroughly** - Unit tests + integration tests + examples
-5. **Update docs** - language-specific READMEs
+1. **Verify the server contract** - Confirm routes and wire fields against the
+   current server implementation and public API documentation.
+2. **Compare every SDK** - Check Rust, Python, TypeScript, Kotlin, and Go rather
+   than inferring parity from one implementation.
+3. **Follow existing patterns** - Match each language's established API style.
+4. **Test thoroughly** - Add unit tests, integration coverage where permitted,
+   and matching examples.
+5. **Update docs** - Keep language-specific READMEs and this matrix aligned.
 
 ---
 
