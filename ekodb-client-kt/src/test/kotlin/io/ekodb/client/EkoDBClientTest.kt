@@ -293,11 +293,23 @@ class EkoDBClientTest {
 
     @Test
     fun `beginTransaction returns transaction id`() = runBlocking {
-        val mockEngine = createMockEngine("""{"transaction_id": "tx_123456"}""")
-        val client = createTestClient(mockEngine)
+        val recorded = mutableListOf<HttpRequestData>()
+        val client = createTestClient(capturingMockEngine(recorded, """{"transaction_id": "tx_123456"}"""))
         val result = client.beginTransaction()
         assertNotNull(result)
         assertEquals("tx_123456", result)
+        assertEquals("{}", (recorded.last().body as TextContent).text)
+    }
+
+    @Test
+    fun `beginTransaction sends an explicit isolation level`() = runBlocking {
+        val recorded = mutableListOf<HttpRequestData>()
+        val client = createTestClient(capturingMockEngine(recorded, """{"transaction_id": "tx_serializable"}"""))
+
+        val result = client.beginTransaction("Serializable")
+
+        assertEquals("tx_serializable", result)
+        assertTrue((recorded.last().body as TextContent).text.contains("\"isolation_level\":\"Serializable\""))
     }
 
     @Test

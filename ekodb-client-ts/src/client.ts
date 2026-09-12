@@ -1472,16 +1472,14 @@ export class EkoDBClient {
    * transaction read or wrote was changed by another committed transaction —
    * retry the transaction in that case.
    *
-   * @param isolationLevel - Transaction isolation level (default: "ReadCommitted")
+   * @param isolationLevel - Optional transaction isolation level; omit it to use the server default
    * @returns Transaction ID
    */
-  async beginTransaction(
-    isolationLevel: string = "ReadCommitted",
-  ): Promise<string> {
+  async beginTransaction(isolationLevel?: string): Promise<string> {
     const result = await this.makeRequest<{ transaction_id: string }>(
       "POST",
       "/api/transactions",
-      { isolation_level: isolationLevel },
+      isolationLevel === undefined ? {} : { isolation_level: isolationLevel },
       0,
       true,
     );

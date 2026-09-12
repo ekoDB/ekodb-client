@@ -1854,18 +1854,16 @@ impl Client {
     // ========== Transaction Methods ==========
 
     /// Begin a new transaction
-    #[pyo3(signature = (isolation_level="ReadCommitted"))]
+    #[pyo3(signature = (isolation_level=None))]
     fn begin_transaction<'py>(
         &self,
         py: Python<'py>,
-        isolation_level: &str,
+        isolation_level: Option<String>,
     ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
-        let isolation_level = isolation_level.to_string();
-
         future_into_py(py, async move {
             let result = client
-                .begin_transaction(&isolation_level)
+                .begin_transaction(isolation_level.as_deref())
                 .await
                 .map_err(|e| map_client_err("Begin transaction failed", e))?;
 

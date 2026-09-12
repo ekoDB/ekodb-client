@@ -1143,12 +1143,17 @@ impl HttpClient {
     // ========== Transaction Methods ==========
 
     /// Begin a new transaction
-    pub async fn begin_transaction(&self, isolation_level: &str, token: &str) -> Result<String> {
+    pub async fn begin_transaction(
+        &self,
+        isolation_level: Option<&str>,
+        token: &str,
+    ) -> Result<String> {
         let url = self.base_url.join("/api/transactions")?;
 
         #[derive(Serialize)]
         struct BeginTransactionRequest<'a> {
-            isolation_level: &'a str,
+            #[serde(skip_serializing_if = "Option::is_none")]
+            isolation_level: Option<&'a str>,
         }
 
         let request = BeginTransactionRequest { isolation_level };

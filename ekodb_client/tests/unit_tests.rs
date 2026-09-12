@@ -1026,6 +1026,7 @@ async fn test_begin_transaction_success() {
 
     let _tx_mock = server
         .mock("POST", "/api/transactions")
+        .match_body(Matcher::Json(json!({"isolation_level": "ReadCommitted"})))
         .with_status(200)
         .with_header("content-type", "application/json")
         .with_body(json!({"transaction_id": "tx_123456"}).to_string())
@@ -1034,10 +1035,30 @@ async fn test_begin_transaction_success() {
 
     let client = create_test_client(&server).await;
 
-    let result = client.begin_transaction("ReadCommitted").await;
+    let result = client.begin_transaction(Some("ReadCommitted")).await;
 
     assert!(result.is_ok());
     assert_eq!(result.unwrap(), "tx_123456");
+}
+
+#[tokio::test]
+async fn test_begin_transaction_omits_isolation_for_server_default() {
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+    let tx_mock = server
+        .mock("POST", "/api/transactions")
+        .match_body(Matcher::Json(json!({})))
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"transaction_id": "tx_default"}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    let result = client.begin_transaction(None).await;
+
+    assert_eq!(result.unwrap(), "tx_default");
+    tx_mock.assert_async().await;
 }
 
 #[tokio::test]

@@ -1588,15 +1588,15 @@ class EkoDBClient private constructor(
 
     /**
      * Begin a new transaction
-     * @param isolationLevel Transaction isolation level (default: "ReadCommitted")
+     * @param isolationLevel Optional transaction isolation level; null uses the server default
      * @return Transaction ID
      */
-    suspend fun beginTransaction(isolationLevel: String = "ReadCommitted"): String {
+    suspend fun beginTransaction(isolationLevel: String? = null): String {
         val response = executeWithRetry { token ->
             client.post("$baseUrl/api/transactions") {
                 header("Authorization", "Bearer $token")
                 contentType(ContentType.Application.Json)
-                setBody(mapOf("isolation_level" to isolationLevel))
+                setBody(if (isolationLevel == null) emptyMap() else mapOf("isolation_level" to isolationLevel))
             }
         }
 

@@ -459,6 +459,22 @@ describe("EkoDBClient transactions", () => {
     const txId = await client.beginTransaction();
 
     expect(txId).toBe("tx_123456");
+    const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+    expect(JSON.parse(calls[1][1]?.body as string)).toEqual({});
+  });
+
+  it("sends an explicitly selected transaction isolation level", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+    mockJsonResponse({ transaction_id: "tx_serializable" });
+
+    const txId = await client.beginTransaction("Serializable");
+
+    expect(txId).toBe("tx_serializable");
+    const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+    expect(JSON.parse(calls[1][1]?.body as string)).toEqual({
+      isolation_level: "Serializable",
+    });
   });
 
   it("commits transaction", async () => {
