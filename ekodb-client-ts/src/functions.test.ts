@@ -7,7 +7,12 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { Stage, parameterRef, type FunctionStageConfig } from "./functions";
+import {
+  Stage,
+  parameterRef,
+  type FunctionCondition,
+  type FunctionStageConfig,
+} from "./functions";
 import type { GroupFunctionConfig } from "./functions";
 
 describe("GroupFunctionConfig", () => {
@@ -22,6 +27,21 @@ describe("GroupFunctionConfig", () => {
       expect(JSON.parse(JSON.stringify(config)).operation).toBe(operation);
     },
   );
+});
+
+describe("FunctionCondition comparisons", () => {
+  it.each([
+    "FieldGreaterThan",
+    "FieldLessThan",
+    "FieldGreaterThanOrEqual",
+    "FieldLessThanOrEqual",
+  ] as const)("accepts and preserves %s", (type) => {
+    const condition: FunctionCondition = {
+      type,
+      value: { field: "score", value: 10 },
+    };
+    expect(JSON.parse(JSON.stringify(condition))).toEqual(condition);
+  });
 });
 
 describe("parameterRef", () => {

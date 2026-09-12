@@ -42,6 +42,23 @@ class FunctionStagesTest {
         }
     }
 
+    @Test
+    fun `field comparison conditions preserve their wire tags and values`() {
+        val conditions = listOf(
+            FunctionCondition.FieldGreaterThan("score", JsonPrimitive(10)) to "FieldGreaterThan",
+            FunctionCondition.FieldLessThan("score", JsonPrimitive(10)) to "FieldLessThan",
+            FunctionCondition.FieldGreaterThanOrEqual("score", JsonPrimitive(10)) to "FieldGreaterThanOrEqual",
+            FunctionCondition.FieldLessThanOrEqual("score", JsonPrimitive(10)) to "FieldLessThanOrEqual",
+        )
+        for ((condition, type) in conditions) {
+            val wire = json.encodeToString(FunctionConditionSerializer, condition)
+            assertContains(wire, "\"type\":\"$type\"")
+            assertContains(wire, "\"field\":\"score\"")
+            assertContains(wire, "\"value\":10")
+            assertEquals(condition, json.decodeFromString(FunctionConditionSerializer, wire))
+        }
+    }
+
     // ------------------------------------------------------------------
     // parameterRef()
     // ------------------------------------------------------------------
