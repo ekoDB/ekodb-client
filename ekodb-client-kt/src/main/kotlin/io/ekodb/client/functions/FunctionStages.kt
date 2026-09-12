@@ -204,7 +204,9 @@ sealed class FunctionStageConfig {
         val url: String,
         @EncodeDefault val method: String = "GET",
         val headers: Map<String, String>? = null,
-        val body: JsonElement? = null
+        val body: JsonElement? = null,
+        val timeout_seconds: Long? = null,
+        val output_field: String? = null,
     ) : FunctionStageConfig()
 
     @Serializable

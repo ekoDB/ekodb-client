@@ -106,6 +106,29 @@ class FunctionStagesTest {
     }
 
     @Test
+    fun `HttpRequest preserves timeout and output field through nested round trip`() {
+        val function = FunctionStageConfig.If(
+            condition = FunctionCondition.HasRecords,
+            then_functions = listOf(
+                FunctionStageConfig.HttpRequest(
+                    url = "https://example.test/data",
+                    method = "POST",
+                    body = buildJsonObject { put("id", "{{id}}") },
+                    timeout_seconds = 15,
+                    output_field = "upstream_response",
+                ),
+            ),
+        )
+
+        val wire = json.encodeToString<FunctionStageConfig>(function)
+        val decoded = json.decodeFromString<FunctionStageConfig>(wire)
+
+        assertEquals(function, decoded)
+        assertContains(wire, "\"timeout_seconds\":15")
+        assertContains(wire, "\"output_field\":\"upstream_response\"")
+    }
+
+    @Test
     fun `parameterRef produces structural placeholder shape`() {
         val p = parameterRef("record")
         assertEquals("Parameter", p["type"]?.toString()?.trim('"'))
