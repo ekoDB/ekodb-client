@@ -1059,6 +1059,36 @@ describe("EkoDBClient scripts advanced", () => {
       client.updateFunction("func_123", script),
     ).resolves.not.toThrow();
   });
+
+  it("preserves unknown function data across get and update transport", async () => {
+    const client = createTestClient();
+    const futureFunction = {
+      label: "future_contract",
+      name: "Future contract",
+      parameters: {},
+      functions: [
+        { type: "FindAll", collection: "items", future_field: true },
+        { type: "FutureStage", future_value: { nested: true } },
+      ],
+      transaction_config: {
+        enabled: true,
+        auto_rollback: true,
+        isolation_level: "Serializable",
+      },
+    };
+
+    mockTokenResponse();
+    mockJsonResponse(futureFunction);
+    const decoded = await client.getFunction("func_123");
+
+    mockJsonResponse(null);
+    await client.updateFunction("func_123", decoded);
+
+    const [url, init] = mockFetch.mock.calls[2];
+    expect(url).toBe("http://localhost:8080/api/functions/func_123");
+    expect(init.method).toBe("PUT");
+    expect(JSON.parse(init.body as string)).toEqual(futureFunction);
+  });
 });
 
 describe("EkoDBClient chat advanced", () => {

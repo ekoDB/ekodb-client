@@ -47,7 +47,7 @@ YELLOW := \033[33m
 RED := \033[31m
 RESET := \033[0m
 
-.PHONY: all build build-release build-client build-python-client build-typescript-client build-examples test test-ls test-ls-check test-ci test-client test-examples test-examples-direct test-examples-client test-examples-rust test-examples-python test-examples-go test-examples-typescript test-examples-javascript test-examples-transactions test-examples-scripts test-examples-scripts-crud test-examples-swr test-examples-ts-swr test-examples-py-swr test-examples-go-swr test-examples-rust-swr test-examples-kt-swr function-stage-contract-check clean check fmt fmt-rust fmt-rust-client fmt-rust-examples fmt-python fmt-go fmt-typescript fmt-md format install install-rust install-python install-typescript install-go venv python-example-deps ensure-jvm ensure-ruff ensure-cargo check-toolchains setup install-hooks deps-check deps-update deploy-client deploy-client-rust deploy-client-py deploy-client-py-simple deploy-client-go deploy-client-ts bump-version sync-versions bump-client-py docs-client
+.PHONY: all build build-release build-client build-python-client build-typescript-client build-examples test test-hooks test-ls test-ls-check test-ci test-client test-examples test-examples-direct test-examples-client test-examples-rust test-examples-python test-examples-go test-examples-typescript test-examples-javascript test-examples-transactions test-examples-scripts test-examples-scripts-crud test-examples-swr test-examples-ts-swr test-examples-py-swr test-examples-go-swr test-examples-rust-swr test-examples-kt-swr function-stage-contract-check clean check fmt fmt-rust fmt-rust-client fmt-rust-examples fmt-python fmt-go fmt-typescript fmt-md format install install-rust install-python install-typescript install-go venv python-example-deps ensure-jvm ensure-ruff ensure-cargo check-toolchains setup install-hooks deps-check deps-update deploy-client deploy-client-rust deploy-client-py deploy-client-py-simple deploy-client-go deploy-client-ts bump-version sync-versions bump-client-py docs-client
 
 # Color codes for Worthington jet
 MAGENTA := \033[35m
@@ -397,7 +397,7 @@ deploy-client-kt:
 deploy-client-kotlin: deploy-client-kt
 
 # Test targets - runs ALL unit tests across all client libraries
-test: ensure-hooks examples-ls-check build-python-client ensure-jvm
+test: function-stage-contract-check ensure-hooks test-hooks examples-ls-check build-python-client ensure-jvm
 	@RUST_COUNT=0; TS_COUNT=0; PY_COUNT=0; KT_COUNT=0; \
 	echo "🦀 $(CYAN)Running Rust client tests...$(RESET)"; \
 	RUST_OUTPUT=$$($(CARGO) test -p ekodb_client 2>&1); RUST_STATUS=$$?; \
@@ -485,7 +485,7 @@ test-kotlin: function-stage-contract-check ensure-jvm
 	@cd $(CLIENT_KT_DIR) && ./gradlew test --quiet
 	@echo "✅ $(GREEN)Kotlin tests complete!$(RESET)"
 
-test-ci:
+test-ci: function-stage-contract-check
 	@echo "🧪 $(CYAN)Running CI-safe tests (optimized for CI/CD pipelines)...$(RESET)"
 	@echo "📦 $(CYAN)Testing ekodb_client...$(RESET)"
 	$(CARGO) test -p ekodb_client --lib
@@ -1068,7 +1068,7 @@ python-example-deps: venv
 	@$(VENV_PY) -m pip install --quiet -r examples/requirements.txt
 
 # Verify a Java 17+ runtime is available to launch Gradle (the wrapper is pinned to
-# Gradle 8.11, which requires JDK 17+ to run). The JDK 17 *toolchain* used to compile
+# Gradle 9.7.1, which requires JDK 17+ to run). The JDK 17 *toolchain* used to compile
 # is auto-provisioned by the foojay plugin (settings.gradle.kts); this checks the
 # launcher JVM, which must already exist on a fresh machine.
 ensure-jvm:
@@ -1086,7 +1086,7 @@ ensure-jvm:
 	if [ "$$MAJOR" = "1" ]; then MAJOR=$$(echo "$$VER" | cut -d. -f2); fi; \
 	case "$$MAJOR" in ''|*[!0-9]*) MAJOR=0 ;; esac; \
 	if [ "$$MAJOR" -lt 17 ]; then \
-		echo "$(RED)Java 17+ is required to run Gradle 8.11 (found '$$VER').$(RESET)"; \
+		echo "$(RED)Java 17+ is required to run Gradle 9.7.1 (found '$$VER').$(RESET)"; \
 		echo "$(YELLOW)  Ubuntu/Debian: sudo apt install openjdk-17-jdk$(RESET)"; \
 		echo "$(YELLOW)  macOS:         brew install openjdk@17$(RESET)"; \
 		exit 1; \
@@ -1841,12 +1841,24 @@ deps-update-kotlin: ensure-jvm
 # ============================================================================
 
 ensure-hooks:
-	@if [ ! -f .git/hooks/pre-commit ]; then \
+	@set -eu; \
+	HOOK_PATH="$$(git rev-parse --git-path hooks/pre-commit)"; \
+	if [ -L "$$HOOK_PATH" ] && [ ! -e "$$HOOK_PATH" ]; then \
+		echo "❌ $(RED)Pre-commit hook is a dangling symlink: $$HOOK_PATH$(RESET)"; \
+		exit 1; \
+	fi; \
+	if [ ! -e "$$HOOK_PATH" ]; then \
 		echo "🔗 $(CYAN)Installing pre-commit hook...$(RESET)"; \
-		ln -s ../../scripts/pre-commit .git/hooks/pre-commit; \
-		chmod +x .git/hooks/pre-commit; \
+		GIT_COMMON_DIR="$$(git rev-parse --path-format=absolute --git-common-dir)"; \
+		REPO_ROOT="$$(dirname "$$GIT_COMMON_DIR")"; \
+		test -x "$$REPO_ROOT/scripts/pre-commit"; \
+		ln -s "$$REPO_ROOT/scripts/pre-commit" "$$HOOK_PATH"; \
+		chmod +x "$$HOOK_PATH"; \
 		echo "✅ $(GREEN)Pre-commit hook installed$(RESET)"; \
 	fi
+
+test-hooks:
+	@scripts/test-ensure-hooks.sh
 
 examples-ls:
 	@echo "📋 $(CYAN)Generating examples inventory...$(RESET)"

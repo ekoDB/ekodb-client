@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import type { FunctionStageConfig, UserFunction } from "./functions";
+import type { FunctionStageConfig } from "./functions";
 
 interface ContractCase {
   name: string;
@@ -23,7 +23,7 @@ const fixture: ContractFixture = JSON.parse(
 );
 
 describe("generated function-stage contract", () => {
-  it("round-trips every generated variant without loss", () => {
+  it("keeps every generated variant JSON-lossless", () => {
     expect(fixture.variant_count).toBe(fixture.variants.length);
     expect(fixture.variants.length).toBeGreaterThanOrEqual(
       fixture.coverage_floor,
@@ -35,27 +35,5 @@ describe("generated function-stage contract", () => {
         testCase.stage,
       );
     }
-  });
-
-  it("preserves unknown fields and variants verbatim", () => {
-    const futureFunction = {
-      label: "future_contract",
-      name: "Future contract",
-      parameters: {},
-      functions: [
-        { type: "FindAll", collection: "items", future_field: true },
-        { type: "FutureStage", future_value: { nested: true } },
-      ],
-      transaction_config: {
-        enabled: true,
-        auto_rollback: true,
-        isolation_level: "Serializable",
-      },
-    };
-
-    // TypeScript performs no lossy runtime transformation: values returned by
-    // fetch retain their complete JSON shape when sent back by updateFunction.
-    const decoded = futureFunction as unknown as UserFunction;
-    expect(JSON.parse(JSON.stringify(decoded))).toEqual(futureFunction);
   });
 });
