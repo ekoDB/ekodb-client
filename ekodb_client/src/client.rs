@@ -3,7 +3,7 @@
 use crate::auth::AuthManager;
 use crate::error::{Error, Result};
 use crate::http::HttpClient;
-use crate::schema::{CollectionMetadata, Schema};
+use crate::schema::{CollectionMetadata, Schema, SchemaConstraintUpdate};
 use crate::search::{DistinctValuesQuery, DistinctValuesResponse, SearchQuery, SearchResponse};
 use crate::types::{FieldType, Query, Record};
 use std::sync::Arc;
@@ -1745,6 +1745,55 @@ impl Client {
             let collection = collection.clone();
             let http = http.clone();
             async move { http.get_schema(&collection, &token).await }
+        })
+        .await
+    }
+
+    /// Apply a partial update to one or more fields' schema constraints.
+    ///
+    /// Calls `PUT /api/schemas/{collection}` with only the attributes set on
+    /// each [`SchemaConstraintUpdate`] — fields left as `None` are omitted
+    /// from the request body, so this only touches what you pass.
+    ///
+    /// # Arguments
+    ///
+    /// * `collection` - The collection name
+    /// * `constraints` - Per-field constraint updates, keyed by field name
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # use ekodb_client::{Client, SchemaConstraintUpdate};
+    /// # use std::collections::HashMap;
+    /// # async fn example(client: &Client) -> Result<(), ekodb_client::Error> {
+    /// let mut constraints = HashMap::new();
+    /// constraints.insert(
+    ///     "email".to_string(),
+    ///     SchemaConstraintUpdate {
+    ///         required: Some(true),
+    ///         ..Default::default()
+    ///     },
+    /// );
+    ///
+    /// client.update_schema_constraints("users", constraints).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn update_schema_constraints(
+        &self,
+        collection: &str,
+        constraints: std::collections::HashMap<String, SchemaConstraintUpdate>,
+    ) -> Result<()> {
+        let collection = collection.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let collection = collection.clone();
+            let constraints = constraints.clone();
+            let http = http.clone();
+            async move {
+                http.update_schema_constraints(&collection, &constraints, &token)
+                    .await
+            }
         })
         .await
     }
