@@ -472,12 +472,12 @@ describe("QueryBuilder chaining", () => {
 // ============================================================================
 
 describe("QueryBuilder rawFilter", () => {
-  it("adds raw filter expression", () => {
+  it("adds a valid raw filter expression", () => {
     const rawFilter = {
       type: "Condition",
       content: {
         field: "custom",
-        operator: "CustomOp",
+        operator: "Eq",
         value: "custom_value",
       },
     };
@@ -491,6 +491,31 @@ describe("QueryBuilder rawFilter", () => {
     expect(() => new QueryBuilder().rawFilter({ status: "active" })).toThrow(
       /content/,
     );
+  });
+
+  it("rejects invalid operators and logical cardinality", () => {
+    const condition = {
+      type: "Condition",
+      content: { field: "status", operator: "Eq", value: "active" },
+    };
+    expect(() =>
+      new QueryBuilder().rawFilter({
+        type: "Condition",
+        content: { field: "status", operator: "CustomOp", value: "active" },
+      }),
+    ).toThrow(/unsupported condition operator/);
+    expect(() =>
+      new QueryBuilder().rawFilter({
+        type: "Logical",
+        content: { operator: "And", expressions: [] },
+      }),
+    ).toThrow(/requires expressions/);
+    expect(() =>
+      new QueryBuilder().rawFilter({
+        type: "Logical",
+        content: { operator: "Not", expressions: [condition, condition] },
+      }),
+    ).toThrow(/exactly one/);
   });
 });
 

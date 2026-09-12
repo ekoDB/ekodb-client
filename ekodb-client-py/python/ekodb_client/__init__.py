@@ -61,7 +61,9 @@ from ._ekodb_client import (
 from .stages import (
     Stage,
     ChatMessage,
+    QueryConditionOperator,
     QueryExpression,
+    QueryLogicalOperator,
     parameter_ref,
     validate_query_expression,
 )
@@ -133,7 +135,9 @@ __all__ = [
     "Stage",
     "ChatMessage",
     "parameter_ref",
+    "QueryConditionOperator",
     "QueryExpression",
+    "QueryLogicalOperator",
     "validate_query_expression",
     # Query, Schema, and Join builders
     "QueryBuilder",

@@ -51,27 +51,77 @@ pub fn parameter_ref(name: impl Into<String>) -> serde_json::Value {
 #[serde(transparent)]
 pub struct QueryExpression(serde_json::Value);
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum QueryConditionOperator {
+    Eq,
+    Ne,
+    Gt,
+    Gte,
+    Lt,
+    Lte,
+    In,
+    NotIn,
+    Contains,
+    StartsWith,
+    EndsWith,
+}
+
+impl QueryConditionOperator {
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::Eq => "Eq",
+            Self::Ne => "Ne",
+            Self::Gt => "Gt",
+            Self::Gte => "Gte",
+            Self::Lt => "Lt",
+            Self::Lte => "Lte",
+            Self::In => "In",
+            Self::NotIn => "NotIn",
+            Self::Contains => "Contains",
+            Self::StartsWith => "StartsWith",
+            Self::EndsWith => "EndsWith",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum QueryLogicalOperator {
+    And,
+    Or,
+    Not,
+}
+
+impl QueryLogicalOperator {
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::And => "And",
+            Self::Or => "Or",
+            Self::Not => "Not",
+        }
+    }
+}
+
 impl QueryExpression {
     pub fn condition(
         field: impl Into<String>,
-        operator: impl Into<String>,
+        operator: QueryConditionOperator,
         value: serde_json::Value,
     ) -> Self {
         Self(serde_json::json!({
             "type": "Condition",
             "content": {
                 "field": field.into(),
-                "operator": operator.into(),
+                "operator": operator.as_str(),
                 "value": value,
             },
         }))
     }
 
-    pub fn logical(operator: impl Into<String>, expressions: Vec<Self>) -> Self {
-        Self(serde_json::json!({
+    pub fn logical(operator: QueryLogicalOperator, expressions: Vec<Self>) -> Result<Self, String> {
+        Self::try_from(serde_json::json!({
             "type": "Logical",
             "content": {
-                "operator": operator.into(),
+                "operator": operator.as_str(),
                 "expressions": expressions,
             },
         }))
@@ -103,31 +153,58 @@ impl QueryExpression {
                 {
                     return Err("Condition content must contain a string `field`".to_string());
                 }
-                if content
+                let operator = content
                     .get("operator")
                     .and_then(serde_json::Value::as_str)
-                    .is_none()
-                {
-                    return Err("Condition content must contain a string `operator`".to_string());
+                    .ok_or_else(|| {
+                        "Condition content must contain a string `operator`".to_string()
+                    })?;
+                if !matches!(
+                    operator,
+                    "Eq" | "Ne"
+                        | "Gt"
+                        | "Gte"
+                        | "Lt"
+                        | "Lte"
+                        | "In"
+                        | "NotIn"
+                        | "Contains"
+                        | "StartsWith"
+                        | "EndsWith"
+                ) {
+                    return Err(format!("unsupported condition operator `{operator}`"));
                 }
                 if !content.contains_key("value") {
                     return Err("Condition content must contain `value`".to_string());
                 }
             }
             "Logical" => {
-                if content
+                let operator = content
                     .get("operator")
                     .and_then(serde_json::Value::as_str)
-                    .is_none()
-                {
-                    return Err("Logical content must contain a string `operator`".to_string());
-                }
+                    .ok_or_else(|| {
+                        "Logical content must contain a string `operator`".to_string()
+                    })?;
                 let expressions = content
                     .get("expressions")
                     .and_then(serde_json::Value::as_array)
                     .ok_or_else(|| {
                         "Logical content must contain an array `expressions`".to_string()
                     })?;
+                match operator {
+                    "And" | "Or" if expressions.is_empty() => {
+                        return Err(format!(
+                            "logical operator `{operator}` requires at least one expression"
+                        ));
+                    }
+                    "Not" if expressions.len() != 1 => {
+                        return Err(
+                            "logical operator `Not` requires exactly one expression".to_string()
+                        );
+                    }
+                    "And" | "Or" | "Not" => {}
+                    _ => return Err(format!("unsupported logical operator `{operator}`")),
+                }
                 for expression in expressions {
                     Self::validate(expression)?;
                 }
@@ -1362,9 +1439,14 @@ mod tests {
     #[test]
     fn query_expression_accepts_typed_and_correct_raw_forms() {
         let typed = QueryExpression::logical(
-            "And",
-            vec![QueryExpression::condition("status", "Eq", json!("active"))],
-        );
+            QueryLogicalOperator::And,
+            vec![QueryExpression::condition(
+                "status",
+                QueryConditionOperator::Eq,
+                json!("active"),
+            )],
+        )
+        .unwrap();
         assert_eq!(
             serde_json::to_value(typed).unwrap(),
             json!({
@@ -1397,6 +1479,27 @@ mod tests {
             "filter": {"status": "active"}
         });
         assert!(serde_json::from_value::<Function>(stage).is_err());
+    }
+
+    #[test]
+    fn query_expression_rejects_invalid_operators_and_cardinality() {
+        let condition = |operator: &str| {
+            json!({
+                "type": "Condition",
+                "content": {"field": "status", "operator": operator, "value": "active"}
+            })
+        };
+        assert!(QueryExpression::try_from(condition("CustomOp")).is_err());
+
+        for expression in [
+            json!({"type": "Logical", "content": {"operator": "And", "expressions": []}}),
+            json!({"type": "Logical", "content": {"operator": "Custom", "expressions": [condition("Eq")]}}),
+            json!({"type": "Logical", "content": {"operator": "Not", "expressions": [condition("Eq"), condition("Ne")]}}),
+        ] {
+            assert!(QueryExpression::try_from(expression).is_err());
+        }
+
+        assert!(QueryExpression::logical(QueryLogicalOperator::Not, Vec::new()).is_err());
     }
 
     #[test]

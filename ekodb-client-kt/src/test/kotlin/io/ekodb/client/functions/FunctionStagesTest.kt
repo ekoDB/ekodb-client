@@ -98,6 +98,21 @@ class FunctionStagesTest {
         }
     }
 
+    @Test
+    fun `condition codec rejects unknown data instead of dropping it`() {
+        val unknownTopLevel =
+            """{"type":"FieldEquals","value":{"field":"score","value":10},"future":true}"""
+        val unknownNested =
+            """{"type":"FieldEquals","value":{"field":"score","value":10,"future":true}}"""
+
+        assertFailsWith<IllegalArgumentException> {
+            json.decodeFromString(FunctionConditionSerializer, unknownTopLevel)
+        }
+        assertFailsWith<IllegalArgumentException> {
+            json.decodeFromString(FunctionConditionSerializer, unknownNested)
+        }
+    }
+
     // ------------------------------------------------------------------
     // parameterRef()
     // ------------------------------------------------------------------
@@ -108,7 +123,7 @@ class FunctionStagesTest {
 
     @Test
     fun `filter sort limit and skip serialize as Query stages`() {
-        val filter = queryCondition("status", "Eq", JsonPrimitive("active"))
+        val filter = queryCondition("status", QueryConditionOperator.Eq, JsonPrimitive("active"))
         val stages = listOf(
             FunctionStageConfig.filter("users", filter),
             FunctionStageConfig.sort("users", listOf(SortFieldConfig("created_at", ascending = false))),
@@ -136,7 +151,7 @@ class FunctionStagesTest {
             ).jsonObject
 
         val filtered = wireOf(
-            FunctionStageConfig.filter("users", queryCondition("a", "Eq", JsonPrimitive(1))),
+            FunctionStageConfig.filter("users", queryCondition("a", QueryConditionOperator.Eq, JsonPrimitive(1))),
         )
         assertNotNull(filtered["filter"])
 
@@ -156,6 +171,24 @@ class FunctionStagesTest {
             FunctionStageConfig.Update("users", bare, buildJsonObject {})
         }
         assertFailsWith<IllegalArgumentException> { FunctionStageConfig.Delete("users", bare) }
+    }
+
+    @Test
+    fun `query expressions reject invalid operators and logical cardinality`() {
+        val condition = queryCondition("status", QueryConditionOperator.Eq, JsonPrimitive("active"))
+        val invalidCondition = buildJsonObject {
+            put("type", "Condition")
+            put("content", buildJsonObject {
+                put("field", "status")
+                put("operator", "CustomOp")
+                put("value", "active")
+            })
+        }
+        assertFailsWith<IllegalArgumentException> { validateQueryExpression(invalidCondition) }
+        assertFailsWith<IllegalArgumentException> { queryLogical(QueryLogicalOperator.And, emptyList()) }
+        assertFailsWith<IllegalArgumentException> {
+            queryLogical(QueryLogicalOperator.Not, listOf(condition, condition))
+        }
     }
 
     @Test

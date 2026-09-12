@@ -5,6 +5,8 @@ helpers. Server-side behavior for structural parameter placeholders is
 covered by the server-side integration tests.
 """
 
+import pytest
+
 from ekodb_client import Stage, parameter_ref
 
 # ---------------------------------------------------------------------------
@@ -202,6 +204,38 @@ def test_search_stage_shapes_match_the_wire_contract():
         "query_vector": [0.1, 0.2],
         "limit": 5,
     }
+
+
+def test_query_expression_rejects_invalid_operators_and_cardinality():
+    condition = {
+        "type": "Condition",
+        "content": {"field": "status", "operator": "Eq", "value": "active"},
+    }
+
+    with pytest.raises(ValueError, match="unsupported condition operator"):
+        Stage.query(
+            "items",
+            {
+                "type": "Condition",
+                "content": {**condition["content"], "operator": "CustomOp"},
+            },
+        )
+    with pytest.raises(ValueError, match="requires expressions"):
+        Stage.query(
+            "items",
+            {"type": "Logical", "content": {"operator": "And", "expressions": []}},
+        )
+    with pytest.raises(ValueError, match="exactly one"):
+        Stage.query(
+            "items",
+            {
+                "type": "Logical",
+                "content": {
+                    "operator": "Not",
+                    "expressions": [condition, condition],
+                },
+            },
+        )
 
 
 # ---------------------------------------------------------------------------
