@@ -36,6 +36,21 @@ export interface ParameterDefinition {
   param_type?: string;
 }
 
+/** Algorithms supported by the server's JWT sign and verify stages. */
+export type JwtAlgorithm =
+  | "HS256"
+  | "HS384"
+  | "HS512"
+  | "RS256"
+  | "RS384"
+  | "RS512"
+  | "PS256"
+  | "PS384"
+  | "PS512"
+  | "ES256"
+  | "ES384"
+  | "EdDSA";
+
 // ParameterValue removed - use plain values instead
 
 export type FunctionStageConfig =
@@ -279,7 +294,7 @@ export type FunctionStageConfig =
       type: "JwtSign";
       claims: Record<string, unknown>;
       secret: string;
-      algorithm?: "HS256" | "HS384" | "HS512";
+      algorithm?: JwtAlgorithm;
       expires_in_secs?: number;
       output_field: string;
     }
@@ -294,7 +309,7 @@ export type FunctionStageConfig =
       type: "JwtVerify";
       token_field: string;
       secret: string;
-      algorithm?: "HS256" | "HS384" | "HS512";
+      algorithm?: JwtAlgorithm;
       output_field: string;
     }
   | {
@@ -1090,14 +1105,14 @@ export const Stage = {
    * @param secret - Signing secret (typically `"{{env.JWT_SECRET}}"`).
    * @param output_field - Field name to write the signed JWT into.
    * @param expires_in_secs - Lifetime in seconds (auto-stamps `iat` + `exp`).
-   * @param algorithm - `"HS256"` (default) | `"HS384"` | `"HS512"`.
+   * @param algorithm - A supported HMAC, RSA, RSA-PSS, ECDSA, or EdDSA algorithm.
    */
   jwtSign: (
     claims: Record<string, unknown>,
     secret: string,
     output_field: string,
     expires_in_secs?: number,
-    algorithm?: "HS256" | "HS384" | "HS512",
+    algorithm?: JwtAlgorithm,
   ): FunctionStageConfig => ({
     type: "JwtSign",
     claims,
@@ -1122,7 +1137,7 @@ export const Stage = {
     token_field: string,
     secret: string,
     output_field: string,
-    algorithm?: "HS256" | "HS384" | "HS512",
+    algorithm?: JwtAlgorithm,
   ): FunctionStageConfig => ({
     type: "JwtVerify",
     token_field,
