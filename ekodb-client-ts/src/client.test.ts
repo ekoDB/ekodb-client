@@ -13,7 +13,7 @@ import {
   DEFAULT_REQUEST_TIMEOUT_MS,
   parseHealthStatus,
 } from "./client";
-import type { ChatModels } from "./client";
+import type { ChatMessageRequest, ChatModels } from "./client";
 import { SearchQueryBuilder } from "./search";
 
 // Mock fetch globally
@@ -53,6 +53,15 @@ function mockJsonResponse(data: unknown, status = 200): void {
     }),
   });
 }
+
+it("does not expose the retired force_summarize chat option", () => {
+  const request: ChatMessageRequest = {
+    message: "hello",
+    // @ts-expect-error force_summarize was removed from the server contract
+    force_summarize: true,
+  };
+  expect(request.message).toBe("hello");
+});
 
 function mockErrorResponse(status: number, message: string): void {
   mockFetch.mockResolvedValueOnce({

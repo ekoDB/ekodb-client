@@ -396,8 +396,6 @@ pub struct ChatMessageRequest {
     pub message: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub bypass_ripple: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub force_summarize: Option<bool>,
     /// Maximum tool-calling iterations for this message.
     /// Overrides the server/session default when set.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -442,7 +440,6 @@ impl ChatMessageRequest {
         Self {
             message: message.into(),
             bypass_ripple: None,
-            force_summarize: None,
             max_iterations: None,
             tool_config: None,
             llm_model: None,
@@ -458,12 +455,6 @@ impl ChatMessageRequest {
     /// File API server-side.
     pub fn attachments(mut self, attachments: Vec<Attachment>) -> Self {
         self.attachments = Some(attachments);
-        self
-    }
-
-    /// Force conversation summarization
-    pub fn force_summarize(mut self, force: bool) -> Self {
-        self.force_summarize = Some(force);
         self
     }
 
@@ -836,10 +827,17 @@ mod tests {
 
     #[test]
     fn test_chat_message_request() {
-        let request = ChatMessageRequest::new("Hello").force_summarize(true);
+        let request = ChatMessageRequest::new("Hello").max_iterations(3);
 
         assert_eq!(request.message, "Hello");
-        assert_eq!(request.force_summarize, Some(true));
+        assert_eq!(request.max_iterations, Some(3));
+        assert!(
+            !serde_json::to_value(request)
+                .unwrap()
+                .as_object()
+                .unwrap()
+                .contains_key("force_summarize")
+        );
     }
 
     #[test]

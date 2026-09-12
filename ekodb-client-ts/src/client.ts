@@ -326,7 +326,6 @@ export interface CreateChatSessionRequest {
 export interface ChatMessageRequest {
   message: string;
   bypass_ripple?: boolean;
-  force_summarize?: boolean;
   max_iterations?: number;
   tool_config?: ToolConfig;
   llm_model?: string;
