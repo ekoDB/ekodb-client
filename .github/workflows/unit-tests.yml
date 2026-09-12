@@ -23,6 +23,9 @@ jobs:
       - name: Check function-stage parity
         run: python3 scripts/check-function-stage-parity.py
 
+      - name: Check client-example parity
+        run: python3 scripts/check-example-parity.py
+
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:

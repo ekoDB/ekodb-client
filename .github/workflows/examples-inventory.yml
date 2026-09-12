@@ -8,6 +8,8 @@ on:
       - 'examples/**'
       - 'examples_list.txt'
       - 'scripts/generate_examples_list.sh'
+      - 'scripts/check-example-parity.py'
+      - 'scripts/run-client-examples.sh'
   push:
     branches:
       - main
@@ -16,6 +18,8 @@ on:
       - 'examples/**'
       - 'examples_list.txt'
       - 'scripts/generate_examples_list.sh'
+      - 'scripts/check-example-parity.py'
+      - 'scripts/run-client-examples.sh'
 
 jobs:
   check-inventory:
@@ -31,6 +35,9 @@ jobs:
       
       - name: Generate examples inventory
         run: make examples-ls-check
+
+      - name: Check cross-language scenario parity
+        run: make example-parity-check
       
       - name: Check if inventory is up to date
         run: |
