@@ -142,6 +142,25 @@ def compare(
     )
 
 
+def check_query_expression_docs() -> None:
+    checks = {
+        ROOT / "ekodb_client/README.md": (
+            r'ws\.query\([\s\S]*?"type"\s*:\s*"Condition"[\s\S]*?"content"\s*:',
+            r'ws\.query\([^;\n]*Some\(json!\(\{\s*"field"\s*:',
+        ),
+        ROOT / "ekodb-client-py/README.md": (
+            r'ws_query\([\s\S]*?filter\s*=\s*\{[\s\S]*?"type"\s*:\s*"Condition"[\s\S]*?"content"\s*:',
+            r'ws_query\([^\n]*filter\s*=\s*\{\s*"field"\s*:',
+        ),
+    }
+    for path, (required, rejected) in checks.items():
+        source = path.read_text()
+        if not re.search(required, source):
+            raise SystemExit(f"{path}: tagged WebSocket QueryExpression example missing")
+        if re.search(rejected, source):
+            raise SystemExit(f"{path}: flat WebSocket filter example is invalid")
+
+
 def main() -> None:
     fixture = json.loads(FIXTURE.read_text())
     floor = fixture["coverage_floor"]
@@ -173,6 +192,7 @@ def main() -> None:
         expected,
         floor,
     )
+    check_query_expression_docs()
     print(f"function-stage parity OK: {len(expected)} variants")
 
 
