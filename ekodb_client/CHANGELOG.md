@@ -39,10 +39,10 @@ and this project adheres to
   Rust, Python, TypeScript, and Kotlin request surfaces. (#235)
 - **Dependency and toolchain updates.** Integrate TypeScript 7 (#191),
   `tokio-tungstenite` 0.30 (#192), Gradle 9.7.1 (#193), Ruff 0.16.6 (#223),
-  Vitest 5 (#224), Kotlin serialization 2.4.20 (#225), kotlinx-datetime 0.8
-  compatibility artifacts (#226), and Foojay resolver convention 1.0 (#228). The
-  `msgpack-core` 0.9.12 update remains excluded because its Kotlin gate is
-  failing. (#219, #227)
+  Vitest 5 (#224), kotlinx-datetime 0.8 compatibility artifacts (#226), and
+  Foojay resolver convention 1.0 (#228). Kotlin serialization 2.4.20 and
+  `msgpack-core` 0.9.12 remain excluded because their CodeQL and Kotlin gates,
+  respectively, are failing. (#219, #225, #227)
 
 ### Fixed
 
