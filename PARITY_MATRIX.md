@@ -127,11 +127,6 @@ ranking, index selection, and ANN recall are not covered by those checks. See
   response modeling across every client operation.
 - The existing query builder uses `JsonElement` filters and dynamic inputs.
   Vector-index algorithm and metric options remain strings in Kotlin.
-- Some unrelated Quick Start examples still need correction: `client.query`,
-  `deleteWhere`, and `offset` are not current Kotlin APIs, and CRUD methods use
-  `Record` rather than the maps shown in those examples. Use the compiled
-  examples in `examples/kotlin/examples` as the reference for those operations.
-  Tracked in #216.
 
 ## Chat Models API
 
