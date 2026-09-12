@@ -63,8 +63,8 @@ fun main() {
                         put(
                             "expression",
                             buildJsonObject {
-                                put("type", "Field")
-                                put("name", "price")
+                                put("type", "FieldReference")
+                                put("value", "price")
                             },
                         )
                     },
@@ -121,6 +121,13 @@ fun main() {
             ?.jsonPrimitive?.content == "FieldGreaterThanOrEqual",
     )
     check(requireStage(stages, "BatchDelete").getValue("record_ids").jsonArray[1].jsonPrimitive.content == "item-2")
+    check(
+        requireStage(stages, "AddFields").getValue("fields").jsonArray[0]
+            .jsonObject.getValue("expression").jsonObject == buildJsonObject {
+            put("type", "FieldReference")
+            put("value", "price")
+        },
+    )
     check(requireStage(stages, "Embed")["input_field"]?.jsonPrimitive?.content == "body")
     check(requireStage(stages, "HttpRequest")["timeout_seconds"]?.jsonPrimitive?.content == "10")
     check(requireStage(stages, "HttpRequest")["output_field"]?.jsonPrimitive?.content == "response")

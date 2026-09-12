@@ -47,7 +47,7 @@ const stages: FunctionStageConfig[] = [
   Stage.addFields([
     {
       field_name: "total",
-      expression: { type: "Field", name: "price" },
+      expression: { type: "FieldReference", value: "price" },
     },
   ]),
   Stage.currentDatetime("processed_at"),
@@ -115,6 +115,15 @@ assert.deepEqual(
     >
   ).record_ids,
   ["item-1", "item-2"],
+);
+assert.deepEqual(
+  (
+    byType.get("AddFields") as Extract<
+      FunctionStageConfig,
+      { type: "AddFields" }
+    >
+  ).fields[0].expression,
+  { type: "FieldReference", value: "price" },
 );
 assert.equal(
   (byType.get("Embed") as Extract<FunctionStageConfig, { type: "Embed" }>)
