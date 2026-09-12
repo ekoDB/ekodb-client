@@ -1,0 +1,1125 @@
+{
+  "schema_version": 1,
+  "coverage_floor": 67,
+  "variant_count": 67,
+  "variants": [
+    {
+      "name": "FindAll",
+      "fields": [
+        "collection"
+      ],
+      "stage": {
+        "type": "FindAll",
+        "collection": "items"
+      }
+    },
+    {
+      "name": "Query",
+      "fields": [
+        "collection",
+        "filter",
+        "sort",
+        "limit",
+        "skip"
+      ],
+      "stage": {
+        "type": "Query",
+        "collection": "items",
+        "filter": {
+          "type": "Condition",
+          "content": {
+            "field": "status",
+            "operator": "Eq",
+            "value": "active"
+          }
+        },
+        "sort": [
+          {
+            "field": "created_at",
+            "ascending": false
+          }
+        ],
+        "limit": 7,
+        "skip": 2
+      }
+    },
+    {
+      "name": "VectorSearch",
+      "fields": [
+        "collection",
+        "query_vector",
+        "limit",
+        "threshold"
+      ],
+      "stage": {
+        "type": "VectorSearch",
+        "collection": "items",
+        "query_vector": [
+          0.12345678901234568,
+          0.25
+        ],
+        "limit": 7,
+        "threshold": 0.75
+      }
+    },
+    {
+      "name": "HybridSearch",
+      "fields": [
+        "collection",
+        "query_text",
+        "query_vector",
+        "limit"
+      ],
+      "stage": {
+        "type": "HybridSearch",
+        "collection": "items",
+        "query_text": "sample query",
+        "query_vector": [
+          0.12345678901234568,
+          0.25
+        ],
+        "limit": 7
+      }
+    },
+    {
+      "name": "TextSearch",
+      "fields": [
+        "collection",
+        "query_text",
+        "fields",
+        "limit",
+        "fuzzy"
+      ],
+      "stage": {
+        "type": "TextSearch",
+        "collection": "items",
+        "query_text": "sample query",
+        "fields": [
+          "title",
+          "status"
+        ],
+        "limit": 7,
+        "fuzzy": true
+      }
+    },
+    {
+      "name": "FindById",
+      "fields": [
+        "collection",
+        "record_id"
+      ],
+      "stage": {
+        "type": "FindById",
+        "collection": "items",
+        "record_id": "sample-id"
+      }
+    },
+    {
+      "name": "FindOne",
+      "fields": [
+        "collection",
+        "key",
+        "value"
+      ],
+      "stage": {
+        "type": "FindOne",
+        "collection": "items",
+        "key": "sample-key",
+        "value": "sample-value"
+      }
+    },
+    {
+      "name": "Insert",
+      "fields": [
+        "collection",
+        "record",
+        "bypass_ripple",
+        "ttl"
+      ],
+      "stage": {
+        "type": "Insert",
+        "collection": "items",
+        "record": {
+          "name": "sample"
+        },
+        "bypass_ripple": true,
+        "ttl": 60
+      }
+    },
+    {
+      "name": "BatchInsert",
+      "fields": [
+        "collection",
+        "records",
+        "bypass_ripple"
+      ],
+      "stage": {
+        "type": "BatchInsert",
+        "collection": "items",
+        "records": [
+          {
+            "name": "first"
+          },
+          {
+            "name": "second"
+          }
+        ],
+        "bypass_ripple": true
+      }
+    },
+    {
+      "name": "Update",
+      "fields": [
+        "collection",
+        "filter",
+        "updates",
+        "bypass_ripple",
+        "ttl"
+      ],
+      "stage": {
+        "type": "Update",
+        "collection": "items",
+        "filter": {
+          "type": "Condition",
+          "content": {
+            "field": "status",
+            "operator": "Eq",
+            "value": "active"
+          }
+        },
+        "updates": {
+          "status": "updated"
+        },
+        "bypass_ripple": true,
+        "ttl": 60
+      }
+    },
+    {
+      "name": "UpdateById",
+      "fields": [
+        "collection",
+        "record_id",
+        "updates",
+        "bypass_ripple",
+        "ttl"
+      ],
+      "stage": {
+        "type": "UpdateById",
+        "collection": "items",
+        "record_id": "sample-id",
+        "updates": {
+          "status": "updated"
+        },
+        "bypass_ripple": true,
+        "ttl": 60
+      }
+    },
+    {
+      "name": "FindOneAndUpdate",
+      "fields": [
+        "collection",
+        "record_id",
+        "updates",
+        "bypass_ripple",
+        "ttl"
+      ],
+      "stage": {
+        "type": "FindOneAndUpdate",
+        "collection": "items",
+        "record_id": "sample-id",
+        "updates": {
+          "status": "updated"
+        },
+        "bypass_ripple": true,
+        "ttl": 60
+      }
+    },
+    {
+      "name": "UpdateWithAction",
+      "fields": [
+        "collection",
+        "record_id",
+        "action",
+        "field",
+        "value",
+        "bypass_ripple"
+      ],
+      "stage": {
+        "type": "UpdateWithAction",
+        "collection": "items",
+        "record_id": "sample-id",
+        "action": "increment",
+        "field": "sample_field",
+        "value": "sample-value",
+        "bypass_ripple": true
+      }
+    },
+    {
+      "name": "Upsert",
+      "fields": [
+        "collection",
+        "key",
+        "value",
+        "record",
+        "bypass_ripple",
+        "ttl"
+      ],
+      "stage": {
+        "type": "Upsert",
+        "collection": "items",
+        "key": "sample-key",
+        "value": "sample-value",
+        "record": {
+          "name": "sample"
+        },
+        "bypass_ripple": true,
+        "ttl": 60
+      }
+    },
+    {
+      "name": "SetField",
+      "fields": [
+        "field",
+        "value"
+      ],
+      "stage": {
+        "type": "SetField",
+        "field": "sample_field",
+        "value": "sample-value"
+      }
+    },
+    {
+      "name": "CurrentDatetime",
+      "fields": [
+        "output_field"
+      ],
+      "stage": {
+        "type": "CurrentDatetime",
+        "output_field": "result"
+      }
+    },
+    {
+      "name": "Increment",
+      "fields": [
+        "collection",
+        "record_id",
+        "field",
+        "by",
+        "bypass_ripple"
+      ],
+      "stage": {
+        "type": "Increment",
+        "collection": "items",
+        "record_id": "sample-id",
+        "field": "sample_field",
+        "by": 2,
+        "bypass_ripple": true
+      }
+    },
+    {
+      "name": "Push",
+      "fields": [
+        "collection",
+        "record_id",
+        "field",
+        "value",
+        "bypass_ripple"
+      ],
+      "stage": {
+        "type": "Push",
+        "collection": "items",
+        "record_id": "sample-id",
+        "field": "sample_field",
+        "value": "sample-value",
+        "bypass_ripple": true
+      }
+    },
+    {
+      "name": "Delete",
+      "fields": [
+        "collection",
+        "filter",
+        "bypass_ripple"
+      ],
+      "stage": {
+        "type": "Delete",
+        "collection": "items",
+        "filter": {
+          "type": "Condition",
+          "content": {
+            "field": "status",
+            "operator": "Eq",
+            "value": "active"
+          }
+        },
+        "bypass_ripple": true
+      }
+    },
+    {
+      "name": "DeleteById",
+      "fields": [
+        "collection",
+        "record_id",
+        "bypass_ripple"
+      ],
+      "stage": {
+        "type": "DeleteById",
+        "collection": "items",
+        "record_id": "sample-id",
+        "bypass_ripple": true
+      }
+    },
+    {
+      "name": "BatchDelete",
+      "fields": [
+        "collection",
+        "record_ids",
+        "bypass_ripple"
+      ],
+      "stage": {
+        "type": "BatchDelete",
+        "collection": "items",
+        "record_ids": [
+          "id-1",
+          "id-2"
+        ],
+        "bypass_ripple": true
+      }
+    },
+    {
+      "name": "Group",
+      "fields": [
+        "by_fields",
+        "functions"
+      ],
+      "stage": {
+        "type": "Group",
+        "by_fields": [
+          "category"
+        ],
+        "functions": [
+          {
+            "output_field": "total",
+            "operation": "Sum",
+            "input_field": "amount"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Project",
+      "fields": [
+        "fields",
+        "exclude"
+      ],
+      "stage": {
+        "type": "Project",
+        "fields": [
+          "title",
+          "status"
+        ],
+        "exclude": true
+      }
+    },
+    {
+      "name": "AddFields",
+      "fields": [
+        "fields"
+      ],
+      "stage": {
+        "type": "AddFields",
+        "fields": [
+          {
+            "field_name": "total",
+            "expression": {
+              "type": "Literal",
+              "value": 1
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Count",
+      "fields": [
+        "output_field"
+      ],
+      "stage": {
+        "type": "Count",
+        "output_field": "result"
+      }
+    },
+    {
+      "name": "Chat",
+      "fields": [
+        "messages",
+        "model",
+        "temperature",
+        "max_tokens"
+      ],
+      "stage": {
+        "type": "Chat",
+        "messages": [
+          {
+            "role": "user",
+            "content": "hello"
+          }
+        ],
+        "model": "sample-model",
+        "temperature": 0.5,
+        "max_tokens": 7
+      }
+    },
+    {
+      "name": "Embed",
+      "fields": [
+        "input_field",
+        "output_field",
+        "model"
+      ],
+      "stage": {
+        "type": "Embed",
+        "input_field": "source_text",
+        "output_field": "result",
+        "model": "sample-model"
+      }
+    },
+    {
+      "name": "HttpRequest",
+      "fields": [
+        "url",
+        "method",
+        "headers",
+        "body",
+        "timeout_seconds",
+        "output_field"
+      ],
+      "stage": {
+        "type": "HttpRequest",
+        "url": "https://example.test/data",
+        "method": "POST",
+        "headers": {
+          "x-contract-test": "true"
+        },
+        "body": {
+          "payload": true
+        },
+        "timeout_seconds": 7,
+        "output_field": "result"
+      }
+    },
+    {
+      "name": "If",
+      "fields": [
+        "condition",
+        "then_functions",
+        "else_functions"
+      ],
+      "stage": {
+        "type": "If",
+        "condition": {
+          "type": "HasRecords"
+        },
+        "then_functions": [
+          {
+            "type": "FindAll",
+            "collection": "nested"
+          }
+        ],
+        "else_functions": [
+          {
+            "type": "FindAll",
+            "collection": "nested"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ForEach",
+      "fields": [
+        "functions"
+      ],
+      "stage": {
+        "type": "ForEach",
+        "functions": [
+          {
+            "type": "FindAll",
+            "collection": "nested"
+          }
+        ]
+      }
+    },
+    {
+      "name": "CallFunction",
+      "fields": [
+        "function_label",
+        "params"
+      ],
+      "stage": {
+        "type": "CallFunction",
+        "function_label": "nested_function",
+        "params": {
+          "id": "sample-id"
+        }
+      }
+    },
+    {
+      "name": "CreateSavepoint",
+      "fields": [
+        "name"
+      ],
+      "stage": {
+        "type": "CreateSavepoint",
+        "name": "savepoint"
+      }
+    },
+    {
+      "name": "RollbackToSavepoint",
+      "fields": [
+        "name"
+      ],
+      "stage": {
+        "type": "RollbackToSavepoint",
+        "name": "savepoint"
+      }
+    },
+    {
+      "name": "ReleaseSavepoint",
+      "fields": [
+        "name"
+      ],
+      "stage": {
+        "type": "ReleaseSavepoint",
+        "name": "savepoint"
+      }
+    },
+    {
+      "name": "KvGet",
+      "fields": [
+        "key"
+      ],
+      "stage": {
+        "type": "KvGet",
+        "key": "sample-key"
+      }
+    },
+    {
+      "name": "KvSet",
+      "fields": [
+        "key",
+        "value",
+        "ttl"
+      ],
+      "stage": {
+        "type": "KvSet",
+        "key": "sample-key",
+        "value": {
+          "sample": true
+        },
+        "ttl": 60
+      }
+    },
+    {
+      "name": "KvDelete",
+      "fields": [
+        "key"
+      ],
+      "stage": {
+        "type": "KvDelete",
+        "key": "sample-key"
+      }
+    },
+    {
+      "name": "KvExists",
+      "fields": [
+        "key",
+        "output_field"
+      ],
+      "stage": {
+        "type": "KvExists",
+        "key": "sample-key",
+        "output_field": "result"
+      }
+    },
+    {
+      "name": "KvQuery",
+      "fields": [
+        "pattern",
+        "include_expired"
+      ],
+      "stage": {
+        "type": "KvQuery",
+        "pattern": "cache:.*",
+        "include_expired": true
+      }
+    },
+    {
+      "name": "SWR",
+      "fields": [
+        "cache_key",
+        "ttl",
+        "url",
+        "method",
+        "headers",
+        "body",
+        "timeout_seconds",
+        "output_field",
+        "collection"
+      ],
+      "stage": {
+        "type": "SWR",
+        "cache_key": "cache:sample",
+        "ttl": 60,
+        "url": "https://example.test/data",
+        "method": "POST",
+        "headers": {
+          "x-contract-test": "true"
+        },
+        "body": {
+          "payload": true
+        },
+        "timeout_seconds": 7,
+        "output_field": "result",
+        "collection": "items"
+      }
+    },
+    {
+      "name": "TryCatch",
+      "fields": [
+        "try_functions",
+        "catch_functions",
+        "output_error_field"
+      ],
+      "stage": {
+        "type": "TryCatch",
+        "try_functions": [
+          {
+            "type": "FindAll",
+            "collection": "nested"
+          }
+        ],
+        "catch_functions": [
+          {
+            "type": "FindAll",
+            "collection": "nested"
+          }
+        ],
+        "output_error_field": "error"
+      }
+    },
+    {
+      "name": "Parallel",
+      "fields": [
+        "functions",
+        "wait_for_all"
+      ],
+      "stage": {
+        "type": "Parallel",
+        "functions": [
+          {
+            "type": "FindAll",
+            "collection": "nested"
+          }
+        ],
+        "wait_for_all": true
+      }
+    },
+    {
+      "name": "Sleep",
+      "fields": [
+        "duration_ms"
+      ],
+      "stage": {
+        "type": "Sleep",
+        "duration_ms": 7
+      }
+    },
+    {
+      "name": "BcryptHash",
+      "fields": [
+        "plain",
+        "cost",
+        "output_field"
+      ],
+      "stage": {
+        "type": "BcryptHash",
+        "plain": "{{password}}",
+        "cost": 12,
+        "output_field": "result"
+      }
+    },
+    {
+      "name": "BcryptVerify",
+      "fields": [
+        "plain",
+        "hash_field",
+        "output_field"
+      ],
+      "stage": {
+        "type": "BcryptVerify",
+        "plain": "{{password}}",
+        "hash_field": "password_hash",
+        "output_field": "result"
+      }
+    },
+    {
+      "name": "RandomToken",
+      "fields": [
+        "bytes",
+        "encoding",
+        "output_field"
+      ],
+      "stage": {
+        "type": "RandomToken",
+        "bytes": 16,
+        "encoding": "hex",
+        "output_field": "result"
+      }
+    },
+    {
+      "name": "JwtSign",
+      "fields": [
+        "claims",
+        "secret",
+        "algorithm",
+        "expires_in_secs",
+        "output_field"
+      ],
+      "stage": {
+        "type": "JwtSign",
+        "claims": {
+          "sub": "sample-user"
+        },
+        "secret": "{{env.CONTRACT_SECRET}}",
+        "algorithm": "HS256",
+        "expires_in_secs": 7,
+        "output_field": "result"
+      }
+    },
+    {
+      "name": "JwtVerify",
+      "fields": [
+        "token_field",
+        "secret",
+        "algorithm",
+        "output_field"
+      ],
+      "stage": {
+        "type": "JwtVerify",
+        "token_field": "token",
+        "secret": "{{env.CONTRACT_SECRET}}",
+        "algorithm": "HS256",
+        "output_field": "result"
+      }
+    },
+    {
+      "name": "EmailSend",
+      "fields": [
+        "to",
+        "subject",
+        "body",
+        "from",
+        "reply_to",
+        "api_key",
+        "provider",
+        "html",
+        "output_field"
+      ],
+      "stage": {
+        "type": "EmailSend",
+        "to": "to@example.test",
+        "subject": "subject",
+        "body": "message body",
+        "from": "from@example.test",
+        "reply_to": "reply@example.test",
+        "api_key": "{{env.API_KEY}}",
+        "provider": "sendgrid",
+        "html": true,
+        "output_field": "result"
+      }
+    },
+    {
+      "name": "HmacSign",
+      "fields": [
+        "input",
+        "secret",
+        "algorithm",
+        "output_field",
+        "encoding"
+      ],
+      "stage": {
+        "type": "HmacSign",
+        "input": "sample input",
+        "secret": "{{env.CONTRACT_SECRET}}",
+        "algorithm": "sha256",
+        "output_field": "result",
+        "encoding": "hex"
+      }
+    },
+    {
+      "name": "HmacVerify",
+      "fields": [
+        "input",
+        "provided_mac",
+        "secret",
+        "algorithm",
+        "encoding",
+        "output_field"
+      ],
+      "stage": {
+        "type": "HmacVerify",
+        "input": "sample input",
+        "provided_mac": "deadbeef",
+        "secret": "{{env.CONTRACT_SECRET}}",
+        "algorithm": "sha256",
+        "encoding": "hex",
+        "output_field": "result"
+      }
+    },
+    {
+      "name": "AesEncrypt",
+      "fields": [
+        "plaintext",
+        "key",
+        "key_encoding",
+        "output_field"
+      ],
+      "stage": {
+        "type": "AesEncrypt",
+        "plaintext": "sample plaintext",
+        "key": "sample-key",
+        "key_encoding": "hex",
+        "output_field": "result"
+      }
+    },
+    {
+      "name": "AesDecrypt",
+      "fields": [
+        "ciphertext_field",
+        "key",
+        "key_encoding",
+        "output_field"
+      ],
+      "stage": {
+        "type": "AesDecrypt",
+        "ciphertext_field": "ciphertext",
+        "key": "sample-key",
+        "key_encoding": "hex",
+        "output_field": "result"
+      }
+    },
+    {
+      "name": "UuidGenerate",
+      "fields": [
+        "output_field"
+      ],
+      "stage": {
+        "type": "UuidGenerate",
+        "output_field": "result"
+      }
+    },
+    {
+      "name": "TotpGenerate",
+      "fields": [
+        "secret",
+        "digits",
+        "period",
+        "algorithm",
+        "output_field"
+      ],
+      "stage": {
+        "type": "TotpGenerate",
+        "secret": "{{env.CONTRACT_SECRET}}",
+        "digits": 6,
+        "period": 30,
+        "algorithm": "sha256",
+        "output_field": "result"
+      }
+    },
+    {
+      "name": "TotpVerify",
+      "fields": [
+        "code",
+        "secret",
+        "digits",
+        "period",
+        "algorithm",
+        "skew",
+        "output_field"
+      ],
+      "stage": {
+        "type": "TotpVerify",
+        "code": "123456",
+        "secret": "{{env.CONTRACT_SECRET}}",
+        "digits": 6,
+        "period": 30,
+        "algorithm": "sha256",
+        "skew": 1,
+        "output_field": "result"
+      }
+    },
+    {
+      "name": "Base64Encode",
+      "fields": [
+        "input",
+        "url_safe",
+        "output_field"
+      ],
+      "stage": {
+        "type": "Base64Encode",
+        "input": "sample input",
+        "url_safe": true,
+        "output_field": "result"
+      }
+    },
+    {
+      "name": "Base64Decode",
+      "fields": [
+        "input",
+        "url_safe",
+        "output_field"
+      ],
+      "stage": {
+        "type": "Base64Decode",
+        "input": "sample input",
+        "url_safe": true,
+        "output_field": "result"
+      }
+    },
+    {
+      "name": "HexEncode",
+      "fields": [
+        "input",
+        "output_field"
+      ],
+      "stage": {
+        "type": "HexEncode",
+        "input": "sample input",
+        "output_field": "result"
+      }
+    },
+    {
+      "name": "HexDecode",
+      "fields": [
+        "input",
+        "output_field"
+      ],
+      "stage": {
+        "type": "HexDecode",
+        "input": "sample input",
+        "output_field": "result"
+      }
+    },
+    {
+      "name": "Slugify",
+      "fields": [
+        "input",
+        "output_field"
+      ],
+      "stage": {
+        "type": "Slugify",
+        "input": "sample input",
+        "output_field": "result"
+      }
+    },
+    {
+      "name": "IdempotencyClaim",
+      "fields": [
+        "key",
+        "ttl_secs",
+        "output_field"
+      ],
+      "stage": {
+        "type": "IdempotencyClaim",
+        "key": "sample-key",
+        "ttl_secs": 7,
+        "output_field": "result"
+      }
+    },
+    {
+      "name": "RateLimit",
+      "fields": [
+        "key",
+        "limit",
+        "window_secs",
+        "on_exceed",
+        "output_field"
+      ],
+      "stage": {
+        "type": "RateLimit",
+        "key": "sample-key",
+        "limit": 7,
+        "window_secs": 7,
+        "on_exceed": "fail",
+        "output_field": "result"
+      }
+    },
+    {
+      "name": "LockAcquire",
+      "fields": [
+        "key",
+        "ttl_secs",
+        "output_field"
+      ],
+      "stage": {
+        "type": "LockAcquire",
+        "key": "sample-key",
+        "ttl_secs": 7,
+        "output_field": "result"
+      }
+    },
+    {
+      "name": "LockRelease",
+      "fields": [
+        "key",
+        "token",
+        "output_field"
+      ],
+      "stage": {
+        "type": "LockRelease",
+        "key": "sample-key",
+        "token": "lock-token",
+        "output_field": "result"
+      }
+    },
+    {
+      "name": "Return",
+      "fields": [
+        "fields",
+        "status_code"
+      ],
+      "stage": {
+        "type": "Return",
+        "fields": {
+          "ok": true,
+          "result": "{{value}}"
+        },
+        "status_code": 200
+      }
+    },
+    {
+      "name": "Validate",
+      "fields": [
+        "schema",
+        "data_field",
+        "on_error"
+      ],
+      "stage": {
+        "type": "Validate",
+        "schema": {
+          "type": "object",
+          "required": [
+            "name"
+          ]
+        },
+        "data_field": "input",
+        "on_error": [
+          {
+            "type": "FindAll",
+            "collection": "nested"
+          }
+        ]
+      }
+    }
+  ]
+}

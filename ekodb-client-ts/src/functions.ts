@@ -132,6 +132,8 @@ export type FunctionStageConfig =
       method?: string;
       headers?: Record<string, string>;
       body?: any;
+      timeout_seconds?: number;
+      output_field?: string;
     }
   | {
       type: "VectorSearch";
@@ -211,6 +213,37 @@ export type FunctionStageConfig =
       value: any;
       bypass_ripple?: boolean;
     }
+  | {
+      type: "Upsert";
+      collection: string;
+      key: string;
+      value: any;
+      record: Record<string, any>;
+      bypass_ripple?: boolean;
+      ttl?: number;
+    }
+  | {
+      type: "Increment";
+      collection: string;
+      record_id: string;
+      field: string;
+      by?: number | string;
+      bypass_ripple?: boolean;
+    }
+  | {
+      type: "Push";
+      collection: string;
+      record_id: string;
+      field: string;
+      value: any;
+      bypass_ripple?: boolean;
+    }
+  | { type: "SetField"; field: string; value: any }
+  | {
+      type: "AddFields";
+      fields: Array<{ field_name: string; expression: Record<string, any> }>;
+    }
+  | { type: "CurrentDatetime"; output_field: string }
   | {
       type: "CreateSavepoint";
       name: string;
@@ -725,6 +758,68 @@ export const Stage = {
     ttl,
   }),
 
+  upsert: (
+    collection: string,
+    key: string,
+    value: any,
+    record: Record<string, any>,
+    bypassRipple = false,
+    ttl?: number,
+  ): FunctionStageConfig => ({
+    type: "Upsert",
+    collection,
+    key,
+    value,
+    record,
+    bypass_ripple: bypassRipple,
+    ttl,
+  }),
+
+  increment: (
+    collection: string,
+    record_id: string,
+    field: string,
+    by?: number | string,
+    bypassRipple = false,
+  ): FunctionStageConfig => ({
+    type: "Increment",
+    collection,
+    record_id,
+    field,
+    by,
+    bypass_ripple: bypassRipple,
+  }),
+
+  push: (
+    collection: string,
+    record_id: string,
+    field: string,
+    value: any,
+    bypassRipple = false,
+  ): FunctionStageConfig => ({
+    type: "Push",
+    collection,
+    record_id,
+    field,
+    value,
+    bypass_ripple: bypassRipple,
+  }),
+
+  setField: (field: string, value: any): FunctionStageConfig => ({
+    type: "SetField",
+    field,
+    value,
+  }),
+
+  addFields: (
+    fields: Array<{ field_name: string; expression: Record<string, any> }>,
+  ): FunctionStageConfig => ({ type: "AddFields", fields }),
+
+  currentDatetime: (output_field: string): FunctionStageConfig => ({
+    type: "CurrentDatetime",
+    output_field,
+  }),
+
   delete: (
     collection: string,
     filter: QueryExpression | Record<string, unknown>,
@@ -816,12 +911,16 @@ export const Stage = {
     method = "GET",
     headers?: Record<string, string>,
     body?: any,
+    timeout_seconds?: number,
+    output_field?: string,
   ): FunctionStageConfig => ({
     type: "HttpRequest",
     url,
     method,
     headers,
     body,
+    timeout_seconds,
+    output_field,
   }),
 
   vectorSearch: (

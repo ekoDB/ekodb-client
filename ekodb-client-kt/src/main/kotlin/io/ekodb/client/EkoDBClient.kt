@@ -170,6 +170,10 @@ class EkoDBClient private constructor(
         install(WebSockets)
     }
 
+    // Stored functions must fail on unknown fields so a read-modify-write can
+    // never silently erase a stage or field introduced by a newer server.
+    private val functionJson = Json { ignoreUnknownKeys = false }
+
     private var authToken: String? = null
     private var tokenExpiry: Long = 0
     private var lastRateLimitInfo: RateLimitInfo? = null
@@ -2442,7 +2446,7 @@ class EkoDBClient private constructor(
                 bearerAuth(token)
             }
         }
-        return response.body<io.ekodb.client.functions.UserFunction>()
+        return functionJson.decodeFromString(response.bodyAsText())
     }
 
     /**
@@ -2459,7 +2463,7 @@ class EkoDBClient private constructor(
                 bearerAuth(token)
             }
         }
-        return response.body<List<io.ekodb.client.functions.UserFunction>>()
+        return functionJson.decodeFromString(response.bodyAsText())
     }
 
     /**
