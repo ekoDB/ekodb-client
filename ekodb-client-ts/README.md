@@ -418,7 +418,7 @@ await client.init();
 // Goals
 const goal = await client.goalCreate({
   title: "Migrate data",
-  status: "active",
+  status: "pending",
 });
 const goals = await client.goalList();
 await client.goalComplete("goal-id", { summary: "Done" });
@@ -435,7 +435,7 @@ await client.taskSucceed("task-id", { records: 1500 });
 // Agents
 const agent = await client.agentCreate({
   name: "processor",
-  model: "gpt-4.1",
+  llm_model: "gpt-4.1",
 });
 const agents = await client.agentList();
 ```
