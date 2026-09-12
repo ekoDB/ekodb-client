@@ -663,7 +663,8 @@ All examples are located in `examples/rust/examples/` directory.
 Buffered, read-your-writes transactions. Statements issued with a
 `transaction_id` are staged and applied atomically at commit.
 
-- `begin_transaction(isolation_level)` - Start a transaction, returns its id
+- `begin_transaction(isolation_level: Option<&str>)` - Start a transaction and
+  return its id; pass `None` to use the server default
 - `commit_transaction(transaction_id)` - Apply staged writes (may return a
   retryable HTTP 409 conflict)
 - `rollback_transaction(transaction_id)` - Discard staged writes

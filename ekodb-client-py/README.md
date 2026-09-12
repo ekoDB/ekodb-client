@@ -559,9 +559,10 @@ Buffered, read-your-writes transactions. Operations issued with a
 `transaction_id` kwarg (accepted on `insert`, `find`, `find_by_id`, `update`,
 `delete`) are staged and applied atomically at commit.
 
-#### `await client.begin_transaction(isolation_level: str = "ReadCommitted") -> str`
+#### `await client.begin_transaction(isolation_level: str | None = None) -> str`
 
-Start a transaction and return its id.
+Start a transaction and return its id. Omitting `isolation_level` uses the server
+default.
 
 #### `await client.commit_transaction(transaction_id: str) -> None`
 
