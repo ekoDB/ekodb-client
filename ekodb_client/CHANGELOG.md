@@ -10,6 +10,11 @@ and this project adheres to
 
 ### Added
 
+- **Cross-language example parity.** Add one offline stored-function contract
+  example to Rust, Python, Go, TypeScript, and Kotlin, plus a parity gate that
+  normalizes language naming and fails when a scenario exists in only part of
+  the SDK set. The build now compiles every discovered client example in all
+  five SDK languages and checks both handwritten and compiled JavaScript.
 - **Stored-function contract coverage.** Generate a 67-variant, fully populated
   fixture from the authoritative function enum; enforce exact variant/field
   parity across Rust/Python, TypeScript, and Kotlin; and round-trip every case
@@ -41,6 +46,10 @@ and this project adheres to
 
 ### Fixed
 
+- **Executable examples track the current API.** Correct schedule, transaction,
+  goal, agent, streaming, embedding, JWT, KV-link, and Kotlin function examples;
+  restore Kotlin distinct-values coverage; and make example-build failures
+  propagate instead of being reported as expected.
 - **Stored-function filter safety.** Add a typed, adjacently-tagged query
   expression representation and validate legacy raw objects at stage
   construction, so bare filters, unsupported operators, empty logical groups,
