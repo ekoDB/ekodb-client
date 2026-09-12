@@ -26,6 +26,30 @@ async fn create_test_client(server: &Server) -> Client {
         .expect("Failed to create test client")
 }
 
+#[tokio::test]
+async fn test_trigger_schedule_posts_to_trigger_endpoint() {
+    let mut server = Server::new_async().await;
+    let token_mock = mock_token_endpoint(&mut server);
+    let trigger_mock = server
+        .mock("POST", "/api/schedules/nightly%2Fbackup/trigger")
+        .match_header("authorization", "Bearer test-jwt-token")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"status": "triggered", "schedule_id": "nightly/backup"}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    let result = client
+        .trigger_schedule("nightly/backup")
+        .await
+        .expect("schedule should trigger");
+
+    assert_eq!(result["status"], "triggered");
+    token_mock.assert_async().await;
+    trigger_mock.assert_async().await;
+}
+
 /// Setup mock for token endpoint
 fn mock_token_endpoint(server: &mut Server) -> mockito::Mock {
     server

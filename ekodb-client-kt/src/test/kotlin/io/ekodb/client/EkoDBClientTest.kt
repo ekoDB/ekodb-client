@@ -1859,6 +1859,21 @@ class EkoDBClientTest {
     }
 
     @Test
+    fun `trigger schedule posts to the trigger endpoint`() = runBlocking {
+        val recorded = mutableListOf<HttpRequestData>()
+        val client = createTestClient(
+            capturingMockEngine(recorded, """{"status":"triggered","schedule_id":"nightly/backup"}"""),
+        )
+
+        val result = client.triggerSchedule("nightly/backup")
+
+        val sent = recorded.last()
+        assertEquals("/api/schedules/nightly%2Fbackup/trigger", sent.url.encodedPath)
+        assertEquals(HttpMethod.Post, sent.method)
+        assertEquals("triggered", result["status"]?.jsonPrimitive?.content)
+    }
+
+    @Test
     fun `updateSchemaConstraints PUTs a top-level constraints key and omits unset attributes`() = runBlocking {
         val recorded = mutableListOf<HttpRequestData>()
         val client = createTestClient(capturingMockEngine(recorded, """{"status": "ok"}"""))

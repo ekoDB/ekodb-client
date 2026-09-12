@@ -3092,6 +3092,23 @@ describe("EkoDBClient schedules", () => {
     expect(dataCall[1]?.method).toBe("PUT");
     expect(JSON.parse(dataCall[1]?.body as string)).toEqual({ enabled: true });
   });
+
+  it("triggers a schedule immediately", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+    mockJsonResponse({ status: "triggered", schedule_id: "nightly/backup" });
+
+    const result = await client.triggerSchedule("nightly/backup");
+    expect(result).toEqual({
+      status: "triggered",
+      schedule_id: "nightly/backup",
+    });
+
+    const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+    const dataCall = calls[1];
+    expect(dataCall[0]).toContain("/api/schedules/nightly%2Fbackup/trigger");
+    expect(dataCall[1]?.method).toBe("POST");
+  });
 });
 
 // ============================================================================

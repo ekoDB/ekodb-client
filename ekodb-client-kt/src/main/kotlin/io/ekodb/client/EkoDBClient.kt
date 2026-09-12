@@ -3676,6 +3676,20 @@ class EkoDBClient private constructor(
      */
     suspend fun resumeSchedule(id: String): JsonObject = setScheduleEnabled(id, true)
 
+    /** Trigger a schedule immediately. */
+    suspend fun triggerSchedule(id: String): JsonObject {
+        val response = executeWithRetry { token ->
+            client.post("$baseUrl/api/schedules/${id.encodeURLPathPart()}/trigger") {
+                bearerAuth(token)
+            }
+        }
+        if (response.status.value >= 400) {
+            val errorText = response.bodyAsText()
+            throw IllegalStateException("Server error ${response.status.value}: $errorText")
+        }
+        return response.body<JsonObject>()
+    }
+
     /**
      * Shared implementation for pause/resume: a partial update carrying only
      * `enabled`. The server recomputes the next execution time when `enabled`

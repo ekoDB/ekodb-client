@@ -3294,6 +3294,18 @@ impl Client {
         .await
     }
 
+    /// Trigger a schedule immediately.
+    pub async fn trigger_schedule(&self, id: &str) -> Result<serde_json::Value> {
+        let id = id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let id = id.clone();
+            let http = http.clone();
+            async move { http.trigger_schedule(&id, &token).await }
+        })
+        .await
+    }
+
     // =========================================================================
     // Schema Cache & WebSocket Convenience
     // =========================================================================
