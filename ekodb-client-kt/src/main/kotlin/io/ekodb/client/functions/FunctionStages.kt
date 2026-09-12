@@ -9,6 +9,7 @@ import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonClassDiscriminator
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonObject
@@ -63,6 +64,14 @@ enum class QueryConditionOperator(val wireValue: String) {
     Contains("Contains"),
     StartsWith("StartsWith"),
     EndsWith("EndsWith"),
+    Equals("Equals"),
+    Equal("Equal"),
+    NotEquals("NotEquals"),
+    NotEqual("NotEqual"),
+    GreaterThan("GreaterThan"),
+    LessThan("LessThan"),
+    GreaterThanOrEqual("GreaterThanOrEqual"),
+    LessThanOrEqual("LessThanOrEqual"),
 }
 
 enum class QueryLogicalOperator(val wireValue: String) {
@@ -105,7 +114,7 @@ fun validateQueryExpression(expression: JsonObject): JsonObject {
 
     when (type) {
         "Condition" -> {
-            require(content["field"]?.jsonPrimitive?.content != null) {
+            require((content["field"] as? JsonPrimitive)?.isString == true) {
                 "Condition content requires string `field`"
             }
             val operator = content["operator"]?.jsonPrimitive?.content

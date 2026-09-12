@@ -19,6 +19,14 @@ QueryConditionOperator = Literal[
     "Contains",
     "StartsWith",
     "EndsWith",
+    "Equals",
+    "Equal",
+    "NotEquals",
+    "NotEqual",
+    "GreaterThan",
+    "LessThan",
+    "GreaterThanOrEqual",
+    "LessThanOrEqual",
 ]
 QueryLogicalOperator = Literal["And", "Or", "Not"]
 CONDITION_OPERATORS = {
@@ -33,6 +41,14 @@ CONDITION_OPERATORS = {
     "Contains",
     "StartsWith",
     "EndsWith",
+    "Equals",
+    "Equal",
+    "NotEquals",
+    "NotEqual",
+    "GreaterThan",
+    "LessThan",
+    "GreaterThanOrEqual",
+    "LessThanOrEqual",
 }
 LOGICAL_OPERATORS = {"And", "Or", "Not"}
 

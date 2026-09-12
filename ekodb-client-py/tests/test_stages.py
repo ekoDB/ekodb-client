@@ -238,6 +238,28 @@ def test_query_expression_rejects_invalid_operators_and_cardinality():
         )
 
 
+def test_query_expression_accepts_all_long_form_operator_aliases():
+    aliases = [
+        "Equals",
+        "Equal",
+        "NotEquals",
+        "NotEqual",
+        "GreaterThan",
+        "LessThan",
+        "GreaterThanOrEqual",
+        "LessThanOrEqual",
+    ]
+    for operator in aliases:
+        stage = Stage.query(
+            "items",
+            {
+                "type": "Condition",
+                "content": {"field": "score", "operator": operator, "value": 10},
+            },
+        )
+        assert stage["filter"]["content"]["operator"] == operator
+
+
 # ---------------------------------------------------------------------------
 # Crypto primitives: BcryptHash, BcryptVerify, RandomToken (ekoDB >= 0.41.0)
 # ---------------------------------------------------------------------------
