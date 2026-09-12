@@ -48,6 +48,7 @@ export type {
   FieldTypeSchema,
   IndexConfig,
   CollectionMetadata,
+  SchemaConstraintUpdate,
 } from "./schema";
 export type { JoinConfig } from "./join";
 export type {

@@ -5,7 +5,12 @@
 import { encode, decode } from "@msgpack/msgpack";
 import { QueryBuilder, Query } from "./query-builder";
 import { SearchQuery, SearchResponse } from "./search";
-import { Schema, SchemaBuilder, CollectionMetadata } from "./schema";
+import {
+  Schema,
+  SchemaBuilder,
+  CollectionMetadata,
+  SchemaConstraintUpdate,
+} from "./schema";
 import { UserFunction, FunctionResult } from "./functions";
 
 export interface Record {
@@ -1863,6 +1868,38 @@ export class EkoDBClient {
   async getSchema(collection: string): Promise<Schema> {
     const metadata = await this.getCollection(collection);
     return metadata.collection;
+  }
+
+  /**
+   * Update constraints on one or more fields of an existing collection's schema
+   *
+   * This is a partial update: only the attributes actually set on each
+   * SchemaConstraintUpdate are sent, and only those attributes are changed on
+   * the server. Omitted attributes (left `undefined`) leave that field's
+   * existing constraint untouched.
+   *
+   * @param collection - Collection name
+   * @param constraints - Map of field name to the constraint attributes to update
+   *
+   * @example
+   * ```typescript
+   * await client.updateSchemaConstraints("users", {
+   *   email: { unique: true, required: true },
+   *   age: { min: 0, max: 150 },
+   * });
+   * ```
+   */
+  async updateSchemaConstraints(
+    collection: string,
+    constraints: { [field: string]: SchemaConstraintUpdate },
+  ): Promise<void> {
+    await this.makeRequest<void>(
+      "PUT",
+      `/api/schemas/${encodeURIComponent(collection)}`,
+      { constraints },
+      0,
+      true, // Force JSON for metadata operations
+    );
   }
 
   /**

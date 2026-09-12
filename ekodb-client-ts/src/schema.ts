@@ -79,6 +79,31 @@ export interface FieldTypeSchema {
 }
 
 /**
+ * Partial update to a single field's constraints, for the schema-constraints
+ * update endpoint. Every attribute is optional: only attributes actually set
+ * are sent to the server, and an omitted attribute leaves that constraint
+ * unchanged on the existing field.
+ */
+export interface SchemaConstraintUpdate {
+  /** Field type - must be one of the valid types (case-sensitive, e.g., "String", "Integer", "Float") */
+  field_type?: string;
+  /** Default value for the field */
+  default?: unknown;
+  /** Whether the field must be unique across records */
+  unique?: boolean;
+  /** Whether the field is required */
+  required?: boolean;
+  /** Allowed enum values */
+  enums?: unknown[];
+  /** Maximum value (for numbers/dates) */
+  max?: number;
+  /** Minimum value (for numbers/dates) */
+  min?: number;
+  /** Regex pattern for string validation */
+  regex?: string;
+}
+
+/**
  * Collection schema
  */
 export interface Schema {

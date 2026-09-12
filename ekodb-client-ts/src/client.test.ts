@@ -927,6 +927,50 @@ describe("EkoDBClient collection management", () => {
   });
 
   // Note: getSchema requires specific response format - covered by integration tests
+
+  it("sends a top-level constraints key, never fields, to PUT /api/schemas/:collection", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse({ status: "updated" });
+
+    await client.updateSchemaConstraints("users", {
+      email: { unique: true, required: true },
+    });
+
+    const [url, init] = mockFetch.mock.calls[1];
+    expect(url).toBe("http://localhost:8080/api/schemas/users");
+    expect(init.method).toBe("PUT");
+    const body = JSON.parse(init.body as string);
+    expect(body).toHaveProperty("constraints");
+    expect(body.fields).toBeUndefined();
+    expect(body).toEqual({
+      constraints: { email: { unique: true, required: true } },
+    });
+  });
+
+  it("omits unset SchemaConstraintUpdate attributes from the outgoing body", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse({ status: "updated" });
+
+    await client.updateSchemaConstraints("orders", {
+      total: { min: 0 },
+    });
+
+    const [, init] = mockFetch.mock.calls[1];
+    const body = JSON.parse(init.body as string);
+    const fieldUpdate = body.constraints.total;
+    expect(fieldUpdate).toEqual({ min: 0 });
+    expect(fieldUpdate).not.toHaveProperty("max");
+    expect(fieldUpdate).not.toHaveProperty("field_type");
+    expect(fieldUpdate).not.toHaveProperty("default");
+    expect(fieldUpdate).not.toHaveProperty("unique");
+    expect(fieldUpdate).not.toHaveProperty("required");
+    expect(fieldUpdate).not.toHaveProperty("enums");
+    expect(fieldUpdate).not.toHaveProperty("regex");
+  });
 });
 
 describe("EkoDBClient KV advanced", () => {
