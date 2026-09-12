@@ -185,7 +185,19 @@ make test-examples-rust-client
 make test-examples-python-client
 make test-examples-go-client
 make test-examples-typescript-client
+make test-examples-javascript-client
+make test-examples-kotlin-client
 ```
+
+Offline parity and compilation checks do not require a server:
+
+```bash
+make example-parity-check
+EKODB_CLIENT_GO_DIR=/path/to/ekodb-client-go-worktree make check-client-examples
+```
+
+The Go override ensures a client worktree compiles examples against the paired
+Go feature worktree instead of a sibling default-branch checkout.
 
 ### Search and Schema Compatibility
 
@@ -386,6 +398,7 @@ git push origin main --tags
 
 ### Testing
 
-- ✅ Examples for all languages (Rust, Python, Go, TypeScript, JavaScript)
+- ✅ Examples for all languages (Rust, Python, Go, TypeScript/JavaScript,
+  Kotlin)
 - ✅ Both direct API and client library examples
 - ✅ Automatic client building before running examples
