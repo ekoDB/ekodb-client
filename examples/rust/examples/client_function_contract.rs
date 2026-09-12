@@ -90,7 +90,7 @@ fn main() {
         })
         .with_function(Function::AddFields {
             fields: vec![
-                json!({"field_name": "total", "expression": {"type": "Field", "name": "price"}}),
+                json!({"field_name": "total", "expression": {"type": "FieldReference", "value": "price"}}),
             ],
         })
         .with_function(Function::CurrentDatetime {
@@ -159,6 +159,10 @@ fn main() {
         "FieldGreaterThanOrEqual"
     );
     assert_eq!(stage(&encoded, "BatchDelete")["record_ids"][1], "item-2");
+    assert_eq!(
+        stage(&encoded, "AddFields")["fields"][0]["expression"],
+        json!({"type": "FieldReference", "value": "price"})
+    );
     assert_eq!(stage(&encoded, "Embed")["input_field"], "body");
     assert_eq!(stage(&encoded, "HttpRequest")["timeout_seconds"], 10);
     assert_eq!(stage(&encoded, "HttpRequest")["output_field"], "response");

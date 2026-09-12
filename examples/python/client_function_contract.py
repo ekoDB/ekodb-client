@@ -46,7 +46,12 @@ def main() -> None:
         Stage.push("items", "item-1", "tags", "new"),
         Stage.set_field("source", "contract"),
         Stage.add_fields(
-            [{"field_name": "total", "expression": {"type": "Field", "name": "price"}}]
+            [
+                {
+                    "field_name": "total",
+                    "expression": {"type": "FieldReference", "value": "price"},
+                }
+            ]
         ),
         Stage.current_datetime("processed_at"),
         Stage.vector_search("items", [0.1, 0.2], limit=3, threshold=0.8),
@@ -85,6 +90,10 @@ def main() -> None:
     assert by_type["Group"]["functions"][2]["operation"] == "ApproxDistinct"
     assert by_type["If"]["condition"]["type"] == "FieldGreaterThanOrEqual"
     assert by_type["BatchDelete"]["record_ids"] == ["item-1", "item-2"]
+    assert by_type["AddFields"]["fields"][0]["expression"] == {
+        "type": "FieldReference",
+        "value": "price",
+    }
     assert by_type["Embed"]["input_field"] == "body"
     assert by_type["HttpRequest"]["timeout_seconds"] == 10
     assert by_type["HttpRequest"]["output_field"] == "response"

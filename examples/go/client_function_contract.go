@@ -35,6 +35,7 @@ func main() {
 		},
 	}
 	limit, threshold := 3, 0.8
+	timeout := uint64(10)
 	model := "text-embedding-3-small"
 	isolation := "Serializable"
 	stages := []ekodb.FunctionStageConfig{
@@ -65,7 +66,7 @@ func main() {
 		rawStage("AddFields", map[string]interface{}{
 			"fields": []map[string]interface{}{{
 				"field_name": "total",
-				"expression": map[string]interface{}{"type": "Field", "name": "price"},
+				"expression": map[string]interface{}{"type": "FieldReference", "value": "price"},
 			}},
 		}),
 		rawStage("CurrentDatetime", map[string]interface{}{"output_field": "processed_at"}),
@@ -75,6 +76,13 @@ func main() {
 		ekodb.StageUpdateWithAction("items", "item-1", string(ekodb.UpdateActionIncrement), "views", 1, true),
 		ekodb.StageBatchDelete("items", []string{"item-1", "item-2"}, true),
 		ekodb.StageEmbed("body", "embedding", &model),
+		ekodb.StageHttpRequestWithOptions(
+			"https://example.com/items",
+			"GET",
+			nil,
+			nil,
+			&ekodb.HttpRequestOptions{TimeoutSeconds: &timeout, OutputField: "response"},
+		),
 	}
 	function := ekodb.UserFunction{
 		Label:      "client_function_contract",
@@ -110,7 +118,12 @@ func main() {
 	require(condition["type"] == "FieldGreaterThanOrEqual", "function condition mismatch")
 	recordIDs := requireStage(encoded.Functions, "BatchDelete")["record_ids"].([]interface{})
 	require(recordIDs[1] == "item-2", "batch delete record_ids mismatch")
+	fields := requireStage(encoded.Functions, "AddFields")["fields"].([]interface{})
+	expression := fields[0].(map[string]interface{})["expression"].(map[string]interface{})
+	require(expression["type"] == "FieldReference" && expression["value"] == "price", "add fields expression mismatch")
 	require(requireStage(encoded.Functions, "Embed")["input_field"] == "body", "embed field mismatch")
+	require(requireStage(encoded.Functions, "HttpRequest")["timeout_seconds"] == float64(10), "http timeout mismatch")
+	require(requireStage(encoded.Functions, "HttpRequest")["output_field"] == "response", "http output field mismatch")
 	for _, stageType := range []string{
 		"Upsert", "Increment", "Push", "SetField", "AddFields", "CurrentDatetime",
 		"VectorSearch", "HybridSearch", "FindOneAndUpdate", "UpdateWithAction",
