@@ -9,9 +9,10 @@ counts; do not copy a count into this guide.
 - **Client Library Examples** - Using official client libraries (recommended)
 - **Direct API Examples** - Raw HTTP/WebSocket calls for learning the API
 
-Offline gates enforce matching SDK scenario sets and compile every client
-example. Live execution requires a running ekoDB instance and credentials;
-`make test-examples` provides that behavior-level integration pass.
+The default gates enforce matching SDK scenario sets. `make build-examples`
+provides the offline compilation check for every client example. Live execution
+requires a running ekoDB instance and credentials; `make test-examples` provides
+that behavior-level integration pass.
 
 ---
 

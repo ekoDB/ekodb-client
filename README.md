@@ -15,9 +15,9 @@ Official client libraries for ekoDB - a high-performance document database.
   Python, Go, TypeScript, JavaScript, Kotlin
 - **<!--ex:clients-->5<!--/ex:clients--> full-featured clients** - Complete
   feature parity across Rust, Python, Go, TypeScript, Kotlin
-- **<!--ex:perclient-->46<!--/ex:perclient--> client-library examples per
-  client** - CRUD, batch ops, queries, joins, search, WebSocket, AI/chat, and
-  more
+- **<!--ex:perclient-->46<!--/ex:perclient--> shared client-library scenarios
+  per SDK** - CRUD, batch ops, queries, joins, search, WebSocket, AI/chat, and
+  more; language-specific auxiliary examples may add to this total
 - **Parity-gated** - Offline checks enforce the same scenario set and compile
   every client example; live runners require an ekoDB instance and credentials
 
@@ -80,8 +80,8 @@ implementation("io.ekodb:ekodb-client-kt:0.26.4")
 - ✅ AI/Chat integration
 - ✅ Schema management
 - ✅ Full-text search
-- ✅ <!--ex:perclient-->46<!--/ex:perclient--> comprehensive client-library
-  examples (+ 1 RAG example)
+- ✅ <!--ex:perclient-->46<!--/ex:perclient--> shared client-library scenarios
+  (+ language-specific auxiliary and RAG examples)
 
 ## Features
 
@@ -117,7 +117,8 @@ Each client also includes language-specific features:
 - [TypeScript Client Documentation](./ekodb-client-ts/README.md)
 - [Kotlin Client Documentation](./ekodb-client-kt/README.md)
 - [Examples](./examples/) - Code examples across all available languages
-  (<!--ex:perclient-->46<!--/ex:perclient--> client-library examples per client)
+  (<!--ex:perclient-->46<!--/ex:perclient--> shared client-library scenarios per
+  SDK)
 
 ## 🛠️ Development
 

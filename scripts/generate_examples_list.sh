@@ -271,7 +271,7 @@ echo "  Full-Featured Clients: $num_clients ($(echo "$full_featured_clients" | s
 # historical `ClientProjection` auxiliary example, so raw filename counts are
 # not the parity count; TypeScript is the canonical shared scenario set.
 per_client_display="$ts_client_count"
-echo "  Examples Per Client: $per_client_display" >> "$EXAMPLES_TXT"
+echo "  Shared Scenarios Per SDK: $per_client_display" >> "$EXAMPLES_TXT"
 
 echo -e "${GREEN}✅ Examples list generated!${RESET}"
 echo -e "  Total: ${GREEN}$total_all${RESET} examples"
