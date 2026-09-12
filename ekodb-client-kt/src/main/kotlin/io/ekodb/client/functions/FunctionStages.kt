@@ -739,6 +739,10 @@ sealed class FunctionCondition {
     object HasRecords : FunctionCondition()
     data class FieldEquals(val field: String, val fieldValue: JsonElement) : FunctionCondition()
     data class FieldExists(val field: String) : FunctionCondition()
+    data class FieldGreaterThan(val field: String, val fieldValue: JsonElement) : FunctionCondition()
+    data class FieldLessThan(val field: String, val fieldValue: JsonElement) : FunctionCondition()
+    data class FieldGreaterThanOrEqual(val field: String, val fieldValue: JsonElement) : FunctionCondition()
+    data class FieldLessThanOrEqual(val field: String, val fieldValue: JsonElement) : FunctionCondition()
     data class CountEquals(val count: Int) : FunctionCondition()
     data class CountGreaterThan(val count: Int) : FunctionCondition()
     data class CountLessThan(val count: Int) : FunctionCondition()
@@ -772,6 +776,12 @@ object FunctionConditionSerializer : kotlinx.serialization.KSerializer<FunctionC
                 put("type", "FieldExists")
                 put("value", buildJsonObject { put("field", value.field) })
             }
+            is FunctionCondition.FieldGreaterThan -> fieldComparison("FieldGreaterThan", value.field, value.fieldValue)
+            is FunctionCondition.FieldLessThan -> fieldComparison("FieldLessThan", value.field, value.fieldValue)
+            is FunctionCondition.FieldGreaterThanOrEqual ->
+                fieldComparison("FieldGreaterThanOrEqual", value.field, value.fieldValue)
+            is FunctionCondition.FieldLessThanOrEqual ->
+                fieldComparison("FieldLessThanOrEqual", value.field, value.fieldValue)
             is FunctionCondition.CountEquals -> buildJsonObject {
                 put("type", "CountEquals")
                 put("value", buildJsonObject { put("count", value.count) })
@@ -834,6 +844,20 @@ object FunctionConditionSerializer : kotlinx.serialization.KSerializer<FunctionC
                 val v = valueObj ?: error("Missing value for FieldExists")
                 FunctionCondition.FieldExists(v["field"]?.jsonPrimitive?.content ?: error("Missing field"))
             }
+            "FieldGreaterThan" -> decodeFieldComparison(valueObj, type) { field, value ->
+                FunctionCondition.FieldGreaterThan(field, value)
+            }
+            "FieldLessThan" -> decodeFieldComparison(valueObj, type) { field, value ->
+                FunctionCondition.FieldLessThan(field, value)
+            }
+            "FieldGreaterThanOrEqual" ->
+                decodeFieldComparison(valueObj, type) { field, value ->
+                    FunctionCondition.FieldGreaterThanOrEqual(field, value)
+                }
+            "FieldLessThanOrEqual" ->
+                decodeFieldComparison(valueObj, type) { field, value ->
+                    FunctionCondition.FieldLessThanOrEqual(field, value)
+                }
             "CountEquals" -> {
                 val v = valueObj ?: error("Missing value for CountEquals")
                 FunctionCondition.CountEquals(v["count"]?.jsonPrimitive?.int ?: error("Missing count"))
@@ -872,6 +896,27 @@ object FunctionConditionSerializer : kotlinx.serialization.KSerializer<FunctionC
             }
             else -> error("Unknown condition type: $type")
         }
+    }
+
+    private fun fieldComparison(type: String, field: String, fieldValue: JsonElement): JsonObject =
+        buildJsonObject {
+            put("type", type)
+            put("value", buildJsonObject {
+                put("field", field)
+                put("value", fieldValue)
+            })
+        }
+
+    private fun decodeFieldComparison(
+        value: JsonObject?,
+        type: String,
+        create: (String, JsonElement) -> FunctionCondition,
+    ): FunctionCondition {
+        val fields = value ?: error("Missing value for $type")
+        return create(
+            fields["field"]?.jsonPrimitive?.content ?: error("Missing field"),
+            fields["value"] ?: error("Missing value"),
+        )
     }
 }
 

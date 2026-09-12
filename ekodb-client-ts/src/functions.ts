@@ -553,6 +553,10 @@ export interface SortFieldConfig {
 export type FunctionCondition =
   | { type: "FieldEquals"; value: { field: string; value: any } }
   | { type: "FieldExists"; value: { field: string } }
+  | { type: "FieldGreaterThan"; value: { field: string; value: any } }
+  | { type: "FieldLessThan"; value: { field: string; value: any } }
+  | { type: "FieldGreaterThanOrEqual"; value: { field: string; value: any } }
+  | { type: "FieldLessThanOrEqual"; value: { field: string; value: any } }
   | { type: "HasRecords" }
   | { type: "CountEquals"; value: { count: number } }
   | { type: "CountGreaterThan"; value: { count: number } }

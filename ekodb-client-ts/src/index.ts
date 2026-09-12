@@ -55,6 +55,7 @@ export type {
   UserFunction,
   ParameterDefinition,
   FunctionStageConfig,
+  FunctionCondition,
   JwtAlgorithm,
   GroupFunctionConfig,
   SortFieldConfig,
