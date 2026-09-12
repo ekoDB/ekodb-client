@@ -8,6 +8,21 @@
 
 import { describe, it, expect } from "vitest";
 import { Stage, parameterRef, type FunctionStageConfig } from "./functions";
+import type { GroupFunctionConfig } from "./functions";
+
+describe("GroupFunctionConfig", () => {
+  it.each(["AddToSet", "StandardDeviation", "ApproxDistinct"] as const)(
+    "accepts the %s operation",
+    (operation) => {
+      const config: GroupFunctionConfig = {
+        output_field: "result",
+        operation,
+        input_field: "value",
+      };
+      expect(JSON.parse(JSON.stringify(config)).operation).toBe(operation);
+    },
+  );
+});
 
 describe("parameterRef", () => {
   it("produces the structural placeholder shape ekoDB's resolver expects", () => {

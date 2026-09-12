@@ -912,7 +912,10 @@ enum class GroupFunctionOp {
     Max,
     First,
     Last,
-    Push
+    Push,
+    AddToSet,
+    StandardDeviation,
+    ApproxDistinct,
 }
 
 /**

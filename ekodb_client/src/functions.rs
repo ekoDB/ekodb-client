@@ -898,6 +898,9 @@ pub enum GroupFunctionOp {
     First,
     Last,
     Push,
+    AddToSet,
+    StandardDeviation,
+    ApproxDistinct,
 }
 
 /// Sort field configuration
@@ -983,6 +986,19 @@ pub struct StageStats {
 mod tests {
     use super::*;
     use serde_json::json;
+
+    #[test]
+    fn group_function_operations_include_the_full_wire_set() {
+        let operations = [
+            (GroupFunctionOp::AddToSet, "\"AddToSet\""),
+            (GroupFunctionOp::StandardDeviation, "\"StandardDeviation\""),
+            (GroupFunctionOp::ApproxDistinct, "\"ApproxDistinct\""),
+        ];
+
+        for (operation, expected) in operations {
+            assert_eq!(serde_json::to_string(&operation).unwrap(), expected);
+        }
+    }
 
     #[test]
     fn try_catch_round_trip() {
