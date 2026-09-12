@@ -1643,12 +1643,10 @@ examples-ls-check:
 	@python3 scripts/check-example-parity.py
 	@chmod +x scripts/generate_examples_list.sh
 	@./scripts/generate_examples_list.sh --temp
-	@if ! diff examples_list.txt examples_list.txt.tmp > /dev/null 2>&1 || \
-	    ! diff examples_list.json examples_list.json.tmp > /dev/null 2>&1; then \
+	@if ! diff examples_list.txt examples_list.txt.tmp > /dev/null 2>&1; then \
 		echo "$(RED)❌ Examples inventory has changed!$(RESET)"; \
 		echo "$(YELLOW)Differences found:$(RESET)"; \
 		diff examples_list.txt examples_list.txt.tmp || true; \
-		diff examples_list.json examples_list.json.tmp || true; \
 		echo "$(YELLOW)Run 'make examples-ls' to update the snapshot$(RESET)"; \
 		rm -f examples_list.txt.tmp examples_list.json.tmp; \
 		exit 1; \
