@@ -42,14 +42,20 @@ def validate_query_expression(expression: Dict[str, Any]) -> Dict[str, Any]:
         raise ValueError("query expression must contain a dict `content`")
 
     if expression_type == "Condition":
-        if not isinstance(content.get("field"), str) or not isinstance(content.get("operator"), str):
+        if not isinstance(content.get("field"), str) or not isinstance(
+            content.get("operator"), str
+        ):
             raise ValueError("Condition content requires string `field` and `operator`")
         if "value" not in content:
             raise ValueError("Condition content requires `value`")
     elif expression_type == "Logical":
         expressions = content.get("expressions")
-        if not isinstance(content.get("operator"), str) or not isinstance(expressions, list):
-            raise ValueError("Logical content requires string `operator` and list `expressions`")
+        if not isinstance(content.get("operator"), str) or not isinstance(
+            expressions, list
+        ):
+            raise ValueError(
+                "Logical content requires string `operator` and list `expressions`"
+            )
         for child in expressions:
             validate_query_expression(child)
     else:
