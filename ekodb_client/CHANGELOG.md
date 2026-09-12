@@ -8,6 +8,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- **`update_schema_constraints`/`updateSchemaConstraints` added to all four client languages (Rust, Python, TypeScript, Kotlin).** The schema-update endpoint had no client method at all in any language — only `create_collection`/`get_schema` existed. Each language sends `PUT /api/schemas/{collection}` with a `{"constraints": {...}}` body, where each field's update object (`field_type`, `default`, `unique`, `required`, `enums`, `max`, `min`, `regex`) is optional and only set attributes are serialized (partial-update semantics). (#230)
+
 ### Changed
 
 - **Tags and Releases are cut by CI on a version cap.** A `chore(*): vX.Y.Z`
