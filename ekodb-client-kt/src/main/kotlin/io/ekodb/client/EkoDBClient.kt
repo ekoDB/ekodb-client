@@ -1064,6 +1064,28 @@ class EkoDBClient private constructor(
     }
 
     /**
+     * Partially update constraints on one or more fields of a collection's
+     * schema. Each [SchemaConstraintUpdate] is a partial update: only the
+     * attributes actually set on it are sent, so an omitted attribute is left
+     * untouched server-side rather than cleared.
+     */
+    suspend fun updateSchemaConstraints(collection: String, constraints: Map<String, SchemaConstraintUpdate>) {
+        val body = buildJsonObject {
+            put("constraints", buildJsonObject {
+                constraints.forEach { (name, update) -> put(name, update.toJsonObject()) }
+            })
+        }
+        executeWithRetry { token ->
+            client.put("$baseUrl/api/schemas/${collection.encodeURLPathPart()}") {
+                header("Authorization", "Bearer $token")
+                contentType(getContentTypeForRequest())
+                header("Accept", getContentTypeForRequest().toString())
+                setBody(body)
+            }
+        }
+    }
+
+    /**
      * Check if a collection exists
      */
     suspend fun collectionExists(collection: String): Boolean {

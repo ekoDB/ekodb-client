@@ -126,6 +126,43 @@ class FieldTypeSchemaBuilder(private val fieldType: String) {
 }
 
 /**
+ * A partial update to a single field's constraints, for use with
+ * [EkoDBClient.updateSchemaConstraints]. Every attribute is optional and only
+ * the attributes actually set are serialized — this is a partial update, so an
+ * omitted attribute is left untouched server-side rather than cleared.
+ *
+ * Example:
+ * ```kotlin
+ * client.updateSchemaConstraints(
+ *     "users",
+ *     mapOf("email" to SchemaConstraintUpdate(required = true, unique = true))
+ * )
+ * ```
+ */
+data class SchemaConstraintUpdate(
+    val fieldType: String? = null,
+    val default: JsonElement? = null,
+    val unique: Boolean? = null,
+    val required: Boolean? = null,
+    val enums: List<JsonElement>? = null,
+    val max: Double? = null,
+    val min: Double? = null,
+    val regex: String? = null,
+) {
+    /** Build this update as a JsonObject, omitting attributes left unset. */
+    fun toJsonObject(): JsonObject = buildJsonObject {
+        fieldType?.let { put("field_type", it) }
+        default?.let { put("default", it) }
+        unique?.let { put("unique", it) }
+        required?.let { put("required", it) }
+        enums?.let { put("enums", JsonArray(it)) }
+        max?.let { put("max", it) }
+        min?.let { put("min", it) }
+        regex?.let { put("regex", it) }
+    }
+}
+
+/**
  * Fluent builder for collection schemas.
  *
  * Example:

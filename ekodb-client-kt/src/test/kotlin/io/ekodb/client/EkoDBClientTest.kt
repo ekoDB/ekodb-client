@@ -1858,6 +1858,43 @@ class EkoDBClientTest {
         assertTrue((sent.body as TextContent).text.contains("\"enabled\":true"))
     }
 
+    @Test
+    fun `updateSchemaConstraints PUTs a top-level constraints key and omits unset attributes`() = runBlocking {
+        val recorded = mutableListOf<HttpRequestData>()
+        val client = createTestClient(capturingMockEngine(recorded, """{"status": "ok"}"""))
+
+        client.updateSchemaConstraints(
+            "users",
+            mapOf(
+                "email" to SchemaConstraintUpdate(required = true, unique = true),
+                "age" to SchemaConstraintUpdate(min = 0.0, max = 150.0),
+            )
+        )
+
+        val sent = recorded.last()
+        assertEquals("/api/schemas/users", sent.url.encodedPath)
+        assertEquals(HttpMethod.Put, sent.method)
+
+        val body = Json.parseToJsonElement((sent.body as TextContent).text).jsonObject
+        // Exactly one top-level key, "constraints" — never "fields" (that shape
+        // belongs to createCollection's full schema, not a partial update).
+        assertEquals(setOf("constraints"), body.keys)
+        val constraints = body.getValue("constraints").jsonObject
+        assertEquals(setOf("email", "age"), constraints.keys)
+
+        val email = constraints.getValue("email").jsonObject
+        assertEquals(JsonPrimitive(true), email["required"])
+        assertEquals(JsonPrimitive(true), email["unique"])
+        // Attributes never set on this update (field_type, default, enums,
+        // max, min, regex) must be absent, not null, from the per-field object.
+        assertEquals(setOf("required", "unique"), email.keys)
+
+        val age = constraints.getValue("age").jsonObject
+        assertEquals(setOf("min", "max"), age.keys)
+        assertEquals(JsonPrimitive(0.0), age["min"])
+        assertEquals(JsonPrimitive(150.0), age["max"])
+    }
+
     // ========================================================================
     // Schedule Management Tests
     // ========================================================================
