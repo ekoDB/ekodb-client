@@ -129,6 +129,27 @@ class FunctionStagesTest {
     }
 
     @Test
+    fun `UserFunction preserves transaction config`() {
+        val function = UserFunction(
+            label = "atomic_transfer",
+            name = "Atomic transfer",
+            functions = listOf(FunctionStageConfig.FindAll("accounts")),
+            transaction_config = TransactionConfig(
+                enabled = true,
+                auto_rollback = true,
+                isolation_level = "Serializable",
+            ),
+        )
+
+        val wire = json.encodeToString(function)
+        val decoded = json.decodeFromString<UserFunction>(wire)
+
+        assertEquals(function, decoded)
+        assertContains(wire, "\"transaction_config\"")
+        assertContains(wire, "\"isolation_level\":\"Serializable\"")
+    }
+
+    @Test
     fun `parameterRef produces structural placeholder shape`() {
         val p = parameterRef("record")
         assertEquals("Parameter", p["type"]?.toString()?.trim('"'))
