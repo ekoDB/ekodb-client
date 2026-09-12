@@ -47,6 +47,7 @@ fun main() = runBlocking {
         println("\n--- Getting links ---")
         val links = client.kvGetLinks("user:alice")
         println("Links for user:alice: $links")
+        check(links.size == 3) { "Expected three KV links, got ${links.size}" }
 
         // 4. Unlink a document
         println("\n--- Unlinking document ---")
@@ -57,6 +58,7 @@ fun main() = runBlocking {
         println("\n--- Verifying remaining links ---")
         val remaining = client.kvGetLinks("user:alice")
         println("Remaining links: $remaining")
+        check(remaining.size == 2) { "Expected two KV links after unlink, got ${remaining.size}" }
 
         // Cleanup
         println("\n--- Cleanup ---")

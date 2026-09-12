@@ -3,7 +3,7 @@
 Transaction Example using ekoDB Python Client
 
 Demonstrates:
-- Begin transaction with isolation level
+- Begin transaction with the server default or an explicit isolation level
 - Operations within a transaction
 - Transaction status checking
 - Commit transaction
@@ -44,8 +44,8 @@ async def main():
 
     # Example 1: Begin Transaction
     print("=== Example 1: Begin Transaction ===")
-    tx_id = await client.begin_transaction("ReadCommitted")
-    print(f"Transaction ID: {tx_id}\n")
+    tx_id = await client.begin_transaction()
+    print(f"Transaction ID (server-default isolation): {tx_id}\n")
 
     # Example 2: Operations within Transaction
     print("=== Example 2: Operations within Transaction ===")

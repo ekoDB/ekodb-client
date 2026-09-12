@@ -31,6 +31,7 @@ async def main():
         {
             "title": "Deploy v3",
             "description": "Deploy version 3 to production",
+            "status": "pending",
             "steps": [
                 {"description": "Build Docker image", "status": "pending"},
                 {"description": "Run migrations", "status": "pending"},
@@ -178,7 +179,7 @@ async def main():
             "name": "CodeReviewer",
             "system_prompt": "You review code for correctness and style.",
             "deployment_id": "deploy_test",
-            "model": "gpt-4o",
+            "llm_model": "gpt-4o",
             "tools": ["web_search", "file_read"],
         }
     )
