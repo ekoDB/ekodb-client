@@ -517,6 +517,28 @@ describe("QueryBuilder rawFilter", () => {
       }),
     ).toThrow(/exactly one/);
   });
+
+  it("accepts every long-form condition operator alias", () => {
+    for (const operator of [
+      "Equals",
+      "Equal",
+      "NotEquals",
+      "NotEqual",
+      "GreaterThan",
+      "LessThan",
+      "GreaterThanOrEqual",
+      "LessThanOrEqual",
+    ]) {
+      expect(
+        new QueryBuilder()
+          .rawFilter({
+            type: "Condition",
+            content: { field: "score", operator, value: 10 },
+          })
+          .build().filter,
+      ).toBeDefined();
+    }
+  });
 });
 
 // ============================================================================

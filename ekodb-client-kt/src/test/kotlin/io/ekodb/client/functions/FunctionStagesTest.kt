@@ -192,6 +192,46 @@ class FunctionStagesTest {
     }
 
     @Test
+    fun `query expressions accept every long form condition operator alias`() {
+        val aliases = listOf(
+            "Equals",
+            "Equal",
+            "NotEquals",
+            "NotEqual",
+            "GreaterThan",
+            "LessThan",
+            "GreaterThanOrEqual",
+            "LessThanOrEqual",
+        )
+        for (operator in aliases) {
+            val expression = buildJsonObject {
+                put("type", "Condition")
+                put("content", buildJsonObject {
+                    put("field", "score")
+                    put("operator", operator)
+                    put("value", 10)
+                })
+            }
+            assertEquals(expression, validateQueryExpression(expression))
+        }
+    }
+
+    @Test
+    fun `query conditions reject non-string fields`() {
+        for (field in listOf(JsonPrimitive(42), JsonPrimitive(true))) {
+            val expression = buildJsonObject {
+                put("type", "Condition")
+                put("content", buildJsonObject {
+                    put("field", field)
+                    put("operator", "Eq")
+                    put("value", "active")
+                })
+            }
+            assertFailsWith<IllegalArgumentException> { validateQueryExpression(expression) }
+        }
+    }
+
+    @Test
     fun `HttpRequest preserves timeout and output field through nested round trip`() {
         val function = FunctionStageConfig.If(
             condition = FunctionCondition.HasRecords,

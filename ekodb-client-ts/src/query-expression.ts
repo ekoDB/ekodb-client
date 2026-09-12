@@ -10,7 +10,15 @@ export type QueryConditionOperator =
   | "NotIn"
   | "Contains"
   | "StartsWith"
-  | "EndsWith";
+  | "EndsWith"
+  | "Equals"
+  | "Equal"
+  | "NotEquals"
+  | "NotEqual"
+  | "GreaterThan"
+  | "LessThan"
+  | "GreaterThanOrEqual"
+  | "LessThanOrEqual";
 
 export interface QueryConditionExpression {
   type: "Condition";
@@ -44,6 +52,14 @@ const conditionOperators = new Set<QueryConditionOperator>([
   "Contains",
   "StartsWith",
   "EndsWith",
+  "Equals",
+  "Equal",
+  "NotEquals",
+  "NotEqual",
+  "GreaterThan",
+  "LessThan",
+  "GreaterThanOrEqual",
+  "LessThanOrEqual",
 ]);
 
 const logicalOperators = new Set(["And", "Or", "Not"]);

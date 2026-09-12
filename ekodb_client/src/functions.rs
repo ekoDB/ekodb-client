@@ -64,6 +64,14 @@ pub enum QueryConditionOperator {
     Contains,
     StartsWith,
     EndsWith,
+    Equals,
+    Equal,
+    NotEquals,
+    NotEqual,
+    GreaterThan,
+    LessThan,
+    GreaterThanOrEqual,
+    LessThanOrEqual,
 }
 
 impl QueryConditionOperator {
@@ -80,6 +88,14 @@ impl QueryConditionOperator {
             Self::Contains => "Contains",
             Self::StartsWith => "StartsWith",
             Self::EndsWith => "EndsWith",
+            Self::Equals => "Equals",
+            Self::Equal => "Equal",
+            Self::NotEquals => "NotEquals",
+            Self::NotEqual => "NotEqual",
+            Self::GreaterThan => "GreaterThan",
+            Self::LessThan => "LessThan",
+            Self::GreaterThanOrEqual => "GreaterThanOrEqual",
+            Self::LessThanOrEqual => "LessThanOrEqual",
         }
     }
 }
@@ -171,6 +187,14 @@ impl QueryExpression {
                         | "Contains"
                         | "StartsWith"
                         | "EndsWith"
+                        | "Equals"
+                        | "Equal"
+                        | "NotEquals"
+                        | "NotEqual"
+                        | "GreaterThan"
+                        | "LessThan"
+                        | "GreaterThanOrEqual"
+                        | "LessThanOrEqual"
                 ) {
                     return Err(format!("unsupported condition operator `{operator}`"));
                 }
@@ -1490,6 +1514,21 @@ mod tests {
             })
         };
         assert!(QueryExpression::try_from(condition("CustomOp")).is_err());
+        for alias in [
+            "Equals",
+            "Equal",
+            "NotEquals",
+            "NotEqual",
+            "GreaterThan",
+            "LessThan",
+            "GreaterThanOrEqual",
+            "LessThanOrEqual",
+        ] {
+            assert!(
+                QueryExpression::try_from(condition(alias)).is_ok(),
+                "{alias}"
+            );
+        }
 
         for expression in [
             json!({"type": "Logical", "content": {"operator": "And", "expressions": []}}),
