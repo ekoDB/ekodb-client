@@ -363,6 +363,56 @@ sealed class FunctionStageConfig {
     ) : FunctionStageConfig()
 
     @Serializable
+    @SerialName("Upsert")
+    data class Upsert(
+        val collection: String,
+        val key: String,
+        val value: JsonElement,
+        val record: JsonObject,
+        @EncodeDefault val bypass_ripple: Boolean = false,
+        val ttl: Long? = null,
+    ) : FunctionStageConfig()
+
+    @Serializable
+    @SerialName("Increment")
+    data class Increment(
+        val collection: String,
+        val record_id: String,
+        val field: String,
+        val by: JsonElement? = null,
+        @EncodeDefault val bypass_ripple: Boolean = false,
+    ) : FunctionStageConfig()
+
+    @Serializable
+    @SerialName("Push")
+    data class Push(
+        val collection: String,
+        val record_id: String,
+        val field: String,
+        val value: JsonElement,
+        @EncodeDefault val bypass_ripple: Boolean = false,
+    ) : FunctionStageConfig()
+
+    @Serializable
+    @SerialName("SetField")
+    data class SetField(
+        val field: String,
+        val value: JsonElement,
+    ) : FunctionStageConfig()
+
+    @Serializable
+    @SerialName("AddFields")
+    data class AddFields(
+        val fields: List<JsonObject>,
+    ) : FunctionStageConfig()
+
+    @Serializable
+    @SerialName("CurrentDatetime")
+    data class CurrentDatetime(
+        val output_field: String,
+    ) : FunctionStageConfig()
+
+    @Serializable
     @SerialName("If")
     data class If(
         val condition: FunctionCondition,

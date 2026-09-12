@@ -47,7 +47,7 @@ YELLOW := \033[33m
 RED := \033[31m
 RESET := \033[0m
 
-.PHONY: all build build-release build-client build-python-client build-typescript-client build-examples test test-ls test-ls-check test-ci test-client test-examples test-examples-direct test-examples-client test-examples-rust test-examples-python test-examples-go test-examples-typescript test-examples-javascript test-examples-transactions test-examples-scripts test-examples-scripts-crud test-examples-swr test-examples-ts-swr test-examples-py-swr test-examples-go-swr test-examples-rust-swr test-examples-kt-swr clean check fmt fmt-rust fmt-rust-client fmt-rust-examples fmt-python fmt-go fmt-typescript fmt-md format install install-rust install-python install-typescript install-go venv python-example-deps ensure-jvm ensure-ruff ensure-cargo check-toolchains setup install-hooks deps-check deps-update deploy-client deploy-client-rust deploy-client-py deploy-client-py-simple deploy-client-go deploy-client-ts bump-version sync-versions bump-client-py docs-client
+.PHONY: all build build-release build-client build-python-client build-typescript-client build-examples test test-ls test-ls-check test-ci test-client test-examples test-examples-direct test-examples-client test-examples-rust test-examples-python test-examples-go test-examples-typescript test-examples-javascript test-examples-transactions test-examples-scripts test-examples-scripts-crud test-examples-swr test-examples-ts-swr test-examples-py-swr test-examples-go-swr test-examples-rust-swr test-examples-kt-swr function-stage-contract-check clean check fmt fmt-rust fmt-rust-client fmt-rust-examples fmt-python fmt-go fmt-typescript fmt-md format install install-rust install-python install-typescript install-go venv python-example-deps ensure-jvm ensure-ruff ensure-cargo check-toolchains setup install-hooks deps-check deps-update deploy-client deploy-client-rust deploy-client-py deploy-client-py-simple deploy-client-go deploy-client-ts bump-version sync-versions bump-client-py docs-client
 
 # Color codes for Worthington jet
 MAGENTA := \033[35m
@@ -462,22 +462,25 @@ test-ls-check:
 	   echo "$(RED)Inventory Total ($$TT) != sum of per-language ($$S) — run 'make test' to regenerate.$(RESET)"; exit 1; fi; \
 	 echo "✅ $(GREEN)Test inventory OK (Total $$TT = $$R+$$T+$$P+$$K).$(RESET)"
 
-test-rust:
+function-stage-contract-check:
+	@python3 scripts/check-function-stage-parity.py
+
+test-rust: function-stage-contract-check
 	@echo "🦀 $(CYAN)Running Rust client tests...$(RESET)"
 	@$(CARGO) test -p ekodb_client
 	@echo "✅ $(GREEN)Rust tests complete!$(RESET)"
 
-test-typescript:
+test-typescript: function-stage-contract-check
 	@echo "📘 $(CYAN)Running TypeScript client tests...$(RESET)"
 	@cd $(CLIENT_TS_DIR) && npm test
 	@echo "✅ $(GREEN)TypeScript tests complete!$(RESET)"
 
-test-python: build-python-client
+test-python: function-stage-contract-check build-python-client
 	@echo "🐍 $(CYAN)Running Python client tests...$(RESET)"
 	@cd $(CLIENT_PY_DIR) && $(VENV_PY) -m pytest tests/ -v
 	@echo "✅ $(GREEN)Python tests complete!$(RESET)"
 
-test-kotlin: ensure-jvm
+test-kotlin: function-stage-contract-check ensure-jvm
 	@echo "🟣 $(CYAN)Running Kotlin client tests...$(RESET)"
 	@cd $(CLIENT_KT_DIR) && ./gradlew test --quiet
 	@echo "✅ $(GREEN)Kotlin tests complete!$(RESET)"

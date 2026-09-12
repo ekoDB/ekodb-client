@@ -1,14 +1,18 @@
 package io.ekodb.client.functions
 
+import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.decodeFromJsonElement
+import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
+import java.nio.file.Path
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
@@ -30,6 +34,40 @@ import kotlin.test.assertTrue
  */
 class FunctionStagesTest {
     private val json = Json { encodeDefaults = true }
+
+    @Test
+    fun `every generated function stage round trips without loss`() {
+        val fixturePath = Path.of("..", "test-fixtures", "function-stage-contract.json")
+        val fixture = Json.parseToJsonElement(fixturePath.toFile().readText()).jsonObject
+        val floor = fixture["coverage_floor"]!!.jsonPrimitive.content.toInt()
+        val count = fixture["variant_count"]!!.jsonPrimitive.content.toInt()
+        val cases = fixture["variants"]!!.jsonArray
+        assertEquals(count, cases.size)
+        assertTrue(cases.size >= floor, "function-stage fixture fell below its coverage floor")
+
+        val strictJson = Json { ignoreUnknownKeys = false }
+        for (case in cases) {
+            val body = case.jsonObject
+            val name = body["name"]!!.jsonPrimitive.content
+            val stage = body["stage"]!!
+            val decoded = strictJson.decodeFromJsonElement(FunctionStageConfig.serializer(), stage)
+            val encoded = strictJson.encodeToJsonElement(FunctionStageConfig.serializer(), decoded)
+            assertEquals(stage, encoded, "$name lost contract data")
+        }
+    }
+
+    @Test
+    fun `strict function codec rejects unknown stage data`() {
+        val strictJson = Json { ignoreUnknownKeys = false }
+        val unknownField = """{"type":"FindAll","collection":"items","future_field":true}"""
+        val unknownVariant = """{"type":"FutureStage","value":true}"""
+        assertFailsWith<Exception> {
+            strictJson.decodeFromString<FunctionStageConfig>(unknownField)
+        }
+        assertFailsWith<Exception> {
+            strictJson.decodeFromString<FunctionStageConfig>(unknownVariant)
+        }
+    }
 
     @Test
     fun `group operations include the complete wire set`() {

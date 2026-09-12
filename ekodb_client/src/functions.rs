@@ -161,6 +161,7 @@ impl<'de> Deserialize<'de> for QueryExpression {
 /// A reusable sequence of Functions stored in ekoDB.
 /// Called by label via the `call_function` chat tool or REST API.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct UserFunction {
     /// Unique identifier (ekoDB-generated)
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -285,6 +286,7 @@ impl UserFunction {
 
 /// Transaction settings attached to a stored function.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct TransactionConfig {
     pub enabled: bool,
     pub auto_rollback: bool,
@@ -294,6 +296,7 @@ pub struct TransactionConfig {
 
 /// Parameter definition for a function
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct ParameterDefinition {
     /// Parameter name (used as key in HashMap, not serialized)
     #[serde(skip_serializing, default)]
@@ -344,7 +347,7 @@ impl ParameterDefinition {
 
 /// Condition evaluation for function control flow (If statements)
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(tag = "type", content = "value")]
+#[serde(tag = "type", content = "value", deny_unknown_fields)]
 pub enum FunctionCondition {
     /// Check if field equals value in current records
     FieldEquals {
@@ -395,7 +398,7 @@ pub enum FunctionCondition {
 
 /// Function step in a pipeline
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(tag = "type", rename_all = "PascalCase")]
+#[serde(tag = "type", rename_all = "PascalCase", deny_unknown_fields)]
 #[allow(
     clippy::enum_variant_names,
     clippy::vec_box,
@@ -1018,6 +1021,7 @@ fn default_method() -> String {
 
 /// Chat message for AI operations
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct ChatMessage {
     pub role: String,
     pub content: String,
@@ -1051,6 +1055,7 @@ impl ChatMessage {
 
 /// Group function configuration for Group stage
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct GroupFunctionConfig {
     pub output_field: String,
     pub operation: GroupFunctionOp,
@@ -1094,6 +1099,7 @@ pub enum GroupFunctionOp {
 
 /// Sort field configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct SortFieldConfig {
     pub field: String,
     #[serde(default = "default_ascending")]
@@ -1175,6 +1181,59 @@ pub struct StageStats {
 mod tests {
     use super::*;
     use serde_json::json;
+
+    #[derive(Deserialize)]
+    struct FunctionContractFixture {
+        coverage_floor: usize,
+        variant_count: usize,
+        variants: Vec<FunctionContractCase>,
+    }
+
+    #[derive(Deserialize)]
+    struct FunctionContractCase {
+        name: String,
+        stage: serde_json::Value,
+    }
+
+    #[test]
+    fn every_generated_function_stage_round_trips_without_loss() {
+        let fixture: FunctionContractFixture = serde_json::from_str(include_str!(
+            "../../test-fixtures/function-stage-contract.json"
+        ))
+        .unwrap();
+        assert_eq!(fixture.variant_count, fixture.variants.len());
+        assert!(fixture.variants.len() >= fixture.coverage_floor);
+
+        for case in fixture.variants {
+            let decoded: Function = serde_json::from_value(case.stage.clone())
+                .unwrap_or_else(|error| panic!("{} failed to decode: {error}", case.name));
+            let encoded = serde_json::to_value(decoded)
+                .unwrap_or_else(|error| panic!("{} failed to encode: {error}", case.name));
+            assert_eq!(encoded, case.stage, "{} lost contract data", case.name);
+        }
+    }
+
+    #[test]
+    fn stored_function_decode_rejects_unknown_fields_and_variants() {
+        let unknown_field = json!({
+            "type": "FindAll",
+            "collection": "items",
+            "future_field": true
+        });
+        let unknown_variant = json!({"type": "FutureStage", "value": true});
+        assert!(serde_json::from_value::<Function>(unknown_field).is_err());
+        assert!(serde_json::from_value::<Function>(unknown_variant).is_err());
+
+        let unknown_top_level = json!({
+            "label": "sample",
+            "name": "Sample",
+            "parameters": {},
+            "functions": [{"type": "FindAll", "collection": "items"}],
+            "tags": [],
+            "future_field": true
+        });
+        assert!(serde_json::from_value::<UserFunction>(unknown_top_level).is_err());
+    }
 
     #[test]
     fn user_function_preserves_transaction_config() {
