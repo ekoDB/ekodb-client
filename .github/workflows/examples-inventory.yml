@@ -5,6 +5,7 @@ permissions:
 on:
   pull_request:
     paths:
+      - 'Makefile'
       - 'examples/**'
       - 'examples_list.txt'
       - 'scripts/generate_examples_list.sh'
@@ -15,6 +16,7 @@ on:
       - main
       - master
     paths:
+      - 'Makefile'
       - 'examples/**'
       - 'examples_list.txt'
       - 'scripts/generate_examples_list.sh'
