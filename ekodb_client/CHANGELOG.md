@@ -6,6 +6,56 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Stored-function contract coverage.** Generate a 67-variant, fully populated
+  fixture from the authoritative function enum; enforce exact variant/field
+  parity across Rust/Python, TypeScript, and Kotlin; and round-trip every case
+  through each language gate with a non-vacuous coverage floor. Rust, Python,
+  and Kotlin now reject unknown stored-function data rather than silently
+  dropping it, while TypeScript preserves unknown JSON verbatim. (#205)
+- **Stored-function stage parity.** Add `AddToSet`, `StandardDeviation`, and
+  `ApproxDistinct` group operations (#231); field comparison conditions in
+  TypeScript and Kotlin (#232); and `Upsert`, `Increment`, `Push`, `SetField`,
+  `AddFields`, and `CurrentDatetime` stages across the client models (#233).
+- **Manual schedule triggering.** Expose `trigger_schedule`/`triggerSchedule`
+  in Rust, Python, TypeScript, and Kotlin, using the server's escaped
+  `POST /api/schedules/{id}/trigger` route. (#239)
+
+### Changed
+
+- **Server-default transaction isolation.** Omitting the isolation level now
+  sends an empty request object in all four clients instead of forcing
+  `ReadCommitted`. (#234)
+- **Chat request cleanup.** Remove the retired `force_summarize` option from
+  Rust, Python, TypeScript, and Kotlin request surfaces. (#235)
+- **Dependency and toolchain updates.** Integrate TypeScript 7 (#191),
+  `tokio-tungstenite` 0.30 (#192), Gradle 9.7.1 (#193), Ruff 0.16.6 (#223),
+  Vitest 5 (#224), Kotlin serialization 2.4.20 (#225), kotlinx-datetime 0.8
+  compatibility artifacts (#226), and Foojay resolver convention 1.0 (#228).
+  The `msgpack-core` 0.9.12 update remains excluded because its Kotlin gate is
+  failing. (#219, #227)
+
+### Fixed
+
+- **Stored-function filter safety.** Add a typed, adjacently-tagged query
+  expression representation and validate legacy raw objects at stage
+  construction, so bare filters fail locally instead of invalidating a whole
+  stored function on the server. Correctly tagged raw objects remain
+  supported in all four clients. (#202)
+- **Lossless stored-function models.** Preserve Kotlin HTTP timeout/output
+  fields (#203), correct Rust/Python search and mutation stage shapes and
+  full-precision vectors (#204), and preserve `transaction_config` in Rust,
+  Python, TypeScript, and Kotlin (#206).
+- **Rust vector values.** Preserve the distinct
+  `{"type":"Vector","value":[...]}` envelope rather than decoding it as an
+  ordinary array. (#217)
+- **Cross-client surface corrections.** Decode Kotlin KV-link results as an
+  array (#236), expose the complete TypeScript JWT algorithm set (#237), and
+  correct README goal-status, agent-model, and schedule examples (#238).
+
 ## [0.26.4] - 2026-09-12
 
 ### Added
