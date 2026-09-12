@@ -2,16 +2,16 @@
 
 Back to [README](../README.md)
 
-This directory contains **93 working examples** demonstrating ekoDB's features
-across 6 programming languages. Examples are organized into two categories:
+This directory contains runnable examples across six programming languages. The
+generated [inventory](../examples_list.txt) is the source of truth for current
+counts; do not copy a count into this guide.
 
-- **Client Library Examples** (56 examples) - Using official client libraries
-  (recommended)
-- **Direct API Examples** (37 examples) - Raw HTTP/WebSocket calls for learning
-  the API
+- **Client Library Examples** - Using official client libraries (recommended)
+- **Direct API Examples** - Raw HTTP/WebSocket calls for learning the API
 
-Each example is self-contained, fully tested, and serves as both documentation
-and integration tests.
+Offline gates enforce matching SDK scenario sets and compile every client
+example. Live execution requires a running ekoDB instance and credentials;
+`make test-examples` provides that behavior-level integration pass.
 
 ---
 
@@ -75,7 +75,7 @@ This will:
 
 - Check server availability
 - Install dependencies for each language
-- Run all 84 examples (28 direct + 56 client)
+- Run every example discovered by the language runners
 - Provide pass/fail summary
 
 ### Run via Makefile (Recommended)
@@ -108,7 +108,7 @@ make test-examples-python-client      # Python client library examples
 
 ## 📋 Example Types
 
-### Direct API Examples (37 examples)
+### Direct API Examples
 
 Located in the main `{language}/` directories. These examples use raw
 HTTP/WebSocket calls to demonstrate the API directly.
@@ -120,9 +120,9 @@ HTTP/WebSocket calls to demonstrate the API directly.
 - See request/response formats
 - Reference for custom client implementations
 
-**Languages:** Rust (7), JavaScript (10), Python (10), Go (10)
+**Languages:** Rust, JavaScript, Python, Go
 
-### Client Library Examples (56 examples)
+### Client Library Examples
 
 Located in `{language}/client_*.{ext}` files or
 `{language}/examples/Client*.{ext}`. These examples use official client
@@ -135,8 +135,9 @@ libraries for production use.
 - Advanced features (chat, search, schema management)
 - Recommended for application development
 
-**Languages:** Rust (14), Python (14), Go (14), TypeScript (14), JavaScript (7),
-Kotlin (14)
+**Languages:** Rust, Python, Go, TypeScript/JavaScript, Kotlin. The five SDK
+implementations share a mechanically checked scenario set; JavaScript runs the
+compiled TypeScript set because both use the same npm package.
 
 **Key Difference:** Client examples automatically clean up test collections,
 while direct examples use predictable collection names for learning purposes.
@@ -147,19 +148,20 @@ while direct examples use predictable collection names for learning purposes.
 
 Direct examples are in the main language directories:
 
-- **JavaScript** - 10 examples in `javascript/`
-- **Python** - 10 examples in `python/`
-- **Go** - 10 examples in `go/`
-- **Rust** - 7 examples in `rust/examples/`
+- **JavaScript** - `javascript/`
+- **Python** - `python/`
+- **Go** - `go/`
+- **Rust** - `rust/examples/`
 
 ### Client Library Examples
 
-- **Rust** - 14 examples (`client_*.rs` in `rust/examples/`)
-- **Python** - 14 examples (`client_*.py` in `python/`)
-- **Go** - 14 examples (`client_*.go` in `go/`)
-- **TypeScript** - 14 examples (`client_*.ts` in `typescript/`)
-- **JavaScript** - 7 examples (`client_*.js` in `javascript/`)
-- **Kotlin** - 14 examples (`Client*.kt` in `kotlin/examples/`)
+- **Rust** - `client_*.rs` in `rust/examples/`
+- **Python** - `client_*.py` in `python/`
+- **Go** - `client_*.go` in `go/`
+- **TypeScript** - `client_*.ts` in `typescript/`
+- **JavaScript** - compiled from the TypeScript scenario set for parity, with
+  additional handwritten examples in `javascript/`
+- **Kotlin** - `Client*.kt` in `kotlin/examples/`
 
 ### Feature Categories (Direct API Examples)
 
@@ -352,7 +354,9 @@ cargo run --example websocket_ttl
 
 ### Test Runners
 
-Each language has a test runner that executes all examples:
+The direct API directories retain language-specific test runners. Client SDK
+examples use the repository-level discovery runner so a new `client_*` or
+`Client*` scenario is included automatically.
 
 #### JavaScript Test Runner
 
@@ -402,7 +406,8 @@ From the repository root:
 make test-examples
 ```
 
-Runs all examples across all languages (JavaScript, Python, Go, Rust).
+Runs all discovered examples across Rust, Python, Go, TypeScript/JavaScript, and
+Kotlin.
 
 #### Run Language-Specific Tests
 
@@ -411,6 +416,8 @@ make test-examples-js       # JavaScript only
 make test-examples-python   # Python only
 make test-examples-go       # Go only
 make test-examples-rust     # Rust only
+make test-examples-typescript # TypeScript only
+make test-examples-kotlin   # Kotlin only
 ```
 
 #### Prerequisites for Makefile Commands
@@ -449,25 +456,13 @@ make test-examples-rust
 
 ### Architecture
 
-All examples function as integration tests:
+The suite combines offline contract checks with live integration examples:
 
 ```
-┌─────────────────────────────────────┐
-│      Master Test Runner             │
-│      (Makefile commands)            │
-└──────────┬──────────────────────────┘
-           │
-           ├──> JavaScript Test Runner (test-runner.js)
-           │    └──> 7 examples in javascript/
-           │
-           ├──> Python Test Runner (test_runner.py)
-           │    └──> 7 examples in python/
-           │
-           ├──> Go Test Runner (test_runner.go)
-           │    └──> 7 examples in go/
-           │
-           └──> Rust Examples (cargo run --example)
-                └──> 7 examples in examples/
+make example-parity-check     -> compare normalized SDK scenario sets
+make check-client-examples    -> compile every SDK scenario without a server
+make test-examples-client     -> run every SDK scenario against ekoDB
+make test-examples-direct     -> run the direct HTTP/WebSocket examples
 ```
 
 ### What Gets Tested
@@ -498,7 +493,7 @@ Successful test run:
 === Getting Authentication Token ===
 ✓ Authentication successful
 
-=== Running 7 Examples ===
+=== Running Examples ===
 
 === Running simple_crud.js ===
 ✓ simple_crud.js completed successfully
@@ -506,13 +501,13 @@ Successful test run:
 === Running simple_websocket.js ===
 ✓ simple_websocket.js completed successfully
 
-[... 5 more examples ...]
+[... remaining discovered examples ...]
 
 ╔════════════════════════════════════════╗
 ║           Test Summary                 ║
 ╚════════════════════════════════════════╝
-Total: 7
-Passed: 7
+Total: <discovered count>
+Passed: <discovered count>
 Failed: 0
 ```
 
@@ -539,9 +534,11 @@ All examples use the ekoDB authentication system:
 5. Uses token in Authorization header for all requests
 ```
 
-### Default Credentials
+### Test Credentials
 
-- **API Key**: `a-test-api-key-from-ekodb` (default test key)
+- **API Key**: supply the key configured for the test instance. Some local-only
+  examples fall back to `a-test-api-key-from-ekodb`, but portable runners must
+  not rely on that value.
 - **Token Generation**: Automatic via `/api/auth/token`
 - **Token Usage**: `Authorization: Bearer <token>` header
 
@@ -581,16 +578,17 @@ async function getAuthToken() {
 
 ### Environment Variables
 
-| Variable          | Default                     | Description                     |
-| ----------------- | --------------------------- | ------------------------------- |
-| `API_BASE_URL`    | `http://localhost:8080`     | ekoDB server URL                |
-| `API_BASE_KEY`    | `a-test-api-key-from-ekodb` | API authentication key          |
-| `WS_BASE_URL`     | `ws://localhost:8080`       | WebSocket server URL            |
-| `REQUEST_TIMEOUT` | `30000`                     | Request timeout in milliseconds |
+| Variable          | Default                 | Description                     |
+| ----------------- | ----------------------- | ------------------------------- |
+| `API_BASE_URL`    | `http://localhost:8080` | ekoDB server URL                |
+| `API_BASE_KEY`    | required                | API authentication key          |
+| `WS_BASE_URL`     | `ws://localhost:8080`   | WebSocket server URL            |
+| `REQUEST_TIMEOUT` | `30000`                 | Request timeout in milliseconds |
 
 ### Configuration File
 
-All examples read from `.env` file:
+Live examples read these values from the environment; many runners also load a
+repository-root `.env` file:
 
 ```bash
 # .env file
@@ -606,7 +604,7 @@ REQUEST_TIMEOUT=30000
 # Copy example file
 cp .env.example .env
 
-# Edit if needed (defaults work for local testing)
+# Edit with credentials for the test instance
 vim .env
 ```
 
@@ -963,28 +961,25 @@ documentation)
 
 ## 📊 Summary
 
-- **Total Examples**: 93 examples
-  - **Direct API**: 37 examples (Rust: 7, JavaScript: 10, Python: 10, Go: 10)
-  - **Client Libraries**: 56 examples (Rust: 14, Go: 14, TypeScript: 14,
-    JavaScript: 7, Kotlin: 14)
-  - **Transaction Examples**: Available across all languages (v0.24.0+)
+- **Current counts**: generated in [examples_list.txt](../examples_list.txt)
+- **Transaction Examples**: available across all languages
 - **Languages**: JavaScript, TypeScript, Python, Go, Rust, Kotlin
-- **Test Coverage**: All examples tested automatically via Makefile
-- **CI/CD Ready**: Easy integration into pipelines
+- **Offline Coverage**: scenario parity and compilation via
+  `make example-parity-check` and `make check-client-examples`
+- **Live Coverage**: `make test-examples` against a configured ekoDB instance
 - **Documentation**: Self-documenting code examples
 - **Cleanup**: Client examples auto-cleanup, direct examples use predictable
   names
-- **Feature Parity**: All client libraries have complete feature parity (14
-  examples each)
+- **Feature Parity**: the shared client scenario set is checked mechanically
 - **v0.24.0 Compatible**: Transaction reliability improvements fully supported
 
 ### Quick Reference
 
 | Command                            | Description                        |
 | ---------------------------------- | ---------------------------------- |
-| `make test-examples`               | Run all 93 examples                |
-| `make test-examples-direct`        | Run 37 direct API examples         |
-| `make test-examples-client`        | Run 56 client library examples     |
+| `make test-examples`               | Run all discovered examples        |
+| `make test-examples-direct`        | Run direct API examples            |
+| `make test-examples-client`        | Run all client library examples    |
 | `make test-examples-{lang}`        | Run all examples for a language    |
 | `make test-examples-{lang}-direct` | Run direct examples for a language |
 | `make test-examples-{lang}-client` | Run client examples for a language |

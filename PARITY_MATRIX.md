@@ -1,9 +1,10 @@
 # Client Library Parity Matrix
 
-**Last Updated:** September 8, 2026
+**Last Updated:** September 12, 2026
 
-**Client version:** 0.26.3 (Rust, Python, TypeScript, Kotlin); Go is maintained
-in the separate `ekodb-client-go` repository.
+**Published client version:** 0.26.4. The changes under `[Unreleased]` are on
+the current development branches. Go is maintained in the separate
+`ekodb-client-go` repository.
 
 > Renamed from `MISSING_FEATURES.md` (April 28, 2026) to reflect the current
 > intent: a parity tracker, not a missing-features checklist. Inbound links from
@@ -11,10 +12,11 @@ in the separate `ekodb-client-go` repository.
 > the old path. The companion `documentation/CLIENT_LIBRARY_GAPS.md` was removed
 > in the same pass (it duplicated this file at a stale revision).
 
-## Status: Core parity with typed Kotlin search
+## Status: Core and stored-function contract parity
 
 The core parity baseline below was verified at v0.21.0. Search API coverage was
-updated for v0.26.3; language-specific differences are noted separately.
+updated through v0.26.4; the current stored-function and example-parity work is
+documented below. Language-specific differences are noted separately.
 
 > The v0.21.0 parity pass closed a set of per-client method gaps. Newly brought
 > to parity:
@@ -60,7 +62,7 @@ TypeScript, Go, Kotlin). This includes:
 - Chat sessions, models, streaming, branching, merging
 - User Functions, Scripts, Query Builder, Schema Builder
 - Goals, Tasks, Agents (full lifecycle)
-- Schedule management (CRUD + pause/resume)
+- Schedule management (CRUD + pause/resume + immediate trigger)
 - KV document linking
 - WebSocket: full CRUD parity (14 methods), subscriptions, chat streaming
 - SSE subscriptions (for clients behind reverse proxies that block WS)
@@ -156,6 +158,21 @@ server contract. The Kotlin property name is unchanged.
   JavaScript ✅ | Kotlin ✅
 - `deleteUserFunction()` - Rust ✅ | Go ✅ | Python ✅ | TypeScript ✅ |
   JavaScript ✅ | Kotlin ✅
+
+### Stored-function wire contract
+
+- The five SDK implementations preserve `transaction_config`; omitting its
+  isolation level uses the server default.
+- Rust, Python, TypeScript, and Kotlin share a generated 67-stage fixture that
+  covers every modeled stage and field. It includes typed query-expression
+  filters, field-comparison conditions, the complete group-operation set, and
+  the current mutation/search/HTTP stage shapes.
+- The Go client models the same server contract in its separate repository and
+  its public examples compile against that checkout through a configurable
+  worktree path.
+- `scripts/check-example-parity.py` enforces the same client-example scenario
+  set across Rust, Python, Go, TypeScript, and Kotlin. JavaScript executes the
+  compiled TypeScript set because both languages use the same npm SDK.
 
 ## Collection Operations
 
@@ -260,9 +277,9 @@ GET    /api/indexes/query/{collection}          - List all query indexes
 DELETE /api/indexes/query/{collection}/{field}  - Delete specific index
 ```
 
-### Missing Client Methods
+### Client Methods
 
-**All Languages Need:**
+All clients expose:
 
 ```typescript
 // TypeScript/JavaScript
@@ -334,9 +351,9 @@ POST /api/search/vector/{collection}/explain    - Explain vector search executio
 POST /api/search/hybrid/{collection}/explain    - Explain hybrid search execution
 ```
 
-### Missing Client Methods
+### Client Methods
 
-**All Languages Need:**
+All languages expose:
 
 ```typescript
 // TypeScript/JavaScript
@@ -411,37 +428,37 @@ DELETE /api/kv/{key}/links/{collection}/{document_id}      - Remove link
 
 ```typescript
 // TypeScript/JavaScript
-kvGetLinks(key: string): Promise<DocumentLink[]>
-kvLink(key: string, collection: string, documentId: string): Promise<void>
-kvUnlink(key: string, collection: string, documentId: string): Promise<void>
+kvGetLinks(key: string): Promise<Record>
+kvLink(key: string, collection: string, documentId: string, linkData?: LinkData): Promise<Record>
+kvUnlink(key: string, collection: string, documentId: string): Promise<Record>
 ```
 
 ```go
 // Go
-KVGetLinks(key string) ([]DocumentLink, error)
-KVLink(key, collection, documentId string) error
-KVUnlink(key, collection, documentId string) error
+KVGetLinks(key string) ([]map[string]interface{}, error)
+KVLink(key, collection, documentId string) (map[string]interface{}, error)
+KVUnlink(key, collection, documentId string) (map[string]interface{}, error)
 ```
 
 ```rust
 // Rust
-pub async fn kv_get_links(&self, key: &str) -> Result<Vec<DocumentLink>>
-pub async fn kv_link(&self, key: &str, collection: &str, document_id: &str) -> Result<()>
-pub async fn kv_unlink(&self, key: &str, collection: &str, document_id: &str) -> Result<()>
+pub async fn kv_get_links(&self, key: &str) -> Result<serde_json::Value>
+pub async fn kv_link(&self, key: &str, collection: &str, document_id: &str) -> Result<serde_json::Value>
+pub async fn kv_unlink(&self, key: &str, collection: &str, document_id: &str) -> Result<serde_json::Value>
 ```
 
 ```python
 # Python
-def kv_get_links(self, key: str) -> List[DocumentLink]
-def kv_link(self, key: str, collection: str, document_id: str) -> None
-def kv_unlink(self, key: str, collection: str, document_id: str) -> None
+await client.kv_get_links(key)
+await client.kv_link(key, collection, document_id)
+await client.kv_unlink(key, collection, document_id)
 ```
 
 ```kotlin
 // Kotlin
-suspend fun kvGetLinks(key: String): List<DocumentLink>
-suspend fun kvLink(key: String, collection: String, documentId: String)
-suspend fun kvUnlink(key: String, collection: String, documentId: String)
+suspend fun kvGetLinks(key: String): JsonArray
+suspend fun kvLink(key: String, collection: String, documentId: String, linkData: JsonObject = buildJsonObject {}): JsonObject
+suspend fun kvUnlink(key: String, collection: String, documentId: String): JsonObject
 ```
 
 ### Use Cases
@@ -450,18 +467,15 @@ suspend fun kvUnlink(key: String, collection: String, documentId: String)
 - **Invalidation:** Track which documents are referenced by cache keys
 - **Consistency:** Maintain relationships between KV store and collections
 
-### Implementation Priority
-
-🟡 **MEDIUM** - Useful for advanced caching patterns
-
 ---
 
-## 4. Schedule Management (Cron Jobs) ✅ (Implemented March 2026 — no admin auth required)
+## 4. Schedule Management (Cron Jobs) ✅
 
 ### Description
 
-Schedules allow running Functions or Scripts on a cron schedule. Full CRUD
-operations available on server.
+Schedules run saved functions on a cron schedule. Full CRUD and immediate
+triggering are available on the server; these routes require admin
+authentication.
 
 ### Server Endpoints
 
@@ -481,9 +495,9 @@ POST .../pause and .../resume, and every client implemented them literally; all
 of them 404'd. Keep this table matched to the server's actual route table.
 ```
 
-### Missing Client Methods
+### Client Methods
 
-**All Languages Need:**
+All languages expose:
 
 - `createSchedule(config)` - Create cron job
 - `listSchedules()` - List all schedules
@@ -492,16 +506,13 @@ of them 404'd. Keep this table matched to the server's actual route table.
 - `deleteSchedule(id)` - Delete schedule
 - `pauseSchedule(id)` - Pause execution
 - `resumeSchedule(id)` - Resume execution
+- `triggerSchedule(id)` - Run immediately
 
 ### Use Cases
 
 - **Automated Tasks:** Run cleanup, aggregations, reports on schedule
 - **Data Processing:** Periodic ETL jobs, batch processing
 - **Maintenance:** Scheduled backups, cache warming
-
-### Implementation Priority
-
-🟡 **MEDIUM** - Important for automation workflows
 
 ---
 
@@ -574,7 +585,7 @@ POST /api/replication/wal                       - Receive WAL shipment from peer
 
 ---
 
-## Implementation Roadmap
+## Remaining Roadmap
 
 ### Query & Search Index Management
 
@@ -585,22 +596,10 @@ POST /api/replication/wal                       - Receive WAL shipment from peer
 - Add comprehensive tests for all index operations
 - Update examples showing index usage
 
-### KV Document Linking
-
-**Target:** Q2 2026
-
-- Implement KV link methods (get, link, unlink)
-- Add tests for link operations
-- Create examples demonstrating cache-to-document relationships
-
-### Schedules & Advanced Features
-
-**Target:** Q2-Q3 2026
-
-- Implement schedule CRUD methods
-- Add schema constraint methods
-- Add WAL operation methods (admin-focused)
-- Comprehensive testing and examples
+KV document linking, schedule management (including trigger), and schema
+constraint updates are implemented. Remaining work in this historical roadmap is
+limited to deliberately admin-focused index/WAL surfaces and any future server
+contract additions.
 
 ---
 
@@ -679,20 +678,22 @@ interface LinkData {
 interface Schedule {
   id: string;
   name: string;
-  cron: string;
-  functionName?: string;
-  scriptName?: string;
-  paused: boolean;
-  nextRun: string;
-  lastRun?: string;
+  cron_expression: string;
+  function_label: string;
+  parameters?: Record<string, unknown>;
+  enabled: boolean;
+  timezone?: string;
+  next_execution?: string;
+  last_execution?: string;
 }
 
 interface ScheduleConfig {
   name: string;
-  cron: string;
-  functionName?: string;
-  scriptName?: string;
-  paused?: boolean;
+  cron_expression: string;
+  function_label: string;
+  parameters?: Record<string, unknown>;
+  enabled?: boolean;
+  timezone?: string;
 }
 ```
 
