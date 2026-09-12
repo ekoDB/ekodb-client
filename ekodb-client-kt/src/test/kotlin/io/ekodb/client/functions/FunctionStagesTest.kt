@@ -30,6 +30,18 @@ import kotlin.test.assertTrue
 class FunctionStagesTest {
     private val json = Json { encodeDefaults = true }
 
+    @Test
+    fun `group operations include the complete wire set`() {
+        val operations = listOf(
+            GroupFunctionOp.AddToSet to "\"AddToSet\"",
+            GroupFunctionOp.StandardDeviation to "\"StandardDeviation\"",
+            GroupFunctionOp.ApproxDistinct to "\"ApproxDistinct\"",
+        )
+        for ((operation, expected) in operations) {
+            assertEquals(expected, json.encodeToString(operation))
+        }
+    }
+
     // ------------------------------------------------------------------
     // parameterRef()
     // ------------------------------------------------------------------

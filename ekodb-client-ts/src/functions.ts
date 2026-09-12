@@ -536,7 +536,10 @@ export interface GroupFunctionConfig {
     | "Max"
     | "First"
     | "Last"
-    | "Push";
+    | "Push"
+    | "AddToSet"
+    | "StandardDeviation"
+    | "ApproxDistinct";
   input_field?: string;
 }
 
