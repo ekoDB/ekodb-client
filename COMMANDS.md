@@ -137,7 +137,7 @@ make setup
 ### Build All Clients
 
 ```bash
-# Build ALL client libraries (Rust, Python, TypeScript)
+# Build ALL client libraries (Rust, Python, TypeScript, Kotlin)
 make build
 ```
 
@@ -146,6 +146,7 @@ make build
 - Builds Rust client (`ekodb_client`)
 - Builds Python client (via maturin)
 - Builds TypeScript client (npm build)
+- Builds Kotlin client (Gradle build)
 
 ### Build Individual Clients
 
@@ -158,6 +159,9 @@ make build-python-client
 
 # Build TypeScript client only
 make build-typescript-client
+
+# Build Kotlin client only
+make build-kotlin-client
 
 # Build Rust client in release mode
 make build-release
