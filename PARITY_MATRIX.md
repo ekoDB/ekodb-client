@@ -426,36 +426,30 @@ All languages expose:
 
 ---
 
-## 5. Advanced Schema Features ⚠️ (Partial)
+## 5. Advanced Schema Features ✅
 
 ### Description
 
-Advanced schema validation and constraint management beyond basic schema
-operations.
+Schema constraint management beyond basic collection operations. Record
+validation is applied automatically by the server during writes; there is no
+separate record-validation route.
 
 ### Server Endpoints
 
 ```
 PUT /api/schemas/{collection}                   - Update schema constraints
-GET /api/schema/{collection}/validate           - Validate records against schema
 ```
 
 ### Client status
 
 - `updateSchemaConstraints(collection, constraints)` is implemented in Rust,
   Python, TypeScript, Kotlin, and Go.
-- A `validateRecords(collection, records)` convenience method is not currently
-  exposed by the clients.
 
 ### Use Cases
 
 - **Data Quality:** Enforce strict validation rules
 - **Migration Safety:** Validate data before schema changes
 - **Compliance:** Ensure data meets regulatory requirements
-
-### Implementation Priority
-
-🟢 **LOW** - Specialized use cases
 
 ---
 
@@ -492,9 +486,9 @@ inspection.
 ## Remaining Roadmap
 
 KV document linking, schedule management (including trigger), and schema
-constraint updates are implemented. The remaining client-facing gap recorded
-here is optional record pre-validation. Query/search index administration and
-WAL operations remain deliberately outside the application SDK surface.
+constraint updates are implemented. Query/search index administration and WAL
+operations remain deliberately outside the application SDK surface; future
+server contract additions should be evaluated against that boundary.
 
 ---
 
