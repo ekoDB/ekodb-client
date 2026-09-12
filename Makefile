@@ -256,6 +256,7 @@ test-examples-typescript-client: build-typescript-client
 	@scripts/run-client-examples.sh run typescript
 
 test-examples-javascript-client: build-typescript-client
+	@cd examples/javascript && npm install
 	@cd examples/typescript && npm install && npm run build
 	@scripts/run-client-examples.sh run javascript
 
