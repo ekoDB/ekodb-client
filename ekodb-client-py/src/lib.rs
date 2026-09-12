@@ -2138,14 +2138,13 @@ impl Client {
     /// `Attachment` struct on the Rust side. Under ~20 MB stays inline;
     /// larger files are routed through the provider's File API on the
     /// server side.
-    #[pyo3(signature = (chat_id, message, bypass_ripple=None, force_summarize=None, max_iterations=None, attachments=None))]
+    #[pyo3(signature = (chat_id, message, bypass_ripple=None, max_iterations=None, attachments=None))]
     fn chat_message<'py>(
         &self,
         py: Python<'py>,
         chat_id: String,
         message: String,
         bypass_ripple: Option<bool>,
-        force_summarize: Option<bool>,
         max_iterations: Option<u32>,
         attachments: Option<Bound<'py, PyAny>>,
     ) -> PyResult<Bound<'py, PyAny>> {
@@ -2156,7 +2155,6 @@ impl Client {
             let request = ChatMessageRequest {
                 message,
                 bypass_ripple,
-                force_summarize,
                 max_iterations,
                 tool_config: None,
                 llm_model: None,
@@ -2179,14 +2177,13 @@ impl Client {
     /// Returns a ChatStreamReceiver for receiving events incrementally.
     ///
     /// `attachments` accepts the same shape as `chat_message`.
-    #[pyo3(signature = (chat_id, message, bypass_ripple=None, force_summarize=None, max_iterations=None, attachments=None))]
+    #[pyo3(signature = (chat_id, message, bypass_ripple=None, max_iterations=None, attachments=None))]
     fn chat_message_stream<'py>(
         &self,
         py: Python<'py>,
         chat_id: String,
         message: String,
         bypass_ripple: Option<bool>,
-        force_summarize: Option<bool>,
         max_iterations: Option<u32>,
         attachments: Option<Bound<'py, PyAny>>,
     ) -> PyResult<Bound<'py, PyAny>> {
@@ -2197,7 +2194,6 @@ impl Client {
             let request = ChatMessageRequest {
                 message,
                 bypass_ripple,
-                force_summarize,
                 max_iterations,
                 tool_config: None,
                 llm_model: None,

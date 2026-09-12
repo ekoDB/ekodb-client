@@ -2389,6 +2389,12 @@ class EkoDBClientTest {
         assertFalse(json.contains("exclude_tools"))
     }
 
+    @Test
+    fun `ChatMessageRequest does not expose retired forceSummarize`() {
+        val fieldNames = io.ekodb.client.types.ChatMessageRequest::class.java.declaredFields.map { it.name }
+        assertFalse("forceSummarize" in fieldNames)
+    }
+
     // ========================================================================
     // submitChatToolResult Tests
     // ========================================================================
