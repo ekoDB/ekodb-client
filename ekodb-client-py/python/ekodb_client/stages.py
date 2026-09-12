@@ -7,10 +7,39 @@ that can be used in script definitions.
 
 from typing import Any, Dict, List, Literal, Optional, TypedDict, Union
 
+QueryConditionOperator = Literal[
+    "Eq",
+    "Ne",
+    "Gt",
+    "Gte",
+    "Lt",
+    "Lte",
+    "In",
+    "NotIn",
+    "Contains",
+    "StartsWith",
+    "EndsWith",
+]
+QueryLogicalOperator = Literal["And", "Or", "Not"]
+CONDITION_OPERATORS = {
+    "Eq",
+    "Ne",
+    "Gt",
+    "Gte",
+    "Lt",
+    "Lte",
+    "In",
+    "NotIn",
+    "Contains",
+    "StartsWith",
+    "EndsWith",
+}
+LOGICAL_OPERATORS = {"And", "Or", "Not"}
+
 
 class QueryConditionContent(TypedDict):
     field: str
-    operator: str
+    operator: QueryConditionOperator
     value: Any
 
 
@@ -20,7 +49,7 @@ class QueryConditionExpression(TypedDict):
 
 
 class QueryLogicalContent(TypedDict):
-    operator: Literal["And", "Or", "Not"]
+    operator: QueryLogicalOperator
     expressions: List["QueryExpression"]
 
 
@@ -48,6 +77,8 @@ def validate_query_expression(expression: Dict[str, Any]) -> Dict[str, Any]:
             raise ValueError("Condition content requires string `field` and `operator`")
         if "value" not in content:
             raise ValueError("Condition content requires `value`")
+        if content["operator"] not in CONDITION_OPERATORS:
+            raise ValueError(f"unsupported condition operator `{content['operator']}`")
     elif expression_type == "Logical":
         expressions = content.get("expressions")
         if not isinstance(content.get("operator"), str) or not isinstance(
@@ -56,6 +87,13 @@ def validate_query_expression(expression: Dict[str, Any]) -> Dict[str, Any]:
             raise ValueError(
                 "Logical content requires string `operator` and list `expressions`"
             )
+        operator = content["operator"]
+        if operator not in LOGICAL_OPERATORS:
+            raise ValueError(f"unsupported logical operator `{operator}`")
+        if not expressions:
+            raise ValueError(f"logical operator `{operator}` requires expressions")
+        if operator == "Not" and len(expressions) != 1:
+            raise ValueError("logical operator `Not` requires exactly one expression")
         for child in expressions:
             validate_query_expression(child)
     else:

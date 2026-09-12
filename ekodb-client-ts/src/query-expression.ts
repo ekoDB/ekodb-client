@@ -32,6 +32,22 @@ export interface QueryLogicalExpression {
 /** The adjacently-tagged filter shape accepted by ekoDB. */
 export type QueryExpression = QueryConditionExpression | QueryLogicalExpression;
 
+const conditionOperators = new Set<QueryConditionOperator>([
+  "Eq",
+  "Ne",
+  "Gt",
+  "Gte",
+  "Lt",
+  "Lte",
+  "In",
+  "NotIn",
+  "Contains",
+  "StartsWith",
+  "EndsWith",
+]);
+
+const logicalOperators = new Set(["And", "Or", "Not"]);
+
 /** Validate raw JSON while preserving correctly-shaped object callers. */
 export function queryExpression(
   value: QueryExpression | Record<string, unknown>,
@@ -67,6 +83,11 @@ export function assertQueryExpression(
     if (!("value" in body)) {
       throw new TypeError("Condition content requires `value`");
     }
+    if (!conditionOperators.has(body.operator as QueryConditionOperator)) {
+      throw new TypeError(
+        `unsupported condition operator \`${body.operator}\``,
+      );
+    }
     return;
   }
 
@@ -74,6 +95,19 @@ export function assertQueryExpression(
     if (typeof body.operator !== "string" || !Array.isArray(body.expressions)) {
       throw new TypeError(
         "Logical content requires string `operator` and array `expressions`",
+      );
+    }
+    if (!logicalOperators.has(body.operator)) {
+      throw new TypeError(`unsupported logical operator \`${body.operator}\``);
+    }
+    if (body.expressions.length === 0) {
+      throw new TypeError(
+        `logical operator \`${body.operator}\` requires expressions`,
+      );
+    }
+    if (body.operator === "Not" && body.expressions.length !== 1) {
+      throw new TypeError(
+        "logical operator `Not` requires exactly one expression",
       );
     }
     body.expressions.forEach(assertQueryExpression);

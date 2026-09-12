@@ -674,7 +674,10 @@ ws = await client.websocket("ws://localhost:8080")
 
 # Full CRUD over WebSocket (14 methods)
 result = await ws.ws_insert("users", {"name": "Alice", "email": "a@b.com"})
-results = await ws.ws_query("users", filter={"field": "status", "operator": "Eq", "value": "active"})
+results = await ws.ws_query("users", filter={
+    "type": "Condition",
+    "content": {"field": "status", "operator": "Eq", "value": "active"},
+})
 user = await ws.ws_find_by_id("users", "record-id")
 await ws.ws_update("users", "record-id", {"name": "Updated"})
 await ws.ws_delete("users", "record-id")

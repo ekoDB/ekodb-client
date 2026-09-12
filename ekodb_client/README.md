@@ -193,7 +193,10 @@ let ws = client.connect_ws().await?;
 
 // Full CRUD over WebSocket (14 methods — same as REST, zero HTTP overhead)
 let record = ws.insert("users", json!({"name": "Alice", "email": "a@b.com"}), None).await?;
-let results = ws.query("users", Some(json!({"field": "status", "operator": "Eq", "value": "active"})), None, None, None).await?;
+let results = ws.query("users", Some(json!({
+    "type": "Condition",
+    "content": {"field": "status", "operator": "Eq", "value": "active"}
+})), None, None, None).await?;
 let user = ws.find_by_id("users", "record_id").await?;
 ws.update("users", "record_id", json!({"name": "Updated"}), None).await?;
 ws.delete("users", "record_id", None).await?;
