@@ -5,6 +5,7 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonClassDiscriminator
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -48,6 +49,65 @@ import kotlinx.serialization.json.put
 fun parameterRef(name: String): JsonObject = buildJsonObject {
     put("type", "Parameter")
     put("name", name)
+}
+
+/** Build a valid condition expression for Query, Update, and Delete filters. */
+fun queryCondition(field: String, operator: String, value: JsonElement): JsonObject = buildJsonObject {
+    put("type", "Condition")
+    put("content", buildJsonObject {
+        put("field", field)
+        put("operator", operator)
+        put("value", value)
+    })
+}
+
+/** Build a valid logical expression from already-tagged child expressions. */
+fun queryLogical(operator: String, expressions: List<JsonObject>): JsonObject =
+    validateQueryExpression(
+        buildJsonObject {
+            put("type", "Logical")
+            put("content", buildJsonObject {
+                put("operator", operator)
+                put("expressions", JsonArray(expressions))
+            })
+        },
+    )
+
+/** Validate raw JSON at stage construction so malformed filters never reach the server. */
+fun validateQueryExpression(expression: JsonObject): JsonObject {
+    val type = expression["type"]?.jsonPrimitive?.content
+        ?: throw IllegalArgumentException("query expression must contain a string `type`")
+    val content = expression["content"] as? JsonObject
+        ?: throw IllegalArgumentException("query expression must contain an object `content`")
+
+    when (type) {
+        "Condition" -> {
+            require(content["field"]?.jsonPrimitive?.content != null) {
+                "Condition content requires string `field`"
+            }
+            require(content["operator"]?.jsonPrimitive?.content != null) {
+                "Condition content requires string `operator`"
+            }
+            require("value" in content) { "Condition content requires `value`" }
+        }
+        "Logical" -> {
+            require(content["operator"]?.jsonPrimitive?.content != null) {
+                "Logical content requires string `operator`"
+            }
+            val expressions = content["expressions"] as? JsonArray
+                ?: throw IllegalArgumentException("Logical content requires array `expressions`")
+            expressions.forEach {
+                validateQueryExpression(
+                    it as? JsonObject
+                        ?: throw IllegalArgumentException("logical child must be an object"),
+                )
+            }
+        }
+        else -> throw IllegalArgumentException(
+            "query expression `type` must be `Condition` or `Logical`",
+        )
+    }
+    return expression
 }
 
 /**
@@ -115,7 +175,11 @@ sealed class FunctionStageConfig {
         val sort: List<JsonObject>? = null,
         val limit: Int? = null,
         val skip: Int? = null
-    ) : FunctionStageConfig()
+    ) : FunctionStageConfig() {
+        init {
+            filter?.let(::validateQueryExpression)
+        }
+    }
 
     @Serializable
     @SerialName("Project")
@@ -154,7 +218,11 @@ sealed class FunctionStageConfig {
         val updates: JsonObject,
         @EncodeDefault val bypass_ripple: Boolean = false,
         val ttl: Long? = null
-    ) : FunctionStageConfig()
+    ) : FunctionStageConfig() {
+        init {
+            validateQueryExpression(filter)
+        }
+    }
 
     @Serializable
     @SerialName("UpdateById")
@@ -172,7 +240,11 @@ sealed class FunctionStageConfig {
         val collection: String,
         val filter: JsonObject,
         @EncodeDefault val bypass_ripple: Boolean = false
-    ) : FunctionStageConfig()
+    ) : FunctionStageConfig() {
+        init {
+            validateQueryExpression(filter)
+        }
+    }
 
     @Serializable
     @SerialName("DeleteById")

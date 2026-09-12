@@ -41,6 +41,123 @@ pub fn parameter_ref(name: impl Into<String>) -> serde_json::Value {
     })
 }
 
+/// A validated, adjacently-tagged filter expression for function stages.
+///
+/// Use [`QueryExpression::condition`] and [`QueryExpression::logical`] for
+/// typed construction. Existing raw JSON remains supported through
+/// [`TryFrom<serde_json::Value>`], but malformed objects fail before a request
+/// can be sent.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(transparent)]
+pub struct QueryExpression(serde_json::Value);
+
+impl QueryExpression {
+    pub fn condition(
+        field: impl Into<String>,
+        operator: impl Into<String>,
+        value: serde_json::Value,
+    ) -> Self {
+        Self(serde_json::json!({
+            "type": "Condition",
+            "content": {
+                "field": field.into(),
+                "operator": operator.into(),
+                "value": value,
+            },
+        }))
+    }
+
+    pub fn logical(operator: impl Into<String>, expressions: Vec<Self>) -> Self {
+        Self(serde_json::json!({
+            "type": "Logical",
+            "content": {
+                "operator": operator.into(),
+                "expressions": expressions,
+            },
+        }))
+    }
+
+    pub fn into_value(self) -> serde_json::Value {
+        self.0
+    }
+
+    fn validate(value: &serde_json::Value) -> Result<(), String> {
+        let object = value
+            .as_object()
+            .ok_or_else(|| "query expression must be a JSON object".to_string())?;
+        let expression_type = object
+            .get("type")
+            .and_then(serde_json::Value::as_str)
+            .ok_or_else(|| "query expression must contain a string `type`".to_string())?;
+        let content = object
+            .get("content")
+            .and_then(serde_json::Value::as_object)
+            .ok_or_else(|| "query expression must contain an object `content`".to_string())?;
+
+        match expression_type {
+            "Condition" => {
+                if content
+                    .get("field")
+                    .and_then(serde_json::Value::as_str)
+                    .is_none()
+                {
+                    return Err("Condition content must contain a string `field`".to_string());
+                }
+                if content
+                    .get("operator")
+                    .and_then(serde_json::Value::as_str)
+                    .is_none()
+                {
+                    return Err("Condition content must contain a string `operator`".to_string());
+                }
+                if !content.contains_key("value") {
+                    return Err("Condition content must contain `value`".to_string());
+                }
+            }
+            "Logical" => {
+                if content
+                    .get("operator")
+                    .and_then(serde_json::Value::as_str)
+                    .is_none()
+                {
+                    return Err("Logical content must contain a string `operator`".to_string());
+                }
+                let expressions = content
+                    .get("expressions")
+                    .and_then(serde_json::Value::as_array)
+                    .ok_or_else(|| {
+                        "Logical content must contain an array `expressions`".to_string()
+                    })?;
+                for expression in expressions {
+                    Self::validate(expression)?;
+                }
+            }
+            other => return Err(format!("unsupported query expression type `{other}`")),
+        }
+
+        Ok(())
+    }
+}
+
+impl TryFrom<serde_json::Value> for QueryExpression {
+    type Error = String;
+
+    fn try_from(value: serde_json::Value) -> Result<Self, Self::Error> {
+        Self::validate(&value)?;
+        Ok(Self(value))
+    }
+}
+
+impl<'de> Deserialize<'de> for QueryExpression {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let value = serde_json::Value::deserialize(deserializer)?;
+        Self::try_from(value).map_err(serde::de::Error::custom)
+    }
+}
+
 /// A reusable sequence of Functions stored in ekoDB.
 /// Called by label via the `call_function` chat tool or REST API.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -292,7 +409,7 @@ pub enum Function {
     Query {
         collection: String,
         #[serde(skip_serializing_if = "Option::is_none")]
-        filter: Option<serde_json::Value>,
+        filter: Option<QueryExpression>,
         #[serde(skip_serializing_if = "Option::is_none")]
         sort: Option<Vec<SortFieldConfig>>,
         #[serde(skip_serializing_if = "Option::is_none")]
@@ -339,7 +456,7 @@ pub enum Function {
     /// Update records matching filter
     Update {
         collection: String,
-        filter: serde_json::Value,
+        filter: QueryExpression,
         updates: serde_json::Value,
         #[serde(skip_serializing_if = "Option::is_none")]
         bypass_ripple: Option<bool>,
@@ -416,7 +533,7 @@ pub enum Function {
     /// Delete records matching filter
     Delete {
         collection: String,
-        filter: serde_json::Value,
+        filter: QueryExpression,
         #[serde(skip_serializing_if = "Option::is_none")]
         bypass_ripple: Option<bool>,
     },
@@ -1181,6 +1298,46 @@ mod tests {
             let decoded: Function = serde_json::from_value(wire.clone()).unwrap();
             assert_eq!(serde_json::to_value(decoded).unwrap(), wire);
         }
+    }
+
+    #[test]
+    fn query_expression_accepts_typed_and_correct_raw_forms() {
+        let typed = QueryExpression::logical(
+            "And",
+            vec![QueryExpression::condition("status", "Eq", json!("active"))],
+        );
+        assert_eq!(
+            serde_json::to_value(typed).unwrap(),
+            json!({
+                "type": "Logical",
+                "content": {
+                    "operator": "And",
+                    "expressions": [{
+                        "type": "Condition",
+                        "content": {"field": "status", "operator": "Eq", "value": "active"}
+                    }]
+                }
+            })
+        );
+
+        let raw = json!({
+            "type": "Condition",
+            "content": {"field": "status", "operator": "Eq", "value": "active"}
+        });
+        assert!(QueryExpression::try_from(raw).is_ok());
+    }
+
+    #[test]
+    fn query_expression_rejects_bare_filter_objects() {
+        let error = QueryExpression::try_from(json!({"status": "active"})).unwrap_err();
+        assert!(error.contains("string `type`"));
+
+        let stage = json!({
+            "type": "Delete",
+            "collection": "items",
+            "filter": {"status": "active"}
+        });
+        assert!(serde_json::from_value::<Function>(stage).is_err());
     }
 
     #[test]

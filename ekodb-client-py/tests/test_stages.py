@@ -94,6 +94,17 @@ def test_update_with_structural_filter_and_updates():
     assert stage["updates"] == {"type": "Parameter", "name": "updates"}
 
 
+def test_query_shaped_stages_reject_bare_filters_immediately():
+    import pytest
+
+    with pytest.raises(ValueError, match="content"):
+        Stage.query("items", {"status": "active"})
+    with pytest.raises(ValueError, match="content"):
+        Stage.update("items", {"id": "1"}, {})
+    with pytest.raises(ValueError, match="content"):
+        Stage.delete("items", {})
+
+
 # ---------------------------------------------------------------------------
 # Stage.batch_insert with per-record Parameter placeholders
 # ---------------------------------------------------------------------------
@@ -502,9 +513,7 @@ def test_new_stages_json_round_trip():
 
 
 def test_hmac_sign_and_verify_build_correctly():
-    sign = Stage.hmac_sign(
-        "{{p}}", "{{env.K}}", "mac", algorithm="sha256", encoding="hex"
-    )
+    sign = Stage.hmac_sign("{{p}}", "{{env.K}}", "mac", algorithm="sha256", encoding="hex")
     assert sign == {
         "type": "HmacSign",
         "input": "{{p}}",
@@ -530,9 +539,7 @@ def test_aes_uuid_totp_stages_build():
 
     assert Stage.uuid_generate("id") == {"type": "UuidGenerate", "output_field": "id"}
 
-    totp = Stage.totp_generate(
-        "{{env.T}}", "code", digits=6, period=30, algorithm="sha1"
-    )
+    totp = Stage.totp_generate("{{env.T}}", "code", digits=6, period=30, algorithm="sha1")
     assert totp["type"] == "TotpGenerate"
     assert totp["digits"] == 6
     assert totp["period"] == 30
