@@ -74,6 +74,10 @@ pub struct UserFunction {
     #[serde(default)]
     pub tags: Vec<String>,
 
+    /// Optional transaction settings for atomic function execution.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub transaction_config: Option<TransactionConfig>,
+
     /// Creation timestamp (server-managed, read-only)
     #[serde(skip_serializing)]
     pub created_at: Option<DateTime<Utc>>,
@@ -107,11 +111,18 @@ impl UserFunction {
             parameters: HashMap::new(),
             functions: Vec::new(),
             tags: Vec::new(),
+            transaction_config: None,
             created_at: None,
             updated_at: None,
             http_method: None,
             http_path: None,
         }
+    }
+
+    /// Execute supported write stages atomically with the supplied settings.
+    pub fn with_transaction_config(mut self, config: TransactionConfig) -> Self {
+        self.transaction_config = Some(config);
+        self
     }
 
     /// Expose this function under the REST path-router. `method` is
@@ -153,6 +164,15 @@ impl UserFunction {
         self.tags.push(tag.into());
         self
     }
+}
+
+/// Transaction settings attached to a stored function.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TransactionConfig {
+    pub enabled: bool,
+    pub auto_rollback: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub isolation_level: Option<String>,
 }
 
 /// Parameter definition for a function
@@ -986,6 +1006,34 @@ pub struct StageStats {
 mod tests {
     use super::*;
     use serde_json::json;
+
+    #[test]
+    fn user_function_preserves_transaction_config() {
+        let wire = json!({
+            "label": "atomic_transfer",
+            "name": "Atomic transfer",
+            "parameters": {},
+            "functions": [{"type": "FindAll", "collection": "accounts"}],
+            "tags": [],
+            "transaction_config": {
+                "enabled": true,
+                "auto_rollback": true,
+                "isolation_level": "Serializable"
+            }
+        });
+
+        let function: UserFunction = serde_json::from_value(wire.clone()).unwrap();
+
+        assert_eq!(
+            function.transaction_config,
+            Some(TransactionConfig {
+                enabled: true,
+                auto_rollback: true,
+                isolation_level: Some("Serializable".to_string()),
+            })
+        );
+        assert_eq!(serde_json::to_value(function).unwrap(), wire);
+    }
 
     #[test]
     fn group_function_operations_include_the_full_wire_set() {

@@ -12,6 +12,7 @@ import {
   parameterRef,
   type FunctionCondition,
   type FunctionStageConfig,
+  type UserFunction,
 } from "./functions";
 import type { GroupFunctionConfig } from "./functions";
 
@@ -41,6 +42,28 @@ describe("FunctionCondition comparisons", () => {
       value: { field: "score", value: 10 },
     };
     expect(JSON.parse(JSON.stringify(condition))).toEqual(condition);
+  });
+});
+
+describe("UserFunction transaction_config", () => {
+  it("preserves atomic execution settings", () => {
+    const fn: UserFunction = {
+      label: "atomic_transfer",
+      name: "Atomic transfer",
+      parameters: {},
+      functions: [Stage.findAll("accounts")],
+      transaction_config: {
+        enabled: true,
+        auto_rollback: true,
+        isolation_level: "Serializable",
+      },
+    };
+
+    expect(JSON.parse(JSON.stringify(fn)).transaction_config).toEqual({
+      enabled: true,
+      auto_rollback: true,
+      isolation_level: "Serializable",
+    });
   });
 });
 

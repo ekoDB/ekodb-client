@@ -53,6 +53,7 @@ export type {
 export type { JoinConfig } from "./join";
 export type {
   UserFunction,
+  TransactionConfig,
   ParameterDefinition,
   FunctionStageConfig,
   FunctionCondition,

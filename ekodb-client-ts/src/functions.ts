@@ -12,6 +12,7 @@ export interface UserFunction {
   parameters: { [key: string]: ParameterDefinition };
   functions: FunctionStageConfig[];
   tags?: string[];
+  transaction_config?: TransactionConfig;
   created_at?: string;
   updated_at?: string;
   /**
@@ -27,6 +28,12 @@ export interface UserFunction {
    * map at call time. Requires ekoDB >= 0.42.0.
    */
   http_path?: string;
+}
+
+export interface TransactionConfig {
+  enabled: boolean;
+  auto_rollback: boolean;
+  isolation_level?: string;
 }
 
 export interface ParameterDefinition {
