@@ -1,7 +1,8 @@
 //! ekoDB Rust Client - Schedule Management Example
 //!
 //! Demonstrates the full schedule lifecycle: create, list, get, update,
-//! pause, resume, and delete.
+//! trigger, pause, resume, and delete. The referenced function label must
+//! already exist on the server.
 //!
 //! Run with: `cargo run --example client_schedules`
 
@@ -28,13 +29,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .create_schedule(json!({
             "name": "nightly-cleanup",
             "description": "Remove expired sessions and temp files",
-            "cron": "0 3 * * *",
+            "function_label": "nightly_cleanup",
+            "cron_expression": "0 0 3 * * *",
             "timezone": "UTC",
-            "action": {
-                "type": "http",
-                "url": "http://localhost:8080/api/cleanup",
-                "method": "POST",
-            },
             "enabled": true,
         }))
         .await?;
@@ -61,24 +58,29 @@ async fn main() -> Result<(), Box<dyn Error>> {
             &schedule_id,
             json!({
                 "description": "Remove expired sessions, temp files, and orphaned uploads",
-                "cron": "0 4 * * *",
+                "cron_expression": "0 0 4 * * *",
             }),
         )
         .await?;
-    println!("Updated cron: {}", updated["cron"]);
+    println!("Updated cron: {}", updated["cron_expression"]);
     println!("Updated description: {}", updated["description"]);
 
-    // 5. Pause schedule
+    // 5. Trigger the schedule immediately
+    println!("\n--- Triggering schedule ---");
+    let triggered = client.trigger_schedule(&schedule_id).await?;
+    println!("Trigger response: {}", triggered);
+
+    // 6. Pause schedule
     println!("\n--- Pausing schedule ---");
     let paused = client.pause_schedule(&schedule_id).await?;
     println!("Schedule paused: {}", paused);
 
-    // 6. Resume schedule
+    // 7. Resume schedule
     println!("\n--- Resuming schedule ---");
     let resumed = client.resume_schedule(&schedule_id).await?;
     println!("Schedule resumed: {}", resumed);
 
-    // 7. Delete schedule
+    // 8. Delete schedule
     println!("\n--- Deleting schedule ---");
     client.delete_schedule(&schedule_id).await?;
     println!("Schedule deleted successfully");

@@ -31,6 +31,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .goal_create(json!({
             "title": "Deploy v2.0 to production",
             "description": "Full release cycle for version 2.0",
+            "status": "pending",
             "priority": "high",
             "steps": [
                 {"description": "Run integration tests"},
@@ -216,8 +217,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
             "name": "backup-agent",
             "description": "Handles nightly backups and restores",
             "deployment_id": "deploy-abc-123",
+            "llm_model": "gpt-4.1",
             "capabilities": ["backup", "restore", "verify"],
-            "status": "active",
         }))
         .await?;
     let agent_id = agent["id"].as_str().unwrap_or_default().to_string();

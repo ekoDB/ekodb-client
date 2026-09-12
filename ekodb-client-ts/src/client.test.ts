@@ -3047,17 +3047,24 @@ describe("EkoDBClient schedules", () => {
     mockJsonResponse({
       id: "sched_1",
       name: "Nightly Backup",
-      cron: "0 2 * * *",
-      status: "active",
+      function_label: "nightly_backup",
+      cron_expression: "0 0 2 * * *",
+      enabled: true,
     });
 
     const result = await client.createSchedule({
       name: "Nightly Backup",
-      cron: "0 2 * * *",
-      action: "backup",
+      function_label: "nightly_backup",
+      cron_expression: "0 0 2 * * *",
     });
     expect(result).toHaveProperty("id", "sched_1");
-    expect(result).toHaveProperty("status", "active");
+    expect(result).toHaveProperty("enabled", true);
+    const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+    expect(JSON.parse(calls[1][1]?.body as string)).toEqual({
+      name: "Nightly Backup",
+      function_label: "nightly_backup",
+      cron_expression: "0 0 2 * * *",
+    });
   });
 
   it("lists schedules", async () => {
@@ -3080,7 +3087,7 @@ describe("EkoDBClient schedules", () => {
     mockJsonResponse({
       id: "sched_1",
       name: "Nightly Backup",
-      cron: "0 2 * * *",
+      cron_expression: "0 0 2 * * *",
     });
 
     const result = await client.getSchedule("sched_1");
@@ -3094,15 +3101,20 @@ describe("EkoDBClient schedules", () => {
     mockJsonResponse({
       id: "sched_1",
       name: "Updated Backup",
-      cron: "0 3 * * *",
+      cron_expression: "0 0 3 * * *",
     });
 
     const result = await client.updateSchedule("sched_1", {
       name: "Updated Backup",
-      cron: "0 3 * * *",
+      cron_expression: "0 0 3 * * *",
     });
     expect(result).toHaveProperty("name", "Updated Backup");
-    expect(result).toHaveProperty("cron", "0 3 * * *");
+    expect(result).toHaveProperty("cron_expression", "0 0 3 * * *");
+    const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+    expect(JSON.parse(calls[1][1]?.body as string)).toEqual({
+      name: "Updated Backup",
+      cron_expression: "0 0 3 * * *",
+    });
   });
 
   it("deletes a schedule", async () => {
@@ -3116,10 +3128,10 @@ describe("EkoDBClient schedules", () => {
   it("pauses a schedule", async () => {
     const client = createTestClient();
     mockTokenResponse();
-    mockJsonResponse({ id: "sched_1", status: "paused" });
+    mockJsonResponse({ id: "sched_1", enabled: false });
 
     const result = await client.pauseSchedule("sched_1");
-    expect(result).toHaveProperty("status", "paused");
+    expect(result).toHaveProperty("enabled", false);
 
     // Assert the REQUEST. There is no /pause route; pausing is a partial
     // update of `enabled`. A response-only assertion passed for as long as
@@ -3135,10 +3147,10 @@ describe("EkoDBClient schedules", () => {
   it("resumes a schedule", async () => {
     const client = createTestClient();
     mockTokenResponse();
-    mockJsonResponse({ id: "sched_1", status: "active" });
+    mockJsonResponse({ id: "sched_1", enabled: true });
 
     const result = await client.resumeSchedule("sched_1");
-    expect(result).toHaveProperty("status", "active");
+    expect(result).toHaveProperty("enabled", true);
 
     const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
     const dataCall = calls[1];

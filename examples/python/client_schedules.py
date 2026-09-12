@@ -1,7 +1,9 @@
 """ekoDB Python Client - Schedule Management Integration Example
 
 Demonstrates the full schedule lifecycle:
-  create -> list -> get -> update -> pause -> resume -> delete
+  create -> list -> get -> update -> trigger -> pause -> resume -> delete
+
+The referenced function label must already exist on the server.
 """
 
 import asyncio
@@ -25,7 +27,8 @@ async def main():
     schedule = await client.create_schedule(
         {
             "name": "Nightly Report",
-            "cron": "0 0 * * *",
+            "function_label": "nightly_report",
+            "cron_expression": "0 0 0 * * *",
             "description": "Generate and email nightly analytics report",
             "timezone": "UTC",
             "enabled": True,
@@ -42,30 +45,35 @@ async def main():
     # 3. Get schedule by ID
     print("\n--- get_schedule ---")
     fetched = await client.get_schedule(schedule_id)
-    print(f"Fetched: {fetched.get('name')} cron={fetched.get('cron')}")
+    print(f"Fetched: {fetched.get('name')} cron={fetched.get('cron_expression')}")
 
     # 4. Update schedule
     print("\n--- update_schedule ---")
     updated = await client.update_schedule(
         schedule_id,
         {
-            "cron": "30 1 * * *",
+            "cron_expression": "0 30 1 * * *",
             "description": "Changed to 1:30 AM UTC",
         },
     )
-    print(f"Updated cron: {updated.get('cron')}")
+    print(f"Updated cron: {updated.get('cron_expression')}")
 
-    # 5. Pause schedule
+    # 5. Trigger immediately
+    print("\n--- trigger_schedule ---")
+    triggered = await client.trigger_schedule(schedule_id)
+    print(f"Triggered: {triggered}")
+
+    # 6. Pause schedule
     print("\n--- pause_schedule ---")
     paused = await client.pause_schedule(schedule_id)
-    print(f"Paused: status={paused.get('status')}")
+    print(f"Paused: enabled={paused.get('enabled')}")
 
-    # 6. Resume schedule
+    # 7. Resume schedule
     print("\n--- resume_schedule ---")
     resumed = await client.resume_schedule(schedule_id)
-    print(f"Resumed: status={resumed.get('status')}")
+    print(f"Resumed: enabled={resumed.get('enabled')}")
 
-    # 7. Delete schedule
+    # 8. Delete schedule
     print("\n--- delete_schedule ---")
     await client.delete_schedule(schedule_id)
     print("Schedule deleted successfully")

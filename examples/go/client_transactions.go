@@ -12,7 +12,7 @@ import (
 // Transaction Example using ekoDB Go Client
 //
 // Demonstrates:
-// - Begin transaction with isolation level
+// - Begin transaction with the server default or an explicit isolation level
 // - Operations within a transaction
 // - Transaction status checking
 // - Commit transaction
@@ -66,11 +66,11 @@ func main() {
 
 	// Example 1: Begin Transaction
 	fmt.Println("=== Example 1: Begin Transaction ===")
-	txID, err := client.BeginTransaction("READ_COMMITTED")
+	txID, err := client.BeginTransaction()
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("Transaction ID: %s\n\n", txID)
+	fmt.Printf("Transaction ID (server-default isolation): %s\n\n", txID)
 
 	// Example 2: Operations within Transaction
 	fmt.Println("=== Example 2: Operations within Transaction ===")

@@ -1928,14 +1928,18 @@ class EkoDBClientTest {
 
     @Test
     fun `createSchedule returns schedule object`() = runBlocking {
-        val mockEngine = createMockEngine("""{"id": "sched_1", "name": "Daily Backup", "cron": "0 0 * * *"}""")
-        val client = createTestClient(mockEngine)
+        val recorded = mutableListOf<HttpRequestData>()
+        val client = createTestClient(capturingMockEngine(recorded, """{"id":"sched_1","name":"Daily Backup","cron_expression":"0 0 0 * * *"}"""))
         val result = client.createSchedule(buildJsonObject {
             put("name", "Daily Backup")
-            put("cron", "0 0 * * *")
+            put("function_label", "daily_backup")
+            put("cron_expression", "0 0 0 * * *")
         })
         assertEquals("sched_1", result["id"]?.jsonPrimitive?.content)
         assertEquals("Daily Backup", result["name"]?.jsonPrimitive?.content)
+        val body = Json.parseToJsonElement((recorded.last().body as TextContent).text).jsonObject
+        assertEquals("daily_backup", body["function_label"]?.jsonPrimitive?.content)
+        assertEquals("0 0 0 * * *", body["cron_expression"]?.jsonPrimitive?.content)
     }
 
     @Test
@@ -1951,7 +1955,7 @@ class EkoDBClientTest {
 
     @Test
     fun `getSchedule returns schedule by ID`() = runBlocking {
-        val mockEngine = createMockEngine("""{"id": "sched_1", "name": "Daily Backup", "cron": "0 0 * * *"}""")
+        val mockEngine = createMockEngine("""{"id": "sched_1", "name": "Daily Backup", "cron_expression": "0 0 0 * * *"}""")
         val client = createTestClient(mockEngine)
         val result = client.getSchedule("sched_1")
         assertEquals("sched_1", result["id"]?.jsonPrimitive?.content)
@@ -1959,13 +1963,15 @@ class EkoDBClientTest {
 
     @Test
     fun `updateSchedule updates and returns schedule`() = runBlocking {
-        val mockEngine = createMockEngine("""{"id": "sched_1", "name": "Weekly Backup", "cron": "0 0 * * 0"}""")
-        val client = createTestClient(mockEngine)
+        val recorded = mutableListOf<HttpRequestData>()
+        val client = createTestClient(capturingMockEngine(recorded, """{"id":"sched_1","name":"Weekly Backup","cron_expression":"0 0 0 * * 0"}"""))
         val result = client.updateSchedule("sched_1", buildJsonObject {
             put("name", "Weekly Backup")
-            put("cron", "0 0 * * 0")
+            put("cron_expression", "0 0 0 * * 0")
         })
         assertEquals("Weekly Backup", result["name"]?.jsonPrimitive?.content)
+        val body = Json.parseToJsonElement((recorded.last().body as TextContent).text).jsonObject
+        assertEquals("0 0 0 * * 0", body["cron_expression"]?.jsonPrimitive?.content)
     }
 
     @Test
@@ -1978,18 +1984,18 @@ class EkoDBClientTest {
 
     @Test
     fun `pauseSchedule returns paused schedule`() = runBlocking {
-        val mockEngine = createMockEngine("""{"id": "sched_1", "status": "paused"}""")
+        val mockEngine = createMockEngine("""{"id": "sched_1", "enabled": false}""")
         val client = createTestClient(mockEngine)
         val result = client.pauseSchedule("sched_1")
-        assertEquals("paused", result["status"]?.jsonPrimitive?.content)
+        assertEquals(false, result["enabled"]?.jsonPrimitive?.boolean)
     }
 
     @Test
     fun `resumeSchedule returns active schedule`() = runBlocking {
-        val mockEngine = createMockEngine("""{"id": "sched_1", "status": "active"}""")
+        val mockEngine = createMockEngine("""{"id": "sched_1", "enabled": true}""")
         val client = createTestClient(mockEngine)
         val result = client.resumeSchedule("sched_1")
-        assertEquals("active", result["status"]?.jsonPrimitive?.content)
+        assertEquals(true, result["enabled"]?.jsonPrimitive?.boolean)
     }
 
     // ========================================================================

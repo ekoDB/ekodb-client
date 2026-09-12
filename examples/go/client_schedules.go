@@ -2,7 +2,9 @@
 //
 // Exercises the full schedule lifecycle:
 //   CreateSchedule -> ListSchedules -> GetSchedule -> UpdateSchedule
-//   -> PauseSchedule -> ResumeSchedule -> DeleteSchedule
+//   -> TriggerSchedule -> PauseSchedule -> ResumeSchedule -> DeleteSchedule
+//
+// The referenced function label must already exist on the server.
 
 package main
 
@@ -37,14 +39,11 @@ func main() {
 	// 1. Create a schedule
 	fmt.Println("--- Creating schedule ---")
 	schedule, err := client.CreateSchedule(map[string]interface{}{
-		"name":        "nightly-backup",
-		"description": "Runs a database backup every night at midnight",
-		"cron":        "0 0 * * *",
-		"action": map[string]interface{}{
-			"type":       "script",
-			"script_id":  "backup_script_1",
-			"parameters": map[string]interface{}{"target": "production"},
-		},
+		"name":            "nightly-backup",
+		"description":     "Runs a database backup every night at midnight",
+		"function_label":  "nightly_backup",
+		"cron_expression": "0 0 0 * * *",
+		"enabled":         true,
 	})
 	if err != nil {
 		log.Fatalf("CreateSchedule failed: %v", err)
@@ -66,36 +65,44 @@ func main() {
 	if err != nil {
 		log.Fatalf("GetSchedule failed: %v", err)
 	}
-	fmt.Printf("Fetched schedule: %s (cron: %s)\n", fetched["name"], fetched["cron"])
+	fmt.Printf("Fetched schedule: %s (cron: %s)\n", fetched["name"], fetched["cron_expression"])
 
 	// 4. Update schedule
 	fmt.Println("\n--- Updating schedule ---")
 	updated, err := client.UpdateSchedule(scheduleID, map[string]interface{}{
-		"cron":        "0 2 * * *",
-		"description": "Runs backup at 2 AM instead of midnight",
+		"cron_expression": "0 0 2 * * *",
+		"description":     "Runs backup at 2 AM instead of midnight",
 	})
 	if err != nil {
 		log.Fatalf("UpdateSchedule failed: %v", err)
 	}
-	fmt.Printf("Updated cron: %v\n", updated["cron"])
+	fmt.Printf("Updated cron: %v\n", updated["cron_expression"])
 
-	// 5. Pause schedule
+	// 5. Trigger immediately
+	fmt.Println("\n--- Triggering schedule ---")
+	triggered, err := client.TriggerSchedule(scheduleID)
+	if err != nil {
+		log.Fatalf("TriggerSchedule failed: %v", err)
+	}
+	fmt.Printf("Trigger response: %v\n", triggered)
+
+	// 6. Pause schedule
 	fmt.Println("\n--- Pausing schedule ---")
 	paused, err := client.PauseSchedule(scheduleID)
 	if err != nil {
 		log.Fatalf("PauseSchedule failed: %v", err)
 	}
-	fmt.Printf("Schedule status: %s\n", paused["status"])
+	fmt.Printf("Schedule enabled: %v\n", paused["enabled"])
 
-	// 6. Resume schedule
+	// 7. Resume schedule
 	fmt.Println("\n--- Resuming schedule ---")
 	resumed, err := client.ResumeSchedule(scheduleID)
 	if err != nil {
 		log.Fatalf("ResumeSchedule failed: %v", err)
 	}
-	fmt.Printf("Schedule status: %s\n", resumed["status"])
+	fmt.Printf("Schedule enabled: %v\n", resumed["enabled"])
 
-	// 7. Delete schedule
+	// 8. Delete schedule
 	fmt.Println("\n--- Deleting schedule ---")
 	if err := client.DeleteSchedule(scheduleID); err != nil {
 		log.Fatalf("DeleteSchedule failed: %v", err)
