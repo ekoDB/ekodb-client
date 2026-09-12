@@ -12,6 +12,7 @@ import kotlinx.serialization.json.put
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
@@ -69,8 +70,9 @@ class FunctionStagesTest {
 
     @Test
     fun `filter sort limit and skip serialize as Query stages`() {
+        val filter = queryCondition("status", "Eq", JsonPrimitive("active"))
         val stages = listOf(
-            FunctionStageConfig.filter("users", buildJsonObject { put("status", "active") }),
+            FunctionStageConfig.filter("users", filter),
             FunctionStageConfig.sort("users", listOf(SortFieldConfig("created_at", ascending = false))),
             FunctionStageConfig.limit("users", 10),
             FunctionStageConfig.skip("users", 5),
@@ -95,7 +97,9 @@ class FunctionStagesTest {
                 json.encodeToString(FunctionStageConfig.serializer(), stage),
             ).jsonObject
 
-        val filtered = wireOf(FunctionStageConfig.filter("users", buildJsonObject { put("a", 1) }))
+        val filtered = wireOf(
+            FunctionStageConfig.filter("users", queryCondition("a", "Eq", JsonPrimitive(1))),
+        )
         assertNotNull(filtered["filter"])
 
         val limited = wireOf(FunctionStageConfig.limit("users", 10))
@@ -103,6 +107,17 @@ class FunctionStagesTest {
 
         val skipped = wireOf(FunctionStageConfig.skip("users", 5))
         assertEquals(5, skipped["skip"]?.jsonPrimitive?.content?.toInt())
+    }
+
+    @Test
+    fun `query-shaped stages reject bare filter objects immediately`() {
+        val bare = buildJsonObject { put("status", "active") }
+
+        assertFailsWith<IllegalArgumentException> { FunctionStageConfig.filter("users", bare) }
+        assertFailsWith<IllegalArgumentException> {
+            FunctionStageConfig.Update("users", bare, buildJsonObject {})
+        }
+        assertFailsWith<IllegalArgumentException> { FunctionStageConfig.Delete("users", bare) }
     }
 
     @Test

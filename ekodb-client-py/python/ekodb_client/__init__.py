@@ -17,7 +17,7 @@ Example:
             max_retries=3,      # Maximum retry attempts (default: 3)
             timeout_secs=30     # Request timeout in seconds (default: 30)
         )
-        
+
         try:
             # Insert a document
             record = await client.insert("users", {
@@ -26,19 +26,19 @@ Example:
                 "active": True
             })
             print(f"Inserted: {record}")
-            
+
             # Find documents
             results = await client.find("users", limit=10)
             print(f"Found {len(results)} documents")
-            
+
             # Update a document
             updated = await client.update("users", record["id"], {
                 "age": 31
             })
-            
+
             # Delete a document
             await client.delete("users", record["id"])
-            
+
         except RateLimitError as e:
             print(f"Rate limited! Retry after {e.retry_after_secs} seconds")
 
@@ -58,7 +58,13 @@ from ._ekodb_client import (
     parse_health_status,
 )
 
-from .stages import Stage, ChatMessage, parameter_ref
+from .stages import (
+    Stage,
+    ChatMessage,
+    QueryExpression,
+    parameter_ref,
+    validate_query_expression,
+)
 from .query_builder import QueryBuilder
 from .schema_builder import SchemaBuilder, FieldTypeSchemaBuilder
 from .join import JoinConfig
@@ -127,6 +133,8 @@ __all__ = [
     "Stage",
     "ChatMessage",
     "parameter_ref",
+    "QueryExpression",
+    "validate_query_expression",
     # Query, Schema, and Join builders
     "QueryBuilder",
     "SchemaBuilder",

@@ -486,6 +486,12 @@ describe("QueryBuilder rawFilter", () => {
 
     expect(query.filter).toEqual(rawFilter);
   });
+
+  it("rejects an untagged raw filter immediately", () => {
+    expect(() => new QueryBuilder().rawFilter({ status: "active" })).toThrow(
+      /content/,
+    );
+  });
 });
 
 // ============================================================================

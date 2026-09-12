@@ -2,6 +2,8 @@
  * Functions API for ekoDB TypeScript client
  */
 
+import { queryExpression, type QueryExpression } from "./query-expression";
+
 /** A reusable sequence of Functions stored in ekoDB. */
 export interface UserFunction {
   id?: string;
@@ -65,7 +67,7 @@ export type FunctionStageConfig =
   | {
       type: "Query";
       collection: string;
-      filter?: Record<string, any>;
+      filter?: QueryExpression;
       sort?: SortFieldConfig[];
       limit?: number;
       skip?: number;
@@ -87,7 +89,7 @@ export type FunctionStageConfig =
   | {
       type: "Update";
       collection: string;
-      filter: Record<string, any>;
+      filter: QueryExpression;
       updates: Record<string, any>;
       bypass_ripple?: boolean;
       ttl?: number;
@@ -103,7 +105,7 @@ export type FunctionStageConfig =
   | {
       type: "Delete";
       collection: string;
-      filter: Record<string, any>;
+      filter: QueryExpression;
       bypass_ripple?: boolean;
     }
   | {
@@ -647,14 +649,14 @@ export const Stage = {
 
   query: (
     collection: string,
-    filter?: Record<string, any>,
+    filter?: QueryExpression | Record<string, unknown>,
     sort?: SortFieldConfig[],
     limit?: number,
     skip?: number,
   ): FunctionStageConfig => ({
     type: "Query",
     collection,
-    filter,
+    filter: filter === undefined ? undefined : queryExpression(filter),
     sort,
     limit,
     skip,
@@ -695,14 +697,14 @@ export const Stage = {
 
   update: (
     collection: string,
-    filter: Record<string, any>,
+    filter: QueryExpression | Record<string, unknown>,
     updates: Record<string, any> | ParameterRef,
     bypassRipple = false,
     ttl?: number,
   ): FunctionStageConfig => ({
     type: "Update",
     collection,
-    filter,
+    filter: queryExpression(filter),
     updates,
     bypass_ripple: bypassRipple,
     ttl,
@@ -725,12 +727,12 @@ export const Stage = {
 
   delete: (
     collection: string,
-    filter: Record<string, any>,
+    filter: QueryExpression | Record<string, unknown>,
     bypassRipple = false,
   ): FunctionStageConfig => ({
     type: "Delete",
     collection,
-    filter,
+    filter: queryExpression(filter),
     bypass_ripple: bypassRipple,
   }),
 
@@ -781,11 +783,11 @@ export const Stage = {
    */
   filter: (
     collection: string,
-    filter: Record<string, any>,
+    filter: QueryExpression | Record<string, unknown>,
   ): FunctionStageConfig => ({
     type: "Query",
     collection,
-    filter,
+    filter: queryExpression(filter),
   }),
 
   /** Sort a collection. Shorthand for a `Query` carrying only `sort`. */

@@ -5,7 +5,57 @@ Provides helper methods for creating function stage configurations
 that can be used in script definitions.
 """
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, TypedDict, Union
+
+
+class QueryConditionContent(TypedDict):
+    field: str
+    operator: str
+    value: Any
+
+
+class QueryConditionExpression(TypedDict):
+    type: Literal["Condition"]
+    content: QueryConditionContent
+
+
+class QueryLogicalContent(TypedDict):
+    operator: Literal["And", "Or", "Not"]
+    expressions: List["QueryExpression"]
+
+
+class QueryLogicalExpression(TypedDict):
+    type: Literal["Logical"]
+    content: QueryLogicalContent
+
+
+QueryExpression = Union[QueryConditionExpression, QueryLogicalExpression]
+
+
+def validate_query_expression(expression: Dict[str, Any]) -> Dict[str, Any]:
+    """Validate a raw filter before a function stage can be submitted."""
+    if not isinstance(expression, dict):
+        raise TypeError("query expression must be a dict")
+    expression_type = expression.get("type")
+    content = expression.get("content")
+    if not isinstance(content, dict):
+        raise ValueError("query expression must contain a dict `content`")
+
+    if expression_type == "Condition":
+        if not isinstance(content.get("field"), str) or not isinstance(content.get("operator"), str):
+            raise ValueError("Condition content requires string `field` and `operator`")
+        if "value" not in content:
+            raise ValueError("Condition content requires `value`")
+    elif expression_type == "Logical":
+        expressions = content.get("expressions")
+        if not isinstance(content.get("operator"), str) or not isinstance(expressions, list):
+            raise ValueError("Logical content requires string `operator` and list `expressions`")
+        for child in expressions:
+            validate_query_expression(child)
+    else:
+        raise ValueError("query expression `type` must be `Condition` or `Logical`")
+
+    return expression
 
 
 def parameter_ref(name: str) -> Dict[str, str]:
@@ -57,7 +107,7 @@ class Stage:
         """Query records with filter, sort, limit, skip."""
         stage: Dict[str, Any] = {"type": "Query", "collection": collection}
         if filter is not None:
-            stage["filter"] = filter
+            stage["filter"] = validate_query_expression(filter)
         if sort is not None:
             stage["sort"] = sort
         if limit is not None:
@@ -101,7 +151,7 @@ class Stage:
         stage: Dict[str, Any] = {
             "type": "Update",
             "collection": collection,
-            "filter": filter,
+            "filter": validate_query_expression(filter),
             "updates": updates,
         }
         if bypass_ripple:
@@ -248,7 +298,7 @@ class Stage:
         stage: Dict[str, Any] = {
             "type": "Delete",
             "collection": collection,
-            "filter": filter,
+            "filter": validate_query_expression(filter),
         }
         if bypass_ripple:
             stage["bypass_ripple"] = bypass_ripple

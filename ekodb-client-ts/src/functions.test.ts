@@ -819,12 +819,14 @@ describe("Crypto and concurrency stages", () => {
     // function. They are shorthands for a Query carrying that one field.
 
     it("filter emits a Query with only the filter set", () => {
-      const wire = JSON.parse(
-        JSON.stringify(Stage.filter("users", { status: "active" })),
-      );
+      const filter = {
+        type: "Condition",
+        content: { field: "status", operator: "Eq", value: "active" },
+      } as const;
+      const wire = JSON.parse(JSON.stringify(Stage.filter("users", filter)));
       expect(wire.type).toBe("Query");
       expect(wire.collection).toBe("users");
-      expect(wire.filter).toEqual({ status: "active" });
+      expect(wire.filter).toEqual(filter);
     });
 
     it("sort emits a Query with only the sort set", () => {
@@ -853,8 +855,12 @@ describe("Crypto and concurrency stages", () => {
     });
 
     it("never emits a stage type the server has no variant for", () => {
+      const filter = {
+        type: "Condition",
+        content: { field: "active", operator: "Eq", value: true },
+      } as const;
       const wire = [
-        Stage.filter("users", {}),
+        Stage.filter("users", filter),
         Stage.sort("users", []),
         Stage.limit("users", 1),
         Stage.skip("users", 1),
@@ -863,6 +869,14 @@ describe("Crypto and concurrency stages", () => {
       expect(wire).not.toContain("Sort");
       expect(wire).not.toContain("Limit");
       expect(wire).not.toContain("Skip");
+    });
+
+    it("rejects a bare filter object before a request can be sent", () => {
+      expect(() => Stage.filter("users", { status: "active" })).toThrow(
+        /content/,
+      );
+      expect(() => Stage.update("users", { id: "1" }, {})).toThrow(/content/);
+      expect(() => Stage.delete("users", {})).toThrow(/content/);
     });
   });
 });

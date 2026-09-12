@@ -3181,7 +3181,7 @@ fn test_update_by_id_accepts_structural_parameter() {
 
 #[test]
 fn test_update_with_structural_filter_and_updates() {
-    use ekodb_client::{Function, parameter_ref};
+    use ekodb_client::{Function, QueryExpression, parameter_ref};
     let filter = serde_json::json!({
         "type": "Condition",
         "content": {
@@ -3192,7 +3192,7 @@ fn test_update_with_structural_filter_and_updates() {
     });
     let stage = Function::Update {
         collection: "items".to_string(),
-        filter,
+        filter: QueryExpression::try_from(filter).expect("valid query expression"),
         updates: parameter_ref("updates"),
         bypass_ripple: None,
         ttl: None,
