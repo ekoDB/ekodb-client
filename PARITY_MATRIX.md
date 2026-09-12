@@ -246,12 +246,12 @@ status codes and response bodies, including exhausted server errors. See the
 
 ---
 
-## Historical Notes
+## Administrative Surface (intentionally excluded)
 
-The sections below are preserved for reference. All features listed were
-implemented across all clients as of March 2026 (v0.14.0). The "admin-only"
-designations for Query Index and Search Index management remain correct — these
-are server administration endpoints, not client library features.
+Query-index and search-index administration belongs to server tooling rather
+than the application SDKs. The endpoint inventory is retained here to explain
+the boundary; the signatures in older revisions were proposals, not shipped
+client methods.
 
 ---
 
@@ -272,49 +272,10 @@ GET    /api/indexes/query/{collection}          - List all query indexes
 DELETE /api/indexes/query/{collection}/{field}  - Delete specific index
 ```
 
-### Client Methods
+### Client status
 
-All clients expose:
-
-```typescript
-// TypeScript/JavaScript
-createQueryIndex(collection: string, field: string, options?: IndexOptions): Promise<void>
-listQueryIndexes(collection: string): Promise<QueryIndex[]>
-deleteQueryIndex(collection: string, field: string): Promise<void>
-explainQuery(collection: string, query: Query): Promise<QueryPlan>
-```
-
-```go
-// Go
-CreateQueryIndex(collection, field string, options *IndexOptions) error
-ListQueryIndexes(collection string) ([]QueryIndex, error)
-DeleteQueryIndex(collection, field string) error
-ExplainQuery(collection string, query interface{}) (*QueryPlan, error)
-```
-
-```rust
-// Rust
-pub async fn create_query_index(&self, collection: &str, field: &str, options: Option<IndexOptions>) -> Result<()>
-pub async fn list_query_indexes(&self, collection: &str) -> Result<Vec<QueryIndex>>
-pub async fn delete_query_index(&self, collection: &str, field: &str) -> Result<()>
-pub async fn explain_query(&self, collection: &str, query: Query) -> Result<QueryPlan>
-```
-
-```python
-# Python
-def create_query_index(self, collection: str, field: str, options: Optional[IndexOptions] = None) -> None
-def list_query_indexes(self, collection: str) -> List[QueryIndex]
-def delete_query_index(self, collection: str, field: str) -> None
-def explain_query(self, collection: str, query: dict) -> QueryPlan
-```
-
-```kotlin
-// Kotlin
-suspend fun createQueryIndex(collection: String, field: String, options: IndexOptions? = null)
-suspend fun listQueryIndexes(collection: String): List<QueryIndex>
-suspend fun deleteQueryIndex(collection: String, field: String)
-suspend fun explainQuery(collection: String, query: Query): QueryPlan
-```
+These methods are intentionally not exposed by the application clients. Use
+the authenticated administration surface or server-side operational tooling.
 
 ### Use Cases
 
@@ -322,10 +283,6 @@ suspend fun explainQuery(collection: String, query: Query): QueryPlan
 - **Query Analysis:** Understand query execution plans before running expensive
   queries
 - **Index Management:** List and remove unused indexes to free resources
-
-### Implementation Priority
-
-🔴 **HIGH** - Critical for production performance optimization
 
 ---
 
@@ -346,59 +303,17 @@ POST /api/search/vector/{collection}/explain    - Explain vector search executio
 POST /api/search/hybrid/{collection}/explain    - Explain hybrid search execution
 ```
 
-### Client Methods
+### Client status
 
-All languages expose:
-
-```typescript
-// TypeScript/JavaScript
-createSearchIndex(collection: string, config: SearchIndexConfig): Promise<void>
-explainTextSearch(collection: string, query: string, options?: SearchOptions): Promise<SearchPlan>
-explainVectorSearch(collection: string, vector: number[], options?: SearchOptions): Promise<SearchPlan>
-explainHybridSearch(collection: string, query: HybridQuery): Promise<SearchPlan>
-```
-
-```go
-// Go
-CreateSearchIndex(collection string, config SearchIndexConfig) error
-ExplainTextSearch(collection, query string, options *SearchOptions) (*SearchPlan, error)
-ExplainVectorSearch(collection string, vector []float64, options *SearchOptions) (*SearchPlan, error)
-ExplainHybridSearch(collection string, query HybridQuery) (*SearchPlan, error)
-```
-
-```rust
-// Rust
-pub async fn create_search_index(&self, collection: &str, config: SearchIndexConfig) -> Result<()>
-pub async fn explain_text_search(&self, collection: &str, query: &str, options: Option<SearchOptions>) -> Result<SearchPlan>
-pub async fn explain_vector_search(&self, collection: &str, vector: Vec<f64>, options: Option<SearchOptions>) -> Result<SearchPlan>
-pub async fn explain_hybrid_search(&self, collection: &str, query: HybridQuery) -> Result<SearchPlan>
-```
-
-```python
-# Python
-def create_search_index(self, collection: str, config: SearchIndexConfig) -> None
-def explain_text_search(self, collection: str, query: str, options: Optional[SearchOptions] = None) -> SearchPlan
-def explain_vector_search(self, collection: str, vector: List[float], options: Optional[SearchOptions] = None) -> SearchPlan
-def explain_hybrid_search(self, collection: str, query: HybridQuery) -> SearchPlan
-```
-
-```kotlin
-// Kotlin
-suspend fun createSearchIndex(collection: String, config: SearchIndexConfig)
-suspend fun explainTextSearch(collection: String, query: String, options: SearchOptions? = null): SearchPlan
-suspend fun explainVectorSearch(collection: String, vector: List<Double>, options: SearchOptions? = null): SearchPlan
-suspend fun explainHybridSearch(collection: String, query: HybridQuery): SearchPlan
-```
+These methods are intentionally not exposed by the application clients. Normal
+text, vector, and hybrid search operations remain available in every SDK; only
+index administration and explain endpoints are excluded.
 
 ### Use Cases
 
 - **Search Setup:** Dynamically create text/vector indexes for collections
 - **Performance Tuning:** Analyze search query execution before running
 - **Index Configuration:** Configure HNSW parameters, BM25 settings, etc.
-
-### Implementation Priority
-
-🔴 **HIGH** - Essential for search-heavy applications
 
 ---
 
@@ -417,9 +332,9 @@ POST   /api/kv/{key}/links/{collection}/{document_id}      - Create link. A body
 DELETE /api/kv/{key}/links/{collection}/{document_id}      - Remove link
 ```
 
-### Missing Client Methods
+### Current Client Methods
 
-**All Languages Need:**
+All five SDKs expose:
 
 ```typescript
 // TypeScript/JavaScript
@@ -511,7 +426,7 @@ All languages expose:
 
 ---
 
-## 5. Advanced Schema Features ❌
+## 5. Advanced Schema Features ⚠️ (Partial)
 
 ### Description
 
@@ -521,16 +436,16 @@ operations.
 ### Server Endpoints
 
 ```
-PUT /api/schema/{collection}/constraints        - Update schema constraints
+PUT /api/schemas/{collection}                   - Update schema constraints
 GET /api/schema/{collection}/validate           - Validate records against schema
 ```
 
-### Missing Client Methods
+### Client status
 
-**All Languages Need:**
-
-- `updateSchemaConstraints(collection, constraints)` - Set validation rules
-- `validateRecords(collection, records)` - Pre-validate before insert
+- `updateSchemaConstraints(collection, constraints)` is implemented in Rust,
+  Python, TypeScript, Kotlin, and Go.
+- A `validateRecords(collection, records)` convenience method is not currently
+  exposed by the clients.
 
 ### Use Cases
 
@@ -544,7 +459,7 @@ GET /api/schema/{collection}/validate           - Validate records against schem
 
 ---
 
-## 6. WAL (Write-Ahead Log) Operations ❌
+## 6. WAL (Write-Ahead Log) Operations ⛔ (Admin-only)
 
 ### Description
 
@@ -560,13 +475,11 @@ GET  /api/wal/entries                           - Get WAL entries in time range
 POST /api/replication/wal                       - Receive WAL shipment from peer
 ```
 
-### Missing Client Methods
+### Client status
 
-**All Languages Need:**
-
-- `getWALHealth()` - Check WAL status
-- `rotateWAL()` - Force log rotation
-- `getWALEntries(startTime, endTime)` - Retrieve historical operations
+Direct WAL controls are intentionally not exposed by the application clients.
+Use authenticated server operations tooling for health, rotation, and entry
+inspection.
 
 ### Use Cases
 
@@ -574,82 +487,18 @@ POST /api/replication/wal                       - Receive WAL shipment from peer
 - **Audit Logging:** Track all database operations
 - **Disaster Recovery:** Replay WAL entries
 
-### Implementation Priority
-
-🟢 **LOW** - Admin/debugging tool, not typical application use
-
 ---
 
 ## Remaining Roadmap
 
-### Query & Search Index Management
-
-**Target:** Q1 2026
-
-- Implement query index methods (create, list, delete, explain)
-- Implement search index methods (create, explain variants)
-- Add comprehensive tests for all index operations
-- Update examples showing index usage
-
 KV document linking, schedule management (including trigger), and schema
-constraint updates are implemented. Remaining work in this historical roadmap is
-limited to deliberately admin-focused index/WAL surfaces and any future server
-contract additions.
+constraint updates are implemented. The remaining client-facing gap recorded
+here is optional record pre-validation. Query/search index administration and
+WAL operations remain deliberately outside the application SDK surface.
 
 ---
 
-## Type Definitions Needed
-
-### Query Index Types
-
-```typescript
-interface IndexOptions {
-  unique?: boolean;
-  sparse?: boolean;
-}
-
-interface QueryIndex {
-  field: string;
-  type: string;
-  unique: boolean;
-  sparse: boolean;
-}
-
-interface QueryPlan {
-  collection: string;
-  indexUsed?: string;
-  estimatedCost: number;
-  stages: PlanStage[];
-}
-```
-
-### Search Index Types
-
-```typescript
-interface SearchIndexConfig {
-  type: "text" | "vector";
-  field: string;
-  textConfig?: {
-    language?: string;
-    stopWords?: string[];
-  };
-  vectorConfig?: {
-    dimensions: number;
-    metric?: "cosine" | "euclidean" | "dot";
-    hnsw?: {
-      m?: number;
-      efConstruction?: number;
-    };
-  };
-}
-
-interface SearchPlan {
-  indexUsed: string;
-  queryType: "text" | "vector" | "hybrid";
-  estimatedResults: number;
-  executionSteps: string[];
-}
-```
+## Representative Shared Types
 
 ### KV Link Types
 
