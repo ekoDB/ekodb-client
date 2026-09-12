@@ -302,6 +302,37 @@ describe("Stage.jwtVerify", () => {
 });
 
 describe("JWT stages JSON wire format", () => {
+  it.each([
+    "HS256",
+    "HS384",
+    "HS512",
+    "RS256",
+    "RS384",
+    "RS512",
+    "PS256",
+    "PS384",
+    "PS512",
+    "ES256",
+    "ES384",
+    "EdDSA",
+  ] as const)("accepts the supported %s algorithm", (algorithm) => {
+    const sign = Stage.jwtSign(
+      { sub: "user-1" },
+      "key",
+      "token",
+      60,
+      algorithm,
+    ) as Extract<FunctionStageConfig, { type: "JwtSign" }>;
+    const verify = Stage.jwtVerify(
+      "token",
+      "key",
+      "claims",
+      algorithm,
+    ) as Extract<FunctionStageConfig, { type: "JwtVerify" }>;
+    expect(sign.algorithm).toBe(algorithm);
+    expect(verify.algorithm).toBe(algorithm);
+  });
+
   it("JwtSign round-trips through JSON unchanged", () => {
     const stage = Stage.jwtSign(
       { sub: "user-1" },
