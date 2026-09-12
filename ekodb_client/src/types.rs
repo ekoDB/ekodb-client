@@ -5,7 +5,9 @@
 
 use chrono::{DateTime, Utc};
 use rust_decimal::Decimal;
-use serde::{Deserialize, Serialize};
+use serde::de::Error as DeError;
+use serde::ser::SerializeMap;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::collections::HashMap;
 use std::time::Duration;
 use uuid::Uuid;
@@ -32,8 +34,7 @@ pub enum NumberValue {
 }
 
 /// Field type representing all supported data types in ekoDB
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(untagged)]
+#[derive(Debug, Clone, PartialEq)]
 #[allow(clippy::upper_case_acronyms)]
 pub enum FieldType {
     /// String value
@@ -68,6 +69,88 @@ pub enum FieldType {
     Bytes(Vec<u8>),
     /// Null value
     Null,
+}
+
+impl Serialize for FieldType {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            FieldType::String(value) => value.serialize(serializer),
+            FieldType::Integer(value) => value.serialize(serializer),
+            FieldType::Float(value) => value.serialize(serializer),
+            FieldType::Number(value) => value.serialize(serializer),
+            FieldType::Boolean(value) => value.serialize(serializer),
+            FieldType::Object(value) => value.serialize(serializer),
+            FieldType::Array(value) | FieldType::Set(value) => value.serialize(serializer),
+            FieldType::Vector(value) => {
+                let mut map = serializer.serialize_map(Some(2))?;
+                map.serialize_entry("type", "Vector")?;
+                map.serialize_entry("value", value)?;
+                map.end()
+            }
+            FieldType::DateTime(value) => value.serialize(serializer),
+            FieldType::UUID(value) => value.serialize(serializer),
+            FieldType::Decimal(value) => Serialize::serialize(value, serializer),
+            FieldType::Duration(value) => value.serialize(serializer),
+            FieldType::Binary(value) | FieldType::Bytes(value) => value.serialize(serializer),
+            FieldType::Null => serializer.serialize_none(),
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for FieldType {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        fn from_json(value: serde_json::Value) -> Result<FieldType, String> {
+            match value {
+                serde_json::Value::Null => Ok(FieldType::Null),
+                serde_json::Value::Bool(value) => Ok(FieldType::Boolean(value)),
+                serde_json::Value::Number(value) => {
+                    if let Some(value) = value.as_i64() {
+                        Ok(FieldType::Integer(value))
+                    } else {
+                        value
+                            .as_f64()
+                            .map(FieldType::Float)
+                            .ok_or_else(|| "number cannot be represented as i64 or f64".to_string())
+                    }
+                }
+                serde_json::Value::String(value) => Ok(FieldType::String(value)),
+                serde_json::Value::Array(values) => values
+                    .into_iter()
+                    .map(from_json)
+                    .collect::<Result<Vec<_>, _>>()
+                    .map(FieldType::Array),
+                serde_json::Value::Object(mut values) => {
+                    if values.get("type").and_then(serde_json::Value::as_str) == Some("Vector") {
+                        let vector = values
+                            .remove("value")
+                            .ok_or_else(|| "Vector envelope is missing value".to_string())?;
+                        let serde_json::Value::Array(items) = vector else {
+                            return Err("Vector envelope value must be an array".to_string());
+                        };
+                        return items
+                            .into_iter()
+                            .map(from_json)
+                            .collect::<Result<Vec<_>, _>>()
+                            .map(FieldType::Vector);
+                    }
+
+                    values
+                        .into_iter()
+                        .map(|(key, value)| from_json(value).map(|value| (key, value)))
+                        .collect::<Result<HashMap<_, _>, _>>()
+                        .map(FieldType::Object)
+                }
+            }
+        }
+
+        from_json(serde_json::Value::deserialize(deserializer)?).map_err(D::Error::custom)
+    }
 }
 
 impl FieldType {

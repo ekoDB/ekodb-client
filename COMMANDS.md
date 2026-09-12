@@ -217,12 +217,9 @@ server 0.72.2, including collection cleanup results. Kotlin schema tests use the
 accepted field types as regression fixtures. These commands run locally without
 a live server; they do not measure ranking or ANN recall.
 
-The document Vector envelope is `{"type":"Vector","value":[...]}`. Protocol
-sources are TypeScript's `Field.vector` (`ekodb-client-ts/src/utils.ts`) and
-Python's `field_vector` (`ekodb-client-py/python/ekodb_client/utils.py`),
-confirmed by live acceptance under an explicit Vector schema. Rust's
-`FieldType::Vector` (`ekodb_client/src/types.rs`) is untagged and currently
-emits an array; the Rust fixture test constructs the envelope explicitly.
+The document Vector envelope is `{"type":"Vector","value":[...]}`. Rust's
+`FieldType::vector`, TypeScript's `Field.vector`, Python's `field_vector`, and
+Kotlin's `FieldType.vector` all construct that envelope.
 `test-fixtures/vector-record.json` compares complete insertion payloads without
 collapsing Array and Vector. Rust and TypeScript codec tests retain the same
 distinction in MessagePack; this is not a live binary-transport claim. Kotlin
