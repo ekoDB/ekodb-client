@@ -132,6 +132,113 @@ class Stage:
         return stage
 
     @staticmethod
+    def find_one_and_update(
+        collection: str,
+        record_id: str,
+        updates: Dict[str, Any],
+        bypass_ripple: bool = False,
+        ttl: Optional[Union[str, int]] = None,
+    ) -> Dict[str, Any]:
+        """Atomically update one record by ID."""
+        stage: Dict[str, Any] = {
+            "type": "FindOneAndUpdate",
+            "collection": collection,
+            "record_id": record_id,
+            "updates": updates,
+        }
+        if bypass_ripple:
+            stage["bypass_ripple"] = bypass_ripple
+        if ttl is not None:
+            stage["ttl"] = ttl
+        return stage
+
+    @staticmethod
+    def update_with_action(
+        collection: str,
+        record_id: str,
+        action: str,
+        field: str,
+        value: Any,
+        bypass_ripple: bool = False,
+    ) -> Dict[str, Any]:
+        """Apply a named action to one field on a record."""
+        stage: Dict[str, Any] = {
+            "type": "UpdateWithAction",
+            "collection": collection,
+            "record_id": record_id,
+            "action": action,
+            "field": field,
+            "value": value,
+        }
+        if bypass_ripple:
+            stage["bypass_ripple"] = bypass_ripple
+        return stage
+
+    @staticmethod
+    def upsert(
+        collection: str,
+        key: str,
+        value: Any,
+        record: Dict[str, Any],
+        bypass_ripple: bool = False,
+        ttl: Optional[Union[str, int]] = None,
+    ) -> Dict[str, Any]:
+        """Insert a record or update the row selected by a key/value pair."""
+        stage: Dict[str, Any] = {
+            "type": "Upsert",
+            "collection": collection,
+            "key": key,
+            "value": value,
+            "record": record,
+        }
+        if bypass_ripple:
+            stage["bypass_ripple"] = bypass_ripple
+        if ttl is not None:
+            stage["ttl"] = ttl
+        return stage
+
+    @staticmethod
+    def increment(
+        collection: str,
+        record_id: str,
+        field: str,
+        by: Optional[Any] = None,
+        bypass_ripple: bool = False,
+    ) -> Dict[str, Any]:
+        """Increment a numeric field on a record."""
+        stage: Dict[str, Any] = {
+            "type": "Increment",
+            "collection": collection,
+            "record_id": record_id,
+            "field": field,
+        }
+        if by is not None:
+            stage["by"] = by
+        if bypass_ripple:
+            stage["bypass_ripple"] = bypass_ripple
+        return stage
+
+    @staticmethod
+    def push(
+        collection: str,
+        record_id: str,
+        field: str,
+        value: Any,
+        bypass_ripple: bool = False,
+    ) -> Dict[str, Any]:
+        """Append a value to an array field on a record."""
+        stage: Dict[str, Any] = {
+            "type": "Push",
+            "collection": collection,
+            "record_id": record_id,
+            "field": field,
+            "value": value,
+        }
+        if bypass_ripple:
+            stage["bypass_ripple"] = bypass_ripple
+        return stage
+
+    @staticmethod
     def delete(
         collection: str,
         filter: Dict[str, Any],
@@ -167,6 +274,21 @@ class Stage:
     def project(fields: List[str], exclude: bool = False) -> Dict[str, Any]:
         """Project specific fields from records."""
         return {"type": "Project", "fields": fields, "exclude": exclude}
+
+    @staticmethod
+    def set_field(field: str, value: Any) -> Dict[str, Any]:
+        """Set one field on each record in the working set."""
+        return {"type": "SetField", "field": field, "value": value}
+
+    @staticmethod
+    def add_fields(fields: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Add computed fields to each record in the working set."""
+        return {"type": "AddFields", "fields": fields}
+
+    @staticmethod
+    def current_datetime(output_field: str) -> Dict[str, Any]:
+        """Write the current UTC datetime to an output field."""
+        return {"type": "CurrentDatetime", "output_field": output_field}
 
     @staticmethod
     def count(output_field: str) -> Dict[str, Any]:

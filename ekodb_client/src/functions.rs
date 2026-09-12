@@ -361,7 +361,7 @@ pub enum Function {
     /// Find one record and update atomically
     FindOneAndUpdate {
         collection: String,
-        filter: serde_json::Value,
+        record_id: String,
         updates: serde_json::Value,
         #[serde(skip_serializing_if = "Option::is_none")]
         bypass_ripple: Option<bool>,
@@ -372,8 +372,43 @@ pub enum Function {
     /// Update with actions (increment/decrement)
     UpdateWithAction {
         collection: String,
-        filter: serde_json::Value,
-        actions: serde_json::Value,
+        record_id: String,
+        action: String,
+        field: String,
+        value: serde_json::Value,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        bypass_ripple: Option<bool>,
+    },
+
+    /// Insert or update a record selected by a key/value pair.
+    Upsert {
+        collection: String,
+        key: String,
+        value: serde_json::Value,
+        record: serde_json::Value,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        bypass_ripple: Option<bool>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        ttl: Option<serde_json::Value>,
+    },
+
+    /// Increment a numeric field on a record.
+    Increment {
+        collection: String,
+        record_id: String,
+        field: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        by: Option<serde_json::Value>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        bypass_ripple: Option<bool>,
+    },
+
+    /// Append a value to an array field on a record.
+    Push {
+        collection: String,
+        record_id: String,
+        field: String,
+        value: serde_json::Value,
         #[serde(skip_serializing_if = "Option::is_none")]
         bypass_ripple: Option<bool>,
     },
@@ -410,8 +445,8 @@ pub enum Function {
     BatchDelete {
         collection: String,
         record_ids: Vec<String>,
-        #[serde(default)]
-        bypass_ripple: bool,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        bypass_ripple: Option<bool>,
     },
 
     /// HTTP request
@@ -431,9 +466,12 @@ pub enum Function {
 
     /// Vector search
     VectorSearch {
-        query_vector: Vec<f32>,
+        collection: String,
+        query_vector: Vec<f64>,
         #[serde(skip_serializing_if = "Option::is_none")]
-        options: Option<serde_json::Value>,
+        limit: Option<usize>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        threshold: Option<f64>,
     },
 
     /// Text search
@@ -450,11 +488,25 @@ pub enum Function {
 
     /// Hybrid search (text + vector)
     HybridSearch {
-        text_query: String,
-        vector_query: Vec<f32>,
+        collection: String,
+        query_text: String,
         #[serde(skip_serializing_if = "Option::is_none")]
-        options: Option<serde_json::Value>,
+        query_vector: Option<Vec<f64>>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        limit: Option<usize>,
     },
+
+    /// Set one field on each record in the working set.
+    SetField {
+        field: String,
+        value: serde_json::Value,
+    },
+
+    /// Add several computed fields to each record in the working set.
+    AddFields { fields: Vec<serde_json::Value> },
+
+    /// Write the current UTC datetime to a field.
+    CurrentDatetime { output_field: String },
 
     /// AI Chat completion
     Chat {
@@ -1045,6 +1097,89 @@ mod tests {
 
         for (operation, expected) in operations {
             assert_eq!(serde_json::to_string(&operation).unwrap(), expected);
+        }
+    }
+
+    #[test]
+    fn corrected_and_new_function_stages_round_trip_without_field_loss() {
+        let stages = vec![
+            json!({
+                "type": "VectorSearch",
+                "collection": "items",
+                "query_vector": [0.12345678901234568, 0.2],
+                "limit": 5,
+                "threshold": 0.8
+            }),
+            json!({
+                "type": "HybridSearch",
+                "collection": "items",
+                "query_text": "blue",
+                "query_vector": [0.1, 0.2],
+                "limit": 7
+            }),
+            json!({
+                "type": "FindOneAndUpdate",
+                "collection": "items",
+                "record_id": "item-1",
+                "updates": {"status": "done"},
+                "bypass_ripple": true,
+                "ttl": {"type": "Parameter", "name": "ttl"}
+            }),
+            json!({
+                "type": "UpdateWithAction",
+                "collection": "items",
+                "record_id": "item-1",
+                "action": "Increment",
+                "field": "count",
+                "value": 2,
+                "bypass_ripple": true
+            }),
+            json!({
+                "type": "BatchDelete",
+                "collection": "items",
+                "record_ids": ["item-1", "item-2"],
+                "bypass_ripple": true
+            }),
+            json!({
+                "type": "Upsert",
+                "collection": "items",
+                "key": "sku",
+                "value": "A-1",
+                "record": {"name": "widget"},
+                "bypass_ripple": true,
+                "ttl": 3600
+            }),
+            json!({
+                "type": "Increment",
+                "collection": "items",
+                "record_id": "item-1",
+                "field": "count",
+                "by": {"type": "Parameter", "name": "amount"},
+                "bypass_ripple": true
+            }),
+            json!({
+                "type": "Push",
+                "collection": "items",
+                "record_id": "item-1",
+                "field": "tags",
+                "value": "new",
+                "bypass_ripple": true
+            }),
+            json!({"type": "SetField", "field": "active", "value": true}),
+            json!({
+                "type": "AddFields",
+                "fields": [{"field": "total", "expression": {"type": "Literal", "value": 1}}]
+            }),
+            json!({"type": "CurrentDatetime", "output_field": "processed_at"}),
+        ];
+
+        assert!(
+            stages.len() >= 11,
+            "the regression matrix must not be vacuous"
+        );
+        for wire in stages {
+            let decoded: Function = serde_json::from_value(wire.clone()).unwrap();
+            assert_eq!(serde_json::to_value(decoded).unwrap(), wire);
         }
     }
 
