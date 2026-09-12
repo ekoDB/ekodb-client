@@ -561,8 +561,8 @@ Buffered, read-your-writes transactions. Operations issued with a
 
 #### `await client.begin_transaction(isolation_level: str | None = None) -> str`
 
-Start a transaction and return its id. Omitting `isolation_level` uses the server
-default.
+Start a transaction and return its id. Omitting `isolation_level` uses the
+server default.
 
 #### `await client.commit_transaction(transaction_id: str) -> None`
 

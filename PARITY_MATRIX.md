@@ -181,10 +181,10 @@ examples.
 **Vector record values:** Rust and Kotlin `FieldType.vector`, TypeScript
 `Field.vector`, and Python `field_vector` emit the server-accepted type/value
 envelope, distinct from ordinary arrays. The Rust golden test exercises its
-vector helper directly. The Kotlin live
-contract verifies insertion, named-field cosine search, one Boolean filter,
-upsert visibility, and cleanup; it does not establish broad prefilter or ANN
-semantics. Earlier schema-only validation did not test record insertion. See
+vector helper directly. The Kotlin live contract verifies insertion, named-field
+cosine search, one Boolean filter, upsert visibility, and cleanup; it does not
+establish broad prefilter or ANN semantics. Earlier schema-only validation did
+not test record insertion. See
 [contract commands and evidence](COMMANDS.md#search-and-schema-compatibility).
 
 **Kotlin HTTP errors (unreleased):** `EkoDBHttpException` exposes terminal
