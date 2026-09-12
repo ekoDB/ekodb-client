@@ -1,5 +1,8 @@
 # Makefile for ekoDB Client Libraries
 
+SHELL := /bin/bash
+.SHELLFLAGS := -o pipefail -c
+
 # Environment variables
 CARGO := cargo
 CLIENT_DIR := ekodb_client
@@ -47,7 +50,7 @@ YELLOW := \033[33m
 RED := \033[31m
 RESET := \033[0m
 
-.PHONY: all build build-release build-client build-python-client build-typescript-client build-examples test test-hooks test-ls test-ls-check test-ci test-client test-examples test-examples-direct test-examples-client test-examples-rust test-examples-python test-examples-go test-examples-typescript test-examples-javascript test-examples-transactions test-examples-scripts test-examples-scripts-crud test-examples-swr test-examples-ts-swr test-examples-py-swr test-examples-go-swr test-examples-rust-swr test-examples-kt-swr function-stage-contract-check clean check fmt fmt-rust fmt-rust-client fmt-rust-examples fmt-python fmt-go fmt-typescript fmt-md format install install-rust install-python install-typescript install-go venv python-example-deps ensure-jvm ensure-ruff ensure-cargo check-toolchains setup install-hooks deps-check deps-update deploy-client deploy-client-rust deploy-client-py deploy-client-py-simple deploy-client-go deploy-client-ts bump-version sync-versions bump-client-py docs-client
+.PHONY: all build build-release build-client build-python-client build-typescript-client build-examples check-client-examples example-parity-check test test-hooks test-ls test-ls-check test-ci test-client test-examples test-examples-direct test-examples-client test-examples-rust test-examples-python test-examples-go test-examples-typescript test-examples-javascript test-examples-transactions test-examples-scripts test-examples-scripts-crud test-examples-swr test-examples-ts-swr test-examples-py-swr test-examples-go-swr test-examples-rust-swr test-examples-kt-swr function-stage-contract-check clean check fmt fmt-rust fmt-rust-client fmt-rust-examples fmt-python fmt-go fmt-typescript fmt-md format install install-rust install-python install-typescript install-go venv python-example-deps ensure-jvm ensure-ruff ensure-cargo check-toolchains setup install-hooks deps-check deps-update deploy-client deploy-client-rust deploy-client-py deploy-client-py-simple deploy-client-go deploy-client-ts bump-version sync-versions bump-client-py docs-client
 
 # Color codes for Worthington jet
 MAGENTA := \033[35m
@@ -219,25 +222,50 @@ build-release:
 	@echo "✅ $(GREEN)Release build complete!$(RESET)"
 
 # Build all examples across all languages
-build-examples: check-toolchains ensure-jvm
+build-examples: check-toolchains ensure-jvm example-parity-check
 	@echo "🔨 $(CYAN)Building ALL examples...$(RESET)"
-	@echo "🦀 $(CYAN)Building Rust examples...$(RESET)"
-	@cd examples/rust && cargo build --examples
-	@echo "✅ Rust examples built"
-	@echo "📘 $(CYAN)Building TypeScript examples...$(RESET)"
-	@cd examples/typescript && npm install && npm run build
-	@echo "✅ TypeScript examples built"
-	@echo "🐍 $(CYAN)Checking Python examples...$(RESET)"
-	@cd examples/python && python3 -m py_compile *.py
-	@echo "✅ Python examples verified"
-	@echo "🟣 $(CYAN)Building Kotlin client library (required by examples)...$(RESET)"
-	@cd ekodb-client-kt && ./gradlew jar -q
-	@echo "🟣 $(CYAN)Building Kotlin examples...$(RESET)"
-	@cd examples/kotlin && ./gradlew build -q
-	@echo "✅ Kotlin examples built"
-	@echo "�🔷 $(CYAN)Checking Go examples...$(RESET)"
-	@cd examples/go && go build ./... || echo "⚠️  Go examples failed (expected)"
+	@$(MAKE) --no-print-directory check-client-examples
 	@echo "✅ $(GREEN)All examples built successfully!$(RESET)"
+
+check-client-examples: build-python-client build-typescript-client build-kotlin-client
+	@cd examples/typescript && npm install
+	@scripts/run-client-examples.sh check rust
+	@scripts/run-client-examples.sh check python
+	@scripts/run-client-examples.sh check go
+	@scripts/run-client-examples.sh check typescript
+	@scripts/run-client-examples.sh check javascript
+	@scripts/run-client-examples.sh check kotlin
+
+example-parity-check:
+	@python3 scripts/check-example-parity.py
+
+# Client-example runners discover every scenario from the filesystem. Adding a
+# new example therefore adds it to the live runner automatically; the parity
+# check above ensures the five SDK implementations expose the same scenario set.
+test-examples-rust-client: build-client
+	@scripts/run-client-examples.sh run rust
+
+test-examples-python-client: build-python-client python-example-deps
+	@VENV_PY=$(VENV_PY) scripts/run-client-examples.sh run python
+
+test-examples-go-client:
+	@scripts/run-client-examples.sh run go
+
+test-examples-typescript-client: build-typescript-client
+	@cd examples/typescript && npm install
+	@scripts/run-client-examples.sh run typescript
+
+test-examples-javascript-client: build-typescript-client
+	@cd examples/typescript && npm install && npm run build
+	@scripts/run-client-examples.sh run javascript
+
+test-examples-kotlin-client: build-kotlin-client ensure-jvm
+	@scripts/run-client-examples.sh run kotlin
+
+test-examples-kotlin: ensure-jvm
+	@echo "make test-examples-kotlin" > examples/kotlin/test-examples-kt.md
+	@$(MAKE) --no-print-directory --silent test-examples-kotlin-client 2>&1 | $(SCRUB_PATHS) | tee -a examples/kotlin/test-examples-kt.md
+	@echo "✅ $(GREEN)All Kotlin integration tests complete!$(RESET)"
 
 # Client library deployment targets
 deploy-client: deploy-client-rust
@@ -397,7 +425,7 @@ deploy-client-kt:
 deploy-client-kotlin: deploy-client-kt
 
 # Test targets - runs ALL unit tests across all client libraries
-test: function-stage-contract-check ensure-hooks test-hooks examples-ls-check build-python-client ensure-jvm
+test: function-stage-contract-check example-parity-check ensure-hooks test-hooks examples-ls-check build-python-client ensure-jvm
 	@RUST_COUNT=0; TS_COUNT=0; PY_COUNT=0; KT_COUNT=0; \
 	echo "🦀 $(CYAN)Running Rust client tests...$(RESET)"; \
 	RUST_OUTPUT=$$($(CARGO) test -p ekodb_client 2>&1); RUST_STATUS=$$?; \
@@ -485,7 +513,7 @@ test-kotlin: function-stage-contract-check ensure-jvm
 	@cd $(CLIENT_KT_DIR) && ./gradlew test --quiet
 	@echo "✅ $(GREEN)Kotlin tests complete!$(RESET)"
 
-test-ci: function-stage-contract-check
+test-ci: function-stage-contract-check example-parity-check
 	@echo "🧪 $(CYAN)Running CI-safe tests (optimized for CI/CD pipelines)...$(RESET)"
 	@echo "📦 $(CYAN)Testing ekodb_client...$(RESET)"
 	$(CARGO) test -p ekodb_client --lib
@@ -521,7 +549,7 @@ test-ci: function-stage-contract-check
 # ============================================================================
 
 # Run all examples (all languages, both direct and client, including transactions)
-test-examples: examples-ls-check
+test-examples: examples-ls-check example-parity-check
 	@echo "make test-examples" > examples/test-examples.md
 	@$(MAKE) --no-print-directory --silent test-examples-rust test-examples-python test-examples-go test-examples-typescript test-examples-javascript test-examples-kotlin test-examples-rag test-examples-swr test-examples-fcomp test-examples-subscribe 2>&1 | $(SCRUB_PATHS) | tee -a examples/test-examples.md
 	@echo "✅ $(GREEN)All integration tests complete!$(RESET)"
@@ -531,7 +559,7 @@ test-examples-direct: test-examples-rust-direct test-examples-python-direct test
 	@echo "✅ $(GREEN)Direct API examples complete!$(RESET)"
 
 # Run client library examples (using language-specific clients)
-test-examples-client: test-examples-rust-client test-examples-python-client test-examples-go-client test-examples-typescript-client test-examples-javascript-client
+test-examples-client: test-examples-rust-client test-examples-python-client test-examples-go-client test-examples-typescript-client test-examples-javascript-client test-examples-kotlin-client
 	@echo "✅ $(GREEN)All client library examples complete!$(RESET)"
 
 # Run transaction examples (all languages with direct API support)
@@ -992,45 +1020,6 @@ test-examples-rust-direct:
 	@cd examples/rust && cargo run --example simple_crud && cargo run --example simple_websocket && cargo run --example batch_operations && cargo run --example kv_operations && cargo run --example collection_management && cargo run --example document_ttl && cargo run --example websocket_ttl && cargo run --example http_functions && cargo run --example transactions
 	@echo "✅ $(GREEN)Rust direct examples complete!$(RESET)"
 
-test-examples-rust-client: build-client
-	@echo "🧪 $(CYAN)Running Rust client library examples...$(RESET)"
-	@cd examples/rust && cargo run --example client_simple_crud
-	@cd examples/rust && cargo run --example client_simple_websocket
-	@cd examples/rust && cargo run --example client_batch_operations
-	@cd examples/rust && cargo run --example client_collection_management
-	@cd examples/rust && cargo run --example client_kv_operations
-	@cd examples/rust && cargo run --example client_transactions
-	@cd examples/rust && cargo run --example client_query_builder
-	@cd examples/rust && cargo run --example client_search
-	@cd examples/rust && cargo run --example client_schema
-	@cd examples/rust && cargo run --example client_joins
-	@cd examples/rust && cargo run --example client_document_ttl
-	@cd examples/rust && cargo run --example client_websocket_ttl
-	@cd examples/rust && cargo run --example client_edge_cache
-	@cd examples/rust && cargo run --example client_functions
-	@cd examples/rust && cargo run --example client_function_composition
-	@cd examples/rust && cargo run --example client_functions_complete
-	@cd examples/rust && cargo run --example client_functions_kv_wrapped
-	@cd examples/rust && cargo run --example client_swr_pattern
-	@cd examples/rust && cargo run --example client_swr_native
-	@cd examples/rust && cargo run --example client_functions_advanced
-	@cd examples/rust && cargo run --example client_functions_ai
-	@cd examples/rust && cargo run --example client_functions_crud
-	@cd examples/rust && cargo run --example client_functions_search
-	@cd examples/rust && cargo run --example client_chat_basic
-	@cd examples/rust && cargo run --example client_chat_advanced
-	@cd examples/rust && cargo run --example client_chat_sessions
-	@cd examples/rust && cargo run --example client_chat_models
-	@cd examples/rust && cargo run --example client_user_functions
-	@cd examples/rust && cargo run --example client_convenience_methods
-	@cd examples/rust && cargo run --example bypass_ripple_example
-	@cd examples/rust && cargo run --example projection_example
-	@cd examples/rust && cargo run --example client_jwt_auth_flow
-	@cd examples/rust && cargo run --example client_crypto_stages
-	@cd examples/rust && cargo run --example client_concurrency_stages
-	@cd examples/rust && cargo run --example client_path_routed_function
-	@echo "✅ $(GREEN)Rust client examples complete!$(RESET)"
-
 # ============================================================================
 # Python Examples (both direct + client)
 # ============================================================================
@@ -1142,47 +1131,6 @@ build-python-client: venv ensure-cargo
 	@$(VENV_PY) -m pip install --quiet pytest pytest-asyncio
 	@echo "✅ $(GREEN)Python client package built and installed!$(RESET)"
 
-test-examples-python-client: build-python-client python-example-deps
-	@echo "🧪 $(CYAN)Running Python client library examples...$(RESET)"
-	@cd examples/python && $(VENV_PY) client_simple_crud.py
-	@cd examples/python && $(VENV_PY) client_simple_websocket.py
-	@cd examples/python && $(VENV_PY) client_batch_operations.py
-	@cd examples/python && $(VENV_PY) client_collection_management.py
-	@cd examples/python && $(VENV_PY) client_kv_operations.py
-	@cd examples/python && $(VENV_PY) client_transactions.py
-	@cd examples/python && $(VENV_PY) client_query_builder.py
-	@cd examples/python && $(VENV_PY) client_search.py
-	@cd examples/python && $(VENV_PY) client_schema.py
-	@cd examples/python && $(VENV_PY) client_joins.py
-	@cd examples/python && $(VENV_PY) client_document_ttl.py
-	@cd examples/python && $(VENV_PY) client_websocket_ttl.py
-	@cd examples/python && $(VENV_PY) client_edge_cache.py
-	@cd examples/python && $(VENV_PY) client_functions.py
-	@cd examples/python && $(VENV_PY) client_function_composition.py
-	@cd examples/python && $(VENV_PY) client_functions_complete.py
-	@cd examples/python && $(VENV_PY) client_functions_kv_wrapped.py
-	@cd examples/python && $(VENV_PY) client_swr_pattern.py
-	@cd examples/python && $(VENV_PY) client_swr_native.py
-	@cd examples/python && $(VENV_PY) client_functions_advanced.py
-	@cd examples/python && $(VENV_PY) client_functions_ai.py
-	@cd examples/python && $(VENV_PY) client_functions_crud.py
-	@cd examples/python && $(VENV_PY) client_functions_search.py
-	@cd examples/python && $(VENV_PY) client_chat_basic.py
-	@cd examples/python && $(VENV_PY) client_chat_advanced.py
-	@cd examples/python && $(VENV_PY) client_chat_sessions.py
-	@cd examples/python && $(VENV_PY) client_convenience_methods.py
-	@cd examples/python && $(VENV_PY) bypass_ripple_example.py
-	@cd examples/python && $(VENV_PY) projection_example.py
-	@cd examples/python && $(VENV_PY) client_kv_precision.py
-	@cd examples/python && $(VENV_PY) client_chat_models.py
-	@cd examples/python && $(VENV_PY) client_user_functions.py
-	@cd examples/python && $(VENV_PY) client_collection_utils.py
-	@cd examples/python && $(VENV_PY) client_jwt_auth_flow.py
-	@cd examples/python && $(VENV_PY) client_crypto_stages.py
-	@cd examples/python && $(VENV_PY) client_concurrency_stages.py
-	@cd examples/python && $(VENV_PY) client_path_routed_function.py
-	@echo "✅ $(GREEN)Python client examples complete!$(RESET)"
-
 # ============================================================================
 # Go Examples (both direct + client)
 # ============================================================================
@@ -1195,47 +1143,6 @@ test-examples-go-direct:
 	@echo "🧪 $(CYAN)Running Go examples (direct HTTP/WebSocket)...$(RESET)"
 	@cd examples/go && go run test_runner.go
 	@echo "✅ $(GREEN)Go direct examples complete!$(RESET)"
-
-test-examples-go-client:
-	@echo "🧪 $(CYAN)Running Go client library examples...$(RESET)"
-	@cd examples/go && go run client_simple_crud.go
-	@cd examples/go && go run client_simple_websocket.go
-	@cd examples/go && go run client_batch_operations.go
-	@cd examples/go && go run client_collection_management.go
-	@cd examples/go && go run client_kv_operations.go
-	@cd examples/go && go run client_transactions.go
-	@cd examples/go && go run client_query_builder.go
-	@cd examples/go && go run client_search.go
-	@cd examples/go && go run client_schema.go
-	@cd examples/go && go run client_joins.go
-	@cd examples/go && go run client_document_ttl.go
-	@cd examples/go && go run client_websocket_ttl.go
-	@cd examples/go && go run client_edge_cache.go
-	@cd examples/go && go run client_functions.go
-	@cd examples/go && go run client_function_composition.go
-	@cd examples/go && go run client_functions_complete.go
-	@cd examples/go && go run client_functions_kv_wrapped.go
-	@cd examples/go && go run client_swr_pattern.go
-	@cd examples/go && go run client_swr_native.go
-	@cd examples/go && go run client_functions_advanced.go
-	@cd examples/go && go run client_functions_ai.go
-	@cd examples/go && go run client_functions_crud.go
-	@cd examples/go && go run client_functions_search.go
-	@cd examples/go && go run client_chat_basic.go
-	@cd examples/go && go run client_chat_advanced.go
-	@cd examples/go && go run client_chat_sessions.go
-	@cd examples/go && go run client_convenience_methods.go
-	@cd examples/go && go run bypass_ripple_example.go
-	@cd examples/go && go run projection_example.go
-	@cd examples/go && go run client_kv_precision.go
-	@cd examples/go && go run client_chat_models.go
-	@cd examples/go && go run client_user_functions.go
-	@cd examples/go && go run client_collection_utils.go
-	@cd examples/go && go run client_jwt_auth_flow.go
-	@cd examples/go && go run client_crypto_stages.go
-	@cd examples/go && go run client_concurrency_stages.go
-	@cd examples/go && go run client_path_routed_function.go
-	@echo "✅ $(GREEN)Go client examples complete!$(RESET)"
 
 # ============================================================================
 # TypeScript Examples (client only - no direct examples)
@@ -1256,48 +1163,6 @@ build-typescript-client:
 # JavaScript uses the TypeScript client (npm package)
 build-javascript-client: build-typescript-client
 
-test-examples-typescript-client: build-typescript-client
-	@echo "🧪 $(CYAN)Running TypeScript client library examples...$(RESET)"
-	@cd examples/typescript && npm install
-	@cd examples/typescript && npx tsx client_simple_crud.ts
-	@cd examples/typescript && npx tsx client_simple_websocket.ts
-	@cd examples/typescript && npx tsx client_batch_operations.ts
-	@cd examples/typescript && npx tsx client_collection_management.ts
-	@cd examples/typescript && npx tsx client_kv_operations.ts
-	@cd examples/typescript && npx tsx client_transactions.ts
-	@cd examples/typescript && npx tsx client_query_builder.ts
-	@cd examples/typescript && npx tsx client_search.ts
-	@cd examples/typescript && npx tsx client_schema.ts
-	@cd examples/typescript && npx tsx client_joins.ts
-	@cd examples/typescript && npx tsx client_document_ttl.ts
-	@cd examples/typescript && npx tsx client_websocket_ttl.ts
-	@cd examples/typescript && npx tsx client_edge_cache.ts
-	@cd examples/typescript && npx tsx client_functions.ts
-	@cd examples/typescript && npx tsx client_function_composition.ts
-	@cd examples/typescript && npx tsx client_functions_complete.ts
-	@cd examples/typescript && npx tsx client_functions_kv_wrapped.ts
-	@cd examples/typescript && npx tsx client_swr_pattern.ts
-	@cd examples/typescript && npx tsx client_swr_native.ts
-	@cd examples/typescript && npx tsx client_functions_advanced.ts
-	@cd examples/typescript && npx tsx client_functions_ai.ts
-	@cd examples/typescript && npx tsx client_functions_crud.ts
-	@cd examples/typescript && npx tsx client_functions_search.ts
-	@cd examples/typescript && npx tsx client_chat_basic.ts
-	@cd examples/typescript && npx tsx client_chat_advanced.ts
-	@cd examples/typescript && npx tsx client_chat_sessions.ts
-	@cd examples/typescript && npx tsx client_convenience_methods.ts
-	@cd examples/typescript && npx tsx bypass_ripple_example.ts
-	@cd examples/typescript && npx tsx projection_example.ts
-	@cd examples/typescript && npx tsx client_kv_precision.ts
-	@cd examples/typescript && npx tsx client_chat_models.ts
-	@cd examples/typescript && npx tsx client_user_functions.ts
-	@cd examples/typescript && npx tsx client_collection_utils.ts
-	@cd examples/typescript && npx tsx client_jwt_auth_flow.ts
-	@cd examples/typescript && npx tsx client_crypto_stages.ts
-	@cd examples/typescript && npx tsx client_concurrency_stages.ts
-	@cd examples/typescript && npx tsx client_path_routed_function.ts
-	@echo "✅ $(GREEN)TypeScript client examples complete!$(RESET)"
-
 # ============================================================================
 # JavaScript Examples (both direct + client)
 # ============================================================================
@@ -1315,102 +1180,15 @@ test-examples-javascript-direct:
 	@cd examples/javascript && npm install && node test-runner.js
 	@echo "✅ $(GREEN)JavaScript direct examples complete!$(RESET)"
 
-test-examples-javascript-client: build-typescript-client
-	@echo "🧪 $(CYAN)Running JavaScript client library examples...$(RESET)"
-	@cd examples/javascript && npm install
-	@cd examples/javascript && node client_simple_crud.js
-	@cd examples/javascript && node client_simple_websocket.js
-	@cd examples/javascript && node client_batch_operations.js
-	@cd examples/javascript && node client_collection_management.js
-	@cd examples/javascript && node client_kv_operations.js
-	@cd examples/javascript && node client_transactions.js
-	@cd examples/javascript && node client_query_builder.js
-	@cd examples/javascript && node client_search.js
-	@cd examples/javascript && node client_schema.js
-	@cd examples/javascript && node client_joins.js
-	@cd examples/javascript && node client_document_ttl.js
-	@cd examples/javascript && node client_websocket_ttl.js
-	@cd examples/javascript && node client_edge_cache.js
-	@cd examples/javascript && node client_functions.js
-	@cd examples/javascript && node client_function_composition.js
-	@cd examples/javascript && node client_functions_complete.js
-	@cd examples/javascript && node client_functions_kv_wrapped.js
-	@cd examples/javascript && node client_functions_crud.js
-	@cd examples/javascript && node client_functions_search.js
-	@cd examples/javascript && node client_functions_advanced.js
-	@cd examples/javascript && node client_functions_ai.js
-	@cd examples/javascript && node client_swr_pattern.js
-	@cd examples/javascript && node client_swr_native.js
-	@cd examples/javascript && node client_chat_basic.js
-	@cd examples/javascript && node client_chat_advanced.js
-	@cd examples/javascript && node client_chat_sessions.js
-	@echo "✅ $(GREEN)JavaScript client examples complete!$(RESET)"
-
 # ============================================================================
 # Kotlin Examples (client + transactions)
 # ============================================================================
-test-examples-kotlin: ensure-jvm
-	@echo "make test-examples-kotlin" > examples/kotlin/test-examples-kt.md
-	@$(MAKE) --no-print-directory --silent test-examples-kotlin-client 2>&1 | $(SCRUB_PATHS) | tee -a examples/kotlin/test-examples-kt.md
-	@echo "🟣 $(YELLOW)Kotlin Transactions...$(RESET)"
-	@if [ -f .env ]; then . ./.env; fi && \
-		{ JH=$$(/usr/libexec/java_home -v 17 2>/dev/null) && export JAVA_HOME=$$JH && export PATH=$$JH/bin:$$PATH || true; } && \
-		cd examples/kotlin && API_BASE_URL=$$API_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass="io.ekodb.client.examples.ClientTransactionsKt" --quiet 2>&1 | $(SCRUB_PATHS) | tee -a test-examples-kt.md
-	@echo "✅ $(GREEN)All Kotlin integration tests complete!$(RESET)"
-
 test-examples-kt: test-examples-kotlin
 
 build-kotlin-client: ensure-jvm
 	@echo "🟣 $(CYAN)Building Kotlin client library...$(RESET)"
 	@cd ekodb-client-kt && { JH=$$(/usr/libexec/java_home -v 17 2>/dev/null) && export JAVA_HOME=$$JH && export PATH=$$JH/bin:$$PATH || true; } && ./gradlew build --no-daemon
 	@echo "✅ $(GREEN)Kotlin client built!$(RESET)"
-
-test-examples-kotlin-client: build-kotlin-client ensure-jvm
-	@echo "🧪 $(CYAN)Running Kotlin client library examples...$(RESET)"
-	@if [ -f .env ]; then \
-		. ./.env && \
-		{ JH=$$(/usr/libexec/java_home -v 17 2>/dev/null) && export JAVA_HOME=$$JH && export PATH=$$JH/bin:$$PATH || true; } && \
-		cd examples/kotlin && \
-		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientSimpleCrudKt --no-daemon && \
-		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientSimpleWebsocketKt --no-daemon && \
-		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientBatchOperationsKt --no-daemon && \
-		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientCollectionManagementKt --no-daemon && \
-		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientKvOperationsKt --no-daemon && \
-		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientTransactionsKt --no-daemon && \
-		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientQueryBuilderKt --no-daemon && \
-		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientSearchKt --no-daemon && \
-		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientSchemaManagementKt --no-daemon && \
-		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientJoinsKt --no-daemon && \
-		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientDocumentTtlKt --no-daemon && \
-		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientWebsocketTtlKt --no-daemon && \
-		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientEdgeCacheKt --no-daemon && \
-		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientFunctionsKt --no-daemon && \
-		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientFunctionsCompleteKt --no-daemon && \
-		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientFunctionsKvWrappedKt --no-daemon && \
-		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientSwrPatternKt --no-daemon && \
-		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientSwrNativeKt --no-daemon && \
-		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientFunctionsAdvancedKt --no-daemon && \
-		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientFunctionsAiKt --no-daemon && \
-		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientFunctionsCrudKt --no-daemon && \
-		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientFunctionsSearchKt --no-daemon && \
-		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientChatBasicKt --no-daemon && \
-		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientChatAdvancedKt --no-daemon && \
-		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientChatSessionsKt --no-daemon && \
-		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientChatModelsKt --no-daemon && \
-		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientUserFunctionsKt --no-daemon && \
-		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientConvenienceMethodsKt --no-daemon && \
-		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.BypassRippleExampleKt --no-daemon && \
-		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientProjectionKt --no-daemon && \
-		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientJwtAuthFlowKt --no-daemon && \
-		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientCryptoStagesKt --no-daemon && \
-		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientConcurrencyStagesKt --no-daemon && \
-		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientPathRoutedFunctionKt --no-daemon; \
-	else \
-		echo "$(RED)❌ .env file not found$(RESET)"; \
-		echo "$(YELLOW)💡 Create .env file with API_BASE_URL, WS_BASE_URL, and API_BASE_KEY$(RESET)"; \
-		exit 1; \
-	fi
-	@echo "✅ $(GREEN)Kotlin client examples complete!$(RESET)"
 
 # Clean targets
 clean:
@@ -1453,20 +1231,14 @@ fmt-rust-examples:
 	@echo "✅ $(GREEN)Rust examples formatted!$(RESET)"
 
 # Format Python code (client + examples)
-fmt-python:
+fmt-python: venv
 	@echo "🐍 $(CYAN)Formatting Python code...$(RESET)"
-	@if command -v black > /dev/null; then \
-		black ekodb-client-py/ examples/python/ --line-length 88 --exclude 'target|venv|\.venv|test_env'; \
-		echo "✅ $(GREEN)Python formatting complete with black!$(RESET)"; \
-	elif command -v autopep8 > /dev/null; then \
-		find ekodb-client-py examples/python -name "*.py" -not -path "*/target/*" -not -path "*/venv/*" -not -path "*/.venv/*" -exec autopep8 --in-place --aggressive --aggressive {} \; 2>/dev/null || true; \
-		echo "✅ $(GREEN)Python formatting complete with autopep8!$(RESET)"; \
-	else \
-		echo "$(YELLOW)No Python formatter found. Installing black...$(RESET)"; \
-		python3 -m pip install black --user; \
-		black ekodb-client-py/ examples/python/ --line-length 88 --exclude 'target|venv|\.venv|test_env'; \
-		echo "✅ $(GREEN)black installed and Python formatting complete!$(RESET)"; \
+	@if ! $(VENV_PY) -m black --version >/dev/null 2>&1; then \
+		echo "$(YELLOW)Installing black into the project virtual environment...$(RESET)"; \
+		$(VENV_PY) -m pip install --quiet black; \
 	fi
+	@$(VENV_PY) -m black ekodb-client-py/ examples/python/ --line-length 88 --exclude 'target|venv|\.venv|test_env'
+	@echo "✅ $(GREEN)Python formatting complete with project-local black!$(RESET)"
 
 # Format Go code (client + examples)
 fmt-go:
@@ -1545,7 +1317,7 @@ lint-typescript:
 # .venv on demand, so `make lint` provisions its own linter and can never
 # silently skip Python lint — mirroring the Go repos' `ensure-golangci-lint` and
 # this Makefile's `ensure-jvm` preflight, and giving local == CI for free.
-RUFF_VERSION := $(shell grep -oE 'ruff==[0-9.]+' $(CLIENT_PY_DIR)/pyproject.toml | head -1 | cut -d= -f3)
+RUFF_VERSION := $(shell if [ -f "$(CLIENT_PY_DIR)/pyproject.toml" ]; then grep -oE 'ruff==[0-9.]+' "$(CLIENT_PY_DIR)/pyproject.toml" | head -1 | cut -d= -f3; fi)
 
 ensure-ruff: venv
 	@if [ -z "$(RUFF_VERSION)" ]; then \
@@ -1868,12 +1640,15 @@ examples-ls:
 
 examples-ls-check:
 	@echo "🔍 $(CYAN)Checking examples inventory against committed snapshot...$(RESET)"
+	@python3 scripts/check-example-parity.py
 	@chmod +x scripts/generate_examples_list.sh
 	@./scripts/generate_examples_list.sh --temp
-	@if ! diff examples_list.txt examples_list.txt.tmp > /dev/null 2>&1; then \
+	@if ! diff examples_list.txt examples_list.txt.tmp > /dev/null 2>&1 || \
+	    ! diff examples_list.json examples_list.json.tmp > /dev/null 2>&1; then \
 		echo "$(RED)❌ Examples inventory has changed!$(RESET)"; \
 		echo "$(YELLOW)Differences found:$(RESET)"; \
 		diff examples_list.txt examples_list.txt.tmp || true; \
+		diff examples_list.json examples_list.json.tmp || true; \
 		echo "$(YELLOW)Run 'make examples-ls' to update the snapshot$(RESET)"; \
 		rm -f examples_list.txt.tmp examples_list.json.tmp; \
 		exit 1; \
