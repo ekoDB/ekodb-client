@@ -234,10 +234,10 @@ impl Default for Schema {
 /// A partial update to a single field's constraints, sent to
 /// `PUT /api/schemas/{collection}`.
 ///
-/// Mirrors the server's `SchemaConstraintUpdate`
-/// (`ekodb_server/src/schema.rs`). Every field is optional: only the
-/// attributes that are set are serialized, so a request can adjust one
-/// constraint (e.g. `required`) without resending the others.
+/// Mirrors the server's schema-constraints-update request contract exactly.
+/// Every field is optional: only the attributes that are set are serialized,
+/// so a request can adjust one constraint (e.g. `required`) without
+/// resending the others.
 #[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq)]
 pub struct SchemaConstraintUpdate {
     /// New field type (e.g. "string", "number", "boolean")

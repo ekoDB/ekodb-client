@@ -3849,8 +3849,8 @@ async fn test_sse_frame_named_error_is_an_error_whatever_its_payload_calls_the_m
 // Schema Constraints Tests
 // ============================================================================
 
-// The server's `SchemaConstraintsUpdate` (ekodb_server/src/schema.rs:401-404)
-// has exactly one top-level field: `constraints`. Pin the outgoing wire shape
+// The server's schema-constraints-update request body has exactly one
+// top-level field: `constraints`. Pin the outgoing wire shape
 // with an exact-match body so a regression back to a `fields` envelope (as
 // docs.ekodb.io mistakenly described for the never-implemented
 // `update_schema`) fails this test rather than shipping silently.
