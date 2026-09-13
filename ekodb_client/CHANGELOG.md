@@ -74,7 +74,14 @@ and this project adheres to
   individually against a checkout of `ekodb-client-go`, but nothing in CI called
   it. Wire it into a new job, plus a daily schedule trigger since a drift like
   this one originates in `ekodb-client-go` and touches no path this repo's
-  existing triggers watch. (#179)
+  existing triggers watch.
+
+  The job checks out ekodb-client-go's default branch, but a same-named branch
+  is checked out instead when one exists there -- this repo's PRs are sometimes
+  paired with a matching branch on ekodb-client-go for coordinated cross-repo
+  changes, and checking out its default branch unconditionally fails every such
+  PR until the paired branch merges first. (#179)
+
 - **Stored-function filter safety.** Add a typed, adjacently-tagged query
   expression representation and validate legacy raw objects at stage
   construction, so bare filters, unsupported operators, empty logical groups,
