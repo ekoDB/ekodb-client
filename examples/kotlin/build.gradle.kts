@@ -1,6 +1,6 @@
 plugins {
-    kotlin("jvm") version "2.3.0"
-    kotlin("plugin.serialization") version "2.3.0"
+    kotlin("jvm") version "2.4.10"
+    kotlin("plugin.serialization") version "2.4.10"
     application
 }
 
@@ -32,16 +32,16 @@ dependencies {
     implementation("org.msgpack:msgpack-core:0.9.8")
 
     // Ktor client (match client library versions)
-    implementation("io.ktor:ktor-client-core:3.5.0")
-    implementation("io.ktor:ktor-client-cio:3.5.0")
-    implementation("io.ktor:ktor-client-content-negotiation:3.5.0")
-    implementation("io.ktor:ktor-serialization-kotlinx-json:3.5.0")
-    implementation("io.ktor:ktor-client-websockets:3.5.0")
-    implementation("io.ktor:ktor-client-logging:3.5.0")
-    implementation("io.ktor:ktor-client-encoding:3.5.0")
-    
+    implementation("io.ktor:ktor-client-core:3.5.2")
+    implementation("io.ktor:ktor-client-cio:3.5.2")
+    implementation("io.ktor:ktor-client-content-negotiation:3.5.2")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:3.5.2")
+    implementation("io.ktor:ktor-client-websockets:3.5.2")
+    implementation("io.ktor:ktor-client-logging:3.5.2")
+    implementation("io.ktor:ktor-client-encoding:3.5.2")
+
     // DateTime
-    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.7.1-0.6.x-compat")
+    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0-0.6.x-compat")
     
     // Dotenv for environment variables
     implementation("io.github.cdimascio:dotenv-kotlin:6.4.1")
@@ -59,9 +59,15 @@ application {
 }
 
 tasks.named<JavaExec>("run") {
-    environment("API_BASE_URL", System.getenv("API_BASE_URL") ?: "http://localhost:8080")
-    environment("WS_BASE_URL", System.getenv("WS_BASE_URL") ?: "ws://localhost:8080")
-    environment("API_BASE_KEY", System.getenv("API_BASE_KEY") ?: "a-test-api-key-from-ekodb")
+    // Forward these ONLY when the invoking shell actually set them. Each example
+    // calls dotenv() to read this project's .env, and dotenv-kotlin gives an
+    // already-set process environment variable precedence over the .env file --
+    // so unconditionally setting a fallback here (as this used to do) permanently
+    // shadows .env's real values with these placeholders, regardless of what's
+    // configured there.
+    listOf("API_BASE_URL", "WS_BASE_URL", "API_BASE_KEY").forEach { name ->
+        System.getenv(name)?.let { environment(name, it) }
+    }
 }
 
 // Add source directory

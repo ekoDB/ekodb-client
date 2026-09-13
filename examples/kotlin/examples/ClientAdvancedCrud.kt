@@ -69,7 +69,7 @@ fun main() = runBlocking {
             collection, recordId,
             actions = listOf(
                 Triple("increment", "views", JsonPrimitive(100)),
-                Triple("decrement", "score", JsonPrimitive(25)),
+                Triple("decrement", "score", JsonPrimitive(25.0)),
                 Triple("push", "tags", JsonPrimitive("sequenced"))
             )
         )
