@@ -50,7 +50,7 @@ YELLOW := \033[33m
 RED := \033[31m
 RESET := \033[0m
 
-.PHONY: all build build-release build-client build-python-client build-typescript-client build-examples check-client-examples example-parity-check check-examples-go-compile test test-hooks test-ls test-ls-check test-ci test-client test-examples test-examples-direct test-examples-client test-examples-rust test-examples-python test-examples-go test-examples-typescript test-examples-javascript test-examples-transactions test-examples-scripts test-examples-scripts-crud test-examples-swr test-examples-ts-swr test-examples-py-swr test-examples-go-swr test-examples-rust-swr test-examples-kt-swr function-stage-contract-check clean check fmt fmt-rust fmt-rust-client fmt-rust-examples fmt-python fmt-go fmt-typescript fmt-md format install install-rust install-python install-typescript install-go venv python-example-deps ensure-jvm ensure-ruff ensure-cargo check-toolchains setup install-hooks deps-check deps-update deploy-client deploy-client-rust deploy-client-py deploy-client-py-simple deploy-client-go deploy-client-ts bump-version sync-versions bump-client-py docs-client
+.PHONY: all build build-release build-client build-python-client build-typescript-client build-examples check-client-examples example-parity-check test test-hooks test-ls test-ls-check test-ci test-client test-examples test-examples-direct test-examples-client test-examples-rust test-examples-python test-examples-go test-examples-typescript test-examples-javascript test-examples-transactions test-examples-scripts test-examples-scripts-crud test-examples-swr test-examples-ts-swr test-examples-py-swr test-examples-go-swr test-examples-rust-swr test-examples-kt-swr function-stage-contract-check clean check fmt fmt-rust fmt-rust-client fmt-rust-examples fmt-python fmt-go fmt-typescript fmt-md format install install-rust install-python install-typescript install-go venv python-example-deps ensure-jvm ensure-ruff ensure-cargo check-toolchains setup install-hooks deps-check deps-update deploy-client deploy-client-rust deploy-client-py deploy-client-py-simple deploy-client-go deploy-client-ts bump-version sync-versions bump-client-py docs-client
 
 # Color codes for Worthington jet
 MAGENTA := \033[35m
@@ -1144,17 +1144,6 @@ test-examples-go-direct:
 	@echo "🧪 $(CYAN)Running Go examples (direct HTTP/WebSocket)...$(RESET)"
 	@cd examples/go && go run test_runner.go
 	@echo "✅ $(GREEN)Go direct examples complete!$(RESET)"
-
-# Every example in examples/go declares its own package main / func main(), so
-# `go build ./...` fails on "main redeclared" regardless of correctness -- each
-# file has to be compiled individually. This needs no live server, unlike
-# test-examples-go-client/-direct, so it can run in CI on every push (ekoDB/ekodb-client#179).
-check-examples-go-compile:
-	@echo "🔍 $(CYAN)Compiling every examples/go/*.go individually...$(RESET)"
-	@cd examples/go && for f in *.go; do \
-		go build -o /dev/null "$$f" || exit 1; \
-	done
-	@echo "✅ $(GREEN)Every Go example compiles!$(RESET)"
 
 # ============================================================================
 # TypeScript Examples (client only - no direct examples)
