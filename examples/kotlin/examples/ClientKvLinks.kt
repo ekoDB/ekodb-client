@@ -62,6 +62,9 @@ fun main() = runBlocking {
 
         // Cleanup
         println("\n--- Cleanup ---")
+        client.kvUnlink("user:alice", "orders", "order_001")
+        client.kvUnlink("user:alice", "invoices", "inv_100")
+        println("Unlinked remaining documents")
         client.kvDelete("user:alice")
         println("Deleted key: user:alice")
 
