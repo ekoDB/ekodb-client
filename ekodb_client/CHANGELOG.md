@@ -37,9 +37,8 @@ and this project adheres to
   `ReadCommitted`. (#234)
 - **Chat request cleanup.** Remove the retired `force_summarize` option from
   Rust, Python, TypeScript, and Kotlin request surfaces. Python callers using
-  positional optional arguments must remove the former `force_summarize` slot
-  to avoid silently shifting later values; prefer keyword arguments. (#235,
-  #243)
+  positional optional arguments must remove the former `force_summarize` slot to
+  avoid silently shifting later values; prefer keyword arguments. (#235, #243)
 - **Dependency and toolchain updates.** Integrate TypeScript 7 (#191),
   `tokio-tungstenite` 0.30 (#192), Gradle 9.7.1 (#193), Ruff 0.16.6 (#223),
   Vitest 5 (#224), kotlinx-datetime 0.8 compatibility artifacts (#226), and
