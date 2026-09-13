@@ -57,6 +57,15 @@ and this project adheres to
   goal, agent, streaming, embedding, JWT, KV-link, and Kotlin function examples;
   restore Kotlin distinct-values coverage; and make example-build failures
   propagate instead of being reported as expected.
+- **Kotlin examples authenticate with the real configured key.** The Gradle
+  `run` task unconditionally forwarded a hardcoded placeholder API key (and
+  placeholder base URLs) into the example JVM's environment even when the
+  invoking shell hadn't set one, which `dotenv-kotlin` then preferred over
+  `examples/kotlin/.env`'s real key — every Kotlin example run via
+  `make test-examples-kotlin` authenticated with the placeholder and got a 401.
+  Now only forwarded when the shell actually set them. Also fix
+  `ClientAdvancedCrud.kt` decrementing a Float field with an int literal, which
+  ekoDB's typed-value semantics reject. (#244)
 - **Stored-function filter safety.** Add a typed, adjacently-tagged query
   expression representation and validate legacy raw objects at stage
   construction, so bare filters, unsupported operators, empty logical groups,
