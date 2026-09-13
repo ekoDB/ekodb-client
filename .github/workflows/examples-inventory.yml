@@ -27,20 +27,20 @@ jobs:
   check-inventory:
     name: Verify Examples Inventory
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Make scripts executable
         run: chmod +x scripts/generate_examples_list.sh
-      
+
       - name: Generate examples inventory
         run: make examples-ls-check
 
       - name: Check cross-language scenario parity
         run: make example-parity-check
-      
+
       - name: Check if inventory is up to date
         run: |
           if [ -f examples_list.txt.tmp ]; then
@@ -54,3 +54,33 @@ jobs:
             exit 1
           fi
           echo "✅ Examples inventory is up to date!"
+
+  # Every examples/go/*.go file declares its own package main / func main(),
+  # so `go build ./...` fails on "main redeclared" regardless of correctness --
+  # nothing else in this repo's CI compiles these files individually, which is
+  # how a signature drift against ekodb-client-go went unnoticed (#179). This
+  # job needs no live ekoDB server, unlike the test-examples-go-* targets.
+  check-go-examples-compile:
+    name: Compile Go Examples
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout ekodb-client
+        uses: actions/checkout@v4
+        with:
+          path: ekodb-client
+
+      - name: Checkout ekodb-client-go
+        uses: actions/checkout@v4
+        with:
+          repository: ekoDB/ekodb-client-go
+          path: ekodb-client-go
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: ekodb-client/examples/go/go.mod
+
+      - name: Compile every Go example individually
+        working-directory: ekodb-client
+        run: make check-examples-go-compile
