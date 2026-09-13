@@ -67,6 +67,13 @@ and this project adheres to
   the invoking shell's environment, so no fallback or explicit forwarding is
   needed. Also fix `ClientAdvancedCrud.kt` decrementing a Float field with an
   int literal, which ekoDB's typed-value semantics reject. (#244)
+- **CI now compiles every Go example.**
+  `examples/go/client_chat_message_stream.go` called `ChatMessageStream` with
+  two arguments after the method gained a `context.Context` parameter, and
+  nothing compiled these files in CI to catch it. Add a job that builds every
+  `examples/go/*.go` individually (each declares its own `package main`, so
+  `go build ./...` fails regardless of correctness) against a checkout of
+  `ekodb-client-go`. (#179)
 - **Stored-function filter safety.** Add a typed, adjacently-tagged query
   expression representation and validate legacy raw objects at stage
   construction, so bare filters, unsupported operators, empty logical groups,
