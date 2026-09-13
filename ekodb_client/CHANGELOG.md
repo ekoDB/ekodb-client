@@ -41,12 +41,16 @@ and this project adheres to
   `tokio-tungstenite` 0.30 (#192), Gradle 9.7.1 (#193), Ruff 0.16.6 (#223),
   Vitest 5 (#224), kotlinx-datetime 0.8 compatibility artifacts (#226), and
   Foojay resolver convention 1.0 (#228), completing the deferred dependency
-  decisions tracked by #219. Kotlin serialization 2.4.20 and
-  `msgpack-core` 0.9.12 remain excluded because their CodeQL and Kotlin gates,
-  respectively, are failing. (#225, #227)
+  decisions tracked by #219. Kotlin serialization 2.4.20 and `msgpack-core`
+  0.9.12 remain excluded because their CodeQL and Kotlin gates, respectively,
+  are failing. (#225, #227)
 
 ### Fixed
 
+- **KV-link response and cleanup contracts.** TypeScript now types link queries
+  as arrays and link mutations as `null`; Kotlin decodes the documented `null`
+  mutation response; and Rust, Go, and Kotlin examples explicitly unlink every
+  relationship before deleting its owning key. (#241, #242)
 - **Executable examples track the current API.** Correct schedule, transaction,
   goal, agent, streaming, embedding, JWT, KV-link, and Kotlin function examples;
   restore Kotlin distinct-values coverage; and make example-build failures
