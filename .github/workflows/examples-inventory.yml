@@ -82,10 +82,32 @@ jobs:
           path: ekodb-client
           persist-credentials: false
 
+      # This repo's PR branches are sometimes paired with a same-named branch
+      # on ekodb-client-go for coordinated cross-repo changes (e.g. this repo
+      # exercising a new client API landing there first) -- checking out
+      # ekodb-client-go's default branch unconditionally would then compile
+      # examples against symbols that only exist on the paired branch and
+      # fail every time until the OTHER repo's PR merges. Prefer the matching
+      # branch name when it exists there; fall back to ekodb-client-go's own
+      # default branch otherwise (the common case).
+      - name: Resolve ekodb-client-go ref to test against
+        id: sibling-ref
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: |
+          if gh api "repos/ekoDB/ekodb-client-go/branches/$BRANCH" >/dev/null 2>&1; then
+            echo "ref=$BRANCH" >> "$GITHUB_OUTPUT"
+          else
+            default=$(gh api repos/ekoDB/ekodb-client-go --jq .default_branch)
+            echo "ref=$default" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Checkout ekodb-client-go
         uses: actions/checkout@v4
         with:
           repository: ekoDB/ekodb-client-go
+          ref: ${{ steps.sibling-ref.outputs.ref }}
           path: ekodb-client-go
           persist-credentials: false
 
