@@ -15,6 +15,13 @@ export {
 } from "./client";
 export type { HealthState } from "./client";
 export { QueryBuilder, SortOrder } from "./query-builder";
+export { queryExpression, assertQueryExpression } from "./query-expression";
+export type {
+  QueryExpression,
+  QueryConditionExpression,
+  QueryLogicalExpression,
+  QueryConditionOperator,
+} from "./query-expression";
 export { SearchQueryBuilder } from "./search";
 export {
   SchemaBuilder,
@@ -53,8 +60,11 @@ export type {
 export type { JoinConfig } from "./join";
 export type {
   UserFunction,
+  TransactionConfig,
   ParameterDefinition,
   FunctionStageConfig,
+  FunctionCondition,
+  JwtAlgorithm,
   GroupFunctionConfig,
   SortFieldConfig,
   FunctionResult,

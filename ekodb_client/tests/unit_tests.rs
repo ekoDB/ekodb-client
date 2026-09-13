@@ -26,6 +26,30 @@ async fn create_test_client(server: &Server) -> Client {
         .expect("Failed to create test client")
 }
 
+#[tokio::test]
+async fn test_trigger_schedule_posts_to_trigger_endpoint() {
+    let mut server = Server::new_async().await;
+    let token_mock = mock_token_endpoint(&mut server);
+    let trigger_mock = server
+        .mock("POST", "/api/schedules/nightly%2Fbackup/trigger")
+        .match_header("authorization", "Bearer test-jwt-token")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"status": "triggered", "schedule_id": "nightly/backup"}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    let result = client
+        .trigger_schedule("nightly/backup")
+        .await
+        .expect("schedule should trigger");
+
+    assert_eq!(result["status"], "triggered");
+    token_mock.assert_async().await;
+    trigger_mock.assert_async().await;
+}
+
 /// Setup mock for token endpoint
 fn mock_token_endpoint(server: &mut Server) -> mockito::Mock {
     server
@@ -1002,6 +1026,7 @@ async fn test_begin_transaction_success() {
 
     let _tx_mock = server
         .mock("POST", "/api/transactions")
+        .match_body(Matcher::Json(json!({"isolation_level": "ReadCommitted"})))
         .with_status(200)
         .with_header("content-type", "application/json")
         .with_body(json!({"transaction_id": "tx_123456"}).to_string())
@@ -1010,10 +1035,30 @@ async fn test_begin_transaction_success() {
 
     let client = create_test_client(&server).await;
 
-    let result = client.begin_transaction("ReadCommitted").await;
+    let result = client.begin_transaction(Some("ReadCommitted")).await;
 
     assert!(result.is_ok());
     assert_eq!(result.unwrap(), "tx_123456");
+}
+
+#[tokio::test]
+async fn test_begin_transaction_omits_isolation_for_server_default() {
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+    let tx_mock = server
+        .mock("POST", "/api/transactions")
+        .match_body(Matcher::Json(json!({})))
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"transaction_id": "tx_default"}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    let result = client.begin_transaction(None).await;
+
+    assert_eq!(result.unwrap(), "tx_default");
+    tx_mock.assert_async().await;
 }
 
 #[tokio::test]
@@ -3136,7 +3181,7 @@ fn test_update_by_id_accepts_structural_parameter() {
 
 #[test]
 fn test_update_with_structural_filter_and_updates() {
-    use ekodb_client::{Function, parameter_ref};
+    use ekodb_client::{Function, QueryExpression, parameter_ref};
     let filter = serde_json::json!({
         "type": "Condition",
         "content": {
@@ -3147,7 +3192,7 @@ fn test_update_with_structural_filter_and_updates() {
     });
     let stage = Function::Update {
         collection: "items".to_string(),
-        filter,
+        filter: QueryExpression::try_from(filter).expect("valid query expression"),
         updates: parameter_ref("updates"),
         bypass_ripple: None,
         ttl: None,

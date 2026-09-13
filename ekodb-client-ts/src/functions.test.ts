@@ -7,7 +7,65 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { Stage, parameterRef, type FunctionStageConfig } from "./functions";
+import {
+  Stage,
+  parameterRef,
+  type FunctionCondition,
+  type FunctionStageConfig,
+  type UserFunction,
+} from "./functions";
+import type { GroupFunctionConfig } from "./functions";
+
+describe("GroupFunctionConfig", () => {
+  it.each(["AddToSet", "StandardDeviation", "ApproxDistinct"] as const)(
+    "accepts the %s operation",
+    (operation) => {
+      const config: GroupFunctionConfig = {
+        output_field: "result",
+        operation,
+        input_field: "value",
+      };
+      expect(JSON.parse(JSON.stringify(config)).operation).toBe(operation);
+    },
+  );
+});
+
+describe("FunctionCondition comparisons", () => {
+  it.each([
+    "FieldGreaterThan",
+    "FieldLessThan",
+    "FieldGreaterThanOrEqual",
+    "FieldLessThanOrEqual",
+  ] as const)("accepts and preserves %s", (type) => {
+    const condition: FunctionCondition = {
+      type,
+      value: { field: "score", value: 10 },
+    };
+    expect(JSON.parse(JSON.stringify(condition))).toEqual(condition);
+  });
+});
+
+describe("UserFunction transaction_config", () => {
+  it("preserves atomic execution settings", () => {
+    const fn: UserFunction = {
+      label: "atomic_transfer",
+      name: "Atomic transfer",
+      parameters: {},
+      functions: [Stage.findAll("accounts")],
+      transaction_config: {
+        enabled: true,
+        auto_rollback: true,
+        isolation_level: "Serializable",
+      },
+    };
+
+    expect(JSON.parse(JSON.stringify(fn)).transaction_config).toEqual({
+      enabled: true,
+      auto_rollback: true,
+      isolation_level: "Serializable",
+    });
+  });
+});
 
 describe("parameterRef", () => {
   it("produces the structural placeholder shape ekoDB's resolver expects", () => {
@@ -302,6 +360,37 @@ describe("Stage.jwtVerify", () => {
 });
 
 describe("JWT stages JSON wire format", () => {
+  it.each([
+    "HS256",
+    "HS384",
+    "HS512",
+    "RS256",
+    "RS384",
+    "RS512",
+    "PS256",
+    "PS384",
+    "PS512",
+    "ES256",
+    "ES384",
+    "EdDSA",
+  ] as const)("accepts the supported %s algorithm", (algorithm) => {
+    const sign = Stage.jwtSign(
+      { sub: "user-1" },
+      "key",
+      "token",
+      60,
+      algorithm,
+    ) as Extract<FunctionStageConfig, { type: "JwtSign" }>;
+    const verify = Stage.jwtVerify(
+      "token",
+      "key",
+      "claims",
+      algorithm,
+    ) as Extract<FunctionStageConfig, { type: "JwtVerify" }>;
+    expect(sign.algorithm).toBe(algorithm);
+    expect(verify.algorithm).toBe(algorithm);
+  });
+
   it("JwtSign round-trips through JSON unchanged", () => {
     const stage = Stage.jwtSign(
       { sub: "user-1" },
@@ -730,12 +819,14 @@ describe("Crypto and concurrency stages", () => {
     // function. They are shorthands for a Query carrying that one field.
 
     it("filter emits a Query with only the filter set", () => {
-      const wire = JSON.parse(
-        JSON.stringify(Stage.filter("users", { status: "active" })),
-      );
+      const filter = {
+        type: "Condition",
+        content: { field: "status", operator: "Eq", value: "active" },
+      } as const;
+      const wire = JSON.parse(JSON.stringify(Stage.filter("users", filter)));
       expect(wire.type).toBe("Query");
       expect(wire.collection).toBe("users");
-      expect(wire.filter).toEqual({ status: "active" });
+      expect(wire.filter).toEqual(filter);
     });
 
     it("sort emits a Query with only the sort set", () => {
@@ -764,8 +855,12 @@ describe("Crypto and concurrency stages", () => {
     });
 
     it("never emits a stage type the server has no variant for", () => {
+      const filter = {
+        type: "Condition",
+        content: { field: "active", operator: "Eq", value: true },
+      } as const;
       const wire = [
-        Stage.filter("users", {}),
+        Stage.filter("users", filter),
         Stage.sort("users", []),
         Stage.limit("users", 1),
         Stage.skip("users", 1),
@@ -774,6 +869,14 @@ describe("Crypto and concurrency stages", () => {
       expect(wire).not.toContain("Sort");
       expect(wire).not.toContain("Limit");
       expect(wire).not.toContain("Skip");
+    });
+
+    it("rejects a bare filter object before a request can be sent", () => {
+      expect(() => Stage.filter("users", { status: "active" })).toThrow(
+        /content/,
+      );
+      expect(() => Stage.update("users", { id: "1" }, {})).toThrow(/content/);
+      expect(() => Stage.delete("users", {})).toThrow(/content/);
     });
   });
 });

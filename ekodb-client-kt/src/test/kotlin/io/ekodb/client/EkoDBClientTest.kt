@@ -293,11 +293,23 @@ class EkoDBClientTest {
 
     @Test
     fun `beginTransaction returns transaction id`() = runBlocking {
-        val mockEngine = createMockEngine("""{"transaction_id": "tx_123456"}""")
-        val client = createTestClient(mockEngine)
+        val recorded = mutableListOf<HttpRequestData>()
+        val client = createTestClient(capturingMockEngine(recorded, """{"transaction_id": "tx_123456"}"""))
         val result = client.beginTransaction()
         assertNotNull(result)
         assertEquals("tx_123456", result)
+        assertEquals("{}", (recorded.last().body as TextContent).text)
+    }
+
+    @Test
+    fun `beginTransaction sends an explicit isolation level`() = runBlocking {
+        val recorded = mutableListOf<HttpRequestData>()
+        val client = createTestClient(capturingMockEngine(recorded, """{"transaction_id": "tx_serializable"}"""))
+
+        val result = client.beginTransaction("Serializable")
+
+        assertEquals("tx_serializable", result)
+        assertTrue((recorded.last().body as TextContent).text.contains("\"isolation_level\":\"Serializable\""))
     }
 
     @Test
@@ -1774,48 +1786,46 @@ class EkoDBClientTest {
 
     @Test
     fun `kvGetLinks returns linked documents`() = runBlocking {
-        val mockEngine = createMockEngine("""{"key": "user:123", "links": [{"collection": "orders", "document_id": "ord_1"}]}""")
+        val mockEngine = createMockEngine("""[{"collection": "orders", "document_id": "ord_1"}]""")
         val client = createTestClient(mockEngine)
         val result = client.kvGetLinks("user:123")
-        assertNotNull(result)
-        assertEquals("user:123", result["key"]?.jsonPrimitive?.content)
-        assertNotNull(result["links"])
+        assertEquals(1, result.size)
+        assertEquals("orders", result[0].jsonObject["collection"]?.jsonPrimitive?.content)
+        assertEquals("ord_1", result[0].jsonObject["document_id"]?.jsonPrimitive?.content)
     }
 
     @Test
     fun `kvLink links a document to a key`() = runBlocking {
-        val mockEngine = createMockEngine("""{"status": "linked", "key": "user:123"}""")
+        val mockEngine = createMockEngine("null")
         val client = createTestClient(mockEngine)
         val result = client.kvLink("user:123", "orders", "ord_1")
-        assertNotNull(result)
-        assertEquals("linked", result["status"]?.jsonPrimitive?.content)
+        assertEquals(JsonNull, result)
     }
 
     @Test
     fun `kvUnlink removes a document link from a key`() = runBlocking {
-        val mockEngine = createMockEngine("""{"status": "unlinked", "key": "user:123"}""")
+        val mockEngine = createMockEngine("null")
         val client = createTestClient(mockEngine)
         val result = client.kvUnlink("user:123", "orders", "ord_1")
-        assertNotNull(result)
-        assertEquals("unlinked", result["status"]?.jsonPrimitive?.content)
+        assertEquals(JsonNull, result)
     }
 
     @Test
     fun `kv link methods target the documented routes and verbs`() = runBlocking {
         val recorded = mutableListOf<HttpRequestData>()
 
-        var client = createTestClient(capturingMockEngine(recorded, """{"links": []}"""))
+        var client = createTestClient(capturingMockEngine(recorded, """[]"""))
         client.kvGetLinks("user:123")
         assertEquals("/api/kv/user:123/links", recorded.last().url.encodedPath)
         assertEquals(HttpMethod.Get, recorded.last().method)
 
-        client = createTestClient(capturingMockEngine(recorded, """{"status": "linked"}"""))
+        client = createTestClient(capturingMockEngine(recorded, "null"))
         client.kvLink("user:123", "orders", "ord_1")
         // The identifying triple belongs in the PATH, not the body.
         assertEquals("/api/kv/user:123/links/orders/ord_1", recorded.last().url.encodedPath)
         assertEquals(HttpMethod.Post, recorded.last().method)
 
-        client = createTestClient(capturingMockEngine(recorded, """{"status": "unlinked"}"""))
+        client = createTestClient(capturingMockEngine(recorded, "null"))
         client.kvUnlink("user:123", "orders", "ord_1")
         assertEquals("/api/kv/user:123/links/orders/ord_1", recorded.last().url.encodedPath)
         // DELETE, not POST — the previous implementation used POST and 404'd.
@@ -1856,6 +1866,21 @@ class EkoDBClientTest {
         assertEquals("/api/schedules/sched_1", sent.url.encodedPath)
         assertEquals(HttpMethod.Put, sent.method)
         assertTrue((sent.body as TextContent).text.contains("\"enabled\":true"))
+    }
+
+    @Test
+    fun `trigger schedule posts to the trigger endpoint`() = runBlocking {
+        val recorded = mutableListOf<HttpRequestData>()
+        val client = createTestClient(
+            capturingMockEngine(recorded, """{"status":"triggered","schedule_id":"nightly/backup"}"""),
+        )
+
+        val result = client.triggerSchedule("nightly/backup")
+
+        val sent = recorded.last()
+        assertEquals("/api/schedules/nightly%2Fbackup/trigger", sent.url.encodedPath)
+        assertEquals(HttpMethod.Post, sent.method)
+        assertEquals("triggered", result["status"]?.jsonPrimitive?.content)
     }
 
     @Test
@@ -1901,14 +1926,18 @@ class EkoDBClientTest {
 
     @Test
     fun `createSchedule returns schedule object`() = runBlocking {
-        val mockEngine = createMockEngine("""{"id": "sched_1", "name": "Daily Backup", "cron": "0 0 * * *"}""")
-        val client = createTestClient(mockEngine)
+        val recorded = mutableListOf<HttpRequestData>()
+        val client = createTestClient(capturingMockEngine(recorded, """{"id":"sched_1","name":"Daily Backup","cron_expression":"0 0 0 * * *"}"""))
         val result = client.createSchedule(buildJsonObject {
             put("name", "Daily Backup")
-            put("cron", "0 0 * * *")
+            put("function_label", "daily_backup")
+            put("cron_expression", "0 0 0 * * *")
         })
         assertEquals("sched_1", result["id"]?.jsonPrimitive?.content)
         assertEquals("Daily Backup", result["name"]?.jsonPrimitive?.content)
+        val body = Json.parseToJsonElement((recorded.last().body as TextContent).text).jsonObject
+        assertEquals("daily_backup", body["function_label"]?.jsonPrimitive?.content)
+        assertEquals("0 0 0 * * *", body["cron_expression"]?.jsonPrimitive?.content)
     }
 
     @Test
@@ -1924,7 +1953,7 @@ class EkoDBClientTest {
 
     @Test
     fun `getSchedule returns schedule by ID`() = runBlocking {
-        val mockEngine = createMockEngine("""{"id": "sched_1", "name": "Daily Backup", "cron": "0 0 * * *"}""")
+        val mockEngine = createMockEngine("""{"id": "sched_1", "name": "Daily Backup", "cron_expression": "0 0 0 * * *"}""")
         val client = createTestClient(mockEngine)
         val result = client.getSchedule("sched_1")
         assertEquals("sched_1", result["id"]?.jsonPrimitive?.content)
@@ -1932,13 +1961,15 @@ class EkoDBClientTest {
 
     @Test
     fun `updateSchedule updates and returns schedule`() = runBlocking {
-        val mockEngine = createMockEngine("""{"id": "sched_1", "name": "Weekly Backup", "cron": "0 0 * * 0"}""")
-        val client = createTestClient(mockEngine)
+        val recorded = mutableListOf<HttpRequestData>()
+        val client = createTestClient(capturingMockEngine(recorded, """{"id":"sched_1","name":"Weekly Backup","cron_expression":"0 0 0 * * 0"}"""))
         val result = client.updateSchedule("sched_1", buildJsonObject {
             put("name", "Weekly Backup")
-            put("cron", "0 0 * * 0")
+            put("cron_expression", "0 0 0 * * 0")
         })
         assertEquals("Weekly Backup", result["name"]?.jsonPrimitive?.content)
+        val body = Json.parseToJsonElement((recorded.last().body as TextContent).text).jsonObject
+        assertEquals("0 0 0 * * 0", body["cron_expression"]?.jsonPrimitive?.content)
     }
 
     @Test
@@ -1951,18 +1982,18 @@ class EkoDBClientTest {
 
     @Test
     fun `pauseSchedule returns paused schedule`() = runBlocking {
-        val mockEngine = createMockEngine("""{"id": "sched_1", "status": "paused"}""")
+        val mockEngine = createMockEngine("""{"id": "sched_1", "enabled": false}""")
         val client = createTestClient(mockEngine)
         val result = client.pauseSchedule("sched_1")
-        assertEquals("paused", result["status"]?.jsonPrimitive?.content)
+        assertEquals(false, result["enabled"]?.jsonPrimitive?.boolean)
     }
 
     @Test
     fun `resumeSchedule returns active schedule`() = runBlocking {
-        val mockEngine = createMockEngine("""{"id": "sched_1", "status": "active"}""")
+        val mockEngine = createMockEngine("""{"id": "sched_1", "enabled": true}""")
         val client = createTestClient(mockEngine)
         val result = client.resumeSchedule("sched_1")
-        assertEquals("active", result["status"]?.jsonPrimitive?.content)
+        assertEquals(true, result["enabled"]?.jsonPrimitive?.boolean)
     }
 
     // ========================================================================
@@ -2360,6 +2391,12 @@ class EkoDBClientTest {
         assertFalse(json.contains("client_tools"))
         assertFalse(json.contains("confirm_tools"))
         assertFalse(json.contains("exclude_tools"))
+    }
+
+    @Test
+    fun `ChatMessageRequest does not expose retired forceSummarize`() {
+        val fieldNames = io.ekodb.client.types.ChatMessageRequest::class.java.declaredFields.map { it.name }
+        assertFalse("forceSummarize" in fieldNames)
     }
 
     // ========================================================================

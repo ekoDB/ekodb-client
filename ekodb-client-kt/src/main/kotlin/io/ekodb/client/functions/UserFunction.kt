@@ -15,11 +15,19 @@ data class UserFunction(
     val parameters: Map<String, ParameterDefinition> = emptyMap(),
     val functions: List<FunctionStageConfig>,
     val tags: List<String> = emptyList(),
+    val transaction_config: TransactionConfig? = null,
     val http_method: String? = null,
     val http_path: String? = null,
     val id: String? = null,
     val created_at: String? = null,
     val updated_at: String? = null
+)
+
+@Serializable
+data class TransactionConfig(
+    val enabled: Boolean,
+    val auto_rollback: Boolean,
+    val isolation_level: String? = null,
 )
 
 /**

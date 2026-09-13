@@ -170,6 +170,10 @@ class EkoDBClient private constructor(
         install(WebSockets)
     }
 
+    // Stored functions must fail on unknown fields so a read-modify-write can
+    // never silently erase a stage or field introduced by a newer server.
+    private val functionJson = Json { ignoreUnknownKeys = false }
+
     private var authToken: String? = null
     private var tokenExpiry: Long = 0
     private var lastRateLimitInfo: RateLimitInfo? = null
@@ -1588,15 +1592,15 @@ class EkoDBClient private constructor(
 
     /**
      * Begin a new transaction
-     * @param isolationLevel Transaction isolation level (default: "ReadCommitted")
+     * @param isolationLevel Optional transaction isolation level; null uses the server default
      * @return Transaction ID
      */
-    suspend fun beginTransaction(isolationLevel: String = "ReadCommitted"): String {
+    suspend fun beginTransaction(isolationLevel: String? = null): String {
         val response = executeWithRetry { token ->
             client.post("$baseUrl/api/transactions") {
                 header("Authorization", "Bearer $token")
                 contentType(ContentType.Application.Json)
-                setBody(mapOf("isolation_level" to isolationLevel))
+                setBody(if (isolationLevel == null) emptyMap() else mapOf("isolation_level" to isolationLevel))
             }
         }
 
@@ -2442,7 +2446,7 @@ class EkoDBClient private constructor(
                 bearerAuth(token)
             }
         }
-        return response.body<io.ekodb.client.functions.UserFunction>()
+        return functionJson.decodeFromString(response.bodyAsText())
     }
 
     /**
@@ -2459,7 +2463,7 @@ class EkoDBClient private constructor(
                 bearerAuth(token)
             }
         }
-        return response.body<List<io.ekodb.client.functions.UserFunction>>()
+        return functionJson.decodeFromString(response.bodyAsText())
     }
 
     /**
@@ -3528,7 +3532,7 @@ class EkoDBClient private constructor(
     // ── KV Document Linking ──────────────────────────────────────────────────
 
     /** Get documents linked to a KV key */
-    suspend fun kvGetLinks(key: String): JsonObject {
+    suspend fun kvGetLinks(key: String): JsonArray {
         val response = executeWithRetry { token ->
             client.get("$baseUrl/api/kv/${key.encodeURLPathPart()}/links") {
                 bearerAuth(token)
@@ -3538,7 +3542,7 @@ class EkoDBClient private constructor(
             val errorText = response.bodyAsText()
             throw IllegalStateException("Server error ${response.status.value}: $errorText")
         }
-        return response.body<JsonObject>()
+        return response.body<JsonArray>()
     }
 
     /** Link a document to a KV key */
@@ -3547,7 +3551,7 @@ class EkoDBClient private constructor(
         collection: String,
         documentId: String,
         linkData: JsonObject = buildJsonObject { },
-    ): JsonObject {
+    ): JsonNull {
         // The identifying triple belongs in the PATH; the body carries the
         // optional link payload (keys / field_path / metadata).
         val path =
@@ -3564,11 +3568,13 @@ class EkoDBClient private constructor(
             val errorText = response.bodyAsText()
             throw IllegalStateException("Server error ${response.status.value}: $errorText")
         }
-        return response.body<JsonObject>()
+        val result = response.body<JsonElement>()
+        check(result is JsonNull) { "Expected null KV-link response, got: $result" }
+        return result
     }
 
     /** Unlink a document from a KV key */
-    suspend fun kvUnlink(key: String, collection: String, documentId: String): JsonObject {
+    suspend fun kvUnlink(key: String, collection: String, documentId: String): JsonNull {
         // DELETE, not POST, and no body — the previous POST to /api/kv/unlink
         // hit a route that does not exist.
         val path =
@@ -3583,7 +3589,9 @@ class EkoDBClient private constructor(
             val errorText = response.bodyAsText()
             throw IllegalStateException("Server error ${response.status.value}: $errorText")
         }
-        return response.body<JsonObject>()
+        val result = response.body<JsonElement>()
+        check(result is JsonNull) { "Expected null KV-unlink response, got: $result" }
+        return result
     }
 
     // ── Schedule Management ──────────────────────────────────────────────────
@@ -3675,6 +3683,20 @@ class EkoDBClient private constructor(
      * rather than its own endpoint.
      */
     suspend fun resumeSchedule(id: String): JsonObject = setScheduleEnabled(id, true)
+
+    /** Trigger a schedule immediately. */
+    suspend fun triggerSchedule(id: String): JsonObject {
+        val response = executeWithRetry { token ->
+            client.post("$baseUrl/api/schedules/${id.encodeURLPathPart()}/trigger") {
+                bearerAuth(token)
+            }
+        }
+        if (response.status.value >= 400) {
+            val errorText = response.bodyAsText()
+            throw IllegalStateException("Server error ${response.status.value}: $errorText")
+        }
+        return response.body<JsonObject>()
+    }
 
     /**
      * Shared implementation for pause/resume: a partial update carrying only

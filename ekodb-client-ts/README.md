@@ -418,7 +418,7 @@ await client.init();
 // Goals
 const goal = await client.goalCreate({
   title: "Migrate data",
-  status: "active",
+  status: "pending",
 });
 const goals = await client.goalList();
 await client.goalComplete("goal-id", { summary: "Done" });
@@ -435,7 +435,7 @@ await client.taskSucceed("task-id", { records: 1500 });
 // Agents
 const agent = await client.agentCreate({
   name: "processor",
-  model: "gpt-4.1",
+  llm_model: "gpt-4.1",
 });
 const agents = await client.agentList();
 ```
@@ -446,11 +446,15 @@ const agents = await client.agentList();
 // Create a schedule
 const sched = await client.createSchedule({
   name: "nightly",
-  cron: "0 2 * * *",
+  cron_expression: "0 0 2 * * *",
+  function_label: "nightly_backup",
 });
 
 // Pause a schedule
 await client.pauseSchedule("sched-id");
+
+// Run immediately
+await client.triggerSchedule("sched-id");
 ```
 
 ### WebSocket Chat Streaming

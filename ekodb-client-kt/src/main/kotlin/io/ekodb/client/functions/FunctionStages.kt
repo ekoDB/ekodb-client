@@ -5,9 +5,11 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonClassDiscriminator
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonObject
@@ -48,6 +50,104 @@ import kotlinx.serialization.json.put
 fun parameterRef(name: String): JsonObject = buildJsonObject {
     put("type", "Parameter")
     put("name", name)
+}
+
+enum class QueryConditionOperator(val wireValue: String) {
+    Eq("Eq"),
+    Ne("Ne"),
+    Gt("Gt"),
+    Gte("Gte"),
+    Lt("Lt"),
+    Lte("Lte"),
+    In("In"),
+    NotIn("NotIn"),
+    Contains("Contains"),
+    StartsWith("StartsWith"),
+    EndsWith("EndsWith"),
+    Equals("Equals"),
+    Equal("Equal"),
+    NotEquals("NotEquals"),
+    NotEqual("NotEqual"),
+    GreaterThan("GreaterThan"),
+    LessThan("LessThan"),
+    GreaterThanOrEqual("GreaterThanOrEqual"),
+    LessThanOrEqual("LessThanOrEqual"),
+}
+
+enum class QueryLogicalOperator(val wireValue: String) {
+    And("And"),
+    Or("Or"),
+    Not("Not"),
+}
+
+private val queryConditionOperators = QueryConditionOperator.entries.mapTo(mutableSetOf()) { it.wireValue }
+private val queryLogicalOperators = QueryLogicalOperator.entries.mapTo(mutableSetOf()) { it.wireValue }
+
+/** Build a valid condition expression for Query, Update, and Delete filters. */
+fun queryCondition(field: String, operator: QueryConditionOperator, value: JsonElement): JsonObject = buildJsonObject {
+    put("type", "Condition")
+    put("content", buildJsonObject {
+        put("field", field)
+        put("operator", operator.wireValue)
+        put("value", value)
+    })
+}
+
+/** Build a valid logical expression from already-tagged child expressions. */
+fun queryLogical(operator: QueryLogicalOperator, expressions: List<JsonObject>): JsonObject =
+    validateQueryExpression(
+        buildJsonObject {
+            put("type", "Logical")
+            put("content", buildJsonObject {
+                put("operator", operator.wireValue)
+                put("expressions", JsonArray(expressions))
+            })
+        },
+    )
+
+/** Validate raw JSON at stage construction so malformed filters never reach the server. */
+fun validateQueryExpression(expression: JsonObject): JsonObject {
+    val type = expression["type"]?.jsonPrimitive?.content
+        ?: throw IllegalArgumentException("query expression must contain a string `type`")
+    val content = expression["content"] as? JsonObject
+        ?: throw IllegalArgumentException("query expression must contain an object `content`")
+
+    when (type) {
+        "Condition" -> {
+            require((content["field"] as? JsonPrimitive)?.isString == true) {
+                "Condition content requires string `field`"
+            }
+            val operator = content["operator"]?.jsonPrimitive?.content
+            require(operator != null) {
+                "Condition content requires string `operator`"
+            }
+            require(operator in queryConditionOperators) { "unsupported condition operator `$operator`" }
+            require("value" in content) { "Condition content requires `value`" }
+        }
+        "Logical" -> {
+            val operator = content["operator"]?.jsonPrimitive?.content
+            require(operator != null) {
+                "Logical content requires string `operator`"
+            }
+            val expressions = content["expressions"] as? JsonArray
+                ?: throw IllegalArgumentException("Logical content requires array `expressions`")
+            require(operator in queryLogicalOperators) { "unsupported logical operator `$operator`" }
+            require(expressions.isNotEmpty()) { "logical operator `$operator` requires expressions" }
+            require(operator != "Not" || expressions.size == 1) {
+                "logical operator `Not` requires exactly one expression"
+            }
+            expressions.forEach {
+                validateQueryExpression(
+                    it as? JsonObject
+                        ?: throw IllegalArgumentException("logical child must be an object"),
+                )
+            }
+        }
+        else -> throw IllegalArgumentException(
+            "query expression `type` must be `Condition` or `Logical`",
+        )
+    }
+    return expression
 }
 
 /**
@@ -115,7 +215,11 @@ sealed class FunctionStageConfig {
         val sort: List<JsonObject>? = null,
         val limit: Int? = null,
         val skip: Int? = null
-    ) : FunctionStageConfig()
+    ) : FunctionStageConfig() {
+        init {
+            filter?.let(::validateQueryExpression)
+        }
+    }
 
     @Serializable
     @SerialName("Project")
@@ -154,7 +258,11 @@ sealed class FunctionStageConfig {
         val updates: JsonObject,
         @EncodeDefault val bypass_ripple: Boolean = false,
         val ttl: Long? = null
-    ) : FunctionStageConfig()
+    ) : FunctionStageConfig() {
+        init {
+            validateQueryExpression(filter)
+        }
+    }
 
     @Serializable
     @SerialName("UpdateById")
@@ -172,7 +280,11 @@ sealed class FunctionStageConfig {
         val collection: String,
         val filter: JsonObject,
         @EncodeDefault val bypass_ripple: Boolean = false
-    ) : FunctionStageConfig()
+    ) : FunctionStageConfig() {
+        init {
+            validateQueryExpression(filter)
+        }
+    }
 
     @Serializable
     @SerialName("DeleteById")
@@ -204,7 +316,9 @@ sealed class FunctionStageConfig {
         val url: String,
         @EncodeDefault val method: String = "GET",
         val headers: Map<String, String>? = null,
-        val body: JsonElement? = null
+        val body: JsonElement? = null,
+        val timeout_seconds: Long? = null,
+        val output_field: String? = null,
     ) : FunctionStageConfig()
 
     @Serializable
@@ -286,6 +400,56 @@ sealed class FunctionStageConfig {
         val field: String,
         val value: JsonElement,
         @EncodeDefault val bypass_ripple: Boolean = false
+    ) : FunctionStageConfig()
+
+    @Serializable
+    @SerialName("Upsert")
+    data class Upsert(
+        val collection: String,
+        val key: String,
+        val value: JsonElement,
+        val record: JsonObject,
+        @EncodeDefault val bypass_ripple: Boolean = false,
+        val ttl: Long? = null,
+    ) : FunctionStageConfig()
+
+    @Serializable
+    @SerialName("Increment")
+    data class Increment(
+        val collection: String,
+        val record_id: String,
+        val field: String,
+        val by: JsonElement? = null,
+        @EncodeDefault val bypass_ripple: Boolean = false,
+    ) : FunctionStageConfig()
+
+    @Serializable
+    @SerialName("Push")
+    data class Push(
+        val collection: String,
+        val record_id: String,
+        val field: String,
+        val value: JsonElement,
+        @EncodeDefault val bypass_ripple: Boolean = false,
+    ) : FunctionStageConfig()
+
+    @Serializable
+    @SerialName("SetField")
+    data class SetField(
+        val field: String,
+        val value: JsonElement,
+    ) : FunctionStageConfig()
+
+    @Serializable
+    @SerialName("AddFields")
+    data class AddFields(
+        val fields: List<JsonObject>,
+    ) : FunctionStageConfig()
+
+    @Serializable
+    @SerialName("CurrentDatetime")
+    data class CurrentDatetime(
+        val output_field: String,
     ) : FunctionStageConfig()
 
     @Serializable
@@ -739,6 +903,10 @@ sealed class FunctionCondition {
     object HasRecords : FunctionCondition()
     data class FieldEquals(val field: String, val fieldValue: JsonElement) : FunctionCondition()
     data class FieldExists(val field: String) : FunctionCondition()
+    data class FieldGreaterThan(val field: String, val fieldValue: JsonElement) : FunctionCondition()
+    data class FieldLessThan(val field: String, val fieldValue: JsonElement) : FunctionCondition()
+    data class FieldGreaterThanOrEqual(val field: String, val fieldValue: JsonElement) : FunctionCondition()
+    data class FieldLessThanOrEqual(val field: String, val fieldValue: JsonElement) : FunctionCondition()
     data class CountEquals(val count: Int) : FunctionCondition()
     data class CountGreaterThan(val count: Int) : FunctionCondition()
     data class CountLessThan(val count: Int) : FunctionCondition()
@@ -772,6 +940,12 @@ object FunctionConditionSerializer : kotlinx.serialization.KSerializer<FunctionC
                 put("type", "FieldExists")
                 put("value", buildJsonObject { put("field", value.field) })
             }
+            is FunctionCondition.FieldGreaterThan -> fieldComparison("FieldGreaterThan", value.field, value.fieldValue)
+            is FunctionCondition.FieldLessThan -> fieldComparison("FieldLessThan", value.field, value.fieldValue)
+            is FunctionCondition.FieldGreaterThanOrEqual ->
+                fieldComparison("FieldGreaterThanOrEqual", value.field, value.fieldValue)
+            is FunctionCondition.FieldLessThanOrEqual ->
+                fieldComparison("FieldLessThanOrEqual", value.field, value.fieldValue)
             is FunctionCondition.CountEquals -> buildJsonObject {
                 put("type", "CountEquals")
                 put("value", buildJsonObject { put("count", value.count) })
@@ -821,10 +995,17 @@ object FunctionConditionSerializer : kotlinx.serialization.KSerializer<FunctionC
         val type = jsonObject["type"]?.jsonPrimitive?.content ?: error("Missing type field")
         val valueObj = jsonObject["value"]?.jsonObject
 
+        requireOnlyKeys(
+            jsonObject,
+            if (type == "HasRecords") setOf("type") else setOf("type", "value"),
+            type,
+        )
+
         return when (type) {
             "HasRecords" -> FunctionCondition.HasRecords
             "FieldEquals" -> {
                 val v = valueObj ?: error("Missing value for FieldEquals")
+                requireOnlyKeys(v, setOf("field", "value"), type)
                 FunctionCondition.FieldEquals(
                     v["field"]?.jsonPrimitive?.content ?: error("Missing field"),
                     v["value"] ?: error("Missing value")
@@ -832,22 +1013,41 @@ object FunctionConditionSerializer : kotlinx.serialization.KSerializer<FunctionC
             }
             "FieldExists" -> {
                 val v = valueObj ?: error("Missing value for FieldExists")
+                requireOnlyKeys(v, setOf("field"), type)
                 FunctionCondition.FieldExists(v["field"]?.jsonPrimitive?.content ?: error("Missing field"))
             }
+            "FieldGreaterThan" -> decodeFieldComparison(valueObj, type) { field, value ->
+                FunctionCondition.FieldGreaterThan(field, value)
+            }
+            "FieldLessThan" -> decodeFieldComparison(valueObj, type) { field, value ->
+                FunctionCondition.FieldLessThan(field, value)
+            }
+            "FieldGreaterThanOrEqual" ->
+                decodeFieldComparison(valueObj, type) { field, value ->
+                    FunctionCondition.FieldGreaterThanOrEqual(field, value)
+                }
+            "FieldLessThanOrEqual" ->
+                decodeFieldComparison(valueObj, type) { field, value ->
+                    FunctionCondition.FieldLessThanOrEqual(field, value)
+                }
             "CountEquals" -> {
                 val v = valueObj ?: error("Missing value for CountEquals")
+                requireOnlyKeys(v, setOf("count"), type)
                 FunctionCondition.CountEquals(v["count"]?.jsonPrimitive?.int ?: error("Missing count"))
             }
             "CountGreaterThan" -> {
                 val v = valueObj ?: error("Missing value for CountGreaterThan")
+                requireOnlyKeys(v, setOf("count"), type)
                 FunctionCondition.CountGreaterThan(v["count"]?.jsonPrimitive?.int ?: error("Missing count"))
             }
             "CountLessThan" -> {
                 val v = valueObj ?: error("Missing value for CountLessThan")
+                requireOnlyKeys(v, setOf("count"), type)
                 FunctionCondition.CountLessThan(v["count"]?.jsonPrimitive?.int ?: error("Missing count"))
             }
             "And" -> {
                 val v = valueObj ?: error("Missing value for And")
+                requireOnlyKeys(v, setOf("conditions"), type)
                 val conditions = kotlinx.serialization.json.Json.decodeFromJsonElement(
                     kotlinx.serialization.builtins.ListSerializer(FunctionConditionSerializer),
                     v["conditions"] ?: error("Missing conditions")
@@ -856,6 +1056,7 @@ object FunctionConditionSerializer : kotlinx.serialization.KSerializer<FunctionC
             }
             "Or" -> {
                 val v = valueObj ?: error("Missing value for Or")
+                requireOnlyKeys(v, setOf("conditions"), type)
                 val conditions = kotlinx.serialization.json.Json.decodeFromJsonElement(
                     kotlinx.serialization.builtins.ListSerializer(FunctionConditionSerializer),
                     v["conditions"] ?: error("Missing conditions")
@@ -864,6 +1065,7 @@ object FunctionConditionSerializer : kotlinx.serialization.KSerializer<FunctionC
             }
             "Not" -> {
                 val v = valueObj ?: error("Missing value for Not")
+                requireOnlyKeys(v, setOf("condition"), type)
                 val condition = kotlinx.serialization.json.Json.decodeFromJsonElement(
                     FunctionConditionSerializer,
                     v["condition"] ?: error("Missing condition")
@@ -871,6 +1073,35 @@ object FunctionConditionSerializer : kotlinx.serialization.KSerializer<FunctionC
                 FunctionCondition.Not(condition)
             }
             else -> error("Unknown condition type: $type")
+        }
+    }
+
+    private fun fieldComparison(type: String, field: String, fieldValue: JsonElement): JsonObject =
+        buildJsonObject {
+            put("type", type)
+            put("value", buildJsonObject {
+                put("field", field)
+                put("value", fieldValue)
+            })
+        }
+
+    private fun decodeFieldComparison(
+        value: JsonObject?,
+        type: String,
+        create: (String, JsonElement) -> FunctionCondition,
+    ): FunctionCondition {
+        val fields = value ?: error("Missing value for $type")
+        requireOnlyKeys(fields, setOf("field", "value"), type)
+        return create(
+            fields["field"]?.jsonPrimitive?.content ?: error("Missing field"),
+            fields["value"] ?: error("Missing value"),
+        )
+    }
+
+    private fun requireOnlyKeys(value: JsonObject, allowed: Set<String>, type: String) {
+        val unknown = value.keys - allowed
+        require(unknown.isEmpty()) {
+            "$type condition contains unknown field(s): ${unknown.sorted().joinToString()}"
         }
     }
 }
@@ -912,7 +1143,10 @@ enum class GroupFunctionOp {
     Max,
     First,
     Last,
-    Push
+    Push,
+    AddToSet,
+    StandardDeviation,
+    ApproxDistinct,
 }
 
 /**

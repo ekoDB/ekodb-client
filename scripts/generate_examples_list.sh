@@ -23,6 +23,7 @@ if [ "$1" = "--temp" ]; then
 fi
 
 echo -e "${CYAN}🔍 Generating comprehensive examples list...${RESET}"
+python3 scripts/check-example-parity.py
 
 # Start JSON structure
 echo "[" > "$EXAMPLES_JSON"
@@ -266,22 +267,11 @@ num_clients=$(echo "$full_featured_clients" | wc -w | tr -d ' ')
 echo "  Languages: $num_languages ($(echo "$example_languages" | sed 's/ /, /g'))" >> "$EXAMPLES_TXT"
 echo "  Full-Featured Clients: $num_clients ($(echo "$full_featured_clients" | sed 's/ /, /g'))" >> "$EXAMPLES_TXT"
 
-# Client-library examples per full-featured client. Rust/Python/Go/TypeScript/
-# Kotlin are mirrored for parity, so this is normally a single number; emit a
-# MIN-MAX range if they ever diverge so the README stays honest without a
-# hardcoded literal.
-per_client_min=$rust_client_count
-per_client_max=$rust_client_count
-for c in $python_client_count $go_client_count $ts_client_count $kotlin_client_count; do
-    [ "$c" -lt "$per_client_min" ] && per_client_min=$c
-    [ "$c" -gt "$per_client_max" ] && per_client_max=$c
-done
-if [ "$per_client_min" -eq "$per_client_max" ]; then
-    per_client_display="$per_client_min"
-else
-    per_client_display="${per_client_min}-${per_client_max}"
-fi
-echo "  Examples Per Client: $per_client_display" >> "$EXAMPLES_TXT"
+# The parity checker compares normalized scenario names. Kotlin also carries a
+# historical `ClientProjection` auxiliary example, so raw filename counts are
+# not the parity count; TypeScript is the canonical shared scenario set.
+per_client_display="$ts_client_count"
+echo "  Shared Scenarios Per SDK: $per_client_display" >> "$EXAMPLES_TXT"
 
 echo -e "${GREEN}✅ Examples list generated!${RESET}"
 echo -e "  Total: ${GREEN}$total_all${RESET} examples"

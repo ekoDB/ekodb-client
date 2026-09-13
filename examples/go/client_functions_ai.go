@@ -128,7 +128,7 @@ func main() {
 		Parameters: map[string]ekodb.ParameterDefinition{
 			"text": {Required: true, Description: "Text to embed"},
 		},
-		Functions: []ekodb.FunctionStageConfig{ekodb.StageEmbed("{{text}}", &model2)},
+		Functions: []ekodb.FunctionStageConfig{ekodb.StageEmbed("text", "embedding", &model2)},
 		Tags:      []string{"ai", "embed"},
 	}
 	scriptID2, _ := saveOrUpdateFn(client, script2)

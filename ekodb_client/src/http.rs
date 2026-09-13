@@ -1143,12 +1143,17 @@ impl HttpClient {
     // ========== Transaction Methods ==========
 
     /// Begin a new transaction
-    pub async fn begin_transaction(&self, isolation_level: &str, token: &str) -> Result<String> {
+    pub async fn begin_transaction(
+        &self,
+        isolation_level: Option<&str>,
+        token: &str,
+    ) -> Result<String> {
         let url = self.base_url.join("/api/transactions")?;
 
         #[derive(Serialize)]
         struct BeginTransactionRequest<'a> {
-            isolation_level: &'a str,
+            #[serde(skip_serializing_if = "Option::is_none")]
+            isolation_level: Option<&'a str>,
         }
 
         let request = BeginTransactionRequest { isolation_level };
@@ -3813,6 +3818,19 @@ impl HttpClient {
     /// an update rather than its own endpoint.
     pub async fn resume_schedule(&self, id: &str, token: &str) -> Result<serde_json::Value> {
         self.set_schedule_enabled(id, true, token).await
+    }
+
+    /// Trigger a schedule immediately.
+    pub async fn trigger_schedule(&self, id: &str, token: &str) -> Result<serde_json::Value> {
+        let url = self.api_path_url(&["schedules", id, "trigger"])?;
+        let response = self
+            .client
+            .post(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        self.handle_response("/api/schedules/{id}/trigger", response)
+            .await
     }
 
     /// Shared implementation for pause/resume: a partial update carrying only

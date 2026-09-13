@@ -7,6 +7,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -46,7 +47,7 @@ func main() {
 
 	// Stream a chat message via SSE
 	fmt.Println("\nStreaming response for: 'What is ekoDB?'\n")
-	eventCh, err := client.ChatMessageStream(session.ChatID, ekodb.ChatMessageRequest{
+	eventCh, err := client.ChatMessageStream(context.Background(), session.ChatID, ekodb.ChatMessageRequest{
 		Message: "What is ekoDB?",
 	})
 	if err != nil {

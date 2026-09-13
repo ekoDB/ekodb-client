@@ -9,7 +9,8 @@ import kotlinx.serialization.json.put
 /**
  * Schedule management example.
  *
- * Exercises create -> list -> get -> update -> pause -> resume -> delete.
+ * Exercises create -> list -> get -> update -> trigger -> pause -> resume -> delete.
+ * The referenced function label must already exist on the server.
  */
 fun main() = runBlocking {
     val dotenv = dotenv()
@@ -28,8 +29,10 @@ fun main() = runBlocking {
         println("--- Creating schedule ---")
         val schedule = client.createSchedule(buildJsonObject {
             put("name", "Hourly Health Check")
-            put("cron", "0 * * * *")
+            put("function_label", "hourly_health_check")
+            put("cron_expression", "0 0 * * * *")
             put("description", "Ping all services every hour")
+            put("enabled", true)
         })
         val schedId = schedule["id"].toString().trim('"')
         println("Created schedule: $schedId — ${schedule["name"]}")
@@ -42,27 +45,32 @@ fun main() = runBlocking {
         // 3. Get schedule by ID
         println("\n--- Getting schedule ---")
         val fetched = client.getSchedule(schedId)
-        println("Fetched: ${fetched["name"]} (cron: ${fetched["cron"]})")
+        println("Fetched: ${fetched["name"]} (cron: ${fetched["cron_expression"]})")
 
         // 4. Update schedule
         println("\n--- Updating schedule ---")
         val updated = client.updateSchedule(schedId, buildJsonObject {
-            put("cron", "*/30 * * * *")
+            put("cron_expression", "0 */30 * * * *")
             put("description", "Ping all services every 30 minutes")
         })
-        println("Updated cron: ${updated["cron"]}")
+        println("Updated cron: ${updated["cron_expression"]}")
 
-        // 5. Pause schedule
+        // 5. Trigger immediately
+        println("\n--- Triggering schedule ---")
+        val triggered = client.triggerSchedule(schedId)
+        println("Trigger response: $triggered")
+
+        // 6. Pause schedule
         println("\n--- Pausing schedule ---")
         val paused = client.pauseSchedule(schedId)
-        println("Status after pause: ${paused["status"]}")
+        println("Enabled after pause: ${paused["enabled"]}")
 
-        // 6. Resume schedule
+        // 7. Resume schedule
         println("\n--- Resuming schedule ---")
         val resumed = client.resumeSchedule(schedId)
-        println("Status after resume: ${resumed["status"]}")
+        println("Enabled after resume: ${resumed["enabled"]}")
 
-        // 7. Delete schedule
+        // 8. Delete schedule
         println("\n--- Deleting schedule ---")
         client.deleteSchedule(schedId)
         println("Schedule deleted successfully")

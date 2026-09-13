@@ -7,21 +7,33 @@ expected response shapes, mirroring the Rust Schedule endpoints.
 Run with: pytest tests/test_schedules.py -v
 """
 
+import ekodb_client
+
+
+def test_client_exposes_trigger_schedule():
+    assert hasattr(ekodb_client.Client, "trigger_schedule")
+
 
 class TestScheduleRequestStructure:
     """Verify that schedule request dicts are well-formed."""
 
     def test_create_schedule_minimal(self):
-        """A create_schedule request needs at least a name and cron."""
-        request = {"name": "Daily Backup", "cron": "0 2 * * *"}
+        """A create request names a function and uses a six-field cron."""
+        request = {
+            "name": "Daily Backup",
+            "function_label": "daily_backup",
+            "cron_expression": "0 0 2 * * *",
+        }
         assert request["name"] == "Daily Backup"
-        assert request["cron"] == "0 2 * * *"
+        assert request["function_label"] == "daily_backup"
+        assert request["cron_expression"] == "0 0 2 * * *"
 
     def test_create_schedule_full(self):
         """Create schedule with all optional fields."""
         request = {
             "name": "Nightly Sync",
-            "cron": "0 0 * * *",
+            "function_label": "nightly_sync",
+            "cron_expression": "0 0 0 * * *",
             "description": "Sync data from external sources nightly",
             "chat_id": "session_abc",
             "message": "Run the nightly sync procedure",
@@ -34,16 +46,16 @@ class TestScheduleRequestStructure:
 
     def test_update_schedule_partial(self):
         """Update schedule only sends changed fields."""
-        request = {"cron": "30 3 * * *"}
+        request = {"cron_expression": "0 30 3 * * *"}
         assert "name" not in request
         assert "description" not in request
-        assert request["cron"] == "30 3 * * *"
+        assert request["cron_expression"] == "0 30 3 * * *"
 
     def test_update_schedule_multiple_fields(self):
         """Update schedule can change multiple fields at once."""
         request = {
             "name": "Updated Backup",
-            "cron": "0 4 * * *",
+            "cron_expression": "0 0 4 * * *",
             "description": "Changed to 4 AM",
         }
         assert request["name"] == "Updated Backup"
@@ -57,26 +69,33 @@ class TestScheduleResponseStructure:
         resp = {
             "id": "sched_1",
             "name": "Daily Backup",
-            "cron": "0 2 * * *",
-            "status": "active",
+            "cron_expression": "0 0 2 * * *",
+            "enabled": True,
         }
         assert "id" in resp
         assert isinstance(resp["id"], str)
-        assert resp["cron"] == "0 2 * * *"
+        assert resp["cron_expression"] == "0 0 2 * * *"
 
     def test_schedule_list_response(self):
         resp = {
             "schedules": [
-                {"id": "sched_1", "name": "Daily Backup", "cron": "0 2 * * *"},
-                {"id": "sched_2", "name": "Weekly Report", "cron": "0 9 * * 1"},
+                {
+                    "id": "sched_1",
+                    "name": "Daily Backup",
+                    "cron_expression": "0 0 2 * * *",
+                },
+                {
+                    "id": "sched_2",
+                    "name": "Weekly Report",
+                    "cron_expression": "0 0 9 * * 1",
+                },
             ]
         }
         assert isinstance(resp["schedules"], list)
         assert len(resp["schedules"]) == 2
 
-    def test_schedule_status_values(self):
-        """Schedule status: active, paused."""
-        valid_statuses = {"active", "paused"}
-        for status in valid_statuses:
-            resp = {"id": "sched_1", "status": status}
-            assert resp["status"] in valid_statuses
+    def test_schedule_enabled_values(self):
+        """Pause and resume are represented by the enabled flag."""
+        for enabled in (False, True):
+            resp = {"id": "sched_1", "enabled": enabled}
+            assert resp["enabled"] is enabled

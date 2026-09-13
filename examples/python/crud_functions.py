@@ -5,7 +5,7 @@ Complete CRUD Functions Example - ekoDB
 Demonstrates the full CRUD lifecycle using functions with verification:
 1. Insert + Verify (using Query)
 2. Query + Update + Verify
-3. FindById + Update + Verify  
+3. FindById + Update + Verify
 4. Delete + Verify
 
 Each function shows how Functions chain together with proper verification.
