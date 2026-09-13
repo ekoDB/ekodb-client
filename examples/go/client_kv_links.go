@@ -107,6 +107,9 @@ func main() {
 
 	// Cleanup
 	fmt.Println("\n--- Cleanup ---")
+	if _, err := client.KVUnlink("team:engineering", collection, doc1ID); err != nil {
+		log.Fatalf("KVUnlink remaining doc1 failed: %v", err)
+	}
 	_ = client.KVDelete("team:engineering")
 	_ = client.Delete(collection, doc1ID)
 	_ = client.Delete(collection, doc2ID)
