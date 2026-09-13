@@ -69,11 +69,12 @@ and this project adheres to
   int literal, which ekoDB's typed-value semantics reject. (#244)
 - **CI now compiles every Go example.**
   `examples/go/client_chat_message_stream.go` called `ChatMessageStream` with
-  two arguments after the method gained a `context.Context` parameter, and
-  nothing compiled these files in CI to catch it. Add a job that builds every
-  `examples/go/*.go` individually (each declares its own `package main`, so
-  `go build ./...` fails regardless of correctness) against a checkout of
-  `ekodb-client-go`. (#179)
+  two arguments after the method gained a `context.Context` parameter.
+  `scripts/run-client-examples.sh check go` already compiled these files
+  individually against a checkout of `ekodb-client-go`, but nothing in CI called
+  it. Wire it into a new job, plus a daily schedule trigger since a drift like
+  this one originates in `ekodb-client-go` and touches no path this repo's
+  existing triggers watch. (#179)
 - **Stored-function filter safety.** Add a typed, adjacently-tagged query
   expression representation and validate legacy raw objects at stage
   construction, so bare filters, unsupported operators, empty logical groups,
