@@ -1,7 +1,7 @@
 //! Transaction Example using ekoDB Rust Client
 //!
 //! Demonstrates:
-//! - Begin transaction with isolation level
+//! - Begin transaction with the server default or an explicit isolation level
 //! - Operations within a transaction
 //! - Transaction status checking
 //! - Commit transaction
@@ -52,8 +52,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Example 1: Begin Transaction
     println!("=== Example 1: Begin Transaction ===");
-    let tx_id = client.begin_transaction("ReadCommitted").await?;
-    println!("Transaction ID: {}\n", tx_id);
+    let tx_id = client.begin_transaction(None).await?;
+    println!("Transaction ID (server-default isolation): {}\n", tx_id);
 
     // Example 2: Operations within Transaction
     println!("=== Example 2: Operations within Transaction ===");
@@ -73,7 +73,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Example 5: Rollback Demo
     println!("=== Example 5: Rollback Demo ===");
-    let tx_id2 = client.begin_transaction("ReadCommitted").await?;
+    let tx_id2 = client.begin_transaction(Some("ReadCommitted")).await?;
     println!("New transaction: {}", tx_id2);
 
     let status2 = client.get_transaction_status(&tx_id2).await?;

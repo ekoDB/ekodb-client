@@ -232,8 +232,6 @@ data class ChatMessageRequest(
     val message: String,
     @SerialName("bypass_ripple")
     val bypassRipple: Boolean? = null,
-    @SerialName("force_summarize")
-    val forceSummarize: Boolean? = null,
     @SerialName("max_iterations")
     val maxIterations: Int? = null,
     @SerialName("tool_config")

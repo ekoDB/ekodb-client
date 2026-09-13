@@ -45,6 +45,19 @@ async function saveOrUpdateUserFunction(
 async function main() {
   const client = new EkoDBClient(BASE_URL, API_KEY);
   await client.init();
+
+  // Compile-time/runtime construction check for an asymmetric algorithm. The
+  // live demo below uses HS256 because it reads a shared secret from .env.
+  const asymmetricJwt = Stage.jwtSign(
+    { sub: "example" },
+    "{{env.JWT_PRIVATE_KEY}}",
+    "token",
+    3600,
+    "EdDSA",
+  );
+  if (asymmetricJwt.type !== "JwtSign" || asymmetricJwt.algorithm !== "EdDSA") {
+    throw new Error("JWT algorithm was not preserved");
+  }
   console.log("✓ Client created");
 
   // 1. Register: bcrypt-hash, insert.

@@ -90,6 +90,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // Cleanup
     println!("\n--- Cleanup ---");
+    client
+        .kv_unlink("user:alice:projects", collection, &doc2_id)
+        .await?;
+    println!("Unlinked remaining document");
     client.kv_delete("user:alice:projects").await?;
     println!("Deleted KV key");
     client.delete(collection, &doc1_id, None).await?;

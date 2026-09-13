@@ -137,7 +137,7 @@ make setup
 ### Build All Clients
 
 ```bash
-# Build ALL client libraries (Rust, Python, TypeScript)
+# Build ALL client libraries (Rust, Python, TypeScript, Kotlin)
 make build
 ```
 
@@ -146,6 +146,7 @@ make build
 - Builds Rust client (`ekodb_client`)
 - Builds Python client (via maturin)
 - Builds TypeScript client (npm build)
+- Builds Kotlin client (Gradle build)
 
 ### Build Individual Clients
 
@@ -158,6 +159,9 @@ make build-python-client
 
 # Build TypeScript client only
 make build-typescript-client
+
+# Build Kotlin client only
+make build-kotlin-client
 
 # Build Rust client in release mode
 make build-release
@@ -185,7 +189,19 @@ make test-examples-rust-client
 make test-examples-python-client
 make test-examples-go-client
 make test-examples-typescript-client
+make test-examples-javascript-client
+make test-examples-kotlin-client
 ```
+
+Offline parity and compilation checks do not require a server:
+
+```bash
+make example-parity-check
+EKODB_CLIENT_GO_DIR=/path/to/ekodb-client-go-worktree make check-client-examples
+```
+
+The Go override ensures a client worktree compiles examples against the paired
+Go feature worktree instead of a sibling default-branch checkout.
 
 ### Search and Schema Compatibility
 
@@ -217,12 +233,9 @@ server 0.72.2, including collection cleanup results. Kotlin schema tests use the
 accepted field types as regression fixtures. These commands run locally without
 a live server; they do not measure ranking or ANN recall.
 
-The document Vector envelope is `{"type":"Vector","value":[...]}`. Protocol
-sources are TypeScript's `Field.vector` (`ekodb-client-ts/src/utils.ts`) and
-Python's `field_vector` (`ekodb-client-py/python/ekodb_client/utils.py`),
-confirmed by live acceptance under an explicit Vector schema. Rust's
-`FieldType::Vector` (`ekodb_client/src/types.rs`) is untagged and currently
-emits an array; the Rust fixture test constructs the envelope explicitly.
+The document Vector envelope is `{"type":"Vector","value":[...]}`. Rust's
+`FieldType::vector`, TypeScript's `Field.vector`, Python's `field_vector`, and
+Kotlin's `FieldType.vector` all construct that envelope.
 `test-fixtures/vector-record.json` compares complete insertion payloads without
 collapsing Array and Vector. Rust and TypeScript codec tests retain the same
 distinction in MessagePack; this is not a live binary-transport claim. Kotlin
@@ -389,6 +402,7 @@ git push origin main --tags
 
 ### Testing
 
-- ✅ Examples for all languages (Rust, Python, Go, TypeScript, JavaScript)
+- ✅ Examples for all languages (Rust, Python, Go, TypeScript/JavaScript,
+  Kotlin)
 - ✅ Both direct API and client library examples
 - ✅ Automatic client building before running examples

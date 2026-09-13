@@ -1,17 +1,22 @@
 package io.ekodb.client.functions
 
+import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.decodeFromJsonElement
+import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
+import java.nio.file.Path
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
@@ -30,6 +35,84 @@ import kotlin.test.assertTrue
 class FunctionStagesTest {
     private val json = Json { encodeDefaults = true }
 
+    @Test
+    fun `every generated function stage round trips without loss`() {
+        val fixturePath = Path.of("..", "test-fixtures", "function-stage-contract.json")
+        val fixture = Json.parseToJsonElement(fixturePath.toFile().readText()).jsonObject
+        val floor = fixture["coverage_floor"]!!.jsonPrimitive.content.toInt()
+        val count = fixture["variant_count"]!!.jsonPrimitive.content.toInt()
+        val cases = fixture["variants"]!!.jsonArray
+        assertEquals(count, cases.size)
+        assertTrue(cases.size >= floor, "function-stage fixture fell below its coverage floor")
+
+        val strictJson = Json { ignoreUnknownKeys = false }
+        for (case in cases) {
+            val body = case.jsonObject
+            val name = body["name"]!!.jsonPrimitive.content
+            val stage = body["stage"]!!
+            val decoded = strictJson.decodeFromJsonElement(FunctionStageConfig.serializer(), stage)
+            val encoded = strictJson.encodeToJsonElement(FunctionStageConfig.serializer(), decoded)
+            assertEquals(stage, encoded, "$name lost contract data")
+        }
+    }
+
+    @Test
+    fun `strict function codec rejects unknown stage data`() {
+        val strictJson = Json { ignoreUnknownKeys = false }
+        val unknownField = """{"type":"FindAll","collection":"items","future_field":true}"""
+        val unknownVariant = """{"type":"FutureStage","value":true}"""
+        assertFailsWith<Exception> {
+            strictJson.decodeFromString<FunctionStageConfig>(unknownField)
+        }
+        assertFailsWith<Exception> {
+            strictJson.decodeFromString<FunctionStageConfig>(unknownVariant)
+        }
+    }
+
+    @Test
+    fun `group operations include the complete wire set`() {
+        val operations = listOf(
+            GroupFunctionOp.AddToSet to "\"AddToSet\"",
+            GroupFunctionOp.StandardDeviation to "\"StandardDeviation\"",
+            GroupFunctionOp.ApproxDistinct to "\"ApproxDistinct\"",
+        )
+        for ((operation, expected) in operations) {
+            assertEquals(expected, json.encodeToString(operation))
+        }
+    }
+
+    @Test
+    fun `field comparison conditions preserve their wire tags and values`() {
+        val conditions = listOf(
+            FunctionCondition.FieldGreaterThan("score", JsonPrimitive(10)) to "FieldGreaterThan",
+            FunctionCondition.FieldLessThan("score", JsonPrimitive(10)) to "FieldLessThan",
+            FunctionCondition.FieldGreaterThanOrEqual("score", JsonPrimitive(10)) to "FieldGreaterThanOrEqual",
+            FunctionCondition.FieldLessThanOrEqual("score", JsonPrimitive(10)) to "FieldLessThanOrEqual",
+        )
+        for ((condition, type) in conditions) {
+            val wire = json.encodeToString(FunctionConditionSerializer, condition)
+            assertContains(wire, "\"type\":\"$type\"")
+            assertContains(wire, "\"field\":\"score\"")
+            assertContains(wire, "\"value\":10")
+            assertEquals(condition, json.decodeFromString(FunctionConditionSerializer, wire))
+        }
+    }
+
+    @Test
+    fun `condition codec rejects unknown data instead of dropping it`() {
+        val unknownTopLevel =
+            """{"type":"FieldEquals","value":{"field":"score","value":10},"future":true}"""
+        val unknownNested =
+            """{"type":"FieldEquals","value":{"field":"score","value":10,"future":true}}"""
+
+        assertFailsWith<IllegalArgumentException> {
+            json.decodeFromString(FunctionConditionSerializer, unknownTopLevel)
+        }
+        assertFailsWith<IllegalArgumentException> {
+            json.decodeFromString(FunctionConditionSerializer, unknownNested)
+        }
+    }
+
     // ------------------------------------------------------------------
     // parameterRef()
     // ------------------------------------------------------------------
@@ -40,8 +123,9 @@ class FunctionStagesTest {
 
     @Test
     fun `filter sort limit and skip serialize as Query stages`() {
+        val filter = queryCondition("status", QueryConditionOperator.Eq, JsonPrimitive("active"))
         val stages = listOf(
-            FunctionStageConfig.filter("users", buildJsonObject { put("status", "active") }),
+            FunctionStageConfig.filter("users", filter),
             FunctionStageConfig.sort("users", listOf(SortFieldConfig("created_at", ascending = false))),
             FunctionStageConfig.limit("users", 10),
             FunctionStageConfig.skip("users", 5),
@@ -66,7 +150,9 @@ class FunctionStagesTest {
                 json.encodeToString(FunctionStageConfig.serializer(), stage),
             ).jsonObject
 
-        val filtered = wireOf(FunctionStageConfig.filter("users", buildJsonObject { put("a", 1) }))
+        val filtered = wireOf(
+            FunctionStageConfig.filter("users", queryCondition("a", QueryConditionOperator.Eq, JsonPrimitive(1))),
+        )
         assertNotNull(filtered["filter"])
 
         val limited = wireOf(FunctionStageConfig.limit("users", 10))
@@ -74,6 +160,119 @@ class FunctionStagesTest {
 
         val skipped = wireOf(FunctionStageConfig.skip("users", 5))
         assertEquals(5, skipped["skip"]?.jsonPrimitive?.content?.toInt())
+    }
+
+    @Test
+    fun `query-shaped stages reject bare filter objects immediately`() {
+        val bare = buildJsonObject { put("status", "active") }
+
+        assertFailsWith<IllegalArgumentException> { FunctionStageConfig.filter("users", bare) }
+        assertFailsWith<IllegalArgumentException> {
+            FunctionStageConfig.Update("users", bare, buildJsonObject {})
+        }
+        assertFailsWith<IllegalArgumentException> { FunctionStageConfig.Delete("users", bare) }
+    }
+
+    @Test
+    fun `query expressions reject invalid operators and logical cardinality`() {
+        val condition = queryCondition("status", QueryConditionOperator.Eq, JsonPrimitive("active"))
+        val invalidCondition = buildJsonObject {
+            put("type", "Condition")
+            put("content", buildJsonObject {
+                put("field", "status")
+                put("operator", "CustomOp")
+                put("value", "active")
+            })
+        }
+        assertFailsWith<IllegalArgumentException> { validateQueryExpression(invalidCondition) }
+        assertFailsWith<IllegalArgumentException> { queryLogical(QueryLogicalOperator.And, emptyList()) }
+        assertFailsWith<IllegalArgumentException> {
+            queryLogical(QueryLogicalOperator.Not, listOf(condition, condition))
+        }
+    }
+
+    @Test
+    fun `query expressions accept every long form condition operator alias`() {
+        val aliases = listOf(
+            "Equals",
+            "Equal",
+            "NotEquals",
+            "NotEqual",
+            "GreaterThan",
+            "LessThan",
+            "GreaterThanOrEqual",
+            "LessThanOrEqual",
+        )
+        for (operator in aliases) {
+            val expression = buildJsonObject {
+                put("type", "Condition")
+                put("content", buildJsonObject {
+                    put("field", "score")
+                    put("operator", operator)
+                    put("value", 10)
+                })
+            }
+            assertEquals(expression, validateQueryExpression(expression))
+        }
+    }
+
+    @Test
+    fun `query conditions reject non-string fields`() {
+        for (field in listOf(JsonPrimitive(42), JsonPrimitive(true))) {
+            val expression = buildJsonObject {
+                put("type", "Condition")
+                put("content", buildJsonObject {
+                    put("field", field)
+                    put("operator", "Eq")
+                    put("value", "active")
+                })
+            }
+            assertFailsWith<IllegalArgumentException> { validateQueryExpression(expression) }
+        }
+    }
+
+    @Test
+    fun `HttpRequest preserves timeout and output field through nested round trip`() {
+        val function = FunctionStageConfig.If(
+            condition = FunctionCondition.HasRecords,
+            then_functions = listOf(
+                FunctionStageConfig.HttpRequest(
+                    url = "https://example.test/data",
+                    method = "POST",
+                    body = buildJsonObject { put("id", "{{id}}") },
+                    timeout_seconds = 15,
+                    output_field = "upstream_response",
+                ),
+            ),
+        )
+
+        val wire = json.encodeToString<FunctionStageConfig>(function)
+        val decoded = json.decodeFromString<FunctionStageConfig>(wire)
+
+        assertEquals(function, decoded)
+        assertContains(wire, "\"timeout_seconds\":15")
+        assertContains(wire, "\"output_field\":\"upstream_response\"")
+    }
+
+    @Test
+    fun `UserFunction preserves transaction config`() {
+        val function = UserFunction(
+            label = "atomic_transfer",
+            name = "Atomic transfer",
+            functions = listOf(FunctionStageConfig.FindAll("accounts")),
+            transaction_config = TransactionConfig(
+                enabled = true,
+                auto_rollback = true,
+                isolation_level = "Serializable",
+            ),
+        )
+
+        val wire = json.encodeToString(function)
+        val decoded = json.decodeFromString<UserFunction>(wire)
+
+        assertEquals(function, decoded)
+        assertContains(wire, "\"transaction_config\"")
+        assertContains(wire, "\"isolation_level\":\"Serializable\"")
     }
 
     @Test

@@ -41,9 +41,228 @@ pub fn parameter_ref(name: impl Into<String>) -> serde_json::Value {
     })
 }
 
+/// A validated, adjacently-tagged filter expression for function stages.
+///
+/// Use [`QueryExpression::condition`] and [`QueryExpression::logical`] for
+/// typed construction. Existing raw JSON remains supported through
+/// [`TryFrom<serde_json::Value>`], but malformed objects fail before a request
+/// can be sent.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(transparent)]
+pub struct QueryExpression(serde_json::Value);
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum QueryConditionOperator {
+    Eq,
+    Ne,
+    Gt,
+    Gte,
+    Lt,
+    Lte,
+    In,
+    NotIn,
+    Contains,
+    StartsWith,
+    EndsWith,
+    Equals,
+    Equal,
+    NotEquals,
+    NotEqual,
+    GreaterThan,
+    LessThan,
+    GreaterThanOrEqual,
+    LessThanOrEqual,
+}
+
+impl QueryConditionOperator {
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::Eq => "Eq",
+            Self::Ne => "Ne",
+            Self::Gt => "Gt",
+            Self::Gte => "Gte",
+            Self::Lt => "Lt",
+            Self::Lte => "Lte",
+            Self::In => "In",
+            Self::NotIn => "NotIn",
+            Self::Contains => "Contains",
+            Self::StartsWith => "StartsWith",
+            Self::EndsWith => "EndsWith",
+            Self::Equals => "Equals",
+            Self::Equal => "Equal",
+            Self::NotEquals => "NotEquals",
+            Self::NotEqual => "NotEqual",
+            Self::GreaterThan => "GreaterThan",
+            Self::LessThan => "LessThan",
+            Self::GreaterThanOrEqual => "GreaterThanOrEqual",
+            Self::LessThanOrEqual => "LessThanOrEqual",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum QueryLogicalOperator {
+    And,
+    Or,
+    Not,
+}
+
+impl QueryLogicalOperator {
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::And => "And",
+            Self::Or => "Or",
+            Self::Not => "Not",
+        }
+    }
+}
+
+impl QueryExpression {
+    pub fn condition(
+        field: impl Into<String>,
+        operator: QueryConditionOperator,
+        value: serde_json::Value,
+    ) -> Self {
+        Self(serde_json::json!({
+            "type": "Condition",
+            "content": {
+                "field": field.into(),
+                "operator": operator.as_str(),
+                "value": value,
+            },
+        }))
+    }
+
+    pub fn logical(operator: QueryLogicalOperator, expressions: Vec<Self>) -> Result<Self, String> {
+        Self::try_from(serde_json::json!({
+            "type": "Logical",
+            "content": {
+                "operator": operator.as_str(),
+                "expressions": expressions,
+            },
+        }))
+    }
+
+    pub fn into_value(self) -> serde_json::Value {
+        self.0
+    }
+
+    fn validate(value: &serde_json::Value) -> Result<(), String> {
+        let object = value
+            .as_object()
+            .ok_or_else(|| "query expression must be a JSON object".to_string())?;
+        let expression_type = object
+            .get("type")
+            .and_then(serde_json::Value::as_str)
+            .ok_or_else(|| "query expression must contain a string `type`".to_string())?;
+        let content = object
+            .get("content")
+            .and_then(serde_json::Value::as_object)
+            .ok_or_else(|| "query expression must contain an object `content`".to_string())?;
+
+        match expression_type {
+            "Condition" => {
+                if content
+                    .get("field")
+                    .and_then(serde_json::Value::as_str)
+                    .is_none()
+                {
+                    return Err("Condition content must contain a string `field`".to_string());
+                }
+                let operator = content
+                    .get("operator")
+                    .and_then(serde_json::Value::as_str)
+                    .ok_or_else(|| {
+                        "Condition content must contain a string `operator`".to_string()
+                    })?;
+                if !matches!(
+                    operator,
+                    "Eq" | "Ne"
+                        | "Gt"
+                        | "Gte"
+                        | "Lt"
+                        | "Lte"
+                        | "In"
+                        | "NotIn"
+                        | "Contains"
+                        | "StartsWith"
+                        | "EndsWith"
+                        | "Equals"
+                        | "Equal"
+                        | "NotEquals"
+                        | "NotEqual"
+                        | "GreaterThan"
+                        | "LessThan"
+                        | "GreaterThanOrEqual"
+                        | "LessThanOrEqual"
+                ) {
+                    return Err(format!("unsupported condition operator `{operator}`"));
+                }
+                if !content.contains_key("value") {
+                    return Err("Condition content must contain `value`".to_string());
+                }
+            }
+            "Logical" => {
+                let operator = content
+                    .get("operator")
+                    .and_then(serde_json::Value::as_str)
+                    .ok_or_else(|| {
+                        "Logical content must contain a string `operator`".to_string()
+                    })?;
+                let expressions = content
+                    .get("expressions")
+                    .and_then(serde_json::Value::as_array)
+                    .ok_or_else(|| {
+                        "Logical content must contain an array `expressions`".to_string()
+                    })?;
+                match operator {
+                    "And" | "Or" if expressions.is_empty() => {
+                        return Err(format!(
+                            "logical operator `{operator}` requires at least one expression"
+                        ));
+                    }
+                    "Not" if expressions.len() != 1 => {
+                        return Err(
+                            "logical operator `Not` requires exactly one expression".to_string()
+                        );
+                    }
+                    "And" | "Or" | "Not" => {}
+                    _ => return Err(format!("unsupported logical operator `{operator}`")),
+                }
+                for expression in expressions {
+                    Self::validate(expression)?;
+                }
+            }
+            other => return Err(format!("unsupported query expression type `{other}`")),
+        }
+
+        Ok(())
+    }
+}
+
+impl TryFrom<serde_json::Value> for QueryExpression {
+    type Error = String;
+
+    fn try_from(value: serde_json::Value) -> Result<Self, Self::Error> {
+        Self::validate(&value)?;
+        Ok(Self(value))
+    }
+}
+
+impl<'de> Deserialize<'de> for QueryExpression {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let value = serde_json::Value::deserialize(deserializer)?;
+        Self::try_from(value).map_err(serde::de::Error::custom)
+    }
+}
+
 /// A reusable sequence of Functions stored in ekoDB.
 /// Called by label via the `call_function` chat tool or REST API.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct UserFunction {
     /// Unique identifier (ekoDB-generated)
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -73,6 +292,10 @@ pub struct UserFunction {
     /// Tags for categorization
     #[serde(default)]
     pub tags: Vec<String>,
+
+    /// Optional transaction settings for atomic function execution.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub transaction_config: Option<TransactionConfig>,
 
     /// Creation timestamp (server-managed, read-only)
     #[serde(skip_serializing)]
@@ -107,11 +330,18 @@ impl UserFunction {
             parameters: HashMap::new(),
             functions: Vec::new(),
             tags: Vec::new(),
+            transaction_config: None,
             created_at: None,
             updated_at: None,
             http_method: None,
             http_path: None,
         }
+    }
+
+    /// Execute supported write stages atomically with the supplied settings.
+    pub fn with_transaction_config(mut self, config: TransactionConfig) -> Self {
+        self.transaction_config = Some(config);
+        self
     }
 
     /// Expose this function under the REST path-router. `method` is
@@ -155,8 +385,19 @@ impl UserFunction {
     }
 }
 
+/// Transaction settings attached to a stored function.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct TransactionConfig {
+    pub enabled: bool,
+    pub auto_rollback: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub isolation_level: Option<String>,
+}
+
 /// Parameter definition for a function
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct ParameterDefinition {
     /// Parameter name (used as key in HashMap, not serialized)
     #[serde(skip_serializing, default)]
@@ -207,7 +448,7 @@ impl ParameterDefinition {
 
 /// Condition evaluation for function control flow (If statements)
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(tag = "type", content = "value")]
+#[serde(tag = "type", content = "value", deny_unknown_fields)]
 pub enum FunctionCondition {
     /// Check if field equals value in current records
     FieldEquals {
@@ -258,7 +499,7 @@ pub enum FunctionCondition {
 
 /// Function step in a pipeline
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(tag = "type", rename_all = "PascalCase")]
+#[serde(tag = "type", rename_all = "PascalCase", deny_unknown_fields)]
 #[allow(
     clippy::enum_variant_names,
     clippy::vec_box,
@@ -272,7 +513,7 @@ pub enum Function {
     Query {
         collection: String,
         #[serde(skip_serializing_if = "Option::is_none")]
-        filter: Option<serde_json::Value>,
+        filter: Option<QueryExpression>,
         #[serde(skip_serializing_if = "Option::is_none")]
         sort: Option<Vec<SortFieldConfig>>,
         #[serde(skip_serializing_if = "Option::is_none")]
@@ -319,7 +560,7 @@ pub enum Function {
     /// Update records matching filter
     Update {
         collection: String,
-        filter: serde_json::Value,
+        filter: QueryExpression,
         updates: serde_json::Value,
         #[serde(skip_serializing_if = "Option::is_none")]
         bypass_ripple: Option<bool>,
@@ -341,7 +582,7 @@ pub enum Function {
     /// Find one record and update atomically
     FindOneAndUpdate {
         collection: String,
-        filter: serde_json::Value,
+        record_id: String,
         updates: serde_json::Value,
         #[serde(skip_serializing_if = "Option::is_none")]
         bypass_ripple: Option<bool>,
@@ -352,8 +593,43 @@ pub enum Function {
     /// Update with actions (increment/decrement)
     UpdateWithAction {
         collection: String,
-        filter: serde_json::Value,
-        actions: serde_json::Value,
+        record_id: String,
+        action: String,
+        field: String,
+        value: serde_json::Value,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        bypass_ripple: Option<bool>,
+    },
+
+    /// Insert or update a record selected by a key/value pair.
+    Upsert {
+        collection: String,
+        key: String,
+        value: serde_json::Value,
+        record: serde_json::Value,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        bypass_ripple: Option<bool>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        ttl: Option<serde_json::Value>,
+    },
+
+    /// Increment a numeric field on a record.
+    Increment {
+        collection: String,
+        record_id: String,
+        field: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        by: Option<serde_json::Value>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        bypass_ripple: Option<bool>,
+    },
+
+    /// Append a value to an array field on a record.
+    Push {
+        collection: String,
+        record_id: String,
+        field: String,
+        value: serde_json::Value,
         #[serde(skip_serializing_if = "Option::is_none")]
         bypass_ripple: Option<bool>,
     },
@@ -361,7 +637,7 @@ pub enum Function {
     /// Delete records matching filter
     Delete {
         collection: String,
-        filter: serde_json::Value,
+        filter: QueryExpression,
         #[serde(skip_serializing_if = "Option::is_none")]
         bypass_ripple: Option<bool>,
     },
@@ -390,8 +666,8 @@ pub enum Function {
     BatchDelete {
         collection: String,
         record_ids: Vec<String>,
-        #[serde(default)]
-        bypass_ripple: bool,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        bypass_ripple: Option<bool>,
     },
 
     /// HTTP request
@@ -411,9 +687,12 @@ pub enum Function {
 
     /// Vector search
     VectorSearch {
-        query_vector: Vec<f32>,
+        collection: String,
+        query_vector: Vec<f64>,
         #[serde(skip_serializing_if = "Option::is_none")]
-        options: Option<serde_json::Value>,
+        limit: Option<usize>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        threshold: Option<f64>,
     },
 
     /// Text search
@@ -430,11 +709,25 @@ pub enum Function {
 
     /// Hybrid search (text + vector)
     HybridSearch {
-        text_query: String,
-        vector_query: Vec<f32>,
+        collection: String,
+        query_text: String,
         #[serde(skip_serializing_if = "Option::is_none")]
-        options: Option<serde_json::Value>,
+        query_vector: Option<Vec<f64>>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        limit: Option<usize>,
     },
+
+    /// Set one field on each record in the working set.
+    SetField {
+        field: String,
+        value: serde_json::Value,
+    },
+
+    /// Add several computed fields to each record in the working set.
+    AddFields { fields: Vec<serde_json::Value> },
+
+    /// Write the current UTC datetime to a field.
+    CurrentDatetime { output_field: String },
 
     /// AI Chat completion
     Chat {
@@ -829,6 +1122,7 @@ fn default_method() -> String {
 
 /// Chat message for AI operations
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct ChatMessage {
     pub role: String,
     pub content: String,
@@ -862,6 +1156,7 @@ impl ChatMessage {
 
 /// Group function configuration for Group stage
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct GroupFunctionConfig {
     pub output_field: String,
     pub operation: GroupFunctionOp,
@@ -898,10 +1193,14 @@ pub enum GroupFunctionOp {
     First,
     Last,
     Push,
+    AddToSet,
+    StandardDeviation,
+    ApproxDistinct,
 }
 
 /// Sort field configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct SortFieldConfig {
     pub field: String,
     #[serde(default = "default_ascending")]
@@ -983,6 +1282,264 @@ pub struct StageStats {
 mod tests {
     use super::*;
     use serde_json::json;
+
+    #[derive(Deserialize)]
+    struct FunctionContractFixture {
+        coverage_floor: usize,
+        variant_count: usize,
+        variants: Vec<FunctionContractCase>,
+    }
+
+    #[derive(Deserialize)]
+    struct FunctionContractCase {
+        name: String,
+        stage: serde_json::Value,
+    }
+
+    #[test]
+    fn every_generated_function_stage_round_trips_without_loss() {
+        let fixture: FunctionContractFixture = serde_json::from_str(include_str!(
+            "../../test-fixtures/function-stage-contract.json"
+        ))
+        .unwrap();
+        assert_eq!(fixture.variant_count, fixture.variants.len());
+        assert!(fixture.variants.len() >= fixture.coverage_floor);
+
+        for case in fixture.variants {
+            let decoded: Function = serde_json::from_value(case.stage.clone())
+                .unwrap_or_else(|error| panic!("{} failed to decode: {error}", case.name));
+            let encoded = serde_json::to_value(decoded)
+                .unwrap_or_else(|error| panic!("{} failed to encode: {error}", case.name));
+            assert_eq!(encoded, case.stage, "{} lost contract data", case.name);
+        }
+    }
+
+    #[test]
+    fn stored_function_decode_rejects_unknown_fields_and_variants() {
+        let unknown_field = json!({
+            "type": "FindAll",
+            "collection": "items",
+            "future_field": true
+        });
+        let unknown_variant = json!({"type": "FutureStage", "value": true});
+        assert!(serde_json::from_value::<Function>(unknown_field).is_err());
+        assert!(serde_json::from_value::<Function>(unknown_variant).is_err());
+
+        let unknown_top_level = json!({
+            "label": "sample",
+            "name": "Sample",
+            "parameters": {},
+            "functions": [{"type": "FindAll", "collection": "items"}],
+            "tags": [],
+            "future_field": true
+        });
+        assert!(serde_json::from_value::<UserFunction>(unknown_top_level).is_err());
+    }
+
+    #[test]
+    fn user_function_preserves_transaction_config() {
+        let wire = json!({
+            "label": "atomic_transfer",
+            "name": "Atomic transfer",
+            "parameters": {},
+            "functions": [{"type": "FindAll", "collection": "accounts"}],
+            "tags": [],
+            "transaction_config": {
+                "enabled": true,
+                "auto_rollback": true,
+                "isolation_level": "Serializable"
+            }
+        });
+
+        let function: UserFunction = serde_json::from_value(wire.clone()).unwrap();
+
+        assert_eq!(
+            function.transaction_config,
+            Some(TransactionConfig {
+                enabled: true,
+                auto_rollback: true,
+                isolation_level: Some("Serializable".to_string()),
+            })
+        );
+        assert_eq!(serde_json::to_value(function).unwrap(), wire);
+    }
+
+    #[test]
+    fn group_function_operations_include_the_full_wire_set() {
+        let operations = [
+            (GroupFunctionOp::AddToSet, "\"AddToSet\""),
+            (GroupFunctionOp::StandardDeviation, "\"StandardDeviation\""),
+            (GroupFunctionOp::ApproxDistinct, "\"ApproxDistinct\""),
+        ];
+
+        for (operation, expected) in operations {
+            assert_eq!(serde_json::to_string(&operation).unwrap(), expected);
+        }
+    }
+
+    #[test]
+    fn corrected_and_new_function_stages_round_trip_without_field_loss() {
+        let stages = vec![
+            json!({
+                "type": "VectorSearch",
+                "collection": "items",
+                "query_vector": [0.12345678901234568, 0.2],
+                "limit": 5,
+                "threshold": 0.8
+            }),
+            json!({
+                "type": "HybridSearch",
+                "collection": "items",
+                "query_text": "blue",
+                "query_vector": [0.1, 0.2],
+                "limit": 7
+            }),
+            json!({
+                "type": "FindOneAndUpdate",
+                "collection": "items",
+                "record_id": "item-1",
+                "updates": {"status": "done"},
+                "bypass_ripple": true,
+                "ttl": {"type": "Parameter", "name": "ttl"}
+            }),
+            json!({
+                "type": "UpdateWithAction",
+                "collection": "items",
+                "record_id": "item-1",
+                "action": "Increment",
+                "field": "count",
+                "value": 2,
+                "bypass_ripple": true
+            }),
+            json!({
+                "type": "BatchDelete",
+                "collection": "items",
+                "record_ids": ["item-1", "item-2"],
+                "bypass_ripple": true
+            }),
+            json!({
+                "type": "Upsert",
+                "collection": "items",
+                "key": "sku",
+                "value": "A-1",
+                "record": {"name": "widget"},
+                "bypass_ripple": true,
+                "ttl": 3600
+            }),
+            json!({
+                "type": "Increment",
+                "collection": "items",
+                "record_id": "item-1",
+                "field": "count",
+                "by": {"type": "Parameter", "name": "amount"},
+                "bypass_ripple": true
+            }),
+            json!({
+                "type": "Push",
+                "collection": "items",
+                "record_id": "item-1",
+                "field": "tags",
+                "value": "new",
+                "bypass_ripple": true
+            }),
+            json!({"type": "SetField", "field": "active", "value": true}),
+            json!({
+                "type": "AddFields",
+                "fields": [{"field": "total", "expression": {"type": "Literal", "value": 1}}]
+            }),
+            json!({"type": "CurrentDatetime", "output_field": "processed_at"}),
+        ];
+
+        assert!(
+            stages.len() >= 11,
+            "the regression matrix must not be vacuous"
+        );
+        for wire in stages {
+            let decoded: Function = serde_json::from_value(wire.clone()).unwrap();
+            assert_eq!(serde_json::to_value(decoded).unwrap(), wire);
+        }
+    }
+
+    #[test]
+    fn query_expression_accepts_typed_and_correct_raw_forms() {
+        let typed = QueryExpression::logical(
+            QueryLogicalOperator::And,
+            vec![QueryExpression::condition(
+                "status",
+                QueryConditionOperator::Eq,
+                json!("active"),
+            )],
+        )
+        .unwrap();
+        assert_eq!(
+            serde_json::to_value(typed).unwrap(),
+            json!({
+                "type": "Logical",
+                "content": {
+                    "operator": "And",
+                    "expressions": [{
+                        "type": "Condition",
+                        "content": {"field": "status", "operator": "Eq", "value": "active"}
+                    }]
+                }
+            })
+        );
+
+        let raw = json!({
+            "type": "Condition",
+            "content": {"field": "status", "operator": "Eq", "value": "active"}
+        });
+        assert!(QueryExpression::try_from(raw).is_ok());
+    }
+
+    #[test]
+    fn query_expression_rejects_bare_filter_objects() {
+        let error = QueryExpression::try_from(json!({"status": "active"})).unwrap_err();
+        assert!(error.contains("string `type`"));
+
+        let stage = json!({
+            "type": "Delete",
+            "collection": "items",
+            "filter": {"status": "active"}
+        });
+        assert!(serde_json::from_value::<Function>(stage).is_err());
+    }
+
+    #[test]
+    fn query_expression_rejects_invalid_operators_and_cardinality() {
+        let condition = |operator: &str| {
+            json!({
+                "type": "Condition",
+                "content": {"field": "status", "operator": operator, "value": "active"}
+            })
+        };
+        assert!(QueryExpression::try_from(condition("CustomOp")).is_err());
+        for alias in [
+            "Equals",
+            "Equal",
+            "NotEquals",
+            "NotEqual",
+            "GreaterThan",
+            "LessThan",
+            "GreaterThanOrEqual",
+            "LessThanOrEqual",
+        ] {
+            assert!(
+                QueryExpression::try_from(condition(alias)).is_ok(),
+                "{alias}"
+            );
+        }
+
+        for expression in [
+            json!({"type": "Logical", "content": {"operator": "And", "expressions": []}}),
+            json!({"type": "Logical", "content": {"operator": "Custom", "expressions": [condition("Eq")]}}),
+            json!({"type": "Logical", "content": {"operator": "Not", "expressions": [condition("Eq"), condition("Ne")]}}),
+        ] {
+            assert!(QueryExpression::try_from(expression).is_err());
+        }
+
+        assert!(QueryExpression::logical(QueryLogicalOperator::Not, Vec::new()).is_err());
+    }
 
     #[test]
     fn try_catch_round_trip() {

@@ -9,10 +9,11 @@ package io.ekodb.client.examples
 
 import io.ekodb.client.EkoDBClient
 import io.ekodb.client.functions.*
-import io.ekodb.client.types.FieldType
+import io.ekodb.client.types.Record
 import io.github.cdimascio.dotenv.dotenv
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlin.system.measureTimeMillis
@@ -49,7 +50,7 @@ fun main() = runBlocking {
 
     println("=== ekoDB Function Composition Examples ===\n")
 
-    setupTestData(client)
+    setupCompositionTestData(client)
     basicCompositionExample(client)
     swrCompositionExample(client)
     nestedCompositionExample(client)
@@ -57,16 +58,15 @@ fun main() = runBlocking {
     println("\n✅ All composition examples completed!")
 }
 
-suspend fun setupTestData(client: EkoDBClient) {
+suspend fun setupCompositionTestData(client: EkoDBClient) {
     println("📋 Setting up test data...\n")
 
     for (i in 1..5) {
-        val record = mapOf(
-            "id" to FieldType.String("user_$i"),
-            "name" to FieldType.String("User $i"),
-            "department" to FieldType.String(if (i <= 2) "engineering" else "sales"),
-            "score" to FieldType.Integer(i * 20)
-        )
+        val record = Record.new()
+            .insert("id", "user_$i")
+            .insert("name", "User $i")
+            .insert("department", if (i <= 2) "engineering" else "sales")
+            .insert("score", i * 20)
         client.insert("users", record)
     }
 
@@ -83,14 +83,13 @@ suspend fun basicCompositionExample(client: EkoDBClient) {
         name = "Fetch user by ID",
         parameters = mapOf(
             "user_id" to ParameterDefinition(
-                name = "user_id",
                 required = true
             )
         ),
         functions = listOf(
-            Function.FindById(
+            FunctionStageConfig.FindById(
                 collection = "users",
-                recordId = "{{user_id}}"
+                record_id = "{{user_id}}"
             )
         )
     )
@@ -104,16 +103,15 @@ suspend fun basicCompositionExample(client: EkoDBClient) {
         name = "Wrapper that calls fetch_user",
         parameters = mapOf(
             "user_id" to ParameterDefinition(
-                name = "user_id",
                 required = true
             )
         ),
         functions = listOf(
-            Function.CallFunction(
-                functionLabel = "fetch_user",
+            FunctionStageConfig.CallFunction(
+                function_label = "fetch_user",
                 params = null // Inherits user_id from parent scope
             ),
-            Function.Project(
+            FunctionStageConfig.Project(
                 fields = listOf("name", "department"),
                 exclude = false
             )
@@ -124,7 +122,7 @@ suspend fun basicCompositionExample(client: EkoDBClient) {
     println("✅ Saved composed function: get_user_wrapper (calls fetch_user + projects fields)\n")
 
     // Step 3: Call the composed function
-    val params = mapOf("user_id" to FieldType.String("user_1"))
+    val params = mapOf("user_id" to JsonPrimitive("user_1"))
     val result = client.callFunction("get_user_wrapper", params)
 
     println("📊 Result from composed function:")
@@ -151,20 +149,21 @@ suspend fun swrCompositionExample(client: EkoDBClient) {
         name = "Fetch user from API and cache in KV",
         parameters = mapOf(
             "user_id" to ParameterDefinition(
-                name = "user_id",
                 required = true
             )
         ),
         functions = listOf(
-            Function.HttpRequest(
+            FunctionStageConfig.HttpRequest(
                 url = "https://jsonplaceholder.typicode.com/users/{{user_id}}",
                 method = "GET",
-                headers = mapOf("Accept" to "application/json")
+                headers = mapOf("Accept" to "application/json"),
+                timeout_seconds = 15,
+                output_field = "fetched_user"
             ),
             // Store in KV cache (much faster than collection for cache lookups)
-            Function.KvSet(
+            FunctionStageConfig.KvSet(
                 key = "user_cache:{{user_id}}",
-                value = kotlinx.serialization.json.JsonPrimitive("{{http_response}}"),
+                value = kotlinx.serialization.json.JsonPrimitive("{{fetched_user}}"),
                 ttl = 300 // 5 minute cache
             )
         )
@@ -180,33 +179,32 @@ suspend fun swrCompositionExample(client: EkoDBClient) {
         name = "SWR pattern for user data (KV-based)",
         parameters = mapOf(
             "user_id" to ParameterDefinition(
-                name = "user_id",
                 required = true
             )
         ),
         functions = listOf(
             // Check KV cache first (O(1) lookup - much faster than FindById)
-            Function.KvGet(
+            FunctionStageConfig.KvGet(
                 key = "user_cache:{{user_id}}"
             ),
-            Function.If(
+            FunctionStageConfig.If(
                 // KvGet returns { value: ... } on hit, { value: null } on miss
                 // So we check if "value" is not null to detect cache hit
                 condition = FunctionCondition.Not(
                     FunctionCondition.FieldEquals(field = "value", fieldValue = JsonNull)
                 ),
-                thenFunctions = listOf(
+                then_functions = listOf(
                     // Cache hit - project the value field
-                    Function.Project(
+                    FunctionStageConfig.Project(
                         fields = listOf("value"),
                         exclude = false
                     )
                 ),
-                elseFunctions = listOf(
+                else_functions = listOf(
                     // Cache miss - call reusable function to fetch and store
                     // Explicitly pass user_id to the function
-                    Function.CallFunction(
-                        functionLabel = "fetch_and_store_user",
+                    FunctionStageConfig.CallFunction(
+                        function_label = "fetch_and_store_user",
                         params = buildJsonObject {
                             put("user_id", "{{user_id}}")
                         }
@@ -221,24 +219,26 @@ suspend fun swrCompositionExample(client: EkoDBClient) {
 
     // Step 3: Test cache miss
     println("First call (cache miss - will fetch from API):")
-    val params = mapOf("user_id" to FieldType.String("1"))
+    val params = mapOf("user_id" to JsonPrimitive("1"))
 
+    lateinit var result1: io.ekodb.client.functions.FunctionResult
     val duration1 = measureTimeMillis {
-        val result1 = client.callFunction("swr_user", params)
-        println("   ⏱️  Duration: ${duration1}ms")
-        println("   📊 Records: ${result1.records.size}\n")
+        result1 = client.callFunction("swr_user", params)
     }
+    println("   ⏱️  Duration: ${duration1}ms")
+    println("   📊 Records: ${result1.records.size}\n")
 
     // Step 4: Test cache hit
     println("Second call (cache hit - from cache):")
+    lateinit var result2: io.ekodb.client.functions.FunctionResult
     val duration2 = measureTimeMillis {
-        val result2 = client.callFunction("swr_user", params)
-        println("   ⏱️  Duration: ${duration2}ms")
-        println("   📊 Records: ${result2.records.size}")
-        if (duration2 > 0) {
-            val speedup = duration1.toDouble() / duration2.toDouble()
-            println("   🚀 Cache speedup: ${"%.1f".format(speedup)}x faster!\n")
-        }
+        result2 = client.callFunction("swr_user", params)
+    }
+    println("   ⏱️  Duration: ${duration2}ms")
+    println("   📊 Records: ${result2.records.size}")
+    if (duration2 > 0) {
+        val speedup = duration1.toDouble() / duration2.toDouble()
+        println("   🚀 Cache speedup: ${"%.1f".format(speedup)}x faster!\n")
     }
 }
 
@@ -252,14 +252,13 @@ suspend fun nestedCompositionExample(client: EkoDBClient) {
         name = "Check if user exists",
         parameters = mapOf(
             "user_id" to ParameterDefinition(
-                name = "user_id",
                 required = true
             )
         ),
         functions = listOf(
-            Function.FindById(
+            FunctionStageConfig.FindById(
                 collection = "users",
-                recordId = "{{user_id}}"
+                record_id = "{{user_id}}"
             )
         )
     )
@@ -273,16 +272,15 @@ suspend fun nestedCompositionExample(client: EkoDBClient) {
         name = "Validate and slim down user",
         parameters = mapOf(
             "user_id" to ParameterDefinition(
-                name = "user_id",
                 required = true
             )
         ),
         functions = listOf(
-            Function.CallFunction(
-                functionLabel = "validate_user",
+            FunctionStageConfig.CallFunction(
+                function_label = "validate_user",
                 params = null // Inherits user_id from parent scope
             ),
-            Function.Project(
+            FunctionStageConfig.Project(
                 fields = listOf("name", "department"),
                 exclude = false
             )
@@ -298,13 +296,12 @@ suspend fun nestedCompositionExample(client: EkoDBClient) {
         name = "Get verified and validated user",
         parameters = mapOf(
             "user_id" to ParameterDefinition(
-                name = "user_id",
                 required = true
             )
         ),
         functions = listOf(
-            Function.CallFunction(
-                functionLabel = "fetch_slim_user",
+            FunctionStageConfig.CallFunction(
+                function_label = "fetch_slim_user",
                 params = null // Inherits user_id from parent scope
             )
         )
@@ -314,7 +311,7 @@ suspend fun nestedCompositionExample(client: EkoDBClient) {
     println("✅ Level 3 function: get_verified_user (calls fetch_slim_user)\n")
 
     // Execute 3-level nested composition
-    val params = mapOf("user_id" to FieldType.String("user_1"))
+    val params = mapOf("user_id" to JsonPrimitive("user_1"))
     val result = client.callFunction("get_verified_user", params)
 
     println("📊 Result from 3-level nested composition:")

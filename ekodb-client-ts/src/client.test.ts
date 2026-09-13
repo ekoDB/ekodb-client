@@ -13,7 +13,7 @@ import {
   DEFAULT_REQUEST_TIMEOUT_MS,
   parseHealthStatus,
 } from "./client";
-import type { ChatModels } from "./client";
+import type { ChatMessageRequest, ChatModels } from "./client";
 import { SearchQueryBuilder } from "./search";
 
 // Mock fetch globally
@@ -53,6 +53,15 @@ function mockJsonResponse(data: unknown, status = 200): void {
     }),
   });
 }
+
+it("does not expose the retired force_summarize chat option", () => {
+  const request: ChatMessageRequest = {
+    message: "hello",
+    // @ts-expect-error force_summarize was removed from the server contract
+    force_summarize: true,
+  };
+  expect(request.message).toBe("hello");
+});
 
 function mockErrorResponse(status: number, message: string): void {
   mockFetch.mockResolvedValueOnce({
@@ -459,6 +468,22 @@ describe("EkoDBClient transactions", () => {
     const txId = await client.beginTransaction();
 
     expect(txId).toBe("tx_123456");
+    const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+    expect(JSON.parse(calls[1][1]?.body as string)).toEqual({});
+  });
+
+  it("sends an explicitly selected transaction isolation level", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+    mockJsonResponse({ transaction_id: "tx_serializable" });
+
+    const txId = await client.beginTransaction("Serializable");
+
+    expect(txId).toBe("tx_serializable");
+    const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+    expect(JSON.parse(calls[1][1]?.body as string)).toEqual({
+      isolation_level: "Serializable",
+    });
   });
 
   it("commits transaction", async () => {
@@ -1033,6 +1058,36 @@ describe("EkoDBClient scripts advanced", () => {
     await expect(
       client.updateFunction("func_123", script),
     ).resolves.not.toThrow();
+  });
+
+  it("preserves unknown function data across get and update transport", async () => {
+    const client = createTestClient();
+    const futureFunction = {
+      label: "future_contract",
+      name: "Future contract",
+      parameters: {},
+      functions: [
+        { type: "FindAll", collection: "items", future_field: true },
+        { type: "FutureStage", future_value: { nested: true } },
+      ],
+      transaction_config: {
+        enabled: true,
+        auto_rollback: true,
+        isolation_level: "Serializable",
+      },
+    };
+
+    mockTokenResponse();
+    mockJsonResponse(futureFunction);
+    const decoded = await client.getFunction("func_123");
+
+    mockJsonResponse(null);
+    await client.updateFunction("func_123", decoded);
+
+    const [url, init] = mockFetch.mock.calls[2];
+    expect(url).toBe("http://localhost:8080/api/functions/func_123");
+    expect(init.method).toBe("PUT");
+    expect(JSON.parse(init.body as string)).toEqual(futureFunction);
   });
 });
 
@@ -2992,17 +3047,24 @@ describe("EkoDBClient schedules", () => {
     mockJsonResponse({
       id: "sched_1",
       name: "Nightly Backup",
-      cron: "0 2 * * *",
-      status: "active",
+      function_label: "nightly_backup",
+      cron_expression: "0 0 2 * * *",
+      enabled: true,
     });
 
     const result = await client.createSchedule({
       name: "Nightly Backup",
-      cron: "0 2 * * *",
-      action: "backup",
+      function_label: "nightly_backup",
+      cron_expression: "0 0 2 * * *",
     });
     expect(result).toHaveProperty("id", "sched_1");
-    expect(result).toHaveProperty("status", "active");
+    expect(result).toHaveProperty("enabled", true);
+    const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+    expect(JSON.parse(calls[1][1]?.body as string)).toEqual({
+      name: "Nightly Backup",
+      function_label: "nightly_backup",
+      cron_expression: "0 0 2 * * *",
+    });
   });
 
   it("lists schedules", async () => {
@@ -3025,7 +3087,7 @@ describe("EkoDBClient schedules", () => {
     mockJsonResponse({
       id: "sched_1",
       name: "Nightly Backup",
-      cron: "0 2 * * *",
+      cron_expression: "0 0 2 * * *",
     });
 
     const result = await client.getSchedule("sched_1");
@@ -3039,15 +3101,20 @@ describe("EkoDBClient schedules", () => {
     mockJsonResponse({
       id: "sched_1",
       name: "Updated Backup",
-      cron: "0 3 * * *",
+      cron_expression: "0 0 3 * * *",
     });
 
     const result = await client.updateSchedule("sched_1", {
       name: "Updated Backup",
-      cron: "0 3 * * *",
+      cron_expression: "0 0 3 * * *",
     });
     expect(result).toHaveProperty("name", "Updated Backup");
-    expect(result).toHaveProperty("cron", "0 3 * * *");
+    expect(result).toHaveProperty("cron_expression", "0 0 3 * * *");
+    const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+    expect(JSON.parse(calls[1][1]?.body as string)).toEqual({
+      name: "Updated Backup",
+      cron_expression: "0 0 3 * * *",
+    });
   });
 
   it("deletes a schedule", async () => {
@@ -3061,10 +3128,10 @@ describe("EkoDBClient schedules", () => {
   it("pauses a schedule", async () => {
     const client = createTestClient();
     mockTokenResponse();
-    mockJsonResponse({ id: "sched_1", status: "paused" });
+    mockJsonResponse({ id: "sched_1", enabled: false });
 
     const result = await client.pauseSchedule("sched_1");
-    expect(result).toHaveProperty("status", "paused");
+    expect(result).toHaveProperty("enabled", false);
 
     // Assert the REQUEST. There is no /pause route; pausing is a partial
     // update of `enabled`. A response-only assertion passed for as long as
@@ -3080,10 +3147,10 @@ describe("EkoDBClient schedules", () => {
   it("resumes a schedule", async () => {
     const client = createTestClient();
     mockTokenResponse();
-    mockJsonResponse({ id: "sched_1", status: "active" });
+    mockJsonResponse({ id: "sched_1", enabled: true });
 
     const result = await client.resumeSchedule("sched_1");
-    expect(result).toHaveProperty("status", "active");
+    expect(result).toHaveProperty("enabled", true);
 
     const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
     const dataCall = calls[1];
@@ -3091,6 +3158,23 @@ describe("EkoDBClient schedules", () => {
     expect(dataCall[0]).not.toContain("/resume");
     expect(dataCall[1]?.method).toBe("PUT");
     expect(JSON.parse(dataCall[1]?.body as string)).toEqual({ enabled: true });
+  });
+
+  it("triggers a schedule immediately", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+    mockJsonResponse({ status: "triggered", schedule_id: "nightly/backup" });
+
+    const result = await client.triggerSchedule("nightly/backup");
+    expect(result).toEqual({
+      status: "triggered",
+      schedule_id: "nightly/backup",
+    });
+
+    const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+    const dataCall = calls[1];
+    expect(dataCall[0]).toContain("/api/schedules/nightly%2Fbackup/trigger");
+    expect(dataCall[1]?.method).toBe("POST");
   });
 });
 
@@ -3102,15 +3186,16 @@ describe("EkoDBClient kv links", () => {
   it("gets links for a KV key", async () => {
     const client = createTestClient();
     mockTokenResponse();
-    mockJsonResponse({
-      links: [
-        { collection: "users", document_id: "user_1" },
-        { collection: "orders", document_id: "order_1" },
-      ],
-    });
+    mockJsonResponse([
+      { collection: "users", record_id: "user_1" },
+      { collection: "orders", record_id: "order_1" },
+    ]);
 
     const result = await client.kvGetLinks("session:user123");
-    expect(result).toHaveProperty("links");
+    expect(result).toEqual([
+      { collection: "users", record_id: "user_1" },
+      { collection: "orders", record_id: "order_1" },
+    ]);
 
     // Assert the REQUEST, not just the mocked response. These three methods
     // shipped pointing at routes that do not exist, and every one of these
@@ -3125,10 +3210,10 @@ describe("EkoDBClient kv links", () => {
   it("links a document to a KV key", async () => {
     const client = createTestClient();
     mockTokenResponse();
-    mockJsonResponse({ status: "linked" });
+    mockJsonResponse(null);
 
     const result = await client.kvLink("session:user123", "users", "user_1");
-    expect(result).toHaveProperty("status", "linked");
+    expect(result).toBeNull();
 
     const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
     const dataCall = calls[1];
@@ -3142,7 +3227,7 @@ describe("EkoDBClient kv links", () => {
   it("passes optional link data in the body", async () => {
     const client = createTestClient();
     mockTokenResponse();
-    mockJsonResponse({ status: "linked" });
+    mockJsonResponse(null);
 
     await client.kvLink("session:user123", "users", "user_1", {
       field_path: "profile.avatar",
@@ -3160,10 +3245,10 @@ describe("EkoDBClient kv links", () => {
   it("unlinks a document from a KV key", async () => {
     const client = createTestClient();
     mockTokenResponse();
-    mockJsonResponse({ status: "unlinked" });
+    mockJsonResponse(null);
 
     const result = await client.kvUnlink("session:user123", "users", "user_1");
-    expect(result).toHaveProperty("status", "unlinked");
+    expect(result).toBeNull();
 
     const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
     const dataCall = calls[1];

@@ -751,7 +751,7 @@ fun main() = runBlocking {
     // Goals
     val goal = client.goalCreate(buildJsonObject {
         put("title", "Migrate data")
-        put("status", "active")
+        put("status", "pending")
     })
     val goals = client.goalList()
     client.goalComplete("goal-id", buildJsonObject { put("summary", "Done") })
@@ -759,7 +759,7 @@ fun main() = runBlocking {
     // Agents
     val agent = client.agentCreate(buildJsonObject {
         put("name", "processor")
-        put("model", "gpt-4.1")
+        put("llm_model", "gpt-4.1")
     })
 
     client.close()
@@ -772,11 +772,15 @@ fun main() = runBlocking {
 // Create a schedule
 val sched = client.createSchedule(buildJsonObject {
     put("name", "nightly")
-    put("cron", "0 2 * * *")
+    put("cron_expression", "0 0 2 * * *")
+    put("function_label", "nightly_backup")
 })
 
 // Pause a schedule
 client.pauseSchedule("sched-id")
+
+// Run immediately
+client.triggerSchedule("sched-id")
 ```
 
 ### WebSocket Chat Streaming

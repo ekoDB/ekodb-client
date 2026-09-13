@@ -32,6 +32,7 @@ fun main() = runBlocking {
         val goal = client.goalCreate(buildJsonObject {
             put("title", "Deploy v2.0")
             put("description", "Ship the next major release")
+            put("status", "pending")
             putJsonArray("steps") {
                 add(buildJsonObject { put("description", "Run test suite") })
                 add(buildJsonObject { put("description", "Build release artifacts") })
@@ -171,6 +172,7 @@ fun main() = runBlocking {
             put("name", "DataBot")
             put("system_prompt", "You are a data analysis assistant.")
             put("deployment_id", "deploy_kt_example")
+            put("llm_model", "gpt-4.1")
         })
         val agentId = agent["id"].toString().trim('"')
         println("Created agent: $agentId — ${agent["name"]}")

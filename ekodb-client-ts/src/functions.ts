@@ -2,6 +2,8 @@
  * Functions API for ekoDB TypeScript client
  */
 
+import { queryExpression, type QueryExpression } from "./query-expression";
+
 /** A reusable sequence of Functions stored in ekoDB. */
 export interface UserFunction {
   id?: string;
@@ -12,6 +14,7 @@ export interface UserFunction {
   parameters: { [key: string]: ParameterDefinition };
   functions: FunctionStageConfig[];
   tags?: string[];
+  transaction_config?: TransactionConfig;
   created_at?: string;
   updated_at?: string;
   /**
@@ -29,12 +32,33 @@ export interface UserFunction {
   http_path?: string;
 }
 
+export interface TransactionConfig {
+  enabled: boolean;
+  auto_rollback: boolean;
+  isolation_level?: string;
+}
+
 export interface ParameterDefinition {
   required: boolean;
   default?: any;
   description?: string;
   param_type?: string;
 }
+
+/** Algorithms supported by the server's JWT sign and verify stages. */
+export type JwtAlgorithm =
+  | "HS256"
+  | "HS384"
+  | "HS512"
+  | "RS256"
+  | "RS384"
+  | "RS512"
+  | "PS256"
+  | "PS384"
+  | "PS512"
+  | "ES256"
+  | "ES384"
+  | "EdDSA";
 
 // ParameterValue removed - use plain values instead
 
@@ -43,7 +67,7 @@ export type FunctionStageConfig =
   | {
       type: "Query";
       collection: string;
-      filter?: Record<string, any>;
+      filter?: QueryExpression;
       sort?: SortFieldConfig[];
       limit?: number;
       skip?: number;
@@ -65,7 +89,7 @@ export type FunctionStageConfig =
   | {
       type: "Update";
       collection: string;
-      filter: Record<string, any>;
+      filter: QueryExpression;
       updates: Record<string, any>;
       bypass_ripple?: boolean;
       ttl?: number;
@@ -81,7 +105,7 @@ export type FunctionStageConfig =
   | {
       type: "Delete";
       collection: string;
-      filter: Record<string, any>;
+      filter: QueryExpression;
       bypass_ripple?: boolean;
     }
   | {
@@ -108,6 +132,8 @@ export type FunctionStageConfig =
       method?: string;
       headers?: Record<string, string>;
       body?: any;
+      timeout_seconds?: number;
+      output_field?: string;
     }
   | {
       type: "VectorSearch";
@@ -187,6 +213,37 @@ export type FunctionStageConfig =
       value: any;
       bypass_ripple?: boolean;
     }
+  | {
+      type: "Upsert";
+      collection: string;
+      key: string;
+      value: any;
+      record: Record<string, any>;
+      bypass_ripple?: boolean;
+      ttl?: number;
+    }
+  | {
+      type: "Increment";
+      collection: string;
+      record_id: string;
+      field: string;
+      by?: number | string;
+      bypass_ripple?: boolean;
+    }
+  | {
+      type: "Push";
+      collection: string;
+      record_id: string;
+      field: string;
+      value: any;
+      bypass_ripple?: boolean;
+    }
+  | { type: "SetField"; field: string; value: any }
+  | {
+      type: "AddFields";
+      fields: Array<{ field_name: string; expression: Record<string, any> }>;
+    }
+  | { type: "CurrentDatetime"; output_field: string }
   | {
       type: "CreateSavepoint";
       name: string;
@@ -279,7 +336,7 @@ export type FunctionStageConfig =
       type: "JwtSign";
       claims: Record<string, unknown>;
       secret: string;
-      algorithm?: "HS256" | "HS384" | "HS512";
+      algorithm?: JwtAlgorithm;
       expires_in_secs?: number;
       output_field: string;
     }
@@ -294,7 +351,7 @@ export type FunctionStageConfig =
       type: "JwtVerify";
       token_field: string;
       secret: string;
-      algorithm?: "HS256" | "HS384" | "HS512";
+      algorithm?: JwtAlgorithm;
       output_field: string;
     }
   | {
@@ -521,7 +578,10 @@ export interface GroupFunctionConfig {
     | "Max"
     | "First"
     | "Last"
-    | "Push";
+    | "Push"
+    | "AddToSet"
+    | "StandardDeviation"
+    | "ApproxDistinct";
   input_field?: string;
 }
 
@@ -535,6 +595,10 @@ export interface SortFieldConfig {
 export type FunctionCondition =
   | { type: "FieldEquals"; value: { field: string; value: any } }
   | { type: "FieldExists"; value: { field: string } }
+  | { type: "FieldGreaterThan"; value: { field: string; value: any } }
+  | { type: "FieldLessThan"; value: { field: string; value: any } }
+  | { type: "FieldGreaterThanOrEqual"; value: { field: string; value: any } }
+  | { type: "FieldLessThanOrEqual"; value: { field: string; value: any } }
   | { type: "HasRecords" }
   | { type: "CountEquals"; value: { count: number } }
   | { type: "CountGreaterThan"; value: { count: number } }
@@ -618,14 +682,14 @@ export const Stage = {
 
   query: (
     collection: string,
-    filter?: Record<string, any>,
+    filter?: QueryExpression | Record<string, unknown>,
     sort?: SortFieldConfig[],
     limit?: number,
     skip?: number,
   ): FunctionStageConfig => ({
     type: "Query",
     collection,
-    filter,
+    filter: filter === undefined ? undefined : queryExpression(filter),
     sort,
     limit,
     skip,
@@ -666,14 +730,14 @@ export const Stage = {
 
   update: (
     collection: string,
-    filter: Record<string, any>,
+    filter: QueryExpression | Record<string, unknown>,
     updates: Record<string, any> | ParameterRef,
     bypassRipple = false,
     ttl?: number,
   ): FunctionStageConfig => ({
     type: "Update",
     collection,
-    filter,
+    filter: queryExpression(filter),
     updates,
     bypass_ripple: bypassRipple,
     ttl,
@@ -694,14 +758,76 @@ export const Stage = {
     ttl,
   }),
 
+  upsert: (
+    collection: string,
+    key: string,
+    value: any,
+    record: Record<string, any>,
+    bypassRipple = false,
+    ttl?: number,
+  ): FunctionStageConfig => ({
+    type: "Upsert",
+    collection,
+    key,
+    value,
+    record,
+    bypass_ripple: bypassRipple,
+    ttl,
+  }),
+
+  increment: (
+    collection: string,
+    record_id: string,
+    field: string,
+    by?: number | string,
+    bypassRipple = false,
+  ): FunctionStageConfig => ({
+    type: "Increment",
+    collection,
+    record_id,
+    field,
+    by,
+    bypass_ripple: bypassRipple,
+  }),
+
+  push: (
+    collection: string,
+    record_id: string,
+    field: string,
+    value: any,
+    bypassRipple = false,
+  ): FunctionStageConfig => ({
+    type: "Push",
+    collection,
+    record_id,
+    field,
+    value,
+    bypass_ripple: bypassRipple,
+  }),
+
+  setField: (field: string, value: any): FunctionStageConfig => ({
+    type: "SetField",
+    field,
+    value,
+  }),
+
+  addFields: (
+    fields: Array<{ field_name: string; expression: Record<string, any> }>,
+  ): FunctionStageConfig => ({ type: "AddFields", fields }),
+
+  currentDatetime: (output_field: string): FunctionStageConfig => ({
+    type: "CurrentDatetime",
+    output_field,
+  }),
+
   delete: (
     collection: string,
-    filter: Record<string, any>,
+    filter: QueryExpression | Record<string, unknown>,
     bypassRipple = false,
   ): FunctionStageConfig => ({
     type: "Delete",
     collection,
-    filter,
+    filter: queryExpression(filter),
     bypass_ripple: bypassRipple,
   }),
 
@@ -752,11 +878,11 @@ export const Stage = {
    */
   filter: (
     collection: string,
-    filter: Record<string, any>,
+    filter: QueryExpression | Record<string, unknown>,
   ): FunctionStageConfig => ({
     type: "Query",
     collection,
-    filter,
+    filter: queryExpression(filter),
   }),
 
   /** Sort a collection. Shorthand for a `Query` carrying only `sort`. */
@@ -785,12 +911,16 @@ export const Stage = {
     method = "GET",
     headers?: Record<string, string>,
     body?: any,
+    timeout_seconds?: number,
+    output_field?: string,
   ): FunctionStageConfig => ({
     type: "HttpRequest",
     url,
     method,
     headers,
     body,
+    timeout_seconds,
+    output_field,
   }),
 
   vectorSearch: (
@@ -1090,14 +1220,14 @@ export const Stage = {
    * @param secret - Signing secret (typically `"{{env.JWT_SECRET}}"`).
    * @param output_field - Field name to write the signed JWT into.
    * @param expires_in_secs - Lifetime in seconds (auto-stamps `iat` + `exp`).
-   * @param algorithm - `"HS256"` (default) | `"HS384"` | `"HS512"`.
+   * @param algorithm - A supported HMAC, RSA, RSA-PSS, ECDSA, or EdDSA algorithm.
    */
   jwtSign: (
     claims: Record<string, unknown>,
     secret: string,
     output_field: string,
     expires_in_secs?: number,
-    algorithm?: "HS256" | "HS384" | "HS512",
+    algorithm?: JwtAlgorithm,
   ): FunctionStageConfig => ({
     type: "JwtSign",
     claims,
@@ -1122,7 +1252,7 @@ export const Stage = {
     token_field: string,
     secret: string,
     output_field: string,
-    algorithm?: "HS256" | "HS384" | "HS512",
+    algorithm?: JwtAlgorithm,
   ): FunctionStageConfig => ({
     type: "JwtVerify",
     token_field,

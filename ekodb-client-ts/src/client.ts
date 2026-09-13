@@ -326,7 +326,6 @@ export interface CreateChatSessionRequest {
 export interface ChatMessageRequest {
   message: string;
   bypass_ripple?: boolean;
-  force_summarize?: boolean;
   max_iterations?: number;
   tool_config?: ToolConfig;
   llm_model?: string;
@@ -1472,16 +1471,14 @@ export class EkoDBClient {
    * transaction read or wrote was changed by another committed transaction —
    * retry the transaction in that case.
    *
-   * @param isolationLevel - Transaction isolation level (default: "ReadCommitted")
+   * @param isolationLevel - Optional transaction isolation level; omit it to use the server default
    * @returns Transaction ID
    */
-  async beginTransaction(
-    isolationLevel: string = "ReadCommitted",
-  ): Promise<string> {
+  async beginTransaction(isolationLevel?: string): Promise<string> {
     const result = await this.makeRequest<{ transaction_id: string }>(
       "POST",
       "/api/transactions",
-      { isolation_level: isolationLevel },
+      isolationLevel === undefined ? {} : { isolation_level: isolationLevel },
       0,
       true,
     );
@@ -3265,8 +3262,8 @@ export class EkoDBClient {
   // ========================================================================
 
   /** Get documents linked to a KV key */
-  async kvGetLinks(key: string): Promise<Record> {
-    return this.makeRequest<Record>(
+  async kvGetLinks(key: string): Promise<Record[]> {
+    return this.makeRequest<Record[]>(
       "GET",
       `/api/kv/${encodeURIComponent(key)}/links`,
       undefined,
@@ -3291,8 +3288,8 @@ export class EkoDBClient {
       field_path?: string;
       metadata?: { [key: string]: string };
     } = {},
-  ): Promise<Record> {
-    return this.makeRequest<Record>(
+  ): Promise<null> {
+    return this.makeRequest<null>(
       "POST",
       `/api/kv/${encodeURIComponent(key)}/links/${encodeURIComponent(collection)}/${encodeURIComponent(documentId)}`,
       linkData,
@@ -3306,8 +3303,8 @@ export class EkoDBClient {
     key: string,
     collection: string,
     documentId: string,
-  ): Promise<Record> {
-    return this.makeRequest<Record>(
+  ): Promise<null> {
+    return this.makeRequest<null>(
       "DELETE",
       `/api/kv/${encodeURIComponent(key)}/links/${encodeURIComponent(collection)}/${encodeURIComponent(documentId)}`,
       undefined,
@@ -3386,6 +3383,17 @@ export class EkoDBClient {
    */
   async resumeSchedule(id: string): Promise<Record> {
     return this.setScheduleEnabled(id, true);
+  }
+
+  /** Trigger a schedule immediately. */
+  async triggerSchedule(id: string): Promise<Record> {
+    return this.makeRequest<Record>(
+      "POST",
+      `/api/schedules/${encodeURIComponent(id)}/trigger`,
+      undefined,
+      0,
+      true,
+    );
   }
 
   /**

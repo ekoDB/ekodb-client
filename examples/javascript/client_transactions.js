@@ -10,7 +10,7 @@ const API_KEY = process.env.API_BASE_KEY || "a-test-api-key-from-ekodb";
  * Transaction Example using ekoDB JavaScript Client
  *
  * Demonstrates:
- * - Begin transaction with isolation level
+ * - Begin transaction with the server default or an explicit isolation level
  * - Operations within a transaction
  * - Transaction status checking
  * - Commit transaction
@@ -41,8 +41,8 @@ async function main() {
 
   // Example 1: Begin Transaction
   console.log("=== Example 1: Begin Transaction ===");
-  const txId = await client.beginTransaction("ReadCommitted");
-  console.log(`Transaction ID: ${txId}\n`);
+  const txId = await client.beginTransaction();
+  console.log(`Transaction ID (server-default isolation): ${txId}\n`);
 
   // Example 2: Operations within Transaction
   console.log("=== Example 2: Operations within Transaction ===");

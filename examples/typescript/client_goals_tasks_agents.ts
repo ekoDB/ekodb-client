@@ -23,6 +23,7 @@ async function main() {
   const goal = await client.goalCreate({
     title: "Deploy v2.0",
     description: "Ship version 2.0 to production",
+    status: "pending",
     steps: [
       { description: "Run test suite" },
       { description: "Build release artifacts" },
@@ -162,7 +163,7 @@ async function main() {
   const agent = await client.agentCreate({
     name: "SupportBot",
     system_prompt: "You are a helpful customer support agent.",
-    model: "gpt-4",
+    llm_model: "gpt-4",
     deployment_id: "deploy_prod_1",
   });
   const agentId = agent.id as string;

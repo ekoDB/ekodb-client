@@ -559,9 +559,10 @@ Buffered, read-your-writes transactions. Operations issued with a
 `transaction_id` kwarg (accepted on `insert`, `find`, `find_by_id`, `update`,
 `delete`) are staged and applied atomically at commit.
 
-#### `await client.begin_transaction(isolation_level: str = "ReadCommitted") -> str`
+#### `await client.begin_transaction(isolation_level: str | None = None) -> str`
 
-Start a transaction and return its id.
+Start a transaction and return its id. Omitting `isolation_level` uses the
+server default.
 
 #### `await client.commit_transaction(transaction_id: str) -> None`
 
@@ -635,7 +636,7 @@ async def main():
     client = Client.new("http://localhost:8080", "your-api-key")
 
     # Goals
-    goal = await client.goal_create({"title": "Migrate data", "status": "active"})
+    goal = await client.goal_create({"title": "Migrate data", "status": "pending"})
     goals = await client.goal_list()
     await client.goal_complete("goal-id", {"summary": "Done"})
 
@@ -644,7 +645,7 @@ async def main():
     await client.task_start("task-id")
 
     # Agents
-    agent = await client.agent_create({"name": "processor", "model": "gpt-4.1"})
+    agent = await client.agent_create({"name": "processor", "llm_model": "gpt-4.1"})
 
 asyncio.run(main())
 ```
@@ -653,10 +654,17 @@ asyncio.run(main())
 
 ```python
 # Create a schedule
-sched = await client.create_schedule({"name": "nightly", "cron": "0 2 * * *"})
+sched = await client.create_schedule({
+    "name": "nightly",
+    "cron_expression": "0 0 2 * * *",
+    "function_label": "nightly_backup",
+})
 
 # Pause a schedule
 await client.pause_schedule("sched-id")
+
+# Run immediately
+await client.trigger_schedule("sched-id")
 ```
 
 ### WebSocket Operations
@@ -666,7 +674,10 @@ ws = await client.websocket("ws://localhost:8080")
 
 # Full CRUD over WebSocket (14 methods)
 result = await ws.ws_insert("users", {"name": "Alice", "email": "a@b.com"})
-results = await ws.ws_query("users", filter={"field": "status", "operator": "Eq", "value": "active"})
+results = await ws.ws_query("users", filter={
+    "type": "Condition",
+    "content": {"field": "status", "operator": "Eq", "value": "active"},
+})
 user = await ws.ws_find_by_id("users", "record-id")
 await ws.ws_update("users", "record-id", {"name": "Updated"})
 await ws.ws_delete("users", "record-id")

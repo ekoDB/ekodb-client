@@ -1262,18 +1262,22 @@ impl Client {
     ///
     /// # Arguments
     ///
-    /// * `isolation_level` - Transaction isolation level (e.g., "ReadCommitted")
+    /// * `isolation_level` - Optional transaction isolation level (e.g.,
+    ///   `Some("ReadCommitted")`). `None` uses the server default.
     ///
     /// # Returns
     ///
     /// The transaction ID
-    pub async fn begin_transaction(&self, isolation_level: &str) -> Result<String> {
-        let isolation_level = isolation_level.to_string();
+    pub async fn begin_transaction(&self, isolation_level: Option<&str>) -> Result<String> {
+        let isolation_level = isolation_level.map(str::to_string);
         let http = self.http.clone();
         self.execute_with_token_refresh(move |token| {
             let isolation_level = isolation_level.clone();
             let http = http.clone();
-            async move { http.begin_transaction(&isolation_level, &token).await }
+            async move {
+                http.begin_transaction(isolation_level.as_deref(), &token)
+                    .await
+            }
         })
         .await
     }
@@ -3290,6 +3294,18 @@ impl Client {
             let id = id.clone();
             let http = http.clone();
             async move { http.resume_schedule(&id, &token).await }
+        })
+        .await
+    }
+
+    /// Trigger a schedule immediately.
+    pub async fn trigger_schedule(&self, id: &str) -> Result<serde_json::Value> {
+        let id = id.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let id = id.clone();
+            let http = http.clone();
+            async move { http.trigger_schedule(&id, &token).await }
         })
         .await
     }

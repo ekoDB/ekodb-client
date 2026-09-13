@@ -5,33 +5,51 @@ permissions:
 on:
   pull_request:
     paths:
+      - 'Makefile'
       - 'examples/**'
       - 'examples_list.txt'
       - 'scripts/generate_examples_list.sh'
+      - 'scripts/check-example-parity.py'
+      - 'scripts/run-client-examples.sh'
+      - '.github/workflows/examples-inventory.yml'
   push:
     branches:
       - main
       - master
     paths:
+      - 'Makefile'
       - 'examples/**'
       - 'examples_list.txt'
       - 'scripts/generate_examples_list.sh'
+      - 'scripts/check-example-parity.py'
+      - 'scripts/run-client-examples.sh'
+      - '.github/workflows/examples-inventory.yml'
+  schedule:
+    # The Go example compile check (below) can drift out of sync with
+    # ekoDB/ekodb-client-go's signatures without any change landing in THIS
+    # repo's tracked paths (ekoDB/ekodb-client#179's original break was
+    # exactly this shape) -- the path-scoped triggers above can't catch that,
+    # so this runs independently of what changed here.
+    - cron: '17 6 * * *'
 
 jobs:
   check-inventory:
     name: Verify Examples Inventory
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Make scripts executable
         run: chmod +x scripts/generate_examples_list.sh
-      
+
       - name: Generate examples inventory
         run: make examples-ls-check
-      
+
+      - name: Check cross-language scenario parity
+        run: make example-parity-check
+
       - name: Check if inventory is up to date
         run: |
           if [ -f examples_list.txt.tmp ]; then
@@ -45,3 +63,62 @@ jobs:
             exit 1
           fi
           echo "✅ Examples inventory is up to date!"
+
+  # Every examples/go/*.go file declares its own package main / func main(),
+  # so `go build ./...` fails on "main redeclared" regardless of correctness.
+  # `scripts/run-client-examples.sh check go` already compiles them one at a
+  # time via a temp -modfile overlay (no live ekoDB server needed) -- nothing
+  # in CI called it, which is how a signature drift against ekodb-client-go
+  # went unnoticed (#179). Reuses that script rather than a second definition
+  # of "compile the Go examples".
+  check-go-examples-compile:
+    name: Compile Go Examples
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout ekodb-client
+        uses: actions/checkout@v4
+        with:
+          path: ekodb-client
+          persist-credentials: false
+
+      # This repo's PR branches are sometimes paired with a same-named branch
+      # on ekodb-client-go for coordinated cross-repo changes (e.g. this repo
+      # exercising a new client API landing there first) -- checking out
+      # ekodb-client-go's default branch unconditionally would then compile
+      # examples against symbols that only exist on the paired branch and
+      # fail every time until the OTHER repo's PR merges. Prefer the matching
+      # branch name when it exists there; fall back to ekodb-client-go's own
+      # default branch otherwise (the common case).
+      - name: Resolve ekodb-client-go ref to test against
+        id: sibling-ref
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: |
+          if gh api "repos/ekoDB/ekodb-client-go/branches/$BRANCH" >/dev/null 2>&1; then
+            echo "ref=$BRANCH" >> "$GITHUB_OUTPUT"
+          else
+            default=$(gh api repos/ekoDB/ekodb-client-go --jq .default_branch)
+            echo "ref=$default" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout ekodb-client-go
+        uses: actions/checkout@v4
+        with:
+          repository: ekoDB/ekodb-client-go
+          ref: ${{ steps.sibling-ref.outputs.ref }}
+          path: ekodb-client-go
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: ekodb-client/examples/go/go.mod
+          cache-dependency-path: ekodb-client/examples/go/go.sum
+
+      - name: Compile every Go example individually
+        working-directory: ekodb-client
+        env:
+          EKODB_CLIENT_GO_DIR: ${{ github.workspace }}/ekodb-client-go
+        run: scripts/run-client-examples.sh check go

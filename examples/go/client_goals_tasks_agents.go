@@ -48,6 +48,7 @@ func main() {
 	goal, err := client.GoalCreate(map[string]interface{}{
 		"title":       "Deploy v2.0",
 		"description": "Ship the v2.0 release to production",
+		"status":      "pending",
 		"steps": []map[string]interface{}{
 			{"description": "Run integration tests"},
 			{"description": "Build release artifacts"},
@@ -261,6 +262,7 @@ func main() {
 		"name":          "benchmark-runner",
 		"description":   "Runs periodic benchmarks",
 		"deployment_id": "deploy_prod_1",
+		"llm_model":     "gpt-4.1",
 	})
 	if err != nil {
 		log.Fatalf("AgentCreate failed: %v", err)

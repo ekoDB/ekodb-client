@@ -5,8 +5,9 @@ helpers. Server-side behavior for structural parameter placeholders is
 covered by the server-side integration tests.
 """
 
-from ekodb_client import Stage, parameter_ref
+import pytest
 
+from ekodb_client import Stage, parameter_ref
 
 # ---------------------------------------------------------------------------
 # parameter_ref()
@@ -94,6 +95,17 @@ def test_update_with_structural_filter_and_updates():
     assert stage["updates"] == {"type": "Parameter", "name": "updates"}
 
 
+def test_query_shaped_stages_reject_bare_filters_immediately():
+    import pytest
+
+    with pytest.raises(ValueError, match="content"):
+        Stage.query("items", {"status": "active"})
+    with pytest.raises(ValueError, match="content"):
+        Stage.update("items", {"id": "1"}, {})
+    with pytest.raises(ValueError, match="content"):
+        Stage.delete("items", {})
+
+
 # ---------------------------------------------------------------------------
 # Stage.batch_insert with per-record Parameter placeholders
 # ---------------------------------------------------------------------------
@@ -148,6 +160,104 @@ def test_update_by_id_json_serialization():
     assert wire["type"] == "UpdateById"
     assert wire["record_id"] == "{{id}}"
     assert wire["updates"] == {"type": "Parameter", "name": "updates"}
+
+
+def test_corrected_and_new_mutation_stage_shapes():
+    stages = [
+        Stage.find_one_and_update("items", "item-1", {"name": "new"}),
+        Stage.update_with_action("items", "item-1", "Increment", "count", 2),
+        Stage.upsert("items", "sku", "A-1", {"name": "new"}),
+        Stage.increment("items", "item-1", "count", by=2),
+        Stage.push("items", "item-1", "tags", "new"),
+        Stage.set_field("active", True),
+        Stage.add_fields(
+            [{"field": "total", "expression": {"type": "Literal", "value": 1}}]
+        ),
+        Stage.current_datetime("processed_at"),
+    ]
+
+    assert stages[0]["record_id"] == "item-1"
+    assert "filter" not in stages[0]
+    assert stages[1]["action"] == "Increment"
+    assert stages[3]["by"] == 2
+    assert stages[4]["value"] == "new"
+    assert stages[5] == {"type": "SetField", "field": "active", "value": True}
+    assert stages[6]["type"] == "AddFields"
+    assert stages[7] == {"type": "CurrentDatetime", "output_field": "processed_at"}
+
+
+def test_search_stage_shapes_match_the_wire_contract():
+    vector = Stage.vector_search("items", [0.1, 0.2], limit=5, threshold=0.8)
+    hybrid = Stage.hybrid_search("items", "blue", [0.1, 0.2], limit=5)
+
+    assert vector == {
+        "type": "VectorSearch",
+        "collection": "items",
+        "query_vector": [0.1, 0.2],
+        "limit": 5,
+        "threshold": 0.8,
+    }
+    assert hybrid == {
+        "type": "HybridSearch",
+        "collection": "items",
+        "query_text": "blue",
+        "query_vector": [0.1, 0.2],
+        "limit": 5,
+    }
+
+
+def test_query_expression_rejects_invalid_operators_and_cardinality():
+    condition = {
+        "type": "Condition",
+        "content": {"field": "status", "operator": "Eq", "value": "active"},
+    }
+
+    with pytest.raises(ValueError, match="unsupported condition operator"):
+        Stage.query(
+            "items",
+            {
+                "type": "Condition",
+                "content": {**condition["content"], "operator": "CustomOp"},
+            },
+        )
+    with pytest.raises(ValueError, match="requires expressions"):
+        Stage.query(
+            "items",
+            {"type": "Logical", "content": {"operator": "And", "expressions": []}},
+        )
+    with pytest.raises(ValueError, match="exactly one"):
+        Stage.query(
+            "items",
+            {
+                "type": "Logical",
+                "content": {
+                    "operator": "Not",
+                    "expressions": [condition, condition],
+                },
+            },
+        )
+
+
+def test_query_expression_accepts_all_long_form_operator_aliases():
+    aliases = [
+        "Equals",
+        "Equal",
+        "NotEquals",
+        "NotEqual",
+        "GreaterThan",
+        "LessThan",
+        "GreaterThanOrEqual",
+        "LessThanOrEqual",
+    ]
+    for operator in aliases:
+        stage = Stage.query(
+            "items",
+            {
+                "type": "Condition",
+                "content": {"field": "score", "operator": operator, "value": 10},
+            },
+        )
+        assert stage["filter"]["content"]["operator"] == operator
 
 
 # ---------------------------------------------------------------------------

@@ -2,6 +2,8 @@
  * Query Builder for constructing complex queries with fluent API
  */
 
+import { queryExpression, type QueryExpression } from "./query-expression";
+
 export enum SortOrder {
   Asc = "asc",
   Desc = "desc",
@@ -33,7 +35,7 @@ export interface Query {
  * ```
  */
 export class QueryBuilder {
-  private filters: any[] = [];
+  private filters: QueryExpression[] = [];
   private sortFields: Array<{ field: string; order: SortOrder }> = [];
   private _limit?: number;
   private _skip?: number;
@@ -226,12 +228,12 @@ export class QueryBuilder {
   /**
    * Combine filters with AND logic
    */
-  and(conditions: any[]): this {
+  and(conditions: Array<QueryExpression | Record<string, unknown>>): this {
     this.filters.push({
       type: "Logical",
       content: {
         operator: "And",
-        expressions: conditions,
+        expressions: conditions.map(queryExpression),
       },
     });
     return this;
@@ -240,12 +242,12 @@ export class QueryBuilder {
   /**
    * Combine filters with OR logic
    */
-  or(conditions: any[]): this {
+  or(conditions: Array<QueryExpression | Record<string, unknown>>): this {
     this.filters.push({
       type: "Logical",
       content: {
         operator: "Or",
-        expressions: conditions,
+        expressions: conditions.map(queryExpression),
       },
     });
     return this;
@@ -254,12 +256,12 @@ export class QueryBuilder {
   /**
    * Negate a filter
    */
-  not(condition: any): this {
+  not(condition: QueryExpression | Record<string, unknown>): this {
     this.filters.push({
       type: "Logical",
       content: {
         operator: "Not",
-        expressions: [condition],
+        expressions: [queryExpression(condition)],
       },
     });
     return this;
@@ -268,8 +270,8 @@ export class QueryBuilder {
   /**
    * Add a raw filter expression
    */
-  rawFilter(filter: any): this {
-    this.filters.push(filter);
+  rawFilter(filter: QueryExpression | Record<string, unknown>): this {
+    this.filters.push(queryExpression(filter));
     return this;
   }
 

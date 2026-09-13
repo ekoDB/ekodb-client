@@ -193,7 +193,10 @@ let ws = client.connect_ws().await?;
 
 // Full CRUD over WebSocket (14 methods — same as REST, zero HTTP overhead)
 let record = ws.insert("users", json!({"name": "Alice", "email": "a@b.com"}), None).await?;
-let results = ws.query("users", Some(json!({"field": "status", "operator": "Eq", "value": "active"})), None, None, None).await?;
+let results = ws.query("users", Some(json!({
+    "type": "Condition",
+    "content": {"field": "status", "operator": "Eq", "value": "active"}
+})), None, None, None).await?;
 let user = ws.find_by_id("users", "record_id").await?;
 ws.update("users", "record_id", json!({"name": "Updated"}), None).await?;
 ws.delete("users", "record_id", None).await?;
@@ -663,7 +666,8 @@ All examples are located in `examples/rust/examples/` directory.
 Buffered, read-your-writes transactions. Statements issued with a
 `transaction_id` are staged and applied atomically at commit.
 
-- `begin_transaction(isolation_level)` - Start a transaction, returns its id
+- `begin_transaction(isolation_level: Option<&str>)` - Start a transaction and
+  return its id; pass `None` to use the server default
 - `commit_transaction(transaction_id)` - Apply staged writes (may return a
   retryable HTTP 409 conflict)
 - `rollback_transaction(transaction_id)` - Discard staged writes
@@ -692,7 +696,7 @@ use serde_json::json;
 let goal = client.goal_create(json!({
     "title": "Migrate user data",
     "description": "Move users from legacy to new schema",
-    "status": "active",
+    "status": "pending",
 })).await?;
 
 // List goals
@@ -730,7 +734,7 @@ client.task_resume("task-id", None).await?;
 // Agents
 let agent = client.agent_create(json!({
     "name": "data-processor",
-    "model": "gpt-4.1",
+    "llm_model": "gpt-4.1",
 })).await?;
 let agents = client.agent_list().await?;
 client.agent_get_by_name("data-processor").await?;
@@ -745,20 +749,23 @@ use serde_json::json;
 // Create a schedule
 let sched = client.create_schedule(json!({
     "name": "nightly-backup",
-    "cron": "0 2 * * *",
-    "task_type": "backup",
+    "cron_expression": "0 0 2 * * *",
+    "function_label": "nightly_backup",
 })).await?;
 
 // List, get, update
 let schedules = client.list_schedules().await?;
 client.get_schedule("sched-id").await?;
 client.update_schedule("sched-id", json!({
-    "cron": "0 3 * * *"
+    "cron_expression": "0 0 3 * * *"
 })).await?;
 
 // Pause and resume
 client.pause_schedule("sched-id").await?;
 client.resume_schedule("sched-id").await?;
+
+// Run immediately
+client.trigger_schedule("sched-id").await?;
 
 // Delete
 client.delete_schedule("sched-id").await?;

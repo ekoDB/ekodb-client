@@ -10,7 +10,7 @@ import kotlinx.coroutines.runBlocking
  * Transaction Example using ekoDB Kotlin Client
  *
  * Demonstrates:
- * - Begin transaction with isolation level
+ * - Begin transaction with the server default or an explicit isolation level
  * - Operations within a transaction
  * - Transaction status checking
  * - Commit transaction
@@ -47,8 +47,8 @@ fun main() = runBlocking {
 
     // Example 1: Begin Transaction
     println("=== Example 1: Begin Transaction ===")
-    val txId = client.beginTransaction("ReadCommitted")
-    println("Transaction ID: $txId\n")
+    val txId = client.beginTransaction()
+    println("Transaction ID (server-default isolation): $txId\n")
 
     // Example 2: Operations within Transaction
     println("=== Example 2: Operations within Transaction ===")
