@@ -63,9 +63,10 @@ and this project adheres to
   invoking shell hadn't set one, which `dotenv-kotlin` then preferred over
   `examples/kotlin/.env`'s real key — every Kotlin example run via
   `make test-examples-kotlin` authenticated with the placeholder and got a 401.
-  Now only forwarded when the shell actually set them. Also fix
-  `ClientAdvancedCrud.kt` decrementing a Float field with an int literal, which
-  ekoDB's typed-value semantics reject. (#244)
+  The forwarding is now removed entirely — a `JavaExec` task already inherits
+  the invoking shell's environment, so no fallback or explicit forwarding is
+  needed. Also fix `ClientAdvancedCrud.kt` decrementing a Float field with an
+  int literal, which ekoDB's typed-value semantics reject. (#244)
 - **Stored-function filter safety.** Add a typed, adjacently-tagged query
   expression representation and validate legacy raw objects at stage
   construction, so bare filters, unsupported operators, empty logical groups,
