@@ -3262,8 +3262,8 @@ export class EkoDBClient {
   // ========================================================================
 
   /** Get documents linked to a KV key */
-  async kvGetLinks(key: string): Promise<Record> {
-    return this.makeRequest<Record>(
+  async kvGetLinks(key: string): Promise<Record[]> {
+    return this.makeRequest<Record[]>(
       "GET",
       `/api/kv/${encodeURIComponent(key)}/links`,
       undefined,
@@ -3288,8 +3288,8 @@ export class EkoDBClient {
       field_path?: string;
       metadata?: { [key: string]: string };
     } = {},
-  ): Promise<Record> {
-    return this.makeRequest<Record>(
+  ): Promise<null> {
+    return this.makeRequest<null>(
       "POST",
       `/api/kv/${encodeURIComponent(key)}/links/${encodeURIComponent(collection)}/${encodeURIComponent(documentId)}`,
       linkData,
@@ -3303,8 +3303,8 @@ export class EkoDBClient {
     key: string,
     collection: string,
     documentId: string,
-  ): Promise<Record> {
-    return this.makeRequest<Record>(
+  ): Promise<null> {
+    return this.makeRequest<null>(
       "DELETE",
       `/api/kv/${encodeURIComponent(key)}/links/${encodeURIComponent(collection)}/${encodeURIComponent(documentId)}`,
       undefined,

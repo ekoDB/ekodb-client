@@ -1796,20 +1796,18 @@ class EkoDBClientTest {
 
     @Test
     fun `kvLink links a document to a key`() = runBlocking {
-        val mockEngine = createMockEngine("""{"status": "linked", "key": "user:123"}""")
+        val mockEngine = createMockEngine("null")
         val client = createTestClient(mockEngine)
         val result = client.kvLink("user:123", "orders", "ord_1")
-        assertNotNull(result)
-        assertEquals("linked", result["status"]?.jsonPrimitive?.content)
+        assertEquals(JsonNull, result)
     }
 
     @Test
     fun `kvUnlink removes a document link from a key`() = runBlocking {
-        val mockEngine = createMockEngine("""{"status": "unlinked", "key": "user:123"}""")
+        val mockEngine = createMockEngine("null")
         val client = createTestClient(mockEngine)
         val result = client.kvUnlink("user:123", "orders", "ord_1")
-        assertNotNull(result)
-        assertEquals("unlinked", result["status"]?.jsonPrimitive?.content)
+        assertEquals(JsonNull, result)
     }
 
     @Test
@@ -1821,13 +1819,13 @@ class EkoDBClientTest {
         assertEquals("/api/kv/user:123/links", recorded.last().url.encodedPath)
         assertEquals(HttpMethod.Get, recorded.last().method)
 
-        client = createTestClient(capturingMockEngine(recorded, """{"status": "linked"}"""))
+        client = createTestClient(capturingMockEngine(recorded, "null"))
         client.kvLink("user:123", "orders", "ord_1")
         // The identifying triple belongs in the PATH, not the body.
         assertEquals("/api/kv/user:123/links/orders/ord_1", recorded.last().url.encodedPath)
         assertEquals(HttpMethod.Post, recorded.last().method)
 
-        client = createTestClient(capturingMockEngine(recorded, """{"status": "unlinked"}"""))
+        client = createTestClient(capturingMockEngine(recorded, "null"))
         client.kvUnlink("user:123", "orders", "ord_1")
         assertEquals("/api/kv/user:123/links/orders/ord_1", recorded.last().url.encodedPath)
         // DELETE, not POST — the previous implementation used POST and 404'd.

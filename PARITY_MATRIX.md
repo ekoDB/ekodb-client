@@ -338,9 +338,9 @@ All five SDKs expose:
 
 ```typescript
 // TypeScript/JavaScript
-kvGetLinks(key: string): Promise<Record>
-kvLink(key: string, collection: string, documentId: string, linkData?: LinkData): Promise<Record>
-kvUnlink(key: string, collection: string, documentId: string): Promise<Record>
+kvGetLinks(key: string): Promise<Record[]>
+kvLink(key: string, collection: string, documentId: string, linkData?: LinkData): Promise<null>
+kvUnlink(key: string, collection: string, documentId: string): Promise<null>
 ```
 
 ```go
@@ -367,8 +367,8 @@ await client.kv_unlink(key, collection, document_id)
 ```kotlin
 // Kotlin
 suspend fun kvGetLinks(key: String): JsonArray
-suspend fun kvLink(key: String, collection: String, documentId: String, linkData: JsonObject = buildJsonObject {}): JsonObject
-suspend fun kvUnlink(key: String, collection: String, documentId: String): JsonObject
+suspend fun kvLink(key: String, collection: String, documentId: String, linkData: JsonObject = buildJsonObject {}): JsonNull
+suspend fun kvUnlink(key: String, collection: String, documentId: String): JsonNull
 ```
 
 ### Use Cases

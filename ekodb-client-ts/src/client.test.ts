@@ -3186,15 +3186,16 @@ describe("EkoDBClient kv links", () => {
   it("gets links for a KV key", async () => {
     const client = createTestClient();
     mockTokenResponse();
-    mockJsonResponse({
-      links: [
-        { collection: "users", document_id: "user_1" },
-        { collection: "orders", document_id: "order_1" },
-      ],
-    });
+    mockJsonResponse([
+      { collection: "users", record_id: "user_1" },
+      { collection: "orders", record_id: "order_1" },
+    ]);
 
     const result = await client.kvGetLinks("session:user123");
-    expect(result).toHaveProperty("links");
+    expect(result).toEqual([
+      { collection: "users", record_id: "user_1" },
+      { collection: "orders", record_id: "order_1" },
+    ]);
 
     // Assert the REQUEST, not just the mocked response. These three methods
     // shipped pointing at routes that do not exist, and every one of these
@@ -3209,10 +3210,10 @@ describe("EkoDBClient kv links", () => {
   it("links a document to a KV key", async () => {
     const client = createTestClient();
     mockTokenResponse();
-    mockJsonResponse({ status: "linked" });
+    mockJsonResponse(null);
 
     const result = await client.kvLink("session:user123", "users", "user_1");
-    expect(result).toHaveProperty("status", "linked");
+    expect(result).toBeNull();
 
     const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
     const dataCall = calls[1];
@@ -3226,7 +3227,7 @@ describe("EkoDBClient kv links", () => {
   it("passes optional link data in the body", async () => {
     const client = createTestClient();
     mockTokenResponse();
-    mockJsonResponse({ status: "linked" });
+    mockJsonResponse(null);
 
     await client.kvLink("session:user123", "users", "user_1", {
       field_path: "profile.avatar",
@@ -3244,10 +3245,10 @@ describe("EkoDBClient kv links", () => {
   it("unlinks a document from a KV key", async () => {
     const client = createTestClient();
     mockTokenResponse();
-    mockJsonResponse({ status: "unlinked" });
+    mockJsonResponse(null);
 
     const result = await client.kvUnlink("session:user123", "users", "user_1");
-    expect(result).toHaveProperty("status", "unlinked");
+    expect(result).toBeNull();
 
     const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
     const dataCall = calls[1];

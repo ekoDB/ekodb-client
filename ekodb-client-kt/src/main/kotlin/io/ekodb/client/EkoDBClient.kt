@@ -3551,7 +3551,7 @@ class EkoDBClient private constructor(
         collection: String,
         documentId: String,
         linkData: JsonObject = buildJsonObject { },
-    ): JsonObject {
+    ): JsonNull {
         // The identifying triple belongs in the PATH; the body carries the
         // optional link payload (keys / field_path / metadata).
         val path =
@@ -3568,11 +3568,13 @@ class EkoDBClient private constructor(
             val errorText = response.bodyAsText()
             throw IllegalStateException("Server error ${response.status.value}: $errorText")
         }
-        return response.body<JsonObject>()
+        val result = response.body<JsonElement>()
+        check(result is JsonNull) { "Expected null KV-link response, got: $result" }
+        return result
     }
 
     /** Unlink a document from a KV key */
-    suspend fun kvUnlink(key: String, collection: String, documentId: String): JsonObject {
+    suspend fun kvUnlink(key: String, collection: String, documentId: String): JsonNull {
         // DELETE, not POST, and no body — the previous POST to /api/kv/unlink
         // hit a route that does not exist.
         val path =
@@ -3587,7 +3589,9 @@ class EkoDBClient private constructor(
             val errorText = response.bodyAsText()
             throw IllegalStateException("Server error ${response.status.value}: $errorText")
         }
-        return response.body<JsonObject>()
+        val result = response.body<JsonElement>()
+        check(result is JsonNull) { "Expected null KV-unlink response, got: $result" }
+        return result
     }
 
     // ── Schedule Management ──────────────────────────────────────────────────
