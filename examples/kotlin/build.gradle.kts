@@ -58,17 +58,14 @@ application {
     mainClass.set(exampleClass)
 }
 
-tasks.named<JavaExec>("run") {
-    // Forward these ONLY when the invoking shell actually set them. Each example
-    // calls dotenv() to read this project's .env, and dotenv-kotlin gives an
-    // already-set process environment variable precedence over the .env file --
-    // so unconditionally setting a fallback here (as this used to do) permanently
-    // shadows .env's real values with these placeholders, regardless of what's
-    // configured there.
-    listOf("API_BASE_URL", "WS_BASE_URL", "API_BASE_KEY").forEach { name ->
-        System.getenv(name)?.let { environment(name, it) }
-    }
-}
+// No API_BASE_URL/WS_BASE_URL/API_BASE_KEY environment() calls here on
+// purpose: a JavaExec task inherits the build process's environment by
+// default, so the example JVM already sees whatever the invoking shell set.
+// This used to set a hardcoded placeholder fallback for each var, which
+// permanently shadowed examples/kotlin/.env's real values -- dotenv-kotlin
+// gives an already-set process environment variable precedence over the
+// .env file, so every example run authenticated with the placeholder key
+// instead.
 
 // Add source directory
 sourceSets {
