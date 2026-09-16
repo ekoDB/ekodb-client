@@ -10,11 +10,14 @@ mode=$1
 language=$2
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 
-# Use one authoritative credential set for every language while preserving
-# explicit caller/CI overrides. Individual example directories may contain
-# legacy .env copies, but a workspace run must not switch keys between clients.
-# shellcheck disable=SC1091
-source "$root/scripts/load-root-env.sh"
+# Live runs use one authoritative credential set while preserving explicit
+# caller/CI overrides. Compile-only checks neither contact ekoDB nor require a
+# credential, which keeps the inventory CI job usable without repository
+# secrets.
+if [[ $mode == "run" ]]; then
+    # shellcheck disable=SC1091
+    source "$root/scripts/load-root-env.sh"
+fi
 
 example_timeout_seconds=${EXAMPLE_TIMEOUT_SECONDS:-300}
 if [[ ! $example_timeout_seconds =~ ^[1-9][0-9]*$ ]]; then
