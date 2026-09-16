@@ -141,25 +141,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         let results1 = client.find(users_collection, query1, None).await?;
         println!("✓ Found {} users with department data", results1.len());
-        for user in &results1 {
+        for (index, user) in results1.iter().enumerate() {
             let user_json = serde_json::to_value(user)?;
             let extracted = extract_record(&user_json);
 
-            let name =
-                get_string_value(&extracted["name"]).unwrap_or_else(|| "Unknown".to_string());
+            let has_name = get_string_value(&extracted["name"]).is_some();
+            let joined_departments = extracted["department"]
+                .as_array()
+                .map_or(0, |departments| departments.len());
 
-            // Join returns an array, get first element
-            let dept_name = if let Some(depts) = extracted["department"].as_array() {
-                if let Some(dept) = depts.first() {
-                    get_string_value(&dept["name"]).unwrap_or_else(|| "No department".to_string())
-                } else {
-                    "No department".to_string()
-                }
-            } else {
-                "No department".to_string()
-            };
-
-            println!("  - {}: {}", name, dept_name);
+            println!(
+                "  - user {}: name present={}, joined departments={}",
+                index + 1,
+                has_name,
+                joined_departments
+            );
         }
         println!();
 
@@ -180,25 +176,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         let results2 = client.find(users_collection, query2, None).await?;
         println!("✓ Found {} users in Engineering", results2.len());
-        for user in &results2 {
+        for (index, user) in results2.iter().enumerate() {
             let user_json = serde_json::to_value(user)?;
             let extracted = extract_record(&user_json);
 
-            let name =
-                get_string_value(&extracted["name"]).unwrap_or_else(|| "Unknown".to_string());
+            let has_name = get_string_value(&extracted["name"]).is_some();
+            let has_department_location = extracted["department"]
+                .as_array()
+                .and_then(|departments| departments.first())
+                .and_then(|department| get_string_value(&department["location"]))
+                .is_some();
 
-            // Join returns an array, get first element
-            let location = if let Some(depts) = extracted["department"].as_array() {
-                if let Some(dept) = depts.first() {
-                    get_string_value(&dept["location"]).unwrap_or_else(|| "Unknown".to_string())
-                } else {
-                    "Unknown".to_string()
-                }
-            } else {
-                "Unknown".to_string()
-            };
-
-            println!("  - {}: {}", name, location);
+            println!(
+                "  - user {}: name present={}, department location present={}",
+                index + 1,
+                has_name,
+                has_department_location
+            );
         }
         println!();
 
@@ -227,25 +221,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         let results3 = client.find(users_collection, query3, None).await?;
         println!("✓ Found {} users with profile data", results3.len());
-        for user in &results3 {
+        for (index, user) in results3.iter().enumerate() {
             let user_json = serde_json::to_value(user)?;
             let extracted = extract_record(&user_json);
 
-            let name =
-                get_string_value(&extracted["name"]).unwrap_or_else(|| "Unknown".to_string());
+            let has_name = get_string_value(&extracted["name"]).is_some();
+            let has_profile_bio = extracted["profile"]
+                .as_array()
+                .and_then(|profiles| profiles.first())
+                .and_then(|profile| get_string_value(&profile["bio"]))
+                .is_some();
 
-            // Join returns an array, get first element
-            let bio = if let Some(profiles) = extracted["profile"].as_array() {
-                if let Some(profile) = profiles.first() {
-                    get_string_value(&profile["bio"]).unwrap_or_else(|| "N/A".to_string())
-                } else {
-                    "N/A".to_string()
-                }
-            } else {
-                "N/A".to_string()
-            };
-
-            println!("  - {}: {}", name, bio);
+            println!(
+                "  - user {}: name present={}, profile bio present={}",
+                index + 1,
+                has_name,
+                has_profile_bio
+            );
         }
         println!();
 
@@ -266,26 +258,27 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         let results4 = client.find(orders_collection, query4, None).await?;
         println!("✓ Found {} completed orders", results4.len());
-        for order in &results4 {
+        for (index, order) in results4.iter().enumerate() {
             let order_json = serde_json::to_value(order)?;
             let extracted = extract_record(&order_json);
 
-            let product =
-                get_string_value(&extracted["product"]).unwrap_or_else(|| "Unknown".to_string());
-            let amount = ekodb_client::get_int_value(&extracted["amount"]).unwrap_or(0);
+            let has_product = get_string_value(&extracted["product"]).is_some();
+            let has_amount = ekodb_client::get_int_value(&extracted["amount"]).is_some();
 
             // Join returns an array, get first element
-            let user_name = if let Some(users) = extracted["user"].as_array() {
-                if let Some(user) = users.first() {
-                    get_string_value(&user["name"]).unwrap_or_else(|| "Unknown".to_string())
-                } else {
-                    "Unknown".to_string()
-                }
-            } else {
-                "Unknown".to_string()
-            };
+            let joined_users = extracted["user"].as_array();
+            let has_user_name = joined_users
+                .and_then(|users| users.first())
+                .and_then(|user| get_string_value(&user["name"]))
+                .is_some();
 
-            println!("  - {} (${}) by {}", product, amount, user_name);
+            println!(
+                "  - order {}: product present={}, amount present={}, joined user name present={}",
+                index + 1,
+                has_product,
+                has_amount,
+                has_user_name
+            );
         }
         println!();
 
@@ -308,27 +301,25 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         let results5 = client.find(users_collection, query5, None).await?;
         println!("✓ Found {} users with example.com emails", results5.len());
-        for user in &results5 {
+        for (index, user) in results5.iter().enumerate() {
             let user_json = serde_json::to_value(user)?;
             let extracted = extract_record(&user_json);
 
-            let name =
-                get_string_value(&extracted["name"]).unwrap_or_else(|| "Unknown".to_string());
-            let email =
-                get_string_value(&extracted["email"]).unwrap_or_else(|| "Unknown".to_string());
+            let has_name = get_string_value(&extracted["name"]).is_some();
+            let email_matches = get_string_value(&extracted["email"])
+                .is_some_and(|email| email.ends_with("@example.com"));
 
-            // Join returns an array, get first element
-            let location = if let Some(depts) = extracted["department"].as_array() {
-                if let Some(dept) = depts.first() {
-                    get_string_value(&dept["location"]).unwrap_or_else(|| "N/A".to_string())
-                } else {
-                    "N/A".to_string()
-                }
-            } else {
-                "N/A".to_string()
-            };
+            let joined_departments = extracted["department"]
+                .as_array()
+                .map_or(0, |departments| departments.len());
 
-            println!("  - {} ({}): {}", name, email, location);
+            println!(
+                "  - user {}: name present={}, email domain matched={}, joined departments={}",
+                index + 1,
+                has_name,
+                email_matches,
+                joined_departments
+            );
         }
         println!();
 
