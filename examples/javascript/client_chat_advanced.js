@@ -18,11 +18,14 @@ async function main() {
   // Create client
   const client = new EkoDBClient(
     process.env.API_BASE_URL || "http://localhost:8080",
-    process.env.API_BASE_KEY || ""
+    process.env.API_BASE_KEY || "",
   );
   await client.init();
 
   const collection = "client_chat_advanced_js";
+  let chatId;
+  let chatId2;
+  let primaryError;
 
   try {
     // Insert sample data
@@ -47,7 +50,7 @@ async function main() {
       llm_model: "gpt-4o-mini",
       system_prompt: "You are a helpful product assistant.",
     });
-    const chatId = session.chat_id;
+    chatId = session.chat_id;
     console.log(`✓ Created session: ${chatId}\n`);
 
     // Send initial message
@@ -93,7 +96,7 @@ async function main() {
     console.log("=== Feature 1: Regenerate AI Response ===");
     const regenerated = await client.regenerateMessage(
       chatId,
-      assistantMessageId
+      assistantMessageId,
     );
     console.log("✓ Message regenerated");
     if (regenerated.responses.length > 0) {
@@ -105,7 +108,7 @@ async function main() {
     await client.updateChatMessage(
       chatId,
       userMessageId,
-      "What is the updated price of ekoDB?"
+      "What is the updated price of ekoDB?",
     );
     console.log("✓ Message content updated\n");
 
@@ -125,14 +128,14 @@ async function main() {
     const session2 = await client.createChatSession({
       collections: [
         {
-          collection_name: "products",
+          collection_name: collection,
           fields: [], // Empty = search all fields
         },
       ],
       llm_provider: "openai",
       llm_model: "gpt-4o-mini",
     });
-    const chatId2 = session2.chat_id;
+    chatId2 = session2.chat_id;
     console.log(`✓ Created second session: ${chatId2}`);
 
     // Send a message in the second session
@@ -149,7 +152,7 @@ async function main() {
     });
     console.log("✓ Sessions merged successfully");
     console.log(
-      `  Total messages in merged session: ${mergeResult.message_count}\n`
+      `  Total messages in merged session: ${mergeResult.message_count}\n`,
     );
 
     // Feature 5: Delete Message
@@ -160,24 +163,47 @@ async function main() {
     // Verify message count after deletion
     const sessionDetails = await client.getChatSession(chatId);
     console.log(`✓ Messages remaining: ${sessionDetails.message_count}\n`);
-
-    // Cleanup
-    console.log("=== Cleanup ===");
-    await client.deleteChatSession(chatId);
-    console.log("✓ Deleted session");
-    await client.deleteCollection(collection);
-    console.log("✓ Deleted collection\n");
-
-    console.log("✓ All advanced chat features demonstrated successfully!");
   } catch (error) {
-    // Cleanup on error
+    primaryError = error;
+    throw error;
+  } finally {
+    console.log("=== Cleanup ===");
+    const cleanupErrors = [];
+
+    for (const [label, id] of [
+      ["second session", chatId2],
+      ["session", chatId],
+    ]) {
+      if (!id) continue;
+      try {
+        await client.deleteChatSession(id);
+        console.log(`✓ Deleted ${label}`);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        // A successful merge may already have consumed the source session.
+        if (!message.includes("status 404") && !/not found/i.test(message)) {
+          cleanupErrors.push(error);
+        }
+      }
+    }
+
     try {
       await client.deleteCollection(collection);
-    } catch (e) {
-      // Ignore cleanup errors
+      console.log("✓ Deleted collection\n");
+    } catch (error) {
+      cleanupErrors.push(error);
     }
-    throw error;
+
+    if (cleanupErrors.length > 0) {
+      if (primaryError) {
+        console.error("Cleanup errors:", cleanupErrors);
+      } else {
+        throw new AggregateError(cleanupErrors, "Advanced chat cleanup failed");
+      }
+    }
   }
+
+  console.log("✓ All advanced chat features demonstrated successfully!");
 }
 
 main().catch((error) => {

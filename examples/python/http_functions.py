@@ -18,6 +18,12 @@ load_dotenv(env_path)
 
 BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8080")
 API_KEY = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb")
+TEST_COLLECTION = "functions_users_http_py"
+FUNCTION_LABELS = (
+    "get_active_users_http_py",
+    "get_active_users_paginated_http_py",
+    "user_stats_http_py",
+)
 
 
 async def get_auth_token(session):
@@ -75,7 +81,8 @@ async def save_or_update_function(session, token, function):
     # 409: label already exists — update the existing definition instead.
     await request(session, "PUT", f"/api/functions/{label}", function, token)
     print(f"ℹ️  Function '{label}' already existed — updated instead")
-    return label
+    existing = await request(session, "GET", f"/api/functions/{label}", None, token)
+    return existing["id"]
 
 
 async def setup_test_data(session, token):
@@ -89,7 +96,7 @@ async def setup_test_data(session, token):
             "status": "active" if i % 2 == 0 else "inactive",
             "score": i * 10,
         }
-        await request(session, "POST", "/api/insert/users", record, token)
+        await request(session, "POST", f"/api/insert/{TEST_COLLECTION}", record, token)
 
     print("✅ Test data ready\n")
 
@@ -99,7 +106,7 @@ async def simple_query_function(session, token):
     print("📝 Example 1: Simple Query Function with Filter\n")
 
     function1 = {
-        "label": "get_active_users",
+        "label": FUNCTION_LABELS[0],
         "name": "Get Active Users",
         "description": "Query users with active status",
         "version": "1.0",
@@ -107,7 +114,7 @@ async def simple_query_function(session, token):
         "functions": [
             {
                 "type": "Query",
-                "collection": "users",
+                "collection": TEST_COLLECTION,
                 "filter": {
                     "type": "Condition",
                     "content": {
@@ -127,7 +134,7 @@ async def simple_query_function(session, token):
 
     # Call script (can use label)
     call_result = await request(
-        session, "POST", "/api/functions/get_active_users", {}, token
+        session, "POST", f"/api/functions/{FUNCTION_LABELS[0]}", {}, token
     )
     print(f"📊 Found {len(call_result['records'])} active users\n")
 
@@ -139,7 +146,7 @@ async def parameterized_pagination_function(session, token):
     print("📝 Example 2: Parameterized Pagination with Limit/Skip\n")
 
     function2 = {
-        "label": "get_active_users_paginated",
+        "label": FUNCTION_LABELS[1],
         "name": "Get Active Users (Paginated)",
         "version": "1.0",
         "parameters": {
@@ -157,7 +164,7 @@ async def parameterized_pagination_function(session, token):
         "functions": [
             {
                 "type": "Query",
-                "collection": "users",
+                "collection": TEST_COLLECTION,
                 "filter": {
                     "type": "Condition",
                     "content": {
@@ -181,7 +188,7 @@ async def parameterized_pagination_function(session, token):
     call_result = await request(
         session,
         "POST",
-        "/api/functions/get_active_users_paginated",
+        f"/api/functions/{FUNCTION_LABELS[1]}",
         {"page_size": 3, "page_offset": 0},
         token,
     )
@@ -191,11 +198,12 @@ async def parameterized_pagination_function(session, token):
     call_result = await request(
         session,
         "POST",
-        "/api/functions/get_active_users_paginated",
+        f"/api/functions/{FUNCTION_LABELS[1]}",
         {"page_size": 3, "page_offset": 3},
         token,
     )
     print(f"📊 Page 2: Found {len(call_result['records'])} users (limit=3, skip=3)\n")
+    return function_id
 
 
 async def aggregation_function(session, token):
@@ -203,14 +211,14 @@ async def aggregation_function(session, token):
     print("📝 Example 3: Multi-Stage Pipeline (Query → Group → Calculate)\n")
 
     function3 = {
-        "label": "user_stats",
+        "label": FUNCTION_LABELS[2],
         "name": "User Statistics by Status",
         "version": "1.0",
         "parameters": {},
         "functions": [
             {
                 "type": "Query",
-                "collection": "users",
+                "collection": TEST_COLLECTION,
                 "filter": {
                     "type": "Condition",
                     "content": {
@@ -244,7 +252,9 @@ async def aggregation_function(session, token):
     function_id = await save_or_update_function(session, token, function3)
     print(f"✅ Function saved: {function_id}")
 
-    call_result = await request(session, "POST", "/api/functions/user_stats", {}, token)
+    call_result = await request(
+        session, "POST", f"/api/functions/{FUNCTION_LABELS[2]}", {}, token
+    )
     print(
         f"📊 Pipeline Results: Filtered (age>20) → Grouped by status → {len(call_result['records'])} groups"
     )
@@ -271,12 +281,12 @@ async def function_management(session, token, get_active_users_id, user_stats_id
 
     # Update script (requires encrypted ID)
     updated = {
-        "label": "get_active_users",
+        "label": FUNCTION_LABELS[0],
         "name": "Get Active Users (Updated)",
         "description": "Updated description",
         "version": "1.1",
         "parameters": {},
-        "functions": [{"type": "FindAll", "collection": "users"}],
+        "functions": [{"type": "FindAll", "collection": TEST_COLLECTION}],
         "tags": ["users"],
     }
     await request(
@@ -296,24 +306,70 @@ async def main():
     """Main function"""
     print("🚀 ekoDB Functions Example (Python/HTTP)\n")
 
-    try:
-        async with aiohttp.ClientSession() as session:
-            token = await get_auth_token(session)
-            print("✓ Authentication successful\n")
-
+    async with aiohttp.ClientSession() as session:
+        token = await get_auth_token(session)
+        print("✓ Authentication successful\n")
+        function_ids = []
+        try:
+            try:
+                await request(
+                    session,
+                    "DELETE",
+                    f"/api/collections/{TEST_COLLECTION}",
+                    None,
+                    token,
+                )
+            except Exception as error:
+                if "HTTP 404" not in str(error):
+                    raise
             await setup_test_data(session, token)
             get_active_users_id = await simple_query_function(session, token)
-            await parameterized_pagination_function(session, token)
+            function_ids.append(get_active_users_id)
+            function_ids.append(await parameterized_pagination_function(session, token))
             user_stats_id = await aggregation_function(session, token)
+            function_ids.append(user_stats_id)
             await function_management(
                 session, token, get_active_users_id, user_stats_id
             )
-
             print("✅ All examples completed!")
-
-    except Exception as error:
-        print(f"❌ Error: {error}")
-        raise
+        finally:
+            cleanup_errors = []
+            cleanup_function_ids = list(function_ids)
+            try:
+                functions = await request(session, "GET", "/api/functions", None, token)
+                cleanup_function_ids.extend(
+                    function["id"]
+                    for function in functions
+                    if function.get("label") in FUNCTION_LABELS
+                    and function.get("id") not in cleanup_function_ids
+                )
+            except Exception as error:
+                cleanup_errors.append(f"discover functions: {error}")
+            for function_id in cleanup_function_ids:
+                try:
+                    await request(
+                        session,
+                        "DELETE",
+                        f"/api/functions/{function_id}",
+                        None,
+                        token,
+                    )
+                except Exception as error:
+                    if "HTTP 404" not in str(error) and "not found" not in str(error):
+                        cleanup_errors.append(f"function {function_id}: {error}")
+            try:
+                await request(
+                    session,
+                    "DELETE",
+                    f"/api/collections/{TEST_COLLECTION}",
+                    None,
+                    token,
+                )
+            except Exception as error:
+                if "HTTP 404" not in str(error) and "not found" not in str(error):
+                    cleanup_errors.append(f"collection {TEST_COLLECTION}: {error}")
+            if cleanup_errors:
+                raise RuntimeError("Cleanup failed: " + "; ".join(cleanup_errors))
 
 
 if __name__ == "__main__":

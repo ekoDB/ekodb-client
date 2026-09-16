@@ -10,15 +10,23 @@ import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
 
+private val cryptoLabels = listOf(
+    "crypto_demo_hmac_kt",
+    "crypto_demo_aes_kt",
+    "crypto_demo_uuid_kt",
+    "crypto_demo_totp_kt",
+    "crypto_demo_encoding_kt",
+)
+
 /**
  * Crypto stages — comprehensive demo of every primitive added in
  * ekoDB 0.42.0 (HMAC, AES-GCM, UUID, TOTP, Base64, Hex, Slugify).
  *
- *   crypto_demo_hmac      HmacSign + HmacVerify (round trip)
- *   crypto_demo_aes       AesEncrypt + AesDecrypt (round trip)
- *   crypto_demo_uuid      UuidGenerate
- *   crypto_demo_totp      TotpGenerate (RFC 6238)
- *   crypto_demo_encoding  Base64 + Hex + Slugify
+ *   crypto_demo_hmac_kt      HmacSign + HmacVerify (round trip)
+ *   crypto_demo_aes_kt       AesEncrypt + AesDecrypt (round trip)
+ *   crypto_demo_uuid_kt      UuidGenerate
+ *   crypto_demo_totp_kt      TotpGenerate (RFC 6238)
+ *   crypto_demo_encoding_kt  Base64 + Hex + Slugify
  *
  * Operator-owned secrets flow through `{{env.NAME}}` so they never
  * land in the function definition stored on disk.
@@ -32,10 +40,31 @@ fun main() = runBlocking {
 
     val client = EkoDBClient.builder().baseUrl(baseUrl).apiKey(apiKey).build()
     println("✓ Client created")
+    var failure: Exception? = null
+    try {
+        runCryptoStages(client)
+    } catch (error: Exception) {
+        failure = error
+    } finally {
+        for (label in cryptoLabels) {
+            try {
+                client.deleteUserFunction(label)
+            } catch (cleanupError: Exception) {
+                if (!isNotFoundError(cleanupError)) {
+                    failure = failure?.also { it.addSuppressed(cleanupError) } ?: cleanupError
+                }
+            }
+        }
+    }
+    failure?.let { throw it }
+    println("\n✓ Cleaned up demo functions")
+}
+
+private suspend fun runCryptoStages(client: EkoDBClient) {
 
     // 1. HMAC sign + verify round trip.
     val hmac = buildJsonObject {
-        put("label", "crypto_demo_hmac")
+        put("label", cryptoLabels[0])
         put("name", "HMAC sign + verify")
         putJsonObject("parameters") {
             putJsonObject("payload") { put("required", true) }
@@ -60,11 +89,11 @@ fun main() = runBlocking {
             })
         }
     }
-    saveCryptoFn(client, hmac, "crypto_demo_hmac")
+    saveCryptoFn(client, hmac, cryptoLabels[0])
 
     // 2. AES-256-GCM encrypt + decrypt round trip.
     val aes = buildJsonObject {
-        put("label", "crypto_demo_aes")
+        put("label", cryptoLabels[1])
         put("name", "AES encrypt + decrypt")
         putJsonObject("parameters") {
             putJsonObject("plaintext") { put("required", true) }
@@ -86,11 +115,11 @@ fun main() = runBlocking {
             })
         }
     }
-    saveCryptoFn(client, aes, "crypto_demo_aes")
+    saveCryptoFn(client, aes, cryptoLabels[1])
 
     // 3. UuidGenerate.
     val uuidFn = buildJsonObject {
-        put("label", "crypto_demo_uuid")
+        put("label", cryptoLabels[2])
         put("name", "Generate v4 UUID")
         putJsonObject("parameters") {}
         putJsonArray("functions") {
@@ -100,11 +129,11 @@ fun main() = runBlocking {
             })
         }
     }
-    saveCryptoFn(client, uuidFn, "crypto_demo_uuid")
+    saveCryptoFn(client, uuidFn, cryptoLabels[2])
 
     // 4. TotpGenerate (RFC 6238 with SHA1).
     val totp = buildJsonObject {
-        put("label", "crypto_demo_totp")
+        put("label", cryptoLabels[3])
         put("name", "Generate TOTP code")
         putJsonObject("parameters") {}
         putJsonArray("functions") {
@@ -118,11 +147,11 @@ fun main() = runBlocking {
             })
         }
     }
-    saveCryptoFn(client, totp, "crypto_demo_totp")
+    saveCryptoFn(client, totp, cryptoLabels[3])
 
     // 5. Base64 + Hex + Slugify chained.
     val encoding = buildJsonObject {
-        put("label", "crypto_demo_encoding")
+        put("label", cryptoLabels[4])
         put("name", "Base64 / Hex / Slugify")
         putJsonObject("parameters") {
             putJsonObject("title") { put("required", true) }
@@ -145,22 +174,19 @@ fun main() = runBlocking {
             })
         }
     }
-    saveCryptoFn(client, encoding, "crypto_demo_encoding")
+    saveCryptoFn(client, encoding, cryptoLabels[4])
 
     println("\nInvoke them with:")
-    println("  POST /api/functions/crypto_demo_hmac     { \"payload\": \"hi\" }")
-    println("  POST /api/functions/crypto_demo_aes      { \"plaintext\": \"secret\" }")
-    println("  POST /api/functions/crypto_demo_uuid")
-    println("  POST /api/functions/crypto_demo_totp")
-    println("  POST /api/functions/crypto_demo_encoding { \"title\": \"Héllo World\" }")
+    println("  POST /api/functions/${cryptoLabels[0]} { \"payload\": \"hi\" }")
+    println("  POST /api/functions/${cryptoLabels[1]} { \"plaintext\": \"secret\" }")
+    println("  POST /api/functions/${cryptoLabels[2]}")
+    println("  POST /api/functions/${cryptoLabels[3]}")
+    println("  POST /api/functions/${cryptoLabels[4]} { \"title\": \"Héllo World\" }")
+}
 
-    for (label in listOf(
-        "crypto_demo_hmac", "crypto_demo_aes", "crypto_demo_uuid",
-        "crypto_demo_totp", "crypto_demo_encoding",
-    )) {
-        try { client.deleteUserFunction(label) } catch (_: Exception) {}
-    }
-    println("\n✓ Cleaned up demo functions")
+private fun isNotFoundError(error: Exception): Boolean {
+    val message = error.message.orEmpty()
+    return message.contains("status 404") || message.contains("not found", ignoreCase = true)
 }
 
 private fun isAlreadyExistsError(e: Exception): Boolean {
@@ -181,7 +207,7 @@ private suspend fun saveCryptoFn(
             client.updateUserFunction(label, fn)
             println("ℹ️  Function '$label' already existed — updated instead")
         } else {
-            println("SaveUserFunction($label) error: ${e.message}")
+            throw e
         }
     }
 }

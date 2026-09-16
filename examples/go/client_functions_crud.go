@@ -42,7 +42,7 @@ func saveOrUpdateFn(client *ekodb.Client, fn ekodb.UserFunction) (string, error)
 	return "", err
 }
 
-func main() {
+func run() (runErr error) {
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found, using defaults")
 	}
@@ -59,15 +59,30 @@ func main() {
 
 	client, err := ekodb.NewClient(baseURL, apiKey)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
+	collection := "crud_users_go"
+	collectionOwned := false
+	var scriptIDs []string
+	defer func() {
+		fmt.Println("🧹 Cleaning up...")
+		for _, id := range scriptIDs {
+			runErr = errors.Join(runErr, client.DeleteFunction(id))
+		}
+		if collectionOwned {
+			runErr = errors.Join(runErr, client.DeleteCollection(collection))
+		}
+		if runErr == nil {
+			fmt.Println("✅ Cleanup complete")
+		}
+	}()
 
 	fmt.Println("🚀 ekoDB Go CRUD Functions Example")
 	fmt.Println()
 
 	// Setup test data
 	fmt.Println("📋 Setting up test data...")
-	client.DeleteCollection("crud_users_go")
+	client.DeleteCollection(collection)
 
 	for i := 1; i <= 10; i++ {
 		status := "active"
@@ -78,17 +93,18 @@ func main() {
 		if i <= 3 {
 			role = "admin"
 		}
-		client.Insert("crud_users_go", map[string]interface{}{
+		if _, err := client.Insert(collection, map[string]interface{}{
 			"name":   fmt.Sprintf("User %d", i),
 			"email":  fmt.Sprintf("user%d@example.com", i),
 			"status": status,
 			"score":  i * 10,
 			"role":   role,
-		})
+		}); err != nil {
+			return err
+		}
+		collectionOwned = true
 	}
-	fmt.Println("✅ Created 10 test users\n")
-
-	var scriptIDs []string
+	fmt.Print("✅ Created 10 test users\n\n")
 
 	// Example 1: List All Users
 	fmt.Println("📝 Example 1: List All Users")
@@ -100,16 +116,22 @@ func main() {
 		Version:    func() *string { s := "1.0"; return &s }(),
 		Parameters: map[string]ekodb.ParameterDefinition{},
 		Functions: []ekodb.FunctionStageConfig{
-			ekodb.StageFindAll("crud_users_go"),
+			ekodb.StageFindAll(collection),
 			ekodb.StageProject([]string{"name", "email", "status"}, false),
 		},
 		Tags: []string{"users", "query"},
 	}
-	scriptID1, _ := saveOrUpdateFn(client, script1)
+	scriptID1, err := saveOrUpdateFn(client, script1)
+	if err != nil {
+		return err
+	}
 	scriptIDs = append(scriptIDs, scriptID1)
 	fmt.Println("✅ Function saved")
 
-	result1, _ := client.CallFunction("list_all_users_go", nil)
+	result1, err := client.CallFunction("list_all_users_go", nil)
+	if err != nil {
+		return err
+	}
 	if result1 != nil {
 		fmt.Printf("📊 Found %d users\n", len(result1.Records))
 		fmt.Printf("⏱️  Execution time: %vms\n\n", result1.Stats.ExecutionTimeMs)
@@ -125,18 +147,24 @@ func main() {
 		Version:    func() *string { s := "1.0"; return &s }(),
 		Parameters: map[string]ekodb.ParameterDefinition{},
 		Functions: []ekodb.FunctionStageConfig{
-			ekodb.StageFindAll("crud_users_go"),
+			ekodb.StageFindAll(collection),
 			ekodb.StageGroup([]string{"status"}, []ekodb.GroupFunctionConfig{
 				{OutputField: "count", Operation: "Count"},
 			}),
 		},
 		Tags: []string{"users", "analytics"},
 	}
-	scriptID2, _ := saveOrUpdateFn(client, script2)
+	scriptID2, err := saveOrUpdateFn(client, script2)
+	if err != nil {
+		return err
+	}
 	scriptIDs = append(scriptIDs, scriptID2)
 	fmt.Println("✅ Function saved")
 
-	result2, _ := client.CallFunction("users_by_status_go", nil)
+	result2, err := client.CallFunction("users_by_status_go", nil)
+	if err != nil {
+		return err
+	}
 	if result2 != nil {
 		fmt.Println("📊 User counts by status:")
 		for _, record := range result2.Records {
@@ -145,13 +173,12 @@ func main() {
 		fmt.Printf("⏱️  Execution time: %vms\n\n", result2.Stats.ExecutionTimeMs)
 	}
 
-	// Cleanup
-	fmt.Println("🧹 Cleaning up...")
-	for _, scriptID := range scriptIDs {
-		client.DeleteFunction(scriptID)
-	}
-	client.DeleteCollection("crud_users_go")
-	fmt.Println("✅ Cleanup complete")
-	fmt.Println()
 	fmt.Println("✅ All CRUD script examples finished!")
+	return nil
+}
+
+func main() {
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
 }

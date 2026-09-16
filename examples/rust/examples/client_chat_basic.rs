@@ -30,6 +30,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .build()?;
 
     let collection = "client_chat_basic_rust";
+    let mut chat_id_for_cleanup = None;
+
+    let operation_result: Result<(), Box<dyn Error>> = async {
 
     // Step 1: Insert some sample data for context
     println!("=== Inserting Sample Data ===");
@@ -67,6 +70,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let session = client.create_chat_session(session_request).await?;
     let chat_id = &session.chat_id;
+    chat_id_for_cleanup = Some(session.chat_id.clone());
     println!("✓ Created session: {}\n", chat_id);
 
     // Step 3: Send a chat message
@@ -94,12 +98,32 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     println!("\nExecution Time: {}ms", response.execution_time_ms);
 
-    // Cleanup: Delete the collection (chat session is managed by server)
+    Ok(())
+    }
+    .await;
+
     println!("\n=== Cleanup ===");
-    client.delete_collection(collection).await?;
-    println!("✓ Deleted collection");
+    let mut cleanup_errors = Vec::new();
+    if let Some(chat_id) = chat_id_for_cleanup.as_deref() {
+        match client.delete_chat_session(chat_id).await {
+            Ok(()) => println!("✓ Deleted session"),
+            Err(error) => cleanup_errors.push(format!("session {chat_id}: {error}")),
+        }
+    }
+    match client.delete_collection(collection).await {
+        Ok(()) => println!("✓ Deleted collection"),
+        Err(error) => cleanup_errors.push(format!("collection {collection}: {error}")),
+    }
 
+    if let Err(error) = operation_result {
+        if !cleanup_errors.is_empty() {
+            eprintln!("Cleanup also failed: {}", cleanup_errors.join("; "));
+        }
+        return Err(error);
+    }
+    if !cleanup_errors.is_empty() {
+        return Err(format!("Cleanup failed: {}", cleanup_errors.join("; ")).into());
+    }
     println!("\n✓ Chat completed successfully");
-
     Ok(())
 }

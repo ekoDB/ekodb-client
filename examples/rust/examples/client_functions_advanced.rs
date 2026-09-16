@@ -2,8 +2,27 @@
 //!
 //! Demonstrates advanced query and aggregation operations using simple patterns
 
-use ekodb_client::{Client, Function, GroupFunctionConfig, GroupFunctionOp, Record, UserFunction};
+use ekodb_client::{
+    Client, Error, FieldType, Function, GroupFunctionConfig, GroupFunctionOp, Record, UserFunction,
+};
 use serde_json::json;
+use std::error::Error as StdError;
+
+fn is_not_found(error: &Error) -> bool {
+    matches!(error, Error::NotFound | Error::Api { code: 404, .. })
+}
+
+fn number(record: &Record, key: &str) -> Result<f64, Box<dyn StdError>> {
+    let field = match record.get(key) {
+        Some(FieldType::Object(wrapper)) => wrapper.get("value"),
+        value => value,
+    };
+    match field {
+        Some(FieldType::Integer(value)) => Ok(*value as f64),
+        Some(FieldType::Float(value)) => Ok(*value),
+        value => Err(format!("field '{key}' was not numeric: {value:?}").into()),
+    }
+}
 
 /// Save a function idempotently: if the label already exists (HTTP 409),
 /// update the existing definition instead, then return its id.
@@ -18,32 +37,23 @@ async fn save_or_update(
             client.update_function(&label, function).await?;
             println!("ℹ️  Function '{}' already existed — updated instead", label);
             let existing = client.get_function(&label).await?;
-            Ok(existing.id.unwrap_or(label))
+            existing.id.ok_or_else(|| {
+                std::io::Error::other(format!("updated function '{label}' did not include an id"))
+                    .into()
+            })
         }
         Err(e) => Err(Box::new(e)),
     }
 }
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    dotenv::dotenv().ok();
-
-    let base_url =
-        std::env::var("API_BASE_URL").unwrap_or_else(|_| "http://localhost:8080".to_string());
-    let api_key =
-        std::env::var("API_BASE_KEY").unwrap_or_else(|_| "a-test-api-key-from-ekodb".to_string());
-
-    let client = Client::builder()
-        .base_url(&base_url)
-        .api_key(&api_key)
-        .build()?;
-
+async fn run_examples(
+    client: &Client,
+    script_ids: &mut Vec<String>,
+) -> Result<(), Box<dyn StdError>> {
     println!("🚀 ekoDB Rust Advanced Functions Example\n");
 
     // Setup test data
     println!("📋 Setting up test data...");
-    let _ = client.delete_collection("advanced_products_rs").await;
-
     let products = vec![
         json!({"name": "Laptop Pro", "category": "Electronics", "price": 1299, "stock": 15, "rating": 4.8}),
         json!({"name": "Wireless Mouse", "category": "Electronics", "price": 29, "stock": 45, "rating": 4.5}),
@@ -55,6 +65,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         json!({"name": "Keyboard", "category": "Electronics", "price": 89, "stock": 30, "rating": 4.4}),
     ];
 
+    let mut inserted_ids = Vec::new();
     for product in &products {
         let mut record = Record::new();
         if let Some(obj) = product.as_object() {
@@ -62,11 +73,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 record.insert(key.clone(), value.clone());
             }
         }
-        client.insert("advanced_products_rs", record, None).await?;
+        let inserted = client.insert("advanced_products_rs", record, None).await?;
+        let id = inserted
+            .get_string("id")
+            .filter(|id| !id.is_empty())
+            .ok_or("product insert did not return an ID")?;
+        if inserted_ids.iter().any(|existing| existing == id) {
+            return Err(format!("duplicate inserted product ID: {id}").into());
+        }
+        inserted_ids.push(id.to_string());
     }
     println!("✅ Created {} products\n", products.len());
-
-    let mut script_ids: Vec<String> = Vec::new();
 
     // Example 1: List All Products
     println!("📝 Example 1: List All Products\n");
@@ -77,7 +94,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             collection: "advanced_products_rs".to_string(),
         });
 
-    let script_id1 = save_or_update(&client, script1).await?;
+    let script_id1 = save_or_update(client, script1).await?;
     script_ids.push(script_id1);
     println!("✅ Function saved");
 
@@ -85,6 +102,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .call_function("list_all_products_adv_rs", None)
         .await?;
     println!("📊 Found {} products", result1.records.len());
+    if result1.records.len() != 8 {
+        return Err(format!("expected 8 products, found {}", result1.records.len()).into());
+    }
     println!(
         "⏱️  Execution time: {}ms\n",
         result1.stats.execution_time_ms
@@ -107,7 +127,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             ],
         });
 
-    let script_id2 = save_or_update(&client, script2).await?;
+    let script_id2 = save_or_update(client, script2).await?;
     script_ids.push(script_id2);
     println!("✅ Function saved");
 
@@ -115,23 +135,85 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .call_function("products_by_category_rs", None)
         .await?;
     println!("📊 Category breakdown:");
+    let mut electronics = None;
+    let mut furniture = None;
     for record in &result2.records {
         println!("   {:?}", record);
+        let aggregate = (
+            number(record, "count")? as i64,
+            number(record, "avg_price")?,
+        );
+        match record.get_string("category") {
+            Some("Electronics") => electronics = Some(aggregate),
+            Some("Furniture") => furniture = Some(aggregate),
+            value => return Err(format!("unexpected category group: {value:?}").into()),
+        }
+    }
+    if result2.records.len() != 2
+        || electronics != Some((5, 367.0))
+        || furniture
+            .map(|(count, average)| count != 3 || (average - 1097.0 / 3.0).abs() > 1e-9)
+            .unwrap_or(true)
+    {
+        return Err(format!(
+            "unexpected aggregates: Electronics={electronics:?}, Furniture={furniture:?}"
+        )
+        .into());
     }
     println!(
         "⏱️  Execution time: {}ms\n",
         result2.stats.execution_time_ms
     );
 
-    // Cleanup
-    println!("🧹 Cleaning up...");
-    for script_id in script_ids {
-        let _ = client.delete_function(&script_id).await;
+    Ok(())
+}
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn StdError>> {
+    dotenv::dotenv().ok();
+    let base_url =
+        std::env::var("API_BASE_URL").unwrap_or_else(|_| "http://localhost:8080".to_string());
+    let api_key =
+        std::env::var("API_BASE_KEY").unwrap_or_else(|_| "a-test-api-key-from-ekodb".to_string());
+    let client = Client::builder()
+        .base_url(&base_url)
+        .api_key(&api_key)
+        .build()?;
+    let collection = "advanced_products_rs";
+    if let Err(error) = client.delete_collection(collection).await {
+        if !is_not_found(&error) {
+            return Err(error.into());
+        }
     }
-    let _ = client.delete_collection("advanced_products_rs").await;
+    let mut script_ids = Vec::new();
+    let operation_result = run_examples(&client, &mut script_ids).await;
+    println!("🧹 Cleaning up...");
+    let mut cleanup_errors = Vec::new();
+    for script_id in script_ids.iter().rev() {
+        if let Err(error) = client.delete_function(script_id).await {
+            cleanup_errors.push(format!("function {script_id}: {error}"));
+        }
+    }
+    if let Err(error) = client.delete_collection(collection).await {
+        if !is_not_found(&error) {
+            cleanup_errors.push(format!("collection {collection}: {error}"));
+        }
+    }
+    match (operation_result, cleanup_errors.is_empty()) {
+        (Err(primary), false) => {
+            return Err(format!(
+                "{primary}; cleanup also failed: {}",
+                cleanup_errors.join("; ")
+            )
+            .into())
+        }
+        (Err(primary), true) => return Err(primary),
+        (Ok(()), false) => {
+            return Err(format!("cleanup failed: {}", cleanup_errors.join("; ")).into())
+        }
+        (Ok(()), true) => {}
+    }
     println!("✅ Cleanup complete\n");
-
     println!("✅ All advanced script examples finished!");
-
     Ok(())
 }

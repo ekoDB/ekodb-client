@@ -21,6 +21,17 @@ use serde_json::json;
 use std::collections::HashMap;
 use std::env;
 
+const FUNCTION_LABELS: [&str; 3] = [
+    "rs_users_register",
+    "rs_users_login",
+    "rs_users_verify_token",
+];
+
+fn is_missing_function(error: &ekodb_client::Error) -> bool {
+    matches!(error, ekodb_client::Error::Api { code: 404, .. })
+        || error.to_string().to_ascii_lowercase().contains("not found")
+}
+
 /// Save a user function idempotently: if the label already exists (HTTP 409),
 /// update the existing definition instead.
 async fn save_or_update_user(
@@ -51,6 +62,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .base_url(&base_url)
         .api_key(&api_key)
         .build()?;
+
+    cleanup_functions(&client).await?;
+
+    let operation_result: Result<(), Box<dyn std::error::Error>> = async {
 
     println!("✓ Client created");
 
@@ -177,11 +192,41 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
          the function definition."
     );
 
-    // Cleanup so re-runs don't conflict with the first registration.
-    let _ = client.delete_user_function("rs_users_register").await;
-    let _ = client.delete_user_function("rs_users_login").await;
-    let _ = client.delete_user_function("rs_users_verify_token").await;
-    println!("\n✓ Cleaned up demo functions");
+        Ok(())
+    }
+    .await;
 
-    Ok(())
+    let cleanup_result = cleanup_functions(&client).await;
+    match (operation_result, cleanup_result) {
+        (Ok(()), Ok(())) => {
+            println!("\n✓ Cleaned up demo functions");
+            Ok(())
+        }
+        (Err(operation_error), Ok(())) => Err(operation_error),
+        (Ok(()), Err(cleanup_error)) => Err(cleanup_error),
+        (Err(operation_error), Err(cleanup_error)) => Err(std::io::Error::other(format!(
+            "{operation_error}; cleanup also failed: {cleanup_error}"
+        ))
+        .into()),
+    }
+}
+
+async fn cleanup_functions(client: &Client) -> Result<(), Box<dyn std::error::Error>> {
+    let mut errors = Vec::new();
+    for label in FUNCTION_LABELS {
+        match client.delete_user_function(label).await {
+            Ok(()) => {}
+            Err(error) if is_missing_function(&error) => {}
+            Err(error) => errors.push(format!("{label}: {error}")),
+        }
+    }
+    if errors.is_empty() {
+        Ok(())
+    } else {
+        Err(std::io::Error::other(format!(
+            "failed to clean owned functions: {}",
+            errors.join("; ")
+        ))
+        .into())
+    }
 }

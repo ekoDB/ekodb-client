@@ -1,21 +1,21 @@
 make test-examples-python
-📦 [36mEnsuring Python example dependencies in .venv...[0m
-🧪 [36mRunning Python examples (direct HTTP/WebSocket)...[0m
+📦 Ensuring Python example dependencies in .venv...
+🧪 Running Python examples (direct HTTP/WebSocket)...
 === Simple CRUD Operations (Direct HTTP) ===
 
 ✓ Authentication successful
 
 === Insert Document ===
-Inserted: {'id': 'a1Q5wlEhvqySoP3kgNk40K5Ijz_ty6228uY7R3jdt1PWY_9AwRQWmzaOuEYcUY357OSO7cUHcKCPURGECnCL_g'}
+Inserted: {'id': 'TM-QdUR_6x6IslYUQbtugSFgLeifarLw6N7SHSUWkUQCVjEURCmVJjcLHIDAknO-ciup0ntYpzj50LRl9v9Mxw'}
 
 === Find by ID ===
-Found: {'name': {'value': 'Test Record', 'type': 'String'}, 'value': {'type': 'Integer', 'value': 42}, 'id': 'a1Q5wlEhvqySoP3kgNk40K5Ijz_ty6228uY7R3jdt1PWY_9AwRQWmzaOuEYcUY357OSO7cUHcKCPURGECnCL_g', 'active': {'type': 'Boolean', 'value': True}}
+Found: {'name': {'type': 'String', 'value': 'Test Record'}, 'active': {'type': 'Boolean', 'value': True}, 'id': 'TM-QdUR_6x6IslYUQbtugSFgLeifarLw6N7SHSUWkUQCVjEURCmVJjcLHIDAknO-ciup0ntYpzj50LRl9v9Mxw', 'value': {'value': 42, 'type': 'Integer'}}
 
 === Find with Query ===
-Found documents: [{'id': 'a1Q5wlEhvqySoP3kgNk40K5Ijz_ty6228uY7R3jdt1PWY_9AwRQWmzaOuEYcUY357OSO7cUHcKCPURGECnCL_g', 'value': {'type': 'Integer', 'value': 42}, 'active': {'type': 'Boolean', 'value': True}, 'name': {'value': 'Test Record', 'type': 'String'}}]
+Found documents: [{'name': {'type': 'String', 'value': 'Test Record'}, 'value': {'value': 42, 'type': 'Integer'}, 'active': {'type': 'Boolean', 'value': True}, 'id': 'TM-QdUR_6x6IslYUQbtugSFgLeifarLw6N7SHSUWkUQCVjEURCmVJjcLHIDAknO-ciup0ntYpzj50LRl9v9Mxw'}]
 
 === Update Document ===
-Updated: {'active': {'type': 'Boolean', 'value': True}, 'value': {'value': 100, 'type': 'Integer'}, 'id': 'a1Q5wlEhvqySoP3kgNk40K5Ijz_ty6228uY7R3jdt1PWY_9AwRQWmzaOuEYcUY357OSO7cUHcKCPURGECnCL_g', 'name': {'value': 'Updated Record', 'type': 'String'}}
+Updated: {'name': {'type': 'String', 'value': 'Updated Record'}, 'active': {'value': True, 'type': 'Boolean'}, 'id': 'TM-QdUR_6x6IslYUQbtugSFgLeifarLw6N7SHSUWkUQCVjEURCmVJjcLHIDAknO-ciup0ntYpzj50LRl9v9Mxw', 'value': {'type': 'Integer', 'value': 100}}
 
 === Delete Document ===
 Deleted document
@@ -26,7 +26,7 @@ Deleted document
 ✓ Authentication successful
 
 === Inserting Test Data ===
-✓ Inserted test record: eo4k2XKeeP4Jw-NIruzkp5BZ37laWem-xan_dukdvdrmZzoejTtyeo5p4ZQXOFLyMu6bG4acNriPRHzHTq0EoQ
+✓ Inserted test record: vnEyQd5QIipWYXaesy5-e3jkSI5lF5Nntzy0yNsk8QDvZJ2Out94Lb4Kkh2lJWzCu3oJXVOvVhdHrebBeMgJ7A
 
 === Connecting to WebSocket ===
 ✓ WebSocket connected
@@ -45,32 +45,17 @@ Response: {
           "type": "String",
           "value": "WebSocket Test Record"
         },
-        "id": "eo4k2XKeeP4Jw-NIruzkp5BZ37laWem-xan_dukdvdrmZzoejTtyeo5p4ZQXOFLyMu6bG4acNriPRHzHTq0EoQ",
-        "value": {
-          "type": "Integer",
-          "value": 42
-        }
-      },
-      {
         "value": {
           "value": 42,
           "type": "Integer"
         },
-        "id": "WsbRCK94m4hP3hqb2DP9BPADED5Qb3sY8pyagkVQFOgdbEuIFn84mi1fBQkRrv_aJlCNvJp3vQhqcdHXQRFFCQ",
-        "name": {
-          "value": "WebSocket Test Record",
-          "type": "String"
-        },
-        "active": {
-          "value": true,
-          "type": "Boolean"
-        }
+        "id": "vnEyQd5QIipWYXaesy5-e3jkSI5lF5Nntzy0yNsk8QDvZJ2Out94Lb4Kkh2lJWzCu3oJXVOvVhdHrebBeMgJ7A"
       }
     ]
   },
-  "messageId": "1203295986"
+  "messageId": "372394558"
 }
-✓ Retrieved 2 record(s) via WebSocket
+✓ Retrieved 1 record via WebSocket
 
 ✓ WebSocket example completed successfully
 🚀 ekoDB Functions Example (Python/HTTP)
@@ -82,27 +67,26 @@ Response: {
 
 📝 Example 1: Simple Query Function with Filter
 
-✅ Function saved: aQOhxtl8FqlCWAfLt2kwxkBBWENcuPzH6NvLErvi6igzH0oBBanpH3WNqr33v8qjesn0v97Aap20UK57dLbiXg
-📊 Found 15 active users
+✅ Function saved: sM68v2lTjXweuS5N0EaQyBcF1223pit5d-J-kFSzAsf9EQYOHOEGj5MJIfXAQPhh5bawnYwTSfm4qKdkkWiigA
+📊 Found 5 active users
 
 📝 Example 2: Parameterized Pagination with Limit/Skip
 
-ℹ️  Function 'get_active_users_paginated' already existed — updated instead
-✅ Function saved: get_active_users_paginated
+✅ Function saved: RuE08wdmkE9MkXv9EMiJSxyM_YfPmSbKG3koydGlUfkBGtPm4Kl7-Cwzue59fLWMrXXdBIY80KYMHQ05z1j_ig
 📊 Page 1: Found 3 users (limit=3, skip=0)
 
-📊 Page 2: Found 3 users (limit=3, skip=3)
+📊 Page 2: Found 2 users (limit=3, skip=3)
 
 📝 Example 3: Multi-Stage Pipeline (Query → Group → Calculate)
 
-✅ Function saved: Vdeac4D5AE1Yu0e01zhmaHhYZ9Nm9THgZSo8j-SRN9MPn0a91xHPNoeRkmeySi10cTclh4mUgBgwDOuI9FfrNA
+✅ Function saved: U1c1tCezuP_dW6DxqPJolTkcKFbvP2nRie6l9P8R66I-hdkQ47u8ZwHwRhaUC4DOV2XrWU-MC8XS62LpC9qttw
 📊 Pipeline Results: Filtered (age>20) → Grouped by status → 2 groups
-   {'max_score': {'type': 'Integer', 'value': 100}, 'count': {'type': 'Integer', 'value': 15}, 'avg_score': {'value': 60.0, 'type': 'Float'}, 'status': {'value': 'active', 'type': 'String'}}
-   {'count': {'type': 'Integer', 'value': 15}, 'max_score': {'type': 'Integer', 'value': 90}, 'avg_score': {'type': 'Float', 'value': 50.0}, 'status': {'value': 'inactive', 'type': 'String'}}
+   {'count': {'type': 'Integer', 'value': 5}, 'max_score': {'type': 'Integer', 'value': 100}, 'status': {'value': 'active', 'type': 'String'}, 'avg_score': {'value': 60.0, 'type': 'Float'}}
+   {'max_score': {'value': 90, 'type': 'Integer'}, 'avg_score': {'value': 50.0, 'type': 'Float'}, 'status': {'type': 'String', 'value': 'inactive'}, 'count': {'value': 5, 'type': 'Integer'}}
 
 📝 Example 4: Function Management
 
-📋 Total scripts: 13
+📋 Total scripts: 3
 🔍 Retrieved script: Get Active Users
 ✏️  Function updated
 🗑️  Function deleted
@@ -117,7 +101,7 @@ Response: {
 
 === Batch Insert ===
 ✓ Batch inserted 5 records
-✓ Verified: Found 10 total records in collection
+✓ Verified: Found 5 total records in collection
 
 === Creating test records for update/delete ===
 Created 3 test records
@@ -139,15 +123,15 @@ Created 3 test records
 ✓ Set key: session:user123
 
 === KV Get ===
-Retrieved value: {'value': {'username': 'john_doe', 'userId': 123}, 'type': 'Object'}
+Retrieved value: {'type': 'Object', 'value': {'userId': 123, 'username': 'john_doe'}}
 
 === Set Multiple Keys ===
 ✓ Set 3 keys
 
 === Get Multiple Keys ===
-cache:product:1: {'value': {'name': 'Product 1', 'price': 29.99}, 'type': 'Object'}
-cache:product:2: {'type': 'Object', 'value': {'price': 39.989999999999995, 'name': 'Product 2'}}
-cache:product:3: {'value': {'name': 'Product 3', 'price': 49.989999999999995}, 'type': 'Object'}
+kv_operations:direct:py:cache:product:1: {'type': 'Object', 'value': {'name': 'Product 1', 'price': 29.99}}
+kv_operations:direct:py:cache:product:2: {'type': 'Object', 'value': {'name': 'Product 2', 'price': 39.989999999999995}}
+kv_operations:direct:py:cache:product:3: {'type': 'Object', 'value': {'price': 49.989999999999995, 'name': 'Product 3'}}
 
 === KV Delete ===
 ✓ Deleted key: session:user123
@@ -162,11 +146,11 @@ cache:product:3: {'value': {'name': 'Product 3', 'price': 49.989999999999995}, '
 ✓ Authentication successful
 
 === Create Collection (via insert) ===
-Collection created with first record: IYUSaUbLfQ_PKDpAZKhyblsLz6GnsPXC-yLxOt0yHSTMEmRyHuWZJDTUonE0oZsI2oQYCDVTA56Lr-ZWsBoPwQ
+Collection created with first record: 8WIytDUW7n2w13lz4Qb1Dr99fiP2CzYXfQLFavlVyyd9178oo_TnFnj064ZvCDJUcW1mSc4bFRzg4TwWXI_Rvg
 
 === List Collections ===
-Total collections: 15
-Sample collections: ['products', 'ttl_cache', 'test_collection', 'websocket_test', 'demo_collection']
+Total collections: 13
+Sample collections: ['chat_agent_configs__ek0_testing', 'agent_function_versions__ek0_testing', 'schedules__ek0_testing', 'functions__ek0_testing', 'chat_configurations__ek0_testing']
 
 === Count Documents ===
 Document count: 1
@@ -189,11 +173,11 @@ Collection still exists: False
 ============================================================
 
 === Setup: Creating Test Accounts ===
-Created Alice: $1000 - ID: 4zSyg9uMWXBIZp5pdG09vVVtv-9JKQZDx9Jy3_2nItvRFPlgsUU77I4c_z19B4GKtpXm168T0opDja99SlzFNQ
-Created Bob: $500 - ID: zI9zMrj6Kzlk4V0jbY1gmKyJxx8D4xxhnAXuefWbGfxMt6E_-_eF35NFdo15OWOQ25541Td_NmEr8vfz9y65Dg
+Created Alice: $1000 - ID: VLImFh2NTxDJx6Aip5SHAQFUg1IOTO6ELQyQidOaazkGZ6rTYzDuxBGLI5dPk291XEKfBWPeTBQmzH_8RxkfPw
+Created Bob: $500 - ID: mZZbicGtnRYDnYqSgv_oCKC0GTVWGyNCc3irZzTCcK8FjZ3RhF6dDb6jU2YuVgP2FnxLcIXg-VndRBMJtQgswA
 
 === Example 1: Begin Transaction ===
-Transaction ID: 04a42851-e07f-4666-873d-2d5cb7c9b68b
+Transaction ID: ff04e3d1-50e3-4a55-9f93-b28754427a11
 
 === Example 2: Operations with transaction_id ===
 Updated Alice: $1000 → $800
@@ -211,19 +195,19 @@ Alice: ${'type': 'Integer', 'value': 800}
 Bob: ${'type': 'Integer', 'value': 700}
 
 === Example 5: Rollback ===
-New transaction: 9f001080-8c8b-4a0f-9242-84e9804fc2f7
+New transaction: c7e8547f-738c-4246-a7e5-aa5e5ebde828
 Updated Bob: $700 → $600 (in transaction)
 ✓ Transaction rolled back
-Bob after rollback: ${'value': 700, 'type': 'Integer'}
+Bob after rollback: ${'type': 'Integer', 'value': 700}
 
 === Cleanup ===
 ✓ All transaction examples completed
 === Setup: Creating Test Accounts ===
-Created Alice: $1000 - ID: j6zd2pmeUKTOIWURRGc0TMgyKxlrn2hh1PHEwwf4KCOELgZetVE4kj5M13d-rNuO1cqvhEJWFd2m7fnr81E9qg
-Created Bob: $500 - ID: XDzRzFlO-5foII8yZ6E3M_8g7u89ytQhJp_jUmnNBIXME0URjOy-2Mj05Epi7jEXkBuoxugqc8NxQx2FXYvGGA
+Created Alice: $1000 - ID: RDmu5MWZdrTO-PFMdZdANPVSCeU5XtMYEjQJOUTwoX0d_mmHKuOI9hFW6polhu93HitdIUJ8hFqfyFByZtx7Ew
+Created Bob: $500 - ID: rKnVOtTCZv8cur7YIPwI63yDKHnCLRLRpAKhuzYdCme3jbqWf_xyJO4-3jLz2h0tl415Jv7ceI97DeNRgjPwRA
 
 === Example 1: Begin Transaction ===
-Transaction ID: 2c764a89-78a4-4913-9aff-0847db854e8b
+Transaction ID: ce4bf37f-aecf-4d19-9f78-06d69ce67523
 
 === Example 2: Operations with transaction_id ===
 Updated Alice: $1000 → $800
@@ -233,8 +217,8 @@ Updated Bob: $500 → $700
 ✓ Transaction committed
 
 === Verification ===
-Alice: ${'value': 800, 'type': 'Integer'}
-Bob: ${'value': 700, 'type': 'Integer'}
+Alice: ${'type': 'Integer', 'value': 800}
+Bob: ${'type': 'Integer', 'value': 700}
 
 === Cleanup ===
 ✓ Deleted test accounts
@@ -249,11 +233,11 @@ Bob: ${'value': 700, 'type': 'Integer'}
 ============================================================
 
 === Setup: Creating Test Accounts ===
-Created Alice: $1000 - ID: O2e0z3Z7haFSsDNinnxuZI0l79hjKcsIChWQt0NHBJ_-YDk6aiNQHRx_G2oLgFo5hF0e5CnWegh8rhVcDe0Scw
-Created Bob: $500 - ID: RQqc9MkpQtQqh0uHellOafhMUu0ch5X2OpY9iTVl8WmjMddflQPaE2bCVpNCi-tSvt7Zq8IJS_WWQok5JZQ8aQ
+Created Alice: $1000 - ID: 2YgIbBifibp8lDGVf0hzL8sgn7KaXtm_d4512WIBb0f6hL-dLvA9yCW7oAlwI_faYrbb12YA4prcqnBo4cHeyA
+Created Bob: $500 - ID: sKrbpVGUav4XAXXpiyaSvRknnJCFnf84qKZOIiWSZs_IKCuEsj1xuoyLk_RRsPuhNlX2LUxUtfsyIqqQ306S0w
 
 === Example 1: Begin Transaction ===
-Transaction ID: 8d2a2e82-fcad-48f8-b21a-100b3b07f7c3
+Transaction ID: 7600bc9c-180d-4aec-ba1c-00fd9eb7e916
 
 === Example 2: Operations with transaction_id ===
 Updated Alice: $1000 → $800
@@ -267,11 +251,11 @@ Operations: 2
 ✓ Transaction committed
 
 === Verification ===
-Alice: ${'value': 800, 'type': 'Integer'}
-Bob: ${'type': 'Integer', 'value': 700}
+Alice: ${'type': 'Integer', 'value': 800}
+Bob: ${'value': 700, 'type': 'Integer'}
 
 === Example 5: Rollback ===
-New transaction: 5095ef61-af82-4604-b77f-9e0738bb15ac
+New transaction: 30eb8f0d-dc08-46cc-832c-3b5c7b6c7a4e
 Updated Bob: $700 → $600 (in transaction)
 ✓ Transaction rolled back
 Bob after rollback: ${'type': 'Integer', 'value': 700}
@@ -279,11 +263,11 @@ Bob after rollback: ${'type': 'Integer', 'value': 700}
 === Cleanup ===
 ✓ All transaction examples completed
 === Setup: Creating Test Accounts ===
-Created Alice: $1000 - ID: 2Meq2Oq-bqtXEyOgzll3gkZb-q6_Q1fdYb6wb5vNf4KuMtAY_1uzWdNRuHyvRu9fU6spY2tmv5mIAZiOr5k20g
-Created Bob: $500 - ID: D_IT-TIbTRv_DwyUjYrlz_-RUwJZ7pwC3QLuafUl1UuY0Q5VYb9JrMAJOaAro0Ox7iIMcRHi105wQ9U9ObwljA
+Created Alice: $1000 - ID: IvhYLSywsp88rDwhpMKXGNo_OqB8YHbP1U0ODUfhjUJ64tQGH1iCY024VudY3aGzUauYRcj_rFwDAidepyTE4A
+Created Bob: $500 - ID: 6LEfITW0a04fCDUF5H7EgLwGrIbkUXiWGqpD3kDs-4_g8sf_6XtLE1McnqHJyEChuPAMkEnFOgwTmazj1cudhA
 
 === Example 1: Begin Transaction ===
-Transaction ID: a13f161a-634f-43f4-a6cd-18e608e32199
+Transaction ID: a35c94d5-a3bf-4a31-be1d-a3931946c1ef
 
 === Example 2: Operations with transaction_id ===
 Updated Alice: $1000 → $800
@@ -293,7 +277,7 @@ Updated Bob: $500 → $700
 ✓ Transaction committed
 
 === Verification ===
-Alice: ${'type': 'Integer', 'value': 800}
+Alice: ${'value': 800, 'type': 'Integer'}
 Bob: ${'type': 'Integer', 'value': 700}
 
 === Cleanup ===
@@ -309,11 +293,11 @@ Bob: ${'type': 'Integer', 'value': 700}
 ============================================================
 
 === Setup: Creating Test Accounts ===
-Created Alice: $1000 - ID: RbFJVZCdpm7b4YpE4q70AIWNQke1LXS5ijSm0lBOCiUnNwG5F9xeSis-aVlo_ACyaimnX46zchlM4GwaVySTmQ
-Created Bob: $500 - ID: Bsef3UwZoq_OfybqwAFmMSW_IsZtAaT--GSFuxHE06pWj6GQPm5OW70B5b06bk8yTnp2anUMU5J_QCdvsKK28Q
+Created Alice: $1000 - ID: L4FLEcQPSjzLkTk6xZr6ZcJLc1fbFB34INXVcD7D0y4YcfVzd43ZSGKS4vW-A712_AJakReNBaKqMvbekUFFQQ
+Created Bob: $500 - ID: ZGPJeClHYKpMCi3kRZ4rlbSsyDRTpM-Q-BCQTCPQTAzheRP4hUJC5s_xiDLXD1bdS9KRMK6onSrisnRkzL0Oqg
 
 === Example 1: Begin Transaction ===
-Transaction ID: f71f1ab5-04f9-4cfa-b415-a05bdd418300
+Transaction ID: 4def801c-e469-4c61-bd91-ac0d314a28de
 
 === Example 2: Operations with transaction_id ===
 Updated Alice: $1000 → $800
@@ -327,23 +311,23 @@ Operations: 2
 ✓ Transaction committed
 
 === Verification ===
-Alice: ${'value': 800, 'type': 'Integer'}
-Bob: ${'type': 'Integer', 'value': 700}
+Alice: ${'type': 'Integer', 'value': 800}
+Bob: ${'value': 700, 'type': 'Integer'}
 
 === Example 5: Rollback ===
-New transaction: bde2f986-03b4-4b1e-9523-4c8e56b91c7e
+New transaction: 5ab1d015-ab97-4838-80a8-11054ca1c48a
 Updated Bob: $700 → $600 (in transaction)
 ✓ Transaction rolled back
-Bob after rollback: ${'type': 'Integer', 'value': 700}
+Bob after rollback: ${'value': 700, 'type': 'Integer'}
 
 === Cleanup ===
 ✓ All transaction examples completed
 === Setup: Creating Test Accounts ===
-Created Alice: $1000 - ID: ZbNsO3K7Oya9NXlx-TqEKwRLpKB6rY1FVnb14SslwthsQT6ScpmY_ldxKdkCUjmKlyLxL5eI_sIrbJ8j5-uakw
-Created Bob: $500 - ID: gp1DZNgs4Lzb0rfvDBND95uZzQgFV5feI-hT5WwXI3uIuE56U8njvy5n-FeHnECrsB-U7A2M7OL5ULC1NrNmOw
+Created Alice: $1000 - ID: mqw3yKMtTb-KfuFe3jglw_ERh-3JkObr9L7lpNFeWe8fYN_qU2Zt6mzz4B8_qZk2qtwFLo9-g8nr95dwrE1GJA
+Created Bob: $500 - ID: hxGdhy7SIFjUovyrJp_Eev92UkYm5qGuwaseFdzl9oCIXc6CUBcWd71k8eoknvGNocBVKCAhsrVe8DfaeLnI3w
 
 === Example 1: Begin Transaction ===
-Transaction ID: cdffb018-57be-4344-acca-ad0b472cf2eb
+Transaction ID: 37aab40f-f612-48eb-9d1b-648e0962c746
 
 === Example 2: Operations with transaction_id ===
 Updated Alice: $1000 → $800
@@ -353,7 +337,7 @@ Updated Bob: $500 → $700
 ✓ Transaction committed
 
 === Verification ===
-Alice: ${'value': 800, 'type': 'Integer'}
+Alice: ${'type': 'Integer', 'value': 800}
 Bob: ${'value': 700, 'type': 'Integer'}
 
 === Cleanup ===
@@ -378,12 +362,17 @@ Demonstrates:
 
 Each function shows Functions chaining with proper verification
 ============================================================
+
+============================================================
+🧹 Cleanup
+============================================================
+   ✅ Deleted collection: crud_functions_users_py
 ============================================================
 📝 function 1: Insert + Verify
 ============================================================
 
 1️⃣ Saving Function...
-   ✅ Function saved: 7awGHMBG3oKYZRgo1KQ3iJmzODKVXIRWTOk4NaMzz94Z5D8JhvQWsdo6Eo9b4LmYi9gvbnzAQgpMmMEwCSOG6A
+   ✅ Function saved: cEvB-vC2XGDlxOtAxl7_C-CEjJtG1vOT_v-I6ie23hrAZVnbevpnO2UaJ854spKW6b4wHtAVuyD_-vozZB2b8A
 
 2️⃣ Calling function (Insert + Verify)...
    ✅ function executed: 2 Functions
@@ -391,18 +380,18 @@ Each function shows Functions chaining with proper verification
 
 3️⃣ Verification Results:
    ✅ Found 1 record(s)
-   📋 User ID: 3MzLRJwJJ6yNGJ_0olLOju--BUsYajj5V0dNR_NnFLJkQhTwdvFCskt1qDfvuuFvVDHvMuW6MkIV-zbil4DRJA
-   📋 Name: {'type': 'String', 'value': 'Alice Smith'}
+   📋 User ID: EP55Hdi3uQCblEzQCISkkYD5u7z1aU3kD_DxDEJZtwskUn2Rcv72yxIDRQnS9dG5rEX7rj2YGn_JTGtVaUvFJA
+   📋 Name: {'value': 'Alice Smith', 'type': 'String'}
    📋 Email: {'type': 'String', 'value': 'alice@example.com'}
    📋 Status: {'value': 'pending', 'type': 'String'}
-   📋 Credits: {'type': 'Integer', 'value': 0}
+   📋 Credits: {'value': 0, 'type': 'Integer'}
 
 ============================================================
 📝 function 2: Query + Update + Verify
 ============================================================
 
 1️⃣ Saving Function...
-   ✅ Function saved: 16rRnN2tEGU81ceTkwgfLp8GKbkECl47-2OfFs8gd98ZMj5pw5zhVAGG4TxNSYLmAMBiLG2FjPq7Ba9s7fylAg
+   ✅ Function saved: 1gNXWpQ-JcyL9mHbaqM-YxR9pT4c0AVWLm-wmvpuKaElJq6AGPqrgCmUhK118aIdQKOFpjrhEyc8y3czmOCxSw
 
 2️⃣ Calling function (Query + Update + Verify)...
    ✅ function executed: 3 Functions
@@ -410,15 +399,15 @@ Each function shows Functions chaining with proper verification
 
 3️⃣ Verification Results:
    ✅ Found 1 record(s)
-   📋 Status updated to: {'value': 'active', 'type': 'String'}
-   📋 Name: {'value': 'Alice Smith', 'type': 'String'}
+   📋 Status updated to: {'type': 'String', 'value': 'active'}
+   📋 Name: {'type': 'String', 'value': 'Alice Smith'}
 
 ============================================================
 📝 function 3: Query + Update Credits + Verify
 ============================================================
 
 1️⃣ Saving Function...
-   ✅ Function saved: mKgNzr8opctVS7c3bNIp2tHfa2GONJHak1BuroblMaA2K-CiWr81FZhL36-EpTVvjlhSgkoHz5hE3-8skAgbFQ
+   ✅ Function saved: _ixl6NC74KZeIQ9mtt9s30unMakTLGhhRr4sByQ-S2eaP5ZqJQRYURT_URBYSALRSwRRty4C_mBVs_dK99eAow
 
 2️⃣ Calling function (Query + Update Credits + Verify)...
    ✅ function executed: 3 Functions
@@ -426,16 +415,16 @@ Each function shows Functions chaining with proper verification
 
 3️⃣ Verification Results:
    ✅ Found 1 record(s)
-   📋 Credits updated to: {'type': 'Integer', 'value': 0}
+   📋 Credits updated to: {'value': 100, 'type': 'Integer'}
    📋 Status: {'type': 'String', 'value': 'active'}
-   📋 Name: {'value': 'Alice Smith', 'type': 'String'}
+   📋 Name: {'type': 'String', 'value': 'Alice Smith'}
 
 ============================================================
 📝 function 4: Query Before Delete + Delete + Verify
 ============================================================
 
 1️⃣ Saving Function...
-   ✅ Function saved: B10xKdCtBK0r4c8P1doG-hDuh52tOyTmZdCz9UVcZiz5Eqb65ttmMvOP-w2RtVG3ZvkchxAzMOxabWX_ztNJLg
+   ✅ Function saved: hBoRVgjU2Wu7jIjO8VbUiJ9ljWZe9XMcOXOdgYNFEpQc6NwZRddoUsyp_EqD04VcstYp_qDmGHPDYMs7zB8fYQ
 
 2️⃣ Calling function (Query + Delete + Verify)...
    ✅ function executed: 3 Functions
@@ -448,11 +437,11 @@ Each function shows Functions chaining with proper verification
 ============================================================
 🧹 Cleanup
 ============================================================
-   ✅ Deleted script: 7awGHMBG3oKYZRgo1KQ3...
-   ✅ Deleted script: 16rRnN2tEGU81ceTkwgf...
-   ✅ Deleted script: mKgNzr8opctVS7c3bNIp...
-   ✅ Deleted script: B10xKdCtBK0r4c8P1doG...
-   ✅ Deleted collection: users
+   ✅ Deleted script: cEvB-vC2XGDlxOtAxl7_...
+   ✅ Deleted script: 1gNXWpQ-JcyL9mHbaqM-...
+   ✅ Deleted script: _ixl6NC74KZeIQ9mtt9s...
+   ✅ Deleted script: hBoRVgjU2Wu7jIjO8VbU...
+   ✅ Deleted collection: crud_functions_users_py
 
 ============================================================
 ✅ Complete CRUD Functions Example Finished!
@@ -480,11 +469,11 @@ TEST 1: Document TTL Expiration
 [Step 1] Insert document with 3 second TTL
   Input: {name: 'TTL Test', value: 'should expire'}
   TTL: 3s
-  Output: Document ID = EXYBokqZpVvuW-34sPo0YXAmw4reCUI8ZaIZ9Az0DqUc6cwRHjhnAKVCBUYnjYpkS-EWaF-1fu9kxW_iIEY6Ew
+  Output: Document ID = vNkdU5uF5FZ0y-VqoEUtKMowZL0CrFWQsvY1ALkNwMwsjaj_eWvLwgC_vwDbVuuh4MGXSbmLp4Gdx9jenSu5Zg
   ✓ PASS: Document inserted
 
 [Step 2] Verify document exists immediately
-  Input: find_by_id(EXYBokqZpVvuW-34sPo0YXAmw4reCUI8ZaIZ9Az0DqUc6cwRHjhnAKVCBUYnjYpkS-EWaF-1fu9kxW_iIEY6Ew)
+  Input: find_by_id(vNkdU5uF5FZ0y-VqoEUtKMowZL0CrFWQsvY1ALkNwMwsjaj_eWvLwgC_vwDbVuuh4MGXSbmLp4Gdx9jenSu5Zg)
   Output: Found document with name = TTL Test
   ✓ PASS: Document exists
 
@@ -493,7 +482,7 @@ TEST 1: Document TTL Expiration
   ✓ PASS: Wait complete
 
 [Step 4] Verify document has expired
-  Input: find_by_id(EXYBokqZpVvuW-34sPo0YXAmw4reCUI8ZaIZ9Az0DqUc6cwRHjhnAKVCBUYnjYpkS-EWaF-1fu9kxW_iIEY6Ew)
+  Input: find_by_id(vNkdU5uF5FZ0y-VqoEUtKMowZL0CrFWQsvY1ALkNwMwsjaj_eWvLwgC_vwDbVuuh4MGXSbmLp4Gdx9jenSu5Zg)
   Output: Error (expected) - Find failed: Record not found
   ✓ PASS: Document expired (not found error)
 
@@ -526,11 +515,11 @@ TEST: WebSocket TTL Expiration
 [Step 1] Insert document with 3 second TTL
   Input: {name: 'WS TTL Test', value: 'should expire'}
   TTL: 3s
-  Output: Document ID = OQ5OXwbGJmpAEsftgWLJgP3NMpuYwf2jARmim1WGlMJEjVclruKyTkpjJeTiYfMiy3ybFYqUUMoZe3yW2rAHyw
+  Output: Document ID = 5PzrkBB84GZ3Rw-oEBp9uUbX8nby1cuihKBfnrzHA-ms9gw_oQTBu-jlIFJSSgDkoyhWLERdkB3DocJTaD9Jpw
   ✓ PASS: Document inserted
 
 [Step 2] Query to verify document exists
-  Input: find_by_id(OQ5OXwbGJmpAEsftgWLJgP3NMpuYwf2jARmim1WGlMJEjVclruKyTkpjJeTiYfMiy3ybFYqUUMoZe3yW2rAHyw)
+  Input: find_by_id(5PzrkBB84GZ3Rw-oEBp9uUbX8nby1cuihKBfnrzHA-ms9gw_oQTBu-jlIFJSSgDkoyhWLERdkB3DocJTaD9Jpw)
   Output: Found document with name = WS TTL Test
   ✓ PASS: Document exists
 
@@ -539,7 +528,7 @@ TEST: WebSocket TTL Expiration
   ✓ PASS: Wait complete
 
 [Step 4] Query to verify document has expired
-  Input: find_by_id(OQ5OXwbGJmpAEsftgWLJgP3NMpuYwf2jARmim1WGlMJEjVclruKyTkpjJeTiYfMiy3ybFYqUUMoZe3yW2rAHyw)
+  Input: find_by_id(5PzrkBB84GZ3Rw-oEBp9uUbX8nby1cuihKBfnrzHA-ms9gw_oQTBu-jlIFJSSgDkoyhWLERdkB3DocJTaD9Jpw)
   Output: Error (expected) - Find failed: Record not found
   ✓ PASS: Document expired (not found error)
 
@@ -555,128 +544,108 @@ CLEANUP
 WebSocket TTL expiration is working correctly:
   • Documents with TTL inserted via client expire correctly
   • Queries correctly return None for expired documents
-[34m
-╔════════════════════════════════════════╗[0m
-[34m║   ekoDB Python Examples Test Suite    ║[0m
-[34m╚════════════════════════════════════════╝[0m
-[34m
-=== Checking Server Connection ===[0m
-[32m✓ Server is ready[0m
-[34m
-=== Getting Authentication Token ===[0m
-[32m✓ Authentication successful[0m
-[33m
-=== Running 10 Examples ===[0m
-[34m
-=== Running simple_crud.py ===[0m
-[32m✓ simple_crud.py completed successfully[0m
-[34m
-=== Running simple_websocket.py ===[0m
-[32m✓ simple_websocket.py completed successfully[0m
-[34m
-=== Running http_functions.py ===[0m
-[32m✓ http_functions.py completed successfully[0m
-[34m
-=== Running batch_operations.py ===[0m
-[32m✓ batch_operations.py completed successfully[0m
-[34m
-=== Running kv_operations.py ===[0m
-[32m✓ kv_operations.py completed successfully[0m
-[34m
-=== Running collection_management.py ===[0m
-[32m✓ collection_management.py completed successfully[0m
-[34m
-=== Running transactions.py ===[0m
-[32m✓ transactions.py completed successfully[0m
-[34m
-=== Running crud_functions.py ===[0m
-[32m✓ crud_functions.py completed successfully[0m
-[34m
-=== Running document_ttl.py ===[0m
-[32m✓ document_ttl.py completed successfully[0m
-[34m
-=== Running websocket_ttl.py ===[0m
-[32m✓ websocket_ttl.py completed successfully[0m
-[34m
-╔════════════════════════════════════════╗[0m
-[34m║           Test Summary                 ║[0m
-[34m╚════════════════════════════════════════╝[0m
-[34mTotal: 10[0m
-[32mPassed: 10[0m
-[32mFailed: 0[0m
-✅ [32mPython direct examples complete![0m
-🐍 [36mBuilding Python client package...[0m
-🔧 [36mEnsuring maturin is available in .venv...[0m
-🔨 [36mBuilding wheel...[0m
+
+╔════════════════════════════════════════╗
+║   ekoDB Python Examples Test Suite    ║
+╚════════════════════════════════════════╝
+
+=== Checking Server Connection ===
+✓ Server is ready
+
+=== Getting Authentication Token ===
+✓ Authentication successful
+
+=== Running 10 Examples ===
+
+=== Running simple_crud.py ===
+✓ simple_crud.py completed successfully
+
+=== Running simple_websocket.py ===
+✓ simple_websocket.py completed successfully
+
+=== Running http_functions.py ===
+✓ http_functions.py completed successfully
+
+=== Running batch_operations.py ===
+✓ batch_operations.py completed successfully
+
+=== Running kv_operations.py ===
+✓ kv_operations.py completed successfully
+
+=== Running collection_management.py ===
+✓ collection_management.py completed successfully
+
+=== Running transactions.py ===
+✓ transactions.py completed successfully
+
+=== Running crud_functions.py ===
+✓ crud_functions.py completed successfully
+
+=== Running document_ttl.py ===
+✓ document_ttl.py completed successfully
+
+=== Running websocket_ttl.py ===
+✓ websocket_ttl.py completed successfully
+
+╔════════════════════════════════════════╗
+║           Test Summary                 ║
+╚════════════════════════════════════════╝
+Total: 10
+Passed: 10
+Failed: 0
+✅ Python direct examples complete!
+🐍 Building Python client package...
+🔧 Ensuring maturin is available in .venv...
+🔨 Building wheel...
 🍹 Building a mixed python/rust project
 🐍 Found CPython 3.11 at /Library/Frameworks/Python.framework/Versions/3.11/bin/python3
 🔗 Found pyo3 bindings with abi3-py3.8 support
 💻 Using `MACOSX_DEPLOYMENT_TARGET=11.0` for aarch64-apple-darwin by default
-    Finished `release` profile [optimized] target(s) in 1m 05s
-📦 Built wheel for abi3 Python ≥ 3.8 to ekoDB/ekodb-client/ekodb-client-py/target/wheels/ekodb_client-0.26.1-cp38-abi3-macosx_11_0_arm64.whl
-📦 [36mInstalling Python wheel into .venv...[0m
-Processing ./ekodb-client-py/target/wheels/ekodb_client-0.26.1-cp38-abi3-macosx_11_0_arm64.whl
+    Finished `release` profile [optimized] target(s) in 0.19s
+📦 Built wheel for abi3 Python ≥ 3.8 to ekoDB/ekodb-client/ekodb-client-py/target/wheels/ekodb_client-0.26.4-cp38-abi3-macosx_11_0_arm64.whl
+📦 Installing Python wheel into .venv...
+Processing ./ekodb-client-py/target/wheels/ekodb_client-0.26.4-cp38-abi3-macosx_11_0_arm64.whl
 Installing collected packages: ekodb-client
   Attempting uninstall: ekodb-client
-    Found existing installation: ekodb_client 0.26.1
-    Uninstalling ekodb_client-0.26.1:
-      Successfully uninstalled ekodb_client-0.26.1
-Successfully installed ekodb-client-0.26.1
-🧪 [36mEnsuring test dependencies (pytest) in .venv...[0m
-✅ [32mPython client package built and installed![0m
-🧪 [36mRunning Python client library examples...[0m
-✓ Client created (token exchange happens automatically)
+    Found existing installation: ekodb_client 0.26.4
+    Uninstalling ekodb_client-0.26.4:
+      Successfully uninstalled ekodb_client-0.26.4
+Successfully installed ekodb-client-0.26.4
+🧪 Ensuring test dependencies (pytest) in .venv...
+✅ Python client package built and installed!
+bash: warning: setlocale: LC_ALL: cannot change locale (C.UTF-8): No such file or directory
+perl: warning: Setting locale failed.
+perl: warning: Please check that your locale settings:
+	LC_ALL = "C.UTF-8",
+	LC_CTYPE = "C.UTF-8",
+	LANG = "C.UTF-8"
+    are supported and installed on your system.
+perl: warning: Falling back to the standard locale ("C").
+=== ekoDB Advanced CRUD Example (Python) ===
 
-=== Insert Document ===
-Inserted: {'id': 'EvF-JhBbxnRr5xUGeSBQABQ4fyFXmJ9QIoMUG_xDZmd1GRZe-d4bDWi95EG0keEHVPK44nDaVp3_Rym3D-1AUw'}
+--- insert ---
+Inserted: aqM86JhjkPW7sw4LwSnTbLZeBgdIJRUQlFE6Aj74WW40KoIESgVk9aVwU3NWjP5F7G8Vf2jAHwjspAjPcv5ndw
 
-=== Find by ID ===
-Found: {'tags': {'type': 'Array', 'value': ['tag1', 'tag2', 'tag3']}, 'categories': {'value': ['electronics', 'computers'], 'type': 'Array'}, 'metadata': {'type': 'Object', 'value': {'nested': {'deep': True}, 'key': 'value'}}, 'id': 'EvF-JhBbxnRr5xUGeSBQABQ4fyFXmJ9QIoMUG_xDZmd1GRZe-d4bDWi95EG0keEHVPK44nDaVp3_Rym3D-1AUw', 'value': {'type': 'Integer', 'value': 42}, 'data': {'type': 'String', 'value': 'aGVsbG8gd29ybGQ='}, 'active': {'value': True, 'type': 'Boolean'}, 'embedding': {'type': 'Array', 'value': [0.1, 0.2, 0.3, 0.4, 0.5]}, 'price': {'type': 'Float', 'value': 99.99}, 'name': {'value': 'Test Record', 'type': 'String'}, 'user_id': {'value': '550e8400-e29b-41d4-a716-446655440000', 'type': 'String'}, 'created_at': {'type': 'String', 'value': '2026-09-07T17:45:51.582285'}}
+--- update_with_action (increment) ---
+After increment count by 5: {'id': 'aqM86JhjkPW7sw4LwSnTbLZeBgdIJRUQlFE6Aj74WW40KoIESgVk9aVwU3NWjP5F7G8Vf2jAHwjspAjPcv5ndw', 'name': {'type': 'String', 'value': 'Counter Record'}, 'tags': {'type': 'Array', 'value': ['initial']}, 'count': {'type': 'Integer', 'value': 15}, 'score': {'value': 50.0, 'type': 'Float'}}
 
-=== Extract Field Values (All Types) ===
-Extracted values:
-  name (String): Test Record
-  value (Integer): 42
-  active (Boolean): True
-  price (Decimal): 99.99
-  created_at (DateTime): 2026-09-07 17:45:51.582285
-  user_id (UUID): 550e8400-e29b-41d4-a716-446655440000
-  tags (Array): ['tag1', 'tag2', 'tag3']
-  metadata (Object): {'nested': {'deep': True}, 'key': 'value'}
-  embedding (Vector): [0.1, 0.2, 0.3, 0.4, 0.5]
-  categories (Set): ['electronics', 'computers']
-  data (Bytes): 11 bytes
-Plain record: {'tags': ['tag1', 'tag2', 'tag3'], 'categories': ['electronics', 'computers'], 'metadata': {'nested': {'deep': True}, 'key': 'value'}, 'id': 'EvF-JhBbxnRr5xUGeSBQABQ4fyFXmJ9QIoMUG_xDZmd1GRZe-d4bDWi95EG0keEHVPK44nDaVp3_Rym3D-1AUw', 'value': 42, 'data': 'aGVsbG8gd29ybGQ=', 'active': True, 'embedding': [0.1, 0.2, 0.3, 0.4, 0.5], 'price': 99.99, 'name': 'Test Record', 'user_id': '550e8400-e29b-41d4-a716-446655440000', 'created_at': '2026-09-07T17:45:51.582285'}
+--- update_with_action (decrement) ---
+After decrement score by 10: {'name': {'type': 'String', 'value': 'Counter Record'}, 'id': 'aqM86JhjkPW7sw4LwSnTbLZeBgdIJRUQlFE6Aj74WW40KoIESgVk9aVwU3NWjP5F7G8Vf2jAHwjspAjPcv5ndw', 'score': {'value': 40.0, 'type': 'Float'}, 'tags': {'type': 'Array', 'value': ['initial']}, 'count': {'type': 'Integer', 'value': 15}}
 
-=== Find with Query ===
-Found documents: 1
+--- update_with_action_sequence ---
+After action sequence: {'id': 'aqM86JhjkPW7sw4LwSnTbLZeBgdIJRUQlFE6Aj74WW40KoIESgVk9aVwU3NWjP5F7G8Vf2jAHwjspAjPcv5ndw', 'name': {'type': 'String', 'value': 'Counter Record'}, 'tags': {'value': ['initial', 'sequenced'], 'type': 'Array'}, 'score': {'value': 40.0, 'type': 'Float'}, 'count': {'type': 'Integer', 'value': 115}}
 
-=== Update Document ===
-Updated: {'user_id': {'type': 'String', 'value': '550e8400-e29b-41d4-a716-446655440000'}, 'metadata': {'type': 'Object', 'value': {'key': 'value', 'nested': {'deep': True}}}, 'price': {'value': 99.99, 'type': 'Float'}, 'tags': {'value': ['tag1', 'tag2', 'tag3'], 'type': 'Array'}, 'value': {'type': 'Integer', 'value': 100}, 'data': {'value': 'aGVsbG8gd29ybGQ=', 'type': 'String'}, 'id': 'EvF-JhBbxnRr5xUGeSBQABQ4fyFXmJ9QIoMUG_xDZmd1GRZe-d4bDWi95EG0keEHVPK44nDaVp3_Rym3D-1AUw', 'created_at': {'value': '2026-09-07T17:45:51.582285', 'type': 'String'}, 'categories': {'type': 'Array', 'value': ['electronics', 'computers']}, 'embedding': {'type': 'Array', 'value': [0.1, 0.2, 0.3, 0.4, 0.5]}, 'active': {'type': 'Boolean', 'value': True}, 'name': {'value': 'Updated Record', 'type': 'String'}}
+--- cleanup ---
+Cleaned up collection
 
-=== Delete Document ===
-Deleted document
-
-=== Cleanup ===
-✓ Deleted collection
-
-✓ All CRUD operations completed successfully
-✓ Client created
-
-=== Inserting Test Data ===
-✓ Inserted test record: YiKAR-m432k_Dbi7mQlK7DK8rQMEcoswMXGqWyhbiLZaVRJ9rVlQ3AuYpS2NW1BSlowl7J6LKSvuvfjxJkGK7w
-
-=== Connecting to WebSocket ===
-✓ WebSocket connected
-
-=== Querying Data via WebSocket ===
-✓ Retrieved 1 record(s) via WebSocket
-  Record 1: 4 fields
-
-=== Cleanup ===
-✓ Deleted collection
-
-✓ WebSocket example completed successfully
+=== Advanced CRUD example completed ===
+perl: warning: Setting locale failed.
+perl: warning: Please check that your locale settings:
+	LC_ALL = "C.UTF-8",
+	LC_CTYPE = "C.UTF-8",
+	LANG = "C.UTF-8"
+    are supported and installed on your system.
+perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
 === Batch Insert ===
@@ -693,14 +662,219 @@ Deleted document
 ✓ Deleted collection
 
 ✓ All batch operations completed successfully
+perl: warning: Setting locale failed.
+perl: warning: Please check that your locale settings:
+	LC_ALL = "C.UTF-8",
+	LC_CTYPE = "C.UTF-8",
+	LANG = "C.UTF-8"
+    are supported and installed on your system.
+perl: warning: Falling back to the standard locale ("C").
+=== ekoDB Advanced Chat Features Example ===
+
+=== Inserting Sample Data ===
+✓ Inserted sample product
+
+=== Creating Chat Session ===
+✓ Created session: LnBuzLJPwASGqnCQlUmhO-1c-qo1rcC7OuzGVFe0vmhLkxk_HNpdR-SGcLd6nLT15m11-fTUmBM2R0N8KXOWqQ
+
+=== Sending Initial Message ===
+✓ Message sent
+  Response: The available product is:
+
+- **Name:** ekoDB
+- **Description:** High-performance database product
+- **Price:** $99
+
+If you need more information or have any other questions, feel free to ask!
+
+✓ Second message sent
+
+Debug: Found 4 messages
+Debug: First message keys: dict_keys(['llm_provider', 'token_usage', 'chat_id', 'id', 'updated_at', 'content', 'created_at', 'context_snippets', 'llm_model', 'role'])
+Debug: First message role: {'value': 'assistant', 'type': 'String'}
+=== Feature 1: Regenerate AI Response ===
+✓ Message regenerated
+  New response: The price of ekoDB is $99. If you have any other questions or need further assistance, feel free to ask!
+
+=== Feature 2: Edit Message ===
+✓ Message content updated
+
+=== Feature 3: Mark Message as Forgotten ===
+✓ Message marked as forgotten (excluded from LLM context)
+
+✓ Message unmarked as forgotten
+
+=== Feature 4: Merge Chat Sessions ===
+✓ Created second session: PblUNwUt_wNcVUJhMbyomvEWuBtNCEiXbReOivh-2e6abH23PqdXpOJNTJg6RIJOZTcjgq9Z3CTFDkPoORg7kQ
+✓ Sent message in second session
+✓ Sessions merged successfully
+  Total messages in merged session: 7
+
+=== Feature 5: Delete Message ===
+✓ Message deleted
+
+✓ Messages remaining: 6
+
+=== Cleanup ===
+✓ Deleted chat session: PblUNwUt_wNcVUJhMbyomvEWuBtNCEiXbReOivh-2e6abH23PqdXpOJNTJg6RIJOZTcjgq9Z3CTFDkPoORg7kQ
+✓ Deleted chat session: LnBuzLJPwASGqnCQlUmhO-1c-qo1rcC7OuzGVFe0vmhLkxk_HNpdR-SGcLd6nLT15m11-fTUmBM2R0N8KXOWqQ
+✓ Deleted collection
+
+✓ All advanced chat features demonstrated successfully!
+perl: warning: Setting locale failed.
+perl: warning: Please check that your locale settings:
+	LC_ALL = "C.UTF-8",
+	LC_CTYPE = "C.UTF-8",
+	LANG = "C.UTF-8"
+    are supported and installed on your system.
+perl: warning: Falling back to the standard locale ("C").
+=== ekoDB Chat Basic Example ===
+
+=== Inserting Sample Data ===
+✓ Inserted 3 sample documents
+
+=== Creating Chat Session ===
+✓ Created session: d8LtJHpYC_tm702s4o4sgae4mXMsGk5ATuVD8XQxHZV3cprhe4-YQYp61TL-c-AopjE2vl8RqAjOO3r1n20l8g
+
+=== Sending Chat Message ===
+Message ID: 9IjPNKJ5vZnKlE2rpTcWxrPpTO8udDzuThHvRDt4KQrovnYYluhDlay2I5ejh644jlH9PeknDfvSieDBX5uvdA
+
+=== AI Response ===
+The available products and their prices are as follows:
+
+1. **ekoDB Cloud**: $499
+   - Description: Fully managed cloud database service product
+
+2. **ekoDB**: $99
+   - Description: A high-performance database product with AI capabilities
+
+3. **ekoDB Pro**: $299
+   - Description: Enterprise edition product with advanced features
+
+Execution Time: 2239ms
+
+=== Token Usage ===
+Prompt tokens: 3413
+Completion tokens: 82
+Total tokens: 3495
+
+=== Cleanup ===
+✓ Deleted session
+✓ Deleted collection
+
+✓ Chat completed successfully
+perl: warning: Setting locale failed.
+perl: warning: Please check that your locale settings:
+	LC_ALL = "C.UTF-8",
+	LC_CTYPE = "C.UTF-8",
+	LANG = "C.UTF-8"
+    are supported and installed on your system.
+perl: warning: Falling back to the standard locale ("C").
+=== ekoDB Chat Message Stream (SSE) Example (Python) ===
+
+Created session: d2jbEsqufBGFUSSPpH8BB2fd4CXpZNhqpCEmA8abcXgB3Jzg8z05ZsjBxJVgwmVlaHmqYy8ifqrTSWa0RYTX8A
+
+Streaming response for: 'What is ekoDB?'
+
+{"__progress":"received"}{"__progress":"generating","model":"gpt-4o-mini","provider":"openai"}EkoDB is a high-performance, embedded database specifically designed for use with the Elixir programming language. It focuses on providing fast access to data while being lightweight and easy to integrate into Elixir applications. EkoDB supports transactional capabilities and is optimized for concurrent access, making it suitable for applications that require efficient data storage and retrieval.
+
+EkoDB is particularly suitable for scenarios where you want a database that can be embedded within an application without the need for a separate database server, thus reducing the overhead of managing a standalone database system. Its design leverages the strengths of the BEAM virtual machine, which Elixir and Erlang run on, providing excellent performance under concurrent workloads.
+
+If you need more specific details or have particular questions about EkoDB, feel free to ask!
+
+--- Stream complete ---
+Message ID: 7oTL2uYA-skM95Dt4TndZ-L42OhbZucqA1W3GC2dFVnRbBVfVe5aMGgqKGI598Iz6xztDo7GfzTMv5JVIZSmtg
+Execution time: 2307ms
+Context window: 128000 tokens
+
+✓ Chat message stream example completed
+perl: warning: Setting locale failed.
+perl: warning: Please check that your locale settings:
+	LC_ALL = "C.UTF-8",
+	LC_CTYPE = "C.UTF-8",
+	LANG = "C.UTF-8"
+    are supported and installed on your system.
+perl: warning: Falling back to the standard locale ("C").
+✓ Client created
+
+=== Get All Chat Models ===
+OpenAI models: ['text-embedding-ada-002', 'whisper-1', 'gpt-3.5-turbo', 'tts-1', 'gpt-3.5-turbo-16k', 'gpt-4-0613', 'gpt-4', 'davinci-002', 'babbage-002', 'gpt-3.5-turbo-instruct', 'gpt-3.5-turbo-instruct-0914', 'gpt-3.5-turbo-1106', 'tts-1-hd', 'tts-1-1106', 'tts-1-hd-1106', 'text-embedding-3-small', 'text-embedding-3-large', 'gpt-3.5-turbo-0125', 'gpt-4-turbo', 'gpt-4-turbo-2024-04-09', 'gpt-4o', 'gpt-4o-2024-05-13', 'gpt-4o-mini-2024-07-18', 'gpt-4o-mini', 'gpt-4o-2024-08-06', 'omni-moderation-latest', 'omni-moderation-2024-09-26', 'o1-2024-12-17', 'o1', 'o3-mini', 'o3-mini-2025-01-31', 'gpt-4o-2024-11-20', 'gpt-4o-mini-search-preview-2025-03-11', 'gpt-4o-mini-search-preview', 'gpt-4o-transcribe', 'gpt-4o-mini-transcribe', 'o1-pro-2025-03-19', 'o1-pro', 'gpt-4o-mini-tts', 'o3-2025-04-16', 'o4-mini-2025-04-16', 'o3', 'o4-mini', 'gpt-4.1-2025-04-14', 'gpt-4.1', 'gpt-4.1-mini-2025-04-14', 'gpt-4.1-mini', 'gpt-4.1-nano-2025-04-14', 'gpt-4.1-nano', 'gpt-image-1', 'o4-mini-deep-research', 'gpt-4o-transcribe-diarize', 'o4-mini-deep-research-2025-06-26', 'gpt-5-chat-latest', 'gpt-5-2025-08-07', 'gpt-5', 'gpt-5-mini-2025-08-07', 'gpt-5-mini', 'gpt-5-nano-2025-08-07', 'gpt-5-nano', 'gpt-audio-2025-08-28', 'gpt-realtime', 'gpt-realtime-2025-08-28', 'gpt-audio', 'gpt-5-codex', 'gpt-image-1-mini', 'gpt-5-pro-2025-10-06', 'gpt-5-pro', 'gpt-audio-mini', 'gpt-audio-mini-2025-10-06', 'gpt-5-search-api', 'gpt-realtime-mini', 'sora-2', 'sora-2-pro', 'gpt-5-search-api-2025-10-14', 'gpt-5.1-chat-latest', 'gpt-5.1-2025-11-13', 'gpt-5.1', 'gpt-5.1-codex', 'gpt-5.1-codex-mini', 'gpt-5.1-codex-max', 'gpt-image-1.5', 'gpt-5.2-2025-12-11', 'gpt-5.2', 'gpt-5.2-pro-2025-12-11', 'gpt-5.2-pro', 'gpt-5.2-chat-latest', 'gpt-4o-mini-transcribe-2025-12-15', 'gpt-4o-mini-transcribe-2025-03-20', 'gpt-4o-mini-tts-2025-03-20', 'gpt-4o-mini-tts-2025-12-15', 'gpt-realtime-mini-2025-12-15', 'gpt-audio-mini-2025-12-15', 'chatgpt-image-latest', 'gpt-5.2-codex', 'gpt-5.3-codex', 'gpt-realtime-1.5', 'gpt-audio-1.5', 'gpt-4o-search-preview', 'gpt-4o-search-preview-2025-03-11', 'gpt-5.3-chat-latest', 'gpt-5.4-2026-03-05', 'gpt-5.4-pro', 'gpt-5.4-pro-2026-03-05', 'gpt-5.4', 'gpt-5.4-nano-2026-03-17', 'gpt-5.4-nano', 'gpt-5.4-mini-2026-03-17', 'gpt-5.4-mini', 'gpt-image-2', 'gpt-image-2-2026-04-21', 'gpt-5.5', 'gpt-5.5-2026-04-23', 'gpt-5.5-pro', 'gpt-5.5-pro-2026-04-23', 'chat-latest', 'gpt-realtime-translate', 'gpt-realtime-2', 'gpt-realtime-whisper', 'gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna', 'gpt-realtime-2.1', 'gpt-realtime-2.1-mini', 'gpt-transcribe', 'gpt-live-transcribe', 'gpt-6-astra', 'gpt-image-2.5-flare', 'gpt-image-2.5-sunburst', 'gpt-image-2.5-flare-2026-09-08', 'gpt-image-2.5-sunburst-2026-09-08', 'gpt-live-1']
+Anthropic models: ['claude-fable-5-1', 'claude-opus-5', 'claude-sonnet-5', 'claude-fable-5', 'claude-opus-4-8', 'claude-opus-4-7', 'claude-sonnet-4-6', 'claude-opus-4-6', 'claude-opus-4-5-20251101', 'claude-haiku-4-5-20251001', 'claude-sonnet-4-5-20250929']
+Perplexity models: []
+Gemini models: []
+
+=== Get OpenAI Models ===
+OpenAI models: ['text-embedding-ada-002', 'whisper-1', 'gpt-3.5-turbo', 'tts-1', 'gpt-3.5-turbo-16k', 'gpt-4-0613', 'gpt-4', 'davinci-002', 'babbage-002', 'gpt-3.5-turbo-instruct', 'gpt-3.5-turbo-instruct-0914', 'gpt-3.5-turbo-1106', 'tts-1-hd', 'tts-1-1106', 'tts-1-hd-1106', 'text-embedding-3-small', 'text-embedding-3-large', 'gpt-3.5-turbo-0125', 'gpt-4-turbo', 'gpt-4-turbo-2024-04-09', 'gpt-4o', 'gpt-4o-2024-05-13', 'gpt-4o-mini-2024-07-18', 'gpt-4o-mini', 'gpt-4o-2024-08-06', 'omni-moderation-latest', 'omni-moderation-2024-09-26', 'o1-2024-12-17', 'o1', 'o3-mini', 'o3-mini-2025-01-31', 'gpt-4o-2024-11-20', 'gpt-4o-mini-search-preview-2025-03-11', 'gpt-4o-mini-search-preview', 'gpt-4o-transcribe', 'gpt-4o-mini-transcribe', 'o1-pro-2025-03-19', 'o1-pro', 'gpt-4o-mini-tts', 'o3-2025-04-16', 'o4-mini-2025-04-16', 'o3', 'o4-mini', 'gpt-4.1-2025-04-14', 'gpt-4.1', 'gpt-4.1-mini-2025-04-14', 'gpt-4.1-mini', 'gpt-4.1-nano-2025-04-14', 'gpt-4.1-nano', 'gpt-image-1', 'o4-mini-deep-research', 'gpt-4o-transcribe-diarize', 'o4-mini-deep-research-2025-06-26', 'gpt-5-chat-latest', 'gpt-5-2025-08-07', 'gpt-5', 'gpt-5-mini-2025-08-07', 'gpt-5-mini', 'gpt-5-nano-2025-08-07', 'gpt-5-nano', 'gpt-audio-2025-08-28', 'gpt-realtime', 'gpt-realtime-2025-08-28', 'gpt-audio', 'gpt-5-codex', 'gpt-image-1-mini', 'gpt-5-pro-2025-10-06', 'gpt-5-pro', 'gpt-audio-mini', 'gpt-audio-mini-2025-10-06', 'gpt-5-search-api', 'gpt-realtime-mini', 'sora-2', 'sora-2-pro', 'gpt-5-search-api-2025-10-14', 'gpt-5.1-chat-latest', 'gpt-5.1-2025-11-13', 'gpt-5.1', 'gpt-5.1-codex', 'gpt-5.1-codex-mini', 'gpt-5.1-codex-max', 'gpt-image-1.5', 'gpt-5.2-2025-12-11', 'gpt-5.2', 'gpt-5.2-pro-2025-12-11', 'gpt-5.2-pro', 'gpt-5.2-chat-latest', 'gpt-4o-mini-transcribe-2025-12-15', 'gpt-4o-mini-transcribe-2025-03-20', 'gpt-4o-mini-tts-2025-03-20', 'gpt-4o-mini-tts-2025-12-15', 'gpt-realtime-mini-2025-12-15', 'gpt-audio-mini-2025-12-15', 'chatgpt-image-latest', 'gpt-5.2-codex', 'gpt-5.3-codex', 'gpt-realtime-1.5', 'gpt-audio-1.5', 'gpt-4o-search-preview', 'gpt-4o-search-preview-2025-03-11', 'gpt-5.3-chat-latest', 'gpt-5.4-2026-03-05', 'gpt-5.4-pro', 'gpt-5.4-pro-2026-03-05', 'gpt-5.4', 'gpt-5.4-nano-2026-03-17', 'gpt-5.4-nano', 'gpt-5.4-mini-2026-03-17', 'gpt-5.4-mini', 'gpt-image-2', 'gpt-image-2-2026-04-21', 'gpt-5.5', 'gpt-5.5-2026-04-23', 'gpt-5.5-pro', 'gpt-5.5-pro-2026-04-23', 'chat-latest', 'gpt-realtime-translate', 'gpt-realtime-2', 'gpt-realtime-whisper', 'gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna', 'gpt-realtime-2.1', 'gpt-realtime-2.1-mini', 'gpt-transcribe', 'gpt-live-transcribe', 'gpt-6-astra', 'gpt-image-2.5-flare', 'gpt-image-2.5-sunburst', 'gpt-image-2.5-flare-2026-09-08', 'gpt-image-2.5-sunburst-2026-09-08', 'gpt-live-1']
+
+=== Get Anthropic Models ===
+Anthropic models: ['claude-fable-5-1', 'claude-opus-5', 'claude-sonnet-5', 'claude-fable-5', 'claude-opus-4-8', 'claude-opus-4-7', 'claude-sonnet-4-6', 'claude-opus-4-6', 'claude-opus-4-5-20251101', 'claude-haiku-4-5-20251001', 'claude-sonnet-4-5-20250929']
+
+✓ Chat Models API example complete
+perl: warning: Setting locale failed.
+perl: warning: Please check that your locale settings:
+	LC_ALL = "C.UTF-8",
+	LC_CTYPE = "C.UTF-8",
+	LANG = "C.UTF-8"
+    are supported and installed on your system.
+perl: warning: Falling back to the standard locale ("C").
+=== ekoDB Chat Session Management Example ===
+
+=== Inserting Sample Data ===
+✓ Inserted sample product
+
+=== Creating Chat Session ===
+✓ Created session: oU2biI16LkKeN5i_IyBuQxxuujQp6RtWRlBHUnF17Bkgv3dcM20VRUwVz578P3nj7KmMhfGg9ilOR_iq5jI-UA
+
+=== Sending Messages ===
+✓ Message 1 sent
+  Response: The available product is:
+
+- **Name**: ekoDB
+- **Description**: A high-performance database product
+- **Price**: $99
+
+If you need more details or have other questions, feel free to ask!
+
+✓ Message 2 sent
+  Response: The price of ekoDB is $99.
+
+=== Retrieving Session Messages ===
+✓ Retrieved 4 messages
+
+=== Updating Session ===
+✓ Session updated
+
+=== Branching Session ===
+✓ Created branch: D5-jZ63H9q4tt_Rv8EoZUi7qV_LxdHn0Fthwil8JBmSVd30GcPAM4b2zer9Q6nOP-7mTnrkumglcFawMr8nb3g
+  Parent: oU2biI16LkKeN5i_IyBuQxxuujQp6RtWRlBHUnF17Bkgv3dcM20VRUwVz578P3nj7KmMhfGg9ilOR_iq5jI-UA
+
+=== Listing Sessions ===
+✓ Found 2 sessions
+  Session 1: D5-jZ63H9q4tt_Rv8EoZUi7qV_LxdHn0Fthwil8JBmSVd30GcPAM4b2zer9Q6nOP-7mTnrkumglcFawMr8nb3g (Untitled)
+  Session 2: oU2biI16LkKeN5i_IyBuQxxuujQp6RtWRlBHUnF17Bkgv3dcM20VRUwVz578P3nj7KmMhfGg9ilOR_iq5jI-UA (Untitled)
+
+=== Deleting Branch Session ===
+✓ Deleted branch session: D5-jZ63H9q4tt_Rv8EoZUi7qV_LxdHn0Fthwil8JBmSVd30GcPAM4b2zer9Q6nOP-7mTnrkumglcFawMr8nb3g
+
+=== Cleanup ===
+✓ Deleted sessions and collection
+
+✓ All session management operations completed successfully
+perl: warning: Setting locale failed.
+perl: warning: Please check that your locale settings:
+	LC_ALL = "C.UTF-8",
+	LC_CTYPE = "C.UTF-8",
+	LANG = "C.UTF-8"
+    are supported and installed on your system.
+perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
 === Create Collection (via insert) ===
-Collection created with first record: "ZQ-lYIMJXpju2ZIVubirsLkSx_mqCR-W32kJHqxF6ZSXPoCIAWbX3OgRjUzSdp1DoG0bNmDvdMXQMVbUM6SqOg"
+Collection created with first record: "_880851ZpRaOlHOpj6IL3C_3AeBEaD0VYnKnMDK_iL5Eq85tK_Cci6eO90jToLPKMWcCLVofcjJIDc-RAjufVw"
 
 === List Collections ===
-Total collections: 14
-Sample collections: ['products', 'ttl_cache', 'test_collection', 'websocket_test', 'chat_configurations__ek0_testing']
+Total collections: 13
+Sample collections: ['chat_agent_configs__ek0_testing', 'agent_function_versions__ek0_testing', 'client_collection_management_python', 'schedules__ek0_testing', 'functions__ek0_testing']
 
 === Count Documents ===
 Document count: 1
@@ -712,189 +886,809 @@ Collection deleted successfully
 Collection still exists: False
 
 ✓ All collection management operations completed successfully
+perl: warning: Setting locale failed.
+perl: warning: Please check that your locale settings:
+	LC_ALL = "C.UTF-8",
+	LC_CTYPE = "C.UTF-8",
+	LANG = "C.UTF-8"
+    are supported and installed on your system.
+perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
-=== KV Set ===
-✓ Set key: session:user123
+=== Check Collection Exists (Before Creation) ===
+Collection 'collection_utils_test_py' exists: False
 
-=== KV Get ===
-Retrieved value: {'value': '{"type":"Object","value":{"userId":123,"username":"john_doe"}}'}
+=== Creating Test Documents ===
+Created 5 test documents
 
-=== KV Batch Set ===
-✓ Batch set 3 keys
-  cache:product:1: success
-  cache:product:2: success
-  cache:product:3: success
+=== Check Collection Exists (After Creation) ===
+Collection 'collection_utils_test_py' exists: True
 
-=== KV Batch Get ===
-✓ Batch retrieved 3 values
-  cache:product:1: {'price': 29.99, 'name': 'Product 1'}
-  cache:product:2: {'name': 'Product 2', 'price': 39.99}
-  cache:product:3: {'price': 49.99, 'name': 'Product 3'}
+=== Count Documents ===
+Document count in 'collection_utils_test_py': 5
 
-=== KV Exists ===
-Key exists: True
+=== Check Non-Existent Collection ===
+Collection 'nonexistent_collection_xyz' exists: False
 
-=== KV Find (Pattern Query) ===
-Found 3 keys matching 'cache:product:.*'
+=== Cleanup ===
+Deleted collection 'collection_utils_test_py'
 
-=== KV Query (Alias for Find) ===
-Total keys in store: 6
+✓ Collection Utilities example complete
+perl: warning: Setting locale failed.
+perl: warning: Please check that your locale settings:
+	LC_ALL = "C.UTF-8",
+	LC_CTYPE = "C.UTF-8",
+	LANG = "C.UTF-8"
+    are supported and installed on your system.
+perl: warning: Falling back to the standard locale ("C").
+✓ Client created
+✓ conc_demo_pay saved
+✓ conc_demo_rl_fail saved
+✓ conc_demo_rl_skip saved
+✓ conc_demo_lock saved
 
-=== KV Delete ===
-✓ Deleted key: session:user123
-✓ Verified: Key exists after delete: False
+Invoke them like:
+  POST /api/functions/conc_demo_pay        { "idempotency_key": "...", "amount": 100 }
+  POST /api/functions/conc_demo_rl_fail    { "user_id": 42 }
+  POST /api/functions/conc_demo_rl_skip    { "user_id": 42 }
+  POST /api/functions/conc_demo_lock       { "resource": "queue:drain" }
 
-=== KV Batch Delete ===
-✓ Batch deleted 3 keys
-  cache:product:1: deleted
-  cache:product:2: deleted
-  cache:product:3: deleted
+✓ Cleaned up demo functions
+perl: warning: Setting locale failed.
+perl: warning: Please check that your locale settings:
+	LC_ALL = "C.UTF-8",
+	LC_CTYPE = "C.UTF-8",
+	LANG = "C.UTF-8"
+    are supported and installed on your system.
+perl: warning: Falling back to the standard locale ("C").
+=== ekoDB Convenience Methods Example ===
 
-✓ All KV operations completed successfully
+=== Native Dict Creation ===
+✓ Created record with plain dict: {'id': 'UuZqbQLFX9209NKfyFPQRaMjGyC82kaMangHnRkiat83hVKIZFihD5Z04YWjpLJARCTS59-I7f7soG3ffincAA'}
+
+=== Upsert Operation ===
+✓ Upsert (update existing record): UuZqbQLFX9209NKfyFPQRaMjGyC82kaMangHnRkiat83hVKIZFihD5Z04YWjpLJARCTS59-I7f7soG3ffincAA
+✓ Inserted second record: 4imi8hLOz-1OJRE-OsPEy4f_rSuAC_MWElFRrZW6jfE--Ct3gZosPXykkkk5zd_MZR2OrZci2GSJFegMHG9sdw
+✓ Upsert (update second record): 4imi8hLOz-1OJRE-OsPEy4f_rSuAC_MWElFRrZW6jfE--Ct3gZosPXykkkk5zd_MZR2OrZci2GSJFegMHG9sdw
+
+=== Find One Operation ===
+✓ Found user by email: {'active': {'type': 'Boolean', 'value': True}, 'age': {'type': 'Integer', 'value': 29}, 'id': 'UuZqbQLFX9209NKfyFPQRaMjGyC82kaMangHnRkiat83hVKIZFihD5Z04YWjpLJARCTS59-I7f7soG3ffincAA', 'email': {'type': 'String', 'value': 'alice.j@newdomain.com'}, 'name': {'type': 'String', 'value': 'Alice Johnson'}}
+✓ User not found (as expected)
+
+=== Exists Check ===
+✓ Record exists: True
+✓ Fake record exists: False (should be False)
+
+=== Pagination ===
+✓ Inserted 25 records for pagination
+✓ Page 1: 10 records (expected 10)
+✓ Page 2: 10 records (expected 10)
+✓ Page 3: 7 records (expected ~7)
+
+=== Cleanup ===
+✓ Deleted collection
+
+✅ All convenience methods demonstrated successfully!
+perl: warning: Setting locale failed.
+perl: warning: Please check that your locale settings:
+	LC_ALL = "C.UTF-8",
+	LC_CTYPE = "C.UTF-8",
+	LANG = "C.UTF-8"
+    are supported and installed on your system.
+perl: warning: Falling back to the standard locale ("C").
+✓ Client created
+✓ crypto_demo_hmac_py saved
+✓ crypto_demo_aes_py saved
+✓ crypto_demo_uuid_py saved
+✓ crypto_demo_totp_py saved
+✓ crypto_demo_encoding_py saved
+
+Invoke them with:
+  POST /api/functions/crypto_demo_hmac_py { "payload": "hi" }
+  POST /api/functions/crypto_demo_aes_py { "plaintext": "secret" }
+  POST /api/functions/crypto_demo_uuid_py
+  POST /api/functions/crypto_demo_totp_py
+  POST /api/functions/crypto_demo_encoding_py { "title": "Héllo World" }
+
+✓ Cleaned up demo functions
+perl: warning: Setting locale failed.
+perl: warning: Please check that your locale settings:
+	LC_ALL = "C.UTF-8",
+	LC_CTYPE = "C.UTF-8",
+	LANG = "C.UTF-8"
+    are supported and installed on your system.
+perl: warning: Falling back to the standard locale ("C").
+=== Distinct Values Example ===
+
+Inserting sample products...
+Inserted 8 products
+
+=== Distinct Categories (all products) ===
+Found 3 distinct categories:
+  - {'type': 'String', 'value': 'books'}
+  - {'type': 'String', 'value': 'clothing'}
+  - {'type': 'String', 'value': 'electronics'}
+
+=== Distinct Statuses (all products) ===
+Found 3 distinct statuses:
+  - {'type': 'String', 'value': 'active'}
+  - {'type': 'String', 'value': 'archived'}
+  - {'type': 'String', 'value': 'discontinued'}
+
+=== Distinct Statuses in Electronics ===
+Found 2 distinct statuses for electronics:
+  - {'type': 'String', 'value': 'active'}
+  - {'type': 'String', 'value': 'discontinued'}
+
+Cleanup done.
+perl: warning: Setting locale failed.
+perl: warning: Please check that your locale settings:
+	LC_ALL = "C.UTF-8",
+	LC_CTYPE = "C.UTF-8",
+	LANG = "C.UTF-8"
+    are supported and installed on your system.
+perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
-=== Setup: Creating Test Accounts ===
-Created Alice: $1000 - ID: yhTEl0mjHcP2H6FwcMMYeoU3eW8cEDdgv25XNOCxsU2gbjR53ZQDKWQ1bsjCDAKcHe7adwDpUpSGiWDTHbCzAQ
-Created Bob: $500 - ID: _3s4vR0IQGYe8d2ACxN379RK5YrHHIgHf6XzdAIW3u8qyOGEZoCqXcXaGuwGSDuEz8LqRenoWuJqxWrmT7aMIA
+=== Insert Document with TTL (1 hour) ===
+✓ Inserted document: ama0yiTT93xI7mRlE5SzKYmmEPx7Xf-58ooldS9drtPa9pgW216FbV4uELq1W6kWydtVg-kBopFzaDAWNECWHg
 
-=== Example 1: Begin Transaction ===
-Transaction ID: a9f53d07-b148-4254-839b-3c2ad91f4194
+=== Insert Document with TTL (5 minutes) ===
+✓ Inserted document: lpPdHomV0qnCX-N1NFzEyAluq6LDjxupYRSpT-L75-oPy36pCX67ItRTk9Bcfi6621iPrO6frzZi2gzNsbz79Q
 
-=== Example 2: Operations within Transaction ===
-Updated Alice: $1000 → $800 (simulated)
-Updated Bob: $500 → $700 (simulated)
+=== Query Documents ===
+✓ Found 2 documents with TTL
 
-=== Example 3: Transaction Status ===
-Status: Active
-Operations: 0
+=== Update Document ===
+✓ Updated document
 
-=== Example 4: Commit Transaction ===
-✓ Transaction committed
-
-=== Example 5: Rollback Demo ===
-New transaction: 0502005d-e8d0-4a33-8284-26ddf2c501d7
-Status before rollback: Active
-✓ Transaction rolled back
+=== Delete Document ===
+✓ Deleted document
 
 === Cleanup ===
-✓ Deleted test accounts
+✓ Deleted collection
 
-✓ All client transaction examples completed
-=== Query Builder Examples ===
+✓ All document TTL operations completed successfully
 
-Setting up test data...
-✅ Test data created
+💡 Note: Documents with TTL will automatically expire after the specified duration
+perl: warning: Setting locale failed.
+perl: warning: Please check that your locale settings:
+	LC_ALL = "C.UTF-8",
+	LC_CTYPE = "C.UTF-8",
+	LANG = "C.UTF-8"
+    are supported and installed on your system.
+perl: warning: Falling back to the standard locale ("C").
+=== ekoDB as Edge Cache - Simple Example ===
 
-1. Simple equality query:
-Found 2 active users
+Creating edge cache function...
+✓ Edge cache script created: 04t0Hil8MnDnr6wDBmJFm3wfgbGFPDjBWZ4qlR618H9sqSGVJQMWEpZFE9dnuDUtUOnkswEs49DbT4yzRSzf-w
 
-2. Range query with sorting:
-Found 3 users aged 18-65
+Call 1: Cache miss (fetches from API)
+Response time: 439ms
+Result: {
+  "records": [
+    {
+      "value": {
+        "type": "Object",
+        "value": {
+          "current": {
+            "interval": 900,
+            "temperature_2m": 20.0,
+            "time": "2026-09-16T13:45"
+          },
+          "current_units": {
+            "interval": "seconds",
+            "temperature_2m": "\u00b0C",
+            "time": "iso8601"
+          },
+          "elevation": 32.0,
+          "generationtime_ms": 0.03254413604736328,
+          "latitude": 40.710335,
+          "longitude": -73.99308,
+          "timezone": "GMT",
+          "timezone_abbreviation": "GMT",
+          "utc_offset_seconds": 0
+        }
+      }
+    }
+  ],
+  "stats": {
+    "execution_time_ms": 0,
+    "input_count": 0,
+    "output_count": 1,
+    "stage_stats": [],
+    "stages_executed": 2
+  }
+}
 
-3. String operations:
-Found 2 users with @example.com emails
+Call 2: Cache hit (served from ekoDB)
+Response time: 12ms (37.0x faster!)
+Result: {
+  "records": [
+    {
+      "value": {
+        "type": "Object",
+        "value": {
+          "current": {
+            "interval": 900,
+            "temperature_2m": 20.0,
+            "time": "2026-09-16T13:45"
+          },
+          "current_units": {
+            "interval": "seconds",
+            "temperature_2m": "\u00b0C",
+            "time": "iso8601"
+          },
+          "elevation": 32.0,
+          "generationtime_ms": 0.03254413604736328,
+          "latitude": 40.710335,
+          "longitude": -73.99308,
+          "timezone": "GMT",
+          "timezone_abbreviation": "GMT",
+          "utc_offset_seconds": 0
+        }
+      }
+    }
+  ],
+  "stats": {
+    "execution_time_ms": 0,
+    "input_count": 0,
+    "output_count": 1,
+    "stage_stats": [],
+    "stages_executed": 2
+  }
+}
 
-4. IN operator:
-Found 2 privileged users
+=== The Magic ===
+- Your DATABASE is your EDGE
+- No Redis needed
+- No CDN needed
+- No cache invalidation logic needed (TTL handles it)
+- With ripples: All nodes auto-sync cache
+- One service: Database + Cache + Edge Functions
 
-5. Complex query with multiple conditions:
-Found 1 active US users over 21
+✓ Example complete!
 
-6. Pagination:
-Page 1: 2 users
+perl: warning: Setting locale failed.
+perl: warning: Please check that your locale settings:
+	LC_ALL = "C.UTF-8",
+	LC_CTYPE = "C.UTF-8",
+	LANG = "C.UTF-8"
+    are supported and installed on your system.
+perl: warning: Falling back to the standard locale ("C").
+=== ekoDB Function Composition Examples ===
 
-7. NOT IN operator:
-Found 2 valid users
+📋 Setting up test data...
 
-8. Using bypass flags:
-Found 2 users (bypassed cache)
+✅ Test data ready
 
-=== Cleanup ===
-✅ Deleted test collection
+📝 Example 1: Basic Function Composition
 
-✅ Query Builder examples completed!
-=== Search Examples ===
+Building reusable functions that call each other...
 
-Setting up test data...
-✅ Test data created
+✅ Saved reusable function: fetch_user_py
+✅ Saved composed function: get_user_wrapper_py (calls fetch_user_py + projects fields)
 
-1. Basic full-text search:
-Found 2 results
-  1. Score: 12.870, Matched: email, name
-  2. Score: 6.270, Matched: name
+📊 Result from composed function:
+   Records: 1
+   Name: {"type": "String", "value": "User 1"}
+   Department: {"type": "String", "value": "engineering"}
 
-2. Fuzzy search (typo tolerance):
-Found 4 results with fuzzy matching
-  1. Score: 13.200, Matched: bio, title
-  2. Score: 13.200, Matched: bio, title
-  3. Score: 13.200, Matched: bio, title
-  4. Score: 13.200, Matched: title, bio
+🎯 Key Benefit: fetch_user can be reused by ANY function!
+   No code duplication, single source of truth
 
-3. Search with field weights:
-Found 4 results with weighted fields
-  1. Score: 26.400, Matched: title, bio
-  2. Score: 26.400, Matched: bio, title
-  3. Score: 26.400, Matched: title, bio
-  4. Score: 26.400, Matched: bio, title
+📝 Example 2: SWR Pattern with Function Composition
 
-4. Search with minimum score threshold:
-Found 2 results with score >= 0.3
-  1. Score: 6.600, Matched: bio
-  2. Score: 6.600, Matched: bio
+Using KV cache + CallFunction for fast cache-aside pattern...
 
-5. Search with stemming and exact match boosting:
-Found 2 results (matches: run, running, runs)
-  1. Score: 6.600, Matched: bio
-  2. Score: 6.600, Matched: bio
+✅ Saved reusable function: fetch_and_store_user_py (uses KV)
+✅ Saved SWR function using composition: swr_user_py
 
-6. Vector search (semantic search):
-Found 3 semantically similar documents
-  1. Score: 0.751
-  2. Score: 0.732
-  3. Score: 0.720
+First call (cache miss - will fetch from API):
+   ⏱️  Duration: 102.7ms
+   📊 Records: 1
+   📦 Data: {
+      "value": {
+            "type": "Object",
+            "value": {
+                  "address": {
+                        "city": "Gwenborough",
+                        "geo": {
+                 ...
 
-7. Hybrid search (text + vector):
-Found 3 results using hybrid search (text + vector)
-  1. Score: 1.366, Matched: title, content
-  2. Score: 0.860, Matched: content, title
-  3. Score: 0.375, Matched: 
+Second call (cache hit - from cache):
+   ⏱️  Duration: 10.2ms
+   📊 Records: 1
+   📦 Data: {
+      "value": {
+            "type": "Object",
+            "value": {
+                  "address": {
+                        "city": "Gwenborough",
+                        "geo": {
+                 ...
+   🚀 Cache speedup: 10.0x faster!
 
-8. Case-sensitive search:
-Found 1 results (case-sensitive)
-  1. Score: 6.600, Matched: title
+📝 Example 3: Multi-Level Function Composition
 
-9. Vector search with a metadata pre-filter (category = ml):
-Found 2 documents in category "ml" (NLP excluded)
-  1. Introduction to Machine Learning (category: ml)
-  2. Deep Learning Fundamentals (category: ml)
+Building complex workflows from small, reusable pieces...
 
-=== Cleanup ===
-✅ Deleted test collections
+✅ Level 1 function: validate_user_py
+✅ Level 2 function: fetch_slim_user_py (calls validate_user_py)
+✅ Level 3 function: get_verified_user_py (calls fetch_slim_user_py)
 
-✅ Search examples completed!
-=== Schema Management Examples ===
+📊 Result from 3-level nested composition:
+   Records: 1
+   Name: User 1
+   Department: engineering
 
-1. Creating user schema with basic fields:
-✅ User schema created
+🎯 Key Benefit: Each function is independently testable and reusable!
+   - validate_user: Used in 100 different workflows
+   - fetch_slim_user: Used in 50 workflows
+   - get_verified_user: Specific workflow
 
-2. Creating product schema with text index:
-✅ Product schema with indexes created
 
-3. Creating document schema with vector index:
-✅ Document schema with vector index created
+✅ Cleanup complete
+✅ All composition examples completed!
+perl: warning: Setting locale failed.
+perl: warning: Please check that your locale settings:
+	LC_ALL = "C.UTF-8",
+	LC_CTYPE = "C.UTF-8",
+	LANG = "C.UTF-8"
+    are supported and installed on your system.
+perl: warning: Falling back to the standard locale ("C").
+client_function_contract: ok
+perl: warning: Setting locale failed.
+perl: warning: Please check that your locale settings:
+	LC_ALL = "C.UTF-8",
+	LC_CTYPE = "C.UTF-8",
+	LANG = "C.UTF-8"
+    are supported and installed on your system.
+perl: warning: Falling back to the standard locale ("C").
+🚀 ekoDB Functions Example (Python)
 
-4. Retrieving collection schema:
-Schema fields: ['age', 'email', 'name', 'status']
-Schema version: 1
+📋 Setting up test data...
+✅ Test data ready
 
-5. Retrieving collection metadata:
-Collection has 4 fields
+📝 Example 1: Simple Query Function
 
-6. Creating employee schema with all constraint types:
-✅ Employee schema with all constraints created
+✅ Function saved: uBTrqc9g8xgrY3yfXCvwj0RjoBpGV8eABjKx6Pt9NN8qPNBN2argQTmPhaUdABFHNzn6vPr08kI-8lGYKZin9g
+📊 Found 5 active users
 
-✅ Schema management examples completed!
+📝 Example 2: Parameterized Function
+
+✅ Function saved: Q7vNTMfUB0R7p18d8r-3LzRJQmv5__c5jaK3Vm9WSM_IBXeS88RDw9aoxnIiCNngKSF_sctZhxTtqTy0wwoXWA
+📊 Found 3 users (limited)
+
+📝 Example 3: Aggregation Function
+
+✅ Function saved: K-SpJpHmEcyordqYtWLwxiadH5RjiQBBQvZzhU-ejDxtwb17Q_WfYEAEPLeBQVLHp7SUPwb81flo-VJONZesgg
+📊 Statistics: 2 groups
+   {'avg_score': {'type': 'Float', 'value': 50.0}, 'count': {'type': 'Integer', 'value': 5}, 'status': {'type': 'String', 'value': 'inactive'}}
+
+   {'avg_score': {'type': 'Float', 'value': 60.0}, 'count': {'type': 'Integer', 'value': 5}, 'status': {'type': 'String', 'value': 'active'}}
+
+📝 Example 4: Function Management
+
+📋 Total functions: 3
+🔍 Retrieved function: Get Active Users
+✏️  Function updated
+🗑️  Function deleted
+
+ℹ️  Note: GET/UPDATE/DELETE use IDs. Only CALL supports labels.
+
+✅ All examples completed!
+perl: warning: Setting locale failed.
+perl: warning: Please check that your locale settings:
+	LC_ALL = "C.UTF-8",
+	LC_CTYPE = "C.UTF-8",
+	LANG = "C.UTF-8"
+    are supported and installed on your system.
+perl: warning: Falling back to the standard locale ("C").
+🚀 ekoDB Python Advanced Functions Example
+
+📋 Setting up test data...
+✅ Created 8 products
+
+📝 Example 1: List All Products
+
+✅ Function saved
+📊 Found 8 products
+⏱️  Execution time: 0ms
+
+📝 Example 2: Group Products by Category
+
+✅ Function saved
+📊 Category breakdown:
+   {'avg_price': {'type': 'Float', 'value': 367.0}, 'category': {'type': 'String', 'value': 'Electronics'}, 'count': {'type': 'Integer', 'value': 5}}
+   {'avg_price': {'type': 'Float', 'value': 365.6666666666667}, 'category': {'type': 'String', 'value': 'Furniture'}, 'count': {'type': 'Integer', 'value': 3}}
+⏱️  Execution time: 0ms
+
+📝 Example 3: Count Total Products
+
+✅ Function saved
+📊 Total products: [{'total': {'type': 'Integer', 'value': 8}}]
+⏱️  Execution time: 0ms
+
+🧹 Cleaning up...
+✅ Cleanup complete
+
+✅ All advanced script examples finished!
+perl: warning: Setting locale failed.
+perl: warning: Please check that your locale settings:
+	LC_ALL = "C.UTF-8",
+	LC_CTYPE = "C.UTF-8",
+	LANG = "C.UTF-8"
+    are supported and installed on your system.
+perl: warning: Falling back to the standard locale ("C").
+🚀 ekoDB Python AI Functions Example
+
+📋 Setting up test data...
+✅ Created 2 articles
+
+📝 Example 1: Simple Chat Completion
+
+✅ Chat script saved
+🤖 AI Response:
+   Vector databases offer several benefits:
+
+1. **Efficient Similarity Search**: They enable fast retrieval of similar items using vector embeddings, which is essential for applications like image and text similarity.
+
+2. **High Dimensional Data Handling**: They can efficiently manage and query high-dimensional data, making them suitable for machine learning and AI applications.
+
+3. **Scalability**: Vector databases are designed to scale with large datasets, providing robust performance as data grows.
+
+4. **Real-Time Processing**: They support real-time data processing and querying, which is critical for dynamic applications.
+
+5. **Advanced Indexing Techniques**: Use of specialized indexing techniques (e.g., Annoy, HNSW) to improve search speed and accuracy.
+
+6. **Integration with ML Models**: They easily integrate with machine learning frameworks, enabling seamless workflows from model training to deployment.
+
+7. **Diverse Data Types**: Ability to store and query various data types (text, images, audio) in a unified manner.
+
+8. **Enhanced Recommendation Systems**: Improve recommendation systems through better user-item similarity calculations.
+
+These advantages make vector databases particularly valuable in fields like natural language processing, computer vision, and recommendation systems.
+⏱️  Execution time: 0ms
+
+📝 Example 2: Generate Embeddings
+
+✅ Embed script saved
+📊 Generated 2 embeddings
+   Dimensions: 1536
+⏱️  Execution time: 0ms
+
+🧹 Cleaning up...
+✅ Cleanup complete
+
+✅ All AI script examples finished!
+
+💡 This example demonstrates:
+   ✅ Chat completions with system/user messages
+   ✅ Embedding generation for text
+perl: warning: Setting locale failed.
+perl: warning: Please check that your locale settings:
+	LC_ALL = "C.UTF-8",
+	LC_CTYPE = "C.UTF-8",
+	LANG = "C.UTF-8"
+    are supported and installed on your system.
+perl: warning: Falling back to the standard locale ("C").
+🚀 ekoDB Python Complete Functions Example
+
+📋 Demonstrates: FindAll, Group, Count, Multi-stage Pipelines
+
+📋 Setting up complete test data...
+✅ Created 5 products
+
+📝 Example 1: FindAll + Group (Simple Aggregation)
+
+✅ Function saved: 1Az68NmOcpikvGyF8TGvTr5s4JQQGJ5eMkg_7NjHKI7EGJwjjijYgpSjCG2m8OtzogGgfqLHxrNle1YUA0KIng
+📊 Found 2 product groups
+   {'avg_price': {'type': 'Float', 'value': 575.6666666666666}, 'category': {'type': 'String', 'value': 'Electronics'}, 'count': {'type': 'Integer', 'value': 3}}
+   {'avg_price': {'type': 'Float', 'value': 474.0}, 'category': {'type': 'String', 'value': 'Furniture'}, 'count': {'type': 'Integer', 'value': 2}}
+⏱️  Execution time: 0ms
+
+📝 Example 2: Simple Product Listing
+
+✅ Function saved
+📊 Found 5 products
+⏱️  Execution time: 0ms
+
+📝 Example 3: Count by Category
+
+✅ Function saved
+📊 Found 2 categories
+   {'category': {'type': 'String', 'value': 'Electronics'}, 'count': {'type': 'Integer', 'value': 3}}
+   {'category': {'type': 'String', 'value': 'Furniture'}, 'count': {'type': 'Integer', 'value': 2}}
+⏱️  Execution time: 0ms
+
+📝 Example 4: High Rating Products
+
+✅ Function saved
+📊 Found 3 products
+⏱️  Execution time: 0ms
+
+📝 Example 5: function with Parameter Definition
+
+✅ Function saved
+📊 Found 3 products
+⏱️  Execution time: 0ms
+
+📝 Example 6: Multi-Stage Pipeline (FindAll → Group → Count)
+
+✅ Function saved
+📊 Pipeline executed 3 stages
+⏱️  Total execution time: 0ms
+
+✅ All complete script examples finished!
+
+💡 This example demonstrates ekoDB's function system:
+   ✅ FindAll operations
+   ✅ Group aggregations (Count, Average)
+   ✅ Multi-stage pipelines (FindAll → Group → Count)
+   ✅ Parameter definitions
+   ✅ Function management (save, call, delete)
+🧹 Cleaning up...
+✅ Cleanup complete
+
+perl: warning: Setting locale failed.
+perl: warning: Please check that your locale settings:
+	LC_ALL = "C.UTF-8",
+	LC_CTYPE = "C.UTF-8",
+	LANG = "C.UTF-8"
+    are supported and installed on your system.
+perl: warning: Falling back to the standard locale ("C").
+🚀 ekoDB Python CRUD Functions Example
+
+📋 Setting up test data...
+✅ Created 10 test users
+
+📝 Example 1: List All Users
+
+✅ Function saved
+📊 Found 10 users
+⏱️  Execution time: 0ms
+
+📝 Example 2: Count Users by Status
+
+✅ Function saved
+📊 User counts by status:
+   active: 7 users
+   inactive: 3 users
+⏱️  Execution time: 0ms
+
+📝 Example 3: Average Score by Role
+
+✅ Function saved
+📊 Average score by role:
+   {'avg_score': {'type': 'Float', 'value': 20.0}, 'count': {'type': 'Integer', 'value': 3}, 'role': {'type': 'String', 'value': 'admin'}}
+   {'avg_score': {'type': 'Float', 'value': 70.0}, 'count': {'type': 'Integer', 'value': 7}, 'role': {'type': 'String', 'value': 'user'}}
+⏱️  Execution time: 0ms
+
+🧹 Cleaning up...
+✅ Cleanup complete
+
+✅ All CRUD script examples finished!
+perl: warning: Setting locale failed.
+perl: warning: Please check that your locale settings:
+	LC_ALL = "C.UTF-8",
+	LC_CTYPE = "C.UTF-8",
+	LANG = "C.UTF-8"
+    are supported and installed on your system.
+perl: warning: Falling back to the standard locale ("C").
+🚀 ekoDB Python KV Store & Wrapped Types Example
+
+📋 Demonstrates:
+   • Wrapped type field builders (UUID, Decimal, DateTime, etc.)
+   • KV store operations (get, set, delete, exists, query)
+   • Combined wrapped types + KV workflows
+
+📝 Example 1: Inserting Records with Wrapped Types
+
+✅ Inserted order: cO6ej5ddtcabksB-r6i6VrV3j_CQKfb6hjSXIg_28tMnD6knMeUHFRd2AZ08Em7QQgMuZHRqnipjf0zAJNQuaA
+✅ Inserted 2 products with wrapped types
+
+📝 Example 2: Querying and Extracting Wrapped Types
+
+📊 Found 2 products
+   • Wireless Mouse
+   • Laptop Pro
+
+📝 Example 3: Basic KV Store Operations
+
+✅ Set session data
+📊 Retrieved session: {'value': '{"type":"Object","value":{"role":"admin","userId":"user_abc"}}'}
+🔍 Key exists: True
+✅ Set cached data with 1 hour TTL
+🗑️  Deleted session
+
+📝 Example 4: KV Pattern Query
+
+✅ Set 4 config entries
+📊 Found 3 app config entries
+📊 Found 4 total config entries
+
+📝 Example 5: Combined Wrapped Types + KV Usage
+
+✅ Inserted order: _Nc7sXcocnckJf_QLGbzlvmbjs9LxTIAVeFHg6cXTKZaCk8qqSsP2PSY4ExzDJet_5QLL1zKCyc2SZMLhO1q2w
+✅ Cached order status
+📊 Quick status lookup: {'value': '{"type":"Object","value":{"status":"processing","updated_at":"2026-09-16T13:46:38.975619+00:00"}}'}
+
+🧹 Cleaning up...
+✅ Cleanup complete
+
+✅ All KV & Wrapped Types examples completed!
+
+💡 Key takeaways:
+   ✅ Use field_* helpers for type-safe wrapped values
+   ✅ field_decimal() preserves precision (no floating point errors)
+   ✅ KV store is great for caching and quick lookups
+   ✅ Combine KV caching with collection inserts for real workflows
+perl: warning: Setting locale failed.
+perl: warning: Please check that your locale settings:
+	LC_ALL = "C.UTF-8",
+	LC_CTYPE = "C.UTF-8",
+	LANG = "C.UTF-8"
+    are supported and installed on your system.
+perl: warning: Falling back to the standard locale ("C").
+🚀 ekoDB Python Search Functions Example
+
+📋 Setting up test data...
+✅ Inserted 5 documents
+
+📝 Example 1: List All Documents
+
+✅ Function saved
+📊 Found 5 documents
+   1. Vector Databases Explained (Database)
+   2. Getting Started with ekoDB (Database)
+   3. Natural Language Processing (AI)
+   4. Introduction to Machine Learning (AI)
+   5. Database Design Principles (Database)
+⏱️  Execution time: 0ms
+
+📝 Example 2: Count Documents by Category
+
+✅ Function saved
+📊 Documents by category:
+   {'category': {'type': 'String', 'value': 'Database'}, 'count': {'type': 'Integer', 'value': 3}}
+   {'category': {'type': 'String', 'value': 'AI'}, 'count': {'type': 'Integer', 'value': 2}}
+⏱️  Execution time: 0ms
+
+🧹 Cleaning up...
+✅ Cleanup complete
+
+✅ All search script examples finished!
+perl: warning: Setting locale failed.
+perl: warning: Please check that your locale settings:
+	LC_ALL = "C.UTF-8",
+	LC_CTYPE = "C.UTF-8",
+	LANG = "C.UTF-8"
+    are supported and installed on your system.
+perl: warning: Falling back to the standard locale ("C").
+=== ekoDB Goal Template CRUD Example (Python) ===
+
+--- Creating goal template ---
+Created template: Data Migration (id: AuHv6TdHjDt1-RbjlghEBYgJHaYo3sDUs2iwKOUsn5ZIBT6rYedHCuJvhQAM6JIGkx9uEcWhiGnuHLKdCCKEJg)
+
+--- Listing templates ---
+Templates: {'count': 1, 'items': [{'description': {'type': 'String', 'value': 'Template for migrating data between schemas'}, 'id': 'AuHv6TdHjDt1-RbjlghEBYgJHaYo3sDUs2iwKOUsn5ZIBT6rYedHCuJvhQAM6JIGkx9uEcWhiGnuHLKdCCKEJg', 'steps': {'type': 'Array', 'value': [{'description': 'Analyze source schema'}, {'description': 'Create target schema'}, {'description': 'Migrate records'}, {'description': 'Validate results'}]}, 'title': {'type': 'String', 'value': 'Data Migration'}}]}
+
+--- Getting template ---
+Fetched: {'type': 'String', 'value': 'Data Migration'}
+
+--- Updating template ---
+Updated description: {'type': 'String', 'value': 'Updated: comprehensive data migration workflow'}
+
+--- Deleting template ---
+Template deleted successfully
+
+✓ Goal template CRUD example completed
+perl: warning: Setting locale failed.
+perl: warning: Please check that your locale settings:
+	LC_ALL = "C.UTF-8",
+	LC_CTYPE = "C.UTF-8",
+	LANG = "C.UTF-8"
+    are supported and installed on your system.
+perl: warning: Falling back to the standard locale ("C").
+=== ekoDB Goals / Tasks / Agents Integration Example (Python) ===
+
+--- goal_create ---
+Created goal: Deploy v3 (id: bDL5pHK0PGrg0tSGOgbzgYc4LEyEdawMZEjYIagxXGNxm2lsEEwePDGcjH1GA6mfDguiQxzmCfnV-95Bzk8Neg)
+
+--- goal_list ---
+Goals: {'count': 1, 'goals': [{'created_at': '2026-09-16T13:46:39.430861+00:00', 'description': 'Deploy version 3 to production', 'id': 'bDL5pHK0PGrg0tSGOgbzgYc4LEyEdawMZEjYIagxXGNxm2lsEEwePDGcjH1GA6mfDguiQxzmCfnV-95Bzk8Neg', 'status': 'pending', 'steps': '[{"description":"Build Docker image","status":"pending"},{"description":"Run migrations","status":"pending"},{"description":"Smoke test","status":"pending"}]', 'title': 'Deploy v3', 'updated_at': '2026-09-16T13:46:39.430861+00:00'}]}
+
+--- goal_get ---
+Fetched: {'type': 'String', 'value': 'Deploy v3'}
+
+--- goal_update ---
+Updated description: {'type': 'String', 'value': 'Deploy version 3 to production (updated)'}
+
+--- goal_search ---
+Search results: {'count': 1, 'items': [{'_score': 13.2, 'created_at': {'type': 'DateTime', 'value': '2026-09-16T13:46:39.430861+00:00'}, 'description': {'type': 'String', 'value': 'Deploy version 3 to production (updated)'}, 'id': 'bDL5pHK0PGrg0tSGOgbzgYc4LEyEdawMZEjYIagxXGNxm2lsEEwePDGcjH1GA6mfDguiQxzmCfnV-95Bzk8Neg', 'status': {'type': 'String', 'value': 'pending'}, 'steps': {'type': 'String', 'value': '[{"description":"Build Docker image","status":"pending"},{"description":"Run migrations","status":"pending"},{"description":"Smoke test","status":"pending"}]'}, 'title': {'type': 'String', 'value': 'Deploy v3'}, 'updated_at': {'type': 'DateTime', 'value': '2026-09-16T13:46:39.451770+00:00'}}]}
+
+--- goal_step_start (step 0) ---
+Step 0 started: {'created_at': {'type': 'DateTime', 'value': '2026-09-16T13:46:39.430861+00:00'}, 'description': {'type': 'String', 'value': 'Deploy version 3 to production (updated)'}, 'id': 'bDL5pHK0PGrg0tSGOgbzgYc4LEyEdawMZEjYIagxXGNxm2lsEEwePDGcjH1GA6mfDguiQxzmCfnV-95Bzk8Neg', 'status': {'type': 'String', 'value': 'in_progress'}, 'steps': {'type': 'String', 'value': '[{"description":"Build Docker image","status":"InProgress"},{"description":"Run migrations","status":"pending"},{"description":"Smoke test","status":"pending"}]'}, 'title': {'type': 'String', 'value': 'Deploy v3'}, 'updated_at': {'type': 'DateTime', 'value': '2026-09-16T13:46:39.462377+00:00'}}
+
+--- goal_step_complete (step 0) ---
+Step 0 completed: {'created_at': {'type': 'DateTime', 'value': '2026-09-16T13:46:39.430861+00:00'}, 'description': {'type': 'String', 'value': 'Deploy version 3 to production (updated)'}, 'id': 'bDL5pHK0PGrg0tSGOgbzgYc4LEyEdawMZEjYIagxXGNxm2lsEEwePDGcjH1GA6mfDguiQxzmCfnV-95Bzk8Neg', 'status': {'type': 'String', 'value': 'in_progress'}, 'steps': {'type': 'String', 'value': '[{"description":"Build Docker image","result":"Docker image built: sha256:abc123","status":"Completed"},{"description":"Run migrations","status":"pending"},{"description":"Smoke test","status":"pending"}]'}, 'title': {'type': 'String', 'value': 'Deploy v3'}, 'updated_at': {'type': 'DateTime', 'value': '2026-09-16T13:46:39.468647+00:00'}}
+
+--- goal_step_fail (step 1) ---
+Step 1 failed: {'created_at': {'type': 'DateTime', 'value': '2026-09-16T13:46:39.430861+00:00'}, 'description': {'type': 'String', 'value': 'Deploy version 3 to production (updated)'}, 'id': 'bDL5pHK0PGrg0tSGOgbzgYc4LEyEdawMZEjYIagxXGNxm2lsEEwePDGcjH1GA6mfDguiQxzmCfnV-95Bzk8Neg', 'status': {'type': 'String', 'value': 'in_progress'}, 'steps': {'type': 'String', 'value': '[{"description":"Build Docker image","result":"Docker image built: sha256:abc123","status":"Completed"},{"description":"Run migrations","error":"Migration failed: column already exists","status":"Failed"},{"description":"Smoke test","status":"pending"}]'}, 'title': {'type': 'String', 'value': 'Deploy v3'}, 'updated_at': {'type': 'DateTime', 'value': '2026-09-16T13:46:39.475090+00:00'}}
+
+--- goal_complete ---
+Goal completed: {'type': 'String', 'value': 'pending_review'}
+
+--- goal_approve ---
+Goal approved: {'type': 'String', 'value': 'in_progress'}
+
+--- goal_reject ---
+Goal rejected: {'type': 'String', 'value': 'failed'}
+
+--- task_create ---
+Created task: Nightly Backup (id: STMTtV3OhmZfvVi1jECkojYI8Poh8Y0RKDuGLpjKsOX7ga0WiwMGYmSnk0Ybz7pQ7XNoaBUxUQtldeLQKndG1w)
+
+--- task_list ---
+Tasks: {'count': 1, 'items': [{'cron': {'type': 'String', 'value': '0 2 * * *'}, 'description': {'type': 'String', 'value': 'Backup all databases nightly'}, 'id': 'STMTtV3OhmZfvVi1jECkojYI8Poh8Y0RKDuGLpjKsOX7ga0WiwMGYmSnk0Ybz7pQ7XNoaBUxUQtldeLQKndG1w', 'max_consecutive_failures': {'type': 'Integer', 'value': 3}, 'name': {'type': 'String', 'value': 'Nightly Backup'}}]}
+
+--- task_get ---
+Fetched: {'type': 'String', 'value': 'Nightly Backup'}
+
+--- task_start ---
+Task started: {'type': 'String', 'value': 'running'}
+
+--- task_succeed ---
+Task succeeded: {'consecutive_failures': {'type': 'Integer', 'value': 0}, 'cron': {'type': 'String', 'value': '0 2 * * *'}, 'description': {'type': 'String', 'value': 'Backup all databases nightly'}, 'id': 'STMTtV3OhmZfvVi1jECkojYI8Poh8Y0RKDuGLpjKsOX7ga0WiwMGYmSnk0Ybz7pQ7XNoaBUxUQtldeLQKndG1w', 'last_error': {'type': 'Null', 'value': None}, 'last_run': {'type': 'DateTime', 'value': '2026-09-16T13:46:39.546563+00:00'}, 'max_consecutive_failures': {'type': 'Integer', 'value': 3}, 'name': {'type': 'String', 'value': 'Nightly Backup'}, 'run_count': {'type': 'Integer', 'value': 1}, 'status': {'type': 'String', 'value': 'active'}, 'updated_at': {'type': 'DateTime', 'value': '2026-09-16T13:46:39.546563+00:00'}}
+
+--- task_pause ---
+Task paused: {'type': 'String', 'value': 'paused'}
+
+--- task_resume ---
+Task resumed: {'type': 'String', 'value': 'active'}
+
+--- task_fail ---
+Task failed: {'consecutive_failures': {'type': 'Integer', 'value': 1}, 'cron': {'type': 'String', 'value': '0 2 * * *'}, 'description': {'type': 'String', 'value': 'Backup all databases nightly'}, 'id': 'STMTtV3OhmZfvVi1jECkojYI8Poh8Y0RKDuGLpjKsOX7ga0WiwMGYmSnk0Ybz7pQ7XNoaBUxUQtldeLQKndG1w', 'last_error': {'type': 'String', 'value': 'Disk full'}, 'last_run': {'type': 'DateTime', 'value': '2026-09-16T13:46:39.580430+00:00'}, 'max_consecutive_failures': {'type': 'Integer', 'value': 3}, 'name': {'type': 'String', 'value': 'Nightly Backup'}, 'next_run': {'type': 'DateTime', 'value': '2026-03-22T02:00:00+00:00'}, 'run_count': {'type': 'Integer', 'value': 1}, 'status': {'type': 'String', 'value': 'active'}, 'updated_at': {'type': 'DateTime', 'value': '2026-09-16T13:46:39.580430+00:00'}}
+
+--- task_due ---
+Due tasks: {'count': 0, 'items': []}
+
+--- task_delete ---
+Task deleted
+
+--- agent_create ---
+Created agent: CodeReviewer (id: XIDwOsl1zc59N9RYvoqX_7GkCvQ2Fs7LqAmJHrTh7MmEeXtB4E94coLPiTS9mJ57mBiviiyxAzEpehW_L8PYIA)
+
+--- agent_list ---
+Agents: {'count': 1, 'items': [{'deployment_id': {'type': 'String', 'value': 'deploy_test'}, 'id': 'XIDwOsl1zc59N9RYvoqX_7GkCvQ2Fs7LqAmJHrTh7MmEeXtB4E94coLPiTS9mJ57mBiviiyxAzEpehW_L8PYIA', 'llm_model': {'type': 'String', 'value': 'gpt-4o'}, 'name': {'type': 'String', 'value': 'CodeReviewer'}, 'system_prompt': {'type': 'String', 'value': 'You review code for correctness and style.'}, 'tools': {'type': 'Array', 'value': ['web_search', 'file_read']}}]}
+
+--- agent_get ---
+Fetched: {'type': 'String', 'value': 'CodeReviewer'}
+
+--- agent_get_by_name ---
+By name: {'type': 'String', 'value': 'CodeReviewer'}
+
+--- agent_update ---
+Updated agent prompt: {'type': 'String', 'value': 'You review code. Be concise.'}
+
+--- agents_by_deployment ---
+Agents in deploy_test: {'count': 0, 'items': []}
+WARNING: agents_by_deployment omitted created agent XIDwOsl1zc59N9RYvoqX_7GkCvQ2Fs7LqAmJHrTh7MmEeXtB4E94coLPiTS9mJ57mBiviiyxAzEpehW_L8PYIA; TODO: check/fix the server-side deployment lookup
+
+--- agent_delete ---
+Agent deleted
+
+--- cleanup ---
+Goals cleaned up
+
+=== All goals/tasks/agents operations completed successfully ===
+perl: warning: Setting locale failed.
+perl: warning: Please check that your locale settings:
+	LC_ALL = "C.UTF-8",
+	LC_CTYPE = "C.UTF-8",
+	LANG = "C.UTF-8"
+    are supported and installed on your system.
+perl: warning: Falling back to the standard locale ("C").
 === Join Operations Examples ===
 
 Setting up sample data...
@@ -928,361 +1722,525 @@ Found 2 users with example.com emails:
 ✅ Deleted test collections
 
 ✅ Join operations examples completed!
+perl: warning: Setting locale failed.
+perl: warning: Please check that your locale settings:
+	LC_ALL = "C.UTF-8",
+	LC_CTYPE = "C.UTF-8",
+	LANG = "C.UTF-8"
+    are supported and installed on your system.
+perl: warning: Falling back to the standard locale ("C").
+✓ Client created
+✓ py_users_register saved
+✓ py_users_login saved
+✓ py_users_verify_token saved
+
+=== Auth flow defined as pure stored functions ===
+Call them like:
+  POST /api/functions/py_users_register { "email": "a@b.com", "password": "s3cret" }
+  POST /api/functions/py_users_login    { "email": "a@b.com", "password": "s3cret" }
+  POST /api/functions/py_users_verify_token { "token": "<jwt>" }
+
+✓ Cleaned up demo functions
+perl: warning: Setting locale failed.
+perl: warning: Please check that your locale settings:
+	LC_ALL = "C.UTF-8",
+	LC_CTYPE = "C.UTF-8",
+	LANG = "C.UTF-8"
+    are supported and installed on your system.
+perl: warning: Falling back to the standard locale ("C").
+=== ekoDB KV Links Example (Python) ===
+
+--- kv_set ---
+Set KV key: app:config
+
+--- insert document ---
+Inserted document: U4z5TpCZJQfXc3du_-UM0WXrbXOUya1mezFtSPlfIN5tJx3hrTcRKHMeyENao2L_hgkjuwN9LXJzKbECH2Xwig
+
+--- kv_link ---
+Linked: None
+
+--- kv_get_links ---
+Links for app:config: [{'collection': 'kv_links_example_py', 'created_at': '2026-09-16T13:46:40.281713Z', 'document_id': 'U4z5TpCZJQfXc3du_-UM0WXrbXOUya1mezFtSPlfIN5tJx3hrTcRKHMeyENao2L_hgkjuwN9LXJzKbECH2Xwig', 'field_path': None, 'last_accessed': '2026-09-16T13:46:40.282939Z', 'metadata': {}}]
+
+--- kv_unlink ---
+Unlinked: None
+
+--- kv_get_links (verify empty) ---
+Links after unlink: []
+
+--- cleanup ---
+Cleaned up KV key and collection
+
+=== KV links example completed ===
+perl: warning: Setting locale failed.
+perl: warning: Please check that your locale settings:
+	LC_ALL = "C.UTF-8",
+	LC_CTYPE = "C.UTF-8",
+	LANG = "C.UTF-8"
+    are supported and installed on your system.
+perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
-=== Insert Document with TTL (1 hour) ===
-✓ Inserted document: IhIyxXzg8h0v-2lDMxyW9LKyybpO0CnW9Jg8ll0XkVZ32mKfQkMjm_qWumr__jglVRrKqafRpJGH7-BChcJdgQ
+=== KV Set ===
+✓ Set key: session:user123
 
-=== Insert Document with TTL (5 minutes) ===
-✓ Inserted document: X0-6UWcWwTRAX2GNzyLOwRxloOQsMxa-rsHCMDIUFkLFtIpCen1Xd_K7RJwzpfaEjTMe4oUMP2zDnkbuKJLuvQ
+=== KV Get ===
+Retrieved value: {'value': '{"type":"Object","value":{"userId":123,"username":"john_doe"}}'}
 
-=== Query Documents ===
-✓ Found 2 documents with TTL
+=== KV Batch Set ===
+✓ Batch set 3 keys
+  kv_operations:py:cache:product:1: success
+  kv_operations:py:cache:product:2: success
+  kv_operations:py:cache:product:3: success
+
+=== KV Batch Get ===
+✓ Batch retrieved 3 values
+  kv_operations:py:cache:product:1: {'name': 'Product 1', 'price': 29.99}
+  kv_operations:py:cache:product:2: {'name': 'Product 2', 'price': 39.99}
+  kv_operations:py:cache:product:3: {'price': 49.99, 'name': 'Product 3'}
+
+=== KV Exists ===
+Key exists: True
+
+=== KV Find (Pattern Query) ===
+Found 3 keys matching 'cache:product:.*'
+
+=== KV Query (Alias for Find) ===
+Total keys in store: 4
+
+=== KV Delete ===
+✓ Deleted key: session:user123
+✓ Verified: Key exists after delete: False
+
+=== KV Batch Delete ===
+✓ Batch deleted 3 keys
+  kv_operations:py:cache:product:1: deleted
+  kv_operations:py:cache:product:2: deleted
+  kv_operations:py:cache:product:3: deleted
+
+✓ All KV operations completed successfully
+perl: warning: Setting locale failed.
+perl: warning: Please check that your locale settings:
+	LC_ALL = "C.UTF-8",
+	LC_CTYPE = "C.UTF-8",
+	LANG = "C.UTF-8"
+    are supported and installed on your system.
+perl: warning: Falling back to the standard locale ("C").
+=== KV Precision: Float vs Decimal ===
+
+=== Test 1: Using Python Floats (LOSES PRECISION) ===
+✓ Stored products with float prices
+
+Retrieved float prices:
+  Widget A: $29.99 (expected $29.99) ✓
+  Widget B: $39.99 (expected $39.99) ✓
+  Widget C: $49.99 (expected $49.99) ✓
+
+=== Test 2: Using field_decimal() (PRESERVES PRECISION) ===
+✓ Stored products with decimal prices
+
+Retrieved decimal prices:
+  Widget A: $29.99 (expected $29.99) ✓
+  Widget B: $39.99 (expected $39.99) ✓
+  Widget C: $49.99 (expected $49.99) ✓
+
+=== Test 3: Sum Calculation Comparison ===
+  Float sum: $119.97 (expected $119.97)
+  Decimal sum: $119.97 (expected $119.97)
+
+=== Test 4: Extreme Precision Example ===
+  Float 0.1 + 0.2 = 0.30000000000000004 (should be 0.3)
+  Decimal "0.30" = 0.30 (exact!)
+
+=== Cleanup ===
+✓ Cleaned up test keys
+
+=== Summary ===
+✅ Use field_decimal() for monetary values, percentages, and
+   any case where floating-point errors are unacceptable.
+✅ field_decimal() stores values as strings internally,
+   preserving exact precision across all operations.
+perl: warning: Setting locale failed.
+perl: warning: Please check that your locale settings:
+	LC_ALL = "C.UTF-8",
+	LC_CTYPE = "C.UTF-8",
+	LANG = "C.UTF-8"
+    are supported and installed on your system.
+perl: warning: Falling back to the standard locale ("C").
+✓ Client created
+✓ py_route_admin saved
+✓ py_route_user_by_id saved
+✓ py_route_user_posts saved
+✓ py_route_org_create_member saved
+
+Try them with curl:
+  curl http://localhost:8080/api/route/users/admin
+  curl http://localhost:8080/api/route/users/42
+  curl http://localhost:8080/api/route/users/42/posts/7
+  curl -X POST http://localhost:8080/api/route/orgs/acme/members \
+       -H 'Content-Type: application/json' -d '{"name":"alice"}'
+
+✓ Cleaned up demo functions
+perl: warning: Setting locale failed.
+perl: warning: Please check that your locale settings:
+	LC_ALL = "C.UTF-8",
+	LC_CTYPE = "C.UTF-8",
+	LANG = "C.UTF-8"
+    are supported and installed on your system.
+perl: warning: Falling back to the standard locale ("C").
+=== Query Builder Examples ===
+
+Setting up test data...
+✅ Test data created
+
+1. Simple equality query:
+Found 2 active users
+
+2. Range query with sorting:
+Found 3 users aged 18-65
+
+3. String operations:
+Found 2 users with @example.com emails
+
+4. IN operator:
+Found 2 privileged users
+
+5. Complex query with multiple conditions:
+Found 1 active US users over 21
+
+6. Pagination:
+Page 1: 2 users
+
+7. NOT IN operator:
+Found 2 valid users
+
+8. Using bypass flags:
+Found 2 users (bypassed cache)
+
+=== Cleanup ===
+✅ Deleted test collection
+
+✅ Query Builder examples completed!
+perl: warning: Setting locale failed.
+perl: warning: Please check that your locale settings:
+	LC_ALL = "C.UTF-8",
+	LC_CTYPE = "C.UTF-8",
+	LANG = "C.UTF-8"
+    are supported and installed on your system.
+perl: warning: Falling back to the standard locale ("C").
+=== ekoDB Raw Completion Stream (SSE) Example ===
+
+--- Basic SSE Raw Completion ---
+Response: The three primary colors are red, blue, and yellow.
+
+--- Structured Output via SSE ---
+JSON response: [
+  {
+    "name": "Earth",
+    "diameter_km": 12742
+  },
+  {
+    "name": "Mars",
+    "diameter_km": 6779
+  },
+  {
+    "name": "Jupiter",
+    "diameter_km": 139820
+  }
+]
+
+--- Blocking HTTP (for comparison) ---
+Blocking response: Hello! I hope you're having a wonderful day.
+
+=== Done ===
+perl: warning: Setting locale failed.
+perl: warning: Please check that your locale settings:
+	LC_ALL = "C.UTF-8",
+	LC_CTYPE = "C.UTF-8",
+	LANG = "C.UTF-8"
+    are supported and installed on your system.
+perl: warning: Falling back to the standard locale ("C").
+=== ekoDB Schedule Management Example (Python) ===
+
+--- create_schedule ---
+Created schedule: Nightly Report (id: cf536bf3-55eb-48f8-9fcd-eb9f3e5ee824)
+
+--- list_schedules ---
+Schedules: {'count': 1, 'schedules': [{'created_at': '2026-09-16T13:46:43.864278Z', 'cron_expression': '0 0 0 * * *', 'description': 'Generate and email nightly analytics report', 'enabled': True, 'function_label': 'schedule_noop_python_15331', 'id': 'cf536bf3-55eb-48f8-9fcd-eb9f3e5ee824', 'last_execution': None, 'name': 'Nightly Report', 'next_execution': '2026-09-17T00:00:00Z', 'parameters': {}, 'stats': {'avg_execution_time_ms': 0.0, 'failed_executions': 0, 'last_error': None, 'successful_executions': 0, 'total_executions': 0}, 'timezone': 'UTC', 'updated_at': '2026-09-16T13:46:43.864278Z'}]}
+
+--- get_schedule ---
+Fetched: Nightly Report cron=0 0 0 * * *
+
+--- update_schedule ---
+Updated cron: 0 30 1 * * *
+
+--- trigger_schedule ---
+Triggered: {'schedule_id': 'cf536bf3-55eb-48f8-9fcd-eb9f3e5ee824', 'status': 'triggered'}
+
+--- pause_schedule ---
+Paused: enabled=False
+
+--- resume_schedule ---
+Resumed: enabled=True
+Schedule deleted successfully
+
+=== Schedule management example completed ===
+perl: warning: Setting locale failed.
+perl: warning: Please check that your locale settings:
+	LC_ALL = "C.UTF-8",
+	LC_CTYPE = "C.UTF-8",
+	LANG = "C.UTF-8"
+    are supported and installed on your system.
+perl: warning: Falling back to the standard locale ("C").
+=== Schema Management Examples ===
+
+1. Creating user schema with basic fields:
+✅ User schema created
+
+2. Creating product schema with text index:
+✅ Product schema with indexes created
+
+3. Creating document schema with vector index:
+✅ Document schema with vector index created
+
+4. Retrieving collection schema:
+Schema fields: ['age', 'email', 'name', 'status']
+Schema version: 1
+
+5. Retrieving collection metadata:
+Collection has 4 fields
+
+6. Creating employee schema with all constraint types:
+✅ Employee schema with all constraints created
+
+✅ Schema management examples completed!
+perl: warning: Setting locale failed.
+perl: warning: Please check that your locale settings:
+	LC_ALL = "C.UTF-8",
+	LC_CTYPE = "C.UTF-8",
+	LANG = "C.UTF-8"
+    are supported and installed on your system.
+perl: warning: Falling back to the standard locale ("C").
+=== Search Examples ===
+
+Setting up test data...
+✅ Test data created
+
+1. Basic full-text search:
+Found 2 results
+  1. Score: 12.870, Matched: email, name
+  2. Score: 6.270, Matched: name
+
+2. Fuzzy search (typo tolerance):
+Found 4 results with fuzzy matching
+  1. Score: 13.200, Matched: bio, title
+  2. Score: 13.200, Matched: title, bio
+  3. Score: 13.200, Matched: title, bio
+  4. Score: 13.200, Matched: title, bio
+
+3. Search with field weights:
+Found 4 results with weighted fields
+  1. Score: 26.400, Matched: title, bio
+  2. Score: 26.400, Matched: bio, title
+  3. Score: 26.400, Matched: title, bio
+  4. Score: 26.400, Matched: bio, title
+
+4. Search with minimum score threshold:
+Found 2 results with score >= 0.3
+  1. Score: 6.600, Matched: bio
+  2. Score: 6.600, Matched: bio
+
+5. Search with stemming and exact match boosting:
+Found 2 results (matches: run, running, runs)
+  1. Score: 6.600, Matched: bio
+  2. Score: 6.600, Matched: bio
+
+6. Vector search (semantic search):
+Found 3 semantically similar documents
+  1. Score: 0.767
+  2. Score: 0.762
+  3. Score: 0.739
+
+7. Hybrid search (text + vector):
+Found 3 results using hybrid search (text + vector)
+  1. Score: 1.381, Matched: title, content
+  2. Score: 0.884, Matched: title, content
+  3. Score: 0.370, Matched:
+
+8. Case-sensitive search:
+Found 1 results (case-sensitive)
+  1. Score: 6.600, Matched: title
+
+9. Vector search with a metadata pre-filter (category = ml):
+Found 2 documents in category "ml" (NLP excluded)
+  1. Deep Learning Fundamentals (category: ml)
+  2. Introduction to Machine Learning (category: ml)
+
+=== Cleanup ===
+✅ Deleted test collections
+
+✅ Search examples completed!
+perl: warning: Setting locale failed.
+perl: warning: Please check that your locale settings:
+	LC_ALL = "C.UTF-8",
+	LC_CTYPE = "C.UTF-8",
+	LANG = "C.UTF-8"
+    are supported and installed on your system.
+perl: warning: Falling back to the standard locale ("C").
+✓ Client created (token exchange happens automatically)
+
+=== Insert Document ===
+Inserted: {'id': 'N-jyqJKt4chumKeEwGLoDr_Mt1BzZ3w98K7EC8gbnD7fQMu9DWBrtly37pGLR-l8474E1rE_4Ij6midLbfqj6A'}
+
+=== Find by ID ===
+Found: {'tags': {'value': ['tag1', 'tag2', 'tag3'], 'type': 'Array'}, 'name': {'type': 'String', 'value': 'Test Record'}, 'data': {'value': 'aGVsbG8gd29ybGQ=', 'type': 'String'}, 'categories': {'type': 'Array', 'value': ['electronics', 'computers']}, 'user_id': {'type': 'String', 'value': '550e8400-e29b-41d4-a716-446655440000'}, 'embedding': {'value': [0.1, 0.2, 0.3, 0.4, 0.5], 'type': 'Array'}, 'created_at': {'type': 'String', 'value': '2026-09-16T09:46:44.552501'}, 'metadata': {'type': 'Object', 'value': {'nested': {'deep': True}, 'key': 'value'}}, 'price': {'type': 'Float', 'value': 99.99}, 'value': {'value': 42, 'type': 'Integer'}, 'id': 'N-jyqJKt4chumKeEwGLoDr_Mt1BzZ3w98K7EC8gbnD7fQMu9DWBrtly37pGLR-l8474E1rE_4Ij6midLbfqj6A', 'active': {'value': True, 'type': 'Boolean'}}
+
+=== Extract Field Values (All Types) ===
+Extracted values:
+  name (String): Test Record
+  value (Integer): 42
+  active (Boolean): True
+  price (Decimal): 99.99
+  created_at (DateTime): 2026-09-16 09:46:44.552501
+  user_id (UUID): 550e8400-e29b-41d4-a716-446655440000
+  tags (Array): ['tag1', 'tag2', 'tag3']
+  metadata (Object): {'nested': {'deep': True}, 'key': 'value'}
+  embedding (Vector): [0.1, 0.2, 0.3, 0.4, 0.5]
+  categories (Set): ['electronics', 'computers']
+  data (Bytes): 11 bytes
+Plain record: {'tags': ['tag1', 'tag2', 'tag3'], 'name': 'Test Record', 'data': 'aGVsbG8gd29ybGQ=', 'categories': ['electronics', 'computers'], 'user_id': '550e8400-e29b-41d4-a716-446655440000', 'embedding': [0.1, 0.2, 0.3, 0.4, 0.5], 'created_at': '2026-09-16T09:46:44.552501', 'metadata': {'nested': {'deep': True}, 'key': 'value'}, 'price': 99.99, 'value': 42, 'id': 'N-jyqJKt4chumKeEwGLoDr_Mt1BzZ3w98K7EC8gbnD7fQMu9DWBrtly37pGLR-l8474E1rE_4Ij6midLbfqj6A', 'active': True}
+
+=== Find with Query ===
+Found documents: 1
 
 === Update Document ===
-✓ Updated document
+Updated: {'embedding': {'value': [0.1, 0.2, 0.3, 0.4, 0.5], 'type': 'Array'}, 'user_id': {'value': '550e8400-e29b-41d4-a716-446655440000', 'type': 'String'}, 'created_at': {'type': 'String', 'value': '2026-09-16T09:46:44.552501'}, 'tags': {'type': 'Array', 'value': ['tag1', 'tag2', 'tag3']}, 'metadata': {'value': {'key': 'value', 'nested': {'deep': True}}, 'type': 'Object'}, 'categories': {'value': ['electronics', 'computers'], 'type': 'Array'}, 'name': {'value': 'Updated Record', 'type': 'String'}, 'id': 'N-jyqJKt4chumKeEwGLoDr_Mt1BzZ3w98K7EC8gbnD7fQMu9DWBrtly37pGLR-l8474E1rE_4Ij6midLbfqj6A', 'value': {'type': 'Integer', 'value': 100}, 'price': {'type': 'Float', 'value': 99.99}, 'data': {'type': 'String', 'value': 'aGVsbG8gd29ybGQ='}, 'active': {'type': 'Boolean', 'value': True}}
 
 === Delete Document ===
-✓ Deleted document
+Deleted document
 
 === Cleanup ===
 ✓ Deleted collection
 
-✓ All document TTL operations completed successfully
-
-💡 Note: Documents with TTL will automatically expire after the specified duration
+✓ All CRUD operations completed successfully
+perl: warning: Setting locale failed.
+perl: warning: Please check that your locale settings:
+	LC_ALL = "C.UTF-8",
+	LC_CTYPE = "C.UTF-8",
+	LANG = "C.UTF-8"
+    are supported and installed on your system.
+perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
-=== Insert Test Data with TTL ===
-✓ Inserted document with TTL: I52ollVSHC7QKSNotyzSJdi7rZclamQASY9cQ2QhAOouqEKRKbOAfNjKny21H_rDOC8ZODPiwTJdR4LPMviQ5A
+=== Inserting Test Data ===
+✓ Inserted test record: d60DCX9GnxIKQsDpagOUzX2xmIKZtyU89-K6jIyshEpRUocVoMj1xBKKVYKM3c-v21kOSTSV7VpsAFvJDTEBpA
 
-=== Query via WebSocket ===
+=== Connecting to WebSocket ===
 ✓ WebSocket connected
+
+=== Querying Data via WebSocket ===
 ✓ Retrieved 1 record(s) via WebSocket
-  Record 1: 5 fields
+  Record 1: 4 fields
 
 === Cleanup ===
 ✓ Deleted collection
 
-✓ WebSocket TTL example completed successfully
-
-💡 Note: Documents with TTL will automatically expire after the specified duration
-=== ekoDB as Edge Cache - Simple Example ===
-
-Creating edge cache function...
-✓ Edge cache script created: SabLIGLiEs9jEZhgP33XWXfHibOVcf260UhOo0gsTlpv2pV1XXZBnQM_COSVfoqjk4hOtcU2Yj1_fDfAgSn1NA
-
-Call 1: Cache miss (fetches from API)
-Response time: 463ms
-Result: {
-  "records": [
-    {
-      "value": {
-        "type": "Object",
-        "value": {
-          "current": {
-            "interval": 900,
-            "temperature_2m": 26.4,
-            "time": "2026-09-07T21:45"
-          },
-          "current_units": {
-            "interval": "seconds",
-            "temperature_2m": "\u00b0C",
-            "time": "iso8601"
-          },
-          "elevation": 32.0,
-          "generationtime_ms": 0.020742416381835938,
-          "latitude": 40.710335,
-          "longitude": -73.99308,
-          "timezone": "GMT",
-          "timezone_abbreviation": "GMT",
-          "utc_offset_seconds": 0
-        }
-      }
-    }
-  ],
-  "stats": {
-    "execution_time_ms": 0,
-    "input_count": 0,
-    "output_count": 1,
-    "stage_stats": [],
-    "stages_executed": 2
-  }
-}
-
-Call 2: Cache hit (served from ekoDB)
-Response time: 14ms (34.2x faster!)
-Result: {
-  "records": [
-    {
-      "value": {
-        "type": "Object",
-        "value": {
-          "current": {
-            "interval": 900,
-            "temperature_2m": 26.4,
-            "time": "2026-09-07T21:45"
-          },
-          "current_units": {
-            "interval": "seconds",
-            "temperature_2m": "\u00b0C",
-            "time": "iso8601"
-          },
-          "elevation": 32.0,
-          "generationtime_ms": 0.020742416381835938,
-          "latitude": 40.710335,
-          "longitude": -73.99308,
-          "timezone": "GMT",
-          "timezone_abbreviation": "GMT",
-          "utc_offset_seconds": 0
-        }
-      }
-    }
-  ],
-  "stats": {
-    "execution_time_ms": 0,
-    "input_count": 0,
-    "output_count": 1,
-    "stage_stats": [],
-    "stages_executed": 2
-  }
-}
-
-=== The Magic ===
-- Your DATABASE is your EDGE
-- No Redis needed
-- No CDN needed
-- No cache invalidation logic needed (TTL handles it)
-- With ripples: All nodes auto-sync cache
-- One service: Database + Cache + Edge Functions
-
-✓ Example complete!
-
-🚀 ekoDB Functions Example (Python)
-
-📋 Setting up test data...
-✅ Test data ready
-
-📝 Example 1: Simple Query Function
-
-ℹ️  Function 'get_active_users' already existed — updated instead
-✅ Function saved: get_active_users
-📊 Found 10 active users
-
-📝 Example 2: Parameterized Function
-
-ℹ️  Function 'get_users_by_status' already existed — updated instead
-✅ Function saved: get_users_by_status
-📊 Found 10 users (limited)
-
-📝 Example 3: Aggregation Function
-
-✅ Function saved: Bej__DMx1TsPCHeDWAqjwQrK4yO280cLF349X8Qe6QWmaH11P6KCmowRlDCfcUUiBo_WGA9A62jgkrwu4W5O2Q
-📊 Statistics: 2 groups
-   {'avg_score': {'type': 'Float', 'value': 60.0}, 'count': {'type': 'Integer', 'value': 5}, 'status': {'type': 'String', 'value': 'active'}}
-
-   {'avg_score': {'type': 'Float', 'value': 50.0}, 'count': {'type': 'Integer', 'value': 5}, 'status': {'type': 'String', 'value': 'inactive'}}
-
-📝 Example 4: Function Management
-
-📋 Total functions: 14
-🔍 Retrieved function: Get Active Users
-✏️  Function updated
-🗑️  Function deleted
-
-ℹ️  Note: GET/UPDATE/DELETE use IDs. Only CALL supports labels.
-
-✅ All examples completed!
-=== ekoDB Function Composition Examples ===
-
-📋 Setting up test data...
-
-✅ Test data ready
-
-📝 Example 1: Basic Function Composition
-
-Building reusable functions that call each other...
-
-ℹ️  Function 'fetch_user' already existed — updated instead
-✅ Saved reusable function: fetch_user
-ℹ️  Function 'get_user_wrapper' already existed — updated instead
-✅ Saved composed function: get_user_wrapper (calls fetch_user + projects fields)
-
-📊 Result from composed function:
-   Records: 1
-   Name: {"type": "String", "value": "User 1"}
-   Department: {"type": "String", "value": "engineering"}
-
-🎯 Key Benefit: fetch_user can be reused by ANY function!
-   No code duplication, single source of truth
-
-📝 Example 2: SWR Pattern with Function Composition
-
-Using KV cache + CallFunction for fast cache-aside pattern...
-
-ℹ️  Function 'fetch_and_store_user' already existed — updated instead
-✅ Saved reusable function: fetch_and_store_user (uses KV)
-ℹ️  Function 'swr_user' already existed — updated instead
-✅ Saved SWR function using composition: swr_user
-
-First call (cache miss - will fetch from API):
-   ⏱️  Duration: 87.5ms
-   📊 Records: 1
-   📦 Data: {
-      "value": {
-            "type": "Object",
-            "value": {
-                  "address": {
-                        "city": "Gwenborough",
-                        "geo": {
-                 ...
-
-Second call (cache hit - from cache):
-   ⏱️  Duration: 2.5ms
-   📊 Records: 1
-   📦 Data: {
-      "value": {
-            "type": "Object",
-            "value": {
-                  "address": {
-                        "city": "Gwenborough",
-                        "geo": {
-                 ...
-   🚀 Cache speedup: 35.3x faster!
-
-📝 Example 3: Multi-Level Function Composition
-
-Building complex workflows from small, reusable pieces...
-
-ℹ️  Function 'validate_user' already existed — updated instead
-✅ Level 1 function: validate_user
-ℹ️  Function 'fetch_slim_user' already existed — updated instead
-✅ Level 2 function: fetch_slim_user (calls validate_user)
-ℹ️  Function 'get_verified_user' already existed — updated instead
-✅ Level 3 function: get_verified_user (calls fetch_slim_user)
-
-📊 Result from 3-level nested composition:
-   Records: 1
-   Name: User 1
-   Department: engineering
-
-🎯 Key Benefit: Each function is independently testable and reusable!
-   - validate_user: Used in 100 different workflows
-   - fetch_slim_user: Used in 50 workflows
-   - get_verified_user: Specific workflow
-
-
-✅ All composition examples completed!
-🚀 ekoDB Python Complete Functions Example
-
-📋 Demonstrates: FindAll, Group, Count, Multi-stage Pipelines
-
-📋 Setting up complete test data...
-✅ Created 5 products
-
-📝 Example 1: FindAll + Group (Simple Aggregation)
-
-✅ Function saved: j-FfwMe1hD5AEe8kef_rXOrbbxR7M3AT5sl3U2ebQYeLegwzCnQxXdCb1Ifr-X6AlLioQndyUiDyRC56_hPXOA
-📊 Found 2 product groups
-   {'avg_price': {'type': 'Float', 'value': 474.0}, 'category': {'type': 'String', 'value': 'Furniture'}, 'count': {'type': 'Integer', 'value': 2}}
-   {'avg_price': {'type': 'Float', 'value': 575.6666666666666}, 'category': {'type': 'String', 'value': 'Electronics'}, 'count': {'type': 'Integer', 'value': 3}}
-⏱️  Execution time: 0ms
-
-📝 Example 2: Simple Product Listing
-
-✅ Function saved
-📊 Found 5 products
-⏱️  Execution time: 0ms
-
-📝 Example 3: Count by Category
-
-✅ Function saved
-📊 Found 2 categories
-   {'category': {'type': 'String', 'value': 'Furniture'}, 'count': {'type': 'Integer', 'value': 2}}
-   {'category': {'type': 'String', 'value': 'Electronics'}, 'count': {'type': 'Integer', 'value': 3}}
-⏱️  Execution time: 0ms
-
-📝 Example 4: High Rating Products
-
-✅ Function saved
-📊 Found 5 products
-⏱️  Execution time: 0ms
-
-📝 Example 5: function with Parameter Definition
-
-✅ Function saved
-📊 Found 5 products
-⏱️  Execution time: 0ms
-
-📝 Example 6: Multi-Stage Pipeline (FindAll → Group → Count)
-
-✅ Function saved
-📊 Pipeline executed 3 stages
-⏱️  Total execution time: 0ms
-
-🧹 Cleaning up...
-✅ Cleanup complete
-
-✅ All complete script examples finished!
-
-💡 This example demonstrates ekoDB's function system:
-   ✅ FindAll operations
-   ✅ Group aggregations (Count, Average)
-   ✅ Multi-stage pipelines (FindAll → Group → Count)
-   ✅ Parameter definitions
-   ✅ Function management (save, call, delete)
-🚀 ekoDB Python KV Store & Wrapped Types Example
+✓ WebSocket example completed successfully
+perl: warning: Setting locale failed.
+perl: warning: Please check that your locale settings:
+	LC_ALL = "C.UTF-8",
+	LC_CTYPE = "C.UTF-8",
+	LANG = "C.UTF-8"
+    are supported and installed on your system.
+perl: warning: Falling back to the standard locale ("C").
+🚀 ekoDB Python Client - Native SWR Function Examples
 
 📋 Demonstrates:
-   • Wrapped type field builders (UUID, Decimal, DateTime, etc.)
-   • KV store operations (get, set, delete, exists, query)
-   • Combined wrapped types + KV workflows
+   • Single-function SWR pattern (replaces 4-step pipeline)
+   • Automatic cache checking, HTTP fetching, and cache setting
+   • Built-in audit trail support
+   • Duration string TTLs ('15m', '1h', '30s')
+   • Multi-function pipeline integration
+   • Dynamic TTL configuration
 
-📝 Example 1: Inserting Records with Wrapped Types
-
-✅ Inserted order: zHL8H7SIXdHrqfKsHUkMUTVkOsRpogO3ba7f10hXBGERNXKXDafEtzbiHPdx6xLsxQ69UehQeBC_q1oCVtb5_A
-✅ Inserted 2 products with wrapped types
-
-📝 Example 2: Querying and Extracting Wrapped Types
-
-📊 Found 2 products
-   • Wireless Mouse
-   • Laptop Pro
-
-📝 Example 3: Basic KV Store Operations
-
-✅ Set session data
-📊 Retrieved session: {'value': '{"type":"Object","value":{"role":"admin","userId":"user_abc"}}'}
-🔍 Key exists: True
-✅ Set cached data with 1 hour TTL
-🗑️  Deleted session
-
-📝 Example 4: KV Pattern Query
-
-✅ Set 4 config entries
-📊 Found 3 app config entries
-📊 Found 4 total config entries
-
-📝 Example 5: Combined Wrapped Types + KV Usage
-
-✅ Inserted order: 5jLe2y4E2tQzz6qBGahbdXfd7Tf_3jje44r473TF58gyZ82W9NSUBvIWalDeT5MvuUyRaEFH3rN1K4pmh9zkiA
-✅ Cached order status
-📊 Quick status lookup: {'value': '{"type":"Object","value":{"status":"processing","updated_at":"2026-09-07T21:45:54.527404+00:00"}}'}
 
 🧹 Cleaning up...
-✅ Cleanup complete
+✓ Deleted 0 test scripts and owned SWR resources
 
-✅ All KV & Wrapped Types examples completed!
+Example 1: Basic Native SWR
+────────────────────────────────────────────────────────────────────────────────
+Single function replaces KvGet → If → HttpRequest → KvSet pipeline
+✓ Created native SWR script: github_user_native_py (xxZRSrRhnZaSTLnQLruEdF-V8vOpgMgyn1PIEGKNjV86T6ht_OICPgXbtae5MSo1XfNeJQkUzeaV0PrWbT09-w)
 
-💡 Key takeaways:
-   ✅ Use field_* helpers for type-safe wrapped values
-   ✅ field_decimal() preserves precision (no floating point errors)
-   ✅ KV store is great for caching and quick lookups
-   ✅ Combine KV caching with collection inserts for real workflows
+First call (cache miss - will fetch from GitHub API):
+  Response time: 160ms
+  Records returned: 1
+
+Second call (cache hit - instant from KV store):
+  Response time: 4ms
+  Speedup: 38.9x faster 🚀
+  Records returned: 1
+
+
+Example 2: SWR with Built-in Audit Trail
+────────────────────────────────────────────────────────────────────────────────
+Optional collection parameter for automatic request logging
+✓ Created SWR script with audit trail: product_swr_audit_py (BbAIc7ghYyGfeNUFbYU5NIDFyHSQwe-LvKn5MKfTpPm6fl6FhpjykrRq1tybVbbDw_geCee3myS11qfGpkr_eg)
+
+Fetching product (will create audit trail entry):
+  ✓ Product fetched and cached
+  ✓ Audit record created in 'swr_audit_trail_py' collection
+  Records: 1
+
+
+Example 3: SWR in Multi-Function Pipeline
+────────────────────────────────────────────────────────────────────────────────
+Fetch external data → Process → Store in collection
+✓ Created enrichment pipeline: user_enrichment_pipeline_py (XHbikHblkYdNoShLSTDacMgtjXxgoxnSmKTjL0FAB7Ebb13KjeK3Q3AUVuRxdkWHjn0HDNnaGbcBUCeFdXX-wQ)
+
+Running pipeline:
+  ✓ Data fetched from API (cached 30m)
+  ✓ Enriched data stored in 'enriched_users_swr_py' (TTL 24h)
+  Pipeline returned 1 records
+
+
+Example 4: Dynamic TTL Configuration
+────────────────────────────────────────────────────────────────────────────────
+TTL as parameter - supports duration strings, integers, ISO timestamps
+✓ Created dynamic TTL script: flexible_cache_py (Zq_uMGdi__HW7v131_fyoYI4PXaKs9RpAhjNZQsCNdSwpCLn9Mh9cr1hJYTp4uyCmgJrKMPQ-WsraWM6LlinuA)
+  ✓ Cached with TTL: 5m (5 minutes)
+  ✓ Cached with TTL: 1h (1 hour)
+  ✓ Cached with TTL: 30s (30 seconds)
+
+================================================================================
+✅ Key Benefits of Native SWR:
+✅ Single function: Replaces 4-function cache-aside pattern
+✅ Duration strings: Use '15m', '1h', '2h' instead of calculating seconds
+✅ Built-in audit: Optional collection parameter for automatic logging
+✅ Auto-enrichment: output_field populates params for downstream functions
+✅ Transactional: Works correctly in both transactional and non-transactional contexts
+✅ KV-optimized: Uses native KV store with proper TTL handling
+
+=== Performance Comparison ===
+Legacy Pattern: KvGet → If → HttpRequest → KvSet → Insert (5 functions)
+Native SWR:     SWR → Insert (2 functions)
+Result:         60% fewer functions, cleaner code, same behavior 🎯
+
+🧹 Cleaning up...
+✓ Deleted 4 test scripts and owned SWR resources
+
+✅ All examples completed!
+perl: warning: Setting locale failed.
+perl: warning: Please check that your locale settings:
+	LC_ALL = "C.UTF-8",
+	LC_CTYPE = "C.UTF-8",
+	LANG = "C.UTF-8"
+    are supported and installed on your system.
+perl: warning: Falling back to the standard locale ("C").
 === ekoDB SWR (Stale-While-Revalidate) Pattern ===
 
 Step 1: Create SWR function that acts as edge cache
-✓ Created SWR script: fetch_api_user_py (fxUFE9JIn1JbZJs0ic8LgAEi0yDJKckws4qwSUVUfvVC9zmFZRFYq6MTtUhF2mAJ2mt4AMFWtJKeRVZDsG7h5g)
+✓ Created SWR script: fetch_api_user_py (4xgBQBp-RoILrO5Ipdr09WufQuaQbTVoJmelROSED7wAtpL783yPsSUQiEzkduVVmlH0yFoSfjQ5IAE5nupzJA)
 
 Step 2: First call - Cache miss, fetches from API
 Result: {
@@ -1327,7 +2285,7 @@ Result: {
 ✓ Data fetched from external API and cached
 
 Step 3: Second call - Cache hit, instant response from ekoDB
-Response time: 2ms (served from cache)
+Response time: 6ms (served from cache)
 Result: {
   "records": [
     {
@@ -1376,510 +2334,68 @@ Result: {
 ✅ Cache miss → Fetch from API → Store in ekoDB
 ✅ Cache hit → Instant response from ekoDB
 ✅ TTL handles automatic cache invalidation
-🚀 ekoDB Python Client - Native SWR Function Examples
-
-📋 Demonstrates:
-   • Single-function SWR pattern (replaces 4-step pipeline)
-   • Automatic cache checking, HTTP fetching, and cache setting
-   • Built-in audit trail support
-   • Duration string TTLs ('15m', '1h', '30s')
-   • Multi-function pipeline integration
-   • Dynamic TTL configuration
-
-
-Example 1: Basic Native SWR
-────────────────────────────────────────────────────────────────────────────────
-Single function replaces KvGet → If → HttpRequest → KvSet pipeline
-✓ Created native SWR script: github_user_native (1z1z7w7vKOw2kY3ehSrm5WPK-sdgTEJMu_8Jor8kBMYDuWuYNO-jkDNxhBMZBPkROCIin7rTML77Q2--pXdQoA)
-
-First call (cache miss - will fetch from GitHub API):
-  Response time: 11201ms
-  Records returned: 1
-
-Second call (cache hit - instant from KV store):
-  Response time: 8ms
-  Speedup: 1482.4x faster 🚀
-  Records returned: 1
-
-
-Example 2: SWR with Built-in Audit Trail
-────────────────────────────────────────────────────────────────────────────────
-Optional collection parameter for automatic request logging
-✓ Created SWR script with audit trail: product_swr_audit (xZnkPwtbTr5eJDOXe3c6u36rQ_oJKEDQPOXa_vH9fED2-XXII71CSt_958e3ik5u_QEs6ZyIgGZ-7lUGWyRsbQ)
-
-Fetching product (will create audit trail entry):
-  ✓ Product fetched and cached
-  ✓ Audit record created in 'swr_audit_trail' collection
-  Records: 1
-
-
-Example 3: SWR in Multi-Function Pipeline
-────────────────────────────────────────────────────────────────────────────────
-Fetch external data → Process → Store in collection
-✓ Created enrichment pipeline: user_enrichment_pipeline (GNvfJ_xijkUBMoOlSp2l7sJZ0l0WEmMpZCFUosywpIYEFTZX5gs6MLAGbonvvQ8a9nI3sHxjdfc5CJ5o-WQ2Qg)
-
-Running pipeline:
-  ✓ Data fetched from API (cached 30m)
-  ✓ Enriched data stored in 'enriched_users' (TTL 24h)
-  Pipeline returned 1 records
-
-
-Example 4: Dynamic TTL Configuration
-────────────────────────────────────────────────────────────────────────────────
-TTL as parameter - supports duration strings, integers, ISO timestamps
-✓ Created dynamic TTL script: flexible_cache (SSCjxkh4Rj-0soIhyXJckd6xAvC3subZ95cQQbnyfPwa2LeZ1C7IGQG1ZE05HZLDB9hbtKHyNycxkeOMvfPPNw)
-  ✓ Cached with TTL: 5m (5 minutes)
-  ✓ Cached with TTL: 1h (1 hour)
-  ✓ Cached with TTL: 30s (30 seconds)
-
-================================================================================
-✅ Key Benefits of Native SWR:
-✅ Single function: Replaces 4-function cache-aside pattern
-✅ Duration strings: Use '15m', '1h', '2h' instead of calculating seconds
-✅ Built-in audit: Optional collection parameter for automatic logging
-✅ Auto-enrichment: output_field populates params for downstream functions
-✅ Transactional: Works correctly in both transactional and non-transactional contexts
-✅ KV-optimized: Uses native KV store with proper TTL handling
-
-=== Performance Comparison ===
-Legacy Pattern: KvGet → If → HttpRequest → KvSet → Insert (5 functions)
-Native SWR:     SWR → Insert (2 functions)
-Result:         60% fewer functions, cleaner code, same behavior 🎯
-
-🧹 Cleaning up...
-✓ Deleted 4 test scripts
-
-✅ All examples completed!
-🚀 ekoDB Python Advanced Functions Example
-
-📋 Setting up test data...
-✅ Created 8 products
-
-📝 Example 1: List All Products
-
-✅ Function saved
-📊 Found 8 products
-⏱️  Execution time: 0ms
-
-📝 Example 2: Group Products by Category
-
-✅ Function saved
-📊 Category breakdown:
-   {'avg_price': {'type': 'Float', 'value': 367.0}, 'category': {'type': 'String', 'value': 'Electronics'}, 'count': {'type': 'Integer', 'value': 5}}
-   {'avg_price': {'type': 'Float', 'value': 365.6666666666667}, 'category': {'type': 'String', 'value': 'Furniture'}, 'count': {'type': 'Integer', 'value': 3}}
-⏱️  Execution time: 0ms
-
-📝 Example 3: Count Total Products
-
-✅ Function saved
-📊 Total products: [{'total': {'type': 'Integer', 'value': 8}}]
-⏱️  Execution time: 0ms
-
-🧹 Cleaning up...
-✅ Cleanup complete
-
-✅ All advanced script examples finished!
-🚀 ekoDB Python AI Functions Example
-
-📋 Setting up test data...
-✅ Created 2 articles
-
-📝 Example 1: Simple Chat Completion
-
-✅ Chat script saved
-🤖 AI Response:
-   Vector databases offer several benefits, including:
-
-1. **Efficient Similarity Search**: They enable fast similarity searches using vector representations, making them ideal for applications like recommendation systems and image retrieval.
-
-2. **Handling Unstructured Data**: They efficiently manage and query unstructured data, such as text and images, by converting them into vector embeddings.
-
-3. **Scalability**: Vector databases can scale to handle large datasets and high-dimensional vectors, supporting growing data needs.
-
-4. **Real-time Processing**: Many vector databases are optimized for real-time querying, allowing for quick response times in dynamic environments.
-
-5. **Advanced Machine Learning Integration**: They support machine learning workloads, enabling seamless integration of AI models for tasks like clustering and classification.
-
-6. **Dimensionality Reduction Support**: Vector databases often incorporate techniques for dimensionality reduction, which can improve search efficiency and reduce storage costs.
-
-7. **Multi-modal Data Support**: They can work with different types of data (text, images, audio) by representing them in a unified vector space.
-
-Overall, vector databases enhance performance and capabilities in managing and querying complex data types.
-⏱️  Execution time: 0ms
-
-📝 Example 2: Generate Embeddings
-
-✅ Embed script saved
-📊 Embedding generated
-⏱️  Execution time: 0ms
-
-🧹 Cleaning up...
-✅ Cleanup complete
-
-✅ All AI script examples finished!
-
-💡 This example demonstrates:
-   ✅ Chat completions with system/user messages
-   ✅ Embedding generation for text
-🚀 ekoDB Python CRUD Functions Example
-
-📋 Setting up test data...
-✅ Created 10 test users
-
-📝 Example 1: List All Users
-
-✅ Function saved
-📊 Found 10 users
-⏱️  Execution time: 0ms
-
-📝 Example 2: Count Users by Status
-
-✅ Function saved
-📊 User counts by status:
-   inactive: 3 users
-   active: 7 users
-⏱️  Execution time: 0ms
-
-📝 Example 3: Average Score by Role
-
-✅ Function saved
-📊 Average score by role:
-   {'avg_score': {'type': 'Float', 'value': 70.0}, 'count': {'type': 'Integer', 'value': 7}, 'role': {'type': 'String', 'value': 'user'}}
-   {'avg_score': {'type': 'Float', 'value': 20.0}, 'count': {'type': 'Integer', 'value': 3}, 'role': {'type': 'String', 'value': 'admin'}}
-⏱️  Execution time: 0ms
-
-🧹 Cleaning up...
-✅ Cleanup complete
-
-✅ All CRUD script examples finished!
-🚀 ekoDB Python Search Functions Example
-
-📋 Setting up test data...
-✅ Inserted 5 documents
-
-📝 Example 1: List All Documents
-
-✅ Function saved
-📊 Found 5 documents
-   1. Database Design Principles (Database)
-   2. Natural Language Processing (AI)
-   3. Introduction to Machine Learning (AI)
-   4. Getting Started with ekoDB (Database)
-   5. Vector Databases Explained (Database)
-⏱️  Execution time: 0ms
-
-📝 Example 2: Count Documents by Category
-
-✅ Function saved
-📊 Documents by category:
-   {'category': {'type': 'String', 'value': 'Database'}, 'count': {'type': 'Integer', 'value': 3}}
-   {'category': {'type': 'String', 'value': 'AI'}, 'count': {'type': 'Integer', 'value': 2}}
-⏱️  Execution time: 0ms
-
-🧹 Cleaning up...
-✅ Cleanup complete
-
-✅ All search script examples finished!
-=== ekoDB Chat Basic Example ===
-
-=== Inserting Sample Data ===
-✓ Inserted 3 sample documents
-
-=== Creating Chat Session ===
-✓ Created session: daiZC2QZTBDSnnyM0mBh543J3Ee0r_G5DhBylJLWym6POyg7M3-dT4tow1FkEhyU8qc6hIfOLBx-FI_9u16NIA
-
-=== Sending Chat Message ===
-Message ID: Z1ovPwJ2kPbYsyqjsy1VExkeLPHg0k9Cln16ohUx0lVHw03Ab0K6ddqtKWLfaPdLkw9kh-HIsJJuQ4HllzZsKw
-
-=== AI Response ===
-The available products and their prices are as follows:
-
-1. **ekoDB Pro**
-   - Price: $299
-   - Description: Enterprise edition product with advanced features
-
-2. **ekoDB**
-   - Price: $99
-   - Description: A high-performance database product with AI capabilities
-
-3. **ekoDB Cloud**
-   - Price: $499
-   - Description: Fully managed cloud database service product
-
-Execution Time: 1761ms
-
-=== Token Usage ===
-Prompt tokens: 3413
-Completion tokens: 90
-Total tokens: 3503
-
-=== Cleanup ===
-✓ Deleted collection
-
-✓ Chat completed successfully
-=== ekoDB Advanced Chat Features Example ===
-
-=== Inserting Sample Data ===
-✓ Inserted sample product
-
-=== Creating Chat Session ===
-✓ Created session: F0HuY0ip7tQDKrvJ6MATDEXoovwHKTK1DWMZMCCrguajTcs9RqP-okILyItnUmQ7uVdyDtZzWfdv45vAVcPTfQ
-
-=== Sending Initial Message ===
-✓ Message sent
-  Response: The available product is:
-
-- **Name:** ekoDB
-- **Description:** High-performance database product
-- **Price:** $99
-
-If you need more details or other products, just let me know!
-
-✓ Second message sent
-
-Debug: Found 4 messages
-Debug: First message keys: dict_keys(['content', 'created_at', 'chat_id', 'llm_model', 'id', 'role', 'llm_provider', 'token_usage', 'updated_at', 'context_snippets'])
-Debug: First message role: {'type': 'String', 'value': 'assistant'}
-=== Feature 1: Regenerate AI Response ===
-✓ Message regenerated
-  New response: The price of ekoDB is $99.
-
-=== Feature 2: Edit Message ===
-✓ Message content updated
-
-=== Feature 3: Mark Message as Forgotten ===
-✓ Message marked as forgotten (excluded from LLM context)
-
-✓ Message unmarked as forgotten
-
-=== Feature 4: Merge Chat Sessions ===
-✓ Created second session: MsFgaGHuEMqowhdNh55laOo1tJMk2CoF8bjwtylNl90Ei5BOTrKz0kqajiENJs7al67mxOoZizgXgU1_a19jWg
-✓ Sent message in second session
-✓ Sessions merged successfully
-  Total messages in merged session: 7
-
-=== Feature 5: Delete Message ===
-✓ Message deleted
-
-✓ Messages remaining: 6
-
-=== Cleanup ===
-✓ Deleted session
-✓ Deleted collection
-
-✓ All advanced chat features demonstrated successfully!
-=== ekoDB Chat Session Management Example ===
-
-=== Inserting Sample Data ===
-✓ Inserted sample product
-
-=== Creating Chat Session ===
-✓ Created session: nkBJXWlWv5CQEGIuO_iZt14BLDnyv3qqWNQSWIMEdEG76GnvcBXraqm_M40BZLRGqU3AaCGxIVVZv7wwyClb2g
-
-=== Sending Messages ===
-✓ Message 1 sent
-  Response: The available product is:
-
-- **Name:** ekoDB
-- **Description:** A high-performance database product
-- **Price:** $99
-
-If you need more information or have any other questions, feel free to ask!
-
-✓ Message 2 sent
-  Response: The price of ekoDB is $99.
-
-=== Retrieving Session Messages ===
-✓ Retrieved 4 messages
-
-=== Updating Session ===
-✓ Session updated
-
-=== Branching Session ===
-✓ Created branch: JZyJ6uwvW4GaYyX1ux4VkCPcIR5NTaqX5wMo1jJepkZvZb6DDC2AuyrZ7fSG-wlPDxpVHRjHYAmkw1Jf_HlEVA
-  Parent: nkBJXWlWv5CQEGIuO_iZt14BLDnyv3qqWNQSWIMEdEG76GnvcBXraqm_M40BZLRGqU3AaCGxIVVZv7wwyClb2g
-
-=== Listing Sessions ===
-✓ Found 7 sessions
-  Session 1: JZyJ6uwvW4GaYyX1ux4VkCPcIR5NTaqX5wMo1jJepkZvZb6DDC2AuyrZ7fSG-wlPDxpVHRjHYAmkw1Jf_HlEVA (Untitled)
-  Session 2: nkBJXWlWv5CQEGIuO_iZt14BLDnyv3qqWNQSWIMEdEG76GnvcBXraqm_M40BZLRGqU3AaCGxIVVZv7wwyClb2g (Untitled)
-  Session 3: MsFgaGHuEMqowhdNh55laOo1tJMk2CoF8bjwtylNl90Ei5BOTrKz0kqajiENJs7al67mxOoZizgXgU1_a19jWg (Untitled)
-  Session 4: daiZC2QZTBDSnnyM0mBh543J3Ee0r_G5DhBylJLWym6POyg7M3-dT4tow1FkEhyU8qc6hIfOLBx-FI_9u16NIA (Untitled)
-  Session 5: 1XLUyFhbuCQozWHtbWvx5Jjk1LEyfQxrk2ovJjO7bwll-2gtz50K88C5Zqr1REVwWLTNjHiDTqQmG2I9hmEMLQ (Untitled)
-  Session 6: L1UQzFyFR4ccuvwyDYzO0gicZTwcGTyE2eObq41Pxc0Af_hs8haT87q3nMhpH4rHu1SgAXeMe2rlCNCgMNRpWA (Untitled)
-  Session 7: EpncQpgraSLlTwxuY9OQk1S-6BHw17FPHrGe1hQSC1k3Y-mKu82KFBbgejEmRy0C6de3NyaqW20Z830tZ6GwRA (Untitled)
-
-=== Deleting Branch Session ===
-✓ Deleted branch session: JZyJ6uwvW4GaYyX1ux4VkCPcIR5NTaqX5wMo1jJepkZvZb6DDC2AuyrZ7fSG-wlPDxpVHRjHYAmkw1Jf_HlEVA
-
-=== Cleanup ===
-✓ Deleted collection
-
-✓ All session management operations completed successfully
-=== ekoDB Convenience Methods Example ===
-
-=== Native Dict Creation ===
-✓ Created record with plain dict: {'id': '-Hf0Shv71kf9kwGjhSzD0YYz-MXTAy-uDnErUXXFqBhOwWhMo74NcZqY89OAvZtevNj0neuV1QYUoD7hZEmXtA'}
-
-=== Upsert Operation ===
-✓ Upsert (update existing record): -Hf0Shv71kf9kwGjhSzD0YYz-MXTAy-uDnErUXXFqBhOwWhMo74NcZqY89OAvZtevNj0neuV1QYUoD7hZEmXtA
-✓ Inserted second record: L4pf8IKDJi445rF3t_eGy3U8edgfOnQOR58VEkTkhrYEYwSZuPKaGQbMm8kMb40skKkCv32o5NGujYBfXWqFXA
-✓ Upsert (update second record): L4pf8IKDJi445rF3t_eGy3U8edgfOnQOR58VEkTkhrYEYwSZuPKaGQbMm8kMb40skKkCv32o5NGujYBfXWqFXA
-
-=== Find One Operation ===
-✓ Found user by email: {'email': {'value': 'alice.j@newdomain.com', 'type': 'String'}, 'id': '-Hf0Shv71kf9kwGjhSzD0YYz-MXTAy-uDnErUXXFqBhOwWhMo74NcZqY89OAvZtevNj0neuV1QYUoD7hZEmXtA', 'name': {'type': 'String', 'value': 'Alice Johnson'}, 'age': {'type': 'Integer', 'value': 29}, 'active': {'value': True, 'type': 'Boolean'}}
-✓ User not found (as expected)
-
-=== Exists Check ===
-✓ Record exists: True
-✓ Fake record exists: False (should be False)
-
-=== Pagination ===
-✓ Inserted 25 records for pagination
-✓ Page 1: 10 records (expected 10)
-✓ Page 2: 10 records (expected 10)
-✓ Page 3: 7 records (expected ~7)
-
-=== Cleanup ===
-✓ Deleted collection
-
-✅ All convenience methods demonstrated successfully!
-=== Bypass Ripple Example ===
-
-1. Basic insert (ripple enabled):
-   Inserted with ripple: {'id': 'rz0ZfcMp1ez7DnM4a0le60qXzN4tOw7dQnU909ZGElfgVFHXB10bE21ONzfGqYbEeLvX6u9zfOYLUHiytt8M8g'}
-
-2. Insert with bypass_ripple:
-   Inserted with bypass_ripple: {'id': 'pCXreJ0K1b61UbXxxsYcuZwrwRuQgxjOHw0xEtEd9D4fuu_vAY6r41WJBJVTjp31Y-jfvw_IzaTDTedZkIb4QQ'}
-
-3. Update with bypass_ripple:
-   Updated with bypass_ripple: {'id': 'rz0ZfcMp1ez7DnM4a0le60qXzN4tOw7dQnU909ZGElfgVFHXB10bE21ONzfGqYbEeLvX6u9zfOYLUHiytt8M8g', 'price': {'type': 'Integer', 'value': 150}, 'name': {'type': 'String', 'value': 'Product 1'}}
-
-4. Delete with bypass_ripple:
-   Deleted with bypass_ripple
-
-5. Batch insert with bypass_ripple:
-   Batch inserted with bypass_ripple: 2 records
-
-6. Upsert with bypass_ripple:
-   Upserted with bypass_ripple: {'name': {'type': 'String', 'value': 'Upsert Product'}, 'price': {'value': 500, 'type': 'Integer'}, 'id': 'rz0ZfcMp1ez7DnM4a0le60qXzN4tOw7dQnU909ZGElfgVFHXB10bE21ONzfGqYbEeLvX6u9zfOYLUHiytt8M8g'}
-
-✅ All bypass_ripple operations completed successfully!
-Client created
-
-Setting up test data...
-Inserted 4 test users
-
-Example 1: Select specific fields (id, name, email only)
-  Found 3 active users
-  Fields returned: ['email', 'name', 'id']
-  First user: {'value': 'Alice Johnson', 'type': 'String'} <{'value': 'alice@example.com', 'type': 'String'}>
-
-Example 2: Exclude sensitive fields (password, api_key, secret_token)
-  Found 2 admins
-  Sensitive fields excluded:
-    - password: excluded
-    - api_key: excluded
-    - secret_token: excluded
-  Fields returned: ['user_role', 'age', 'created_at', 'avatar_url', 'id', 'bio', 'email', 'name', 'status']
-
-Example 3: Complex query with projection (active users, ages 18-65)
-  Found 3 active users (ages 18-65)
-    - {'value': 'Dave Brown', 'type': 'String'} (age {'type': 'Integer', 'value': 45})
-    - {'type': 'String', 'value': 'Alice Johnson'} (age {'type': 'Integer', 'value': 30})
-    - {'value': 'Bob Smith', 'type': 'String'} (age {'value': 25, 'type': 'Integer'})
-
-Example 4: Query inactive users with profile fields
-  Found 1 inactive users
-    - {'type': 'String', 'value': 'Carol White'}: {'type': 'String', 'value': 'Manager'}
-
-Example 5: Compare full vs projected data
-  Full query:
-    - 12 fields per record
-    - Fields: ['created_at', 'secret_token', 'age', 'status', 'user_role', 'email', 'bio', 'id', 'name', 'avatar_url', 'password', 'api_key']
-  Projected query:
-    - 3 fields per record
-    - Fields: ['email', 'name', 'id']
-  Bandwidth savings: ~75% fewer fields
-
-Cleaning up test data...
-Cleanup complete
-
-All projection examples completed successfully!
-=== KV Precision: Float vs Decimal ===
-
-=== Test 1: Using Python Floats (LOSES PRECISION) ===
-✓ Stored products with float prices
-
-Retrieved float prices:
-  Widget A: $29.99 (expected $29.99) ✓
-  Widget B: $39.99 (expected $39.99) ✓
-  Widget C: $49.99 (expected $49.99) ✓
-
-=== Test 2: Using field_decimal() (PRESERVES PRECISION) ===
-✓ Stored products with decimal prices
-
-Retrieved decimal prices:
-  Widget A: $29.99 (expected $29.99) ✓
-  Widget B: $39.99 (expected $39.99) ✓
-  Widget C: $49.99 (expected $49.99) ✓
-
-=== Test 3: Sum Calculation Comparison ===
-  Float sum: $119.97 (expected $119.97)
-  Decimal sum: $119.97 (expected $119.97)
-
-=== Test 4: Extreme Precision Example ===
-  Float 0.1 + 0.2 = None (should be 0.3)
-  Decimal "0.30" = None (exact!)
-
-=== Cleanup ===
-✓ Cleaned up test keys
-
-=== Summary ===
-✅ Use field_decimal() for monetary values, percentages, and
-   any case where floating-point errors are unacceptable.
-✅ field_decimal() stores values as strings internally,
-   preserving exact precision across all operations.
+perl: warning: Setting locale failed.
+perl: warning: Please check that your locale settings:
+	LC_ALL = "C.UTF-8",
+	LC_CTYPE = "C.UTF-8",
+	LANG = "C.UTF-8"
+    are supported and installed on your system.
+perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
-=== Get All Chat Models ===
-OpenAI models: ['text-embedding-ada-002', 'whisper-1', 'gpt-3.5-turbo', 'tts-1', 'gpt-3.5-turbo-16k', 'gpt-4-0613', 'gpt-4', 'davinci-002', 'babbage-002', 'gpt-3.5-turbo-instruct', 'gpt-3.5-turbo-instruct-0914', 'gpt-3.5-turbo-1106', 'tts-1-hd', 'tts-1-1106', 'tts-1-hd-1106', 'text-embedding-3-small', 'text-embedding-3-large', 'gpt-3.5-turbo-0125', 'gpt-4-turbo', 'gpt-4-turbo-2024-04-09', 'gpt-4o', 'gpt-4o-2024-05-13', 'gpt-4o-mini-2024-07-18', 'gpt-4o-mini', 'gpt-4o-2024-08-06', 'omni-moderation-latest', 'omni-moderation-2024-09-26', 'o1-2024-12-17', 'o1', 'o3-mini', 'o3-mini-2025-01-31', 'gpt-4o-2024-11-20', 'gpt-4o-mini-search-preview-2025-03-11', 'gpt-4o-mini-search-preview', 'gpt-4o-transcribe', 'gpt-4o-mini-transcribe', 'o1-pro-2025-03-19', 'o1-pro', 'gpt-4o-mini-tts', 'o3-2025-04-16', 'o4-mini-2025-04-16', 'o3', 'o4-mini', 'gpt-4.1-2025-04-14', 'gpt-4.1', 'gpt-4.1-mini-2025-04-14', 'gpt-4.1-mini', 'gpt-4.1-nano-2025-04-14', 'gpt-4.1-nano', 'gpt-image-1', 'o4-mini-deep-research', 'gpt-4o-transcribe-diarize', 'o4-mini-deep-research-2025-06-26', 'gpt-5-chat-latest', 'gpt-5-2025-08-07', 'gpt-5', 'gpt-5-mini-2025-08-07', 'gpt-5-mini', 'gpt-5-nano-2025-08-07', 'gpt-5-nano', 'gpt-audio-2025-08-28', 'gpt-realtime', 'gpt-realtime-2025-08-28', 'gpt-audio', 'gpt-5-codex', 'gpt-image-1-mini', 'gpt-5-pro-2025-10-06', 'gpt-5-pro', 'gpt-audio-mini', 'gpt-audio-mini-2025-10-06', 'gpt-5-search-api', 'gpt-realtime-mini', 'sora-2', 'sora-2-pro', 'gpt-5-search-api-2025-10-14', 'gpt-5.1-chat-latest', 'gpt-5.1-2025-11-13', 'gpt-5.1', 'gpt-5.1-codex', 'gpt-5.1-codex-mini', 'gpt-5.1-codex-max', 'gpt-image-1.5', 'gpt-5.2-2025-12-11', 'gpt-5.2', 'gpt-5.2-pro-2025-12-11', 'gpt-5.2-pro', 'gpt-5.2-chat-latest', 'gpt-4o-mini-transcribe-2025-12-15', 'gpt-4o-mini-transcribe-2025-03-20', 'gpt-4o-mini-tts-2025-03-20', 'gpt-4o-mini-tts-2025-12-15', 'gpt-realtime-mini-2025-12-15', 'gpt-audio-mini-2025-12-15', 'chatgpt-image-latest', 'gpt-5.2-codex', 'gpt-5.3-codex', 'gpt-realtime-1.5', 'gpt-audio-1.5', 'gpt-4o-search-preview', 'gpt-4o-search-preview-2025-03-11', 'gpt-5.3-chat-latest', 'gpt-5.4-2026-03-05', 'gpt-5.4-pro', 'gpt-5.4-pro-2026-03-05', 'gpt-5.4', 'gpt-5.4-nano-2026-03-17', 'gpt-5.4-nano', 'gpt-5.4-mini-2026-03-17', 'gpt-5.4-mini', 'gpt-image-2', 'gpt-image-2-2026-04-21', 'gpt-5.5', 'gpt-5.5-2026-04-23', 'gpt-5.5-pro', 'gpt-5.5-pro-2026-04-23', 'chat-latest', 'gpt-realtime-translate', 'gpt-realtime-2', 'gpt-realtime-whisper', 'gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna', 'gpt-realtime-2.1', 'gpt-realtime-2.1-mini', 'gpt-transcribe', 'gpt-live-transcribe', 'gpt-6-astra']
-Anthropic models: ['claude-fable-5-1', 'claude-opus-5', 'claude-sonnet-5', 'claude-fable-5', 'claude-opus-4-8', 'claude-opus-4-7', 'claude-sonnet-4-6', 'claude-opus-4-6', 'claude-opus-4-5-20251101', 'claude-haiku-4-5-20251001', 'claude-sonnet-4-5-20250929']
-Perplexity models: []
-Gemini models: []
+=== Setup: Creating Test Accounts ===
+Created Alice: $1000 - ID: qzE2Ohr-Pn04Lm5t2PLqd1TaF06MQf_SSrUY94v1hf1p2qK0T4JSBa9wxUJhZjgqgtzIl12HL8FxHaOp0KO5Ww
+Created Bob: $500 - ID: a2-ixUxm5rJsDPFl8jimqo7DSN5Oc-yBvKr1GNTZ1W2Cfo1t01goYIOJd3AuPaH4dI400ADV0KAWnnXov2OJNg
 
-=== Get OpenAI Models ===
-OpenAI models: ['text-embedding-ada-002', 'whisper-1', 'gpt-3.5-turbo', 'tts-1', 'gpt-3.5-turbo-16k', 'gpt-4-0613', 'gpt-4', 'davinci-002', 'babbage-002', 'gpt-3.5-turbo-instruct', 'gpt-3.5-turbo-instruct-0914', 'gpt-3.5-turbo-1106', 'tts-1-hd', 'tts-1-1106', 'tts-1-hd-1106', 'text-embedding-3-small', 'text-embedding-3-large', 'gpt-3.5-turbo-0125', 'gpt-4-turbo', 'gpt-4-turbo-2024-04-09', 'gpt-4o', 'gpt-4o-2024-05-13', 'gpt-4o-mini-2024-07-18', 'gpt-4o-mini', 'gpt-4o-2024-08-06', 'omni-moderation-latest', 'omni-moderation-2024-09-26', 'o1-2024-12-17', 'o1', 'o3-mini', 'o3-mini-2025-01-31', 'gpt-4o-2024-11-20', 'gpt-4o-mini-search-preview-2025-03-11', 'gpt-4o-mini-search-preview', 'gpt-4o-transcribe', 'gpt-4o-mini-transcribe', 'o1-pro-2025-03-19', 'o1-pro', 'gpt-4o-mini-tts', 'o3-2025-04-16', 'o4-mini-2025-04-16', 'o3', 'o4-mini', 'gpt-4.1-2025-04-14', 'gpt-4.1', 'gpt-4.1-mini-2025-04-14', 'gpt-4.1-mini', 'gpt-4.1-nano-2025-04-14', 'gpt-4.1-nano', 'gpt-image-1', 'o4-mini-deep-research', 'gpt-4o-transcribe-diarize', 'o4-mini-deep-research-2025-06-26', 'gpt-5-chat-latest', 'gpt-5-2025-08-07', 'gpt-5', 'gpt-5-mini-2025-08-07', 'gpt-5-mini', 'gpt-5-nano-2025-08-07', 'gpt-5-nano', 'gpt-audio-2025-08-28', 'gpt-realtime', 'gpt-realtime-2025-08-28', 'gpt-audio', 'gpt-5-codex', 'gpt-image-1-mini', 'gpt-5-pro-2025-10-06', 'gpt-5-pro', 'gpt-audio-mini', 'gpt-audio-mini-2025-10-06', 'gpt-5-search-api', 'gpt-realtime-mini', 'sora-2', 'sora-2-pro', 'gpt-5-search-api-2025-10-14', 'gpt-5.1-chat-latest', 'gpt-5.1-2025-11-13', 'gpt-5.1', 'gpt-5.1-codex', 'gpt-5.1-codex-mini', 'gpt-5.1-codex-max', 'gpt-image-1.5', 'gpt-5.2-2025-12-11', 'gpt-5.2', 'gpt-5.2-pro-2025-12-11', 'gpt-5.2-pro', 'gpt-5.2-chat-latest', 'gpt-4o-mini-transcribe-2025-12-15', 'gpt-4o-mini-transcribe-2025-03-20', 'gpt-4o-mini-tts-2025-03-20', 'gpt-4o-mini-tts-2025-12-15', 'gpt-realtime-mini-2025-12-15', 'gpt-audio-mini-2025-12-15', 'chatgpt-image-latest', 'gpt-5.2-codex', 'gpt-5.3-codex', 'gpt-realtime-1.5', 'gpt-audio-1.5', 'gpt-4o-search-preview', 'gpt-4o-search-preview-2025-03-11', 'gpt-5.3-chat-latest', 'gpt-5.4-2026-03-05', 'gpt-5.4-pro', 'gpt-5.4-pro-2026-03-05', 'gpt-5.4', 'gpt-5.4-nano-2026-03-17', 'gpt-5.4-nano', 'gpt-5.4-mini-2026-03-17', 'gpt-5.4-mini', 'gpt-image-2', 'gpt-image-2-2026-04-21', 'gpt-5.5', 'gpt-5.5-2026-04-23', 'gpt-5.5-pro', 'gpt-5.5-pro-2026-04-23', 'chat-latest', 'gpt-realtime-translate', 'gpt-realtime-2', 'gpt-realtime-whisper', 'gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna', 'gpt-realtime-2.1', 'gpt-realtime-2.1-mini', 'gpt-transcribe', 'gpt-live-transcribe', 'gpt-6-astra']
+=== Example 1: Begin Transaction ===
+Transaction ID (server-default isolation): 255cf96b-c6cf-4b94-b8bc-2b2541f1f723
 
-=== Get Anthropic Models ===
-Anthropic models: ['claude-fable-5-1', 'claude-opus-5', 'claude-sonnet-5', 'claude-fable-5', 'claude-opus-4-8', 'claude-opus-4-7', 'claude-sonnet-4-6', 'claude-opus-4-6', 'claude-opus-4-5-20251101', 'claude-haiku-4-5-20251001', 'claude-sonnet-4-5-20250929']
+=== Example 2: Operations within Transaction ===
+Alice in transaction: {'id': 'qzE2Ohr-Pn04Lm5t2PLqd1TaF06MQf_SSrUY94v1hf1p2qK0T4JSBa9wxUJhZjgqgtzIl12HL8FxHaOp0KO5Ww', 'name': {'type': 'String', 'value': 'Alice'}, 'balance': {'value': 800, 'type': 'Integer'}, 'account_id': {'type': 'String', 'value': 'ACC001'}}
+Bob in transaction: {'id': 'a2-ixUxm5rJsDPFl8jimqo7DSN5Oc-yBvKr1GNTZ1W2Cfo1t01goYIOJd3AuPaH4dI400ADV0KAWnnXov2OJNg', 'balance': {'type': 'Integer', 'value': 700}, 'name': {'type': 'String', 'value': 'Bob'}, 'account_id': {'value': 'ACC002', 'type': 'String'}}
+Updated Alice: $1000 → $800
+Updated Bob: $500 → $700
 
-✓ Chat Models API example complete
+=== Example 3: Transaction Status ===
+Status: Active
+Operations: 2
+
+=== Example 4: Commit Transaction ===
+✓ Transaction committed
+
+✓ Verified committed balances: Alice=$800, Bob=$700
+
+=== Example 5: Rollback Demo ===
+New transaction: 38cbd076-acca-4a4e-9140-90fd8c3c7b49
+Updated Bob: $700 → $600 (in transaction)
+Status before rollback: Active
+✓ Transaction rolled back
+
+✓ Verified Bob remains $700 after rollback
+
+=== Cleanup ===
+✓ Deleted test account collection
+
+✓ All client transaction examples completed
+perl: warning: Setting locale failed.
+perl: warning: Please check that your locale settings:
+	LC_ALL = "C.UTF-8",
+	LC_CTYPE = "C.UTF-8",
+	LANG = "C.UTF-8"
+    are supported and installed on your system.
+perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
 === Create User Function ===
-Created user function with ID: re4FI3SolAfgZ3bliXAqK-R8mc-t2oJ7FsJN1kpz2iIeCrdH5P0R8tc90RDx0_5buUDH1A_dRTaO-6hyjjTbdA
+Created user function with ID: cikQHqX29yz_g8VdcDYS8SZs3o8EhOOxEmzCyC7yIRKdfVcdHpmVoajnngCj3gUDievScrqsrp3Fq32ZJAdXYA
 
 === Get User Function ===
 Retrieved: get_active_users_py - Get Active Users
 Description: Fetches all users and filters by active status
 
 === List All User Functions ===
-Found 14 user functions:
-  - get_active_users_updated: Get Active Users (Updated)
-  - validate_user: Check if user exists
-  - get_users_by_status: Get Users By Status
-  - fetch_and_store_user: Fetch user from API and cache in KV
-  - fetch_slim_user: Validate and slim down user
-  - cache_api_call_py: Cache External API Call
-  - fetch_user: Fetch user by code
-  - get_user_wrapper: Wrapper that calls fetch_user
-  - get_high_scoring_active_users: Get High Scoring Active Users
-  - get_verified_user: Get verified and validated user
+Found 1 user functions:
   - get_active_users_py: Get Active Users
-  - swr_user: SWR pattern for user data (KV-based)
-  - get_active_users_updated: Get Active Users (Updated)
-  - get_active_users_paginated: Get Active Users (Paginated)
 
 === Update User Function ===
 User function updated successfully
@@ -1888,79 +2404,161 @@ User function updated successfully
 User function deleted successfully
 
 ✓ User Functions API example complete
-✓ Client created
+perl: warning: Setting locale failed.
+perl: warning: Please check that your locale settings:
+	LC_ALL = "C.UTF-8",
+	LC_CTYPE = "C.UTF-8",
+	LANG = "C.UTF-8"
+    are supported and installed on your system.
+perl: warning: Falling back to the standard locale ("C").
+=== WebSocket Chat Streaming Example (Python) ===
 
-=== Check Collection Exists (Before Creation) ===
-Collection 'collection_utils_test_py' exists: False
+Created chat session: 8X7E13QPW5EJp8uVTxi94mr0Whg69J-rK-gEXlsvfga6DNhMNarxtcG4t1DlPUR8ynq-PO4xqfzvts9WN85UrA
 
-=== Creating Test Documents ===
-Created 5 test documents
+Sending message: 'What is the capital of France?'
+{"__progress":"received"}{"__progress":"generating","model":"gpt-4o-mini","provider":"openai"}The capital of France is Paris.
 
-=== Check Collection Exists (After Creation) ===
-Collection 'collection_utils_test_py' exists: True
+--- Stream ended ---
+Message ID: tosx-JmwfYh2ujqkvdKMxTo9TDgcnYODkw708jvG1CXe0fOqg5TbJXmYmRESh0OvaNgI_OYvoccXHCZi_z4vyA
+Execution time: 870ms
+Token usage: {'completion_tokens': 8, 'prompt_tokens': 15, 'total_tokens': 23}
 
-=== Count Documents ===
-Document count in 'collection_utils_test_py': 5
+Full response: {"__progress":"received"}{"__progress":"generating","model":"gpt-4o-mini","provider":"openai"}The capital of France is Paris....
+perl: warning: Setting locale failed.
+perl: warning: Please check that your locale settings:
+	LC_ALL = "C.UTF-8",
+	LC_CTYPE = "C.UTF-8",
+	LANG = "C.UTF-8"
+    are supported and installed on your system.
+perl: warning: Falling back to the standard locale ("C").
+=== WebSocket Subscription Example (Python) ===
 
-=== Check Non-Existent Collection ===
-Collection 'nonexistent_collection_xyz' exists: False
+✓ Authentication successful
+✓ WebSocket connected
+
+=== Subscribing to 'ws_subscribe_example_py' ===
+✓ Subscribed (subscription_id: sub_f2670ef209344356a9e118212bb4ef18)
+
+=== Performing mutations to trigger notifications ===
+Inserting record 1...
+✓ Inserted: JWGtopGtQlVlfAwgxYqbMrD7d-mspY4Jf-lAINnj6MujzSb__AkyjCq9wn9X7h4H-QUHOXAMDSDNQrdCiXcYlg
+
+  📡 Notification received:
+     Event:      insert
+     Collection: ws_subscribe_example_py
+     Record IDs: JWGtopGtQlVlfAwgxYqbMrD7d-mspY4Jf-lAINnj6MujzSb__AkyjCq9wn9X7h4H-QUHOXAMDSDNQrdCiXcYlg
+     Timestamp:  2026-09-16T13:46:47.501309+00:00
+
+Inserting record 2...
+✓ Inserted: Q2IixamaWeZb8UZTF3wllCBzQHEXUelak2R0Ok35JmVxhQvsUveUAbyslsTwfsozjaSSDBiuBTKjgAh4kLZnuw
+
+  📡 Notification received:
+     Event:      insert
+     Record IDs: Q2IixamaWeZb8UZTF3wllCBzQHEXUelak2R0Ok35JmVxhQvsUveUAbyslsTwfsozjaSSDBiuBTKjgAh4kLZnuw
+
+=== Unsubscribing ===
+✓ Unsubscribed: {'collection': 'ws_subscribe_example_py', 'found': True, 'unsubscribed': True}
 
 === Cleanup ===
-Deleted collection 'collection_utils_test_py'
+✓ Deleted collection 'ws_subscribe_example_py'
 
-✓ Collection Utilities example complete
+✓ WebSocket subscription example completed successfully
+perl: warning: Setting locale failed.
+perl: warning: Please check that your locale settings:
+	LC_ALL = "C.UTF-8",
+	LC_CTYPE = "C.UTF-8",
+	LANG = "C.UTF-8"
+    are supported and installed on your system.
+perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
-✓ py_users_register saved
-✓ py_users_login saved
-✓ py_users_verify_token saved
 
-=== Auth flow defined as pure stored functions ===
-Call them like:
-  POST /api/functions/py_users_register { "email": "a@b.com", "password": "s3cret" }
-  POST /api/functions/py_users_login    { "email": "a@b.com", "password": "s3cret" }
-  POST /api/functions/py_users_verify_token { "token": "<jwt>" }
+=== Insert Test Data with TTL ===
+✓ Inserted document with TTL: 09XHycUGX8_ITYQH0fmkijqqoXnPs_jtI6ULyUdu5XvHF1uvQSrLc_q0bSFAC8id4PLD75UwwqSAr0Dnf2Tc-Q
 
-✓ Cleaned up demo functions
-✓ Client created
-✓ crypto_demo_hmac saved
-✓ crypto_demo_aes saved
-✓ crypto_demo_uuid saved
-✓ crypto_demo_totp saved
-✓ crypto_demo_encoding saved
+=== Query via WebSocket ===
+✓ WebSocket connected
+✓ Retrieved 1 record(s) via WebSocket
+  Record 1: 5 fields
 
-Invoke them with:
-  POST /api/functions/crypto_demo_hmac     { "payload": "hi" }
-  POST /api/functions/crypto_demo_aes      { "plaintext": "secret" }
-  POST /api/functions/crypto_demo_uuid
-  POST /api/functions/crypto_demo_totp
-  POST /api/functions/crypto_demo_encoding { "title": "Héllo World" }
+=== Cleanup ===
+✓ Deleted collection
 
-✓ Cleaned up demo functions
-✓ Client created
-✓ conc_demo_pay saved
-✓ conc_demo_rl_fail saved
-✓ conc_demo_rl_skip saved
-✓ conc_demo_lock saved
+✓ WebSocket TTL example completed successfully
 
-Invoke them like:
-  POST /api/functions/conc_demo_pay        { "idempotency_key": "...", "amount": 100 }
-  POST /api/functions/conc_demo_rl_fail    { "user_id": 42 }
-  POST /api/functions/conc_demo_rl_skip    { "user_id": 42 }
-  POST /api/functions/conc_demo_lock       { "resource": "queue:drain" }
+💡 Note: Documents with TTL will automatically expire after the specified duration
+perl: warning: Setting locale failed.
+perl: warning: Please check that your locale settings:
+	LC_ALL = "C.UTF-8",
+	LC_CTYPE = "C.UTF-8",
+	LANG = "C.UTF-8"
+    are supported and installed on your system.
+perl: warning: Falling back to the standard locale ("C").
+=== Bypass Ripple Example ===
 
-✓ Cleaned up demo functions
-✓ Client created
-✓ py_route_admin saved
-✓ py_route_user_by_id saved
-✓ py_route_user_posts saved
-✓ py_route_org_create_member saved
+1. Basic insert (ripple enabled):
+   Inserted with ripple: {'id': 'SzVyw2VOoq18eU2wQBBXOlNN8JbFY3EPnUsEw7oi0mznOWDr7MTNl2K9k9R2F6IvqIqHfTc3a3n6DuSOB268XQ'}
 
-Try them with curl:
-  curl http://localhost:8080/api/route/users/admin
-  curl http://localhost:8080/api/route/users/42
-  curl http://localhost:8080/api/route/users/42/posts/7
-  curl -X POST http://localhost:8080/api/route/orgs/acme/members \
-       -H 'Content-Type: application/json' -d '{"name":"alice"}'
+2. Insert with bypass_ripple:
+   Inserted with bypass_ripple: {'id': 'z4fZDtrI9ZHsdgRuWjXeuv4zW5PeJDVLnlyc1VVV_z6bbcQBiEThc6DWF9PpYCYN3hHBbUqKa3IHBCsDDqSTFA'}
 
-✓ Cleaned up demo functions
-✅ [32mPython client examples complete![0m
+3. Update with bypass_ripple:
+   Updated with bypass_ripple: {'name': {'value': 'Product 1', 'type': 'String'}, 'price': {'value': 150, 'type': 'Integer'}, 'id': 'SzVyw2VOoq18eU2wQBBXOlNN8JbFY3EPnUsEw7oi0mznOWDr7MTNl2K9k9R2F6IvqIqHfTc3a3n6DuSOB268XQ'}
+
+4. Delete with bypass_ripple:
+   Deleted with bypass_ripple
+
+5. Batch insert with bypass_ripple:
+   Batch inserted with bypass_ripple: 2 records
+
+6. Upsert with bypass_ripple:
+   Upserted with bypass_ripple: {'price': {'type': 'Integer', 'value': 500}, 'id': 'SzVyw2VOoq18eU2wQBBXOlNN8JbFY3EPnUsEw7oi0mznOWDr7MTNl2K9k9R2F6IvqIqHfTc3a3n6DuSOB268XQ', 'name': {'type': 'String', 'value': 'Upsert Product'}}
+
+✅ All bypass_ripple operations completed successfully!
+perl: warning: Setting locale failed.
+perl: warning: Please check that your locale settings:
+	LC_ALL = "C.UTF-8",
+	LC_CTYPE = "C.UTF-8",
+	LANG = "C.UTF-8"
+    are supported and installed on your system.
+perl: warning: Falling back to the standard locale ("C").
+Client created
+
+Setting up test data...
+Inserted 4 test users
+
+Example 1: Select specific fields (id, name, email only)
+  Found 3 active users
+  Fields returned: ['id', 'email', 'name']
+  First user: {'type': 'String', 'value': 'Dave Brown'} <{'value': 'dave@example.com', 'type': 'String'}>
+
+Example 2: Exclude sensitive fields (password, api_key, secret_token)
+  Found 2 admins
+  Sensitive fields excluded:
+    - password: excluded
+    - api_key: excluded
+    - secret_token: excluded
+  Fields returned: ['user_role', 'bio', 'created_at', 'name', 'avatar_url', 'email', 'id', 'status', 'age']
+
+Example 3: Complex query with projection (active users, ages 18-65)
+  Found 3 active users (ages 18-65)
+    - {'value': 'Dave Brown', 'type': 'String'} (age {'type': 'Integer', 'value': 45})
+    - {'type': 'String', 'value': 'Alice Johnson'} (age {'type': 'Integer', 'value': 30})
+    - {'type': 'String', 'value': 'Bob Smith'} (age {'value': 25, 'type': 'Integer'})
+
+Example 4: Query inactive users with profile fields
+  Found 1 inactive users
+    - {'value': 'Carol White', 'type': 'String'}: {'value': 'Manager', 'type': 'String'}
+
+Example 5: Compare full vs projected data
+  Full query:
+    - 12 fields per record
+    - Fields: ['id', 'status', 'avatar_url', 'api_key', 'password', 'email', 'bio', 'name', 'age', 'user_role', 'secret_token', 'created_at']
+  Projected query:
+    - 3 fields per record
+    - Fields: ['name', 'email', 'id']
+  Bandwidth savings: ~75% fewer fields
+
+Cleaning up test data...
+Cleanup complete
+
+All projection examples completed successfully!

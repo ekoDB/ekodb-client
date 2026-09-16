@@ -9,12 +9,18 @@ import json
 import os
 import time
 from pathlib import Path
+
 from dotenv import load_dotenv
+
 from ekodb_client import Client
 
 # Load environment variables
 env_path = Path(__file__).parent.parent / ".env"
 load_dotenv(env_path)
+GITHUB_COLLECTION = "github_cache_swr_py"
+PRODUCT_COLLECTION = "product_cache_swr_py"
+GITHUB_FUNCTION = "fetch_github_user_swr_py"
+PRODUCT_FUNCTION = "fetch_product_enriched_swr_py"
 
 
 def _is_already_exists_error(err):
@@ -38,32 +44,21 @@ async def save_or_update(client, script):
             raise
         await client.update_function(label, script)
         print(f"ℹ️  Function '{label}' already existed — updated instead")
-        return label
+        existing = await client.get_function(label)
+        function_id = existing.get("id")
+        if not function_id:
+            raise RuntimeError(f"Updated function '{label}' did not include an id")
+        return function_id
 
 
-async def main():
-    base_url = os.getenv("API_BASE_URL", "http://localhost:8080")
-    api_key = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb")
-
-    client = Client.new(base_url, api_key)
-
-    # Start clean: drop any github_cache left over from a prior run so the
-    # collection's schema is inferred fresh from this run's cached response.
-    # A stale schema from an earlier run can disagree with the current value's
-    # inferred type and reject the insert. Guarded because the collection does
-    # not exist yet on a fresh database.
-    try:
-        await client.delete_collection("github_cache")
-    except Exception:
-        pass
-
+async def run_examples(client, function_ids):
     print("=== ekoDB SWR (Stale-While-Revalidate) Pattern ===\n")
 
     # Step 1: Create SWR script for GitHub user caching
     print("Step 1: Create SWR function that acts as edge cache")
 
     swr_script = {
-        "label": "fetch_github_user",
+        "label": GITHUB_FUNCTION,
         "name": "Fetch GitHub User with Cache",
         "description": "SWR pattern: Check cache, fetch from GitHub API if stale, auto-update with TTL",
         "version": "1.0",
@@ -79,7 +74,7 @@ async def main():
             # 1. Check cache
             {
                 "type": "FindById",
-                "collection": "github_cache",
+                "collection": GITHUB_COLLECTION,
                 "record_id": "{{username}}",
             },
             # 2. If cache exists, return it; else fetch from API
@@ -104,7 +99,7 @@ async def main():
                     },
                     {
                         "type": "Insert",
-                        "collection": "github_cache",
+                        "collection": GITHUB_COLLECTION,
                         "record": {
                             "id": {"type": "String", "value": "{{username}}"},
                             "data": {"type": "Object", "value": "{{http_response}}"},
@@ -122,13 +117,14 @@ async def main():
     }
 
     script_id = await save_or_update(client, swr_script)
+    function_ids.append(script_id)
     print(f"✓ Created SWR script: {swr_script['label']} ({script_id})\n")
 
     # Step 2: First call - Cache miss
     print("Step 2: First call - Cache miss, fetches from GitHub API")
     start1 = time.time()
     result1 = await client.call_function(
-        "fetch_github_user", {"username": "torvalds", "ttl": 300}
+        GITHUB_FUNCTION, {"username": "torvalds", "ttl": 300}
     )
     duration1 = (time.time() - start1) * 1000
     print(f"Response time: {duration1:.0f}ms")
@@ -138,7 +134,7 @@ async def main():
     # Step 3: Second call - Cache hit
     print("Step 3: Second call - Cache hit, instant response from ekoDB")
     start2 = time.time()
-    result2 = await client.call_function("fetch_github_user", {"username": "torvalds"})
+    result2 = await client.call_function(GITHUB_FUNCTION, {"username": "torvalds"})
     duration2 = (time.time() - start2) * 1000
     speedup = (duration1 / duration2) if duration2 > 0 else float("inf")
     speedup_text = f"{speedup:.1f}x faster!" if duration2 > 0 else "instant response"
@@ -151,7 +147,7 @@ async def main():
     print("Creating product enrichment function...")
 
     enrich_script = {
-        "label": "fetch_product_enriched",
+        "label": PRODUCT_FUNCTION,
         "name": "Fetch Product with Enrichment",
         "description": "Demonstrates calling external API and enriching data",
         "version": "1.0",
@@ -166,7 +162,7 @@ async def main():
         "functions": [
             {
                 "type": "FindById",
-                "collection": "product_cache",
+                "collection": PRODUCT_COLLECTION,
                 "record_id": "{{product_id}}",
             },
             {
@@ -183,7 +179,7 @@ async def main():
                     },
                     {
                         "type": "Insert",
-                        "collection": "product_cache",
+                        "collection": PRODUCT_COLLECTION,
                         "record": {
                             "id": {"type": "String", "value": "{{product_id}}"},
                             "enriched_data": {
@@ -204,6 +200,7 @@ async def main():
     }
 
     enrich_script_id = await save_or_update(client, enrich_script)
+    function_ids.append(enrich_script_id)
     print(
         f"✓ Created enrichment script: {enrich_script['label']} ({enrich_script_id})\n"
     )
@@ -212,7 +209,7 @@ async def main():
         "Step 4: Call enrichment function - Fetches from API + stores enriched result"
     )
     enriched = await client.call_function(
-        "fetch_product_enriched", {"product_id": "1", "ttl": 600}
+        PRODUCT_FUNCTION, {"product_id": "1", "ttl": 600}
     )
     print(f"Enriched data: {json.dumps(enriched['records'][:1], indent=2)}")
     print("✓ Data fetched, enriched, and cached atomically\n")
@@ -241,6 +238,48 @@ async def main():
     print("\n4. E-commerce Product Pages:")
     print("   - Product info + reviews + inventory + pricing")
     print("   - All from different sources, cached together")
+
+
+async def main():
+    base_url = os.getenv("API_BASE_URL", "http://localhost:8080")
+    api_key = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb")
+    client = Client.new(base_url, api_key)
+    for collection in (GITHUB_COLLECTION, PRODUCT_COLLECTION):
+        try:
+            await client.delete_collection(collection)
+        except Exception as error:
+            if "404" not in str(error) and "not found" not in str(error).lower():
+                raise
+
+    function_ids = []
+    operation_error = None
+    try:
+        await run_examples(client, function_ids)
+    except BaseException as error:  # noqa: BLE001 - cleanup must run on cancellation
+        operation_error = error
+
+    cleanup_errors = []
+    for function_id in reversed(function_ids):
+        try:
+            await client.delete_function(function_id)
+        except Exception as error:  # noqa: BLE001 - attempt every cleanup
+            cleanup_errors.append(f"function {function_id}: {error}")
+    for collection in (GITHUB_COLLECTION, PRODUCT_COLLECTION):
+        try:
+            await client.delete_collection(collection)
+        except Exception as error:  # noqa: BLE001 - preserve the primary error
+            if "404" not in str(error) and "not found" not in str(error).lower():
+                cleanup_errors.append(f"collection {collection}: {error}")
+
+    if operation_error is not None:
+        if cleanup_errors:
+            operation_error.add_note(
+                "cleanup also failed: " + "; ".join(cleanup_errors)
+            )
+            print("⚠️  Cleanup errors: " + "; ".join(cleanup_errors))
+        raise operation_error
+    if cleanup_errors:
+        raise RuntimeError("Cleanup failed: " + "; ".join(cleanup_errors))
 
     print("\n✓ Example complete - Your database IS your edge!\n")
 

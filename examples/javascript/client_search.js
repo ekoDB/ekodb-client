@@ -14,7 +14,7 @@ const { EkoDBClient, SearchQueryBuilder } = require("@ekodb/ekodb-client");
 async function main() {
   const client = new EkoDBClient(
     process.env.API_BASE_URL || "http://localhost:8080",
-    process.env.API_BASE_KEY || "a-test-api-key-from-ekodb"
+    process.env.API_BASE_KEY || "a-test-api-key-from-ekodb",
   );
   await client.init();
 
@@ -118,7 +118,7 @@ async function main() {
     console.log(`Found ${results1.total} results`);
     results1.results.forEach((result, i) => {
       console.log(
-        `  ${i + 1}. Score: ${result.score.toFixed(3)}, Matched: ${result.matched_fields.join(", ")}`
+        `  ${i + 1}. Score: ${result.score.toFixed(3)}, Matched: ${result.matched_fields.join(", ")}`,
       );
     });
     console.log();
@@ -136,7 +136,7 @@ async function main() {
     console.log(`Found ${results2.total} results with fuzzy matching`);
     results2.results.forEach((result, i) => {
       console.log(
-        `  ${i + 1}. Score: ${result.score.toFixed(3)}, Matched: ${result.matched_fields.join(", ")}`
+        `  ${i + 1}. Score: ${result.score.toFixed(3)}, Matched: ${result.matched_fields.join(", ")}`,
       );
     });
     console.log();
@@ -153,7 +153,7 @@ async function main() {
     console.log(`Found ${results3.total} results with weighted fields`);
     results3.results.forEach((result, i) => {
       console.log(
-        `  ${i + 1}. Score: ${result.score.toFixed(3)}, Matched: ${result.matched_fields.join(", ")}`
+        `  ${i + 1}. Score: ${result.score.toFixed(3)}, Matched: ${result.matched_fields.join(", ")}`,
       );
     });
     console.log();
@@ -170,7 +170,7 @@ async function main() {
     console.log(`Found ${results4.total} results with score >= 0.3`);
     results4.results.forEach((result, i) => {
       console.log(
-        `  ${i + 1}. Score: ${result.score.toFixed(3)}, Matched: ${result.matched_fields.join(", ")}`
+        `  ${i + 1}. Score: ${result.score.toFixed(3)}, Matched: ${result.matched_fields.join(", ")}`,
       );
     });
     console.log();
@@ -187,11 +187,11 @@ async function main() {
 
     const results5 = await client.search(usersCollection, search5);
     console.log(
-      `Found ${results5.total} results (matches: work, working, worked)`
+      `Found ${results5.total} results (matches: work, working, worked)`,
     );
     results5.results.forEach((result, i) => {
       console.log(
-        `  ${i + 1}. Score: ${result.score.toFixed(3)}, Matched: ${result.matched_fields.join(", ")}`
+        `  ${i + 1}. Score: ${result.score.toFixed(3)}, Matched: ${result.matched_fields.join(", ")}`,
       );
     });
     console.log();
@@ -213,7 +213,7 @@ async function main() {
     console.log(`Found ${results6.total} semantically similar documents`);
     results6.results.forEach((result, i) => {
       console.log(
-        `  ${i + 1}. Score: ${result.score.toFixed(3)}, Matched: ${result.matched_fields.join(", ")}`
+        `  ${i + 1}. Score: ${result.score.toFixed(3)}, Matched: ${result.matched_fields.join(", ")}`,
       );
     });
     console.log();
@@ -231,11 +231,11 @@ async function main() {
 
     const results7 = await client.search(documentsCollection, search7);
     console.log(
-      `Found ${results7.total} results using hybrid search (text + vector)`
+      `Found ${results7.total} results using hybrid search (text + vector)`,
     );
     results7.results.forEach((result, i) => {
       console.log(
-        `  ${i + 1}. Score: ${result.score.toFixed(3)}, Matched: ${result.matched_fields.join(", ")}`
+        `  ${i + 1}. Score: ${result.score.toFixed(3)}, Matched: ${result.matched_fields.join(", ")}`,
       );
     });
     console.log();
@@ -252,7 +252,7 @@ async function main() {
     console.log(`Found ${results8.total} results (case-sensitive)`);
     results8.results.forEach((result, i) => {
       console.log(
-        `  ${i + 1}. Score: ${result.score.toFixed(3)}, Matched: ${result.matched_fields.join(", ")}`
+        `  ${i + 1}. Score: ${result.score.toFixed(3)}, Matched: ${result.matched_fields.join(", ")}`,
       );
     });
     console.log();

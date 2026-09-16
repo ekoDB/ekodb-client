@@ -12,6 +12,26 @@ dotenv.config();
 
 const BASE_URL = process.env.API_BASE_URL || "http://localhost:8080";
 const API_KEY = process.env.API_BASE_KEY || "a-test-api-key-from-ekodb";
+const FUNCTION_LABELS = {
+  basic: "github_user_native_ts",
+  audit: "product_swr_audit_ts",
+  enrichment: "user_enrichment_pipeline_ts",
+  dynamic: "flexible_cache_ts",
+} as const;
+const COLLECTIONS = {
+  audit: "swr_audit_trail_ts",
+  enrichment: "enriched_users_swr_ts",
+} as const;
+const KV_KEYS = {
+  basicTemplate: "swr_native:ts:github:user:{{username}}",
+  basic: "swr_native:ts:github:user:torvalds",
+  auditTemplate: "swr_native:ts:product:{{product_id}}",
+  audit: "swr_native:ts:product:1",
+  enrichmentTemplate: "swr_native:ts:api:user:{{user_id}}",
+  enrichment: "swr_native:ts:api:user:1",
+  dynamicTemplate: "swr_native:ts:resource:{{resource_id}}",
+  dynamic: "swr_native:ts:resource:test",
+} as const;
 
 /** True when a save failed because the function label already exists (HTTP 409). */
 function isAlreadyExistsError(error: unknown): boolean {
@@ -35,7 +55,12 @@ async function saveOrUpdate(
     await client.updateFunction(script.label, script);
     console.log(`Function '${script.label}' already existed — updated instead`);
     const existing = await client.getFunction(script.label);
-    return existing.id ?? script.label;
+    if (!existing.id) {
+      throw new Error(
+        `Updated function '${script.label}' did not return an id`,
+      );
+    }
+    return existing.id;
   }
 }
 
@@ -48,20 +73,19 @@ async function exampleBasicSWR(client: EkoDBClient): Promise<string> {
 
   // Create script with native SWR function
   const basicSWRScript: UserFunction = {
-    label: "github_user_native",
+    label: FUNCTION_LABELS.basic,
     name: "GitHub User Lookup (Native SWR)",
     description:
       "Fetches GitHub user data with automatic caching using native SWR",
     parameters: {
       username: {
-        param_type: "String",
         description: "GitHub username to fetch",
         required: true,
       },
     },
     functions: [
       Stage.swr(
-        "github:user:{{username}}",
+        KV_KEYS.basicTemplate,
         "15m",
         "https://api.github.com/users/{{username}}",
         "GET",
@@ -75,12 +99,14 @@ async function exampleBasicSWR(client: EkoDBClient): Promise<string> {
   };
 
   const scriptId = await saveOrUpdate(client, basicSWRScript);
-  console.log(`✓ Created native SWR script: github_user_native (${scriptId})`);
+  console.log(
+    `✓ Created native SWR script: ${FUNCTION_LABELS.basic} (${scriptId})`,
+  );
 
   // First call - cache miss
   console.log("\nFirst call (cache miss - will fetch from GitHub API):");
   const start1 = Date.now();
-  const result1 = await client.callFunction("github_user_native", {
+  const result1 = await client.callFunction(scriptId, {
     username: "torvalds",
   });
   const duration1 = Date.now() - start1;
@@ -90,7 +116,7 @@ async function exampleBasicSWR(client: EkoDBClient): Promise<string> {
   // Second call - cache hit
   console.log("\nSecond call (cache hit - instant from KV store):");
   const start2 = Date.now();
-  const result2 = await client.callFunction("github_user_native", {
+  const result2 = await client.callFunction(scriptId, {
     username: "torvalds",
   });
   const duration2 = Date.now() - start2;
@@ -109,19 +135,18 @@ async function exampleAuditTrail(client: EkoDBClient): Promise<string> {
 
   // Create script with audit trail
   const auditSWRScript: UserFunction = {
-    label: "product_swr_audit",
+    label: FUNCTION_LABELS.audit,
     name: "Product API with Audit (Native SWR)",
     description: "Caches product data and logs all requests automatically",
     parameters: {
       product_id: {
-        param_type: "String",
         description: "Product ID to fetch",
         required: true,
       },
     },
     functions: [
       Stage.swr(
-        "product:{{product_id}}",
+        KV_KEYS.auditTemplate,
         "1h",
         "https://fakestoreapi.com/products/{{product_id}}",
         "GET",
@@ -129,7 +154,7 @@ async function exampleAuditTrail(client: EkoDBClient): Promise<string> {
         undefined,
         undefined,
         "product",
-        "swr_audit_trail",
+        COLLECTIONS.audit,
       ),
     ],
     tags: ["products", "audit"],
@@ -137,15 +162,15 @@ async function exampleAuditTrail(client: EkoDBClient): Promise<string> {
 
   const auditScriptId = await saveOrUpdate(client, auditSWRScript);
   console.log(
-    `✓ Created SWR script with audit trail: product_swr_audit (${auditScriptId})`,
+    `✓ Created SWR script with audit trail: ${FUNCTION_LABELS.audit} (${auditScriptId})`,
   );
 
   console.log("\nFetching product (will create audit trail entry):");
-  const productResult = await client.callFunction("product_swr_audit", {
+  const productResult = await client.callFunction(auditScriptId, {
     product_id: "1",
   });
   console.log("  ✓ Product fetched and cached");
-  console.log("  ✓ Audit record created in 'swr_audit_trail' collection");
+  console.log(`  ✓ Audit record created in '${COLLECTIONS.audit}' collection`);
   console.log(`  Records: ${productResult.records?.length || 0}\n`);
 
   return auditScriptId;
@@ -158,12 +183,11 @@ async function examplePipelineEnrichment(client: EkoDBClient): Promise<string> {
 
   // Create enrichment pipeline
   const pipelineScript: UserFunction = {
-    label: "user_enrichment_pipeline",
+    label: FUNCTION_LABELS.enrichment,
     name: "User Data Enrichment Pipeline",
     description: "Fetches external API data and stores enriched results",
     parameters: {
       user_id: {
-        param_type: "String",
         description: "User ID to enrich",
         required: true,
       },
@@ -171,7 +195,7 @@ async function examplePipelineEnrichment(client: EkoDBClient): Promise<string> {
     functions: [
       // Step 1: Fetch from external API with caching (30 min TTL)
       Stage.swr(
-        "api:user:{{user_id}}",
+        KV_KEYS.enrichmentTemplate,
         "30m",
         "https://jsonplaceholder.typicode.com/users/{{user_id}}",
         "GET",
@@ -182,7 +206,7 @@ async function examplePipelineEnrichment(client: EkoDBClient): Promise<string> {
       ),
       // Step 2: Store enriched data in collection (24 hour TTL)
       Stage.insert(
-        "enriched_users",
+        COLLECTIONS.enrichment,
         {
           user_id: { type: "String", value: "{{user_id}}" },
           source_data: { type: "Object", value: "{{user_data}}" },
@@ -196,15 +220,17 @@ async function examplePipelineEnrichment(client: EkoDBClient): Promise<string> {
 
   const pipelineScriptId = await saveOrUpdate(client, pipelineScript);
   console.log(
-    `✓ Created enrichment pipeline: user_enrichment_pipeline (${pipelineScriptId})`,
+    `✓ Created enrichment pipeline: ${FUNCTION_LABELS.enrichment} (${pipelineScriptId})`,
   );
 
   console.log("\nRunning pipeline:");
-  const enrichResult = await client.callFunction("user_enrichment_pipeline", {
+  const enrichResult = await client.callFunction(pipelineScriptId, {
     user_id: "1",
   });
   console.log("  ✓ Data fetched from API (cached 30m)");
-  console.log("  ✓ Enriched data stored in 'enriched_users' (TTL 24h)");
+  console.log(
+    `  ✓ Enriched data stored in '${COLLECTIONS.enrichment}' (TTL 24h)`,
+  );
   console.log(
     `  Pipeline returned ${enrichResult.records?.length || 0} records\n`,
   );
@@ -221,24 +247,22 @@ async function exampleDynamicTTL(client: EkoDBClient): Promise<string> {
 
   // Create script with dynamic TTL
   const dynamicTTLScript: UserFunction = {
-    label: "flexible_cache",
+    label: FUNCTION_LABELS.dynamic,
     name: "Flexible Cache TTL (Native SWR)",
     description: "Demonstrates parameterized TTL values",
     parameters: {
       resource_id: {
-        param_type: "String",
         description: "Resource to fetch",
         required: true,
       },
       ttl: {
-        param_type: "String",
         description: "Cache duration (e.g., '5m', '1h', '30s')",
         required: true,
       },
     },
     functions: [
       Stage.swr(
-        "resource:{{resource_id}}",
+        KV_KEYS.dynamicTemplate,
         "{{ttl}}",
         "https://jsonplaceholder.typicode.com/posts/{{resource_id}}",
         "GET",
@@ -249,7 +273,7 @@ async function exampleDynamicTTL(client: EkoDBClient): Promise<string> {
 
   const dynamicScriptId = await saveOrUpdate(client, dynamicTTLScript);
   console.log(
-    `✓ Created dynamic TTL script: flexible_cache (${dynamicScriptId})`,
+    `✓ Created dynamic TTL script: ${FUNCTION_LABELS.dynamic} (${dynamicScriptId})`,
   );
 
   // Test with different TTLs
@@ -260,7 +284,7 @@ async function exampleDynamicTTL(client: EkoDBClient): Promise<string> {
   ];
 
   for (const test of ttlTests) {
-    await client.callFunction("flexible_cache", {
+    await client.callFunction(dynamicScriptId, {
       resource_id: "test",
       ttl: test.value,
     });
@@ -275,14 +299,61 @@ async function cleanup(
   scriptIds: string[],
 ): Promise<void> {
   console.log("\n🧹 Cleaning up...");
+  const failures: unknown[] = [];
+  const cleanupIds = new Set(scriptIds);
   try {
-    for (const scriptId of scriptIds) {
-      await client.deleteFunction(scriptId);
+    const functions = await client.listFunctions();
+    for (const fn of functions) {
+      if (
+        Object.values(FUNCTION_LABELS).includes(
+          fn.label as (typeof FUNCTION_LABELS)[keyof typeof FUNCTION_LABELS],
+        ) &&
+        fn.id
+      ) {
+        cleanupIds.add(fn.id);
+      }
     }
-    console.log(`✓ Deleted ${scriptIds.length} test scripts`);
   } catch (error) {
-    console.log(`⚠ Cleanup error (non-critical): ${error}`);
+    failures.push(error);
   }
+  for (const scriptId of cleanupIds) {
+    try {
+      await client.deleteFunction(scriptId);
+    } catch (error) {
+      failures.push(error);
+    }
+  }
+  for (const key of [
+    KV_KEYS.basic,
+    KV_KEYS.audit,
+    KV_KEYS.enrichment,
+    KV_KEYS.dynamic,
+  ]) {
+    try {
+      await client.kvDelete(key);
+    } catch (error) {
+      if (!isNotFoundError(error)) failures.push(error);
+    }
+  }
+  for (const collection of Object.values(COLLECTIONS)) {
+    try {
+      await client.deleteCollection(collection);
+    } catch (error) {
+      if (!isNotFoundError(error)) failures.push(error);
+    }
+  }
+  if (failures.length === 0) {
+    console.log(
+      `✓ Deleted ${cleanupIds.size} test scripts and owned SWR resources`,
+    );
+    return;
+  }
+  throw new AggregateError(failures, "Native SWR cleanup failed");
+}
+
+function isNotFoundError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.includes("404") || message.toLowerCase().includes("not found");
 }
 
 async function main() {
@@ -300,22 +371,11 @@ async function main() {
   const client = new EkoDBClient(BASE_URL, API_KEY);
   await client.init();
 
-  // Start clean: drop stale collections from a prior run so their schema is
-  // inferred fresh and a stale schema can't reject the insert.
-  try {
-    await client.deleteCollection("enriched_users");
-  } catch {
-    /* not present yet */
-  }
-  try {
-    await client.deleteCollection("swr_audit_trail");
-  } catch {
-    /* not present yet */
-  }
-
   const scriptIds: string[] = [];
+  let primaryError: unknown;
 
   try {
+    await cleanup(client, scriptIds);
     // Run examples
     scriptIds.push(await exampleBasicSWR(client));
     scriptIds.push(await exampleAuditTrail(client));
@@ -351,13 +411,27 @@ async function main() {
       "Result:         60% fewer functions, cleaner code, same behavior 🎯",
     );
   } catch (error) {
+    primaryError = error;
     console.error("❌ Error:", error);
     throw error;
   } finally {
-    await cleanup(client, scriptIds);
+    try {
+      await cleanup(client, scriptIds);
+    } catch (cleanupError) {
+      if (primaryError !== undefined) {
+        throw new AggregateError(
+          [primaryError, cleanupError],
+          "Native SWR example and cleanup failed",
+        );
+      }
+      throw cleanupError;
+    }
   }
 
   console.log("\n✅ All examples completed!");
 }
 
-main().catch(console.error);
+main().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});

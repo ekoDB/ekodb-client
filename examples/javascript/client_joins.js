@@ -7,13 +7,17 @@
  * - Using joins with queries
  */
 
-const { EkoDBClient, QueryBuilder, JoinBuilder } = require("@ekodb/ekodb-client");
+const {
+  EkoDBClient,
+  QueryBuilder,
+  JoinBuilder,
+} = require("@ekodb/ekodb-client");
 require("dotenv").config();
 
 async function main() {
   const client = new EkoDBClient(
     process.env.API_BASE_URL || "http://localhost:8080",
-    process.env.API_BASE_KEY || "a-test-api-key-from-ekodb"
+    process.env.API_BASE_KEY || "a-test-api-key-from-ekodb",
   );
   await client.init();
 
@@ -93,7 +97,7 @@ async function main() {
       departmentsCollection,
       "department_id",
       "id",
-      "department"
+      "department",
     );
 
     const query1 = new QueryBuilder().join(join1).limit(10).build();
@@ -116,7 +120,7 @@ async function main() {
       departmentsCollection,
       "department_id",
       "id",
-      "department"
+      "department",
     );
 
     const query2 = new QueryBuilder()
@@ -156,7 +160,7 @@ async function main() {
       profilesCollection,
       "id",
       "user_id",
-      "profile"
+      "profile",
     );
 
     const query3 = new QueryBuilder().join(join3).limit(10).build();
@@ -202,7 +206,7 @@ async function main() {
       departmentsCollection,
       "department_id",
       "id",
-      "department"
+      "department",
     );
 
     const query5 = new QueryBuilder()

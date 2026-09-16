@@ -17,10 +17,20 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlin.system.measureTimeMillis
 
+private const val BASIC_LABEL = "github_user_native_kt"
+private const val AUDIT_LABEL = "product_swr_audit_kt"
+private const val PIPELINE_LABEL = "user_enrichment_pipeline_kt"
+private const val DYNAMIC_LABEL = "flexible_cache_kt"
+private const val AUDIT_COLLECTION = "swr_audit_trail_kt"
+private const val ENRICHED_COLLECTION = "enriched_users_kt"
+
 private fun isAlreadyExistsError(e: Exception): Boolean {
     val msg = e.message ?: return false
     return msg.contains("status 409") || msg.contains("already exists")
 }
+
+private fun isNotFoundError(e: Exception): Boolean =
+    e.message.orEmpty().contains("not found", ignoreCase = true)
 
 private suspend fun saveOrUpdate(client: EkoDBClient, func: UserFunction): String {
     return try {
@@ -44,7 +54,7 @@ fun exampleBasicSWR(client: EkoDBClient): String = runBlocking {
 
     // Create function with native SWR function
     val basicSWRScript = UserFunction(
-        label = "github_user_native",
+        label = BASIC_LABEL,
         name = "GitHub User Lookup (Native SWR)",
         description = "Fetches GitHub user data with automatic caching using native SWR",
         parameters = mapOf(
@@ -56,7 +66,7 @@ fun exampleBasicSWR(client: EkoDBClient): String = runBlocking {
         ),
         functions = listOf(
             FunctionStageConfig.SWR(
-                cache_key = "github:user:{{username}}",
+                cache_key = "github:user:kt:{{username}}",
                 ttl = JsonPrimitive("15m"),
                 url = "https://api.github.com/users/{{username}}",
                 method = "GET",
@@ -71,13 +81,13 @@ fun exampleBasicSWR(client: EkoDBClient): String = runBlocking {
     )
 
     val funcId = saveOrUpdate(client, basicSWRScript)
-    println("✓ Created native SWR function: github_user_native ($funcId)")
+    println("✓ Created native SWR function: $BASIC_LABEL ($funcId)")
 
     // First call - cache miss
     println("\nFirst call (cache miss - will fetch from GitHub API):")
     var recordCount1 = 0
     val duration1 = measureTimeMillis {
-        val result1 = client.callFunction("github_user_native", mapOf("username" to JsonPrimitive("torvalds")))
+        val result1 = client.callFunction(BASIC_LABEL, mapOf("username" to JsonPrimitive("torvalds")))
         recordCount1 = result1.records.size
     }
     println("  Response time: ${duration1}ms")
@@ -86,7 +96,7 @@ fun exampleBasicSWR(client: EkoDBClient): String = runBlocking {
     // Second call - cache hit
     println("\nSecond call (cache hit - instant from KV store):")
     val duration2 = measureTimeMillis {
-        client.callFunction("github_user_native", mapOf("username" to JsonPrimitive("torvalds")))
+        client.callFunction(BASIC_LABEL, mapOf("username" to JsonPrimitive("torvalds")))
     }
     println("  Response time: ${duration2}ms")
     val speedup = if (duration2 > 0) duration1.toDouble() / duration2.toDouble() else 0.0
@@ -103,7 +113,7 @@ fun exampleAuditTrail(client: EkoDBClient): String = runBlocking {
 
     // Create function with audit trail
     val auditSWRScript = UserFunction(
-        label = "product_swr_audit",
+        label = AUDIT_LABEL,
         name = "Product API with Audit (Native SWR)",
         description = "Caches product data and logs all requests automatically",
         parameters = mapOf(
@@ -115,7 +125,7 @@ fun exampleAuditTrail(client: EkoDBClient): String = runBlocking {
         ),
         functions = listOf(
             FunctionStageConfig.SWR(
-                cache_key = "product:{{product_id}}",
+                cache_key = "product:kt:{{product_id}}",
                 ttl = JsonPrimitive("1h"),
                 url = "https://fakestoreapi.com/products/{{product_id}}",
                 method = "GET",
@@ -123,19 +133,19 @@ fun exampleAuditTrail(client: EkoDBClient): String = runBlocking {
                 body = null,
                 timeout_seconds = null,
                 output_field = "product",
-                collection = "swr_audit_trail"
+                collection = AUDIT_COLLECTION
             )
         ),
         tags = listOf("products", "audit")
     )
 
     val auditFuncId = saveOrUpdate(client, auditSWRScript)
-    println("✓ Created SWR function with audit trail: product_swr_audit ($auditFuncId)")
+    println("✓ Created SWR function with audit trail: $AUDIT_LABEL ($auditFuncId)")
 
     println("\nFetching product (will create audit trail entry):")
-    val productResult = client.callFunction("product_swr_audit", mapOf("product_id" to JsonPrimitive("1")))
+    val productResult = client.callFunction(AUDIT_LABEL, mapOf("product_id" to JsonPrimitive("1")))
     println("  ✓ Product fetched and cached")
-    println("  ✓ Audit record created in 'swr_audit_trail' collection")
+    println("  ✓ Audit record created in '$AUDIT_COLLECTION' collection")
     println("  Records: ${productResult.records.size}\n")
 
     auditFuncId
@@ -148,7 +158,7 @@ fun examplePipelineEnrichment(client: EkoDBClient): String = runBlocking {
 
     // Create enrichment pipeline
     val pipelineScript = UserFunction(
-        label = "user_enrichment_pipeline",
+        label = PIPELINE_LABEL,
         name = "User Data Enrichment Pipeline",
         description = "Fetches external API data and stores enriched results",
         parameters = mapOf(
@@ -161,7 +171,7 @@ fun examplePipelineEnrichment(client: EkoDBClient): String = runBlocking {
         functions = listOf(
             // Step 1: Fetch from external API with caching (30 min TTL)
             FunctionStageConfig.SWR(
-                cache_key = "api:user:{{user_id}}",
+                cache_key = "api:user:kt:{{user_id}}",
                 ttl = JsonPrimitive("30m"),
                 url = "https://jsonplaceholder.typicode.com/users/{{user_id}}",
                 method = "GET",
@@ -173,7 +183,7 @@ fun examplePipelineEnrichment(client: EkoDBClient): String = runBlocking {
             ),
             // Step 2: Store enriched data in collection (24 hour TTL)
             FunctionStageConfig.Insert(
-                collection = "enriched_users",
+                collection = ENRICHED_COLLECTION,
                 record = buildJsonObject {
                     put("user_id", buildJsonObject {
                         put("type", JsonPrimitive("String"))
@@ -192,12 +202,12 @@ fun examplePipelineEnrichment(client: EkoDBClient): String = runBlocking {
     )
 
     val pipelineScriptId = saveOrUpdate(client, pipelineScript)
-    println("✓ Created enrichment pipeline: user_enrichment_pipeline ($pipelineScriptId)")
+    println("✓ Created enrichment pipeline: $PIPELINE_LABEL ($pipelineScriptId)")
 
     println("\nRunning pipeline:")
-    val enrichResult = client.callFunction("user_enrichment_pipeline", mapOf("user_id" to JsonPrimitive("1")))
+    val enrichResult = client.callFunction(PIPELINE_LABEL, mapOf("user_id" to JsonPrimitive("1")))
     println("  ✓ Data fetched from API (cached 30m)")
-    println("  ✓ Enriched data stored in 'enriched_users' (TTL 24h)")
+    println("  ✓ Enriched data stored in '$ENRICHED_COLLECTION' (TTL 24h)")
     println("  Pipeline returned ${enrichResult.records.size} records\n")
 
     pipelineScriptId
@@ -210,7 +220,7 @@ fun exampleDynamicTTL(client: EkoDBClient): String = runBlocking {
 
     // Create function with dynamic TTL
     val dynamicTTLScript = UserFunction(
-        label = "flexible_cache",
+        label = DYNAMIC_LABEL,
         name = "Flexible Cache TTL (Native SWR)",
         description = "Demonstrates parameterized TTL values",
         parameters = mapOf(
@@ -227,7 +237,7 @@ fun exampleDynamicTTL(client: EkoDBClient): String = runBlocking {
         ),
         functions = listOf(
             FunctionStageConfig.SWR(
-                cache_key = "resource:{{resource_id}}",
+                cache_key = "resource:kt:{{resource_id}}",
                 ttl = JsonPrimitive("{{ttl}}"),
                 url = "https://jsonplaceholder.typicode.com/posts/{{resource_id}}",
                 method = "GET",
@@ -242,7 +252,7 @@ fun exampleDynamicTTL(client: EkoDBClient): String = runBlocking {
     )
 
     val dynamicFuncId = saveOrUpdate(client, dynamicTTLScript)
-    println("✓ Created dynamic TTL function: flexible_cache ($dynamicFuncId)")
+    println("✓ Created dynamic TTL function: $DYNAMIC_LABEL ($dynamicFuncId)")
 
     // Test with different TTLs
     val ttlTests = listOf(
@@ -253,7 +263,7 @@ fun exampleDynamicTTL(client: EkoDBClient): String = runBlocking {
 
     for ((ttlValue, description) in ttlTests) {
         client.callFunction(
-            "flexible_cache",
+            DYNAMIC_LABEL,
             mapOf(
                 "resource_id" to JsonPrimitive("test"),
                 "ttl" to JsonPrimitive(ttlValue)
@@ -265,19 +275,50 @@ fun exampleDynamicTTL(client: EkoDBClient): String = runBlocking {
     dynamicFuncId
 }
 
-suspend fun cleanupSwrFunctions(client: EkoDBClient, funcIds: List<String>) {
+suspend fun cleanupSwrFunctions(client: EkoDBClient) {
     println("\n🧹 Cleaning up...")
-    try {
-        funcIds.forEach { funcId ->
-            client.deleteFunction(funcId)
+    val errors = mutableListOf<String>()
+    var deletedFunctions = 0
+    listOf(BASIC_LABEL, AUDIT_LABEL, PIPELINE_LABEL, DYNAMIC_LABEL).forEach { label ->
+        try {
+            val function = client.getFunction(label)
+            val id = function.id ?: error("Function '$label' lookup returned no ID")
+            client.deleteFunction(id)
+            deletedFunctions += 1
+        } catch (e: Exception) {
+            if (!isNotFoundError(e)) {
+                errors.add("function $label: ${e.message}")
+            }
         }
-        println("✓ Deleted ${funcIds.size} test functions")
-    } catch (e: Exception) {
-        println("⚠ Cleanup error (non-critical): ${e.message}")
     }
+    listOf(
+        "github:user:kt:torvalds",
+        "product:kt:1",
+        "api:user:kt:1",
+        "resource:kt:test"
+    ).forEach { key ->
+        try {
+            client.kvDelete(key)
+        } catch (e: Exception) {
+            if (!isNotFoundError(e)) {
+                errors.add("KV key $key: ${e.message}")
+            }
+        }
+    }
+    listOf(AUDIT_COLLECTION, ENRICHED_COLLECTION).forEach { collection ->
+        try {
+            client.deleteCollection(collection)
+        } catch (e: Exception) {
+            if (!isNotFoundError(e)) {
+                errors.add("collection $collection: ${e.message}")
+            }
+        }
+    }
+    check(errors.isEmpty()) { "Cleanup failed: ${errors.joinToString("; ")}" }
+    println("✓ Deleted $deletedFunctions test functions and owned SWR collections")
 }
 
-fun main() = runBlocking {
+fun main(): Unit = runBlocking {
     println("🚀 ekoDB Kotlin Client - Native SWR Function Examples\n")
     println("📋 Demonstrates:")
     println("   • Single-function SWR pattern (replaces 4-step pipeline)")
@@ -296,14 +337,14 @@ fun main() = runBlocking {
         .apiKey(apiKey)
         .build()
 
-    val funcIds = mutableListOf<String>()
-
+    var failure: Throwable? = null
     try {
+        cleanupSwrFunctions(client)
         // Run examples
-        funcIds.add(exampleBasicSWR(client))
-        funcIds.add(exampleAuditTrail(client))
-        funcIds.add(examplePipelineEnrichment(client))
-        funcIds.add(exampleDynamicTTL(client))
+        exampleBasicSWR(client)
+        exampleAuditTrail(client)
+        examplePipelineEnrichment(client)
+        exampleDynamicTTL(client)
 
         // Summary
         println("\n${"=".repeat(80)}")
@@ -319,12 +360,25 @@ fun main() = runBlocking {
         println("Legacy Pattern: KvGet → If → HttpRequest → KvSet → Insert (5 functions)")
         println("Native SWR:     SWR → Insert (2 functions)")
         println("Result:         60% fewer functions, cleaner code, same behavior 🎯")
-    } catch (e: Exception) {
-        println("❌ Error: ${e.message}")
-        e.printStackTrace()
+    } catch (error: Throwable) {
+        println("❌ Error: ${error.message}")
+        failure = error
     } finally {
-        cleanupSwrFunctions(client, funcIds)
+        try {
+            cleanupSwrFunctions(client)
+        } catch (cleanupError: Throwable) {
+            val primary = failure
+            if (primary == null) failure = cleanupError else primary.addSuppressed(cleanupError)
+        }
+        try {
+            client.close()
+        } catch (cleanupError: Throwable) {
+            val primary = failure
+            if (primary == null) failure = cleanupError else primary.addSuppressed(cleanupError)
+        }
     }
+
+    failure?.let { throw it }
 
     println("\n✅ All examples completed!")
 }

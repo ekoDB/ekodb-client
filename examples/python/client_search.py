@@ -15,29 +15,18 @@ from pathlib import Path
 from dotenv import load_dotenv
 from ekodb_client import Client, get_value
 
+COLLECTIONS = ("search_users_client_py", "search_documents_client_py")
+
 # Load environment variables
 env_path = Path(__file__).parent.parent / ".env"
 load_dotenv(env_path)
 
 
-async def main():
-    # Create client
-    base_url = os.getenv("API_BASE_URL", "http://localhost:8080")
-    api_key = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb")
-    client = Client.new(base_url, api_key)
-
+async def run_example(client):
     print("=== Search Examples ===\n")
 
     # Use unique collection names
-    users_collection = "search_users_client_py"
-    documents_collection = "search_documents_client_py"
-
-    # Cleanup any existing test collections
-    try:
-        await client.delete_collection(users_collection)
-        await client.delete_collection(documents_collection)
-    except:
-        pass  # Ignore errors if collections don't exist
+    users_collection, documents_collection = COLLECTIONS
 
     # Setup: Insert test data
     print("Setting up test data...")
@@ -267,7 +256,7 @@ async def main():
         filters=ml_filter,  # only "ml" documents are candidates
     )
     print(
-        f"Found {len(results9.get('results', []))} documents in category \"ml\" (NLP excluded)"
+        f'Found {len(results9.get("results", []))} documents in category "ml" (NLP excluded)'
     )
     for i, result in enumerate(results9.get("results", []), 1):
         record = result.get("record", {})
@@ -278,10 +267,44 @@ async def main():
 
     # Cleanup
     print("=== Cleanup ===")
-    await client.delete_collection(users_collection)
-    await client.delete_collection(documents_collection)
-    print("✅ Deleted test collections\n")
 
+
+async def cleanup(client):
+    errors = []
+    for collection in COLLECTIONS:
+        try:
+            await client.delete_collection(collection)
+        except Exception as error:  # noqa: BLE001 - attempt every owned cleanup
+            if "404" not in str(error) and "not found" not in str(error).lower():
+                errors.append(f"{collection}: {error}")
+    if errors:
+        raise RuntimeError("cleanup failed: " + "; ".join(errors))
+
+
+async def main():
+    client = Client.new(
+        os.getenv("API_BASE_URL", "http://localhost:8080"),
+        os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb"),
+    )
+    await cleanup(client)
+    primary_error = None
+    try:
+        await run_example(client)
+    except BaseException as error:  # noqa: BLE001 - cleanup must run on cancellation
+        primary_error = error
+    cleanup_error = None
+    try:
+        await cleanup(client)
+    except Exception as error:  # noqa: BLE001 - preserve the primary failure
+        cleanup_error = error
+    if primary_error is not None:
+        if cleanup_error is not None:
+            primary_error.add_note(f"Cleanup also failed: {cleanup_error}")
+            print(f"⚠️  Cleanup also failed: {cleanup_error}")
+        raise primary_error
+    if cleanup_error is not None:
+        raise cleanup_error
+    print("✅ Deleted test collections\n")
     print("✅ Search examples completed!")
 
 

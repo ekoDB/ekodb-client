@@ -5,9 +5,15 @@
 //! - On cache miss, fetch from external API and store
 //! - On cache hit, return cached data instantly
 
-use ekodb_client::{Client, FieldType, Function, Record, UserFunction};
+use ekodb_client::{Client, Error, FieldType, Function, Record, UserFunction};
 use std::env;
 use std::time::Instant;
+
+const COLLECTION: &str = "edge_cache_rs";
+
+fn is_not_found(error: &Error) -> bool {
+    matches!(error, Error::NotFound | Error::Api { code: 404, .. })
+}
 
 /// Save a function idempotently: if the label already exists (HTTP 409),
 /// update the existing definition instead, then return its id.
@@ -22,31 +28,23 @@ async fn save_or_update(
             client.update_function(&label, function).await?;
             println!("ℹ️  Function '{}' already existed — updated instead", label);
             let existing = client.get_function(&label).await?;
-            Ok(existing.id.unwrap_or(label))
+            existing.id.ok_or_else(|| {
+                std::io::Error::other(format!("updated function '{label}' did not include an id"))
+                    .into()
+            })
         }
         Err(e) => Err(Box::new(e)),
     }
 }
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    dotenv::dotenv().ok();
-
-    let base_url = env::var("API_BASE_URL").unwrap_or_else(|_| "http://localhost:8080".to_string());
-    let api_key =
-        env::var("API_BASE_KEY").unwrap_or_else(|_| "a-test-api-key-from-ekodb".to_string());
-
-    let client = Client::builder()
-        .base_url(&base_url)
-        .api_key(&api_key)
-        .build()?;
-
+async fn run_example(
+    client: &Client,
+    script_id: &mut Option<String>,
+) -> Result<(), Box<dyn std::error::Error>> {
     println!("=== ekoDB as Edge Cache - Simple Example ===\n");
 
     // Setup: Create a simple cache collection with test data
     println!("Setting up edge cache collection...");
-    let _ = client.delete_collection("edge_cache_rs").await;
-
     // Insert a cached entry
     let mut cache_record = Record::new();
     cache_record.insert("id", FieldType::String("weather_nyc".to_string()));
@@ -55,7 +53,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         "cached_at",
         FieldType::String(chrono::Utc::now().to_rfc3339()),
     );
-    client.insert("edge_cache_rs", cache_record, None).await?;
+    client.insert(COLLECTION, cache_record, None).await?;
     println!("✓ Cache entry created\n");
 
     // Create a simple cache lookup script
@@ -63,11 +61,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cache_script = UserFunction::new("cache_lookup_rs", "Cache Lookup")
         .with_description("Simple cache lookup by key")
         .with_function(Function::FindAll {
-            collection: "edge_cache_rs".to_string(),
+            collection: COLLECTION.to_string(),
         });
 
-    let script_id = save_or_update(&client, cache_script).await?;
-    println!("✓ Edge cache script created: {}\n", script_id);
+    *script_id = Some(save_or_update(client, cache_script).await?);
+    println!(
+        "✓ Edge cache script created: {}\n",
+        script_id.as_deref().unwrap()
+    );
 
     // Test it - First call
     println!("Call 1: Cache lookup");
@@ -85,12 +86,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Response time: {}ms", duration2.as_millis());
     println!("Found {} cached entries", result2.records.len());
 
-    // Cleanup
-    println!("\n🧹 Cleaning up...");
-    let _ = client.delete_function(&script_id).await;
-    let _ = client.delete_collection("edge_cache_rs").await;
-    println!("✓ Cleanup complete");
-
     println!("\n=== The Magic ===");
     println!("- Your DATABASE is your EDGE");
     println!("- No Redis needed");
@@ -99,7 +94,54 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("- With ripples: All nodes auto-sync cache");
     println!("- One service: Database + Cache + Edge Functions");
 
-    println!("\n✓ Example complete!");
+    Ok(())
+}
 
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    dotenv::dotenv().ok();
+    let base_url = env::var("API_BASE_URL").unwrap_or_else(|_| "http://localhost:8080".to_string());
+    let api_key =
+        env::var("API_BASE_KEY").unwrap_or_else(|_| "a-test-api-key-from-ekodb".to_string());
+    let client = Client::builder()
+        .base_url(&base_url)
+        .api_key(&api_key)
+        .build()?;
+    if let Err(error) = client.delete_collection(COLLECTION).await {
+        if !is_not_found(&error) {
+            return Err(error.into());
+        }
+    }
+
+    let mut script_id = None;
+    let operation_result = run_example(&client, &mut script_id).await;
+    println!("\n🧹 Cleaning up...");
+    let mut cleanup_errors = Vec::new();
+    if let Some(id) = &script_id {
+        if let Err(error) = client.delete_function(id).await {
+            cleanup_errors.push(format!("function {id}: {error}"));
+        }
+    }
+    if let Err(error) = client.delete_collection(COLLECTION).await {
+        if !is_not_found(&error) {
+            cleanup_errors.push(format!("collection {COLLECTION}: {error}"));
+        }
+    }
+    match (operation_result, cleanup_errors.is_empty()) {
+        (Err(primary), false) => {
+            return Err(format!(
+                "{primary}; cleanup also failed: {}",
+                cleanup_errors.join("; ")
+            )
+            .into())
+        }
+        (Err(primary), true) => return Err(primary),
+        (Ok(()), false) => {
+            return Err(format!("cleanup failed: {}", cleanup_errors.join("; ")).into())
+        }
+        (Ok(()), true) => {}
+    }
+    println!("✓ Cleanup complete");
+    println!("\n✓ Example complete!");
     Ok(())
 }

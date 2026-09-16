@@ -12,7 +12,7 @@ require("dotenv").config();
 async function main() {
   const client = new EkoDBClient(
     process.env.API_BASE_URL || "http://localhost:8080",
-    process.env.API_BASE_KEY || ""
+    process.env.API_BASE_KEY || "",
   );
   await client.init();
   console.log("✓ Client created");
@@ -58,7 +58,7 @@ async function main() {
   try {
     const providerModels = await client.getChatModel("openai");
     console.log(
-      `OpenAI models: ${providerModels.join(", ") || "none configured"}`
+      `OpenAI models: ${providerModels.join(", ") || "none configured"}`,
     );
   } catch (error) {
     console.log(`GetChatModel error: ${error}`);
@@ -69,7 +69,7 @@ async function main() {
   try {
     const anthropicModels = await client.getChatModel("anthropic");
     console.log(
-      `Anthropic models: ${anthropicModels.join(", ") || "none configured"}`
+      `Anthropic models: ${anthropicModels.join(", ") || "none configured"}`,
     );
   } catch (error) {
     console.log(`GetChatModel error: ${error}`);

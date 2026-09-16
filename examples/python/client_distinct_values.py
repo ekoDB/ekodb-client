@@ -13,25 +13,17 @@ from pathlib import Path
 from dotenv import load_dotenv
 from ekodb_client import Client
 
+COLLECTION = "distinct_values_example_py"
+
 # Load environment variables
 env_path = Path(__file__).parent.parent / ".env"
 load_dotenv(env_path)
 
 
-async def main():
-    base_url = os.getenv("API_BASE_URL", "http://localhost:8080")
-    api_key = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb")
-    client = Client.new(base_url, api_key)
-
+async def run_example(client):
     print("=== Distinct Values Example ===\n")
 
-    collection = "distinct_values_example_py"
-
-    # Cleanup from previous runs
-    try:
-        await client.delete_collection(collection)
-    except Exception:
-        pass  # Collection may not exist yet
+    collection = COLLECTION
 
     # -------------------------------------------------------------------------
     # Step 1: Insert sample data
@@ -95,7 +87,39 @@ async def main():
     # -------------------------------------------------------------------------
     # Cleanup
     # -------------------------------------------------------------------------
-    await client.delete_collection(collection)
+
+
+async def cleanup(client):
+    try:
+        await client.delete_collection(COLLECTION)
+    except Exception as error:
+        if "404" not in str(error) and "not found" not in str(error).lower():
+            raise
+
+
+async def main():
+    client = Client.new(
+        os.getenv("API_BASE_URL", "http://localhost:8080"),
+        os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb"),
+    )
+    await cleanup(client)
+    primary_error = None
+    try:
+        await run_example(client)
+    except BaseException as error:  # noqa: BLE001 - cleanup must run on cancellation
+        primary_error = error
+    cleanup_error = None
+    try:
+        await cleanup(client)
+    except Exception as error:  # noqa: BLE001 - preserve the primary failure
+        cleanup_error = error
+    if primary_error is not None:
+        if cleanup_error is not None:
+            primary_error.add_note(f"Cleanup also failed: {cleanup_error}")
+            print(f"⚠️  Cleanup also failed: {cleanup_error}")
+        raise primary_error
+    if cleanup_error is not None:
+        raise cleanup_error
     print("Cleanup done.")
 
 

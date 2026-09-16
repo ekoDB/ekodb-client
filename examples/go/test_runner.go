@@ -8,6 +8,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
+	"syscall"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -72,12 +74,52 @@ func runExample(file string) bool {
 	// Get the directory containing the file
 	dir := filepath.Dir(file)
 
+	timeoutSeconds := 300
+	if configured := os.Getenv("EXAMPLE_TIMEOUT_SECONDS"); configured != "" {
+		parsed, err := strconv.Atoi(configured)
+		if err != nil || parsed <= 0 {
+			log("✗ EXAMPLE_TIMEOUT_SECONDS must be a positive integer", colorRed)
+			return false
+		}
+		timeoutSeconds = parsed
+	}
 	cmd := exec.Command("go", "run", filepath.Base(file))
 	cmd.Dir = dir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
-	err := cmd.Run()
+	if err := cmd.Start(); err != nil {
+		log(fmt.Sprintf("✗ %s failed to start: %v", filepath.Base(file), err), colorRed)
+		return false
+	}
+	done := make(chan error, 1)
+	go func() { done <- cmd.Wait() }()
+
+	var err error
+	select {
+	case err = <-done:
+	case <-time.After(time.Duration(timeoutSeconds) * time.Second):
+		_ = syscall.Kill(-cmd.Process.Pid, syscall.SIGTERM)
+		leaderExited := false
+		gracePeriod := time.NewTimer(5 * time.Second)
+		select {
+		case <-done:
+			leaderExited = true
+			<-gracePeriod.C
+		case <-gracePeriod.C:
+		}
+		// Always check and kill the process group after the grace period. The
+		// go-run leader can exit while a signal-resistant compiled child remains.
+		if syscall.Kill(-cmd.Process.Pid, 0) == nil {
+			_ = syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
+		}
+		if !leaderExited {
+			<-done
+		}
+		log(fmt.Sprintf("✗ %s timed out after %ds", filepath.Base(file), timeoutSeconds), colorRed)
+		return false
+	}
 	if err != nil {
 		log(fmt.Sprintf("✗ %s failed", filepath.Base(file)), colorRed)
 		return false

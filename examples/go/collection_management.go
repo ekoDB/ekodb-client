@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -10,6 +11,8 @@ import (
 
 	"github.com/joho/godotenv"
 )
+
+const managedCollection = "collection_management_go"
 
 var (
 	baseURL   string
@@ -75,6 +78,9 @@ func request(method, path string, body interface{}) (map[string]interface{}, err
 	}
 
 	respBody, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode >= 300 {
+		return nil, fmt.Errorf("HTTP %d: %s", resp.StatusCode, respBody)
+	}
 	if len(respBody) == 0 {
 		return map[string]interface{}{}, nil
 	}
@@ -84,28 +90,38 @@ func request(method, path string, body interface{}) (map[string]interface{}, err
 	return result, nil
 }
 
-func main() {
-	fmt.Println("=== Collection Management (Direct HTTP) ===\n")
+func run() (runErr error) {
+	fmt.Print("=== Collection Management (Direct HTTP) ===\n\n")
 
 	_, err := getAuthToken()
 	if err != nil {
-		fmt.Printf("Auth failed: %v\n", err)
-		os.Exit(1)
+		return fmt.Errorf("auth failed: %w", err)
 	}
 	fmt.Println("✓ Authentication successful")
+	defer func() {
+		if _, err := request("DELETE", "/api/collections/"+managedCollection, nil); err != nil {
+			runErr = errors.Join(runErr, fmt.Errorf("cleanup collection %s: %w", managedCollection, err))
+		}
+	}()
 
 	// Example 1: Create a collection (via insert)
 	fmt.Println("\n=== Create Collection (via insert) ===")
-	insertResult, _ := request("POST", "/api/insert/demo_collection", map[string]interface{}{
+	insertResult, err := request("POST", "/api/insert/"+managedCollection, map[string]interface{}{
 		"name":        "Demo Collection",
 		"description": "Created for testing",
 		"active":      true,
 	})
+	if err != nil {
+		return fmt.Errorf("create collection: %w", err)
+	}
 	fmt.Printf("Collection created with first record: %s\n", insertResult["id"])
 
 	// Example 2: List all collections
 	fmt.Println("\n=== List Collections ===")
-	collectionsData, _ := request("GET", "/api/collections", nil)
+	collectionsData, err := request("GET", "/api/collections", nil)
+	if err != nil {
+		return fmt.Errorf("list collections: %w", err)
+	}
 	collections := []string{}
 	if colls, ok := collectionsData["collections"].([]interface{}); ok {
 		for _, c := range colls {
@@ -121,22 +137,38 @@ func main() {
 
 	// Example 3: Delete collection
 	fmt.Println("\n=== Delete Collection ===")
-	request("DELETE", "/api/collections/demo_collection", nil)
+	if _, err := request("DELETE", "/api/collections/"+managedCollection, nil); err != nil {
+		return fmt.Errorf("delete collection: %w", err)
+	}
 	fmt.Println("Collection deleted successfully")
 
 	// Example 4: Verify deletion
 	fmt.Println("\n=== Verify Deletion ===")
-	updatedCollectionsData, _ := request("GET", "/api/collections", nil)
+	updatedCollectionsData, err := request("GET", "/api/collections", nil)
+	if err != nil {
+		return fmt.Errorf("verify collection deletion: %w", err)
+	}
 	stillExists := false
 	if colls, ok := updatedCollectionsData["collections"].([]interface{}); ok {
 		for _, c := range colls {
-			if c.(string) == "demo_collection" {
+			if c.(string) == managedCollection {
 				stillExists = true
 				break
 			}
 		}
 	}
 	fmt.Printf("Collection still exists: %v\n", stillExists)
+	if stillExists {
+		return fmt.Errorf("collection %s still exists after deletion", managedCollection)
+	}
 
 	fmt.Println("\n✓ All collection management operations completed successfully")
+	return nil
+}
+
+func main() {
+	if err := run(); err != nil {
+		fmt.Printf("✗ Collection management failed: %v\n", err)
+		os.Exit(1)
+	}
 }

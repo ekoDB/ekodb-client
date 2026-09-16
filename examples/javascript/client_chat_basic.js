@@ -13,11 +13,13 @@ async function main() {
   // Create client
   const client = new EkoDBClient(
     process.env.API_BASE_URL || "http://localhost:8080",
-    process.env.API_BASE_KEY || ""
+    process.env.API_BASE_KEY || "",
   );
   await client.init();
 
   const collection = "client_chat_basic_js";
+  let chatId;
+  let primaryError;
 
   try {
     // Step 1: Insert sample data
@@ -52,7 +54,7 @@ async function main() {
       llm_model: "gpt-4o-mini",
       system_prompt: "You are a helpful assistant for product information.",
     });
-    const chatId = session.chat_id;
+    chatId = session.chat_id;
     console.log(`✓ Created session: ${chatId}\n`);
 
     // Step 3: Send a chat message
@@ -65,7 +67,7 @@ async function main() {
     console.log("\n=== AI Response ===");
     response.responses.forEach((r) => console.log(r));
     console.log(
-      `\n=== Context Used (${response.context_snippets.length} snippets) ===`
+      `\n=== Context Used (${response.context_snippets.length} snippets) ===`,
     );
     response.context_snippets.forEach((snippet, i) => {
       console.log(`  Snippet ${i + 1}:`, snippet);
@@ -75,25 +77,33 @@ async function main() {
     if (response.token_usage) {
       console.log(`\n=== Token Usage ===`);
       console.log(`Prompt tokens: ${response.token_usage.prompt_tokens}`);
-      console.log(`Completion tokens: ${response.token_usage.completion_tokens}`);
+      console.log(
+        `Completion tokens: ${response.token_usage.completion_tokens}`,
+      );
       console.log(`Total tokens: ${response.token_usage.total_tokens}`);
     }
-
-    // Cleanup
-    console.log("\n=== Cleanup ===");
-    await client.deleteCollection(collection);
-    console.log("✓ Deleted collection");
-
-    console.log("\n✓ Chat completed successfully");
   } catch (error) {
-    // Cleanup on error
-    try {
-      await client.deleteCollection(collection);
-    } catch (e) {
-      // Ignore cleanup errors
-    }
+    primaryError = error;
     throw error;
+  } finally {
+    console.log("\n=== Cleanup ===");
+    const cleanup = await Promise.allSettled([
+      ...(chatId ? [client.deleteChatSession(chatId)] : []),
+      client.deleteCollection(collection),
+    ]);
+    const failures = cleanup.filter((result) => result.status === "rejected");
+    if (failures.length > 0) {
+      throw new AggregateError(
+        [primaryError, ...failures.map((failure) => failure.reason)].filter(
+          Boolean,
+        ),
+        "Chat example or cleanup failed",
+      );
+    }
+    if (chatId) console.log("✓ Deleted session");
+    console.log("✓ Deleted collection");
   }
+  console.log("\n✓ Chat completed successfully");
 }
 
 main().catch((error) => {

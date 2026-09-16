@@ -21,25 +21,11 @@ API_KEY = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb")
 TEST_COLLECTION = "projection_test_users_py"
 
 
-async def main():
-    # Initialize client
-    client = Client.new(
-        BASE_URL,
-        API_KEY,
-        should_retry=True,
-        max_retries=3,
-        timeout_secs=30,
-    )
+async def run_example(client):
     print("Client created\n")
 
     # Setup: Create test collection and insert test data
     print("Setting up test data...")
-    try:
-        await client.delete_collection(TEST_COLLECTION)
-    except Exception:
-        # Collection may not exist, that's fine
-        pass
-
     # Insert test users with various fields
     test_users = [
         {
@@ -243,9 +229,43 @@ async def main():
 
     # Cleanup
     print("\nCleaning up test data...")
-    await client.delete_collection(TEST_COLLECTION)
-    print("Cleanup complete")
 
+
+async def cleanup(client):
+    try:
+        await client.delete_collection(TEST_COLLECTION)
+    except Exception as error:
+        if "404" not in str(error) and "not found" not in str(error).lower():
+            raise
+
+
+async def main():
+    client = Client.new(
+        BASE_URL,
+        API_KEY,
+        should_retry=True,
+        max_retries=3,
+        timeout_secs=30,
+    )
+    await cleanup(client)
+    primary_error = None
+    try:
+        await run_example(client)
+    except BaseException as error:  # noqa: BLE001 - cleanup must run on cancellation
+        primary_error = error
+    cleanup_error = None
+    try:
+        await cleanup(client)
+    except Exception as error:  # noqa: BLE001 - preserve the primary failure
+        cleanup_error = error
+    if primary_error is not None:
+        if cleanup_error is not None:
+            primary_error.add_note(f"Cleanup also failed: {cleanup_error}")
+            print(f"⚠️  Cleanup also failed: {cleanup_error}")
+        raise primary_error
+    if cleanup_error is not None:
+        raise cleanup_error
+    print("Cleanup complete")
     print("\nAll projection examples completed successfully!")
 
 

@@ -5,11 +5,18 @@
 //! - Embedding generation
 //! - Simple AI workflows
 
-use ekodb_client::{
-    ChatMessage, Client, FieldType, Function, ParameterDefinition, Record, UserFunction,
-};
+use ekodb_client::{ChatMessage, Client, FieldType, Function, Record, UserFunction};
 use serde_json::json;
-use std::collections::HashMap;
+
+const COLLECTION: &str = "ai_articles_rs";
+
+fn vector_len(field: Option<&FieldType>) -> Option<usize> {
+    match field {
+        Some(FieldType::Vector(values)) | Some(FieldType::Array(values)) => Some(values.len()),
+        Some(FieldType::Object(wrapper)) => vector_len(wrapper.get("value")),
+        _ => None,
+    }
+}
 
 /// Save a function idempotently: if the label already exists (HTTP 409),
 /// update the existing definition instead, then return its id.
@@ -24,7 +31,10 @@ async fn save_or_update(
             client.update_function(&label, function).await?;
             println!("ℹ️  Function '{}' already existed — updated instead", label);
             let existing = client.get_function(&label).await?;
-            Ok(existing.id.unwrap_or(label))
+            existing.id.ok_or_else(|| {
+                std::io::Error::other(format!("updated function '{label}' did not include an id"))
+                    .into()
+            })
         }
         Err(e) => Err(Box::new(e)),
     }
@@ -45,10 +55,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .build()?;
 
     println!("🚀 ekoDB Rust AI Functions Example\n");
+    let mut script_ids: Vec<String> = Vec::new();
+    let operation_result = async {
 
     // Setup test data
     println!("📋 Setting up test data...");
-    let _ = client.delete_collection("ai_articles_rs").await;
+    let _ = client.delete_collection(COLLECTION).await;
 
     let articles = vec![
         json!({"title": "Getting Started with ekoDB", "content": "ekoDB is a high-performance database...", "status": "published"}),
@@ -69,11 +81,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             "status",
             FieldType::String(article["status"].as_str().unwrap().to_string()),
         );
-        client.insert("ai_articles_rs", record, None).await?;
+        client.insert(COLLECTION, record, None).await?;
     }
     println!("✅ Created {} articles\n", articles.len());
-
-    let mut script_ids: Vec<String> = Vec::new();
 
     // Example 1: Simple Chat Completion
     println!("📝 Example 1: Simple Chat Completion\n");
@@ -97,11 +107,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let result1 = client.call_function("ai_assistant_rs", None).await?;
     println!("🤖 AI Response:");
-    if let Some(first) = result1.records.first() {
-        if let Some(FieldType::String(response)) = first.get("response") {
-            println!("   {}", response);
-        }
-    }
+    let response = result1
+        .records
+        .first()
+        .and_then(|record| record.get_string("response"))
+        .filter(|response| !response.trim().is_empty())
+        .ok_or("chat function returned no response text")?;
+    println!("   {response}");
     println!(
         "⏱️  Execution time: {}ms\n",
         result1.stats.execution_time_ms
@@ -112,13 +124,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let script2 = UserFunction::new("generate_embedding_rs", "Generate Embedding")
         .with_description("Generate embedding for text")
         .with_version("1.0")
-        .with_parameter(
-            ParameterDefinition::new("text")
-                .required()
-                .with_description("Text to embed"),
-        )
+        .with_function(Function::FindAll {
+            collection: COLLECTION.to_string(),
+        })
         .with_function(Function::Embed {
-            input_field: "text".to_string(),
+            input_field: "content".to_string(),
             output_field: "embedding".to_string(),
             model: None,
         })
@@ -128,26 +138,54 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     script_ids.push(script_id2.clone());
     println!("✅ Embed script saved");
 
-    let mut params = HashMap::new();
-    params.insert(
-        "text".to_string(),
-        FieldType::String("ekoDB is a powerful database".to_string()),
-    );
-    let result2 = client
-        .call_function("generate_embedding_rs", Some(params))
-        .await?;
-    println!("📊 Embedding generated");
+    let result2 = client.call_function("generate_embedding_rs", None).await?;
+    if result2.records.len() != articles.len() {
+        return Err(format!(
+            "embedding function returned {} records; expected {}",
+            result2.records.len(),
+            articles.len()
+        )
+        .into());
+    }
+    let dimensions = result2
+        .records
+        .iter()
+        .map(|record| vector_len(record.get("embedding")))
+        .collect::<Option<Vec<_>>>()
+        .ok_or("embedding function returned a record without an embedding vector")?;
+    if dimensions.iter().any(|dimensions| *dimensions == 0) {
+        return Err("embedding function returned an empty vector".into());
+    }
+    println!("📊 Generated {} embeddings", dimensions.len());
+    println!("   Dimensions: {}", dimensions[0]);
     println!(
         "⏱️  Execution time: {}ms\n",
         result2.stats.execution_time_ms
     );
 
-    // Cleanup
-    println!("🧹 Cleaning up...");
-    for script_id in script_ids {
-        let _ = client.delete_function(&script_id).await;
+    Ok::<(), Box<dyn std::error::Error>>(())
     }
-    let _ = client.delete_collection("ai_articles_rs").await;
+    .await;
+
+    println!("🧹 Cleaning up...");
+    let mut cleanup_errors = Vec::new();
+    for script_id in script_ids.iter().rev() {
+        if let Err(error) = client.delete_function(script_id).await {
+            cleanup_errors.push(format!("function {script_id}: {error}"));
+        }
+    }
+    if let Err(error) = client.delete_collection(COLLECTION).await {
+        cleanup_errors.push(format!("collection {COLLECTION}: {error}"));
+    }
+    if let Err(operation_error) = operation_result {
+        if !cleanup_errors.is_empty() {
+            eprintln!("⚠️  Cleanup errors: {}", cleanup_errors.join("; "));
+        }
+        return Err(operation_error);
+    }
+    if !cleanup_errors.is_empty() {
+        return Err(format!("cleanup failed: {}", cleanup_errors.join("; ")).into());
+    }
     println!("✅ Cleanup complete\n");
 
     println!("✅ All AI script examples finished!");

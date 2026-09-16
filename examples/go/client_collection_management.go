@@ -6,6 +6,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -14,7 +15,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func main() {
+func run() (runErr error) {
 	// Load environment variables
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found")
@@ -33,11 +34,18 @@ func main() {
 	// Create ekoDB client
 	client, err := ekodb.NewClient(baseURL, apiKey)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	fmt.Println("✓ Client created")
 
 	collection := "client_collection_management_go"
+	owned := false
+	deleted := false
+	defer func() {
+		if owned && !deleted {
+			runErr = errors.Join(runErr, client.DeleteCollection(collection))
+		}
+	}()
 
 	// Example 1: Create collection (via insert)
 	fmt.Println("\n=== Create Collection (via insert) ===")
@@ -47,15 +55,16 @@ func main() {
 	}
 	inserted, err := client.Insert(collection, record)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
+	owned = true
 	fmt.Printf("Collection created with first record: %v\n", inserted["id"])
 
 	// Example 2: List collections
 	fmt.Println("\n=== List Collections ===")
 	collections, err := client.ListCollections()
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	fmt.Printf("Total collections: %d\n", len(collections))
 
@@ -71,22 +80,23 @@ func main() {
 	limit := 1000
 	docs, err := client.Find(collection, ekodb.Query{Limit: &limit})
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	fmt.Printf("Document count: %d\n", len(docs))
 
 	// Example 4: Delete collection
 	fmt.Println("\n=== Delete Collection ===")
 	if err := client.DeleteCollection(collection); err != nil {
-		log.Fatal(err)
+		return err
 	}
+	deleted = true
 	fmt.Println("Collection deleted successfully")
 
 	// Example 5: Verify deletion
 	fmt.Println("\n=== Verify Deletion ===")
 	collections, err = client.ListCollections()
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	exists := false
@@ -97,6 +107,16 @@ func main() {
 		}
 	}
 	fmt.Printf("Collection still exists: %v\n", exists)
+	if exists {
+		return fmt.Errorf("collection %s still exists after deletion", collection)
+	}
 
 	fmt.Println("\n✓ All collection management operations completed successfully")
+	return nil
+}
+
+func main() {
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
 }

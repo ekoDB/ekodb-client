@@ -2,11 +2,11 @@
 """Crypto stages — comprehensive demo of every primitive added in
 ekoDB 0.42.0 (HMAC, AES-GCM, UUID, TOTP, Base64, Hex, Slugify).
 
-    crypto_demo_hmac      HmacSign + HmacVerify (round trip)
-    crypto_demo_aes       AesEncrypt + AesDecrypt (round trip)
-    crypto_demo_uuid      UuidGenerate
-    crypto_demo_totp      TotpGenerate (RFC 6238)
-    crypto_demo_encoding  Base64 + Hex + Slugify
+    crypto_demo_hmac_py      HmacSign + HmacVerify (round trip)
+    crypto_demo_aes_py       AesEncrypt + AesDecrypt (round trip)
+    crypto_demo_uuid_py      UuidGenerate
+    crypto_demo_totp_py      TotpGenerate (RFC 6238)
+    crypto_demo_encoding_py  Base64 + Hex + Slugify
 
 Operator-owned secrets flow through ``{{env.NAME}}`` so they never
 land in the function definition stored on disk.
@@ -26,15 +26,50 @@ load_dotenv(env_path)
 
 BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8080")
 API_KEY = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb")
+FUNCTION_LABELS = (
+    "crypto_demo_hmac_py",
+    "crypto_demo_aes_py",
+    "crypto_demo_uuid_py",
+    "crypto_demo_totp_py",
+    "crypto_demo_encoding_py",
+)
 
 
 async def main() -> None:
     client = Client.new(BASE_URL, API_KEY)
     print("✓ Client created")
+    primary_error = None
+    try:
+        await _run(client)
+    except Exception as error:
+        primary_error = error
+
+    cleanup_errors = []
+    for label in FUNCTION_LABELS:
+        try:
+            await client.delete_user_function(label)
+        except Exception as error:
+            if not _is_not_found_error(error):
+                cleanup_errors.append(RuntimeError(f"{label}: {error}"))
+
+    if primary_error is not None:
+        if cleanup_errors:
+            cleanup_summary = "; ".join(str(error) for error in cleanup_errors)
+            raise RuntimeError(
+                f"{primary_error}; cleanup also failed: {cleanup_summary}"
+            ) from primary_error
+        raise primary_error
+    if cleanup_errors:
+        cleanup_summary = "; ".join(str(error) for error in cleanup_errors)
+        raise RuntimeError(f"Crypto stages cleanup failed: {cleanup_summary}")
+    print("\n✓ Cleaned up demo functions")
+
+
+async def _run(client) -> None:
 
     # 1. HMAC sign + verify round trip.
     hmac = {
-        "label": "crypto_demo_hmac",
+        "label": FUNCTION_LABELS[0],
         "name": "HMAC sign + verify",
         "parameters": {"payload": {"required": True}},
         "functions": [
@@ -55,11 +90,11 @@ async def main() -> None:
             ),
         ],
     }
-    await _save(client, "crypto_demo_hmac", hmac)
+    await _save(client, FUNCTION_LABELS[0], hmac)
 
     # 2. AES-256-GCM encrypt + decrypt round trip.
     aes = {
-        "label": "crypto_demo_aes",
+        "label": FUNCTION_LABELS[1],
         "name": "AES encrypt + decrypt",
         "parameters": {"plaintext": {"required": True}},
         "functions": [
@@ -71,20 +106,20 @@ async def main() -> None:
             ),
         ],
     }
-    await _save(client, "crypto_demo_aes", aes)
+    await _save(client, FUNCTION_LABELS[1], aes)
 
     # 3. UuidGenerate.
     uuid_fn = {
-        "label": "crypto_demo_uuid",
+        "label": FUNCTION_LABELS[2],
         "name": "Generate v4 UUID",
         "parameters": {},
         "functions": [Stage.uuid_generate("id")],
     }
-    await _save(client, "crypto_demo_uuid", uuid_fn)
+    await _save(client, FUNCTION_LABELS[2], uuid_fn)
 
     # 4. TotpGenerate (RFC 6238 with SHA1).
     totp = {
-        "label": "crypto_demo_totp",
+        "label": FUNCTION_LABELS[3],
         "name": "Generate TOTP code",
         "parameters": {},
         "functions": [
@@ -97,11 +132,11 @@ async def main() -> None:
             )
         ],
     }
-    await _save(client, "crypto_demo_totp", totp)
+    await _save(client, FUNCTION_LABELS[3], totp)
 
     # 5. Base64 + Hex + Slugify chained.
     encoding = {
-        "label": "crypto_demo_encoding",
+        "label": FUNCTION_LABELS[4],
         "name": "Base64 / Hex / Slugify",
         "parameters": {"title": {"required": True}},
         "functions": [
@@ -110,33 +145,26 @@ async def main() -> None:
             Stage.slugify("{{title}}", "title_slug"),
         ],
     }
-    await _save(client, "crypto_demo_encoding", encoding)
+    await _save(client, FUNCTION_LABELS[4], encoding)
 
     print("\nInvoke them with:")
-    print('  POST /api/functions/crypto_demo_hmac     { "payload": "hi" }')
-    print('  POST /api/functions/crypto_demo_aes      { "plaintext": "secret" }')
-    print("  POST /api/functions/crypto_demo_uuid")
-    print("  POST /api/functions/crypto_demo_totp")
-    print('  POST /api/functions/crypto_demo_encoding { "title": "Héllo World" }')
-
-    for label in (
-        "crypto_demo_hmac",
-        "crypto_demo_aes",
-        "crypto_demo_uuid",
-        "crypto_demo_totp",
-        "crypto_demo_encoding",
-    ):
-        try:
-            await client.delete_user_function(label)
-        except Exception:
-            pass
-    print("\n✓ Cleaned up demo functions")
+    print(f'  POST /api/functions/{FUNCTION_LABELS[0]} {{ "payload": "hi" }}')
+    print(f'  POST /api/functions/{FUNCTION_LABELS[1]} {{ "plaintext": "secret" }}')
+    print(f"  POST /api/functions/{FUNCTION_LABELS[2]}")
+    print(f"  POST /api/functions/{FUNCTION_LABELS[3]}")
+    print(f'  POST /api/functions/{FUNCTION_LABELS[4]} {{ "title": "Héllo World" }}')
 
 
 def _is_already_exists_error(err):
     """Detect the server's 409 'function already exists' response."""
     msg = str(err)
     return "409" in msg or "already exists" in msg
+
+
+def _is_not_found_error(err):
+    """Accept both HTTP 404 and the server's HTTP 400 missing-label response."""
+    msg = str(err).lower()
+    return "status 404" in msg or "not found" in msg
 
 
 async def _save(client, label: str, func) -> None:
@@ -157,8 +185,9 @@ async def _save(client, label: str, func) -> None:
         print(f"✓ {label} saved")
     except Exception as e:
         if not _is_already_exists_error(e):
-            print(f"SaveUserFunction({label}) error: {type(e).__name__}")
-            return
+            raise RuntimeError(
+                f"SaveUserFunction({label}) failed: {type(e).__name__}"
+            ) from e
         await client.update_user_function(label, func)
         print(f"ℹ️  Function '{label}' already existed — updated instead")
 

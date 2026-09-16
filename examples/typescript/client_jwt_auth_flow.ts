@@ -22,6 +22,11 @@ dotenv.config();
 const BASE_URL = process.env.API_BASE_URL || "http://localhost:8080";
 const API_KEY = process.env.API_BASE_KEY || "a-test-api-key-from-ekodb";
 
+function isNotFoundError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.includes("status 404") || /not found/i.test(message);
+}
+
 /** True when a save failed because the function label already exists (HTTP 409). */
 function isAlreadyExistsError(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error);
@@ -45,114 +50,144 @@ async function saveOrUpdateUserFunction(
 async function main() {
   const client = new EkoDBClient(BASE_URL, API_KEY);
   await client.init();
+  const suffix = `${process.pid}_${Date.now()}`;
+  const usersCollection = `jwt_users_ts_${suffix}`;
+  const inflightCollection = `jwt_inflight_ts_${suffix}`;
+  const registerLabel = `jwt_register_ts_${suffix}`;
+  const loginLabel = `jwt_login_ts_${suffix}`;
+  const verifyLabel = `jwt_verify_ts_${suffix}`;
+  const labels = [registerLabel, loginLabel, verifyLabel];
+  let primaryError: unknown;
 
-  // Compile-time/runtime construction check for an asymmetric algorithm. The
-  // live demo below uses HS256 because it reads a shared secret from .env.
-  const asymmetricJwt = Stage.jwtSign(
-    { sub: "example" },
-    "{{env.JWT_PRIVATE_KEY}}",
-    "token",
-    3600,
-    "EdDSA",
-  );
-  if (asymmetricJwt.type !== "JwtSign" || asymmetricJwt.algorithm !== "EdDSA") {
-    throw new Error("JWT algorithm was not preserved");
+  try {
+    // Compile-time/runtime construction check for an asymmetric algorithm. The
+    // live demo below uses HS256 because it reads a shared secret from .env.
+    const asymmetricJwt = Stage.jwtSign(
+      { sub: "example" },
+      "{{env.JWT_PRIVATE_KEY}}",
+      "token",
+      3600,
+      "EdDSA",
+    );
+    if (
+      asymmetricJwt.type !== "JwtSign" ||
+      asymmetricJwt.algorithm !== "EdDSA"
+    ) {
+      throw new Error("JWT algorithm was not preserved");
+    }
+    console.log("✓ Client created");
+
+    // 1. Register: bcrypt-hash, insert.
+    const register: UserFunction = {
+      label: registerLabel,
+      name: "Register user",
+      description: "Validate, bcrypt-hash, insert.",
+      parameters: {
+        email: { required: true },
+        password: { required: true },
+      },
+      functions: [
+        Stage.bcryptHash("{{password}}", "password_hash", 12),
+        Stage.insert(usersCollection, {
+          email: "{{email}}",
+          password_hash: "{{password_hash}}",
+        }),
+      ],
+    };
+    await saveOrUpdateUserFunction(client, register);
+    console.log("✓ ts_users_register saved");
+
+    // 2. Login: find user, verify bcrypt, sign JWT on success.
+    const login: UserFunction = {
+      label: loginLabel,
+      name: "Login user",
+      description: "Verify password, mint JWT.",
+      parameters: {
+        email: { required: true },
+        password: { required: true },
+      },
+      functions: [
+        Stage.findOne(usersCollection, "email", "{{email}}"),
+        Stage.bcryptVerify("{{password}}", "password_hash", "password_ok"),
+        Stage.if(
+          { type: "FieldEquals", value: { field: "password_ok", value: true } },
+          [
+            Stage.jwtSign(
+              { email: "{{email}}" },
+              "{{env.JWT_SECRET}}",
+              "token",
+              3600,
+              "HS256",
+            ),
+            Stage.returnResponse({ ok: true, token: "{{token}}" }, 200),
+          ],
+          [Stage.returnResponse({ ok: false }, 401)],
+        ),
+      ],
+    };
+    await saveOrUpdateUserFunction(client, login);
+    console.log("✓ ts_users_login saved");
+
+    // 3. Verify a JWT — fail-closed when claims is null.
+    const verify: UserFunction = {
+      label: verifyLabel,
+      name: "Verify JWT token",
+      parameters: { token: { required: true } },
+      functions: [
+        // Synthetic record so JwtVerify has working_data[0] to read off.
+        Stage.insert(inflightCollection, { token: "{{token}}" }, true, 60),
+        Stage.jwtVerify("token", "{{env.JWT_SECRET}}", "claims", "HS256"),
+        Stage.if(
+          { type: "FieldEquals", value: { field: "claims", value: null } },
+          [Stage.returnResponse({ ok: false }, 401)],
+          [Stage.returnResponse({ ok: true }, 200)],
+        ),
+      ],
+    };
+    await saveOrUpdateUserFunction(client, verify);
+    console.log("✓ ts_users_verify_token saved");
+
+    console.log("\n=== Auth flow defined as pure stored functions ===");
+    console.log("Call them like:");
+    console.log(
+      `  POST /api/functions/${registerLabel} { "email": "a@b.com", "password": "s3cret" }`,
+    );
+    console.log(
+      `  POST /api/functions/${loginLabel} { "email": "a@b.com", "password": "s3cret" }`,
+    );
+    console.log(`  POST /api/functions/${verifyLabel} { "token": "<jwt>" }`);
+    console.log(
+      "\nSet JWT_SECRET in ekoDB's environment_vars whitelist before invoking.",
+    );
+  } catch (error) {
+    primaryError = error;
+    throw error;
+  } finally {
+    const cleanupErrors: unknown[] = [];
+    for (const label of labels.reverse()) {
+      try {
+        await client.deleteUserFunction(label);
+      } catch (error) {
+        if (!isNotFoundError(error)) cleanupErrors.push(error);
+      }
+    }
+    for (const collection of [inflightCollection, usersCollection]) {
+      try {
+        await client.deleteCollection(collection);
+      } catch (error) {
+        if (!isNotFoundError(error)) cleanupErrors.push(error);
+      }
+    }
+    if (cleanupErrors.length > 0) {
+      throw new AggregateError(
+        primaryError === undefined
+          ? cleanupErrors
+          : [primaryError, ...cleanupErrors],
+        "JWT example or cleanup failed",
+      );
+    }
+    console.log("\n✓ Cleaned up demo functions");
   }
-  console.log("✓ Client created");
-
-  // 1. Register: bcrypt-hash, insert.
-  const register: UserFunction = {
-    label: "ts_users_register",
-    name: "Register user",
-    description: "Validate, bcrypt-hash, insert.",
-    parameters: {
-      email: { required: true },
-      password: { required: true },
-    },
-    functions: [
-      Stage.bcryptHash("{{password}}", "password_hash", 12),
-      Stage.insert("ts_users", {
-        email: "{{email}}",
-        password_hash: "{{password_hash}}",
-      }),
-    ],
-  };
-  await saveOrUpdateUserFunction(client, register);
-  console.log("✓ ts_users_register saved");
-
-  // 2. Login: find user, verify bcrypt, sign JWT on success.
-  const login: UserFunction = {
-    label: "ts_users_login",
-    name: "Login user",
-    description: "Verify password, mint JWT.",
-    parameters: {
-      email: { required: true },
-      password: { required: true },
-    },
-    functions: [
-      Stage.findOne("ts_users", "email", "{{email}}"),
-      Stage.bcryptVerify("{{password}}", "password_hash", "password_ok"),
-      Stage.if(
-        { type: "FieldEquals", value: { field: "password_ok", value: true } },
-        [
-          Stage.jwtSign(
-            { email: "{{email}}" },
-            "{{env.JWT_SECRET}}",
-            "token",
-            3600,
-            "HS256",
-          ),
-          Stage.returnResponse({ ok: true, token: "{{token}}" }, 200),
-        ],
-        [Stage.returnResponse({ ok: false }, 401)],
-      ),
-    ],
-  };
-  await saveOrUpdateUserFunction(client, login);
-  console.log("✓ ts_users_login saved");
-
-  // 3. Verify a JWT — fail-closed when claims is null.
-  const verify: UserFunction = {
-    label: "ts_users_verify_token",
-    name: "Verify JWT token",
-    parameters: { token: { required: true } },
-    functions: [
-      // Synthetic record so JwtVerify has working_data[0] to read off.
-      Stage.insert("_inflight_jwt_check", { token: "{{token}}" }, true, 60),
-      Stage.jwtVerify("token", "{{env.JWT_SECRET}}", "claims", "HS256"),
-      Stage.if(
-        { type: "FieldEquals", value: { field: "claims", value: null } },
-        [Stage.returnResponse({ ok: false }, 401)],
-        [Stage.returnResponse({ ok: true }, 200)],
-      ),
-    ],
-  };
-  await saveOrUpdateUserFunction(client, verify);
-  console.log("✓ ts_users_verify_token saved");
-
-  console.log("\n=== Auth flow defined as pure stored functions ===");
-  console.log("Call them like:");
-  console.log(
-    '  POST /api/functions/ts_users_register { "email": "a@b.com", "password": "s3cret" }',
-  );
-  console.log(
-    '  POST /api/functions/ts_users_login    { "email": "a@b.com", "password": "s3cret" }',
-  );
-  console.log(
-    '  POST /api/functions/ts_users_verify_token { "token": "<jwt>" }',
-  );
-  console.log(
-    "\nSet JWT_SECRET in ekoDB's environment_vars whitelist before invoking.",
-  );
-
-  for (const label of [
-    "ts_users_register",
-    "ts_users_login",
-    "ts_users_verify_token",
-  ]) {
-    await client.deleteUserFunction(label).catch(() => {});
-  }
-  console.log("\n✓ Cleaned up demo functions");
 }
 
 main().catch((err) => {

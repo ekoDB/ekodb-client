@@ -19,6 +19,19 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
+private const val ORDERS_COLLECTION = "kv_wrapped_orders_kt"
+private const val PRODUCTS_COLLECTION = "kv_wrapped_products_kt"
+private const val FUNCTION_ORDERS_COLLECTION = "kv_wrapped_function_orders_kt"
+private const val PROCESSED_ORDERS_COLLECTION = "kv_wrapped_processed_orders_kt"
+private const val CREATE_ORDER_LABEL = "kv_wrapped_create_order_kt"
+private const val CACHED_PRODUCT_LABEL = "kv_wrapped_cached_product_kt"
+private const val PROCESS_ORDER_LABEL = "kv_wrapped_process_order_kt"
+private const val SESSION_KEY = "kv_wrapped_kt:user:session:123"
+private const val CACHE_KEY = "kv_wrapped_kt:cache:product:456"
+private const val PRODUCT_KEY = "kv_wrapped_kt:product:cache:789"
+private const val ORDER_ID = "c2d3e4f5-a1b2-c3d4-e5f6-a1b2c3d4e5f6"
+private const val ORDER_STATUS_KEY = "kv_wrapped_kt:order:status:$ORDER_ID"
+
 private fun isAlreadyExistsError(e: Exception): Boolean {
     val msg = e.message ?: return false
     return msg.contains("status 409") || msg.contains("already exists")
@@ -58,34 +71,43 @@ fun main() = runBlocking {
 
     println("✅ Client initialized\n")
 
-    val funcIds = mutableListOf<String>()
+    var failure: Throwable? = null
 
     try {
         // Wrapped Types Examples
         wrappedTypesInsert(client)
-        funcIds.add(wrappedTypesInScript(client))
+        wrappedTypesInScript(client)
 
         // KV Store Examples
         kvBasicOperations(client)
-        funcIds.add(kvScriptOperations(client))
+        kvScriptOperations(client)
 
         // Combined Example
-        funcIds.add(combinedExample(client))
+        combinedExample(client)
 
-        // Cleanup
-        cleanup(client, funcIds)
-
-        println("✅ All KV & Wrapped Types examples completed!")
-        println("\n💡 Key takeaways:")
-        println("   ✅ Use field* helpers for type-safe wrapped values")
-        println("   ✅ fieldDecimal() preserves precision (no floating point errors)")
-        println("   ✅ KV store is great for caching and quick lookups")
-        println("   ✅ FunctionStageConfig.Kv* classes work within functions")
-
-    } catch (e: Exception) {
+    } catch (e: Throwable) {
         println("❌ Error: ${e.message}")
         e.printStackTrace()
+        failure = e
+    } finally {
+        try {
+            cleanup(client)
+        } catch (cleanupError: Throwable) {
+            failure = failure?.also { it.addSuppressed(cleanupError) } ?: cleanupError
+        }
+        try {
+            client.close()
+        } catch (cleanupError: Throwable) {
+            failure = failure?.also { it.addSuppressed(cleanupError) } ?: cleanupError
+        }
     }
+    failure?.let { throw it }
+    println("✅ All KV & Wrapped Types examples completed!")
+    println("\n💡 Key takeaways:")
+    println("   ✅ Use field* helpers for type-safe wrapped values")
+    println("   ✅ fieldDecimal() preserves precision (no floating point errors)")
+    println("   ✅ KV store is great for caching and quick lookups")
+    println("   ✅ FunctionStageConfig.Kv* classes work within functions")
 }
 
 // =============================================================================
@@ -103,7 +125,7 @@ suspend fun wrappedTypesInsert(client: EkoDBClient) {
         .insert("quantity", 42)
         .insert("status", "pending")
 
-    val result = client.insert("orders_example", order)
+    val result = client.insert(ORDERS_COLLECTION, order)
     println("✅ Inserted order: ${result.get("id")}")
 
     // Insert products with proper UUID types
@@ -121,8 +143,8 @@ suspend fun wrappedTypesInsert(client: EkoDBClient) {
         .insert("stock", 150)
         .insert("available", true)
 
-    client.insert("products_example", product1)
-    client.insert("products_example", product2)
+    client.insert(PRODUCTS_COLLECTION, product1)
+    client.insert(PRODUCTS_COLLECTION, product2)
     println("✅ Inserted 2 products\n")
 }
 
@@ -130,7 +152,7 @@ suspend fun wrappedTypesInScript(client: EkoDBClient): String {
     println("📝 Example 2: function with Wrapped Type Parameters\n")
 
     val func = UserFunction(
-        label = "create_order_with_types_kt",
+        label = CREATE_ORDER_LABEL,
         name = "Create Order with Wrapped Types (Kotlin)",
         description = "Demonstrates wrapped types in script insert operations",
         version = "1.0",
@@ -152,7 +174,7 @@ suspend fun wrappedTypesInScript(client: EkoDBClient): String {
         ),
         functions = listOf(
             FunctionStageConfig.Insert(
-                collection = "function_orders",
+                collection = FUNCTION_ORDERS_COLLECTION,
                 record = buildJsonObject {
                     put("order_id", "{{order_id}}")
                     put("total", buildJsonObject {
@@ -170,7 +192,7 @@ suspend fun wrappedTypesInScript(client: EkoDBClient): String {
     val id = saveOrUpdate(client, func)
     println("✅ Function saved: $id")
 
-    val result = client.callFunction("create_order_with_types_kt", mapOf(
+    val result = client.callFunction(CREATE_ORDER_LABEL, mapOf(
         "order_total" to JsonPrimitive("599.99"),
         "order_id" to JsonPrimitive("order_${System.currentTimeMillis()}"),
         "timestamp" to JsonPrimitive(java.time.Instant.now().toString())
@@ -193,11 +215,11 @@ suspend fun kvBasicOperations(client: EkoDBClient) {
         put("userId", "user_abc")
         put("role", "admin")
     }
-    client.kvSet("user:session:123", sessionData)
+    client.kvSet(SESSION_KEY, sessionData)
     println("✅ Set session data")
 
     // Get the value back
-    val session = client.kvGet("user:session:123")
+    val session = client.kvGet(SESSION_KEY)
     println("📊 Retrieved session: $session")
 
     // Set with TTL (1 hour)
@@ -205,11 +227,11 @@ suspend fun kvBasicOperations(client: EkoDBClient) {
         put("name", "Cached Product")
         put("price", 99.99)
     }
-    client.kvSetWithTtl("cache:product:456", cacheData, "3600")
+    client.kvSetWithTtl(CACHE_KEY, cacheData, "3600")
     println("✅ Set cached data with 1 hour TTL")
 
     // Delete a key
-    client.kvDelete("user:session:123")
+    client.kvDelete(SESSION_KEY)
     println("🗑️  Deleted session\n")
 }
 
@@ -217,7 +239,7 @@ suspend fun kvScriptOperations(client: EkoDBClient): String {
     println("📝 Example 4: KV Operations in Functions\n")
 
     val func = UserFunction(
-        label = "cached_product_lookup_kt",
+        label = CACHED_PRODUCT_LABEL,
         name = "Cached Product Lookup (Kotlin)",
         description = "Uses KV store for caching within a script",
         version = "1.0",
@@ -249,8 +271,8 @@ suspend fun kvScriptOperations(client: EkoDBClient): String {
     val id = saveOrUpdate(client, func)
     println("✅ Function saved: $id")
 
-    val result = client.callFunction("cached_product_lookup_kt", mapOf(
-        "product_key" to JsonPrimitive("product:cache:789"),
+    val result = client.callFunction(CACHED_PRODUCT_LABEL, mapOf(
+        "product_key" to JsonPrimitive(PRODUCT_KEY),
         "product_data" to JsonPrimitive("{\"name\":\"Test Product\",\"price\":49.99}")
     ))
     println("📊 Cached and retrieved product data")
@@ -267,7 +289,7 @@ suspend fun combinedExample(client: EkoDBClient): String {
     println("📝 Example 5: Combined Wrapped Types + KV Function\n")
 
     val func = UserFunction(
-        label = "process_order_with_cache_kt",
+        label = PROCESS_ORDER_LABEL,
         name = "Process Order with Cache (Kotlin)",
         description = "Demonstrates combined KV and wrapped type usage",
         version = "1.0",
@@ -290,7 +312,7 @@ suspend fun combinedExample(client: EkoDBClient): String {
         ),
         functions = listOf(
             FunctionStageConfig.KvSet(
-                key = "order:status:{{order_id}}",
+                key = "kv_wrapped_kt:order:status:{{order_id}}",
                 value = buildJsonObject {
                     put("status", "processing")
                     put("updated_at", "{{timestamp}}")
@@ -298,7 +320,7 @@ suspend fun combinedExample(client: EkoDBClient): String {
                 ttl = 86400
             ),
             FunctionStageConfig.Insert(
-                collection = "processed_orders",
+                collection = PROCESSED_ORDERS_COLLECTION,
                 record = buildJsonObject {
                     put("order_id", "{{order_id}}")
                     put("total", buildJsonObject {
@@ -309,7 +331,7 @@ suspend fun combinedExample(client: EkoDBClient): String {
                     put("status", "processing")
                 }
             ),
-            FunctionStageConfig.KvGet(key = "order:status:{{order_id}}")
+            FunctionStageConfig.KvGet(key = "kv_wrapped_kt:order:status:{{order_id}}")
         ),
         tags = listOf("orders", "kv", "wrapped-types")
     )
@@ -317,8 +339,8 @@ suspend fun combinedExample(client: EkoDBClient): String {
     val id = saveOrUpdate(client, func)
     println("✅ Function saved: $id")
 
-    val result = client.callFunction("process_order_with_cache_kt", mapOf(
-        "order_id" to JsonPrimitive("c2d3e4f5-a1b2-c3d4-e5f6-a1b2c3d4e5f6"),
+    val result = client.callFunction(PROCESS_ORDER_LABEL, mapOf(
+        "order_id" to JsonPrimitive(ORDER_ID),
         "total" to JsonPrimitive("299.99"),
         "timestamp" to JsonPrimitive(java.time.Instant.now().toString())
     ))
@@ -333,25 +355,40 @@ suspend fun combinedExample(client: EkoDBClient): String {
 // Cleanup
 // =============================================================================
 
-suspend fun cleanup(client: EkoDBClient, funcIds: List<String>) {
+suspend fun cleanup(client: EkoDBClient) {
     println("🧹 Cleaning up...")
-
-    try {
-        for (id in funcIds) {
-            client.deleteFunction(id)
+    var failure: Exception? = null
+    suspend fun attempt(operation: suspend () -> Unit) {
+        try {
+            operation()
+        } catch (error: Exception) {
+            val notFound = error.message?.let {
+                it.contains("status 404") || it.contains("not found", ignoreCase = true)
+            } == true
+            if (!notFound) {
+                failure = failure?.also { it.addSuppressed(error) } ?: error
+            }
         }
-
-        client.deleteCollection("orders_example")
-        client.deleteCollection("products_example")
-        client.deleteCollection("function_orders")
-        client.deleteCollection("processed_orders")
-
-        client.kvDelete("cache:product:456")
-        client.kvDelete("product:cache:789")
-        client.kvDelete("order:status:c2d3e4f5-a1b2-c3d4-e5f6-a1b2c3d4e5f6")
-
-        println("✅ Cleanup complete\n")
-    } catch (e: Exception) {
-        println("⚠️  Cleanup had some errors (may be expected)\n")
     }
+
+    for (label in listOf(CREATE_ORDER_LABEL, CACHED_PRODUCT_LABEL, PROCESS_ORDER_LABEL)) {
+        attempt { client.deleteFunction(label) }
+    }
+    for (collection in listOf(ORDERS_COLLECTION, PRODUCTS_COLLECTION, FUNCTION_ORDERS_COLLECTION, PROCESSED_ORDERS_COLLECTION)) {
+        attempt { client.deleteCollection(collection) }
+    }
+    for (key in listOf(
+        SESSION_KEY,
+        CACHE_KEY,
+        PRODUCT_KEY,
+        ORDER_STATUS_KEY
+    )) {
+        attempt { client.kvDelete(key) }
+    }
+
+    failure?.let {
+        println("⚠️  Cleanup had some errors (may be expected)\n")
+        throw it
+    }
+    println("✅ Cleanup complete\n")
 }

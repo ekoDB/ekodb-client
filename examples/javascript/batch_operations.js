@@ -64,104 +64,137 @@ async function main() {
 
   await getAuthToken();
   console.log("✓ Authentication successful");
+  await request("DELETE", "/api/collections/batch_users");
 
-  // Example 1: Batch Insert
-  console.log("\n=== Batch Insert ===");
-  const records = [
-    { name: "User 1", email: "user1@example.com", age: 25 },
-    { name: "User 2", email: "user2@example.com", age: 30 },
-    { name: "User 3", email: "user3@example.com", age: 35 },
-    { name: "User 4", email: "user4@example.com", age: 40 },
-    { name: "User 5", email: "user5@example.com", age: 45 },
-  ];
+  try {
+    // Example 1: Batch Insert
+    console.log("\n=== Batch Insert ===");
+    const records = [
+      { name: "User 1", email: "user1@example.com", age: 25 },
+      { name: "User 2", email: "user2@example.com", age: 30 },
+      { name: "User 3", email: "user3@example.com", age: 35 },
+      { name: "User 4", email: "user4@example.com", age: 40 },
+      { name: "User 5", email: "user5@example.com", age: 45 },
+    ];
 
-  const inserts = records.map((r) => ({ data: r }));
-  const batchInsertData = {
-    inserts: inserts,
-    bypass_ripple: false,
-  };
+    const inserts = records.map((r) => ({ data: r }));
+    const batchInsertData = {
+      inserts: inserts,
+      bypass_ripple: false,
+    };
 
-  const insertResult = await request(
-    "POST",
-    "/api/batch/insert/batch_users",
-    batchInsertData
-  );
-  const insertedCount = insertResult.successful
-    ? insertResult.successful.length
-    : 0;
-  console.log(`✓ Batch inserted ${insertedCount} records`);
+    const insertResult = await request(
+      "POST",
+      "/api/batch/insert/batch_users",
+      batchInsertData,
+    );
+    const insertedCount = insertResult.successful
+      ? insertResult.successful.length
+      : 0;
+    console.log(`✓ Batch inserted ${insertedCount} records`);
+    if (insertedCount !== records.length) {
+      throw new Error(
+        `Expected ${records.length} successful inserts, got ${insertedCount}`,
+      );
+    }
 
-  // Verify the inserts
-  const allDocs = await request("POST", "/api/find/batch_users", { limit: 100 });
-  const totalCount = Array.isArray(allDocs) ? allDocs.length : 0;
-  console.log(`✓ Verified: Found ${totalCount} total records in collection`);
-
-  // Example 2: Create test records for update/delete
-  console.log("\n=== Creating test records for update/delete ===");
-  const ids = [];
-  for (let i = 0; i < 3; i++) {
-    const doc = await request("POST", "/api/insert/batch_users", {
-      name: `Test User ${i}`,
-      value: i,
+    // Verify the inserts
+    const allDocs = await request("POST", "/api/find/batch_users", {
+      limit: 100,
     });
-    ids.push(doc.id);
+    const totalCount = Array.isArray(allDocs) ? allDocs.length : 0;
+    console.log(`✓ Verified: Found ${totalCount} total records in collection`);
+
+    // Example 2: Create test records for update/delete
+    console.log("\n=== Creating test records for update/delete ===");
+    const ids = [];
+    for (let i = 0; i < 3; i++) {
+      const doc = await request("POST", "/api/insert/batch_users", {
+        name: `Test User ${i}`,
+        value: i,
+      });
+      ids.push(doc.id);
+    }
+    console.log(`Created ${ids.length} test records`);
+
+    // Example 3: Batch Update
+    console.log("\n=== Batch Update ===");
+    const updates = ids.map((id, i) => ({
+      id: id,
+      data: { name: `Updated User ${i}`, status: "active" },
+    }));
+
+    const batchUpdateData = {
+      updates: updates,
+      bypass_ripple: false,
+    };
+
+    const updateResult = await request(
+      "PUT",
+      "/api/batch/update/batch_users",
+      batchUpdateData,
+    );
+    const updatedCount = updateResult.successful
+      ? updateResult.successful.length
+      : 0;
+    console.log(`✓ Batch updated ${updatedCount} records`);
+    if (updatedCount !== ids.length) {
+      throw new Error(
+        `Expected ${ids.length} successful updates, got ${updatedCount}`,
+      );
+    }
+
+    // Verify the updates
+    const updatedDoc = await request("GET", `/api/find/batch_users/${ids[0]}`);
+    const status =
+      updatedDoc?.status && typeof updatedDoc.status === "object"
+        ? updatedDoc.status.value
+        : updatedDoc?.status;
+    if (status !== "active") {
+      throw new Error(
+        `Expected updated status "active", got ${String(status)}`,
+      );
+    }
+    console.log(`✓ Verified: Record updated with status="${status}"`);
+
+    // Example 4: Batch Delete
+    console.log("\n=== Batch Delete ===");
+    const deletes = ids.map((id) => ({ id: id }));
+    const batchDeleteData = {
+      deletes: deletes,
+      bypass_ripple: false,
+    };
+
+    const deleteResult = await request(
+      "DELETE",
+      "/api/batch/delete/batch_users",
+      batchDeleteData,
+    );
+    const deletedCount = deleteResult.successful
+      ? deleteResult.successful.length
+      : 0;
+    console.log(`✓ Batch deleted ${deletedCount} records`);
+    if (deletedCount !== ids.length) {
+      throw new Error(
+        `Expected ${ids.length} successful deletes, got ${deletedCount}`,
+      );
+    }
+
+    // Verify the deletes
+    const verifyDelete = await request(
+      "GET",
+      `/api/find/batch_users/${ids[0]}`,
+    );
+    if (verifyDelete === null) {
+      console.log("✓ Verified: Records successfully deleted (not found)");
+    } else {
+      throw new Error("Record still exists after delete");
+    }
+
+    console.log("\n✓ All batch operations completed successfully");
+  } finally {
+    await request("DELETE", "/api/collections/batch_users");
   }
-  console.log(`Created ${ids.length} test records`);
-
-  // Example 3: Batch Update
-  console.log("\n=== Batch Update ===");
-  const updates = ids.map((id, i) => ({
-    id: id,
-    data: { name: `Updated User ${i}`, status: "active" },
-  }));
-
-  const batchUpdateData = {
-    updates: updates,
-    bypass_ripple: false,
-  };
-
-  const updateResult = await request(
-    "PUT",
-    "/api/batch/update/batch_users",
-    batchUpdateData
-  );
-  const updatedCount = updateResult.successful
-    ? updateResult.successful.length
-    : 0;
-  console.log(`✓ Batch updated ${updatedCount} records`);
-
-  // Verify the updates
-  const updatedDoc = await request("GET", `/api/find/batch_users/${ids[0]}`);
-  const status = updatedDoc?.status?.value || updatedDoc?.status || "active";
-  console.log(`✓ Verified: Record updated with status="${status}"`);
-
-  // Example 4: Batch Delete
-  console.log("\n=== Batch Delete ===");
-  const deletes = ids.map((id) => ({ id: id }));
-  const batchDeleteData = {
-    deletes: deletes,
-    bypass_ripple: false,
-  };
-
-  const deleteResult = await request(
-    "DELETE",
-    "/api/batch/delete/batch_users",
-    batchDeleteData
-  );
-  const deletedCount = deleteResult.successful
-    ? deleteResult.successful.length
-    : 0;
-  console.log(`✓ Batch deleted ${deletedCount} records`);
-
-  // Verify the deletes
-  const verifyDelete = await request("GET", `/api/find/batch_users/${ids[0]}`);
-  if (verifyDelete === null) {
-    console.log("✓ Verified: Records successfully deleted (not found)");
-  } else {
-    console.log("✗ Warning: Record still exists after delete!");
-  }
-
-  console.log("\n✓ All batch operations completed successfully");
 }
 
 main().catch((error) => {

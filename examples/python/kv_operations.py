@@ -7,6 +7,7 @@ using raw HTTP requests - no client library required
 """
 
 import os
+
 import requests
 from dotenv import load_dotenv
 
@@ -16,6 +17,12 @@ BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8080")
 API_KEY = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb")
 
 auth_token = None
+SESSION_KEY = "kv_operations:direct:py:session:user123"
+PRODUCT_KEYS = [
+    "kv_operations:direct:py:cache:product:1",
+    "kv_operations:direct:py:cache:product:2",
+    "kv_operations:direct:py:cache:product:3",
+]
 
 
 def get_auth_token():
@@ -54,17 +61,12 @@ def request(method, path, body=None):
     return response.json()
 
 
-def main():
-    print("=== Key-Value Operations (Direct HTTP) ===\n")
-
-    get_auth_token()
-    print("✓ Authentication successful")
-
+def run_examples():
     # Example 1: Set a key-value pair
     print("\n=== KV Set ===")
     request(
         "POST",
-        "/api/kv/set/session:user123",
+        f"/api/kv/set/{SESSION_KEY}",
         {
             "value": {
                 "userId": 123,
@@ -76,12 +78,12 @@ def main():
 
     # Example 2: Get a key-value pair
     print("\n=== KV Get ===")
-    get_value = request("GET", "/api/kv/get/session:user123")
+    get_value = request("GET", f"/api/kv/get/{SESSION_KEY}")
     print(f"Retrieved value: {get_value.get('value') if get_value else None}")
 
     # Example 3: Set multiple keys
     print("\n=== Set Multiple Keys ===")
-    keys = ["cache:product:1", "cache:product:2", "cache:product:3"]
+    keys = PRODUCT_KEYS
 
     for i, key in enumerate(keys):
         request(
@@ -104,21 +106,60 @@ def main():
 
     # Example 5: Delete a key
     print("\n=== KV Delete ===")
-    request("DELETE", "/api/kv/delete/session:user123")
+    request("DELETE", f"/api/kv/delete/{SESSION_KEY}")
     print("✓ Deleted key: session:user123")
 
     # Verify deletion
-    verify_delete = request("GET", "/api/kv/get/session:user123")
+    verify_delete = request("GET", f"/api/kv/get/{SESSION_KEY}")
     if verify_delete is None:
         print("✓ Verified: Key successfully deleted (not found)")
     else:
         print("✗ Warning: Key still exists after delete!")
+        raise RuntimeError("session key still exists after deletion")
 
     # Example 6: Delete multiple keys
     print("\n=== Delete Multiple Keys ===")
     for key in keys:
         request("DELETE", f"/api/kv/delete/{key}")
     print(f"✓ Deleted {len(keys)} keys")
+
+
+def cleanup_owned_keys():
+    errors = []
+    for key in [SESSION_KEY, *PRODUCT_KEYS]:
+        try:
+            request("DELETE", f"/api/kv/delete/{key}")
+        except Exception as exc:
+            errors.append(f"{key}: {exc}")
+    if errors:
+        raise RuntimeError("failed to clean owned KV keys: " + "; ".join(errors))
+
+
+def main():
+    print("=== Key-Value Operations (Direct HTTP) ===\n")
+
+    get_auth_token()
+    print("✓ Authentication successful")
+    cleanup_owned_keys()
+
+    operation_error = None
+    try:
+        run_examples()
+    except Exception as exc:
+        operation_error = exc
+
+    cleanup_error = None
+    try:
+        cleanup_owned_keys()
+    except Exception as exc:
+        cleanup_error = exc
+
+    if operation_error is not None:
+        if cleanup_error is not None:
+            operation_error.add_note(f"Cleanup also failed: {cleanup_error}")
+        raise operation_error
+    if cleanup_error is not None:
+        raise cleanup_error
 
     print("\n✓ All KV operations completed successfully")
 

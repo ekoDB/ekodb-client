@@ -4,6 +4,15 @@
 
 import { EkoDBClient } from "@ekodb/ekodb-client";
 
+function combineErrors(primary: unknown, cleanup: unknown[]): unknown {
+  if (cleanup.length === 0) return primary;
+  if (primary === undefined && cleanup.length === 1) return cleanup[0];
+  const failures = primary === undefined ? cleanup : [primary, ...cleanup];
+  const combined = new Error(failures.map(String).join("; "));
+  (combined as Error & { cause?: unknown }).cause = primary;
+  return combined;
+}
+
 async function main() {
   console.log("=== ekoDB Chat Message Stream (SSE) Example (TypeScript) ===\n");
 
@@ -13,42 +22,69 @@ async function main() {
 
   const client = new EkoDBClient(baseUrl, apiKey);
 
-  // Create a chat session
-  const session = await client.createChatSession({
-    collections: [],
-    llm_provider: "openai",
-    system_prompt: "You are a helpful assistant.",
-  });
-  const chatId = session.chat_id;
-  console.log(`Created session: ${chatId}`);
+  let chatId: string | undefined;
+  let primaryError: unknown;
+  try {
+    // Create a chat session
+    const session = await client.createChatSession({
+      collections: [],
+      llm_provider: "openai",
+      system_prompt: "You are a helpful assistant.",
+    });
+    chatId = session.chat_id;
+    console.log(`Created session: ${chatId}`);
 
-  // Stream a chat message via SSE
-  console.log("\nStreaming response for: 'What is ekoDB?'\n");
-  const stream = client.chatMessageStream(chatId, {
-    message: "What is ekoDB?",
-  });
+    // Stream a chat message via SSE
+    console.log("\nStreaming response for: 'What is ekoDB?'\n");
+    const stream = client.chatMessageStream(chatId, {
+      message: "What is ekoDB?",
+    });
+    let completed = false;
+    let streamError: Error | undefined;
 
-  stream.on("event", (event: any) => {
-    switch (event.type) {
-      case "chunk":
-        process.stdout.write(event.content);
-        break;
-      case "end":
-        console.log("\n\n--- Stream complete ---");
-        console.log(`Message ID: ${event.messageId}`);
-        console.log(`Execution time: ${event.executionTimeMs}ms`);
-        if (event.contextWindow) {
-          console.log(`Context window: ${event.contextWindow} tokens`);
-        }
-        break;
-      case "error":
-        console.error(`Error: ${event.error}`);
-        break;
+    stream.on("event", (event: any) => {
+      switch (event.type) {
+        case "chunk":
+          process.stdout.write(event.content);
+          break;
+        case "end":
+          completed = true;
+          console.log("\n\n--- Stream complete ---");
+          console.log(`Message ID: ${event.messageId}`);
+          console.log(`Execution time: ${event.executionTimeMs}ms`);
+          if (event.contextWindow) {
+            console.log(`Context window: ${event.contextWindow} tokens`);
+          }
+          break;
+        case "error":
+          console.error(`Error: ${event.error}`);
+          streamError = new Error(`Chat stream failed: ${event.error}`);
+          break;
+      }
+    });
+
+    await new Promise((resolve) => stream.on("close", resolve));
+    if (streamError) throw streamError;
+    if (!completed) throw new Error("Chat stream ended before an end event");
+  } catch (error) {
+    primaryError = error;
+  }
+
+  const cleanupErrors: unknown[] = [];
+  if (chatId !== undefined) {
+    try {
+      await client.deleteChatSession(chatId);
+    } catch (error) {
+      cleanupErrors.push(error);
     }
-  });
+  }
+  const failure = combineErrors(primaryError, cleanupErrors);
+  if (failure !== undefined) throw failure;
 
-  await new Promise((resolve) => stream.on("close", resolve));
   console.log("\n✓ Chat message stream example completed");
 }
 
-main().catch(console.error);
+main().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});

@@ -103,7 +103,9 @@ async function main() {
   const stillExists = updatedCollections.includes("demo_collection");
   console.log(`Collection still exists: ${stillExists}`);
 
-  console.log("\n✓ All collection management operations completed successfully");
+  console.log(
+    "\n✓ All collection management operations completed successfully",
+  );
 }
 
 main().catch((error) => {

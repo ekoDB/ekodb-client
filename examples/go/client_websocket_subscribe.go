@@ -3,7 +3,9 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"time"
@@ -12,7 +14,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func main() {
+func run() (runErr error) {
 	godotenv.Load()
 
 	baseURL := os.Getenv("API_BASE_URL")
@@ -37,15 +39,38 @@ func main() {
 	authBody, _ := json.Marshal(map[string]string{"api_key": apiKey})
 	authResp, err := http.Post(baseURL+"/api/auth/token", "application/json", bytes.NewBuffer(authBody))
 	if err != nil {
-		fmt.Printf("Auth failed: %v\n", err)
-		os.Exit(1)
+		return fmt.Errorf("auth failed: %w", err)
 	}
 	defer authResp.Body.Close()
 
 	var authResult map[string]interface{}
-	json.NewDecoder(authResp.Body).Decode(&authResult)
-	token := authResult["token"].(string)
+	if err := json.NewDecoder(authResp.Body).Decode(&authResult); err != nil {
+		return fmt.Errorf("decode auth response: %w", err)
+	}
+	token, ok := authResult["token"].(string)
+	if !ok || token == "" {
+		return fmt.Errorf("auth response did not contain a token")
+	}
 	fmt.Println("✓ Authentication successful")
+	defer func() {
+		req, err := http.NewRequest("DELETE", baseURL+"/api/collections/"+collection, nil)
+		if err == nil {
+			req.Header.Set("Authorization", "Bearer "+token)
+			resp, requestErr := http.DefaultClient.Do(req)
+			if requestErr != nil {
+				err = requestErr
+			} else {
+				defer resp.Body.Close()
+				if resp.StatusCode >= 300 && resp.StatusCode != http.StatusNotFound {
+					body, _ := io.ReadAll(resp.Body)
+					err = fmt.Errorf("HTTP %d: %s", resp.StatusCode, body)
+				}
+			}
+		}
+		if err != nil {
+			runErr = errors.Join(runErr, fmt.Errorf("cleanup collection %s: %w", collection, err))
+		}
+	}()
 
 	// Step 2: Connect to WebSocket
 	header := http.Header{}
@@ -53,8 +78,7 @@ func main() {
 
 	conn, _, err := websocket.DefaultDialer.Dial(wsURL+"/api/ws", header)
 	if err != nil {
-		fmt.Printf("WebSocket connection failed: %v\n", err)
-		os.Exit(1)
+		return fmt.Errorf("WebSocket connection failed: %w", err)
 	}
 	defer conn.Close()
 	fmt.Println("✓ WebSocket connected")
@@ -69,14 +93,12 @@ func main() {
 		},
 	}
 	if err := conn.WriteJSON(subscribeMsg); err != nil {
-		fmt.Printf("WebSocket subscribe request failed: %v\n", err)
-		os.Exit(1)
+		return fmt.Errorf("WebSocket subscribe request failed: %w", err)
 	}
 
 	var subResponse map[string]interface{}
 	if err := conn.ReadJSON(&subResponse); err != nil {
-		fmt.Printf("WebSocket subscribe response read failed: %v\n", err)
-		os.Exit(1)
+		return fmt.Errorf("WebSocket subscribe response read failed: %w", err)
 	}
 	payload := subResponse["payload"].(map[string]interface{})
 	data := payload["data"].(map[string]interface{})
@@ -119,11 +141,14 @@ func main() {
 	fmt.Println("\n=== Performing mutations to trigger notifications ===")
 
 	fmt.Println("Inserting record 1...")
-	result1, _ := doInsert(map[string]interface{}{
+	result1, err := doInsert(map[string]interface{}{
 		"name":   "Alice",
 		"role":   "engineer",
 		"active": true,
 	})
+	if err != nil {
+		return fmt.Errorf("insert record 1: %w", err)
+	}
 	fmt.Printf("✓ Inserted: %s\n", result1["id"])
 
 	// Wait for notification
@@ -141,15 +166,18 @@ func main() {
 		fmt.Printf("     Record IDs: %v\n", idStrs)
 		fmt.Printf("     Timestamp:  %s\n", p["timestamp"])
 	case <-time.After(5 * time.Second):
-		fmt.Println("  ⏳ No notification within timeout")
+		return fmt.Errorf("no notification for record 1 within timeout")
 	}
 
 	fmt.Println("\nInserting record 2...")
-	result2, _ := doInsert(map[string]interface{}{
+	result2, err := doInsert(map[string]interface{}{
 		"name":   "Bob",
 		"role":   "designer",
 		"active": true,
 	})
+	if err != nil {
+		return fmt.Errorf("insert record 2: %w", err)
+	}
 	fmt.Printf("✓ Inserted: %s\n", result2["id"])
 
 	select {
@@ -164,7 +192,7 @@ func main() {
 		}
 		fmt.Printf("     Record IDs: %v\n", idStrs)
 	case <-time.After(5 * time.Second):
-		fmt.Println("  ⏳ No notification within timeout")
+		return fmt.Errorf("no notification for record 2 within timeout")
 	}
 
 	// Step 6: Unsubscribe
@@ -176,10 +204,17 @@ func main() {
 		},
 	}
 	if err := conn.WriteJSON(unsubMsg); err != nil {
-		fmt.Printf("WebSocket unsubscribe failed: %v\n", err)
-		os.Exit(1)
+		return fmt.Errorf("WebSocket unsubscribe failed: %w", err)
 	}
 	fmt.Println("✓ Unsubscribed")
 
 	fmt.Println("\n✓ WebSocket subscription example completed successfully")
+	return nil
+}
+
+func main() {
+	if err := run(); err != nil {
+		fmt.Printf("✗ WebSocket subscription example failed: %v\n", err)
+		os.Exit(1)
+	}
 }

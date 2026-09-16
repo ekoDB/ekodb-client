@@ -27,13 +27,19 @@ function extractStringField(record, field) {
   return value ? String(value) : "N/A";
 }
 
-async function createConversation(client, collection, convId, title) {
+async function createConversation(
+  client,
+  collection,
+  messagesCollection,
+  convId,
+  title,
+) {
   const conv = {
     conversation_id: convId,
     title,
     created_at: new Date().toISOString(),
     search_config: {
-      collections: ["rag_messages"],
+      collections: [messagesCollection],
       search_type: "hybrid",
       limit: 10,
     },
@@ -41,12 +47,34 @@ async function createConversation(client, collection, convId, title) {
   await client.insert(collection, conv);
 }
 
+function isNotFound(error) {
+  return /\b404\b|not found/i.test(error?.message || String(error));
+}
+
+async function cleanupCollections(client, collections) {
+  const results = await Promise.allSettled(
+    collections.map(async (collection) => {
+      try {
+        await client.deleteCollection(collection);
+      } catch (error) {
+        if (!isNotFound(error)) throw error;
+      }
+    }),
+  );
+  const failures = results
+    .filter((result) => result.status === "rejected")
+    .map((result) => result.reason);
+  if (failures.length > 0) {
+    throw new AggregateError(failures, "Collection cleanup failed");
+  }
+}
+
 async function generateEmbedding(client, text) {
   console.log("  → Calling ekoDB embed() helper...");
   console.log("    • Using model: text-embedding-3-small");
   console.log(`    • Text length: ${text.length} characters`);
   console.log(
-    "    • Behind the scenes: Creating temp Function with Embed operation"
+    "    • Behind the scenes: Creating temp Function with Embed operation",
   );
 
   const start = Date.now();
@@ -54,7 +82,7 @@ async function generateEmbedding(client, text) {
   const duration = (Date.now() - start) / 1000;
 
   console.log(
-    `    ✓ Generated embedding: ${embedding.length} dimensions in ${duration.toFixed(3)}s`
+    `    ✓ Generated embedding: ${embedding.length} dimensions in ${duration.toFixed(3)}s`,
   );
   console.log("    • Function auto-cleaned up by client");
 
@@ -67,7 +95,7 @@ async function storeMessageWithEmbedding(
   conversationId,
   role,
   content,
-  tags
+  tags,
 ) {
   const embedding = await generateEmbedding(client, content);
 
@@ -86,27 +114,27 @@ async function storeMessageWithEmbedding(
 async function main() {
   console.log("=== ekoDB RAG Conversation System ===\n");
   console.log(
-    "This example shows how ekoDB can power a self-improving AI system"
+    "This example shows how ekoDB can power a self-improving AI system",
   );
   console.log("that learns from its own conversation history.\n");
 
   // Create client
   const client = new EkoDBClient(
     process.env.API_BASE_URL || "http://localhost:8080",
-    process.env.API_BASE_KEY || "a-test-api-key-from-ekodb"
+    process.env.API_BASE_KEY || "a-test-api-key-from-ekodb",
   );
   await client.init();
 
   const messagesCollection = "rag_messages_js";
   const conversationsCollection = "rag_conversations_js";
+  let chatSessionId;
+  let runError;
 
   // Cleanup any existing data
-  try {
-    await client.deleteCollection(messagesCollection);
-    await client.deleteCollection(conversationsCollection);
-  } catch (e) {
-    // Ignore if collections don't exist
-  }
+  await cleanupCollections(client, [
+    messagesCollection,
+    conversationsCollection,
+  ]);
 
   try {
     // ========================================
@@ -120,8 +148,9 @@ async function main() {
     await createConversation(
       client,
       conversationsCollection,
+      messagesCollection,
       conv1Id,
-      "Rust Programming"
+      "Rust Programming",
     );
 
     const rustMessages = [
@@ -148,11 +177,11 @@ async function main() {
         conv1Id,
         role,
         content,
-        ["rust", "programming"]
+        ["rust", "programming"],
       );
     }
     console.log(
-      `✓ Stored Rust programming conversation (${rustMessages.length} messages)`
+      `✓ Stored Rust programming conversation (${rustMessages.length} messages)`,
     );
 
     // Conversation 2: Database Design Discussion
@@ -160,8 +189,9 @@ async function main() {
     await createConversation(
       client,
       conversationsCollection,
+      messagesCollection,
       conv2Id,
-      "Database Design"
+      "Database Design",
     );
 
     const dbMessages = [
@@ -188,11 +218,11 @@ async function main() {
         conv2Id,
         role,
         content,
-        ["database", "design"]
+        ["database", "design"],
       );
     }
     console.log(
-      `✓ Stored database design conversation (${dbMessages.length} messages)`
+      `✓ Stored database design conversation (${dbMessages.length} messages)`,
     );
 
     // Conversation 3: Performance Optimization
@@ -200,8 +230,9 @@ async function main() {
     await createConversation(
       client,
       conversationsCollection,
+      messagesCollection,
       conv3Id,
-      "Performance Optimization"
+      "Performance Optimization",
     );
 
     const perfMessages = [
@@ -228,11 +259,11 @@ async function main() {
         conv3Id,
         role,
         content,
-        ["performance", "optimization"]
+        ["performance", "optimization"],
       );
     }
     console.log(
-      `✓ Stored performance optimization conversation (${perfMessages.length} messages)\n`
+      `✓ Stored performance optimization conversation (${perfMessages.length} messages)\n`,
     );
 
     // ========================================
@@ -248,7 +279,7 @@ async function main() {
     // ========================================
     console.log("=== Step 3: Searching Related Context ===");
     console.log(
-      "Using hybrid search to find relevant messages from all conversations...\n"
+      "Using hybrid search to find relevant messages from all conversations...\n",
     );
 
     // Generate embedding for the question
@@ -268,13 +299,13 @@ async function main() {
       messagesCollection,
       userQuestion,
       questionEmbedding,
-      5
+      5,
     );
     const searchDuration = (Date.now() - searchStart) / 1000;
     console.log(`  ✓ Search completed in ${searchDuration.toFixed(3)}s`);
 
     console.log(
-      `✓ Found ${relatedMessages.length} related messages across all conversations:`
+      `✓ Found ${relatedMessages.length} related messages across all conversations:`,
     );
 
     const contextMessages = [];
@@ -310,6 +341,7 @@ async function main() {
         "to give comprehensive answers that combine knowledge from multiple " +
         `topics. Context:\n\n${context}`,
     });
+    chatSessionId = chatSession.chat_id;
 
     // Send the question
     const response = await client.chatMessage(chatSession.chat_id, {
@@ -330,8 +362,9 @@ async function main() {
     await createConversation(
       client,
       conversationsCollection,
+      messagesCollection,
       newConvId,
-      "Memory-Safe Database Code"
+      "Memory-Safe Database Code",
     );
 
     // Store user question
@@ -341,7 +374,7 @@ async function main() {
       newConvId,
       "user",
       userQuestion,
-      ["rust", "database", "performance"]
+      ["rust", "database", "performance"],
     );
 
     // Store AI response
@@ -352,7 +385,7 @@ async function main() {
         newConvId,
         "assistant",
         response.responses[0],
-        ["rust", "database", "performance"]
+        ["rust", "database", "performance"],
       );
     }
 
@@ -363,7 +396,7 @@ async function main() {
     // ========================================
     console.log("=== Step 6: Cross-Conversation Search ===");
     console.log(
-      "Searching for messages about 'ownership' across ALL conversations...\n"
+      "Searching for messages about 'ownership' across ALL conversations...\n",
     );
 
     console.log("\n→ Executing textSearch()...");
@@ -377,13 +410,13 @@ async function main() {
     const ownershipResults = await client.textSearch(
       messagesCollection,
       "ownership system",
-      3
+      3,
     );
     const textDuration = (Date.now() - textStart) / 1000;
     console.log(`  ✓ Text search completed in ${textDuration.toFixed(3)}s`);
 
     console.log(
-      `✓ Found ${ownershipResults.length} messages mentioning ownership:`
+      `✓ Found ${ownershipResults.length} messages mentioning ownership:`,
     );
     for (let i = 0; i < ownershipResults.length; i++) {
       const msg = ownershipResults[i];
@@ -400,8 +433,14 @@ async function main() {
     console.log("→ Querying database statistics...");
     console.log("  • Using findAllWithLimit() helper - simplified query API\n");
 
-    const totalMessages = await client.findAllWithLimit(messagesCollection, 1000);
-    const totalConvs = await client.findAllWithLimit(conversationsCollection, 100);
+    const totalMessages = await client.findAllWithLimit(
+      messagesCollection,
+      1000,
+    );
+    const totalConvs = await client.findAllWithLimit(
+      conversationsCollection,
+      100,
+    );
 
     console.log("📊 Database Statistics:");
     console.log(`  • Total conversations: ${totalConvs.length}`);
@@ -423,17 +462,8 @@ async function main() {
     console.log("  • Collection-specific settings");
     console.log("  • Per-conversation AI behavior");
     console.log(
-      "\nThis enables context-aware search tuned to each conversation's needs!\n"
+      "\nThis enables context-aware search tuned to each conversation's needs!\n",
     );
-
-    // ========================================
-    // Cleanup
-    // ========================================
-    console.log("=== Cleanup ===");
-    await client.deleteChatSession(chatSession.chat_id);
-    await client.deleteCollection(messagesCollection);
-    await client.deleteCollection(conversationsCollection);
-    console.log("✓ Cleanup complete\n");
 
     // ========================================
     // Summary
@@ -452,30 +482,46 @@ async function main() {
     console.log("  • client.findAllWithLimit() - Query all documents\n");
     console.log("💡 Key Takeaways:");
     console.log(
-      "  1. ekoDB handles AI Functions natively - no external services needed"
+      "  1. ekoDB handles AI Functions natively - no external services needed",
     );
     console.log("  2. One-line embedding generation with auto-cleanup");
     console.log(
-      "  3. Hybrid search combines semantic understanding + keyword matching"
+      "  3. Hybrid search combines semantic understanding + keyword matching",
     );
     console.log("  4. Perfect for RAG: store, search, and retrieve context");
     console.log(
-      "  5. All AI capabilities accessible through simple client methods\n"
+      "  5. All AI capabilities accessible through simple client methods\n",
     );
     console.log("🎯 Build production RAG systems with ekoDB!");
     console.log("   → Set OPENAI_API_KEY in your ekoDB server environment");
     console.log("   → Use these client helpers to make AI integration simple");
     console.log("   → Scale to millions of documents with native indexing\n");
   } catch (error) {
-    // Cleanup on error
-    try {
-      await client.deleteCollection(messagesCollection);
-      await client.deleteCollection(conversationsCollection);
-    } catch (e) {
-      // Ignore cleanup errors
-    }
+    runError = error;
     throw error;
+  } finally {
+    console.log("=== Cleanup ===");
+    const cleanupResults = await Promise.allSettled([
+      ...(chatSessionId ? [client.deleteChatSession(chatSessionId)] : []),
+      cleanupCollections(client, [messagesCollection, conversationsCollection]),
+    ]);
+    const cleanupFailures = cleanupResults
+      .filter((result) => result.status === "rejected")
+      .map((result) => result.reason);
+    if (cleanupFailures.length === 0) {
+      console.log("✓ Cleanup complete\n");
+    } else if (runError) {
+      throw new AggregateError(
+        [runError, ...cleanupFailures],
+        "RAG example and cleanup both failed",
+      );
+    } else {
+      throw new AggregateError(cleanupFailures, "RAG cleanup failed");
+    }
   }
 }
 
-main().catch(console.error);
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});

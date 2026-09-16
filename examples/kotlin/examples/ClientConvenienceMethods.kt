@@ -27,8 +27,10 @@ fun main() = runBlocking {
         .apiKey(apiKey)
         .build()
 
-    val collection = "convenience_methods_example_kt"
+    val collection = "convenience_methods_example_kt_${System.currentTimeMillis()}"
+    var failure: Throwable? = null
 
+    try {
     println("=== Native Object Creation ===")
     // Kotlin uses Record objects with builder pattern
     val user1 = Record.new()
@@ -105,9 +107,25 @@ fun main() = runBlocking {
         println("✓ Page $page: ${records.size} records (expected $expected)")
     }
 
-    println("\n=== Cleanup ===")
-    client.deleteCollection(collection)
-    println("✓ Deleted collection")
-
+    } catch (error: Throwable) {
+        failure = error
+    } finally {
+        println("\n=== Cleanup ===")
+        try {
+            client.deleteCollection(collection)
+            println("✓ Deleted collection")
+        } catch (cleanupError: Throwable) {
+            val notFound = cleanupError.message?.let {
+                it.contains("status 404") || it.contains("not found", ignoreCase = true)
+            } == true
+            if (!notFound) failure = failure?.also { it.addSuppressed(cleanupError) } ?: cleanupError
+        }
+        try {
+            client.close()
+        } catch (cleanupError: Throwable) {
+            failure = failure?.also { it.addSuppressed(cleanupError) } ?: cleanupError
+        }
+    }
+    failure?.let { throw it }
     println("\n✅ All convenience methods demonstrated successfully!")
 }

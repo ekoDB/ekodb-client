@@ -5,6 +5,24 @@ use std::env;
 use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
 use url::Url;
 
+const COLLECTION: &str = "ws_ttl_test_rs";
+
+async fn delete_collection(
+    client: &Client,
+    base_url: &str,
+    token: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let response = client
+        .delete(format!("{base_url}/api/collections/{COLLECTION}"))
+        .bearer_auth(token)
+        .send()
+        .await?;
+    if response.status() != reqwest::StatusCode::NOT_FOUND {
+        response.error_for_status()?;
+    }
+    Ok(())
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv::dotenv().ok();
@@ -27,10 +45,31 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let token = auth_response["token"].as_str().unwrap();
     println!("✓ Authentication successful");
 
+    delete_collection(&client, &base_url, token).await?;
+    let operation_result = run_example(&client, &base_url, &ws_url, token).await;
+    let cleanup_result = delete_collection(&client, &base_url, token).await;
+    match (operation_result, cleanup_result) {
+        (Err(primary), Err(cleanup)) => {
+            return Err(format!("{primary}; cleanup also failed: {cleanup}").into());
+        }
+        (Err(primary), Ok(())) => return Err(primary),
+        (Ok(()), Err(cleanup)) => return Err(cleanup),
+        (Ok(()), Ok(())) => {}
+    }
+    println!("\n✓ WebSocket TTL example completed successfully");
+    Ok(())
+}
+
+async fn run_example(
+    client: &Client,
+    base_url: &str,
+    ws_url: &str,
+    token: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
     // Insert test data with TTL
     println!("\n=== Insert Test Data with TTL ===");
     let doc: Value = client
-        .post(&format!("{}/api/insert/ws_ttl_test", base_url))
+        .post(format!("{base_url}/api/insert/{COLLECTION}"))
         .header("Authorization", format!("Bearer {}", token))
         .json(&json!({
             "name": "WebSocket TTL Test",
@@ -82,7 +121,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 "type": "FindAll",
                 "messageId": "1",
                 "payload": {
-                    "collection": "ws_ttl_test"
+                    "collection": COLLECTION
                 }
             })
             .to_string()
@@ -90,44 +129,30 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ))
         .await?;
 
-    // Wait for response
-    if let Some(msg) = read.next().await {
-        if let Ok(msg) = msg {
-            if let Ok(text) = msg.into_text() {
-                if !text.is_empty() {
-                    match serde_json::from_str::<Value>(&text) {
-                        Ok(response) => {
-                            if let Some(payload) = response.get("payload") {
-                                if let Some(data) = payload.get("data") {
-                                    if let Some(arr) = data.as_array() {
-                                        println!(
-                                            "✓ Retrieved {} record(s) via WebSocket",
-                                            arr.len()
-                                        );
+    // Wait for one complete response and fail rather than reporting a false success.
+    let msg = tokio::time::timeout(std::time::Duration::from_secs(10), read.next())
+        .await
+        .map_err(|_| "WebSocket response timed out")?
+        .ok_or("WebSocket closed before returning data")??;
+    let text = msg.into_text()?;
+    let response: Value = serde_json::from_str(&text)?;
+    let records = response
+        .pointer("/payload/data")
+        .and_then(Value::as_array)
+        .ok_or("WebSocket response did not contain payload.data")?;
+    if records.len() != 1 {
+        return Err(format!("expected exactly 1 WebSocket record, got {}", records.len()).into());
+    }
+    println!("✓ Retrieved 1 record via WebSocket");
 
-                                        // Show the actual records
-                                        for (i, record) in arr.iter().enumerate() {
-                                            println!("\nRecord {}:", i + 1);
-                                            if let Some(obj) = record.as_object() {
-                                                for (key, value) in obj {
-                                                    println!("  {}: {}", key, value);
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        Err(e) => {
-                            eprintln!("Failed to parse JSON: {}", e);
-                        }
-                    }
-                }
+    for (i, record) in records.iter().enumerate() {
+        println!("\nRecord {}:", i + 1);
+        if let Some(obj) = record.as_object() {
+            for (key, value) in obj {
+                println!("  {}: {}", key, value);
             }
         }
     }
-
-    println!("\n✓ WebSocket TTL example completed successfully");
 
     Ok(())
 }

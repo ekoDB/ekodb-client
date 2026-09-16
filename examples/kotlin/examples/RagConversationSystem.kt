@@ -47,20 +47,37 @@ fun extractStringField(record: JsonObject, field: String): String {
     }
 }
 
-suspend fun createConversation(client: EkoDBClient, collection: String, convId: String, title: String) {
+suspend fun createConversation(client: EkoDBClient, collection: String, messagesCollection: String, convId: String, title: String) {
     val record = io.ekodb.client.types.Record()
     record.insert("conversation_id", convId)
     record.insert("title", title)
     record.insert("created_at", System.currentTimeMillis().toString())
     
     val searchConfig = mapOf(
-        "collections" to io.ekodb.client.types.FieldType.array(listOf(io.ekodb.client.types.FieldType.string("rag_messages"))),
+        "collections" to io.ekodb.client.types.FieldType.array(listOf(io.ekodb.client.types.FieldType.string(messagesCollection))),
         "search_type" to io.ekodb.client.types.FieldType.string("hybrid"),
         "limit" to io.ekodb.client.types.FieldType.integer(10)
     )
     record["search_config"] = io.ekodb.client.types.FieldType.obj(searchConfig)
     
     client.insert(collection, record)
+}
+
+suspend fun cleanupCollections(client: EkoDBClient, collections: List<String>) {
+    val failures = mutableListOf<Exception>()
+    for (collection in collections) {
+        try {
+            client.deleteCollection(collection)
+        } catch (error: Exception) {
+            val isNotFound = error.message?.contains("404") == true ||
+                error.message?.contains("not found", ignoreCase = true) == true
+            if (!isNotFound) failures.add(error)
+        }
+    }
+    failures.firstOrNull()?.let { firstFailure ->
+        failures.drop(1).forEach(firstFailure::addSuppressed)
+        throw firstFailure
+    }
 }
 
 suspend fun storeMessageWithEmbedding(
@@ -112,12 +129,13 @@ fun main() = runBlocking {
         .apiKey(apiKey)
         .build()
 
-    val messagesCollection = "rag_messages"
-    val conversationsCollection = "rag_conversations"
+    val messagesCollection = "rag_messages_kt"
+    val conversationsCollection = "rag_conversations_kt"
+    var runFailure: Throwable? = null
 
+    try {
     // Cleanup any existing data
-    try { client.deleteCollection(messagesCollection) } catch (_: Exception) {}
-    try { client.deleteCollection(conversationsCollection) } catch (_: Exception) {}
+    cleanupCollections(client, listOf(messagesCollection, conversationsCollection))
 
     // ========================================
     // STEP 1: Simulate Historical Conversations
@@ -127,7 +145,7 @@ fun main() = runBlocking {
 
     // Conversation 1: Rust Programming Discussion
     val conv1Id = "conv_rust_programming"
-    createConversation(client, conversationsCollection, conv1Id, "Rust Programming")
+    createConversation(client, conversationsCollection, messagesCollection, conv1Id, "Rust Programming")
 
     val rustMessages = listOf(
         "user" to "What are the key features of Rust?",
@@ -143,7 +161,7 @@ fun main() = runBlocking {
 
     // Conversation 2: Database Design Discussion
     val conv2Id = "conv_database_design"
-    createConversation(client, conversationsCollection, conv2Id, "Database Design")
+    createConversation(client, conversationsCollection, messagesCollection, conv2Id, "Database Design")
 
     val dbMessages = listOf(
         "user" to "What is database normalization?",
@@ -159,7 +177,7 @@ fun main() = runBlocking {
 
     // Conversation 3: Performance Optimization
     val conv3Id = "conv_performance"
-    createConversation(client, conversationsCollection, conv3Id, "Performance Optimization")
+    createConversation(client, conversationsCollection, messagesCollection, conv3Id, "Performance Optimization")
 
     val perfMessages = listOf(
         "user" to "How can I optimize database queries?",
@@ -245,7 +263,7 @@ fun main() = runBlocking {
     println("=== Step 5: Storing New Conversation ===")
 
     val newConvId = "conv_new_question"
-    createConversation(client, conversationsCollection, newConvId, "Memory-Safe Database Code")
+    createConversation(client, conversationsCollection, messagesCollection, newConvId, "Memory-Safe Database Code")
 
     storeMessageWithEmbedding(client, messagesCollection, newConvId, "user", userQuestion, 
         listOf("rust", "database", "performance"))
@@ -311,14 +329,6 @@ fun main() = runBlocking {
     println("\nThis enables context-aware search tuned to each conversation's needs!\n")
 
     // ========================================
-    // Cleanup
-    // ========================================
-    println("=== Cleanup ===")
-    client.deleteCollection(messagesCollection)
-    client.deleteCollection(conversationsCollection)
-    println("✓ Cleanup complete\n")
-
-    // ========================================
     // Summary
     // ========================================
     println("\n=== 📚 Summary: What This Example Showed ===\n")
@@ -344,5 +354,22 @@ fun main() = runBlocking {
     println("   → Use these client helpers to make AI integration simple")
     println("   → Scale to millions of documents with native indexing\n")
 
-    client.close()
+    } catch (error: Throwable) {
+        runFailure = error
+        throw error
+    } finally {
+        println("=== Cleanup ===")
+        try {
+            cleanupCollections(client, listOf(messagesCollection, conversationsCollection))
+            println("✓ Cleanup complete\n")
+        } catch (cleanupError: Throwable) {
+            if (runFailure != null) {
+                runFailure.addSuppressed(cleanupError)
+            } else {
+                throw cleanupError
+            }
+        } finally {
+            client.close()
+        }
+    }
 }

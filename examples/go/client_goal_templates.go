@@ -5,6 +5,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -13,8 +14,8 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func main() {
-	fmt.Println("=== ekoDB Goal Template CRUD Example (Go) ===\n")
+func run() (runErr error) {
+	fmt.Print("=== ekoDB Goal Template CRUD Example (Go) ===\n\n")
 
 	_ = godotenv.Load()
 
@@ -24,18 +25,19 @@ func main() {
 	}
 	apiKey := os.Getenv("API_BASE_KEY")
 	if apiKey == "" {
-		log.Fatal("API_BASE_KEY environment variable is required")
+		return errors.New("API_BASE_KEY environment variable is required")
 	}
 
 	client, err := ekodb.NewClient(baseURL, apiKey)
 	if err != nil {
-		log.Fatalf("Failed to create client: %v", err)
+		return fmt.Errorf("create client: %w", err)
 	}
 
 	// 1. Create a goal template
 	fmt.Println("--- Creating goal template ---")
+	templateTitle := "Data Migration"
 	template, err := client.GoalTemplateCreate(map[string]interface{}{
-		"title":       "Data Migration",
+		"title":       templateTitle,
 		"description": "Template for migrating data between schemas",
 		"steps": []map[string]interface{}{
 			{"description": "Analyze source schema"},
@@ -45,16 +47,30 @@ func main() {
 		},
 	})
 	if err != nil {
-		log.Fatalf("Failed to create template: %v", err)
+		return fmt.Errorf("create template: %w", err)
 	}
-	templateID := template["id"].(string)
-	fmt.Printf("Created template: %s (id: %s)\n", template["title"], templateID)
+	templateID := ekodb.GetStringValue(template["id"])
+	if templateID == "" {
+		return errors.New("create template response contained no ID")
+	}
+	templateDeleted := false
+	defer func() {
+		if !templateDeleted {
+			if cleanupErr := client.GoalTemplateDelete(templateID); cleanupErr != nil {
+				runErr = errors.Join(runErr, fmt.Errorf("delete template %s: %w", templateID, cleanupErr))
+			}
+		}
+	}()
+	fmt.Printf("Created template: %s (id: %s)\n", templateTitle, templateID)
 
 	// 2. List all templates
 	fmt.Println("\n--- Listing templates ---")
 	list, err := client.GoalTemplateList()
 	if err != nil {
-		log.Fatalf("Failed to list templates: %v", err)
+		return fmt.Errorf("list templates: %w", err)
+	}
+	if !responseContainsID(list, templateID) {
+		return fmt.Errorf("template list did not contain created ID %s: %v", templateID, list)
 	}
 	fmt.Printf("Templates: %v\n", list)
 
@@ -62,9 +78,12 @@ func main() {
 	fmt.Println("\n--- Getting template ---")
 	fetched, err := client.GoalTemplateGet(templateID)
 	if err != nil {
-		log.Fatalf("Failed to get template: %v", err)
+		return fmt.Errorf("get template: %w", err)
 	}
-	fmt.Printf("Fetched: %s\n", fetched["title"])
+	if title := ekodb.GetStringValue(fetched["title"]); title != templateTitle {
+		return fmt.Errorf("fetched template title was %q, expected %q", title, templateTitle)
+	}
+	fmt.Printf("Fetched: %s\n", ekodb.GetStringValue(fetched["title"]))
 
 	// 4. Update template
 	fmt.Println("\n--- Updating template ---")
@@ -72,17 +91,50 @@ func main() {
 		"description": "Updated: comprehensive data migration workflow",
 	})
 	if err != nil {
-		log.Fatalf("Failed to update template: %v", err)
+		return fmt.Errorf("update template: %w", err)
 	}
-	fmt.Printf("Updated description: %s\n", updated["description"])
+	wantDescription := "Updated: comprehensive data migration workflow"
+	if description := ekodb.GetStringValue(updated["description"]); description != wantDescription {
+		return fmt.Errorf("updated template description was %q, expected %q", description, wantDescription)
+	}
+	fmt.Printf("Updated description: %s\n", ekodb.GetStringValue(updated["description"]))
 
 	// 5. Delete template
 	fmt.Println("\n--- Deleting template ---")
 	err = client.GoalTemplateDelete(templateID)
 	if err != nil {
-		log.Fatalf("Failed to delete template: %v", err)
+		return fmt.Errorf("delete template: %w", err)
 	}
+	templateDeleted = true
 	fmt.Println("Template deleted successfully")
 
 	fmt.Println("\n✓ Goal template CRUD example completed")
+	return nil
+}
+
+func responseContainsID(value interface{}, id string) bool {
+	switch typed := value.(type) {
+	case []interface{}:
+		for _, item := range typed {
+			if responseContainsID(item, id) {
+				return true
+			}
+		}
+	case map[string]interface{}:
+		if ekodb.GetStringValue(typed["id"]) == id {
+			return true
+		}
+		for _, key := range []string{"items", "templates"} {
+			if responseContainsID(typed[key], id) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func main() {
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
 }

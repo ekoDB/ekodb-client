@@ -11,10 +11,27 @@ Each function shows Functions chaining with proper verification using parameteri
 */
 
 use serde_json::{json, Value};
+use std::collections::HashSet;
 use std::env;
+
+const TEST_COLLECTION: &str = "crud_functions_users_rs";
+const FUNCTION_LABELS: [&str; 4] = [
+    "insert_and_verify_rs",
+    "query_update_verify_rs",
+    "query_update_credits_rs",
+    "delete_and_verify_rs",
+];
 use std::sync::OnceLock;
 
 static AUTH_TOKEN: OnceLock<String> = OnceLock::new();
+
+fn get_value(value: &Value) -> &Value {
+    if value.get("type").is_some() && value.get("value").is_some() {
+        &value["value"]
+    } else {
+        value
+    }
+}
 
 fn get_base_url() -> String {
     env::var("API_BASE_URL").unwrap_or_else(|_| "http://localhost:8080".to_string())
@@ -88,7 +105,7 @@ async fn script_1_insert_and_verify() -> Result<(String, String), Box<dyn std::e
     println!("{}", "=".repeat(60));
 
     let script = json!({
-        "label": "insert_and_verify",
+        "label": FUNCTION_LABELS[0],
         "name": "Insert and Verify User",
         "description": "Insert a user and verify it was created",
         "version": "1.0",
@@ -107,7 +124,7 @@ async fn script_1_insert_and_verify() -> Result<(String, String), Box<dyn std::e
         "functions": [
             {
                 "type": "Insert",
-                "collection": "users",
+                "collection": TEST_COLLECTION,
                 "record": {
                     "name": "{{user_name}}",
                     "email": "{{user_email}}",
@@ -117,7 +134,7 @@ async fn script_1_insert_and_verify() -> Result<(String, String), Box<dyn std::e
             },
             {
                 "type": "Query",
-                "collection": "users",
+                "collection": TEST_COLLECTION,
                 "filter": {
                     "type": "Condition",
                     "content": {
@@ -141,7 +158,12 @@ async fn script_1_insert_and_verify() -> Result<(String, String), Box<dyn std::e
         "user_name": "Alice Smith",
         "user_email": "alice@example.com"
     });
-    let call_result = request("POST", "/api/functions/insert_and_verify", Some(params)).await?;
+    let call_result = request(
+        "POST",
+        &format!("/api/functions/{}", FUNCTION_LABELS[0]),
+        Some(params),
+    )
+    .await?;
 
     let stats = &call_result["stats"];
     println!(
@@ -179,7 +201,7 @@ async fn script_2_query_update_verify() -> Result<String, Box<dyn std::error::Er
     println!("{}", "=".repeat(60));
 
     let script = json!({
-        "label": "query_update_verify",
+        "label": FUNCTION_LABELS[1],
         "name": "Query, Update, and Verify",
         "description": "Find user by filter, update status, verify change",
         "version": "1.0",
@@ -199,7 +221,7 @@ async fn script_2_query_update_verify() -> Result<String, Box<dyn std::error::Er
         "functions": [
             {
                 "type": "Query",
-                "collection": "users",
+                "collection": TEST_COLLECTION,
                 "filter": {
                     "type": "Condition",
                     "content": {
@@ -211,7 +233,7 @@ async fn script_2_query_update_verify() -> Result<String, Box<dyn std::error::Er
             },
             {
                 "type": "Update",
-                "collection": "users",
+                "collection": TEST_COLLECTION,
                 "filter": {
                     "type": "Condition",
                     "content": {
@@ -226,7 +248,7 @@ async fn script_2_query_update_verify() -> Result<String, Box<dyn std::error::Er
             },
             {
                 "type": "Query",
-                "collection": "users",
+                "collection": TEST_COLLECTION,
                 "filter": {
                     "type": "Condition",
                     "content": {
@@ -250,7 +272,12 @@ async fn script_2_query_update_verify() -> Result<String, Box<dyn std::error::Er
         "user_email": "alice@example.com",
         "new_status": "active"
     });
-    let call_result = request("POST", "/api/functions/query_update_verify", Some(params)).await?;
+    let call_result = request(
+        "POST",
+        &format!("/api/functions/{}", FUNCTION_LABELS[1]),
+        Some(params),
+    )
+    .await?;
 
     let stats = &call_result["stats"];
     println!(
@@ -262,10 +289,23 @@ async fn script_2_query_update_verify() -> Result<String, Box<dyn std::error::Er
     let records = call_result["records"].as_array().unwrap();
     println!("\n3️⃣ Verification Results:");
     println!("   ✅ Found {} record(s)", records.len());
-    if let Some(user) = records.first() {
-        println!("   📋 Status updated to: {}", user["status"]);
-        println!("   📋 Name: {}", user["name"]);
+    if records.len() != 1 {
+        return Err(format!(
+            "status verification expected 1 record, found {}",
+            records.len()
+        )
+        .into());
     }
+    let user = &records[0];
+    if get_value(&user["status"]) != &json!("active") {
+        return Err(format!(
+            "status verification expected active, found {}",
+            user["status"]
+        )
+        .into());
+    }
+    println!("   📋 Status updated to: {}", user["status"]);
+    println!("   📋 Name: {}", user["name"]);
 
     Ok(script_id)
 }
@@ -276,7 +316,7 @@ async fn script_3_query_update_credits() -> Result<String, Box<dyn std::error::E
     println!("{}", "=".repeat(60));
 
     let script = json!({
-        "label": "query_update_credits",
+        "label": FUNCTION_LABELS[2],
         "name": "Query, Update Credits, and Verify",
         "description": "Find user by email, update credits, verify change",
         "version": "1.0",
@@ -286,17 +326,11 @@ async fn script_3_query_update_credits() -> Result<String, Box<dyn std::error::E
                 "required": true,
                 "description": "Email to search for"
             },
-            "credits": {
-                "type": "Integer",
-                "default": 100,
-                "required": false,
-                "description": "Credits to set"
-            }
         },
         "functions": [
             {
                 "type": "Query",
-                "collection": "users",
+                "collection": TEST_COLLECTION,
                 "filter": {
                     "type": "Condition",
                     "content": {
@@ -308,7 +342,7 @@ async fn script_3_query_update_credits() -> Result<String, Box<dyn std::error::E
             },
             {
                 "type": "Update",
-                "collection": "users",
+                "collection": TEST_COLLECTION,
                 "filter": {
                     "type": "Condition",
                     "content": {
@@ -318,12 +352,12 @@ async fn script_3_query_update_credits() -> Result<String, Box<dyn std::error::E
                     }
                 },
                 "updates": {
-                    "credits": "{{credits}}"
+                    "credits": 100
                 }
             },
             {
                 "type": "Query",
-                "collection": "users",
+                "collection": TEST_COLLECTION,
                 "filter": {
                     "type": "Condition",
                     "content": {
@@ -344,10 +378,14 @@ async fn script_3_query_update_credits() -> Result<String, Box<dyn std::error::E
 
     println!("\n2️⃣ Calling function (Query + Update Credits + Verify)...");
     let params = json!({
-        "user_email": "alice@example.com",
-        "credits": 100
+        "user_email": "alice@example.com"
     });
-    let call_result = request("POST", "/api/functions/query_update_credits", Some(params)).await?;
+    let call_result = request(
+        "POST",
+        &format!("/api/functions/{}", FUNCTION_LABELS[2]),
+        Some(params),
+    )
+    .await?;
 
     let stats = &call_result["stats"];
     println!(
@@ -359,11 +397,24 @@ async fn script_3_query_update_credits() -> Result<String, Box<dyn std::error::E
     let records = call_result["records"].as_array().unwrap();
     println!("\n3️⃣ Verification Results:");
     println!("   ✅ Found {} record(s)", records.len());
-    if let Some(user) = records.first() {
-        println!("   📋 Credits updated to: {}", user["credits"]);
-        println!("   📋 Status: {}", user["status"]);
-        println!("   📋 Name: {}", user["name"]);
+    if records.len() != 1 {
+        return Err(format!(
+            "credits verification expected 1 record, found {}",
+            records.len()
+        )
+        .into());
     }
+    let user = &records[0];
+    if get_value(&user["credits"]) != &json!(100) {
+        return Err(format!(
+            "credits verification expected 100, found {}",
+            user["credits"]
+        )
+        .into());
+    }
+    println!("   📋 Credits updated to: {}", user["credits"]);
+    println!("   📋 Status: {}", user["status"]);
+    println!("   📋 Name: {}", user["name"]);
 
     Ok(script_id)
 }
@@ -374,7 +425,7 @@ async fn script_4_delete_and_verify() -> Result<String, Box<dyn std::error::Erro
     println!("{}", "=".repeat(60));
 
     let script = json!({
-        "label": "delete_and_verify",
+        "label": FUNCTION_LABELS[3],
         "name": "Query Before Delete and Verify",
         "description": "Verify record exists, delete it, then verify it's gone",
         "version": "1.0",
@@ -388,7 +439,7 @@ async fn script_4_delete_and_verify() -> Result<String, Box<dyn std::error::Erro
         "functions": [
             {
                 "type": "Query",
-                "collection": "users",
+                "collection": TEST_COLLECTION,
                 "filter": {
                     "type": "Condition",
                     "content": {
@@ -400,7 +451,7 @@ async fn script_4_delete_and_verify() -> Result<String, Box<dyn std::error::Erro
             },
             {
                 "type": "Delete",
-                "collection": "users",
+                "collection": TEST_COLLECTION,
                 "filter": {
                     "type": "Condition",
                     "content": {
@@ -412,7 +463,7 @@ async fn script_4_delete_and_verify() -> Result<String, Box<dyn std::error::Erro
             },
             {
                 "type": "Query",
-                "collection": "users",
+                "collection": TEST_COLLECTION,
                 "filter": {
                     "type": "Condition",
                     "content": {
@@ -435,7 +486,12 @@ async fn script_4_delete_and_verify() -> Result<String, Box<dyn std::error::Erro
     let params = json!({
         "user_email": "alice@example.com"
     });
-    let call_result = request("POST", "/api/functions/delete_and_verify", Some(params)).await?;
+    let call_result = request(
+        "POST",
+        &format!("/api/functions/{}", FUNCTION_LABELS[3]),
+        Some(params),
+    )
+    .await?;
 
     let stats = &call_result["stats"];
     println!(
@@ -447,6 +503,9 @@ async fn script_4_delete_and_verify() -> Result<String, Box<dyn std::error::Erro
     let records = call_result["records"].as_array().unwrap();
     println!("\n3️⃣ Verification Results:");
     println!("   📊 Before delete: Record existed (verified by first Query)");
+    if !records.is_empty() {
+        return Err(format!("delete failed: still found {} record(s)", records.len()).into());
+    }
     println!(
         "   ✅ After delete: Record successfully deleted (Query returned {} records)",
         records.len()
@@ -455,13 +514,38 @@ async fn script_4_delete_and_verify() -> Result<String, Box<dyn std::error::Erro
     Ok(script_id)
 }
 
-async fn cleanup(script_ids: Vec<String>) {
+async fn cleanup(
+    mut script_ids: Vec<String>,
+    allow_missing_collection: bool,
+) -> Result<(), Box<dyn std::error::Error>> {
     println!("\n{}", "=".repeat(60));
     println!("🧹 Cleanup");
     println!("{}", "=".repeat(60));
 
+    let mut errors = Vec::new();
+    match request("GET", "/api/functions", None).await {
+        Ok(functions) => {
+            if let Some(functions) = functions.as_array() {
+                for function in functions {
+                    let is_ours = function["label"]
+                        .as_str()
+                        .is_some_and(|label| FUNCTION_LABELS.contains(&label));
+                    if is_ours {
+                        if let Some(id) = function["id"].as_str() {
+                            script_ids.push(id.to_string());
+                        }
+                    }
+                }
+            }
+        }
+        Err(error) => errors.push(format!("discover functions: {error}")),
+    }
+    let mut seen = HashSet::new();
     for script_id in script_ids {
         if script_id.is_empty() {
+            continue;
+        }
+        if !seen.insert(script_id.clone()) {
             continue;
         }
         match request("DELETE", &format!("/api/functions/{}", script_id), None).await {
@@ -473,14 +557,35 @@ async fn cleanup(script_ids: Vec<String>) {
                 };
                 println!("   ✅ Deleted script: {}", truncated_id);
             }
-            Err(e) => println!("   ⚠️  Could not delete script: {}", e),
+            Err(e) => {
+                println!("   ⚠️  Could not delete script: {}", e);
+                errors.push(e.to_string());
+            }
         }
     }
 
-    match request("DELETE", "/api/collections/users", None).await {
-        Ok(_) => println!("   ✅ Deleted collection: users"),
-        Err(e) => println!("   ⚠️  Could not delete collection: {}", e),
+    match request(
+        "DELETE",
+        &format!("/api/collections/{TEST_COLLECTION}"),
+        None,
+    )
+    .await
+    {
+        Ok(_) => println!("   ✅ Deleted collection: {TEST_COLLECTION}"),
+        Err(e) => {
+            let message = e.to_string();
+            let missing =
+                message.contains("HTTP 404") || message.to_lowercase().contains("not found");
+            if !allow_missing_collection || !missing {
+                println!("   ⚠️  Could not delete collection: {}", e);
+                errors.push(message);
+            }
+        }
     }
+    if !errors.is_empty() {
+        return Err(format!("cleanup failed: {}", errors.join("; ")).into());
+    }
+    Ok(())
 }
 
 #[tokio::main]
@@ -498,21 +603,26 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Each function shows Functions chaining with proper verification");
     println!("{}", "=".repeat(60));
 
-    // Run all CRUD Functions in sequence
-    let (_user_id, script1_id) = script_1_insert_and_verify().await?;
-    let mut script_ids = vec![script1_id];
+    cleanup(Vec::new(), true).await?;
+    let mut script_ids = Vec::new();
+    let operation_result: Result<(), Box<dyn std::error::Error>> = async {
+        let (_user_id, script1_id) = script_1_insert_and_verify().await?;
+        script_ids.push(script1_id);
 
-    let script2_id = script_2_query_update_verify().await?;
-    script_ids.push(script2_id);
-
-    let script3_id = script_3_query_update_credits().await?;
-    script_ids.push(script3_id);
-
-    let script4_id = script_4_delete_and_verify().await?;
-    script_ids.push(script4_id);
-
-    // Cleanup
-    cleanup(script_ids).await;
+        script_ids.push(script_2_query_update_verify().await?);
+        script_ids.push(script_3_query_update_credits().await?);
+        script_ids.push(script_4_delete_and_verify().await?);
+        Ok(())
+    }
+    .await;
+    let cleanup_result = cleanup(script_ids, false).await;
+    if let Err(error) = operation_result {
+        if let Err(cleanup_error) = cleanup_result {
+            eprintln!("Cleanup also failed: {cleanup_error}");
+        }
+        return Err(error);
+    }
+    cleanup_result?;
 
     println!("\n{}", "=".repeat(60));
     println!("✅ Complete CRUD Functions Example Finished!");

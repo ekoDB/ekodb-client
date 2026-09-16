@@ -8,6 +8,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -20,7 +21,7 @@ import (
 
 const testCollection = "projection_test_users_go"
 
-func main() {
+func run() (runErr error) {
 	// Load environment variables
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found")
@@ -39,10 +40,18 @@ func main() {
 	// Initialize client
 	client, err := ekodb.NewClient(baseURL, apiKey)
 	if err != nil {
-		log.Fatalf("Failed to create client: %v", err)
+		return fmt.Errorf("create client: %w", err)
 	}
+	collectionDeleted := false
+	defer func() {
+		if !collectionDeleted {
+			if err := client.DeleteCollection(testCollection); err != nil {
+				runErr = errors.Join(runErr, fmt.Errorf("cleanup collection %s: %w", testCollection, err))
+			}
+		}
+	}()
 
-	fmt.Println("Client created\n")
+	fmt.Print("Client created\n\n")
 
 	// Setup: Create test collection and insert test data
 	fmt.Println("Setting up test data...")
@@ -109,7 +118,7 @@ func main() {
 	for _, user := range testUsers {
 		result, err := client.Insert(testCollection, user)
 		if err != nil {
-			log.Printf("Warning: Insert failed: %v", err)
+			return fmt.Errorf("insert test user: %w", err)
 		} else if id, ok := result["id"].(string); ok {
 			insertedIDs = append(insertedIDs, id)
 		}
@@ -126,7 +135,7 @@ func main() {
 
 	users, err := client.Find(testCollection, usersQuery)
 	if err != nil {
-		log.Fatalf("Find failed: %v", err)
+		return fmt.Errorf("find projected active users: %w", err)
 	}
 	fmt.Printf("  Found %d active users\n", len(users))
 	if len(users) > 0 {
@@ -146,7 +155,7 @@ func main() {
 
 	admins, err := client.Find(testCollection, adminsQuery)
 	if err != nil {
-		log.Fatalf("Find failed: %v", err)
+		return fmt.Errorf("find projected admins: %w", err)
 	}
 	fmt.Printf("  Found %d admins\n", len(admins))
 	if len(admins) > 0 {
@@ -174,7 +183,7 @@ func main() {
 
 	activeUsers, err := client.Find(testCollection, activeUsersQuery)
 	if err != nil {
-		log.Fatalf("Find failed: %v", err)
+		return fmt.Errorf("find active users: %w", err)
 	}
 	fmt.Printf("  Found %d active users (ages 18-65)\n", len(activeUsers))
 	for _, user := range activeUsers {
@@ -192,7 +201,7 @@ func main() {
 
 	inactiveUsers, err := client.Find(testCollection, inactiveQuery)
 	if err != nil {
-		log.Fatalf("Find failed: %v", err)
+		return fmt.Errorf("find inactive users: %w", err)
 	}
 	fmt.Printf("  Found %d inactive users\n", len(inactiveUsers))
 	for _, user := range inactiveUsers {
@@ -214,12 +223,12 @@ func main() {
 
 	fullUsers, err := client.Find(testCollection, fullQuery)
 	if err != nil {
-		log.Fatalf("Find failed: %v", err)
+		return fmt.Errorf("find full users: %w", err)
 	}
 
 	projectedUsers, err := client.Find(testCollection, projectedQuery)
 	if err != nil {
-		log.Fatalf("Find failed: %v", err)
+		return fmt.Errorf("find projected users: %w", err)
 	}
 
 	if len(fullUsers) > 0 && len(projectedUsers) > 0 {
@@ -239,12 +248,19 @@ func main() {
 	// Cleanup
 	fmt.Println("\nCleaning up test data...")
 	if err := client.DeleteCollection(testCollection); err != nil {
-		log.Printf("Warning: Failed to delete collection: %v", err)
-	} else {
-		fmt.Println("Cleanup complete")
+		return fmt.Errorf("delete collection: %w", err)
 	}
+	collectionDeleted = true
+	fmt.Println("Cleanup complete")
 
 	fmt.Println("\nAll projection examples completed successfully!")
+	return nil
+}
+
+func main() {
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
 }
 
 // Helper function to get sorted field names from a record

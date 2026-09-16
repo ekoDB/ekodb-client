@@ -35,11 +35,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
             ],
         }))
         .await?;
-    let template_id = template["id"].as_str().unwrap_or_default();
-    println!(
-        "Created template: {} (id: {})",
-        template["title"], template_id
-    );
+    let template_id = template["id"].as_str().ok_or_else(|| {
+        std::io::Error::new(std::io::ErrorKind::InvalidData, "missing template id")
+    })?;
+    println!("Created template: Data Migration (id: {})", template_id);
 
     // 2. List all templates
     println!("\n--- Listing templates ---");

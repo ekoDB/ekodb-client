@@ -20,7 +20,7 @@ const {
 async function main() {
   const client = new EkoDBClient(
     process.env.API_BASE_URL || "http://localhost:8080",
-    process.env.API_BASE_KEY || "a-test-api-key-from-ekodb"
+    process.env.API_BASE_KEY || "a-test-api-key-from-ekodb",
   );
   await client.init();
 
@@ -48,21 +48,21 @@ async function main() {
     const userSchema = new SchemaBuilder()
       .addField(
         "name",
-        new FieldTypeSchemaBuilder("String").required().pattern("^[a-zA-Z ]+$")
+        new FieldTypeSchemaBuilder("String").required().pattern("^[a-zA-Z ]+$"),
       )
       .addField(
         "email",
         new FieldTypeSchemaBuilder("String")
           .required()
           .unique()
-          .pattern("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$")
+          .pattern("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"),
       )
       .addField("age", new FieldTypeSchemaBuilder("Integer").range(0, 150))
       .addField(
         "status",
         new FieldTypeSchemaBuilder("String")
           .defaultValue("active")
-          .enums(["active", "inactive", "suspended"])
+          .enums(["active", "inactive", "suspended"]),
       )
       .build();
 
@@ -82,23 +82,23 @@ async function main() {
     const productSchema = new SchemaBuilder()
       .addField(
         "name",
-        new FieldTypeSchemaBuilder("String").required().textIndex("english")
+        new FieldTypeSchemaBuilder("String").required().textIndex("english"),
       )
       .addField(
         "description",
-        new FieldTypeSchemaBuilder("String").textIndex("english")
+        new FieldTypeSchemaBuilder("String").textIndex("english"),
       )
       .addField(
         "price",
-        new FieldTypeSchemaBuilder("Float").required().range(0, undefined)
+        new FieldTypeSchemaBuilder("Float").required().range(0, undefined),
       )
       .addField(
         "category",
-        new FieldTypeSchemaBuilder("String").required().btreeIndex()
+        new FieldTypeSchemaBuilder("String").required().btreeIndex(),
       )
       .addField(
         "sku",
-        new FieldTypeSchemaBuilder("String").required().unique().hashIndex()
+        new FieldTypeSchemaBuilder("String").required().unique().hashIndex(),
       )
       .build();
 
@@ -121,11 +121,11 @@ async function main() {
     const documentSchema = new SchemaBuilder()
       .addField(
         "title",
-        new FieldTypeSchemaBuilder("String").required().textIndex("english")
+        new FieldTypeSchemaBuilder("String").required().textIndex("english"),
       )
       .addField(
         "content",
-        new FieldTypeSchemaBuilder("String").required().textIndex("english")
+        new FieldTypeSchemaBuilder("String").required().textIndex("english"),
       )
       .addField(
         "embedding",
@@ -133,15 +133,15 @@ async function main() {
           VecAlgo.HNSW || "hnsw",
           DistMet.Cosine || "cosine",
           16,
-          200
-        )
+          200,
+        ),
       )
       .addField("tags", new FieldTypeSchemaBuilder("Array"))
       .addField(
         "created_at",
         new FieldTypeSchemaBuilder("DateTime").defaultValue(
-          new Date().toISOString()
-        )
+          new Date().toISOString(),
+        ),
       )
       .build();
 
@@ -169,7 +169,7 @@ async function main() {
     console.log(
       "Collection has",
       Object.keys(metadata.collection.fields).length,
-      "fields"
+      "fields",
     );
     console.log();
 
@@ -182,7 +182,7 @@ async function main() {
           .required()
           .unique()
           .pattern("^EMP-[0-9]{6}$")
-          .hashIndex()
+          .hashIndex(),
       )
       .addField("first_name", new FieldTypeSchemaBuilder("String").required())
       .addField("last_name", new FieldTypeSchemaBuilder("String").required())
@@ -191,18 +191,21 @@ async function main() {
         new FieldTypeSchemaBuilder("String")
           .required()
           .enums(["Engineering", "Sales", "Marketing", "HR", "Finance"])
-          .btreeIndex()
+          .btreeIndex(),
       )
       .addField(
         "salary",
-        new FieldTypeSchemaBuilder("Float").required().range(30000, 500000)
+        new FieldTypeSchemaBuilder("Float").required().range(30000, 500000),
       )
       .addField("hire_date", new FieldTypeSchemaBuilder("DateTime").required())
       .addField(
         "is_active",
-        new FieldTypeSchemaBuilder("Boolean").defaultValue(true)
+        new FieldTypeSchemaBuilder("Boolean").defaultValue(true),
       )
-      .addField("bio", new FieldTypeSchemaBuilder("String").textIndex("english"))
+      .addField(
+        "bio",
+        new FieldTypeSchemaBuilder("String").textIndex("english"),
+      )
       .bypassRipple(false)
       .build();
 

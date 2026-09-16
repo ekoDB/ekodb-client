@@ -14,34 +14,28 @@ from pathlib import Path
 from dotenv import load_dotenv
 from ekodb_client import Client
 
+COLLECTIONS = (
+    "schema_users_client_py",
+    "schema_products_client_py",
+    "schema_documents_client_py",
+    "schema_employees_client_py",
+)
+
 # Load environment variables
 env_path = Path(__file__).parent.parent / ".env"
 load_dotenv(env_path)
 
 
-async def main():
-    # Create client
-    base_url = os.getenv("API_BASE_URL", "http://localhost:8080")
-    api_key = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb")
-    client = Client.new(base_url, api_key)
-
+async def run_example(client):
     print("=== Schema Management Examples ===\n")
 
     # Use unique collection names
-    users_collection = "schema_users_client_py"
-    products_collection = "schema_products_client_py"
-    documents_collection = "schema_documents_client_py"
-    employees_collection = "schema_employees_client_py"
-
-    # Cleanup: Delete collections if they exist from previous runs
-    try:
-        await client.delete_collection(users_collection)
-        await client.delete_collection(products_collection)
-        await client.delete_collection(documents_collection)
-        await client.delete_collection(employees_collection)
-    except:
-        # Collections don't exist, that's fine
-        pass
+    (
+        users_collection,
+        products_collection,
+        documents_collection,
+        employees_collection,
+    ) = COLLECTIONS
 
     # Example 1: Create a simple user schema
     print("1. Creating user schema with basic fields:")
@@ -186,6 +180,42 @@ async def main():
     await client.create_collection(employees_collection, employee_schema)
     print("✅ Employee schema with all constraints created\n")
 
+
+async def cleanup(client):
+    errors = []
+    for collection in COLLECTIONS:
+        try:
+            await client.delete_collection(collection)
+        except Exception as error:  # noqa: BLE001 - attempt every owned cleanup
+            if "404" not in str(error) and "not found" not in str(error).lower():
+                errors.append(f"{collection}: {error}")
+    if errors:
+        raise RuntimeError("cleanup failed: " + "; ".join(errors))
+
+
+async def main():
+    client = Client.new(
+        os.getenv("API_BASE_URL", "http://localhost:8080"),
+        os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb"),
+    )
+    await cleanup(client)
+    primary_error = None
+    try:
+        await run_example(client)
+    except BaseException as error:  # noqa: BLE001 - cleanup must run on cancellation
+        primary_error = error
+    cleanup_error = None
+    try:
+        await cleanup(client)
+    except Exception as error:  # noqa: BLE001 - preserve the primary failure
+        cleanup_error = error
+    if primary_error is not None:
+        if cleanup_error is not None:
+            primary_error.add_note(f"Cleanup also failed: {cleanup_error}")
+            print(f"⚠️  Cleanup also failed: {cleanup_error}")
+        raise primary_error
+    if cleanup_error is not None:
+        raise cleanup_error
     print("✅ Schema management examples completed!")
 
 

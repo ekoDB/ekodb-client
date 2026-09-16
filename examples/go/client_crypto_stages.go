@@ -24,7 +24,12 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func main() {
+var cryptoLabels = []string{
+	"crypto_demo_hmac_go", "crypto_demo_aes_go", "crypto_demo_uuid_go",
+	"crypto_demo_totp_go", "crypto_demo_encoding_go",
+}
+
+func run() (runErr error) {
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found")
 	}
@@ -33,16 +38,27 @@ func main() {
 
 	client, err := ekodb.NewClient(baseURL, apiKey)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	fmt.Println("✓ Client created")
+	ownedLabels := make([]string, 0, len(cryptoLabels))
+	defer func() {
+		for _, label := range ownedLabels {
+			if err := client.DeleteUserFunction(label); err != nil {
+				runErr = errors.Join(runErr, fmt.Errorf("cleanup function %s: %w", label, err))
+			}
+		}
+		if runErr == nil {
+			fmt.Println("\n✓ Cleaned up demo functions")
+		}
+	}()
 
 	digits := 6
 	period := uint64(30)
 
 	// 1. HMAC sign + verify round trip.
 	hmac := ekodb.UserFunction{
-		Label: "crypto_demo_hmac",
+		Label: cryptoLabels[0],
 		Name:  "HMAC sign + verify",
 		Parameters: map[string]ekodb.ParameterDefinition{
 			"payload": {Required: true},
@@ -52,11 +68,14 @@ func main() {
 			ekodb.StageHmacVerify("{{payload}}", "{{mac}}", "{{env.HMAC_KEY}}", "verified", "sha256", "hex"),
 		},
 	}
-	saveFn(client, hmac)
+	if err := saveFn(client, hmac); err != nil {
+		return err
+	}
+	ownedLabels = append(ownedLabels, hmac.Label)
 
 	// 2. AES-256-GCM encrypt + decrypt round trip.
 	aes := ekodb.UserFunction{
-		Label: "crypto_demo_aes",
+		Label: cryptoLabels[1],
 		Name:  "AES encrypt + decrypt",
 		Parameters: map[string]ekodb.ParameterDefinition{
 			"plaintext": {Required: true},
@@ -66,22 +85,28 @@ func main() {
 			ekodb.StageAesDecrypt("envelope", "{{env.DATA_KEY}}", "recovered", "hex"),
 		},
 	}
-	saveFn(client, aes)
+	if err := saveFn(client, aes); err != nil {
+		return err
+	}
+	ownedLabels = append(ownedLabels, aes.Label)
 
 	// 3. UuidGenerate.
 	uuidFn := ekodb.UserFunction{
-		Label:      "crypto_demo_uuid",
+		Label:      cryptoLabels[2],
 		Name:       "Generate v4 UUID",
 		Parameters: map[string]ekodb.ParameterDefinition{},
 		Functions: []ekodb.FunctionStageConfig{
 			ekodb.StageUuidGenerate("id"),
 		},
 	}
-	saveFn(client, uuidFn)
+	if err := saveFn(client, uuidFn); err != nil {
+		return err
+	}
+	ownedLabels = append(ownedLabels, uuidFn.Label)
 
 	// 4. TotpGenerate (RFC 6238 with SHA1).
 	totp := ekodb.UserFunction{
-		Label:      "crypto_demo_totp",
+		Label:      cryptoLabels[3],
 		Name:       "Generate TOTP code",
 		Parameters: map[string]ekodb.ParameterDefinition{},
 		Functions: []ekodb.FunctionStageConfig{
@@ -92,11 +117,14 @@ func main() {
 			),
 		},
 	}
-	saveFn(client, totp)
+	if err := saveFn(client, totp); err != nil {
+		return err
+	}
+	ownedLabels = append(ownedLabels, totp.Label)
 
 	// 5. Base64 + Hex + Slugify chained.
 	encoding := ekodb.UserFunction{
-		Label: "crypto_demo_encoding",
+		Label: cryptoLabels[4],
 		Name:  "Base64 / Hex / Slugify",
 		Parameters: map[string]ekodb.ParameterDefinition{
 			"title": {Required: true},
@@ -107,40 +135,41 @@ func main() {
 			ekodb.StageSlugify("{{title}}", "title_slug"),
 		},
 	}
-	saveFn(client, encoding)
+	if err := saveFn(client, encoding); err != nil {
+		return err
+	}
+	ownedLabels = append(ownedLabels, encoding.Label)
 
 	fmt.Println("\nInvoke them with:")
-	fmt.Println(`  POST /api/functions/crypto_demo_hmac     { "payload": "hi" }`)
-	fmt.Println(`  POST /api/functions/crypto_demo_aes      { "plaintext": "secret" }`)
-	fmt.Println("  POST /api/functions/crypto_demo_uuid")
-	fmt.Println("  POST /api/functions/crypto_demo_totp")
-	fmt.Println(`  POST /api/functions/crypto_demo_encoding { "title": "Héllo World" }`)
-
-	for _, label := range []string{
-		"crypto_demo_hmac", "crypto_demo_aes", "crypto_demo_uuid",
-		"crypto_demo_totp", "crypto_demo_encoding",
-	} {
-		_ = client.DeleteUserFunction(label)
-	}
-	fmt.Println("\n✓ Cleaned up demo functions")
+	fmt.Printf("  POST /api/functions/%s     { \"payload\": \"hi\" }\n", cryptoLabels[0])
+	fmt.Printf("  POST /api/functions/%s      { \"plaintext\": \"secret\" }\n", cryptoLabels[1])
+	fmt.Printf("  POST /api/functions/%s\n", cryptoLabels[2])
+	fmt.Printf("  POST /api/functions/%s\n", cryptoLabels[3])
+	fmt.Printf("  POST /api/functions/%s { \"title\": \"Héllo World\" }\n", cryptoLabels[4])
+	return nil
 }
 
-func saveFn(client *ekodb.Client, f ekodb.UserFunction) {
+func saveFn(client *ekodb.Client, f ekodb.UserFunction) error {
 	_, err := client.SaveUserFunction(f)
 	if err == nil {
 		fmt.Printf("✓ %s saved\n", f.Label)
-		return
+		return nil
 	}
 	var httpErr *ekodb.HTTPError
 	if errors.As(err, &httpErr) && httpErr.StatusCode == 409 {
 		if uerr := client.UpdateUserFunction(f.Label, f); uerr != nil {
-			fmt.Printf("UpdateUserFunction(%s) error: %v\n", f.Label, uerr)
-			return
+			return fmt.Errorf("update function %s: %w", f.Label, uerr)
 		}
 		fmt.Printf("✓ %s already existed — updated instead\n", f.Label)
-		return
+		return nil
 	}
-	fmt.Printf("SaveUserFunction(%s) error: %v\n", f.Label, err)
+	return fmt.Errorf("save function %s: %w", f.Label, err)
+}
+
+func main() {
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
 }
 
 func getenv(key, fallback string) string {

@@ -3,13 +3,13 @@
 Demonstrates the full schedule lifecycle:
   create -> list -> get -> update -> trigger -> pause -> resume -> delete
 
-The referenced function label must already exist on the server.
+The example creates a temporary no-op function for the schedule to invoke.
 """
 
 import asyncio
 import os
 
-from ekodb_client import Client
+from ekodb_client import Client, Stage
 
 
 async def main():
@@ -22,61 +22,76 @@ async def main():
 
     client = Client.new(base_url, api_key)
 
-    # 1. Create a schedule
-    print("--- create_schedule ---")
-    schedule = await client.create_schedule(
+    function_label = f"schedule_noop_python_{os.getpid()}"
+    function_id = await client.save_function(
         {
-            "name": "Nightly Report",
-            "function_label": "nightly_report",
-            "cron_expression": "0 0 0 * * *",
-            "description": "Generate and email nightly analytics report",
-            "timezone": "UTC",
-            "enabled": True,
+            "label": function_label,
+            "name": "Schedule example no-op",
+            "parameters": {},
+            "functions": [Stage.return_response({"triggered": True}, 200)],
         }
     )
-    schedule_id = schedule["id"]
-    print(f"Created schedule: {schedule.get('name')} (id: {schedule_id})")
 
-    # 2. List all schedules
-    print("\n--- list_schedules ---")
-    schedules = await client.list_schedules()
-    print(f"Schedules: {schedules}")
+    schedule_id = None
+    try:
+        print("--- create_schedule ---")
+        schedule = await client.create_schedule(
+            {
+                "name": "Nightly Report",
+                "function_label": function_label,
+                "cron_expression": "0 0 0 * * *",
+                "description": "Generate and email nightly analytics report",
+                "timezone": "UTC",
+                "enabled": True,
+            }
+        )
+        schedule_id = schedule["id"]
+        print(f"Created schedule: {schedule.get('name')} (id: {schedule_id})")
 
-    # 3. Get schedule by ID
-    print("\n--- get_schedule ---")
-    fetched = await client.get_schedule(schedule_id)
-    print(f"Fetched: {fetched.get('name')} cron={fetched.get('cron_expression')}")
+        print("\n--- list_schedules ---")
+        print(f"Schedules: {await client.list_schedules()}")
 
-    # 4. Update schedule
-    print("\n--- update_schedule ---")
-    updated = await client.update_schedule(
-        schedule_id,
-        {
-            "cron_expression": "0 30 1 * * *",
-            "description": "Changed to 1:30 AM UTC",
-        },
-    )
-    print(f"Updated cron: {updated.get('cron_expression')}")
+        print("\n--- get_schedule ---")
+        fetched = await client.get_schedule(schedule_id)
+        print(f"Fetched: {fetched.get('name')} cron={fetched.get('cron_expression')}")
 
-    # 5. Trigger immediately
-    print("\n--- trigger_schedule ---")
-    triggered = await client.trigger_schedule(schedule_id)
-    print(f"Triggered: {triggered}")
+        print("\n--- update_schedule ---")
+        updated = await client.update_schedule(
+            schedule_id,
+            {
+                "cron_expression": "0 30 1 * * *",
+                "description": "Changed to 1:30 AM UTC",
+            },
+        )
+        print(f"Updated cron: {updated.get('cron_expression')}")
 
-    # 6. Pause schedule
-    print("\n--- pause_schedule ---")
-    paused = await client.pause_schedule(schedule_id)
-    print(f"Paused: enabled={paused.get('enabled')}")
+        print("\n--- trigger_schedule ---")
+        print(f"Triggered: {await client.trigger_schedule(schedule_id)}")
 
-    # 7. Resume schedule
-    print("\n--- resume_schedule ---")
-    resumed = await client.resume_schedule(schedule_id)
-    print(f"Resumed: enabled={resumed.get('enabled')}")
+        print("\n--- pause_schedule ---")
+        print(
+            f"Paused: enabled={(await client.pause_schedule(schedule_id)).get('enabled')}"
+        )
 
-    # 8. Delete schedule
-    print("\n--- delete_schedule ---")
-    await client.delete_schedule(schedule_id)
-    print("Schedule deleted successfully")
+        print("\n--- resume_schedule ---")
+        print(
+            f"Resumed: enabled={(await client.resume_schedule(schedule_id)).get('enabled')}"
+        )
+    finally:
+        cleanup_error = None
+        if schedule_id is not None:
+            try:
+                await client.delete_schedule(schedule_id)
+                print("Schedule deleted successfully")
+            except Exception as exc:
+                cleanup_error = exc
+        try:
+            await client.delete_function(function_id)
+        except Exception as exc:
+            if cleanup_error is None:
+                cleanup_error = exc
+        if cleanup_error is not None:
+            raise cleanup_error
 
     print("\n=== Schedule management example completed ===")
 

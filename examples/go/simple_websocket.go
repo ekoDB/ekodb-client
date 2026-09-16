@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -54,7 +55,7 @@ func insertTestData(token string) (map[string]interface{}, error) {
 		"active": true,
 	})
 
-	req, _ := http.NewRequest("POST", baseURL+"/api/insert/websocket_test", bytes.NewBuffer(body))
+	req, _ := http.NewRequest("POST", baseURL+"/api/insert/websocket_test_go", bytes.NewBuffer(body))
 	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("Content-Type", "application/json")
 
@@ -70,23 +71,46 @@ func insertTestData(token string) (map[string]interface{}, error) {
 	return result, nil
 }
 
-func main() {
-	fmt.Println("=== Simple WebSocket Operations (Direct API) ===\n")
+func deleteTestCollection(token string) error {
+	req, err := http.NewRequest("DELETE", baseURL+"/api/collections/websocket_test_go", nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Authorization", "Bearer "+token)
+	resp, err := (&http.Client{}).Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusNotFound && (resp.StatusCode < 200 || resp.StatusCode >= 300) {
+		return fmt.Errorf("collection cleanup failed with status %d", resp.StatusCode)
+	}
+	return nil
+}
+
+func run() (runErr error) {
+	fmt.Print("=== Simple WebSocket Operations (Direct API) ===\n\n")
 
 	// Step 1: Get authentication token
 	token, err := getAuthToken()
 	if err != nil {
-		fmt.Printf("Auth failed: %v\n", err)
-		os.Exit(1)
+		return fmt.Errorf("auth failed: %w", err)
 	}
 	fmt.Println("✓ Authentication successful")
+	if err := deleteTestCollection(token); err != nil {
+		return fmt.Errorf("initial cleanup failed: %w", err)
+	}
+	defer func() {
+		if err := deleteTestCollection(token); err != nil {
+			runErr = errors.Join(runErr, fmt.Errorf("cleanup failed: %w", err))
+		}
+	}()
 
 	// Step 2: Insert test data first
 	fmt.Println("\n=== Inserting Test Data ===")
 	insertResult, err := insertTestData(token)
 	if err != nil {
-		fmt.Printf("Insert failed: %v\n", err)
-		os.Exit(1)
+		return fmt.Errorf("insert failed: %w", err)
 	}
 	fmt.Printf("✓ Inserted test record: %s\n", insertResult["id"])
 
@@ -98,8 +122,7 @@ func main() {
 
 	conn, _, err := websocket.DefaultDialer.Dial(wsURL+"/api/ws", header)
 	if err != nil {
-		fmt.Printf("WebSocket connection failed: %v\n", err)
-		os.Exit(1)
+		return fmt.Errorf("WebSocket connection failed: %w", err)
 	}
 	defer conn.Close()
 	fmt.Println("✓ WebSocket connected")
@@ -112,34 +135,49 @@ func main() {
 		"type":      "FindAll",
 		"messageId": messageID,
 		"payload": map[string]interface{}{
-			"collection": "websocket_test",
+			"collection": "websocket_test_go",
 		},
 	}
 
 	err = conn.WriteJSON(message)
 	if err != nil {
-		fmt.Printf("Failed to send message: %v\n", err)
-		os.Exit(1)
+		return fmt.Errorf("failed to send message: %w", err)
 	}
 
 	// Wait for response
 	conn.SetReadDeadline(time.Now().Add(10 * time.Second))
 	_, responseBytes, err := conn.ReadMessage()
 	if err != nil {
-		fmt.Printf("Failed to read response: %v\n", err)
-		os.Exit(1)
+		return fmt.Errorf("failed to read response: %w", err)
 	}
 
 	var response map[string]interface{}
-	json.Unmarshal(responseBytes, &response)
+	if err := json.Unmarshal(responseBytes, &response); err != nil {
+		return fmt.Errorf("decode WebSocket response: %w", err)
+	}
 	prettyResponse, _ := json.MarshalIndent(response, "", "  ")
 	fmt.Printf("Response: %s\n", prettyResponse)
 
-	if payload, ok := response["payload"].(map[string]interface{}); ok {
-		if data, ok := payload["data"].([]interface{}); ok {
-			fmt.Printf("✓ Retrieved %d record(s) via WebSocket\n", len(data))
-		}
+	payload, ok := response["payload"].(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("WebSocket response did not contain payload")
 	}
+	data, ok := payload["data"].([]interface{})
+	if !ok {
+		return fmt.Errorf("WebSocket response did not contain payload.data")
+	}
+	if len(data) != 1 {
+		return fmt.Errorf("expected exactly 1 WebSocket record, got %d", len(data))
+	}
+	fmt.Println("✓ Retrieved 1 record via WebSocket")
 
+	return nil
+}
+
+func main() {
+	if err := run(); err != nil {
+		fmt.Printf("Error: %v\n", err)
+		os.Exit(1)
+	}
 	fmt.Println("\n✓ WebSocket example completed successfully")
 }

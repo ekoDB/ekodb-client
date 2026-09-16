@@ -3,7 +3,7 @@
 // Exercises the full lifecycle: create, list, get, update, search, complete,
 // approve, reject, step operations, task scheduling, and agent management.
 
-import { EkoDBClient } from "@ekodb/ekodb-client";
+import { EkoDBClient, getValue } from "@ekodb/ekodb-client";
 
 async function main() {
   console.log("=== ekoDB Goals, Tasks & Agents Example (TypeScript) ===\n");
@@ -42,14 +42,14 @@ async function main() {
   // 3. Get goal by ID
   console.log("\n--- Getting goal ---");
   const fetched = await client.goalGet(goalId);
-  console.log(`Fetched: ${fetched.title}`);
+  console.log(`Fetched: ${getValue(fetched.title)}`);
 
   // 4. Update goal
   console.log("\n--- Updating goal ---");
   const updated = await client.goalUpdate(goalId, {
     description: "Ship version 2.0 with hot-fix patches",
   });
-  console.log(`Updated description: ${updated.description}`);
+  console.log(`Updated description: ${getValue(updated.description)}`);
 
   // 5. Search goals
   console.log("\n--- Searching goals ---");
@@ -78,12 +78,12 @@ async function main() {
   const completed = await client.goalComplete(goalId, {
     summary: "Deployed successfully after retrying build step",
   });
-  console.log(`Goal status: ${completed.status}`);
+  console.log(`Goal status: ${getValue(completed.status)}`);
 
   // 8. Approve the goal
   console.log("--- Approving goal ---");
   const approved = await client.goalApprove(goalId);
-  console.log(`Goal status after approve: ${approved.status}`);
+  console.log(`Goal status after approve: ${getValue(approved.status)}`);
 
   // 9. Create another goal to reject
   console.log("\n--- Creating goal to reject ---");
@@ -98,7 +98,7 @@ async function main() {
   const rejected = await client.goalReject(rejectGoalId, {
     reason: "Plan does not meet requirements",
   });
-  console.log(`Goal status after reject: ${rejected.status}`);
+  console.log(`Goal status after reject: ${getValue(rejected.status)}`);
 
   // ========================================================================
   // TASKS
@@ -112,7 +112,12 @@ async function main() {
     config: { endpoint: "/health" },
   });
   const taskId = task.id as string;
-  console.log(`Created task: ${task.name} (id: ${taskId})`);
+  const createdTask = await client.taskGet(taskId);
+  const createdTaskName = getValue<string>(createdTask.name);
+  if (createdTaskName !== "Hourly Health Check") {
+    throw new Error(`Unexpected created task name: ${createdTaskName}`);
+  }
+  console.log(`Created task: ${createdTaskName} (id: ${taskId})`);
 
   console.log("\n--- Listing tasks ---");
   const taskList = await client.taskList();
@@ -120,32 +125,32 @@ async function main() {
 
   console.log("\n--- Getting task ---");
   const fetchedTask = await client.taskGet(taskId);
-  console.log(`Fetched: ${fetchedTask.name}`);
+  console.log(`Fetched: ${getValue(fetchedTask.name)}`);
 
   console.log("\n--- Starting task ---");
   const started = await client.taskStart(taskId);
-  console.log(`Task status: ${started.status}`);
+  console.log(`Task status: ${getValue(started.status)}`);
 
   console.log("\n--- Succeeding task ---");
   const succeeded = await client.taskSucceed(taskId, {
     output: "Health check passed: 200 OK",
   });
-  console.log(`Task status after succeed: ${succeeded.status}`);
+  console.log(`Task status after succeed: ${getValue(succeeded.status)}`);
 
   console.log("\n--- Pausing task ---");
   const paused = await client.taskPause(taskId);
-  console.log(`Task status after pause: ${paused.status}`);
+  console.log(`Task status after pause: ${getValue(paused.status)}`);
 
   console.log("\n--- Resuming task ---");
   const resumed = await client.taskResume(taskId, {});
-  console.log(`Task status after resume: ${resumed.status}`);
+  console.log(`Task status after resume: ${getValue(resumed.status)}`);
 
   console.log("\n--- Failing task ---");
   await client.taskStart(taskId);
   const failed = await client.taskFail(taskId, {
     error: "Connection timeout to /health",
   });
-  console.log(`Task status after fail: ${failed.status}`);
+  console.log(`Task status after fail: ${getValue(failed.status)}`);
 
   console.log("\n--- Getting due tasks ---");
   const dueTasks = await client.taskDue(new Date().toISOString());
@@ -167,7 +172,12 @@ async function main() {
     deployment_id: "deploy_prod_1",
   });
   const agentId = agent.id as string;
-  console.log(`Created agent: ${agent.name} (id: ${agentId})`);
+  const createdAgent = await client.agentGet(agentId);
+  const createdAgentName = getValue<string>(createdAgent.name);
+  if (createdAgentName !== "SupportBot") {
+    throw new Error(`Unexpected created agent name: ${createdAgentName}`);
+  }
+  console.log(`Created agent: ${createdAgentName} (id: ${agentId})`);
 
   console.log("\n--- Listing agents ---");
   const agentList = await client.agentList();
@@ -175,21 +185,32 @@ async function main() {
 
   console.log("\n--- Getting agent by ID ---");
   const fetchedAgent = await client.agentGet(agentId);
-  console.log(`Fetched: ${fetchedAgent.name}`);
+  console.log(`Fetched: ${getValue(fetchedAgent.name)}`);
 
   console.log("\n--- Getting agent by name ---");
   const byName = await client.agentGetByName("SupportBot");
-  console.log(`By name: ${byName.name} (id: ${byName.id})`);
+  console.log(`By name: ${getValue(byName.name)} (id: ${byName.id})`);
 
   console.log("\n--- Updating agent ---");
   const updatedAgent = await client.agentUpdate(agentId, {
     system_prompt: "You are an expert customer support agent with empathy.",
   });
-  console.log(`Updated agent: ${updatedAgent.name}`);
+  console.log(`Updated agent: ${getValue(updatedAgent.name)}`);
 
   console.log("\n--- Getting agents by deployment ---");
   const byDeployment = await client.agentsByDeployment("deploy_prod_1");
   console.log("Agents in deployment:", JSON.stringify(byDeployment, null, 2));
+  // TODO(ekoDB dev team): The live endpoint currently returns an empty list
+  // even though agentList includes the newly created agent with this exact
+  // deployment_id. Add an exact agent-ID assertion once fixed server-side.
+  const deploymentAgentIds = Array.isArray(byDeployment.items)
+    ? byDeployment.items.map((item: any) => item.id)
+    : [];
+  if (!deploymentAgentIds.includes(agentId)) {
+    console.warn(
+      `WARNING: agents-by-deployment omitted created agent ${agentId}; TODO: check/fix the server-side deployment lookup`,
+    );
+  }
 
   console.log("\n--- Deleting agent ---");
   await client.agentDelete(agentId);
@@ -207,4 +228,7 @@ async function main() {
   console.log("\n=== All goals, tasks & agents operations completed ===");
 }
 
-main().catch(console.error);
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});

@@ -19,7 +19,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-async def main():
+async def main(resources):
     print("=== ekoDB Chat Session Management Example ===\n")
 
     # Create client
@@ -28,6 +28,7 @@ async def main():
     client = Client.new(base_url, api_key)
 
     collection = "client_chat_sessions_python"
+    resources.update(client=client, collection=collection)
 
     # Step 1: Insert sample data
     print("=== Inserting Sample Data ===")
@@ -50,6 +51,7 @@ async def main():
         system_prompt="You are a helpful assistant for product information.",
     )
     chat_id = session["chat_id"]
+    resources["chat_ids"].append(chat_id)
     print(f"✓ Created session: {chat_id}\n")
 
     # Step 3: Send messages in the session
@@ -95,6 +97,7 @@ async def main():
         llm_model="gpt-4o-mini",
     )
     branch_id = branched["chat_id"]
+    resources["chat_ids"].append(branch_id)
     print(f"✓ Created branch: {branch_id}")
     print(f"  Parent: {chat_id}\n")
 
@@ -114,15 +117,42 @@ async def main():
     # Step 8: Delete branch session
     print("=== Deleting Branch Session ===")
     await client.delete_chat_session(branch_id)
+    resources["chat_ids"].remove(branch_id)
     print(f"✓ Deleted branch session: {branch_id}\n")
 
-    # Cleanup: Delete the collection (chat sessions are managed by server)
-    print("=== Cleanup ===")
-    await client.delete_collection(collection)
-    print("✓ Deleted collection\n")
 
+async def run():
+    resources = {"client": None, "collection": None, "chat_ids": []}
+    primary_error = None
+    try:
+        await main(resources)
+    except BaseException as error:
+        primary_error = error
+
+    cleanup_errors = []
+    client = resources["client"]
+    if client:
+        print("=== Cleanup ===")
+        for chat_id in resources["chat_ids"]:
+            try:
+                await client.delete_chat_session(chat_id)
+            except Exception as error:
+                cleanup_errors.append(f"session {chat_id}: {error}")
+        try:
+            await client.delete_collection(resources["collection"])
+        except Exception as error:
+            cleanup_errors.append(f"collection {resources['collection']}: {error}")
+        if not cleanup_errors:
+            print("✓ Deleted sessions and collection\n")
+
+    if primary_error:
+        if cleanup_errors:
+            print("Cleanup also failed: " + "; ".join(cleanup_errors))
+        raise primary_error
+    if cleanup_errors:
+        raise RuntimeError("Cleanup failed: " + "; ".join(cleanup_errors))
     print("✓ All session management operations completed successfully")
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(run())

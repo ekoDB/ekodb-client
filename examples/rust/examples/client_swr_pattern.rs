@@ -6,11 +6,40 @@
 //! - Store result with TTL for auto-expiration
 
 use ekodb_client::{
-    Client, FieldType, Function, FunctionCondition, ParameterDefinition, UserFunction,
+    Client, Error, FieldType, Function, FunctionCondition, ParameterDefinition, UserFunction,
 };
-use serde_json::json;
+use serde_json::{json, Value};
 use std::collections::HashMap;
+use std::error::Error as StdError;
 use std::time::Instant;
+
+const COLLECTION: &str = "user_cache_rs";
+const FUNCTION_LABEL: &str = "fetch_api_user_rs";
+
+fn is_not_found(error: &Error) -> bool {
+    matches!(error, Error::NotFound | Error::Api { code: 404, .. })
+}
+
+fn unwrap_typed(value: &Value) -> &Value {
+    if let Value::Object(object) = value {
+        if object.len() == 2 && object.contains_key("type") && object.contains_key("value") {
+            return unwrap_typed(&object["value"]);
+        }
+    }
+    value
+}
+
+fn user_payload(record: &ekodb_client::Record) -> Result<Value, Box<dyn StdError>> {
+    let json = serde_json::to_value(record)?;
+    let data = unwrap_typed(
+        json.get("data")
+            .ok_or("SWR record did not include a data field")?,
+    );
+    if data["id"] != 1 || data["name"] != "Leanne Graham" {
+        return Err(format!("unexpected SWR user payload: {data}").into());
+    }
+    Ok(data.clone())
+}
 
 /// Save a function idempotently: if the label already exists (HTTP 409),
 /// update the existing definition instead, then return its id.
@@ -25,26 +54,19 @@ async fn save_or_update(
             client.update_function(&label, function).await?;
             println!("ℹ️  Function '{}' already existed — updated instead", label);
             let existing = client.get_function(&label).await?;
-            Ok(existing.id.unwrap_or(label))
+            existing.id.ok_or_else(|| {
+                std::io::Error::other(format!("updated function '{label}' did not include an id"))
+                    .into()
+            })
         }
         Err(e) => Err(Box::new(e)),
     }
 }
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    dotenv::dotenv().ok();
-
-    let base_url =
-        std::env::var("API_BASE_URL").unwrap_or_else(|_| "http://localhost:8080".to_string());
-    let api_key =
-        std::env::var("API_BASE_KEY").unwrap_or_else(|_| "a-test-api-key-from-ekodb".to_string());
-
-    let client = Client::builder()
-        .base_url(&base_url)
-        .api_key(&api_key)
-        .build()?;
-
+async fn run_examples(
+    client: &Client,
+    script_id: &mut Option<String>,
+) -> Result<(), Box<dyn StdError>> {
     println!("=== ekoDB SWR (Stale-While-Revalidate) Pattern ===\n");
 
     println!("Step 1: Create SWR function that acts as edge cache");
@@ -72,14 +94,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let swr_script = UserFunction {
         id: None,
-        label: "fetch_api_user_rs".to_string(),
+        label: FUNCTION_LABEL.to_string(),
         name: "Fetch User with Cache".to_string(),
         description: Some("SWR pattern: Check cache, fetch from API if stale".to_string()),
         version: Some("1.0".to_string()),
         parameters,
         functions: vec![
             Function::FindById {
-                collection: "user_cache_rs".to_string(),
+                collection: COLLECTION.to_string(),
                 record_id: "{{user_id}}".to_string(),
             },
             Function::If {
@@ -101,7 +123,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         output_field: None,
                     }),
                     Box::new(Function::Insert {
-                        collection: "user_cache_rs".to_string(),
+                        collection: COLLECTION.to_string(),
                         record: json!({
                             "id": {"type": "String", "value": "{{user_id}}"},
                             "data": {"type": "Object", "value": "{{http_response}}"},
@@ -121,8 +143,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         updated_at: None,
     };
 
-    let script_id = save_or_update(&client, swr_script).await?;
-    println!("✓ Created SWR script: fetch_api_user_rs ({})\n", script_id);
+    *script_id = Some(save_or_update(client, swr_script).await?);
+    println!(
+        "✓ Created SWR script: fetch_api_user_rs ({})\n",
+        script_id.as_deref().unwrap()
+    );
 
     println!("Step 2: First call - Cache miss, fetches from API");
     let mut params1 = HashMap::new();
@@ -132,10 +157,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         "cached_at".to_string(),
         FieldType::String(chrono::Utc::now().to_rfc3339()),
     );
-    let result1 = client
-        .call_function("fetch_api_user_rs", Some(params1))
-        .await?;
+    let result1 = client.call_function(FUNCTION_LABEL, Some(params1)).await?;
     println!("Result: {:?}", result1.stats);
+    if result1.records.len() != 1 {
+        return Err(format!(
+            "expected one cache-miss record, got {}",
+            result1.records.len()
+        )
+        .into());
+    }
+    let payload1 = user_payload(&result1.records[0])?;
     println!("✓ Data fetched from external API and cached\n");
 
     println!("Step 3: Second call - Cache hit, instant response from ekoDB");
@@ -147,26 +178,75 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         "cached_at".to_string(),
         FieldType::String(chrono::Utc::now().to_rfc3339()),
     );
-    let _ = client
-        .call_function("fetch_api_user_rs", Some(params2))
-        .await?;
+    let result2 = client.call_function(FUNCTION_LABEL, Some(params2)).await?;
     let duration = start.elapsed();
     println!(
         "Response time: {}ms (served from cache)",
         duration.as_millis()
     );
+    if result2.records.len() != 1 {
+        return Err(format!(
+            "expected one cache-hit record, got {}",
+            result2.records.len()
+        )
+        .into());
+    }
+    if user_payload(&result2.records[0])? != payload1 {
+        return Err("cache hit returned different user data".into());
+    }
     println!("✓ Lightning fast cache hit\n");
+    Ok(())
+}
 
-    // Cleanup
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn StdError>> {
+    dotenv::dotenv().ok();
+    let base_url =
+        std::env::var("API_BASE_URL").unwrap_or_else(|_| "http://localhost:8080".to_string());
+    let api_key =
+        std::env::var("API_BASE_KEY").unwrap_or_else(|_| "a-test-api-key-from-ekodb".to_string());
+    let client = Client::builder()
+        .base_url(&base_url)
+        .api_key(&api_key)
+        .build()?;
+    if let Err(error) = client.delete_collection(COLLECTION).await {
+        if !is_not_found(&error) {
+            return Err(error.into());
+        }
+    }
+
+    let mut script_id = None;
+    let operation_result = run_examples(&client, &mut script_id).await;
     println!("🧹 Cleaning up...");
-    let _ = client.delete_function(&script_id).await;
-    let _ = client.delete_collection("user_cache_rs").await;
+    let mut cleanup_errors = Vec::new();
+    if let Some(id) = &script_id {
+        if let Err(error) = client.delete_function(id).await {
+            cleanup_errors.push(format!("function {id}: {error}"));
+        }
+    }
+    if let Err(error) = client.delete_collection(COLLECTION).await {
+        if !is_not_found(&error) {
+            cleanup_errors.push(format!("collection {COLLECTION}: {error}"));
+        }
+    }
+    match (operation_result, cleanup_errors.is_empty()) {
+        (Err(primary), false) => {
+            return Err(format!(
+                "{primary}; cleanup also failed: {}",
+                cleanup_errors.join("; ")
+            )
+            .into())
+        }
+        (Err(primary), true) => return Err(primary),
+        (Ok(()), false) => {
+            return Err(format!("cleanup failed: {}", cleanup_errors.join("; ")).into())
+        }
+        (Ok(()), true) => {}
+    }
     println!("✓ Cleanup complete\n");
-
     println!("=== SWR Pattern Summary ===");
     println!("✅ Cache miss → Fetch from API → Store in ekoDB");
     println!("✅ Cache hit → Instant response from ekoDB");
     println!("✅ TTL handles automatic cache invalidation");
-
     Ok(())
 }

@@ -24,6 +24,18 @@ dotenv.config();
 
 const BASE_URL = process.env.API_BASE_URL || "http://localhost:8080";
 const API_KEY = process.env.API_BASE_KEY || "a-test-api-key-from-ekodb";
+const FUNCTION_LABELS = [
+  "crypto_demo_hmac_ts",
+  "crypto_demo_aes_ts",
+  "crypto_demo_uuid_ts",
+  "crypto_demo_totp_ts",
+  "crypto_demo_encoding_ts",
+] as const;
+
+function isNotFoundError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.includes("status 404") || /not found/i.test(message);
+}
 
 /** True when a save failed because the function label already exists (HTTP 409). */
 function isAlreadyExistsError(error: unknown): boolean {
@@ -48,106 +60,127 @@ async function saveOrUpdateUserFunction(
 async function main() {
   const client = new EkoDBClient(BASE_URL, API_KEY);
   await client.init();
-  console.log("✓ Client created");
+  let primaryError: unknown;
+  try {
+    console.log("✓ Client created");
 
-  // 1. HMAC sign + verify in a single pipeline.
-  const hmac: UserFunction = {
-    label: "crypto_demo_hmac",
-    name: "HMAC sign + verify",
-    parameters: { payload: { required: true } },
-    functions: [
-      Stage.hmacSign("{{payload}}", "{{env.HMAC_KEY}}", "mac", {
-        algorithm: "sha256",
-        encoding: "hex",
-      }),
-      Stage.hmacVerify(
-        "{{payload}}",
-        "{{mac}}",
-        "{{env.HMAC_KEY}}",
-        "verified",
-        {
+    // 1. HMAC sign + verify in a single pipeline.
+    const hmac: UserFunction = {
+      label: FUNCTION_LABELS[0],
+      name: "HMAC sign + verify",
+      parameters: { payload: { required: true } },
+      functions: [
+        Stage.hmacSign("{{payload}}", "{{env.HMAC_KEY}}", "mac", {
           algorithm: "sha256",
           encoding: "hex",
-        },
-      ),
-    ],
-  };
-  await saveOrUpdateUserFunction(client, hmac);
-  console.log("✓ crypto_demo_hmac saved");
+        }),
+        Stage.hmacVerify(
+          "{{payload}}",
+          "{{mac}}",
+          "{{env.HMAC_KEY}}",
+          "verified",
+          {
+            algorithm: "sha256",
+            encoding: "hex",
+          },
+        ),
+      ],
+    };
+    await saveOrUpdateUserFunction(client, hmac);
+    console.log(`✓ ${hmac.label} saved`);
 
-  // 2. AES-256-GCM encrypt + decrypt.
-  const aes: UserFunction = {
-    label: "crypto_demo_aes",
-    name: "AES encrypt + decrypt",
-    parameters: { plaintext: { required: true } },
-    functions: [
-      Stage.aesEncrypt("{{plaintext}}", "{{env.DATA_KEY}}", "envelope", "hex"),
-      Stage.aesDecrypt("envelope", "{{env.DATA_KEY}}", "recovered", "hex"),
-    ],
-  };
-  await saveOrUpdateUserFunction(client, aes);
-  console.log("✓ crypto_demo_aes saved");
+    // 2. AES-256-GCM encrypt + decrypt.
+    const aes: UserFunction = {
+      label: FUNCTION_LABELS[1],
+      name: "AES encrypt + decrypt",
+      parameters: { plaintext: { required: true } },
+      functions: [
+        Stage.aesEncrypt(
+          "{{plaintext}}",
+          "{{env.DATA_KEY}}",
+          "envelope",
+          "hex",
+        ),
+        Stage.aesDecrypt("envelope", "{{env.DATA_KEY}}", "recovered", "hex"),
+      ],
+    };
+    await saveOrUpdateUserFunction(client, aes);
+    console.log(`✓ ${aes.label} saved`);
 
-  // 3. UuidGenerate — fresh ID every call.
-  const uuidFn: UserFunction = {
-    label: "crypto_demo_uuid",
-    name: "Generate v4 UUID",
-    parameters: {},
-    functions: [Stage.uuidGenerate("id")],
-  };
-  await saveOrUpdateUserFunction(client, uuidFn);
-  console.log("✓ crypto_demo_uuid saved");
+    // 3. UuidGenerate — fresh ID every call.
+    const uuidFn: UserFunction = {
+      label: FUNCTION_LABELS[2],
+      name: "Generate v4 UUID",
+      parameters: {},
+      functions: [Stage.uuidGenerate("id")],
+    };
+    await saveOrUpdateUserFunction(client, uuidFn);
+    console.log(`✓ ${uuidFn.label} saved`);
 
-  // 4. TotpGenerate — RFC 6238 with SHA1 (most authenticator apps).
-  const totp: UserFunction = {
-    label: "crypto_demo_totp",
-    name: "Generate TOTP code",
-    parameters: {},
-    functions: [
-      Stage.totpGenerate("{{env.TOTP_SECRET}}", "code", {
-        digits: 6,
-        period: 30,
-        algorithm: "sha1",
-      }),
-    ],
-  };
-  await saveOrUpdateUserFunction(client, totp);
-  console.log("✓ crypto_demo_totp saved");
+    // 4. TotpGenerate — RFC 6238 with SHA1 (most authenticator apps).
+    const totp: UserFunction = {
+      label: FUNCTION_LABELS[3],
+      name: "Generate TOTP code",
+      parameters: {},
+      functions: [
+        Stage.totpGenerate("{{env.TOTP_SECRET}}", "code", {
+          digits: 6,
+          period: 30,
+          algorithm: "sha1",
+        }),
+      ],
+    };
+    await saveOrUpdateUserFunction(client, totp);
+    console.log(`✓ ${totp.label} saved`);
 
-  // 5. Base64 + Hex + Slugify chained on one input.
-  const encoding: UserFunction = {
-    label: "crypto_demo_encoding",
-    name: "Base64 / Hex / Slugify",
-    parameters: { title: { required: true } },
-    functions: [
-      Stage.base64Encode("{{title}}", "title_b64"),
-      Stage.hexEncode("{{title}}", "title_hex"),
-      Stage.slugify("{{title}}", "title_slug"),
-    ],
-  };
-  await saveOrUpdateUserFunction(client, encoding);
-  console.log("✓ crypto_demo_encoding saved");
+    // 5. Base64 + Hex + Slugify chained on one input.
+    const encoding: UserFunction = {
+      label: FUNCTION_LABELS[4],
+      name: "Base64 / Hex / Slugify",
+      parameters: { title: { required: true } },
+      functions: [
+        Stage.base64Encode("{{title}}", "title_b64"),
+        Stage.hexEncode("{{title}}", "title_hex"),
+        Stage.slugify("{{title}}", "title_slug"),
+      ],
+    };
+    await saveOrUpdateUserFunction(client, encoding);
+    console.log(`✓ ${encoding.label} saved`);
 
-  console.log("\nInvoke them with:");
-  console.log('  POST /api/functions/crypto_demo_hmac     { "payload": "hi" }');
-  console.log(
-    '  POST /api/functions/crypto_demo_aes      { "plaintext": "secret" }',
-  );
-  console.log("  POST /api/functions/crypto_demo_uuid");
-  console.log("  POST /api/functions/crypto_demo_totp");
-  console.log(
-    '  POST /api/functions/crypto_demo_encoding { "title": "Héllo World" }',
-  );
-
-  for (const label of [
-    "crypto_demo_hmac",
-    "crypto_demo_aes",
-    "crypto_demo_uuid",
-    "crypto_demo_totp",
-    "crypto_demo_encoding",
-  ]) {
-    await client.deleteUserFunction(label).catch(() => {});
+    console.log("\nInvoke them with:");
+    console.log(
+      `  POST /api/functions/${FUNCTION_LABELS[0]} { "payload": "hi" }`,
+    );
+    console.log(
+      `  POST /api/functions/${FUNCTION_LABELS[1]} { "plaintext": "secret" }`,
+    );
+    console.log(`  POST /api/functions/${FUNCTION_LABELS[2]}`);
+    console.log(`  POST /api/functions/${FUNCTION_LABELS[3]}`);
+    console.log(
+      `  POST /api/functions/${FUNCTION_LABELS[4]} { "title": "Héllo World" }`,
+    );
+  } catch (error) {
+    primaryError = error;
+  } finally {
+    const cleanupErrors: unknown[] = [];
+    for (const label of FUNCTION_LABELS) {
+      try {
+        await client.deleteUserFunction(label);
+      } catch (error) {
+        if (!isNotFoundError(error)) cleanupErrors.push(error);
+      }
+    }
+    if (cleanupErrors.length > 0) {
+      primaryError =
+        primaryError === undefined
+          ? new AggregateError(cleanupErrors, "Crypto stages cleanup failed")
+          : new AggregateError(
+              [primaryError, ...cleanupErrors],
+              "Crypto stages example and cleanup failed",
+            );
+    }
   }
+  if (primaryError !== undefined) throw primaryError;
   console.log("\n✓ Cleaned up demo functions");
 }
 

@@ -34,6 +34,9 @@ from dotenv import load_dotenv
 env_path = Path(__file__).parent.parent / ".env"
 load_dotenv(env_path)
 
+MESSAGES_COLLECTION = "rag_messages_py"
+CONVERSATIONS_COLLECTION = "rag_conversations_py"
+
 
 def extract_string_field(record: Dict[str, Any], field: str) -> str:
     """Extract string field from record (handles Object wrapper)"""
@@ -52,7 +55,7 @@ async def create_conversation(
         "title": title,
         "created_at": datetime.utcnow().isoformat(),
         "search_config": {
-            "collections": ["rag_messages"],
+            "collections": [MESSAGES_COLLECTION],
             "search_type": "hybrid",
             "limit": 10,
         },
@@ -102,25 +105,13 @@ async def store_message_with_embedding(
     await client.insert(collection, msg)
 
 
-async def main():
+async def run_example(client, resources):
     print("=== ekoDB RAG Conversation System ===\n")
     print("This example shows how ekoDB can power a self-improving AI system")
     print("that learns from its own conversation history.\n")
 
-    # Create client
-    base_url = os.getenv("API_BASE_URL", "http://localhost:8080")
-    api_key = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb")
-    client = Client.new(base_url, api_key)
-
-    messages_collection = "rag_messages"
-    conversations_collection = "rag_conversations"
-
-    # Cleanup any existing data
-    try:
-        await client.delete_collection(messages_collection)
-        await client.delete_collection(conversations_collection)
-    except:
-        pass
+    messages_collection = MESSAGES_COLLECTION
+    conversations_collection = CONVERSATIONS_COLLECTION
 
     # ========================================
     # STEP 1: Simulate Historical Conversations
@@ -302,6 +293,7 @@ async def main():
             f"topics. Context:\n\n{context}"
         ),
     )
+    resources["chat_id"] = chat_session["chat_id"]
 
     # Send the question
     response = await client.chat_message(
@@ -392,15 +384,6 @@ async def main():
     print("\nThis enables context-aware search tuned to each conversation's needs!\n")
 
     # ========================================
-    # Cleanup
-    # ========================================
-    print("=== Cleanup ===")
-    await client.delete_chat_session(chat_session["chat_id"])
-    await client.delete_collection(messages_collection)
-    await client.delete_collection(conversations_collection)
-    print("✓ Cleanup complete\n")
-
-    # ========================================
     # Summary - What We Demonstrated
     # ========================================
     print("\n=== 📚 Summary: What This Example Showed ===\n")
@@ -433,6 +416,54 @@ async def main():
     print("   → Use these client helpers to make AI integration simple")
     print("   → Scale to millions of documents with native indexing")
     print("")
+
+
+async def cleanup(client, resources):
+    errors = []
+    chat_id = resources.get("chat_id")
+    if chat_id:
+        try:
+            await client.delete_chat_session(chat_id)
+        except Exception as error:  # noqa: BLE001 - attempt remaining cleanup
+            if "404" not in str(error) and "not found" not in str(error).lower():
+                errors.append(f"chat session {chat_id}: {error}")
+    for collection in (MESSAGES_COLLECTION, CONVERSATIONS_COLLECTION):
+        try:
+            await client.delete_collection(collection)
+        except Exception as error:  # noqa: BLE001 - attempt every owned cleanup
+            if "404" not in str(error) and "not found" not in str(error).lower():
+                errors.append(f"collection {collection}: {error}")
+    if errors:
+        raise RuntimeError("cleanup failed: " + "; ".join(errors))
+
+
+async def main():
+    base_url = os.getenv("API_BASE_URL", "http://localhost:8080")
+    api_key = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb")
+    client = Client.new(base_url, api_key)
+    resources = {}
+    await cleanup(client, resources)
+
+    primary_error = None
+    try:
+        await run_example(client, resources)
+    except BaseException as error:  # noqa: BLE001 - cleanup must run on cancellation
+        primary_error = error
+
+    cleanup_error = None
+    try:
+        await cleanup(client, resources)
+    except Exception as error:  # noqa: BLE001 - preserve the primary failure
+        cleanup_error = error
+
+    if primary_error is not None:
+        if cleanup_error is not None:
+            primary_error.add_note(f"Cleanup also failed: {cleanup_error}")
+            print(f"⚠️  Cleanup also failed: {cleanup_error}")
+        raise primary_error
+    if cleanup_error is not None:
+        raise cleanup_error
+    print("✓ Cleanup complete\n")
 
 
 if __name__ == "__main__":

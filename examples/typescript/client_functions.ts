@@ -4,10 +4,20 @@
  * Demonstrates creating, managing, and executing scripts
  */
 
-import { EkoDBClient, Stage, UserFunction } from "@ekodb/ekodb-client";
+import {
+  EkoDBClient,
+  Stage,
+  UserFunction,
+  queryExpression,
+} from "@ekodb/ekodb-client";
 import * as dotenv from "dotenv";
 
 dotenv.config();
+
+const COLLECTION = "functions_users_client_ts";
+const ACTIVE_LABEL = "get_active_users_client_ts";
+const STATUS_LABEL = "get_users_by_status_client_ts";
+const STATS_LABEL = "user_stats_client_ts";
 
 /** True when a save failed because the function label already exists (HTTP 409). */
 function isAlreadyExistsError(error: unknown): boolean {
@@ -47,7 +57,7 @@ async function setupTestData(client: EkoDBClient): Promise<void> {
       status: i % 2 === 0 ? "active" : "inactive",
       score: i * 10,
     };
-    await client.insert("users", record);
+    await client.insert(COLLECTION, record);
   }
 
   console.log("✅ Test data ready\n");
@@ -57,19 +67,27 @@ async function simpleQueryScript(client: EkoDBClient): Promise<string> {
   console.log("📝 Example 1: Simple Query Function\n");
 
   const script = {
-    label: "get_active_users",
+    label: ACTIVE_LABEL,
     name: "Get Active Users",
     description: "Retrieve all active users",
     version: "1.0",
     parameters: {},
-    functions: [Stage.findAll("users")],
+    functions: [
+      Stage.query(
+        COLLECTION,
+        queryExpression({
+          type: "Condition",
+          content: { field: "status", operator: "Eq", value: "active" },
+        }),
+      ),
+    ],
     tags: ["users", "query"],
   };
 
   const id = await saveOrUpdate(client, script);
   console.log(`✅ Function saved: ${id}`);
 
-  const result = await client.callFunction("get_active_users");
+  const result = await client.callFunction(id);
   console.log(`📊 Found ${result.records.length} active users\n`);
 
   return id;
@@ -79,22 +97,30 @@ async function parameterizedScript(client: EkoDBClient): Promise<string> {
   console.log("📝 Example 2: Parameterized Function\n");
 
   const script = {
-    label: "get_users_by_status",
+    label: STATUS_LABEL,
     name: "Get Users By Status",
     version: "1.0",
     parameters: {
       status: {
-        param_type: "String" as const,
         required: false,
         default: "active",
       },
       limit: {
-        param_type: "Integer" as const,
         required: false,
         default: 10,
       },
     },
-    functions: [Stage.findAll("users")],
+    functions: [
+      Stage.query(
+        COLLECTION,
+        queryExpression({
+          type: "Condition",
+          content: { field: "status", operator: "Eq", value: "active" },
+        }),
+        undefined,
+        3,
+      ),
+    ],
     tags: ["users", "parameterized"],
   };
 
@@ -102,7 +128,7 @@ async function parameterizedScript(client: EkoDBClient): Promise<string> {
   console.log(`✅ Function saved: ${id}`);
 
   const params = { status: "active", limit: 3 };
-  const result = await client.callFunction("get_users_by_status", params);
+  const result = await client.callFunction(id, params);
   console.log(`📊 Found ${result.records.length} users (limited)\n`);
 
   return id;
@@ -112,12 +138,12 @@ async function aggregationScript(client: EkoDBClient): Promise<string> {
   console.log("📝 Example 3: Aggregation Function\n");
 
   const script = {
-    label: "user_stats",
+    label: STATS_LABEL,
     name: "User Statistics",
     version: "1.0",
     parameters: {},
     functions: [
-      Stage.findAll("users"),
+      Stage.findAll(COLLECTION),
       Stage.group(
         ["status"], // by_fields
         [
@@ -137,7 +163,7 @@ async function aggregationScript(client: EkoDBClient): Promise<string> {
   const id = await saveOrUpdate(client, script);
   console.log(`✅ Function saved: ${id}`);
 
-  const result = await client.callFunction("user_stats");
+  const result = await client.callFunction(id);
   console.log(`📊 Statistics: ${result.records.length} groups`);
   result.records.forEach((record) =>
     console.log(`   ${JSON.stringify(record)}`),
@@ -165,18 +191,17 @@ async function scriptManagement(
 
   // Update script by ID
   const updated = {
-    label: "get_active_users_updated",
+    label: `${ACTIVE_LABEL}_updated`,
     name: "Get Active Users (Updated)",
     description: "Updated description",
     version: "1.1",
     parameters: {},
-    functions: [Stage.findAll("users")],
+    functions: [Stage.findAll(COLLECTION)],
     tags: ["users"],
   };
   await client.updateFunction(getActiveUsersId, updated);
   console.log("✏️  function updated");
 
-  // Delete script by ID
   await client.deleteFunction(userStatsId);
   console.log("🗑️  function deleted\n");
 
@@ -199,19 +224,42 @@ async function main(): Promise<void> {
   const client = new EkoDBClient(baseUrl, apiKey);
   await client.init();
 
-  // Run examples and track IDs
-  await setupTestData(client);
-  const getActiveUsersId = await simpleQueryScript(client);
-  const getUsersByStatusId = await parameterizedScript(client);
-  const userStatsId = await aggregationScript(client);
-  await scriptManagement(
-    client,
-    getActiveUsersId,
-    getUsersByStatusId,
-    userStatsId,
-  );
-
-  console.log("✅ All examples completed!");
+  const scriptIds: string[] = [];
+  let primaryError: unknown;
+  try {
+    await client.deleteCollection(COLLECTION).catch(() => undefined);
+    await setupTestData(client);
+    scriptIds.push(await simpleQueryScript(client));
+    scriptIds.push(await parameterizedScript(client));
+    scriptIds.push(await aggregationScript(client));
+    await scriptManagement(client, scriptIds[0], scriptIds[1], scriptIds[2]);
+    console.log("✅ All examples completed!");
+  } catch (error) {
+    primaryError = error;
+    throw error;
+  } finally {
+    const cleanup = await Promise.allSettled([
+      ...scriptIds.map((id) =>
+        client.deleteFunction(id).catch((error) => {
+          if (!String(error).includes("not found")) throw error;
+        }),
+      ),
+      client.deleteCollection(COLLECTION),
+    ]);
+    const failures = cleanup.filter(
+      (result): result is PromiseRejectedResult => result.status === "rejected",
+    );
+    if (failures.length > 0) {
+      const errors = failures.map((failure) => failure.reason);
+      if (primaryError !== undefined) errors.unshift(primaryError);
+      throw new AggregateError(
+        errors,
+        primaryError === undefined
+          ? "Function example cleanup failed"
+          : "Function example and cleanup failed",
+      );
+    }
+  }
 }
 
 main().catch((error) => {

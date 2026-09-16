@@ -19,6 +19,15 @@ import (
 	"github.com/joho/godotenv"
 )
 
+const (
+	basicLabel         = "github_user_native_go"
+	auditLabel         = "product_swr_audit_go"
+	pipelineLabel      = "user_enrichment_pipeline_go"
+	dynamicLabel       = "flexible_cache_go"
+	auditCollection    = "swr_audit_trail_go"
+	enrichedCollection = "enriched_users_go"
+)
+
 // saveOrUpdateFn saves a function, or — if the label already exists (HTTP 409)
 // — updates it in place and recovers the encrypted ID via a GET by label.
 func saveOrUpdateFn(client *ekodb.Client, fn ekodb.UserFunction) (string, error) {
@@ -54,7 +63,7 @@ func exampleBasicSWR(client *ekodb.Client) (string, error) {
 	outputField := "user_data"
 
 	basicSWRScript := ekodb.UserFunction{
-		Label:       "github_user_native",
+		Label:       basicLabel,
 		Name:        "GitHub User Lookup (Native SWR)",
 		Description: strPtr("Fetches GitHub user data with automatic caching using native SWR"),
 		Parameters: map[string]ekodb.ParameterDefinition{
@@ -65,8 +74,8 @@ func exampleBasicSWR(client *ekodb.Client) (string, error) {
 		},
 		Functions: []ekodb.FunctionStageConfig{
 			ekodb.StageSWR(
-				"github:user:{{username}}", // cache_key
-				"15m",                      // ttl
+				"github:user:go:{{username}}", // cache_key
+				"15m",                         // ttl
 				"https://api.github.com/users/{{username}}", // url
 				"GET",        // method
 				headers,      // headers
@@ -83,12 +92,12 @@ func exampleBasicSWR(client *ekodb.Client) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to save script: %w", err)
 	}
-	fmt.Printf("✓ Created native SWR script: github_user_native (%s)\n", scriptID)
+	fmt.Printf("✓ Created native SWR script: %s (%s)\n", basicLabel, scriptID)
 
 	// First call - cache miss
 	fmt.Println("\nFirst call (cache miss - will fetch from GitHub API):")
 	start1 := time.Now()
-	result1, err := client.CallFunction("github_user_native", map[string]interface{}{
+	result1, err := client.CallFunction(basicLabel, map[string]interface{}{
 		"username": "torvalds",
 	})
 	if err != nil {
@@ -101,7 +110,7 @@ func exampleBasicSWR(client *ekodb.Client) (string, error) {
 	// Second call - cache hit
 	fmt.Println("\nSecond call (cache hit - instant from KV store):")
 	start2 := time.Now()
-	result2, err := client.CallFunction("github_user_native", map[string]interface{}{
+	result2, err := client.CallFunction(basicLabel, map[string]interface{}{
 		"username": "torvalds",
 	})
 	if err != nil {
@@ -125,10 +134,10 @@ func exampleAuditTrail(client *ekodb.Client) (string, error) {
 	fmt.Println("Optional collection parameter for automatic request logging")
 
 	outputField := "product"
-	collection := "swr_audit_trail"
+	collection := auditCollection
 
 	auditSWRScript := ekodb.UserFunction{
-		Label:       "product_swr_audit",
+		Label:       auditLabel,
 		Name:        "Product API with Audit (Native SWR)",
 		Description: strPtr("Caches product data and logs all requests automatically"),
 		Parameters: map[string]ekodb.ParameterDefinition{
@@ -139,8 +148,8 @@ func exampleAuditTrail(client *ekodb.Client) (string, error) {
 		},
 		Functions: []ekodb.FunctionStageConfig{
 			ekodb.StageSWR(
-				"product:{{product_id}}", // cache_key
-				"1h",                     // ttl
+				"product:go:{{product_id}}", // cache_key
+				"1h",                        // ttl
 				"https://fakestoreapi.com/products/{{product_id}}", // url
 				"GET",        // method
 				nil,          // headers
@@ -157,17 +166,17 @@ func exampleAuditTrail(client *ekodb.Client) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to save audit script: %w", err)
 	}
-	fmt.Printf("✓ Created SWR script with audit trail: product_swr_audit (%s)\n", auditScriptID)
+	fmt.Printf("✓ Created SWR script with audit trail: %s (%s)\n", auditLabel, auditScriptID)
 
 	fmt.Println("\nFetching product (will create audit trail entry):")
-	productResult, err := client.CallFunction("product_swr_audit", map[string]interface{}{
+	productResult, err := client.CallFunction(auditLabel, map[string]interface{}{
 		"product_id": "1",
 	})
 	if err != nil {
 		return auditScriptID, fmt.Errorf("product call failed: %w", err)
 	}
 	fmt.Println("  ✓ Product fetched and cached")
-	fmt.Println("  ✓ Audit record created in 'swr_audit_trail' collection")
+	fmt.Printf("  ✓ Audit record created in '%s' collection\n", auditCollection)
 	fmt.Printf("  Records: %d\n\n", len(productResult.Records))
 
 	return auditScriptID, nil
@@ -182,7 +191,7 @@ func examplePipelineEnrichment(client *ekodb.Client) (string, error) {
 
 	ttl24h := int64(86400) // 24 hours in seconds
 	pipelineScript := ekodb.UserFunction{
-		Label:       "user_enrichment_pipeline",
+		Label:       pipelineLabel,
 		Name:        "User Data Enrichment Pipeline",
 		Description: strPtr("Fetches external API data and stores enriched results"),
 		Parameters: map[string]ekodb.ParameterDefinition{
@@ -194,8 +203,8 @@ func examplePipelineEnrichment(client *ekodb.Client) (string, error) {
 		Functions: []ekodb.FunctionStageConfig{
 			// Step 1: Fetch from external API with caching (30 min TTL)
 			ekodb.StageSWR(
-				"api:user:{{user_id}}", // cache_key
-				"30m",                  // ttl
+				"api:user:go:{{user_id}}", // cache_key
+				"30m",                     // ttl
 				"https://jsonplaceholder.typicode.com/users/{{user_id}}", // url
 				"GET",        // method
 				nil,          // headers
@@ -206,7 +215,7 @@ func examplePipelineEnrichment(client *ekodb.Client) (string, error) {
 			),
 			// Step 2: Store enriched data in collection (24 hour TTL)
 			ekodb.StageInsert(
-				"enriched_users", // collection
+				enrichedCollection, // collection
 				map[string]interface{}{
 					"user_id":     map[string]interface{}{"type": "String", "value": "{{user_id}}"},
 					"source_data": map[string]interface{}{"type": "Object", "value": "{{user_data}}"},
@@ -222,17 +231,17 @@ func examplePipelineEnrichment(client *ekodb.Client) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to save pipeline script: %w", err)
 	}
-	fmt.Printf("✓ Created enrichment pipeline: user_enrichment_pipeline (%s)\n", pipelineScriptID)
+	fmt.Printf("✓ Created enrichment pipeline: %s (%s)\n", pipelineLabel, pipelineScriptID)
 
 	fmt.Println("\nRunning pipeline:")
-	enrichResult, err := client.CallFunction("user_enrichment_pipeline", map[string]interface{}{
+	enrichResult, err := client.CallFunction(pipelineLabel, map[string]interface{}{
 		"user_id": "1",
 	})
 	if err != nil {
 		return pipelineScriptID, fmt.Errorf("pipeline call failed: %w", err)
 	}
 	fmt.Println("  ✓ Data fetched from API (cached 30m)")
-	fmt.Println("  ✓ Enriched data stored in 'enriched_users' (TTL 24h)")
+	fmt.Printf("  ✓ Enriched data stored in '%s' (TTL 24h)\n", enrichedCollection)
 	fmt.Printf("  Pipeline returned %d records\n\n", len(enrichResult.Records))
 
 	return pipelineScriptID, nil
@@ -244,7 +253,7 @@ func exampleDynamicTTL(client *ekodb.Client) (string, error) {
 	fmt.Println("TTL as parameter - supports duration strings, integers, ISO timestamps")
 
 	dynamicTTLScript := ekodb.UserFunction{
-		Label:       "flexible_cache",
+		Label:       dynamicLabel,
 		Name:        "Flexible Cache TTL (Native SWR)",
 		Description: strPtr("Demonstrates parameterized TTL values"),
 		Parameters: map[string]ekodb.ParameterDefinition{
@@ -259,8 +268,8 @@ func exampleDynamicTTL(client *ekodb.Client) (string, error) {
 		},
 		Functions: []ekodb.FunctionStageConfig{
 			ekodb.StageSWR(
-				"resource:{{resource_id}}", // cache_key
-				"{{ttl}}",                  // ttl (parameterized)
+				"resource:go:{{resource_id}}", // cache_key
+				"{{ttl}}",                     // ttl (parameterized)
 				"https://jsonplaceholder.typicode.com/posts/{{resource_id}}", // url
 				"GET", // method
 				nil,   // headers
@@ -277,7 +286,7 @@ func exampleDynamicTTL(client *ekodb.Client) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to save dynamic TTL script: %w", err)
 	}
-	fmt.Printf("✓ Created dynamic TTL script: flexible_cache (%s)\n", dynamicScriptID)
+	fmt.Printf("✓ Created dynamic TTL script: %s (%s)\n", dynamicLabel, dynamicScriptID)
 
 	// Test with different TTLs
 	ttlTests := []struct {
@@ -290,7 +299,7 @@ func exampleDynamicTTL(client *ekodb.Client) (string, error) {
 	}
 
 	for _, test := range ttlTests {
-		_, err := client.CallFunction("flexible_cache", map[string]interface{}{
+		_, err := client.CallFunction(dynamicLabel, map[string]interface{}{
 			"resource_id": "test",
 			"ttl":         test.value,
 		})
@@ -308,17 +317,85 @@ func strPtr(s string) *string {
 	return &s
 }
 
-func cleanup(client *ekodb.Client, scriptIDs []string) {
-	fmt.Println("\n🧹 Cleaning up...")
-	for _, scriptID := range scriptIDs {
-		if err := client.DeleteFunction(scriptID); err != nil {
-			log.Printf("⚠ Cleanup error (non-critical): %v", err)
-		}
-	}
-	fmt.Printf("✓ Deleted %d test scripts\n", len(scriptIDs))
+func isNotFound(err error) bool {
+	var httpErr *ekodb.HTTPError
+	return (errors.As(err, &httpErr) && httpErr.StatusCode == 404) ||
+		strings.Contains(strings.ToLower(err.Error()), "not found")
 }
 
-func main() {
+func startClean(client *ekodb.Client) error {
+	var cleanupErrors []string
+	for _, label := range []string{basicLabel, auditLabel, pipelineLabel, dynamicLabel} {
+		function, err := client.GetFunction(label)
+		if err != nil {
+			if !isNotFound(err) {
+				cleanupErrors = append(cleanupErrors, fmt.Sprintf("function %s lookup: %v", label, err))
+			}
+			continue
+		}
+		if function.ID == nil {
+			cleanupErrors = append(cleanupErrors, fmt.Sprintf("function %s lookup returned no ID", label))
+			continue
+		}
+		if err := client.DeleteFunction(*function.ID); err != nil && !isNotFound(err) {
+			cleanupErrors = append(cleanupErrors, fmt.Sprintf("function %s: %v", label, err))
+		}
+	}
+	for _, key := range []string{
+		"github:user:go:torvalds",
+		"product:go:1",
+		"api:user:go:1",
+		"resource:go:test",
+	} {
+		if err := client.KVDelete(key); err != nil && !isNotFound(err) {
+			cleanupErrors = append(cleanupErrors, fmt.Sprintf("KV key %s: %v", key, err))
+		}
+	}
+	for _, collection := range []string{auditCollection, enrichedCollection} {
+		if err := client.DeleteCollection(collection); err != nil && !isNotFound(err) {
+			cleanupErrors = append(cleanupErrors, fmt.Sprintf("collection %s: %v", collection, err))
+		}
+	}
+	if len(cleanupErrors) > 0 {
+		return fmt.Errorf("initial cleanup failed: %s", strings.Join(cleanupErrors, "; "))
+	}
+	return nil
+}
+
+func cleanup(client *ekodb.Client, scriptIDs []string) error {
+	fmt.Println("\n🧹 Cleaning up...")
+	var cleanupErrors []string
+	deletedScripts := 0
+	for _, scriptID := range scriptIDs {
+		if err := client.DeleteFunction(scriptID); err != nil {
+			cleanupErrors = append(cleanupErrors, fmt.Sprintf("function %s: %v", scriptID, err))
+		} else {
+			deletedScripts++
+		}
+	}
+	for _, key := range []string{
+		"github:user:go:torvalds",
+		"product:go:1",
+		"api:user:go:1",
+		"resource:go:test",
+	} {
+		if err := client.KVDelete(key); err != nil && !isNotFound(err) {
+			cleanupErrors = append(cleanupErrors, fmt.Sprintf("KV key %s: %v", key, err))
+		}
+	}
+	for _, collection := range []string{auditCollection, enrichedCollection} {
+		if err := client.DeleteCollection(collection); err != nil && !isNotFound(err) {
+			cleanupErrors = append(cleanupErrors, fmt.Sprintf("collection %s: %v", collection, err))
+		}
+	}
+	if len(cleanupErrors) > 0 {
+		return fmt.Errorf("cleanup failed: %s", strings.Join(cleanupErrors, "; "))
+	}
+	fmt.Printf("✓ Deleted %d test scripts\n", deletedScripts)
+	return nil
+}
+
+func run() (runErr error) {
 	fmt.Println("🚀 ekoDB Go Client - Native SWR Function Examples\n")
 	fmt.Println("📋 Demonstrates:")
 	fmt.Println("   • Single-function SWR pattern (replaces 4-step pipeline)")
@@ -345,40 +422,52 @@ func main() {
 
 	client, err := ekodb.NewClient(baseURL, apiKey)
 	if err != nil {
-		log.Fatalf("❌ Failed to create client: %v", err)
+		return fmt.Errorf("failed to create client: %w", err)
 	}
 
-	// Start clean: drop stale collections from a prior run so their schema is
-	// inferred fresh and a stale schema can't reject the insert.
-	client.DeleteCollection("enriched_users")
-	client.DeleteCollection("swr_audit_trail")
+	if err := startClean(client); err != nil {
+		return err
+	}
 
 	var scriptIDs []string
+	defer func() {
+		if cleanupErr := cleanup(client, scriptIDs); cleanupErr != nil {
+			runErr = errors.Join(runErr, cleanupErr)
+		}
+	}()
 
 	// Run examples
 	scriptID, err := exampleBasicSWR(client)
-	if err != nil {
-		log.Fatalf("❌ Example 1 failed: %v", err)
+	if scriptID != "" {
+		scriptIDs = append(scriptIDs, scriptID)
 	}
-	scriptIDs = append(scriptIDs, scriptID)
+	if err != nil {
+		return fmt.Errorf("example 1: %w", err)
+	}
 
 	scriptID, err = exampleAuditTrail(client)
-	if err != nil {
-		log.Fatalf("❌ Example 2 failed: %v", err)
+	if scriptID != "" {
+		scriptIDs = append(scriptIDs, scriptID)
 	}
-	scriptIDs = append(scriptIDs, scriptID)
+	if err != nil {
+		return fmt.Errorf("example 2: %w", err)
+	}
 
 	scriptID, err = examplePipelineEnrichment(client)
-	if err != nil {
-		log.Fatalf("❌ Example 3 failed: %v", err)
+	if scriptID != "" {
+		scriptIDs = append(scriptIDs, scriptID)
 	}
-	scriptIDs = append(scriptIDs, scriptID)
+	if err != nil {
+		return fmt.Errorf("example 3: %w", err)
+	}
 
 	scriptID, err = exampleDynamicTTL(client)
-	if err != nil {
-		log.Fatalf("❌ Example 4 failed: %v", err)
+	if scriptID != "" {
+		scriptIDs = append(scriptIDs, scriptID)
 	}
-	scriptIDs = append(scriptIDs, scriptID)
+	if err != nil {
+		return fmt.Errorf("example 4: %w", err)
+	}
 
 	// Summary
 	fmt.Println("\n" + strings.Repeat("=", 80))
@@ -395,7 +484,12 @@ func main() {
 	fmt.Println("Native SWR:     SWR → Insert (2 functions)")
 	fmt.Println("Result:         60% fewer functions, cleaner code, same behavior 🎯")
 
-	cleanup(client, scriptIDs)
+	return nil
+}
 
+func main() {
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
 	fmt.Println("\n✅ All examples completed!")
 }

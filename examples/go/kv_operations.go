@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -10,6 +11,10 @@ import (
 
 	"github.com/joho/godotenv"
 )
+
+const sessionKey = "session:user123:go"
+
+var productKeys = []string{"cache:product:1:go", "cache:product:2:go", "cache:product:3:go"}
 
 var (
 	baseURL   string
@@ -75,6 +80,9 @@ func request(method, path string, body interface{}) (map[string]interface{}, err
 	}
 
 	respBody, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode >= 300 {
+		return nil, fmt.Errorf("HTTP %d: %s", resp.StatusCode, respBody)
+	}
 	if len(respBody) == 0 {
 		return map[string]interface{}{}, nil
 	}
@@ -84,51 +92,67 @@ func request(method, path string, body interface{}) (map[string]interface{}, err
 	return result, nil
 }
 
-func main() {
-	fmt.Println("=== Key-Value Operations (Direct HTTP) ===\n")
+func run() (runErr error) {
+	fmt.Print("=== Key-Value Operations (Direct HTTP) ===\n\n")
 
 	_, err := getAuthToken()
 	if err != nil {
-		fmt.Printf("Auth failed: %v\n", err)
-		os.Exit(1)
+		return fmt.Errorf("auth failed: %w", err)
 	}
 	fmt.Println("✓ Authentication successful")
+	defer func() {
+		for _, key := range append([]string{sessionKey}, productKeys...) {
+			if _, err := request("DELETE", "/api/kv/delete/"+key, nil); err != nil {
+				runErr = errors.Join(runErr, fmt.Errorf("cleanup KV key %s: %w", key, err))
+			}
+		}
+	}()
 
 	// Example 1: Set a key-value pair
 	fmt.Println("\n=== KV Set ===")
-	request("POST", "/api/kv/set/session:user123", map[string]interface{}{
+	if _, err := request("POST", "/api/kv/set/"+sessionKey, map[string]interface{}{
 		"value": map[string]interface{}{
 			"userId":   123,
 			"username": "john_doe",
 		},
-	})
-	fmt.Println("✓ Set key: session:user123")
+	}); err != nil {
+		return fmt.Errorf("set KV key %s: %w", sessionKey, err)
+	}
+	fmt.Printf("✓ Set key: %s\n", sessionKey)
 
 	// Example 2: Get a key-value pair
 	fmt.Println("\n=== KV Get ===")
-	getValue, _ := request("GET", "/api/kv/get/session:user123", nil)
+	getValue, err := request("GET", "/api/kv/get/"+sessionKey, nil)
+	if err != nil {
+		return fmt.Errorf("get KV key %s: %w", sessionKey, err)
+	}
 	if getValue != nil {
 		fmt.Printf("Retrieved value: %v\n", getValue["value"])
 	}
 
 	// Example 3: Set multiple keys
 	fmt.Println("\n=== Set Multiple Keys ===")
-	keys := []string{"cache:product:1", "cache:product:2", "cache:product:3"}
+	keys := productKeys
 
 	for i, key := range keys {
-		request("POST", "/api/kv/set/"+key, map[string]interface{}{
+		if _, err := request("POST", "/api/kv/set/"+key, map[string]interface{}{
 			"value": map[string]interface{}{
 				"name":  fmt.Sprintf("Product %d", i+1),
 				"price": 29.99 + float64(i)*10.0,
 			},
-		})
+		}); err != nil {
+			return fmt.Errorf("set KV key %s: %w", key, err)
+		}
 	}
 	fmt.Printf("✓ Set %d keys\n", len(keys))
 
 	// Example 4: Get multiple keys
 	fmt.Println("\n=== Get Multiple Keys ===")
 	for _, key := range keys {
-		result, _ := request("GET", "/api/kv/get/"+key, nil)
+		result, err := request("GET", "/api/kv/get/"+key, nil)
+		if err != nil {
+			return fmt.Errorf("get KV key %s: %w", key, err)
+		}
 		if result != nil {
 			fmt.Printf("%s: %v\n", key, result["value"])
 		}
@@ -136,11 +160,16 @@ func main() {
 
 	// Example 5: Delete a key
 	fmt.Println("\n=== KV Delete ===")
-	request("DELETE", "/api/kv/delete/session:user123", nil)
-	fmt.Println("✓ Deleted key: session:user123")
+	if _, err := request("DELETE", "/api/kv/delete/"+sessionKey, nil); err != nil {
+		return fmt.Errorf("delete KV key %s: %w", sessionKey, err)
+	}
+	fmt.Printf("✓ Deleted key: %s\n", sessionKey)
 
 	// Verify deletion
-	verifyDelete, _ := request("GET", "/api/kv/get/session:user123", nil)
+	verifyDelete, err := request("GET", "/api/kv/get/"+sessionKey, nil)
+	if err != nil {
+		return fmt.Errorf("verify KV deletion %s: %w", sessionKey, err)
+	}
 	if verifyDelete == nil {
 		fmt.Println("✓ Verified: Key successfully deleted (not found)")
 	} else {
@@ -150,9 +179,19 @@ func main() {
 	// Example 6: Delete multiple keys
 	fmt.Println("\n=== Delete Multiple Keys ===")
 	for _, key := range keys {
-		request("DELETE", "/api/kv/delete/"+key, nil)
+		if _, err := request("DELETE", "/api/kv/delete/"+key, nil); err != nil {
+			return fmt.Errorf("delete KV key %s: %w", key, err)
+		}
 	}
 	fmt.Printf("✓ Deleted %d keys\n", len(keys))
 
 	fmt.Println("\n✓ All KV operations completed successfully")
+	return nil
+}
+
+func main() {
+	if err := run(); err != nil {
+		fmt.Printf("✗ KV operations failed: %v\n", err)
+		os.Exit(1)
+	}
 }

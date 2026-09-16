@@ -136,7 +136,11 @@ async function main() {
 
   const insertedIds = [];
   for (const user of testUsers) {
-    const result = await request("POST", `/api/insert/${TEST_COLLECTION}`, user);
+    const result = await request(
+      "POST",
+      `/api/insert/${TEST_COLLECTION}`,
+      user,
+    );
     insertedIds.push(result.id);
   }
   console.log(`Inserted ${insertedIds.length} test users\n`);
@@ -163,7 +167,9 @@ async function main() {
   }
 
   // Example 2: Exclude sensitive fields - hide password, api_key, secret_token
-  console.log("\nExample 2: Exclude sensitive fields (password, api_key, secret_token)");
+  console.log(
+    "\nExample 2: Exclude sensitive fields (password, api_key, secret_token)",
+  );
   const admins = await request("POST", `/api/find/${TEST_COLLECTION}`, {
     filter: {
       type: "Condition",
@@ -181,15 +187,23 @@ async function main() {
     const hasApiKey = "api_key" in admins[0];
     const hasToken = "secret_token" in admins[0];
     console.log("  Sensitive fields excluded:");
-    console.log(`    - password: ${hasPassword ? "PRESENT (unexpected!)" : "excluded"}`);
-    console.log(`    - api_key: ${hasApiKey ? "PRESENT (unexpected!)" : "excluded"}`);
-    console.log(`    - secret_token: ${hasToken ? "PRESENT (unexpected!)" : "excluded"}`);
+    console.log(
+      `    - password: ${hasPassword ? "PRESENT (unexpected!)" : "excluded"}`,
+    );
+    console.log(
+      `    - api_key: ${hasApiKey ? "PRESENT (unexpected!)" : "excluded"}`,
+    );
+    console.log(
+      `    - secret_token: ${hasToken ? "PRESENT (unexpected!)" : "excluded"}`,
+    );
     const fields = Object.keys(admins[0]);
     console.log(`  Fields returned: ${JSON.stringify(fields)}`);
   }
 
   // Example 3: Complex query with projection - active users with profile fields
-  console.log("\nExample 3: Complex query with projection (active users, ages 18-65)");
+  console.log(
+    "\nExample 3: Complex query with projection (active users, ages 18-65)",
+  );
   const activeUsers = await request("POST", `/api/find/${TEST_COLLECTION}`, {
     filter: {
       type: "Logical",
@@ -254,7 +268,12 @@ async function main() {
     select_fields: ["id", "name", "email"],
   });
 
-  if (fullUsers && fullUsers.length > 0 && projectedUsers && projectedUsers.length > 0) {
+  if (
+    fullUsers &&
+    fullUsers.length > 0 &&
+    projectedUsers &&
+    projectedUsers.length > 0
+  ) {
     const fullFields = Object.keys(fullUsers[0]);
     const projectedFields = Object.keys(projectedUsers[0]);
 
@@ -264,7 +283,11 @@ async function main() {
     console.log("  Projected query:");
     console.log(`    - ${projectedFields.length} fields per record`);
     console.log(`    - Fields: ${JSON.stringify(projectedFields)}`);
-    const savings = 100 - Math.floor((projectedFields.length * 100) / Math.max(fullFields.length, 1));
+    const savings =
+      100 -
+      Math.floor(
+        (projectedFields.length * 100) / Math.max(fullFields.length, 1),
+      );
     console.log(`  Bandwidth savings: ~${savings}% fewer fields`);
   }
 

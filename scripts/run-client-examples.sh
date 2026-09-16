@@ -10,6 +10,22 @@ mode=$1
 language=$2
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 
+# Use one authoritative credential set for every language while preserving
+# explicit caller/CI overrides. Individual example directories may contain
+# legacy .env copies, but a workspace run must not switch keys between clients.
+# shellcheck disable=SC1091
+source "$root/scripts/load-root-env.sh"
+
+example_timeout_seconds=${EXAMPLE_TIMEOUT_SECONDS:-300}
+if [[ ! $example_timeout_seconds =~ ^[1-9][0-9]*$ ]]; then
+    echo "EXAMPLE_TIMEOUT_SECONDS must be a positive integer." >&2
+    exit 2
+fi
+
+run_with_timeout() {
+    perl "$root/scripts/run-with-timeout.pl" "$example_timeout_seconds" "$@"
+}
+
 run_go() {
     local go_dir="$root/examples/go"
     local go_client_dir=${EKODB_CLIENT_GO_DIR:-}
@@ -42,7 +58,7 @@ run_go() {
         if [[ "$mode" == "check" ]]; then
             (cd "$go_dir" && go build -modfile="$(basename "$modfile")" -o "$output_dir/$name" "$(basename "$source")")
         else
-            (cd "$go_dir" && go run -modfile="$(basename "$modfile")" "$(basename "$source")")
+            (cd "$go_dir" && run_with_timeout go run -modfile="$(basename "$modfile")" "$(basename "$source")")
         fi
     done
 }
@@ -55,7 +71,7 @@ case "$mode:$language" in
         for source in "$root"/examples/rust/examples/client_*.rs \
             "$root"/examples/rust/examples/bypass_ripple_example.rs \
             "$root"/examples/rust/examples/projection_example.rs; do
-            (cd "$root/examples/rust" && cargo run --example "$(basename "${source%.rs}")")
+            (cd "$root/examples/rust" && run_with_timeout cargo run --example "$(basename "${source%.rs}")")
         done
         ;;
     check:python)
@@ -66,7 +82,7 @@ case "$mode:$language" in
         for source in "$root"/examples/python/client_*.py \
             "$root"/examples/python/bypass_ripple_example.py \
             "$root"/examples/python/projection_example.py; do
-            "$python_bin" "$source"
+            run_with_timeout "$python_bin" "$source"
         done
         ;;
     check:go|run:go)
@@ -79,7 +95,7 @@ case "$mode:$language" in
         for source in "$root"/examples/typescript/client_*.ts \
             "$root"/examples/typescript/bypass_ripple_example.ts \
             "$root"/examples/typescript/projection_example.ts; do
-            (cd "$root/examples/typescript" && npx tsx "$(basename "$source")")
+            (cd "$root/examples/typescript" && run_with_timeout npx tsx "$(basename "$source")")
         done
         ;;
     check:javascript)
@@ -96,22 +112,28 @@ case "$mode:$language" in
             exit 1
         }
         for source in "$root"/examples/javascript/client_*.js; do
-            node "$source"
+            run_with_timeout node "$source"
         done
         for source in "$root"/examples/typescript/dist/client_*.js \
             "$root"/examples/typescript/dist/bypass_ripple_example.js \
             "$root"/examples/typescript/dist/projection_example.js; do
-            node "$source"
+            run_with_timeout node "$source"
         done
         ;;
     check:kotlin)
-        (cd "$root/examples/kotlin" && ./gradlew compileKotlin --no-daemon)
+        for source in "$root"/examples/kotlin/examples/Client*.kt \
+            "$root"/examples/kotlin/examples/BypassRippleExample.kt \
+            "$root"/examples/kotlin/examples/RagConversationSystem.kt \
+            "$root"/examples/kotlin/examples/SwrPattern.kt; do
+            main="io.ekodb.client.examples.$(basename "${source%.kt}")Kt"
+            (cd "$root/examples/kotlin" && ./gradlew compileKotlin -PmainClass="$main" --no-daemon)
+        done
         ;;
     run:kotlin)
         for source in "$root"/examples/kotlin/examples/Client*.kt \
             "$root"/examples/kotlin/examples/BypassRippleExample.kt; do
             main="io.ekodb.client.examples.$(basename "${source%.kt}")Kt"
-            (cd "$root/examples/kotlin" && ./gradlew run -PmainClass="$main" --no-daemon)
+            (cd "$root/examples/kotlin" && run_with_timeout ./gradlew run -PmainClass="$main" --no-daemon)
         done
         ;;
     *)

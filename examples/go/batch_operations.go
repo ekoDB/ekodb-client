@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -75,24 +76,36 @@ func request(method, path string, body interface{}) (map[string]interface{}, err
 	}
 
 	respBody, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, fmt.Errorf("HTTP %d: %s", resp.StatusCode, string(respBody))
+	}
 	if len(respBody) == 0 {
 		return map[string]interface{}{}, nil
 	}
 
 	var result map[string]interface{}
-	json.Unmarshal(respBody, &result)
+	if err := json.Unmarshal(respBody, &result); err != nil {
+		return nil, fmt.Errorf("decode response: %w", err)
+	}
 	return result, nil
 }
 
-func main() {
-	fmt.Println("=== Batch Operations (Direct HTTP) ===\n")
+func run() (runErr error) {
+	fmt.Print("=== Batch Operations (Direct HTTP) ===\n\n")
 
 	_, err := getAuthToken()
 	if err != nil {
-		fmt.Printf("Auth failed: %v\n", err)
-		os.Exit(1)
+		return fmt.Errorf("auth failed: %w", err)
 	}
 	fmt.Println("✓ Authentication successful")
+	if _, err := request("DELETE", "/api/collections/batch_users_go", nil); err != nil {
+		return fmt.Errorf("initial cleanup failed: %w", err)
+	}
+	defer func() {
+		if _, err := request("DELETE", "/api/collections/batch_users_go", nil); err != nil {
+			runErr = errors.Join(runErr, fmt.Errorf("cleanup failed: %w", err))
+		}
+	}()
 
 	// Example 1: Batch Insert
 	fmt.Println("\n=== Batch Insert ===")
@@ -114,24 +127,35 @@ func main() {
 		"bypass_ripple": false,
 	}
 
-	insertResult, _ := request("POST", "/api/batch/insert/batch_users", batchInsertData)
+	insertResult, err := request("POST", "/api/batch/insert/batch_users_go", batchInsertData)
+	if err != nil {
+		return fmt.Errorf("batch insert: %w", err)
+	}
 	insertedCount := 0
 	if successful, ok := insertResult["successful"].([]interface{}); ok {
 		insertedCount = len(successful)
 	}
 	fmt.Printf("✓ Batch inserted %d records\n", insertedCount)
+	if insertedCount != len(records) {
+		return fmt.Errorf("expected %d successful inserts, got %d", len(records), insertedCount)
+	}
 
 	// Example 2: Create test records for update/delete
 	fmt.Println("\n=== Creating test records for update/delete ===")
 	var ids []string
 	for i := 0; i < 3; i++ {
-		doc, _ := request("POST", "/api/insert/batch_users", map[string]interface{}{
+		doc, err := request("POST", "/api/insert/batch_users_go", map[string]interface{}{
 			"name":  fmt.Sprintf("Test User %d", i),
 			"value": i,
 		})
-		if doc != nil {
-			ids = append(ids, doc["id"].(string))
+		if err != nil {
+			return fmt.Errorf("create test record %d: %w", i, err)
 		}
+		id, ok := doc["id"].(string)
+		if !ok || id == "" {
+			return fmt.Errorf("create test record %d returned no id", i)
+		}
+		ids = append(ids, id)
 	}
 	fmt.Printf("Created %d test records\n", len(ids))
 
@@ -150,12 +174,18 @@ func main() {
 		"bypass_ripple": false,
 	}
 
-	updateResult, _ := request("PUT", "/api/batch/update/batch_users", batchUpdateData)
+	updateResult, err := request("PUT", "/api/batch/update/batch_users_go", batchUpdateData)
+	if err != nil {
+		return fmt.Errorf("batch update: %w", err)
+	}
 	updatedCount := 0
 	if successful, ok := updateResult["successful"].([]interface{}); ok {
 		updatedCount = len(successful)
 	}
 	fmt.Printf("✓ Batch updated %d records\n", updatedCount)
+	if updatedCount != len(ids) {
+		return fmt.Errorf("expected %d successful updates, got %d", len(ids), updatedCount)
+	}
 
 	// Example 4: Batch Delete
 	fmt.Println("\n=== Batch Delete ===")
@@ -169,20 +199,37 @@ func main() {
 		"bypass_ripple": false,
 	}
 
-	deleteResult, _ := request("DELETE", "/api/batch/delete/batch_users", batchDeleteData)
+	deleteResult, err := request("DELETE", "/api/batch/delete/batch_users_go", batchDeleteData)
+	if err != nil {
+		return fmt.Errorf("batch delete: %w", err)
+	}
 	deletedCount := 0
 	if successful, ok := deleteResult["successful"].([]interface{}); ok {
 		deletedCount = len(successful)
 	}
 	fmt.Printf("✓ Batch deleted %d records\n", deletedCount)
+	if deletedCount != len(ids) {
+		return fmt.Errorf("expected %d successful deletes, got %d", len(ids), deletedCount)
+	}
 
 	// Verify the deletes
-	verifyDelete, _ := request("GET", "/api/find/batch_users/"+ids[0], nil)
+	verifyDelete, err := request("GET", "/api/find/batch_users_go/"+ids[0], nil)
+	if err != nil {
+		return fmt.Errorf("verify delete: %w", err)
+	}
 	if verifyDelete == nil {
 		fmt.Println("✓ Verified: Records successfully deleted (not found)")
 	} else {
-		fmt.Println("✗ Warning: Record still exists after delete!")
+		return fmt.Errorf("record still exists after delete")
 	}
 
+	return nil
+}
+
+func main() {
+	if err := run(); err != nil {
+		fmt.Printf("Error: %v\n", err)
+		os.Exit(1)
+	}
 	fmt.Println("\n✓ All batch operations completed successfully")
 }

@@ -11,6 +11,34 @@ dotenv.config();
 
 const BASE_URL = process.env.API_BASE_URL || "http://localhost:8080";
 const API_KEY = process.env.API_BASE_KEY || "a-test-api-key-from-ekodb";
+const ORDERS_COLLECTION = "kv_wrapped_orders_ts";
+const PRODUCTS_COLLECTION = "kv_wrapped_products_ts";
+const SCRIPT_ORDERS_COLLECTION = "kv_wrapped_script_orders_ts";
+const PROCESSED_ORDERS_COLLECTION = "kv_wrapped_processed_orders_ts";
+const CREATE_ORDER_LABEL = "kv_wrapped_create_order_ts";
+const CACHED_PRODUCT_LABEL = "kv_wrapped_cached_product_ts";
+const PROCESS_ORDER_LABEL = "kv_wrapped_process_order_ts";
+const SESSION_KEY = "kv_wrapped_ts:user:session:123";
+const CACHE_KEY = "kv_wrapped_ts:cache:product:456";
+const PRODUCT_KEY = "kv_wrapped_ts:product:cache:789";
+const CONFIG_KEYS = [
+  "kv_wrapped_ts:config:app:theme",
+  "kv_wrapped_ts:config:app:language",
+  "kv_wrapped_ts:config:app:notifications",
+  "kv_wrapped_ts:config:user:preferences",
+] as const;
+const ORDER_ID = "c2d3e4f5-a1b2-c3d4-e5f6-a1b2c3d4e5f6";
+const ORDER_STATUS_KEY = `kv_wrapped_ts:order:status:${ORDER_ID}`;
+const FUNCTION_LABELS = [
+  CREATE_ORDER_LABEL,
+  CACHED_PRODUCT_LABEL,
+  PROCESS_ORDER_LABEL,
+] as const;
+
+function isNotFoundError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.includes("status 404") || /not found/i.test(message);
+}
 
 /** True when a save failed because the function label already exists (HTTP 409). */
 function isAlreadyExistsError(error: unknown): boolean {
@@ -57,7 +85,7 @@ async function wrappedTypesInsert(client: EkoDBClient): Promise<void> {
     metadata: Field.object({ source: "web", campaign: "summer2024" }),
   };
 
-  const result = await client.insert("orders_example", order);
+  const result = await client.insert(ORDERS_COLLECTION, order);
   console.log(`✅ Inserted order: ${result.id}`);
 
   // Insert multiple products with various wrapped types
@@ -83,7 +111,7 @@ async function wrappedTypesInsert(client: EkoDBClient): Promise<void> {
   ];
 
   for (const product of products) {
-    await client.insert("products_example", product);
+    await client.insert(PRODUCTS_COLLECTION, product);
   }
   console.log(`✅ Inserted ${products.length} products with wrapped types\n`);
 }
@@ -93,27 +121,24 @@ async function wrappedTypesInScript(client: EkoDBClient): Promise<string> {
 
   // Create a script that inserts records with wrapped types
   const script = {
-    label: "create_order_with_types",
+    label: CREATE_ORDER_LABEL,
     name: "Create Order with Wrapped Types",
     description: "Demonstrates wrapped types in script insert operations",
     version: "1.0",
     parameters: {
       order_total: {
-        param_type: "String" as const,
         required: true,
       },
       order_id: {
-        param_type: "String" as const,
         required: true,
       },
       timestamp: {
-        param_type: "DateTime" as const,
         required: true,
         description: "Current UTC timestamp (ISO 8601)",
       },
     },
     functions: [
-      Stage.insert("script_orders", {
+      Stage.insert(SCRIPT_ORDERS_COLLECTION, {
         order_id: "{{order_id}}",
         total: { type: "Decimal", value: "{{order_total}}" },
         created_at: "{{timestamp}}",
@@ -127,7 +152,7 @@ async function wrappedTypesInScript(client: EkoDBClient): Promise<string> {
   console.log(`✅ Function saved: ${id}`);
 
   // Execute the script with a decimal parameter
-  const result = await client.callFunction("create_order_with_types", {
+  const result = await client.callFunction(id, {
     order_total: "599.99",
     order_id: `order_${Date.now()}`,
     timestamp: new Date().toISOString(),
@@ -146,27 +171,23 @@ async function kvBasicOperations(client: EkoDBClient): Promise<void> {
   console.log("📝 Example 3: Basic KV Store Operations\n");
 
   // Set a simple value
-  await client.kvSet("user:session:123", { userId: "user_abc", role: "admin" });
+  await client.kvSet(SESSION_KEY, { userId: "user_abc", role: "admin" });
   console.log("✅ Set session data");
 
   // Get the value back
-  const session = await client.kvGet("user:session:123");
+  const session = await client.kvGet(SESSION_KEY);
   console.log(`📊 Retrieved session: ${JSON.stringify(session)}`);
 
   // Check if key exists
-  const exists = await client.kvExists("user:session:123");
+  const exists = await client.kvExists(SESSION_KEY);
   console.log(`🔍 Key exists: ${exists}`);
 
   // Set with TTL (expires in 1 hour)
-  await client.kvSet(
-    "cache:product:456",
-    { name: "Cached Product", price: 99.99 },
-    3600,
-  );
+  await client.kvSet(CACHE_KEY, { name: "Cached Product", price: 99.99 }, 3600);
   console.log("✅ Set cached data with 1 hour TTL");
 
   // Delete a key
-  await client.kvDelete("user:session:123");
+  await client.kvDelete(SESSION_KEY);
   console.log(`🗑️  Deleted session\n`);
 }
 
@@ -175,17 +196,15 @@ async function kvScriptOperations(client: EkoDBClient): Promise<string> {
 
   // function that uses KV for caching query results
   const script = {
-    label: "cached_product_lookup",
+    label: CACHED_PRODUCT_LABEL,
     name: "Cached Product Lookup",
     description: "Uses KV store for caching within a script",
     version: "1.0",
     parameters: {
       product_key: {
-        param_type: "String" as const,
         required: true,
       },
       product_data: {
-        param_type: "Object" as const,
         required: true,
       },
     },
@@ -202,8 +221,8 @@ async function kvScriptOperations(client: EkoDBClient): Promise<string> {
   console.log(`✅ Function saved: ${id}`);
 
   // Execute the caching script
-  const result = await client.callFunction("cached_product_lookup", {
-    product_key: "product:cache:789",
+  const result = await client.callFunction(id, {
+    product_key: PRODUCT_KEY,
     product_data: { name: "Test Product", price: 49.99 },
   });
   console.log(`📊 Cached and retrieved product data`);
@@ -216,19 +235,23 @@ async function kvPatternQuery(client: EkoDBClient): Promise<void> {
   console.log("📝 Example 5: KV Pattern Query\n");
 
   // Set up multiple KV entries with a pattern
-  await client.kvSet("config:app:theme", { mode: "dark" });
-  await client.kvSet("config:app:language", { code: "en" });
-  await client.kvSet("config:app:notifications", { enabled: true });
-  await client.kvSet("config:user:preferences", { timezone: "UTC" });
+  await client.kvSet(CONFIG_KEYS[0], { mode: "dark" });
+  await client.kvSet(CONFIG_KEYS[1], { code: "en" });
+  await client.kvSet(CONFIG_KEYS[2], { enabled: true });
+  await client.kvSet(CONFIG_KEYS[3], { timezone: "UTC" });
 
   console.log("✅ Set 4 config entries");
 
   // Query all config:app:* keys
-  const appConfigs = await client.kvQuery({ pattern: "config:app:*" });
+  const appConfigs = await client.kvQuery({
+    pattern: "kv_wrapped_ts:config:app:*",
+  });
   console.log(`📊 Found ${appConfigs.length} app config entries`);
 
   // Query all config:* keys
-  const allConfigs = await client.kvQuery({ pattern: "config:*" });
+  const allConfigs = await client.kvQuery({
+    pattern: "kv_wrapped_ts:config:*",
+  });
   console.log(`📊 Found ${allConfigs.length} total config entries\n`);
 }
 
@@ -243,28 +266,25 @@ async function combinedExample(client: EkoDBClient): Promise<string> {
   // 1. Stores order metadata in KV for quick access
   // 2. Inserts the full order with wrapped types
   const script = {
-    label: "process_order_with_cache",
+    label: PROCESS_ORDER_LABEL,
     name: "Process Order with Cache",
     description: "Demonstrates combined KV and wrapped type usage",
     version: "1.0",
     parameters: {
       order_id: {
-        param_type: "String" as const,
         required: true,
       },
       total: {
-        param_type: "String" as const,
         required: true,
       },
       timestamp: {
-        param_type: "DateTime" as const,
         required: true,
       },
     },
     functions: [
       // Cache order status in KV for quick lookups
       Stage.kvSet(
-        "order:status:{{order_id}}",
+        "kv_wrapped_ts:order:status:{{order_id}}",
         {
           status: "processing",
           updated_at: "{{timestamp}}",
@@ -272,14 +292,14 @@ async function combinedExample(client: EkoDBClient): Promise<string> {
         86400, // 24 hour TTL
       ),
       // Insert full order record with wrapped types
-      Stage.insert("processed_orders", {
+      Stage.insert(PROCESSED_ORDERS_COLLECTION, {
         order_id: "{{order_id}}",
         total: { type: "Decimal", value: "{{total}}" },
         created_at: "{{timestamp}}",
         status: "processing",
       }),
       // Verify the cache entry
-      Stage.kvGet("order:status:{{order_id}}"),
+      Stage.kvGet("kv_wrapped_ts:order:status:{{order_id}}"),
     ],
     tags: ["orders", "kv", "wrapped-types", "combined"],
   };
@@ -288,8 +308,8 @@ async function combinedExample(client: EkoDBClient): Promise<string> {
   console.log(`✅ Function saved: ${id}`);
 
   // Execute the combined script
-  const result = await client.callFunction("process_order_with_cache", {
-    order_id: "c2d3e4f5-a1b2-c3d4-e5f6-a1b2c3d4e5f6",
+  const result = await client.callFunction(id, {
+    order_id: ORDER_ID,
     total: "299.99",
     timestamp: new Date().toISOString(),
   });
@@ -309,32 +329,44 @@ async function cleanup(
   scriptIds: string[],
 ): Promise<void> {
   console.log("🧹 Cleaning up...");
-
-  try {
-    // Delete scripts
-    for (const id of scriptIds) {
+  const errors: unknown[] = [];
+  for (const id of scriptIds) {
+    try {
       await client.deleteFunction(id);
+    } catch (error) {
+      if (!isNotFoundError(error)) errors.push(error);
     }
-
-    // Delete collections
-    await client.deleteCollection("orders_example");
-    await client.deleteCollection("products_example");
-    await client.deleteCollection("script_orders");
-    await client.deleteCollection("processed_orders");
-
-    // Clean up KV entries
-    await client.kvDelete("cache:product:456");
-    await client.kvDelete("product:cache:789");
-    await client.kvDelete("config:app:theme");
-    await client.kvDelete("config:app:language");
-    await client.kvDelete("config:app:notifications");
-    await client.kvDelete("config:user:preferences");
-    await client.kvDelete("order:status:c2d3e4f5-a1b2-c3d4-e5f6-a1b2c3d4e5f6");
-
-    console.log("✅ Cleanup complete\n");
-  } catch (error) {
-    console.log("⚠️  Cleanup had some errors (may be expected)\n");
   }
+  for (const collection of [
+    ORDERS_COLLECTION,
+    PRODUCTS_COLLECTION,
+    SCRIPT_ORDERS_COLLECTION,
+    PROCESSED_ORDERS_COLLECTION,
+  ]) {
+    try {
+      await client.deleteCollection(collection);
+    } catch (error) {
+      if (!isNotFoundError(error)) errors.push(error);
+    }
+  }
+  for (const key of [
+    SESSION_KEY,
+    CACHE_KEY,
+    PRODUCT_KEY,
+    ...CONFIG_KEYS,
+    ORDER_STATUS_KEY,
+  ]) {
+    try {
+      await client.kvDelete(key);
+    } catch (error) {
+      if (!isNotFoundError(error)) errors.push(error);
+    }
+  }
+  if (errors.length > 0) {
+    console.log("⚠️  Cleanup had some errors (may be expected)\n");
+    throw new AggregateError(errors, "KV/wrapped cleanup failed");
+  }
+  console.log("✅ Cleanup complete\n");
 }
 
 // =============================================================================
@@ -353,8 +385,9 @@ async function main() {
 
   const client = new EkoDBClient(BASE_URL, API_KEY);
   await client.init();
-
   const scriptIds: string[] = [];
+
+  let primaryError: unknown;
 
   try {
     // Wrapped Types Examples
@@ -368,25 +401,34 @@ async function main() {
 
     // Combined Example
     scriptIds.push(await combinedExample(client));
-
-    // Cleanup
-    await cleanup(client, scriptIds);
-
-    console.log("✅ All KV & Wrapped Types examples completed!");
-    console.log("\n💡 Key takeaways:");
-    console.log("   ✅ Use Field.* helpers for type-safe wrapped values");
-    console.log(
-      "   ✅ Field.decimal() preserves precision (no floating point errors)",
-    );
-    console.log("   ✅ KV store is great for caching and quick lookups");
-    console.log("   ✅ Stage.kv*() functions work within scripts");
-    console.log(
-      "   ✅ Combine KV caching with collection inserts for real workflows",
-    );
   } catch (error) {
     console.error("❌ Error:", error);
-    process.exit(1);
+    primaryError = error;
+  } finally {
+    try {
+      await cleanup(client, scriptIds);
+    } catch (cleanupError) {
+      primaryError =
+        primaryError === undefined
+          ? cleanupError
+          : new AggregateError(
+              [primaryError, cleanupError],
+              "KV/wrapped example and cleanup failed",
+            );
+    }
   }
+  if (primaryError !== undefined) throw primaryError;
+  console.log("✅ All KV & Wrapped Types examples completed!");
+  console.log("\n💡 Key takeaways:");
+  console.log("   ✅ Use Field.* helpers for type-safe wrapped values");
+  console.log(
+    "   ✅ Field.decimal() preserves precision (no floating point errors)",
+  );
+  console.log("   ✅ KV store is great for caching and quick lookups");
+  console.log("   ✅ Stage.kv*() functions work within scripts");
+  console.log(
+    "   ✅ Combine KV caching with collection inserts for real workflows",
+  );
 }
 
 main().catch((error) => {

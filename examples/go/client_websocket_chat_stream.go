@@ -1,8 +1,11 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	"log"
 	"os"
+	"strings"
 
 	ekodb "github.com/ekoDB/ekodb-client-go"
 )
@@ -21,8 +24,8 @@ func getEnv(key, fallback string) string {
 	return fallback
 }
 
-func main() {
-	fmt.Println("=== WebSocket Chat Streaming Example (Go) ===\n")
+func runBasic() (runErr error) {
+	fmt.Print("=== WebSocket Chat Streaming Example (Go) ===\n\n")
 
 	baseURL := getEnv("API_BASE_URL", "http://localhost:8080")
 	wsURL := getEnv("WS_BASE_URL", "ws://localhost:8080")
@@ -31,27 +34,33 @@ func main() {
 	// Create HTTP client for session management
 	client, err := ekodb.NewClient(baseURL, apiKey)
 	if err != nil {
-		fmt.Printf("Failed to create client: %v\n", err)
-		return
+		return fmt.Errorf("create client: %w", err)
 	}
 
 	// Create a chat session
 	systemPrompt := "You are a helpful assistant."
+	llmModel := "gpt-4o-mini"
 	session, err := client.CreateChatSession(ekodb.CreateChatSessionRequest{
+		Collections:  []ekodb.CollectionConfig{},
+		LLMProvider:  "openai",
+		LLMModel:     &llmModel,
 		SystemPrompt: &systemPrompt,
 	})
 	if err != nil {
-		fmt.Printf("Failed to create chat session: %v\n", err)
-		return
+		return fmt.Errorf("create chat session: %w", err)
 	}
 	chatID := session.ChatID
+	defer func() {
+		if err := client.DeleteChatSession(chatID); err != nil {
+			runErr = errors.Join(runErr, fmt.Errorf("delete chat session: %w", err))
+		}
+	}()
 	fmt.Printf("Created chat session: %s\n", chatID)
 
 	// Connect WebSocket
 	ws, err := client.WebSocket(wsURL)
 	if err != nil {
-		fmt.Printf("Failed to connect WebSocket: %v\n", err)
-		return
+		return fmt.Errorf("connect WebSocket: %w", err)
 	}
 	defer ws.Close()
 
@@ -59,11 +68,12 @@ func main() {
 	fmt.Println("\nSending message: 'What is the capital of France?'")
 	eventCh, err := ws.ChatSend(chatID, "What is the capital of France?")
 	if err != nil {
-		fmt.Printf("Failed to send chat: %v\n", err)
-		return
+		return fmt.Errorf("send chat: %w", err)
 	}
 
 	fullResponse := ""
+	completed := false
+	messageID := ""
 	for event := range eventCh {
 		switch event.Type {
 		case "chunk":
@@ -71,6 +81,8 @@ func main() {
 			fmt.Print(event.Content)
 
 		case "end":
+			completed = true
+			messageID = event.MessageID
 			fmt.Printf("\n\n--- Stream ended ---\n")
 			fmt.Printf("Message ID: %s\n", event.MessageID)
 			fmt.Printf("Execution time: %dms\n", event.ExecutionTimeMs)
@@ -85,22 +97,35 @@ func main() {
 			err := ws.SendToolResult(chatID, event.CallID, true,
 				map[string]string{"result": "Tool executed successfully"}, "")
 			if err != nil {
-				fmt.Printf("Failed to send tool result: %v\n", err)
+				return fmt.Errorf("send tool result: %w", err)
 			}
 
 		case "error":
-			fmt.Printf("\n[Error] %s\n", event.Error)
+			return fmt.Errorf("WebSocket chat failed: %s", event.Error)
 		}
+	}
+	if !completed {
+		return fmt.Errorf("WebSocket chat ended before an end event")
+	}
+	if strings.TrimSpace(fullResponse) == "" || strings.TrimSpace(messageID) == "" {
+		return fmt.Errorf("WebSocket chat completed without content or message ID: bytes=%d message_id=%q", len(fullResponse), messageID)
 	}
 
 	if len(fullResponse) > 200 {
 		fullResponse = fullResponse[:200]
 	}
 	fmt.Printf("\nFull response: %s...\n", fullResponse)
+	return nil
 }
 
-func chatWithClientTools() {
-	fmt.Println("\n=== Chat with Client Tools ===\n")
+func main() {
+	if err := runBasic(); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func chatWithClientTools() (runErr error) {
+	fmt.Print("\n=== Chat with Client Tools ===\n\n")
 
 	baseURL := getEnv("API_BASE_URL", "http://localhost:8080")
 	wsURL := getEnv("WS_BASE_URL", "ws://localhost:8080")
@@ -108,25 +133,31 @@ func chatWithClientTools() {
 
 	client, err := ekodb.NewClient(baseURL, apiKey)
 	if err != nil {
-		fmt.Printf("Failed to create client: %v\n", err)
-		return
+		return fmt.Errorf("create client: %w", err)
 	}
 	ws, err := client.WebSocket(wsURL)
 	if err != nil {
-		fmt.Printf("Failed to connect: %v\n", err)
-		return
+		return fmt.Errorf("connect WebSocket: %w", err)
 	}
 	defer ws.Close()
 
 	systemPrompt := "You are a helpful assistant with access to tools."
+	llmModel := "gpt-4o-mini"
 	session, err := client.CreateChatSession(ekodb.CreateChatSessionRequest{
+		Collections:  []ekodb.CollectionConfig{},
+		LLMProvider:  "openai",
+		LLMModel:     &llmModel,
 		SystemPrompt: &systemPrompt,
 	})
 	if err != nil {
-		fmt.Printf("Failed to create session: %v\n", err)
-		return
+		return fmt.Errorf("create session: %w", err)
 	}
 	chatID := session.ChatID
+	defer func() {
+		if err := client.DeleteChatSession(chatID); err != nil {
+			runErr = errors.Join(runErr, fmt.Errorf("delete chat session: %w", err))
+		}
+	}()
 
 	// Register client-side tools
 	err = ws.RegisterClientTools(chatID, []ekodb.ClientToolDefinition{
@@ -143,29 +174,35 @@ func chatWithClientTools() {
 		},
 	})
 	if err != nil {
-		fmt.Printf("Failed to register tools: %v\n", err)
-		return
+		return fmt.Errorf("register tools: %w", err)
 	}
 	fmt.Println("Registered client tools")
 
 	eventCh, err := ws.ChatSend(chatID, "What's the weather in Paris?")
 	if err != nil {
-		fmt.Printf("Failed to send: %v\n", err)
-		return
+		return fmt.Errorf("send chat: %w", err)
 	}
 
+	completed := false
 	for event := range eventCh {
 		switch event.Type {
 		case "chunk":
 			fmt.Print(event.Content)
 		case "toolCall":
 			fmt.Printf("\n[Tool Call] %s(%s)\n", event.ToolName, string(event.Arguments))
-			ws.SendToolResult(chatID, event.CallID, true,
-				map[string]string{"temperature": "22°C", "condition": "Sunny"}, "")
+			if err := ws.SendToolResult(chatID, event.CallID, true,
+				map[string]string{"temperature": "22°C", "condition": "Sunny"}, ""); err != nil {
+				return fmt.Errorf("send tool result: %w", err)
+			}
 		case "end":
+			completed = true
 			fmt.Printf("\n--- Done (%dms) ---\n", event.ExecutionTimeMs)
 		case "error":
-			fmt.Printf("\n[Error] %s\n", event.Error)
+			return fmt.Errorf("WebSocket chat failed: %s", event.Error)
 		}
 	}
+	if !completed {
+		return fmt.Errorf("WebSocket chat ended before an end event")
+	}
+	return nil
 }

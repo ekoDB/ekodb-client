@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	ekodb "github.com/ekoDB/ekodb-client-go"
@@ -40,18 +41,18 @@ func saveOrUpdateFn(client *ekodb.Client, fn ekodb.UserFunction) (string, error)
 	return "", err
 }
 
-func main() {
+func run() (runErr error) {
 	// Load environment variables
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found")
 	}
 
-	fmt.Println("🚀 ekoDB Go KV Store & Wrapped Types Example\n")
+	fmt.Print("🚀 ekoDB Go KV Store & Wrapped Types Example\n\n")
 	fmt.Println("📋 Demonstrates:")
 	fmt.Println("   • Wrapped type field builders (UUID, Decimal, DateTime, etc.)")
 	fmt.Println("   • KV store operations (get, set, delete, exists, query)")
 	fmt.Println("   • KV operations within scripts")
-	fmt.Println("   • Combined wrapped types + KV workflows\n")
+	fmt.Print("   • Combined wrapped types + KV workflows\n\n")
 
 	baseURL := os.Getenv("API_BASE_URL")
 	if baseURL == "" {
@@ -64,42 +65,48 @@ func main() {
 
 	client, err := ekodb.NewClient(baseURL, apiKey)
 	if err != nil {
-		log.Fatalf("Failed to create client: %v", err)
+		return fmt.Errorf("create client: %w", err)
 	}
 
 	var scriptIds []string
+	defer func() {
+		runErr = errors.Join(runErr, cleanup(client, scriptIds))
+	}()
 
 	// Wrapped Types Examples
 	if err := wrappedTypesInsert(client); err != nil {
-		log.Fatalf("Wrapped types insert failed: %v", err)
+		return fmt.Errorf("wrapped types insert: %w", err)
 	}
 
-	if id, err := wrappedTypesInScript(client); err != nil {
-		log.Fatalf("Wrapped types script failed: %v", err)
-	} else {
+	id, err := wrappedTypesInScript(client)
+	if id != "" {
 		scriptIds = append(scriptIds, id)
+	}
+	if err != nil {
+		return fmt.Errorf("wrapped types script: %w", err)
 	}
 
 	// KV Store Examples
 	if err := kvBasicOperations(client); err != nil {
-		log.Fatalf("KV basic operations failed: %v", err)
+		return fmt.Errorf("KV basic operations: %w", err)
 	}
 
-	if id, err := kvScriptOperations(client); err != nil {
-		log.Fatalf("KV script operations failed: %v", err)
-	} else {
+	id, err = kvScriptOperations(client)
+	if id != "" {
 		scriptIds = append(scriptIds, id)
+	}
+	if err != nil {
+		return fmt.Errorf("KV script operations: %w", err)
 	}
 
 	// Combined Example
-	if id, err := combinedExample(client); err != nil {
-		log.Fatalf("Combined example failed: %v", err)
-	} else {
+	id, err = combinedExample(client)
+	if id != "" {
 		scriptIds = append(scriptIds, id)
 	}
-
-	// Cleanup
-	cleanup(client, scriptIds)
+	if err != nil {
+		return fmt.Errorf("combined example: %w", err)
+	}
 
 	fmt.Println("✅ All KV & Wrapped Types examples completed!")
 	fmt.Println("\n💡 Key takeaways:")
@@ -107,6 +114,13 @@ func main() {
 	fmt.Println("   ✅ FieldDecimal() preserves precision (no floating point errors)")
 	fmt.Println("   ✅ KV store is great for caching and quick lookups")
 	fmt.Println("   ✅ StageKv*() functions work within scripts")
+	return nil
+}
+
+func main() {
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
 }
 
 // =============================================================================
@@ -114,7 +128,7 @@ func main() {
 // =============================================================================
 
 func wrappedTypesInsert(client *ekodb.Client) error {
-	fmt.Println("📝 Example 1: Inserting Records with Wrapped Types\n")
+	fmt.Print("📝 Example 1: Inserting Records with Wrapped Types\n\n")
 
 	// Insert an order with wrapped types for precise data handling
 	order := map[string]interface{}{
@@ -128,7 +142,7 @@ func wrappedTypesInsert(client *ekodb.Client) error {
 		"metadata":        ekodb.FieldObject(map[string]interface{}{"source": "web"}),
 	}
 
-	result, err := client.Insert("orders_example", order)
+	result, err := client.Insert("orders_example_go", order)
 	if err != nil {
 		return err
 	}
@@ -157,7 +171,7 @@ func wrappedTypesInsert(client *ekodb.Client) error {
 	}
 
 	for _, product := range products {
-		if _, err := client.Insert("products_example", product); err != nil {
+		if _, err := client.Insert("products_example_go", product); err != nil {
 			return err
 		}
 	}
@@ -166,7 +180,7 @@ func wrappedTypesInsert(client *ekodb.Client) error {
 }
 
 func wrappedTypesInScript(client *ekodb.Client) (string, error) {
-	fmt.Println("📝 Example 2: function with Wrapped Type Parameters\n")
+	fmt.Print("📝 Example 2: function with Wrapped Type Parameters\n\n")
 
 	script := ekodb.UserFunction{
 		Label:       "create_order_with_types_go",
@@ -186,7 +200,7 @@ func wrappedTypesInScript(client *ekodb.Client) (string, error) {
 			},
 		},
 		Functions: []ekodb.FunctionStageConfig{
-			ekodb.StageInsert("script_orders", map[string]interface{}{
+			ekodb.StageInsert("script_orders_go", map[string]interface{}{
 				"order_id":   "{{order_id}}",
 				"total":      map[string]interface{}{"type": "Decimal", "value": "{{order_total}}"},
 				"created_at": "{{timestamp}}",
@@ -221,10 +235,10 @@ func wrappedTypesInScript(client *ekodb.Client) (string, error) {
 // =============================================================================
 
 func kvBasicOperations(client *ekodb.Client) error {
-	fmt.Println("📝 Example 3: Basic KV Store Operations\n")
+	fmt.Print("📝 Example 3: Basic KV Store Operations\n\n")
 
 	// Set a simple value
-	if err := client.KVSet("user:session:123", map[string]interface{}{
+	if err := client.KVSet("user:session:123:go", map[string]interface{}{
 		"userId": "user_abc",
 		"role":   "admin",
 	}); err != nil {
@@ -233,21 +247,21 @@ func kvBasicOperations(client *ekodb.Client) error {
 	fmt.Println("✅ Set session data")
 
 	// Get the value back
-	session, err := client.KVGet("user:session:123")
+	session, err := client.KVGet("user:session:123:go")
 	if err != nil {
 		return err
 	}
 	fmt.Printf("📊 Retrieved session: %v\n", session)
 
 	// Check if key exists
-	exists, err := client.KVExists("user:session:123")
+	exists, err := client.KVExists("user:session:123:go")
 	if err != nil {
 		return err
 	}
 	fmt.Printf("🔍 Key exists: %v\n", exists)
 
 	// Set with TTL (1 hour)
-	if err := client.KVSet("cache:product:456", map[string]interface{}{
+	if err := client.KVSet("cache:product:456:go", map[string]interface{}{
 		"name":  "Cached Product",
 		"price": 99.99,
 	}); err != nil {
@@ -256,7 +270,7 @@ func kvBasicOperations(client *ekodb.Client) error {
 	fmt.Println("✅ Set cached data with 1 hour TTL")
 
 	// Delete a key
-	if err := client.KVDelete("user:session:123"); err != nil {
+	if err := client.KVDelete("user:session:123:go"); err != nil {
 		return err
 	}
 	fmt.Println("🗑️  Deleted session")
@@ -265,7 +279,7 @@ func kvBasicOperations(client *ekodb.Client) error {
 }
 
 func kvScriptOperations(client *ekodb.Client) (string, error) {
-	fmt.Println("📝 Example 4: KV Operations in Functions\n")
+	fmt.Print("📝 Example 4: KV Operations in Functions\n\n")
 
 	ttl := int64(3600)
 	script := ekodb.UserFunction{
@@ -291,7 +305,7 @@ func kvScriptOperations(client *ekodb.Client) (string, error) {
 	fmt.Printf("✅ Function saved: %s\n", id)
 
 	result, err := client.CallFunction("cached_product_lookup_go", map[string]interface{}{
-		"product_key":  "product:cache:789",
+		"product_key":  "product:cache:789:go",
 		"product_data": map[string]interface{}{"name": "Test Product", "price": 49.99},
 	})
 	if err != nil {
@@ -308,7 +322,7 @@ func kvScriptOperations(client *ekodb.Client) (string, error) {
 // =============================================================================
 
 func combinedExample(client *ekodb.Client) (string, error) {
-	fmt.Println("📝 Example 5: Combined Wrapped Types + KV Function\n")
+	fmt.Print("📝 Example 5: Combined Wrapped Types + KV Function\n\n")
 
 	ttl := int64(86400) // 24 hours
 	script := ekodb.UserFunction{
@@ -322,17 +336,17 @@ func combinedExample(client *ekodb.Client) (string, error) {
 			"timestamp": {Required: true, Description: "Current UTC timestamp (ISO 8601)"},
 		},
 		Functions: []ekodb.FunctionStageConfig{
-			ekodb.StageKvSet("order:status:{{order_id}}", map[string]interface{}{
+			ekodb.StageKvSet("order:status:{{order_id}}:go", map[string]interface{}{
 				"status":     "processing",
 				"updated_at": "{{timestamp}}",
 			}, &ttl),
-			ekodb.StageInsert("processed_orders", map[string]interface{}{
+			ekodb.StageInsert("processed_orders_go", map[string]interface{}{
 				"order_id":   "{{order_id}}",
 				"total":      map[string]interface{}{"type": "Decimal", "value": "{{total}}"},
 				"created_at": "{{timestamp}}",
 				"status":     "processing",
 			}, false, nil),
-			ekodb.StageKvGet("order:status:{{order_id}}"),
+			ekodb.StageKvGet("order:status:{{order_id}}:go"),
 		},
 		Tags: []string{"orders", "kv", "wrapped-types"},
 	}
@@ -362,23 +376,42 @@ func combinedExample(client *ekodb.Client) (string, error) {
 // Cleanup
 // =============================================================================
 
-func cleanup(client *ekodb.Client, scriptIds []string) {
+func cleanup(client *ekodb.Client, scriptIds []string) error {
 	fmt.Println("🧹 Cleaning up...")
+	var cleanupErr error
 
 	for _, id := range scriptIds {
-		_ = client.DeleteFunction(id)
+		if err := client.DeleteFunction(id); err != nil && !cleanupNotFound(err) {
+			cleanupErr = errors.Join(cleanupErr, fmt.Errorf("delete function %s: %w", id, err))
+		}
 	}
 
-	_ = client.DeleteCollection("orders_example")
-	_ = client.DeleteCollection("products_example")
-	_ = client.DeleteCollection("script_orders")
-	_ = client.DeleteCollection("processed_orders")
+	for _, collection := range []string{"orders_example_go", "products_example_go", "script_orders_go", "processed_orders_go"} {
+		if err := client.DeleteCollection(collection); err != nil && !cleanupNotFound(err) {
+			cleanupErr = errors.Join(cleanupErr, fmt.Errorf("delete collection %s: %w", collection, err))
+		}
+	}
 
-	_ = client.KVDelete("cache:product:456")
-	_ = client.KVDelete("product:cache:789")
-	_ = client.KVDelete("order:status:c2d3e4f5-a1b2-c3d4-e5f6-a1b2c3d4e5f6")
+	for _, key := range []string{"cache:product:456:go", "user:session:123:go", "product:cache:789:go", "order:status:c2d3e4f5-a1b2-c3d4-e5f6-a1b2c3d4e5f6:go"} {
+		if err := client.KVDelete(key); err != nil && !cleanupNotFound(err) {
+			cleanupErr = errors.Join(cleanupErr, fmt.Errorf("delete KV key %s: %w", key, err))
+		}
+	}
 
-	fmt.Println("✅ Cleanup complete\n")
+	if cleanupErr == nil {
+		fmt.Print("✅ Cleanup complete\n\n")
+	}
+	return cleanupErr
+}
+
+func cleanupNotFound(err error) bool {
+	var httpErr *ekodb.HTTPError
+	if errors.As(err, &httpErr) && (httpErr.StatusCode == 404 || httpErr.StatusCode == 400) {
+		message := strings.ToLower(httpErr.Message)
+		return strings.Contains(message, "not found") || strings.Contains(message, "does not exist")
+	}
+	message := strings.ToLower(err.Error())
+	return strings.Contains(message, "not found") || strings.Contains(message, "does not exist")
 }
 
 func strPtr(s string) *string {

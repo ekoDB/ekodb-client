@@ -17,6 +17,15 @@ load_dotenv(env_path)
 
 BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8080")
 API_KEY = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb")
+COLLECTION = "complete_products_py"
+FUNCTION_LABELS = {
+    "product_stats",
+    "list_all_products",
+    "count_by_category",
+    "top_rated_products",
+    "list_with_limit",
+    "product_summary",
+}
 
 
 def _is_already_exists_error(err):
@@ -35,7 +44,11 @@ async def save_or_update(client, script):
             raise
         await client.update_function(label, script)
         print(f"ℹ️  Function '{label}' already existed — updated instead")
-        return label
+        existing = await client.get_function(label)
+        function_id = existing.get("id")
+        if not function_id:
+            raise RuntimeError(f"Updated function '{label}' did not include an id")
+        return function_id
 
 
 def generate_mock_embedding(size: int) -> list:
@@ -86,7 +99,7 @@ async def setup_test_data(client):
     ]
 
     for product in products:
-        await client.insert("complete_products", product)
+        await client.insert(COLLECTION, product)
 
     print(f"✅ Created {len(products)} products\n")
 
@@ -101,7 +114,7 @@ async def advanced_query_function(client):
         "version": "1.0",
         "parameters": {},
         "functions": [
-            {"type": "FindAll", "collection": "complete_products"},
+            {"type": "FindAll", "collection": COLLECTION},
             {
                 "type": "Group",
                 "by_fields": ["category"],
@@ -140,9 +153,7 @@ async def list_products_script(client):
         "name": "List All Products",
         "version": "1.0",
         "parameters": {},
-        "functions": [
-            {"type": "FindAll", "collection": "complete_products"},
-        ],
+        "functions": [{"type": "FindAll", "collection": COLLECTION}],
         "tags": ["products", "list"],
     }
 
@@ -167,7 +178,7 @@ async def category_count_script(client):
         "version": "1.0",
         "parameters": {},
         "functions": [
-            {"type": "FindAll", "collection": "complete_products"},
+            {"type": "FindAll", "collection": COLLECTION},
             {
                 "type": "Group",
                 "by_fields": ["category"],
@@ -200,7 +211,18 @@ async def top_rated_script(client):
         "version": "1.0",
         "parameters": {},
         "functions": [
-            {"type": "FindAll", "collection": "complete_products"},
+            {
+                "type": "Query",
+                "collection": COLLECTION,
+                "filter": {
+                    "type": "Condition",
+                    "content": {
+                        "field": "rating",
+                        "operator": "Gte",
+                        "value": 4.6,
+                    },
+                },
+            }
         ],
         "tags": ["products", "quality"],
     }
@@ -209,6 +231,10 @@ async def top_rated_script(client):
     print("✅ Function saved")
 
     result = await client.call_function("top_rated_products", None)
+    if len(result["records"]) != 3:
+        raise RuntimeError(
+            f"Top-rated query returned {len(result['records'])} products; expected 3"
+        )
 
     print(f"📊 Found {len(result['records'])} products")
     print(f"⏱️  Execution time: {result['stats']['execution_time_ms']}ms\n")
@@ -226,13 +252,16 @@ async def script_with_parameter(client):
         "version": "1.0",
         "parameters": {
             "max_items": {
-                "param_type": "Integer",
                 "required": False,
                 "default": 5,
             },
         },
         "functions": [
-            {"type": "FindAll", "collection": "complete_products"},
+            {
+                "type": "Query",
+                "collection": COLLECTION,
+                "limit": "{{max_items}}",
+            },
         ],
         "tags": ["products", "list"],
     }
@@ -241,6 +270,10 @@ async def script_with_parameter(client):
     print("✅ Function saved")
 
     result = await client.call_function("list_with_limit", {"max_items": 3})
+    if len(result["records"]) != 3:
+        raise RuntimeError(
+            f"Parameterized limit returned {len(result['records'])} products; expected 3"
+        )
 
     print(f"📊 Found {len(result['records'])} products")
     print(f"⏱️  Execution time: {result['stats']['execution_time_ms']}ms\n")
@@ -258,7 +291,7 @@ async def multi_stage_pipeline(client):
         "version": "1.0",
         "parameters": {},
         "functions": [
-            {"type": "FindAll", "collection": "complete_products"},
+            {"type": "FindAll", "collection": COLLECTION},
             {
                 "type": "Group",
                 "by_fields": ["category"],
@@ -292,13 +325,26 @@ async def cleanup(client, script_ids):
     """Cleanup test data and scripts"""
     print("🧹 Cleaning up...")
 
+    errors = []
+    ids = set(script_ids)
     try:
-        for script_id in script_ids:
+        for function in await client.list_functions(None):
+            if function.get("label") in FUNCTION_LABELS and function.get("id"):
+                ids.add(function["id"])
+    except Exception as error:
+        errors.append(f"list functions for cleanup: {error}")
+    for script_id in ids:
+        try:
             await client.delete_function(script_id)
-        await client.delete_collection("complete_products")
-        print("✅ Cleanup complete\n")
-    except Exception as e:
-        print(f"⚠️  Cleanup had some errors: {e}\n")
+        except Exception as error:
+            errors.append(f"function {script_id}: {error}")
+    try:
+        await client.delete_collection(COLLECTION)
+    except Exception as error:
+        errors.append(f"collection {COLLECTION}: {error}")
+    if errors:
+        raise RuntimeError("Cleanup failed: " + "; ".join(errors))
+    print("✅ Cleanup complete\n")
 
 
 async def main():
@@ -309,23 +355,26 @@ async def main():
     # Import client (assuming it's available)
     try:
         from ekodb_client import Client
-    except ImportError:
-        print("❌ ekodb_client not found. Please install the Python client.")
-        return
+    except ImportError as error:
+        raise RuntimeError(
+            "ekodb_client not found. Please install the Python client."
+        ) from error
 
     client = Client.new(BASE_URL, API_KEY)
 
+    script_ids = []
     try:
+        try:
+            await client.delete_collection(COLLECTION)
+        except Exception:
+            pass
         await setup_test_data(client)
-        script_ids = []
         script_ids.append(await advanced_query_function(client))
         script_ids.append(await list_products_script(client))
         script_ids.append(await category_count_script(client))
         script_ids.append(await top_rated_script(client))
         script_ids.append(await script_with_parameter(client))
         script_ids.append(await multi_stage_pipeline(client))
-        await cleanup(client, script_ids)
-
         print("✅ All complete script examples finished!")
         print("\n💡 This example demonstrates ekoDB's function system:")
         print("   ✅ FindAll operations")
@@ -333,8 +382,8 @@ async def main():
         print("   ✅ Multi-stage pipelines (FindAll → Group → Count)")
         print("   ✅ Parameter definitions")
         print("   ✅ Function management (save, call, delete)")
-    except Exception as e:
-        print(f"❌ Error: {e}")
+    finally:
+        await cleanup(client, script_ids)
 
 
 if __name__ == "__main__":

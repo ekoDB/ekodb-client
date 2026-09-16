@@ -4,6 +4,7 @@
 import asyncio
 import os
 from pathlib import Path
+
 import aiohttp
 from dotenv import load_dotenv
 
@@ -13,6 +14,7 @@ load_dotenv(env_path)
 
 BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8080")
 API_KEY = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb")
+COLLECTION = "transactions_accounts_py"
 
 
 async def get_auth_token(session):
@@ -45,6 +47,15 @@ async def update_config(session, headers, config_update):
         return await response.json()
 
 
+async def delete_collection(session, headers):
+    """Delete only this language's transaction fixture collection."""
+    async with session.delete(
+        f"{BASE_URL}/api/collections/{COLLECTION}", headers=headers
+    ) as response:
+        if response.status != 404:
+            response.raise_for_status()
+
+
 async def run_transaction_test(session, headers, test_name):
     """Run a single transaction test"""
     print(f"\n{'='*60}")
@@ -54,7 +65,7 @@ async def run_transaction_test(session, headers, test_name):
     # Setup test data
     print("=== Setup: Creating Test Accounts ===")
     async with session.post(
-        f"{BASE_URL}/api/insert/test_accounts",
+        f"{BASE_URL}/api/insert/{COLLECTION}",
         headers=headers,
         json={"account_id": "ACC001", "name": "Alice", "balance": 1000},
     ) as response:
@@ -63,7 +74,7 @@ async def run_transaction_test(session, headers, test_name):
         print(f"Created Alice: $1000 - ID: {alice_id}")
 
     async with session.post(
-        f"{BASE_URL}/api/insert/test_accounts",
+        f"{BASE_URL}/api/insert/{COLLECTION}",
         headers=headers,
         json={"account_id": "ACC002", "name": "Bob", "balance": 500},
     ) as response:
@@ -85,7 +96,7 @@ async def run_transaction_test(session, headers, test_name):
     # Perform operations in transaction
     print("=== Example 2: Operations with transaction_id ===")
     async with session.put(
-        f"{BASE_URL}/api/batch/update/test_accounts?transaction_id={tx_id}",
+        f"{BASE_URL}/api/batch/update/{COLLECTION}?transaction_id={tx_id}",
         headers=headers,
         json={
             "updates": [
@@ -118,14 +129,14 @@ async def run_transaction_test(session, headers, test_name):
     # Verify
     print("=== Verification ===")
     async with session.get(
-        f"{BASE_URL}/api/find/test_accounts/{alice_id}",
+        f"{BASE_URL}/api/find/{COLLECTION}/{alice_id}",
         headers=headers,
     ) as response:
         alice_final = await response.json()
         print(f"Alice: ${alice_final['balance']}")
 
     async with session.get(
-        f"{BASE_URL}/api/find/test_accounts/{bob_id}",
+        f"{BASE_URL}/api/find/{COLLECTION}/{bob_id}",
         headers=headers,
     ) as response:
         bob_final = await response.json()
@@ -143,7 +154,7 @@ async def run_transaction_test(session, headers, test_name):
         print(f"New transaction: {tx_id2}")
 
     async with session.put(
-        f"{BASE_URL}/api/batch/update/test_accounts?transaction_id={tx_id2}",
+        f"{BASE_URL}/api/batch/update/{COLLECTION}?transaction_id={tx_id2}",
         headers=headers,
         json={"updates": [{"id": bob_id, "data": {"balance": 600}}]},
     ) as response:
@@ -156,7 +167,7 @@ async def run_transaction_test(session, headers, test_name):
         print("✓ Transaction rolled back")
 
     async with session.get(
-        f"{BASE_URL}/api/find/test_accounts/{bob_id}",
+        f"{BASE_URL}/api/find/{COLLECTION}/{bob_id}",
         headers=headers,
     ) as response:
         bob_after = await response.json()
@@ -165,10 +176,10 @@ async def run_transaction_test(session, headers, test_name):
     # Cleanup
     print("=== Cleanup ===")
     await session.delete(
-        f"{BASE_URL}/api/delete/test_accounts/{alice_id}", headers=headers
+        f"{BASE_URL}/api/delete/{COLLECTION}/{alice_id}", headers=headers
     )
     await session.delete(
-        f"{BASE_URL}/api/delete/test_accounts/{bob_id}", headers=headers
+        f"{BASE_URL}/api/delete/{COLLECTION}/{bob_id}", headers=headers
     )
 
     print("✓ All transaction examples completed")
@@ -178,7 +189,7 @@ async def run_single_transaction_flow(session, headers):
     # Setup test data
     print("=== Setup: Creating Test Accounts ===")
     async with session.post(
-        f"{BASE_URL}/api/insert/test_accounts",
+        f"{BASE_URL}/api/insert/{COLLECTION}",
         headers=headers,
         json={"account_id": "ACC001", "name": "Alice", "balance": 1000},
     ) as response:
@@ -187,7 +198,7 @@ async def run_single_transaction_flow(session, headers):
         print(f"Created Alice: $1000 - ID: {alice_id}")
 
     async with session.post(
-        f"{BASE_URL}/api/insert/test_accounts",
+        f"{BASE_URL}/api/insert/{COLLECTION}",
         headers=headers,
         json={"account_id": "ACC002", "name": "Bob", "balance": 500},
     ) as response:
@@ -209,7 +220,7 @@ async def run_single_transaction_flow(session, headers):
     # Perform operations in transaction
     print("=== Example 2: Operations with transaction_id ===")
     async with session.put(
-        f"{BASE_URL}/api/batch/update/test_accounts?transaction_id={tx_id}",
+        f"{BASE_URL}/api/batch/update/{COLLECTION}?transaction_id={tx_id}",
         headers=headers,
         json={
             "updates": [
@@ -232,14 +243,14 @@ async def run_single_transaction_flow(session, headers):
     # Verify
     print("=== Verification ===")
     async with session.get(
-        f"{BASE_URL}/api/find/test_accounts/{alice_id}",
+        f"{BASE_URL}/api/find/{COLLECTION}/{alice_id}",
         headers=headers,
     ) as response:
         alice_final = await response.json()
         print(f"Alice: ${alice_final['balance']}")
 
     async with session.get(
-        f"{BASE_URL}/api/find/test_accounts/{bob_id}",
+        f"{BASE_URL}/api/find/{COLLECTION}/{bob_id}",
         headers=headers,
     ) as response:
         bob_final = await response.json()
@@ -248,10 +259,10 @@ async def run_single_transaction_flow(session, headers):
     # Cleanup
     print("=== Cleanup ===")
     await session.delete(
-        f"{BASE_URL}/api/delete/test_accounts/{alice_id}", headers=headers
+        f"{BASE_URL}/api/delete/{COLLECTION}/{alice_id}", headers=headers
     )
     await session.delete(
-        f"{BASE_URL}/api/delete/test_accounts/{bob_id}", headers=headers
+        f"{BASE_URL}/api/delete/{COLLECTION}/{bob_id}", headers=headers
     )
     print("✓ Deleted test accounts\n")
 
@@ -267,6 +278,7 @@ if __name__ == "__main__":
                 "Content-Type": "application/json",
             }
             print("✓ Authentication successful\n")
+            await delete_collection(session, headers)
 
             # Get original config
             print("📋 Getting original configuration...")
@@ -274,6 +286,7 @@ if __name__ == "__main__":
             original_durable = original_config.get("durable_operations")
             print(f"   Original durable_operations: {original_durable}\n")
 
+            operation_error = None
             try:
                 # Test 1: With original config
                 await run_transaction_test(
@@ -303,14 +316,35 @@ if __name__ == "__main__":
                 )
                 await run_single_transaction_flow(session, headers)
 
-            finally:
-                # Restore original config
+            except BaseException as error:  # noqa: BLE001 - cleanup must always run
+                operation_error = error
+
+            cleanup_errors = []
+            try:
+                # Restore original config.
                 print("\n🔄 Restoring original configuration...")
                 if original_durable is not None:
                     await update_config(
                         session, headers, {"durable_operations": original_durable}
                     )
                 print(f"   ✓ Config restored: durable_operations={original_durable}\n")
+            except Exception as error:  # noqa: BLE001 - attempt collection cleanup too
+                cleanup_errors.append(f"restore configuration: {error}")
+
+            try:
+                await delete_collection(session, headers)
+            except Exception as error:  # noqa: BLE001 - preserve the primary error
+                cleanup_errors.append(f"collection {COLLECTION}: {error}")
+
+            if operation_error is not None:
+                if cleanup_errors:
+                    operation_error.add_note(
+                        "cleanup also failed: " + "; ".join(cleanup_errors)
+                    )
+                    print("⚠️  Cleanup errors: " + "; ".join(cleanup_errors))
+                raise operation_error
+            if cleanup_errors:
+                raise RuntimeError("Cleanup failed: " + "; ".join(cleanup_errors))
 
             print("\n" + "=" * 60)
             print("✅ ALL TESTS PASSED - Transactions successful")

@@ -6,6 +6,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -14,7 +15,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func main() {
+func run() (runErr error) {
 	// Load environment variables
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found")
@@ -38,11 +39,19 @@ func main() {
 	// Create ekoDB client
 	client, err := ekodb.NewClient(baseURL, apiKey)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	fmt.Println("✓ Client created")
 
 	collection := "client_websocket_ttl_go"
+	collectionDeleted := false
+	defer func() {
+		if !collectionDeleted {
+			if err := client.DeleteCollection(collection); err != nil {
+				runErr = errors.Join(runErr, fmt.Errorf("cleanup collection %s: %w", collection, err))
+			}
+		}
+	}()
 
 	// Step 1: Insert test data with TTL
 	fmt.Println("\n=== Insert Test Data with TTL ===")
@@ -55,7 +64,7 @@ func main() {
 		TTL: "1h",
 	})
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	fmt.Printf("✓ Inserted document with TTL: %v\n", inserted["id"])
 
@@ -63,14 +72,14 @@ func main() {
 	fmt.Println("\n=== Query via WebSocket ===")
 	ws, err := client.WebSocket(wsURL)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	defer ws.Close()
 	fmt.Println("✓ WebSocket connected")
 
 	records, err := ws.FindAll(collection)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	fmt.Printf("✓ Retrieved %d record(s) via WebSocket\n", len(records))
 
@@ -85,10 +94,18 @@ func main() {
 	// Cleanup: Delete the collection
 	fmt.Println("\n=== Cleanup ===")
 	if err := client.DeleteCollection(collection); err != nil {
-		log.Fatal(err)
+		return err
 	}
+	collectionDeleted = true
 	fmt.Println("✓ Deleted collection")
 
 	fmt.Println("\n✓ WebSocket TTL example completed successfully")
 	fmt.Println("\n💡 Note: Documents with TTL will automatically expire after the specified duration")
+	return nil
+}
+
+func main() {
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
 }

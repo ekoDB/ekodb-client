@@ -49,9 +49,11 @@ fun main() = runBlocking {
     println("📋 Demonstrates: FindAll, Group, Count, Multi-stage Pipelines")
     println()
 
-    // Setup test data
-    println("📋 Setting up complete test data...")
-    try { client.deleteCollection("complete_products_kt") } catch (e: Exception) {}
+    val funcIds = mutableListOf<String>()
+    try {
+        // Setup test data
+        println("📋 Setting up complete test data...")
+        try { client.deleteCollection("complete_products_kt") } catch (e: Exception) {}
 
     val products = listOf(
         Record.new().insert("name", "Laptop Pro").insert("category", "Electronics").insert("price", 1299).insert("stock", 15).insert("rating", 4.8),
@@ -66,9 +68,6 @@ fun main() = runBlocking {
     }
     println("✅ Created ${products.size} products\n")
 
-    val funcIds = mutableListOf<String>()
-
-    try {
         // Example 1: FindAll + Group (Simple Aggregation)
         println("📝 Example 1: FindAll + Group (Simple Aggregation)")
         println()
@@ -181,17 +180,9 @@ fun main() = runBlocking {
         // Cleanup
         println("🧹 Cleaning up...")
         for (funcId in funcIds) {
-            try {
-                client.deleteFunction(funcId)
-            } catch (e: Exception) {
-                // Ignore cleanup errors
-            }
+            client.deleteFunction(funcId)
         }
-        try {
-            client.deleteCollection("complete_products_kt")
-        } catch (e: Exception) {
-            // Ignore cleanup errors
-        }
+        client.deleteCollection("complete_products_kt")
         println("✅ Cleanup complete")
 
         println()
@@ -206,5 +197,14 @@ fun main() = runBlocking {
     } catch (e: Exception) {
         println("❌ Error: ${e.message}")
         e.printStackTrace()
+        for (funcId in funcIds) {
+            try { client.deleteFunction(funcId) } catch (cleanupError: Exception) { e.addSuppressed(cleanupError) }
+        }
+        try { client.deleteCollection("complete_products_kt") } catch (cleanupError: Exception) {
+            e.addSuppressed(cleanupError)
+        }
+        throw e
+    } finally {
+        client.close()
     }
 }

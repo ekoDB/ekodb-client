@@ -6,6 +6,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -14,7 +15,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func main() {
+func run() (runErr error) {
 	// Load environment variables
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found")
@@ -33,11 +34,18 @@ func main() {
 	// Create ekoDB client
 	client, err := ekodb.NewClient(baseURL, apiKey)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	fmt.Println("✓ Client created")
 
 	collection := "client_batch_operations_go"
+	owned := false
+	deleted := false
+	defer func() {
+		if owned && !deleted {
+			runErr = errors.Join(runErr, client.DeleteCollection(collection))
+		}
+	}()
 
 	// Example 1: Batch Insert
 	fmt.Println("\n=== Batch Insert ===")
@@ -51,8 +59,9 @@ func main() {
 
 	inserted, err := client.BatchInsert(collection, records)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
+	owned = true
 	fmt.Printf("✓ Batch inserted %d records\n", len(inserted))
 
 	// Collect IDs
@@ -65,7 +74,7 @@ func main() {
 	limit := 100
 	allDocs, err := client.Find(collection, ekodb.Query{Limit: &limit})
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	fmt.Printf("✓ Verified: Found %d total records in collection\n", len(allDocs))
 
@@ -81,7 +90,7 @@ func main() {
 
 	updated, err := client.BatchUpdate(collection, updates)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	fmt.Printf("✓ Batch updated %d records\n", len(updated))
 
@@ -90,16 +99,24 @@ func main() {
 	deleteIDs := ids[:3]
 	deletedCount, err := client.BatchDelete(collection, deleteIDs)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	fmt.Printf("✓ Batch deleted %d records\n", deletedCount)
 
 	// Cleanup: Delete the collection
 	fmt.Println("\n=== Cleanup ===")
 	if err := client.DeleteCollection(collection); err != nil {
-		log.Fatal(err)
+		return err
 	}
+	deleted = true
 	fmt.Println("✓ Deleted collection")
 
 	fmt.Println("\n✓ All batch operations completed successfully")
+	return nil
+}
+
+func main() {
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
 }

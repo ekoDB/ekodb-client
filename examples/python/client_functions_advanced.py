@@ -23,6 +23,18 @@ def _is_already_exists_error(err):
     return "409" in msg or "already exists" in msg
 
 
+def _is_not_found_error(err):
+    msg = str(err).lower()
+    return "404" in msg or "not found" in msg
+
+
+def field_value(record, key):
+    value = record.get(key)
+    if isinstance(value, dict) and "value" in value:
+        return value["value"]
+    return value
+
+
 async def save_or_update(client, script):
     """Save a function, falling back to an update if its label already exists."""
     label = script["label"]
@@ -33,23 +45,18 @@ async def save_or_update(client, script):
             raise
         await client.update_function(label, script)
         print(f"ℹ️  Function '{label}' already existed — updated instead")
-        return label
+        existing = await client.get_function(label)
+        function_id = existing.get("id")
+        if not function_id:
+            raise RuntimeError(f"Updated function '{label}' did not include an id")
+        return function_id
 
 
-async def main():
-    from ekodb_client import Client, Stage
-
-    client = Client.new(BASE_URL, API_KEY)
-
+async def run_examples(client, script_ids):
     print("🚀 ekoDB Python Advanced Functions Example\n")
 
     # Setup test data
     print("📋 Setting up test data...")
-    try:
-        await client.delete_collection("advanced_products_py")
-    except Exception:
-        pass
-
     products = [
         {
             "name": "Laptop Pro",
@@ -109,11 +116,16 @@ async def main():
         },
     ]
 
+    inserted_ids = []
     for product in products:
-        await client.insert("advanced_products_py", product)
+        inserted = await client.insert("advanced_products_py", product)
+        product_id = field_value(inserted, "id")
+        if not product_id:
+            raise AssertionError("product insert did not return an ID")
+        inserted_ids.append(product_id)
+    if len(set(inserted_ids)) != 8:
+        raise AssertionError("product inserts did not return 8 unique IDs")
     print(f"✅ Created {len(products)} products\n")
-
-    script_ids = []
 
     # Example 1: List All Products
     print("📝 Example 1: List All Products\n")
@@ -131,6 +143,8 @@ async def main():
 
     result1 = await client.call_function("list_all_products_adv_py", None)
     print(f"📊 Found {len(result1['records'])} products")
+    if len(result1["records"]) != 8:
+        raise AssertionError("list function did not return all 8 products")
     print(f"⏱️  Execution time: {result1['stats']['execution_time_ms']}ms\n")
 
     # Example 2: Group Products by Category
@@ -162,9 +176,28 @@ async def main():
     print("✅ Function saved")
 
     result2 = await client.call_function("products_by_category_py", None)
-    print(f"📊 Category breakdown:")
+    print("📊 Category breakdown:")
+    category_stats = {}
     for record in result2["records"]:
         print(f"   {record}")
+        category_stats[field_value(record, "category")] = (
+            field_value(record, "count"),
+            field_value(record, "avg_price"),
+        )
+    expected_stats = {
+        "Electronics": (5, 367.0),
+        "Furniture": (3, 1097 / 3),
+    }
+    if set(category_stats) != set(expected_stats):
+        raise AssertionError(f"unexpected category groups: {category_stats!r}")
+    for category, (expected_count, expected_average) in expected_stats.items():
+        count, average = category_stats[category]
+        if count != expected_count or not isinstance(average, (int, float)):
+            raise AssertionError(
+                f"unexpected {category} aggregate: {(count, average)!r}"
+            )
+        if abs(average - expected_average) > 1e-9:
+            raise AssertionError(f"unexpected {category} average: {average!r}")
     print(f"⏱️  Execution time: {result2['stats']['execution_time_ms']}ms\n")
 
     # Example 3: Count Total
@@ -186,21 +219,53 @@ async def main():
 
     result3 = await client.call_function("count_products_py", None)
     print(f"📊 Total products: {result3['records']}")
+    if len(result3["records"]) != 1 or field_value(result3["records"][0], "total") != 8:
+        raise AssertionError(f"unexpected total count response: {result3['records']!r}")
     print(f"⏱️  Execution time: {result3['stats']['execution_time_ms']}ms\n")
 
-    # Cleanup
+
+async def main():
+    from ekodb_client import Client
+
+    client = Client.new(BASE_URL, API_KEY)
+    collection = "advanced_products_py"
+    script_ids = []
+    try:
+        await client.delete_collection(collection)
+    except Exception as error:
+        if not _is_not_found_error(error):
+            raise
+
+    operation_error = None
+    try:
+        await run_examples(client, script_ids)
+    except BaseException as error:  # noqa: BLE001 - cleanup must run on cancellation
+        operation_error = error
+
     print("🧹 Cleaning up...")
-    for script_id in script_ids:
+    cleanup_errors = []
+    for script_id in reversed(script_ids):
         try:
             await client.delete_function(script_id)
-        except Exception:
-            pass
+        except Exception as error:  # noqa: BLE001 - attempt every cleanup
+            cleanup_errors.append(f"function {script_id}: {error}")
     try:
-        await client.delete_collection("advanced_products_py")
-    except Exception:
-        pass
-    print("✅ Cleanup complete\n")
+        await client.delete_collection(collection)
+    except Exception as error:  # noqa: BLE001 - preserve the operation error
+        if not _is_not_found_error(error):
+            cleanup_errors.append(f"collection {collection}: {error}")
 
+    if operation_error is not None:
+        if cleanup_errors:
+            operation_error.add_note(
+                "cleanup also failed: " + "; ".join(cleanup_errors)
+            )
+            print("⚠️  Cleanup errors: " + "; ".join(cleanup_errors))
+        raise operation_error
+    if cleanup_errors:
+        raise RuntimeError("Cleanup failed: " + "; ".join(cleanup_errors))
+
+    print("✅ Cleanup complete\n")
     print("✅ All advanced script examples finished!")
 
 

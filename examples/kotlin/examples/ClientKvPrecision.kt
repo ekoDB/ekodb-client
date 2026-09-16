@@ -1,12 +1,34 @@
 package io.ekodb.client.examples
 
 import io.ekodb.client.EkoDBClient
-import io.ekodb.client.fieldDecimal
-import io.ekodb.client.getValue
-import io.ekodb.client.getDecimalValue
 import io.github.cdimascio.dotenv.dotenv
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.*
+
+private fun unwrapField(field: JsonElement?): JsonElement? =
+    if (field is JsonObject && "type" in field && "value" in field) field["value"] else field
+
+private fun fieldDouble(field: JsonElement?): Double? =
+    (unwrapField(field) as? JsonPrimitive)?.doubleOrNull
+
+private fun fieldString(field: JsonElement?): String? =
+    (unwrapField(field) as? JsonPrimitive)?.contentOrNull
+
+private fun kvObject(result: Any?): JsonObject {
+    var value = result as? JsonElement ?: error("KV response was not JSON: $result")
+    repeat(3) {
+        value = when {
+            value is JsonPrimitive && value.isString ->
+                Json.parseToJsonElement(value.content)
+            value is JsonObject && "type" in value && "value" in value ->
+                value["value"] ?: error("KV response value was null")
+            value is JsonObject && value.size == 1 && "value" in value ->
+                value["value"] ?: error("KV response value was null")
+            else -> return@repeat
+        }
+    }
+    return value as? JsonObject ?: error("KV response did not contain an object: $result")
+}
 
 /**
  * KV Precision example - Float vs Decimal Comparison
@@ -31,6 +53,7 @@ fun main() = runBlocking {
 
     // Track all keys for cleanup
     val allKeys = mutableListOf<String>()
+    var primaryError: Throwable? = null
 
     try {
         // =====================================================================
@@ -52,15 +75,22 @@ fun main() = runBlocking {
 
         // Retrieve and show the precision loss
         val floatResults = client.kvBatchGet(floatKeys)
+        check(floatResults.size == floatProducts.size) {
+            "Expected ${floatProducts.size} float products, got ${floatResults.size}"
+        }
         println("\nRetrieved float prices:")
         val expectedFloatPrices = listOf(29.99, 39.99, 49.99)
         val productNames = listOf("Widget A", "Widget B", "Widget C")
         for (i in floatResults.indices) {
-            val obj = floatResults[i].jsonObject
-            val actualPrice = getValue<Double>(obj["price"])
+            val obj = kvObject(floatResults[i])
+            val actualPrice = fieldDouble(obj["price"])
+                ?: error("Missing float price for ${productNames[i]}")
             val expectedPrice = expectedFloatPrices[i]
             val match = if (expectedPrice == actualPrice) "MATCH" else "PRECISION LOST"
             println("  ${productNames[i]}: \$$actualPrice (expected \$$expectedPrice) $match")
+            check(actualPrice == expectedPrice) {
+                "Float price for ${productNames[i]} was $actualPrice, expected $expectedPrice"
+            }
         }
 
         // =====================================================================
@@ -93,12 +123,19 @@ fun main() = runBlocking {
 
         // Retrieve and show precision is preserved
         val decimalResults = client.kvBatchGet(decimalKeys)
+        check(decimalResults.size == decimalProducts.size) {
+            "Expected ${decimalProducts.size} decimal products, got ${decimalResults.size}"
+        }
         val expectedDecimalPrices = listOf("29.99", "39.99", "49.99")
         println("\nRetrieved decimal prices:")
         for (i in decimalResults.indices) {
-            val obj = decimalResults[i].jsonObject
-            val actualPrice = getDecimalValue(obj["price"])
+            val obj = kvObject(decimalResults[i])
+            val actualPrice = fieldString(obj["price"])
+                ?: error("Missing decimal price for ${productNames[i]}")
             val expectedPrice = expectedDecimalPrices[i]
+            check(actualPrice == expectedPrice) {
+                "Decimal price for ${productNames[i]} was $actualPrice, expected $expectedPrice"
+            }
             println("  ${productNames[i]}: \$$actualPrice (expected \$$expectedPrice)")
         }
 
@@ -109,19 +146,27 @@ fun main() = runBlocking {
 
         // Sum up float prices
         var floatSum = 0.0
-        for (result in floatResults) {
-            val price = getValue<Double>(result.jsonObject["price"])
-            if (price != null) floatSum += price
+        for ((index, result) in floatResults.withIndex()) {
+            val price = fieldDouble(kvObject(result)["price"])
+                ?: error("Missing float price for ${productNames[index]}")
+            floatSum += price
         }
         println("  Float sum: \$$floatSum (expected \$119.97)")
+        check(kotlin.math.abs(floatSum - 119.97) < 1e-9) {
+            "Float sum was $floatSum, expected 119.97"
+        }
 
         // Sum up decimal prices (come back as strings, convert for display)
-        var decimalSum = 0.0
-        for (result in decimalResults) {
-            val price = getDecimalValue(result.jsonObject["price"])
-            if (price != null) decimalSum += price
+        var decimalSum = java.math.BigDecimal.ZERO
+        for ((index, result) in decimalResults.withIndex()) {
+            val price = fieldString(kvObject(result)["price"])
+                ?: error("Missing decimal price for ${productNames[index]}")
+            decimalSum = decimalSum.add(price.toBigDecimal())
         }
-        println("  Decimal sum: \$${"%.2f".format(decimalSum)} (expected \$119.97)")
+        check(decimalSum == "119.97".toBigDecimal()) {
+            "Decimal sum was $decimalSum, expected 119.97"
+        }
+        println("  Decimal sum: \$${decimalSum.toPlainString()} (expected \$119.97)")
 
         // =====================================================================
         // Test 4: More extreme precision example
@@ -145,45 +190,59 @@ fun main() = runBlocking {
         val floatPrecision = client.kvGet(floatPrecisionKey)
         val decimalPrecision = client.kvGet(decimalPrecisionKey)
 
-        // kvGet returns the value as a JsonPrimitive string containing JSON;
-        // parse it to extract the nested object
-        val floatParsed = if (floatPrecision is JsonPrimitive) {
-            Json.parseToJsonElement(floatPrecision.content).jsonObject
-        } else if (floatPrecision is JsonObject) {
-            floatPrecision
-        } else null
+        val floatParsed = kvObject(floatPrecision)
+        val decimalParsed = kvObject(decimalPrecision)
 
-        val decimalParsed = if (decimalPrecision is JsonPrimitive) {
-            Json.parseToJsonElement(decimalPrecision.content).jsonObject
-        } else if (decimalPrecision is JsonObject) {
-            decimalPrecision
-        } else null
-
-        val floatAmount = floatParsed?.get("amount")?.let { getValue<Double>(it) }
-        val decimalAmount = decimalParsed?.get("amount")?.let { getDecimalValue(it) }
-
+        val floatAmount = fieldDouble(floatParsed["amount"])
+            ?: error("Missing float precision amount in $floatPrecision")
+        val decimalAmount = fieldString(decimalParsed["amount"])
+            ?: error("Missing decimal precision amount in $decimalPrecision")
         println("  Float 0.1 + 0.2 = $floatAmount (should be 0.3)")
         println("  Decimal \"0.30\" = $decimalAmount (exact!)")
+        check(floatAmount == 0.1 + 0.2) {
+            "Float precision amount was $floatAmount, expected ${0.1 + 0.2}"
+        }
+        check(decimalAmount == "0.30") {
+            "Decimal precision amount was $decimalAmount, expected 0.30"
+        }
 
+    } catch (error: Throwable) {
+        primaryError = error
+        throw error
     } finally {
         // =====================================================================
         // Cleanup
         // =====================================================================
         println("\n=== Cleanup ===")
+        var cleanupError: Throwable? = null
         try {
             client.kvBatchDelete(allKeys)
             println("Cleaned up ${allKeys.size} test keys")
-        } catch (e: Exception) {
-            println("Cleanup error: ${e.message}")
+        } catch (error: Throwable) {
+            println("Cleanup error: ${error.message}")
+            cleanupError = error
         }
 
-        client.close()
+        try {
+            client.close()
+        } catch (error: Throwable) {
+            if (cleanupError == null) {
+                cleanupError = error
+            } else {
+                cleanupError.addSuppressed(error)
+            }
+        }
 
-        println("\n=== Summary ===")
-        println("Use fieldDecimal() for monetary values, percentages, and")
-        println("any case where floating-point errors are unacceptable.")
-        println("fieldDecimal() stores values as strings internally,")
-        println("preserving exact precision across all operations.")
-        println("\n=== Example Complete ===")
+        cleanupError?.let { error ->
+            if (primaryError == null) throw error
+            primaryError.addSuppressed(error)
+        }
     }
+
+    println("\n=== Summary ===")
+    println("Use fieldDecimal() for monetary values, percentages, and")
+    println("any case where floating-point errors are unacceptable.")
+    println("fieldDecimal() stores values as strings internally,")
+    println("preserving exact precision across all operations.")
+    println("\n=== Example Complete ===")
 }

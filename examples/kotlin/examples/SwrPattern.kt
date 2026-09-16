@@ -20,6 +20,9 @@ private fun isAlreadyExistsError(e: Exception): Boolean {
     return msg.contains("status 409") || msg.contains("already exists")
 }
 
+private fun isNotFoundError(error: Throwable): Boolean =
+    error.message?.let { it.contains("status 404") || it.contains("not found", ignoreCase = true) } == true
+
 /**
  * Idempotent save: create the function, or PUT-update it by label if it already
  * exists. Returns the encrypted ID either way (resolved by label on the update
@@ -50,18 +53,21 @@ fun main() = runBlocking {
         .apiKey(apiKey)
         .build()
 
-    // Start clean: drop stale cache collections from a prior run so their schema
-    // is inferred fresh and a stale schema can't reject the insert.
-    try { client.deleteCollection("github_cache") } catch (e: Exception) {}
-    try { client.deleteCollection("product_cache") } catch (e: Exception) {}
+    val runSuffix = System.currentTimeMillis()
+    val githubCollection = "swr_github_cache_kt_$runSuffix"
+    val productCollection = "swr_product_cache_kt_$runSuffix"
+    val githubFunctionLabel = "swr_fetch_github_user_kt_$runSuffix"
+    val productFunctionLabel = "swr_fetch_product_kt_$runSuffix"
+    var primaryError: Throwable? = null
 
-    println("=== ekoDB SWR (Stale-While-Revalidate) Pattern ===\n")
+    try {
+        println("=== ekoDB SWR (Stale-While-Revalidate) Pattern ===\n")
 
     // Step 1: Create SWR function for GitHub user caching
     println("Step 1: Create SWR function that acts as edge cache")
 
     val swrScript = UserFunction(
-        label = "fetch_github_user",
+        label = githubFunctionLabel,
         name = "Fetch GitHub User with Cache",
         description = "SWR pattern: Check cache, fetch from GitHub API if stale, auto-update with TTL",
         version = "1.0",
@@ -79,7 +85,7 @@ fun main() = runBlocking {
         functions = listOf(
             // 1. Check cache
             FunctionStageConfig.FindById(
-                collection = "github_cache",
+                collection = githubCollection,
                 record_id = "{{username}}"
             ),
             // 2. If cache exists, return it; else fetch from API
@@ -100,7 +106,7 @@ fun main() = runBlocking {
                         headers = mapOf("User-Agent" to "ekoDB-SWR-Example")
                     ),
                     FunctionStageConfig.Insert(
-                        collection = "github_cache",
+                        collection = githubCollection,
                         record = buildJsonObject {
                             putJsonObject("id") {
                                 put("type", "String")
@@ -131,7 +137,7 @@ fun main() = runBlocking {
     println("Step 2: First call - Cache miss, fetches from GitHub API")
     val start1 = System.currentTimeMillis()
     val result1 = client.callFunction(
-        "fetch_github_user",
+        githubFunctionLabel,
         mapOf(
             "username" to JsonPrimitive("torvalds"),
             "ttl" to JsonPrimitive(300)
@@ -146,7 +152,7 @@ fun main() = runBlocking {
     println("Step 3: Second call - Cache hit, instant response from ekoDB")
     val start2 = System.currentTimeMillis()
     val result2 = client.callFunction(
-        "fetch_github_user",
+        githubFunctionLabel,
         mapOf("username" to JsonPrimitive("torvalds"))
     )
     val duration2 = System.currentTimeMillis() - start2
@@ -160,7 +166,7 @@ fun main() = runBlocking {
     println("Creating product enrichment function...")
 
     val enrichFunc = UserFunction(
-        label = "fetch_product_enriched",
+        label = productFunctionLabel,
         name = "Fetch Product with Enrichment",
         description = "Demonstrates calling external API and enriching data",
         version = "1.0",
@@ -177,7 +183,7 @@ fun main() = runBlocking {
         ),
         functions = listOf(
             FunctionStageConfig.FindById(
-                collection = "product_cache",
+                collection = productCollection,
                 record_id = "{{product_id}}"
             ),
             FunctionStageConfig.If(
@@ -194,7 +200,7 @@ fun main() = runBlocking {
                         method = "GET"
                     ),
                     FunctionStageConfig.Insert(
-                        collection = "product_cache",
+                        collection = productCollection,
                         record = buildJsonObject {
                             putJsonObject("id") {
                                 put("type", "String")
@@ -223,7 +229,7 @@ fun main() = runBlocking {
 
     println("Step 4: Call enrichment function - Fetches from API + stores enriched result")
     val enriched = client.callFunction(
-        "fetch_product_enriched",
+        productFunctionLabel,
         mapOf(
             "product_id" to JsonPrimitive("1"),
             "ttl" to JsonPrimitive(600)
@@ -255,5 +261,40 @@ fun main() = runBlocking {
     println("   - Product info + reviews + inventory + pricing")
     println("   - All from different sources, cached together")
 
-    println("\n✓ Example complete - Your database IS your edge!\n")
+        println("\n✓ Example complete - Your database IS your edge!\n")
+    } catch (error: Throwable) {
+        primaryError = error
+        throw error
+    } finally {
+        val cleanupErrors = mutableListOf<Throwable>()
+        for (label in listOf(productFunctionLabel, githubFunctionLabel)) {
+            try {
+                val id = client.getFunction(label).id
+                if (id != null) client.deleteFunction(id)
+            } catch (error: Throwable) {
+                if (!isNotFoundError(error)) cleanupErrors += error
+            }
+        }
+        for (collection in listOf(productCollection, githubCollection)) {
+            try {
+                client.deleteCollection(collection)
+            } catch (error: Throwable) {
+                if (!isNotFoundError(error)) cleanupErrors += error
+            }
+        }
+        try {
+            client.close()
+        } catch (error: Throwable) {
+            cleanupErrors += error
+        }
+
+        val failure = primaryError
+        if (failure != null) {
+            cleanupErrors.forEach(failure::addSuppressed)
+        } else if (cleanupErrors.isNotEmpty()) {
+            val cleanupError = cleanupErrors.first()
+            cleanupErrors.drop(1).forEach(cleanupError::addSuppressed)
+            throw cleanupError
+        }
+    }
 }
