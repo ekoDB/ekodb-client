@@ -8,6 +8,8 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.27.0] - 2026-09-16
+
 ### Added
 
 - **Cross-language example parity.** Add one offline stored-function contract
