@@ -1348,6 +1348,7 @@ impl Client {
     ///
     /// Returns:
     ///     dict with "content" key containing the LLM response text
+    #[pyo3(signature = (system_prompt, message, provider=None, model=None, max_tokens=None))]
     fn raw_completion_stream<'py>(
         &self,
         py: Python<'py>,
@@ -1394,6 +1395,7 @@ impl Client {
     ///     provider: Optional provider name
     ///     model: Optional model name
     ///     max_tokens: Optional max tokens
+    #[pyo3(signature = (system_prompt, message, on_token, provider=None, model=None, max_tokens=None))]
     fn raw_completion_stream_with_progress<'py>(
         &self,
         py: Python<'py>,

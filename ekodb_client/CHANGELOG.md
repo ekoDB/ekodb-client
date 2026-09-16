@@ -49,6 +49,24 @@ and this project adheres to
 
 ### Fixed
 
+- **Live example and restore contracts.** Load one root credential set across
+  aggregate, per-language, direct, and client example runs while preserving
+  explicit CI overrides; force the update-action sequence endpoint to JSON; use
+  the current restore response fields (`restored` and `cleared_count`); and
+  temporarily disable live restore calls with a server-team TODO while the API
+  reports that deleted data is not recoverable. The Rust TTL example now uses
+  unquoted IDs, bounded requests, status checks, and record-scoped cleanup;
+  cleanup errors fail Go and Kotlin examples instead of printing false success.
+  The TypeScript distinct-values example now resolves its `.env` path under ESM,
+  Python streaming bindings correctly default optional provider/model arguments,
+  chat examples fail on stream errors or premature EOF, schedule examples clean
+  up temporary resources on failures, and Kotlin examples use the same Gradle
+  9.7.1 wrapper as the client. Function parameters no longer send the retired
+  `param_type` field, and the root environment loader now fails clearly when no
+  API key is configured and has dedicated shell tests. TypeScript KV paths now
+  preserve colon-delimited keys while still escaping path separators, and
+  cross-language examples unwrap typed response fields instead of printing
+  `null`, `undefined`, or `[object Object]`. (#245, #248, #249)
 - **KV-link response and cleanup contracts.** TypeScript now types link queries
   as arrays and link mutations as `null`; Kotlin decodes the documented `null`
   mutation response; and Rust, Go, and Kotlin examples explicitly unlink every

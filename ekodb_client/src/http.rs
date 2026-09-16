@@ -89,6 +89,12 @@ impl HttpClient {
     /// Only CRUD operations (insert/update/delete/batch) support MessagePack
     /// Everything else (search, collections, kv, auth, chat) uses JSON
     fn should_use_json(path: &str) -> bool {
+        // The action-sequence endpoint accepts JSON even though it lives under
+        // the otherwise MessagePack-capable /api/update namespace.
+        if path.starts_with("/api/update/sequence/") {
+            return true;
+        }
+
         // ONLY these operations support MessagePack
         let msgpack_paths = [
             "/api/insert/",
@@ -461,7 +467,7 @@ impl HttpClient {
         actions: Vec<(String, String, FieldType)>,
         token: &str,
     ) -> Result<Record> {
-        let url_path = "/api/update/";
+        let url_path = "/api/update/sequence/";
         let url = self.api_path_url(&["update", "sequence", collection, id])?;
         let body = self.serialize(url_path, &actions)?;
 
@@ -595,7 +601,7 @@ impl HttpClient {
 
             let result: serde_json::Value = self.handle_response(url_path, response).await?;
             Ok(result
-                .get("records_restored")
+                .get("cleared_count")
                 .and_then(|v| v.as_u64())
                 .unwrap_or(0) as usize)
         })
@@ -2844,9 +2850,11 @@ impl HttpClient {
         let mut url = self.base_url.join("/api/functions")?;
 
         if let Some(tags) = tags {
-            // append_pair percent-encodes the value (`&`/`=`/`,`), so a tag
-            // containing query-reserved characters can't smuggle extra params.
-            url.query_pairs_mut().append_pair("tags", &tags.join(","));
+            // The API accepts one singular `tag` parameter per filter.
+            let mut query = url.query_pairs_mut();
+            for tag in tags {
+                query.append_pair("tag", &tag);
+            }
         }
 
         self.execute_with_retry(|| async {
@@ -3075,9 +3083,11 @@ impl HttpClient {
         let mut url = self.base_url.join("/api/functions")?;
 
         if let Some(tags) = tags {
-            // append_pair percent-encodes the value (`&`/`=`/`,`), so a tag
-            // containing query-reserved characters can't smuggle extra params.
-            url.query_pairs_mut().append_pair("tags", &tags.join(","));
+            // The API accepts one singular `tag` parameter per filter.
+            let mut query = url.query_pairs_mut();
+            for tag in tags {
+                query.append_pair("tag", &tag);
+            }
         }
 
         self.execute_with_retry(|| async {
@@ -3950,6 +3960,12 @@ mod tests {
             SerializationFormat::Json,
         )
         .expect("client builds")
+    }
+
+    #[test]
+    fn update_sequence_is_json_only() {
+        assert!(HttpClient::should_use_json("/api/update/sequence/users/id"));
+        assert!(!HttpClient::should_use_json("/api/update/users/id"));
     }
 
     /// A chat delete that fails with an empty-bodied 429 must surface the typed

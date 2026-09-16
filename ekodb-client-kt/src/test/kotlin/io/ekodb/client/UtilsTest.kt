@@ -1,6 +1,10 @@
 package io.ekodb.client
 
 import io.ekodb.client.types.FieldType
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -115,6 +119,19 @@ class UtilsTest {
         // wrapper and unwraps to null even though the inner value is null.
         val field = mapOf("type" to "Null", "value" to null)
         assertNull(getValue<Any>(field))
+    }
+
+    @Test
+    fun `getValue extracts values from raw JSON wrappers`() {
+        val field = buildJsonObject {
+            put("type", "String")
+            put("value", "hello from json")
+        }
+
+        assertEquals("hello from json", getValue<String>(field))
+        assertEquals(42L, getValue<Long>(JsonPrimitive(42)))
+        assertEquals(true, getValue<Boolean>(JsonPrimitive(true)))
+        assertNull(getValue<Any>(JsonNull))
     }
 
     // ========================================================================

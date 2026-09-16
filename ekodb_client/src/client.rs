@@ -772,12 +772,31 @@ impl Client {
             opts
         });
 
-        // Try update first
-        match self
-            .update(collection, id, record.clone(), update_opts)
-            .await
+        // Check existence before choosing the write. Some server versions return
+        // a successful-looking update response for a missing caller-supplied ID
+        // without adding a record to collection queries.
+        let existing = if let Some(transaction_id) = options
+            .as_ref()
+            .and_then(|options| options.transaction_id.as_deref())
         {
-            Ok(updated) => Ok(updated),
+            self.find_by_id_in_transaction(
+                collection,
+                id,
+                transaction_id,
+                options.as_ref().and_then(|options| options.bypass_ripple),
+            )
+            .await
+        } else {
+            self.find_by_id(
+                collection,
+                id,
+                options.as_ref().and_then(|options| options.bypass_ripple),
+            )
+            .await
+        };
+
+        match existing {
+            Ok(_) => self.update(collection, id, record, update_opts).await,
             Err(Error::NotFound) => {
                 // Record doesn't exist, insert it
                 // Convert UpsertOptions to InsertOptions
