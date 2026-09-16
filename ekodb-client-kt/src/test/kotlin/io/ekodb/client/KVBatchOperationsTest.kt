@@ -4,6 +4,7 @@ import io.ktor.client.*
 import io.ktor.client.engine.mock.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.http.*
+import io.ktor.http.content.TextContent
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.*
@@ -54,9 +55,9 @@ class KVBatchOperationsTest {
     fun `kvBatchGet returns multiple values`() = runBlocking {
         val mockEngine = createMockEngine(
             """[
-                {"data": "value1"},
-                {"data": "value2"},
-                {"data": "value3"}
+                {"value": {"data": "value1"}},
+                {"value": {"data": "value2"}},
+                {"value": {"data": "value3"}}
             ]"""
         )
         val client = createTestClient(mockEngine)
@@ -65,20 +66,30 @@ class KVBatchOperationsTest {
         val results = client.kvBatchGet(keys)
 
         assertEquals(3, results.size)
-        assertNotNull(results[0])
-        assertNotNull(results[1])
-        assertNotNull(results[2])
+        assertEquals("value1", results[0].jsonObject["value"]?.jsonObject?.get("data")?.jsonPrimitive?.content)
+        assertEquals("value2", results[1].jsonObject["value"]?.jsonObject?.get("data")?.jsonPrimitive?.content)
+        assertEquals("value3", results[2].jsonObject["value"]?.jsonObject?.get("data")?.jsonPrimitive?.content)
     }
 
     @Test
     fun `kvBatchSet sets multiple keys successfully`() = runBlocking {
-        val mockEngine = createMockEngine(
-            """[
-                ["key1", true],
-                ["key2", true],
-                ["key3", true]
-            ]"""
-        )
+        var requestBody: String? = null
+        val mockEngine = MockEngine { request ->
+            if (request.url.encodedPath.contains("/api/auth/token")) {
+                respond(
+                    content = """{"token": "mock_jwt_token_123"}""",
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                )
+            } else {
+                requestBody = (request.body as TextContent).text
+                respond(
+                    content = """[["key1",true],["key2",true],["key3",true]]""",
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                )
+            }
+        }
         val client = createTestClient(mockEngine)
 
         val entries = listOf(
@@ -92,6 +103,12 @@ class KVBatchOperationsTest {
         assertTrue(results[0].second)
         assertTrue(results[1].second)
         assertTrue(results[2].second)
+        val sent = Json.parseToJsonElement(requireNotNull(requestBody)).jsonObject
+        assertEquals(
+            buildJsonObject { put("data", "value1") },
+            sent["values"]?.jsonArray?.first(),
+            "batch values must not be wrapped in an extra value object"
+        )
     }
 
     @Test

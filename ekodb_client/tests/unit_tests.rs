@@ -451,15 +451,14 @@ async fn test_find_by_id_with_projection_encodes_reserved_chars() {
 #[tokio::test]
 async fn test_list_user_functions_encodes_reserved_chars_in_tags() {
     // A tag containing query-reserved characters must be percent-encoded and
-    // decode back to the exact comma-joined value, never split into extra query
-    // params. Matcher::UrlEncoded decodes the query before matching, so this
-    // fails if the client interpolates the tag raw into `?tags=...`.
+    // decode back to separate repeated `tag` values, never split into extra
+    // query params. The live API uses singular `tag`, not `tags`.
     let mut server = Server::new_async().await;
     let _token_mock = mock_token_endpoint(&mut server);
 
     let _list_mock = server
         .mock("GET", "/api/functions")
-        .match_query(Matcher::UrlEncoded("tags".into(), "a&injected=1,b".into()))
+        .match_query(Matcher::Exact("tag=a%26injected%3D1&tag=b".to_string()))
         .with_status(200)
         .with_header("content-type", "application/json")
         .with_body(json!([]).to_string())
@@ -1779,7 +1778,7 @@ async fn test_restore_deleted_success() {
         .mock("POST", "/api/trash/users/record_123")
         .with_status(200)
         .with_header("content-type", "application/json")
-        .with_body(json!({"status": "restored"}).to_string())
+        .with_body(json!({"status": "success", "restored": true}).to_string())
         .create_async()
         .await;
 
@@ -1787,6 +1786,23 @@ async fn test_restore_deleted_success() {
 
     let result = client.restore_deleted("users", "record_123").await;
     assert!(result.is_ok());
+    assert!(result.unwrap());
+}
+
+#[tokio::test]
+async fn test_restore_deleted_returns_false_when_not_restored() {
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+    let _restore_mock = server
+        .mock("POST", "/api/trash/users/missing")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"status": "success", "restored": false}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    assert!(!client.restore_deleted("users", "missing").await.unwrap());
 }
 
 #[tokio::test]
@@ -1799,7 +1815,7 @@ async fn test_restore_collection_success() {
         .mock("POST", "/api/trash/users")
         .with_status(200)
         .with_header("content-type", "application/json")
-        .with_body(json!({"status": "restored", "records_restored": 5}).to_string())
+        .with_body(json!({"status": "success", "cleared_count": 5}).to_string())
         .create_async()
         .await;
 
@@ -1857,14 +1873,18 @@ async fn test_get_transaction_status_success() {
         .mock("GET", "/api/transactions/tx_123")
         .with_status(200)
         .with_header("content-type", "application/json")
-        .with_body(json!({"transaction_id": "tx_123", "status": "active"}).to_string())
+        .with_body(json!({"state": "Active", "operations_count": 2}).to_string())
         .create_async()
         .await;
 
     let client = create_test_client(&server).await;
 
-    let result = client.get_transaction_status("tx_123").await;
-    assert!(result.is_ok());
+    let result = client
+        .get_transaction_status("tx_123")
+        .await
+        .expect("transaction status request should succeed");
+    assert_eq!(result["state"], "Active");
+    assert_eq!(result["operations_count"], 2);
 }
 
 // Note: Functions, Chat, Search tests require complex mock setup
@@ -1880,9 +1900,10 @@ async fn test_upsert_inserts_when_not_found() {
 
     let _token_mock = mock_token_endpoint(&mut server);
 
-    // Mock update endpoint returning 404
-    let _update_mock = server
-        .mock("PUT", "/api/update/users/user123")
+    // Missing IDs must be detected before update because a successful-looking
+    // missing update is not proof that a record was persisted.
+    let _find_mock = server
+        .mock("GET", "/api/find/users/user123")
         .with_status(404)
         .with_header("content-type", "application/json")
         .with_body(json!({"error": "Not found"}).to_string())
@@ -1911,6 +1932,14 @@ async fn test_upsert_updates_when_exists() {
     let mut server = Server::new_async().await;
 
     let _token_mock = mock_token_endpoint(&mut server);
+
+    let _find_mock = server
+        .mock("GET", "/api/find/users/user123")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"id": "user123", "name": "John Doe"}).to_string())
+        .create_async()
+        .await;
 
     // Mock update endpoint succeeding
     let _update_mock = server
@@ -2398,6 +2427,7 @@ async fn test_update_with_action_sequence() {
 
     let _seq_mock = server
         .mock("PUT", "/api/update/sequence/game/player_1")
+        .match_header("content-type", "application/json")
         .with_status(200)
         .with_header("content-type", "application/json")
         .with_body(
@@ -2412,7 +2442,13 @@ async fn test_update_with_action_sequence() {
         .create_async()
         .await;
 
-    let client = create_test_client(&server).await;
+    let client = Client::builder()
+        .base_url(server.url())
+        .api_key("test-api-key")
+        .should_retry(false)
+        .serialization_format(ekodb_client::SerializationFormat::MessagePack)
+        .build()
+        .expect("Failed to create test client");
 
     let actions = vec![
         (

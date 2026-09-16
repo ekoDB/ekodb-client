@@ -704,18 +704,24 @@ await ws.cancel_chat("chat-id")
 
 ```python
 stream = await ws.chat_send(chat_id, "What is the capital of France?")
-async for event in stream:
-    if event.type == "chunk":
-        print(event.content, end="")
-    elif event.type == "end":
-        print(f"\nDone (context: {event.context_window} tokens)")
-    elif event.type == "tool_call":
-        print(f"[Tool] {event.tool_name}")
+while True:
+    event = await stream.recv()
+    if event is None:
+        break
+
+    if event["type"] == "chunk":
+        print(event["content"], end="")
+    elif event["type"] == "end":
+        print(f"\nDone (context: {event.get('context_window')} tokens)")
+        break
+    elif event["type"] == "tool_call":
+        print(f"[Tool] {event['tool_name']}")
         await ws.send_tool_result(
-            chat_id, event.call_id, True, {"result": "done"}
+            chat_id, event["call_id"], True, {"result": "done"}
         )
-    elif event.type == "error":
-        print(f"Error: {event.error}")
+    elif event["type"] == "error":
+        print(f"Error: {event['error']}")
+        break
 ```
 
 ## License

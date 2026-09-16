@@ -264,7 +264,12 @@ describe("EkoDBClient updateWithAction", () => {
 
 describe("EkoDBClient updateWithActionSequence", () => {
   it("applies multiple actions atomically", async () => {
-    const client = createTestClient();
+    const client = new EkoDBClient({
+      baseURL: "http://localhost:8080",
+      apiKey: "test-api-key",
+      format: SerializationFormat.MessagePack,
+      shouldRetry: false,
+    });
 
     mockTokenResponse();
     mockJsonResponse({ id: "player_1", score: 110, lives: 2 });
@@ -277,6 +282,10 @@ describe("EkoDBClient updateWithActionSequence", () => {
 
     expect(result).toHaveProperty("score", 110);
     expect(result).toHaveProperty("lives", 2);
+    expect(mockFetch.mock.calls[1]?.[1]?.headers).toMatchObject({
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    });
   });
 });
 
@@ -424,6 +433,19 @@ describe("EkoDBClient KV store", () => {
     expect(result).toEqual({ data: "stored_value" });
   });
 
+  it("preserves colons in KV paths while escaping path separators", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse({ value: { data: "stored_value" } });
+
+    await client.kvGet("session:user/123");
+
+    expect(mockFetch.mock.calls[1][0]).toBe(
+      "http://localhost:8080/api/kv/get/session:user%2F123",
+    );
+  });
+
   it("deletes KV value", async () => {
     const client = createTestClient();
 
@@ -451,6 +473,33 @@ describe("EkoDBClient KV store", () => {
     const result = await client.kvExists("my_key");
 
     expect(result).toBe(true);
+  });
+
+  it("returns false when KV lookup returns 404", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockErrorResponse(404, "Not found");
+
+    await expect(client.kvExists("missing_key")).resolves.toBe(false);
+  });
+
+  it("propagates non-404 KV lookup failures", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockErrorResponse(500, "Internal server error");
+
+    await expect(client.kvExists("my_key")).rejects.toThrow("status 500");
+  });
+
+  it("does not mistake a non-404 body mentioning status 404 for a 404", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockErrorResponse(500, "upstream request failed with status 404");
+
+    await expect(client.kvExists("my_key")).rejects.toThrow("status 500");
   });
 });
 
@@ -554,14 +603,31 @@ describe("EkoDBClient restore operations", () => {
     const client = createTestClient();
 
     mockTokenResponse();
-    mockJsonResponse({ status: "restored" });
+    mockJsonResponse({ status: "success", restored: true });
 
-    await expect(
-      client.restoreRecord("users", "record_123"),
-    ).resolves.not.toThrow();
+    await expect(client.restoreRecord("users", "record_123")).resolves.toBe(
+      true,
+    );
   });
 
-  // Note: restoreCollection return type may vary - covered by integration tests
+  it("returns false when the server did not restore the record", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+    mockJsonResponse({ status: "success", restored: false });
+
+    await expect(client.restoreRecord("users", "missing")).resolves.toBe(false);
+  });
+
+  it("returns the restored collection count", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse({ status: "success", cleared_count: 5 });
+
+    await expect(client.restoreCollection("users")).resolves.toEqual({
+      recordsRestored: 5,
+    });
+  });
 });
 
 // ============================================================================
@@ -1024,12 +1090,18 @@ describe("EkoDBClient scripts advanced", () => {
     const script = {
       label: "my_function",
       name: "my_function",
-      parameters: {},
+      parameters: {
+        query: { required: true, param_type: "string" },
+      },
       functions: [],
     };
     const result = await client.saveFunction(script);
 
     expect(result).toBeDefined();
+    const request = mockFetch.mock.calls[1][1] as RequestInit;
+    const body = JSON.parse(request.body as string);
+    expect(body.parameters.query).toEqual({ required: true });
+    expect(script.parameters.query.param_type).toBe("string");
   });
 
   it("gets script by ID", async () => {
@@ -1198,11 +1270,11 @@ describe("EkoDBClient transaction status", () => {
     const client = createTestClient();
 
     mockTokenResponse();
-    mockJsonResponse({ transaction_id: "tx_123", status: "active" });
+    mockJsonResponse({ state: "Active", operations_count: 2 });
 
     const result = await client.getTransactionStatus("tx_123");
 
-    expect(result).toBeDefined();
+    expect(result).toEqual({ state: "Active", operations_count: 2 });
   });
 });
 
@@ -1292,10 +1364,10 @@ describe("Convenience methods", () => {
   describe("upsert", () => {
     it("inserts when record not found", async () => {
       mockTokenResponse();
-      // Mock update returning 404
+      // Preflight lookup does not find the caller-supplied ID.
       mockErrorResponse(404, "Not found");
       // Mock insert succeeding
-      mockJsonResponse({ id: "user123", name: "John Doe" });
+      mockJsonResponse({ id: "server-generated", name: "John Doe" });
 
       const client = createTestClient();
       await client.init();
@@ -1303,12 +1375,19 @@ describe("Convenience methods", () => {
       const result = await client.upsert("users", "user123", {
         name: "John Doe",
       });
-      expect(result).toEqual({ id: "user123", name: "John Doe" });
+      expect(result).toEqual({ id: "server-generated", name: "John Doe" });
+      expect(mockFetch.mock.calls[1][0]).toBe(
+        "http://localhost:8080/api/find/users/user123",
+      );
+      expect(mockFetch.mock.calls[2][0]).toBe(
+        "http://localhost:8080/api/insert/users",
+      );
     });
 
     it("updates when record exists", async () => {
       mockTokenResponse();
-      // Mock update succeeding
+      // Preflight lookup proves the caller-supplied ID exists.
+      mockJsonResponse({ id: "user123", name: "John Doe" });
       mockJsonResponse({ id: "user123", name: "John Doe Updated" });
 
       const client = createTestClient();
@@ -1318,11 +1397,17 @@ describe("Convenience methods", () => {
         name: "John Doe Updated",
       });
       expect(result).toEqual({ id: "user123", name: "John Doe Updated" });
+      expect(mockFetch.mock.calls[1][0]).toBe(
+        "http://localhost:8080/api/find/users/user123",
+      );
+      expect(mockFetch.mock.calls[2][0]).toBe(
+        "http://localhost:8080/api/update/users/user123",
+      );
     });
 
     it("throws on non-404 errors", async () => {
       mockTokenResponse();
-      // Mock update with server error
+      // Preflight lookup fails with a server error.
       mockErrorResponse(500, "Internal server error");
 
       const client = createTestClient();
@@ -2316,7 +2401,7 @@ describe("EkoDBClient tasks", () => {
   it("creates a task", async () => {
     const client = createTestClient();
     mockTokenResponse();
-    mockJsonResponse({ id: "task_1", name: "Test Task", status: "active" });
+    mockJsonResponse({ id: "task_1" });
 
     const result = await client.taskCreate({
       name: "Test Task",
@@ -2328,10 +2413,10 @@ describe("EkoDBClient tasks", () => {
   it("lists tasks", async () => {
     const client = createTestClient();
     mockTokenResponse();
-    mockJsonResponse({ tasks: [] });
+    mockJsonResponse({ count: 0, items: [] });
 
     const result = await client.taskList();
-    expect(result).toHaveProperty("tasks");
+    expect(result).toEqual({ count: 0, items: [] });
   });
 
   it("gets a task by ID", async () => {
@@ -2423,22 +2508,22 @@ describe("EkoDBClient agents", () => {
   it("creates an agent", async () => {
     const client = createTestClient();
     mockTokenResponse();
-    mockJsonResponse({ id: "agent_1", name: "TestAgent" });
+    mockJsonResponse({ id: "agent_1" });
 
     const result = await client.agentCreate({
       name: "TestAgent",
       system_prompt: "You help.",
     });
-    expect(result).toHaveProperty("name", "TestAgent");
+    expect(result).toHaveProperty("id", "agent_1");
   });
 
   it("lists agents", async () => {
     const client = createTestClient();
     mockTokenResponse();
-    mockJsonResponse({ agents: [] });
+    mockJsonResponse({ count: 0, items: [] });
 
     const result = await client.agentList();
-    expect(result).toHaveProperty("agents");
+    expect(result).toEqual({ count: 0, items: [] });
   });
 
   it("gets an agent by ID", async () => {
@@ -2557,20 +2642,19 @@ describe("EkoDBClient goal templates", () => {
   it("creates a goal template", async () => {
     const client = createTestClient();
     mockTokenResponse();
-    mockJsonResponse({ id: "gt_1", title: "Deploy Checklist" });
+    mockJsonResponse({ id: "gt_1" });
 
     const result = await client.goalTemplateCreate({
       title: "Deploy Checklist",
       steps: [{ title: "Run tests" }],
     });
     expect(result).toHaveProperty("id", "gt_1");
-    expect(result).toHaveProperty("title", "Deploy Checklist");
   });
 
   it("creates a goal template and verifies POST method", async () => {
     const client = createTestClient();
     mockTokenResponse();
-    mockJsonResponse({ id: "gt_2", title: "Onboarding" });
+    mockJsonResponse({ id: "gt_2" });
 
     await client.goalTemplateCreate({ title: "Onboarding" });
 
@@ -2584,11 +2668,15 @@ describe("EkoDBClient goal templates", () => {
     const client = createTestClient();
     mockTokenResponse();
     mockJsonResponse({
-      templates: [{ id: "gt_1" }, { id: "gt_2" }],
+      count: 2,
+      items: [{ id: "gt_1" }, { id: "gt_2" }],
     });
 
     const result = await client.goalTemplateList();
-    expect(result).toHaveProperty("templates");
+    expect(result).toEqual({
+      count: 2,
+      items: [{ id: "gt_1" }, { id: "gt_2" }],
+    });
   });
 
   it("lists goal templates and verifies GET method", async () => {
@@ -3191,7 +3279,7 @@ describe("EkoDBClient kv links", () => {
       { collection: "orders", record_id: "order_1" },
     ]);
 
-    const result = await client.kvGetLinks("session:user123");
+    const result = await client.kvGetLinks("session:user/123");
     expect(result).toEqual([
       { collection: "users", record_id: "user_1" },
       { collection: "orders", record_id: "order_1" },
@@ -3203,7 +3291,7 @@ describe("EkoDBClient kv links", () => {
     // about the URL the client actually asked for.
     const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
     const dataCall = calls[1]; // calls[0] is the token exchange
-    expect(dataCall[0]).toContain("/api/kv/session%3Auser123/links");
+    expect(dataCall[0]).toContain("/api/kv/session:user%2F123/links");
     expect(dataCall[1]?.method).toBe("GET");
   });
 
@@ -3212,14 +3300,14 @@ describe("EkoDBClient kv links", () => {
     mockTokenResponse();
     mockJsonResponse(null);
 
-    const result = await client.kvLink("session:user123", "users", "user_1");
+    const result = await client.kvLink("session:user/123", "users", "user_1");
     expect(result).toBeNull();
 
     const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
     const dataCall = calls[1];
     // The identifying triple belongs in the PATH, not the body.
     expect(dataCall[0]).toContain(
-      "/api/kv/session%3Auser123/links/users/user_1",
+      "/api/kv/session:user%2F123/links/users/user_1",
     );
     expect(dataCall[1]?.method).toBe("POST");
   });
@@ -3247,13 +3335,13 @@ describe("EkoDBClient kv links", () => {
     mockTokenResponse();
     mockJsonResponse(null);
 
-    const result = await client.kvUnlink("session:user123", "users", "user_1");
+    const result = await client.kvUnlink("session:user/123", "users", "user_1");
     expect(result).toBeNull();
 
     const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
     const dataCall = calls[1];
     expect(dataCall[0]).toContain(
-      "/api/kv/session%3Auser123/links/users/user_1",
+      "/api/kv/session:user%2F123/links/users/user_1",
     );
     // DELETE, not POST — the previous implementation used POST and 404'd.
     expect(dataCall[1]?.method).toBe("DELETE");
@@ -3761,10 +3849,7 @@ describe("extractRecordId", () => {
 // ============================================================================
 
 describe("EkoDBClient URL path segment encoding", () => {
-  it("listUserFunctions percent-encodes reserved chars in the tags query param", async () => {
-    // A tag with query-reserved characters must be percent-encoded, not
-    // concatenated raw into `?tags=...`. Without encoding, `a&injected=1`
-    // splits into tags="a" plus a smuggled `injected=1` query param.
+  it("listUserFunctions repeats and percent-encodes the tag query param", async () => {
     const client = createTestClient();
 
     mockTokenResponse();
@@ -3774,7 +3859,7 @@ describe("EkoDBClient URL path segment encoding", () => {
 
     const [url] = mockFetch.mock.calls[1];
     const parsed = new URL(url as string);
-    expect(parsed.searchParams.get("tags")).toBe("a&injected=1,b");
+    expect(parsed.searchParams.getAll("tag")).toEqual(["a&injected=1", "b"]);
     expect(parsed.searchParams.has("injected")).toBe(false);
   });
 

@@ -1,6 +1,12 @@
 package io.ekodb.client
 
 import io.ekodb.client.types.FieldType
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.doubleOrNull
+import kotlinx.serialization.json.longOrNull
 
 /**
  * Utility functions for working with ekoDB records
@@ -44,9 +50,36 @@ inline fun <reified T> getValue(field: Any?): T? {
     // (e.g. {"value": 1, "currency": "USD"}) must pass through untouched.
     if (field is Map<*, *>) {
         if (field.containsKey("type") && field.containsKey("value")) {
-            return convertValue<T>(field["value"])
+            val wrappedValue = field["value"]
+            if (wrappedValue is JsonNull) return null
+            if (wrappedValue is JsonPrimitive) {
+                val scalar: Any? = when {
+                    wrappedValue.isString -> wrappedValue.content
+                    wrappedValue.booleanOrNull != null -> wrappedValue.booleanOrNull
+                    wrappedValue.longOrNull != null -> wrappedValue.longOrNull
+                    wrappedValue.doubleOrNull != null -> wrappedValue.doubleOrNull
+                    else -> wrappedValue.contentOrNull
+                }
+                return convertValue<T>(scalar)
+            }
+            return convertValue<T>(wrappedValue)
         }
         return convertValue<T>(field)
+    }
+
+    // Raw JSON helpers return JsonElement values rather than decoded Kotlin
+    // scalars. Unwrap primitives so getValue/getStringValue work consistently
+    // for both typed records and JsonObject endpoint responses.
+    if (field is JsonNull) return null
+    if (field is JsonPrimitive) {
+        val scalar: Any? = when {
+            field.isString -> field.content
+            field.booleanOrNull != null -> field.booleanOrNull
+            field.longOrNull != null -> field.longOrNull
+            field.doubleOrNull != null -> field.doubleOrNull
+            else -> field.contentOrNull
+        }
+        return convertValue<T>(scalar)
     }
 
     return convertValue<T>(field)

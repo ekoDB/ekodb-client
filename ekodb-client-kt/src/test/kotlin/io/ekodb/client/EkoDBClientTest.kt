@@ -273,15 +273,41 @@ class EkoDBClientTest {
 
     @Test
     fun `restoreRecord returns true on success`() = runBlocking {
-        val mockEngine = createMockEngine("""{"status": "restored"}""")
+        val mockEngine = createMockEngine("""{"status": "success", "restored": true}""")
         val client = createTestClient(mockEngine)
         val result = client.restoreRecord("users", "deleted_user_123")
         assertTrue(result)
     }
 
     @Test
+    fun `restoreRecord returns false when server did not restore record`() = runBlocking {
+        val mockEngine = createMockEngine("""{"status": "success", "restored": false}""")
+        val client = createTestClient(mockEngine)
+        assertFalse(client.restoreRecord("users", "missing_user"))
+    }
+
+    @Test
+    fun `update action sequence uses JSON in messagepack mode`() = runBlocking {
+        val recorded = mutableListOf<HttpRequestData>()
+        val mockHttpClient = HttpClient(capturingMockEngine(recorded, """{"id":"player_1"}""")) {
+            install(ContentNegotiation) { json() }
+        }
+        val client = EkoDBClient.builder()
+            .baseUrl(testBaseUrl)
+            .apiKey(testApiKey)
+            .format(SerializationFormat.MESSAGEPACK)
+            .httpClient(mockHttpClient)
+            .build()
+
+        client.updateWithActionSequence("game", "player_1", listOf(Triple("increment", "score", JsonPrimitive(10))))
+
+        assertEquals(ContentType.Application.Json, recorded.single().body.contentType)
+        assertTrue((recorded.single().body as TextContent).text.contains("increment"))
+    }
+
+    @Test
     fun `restoreCollection returns count`() = runBlocking {
-        val mockEngine = createMockEngine("""{"status": "restored", "records_restored": 5}""")
+        val mockEngine = createMockEngine("""{"status": "success", "cleared_count": 5}""")
         val client = createTestClient(mockEngine)
         val result = client.restoreCollection("users")
         assertEquals(5, result)
@@ -314,12 +340,11 @@ class EkoDBClientTest {
 
     @Test
     fun `getTransactionStatus returns result`() = runBlocking {
-        val mockEngine = createMockEngine("""{"transaction_id": "tx_123", "status": "active"}""")
+        val mockEngine = createMockEngine("""{"state": "Active", "operations_count": 2}""")
         val client = createTestClient(mockEngine)
         val result = client.getTransactionStatus("tx_123")
-        assertNotNull(result)
-        // Just verify we got a result back
-        assertTrue(result.isNotEmpty())
+        assertEquals("Active", result["state"])
+        assertEquals(2, result["operations_count"])
     }
 
     @Test
@@ -764,61 +789,6 @@ class EkoDBClientTest {
         assertEquals("user_123", idField.value)
     }
 
-    // TODO: Fix mock engine for upsert fallback scenario - token caching makes mock ordering complex
-    // The upsert logic works correctly but testing the fallback requires more sophisticated mocking
-    /*@Test
-    fun `upsert inserts new record when not found`() = runBlocking {
-        var callNumber = 0
-        val mockEngine = MockEngine { request ->
-            callNumber++
-            when (callNumber) {
-                1 -> {
-                    // First call: auth token
-                    respond(
-                        content = """{"token": "mock_jwt_token_123"}""",
-                        status = HttpStatusCode.OK,
-                        headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
-                    )
-                }
-                2 -> {
-                    // Second call: update returns 404
-                    respond(
-                        content = """{"error": "Not found"}""",
-                        status = HttpStatusCode.NotFound,
-                        headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
-                    )
-                }
-                3 -> {
-                    // Third call: insert succeeds
-                    respond(
-                        content = """{"id": "new_user_456", "name": "Bob", "email": "bob@example.com"}""",
-                        status = HttpStatusCode.OK,
-                        headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
-                    )
-                }
-                else -> {
-                    respond(
-                        content = """{"error": "unexpected call $callNumber"}""",
-                        status = HttpStatusCode.BadRequest,
-                        headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
-                    )
-                }
-            }
-        }
-
-        val client = createTestClient(mockEngine)
-        val record = io.ekodb.client.types.Record()
-            .insert("name", "Bob")
-            .insert("email", "bob@example.com")
-
-        val result = client.upsert("users", "nonexistent_id", record)
-        assertNotNull(result)
-        val idField = result["id"]
-        assertNotNull(idField, "ID field should not be null")
-        assertTrue(idField is io.ekodb.client.types.FieldType.StringValue, "ID should be StringValue but was ${idField::class.simpleName}")
-        assertEquals("new_user_456", (idField as io.ekodb.client.types.FieldType.StringValue).value)
-    }*/
-
     @Test
     fun `findOne returns first matching record`() = runBlocking {
         val mockEngine = createMockEngine("""[{"id": "user_123", "name": "Alice", "email": "alice@example.com"}]""")
@@ -937,10 +907,7 @@ class EkoDBClientTest {
     }
 
     @Test
-    fun `listUserFunctions percent-encodes reserved chars in the tags query param`() = runBlocking {
-        // A tag containing query-reserved characters must be percent-encoded, not
-        // concatenated raw into `?tags=...`. Without encoding, `a&injected=1`
-        // splits into tags="a" plus a smuggled `injected=1` query param.
+    fun `listUserFunctions repeats and percent-encodes the tag query param`() = runBlocking {
         var capturedUrl: io.ktor.http.Url? = null
         val mockEngine = captureBatchUrl("""[]""") { capturedUrl = it }
         val client = createTestClient(mockEngine)
@@ -948,7 +915,7 @@ class EkoDBClientTest {
         client.listUserFunctions(listOf("a&injected=1", "b"))
 
         assertEquals("/api/functions", capturedUrl?.encodedPath)
-        assertEquals("a&injected=1,b", capturedUrl?.parameters?.get("tags"))
+        assertEquals(listOf("a&injected=1", "b"), capturedUrl?.parameters?.getAll("tag"))
         assertEquals(
             null,
             capturedUrl?.parameters?.get("injected"),
@@ -1490,19 +1457,38 @@ class EkoDBClientTest {
     // ========================================================================
 
     @Test
-    fun `countDocuments returns count`() = runBlocking {
-        val mockEngine = createMockEngine("""{"count": 42}""")
+    fun `countDocuments returns legacy top-level count`() = runBlocking {
+        val mockEngine = createMockEngine("""{"count":2}""")
         val client = createTestClient(mockEngine)
         val count = client.countDocuments("users")
-        assertEquals(42L, count)
+        assertEquals(2L, count)
     }
 
     @Test
-    fun `countDocuments returns zero when missing`() = runBlocking {
-        val mockEngine = createMockEngine("""{}""")
+    fun `countDocuments returns live analytics record count`() = runBlocking {
+        val mockEngine = createMockEngine(
+            """{"analytics":["users",{"record_count":5}],"collection":{}}"""
+        )
         val client = createTestClient(mockEngine)
-        val count = client.countDocuments("empty_col")
-        assertEquals(0L, count)
+        assertEquals(5L, client.countDocuments("users"))
+    }
+
+    @Test
+    fun `countDocuments uses collection metadata endpoint`() = runBlocking {
+        val requests = mutableListOf<HttpRequestData>()
+        val mockEngine = capturingMockEngine(requests, """{"count":0}""")
+        val client = createTestClient(mockEngine)
+        client.countDocuments("users")
+
+        assertEquals(HttpMethod.Get, requests.single().method)
+        assertEquals("/api/collections/users", requests.single().url.encodedPath)
+    }
+
+    @Test
+    fun `count delegates to countDocuments metadata lookup`() = runBlocking {
+        val mockEngine = createMockEngine("""{"count":1}""")
+        val client = createTestClient(mockEngine)
+        assertEquals(1L, client.count("users"))
     }
 
     // ========================================================================
@@ -1778,6 +1764,23 @@ class EkoDBClientTest {
         val client = createTestClient(mockEngine)
         val result = client.kvExists("test:key")
         assertTrue(result)
+    }
+
+    @Test
+    fun `kvExists returns false when key is not found`() = runBlocking {
+        val mockEngine = createMockEngine("""{"error":"Not found"}""", HttpStatusCode.NotFound)
+        val client = createTestClient(mockEngine)
+
+        assertFalse(client.kvExists("missing:key"))
+    }
+
+    @Test
+    fun `kvExists propagates non-404 failures`() = runBlocking {
+        val mockEngine = createMockEngine("""{"error":"unavailable"}""", HttpStatusCode.ServiceUnavailable)
+        val client = createTestClient(mockEngine)
+
+        val error = assertFailsWith<EkoDBHttpException> { client.kvExists("test:key") }
+        assertEquals(503, error.statusCode)
     }
 
     // ========================================================================

@@ -282,6 +282,8 @@ class EkoDBClient private constructor(
      * CRUD operations support MessagePack/CBOR, but metadata/KV/auth/chat endpoints are JSON-only
      */
     private fun shouldUseJSON(path: String): Boolean {
+        if (path.startsWith("/api/update/sequence/")) return true
+
         val jsonOnlyPaths = listOf(
             "/api/collections",
             "/api/kv",
@@ -825,8 +827,8 @@ class EkoDBClient private constructor(
     /**
      * Insert or update a record (upsert operation)
      *
-     * Attempts to update the record first. If the record doesn't exist (404 error),
-     * it will be inserted instead. This provides atomic insert-or-update semantics.
+     * Checks whether the caller-supplied ID exists before updating it. If it does
+     * not exist, inserts the record and returns the server-generated ID.
      *
      * @param collection Collection name
      * @param id Record ID
@@ -840,19 +842,16 @@ class EkoDBClient private constructor(
         record: Record,
         bypassRipple: Boolean? = null
     ): Record {
-        return try {
-            // Try update first
-            update(collection, id, record, bypassRipple)
-        } catch (e: Exception) {
-            // Check if it's a NotFound error
-            if (e.message?.contains("404") == true || e.message?.contains("Not found") == true) {
-                // Record doesn't exist, insert it
-                insert(collection, record, ttl = null, bypassRipple = bypassRipple)
-            } else {
-                // Other error, propagate it
-                throw e
+        try {
+            findById(collection, id, bypassRipple)
+        } catch (e: EkoDBHttpException) {
+            if (e.statusCode == HttpStatusCode.NotFound.value) {
+                return insert(collection, record, ttl = null, bypassRipple = bypassRipple)
             }
+            throw e
         }
+
+        return update(collection, id, record, bypassRipple)
     }
 
     /**
@@ -923,16 +922,7 @@ class EkoDBClient private constructor(
     /**
      * Count documents in a collection
      */
-    suspend fun count(collection: String): Long {
-        val response = executeWithRetry { token ->
-            client.get("$baseUrl/api/collections/${collection.encodeURLPathPart()}") {
-                header("Authorization", "Bearer $token")
-            }
-        }
-        // this must return the collection but getting a collection by collection name returns all the stats, we need to return the amount of records in the collection
-        val json = response.body<JsonObject>()
-        return json["count"].toString().toLong()
-    }
+    suspend fun count(collection: String): Long = countDocuments(collection)
 
     /**
      * List all collections
@@ -984,7 +974,8 @@ class EkoDBClient private constructor(
             }
         }
         val result: JsonObject = response.body()
-        return result["status"]?.toString()?.contains("restored") == true
+        return result["status"]?.jsonPrimitive?.content == "success" &&
+            result["restored"]?.jsonPrimitive?.booleanOrNull == true
     }
 
     /**
@@ -998,7 +989,7 @@ class EkoDBClient private constructor(
             }
         }
         val result: JsonObject = response.body()
-        return result["records_restored"]?.toString()?.toLongOrNull() ?: 0L
+        return result["cleared_count"]?.jsonPrimitive?.longOrNull ?: 0L
     }
 
     /**
@@ -1105,14 +1096,16 @@ class EkoDBClient private constructor(
      * Count documents in a collection
      */
     suspend fun countDocuments(collection: String): Long {
-        val response = executeWithRetry { token ->
-            client.get("$baseUrl/api/${collection.encodeURLPathPart()}/count") {
-                header("Authorization", "Bearer $token")
-            }
+        val metadata = getCollection(collection)
+        metadata["count"]?.jsonPrimitive?.longOrNull?.let { return it }
+
+        val analytics = metadata["analytics"]
+        val analyticsObject = when (analytics) {
+            is JsonObject -> analytics
+            is JsonArray -> analytics.lastOrNull { it is JsonObject } as? JsonObject
+            else -> null
         }
-        val body = response.bodyAsText()
-        val json = Json.parseToJsonElement(body).jsonObject
-        return json["count"]?.jsonPrimitive?.long ?: 0L
+        return analyticsObject?.get("record_count")?.jsonPrimitive?.longOrNull ?: 0L
     }
 
     private val searchJson = Json { ignoreUnknownKeys = true }
@@ -1409,14 +1402,15 @@ class EkoDBClient private constructor(
      * Key-Value: Get a value
      */
     suspend fun kvGet(key: String): Any? {
-        val response = executeWithRetry { token ->
-            client.get("$baseUrl/api/kv/get/${key.encodeURLPathPart()}") {
-                header("Authorization", "Bearer $token")
+        val response = try {
+            executeWithRetry { token ->
+                client.get("$baseUrl/api/kv/get/${key.encodeURLPathPart()}") {
+                    header("Authorization", "Bearer $token")
+                }
             }
-        }
-
-        if (response.status == HttpStatusCode.NotFound) {
-            return null
+        } catch (error: EkoDBHttpException) {
+            if (error.statusCode == HttpStatusCode.NotFound.value) return null
+            throw error
         }
 
         val result = response.body<JsonObject>()
@@ -1486,7 +1480,7 @@ class EkoDBClient private constructor(
      */
     suspend fun kvBatchSet(entries: List<Triple<String, JsonElement, Int?>>): List<Pair<String, Boolean>> {
         val keys = entries.map { it.first }
-        val values = entries.map { buildJsonObject { put("value", it.second) } }
+        val values = entries.map { it.second }
         // Server applies a single TTL to all entries - use first entry's TTL if provided
         val ttl = entries.firstOrNull()?.third
 
@@ -1546,12 +1540,7 @@ class EkoDBClient private constructor(
      * Key-Value: Check if a key exists
      */
     suspend fun kvExists(key: String): Boolean {
-        return try {
-            val result = kvGet(key)
-            result != null
-        } catch (e: Exception) {
-            false
-        }
+        return kvGet(key) != null
     }
 
     /**
@@ -2453,8 +2442,9 @@ class EkoDBClient private constructor(
      * List all functions, optionally filtered by tags
      */
     suspend fun listFunctions(tags: List<String>? = null): List<io.ekodb.client.functions.UserFunction> {
-        val url = if (tags != null) {
-            "$baseUrl/api/functions?tags=${tags.joinToString(",").encodeURLQueryComponent(encodeFull = true)}"
+        val url = if (!tags.isNullOrEmpty()) {
+            val query = tags.joinToString("&") { "tag=${it.encodeURLQueryComponent(encodeFull = true)}" }
+            "$baseUrl/api/functions?$query"
         } else {
             "$baseUrl/api/functions"
         }
@@ -2578,8 +2568,9 @@ class EkoDBClient private constructor(
      * @return List of user functions
      */
     suspend fun listUserFunctions(tags: List<String>? = null): List<JsonObject> {
-        val url = if (tags != null && tags.isNotEmpty()) {
-            "$baseUrl/api/functions?tags=${tags.joinToString(",").encodeURLQueryComponent(encodeFull = true)}"
+        val url = if (!tags.isNullOrEmpty()) {
+            val query = tags.joinToString("&") { "tag=${it.encodeURLQueryComponent(encodeFull = true)}" }
+            "$baseUrl/api/functions?$query"
         } else {
             "$baseUrl/api/functions"
         }

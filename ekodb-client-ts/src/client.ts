@@ -560,6 +560,28 @@ function stripTrailingSlashes(url: string): string {
   return end === url.length ? url : url.slice(0, end);
 }
 
+function isNotFoundError(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    error.message.startsWith("Request failed with status 404:")
+  );
+}
+
+/**
+ * Keep the legacy `param_type` field available to TypeScript callers without
+ * sending it to servers that reject the retired wire field.
+ */
+function functionRequestBody(userFunction: UserFunction): UserFunction {
+  const parameters = Object.fromEntries(
+    Object.entries(userFunction.parameters).map(([name, definition]) => {
+      const wireDefinition = { ...definition };
+      delete wireDefinition.param_type;
+      return [name, wireDefinition];
+    }),
+  );
+  return { ...userFunction, parameters };
+}
+
 export class EkoDBClient {
   private baseURL: string;
   private apiKey: string;
@@ -1164,7 +1186,7 @@ export class EkoDBClient {
     actions: [string, string, any][],
   ): Promise<Record> {
     const url = `/api/update/sequence/${encodeURIComponent(collection)}/${encodeURIComponent(id)}`;
-    return this.makeRequest<Record>("PUT", url, actions);
+    return this.makeRequest<Record>("PUT", url, actions, 0, true);
   }
 
   /**
@@ -1301,6 +1323,13 @@ export class EkoDBClient {
    * @param value - The value to store
    * @param ttl - Optional TTL in seconds
    */
+  private encodeKvKey(key: string): string {
+    // Colons are valid inside a URL path segment and are part of common KV
+    // keys. The live API does not decode `%3A` consistently across KV routes,
+    // so preserve colons while still escaping separators such as `/`.
+    return encodeURIComponent(key).replace(/%3A/gi, ":");
+  }
+
   async kvSet(key: string, value: any, ttl?: number): Promise<void> {
     const body: any = { value };
     if (ttl !== undefined) {
@@ -1308,7 +1337,7 @@ export class EkoDBClient {
     }
     await this.makeRequest<void>(
       "POST",
-      `/api/kv/set/${encodeURIComponent(key)}`,
+      `/api/kv/set/${this.encodeKvKey(key)}`,
       body,
       0,
       true, // Force JSON for KV operations
@@ -1321,7 +1350,7 @@ export class EkoDBClient {
   async kvGet(key: string): Promise<any> {
     const result = await this.makeRequest<{ value: any }>(
       "GET",
-      `/api/kv/get/${encodeURIComponent(key)}`,
+      `/api/kv/get/${this.encodeKvKey(key)}`,
       undefined,
       0,
       true, // Force JSON for KV operations
@@ -1335,7 +1364,7 @@ export class EkoDBClient {
   async kvDelete(key: string): Promise<void> {
     await this.makeRequest<void>(
       "DELETE",
-      `/api/kv/delete/${encodeURIComponent(key)}`,
+      `/api/kv/delete/${this.encodeKvKey(key)}`,
       undefined,
       0,
       true, // Force JSON for KV operations
@@ -1420,8 +1449,9 @@ export class EkoDBClient {
     try {
       const result = await this.kvGet(key);
       return result !== null && result !== undefined;
-    } catch {
-      return false;
+    } catch (error) {
+      if (isNotFoundError(error)) return false;
+      throw error;
     }
   }
 
@@ -1580,8 +1610,8 @@ export class EkoDBClient {
   /**
    * Insert or update a record (upsert operation)
    *
-   * Attempts to update the record first. If the record doesn't exist (404 error),
-   * it will be inserted instead. This provides atomic insert-or-update semantics.
+   * Checks whether the caller-supplied ID exists before updating it. If it does
+   * not exist, inserts the record and returns the server-generated ID.
    *
    * @param collection - Collection name
    * @param id - Record ID
@@ -1610,18 +1640,12 @@ export class EkoDBClient {
     options?: UpsertOptions,
   ): Promise<Record> {
     try {
-      // Try update first
-      return await this.update(collection, id, record, {
+      await this.findById(collection, id, {
         bypassRipple: options?.bypassRipple,
         transactionId: options?.transactionId,
-        bypassCache: options?.bypassCache,
       });
-    } catch (error: any) {
-      // If not found, insert instead
-      if (
-        error.message?.includes("404") ||
-        error.message?.includes("Not found")
-      ) {
+    } catch (error) {
+      if (isNotFoundError(error)) {
         return await this.insert(collection, record, {
           ttl: options?.ttl,
           bypassRipple: options?.bypassRipple,
@@ -1631,6 +1655,12 @@ export class EkoDBClient {
       }
       throw error;
     }
+
+    return this.update(collection, id, record, {
+      bypassRipple: options?.bypassRipple,
+      transactionId: options?.transactionId,
+      bypassCache: options?.bypassCache,
+    });
   }
 
   /**
@@ -1776,14 +1806,17 @@ export class EkoDBClient {
    * @returns true if restored successfully
    */
   async restoreRecord(collection: string, id: string): Promise<boolean> {
-    const result = await this.makeRequest<{ status: string }>(
+    const result = await this.makeRequest<{
+      status: string;
+      restored: boolean;
+    }>(
       "POST",
       `/api/trash/${encodeURIComponent(collection)}/${encodeURIComponent(id)}`,
       undefined,
       0,
       true,
     );
-    return result.status === "restored";
+    return result.status === "success" && result.restored === true;
   }
 
   /**
@@ -1799,7 +1832,7 @@ export class EkoDBClient {
     const result = await this.makeRequest<{
       status: string;
       collection: string;
-      records_restored: number;
+      cleared_count: number;
     }>(
       "POST",
       `/api/trash/${encodeURIComponent(collection)}`,
@@ -1807,7 +1840,7 @@ export class EkoDBClient {
       0,
       true,
     );
-    return { recordsRestored: result.records_restored };
+    return { recordsRestored: result.cleared_count };
   }
 
   /**
@@ -2717,7 +2750,7 @@ export class EkoDBClient {
     const result = await this.makeRequest<{ id: string }>(
       "POST",
       "/api/functions",
-      script,
+      functionRequestBody(script),
     );
     return result.id;
   }
@@ -2736,11 +2769,10 @@ export class EkoDBClient {
    * List all functions, optionally filtered by tags
    */
   async listFunctions(tags?: string[]): Promise<UserFunction[]> {
-    // URLSearchParams percent-encodes the value (`&`/`=`/`,`), so a tag
-    // containing query-reserved characters can't smuggle extra params.
-    const params = tags
-      ? `?${new URLSearchParams({ tags: tags.join(",") }).toString()}`
-      : "";
+    const query = new URLSearchParams();
+    tags?.forEach((tag) => query.append("tag", tag));
+    const encodedQuery = query.toString();
+    const params = encodedQuery ? `?${encodedQuery}` : "";
     return this.makeRequest<UserFunction[]>("GET", `/api/functions${params}`);
   }
 
@@ -2751,7 +2783,7 @@ export class EkoDBClient {
     await this.makeRequest<void>(
       "PUT",
       `/api/functions/${encodeURIComponent(id)}`,
-      script,
+      functionRequestBody(script),
     );
   }
 
@@ -2792,7 +2824,7 @@ export class EkoDBClient {
     const result = await this.makeRequest<{ id: string }>(
       "POST",
       "/api/functions",
-      userFunction,
+      functionRequestBody(userFunction),
       0,
       true, // Force JSON
     );
@@ -2820,11 +2852,10 @@ export class EkoDBClient {
    * @returns Array of user functions
    */
   async listUserFunctions(tags?: string[]): Promise<UserFunction[]> {
-    // URLSearchParams percent-encodes the value (`&`/`=`/`,`), so a tag
-    // containing query-reserved characters can't smuggle extra params.
-    const params = tags
-      ? `?${new URLSearchParams({ tags: tags.join(",") }).toString()}`
-      : "";
+    const query = new URLSearchParams();
+    tags?.forEach((tag) => query.append("tag", tag));
+    const encodedQuery = query.toString();
+    const params = encodedQuery ? `?${encodedQuery}` : "";
     return this.makeRequest<UserFunction[]>(
       "GET",
       `/api/functions${params}`,
@@ -2846,7 +2877,7 @@ export class EkoDBClient {
     await this.makeRequest<void>(
       "PUT",
       `/api/functions/${encodeURIComponent(label)}`,
-      userFunction,
+      functionRequestBody(userFunction),
       0,
       true, // Force JSON
     );
@@ -3265,7 +3296,7 @@ export class EkoDBClient {
   async kvGetLinks(key: string): Promise<Record[]> {
     return this.makeRequest<Record[]>(
       "GET",
-      `/api/kv/${encodeURIComponent(key)}/links`,
+      `/api/kv/${this.encodeKvKey(key)}/links`,
       undefined,
       0,
       true,
@@ -3291,7 +3322,7 @@ export class EkoDBClient {
   ): Promise<null> {
     return this.makeRequest<null>(
       "POST",
-      `/api/kv/${encodeURIComponent(key)}/links/${encodeURIComponent(collection)}/${encodeURIComponent(documentId)}`,
+      `/api/kv/${this.encodeKvKey(key)}/links/${encodeURIComponent(collection)}/${encodeURIComponent(documentId)}`,
       linkData,
       0,
       true,
@@ -3306,7 +3337,7 @@ export class EkoDBClient {
   ): Promise<null> {
     return this.makeRequest<null>(
       "DELETE",
-      `/api/kv/${encodeURIComponent(key)}/links/${encodeURIComponent(collection)}/${encodeURIComponent(documentId)}`,
+      `/api/kv/${this.encodeKvKey(key)}/links/${encodeURIComponent(collection)}/${encodeURIComponent(documentId)}`,
       undefined,
       0,
       true,

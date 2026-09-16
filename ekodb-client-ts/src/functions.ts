@@ -42,6 +42,7 @@ export interface ParameterDefinition {
   required: boolean;
   default?: any;
   description?: string;
+  /** @deprecated The server does not consume this field; retained for source compatibility. */
   param_type?: string;
 }
 

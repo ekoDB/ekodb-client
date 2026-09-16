@@ -98,23 +98,34 @@ class VectorRecordTest {
     @Test
     fun `insert update and both upsert branches send complete golden body`() = runTest {
         val paths = mutableListOf<String>()
+        val serverGenerated = record().apply { this["id"] = FieldType.string("server-generated") }
+        var insertAfterMissingPreflight = false
         val client = client { request ->
-            assertEquals(golden(), Json.parseToJsonElement((request.body as TextContent).text))
-            assertEquals(ContentType.Application.Json, request.body.contentType?.withoutParameters())
             paths.add("${request.method.value} ${request.url.encodedPath}")
-            if (request.url.encodedPath.endsWith("/missing")) {
+            if (request.method == HttpMethod.Get && request.url.encodedPath.endsWith("/missing")) {
+                insertAfterMissingPreflight = true
                 respond("not found", HttpStatusCode.NotFound)
             } else {
-                respond(golden().toString(), headers = headersOf(HttpHeaders.ContentType, "application/json"))
+                if (request.method != HttpMethod.Get) {
+                    assertEquals(golden(), Json.parseToJsonElement((request.body as TextContent).text))
+                    assertEquals(ContentType.Application.Json, request.body.contentType?.withoutParameters())
+                }
+                val response = if (request.method == HttpMethod.Post && insertAfterMissingPreflight) {
+                    Json.encodeToJsonElement(serverGenerated)
+                } else {
+                    golden()
+                }
+                respond(response.toString(), headers = headersOf(HttpHeaders.ContentType, "application/json"))
             }
         }
         try {
             assertEquals(record(), client.insert("vectors", record()))
             assertEquals(record(), client.update("vectors", "existing", record()))
             assertEquals(record(), client.upsert("vectors", "existing", record()))
-            assertEquals(record(), client.upsert("vectors", "missing", record()))
+            assertEquals(serverGenerated, client.upsert("vectors", "missing", record()))
             assertEquals(listOf("POST /api/insert/vectors", "PUT /api/update/vectors/existing",
-                "PUT /api/update/vectors/existing", "PUT /api/update/vectors/missing", "POST /api/insert/vectors"), paths)
+                "GET /api/find/vectors/existing", "PUT /api/update/vectors/existing",
+                "GET /api/find/vectors/missing", "POST /api/insert/vectors"), paths)
         } finally {
             client.close()
         }
