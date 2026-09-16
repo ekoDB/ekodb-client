@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-async def main():
+async def main(resources):
     print("=== ekoDB Chat Basic Example ===\n")
 
     # Create client
@@ -21,6 +21,7 @@ async def main():
     client = Client.new(base_url, api_key)
 
     collection = "client_chat_basic_python"
+    resources.update(client=client, collection=collection)
 
     # Step 1: Insert sample data
     print("=== Inserting Sample Data ===")
@@ -59,6 +60,7 @@ async def main():
         system_prompt="You are a helpful assistant for product information.",
     )
     chat_id = session["chat_id"]
+    resources["chat_ids"].append(chat_id)
     print(f"✓ Created session: {chat_id}\n")
 
     # Step 3: Send a chat message
@@ -79,13 +81,40 @@ async def main():
         print(f"Completion tokens: {response['token_usage']['completion_tokens']}")
         print(f"Total tokens: {response['token_usage']['total_tokens']}")
 
-    # Cleanup: Delete the collection (chat session is managed by server)
-    print("\n=== Cleanup ===")
-    await client.delete_collection(collection)
-    print("✓ Deleted collection")
 
+async def run():
+    resources = {"client": None, "collection": None, "chat_ids": []}
+    primary_error = None
+    try:
+        await main(resources)
+    except BaseException as error:
+        primary_error = error
+
+    cleanup_errors = []
+    client = resources["client"]
+    if client:
+        print("\n=== Cleanup ===")
+        for chat_id in resources["chat_ids"]:
+            try:
+                await client.delete_chat_session(chat_id)
+                print("✓ Deleted session")
+            except Exception as error:
+                cleanup_errors.append(f"session {chat_id}: {error}")
+        if resources["collection"]:
+            try:
+                await client.delete_collection(resources["collection"])
+                print("✓ Deleted collection")
+            except Exception as error:
+                cleanup_errors.append(f"collection {resources['collection']}: {error}")
+
+    if primary_error:
+        if cleanup_errors:
+            print("Cleanup also failed: " + "; ".join(cleanup_errors))
+        raise primary_error
+    if cleanup_errors:
+        raise RuntimeError("Cleanup failed: " + "; ".join(cleanup_errors))
     print("\n✓ Chat completed successfully")
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(run())

@@ -1,4 +1,4 @@
-import { EkoDBClient, QueryBuilder } from "@ekodb/ekodb-client";
+import { EkoDBClient, QueryBuilder, getValue } from "@ekodb/ekodb-client";
 import * as dotenv from "dotenv";
 
 dotenv.config();
@@ -99,7 +99,9 @@ async function main() {
     const user = users[0] as Record<string, unknown>;
     const fields = Object.keys(user);
     console.log(`  Fields returned: ${JSON.stringify(fields)}`);
-    console.log(`  First user: ${user.name} <${user.email}>`);
+    console.log(
+      `  First user: ${getValue(user.name)} <${getValue(user.email)}>`,
+    );
   }
 
   // Example 2: Exclude sensitive fields - hide password, api_key, secret_token
@@ -151,7 +153,7 @@ async function main() {
   console.log(`  Found ${activeUsers.length} active users (ages 18-65)`);
   for (const user of activeUsers) {
     const u = user as Record<string, unknown>;
-    console.log(`    - ${u.name} (age ${u.age})`);
+    console.log(`    - ${getValue(u.name)} (age ${getValue(u.age)})`);
   }
 
   // Example 4: Query inactive users with profile fields
@@ -166,7 +168,7 @@ async function main() {
   console.log(`  Found ${inactiveUsers.length} inactive users`);
   for (const user of inactiveUsers) {
     const u = user as Record<string, unknown>;
-    console.log(`    - ${u.name}: ${u.bio}`);
+    console.log(`    - ${getValue(u.name)}: ${getValue(u.bio)}`);
   }
 
   // Example 5: Compare full vs projected data - demonstrates bandwidth savings
@@ -209,4 +211,7 @@ async function main() {
   console.log("\nAll projection examples completed successfully!");
 }
 
-main().catch(console.error);
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});

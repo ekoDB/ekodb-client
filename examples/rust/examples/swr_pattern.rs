@@ -1,9 +1,18 @@
 use ekodb_client::{
-    Client, FieldType, Function, FunctionCondition, ParameterDefinition, UserFunction,
+    Client, Error, FieldType, Function, FunctionCondition, ParameterDefinition, UserFunction,
 };
 use std::collections::HashMap;
 use std::env;
 use std::time::Instant;
+
+const GITHUB_COLLECTION: &str = "github_cache_swr_rs";
+const PRODUCT_COLLECTION: &str = "product_cache_swr_rs";
+const GITHUB_FUNCTION: &str = "fetch_github_user_swr_rs";
+const PRODUCT_FUNCTION: &str = "fetch_product_enriched_swr_rs";
+
+fn is_not_found(error: &Error) -> bool {
+    matches!(error, Error::NotFound | Error::Api { code: 404, .. })
+}
 
 /// Save a function idempotently: if the label already exists (HTTP 409),
 /// update the existing definition instead. Returns the function id (or the
@@ -19,36 +28,25 @@ async fn save_or_update(
             client.update_function(&label, function).await?;
             println!("ℹ️  Function '{}' already existed — updated instead", label);
             let existing = client.get_function(&label).await?;
-            Ok(existing.id.unwrap_or(label))
+            existing.id.ok_or_else(|| {
+                std::io::Error::other(format!("updated function '{label}' did not include an id"))
+                    .into()
+            })
         }
         Err(e) => Err(Box::new(e)),
     }
 }
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    dotenv::dotenv().ok();
-
-    let base_url = env::var("API_BASE_URL").unwrap_or_else(|_| "http://localhost:8080".to_string());
-    let api_key =
-        env::var("API_BASE_KEY").unwrap_or_else(|_| "a-test-api-key-from-ekodb".to_string());
-
-    let client = Client::builder()
-        .base_url(&base_url)
-        .api_key(&api_key)
-        .build()?;
-
-    // Start clean: drop stale cache collections from a prior run so their schema
-    // is inferred fresh and a stale schema can't reject the insert.
-    let _ = client.delete_collection("github_cache").await;
-    let _ = client.delete_collection("product_cache").await;
-
+async fn run_examples(
+    client: &Client,
+    function_ids: &mut Vec<String>,
+) -> Result<(), Box<dyn std::error::Error>> {
     println!("=== ekoDB SWR (Stale-While-Revalidate) Pattern ===\n");
 
     // Step 1: Create SWR script for GitHub user caching
     println!("Step 1: Create SWR function that acts as edge cache");
 
-    let swr_script = UserFunction::new("fetch_github_user", "Fetch GitHub User with Cache")
+    let swr_script = UserFunction::new(GITHUB_FUNCTION, "Fetch GitHub User with Cache")
         .with_description(
             "SWR pattern: Check cache, fetch from GitHub API if stale, auto-update with TTL",
         )
@@ -59,7 +57,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         )
         .with_parameter(ParameterDefinition::new("ttl").with_description("Cache TTL in seconds"))
         .with_function(Function::FindById {
-            collection: "github_cache".to_string(),
+            collection: GITHUB_COLLECTION.to_string(),
             record_id: "{{username}}".to_string(),
         })
         .with_function(Function::If {
@@ -81,7 +79,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     output_field: None,
                 }),
                 Box::new(Function::Insert {
-                    collection: "github_cache".to_string(),
+                    collection: GITHUB_COLLECTION.to_string(),
                     record: serde_json::json!({
                         "id": {"type": "String", "value": "{{username}}"},
                         "data": {"type": "Object", "value": "{{http_response}}"}
@@ -90,7 +88,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     ttl: None,
                 }),
                 Box::new(Function::FindById {
-                    collection: "github_cache".to_string(),
+                    collection: GITHUB_COLLECTION.to_string(),
                     record_id: "{{username}}".to_string(),
                 }),
                 Box::new(Function::Project {
@@ -103,7 +101,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with_tag("github")
         .with_tag("cache");
 
-    let script_id = save_or_update(&client, swr_script).await?;
+    let script_id = save_or_update(client, swr_script).await?;
+    function_ids.push(script_id.clone());
     println!("✓ Created SWR script: fetch_github_user ({})\n", script_id);
 
     // Step 2: First call - Cache miss
@@ -116,9 +115,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
     params1.insert("ttl".to_string(), FieldType::Integer(300));
 
-    let result1 = client
-        .call_function("fetch_github_user", Some(params1))
-        .await?;
+    let result1 = client.call_function(GITHUB_FUNCTION, Some(params1)).await?;
     let duration1 = start1.elapsed();
     println!("Response time: {}ms", duration1.as_millis());
     println!(
@@ -136,9 +133,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         FieldType::String("torvalds".to_string()),
     );
 
-    let _result2 = client
-        .call_function("fetch_github_user", Some(params2))
-        .await?;
+    let _result2 = client.call_function(GITHUB_FUNCTION, Some(params2)).await?;
     let duration2 = start2.elapsed();
     let speedup = duration1.as_millis() as f64 / duration2.as_millis() as f64;
     println!(
@@ -152,60 +147,58 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== Advanced: SWR with Data Enrichment ===\n");
     println!("Creating product enrichment function...");
 
-    let enrich_script =
-        UserFunction::new("fetch_product_enriched", "Fetch Product with Enrichment")
-            .with_description("Demonstrates calling external API and enriching data")
-            .with_parameter(
-                ParameterDefinition::new("product_id")
-                    .required()
-                    .with_description("Product ID"),
-            )
-            .with_parameter(
-                ParameterDefinition::new("ttl").with_description("Cache TTL (10 minutes)"),
-            )
-            .with_function(Function::FindById {
-                collection: "product_cache".to_string(),
-                record_id: "{{product_id}}".to_string(),
-            })
-            .with_function(Function::If {
-                condition: FunctionCondition::HasRecords,
-                then_functions: vec![Box::new(Function::Project {
+    let enrich_script = UserFunction::new(PRODUCT_FUNCTION, "Fetch Product with Enrichment")
+        .with_description("Demonstrates calling external API and enriching data")
+        .with_parameter(
+            ParameterDefinition::new("product_id")
+                .required()
+                .with_description("Product ID"),
+        )
+        .with_parameter(ParameterDefinition::new("ttl").with_description("Cache TTL (10 minutes)"))
+        .with_function(Function::FindById {
+            collection: PRODUCT_COLLECTION.to_string(),
+            record_id: "{{product_id}}".to_string(),
+        })
+        .with_function(Function::If {
+            condition: FunctionCondition::HasRecords,
+            then_functions: vec![Box::new(Function::Project {
+                fields: vec!["enriched_data".to_string()],
+                exclude: false,
+            })],
+            else_functions: Some(vec![
+                Box::new(Function::HttpRequest {
+                    url: "https://dummyjson.com/products/{{product_id}}".to_string(),
+                    method: "GET".to_string(),
+                    headers: None,
+                    body: None,
+                    timeout_seconds: None,
+                    output_field: None,
+                }),
+                Box::new(Function::Insert {
+                    collection: PRODUCT_COLLECTION.to_string(),
+                    record: serde_json::json!({
+                        "id": {"type": "String", "value": "{{product_id}}"},
+                        "enriched_data": {"type": "Object", "value": "{{http_response}}"}
+                    }),
+                    bypass_ripple: None,
+                    ttl: None,
+                }),
+                Box::new(Function::FindById {
+                    collection: PRODUCT_COLLECTION.to_string(),
+                    record_id: "{{product_id}}".to_string(),
+                }),
+                Box::new(Function::Project {
                     fields: vec!["enriched_data".to_string()],
                     exclude: false,
-                })],
-                else_functions: Some(vec![
-                    Box::new(Function::HttpRequest {
-                        url: "https://dummyjson.com/products/{{product_id}}".to_string(),
-                        method: "GET".to_string(),
-                        headers: None,
-                        body: None,
-                        timeout_seconds: None,
-                        output_field: None,
-                    }),
-                    Box::new(Function::Insert {
-                        collection: "product_cache".to_string(),
-                        record: serde_json::json!({
-                            "id": {"type": "String", "value": "{{product_id}}"},
-                            "enriched_data": {"type": "Object", "value": "{{http_response}}"}
-                        }),
-                        bypass_ripple: None,
-                        ttl: None,
-                    }),
-                    Box::new(Function::FindById {
-                        collection: "product_cache".to_string(),
-                        record_id: "{{product_id}}".to_string(),
-                    }),
-                    Box::new(Function::Project {
-                        fields: vec!["enriched_data".to_string()],
-                        exclude: false,
-                    }),
-                ]),
-            })
-            .with_tag("enrichment")
-            .with_tag("product")
-            .with_tag("cache");
+                }),
+            ]),
+        })
+        .with_tag("enrichment")
+        .with_tag("product")
+        .with_tag("cache");
 
-    let enrich_script_id = save_or_update(&client, enrich_script).await?;
+    let enrich_script_id = save_or_update(client, enrich_script).await?;
+    function_ids.push(enrich_script_id.clone());
     println!(
         "✓ Created enrichment script: fetch_product_enriched ({})\n",
         enrich_script_id
@@ -217,7 +210,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     enrich_params.insert("ttl".to_string(), FieldType::Integer(600));
 
     let enriched = client
-        .call_function("fetch_product_enriched", Some(enrich_params))
+        .call_function(PRODUCT_FUNCTION, Some(enrich_params))
         .await?;
     println!(
         "Enriched data: {}",
@@ -248,7 +241,56 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   - Product info + reviews + inventory + pricing");
     println!("   - All from different sources, cached together");
 
-    println!("\n✓ Example complete - Your database IS your edge!\n");
+    Ok(())
+}
 
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    dotenv::dotenv().ok();
+    let base_url = env::var("API_BASE_URL").unwrap_or_else(|_| "http://localhost:8080".to_string());
+    let api_key =
+        env::var("API_BASE_KEY").unwrap_or_else(|_| "a-test-api-key-from-ekodb".to_string());
+    let client = Client::builder()
+        .base_url(&base_url)
+        .api_key(&api_key)
+        .build()?;
+    for collection in [GITHUB_COLLECTION, PRODUCT_COLLECTION] {
+        if let Err(error) = client.delete_collection(collection).await {
+            if !is_not_found(&error) {
+                return Err(error.into());
+            }
+        }
+    }
+
+    let mut function_ids = Vec::new();
+    let operation_result = run_examples(&client, &mut function_ids).await;
+    let mut cleanup_errors = Vec::new();
+    for function_id in function_ids.iter().rev() {
+        if let Err(error) = client.delete_function(function_id).await {
+            cleanup_errors.push(format!("function {function_id}: {error}"));
+        }
+    }
+    for collection in [GITHUB_COLLECTION, PRODUCT_COLLECTION] {
+        if let Err(error) = client.delete_collection(collection).await {
+            if !is_not_found(&error) {
+                cleanup_errors.push(format!("collection {collection}: {error}"));
+            }
+        }
+    }
+    match (operation_result, cleanup_errors.is_empty()) {
+        (Err(primary), false) => {
+            return Err(format!(
+                "{primary}; cleanup also failed: {}",
+                cleanup_errors.join("; ")
+            )
+            .into())
+        }
+        (Err(primary), true) => return Err(primary),
+        (Ok(()), false) => {
+            return Err(format!("cleanup failed: {}", cleanup_errors.join("; ")).into())
+        }
+        (Ok(()), true) => {}
+    }
+    println!("\n✓ Example complete - Your database IS your edge!\n");
     Ok(())
 }

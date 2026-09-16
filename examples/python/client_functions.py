@@ -19,6 +19,10 @@ load_dotenv(env_path)
 
 BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8080")
 API_KEY = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb")
+COLLECTION = "functions_users_client_py"
+ACTIVE_LABEL = "get_active_users_client_py"
+STATUS_LABEL = "get_users_by_status_client_py"
+STATS_LABEL = "user_stats_client_py"
 
 
 def _is_already_exists_error(err):
@@ -57,7 +61,7 @@ async def setup_test_data(client):
             "status": "active" if i % 2 == 0 else "inactive",
             "score": i * 10,
         }
-        await client.insert("users", record)
+        await client.insert(COLLECTION, record)
 
     print("✅ Test data ready\n")
 
@@ -67,13 +71,24 @@ async def simple_query_script(client):
     print("📝 Example 1: Simple Query Function\n")
 
     script = {
-        "label": "get_active_users",
+        "label": ACTIVE_LABEL,
         "name": "Get Active Users",
         "description": "Retrieve all active users",
         "version": "1.0",
         "parameters": {},
         "functions": [
-            {"type": "FindAll", "collection": "users"},
+            {
+                "type": "Query",
+                "collection": COLLECTION,
+                "filter": {
+                    "type": "Condition",
+                    "content": {
+                        "field": "status",
+                        "operator": "Eq",
+                        "value": "active",
+                    },
+                },
+            },
         ],
         "tags": ["users", "query"],
     }
@@ -81,7 +96,7 @@ async def simple_query_script(client):
     script_id = await save_or_update(client, script)
     print(f"✅ Function saved: {script_id}")
 
-    result = await client.call_function("get_active_users", None)
+    result = await client.call_function(ACTIVE_LABEL, None)
     print(f"📊 Found {len(result['records'])} active users\n")
 
     return script_id
@@ -92,23 +107,33 @@ async def parameterized_script(client):
     print("📝 Example 2: Parameterized Function\n")
 
     script = {
-        "label": "get_users_by_status",
+        "label": STATUS_LABEL,
         "name": "Get Users By Status",
         "version": "1.0",
         "parameters": {
             "status": {
-                "param_type": "String",
                 "required": False,
                 "default": "active",
             },
             "limit": {
-                "param_type": "Integer",
                 "required": False,
                 "default": 10,
             },
         },
         "functions": [
-            {"type": "FindAll", "collection": "users"},
+            {
+                "type": "Query",
+                "collection": COLLECTION,
+                "filter": {
+                    "type": "Condition",
+                    "content": {
+                        "field": "status",
+                        "operator": "Eq",
+                        "value": "{{status}}",
+                    },
+                },
+                "limit": "{{limit}}",
+            },
         ],
         "tags": ["users", "parameterized"],
     }
@@ -117,7 +142,7 @@ async def parameterized_script(client):
     print(f"✅ Function saved: {script_id}")
 
     params = {"status": "active", "limit": 3}
-    result = await client.call_function("get_users_by_status", params)
+    result = await client.call_function(STATUS_LABEL, params)
     print(f"📊 Found {len(result['records'])} users (limited)\n")
 
     return script_id
@@ -128,12 +153,12 @@ async def aggregation_script(client):
     print("📝 Example 3: Aggregation Function\n")
 
     script = {
-        "label": "user_stats",
+        "label": STATS_LABEL,
         "name": "User Statistics",
         "version": "1.0",
         "parameters": {},
         "functions": [
-            {"type": "FindAll", "collection": "users"},
+            {"type": "FindAll", "collection": COLLECTION},
             {
                 "type": "Group",
                 "by_fields": ["status"],
@@ -153,7 +178,7 @@ async def aggregation_script(client):
     script_id = await save_or_update(client, script)
     print(f"✅ Function saved: {script_id}")
 
-    result = await client.call_function("user_stats", None)
+    result = await client.call_function(STATS_LABEL, None)
     print(f"📊 Statistics: {len(result['records'])} groups")
     for record in result["records"]:
         print(f"   {record}\n")
@@ -175,20 +200,19 @@ async def script_management(client, get_active_users_id, user_stats_id):
 
     # Update function by ID
     updated = {
-        "label": "get_active_users_updated",
+        "label": f"{ACTIVE_LABEL}_updated",
         "name": "Get Active Users (Updated)",
         "description": "Updated description",
         "version": "1.1",
         "parameters": {},
         "functions": [
-            {"type": "FindAll", "collection": "users"},
+            {"type": "FindAll", "collection": COLLECTION},
         ],
         "tags": ["users"],
     }
     await client.update_function(get_active_users_id, updated)
     print("✏️  Function updated")
 
-    # Delete function by ID
     await client.delete_function(user_stats_id)
     print("🗑️  Function deleted\n")
 
@@ -201,14 +225,38 @@ async def main():
 
     client = Client.new(BASE_URL, API_KEY)
 
-    # Run examples and track IDs
-    await setup_test_data(client)
-    get_active_users_id = await simple_query_script(client)
-    get_users_by_status_id = await parameterized_script(client)
-    user_stats_id = await aggregation_script(client)
-    await script_management(client, get_active_users_id, user_stats_id)
-
-    print("✅ All examples completed!")
+    script_ids = []
+    try:
+        try:
+            await client.delete_collection(COLLECTION)
+        except Exception:
+            pass
+        await setup_test_data(client)
+        script_ids.append(await simple_query_script(client))
+        script_ids.append(await parameterized_script(client))
+        script_ids.append(await aggregation_script(client))
+        await script_management(client, script_ids[0], script_ids[2])
+        print("✅ All examples completed!")
+    finally:
+        cleanup_errors = []
+        cleanup_labels = [
+            ACTIVE_LABEL,
+            f"{ACTIVE_LABEL}_updated",
+            STATUS_LABEL,
+            STATS_LABEL,
+        ]
+        for script_id in cleanup_labels:
+            try:
+                await client.delete_function(script_id)
+            except Exception as error:
+                if "not found" not in str(error):
+                    cleanup_errors.append(f"function {script_id}: {error}")
+        try:
+            await client.delete_collection(COLLECTION)
+        except Exception as error:
+            cleanup_errors.append(f"collection {COLLECTION}: {error}")
+        if cleanup_errors:
+            raise RuntimeError("Cleanup failed: " + "; ".join(cleanup_errors))
 
 
 if __name__ == "__main__":

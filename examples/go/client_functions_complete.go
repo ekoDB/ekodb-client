@@ -42,7 +42,7 @@ func saveOrUpdateFn(client *ekodb.Client, fn ekodb.UserFunction) (string, error)
 	return "", err
 }
 
-func main() {
+func run() (runErr error) {
 	// Load environment
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found, using defaults")
@@ -60,8 +60,23 @@ func main() {
 
 	client, err := ekodb.NewClient(baseURL, apiKey)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
+	collection := "complete_products_go"
+	collectionOwned := false
+	var scriptIDs []string
+	defer func() {
+		fmt.Println("🧹 Cleaning up...")
+		for _, id := range scriptIDs {
+			runErr = errors.Join(runErr, client.DeleteFunction(id))
+		}
+		if collectionOwned {
+			runErr = errors.Join(runErr, client.DeleteCollection(collection))
+		}
+		if runErr == nil {
+			fmt.Println("✅ Cleanup complete")
+		}
+	}()
 
 	fmt.Println("🚀 ekoDB Go Complete Functions Example")
 	fmt.Println()
@@ -80,14 +95,13 @@ func main() {
 	}
 
 	for _, product := range products {
-		_, err := client.Insert("complete_products_go", product)
+		_, err := client.Insert(collection, product)
 		if err != nil {
-			log.Printf("Insert error: %v", err)
+			return fmt.Errorf("insert product: %w", err)
 		}
+		collectionOwned = true
 	}
 	fmt.Printf("✅ Created %d products\n\n", len(products))
-
-	var scriptIDs []string
 
 	// Example 1: FindAll + Group (Simple Aggregation)
 	fmt.Println("📝 Example 1: FindAll + Group (Simple Aggregation)")
@@ -100,7 +114,7 @@ func main() {
 		Version:    &version,
 		Parameters: map[string]ekodb.ParameterDefinition{},
 		Functions: []ekodb.FunctionStageConfig{
-			ekodb.StageFindAll("complete_products_go"),
+			ekodb.StageFindAll(collection),
 			ekodb.StageGroup([]string{"category"}, []ekodb.GroupFunctionConfig{
 				{OutputField: "count", Operation: "Count"},
 				{OutputField: "avg_price", Operation: "Average", InputField: strPtr("price")},
@@ -111,14 +125,14 @@ func main() {
 
 	scriptID1, err := saveOrUpdateFn(client, script1)
 	if err != nil {
-		log.Printf("Save script error: %v", err)
+		return fmt.Errorf("save product stats: %w", err)
 	} else {
 		fmt.Printf("✅ Function saved: %s\n", scriptID1)
 		scriptIDs = append(scriptIDs, scriptID1)
 
 		result1, err := client.CallFunction("product_stats_go", nil)
 		if err != nil {
-			log.Printf("Call script error: %v", err)
+			return fmt.Errorf("call product stats: %w", err)
 		} else {
 			fmt.Printf("📊 Found %d category stats\n\n", len(result1.Records))
 		}
@@ -134,21 +148,21 @@ func main() {
 		Version:    &version,
 		Parameters: map[string]ekodb.ParameterDefinition{},
 		Functions: []ekodb.FunctionStageConfig{
-			ekodb.StageFindAll("complete_products_go"),
+			ekodb.StageFindAll(collection),
 		},
 		Tags: []string{"products", "list"},
 	}
 
 	scriptID2, err := saveOrUpdateFn(client, script2)
 	if err != nil {
-		log.Printf("Save script error: %v", err)
+		return fmt.Errorf("save product listing: %w", err)
 	} else {
 		fmt.Println("✅ Function saved")
 		scriptIDs = append(scriptIDs, scriptID2)
 
 		result2, err := client.CallFunction("list_all_products_go", nil)
 		if err != nil {
-			log.Printf("Call script error: %v", err)
+			return fmt.Errorf("call product listing: %w", err)
 		} else {
 			fmt.Printf("📊 Found %d products\n\n", len(result2.Records))
 		}
@@ -164,7 +178,7 @@ func main() {
 		Version:    &version,
 		Parameters: map[string]ekodb.ParameterDefinition{},
 		Functions: []ekodb.FunctionStageConfig{
-			ekodb.StageFindAll("complete_products_go"),
+			ekodb.StageFindAll(collection),
 			ekodb.StageGroup([]string{"category"}, []ekodb.GroupFunctionConfig{
 				{OutputField: "count", Operation: "Count"},
 			}),
@@ -174,14 +188,14 @@ func main() {
 
 	scriptID3, err := saveOrUpdateFn(client, script3)
 	if err != nil {
-		log.Printf("Save script error: %v", err)
+		return fmt.Errorf("save category count: %w", err)
 	} else {
 		fmt.Println("✅ Function saved")
 		scriptIDs = append(scriptIDs, scriptID3)
 
 		result3, err := client.CallFunction("count_by_category_go", nil)
 		if err != nil {
-			log.Printf("Call script error: %v", err)
+			return fmt.Errorf("call category count: %w", err)
 		} else {
 			fmt.Printf("📊 Found %d categories\n\n", len(result3.Records))
 		}
@@ -197,7 +211,7 @@ func main() {
 		Version:    &version,
 		Parameters: map[string]ekodb.ParameterDefinition{},
 		Functions: []ekodb.FunctionStageConfig{
-			ekodb.StageFindAll("complete_products_go"),
+			ekodb.StageFindAll(collection),
 			ekodb.StageGroup([]string{"category"}, []ekodb.GroupFunctionConfig{
 				{OutputField: "count", Operation: "Count"},
 				{OutputField: "avg_price", Operation: "Average", InputField: strPtr("price")},
@@ -209,26 +223,18 @@ func main() {
 
 	scriptID4, err := saveOrUpdateFn(client, script4)
 	if err != nil {
-		log.Printf("Save script error: %v", err)
+		return fmt.Errorf("save product summary: %w", err)
 	} else {
 		fmt.Println("✅ Function saved")
 		scriptIDs = append(scriptIDs, scriptID4)
 
 		result4, err := client.CallFunction("product_summary_go", nil)
 		if err != nil {
-			log.Printf("Call script error: %v", err)
+			return fmt.Errorf("call product summary: %w", err)
 		} else {
 			fmt.Printf("📊 Pipeline executed %d stages\n\n", result4.Stats.StagesExecuted)
 		}
 	}
-
-	// Cleanup
-	fmt.Println("🧹 Cleaning up...")
-	for _, scriptID := range scriptIDs {
-		client.DeleteFunction(scriptID)
-	}
-	client.DeleteCollection("complete_products_go")
-	fmt.Println("✅ Cleanup complete")
 
 	fmt.Println()
 	fmt.Println("✅ All complete script examples finished!")
@@ -238,4 +244,11 @@ func main() {
 	fmt.Println("   ✅ Group aggregations (Count, Average)")
 	fmt.Println("   ✅ Multi-stage pipelines (FindAll → Group → Count)")
 	fmt.Println("   ✅ Function management (save, call, delete)")
+	return nil
+}
+
+func main() {
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
 }

@@ -9,21 +9,22 @@ import asyncio
 import os
 from datetime import datetime, timezone
 from pathlib import Path
+
 from dotenv import load_dotenv
 
 from ekodb_client import (
     Client,
-    field_uuid,
-    field_decimal,
-    field_datetime,
-    field_duration,
-    field_number,
-    field_set,
-    field_vector,
-    field_object,
-    field_integer,
-    field_float,
     field_boolean,
+    field_datetime,
+    field_decimal,
+    field_duration,
+    field_float,
+    field_integer,
+    field_number,
+    field_object,
+    field_set,
+    field_uuid,
+    field_vector,
 )
 
 # Load environment variables
@@ -32,6 +33,26 @@ load_dotenv(env_path)
 
 BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8080")
 API_KEY = os.getenv("API_BASE_KEY")
+ORDERS = "orders_example_py"
+PRODUCTS = "products_example_py"
+PROCESSED_ORDERS = "processed_orders_example_py"
+SESSION_KEY = "kv_wrapped:py:user:session:123"
+CACHE_KEY = "kv_wrapped:py:cache:product:456"
+CONFIG_THEME = "kv_wrapped:py:config:app:theme"
+CONFIG_LANGUAGE = "kv_wrapped:py:config:app:language"
+CONFIG_NOTIFICATIONS = "kv_wrapped:py:config:app:notifications"
+CONFIG_PREFERENCES = "kv_wrapped:py:config:user:preferences"
+ORDER_KEY = "kv_wrapped:py:order:status:c2d3e4f5-a1b2-c3d4-e5f6-a1b2c3d4e5f6"
+COLLECTIONS = (ORDERS, PRODUCTS, PROCESSED_ORDERS)
+KV_KEYS = (
+    SESSION_KEY,
+    CACHE_KEY,
+    CONFIG_THEME,
+    CONFIG_LANGUAGE,
+    CONFIG_NOTIFICATIONS,
+    CONFIG_PREFERENCES,
+    ORDER_KEY,
+)
 
 
 # =============================================================================
@@ -55,7 +76,7 @@ async def wrapped_types_insert(client: Client) -> None:
         "metadata": field_object({"source": "web", "campaign": "summer2024"}),
     }
 
-    result = await client.insert("orders_example", order)
+    result = await client.insert(ORDERS, order)
     print(f"✅ Inserted order: {result.get('id')}")
 
     # Insert products with wrapped types
@@ -81,7 +102,7 @@ async def wrapped_types_insert(client: Client) -> None:
     ]
 
     for product in products:
-        await client.insert("products_example", product)
+        await client.insert(PRODUCTS, product)
 
     print(f"✅ Inserted {len(products)} products with wrapped types\n")
 
@@ -91,7 +112,7 @@ async def wrapped_types_query(client: Client) -> None:
     print("📝 Example 2: Querying and Extracting Wrapped Types\n")
 
     # Query all products
-    products = await client.find("products_example", limit=10)
+    products = await client.find(PRODUCTS, limit=10)
     print(f"📊 Found {len(products)} products")
 
     # Demonstrate extracting wrapped type values
@@ -114,27 +135,27 @@ async def kv_basic_operations(client: Client) -> None:
     print("📝 Example 3: Basic KV Store Operations\n")
 
     # Set a simple value
-    await client.kv_set("user:session:123", {"userId": "user_abc", "role": "admin"})
+    await client.kv_set(SESSION_KEY, {"userId": "user_abc", "role": "admin"})
     print("✅ Set session data")
 
     # Get the value back
-    session = await client.kv_get("user:session:123")
+    session = await client.kv_get(SESSION_KEY)
     print(f"📊 Retrieved session: {session}")
 
     # Check if key exists
-    exists = await client.kv_exists("user:session:123")
+    exists = await client.kv_exists(SESSION_KEY)
     print(f"🔍 Key exists: {exists}")
 
     # Set with TTL (1 hour)
     await client.kv_set(
-        "cache:product:456",
+        CACHE_KEY,
         {"name": "Cached Product", "price": 99.99},
         ttl="1h",
     )
     print("✅ Set cached data with 1 hour TTL")
 
     # Delete a key
-    await client.kv_delete("user:session:123")
+    await client.kv_delete(SESSION_KEY)
     print("🗑️  Deleted session\n")
 
 
@@ -143,19 +164,19 @@ async def kv_pattern_query(client: Client) -> None:
     print("📝 Example 4: KV Pattern Query\n")
 
     # Set up multiple KV entries with a pattern
-    await client.kv_set("config:app:theme", {"mode": "dark"})
-    await client.kv_set("config:app:language", {"code": "en"})
-    await client.kv_set("config:app:notifications", {"enabled": True})
-    await client.kv_set("config:user:preferences", {"timezone": "UTC"})
+    await client.kv_set(CONFIG_THEME, {"mode": "dark"})
+    await client.kv_set(CONFIG_LANGUAGE, {"code": "en"})
+    await client.kv_set(CONFIG_NOTIFICATIONS, {"enabled": True})
+    await client.kv_set(CONFIG_PREFERENCES, {"timezone": "UTC"})
 
     print("✅ Set 4 config entries")
 
     # Query all config:app:* keys
-    app_configs = await client.kv_query(pattern="config:app:*")
+    app_configs = await client.kv_query(pattern="kv_wrapped:py:config:app:*")
     print(f"📊 Found {len(app_configs)} app config entries")
 
     # Query all config:* keys
-    all_configs = await client.kv_query(pattern="config:*")
+    all_configs = await client.kv_query(pattern="kv_wrapped:py:config:*")
     print(f"📊 Found {len(all_configs)} total config entries\n")
 
 
@@ -177,12 +198,12 @@ async def combined_example(client: Client) -> None:
         "status": "processing",
     }
 
-    result = await client.insert("processed_orders", order)
+    result = await client.insert(PROCESSED_ORDERS, order)
     print(f"✅ Inserted order: {result.get('id')}")
 
     # Cache order status in KV for quick lookups
     await client.kv_set(
-        f"order:status:{order_id}",
+        ORDER_KEY,
         {
             "status": "processing",
             "updated_at": datetime.now(timezone.utc).isoformat(),
@@ -192,7 +213,7 @@ async def combined_example(client: Client) -> None:
     print("✅ Cached order status")
 
     # Quick status lookup via KV
-    status = await client.kv_get(f"order:status:{order_id}")
+    status = await client.kv_get(ORDER_KEY)
     print(f"📊 Quick status lookup: {status}\n")
 
 
@@ -201,25 +222,30 @@ async def combined_example(client: Client) -> None:
 # =============================================================================
 
 
-async def cleanup(client: Client) -> None:
+async def cleanup(client: Client, verbose=True) -> None:
     """Clean up test data"""
-    print("🧹 Cleaning up...")
+    if verbose:
+        print("🧹 Cleaning up...")
 
-    try:
-        await client.delete_collection("orders_example")
-        await client.delete_collection("products_example")
-        await client.delete_collection("processed_orders")
-
-        await client.kv_delete("cache:product:456")
-        await client.kv_delete("config:app:theme")
-        await client.kv_delete("config:app:language")
-        await client.kv_delete("config:app:notifications")
-        await client.kv_delete("config:user:preferences")
-        await client.kv_delete("order:status:c2d3e4f5-a1b2-c3d4-e5f6-a1b2c3d4e5f6")
-
+    errors = []
+    for collection in COLLECTIONS:
+        try:
+            await client.delete_collection(collection)
+        except Exception as error:
+            if "404" not in str(error) and "not found" not in str(error).lower():
+                errors.append(f"collection {collection}: {error}")
+    for key in KV_KEYS:
+        try:
+            if await client.kv_exists(key):
+                await client.kv_delete(key)
+        except Exception as error:
+            errors.append(f"KV key {key}: {error}")
+    if errors:
+        if verbose:
+            print("⚠️  Cleanup had some errors (may be expected)\n")
+        raise RuntimeError("; ".join(errors))
+    if verbose:
         print("✅ Cleanup complete\n")
-    except Exception:
-        print("⚠️  Cleanup had some errors (may be expected)\n")
 
 
 # =============================================================================
@@ -236,6 +262,8 @@ async def main():
 
     client = Client.new(BASE_URL, API_KEY)
 
+    await cleanup(client, verbose=False)
+    operation_error = None
     try:
         # Wrapped Types Examples
         await wrapped_types_insert(client)
@@ -248,19 +276,26 @@ async def main():
         # Combined Example
         await combined_example(client)
 
-        # Cleanup
-        await cleanup(client)
-
-        print("✅ All KV & Wrapped Types examples completed!")
-        print("\n💡 Key takeaways:")
-        print("   ✅ Use field_* helpers for type-safe wrapped values")
-        print("   ✅ field_decimal() preserves precision (no floating point errors)")
-        print("   ✅ KV store is great for caching and quick lookups")
-        print("   ✅ Combine KV caching with collection inserts for real workflows")
-
     except Exception as e:
         print(f"❌ Error: {e}")
-        raise
+        operation_error = e
+
+    try:
+        await cleanup(client)
+    except Exception as cleanup_error:
+        if operation_error is not None:
+            operation_error.add_note(f"cleanup also failed: {cleanup_error}")
+        else:
+            raise
+    if operation_error is not None:
+        raise operation_error
+
+    print("✅ All KV & Wrapped Types examples completed!")
+    print("\n💡 Key takeaways:")
+    print("   ✅ Use field_* helpers for type-safe wrapped values")
+    print("   ✅ field_decimal() preserves precision (no floating point errors)")
+    print("   ✅ KV store is great for caching and quick lookups")
+    print("   ✅ Combine KV caching with collection inserts for real workflows")
 
 
 if __name__ == "__main__":

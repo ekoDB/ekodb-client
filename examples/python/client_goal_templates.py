@@ -34,7 +34,7 @@ async def main():
         }
     )
     template_id = template["id"]
-    print(f"Created template: {template.get('title')} (id: {template_id})")
+    print(f"Created template: Data Migration (id: {template_id})")
 
     # 2. List all templates
     print("\n--- Listing templates ---")

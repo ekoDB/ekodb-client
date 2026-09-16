@@ -39,7 +39,7 @@ func saveOrUpdateFn(client *ekodb.Client, fn ekodb.UserFunction) (string, error)
 	return "", err
 }
 
-func main() {
+func run() (runErr error) {
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found, using defaults")
 	}
@@ -56,15 +56,30 @@ func main() {
 
 	client, err := ekodb.NewClient(baseURL, apiKey)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
+	collection := "search_docs_go"
+	collectionOwned := false
+	var scriptIDs []string
+	defer func() {
+		fmt.Println("🧹 Cleaning up...")
+		for _, id := range scriptIDs {
+			runErr = errors.Join(runErr, client.DeleteFunction(id))
+		}
+		if collectionOwned {
+			runErr = errors.Join(runErr, client.DeleteCollection(collection))
+		}
+		if runErr == nil {
+			fmt.Println("✅ Cleanup complete")
+		}
+	}()
 
 	fmt.Println("🚀 ekoDB Go Search Functions Example")
 	fmt.Println()
 
 	// Setup test data
 	fmt.Println("📋 Setting up test data...")
-	client.DeleteCollection("search_docs_go")
+	client.DeleteCollection(collection)
 
 	documents := []map[string]interface{}{
 		{"title": "Introduction to Machine Learning", "content": "Machine learning is a subset of AI.", "category": "AI", "tags": []string{"ml", "ai"}},
@@ -75,11 +90,12 @@ func main() {
 	}
 
 	for _, doc := range documents {
-		client.Insert("search_docs_go", doc)
+		if _, err := client.Insert(collection, doc); err != nil {
+			return err
+		}
+		collectionOwned = true
 	}
 	fmt.Printf("✅ Inserted %d documents\n\n", len(documents))
-
-	var scriptIDs []string
 
 	// Example 1: List All Documents
 	fmt.Println("📝 Example 1: List All Documents")
@@ -90,14 +106,20 @@ func main() {
 		Name:       "List All Documents",
 		Version:    func() *string { s := "1.0"; return &s }(),
 		Parameters: map[string]ekodb.ParameterDefinition{},
-		Functions:  []ekodb.FunctionStageConfig{ekodb.StageFindAll("search_docs_go")},
+		Functions:  []ekodb.FunctionStageConfig{ekodb.StageFindAll(collection)},
 		Tags:       []string{"search", "list"},
 	}
-	scriptID1, _ := saveOrUpdateFn(client, script1)
+	scriptID1, err := saveOrUpdateFn(client, script1)
+	if err != nil {
+		return err
+	}
 	scriptIDs = append(scriptIDs, scriptID1)
 	fmt.Println("✅ Function saved")
 
-	result1, _ := client.CallFunction("list_all_docs_go", nil)
+	result1, err := client.CallFunction("list_all_docs_go", nil)
+	if err != nil {
+		return err
+	}
 	if result1 != nil {
 		fmt.Printf("📊 Found %d documents\n", len(result1.Records))
 		for i, record := range result1.Records {
@@ -118,18 +140,24 @@ func main() {
 		Version:    func() *string { s := "1.0"; return &s }(),
 		Parameters: map[string]ekodb.ParameterDefinition{},
 		Functions: []ekodb.FunctionStageConfig{
-			ekodb.StageFindAll("search_docs_go"),
+			ekodb.StageFindAll(collection),
 			ekodb.StageGroup([]string{"category"}, []ekodb.GroupFunctionConfig{
 				{OutputField: "count", Operation: "Count"},
 			}),
 		},
 		Tags: []string{"search", "analytics"},
 	}
-	scriptID2, _ := saveOrUpdateFn(client, script2)
+	scriptID2, err := saveOrUpdateFn(client, script2)
+	if err != nil {
+		return err
+	}
 	scriptIDs = append(scriptIDs, scriptID2)
 	fmt.Println("✅ Function saved")
 
-	result2, _ := client.CallFunction("docs_by_category_go", nil)
+	result2, err := client.CallFunction("docs_by_category_go", nil)
+	if err != nil {
+		return err
+	}
 	if result2 != nil {
 		fmt.Println("📊 Documents by category:")
 		for _, record := range result2.Records {
@@ -138,13 +166,12 @@ func main() {
 		fmt.Printf("⏱️  Execution time: %vms\n\n", result2.Stats.ExecutionTimeMs)
 	}
 
-	// Cleanup
-	fmt.Println("🧹 Cleaning up...")
-	for _, scriptID := range scriptIDs {
-		client.DeleteFunction(scriptID)
-	}
-	client.DeleteCollection("search_docs_go")
-	fmt.Println("✅ Cleanup complete")
-	fmt.Println()
 	fmt.Println("✅ All search script examples finished!")
+	return nil
+}
+
+func main() {
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
 }

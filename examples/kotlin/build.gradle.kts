@@ -53,6 +53,7 @@ kotlin {
 
 // Configure which example to run
 val exampleClass = project.findProperty("mainClass") as String? ?: "io.ekodb.client.examples.ClientSimpleCrudKt"
+val exampleSource = exampleClass.substringAfterLast('.').removeSuffix("Kt") + ".kt"
 
 application {
     mainClass.set(exampleClass)
@@ -71,5 +72,9 @@ application {
 sourceSets {
     main {
         kotlin.srcDir("examples")
+        // Every standalone example intentionally exposes a top-level main in
+        // the same package. Compile only the entry point selected for this run
+        // so a clean build does not treat those mains as conflicting overloads.
+        kotlin.include(exampleSource)
     }
 }

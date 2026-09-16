@@ -6,6 +6,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -14,7 +15,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func main() {
+func run() (runErr error) {
 	// Load environment variables
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found")
@@ -33,11 +34,19 @@ func main() {
 	// Create ekoDB client
 	client, err := ekodb.NewClient(baseURL, apiKey)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	fmt.Println("✓ Client created")
 
 	collection := "client_document_ttl_go"
+	collectionDeleted := false
+	defer func() {
+		if !collectionDeleted {
+			if err := client.DeleteCollection(collection); err != nil {
+				runErr = errors.Join(runErr, fmt.Errorf("cleanup collection %s: %w", collection, err))
+			}
+		}
+	}()
 
 	// Example 1: Insert document with TTL (1 hour)
 	fmt.Println("\n=== Insert Document with TTL (1 hour) ===")
@@ -49,7 +58,7 @@ func main() {
 		TTL: "1h",
 	})
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	fmt.Printf("✓ Inserted document: %v\n", doc1["id"])
 
@@ -63,7 +72,7 @@ func main() {
 		TTL: "5m",
 	})
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	fmt.Printf("✓ Inserted document: %v\n", doc2["id"])
 
@@ -72,7 +81,7 @@ func main() {
 	limit := 100
 	docs, err := client.Find(collection, ekodb.Query{Limit: &limit})
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	fmt.Printf("✓ Found %d documents with TTL\n", len(docs))
 
@@ -85,7 +94,7 @@ func main() {
 		}
 		_, err := client.Update(collection, doc1ID, updateData)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 		fmt.Println("✓ Updated document")
 	}
@@ -94,7 +103,7 @@ func main() {
 	fmt.Println("\n=== Delete Document ===")
 	if doc1ID, ok := doc1["id"].(string); ok {
 		if err := client.Delete(collection, doc1ID); err != nil {
-			log.Fatal(err)
+			return err
 		}
 		fmt.Println("✓ Deleted document")
 	}
@@ -102,10 +111,18 @@ func main() {
 	// Cleanup: Delete the collection
 	fmt.Println("\n=== Cleanup ===")
 	if err := client.DeleteCollection(collection); err != nil {
-		log.Fatal(err)
+		return err
 	}
+	collectionDeleted = true
 	fmt.Println("✓ Deleted collection")
 
 	fmt.Println("\n✓ All document TTL operations completed successfully")
 	fmt.Println("\n💡 Note: Documents with TTL will automatically expire after the specified duration")
+	return nil
+}
+
+func main() {
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
 }

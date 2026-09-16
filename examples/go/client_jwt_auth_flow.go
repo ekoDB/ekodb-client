@@ -24,7 +24,11 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func main() {
+var jwtFunctionLabels = []string{
+	"go_users_register", "go_users_login", "go_users_verify_token",
+}
+
+func run() (runErr error) {
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found")
 	}
@@ -33,16 +37,27 @@ func main() {
 
 	client, err := ekodb.NewClient(baseURL, apiKey)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	fmt.Println("✓ Client created")
+	ownedLabels := make([]string, 0, len(jwtFunctionLabels))
+	defer func() {
+		for _, label := range ownedLabels {
+			if err := client.DeleteUserFunction(label); err != nil {
+				runErr = errors.Join(runErr, fmt.Errorf("cleanup function %s: %w", label, err))
+			}
+		}
+		if runErr == nil {
+			fmt.Println("\n✓ Cleaned up demo functions")
+		}
+	}()
 
 	cost := 12
 	expires := int64(3600)
 
 	// 1. Register: bcrypt-hash, insert.
 	register := ekodb.UserFunction{
-		Label:       "go_users_register",
+		Label:       jwtFunctionLabels[0],
 		Name:        "Register user",
 		Description: strPtr("Validate, bcrypt-hash, insert."),
 		Parameters: map[string]ekodb.ParameterDefinition{
@@ -51,17 +66,20 @@ func main() {
 		},
 		Functions: []ekodb.FunctionStageConfig{
 			ekodb.StageBcryptHash("{{password}}", "password_hash", &cost),
-			ekodb.StageInsert("go_users", map[string]interface{}{
+			ekodb.StageInsert("jwt_users_go", map[string]interface{}{
 				"email":         "{{email}}",
 				"password_hash": "{{password_hash}}",
 			}, false, nil),
 		},
 	}
-	_save(client, register)
+	if err := saveJWTFunction(client, register); err != nil {
+		return err
+	}
+	ownedLabels = append(ownedLabels, register.Label)
 
 	// 2. Login: find user, verify bcrypt, sign JWT on success.
 	login := ekodb.UserFunction{
-		Label:       "go_users_login",
+		Label:       jwtFunctionLabels[1],
 		Name:        "Login user",
 		Description: strPtr("Verify password, mint JWT."),
 		Parameters: map[string]ekodb.ParameterDefinition{
@@ -69,7 +87,7 @@ func main() {
 			"password": {Required: true},
 		},
 		Functions: []ekodb.FunctionStageConfig{
-			ekodb.StageFindOne("go_users", "email", "{{email}}"),
+			ekodb.StageFindOne("jwt_users_go", "email", "{{email}}"),
 			ekodb.StageBcryptVerify("{{password}}", "password_hash", "password_ok"),
 			ekodb.StageIf(
 				ekodb.FunctionCondition{
@@ -96,12 +114,15 @@ func main() {
 			),
 		},
 	}
-	_save(client, login)
+	if err := saveJWTFunction(client, login); err != nil {
+		return err
+	}
+	ownedLabels = append(ownedLabels, login.Label)
 
 	// 3. Verify a JWT — fail-closed when claims is null.
 	verifyTtl := int64(60)
 	verify := ekodb.UserFunction{
-		Label: "go_users_verify_token",
+		Label: jwtFunctionLabels[2],
 		Name:  "Verify JWT token",
 		Parameters: map[string]ekodb.ParameterDefinition{
 			"token": {Required: true},
@@ -109,7 +130,7 @@ func main() {
 		Functions: []ekodb.FunctionStageConfig{
 			// Synthetic record so JwtVerify has working_data[0] to read off.
 			ekodb.StageInsert(
-				"_inflight_jwt_check",
+				"inflight_jwt_check_go",
 				map[string]interface{}{"token": "{{token}}"},
 				true,
 				&verifyTtl,
@@ -130,7 +151,10 @@ func main() {
 			),
 		},
 	}
-	_save(client, verify)
+	if err := saveJWTFunction(client, verify); err != nil {
+		return err
+	}
+	ownedLabels = append(ownedLabels, verify.Label)
 
 	fmt.Println("\n=== Auth flow defined as pure stored functions ===")
 	fmt.Println("Call them like:")
@@ -138,32 +162,30 @@ func main() {
 	fmt.Println(`  POST /api/functions/go_users_login    { "email": "a@b.com", "password": "s3cret" }`)
 	fmt.Println(`  POST /api/functions/go_users_verify_token { "token": "<jwt>" }`)
 
-	for _, label := range []string{
-		"go_users_register",
-		"go_users_login",
-		"go_users_verify_token",
-	} {
-		_ = client.DeleteUserFunction(label)
-	}
-	fmt.Println("\n✓ Cleaned up demo functions")
+	return nil
 }
 
-func _save(client *ekodb.Client, f ekodb.UserFunction) {
+func saveJWTFunction(client *ekodb.Client, f ekodb.UserFunction) error {
 	_, err := client.SaveUserFunction(f)
 	if err == nil {
 		fmt.Printf("✓ %s saved\n", f.Label)
-		return
+		return nil
 	}
 	var httpErr *ekodb.HTTPError
 	if errors.As(err, &httpErr) && httpErr.StatusCode == 409 {
 		if uerr := client.UpdateUserFunction(f.Label, f); uerr != nil {
-			fmt.Printf("UpdateUserFunction(%s) error: %v\n", f.Label, uerr)
-			return
+			return fmt.Errorf("update function %s: %w", f.Label, uerr)
 		}
 		fmt.Printf("✓ %s already existed — updated instead\n", f.Label)
-		return
+		return nil
 	}
-	fmt.Printf("SaveUserFunction(%s) error: %v\n", f.Label, err)
+	return fmt.Errorf("save function %s: %w", f.Label, err)
+}
+
+func main() {
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
 }
 
 func strPtr(s string) *string { return &s }

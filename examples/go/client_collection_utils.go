@@ -7,6 +7,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -15,7 +16,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func main() {
+func run() (runErr error) {
 	// Load environment variables
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found")
@@ -34,20 +35,28 @@ func main() {
 	// Create ekoDB client
 	client, err := ekodb.NewClient(baseURL, apiKey)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	fmt.Println("✓ Client created")
 
-	collection := "collection_utils_test"
+	collection := "collection_utils_test_go"
+	collectionDeleted := false
+	defer func() {
+		if collectionDeleted {
+			return
+		}
+		if err := client.DeleteCollection(collection); err != nil {
+			runErr = errors.Join(runErr, fmt.Errorf("cleanup collection %s: %w", collection, err))
+		}
+	}()
 
 	// Example 1: Check if collection exists (should be false initially)
 	fmt.Println("\n=== Check Collection Exists (Before Creation) ===")
 	exists, err := client.CollectionExists(collection)
 	if err != nil {
-		log.Printf("CollectionExists error: %v", err)
-	} else {
-		fmt.Printf("Collection '%s' exists: %v\n", collection, exists)
+		return fmt.Errorf("check collection before creation: %w", err)
 	}
+	fmt.Printf("Collection '%s' exists: %v\n", collection, exists)
 
 	// Example 2: Create some test documents
 	fmt.Println("\n=== Creating Test Documents ===")
@@ -58,7 +67,7 @@ func main() {
 		}
 		_, err := client.Insert(collection, record)
 		if err != nil {
-			log.Printf("Insert error: %v", err)
+			return fmt.Errorf("insert document %d: %w", i, err)
 		}
 	}
 	fmt.Println("Created 5 test documents")
@@ -67,37 +76,41 @@ func main() {
 	fmt.Println("\n=== Check Collection Exists (After Creation) ===")
 	exists, err = client.CollectionExists(collection)
 	if err != nil {
-		log.Printf("CollectionExists error: %v", err)
-	} else {
-		fmt.Printf("Collection '%s' exists: %v\n", collection, exists)
+		return fmt.Errorf("check collection after creation: %w", err)
 	}
+	fmt.Printf("Collection '%s' exists: %v\n", collection, exists)
 
 	// Example 4: Count documents in collection
 	fmt.Println("\n=== Count Documents ===")
 	count, err := client.CountDocuments(collection)
 	if err != nil {
-		log.Printf("CountDocuments error: %v", err)
-	} else {
-		fmt.Printf("Document count in '%s': %d\n", collection, count)
+		return fmt.Errorf("count documents: %w", err)
 	}
+	fmt.Printf("Document count in '%s': %d\n", collection, count)
 
 	// Example 5: Check non-existent collection
 	fmt.Println("\n=== Check Non-Existent Collection ===")
 	exists, err = client.CollectionExists("nonexistent_collection_xyz")
 	if err != nil {
-		log.Printf("CollectionExists error: %v", err)
-	} else {
-		fmt.Printf("Collection 'nonexistent_collection_xyz' exists: %v\n", exists)
+		return fmt.Errorf("check nonexistent collection: %w", err)
 	}
+	fmt.Printf("Collection 'nonexistent_collection_xyz' exists: %v\n", exists)
 
 	// Cleanup: Delete the test collection
 	fmt.Println("\n=== Cleanup ===")
 	err = client.DeleteCollection(collection)
 	if err != nil {
-		log.Printf("DeleteCollection error: %v", err)
-	} else {
-		fmt.Printf("Deleted collection '%s'\n", collection)
+		return fmt.Errorf("delete collection: %w", err)
 	}
+	fmt.Printf("Deleted collection '%s'\n", collection)
+	collectionDeleted = true
 
 	fmt.Println("\n✓ Collection Utilities example complete")
+	return nil
+}
+
+func main() {
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
 }

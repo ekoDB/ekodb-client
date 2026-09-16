@@ -19,9 +19,39 @@
 //!
 //! Run with: `cargo run --example rag_conversation_system`
 
-use ekodb_client::{Client, Record};
+use ekodb_client::{Client, Error as EkoError, Record};
 use serde_json::json;
 use std::error::Error;
+
+const MESSAGES_COLLECTION: &str = "rag_messages_rust";
+const CONVERSATIONS_COLLECTION: &str = "rag_conversations_rust";
+
+fn is_not_found(error: &EkoError) -> bool {
+    matches!(error, EkoError::NotFound | EkoError::Api { code: 404, .. })
+}
+
+async fn cleanup(client: &Client, chat_id: Option<&str>) -> Result<(), Box<dyn Error>> {
+    let mut errors = Vec::new();
+    if let Some(chat_id) = chat_id {
+        if let Err(error) = client.delete_chat_session(chat_id).await {
+            if !is_not_found(&error) {
+                errors.push(format!("chat session {chat_id}: {error}"));
+            }
+        }
+    }
+    for collection in [MESSAGES_COLLECTION, CONVERSATIONS_COLLECTION] {
+        if let Err(error) = client.delete_collection(collection).await {
+            if !is_not_found(&error) {
+                errors.push(format!("collection {collection}: {error}"));
+            }
+        }
+    }
+    if errors.is_empty() {
+        Ok(())
+    } else {
+        Err(format!("cleanup failed: {}", errors.join("; ")).into())
+    }
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -39,370 +69,379 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .api_key(std::env::var("API_BASE_KEY")?)
         .build()?;
 
-    let messages_collection = "rag_messages";
-    let conversations_collection = "rag_conversations";
+    cleanup(&client, None).await?;
+    let mut chat_id_for_cleanup = None;
 
-    // Cleanup any existing data
-    let _ = client.delete_collection(messages_collection).await;
-    let _ = client.delete_collection(conversations_collection).await;
+    let operation_result: Result<(), Box<dyn Error>> = async {
+        let messages_collection = MESSAGES_COLLECTION;
+        let conversations_collection = CONVERSATIONS_COLLECTION;
 
-    // ========================================
-    // STEP 1: Simulate Historical Conversations
-    // ========================================
-    println!("=== Step 1: Building Conversation History ===");
-    println!("Storing previous conversations with embeddings...\n");
+        // ========================================
+        // STEP 1: Simulate Historical Conversations
+        // ========================================
+        println!("=== Step 1: Building Conversation History ===");
+        println!("Storing previous conversations with embeddings...\n");
 
-    // Conversation 1: Rust Programming Discussion
-    let conv1_id = "conv_rust_programming";
-    create_conversation(
-        &client,
-        conversations_collection,
-        conv1_id,
-        "Rust Programming",
-    )
-    .await?;
+        // Conversation 1: Rust Programming Discussion
+        let conv1_id = "conv_rust_programming";
+        create_conversation(
+            &client,
+            conversations_collection,
+            conv1_id,
+            "Rust Programming",
+        )
+        .await?;
 
-    let rust_messages = vec![
-        ("user", "What are the key features of Rust?"),
-        (
-            "assistant",
-            "Rust's key features include: memory safety without garbage collection, \
+        let rust_messages = vec![
+            ("user", "What are the key features of Rust?"),
+            (
+                "assistant",
+                "Rust's key features include: memory safety without garbage collection, \
              zero-cost abstractions, ownership system, powerful type system, and excellent \
              concurrency support.",
-        ),
-        ("user", "How does the borrow checker work?"),
-        (
-            "assistant",
-            "The borrow checker enforces Rust's ownership rules at compile time. It ensures \
+            ),
+            ("user", "How does the borrow checker work?"),
+            (
+                "assistant",
+                "The borrow checker enforces Rust's ownership rules at compile time. It ensures \
              that references don't outlive the data they point to and prevents data races by \
              allowing either multiple immutable references or one mutable reference.",
-        ),
-    ];
+            ),
+        ];
 
-    for (role, content) in &rust_messages {
-        store_message_with_embedding(
+        for (role, content) in &rust_messages {
+            store_message_with_embedding(
+                &client,
+                messages_collection,
+                conv1_id,
+                role,
+                content,
+                &["rust", "programming"],
+            )
+            .await?;
+        }
+        println!(
+            "✓ Stored Rust programming conversation ({} messages)",
+            rust_messages.len()
+        );
+
+        // Conversation 2: Database Design Discussion
+        let conv2_id = "conv_database_design";
+        create_conversation(
             &client,
-            messages_collection,
-            conv1_id,
-            role,
-            content,
-            &["rust", "programming"],
+            conversations_collection,
+            conv2_id,
+            "Database Design",
         )
         .await?;
-    }
-    println!(
-        "✓ Stored Rust programming conversation ({} messages)",
-        rust_messages.len()
-    );
 
-    // Conversation 2: Database Design Discussion
-    let conv2_id = "conv_database_design";
-    create_conversation(
-        &client,
-        conversations_collection,
-        conv2_id,
-        "Database Design",
-    )
-    .await?;
-
-    let db_messages = vec![
-        ("user", "What is database normalization?"),
-        (
-            "assistant",
-            "Database normalization is the process of organizing data to reduce redundancy \
+        let db_messages = vec![
+            ("user", "What is database normalization?"),
+            (
+                "assistant",
+                "Database normalization is the process of organizing data to reduce redundancy \
              and improve data integrity. It involves dividing large tables into smaller ones \
              and defining relationships between them using foreign keys.",
-        ),
-        ("user", "When should I use NoSQL over SQL?"),
-        (
-            "assistant",
-            "Use NoSQL when you need: flexible schemas, horizontal scaling, high write \
+            ),
+            ("user", "When should I use NoSQL over SQL?"),
+            (
+                "assistant",
+                "Use NoSQL when you need: flexible schemas, horizontal scaling, high write \
              throughput, or when working with unstructured data. SQL is better for complex \
              queries, ACID transactions, and structured data with well-defined relationships.",
-        ),
-    ];
+            ),
+        ];
 
-    for (role, content) in &db_messages {
-        store_message_with_embedding(
+        for (role, content) in &db_messages {
+            store_message_with_embedding(
+                &client,
+                messages_collection,
+                conv2_id,
+                role,
+                content,
+                &["database", "design"],
+            )
+            .await?;
+        }
+        println!(
+            "✓ Stored database design conversation ({} messages)",
+            db_messages.len()
+        );
+
+        // Conversation 3: Performance Optimization
+        let conv3_id = "conv_performance";
+        create_conversation(
             &client,
-            messages_collection,
-            conv2_id,
-            role,
-            content,
-            &["database", "design"],
+            conversations_collection,
+            conv3_id,
+            "Performance Optimization",
         )
         .await?;
-    }
-    println!(
-        "✓ Stored database design conversation ({} messages)",
-        db_messages.len()
-    );
 
-    // Conversation 3: Performance Optimization
-    let conv3_id = "conv_performance";
-    create_conversation(
-        &client,
-        conversations_collection,
-        conv3_id,
-        "Performance Optimization",
-    )
-    .await?;
-
-    let perf_messages = vec![
-        ("user", "How can I optimize database queries?"),
-        (
-            "assistant",
-            "Key database optimization techniques: use indexes wisely, avoid SELECT *, \
+        let perf_messages = vec![
+            ("user", "How can I optimize database queries?"),
+            (
+                "assistant",
+                "Key database optimization techniques: use indexes wisely, avoid SELECT *, \
              optimize JOIN operations, use query caching, denormalize when needed, and \
              analyze query execution plans.",
-        ),
-        ("user", "What about memory management in Rust?"),
-        (
-            "assistant",
-            "Rust's ownership system provides zero-cost memory management. Use Box for \
+            ),
+            ("user", "What about memory management in Rust?"),
+            (
+                "assistant",
+                "Rust's ownership system provides zero-cost memory management. Use Box for \
              heap allocation, Rc/Arc for shared ownership, and avoid cloning large data \
              structures. The compiler optimizes away unnecessary allocations.",
-        ),
-    ];
+            ),
+        ];
 
-    for (role, content) in &perf_messages {
-        store_message_with_embedding(
-            &client,
-            messages_collection,
-            conv3_id,
-            role,
-            content,
-            &["performance", "optimization"],
-        )
-        .await?;
-    }
-    println!(
-        "✓ Stored performance optimization conversation ({} messages)\n",
-        perf_messages.len()
-    );
+        for (role, content) in &perf_messages {
+            store_message_with_embedding(
+                &client,
+                messages_collection,
+                conv3_id,
+                role,
+                content,
+                &["performance", "optimization"],
+            )
+            .await?;
+        }
+        println!(
+            "✓ Stored performance optimization conversation ({} messages)\n",
+            perf_messages.len()
+        );
 
-    // ========================================
-    // STEP 2: New User Question - RAG in Action
-    // ========================================
-    println!("=== Step 2: New User Question with Context Retrieval ===");
-    let user_question = "How do I write memory-safe high-performance database code?";
-    println!("User asks: \"{}\"\n", user_question);
+        // ========================================
+        // STEP 2: New User Question - RAG in Action
+        // ========================================
+        println!("=== Step 2: New User Question with Context Retrieval ===");
+        let user_question = "How do I write memory-safe high-performance database code?";
+        println!("User asks: \"{}\"\n", user_question);
 
-    // ========================================
-    // STEP 3: Search Across ALL Previous Conversations
-    // ========================================
-    println!("=== Step 3: Searching Related Context ===");
-    println!("Using hybrid search to find relevant messages from all conversations...\n");
+        // ========================================
+        // STEP 3: Search Across ALL Previous Conversations
+        // ========================================
+        println!("=== Step 3: Searching Related Context ===");
+        println!("Using hybrid search to find relevant messages from all conversations...\n");
 
-    // Generate embedding for the question
-    println!("\n→ Generating embedding for user question...");
-    let question_embedding = generate_embedding(&client, user_question).await?;
+        // Generate embedding for the question
+        println!("\n→ Generating embedding for user question...");
+        let question_embedding = generate_embedding(&client, user_question).await?;
 
-    // Use NEW hybrid_search helper - combining semantic + keyword search
-    println!("\n→ Executing hybrid_search()...");
-    println!("  • Collection: {}", messages_collection);
-    println!("  • Query text: \"{}\"", user_question);
-    println!("  • Vector dimensions: {}", question_embedding.len());
-    println!("  • Limit: 5 results");
-    println!("  • Search type: Semantic (vector) + Keyword (text)");
-    println!("  • Server combines both scores for relevance ranking");
+        // Use NEW hybrid_search helper - combining semantic + keyword search
+        println!("\n→ Executing hybrid_search()...");
+        println!("  • Collection: {}", messages_collection);
+        println!("  • Query text: \"{}\"", user_question);
+        println!("  • Vector dimensions: {}", question_embedding.len());
+        println!("  • Limit: 5 results");
+        println!("  • Search type: Semantic (vector) + Keyword (text)");
+        println!("  • Server combines both scores for relevance ranking");
 
-    let search_start = std::time::Instant::now();
-    let related_messages = client
-        .hybrid_search(
-            messages_collection,
-            user_question,
-            question_embedding.clone(),
-            5, // Top 5 most relevant
-        )
-        .await?;
-    let search_duration = search_start.elapsed();
+        let search_start = std::time::Instant::now();
+        let related_messages = client
+            .hybrid_search(
+                messages_collection,
+                user_question,
+                question_embedding.clone(),
+                5, // Top 5 most relevant
+            )
+            .await?;
+        let search_duration = search_start.elapsed();
 
-    println!("  ✓ Search completed in {:?}", search_duration);
-    println!(
-        "\n✓ Found {} related messages across all conversations:",
-        related_messages.len()
-    );
+        println!("  ✓ Search completed in {:?}", search_duration);
+        println!(
+            "\n✓ Found {} related messages across all conversations:",
+            related_messages.len()
+        );
 
-    let mut context_messages = Vec::new();
-    for (i, msg) in related_messages.iter().enumerate() {
-        let content = msg.get_string("content").unwrap_or("N/A").to_string();
+        let mut context_messages = Vec::new();
+        for (i, msg) in related_messages.iter().enumerate() {
+            let content = msg.get_string("content").unwrap_or("N/A").to_string();
 
-        let conv_id = msg
-            .get_string("conversation_id")
-            .unwrap_or("N/A")
-            .to_string();
+            let conv_id = msg
+                .get_string("conversation_id")
+                .unwrap_or("N/A")
+                .to_string();
 
-        println!("  {}. From {}", i + 1, conv_id);
-        println!("     {}\n", content);
+            println!("  {}. From {}", i + 1, conv_id);
+            println!("     {}\n", content);
 
-        context_messages.push(content);
-    }
+            context_messages.push(content);
+        }
 
-    // ========================================
-    // STEP 4: Build Context-Aware AI Response
-    // ========================================
-    println!("=== Step 4: Generating Context-Aware Response ===");
+        // ========================================
+        // STEP 4: Build Context-Aware AI Response
+        // ========================================
+        println!("=== Step 4: Generating Context-Aware Response ===");
 
-    // Prepare context from search results
-    let context = format!(
-        "Here is relevant information from previous conversations:\n\n{}",
-        context_messages
-            .iter()
-            .enumerate()
-            .map(|(i, msg)| format!("Context {}: {}", i + 1, msg))
-            .collect::<Vec<_>>()
-            .join("\n\n")
-    );
+        // Prepare context from search results
+        let context = format!(
+            "Here is relevant information from previous conversations:\n\n{}",
+            context_messages
+                .iter()
+                .enumerate()
+                .map(|(i, msg)| format!("Context {}: {}", i + 1, msg))
+                .collect::<Vec<_>>()
+                .join("\n\n")
+        );
 
-    // Create chat session for the new question
-    let chat_session = client
-        .create_chat_session(
-            ekodb_client::CreateChatSessionRequest::new("openai")
-                .model("gpt-4o-mini")
-                .system_prompt(&format!(
-                    "You are a helpful programming assistant. Use the provided context \
+        // Create chat session for the new question
+        let chat_session = client
+            .create_chat_session(
+                ekodb_client::CreateChatSessionRequest::new("openai")
+                    .model("gpt-4o-mini")
+                    .system_prompt(&format!(
+                        "You are a helpful programming assistant. Use the provided context \
                      to give comprehensive answers that combine knowledge from multiple \
                      topics. Context:\n\n{}",
-                    context
-                )),
+                        context
+                    )),
+            )
+            .await?;
+        chat_id_for_cleanup = Some(chat_session.chat_id.clone());
+
+        // Send the question
+        let response = client
+            .chat_message(
+                &chat_session.chat_id,
+                ekodb_client::ChatMessageRequest::new(user_question),
+            )
+            .await?;
+
+        println!("✓ AI Response (with context from {} conversations):\n", 3);
+        if !response.responses.is_empty() {
+            println!("{}\n", response.responses[0]);
+        }
+
+        // ========================================
+        // STEP 5: Store New Conversation
+        // ========================================
+        println!("=== Step 5: Storing New Conversation ===");
+
+        let new_conv_id = "conv_new_question";
+        create_conversation(
+            &client,
+            conversations_collection,
+            new_conv_id,
+            "Memory-Safe Database Code",
         )
         .await?;
 
-    // Send the question
-    let response = client
-        .chat_message(
-            &chat_session.chat_id,
-            ekodb_client::ChatMessageRequest::new(user_question),
-        )
-        .await?;
-
-    println!("✓ AI Response (with context from {} conversations):\n", 3);
-    if !response.responses.is_empty() {
-        println!("{}\n", response.responses[0]);
-    }
-
-    // ========================================
-    // STEP 5: Store New Conversation
-    // ========================================
-    println!("=== Step 5: Storing New Conversation ===");
-
-    let new_conv_id = "conv_new_question";
-    create_conversation(
-        &client,
-        conversations_collection,
-        new_conv_id,
-        "Memory-Safe Database Code",
-    )
-    .await?;
-
-    // Store user question
-    store_message_with_embedding(
-        &client,
-        messages_collection,
-        new_conv_id,
-        "user",
-        user_question,
-        &["rust", "database", "performance"],
-    )
-    .await?;
-
-    // Store AI response
-    if !response.responses.is_empty() {
+        // Store user question
         store_message_with_embedding(
             &client,
             messages_collection,
             new_conv_id,
-            "assistant",
-            &response.responses[0],
+            "user",
+            user_question,
             &["rust", "database", "performance"],
         )
         .await?;
+
+        // Store AI response
+        if !response.responses.is_empty() {
+            store_message_with_embedding(
+                &client,
+                messages_collection,
+                new_conv_id,
+                "assistant",
+                &response.responses[0],
+                &["rust", "database", "performance"],
+            )
+            .await?;
+        }
+
+        println!("✓ New conversation stored and indexed for future retrieval\n");
+
+        // ========================================
+        // STEP 6: Demonstrate Cross-Conversation Search
+        // ========================================
+        println!("=== Step 6: Cross-Conversation Search ===");
+        println!("Searching for messages about 'ownership' across ALL conversations...\n");
+
+        // NEW text_search helper - simple text search without embeddings
+        println!("\n→ Executing text_search()...");
+        println!("  • Collection: {}", messages_collection);
+        println!("  • Query: \"ownership system\"");
+        println!("  • Limit: 3 results");
+        println!("  • Search method: Full-text with fuzzy matching & stemming");
+        println!("  • No vector embeddings needed - pure keyword search");
+
+        let text_search_start = std::time::Instant::now();
+        let ownership_results = client
+            .text_search(
+                messages_collection,
+                "ownership system",
+                3, // Limit to 3 results
+            )
+            .await?;
+        let text_search_duration = text_search_start.elapsed();
+
+        println!("  ✓ Text search completed in {:?}", text_search_duration);
+        println!(
+            "\n✓ Found {} messages mentioning ownership:",
+            ownership_results.len()
+        );
+        for (i, msg) in ownership_results.iter().enumerate() {
+            let content = msg.get_string("content").unwrap_or("N/A").to_string();
+
+            let conv_id = msg
+                .get_string("conversation_id")
+                .unwrap_or("N/A")
+                .to_string();
+
+            println!("  {}. From {}: {}\n", i + 1, conv_id, content);
+        }
+
+        // ========================================
+        // STEP 7: Show System Statistics
+        // ========================================
+        println!("=== System Statistics ===");
+
+        // NEW find_all helper - query all documents with a limit
+        println!("\n→ Querying database statistics...");
+        println!("  • Using find_all() helper - simplified query API");
+
+        let total_messages = client.find_all(messages_collection, 1000).await?;
+        let total_convs = client.find_all(conversations_collection, 100).await?;
+
+        println!("\n📊 Database Statistics:");
+        println!("  • Total conversations: {}", total_convs.len());
+        println!("  • Total messages stored: {}", total_messages.len());
+        println!("  • All messages indexed for vector search ✓");
+        println!("  • All messages indexed for text search ✓");
+        println!("  • All messages queryable by metadata ✓\n");
+
+        // ========================================
+        // STEP 8: Dynamic Search Configuration
+        // ========================================
+        println!("=== Step 8: Dynamic Search Configuration ===");
+        println!("Each conversation can have its own search config...\n");
+
+        println!("💡 Conversations can store custom search configurations:");
+        println!("  • Search type: hybrid, text, or vector");
+        println!("  • Relevance thresholds");
+        println!("  • Filter by tags or metadata");
+        println!("  • Collection-specific settings");
+        println!("  • Per-conversation AI behavior");
+        println!("\nThis enables context-aware search tuned to each conversation's needs!\n");
+
+        Ok(())
     }
+    .await;
 
-    println!("✓ New conversation stored and indexed for future retrieval\n");
-
-    // ========================================
-    // STEP 6: Demonstrate Cross-Conversation Search
-    // ========================================
-    println!("=== Step 6: Cross-Conversation Search ===");
-    println!("Searching for messages about 'ownership' across ALL conversations...\n");
-
-    // NEW text_search helper - simple text search without embeddings
-    println!("\n→ Executing text_search()...");
-    println!("  • Collection: {}", messages_collection);
-    println!("  • Query: \"ownership system\"");
-    println!("  • Limit: 3 results");
-    println!("  • Search method: Full-text with fuzzy matching & stemming");
-    println!("  • No vector embeddings needed - pure keyword search");
-
-    let text_search_start = std::time::Instant::now();
-    let ownership_results = client
-        .text_search(
-            messages_collection,
-            "ownership system",
-            3, // Limit to 3 results
-        )
-        .await?;
-    let text_search_duration = text_search_start.elapsed();
-
-    println!("  ✓ Text search completed in {:?}", text_search_duration);
-    println!(
-        "\n✓ Found {} messages mentioning ownership:",
-        ownership_results.len()
-    );
-    for (i, msg) in ownership_results.iter().enumerate() {
-        let content = msg.get_string("content").unwrap_or("N/A").to_string();
-
-        let conv_id = msg
-            .get_string("conversation_id")
-            .unwrap_or("N/A")
-            .to_string();
-
-        println!("  {}. From {}: {}\n", i + 1, conv_id, content);
-    }
-
-    // ========================================
-    // STEP 7: Show System Statistics
-    // ========================================
-    println!("=== System Statistics ===");
-
-    // NEW find_all helper - query all documents with a limit
-    println!("\n→ Querying database statistics...");
-    println!("  • Using find_all() helper - simplified query API");
-
-    let total_messages = client.find_all(messages_collection, 1000).await?;
-    let total_convs = client.find_all(conversations_collection, 100).await?;
-
-    println!("\n📊 Database Statistics:");
-    println!("  • Total conversations: {}", total_convs.len());
-    println!("  • Total messages stored: {}", total_messages.len());
-    println!("  • All messages indexed for vector search ✓");
-    println!("  • All messages indexed for text search ✓");
-    println!("  • All messages queryable by metadata ✓\n");
-
-    // ========================================
-    // STEP 8: Dynamic Search Configuration
-    // ========================================
-    println!("=== Step 8: Dynamic Search Configuration ===");
-    println!("Each conversation can have its own search config...\n");
-
-    println!("💡 Conversations can store custom search configurations:");
-    println!("  • Search type: hybrid, text, or vector");
-    println!("  • Relevance thresholds");
-    println!("  • Filter by tags or metadata");
-    println!("  • Collection-specific settings");
-    println!("  • Per-conversation AI behavior");
-    println!("\nThis enables context-aware search tuned to each conversation's needs!\n");
-
-    // ========================================
-    // Cleanup
-    // ========================================
     println!("\n=== Cleanup ===");
     println!("Deleting example collections...\n");
-
-    client.delete_collection(messages_collection).await?;
-    client.delete_collection(conversations_collection).await?;
+    let cleanup_result = cleanup(&client, chat_id_for_cleanup.as_deref()).await;
+    match (operation_result, cleanup_result) {
+        (Err(primary), Err(cleanup)) => {
+            eprintln!("Cleanup also failed: {cleanup}");
+            return Err(format!("{primary}; cleanup also failed: {cleanup}").into());
+        }
+        (Err(primary), Ok(())) => return Err(primary),
+        (Ok(()), Err(cleanup)) => return Err(cleanup),
+        (Ok(()), Ok(())) => {}
+    }
 
     println!("✅ All done! RAG system demonstrated successfully.\n");
     println!("✓ Using search results to enhance AI responses (RAG)");
@@ -433,7 +472,7 @@ async fn create_conversation(
     conv.insert(
         "search_config",
         json!({
-            "collections": ["rag_messages"],
+            "collections": [MESSAGES_COLLECTION],
             "search_type": "hybrid",
             "limit": 10
         }),

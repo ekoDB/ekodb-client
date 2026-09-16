@@ -18,7 +18,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func main() {
+func run() (runErr error) {
 	// Load environment
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found, using defaults")
@@ -36,15 +36,30 @@ func main() {
 
 	client, err := ekodb.NewClient(baseURL, apiKey)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
+	collection := "edge_cache_go"
+	collectionOwned := false
+	functionID := ""
+	defer func() {
+		fmt.Println("\n🧹 Cleaning up...")
+		if functionID != "" {
+			runErr = errors.Join(runErr, client.DeleteFunction(functionID))
+		}
+		if collectionOwned {
+			runErr = errors.Join(runErr, client.DeleteCollection(collection))
+		}
+		if runErr == nil {
+			fmt.Println("✓ Cleanup complete")
+		}
+	}()
 
 	fmt.Println("=== ekoDB as Edge Cache - Simple Example ===")
 	fmt.Println()
 
 	// Setup: Create cache collection with test data
 	fmt.Println("Setting up edge cache collection...")
-	_ = client.DeleteCollection("edge_cache_go")
+	_ = client.DeleteCollection(collection)
 
 	// Insert a cached entry
 	cacheRecord := map[string]interface{}{
@@ -52,10 +67,11 @@ func main() {
 		"data":      "{\"temp\": 72}",
 		"cached_at": time.Now().Format(time.RFC3339),
 	}
-	_, err = client.Insert("edge_cache_go", cacheRecord)
+	_, err = client.Insert(collection, cacheRecord)
 	if err != nil {
-		log.Fatalf("Failed to insert cache record: %v", err)
+		return fmt.Errorf("insert cache record: %w", err)
 	}
+	collectionOwned = true
 	fmt.Println("✓ Cache entry created")
 	fmt.Println()
 
@@ -69,23 +85,23 @@ func main() {
 		Version:     &version,
 		Parameters:  map[string]ekodb.ParameterDefinition{},
 		Functions: []ekodb.FunctionStageConfig{
-			ekodb.StageFindAll("edge_cache_go"),
+			ekodb.StageFindAll(collection),
 		},
 		Tags: []string{"cache", "edge"},
 	}
 
-	scriptID, err := saveOrUpdateFn(client, cacheScript)
+	functionID, err = saveOrUpdateFn(client, cacheScript)
 	if err != nil {
-		log.Fatalf("Failed to save script: %v", err)
+		return fmt.Errorf("save script: %w", err)
 	}
-	fmt.Printf("✓ Edge cache script created: %s\n\n", scriptID)
+	fmt.Printf("✓ Edge cache script created: %s\n\n", functionID)
 
 	// Test it - First call
 	fmt.Println("Call 1: Cache lookup")
 	start1 := time.Now()
 	result1, err := client.CallFunction("edge_cache_lookup_go", nil)
 	if err != nil {
-		log.Fatalf("Function call failed: %v", err)
+		return fmt.Errorf("first function call: %w", err)
 	}
 	duration1 := time.Since(start1)
 	fmt.Printf("Response time: %dms\n", duration1.Milliseconds())
@@ -96,17 +112,11 @@ func main() {
 	start2 := time.Now()
 	result2, err := client.CallFunction("edge_cache_lookup_go", nil)
 	if err != nil {
-		log.Fatalf("Function call failed: %v", err)
+		return fmt.Errorf("second function call: %w", err)
 	}
 	duration2 := time.Since(start2)
 	fmt.Printf("Response time: %dms\n", duration2.Milliseconds())
 	fmt.Printf("Found %d cached entries\n", len(result2.Records))
-
-	// Cleanup
-	fmt.Println("\n🧹 Cleaning up...")
-	_ = client.DeleteFunction(scriptID)
-	_ = client.DeleteCollection("edge_cache_go")
-	fmt.Println("✓ Cleanup complete")
 
 	fmt.Println("\n=== The Magic ===")
 	fmt.Println("- Your DATABASE is your EDGE")
@@ -117,6 +127,13 @@ func main() {
 	fmt.Println("- One service: Database + Cache + Edge Functions")
 
 	fmt.Println("\n✓ Example complete!")
+	return nil
+}
+
+func main() {
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
 }
 
 // saveOrUpdateFn saves a function, or — if the label already exists (HTTP 409)

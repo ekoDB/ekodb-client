@@ -54,11 +54,12 @@ def request(method, path, body=None):
     return response.json()
 
 
-def main():
+def run_batch():
     print("=== Batch Operations (Direct HTTP) ===\n")
 
     get_auth_token()
     print("✓ Authentication successful")
+    request("DELETE", "/api/collections/batch_users")
 
     # Example 1: Batch Insert
     print("\n=== Batch Insert ===")
@@ -79,6 +80,10 @@ def main():
     insert_result = request("POST", "/api/batch/insert/batch_users", batch_insert_data)
     inserted_count = len(insert_result.get("successful", []))
     print(f"✓ Batch inserted {inserted_count} records")
+    if inserted_count != len(records):
+        raise RuntimeError(
+            f"Expected {len(records)} successful inserts, got {inserted_count}"
+        )
 
     # Verify the inserts
     all_docs = request("POST", "/api/find/batch_users", {"limit": 100})
@@ -115,12 +120,18 @@ def main():
     update_result = request("PUT", "/api/batch/update/batch_users", batch_update_data)
     updated_count = len(update_result.get("successful", []))
     print(f"✓ Batch updated {updated_count} records")
+    if updated_count != len(ids):
+        raise RuntimeError(
+            f"Expected {len(ids)} successful updates, got {updated_count}"
+        )
 
     # Verify the updates
     updated_doc = request("GET", f"/api/find/batch_users/{ids[0]}")
-    status = updated_doc.get("status", {})
+    status = updated_doc.get("status")
     if isinstance(status, dict):
-        status = status.get("value", "active")
+        status = status.get("value")
+    if status != "active":
+        raise RuntimeError(f'Expected updated status "active", got {status!r}')
     print(f'✓ Verified: Record updated with status="{status}"')
 
     # Example 4: Batch Delete
@@ -136,15 +147,37 @@ def main():
     )
     deleted_count = len(delete_result.get("successful", []))
     print(f"✓ Batch deleted {deleted_count} records")
+    if deleted_count != len(ids):
+        raise RuntimeError(
+            f"Expected {len(ids)} successful deletes, got {deleted_count}"
+        )
 
     # Verify the deletes
     verify_delete = request("GET", f"/api/find/batch_users/{ids[0]}")
     if verify_delete is None:
         print("✓ Verified: Records successfully deleted (not found)")
     else:
-        print("✗ Warning: Record still exists after delete!")
+        raise RuntimeError("Record still exists after delete")
 
     print("\n✓ All batch operations completed successfully")
+
+
+def main():
+    primary_error = None
+    try:
+        run_batch()
+    except BaseException as error:
+        primary_error = error
+
+    try:
+        request("DELETE", "/api/collections/batch_users")
+    except Exception as cleanup_error:
+        if primary_error:
+            print(f"Cleanup also failed: {cleanup_error}")
+        else:
+            raise
+    if primary_error:
+        raise primary_error
 
 
 if __name__ == "__main__":

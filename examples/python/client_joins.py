@@ -13,33 +13,25 @@ from pathlib import Path
 from dotenv import load_dotenv
 from ekodb_client import Client
 
+COLLECTIONS = (
+    "joins_users_client_py",
+    "joins_departments_client_py",
+    "joins_orders_client_py",
+    "joins_profiles_client_py",
+)
+
 # Load environment variables
 env_path = Path(__file__).parent.parent / ".env"
 load_dotenv(env_path)
 
 
-async def main():
-    # Create client
-    base_url = os.getenv("API_BASE_URL", "http://localhost:8080")
-    api_key = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb")
-    client = Client.new(base_url, api_key)
-
+async def run_example(client):
     print("=== Join Operations Examples ===\n")
 
     # Use unique collection names
-    users_collection = "joins_users_client_py"
-    departments_collection = "joins_departments_client_py"
-    orders_collection = "joins_orders_client_py"
-    profiles_collection = "joins_profiles_client_py"
-
-    # Cleanup any existing test collections
-    try:
-        await client.delete_collection(users_collection)
-        await client.delete_collection(departments_collection)
-        await client.delete_collection(orders_collection)
-        await client.delete_collection(profiles_collection)
-    except:
-        pass  # Ignore errors if collections don't exist
+    users_collection, departments_collection, orders_collection, profiles_collection = (
+        COLLECTIONS
+    )
 
     # Setup: Create sample data
     print("Setting up sample data...")
@@ -317,12 +309,44 @@ async def main():
 
     # Cleanup
     print("=== Cleanup ===")
-    await client.delete_collection(users_collection)
-    await client.delete_collection(departments_collection)
-    await client.delete_collection(orders_collection)
-    await client.delete_collection(profiles_collection)
-    print("✅ Deleted test collections\n")
 
+
+async def cleanup(client):
+    errors = []
+    for collection in COLLECTIONS:
+        try:
+            await client.delete_collection(collection)
+        except Exception as error:  # noqa: BLE001 - attempt every owned cleanup
+            if "404" not in str(error) and "not found" not in str(error).lower():
+                errors.append(f"{collection}: {error}")
+    if errors:
+        raise RuntimeError("cleanup failed: " + "; ".join(errors))
+
+
+async def main():
+    client = Client.new(
+        os.getenv("API_BASE_URL", "http://localhost:8080"),
+        os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb"),
+    )
+    await cleanup(client)
+    primary_error = None
+    try:
+        await run_example(client)
+    except BaseException as error:  # noqa: BLE001 - cleanup must run on cancellation
+        primary_error = error
+    cleanup_error = None
+    try:
+        await cleanup(client)
+    except Exception as error:  # noqa: BLE001 - preserve the primary failure
+        cleanup_error = error
+    if primary_error is not None:
+        if cleanup_error is not None:
+            primary_error.add_note(f"Cleanup also failed: {cleanup_error}")
+            print(f"⚠️  Cleanup also failed: {cleanup_error}")
+        raise primary_error
+    if cleanup_error is not None:
+        raise cleanup_error
+    print("✅ Deleted test collections\n")
     print("✅ Join operations examples completed!")
 
 

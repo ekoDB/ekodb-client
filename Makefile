@@ -40,8 +40,12 @@ TOTAL_TEST_COUNT := $(shell awk -F': ' '/^Total:/{print $$2}'      $(TESTS_INVEN
 # The prefix is passed via the environment and matched LITERALLY (perl `\Q…\E`),
 # not as a regex, so metacharacters in a developer's path (a dotted username, a
 # `+`, etc.) can neither over-match nor break the substitution.
+# Perl autoflush keeps this middle stage from delaying live report output until
+# its block buffer fills.
 SCRUB_PREFIX := $(dir $(patsubst %/,%,$(dir $(CURDIR))))
-SCRUB_PATHS = SCRUB_PREFIX='$(SCRUB_PREFIX)' perl -pe 's/\Q$$ENV{SCRUB_PREFIX}\E//g'
+SCRUB_PATHS = SCRUB_PREFIX='$(SCRUB_PREFIX)' perl -pe 'BEGIN { $$| = 1 } s/\Q$$ENV{SCRUB_PREFIX}\E//g; s/\e\[[0-?]*[ -\/]*[@-~]//g; s/\\(?:033|u001b)\[[0-9;]*m//g; s/[ \t]+(?=\r?$$)//'
+EXAMPLE_TIMEOUT_SECONDS ?= 300
+RUN_WITH_TIMEOUT = perl '$(CURDIR)/scripts/run-with-timeout.pl' '$(EXAMPLE_TIMEOUT_SECONDS)'
 
 # Color codes for pretty output
 CYAN := \033[36m
@@ -50,7 +54,7 @@ YELLOW := \033[33m
 RED := \033[31m
 RESET := \033[0m
 
-.PHONY: all build build-release build-client build-python-client build-typescript-client build-examples check-client-examples example-parity-check test test-hooks test-ls test-ls-check test-ci test-client test-examples test-examples-direct test-examples-client test-examples-rust test-examples-python test-examples-go test-examples-typescript test-examples-javascript test-examples-transactions test-examples-scripts test-examples-scripts-crud test-examples-swr test-examples-ts-swr test-examples-py-swr test-examples-go-swr test-examples-rust-swr test-examples-kt-swr function-stage-contract-check clean check fmt fmt-rust fmt-rust-client fmt-rust-examples fmt-python fmt-go fmt-typescript fmt-md format install install-rust install-python install-typescript install-go venv python-example-deps ensure-jvm ensure-ruff ensure-cargo check-toolchains setup install-hooks deps-check deps-update deploy-client deploy-client-rust deploy-client-py deploy-client-py-simple deploy-client-go deploy-client-ts bump-version sync-versions bump-client-py docs-client
+.PHONY: all build build-release build-client build-python-client build-typescript-client build-examples check-client-examples example-parity-check test test-hooks test-example-env test-ls test-ls-check test-ci test-client test-examples test-examples-direct test-examples-client test-examples-rust test-examples-python test-examples-go test-examples-typescript test-examples-javascript test-examples-transactions test-examples-scripts test-examples-scripts-crud test-examples-swr test-examples-ts-swr test-examples-py-swr test-examples-go-swr test-examples-rust-swr test-examples-kt-swr function-stage-contract-check clean check fmt fmt-rust fmt-rust-client fmt-rust-examples fmt-python fmt-go fmt-typescript fmt-md format install install-rust install-python install-typescript install-go venv python-example-deps ensure-jvm ensure-ruff ensure-cargo check-toolchains setup install-hooks deps-check deps-update deploy-client deploy-client-rust deploy-client-py deploy-client-py-simple deploy-client-go deploy-client-ts bump-version sync-versions bump-client-py docs-client
 
 # Color codes for Worthington jet
 MAGENTA := \033[35m
@@ -265,7 +269,7 @@ test-examples-kotlin-client: build-kotlin-client ensure-jvm
 
 test-examples-kotlin: ensure-jvm
 	@echo "make test-examples-kotlin" > examples/kotlin/test-examples-kt.md
-	@$(MAKE) --no-print-directory --silent test-examples-kotlin-client 2>&1 | $(SCRUB_PATHS) | tee -a examples/kotlin/test-examples-kt.md
+	@set -o pipefail; $(MAKE) --no-print-directory --silent test-examples-kotlin-client 2>&1 | $(SCRUB_PATHS) | tee -a examples/kotlin/test-examples-kt.md
 	@echo "✅ $(GREEN)All Kotlin integration tests complete!$(RESET)"
 
 # Client library deployment targets
@@ -426,7 +430,7 @@ deploy-client-kt:
 deploy-client-kotlin: deploy-client-kt
 
 # Test targets - runs ALL unit tests across all client libraries
-test: function-stage-contract-check example-parity-check ensure-hooks test-hooks examples-ls-check build-python-client ensure-jvm
+test: function-stage-contract-check example-parity-check ensure-hooks test-hooks test-example-env examples-ls-check build-python-client ensure-jvm
 	@RUST_COUNT=0; TS_COUNT=0; PY_COUNT=0; KT_COUNT=0; \
 	echo "🦀 $(CYAN)Running Rust client tests...$(RESET)"; \
 	RUST_OUTPUT=$$($(CARGO) test -p ekodb_client 2>&1); RUST_STATUS=$$?; \
@@ -552,7 +556,8 @@ test-ci: function-stage-contract-check example-parity-check
 # Run all examples (all languages, both direct and client, including transactions)
 test-examples: examples-ls-check example-parity-check
 	@echo "make test-examples" > examples/test-examples.md
-	@$(MAKE) --no-print-directory --silent test-examples-rust test-examples-python test-examples-go test-examples-typescript test-examples-javascript test-examples-kotlin test-examples-rag test-examples-swr test-examples-fcomp test-examples-subscribe 2>&1 | $(SCRUB_PATHS) | tee -a examples/test-examples.md
+	@set -o pipefail; source scripts/load-root-env.sh && \
+		$(MAKE) --no-print-directory --silent test-examples-rust test-examples-python test-examples-go test-examples-typescript test-examples-javascript test-examples-kotlin test-examples-rag test-examples-swr test-examples-fcomp test-examples-subscribe 2>&1 | $(SCRUB_PATHS) | tee -a examples/test-examples.md
 	@echo "✅ $(GREEN)All integration tests complete!$(RESET)"
 
 # Run direct API examples (using raw HTTP/WebSocket calls, including transactions)
@@ -638,7 +643,7 @@ test-examples-functions-crud: python-example-deps
 # ============================================================================
 test-examples-rag:
 	@echo "make test-examples-rag" > test-examples-rag.md
-	@$(MAKE) --no-print-directory --silent run-rag-examples 2>&1 | $(SCRUB_PATHS) | tee -a test-examples-rag.md
+	@set -o pipefail; source scripts/load-root-env.sh && $(MAKE) --no-print-directory --silent run-rag-examples 2>&1 | $(SCRUB_PATHS) | tee -a test-examples-rag.md
 	@echo "✅ $(GREEN)All RAG examples complete! Output saved to test-examples-rag.md$(RESET)"
 
 run-rag-examples: build-python-client python-example-deps ensure-jvm
@@ -670,11 +675,11 @@ run-rag-examples: build-python-client python-example-deps ensure-jvm
 	@echo "✓ TypeScript example built"
 	@echo ""
 	@echo "$(CYAN)Building Go client library...$(RESET)"
-	@cd ../ekodb-client-go && go build -o /dev/null . 2>&1 | head -5 || true
+	@cd ../ekodb-client-go && go build -o /dev/null .
 	@echo "✓ Go client built"
 	@echo ""
 	@echo "$(CYAN)Building Go RAG example...$(RESET)"
-	@cd examples/go && go build -o rag_conversation_system rag_conversation_system.go
+	@cd examples/go && go build -o /dev/null rag_conversation_system.go
 	@echo "✓ Go example built"
 	@echo ""
 	@echo "$(CYAN)Building Kotlin client library...$(RESET)"
@@ -682,32 +687,32 @@ run-rag-examples: build-python-client python-example-deps ensure-jvm
 	@echo "✓ Kotlin client built"
 	@echo ""
 	@echo "$(CYAN)Building Kotlin RAG example...$(RESET)"
-	@cd examples/kotlin && ./gradlew build -x test --quiet
+	@cd examples/kotlin && ./gradlew build -PmainClass="io.ekodb.client.examples.RagConversationSystemKt" -x test --quiet
 	@echo "✓ Kotlin example built"
 	@echo ""
 	@echo "$(CYAN)Running Rust RAG Example...$(RESET)"
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
-	@cd examples/rust && cargo run --example rag_conversation_system --quiet
+	@cd examples/rust && $(RUN_WITH_TIMEOUT) cargo run --example rag_conversation_system --quiet
 	@echo ""
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "$(CYAN)Running Python RAG Example...$(RESET)"
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
-	@cd examples/python && $(VENV_PY) rag_conversation_system.py
+	@cd examples/python && $(RUN_WITH_TIMEOUT) $(VENV_PY) rag_conversation_system.py
 	@echo ""
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "$(CYAN)Running TypeScript RAG Example...$(RESET)"
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
-	@cd examples/typescript && node dist/rag_conversation_system.js
+	@cd examples/typescript && $(RUN_WITH_TIMEOUT) node dist/rag_conversation_system.js
 	@echo ""
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "$(CYAN)Running Go RAG Example...$(RESET)"
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
-	@cd examples/go && ./rag_conversation_system
+	@cd examples/go && $(RUN_WITH_TIMEOUT) go run rag_conversation_system.go
 	@echo ""
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "$(CYAN)Running Kotlin RAG Example...$(RESET)"
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
-	@cd examples/kotlin && export $$(grep -v '^#' .env | grep -v '^$$' | xargs) && ./gradlew run -PmainClass="io.ekodb.client.examples.RagConversationSystemKt" --quiet
+	@cd examples/kotlin && export $$(grep -v '^#' .env | grep -v '^$$' | xargs) && $(RUN_WITH_TIMEOUT) ./gradlew run -PmainClass="io.ekodb.client.examples.RagConversationSystemKt" --quiet
 	@echo ""
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "✅ $(GREEN)RAG Examples Complete!$(RESET)"
@@ -734,7 +739,7 @@ test-examples-swr:
 	@echo "🌐 $(CYAN)Testing SWR (Stale-While-Revalidate) Pattern Examples$(RESET)"
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo ""
-	@$(MAKE) test-examples-ts-swr test-examples-py-swr test-examples-go-swr test-examples-rust-swr test-examples-kt-swr
+	@source scripts/load-root-env.sh && $(MAKE) test-examples-ts-swr test-examples-py-swr test-examples-go-swr test-examples-rust-swr test-examples-kt-swr
 	@echo ""
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "✅ $(GREEN)All SWR Examples Complete!$(RESET)"
@@ -805,7 +810,7 @@ test-examples-fcomp:
 	@echo "🔗 $(CYAN)Testing Function Composition Examples$(RESET)"
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo ""
-	@$(MAKE) test-examples-rust-fcomp test-examples-ts-fcomp test-examples-py-fcomp test-examples-go-fcomp test-examples-js-fcomp
+	@source scripts/load-root-env.sh && $(MAKE) test-examples-rust-fcomp test-examples-ts-fcomp test-examples-py-fcomp test-examples-go-fcomp test-examples-js-fcomp
 	@echo ""
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "✅ $(GREEN)All Function Composition Examples Complete!$(RESET)"
@@ -960,7 +965,7 @@ test-examples-subscribe:
 	@echo "  4. Verifying MutationNotification push messages arrive"
 	@echo "  5. Unsubscribing and cleaning up"
 	@echo ""
-	@$(MAKE) test-examples-subscribe-rust test-examples-subscribe-go test-examples-subscribe-py test-examples-subscribe-ts test-examples-subscribe-kt
+	@source scripts/load-root-env.sh && $(MAKE) test-examples-subscribe-rust test-examples-subscribe-go test-examples-subscribe-py test-examples-subscribe-ts test-examples-subscribe-kt
 	@echo ""
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "✅ $(GREEN)All WebSocket Subscription Tests Passed!$(RESET)"
@@ -1009,7 +1014,7 @@ test-examples-subscribe-kt: ensure-jvm
 # ============================================================================
 test-examples-rust:
 	@echo "make test-examples-rust" > examples/rust/test-examples-rs.md
-	@$(MAKE) --no-print-directory --silent test-examples-rust-direct test-examples-rust-client 2>&1 | $(SCRUB_PATHS) | tee -a examples/rust/test-examples-rs.md
+	@set -o pipefail; $(MAKE) --no-print-directory --silent test-examples-rust-direct test-examples-rust-client 2>&1 | $(SCRUB_PATHS) | tee -a examples/rust/test-examples-rs.md
 	@echo "✅ $(GREEN)All Rust integration tests complete!$(RESET)"
 
 test-examples-rs: test-examples-rust
@@ -1018,7 +1023,10 @@ test-examples-rs-client: test-examples-rust-client
 
 test-examples-rust-direct:
 	@echo "🧪 $(CYAN)Running Rust examples (direct HTTP/WebSocket)...$(RESET)"
-	@cd examples/rust && cargo run --example simple_crud && cargo run --example simple_websocket && cargo run --example batch_operations && cargo run --example kv_operations && cargo run --example collection_management && cargo run --example document_ttl && cargo run --example websocket_ttl && cargo run --example http_functions && cargo run --example transactions
+	@source scripts/load-root-env.sh && cd examples/rust && \
+		for example in simple_crud simple_websocket batch_operations kv_operations collection_management document_ttl websocket_ttl http_functions transactions; do \
+			$(RUN_WITH_TIMEOUT) cargo run --example "$$example" || exit $$?; \
+		done
 	@echo "✅ $(GREEN)Rust direct examples complete!$(RESET)"
 
 # ============================================================================
@@ -1026,7 +1034,7 @@ test-examples-rust-direct:
 # ============================================================================
 test-examples-python:
 	@echo "make test-examples-python" > examples/python/text-examples-py.md
-	@$(MAKE) --no-print-directory --silent test-examples-python-direct test-examples-python-client 2>&1 | $(SCRUB_PATHS) | tee -a examples/python/text-examples-py.md
+	@set -o pipefail; $(MAKE) --no-print-directory --silent test-examples-python-direct test-examples-python-client 2>&1 | $(SCRUB_PATHS) | tee -a examples/python/text-examples-py.md
 	@echo "✅ $(GREEN)All Python integration tests complete!$(RESET)"
 
 test-examples-py: test-examples-python
@@ -1035,7 +1043,7 @@ test-examples-py-client: test-examples-python-client
 
 test-examples-python-direct: python-example-deps
 	@echo "🧪 $(CYAN)Running Python examples (direct HTTP/WebSocket)...$(RESET)"
-	@cd examples/python && $(VENV_PY) test_runner.py
+	@source scripts/load-root-env.sh && cd examples/python && $(VENV_PY) test_runner.py
 	@echo "✅ $(GREEN)Python direct examples complete!$(RESET)"
 
 # Create the project-local .venv if missing (portable across macOS and Ubuntu)
@@ -1137,12 +1145,12 @@ build-python-client: venv ensure-cargo
 # ============================================================================
 test-examples-go:
 	@echo "make test-examples-go" > examples/go/test-examples-go.md
-	@$(MAKE) --no-print-directory --silent test-examples-go-direct test-examples-go-client 2>&1 | $(SCRUB_PATHS) | tee -a examples/go/test-examples-go.md
+	@set -o pipefail; $(MAKE) --no-print-directory --silent test-examples-go-direct test-examples-go-client 2>&1 | $(SCRUB_PATHS) | tee -a examples/go/test-examples-go.md
 	@echo "✅ $(GREEN)All Go integration tests complete!$(RESET)"
 
 test-examples-go-direct:
 	@echo "🧪 $(CYAN)Running Go examples (direct HTTP/WebSocket)...$(RESET)"
-	@cd examples/go && go run test_runner.go
+	@source scripts/load-root-env.sh && cd examples/go && go run test_runner.go
 	@echo "✅ $(GREEN)Go direct examples complete!$(RESET)"
 
 # ============================================================================
@@ -1150,7 +1158,7 @@ test-examples-go-direct:
 # ============================================================================
 test-examples-typescript:
 	@echo "make test-examples-typescript" > examples/typescript/test-examples-ts.md
-	@$(MAKE) --no-print-directory --silent test-examples-typescript-client 2>&1 | $(SCRUB_PATHS) | tee -a examples/typescript/test-examples-ts.md
+	@set -o pipefail; $(MAKE) --no-print-directory --silent test-examples-typescript-client 2>&1 | $(SCRUB_PATHS) | tee -a examples/typescript/test-examples-ts.md
 	@echo "✅ $(GREEN)All TypeScript integration tests complete!$(RESET)"
 
 test-examples-ts: test-examples-typescript
@@ -1169,7 +1177,7 @@ build-javascript-client: build-typescript-client
 # ============================================================================
 test-examples-javascript:
 	@echo "make test-examples-javascript" > examples/javascript/test-examples-js.md
-	@$(MAKE) --no-print-directory --silent test-examples-javascript-direct test-examples-javascript-client 2>&1 | $(SCRUB_PATHS) | tee -a examples/javascript/test-examples-js.md
+	@set -o pipefail; $(MAKE) --no-print-directory --silent test-examples-javascript-direct test-examples-javascript-client 2>&1 | $(SCRUB_PATHS) | tee -a examples/javascript/test-examples-js.md
 	@echo "✅ $(GREEN)All JavaScript integration tests complete!$(RESET)"
 
 test-examples-js: test-examples-javascript
@@ -1178,7 +1186,7 @@ test-examples-js-client: test-examples-javascript-client
 
 test-examples-javascript-direct:
 	@echo "🧪 $(CYAN)Running JavaScript examples (direct HTTP/WebSocket)...$(RESET)"
-	@cd examples/javascript && npm install && node test-runner.js
+	@source scripts/load-root-env.sh && cd examples/javascript && npm install && node test-runner.js
 	@echo "✅ $(GREEN)JavaScript direct examples complete!$(RESET)"
 
 # ============================================================================
@@ -1632,6 +1640,10 @@ ensure-hooks:
 
 test-hooks:
 	@scripts/test-ensure-hooks.sh
+
+test-example-env:
+	@bash scripts/test-load-root-env.sh
+	@bash scripts/test-scrub-paths.sh
 
 examples-ls:
 	@echo "📋 $(CYAN)Generating examples inventory...$(RESET)"

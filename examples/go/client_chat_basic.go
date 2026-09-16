@@ -5,16 +5,18 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	ekodb "github.com/ekoDB/ekodb-client-go"
 	"github.com/joho/godotenv"
 )
 
-func main() {
-	fmt.Println("=== ekoDB Chat Basic Example ===\n")
+func run() (runErr error) {
+	fmt.Print("=== ekoDB Chat Basic Example ===\n\n")
 
 	// Load environment variables
 	_ = godotenv.Load()
@@ -26,15 +28,23 @@ func main() {
 	}
 	apiKey := os.Getenv("API_BASE_KEY")
 	if apiKey == "" {
-		log.Fatal("API_BASE_KEY environment variable is required")
+		return fmt.Errorf("API_BASE_KEY environment variable is required")
 	}
 
 	client, err := ekodb.NewClient(baseURL, apiKey)
 	if err != nil {
-		log.Fatalf("Failed to create client: %v", err)
+		return fmt.Errorf("create client: %w", err)
 	}
 
 	collection := "client_chat_basic_go"
+	collectionDeleted := false
+	defer func() {
+		if !collectionDeleted {
+			if err := client.DeleteCollection(collection); err != nil {
+				runErr = errors.Join(runErr, fmt.Errorf("delete collection: %w", err))
+			}
+		}
+	}()
 
 	// Step 1: Insert sample data
 	fmt.Println("=== Inserting Sample Data ===")
@@ -44,7 +54,7 @@ func main() {
 		"price":       99,
 	})
 	if err != nil {
-		log.Fatalf("Failed to insert: %v", err)
+		return fmt.Errorf("insert product: %w", err)
 	}
 
 	_, err = client.Insert(collection, ekodb.Record{
@@ -53,7 +63,7 @@ func main() {
 		"price":       299,
 	})
 	if err != nil {
-		log.Fatalf("Failed to insert: %v", err)
+		return fmt.Errorf("insert pro product: %w", err)
 	}
 
 	_, err = client.Insert(collection, ekodb.Record{
@@ -62,9 +72,9 @@ func main() {
 		"price":       499,
 	})
 	if err != nil {
-		log.Fatalf("Failed to insert: %v", err)
+		return fmt.Errorf("insert cloud product: %w", err)
 	}
-	fmt.Println("✓ Inserted 3 sample documents\n")
+	fmt.Print("✓ Inserted 3 sample documents\n\n")
 
 	// Step 2: Create a chat session
 	fmt.Println("=== Creating Chat Session ===")
@@ -83,9 +93,17 @@ func main() {
 		SystemPrompt: &systemPrompt,
 	})
 	if err != nil {
-		log.Fatalf("Failed to create session: %v", err)
+		return fmt.Errorf("create session: %w", err)
 	}
 	chatID := session.ChatID
+	chatDeleted := false
+	defer func() {
+		if !chatDeleted {
+			if err := client.DeleteChatSession(chatID); err != nil {
+				runErr = errors.Join(runErr, fmt.Errorf("delete chat session: %w", err))
+			}
+		}
+	}()
 	fmt.Printf("✓ Created session: %s\n\n", chatID)
 
 	// Step 3: Send a chat message
@@ -94,7 +112,10 @@ func main() {
 		Message: "What products are available and what are their prices?",
 	})
 	if err != nil {
-		log.Fatalf("Chat failed: %v", err)
+		return fmt.Errorf("chat: %w", err)
+	}
+	if response.MessageID == "" || len(response.Responses) == 0 || strings.TrimSpace(response.Responses[0]) == "" {
+		return fmt.Errorf("chat returned no usable response: message_id=%q responses=%d", response.MessageID, len(response.Responses))
 	}
 
 	fmt.Printf("Message ID: %s\n", response.MessageID)
@@ -115,12 +136,25 @@ func main() {
 		fmt.Printf("Total tokens: %d\n", response.TokenUsage.TotalTokens)
 	}
 
-	// Cleanup: Delete the collection (chat session is managed by server)
+	// Cleanup
 	fmt.Println("\n=== Cleanup ===")
-	if err := client.DeleteCollection(collection); err != nil {
-		log.Fatalf("Failed to delete collection: %v", err)
+	if err := client.DeleteChatSession(chatID); err != nil {
+		return fmt.Errorf("delete chat session: %w", err)
 	}
+	chatDeleted = true
+	fmt.Println("✓ Deleted session")
+	if err := client.DeleteCollection(collection); err != nil {
+		return fmt.Errorf("delete collection: %w", err)
+	}
+	collectionDeleted = true
 	fmt.Println("✓ Deleted collection")
 
 	fmt.Println("\n✓ Chat completed successfully")
+	return nil
+}
+
+func main() {
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
 }

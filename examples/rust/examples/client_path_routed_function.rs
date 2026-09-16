@@ -20,6 +20,18 @@ use ekodb_client::{Client, Function, ParameterDefinition, UserFunction};
 use std::collections::HashMap;
 use std::env;
 
+const FUNCTION_LABELS: [&str; 4] = [
+    "rs_route_admin",
+    "rs_route_user_by_id",
+    "rs_route_user_posts",
+    "rs_route_org_create_member",
+];
+
+fn is_missing_function(error: &ekodb_client::Error) -> bool {
+    matches!(error, ekodb_client::Error::Api { code: 404, .. })
+        || error.to_string().to_ascii_lowercase().contains("not found")
+}
+
 /// Save a user function idempotently: if the label already exists (HTTP 409),
 /// update the existing definition instead.
 async fn save_or_update_user(
@@ -51,98 +63,127 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .api_key(&api_key)
         .build()?;
 
-    println!("✓ Client created");
+    cleanup_functions(&client).await?;
 
-    // Most-specific literal — `/users/admin` answers admin lookups
-    // separately from the `:id` route. Specificity score 0 beats the
-    // `:id` route's score of 1.
-    let admin = UserFunction::new("rs_route_admin", "Get admin user")
-        .with_http_route("GET", "/users/admin")
-        .with_function(Function::Return {
-            fields: HashMap::from([(
-                "role".to_string(),
-                serde_json::Value::String("admin".to_string()),
-            )]),
-            status_code: Some(200),
-        });
-    save_or_update_user(&client, admin).await?;
-    println!("✓ rs_route_admin → GET /api/route/users/admin");
+    let operation_result: Result<(), Box<dyn std::error::Error>> = async {
+        println!("✓ Client created");
 
-    // Single-placeholder route — `:id` lands in params.id at call time.
-    let by_id = UserFunction::new("rs_route_user_by_id", "Get user by id")
-        .with_http_route("GET", "/users/:id")
-        .with_parameter(ParameterDefinition::new("id").required())
-        .with_function(Function::Return {
-            fields: HashMap::from([(
-                "requested_id".to_string(),
-                serde_json::Value::String("{{id}}".to_string()),
-            )]),
-            status_code: Some(200),
-        });
-    save_or_update_user(&client, by_id).await?;
-    println!("✓ rs_route_user_by_id → GET /api/route/users/:id");
+        // Most-specific literal — `/users/admin` answers admin lookups
+        // separately from the `:id` route. Specificity score 0 beats the
+        // `:id` route's score of 1.
+        let admin = UserFunction::new("rs_route_admin", "Get admin user")
+            .with_http_route("GET", "/users/admin")
+            .with_function(Function::Return {
+                fields: HashMap::from([(
+                    "role".to_string(),
+                    serde_json::Value::String("admin".to_string()),
+                )]),
+                status_code: Some(200),
+            });
+        save_or_update_user(&client, admin).await?;
+        println!("✓ rs_route_admin → GET /api/route/users/admin");
 
-    // Two-placeholder nested route — both segments extracted.
-    let posts = UserFunction::new("rs_route_user_posts", "List user's posts")
-        .with_http_route("GET", "/users/:id/posts/:post_id")
-        .with_parameter(ParameterDefinition::new("id").required())
-        .with_parameter(ParameterDefinition::new("post_id").required())
-        .with_function(Function::Return {
-            fields: HashMap::from([
-                (
-                    "user_id".to_string(),
+        // Single-placeholder route — `:id` lands in params.id at call time.
+        let by_id = UserFunction::new("rs_route_user_by_id", "Get user by id")
+            .with_http_route("GET", "/users/:id")
+            .with_parameter(ParameterDefinition::new("id").required())
+            .with_function(Function::Return {
+                fields: HashMap::from([(
+                    "requested_id".to_string(),
                     serde_json::Value::String("{{id}}".to_string()),
-                ),
-                (
-                    "post_id".to_string(),
-                    serde_json::Value::String("{{post_id}}".to_string()),
-                ),
-            ]),
-            status_code: Some(200),
-        });
-    save_or_update_user(&client, posts).await?;
-    println!("✓ rs_route_user_posts → GET /api/route/users/:id/posts/:post_id");
+                )]),
+                status_code: Some(200),
+            });
+        save_or_update_user(&client, by_id).await?;
+        println!("✓ rs_route_user_by_id → GET /api/route/users/:id");
 
-    // POST route demonstrating the body-over-path-params merge.
-    // Path provides `:org`; the body can additionally provide
-    // arbitrary fields (a `name`, etc.) — body keys win on collision.
-    let create = UserFunction::new("rs_route_org_create_member", "Add member to org")
-        .with_http_route("POST", "/orgs/:org/members")
-        .with_parameter(ParameterDefinition::new("org").required())
-        .with_parameter(ParameterDefinition::new("name").required())
-        .with_function(Function::Return {
-            fields: HashMap::from([
-                (
-                    "org".to_string(),
-                    serde_json::Value::String("{{org}}".to_string()),
-                ),
-                (
-                    "name".to_string(),
-                    serde_json::Value::String("{{name}}".to_string()),
-                ),
-                ("created".to_string(), serde_json::Value::Bool(true)),
-            ]),
-            status_code: Some(201),
-        });
-    save_or_update_user(&client, create).await?;
-    println!("✓ rs_route_org_create_member → POST /api/route/orgs/:org/members");
+        // Two-placeholder nested route — both segments extracted.
+        let posts = UserFunction::new("rs_route_user_posts", "List user's posts")
+            .with_http_route("GET", "/users/:id/posts/:post_id")
+            .with_parameter(ParameterDefinition::new("id").required())
+            .with_parameter(ParameterDefinition::new("post_id").required())
+            .with_function(Function::Return {
+                fields: HashMap::from([
+                    (
+                        "user_id".to_string(),
+                        serde_json::Value::String("{{id}}".to_string()),
+                    ),
+                    (
+                        "post_id".to_string(),
+                        serde_json::Value::String("{{post_id}}".to_string()),
+                    ),
+                ]),
+                status_code: Some(200),
+            });
+        save_or_update_user(&client, posts).await?;
+        println!("✓ rs_route_user_posts → GET /api/route/users/:id/posts/:post_id");
 
-    println!("\nTry them with curl:");
-    println!("  curl http://localhost:8080/api/route/users/admin");
-    println!("  curl http://localhost:8080/api/route/users/42");
-    println!("  curl http://localhost:8080/api/route/users/42/posts/7");
-    println!("  curl -X POST http://localhost:8080/api/route/orgs/acme/members \\");
-    println!("       -H 'Content-Type: application/json' -d '{{\"name\":\"alice\"}}'");
+        // POST route demonstrating the body-over-path-params merge.
+        // Path provides `:org`; the body can additionally provide
+        // arbitrary fields (a `name`, etc.) — body keys win on collision.
+        let create = UserFunction::new("rs_route_org_create_member", "Add member to org")
+            .with_http_route("POST", "/orgs/:org/members")
+            .with_parameter(ParameterDefinition::new("org").required())
+            .with_parameter(ParameterDefinition::new("name").required())
+            .with_function(Function::Return {
+                fields: HashMap::from([
+                    (
+                        "org".to_string(),
+                        serde_json::Value::String("{{org}}".to_string()),
+                    ),
+                    (
+                        "name".to_string(),
+                        serde_json::Value::String("{{name}}".to_string()),
+                    ),
+                    ("created".to_string(), serde_json::Value::Bool(true)),
+                ]),
+                status_code: Some(201),
+            });
+        save_or_update_user(&client, create).await?;
+        println!("✓ rs_route_org_create_member → POST /api/route/orgs/:org/members");
 
-    for label in [
-        "rs_route_admin",
-        "rs_route_user_by_id",
-        "rs_route_user_posts",
-        "rs_route_org_create_member",
-    ] {
-        let _ = client.delete_user_function(label).await;
+        println!("\nTry them with curl:");
+        println!("  curl http://localhost:8080/api/route/users/admin");
+        println!("  curl http://localhost:8080/api/route/users/42");
+        println!("  curl http://localhost:8080/api/route/users/42/posts/7");
+        println!("  curl -X POST http://localhost:8080/api/route/orgs/acme/members \\");
+        println!("       -H 'Content-Type: application/json' -d '{{\"name\":\"alice\"}}'");
+
+        Ok(())
     }
-    println!("\n✓ Cleaned up demo functions");
+    .await;
 
-    Ok(())
+    let cleanup_result = cleanup_functions(&client).await;
+    match (operation_result, cleanup_result) {
+        (Ok(()), Ok(())) => {
+            println!("\n✓ Cleaned up demo functions");
+            Ok(())
+        }
+        (Err(operation_error), Ok(())) => Err(operation_error),
+        (Ok(()), Err(cleanup_error)) => Err(cleanup_error),
+        (Err(operation_error), Err(cleanup_error)) => Err(std::io::Error::other(format!(
+            "{operation_error}; cleanup also failed: {cleanup_error}"
+        ))
+        .into()),
+    }
+}
+
+async fn cleanup_functions(client: &Client) -> Result<(), Box<dyn std::error::Error>> {
+    let mut errors = Vec::new();
+    for label in FUNCTION_LABELS {
+        match client.delete_user_function(label).await {
+            Ok(()) => {}
+            Err(error) if is_missing_function(&error) => {}
+            Err(error) => errors.push(format!("{label}: {error}")),
+        }
+    }
+    if errors.is_empty() {
+        Ok(())
+    } else {
+        Err(std::io::Error::other(format!(
+            "failed to clean owned functions: {}",
+            errors.join("; ")
+        ))
+        .into())
+    }
 }

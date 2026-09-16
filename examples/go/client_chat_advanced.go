@@ -10,16 +10,25 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	ekodb "github.com/ekoDB/ekodb-client-go"
 	"github.com/joho/godotenv"
 )
 
 func main() {
-	fmt.Println("=== ekoDB Advanced Chat Features Example ===\n")
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("✓ All advanced chat features demonstrated successfully!")
+}
+
+func run() (runErr error) {
+	fmt.Print("=== ekoDB Advanced Chat Features Example ===\n\n")
 
 	// Load environment variables
 	_ = godotenv.Load()
@@ -31,27 +40,48 @@ func main() {
 	}
 	apiKey := os.Getenv("API_BASE_KEY")
 	if apiKey == "" {
-		log.Fatal("API_BASE_KEY environment variable is required")
+		return errors.New("API_BASE_KEY environment variable is required")
 	}
 
 	client, err := ekodb.NewClient(baseURL, apiKey)
 	if err != nil {
-		log.Fatalf("Failed to create client: %v", err)
+		return fmt.Errorf("create client: %w", err)
 	}
 
 	collection := "client_chat_advanced_go"
+	chatIDs := []string{}
+	collectionCreated := false
+	defer func() {
+		fmt.Println("=== Cleanup ===")
+		for i := len(chatIDs) - 1; i >= 0; i-- {
+			chatID := chatIDs[i]
+			if cleanupErr := client.DeleteChatSession(chatID); cleanupErr != nil {
+				runErr = errors.Join(runErr, fmt.Errorf("delete chat session %s: %w", chatID, cleanupErr))
+			} else {
+				fmt.Printf("✓ Deleted chat session: %s\n", chatID)
+			}
+		}
+		if collectionCreated {
+			if cleanupErr := client.DeleteCollection(collection); cleanupErr != nil {
+				runErr = errors.Join(runErr, fmt.Errorf("delete collection %s: %w", collection, cleanupErr))
+			} else {
+				fmt.Print("✓ Deleted collection\n\n")
+			}
+		}
+	}()
 
 	// Insert sample data
 	fmt.Println("=== Inserting Sample Data ===")
+	collectionCreated = true
 	_, err = client.Insert(collection, ekodb.Record{
 		"name":        "ekoDB",
 		"description": "High-performance database product",
 		"price":       99,
 	})
 	if err != nil {
-		log.Fatalf("Failed to insert: %v", err)
+		return fmt.Errorf("insert sample product: %w", err)
 	}
-	fmt.Println("✓ Inserted sample product\n")
+	fmt.Print("✓ Inserted sample product\n\n")
 
 	// Create a chat session
 	fmt.Println("=== Creating Chat Session ===")
@@ -70,9 +100,10 @@ func main() {
 		SystemPrompt: &systemPrompt,
 	})
 	if err != nil {
-		log.Fatalf("Failed to create session: %v", err)
+		return fmt.Errorf("create chat session: %w", err)
 	}
 	chatID := session.ChatID
+	chatIDs = append(chatIDs, chatID)
 	fmt.Printf("✓ Created session: %s\n\n", chatID)
 
 	// Send initial message
@@ -81,21 +112,22 @@ func main() {
 		Message: "What products are available?",
 	})
 	if err != nil {
-		log.Fatalf("Failed to send message: %v", err)
+		return fmt.Errorf("send initial message: %w", err)
+	}
+	if msg1.MessageID == "" || len(msg1.Responses) == 0 || strings.TrimSpace(msg1.Responses[0]) == "" {
+		return errors.New("initial chat message returned no usable response")
 	}
 	fmt.Println("✓ Message sent")
-	if len(msg1.Responses) > 0 {
-		fmt.Printf("  Response: %s\n\n", msg1.Responses[0])
-	}
+	fmt.Printf("  Response: %s\n\n", msg1.Responses[0])
 
 	// Send a second message
 	_, err = client.ChatMessage(chatID, ekodb.ChatMessageRequest{
 		Message: "What is the price of ekoDB?",
 	})
 	if err != nil {
-		log.Fatalf("Failed to send second message: %v", err)
+		return fmt.Errorf("send second message: %w", err)
 	}
-	fmt.Println("✓ Second message sent\n")
+	fmt.Print("✓ Second message sent\n\n")
 
 	// Get messages to find user and assistant message IDs
 	messages, err := client.GetChatSessionMessages(chatID, &ekodb.GetMessagesQuery{
@@ -103,7 +135,7 @@ func main() {
 		Sort:  ekodb.StringPtr("desc"),
 	})
 	if err != nil {
-		log.Fatalf("Failed to get messages: %v", err)
+		return fmt.Errorf("get messages: %w", err)
 	}
 
 	var assistantMessageID string
@@ -135,45 +167,46 @@ func main() {
 		}
 	}
 	if assistantMessageID == "" {
-		log.Fatal("Could not find assistant message")
+		return errors.New("could not find assistant message")
 	}
 	if userMessageID == "" {
-		log.Fatal("Could not find user message")
+		return errors.New("could not find user message")
 	}
 
 	// Feature 1: Regenerate Message
 	fmt.Println("=== Feature 1: Regenerate AI Response ===")
 	regenerated, err := client.RegenerateChatMessage(chatID, assistantMessageID)
 	if err != nil {
-		log.Fatalf("Failed to regenerate message: %v", err)
+		return fmt.Errorf("regenerate message: %w", err)
+	}
+	if regenerated.MessageID == "" || len(regenerated.Responses) == 0 || strings.TrimSpace(regenerated.Responses[0]) == "" {
+		return errors.New("regenerated chat message returned no usable response")
 	}
 	fmt.Println("✓ Message regenerated")
-	if len(regenerated.Responses) > 0 {
-		fmt.Printf("  New response: %s\n\n", regenerated.Responses[0])
-	}
+	fmt.Printf("  New response: %s\n\n", regenerated.Responses[0])
 
 	// Feature 2: Update Message Content
 	fmt.Println("=== Feature 2: Edit Message ===")
 	err = client.UpdateChatMessage(chatID, userMessageID, "What is the updated price of ekoDB?")
 	if err != nil {
-		log.Fatalf("Failed to update message: %v", err)
+		return fmt.Errorf("update message: %w", err)
 	}
-	fmt.Println("✓ Message content updated\n")
+	fmt.Print("✓ Message content updated\n\n")
 
 	// Feature 3: Toggle Forgotten Status
 	fmt.Println("=== Feature 3: Mark Message as Forgotten ===")
 	err = client.ToggleForgottenMessage(chatID, userMessageID, true)
 	if err != nil {
-		log.Fatalf("Failed to toggle forgotten: %v", err)
+		return fmt.Errorf("mark message forgotten: %w", err)
 	}
-	fmt.Println("✓ Message marked as forgotten (excluded from LLM context)\n")
+	fmt.Print("✓ Message marked as forgotten (excluded from LLM context)\n\n")
 
 	// Unmark as forgotten
 	err = client.ToggleForgottenMessage(chatID, userMessageID, false)
 	if err != nil {
-		log.Fatalf("Failed to toggle forgotten: %v", err)
+		return fmt.Errorf("unmark message forgotten: %w", err)
 	}
-	fmt.Println("✓ Message unmarked as forgotten\n")
+	fmt.Print("✓ Message unmarked as forgotten\n\n")
 
 	// Feature 4: Session Merging
 	fmt.Println("=== Feature 4: Merge Chat Sessions ===")
@@ -182,7 +215,7 @@ func main() {
 	session2, err := client.CreateChatSession(ekodb.CreateChatSessionRequest{
 		Collections: []ekodb.CollectionConfig{
 			{
-				CollectionName: "products",
+				CollectionName: collection,
 				Fields:         []interface{}{}, // Empty = search all fields
 			},
 		},
@@ -190,9 +223,10 @@ func main() {
 		LLMModel:    &llmModel,
 	})
 	if err != nil {
-		log.Fatalf("Failed to create second session: %v", err)
+		return fmt.Errorf("create second session: %w", err)
 	}
 	chatID2 := session2.ChatID
+	chatIDs = append(chatIDs, chatID2)
 	fmt.Printf("✓ Created second session: %s\n", chatID2)
 
 	// Send a message in the second session
@@ -200,7 +234,7 @@ func main() {
 		Message: "Tell me more about the features",
 	})
 	if err != nil {
-		log.Fatalf("Failed to send message: %v", err)
+		return fmt.Errorf("send second-session message: %w", err)
 	}
 	fmt.Println("✓ Sent message in second session")
 
@@ -211,7 +245,10 @@ func main() {
 		MergeStrategy: ekodb.MergeStrategyChronological,
 	})
 	if err != nil {
-		log.Fatalf("Failed to merge sessions: %v", err)
+		return fmt.Errorf("merge sessions: %w", err)
+	}
+	if mergeResult.MessageCount == 0 {
+		return errors.New("merged session reported zero messages")
 	}
 	fmt.Println("✓ Sessions merged successfully")
 	fmt.Printf("  Total messages in merged session: %d\n\n", mergeResult.MessageCount)
@@ -220,29 +257,16 @@ func main() {
 	fmt.Println("=== Feature 5: Delete Message ===")
 	err = client.DeleteChatMessage(chatID, userMessageID)
 	if err != nil {
-		log.Fatalf("Failed to delete message: %v", err)
+		return fmt.Errorf("delete message: %w", err)
 	}
-	fmt.Println("✓ Message deleted\n")
+	fmt.Print("✓ Message deleted\n\n")
 
 	// Verify message count after deletion
 	sessionDetails, err := client.GetChatSession(chatID)
 	if err != nil {
-		log.Fatalf("Failed to get session: %v", err)
+		return fmt.Errorf("get merged session: %w", err)
 	}
 	fmt.Printf("✓ Messages remaining: %d\n\n", sessionDetails.MessageCount)
 
-	// Cleanup
-	fmt.Println("=== Cleanup ===")
-	err = client.DeleteChatSession(chatID)
-	if err != nil {
-		log.Fatalf("Failed to delete session: %v", err)
-	}
-	fmt.Println("✓ Deleted session")
-
-	if err := client.DeleteCollection(collection); err != nil {
-		log.Fatalf("Failed to delete collection: %v", err)
-	}
-	fmt.Println("✓ Deleted collection\n")
-
-	fmt.Println("✓ All advanced chat features demonstrated successfully!")
+	return nil
 }

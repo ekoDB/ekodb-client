@@ -31,138 +31,169 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .build()?;
 
     let collection = "client_chat_sessions_rust";
+    let mut chat_id_for_cleanup = None;
+    let mut branch_id_for_cleanup = None;
 
-    // Step 1: Insert sample data
-    println!("=== Inserting Sample Data ===");
-    let mut doc = Record::new();
-    doc.insert("product", "ekoDB");
-    doc.insert(
-        "description",
-        "A high-performance database product with AI capabilities",
-    );
-    doc.insert("price", 99);
-    client.insert(collection, doc, None).await?;
-    println!("✓ Inserted sample product\n");
+    let operation_result: Result<(), Box<dyn Error>> = async {
+        // Step 1: Insert sample data
+        println!("=== Inserting Sample Data ===");
+        let mut doc = Record::new();
+        doc.insert("product", "ekoDB");
+        doc.insert(
+            "description",
+            "A high-performance database product with AI capabilities",
+        );
+        doc.insert("price", 99);
+        client.insert(collection, doc, None).await?;
+        println!("✓ Inserted sample product\n");
 
-    // Step 2: Create a chat session
-    println!("=== Creating Chat Session ===");
-    let session_request = CreateChatSessionRequest::new("openai")
-        .model("gpt-4o-mini")
-        .system_prompt("You are a helpful assistant for product information.")
-        .collection(CollectionConfig {
-            collection_name: collection.to_string(),
-            fields: vec![],
-            search_options: None,
-        });
+        // Step 2: Create a chat session
+        println!("=== Creating Chat Session ===");
+        let session_request = CreateChatSessionRequest::new("openai")
+            .model("gpt-4o-mini")
+            .system_prompt("You are a helpful assistant for product information.")
+            .collection(CollectionConfig {
+                collection_name: collection.to_string(),
+                fields: vec![],
+                search_options: None,
+            });
 
-    let session = client.create_chat_session(session_request).await?;
-    let chat_id = session.chat_id.clone();
+        let session = client.create_chat_session(session_request).await?;
+        let chat_id = session.chat_id.clone();
+        chat_id_for_cleanup = Some(chat_id.clone());
 
-    println!("✓ Created session: {}", chat_id);
+        println!("✓ Created session: {}", chat_id);
 
-    // Step 3: Send messages in the session
-    println!("=== Sending Messages ===");
+        // Step 3: Send messages in the session
+        println!("=== Sending Messages ===");
 
-    let msg1 = client
-        .chat_message(
-            &chat_id,
-            ChatMessageRequest::new("What products are available?"),
-        )
-        .await?;
-    println!("✓ Message 1 sent");
-    println!(
-        "  Response: {}\n",
-        msg1.responses.first().unwrap_or(&String::new())
-    );
+        let msg1 = client
+            .chat_message(
+                &chat_id,
+                ChatMessageRequest::new("What products are available?"),
+            )
+            .await?;
+        println!("✓ Message 1 sent");
+        println!(
+            "  Response: {}\n",
+            msg1.responses.first().unwrap_or(&String::new())
+        );
 
-    let msg2 = client
-        .chat_message(&chat_id, ChatMessageRequest::new("What is the price?"))
-        .await?;
-    println!("✓ Message 2 sent");
-    println!(
-        "  Response: {}\n",
-        msg2.responses.first().unwrap_or(&String::new())
-    );
+        let msg2 = client
+            .chat_message(&chat_id, ChatMessageRequest::new("What is the price?"))
+            .await?;
+        println!("✓ Message 2 sent");
+        println!(
+            "  Response: {}\n",
+            msg2.responses.first().unwrap_or(&String::new())
+        );
 
-    // Step 4: Get session messages
-    println!("=== Retrieving Session Messages ===");
-    let messages_response = client
-        .get_chat_session_messages(&chat_id, GetMessagesQuery::new().limit(10).sort("asc"))
-        .await?;
-    println!("✓ Retrieved {} messages", messages_response.messages.len());
-    for (i, msg) in messages_response.messages.iter().enumerate() {
-        if let Some(ekodb_client::FieldType::String(role)) = msg.get("role") {
-            if let Some(ekodb_client::FieldType::String(content)) = msg.get("content") {
-                println!(
-                    "  Message {}: [{}] {}",
-                    i + 1,
-                    role,
-                    if content.len() > 60 {
-                        format!("{}...", &content[..60])
-                    } else {
-                        content.to_string()
-                    }
-                );
+        // Step 4: Get session messages
+        println!("=== Retrieving Session Messages ===");
+        let messages_response = client
+            .get_chat_session_messages(&chat_id, GetMessagesQuery::new().limit(10).sort("asc"))
+            .await?;
+        println!("✓ Retrieved {} messages", messages_response.messages.len());
+        for (i, msg) in messages_response.messages.iter().enumerate() {
+            if let Some(ekodb_client::FieldType::String(role)) = msg.get("role") {
+                if let Some(ekodb_client::FieldType::String(content)) = msg.get("content") {
+                    println!(
+                        "  Message {}: [{}] {}",
+                        i + 1,
+                        role,
+                        if content.chars().count() > 60 {
+                            format!("{}...", content.chars().take(60).collect::<String>())
+                        } else {
+                            content.to_string()
+                        }
+                    );
+                }
             }
         }
+        println!();
+
+        // Step 5: Update session metadata
+        println!("=== Updating Session ===");
+        client
+            .update_chat_session(
+                &chat_id,
+                UpdateSessionRequest::new().system_prompt("You are an expert product consultant."),
+            )
+            .await?;
+        println!("✓ Session updated\n");
+
+        // Step 6: Branch the session (branch at message index 0)
+        println!("=== Branching Session ===");
+        let branch_request = CreateChatSessionRequest::new("openai")
+            .model("gpt-4o-mini")
+            .branch_from(chat_id.to_string(), 0);
+
+        let branched = client.branch_chat_session(branch_request).await?;
+        let branch_id = branched.chat_id.clone();
+        branch_id_for_cleanup = Some(branch_id.clone());
+
+        println!("✓ Created branch: {}", branch_id);
+        println!("  Parent: {}\n", chat_id);
+
+        // Step 7: List all sessions
+        println!("=== Listing Sessions ===");
+        let sessions = client
+            .list_chat_sessions(ListSessionsQuery::new().limit(10).sort("desc"))
+            .await?;
+        println!("✓ Found {} sessions", sessions.total);
+        for (i, sess) in sessions.sessions.iter().take(3).enumerate() {
+            println!(
+                "  Session {}: {} ({})",
+                i + 1,
+                sess.chat_id,
+                sess.title.as_ref().unwrap_or(&"Untitled".to_string())
+            );
+        }
+        println!();
+
+        // Step 8: Get specific session
+        println!("=== Getting Session Details ===");
+        let session_details = client.get_chat_session(&chat_id).await?;
+        println!("✓ Session details retrieved");
+        println!("  Messages: {}\n", session_details.message_count);
+
+        // Step 9: Delete the branched session
+        println!("=== Deleting Branch Session ===");
+        client.delete_chat_session(&branch_id).await?;
+        branch_id_for_cleanup = None;
+        println!("✓ Deleted branch session: {}\n", branch_id);
+
+        Ok(())
     }
-    println!();
+    .await;
 
-    // Step 5: Update session metadata
-    println!("=== Updating Session ===");
-    client
-        .update_chat_session(
-            &chat_id,
-            UpdateSessionRequest::new().system_prompt("You are an expert product consultant."),
-        )
-        .await?;
-    println!("✓ Session updated\n");
-
-    // Step 6: Branch the session (branch at message index 0)
-    println!("=== Branching Session ===");
-    let branch_request = CreateChatSessionRequest::new("openai")
-        .model("gpt-4o-mini")
-        .branch_from(chat_id.to_string(), 0);
-
-    let branched = client.branch_chat_session(branch_request).await?;
-    let branch_id = branched.chat_id.clone();
-
-    println!("✓ Created branch: {}", branch_id);
-    println!("  Parent: {}\n", chat_id);
-
-    // Step 7: List all sessions
-    println!("=== Listing Sessions ===");
-    let sessions = client
-        .list_chat_sessions(ListSessionsQuery::new().limit(10).sort("desc"))
-        .await?;
-    println!("✓ Found {} sessions", sessions.total);
-    for (i, sess) in sessions.sessions.iter().take(3).enumerate() {
-        println!(
-            "  Session {}: {} ({})",
-            i + 1,
-            sess.chat_id,
-            sess.title.as_ref().unwrap_or(&"Untitled".to_string())
-        );
-    }
-    println!();
-
-    // Step 8: Get specific session
-    println!("=== Getting Session Details ===");
-    let session_details = client.get_chat_session(&chat_id).await?;
-    println!("✓ Session details retrieved");
-    println!("  Messages: {}\n", session_details.message_count);
-
-    // Step 9: Delete the branched session
-    println!("=== Deleting Branch Session ===");
-    client.delete_chat_session(&branch_id).await?;
-    println!("✓ Deleted branch session: {}\n", branch_id);
-
-    // Cleanup: Delete the collection (chat sessions are managed by server)
     println!("=== Cleanup ===");
-    client.delete_collection(collection).await?;
-    println!("✓ Deleted collection\n");
+    let mut cleanup_errors = Vec::new();
+    if let Some(branch_id) = branch_id_for_cleanup.as_deref() {
+        if let Err(error) = client.delete_chat_session(branch_id).await {
+            cleanup_errors.push(format!("branch session {branch_id}: {error}"));
+        }
+    }
+    if let Some(chat_id) = chat_id_for_cleanup.as_deref() {
+        match client.delete_chat_session(chat_id).await {
+            Ok(()) => println!("✓ Deleted session"),
+            Err(error) => cleanup_errors.push(format!("session {chat_id}: {error}")),
+        }
+    }
+    match client.delete_collection(collection).await {
+        Ok(()) => println!("✓ Deleted collection\n"),
+        Err(error) => cleanup_errors.push(format!("collection {collection}: {error}")),
+    }
 
+    if let Err(error) = operation_result {
+        if !cleanup_errors.is_empty() {
+            eprintln!("Cleanup also failed: {}", cleanup_errors.join("; "));
+        }
+        return Err(error);
+    }
+    if !cleanup_errors.is_empty() {
+        return Err(format!("Cleanup failed: {}", cleanup_errors.join("; ")).into());
+    }
     println!("✓ All session management operations completed successfully");
-
     Ok(())
 }

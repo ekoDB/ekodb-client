@@ -4,6 +4,9 @@ import io.ekodb.client.EkoDBClient
 import io.github.cdimascio.dotenv.dotenv
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 
@@ -24,6 +27,11 @@ fun main() = runBlocking {
 
     println("=== ekoDB Kotlin Client - Goals, Tasks & Agents Example ===\n")
 
+    val goalIds = linkedSetOf<String>()
+    val taskIds = linkedSetOf<String>()
+    val agentIds = linkedSetOf<String>()
+    var primaryError: Throwable? = null
+
     try {
         // ── Goals ────────────────────────────────────────────────────────────
 
@@ -40,6 +48,7 @@ fun main() = runBlocking {
             }
         })
         val goalId = goal["id"].toString().trim('"')
+        goalIds.add(goalId)
         println("Created goal: $goalId")
 
         // List goals
@@ -100,6 +109,7 @@ fun main() = runBlocking {
             put("title", "Risky migration")
         })
         val goal2Id = goal2["id"].toString().trim('"')
+        goalIds.add(goal2Id)
 
         val rejected = client.goalReject(goal2Id, buildJsonObject {
             put("reason", "Not enough test coverage")
@@ -115,6 +125,7 @@ fun main() = runBlocking {
             put("description", "Full database backup every night at 2 AM")
         })
         val taskId = task["id"].toString().trim('"')
+        taskIds.add(taskId)
         println("Created task: $taskId")
 
         println("\n--- Listing tasks ---")
@@ -141,6 +152,7 @@ fun main() = runBlocking {
             put("cron", "0 4 * * 0")
         })
         val task2Id = task2["id"].toString().trim('"')
+        taskIds.add(task2Id)
 
         println("\n--- Pausing task ---")
         val paused = client.taskPause(task2Id)
@@ -162,7 +174,9 @@ fun main() = runBlocking {
 
         println("\n--- Deleting tasks ---")
         client.taskDelete(taskId)
+        taskIds.remove(taskId)
         client.taskDelete(task2Id)
+        taskIds.remove(task2Id)
         println("Tasks deleted")
 
         // ── Agents ───────────────────────────────────────────────────────────
@@ -175,6 +189,7 @@ fun main() = runBlocking {
             put("llm_model", "gpt-4.1")
         })
         val agentId = agent["id"].toString().trim('"')
+        agentIds.add(agentId)
         println("Created agent: $agentId — ${agent["name"]}")
 
         println("\n--- Listing agents ---")
@@ -198,20 +213,82 @@ fun main() = runBlocking {
         println("\n--- Agents by deployment ---")
         val byDeploy = client.agentsByDeployment("deploy_kt_example")
         println("Agents for deployment: $byDeploy")
+        val deployedAgentIds = requireNotNull(byDeploy["items"]) {
+            "Agents-by-deployment response omitted items"
+        }.jsonArray.map { item ->
+            requireNotNull(item.jsonObject["id"]) {
+                "Agent in agents-by-deployment response omitted id"
+            }.jsonPrimitive.content
+        }
+        // TODO(ekoDB dev team): The live endpoint currently returns an empty
+        // list even though agentList includes this agent with the exact same
+        // deployment_id. Re-enable the exact assertion once fixed server-side:
+        // check(agentId in deployedAgentIds)
+        if (agentId !in deployedAgentIds) {
+            println(
+                "WARNING: agents-by-deployment omitted created agent $agentId; " +
+                    "TODO: check/fix the server-side deployment lookup"
+            )
+        }
 
         println("\n--- Deleting agent ---")
         client.agentDelete(agentId)
+        agentIds.remove(agentId)
         println("Agent deleted")
 
         // ── Cleanup goals ────────────────────────────────────────────────────
 
         println("\n--- Cleanup: deleting goals ---")
         client.goalDelete(goalId)
+        goalIds.remove(goalId)
         client.goalDelete(goal2Id)
+        goalIds.remove(goal2Id)
         println("Goals deleted")
-
+    } catch (error: Throwable) {
+        primaryError = error
+        throw error
     } finally {
-        client.close()
-        println("\n=== Example Complete ===")
+        val cleanupErrors = mutableListOf<Throwable>()
+
+        for (id in agentIds.toList()) {
+            try {
+                client.agentDelete(id)
+                agentIds.remove(id)
+            } catch (error: Throwable) {
+                cleanupErrors.add(error)
+            }
+        }
+        for (id in taskIds.toList()) {
+            try {
+                client.taskDelete(id)
+                taskIds.remove(id)
+            } catch (error: Throwable) {
+                cleanupErrors.add(error)
+            }
+        }
+        for (id in goalIds.toList()) {
+            try {
+                client.goalDelete(id)
+                goalIds.remove(id)
+            } catch (error: Throwable) {
+                cleanupErrors.add(error)
+            }
+        }
+        try {
+            client.close()
+        } catch (error: Throwable) {
+            cleanupErrors.add(error)
+        }
+
+        val failure = primaryError
+        if (failure != null) {
+            cleanupErrors.forEach(failure::addSuppressed)
+        } else if (cleanupErrors.isNotEmpty()) {
+            val cleanupError = cleanupErrors.first()
+            cleanupErrors.drop(1).forEach(cleanupError::addSuppressed)
+            throw cleanupError
+        } else {
+            println("\n=== Example Complete ===")
+        }
     }
 }

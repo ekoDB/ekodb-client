@@ -2,67 +2,70 @@
  * Key-Value Operations - Using @ekodb/ekodb-client library
  */
 
-const { EkoDBClient } = require('@ekodb/ekodb-client');
-const dotenv = require('dotenv');
+const { EkoDBClient } = require("@ekodb/ekodb-client");
+const dotenv = require("dotenv");
 
 dotenv.config();
 
-const BASE_URL = process.env.API_BASE_URL || 'http://localhost:8080';
-const API_KEY = process.env.API_BASE_KEY || 'a-test-api-key-from-ekodb';
+const BASE_URL = process.env.API_BASE_URL || "http://localhost:8080";
+const API_KEY = process.env.API_BASE_KEY || "a-test-api-key-from-ekodb";
 
 async function main() {
   const client = new EkoDBClient(BASE_URL, API_KEY);
   await client.init();
-  console.log('✓ Client created');
+  console.log("✓ Client created");
 
-  console.log('\n=== KV Set ===');
-  await client.kvSet('session:user123', { userId: 123, username: 'john_doe' });
-  console.log('✓ Set key: session:user123');
+  console.log("\n=== KV Set ===");
+  await client.kvSet("session:user123", { userId: 123, username: "john_doe" });
+  console.log("✓ Set key: session:user123");
 
-  console.log('\n=== KV Get ===');
-  const value = await client.kvGet('session:user123');
-  console.log('Retrieved value:', value);
+  console.log("\n=== KV Get ===");
+  const value = await client.kvGet("session:user123");
+  console.log("Retrieved value:", value);
 
-  console.log('\n=== Set Multiple Keys ===');
-  const keys = ['cache:product:1', 'cache:product:2', 'cache:product:3'];
+  console.log("\n=== Set Multiple Keys ===");
+  const keys = ["cache:product:1", "cache:product:2", "cache:product:3"];
   for (let i = 0; i < keys.length; i++) {
-    await client.kvSet(keys[i], { name: `Product ${i + 1}`, price: 29.99 + i * 10 });
+    await client.kvSet(keys[i], {
+      name: `Product ${i + 1}`,
+      price: 29.99 + i * 10,
+    });
   }
   console.log(`✓ Set ${keys.length} keys`);
 
-  console.log('\n=== Get Multiple Keys ===');
+  console.log("\n=== Get Multiple Keys ===");
   for (const key of keys) {
     const val = await client.kvGet(key);
     console.log(`${key}:`, val);
   }
 
-  console.log('\n=== KV Exists ===');
-  const exists = await client.kvExists('session:user123');
+  console.log("\n=== KV Exists ===");
+  const exists = await client.kvExists("session:user123");
   console.log(`Key exists: ${exists}`);
 
-  console.log('\n=== KV Find (Pattern Query) ===');
-  const cacheResults = await client.kvFind({ pattern: 'cache:product:.*' });
+  console.log("\n=== KV Find (Pattern Query) ===");
+  const cacheResults = await client.kvFind({ pattern: "cache:product:.*" });
   console.log(`Found ${cacheResults.length} keys matching 'cache:product:.*'`);
 
-  console.log('\n=== KV Query (Alias for Find) ===');
+  console.log("\n=== KV Query (Alias for Find) ===");
   const allResults = await client.kvQuery({});
   console.log(`Total keys in store: ${allResults.length}`);
 
-  console.log('\n=== KV Delete ===');
-  await client.kvDelete('session:user123');
-  console.log('✓ Deleted key: session:user123');
+  console.log("\n=== KV Delete ===");
+  await client.kvDelete("session:user123");
+  console.log("✓ Deleted key: session:user123");
 
   // Verify deletion with kvExists
-  const existsAfterDelete = await client.kvExists('session:user123');
+  const existsAfterDelete = await client.kvExists("session:user123");
   console.log(`✓ Verified: Key exists after delete: ${existsAfterDelete}`);
 
-  console.log('\n=== Delete Multiple Keys ===');
+  console.log("\n=== Delete Multiple Keys ===");
   for (const key of keys) {
     await client.kvDelete(key);
   }
   console.log(`✓ Deleted ${keys.length} keys`);
 
-  console.log('\n✓ All KV operations completed successfully');
+  console.log("\n✓ All KV operations completed successfully");
 }
 
 main().catch((error) => {

@@ -24,6 +24,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -56,13 +57,13 @@ func extractStringField(record ekodb.Record, field string) string {
 	return "N/A"
 }
 
-func createConversation(client *ekodb.Client, collection, convID, title string) error {
+func createConversation(client *ekodb.Client, collection, messagesCollection, convID, title string) error {
 	conv := ekodb.Record{
 		"id":         convID,
 		"title":      title,
 		"created_at": time.Now().Format(time.RFC3339),
 		"search_config": map[string]interface{}{
-			"collections": []string{"rag_messages"},
+			"collections": []string{messagesCollection},
 			"search_type": "hybrid",
 			"limit":       10,
 		},
@@ -109,6 +110,12 @@ func storeMessageWithEmbedding(client *ekodb.Client, collection, conversationID,
 }
 
 func main() {
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func run() (runErr error) {
 	fmt.Println("=== ekoDB RAG Conversation System ===\n")
 	fmt.Println("This example shows how ekoDB can power a self-improving AI system")
 	fmt.Println("that learns from its own conversation history.\n")
@@ -130,15 +137,40 @@ func main() {
 
 	client, err := ekodb.NewClient(baseURL, apiKey)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
-	messagesCollection := "rag_messages"
-	conversationsCollection := "rag_conversations"
+	messagesCollection := "rag_messages_go"
+	conversationsCollection := "rag_conversations_go"
+	chatID := ""
+	defer func() {
+		fmt.Println("=== Cleanup ===")
+		var cleanupErr error
+		if chatID != "" {
+			cleanupErr = errors.Join(cleanupErr, client.DeleteChatSession(chatID))
+		}
+		for _, collection := range []string{messagesCollection, conversationsCollection} {
+			err := client.DeleteCollection(collection)
+			var httpErr *ekodb.HTTPError
+			if err != nil && !(errors.As(err, &httpErr) && httpErr.IsNotFound()) {
+				cleanupErr = errors.Join(cleanupErr, fmt.Errorf("delete collection %s: %w", collection, err))
+			}
+		}
+		if cleanupErr != nil {
+			runErr = errors.Join(runErr, cleanupErr)
+		} else {
+			fmt.Println("✓ Cleanup complete\n")
+		}
+	}()
 
 	// Cleanup any existing data
-	client.DeleteCollection(messagesCollection)
-	client.DeleteCollection(conversationsCollection)
+	for _, collection := range []string{messagesCollection, conversationsCollection} {
+		err := client.DeleteCollection(collection)
+		var httpErr *ekodb.HTTPError
+		if err != nil && !(errors.As(err, &httpErr) && httpErr.IsNotFound()) {
+			return fmt.Errorf("pre-clean collection %s: %w", collection, err)
+		}
+	}
 
 	// ========================================
 	// STEP 1: Simulate Historical Conversations
@@ -148,8 +180,8 @@ func main() {
 
 	// Conversation 1: Rust Programming Discussion
 	conv1ID := "conv_rust_programming"
-	if err := createConversation(client, conversationsCollection, conv1ID, "Rust Programming"); err != nil {
-		log.Fatal(err)
+	if err := createConversation(client, conversationsCollection, messagesCollection, conv1ID, "Rust Programming"); err != nil {
+		return err
 	}
 
 	rustMessages := []struct {
@@ -164,15 +196,15 @@ func main() {
 
 	for _, msg := range rustMessages {
 		if err := storeMessageWithEmbedding(client, messagesCollection, conv1ID, msg.role, msg.content, []string{"rust", "programming"}); err != nil {
-			log.Fatal(err)
+			return err
 		}
 	}
 	fmt.Printf("✓ Stored Rust programming conversation (%d messages)\n", len(rustMessages))
 
 	// Conversation 2: Database Design Discussion
 	conv2ID := "conv_database_design"
-	if err := createConversation(client, conversationsCollection, conv2ID, "Database Design"); err != nil {
-		log.Fatal(err)
+	if err := createConversation(client, conversationsCollection, messagesCollection, conv2ID, "Database Design"); err != nil {
+		return err
 	}
 
 	dbMessages := []struct {
@@ -187,15 +219,15 @@ func main() {
 
 	for _, msg := range dbMessages {
 		if err := storeMessageWithEmbedding(client, messagesCollection, conv2ID, msg.role, msg.content, []string{"database", "design"}); err != nil {
-			log.Fatal(err)
+			return err
 		}
 	}
 	fmt.Printf("✓ Stored database design conversation (%d messages)\n", len(dbMessages))
 
 	// Conversation 3: Performance Optimization
 	conv3ID := "conv_performance"
-	if err := createConversation(client, conversationsCollection, conv3ID, "Performance Optimization"); err != nil {
-		log.Fatal(err)
+	if err := createConversation(client, conversationsCollection, messagesCollection, conv3ID, "Performance Optimization"); err != nil {
+		return err
 	}
 
 	perfMessages := []struct {
@@ -210,7 +242,7 @@ func main() {
 
 	for _, msg := range perfMessages {
 		if err := storeMessageWithEmbedding(client, messagesCollection, conv3ID, msg.role, msg.content, []string{"performance", "optimization"}); err != nil {
-			log.Fatal(err)
+			return err
 		}
 	}
 	fmt.Printf("✓ Stored performance optimization conversation (%d messages)\n\n", len(perfMessages))
@@ -249,7 +281,7 @@ func main() {
 		return emb, nil
 	}()
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	fmt.Println("\n→ Executing HybridSearch()...")
@@ -263,7 +295,7 @@ func main() {
 	searchStart := time.Now()
 	relatedMessages, err := client.HybridSearch(messagesCollection, userQuestion, questionEmbedding, 5)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	searchDuration := time.Since(searchStart).Seconds()
 	fmt.Printf("  ✓ Search completed in %.3fs\n", searchDuration)
@@ -311,8 +343,9 @@ func main() {
 		log.Println("   • OPENAI_API_KEY is not set in ekoDB server environment")
 		log.Println("   • OpenAI API is experiencing issues")
 		log.Println("   • Network connectivity problems")
-		log.Fatal("Cannot continue without AI chat capabilities")
+		return fmt.Errorf("cannot continue without AI chat capabilities: %w", err)
 	}
+	chatID = chatSession.ChatID
 
 	// Send the question
 	response, err := client.ChatMessage(chatSession.ChatID, ekodb.ChatMessageRequest{
@@ -324,7 +357,7 @@ func main() {
 		log.Println("   • OpenAI API quota exceeded (status 402)")
 		log.Println("   • OpenAI API server error (status 500)")
 		log.Println("   • Invalid API key or permissions")
-		log.Fatal("AI response generation failed")
+		return fmt.Errorf("AI response generation failed: %w", err)
 	}
 
 	fmt.Println("✓ AI Response (with context from 3 conversations):\n")
@@ -338,19 +371,19 @@ func main() {
 	fmt.Println("=== Step 5: Storing New Conversation ===")
 
 	newConvID := "conv_new_question"
-	if err := createConversation(client, conversationsCollection, newConvID, "Memory-Safe Database Code"); err != nil {
-		log.Fatal(err)
+	if err := createConversation(client, conversationsCollection, messagesCollection, newConvID, "Memory-Safe Database Code"); err != nil {
+		return err
 	}
 
 	// Store user question
 	if err := storeMessageWithEmbedding(client, messagesCollection, newConvID, "user", userQuestion, []string{"rust", "database", "performance"}); err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	// Store AI response
 	if len(response.Responses) > 0 {
 		if err := storeMessageWithEmbedding(client, messagesCollection, newConvID, "assistant", response.Responses[0], []string{"rust", "database", "performance"}); err != nil {
-			log.Fatal(err)
+			return err
 		}
 	}
 
@@ -372,7 +405,7 @@ func main() {
 	textStart := time.Now()
 	ownershipResults, err := client.TextSearch(messagesCollection, "ownership system", 3)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	textDuration := time.Since(textStart).Seconds()
 	fmt.Printf("  ✓ Text search completed in %.3fs\n", textDuration)
@@ -394,11 +427,11 @@ func main() {
 
 	totalMessages, err := client.FindAll(messagesCollection, 1000)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	totalConvs, err := client.FindAll(conversationsCollection, 100)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	fmt.Println("📊 Database Statistics:")
@@ -421,17 +454,6 @@ func main() {
 	fmt.Println("  • Collection-specific settings")
 	fmt.Println("  • Per-conversation AI behavior")
 	fmt.Println("\nThis enables context-aware search tuned to each conversation's needs!\n")
-
-	// ========================================
-	// Cleanup
-	// ========================================
-	fmt.Println("=== Cleanup ===")
-	if err := client.DeleteChatSession(chatSession.ChatID); err != nil {
-		log.Printf("Warning: failed to delete chat session: %v", err)
-	}
-	client.DeleteCollection(messagesCollection)
-	client.DeleteCollection(conversationsCollection)
-	fmt.Println("✓ Cleanup complete\n")
 
 	// ========================================
 	// Summary
@@ -458,6 +480,7 @@ func main() {
 	fmt.Println("   → Set OPENAI_API_KEY in your ekoDB server environment")
 	fmt.Println("   → Use these client helpers to make AI integration simple")
 	fmt.Println("   → Scale to millions of documents with native indexing\n")
+	return nil
 }
 
 func strPtr(s string) *string {

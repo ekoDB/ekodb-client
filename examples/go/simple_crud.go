@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -10,6 +11,8 @@ import (
 
 	"github.com/joho/godotenv"
 )
+
+const simpleCRUDCollection = "simple_crud_go"
 
 var (
 	baseURL   string
@@ -75,6 +78,9 @@ func request(method, path string, body interface{}) (map[string]interface{}, err
 	}
 
 	respBody, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode >= 300 {
+		return nil, fmt.Errorf("HTTP %d: %s", resp.StatusCode, respBody)
+	}
 	if len(respBody) == 0 {
 		return map[string]interface{}{}, nil
 	}
@@ -112,6 +118,9 @@ func requestArray(method, path string, body interface{}) ([]map[string]interface
 	}
 
 	respBody, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode >= 300 {
+		return nil, fmt.Errorf("HTTP %d: %s", resp.StatusCode, respBody)
+	}
 	if len(respBody) == 0 {
 		return []map[string]interface{}{}, nil
 	}
@@ -121,34 +130,44 @@ func requestArray(method, path string, body interface{}) ([]map[string]interface
 	return result, nil
 }
 
-func main() {
-	fmt.Println("=== Simple CRUD Operations (Direct HTTP) ===\n")
+func run() (runErr error) {
+	fmt.Print("=== Simple CRUD Operations (Direct HTTP) ===\n\n")
 
 	_, err := getAuthToken()
 	if err != nil {
-		fmt.Printf("Auth failed: %v\n", err)
-		os.Exit(1)
+		return fmt.Errorf("auth failed: %w", err)
 	}
 	fmt.Println("✓ Authentication successful")
+	defer func() {
+		if _, err := request("DELETE", "/api/collections/"+simpleCRUDCollection, nil); err != nil {
+			runErr = errors.Join(runErr, fmt.Errorf("cleanup collection %s: %w", simpleCRUDCollection, err))
+		}
+	}()
 
 	// Example 1: Insert a document
 	fmt.Println("\n=== Insert Document ===")
-	doc, _ := request("POST", "/api/insert/test_collection", map[string]interface{}{
+	doc, err := request("POST", "/api/insert/"+simpleCRUDCollection, map[string]interface{}{
 		"name":   "Test Record",
 		"value":  42,
 		"active": true,
 	})
+	if err != nil {
+		return fmt.Errorf("insert document: %w", err)
+	}
 	fmt.Printf("Inserted: %v\n", doc)
 	docID := doc["id"].(string)
 
 	// Example 2: Find by ID
 	fmt.Println("\n=== Find by ID ===")
-	foundDoc, _ := request("GET", "/api/find/test_collection/"+docID, nil)
+	foundDoc, err := request("GET", "/api/find/"+simpleCRUDCollection+"/"+docID, nil)
+	if err != nil {
+		return fmt.Errorf("find document: %w", err)
+	}
 	fmt.Printf("Found: %v\n", foundDoc)
 
 	// Example 3: Find with query
 	fmt.Println("\n=== Find with Query ===")
-	docs, _ := requestArray("POST", "/api/find/test_collection", map[string]interface{}{
+	docs, err := requestArray("POST", "/api/find/"+simpleCRUDCollection, map[string]interface{}{
 		"filter": map[string]interface{}{
 			"type": "Condition",
 			"content": map[string]interface{}{
@@ -159,20 +178,36 @@ func main() {
 		},
 		"limit": 10,
 	})
+	if err != nil {
+		return fmt.Errorf("query documents: %w", err)
+	}
 	fmt.Printf("Found documents: %v\n", docs)
 
 	// Example 4: Update document
 	fmt.Println("\n=== Update Document ===")
-	updated, _ := request("PUT", "/api/update/test_collection/"+docID, map[string]interface{}{
+	updated, err := request("PUT", "/api/update/"+simpleCRUDCollection+"/"+docID, map[string]interface{}{
 		"name":  "Updated Record",
 		"value": 100,
 	})
+	if err != nil {
+		return fmt.Errorf("update document: %w", err)
+	}
 	fmt.Printf("Updated: %v\n", updated)
 
 	// Example 5: Delete document
 	fmt.Println("\n=== Delete Document ===")
-	request("DELETE", "/api/delete/test_collection/"+docID, nil)
+	if _, err := request("DELETE", "/api/delete/"+simpleCRUDCollection+"/"+docID, nil); err != nil {
+		return fmt.Errorf("delete document: %w", err)
+	}
 	fmt.Println("Deleted document")
 
 	fmt.Println("\n✓ All CRUD operations completed successfully")
+	return nil
+}
+
+func main() {
+	if err := run(); err != nil {
+		fmt.Printf("✗ Simple CRUD failed: %v\n", err)
+		os.Exit(1)
+	}
 }

@@ -8,8 +8,10 @@ encapsulates the entire cache-aside pattern in a single operation.
 
 import os
 import time
-from ekodb_client import Client, Stage
+
 from dotenv import load_dotenv
+
+from ekodb_client import Client, Stage
 
 load_dotenv()
 
@@ -30,11 +32,40 @@ async def save_or_update(client, script):
             raise
         await client.update_function(label, script)
         print(f"ℹ️  Function '{label}' already existed — updated instead")
-        return label
+        existing = await client.get_function(label)
+        function_id = existing.get("id")
+        if not function_id:
+            raise RuntimeError(f"Updated function '{label}' did not return an id")
+        return function_id
 
 
 BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8080")
 API_KEY = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb")
+FUNCTION_LABELS = {
+    "basic": "github_user_native_py",
+    "audit": "product_swr_audit_py",
+    "enrichment": "user_enrichment_pipeline_py",
+    "dynamic": "flexible_cache_py",
+}
+COLLECTIONS = {
+    "audit": "swr_audit_trail_py",
+    "enrichment": "enriched_users_swr_py",
+}
+KV_KEYS = {
+    "basic_template": "swr_native:py:github:user:{{username}}",
+    "basic": "swr_native:py:github:user:torvalds",
+    "audit_template": "swr_native:py:product:{{product_id}}",
+    "audit": "swr_native:py:product:1",
+    "enrichment_template": "swr_native:py:api:user:{{user_id}}",
+    "enrichment": "swr_native:py:api:user:1",
+    "dynamic_template": "swr_native:py:resource:{{resource_id}}",
+    "dynamic": "swr_native:py:resource:test",
+}
+
+
+def _is_not_found_error(err):
+    message = str(err).lower()
+    return "404" in message or "not found" in message
 
 
 async def example_basic_swr(client: Client):
@@ -45,19 +76,18 @@ async def example_basic_swr(client: Client):
 
     # Create script with native SWR function
     basic_swr_script = {
-        "label": "github_user_native",
+        "label": FUNCTION_LABELS["basic"],
         "name": "GitHub User Lookup (Native SWR)",
         "description": "Fetches GitHub user data with automatic caching using native SWR",
         "parameters": {
             "username": {
-                "type": "String",
                 "description": "GitHub username to fetch",
                 "required": True,
             }
         },
         "functions": [
             Stage.swr(
-                cache_key="github:user:{{username}}",
+                cache_key=KV_KEYS["basic_template"],
                 ttl="15m",
                 url="https://api.github.com/users/{{username}}",
                 method="GET",
@@ -69,12 +99,14 @@ async def example_basic_swr(client: Client):
     }
 
     script_id = await save_or_update(client, basic_swr_script)
-    print(f"✓ Created native SWR script: github_user_native ({script_id})")
+    print(f"✓ Created native SWR script: {FUNCTION_LABELS['basic']} ({script_id})")
 
     # First call - cache miss
     print("\nFirst call (cache miss - will fetch from GitHub API):")
     start1 = time.time()
-    result1 = await client.call_function("github_user_native", {"username": "torvalds"})
+    result1 = await client.call_function(
+        FUNCTION_LABELS["basic"], {"username": "torvalds"}
+    )
     duration1 = (time.time() - start1) * 1000
     print(f"  Response time: {duration1:.0f}ms")
     print(f"  Records returned: {len(result1.get('records', []))}")
@@ -82,7 +114,9 @@ async def example_basic_swr(client: Client):
     # Second call - cache hit
     print("\nSecond call (cache hit - instant from KV store):")
     start2 = time.time()
-    result2 = await client.call_function("github_user_native", {"username": "torvalds"})
+    result2 = await client.call_function(
+        FUNCTION_LABELS["basic"], {"username": "torvalds"}
+    )
     duration2 = (time.time() - start2) * 1000
     speedup = duration1 / duration2 if duration2 > 0 else 0
     print(f"  Response time: {duration2:.0f}ms")
@@ -100,24 +134,23 @@ async def example_audit_trail(client: Client):
 
     # Create script with audit trail
     audit_swr_script = {
-        "label": "product_swr_audit",
+        "label": FUNCTION_LABELS["audit"],
         "name": "Product API with Audit (Native SWR)",
         "description": "Caches product data and logs all requests automatically",
         "parameters": {
             "product_id": {
-                "type": "String",
                 "description": "Product ID to fetch",
                 "required": True,
             }
         },
         "functions": [
             Stage.swr(
-                cache_key="product:{{product_id}}",
+                cache_key=KV_KEYS["audit_template"],
                 ttl="1h",
                 url="https://fakestoreapi.com/products/{{product_id}}",
                 method="GET",
                 output_field="product",
-                collection="swr_audit_trail",
+                collection=COLLECTIONS["audit"],
             )
         ],
         "tags": ["products", "audit"],
@@ -125,15 +158,15 @@ async def example_audit_trail(client: Client):
 
     audit_script_id = await save_or_update(client, audit_swr_script)
     print(
-        f"✓ Created SWR script with audit trail: product_swr_audit ({audit_script_id})"
+        f"✓ Created SWR script with audit trail: {FUNCTION_LABELS['audit']} ({audit_script_id})"
     )
 
     print("\nFetching product (will create audit trail entry):")
     product_result = await client.call_function(
-        "product_swr_audit", {"product_id": "1"}
+        FUNCTION_LABELS["audit"], {"product_id": "1"}
     )
     print("  ✓ Product fetched and cached")
-    print("  ✓ Audit record created in 'swr_audit_trail' collection")
+    print(f"  ✓ Audit record created in '{COLLECTIONS['audit']}' collection")
     print(f"  Records: {len(product_result.get('records', []))}\n")
 
     return audit_script_id
@@ -147,12 +180,11 @@ async def example_pipeline_enrichment(client: Client):
 
     # Create enrichment pipeline
     pipeline_script = {
-        "label": "user_enrichment_pipeline",
+        "label": FUNCTION_LABELS["enrichment"],
         "name": "User Data Enrichment Pipeline",
         "description": "Fetches external API data and stores enriched results",
         "parameters": {
             "user_id": {
-                "type": "String",
                 "description": "User ID to enrich",
                 "required": True,
             }
@@ -160,7 +192,7 @@ async def example_pipeline_enrichment(client: Client):
         "functions": [
             # Step 1: Fetch from external API with caching (30 min TTL)
             Stage.swr(
-                cache_key="api:user:{{user_id}}",
+                cache_key=KV_KEYS["enrichment_template"],
                 ttl="30m",
                 url="https://jsonplaceholder.typicode.com/users/{{user_id}}",
                 method="GET",
@@ -168,7 +200,7 @@ async def example_pipeline_enrichment(client: Client):
             ),
             # Step 2: Store enriched data in collection (24 hour TTL)
             Stage.insert(
-                collection="enriched_users",
+                collection=COLLECTIONS["enrichment"],
                 record={
                     "user_id": {"type": "String", "value": "{{user_id}}"},
                     "source_data": {"type": "Object", "value": "{{user_data}}"},
@@ -181,15 +213,15 @@ async def example_pipeline_enrichment(client: Client):
 
     pipeline_script_id = await save_or_update(client, pipeline_script)
     print(
-        f"✓ Created enrichment pipeline: user_enrichment_pipeline ({pipeline_script_id})"
+        f"✓ Created enrichment pipeline: {FUNCTION_LABELS['enrichment']} ({pipeline_script_id})"
     )
 
     print("\nRunning pipeline:")
     enrich_result = await client.call_function(
-        "user_enrichment_pipeline", {"user_id": "1"}
+        FUNCTION_LABELS["enrichment"], {"user_id": "1"}
     )
     print("  ✓ Data fetched from API (cached 30m)")
-    print("  ✓ Enriched data stored in 'enriched_users' (TTL 24h)")
+    print(f"  ✓ Enriched data stored in '{COLLECTIONS['enrichment']}' (TTL 24h)")
     print(f"  Pipeline returned {len(enrich_result.get('records', []))} records\n")
 
     return pipeline_script_id
@@ -203,24 +235,22 @@ async def example_dynamic_ttl(client: Client):
 
     # Create script with dynamic TTL
     dynamic_ttl_script = {
-        "label": "flexible_cache",
+        "label": FUNCTION_LABELS["dynamic"],
         "name": "Flexible Cache TTL (Native SWR)",
         "description": "Demonstrates parameterized TTL values",
         "parameters": {
             "resource_id": {
-                "type": "String",
                 "description": "Resource to fetch",
                 "required": True,
             },
             "ttl": {
-                "type": "String",
                 "description": "Cache duration (e.g., '5m', '1h', '30s')",
                 "required": True,
             },
         },
         "functions": [
             Stage.swr(
-                cache_key="resource:{{resource_id}}",
+                cache_key=KV_KEYS["dynamic_template"],
                 ttl="{{ttl}}",
                 url="https://jsonplaceholder.typicode.com/posts/{{resource_id}}",
                 method="GET",
@@ -230,14 +260,16 @@ async def example_dynamic_ttl(client: Client):
     }
 
     dynamic_script_id = await save_or_update(client, dynamic_ttl_script)
-    print(f"✓ Created dynamic TTL script: flexible_cache ({dynamic_script_id})")
+    print(
+        f"✓ Created dynamic TTL script: {FUNCTION_LABELS['dynamic']} ({dynamic_script_id})"
+    )
 
     # Test with different TTLs
     ttl_tests = [("5m", "5 minutes"), ("1h", "1 hour"), ("30s", "30 seconds")]
 
     for ttl_value, description in ttl_tests:
         await client.call_function(
-            "flexible_cache", {"resource_id": "test", "ttl": ttl_value}
+            FUNCTION_LABELS["dynamic"], {"resource_id": "test", "ttl": ttl_value}
         )
         print(f"  ✓ Cached with TTL: {ttl_value} ({description})")
 
@@ -245,14 +277,50 @@ async def example_dynamic_ttl(client: Client):
 
 
 async def cleanup(client: Client, script_ids: list):
-    """Clean up test scripts"""
+    """Clean up only the functions, KV keys, and collections owned by this example."""
     print("\n🧹 Cleaning up...")
+    errors = []
+    cleanup_ids = set(script_ids)
     try:
-        for script_id in script_ids:
+        functions = await client.list_functions(None)
+        cleanup_ids.update(
+            function["id"]
+            for function in functions
+            if function.get("label") in FUNCTION_LABELS.values() and function.get("id")
+        )
+    except Exception as exc:
+        errors.append(("discover functions", exc))
+    deleted = 0
+    for script_id in cleanup_ids:
+        try:
             await client.delete_function(script_id)
-        print(f"✓ Deleted {len(script_ids)} test scripts")
-    except Exception as e:
-        print(f"⚠ Cleanup error (non-critical): {e}")
+            deleted += 1
+        except Exception as exc:
+            errors.append((script_id, exc))
+    for key in (
+        KV_KEYS["basic"],
+        KV_KEYS["audit"],
+        KV_KEYS["enrichment"],
+        KV_KEYS["dynamic"],
+    ):
+        try:
+            await client.kv_delete(key)
+        except Exception as exc:
+            if not _is_not_found_error(exc):
+                errors.append((f"KV key {key}", exc))
+    for collection in COLLECTIONS.values():
+        try:
+            await client.delete_collection(collection)
+        except Exception as exc:
+            if not _is_not_found_error(exc):
+                errors.append((f"collection {collection}", exc))
+    if errors:
+        details = "; ".join(f"{resource}: {error}" for resource, error in errors)
+        print(f"⚠ Cleanup failed: {details}")
+        raise RuntimeError(
+            f"Failed to clean up {len(errors)} owned resource(s): {details}"
+        )
+    print(f"✓ Deleted {deleted} test scripts and owned SWR resources")
 
 
 async def main():
@@ -268,17 +336,10 @@ async def main():
 
     client = Client.new(BASE_URL, API_KEY)
 
-    # Start clean: drop stale collections from a prior run so their schema is
-    # inferred fresh and a stale schema can't reject the insert.
-    for _c in ("enriched_users", "swr_audit_trail"):
-        try:
-            await client.delete_collection(_c)
-        except Exception:
-            pass
-
     script_ids = []
 
     try:
+        await cleanup(client, script_ids)
         # Run examples
         script_ids.append(await example_basic_swr(client))
         script_ids.append(await example_audit_trail(client))
@@ -311,6 +372,7 @@ async def main():
         import traceback
 
         traceback.print_exc()
+        raise
 
     finally:
         await cleanup(client, script_ids)

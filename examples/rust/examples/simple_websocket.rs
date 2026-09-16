@@ -4,6 +4,8 @@ use std::env;
 use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
 use url::Url;
 
+const COLLECTION: &str = "simple_websocket_example_rs";
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv::dotenv().ok();
@@ -25,10 +27,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let token = token_data["token"].as_str().unwrap();
     println!("✓ Authentication successful");
 
+    // A failed prior run may have left records behind. Start from a bounded
+    // collection so FindAll cannot dump an ever-growing response.
+    delete_test_collection(&client, &base_url, token).await?;
+
+    let operation_result: Result<(), Box<dyn std::error::Error>> = async {
+
     // Step 2: Insert some test data first
     println!("\n=== Inserting Test Data ===");
     let insert_response = client
-        .post(&format!("{}/api/insert/websocket_test", base_url))
+        .post(&format!("{}/api/insert/{}", base_url, COLLECTION))
         .header("Authorization", format!("Bearer {}", token))
         .json(&json!({
             "name": "WebSocket Test Record",
@@ -36,10 +44,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             "active": true
         }))
         .send()
-        .await?;
+        .await?
+        .error_for_status()?;
 
     let insert_result: Value = insert_response.json().await?;
-    println!("✓ Inserted test record: {}", insert_result["id"]);
+    let inserted_id = insert_result["id"]
+        .as_str()
+        .ok_or("insert response did not include a string id")?;
+    println!("✓ Inserted test record: {}", inserted_id);
 
     // Step 3: Connect to WebSocket with Authorization header
     println!("\n=== Connecting to WebSocket ===");
@@ -89,7 +101,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 "type": "FindAll",
                 "messageId": message_id,
                 "payload": {
-                    "collection": "websocket_test"
+                    "collection": COLLECTION
                 }
             })
             .to_string()
@@ -126,6 +138,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                                             "✓ Retrieved {} record(s) via WebSocket",
                                                             arr.len()
                                                         );
+                                                        if !arr.iter().any(|record| {
+                                                            record.get("id").and_then(Value::as_str)
+                                                                == Some(inserted_id)
+                                                        }) {
+                                                            return Err("WebSocket response omitted the inserted record".into());
+                                                        }
                                                     }
                                                 }
                                             }
@@ -141,8 +159,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         }
                     }
                     Err(e) => {
-                        eprintln!("WebSocket error: {}", e);
-                        break;
+                        return Err(format!("WebSocket error: {e}").into());
                     }
                 }
             }
@@ -158,10 +175,42 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     if !received_data {
-        eprintln!("Warning: No data response received within timeout");
+        return Err("No data response received within timeout".into());
     }
 
-    println!("\n✓ WebSocket example completed successfully");
+        Ok(())
+    }
+    .await;
 
-    Ok(())
+    let cleanup_result = delete_test_collection(&client, &base_url, token).await;
+    match (operation_result, cleanup_result) {
+        (Ok(()), Ok(())) => {
+            println!("✓ Deleted test collection");
+            println!("\n✓ WebSocket example completed successfully");
+            Ok(())
+        }
+        (Err(operation_error), Ok(())) => Err(operation_error),
+        (Ok(()), Err(cleanup_error)) => Err(cleanup_error),
+        (Err(operation_error), Err(cleanup_error)) => Err(std::io::Error::other(format!(
+            "{operation_error}; cleanup also failed: {cleanup_error}"
+        ))
+        .into()),
+    }
+}
+
+async fn delete_test_collection(
+    client: &reqwest::Client,
+    base_url: &str,
+    token: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let response = client
+        .delete(format!("{base_url}/api/collections/{COLLECTION}"))
+        .header("Authorization", format!("Bearer {token}"))
+        .send()
+        .await?;
+    if response.status().is_success() || response.status() == reqwest::StatusCode::NOT_FOUND {
+        Ok(())
+    } else {
+        Err(response.error_for_status().unwrap_err().into())
+    }
 }

@@ -10,6 +10,31 @@ require("dotenv").config();
 
 const BASE_URL = process.env.API_BASE_URL || "http://localhost:8080";
 const API_KEY = process.env.API_BASE_KEY || "a-test-api-key-from-ekodb";
+const FUNCTION_LABELS = {
+  basic: "github_user_native_js",
+  audit: "product_swr_audit_js",
+  enrichment: "user_enrichment_pipeline_js",
+  dynamic: "flexible_cache_js",
+};
+const COLLECTIONS = {
+  audit: "swr_audit_trail_js",
+  enrichment: "enriched_users_swr_js",
+};
+const KV_KEYS = {
+  basicTemplate: "swr_native:js:github:user:{{username}}",
+  basic: "swr_native:js:github:user:torvalds",
+  auditTemplate: "swr_native:js:product:{{product_id}}",
+  audit: "swr_native:js:product:1",
+  enrichmentTemplate: "swr_native:js:api:user:{{user_id}}",
+  enrichment: "swr_native:js:api:user:1",
+  dynamicTemplate: "swr_native:js:resource:{{resource_id}}",
+  dynamic: "swr_native:js:resource:test",
+};
+
+function isNotFoundError(error) {
+  const message = String(error);
+  return message.includes("404") || message.toLowerCase().includes("not found");
+}
 
 /**
  * Save a function idempotently.
@@ -27,8 +52,15 @@ async function saveOrUpdate(client, script) {
   } catch (error) {
     if (error.message && error.message.includes("already exists")) {
       await client.updateFunction(script.label, script);
-      console.log(`ℹ️  Function '${script.label}' already existed — updated instead`);
+      console.log(
+        `ℹ️  Function '${script.label}' already existed — updated instead`,
+      );
       const existing = await client.getFunction(script.label);
+      if (!existing.id) {
+        throw new Error(
+          `Updated function '${script.label}' did not return an id`,
+        );
+      }
       return existing.id;
     }
     throw error;
@@ -38,42 +70,46 @@ async function saveOrUpdate(client, script) {
 async function exampleBasicSWR(client) {
   console.log("\nExample 1: Basic Native SWR");
   console.log("─".repeat(80));
-  console.log("Single function replaces KvGet → If → HttpRequest → KvSet pipeline");
+  console.log(
+    "Single function replaces KvGet → If → HttpRequest → KvSet pipeline",
+  );
 
   // Create script with native SWR function
   const basicSWRScript = {
-    label: "github_user_native",
+    label: FUNCTION_LABELS.basic,
     name: "GitHub User Lookup (Native SWR)",
-    description: "Fetches GitHub user data with automatic caching using native SWR",
+    description:
+      "Fetches GitHub user data with automatic caching using native SWR",
     parameters: {
       username: {
-        type: "String",
         description: "GitHub username to fetch",
         required: true,
       },
     },
     functions: [
       Stage.swr(
-        "github:user:{{username}}",
+        KV_KEYS.basicTemplate,
         "15m",
         "https://api.github.com/users/{{username}}",
         "GET",
         { "User-Agent": "ekoDB-Client" },
         undefined,
         undefined,
-        "user_data"
+        "user_data",
       ),
     ],
     tags: ["github", "swr", "native"],
   };
 
   const scriptId = await saveOrUpdate(client, basicSWRScript);
-  console.log(`✓ Created native SWR script: github_user_native (${scriptId})`);
+  console.log(
+    `✓ Created native SWR script: ${FUNCTION_LABELS.basic} (${scriptId})`,
+  );
 
   // First call - cache miss
   console.log("\nFirst call (cache miss - will fetch from GitHub API):");
   const start1 = Date.now();
-  const result1 = await client.callFunction("github_user_native", {
+  const result1 = await client.callFunction(scriptId, {
     username: "torvalds",
   });
   const duration1 = Date.now() - start1;
@@ -83,7 +119,7 @@ async function exampleBasicSWR(client) {
   // Second call - cache hit
   console.log("\nSecond call (cache hit - instant from KV store):");
   const start2 = Date.now();
-  const result2 = await client.callFunction("github_user_native", {
+  const result2 = await client.callFunction(scriptId, {
     username: "torvalds",
   });
   const duration2 = Date.now() - start2;
@@ -102,19 +138,18 @@ async function exampleAuditTrail(client) {
 
   // Create script with audit trail
   const auditSWRScript = {
-    label: "product_swr_audit",
+    label: FUNCTION_LABELS.audit,
     name: "Product API with Audit (Native SWR)",
     description: "Caches product data and logs all requests automatically",
     parameters: {
       product_id: {
-        type: "String",
         description: "Product ID to fetch",
         required: true,
       },
     },
     functions: [
       Stage.swr(
-        "product:{{product_id}}",
+        KV_KEYS.auditTemplate,
         "1h",
         "https://fakestoreapi.com/products/{{product_id}}",
         "GET",
@@ -122,7 +157,7 @@ async function exampleAuditTrail(client) {
         undefined,
         undefined,
         "product",
-        "swr_audit_trail"
+        COLLECTIONS.audit,
       ),
     ],
     tags: ["products", "audit"],
@@ -130,15 +165,15 @@ async function exampleAuditTrail(client) {
 
   const auditScriptId = await saveOrUpdate(client, auditSWRScript);
   console.log(
-    `✓ Created SWR script with audit trail: product_swr_audit (${auditScriptId})`
+    `✓ Created SWR script with audit trail: ${FUNCTION_LABELS.audit} (${auditScriptId})`,
   );
 
   console.log("\nFetching product (will create audit trail entry):");
-  const productResult = await client.callFunction("product_swr_audit", {
+  const productResult = await client.callFunction(auditScriptId, {
     product_id: "1",
   });
   console.log("  ✓ Product fetched and cached");
-  console.log("  ✓ Audit record created in 'swr_audit_trail' collection");
+  console.log(`  ✓ Audit record created in '${COLLECTIONS.audit}' collection`);
   console.log(`  Records: ${productResult.records?.length || 0}\n`);
 
   return auditScriptId;
@@ -151,12 +186,11 @@ async function examplePipelineEnrichment(client) {
 
   // Create enrichment pipeline
   const pipelineScript = {
-    label: "user_enrichment_pipeline",
+    label: FUNCTION_LABELS.enrichment,
     name: "User Data Enrichment Pipeline",
     description: "Fetches external API data and stores enriched results",
     parameters: {
       user_id: {
-        type: "String",
         description: "User ID to enrich",
         required: true,
       },
@@ -164,24 +198,24 @@ async function examplePipelineEnrichment(client) {
     functions: [
       // Step 1: Fetch from external API with caching (30 min TTL)
       Stage.swr(
-        "api:user:{{user_id}}",
+        KV_KEYS.enrichmentTemplate,
         "30m",
         "https://jsonplaceholder.typicode.com/users/{{user_id}}",
         "GET",
         undefined,
         undefined,
         undefined,
-        "user_data"
+        "user_data",
       ),
       // Step 2: Store enriched data in collection (24 hour TTL)
       Stage.insert(
-        "enriched_users",
+        COLLECTIONS.enrichment,
         {
           user_id: { type: "String", value: "{{user_id}}" },
           source_data: { type: "Object", value: "{{user_data}}" },
         },
         false,
-        "24h"
+        "24h",
       ),
     ],
     tags: ["enrichment", "pipeline"],
@@ -189,16 +223,20 @@ async function examplePipelineEnrichment(client) {
 
   const pipelineScriptId = await saveOrUpdate(client, pipelineScript);
   console.log(
-    `✓ Created enrichment pipeline: user_enrichment_pipeline (${pipelineScriptId})`
+    `✓ Created enrichment pipeline: ${FUNCTION_LABELS.enrichment} (${pipelineScriptId})`,
   );
 
   console.log("\nRunning pipeline:");
-  const enrichResult = await client.callFunction("user_enrichment_pipeline", {
+  const enrichResult = await client.callFunction(pipelineScriptId, {
     user_id: "1",
   });
   console.log("  ✓ Data fetched from API (cached 30m)");
-  console.log("  ✓ Enriched data stored in 'enriched_users' (TTL 24h)");
-  console.log(`  Pipeline returned ${enrichResult.records?.length || 0} records\n`);
+  console.log(
+    `  ✓ Enriched data stored in '${COLLECTIONS.enrichment}' (TTL 24h)`,
+  );
+  console.log(
+    `  Pipeline returned ${enrichResult.records?.length || 0} records\n`,
+  );
 
   return pipelineScriptId;
 }
@@ -206,38 +244,40 @@ async function examplePipelineEnrichment(client) {
 async function exampleDynamicTTL(client) {
   console.log("\nExample 4: Dynamic TTL Configuration");
   console.log("─".repeat(80));
-  console.log("TTL as parameter - supports duration strings, integers, ISO timestamps");
+  console.log(
+    "TTL as parameter - supports duration strings, integers, ISO timestamps",
+  );
 
   // Create script with dynamic TTL
   const dynamicTTLScript = {
-    label: "flexible_cache",
+    label: FUNCTION_LABELS.dynamic,
     name: "Flexible Cache TTL (Native SWR)",
     description: "Demonstrates parameterized TTL values",
     parameters: {
       resource_id: {
-        type: "String",
         description: "Resource to fetch",
         required: true,
       },
       ttl: {
-        type: "String",
         description: "Cache duration (e.g., '5m', '1h', '30s')",
         required: true,
       },
     },
     functions: [
       Stage.swr(
-        "resource:{{resource_id}}",
+        KV_KEYS.dynamicTemplate,
         "{{ttl}}",
         "https://jsonplaceholder.typicode.com/posts/{{resource_id}}",
-        "GET"
+        "GET",
       ),
     ],
     tags: ["dynamic"],
   };
 
   const dynamicScriptId = await saveOrUpdate(client, dynamicTTLScript);
-  console.log(`✓ Created dynamic TTL script: flexible_cache (${dynamicScriptId})`);
+  console.log(
+    `✓ Created dynamic TTL script: ${FUNCTION_LABELS.dynamic} (${dynamicScriptId})`,
+  );
 
   // Test with different TTLs
   const ttlTests = [
@@ -247,7 +287,7 @@ async function exampleDynamicTTL(client) {
   ];
 
   for (const test of ttlTests) {
-    await client.callFunction("flexible_cache", {
+    await client.callFunction(dynamicScriptId, {
       resource_id: "test",
       ttl: test.value,
     });
@@ -259,21 +299,66 @@ async function exampleDynamicTTL(client) {
 
 async function cleanup(client, scriptIds) {
   console.log("\n🧹 Cleaning up...");
+  const errors = [];
+  const cleanupIds = new Set(scriptIds);
   try {
-    for (const scriptId of scriptIds) {
-      await client.deleteFunction(scriptId);
+    const functions = await client.listFunctions();
+    for (const fn of functions) {
+      if (Object.values(FUNCTION_LABELS).includes(fn.label) && fn.id) {
+        cleanupIds.add(fn.id);
+      }
     }
-    console.log(`✓ Deleted ${scriptIds.length} test functions`);
   } catch (error) {
-    console.log(`⚠ Cleanup error (non-critical): ${error}`);
+    errors.push(["discover functions", error]);
   }
+  let deleted = 0;
+  for (const scriptId of cleanupIds) {
+    try {
+      await client.deleteFunction(scriptId);
+      deleted += 1;
+    } catch (error) {
+      errors.push([`function ${scriptId}`, error]);
+    }
+  }
+  for (const key of [
+    KV_KEYS.basic,
+    KV_KEYS.audit,
+    KV_KEYS.enrichment,
+    KV_KEYS.dynamic,
+  ]) {
+    try {
+      await client.kvDelete(key);
+    } catch (error) {
+      if (!isNotFoundError(error)) errors.push([`KV key ${key}`, error]);
+    }
+  }
+  for (const collection of Object.values(COLLECTIONS)) {
+    try {
+      await client.deleteCollection(collection);
+    } catch (error) {
+      if (!isNotFoundError(error))
+        errors.push([`collection ${collection}`, error]);
+    }
+  }
+  if (errors.length > 0) {
+    const details = errors
+      .map(([resource, error]) => `${resource}: ${error}`)
+      .join("; ");
+    console.log(`⚠ Cleanup failed: ${details}`);
+    throw new Error(
+      `Failed to clean up ${errors.length} owned resource(s): ${details}`,
+    );
+  }
+  console.log(`✓ Deleted ${deleted} test functions and owned SWR resources`);
 }
 
 async function main() {
   console.log("🚀 ekoDB JavaScript Client - Native SWR Function Examples\n");
   console.log("📋 Demonstrates:");
   console.log("   • Single-function SWR pattern (replaces 4-step pipeline)");
-  console.log("   • Automatic cache checking, HTTP fetching, and cache setting");
+  console.log(
+    "   • Automatic cache checking, HTTP fetching, and cache setting",
+  );
   console.log("   • Built-in audit trail support");
   console.log("   • Duration string TTLs ('15m', '1h', '30s')");
   console.log("   • Multi-function pipeline integration");
@@ -282,14 +367,10 @@ async function main() {
   const client = new EkoDBClient(BASE_URL, API_KEY);
   await client.init();
 
-  // Start clean: drop stale collections from a prior run so their schema is
-  // inferred fresh and a stale schema can't reject the insert.
-  try { await client.deleteCollection("enriched_users"); } catch (e) { /* not present yet */ }
-  try { await client.deleteCollection("swr_audit_trail"); } catch (e) { /* not present yet */ }
-
   const scriptIds = [];
 
   try {
+    await cleanup(client, scriptIds);
     // Run examples
     scriptIds.push(await exampleBasicSWR(client));
     scriptIds.push(await exampleAuditTrail(client));
@@ -300,16 +381,30 @@ async function main() {
     console.log("\n" + "=".repeat(80));
     console.log("✅ Key Benefits of Native SWR:");
     console.log("✅ Single function: Replaces 4-function cache-aside pattern");
-    console.log("✅ Duration strings: Use '15m', '1h', '2h' instead of calculating seconds");
-    console.log("✅ Built-in audit: Optional collection parameter for automatic logging");
-    console.log("✅ Auto-enrichment: output_field populates params for downstream functions");
-    console.log("✅ Transactional: Works correctly in both transactional and non-transactional contexts");
-    console.log("✅ KV-optimized: Uses native KV store with proper TTL handling");
+    console.log(
+      "✅ Duration strings: Use '15m', '1h', '2h' instead of calculating seconds",
+    );
+    console.log(
+      "✅ Built-in audit: Optional collection parameter for automatic logging",
+    );
+    console.log(
+      "✅ Auto-enrichment: output_field populates params for downstream functions",
+    );
+    console.log(
+      "✅ Transactional: Works correctly in both transactional and non-transactional contexts",
+    );
+    console.log(
+      "✅ KV-optimized: Uses native KV store with proper TTL handling",
+    );
 
     console.log("\n=== Performance Comparison ===");
-    console.log("Legacy Pattern: KvGet → If → HttpRequest → KvSet → Insert (5 functions)");
+    console.log(
+      "Legacy Pattern: KvGet → If → HttpRequest → KvSet → Insert (5 functions)",
+    );
     console.log("Native SWR:     SWR → Insert (2 functions)");
-    console.log("Result:         60% fewer functions, cleaner code, same behavior 🎯");
+    console.log(
+      "Result:         60% fewer functions, cleaner code, same behavior 🎯",
+    );
   } catch (error) {
     console.error("❌ Error:", error);
     throw error;
@@ -320,4 +415,7 @@ async function main() {
   console.log("\n✅ All examples completed!");
 }
 
-main().catch(console.error);
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});

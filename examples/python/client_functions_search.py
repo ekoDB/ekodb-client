@@ -23,6 +23,18 @@ def _is_already_exists_error(err):
     return "409" in msg or "already exists" in msg
 
 
+def _is_not_found_error(err):
+    msg = str(err).lower()
+    return "404" in msg or "not found" in msg
+
+
+def field_value(record, key):
+    value = record.get(key)
+    if isinstance(value, dict) and "value" in value:
+        return value["value"]
+    return value
+
+
 async def save_or_update(client, script):
     """Save a function, falling back to an update if its label already exists."""
     label = script["label"]
@@ -33,23 +45,18 @@ async def save_or_update(client, script):
             raise
         await client.update_function(label, script)
         print(f"ℹ️  Function '{label}' already existed — updated instead")
-        return label
+        existing = await client.get_function(label)
+        function_id = existing.get("id")
+        if not function_id:
+            raise RuntimeError(f"Updated function '{label}' did not include an id")
+        return function_id
 
 
-async def main():
-    from ekodb_client import Client, Stage
-
-    client = Client.new(BASE_URL, API_KEY)
-
+async def run_examples(client, script_ids):
     print("🚀 ekoDB Python Search Functions Example\n")
 
     # Setup test data
     print("📋 Setting up test data...")
-    try:
-        await client.delete_collection("search_docs_py")
-    except Exception:
-        pass
-
     documents = [
         {
             "title": "Introduction to Machine Learning",
@@ -83,11 +90,16 @@ async def main():
         },
     ]
 
+    inserted_ids = []
     for doc in documents:
-        await client.insert("search_docs_py", doc)
+        inserted = await client.insert("search_docs_py", doc)
+        document_id = field_value(inserted, "id")
+        if not document_id:
+            raise AssertionError("document insert did not return an ID")
+        inserted_ids.append(document_id)
+    if len(set(inserted_ids)) != 5:
+        raise AssertionError("document inserts did not return 5 unique IDs")
     print(f"✅ Inserted {len(documents)} documents\n")
-
-    script_ids = []
 
     # Example 1: List All Documents
     print("📝 Example 1: List All Documents\n")
@@ -105,14 +117,18 @@ async def main():
 
     result1 = await client.call_function("list_all_docs_py", None)
     print(f"📊 Found {len(result1['records'])} documents")
+    if len(result1["records"]) != 5:
+        raise AssertionError("list function did not return all 5 documents")
+    returned_titles = set()
     for i, doc in enumerate(result1["records"]):
-        title = doc.get("title", {})
-        if isinstance(title, dict):
-            title = title.get("value", title)
-        category = doc.get("category", {})
-        if isinstance(category, dict):
-            category = category.get("value", category)
+        title = field_value(doc, "title")
+        category = field_value(doc, "category")
+        if not isinstance(title, str) or category not in {"AI", "Database"}:
+            raise AssertionError(f"malformed search record: {doc!r}")
+        returned_titles.add(title)
         print(f"   {i + 1}. {title} ({category})")
+    if returned_titles != {doc["title"] for doc in documents}:
+        raise AssertionError(f"unexpected document titles: {returned_titles!r}")
     print(f"⏱️  Execution time: {result1['stats']['execution_time_ms']}ms\n")
 
     # Example 2: Count Documents by Category
@@ -138,23 +154,57 @@ async def main():
 
     result2 = await client.call_function("docs_by_category_py", None)
     print("📊 Documents by category:")
+    category_counts = {}
     for group in result2["records"]:
         print(f"   {group}")
+        category_counts[field_value(group, "category")] = field_value(group, "count")
+    if category_counts != {"AI": 2, "Database": 3}:
+        raise AssertionError(f"unexpected category groups: {category_counts!r}")
     print(f"⏱️  Execution time: {result2['stats']['execution_time_ms']}ms\n")
 
-    # Cleanup
+
+async def main():
+    from ekodb_client import Client
+
+    client = Client.new(BASE_URL, API_KEY)
+    collection = "search_docs_py"
+    script_ids = []
+    try:
+        await client.delete_collection(collection)
+    except Exception as error:
+        if not _is_not_found_error(error):
+            raise
+
+    operation_error = None
+    try:
+        await run_examples(client, script_ids)
+    except BaseException as error:  # noqa: BLE001 - cleanup must run on cancellation
+        operation_error = error
+
     print("🧹 Cleaning up...")
-    for script_id in script_ids:
+    cleanup_errors = []
+    for script_id in reversed(script_ids):
         try:
             await client.delete_function(script_id)
-        except Exception:
-            pass
+        except Exception as error:  # noqa: BLE001 - attempt every cleanup
+            cleanup_errors.append(f"function {script_id}: {error}")
     try:
-        await client.delete_collection("search_docs_py")
-    except Exception:
-        pass
-    print("✅ Cleanup complete\n")
+        await client.delete_collection(collection)
+    except Exception as error:  # noqa: BLE001 - preserve the operation error
+        if not _is_not_found_error(error):
+            cleanup_errors.append(f"collection {collection}: {error}")
 
+    if operation_error is not None:
+        if cleanup_errors:
+            operation_error.add_note(
+                "cleanup also failed: " + "; ".join(cleanup_errors)
+            )
+            print("⚠️  Cleanup errors: " + "; ".join(cleanup_errors))
+        raise operation_error
+    if cleanup_errors:
+        raise RuntimeError("Cleanup failed: " + "; ".join(cleanup_errors))
+
+    print("✅ Cleanup complete\n")
     print("✅ All search script examples finished!")
 
 

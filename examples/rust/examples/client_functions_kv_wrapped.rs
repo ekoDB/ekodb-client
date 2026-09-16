@@ -1,12 +1,54 @@
-///! KV Store & Wrapped Types Example for ekoDB Rust Client
-///!
-///! Demonstrates: KV operations in scripts, wrapped type field builders
+//! KV Store & Wrapped Types Example for ekoDB Rust Client
+//!
+//! Demonstrates: KV operations in scripts, wrapped type field builders
 use ekodb_client::{
-    Client, FieldType, Function, ParameterDefinition, Record, SerializationFormat, UserFunction,
+    Client, Error, FieldType, Function, ParameterDefinition, Query, Record, SerializationFormat,
+    UserFunction,
 };
 use rust_decimal::Decimal;
-use std::{collections::HashMap, env, str::FromStr};
+use serde_json::Value;
+use std::{collections::HashMap, env, error::Error as StdError, str::FromStr};
 use uuid::Uuid;
+
+const ORDERS: &str = "orders_example_rs";
+const PRODUCTS: &str = "products_example_rs";
+const SESSION_KEY: &str = "kv_wrapped:rs:user:session:123";
+const CACHE_KEY: &str = "kv_wrapped:rs:cache:product:456";
+const PRODUCT_KEY: &str = "kv_wrapped:rs:product:cache:789";
+const ORDER_KEY: &str = "kv_wrapped:rs:order:status:c2d3e4f5-a1b2-c3d4-e5f6-a1b2c3d4e5f6";
+
+fn is_not_found(error: &Error) -> bool {
+    matches!(error, Error::NotFound | Error::Api { code: 404, .. })
+}
+
+fn unwrap_typed(value: &Value) -> &Value {
+    if let Value::Object(object) = value {
+        if object.len() == 2 && object.contains_key("type") && object.contains_key("value") {
+            return unwrap_typed(&object["value"]);
+        }
+    }
+    value
+}
+
+fn function_value(result: &ekodb_client::FunctionResult) -> Result<Value, Box<dyn StdError>> {
+    if result.records.len() != 1 {
+        return Err(format!("expected one function record, got {}", result.records.len()).into());
+    }
+    let record = serde_json::to_value(&result.records[0])?;
+    let value = unwrap_typed(
+        record
+            .get("value")
+            .ok_or("function record had no value field")?,
+    );
+    Ok(value.clone())
+}
+
+async fn delete_kv_if_exists(client: &Client, key: &str) -> Result<(), Error> {
+    if client.kv_exists(key).await? {
+        client.kv_delete(key).await?;
+    }
+    Ok(())
+}
 
 /// Save a function idempotently: if the label already exists (HTTP 409),
 /// update the existing definition instead, then return its id.
@@ -21,7 +63,10 @@ async fn save_or_update(
             client.update_function(&label, function).await?;
             println!("ℹ️  Function '{}' already existed — updated instead", label);
             let existing = client.get_function(&label).await?;
-            Ok(existing.id.unwrap_or(label))
+            existing.id.ok_or_else(|| {
+                std::io::Error::other(format!("updated function '{label}' did not include an id"))
+                    .into()
+            })
         }
         Err(e) => Err(Box::new(e)),
     }
@@ -48,29 +93,42 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .serialization_format(SerializationFormat::Json)
         .build()?;
 
+    for collection in [ORDERS, PRODUCTS] {
+        if let Err(error) = client.delete_collection(collection).await {
+            if !is_not_found(&error) {
+                return Err(error.into());
+            }
+        }
+    }
+    for key in [SESSION_KEY, CACHE_KEY, PRODUCT_KEY, ORDER_KEY] {
+        delete_kv_if_exists(&client, key).await?;
+    }
+
     let mut script_ids = Vec::new();
+    let operation_result: Result<(), Box<dyn StdError>> = async {
+        // Wrapped Types Examples
+        wrapped_types_insert(&client).await?;
+        wrapped_types_in_script(&client, &mut script_ids).await?;
 
-    // Wrapped Types Examples
-    wrapped_types_insert(&client).await?;
+        // KV Store Examples
+        kv_basic_operations(&client).await?;
+        kv_script_operations(&client, &mut script_ids).await?;
 
-    if let Ok(id) = wrapped_types_in_script(&client).await {
-        script_ids.push(id);
+        // Combined Example
+        combined_example(&client, &mut script_ids).await?;
+        Ok(())
     }
+    .await;
 
-    // KV Store Examples
-    kv_basic_operations(&client).await?;
-
-    if let Ok(id) = kv_script_operations(&client).await {
-        script_ids.push(id);
+    let cleanup_result = cleanup(&client, &script_ids).await;
+    match (operation_result, cleanup_result) {
+        (Err(primary), Err(cleanup)) => {
+            return Err(format!("{primary}; cleanup also failed: {cleanup}").into());
+        }
+        (Err(primary), Ok(())) => return Err(primary),
+        (Ok(()), Err(cleanup)) => return Err(cleanup),
+        (Ok(()), Ok(())) => {}
     }
-
-    // Combined Example
-    if let Ok(id) = combined_example(&client).await {
-        script_ids.push(id);
-    }
-
-    // Cleanup
-    cleanup(&client, &script_ids).await?;
 
     println!("✅ All KV & Wrapped Types examples completed!");
     println!("\n💡 Key takeaways:");
@@ -109,7 +167,14 @@ async fn wrapped_types_insert(client: &Client) -> Result<(), Box<dyn std::error:
         ]),
     );
 
-    let result = client.insert("orders_example_rs", order, None).await?;
+    let result = client.insert(ORDERS, order, None).await?;
+    if result
+        .get_string("id")
+        .filter(|id| !id.is_empty())
+        .is_none()
+    {
+        return Err("order insert did not return an ID".into());
+    }
     println!("✅ Inserted order: {:?}", result.get("id"));
 
     // Insert products with wrapped types
@@ -118,6 +183,7 @@ async fn wrapped_types_insert(client: &Client) -> Result<(), Box<dyn std::error:
         ("Wireless Mouse", "29.99", 150, 4.5, true),
     ];
 
+    let mut product_ids = Vec::new();
     for (name, price, stock, rating, available) in products {
         let mut product = Record::new();
         product.insert("name", FieldType::String(name.to_string()));
@@ -129,14 +195,30 @@ async fn wrapped_types_insert(client: &Client) -> Result<(), Box<dyn std::error:
         product.insert("rating", FieldType::Float(rating));
         product.insert("available", FieldType::Boolean(available));
 
-        client.insert("products_example_rs", product, None).await?;
+        let inserted = client.insert(PRODUCTS, product, None).await?;
+        let id = inserted
+            .get_string("id")
+            .filter(|id| !id.is_empty())
+            .ok_or("product insert did not return an ID")?;
+        if product_ids.iter().any(|existing| existing == id) {
+            return Err(format!("duplicate product ID: {id}").into());
+        }
+        product_ids.push(id.to_string());
+    }
+
+    let stored = client.find(PRODUCTS, Query::new().limit(10), None).await?;
+    if stored.len() != 2 {
+        return Err(format!("expected 2 products, found {}", stored.len()).into());
     }
 
     println!("✅ Inserted 2 products with wrapped types\n");
     Ok(())
 }
 
-async fn wrapped_types_in_script(client: &Client) -> Result<String, Box<dyn std::error::Error>> {
+async fn wrapped_types_in_script(
+    client: &Client,
+    script_ids: &mut Vec<String>,
+) -> Result<(), Box<dyn StdError>> {
     println!("📝 Example 2: function with Wrapped Type Parameters\n");
 
     let script = UserFunction::new(
@@ -147,10 +229,11 @@ async fn wrapped_types_in_script(client: &Client) -> Result<String, Box<dyn std:
     .with_version("1.0")
     .with_parameter(ParameterDefinition::new("order_total").required())
     .with_function(Function::FindAll {
-        collection: "products_example_rs".to_string(),
+        collection: PRODUCTS.to_string(),
     });
 
     let id = save_or_update(client, script).await?;
+    script_ids.push(id.clone());
     println!("✅ Function saved: {}", id);
 
     let mut params = HashMap::new();
@@ -162,10 +245,17 @@ async fn wrapped_types_in_script(client: &Client) -> Result<String, Box<dyn std:
     let result = client
         .call_function("create_order_with_types_rs", Some(params))
         .await?;
+    if result.records.len() != 2 {
+        return Err(format!(
+            "wrapped-types function returned {} records",
+            result.records.len()
+        )
+        .into());
+    }
     println!("📊 function executed");
     println!("⏱️  Execution time: {}ms\n", result.stats.execution_time_ms);
 
-    Ok(id)
+    Ok(())
 }
 
 // =============================================================================
@@ -188,7 +278,7 @@ async fn kv_basic_operations(client: &Client) -> Result<(), Box<dyn std::error::
 
     client
         .kv_set(
-            "user:session:123",
+            SESSION_KEY,
             serde_json::Value::Object(session_data.into_iter().collect()),
             None,
         )
@@ -196,12 +286,22 @@ async fn kv_basic_operations(client: &Client) -> Result<(), Box<dyn std::error::
     println!("✅ Set session data");
 
     // Get the value back
-    let session = client.kv_get("user:session:123").await?;
+    let session = client.kv_get(SESSION_KEY).await?;
     println!("📊 Retrieved session: {:?}", session);
+    let session_value = session
+        .as_ref()
+        .map(unwrap_typed)
+        .ok_or("session KV value was missing")?;
+    if session_value["userId"] != "user_abc" || session_value["role"] != "admin" {
+        return Err(format!("unexpected session KV value: {session_value}").into());
+    }
 
     // Check if key exists
-    let exists = client.kv_exists("user:session:123").await?;
+    let exists = client.kv_exists(SESSION_KEY).await?;
     println!("🔍 Key exists: {}", exists);
+    if !exists {
+        return Err("session KV key did not exist after kv_set".into());
+    }
 
     // Set with TTL (1 hour)
     let mut cache_data = HashMap::new();
@@ -216,7 +316,7 @@ async fn kv_basic_operations(client: &Client) -> Result<(), Box<dyn std::error::
 
     client
         .kv_set(
-            "cache:product:456",
+            CACHE_KEY,
             serde_json::Value::Object(cache_data.into_iter().collect()),
             Some("1h"),
         )
@@ -224,13 +324,19 @@ async fn kv_basic_operations(client: &Client) -> Result<(), Box<dyn std::error::
     println!("✅ Set cached data");
 
     // Delete a key
-    client.kv_delete("user:session:123").await?;
+    client.kv_delete(SESSION_KEY).await?;
     println!("🗑️  Deleted session\n");
+    if client.kv_exists(SESSION_KEY).await? {
+        return Err("session KV key still existed after delete".into());
+    }
 
     Ok(())
 }
 
-async fn kv_script_operations(client: &Client) -> Result<String, Box<dyn std::error::Error>> {
+async fn kv_script_operations(
+    client: &Client,
+    script_ids: &mut Vec<String>,
+) -> Result<(), Box<dyn StdError>> {
     println!("📝 Example 4: KV Operations in Functions\n");
 
     let script = UserFunction::new("cached_product_lookup_rs", "Cached Product Lookup (Rust)")
@@ -244,6 +350,7 @@ async fn kv_script_operations(client: &Client) -> Result<String, Box<dyn std::er
         });
 
     let id = save_or_update(client, script).await?;
+    script_ids.push(id.clone());
     println!("✅ Function saved: {}", id);
 
     // First set some data to retrieve
@@ -259,7 +366,7 @@ async fn kv_script_operations(client: &Client) -> Result<String, Box<dyn std::er
 
     client
         .kv_set(
-            "product:cache:789",
+            PRODUCT_KEY,
             serde_json::Value::Object(product_data.into_iter().collect()),
             None,
         )
@@ -268,23 +375,30 @@ async fn kv_script_operations(client: &Client) -> Result<String, Box<dyn std::er
     let mut params = HashMap::new();
     params.insert(
         "product_key".to_string(),
-        FieldType::String("product:cache:789".to_string()),
+        FieldType::String(PRODUCT_KEY.to_string()),
     );
 
     let result = client
         .call_function("cached_product_lookup_rs", Some(params))
         .await?;
+    let value = function_value(&result)?;
+    if value["name"] != "Test Product" || value["price"] != 49.99 {
+        return Err(format!("unexpected cached product: {value}").into());
+    }
     println!("📊 Cached and retrieved product data");
     println!("⏱️  Execution time: {}ms\n", result.stats.execution_time_ms);
 
-    Ok(id)
+    Ok(())
 }
 
 // =============================================================================
 // Combined Example
 // =============================================================================
 
-async fn combined_example(client: &Client) -> Result<String, Box<dyn std::error::Error>> {
+async fn combined_example(
+    client: &Client,
+    script_ids: &mut Vec<String>,
+) -> Result<(), Box<dyn StdError>> {
     println!("📝 Example 5: Combined Wrapped Types + KV Function\n");
 
     let script = UserFunction::new(
@@ -298,10 +412,11 @@ async fn combined_example(client: &Client) -> Result<String, Box<dyn std::error:
     .with_tag("kv")
     .with_tag("wrapped-types")
     .with_function(Function::KvGet {
-        key: serde_json::Value::String("order:status:{{order_id}}".to_string()),
+        key: serde_json::Value::String("kv_wrapped:rs:order:status:{{order_id}}".to_string()),
     });
 
     let id = save_or_update(client, script).await?;
+    script_ids.push(id.clone());
     println!("✅ Function saved: {}", id);
 
     // Set order status in KV store
@@ -317,12 +432,11 @@ async fn combined_example(client: &Client) -> Result<String, Box<dyn std::error:
 
     client
         .kv_set(
-            "order:status:c2d3e4f5-a1b2-c3d4-e5f6-a1b2c3d4e5f6",
+            ORDER_KEY,
             serde_json::Value::Object(status_data.into_iter().collect()),
             None,
         )
         .await?;
-
     let mut params = HashMap::new();
     params.insert(
         "order_id".to_string(),
@@ -332,32 +446,47 @@ async fn combined_example(client: &Client) -> Result<String, Box<dyn std::error:
     let result = client
         .call_function("process_order_with_cache_rs", Some(params))
         .await?;
+    let value = function_value(&result)?;
+    if value["status"] != "processing" || value["updated_at"].as_str().is_none() {
+        return Err(format!("unexpected order status: {value}").into());
+    }
     println!("📊 Processed order with caching");
     println!("⏱️  Stages executed: {}", result.stats.stages_executed);
     println!("⏱️  Execution time: {}ms\n", result.stats.execution_time_ms);
 
-    Ok(id)
+    Ok(())
 }
 
 // =============================================================================
 // Cleanup
 // =============================================================================
 
-async fn cleanup(client: &Client, script_ids: &[String]) -> Result<(), Box<dyn std::error::Error>> {
+async fn cleanup(client: &Client, script_ids: &[String]) -> Result<(), Box<dyn StdError>> {
     println!("🧹 Cleaning up...");
 
-    for id in script_ids {
-        let _ = client.delete_function(id).await;
+    let mut errors = Vec::new();
+    for id in script_ids.iter().rev() {
+        if let Err(error) = client.delete_function(id).await {
+            errors.push(format!("function {id}: {error}"));
+        }
     }
 
-    let _ = client.delete_collection("orders_example_rs").await;
-    let _ = client.delete_collection("products_example_rs").await;
+    for collection in [ORDERS, PRODUCTS] {
+        if let Err(error) = client.delete_collection(collection).await {
+            if !is_not_found(&error) {
+                errors.push(format!("collection {collection}: {error}"));
+            }
+        }
+    }
+    for key in [SESSION_KEY, CACHE_KEY, PRODUCT_KEY, ORDER_KEY] {
+        if let Err(error) = delete_kv_if_exists(client, key).await {
+            errors.push(format!("KV key {key}: {error}"));
+        }
+    }
 
-    let _ = client.kv_delete("cache:product:456").await;
-    let _ = client.kv_delete("product:cache:789").await;
-    let _ = client
-        .kv_delete("order:status:c2d3e4f5-a1b2-c3d4-e5f6-a1b2c3d4e5f6")
-        .await;
+    if !errors.is_empty() {
+        return Err(format!("cleanup failed: {}", errors.join("; ")).into());
+    }
 
     println!("✅ Cleanup complete\n");
     Ok(())

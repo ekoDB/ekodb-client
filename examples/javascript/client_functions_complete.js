@@ -8,6 +8,20 @@ require("dotenv").config();
 
 const BASE_URL = process.env.API_BASE_URL || "http://localhost:8080";
 const API_KEY = process.env.API_BASE_KEY || "a-test-api-key-from-ekodb";
+const COLLECTION = "complete_products_js";
+const FUNCTION_LABELS = [
+  "product_stats_js",
+  "list_all_products_js",
+  "count_by_category_js",
+  "top_rated_products_js",
+  "list_with_limit_js",
+  "product_summary_js",
+];
+
+function isNotFoundError(error) {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.includes("status 404") || /not found/i.test(message);
+}
 
 /**
  * Save a function idempotently.
@@ -25,7 +39,9 @@ async function saveOrUpdate(client, script) {
   } catch (error) {
     if (error.message && error.message.includes("already exists")) {
       await client.updateFunction(script.label, script);
-      console.log(`ℹ️  Function '${script.label}' already existed — updated instead`);
+      console.log(
+        `ℹ️  Function '${script.label}' already existed — updated instead`,
+      );
       const existing = await client.getFunction(script.label);
       return existing.id;
     }
@@ -37,15 +53,45 @@ async function setupTestData(client) {
   console.log("📋 Setting up complete test data...");
 
   const products = [
-    { name: "Laptop Pro", category: "Electronics", price: 1299, stock: 15, rating: 4.8 },
-    { name: "Wireless Mouse", category: "Electronics", price: 29, stock: 45, rating: 4.5 },
-    { name: "Desk Chair", category: "Furniture", price: 349, stock: 8, rating: 4.2 },
-    { name: "Standing Desk", category: "Furniture", price: 599, stock: 12, rating: 4.7 },
-    { name: 'Monitor 27"', category: "Electronics", price: 399, stock: 20, rating: 4.6 },
+    {
+      name: "Laptop Pro",
+      category: "Electronics",
+      price: 1299,
+      stock: 15,
+      rating: 4.8,
+    },
+    {
+      name: "Wireless Mouse",
+      category: "Electronics",
+      price: 29,
+      stock: 45,
+      rating: 4.5,
+    },
+    {
+      name: "Desk Chair",
+      category: "Furniture",
+      price: 349,
+      stock: 8,
+      rating: 4.2,
+    },
+    {
+      name: "Standing Desk",
+      category: "Furniture",
+      price: 599,
+      stock: 12,
+      rating: 4.7,
+    },
+    {
+      name: 'Monitor 27"',
+      category: "Electronics",
+      price: 399,
+      stock: 20,
+      rating: 4.6,
+    },
   ];
 
   for (const product of products) {
-    await client.insert("complete_products_js", product);
+    await client.insert(COLLECTION, product);
   }
 
   console.log(`✅ Created ${products.length} products\n`);
@@ -60,13 +106,17 @@ async function advancedQueryFunction(client) {
     version: "1.0",
     parameters: {},
     functions: [
-      { type: "FindAll", collection: "complete_products_js" },
+      { type: "FindAll", collection: COLLECTION },
       {
         type: "Group",
         by_fields: ["category"],
         functions: [
           { output_field: "count", operation: "Count" },
-          { output_field: "avg_price", operation: "Average", input_field: "price" },
+          {
+            output_field: "avg_price",
+            operation: "Average",
+            input_field: "price",
+          },
         ],
       },
     ],
@@ -76,11 +126,13 @@ async function advancedQueryFunction(client) {
   const scriptId = await saveOrUpdate(client, script);
   console.log(`✅ Function saved: ${scriptId}`);
 
-  const result = await client.callFunction("product_stats_js", null);
+  const result = await client.callFunction(scriptId, null);
 
   console.log(`📊 Found ${result.records?.length || 0} product groups`);
   if (result.records) {
-    result.records.forEach((record) => console.log(`   ${JSON.stringify(record)}`));
+    result.records.forEach((record) =>
+      console.log(`   ${JSON.stringify(record)}`),
+    );
   }
   console.log(`⏱️  Execution time: ${result.stats?.execution_time_ms}ms\n`);
 
@@ -95,14 +147,14 @@ async function listProductsScript(client) {
     name: "List All Products",
     version: "1.0",
     parameters: {},
-    functions: [{ type: "FindAll", collection: "complete_products_js" }],
+    functions: [{ type: "FindAll", collection: COLLECTION }],
     tags: ["products", "list"],
   };
 
   const scriptId = await saveOrUpdate(client, script);
   console.log("✅ Function saved");
 
-  const result = await client.callFunction("list_all_products_js", null);
+  const result = await client.callFunction(scriptId, null);
 
   console.log(`📊 Found ${result.records?.length || 0} products`);
   console.log(`⏱️  Execution time: ${result.stats?.execution_time_ms}ms\n`);
@@ -119,7 +171,7 @@ async function categoryCountScript(client) {
     version: "1.0",
     parameters: {},
     functions: [
-      { type: "FindAll", collection: "complete_products_js" },
+      { type: "FindAll", collection: COLLECTION },
       {
         type: "Group",
         by_fields: ["category"],
@@ -132,11 +184,13 @@ async function categoryCountScript(client) {
   const scriptId = await saveOrUpdate(client, script);
   console.log("✅ Function saved");
 
-  const result = await client.callFunction("count_by_category_js", null);
+  const result = await client.callFunction(scriptId, null);
 
   console.log(`📊 Found ${result.records?.length || 0} categories`);
   if (result.records) {
-    result.records.forEach((record) => console.log(`   ${JSON.stringify(record)}`));
+    result.records.forEach((record) =>
+      console.log(`   ${JSON.stringify(record)}`),
+    );
   }
   console.log(`⏱️  Execution time: ${result.stats?.execution_time_ms}ms\n`);
 
@@ -151,14 +205,14 @@ async function topRatedScript(client) {
     name: "Top Rated Products",
     version: "1.0",
     parameters: {},
-    functions: [{ type: "FindAll", collection: "complete_products_js" }],
+    functions: [{ type: "FindAll", collection: COLLECTION }],
     tags: ["products", "quality"],
   };
 
   const scriptId = await saveOrUpdate(client, script);
   console.log("✅ Function saved");
 
-  const result = await client.callFunction("top_rated_products_js", null);
+  const result = await client.callFunction(scriptId, null);
 
   console.log(`📊 Found ${result.records?.length || 0} products`);
   console.log(`⏱️  Execution time: ${result.stats?.execution_time_ms}ms\n`);
@@ -180,14 +234,16 @@ async function scriptWithParameter(client) {
         default: 5,
       },
     },
-    functions: [{ type: "FindAll", collection: "complete_products_js" }],
+    functions: [{ type: "FindAll", collection: COLLECTION }],
     tags: ["products", "list"],
   };
 
   const scriptId = await saveOrUpdate(client, script);
   console.log("✅ Function saved");
 
-  const result = await client.callFunction("list_with_limit_js", { max_items: 3 });
+  const result = await client.callFunction(scriptId, {
+    max_items: 3,
+  });
 
   console.log(`📊 Found ${result.records?.length || 0} products`);
   console.log(`⏱️  Execution time: ${result.stats?.execution_time_ms}ms\n`);
@@ -204,13 +260,17 @@ async function multiStagePipeline(client) {
     version: "1.0",
     parameters: {},
     functions: [
-      { type: "FindAll", collection: "complete_products_js" },
+      { type: "FindAll", collection: COLLECTION },
       {
         type: "Group",
         by_fields: ["category"],
         functions: [
           { output_field: "count", operation: "Count" },
-          { output_field: "avg_price", operation: "Average", input_field: "price" },
+          {
+            output_field: "avg_price",
+            operation: "Average",
+            input_field: "price",
+          },
         ],
       },
       { type: "Count", output_field: "total_categories" },
@@ -221,10 +281,12 @@ async function multiStagePipeline(client) {
   const scriptId = await saveOrUpdate(client, script);
   console.log("✅ Function saved");
 
-  const result = await client.callFunction("product_summary_js", null);
+  const result = await client.callFunction(scriptId, null);
 
   console.log(`📊 Pipeline executed ${result.stats?.stages_executed} stages`);
-  console.log(`⏱️  Total execution time: ${result.stats?.execution_time_ms}ms\n`);
+  console.log(
+    `⏱️  Total execution time: ${result.stats?.execution_time_ms}ms\n`,
+  );
 
   return scriptId;
 }
@@ -232,47 +294,72 @@ async function multiStagePipeline(client) {
 async function cleanup(client, scriptIds) {
   console.log("🧹 Cleaning up...");
 
-  try {
-    for (const scriptId of scriptIds) {
-      await client.deleteFunction(scriptId);
+  const errors = [];
+  for (const id of scriptIds) {
+    try {
+      await client.deleteFunction(id);
+    } catch (error) {
+      if (!isNotFoundError(error)) errors.push(error);
     }
-    await client.deleteCollection("complete_products_js");
-    console.log("✅ Cleanup complete\n");
-  } catch (e) {
-    console.log(`⚠️  Cleanup had some errors: ${e.message}\n`);
   }
+  try {
+    await client.deleteCollection(COLLECTION);
+  } catch (error) {
+    if (!isNotFoundError(error)) errors.push(error);
+  }
+  if (errors.length > 0) {
+    console.log(`⚠️  Cleanup had ${errors.length} error(s)\n`);
+    throw new AggregateError(errors, "Complete functions cleanup failed");
+  }
+  console.log("✅ Cleanup complete\n");
 }
 
 async function main() {
   console.log("🚀 ekoDB JavaScript Complete Functions Example\n");
-  console.log("📋 Demonstrates: FindAll, Group, Count, Multi-stage Pipelines\n");
+  console.log(
+    "📋 Demonstrates: FindAll, Group, Count, Multi-stage Pipelines\n",
+  );
 
   const client = new EkoDBClient(BASE_URL, API_KEY);
   await client.init();
+  const scriptIds = [];
 
+  let primaryError;
   try {
     await setupTestData(client);
-
-    const scriptIds = [];
     scriptIds.push(await advancedQueryFunction(client));
     scriptIds.push(await listProductsScript(client));
     scriptIds.push(await categoryCountScript(client));
     scriptIds.push(await topRatedScript(client));
     scriptIds.push(await scriptWithParameter(client));
     scriptIds.push(await multiStagePipeline(client));
-
-    await cleanup(client, scriptIds);
-
-    console.log("✅ All complete function examples finished!");
-    console.log("\n💡 This example demonstrates ekoDB's Function system:");
-    console.log("   ✅ FindAll operations");
-    console.log("   ✅ Group aggregations (Count, Average)");
-    console.log("   ✅ Multi-stage pipelines (FindAll → Group → Count)");
-    console.log("   ✅ Parameter definitions");
-    console.log("   ✅ Function management (save, call, delete)");
   } catch (e) {
     console.error(`❌ Error: ${e.message}`);
+    primaryError = e;
+  } finally {
+    try {
+      await cleanup(client, scriptIds);
+    } catch (cleanupError) {
+      primaryError =
+        primaryError === undefined
+          ? cleanupError
+          : new AggregateError(
+              [primaryError, cleanupError],
+              "Complete functions example and cleanup failed",
+            );
+    }
   }
+  if (primaryError !== undefined) throw primaryError;
+  console.log("✅ All complete function examples finished!");
+  console.log("\n💡 This example demonstrates ekoDB's Function system:");
+  console.log("   ✅ FindAll operations");
+  console.log("   ✅ Group aggregations (Count, Average)");
+  console.log("   ✅ Multi-stage pipelines (FindAll → Group → Count)");
+  console.log("   ✅ Parameter definitions");
+  console.log("   ✅ Function management (save, call, delete)");
 }
 
-main().catch(console.error);
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});

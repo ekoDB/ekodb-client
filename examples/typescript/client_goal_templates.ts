@@ -2,7 +2,7 @@
 //
 // Demonstrates creating, listing, getting, updating, and deleting goal templates.
 
-import { EkoDBClient } from "@ekodb/ekodb-client";
+import { EkoDBClient, getValue } from "@ekodb/ekodb-client";
 
 async function main() {
   console.log("=== ekoDB Goal Template CRUD Example (TypeScript) ===\n");
@@ -25,8 +25,13 @@ async function main() {
       { description: "Validate results" },
     ],
   });
-  const templateId = template.id;
-  console.log(`Created template: ${template.title} (id: ${templateId})`);
+  const templateId = template.id as string;
+  const created = await client.goalTemplateGet(templateId);
+  const createdTitle = getValue<string>(created.title);
+  if (createdTitle !== "Data Migration") {
+    throw new Error(`Unexpected created template title: ${createdTitle}`);
+  }
+  console.log(`Created template: ${createdTitle} (id: ${templateId})`);
 
   // 2. List all templates
   console.log("\n--- Listing templates ---");
@@ -36,14 +41,14 @@ async function main() {
   // 3. Get template by ID
   console.log("\n--- Getting template ---");
   const fetched = await client.goalTemplateGet(templateId);
-  console.log(`Fetched: ${fetched.title}`);
+  console.log(`Fetched: ${getValue(fetched.title)}`);
 
   // 4. Update template
   console.log("\n--- Updating template ---");
   const updated = await client.goalTemplateUpdate(templateId, {
     description: "Updated: comprehensive data migration workflow",
   });
-  console.log(`Updated description: ${updated.description}`);
+  console.log(`Updated description: ${getValue(updated.description)}`);
 
   // 5. Delete template
   console.log("\n--- Deleting template ---");
@@ -53,4 +58,7 @@ async function main() {
   console.log("\n✓ Goal template CRUD example completed");
 }
 
-main().catch(console.error);
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});

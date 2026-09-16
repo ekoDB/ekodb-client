@@ -5,11 +5,17 @@
 //! automatically replicated to other nodes.
 
 use ekodb_client::options::{InsertOptions, UpdateOptions, UpsertOptions};
-use ekodb_client::{Client, Record, Result};
+use ekodb_client::{Client, Error, Record};
 use std::env;
 
+const COLLECTION: &str = "bypass_ripple_products_rs";
+
+fn is_not_found(error: &Error) -> bool {
+    matches!(error, Error::NotFound | Error::Api { code: 404, .. })
+}
+
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv::dotenv().ok();
 
     let base_url = env::var("API_BASE_URL").unwrap_or_else(|_| "http://localhost:8080".to_string());
@@ -21,14 +27,36 @@ async fn main() -> Result<()> {
         .api_key(&api_key)
         .build()?;
 
-    let collection = "products";
+    if let Err(error) = client.delete_collection(COLLECTION).await {
+        if !is_not_found(&error) {
+            return Err(error.into());
+        }
+    }
 
+    let operation_result = run_examples(&client).await;
+    let cleanup_result = match client.delete_collection(COLLECTION).await {
+        Err(error) if is_not_found(&error) => Ok(()),
+        result => result,
+    };
+    match (operation_result, cleanup_result) {
+        (Err(primary), Err(cleanup)) => {
+            return Err(format!("{primary}; cleanup also failed: {cleanup}").into());
+        }
+        (Err(primary), Ok(())) => return Err(primary),
+        (Ok(()), Err(cleanup)) => return Err(cleanup.into()),
+        (Ok(()), Ok(())) => {}
+    }
+    println!("✅ All bypass_ripple operations completed successfully!");
+    Ok(())
+}
+
+async fn run_examples(client: &Client) -> Result<(), Box<dyn std::error::Error>> {
     println!("=== Bypass Ripple Example ===\n");
 
     // Basic insert (no bypass)
     println!("1. Basic insert (ripple enabled):");
     let record1 = Record::new().field("name", "Product 1").field("price", 100);
-    let result1 = client.insert(collection, record1, None).await?;
+    let result1 = client.insert(COLLECTION, record1, None).await?;
     println!("   Inserted with ripple: {:?}\n", result1);
 
     // Insert with bypass_ripple
@@ -36,7 +64,7 @@ async fn main() -> Result<()> {
     let record2 = Record::new().field("name", "Product 2").field("price", 200);
     let insert_opts = InsertOptions::new().bypass_ripple(true);
     let result2 = client
-        .insert(collection, record2, Some(insert_opts))
+        .insert(COLLECTION, record2, Some(insert_opts))
         .await?;
     println!("   Inserted with bypass_ripple: {:?}\n", result2);
 
@@ -51,13 +79,13 @@ async fn main() -> Result<()> {
         let update_record = Record::new().field("price", 150);
         let update_opts = UpdateOptions::new().bypass_ripple(true);
         let result3 = client
-            .update(collection, &user_id, update_record, Some(update_opts))
+            .update(COLLECTION, &user_id, update_record, Some(update_opts))
             .await?;
         println!("   Updated with bypass_ripple: {:?}\n", result3);
 
         // Delete with bypass_ripple
         println!("4. Delete with bypass_ripple:");
-        client.delete(collection, &user_id, Some(true)).await?;
+        client.delete(COLLECTION, &user_id, Some(true)).await?;
         println!("   Deleted with bypass_ripple\n");
     }
 
@@ -67,7 +95,7 @@ async fn main() -> Result<()> {
         Record::new().field("name", "Batch 1").field("price", 10),
         Record::new().field("name", "Batch 2").field("price", 20),
     ];
-    let batch_results = client.batch_insert(collection, records, Some(true)).await?;
+    let batch_results = client.batch_insert(COLLECTION, records, Some(true)).await?;
     println!(
         "   Batch inserted with bypass_ripple: {} records\n",
         batch_results.len()
@@ -80,11 +108,9 @@ async fn main() -> Result<()> {
         .field("price", 500);
     let upsert_opts = UpsertOptions::new().bypass_ripple(true);
     let upsert_result = client
-        .upsert(collection, "custom-id", upsert_record, Some(upsert_opts))
+        .upsert(COLLECTION, "custom-id", upsert_record, Some(upsert_opts))
         .await?;
     println!("   Upserted with bypass_ripple: {:?}\n", upsert_result);
-
-    println!("✅ All bypass_ripple operations completed successfully!");
 
     Ok(())
 }

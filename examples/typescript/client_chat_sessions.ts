@@ -27,107 +27,132 @@ async function main() {
   await client.init();
 
   const collection = "client_chat_sessions_ts";
+  let chatId: string | undefined;
+  let branchId: string | undefined;
+  let primaryError: unknown;
 
-  // Step 1: Insert sample data
-  console.log("=== Inserting Sample Data ===");
-  await client.insert(collection, {
-    name: "ekoDB",
-    description: "A high-performance database product",
-    price: 99,
-  });
-  console.log("✓ Inserted sample product\n");
+  try {
+    // Step 1: Insert sample data
+    console.log("=== Inserting Sample Data ===");
+    await client.insert(collection, {
+      name: "ekoDB",
+      description: "A high-performance database product",
+      price: 99,
+    });
+    console.log("✓ Inserted sample product\n");
 
-  // Step 2: Create a chat session
-  console.log("=== Creating Chat Session ===");
-  const session = await client.createChatSession({
-    collections: [
-      {
-        collection_name: collection,
-        fields: [], // Empty = search all fields
-      },
-    ],
-    llm_provider: "openai",
-    llm_model: "gpt-4o-mini",
-    system_prompt: "You are a helpful assistant for product information.",
-  });
-  const chatId = session.chat_id;
-  console.log(`✓ Created session: ${chatId}\n`);
+    // Step 2: Create a chat session
+    console.log("=== Creating Chat Session ===");
+    const session = await client.createChatSession({
+      collections: [
+        {
+          collection_name: collection,
+          fields: [], // Empty = search all fields
+        },
+      ],
+      llm_provider: "openai",
+      llm_model: "gpt-4o-mini",
+      system_prompt: "You are a helpful assistant for product information.",
+    });
+    chatId = session.chat_id;
+    console.log(`✓ Created session: ${chatId}\n`);
 
-  // Step 3: Send messages in the session
-  console.log("=== Sending Messages ===");
-  const msg1 = await client.chatMessage(chatId, {
-    message: "What products are available?",
-  });
-  console.log("✓ Message 1 sent");
-  console.log(`  Response: ${msg1.responses[0] || "No response"}\n`);
+    // Step 3: Send messages in the session
+    console.log("=== Sending Messages ===");
+    const msg1 = await client.chatMessage(chatId, {
+      message: "What products are available?",
+    });
+    console.log("✓ Message 1 sent");
+    console.log(`  Response: ${msg1.responses[0] || "No response"}\n`);
 
-  const msg2 = await client.chatMessage(chatId, {
-    message: "What is the price?",
-  });
-  console.log("✓ Message 2 sent");
-  console.log(`  Response: ${msg2.responses[0] || "No response"}\n`);
+    const msg2 = await client.chatMessage(chatId, {
+      message: "What is the price?",
+    });
+    console.log("✓ Message 2 sent");
+    console.log(`  Response: ${msg2.responses[0] || "No response"}\n`);
 
-  // Step 4: Get session messages
-  console.log("=== Retrieving Session Messages ===");
-  const messagesResponse = await client.getChatSessionMessages(chatId, {
-    limit: 10,
-    sort: "asc",
-  });
-  console.log(`✓ Retrieved ${messagesResponse.messages.length} messages\n`);
+    // Step 4: Get session messages
+    console.log("=== Retrieving Session Messages ===");
+    const messagesResponse = await client.getChatSessionMessages(chatId, {
+      limit: 10,
+      sort: "asc",
+    });
+    console.log(`✓ Retrieved ${messagesResponse.messages.length} messages\n`);
 
-  // Step 5: Update session
-  console.log("=== Updating Session ===");
-  await client.updateChatSession(chatId, {
-    system_prompt: "You are an expert product consultant.",
-  });
-  console.log("✓ Session updated\n");
+    // Step 5: Update session
+    console.log("=== Updating Session ===");
+    await client.updateChatSession(chatId, {
+      system_prompt: "You are an expert product consultant.",
+    });
+    console.log("✓ Session updated\n");
 
-  // Step 6: Branch the session
-  console.log("=== Branching Session ===");
-  const branched = await client.branchChatSession({
-    collections: [
-      {
-        collection_name: "products",
-        fields: [], // Empty = search all fields
-      },
-    ],
-    llm_provider: "openai",
-    llm_model: "gpt-4o-mini",
-    parent_id: chatId,
-    branch_point_idx: 0,
-  });
-  const branchId = branched.chat_id;
-  console.log(`✓ Created branch: ${branchId}`);
-  console.log(`  Parent: ${chatId}\n`);
+    // Step 6: Branch the session
+    console.log("=== Branching Session ===");
+    const branched = await client.branchChatSession({
+      collections: [
+        {
+          collection_name: "products",
+          fields: [], // Empty = search all fields
+        },
+      ],
+      llm_provider: "openai",
+      llm_model: "gpt-4o-mini",
+      parent_id: chatId,
+      branch_point_idx: 0,
+    });
+    branchId = branched.chat_id;
+    console.log(`✓ Created branch: ${branchId}`);
+    console.log(`  Parent: ${chatId}\n`);
 
-  // Step 7: List all sessions
-  console.log("=== Listing Sessions ===");
-  const sessionsList = await client.listChatSessions({
-    limit: 10,
-    sort: "desc",
-  });
-  console.log(`✓ Found ${sessionsList.sessions.length} sessions`);
-  sessionsList.sessions.forEach((s, i) => {
-    console.log(`  Session ${i + 1}: ${s.chat_id} (${s.title || "Untitled"})`);
-  });
-  console.log();
+    // Step 7: List all sessions
+    console.log("=== Listing Sessions ===");
+    const sessionsList = await client.listChatSessions({
+      limit: 10,
+      sort: "desc",
+    });
+    console.log(`✓ Found ${sessionsList.sessions.length} sessions`);
+    sessionsList.sessions.forEach((s, i) => {
+      console.log(
+        `  Session ${i + 1}: ${s.chat_id} (${s.title || "Untitled"})`,
+      );
+    });
+    console.log();
 
-  // Step 8: Get session details
-  console.log("=== Getting Session Details ===");
-  const sessionDetails = await client.getChatSession(chatId);
-  console.log("✓ Session details retrieved");
-  console.log(`  Messages: ${sessionDetails.message_count}\n`);
+    // Step 8: Get session details
+    console.log("=== Getting Session Details ===");
+    const sessionDetails = await client.getChatSession(chatId);
+    console.log("✓ Session details retrieved");
+    console.log(`  Messages: ${sessionDetails.message_count}\n`);
 
-  // Step 9: Delete branch session
-  console.log("=== Deleting Branch Session ===");
-  await client.deleteChatSession(branchId);
-  console.log(`✓ Deleted branch session: ${branchId}\n`);
-
-  // Cleanup: Delete the collection (chat sessions are managed by server)
-  console.log("=== Cleanup ===");
-  await client.deleteCollection(collection);
-  console.log("✓ Deleted collection\n");
-
+    // Step 9: Delete branch session
+    console.log("=== Deleting Branch Session ===");
+    await client.deleteChatSession(branchId);
+    console.log(`✓ Deleted branch session: ${branchId}\n`);
+    branchId = undefined;
+  } catch (error) {
+    primaryError = error;
+    throw error;
+  } finally {
+    console.log("=== Cleanup ===");
+    const cleanup = await Promise.allSettled([
+      ...(branchId ? [client.deleteChatSession(branchId)] : []),
+      ...(chatId ? [client.deleteChatSession(chatId)] : []),
+      client.deleteCollection(collection),
+    ]);
+    const failures = cleanup.filter(
+      (result): result is PromiseRejectedResult => result.status === "rejected",
+    );
+    if (failures.length > 0) {
+      throw new AggregateError(
+        [primaryError, ...failures.map((failure) => failure.reason)].filter(
+          Boolean,
+        ),
+        "Session example or cleanup failed",
+      );
+    }
+    if (chatId) console.log("✓ Deleted session");
+    console.log("✓ Deleted collection\n");
+  }
   console.log("✓ All session management operations completed successfully");
 }
 

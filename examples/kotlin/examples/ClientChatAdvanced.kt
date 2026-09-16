@@ -19,14 +19,16 @@ fun main() = runBlocking {
     val dotenv = dotenv()
     val baseUrl = dotenv["API_BASE_URL"] ?: "http://localhost:8080"
     val apiKey = dotenv["API_BASE_KEY"] ?: "a-test-api-key-from-ekodb"
-    
+
     val client = EkoDBClient.builder()
         .baseUrl(baseUrl)
         .apiKey(apiKey)
         .build()
     
     val collection = "kotlin_chat_advanced_example"
-    
+    val chatIds = mutableListOf<String>()
+    var failure: Throwable? = null
+
     println("=== ekoDB Kotlin Client - Advanced Chat Features Example ===\n")
     
     try {
@@ -57,6 +59,7 @@ fun main() = runBlocking {
         
         val session = client.createChatSession(sessionRequest)
         val chatId = session["chat_id"]?.jsonPrimitive?.content ?: error("No chat_id in response")
+        chatIds += chatId
         println("✓ Created session: $chatId\n")
         
         // Send initial message
@@ -114,21 +117,18 @@ fun main() = runBlocking {
         // Toggle forgotten status
         println("=== Toggling Forgotten Status ===")
         
-        try {
-            val forgottenRequest = buildJsonObject {
-                put("forgotten", true)
-            }
-            client.toggleForgottenMessage(chatId, userMessageId, forgottenRequest)
-            println("✓ Marked message as forgotten (excluded from context)\n")
-        } catch (e: Exception) {
-            println("⚠ Toggle forgotten failed (connection error): ${e.message}\n")
+        val forgottenRequest = buildJsonObject {
+            put("forgotten", true)
         }
+        client.toggleForgottenMessage(chatId, userMessageId, forgottenRequest)
+        println("✓ Marked message as forgotten (excluded from context)\n")
         
         // Create second session for merging
         println("=== Creating Second Session for Merge ===")
         
         val session2 = client.createChatSession(sessionRequest)
         val chatId2 = session2["chat_id"]?.jsonPrimitive?.content ?: error("No chat_id in response")
+        chatIds += chatId2
         println("✓ Created second session: $chatId2\n")
         
         // Merge sessions
@@ -142,13 +142,9 @@ fun main() = runBlocking {
             put("merge_strategy", "Chronological")
         }
         
-        try {
-            val merged = client.mergeChatSessions(mergeRequest)
-            println("✓ Merged sessions")
-            println("  Total messages in merged session: ${merged["message_count"]}\n")
-        } catch (e: Exception) {
-            println("⚠ Merge failed (may not be supported): ${e.message}\n")
-        }
+        val merged = client.mergeChatSessions(mergeRequest)
+        println("✓ Merged sessions")
+        println("  Total messages in merged session: ${merged["message_count"]}\n")
         
         // Delete a specific message
         println("=== Deleting Message ===")
@@ -156,21 +152,30 @@ fun main() = runBlocking {
         client.deleteChatMessage(chatId, userMessageId)
         println("✓ Deleted message\n")
         
-        // Cleanup
-        println("=== Cleanup ===")
-        client.deleteChatSession(chatId)
-        client.deleteChatSession(chatId2)
-        println("✓ Deleted chat sessions")
-        
+    } catch (error: Throwable) {
+        failure = error
     } finally {
+        println("=== Cleanup ===")
+        for (chatId in chatIds.asReversed()) {
+            try {
+                client.deleteChatSession(chatId)
+                println("✓ Deleted chat session: $chatId")
+            } catch (cleanupError: Throwable) {
+                failure = failure?.also { it.addSuppressed(cleanupError) } ?: cleanupError
+            }
+        }
         try {
             client.deleteCollection(collection)
             println("✓ Deleted collection: $collection")
-        } catch (e: Exception) {
-            println("⚠ Could not delete collection: ${e.message}")
+        } catch (cleanupError: Throwable) {
+            failure = failure?.also { it.addSuppressed(cleanupError) } ?: cleanupError
         }
-        
-        client.close()
-        println("\n✓ Advanced chat features example completed successfully")
+        try {
+            client.close()
+        } catch (cleanupError: Throwable) {
+            failure = failure?.also { it.addSuppressed(cleanupError) } ?: cleanupError
+        }
     }
+    failure?.let { throw it }
+    println("\n✓ Advanced chat features example completed successfully")
 }

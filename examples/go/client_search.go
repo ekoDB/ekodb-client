@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"math/rand"
@@ -10,7 +11,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func main() {
+func run() (runErr error) {
 	// Load environment variables
 	if err := godotenv.Load(); err != nil {
 		log.Printf("Warning: .env file not found")
@@ -29,14 +30,27 @@ func main() {
 	// Create client
 	client, err := ekodb.NewClient(baseURL, apiKey)
 	if err != nil {
-		log.Fatalf("Failed to create client: %v", err)
+		return fmt.Errorf("create client: %w", err)
 	}
 
-	fmt.Println("=== Search Examples ===\n")
+	fmt.Print("=== Search Examples ===\n\n")
 
 	// Use unique collection names
 	usersCollection := "search_users_client_go"
 	documentsCollection := "search_documents_client_go"
+	usersOwned, documentsOwned := false, false
+	defer func() {
+		fmt.Println("=== Cleanup ===")
+		if usersOwned {
+			runErr = errors.Join(runErr, client.DeleteCollection(usersCollection))
+		}
+		if documentsOwned {
+			runErr = errors.Join(runErr, client.DeleteCollection(documentsCollection))
+		}
+		if runErr == nil {
+			fmt.Println("✅ Deleted test collections")
+		}
+	}()
 
 	// Cleanup any existing test collections
 	_ = client.DeleteCollection(usersCollection)
@@ -86,8 +100,9 @@ func main() {
 
 	for _, user := range users {
 		if _, err := client.Insert(usersCollection, user); err != nil {
-			log.Printf("Warning: Insert failed: %v", err)
+			return fmt.Errorf("insert search user: %w", err)
 		}
+		usersOwned = true
 	}
 
 	// Insert documents with vector embeddings
@@ -132,11 +147,12 @@ func main() {
 
 	for _, doc := range documents {
 		if _, err := client.Insert(documentsCollection, doc); err != nil {
-			log.Printf("Warning: Insert failed: %v", err)
+			return fmt.Errorf("insert search document: %w", err)
 		}
+		documentsOwned = true
 	}
 
-	fmt.Println("✅ Test data created\n")
+	fmt.Print("✅ Test data created\n\n")
 
 	// Example 1: Basic full-text search
 	fmt.Println("1. Basic full-text search:")
@@ -150,7 +166,7 @@ func main() {
 
 	results1, err := client.Search(usersCollection, search1)
 	if err != nil {
-		log.Printf("Error: %v", err)
+		return fmt.Errorf("basic full-text search: %w", err)
 	} else {
 		fmt.Printf("Found %d results\n", results1.Total)
 		for i, result := range results1.Results {
@@ -174,7 +190,7 @@ func main() {
 
 	results2, err := client.Search(usersCollection, search2)
 	if err != nil {
-		log.Printf("Error: %v", err)
+		return fmt.Errorf("fuzzy search: %w", err)
 	} else {
 		fmt.Printf("Found %d results with fuzzy matching\n", results2.Total)
 		for i, result := range results2.Results {
@@ -196,7 +212,7 @@ func main() {
 
 	results3, err := client.Search(usersCollection, search3)
 	if err != nil {
-		log.Printf("Error: %v", err)
+		return fmt.Errorf("weighted search: %w", err)
 	} else {
 		fmt.Printf("Found %d results with weighted fields\n", results3.Total)
 		for i, result := range results3.Results {
@@ -217,7 +233,7 @@ func main() {
 
 	results4, err := client.Search(usersCollection, search4)
 	if err != nil {
-		log.Printf("Error: %v", err)
+		return fmt.Errorf("minimum-score search: %w", err)
 	} else {
 		fmt.Printf("Found %d results with score >= 0.3\n", results4.Total)
 		for i, result := range results4.Results {
@@ -243,7 +259,7 @@ func main() {
 
 	results5, err := client.Search(usersCollection, search5)
 	if err != nil {
-		log.Printf("Error: %v", err)
+		return fmt.Errorf("stemming search: %w", err)
 	} else {
 		fmt.Printf("Found %d results (matches: work, working, worked)\n", results5.Total)
 		for i, result := range results5.Results {
@@ -270,7 +286,7 @@ func main() {
 
 	results6, err := client.Search(documentsCollection, search6)
 	if err != nil {
-		log.Printf("Error: %v", err)
+		return fmt.Errorf("vector search: %w", err)
 	} else {
 		fmt.Printf("Found %d semantically similar documents\n", results6.Total)
 		for i, result := range results6.Results {
@@ -297,7 +313,7 @@ func main() {
 
 	results7, err := client.Search(documentsCollection, search7)
 	if err != nil {
-		log.Printf("Error: %v", err)
+		return fmt.Errorf("hybrid search: %w", err)
 	} else {
 		fmt.Printf("Found %d results using hybrid search (text + vector)\n", results7.Total)
 		for i, result := range results7.Results {
@@ -319,7 +335,7 @@ func main() {
 
 	results8, err := client.Search(usersCollection, search8)
 	if err != nil {
-		log.Printf("Error: %v", err)
+		return fmt.Errorf("case-sensitive search: %w", err)
 	} else {
 		fmt.Printf("Found %d results (case-sensitive)\n", results8.Total)
 		for i, result := range results8.Results {
@@ -350,7 +366,7 @@ func main() {
 
 	results9, err := client.Search(documentsCollection, search9)
 	if err != nil {
-		log.Printf("Error: %v", err)
+		return fmt.Errorf("filtered vector search: %w", err)
 	} else {
 		fmt.Printf("Found %d documents in category \"ml\" (NLP excluded)\n", results9.Total)
 		for i, result := range results9.Results {
@@ -361,11 +377,12 @@ func main() {
 	}
 	fmt.Println()
 
-	// Cleanup
-	fmt.Println("=== Cleanup ===")
-	client.DeleteCollection(usersCollection)
-	client.DeleteCollection(documentsCollection)
-	fmt.Println("✅ Deleted test collections")
-
 	fmt.Println("\n✅ Search examples completed!")
+	return nil
+}
+
+func main() {
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
 }

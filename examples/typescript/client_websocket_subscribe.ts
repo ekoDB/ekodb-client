@@ -22,6 +22,8 @@ async function getAuthToken(): Promise<string> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ api_key: API_KEY }),
   });
+  if (!res.ok)
+    throw new Error(`Authentication failed with status ${res.status}`);
   const data = (await res.json()) as { token: string };
   return data.token;
 }
@@ -39,7 +41,68 @@ async function insertRecord(
     },
     body: JSON.stringify(record),
   });
+  if (!res.ok) {
+    throw new Error(
+      `Insert failed with status ${res.status}: ${await res.text()}`,
+    );
+  }
   return res.json();
+}
+
+async function deleteCollection(
+  token: string,
+  collection: string,
+): Promise<void> {
+  const res = await fetch(`${BASE_URL}/api/collections/${collection}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok && res.status !== 404) {
+    throw new Error(
+      `Delete collection failed with status ${res.status}: ${await res.text()}`,
+    );
+  }
+}
+
+function waitForMessage(
+  ws: WebSocket,
+  description: string,
+  predicate: (message: any) => boolean,
+): Promise<any> {
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      cleanup();
+      reject(new Error(`${description} timed out after 5 seconds`));
+    }, 5000);
+    const onMessage = (data: WebSocket.RawData) => {
+      try {
+        const message = JSON.parse(data.toString());
+        if (!predicate(message)) return;
+        cleanup();
+        resolve(message);
+      } catch (error) {
+        cleanup();
+        reject(error);
+      }
+    };
+    const onError = (error: Error) => {
+      cleanup();
+      reject(error);
+    };
+    const onClose = () => {
+      cleanup();
+      reject(new Error(`WebSocket closed before ${description}`));
+    };
+    const cleanup = () => {
+      clearTimeout(timeout);
+      ws.off("message", onMessage);
+      ws.off("error", onError);
+      ws.off("close", onClose);
+    };
+    ws.on("message", onMessage);
+    ws.on("error", onError);
+    ws.on("close", onClose);
+  });
 }
 
 async function main() {
@@ -51,112 +114,136 @@ async function main() {
   const token = await getAuthToken();
   console.log("✓ Authentication successful");
 
+  await deleteCollection(token, collection);
+
   // Step 2: Connect to WebSocket
   const ws = new WebSocket(`${WS_URL}/api/ws`, {
     headers: { Authorization: `Bearer ${token}` },
   });
+  let runError: unknown;
 
-  await new Promise<void>((resolve, reject) => {
-    ws.on("open", resolve);
-    ws.on("error", reject);
-  });
-  console.log("✓ WebSocket connected");
-
-  // Step 3: Subscribe to collection
-  console.log(`\n=== Subscribing to '${collection}' ===`);
-
-  const subscribePromise = new Promise<any>((resolve) => {
-    ws.once("message", (data: Buffer) => {
-      resolve(JSON.parse(data.toString()));
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const onOpen = () => {
+        cleanup();
+        resolve();
+      };
+      const onError = (error: Error) => {
+        cleanup();
+        reject(error);
+      };
+      const cleanup = () => {
+        clearTimeout(timeout);
+        ws.off("open", onOpen);
+        ws.off("error", onError);
+      };
+      const timeout = setTimeout(() => {
+        cleanup();
+        reject(new Error("WebSocket open timed out after 5 seconds"));
+      }, 5000);
+      ws.on("open", onOpen);
+      ws.on("error", onError);
     });
-  });
+    console.log("✓ WebSocket connected");
 
-  ws.send(
-    JSON.stringify({
-      type: "Subscribe",
-      payload: { collection },
-    }),
-  );
+    // Step 3: Subscribe to collection
+    console.log(`\n=== Subscribing to '${collection}' ===`);
+    const subscribePromise = waitForMessage(
+      ws,
+      "subscription confirmation",
+      (message) =>
+        message.type === "Success" &&
+        typeof message.payload?.data?.subscription_id === "string",
+    );
+    ws.send(JSON.stringify({ type: "Subscribe", payload: { collection } }));
+    const subResponse = await subscribePromise;
+    console.log(
+      `✓ Subscribed (subscription_id: ${subResponse.payload.data.subscription_id})`,
+    );
 
-  const subResponse = await subscribePromise;
-  console.log(
-    `✓ Subscribed (subscription_id: ${subResponse.payload.data.subscription_id})`,
-  );
+    // Step 4: Perform mutations and require both notifications.
+    console.log("\n=== Performing mutations to trigger notifications ===");
+    const firstNotification = waitForMessage(
+      ws,
+      "first mutation notification",
+      (message) => message.type === "MutationNotification",
+    );
+    console.log("Inserting a record...");
+    const firstInsert = await insertRecord(token, collection, {
+      name: "Alice",
+      role: "engineer",
+      active: true,
+    });
+    console.log(`✓ Inserted record: ${firstInsert.id}`);
+    const first = await firstNotification;
+    if (
+      first.payload?.event !== "insert" ||
+      first.payload?.collection !== collection ||
+      !first.payload?.record_ids?.includes(firstInsert.id)
+    ) {
+      throw new Error(
+        `Unexpected first notification: ${JSON.stringify(first)}`,
+      );
+    }
+    console.log(`  📡 Notification received for ${firstInsert.id}`);
 
-  // Step 4: Listen for notifications in the background
-  console.log("\n=== Listening for mutation notifications ===");
+    const secondNotification = waitForMessage(
+      ws,
+      "second mutation notification",
+      (message) => message.type === "MutationNotification",
+    );
+    console.log("\nInserting another record...");
+    const secondInsert = await insertRecord(token, collection, {
+      name: "Bob",
+      role: "designer",
+      active: true,
+    });
+    console.log(`✓ Inserted record: ${secondInsert.id}`);
+    const second = await secondNotification;
+    if (
+      second.payload?.event !== "insert" ||
+      second.payload?.collection !== collection ||
+      !second.payload?.record_ids?.includes(secondInsert.id)
+    ) {
+      throw new Error(
+        `Unexpected second notification: ${JSON.stringify(second)}`,
+      );
+    }
+    console.log(`  📡 Notification received for ${secondInsert.id}`);
 
-  ws.on("message", (data: Buffer) => {
-    const msg = JSON.parse(data.toString());
-    if (msg.type === "MutationNotification") {
-      console.log(`\n  📡 Notification received:`);
-      console.log(`     Event:      ${msg.payload.event}`);
-      console.log(`     Collection: ${msg.payload.collection}`);
-      console.log(`     Record IDs: ${msg.payload.record_ids.join(", ")}`);
-      console.log(`     Timestamp:  ${msg.payload.timestamp}`);
-      if (msg.payload.records) {
-        console.log(
-          `     Records:    ${JSON.stringify(msg.payload.records).slice(0, 100)}...`,
+    // Step 5: Unsubscribe and require confirmation.
+    console.log("\n=== Unsubscribing ===");
+    const unsubPromise = waitForMessage(
+      ws,
+      "unsubscribe confirmation",
+      (message) => message.type === "Success",
+    );
+    ws.send(JSON.stringify({ type: "Unsubscribe", payload: { collection } }));
+    const unsubResponse = await unsubPromise;
+    console.log(
+      `✓ Unsubscribed: ${JSON.stringify(unsubResponse.payload.data)}`,
+    );
+
+    console.log("\n✓ WebSocket subscription example completed successfully");
+  } catch (error) {
+    runError = error;
+    throw error;
+  } finally {
+    if (ws.readyState === WebSocket.OPEN) ws.close();
+    else if (ws.readyState === WebSocket.CONNECTING) ws.terminate();
+    try {
+      await deleteCollection(token, collection);
+      console.log(`✓ Deleted collection '${collection}'`);
+    } catch (cleanupError) {
+      if (runError) {
+        throw new AggregateError(
+          [runError, cleanupError],
+          "WebSocket subscription example and cleanup both failed",
         );
       }
+      throw cleanupError;
     }
-  });
-
-  // Step 5: Perform mutations via REST API to trigger notifications
-  console.log("\nInserting a record...");
-  const insertResult = await insertRecord(token, collection, {
-    name: "Alice",
-    role: "engineer",
-    active: true,
-  });
-  console.log(`✓ Inserted record: ${insertResult.id}`);
-
-  // Give time for notification to arrive
-  await new Promise((r) => setTimeout(r, 1000));
-
-  console.log("\nInserting another record...");
-  await insertRecord(token, collection, {
-    name: "Bob",
-    role: "designer",
-    active: true,
-  });
-
-  await new Promise((r) => setTimeout(r, 1000));
-
-  // Step 6: Unsubscribe
-  console.log("\n=== Unsubscribing ===");
-
-  const unsubPromise = new Promise<any>((resolve, reject) => {
-    const timeout = setTimeout(() => {
-      ws.removeListener("message", handler);
-      reject(new Error("Unsubscribe timed out after 5 seconds"));
-    }, 5000);
-
-    function handler(data: Buffer) {
-      const msg = JSON.parse(data.toString());
-      if (msg.type === "Success") {
-        clearTimeout(timeout);
-        ws.removeListener("message", handler);
-        resolve(msg);
-      }
-    }
-
-    ws.on("message", handler);
-  });
-
-  ws.send(
-    JSON.stringify({
-      type: "Unsubscribe",
-      payload: { collection },
-    }),
-  );
-
-  const unsubResponse = await unsubPromise;
-  console.log(`✓ Unsubscribed: ${JSON.stringify(unsubResponse.payload.data)}`);
-
-  // Step 7: Cleanup
-  ws.close();
-  console.log("\n✓ WebSocket subscription example completed successfully");
+  }
 }
 
 main().catch((error) => {

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -9,7 +10,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func main() {
+func run() (runErr error) {
 	if err := godotenv.Load(); err != nil {
 		log.Printf("Warning: .env file not found")
 	}
@@ -25,12 +26,19 @@ func main() {
 
 	client, err := ekodb.NewClient(baseURL, apiKey)
 	if err != nil {
-		log.Fatalf("Failed to create client: %v", err)
+		return fmt.Errorf("create client: %w", err)
 	}
 
-	fmt.Println("=== Distinct Values Example ===\n")
+	fmt.Print("=== Distinct Values Example ===\n\n")
 
 	collection := "distinct_values_example_go"
+	owned := false
+	deleted := false
+	defer func() {
+		if owned && !deleted {
+			runErr = errors.Join(runErr, client.DeleteCollection(collection))
+		}
+	}()
 
 	// Cleanup from previous runs
 	_ = client.DeleteCollection(collection)
@@ -53,8 +61,9 @@ func main() {
 
 	for _, p := range products {
 		if _, err := client.Insert(collection, p); err != nil {
-			log.Fatalf("Insert failed: %v", err)
+			return fmt.Errorf("insert product: %w", err)
 		}
+		owned = true
 	}
 	fmt.Printf("Inserted %d products\n\n", len(products))
 
@@ -64,7 +73,7 @@ func main() {
 	fmt.Println("=== Distinct Categories (all products) ===")
 	resp, err := client.DistinctValues(collection, "category", ekodb.DistinctValuesQuery{})
 	if err != nil {
-		log.Fatalf("DistinctValues failed: %v", err)
+		return fmt.Errorf("distinct categories: %w", err)
 	}
 	fmt.Printf("Found %d distinct categories:\n", resp.Count)
 	for _, v := range resp.Values {
@@ -78,7 +87,7 @@ func main() {
 	fmt.Println("=== Distinct Statuses (all products) ===")
 	resp, err = client.DistinctValues(collection, "status", ekodb.DistinctValuesQuery{})
 	if err != nil {
-		log.Fatalf("DistinctValues failed: %v", err)
+		return fmt.Errorf("distinct statuses: %w", err)
 	}
 	fmt.Printf("Found %d distinct statuses:\n", resp.Count)
 	for _, v := range resp.Values {
@@ -101,7 +110,7 @@ func main() {
 		},
 	})
 	if err != nil {
-		log.Fatalf("DistinctValues failed: %v", err)
+		return fmt.Errorf("distinct electronics statuses: %w", err)
 	}
 	fmt.Printf("Found %d distinct statuses for electronics:\n", resp.Count)
 	for _, v := range resp.Values {
@@ -113,7 +122,15 @@ func main() {
 	// Cleanup
 	// ---------------------------------------------------------------------------
 	if err := client.DeleteCollection(collection); err != nil {
-		log.Printf("Cleanup warning: %v", err)
+		return fmt.Errorf("cleanup collection: %w", err)
 	}
+	deleted = true
 	fmt.Println("Cleanup done.")
+	return nil
+}
+
+func main() {
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
 }

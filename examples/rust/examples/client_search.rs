@@ -8,8 +8,22 @@
 //!
 //! Run with: `cargo run --example client_search`
 
-use ekodb_client::{Client, Record, SearchQuery};
+use ekodb_client::{Client, Error as EkoError, Record, SearchQuery};
 use std::error::Error;
+
+const COLLECTION: &str = "search_client_rust";
+
+fn is_not_found(error: &EkoError) -> bool {
+    matches!(error, EkoError::NotFound | EkoError::Api { code: 404, .. })
+}
+
+async fn cleanup(client: &Client) -> Result<(), Box<dyn Error>> {
+    match client.delete_collection(COLLECTION).await {
+        Err(error) if is_not_found(&error) => Ok(()),
+        Err(error) => Err(format!("collection {COLLECTION}: {error}").into()),
+        Ok(()) => Ok(()),
+    }
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -26,224 +40,237 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .api_key(std::env::var("API_BASE_KEY")?)
         .build()?;
 
-    let collection = "search_client_rust";
+    cleanup(&client).await?;
 
-    // Cleanup any existing test collection
-    let _ = client.delete_collection(collection).await;
+    let operation_result: Result<(), Box<dyn Error>> = async {
+        let collection = COLLECTION;
 
-    // Step 1: Insert sample documents
-    println!("=== Inserting Sample Documents ===");
+        // Step 1: Insert sample documents
+        println!("=== Inserting Sample Documents ===");
 
-    // The `category` field is used to demonstrate metadata pre-filtering.
-    let docs = vec![
-        (
-            "Rust Programming",
-            "Learn Rust programming language with hands-on examples and best practices.",
-            vec!["programming", "rust", "tutorial"],
-            "programming",
-        ),
-        (
-            "Python for Data Science",
-            "Master Python for data analysis, machine learning, and visualization.",
-            vec!["programming", "python", "data-science"],
-            "programming",
-        ),
-        (
-            "JavaScript Web Development",
-            "Build modern web applications using JavaScript, React, and Node.js.",
-            vec!["programming", "javascript", "web"],
-            "programming",
-        ),
-        (
-            "Database Design",
-            "Learn database design principles, normalization, and query optimization.",
-            vec!["database", "design", "sql"],
-            "database",
-        ),
-        (
-            "Machine Learning Basics",
-            "Introduction to machine learning algorithms and neural networks.",
-            vec!["ai", "machine-learning", "python"],
-            "ai",
-        ),
-    ];
+        // The `category` field is used to demonstrate metadata pre-filtering.
+        let docs = vec![
+            (
+                "Rust Programming",
+                "Learn Rust programming language with hands-on examples and best practices.",
+                vec!["programming", "rust", "tutorial"],
+                "programming",
+            ),
+            (
+                "Python for Data Science",
+                "Master Python for data analysis, machine learning, and visualization.",
+                vec!["programming", "python", "data-science"],
+                "programming",
+            ),
+            (
+                "JavaScript Web Development",
+                "Build modern web applications using JavaScript, React, and Node.js.",
+                vec!["programming", "javascript", "web"],
+                "programming",
+            ),
+            (
+                "Database Design",
+                "Learn database design principles, normalization, and query optimization.",
+                vec!["database", "design", "sql"],
+                "database",
+            ),
+            (
+                "Machine Learning Basics",
+                "Introduction to machine learning algorithms and neural networks.",
+                vec!["ai", "machine-learning", "python"],
+                "ai",
+            ),
+        ];
 
-    let doc_count = docs.len();
-    for (title, description, tags, category) in docs {
-        let mut doc = Record::new();
-        doc.insert("title", title);
-        doc.insert("description", description);
-        doc.insert("tags", tags.join(",")); // Store as comma-separated string
-        doc.insert("category", category);
-        doc.insert("views", (rand::random::<u32>() % 1000) as i64);
-        client.insert(collection, doc, None).await?;
-    }
-    println!("✓ Inserted {} sample documents\n", doc_count);
+        let doc_count = docs.len();
+        for (title, description, tags, category) in docs {
+            let mut doc = Record::new();
+            doc.insert("title", title);
+            doc.insert("description", description);
+            doc.insert("tags", tags.join(",")); // Store as comma-separated string
+            doc.insert("category", category);
+            doc.insert("views", (rand::random::<u32>() % 1000) as i64);
+            client.insert(collection, doc, None).await?;
+        }
+        println!("✓ Inserted {} sample documents\n", doc_count);
 
-    // Step 2: Basic text search
-    println!("=== Basic Text Search ===");
-    let search = SearchQuery::new("programming").min_score(0.1).limit(3);
+        // Step 2: Basic text search
+        println!("=== Basic Text Search ===");
+        let search = SearchQuery::new("programming").min_score(0.1).limit(3);
 
-    let results = client.search(collection, search).await?;
-    println!(
-        "✓ Found {} results for 'programming'",
-        results.results.len()
-    );
-    for (i, result) in results.results.iter().enumerate() {
+        let results = client.search(collection, search).await?;
         println!(
-            "  {}. Score: {:.4} - {:?}",
-            i + 1,
-            result.score,
-            result.record.get("title")
+            "✓ Found {} results for 'programming'",
+            results.results.len()
         );
-    }
-    println!();
+        for (i, result) in results.results.iter().enumerate() {
+            println!(
+                "  {}. Score: {:.4} - {:?}",
+                i + 1,
+                result.score,
+                result.record.get("title")
+            );
+        }
+        println!();
 
-    // Step 3: Fuzzy search
-    println!("=== Fuzzy Search ===");
-    let fuzzy_search = SearchQuery::new("progamming") // Intentional typo
-        .fuzzy(true)
-        .max_edit_distance(2)
-        .min_score(0.1)
-        .limit(3);
+        // Step 3: Fuzzy search
+        println!("=== Fuzzy Search ===");
+        let fuzzy_search = SearchQuery::new("progamming") // Intentional typo
+            .fuzzy(true)
+            .max_edit_distance(2)
+            .min_score(0.1)
+            .limit(3);
 
-    let fuzzy_results = client.search(collection, fuzzy_search).await?;
-    println!(
-        "✓ Found {} results for 'progamming' (typo)",
-        fuzzy_results.results.len()
-    );
-    for (i, result) in fuzzy_results.results.iter().enumerate() {
+        let fuzzy_results = client.search(collection, fuzzy_search).await?;
         println!(
-            "  {}. Score: {:.4} - {:?}",
-            i + 1,
-            result.score,
-            result.record.get("title")
+            "✓ Found {} results for 'progamming' (typo)",
+            fuzzy_results.results.len()
         );
-    }
-    println!();
+        for (i, result) in fuzzy_results.results.iter().enumerate() {
+            println!(
+                "  {}. Score: {:.4} - {:?}",
+                i + 1,
+                result.score,
+                result.record.get("title")
+            );
+        }
+        println!();
 
-    // Step 4: Field-specific search
-    println!("=== Field-Specific Search ===");
-    let field_search = SearchQuery::new("machine learning")
-        .fields("title,description")
-        .min_score(0.2)
-        .limit(5);
+        // Step 4: Field-specific search
+        println!("=== Field-Specific Search ===");
+        let field_search = SearchQuery::new("machine learning")
+            .fields("title,description")
+            .min_score(0.2)
+            .limit(5);
 
-    let field_results = client.search(collection, field_search).await?;
-    println!(
-        "✓ Found {} results in title/description",
-        field_results.results.len()
-    );
-    for (i, result) in field_results.results.iter().enumerate() {
-        println!("  {}. Score: {:.4}", i + 1, result.score);
-        println!("     Title: {:?}", result.record.get("title"));
-        println!("     Matched: {:?}", result.matched_fields);
-    }
-    println!();
-
-    // Step 5: Search with field weights
-    println!("=== Weighted Search ===");
-    let weighted_search = SearchQuery::new("python")
-        .weights("title:2.0,description:1.0,tags:0.5")
-        .min_score(0.1)
-        .limit(5);
-
-    let weighted_results = client.search(collection, weighted_search).await?;
-    println!(
-        "✓ Found {} results with field weights",
-        weighted_results.results.len()
-    );
-    for (i, result) in weighted_results.results.iter().enumerate() {
+        let field_results = client.search(collection, field_search).await?;
         println!(
-            "  {}. Score: {:.4} - {:?}",
-            i + 1,
-            result.score,
-            result.record.get("title")
+            "✓ Found {} results in title/description",
+            field_results.results.len()
         );
-    }
-    println!();
+        for (i, result) in field_results.results.iter().enumerate() {
+            println!("  {}. Score: {:.4}", i + 1, result.score);
+            println!("     Title: {:?}", result.record.get("title"));
+            println!("     Matched: {:?}", result.matched_fields);
+        }
+        println!();
 
-    // Step 6: Search with stemming and exact boost
-    println!("=== Advanced Search Options ===");
-    let advanced_search = SearchQuery::new("databases")
-        .enable_stemming(true)
-        .boost_exact(true)
-        .case_sensitive(false)
-        .min_score(0.1)
-        .limit(5);
+        // Step 5: Search with field weights
+        println!("=== Weighted Search ===");
+        let weighted_search = SearchQuery::new("python")
+            .weights("title:2.0,description:1.0,tags:0.5")
+            .min_score(0.1)
+            .limit(5);
 
-    let advanced_results = client.search(collection, advanced_search).await?;
-    println!(
-        "✓ Found {} results with stemming",
-        advanced_results.results.len()
-    );
-    for (i, result) in advanced_results.results.iter().enumerate() {
+        let weighted_results = client.search(collection, weighted_search).await?;
         println!(
-            "  {}. Score: {:.4} - {:?}",
-            i + 1,
-            result.score,
-            result.record.get("title")
+            "✓ Found {} results with field weights",
+            weighted_results.results.len()
         );
-    }
-    println!();
+        for (i, result) in weighted_results.results.iter().enumerate() {
+            println!(
+                "  {}. Score: {:.4} - {:?}",
+                i + 1,
+                result.score,
+                result.record.get("title")
+            );
+        }
+        println!();
 
-    // Step 7: Search with limit
-    println!("=== Search with Limit ===");
-    let limited_search = SearchQuery::new("programming")
-        .limit(2) // Only return top 2 results
-        .min_score(0.1);
+        // Step 6: Search with stemming and exact boost
+        println!("=== Advanced Search Options ===");
+        let advanced_search = SearchQuery::new("databases")
+            .enable_stemming(true)
+            .boost_exact(true)
+            .case_sensitive(false)
+            .min_score(0.1)
+            .limit(5);
 
-    let limited_results = client.search(collection, limited_search).await?;
-    println!(
-        "✓ Limited to {} results (requested 2)",
-        limited_results.results.len()
-    );
-    for (i, result) in limited_results.results.iter().enumerate() {
+        let advanced_results = client.search(collection, advanced_search).await?;
         println!(
-            "  {}. Score: {:.4} - {:?}",
-            i + 1,
-            result.score,
-            result.record.get("title")
+            "✓ Found {} results with stemming",
+            advanced_results.results.len()
         );
-    }
-    println!();
+        for (i, result) in advanced_results.results.iter().enumerate() {
+            println!(
+                "  {}. Score: {:.4} - {:?}",
+                i + 1,
+                result.score,
+                result.record.get("title")
+            );
+        }
+        println!();
 
-    // Search with a metadata pre-filter (works on text, vector, and hybrid).
-    // The same query is restricted to documents in the "programming" category.
-    println!("=== Search with a metadata pre-filter (category = programming) ===");
-    let filtered_search = SearchQuery::new("learn")
-        .min_score(0.1)
-        .filters(serde_json::json!({
-            "type": "Condition",
-            "content": {
-                "field": "category",
-                "operator": "Eq",
-                "value": "programming"
-            }
-        }));
+        // Step 7: Search with limit
+        println!("=== Search with Limit ===");
+        let limited_search = SearchQuery::new("programming")
+            .limit(2) // Only return top 2 results
+            .min_score(0.1);
 
-    let filtered_results = client.search(collection, filtered_search).await?;
-    println!(
-        "✓ Found {} results in category 'programming' (database/ai excluded)",
-        filtered_results.results.len()
-    );
-    for (i, result) in filtered_results.results.iter().enumerate() {
+        let limited_results = client.search(collection, limited_search).await?;
         println!(
-            "  {}. {:?} (category: {:?})",
-            i + 1,
-            result.record.get("title"),
-            result.record.get("category")
+            "✓ Limited to {} results (requested 2)",
+            limited_results.results.len()
         );
-    }
-    println!();
+        for (i, result) in limited_results.results.iter().enumerate() {
+            println!(
+                "  {}. Score: {:.4} - {:?}",
+                i + 1,
+                result.score,
+                result.record.get("title")
+            );
+        }
+        println!();
 
-    // Cleanup: Delete the collection
+        // Search with a metadata pre-filter (works on text, vector, and hybrid).
+        // The same query is restricted to documents in the "programming" category.
+        println!("=== Search with a metadata pre-filter (category = programming) ===");
+        let filtered_search = SearchQuery::new("learn")
+            .min_score(0.1)
+            .filters(serde_json::json!({
+                "type": "Condition",
+                "content": {
+                    "field": "category",
+                    "operator": "Eq",
+                    "value": "programming"
+                }
+            }));
+
+        let filtered_results = client.search(collection, filtered_search).await?;
+        println!(
+            "✓ Found {} results in category 'programming' (database/ai excluded)",
+            filtered_results.results.len()
+        );
+        for (i, result) in filtered_results.results.iter().enumerate() {
+            println!(
+                "  {}. {:?} (category: {:?})",
+                i + 1,
+                result.record.get("title"),
+                result.record.get("category")
+            );
+        }
+        println!();
+
+        println!("Execution time: {}ms", results.execution_time_ms);
+        Ok(())
+    }
+    .await;
+
     println!("=== Cleanup ===");
-    client.delete_collection(collection).await?;
-    println!("✓ Deleted collection\n");
+    let cleanup_result = cleanup(&client).await;
+    if cleanup_result.is_ok() {
+        println!("✓ Deleted collection\n");
+    }
+    match (operation_result, cleanup_result) {
+        (Err(primary), Err(cleanup)) => {
+            eprintln!("Cleanup also failed: {cleanup}");
+            return Err(format!("{primary}; cleanup also failed: {cleanup}").into());
+        }
+        (Err(primary), Ok(())) => return Err(primary),
+        (Ok(()), Err(cleanup)) => return Err(cleanup),
+        (Ok(()), Ok(())) => {}
+    }
 
     println!("✓ All search operations completed successfully");
-    println!("Execution time: {}ms", results.execution_time_ms);
-
     Ok(())
 }

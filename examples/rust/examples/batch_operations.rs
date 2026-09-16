@@ -1,8 +1,7 @@
 use serde_json::{json, Value};
 use std::env;
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn run_batch() -> Result<(), Box<dyn std::error::Error>> {
     dotenv::dotenv().ok();
 
     let base_url = env::var("API_BASE_URL").unwrap_or_else(|_| "http://localhost:8080".to_string());
@@ -20,6 +19,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let token_data: Value = token_response.json().await?;
     let token = token_data["token"].as_str().unwrap();
     println!("✓ Authentication successful");
+
+    let _ = client
+        .delete(&format!("{}/api/collections/batch_users", base_url))
+        .header("Authorization", format!("Bearer {}", token))
+        .send()
+        .await?
+        .error_for_status()?;
 
     // Example 1: Batch Insert
     println!("\n=== Batch Insert ===");
@@ -42,7 +48,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .header("Authorization", format!("Bearer {}", token))
         .json(&batch_insert_data)
         .send()
-        .await?;
+        .await?
+        .error_for_status()?;
 
     let insert_result: Value = insert_response.json().await?;
     let inserted_count = insert_result["successful"]
@@ -50,6 +57,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .map(|a| a.len())
         .unwrap_or(0);
     println!("✓ Batch inserted {} records", inserted_count);
+    if inserted_count != records.len() {
+        return Err(format!(
+            "expected {} successful inserts, got {}",
+            records.len(),
+            inserted_count
+        )
+        .into());
+    }
 
     // Verify the inserts
     let verify_response = client
@@ -75,7 +90,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .header("Authorization", format!("Bearer {}", token))
             .json(&json!({"name": format!("Test User {}", i), "value": i}))
             .send()
-            .await?;
+            .await?
+            .error_for_status()?;
 
         let doc: Value = response.json().await?;
         ids.push(doc["id"].as_str().unwrap().to_string());
@@ -105,7 +121,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .header("Authorization", format!("Bearer {}", token))
         .json(&batch_update_data)
         .send()
-        .await?;
+        .await?
+        .error_for_status()?;
 
     let update_result: Value = update_response.json().await?;
     let updated_count = update_result["successful"]
@@ -113,19 +130,31 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .map(|a| a.len())
         .unwrap_or(0);
     println!("✓ Batch updated {} records", updated_count);
+    if updated_count != ids.len() {
+        return Err(format!(
+            "expected {} successful updates, got {}",
+            ids.len(),
+            updated_count
+        )
+        .into());
+    }
 
     // Verify the updates
     let verify_update = client
         .get(&format!("{}/api/find/batch_users/{}", base_url, ids[0]))
         .header("Authorization", format!("Bearer {}", token))
         .send()
-        .await?;
+        .await?
+        .error_for_status()?;
 
     let updated_doc: Value = verify_update.json().await?;
     let status = updated_doc["status"]
         .as_str()
         .or_else(|| updated_doc["status"]["value"].as_str())
-        .unwrap_or("active");
+        .ok_or("updated record is missing a string status")?;
+    if status != "active" {
+        return Err(format!("expected updated status active, got {status}").into());
+    }
     println!("✓ Verified: Record updated with status=\"{}\"", status);
 
     // Example 4: Batch Delete
@@ -141,7 +170,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .header("Authorization", format!("Bearer {}", token))
         .json(&batch_delete_data)
         .send()
-        .await?;
+        .await?
+        .error_for_status()?;
 
     let delete_result: Value = delete_response.json().await?;
     let deleted_count = delete_result["successful"]
@@ -149,6 +179,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .map(|a| a.len())
         .unwrap_or(0);
     println!("✓ Batch deleted {} records", deleted_count);
+    if deleted_count != ids.len() {
+        return Err(format!(
+            "expected {} successful deletes, got {}",
+            ids.len(),
+            deleted_count
+        )
+        .into());
+    }
 
     // Verify the deletes
     let verify_delete = client
@@ -160,10 +198,46 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     if verify_delete.status() == 404 {
         println!("✓ Verified: Records successfully deleted (not found)");
     } else {
-        println!("✗ Warning: Record still exists after delete!");
+        return Err("record still exists after delete".into());
     }
 
     println!("\n✓ All batch operations completed successfully");
 
     Ok(())
+}
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let operation_result = run_batch().await;
+    let cleanup_result = async {
+        let base_url =
+            env::var("API_BASE_URL").unwrap_or_else(|_| "http://localhost:8080".to_string());
+        let api_key =
+            env::var("API_BASE_KEY").unwrap_or_else(|_| "a-test-api-key-from-ekodb".to_string());
+        let client = reqwest::Client::new();
+        let token_response = client
+            .post(format!("{}/api/auth/token", base_url))
+            .json(&json!({ "api_key": api_key }))
+            .send()
+            .await?
+            .error_for_status()?;
+        let token_data: Value = token_response.json().await?;
+        let token = token_data["token"].as_str().ok_or("missing auth token")?;
+        client
+            .delete(format!("{}/api/collections/batch_users", base_url))
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?
+            .error_for_status()?;
+        Ok::<(), Box<dyn std::error::Error>>(())
+    }
+    .await;
+
+    if let Err(error) = operation_result {
+        if let Err(cleanup_error) = cleanup_result {
+            eprintln!("Cleanup also failed: {cleanup_error}");
+        }
+        return Err(error);
+    }
+    cleanup_result
 }

@@ -42,7 +42,7 @@ func saveOrUpdateFn(client *ekodb.Client, fn ekodb.UserFunction) (string, error)
 	return "", err
 }
 
-func main() {
+func run() (runErr error) {
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found, using defaults")
 	}
@@ -59,15 +59,30 @@ func main() {
 
 	client, err := ekodb.NewClient(baseURL, apiKey)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
+	collection := "ai_articles_go"
+	collectionOwned := false
+	var scriptIDs []string
+	defer func() {
+		fmt.Println("🧹 Cleaning up...")
+		for _, id := range scriptIDs {
+			runErr = errors.Join(runErr, client.DeleteFunction(id))
+		}
+		if collectionOwned {
+			runErr = errors.Join(runErr, client.DeleteCollection(collection))
+		}
+		if runErr == nil {
+			fmt.Println("✅ Cleanup complete")
+		}
+	}()
 
 	fmt.Println("🚀 ekoDB Go AI Functions Example")
 	fmt.Println()
 
 	// Setup test data
 	fmt.Println("📋 Setting up test data...")
-	client.DeleteCollection("ai_articles_go")
+	client.DeleteCollection(collection)
 
 	articles := []map[string]interface{}{
 		{"title": "Getting Started with ekoDB", "content": "ekoDB is a high-performance database...", "status": "published"},
@@ -75,11 +90,12 @@ func main() {
 	}
 
 	for _, article := range articles {
-		client.Insert("ai_articles_go", article)
+		if _, err := client.Insert(collection, article); err != nil {
+			return err
+		}
+		collectionOwned = true
 	}
 	fmt.Printf("✅ Created %d articles\n\n", len(articles))
-
-	var scriptIDs []string
 
 	// Example 1: Simple Chat Completion
 	fmt.Println("📝 Example 1: Simple Chat Completion")
@@ -105,11 +121,17 @@ func main() {
 		},
 		Tags: []string{"ai", "chat"},
 	}
-	scriptID1, _ := saveOrUpdateFn(client, script1)
+	scriptID1, err := saveOrUpdateFn(client, script1)
+	if err != nil {
+		return err
+	}
 	scriptIDs = append(scriptIDs, scriptID1)
 	fmt.Println("✅ Chat script saved")
 
-	result1, _ := client.CallFunction("ai_assistant_go", nil)
+	result1, err := client.CallFunction("ai_assistant_go", nil)
+	if err != nil {
+		return err
+	}
 	if result1 != nil {
 		fmt.Println("📊 AI Response generated")
 		fmt.Printf("⏱️  Execution time: %vms\n\n", result1.Stats.ExecutionTimeMs)
@@ -131,29 +153,34 @@ func main() {
 		Functions: []ekodb.FunctionStageConfig{ekodb.StageEmbed("text", "embedding", &model2)},
 		Tags:      []string{"ai", "embed"},
 	}
-	scriptID2, _ := saveOrUpdateFn(client, script2)
+	scriptID2, err := saveOrUpdateFn(client, script2)
+	if err != nil {
+		return err
+	}
 	scriptIDs = append(scriptIDs, scriptID2)
 	fmt.Println("✅ Embed script saved")
 
-	result2, _ := client.CallFunction("generate_embedding_go", map[string]interface{}{
+	result2, err := client.CallFunction("generate_embedding_go", map[string]interface{}{
 		"text": "ekoDB is a powerful database",
 	})
+	if err != nil {
+		return err
+	}
 	if result2 != nil {
 		fmt.Println("📊 Embedding generated")
 		fmt.Printf("⏱️  Execution time: %vms\n\n", result2.Stats.ExecutionTimeMs)
 	}
 
-	// Cleanup
-	fmt.Println("🧹 Cleaning up...")
-	for _, scriptID := range scriptIDs {
-		client.DeleteFunction(scriptID)
-	}
-	client.DeleteCollection("ai_articles_go")
-	fmt.Println("✅ Cleanup complete")
-	fmt.Println()
 	fmt.Println("✅ All AI script examples finished!")
 	fmt.Println()
 	fmt.Println("💡 This example demonstrates:")
 	fmt.Println("   ✅ Chat completions with system/user messages")
 	fmt.Println("   ✅ Embedding generation for text")
+	return nil
+}
+
+func main() {
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
 }

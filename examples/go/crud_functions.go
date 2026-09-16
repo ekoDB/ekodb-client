@@ -15,14 +15,20 @@ Each function shows Functions chaining with proper verification using parameteri
 import (
 	"bytes"
 	"encoding/json"
+	stderrors "errors"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/joho/godotenv"
 )
+
+const testCollection = "crud_functions_users_go"
+
+var functionLabels = []string{"insert_and_verify_go", "query_update_verify_go", "query_update_credits_go", "delete_and_verify_go"}
 
 var (
 	baseURL   string
@@ -41,6 +47,22 @@ func getEnv(key, defaultValue string) string {
 		return value
 	}
 	return defaultValue
+}
+
+func getValue(field interface{}) interface{} {
+	if typed, ok := field.(map[string]interface{}); ok {
+		if _, hasType := typed["type"]; hasType {
+			if value, hasValue := typed["value"]; hasValue {
+				return value
+			}
+		}
+	}
+	return field
+}
+
+func isNotFoundError(err error) bool {
+	message := strings.ToLower(err.Error())
+	return strings.Contains(message, "http 404") || strings.Contains(message, "not found")
 }
 
 func getAuthToken() (string, error) {
@@ -109,7 +131,7 @@ func script1InsertAndVerify(token string) (string, string, error) {
 	fmt.Println(string([]byte(repeat("=", 60))))
 
 	script := map[string]interface{}{
-		"label":       "insert_and_verify",
+		"label":       functionLabels[0],
 		"name":        "Insert and Verify User",
 		"description": "Insert a user and verify it was created",
 		"version":     "1.0",
@@ -128,7 +150,7 @@ func script1InsertAndVerify(token string) (string, string, error) {
 		"functions": []map[string]interface{}{
 			{
 				"type":       "Insert",
-				"collection": "users",
+				"collection": testCollection,
 				"record": map[string]interface{}{
 					"name":    "{{user_name}}",
 					"email":   "{{user_email}}",
@@ -138,7 +160,7 @@ func script1InsertAndVerify(token string) (string, string, error) {
 			},
 			{
 				"type":       "Query",
-				"collection": "users",
+				"collection": testCollection,
 				"filter": map[string]interface{}{
 					"type": "Condition",
 					"content": map[string]interface{}{
@@ -165,7 +187,7 @@ func script1InsertAndVerify(token string) (string, string, error) {
 		"user_name":  "Alice Smith",
 		"user_email": "alice@example.com",
 	}
-	callResult, err := makeRequest("POST", "/api/functions/insert_and_verify", params, token)
+	callResult, err := makeRequest("POST", "/api/functions/"+functionLabels[0], params, token)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to call script: %w", err)
 	}
@@ -207,7 +229,7 @@ func script2QueryUpdateVerify(token string) (string, error) {
 	fmt.Println(string([]byte(repeat("=", 60))))
 
 	script := map[string]interface{}{
-		"label":       "query_update_verify",
+		"label":       functionLabels[1],
 		"name":        "Query, Update, and Verify",
 		"description": "Find user by filter, update status, verify change",
 		"version":     "1.0",
@@ -227,7 +249,7 @@ func script2QueryUpdateVerify(token string) (string, error) {
 		"functions": []map[string]interface{}{
 			{
 				"type":       "Query",
-				"collection": "users",
+				"collection": testCollection,
 				"filter": map[string]interface{}{
 					"type": "Condition",
 					"content": map[string]interface{}{
@@ -239,7 +261,7 @@ func script2QueryUpdateVerify(token string) (string, error) {
 			},
 			{
 				"type":       "Update",
-				"collection": "users",
+				"collection": testCollection,
 				"filter": map[string]interface{}{
 					"type": "Condition",
 					"content": map[string]interface{}{
@@ -254,7 +276,7 @@ func script2QueryUpdateVerify(token string) (string, error) {
 			},
 			{
 				"type":       "Query",
-				"collection": "users",
+				"collection": testCollection,
 				"filter": map[string]interface{}{
 					"type": "Condition",
 					"content": map[string]interface{}{
@@ -281,7 +303,7 @@ func script2QueryUpdateVerify(token string) (string, error) {
 		"user_email": "alice@example.com",
 		"new_status": "active",
 	}
-	callResult, err := makeRequest("POST", "/api/functions/query_update_verify", params, token)
+	callResult, err := makeRequest("POST", "/api/functions/"+functionLabels[1], params, token)
 	if err != nil {
 		return "", fmt.Errorf("failed to call script: %w", err)
 	}
@@ -293,11 +315,15 @@ func script2QueryUpdateVerify(token string) (string, error) {
 	records := callResult["records"].([]interface{})
 	fmt.Println("\n3️⃣ Verification Results:")
 	fmt.Printf("   ✅ Found %d record(s)\n", len(records))
-	if len(records) > 0 {
-		user := records[0].(map[string]interface{})
-		fmt.Printf("   📋 Status updated to: %v\n", user["status"])
-		fmt.Printf("   📋 Name: %v\n", user["name"])
+	if len(records) != 1 {
+		return "", fmt.Errorf("status verification expected 1 record, found %d", len(records))
 	}
+	user := records[0].(map[string]interface{})
+	if getValue(user["status"]) != "active" {
+		return "", fmt.Errorf("status verification expected active, found %v", user["status"])
+	}
+	fmt.Printf("   📋 Status updated to: %v\n", user["status"])
+	fmt.Printf("   📋 Name: %v\n", user["name"])
 
 	return scriptID, nil
 }
@@ -308,7 +334,7 @@ func script3QueryUpdateCredits(token string) (string, error) {
 	fmt.Println(string([]byte(repeat("=", 60))))
 
 	script := map[string]interface{}{
-		"label":       "query_update_credits",
+		"label":       functionLabels[2],
 		"name":        "Query, Update Credits, and Verify",
 		"description": "Find user by email, update credits, verify change",
 		"version":     "1.0",
@@ -318,17 +344,11 @@ func script3QueryUpdateCredits(token string) (string, error) {
 				"required":    true,
 				"description": "Email to search for",
 			},
-			"credits": map[string]interface{}{
-				"type":        "Integer",
-				"default":     100,
-				"required":    false,
-				"description": "Credits to set",
-			},
 		},
 		"functions": []map[string]interface{}{
 			{
 				"type":       "Query",
-				"collection": "users",
+				"collection": testCollection,
 				"filter": map[string]interface{}{
 					"type": "Condition",
 					"content": map[string]interface{}{
@@ -340,7 +360,7 @@ func script3QueryUpdateCredits(token string) (string, error) {
 			},
 			{
 				"type":       "Update",
-				"collection": "users",
+				"collection": testCollection,
 				"filter": map[string]interface{}{
 					"type": "Condition",
 					"content": map[string]interface{}{
@@ -350,12 +370,12 @@ func script3QueryUpdateCredits(token string) (string, error) {
 					},
 				},
 				"updates": map[string]interface{}{
-					"credits": "{{credits}}",
+					"credits": 100,
 				},
 			},
 			{
 				"type":       "Query",
-				"collection": "users",
+				"collection": testCollection,
 				"filter": map[string]interface{}{
 					"type": "Condition",
 					"content": map[string]interface{}{
@@ -380,9 +400,8 @@ func script3QueryUpdateCredits(token string) (string, error) {
 	fmt.Println("\n2️⃣ Calling function (Query + Update Credits + Verify)...")
 	params := map[string]interface{}{
 		"user_email": "alice@example.com",
-		"credits":    100,
 	}
-	callResult, err := makeRequest("POST", "/api/functions/query_update_credits", params, token)
+	callResult, err := makeRequest("POST", "/api/functions/"+functionLabels[2], params, token)
 	if err != nil {
 		return "", fmt.Errorf("failed to call script: %w", err)
 	}
@@ -394,12 +413,16 @@ func script3QueryUpdateCredits(token string) (string, error) {
 	records := callResult["records"].([]interface{})
 	fmt.Println("\n3️⃣ Verification Results:")
 	fmt.Printf("   ✅ Found %d record(s)\n", len(records))
-	if len(records) > 0 {
-		user := records[0].(map[string]interface{})
-		fmt.Printf("   📋 Credits updated to: %v\n", user["credits"])
-		fmt.Printf("   📋 Status: %v\n", user["status"])
-		fmt.Printf("   📋 Name: %v\n", user["name"])
+	if len(records) != 1 {
+		return "", fmt.Errorf("credits verification expected 1 record, found %d", len(records))
 	}
+	user := records[0].(map[string]interface{})
+	if getValue(user["credits"]) != float64(100) {
+		return "", fmt.Errorf("credits verification expected 100, found %v", user["credits"])
+	}
+	fmt.Printf("   📋 Credits updated to: %v\n", user["credits"])
+	fmt.Printf("   📋 Status: %v\n", user["status"])
+	fmt.Printf("   📋 Name: %v\n", user["name"])
 
 	return scriptID, nil
 }
@@ -410,7 +433,7 @@ func script4DeleteAndVerify(token string) (string, error) {
 	fmt.Println(string([]byte(repeat("=", 60))))
 
 	script := map[string]interface{}{
-		"label":       "delete_and_verify",
+		"label":       functionLabels[3],
 		"name":        "Query Before Delete and Verify",
 		"description": "Verify record exists, delete it, then verify it's gone",
 		"version":     "1.0",
@@ -424,7 +447,7 @@ func script4DeleteAndVerify(token string) (string, error) {
 		"functions": []map[string]interface{}{
 			{
 				"type":       "Query",
-				"collection": "users",
+				"collection": testCollection,
 				"filter": map[string]interface{}{
 					"type": "Condition",
 					"content": map[string]interface{}{
@@ -436,7 +459,7 @@ func script4DeleteAndVerify(token string) (string, error) {
 			},
 			{
 				"type":       "Delete",
-				"collection": "users",
+				"collection": testCollection,
 				"filter": map[string]interface{}{
 					"type": "Condition",
 					"content": map[string]interface{}{
@@ -448,7 +471,7 @@ func script4DeleteAndVerify(token string) (string, error) {
 			},
 			{
 				"type":       "Query",
-				"collection": "users",
+				"collection": testCollection,
 				"filter": map[string]interface{}{
 					"type": "Condition",
 					"content": map[string]interface{}{
@@ -474,7 +497,7 @@ func script4DeleteAndVerify(token string) (string, error) {
 	params := map[string]interface{}{
 		"user_email": "alice@example.com",
 	}
-	callResult, err := makeRequest("POST", "/api/functions/delete_and_verify", params, token)
+	callResult, err := makeRequest("POST", "/api/functions/"+functionLabels[3], params, token)
 	if err != nil {
 		return "", fmt.Errorf("failed to call script: %w", err)
 	}
@@ -489,24 +512,44 @@ func script4DeleteAndVerify(token string) (string, error) {
 	if len(records) == 0 {
 		fmt.Println("   ✅ After delete: Record successfully deleted (Query returned 0 records)")
 	} else {
-		fmt.Printf("   ❌ Delete failed - still found %d record(s)\n", len(records))
+		return "", fmt.Errorf("delete failed: still found %d record(s)", len(records))
 	}
 
 	return scriptID, nil
 }
 
-func cleanup(token string, scriptIDs []string) {
+func cleanup(token string, scriptIDs []string, allowMissingCollection bool) error {
 	fmt.Println("\n" + string([]byte(repeat("=", 60))))
 	fmt.Println("🧹 Cleanup")
 	fmt.Println(string([]byte(repeat("=", 60))))
 
+	errors := make([]string, 0)
+	var err error
+	for _, label := range functionLabels {
+		function, getErr := makeRequest("GET", "/api/functions/"+label, nil, token)
+		if getErr != nil {
+			if !isNotFoundError(getErr) {
+				errors = append(errors, fmt.Sprintf("discover function %s: %v", label, getErr))
+			}
+			continue
+		}
+		if id, ok := function["id"].(string); ok && id != "" {
+			scriptIDs = append(scriptIDs, id)
+		}
+	}
+	seen := make(map[string]bool)
 	for _, scriptID := range scriptIDs {
 		if scriptID == "" {
 			continue
 		}
+		if seen[scriptID] {
+			continue
+		}
+		seen[scriptID] = true
 		_, err := makeRequest("DELETE", "/api/functions/"+scriptID, nil, token)
 		if err != nil {
 			fmt.Printf("   ⚠️  Could not delete script: %v\n", err)
+			errors = append(errors, err.Error())
 		} else {
 			truncatedID := scriptID
 			if len(scriptID) > 20 {
@@ -516,12 +559,20 @@ func cleanup(token string, scriptIDs []string) {
 		}
 	}
 
-	_, err := makeRequest("DELETE", "/api/collections/users", nil, token)
+	_, err = makeRequest("DELETE", "/api/collections/"+testCollection, nil, token)
 	if err != nil {
-		fmt.Printf("   ⚠️  Could not delete collection: %v\n", err)
+		missing := isNotFoundError(err)
+		if !allowMissingCollection || !missing {
+			fmt.Printf("   ⚠️  Could not delete collection: %v\n", err)
+			errors = append(errors, err.Error())
+		}
 	} else {
-		fmt.Println("   ✅ Deleted collection: users")
+		fmt.Printf("   ✅ Deleted collection: %s\n", testCollection)
 	}
+	if len(errors) > 0 {
+		return fmt.Errorf("cleanup failed: %s", strings.Join(errors, "; "))
+	}
+	return nil
 }
 
 func repeat(s string, count int) string {
@@ -532,7 +583,7 @@ func repeat(s string, count int) string {
 	return result
 }
 
-func main() {
+func run() (runErr error) {
 	fmt.Println("🚀 ekoDB Complete CRUD Functions Example")
 	fmt.Println(string([]byte(repeat("=", 60))))
 	fmt.Println("Demonstrates:")
@@ -546,37 +597,50 @@ func main() {
 
 	token, err := getAuthToken()
 	if err != nil {
-		log.Fatalf("❌ Error: %v", err)
+		return fmt.Errorf("authentication: %w", err)
 	}
+	scriptIDs := []string{}
+	if err := cleanup(token, scriptIDs, true); err != nil {
+		return fmt.Errorf("initial cleanup: %w", err)
+	}
+	defer func() {
+		if err := cleanup(token, scriptIDs, false); err != nil {
+			runErr = stderrors.Join(runErr, err)
+		}
+	}()
 
 	// Run all CRUD Functions in sequence
 	_, script1ID, err := script1InsertAndVerify(token)
 	if err != nil {
-		log.Fatalf("Function 1 failed: %v", err)
+		return fmt.Errorf("function 1: %w", err)
 	}
-	scriptIDs := []string{script1ID}
+	scriptIDs = append(scriptIDs, script1ID)
 
 	script2ID, err := script2QueryUpdateVerify(token)
 	if err != nil {
-		log.Fatalf("Function 2 failed: %v", err)
+		return fmt.Errorf("function 2: %w", err)
 	}
 	scriptIDs = append(scriptIDs, script2ID)
 
 	script3ID, err := script3QueryUpdateCredits(token)
 	if err != nil {
-		log.Fatalf("Function 3 failed: %v", err)
+		return fmt.Errorf("function 3: %w", err)
 	}
 	scriptIDs = append(scriptIDs, script3ID)
 
 	script4ID, err := script4DeleteAndVerify(token)
 	if err != nil {
-		log.Fatalf("Function 4 failed: %v", err)
+		return fmt.Errorf("function 4: %w", err)
 	}
 	scriptIDs = append(scriptIDs, script4ID)
 
-	// Cleanup
-	cleanup(token, scriptIDs)
+	return nil
+}
 
+func main() {
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
 	fmt.Println("\n" + string([]byte(repeat("=", 60))))
 	fmt.Println("✅ Complete CRUD Functions Example Finished!")
 	fmt.Println(string([]byte(repeat("=", 60))))

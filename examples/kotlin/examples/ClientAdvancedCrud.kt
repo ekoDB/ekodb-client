@@ -75,28 +75,35 @@ fun main() = runBlocking {
         )
         println("After sequence: $sequenced")
 
-        // 4. Delete the record (moves to trash)
-        println("\n--- Deleting record (soft delete) ---")
-        client.delete(collection, recordId)
-        println("Record deleted (in trash)")
-
-        // 5. Restore the single record
-        println("\n--- Restoring record from trash ---")
-        val restored = client.restoreRecord(collection, recordId)
-        println("Record restored: $restored")
-
-        // Verify restore
-        val afterRestore = client.findById(collection, recordId)
-        println("Verified restored record: ${afterRestore["name"]}")
-
-        // 6. Delete the record again, then restore the whole collection
-        println("\n--- Soft-deleting record again ---")
-        client.delete(collection, recordId)
-        println("Record deleted")
-
-        println("\n--- Restoring entire collection ---")
-        val restoredCount = client.restoreCollection(collection)
-        println("Records restored: $restoredCount")
+        /*
+         * TODO(ekoDB dev team): Re-enable the record and collection restore examples
+         * after the server can recover deleted record data. The live API currently
+         * returns status="success", restored=false and removes the tombstone, leaving
+         * the record unavailable afterward.
+         *
+         * // Delete the record (moves to trash)
+         * println("\n--- Deleting record (soft delete) ---")
+         * client.delete(collection, recordId)
+         * println("Record deleted (in trash)")
+         *
+         * // Restore the single record
+         * println("\n--- Restoring record from trash ---")
+         * val restored = client.restoreRecord(collection, recordId)
+         * println("Record restored: $restored")
+         *
+         * // Verify restore
+         * val afterRestore = client.findById(collection, recordId)
+         * println("Verified restored record: ${afterRestore["name"]}")
+         *
+         * // Delete the record again, then restore the whole collection
+         * println("\n--- Soft-deleting record again ---")
+         * client.delete(collection, recordId)
+         * println("Record deleted")
+         *
+         * println("\n--- Restoring entire collection ---")
+         * val restoredCount = client.restoreCollection(collection)
+         * println("Records restored: $restoredCount")
+         */
 
     } finally {
         // Cleanup
@@ -106,9 +113,11 @@ fun main() = runBlocking {
             println("Deleted collection: $collection")
         } catch (e: Exception) {
             println("Could not delete collection: ${e.message}")
+            throw e
+        } finally {
+            client.close()
         }
 
-        client.close()
         println("\n=== Example Complete ===")
     }
 }

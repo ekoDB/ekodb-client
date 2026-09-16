@@ -38,143 +38,178 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Step 2: Create a chat session
     let session_res = http_client
-        .post(&format!("{}/api/chat/sessions", base_url))
+        .post(&format!("{}/api/chat", base_url))
         .header("Authorization", format!("Bearer {}", token))
         .json(&json!({
+            "collections": [],
+            "llm_provider": "openai",
             "system_prompt": "You are a helpful assistant.",
         }))
         .send()
         .await?;
+    if !session_res.status().is_success() {
+        return Err(format!(
+            "chat session creation failed with HTTP {}: {}",
+            session_res.status(),
+            session_res.text().await.unwrap_or_default()
+        )
+        .into());
+    }
     let session_data: Value = session_res.json().await?;
     let chat_id = session_data["chat_id"]
         .as_str()
-        .unwrap_or_default()
+        .ok_or("chat session response did not contain chat_id")?
         .to_string();
     println!("✓ Created chat session: {}", chat_id);
 
-    // Step 3: Connect to WebSocket
-    println!("\n=== Connecting to WebSocket ===");
-    let url = format!("{}/api/ws", ws_url);
-    let parsed = Url::parse(&url)?;
-    let host = parsed
-        .host_str()
-        .map(|h| match parsed.port() {
-            Some(p) => format!("{}:{}", h, p),
-            None => h.to_string(),
-        })
-        .unwrap_or_else(|| "localhost:8080".to_string());
+    let stream_result: Result<(), Box<dyn std::error::Error>> = async {
+        // Step 3: Connect to WebSocket
+        println!("\n=== Connecting to WebSocket ===");
+        let url = format!("{}/api/ws", ws_url);
+        let parsed = Url::parse(&url)?;
+        let host = parsed
+            .host_str()
+            .map(|h| match parsed.port() {
+                Some(p) => format!("{}:{}", h, p),
+                None => h.to_string(),
+            })
+            .unwrap_or_else(|| "localhost:8080".to_string());
 
-    let request = tokio_tungstenite::tungstenite::http::Request::builder()
-        .uri(&url)
-        .header("Authorization", format!("Bearer {}", token))
-        .header("Host", &host)
-        .header("Connection", "Upgrade")
-        .header("Upgrade", "websocket")
-        .header("Sec-WebSocket-Version", "13")
-        .header(
-            "Sec-WebSocket-Key",
-            tokio_tungstenite::tungstenite::handshake::client::generate_key(),
-        )
-        .body(())
-        .unwrap();
+        let request = tokio_tungstenite::tungstenite::http::Request::builder()
+            .uri(&url)
+            .header("Authorization", format!("Bearer {}", token))
+            .header("Host", &host)
+            .header("Connection", "Upgrade")
+            .header("Upgrade", "websocket")
+            .header("Sec-WebSocket-Version", "13")
+            .header(
+                "Sec-WebSocket-Key",
+                tokio_tungstenite::tungstenite::handshake::client::generate_key(),
+            )
+            .body(())
+            .unwrap();
 
-    let (ws_stream, _) = connect_async(request).await?;
-    let (mut write, mut read) = ws_stream.split();
-    println!("✓ WebSocket connected");
+        let (ws_stream, _) = connect_async(request).await?;
+        let (mut write, mut read) = ws_stream.split();
+        println!("✓ WebSocket connected");
 
-    // Step 4: Send chat message via WebSocket
-    println!("\n=== Sending message: 'What is the capital of France?' ===");
-    let chat_msg = json!({
-        "type": "ChatSend",
-        "payload": {
-            "chat_id": chat_id,
-            "message": "What is the capital of France?"
-        }
-    });
-    write
-        .send(Message::Text(chat_msg.to_string().into()))
-        .await?;
+        // Step 4: Send chat message via WebSocket
+        println!("\n=== Sending message: 'What is the capital of France?' ===");
+        let chat_msg = json!({
+            "type": "ChatSend",
+            "payload": {
+                "chat_id": chat_id,
+                "message": "What is the capital of France?"
+            }
+        });
+        write
+            .send(Message::Text(chat_msg.to_string().into()))
+            .await?;
 
-    // Step 5: Stream the response
-    let mut full_response = String::new();
-    let mut got_ack = false;
+        // Step 5: Stream the response
+        let mut full_response = String::new();
+        let mut got_ack = false;
+        let mut completed = false;
 
-    while let Some(Ok(msg)) = read.next().await {
-        if let Message::Text(text) = msg {
-            let parsed: Value = serde_json::from_str(&text)?;
-            let msg_type = parsed["type"].as_str().unwrap_or("");
+        loop {
+            let next = tokio::time::timeout(std::time::Duration::from_secs(120), read.next())
+                .await
+                .map_err(|_| "WebSocket chat timed out waiting for a stream event")?;
+            let Some(msg) = next else { break };
+            let msg = msg?;
+            if let Message::Text(text) = msg {
+                let parsed: Value = serde_json::from_str(&text)?;
+                let msg_type = parsed["type"].as_str().unwrap_or("");
 
-            match msg_type {
-                // Initial acknowledgement
-                "Success" if !got_ack => {
-                    got_ack = true;
-                    println!("✓ Message accepted, streaming...\n");
-                }
+                match msg_type {
+                    // Initial acknowledgement
+                    "Success" if !got_ack => {
+                        got_ack = true;
+                        println!("✓ Message accepted, streaming...\n");
+                    }
 
-                // Streaming text chunks
-                "ChatStreamChunk" => {
-                    let content = parsed["payload"]["content"].as_str().unwrap_or("");
-                    full_response.push_str(content);
-                    print!("{}", content);
-                }
+                    // Streaming text chunks
+                    "ChatStreamChunk" => {
+                        let content = parsed["payload"]["content"].as_str().unwrap_or("");
+                        full_response.push_str(content);
+                        print!("{}", content);
+                    }
 
-                // Tool call requested
-                "ClientToolCall" => {
-                    let tool = parsed["payload"]["tool_name"].as_str().unwrap_or("?");
-                    let call_id = parsed["payload"]["call_id"].as_str().unwrap_or("");
-                    let args = &parsed["payload"]["arguments"];
-                    println!("\n[Tool Call] {}({})", tool, args);
+                    // Tool call requested
+                    "ClientToolCall" => {
+                        let tool = parsed["payload"]["tool_name"].as_str().unwrap_or("?");
+                        let call_id = parsed["payload"]["call_id"].as_str().unwrap_or("");
+                        let args = &parsed["payload"]["arguments"];
+                        println!("\n[Tool Call] {}({})", tool, args);
 
-                    // Send tool result back
-                    let result_msg = json!({
-                        "type": "ClientToolResult",
-                        "payload": {
-                            "chat_id": chat_id,
-                            "call_id": call_id,
-                            "success": true,
-                            "result": {"result": "Tool executed successfully"},
+                        // Send tool result back
+                        let result_msg = json!({
+                            "type": "ClientToolResult",
+                            "payload": {
+                                "chat_id": chat_id,
+                                "call_id": call_id,
+                                "success": true,
+                                "result": {"result": "Tool executed successfully"},
+                            }
+                        });
+                        write
+                            .send(Message::Text(result_msg.to_string().into()))
+                            .await?;
+                    }
+
+                    // Stream completed
+                    "ChatStreamEnd" => {
+                        completed = true;
+                        let payload = &parsed["payload"];
+                        println!("\n\n--- Stream ended ---");
+                        println!("Message ID: {}", payload["message_id"]);
+                        println!(
+                            "Execution time: {}ms",
+                            payload["execution_time_ms"].as_u64().unwrap_or(0)
+                        );
+                        if let Some(usage) = payload.get("token_usage") {
+                            println!("Token usage: {}", usage);
                         }
-                    });
-                    write
-                        .send(Message::Text(result_msg.to_string().into()))
-                        .await?;
-                }
-
-                // Stream completed
-                "ChatStreamEnd" => {
-                    let payload = &parsed["payload"];
-                    println!("\n\n--- Stream ended ---");
-                    println!("Message ID: {}", payload["message_id"]);
-                    println!(
-                        "Execution time: {}ms",
-                        payload["execution_time_ms"].as_u64().unwrap_or(0)
-                    );
-                    if let Some(usage) = payload.get("token_usage") {
-                        println!("Token usage: {}", usage);
+                        if let Some(cw) = payload["context_window"].as_u64() {
+                            println!("Context window: {} tokens", cw);
+                        }
+                        break;
                     }
-                    if let Some(cw) = payload["context_window"].as_u64() {
-                        println!("Context window: {} tokens", cw);
+
+                    // Error
+                    "ChatStreamError" => {
+                        let error = parsed["payload"]["error"].as_str().unwrap_or("unknown");
+                        return Err(format!("WebSocket chat failed: {}", error).into());
                     }
-                    break;
-                }
 
-                // Error
-                "ChatStreamError" => {
-                    let error = parsed["payload"]["error"].as_str().unwrap_or("unknown");
-                    println!("\n[Error] {}", error);
-                    break;
+                    _ => {}
                 }
-
-                _ => {}
             }
         }
-    }
 
-    // Truncate for display
-    if full_response.len() > 200 {
-        full_response.truncate(200);
+        if !completed {
+            return Err("WebSocket chat ended before a ChatStreamEnd event".into());
+        }
+
+        let preview: String = full_response.chars().take(200).collect();
+        println!("\nFull response: {}...", preview);
+        Ok(())
     }
-    println!("\nFull response: {}...", full_response);
+    .await;
+
+    let delete_response = http_client
+        .delete(&format!("{}/api/chat/{}", base_url, chat_id))
+        .header("Authorization", format!("Bearer {}", token))
+        .send()
+        .await?;
+    stream_result?;
+    if !delete_response.status().is_success() {
+        return Err(format!(
+            "chat session cleanup failed with HTTP {}",
+            delete_response.status()
+        )
+        .into());
+    }
 
     println!("\n✓ WebSocket chat streaming example completed successfully");
 

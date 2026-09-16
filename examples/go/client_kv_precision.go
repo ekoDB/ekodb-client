@@ -9,15 +9,17 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
+	"math"
 	"os"
 
 	ekodb "github.com/ekoDB/ekodb-client-go"
 	"github.com/joho/godotenv"
 )
 
-func main() {
+func run() (runErr error) {
 	// Load environment variables
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found")
@@ -34,10 +36,25 @@ func main() {
 
 	client, err := ekodb.NewClient(baseURL, apiKey)
 	if err != nil {
-		log.Fatalf("Failed to create client: %v", err)
+		return fmt.Errorf("create client: %w", err)
 	}
+	floatKeys := []string{"product:float:1:go", "product:float:2:go", "product:float:3:go"}
+	decimalKeys := []string{"product:decimal:1:go", "product:decimal:2:go", "product:decimal:3:go"}
+	allKeys := append(append([]string{}, floatKeys...), decimalKeys...)
+	allKeys = append(allKeys, "precision:float:go", "precision:decimal:go")
+	if _, err := client.KVBatchDelete(allKeys); err != nil {
+		return fmt.Errorf("initial KV cleanup: %w", err)
+	}
+	defer func() {
+		fmt.Println("\n=== Cleanup ===")
+		if _, cleanupErr := client.KVBatchDelete(allKeys); cleanupErr != nil {
+			runErr = errors.Join(runErr, fmt.Errorf("cleanup test keys: %w", cleanupErr))
+		} else {
+			fmt.Println("✓ Cleaned up test keys")
+		}
+	}()
 
-	fmt.Println("=== KV Precision: Float vs Decimal ===\n")
+	fmt.Print("=== KV Precision: Float vs Decimal ===\n\n")
 
 	// =========================================================================
 	// Test 1: Float Precision Loss
@@ -45,24 +62,26 @@ func main() {
 	fmt.Println("=== Test 1: Using Go Floats (LOSES PRECISION) ===")
 
 	floatProducts := []map[string]interface{}{
-		{"key": "product:float:1", "value": map[string]interface{}{"name": "Widget A", "price": 29.99}},
-		{"key": "product:float:2", "value": map[string]interface{}{"name": "Widget B", "price": 39.99}},
-		{"key": "product:float:3", "value": map[string]interface{}{"name": "Widget C", "price": 49.99}},
+		{"key": floatKeys[0], "value": map[string]interface{}{"name": "Widget A", "price": 29.99}},
+		{"key": floatKeys[1], "value": map[string]interface{}{"name": "Widget B", "price": 39.99}},
+		{"key": floatKeys[2], "value": map[string]interface{}{"name": "Widget C", "price": 49.99}},
 	}
 
 	// Store with float values
 	_, err = client.KVBatchSet(floatProducts)
 	if err != nil {
-		log.Fatalf("Failed to batch set float products: %v", err)
+		return fmt.Errorf("batch set float products: %w", err)
 	}
 	fmt.Println("✓ Stored products with float prices")
 
 	// Retrieve and show the precision loss
 	// Note: KV values come back with type wrappers like { "type": "Float", "value": 29.99 }
-	floatKeys := []string{"product:float:1", "product:float:2", "product:float:3"}
 	floatResults, err := client.KVBatchGet(floatKeys)
 	if err != nil {
-		log.Fatalf("Failed to batch get float products: %v", err)
+		return fmt.Errorf("batch get float products: %w", err)
+	}
+	if len(floatResults) != len(floatKeys) {
+		return fmt.Errorf("batch get returned %d float products, expected %d", len(floatResults), len(floatKeys))
 	}
 
 	fmt.Println("\nRetrieved float prices:")
@@ -70,11 +89,10 @@ func main() {
 	names := []string{"Widget A", "Widget B", "Widget C"}
 	for i, val := range floatResults {
 		actualPrice := ekodb.GetFloatValue(val["price"])
-		match := "✓"
 		if actualPrice != expectedPrices[i] {
-			match = "✗ PRECISION LOST"
+			return fmt.Errorf("float price mismatch for %s: got %v, expected %v", names[i], actualPrice, expectedPrices[i])
 		}
-		fmt.Printf("  %s: $%v (expected $%v) %s\n", names[i], actualPrice, expectedPrices[i], match)
+		fmt.Printf("  %s: $%v (expected $%v) ✓\n", names[i], actualPrice, expectedPrices[i])
 	}
 
 	// =========================================================================
@@ -83,30 +101,35 @@ func main() {
 	fmt.Println("\n=== Test 2: Using FieldDecimal() (PRESERVES PRECISION) ===")
 
 	decimalProducts := []map[string]interface{}{
-		{"key": "product:decimal:1", "value": map[string]interface{}{"name": "Widget A", "price": ekodb.FieldDecimal("29.99")}},
-		{"key": "product:decimal:2", "value": map[string]interface{}{"name": "Widget B", "price": ekodb.FieldDecimal("39.99")}},
-		{"key": "product:decimal:3", "value": map[string]interface{}{"name": "Widget C", "price": ekodb.FieldDecimal("49.99")}},
+		{"key": decimalKeys[0], "value": map[string]interface{}{"name": "Widget A", "price": ekodb.FieldDecimal("29.99")}},
+		{"key": decimalKeys[1], "value": map[string]interface{}{"name": "Widget B", "price": ekodb.FieldDecimal("39.99")}},
+		{"key": decimalKeys[2], "value": map[string]interface{}{"name": "Widget C", "price": ekodb.FieldDecimal("49.99")}},
 	}
 
 	// Store with decimal values
 	_, err = client.KVBatchSet(decimalProducts)
 	if err != nil {
-		log.Fatalf("Failed to batch set decimal products: %v", err)
+		return fmt.Errorf("batch set decimal products: %w", err)
 	}
 	fmt.Println("✓ Stored products with decimal prices")
 
 	// Retrieve and show precision is preserved
 	// Decimal values come back as { "type": "Decimal", "value": "29.99" } - GetDecimalValue extracts it
-	decimalKeys := []string{"product:decimal:1", "product:decimal:2", "product:decimal:3"}
 	decimalResults, err := client.KVBatchGet(decimalKeys)
 	if err != nil {
-		log.Fatalf("Failed to batch get decimal products: %v", err)
+		return fmt.Errorf("batch get decimal products: %w", err)
+	}
+	if len(decimalResults) != len(decimalKeys) {
+		return fmt.Errorf("batch get returned %d decimal products, expected %d", len(decimalResults), len(decimalKeys))
 	}
 
 	expectedDecimals := []string{"29.99", "39.99", "49.99"}
 	fmt.Println("\nRetrieved decimal prices:")
 	for i, val := range decimalResults {
 		actualPrice := ekodb.GetStringValue(val["price"])
+		if actualPrice != expectedDecimals[i] {
+			return fmt.Errorf("decimal price mismatch for %s: got %q, expected %q", names[i], actualPrice, expectedDecimals[i])
+		}
 		fmt.Printf("  %s: $%s (expected $%s) ✓\n", names[i], actualPrice, expectedDecimals[i])
 	}
 
@@ -120,12 +143,18 @@ func main() {
 	for _, val := range floatResults {
 		floatSum += ekodb.GetFloatValue(val["price"])
 	}
+	if math.Abs(floatSum-119.97) > 1e-9 {
+		return fmt.Errorf("float sum was %.17g, expected 119.97", floatSum)
+	}
 	fmt.Printf("  Float sum: $%v (expected $119.97)\n", floatSum)
 
 	// Decimal sum (GetDecimalValue handles string parsing)
 	var decimalSum float64 = 0
 	for _, val := range decimalResults {
 		decimalSum += ekodb.GetDecimalValue(val["price"])
+	}
+	if math.Abs(decimalSum-119.97) > 1e-9 {
+		return fmt.Errorf("decimal sum was %.17g, expected 119.97", decimalSum)
 	}
 	fmt.Printf("  Decimal sum: $%.2f (expected $119.97)\n", decimalSum)
 
@@ -135,43 +164,54 @@ func main() {
 	fmt.Println("\n=== Test 4: Extreme Precision Example ===")
 
 	// Store a value that floats can't represent exactly
-	err = client.KVSet("precision:float", map[string]interface{}{"amount": 0.1 + 0.2})
+	err = client.KVSet("precision:float:go", map[string]interface{}{"amount": 0.1 + 0.2})
 	if err != nil {
-		log.Fatalf("Failed to set float precision: %v", err)
+		return fmt.Errorf("set float precision: %w", err)
 	}
-	err = client.KVSet("precision:decimal", map[string]interface{}{"amount": ekodb.FieldDecimal("0.30")})
+	err = client.KVSet("precision:decimal:go", map[string]interface{}{"amount": ekodb.FieldDecimal("0.30")})
 	if err != nil {
-		log.Fatalf("Failed to set decimal precision: %v", err)
+		return fmt.Errorf("set decimal precision: %w", err)
 	}
 
-	floatPrecision, _ := client.KVGet("precision:float")
-	decimalPrecision, _ := client.KVGet("precision:decimal")
-
-	if floatMap, ok := floatPrecision.(map[string]interface{}); ok {
-		floatAmount := ekodb.GetFloatValue(floatMap["amount"])
-		fmt.Printf("  Float 0.1 + 0.2 = %.17f (should be 0.3)\n", floatAmount)
-	}
-
-	if decimalMap, ok := decimalPrecision.(map[string]interface{}); ok {
-		decimalAmount := ekodb.GetStringValue(decimalMap["amount"])
-		fmt.Printf("  Decimal \"0.30\" = %s (exact!)\n", decimalAmount)
-	}
-
-	// =========================================================================
-	// Cleanup
-	// =========================================================================
-	fmt.Println("\n=== Cleanup ===")
-	allKeys := append(floatKeys, decimalKeys...)
-	allKeys = append(allKeys, "precision:float", "precision:decimal")
-	_, err = client.KVBatchDelete(allKeys)
+	floatPrecision, err := client.KVGet("precision:float:go")
 	if err != nil {
-		log.Printf("Warning: cleanup failed: %v", err)
+		return fmt.Errorf("get float precision value: %w", err)
 	}
-	fmt.Println("✓ Cleaned up test keys")
+	decimalPrecision, err := client.KVGet("precision:decimal:go")
+	if err != nil {
+		return fmt.Errorf("get decimal precision value: %w", err)
+	}
+
+	floatMap, ok := ekodb.GetValue(floatPrecision).(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("float precision value has unexpected shape: %T", ekodb.GetValue(floatPrecision))
+	}
+	floatAmount := ekodb.GetFloatValue(floatMap["amount"])
+	if floatAmount == 0 {
+		return errors.New("float precision amount was missing or zero")
+	}
+	fmt.Printf("  Float 0.1 + 0.2 = %.17f (should be 0.3)\n", floatAmount)
+
+	decimalMap, ok := ekodb.GetValue(decimalPrecision).(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("decimal precision value has unexpected shape: %T", ekodb.GetValue(decimalPrecision))
+	}
+	decimalAmount := ekodb.GetStringValue(decimalMap["amount"])
+	if decimalAmount != "0.30" {
+		return fmt.Errorf("decimal precision mismatch: got %q, expected %q", decimalAmount, "0.30")
+	}
+	fmt.Printf("  Decimal \"0.30\" = %s (exact!)\n", decimalAmount)
 
 	fmt.Println("\n=== Summary ===")
 	fmt.Println("✅ Use FieldDecimal() for monetary values, percentages, and")
 	fmt.Println("   any case where floating-point errors are unacceptable.")
 	fmt.Println("✅ FieldDecimal() stores values as strings internally,")
 	fmt.Println("   preserving exact precision across all operations.")
+	return nil
+}
+
+func main() {
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
 }

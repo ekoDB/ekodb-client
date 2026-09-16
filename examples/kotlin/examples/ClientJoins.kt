@@ -55,34 +55,34 @@ fun main() = runBlocking {
         val user1 = client.insert(usersCollection, Record.new()
             .insert("name", "Alice Johnson")
             .insert("email", "alice@example.com")
-            .insert("department_id", dept1Id!!)
+            .insert("department_id", dept1Id)
         )
         val user1Id = (user1["id"] as? FieldType.StringValue)?.value ?: error("No ID")
         
         val user2 = client.insert(usersCollection, Record.new()
             .insert("name", "Bob Smith")
             .insert("email", "bob@example.com")
-            .insert("department_id", dept2Id!!)
+            .insert("department_id", dept2Id)
         )
         val user2Id = (user2["id"] as? FieldType.StringValue)?.value ?: error("No ID")
         
         // Create orders
         client.insert(ordersCollection, Record.new()
-            .insert("user_id", user1Id!!)
+            .insert("user_id", user1Id)
             .insert("product", "Laptop")
             .insert("amount", 1200)
             .insert("status", "completed")
         )
         
         client.insert(ordersCollection, Record.new()
-            .insert("user_id", user1Id!!)
+            .insert("user_id", user1Id)
             .insert("product", "Mouse")
             .insert("amount", 25)
             .insert("status", "completed")
         )
         
         client.insert(ordersCollection, Record.new()
-            .insert("user_id", user2Id!!)
+            .insert("user_id", user2Id)
             .insert("product", "Keyboard")
             .insert("amount", 75)
             .insert("status", "pending")
@@ -119,7 +119,7 @@ fun main() = runBlocking {
         println("=== Example 2: Join with filtering ===")
         
         val query2 = QueryBuilder.new()
-            .eq("department_id", dept1Id!!)
+            .eq("department_id", dept1Id)
             .join(mapOf(
                 "collections" to listOf(departmentsCollection),
                 "local_field" to "department_id",
@@ -145,12 +145,12 @@ fun main() = runBlocking {
         
         // Create profiles
         client.insert(profilesCollection, Record.new()
-            .insert("user_id", user1Id!!)
+            .insert("user_id", user1Id)
             .insert("bio", "Senior Software Engineer")
         )
         
         client.insert(profilesCollection, Record.new()
-            .insert("user_id", user2Id!!)
+            .insert("user_id", user2Id)
             .insert("bio", "Sales Manager")
         )
         

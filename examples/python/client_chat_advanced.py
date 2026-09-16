@@ -11,22 +11,15 @@ This example demonstrates advanced chat features:
 
 import asyncio
 import os
-from ekodb_client import Client
+
 from dotenv import load_dotenv
+
+from ekodb_client import Client
 
 load_dotenv()
 
 
-async def main():
-    print("=== ekoDB Advanced Chat Features Example ===\n")
-
-    # Create client
-    base_url = os.getenv("API_BASE_URL", "http://localhost:8080")
-    api_key = os.getenv("API_BASE_KEY", "")
-    client = Client.new(base_url, api_key)
-
-    collection = "client_chat_advanced_python"
-
+async def run_example(client, collection, chat_ids):
     # Insert sample data
     print("=== Inserting Sample Data ===")
     await client.insert(
@@ -48,6 +41,7 @@ async def main():
         system_prompt="You are a helpful product assistant.",
     )
     chat_id = session["chat_id"]
+    chat_ids.append(chat_id)
     print(f"✓ Created session: {chat_id}\n")
 
     # Send initial message
@@ -84,8 +78,8 @@ async def main():
         None,
     )
     if not assistant_message:
-        raise Exception(
-            f'Could not find assistant message. Total messages: {len(messages["messages"])}'
+        raise RuntimeError(
+            f"Could not find assistant message. Total messages: {len(messages['messages'])}"
         )
     assistant_message_id = assistant_message["id"]
 
@@ -103,7 +97,7 @@ async def main():
         None,
     )
     if not user_message:
-        raise Exception("Could not find user message")
+        raise RuntimeError("Could not find user message")
     user_message_id = user_message["id"]
 
     # Feature 1: Regenerate Message
@@ -134,11 +128,12 @@ async def main():
 
     # Create a second session
     session2 = await client.create_chat_session(
-        collections=[("products", [])],
+        collections=[(collection, [])],
         llm_provider="openai",
         llm_model="gpt-4o-mini",
     )
     chat_id2 = session2["chat_id"]
+    chat_ids.append(chat_id2)
     print(f"✓ Created second session: {chat_id2}")
 
     # Send a message in the second session
@@ -163,12 +158,41 @@ async def main():
     session_details = await client.get_chat_session(chat_id)
     print(f"✓ Messages remaining: {session_details['message_count']}\n")
 
-    # Cleanup
+
+async def main():
+    print("=== ekoDB Advanced Chat Features Example ===\n")
+    base_url = os.getenv("API_BASE_URL", "http://localhost:8080")
+    api_key = os.getenv("API_BASE_KEY", "")
+    client = Client.new(base_url, api_key)
+    collection = "client_chat_advanced_python"
+    chat_ids = []
+    operation_error = None
+
+    try:
+        await run_example(client, collection, chat_ids)
+    except BaseException as error:  # noqa: BLE001 - cleanup must run on cancellation
+        operation_error = error
+
     print("=== Cleanup ===")
-    await client.delete_chat_session(chat_id)
-    print("✓ Deleted session")
-    await client.delete_collection(collection)
-    print("✓ Deleted collection\n")
+    cleanup_errors = []
+    for chat_id in reversed(chat_ids):
+        try:
+            await client.delete_chat_session(chat_id)
+            print(f"✓ Deleted chat session: {chat_id}")
+        except Exception as error:  # noqa: BLE001 - attempt every cleanup
+            cleanup_errors.append(f"chat session {chat_id}: {error}")
+    try:
+        await client.delete_collection(collection)
+        print("✓ Deleted collection\n")
+    except Exception as error:  # noqa: BLE001 - preserve the operation error
+        cleanup_errors.append(f"collection {collection}: {error}")
+
+    if operation_error is not None:
+        if cleanup_errors:
+            print("⚠️  Cleanup errors: " + "; ".join(cleanup_errors))
+        raise operation_error
+    if cleanup_errors:
+        raise RuntimeError("Cleanup failed: " + "; ".join(cleanup_errors))
 
     print("✓ All advanced chat features demonstrated successfully!")
 

@@ -13,9 +13,9 @@ If this test passes, TTL expiration is working correctly.
 
 import asyncio
 import os
-import sys
 import time
 from pathlib import Path
+
 from dotenv import load_dotenv
 
 from ekodb_client import Client
@@ -42,6 +42,12 @@ async def main():
 
     collection = "ttl_expiration_test_py"
     ttl_seconds = 3
+
+    try:
+        await client.delete_collection(collection)
+    except Exception as error:
+        if "404" not in str(error) and "not found" not in str(error).lower():
+            raise
 
     try:
         # ═══════════════════════════════════════════════════════════════════════
@@ -104,7 +110,8 @@ async def main():
                     "❌ FAILED: Document should have expired but still exists!"
                 )
         except Exception as e:
-            if "FAILED" in str(e):
+            message = str(e).lower()
+            if "404" not in message and "not found" not in message:
                 raise
             print(f"  Output: Error (expected) - {e}")
             print("  ✓ PASS: Document expired (not found error)")
@@ -136,9 +143,14 @@ async def main():
         print(f"\n❌ TEST FAILED: {error}")
         try:
             await client.delete_collection(collection)
-        except:
-            pass
-        sys.exit(1)
+        except Exception as cleanup_error:
+            if (
+                "404" not in str(cleanup_error)
+                and "not found" not in str(cleanup_error).lower()
+            ):
+                error.add_note(f"cleanup also failed: {cleanup_error}")
+                print(f"⚠️  Cleanup also failed: {cleanup_error}")
+        raise
 
 
 if __name__ == "__main__":

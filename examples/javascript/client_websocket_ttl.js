@@ -2,30 +2,30 @@
  * WebSocket TTL - Using @ekodb/ekodb-client library
  */
 
-const { EkoDBClient } = require('@ekodb/ekodb-client');
-const dotenv = require('dotenv');
+const { EkoDBClient } = require("@ekodb/ekodb-client");
+const dotenv = require("dotenv");
 
 dotenv.config();
 
-const BASE_URL = process.env.API_BASE_URL || 'http://localhost:8080';
-const WS_URL = process.env.WS_BASE_URL || 'ws://localhost:8080';
-const API_KEY = process.env.API_BASE_KEY || 'a-test-api-key-from-ekodb';
+const BASE_URL = process.env.API_BASE_URL || "http://localhost:8080";
+const WS_URL = process.env.WS_BASE_URL || "ws://localhost:8080";
+const API_KEY = process.env.API_BASE_KEY || "a-test-api-key-from-ekodb";
 
 async function main() {
   const client = new EkoDBClient(BASE_URL, API_KEY);
   await client.init();
-  console.log('✓ Client created');
+  console.log("✓ Client created");
 
-  const collection = 'client_websocket_ttl_js';
+  const collection = "client_websocket_ttl_js";
 
-  console.log('\n=== Insert Test Data with TTL ===');
-  const record = { name: 'WebSocket TTL Test', value: 42, active: true };
-  const inserted = await client.insert(collection, record, '1h');
+  console.log("\n=== Insert Test Data with TTL ===");
+  const record = { name: "WebSocket TTL Test", value: 42, active: true };
+  const inserted = await client.insert(collection, record, "1h");
   console.log(`✓ Inserted document with TTL: ${inserted.id}`);
 
-  console.log('\n=== Query via WebSocket ===');
+  console.log("\n=== Query via WebSocket ===");
   const ws = client.websocket(WS_URL);
-  console.log('✓ WebSocket connected');
+  console.log("✓ WebSocket connected");
 
   const records = await ws.findAll(collection);
   console.log(`✓ Retrieved ${records.length} record(s) via WebSocket`);
@@ -38,12 +38,14 @@ async function main() {
   ws.close();
 
   // Cleanup: Delete the collection
-  console.log('\n=== Cleanup ===');
+  console.log("\n=== Cleanup ===");
   await client.deleteCollection(collection);
-  console.log('✓ Deleted collection');
+  console.log("✓ Deleted collection");
 
-  console.log('\n✓ WebSocket TTL example completed successfully');
-  console.log('\n💡 Note: Documents with TTL will automatically expire after the specified duration');
+  console.log("\n✓ WebSocket TTL example completed successfully");
+  console.log(
+    "\n💡 Note: Documents with TTL will automatically expire after the specified duration",
+  );
 }
 
 main().catch((error) => {

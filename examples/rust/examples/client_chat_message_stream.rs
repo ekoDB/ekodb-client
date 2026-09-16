@@ -29,38 +29,51 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .await?;
     println!("Created session: {}", session.chat_id);
 
-    // Stream a chat message via SSE
-    println!("\nStreaming response for: 'What is ekoDB?'\n");
-    let mut rx = client
-        .chat_message_stream(&session.chat_id, ChatMessageRequest::new("What is ekoDB?"))
-        .await?;
+    let stream_result: Result<(), Box<dyn std::error::Error>> = async {
+        // Stream a chat message via SSE
+        println!("\nStreaming response for: 'What is ekoDB?'\n");
+        let mut rx = client
+            .chat_message_stream(&session.chat_id, ChatMessageRequest::new("What is ekoDB?"))
+            .await?;
 
-    use ekodb_client::websocket::ChatStreamEvent;
-    while let Some(event) = rx.recv().await {
-        match event {
-            ChatStreamEvent::Chunk(text) => {
-                print!("{}", text);
-            }
-            ChatStreamEvent::End {
-                message_id,
-                execution_time_ms,
-                context_window,
-                ..
-            } => {
-                println!("\n\n--- Stream complete ---");
-                println!("Message ID: {}", message_id);
-                println!("Execution time: {}ms", execution_time_ms);
-                if let Some(cw) = context_window {
-                    println!("Context window: {} tokens", cw);
+        use ekodb_client::websocket::ChatStreamEvent;
+        let mut completed = false;
+        while let Some(event) = rx.recv().await {
+            match event {
+                ChatStreamEvent::Chunk(text) => {
+                    print!("{}", text);
                 }
+                ChatStreamEvent::End {
+                    message_id,
+                    execution_time_ms,
+                    context_window,
+                    ..
+                } => {
+                    completed = true;
+                    println!("\n\n--- Stream complete ---");
+                    println!("Message ID: {}", message_id);
+                    println!("Execution time: {}ms", execution_time_ms);
+                    if let Some(cw) = context_window {
+                        println!("Context window: {} tokens", cw);
+                    }
+                }
+                ChatStreamEvent::Error(err) => {
+                    return Err(format!("Chat stream failed: {}", err).into());
+                }
+                _ => {}
             }
-            ChatStreamEvent::Error(err) => {
-                eprintln!("\nError: {}", err);
-            }
-            _ => {}
         }
-    }
 
+        if !completed {
+            return Err("Chat stream ended before an end event".into());
+        }
+        Ok(())
+    }
+    .await;
+
+    let cleanup_result = client.delete_chat_session(&session.chat_id).await;
+    stream_result?;
+    cleanup_result?;
     println!("\n✓ Chat message stream example completed");
     Ok(())
 }

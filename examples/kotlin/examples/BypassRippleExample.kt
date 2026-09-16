@@ -25,7 +25,10 @@ fun main() = runBlocking {
         .apiKey(apiKey)
         .build()
 
-    val collection = "products"
+    val collection = "bypass_ripple_products_kt_${System.currentTimeMillis()}"
+    var primaryError: Throwable? = null
+
+    try {
 
     // Basic insert (no bypass)
     println("1. Basic insert (ripple enabled):")
@@ -78,7 +81,30 @@ fun main() = runBlocking {
     val upsertResult = client.upsert(collection, userId, upsertRecord, bypassRipple = true)
     println("   Upserted with bypass_ripple: $upsertResult\n")
 
-    // Cleanup
-    client.deleteCollection(collection)
+    } catch (error: Throwable) {
+        primaryError = error
+        throw error
+    } finally {
+        var cleanupError: Throwable? = null
+        try {
+            client.deleteCollection(collection)
+        } catch (error: Throwable) {
+            if (!error.message.orEmpty().contains("status 404")) {
+                cleanupError = error
+            }
+        }
+        try {
+            client.close()
+        } catch (error: Throwable) {
+            cleanupError = cleanupError?.also { it.addSuppressed(error) } ?: error
+        }
+
+        if (primaryError != null && cleanupError != null) {
+            primaryError.addSuppressed(cleanupError)
+        } else if (cleanupError != null) {
+            throw cleanupError
+        }
+    }
+
     println("✅ All bypass_ripple operations completed successfully!")
 }

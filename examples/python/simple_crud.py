@@ -7,6 +7,7 @@ using raw HTTP requests - no client library required
 """
 
 import os
+
 import requests
 from dotenv import load_dotenv
 
@@ -16,6 +17,7 @@ BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8080")
 API_KEY = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb")
 
 auth_token = None
+COLLECTION = "simple_crud_example_py"
 
 
 def get_auth_token():
@@ -54,7 +56,7 @@ def request(method, path, body=None):
     return response.json()
 
 
-def main():
+def run_examples():
     print("=== Simple CRUD Operations (Direct HTTP) ===\n")
 
     get_auth_token()
@@ -64,7 +66,7 @@ def main():
     print("\n=== Insert Document ===")
     doc = request(
         "POST",
-        "/api/insert/test_collection",
+        f"/api/insert/{COLLECTION}",
         {
             "name": "Test Record",
             "value": 42,
@@ -76,14 +78,14 @@ def main():
 
     # Example 2: Find by ID
     print("\n=== Find by ID ===")
-    found_doc = request("GET", f"/api/find/test_collection/{doc_id}")
+    found_doc = request("GET", f"/api/find/{COLLECTION}/{doc_id}")
     print(f"Found: {found_doc}")
 
     # Example 3: Find with query
     print("\n=== Find with Query ===")
     docs = request(
         "POST",
-        "/api/find/test_collection",
+        f"/api/find/{COLLECTION}",
         {
             "filter": {
                 "type": "Condition",
@@ -102,7 +104,7 @@ def main():
     print("\n=== Update Document ===")
     updated = request(
         "PUT",
-        f"/api/update/test_collection/{doc_id}",
+        f"/api/update/{COLLECTION}/{doc_id}",
         {
             "name": "Updated Record",
             "value": 100,
@@ -112,8 +114,27 @@ def main():
 
     # Example 5: Delete document
     print("\n=== Delete Document ===")
-    request("DELETE", f"/api/delete/test_collection/{doc_id}")
+    request("DELETE", f"/api/delete/{COLLECTION}/{doc_id}")
     print("Deleted document")
+
+
+def main():
+    request("DELETE", f"/api/collections/{COLLECTION}")
+    operation_error = None
+    try:
+        run_examples()
+    except BaseException as error:  # noqa: BLE001 - cleanup must run on cancellation
+        operation_error = error
+
+    try:
+        request("DELETE", f"/api/collections/{COLLECTION}")
+    except Exception as cleanup_error:
+        if operation_error is not None:
+            operation_error.add_note(f"cleanup also failed: {cleanup_error}")
+        else:
+            raise
+    if operation_error is not None:
+        raise operation_error
 
     print("\n✓ All CRUD operations completed successfully")
 

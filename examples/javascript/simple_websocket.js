@@ -50,12 +50,23 @@ async function insertTestData(token) {
   return response.json();
 }
 
+async function deleteTestCollection(token) {
+  const response = await fetch(`${BASE_URL}/api/collections/websocket_test`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok && response.status !== 404) {
+    throw new Error(`Collection cleanup failed: ${response.status}`);
+  }
+}
+
 async function main() {
   console.log("=== Simple WebSocket Operations (Direct API) ===\n");
 
   // Step 1: Get authentication token
   const token = await getAuthToken();
   console.log("✓ Authentication successful");
+  await deleteTestCollection(token);
 
   // Step 2: Insert test data first
   console.log("\n=== Inserting Test Data ===");
@@ -65,7 +76,7 @@ async function main() {
   // Step 3: Connect to WebSocket
   console.log("\n=== Connecting to WebSocket ===");
 
-  return new Promise((resolve, reject) => {
+  await new Promise((resolve, reject) => {
     const ws = new WebSocket(`${WS_URL}/api/ws`, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -86,7 +97,7 @@ async function main() {
           payload: {
             collection: "websocket_test",
           },
-        })
+        }),
       );
     });
 
@@ -95,10 +106,16 @@ async function main() {
         const response = JSON.parse(data.toString());
         console.log("Response:", JSON.stringify(response, null, 2));
 
-        if (response.payload && response.payload.data) {
-          const records = response.payload.data;
-          console.log(`✓ Retrieved ${records.length} record(s) via WebSocket`);
+        const records = response?.payload?.data;
+        if (!Array.isArray(records)) {
+          throw new Error("WebSocket response did not contain payload.data");
         }
+        if (records.length !== 1) {
+          throw new Error(
+            `Expected exactly 1 WebSocket record, got ${records.length}`,
+          );
+        }
+        console.log("✓ Retrieved 1 record via WebSocket");
 
         console.log("\n✓ WebSocket example completed successfully");
         ws.close();
@@ -125,6 +142,8 @@ async function main() {
       reject(new Error("WebSocket timeout"));
     }, 10000);
   });
+
+  await deleteTestCollection(token);
 }
 
 main().catch((error) => {

@@ -48,9 +48,11 @@ fun main() = runBlocking {
     println("🚀 ekoDB Kotlin Search Functions Example")
     println()
 
-    // Setup test data
-    println("📋 Setting up test data...")
-    try { client.deleteCollection("search_docs_kt") } catch (e: Exception) {}
+    val funcIds = mutableListOf<String>()
+    try {
+        // Setup test data
+        println("📋 Setting up test data...")
+        try { client.deleteCollection("search_docs_kt") } catch (e: Exception) {}
 
     val documents = listOf(
         Record.new().insert("title", "Introduction to Machine Learning").insert("content", "Machine learning is a subset of AI.").insert("category", "AI"),
@@ -65,9 +67,6 @@ fun main() = runBlocking {
     }
     println("✅ Inserted ${documents.size} documents\n")
 
-    val funcIds = mutableListOf<String>()
-
-    try {
         // Example 1: List All Documents
         println("📝 Example 1: List All Documents")
         println()
@@ -125,9 +124,9 @@ fun main() = runBlocking {
         // Cleanup
         println("🧹 Cleaning up...")
         for (funcId in funcIds) {
-            try { client.deleteFunction(funcId) } catch (e: Exception) {}
+            client.deleteFunction(funcId)
         }
-        try { client.deleteCollection("search_docs_kt") } catch (e: Exception) {}
+        client.deleteCollection("search_docs_kt")
         println("✅ Cleanup complete")
 
         println()
@@ -136,5 +135,14 @@ fun main() = runBlocking {
     } catch (e: Exception) {
         println("❌ Error: ${e.message}")
         e.printStackTrace()
+        for (funcId in funcIds) {
+            try { client.deleteFunction(funcId) } catch (cleanupError: Exception) { e.addSuppressed(cleanupError) }
+        }
+        try { client.deleteCollection("search_docs_kt") } catch (cleanupError: Exception) {
+            e.addSuppressed(cleanupError)
+        }
+        throw e
+    } finally {
+        client.close()
     }
 }

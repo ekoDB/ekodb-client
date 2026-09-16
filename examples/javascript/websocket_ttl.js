@@ -23,13 +23,17 @@ async function main() {
   console.log("║   WEBSOCKET TTL EXPIRATION VERIFICATION TEST           ║");
   console.log("╚════════════════════════════════════════════════════════╝");
   console.log();
-  console.log("This test verifies TTL expiration works via WebSocket connections.");
-  console.log("We will use WebSocket to insert, query, and verify TTL expiration.");
+  console.log(
+    "This test verifies TTL expiration works via WebSocket connections.",
+  );
+  console.log(
+    "We will use WebSocket to insert, query, and verify TTL expiration.",
+  );
   console.log();
 
   const client = new EkoDBClient(
     process.env.API_BASE_URL || "http://localhost:8080",
-    process.env.API_BASE_KEY || "a-test-api-key-from-ekodb"
+    process.env.API_BASE_KEY || "a-test-api-key-from-ekodb",
   );
   await client.init();
   console.log("✓ Client connected");
@@ -51,10 +55,14 @@ async function main() {
     console.log("  Input: {name: 'WS TTL Test', value: 'should expire'}");
     console.log(`  TTL: ${ttlSeconds}s`);
 
-    const doc = await client.insert(collection, {
-      name: "WS TTL Test",
-      value: "should expire via websocket",
-    }, { ttl: `${ttlSeconds}s` });
+    const doc = await client.insert(
+      collection,
+      {
+        name: "WS TTL Test",
+        value: "should expire via websocket",
+      },
+      { ttl: `${ttlSeconds}s` },
+    );
 
     const docID = doc.id;
     console.log(`  Output: Document ID = ${docID}`);
@@ -68,7 +76,9 @@ async function main() {
     if (!found) {
       throw new Error("❌ FAILED: Document should exist but was not found");
     }
-    console.log(`  Output: Found document with name = ${found.name?.value || found.name}`);
+    console.log(
+      `  Output: Found document with name = ${found.name?.value || found.name}`,
+    );
     console.log("  ✓ PASS: Document exists");
 
     // Step 3: Wait for TTL to expire
@@ -92,11 +102,16 @@ async function main() {
         console.log("  Output: null (document not found)");
         console.log("  ✓ PASS: Document expired correctly!");
       } else {
-        console.log(`  Output: Document still exists! ${JSON.stringify(expired)}`);
-        throw new Error("❌ FAILED: Document should have expired but still exists!");
+        console.log(
+          `  Output: Document still exists! ${JSON.stringify(expired)}`,
+        );
+        throw new Error(
+          "❌ FAILED: Document should have expired but still exists!",
+        );
       }
     } catch (err) {
       if (err.message.includes("FAILED")) throw err;
+      if (!/\b404\b|not found/i.test(err.message)) throw err;
       console.log(`  Output: Error (expected) - ${err.message}`);
       console.log("  ✓ PASS: Document expired (not found error)");
     }
@@ -104,7 +119,9 @@ async function main() {
     // ═══════════════════════════════════════════════════════════════════════
     // Cleanup
     // ═══════════════════════════════════════════════════════════════════════
-    console.log("\n═══════════════════════════════════════════════════════════");
+    console.log(
+      "\n═══════════════════════════════════════════════════════════",
+    );
     console.log("CLEANUP");
     console.log("═══════════════════════════════════════════════════════════");
 

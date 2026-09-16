@@ -3,7 +3,9 @@
  * Transaction Examples - Direct HTTP API calls
  */
 
-require("dotenv").config({ path: require("path").join(__dirname, "..", ".env") });
+require("dotenv").config({
+  path: require("path").join(__dirname, "..", ".env"),
+});
 
 const BASE_URL = process.env.API_BASE_URL || "http://localhost:8080";
 const API_KEY = process.env.API_BASE_KEY || "a-test-api-key-from-ekodb";
@@ -70,7 +72,7 @@ async function main() {
   await makeRequest(
     "PUT",
     `/api/batch/update/test_accounts?transaction_id=${encodeURIComponent(
-      txId
+      txId,
     )}`,
     token,
     {
@@ -78,7 +80,7 @@ async function main() {
         { id: aliceId, data: { balance: 800 } },
         { id: bobId, data: { balance: 700 } },
       ],
-    }
+    },
   );
   console.log("Updated Alice: $1000 → $800");
   console.log("Updated Bob: $500 → $700\n");
@@ -99,14 +101,14 @@ async function main() {
   const aliceFinal = await makeRequest(
     "GET",
     `/api/find/test_accounts/${aliceId}`,
-    token
+    token,
   );
   console.log(`Alice: ${JSON.stringify(aliceFinal.balance)}`);
 
   const bobFinal = await makeRequest(
     "GET",
     `/api/find/test_accounts/${bobId}`,
-    token
+    token,
   );
   console.log(`Bob: ${JSON.stringify(bobFinal.balance)}\n`);
 
@@ -121,12 +123,12 @@ async function main() {
   await makeRequest(
     "PUT",
     `/api/batch/update/test_accounts?transaction_id=${encodeURIComponent(
-      txId2
+      txId2,
     )}`,
     token,
     {
       updates: [{ id: bobId, data: { balance: 600 } }],
-    }
+    },
   );
   console.log("Updated Bob: $700 → $600 (in transaction)");
 
@@ -136,7 +138,7 @@ async function main() {
   const bobAfter = await makeRequest(
     "GET",
     `/api/find/test_accounts/${bobId}`,
-    token
+    token,
   );
   console.log(`Bob after rollback: ${JSON.stringify(bobAfter.balance)}\n`);
 
@@ -149,4 +151,7 @@ async function main() {
   console.log("✓ All transaction examples completed");
 }
 
-main().catch(console.error);
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});

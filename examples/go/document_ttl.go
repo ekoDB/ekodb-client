@@ -11,6 +11,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -20,7 +21,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func main() {
+func run() (runErr error) {
 	fmt.Println("╔════════════════════════════════════════════════════════╗")
 	fmt.Println("║     TTL EXPIRATION VERIFICATION TEST                   ║")
 	fmt.Println("╚════════════════════════════════════════════════════════╝")
@@ -47,12 +48,19 @@ func main() {
 	// Create client
 	client, err := ekodb.NewClient(baseURL, apiKey)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	fmt.Println("✓ Client connected")
 
 	collection := "ttl_expiration_test_go"
 	ttlSeconds := 3
+	defer func() {
+		if err := client.DeleteCollection(collection); err != nil {
+			runErr = errors.Join(runErr, fmt.Errorf("cleanup collection %s: %w", collection, err))
+		} else {
+			fmt.Println("✓ Deleted test collection")
+		}
+	}()
 
 	// ═══════════════════════════════════════════════════════════════════════
 	// TEST 1: Document TTL Expiration
@@ -75,7 +83,7 @@ func main() {
 		TTL: fmt.Sprintf("%ds", ttlSeconds),
 	})
 	if err != nil {
-		log.Fatalf("❌ FAILED: Could not insert document: %v", err)
+		return fmt.Errorf("could not insert document: %w", err)
 	}
 	docID := doc["id"].(string)
 	fmt.Printf("  Output: Document ID = %s\n", docID)
@@ -87,10 +95,10 @@ func main() {
 
 	found, err := client.FindByID(collection, docID)
 	if err != nil {
-		log.Fatalf("❌ FAILED: Could not find document: %v", err)
+		return fmt.Errorf("could not find document: %w", err)
 	}
 	if found == nil {
-		log.Fatal("❌ FAILED: Document should exist but was not found")
+		return fmt.Errorf("document should exist but was not found")
 	}
 	fmt.Printf("  Output: Found document with name = %v\n", found["name"])
 	fmt.Println("  ✓ PASS: Document exists")
@@ -112,7 +120,10 @@ func main() {
 
 	expired, err := client.FindByID(collection, docID)
 	if err != nil {
-		// Error could mean document not found - that's expected!
+		var httpErr *ekodb.HTTPError
+		if !errors.As(err, &httpErr) || !httpErr.IsNotFound() {
+			return fmt.Errorf("verify document expiration: %w", err)
+		}
 		fmt.Printf("  Output: Error (expected) - %v\n", err)
 		fmt.Println("  ✓ PASS: Document expired (not found error)")
 	} else if expired == nil {
@@ -120,7 +131,7 @@ func main() {
 		fmt.Println("  ✓ PASS: Document expired correctly!")
 	} else {
 		fmt.Printf("  Output: Document still exists! %v\n", expired)
-		log.Fatal("❌ FAILED: Document should have expired but still exists!")
+		return fmt.Errorf("document should have expired but still exists")
 	}
 
 	// ═══════════════════════════════════════════════════════════════════════
@@ -129,12 +140,6 @@ func main() {
 	fmt.Println("\n═══════════════════════════════════════════════════════════")
 	fmt.Println("CLEANUP")
 	fmt.Println("═══════════════════════════════════════════════════════════")
-
-	if err := client.DeleteCollection(collection); err != nil {
-		log.Printf("Warning: cleanup failed: %v", err)
-	} else {
-		fmt.Println("✓ Deleted test collection")
-	}
 
 	// ═══════════════════════════════════════════════════════════════════════
 	// Summary
@@ -148,4 +153,11 @@ func main() {
 	fmt.Println("  • Documents with TTL expire after the specified time")
 	fmt.Println("  • Documents without TTL persist indefinitely")
 	fmt.Println("  • Different TTL durations are handled correctly")
+	return nil
+}
+
+func main() {
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
 }

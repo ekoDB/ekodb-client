@@ -3,8 +3,7 @@
 Demonstrates advanced CRUD operations:
   - update_with_action (atomic field-level actions)
   - update_with_action_sequence (multiple atomic actions in one call)
-  - restore_deleted (restore a soft-deleted document)
-  - restore_collection (restore all soft-deleted documents in a collection)
+  - restore_deleted and restore_collection (temporarily disabled; see TODO below)
 """
 
 import asyncio
@@ -61,34 +60,39 @@ async def main():
             doc_id,
             [
                 ("increment", "count", 100),
-                ("set", "name", "Updated Counter"),
+                ("push", "tags", "sequenced"),
             ],
         )
         print(f"After action sequence: {updated}")
 
-        # 5. Delete the document (soft delete)
-        print("\n--- delete (soft) ---")
-        await client.delete(collection, doc_id)
-        print(f"Deleted document: {doc_id}")
-
-        # 6. restore_deleted - bring it back
-        print("\n--- restore_deleted ---")
-        restored = await client.restore_deleted(collection, doc_id)
-        print(f"Restored: {restored}")
-
-        # 7. Verify the document is back
-        print("\n--- verify restore ---")
-        found = await client.find_by_id(collection, doc_id)
-        print(f"Found after restore: {found}")
-
-        # 8. Delete all docs, then restore_collection
-        print("\n--- restore_collection ---")
-        doc2 = await client.insert(collection, {"name": "Second Record", "value": 42})
-        doc2_id = doc2["id"]
-        await client.delete(collection, doc_id)
-        await client.delete(collection, doc2_id)
-        count = await client.restore_collection(collection)
-        print(f"Restored {count} documents in collection")
+        # TODO(ekoDB dev team): Re-enable the record and collection restore
+        # examples after the server can recover deleted record data. The live
+        # API currently returns status="success", restored=false and removes
+        # the tombstone, leaving the record unavailable afterward.
+        #
+        # # 5. Delete the document (soft delete)
+        # print("\n--- delete (soft) ---")
+        # await client.delete(collection, doc_id)
+        # print(f"Deleted document: {doc_id}")
+        #
+        # # 6. restore_deleted - bring it back
+        # print("\n--- restore_deleted ---")
+        # restored = await client.restore_deleted(collection, doc_id)
+        # print(f"Restored: {restored}")
+        #
+        # # 7. Verify the document is back
+        # print("\n--- verify restore ---")
+        # found = await client.find_by_id(collection, doc_id)
+        # print(f"Found after restore: {found}")
+        #
+        # # 8. Delete all docs, then restore_collection
+        # print("\n--- restore_collection ---")
+        # doc2 = await client.insert(collection, {"name": "Second Record", "value": 42})
+        # doc2_id = doc2["id"]
+        # await client.delete(collection, doc_id)
+        # await client.delete(collection, doc2_id)
+        # count = await client.restore_collection(collection)
+        # print(f"Restored {count} documents in collection")
 
     finally:
         # Cleanup

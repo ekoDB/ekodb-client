@@ -11,7 +11,6 @@ import asyncio
 import json
 import os
 import time
-from datetime import datetime
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -24,6 +23,8 @@ load_dotenv(env_path)
 
 BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8080")
 API_KEY = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb")
+FUNCTION_LABEL = "cache_api_call_py"
+KV_KEY = "edge_cache:py:weather_nyc"
 
 
 def _is_already_exists_error(err):
@@ -47,19 +48,21 @@ async def save_or_update(client, script):
             raise
         await client.update_function(label, script)
         print(f"ℹ️  Function '{label}' already existed — updated instead")
-        return label
+        existing = await client.get_function(label)
+        function_id = existing.get("id")
+        if not function_id:
+            raise RuntimeError(f"Updated function '{label}' did not include an id")
+        return function_id
 
 
-async def edge_cache_example():
-    client = Client.new(BASE_URL, API_KEY)
-
+async def run_example(client, resources):
     print("=== ekoDB as Edge Cache - Simple Example ===\n")
 
     print("Creating edge cache function...")
 
     # Simple passthrough cache pattern
     cache_script = {
-        "label": "cache_api_call_py",
+        "label": FUNCTION_LABEL,
         "name": "Cache External API Call",
         "description": "Database as edge: Check cache → Call API if miss → Store result → Return",
         "parameters": {
@@ -117,15 +120,16 @@ async def edge_cache_example():
     }
 
     script_id = await save_or_update(client, cache_script)
+    resources["function_id"] = script_id
     print(f"✓ Edge cache script created: {script_id}\n")
 
     # Test it - First call hits API
     print("Call 1: Cache miss (fetches from API)")
     start1 = time.time()
     result1 = await client.call_function(
-        "cache_api_call_py",
+        FUNCTION_LABEL,
         {
-            "cache_key": "weather_nyc",
+            "cache_key": KV_KEY,
             "api_url": "https://api.open-meteo.com/v1/forecast?latitude=40.7128&longitude=-74.0060&current=temperature_2m",
             "ttl_seconds": 300,
         },
@@ -138,9 +142,9 @@ async def edge_cache_example():
     print("\nCall 2: Cache hit (served from ekoDB)")
     start2 = time.time()
     result2 = await client.call_function(
-        "cache_api_call_py",
+        FUNCTION_LABEL,
         {
-            "cache_key": "weather_nyc",
+            "cache_key": KV_KEY,
             "api_url": "https://api.open-meteo.com/v1/forecast?latitude=40.7128&longitude=-74.0060&current=temperature_2m",
         },
     )
@@ -156,6 +160,41 @@ async def edge_cache_example():
     print("- No cache invalidation logic needed (TTL handles it)")
     print("- With ripples: All nodes auto-sync cache")
     print("- One service: Database + Cache + Edge Functions")
+
+
+async def edge_cache_example():
+    client = Client.new(BASE_URL, API_KEY)
+    if await client.kv_exists(KV_KEY):
+        await client.kv_delete(KV_KEY)
+
+    resources = {}
+    operation_error = None
+    try:
+        await run_example(client, resources)
+    except BaseException as error:  # noqa: BLE001 - cleanup must run on cancellation
+        operation_error = error
+
+    cleanup_errors = []
+    if resources.get("function_id"):
+        try:
+            await client.delete_function(resources["function_id"])
+        except Exception as error:  # noqa: BLE001 - attempt KV cleanup too
+            cleanup_errors.append(f"function {resources['function_id']}: {error}")
+    try:
+        if await client.kv_exists(KV_KEY):
+            await client.kv_delete(KV_KEY)
+    except Exception as error:  # noqa: BLE001 - preserve the primary failure
+        cleanup_errors.append(f"KV key {KV_KEY}: {error}")
+
+    if operation_error is not None:
+        if cleanup_errors:
+            operation_error.add_note(
+                "cleanup also failed: " + "; ".join(cleanup_errors)
+            )
+            print("⚠️  Cleanup errors: " + "; ".join(cleanup_errors))
+        raise operation_error
+    if cleanup_errors:
+        raise RuntimeError("Cleanup failed: " + "; ".join(cleanup_errors))
 
     print("\n✓ Example complete!\n")
 

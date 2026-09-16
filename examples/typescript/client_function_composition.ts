@@ -12,11 +12,26 @@ dotenv.config();
 
 const API_BASE_URL = process.env.API_BASE_URL || "http://localhost:8080";
 const API_BASE_KEY = process.env.API_BASE_KEY || "a-test-api-key-from-ekodb";
+const RUN_SUFFIX = `${process.pid}_${Date.now()}`;
+const TEST_COLLECTION = `function_composition_users_ts_${RUN_SUFFIX}`;
+const FETCH_USER_LABEL = `fc_fetch_user_ts_${RUN_SUFFIX}`;
+const GET_USER_WRAPPER_LABEL = `fc_get_user_wrapper_ts_${RUN_SUFFIX}`;
+const FETCH_AND_STORE_LABEL = `fc_fetch_store_user_ts_${RUN_SUFFIX}`;
+const SWR_USER_LABEL = `fc_swr_user_ts_${RUN_SUFFIX}`;
+const VALIDATE_USER_LABEL = `fc_validate_user_ts_${RUN_SUFFIX}`;
+const FETCH_SLIM_LABEL = `fc_fetch_slim_user_ts_${RUN_SUFFIX}`;
+const GET_VERIFIED_LABEL = `fc_get_verified_user_ts_${RUN_SUFFIX}`;
+const USER_CACHE_KEY = `fc:user_cache_ts:${RUN_SUFFIX}:1`;
 
 /** True when a save failed because the function label already exists (HTTP 409). */
 function isAlreadyExistsError(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error);
   return message.includes("status 409") || message.includes("already exists");
+}
+
+function isNotFoundError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.includes("status 404") || /not found/i.test(message);
 }
 
 /**
@@ -27,23 +42,27 @@ function isAlreadyExistsError(error: unknown): boolean {
 async function saveOrUpdate(
   client: EkoDBClient,
   script: UserFunction,
+  functionIds: Set<string>,
 ): Promise<string> {
+  let id: string;
   try {
-    return await client.saveFunction(script);
+    id = await client.saveFunction(script);
   } catch (error) {
     if (!isAlreadyExistsError(error)) throw error;
     await client.updateFunction(script.label, script);
     console.log(`Function '${script.label}' already existed — updated instead`);
     const existing = await client.getFunction(script.label);
-    return existing.id ?? script.label;
+    id = existing.id ?? script.label;
   }
+  functionIds.add(id);
+  return id;
 }
 
 async function setupTestData(client: EkoDBClient): Promise<void> {
   console.log("📋 Setting up test data...\n");
 
   for (let i = 1; i <= 5; i++) {
-    await client.insert("users", {
+    await client.insert(TEST_COLLECTION, {
       user_code: `user_${i}`,
       name: `User ${i}`,
       department: i <= 2 ? "engineering" : "sales",
@@ -54,13 +73,16 @@ async function setupTestData(client: EkoDBClient): Promise<void> {
   console.log("✅ Test data ready\n");
 }
 
-async function basicCompositionExample(client: EkoDBClient): Promise<void> {
+async function basicCompositionExample(
+  client: EkoDBClient,
+  functionIds: Set<string>,
+): Promise<void> {
   console.log("📝 Example 1: Basic Function Composition\n");
   console.log("Building reusable functions that call each other...\n");
 
   // Step 1: Create reusable "fetch_user" function
   const fetchUser = {
-    label: "fetch_user",
+    label: FETCH_USER_LABEL,
     name: "Fetch user by code",
     parameters: {
       user_code: { required: true },
@@ -68,19 +90,19 @@ async function basicCompositionExample(client: EkoDBClient): Promise<void> {
     functions: [
       {
         type: "FindOne" as const,
-        collection: "users",
+        collection: TEST_COLLECTION,
         key: "user_code",
         value: "{{user_code}}",
       },
     ],
   };
 
-  await saveOrUpdate(client, fetchUser);
+  await saveOrUpdate(client, fetchUser, functionIds);
   console.log("✅ Saved reusable function: fetch_user");
 
   // Step 2: Create wrapper that CALLS fetch_user
   const getUserWrapper = {
-    label: "get_user_wrapper",
+    label: GET_USER_WRAPPER_LABEL,
     name: "Wrapper that calls fetch_user",
     parameters: {
       user_code: { required: true },
@@ -88,7 +110,7 @@ async function basicCompositionExample(client: EkoDBClient): Promise<void> {
     functions: [
       {
         type: "CallFunction" as const,
-        function_label: "fetch_user",
+        function_label: FETCH_USER_LABEL,
         // params omitted - inherits user_code from parent scope
       },
       {
@@ -99,13 +121,17 @@ async function basicCompositionExample(client: EkoDBClient): Promise<void> {
     ],
   };
 
-  await saveOrUpdate(client, getUserWrapper);
+  const getUserWrapperId = await saveOrUpdate(
+    client,
+    getUserWrapper,
+    functionIds,
+  );
   console.log(
     "✅ Saved composed function: get_user_wrapper (calls fetch_user + projects fields)\n",
   );
 
   // Step 3: Call the composed function
-  const result = await client.callFunction("get_user_wrapper", {
+  const result = await client.callFunction(getUserWrapperId, {
     user_code: "user_1",
   });
 
@@ -121,7 +147,10 @@ async function basicCompositionExample(client: EkoDBClient): Promise<void> {
   console.log("   No code duplication, single source of truth\n");
 }
 
-async function swrCompositionExample(client: EkoDBClient): Promise<void> {
+async function swrCompositionExample(
+  client: EkoDBClient,
+  functionIds: Set<string>,
+): Promise<void> {
   console.log("📝 Example 2: SWR Pattern with Function Composition\n");
   console.log(
     "Using KV cache + CallFunction for fast cache-aside pattern...\n",
@@ -131,7 +160,7 @@ async function swrCompositionExample(client: EkoDBClient): Promise<void> {
   // Using jsonplaceholder.typicode.com - a reliable free API for testing
   // This function fetches from API and stores in KV cache
   const fetchAndStore = {
-    label: "fetch_and_store_user",
+    label: FETCH_AND_STORE_LABEL,
     name: "Fetch user from API and cache in KV",
     parameters: {
       user_id: { required: true },
@@ -148,20 +177,20 @@ async function swrCompositionExample(client: EkoDBClient): Promise<void> {
       // Store in KV cache (much faster than collection for cache lookups)
       {
         type: "KvSet" as const,
-        key: "user_cache:{{user_id}}",
+        key: `fc:user_cache_ts:${RUN_SUFFIX}:{{user_id}}`,
         value: "{{http_response}}",
         ttl: 300, // 5 minute cache
       },
     ],
   };
 
-  await saveOrUpdate(client, fetchAndStore);
+  await saveOrUpdate(client, fetchAndStore, functionIds);
   console.log("✅ Saved reusable function: fetch_and_store_user (uses KV)");
 
   // Step 2: Create SWR function that CALLS the reusable function
   // Pattern: KV cache check → populate if missing → return
   const swrUser = {
-    label: "swr_user",
+    label: SWR_USER_LABEL,
     name: "SWR pattern for user data (KV-based)",
     parameters: {
       user_id: { required: true },
@@ -170,7 +199,7 @@ async function swrCompositionExample(client: EkoDBClient): Promise<void> {
       // Check KV cache first (O(1) lookup - much faster than FindById)
       {
         type: "KvGet" as const,
-        key: "user_cache:{{user_id}}",
+        key: `fc:user_cache_ts:${RUN_SUFFIX}:{{user_id}}`,
       },
       {
         type: "If" as const,
@@ -198,13 +227,13 @@ async function swrCompositionExample(client: EkoDBClient): Promise<void> {
           // Explicitly pass user_id to the function
           {
             type: "CallFunction" as const,
-            function_label: "fetch_and_store_user",
+            function_label: FETCH_AND_STORE_LABEL,
             params: { user_id: "{{user_id}}" },
           },
           // After storing, retrieve the cached value to return it
           {
             type: "KvGet" as const,
-            key: "user_cache:{{user_id}}",
+            key: `fc:user_cache_ts:${RUN_SUFFIX}:{{user_id}}`,
           },
           {
             type: "Project" as const,
@@ -216,13 +245,13 @@ async function swrCompositionExample(client: EkoDBClient): Promise<void> {
     ],
   };
 
-  await saveOrUpdate(client, swrUser);
+  const swrUserId = await saveOrUpdate(client, swrUser, functionIds);
   console.log("✅ Saved SWR function using composition: swr_user\n");
 
   // Step 3: Test cache miss
   console.log("First call (cache miss - will fetch from API):");
   const start1 = Date.now();
-  const result1 = await client.callFunction("swr_user", {
+  const result1 = await client.callFunction(swrUserId, {
     user_id: "1",
   });
   const duration1 = Date.now() - start1;
@@ -242,7 +271,7 @@ async function swrCompositionExample(client: EkoDBClient): Promise<void> {
   // Step 4: Test cache hit
   console.log("Second call (cache hit - from cache):");
   const start2 = Date.now();
-  const result2 = await client.callFunction("swr_user", {
+  const result2 = await client.callFunction(swrUserId, {
     user_id: "1",
   });
   const duration2 = Date.now() - start2;
@@ -262,13 +291,16 @@ async function swrCompositionExample(client: EkoDBClient): Promise<void> {
   }
 }
 
-async function nestedCompositionExample(client: EkoDBClient): Promise<void> {
+async function nestedCompositionExample(
+  client: EkoDBClient,
+  functionIds: Set<string>,
+): Promise<void> {
   console.log("📝 Example 3: Multi-Level Function Composition\n");
   console.log("Building complex workflows from small, reusable pieces...\n");
 
   // Level 1: Base function
   const validateUser = {
-    label: "validate_user",
+    label: VALIDATE_USER_LABEL,
     name: "Check if user exists",
     parameters: {
       user_code: { required: true },
@@ -276,19 +308,19 @@ async function nestedCompositionExample(client: EkoDBClient): Promise<void> {
     functions: [
       {
         type: "FindOne" as const,
-        collection: "users",
+        collection: TEST_COLLECTION,
         key: "user_code",
         value: "{{user_code}}",
       },
     ],
   };
 
-  await saveOrUpdate(client, validateUser);
+  await saveOrUpdate(client, validateUser, functionIds);
   console.log("✅ Level 1 function: validate_user");
 
   // Level 2: Calls validate_user + projects
   const fetchSlim = {
-    label: "fetch_slim_user",
+    label: FETCH_SLIM_LABEL,
     name: "Validate and slim down user",
     parameters: {
       user_code: { required: true },
@@ -296,7 +328,7 @@ async function nestedCompositionExample(client: EkoDBClient): Promise<void> {
     functions: [
       {
         type: "CallFunction" as const,
-        function_label: "validate_user",
+        function_label: VALIDATE_USER_LABEL,
         // params omitted - inherits user_code from parent scope
       },
       {
@@ -307,12 +339,12 @@ async function nestedCompositionExample(client: EkoDBClient): Promise<void> {
     ],
   };
 
-  await saveOrUpdate(client, fetchSlim);
+  await saveOrUpdate(client, fetchSlim, functionIds);
   console.log("✅ Level 2 function: fetch_slim_user (calls validate_user)");
 
   // Level 3: Calls fetch_slim (demonstrates 3-level nesting)
   const getVerifiedUser = {
-    label: "get_verified_user",
+    label: GET_VERIFIED_LABEL,
     name: "Get verified and validated user",
     parameters: {
       user_code: { required: true },
@@ -320,19 +352,23 @@ async function nestedCompositionExample(client: EkoDBClient): Promise<void> {
     functions: [
       {
         type: "CallFunction" as const,
-        function_label: "fetch_slim_user",
+        function_label: FETCH_SLIM_LABEL,
         // params omitted - inherits user_code from parent scope
       },
     ],
   };
 
-  await saveOrUpdate(client, getVerifiedUser);
+  const getVerifiedUserId = await saveOrUpdate(
+    client,
+    getVerifiedUser,
+    functionIds,
+  );
   console.log(
     "✅ Level 3 function: get_verified_user (calls fetch_slim_user)\n",
   );
 
   // Execute 3-level nested composition
-  const result = await client.callFunction("get_verified_user", {
+  const result = await client.callFunction(getVerifiedUserId, {
     user_code: "user_1",
   });
 
@@ -357,15 +393,52 @@ async function nestedCompositionExample(client: EkoDBClient): Promise<void> {
 
 async function main() {
   const client = new EkoDBClient(API_BASE_URL, API_BASE_KEY);
+  const functionIds = new Set<string>();
+  let primaryError: unknown;
 
   console.log("=== ekoDB Function Composition Examples ===\n");
 
-  await setupTestData(client);
-  await basicCompositionExample(client);
-  await swrCompositionExample(client);
-  await nestedCompositionExample(client);
+  try {
+    await setupTestData(client);
+    await basicCompositionExample(client, functionIds);
+    await swrCompositionExample(client, functionIds);
+    await nestedCompositionExample(client, functionIds);
+  } catch (error) {
+    primaryError = error;
+    throw error;
+  } finally {
+    const cleanupErrors: unknown[] = [];
+    for (const id of [...functionIds].reverse()) {
+      try {
+        await client.deleteFunction(id);
+      } catch (error) {
+        if (!isNotFoundError(error)) cleanupErrors.push(error);
+      }
+    }
+    try {
+      await client.kvDelete(USER_CACHE_KEY);
+    } catch (error) {
+      if (!isNotFoundError(error)) cleanupErrors.push(error);
+    }
+    try {
+      await client.deleteCollection(TEST_COLLECTION);
+    } catch (error) {
+      if (!isNotFoundError(error)) cleanupErrors.push(error);
+    }
+    if (cleanupErrors.length > 0) {
+      throw new AggregateError(
+        primaryError === undefined
+          ? cleanupErrors
+          : [primaryError, ...cleanupErrors],
+        "Function composition or cleanup failed",
+      );
+    }
+  }
 
   console.log("\n✅ All composition examples completed!");
 }
 
-main().catch(console.error);
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});

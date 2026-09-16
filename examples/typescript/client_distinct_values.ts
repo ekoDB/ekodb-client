@@ -9,8 +9,10 @@
 
 import * as dotenv from "dotenv";
 import * as path from "path";
-import { EkoDBClient } from "@ekodb/ekodb-client";
+import { fileURLToPath } from "url";
+import { EkoDBClient, getValue } from "@ekodb/ekodb-client";
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
 async function main() {
@@ -56,7 +58,7 @@ async function main() {
   const categories = await client.distinctValues(collection, "category");
   console.log(`Found ${categories.count} distinct categories:`);
   for (const v of categories.values) {
-    console.log(`  - ${v}`);
+    console.log(`  - ${getValue(v)}`);
   }
   console.log();
 
@@ -67,7 +69,7 @@ async function main() {
   const statuses = await client.distinctValues(collection, "status");
   console.log(`Found ${statuses.count} distinct statuses:`);
   for (const v of statuses.values) {
-    console.log(`  - ${v}`);
+    console.log(`  - ${getValue(v)}`);
   }
   console.log();
 
@@ -89,7 +91,7 @@ async function main() {
     `Found ${electronicsStatuses.count} distinct statuses for electronics:`,
   );
   for (const v of electronicsStatuses.values) {
-    console.log(`  - ${v}`);
+    console.log(`  - ${getValue(v)}`);
   }
   console.log();
 
@@ -100,4 +102,7 @@ async function main() {
   console.log("Cleanup done.");
 }
 
-main().catch(console.error);
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});

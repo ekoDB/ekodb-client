@@ -11,6 +11,12 @@ dotenv.config();
 
 const BASE_URL = process.env.API_BASE_URL || "http://localhost:8080";
 const API_KEY = process.env.API_BASE_KEY || "a-test-api-key-from-ekodb";
+const TEST_COLLECTION = "functions_users_http_js";
+const FUNCTION_LABELS = [
+  "get_active_users_http_js",
+  "get_active_users_paginated_http_js",
+  "user_stats_http_js",
+];
 
 let authToken = null;
 
@@ -85,7 +91,9 @@ async function saveOrUpdateFunction(func) {
   if (response.status === 409) {
     // Update the existing function by label, then read it back by label.
     await request("PUT", `/api/functions/${func.label}`, func);
-    console.log(`ℹ️  Function '${func.label}' already existed — updated instead`);
+    console.log(
+      `ℹ️  Function '${func.label}' already existed — updated instead`,
+    );
     return request("GET", `/api/functions/${func.label}`);
   }
 
@@ -103,7 +111,7 @@ async function setupTestData() {
       score: i * 10,
     };
 
-    await request("POST", "/api/insert/users", record);
+    await request("POST", `/api/insert/${TEST_COLLECTION}`, record);
   }
 
   console.log("✅ Test data ready\n");
@@ -113,7 +121,7 @@ async function simpleQueryFunction() {
   console.log("📝 Example 1: Simple Query Function with Filter\n");
 
   const function1 = {
-    label: "get_active_users",
+    label: FUNCTION_LABELS[0],
     name: "Get Active Users",
     description: "Query users with active status",
     version: "1.0",
@@ -121,7 +129,7 @@ async function simpleQueryFunction() {
     functions: [
       {
         type: "Query",
-        collection: "users",
+        collection: TEST_COLLECTION,
         filter: {
           type: "Condition",
           content: {
@@ -139,12 +147,17 @@ async function simpleQueryFunction() {
   const saveResult = await saveOrUpdateFunction(function1);
   console.log(`✅ Function saved: ${saveResult.id}`);
 
-  // Call script (can use label)
+  // Call by the returned ID so execution does not depend on label-index visibility.
   const callResult = await request(
     "POST",
-    "/api/functions/get_active_users",
+    `/api/functions/${saveResult.id}`,
     {},
   );
+  if (callResult.records.length !== 5) {
+    throw new Error(
+      `Active-user query returned ${callResult.records.length} records; expected 5`,
+    );
+  }
   console.log(`📊 Found ${callResult.records.length} active users\n`);
 
   return saveResult.id;
@@ -154,7 +167,7 @@ async function parameterizedPaginationFunction() {
   console.log("📝 Example 2: Parameterized Pagination with Limit/Skip\n");
 
   const function2 = {
-    label: "get_active_users_paginated",
+    label: FUNCTION_LABELS[1],
     name: "Get Active Users (Paginated)",
     version: "1.0",
     parameters: {
@@ -172,7 +185,7 @@ async function parameterizedPaginationFunction() {
     functions: [
       {
         type: "Query",
-        collection: "users",
+        collection: TEST_COLLECTION,
         filter: {
           type: "Condition",
           content: {
@@ -193,38 +206,49 @@ async function parameterizedPaginationFunction() {
   console.log(`✅ Function saved: ${saveResult.id}`);
 
   // Call with page 1 (first 3 users)
-  let callResult = await request(
-    "POST",
-    "/api/functions/get_active_users_paginated",
-    { page_size: 3, page_offset: 0 }
-  );
+  let callResult = await request("POST", `/api/functions/${saveResult.id}`, {
+    page_size: 3,
+    page_offset: 0,
+  });
+  if (callResult.records.length !== 3) {
+    throw new Error(
+      `Page 1 returned ${callResult.records.length} records; expected 3`,
+    );
+  }
   console.log(
-    `📊 Page 1: Found ${callResult.records.length} users (limit=3, skip=0)`
+    `📊 Page 1: Found ${callResult.records.length} users (limit=3, skip=0)`,
   );
 
   // Call with page 2 (next 3 users)
-  callResult = await request(
-    "POST",
-    "/api/functions/get_active_users_paginated",
-    { page_size: 3, page_offset: 3 }
-  );
+  callResult = await request("POST", `/api/functions/${saveResult.id}`, {
+    page_size: 3,
+    page_offset: 3,
+  });
+  if (callResult.records.length !== 2) {
+    throw new Error(
+      `Page 2 returned ${callResult.records.length} records; expected 2`,
+    );
+  }
   console.log(
-    `📊 Page 2: Found ${callResult.records.length} users (limit=3, skip=3)\n`
+    `📊 Page 2: Found ${callResult.records.length} users (limit=3, skip=3)\n`,
   );
+  return saveResult.id;
 }
 
 async function aggregationFunction() {
-  console.log("📝 Example 3: Multi-Stage Pipeline (Query → Group → Calculate)\n");
+  console.log(
+    "📝 Example 3: Multi-Stage Pipeline (Query → Group → Calculate)\n",
+  );
 
   const function3 = {
-    label: "user_stats",
+    label: FUNCTION_LABELS[2],
     name: "User Statistics by Status",
     version: "1.0",
     parameters: {},
     functions: [
       {
         type: "Query",
-        collection: "users",
+        collection: TEST_COLLECTION,
         filter: {
           type: "Condition",
           content: {
@@ -258,7 +282,16 @@ async function aggregationFunction() {
   const saveResult = await saveOrUpdateFunction(function3);
   console.log(`✅ Function saved: ${saveResult.id}`);
 
-  const callResult = await request("POST", "/api/functions/user_stats", {});
+  const callResult = await request(
+    "POST",
+    `/api/functions/${saveResult.id}`,
+    {},
+  );
+  if (callResult.records.length !== 2) {
+    throw new Error(
+      `Status aggregation returned ${callResult.records.length} groups; expected 2`,
+    );
+  }
   console.log(
     `📊 Pipeline Results: Filtered (age>20) → Grouped by status → ${callResult.records.length} groups`,
   );
@@ -283,12 +316,12 @@ async function functionManagement(getActiveUsersId, userStatsId) {
 
   // Update script (requires encrypted ID)
   const updated = {
-    label: "get_active_users",
+    label: FUNCTION_LABELS[0],
     name: "Get Active Users (Updated)",
     description: "Updated description",
     version: "1.1",
     parameters: {},
-    functions: [{ type: "FindAll", collection: "users" }],
+    functions: [{ type: "FindAll", collection: TEST_COLLECTION }],
     tags: ["users"],
   };
   await request("PUT", `/api/functions/${getActiveUsersId}`, updated);
@@ -298,25 +331,71 @@ async function functionManagement(getActiveUsersId, userStatsId) {
   await request("DELETE", `/api/functions/${userStatsId}`);
   console.log("🗑️  Function deleted\n");
 
-  console.log("ℹ️  Note: GET/UPDATE/DELETE operations require the encrypted ID");
+  console.log(
+    "ℹ️  Note: GET/UPDATE/DELETE operations require the encrypted ID",
+  );
   console.log("ℹ️  Only CALL can use either ID or label\n");
 }
 
 async function main() {
   console.log("🚀 ekoDB Functions Example (JavaScript/HTTP)\n");
 
+  let primaryError;
   try {
+    await request("DELETE", `/api/collections/${TEST_COLLECTION}`).catch(
+      (error) => {
+        if (!error.message.includes("HTTP 404")) throw error;
+      },
+    );
     await setupTestData();
     const getActiveUsersId = await simpleQueryFunction();
     await parameterizedPaginationFunction();
     const userStatsId = await aggregationFunction();
     await functionManagement(getActiveUsersId, userStatsId);
-
     console.log("✅ All examples completed!");
   } catch (error) {
-    console.error("❌ Error:", error.message);
-    process.exit(1);
+    primaryError = error;
+    throw error;
+  } finally {
+    let functionIds = [];
+    let discoveryError;
+    try {
+      const functions = await request("GET", "/api/functions");
+      functionIds = functions
+        .filter((fn) => FUNCTION_LABELS.includes(fn.label))
+        .map((fn) => fn.id);
+    } catch (error) {
+      discoveryError = error;
+    }
+    const cleanup = await Promise.allSettled([
+      ...functionIds.map((id) => request("DELETE", `/api/functions/${id}`)),
+      request("DELETE", `/api/collections/${TEST_COLLECTION}`).catch(
+        (error) => {
+          if (
+            !error.message.includes("HTTP 404") &&
+            !error.message.includes("not found")
+          )
+            throw error;
+        },
+      ),
+    ]);
+    const failures = cleanup.filter((result) => result.status === "rejected");
+    if (discoveryError)
+      failures.push({ status: "rejected", reason: discoveryError });
+    if (failures.length > 0) {
+      const errors = failures.map((failure) => failure.reason);
+      if (primaryError !== undefined) errors.unshift(primaryError);
+      throw new AggregateError(
+        errors,
+        primaryError === undefined
+          ? "HTTP functions cleanup failed"
+          : "HTTP functions example and cleanup failed",
+      );
+    }
   }
 }
 
-main();
+main().catch((error) => {
+  console.error("❌ Error:", error);
+  process.exit(1);
+});

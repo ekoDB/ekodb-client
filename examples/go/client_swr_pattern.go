@@ -44,7 +44,7 @@ func saveOrUpdateFn(client *ekodb.Client, fn ekodb.UserFunction) (string, error)
 	return "", err
 }
 
-func main() {
+func run() (runErr error) {
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found, using defaults")
 	}
@@ -61,14 +61,28 @@ func main() {
 
 	client, err := ekodb.NewClient(baseURL, apiKey)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
+	collection := "user_cache_go"
+	scriptID := ""
+	defer func() {
+		fmt.Println("🧹 Cleaning up...")
+		if scriptID != "" {
+			runErr = errors.Join(runErr, client.DeleteFunction(scriptID))
+		}
+		if err := client.DeleteCollection(collection); err != nil {
+			var httpErr *ekodb.HTTPError
+			if !errors.As(err, &httpErr) || httpErr.StatusCode != 404 {
+				runErr = errors.Join(runErr, err)
+			}
+		}
+		if runErr == nil {
+			fmt.Print("✓ Cleanup complete\n\n")
+		}
+	}()
 
 	// Cleanup any stale collections from previous runs
-	client.DeleteCollection("user_cache_go")
-
-	// Create collection without schema to allow any data structure
-	client.CreateCollection("user_cache_go", ekodb.Schema{})
+	client.DeleteCollection(collection)
 
 	fmt.Println("=== ekoDB SWR (Stale-While-Revalidate) Pattern ===")
 	fmt.Println()
@@ -94,7 +108,7 @@ func main() {
 		},
 		Tags: []string{"swr", "user", "cache"},
 		Functions: []ekodb.FunctionStageConfig{
-			ekodb.StageFindById("user_cache_go", "{{user_id}}"),
+			ekodb.StageFindById(collection, "{{user_id}}"),
 			{
 				Stage: "If",
 				Data: map[string]interface{}{
@@ -109,7 +123,7 @@ func main() {
 							map[string]string{"Accept": "application/json"},
 							nil,
 						),
-						ekodb.StageInsert("user_cache_go", map[string]interface{}{
+						ekodb.StageInsert(collection, map[string]interface{}{
 							"id": "{{user_id}}",
 							"data": map[string]interface{}{
 								"type":  "Object",
@@ -123,10 +137,9 @@ func main() {
 		},
 	}
 
-	scriptID, err := saveOrUpdateFn(client, swrScript)
+	scriptID, err = saveOrUpdateFn(client, swrScript)
 	if err != nil {
-		log.Printf("Save script error: %v", err)
-		return
+		return fmt.Errorf("save script: %w", err)
 	}
 	fmt.Printf("✓ Created SWR script: fetch_api_user_go (%s)\n\n", scriptID)
 
@@ -136,12 +149,11 @@ func main() {
 		"ttl":     300,
 	})
 	if err != nil {
-		log.Printf("Call script error: %v", err)
-	} else {
-		resultJSON, _ := json.MarshalIndent(result1, "", "  ")
-		fmt.Printf("Result: %s\n", resultJSON)
-		fmt.Println("✓ Data fetched from external API and cached\n")
+		return fmt.Errorf("first call: %w", err)
 	}
+	resultJSON, _ := json.MarshalIndent(result1, "", "  ")
+	fmt.Printf("Result: %s\n", resultJSON)
+	fmt.Print("✓ Data fetched from external API and cached\n\n")
 
 	fmt.Println("Step 3: Second call - Cache hit, instant response from ekoDB")
 	start := time.Now()
@@ -150,20 +162,20 @@ func main() {
 	})
 	duration := time.Since(start)
 	if err != nil {
-		log.Printf("Call script error: %v", err)
-	} else {
-		fmt.Printf("Response time: %dms (served from cache)\n", duration.Milliseconds())
-		fmt.Println("✓ Lightning fast cache hit\n")
+		return fmt.Errorf("second call: %w", err)
 	}
-
-	// Cleanup
-	fmt.Println("🧹 Cleaning up...")
-	client.DeleteFunction(scriptID)
-	client.DeleteCollection("user_cache_go")
-	fmt.Println("✓ Cleanup complete\n")
+	fmt.Printf("Response time: %dms (served from cache)\n", duration.Milliseconds())
+	fmt.Print("✓ Lightning fast cache hit\n\n")
 
 	fmt.Println("=== SWR Pattern Summary ===")
 	fmt.Println("✅ Cache miss → Fetch from API → Store in ekoDB")
 	fmt.Println("✅ Cache hit → Instant response from ekoDB")
 	fmt.Println("✅ TTL handles automatic cache invalidation")
+	return nil
+}
+
+func main() {
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
 }

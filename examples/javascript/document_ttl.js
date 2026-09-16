@@ -22,13 +22,17 @@ async function main() {
   console.log("║     TTL EXPIRATION VERIFICATION TEST                   ║");
   console.log("╚════════════════════════════════════════════════════════╝");
   console.log();
-  console.log("This test verifies that document TTL expiration works correctly.");
-  console.log("We will insert documents with short TTL and verify they expire.");
+  console.log(
+    "This test verifies that document TTL expiration works correctly.",
+  );
+  console.log(
+    "We will insert documents with short TTL and verify they expire.",
+  );
   console.log();
 
   const client = new EkoDBClient(
     process.env.API_BASE_URL || "http://localhost:8080",
-    process.env.API_BASE_KEY || "a-test-api-key-from-ekodb"
+    process.env.API_BASE_KEY || "a-test-api-key-from-ekodb",
   );
   await client.init();
   console.log("✓ Client connected");
@@ -44,14 +48,20 @@ async function main() {
     console.log("═══════════════════════════════════════════════════════════");
 
     // Step 1: Insert document with 3-second TTL
-    console.log("\n[Step 1] Insert document with " + ttlSeconds + " second TTL");
+    console.log(
+      "\n[Step 1] Insert document with " + ttlSeconds + " second TTL",
+    );
     console.log("  Input: {name: 'TTL Test', value: 'should expire'}");
     console.log("  TTL: " + ttlSeconds + "s");
 
-    const doc = await client.insert(collection, {
-      name: "TTL Test",
-      value: "should expire",
-    }, { ttl: ttlSeconds + "s" });
+    const doc = await client.insert(
+      collection,
+      {
+        name: "TTL Test",
+        value: "should expire",
+      },
+      { ttl: ttlSeconds + "s" },
+    );
 
     const docID = doc.id;
     console.log("  Output: Document ID = " + docID);
@@ -71,7 +81,7 @@ async function main() {
 
     // Step 3: Wait for TTL to expire
     const waitTime = (ttlSeconds + 2) * 1000;
-    console.log("\n[Step 3] Wait for TTL to expire (" + (waitTime / 1000) + "s)");
+    console.log("\n[Step 3] Wait for TTL to expire (" + waitTime / 1000 + "s)");
     process.stdout.write("  Waiting");
     for (let i = 0; i < waitTime / 1000; i++) {
       await sleep(1000);
@@ -90,17 +100,24 @@ async function main() {
         console.log("  Output: null (document not found)");
         console.log("  ✓ PASS: Document expired correctly!");
       } else {
-        console.log("  Output: Document still exists! " + JSON.stringify(expired));
-        throw new Error("❌ FAILED: Document should have expired but still exists!");
+        console.log(
+          "  Output: Document still exists! " + JSON.stringify(expired),
+        );
+        throw new Error(
+          "❌ FAILED: Document should have expired but still exists!",
+        );
       }
     } catch (err) {
-      if (err.message.includes("FAILED")) throw err;
-      console.log("  Output: Error (expected) - " + err.message);
+      const message = err instanceof Error ? err.message : String(err);
+      if (!message.includes("404") && !/not found/i.test(message)) throw err;
+      console.log("  Output: Error (expected) - " + message);
       console.log("  ✓ PASS: Document expired (not found error)");
     }
 
     // Cleanup
-    console.log("\n═══════════════════════════════════════════════════════════");
+    console.log(
+      "\n═══════════════════════════════════════════════════════════",
+    );
     console.log("CLEANUP");
     console.log("═══════════════════════════════════════════════════════════");
 

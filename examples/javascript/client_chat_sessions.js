@@ -20,11 +20,14 @@ async function main() {
   // Create client
   const client = new EkoDBClient(
     process.env.API_BASE_URL || "http://localhost:8080",
-    process.env.API_BASE_KEY || ""
+    process.env.API_BASE_KEY || "",
   );
   await client.init();
 
   const collection = "client_chat_sessions_js";
+  let chatId;
+  let branchId;
+  let primaryError;
 
   try {
     // Step 1: Insert sample data
@@ -49,7 +52,7 @@ async function main() {
       llm_model: "gpt-4o-mini",
       system_prompt: "You are a helpful assistant for product information.",
     });
-    const chatId = session.chat_id;
+    chatId = session.chat_id;
     console.log(`✓ Created session: ${chatId}\n`);
 
     // Step 3: Send messages in the session
@@ -95,7 +98,7 @@ async function main() {
       parent_id: chatId,
       branch_point_idx: 0,
     });
-    const branchId = branched.chat_id;
+    branchId = branched.chat_id;
     console.log(`✓ Created branch: ${branchId}`);
     console.log(`  Parent: ${chatId}\n`);
 
@@ -107,7 +110,9 @@ async function main() {
     });
     console.log(`✓ Found ${sessionsList.sessions.length} sessions`);
     sessionsList.sessions.forEach((s, i) => {
-      console.log(`  Session ${i + 1}: ${s.chat_id} (${s.title || "Untitled"})`);
+      console.log(
+        `  Session ${i + 1}: ${s.chat_id} (${s.title || "Untitled"})`,
+      );
     });
     console.log();
 
@@ -121,22 +126,30 @@ async function main() {
     console.log("=== Deleting Branch Session ===");
     await client.deleteChatSession(branchId);
     console.log(`✓ Deleted branch session: ${branchId}\n`);
-
-    // Cleanup: Delete the collection
-    console.log("=== Cleanup ===");
-    await client.deleteCollection(collection);
-    console.log("✓ Deleted collection\n");
-
-    console.log("✓ All session management operations completed successfully");
+    branchId = undefined;
   } catch (error) {
-    // Cleanup on error
-    try {
-      await client.deleteCollection(collection);
-    } catch (e) {
-      // Ignore cleanup errors
-    }
+    primaryError = error;
     throw error;
+  } finally {
+    console.log("=== Cleanup ===");
+    const cleanup = await Promise.allSettled([
+      ...(branchId ? [client.deleteChatSession(branchId)] : []),
+      ...(chatId ? [client.deleteChatSession(chatId)] : []),
+      client.deleteCollection(collection),
+    ]);
+    const failures = cleanup.filter((result) => result.status === "rejected");
+    if (failures.length > 0) {
+      throw new AggregateError(
+        [primaryError, ...failures.map((failure) => failure.reason)].filter(
+          Boolean,
+        ),
+        "Session example or cleanup failed",
+      );
+    }
+    if (chatId) console.log("✓ Deleted session");
+    console.log("✓ Deleted collection\n");
   }
+  console.log("✓ All session management operations completed successfully");
 }
 
 main().catch((error) => {

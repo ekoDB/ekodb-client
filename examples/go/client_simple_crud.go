@@ -7,6 +7,7 @@ package main
 
 import (
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -16,7 +17,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func main() {
+func run() (runErr error) {
 	// Load environment variables
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found")
@@ -35,11 +36,19 @@ func main() {
 	// Create ekoDB client
 	client, err := ekodb.NewClient(baseURL, apiKey)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	fmt.Println("✓ Client created (token exchange happens automatically)")
 
 	collection := "client_simple_crud_go"
+	collectionDeleted := false
+	defer func() {
+		if !collectionDeleted {
+			if err := client.DeleteCollection(collection); err != nil {
+				runErr = errors.Join(runErr, fmt.Errorf("cleanup collection %s: %w", collection, err))
+			}
+		}
+	}()
 
 	// Example 1: Insert a document with various field types
 	fmt.Println("\n=== Insert Document ===")
@@ -59,7 +68,7 @@ func main() {
 
 	inserted, err := client.Insert(collection, record)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	docID := inserted["id"].(string)
 	fmt.Printf("Inserted: %v\n", inserted)
@@ -68,7 +77,7 @@ func main() {
 	fmt.Println("\n=== Find by ID ===")
 	found, err := client.FindByID(collection, docID)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	fmt.Printf("Found: %v\n", found)
 
@@ -113,7 +122,7 @@ func main() {
 	}
 	docs, err := client.Find(collection, query)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	fmt.Printf("Found documents: %d\n", len(docs))
 
@@ -125,23 +134,31 @@ func main() {
 	}
 	updated, err := client.Update(collection, docID, updateData)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	fmt.Printf("Updated: %v\n", updated)
 
 	// Example 5: Delete document
 	fmt.Println("\n=== Delete Document ===")
 	if err := client.Delete(collection, docID); err != nil {
-		log.Fatal(err)
+		return err
 	}
 	fmt.Println("Deleted document")
 
 	// Cleanup: Delete the collection
 	fmt.Println("\n=== Cleanup ===")
 	if err := client.DeleteCollection(collection); err != nil {
-		log.Fatal(err)
+		return err
 	}
+	collectionDeleted = true
 	fmt.Println("✓ Deleted collection")
 
 	fmt.Println("\n✓ All CRUD operations completed successfully")
+	return nil
+}
+
+func main() {
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
 }

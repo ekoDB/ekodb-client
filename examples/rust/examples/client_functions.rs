@@ -2,10 +2,16 @@
 ///!
 ///! Demonstrates creating, managing, and executing functions
 use ekodb_client::{
-    Client, FieldType, Function, GroupFunctionConfig, GroupFunctionOp, ParameterDefinition, Record,
-    UserFunction,
+    Client, FieldType, Function, GroupFunctionConfig, GroupFunctionOp, ParameterDefinition,
+    QueryConditionOperator, QueryExpression, Record, SortFieldConfig, UserFunction,
 };
 use std::{collections::HashMap, env};
+
+const TEST_COLLECTION: &str = "functions_users_client_rs";
+const ACTIVE_LABEL: &str = "get_active_users_client_rs";
+const UPDATED_ACTIVE_LABEL: &str = "get_active_users_updated_client_rs";
+const STATUS_LABEL: &str = "get_users_by_status_client_rs";
+const STATS_LABEL: &str = "user_stats_client_rs";
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -24,20 +30,49 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== ekoDB Rust Client - Functions Example ===\n");
 
     // Setup test data
-    setup_test_data(&client).await?;
+    let _ = client.delete_collection(TEST_COLLECTION).await;
+    let operation_result: Result<(), Box<dyn std::error::Error>> = async {
+        setup_test_data(&client).await?;
+        let get_active_users_id = simple_query_script(&client).await?;
+        let get_users_by_status_id = parameterized_script(&client).await?;
+        let user_stats_id = aggregation_script(&client).await?;
+        script_management(
+            &client,
+            &get_active_users_id,
+            &get_users_by_status_id,
+            &user_stats_id,
+        )
+        .await?;
+        Ok(())
+    }
+    .await;
 
-    // Run examples and track IDs
-    let get_active_users_id = simple_query_script(&client).await?;
-    let get_users_by_status_id = parameterized_script(&client).await?;
-    let user_stats_id = aggregation_script(&client).await?;
-    script_management(
-        &client,
-        &get_active_users_id,
-        &get_users_by_status_id,
-        &user_stats_id,
-    )
-    .await?;
+    let mut cleanup_errors = Vec::new();
+    for label in [
+        ACTIVE_LABEL,
+        UPDATED_ACTIVE_LABEL,
+        STATUS_LABEL,
+        STATS_LABEL,
+    ] {
+        if let Err(error) = client.delete_function(label).await {
+            if !error.to_string().contains("not found") {
+                cleanup_errors.push(format!("function {label}: {error}"));
+            }
+        }
+    }
+    if let Err(error) = client.delete_collection(TEST_COLLECTION).await {
+        cleanup_errors.push(format!("collection {TEST_COLLECTION}: {error}"));
+    }
 
+    if let Err(error) = operation_result {
+        if !cleanup_errors.is_empty() {
+            eprintln!("Cleanup also failed: {}", cleanup_errors.join("; "));
+        }
+        return Err(error);
+    }
+    if !cleanup_errors.is_empty() {
+        return Err(format!("Cleanup failed: {}", cleanup_errors.join("; ")).into());
+    }
     println!("\n✅ All examples completed!");
     Ok(())
 }
@@ -75,7 +110,7 @@ async fn setup_test_data(client: &Client) -> Result<(), Box<dyn std::error::Erro
             FieldType::String(if i % 2 == 0 { "active" } else { "inactive" }.to_string()),
         );
         record.insert("score", FieldType::Integer(i * 10));
-        client.insert("users", record, None).await?;
+        client.insert(TEST_COLLECTION, record, None).await?;
     }
 
     println!("✅ Test data ready\n");
@@ -85,17 +120,23 @@ async fn setup_test_data(client: &Client) -> Result<(), Box<dyn std::error::Erro
 async fn simple_query_script(client: &Client) -> Result<String, Box<dyn std::error::Error>> {
     println!("📝 Example 1: Simple Query Function\n");
 
-    // Test absolute minimum - just FindAll
-    let script = UserFunction::new("get_active_users", "Get Active Users").with_function(
-        Function::FindAll {
-            collection: "users".to_string(),
-        },
-    );
+    let script =
+        UserFunction::new(ACTIVE_LABEL, "Get Active Users").with_function(Function::Query {
+            collection: TEST_COLLECTION.to_string(),
+            filter: Some(QueryExpression::condition(
+                "status",
+                QueryConditionOperator::Eq,
+                serde_json::json!("active"),
+            )),
+            sort: None,
+            limit: None,
+            skip: None,
+        });
 
     let id = save_or_update(client, script).await?;
     println!("✅ Function saved: {}", id);
 
-    let result = client.call_function("get_active_users", None).await?;
+    let result = client.call_function(ACTIVE_LABEL, None).await?;
     println!("📊 Found {} active users\n", result.records.len());
 
     Ok(id)
@@ -104,14 +145,22 @@ async fn simple_query_script(client: &Client) -> Result<String, Box<dyn std::err
 async fn parameterized_script(client: &Client) -> Result<String, Box<dyn std::error::Error>> {
     println!("📝 Example 2: Parameterized Function\n");
 
-    let script = UserFunction::new("get_users_by_status", "Get Users By Status")
+    let script = UserFunction::new(STATUS_LABEL, "Get Users By Status")
         .with_parameter(
             ParameterDefinition::new("status")
                 .with_default(FieldType::String("active".to_string())),
         )
         .with_parameter(ParameterDefinition::new("limit").with_default(FieldType::Integer(10)))
-        .with_function(Function::FindAll {
-            collection: "users".to_string(),
+        .with_function(Function::Query {
+            collection: TEST_COLLECTION.to_string(),
+            filter: Some(QueryExpression::condition(
+                "status",
+                QueryConditionOperator::Eq,
+                serde_json::json!("{{status}}"),
+            )),
+            sort: Some(vec![SortFieldConfig::new("score").descending()]),
+            limit: Some(serde_json::json!("{{limit}}")),
+            skip: None,
         });
 
     let id = save_or_update(client, script).await?;
@@ -124,9 +173,7 @@ async fn parameterized_script(client: &Client) -> Result<String, Box<dyn std::er
     );
     params.insert("limit".to_string(), FieldType::Integer(3));
 
-    let result = client
-        .call_function("get_users_by_status", Some(params))
-        .await?;
+    let result = client.call_function(STATUS_LABEL, Some(params)).await?;
     println!("📊 Found {} users (limited)\n", result.records.len());
 
     Ok(id)
@@ -135,9 +182,9 @@ async fn parameterized_script(client: &Client) -> Result<String, Box<dyn std::er
 async fn aggregation_script(client: &Client) -> Result<String, Box<dyn std::error::Error>> {
     println!("📝 Example 3: Aggregation Function\n");
 
-    let script = UserFunction::new("user_stats", "User Statistics")
+    let script = UserFunction::new(STATS_LABEL, "User Statistics")
         .with_function(Function::FindAll {
-            collection: "users".to_string(),
+            collection: TEST_COLLECTION.to_string(),
         })
         .with_function(Function::Group {
             by_fields: vec!["status".to_string()],
@@ -151,7 +198,7 @@ async fn aggregation_script(client: &Client) -> Result<String, Box<dyn std::erro
     let id = save_or_update(client, script).await?;
     println!("✅ Function saved: {}", id);
 
-    let result = client.call_function("user_stats", None).await?;
+    let result = client.call_function(STATS_LABEL, None).await?;
     println!("📊 Statistics: {} groups\n", result.records.len());
 
     Ok(id)
@@ -174,11 +221,11 @@ async fn script_management(
     println!("🔍 Retrieved function: {}", function.name);
 
     // Update function by ID
-    let updated = UserFunction::new("get_active_users_updated", "Get Active Users (Updated)")
+    let updated = UserFunction::new(UPDATED_ACTIVE_LABEL, "Get Active Users (Updated)")
         .with_description("Updated description")
         .with_version("1.1")
         .with_function(Function::FindAll {
-            collection: "users".to_string(),
+            collection: TEST_COLLECTION.to_string(),
         })
         .with_tag("users");
 

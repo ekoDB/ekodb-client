@@ -3,6 +3,24 @@ use reqwest::Client;
 use serde_json::{json, Value};
 use std::env;
 
+const COLLECTION: &str = "transactions_accounts_rs";
+
+async fn delete_collection(
+    client: &reqwest::Client,
+    base_url: &str,
+    token: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let response = client
+        .delete(format!("{base_url}/api/collections/{COLLECTION}"))
+        .bearer_auth(token)
+        .send()
+        .await?;
+    if response.status() != reqwest::StatusCode::NOT_FOUND {
+        response.error_for_status()?;
+    }
+    Ok(())
+}
+
 async fn get_auth_token(
     client: &Client,
     base_url: &str,
@@ -59,12 +77,32 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let token = get_auth_token(&client, &base_url, &api_key).await?;
     println!("✓ Authentication successful\n");
 
+    delete_collection(&client, &base_url, &token).await?;
+    let operation_result = run_operations(&client, &base_url, &token).await;
+    let cleanup_result = delete_collection(&client, &base_url, &token).await;
+    match (operation_result, cleanup_result) {
+        (Err(primary), Err(cleanup)) => {
+            return Err(format!("{primary}; cleanup also failed: {cleanup}").into());
+        }
+        (Err(primary), Ok(())) => return Err(primary),
+        (Ok(()), Err(cleanup)) => return Err(cleanup),
+        (Ok(()), Ok(())) => {}
+    }
+    println!("✓ All transaction examples completed");
+    Ok(())
+}
+
+async fn run_operations(
+    client: &Client,
+    base_url: &str,
+    token: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
     // Setup test data
     println!("=== Setup: Creating Test Accounts ===");
     let alice = make_request(
         &client,
         "POST",
-        "/api/insert/test_accounts",
+        &format!("/api/insert/{COLLECTION}"),
         &base_url,
         &token,
         Some(json!({
@@ -80,7 +118,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let bob = make_request(
         &client,
         "POST",
-        "/api/insert/test_accounts",
+        &format!("/api/insert/{COLLECTION}"),
         &base_url,
         &token,
         Some(json!({
@@ -114,7 +152,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     make_request(
         &client,
         "PUT",
-        &format!("/api/batch/update/test_accounts?transaction_id={}", tx_id),
+        &format!("/api/batch/update/{COLLECTION}?transaction_id={tx_id}"),
         &base_url,
         &token,
         Some(json!({
@@ -160,7 +198,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let alice_final = make_request(
         &client,
         "GET",
-        &format!("/api/find/test_accounts/{}", alice_id),
+        &format!("/api/find/{COLLECTION}/{alice_id}"),
         &base_url,
         &token,
         None,
@@ -171,7 +209,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let bob_final = make_request(
         &client,
         "GET",
-        &format!("/api/find/test_accounts/{}", bob_id),
+        &format!("/api/find/{COLLECTION}/{bob_id}"),
         &base_url,
         &token,
         None,
@@ -198,7 +236,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     make_request(
         &client,
         "PUT",
-        &format!("/api/batch/update/test_accounts?transaction_id={}", tx_id2),
+        &format!("/api/batch/update/{COLLECTION}?transaction_id={tx_id2}"),
         &base_url,
         &token,
         Some(json!({
@@ -224,7 +262,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let bob_after = make_request(
         &client,
         "GET",
-        &format!("/api/find/test_accounts/{}", bob_id),
+        &format!("/api/find/{COLLECTION}/{bob_id}"),
         &base_url,
         &token,
         None,
@@ -237,7 +275,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     make_request(
         &client,
         "DELETE",
-        &format!("/api/delete/test_accounts/{}", alice_id),
+        &format!("/api/delete/{COLLECTION}/{alice_id}"),
         &base_url,
         &token,
         None,
@@ -246,15 +284,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     make_request(
         &client,
         "DELETE",
-        &format!("/api/delete/test_accounts/{}", bob_id),
+        &format!("/api/delete/{COLLECTION}/{bob_id}"),
         &base_url,
         &token,
         None,
     )
     .await?;
     println!("✓ Deleted test accounts\n");
-
-    println!("✓ All transaction examples completed");
 
     Ok(())
 }

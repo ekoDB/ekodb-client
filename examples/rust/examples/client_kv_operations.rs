@@ -8,27 +8,21 @@ use ekodb_client::Client;
 use serde_json::json;
 use std::env;
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    dotenv::dotenv().ok();
+const SESSION_KEY: &str = "kv_operations:rs:session:user123";
+const PRODUCT_KEYS: [&str; 3] = [
+    "kv_operations:rs:cache:product:1",
+    "kv_operations:rs:cache:product:2",
+    "kv_operations:rs:cache:product:3",
+];
 
-    let base_url = env::var("API_BASE_URL").unwrap_or_else(|_| "http://localhost:8080".to_string());
-    let api_key =
-        env::var("API_BASE_KEY").unwrap_or_else(|_| "a-test-api-key-from-ekodb".to_string());
-
-    // Create ekoDB client
-    let client = Client::builder()
-        .base_url(&base_url)
-        .api_key(&api_key)
-        .build()?;
-
+async fn run_examples(client: &Client) -> Result<(), Box<dyn std::error::Error>> {
     println!("✓ Client created");
 
     // Example 1: Set a key-value pair
     println!("\n=== KV Set ===");
     client
         .kv_set(
-            "session:user123",
+            SESSION_KEY,
             json!({
                 "userId": 123,
                 "username": "john_doe"
@@ -40,18 +34,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Example 2: Get a key-value pair
     println!("\n=== KV Get ===");
-    if let Some(value) = client.kv_get("session:user123").await? {
+    if let Some(value) = client.kv_get(SESSION_KEY).await? {
         println!("Retrieved value: {:?}", value);
     }
 
     // Example 3: Batch set multiple keys
     println!("\n=== KV Batch Set ===");
     use ekodb_client::Record;
-    let keys = vec![
-        "cache:product:1".to_string(),
-        "cache:product:2".to_string(),
-        "cache:product:3".to_string(),
-    ];
+    let keys: Vec<String> = PRODUCT_KEYS.iter().map(|key| (*key).to_string()).collect();
     let mut values = Vec::new();
     for i in 0..3 {
         let mut record = Record::new();
@@ -76,12 +66,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Example 5: Check if key exists
     println!("\n=== KV Exists ===");
-    let exists = client.kv_exists("session:user123").await?;
+    let exists = client.kv_exists(SESSION_KEY).await?;
     println!("Key exists: {}", exists);
 
     // Example 6: Find keys with pattern
     println!("\n=== KV Find (Pattern Query) ===");
-    let cache_results = client.kv_find(Some("cache:product:.*"), false).await?;
+    let cache_results = client
+        .kv_find(Some("kv_operations:rs:cache:product:.*"), false)
+        .await?;
     println!(
         "Found {} keys matching 'cache:product:.*'",
         cache_results.len()
@@ -94,11 +86,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Example 8: Delete a key
     println!("\n=== KV Delete ===");
-    client.kv_delete("session:user123").await?;
+    client.kv_delete(SESSION_KEY).await?;
     println!("✓ Deleted key: session:user123");
 
     // Verify deletion with kv_exists
-    let exists_after = client.kv_exists("session:user123").await?;
+    let exists_after = client.kv_exists(SESSION_KEY).await?;
     println!("✓ Verified: Key exists after delete: {}", exists_after);
 
     // Example 9: Batch delete multiple keys
@@ -113,7 +105,53 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         );
     }
 
-    println!("\n✓ All KV operations completed successfully");
+    Ok(())
+}
 
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    dotenv::dotenv().ok();
+    let base_url = env::var("API_BASE_URL").unwrap_or_else(|_| "http://localhost:8080".to_string());
+    let api_key =
+        env::var("API_BASE_KEY").unwrap_or_else(|_| "a-test-api-key-from-ekodb".to_string());
+    let client = Client::builder()
+        .base_url(&base_url)
+        .api_key(&api_key)
+        .build()?;
+    let keys: Vec<&str> = std::iter::once(SESSION_KEY).chain(PRODUCT_KEYS).collect();
+    for key in &keys {
+        if client.kv_exists(key).await? {
+            client.kv_delete(key).await?;
+        }
+    }
+
+    let operation_result = run_examples(&client).await;
+    let mut cleanup_errors = Vec::new();
+    for key in keys {
+        match client.kv_exists(key).await {
+            Ok(true) => {
+                if let Err(error) = client.kv_delete(key).await {
+                    cleanup_errors.push(format!("KV key {key}: {error}"));
+                }
+            }
+            Ok(false) => {}
+            Err(error) => cleanup_errors.push(format!("KV key {key}: {error}")),
+        }
+    }
+    match (operation_result, cleanup_errors.is_empty()) {
+        (Err(primary), false) => {
+            return Err(format!(
+                "{primary}; cleanup also failed: {}",
+                cleanup_errors.join("; ")
+            )
+            .into())
+        }
+        (Err(primary), true) => return Err(primary),
+        (Ok(()), false) => {
+            return Err(format!("cleanup failed: {}", cleanup_errors.join("; ")).into())
+        }
+        (Ok(()), true) => {}
+    }
+    println!("\n✓ All KV operations completed successfully");
     Ok(())
 }

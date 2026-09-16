@@ -22,28 +22,40 @@ async def main():
 
     # Create a chat session
     session = await client.create_chat_session(
-        {
-            "system_prompt": "You are a helpful assistant.",
-        }
+        collections=[],
+        llm_provider="openai",
+        llm_model="gpt-4o-mini",
+        system_prompt="You are a helpful assistant.",
     )
     chat_id = session["chat_id"]
     print(f"Created session: {chat_id}")
+    try:
+        # Stream a chat message via SSE
+        print("\nStreaming response for: 'What is ekoDB?'\n")
+        stream = await client.chat_message_stream(chat_id, "What is ekoDB?")
+        completed = False
 
-    # Stream a chat message via SSE
-    print("\nStreaming response for: 'What is ekoDB?'\n")
-    stream = await client.chat_message_stream(chat_id, "What is ekoDB?")
+        while True:
+            event = await stream.recv()
+            if event is None:
+                break
 
-    async for event in stream:
-        if event["type"] == "chunk":
-            print(event["content"], end="", flush=True)
-        elif event["type"] == "end":
-            print(f"\n\n--- Stream complete ---")
-            print(f"Message ID: {event.get('message_id')}")
-            print(f"Execution time: {event.get('execution_time_ms')}ms")
-            if event.get("context_window"):
-                print(f"Context window: {event['context_window']} tokens")
-        elif event["type"] == "error":
-            print(f"\nError: {event.get('error')}")
+            if event["type"] == "chunk":
+                print(event["content"], end="", flush=True)
+            elif event["type"] == "end":
+                completed = True
+                print("\n\n--- Stream complete ---")
+                print(f"Message ID: {event.get('message_id')}")
+                print(f"Execution time: {event.get('execution_time_ms')}ms")
+                if event.get("context_window"):
+                    print(f"Context window: {event['context_window']} tokens")
+            elif event["type"] == "error":
+                raise RuntimeError(f"Chat stream failed: {event.get('error')}")
+
+        if not completed:
+            raise RuntimeError("Chat stream ended before an end event")
+    finally:
+        await client.delete_chat_session(chat_id)
 
     print("\n✓ Chat message stream example completed")
 

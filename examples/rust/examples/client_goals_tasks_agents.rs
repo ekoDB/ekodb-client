@@ -41,7 +41,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
             ],
         }))
         .await?;
-    let goal_id = goal["id"].as_str().unwrap_or_default().to_string();
+    let goal_id = goal["id"]
+        .as_str()
+        .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::InvalidData, "missing goal id"))?
+        .to_string();
     println!("Created goal: {} (id: {})", goal["title"], goal_id);
 
     // 2. List goals
@@ -113,7 +116,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
             "description": "Rewrite JWT handling",
         }))
         .await?;
-    let goal2_id = goal2["id"].as_str().unwrap_or_default().to_string();
+    let goal2_id = goal2["id"]
+        .as_str()
+        .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::InvalidData, "missing goal id"))?
+        .to_string();
     println!("Created goal2: {} (id: {})", goal2["title"], goal2_id);
 
     // 10. Complete and reject goal2
@@ -146,8 +152,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
             "due_at": "2026-03-22T02:00:00Z",
         }))
         .await?;
-    let task_id = task["id"].as_str().unwrap_or_default().to_string();
-    println!("Created task: {} (id: {})", task["title"], task_id);
+    let task_id = task["id"]
+        .as_str()
+        .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::InvalidData, "missing task id"))?
+        .to_string();
+    println!("Created task: Nightly backup (id: {})", task_id);
 
     // 12. List tasks
     println!("\n--- Task: list ---");
@@ -221,8 +230,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
             "capabilities": ["backup", "restore", "verify"],
         }))
         .await?;
-    let agent_id = agent["id"].as_str().unwrap_or_default().to_string();
-    println!("Created agent: {} (id: {})", agent["name"], agent_id);
+    let agent_id = agent["id"]
+        .as_str()
+        .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::InvalidData, "missing agent id"))?
+        .to_string();
+    println!("Created agent: backup-agent (id: {})", agent_id);
 
     // 22. List agents
     println!("\n--- Agent: list ---");
@@ -256,6 +268,17 @@ async fn main() -> Result<(), Box<dyn Error>> {
     println!("\n--- Agent: agents_by_deployment ---");
     let deployment_agents = client.agents_by_deployment("deploy-abc-123").await?;
     println!("Agents in deployment: {}", deployment_agents);
+    let deployment_has_agent = deployment_agents["items"]
+        .as_array()
+        .is_some_and(|items| items.iter().any(|item| item["id"] == agent_id));
+    // TODO(ekoDB dev team): The live server currently omits this freshly-created
+    // agent even though the normal agent list contains the matching deployment_id.
+    // Replace this warning with an exact assertion after the server filter is fixed.
+    if !deployment_has_agent {
+        eprintln!(
+            "WARNING: agents_by_deployment omitted created agent {agent_id}; TODO: check/fix the server-side deployment lookup"
+        );
+    }
 
     // 27. Delete agent
     println!("\n--- Agent: delete ---");

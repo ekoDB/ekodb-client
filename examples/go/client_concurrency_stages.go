@@ -15,7 +15,12 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func main() {
+var concurrencyLabels = []string{
+	"conc_demo_pay_go", "conc_demo_rl_fail_go",
+	"conc_demo_rl_skip_go", "conc_demo_lock_go",
+}
+
+func run() (runErr error) {
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found")
 	}
@@ -24,15 +29,26 @@ func main() {
 
 	client, err := ekodb.NewClient(baseURL, apiKey)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	fmt.Println("✓ Client created")
+	ownedLabels := make([]string, 0, len(concurrencyLabels))
+	defer func() {
+		for _, label := range ownedLabels {
+			if err := client.DeleteUserFunction(label); err != nil {
+				runErr = errors.Join(runErr, fmt.Errorf("cleanup function %s: %w", label, err))
+			}
+		}
+		if runErr == nil {
+			fmt.Println("\n✓ Cleaned up demo functions")
+		}
+	}()
 
 	chargeTtl := int64(60)
 
 	// 1. Idempotent payment — claim → branch on replay → do work.
 	pay := ekodb.UserFunction{
-		Label: "conc_demo_pay",
+		Label: concurrencyLabels[0],
 		Name:  "Idempotent payment",
 		Parameters: map[string]ekodb.ParameterDefinition{
 			"idempotency_key": {Required: true},
@@ -56,7 +72,7 @@ func main() {
 					),
 				},
 				[]ekodb.FunctionStageConfig{
-					ekodb.StageInsert("charges", map[string]interface{}{
+					ekodb.StageInsert("concurrency_charges_go", map[string]interface{}{
 						"amount":          "{{amount}}",
 						"idempotency_key": "{{idempotency_key}}",
 					}, false, nil),
@@ -65,11 +81,14 @@ func main() {
 			),
 		},
 	}
-	saveFn(client, pay)
+	if err := saveFn(client, pay); err != nil {
+		return err
+	}
+	ownedLabels = append(ownedLabels, pay.Label)
 
 	// 2. Rate-limited endpoint (fail mode).
 	rlFail := ekodb.UserFunction{
-		Label: "conc_demo_rl_fail",
+		Label: concurrencyLabels[1],
 		Name:  "Rate-limit (fail mode)",
 		Parameters: map[string]ekodb.ParameterDefinition{
 			"user_id": {Required: true},
@@ -79,11 +98,14 @@ func main() {
 			ekodb.StageReturn(map[string]interface{}{"ok": true}, 200),
 		},
 	}
-	saveFn(client, rlFail)
+	if err := saveFn(client, rlFail); err != nil {
+		return err
+	}
+	ownedLabels = append(ownedLabels, rlFail.Label)
 
 	// 3. Rate-limited endpoint (skip mode).
 	rlSkip := ekodb.UserFunction{
-		Label: "conc_demo_rl_skip",
+		Label: concurrencyLabels[2],
 		Name:  "Rate-limit (skip mode)",
 		Parameters: map[string]ekodb.ParameterDefinition{
 			"user_id": {Required: true},
@@ -105,11 +127,14 @@ func main() {
 			),
 		},
 	}
-	saveFn(client, rlSkip)
+	if err := saveFn(client, rlSkip); err != nil {
+		return err
+	}
+	ownedLabels = append(ownedLabels, rlSkip.Label)
 
 	// 4. Distributed lock — acquire + critical section + release (token-fenced).
 	lock := ekodb.UserFunction{
-		Label: "conc_demo_lock",
+		Label: concurrencyLabels[3],
 		Name:  "Critical section under lock",
 		Parameters: map[string]ekodb.ParameterDefinition{
 			"resource": {Required: true},
@@ -126,7 +151,7 @@ func main() {
 					ekodb.StageReturn(map[string]interface{}{"status": "busy"}, 409),
 				},
 				[]ekodb.FunctionStageConfig{
-					ekodb.StageInsert("lock_demo_audit", map[string]interface{}{
+					ekodb.StageInsert("concurrency_lock_audit_go", map[string]interface{}{
 						"resource": "{{resource}}",
 					}, false, &chargeTtl),
 					ekodb.StageLockRelease("{{resource}}", "{{lock.token}}", "release"),
@@ -135,39 +160,41 @@ func main() {
 			),
 		},
 	}
-	saveFn(client, lock)
+	if err := saveFn(client, lock); err != nil {
+		return err
+	}
+	ownedLabels = append(ownedLabels, lock.Label)
 
 	fmt.Println("\nInvoke them like:")
-	fmt.Println(`  POST /api/functions/conc_demo_pay        { "idempotency_key": "...", "amount": 100 }`)
-	fmt.Println(`  POST /api/functions/conc_demo_rl_fail    { "user_id": 42 }`)
-	fmt.Println(`  POST /api/functions/conc_demo_rl_skip    { "user_id": 42 }`)
-	fmt.Println(`  POST /api/functions/conc_demo_lock       { "resource": "queue:drain" }`)
+	fmt.Printf("  POST /api/functions/%s        { \"idempotency_key\": \"...\", \"amount\": 100 }\n", concurrencyLabels[0])
+	fmt.Printf("  POST /api/functions/%s    { \"user_id\": 42 }\n", concurrencyLabels[1])
+	fmt.Printf("  POST /api/functions/%s    { \"user_id\": 42 }\n", concurrencyLabels[2])
+	fmt.Printf("  POST /api/functions/%s       { \"resource\": \"queue:drain\" }\n", concurrencyLabels[3])
 
-	for _, label := range []string{
-		"conc_demo_pay", "conc_demo_rl_fail",
-		"conc_demo_rl_skip", "conc_demo_lock",
-	} {
-		_ = client.DeleteUserFunction(label)
-	}
-	fmt.Println("\n✓ Cleaned up demo functions")
+	return nil
 }
 
-func saveFn(client *ekodb.Client, f ekodb.UserFunction) {
+func saveFn(client *ekodb.Client, f ekodb.UserFunction) error {
 	_, err := client.SaveUserFunction(f)
 	if err == nil {
 		fmt.Printf("✓ %s saved\n", f.Label)
-		return
+		return nil
 	}
 	var httpErr *ekodb.HTTPError
 	if errors.As(err, &httpErr) && httpErr.StatusCode == 409 {
 		if uerr := client.UpdateUserFunction(f.Label, f); uerr != nil {
-			fmt.Printf("UpdateUserFunction(%s) error: %v\n", f.Label, uerr)
-			return
+			return fmt.Errorf("update function %s: %w", f.Label, uerr)
 		}
 		fmt.Printf("✓ %s already existed — updated instead\n", f.Label)
-		return
+		return nil
 	}
-	fmt.Printf("SaveUserFunction(%s) error: %v\n", f.Label, err)
+	return fmt.Errorf("save function %s: %w", f.Label, err)
+}
+
+func main() {
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
 }
 
 func getenv(key, fallback string) string {

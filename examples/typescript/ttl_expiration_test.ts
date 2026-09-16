@@ -102,8 +102,9 @@ async function main() {
       );
     }
   } catch (err: any) {
-    if (err.message.includes("FAILED")) throw err;
-    console.log("  Output: Error (expected) - " + err.message);
+    const message = err instanceof Error ? err.message : String(err);
+    if (!message.includes("404") && !/not found/i.test(message)) throw err;
+    console.log("  Output: Error (expected) - " + message);
     console.log("  ✓ PASS: Document expired (not found error)");
   }
 

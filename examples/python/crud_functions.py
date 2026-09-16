@@ -23,6 +23,19 @@ load_dotenv(env_path)
 
 BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8080")
 API_KEY = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb")
+TEST_COLLECTION = "crud_functions_users_py"
+FUNCTION_LABELS = (
+    "insert_and_verify_py",
+    "query_update_verify_py",
+    "query_update_credits_py",
+    "delete_and_verify_py",
+)
+
+
+def get_value(field):
+    if isinstance(field, dict) and "type" in field and "value" in field:
+        return field["value"]
+    return field
 
 
 async def get_auth_token(session):
@@ -65,7 +78,7 @@ async def script_1_insert_and_verify(session, token):
     print("=" * 60)
 
     script = {
-        "label": "insert_and_verify",
+        "label": FUNCTION_LABELS[0],
         "name": "Insert and Verify User",
         "description": "Insert a user and verify it was created",
         "version": "1.0",
@@ -84,7 +97,7 @@ async def script_1_insert_and_verify(session, token):
         "functions": [
             {
                 "type": "Insert",
-                "collection": "users",
+                "collection": TEST_COLLECTION,
                 "record": {
                     "name": "{{user_name}}",
                     "email": "{{user_email}}",
@@ -94,7 +107,7 @@ async def script_1_insert_and_verify(session, token):
             },
             {
                 "type": "Query",
-                "collection": "users",
+                "collection": TEST_COLLECTION,
                 "filter": {
                     "type": "Condition",
                     "content": {
@@ -120,7 +133,7 @@ async def script_1_insert_and_verify(session, token):
     call_result = await request(
         session,
         "POST",
-        "/api/functions/insert_and_verify",
+        f"/api/functions/{FUNCTION_LABELS[0]}",
         params,
         token,
     )
@@ -134,7 +147,7 @@ async def script_1_insert_and_verify(session, token):
     records = call_result["records"]
     print(f"\n3️⃣ Verification Results:")
     print(f"   ✅ Found {len(records)} record(s)")
-    if records:
+    if len(records) == 1:
         user = records[0]
         user_id = user.get("id", "N/A")
         print(f"   📋 User ID: {user_id}")
@@ -144,7 +157,7 @@ async def script_1_insert_and_verify(session, token):
         print(f"   📋 Credits: {user.get('credits', 'N/A')}")
         return user_id, script_id
 
-    return None, script_id
+    raise RuntimeError(f"Insert verification expected 1 record, found {len(records)}")
 
 
 async def script_2_query_update_verify(session, token):
@@ -161,7 +174,7 @@ async def script_2_query_update_verify(session, token):
     print("=" * 60)
 
     script = {
-        "label": "query_update_verify",
+        "label": FUNCTION_LABELS[1],
         "name": "Query, Update, and Verify",
         "description": "Find user by filter, update status, verify change",
         "version": "1.0",
@@ -181,7 +194,7 @@ async def script_2_query_update_verify(session, token):
         "functions": [
             {
                 "type": "Query",
-                "collection": "users",
+                "collection": TEST_COLLECTION,
                 "filter": {
                     "type": "Condition",
                     "content": {
@@ -193,7 +206,7 @@ async def script_2_query_update_verify(session, token):
             },
             {
                 "type": "Update",
-                "collection": "users",
+                "collection": TEST_COLLECTION,
                 "filter": {
                     "type": "Condition",
                     "content": {
@@ -206,7 +219,7 @@ async def script_2_query_update_verify(session, token):
             },
             {
                 "type": "Query",
-                "collection": "users",
+                "collection": TEST_COLLECTION,
                 "filter": {
                     "type": "Condition",
                     "content": {
@@ -230,7 +243,7 @@ async def script_2_query_update_verify(session, token):
     call_result = await request(
         session,
         "POST",
-        "/api/functions/query_update_verify",
+        f"/api/functions/{FUNCTION_LABELS[1]}",
         params,
         token,
     )
@@ -243,12 +256,17 @@ async def script_2_query_update_verify(session, token):
     records = call_result["records"]
     print(f"\n3️⃣ Verification Results:")
     print(f"   ✅ Found {len(records)} record(s)")
-    if records:
-        user = records[0]
-        print(f"   📋 Status updated to: {user.get('status', 'N/A')}")
-        print(f"   📋 Name: {user.get('name', 'N/A')}")
-        return script_id
-
+    if len(records) != 1:
+        raise RuntimeError(
+            f"Status verification expected 1 record, found {len(records)}"
+        )
+    user = records[0]
+    if get_value(user.get("status")) != "active":
+        raise RuntimeError(
+            f"Status verification expected active, found {user.get('status')!r}"
+        )
+    print(f"   📋 Status updated to: {user.get('status', 'N/A')}")
+    print(f"   📋 Name: {user.get('name', 'N/A')}")
     return script_id
 
 
@@ -266,7 +284,7 @@ async def script_3_query_update_credits(session, token):
     print("=" * 60)
 
     script = {
-        "label": "query_update_credits",
+        "label": FUNCTION_LABELS[2],
         "name": "Query, Update Credits, and Verify",
         "description": "Find user by email, update credits, verify change",
         "version": "1.0",
@@ -276,17 +294,11 @@ async def script_3_query_update_credits(session, token):
                 "required": True,
                 "description": "Email to search for",
             },
-            "credits": {
-                "type": "Integer",
-                "default": 100,
-                "required": False,
-                "description": "Credits to set",
-            },
         },
         "functions": [
             {
                 "type": "Query",
-                "collection": "users",
+                "collection": TEST_COLLECTION,
                 "filter": {
                     "type": "Condition",
                     "content": {
@@ -298,7 +310,7 @@ async def script_3_query_update_credits(session, token):
             },
             {
                 "type": "Update",
-                "collection": "users",
+                "collection": TEST_COLLECTION,
                 "filter": {
                     "type": "Condition",
                     "content": {
@@ -307,11 +319,11 @@ async def script_3_query_update_credits(session, token):
                         "value": "{{user_email}}",
                     },
                 },
-                "updates": {"credits": "{{credits}}"},
+                "updates": {"credits": 100},
             },
             {
                 "type": "Query",
-                "collection": "users",
+                "collection": TEST_COLLECTION,
                 "filter": {
                     "type": "Condition",
                     "content": {
@@ -331,11 +343,11 @@ async def script_3_query_update_credits(session, token):
     print(f"   ✅ Function saved: {script_id}")
 
     print(f"\n2️⃣ Calling function (Query + Update Credits + Verify)...")
-    params = {"user_email": "alice@example.com", "credits": 100}
+    params = {"user_email": "alice@example.com"}
     call_result = await request(
         session,
         "POST",
-        "/api/functions/query_update_credits",
+        f"/api/functions/{FUNCTION_LABELS[2]}",
         params,
         token,
     )
@@ -348,13 +360,18 @@ async def script_3_query_update_credits(session, token):
     records = call_result["records"]
     print(f"\n3️⃣ Verification Results:")
     print(f"   ✅ Found {len(records)} record(s)")
-    if records:
-        user = records[0]
-        print(f"   📋 Credits updated to: {user.get('credits', 'N/A')}")
-        print(f"   📋 Status: {user.get('status', 'N/A')}")
-        print(f"   📋 Name: {user.get('name', 'N/A')}")
-        return script_id
-
+    if len(records) != 1:
+        raise RuntimeError(
+            f"Credits verification expected 1 record, found {len(records)}"
+        )
+    user = records[0]
+    if get_value(user.get("credits")) != 100:
+        raise RuntimeError(
+            f"Credits verification expected 100, found {user.get('credits')!r}"
+        )
+    print(f"   📋 Credits updated to: {user.get('credits', 'N/A')}")
+    print(f"   📋 Status: {user.get('status', 'N/A')}")
+    print(f"   📋 Name: {user.get('name', 'N/A')}")
     return script_id
 
 
@@ -372,7 +389,7 @@ async def script_4_delete_and_verify(session, token):
     print("=" * 60)
 
     script = {
-        "label": "delete_and_verify",
+        "label": FUNCTION_LABELS[3],
         "name": "Query Before Delete and Verify",
         "description": "Verify record exists, delete it, then verify it's gone",
         "version": "1.0",
@@ -386,7 +403,7 @@ async def script_4_delete_and_verify(session, token):
         "functions": [
             {
                 "type": "Query",
-                "collection": "users",
+                "collection": TEST_COLLECTION,
                 "filter": {
                     "type": "Condition",
                     "content": {
@@ -398,7 +415,7 @@ async def script_4_delete_and_verify(session, token):
             },
             {
                 "type": "Delete",
-                "collection": "users",
+                "collection": TEST_COLLECTION,
                 "filter": {
                     "type": "Condition",
                     "content": {
@@ -410,7 +427,7 @@ async def script_4_delete_and_verify(session, token):
             },
             {
                 "type": "Query",
-                "collection": "users",
+                "collection": TEST_COLLECTION,
                 "filter": {
                     "type": "Condition",
                     "content": {
@@ -434,7 +451,7 @@ async def script_4_delete_and_verify(session, token):
     call_result = await request(
         session,
         "POST",
-        "/api/functions/delete_and_verify",
+        f"/api/functions/{FUNCTION_LABELS[3]}",
         params,
         token,
     )
@@ -453,15 +470,27 @@ async def script_4_delete_and_verify(session, token):
             f"   ✅ After delete: Record successfully deleted (Query returned 0 records)"
         )
     else:
-        print(f"   ❌ Delete failed - still found {len(records)} record(s)")
+        raise RuntimeError(f"Delete failed: still found {len(records)} record(s)")
     return script_id
 
 
-async def cleanup(session, token, script_ids):
+async def cleanup(session, token, script_ids, allow_missing_collection=False):
     """Cleanup test data and scripts"""
     print("\n" + "=" * 60)
     print("🧹 Cleanup")
     print("=" * 60)
+
+    errors = []
+    try:
+        functions = await request(session, "GET", "/api/functions", None, token)
+        script_ids.extend(
+            function["id"]
+            for function in functions
+            if function.get("label") in FUNCTION_LABELS
+            and function.get("id") not in script_ids
+        )
+    except Exception as error:
+        errors.append(error)
 
     for script_id in script_ids:
         if script_id:
@@ -472,12 +501,20 @@ async def cleanup(session, token, script_ids):
                 print(f"   ✅ Deleted script: {script_id[:20]}...")
             except Exception as e:
                 print(f"   ⚠️  Could not delete script: {e}")
+                errors.append(e)
 
     try:
-        await request(session, "DELETE", "/api/collections/users", None, token)
-        print(f"   ✅ Deleted collection: users")
+        await request(
+            session, "DELETE", f"/api/collections/{TEST_COLLECTION}", None, token
+        )
+        print(f"   ✅ Deleted collection: {TEST_COLLECTION}")
     except Exception as e:
-        print(f"   ⚠️  Could not delete collection: {e}")
+        missing = "HTTP 404" in str(e) or "not found" in str(e).lower()
+        if not allow_missing_collection or not missing:
+            print(f"   ⚠️  Could not delete collection: {e}")
+            errors.append(e)
+    if errors:
+        raise RuntimeError(f"Cleanup failed for {len(errors)} resource(s)")
 
 
 async def main():
@@ -494,38 +531,42 @@ async def main():
     print("=" * 60)
 
     async with aiohttp.ClientSession() as session:
+        script_ids = []
         try:
             # Get auth token
             token = await get_auth_token(session)
 
+            await cleanup(session, token, script_ids, allow_missing_collection=True)
+            script_ids.clear()
+
             # Run all CRUD Functions in sequence
-            user_id, script1_id = await script_1_insert_and_verify(session, token)
-            script_ids = [script1_id]
+            _user_id, script1_id = await script_1_insert_and_verify(session, token)
+            script_ids.append(script1_id)
 
-            if user_id:
-                script2_id = await script_2_query_update_verify(session, token)
-                script3_id = await script_3_query_update_credits(session, token)
-                script4_id = await script_4_delete_and_verify(session, token)
-                script_ids.extend([script2_id, script3_id, script4_id])
-
-            # Cleanup
-            await cleanup(session, token, script_ids)
-
-            print("\n" + "=" * 60)
-            print("✅ Complete CRUD Functions Example Finished!")
-            print("=" * 60)
-            print("\n💡 Key Takeaways:")
-            print("   ✅ Functions chain Functions together")
-            print("   ✅ Each function demonstrates operation + verification")
-            print("   ✅ Parameters make functions reusable")
-            print("   ✅ Verification is built into the function itself")
-            print("   ✅ Complete CRUD lifecycle in 4 focused functions")
+            script2_id = await script_2_query_update_verify(session, token)
+            script3_id = await script_3_query_update_credits(session, token)
+            script4_id = await script_4_delete_and_verify(session, token)
+            script_ids.extend([script2_id, script3_id, script4_id])
 
         except Exception as e:
             print(f"\n❌ Error: {e}")
             import traceback
 
             traceback.print_exc()
+            raise
+        finally:
+            if "token" in locals():
+                await cleanup(session, token, script_ids)
+
+        print("\n" + "=" * 60)
+        print("✅ Complete CRUD Functions Example Finished!")
+        print("=" * 60)
+        print("\n💡 Key Takeaways:")
+        print("   ✅ Functions chain Functions together")
+        print("   ✅ Each function demonstrates operation + verification")
+        print("   ✅ Parameters make functions reusable")
+        print("   ✅ Verification is built into the function itself")
+        print("   ✅ Complete CRUD lifecycle in 4 focused functions")
 
 
 if __name__ == "__main__":
