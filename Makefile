@@ -575,21 +575,21 @@ test-examples-transactions: python-example-deps ensure-jvm
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo ""
 	@echo "🐍 $(YELLOW)Python Transactions...$(RESET)"
-	@cd examples/python && $(VENV_PY) transactions.py
+	@cd examples/python && $(RUN_WITH_TIMEOUT) $(VENV_PY) transactions.py
 	@echo ""
 	@echo "🔷 $(YELLOW)Go Transactions...$(RESET)"
-	@cd examples/go && go run transactions.go
+	@cd examples/go && $(RUN_WITH_TIMEOUT) go run transactions.go
 	@echo ""
 	@echo "� $(YELLOW)JavaScript Transactions...$(RESET)"
-	@cd examples/javascript && node transactions.js
+	@cd examples/javascript && $(RUN_WITH_TIMEOUT) node transactions.js
 	@echo ""
 	@echo "🦀 $(YELLOW)Rust Transactions...$(RESET)"
-	@cd examples/rust && cargo run --example transactions --quiet
+	@cd examples/rust && $(RUN_WITH_TIMEOUT) cargo run --example transactions --quiet
 	@echo ""
 	@echo "🟣 $(YELLOW)Kotlin Transactions...$(RESET)"
 	@if [ -f .env ]; then . ./.env; fi && \
 		{ JH=$$(/usr/libexec/java_home -v 17 2>/dev/null) && export JAVA_HOME=$$JH && export PATH=$$JH/bin:$$PATH || true; } && \
-		cd examples/kotlin && API_BASE_URL=$$API_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass="io.ekodb.client.examples.ClientTransactionsKt" --quiet
+		cd examples/kotlin && API_BASE_URL=$$API_BASE_URL API_BASE_KEY=$$API_BASE_KEY $(RUN_WITH_TIMEOUT) ./gradlew run -PmainClass="io.ekodb.client.examples.ClientTransactionsKt" --quiet
 	@echo ""
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "✅ $(GREEN)All transaction examples completed successfully!$(RESET)"
@@ -603,16 +603,16 @@ test-examples-functions: python-example-deps
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo ""
 	@echo "🐍 $(YELLOW)Python Functions (http_functions + crud_functions)...$(RESET)"
-	@cd examples/python && $(VENV_PY) http_functions.py && $(VENV_PY) crud_functions.py
+	@cd examples/python && $(RUN_WITH_TIMEOUT) $(VENV_PY) http_functions.py && $(RUN_WITH_TIMEOUT) $(VENV_PY) crud_functions.py
 	@echo ""
 	@echo "🔷 $(YELLOW)Go Functions (http_functions + crud_functions)...$(RESET)"
-	@cd examples/go && go run http_functions.go && go run crud_functions.go
+	@cd examples/go && $(RUN_WITH_TIMEOUT) go run http_functions.go && $(RUN_WITH_TIMEOUT) go run crud_functions.go
 	@echo ""
 	@echo "📦 $(YELLOW)JavaScript Functions (http_functions + crud_functions)...$(RESET)"
-	@cd examples/javascript && node http_functions.js && node crud_functions.js
+	@cd examples/javascript && $(RUN_WITH_TIMEOUT) node http_functions.js && $(RUN_WITH_TIMEOUT) node crud_functions.js
 	@echo ""
 	@echo "🦀 $(YELLOW)Rust Functions (http_functions + crud_functions)...$(RESET)"
-	@cd examples/rust && cargo run --example http_functions --quiet && cargo run --example crud_functions --quiet
+	@cd examples/rust && $(RUN_WITH_TIMEOUT) cargo run --example http_functions --quiet && $(RUN_WITH_TIMEOUT) cargo run --example crud_functions --quiet
 	@echo ""
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "✅ $(GREEN)All Functions examples completed successfully!$(RESET)"
@@ -624,16 +624,16 @@ test-examples-functions-crud: python-example-deps
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo ""
 	@echo "🐍 $(YELLOW)Python CRUD Functions...$(RESET)"
-	@cd examples/python && $(VENV_PY) crud_functions.py
+	@cd examples/python && $(RUN_WITH_TIMEOUT) $(VENV_PY) crud_functions.py
 	@echo ""
 	@echo "🔷 $(YELLOW)Go CRUD Functions...$(RESET)"
-	@cd examples/go && go run crud_functions.go
+	@cd examples/go && $(RUN_WITH_TIMEOUT) go run crud_functions.go
 	@echo ""
 	@echo "📦 $(YELLOW)JavaScript CRUD Functions...$(RESET)"
-	@cd examples/javascript && node crud_functions.js
+	@cd examples/javascript && $(RUN_WITH_TIMEOUT) node crud_functions.js
 	@echo ""
 	@echo "🦀 $(YELLOW)Rust CRUD Functions...$(RESET)"
-	@cd examples/rust && cargo run --example crud_functions --quiet
+	@cd examples/rust && $(RUN_WITH_TIMEOUT) cargo run --example crud_functions --quiet
 	@echo ""
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "✅ $(GREEN)All CRUD Functions examples completed successfully!$(RESET)"
@@ -761,8 +761,8 @@ test-examples-ts-swr: build-typescript-client
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "$(CYAN)Running TypeScript SWR Examples...$(RESET)"
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
-	@cd examples/typescript && npx tsx client_swr_pattern.ts
-	@cd examples/typescript && npx tsx client_edge_cache.ts
+	@cd examples/typescript && $(RUN_WITH_TIMEOUT) npx tsx client_swr_pattern.ts
+	@cd examples/typescript && $(RUN_WITH_TIMEOUT) npx tsx client_edge_cache.ts
 	@echo "✅ $(GREEN)TypeScript SWR examples complete!$(RESET)"
 
 test-examples-py-swr: build-python-client python-example-deps
@@ -770,7 +770,7 @@ test-examples-py-swr: build-python-client python-example-deps
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "$(CYAN)Running Python SWR Examples...$(RESET)"
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
-	@cd examples/python && $(VENV_PY) swr_pattern.py
+	@cd examples/python && $(RUN_WITH_TIMEOUT) $(VENV_PY) swr_pattern.py
 	@echo "✅ $(GREEN)Python SWR examples complete!$(RESET)"
 
 test-examples-go-swr:
@@ -778,7 +778,7 @@ test-examples-go-swr:
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "$(CYAN)Running Go SWR Examples...$(RESET)"
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
-	@cd examples/go && go run swr_pattern.go
+	@cd examples/go && $(RUN_WITH_TIMEOUT) go run swr_pattern.go
 	@echo "✅ $(GREEN)Go SWR examples complete!$(RESET)"
 
 test-examples-rust-swr: build-client
@@ -786,7 +786,7 @@ test-examples-rust-swr: build-client
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "$(CYAN)Running Rust SWR Examples...$(RESET)"
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
-	@cd examples/rust && cargo run --example swr_pattern
+	@cd examples/rust && $(RUN_WITH_TIMEOUT) cargo run --example swr_pattern
 	@echo "✅ $(GREEN)Rust SWR examples complete!$(RESET)"
 
 test-examples-rust-fcomp: build-client
@@ -794,7 +794,7 @@ test-examples-rust-fcomp: build-client
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "$(CYAN)Running Rust Function Composition Examples...$(RESET)"
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
-	@cd examples/rust && cargo run --example client_function_composition
+	@cd examples/rust && $(RUN_WITH_TIMEOUT) cargo run --example client_function_composition
 	@echo "✅ $(GREEN)Rust function composition examples complete!$(RESET)"
 
 test-examples-rs-fcomp: test-examples-rust-fcomp
@@ -832,7 +832,7 @@ test-examples-ts-fcomp: build-typescript-client
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "$(CYAN)Running TypeScript Function Composition Examples...$(RESET)"
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
-	@cd examples/typescript && npx tsx client_function_composition.ts
+	@cd examples/typescript && $(RUN_WITH_TIMEOUT) npx tsx client_function_composition.ts
 	@echo "✅ $(GREEN)TypeScript function composition examples complete!$(RESET)"
 
 test-examples-py-fcomp: build-python-client python-example-deps
@@ -840,7 +840,7 @@ test-examples-py-fcomp: build-python-client python-example-deps
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "$(CYAN)Running Python Function Composition Examples...$(RESET)"
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
-	@cd examples/python && $(VENV_PY) client_function_composition.py
+	@cd examples/python && $(RUN_WITH_TIMEOUT) $(VENV_PY) client_function_composition.py
 	@echo "✅ $(GREEN)Python function composition examples complete!$(RESET)"
 
 test-examples-go-fcomp:
@@ -848,7 +848,7 @@ test-examples-go-fcomp:
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "$(CYAN)Running Go Function Composition Examples...$(RESET)"
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
-	@cd examples/go && go run client_function_composition.go
+	@cd examples/go && $(RUN_WITH_TIMEOUT) go run client_function_composition.go
 	@echo "✅ $(GREEN)Go function composition examples complete!$(RESET)"
 
 test-examples-js-fcomp: build-javascript-client
@@ -856,7 +856,7 @@ test-examples-js-fcomp: build-javascript-client
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "$(CYAN)Running JavaScript Function Composition Examples...$(RESET)"
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
-	@cd examples/javascript && node client_function_composition.js
+	@cd examples/javascript && $(RUN_WITH_TIMEOUT) node client_function_composition.js
 	@echo "✅ $(GREEN)JavaScript function composition examples complete!$(RESET)"
 
 test-examples-kt-fcomp: ensure-jvm
@@ -868,7 +868,7 @@ test-examples-kt-fcomp: ensure-jvm
 		. ./.env && \
 		{ JH=$$(/usr/libexec/java_home -v 17 2>/dev/null) && export JAVA_HOME=$$JH && export PATH=$$JH/bin:$$PATH || true; } && \
 		cd examples/kotlin && \
-		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientFunctionCompositionKt --no-daemon; \
+		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY $(RUN_WITH_TIMEOUT) ./gradlew run -PmainClass=io.ekodb.client.examples.ClientFunctionCompositionKt --no-daemon; \
 	else \
 		echo "$(RED)✗ .env file not found$(RESET)"; \
 		exit 1; \
@@ -884,7 +884,7 @@ test-examples-kt-swr: ensure-jvm
 		. ./.env && \
 		{ JH=$$(/usr/libexec/java_home -v 17 2>/dev/null) && export JAVA_HOME=$$JH && export PATH=$$JH/bin:$$PATH || true; } && \
 		cd examples/kotlin && \
-		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.SwrPatternKt --no-daemon; \
+		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY $(RUN_WITH_TIMEOUT) ./gradlew run -PmainClass=io.ekodb.client.examples.SwrPatternKt --no-daemon; \
 	else \
 		echo "$(RED)✗ .env file not found$(RESET)"; \
 		exit 1; \
@@ -917,34 +917,34 @@ test-examples-ttl:
 test-examples-ttl-rust: build-client
 	@echo ""
 	@echo "🦀 $(YELLOW)Rust TTL Verification Tests...$(RESET)"
-	@cd examples/rust && cargo run --example ttl_expiration_test
+	@cd examples/rust && $(RUN_WITH_TIMEOUT) cargo run --example ttl_expiration_test
 	@echo "✅ $(GREEN)Rust TTL tests complete!$(RESET)"
 
 test-examples-ttl-go:
 	@echo ""
 	@echo "🔷 $(YELLOW)Go TTL Verification Tests...$(RESET)"
-	@cd examples/go && go run document_ttl.go
-	@cd examples/go && go run websocket_ttl.go
+	@cd examples/go && $(RUN_WITH_TIMEOUT) go run document_ttl.go
+	@cd examples/go && $(RUN_WITH_TIMEOUT) go run websocket_ttl.go
 	@echo "✅ $(GREEN)Go TTL tests complete!$(RESET)"
 
 test-examples-ttl-js:
 	@echo ""
 	@echo "📦 $(YELLOW)JavaScript TTL Verification Tests...$(RESET)"
-	@cd examples/javascript && node document_ttl.js
-	@cd examples/javascript && node websocket_ttl.js
+	@cd examples/javascript && $(RUN_WITH_TIMEOUT) node document_ttl.js
+	@cd examples/javascript && $(RUN_WITH_TIMEOUT) node websocket_ttl.js
 	@echo "✅ $(GREEN)JavaScript TTL tests complete!$(RESET)"
 
 test-examples-ttl-py: build-python-client python-example-deps
 	@echo ""
 	@echo "🐍 $(YELLOW)Python TTL Verification Tests...$(RESET)"
-	@cd examples/python && $(VENV_PY) document_ttl.py
-	@cd examples/python && $(VENV_PY) websocket_ttl.py
+	@cd examples/python && $(RUN_WITH_TIMEOUT) $(VENV_PY) document_ttl.py
+	@cd examples/python && $(RUN_WITH_TIMEOUT) $(VENV_PY) websocket_ttl.py
 	@echo "✅ $(GREEN)Python TTL tests complete!$(RESET)"
 
 test-examples-ttl-ts: build-typescript-client
 	@echo ""
 	@echo "📘 $(YELLOW)TypeScript TTL Verification Tests...$(RESET)"
-	@cd examples/typescript && npx tsx ttl_expiration_test.ts
+	@cd examples/typescript && $(RUN_WITH_TIMEOUT) npx tsx ttl_expiration_test.ts
 	@echo "✅ $(GREEN)TypeScript TTL tests complete!$(RESET)"
 
 # ============================================================================
@@ -974,25 +974,25 @@ test-examples-subscribe:
 test-examples-subscribe-rust: build-client
 	@echo ""
 	@echo "🦀 $(YELLOW)Rust WebSocket Subscription Test...$(RESET)"
-	@cd examples/rust && cargo run --example client_websocket_subscribe
+	@cd examples/rust && $(RUN_WITH_TIMEOUT) cargo run --example client_websocket_subscribe
 	@echo "✅ $(GREEN)Rust subscription test complete!$(RESET)"
 
 test-examples-subscribe-go:
 	@echo ""
 	@echo "🔷 $(YELLOW)Go WebSocket Subscription Test...$(RESET)"
-	@cd examples/go && go run client_websocket_subscribe.go
+	@cd examples/go && $(RUN_WITH_TIMEOUT) go run client_websocket_subscribe.go
 	@echo "✅ $(GREEN)Go subscription test complete!$(RESET)"
 
 test-examples-subscribe-py: python-example-deps
 	@echo ""
 	@echo "🐍 $(YELLOW)Python WebSocket Subscription Test...$(RESET)"
-	@cd examples/python && $(VENV_PY) client_websocket_subscribe.py
+	@cd examples/python && $(RUN_WITH_TIMEOUT) $(VENV_PY) client_websocket_subscribe.py
 	@echo "✅ $(GREEN)Python subscription test complete!$(RESET)"
 
 test-examples-subscribe-ts: build-typescript-client
 	@echo ""
 	@echo "📘 $(YELLOW)TypeScript WebSocket Subscription Test...$(RESET)"
-	@cd examples/typescript && npx tsx client_websocket_subscribe.ts
+	@cd examples/typescript && $(RUN_WITH_TIMEOUT) npx tsx client_websocket_subscribe.ts
 	@echo "✅ $(GREEN)TypeScript subscription test complete!$(RESET)"
 
 test-examples-subscribe-kt: ensure-jvm
@@ -1002,7 +1002,7 @@ test-examples-subscribe-kt: ensure-jvm
 		. ./.env && \
 		{ JH=$$(/usr/libexec/java_home -v 17 2>/dev/null) && export JAVA_HOME=$$JH && export PATH=$$JH/bin:$$PATH || true; } && \
 		cd examples/kotlin && \
-		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY ./gradlew run -PmainClass=io.ekodb.client.examples.ClientWebsocketSubscribeKt --no-daemon; \
+		API_BASE_URL=$$API_BASE_URL WS_BASE_URL=$$WS_BASE_URL API_BASE_KEY=$$API_BASE_KEY $(RUN_WITH_TIMEOUT) ./gradlew run -PmainClass=io.ekodb.client.examples.ClientWebsocketSubscribeKt --no-daemon; \
 	else \
 		echo "$(RED)✗ .env file not found$(RESET)"; \
 		exit 1; \
@@ -1644,6 +1644,7 @@ test-hooks:
 test-example-env:
 	@bash scripts/test-load-root-env.sh
 	@bash scripts/test-scrub-paths.sh
+	@bash scripts/test-run-with-timeout.sh
 
 examples-ls:
 	@echo "📋 $(CYAN)Generating examples inventory...$(RESET)"

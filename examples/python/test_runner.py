@@ -19,6 +19,9 @@ load_dotenv(env_path)
 
 BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8080")
 API_KEY = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb")
+EXAMPLE_TIMEOUT_SECONDS = int(os.getenv("EXAMPLE_TIMEOUT_SECONDS", "300"))
+if EXAMPLE_TIMEOUT_SECONDS <= 0:
+    raise ValueError("EXAMPLE_TIMEOUT_SECONDS must be a positive integer")
 
 
 # Colors for output
@@ -102,9 +105,10 @@ def run_example(file_path, token):
         result = subprocess.run(
             [sys.executable, file_path],
             env=env,
+            stdin=subprocess.DEVNULL,
             capture_output=False,
             text=True,
-            timeout=60,
+            timeout=EXAMPLE_TIMEOUT_SECONDS,
         )
 
         if result.returncode == 0:
@@ -114,7 +118,10 @@ def run_example(file_path, token):
             log(f"✗ {Path(file_path).name} failed with code {result.returncode}", "RED")
             return False
     except subprocess.TimeoutExpired:
-        log(f"✗ {Path(file_path).name} timed out", "RED")
+        log(
+            f"✗ {Path(file_path).name} timed out after {EXAMPLE_TIMEOUT_SECONDS}s",
+            "RED",
+        )
         return False
     except Exception as e:
         log(f"✗ {Path(file_path).name} error: {e}", "RED")

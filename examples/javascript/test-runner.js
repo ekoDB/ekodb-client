@@ -90,7 +90,9 @@ function runExample(file, token) {
     const child = spawn("node", [file], {
       cwd: path.dirname(file),
       env,
-      stdio: "inherit",
+      // The detached process group must not inherit terminal stdin. A read from
+      // a background group can suspend it with SIGTTIN after output completes.
+      stdio: ["ignore", "inherit", "inherit"],
       detached: true,
     });
 

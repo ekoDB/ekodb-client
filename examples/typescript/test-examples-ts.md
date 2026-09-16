@@ -9,7 +9,7 @@ make test-examples-typescript
 > tsc
 
 
-up to date, audited 46 packages in 576ms
+up to date, audited 46 packages in 839ms
 
 12 packages are looking for funding
   run `npm fund` for details
@@ -21,24 +21,16 @@ found 0 vulnerabilities
 
 ✅ TypeScript client built!
 
-added 1 package, removed 1 package, and audited 13 packages in 390ms
+added 1 package, removed 1 package, and audited 13 packages in 383ms
 
 1 package is looking for funding
   run `npm fund` for details
 
 found 0 vulnerabilities
-bash: warning: setlocale: LC_ALL: cannot change locale (C.UTF-8): No such file or directory
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB Advanced CRUD Example (TypeScript) ===
 
 --- Inserting base record ---
-Inserted: YTKswpeH0xQcnZMsWXaBICQf--0Up8AXP3tvjt6Fw0VJCYF7V5ZFwCbhWITpqVFKjgtFPKHeHvi5iQ_ch-sB2w
+Inserted: 6u5dKOi6Jx9rpwHmj-UaR3qk6coAYm31kBafX9x0ADSvTYLfJjXKPPykoXFEqv3Vgsh8Fr1qLlp7RJz3TX2MFQ
 
 --- updateWithAction: increment ---
 Score after increment: 150
@@ -56,13 +48,6 @@ After sequence - score: 160, lives: 2, tags: ["beginner","pro","veteran"]
 Deleted collection
 
 === All advanced CRUD operations completed ===
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
 === Batch Insert ===
@@ -79,20 +64,13 @@ perl: warning: Falling back to the standard locale ("C").
 ✓ Deleted collection
 
 ✓ All batch operations completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB Advanced Chat Features Example ===
 
 === Inserting Sample Data ===
 ✓ Inserted sample product
 
 === Creating Chat Session ===
-✓ Created session: gF6YiDd7ia8MzrNsNkVsHqxzxqJekYhUDyBh0VPIeKUY3R4gEHcV4nBxKUQM965t6dThIQa0pzuW8YiTKl4Vpg
+✓ Created session: sEvd-GaxG-EXsSvlh7c0K1eoO5TLBFNjqTcg5pHKtPfaMb5g34yHnqmck-XdtKZm6FW2rx7HiXJOr06Xae9MKg
 
 === Sending Initial Message ===
 ✓ Message sent
@@ -102,7 +80,7 @@ perl: warning: Falling back to the standard locale ("C").
 - **Description:** High-performance database product
 - **Price:** $99
 
-If you have any further questions or need more information, feel free to ask!
+If you need more information or have further questions, feel free to ask!
 
 ✓ Second message sent
 
@@ -119,7 +97,7 @@ If you have any further questions or need more information, feel free to ask!
 ✓ Message unmarked as forgotten
 
 === Feature 4: Merge Chat Sessions ===
-✓ Created second session: T_NfF1iplssUw35I_WE9NWEexhij3Ibw0AlQsWaJ8ZaFnyxBjbRRxcWs2zG9IxvrsdJbbYERP34L1343LkyIYw
+✓ Created second session: lQrBJD7Qx2fC7oaU7IO8ho19QoF9IhCpcmQHeKdKuJ8nrY75z-Vzv9azTnx042jc-8HjW02dyPuHj96u0IbEnw
 ✓ Sent message in second session
 ✓ Sessions merged successfully
   Total messages in merged session: 7
@@ -130,52 +108,45 @@ If you have any further questions or need more information, feel free to ask!
 ✓ Messages remaining: 6
 
 === Cleanup ===
-✓ Deleted chat session: T_NfF1iplssUw35I_WE9NWEexhij3Ibw0AlQsWaJ8ZaFnyxBjbRRxcWs2zG9IxvrsdJbbYERP34L1343LkyIYw
-✓ Deleted chat session: gF6YiDd7ia8MzrNsNkVsHqxzxqJekYhUDyBh0VPIeKUY3R4gEHcV4nBxKUQM965t6dThIQa0pzuW8YiTKl4Vpg
+✓ Deleted chat session: sEvd-GaxG-EXsSvlh7c0K1eoO5TLBFNjqTcg5pHKtPfaMb5g34yHnqmck-XdtKZm6FW2rx7HiXJOr06Xae9MKg
+✓ Deleted chat session: lQrBJD7Qx2fC7oaU7IO8ho19QoF9IhCpcmQHeKdKuJ8nrY75z-Vzv9azTnx042jc-8HjW02dyPuHj96u0IbEnw
 ✓ Deleted collection
 
 ✓ All advanced chat features demonstrated successfully!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB Chat Basic Example ===
 
 === Inserting Sample Data ===
 ✓ Inserted 3 sample documents
 
 === Creating Chat Session ===
-✓ Created session: L5AA1VCt9I1tJU3s5nWJLq3Y_whSqweKWv3rbvo_1vWOWt7CidfyYXWnhEJcHBOFekoze2r2itAA48KNXLPoCA
+✓ Created session: h6NlubxlUOT5IF5q_I3NFOc-dKJ7xSBaKuvIfbPIP2DjBB_2f-exyWH9Jwdspk8CROLphtqG7g1TnQVoJPQfEg
 
 === Sending Chat Message ===
-Message ID: PhdxgKf1JE0PaCfqrJl_QSsSX1ksZwQ8JaUkDWD7i7qsXWoz9WDMI5SilwXrwVj71gOlIWtDiMXqFt-nT8U6IQ
+Message ID: mZHmK9ekxFnQdaJzChuDxo5hIdrQ1mbXHQ5uzlFXFA7ARqEYu5uosOX2hOdNcppLmC_KobP2ph-m3-7tdUHZ2A
 
 === AI Response ===
-Here are the available products along with their prices:
+The available products and their prices are as follows:
 
-1. **ekoDB**
-   - Price: $99
-   - Description: A high-performance database product with AI capabilities.
-
-2. **ekoDB Cloud**
+1. **ekoDB Cloud**
    - Price: $499
-   - Description: Fully managed cloud database service product.
+   - Description: Fully managed cloud database service product
+
+2. **ekoDB**
+   - Price: $99
+   - Description: A high-performance database product with AI capabilities
 
 3. **ekoDB Pro**
    - Price: $299
-   - Description: Enterprise edition product with advanced features.
+   - Description: Enterprise edition product with advanced features
 
 === Context Used (3 snippets) ===
   Snippet 1: {
   collection: 'client_chat_basic_ts',
   record: {
-    id: 'CtaTJoqvQ3TyVfcIGDiJZ_E4teTAcKJnmmjcPm8rttxqdpNrMuQeGN3R0slYgOGBkwAEF18qFjvquRn1EdfuVg',
-    description: 'A high-performance database product with AI capabilities',
-    price: 99,
-    name: 'ekoDB'
+    id: 'QvcVXlHeVaX0gQ0Ra54CeX8yOt2vHauUr-NjmIb2C1IXIqTr4bByL4hLBEz9ZEwcOH5rXGG4owqpvhjUIV--KQ',
+    name: 'ekoDB Cloud',
+    description: 'Fully managed cloud database service product',
+    price: 499
   },
   score: 0.1111111111111111,
   matched_fields: [ 'description' ]
@@ -183,10 +154,10 @@ Here are the available products along with their prices:
   Snippet 2: {
   collection: 'client_chat_basic_ts',
   record: {
-    description: 'Fully managed cloud database service product',
-    id: 'cMcOp6cansv6llaoPH4gm2mVxk3FJmxEXN1MU0IfX5pcw4qg_MT_WN3oZwXJHB8Qweok0ShxywiNj7E_sqUfBg',
-    price: 499,
-    name: 'ekoDB Cloud'
+    price: 99,
+    description: 'A high-performance database product with AI capabilities',
+    id: 'm4mKzQj58y94_KlbE3leWMTPXFAVO8UZ6k6gj7GUSMaLymo1izl7gRAkrT4HB9PczvincH0sGNfumzezYHeIFQ',
+    name: 'ekoDB'
   },
   score: 0.1111111111111111,
   matched_fields: [ 'description' ]
@@ -194,77 +165,55 @@ Here are the available products along with their prices:
   Snippet 3: {
   collection: 'client_chat_basic_ts',
   record: {
-    id: 'gRANOxcM_j0n1kErwj2-y9j8wpwyPqbYe5ZrdiJPDyfHuNfgQVurtjGVPI-HyrIe91t-s52DYTedmFx4f2hV5A',
+    id: 'B3bg5mY6KDdBx914vxlFW3gLwOj2iylbAC7liEO95sGMxXNJTjyaFBivN4GUo11dZhssGRB2iYZIKEdSE7a8MQ',
     description: 'Enterprise edition product with advanced features',
-    name: 'ekoDB Pro',
-    price: 299
+    price: 299,
+    name: 'ekoDB Pro'
   },
   score: 0.1111111111111111,
   matched_fields: [ 'description' ]
 }
 
-Execution Time: 6509ms
+Execution Time: 5624ms
 
 === Token Usage ===
 Prompt tokens: 3413
-Completion tokens: 91
-Total tokens: 3504
+Completion tokens: 90
+Total tokens: 3503
 
 === Cleanup ===
 ✓ Deleted session
 ✓ Deleted collection
 
 ✓ Chat completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB Chat Message Stream (SSE) Example (TypeScript) ===
 
-Created session: YsEi5x23cRPYqrrDlR6osum7XCXbYsR2W7Yo6LfbdoAgLePGGzuah0jd_qHNGuLhoK0PTWDcw-ipAHq7fm61ig
+Created session: 67v1SoYBya0n_s2YcBLEGTxPq4ZMWr10ZQt5h78cjZusv4re5F73SLVWL-tnX_suG4yP9WFkYEujy6DIJe8i_w
 
 Streaming response for: 'What is ekoDB?'
 
-{"__progress":"received"}{"__progress":"generating","model":"default","provider":"openai"}**ekoDB** (Environmental Knowledge Organization DataBase) is a term that may refer to different resources or databases that catalog information related to ecosystems, environmental knowledge, or eco-organisms, depending on the context. However, as of June 2024, the most widely referenced **ekoDB** is an online database and resource platform specializing in the study of non-coding RNAs (ncRNAs) associated with bacterial and archaeal hosts, especially those involved in defense mechanisms such as CRISPR-Cas systems.
+{"__progress":"received"}{"__progress":"generating","model":"default","provider":"openai"}**ekoDB** is a curated ecological database developed to support ecological research, data analysis, and modeling. Although there may be several uses of the term, in the context of ecology and environmental sciences, **ekoDB** generally refers to:
 
-### ekoDB in the Context of Prokaryotic RNA Defense Systems
-- **ekoDB** stands for **"endogenous prokaryotic RNA defense sYstem DataBase."**
-- It was designed to help researchers explore, analyze, and compare **prokaryotic Argonaute proteins** and other defense-related non-coding RNAs.
-- The database provides curated information on sequences, structures, functions, and evolutionary relationships among various non-coding RNAs involved in prokaryotic immune systems.
-- Resources include:
-  - Genome annotations
-  - Experimental data
-  - Bioinformatic analysis tools
-  - Cross-references to related databases (such as CRISPRdb, anti-CRISPRdb, and others)
+- **A Comprehensive Ecological Data Repository**: ekoDB collects, organizes, and provides access to a wide range of ecological datasets. These may include information on species distributions, trait data, biodiversity, community structure, environmental variables, biotic interactions, and more.
 
-### Possible Broader Uses
-- In some contexts, "ekoDB" might generally refer to databases cataloging ecological or environmental data, but this is less common and not standardized. If your context is ecology, please clarify for a more tailored answer.
+- **A Tool for Data Analysis and Modeling**: ekoDB often includes tools or an API that lets users easily integrate ecological data into their research workflows, facilitating tasks such as ecological modeling, conservation planning, or macroecological analysis.
 
-### Key References
-- **ekoDB:** [ekoDB Database—RNA Defense System in Prokaryotes](https://ekodb.genomics.cn/) (frequently cited in bioinformatics and microbiome research literature)
-- Example publication: **Zhang J, et al. (2021). ekoDB: A comprehensive database of prokaryotic RNA defense systems. Nucleic Acids Research.**
+- **Curated and Standardized Data**: Data in ekoDB is curated and standardized, which helps prevent issues with data quality, format inconsistencies, and facilitates reproducibility in science.
 
----
+**Example:**
+One prominent example of "ekodb" is the R package [`ekodb`](https://cran.r-project.org/web/packages/ekodb/index.html), which is designed as a general-purpose ecological knowledge base for species interactions, traits, and ecological knowledge. It provides an infrastructure for storing, accessing, and querying ecological data in R.
 
 **In summary:**
-**ekoDB** is primarily known as a bioinformatics database for studying RNA-based defense systems in prokaryotes, especially those involving Argonaute and CRISPR-Cas systems, though the term could sometimes refer to other environmental or knowledge-organization databases depending on the context. If you meant a different field or a specific application, please specify for a more precise explanation!
+ekoDB is an ecological knowledge database or platform that makes it easier to access, share, and analyze ecological data, usually through a software library or an online portal, and is particularly valuable for ecologists, conservationists, and data scientists working with ecological or biodiversity data.
+
+**If you have a specific context or platform in mind related to ekoDB, please provide more details for a more targeted answer.**
 
 --- Stream complete ---
-Message ID: WEMudlpJWmx3DwX2k6x8O68qQRhYz2WI3leEJDyT3VPH4D8TH_9SAVbxRtGVgLlG51EQjFEZikEoVH1DAfGUNQ
-Execution time: 7248ms
+Message ID: hjMriqwwY7GH0vK-h6eq4_R23_hHpRMET3cUT7OlVRvGetR-F1Tzgy9RUGY8BrLas5loSLfECjRSosqQNBfchA
+Execution time: 3480ms
 Context window: 1000000 tokens
 
 ✓ Chat message stream example completed
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
 === List Chat Models ===
@@ -430,33 +379,26 @@ Anthropic models: claude-fable-5-1, claude-opus-5, claude-sonnet-5, claude-fable
 Expected error for non-existent provider: Error: Request failed with status 404: {"error":"Unknown provider 'nonexistent_provider_xyz'","error_kind":"unknown_provider"}
 
 ✓ Chat Models example complete
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB Chat Session Management Example ===
 
 === Inserting Sample Data ===
 ✓ Inserted sample product
 
 === Creating Chat Session ===
-✓ Created session: EnuGFcCEp5WX4Zp0-1-NWNuz9wbFdMH1BqUI8LfoBMHcPrX4aOwfU7xQ0UYW22OxxmfD7BFaXWJhp-suER_maA
+✓ Created session: fFrkYi28bme2YC4I365Ly17eYYh_hk5D1ICdEQpNRE8lC8E5bB1nAzzMiowmMvJvcUaKr1v_XrfoUwciBA-o-w
 
 === Sending Messages ===
 ✓ Message 1 sent
-  Response: Based on the database context, the available product is:
+  Response: The available product is:
 
 - **Name:** ekoDB
 - **Description:** A high-performance database product
 - **Price:** $99
 
-If you need more information or specifics about this product, feel free to ask!
+If you need more information or additional products, let me know!
 
 ✓ Message 2 sent
-  Response: The price of the product **ekoDB** is **$99**. If you have any other questions or need further details, let me know!
+  Response: The price of ekoDB is $99.
 
 === Retrieving Session Messages ===
 ✓ Retrieved 4 messages
@@ -465,41 +407,34 @@ If you need more information or specifics about this product, feel free to ask!
 ✓ Session updated
 
 === Branching Session ===
-✓ Created branch: 1XFz__JkGzeOfEFIHxh6CUmX4ZkOntrR63XnaHNRsfShUVRAEJQ2uAHzygZpM5nHkeYI2j0jZlLJnDaRopwuhQ
-  Parent: EnuGFcCEp5WX4Zp0-1-NWNuz9wbFdMH1BqUI8LfoBMHcPrX4aOwfU7xQ0UYW22OxxmfD7BFaXWJhp-suER_maA
+✓ Created branch: 2I6hbzf3jTTo2g4IwfrZLEa6ucytZ_haxfXWMjCGZnr9vbIvyqpgTnqocWiw4auX-AMXVaaSrv4X9Jzy0KGJ6A
+  Parent: fFrkYi28bme2YC4I365Ly17eYYh_hk5D1ICdEQpNRE8lC8E5bB1nAzzMiowmMvJvcUaKr1v_XrfoUwciBA-o-w
 
 === Listing Sessions ===
 ✓ Found 2 sessions
-  Session 1: 1XFz__JkGzeOfEFIHxh6CUmX4ZkOntrR63XnaHNRsfShUVRAEJQ2uAHzygZpM5nHkeYI2j0jZlLJnDaRopwuhQ (Untitled)
-  Session 2: EnuGFcCEp5WX4Zp0-1-NWNuz9wbFdMH1BqUI8LfoBMHcPrX4aOwfU7xQ0UYW22OxxmfD7BFaXWJhp-suER_maA (Untitled)
+  Session 1: 2I6hbzf3jTTo2g4IwfrZLEa6ucytZ_haxfXWMjCGZnr9vbIvyqpgTnqocWiw4auX-AMXVaaSrv4X9Jzy0KGJ6A (Untitled)
+  Session 2: fFrkYi28bme2YC4I365Ly17eYYh_hk5D1ICdEQpNRE8lC8E5bB1nAzzMiowmMvJvcUaKr1v_XrfoUwciBA-o-w (Untitled)
 
 === Getting Session Details ===
 ✓ Session details retrieved
   Messages: 4
 
 === Deleting Branch Session ===
-✓ Deleted branch session: 1XFz__JkGzeOfEFIHxh6CUmX4ZkOntrR63XnaHNRsfShUVRAEJQ2uAHzygZpM5nHkeYI2j0jZlLJnDaRopwuhQ
+✓ Deleted branch session: 2I6hbzf3jTTo2g4IwfrZLEa6ucytZ_haxfXWMjCGZnr9vbIvyqpgTnqocWiw4auX-AMXVaaSrv4X9Jzy0KGJ6A
 
 === Cleanup ===
 ✓ Deleted session
 ✓ Deleted collection
 
 ✓ All session management operations completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
 === Create Collection (via insert) ===
-Collection created with first record: sNpbVQkDtJe4rFxEZ-CUPyPUkyty4Z3-2mnaq2kOHozzjwbeL2zpD-_ytKc9VZyNm5VciZh6y2joS0rYYjBNfQ
+Collection created with first record: t0LKdxvj-jI-9qfNdjX8wpNoXnw0Jo0wLPZgdKrotd__l15luj82SANe5pivvbvkk_ZU9emTgVjFcdy-EBm-xA
 
 === List Collections ===
-Total collections: 21
-Sample collections: chat_agent_configs__ek0_testing,agent_function_versions__ek0_testing,schedules__ek0_testing,schema_employees_client_go,schema_products_client_go
+Total collections: 17
+Sample collections: chat_goals__ek0_testing,schedules__ek0_testing,client_collection_management_ts,schema_products_client_go,agent_function_versions__ek0_testing
 
 === Count Documents ===
 Document count: 1
@@ -511,13 +446,6 @@ Collection deleted successfully
 Collection still exists: false
 
 ✓ All collection management operations completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
 === Check Collection Exists (Before Creation) ===
@@ -539,13 +467,6 @@ Collection 'nonexistent_collection_xyz' exists: false
 Deleted collection 'collection_utils_test_ts'
 
 ✓ Collection Utilities example complete
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 ✓ conc_demo_pay saved
 ✓ conc_demo_rl_fail saved
@@ -553,45 +474,38 @@ perl: warning: Falling back to the standard locale ("C").
 ✓ conc_demo_lock saved
 
 Invoke them like:
-  POST /api/functions/conc_demo_pay_ts_43664_1789567012579 { "idempotency_key": "...", "amount": 100 }
-  POST /api/functions/conc_demo_rl_fail_ts_43664_1789567012579 { "user_id": 42 }
-  POST /api/functions/conc_demo_rl_skip_ts_43664_1789567012579 { "user_id": 42 }
-  POST /api/functions/conc_demo_lock_ts_43664_1789567012579 { "resource": "queue:drain" }
+  POST /api/functions/conc_demo_pay_ts_67690_1789591578851 { "idempotency_key": "...", "amount": 100 }
+  POST /api/functions/conc_demo_rl_fail_ts_67690_1789591578851 { "user_id": 42 }
+  POST /api/functions/conc_demo_rl_skip_ts_67690_1789591578851 { "user_id": 42 }
+  POST /api/functions/conc_demo_lock_ts_67690_1789591578851 { "resource": "queue:drain" }
 
 ✓ Cleaned up demo functions
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB Convenience Methods Example ===
 
 === Native Object Creation ===
 ✓ Created record with plain object: {
-  id: '4pUsgk8BBBUWa6m_STPjcuuMEbZpeBkgEC5rDRoFdPwR0D8N08n4Sn6LSf6uHdpPDsQV6b5SssV6gj-Clv-ViA'
+  id: 'XDdF0edDtfgx1U9ZWxPmYB--fRFc5nJrLVy0LCzKAToUEwTLN5R_IRvEXg9iM9eUZF-5VnQWwpZ2HH1S8qDigw'
 }
 
 === Upsert Operation ===
 ✓ First upsert (update): {
-  id: '4pUsgk8BBBUWa6m_STPjcuuMEbZpeBkgEC5rDRoFdPwR0D8N08n4Sn6LSf6uHdpPDsQV6b5SssV6gj-Clv-ViA',
+  id: 'XDdF0edDtfgx1U9ZWxPmYB--fRFc5nJrLVy0LCzKAToUEwTLN5R_IRvEXg9iM9eUZF-5VnQWwpZ2HH1S8qDigw',
+  age: { value: 29, type: 'Integer' },
+  active: { type: 'Boolean', value: true },
   email: { type: 'String', value: 'alice.j@newdomain.com' },
-  age: { type: 'Integer', value: 29 },
-  active: { value: true, type: 'Boolean' },
   name: { type: 'String', value: 'Alice Johnson' }
 }
 ✓ Second upsert (insert): {
-  id: 'uLdv1LQyQmeg-P5ACj44wbO7IDpFP9I5Sk12EBA0dMI7r0mATdiS-ZOWsymA6DyXTv62qDVlf5bfacckf94_VA'
+  id: 'rV2nJW3CwBCh8v-Qjw3pfxGQ9sdnQJPdZUIB376yvcQsJBArS54YeHUVfDePDaxvFNd3fQEtxvsVLI9bUdmBaw'
 }
 
 === Find One Operation ===
 ✓ Found user by email: {
-  name: { type: 'String', value: 'Alice Johnson' },
+  name: { value: 'Alice Johnson', type: 'String' },
   email: { type: 'String', value: 'alice.j@newdomain.com' },
-  id: '4pUsgk8BBBUWa6m_STPjcuuMEbZpeBkgEC5rDRoFdPwR0D8N08n4Sn6LSf6uHdpPDsQV6b5SssV6gj-Clv-ViA',
-  active: { type: 'Boolean', value: true },
-  age: { type: 'Integer', value: 29 }
+  id: 'XDdF0edDtfgx1U9ZWxPmYB--fRFc5nJrLVy0LCzKAToUEwTLN5R_IRvEXg9iM9eUZF-5VnQWwpZ2HH1S8qDigw',
+  active: { value: true, type: 'Boolean' },
+  age: { value: 29, type: 'Integer' }
 }
 ✓ User not found (as expected)
 
@@ -609,13 +523,6 @@ perl: warning: Falling back to the standard locale ("C").
 ✓ Deleted collection
 
 ✅ All convenience methods demonstrated successfully!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 ✓ crypto_demo_hmac_ts saved
 ✓ crypto_demo_aes_ts saved
@@ -631,13 +538,6 @@ Invoke them with:
   POST /api/functions/crypto_demo_encoding_ts { "title": "Héllo World" }
 
 ✓ Cleaned up demo functions
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === Distinct Values Example ===
 
 Inserting sample products...
@@ -661,20 +561,13 @@ Found 2 distinct statuses for electronics:
   - discontinued
 
 Cleanup done.
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
 === Insert Document with TTL (1 hour) ===
-✓ Inserted document: Pyd9xz2Eu9iHHD9aoIWr1iqFzuCNheix1LA5lA28bxEMFUamJeJUxOGH0tTzjlsr7GuaH86cGBxhNktOea4BKQ
+✓ Inserted document: 97Bb4GtSSe_toM5d7V53AqbZWyssHzmOXBMN5g6_3tyQtSyaIGD5SC1KBo_c2ZO_ddOcMrRQb-tqpPZCfc4WwA
 
 === Insert Document with TTL (5 minutes) ===
-✓ Inserted document: RqIJtIhnBGLutZw60JXgtjBGYR5QwqBgtNn6LkuhywQMLjW2LWsvbe_u6WqDB9k4kwLJblDXYJREkNcYLUxfdQ
+✓ Inserted document: IEpvfCotH_J1uuT4pMulXG_lakbDX1xEyfcLDG7-kn5v3B9yJ4zBudRj0IgNiK8D_RE-Ipb8UPHJwwslNftOsw
 
 === Query Documents ===
 ✓ Found 2 documents with TTL
@@ -691,48 +584,41 @@ perl: warning: Falling back to the standard locale ("C").
 ✓ All document TTL operations completed successfully
 
 💡 Note: Documents with TTL will automatically expire after the specified duration
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB as Edge Cache - Simple Example ===
 
 Creating edge cache function...
-✓ Edge cache script created: XocyYnJ25whFdU1a94R4pZnVvlSbw5EKInYHaWUCWDL1ndawB_jjgG8Dwbzw79ZnM3Gd_Y6hNqwenX6XrrfDIQ
+✓ Edge cache script created: KjnfpDI5ey3lt2wmkVIi3rNg1K214w77g7SSEbkCFHh5_NteFaxlLjpDbLteEobwv8eFFxXjW0LqHf6m70l7Gw
 
 Call 1: Cache miss (fetches from API)
-Response time: 116ms
+Response time: 69ms
 Result: {
   "records": [
     {
       "value": {
-        "type": "Object",
         "value": {
-          "address": {
-            "street": "Kulas Light",
-            "suite": "Apt. 556",
-            "city": "Gwenborough",
-            "geo": {
-              "lat": "-37.3159",
-              "lng": "81.1496"
-            },
-            "zipcode": "92998-3874"
-          },
-          "email": "Sincere@april.biz",
           "phone": "1-770-736-8031 x56442",
-          "username": "Bret",
-          "id": 1,
-          "name": "Leanne Graham",
           "company": {
+            "catchPhrase": "Multi-layered client-server neural-net",
             "name": "Romaguera-Crona",
-            "bs": "harness real-time e-markets",
-            "catchPhrase": "Multi-layered client-server neural-net"
+            "bs": "harness real-time e-markets"
           },
-          "website": "hildegard.org"
-        }
+          "name": "Leanne Graham",
+          "id": 1,
+          "address": {
+            "zipcode": "92998-3874",
+            "suite": "Apt. 556",
+            "street": "Kulas Light",
+            "geo": {
+              "lng": "81.1496",
+              "lat": "-37.3159"
+            },
+            "city": "Gwenborough"
+          },
+          "website": "hildegard.org",
+          "username": "Bret",
+          "email": "Sincere@april.biz"
+        },
+        "type": "Object"
       }
     }
   ],
@@ -746,35 +632,35 @@ Result: {
 }
 
 Call 2: Cache hit (served from ekoDB)
-Response time: 9ms (12.9x faster!)
+Response time: 3ms (23x faster!)
 Result: {
   "records": [
     {
       "value": {
-        "type": "Object",
         "value": {
-          "address": {
-            "street": "Kulas Light",
-            "suite": "Apt. 556",
-            "city": "Gwenborough",
-            "geo": {
-              "lat": "-37.3159",
-              "lng": "81.1496"
-            },
-            "zipcode": "92998-3874"
-          },
-          "email": "Sincere@april.biz",
           "phone": "1-770-736-8031 x56442",
-          "username": "Bret",
-          "id": 1,
-          "name": "Leanne Graham",
           "company": {
+            "catchPhrase": "Multi-layered client-server neural-net",
             "name": "Romaguera-Crona",
-            "bs": "harness real-time e-markets",
-            "catchPhrase": "Multi-layered client-server neural-net"
+            "bs": "harness real-time e-markets"
           },
-          "website": "hildegard.org"
-        }
+          "name": "Leanne Graham",
+          "id": 1,
+          "address": {
+            "zipcode": "92998-3874",
+            "suite": "Apt. 556",
+            "street": "Kulas Light",
+            "geo": {
+              "lng": "81.1496",
+              "lat": "-37.3159"
+            },
+            "city": "Gwenborough"
+          },
+          "website": "hildegard.org",
+          "username": "Bret",
+          "email": "Sincere@april.biz"
+        },
+        "type": "Object"
       }
     }
   ],
@@ -797,13 +683,6 @@ Result: {
 
 ✓ Example complete!
 
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB Function Composition Examples ===
 
 📋 Setting up test data...
@@ -819,8 +698,8 @@ Building reusable functions that call each other...
 
 📊 Result from composed function:
    Records: 1
-   Name: {"type":"String","value":"User 1"}
-   Department: {"value":"engineering","type":"String"}
+   Name: {"value":"User 1","type":"String"}
+   Department: {"type":"String","value":"engineering"}
 
 🎯 Key Benefit: fetch_user can be reused by ANY function!
    No code duplication, single source of truth
@@ -833,34 +712,31 @@ Using KV cache + CallFunction for fast cache-aside pattern...
 ✅ Saved SWR function using composition: swr_user
 
 First call (cache miss - will fetch from API):
-   ⏱️  Duration: 106ms
-   📊 Records: 1
-   📦 Data: {
-  "value": {
-    "value": {
-      "phone": "1-770-736-8031 x56442",
-      "address": {
-        "geo": {
-          "lng": "81.1496",
-          "lat": "-37.3159"
-        },
-        "suite": "Apt. 556"...
-
-Second call (cache hit - from cache):
-   ⏱️  Duration: 6ms
+   ⏱️  Duration: 69ms
    📊 Records: 1
    📦 Data: {
   "value": {
     "type": "Object",
     "value": {
-      "phone": "1-770-736-8031 x56442",
-      "address": {
-        "geo": {
-          "lng": "81.1496",
-          "lat": "-37.3159"
-        },
-     ...
-   🚀 Cache speedup: 17.7x faster!
+      "email": "Sincere@april.biz",
+      "website": "hildegard.org",
+      "company": {
+        "bs": "harness real-time e-markets",
+        "name"...
+
+Second call (cache hit - from cache):
+   ⏱️  Duration: 2ms
+   📊 Records: 1
+   📦 Data: {
+  "value": {
+    "type": "Object",
+    "value": {
+      "email": "Sincere@april.biz",
+      "website": "hildegard.org",
+      "company": {
+        "bs": "harness real-time e-markets",
+        "name"...
+   🚀 Cache speedup: 34.5x faster!
 
 📝 Example 3: Multi-Level Function Composition
 
@@ -882,21 +758,7 @@ Building complex workflows from small, reusable pieces...
 
 
 ✅ All composition examples completed!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 client_function_contract: ok
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 🚀 ekoDB Functions Example (TypeScript)
 
 📋 Setting up test data...
@@ -904,24 +766,24 @@ perl: warning: Falling back to the standard locale ("C").
 
 📝 Example 1: Simple Query Function
 
-✅ Function saved: hepoXMT9m0PENfDrq6D2YaurJivbC8dMhClqekabo9-pZDTK1EMkQBCzICLW_jxX1QgbVXyqxIZDJct1wANdlg
+✅ Function saved: cD2V9m9BoKZAsVE7mGlyM6KFhZvhX-mU9g8tpgbLJ1loQGn4nlXG-Y8rDZnn8ouy9bwVabmYb_Z3F-LedHkmaA
 📊 Found 5 active users
 
 📝 Example 2: Parameterized Function
 
-✅ Function saved: 1sRyK92uMJgIg5nfHZCKEIKn5-af_5F1dkn8skWvUtZctqqONrXZomYNTfJf3jz6yV8XywMs0E9kTFULSWEfcQ
+✅ Function saved: x7LrG8YLGsJGts9vb5BTdq6XZMGv8NdyxiEfP3pGgw0HONzMCU8S_aR5LYp4EH3ZSwj2gXFhmELdn2NTI_WShA
 📊 Found 3 users (limited)
 
 📝 Example 3: Aggregation Function
 
-✅ Function saved: fRc0u3FVNOk_gDADTL_ZTF4UWwPGVNHo3oUEjNUxqJ-SgxQHhYm4NyVrcg8JAZH7dsO7eZYUE0GKPdIRIrxOjg
+✅ Function saved: 2_g4cBQO5H9eBMEntPQ3V0JlLSyhImt7R7YX4numVvcutrTHczXYvFEH9yxsFUZ2qj43SVW2ovnAxKgKFXt63Q
 📊 Statistics: 2 groups
-   {"count":{"type":"Integer","value":5},"avg_score":{"type":"Float","value":50},"status":{"value":"inactive","type":"String"}}
-   {"count":{"value":5,"type":"Integer"},"avg_score":{"value":60,"type":"Float"},"status":{"value":"active","type":"String"}}
+   {"count":{"type":"Integer","value":5},"status":{"type":"String","value":"active"},"avg_score":{"type":"Float","value":60}}
+   {"count":{"value":5,"type":"Integer"},"avg_score":{"type":"Float","value":50},"status":{"value":"inactive","type":"String"}}
 
 📝 Example 4: UserFunction Management
 
-📋 Total scripts: 11
+📋 Total scripts: 5
 🔍 Retrieved script: Get Active Users
 ✏️  function updated
 🗑️  function deleted
@@ -929,13 +791,6 @@ perl: warning: Falling back to the standard locale ("C").
 ℹ️  Note: GET/UPDATE/DELETE use IDs. Only CALL supports labels.
 
 ✅ All examples completed!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 🚀 ekoDB TypeScript Advanced Functions Example
 
 📋 Setting up test data...
@@ -951,21 +806,14 @@ perl: warning: Falling back to the standard locale ("C").
 
 ✅ Function saved
 📊 Category breakdown:
-   {"count":{"value":3,"type":"Integer"},"category":{"type":"String","value":"Furniture"},"avg_price":{"type":"Float","value":365.6666666666667}}
-   {"avg_price":{"type":"Float","value":367},"category":{"type":"String","value":"Electronics"},"count":{"value":5,"type":"Integer"}}
+   {"count":{"value":3,"type":"Integer"},"avg_price":{"value":365.6666666666667,"type":"Float"},"category":{"value":"Furniture","type":"String"}}
+   {"avg_price":{"type":"Float","value":367},"category":{"value":"Electronics","type":"String"},"count":{"type":"Integer","value":5}}
 ⏱️  Execution time: 0ms
 
 🧹 Cleaning up...
 ✅ Cleanup complete
 
 ✅ All advanced script examples finished!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 🚀 ekoDB TypeScript AI Functions Example
 
 📋 Setting up test data...
@@ -977,23 +825,23 @@ perl: warning: Falling back to the standard locale ("C").
 🤖 AI Response:
    Vector databases offer several benefits:
 
-1. **Efficient Similarity Search**: They excel in high-dimensional data retrieval, enabling fast similarity searches based on vector representations, like embeddings.
+1. **Efficient Similarity Search**: Enable fast retrieval of similar items based on vector embeddings, ideal for applications like recommendation systems and image search.
 
-2. **Scalability**: Designed to handle large-scale datasets, they efficiently manage and index vast amounts of vector data.
+2. **High Dimensionality**: Handle high-dimensional data effectively, which is common in machine learning and natural language processing.
 
-3. **Real-time Querying**: Support for real-time access allows for quick responses to queries, which is crucial for applications like recommendation systems.
+3. **Scalability**: Designed to scale with large datasets, allowing for real-time querying and processing.
 
-4. **Enhanced Machine Learning Integration**: They easily integrate with ML models to store and retrieve embeddings, facilitating features like semantic search.
+4. **Flexible Data Types**: Support various data types such as text, images, and audio, making them versatile for diverse applications.
 
-5. **Support for Complex Data Types**: Capable of handling various types of unstructured data, including images, text, and audio.
+5. **Enhanced Performance**: Optimize queries using techniques like approximate nearest neighbor search to improve speed and reduce resource consumption.
 
-6. **Metadata Storage**: Many vector databases allow the storage of associated metadata alongside vectors, providing context to the data retrieved.
+6. **Integration with AI**: Easily integrate with machine learning frameworks, facilitating workflow for AI applications.
 
-7. **Versatile Applications**: Useful in various fields, including natural language processing, image recognition, and anomaly detection.
+7. **Rich Metadata Support**: Often allow for the inclusion of additional metadata alongside vector data, enhancing context for searches.
 
-8. **Flexibility**: Can accommodate various distance metrics (e.g., cosine similarity, Euclidean distance), allowing for tailored search functionality.
+8. **Semantic Understanding**: Enable understanding of semantic relationships and meanings in data through embeddings.
 
-These advantages make vector databases a powerful tool for modern data-intensive applications.
+Overall, they are essential for modern AI-driven applications requiring efficient and effective data retrieval.
 ⏱️  Execution time: 0ms
 
 📝 Example 2: Generate Embeddings
@@ -1011,13 +859,6 @@ These advantages make vector databases a powerful tool for modern data-intensive
 💡 This example demonstrates:
    ✅ Chat completions with system/user messages
    ✅ Embedding generation for text
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 🚀 ekoDB TypeScript Complete Functions Example
 
 📋 Demonstrates: FindAll, Group, Count, Multi-stage Pipelines
@@ -1027,10 +868,10 @@ perl: warning: Falling back to the standard locale ("C").
 
 📝 Example 1: FindAll + Group (Simple Aggregation)
 
-✅ Function saved: LS8AwvDPDoarY-1wNXS1QFZik_sSrIkiztTWNZDzHWrfh614pf8u5QYZzyJkd_6andMxMT7PZGeYapr6qI-OUA
+✅ Function saved: 2ihKmqVtRqN2X7jeY33UOOYl6_Pu-T6uZpICs7d1dFFuP4Wfzhm8_AMg0GCFT2tl3MW0mqRaP3PZK_xu5y0buA
 📊 Found 2 product groups
-   {"count":{"value":2,"type":"Integer"},"avg_price":{"type":"Float","value":474},"category":{"value":"Furniture","type":"String"}}
-   {"category":{"value":"Electronics","type":"String"},"count":{"type":"Integer","value":3},"avg_price":{"type":"Float","value":575.6666666666666}}
+   {"count":{"value":3,"type":"Integer"},"category":{"type":"String","value":"Electronics"},"avg_price":{"value":575.6666666666666,"type":"Float"}}
+   {"category":{"type":"String","value":"Furniture"},"count":{"value":2,"type":"Integer"},"avg_price":{"type":"Float","value":474}}
 ⏱️  Execution time: 0ms
 
 📝 Example 2: Simple Product Listing
@@ -1043,8 +884,8 @@ perl: warning: Falling back to the standard locale ("C").
 
 ✅ Function saved
 📊 Found 2 categories
-   {"category":{"type":"String","value":"Electronics"},"count":{"value":3,"type":"Integer"}}
-   {"count":{"value":2,"type":"Integer"},"category":{"type":"String","value":"Furniture"}}
+   {"category":{"value":"Electronics","type":"String"},"count":{"type":"Integer","value":3}}
+   {"count":{"type":"Integer","value":2},"category":{"type":"String","value":"Furniture"}}
 ⏱️  Execution time: 0ms
 
 📝 Example 4: High Rating Products
@@ -1076,13 +917,6 @@ perl: warning: Falling back to the standard locale ("C").
    ✅ Multi-stage pipelines (FindAll → Group → Count)
    ✅ Parameter definitions
    ✅ Function management (save, call, delete)
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 🚀 ekoDB TypeScript CRUD Functions Example
 
 📋 Setting up test data...
@@ -1098,29 +932,22 @@ perl: warning: Falling back to the standard locale ("C").
 
 ✅ Function saved
 📊 User counts by status:
-   inactive: 3 users
    active: 7 users
+   inactive: 3 users
 ⏱️  Execution time: 0ms
 
 📝 Example 3: Average Score by Role
 
 ✅ Function saved
 📊 Average score by role:
-   {"role":{"value":"user","type":"String"},"avg_score":{"type":"Float","value":70},"count":{"type":"Integer","value":7}}
-   {"role":{"type":"String","value":"admin"},"avg_score":{"type":"Float","value":20},"count":{"value":3,"type":"Integer"}}
+   {"count":{"value":7,"type":"Integer"},"role":{"value":"user","type":"String"},"avg_score":{"type":"Float","value":70}}
+   {"count":{"type":"Integer","value":3},"avg_score":{"value":20,"type":"Float"},"role":{"type":"String","value":"admin"}}
 ⏱️  Execution time: 0ms
 
 🧹 Cleaning up...
 ✅ Cleanup complete
 
 ✅ All CRUD script examples finished!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 🚀 ekoDB TypeScript KV Store & Wrapped Types Example
 
 📋 Demonstrates:
@@ -1131,26 +958,26 @@ perl: warning: Falling back to the standard locale ("C").
 
 📝 Example 1: Inserting Records with Wrapped Types
 
-✅ Inserted order: exVQGRG-8-zXXe6a52fvSaHbhaO7VAZenRXq5ACimpJu41UIna8aZmVJaKpepd4SxeN5oFIfkkCZ068WxQHnFQ
+✅ Inserted order: GmPSy5NyqSkMXjS0Thga5IsnReQIMZfj9_aBRRMGemE2VxNwM0WfSoG92XCBjU4GIhqKQsg7DIYW8SwgTtnCxA
 ✅ Inserted 2 products with wrapped types
 
 📝 Example 2: UserFunction with Wrapped Type Parameters
 
-✅ Function saved: EGAING45NQKEEwYEo5BIXkQnOXTwSSeQfCgXUZC1iGZBLc7u8j_TK02QKw3tOQte1vLQWxjdDwWN2nqM9IfYPw
+✅ Function saved: oY1R8jcpjTO19vt_gopCkdOnejYZSKEAPXRtQAQWa7x5JSwNy0F3c_b4dtZ5J_LNELUnmdfGYU03X6dgAV_RfQ
 📊 Created order via script
 ⏱️  Execution time: 0ms
 
 📝 Example 3: Basic KV Store Operations
 
 ✅ Set session data
-📊 Retrieved session: {"type":"Object","value":{"userId":"user_abc","role":"admin"}}
+📊 Retrieved session: {"value":{"userId":"user_abc","role":"admin"},"type":"Object"}
 🔍 Key exists: true
 ✅ Set cached data with 1 hour TTL
 🗑️  Deleted session
 
 📝 Example 4: KV Operations in Functions
 
-✅ Function saved: lRn6fi1YNrGPPuCHPSqOZq64QRIrkddPbb3o-SPgxltesmtAcom9QbO0JV0ls6hZBu8n_NEWusKQoNsCla3wvA
+✅ Function saved: fwc-RuU06ehUMrOpCmxsqztB9EqKqvtk3QBP-CjMtBIVkIYqbjwPyjwD9c9JSPloEtaIIkoHJUXnjStSSdgPdw
 📊 Cached and retrieved product data
 ⏱️  Execution time: 0ms
 
@@ -1162,7 +989,7 @@ perl: warning: Falling back to the standard locale ("C").
 
 📝 Example 6: Combined Wrapped Types + KV Function
 
-✅ Function saved: QeS0eqNfn39ejnbElSf7w3yWhBfoGmSqFamvfieKk3Dz4Yy3N2AceF9ytSKdTCUKPbRWAdvO8J38KSx4JGc-KA
+✅ Function saved: 3bLLmFbdSiqdGipgtGvhUIWxYPKlszZSys7-Y7eUZSQmPigDOd_d_Jo9-WJwoaK-r9vCLmTMRziAXmgk2tDHqw
 📊 Processed order with caching
 ⏱️  Stages executed: 3
 ⏱️  Execution time: 0ms
@@ -1178,13 +1005,6 @@ perl: warning: Falling back to the standard locale ("C").
    ✅ KV store is great for caching and quick lookups
    ✅ Stage.kv*() functions work within scripts
    ✅ Combine KV caching with collection inserts for real workflows
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 🚀 ekoDB TypeScript Search Functions Example
 
 📋 Setting up test data...
@@ -1195,35 +1015,28 @@ perl: warning: Falling back to the standard locale ("C").
 ✅ Function saved
 📊 Found 5 documents
    1. Getting Started with ekoDB (Database)
-   2. Database Design Principles (Database)
-   3. Natural Language Processing (AI)
-   4. Introduction to Machine Learning (AI)
-   5. Vector Databases Explained (Database)
+   2. Vector Databases Explained (Database)
+   3. Introduction to Machine Learning (AI)
+   4. Natural Language Processing (AI)
+   5. Database Design Principles (Database)
 ⏱️  Execution time: 0ms
 
 📝 Example 2: Count Documents by Category
 
 ✅ Function saved
 📊 Documents by category:
-   {"category":{"type":"String","value":"Database"},"count":{"type":"Integer","value":3}}
-   {"category":{"type":"String","value":"AI"},"count":{"value":2,"type":"Integer"}}
+   {"category":{"value":"AI","type":"String"},"count":{"type":"Integer","value":2}}
+   {"category":{"type":"String","value":"Database"},"count":{"value":3,"type":"Integer"}}
 ⏱️  Execution time: 0ms
 
 🧹 Cleaning up...
 ✅ Cleanup complete
 
 ✅ All search script examples finished!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB Goal Template CRUD Example (TypeScript) ===
 
 --- Creating goal template ---
-Created template: Data Migration (id: ytkpWUsrmbJzWVFcnphz1UySkvVRWC0LN1mdL_L9cyz_uSEu11CEQ4LY7QWlFCLHRK7g-CpdGV1FND476BbEew)
+Created template: Data Migration (id: MCB2oHFWRBO5pKhcZHb723rnobhDBgJDhiwlPXCVpq9-1C02XdIJJzOmTnvViLfT9YjLBlAZi04sdN3Avy3MNA)
 
 --- Listing templates ---
 Templates: {
@@ -1231,7 +1044,7 @@ Templates: {
   items: [
     {
       description: [Object],
-      id: 'ytkpWUsrmbJzWVFcnphz1UySkvVRWC0LN1mdL_L9cyz_uSEu11CEQ4LY7QWlFCLHRK7g-CpdGV1FND476BbEew',
+      id: 'MCB2oHFWRBO5pKhcZHb723rnobhDBgJDhiwlPXCVpq9-1C02XdIJJzOmTnvViLfT9YjLBlAZi04sdN3Avy3MNA',
       steps: [Object],
       title: [Object]
     }
@@ -1248,30 +1061,23 @@ Updated description: Updated: comprehensive data migration workflow
 Template deleted successfully
 
 ✓ Goal template CRUD example completed
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB Goals, Tasks & Agents Example (TypeScript) ===
 
 --- Creating goal ---
-Created goal: Deploy v2.0 (id: HN6d44HfdlxMEb7ZGLowl8DWb0ZQj6tPasBZfODcazMi790fFRi6gp3HwpUQhPTJ-KC_zy22a3yEIsuM2tsFbA)
+Created goal: Deploy v2.0 (id: 7L3h1mT9ecVvIf_eDJR4-KVf39jQrC6Dx1CZBuaz0swOJtxXYo0MOYpukgrLzeiGLoHER48hrg75c0QmeFkWsA)
 
 --- Listing goals ---
 Goals: {
   "count": 1,
   "goals": [
     {
-      "created_at": "2026-09-16T13:57:03.725190+00:00",
+      "created_at": "2026-09-16T20:46:28.990550+00:00",
       "description": "Ship version 2.0 to production",
-      "id": "HN6d44HfdlxMEb7ZGLowl8DWb0ZQj6tPasBZfODcazMi790fFRi6gp3HwpUQhPTJ-KC_zy22a3yEIsuM2tsFbA",
+      "id": "7L3h1mT9ecVvIf_eDJR4-KVf39jQrC6Dx1CZBuaz0swOJtxXYo0MOYpukgrLzeiGLoHER48hrg75c0QmeFkWsA",
       "status": "pending",
       "steps": "[{\"description\":\"Run test suite\"},{\"description\":\"Build release artifacts\"},{\"description\":\"Deploy to staging\"},{\"description\":\"Deploy to production\"}]",
       "title": "Deploy v2.0",
-      "updated_at": "2026-09-16T13:57:03.725190+00:00"
+      "updated_at": "2026-09-16T20:46:28.990550+00:00"
     }
   ]
 }
@@ -1290,13 +1096,13 @@ Search results: {
       "_score": 12.870000000000001,
       "created_at": {
         "type": "DateTime",
-        "value": "2026-09-16T13:57:03.725190+00:00"
+        "value": "2026-09-16T20:46:28.990550+00:00"
       },
       "description": {
         "type": "String",
         "value": "Ship version 2.0 with hot-fix patches"
       },
-      "id": "HN6d44HfdlxMEb7ZGLowl8DWb0ZQj6tPasBZfODcazMi790fFRi6gp3HwpUQhPTJ-KC_zy22a3yEIsuM2tsFbA",
+      "id": "7L3h1mT9ecVvIf_eDJR4-KVf39jQrC6Dx1CZBuaz0swOJtxXYo0MOYpukgrLzeiGLoHER48hrg75c0QmeFkWsA",
       "status": {
         "type": "String",
         "value": "pending"
@@ -1311,18 +1117,18 @@ Search results: {
       },
       "updated_at": {
         "type": "DateTime",
-        "value": "2026-09-16T13:57:03.746062+00:00"
+        "value": "2026-09-16T20:46:29.001495+00:00"
       }
     }
   ]
 }
 
 --- Goal step: start step 0 ---
-Step 0 started on goal HN6d44HfdlxMEb7ZGLowl8DWb0ZQj6tPasBZfODcazMi790fFRi6gp3HwpUQhPTJ-KC_zy22a3yEIsuM2tsFbA
+Step 0 started on goal 7L3h1mT9ecVvIf_eDJR4-KVf39jQrC6Dx1CZBuaz0swOJtxXYo0MOYpukgrLzeiGLoHER48hrg75c0QmeFkWsA
 --- Goal step: complete step 0 ---
-Step 0 completed on goal HN6d44HfdlxMEb7ZGLowl8DWb0ZQj6tPasBZfODcazMi790fFRi6gp3HwpUQhPTJ-KC_zy22a3yEIsuM2tsFbA
+Step 0 completed on goal 7L3h1mT9ecVvIf_eDJR4-KVf39jQrC6Dx1CZBuaz0swOJtxXYo0MOYpukgrLzeiGLoHER48hrg75c0QmeFkWsA
 --- Goal step: fail step 1 ---
-Step 1 failed on goal HN6d44HfdlxMEb7ZGLowl8DWb0ZQj6tPasBZfODcazMi790fFRi6gp3HwpUQhPTJ-KC_zy22a3yEIsuM2tsFbA
+Step 1 failed on goal 7L3h1mT9ecVvIf_eDJR4-KVf39jQrC6Dx1CZBuaz0swOJtxXYo0MOYpukgrLzeiGLoHER48hrg75c0QmeFkWsA
 
 --- Completing goal ---
 Goal status: pending_review
@@ -1335,7 +1141,7 @@ Goal status after reject: failed
 
 
 --- Creating task ---
-Created task: Hourly Health Check (id: JCkZP3yeHoq8JtDgfwGNUuryq-5Dzz85SpwkciXEpJotYx5-VikImfIlH59_1N_OKiD_RPZiMNk_QgAiD6toqQ)
+Created task: Hourly Health Check (id: CedjLvDx8PbBzQzeCrbe_PBfKbDpscDCFgLA6m-g4yjs1DYwlsD8uRLbZ9WEfcmsV6nQoTvxTnlbpiB6kLee7g)
 
 --- Listing tasks ---
 Tasks: {
@@ -1356,7 +1162,7 @@ Tasks: {
         "type": "String",
         "value": "0 * * * *"
       },
-      "id": "JCkZP3yeHoq8JtDgfwGNUuryq-5Dzz85SpwkciXEpJotYx5-VikImfIlH59_1N_OKiD_RPZiMNk_QgAiD6toqQ",
+      "id": "CedjLvDx8PbBzQzeCrbe_PBfKbDpscDCFgLA6m-g4yjs1DYwlsD8uRLbZ9WEfcmsV6nQoTvxTnlbpiB6kLee7g",
       "name": {
         "type": "String",
         "value": "Hourly Health Check"
@@ -1394,7 +1200,7 @@ Task deleted successfully
 
 
 --- Creating agent ---
-Created agent: SupportBot (id: 9n0Tg_h7UolilyOfJSMYsi13sf89X3l9NuZu7YX6E9mHUQEFBIfQOKXznUeCpNG3gGST8W3dmze5NZx69fWARg)
+Created agent: SupportBot (id: NE_HAsIqkS4ZID1xOnX3rKHosUA1Y3v8eNnNQemqPM7K1wqQS7pxqwhnS_PzegT44yl8M-BVvV8WjPGxmtPduw)
 
 --- Listing agents ---
 Agents: {
@@ -1405,7 +1211,7 @@ Agents: {
         "type": "String",
         "value": "deploy_prod_1"
       },
-      "id": "9n0Tg_h7UolilyOfJSMYsi13sf89X3l9NuZu7YX6E9mHUQEFBIfQOKXznUeCpNG3gGST8W3dmze5NZx69fWARg",
+      "id": "NE_HAsIqkS4ZID1xOnX3rKHosUA1Y3v8eNnNQemqPM7K1wqQS7pxqwhnS_PzegT44yl8M-BVvV8WjPGxmtPduw",
       "llm_model": {
         "type": "String",
         "value": "gpt-4"
@@ -1426,7 +1232,7 @@ Agents: {
 Fetched: SupportBot
 
 --- Getting agent by name ---
-By name: SupportBot (id: 9n0Tg_h7UolilyOfJSMYsi13sf89X3l9NuZu7YX6E9mHUQEFBIfQOKXznUeCpNG3gGST8W3dmze5NZx69fWARg)
+By name: SupportBot (id: NE_HAsIqkS4ZID1xOnX3rKHosUA1Y3v8eNnNQemqPM7K1wqQS7pxqwhnS_PzegT44yl8M-BVvV8WjPGxmtPduw)
 
 --- Updating agent ---
 Updated agent: SupportBot
@@ -1436,7 +1242,7 @@ Agents in deployment: {
   "count": 0,
   "items": []
 }
-WARNING: agents-by-deployment omitted created agent 9n0Tg_h7UolilyOfJSMYsi13sf89X3l9NuZu7YX6E9mHUQEFBIfQOKXznUeCpNG3gGST8W3dmze5NZx69fWARg; TODO: check/fix the server-side deployment lookup
+WARNING: agents-by-deployment omitted created agent NE_HAsIqkS4ZID1xOnX3rKHosUA1Y3v8eNnNQemqPM7K1wqQS7pxqwhnS_PzegT44yl8M-BVvV8WjPGxmtPduw; TODO: check/fix the server-side deployment lookup
 
 --- Deleting agent ---
 Agent deleted successfully
@@ -1445,13 +1251,6 @@ Agent deleted successfully
 Goals deleted successfully
 
 === All goals, tasks & agents operations completed ===
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === Join Operations Examples ===
 
 Setting up sample data...
@@ -1459,8 +1258,8 @@ Setting up sample data...
 
 1. Single collection join (users with departments):
 Found 2 users with department data:
-  - Alice Johnson: Engineering
   - Bob Smith: Sales
+  - Alice Johnson: Engineering
 
 2. Join with filtering:
 Found 1 users in Engineering:
@@ -1468,8 +1267,8 @@ Found 1 users in Engineering:
 
 3. Join with user profiles:
 Found 2 users with profile data:
-  - Alice Johnson: Senior Software Engineer
   - Bob Smith: Sales Manager
+  - Alice Johnson: Senior Software Engineer
 
 4. Join orders with user data:
 Found 2 completed orders:
@@ -1485,13 +1284,6 @@ Found 2 users with example.com emails:
 ✅ Join operations examples completed!
 === Cleanup ===
 ✅ Deleted test collections
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 ✓ ts_users_register saved
 ✓ ts_users_login saved
@@ -1499,62 +1291,55 @@ perl: warning: Falling back to the standard locale ("C").
 
 === Auth flow defined as pure stored functions ===
 Call them like:
-  POST /api/functions/jwt_register_ts_44229_1789567025055 { "email": "a@b.com", "password": "s3cret" }
-  POST /api/functions/jwt_login_ts_44229_1789567025055 { "email": "a@b.com", "password": "s3cret" }
-  POST /api/functions/jwt_verify_ts_44229_1789567025055 { "token": "<jwt>" }
+  POST /api/functions/jwt_register_ts_68440_1789591590076 { "email": "a@b.com", "password": "s3cret" }
+  POST /api/functions/jwt_login_ts_68440_1789591590076 { "email": "a@b.com", "password": "s3cret" }
+  POST /api/functions/jwt_verify_ts_68440_1789591590076 { "token": "<jwt>" }
 
 Set JWT_SECRET in ekoDB's environment_vars whitelist before invoking.
 
 ✓ Cleaned up demo functions
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB KV Document Linking Example (TypeScript) ===
 
 --- Setup: creating KV key and documents ---
 Set KV key: session:admin
-Inserted document 1: yd6IIWRlX2kl3zX5pPTLxLvb3cYnQarkqZre4qsJ0_H8qXKACr76AnSvSwNlsroQ5bxui6tCg0aMENKH4U-n9A
-Inserted document 2: 57ciVJwpuOb_vhrWYNBdxcWkdUQIyce2Qmwm-z-rR-SjH8pfalkpgIDmMh3VYKzihGGoqFkkOtStDUX01LwhBA
+Inserted document 1: 39KI33T5Crwilgsy_XPOuPqUzZGCcjmK5GUMwlmEd-toDjZbZym9rk3y7KCIBu-i-ctmdinAQJZWn_7w9bHU-A
+Inserted document 2: 24eEE4gU81mj0ddsoULx6RR86R3CqCWXx6q5ks-NgqV-UcvBAStdPqoLoIKmtj6SfBZmYRTGehb0Sh6UUQGsWA
 
 --- Linking documents to KV key ---
-Linked doc yd6IIWRlX2kl3zX5pPTLxLvb3cYnQarkqZre4qsJ0_H8qXKACr76AnSvSwNlsroQ5bxui6tCg0aMENKH4U-n9A: null
-Linked doc 57ciVJwpuOb_vhrWYNBdxcWkdUQIyce2Qmwm-z-rR-SjH8pfalkpgIDmMh3VYKzihGGoqFkkOtStDUX01LwhBA: null
+Linked doc 39KI33T5Crwilgsy_XPOuPqUzZGCcjmK5GUMwlmEd-toDjZbZym9rk3y7KCIBu-i-ctmdinAQJZWn_7w9bHU-A: null
+Linked doc 24eEE4gU81mj0ddsoULx6RR86R3CqCWXx6q5ks-NgqV-UcvBAStdPqoLoIKmtj6SfBZmYRTGehb0Sh6UUQGsWA: null
 
 --- Getting links for KV key ---
 Links: [
   {
-    "collection": "kv_links_example_ts_44269_1789567025406",
-    "document_id": "57ciVJwpuOb_vhrWYNBdxcWkdUQIyce2Qmwm-z-rR-SjH8pfalkpgIDmMh3VYKzihGGoqFkkOtStDUX01LwhBA",
+    "collection": "kv_links_example_ts_68475_1789591590426",
+    "document_id": "39KI33T5Crwilgsy_XPOuPqUzZGCcjmK5GUMwlmEd-toDjZbZym9rk3y7KCIBu-i-ctmdinAQJZWn_7w9bHU-A",
     "field_path": null,
-    "created_at": "2026-09-16T13:57:05.497356Z",
-    "last_accessed": "2026-09-16T13:57:05.499629Z",
+    "created_at": "2026-09-16T20:46:30.521535Z",
+    "last_accessed": "2026-09-16T20:46:30.523812Z",
     "metadata": {}
   },
   {
-    "collection": "kv_links_example_ts_44269_1789567025406",
-    "document_id": "yd6IIWRlX2kl3zX5pPTLxLvb3cYnQarkqZre4qsJ0_H8qXKACr76AnSvSwNlsroQ5bxui6tCg0aMENKH4U-n9A",
+    "collection": "kv_links_example_ts_68475_1789591590426",
+    "document_id": "24eEE4gU81mj0ddsoULx6RR86R3CqCWXx6q5ks-NgqV-UcvBAStdPqoLoIKmtj6SfBZmYRTGehb0Sh6UUQGsWA",
     "field_path": null,
-    "created_at": "2026-09-16T13:57:05.494021Z",
-    "last_accessed": "2026-09-16T13:57:05.499629Z",
+    "created_at": "2026-09-16T20:46:30.522765Z",
+    "last_accessed": "2026-09-16T20:46:30.523812Z",
     "metadata": {}
   }
 ]
 
 --- Unlinking document ---
-Unlinked doc 57ciVJwpuOb_vhrWYNBdxcWkdUQIyce2Qmwm-z-rR-SjH8pfalkpgIDmMh3VYKzihGGoqFkkOtStDUX01LwhBA: null
+Unlinked doc 24eEE4gU81mj0ddsoULx6RR86R3CqCWXx6q5ks-NgqV-UcvBAStdPqoLoIKmtj6SfBZmYRTGehb0Sh6UUQGsWA: null
 
 --- Verifying remaining links ---
 Remaining links: [
   {
-    "collection": "kv_links_example_ts_44269_1789567025406",
-    "document_id": "yd6IIWRlX2kl3zX5pPTLxLvb3cYnQarkqZre4qsJ0_H8qXKACr76AnSvSwNlsroQ5bxui6tCg0aMENKH4U-n9A",
+    "collection": "kv_links_example_ts_68475_1789591590426",
+    "document_id": "39KI33T5Crwilgsy_XPOuPqUzZGCcjmK5GUMwlmEd-toDjZbZym9rk3y7KCIBu-i-ctmdinAQJZWn_7w9bHU-A",
     "field_path": null,
-    "created_at": "2026-09-16T13:57:05.494021Z",
-    "last_accessed": "2026-09-16T13:57:05.502709Z",
+    "created_at": "2026-09-16T20:46:30.521535Z",
+    "last_accessed": "2026-09-16T20:46:30.525977Z",
     "metadata": {}
   }
 ]
@@ -1563,32 +1348,25 @@ Remaining links: [
 
 --- Cleanup ---
 Cleanup complete
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
 === KV Set ===
 ✓ Set key: session:user123
 
 === KV Get ===
-Retrieved value: { type: 'Object', value: { username: 'john_doe', userId: 123 } }
+Retrieved value: { type: 'Object', value: { userId: 123, username: 'john_doe' } }
 
 === KV Batch Set ===
 ✓ Batch set 3 keys
-  kv_ops_ts_44298_1789567025865:cache:product:1: success
-  kv_ops_ts_44298_1789567025865:cache:product:2: success
-  kv_ops_ts_44298_1789567025865:cache:product:3: success
+  kv_ops_ts_68505_1789591590884:cache:product:1: success
+  kv_ops_ts_68505_1789591590884:cache:product:2: success
+  kv_ops_ts_68505_1789591590884:cache:product:3: success
 
 === KV Batch Get ===
 ✓ Batch retrieved 3 values
-  kv_ops_ts_44298_1789567025865:cache:product:1: { name: 'Product 1', price: 29.99 }
-  kv_ops_ts_44298_1789567025865:cache:product:2: { price: 39.99, name: 'Product 2' }
-  kv_ops_ts_44298_1789567025865:cache:product:3: { name: 'Product 3', price: 49.99 }
+  kv_ops_ts_68505_1789591590884:cache:product:1: { name: 'Product 1', price: 29.99 }
+  kv_ops_ts_68505_1789591590884:cache:product:2: { name: 'Product 2', price: 39.99 }
+  kv_ops_ts_68505_1789591590884:cache:product:3: { price: 49.99, name: 'Product 3' }
 
 === KV Exists ===
 Key exists: true
@@ -1605,18 +1383,11 @@ Total keys in store: 4
 
 === KV Batch Delete ===
 ✓ Batch deleted 3 keys
-  kv_ops_ts_44298_1789567025865:cache:product:1: deleted
-  kv_ops_ts_44298_1789567025865:cache:product:2: deleted
-  kv_ops_ts_44298_1789567025865:cache:product:3: deleted
+  kv_ops_ts_68505_1789591590884:cache:product:1: deleted
+  kv_ops_ts_68505_1789591590884:cache:product:2: deleted
+  kv_ops_ts_68505_1789591590884:cache:product:3: deleted
 
 ✓ All KV operations completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === KV Precision: Float vs Decimal ===
 
 === Test 1: Using JavaScript Floats (LOSES PRECISION) ===
@@ -1653,13 +1424,6 @@ Retrieved decimal prices:
 
 === Cleanup ===
 ✓ Cleaned up test keys
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 ✓ ts_route_admin → GET /api/route/users/admin
 ✓ ts_route_user_by_id → GET /api/route/users/:id
@@ -1674,13 +1438,6 @@ Try them with curl:
        -H 'Content-Type: application/json' -d '{"name":"alice"}'
 
 ✓ Cleaned up demo functions
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === Query Builder Examples ===
 
 Setting up test data...
@@ -1714,13 +1471,6 @@ Found 2 users (bypassed cache)
 ✅ Deleted test collection
 
 ✅ Query Builder examples completed!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB Raw Completion Stream (SSE) Example ===
 
 --- Basic SSE Raw Completion ---
@@ -1737,38 +1487,31 @@ JSON response: [
     "diameter_km": 12104
   },
   {
-    "name": "Jupiter",
-    "diameter_km": 139820
+    "name": "Earth",
+    "diameter_km": 12742
   }
 ]
 
 --- Blocking HTTP (for comparison) ---
-Blocking response: Hello! I hope you're having a wonderful day.
+Blocking response: Hello! I hope you’re having a wonderful day.
 
 === Done ===
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB Schedule Management Example (TypeScript) ===
 
 --- Creating schedule ---
-Created schedule: Nightly Database Backup (id: b4c3c035-310d-4b3e-9a23-0deec07b44b1, cron: 0 0 2 * * *)
+Created schedule: Nightly Database Backup (id: 093b4f3d-7f60-4f0a-bf48-e017478b8056, cron: 0 0 2 * * *)
 
 --- Listing schedules ---
 Schedules: {
   "count": 1,
   "schedules": [
     {
-      "created_at": "2026-09-16T13:57:10.081119Z",
+      "created_at": "2026-09-16T20:46:35.315401Z",
       "cron_expression": "0 0 2 * * *",
       "description": null,
       "enabled": true,
-      "function_label": "schedule_noop_typescript_44451_1789567030044",
-      "id": "b4c3c035-310d-4b3e-9a23-0deec07b44b1",
+      "function_label": "schedule_noop_typescript_68668_1789591595284",
+      "id": "093b4f3d-7f60-4f0a-bf48-e017478b8056",
       "last_execution": null,
       "name": "Nightly Database Backup",
       "next_execution": "2026-09-17T02:00:00Z",
@@ -1781,7 +1524,7 @@ Schedules: {
         "total_executions": 0
       },
       "timezone": "UTC",
-      "updated_at": "2026-09-16T13:57:10.081119Z"
+      "updated_at": "2026-09-16T20:46:35.315401Z"
     }
   ]
 }
@@ -1794,7 +1537,7 @@ Updated: Nightly Full Backup (new cron: 0 0 3 * * *)
 
 --- Triggering schedule ---
 Trigger response: {
-  "schedule_id": "b4c3c035-310d-4b3e-9a23-0deec07b44b1",
+  "schedule_id": "093b4f3d-7f60-4f0a-bf48-e017478b8056",
   "status": "triggered"
 }
 
@@ -1808,13 +1551,6 @@ Schedule enabled after resume: true
 Schedule deleted successfully
 
 === All schedule operations completed ===
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === Schema Management Examples ===
 
 1. Creating user schema with basic fields:
@@ -1837,13 +1573,6 @@ Collection has 4 fields
 ✅ Employee schema with all constraints created
 
 ✅ Schema management examples completed!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === Search Examples ===
 
 Setting up test data...
@@ -1851,22 +1580,22 @@ Setting up test data...
 
 1. Basic full-text search:
 Found 2 results
-  1. Score: 12.870, Matched: email, name
+  1. Score: 12.870, Matched: name, email
   2. Score: 6.270, Matched: name
 
 2. Fuzzy search (typo tolerance):
 Found 4 results with fuzzy matching
   1. Score: 13.200, Matched: bio, title
   2. Score: 13.200, Matched: title, bio
-  3. Score: 13.200, Matched: title, bio
-  4. Score: 13.200, Matched: title, bio
+  3. Score: 13.200, Matched: bio, title
+  4. Score: 13.200, Matched: bio, title
 
 3. Search with field weights:
 Found 4 results with weighted fields
-  1. Score: 26.400, Matched: title, bio
+  1. Score: 26.400, Matched: bio, title
   2. Score: 26.400, Matched: bio, title
-  3. Score: 26.400, Matched: title, bio
-  4. Score: 26.400, Matched: title, bio
+  3. Score: 26.400, Matched: bio, title
+  4. Score: 26.400, Matched: bio, title
 
 4. Search with minimum score threshold:
 Found 2 results with score >= 0.3
@@ -1880,56 +1609,49 @@ Found 1 results (matches: work, working, worked)
 6. Vector search (semantic search):
 Found 3 semantically similar documents
   1. Score: 0.773, Matched:
-  2. Score: 0.743, Matched:
-  3. Score: 0.730, Matched:
+  2. Score: 0.731, Matched:
+  3. Score: 0.720, Matched:
 
 7. Hybrid search (text + vector):
 Found 3 results using hybrid search (text + vector)
-  1. Score: 1.509, Matched: title, content
-  2. Score: 0.897, Matched: content, title
-  3. Score: 0.292, Matched:
+  1. Score: 1.488, Matched: title, content
+  2. Score: 0.893, Matched: title, content
+  3. Score: 0.309, Matched:
 
 8. Case-sensitive search:
 Found 1 results (case-sensitive)
-  1. Score: 13.200, Matched: bio, skills
+  1. Score: 13.200, Matched: skills, bio
 
 9. Vector search with a metadata pre-filter (category = ml):
 Found 2 documents in category "ml" (NLP excluded)
-  1. Introduction to Machine Learning (category: ml)
-  2. Deep Learning Fundamentals (category: ml)
+  1. Deep Learning Fundamentals (category: ml)
+  2. Introduction to Machine Learning (category: ml)
 
 
 ✅ Search examples completed!
 === Cleanup ===
 ✅ Deleted test collections
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created (token exchange happens automatically)
 
 === Insert Document ===
 Inserted: {
-  id: '6uPvvKVzFjh_rV8M4z8nSfJujtBcV0jkKBuku-mrViwy3E_ix8siVZ_ySTLX9kg6rLJCGkMwgpta-ZcBalDSig'
+  id: 'hyFbi-v9QQDMg8NPP5Hhlqzn74H6GFJ6gwy5PWhIPHmxyTt5VWdJVPqOkbomNsOSM1vJdOu1IEHdsw3c-Iu5jA'
 }
 
 === Find by ID ===
 Found: {
-  user_id: { type: 'String', value: '550e8400-e29b-41d4-a716-446655440000' },
-  name: { type: 'String', value: 'Test Record' },
-  price: { value: 99.99, type: 'Float' },
-  metadata: { type: 'Object', value: { key: 'value', nested: [Object] } },
-  active: { type: 'Boolean', value: true },
-  value: { type: 'Integer', value: 42 },
-  created_at: { value: '2026-09-16T13:57:11.521+00:00', type: 'DateTime' },
-  tags: { type: 'Array', value: [ 'tag1', 'tag2', 'tag3' ] },
-  embedding: { type: 'Array', value: [ 0.1, 0.2, 0.3, 0.4, 0.5 ] },
-  categories: { value: [ 'electronics', 'computers' ], type: 'Array' },
   data: { type: 'String', value: 'aGVsbG8gd29ybGQ=' },
-  id: '6uPvvKVzFjh_rV8M4z8nSfJujtBcV0jkKBuku-mrViwy3E_ix8siVZ_ySTLX9kg6rLJCGkMwgpta-ZcBalDSig'
+  name: { type: 'String', value: 'Test Record' },
+  categories: { value: [ 'electronics', 'computers' ], type: 'Array' },
+  created_at: { type: 'DateTime', value: '2026-09-16T20:46:36.660+00:00' },
+  value: { value: 42, type: 'Integer' },
+  id: 'hyFbi-v9QQDMg8NPP5Hhlqzn74H6GFJ6gwy5PWhIPHmxyTt5VWdJVPqOkbomNsOSM1vJdOu1IEHdsw3c-Iu5jA',
+  embedding: { type: 'Array', value: [ 0.1, 0.2, 0.3, 0.4, 0.5 ] },
+  tags: { value: [ 'tag1', 'tag2', 'tag3' ], type: 'Array' },
+  price: { type: 'Float', value: 99.99 },
+  metadata: { value: { nested: [Object], key: 'value' }, type: 'Object' },
+  user_id: { type: 'String', value: '550e8400-e29b-41d4-a716-446655440000' },
+  active: { type: 'Boolean', value: true }
 }
 
 === Extract Field Values (All Types) ===
@@ -1938,26 +1660,26 @@ Extracted values:
   value (Integer): 42
   active (Boolean): true
   price (Decimal): 99.99
-  created_at (DateTime): 2026-09-16T13:57:11.521Z
+  created_at (DateTime): 2026-09-16T20:46:36.660Z
   user_id (UUID): 550e8400-e29b-41d4-a716-446655440000
   tags (Array): [ 'tag1', 'tag2', 'tag3' ]
-  metadata (Object): { key: 'value', nested: { deep: true } }
+  metadata (Object): { nested: { deep: true }, key: 'value' }
   embedding (Vector): [ 0.1, 0.2, 0.3, 0.4, 0.5 ]
   categories (Set): [ 'electronics', 'computers' ]
   data (Bytes): 11 bytes
 Plain record: {
-  user_id: '550e8400-e29b-41d4-a716-446655440000',
-  name: 'Test Record',
-  price: 99.99,
-  metadata: { key: 'value', nested: { deep: true } },
-  active: true,
-  value: 42,
-  created_at: '2026-09-16T13:57:11.521+00:00',
-  tags: [ 'tag1', 'tag2', 'tag3' ],
-  embedding: [ 0.1, 0.2, 0.3, 0.4, 0.5 ],
-  categories: [ 'electronics', 'computers' ],
   data: 'aGVsbG8gd29ybGQ=',
-  id: '6uPvvKVzFjh_rV8M4z8nSfJujtBcV0jkKBuku-mrViwy3E_ix8siVZ_ySTLX9kg6rLJCGkMwgpta-ZcBalDSig'
+  name: 'Test Record',
+  categories: [ 'electronics', 'computers' ],
+  created_at: '2026-09-16T20:46:36.660+00:00',
+  value: 42,
+  id: 'hyFbi-v9QQDMg8NPP5Hhlqzn74H6GFJ6gwy5PWhIPHmxyTt5VWdJVPqOkbomNsOSM1vJdOu1IEHdsw3c-Iu5jA',
+  embedding: [ 0.1, 0.2, 0.3, 0.4, 0.5 ],
+  tags: [ 'tag1', 'tag2', 'tag3' ],
+  price: 99.99,
+  metadata: { nested: { deep: true }, key: 'value' },
+  user_id: '550e8400-e29b-41d4-a716-446655440000',
+  active: true
 }
 
 === Find with Query ===
@@ -1965,17 +1687,17 @@ Found documents: 1
 
 === Update Document ===
 Updated: {
+  active: { type: 'Boolean', value: true },
+  categories: { value: [ 'electronics', 'computers' ], type: 'Array' },
+  id: 'hyFbi-v9QQDMg8NPP5Hhlqzn74H6GFJ6gwy5PWhIPHmxyTt5VWdJVPqOkbomNsOSM1vJdOu1IEHdsw3c-Iu5jA',
+  price: { type: 'Float', value: 99.99 },
   value: { value: 100, type: 'Integer' },
-  embedding: { type: 'Array', value: [ 0.1, 0.2, 0.3, 0.4, 0.5 ] },
-  id: '6uPvvKVzFjh_rV8M4z8nSfJujtBcV0jkKBuku-mrViwy3E_ix8siVZ_ySTLX9kg6rLJCGkMwgpta-ZcBalDSig',
-  active: { value: true, type: 'Boolean' },
-  metadata: { value: { key: 'value', nested: [Object] }, type: 'Object' },
-  categories: { type: 'Array', value: [ 'electronics', 'computers' ] },
-  data: { type: 'String', value: 'aGVsbG8gd29ybGQ=' },
   name: { value: 'Updated Record', type: 'String' },
   tags: { type: 'Array', value: [ 'tag1', 'tag2', 'tag3' ] },
-  price: { type: 'Float', value: 99.99 },
-  created_at: { type: 'DateTime', value: '2026-09-16T13:57:11.521+00:00' },
+  metadata: { value: { nested: [Object], key: 'value' }, type: 'Object' },
+  created_at: { value: '2026-09-16T20:46:36.660+00:00', type: 'DateTime' },
+  embedding: { type: 'Array', value: [ 0.1, 0.2, 0.3, 0.4, 0.5 ] },
+  data: { type: 'String', value: 'aGVsbG8gd29ybGQ=' },
   user_id: { value: '550e8400-e29b-41d4-a716-446655440000', type: 'String' }
 }
 
@@ -1986,17 +1708,10 @@ Deleted document
 ✓ Deleted collection
 
 ✓ All CRUD operations completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
 === Inserting Test Data ===
-✓ Inserted test record: 1e3c0qoAn3EcbJ0T-vP_sk1akMc5ZCksB5OTpdyBFlKzdRedIyl_ZfZMpS6l2gszuvSzJfZ5m_YqsDuaKcH8kQ
+✓ Inserted test record: YLBLGDcd36AtEOFXkM3Tvun6C20hA_oFFqAa-hHl59PE8qYlU235zCzLks1eCNoSXAai5wqQjGlyel0RZIuGRQ
 
 === Connecting to WebSocket ===
 ✓ WebSocket connected
@@ -2009,13 +1724,6 @@ perl: warning: Falling back to the standard locale ("C").
 ✓ Deleted collection
 
 ✓ WebSocket example completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 🚀 ekoDB TypeScript Client - Native SWR Function Examples
 
 📋 Demonstrates:
@@ -2033,22 +1741,22 @@ perl: warning: Falling back to the standard locale ("C").
 Example 1: Basic Native SWR
 ────────────────────────────────────────────────────────────────────────────────
 Single function replaces KvGet → If → HttpRequest → KvSet pipeline
-✓ Created native SWR script: github_user_native_ts (rF7Co0dMr7y5ZPXvkAWjgd9-5g2ZnbjczF3rXpzckpfojICxG-F6KjX79yVrPZkfisf2j4qzDbghL3aS4dRCVQ)
+✓ Created native SWR script: github_user_native_ts (SfyfnK1wf2Vy4baTcbrWmZsVhnYvpYwz9D9QTnuWWx-HkUaAdOFrl5Ky0lZdLdM78XCJnGWmFMAja57uD8UtMw)
 
 First call (cache miss - will fetch from GitHub API):
-  Response time: 174ms
+  Response time: 482ms
   Records returned: 1
 
 Second call (cache hit - instant from KV store):
-  Response time: 5ms
-  Speedup: 34.8x faster 🚀
+  Response time: 3ms
+  Speedup: 160.7x faster 🚀
   Records returned: 1
 
 
 Example 2: SWR with Built-in Audit Trail
 ────────────────────────────────────────────────────────────────────────────────
 Optional collection parameter for automatic request logging
-✓ Created SWR script with audit trail: product_swr_audit_ts (7vHIO0IpfPdBYxdheHiYgfo6Dchr6KA2F2-oMFVV12MgkXymvbLU1F_DzYg5Ziit8oukluO-nJtqEQGfjBYhjQ)
+✓ Created SWR script with audit trail: product_swr_audit_ts (HhegY1bBBiAxgqW9jTaB2qtmwJGodkDkjSK6rLlQHxgqxCaM-SyTBbTLvUdNT60kQCvvnyD_e7YvvAbYPFTrcQ)
 
 Fetching product (will create audit trail entry):
   ✓ Product fetched and cached
@@ -2059,7 +1767,7 @@ Fetching product (will create audit trail entry):
 Example 3: SWR in Multi-Function Pipeline
 ────────────────────────────────────────────────────────────────────────────────
 Fetch external data → Process → Store in collection
-✓ Created enrichment pipeline: user_enrichment_pipeline_ts (YkpH-3izGy9ESfBr5tcZik5FmMZGcm2S7JyVbEiD6RGWQF2pO1FajLgBtJams63VHl89GspGYomlsDg8MIJ_Vw)
+✓ Created enrichment pipeline: user_enrichment_pipeline_ts (72M6S_phU2tIOPpleluuHFjPe0caosFzFPaDtHUDfAnK_cCBQ--MJe0p6yDu-r4DRg6DTtFOgGxKxYo8NtWUtw)
 
 Running pipeline:
   ✓ Data fetched from API (cached 30m)
@@ -2070,7 +1778,7 @@ Running pipeline:
 Example 4: Dynamic TTL Configuration
 ────────────────────────────────────────────────────────────────────────────────
 TTL as parameter - supports duration strings, integers, ISO timestamps
-✓ Created dynamic TTL script: flexible_cache_ts (ZjZwehFwX-NcY4B5PNNs-1djiXI77f_Hv7hgpgTtZ4jWwno58qv-lBKfGCZxAbMUBYAhUL5UF3YDEASB3RCHEQ)
+✓ Created dynamic TTL script: flexible_cache_ts (aJbRwRO-rd4laSbrHvsRsEYm1MCL8s6wmj9EFJfZ5uWA-UUyTde2zDj_ExbhSGMa04ooyoDRikDKYxm_odiaqg)
   ✓ Cached with TTL: 5m (5 minutes)
   ✓ Cached with TTL: 1h (1 hour)
   ✓ Cached with TTL: 30s (30 seconds)
@@ -2093,17 +1801,10 @@ Result:         60% fewer functions, cleaner code, same behavior 🎯
 ✓ Deleted 4 test scripts and owned SWR resources
 
 ✅ All examples completed!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB SWR (Stale-While-Revalidate) Pattern ===
 
 Step 1: Create SWR function that acts as edge cache
-✓ Created SWR script: fetch_api_user_ts_44654_1789567033797 (C4aA0eLf1hBeFUm0J_ERRpbszRx-G9G_NCan1KV-iQ1aPor2-52ZQECBM4pVvgwKCZbt1PUg8Y4QmiWtmOrgKA)
+✓ Created SWR script: fetch_api_user_ts_68859_1789591599098 (oi1XBJRnnQTprjMZi1w8s9A1yPFzaoLTC46geZXgHaBm7Snm9w4t__4nxUFuxMymNr8QC1I7UE8EVO4hFaABVg)
 
 Step 2: First call - Cache miss, fetches from API
 Result: {
@@ -2112,27 +1813,27 @@ Result: {
       "value": {
         "type": "Object",
         "value": {
+          "email": "Sincere@april.biz",
+          "website": "hildegard.org",
           "company": {
-            "bs": "harness real-time e-markets",
+            "name": "Romaguera-Crona",
             "catchPhrase": "Multi-layered client-server neural-net",
-            "name": "Romaguera-Crona"
+            "bs": "harness real-time e-markets"
           },
           "username": "Bret",
-          "name": "Leanne Graham",
           "phone": "1-770-736-8031 x56442",
-          "website": "hildegard.org",
-          "email": "Sincere@april.biz",
           "id": 1,
           "address": {
-            "suite": "Apt. 556",
+            "city": "Gwenborough",
             "zipcode": "92998-3874",
             "geo": {
-              "lng": "81.1496",
-              "lat": "-37.3159"
+              "lat": "-37.3159",
+              "lng": "81.1496"
             },
-            "city": "Gwenborough",
-            "street": "Kulas Light"
-          }
+            "street": "Kulas Light",
+            "suite": "Apt. 556"
+          },
+          "name": "Leanne Graham"
         }
       }
     }
@@ -2148,35 +1849,35 @@ Result: {
 ✓ Data fetched from external API and cached
 
 Step 3: Second call - Cache hit, instant response from ekoDB
-Response time: 8ms (served from cache)
+Response time: 2ms (served from cache)
 Result (cached): {
   "records": [
     {
       "value": {
-        "type": "Object",
         "value": {
+          "email": "Sincere@april.biz",
+          "website": "hildegard.org",
           "company": {
-            "bs": "harness real-time e-markets",
+            "name": "Romaguera-Crona",
             "catchPhrase": "Multi-layered client-server neural-net",
-            "name": "Romaguera-Crona"
+            "bs": "harness real-time e-markets"
           },
           "username": "Bret",
-          "name": "Leanne Graham",
           "phone": "1-770-736-8031 x56442",
-          "website": "hildegard.org",
-          "email": "Sincere@april.biz",
           "id": 1,
           "address": {
-            "suite": "Apt. 556",
+            "city": "Gwenborough",
             "zipcode": "92998-3874",
             "geo": {
-              "lng": "81.1496",
-              "lat": "-37.3159"
+              "lat": "-37.3159",
+              "lng": "81.1496"
             },
-            "city": "Gwenborough",
-            "street": "Kulas Light"
-          }
-        }
+            "street": "Kulas Light",
+            "suite": "Apt. 556"
+          },
+          "name": "Leanne Graham"
+        },
+        "type": "Object"
       }
     }
   ],
@@ -2193,74 +1894,74 @@ Result (cached): {
 === Advanced: SWR with Data Enrichment ===
 
 Creating product enrichment function...
-✓ Created enrichment script: fetch_product_reviews_ts_44654_1789567033797 (9GM0HCuwR1ivD2uQ9eMyydEJbYUgO_522x5CaIHNLMOMxkGbfFSfOhOXCH9rTRHv2dx5eThSftw4bLdM4EXi-w)
+✓ Created enrichment script: fetch_product_reviews_ts_68859_1789591599098 (1qiuv4ebCd21HKRj9rxOAySdFShIrJoyUAaBzQTlEzYjbryjjoNVZaBz5O6nds-Qa_l8BC6ejE5MCihGRrOcxw)
 
 Step 4: Call enrichment function - Fetches from 2 APIs + stores merged result
 Enriched data: {
   "records": [
     {
       "value": {
-        "type": "Object",
         "value": {
-          "category": "beauty",
-          "stock": 99,
-          "reviews": [
-            {
-              "rating": 3,
-              "comment": "Would not recommend!",
-              "date": "2025-04-30T09:41:02.053Z",
-              "reviewerName": "Eleanor Collins",
-              "reviewerEmail": "eleanor.collins@x.dummyjson.com"
-            },
-            {
-              "reviewerName": "Lucas Gordon",
-              "date": "2025-04-30T09:41:02.053Z",
-              "reviewerEmail": "lucas.gordon@x.dummyjson.com",
-              "comment": "Very satisfied!",
-              "rating": 4
-            },
-            {
-              "reviewerName": "Eleanor Collins",
-              "comment": "Highly impressed!",
-              "date": "2025-04-30T09:41:02.053Z",
-              "reviewerEmail": "eleanor.collins@x.dummyjson.com",
-              "rating": 5
-            }
-          ],
-          "price": 9.99,
-          "sku": "BEA-ESS-ESS-001",
-          "dimensions": {
-            "depth": 22.99,
-            "height": 13.08,
-            "width": 15.14
-          },
-          "shippingInformation": "Ships in 3-5 business days",
-          "id": 1,
-          "thumbnail": "https://cdn.dummyjson.com/product-images/beauty/essence-mascara-lash-princess/thumbnail.webp",
+          "weight": 4,
           "warrantyInformation": "1 week warranty",
-          "minimumOrderQuantity": 48,
-          "brand": "Essence",
-          "availabilityStatus": "In Stock",
-          "description": "The Essence Mascara Lash Princess is a popular mascara known for its volumizing and lengthening effects. Achieve dramatic lashes with this long-lasting and cruelty-free formula.",
-          "discountPercentage": 10.48,
+          "category": "beauty",
           "images": [
             "https://cdn.dummyjson.com/product-images/beauty/essence-mascara-lash-princess/1.webp"
           ],
-          "rating": 2.56,
+          "returnPolicy": "No return policy",
+          "stock": 99,
+          "brand": "Essence",
+          "dimensions": {
+            "width": 15.14,
+            "depth": 22.99,
+            "height": 13.08
+          },
           "meta": {
-            "updatedAt": "2026-05-23T11:27:41.868Z",
-            "createdAt": "2025-10-09T14:47:01.588Z",
             "barcode": "5784719087687",
+            "createdAt": "2025-10-09T14:47:01.588Z",
+            "updatedAt": "2026-05-23T11:27:41.868Z",
             "qrCode": "https://cdn.dummyjson.com/public/qr-code.png"
           },
-          "returnPolicy": "No return policy",
+          "minimumOrderQuantity": 48,
+          "rating": 2.56,
+          "discountPercentage": 10.48,
+          "thumbnail": "https://cdn.dummyjson.com/product-images/beauty/essence-mascara-lash-princess/thumbnail.webp",
+          "shippingInformation": "Ships in 3-5 business days",
+          "availabilityStatus": "In Stock",
+          "title": "Essence Mascara Lash Princess",
+          "description": "The Essence Mascara Lash Princess is a popular mascara known for its volumizing and lengthening effects. Achieve dramatic lashes with this long-lasting and cruelty-free formula.",
           "tags": [
             "beauty",
             "mascara"
           ],
-          "title": "Essence Mascara Lash Princess",
-          "weight": 4
-        }
+          "price": 9.99,
+          "id": 1,
+          "sku": "BEA-ESS-ESS-001",
+          "reviews": [
+            {
+              "date": "2025-04-30T09:41:02.053Z",
+              "comment": "Would not recommend!",
+              "rating": 3,
+              "reviewerEmail": "eleanor.collins@x.dummyjson.com",
+              "reviewerName": "Eleanor Collins"
+            },
+            {
+              "date": "2025-04-30T09:41:02.053Z",
+              "reviewerEmail": "lucas.gordon@x.dummyjson.com",
+              "rating": 4,
+              "reviewerName": "Lucas Gordon",
+              "comment": "Very satisfied!"
+            },
+            {
+              "comment": "Highly impressed!",
+              "reviewerName": "Eleanor Collins",
+              "date": "2025-04-30T09:41:02.053Z",
+              "reviewerEmail": "eleanor.collins@x.dummyjson.com",
+              "rating": 5
+            }
+          ]
+        },
+        "type": "Object"
       }
     }
   ],
@@ -2303,21 +2004,14 @@ Enriched data: {
 
 ✓ Example complete - Your database IS your edge!
 
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
 === Setup: Creating Test Accounts ===
-Created Alice: $1000 - ID: l0t13w8Bc4PT2zMBHo1AFUumOu1sFUwAomyDicvNbxA9FkYFKKEPIfs2US_zth50yad4bHn3c4nXOHLizu59Tg
-Created Bob: $500 - ID: n6a6xjh10AiKr1vibZGSzcaMUG0et7s9t1Vokkylye8zV9JTtpmlw63oYVSnWaiSGFKSydowehMeNvSkNEmQ1A
+Created Alice: $1000 - ID: I2eaEoX_PYiUyPacFGhYmNnB8JeS9Hy4HbH52jAW4jvnMf1C84yBeHftQ2VW36EemT6EUnojk6i8tsO3zo_EXQ
+Created Bob: $500 - ID: hEjGdzSCMTBGAcP1sifrBtNTCaEZ5jQigeUPCgDENoSJV-3hyTJYV6VybjDAbc0f8WigCB1-elG_EJPwsiZxaQ
 
 === Example 1: Begin Transaction ===
-Transaction ID (server-default isolation): 703dded5-cf26-4f0c-bfee-a1a636e21028
+Transaction ID (server-default isolation): 73f926ec-75bf-4b64-b399-d0598476f8eb
 
 === Example 2: Operations within Transaction ===
 Updated Alice: $1000 → $800
@@ -2333,7 +2027,7 @@ Operations: 2
 ✓ Verified committed balances: Alice=$800, Bob=$700
 
 === Example 5: Rollback Demo ===
-New transaction: becf42c6-cde9-4439-bfc3-f07b19ca41d9
+New transaction: b426bb99-2b0f-4e49-84f8-42aa51507cd2
 Updated Bob: $700 → $600 (in transaction)
 Status before rollback: Active
 ✓ Transaction rolled back
@@ -2344,35 +2038,22 @@ Status before rollback: Active
 ✓ Deleted test account collection
 
 ✓ All client transaction examples completed
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
 === Create User Function ===
-Created user function with ID: t5Cs3dhQH9reoGHcdmUSctND3NldctK0NB7ztdKpDkQPiF9CX3FbIKAGQrpyNvP3kL9Z-7oNz6cCf6wgY74Qrg
+Created user function with ID: 667ouiTuRngOR-9_3I7Jct8RC36Ml7YnT_wBvVJxjXeTIdIe-0BTC1myF4HYrFXtsJ9JeX-q1mwJ6hMgWg8Kwg
 
 === Get User Function ===
 Retrieved: get_active_users_ts - Get Active Users
 Description: Fetches all users and filters by active status
 
 === List All User Functions ===
-Found 11 user functions:
-  - conc_demo_rl_fail_ts_30955_1789566761407: Rate-limit (fail mode)
-  - conc_demo_rl_skip_ts_43664_1789567012579: Rate-limit (skip mode)
-  - conc_demo_rl_skip_ts_30955_1789566761407: Rate-limit (skip mode)
-  - conc_demo_rl_fail_ts_19088_1789566533301: Rate-limit (fail mode)
-  - conc_demo_rl_fail_ts_43664_1789567012579: Rate-limit (fail mode)
+Found 5 user functions:
+  - fetch_product_reviews_ts_68859_1789591599098: Fetch Product with Reviews (Multi-API)
+  - conc_demo_rl_skip_ts_67690_1789591578851: Rate-limit (skip mode)
   - get_active_users_ts: Get Active Users
+  - conc_demo_rl_fail_ts_67690_1789591578851: Rate-limit (fail mode)
   - get_active_users_client_ts_updated: Get Active Users (Updated)
-  - fetch_product_reviews_ts_32495_1789566782714: Fetch Product with Reviews (Multi-API)
-  - fetch_product_reviews_ts_44654_1789567033797: Fetch Product with Reviews (Multi-API)
-  - conc_demo_rl_skip_ts_19088_1789566533301: Rate-limit (skip mode)
-  - avg_score_by_role_ts_19467_1789566544643: Average Score by Role
 
 === Update User Function ===
 User function updated successfully
@@ -2381,66 +2062,45 @@ User function updated successfully
 User function deleted successfully
 
 ✓ User Functions API example complete
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === WebSocket Chat Streaming Example (TypeScript) ===
 
-Created chat session: 55eVXkoOfGX8HW1fCOZbqEC4HP7MHmAuTTT2zNEcwkn8sg1uIjD-QLc7FROp8RrcWAy7Fj4sRuVx83HUw4OFcw
+Created chat session: 16cYPTcV5eqr2k1LL0FMGGhXs72oVy6yisJCVDN0kKpkLWwC7PrysYUpdggVesFOgsV5B3FTa2EyAV3KlAiHuA
 
 Sending message: 'What is the capital of France?'
 {"__progress":"received"}{"__progress":"generating","model":"default","provider":"openai"}The capital of France is Paris.
 
 --- Stream ended ---
-Message ID: oeTGyOd-IEst_e64cXenHWlW2apIKAcb5ntf1VQIQghxvDpfwI7WdTDWqypW-oageUm7Uhm6QqvdPLISN0Bd2g
-Execution time: 513ms
+Message ID: jGDWC8yq5ktqJdE4-UZO-WqoC3u3wuyQMp9Ek-2FM6AUiDu7iTBNx-kB0JYOUjxES2lqMU_ec8cG3JQmtzd_lg
+Execution time: 543ms
 Token usage: {"completion_tokens":8,"prompt_tokens":15,"total_tokens":23}
 
 Full response: {"__progress":"received"}{"__progress":"generating","model":"default","provider":"openai"}The capital of France is Paris....
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === WebSocket Subscription Example ===
 
 ✓ Authentication successful
 ✓ WebSocket connected
 
 === Subscribing to 'ws_subscribe_example_ts' ===
-✓ Subscribed (subscription_id: sub_8014a7a55c2446a796e88a5008925e01)
+✓ Subscribed (subscription_id: sub_b21b03b58b784e9c85b5366094b86c5a)
 
 === Performing mutations to trigger notifications ===
 Inserting a record...
-✓ Inserted record: 4xm8tj3LhYAYPvY4Ad5d8AT95dz3NFkPbq97CFPUgtECjAmBcJ30bqqbKSG4k1gZXONXo3FHznmMdjaXOp6OFQ
-  📡 Notification received for 4xm8tj3LhYAYPvY4Ad5d8AT95dz3NFkPbq97CFPUgtECjAmBcJ30bqqbKSG4k1gZXONXo3FHznmMdjaXOp6OFQ
+✓ Inserted record: zQK6JbCAGDGb_5p-TOfMM6ZJ9MeVIgtZf3Ehj_zPrUcW0Td2BIbYau009T6kR93Wawavi62g0i8vcKTn02BzmA
+  📡 Notification received for zQK6JbCAGDGb_5p-TOfMM6ZJ9MeVIgtZf3Ehj_zPrUcW0Td2BIbYau009T6kR93Wawavi62g0i8vcKTn02BzmA
 
 Inserting another record...
-✓ Inserted record: U6uw4WnOPK2IV9a57c-Vd5nwhFJ9HHGIoqFALwJF6mSMakUFQVgEicxvbUss-eD8XB5T6TNHiMRaXzo8E-2pyw
-  📡 Notification received for U6uw4WnOPK2IV9a57c-Vd5nwhFJ9HHGIoqFALwJF6mSMakUFQVgEicxvbUss-eD8XB5T6TNHiMRaXzo8E-2pyw
+✓ Inserted record: BG91MUi138Z2RCOsuQ59hDAUZv64wx7jcsLB_2TQJo7xMQUfoAEMpReYa2t9bzrZxtY8V1ntWNOSf3TuefiekA
+  📡 Notification received for BG91MUi138Z2RCOsuQ59hDAUZv64wx7jcsLB_2TQJo7xMQUfoAEMpReYa2t9bzrZxtY8V1ntWNOSf3TuefiekA
 
 === Unsubscribing ===
 ✓ Unsubscribed: {"collection":"ws_subscribe_example_ts","found":true,"unsubscribed":true}
 
 ✓ WebSocket subscription example completed successfully
 ✓ Deleted collection 'ws_subscribe_example_ts'
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
 === Insert Test Data with TTL ===
-✓ Inserted document with TTL: X4Mv0G4FlDcPOX7EizLypZMulLe37eUVo6jeD4ARSpPXT41kboNNNDBb5fQZxr_-GkndC-_jMsnpmLHU8Vzvpg
+✓ Inserted document with TTL: 3nJHvaPt9Jbwy8Z-u7_--mUd4SnoqGQkc11VlrsI0jfyZCGPewxRalbmPeHoA2uuEvszlgsByj1CQOFYa42yKg
 
 === Query via WebSocket ===
 ✓ WebSocket connected
@@ -2453,23 +2113,16 @@ perl: warning: Falling back to the standard locale ("C").
 ✓ WebSocket TTL example completed successfully
 
 💡 Note: Documents with TTL will automatically expire after the specified duration
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === Bypass Ripple Example ===
 
 1. Basic insert (ripple enabled):
-   Inserted with ripple: {"id":"lpwUJJ0Zdyfln0VIf2q-L1LXJe3BF6bwNkiIHNo7l9KEYtghfkkJM94hJaNWH_hY-FrfvqtO6HK275he3rj6NA"}
+   Inserted with ripple: {"id":"12-xM16Gbq7NcRLRsFEYsbBAwzXT8PREgWmqnNScD7LlDl2UTRCLub_T24paR1s7ywqDRy8ZHpoTt5BVcOBXwQ"}
 
 2. Insert with bypass_ripple:
-   Inserted with bypass_ripple: {"id":"FAnu5BvYFg3qt_c26mQA_M2TbjFxQUjcZ19od3_53zdtW581SKr8d6zRoIifgjwYHyDE3GbdICxJU9AuaqX4Bg"}
+   Inserted with bypass_ripple: {"id":"Zxq5teP2yRWzZRO3sc3cZfNBgfo9SHuBVlhubFGvIY8rTGLPQQBG894-9IX9eL7KCBTVUzBcTA45fTWbLNZuPg"}
 
 3. Update with bypass_ripple:
-   Updated with bypass_ripple: {"id":"lpwUJJ0Zdyfln0VIf2q-L1LXJe3BF6bwNkiIHNo7l9KEYtghfkkJM94hJaNWH_hY-FrfvqtO6HK275he3rj6NA","price":{"value":150,"type":"Integer"},"name":{"type":"String","value":"Product 1"}}
+   Updated with bypass_ripple: {"name":{"type":"String","value":"Product 1"},"price":{"type":"Integer","value":150},"id":"12-xM16Gbq7NcRLRsFEYsbBAwzXT8PREgWmqnNScD7LlDl2UTRCLub_T24paR1s7ywqDRy8ZHpoTt5BVcOBXwQ"}
 
 4. Delete with bypass_ripple:
    Deleted with bypass_ripple
@@ -2478,16 +2131,9 @@ perl: warning: Falling back to the standard locale ("C").
    Batch inserted with bypass_ripple: 2 records
 
 6. Upsert with bypass_ripple:
-   Upserted with bypass_ripple: {"id":"oVupjWL0yw8kwtMHQljrEPBdYEtnWlghP_dVa1v_qpveo4wS-tLVIUIeNIjRrJ4bOdeaBE2HGo-Qqmx_kKEVBg"}
+   Upserted with bypass_ripple: {"id":"m8Rk4ojaO2dFda0-s5SAFWkZDADVDk24JzQ8XYZMY79rO-pCcO7x09bitea8ajDsQFjAoVuOq57izKuj1cBEhg"}
 
 ✅ All bypass_ripple operations completed successfully!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 Client created
 
 Setting up test data...
@@ -2495,7 +2141,7 @@ Inserted 4 test users
 
 Example 1: Select specific fields (id, name, email only)
   Found 3 active users
-  Fields returned: ["id","name","email"]
+  Fields returned: ["name","email","id"]
   First user: Alice Johnson <alice@example.com>
 
 Example 2: Exclude sensitive fields (password, api_key, secret_token)
@@ -2504,7 +2150,7 @@ Example 2: Exclude sensitive fields (password, api_key, secret_token)
     - password: excluded
     - api_key: excluded
     - secret_token: excluded
-  Fields returned: ["created_at","email","user_role","bio","avatar_url","age","id","name","status"]
+  Fields returned: ["avatar_url","id","created_at","email","age","user_role","name","status","bio"]
 
 Example 3: Complex query with projection (active users, ages 18-65)
   Found 3 active users (ages 18-65)
@@ -2519,10 +2165,10 @@ Example 4: Query inactive users with profile fields
 Example 5: Compare full vs projected data
   Full query:
     - 12 fields per record
-    - Fields: ["password","secret_token","age","email","created_at","id","api_key","status","user_role","bio","avatar_url","name"]
+    - Fields: ["created_at","name","email","age","secret_token","avatar_url","bio","user_role","password","id","api_key","status"]
   Projected query:
     - 3 fields per record
-    - Fields: ["name","id","email"]
+    - Fields: ["name","email","id"]
   Bandwidth savings: ~75% fewer fields
 
 Cleaning up test data...
