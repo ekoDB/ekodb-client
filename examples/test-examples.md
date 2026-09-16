@@ -1,54 +1,38 @@
 make test-examples
-Composed from the latest per-language reports after focused reruns; no all-language rerun was performed.
-
 🧪 Running Rust examples (direct HTTP/WebSocket)...
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.33s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.19s
      Running `target/debug/examples/simple_crud`
 ✓ Authentication successful
 
 === Insert Document ===
-Inserted: Object {"id": String("Z0h1T97ETrikMhyfrWmHW8CGIlga_7zb1AoCAb-IZxfIDLtFyUrYE-yMojia-QX81j2TbZYGK4C9gv6GQAij4A")}
+Inserted: Object {"id": String("6FEBJZbcQnUeO5uqW_pHxf-UqH4Ssh4COjrXAzUO5dGqzvstlI1Ks2OPEfIzdYlJ58NwuZMlFMM5tQtYcx9_MQ")}
 
 === Find by ID ===
-Found: Object {"active": Object {"type": String("Boolean"), "value": Bool(true)}, "id": String("Z0h1T97ETrikMhyfrWmHW8CGIlga_7zb1AoCAb-IZxfIDLtFyUrYE-yMojia-QX81j2TbZYGK4C9gv6GQAij4A"), "name": Object {"type": String("String"), "value": String("Test Record")}, "value": Object {"type": String("Integer"), "value": Number(42)}}
+Found: Object {"active": Object {"type": String("Boolean"), "value": Bool(true)}, "id": String("6FEBJZbcQnUeO5uqW_pHxf-UqH4Ssh4COjrXAzUO5dGqzvstlI1Ks2OPEfIzdYlJ58NwuZMlFMM5tQtYcx9_MQ"), "name": Object {"type": String("String"), "value": String("Test Record")}, "value": Object {"type": String("Integer"), "value": Number(42)}}
 
 === Find with Query ===
-Found documents: Array [Object {"active": Object {"type": String("Boolean"), "value": Bool(true)}, "id": String("Z0h1T97ETrikMhyfrWmHW8CGIlga_7zb1AoCAb-IZxfIDLtFyUrYE-yMojia-QX81j2TbZYGK4C9gv6GQAij4A"), "name": Object {"type": String("String"), "value": String("Test Record")}, "value": Object {"type": String("Integer"), "value": Number(42)}}]
+Found documents: Array [Object {"active": Object {"type": String("Boolean"), "value": Bool(true)}, "id": String("6FEBJZbcQnUeO5uqW_pHxf-UqH4Ssh4COjrXAzUO5dGqzvstlI1Ks2OPEfIzdYlJ58NwuZMlFMM5tQtYcx9_MQ"), "name": Object {"type": String("String"), "value": String("Test Record")}, "value": Object {"type": String("Integer"), "value": Number(42)}}]
 
 === Update Document ===
-Updated: Object {"active": Object {"type": String("Boolean"), "value": Bool(true)}, "id": String("Z0h1T97ETrikMhyfrWmHW8CGIlga_7zb1AoCAb-IZxfIDLtFyUrYE-yMojia-QX81j2TbZYGK4C9gv6GQAij4A"), "name": Object {"type": String("String"), "value": String("Updated Record")}, "value": Object {"type": String("Integer"), "value": Number(100)}}
+Updated: Object {"active": Object {"type": String("Boolean"), "value": Bool(true)}, "id": String("6FEBJZbcQnUeO5uqW_pHxf-UqH4Ssh4COjrXAzUO5dGqzvstlI1Ks2OPEfIzdYlJ58NwuZMlFMM5tQtYcx9_MQ"), "name": Object {"type": String("String"), "value": String("Updated Record")}, "value": Object {"type": String("Integer"), "value": Number(100)}}
 
 === Delete Document ===
 Deleted document
 
 ✓ All CRUD operations completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.11s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s
      Running `target/debug/examples/simple_websocket`
 ✓ Authentication successful
 
 === Inserting Test Data ===
-✓ Inserted test record: BuJyoP-A5m_zxZfcrNSPehBg5psmQyacvEQ9RYr-DyEzrJnDC4Rq0o-CIG9JMcIEzIgr2lOmIKiXZmhlV8nPRA
+✓ Inserted test record: vzKXXYsbLxLlz66EqpnJfwtf5ZFlw32fcVXU9FITUYxr0XvbEXTaMD6J34I2jkXliIkFU7Sdq3J-_wv-dJ-j3Q
 
 === Connecting to WebSocket ===
 ✓ WebSocket connected
 
 === Querying Data via WebSocket ===
 Response: {
-  "messageId": "1789563129210903000",
+  "messageId": "1789587979656746000",
   "payload": {
     "data": [
       {
@@ -56,7 +40,7 @@ Response: {
           "type": "Boolean",
           "value": true
         },
-        "id": "BuJyoP-A5m_zxZfcrNSPehBg5psmQyacvEQ9RYr-DyEzrJnDC4Rq0o-CIG9JMcIEzIgr2lOmIKiXZmhlV8nPRA",
+        "id": "vzKXXYsbLxLlz66EqpnJfwtf5ZFlw32fcVXU9FITUYxr0XvbEXTaMD6J34I2jkXliIkFU7Sdq3J-_wv-dJ-j3Q",
         "name": {
           "type": "String",
           "value": "WebSocket Test Record"
@@ -74,14 +58,7 @@ Response: {
 ✓ Deleted test collection
 
 ✓ WebSocket example completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.11s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s
      Running `target/debug/examples/batch_operations`
 ✓ Authentication successful
 
@@ -101,14 +78,7 @@ Created 3 test records
 ✓ Verified: Records successfully deleted (not found)
 
 ✓ All batch operations completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s
      Running `target/debug/examples/kv_operations`
 ✓ Authentication successful
 
@@ -134,23 +104,16 @@ kv_operations:direct:rs:cache:product:3: Object {"type": String("Object"), "valu
 ✓ Deleted 3 keys
 
 ✓ All KV operations completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.11s
      Running `target/debug/examples/collection_management`
 ✓ Authentication successful
 
 === Create Collection (via insert) ===
-Collection created with first record: "s8PLj482_CytEmrNSk0Jhd0q5DjzX4GjBKncwS78rKtnvt4MIax1MoWUsKWS4xQ0q919Pxqd53KsMNirGEdPzw"
+Collection created with first record: "c9a_UR6-DRJ7ng-X9UjYHVl2RWuaQRAqW4lBPVyHT7qcUW2WUQTakAve1VgAyG8sGhjWqBQavSGEYKUL-rCTJw"
 
 === List Collections ===
 Total collections: 2
-Sample collections: ["audit__ek0_testing", "demo_collection"]
+Sample collections: ["demo_collection", "audit__ek0_testing"]
 
 === Count Documents ===
 Document count: 1
@@ -162,26 +125,19 @@ Collection deleted successfully
 Collection still exists: false
 
 ✓ All collection management operations completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.11s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s
      Running `target/debug/examples/document_ttl`
 === ekoDB Document TTL Example (Rust) ===
 ✓ Authentication successful
 
 === Insert Document with TTL (1 hour) ===
-✓ Inserted document: 0bITwwl4DvHD_-g-uTNg7IsNozmnwx7XCXEpKbNG2sJ1zP41N6vL-kGJh7kP-zB3RlObGguD1kEviC6082Bxzw
+✓ Inserted document: RTwoJD9QpZxBOs0vrY2G6Acgyb7K8iWGV61SHeYd_QmNtIWva9WJgO5jSdQ4cASI83ktbRMmxQBpYQQiQLWGow
 
 === Insert Document with TTL (5 minutes - integer) ===
-✓ Inserted document: 5nDApqj6-uzFa3XZFVbOzzlTuw-6rO9zJb_aDCfJT9-_q3YIeP752xSGTusU9ZvDL4IVTF1TVXGEdntnIfzGBQ
+✓ Inserted document: yDotFN8dhBwNuR7MzEQd0TXLf28qk2FXcOTrSHpzSQaKQWaGzAW1IbPcQlfxfwt_-vIfMnPpRpkzLUF4YAWFBw
 
 === Insert Document with TTL (30 minutes - duration string) ===
-✓ Inserted document with duration string TTL: b58e_ckLprMvLjNKXN7-xjQQjClijzdx_2yWGm2PSCli6QstLHEekacZTZcrsFVjKkrf2nhxnhdhjmkgycfTRw
+✓ Inserted document with duration string TTL: aC6IzqVPn5JJlIwdZMxnbxEDu2vdjmJskbWsM91GixHs8m7Ntkb9Zs7_AxVcOq3-32f9hzdXsnr6u3xU8GKAzQ
 
 === Query Documents ===
 ✓ Found 3 documents with TTL
@@ -193,39 +149,25 @@ perl: warning: Falling back to the standard locale ("C").
 ✓ Deleted document
 
 ✓ All document TTL operations completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s
      Running `target/debug/examples/websocket_ttl`
 ✓ Authentication successful
 
 === Insert Test Data with TTL ===
-✓ Inserted document with TTL: String("zDu__FXDajqDs532gfO9Kg7FwAs_5-QjAh4VfED83oMhr_cF5u_RIQew-mOJUE0wZ9CeM_-RxyNj7nrY_y3qkg")
+✓ Inserted document with TTL: String("RYr0JB-QinzUKHlaRoRKn8GPczCrzJ9ZkfH1CwV-TXKYNFNM1cdFZEUcvB0MdH6OzsVDG95ncmDqinCTEjW8Mw")
 
 === Query via WebSocket ===
 ✓ WebSocket connected
 ✓ Retrieved 1 record via WebSocket
 
 Record 1:
-  id: "zDu__FXDajqDs532gfO9Kg7FwAs_5-QjAh4VfED83oMhr_cF5u_RIQew-mOJUE0wZ9CeM_-RxyNj7nrY_y3qkg"
+  id: "RYr0JB-QinzUKHlaRoRKn8GPczCrzJ9ZkfH1CwV-TXKYNFNM1cdFZEUcvB0MdH6OzsVDG95ncmDqinCTEjW8Mw"
   name: {"type":"String","value":"WebSocket TTL Test"}
-  ttl: "2026-09-16T13:56:53.289744Z"
+  ttl: "2026-09-16T20:52:35.263156Z"
   value: {"type":"Integer","value":42}
 
 ✓ WebSocket TTL example completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s
      Running `target/debug/examples/http_functions`
 🚀 ekoDB Functions Example (Rust/HTTP)
 
@@ -234,23 +176,23 @@ perl: warning: Falling back to the standard locale ("C").
 
 📝 Example 1: Simple Query Function with Filter
 
-✅ Function saved: 6wquNjJM3_pMc66OQ0xt4MEdyF51oL10tMCAita4BHTYrxQTPYFKn7i0tCikvs2Hjdne0OOkrdQCPiwTs9PevA
+✅ Function saved: GsufPPw9hSFzqd7pdieHmpUERO266lLct4M7y3azLFussBqR_6I9yn2i7tCXzvVj5l8-KXuE5CJiS9rZEGoOQQ
 📊 Found 5 active users
 
 📝 Example 2: Parameterized Pagination with Limit/Skip
 
-✅ Function saved: DECwFOpsFqy4UyFjtPpeeXDKcGCkxLTuSxBi1dED9bJ9O3N_JiF_AyclBoqnxNNbeEl1xrq6YwTAJ9C7Uyv8dQ
+✅ Function saved: 0GgML4jy0yCFkM8Fh8jqeSP50-_HlvGV6PEiaA_lgPk4r7duc-i72vzODUUu2tQpw09YtHfOKTi0v8n2Jl0ilw
 📊 Page 1: Found 3 users (limit=3, skip=0)
 📊 Page 2: Found 2 users (limit=3, skip=3)
 
 📝 Example 3: Complex Filter with Multiple Conditions
 
-✅ Function saved: eQCXq-sihZIS5lBS5zbH4jMOkTV0thINY4_YGK8gnBqwBq-bPsmIvQApPruG6WDbuS7MqX780AXQsxE5brkOYg
+✅ Function saved: VxjT1Zg8XigIfDbWCtCWC7baN6dvkSFwqKxTBIjtzVC7sh2jDj3ycSiZP_D98vzDQBuz7oLP-NRf6oKM43HOiQ
 📊 Found 3 users (status=active, score>50, sorted by score)
 
 📝 Example 4: Multi-Stage Pipeline (Query → Group → Calculate)
 
-✅ Function saved: ySOzgrPnI6lVmsMpfUiFSiBcSYhbpZapQwn3vAGzZBDnQaJIb7ssnJK_OHI_WmxeemRpT7PwNh39TMnF8c28WQ
+✅ Function saved: no6-Ve7QP9dQH1QPm0HJDnFnBQjdYWoHUIwqL7vXV5QZC0qxLWtrIBcZwsAF_ylMEnO3xYHIbNANqdqM0q3SLw
 📊 Pipeline Results: Filtered (age>20) → Grouped by status → 2 groups
    {"avg_score":{"type":"Float","value":60.0},"count":{"type":"Integer","value":5},"max_score":{"type":"Integer","value":100},"status":{"type":"String","value":"active"}}
    {"avg_score":{"type":"Float","value":50.0},"count":{"type":"Integer","value":5},"max_score":{"type":"Integer","value":90},"status":{"type":"String","value":"inactive"}}
@@ -266,23 +208,16 @@ perl: warning: Falling back to the standard locale ("C").
 ℹ️  Only CALL can use either ID or label
 
 ✅ All examples completed!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s
      Running `target/debug/examples/transactions`
 ✓ Authentication successful
 
 === Setup: Creating Test Accounts ===
-Created Alice: $1000 - ID: gyYAeRRzaJ4678zHhc42jlmQKLNzZexCP9ZzrONE-9MmnmIz2RVP1ZD3lBmw2cgu21M-Y_kfrZysSfgR_r09jQ
-Created Bob: $500 - ID: 2-YfTFXkA7CujBaxJU2CaaBYPYUkngjfei8laQIhIcNsYk82RY2Isq7nSqr3mLsKwFfo4AZSJhiqAT6y43ixBw
+Created Alice: $1000 - ID: 7q5WAWmzAZuf5aI4S8YFv-4Auapzeh9W514k8E2ArcGJjjt-yjS9eXZRjxCPCUpafxjw0l4NJz6BQlnn-2POeg
+Created Bob: $500 - ID: CdAkYUmsGqDaaF83Uss9BZZcZCjYDIWWgojHG0YkmXK_GbYLPVUpxlMTQe0bc08euyk1wAkhCjVfj3FVjCBS1g
 
 === Example 1: Begin Transaction ===
-Transaction ID: 4ce9a49a-eb18-4e5a-a86e-fc63b61c0102
+Transaction ID: 24d13bee-1b5d-4a24-8c8c-f8e342477fa6
 
 === Example 2: Operations with transaction_id ===
 Updated Alice: $1000 → $800
@@ -300,7 +235,7 @@ Alice: {"type":"Integer","value":800}
 Bob: {"type":"Integer","value":700}
 
 === Example 5: Rollback ===
-New transaction: 83d7dcce-80a8-415f-b98a-6e0b997248c0
+New transaction: f4c6045c-9377-4424-8d9f-9aaadf51ae1f
 Updated Bob: $700 → $600 (in transaction)
 ✓ Transaction rolled back
 Bob after rollback: {"type":"Integer","value":700}
@@ -311,43 +246,35 @@ Bob after rollback: {"type":"Integer","value":700}
 ✓ All transaction examples completed
 ✅ Rust direct examples complete!
 🛠️  Building client library...
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.26s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.23s
 ✅ Client build complete!
-bash: warning: setlocale: LC_ALL: cannot change locale (C.UTF-8): No such file or directory
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.11s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.09s
      Running `target/debug/examples/client_advanced_crud`
 === ekoDB Advanced CRUD Example (Rust) ===
 
 --- Inserting base document ---
-Inserted: Widget Counter (id: S7eanqhlZAh9ei-K8vORXUHRv9s1UiT-pHzpDHA5MV0e9xh2IUIQvHQe5GtrABIDEzJ6tHBALZk6Lq4fY2FSEA)
+Inserted: Widget Counter (id: cXTpb6KVCG9lHExTDYMOhEimqCIEg-3K3oOvSXVmGp8XABLKTVKzkeVCsGvI8JkDOrz1OajtMA5IKcrrdnyCmQ)
 
 --- update_with_action: increment views by 10 ---
 views after increment: Some(Object({"type": String("Integer"), "value": Integer(110)}))
 
 --- update_with_action: decrement views by 3 ---
-views after decrement: Some(Object({"value": Integer(107), "type": String("Integer")}))
+views after decrement: Some(Object({"type": String("Integer"), "value": Integer(107)}))
 
 --- update_with_action: multiply score by 2 ---
-score after multiply: Some(Object({"value": Float(9.0), "type": String("Float")}))
+score after multiply: Some(Object({"type": String("Float"), "value": Float(9.0)}))
 
 --- update_with_action: push 'ekodb' to tags ---
-tags after push: Some(Object({"type": String("Array"), "value": Array([String("rust"), String("database"), String("ekodb")])}))
+tags after push: Some(Object({"value": Array([String("rust"), String("database"), String("ekodb")]), "type": String("Array")}))
 
 --- update_with_action: append '-suffix' to label ---
 label after append: Some(Object({"type": String("String"), "value": String("prefix-suffix")}))
 
 --- update_with_action: pop last element from tags ---
-tags after pop: Some(Object({"value": Array([String("rust"), String("database")]), "type": String("Array")}))
+tags after pop: Some(Object({"type": String("Array"), "value": Array([String("rust"), String("database")])}))
 
 --- update_with_action: remove 'rust' from tags ---
-tags after remove: Some(Object({"type": String("Array"), "value": Array([String("database")])}))
+tags after remove: Some(Object({"value": Array([String("database")]), "type": String("Array")}))
 
 --- update_with_action_sequence: increment views + push tag + append label ---
 views after sequence: Some(Object({"type": String("Integer"), "value": Integer(157)}))
@@ -358,14 +285,7 @@ label after sequence: Some(Object({"type": String("String"), "value": String("pr
 Deleted collection
 
 === All advanced CRUD operations completed ===
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s
      Running `target/debug/examples/client_batch_operations`
 ✓ Client created
 
@@ -383,14 +303,7 @@ perl: warning: Falling back to the standard locale ("C").
 ✓ Deleted collection
 
 ✓ All batch operations completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s
      Running `target/debug/examples/client_chat_advanced`
 === ekoDB Advanced Chat Features Example ===
 
@@ -398,7 +311,7 @@ perl: warning: Falling back to the standard locale ("C").
 ✓ Inserted sample product
 
 === Creating Chat Session ===
-✓ Created session: CJFDxZ7ySXKr2xupDkPpSbSRYCDuSrznhhHBEOINRPtnDwqtPJzrqLE9f9aqDiS4bAz0WuMoJrvgCT6dqgucUA
+✓ Created session: F4D0-fLWITvW9DIMVXJ4jRuSwrweiX30vQjumHYFXnm5mifYCq0hM9lzX-YaMMNMgC_n0SIdGaEcC1GJbTU_Cg
 
 === Sending Initial Message ===
 ✓ Message sent
@@ -408,7 +321,7 @@ perl: warning: Falling back to the standard locale ("C").
 - **Description:** High-performance database product
 - **Price:** $99
 
-If you need more details or additional products, let me know!
+If you need more details or have other questions, feel free to ask!
 
 ✓ Second message sent
 === Feature 1: Regenerate AI Response ===
@@ -424,7 +337,7 @@ If you need more details or additional products, let me know!
 ✓ Message unmarked as forgotten
 
 === Feature 4: Merge Chat Sessions ===
-✓ Created second session: x94-ex96XM6G9sItMBgu-Pjb2NywpJkANmMeY2K6Tpq-gQb3GbiVNUZoBhJZVzbFhvuj7j-wiNwVfFMQX6bHgA
+✓ Created second session: W4zzRx_Ade7qJbQh_O1Qq_SUcdylCg2zafWVQT9oV9M8lKpFswSthoyEZBOnTdnqu16EvhUaid7k910ZIBXEGA
 ✓ Sent message in second session
 ✓ Sessions merged successfully
   Total messages in merged session: 7
@@ -435,19 +348,12 @@ If you need more details or additional products, let me know!
 ✓ Messages remaining: 6
 
 === Cleanup ===
-✓ Deleted chat session: x94-ex96XM6G9sItMBgu-Pjb2NywpJkANmMeY2K6Tpq-gQb3GbiVNUZoBhJZVzbFhvuj7j-wiNwVfFMQX6bHgA
-✓ Deleted chat session: CJFDxZ7ySXKr2xupDkPpSbSRYCDuSrznhhHBEOINRPtnDwqtPJzrqLE9f9aqDiS4bAz0WuMoJrvgCT6dqgucUA
+✓ Deleted chat session: W4zzRx_Ade7qJbQh_O1Qq_SUcdylCg2zafWVQT9oV9M8lKpFswSthoyEZBOnTdnqu16EvhUaid7k910ZIBXEGA
+✓ Deleted chat session: F4D0-fLWITvW9DIMVXJ4jRuSwrweiX30vQjumHYFXnm5mifYCq0hM9lzX-YaMMNMgC_n0SIdGaEcC1GJbTU_Cg
 ✓ Deleted collection
 
 ✓ All advanced chat features demonstrated successfully!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s
      Running `target/debug/examples/client_chat_basic`
 === ekoDB Chat Basic Example ===
 
@@ -455,23 +361,20 @@ perl: warning: Falling back to the standard locale ("C").
 ✓ Inserted 3 sample documents
 
 === Creating Chat Session ===
-✓ Created session: ziikrS8SSoT8XnnY80XN31mOw9x_br3cXewzlYilC6aEZ4c1tim5bMT_bik9hZo0nWExqMmInxjfaW2MSvQ1wQ
+✓ Created session: YAPEkCok-ZnyynHd_fGLa6MYWwT4LJIsHWP2VKzZvBrhyy5-Q6fFjsTa7ntXU5xj7PJW1SjuDWtKqFNHF_BZZg
 
 === Sending Chat Message ===
-Message ID: i5slv-rqzJCkUz41uzrW6cObLiMsKJjSPOvPOHCvAHQP4t1qU0W0gAXN5mKVfuZSTj8MICWugo8y7rdlqDkKIg
+Message ID: JxRdeubIEnMTXIqmjMeKG1qQI5Mz4tcx0sPfVNaWtnWF-W-nl2P8MOLeDJkyWHcTdQMREqVV5PGAEHqfv6fHCQ
 
 === AI Response ===
-Response 1: ekoDB is a high-performance database designed with intelligent caching and real-time capabilities, along with AI integration.
+Response 1: ekoDB is a high-performance database designed for intelligent caching, real-time capabilities, and integrating AI. Here are some key features of ekoDB:
 
-### Key Features:
-1. **AI Chat Integration**: The chat feature allows you to query your database using natural language, providing AI-powered responses with relevant context.
+1. **AI Chat Integration**: It allows you to query your database using natural language, providing AI-powered responses with relevant context.
 
-2. **Search Capabilities**:
-   - **Full-text Search**: Enables querying of text data efficiently.
-   - **Vector Search**: Allows for semantic searches using vector embeddings.
-   - **Hybrid Search**: Combines both full-text and vector searching with automatic context retrieval.
+2. **Search Capabilities**: ekoDB supports full-text search, vector search, and hybrid search with automatic context retrieval, making it versatile for different querying needs.
 
-These features make ekoDB a versatile and powerful tool for managing and querying data effectively.
+You can leverage these features to enhance your applications and make data interactions more natural and efficient.
+
 
 === Context Used (3 snippets) ===
 
@@ -479,68 +382,65 @@ Snippet 1:
   Collection: client_chat_basic_rust
   Score: 0.6333
   Matched Fields: ["title", "category", "content"]
-  Record: Object {"category": String("features"), "content": String("The chat feature allows you to query your database using natural language and get AI-powered responses with relevant context."), "id": String("Uc5yGDp_U06VPAhiEg3yMiWtjiO54uT3nX9VRX9IsRgb3cVtdJ-G39BNEj3_GEezHIAATUu87ahen_cjUVFKSQ"), "title": String("AI Chat Integration")}
+  Record: Object {"category": String("features"), "content": String("The chat feature allows you to query your database using natural language and get AI-powered responses with relevant context."), "id": String("Qkp9_hAmQHdbXcxxs-Go8-uHqWFs24TVuFu9P3UVm61uDBT6VgjF1Y2P174AgR1J5bRGZLilmSvkAGi-Cx346A"), "title": String("AI Chat Integration")}
 
 Snippet 2:
   Collection: client_chat_basic_rust
   Score: 0.5222
-  Matched Fields: ["category", "title", "content"]
-  Record: Object {"category": String("features"), "content": String("ekoDB supports full-text search, vector search, and hybrid search with automatic context retrieval."), "id": String("lBEkOWr3s40PvtyTuxBXRoNgfzfe3JbYOcj_YLAuy6rhoKS6YYJbkXJxJ3QV4R0tIl64V-luACGAPJ5JDLiGpw"), "title": String("Search Features")}
+  Matched Fields: ["content", "title"]
+  Record: Object {"category": String("documentation"), "content": String("ekoDB is a high-performance database with intelligent caching, real-time capabilities, and AI integration."), "id": String("mZf_cnHdTYCLBLdQmSy8Mznyfi7TyeEw4YZtPjKx7Z70u2fZOvdPoiUPmMnqNWhn4AoKVHoMlPyxJJgJfRPzIQ"), "title": String("Introduction to ekoDB")}
 
 Snippet 3:
   Collection: client_chat_basic_rust
   Score: 0.5222
-  Matched Fields: ["title", "content"]
-  Record: Object {"category": String("documentation"), "content": String("ekoDB is a high-performance database with intelligent caching, real-time capabilities, and AI integration."), "id": String("-41IQXXmuqHyIFDphWjnE6RgU-9pXZVwH8ZWaFsTZ9gP5ezgxJzucB4rX4MruG2k03ec1wojjOi0GVUQmWFZkA"), "title": String("Introduction to ekoDB")}
+  Matched Fields: ["title", "category", "content"]
+  Record: Object {"category": String("features"), "content": String("ekoDB supports full-text search, vector search, and hybrid search with automatic context retrieval."), "id": String("bcB2xRpurqVqHLpmaeV9Pu8UrZzy3SMI-opIVWBj3lititZClERQPrD387AcuPmdtlKbs3eGZUEY9xV9-xfuJQ"), "title": String("Search Features")}
 
-Execution Time: 3470ms
+Execution Time: 2738ms
 
 === Cleanup ===
 ✓ Deleted session
 ✓ Deleted collection
 
 ✓ Chat completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s
      Running `target/debug/examples/client_chat_message_stream`
 === ekoDB Chat Message Stream (SSE) Example (Rust) ===
 
-Created session: Yml_AosYcMSL_uitCWAmtTLFICgyIyBvbapxMNZ4YIs7zapOQQw-8XOKtAdv3-GEYCdL-y0XoTGEPw9Bcujuug
+Created session: T3xnZLyi2r2O56lAqNrwe2VVd_jPva_Vxo1j479OYvSCEhkjj9_wCZJWrGsKb6nNG4XNSnicpLBzmuUd-nUGrQ
 
 Streaming response for: 'What is ekoDB?'
 
-{"__progress":"received"}{"__progress":"generating","model":"default","provider":"openai"}**ekoDB** is a publicly accessible, comprehensive database that integrates and organizes ecological knowledge, particularly data on how species interact with their environment (eco-evolutionary responses), traits, and biotic interactions. Its main features are:
+{"__progress":"received"}{"__progress":"generating","model":"default","provider":"openai"}**ekoDB** refers to a knowledge base or database developed and maintained by **Eko**, a company that specializes in digital health technology. Eko is best known for its smart stethoscopes and digital auscultation tools used to record, visualize, and analyze heart and lung sounds. While there is no widely recognized, standalone product named "ekoDB," the term is sometimes used to refer to:
 
-- **Purpose**: To facilitate research in ecology and evolutionary biology by providing a centralized source for ecological response data, trait information, and species interactions.
-- **Content**: Includes published and curated data on ecological traits (like growth rate, diet, or thermal tolerance), how those traits respond to environmental factors, and how species interact with one another (e.g., predation, mutualism).
-- **Utility**: Helps researchers analyze ecological patterns, develop and test ecological models, and perform meta-analyses, especially in the context of global change or biodiversity studies.
+1. **Eko's Sound Database**:
+   Eko has compiled a large, high-quality database of annotated heart and lung sounds—sometimes called “ekoDB” in research papers and technical materials. This database collects recordings from a diverse patient population, with each recording labeled by clinical experts for features such as murmurs, arrhythmias, crackles, etc. This database is used to train and validate artificial intelligence (AI) algorithms for automated cardiac and pulmonary sound analysis.
 
-ekoDB is similar in concept to other knowledge bases like TRY (for plant traits) and the Global Biotic Interactions database, but aims for broader integration, harmonizing different kinds of ecological data in one place.
+2. **Open Research Resource**:
+   Eko has partnered with academic and healthcare institutions to share anonymized portions of its sound database (ekoDB) with researchers to promote innovation in digital auscultation and machine learning for healthcare.
+
+**Key Points about ekoDB:**
+- Contains tens of thousands of heart and lung sound recordings.
+- Labeled with physician annotation for clinical findings.
+- Used for developing, training, and validating AI diagnostic tools.
+- Available to some researchers and partners for advancing medical AI and telehealth.
 
 **References:**
-- Online documentation and database: [https://www.ekodb.org/](https://www.ekodb.org/)
-- See also: Brodersen, J., et al. (2023). ekoDB: Ecological knowledge database for eco‐evolutionary analysis. *Ecology and Evolution*, 13(2), e9926. [https://doi.org/10.1002/ece3.9926](https://doi.org/10.1002/ece3.9926)
+- Eko Health official website: [ekohealth.com](https://www.ekohealth.com/)
+- Research papers such as:
+  - "A University-Scale Data Set for Cardiac Sound Classification" (published using ekoDB)
+  - "Heart Murmur Detection Using a State-of-the-Art Digital Stethoscope" (uses ekoDB)
+
+**Summary:**
+ekoDB is a clinical sound database from Eko used for research and developing AI-based diagnostic solutions in digital auscultation.
 
 --- Stream complete ---
-Message ID: 0yDQXyQxMRzbAvNUI9Madzn2KD7mVWFLIqV4GMM3uWS5rs1FiRoiR79g6ha2fUVJZEPSPgDHJpVPxyH9kTOWHQ
-Execution time: 3743ms
+Message ID: 5RfBrsrwwWs81hxKHXNBfqOFSAFc4L7zDmKt9b3zNVGH2qaibtbx47oiMfAHn2Jy2Voq-9ERIr30f3_IuZ6AAw
+Execution time: 5030ms
 Context window: 1000000 tokens
 
 ✓ Chat message stream example completed
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s
      Running `target/debug/examples/client_chat_models`
 ✓ Client created
 
@@ -724,14 +624,7 @@ anthropic models (11):
 GetChatModel(perplexity) error: Record not found
 
 ✓ Chat Models API example complete
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.11s
      Running `target/debug/examples/client_chat_sessions`
 === ekoDB Chat Session Management Example ===
 
@@ -739,16 +632,16 @@ perl: warning: Falling back to the standard locale ("C").
 ✓ Inserted sample product
 
 === Creating Chat Session ===
-✓ Created session: 6cWoPtMLf7xz-iAQKNNfe3zmkUQXC22ZTumfXp6Q8O9cDhtl66SOo_ap5Z8N9n7w3R9k64vMYa-8jKrFNlLqBw
+✓ Created session: _67apxP34co1JFZjZXW-CFO4FYqO6Zwj_2eiz9HQYmNYML8alJANXlogV9sWIKdy7EBn-8LxHAoqWvfkZGFVkg
 === Sending Messages ===
 ✓ Message 1 sent
   Response: The available product is:
 
-- **Product Name:** ekoDB
+- **Product:** ekoDB
 - **Description:** A high-performance database product with AI capabilities
 - **Price:** $99
 
-If you need more details or additional products, let me know!
+If you need more details or additional products, please let me know!
 
 ✓ Message 2 sent
   Response: The price of the product ekoDB is $99.
@@ -760,43 +653,36 @@ If you need more details or additional products, let me know!
 ✓ Session updated
 
 === Branching Session ===
-✓ Created branch: nKqdZso8cfgChZmV3w8z57mPSc8cy4BFxf_sAun42DlayyjnUTqaj46SAC-drdJg72QKrM-dFkaOAibBOXuVUw
-  Parent: 6cWoPtMLf7xz-iAQKNNfe3zmkUQXC22ZTumfXp6Q8O9cDhtl66SOo_ap5Z8N9n7w3R9k64vMYa-8jKrFNlLqBw
+✓ Created branch: MeREZRFzRiStK3rVnIK6okjwS1qvbYSLd_AJobjLiqclq-ZgfNSo6Ep_67XHJm_KS2LCXeNkv5mvAbn2qJCawQ
+  Parent: _67apxP34co1JFZjZXW-CFO4FYqO6Zwj_2eiz9HQYmNYML8alJANXlogV9sWIKdy7EBn-8LxHAoqWvfkZGFVkg
 
 === Listing Sessions ===
 ✓ Found 2 sessions
-  Session 1: nKqdZso8cfgChZmV3w8z57mPSc8cy4BFxf_sAun42DlayyjnUTqaj46SAC-drdJg72QKrM-dFkaOAibBOXuVUw (Untitled)
-  Session 2: 6cWoPtMLf7xz-iAQKNNfe3zmkUQXC22ZTumfXp6Q8O9cDhtl66SOo_ap5Z8N9n7w3R9k64vMYa-8jKrFNlLqBw (Untitled)
+  Session 1: MeREZRFzRiStK3rVnIK6okjwS1qvbYSLd_AJobjLiqclq-ZgfNSo6Ep_67XHJm_KS2LCXeNkv5mvAbn2qJCawQ (Untitled)
+  Session 2: _67apxP34co1JFZjZXW-CFO4FYqO6Zwj_2eiz9HQYmNYML8alJANXlogV9sWIKdy7EBn-8LxHAoqWvfkZGFVkg (Untitled)
 
 === Getting Session Details ===
 ✓ Session details retrieved
   Messages: 4
 
 === Deleting Branch Session ===
-✓ Deleted branch session: nKqdZso8cfgChZmV3w8z57mPSc8cy4BFxf_sAun42DlayyjnUTqaj46SAC-drdJg72QKrM-dFkaOAibBOXuVUw
+✓ Deleted branch session: MeREZRFzRiStK3rVnIK6okjwS1qvbYSLd_AJobjLiqclq-ZgfNSo6Ep_67XHJm_KS2LCXeNkv5mvAbn2qJCawQ
 
 === Cleanup ===
 ✓ Deleted session
 ✓ Deleted collection
 
 ✓ All session management operations completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s
      Running `target/debug/examples/client_collection_management`
 ✓ Client created
 
 === Create Collection (via insert) ===
-Collection created with first record: "w48Ns5c78s8OAnW3jbjuNtUHCi9TPTJTpECeaey8Qn-3uxX2FxEJOvu0C_65fiTDRoLOYdSAhiKy9ZibXx4SDQ"
+Collection created with first record: "ztalfV1wdo1bV3H--BIAnyyNmW-PwNuGHa-kdABF6DI99P4Rn7OPaTu-TDMzAFlRU986J8NqZEwic_ZwJlVeMQ"
 
 === List Collections ===
 Total collections: 7
-Sample collections: ["agent_function_versions__ek0_testing", "functions__ek0_testing", "chat_configurations__ek0_testing", "client_collection_management_rust", "audit__ek0_testing"]
+Sample collections: ["agent_function_versions__ek0_testing", "client_collection_management_rust", "chat_turns__ek0_testing", "audit__ek0_testing", "chat_messages__ek0_testing"]
 
 === Count Documents ===
 Document count: 1
@@ -811,14 +697,7 @@ Collection deleted successfully
 Collection still exists: false
 
 ✓ All collection management operations completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s
      Running `target/debug/examples/client_collection_utils`
 ✓ Client created
 
@@ -836,13 +715,13 @@ Document count in 'collection_utils_test_rust': 5
 
 === List Collections ===
 Total collections: 7
+  - collection_utils_test_rust <-- our test
   - agent_function_versions__ek0_testing
+  - chat_turns__ek0_testing
+  - audit__ek0_testing
+  - chat_messages__ek0_testing
   - functions__ek0_testing
   - chat_configurations__ek0_testing
-  - audit__ek0_testing
-  - collection_utils_test_rust <-- our test
-  - chat_messages__ek0_testing
-  - chat_turns__ek0_testing
 
 === Check Non-Existent Collection ===
 Collection 'nonexistent_collection_xyz' exists: false
@@ -851,13 +730,6 @@ Collection 'nonexistent_collection_xyz' exists: false
 Deleted collection 'collection_utils_test_rust'
 
 ✓ Collection Utilities example complete
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
     Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
      Running `target/debug/examples/client_concurrency_stages`
 ✓ Client created
@@ -873,26 +745,19 @@ Invoke them like:
   POST /api/functions/conc_demo_lock       { "resource": "queue:drain" }
 
 ✓ Cleaned up demo functions
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s
      Running `target/debug/examples/client_convenience_methods`
 === ekoDB Convenience Methods Example ===
 
 === Record Builder Pattern ===
-✓ Created record with fluent builder: Record({"id": String("xHHO_SZO9GSvmZUbN-MSxUaMk8B6IEL9JmrEU3ID1qdAycZbY4cIr7BnzNSvHqJ9jWjnKqL5spB8XwBkGVHvGw")})
+✓ Created record with fluent builder: Record({"id": String("O5zfbL0DfpRNNTLxBuAnvFjD50XBqqKobrpUCpCz2Mm_WfIKX-JopGtjgU37JzeWP7FkAIY5WOqq8bYlhrtgzg")})
 
 === Upsert Operation ===
-✓ First upsert (insert): Record({"id": String("JOS5Tj5n2ueYUtHz0JVW2gdLAvZqTdCOLGr9x0LHY-yoUKzk9fnHsm8QJnnrWmvPI5RCistOSyPlHpaeIK4_TQ")})
-✓ Second upsert (update): Record({"id": String("JOS5Tj5n2ueYUtHz0JVW2gdLAvZqTdCOLGr9x0LHY-yoUKzk9fnHsm8QJnnrWmvPI5RCistOSyPlHpaeIK4_TQ"), "email": Object({"value": String("bob.smith@newdomain.com"), "type": String("String")}), "name": Object({"type": String("String"), "value": String("Bob Smith")}), "age": Object({"type": String("Integer"), "value": Integer(36)})})
+✓ First upsert (insert): Record({"id": String("55pVAYY7QR3bBOtu66ofnYzaraghlBINl_5zyCBqeys58aBDTHiaV4veO8J9qmxXC1OqjCDcLcifiXn9z7FBRA")})
+✓ Second upsert (update): Record({"age": Object({"type": String("Integer"), "value": Integer(36)}), "name": Object({"type": String("String"), "value": String("Bob Smith")}), "email": Object({"type": String("String"), "value": String("bob.smith@newdomain.com")}), "id": String("55pVAYY7QR3bBOtu66ofnYzaraghlBINl_5zyCBqeys58aBDTHiaV4veO8J9qmxXC1OqjCDcLcifiXn9z7FBRA")})
 
 === Find One Operation ===
-✓ Found user by email: Record({"name": Object({"value": String("Alice Johnson"), "type": String("String")}), "email": Object({"type": String("String"), "value": String("alice@example.com")}), "active": Object({"value": Boolean(true), "type": String("Boolean")}), "age": Object({"type": String("Integer"), "value": Integer(28)}), "id": String("xHHO_SZO9GSvmZUbN-MSxUaMk8B6IEL9JmrEU3ID1qdAycZbY4cIr7BnzNSvHqJ9jWjnKqL5spB8XwBkGVHvGw")})
+✓ Found user by email: Record({"id": String("O5zfbL0DfpRNNTLxBuAnvFjD50XBqqKobrpUCpCz2Mm_WfIKX-JopGtjgU37JzeWP7FkAIY5WOqq8bYlhrtgzg"), "age": Object({"type": String("Integer"), "value": Integer(28)}), "email": Object({"type": String("String"), "value": String("alice@example.com")}), "active": Object({"value": Boolean(true), "type": String("Boolean")}), "name": Object({"type": String("String"), "value": String("Alice Johnson")})})
 ✓ User not found (as expected)
 
 === Exists Check ===
@@ -909,14 +774,7 @@ perl: warning: Falling back to the standard locale ("C").
 ✓ Deleted collection
 
 ✅ All convenience methods demonstrated successfully!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.11s
      Running `target/debug/examples/client_crypto_stages`
 ✓ Client created
 ✓ crypto_demo_hmac_rs saved
@@ -933,14 +791,7 @@ All crypto-stage demos defined. Invoke any of them with:
   POST /api/functions/crypto_demo_encoding_rs { "title": "Héllo World" }
 
 ✓ Cleaned up demo functions
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s
      Running `target/debug/examples/client_distinct_values`
 === ekoDB Distinct Values Example ===
 
@@ -965,22 +816,15 @@ Found 2 distinct statuses for electronics:
   - {"type":"String","value":"discontinued"}
 
 Cleanup done.
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.13s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s
      Running `target/debug/examples/client_document_ttl`
 ✓ Client created
 
 === Insert Document with TTL (1 hour) ===
-✓ Inserted document: "Ppb-0tgxNy3qEKcTbd4CimSY4UN170faXhlEBm_yA7nyBNQhCB22kRgA_Kx5LE7zzeguqZ2Yk1yShmUsxNGjPQ"
+✓ Inserted document: "AQcATJP9DZD4yB8udszhwUSNA3gNUJAqaZ93cHNi0zMKjxThBOqPzebM88JET40dslJR0HsJjY1K0ILg0DKT5w"
 
 === Insert Document with TTL (5 minutes) ===
-✓ Inserted document: Some(String("hk04mrw6-pAq4Zu33LOsbUNvrYNLGasZxWiIANhZDqSKxjhbJQfJa8o0zZNY_bJ5II-5uIRaTi_Dq5k9lIHCAg"))
+✓ Inserted document: Some(String("seiahmDjLalD8M-8wkcP8AjFfx8h3EZco0IQXD2xzVx3wU2n7o4R8tIIXZVFI3Iss4gJgesfVdFSH3L8ck9A2w"))
 
 === Query Documents ===
 ✓ Found 2 documents with TTL
@@ -997,14 +841,7 @@ perl: warning: Falling back to the standard locale ("C").
 ✓ All document TTL operations completed successfully
 
 💡 Note: Documents with TTL will automatically expire after the specified duration
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s
      Running `target/debug/examples/client_edge_cache`
 === ekoDB as Edge Cache - Simple Example ===
 
@@ -1012,14 +849,14 @@ Setting up edge cache collection...
 ✓ Cache entry created
 
 Creating edge cache lookup script...
-✓ Edge cache script created: qIcr8gwEutVxrA-6MXDRU9T183eeC0GCmOA53_mIxc3IVoqFQlQlCzhcEm6a1aspbQ51lqnQj4o8BSxnU02fBQ
+✓ Edge cache script created: AQDRHFie-EguPxGiOJ5jGNR6L0H5SWhipfVXXKqgvnT6eQX-N6uD_R7fogwDgrOJV3OIM2TWG3GCxfMiIYtmEg
 
 Call 1: Cache lookup
-Response time: 7ms
+Response time: 1ms
 Found 1 cached entries
 
 Call 2: Cache lookup (connection warm)
-Response time: 5ms
+Response time: 1ms
 Found 1 cached entries
 
 === The Magic ===
@@ -1034,14 +871,7 @@ Found 1 cached entries
 ✓ Cleanup complete
 
 ✓ Example complete!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.13s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s
      Running `target/debug/examples/client_function_composition`
 === ekoDB Function Composition Examples ===
 
@@ -1072,33 +902,31 @@ Using KV cache + CallFunction for fast cache-aside pattern...
 ✅ Saved SWR function using composition: swr_user_rs
 
 First call (cache miss - will fetch from API):
-   ⏱️  Duration: 91.863875ms
+   ⏱️  Duration: 84.873166ms
+   📊 Records: 1
+   📦 Data: {
+  "value": {
+    "value": {
+      "email": "Sincere@april.biz",
+      "address": {
+        "zipcode": "92998-3874",
+        "geo": {
+          "lat": "-37.3159",
+          "lng": "81.1496"
+        }...
+
+Second call (cache hit - from cache):
+   ⏱️  Duration: 2.854542ms
    📊 Records: 1
    📦 Data: {
   "value": {
     "type": "Object",
     "value": {
-      "email": "Sincere@april.biz",
-      "name": "Leanne Graham",
-      "id": 1,
-      "address": {
-        "zipcode": "92998-3874",
-        "city"...
-
-Second call (cache hit - from cache):
-   ⏱️  Duration: 5.721584ms
-   📊 Records: 1
-   📦 Data: {
-  "value": {
-    "value": {
-      "email": "Sincere@april.biz",
-      "phone": "1-770-736-8031 x56442",
-      "name": "Leanne Graham",
-      "username": "Bret",
-      "address": {
-        "geo": {
- ...
-   🚀 Cache speedup: 16.1x faster!
+      "website": "hildegard.org",
+      "company": {
+        "catchPhrase": "Multi-layered client-server neural-net",
+        "name": "Romaguera-Cro...
+   🚀 Cache speedup: 29.7x faster!
 
 📝 Example 3: Multi-Level Function Composition
 
@@ -1121,24 +949,10 @@ Building complex workflows from small, reusable pieces...
 
 ✅ Cleanup complete
 ✅ All composition examples completed!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s
      Running `target/debug/examples/client_function_contract`
 client_function_contract: ok
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s
      Running `target/debug/examples/client_functions`
 === ekoDB Rust Client - Functions Example ===
 
@@ -1147,17 +961,17 @@ perl: warning: Falling back to the standard locale ("C").
 
 📝 Example 1: Simple Query Function
 
-✅ Function saved: PJ2MKyrqMIXnN0VzFBS18JByfCmKLkoBzdwyL6vmKUeW1Wk0buQG71iZj-D-a8W2VHtlVqS3TJ9xDkc9QFoO5g
+✅ Function saved: rY1FlKeNOep4Ttx8dF4lt469_MVaThQgGC6cMzEna3q2e0ilTcAiyBEOy2QXfyJYMF55uZS0KoQigr7QCZDnyQ
 📊 Found 5 active users
 
 📝 Example 2: Parameterized Function
 
-✅ Function saved: TVA2xrfxRMgG9MItEEnTiqbFrTRQYMVnG8aPuNrEtm-vBW3267aPK_TCbdzV5yzRYjW4ZuLnP7S46-IBH-DflQ
+✅ Function saved: WWs9-ifjQx0l-ubQe9ApIa2xQkWi-nRLRgNFl2jPaeLlGGH2x4pJUQRuaJ-ljh-J0ZU5wQiaoADDL58UfAUjFw
 📊 Found 3 users (limited)
 
 📝 Example 3: Aggregation Function
 
-✅ Function saved: TsqE2h6QOwFDcmfmgLfXfUPi5QP4QafGXAMdDymkD_GfXe7vvVm0YXjmDWEkRMVwnFXteq2qUQMJxfgY63jugQ
+✅ Function saved: qXPqR3RYIPVkpAblNjB7ZmFBKhipycqB0XVK75W7SExKDa00cjIGHDWYatL5V02wNgXFhP2uXQ4Bd4hkJy3dhw
 📊 Statistics: 2 groups
 
 📝 Example 4: Function Management
@@ -1171,14 +985,7 @@ perl: warning: Falling back to the standard locale ("C").
 
 
 ✅ All examples completed!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s
      Running `target/debug/examples/client_functions_advanced`
 🚀 ekoDB Rust Advanced Functions Example
 
@@ -1195,22 +1002,15 @@ perl: warning: Falling back to the standard locale ("C").
 
 ✅ Function saved
 📊 Category breakdown:
-   Record({"category": Object({"type": String("String"), "value": String("Electronics")}), "count": Object({"type": String("Integer"), "value": Integer(5)}), "avg_price": Object({"type": String("Float"), "value": Float(367.0)})})
-   Record({"avg_price": Object({"value": Float(365.6666666666667), "type": String("Float")}), "category": Object({"value": String("Furniture"), "type": String("String")}), "count": Object({"type": String("Integer"), "value": Integer(3)})})
+   Record({"category": Object({"type": String("String"), "value": String("Electronics")}), "count": Object({"type": String("Integer"), "value": Integer(5)}), "avg_price": Object({"value": Float(367.0), "type": String("Float")})})
+   Record({"count": Object({"type": String("Integer"), "value": Integer(3)}), "avg_price": Object({"type": String("Float"), "value": Float(365.6666666666667)}), "category": Object({"type": String("String"), "value": String("Furniture")})})
 ⏱️  Execution time: 0ms
 
 🧹 Cleaning up...
 ✅ Cleanup complete
 
 ✅ All advanced script examples finished!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.11s
      Running `target/debug/examples/client_functions_ai`
 🚀 ekoDB Rust AI Functions Example
 
@@ -1221,23 +1021,23 @@ perl: warning: Falling back to the standard locale ("C").
 
 ✅ Chat script saved
 🤖 AI Response:
-   Vector databases offer several benefits:
+   Vector databases offer several benefits, including:
 
-1. **Efficient Similarity Search**: They excel at finding similar items quickly using vector embeddings, ideal for tasks like recommendation and image retrieval.
+1. **Efficient Similarity Search**: They excel at retrieving similar items based on vector representations, making them ideal for tasks like image retrieval and recommendation systems.
 
-2. **Scalability**: Designed to handle large datasets with high dimensionality, vector databases can scale horizontally with distributed computing.
+2. **Scalability**: Designed to handle large volumes of high-dimensional data efficiently, allowing for quick indexing and retrieval.
 
-3. **Real-time Performance**: They provide fast indexing and querying, making real-time applications feasible.
+3. **Real-time Queries**: Support for fast, real-time querying and updates, essential for applications needing immediate results.
 
-4. **Supports Complex Data Types**: They can efficiently manage unstructured data like images, text, and audio by converting them into vector representations.
+4. **Handling Unstructured Data**: Can process unstructured data like text, images, and audio by converting them into vector embeddings.
 
-5. **Advanced Algorithms**: Vector databases utilize sophisticated algorithms like Approximate Nearest Neighbors (ANN) to enhance search performance.
+5. **Integration with Machine Learning**: Works well with ML models to facilitate tasks such as classification, clustering, and anomaly detection.
 
-6. **Integration with Machine Learning**: They work well with machine learning workflows, allowing for easy storage and retrieval of feature vectors.
+6. **Flexibility**: Support for various distance metrics (e.g., cosine, Euclidean) to suit different application needs.
 
-7. **Flexibility**: Many vector databases support various distance metrics, enabling tailored similarity searches for different applications.
+7. **Enhanced Search Capabilities**: Offers semantic search capabilities beyond traditional keyword-based approaches, providing contextually relevant results.
 
-8. **Reduced Latency**: They minimize the time taken to fetch related data, improving user experience in applications like chatbots or personalized content delivery.
+8. **Improved User Experience**: Enables more personalized and relevant responses in applications, enhancing user satisfaction.
 ⏱️  Execution time: 0ms
 
 📝 Example 2: Generate Embeddings
@@ -1255,14 +1055,7 @@ perl: warning: Falling back to the standard locale ("C").
 💡 This example demonstrates:
    ✅ Chat completions with system/user messages
    ✅ Embedding generation for text
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s
      Running `target/debug/examples/client_functions_complete`
 🚀 ekoDB Rust Complete Functions Example
 
@@ -1273,10 +1066,10 @@ perl: warning: Falling back to the standard locale ("C").
 
 📝 Example 1: FindAll + Group (Simple Aggregation)
 
-✅ Function saved: NvSepuMRVP9sdxRUgTs98MWWz6zhycomTszJfyc4wvhjFdR5wl4Yd59s4rXFpFMVLmmoDtryDFJUWvTUXGPJag
+✅ Function saved: jZxqirrcDXe5QpXcyA_vTTaaG0YW8fdIlNVhzf64KbYTRIJxq8lWnM8ymQM6w5MbpeElv2XcsU5hCb6efNzJfA
 📊 Found 2 product groups
-   Record({"category": Object({"type": String("String"), "value": String("Electronics")}), "count": Object({"value": Integer(3), "type": String("Integer")}), "avg_price": Object({"value": Float(575.6666666666666), "type": String("Float")})})
-   Record({"avg_price": Object({"type": String("Float"), "value": Float(474.0)}), "count": Object({"value": Integer(2), "type": String("Integer")}), "category": Object({"type": String("String"), "value": String("Furniture")})})
+   Record({"count": Object({"type": String("Integer"), "value": Integer(3)}), "avg_price": Object({"type": String("Float"), "value": Float(575.6666666666666)}), "category": Object({"value": String("Electronics"), "type": String("String")})})
+   Record({"category": Object({"type": String("String"), "value": String("Furniture")}), "count": Object({"type": String("Integer"), "value": Integer(2)}), "avg_price": Object({"value": Float(474.0), "type": String("Float")})})
 ⏱️  Execution time: 0ms
 
 📝 Example 2: Simple Product Listing
@@ -1289,8 +1082,8 @@ perl: warning: Falling back to the standard locale ("C").
 
 ✅ Function saved
 📊 Found 2 categories
-   Record({"category": Object({"type": String("String"), "value": String("Furniture")}), "count": Object({"value": Integer(2), "type": String("Integer")})})
-   Record({"count": Object({"value": Integer(3), "type": String("Integer")}), "category": Object({"value": String("Electronics"), "type": String("String")})})
+   Record({"count": Object({"value": Integer(2), "type": String("Integer")}), "category": Object({"value": String("Furniture"), "type": String("String")})})
+   Record({"count": Object({"type": String("Integer"), "value": Integer(3)}), "category": Object({"type": String("String"), "value": String("Electronics")})})
 ⏱️  Execution time: 0ms
 
 📝 Example 4: High Rating Products
@@ -1322,14 +1115,7 @@ perl: warning: Falling back to the standard locale ("C").
    ✅ Multi-stage pipelines (FindAll → Group → Count)
    ✅ Parameter definitions
    ✅ Function management (save, call, delete)
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s
      Running `target/debug/examples/client_functions_crud`
 🚀 ekoDB Rust CRUD Functions Example
 
@@ -1346,22 +1132,15 @@ perl: warning: Falling back to the standard locale ("C").
 
 ✅ Function saved
 📊 User counts by status:
-   Record({"count": Object({"type": String("Integer"), "value": Integer(3)}), "status": Object({"value": String("inactive"), "type": String("String")})})
-   Record({"status": Object({"value": String("active"), "type": String("String")}), "count": Object({"value": Integer(7), "type": String("Integer")})})
+   Record({"count": Object({"value": Integer(7), "type": String("Integer")}), "status": Object({"value": String("active"), "type": String("String")})})
+   Record({"status": Object({"type": String("String"), "value": String("inactive")}), "count": Object({"type": String("Integer"), "value": Integer(3)})})
 ⏱️  Execution time: 0ms
 
 🧹 Cleaning up...
 ✅ Cleanup complete
 
 ✅ All CRUD script examples finished!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.11s
      Running `target/debug/examples/client_functions_kv_wrapped`
 🚀 ekoDB Rust KV Store & Wrapped Types Example
 
@@ -1373,12 +1152,12 @@ perl: warning: Falling back to the standard locale ("C").
 
 📝 Example 1: Inserting Records with Wrapped Types
 
-✅ Inserted order: Some(String("r_PrrGWlWLADT630OIrkEM6wxT_GgGInaTrJSMfSxpc5v3YyQqXARxsotoHAcKBla-6azgU2cn9NwQE9R6F0AQ"))
+✅ Inserted order: Some(String("N1qy_7is3Mp8xkcPgvzlGxIVOjzVYXoKRiyNVxWDK_lp_zTOd_792z4BuaFLpGlsX-eTQh0PCdJtCRIYUOcYRQ"))
 ✅ Inserted 2 products with wrapped types
 
 📝 Example 2: function with Wrapped Type Parameters
 
-✅ Function saved: MEjNoK5vk3ZVbNkgC3bg-ZbwegJ0BKsPhnYFJiICJzSrWjYEyQ-UIr9WiNk7_Sg6L8wqhrSW-o9P8Y8bpG_69g
+✅ Function saved: mva4g8h8dH6mub4VKmU4Vtb8QUD0Xa4fuzjUXJDRY3FFcMTf6JR7zS3X6JP5QcypmXfHa5nplmWJS3sW7QCUsA
 📊 function executed
 ⏱️  Execution time: 0ms
 
@@ -1392,13 +1171,13 @@ perl: warning: Falling back to the standard locale ("C").
 
 📝 Example 4: KV Operations in Functions
 
-✅ Function saved: H_kB-HdrYTE5d-Mxs7oHs14rJYZiZrrdpgbrWGMgiG7GQ7LDbCtdkjeRadYdlH2sjWo2uBStgs8XXnNIvtJTBQ
+✅ Function saved: 2v4KpleNLu12qSswBa19EOCjIBkH14t6HBMAodzsIMiQMt73DWX0KvjKFDlfXr9OUAnfuEYl85X-yaLAhHaVnQ
 📊 Cached and retrieved product data
 ⏱️  Execution time: 0ms
 
 📝 Example 5: Combined Wrapped Types + KV Function
 
-✅ Function saved: utbbMaZPGQ7DazQE_dk7p0GilYkThmbLKGUKjdvtVMPkhCb-ZOz56U5GJ8Bspd2OKqONWHMQCqfz_x5w2KC7PA
+✅ Function saved: jSR6_ntKHqt2Z5iweJ3XVyUnSTKI0pBjBgkpDPKHr3OFANAiy3GcIUgzhJmgTtRuEZN5t14Ch3joTWZj2dEGnQ
 📊 Processed order with caching
 ⏱️  Stages executed: 1
 ⏱️  Execution time: 0ms
@@ -1413,14 +1192,7 @@ perl: warning: Falling back to the standard locale ("C").
    ✅ FieldType::Decimal preserves precision (no floating point errors)
    ✅ KV store is great for caching and quick lookups
    ✅ KV operations work within scripts
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.11s
      Running `target/debug/examples/client_functions_search`
 🚀 ekoDB Rust Search Functions Example
 
@@ -1432,40 +1204,33 @@ perl: warning: Falling back to the standard locale ("C").
 ✅ Function saved
 📊 Found 5 documents
    1. Getting Started with ekoDB (Database)
-   2. Introduction to Machine Learning (AI)
-   3. Database Design Principles (Database)
-   4. Vector Databases Explained (Database)
-   5. Natural Language Processing (AI)
+   2. Vector Databases Explained (Database)
+   3. Introduction to Machine Learning (AI)
+   4. Natural Language Processing (AI)
+   5. Database Design Principles (Database)
 ⏱️  Execution time: 0ms
 
 📝 Example 2: Count Documents by Category
 
 ✅ Function saved
 📊 Documents by category:
-   Record({"category": Object({"value": String("AI"), "type": String("String")}), "count": Object({"value": Integer(2), "type": String("Integer")})})
-   Record({"count": Object({"value": Integer(3), "type": String("Integer")}), "category": Object({"type": String("String"), "value": String("Database")})})
+   Record({"count": Object({"value": Integer(2), "type": String("Integer")}), "category": Object({"type": String("String"), "value": String("AI")})})
+   Record({"count": Object({"type": String("Integer"), "value": Integer(3)}), "category": Object({"value": String("Database"), "type": String("String")})})
 ⏱️  Execution time: 0ms
 
 🧹 Cleaning up...
 ✅ Cleanup complete
 
 ✅ All search script examples finished!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s
      Running `target/debug/examples/client_goal_templates`
 === ekoDB Goal Template CRUD Example (Rust) ===
 
 --- Creating goal template ---
-Created template: Data Migration (id: y4AGokfGbjULCU7zCEaatvOk-vl6gkHI-03nqXcwloOum7a-8pPCiPGAZjR_Gsm3Z_3f6Mq5EVSMeMBkw61SvA)
+Created template: Data Migration (id: 2GfFEWlYRQw5A09Hr_QHsxDZuqeEXjv1L2M0ccBRYny4akOR8wdR77f4BJz8mn872lC_X0nFMYAvp5nT-l-QGw)
 
 --- Listing templates ---
-Templates: {"count":1,"items":[{"description":{"type":"String","value":"Template for migrating data between schemas"},"id":"y4AGokfGbjULCU7zCEaatvOk-vl6gkHI-03nqXcwloOum7a-8pPCiPGAZjR_Gsm3Z_3f6Mq5EVSMeMBkw61SvA","steps":{"type":"Array","value":[{"description":"Analyze source schema"},{"description":"Create target schema"},{"description":"Migrate records"},{"description":"Validate results"}]},"title":{"type":"String","value":"Data Migration"}}]}
+Templates: {"count":1,"items":[{"description":{"type":"String","value":"Template for migrating data between schemas"},"id":"2GfFEWlYRQw5A09Hr_QHsxDZuqeEXjv1L2M0ccBRYny4akOR8wdR77f4BJz8mn872lC_X0nFMYAvp5nT-l-QGw","steps":{"type":"Array","value":[{"description":"Analyze source schema"},{"description":"Create target schema"},{"description":"Migrate records"},{"description":"Validate results"}]},"title":{"type":"String","value":"Data Migration"}}]}
 
 --- Getting template ---
 Fetched: {"type":"String","value":"Data Migration"}
@@ -1477,22 +1242,15 @@ Updated description: {"type":"String","value":"Updated: comprehensive data migra
 Template deleted successfully
 
 ✓ Goal template CRUD example completed
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.13s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s
      Running `target/debug/examples/client_goals_tasks_agents`
 === ekoDB Goals, Tasks & Agents Integration Example (Rust) ===
 
 --- Goal: create ---
-Created goal: "Deploy v2.0 to production" (id: D5NVcTWVmpDKFpRUDMnntMipZF_BHTuoPFbIS290sLmjib-KkGyQ9JQSy1m3jnaCunctTyHJ5fa_i60PSXN7hw)
+Created goal: "Deploy v2.0 to production" (id: pMr_P3hffv2XhVmQqGAdBkrNqaCxeIC2RiNGJuNEmLZH96kj9sGKud87wcgcSkowon_L4LJHP7Crx__vhtYW7w)
 
 --- Goal: list ---
-Goals: {"count":1,"goals":[{"created_at":"2026-09-16T13:24:14.983121+00:00","description":"Full release cycle for version 2.0","id":"D5NVcTWVmpDKFpRUDMnntMipZF_BHTuoPFbIS290sLmjib-KkGyQ9JQSy1m3jnaCunctTyHJ5fa_i60PSXN7hw","status":"pending","steps":"[{\"description\":\"Run integration tests\"},{\"description\":\"Build release artifacts\"},{\"description\":\"Deploy to staging\"},{\"description\":\"Deploy to production\"}]","title":"Deploy v2.0 to production","updated_at":"2026-09-16T13:24:14.983121+00:00"}]}
+Goals: {"count":1,"goals":[{"created_at":"2026-09-16T20:20:38.360522+00:00","description":"Full release cycle for version 2.0","id":"pMr_P3hffv2XhVmQqGAdBkrNqaCxeIC2RiNGJuNEmLZH96kj9sGKud87wcgcSkowon_L4LJHP7Crx__vhtYW7w","status":"pending","steps":"[{\"description\":\"Run integration tests\"},{\"description\":\"Build release artifacts\"},{\"description\":\"Deploy to staging\"},{\"description\":\"Deploy to production\"}]","title":"Deploy v2.0 to production","updated_at":"2026-09-16T20:20:38.360522+00:00"}]}
 
 --- Goal: get ---
 Fetched goal: {"type":"String","value":"Deploy v2.0 to production"}
@@ -1501,59 +1259,59 @@ Fetched goal: {"type":"String","value":"Deploy v2.0 to production"}
 Updated description: {"type":"String","value":"Updated: full v2.0 release with rollback plan"}
 
 --- Goal: search ---
-Search results: {"count":1,"items":[{"_score":12.87,"created_at":{"type":"DateTime","value":"2026-09-16T13:24:14.983121+00:00"},"description":{"type":"String","value":"Updated: full v2.0 release with rollback plan"},"id":"D5NVcTWVmpDKFpRUDMnntMipZF_BHTuoPFbIS290sLmjib-KkGyQ9JQSy1m3jnaCunctTyHJ5fa_i60PSXN7hw","status":{"type":"String","value":"pending"},"steps":{"type":"String","value":"[{\"description\":\"Run integration tests\"},{\"description\":\"Build release artifacts\"},{\"description\":\"Deploy to staging\"},{\"description\":\"Deploy to production\"}]"},"title":{"type":"String","value":"Deploy v2.0 to production"},"updated_at":{"type":"DateTime","value":"2026-09-16T13:24:15.035462+00:00"}}]}
+Search results: {"count":1,"items":[{"_score":12.87,"created_at":{"type":"DateTime","value":"2026-09-16T20:20:38.360522+00:00"},"description":{"type":"String","value":"Updated: full v2.0 release with rollback plan"},"id":"pMr_P3hffv2XhVmQqGAdBkrNqaCxeIC2RiNGJuNEmLZH96kj9sGKud87wcgcSkowon_L4LJHP7Crx__vhtYW7w","status":{"type":"String","value":"pending"},"steps":{"type":"String","value":"[{\"description\":\"Run integration tests\"},{\"description\":\"Build release artifacts\"},{\"description\":\"Deploy to staging\"},{\"description\":\"Deploy to production\"}]"},"title":{"type":"String","value":"Deploy v2.0 to production"},"updated_at":{"type":"DateTime","value":"2026-09-16T20:20:38.402160+00:00"}}]}
 
 --- Goal step: start (step 0) ---
-Step 0 started: {"created_at":{"type":"DateTime","value":"2026-09-16T13:24:14.983121+00:00"},"description":{"type":"String","value":"Updated: full v2.0 release with rollback plan"},"id":"D5NVcTWVmpDKFpRUDMnntMipZF_BHTuoPFbIS290sLmjib-KkGyQ9JQSy1m3jnaCunctTyHJ5fa_i60PSXN7hw","status":{"type":"String","value":"in_progress"},"steps":{"type":"String","value":"[{\"description\":\"Run integration tests\",\"status\":\"InProgress\"},{\"description\":\"Build release artifacts\"},{\"description\":\"Deploy to staging\"},{\"description\":\"Deploy to production\"}]"},"title":{"type":"String","value":"Deploy v2.0 to production"},"updated_at":{"type":"DateTime","value":"2026-09-16T13:24:15.052739+00:00"}}
+Step 0 started: {"created_at":{"type":"DateTime","value":"2026-09-16T20:20:38.360522+00:00"},"description":{"type":"String","value":"Updated: full v2.0 release with rollback plan"},"id":"pMr_P3hffv2XhVmQqGAdBkrNqaCxeIC2RiNGJuNEmLZH96kj9sGKud87wcgcSkowon_L4LJHP7Crx__vhtYW7w","status":{"type":"String","value":"in_progress"},"steps":{"type":"String","value":"[{\"description\":\"Run integration tests\",\"status\":\"InProgress\"},{\"description\":\"Build release artifacts\"},{\"description\":\"Deploy to staging\"},{\"description\":\"Deploy to production\"}]"},"title":{"type":"String","value":"Deploy v2.0 to production"},"updated_at":{"type":"DateTime","value":"2026-09-16T20:20:38.412332+00:00"}}
 
 --- Goal step: complete (step 0) ---
-Step 0 completed: {"created_at":{"type":"DateTime","value":"2026-09-16T13:24:14.983121+00:00"},"description":{"type":"String","value":"Updated: full v2.0 release with rollback plan"},"id":"D5NVcTWVmpDKFpRUDMnntMipZF_BHTuoPFbIS290sLmjib-KkGyQ9JQSy1m3jnaCunctTyHJ5fa_i60PSXN7hw","status":{"type":"String","value":"in_progress"},"steps":{"type":"String","value":"[{\"description\":\"Run integration tests\",\"result\":\"All 247 tests passed\",\"status\":\"Completed\"},{\"description\":\"Build release artifacts\"},{\"description\":\"Deploy to staging\"},{\"description\":\"Deploy to production\"}]"},"title":{"type":"String","value":"Deploy v2.0 to production"},"updated_at":{"type":"DateTime","value":"2026-09-16T13:24:15.065422+00:00"}}
+Step 0 completed: {"created_at":{"type":"DateTime","value":"2026-09-16T20:20:38.360522+00:00"},"description":{"type":"String","value":"Updated: full v2.0 release with rollback plan"},"id":"pMr_P3hffv2XhVmQqGAdBkrNqaCxeIC2RiNGJuNEmLZH96kj9sGKud87wcgcSkowon_L4LJHP7Crx__vhtYW7w","status":{"type":"String","value":"in_progress"},"steps":{"type":"String","value":"[{\"description\":\"Run integration tests\",\"result\":\"All 247 tests passed\",\"status\":\"Completed\"},{\"description\":\"Build release artifacts\"},{\"description\":\"Deploy to staging\"},{\"description\":\"Deploy to production\"}]"},"title":{"type":"String","value":"Deploy v2.0 to production"},"updated_at":{"type":"DateTime","value":"2026-09-16T20:20:38.419545+00:00"}}
 
 --- Goal step: start (step 1) ---
 Step 1 started
 
 --- Goal step: fail (step 1) ---
-Step 1 failed: {"created_at":{"type":"DateTime","value":"2026-09-16T13:24:14.983121+00:00"},"description":{"type":"String","value":"Updated: full v2.0 release with rollback plan"},"id":"D5NVcTWVmpDKFpRUDMnntMipZF_BHTuoPFbIS290sLmjib-KkGyQ9JQSy1m3jnaCunctTyHJ5fa_i60PSXN7hw","status":{"type":"String","value":"in_progress"},"steps":{"type":"String","value":"[{\"description\":\"Run integration tests\",\"result\":\"All 247 tests passed\",\"status\":\"Completed\"},{\"description\":\"Build release artifacts\",\"error\":\"Build timeout after 300s\",\"status\":\"Failed\"},{\"description\":\"Deploy to staging\"},{\"description\":\"Deploy to production\"}]"},"title":{"type":"String","value":"Deploy v2.0 to production"},"updated_at":{"type":"DateTime","value":"2026-09-16T13:24:15.086183+00:00"}}
+Step 1 failed: {"created_at":{"type":"DateTime","value":"2026-09-16T20:20:38.360522+00:00"},"description":{"type":"String","value":"Updated: full v2.0 release with rollback plan"},"id":"pMr_P3hffv2XhVmQqGAdBkrNqaCxeIC2RiNGJuNEmLZH96kj9sGKud87wcgcSkowon_L4LJHP7Crx__vhtYW7w","status":{"type":"String","value":"in_progress"},"steps":{"type":"String","value":"[{\"description\":\"Run integration tests\",\"result\":\"All 247 tests passed\",\"status\":\"Completed\"},{\"description\":\"Build release artifacts\",\"error\":\"Build timeout after 300s\",\"status\":\"Failed\"},{\"description\":\"Deploy to staging\"},{\"description\":\"Deploy to production\"}]"},"title":{"type":"String","value":"Deploy v2.0 to production"},"updated_at":{"type":"DateTime","value":"2026-09-16T20:20:38.433342+00:00"}}
 
 --- Goal: complete ---
-Goal completed (pending review): {"completed_at":{"type":"DateTime","value":"2026-09-16T13:24:15.095281+00:00"},"created_at":{"type":"DateTime","value":"2026-09-16T13:24:14.983121+00:00"},"description":{"type":"String","value":"Updated: full v2.0 release with rollback plan"},"id":"D5NVcTWVmpDKFpRUDMnntMipZF_BHTuoPFbIS290sLmjib-KkGyQ9JQSy1m3jnaCunctTyHJ5fa_i60PSXN7hw","status":{"type":"String","value":"pending_review"},"steps":{"type":"String","value":"[{\"description\":\"Run integration tests\",\"result\":\"All 247 tests passed\",\"status\":\"Completed\"},{\"description\":\"Build release artifacts\",\"error\":\"Build timeout after 300s\",\"status\":\"Failed\"},{\"description\":\"Deploy to staging\"},{\"description\":\"Deploy to production\"}]"},"summary":{"type":"String","value":"Partial completion — step 1 failed"},"title":{"type":"String","value":"Deploy v2.0 to production"},"updated_at":{"type":"DateTime","value":"2026-09-16T13:24:15.095281+00:00"}}
+Goal completed (pending review): {"completed_at":{"type":"DateTime","value":"2026-09-16T20:20:38.440196+00:00"},"created_at":{"type":"DateTime","value":"2026-09-16T20:20:38.360522+00:00"},"description":{"type":"String","value":"Updated: full v2.0 release with rollback plan"},"id":"pMr_P3hffv2XhVmQqGAdBkrNqaCxeIC2RiNGJuNEmLZH96kj9sGKud87wcgcSkowon_L4LJHP7Crx__vhtYW7w","status":{"type":"String","value":"pending_review"},"steps":{"type":"String","value":"[{\"description\":\"Run integration tests\",\"result\":\"All 247 tests passed\",\"status\":\"Completed\"},{\"description\":\"Build release artifacts\",\"error\":\"Build timeout after 300s\",\"status\":\"Failed\"},{\"description\":\"Deploy to staging\"},{\"description\":\"Deploy to production\"}]"},"summary":{"type":"String","value":"Partial completion — step 1 failed"},"title":{"type":"String","value":"Deploy v2.0 to production"},"updated_at":{"type":"DateTime","value":"2026-09-16T20:20:38.440196+00:00"}}
 
 --- Goal: approve ---
-Goal approved: {"completed_at":{"type":"DateTime","value":"2026-09-16T13:24:15.095281+00:00"},"created_at":{"type":"DateTime","value":"2026-09-16T13:24:14.983121+00:00"},"description":{"type":"String","value":"Updated: full v2.0 release with rollback plan"},"id":"D5NVcTWVmpDKFpRUDMnntMipZF_BHTuoPFbIS290sLmjib-KkGyQ9JQSy1m3jnaCunctTyHJ5fa_i60PSXN7hw","status":{"type":"String","value":"in_progress"},"steps":{"type":"String","value":"[{\"description\":\"Run integration tests\",\"result\":\"All 247 tests passed\",\"status\":\"Completed\"},{\"description\":\"Build release artifacts\",\"error\":\"Build timeout after 300s\",\"status\":\"Failed\"},{\"description\":\"Deploy to staging\"},{\"description\":\"Deploy to production\"}]"},"summary":{"type":"String","value":"Partial completion — step 1 failed"},"title":{"type":"String","value":"Deploy v2.0 to production"},"updated_at":{"type":"DateTime","value":"2026-09-16T13:24:15.104471+00:00"}}
+Goal approved: {"completed_at":{"type":"DateTime","value":"2026-09-16T20:20:38.440196+00:00"},"created_at":{"type":"DateTime","value":"2026-09-16T20:20:38.360522+00:00"},"description":{"type":"String","value":"Updated: full v2.0 release with rollback plan"},"id":"pMr_P3hffv2XhVmQqGAdBkrNqaCxeIC2RiNGJuNEmLZH96kj9sGKud87wcgcSkowon_L4LJHP7Crx__vhtYW7w","status":{"type":"String","value":"in_progress"},"steps":{"type":"String","value":"[{\"description\":\"Run integration tests\",\"result\":\"All 247 tests passed\",\"status\":\"Completed\"},{\"description\":\"Build release artifacts\",\"error\":\"Build timeout after 300s\",\"status\":\"Failed\"},{\"description\":\"Deploy to staging\"},{\"description\":\"Deploy to production\"}]"},"summary":{"type":"String","value":"Partial completion — step 1 failed"},"title":{"type":"String","value":"Deploy v2.0 to production"},"updated_at":{"type":"DateTime","value":"2026-09-16T20:20:38.447125+00:00"}}
 
 --- Goal: create (for rejection) ---
-Created goal2: "Refactor auth module" (id: 4zzaCO6TqzWTWWclqpm9XGpgRcY9h9BI3cEViwxH_J5oimpnB00pMxVZ1ixltgioQFWwSmm3BrIPHKosV1mTHg)
+Created goal2: "Refactor auth module" (id: NlDaez3SW9NeI8ct0XGh3KUf-kz5F9r9uTTIY787X6TIo3RhEjuB1ZcDjuVb4gN0vwAtZhgef_YqPKi_9IOrXw)
 
 --- Goal: complete (goal2) ---
 
 --- Goal: reject ---
-Goal rejected: {"completed_at":{"type":"DateTime","value":"2026-09-16T13:24:15.130807+00:00"},"created_at":{"type":"DateTime","value":"2026-09-16T13:24:15.113443+00:00"},"description":{"type":"String","value":"Rewrite JWT handling"},"id":"4zzaCO6TqzWTWWclqpm9XGpgRcY9h9BI3cEViwxH_J5oimpnB00pMxVZ1ixltgioQFWwSmm3BrIPHKosV1mTHg","reason":{"type":"String","value":"Breaks backward compatibility"},"status":{"type":"String","value":"failed"},"steps":{"type":"String","value":"[]"},"summary":{"type":"String","value":"Completed refactor"},"title":{"type":"String","value":"Refactor auth module"},"updated_at":{"type":"DateTime","value":"2026-09-16T13:24:15.130807+00:00"}}
+Goal rejected: {"completed_at":{"type":"DateTime","value":"2026-09-16T20:20:38.466951+00:00"},"created_at":{"type":"DateTime","value":"2026-09-16T20:20:38.453892+00:00"},"description":{"type":"String","value":"Rewrite JWT handling"},"id":"NlDaez3SW9NeI8ct0XGh3KUf-kz5F9r9uTTIY787X6TIo3RhEjuB1ZcDjuVb4gN0vwAtZhgef_YqPKi_9IOrXw","reason":{"type":"String","value":"Breaks backward compatibility"},"status":{"type":"String","value":"failed"},"steps":{"type":"String","value":"[]"},"summary":{"type":"String","value":"Completed refactor"},"title":{"type":"String","value":"Refactor auth module"},"updated_at":{"type":"DateTime","value":"2026-09-16T20:20:38.466951+00:00"}}
 
 --- Task: create ---
-Created task: Nightly backup (id: 9EzC-4nX2_-60iWre_YoqrVpUKIBOyCbBhGH-i1reOP6LTCjeygW0ReFCen5WjDB5knMujsznVByL0-hqHxjFA)
+Created task: Nightly backup (id: QSPC8osd5fYLo7RyleME9bLUdkMnrCuHaO2wIq30vP3w6foiq62tJ3_NyEuDXkZB6u8LxduhqMZBa01D0xCzKg)
 
 --- Task: list ---
-Tasks: {"count":1,"items":[{"description":{"type":"String","value":"Full database backup to S3"},"due_at":{"type":"DateTime","value":"2026-03-22T02:00:00+00:00"},"id":"9EzC-4nX2_-60iWre_YoqrVpUKIBOyCbBhGH-i1reOP6LTCjeygW0ReFCen5WjDB5knMujsznVByL0-hqHxjFA","max_retries":{"type":"Integer","value":3},"schedule":{"type":"String","value":"0 2 * * *"},"title":{"type":"String","value":"Nightly backup"}}]}
+Tasks: {"count":1,"items":[{"description":{"type":"String","value":"Full database backup to S3"},"due_at":{"type":"DateTime","value":"2026-03-22T02:00:00+00:00"},"id":"QSPC8osd5fYLo7RyleME9bLUdkMnrCuHaO2wIq30vP3w6foiq62tJ3_NyEuDXkZB6u8LxduhqMZBa01D0xCzKg","max_retries":{"type":"Integer","value":3},"schedule":{"type":"String","value":"0 2 * * *"},"title":{"type":"String","value":"Nightly backup"}}]}
 
 --- Task: get ---
 Fetched task: {"type":"String","value":"Nightly backup"}
 
 --- Task: start ---
-Task started: {"description":{"type":"String","value":"Full database backup to S3"},"due_at":{"type":"DateTime","value":"2026-03-22T02:00:00+00:00"},"id":"9EzC-4nX2_-60iWre_YoqrVpUKIBOyCbBhGH-i1reOP6LTCjeygW0ReFCen5WjDB5knMujsznVByL0-hqHxjFA","max_retries":{"type":"Integer","value":3},"schedule":{"type":"String","value":"0 2 * * *"},"status":{"type":"String","value":"running"},"title":{"type":"String","value":"Nightly backup"},"updated_at":{"type":"DateTime","value":"2026-09-16T13:24:15.178359+00:00"}}
+Task started: {"description":{"type":"String","value":"Full database backup to S3"},"due_at":{"type":"DateTime","value":"2026-03-22T02:00:00+00:00"},"id":"QSPC8osd5fYLo7RyleME9bLUdkMnrCuHaO2wIq30vP3w6foiq62tJ3_NyEuDXkZB6u8LxduhqMZBa01D0xCzKg","max_retries":{"type":"Integer","value":3},"schedule":{"type":"String","value":"0 2 * * *"},"status":{"type":"String","value":"running"},"title":{"type":"String","value":"Nightly backup"},"updated_at":{"type":"DateTime","value":"2026-09-16T20:20:38.501302+00:00"}}
 
 --- Task: succeed ---
-Task succeeded: {"consecutive_failures":{"type":"Integer","value":0},"description":{"type":"String","value":"Full database backup to S3"},"due_at":{"type":"DateTime","value":"2026-03-22T02:00:00+00:00"},"id":"9EzC-4nX2_-60iWre_YoqrVpUKIBOyCbBhGH-i1reOP6LTCjeygW0ReFCen5WjDB5knMujsznVByL0-hqHxjFA","last_error":{"type":"Null","value":null},"last_run":{"type":"DateTime","value":"2026-09-16T13:24:15.187065+00:00"},"max_retries":{"type":"Integer","value":3},"run_count":{"type":"Integer","value":1},"schedule":{"type":"String","value":"0 2 * * *"},"status":{"type":"String","value":"active"},"title":{"type":"String","value":"Nightly backup"},"updated_at":{"type":"DateTime","value":"2026-09-16T13:24:15.187065+00:00"}}
+Task succeeded: {"consecutive_failures":{"type":"Integer","value":0},"description":{"type":"String","value":"Full database backup to S3"},"due_at":{"type":"DateTime","value":"2026-03-22T02:00:00+00:00"},"id":"QSPC8osd5fYLo7RyleME9bLUdkMnrCuHaO2wIq30vP3w6foiq62tJ3_NyEuDXkZB6u8LxduhqMZBa01D0xCzKg","last_error":{"type":"Null","value":null},"last_run":{"type":"DateTime","value":"2026-09-16T20:20:38.507945+00:00"},"max_retries":{"type":"Integer","value":3},"run_count":{"type":"Integer","value":1},"schedule":{"type":"String","value":"0 2 * * *"},"status":{"type":"String","value":"active"},"title":{"type":"String","value":"Nightly backup"},"updated_at":{"type":"DateTime","value":"2026-09-16T20:20:38.507945+00:00"}}
 
 --- Task: start (round 2) ---
 
 --- Task: pause ---
-Task paused: {"consecutive_failures":{"type":"Integer","value":0},"description":{"type":"String","value":"Full database backup to S3"},"due_at":{"type":"DateTime","value":"2026-03-22T02:00:00+00:00"},"id":"9EzC-4nX2_-60iWre_YoqrVpUKIBOyCbBhGH-i1reOP6LTCjeygW0ReFCen5WjDB5knMujsznVByL0-hqHxjFA","last_error":{"type":"Null","value":null},"last_run":{"type":"DateTime","value":"2026-09-16T13:24:15.187065+00:00"},"max_retries":{"type":"Integer","value":3},"run_count":{"type":"Integer","value":1},"schedule":{"type":"String","value":"0 2 * * *"},"status":{"type":"String","value":"paused"},"title":{"type":"String","value":"Nightly backup"},"updated_at":{"type":"DateTime","value":"2026-09-16T13:24:15.205785+00:00"}}
+Task paused: {"consecutive_failures":{"type":"Integer","value":0},"description":{"type":"String","value":"Full database backup to S3"},"due_at":{"type":"DateTime","value":"2026-03-22T02:00:00+00:00"},"id":"QSPC8osd5fYLo7RyleME9bLUdkMnrCuHaO2wIq30vP3w6foiq62tJ3_NyEuDXkZB6u8LxduhqMZBa01D0xCzKg","last_error":{"type":"Null","value":null},"last_run":{"type":"DateTime","value":"2026-09-16T20:20:38.507945+00:00"},"max_retries":{"type":"Integer","value":3},"run_count":{"type":"Integer","value":1},"schedule":{"type":"String","value":"0 2 * * *"},"status":{"type":"String","value":"paused"},"title":{"type":"String","value":"Nightly backup"},"updated_at":{"type":"DateTime","value":"2026-09-16T20:20:38.521502+00:00"}}
 
 --- Task: resume ---
-Task resumed: {"consecutive_failures":{"type":"Integer","value":0},"description":{"type":"String","value":"Full database backup to S3"},"due_at":{"type":"DateTime","value":"2026-03-22T02:00:00+00:00"},"id":"9EzC-4nX2_-60iWre_YoqrVpUKIBOyCbBhGH-i1reOP6LTCjeygW0ReFCen5WjDB5knMujsznVByL0-hqHxjFA","last_error":{"type":"Null","value":null},"last_run":{"type":"DateTime","value":"2026-09-16T13:24:15.187065+00:00"},"max_retries":{"type":"Integer","value":3},"run_count":{"type":"Integer","value":1},"schedule":{"type":"String","value":"0 2 * * *"},"status":{"type":"String","value":"active"},"title":{"type":"String","value":"Nightly backup"},"updated_at":{"type":"DateTime","value":"2026-09-16T13:24:15.214914+00:00"}}
+Task resumed: {"consecutive_failures":{"type":"Integer","value":0},"description":{"type":"String","value":"Full database backup to S3"},"due_at":{"type":"DateTime","value":"2026-03-22T02:00:00+00:00"},"id":"QSPC8osd5fYLo7RyleME9bLUdkMnrCuHaO2wIq30vP3w6foiq62tJ3_NyEuDXkZB6u8LxduhqMZBa01D0xCzKg","last_error":{"type":"Null","value":null},"last_run":{"type":"DateTime","value":"2026-09-16T20:20:38.507945+00:00"},"max_retries":{"type":"Integer","value":3},"run_count":{"type":"Integer","value":1},"schedule":{"type":"String","value":"0 2 * * *"},"status":{"type":"String","value":"active"},"title":{"type":"String","value":"Nightly backup"},"updated_at":{"type":"DateTime","value":"2026-09-16T20:20:38.528670+00:00"}}
 
 --- Task: fail ---
-Task failed: {"consecutive_failures":{"type":"Integer","value":1},"description":{"type":"String","value":"Full database backup to S3"},"due_at":{"type":"DateTime","value":"2026-03-22T02:00:00+00:00"},"id":"9EzC-4nX2_-60iWre_YoqrVpUKIBOyCbBhGH-i1reOP6LTCjeygW0ReFCen5WjDB5knMujsznVByL0-hqHxjFA","last_error":{"type":"String","value":"S3 bucket access denied"},"last_run":{"type":"DateTime","value":"2026-09-16T13:24:15.226393+00:00"},"max_retries":{"type":"Integer","value":3},"run_count":{"type":"Integer","value":1},"schedule":{"type":"String","value":"0 2 * * *"},"status":{"type":"String","value":"active"},"title":{"type":"String","value":"Nightly backup"},"updated_at":{"type":"DateTime","value":"2026-09-16T13:24:15.226393+00:00"}}
+Task failed: {"consecutive_failures":{"type":"Integer","value":1},"description":{"type":"String","value":"Full database backup to S3"},"due_at":{"type":"DateTime","value":"2026-03-22T02:00:00+00:00"},"id":"QSPC8osd5fYLo7RyleME9bLUdkMnrCuHaO2wIq30vP3w6foiq62tJ3_NyEuDXkZB6u8LxduhqMZBa01D0xCzKg","last_error":{"type":"String","value":"S3 bucket access denied"},"last_run":{"type":"DateTime","value":"2026-09-16T20:20:38.535900+00:00"},"max_retries":{"type":"Integer","value":3},"run_count":{"type":"Integer","value":1},"schedule":{"type":"String","value":"0 2 * * *"},"status":{"type":"String","value":"active"},"title":{"type":"String","value":"Nightly backup"},"updated_at":{"type":"DateTime","value":"2026-09-16T20:20:38.535900+00:00"}}
 
 --- Task: due ---
 Due tasks: {"count":0,"items":[]}
@@ -1562,10 +1320,10 @@ Due tasks: {"count":0,"items":[]}
 Task deleted
 
 --- Agent: create ---
-Created agent: backup-agent (id: qG3hbvNQv9bXzex89VZzptJy9uIQBHNSS-SdpZlMDIDaCO-STg0Tc0uOpvsV2QrfsABazhvIlmn8SP-By-YFWg)
+Created agent: backup-agent (id: oxl39uQJxoyyIwsv8FMCU9_tyifaHbJXfabw_RDdITNJe_vBOfS9qgHYXfkDeabqNYeMBYAX5gHYtFF0waE7Cg)
 
 --- Agent: list ---
-Agents: {"count":1,"items":[{"capabilities":{"type":"Array","value":["backup","restore","verify"]},"deployment_id":{"type":"String","value":"deploy-abc-123"},"description":{"type":"String","value":"Handles nightly backups and restores"},"id":"qG3hbvNQv9bXzex89VZzptJy9uIQBHNSS-SdpZlMDIDaCO-STg0Tc0uOpvsV2QrfsABazhvIlmn8SP-By-YFWg","llm_model":{"type":"String","value":"gpt-4.1"},"name":{"type":"String","value":"backup-agent"}}]}
+Agents: {"count":1,"items":[{"capabilities":{"type":"Array","value":["backup","restore","verify"]},"deployment_id":{"type":"String","value":"deploy-abc-123"},"description":{"type":"String","value":"Handles nightly backups and restores"},"id":"oxl39uQJxoyyIwsv8FMCU9_tyifaHbJXfabw_RDdITNJe_vBOfS9qgHYXfkDeabqNYeMBYAX5gHYtFF0waE7Cg","llm_model":{"type":"String","value":"gpt-4.1"},"name":{"type":"String","value":"backup-agent"}}]}
 
 --- Agent: get ---
 Fetched agent: {"type":"String","value":"backup-agent"}
@@ -1578,7 +1336,7 @@ Updated agent description: {"type":"String","value":"Handles backups, restores, 
 
 --- Agent: agents_by_deployment ---
 Agents in deployment: {"count":0,"items":[]}
-WARNING: agents_by_deployment omitted created agent qG3hbvNQv9bXzex89VZzptJy9uIQBHNSS-SdpZlMDIDaCO-STg0Tc0uOpvsV2QrfsABazhvIlmn8SP-By-YFWg; TODO: check/fix the server-side deployment lookup
+WARNING: agents_by_deployment omitted created agent oxl39uQJxoyyIwsv8FMCU9_tyifaHbJXfabw_RDdITNJe_vBOfS9qgHYXfkDeabqNYeMBYAX5gHYtFF0waE7Cg; TODO: check/fix the server-side deployment lookup
 
 --- Agent: delete ---
 Agent deleted
@@ -1588,14 +1346,7 @@ Goal 1 deleted
 Goal 2 deleted
 
 === All goals, tasks & agents operations completed ===
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s
      Running `target/debug/examples/client_joins`
 === ekoDB Rust Client - Join Operations Example ===
 
@@ -1604,40 +1355,33 @@ perl: warning: Falling back to the standard locale ("C").
 
 === Example 1: Single collection join (users with departments) ===
 ✓ Found 2 users with department data
-  - Alice Johnson: Engineering
-  - Bob Smith: Sales
+  - user 1: name present=true, joined departments=1
+  - user 2: name present=true, joined departments=1
 
 === Example 2: Join with filtering ===
 ✓ Found 1 users in Engineering
-  - Alice Johnson: Building A
+  - user 1: name present=true, department location present=true
 
 === Example 3: Join with user profiles ===
 ✓ Found 2 users with profile data
-  - Alice Johnson: Senior Software Engineer
-  - Bob Smith: Sales Manager
+  - user 1: name present=true, profile bio present=true
+  - user 2: name present=true, profile bio present=true
 
 === Example 4: Join orders with user data ===
 ✓ Found 2 completed orders
-  - Mouse ($25) by Alice Johnson
-  - Laptop ($1200) by Alice Johnson
+  - order 1: product present=true, amount present=true, joined user name present=true
+  - order 2: product present=true, amount present=true, joined user name present=true
 
 === Example 5: Complex join with multiple conditions ===
 ✓ Found 2 users with example.com emails
-  - Alice Johnson (alice@example.com): Building A
-  - Bob Smith (bob@example.com): Building B
+  - user 1: name present=true, email domain matched=true, joined departments=1
+  - user 2: name present=true, email domain matched=true, joined departments=1
 
 === Cleanup ===
 ✓ Deleted test collections
 
 ✓ Join operations example completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s
      Running `target/debug/examples/client_jwt_auth_flow`
 ✓ Client created
 ✓ rs_users_register saved
@@ -1653,20 +1397,13 @@ Call them like:
 Set JWT_SECRET in ekoDB's environment_vars whitelist before invoking — the {{env.JWT_SECRET}} placeholder reads from that whitelist, NEVER from the function definition.
 
 ✓ Cleaned up demo functions
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s
      Running `target/debug/examples/client_kv_links`
 === ekoDB KV Document Linking Example (Rust) ===
 
 --- Inserting documents ---
-Inserted doc1: Project Alpha (id: j4Opi_fn1na5xnhLFMxxiCJ8ga3ZLd6E18QO_11cpP5h32jRPxQYrTS2lcFJgG23T35Ha3kq7WfX8W3b85G6AQ)
-Inserted doc2: Project Beta (id: f9T04Plq9D0m2_5RTNV1owy9E4LSRnQS_ldIW9oJTFPiok6aw1wr7G-WTl2EldfGCIpJwX606CEgAkUp8nNniQ)
+Inserted doc1: Project Alpha (id: LacJGxxhBCaKIOHtZ99F1Z6FxR-t85_qhU-X0251q6ZsUEM2F-QmoJDuRTT1nYIpM-OMoI25BXixKVtlAojOrQ)
+Inserted doc2: Project Beta (id: ZMbK40zpPCIGy8BvTzJPTnRXsTVOu_OWmk5kshGBOlWcsNvVz2jwNKs8RO3eC3nkI9nnstrrpWPvtIeXlmY5HA)
 
 --- Setting KV key ---
 Set key: kv_links:rs:user:alice:projects
@@ -1676,13 +1413,13 @@ Linked doc1: null
 Linked doc2: null
 
 --- Getting links ---
-Links for kv_links:rs:user:alice:projects: [{"collection":"kv_links_example_rs","created_at":"2026-09-16T13:27:01.718838Z","document_id":"j4Opi_fn1na5xnhLFMxxiCJ8ga3ZLd6E18QO_11cpP5h32jRPxQYrTS2lcFJgG23T35Ha3kq7WfX8W3b85G6AQ","field_path":null,"last_accessed":"2026-09-16T13:27:01.722294Z","metadata":{}},{"collection":"kv_links_example_rs","created_at":"2026-09-16T13:27:01.720586Z","document_id":"f9T04Plq9D0m2_5RTNV1owy9E4LSRnQS_ldIW9oJTFPiok6aw1wr7G-WTl2EldfGCIpJwX606CEgAkUp8nNniQ","field_path":null,"last_accessed":"2026-09-16T13:27:01.722294Z","metadata":{}}]
+Links for kv_links:rs:user:alice:projects: [{"collection":"kv_links_example_rs","created_at":"2026-09-16T20:24:02.699585Z","document_id":"LacJGxxhBCaKIOHtZ99F1Z6FxR-t85_qhU-X0251q6ZsUEM2F-QmoJDuRTT1nYIpM-OMoI25BXixKVtlAojOrQ","field_path":null,"last_accessed":"2026-09-16T20:24:02.700985Z","metadata":{}},{"collection":"kv_links_example_rs","created_at":"2026-09-16T20:24:02.700345Z","document_id":"ZMbK40zpPCIGy8BvTzJPTnRXsTVOu_OWmk5kshGBOlWcsNvVz2jwNKs8RO3eC3nkI9nnstrrpWPvtIeXlmY5HA","field_path":null,"last_accessed":"2026-09-16T20:24:02.700985Z","metadata":{}}]
 
 --- Unlinking doc1 ---
 Unlinked doc1: null
 
 --- Verifying remaining links ---
-Remaining links: [{"collection":"kv_links_example_rs","created_at":"2026-09-16T13:27:01.720586Z","document_id":"f9T04Plq9D0m2_5RTNV1owy9E4LSRnQS_ldIW9oJTFPiok6aw1wr7G-WTl2EldfGCIpJwX606CEgAkUp8nNniQ","field_path":null,"last_accessed":"2026-09-16T13:27:01.725649Z","metadata":{}}]
+Remaining links: [{"collection":"kv_links_example_rs","created_at":"2026-09-16T20:24:02.700345Z","document_id":"ZMbK40zpPCIGy8BvTzJPTnRXsTVOu_OWmk5kshGBOlWcsNvVz2jwNKs8RO3eC3nkI9nnstrrpWPvtIeXlmY5HA","field_path":null,"last_accessed":"2026-09-16T20:24:02.702389Z","metadata":{}}]
 
 --- Cleanup ---
 Unlinked remaining document
@@ -1691,14 +1428,7 @@ Deleted documents
 Deleted collection
 
 === All KV linking operations completed ===
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s
      Running `target/debug/examples/client_kv_operations`
 ✓ Client created
 
@@ -1717,7 +1447,7 @@ Retrieved value: Object {"type": String("Object"), "value": Object {"userId": Nu
 === KV Batch Get ===
 ✓ Batch retrieved 3 values
   kv_operations:rs:cache:product:1: Record({"name": String("Product 1"), "price": Float(29.99)})
-  kv_operations:rs:cache:product:2: Record({"name": String("Product 2"), "price": Float(39.989999999999995)})
+  kv_operations:rs:cache:product:2: Record({"price": Float(39.989999999999995), "name": String("Product 2")})
   kv_operations:rs:cache:product:3: Record({"name": String("Product 3"), "price": Float(49.989999999999995)})
 
 === KV Exists ===
@@ -1740,14 +1470,7 @@ Total keys in store: 4
   kv_operations:rs:cache:product:3: deleted
 
 ✓ All KV operations completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.13s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s
      Running `target/debug/examples/client_kv_precision`
 === KV Precision: Float vs Decimal ===
 
@@ -1783,14 +1506,7 @@ Use FieldType::decimal() for monetary values, percentages, and
 any case where floating-point errors are unacceptable.
 Decimal values are stored as exact strings internally,
 preserving precision across all operations.
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s
      Running `target/debug/examples/client_path_routed_function`
 ✓ Client created
 ✓ rs_route_admin → GET /api/route/users/admin
@@ -1806,14 +1522,7 @@ Try them with curl:
        -H 'Content-Type: application/json' -d '{"name":"alice"}'
 
 ✓ Cleaned up demo functions
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.09s
      Running `target/debug/examples/client_query_builder`
 === ekoDB Query Builder Example ===
 
@@ -1822,21 +1531,21 @@ perl: warning: Falling back to the standard locale ("C").
 
 === Simple Equality Query ===
 ✓ Found 3 active users
+  - Some(Object({"value": String("Bob"), "type": String("String")}))
   - Some(Object({"type": String("String"), "value": String("Alice")}))
-  - Some(Object({"type": String("String"), "value": String("Bob")}))
-  - Some(Object({"value": String("David"), "type": String("String")}))
+  - Some(Object({"type": String("String"), "value": String("David")}))
 
 === Range Query (age >= 28 AND age < 35) ===
 ✓ Found 3 users in age range
-  - Some(Object({"value": String("Bob"), "type": String("String")}))
+  - Some(Object({"type": String("String"), "value": String("Bob")}))
   - Some(Object({"type": String("String"), "value": String("Eve")}))
-  - Some(Object({"value": String("David"), "type": String("String")}))
+  - Some(Object({"type": String("String"), "value": String("David")}))
 
 === IN Operator ===
 ✓ Found 4 users with status active or pending
-  - Some(Object({"value": String("Alice"), "type": String("String")}))
-  - Some(Object({"value": String("Bob"), "type": String("String")}))
+  - Some(Object({"type": String("String"), "value": String("Bob")}))
   - Some(Object({"type": String("String"), "value": String("Eve")}))
+  - Some(Object({"value": String("Alice"), "type": String("String")}))
   - Some(Object({"value": String("David"), "type": String("String")}))
 
 === NOT IN Operator ===
@@ -1847,28 +1556,28 @@ perl: warning: Falling back to the standard locale ("C").
 
 === Prefix Query (StartsWith) ===
 ✓ Found 1 users with names starting with A
-  - Some(Object({"value": String("Alice"), "type": String("String")}))
+  - Some(Object({"type": String("String"), "value": String("Alice")}))
 
 === Complex Query (active AND age >= 28 AND score > 1500) ===
 ✓ Found 2 users matching all conditions
-  - Some(Object({"value": String("Bob"), "type": String("String")}))
-  - Some(Object({"value": String("David"), "type": String("String")}))
+  - Some(Object({"type": String("String"), "value": String("Bob")}))
+  - Some(Object({"type": String("String"), "value": String("David")}))
 
 === OR Query ===
 ✓ Found 2 users with age < 28 OR age > 32
-  - Some(Object({"type": String("String"), "value": String("Charlie")}))
   - Some(Object({"type": String("String"), "value": String("Alice")}))
+  - Some(Object({"value": String("Charlie"), "type": String("String")}))
 
 === Sorted Query (by score descending) ===
 ✓ Top 3 users by score:
-  1. Some(Object({"type": String("String"), "value": String("Bob")}))
-  2. Some(Object({"value": String("David"), "type": String("String")}))
-  3. Some(Object({"type": String("String"), "value": String("Alice")}))
+  1. Some(Object({"value": String("Bob"), "type": String("String")}))
+  2. Some(Object({"type": String("String"), "value": String("David")}))
+  3. Some(Object({"value": String("Alice"), "type": String("String")}))
 
 === Pagination (page 2, size 2) ===
 ✓ Page 2 results:
-  - Some(Object({"type": String("String"), "value": String("Charlie")}))
-  - Some(Object({"type": String("String"), "value": String("David")}))
+  - Some(Object({"value": String("Charlie"), "type": String("String")}))
+  - Some(Object({"value": String("David"), "type": String("String")}))
 
 === NOT Operator ===
 ✓ Found 4 users NOT inactive
@@ -1880,14 +1589,7 @@ perl: warning: Falling back to the standard locale ("C").
 ✓ Deleted collection
 
 ✓ All query builder operations completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s
      Running `target/debug/examples/client_raw_completion_stream`
 === ekoDB Raw Completion Stream (SSE) Example ===
 
@@ -1897,12 +1599,12 @@ Response: The three primary colors are red, blue, and yellow.
 --- Structured Output via SSE ---
 JSON response: [
   {
-    "name": "Mercury",
-    "diameter_km": 4879
+    "name": "Earth",
+    "diameter_km": 12742
   },
   {
-    "name": "Venus",
-    "diameter_km": 12104
+    "name": "Jupiter",
+    "diameter_km": 139820
   },
   {
     "name": "Mars",
@@ -1914,22 +1616,15 @@ JSON response: [
 Blocking response: Hello! I hope you're having a great day.
 
 === Done ===
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s
      Running `target/debug/examples/client_schedules`
 === ekoDB Schedule Management Example (Rust) ===
 
 --- Creating schedule ---
-Created schedule: "nightly-cleanup" (id: 1192c86d-2c5a-4634-8c82-7bfe045782fe)
+Created schedule: "nightly-cleanup" (id: 6e47d965-f6f1-444a-9fe7-f405e554b4df)
 
 --- Listing schedules ---
-Schedules: {"count":1,"schedules":[{"created_at":"2026-09-16T13:33:12.904710Z","cron_expression":"0 0 3 * * *","description":"Remove expired sessions and temp files","enabled":true,"function_label":"schedule_noop_rust_97860","id":"1192c86d-2c5a-4634-8c82-7bfe045782fe","last_execution":null,"name":"nightly-cleanup","next_execution":"2026-09-17T03:00:00Z","parameters":{},"stats":{"avg_execution_time_ms":0.0,"failed_executions":0,"last_error":null,"successful_executions":0,"total_executions":0},"timezone":"UTC","updated_at":"2026-09-16T13:33:12.904710Z"}]}
+Schedules: {"count":1,"schedules":[{"created_at":"2026-09-16T20:29:45.953811Z","cron_expression":"0 0 3 * * *","description":"Remove expired sessions and temp files","enabled":true,"function_label":"schedule_noop_rust_48376","id":"6e47d965-f6f1-444a-9fe7-f405e554b4df","last_execution":null,"name":"nightly-cleanup","next_execution":"2026-09-17T03:00:00Z","parameters":{},"stats":{"avg_execution_time_ms":0.0,"failed_executions":0,"last_error":null,"successful_executions":0,"total_executions":0},"timezone":"UTC","updated_at":"2026-09-16T20:29:45.953811Z"}]}
 
 --- Getting schedule ---
 Fetched schedule: "nightly-cleanup"
@@ -1939,26 +1634,19 @@ Updated cron: "0 0 4 * * *"
 Updated description: "Remove expired sessions, temp files, and orphaned uploads"
 
 --- Triggering schedule ---
-Trigger response: {"schedule_id":"1192c86d-2c5a-4634-8c82-7bfe045782fe","status":"triggered"}
+Trigger response: {"schedule_id":"6e47d965-f6f1-444a-9fe7-f405e554b4df","status":"triggered"}
 
 --- Pausing schedule ---
-Schedule paused: {"created_at":"2026-09-16T13:33:12.904710Z","cron_expression":"0 0 4 * * *","description":"Remove expired sessions, temp files, and orphaned uploads","enabled":false,"function_label":"schedule_noop_rust_97860","id":"1192c86d-2c5a-4634-8c82-7bfe045782fe","last_execution":"2026-09-16T13:33:12.962552Z","name":"nightly-cleanup","next_execution":null,"parameters":{"type":"Object","value":{}},"stats":{"avg_execution_time_ms":0.0,"failed_executions":0,"last_error":null,"successful_executions":0,"total_executions":0},"timezone":"UTC","updated_at":"2026-09-16T13:33:12.966516Z"}
+Schedule paused: {"created_at":"2026-09-16T20:29:45.953811Z","cron_expression":"0 0 4 * * *","description":"Remove expired sessions, temp files, and orphaned uploads","enabled":false,"function_label":"schedule_noop_rust_48376","id":"6e47d965-f6f1-444a-9fe7-f405e554b4df","last_execution":"2026-09-16T20:29:45.982718Z","name":"nightly-cleanup","next_execution":null,"parameters":{"type":"Object","value":{}},"stats":{"avg_execution_time_ms":0.0,"failed_executions":0,"last_error":null,"successful_executions":0,"total_executions":0},"timezone":"UTC","updated_at":"2026-09-16T20:29:45.985530Z"}
 
 --- Resuming schedule ---
-Schedule resumed: {"created_at":"2026-09-16T13:33:12.904710Z","cron_expression":"0 0 4 * * *","description":"Remove expired sessions, temp files, and orphaned uploads","enabled":true,"function_label":"schedule_noop_rust_97860","id":"1192c86d-2c5a-4634-8c82-7bfe045782fe","last_execution":"2026-09-16T13:33:12.962552Z","name":"nightly-cleanup","next_execution":"2026-09-17T04:00:00Z","parameters":{"type":"Object","value":{}},"stats":{"avg_execution_time_ms":0.0,"failed_executions":0,"last_error":null,"successful_executions":0,"total_executions":0},"timezone":"UTC","updated_at":"2026-09-16T13:33:12.970539Z"}
+Schedule resumed: {"created_at":"2026-09-16T20:29:45.953811Z","cron_expression":"0 0 4 * * *","description":"Remove expired sessions, temp files, and orphaned uploads","enabled":true,"function_label":"schedule_noop_rust_48376","id":"6e47d965-f6f1-444a-9fe7-f405e554b4df","last_execution":"2026-09-16T20:29:45.982718Z","name":"nightly-cleanup","next_execution":"2026-09-17T04:00:00Z","parameters":{"type":"Object","value":{}},"stats":{"avg_execution_time_ms":0.0,"failed_executions":0,"last_error":null,"successful_executions":0,"total_executions":0},"timezone":"UTC","updated_at":"2026-09-16T20:29:45.988255Z"}
 
 --- Deleting schedule ---
 Schedule deleted successfully
 
 === All schedule operations completed ===
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.15s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s
      Running `target/debug/examples/client_schema`
 === ekoDB Schema Management Example ===
 
@@ -1966,34 +1654,27 @@ perl: warning: Falling back to the standard locale ("C").
 ✓ Created collection 'schema_client_rust' with schema
 
 === Inserting Valid Documents ===
-✓ Inserted user 1: Some(String("M6WEiYR3obpIKwNG_1X1ODOfoJcx4PJAWGRM46DJ-T-q53TuCDRmnPpZMa88wCEBKyQ_QvLw8oe67AvkC1tFrw"))
-✓ Inserted user 2: Some(String("GR6XiSZRVTdKxYMmoa9cSm8x5whDCLn-uap6wm6pI8vaR_Mrp132BphCuDweeMgz_1Z-wHy2E5Pie8Wey5ri0w"))
+✓ Inserted user 1: Some(String("zgjxAOPOkOIbnY8pWADa7yfeTtXhPY-sVThJQmtjqhvURIRyswbuONx2f7Rkmj2CCnll35h-THcoCcgcVrNi4w"))
+✓ Inserted user 2: Some(String("CmApzEP2pD81-mlzWS39XfT8fbjPCPhw0B0WgPcoSsskq_Qer_bJ6X7tdcCfdsrqsz4sgCK2fsba2lkbE4hrCA"))
 
 === Getting Schema ===
 ✓ Schema for schema_client_rust:
+  - status: String
   - title: String
     (required)
   - email: String
     (required)
-  - status: String
   - age: Integer
 
 === Listing Collections ===
 ✓ Total collections: 13
-  Sample: ["chat_agent_configs__ek0_testing", "agent_function_versions__ek0_testing", "schedules__ek0_testing", "functions__ek0_testing", "chat_configurations__ek0_testing"]
+  Sample: ["chat_goals__ek0_testing", "schedules__ek0_testing", "schema_client_rust", "agent_function_versions__ek0_testing", "chat_raw_completions__ek0_testing"]
 
 === Cleanup ===
 ✓ Deleted collection
 
 ✓ All schema management operations completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s
      Running `target/debug/examples/client_search`
 === ekoDB Search Example ===
 
@@ -2046,27 +1727,20 @@ perl: warning: Falling back to the standard locale ("C").
   1. Some(Object {"type": String("String"), "value": String("Python for Data Science")}) (category: Some(Object {"type": String("String"), "value": String("programming")}))
   2. Some(Object {"type": String("String"), "value": String("Rust Programming")}) (category: Some(Object {"type": String("String"), "value": String("programming")}))
 
-Execution time: 7ms
+Execution time: 2ms
 === Cleanup ===
 ✓ Deleted collection
 
 ✓ All search operations completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s
      Running `target/debug/examples/client_simple_crud`
 ✓ Client created (token exchange happens automatically)
 
 === Insert Document ===
-Inserted: Record({"id": String("GO79zzr3Ba7Sd-VIVQDt8C9muk_HihLXrRrSfuaeAzOvBWUwWCiE45iZYtz4T0msTmaJbadjaryfOmHdFqjr1A")})
+Inserted: Record({"id": String("tvT2dKJMeEfbBInNpRXgT69ie3AMyoXhQxv1ZfFpZRgNvdtii2PCVyDCtvZyww_Phb394Wa8Dcj8JfLU98KVfg")})
 
 === Find by ID ===
-Found: Record({"price": Object({"type": String("Float"), "value": Float(99.99)}), "name": Object({"value": String("Test Record"), "type": String("String")}), "categories": Object({"type": String("Array"), "value": Array([String("electronics"), String("computers")])}), "id": String("GO79zzr3Ba7Sd-VIVQDt8C9muk_HihLXrRrSfuaeAzOvBWUwWCiE45iZYtz4T0msTmaJbadjaryfOmHdFqjr1A"), "created_at": Object({"type": String("DateTime"), "value": String("2026-09-16T13:36:20.355088+00:00")}), "user_id": Object({"value": String("550e8400-e29b-41d4-a716-446655440000"), "type": String("String")}), "embedding": Vector([Float(0.1), Float(0.2), Float(0.3), Float(0.4), Float(0.5)]), "tags": Object({"value": Array([String("tag1"), String("tag2"), String("tag3")]), "type": String("Array")}), "data": Object({"value": String("aGVsbG8gd29ybGQ="), "type": String("String")}), "value": Object({"value": Integer(42), "type": String("Integer")}), "active": Object({"type": String("Boolean"), "value": Boolean(true)}), "metadata": Object({"value": Object({"key": String("value"), "nested": Object({"deep": Boolean(true)})}), "type": String("Object")})})
+Found: Record({"name": Object({"value": String("Test Record"), "type": String("String")}), "categories": Object({"type": String("Array"), "value": Array([String("electronics"), String("computers")])}), "data": Object({"type": String("String"), "value": String("aGVsbG8gd29ybGQ=")}), "created_at": Object({"type": String("DateTime"), "value": String("2026-09-16T20:32:48.012295+00:00")}), "user_id": Object({"type": String("String"), "value": String("550e8400-e29b-41d4-a716-446655440000")}), "id": String("tvT2dKJMeEfbBInNpRXgT69ie3AMyoXhQxv1ZfFpZRgNvdtii2PCVyDCtvZyww_Phb394Wa8Dcj8JfLU98KVfg"), "metadata": Object({"value": Object({"key": String("value"), "nested": Object({"deep": Boolean(true)})}), "type": String("Object")}), "tags": Object({"type": String("Array"), "value": Array([String("tag1"), String("tag2"), String("tag3")])}), "active": Object({"value": Boolean(true), "type": String("Boolean")}), "embedding": Vector([Float(0.1), Float(0.2), Float(0.3), Float(0.4), Float(0.5)]), "price": Object({"value": Float(99.99), "type": String("Float")}), "value": Object({"type": String("Integer"), "value": Integer(42)})})
 
 === Extract Field Values (All Types) ===
 Extracted values:
@@ -2074,7 +1748,7 @@ Extracted values:
   value (Integer): Some(42)
   active (Boolean): Some(true)
   price (Decimal): Some(99.99)
-  created_at (DateTime): Some("2026-09-16T13:36:20.355088+00:00")
+  created_at (DateTime): Some("2026-09-16T20:32:48.012295+00:00")
   user_id (UUID): Some("550e8400-e29b-41d4-a716-446655440000")
   tags (Array): 3 items
   metadata (Object): 2 keys
@@ -2083,10 +1757,10 @@ Extracted values:
   data (Bytes): 11 bytes
 
 === Find with Query ===
-Found documents: [Record({"created_at": Object({"type": String("DateTime"), "value": String("2026-09-16T13:36:20.355088+00:00")}), "active": Object({"type": String("Boolean"), "value": Boolean(true)}), "price": Object({"type": String("Float"), "value": Float(99.99)}), "value": Object({"type": String("Integer"), "value": Integer(42)}), "tags": Object({"type": String("Array"), "value": Array([String("tag1"), String("tag2"), String("tag3")])}), "name": Object({"type": String("String"), "value": String("Test Record")}), "categories": Object({"type": String("Array"), "value": Array([String("electronics"), String("computers")])}), "data": Object({"value": String("aGVsbG8gd29ybGQ="), "type": String("String")}), "user_id": Object({"type": String("String"), "value": String("550e8400-e29b-41d4-a716-446655440000")}), "embedding": Vector([Float(0.1), Float(0.2), Float(0.3), Float(0.4), Float(0.5)]), "id": String("GO79zzr3Ba7Sd-VIVQDt8C9muk_HihLXrRrSfuaeAzOvBWUwWCiE45iZYtz4T0msTmaJbadjaryfOmHdFqjr1A"), "metadata": Object({"value": Object({"key": String("value"), "nested": Object({"deep": Boolean(true)})}), "type": String("Object")})})]
+Found documents: [Record({"id": String("tvT2dKJMeEfbBInNpRXgT69ie3AMyoXhQxv1ZfFpZRgNvdtii2PCVyDCtvZyww_Phb394Wa8Dcj8JfLU98KVfg"), "data": Object({"value": String("aGVsbG8gd29ybGQ="), "type": String("String")}), "user_id": Object({"type": String("String"), "value": String("550e8400-e29b-41d4-a716-446655440000")}), "tags": Object({"type": String("Array"), "value": Array([String("tag1"), String("tag2"), String("tag3")])}), "metadata": Object({"type": String("Object"), "value": Object({"key": String("value"), "nested": Object({"deep": Boolean(true)})})}), "price": Object({"value": Float(99.99), "type": String("Float")}), "value": Object({"value": Integer(42), "type": String("Integer")}), "name": Object({"value": String("Test Record"), "type": String("String")}), "created_at": Object({"value": String("2026-09-16T20:32:48.012295+00:00"), "type": String("DateTime")}), "embedding": Vector([Float(0.1), Float(0.2), Float(0.3), Float(0.4), Float(0.5)]), "categories": Object({"type": String("Array"), "value": Array([String("electronics"), String("computers")])}), "active": Object({"type": String("Boolean"), "value": Boolean(true)})})]
 
 === Update Document ===
-Updated: Record({"embedding": Vector([Float(0.1), Float(0.2), Float(0.3), Float(0.4), Float(0.5)]), "price": Object({"type": String("Float"), "value": Float(99.99)}), "metadata": Object({"type": String("Object"), "value": Object({"nested": Object({"deep": Boolean(true)}), "key": String("value")})}), "user_id": Object({"type": String("String"), "value": String("550e8400-e29b-41d4-a716-446655440000")}), "active": Object({"type": String("Boolean"), "value": Boolean(true)}), "name": Object({"value": String("Updated Record"), "type": String("String")}), "created_at": Object({"type": String("DateTime"), "value": String("2026-09-16T13:36:20.355088+00:00")}), "id": String("GO79zzr3Ba7Sd-VIVQDt8C9muk_HihLXrRrSfuaeAzOvBWUwWCiE45iZYtz4T0msTmaJbadjaryfOmHdFqjr1A"), "data": Object({"type": String("String"), "value": String("aGVsbG8gd29ybGQ=")}), "tags": Object({"type": String("Array"), "value": Array([String("tag1"), String("tag2"), String("tag3")])}), "categories": Object({"type": String("Array"), "value": Array([String("electronics"), String("computers")])}), "value": Object({"type": String("Integer"), "value": Integer(100)})})
+Updated: Record({"user_id": Object({"type": String("String"), "value": String("550e8400-e29b-41d4-a716-446655440000")}), "created_at": Object({"type": String("DateTime"), "value": String("2026-09-16T20:32:48.012295+00:00")}), "id": String("tvT2dKJMeEfbBInNpRXgT69ie3AMyoXhQxv1ZfFpZRgNvdtii2PCVyDCtvZyww_Phb394Wa8Dcj8JfLU98KVfg"), "metadata": Object({"value": Object({"key": String("value"), "nested": Object({"deep": Boolean(true)})}), "type": String("Object")}), "categories": Object({"type": String("Array"), "value": Array([String("electronics"), String("computers")])}), "value": Object({"type": String("Integer"), "value": Integer(100)}), "active": Object({"value": Boolean(true), "type": String("Boolean")}), "tags": Object({"type": String("Array"), "value": Array([String("tag1"), String("tag2"), String("tag3")])}), "data": Object({"type": String("String"), "value": String("aGVsbG8gd29ybGQ=")}), "embedding": Vector([Float(0.1), Float(0.2), Float(0.3), Float(0.4), Float(0.5)]), "price": Object({"type": String("Float"), "value": Float(99.99)}), "name": Object({"value": String("Updated Record"), "type": String("String")})})
 
 === Delete Document ===
 Deleted document
@@ -2095,19 +1769,12 @@ Deleted document
 ✓ Deleted collection
 
 ✓ All CRUD operations completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s
      Running `target/debug/examples/client_simple_websocket`
 ✓ Client created
 
 === Inserting Test Data ===
-✓ Inserted test record: zh5nrq4AzUj1_YXq-BTd5-drVdAJEsUyO9ErsqtB9XHu8CY7KrxdCN-xK8rpJ1gMSwD7Dh27tbXCz_pIGX5-vw
+✓ Inserted test record: 9FZcjPDA48f3nvU9w0iOCuA6dW8JQSG8tA6G9nSZ8igJ92KM9jMfCJvE7ZNGC85j_WNUhh5WPBrYHA63ATP5VA
 
 === Connecting to WebSocket ===
 ✓ WebSocket connected
@@ -2116,23 +1783,16 @@ perl: warning: Falling back to the standard locale ("C").
 ✓ Retrieved 1 record(s) via WebSocket
 
 Record 1:
+  name: "WebSocket Test Record"
+  id: "9FZcjPDA48f3nvU9w0iOCuA6dW8JQSG8tA6G9nSZ8igJ92KM9jMfCJvE7ZNGC85j_WNUhh5WPBrYHA63ATP5VA"
   active: true
   value: 42
-  name: "WebSocket Test Record"
-  id: "zh5nrq4AzUj1_YXq-BTd5-drVdAJEsUyO9ErsqtB9XHu8CY7KrxdCN-xK8rpJ1gMSwD7Dh27tbXCz_pIGX5-vw"
 
 === Cleanup ===
 ✓ Deleted collection
 
 ✓ WebSocket example completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s
      Running `target/debug/examples/client_swr_native`
 === ekoDB Native SWR Function ===
 
@@ -2142,23 +1802,23 @@ the manual FindById → If → HttpRequest → Insert pattern.
 Example 1: Basic GitHub User Cache with Native SWR
 ─────────────────────────────────────────────────────
 
-✓ Created native SWR script: github_user_native_rs (XU85XY54vl1JBrJ3OoQWrlHO7P1tApr_69ukUwSEZlJxDxPJxI3n6BQQJOAiHgb9-fCHuFXRv4oaASabclryzg)
+✓ Created native SWR script: github_user_native_rs (4CwiTTV9zpAkuo-Vb7Qz1-49j3Eb9hLwxwG19U5XrMio2NKsKbB-V6F4TI79cKBjb3mAVFaJPTsHs-KCgsQF-g)
 
 First call (cache miss - will fetch from GitHub API):
-  Response time: 174ms
+  Response time: 169ms
   Records returned: 1
   ✓ Data fetched from API and cached with 15m TTL
 
 Second call (cache hit - instant from KV store):
-  Response time: 3ms
-  Speedup: 58.0x faster
+  Response time: 5ms
+  Speedup: 33.8x faster
   ✓ Lightning fast cache hit
 
 
 Example 2: SWR with Audit Trail Collection
 ─────────────────────────────────────────────────────
 
-✓ Created SWR script with audit trail: product_swr_audit_rs (h-ldBqy5rCwuioQLXEMQsQzGgNQD2jZ5bdMt_74nKevpJW4-lLAF1seRRxmaRDLQ2S7bU2KWN-EruHBcwwhW7w)
+✓ Created SWR script with audit trail: product_swr_audit_rs (dYhKXIcfWZCmcgDiYqq5vcDYgicV7ZTB3NyxaDBppyLItcrwJGQastG0VqHF9YOmNz2FcmyK-xszznhZsReh8Q)
 
 Fetching product (will create audit trail entry):
   ✓ Product fetched and cached
@@ -2170,7 +1830,7 @@ Example 3: SWR in Multi-Function Pipeline
 ─────────────────────────────────────────────────────
 
 Fetch external data → Process → Store in collection
-✓ Created enrichment pipeline: user_enrichment_pipeline_rs (B7x5Vd0s0GvEXK6pSrEkQIbl2gkZFM_p2ADkFrK2_PhQ5pJM7vJhogzUUg2D7DgTs7Mm59DICSD0ELLD_EhbiQ)
+✓ Created enrichment pipeline: user_enrichment_pipeline_rs (-mcesHyYMjqOLJ2_KHdtLhOE1b21esztj0Iym8RU6jH81R9Ej-tAqXeV-A4AlMgXJpOXqo7_gIbbZEZ3RQbx5w)
 
 Running pipeline:
   ✓ Data fetched from API (cached 30m)
@@ -2181,7 +1841,7 @@ Running pipeline:
 Example 4: Dynamic TTL Configuration
 ─────────────────────────────────────────────────────
 
-✓ Created dynamic TTL script: flexible_cache_rs (zEVZfSxI6iy14B8xq2mHyjV8uiGbEx77_4gA1VLL8Rc4Qnt5fEMkAvLGiCggUWGDuvMakvbBxnjWIgNcWk-Liw)
+✓ Created dynamic TTL script: flexible_cache_rs (36SQ9pxPKrMDVscmlTTQdNWoaKzTl0gGQirmnQl_febkz-UBdQfNebgJz-wXaf3nTHjIvIw59vQynK1DDjN2LQ)
   ✓ Cached with TTL: 5m (5 minutes)
   ✓ Cached with TTL: 1h (1 hour)
   ✓ Cached with TTL: 30s (30 seconds)
@@ -2211,26 +1871,19 @@ with minimal code and maximum flexibility. Use it for:
   • Edge computing patterns
   • Real-time data enrichment pipelines
 
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s
      Running `target/debug/examples/client_swr_pattern`
 === ekoDB SWR (Stale-While-Revalidate) Pattern ===
 
 Step 1: Create SWR function that acts as edge cache
-✓ Created SWR script: fetch_api_user_rs (ZEMbIx8l47DWHbfAiEB0w7twFXE53THoWbwOaGiSKmfzoceXtST5yaLC8LMArYxGzanG4pWjSRXaaXFF3C0zaQ)
+✓ Created SWR script: fetch_api_user_rs (JfjjIBF5UgF4DMhyyaSWC6ZxItiO1w3lWz2U24F1PVyEoxpV5wuZW83QeaewjvvviJQx5n_PscBGjFebV6quYw)
 
 Step 2: First call - Cache miss, fetches from API
 Result: FunctionStats { input_count: 0, output_count: 1, execution_time_ms: 0, stages_executed: 2, stage_stats: [] }
 ✓ Data fetched from external API and cached
 
 Step 3: Second call - Cache hit, instant response from ekoDB
-Response time: 13ms (served from cache)
+Response time: 3ms (served from cache)
 ✓ Lightning fast cache hit
 
 🧹 Cleaning up...
@@ -2240,23 +1893,16 @@ Response time: 13ms (served from cache)
 ✅ Cache miss → Fetch from API → Store in ekoDB
 ✅ Cache hit → Instant response from ekoDB
 ✅ TTL handles automatic cache invalidation
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s
      Running `target/debug/examples/client_transactions`
 ✓ Client created
 
 === Setup: Creating Test Accounts ===
-Created Alice: $1000 - ID: 0PdbEi5cW3p2l9T1v1D4cIS5EA4bZrLQyPSY9E3P4nWVAaTK8dNCms9drZe4G0axfaO-TO0Vg7IdXI5ttekYxw
-Created Bob: $500 - ID: CZZA2uw4vrUkbWw7a3kKGwQy6f-T6kxhpRvjLsIYPJ8YGKt3zlDR4zz1xbJWiNYUo_fbtIayAvTgwcNWsgo3xg
+Created Alice: $1000 - ID: DtMj_mG-AJOsCJSjyTJJXes28yhnh57XwB4B-OE9yQoZSvU8M2jOOc-7pvhXxdXGpeFwbkurSYXy5GTagATxaQ
+Created Bob: $500 - ID: CntzzaVK84pWyzeMwA9OI1ASN5_N52_39dIoxTB3QCRRl5KaqCa0Iz0YcMC17XGEjg4k2b_YBdWtCMM_kiD0eA
 
 === Example 1: Begin Transaction ===
-Transaction ID (server-default isolation): e7f2b28f-ba2b-4126-9fc2-6360a546a6af
+Transaction ID (server-default isolation): 95597353-d77f-44cd-a82b-b2373b031061
 
 === Example 2: Operations within Transaction ===
 Updated Alice: $1000 → $800
@@ -2272,7 +1918,7 @@ Operations: 2
 ✓ Verified committed balances: Alice=$800, Bob=$700
 
 === Example 5: Rollback Demo ===
-New transaction: 7d799d00-ab45-4f26-aef2-d6ad9610628f
+New transaction: 9211e85b-f91e-49a5-a2b7-c7d6a501c255
 Updated Bob: $700 → $600 (in transaction)
 Status before rollback: "Active"
 ✓ Transaction rolled back
@@ -2283,19 +1929,12 @@ Status before rollback: "Active"
 ✓ Deleted test account collection
 
 ✓ All client transaction examples completed
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
     Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
      Running `target/debug/examples/client_user_functions`
 ✓ Client created
 
 === Create User Function ===
-Created user function with ID: Ya5jiKsb6sbJO2CvfmHjKNgh3v_jUPAVpxEtDJniPJkQz_hfC-dfcadQu8Bfe4B4chVbqD37GudED8gH9Hf1ow
+Created user function with ID: PYC3-ndog8dc8KjyJCjuXs9BpecBCXYZzl7MRqq3vdzooiUxwQoCDNeBDynN2MRcrdGtTwP0tNwXsF7RJzncdQ
 
 === Get User Function ===
 Retrieved: get_active_users_rs - Get Active Users
@@ -2312,19 +1951,12 @@ User function updated successfully
 User function deleted successfully
 
 ✓ User Functions API example complete
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s
      Running `target/debug/examples/client_websocket_chat_stream`
 === WebSocket Chat Streaming Example (Rust) ===
 
 ✓ Authentication successful
-✓ Created chat session: 7QFgeFN96a9NlN3pppQPL_xuzwUrB4B-1x4W6m82BLFkBqkffP5ZOX9qfAF93iTpIsrbPh-eJkyuzm1S2kayAg
+✓ Created chat session: tBlwv1YCayD6d4aDNNRijzDIusrZW90hvOGbBsq8ZokyHP_SSQe2q61OwqMjlxkX8JtDVJe21nPUKq4586S-Lw
 
 === Connecting to WebSocket ===
 ✓ WebSocket connected
@@ -2335,22 +1967,15 @@ perl: warning: Falling back to the standard locale ("C").
 {"__progress":"received"}{"__progress":"generating","model":"default","provider":"openai"}The capital of France is Paris.
 
 --- Stream ended ---
-Message ID: "VHeqDJpq1Asg2WpK62faqwLvoqnsT4GW4Emy3HylrmVD0gPMSgfzC4gVksYG520dC3traVTUhf5syc1XDcOUQA"
-Execution time: 1020ms
+Message ID: "22-dqVbz_hR9Hgk2UxPui6Gu1fuQvVMOP43Dv_SNbgIw_TkQC8tVG-zjvRzAk3chwDX49HwQDdTL6XOFD0jFhw"
+Execution time: 731ms
 Token usage: {"completion_tokens":8,"prompt_tokens":15,"total_tokens":23}
 Context window: 1000000 tokens
 
 Full response: {"__progress":"received"}{"__progress":"generating","model":"default","provider":"openai"}The capital of France is Paris....
 
 ✓ WebSocket chat streaming example completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s
      Running `target/debug/examples/client_websocket_subscribe`
 ✓ Authentication successful
 
@@ -2358,24 +1983,24 @@ perl: warning: Falling back to the standard locale ("C").
 ✓ WebSocket connected
 
 === Subscribing to 'ws_subscribe_example_rs' ===
-✓ Subscribed (subscription_id: sub_9a52760246f94cb389395a5bfadd802d)
+✓ Subscribed (subscription_id: sub_9883a255f3064fcb9e69c6093cf3c8b3)
 
 === Performing mutations to trigger notifications ===
 Inserting record 1...
-✓ Inserted: 3iGCRbRRPP8pyOKcdXOzyhrsf2l1FxA-FzR4WdWztZNRZtQW47Mi_e7NbqM03GBhJebZKrRsrmmT6mTecEJPHQ
+✓ Inserted: AB-kLSp0n_oFFMCpdCqAvFsv5pB3AOC-44Li5NIIusMsZkQFLv2EzNlOLgeJf__4kBufqoYRTjzaTXHuW9VS3w
 
   📡 Notification received:
      Event:      "insert"
      Collection: "ws_subscribe_example_rs"
-     Record IDs: ["3iGCRbRRPP8pyOKcdXOzyhrsf2l1FxA-FzR4WdWztZNRZtQW47Mi_e7NbqM03GBhJebZKrRsrmmT6mTecEJPHQ"]
-     Timestamp:  "2026-09-16T13:42:44.956886+00:00"
+     Record IDs: ["AB-kLSp0n_oFFMCpdCqAvFsv5pB3AOC-44Li5NIIusMsZkQFLv2EzNlOLgeJf__4kBufqoYRTjzaTXHuW9VS3w"]
+     Timestamp:  "2026-09-16T20:40:00.201971+00:00"
 
 Inserting record 2...
-✓ Inserted: iidsP1x4Hz1KWR_wvOfnS-kuVufcaHgNe35fNpaquy5xSsjEYdtvyb7IFwYIHSVKOGKe2kOeuB25Hd3MPcRFkQ
+✓ Inserted: exGmD9qeeMEBqmvd2bQvIdCrubVNMEAE-mwO9ZNzYujbeZdwq1Qja9BsmmYhaaAz0vkyRt4CcrynJK4r5TEf6w
 
   📡 Notification received:
      Event:      "insert"
-     Record IDs: ["iidsP1x4Hz1KWR_wvOfnS-kuVufcaHgNe35fNpaquy5xSsjEYdtvyb7IFwYIHSVKOGKe2kOeuB25Hd3MPcRFkQ"]
+     Record IDs: ["exGmD9qeeMEBqmvd2bQvIdCrubVNMEAE-mwO9ZNzYujbeZdwq1Qja9BsmmYhaaAz0vkyRt4CcrynJK4r5TEf6w"]
 
 === Unsubscribing ===
 ✓ Unsubscribed
@@ -2384,19 +2009,12 @@ Inserting record 2...
 ✓ Deleted collection 'ws_subscribe_example_rs'
 
 ✓ WebSocket subscription example completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.11s
      Running `target/debug/examples/client_websocket_ttl`
 ✓ Client created
 
 === Insert Test Data with TTL ===
-✓ Inserted document with TTL: Some(String("baYROqS7A06La9OjSiBMMbkqQaAP9oF3i7ZE6ZgndSHC3mvl11eZgfE_ynn81-EPEfbmECG_YbiKmpKweT0Blw"))
+✓ Inserted document with TTL: Some(String("-omaBpZVZUWC9-KRPwxPA-VFKc6f-cq2oV8DMlVd12wSlTXGJl3QQyXam3DnmxSali4wDt9NuOGurlP3mhq7rQ"))
 
 === Query via WebSocket ===
 ✓ WebSocket connected
@@ -2409,25 +2027,18 @@ perl: warning: Falling back to the standard locale ("C").
 ✓ WebSocket TTL example completed successfully
 
 💡 Note: Documents with TTL will automatically expire after the specified duration
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s
      Running `target/debug/examples/bypass_ripple_example`
 === Bypass Ripple Example ===
 
 1. Basic insert (ripple enabled):
-   Inserted with ripple: Record({"id": String("psB7ZwNMa5QlcSJtX3XQ4ulAU78axuVddiYaSaTdMeT4aYyjF4OVfqt4EK8XfjIG6sy03SI6wj8F3I6fO1vwuA")})
+   Inserted with ripple: Record({"id": String("5k2Lw8axvjtm7tjy79oWHiyXaQRDp-5wc_3BvxL3y7YJZOCW56h5TOSDeIOurFtCCmr68PsKucyn81M68mIt-Q")})
 
 2. Insert with bypass_ripple:
-   Inserted with bypass_ripple: Record({"id": String("s7I2Br5j72DCD1aGcuIH7KsYxeChGxfNz9LaE7sE1wKMEpMWzb4ZNiucBhTEDObQQmJOG_B61uAYFtI4n6I0ZQ")})
+   Inserted with bypass_ripple: Record({"id": String("5gYPrEEXLAawQMBtLEtGK3Q87fBNRaR2vIdGXSHnM5-e3c2-EhVt_qrVhQWfuFLIvAg-CcxU_OE0gLnh1Z4Rig")})
 
 3. Update with bypass_ripple:
-   Updated with bypass_ripple: Record({"name": Object({"value": String("Product 1"), "type": String("String")}), "id": String("psB7ZwNMa5QlcSJtX3XQ4ulAU78axuVddiYaSaTdMeT4aYyjF4OVfqt4EK8XfjIG6sy03SI6wj8F3I6fO1vwuA"), "price": Object({"type": String("Integer"), "value": Integer(150)})})
+   Updated with bypass_ripple: Record({"price": Object({"type": String("Integer"), "value": Integer(150)}), "name": Object({"value": String("Product 1"), "type": String("String")}), "id": String("5k2Lw8axvjtm7tjy79oWHiyXaQRDp-5wc_3BvxL3y7YJZOCW56h5TOSDeIOurFtCCmr68PsKucyn81M68mIt-Q")})
 
 4. Delete with bypass_ripple:
    Deleted with bypass_ripple
@@ -2436,17 +2047,10 @@ perl: warning: Falling back to the standard locale ("C").
    Batch inserted with bypass_ripple: 2 records
 
 6. Upsert with bypass_ripple:
-   Upserted with bypass_ripple: Record({"id": String("h3Ciw3daU62OJA2Vy9_TTIWHXsop-n2l2vd8zIatbanW4YEpM6WRvFCjugZkxDOKauVYfb3MDUUHUbU2MKD9Pw")})
+   Upserted with bypass_ripple: Record({"id": String("BL2BVkepmYr7J6-nsEIS9T4Jyk-ZuR9kwJ4zGtb_cQmxjqgCeHsuhG0FJsrX45VjYamMB9MjYmB58uULJjzvuQ")})
 
 ✅ All bypass_ripple operations completed successfully!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.11s
      Running `target/debug/examples/projection_example`
 Client created
 
@@ -2455,7 +2059,7 @@ Inserted 4 test users
 
 Example 1: Select specific fields (id, name, email only)
   Found 3 active users
-  Fields returned: ["id", "email", "name"]
+  Fields returned: ["email", "id", "name"]
 
 Example 2: Exclude sensitive fields (password, api_key, secret_token)
   Found 2 admins
@@ -2463,7 +2067,7 @@ Example 2: Exclude sensitive fields (password, api_key, secret_token)
     - password: excluded
     - api_key: excluded
     - secret_token: excluded
-  Fields returned: ["avatar_url", "name", "id", "bio", "created_at", "status", "email", "age", "user_role"]
+  Fields returned: ["created_at", "age", "avatar_url", "user_role", "id", "email", "name", "bio", "status"]
 
 Example 3: Complex query with projection (active users, ages 18-65)
   Found 3 active users (ages 18-65)
@@ -2474,17 +2078,17 @@ Example 4: Query inactive users with profile fields
 Example 5: Compare full vs projected data
   Full query:
     - 12 fields per record
-    - Fields: ["user_role", "email", "name", "status", "age", "created_at", "api_key", "bio", "password", "secret_token", "id", "avatar_url"]
+    - Fields: ["password", "age", "name", "status", "api_key", "email", "id", "secret_token", "bio", "created_at", "avatar_url", "user_role"]
   Projected query:
     - 3 fields per record
-    - Fields: ["email", "name", "id"]
+    - Fields: ["name", "email", "id"]
   Bandwidth savings: ~75% fewer fields
 
 Cleaning up test data...
 Cleanup complete
 
 All projection examples completed successfully!
-
+✅ All Rust integration tests complete!
 📦 Ensuring Python example dependencies in .venv...
 🧪 Running Python examples (direct HTTP/WebSocket)...
 === Simple CRUD Operations (Direct HTTP) ===
@@ -2492,16 +2096,16 @@ All projection examples completed successfully!
 ✓ Authentication successful
 
 === Insert Document ===
-Inserted: {'id': 'TM-QdUR_6x6IslYUQbtugSFgLeifarLw6N7SHSUWkUQCVjEURCmVJjcLHIDAknO-ciup0ntYpzj50LRl9v9Mxw'}
+Inserted: {'id': '8EGz8v-ddpOaYxF8ZdakbiSDPKpoCqvHUdnewMkcN-5UPM0KOqIPc1LGBOtH5GqQyFUkIv3j5Pc3Vbe1rnZNhg'}
 
 === Find by ID ===
-Found: {'name': {'type': 'String', 'value': 'Test Record'}, 'active': {'type': 'Boolean', 'value': True}, 'id': 'TM-QdUR_6x6IslYUQbtugSFgLeifarLw6N7SHSUWkUQCVjEURCmVJjcLHIDAknO-ciup0ntYpzj50LRl9v9Mxw', 'value': {'value': 42, 'type': 'Integer'}}
+Found: {'value': {'type': 'Integer', 'value': 42}, 'active': {'type': 'Boolean', 'value': True}, 'name': {'type': 'String', 'value': 'Test Record'}, 'id': '8EGz8v-ddpOaYxF8ZdakbiSDPKpoCqvHUdnewMkcN-5UPM0KOqIPc1LGBOtH5GqQyFUkIv3j5Pc3Vbe1rnZNhg'}
 
 === Find with Query ===
-Found documents: [{'name': {'type': 'String', 'value': 'Test Record'}, 'value': {'value': 42, 'type': 'Integer'}, 'active': {'type': 'Boolean', 'value': True}, 'id': 'TM-QdUR_6x6IslYUQbtugSFgLeifarLw6N7SHSUWkUQCVjEURCmVJjcLHIDAknO-ciup0ntYpzj50LRl9v9Mxw'}]
+Found documents: [{'id': '8EGz8v-ddpOaYxF8ZdakbiSDPKpoCqvHUdnewMkcN-5UPM0KOqIPc1LGBOtH5GqQyFUkIv3j5Pc3Vbe1rnZNhg', 'value': {'type': 'Integer', 'value': 42}, 'name': {'type': 'String', 'value': 'Test Record'}, 'active': {'value': True, 'type': 'Boolean'}}]
 
 === Update Document ===
-Updated: {'name': {'type': 'String', 'value': 'Updated Record'}, 'active': {'value': True, 'type': 'Boolean'}, 'id': 'TM-QdUR_6x6IslYUQbtugSFgLeifarLw6N7SHSUWkUQCVjEURCmVJjcLHIDAknO-ciup0ntYpzj50LRl9v9Mxw', 'value': {'type': 'Integer', 'value': 100}}
+Updated: {'name': {'type': 'String', 'value': 'Updated Record'}, 'active': {'type': 'Boolean', 'value': True}, 'id': '8EGz8v-ddpOaYxF8ZdakbiSDPKpoCqvHUdnewMkcN-5UPM0KOqIPc1LGBOtH5GqQyFUkIv3j5Pc3Vbe1rnZNhg', 'value': {'type': 'Integer', 'value': 100}}
 
 === Delete Document ===
 Deleted document
@@ -2512,7 +2116,7 @@ Deleted document
 ✓ Authentication successful
 
 === Inserting Test Data ===
-✓ Inserted test record: vnEyQd5QIipWYXaesy5-e3jkSI5lF5Nntzy0yNsk8QDvZJ2Out94Lb4Kkh2lJWzCu3oJXVOvVhdHrebBeMgJ7A
+✓ Inserted test record: DIRmPQUEeMeb2kbxKaB88YHsNYei1rVFefF8R9TDm71jPF-AkNIkhk3Jl5mSyVpkmvnem8A4CWRq6d-xvU_Z3g
 
 === Connecting to WebSocket ===
 ✓ WebSocket connected
@@ -2523,23 +2127,23 @@ Response: {
   "payload": {
     "data": [
       {
+        "id": "DIRmPQUEeMeb2kbxKaB88YHsNYei1rVFefF8R9TDm71jPF-AkNIkhk3Jl5mSyVpkmvnem8A4CWRq6d-xvU_Z3g",
         "active": {
-          "type": "Boolean",
-          "value": true
-        },
-        "name": {
-          "type": "String",
-          "value": "WebSocket Test Record"
+          "value": true,
+          "type": "Boolean"
         },
         "value": {
           "value": 42,
           "type": "Integer"
         },
-        "id": "vnEyQd5QIipWYXaesy5-e3jkSI5lF5Nntzy0yNsk8QDvZJ2Out94Lb4Kkh2lJWzCu3oJXVOvVhdHrebBeMgJ7A"
+        "name": {
+          "value": "WebSocket Test Record",
+          "type": "String"
+        }
       }
     ]
   },
-  "messageId": "372394558"
+  "messageId": "397463568"
 }
 ✓ Retrieved 1 record via WebSocket
 
@@ -2553,22 +2157,22 @@ Response: {
 
 📝 Example 1: Simple Query Function with Filter
 
-✅ Function saved: sM68v2lTjXweuS5N0EaQyBcF1223pit5d-J-kFSzAsf9EQYOHOEGj5MJIfXAQPhh5bawnYwTSfm4qKdkkWiigA
+✅ Function saved: Wo8V2erlCgrE0cepizpNmHzXrAIr0kIwEzZgyW6zsEEKoLoJcfnGKbP4k5DgXh8RGIxYPY8aHbHNTUGo1jVvGw
 📊 Found 5 active users
 
 📝 Example 2: Parameterized Pagination with Limit/Skip
 
-✅ Function saved: RuE08wdmkE9MkXv9EMiJSxyM_YfPmSbKG3koydGlUfkBGtPm4Kl7-Cwzue59fLWMrXXdBIY80KYMHQ05z1j_ig
+✅ Function saved: 1zz-V-BpE86bQA8B2PfSgXyM3oRmN4BnEbfvcHLMMZ1WQpu0n2HnjZE3792M3YQJ6_SPqOTXnY0czhoFi-sv6A
 📊 Page 1: Found 3 users (limit=3, skip=0)
 
 📊 Page 2: Found 2 users (limit=3, skip=3)
 
 📝 Example 3: Multi-Stage Pipeline (Query → Group → Calculate)
 
-✅ Function saved: U1c1tCezuP_dW6DxqPJolTkcKFbvP2nRie6l9P8R66I-hdkQ47u8ZwHwRhaUC4DOV2XrWU-MC8XS62LpC9qttw
+✅ Function saved: 1JHCJxojeSXAi71Vy8ZDth8cJHyozheUon2dVJGN5A9luayzm4o41ovQnJnrgHU2wEzPMmhGVNdizU8-5IrkaQ
 📊 Pipeline Results: Filtered (age>20) → Grouped by status → 2 groups
-   {'count': {'type': 'Integer', 'value': 5}, 'max_score': {'type': 'Integer', 'value': 100}, 'status': {'value': 'active', 'type': 'String'}, 'avg_score': {'value': 60.0, 'type': 'Float'}}
-   {'max_score': {'value': 90, 'type': 'Integer'}, 'avg_score': {'value': 50.0, 'type': 'Float'}, 'status': {'type': 'String', 'value': 'inactive'}, 'count': {'value': 5, 'type': 'Integer'}}
+   {'max_score': {'type': 'Integer', 'value': 90}, 'status': {'value': 'inactive', 'type': 'String'}, 'count': {'type': 'Integer', 'value': 5}, 'avg_score': {'value': 50.0, 'type': 'Float'}}
+   {'max_score': {'type': 'Integer', 'value': 100}, 'count': {'value': 5, 'type': 'Integer'}, 'avg_score': {'type': 'Float', 'value': 60.0}, 'status': {'value': 'active', 'type': 'String'}}
 
 📝 Example 4: Function Management
 
@@ -2609,15 +2213,15 @@ Created 3 test records
 ✓ Set key: session:user123
 
 === KV Get ===
-Retrieved value: {'type': 'Object', 'value': {'userId': 123, 'username': 'john_doe'}}
+Retrieved value: {'type': 'Object', 'value': {'username': 'john_doe', 'userId': 123}}
 
 === Set Multiple Keys ===
 ✓ Set 3 keys
 
 === Get Multiple Keys ===
-kv_operations:direct:py:cache:product:1: {'type': 'Object', 'value': {'name': 'Product 1', 'price': 29.99}}
-kv_operations:direct:py:cache:product:2: {'type': 'Object', 'value': {'name': 'Product 2', 'price': 39.989999999999995}}
-kv_operations:direct:py:cache:product:3: {'type': 'Object', 'value': {'price': 49.989999999999995, 'name': 'Product 3'}}
+kv_operations:direct:py:cache:product:1: {'type': 'Object', 'value': {'price': 29.99, 'name': 'Product 1'}}
+kv_operations:direct:py:cache:product:2: {'value': {'price': 39.989999999999995, 'name': 'Product 2'}, 'type': 'Object'}
+kv_operations:direct:py:cache:product:3: {'value': {'name': 'Product 3', 'price': 49.989999999999995}, 'type': 'Object'}
 
 === KV Delete ===
 ✓ Deleted key: session:user123
@@ -2632,11 +2236,11 @@ kv_operations:direct:py:cache:product:3: {'type': 'Object', 'value': {'price': 4
 ✓ Authentication successful
 
 === Create Collection (via insert) ===
-Collection created with first record: 8WIytDUW7n2w13lz4Qb1Dr99fiP2CzYXfQLFavlVyyd9178oo_TnFnj064ZvCDJUcW1mSc4bFRzg4TwWXI_Rvg
+Collection created with first record: Q05G8ajtHOuBFC8MGbHWYRVLFK96O-kOcIEefD_pZ39VyCqnCKgDd4Yx8hs8DWG_7g841pSseS1s6_DXsrNnbQ
 
 === List Collections ===
 Total collections: 13
-Sample collections: ['chat_agent_configs__ek0_testing', 'agent_function_versions__ek0_testing', 'schedules__ek0_testing', 'functions__ek0_testing', 'chat_configurations__ek0_testing']
+Sample collections: ['demo_collection', 'chat_goals__ek0_testing', 'schedules__ek0_testing', 'agent_function_versions__ek0_testing', 'chat_raw_completions__ek0_testing']
 
 === Count Documents ===
 Document count: 1
@@ -2659,11 +2263,11 @@ Collection still exists: False
 ============================================================
 
 === Setup: Creating Test Accounts ===
-Created Alice: $1000 - ID: VLImFh2NTxDJx6Aip5SHAQFUg1IOTO6ELQyQidOaazkGZ6rTYzDuxBGLI5dPk291XEKfBWPeTBQmzH_8RxkfPw
-Created Bob: $500 - ID: mZZbicGtnRYDnYqSgv_oCKC0GTVWGyNCc3irZzTCcK8FjZ3RhF6dDb6jU2YuVgP2FnxLcIXg-VndRBMJtQgswA
+Created Alice: $1000 - ID: D-u6Jjw4ClqySZaSJrgQex4O-87sk6XjLfRrhnBLJt87Ae-C-u1EloiTH5k6yErSX3HeXLX3nPJ_v8XuAmRVdQ
+Created Bob: $500 - ID: MwZlbkDLfy9RpTrvgBFBqt7EoCb7N5zn_nuQXGuRToY4oHyUyFZrdMB58HLiPiq18nzRvh3J5NMP2m-fr7t2vw
 
 === Example 1: Begin Transaction ===
-Transaction ID: ff04e3d1-50e3-4a55-9f93-b28754427a11
+Transaction ID: 6e51ef90-48c0-4d90-b535-f0c985d7179d
 
 === Example 2: Operations with transaction_id ===
 Updated Alice: $1000 → $800
@@ -2678,22 +2282,22 @@ Operations: 2
 
 === Verification ===
 Alice: ${'type': 'Integer', 'value': 800}
-Bob: ${'type': 'Integer', 'value': 700}
+Bob: ${'value': 700, 'type': 'Integer'}
 
 === Example 5: Rollback ===
-New transaction: c7e8547f-738c-4246-a7e5-aa5e5ebde828
+New transaction: c27e915f-184e-4b10-a44f-7ff85341da22
 Updated Bob: $700 → $600 (in transaction)
 ✓ Transaction rolled back
-Bob after rollback: ${'type': 'Integer', 'value': 700}
+Bob after rollback: ${'value': 700, 'type': 'Integer'}
 
 === Cleanup ===
 ✓ All transaction examples completed
 === Setup: Creating Test Accounts ===
-Created Alice: $1000 - ID: RDmu5MWZdrTO-PFMdZdANPVSCeU5XtMYEjQJOUTwoX0d_mmHKuOI9hFW6polhu93HitdIUJ8hFqfyFByZtx7Ew
-Created Bob: $500 - ID: rKnVOtTCZv8cur7YIPwI63yDKHnCLRLRpAKhuzYdCme3jbqWf_xyJO4-3jLz2h0tl415Jv7ceI97DeNRgjPwRA
+Created Alice: $1000 - ID: hl-1U5Unaavs0TR8BC8LRHdJkWWcse3W1Sx1_VQI_wWdxmIZExNS-VLrZ-Y5twWEguXvFm9Ln4x7k3IVLJJB3g
+Created Bob: $500 - ID: L0nLFmFOOa8XJkMs8pifsQtzgS_h4EWxhHxWlXZSgfwDJ_-XAKgplaqSx4UNYi8DozqTa0NslLaiLY4Uh_NZlg
 
 === Example 1: Begin Transaction ===
-Transaction ID: ce4bf37f-aecf-4d19-9f78-06d69ce67523
+Transaction ID: 9671cee5-f29f-4b7b-9b25-c0fe55979ca6
 
 === Example 2: Operations with transaction_id ===
 Updated Alice: $1000 → $800
@@ -2704,7 +2308,7 @@ Updated Bob: $500 → $700
 
 === Verification ===
 Alice: ${'type': 'Integer', 'value': 800}
-Bob: ${'type': 'Integer', 'value': 700}
+Bob: ${'value': 700, 'type': 'Integer'}
 
 === Cleanup ===
 ✓ Deleted test accounts
@@ -2719,11 +2323,11 @@ Bob: ${'type': 'Integer', 'value': 700}
 ============================================================
 
 === Setup: Creating Test Accounts ===
-Created Alice: $1000 - ID: 2YgIbBifibp8lDGVf0hzL8sgn7KaXtm_d4512WIBb0f6hL-dLvA9yCW7oAlwI_faYrbb12YA4prcqnBo4cHeyA
-Created Bob: $500 - ID: sKrbpVGUav4XAXXpiyaSvRknnJCFnf84qKZOIiWSZs_IKCuEsj1xuoyLk_RRsPuhNlX2LUxUtfsyIqqQ306S0w
+Created Alice: $1000 - ID: bVGw4mOXov2OtCr6_8TWT1VombO5HGHzZaiY86pTirfcAhBMWR0k0IMojlRo0-HntMP37j7CuvonD4cWRM-5lw
+Created Bob: $500 - ID: 2BJqe8S2SJssrT59_-WK1s3Y8wXuwXzmtxjBqrhLK8-LcgdJAIpmCUCSVXaZYC4c1P-JuTHD-HO-pRZUw7mclg
 
 === Example 1: Begin Transaction ===
-Transaction ID: 7600bc9c-180d-4aec-ba1c-00fd9eb7e916
+Transaction ID: 91a52fc2-3ceb-4ac8-9575-51b3f1cc9afb
 
 === Example 2: Operations with transaction_id ===
 Updated Alice: $1000 → $800
@@ -2737,23 +2341,23 @@ Operations: 2
 ✓ Transaction committed
 
 === Verification ===
-Alice: ${'type': 'Integer', 'value': 800}
-Bob: ${'value': 700, 'type': 'Integer'}
+Alice: ${'value': 800, 'type': 'Integer'}
+Bob: ${'type': 'Integer', 'value': 700}
 
 === Example 5: Rollback ===
-New transaction: 30eb8f0d-dc08-46cc-832c-3b5c7b6c7a4e
+New transaction: 2a0f4a0c-dde9-4eb9-8088-963c76d1dc17
 Updated Bob: $700 → $600 (in transaction)
 ✓ Transaction rolled back
-Bob after rollback: ${'type': 'Integer', 'value': 700}
+Bob after rollback: ${'value': 700, 'type': 'Integer'}
 
 === Cleanup ===
 ✓ All transaction examples completed
 === Setup: Creating Test Accounts ===
-Created Alice: $1000 - ID: IvhYLSywsp88rDwhpMKXGNo_OqB8YHbP1U0ODUfhjUJ64tQGH1iCY024VudY3aGzUauYRcj_rFwDAidepyTE4A
-Created Bob: $500 - ID: 6LEfITW0a04fCDUF5H7EgLwGrIbkUXiWGqpD3kDs-4_g8sf_6XtLE1McnqHJyEChuPAMkEnFOgwTmazj1cudhA
+Created Alice: $1000 - ID: 0M6mtt_Ui0n-dI2BoO0zhXNB63X1Qdw7700PRFK5BmBkBGPQqo0-1UC4GPXiavh6_omNL6ltIfUPF3rvcuRSXQ
+Created Bob: $500 - ID: J-NOi1BtGqcULtNRpXdQHh5qhBxinFAlYWHd9zdKBery1VGGINSnKj6KVBv3RBdloo7Ik1YYpbChKc2hwFsWpA
 
 === Example 1: Begin Transaction ===
-Transaction ID: a35c94d5-a3bf-4a31-be1d-a3931946c1ef
+Transaction ID: d5ced8cc-bbc2-4ce2-9dc0-916d34c19c94
 
 === Example 2: Operations with transaction_id ===
 Updated Alice: $1000 → $800
@@ -2763,8 +2367,8 @@ Updated Bob: $500 → $700
 ✓ Transaction committed
 
 === Verification ===
-Alice: ${'value': 800, 'type': 'Integer'}
-Bob: ${'type': 'Integer', 'value': 700}
+Alice: ${'type': 'Integer', 'value': 800}
+Bob: ${'value': 700, 'type': 'Integer'}
 
 === Cleanup ===
 ✓ Deleted test accounts
@@ -2779,11 +2383,11 @@ Bob: ${'type': 'Integer', 'value': 700}
 ============================================================
 
 === Setup: Creating Test Accounts ===
-Created Alice: $1000 - ID: L4FLEcQPSjzLkTk6xZr6ZcJLc1fbFB34INXVcD7D0y4YcfVzd43ZSGKS4vW-A712_AJakReNBaKqMvbekUFFQQ
-Created Bob: $500 - ID: ZGPJeClHYKpMCi3kRZ4rlbSsyDRTpM-Q-BCQTCPQTAzheRP4hUJC5s_xiDLXD1bdS9KRMK6onSrisnRkzL0Oqg
+Created Alice: $1000 - ID: _vH8qWx8DWBarstLYYIy1ICL2rfUdi9TRoAIHfVnTfhWKLSgOffGZRTaIF8KdlGl-6hlZixccHFFQI8FNqCaCw
+Created Bob: $500 - ID: tI4V9vINipfyXnT9zXK_G0GtThvilYEW4_ujT8GuyWRxksLy8WV7VMDbhoqdlxbUeBGBYGYh6M4zQ5kqSWNPuA
 
 === Example 1: Begin Transaction ===
-Transaction ID: 4def801c-e469-4c61-bd91-ac0d314a28de
+Transaction ID: 412c58ff-0eaa-4536-92ae-6af57d725e4a
 
 === Example 2: Operations with transaction_id ===
 Updated Alice: $1000 → $800
@@ -2798,10 +2402,10 @@ Operations: 2
 
 === Verification ===
 Alice: ${'type': 'Integer', 'value': 800}
-Bob: ${'value': 700, 'type': 'Integer'}
+Bob: ${'type': 'Integer', 'value': 700}
 
 === Example 5: Rollback ===
-New transaction: 5ab1d015-ab97-4838-80a8-11054ca1c48a
+New transaction: 72d9d94d-e74a-4d1d-90d3-56050818d9d1
 Updated Bob: $700 → $600 (in transaction)
 ✓ Transaction rolled back
 Bob after rollback: ${'value': 700, 'type': 'Integer'}
@@ -2809,11 +2413,11 @@ Bob after rollback: ${'value': 700, 'type': 'Integer'}
 === Cleanup ===
 ✓ All transaction examples completed
 === Setup: Creating Test Accounts ===
-Created Alice: $1000 - ID: mqw3yKMtTb-KfuFe3jglw_ERh-3JkObr9L7lpNFeWe8fYN_qU2Zt6mzz4B8_qZk2qtwFLo9-g8nr95dwrE1GJA
-Created Bob: $500 - ID: hxGdhy7SIFjUovyrJp_Eev92UkYm5qGuwaseFdzl9oCIXc6CUBcWd71k8eoknvGNocBVKCAhsrVe8DfaeLnI3w
+Created Alice: $1000 - ID: sjHa8IY6IWy1Ybq30Bn6WJKgdkUNtGQwyZYS8INWyMx0Zhds1PvG78mNIPzevomQEbnxeZ2uxv4l-pYvuIELzg
+Created Bob: $500 - ID: slUOZ4b5uMhyENbDYlT9wX9qIhGqh5vN18Hp2pAV7TaZDDqEjHZkBTv3IipGKke3W29refi1irHxRlcv_NYo7g
 
 === Example 1: Begin Transaction ===
-Transaction ID: 37aab40f-f612-48eb-9d1b-648e0962c746
+Transaction ID: 449bbc73-4e38-4f41-9fcc-18a352161210
 
 === Example 2: Operations with transaction_id ===
 Updated Alice: $1000 → $800
@@ -2823,8 +2427,8 @@ Updated Bob: $500 → $700
 ✓ Transaction committed
 
 === Verification ===
-Alice: ${'type': 'Integer', 'value': 800}
-Bob: ${'value': 700, 'type': 'Integer'}
+Alice: ${'value': 800, 'type': 'Integer'}
+Bob: ${'type': 'Integer', 'value': 700}
 
 === Cleanup ===
 ✓ Deleted test accounts
@@ -2858,7 +2462,7 @@ Each function shows Functions chaining with proper verification
 ============================================================
 
 1️⃣ Saving Function...
-   ✅ Function saved: cEvB-vC2XGDlxOtAxl7_C-CEjJtG1vOT_v-I6ie23hrAZVnbevpnO2UaJ854spKW6b4wHtAVuyD_-vozZB2b8A
+   ✅ Function saved: VyInv1b29beS8EmtbU7NzW1Tk0KUK__5lwzf6ckSib8X6GkKFNoZQWKXbS6kCbtBNV2GrcOOHQmk529RjLMlGA
 
 2️⃣ Calling function (Insert + Verify)...
    ✅ function executed: 2 Functions
@@ -2866,18 +2470,18 @@ Each function shows Functions chaining with proper verification
 
 3️⃣ Verification Results:
    ✅ Found 1 record(s)
-   📋 User ID: EP55Hdi3uQCblEzQCISkkYD5u7z1aU3kD_DxDEJZtwskUn2Rcv72yxIDRQnS9dG5rEX7rj2YGn_JTGtVaUvFJA
+   📋 User ID: a2SqBgk8dXdcvB7CWbLtCjjgAOOrXtUjYi5sTkdVPRmNIo176Mh_xFxKbkaOnnH6-MdUkBFeNkLJ4KBAD5S51w
    📋 Name: {'value': 'Alice Smith', 'type': 'String'}
    📋 Email: {'type': 'String', 'value': 'alice@example.com'}
    📋 Status: {'value': 'pending', 'type': 'String'}
-   📋 Credits: {'value': 0, 'type': 'Integer'}
+   📋 Credits: {'type': 'Integer', 'value': 0}
 
 ============================================================
 📝 function 2: Query + Update + Verify
 ============================================================
 
 1️⃣ Saving Function...
-   ✅ Function saved: 1gNXWpQ-JcyL9mHbaqM-YxR9pT4c0AVWLm-wmvpuKaElJq6AGPqrgCmUhK118aIdQKOFpjrhEyc8y3czmOCxSw
+   ✅ Function saved: Fw22rDs6SkdRP_s7OoKjblNl9Hs-QNedIL1U7vtPKwDOPRSpOP3_vjE3vEoQVUAikLH-bcmtkfvlMiZQsIO-zg
 
 2️⃣ Calling function (Query + Update + Verify)...
    ✅ function executed: 3 Functions
@@ -2886,14 +2490,14 @@ Each function shows Functions chaining with proper verification
 3️⃣ Verification Results:
    ✅ Found 1 record(s)
    📋 Status updated to: {'type': 'String', 'value': 'active'}
-   📋 Name: {'type': 'String', 'value': 'Alice Smith'}
+   📋 Name: {'value': 'Alice Smith', 'type': 'String'}
 
 ============================================================
 📝 function 3: Query + Update Credits + Verify
 ============================================================
 
 1️⃣ Saving Function...
-   ✅ Function saved: _ixl6NC74KZeIQ9mtt9s30unMakTLGhhRr4sByQ-S2eaP5ZqJQRYURT_URBYSALRSwRRty4C_mBVs_dK99eAow
+   ✅ Function saved: r5zoPdXE6F1JBVgzae_OOGMjSHcAAF7f23n3ykKGMWfnk67mmDpTFaieFEseMtAPZnT1prM_tksrXGa_yS8PhQ
 
 2️⃣ Calling function (Query + Update Credits + Verify)...
    ✅ function executed: 3 Functions
@@ -2901,16 +2505,16 @@ Each function shows Functions chaining with proper verification
 
 3️⃣ Verification Results:
    ✅ Found 1 record(s)
-   📋 Credits updated to: {'value': 100, 'type': 'Integer'}
+   📋 Credits updated to: {'type': 'Integer', 'value': 100}
    📋 Status: {'type': 'String', 'value': 'active'}
-   📋 Name: {'type': 'String', 'value': 'Alice Smith'}
+   📋 Name: {'value': 'Alice Smith', 'type': 'String'}
 
 ============================================================
 📝 function 4: Query Before Delete + Delete + Verify
 ============================================================
 
 1️⃣ Saving Function...
-   ✅ Function saved: hBoRVgjU2Wu7jIjO8VbUiJ9ljWZe9XMcOXOdgYNFEpQc6NwZRddoUsyp_EqD04VcstYp_qDmGHPDYMs7zB8fYQ
+   ✅ Function saved: lbH463u7czNm0nVxJJ_4YHDCNr5nAgg1VCD9fYrG9NUsq_6Yx2DqqrKb0jMW_5mVUv1L15PuybBn5tD1TbdEQQ
 
 2️⃣ Calling function (Query + Delete + Verify)...
    ✅ function executed: 3 Functions
@@ -2923,10 +2527,10 @@ Each function shows Functions chaining with proper verification
 ============================================================
 🧹 Cleanup
 ============================================================
-   ✅ Deleted script: cEvB-vC2XGDlxOtAxl7_...
-   ✅ Deleted script: 1gNXWpQ-JcyL9mHbaqM-...
-   ✅ Deleted script: _ixl6NC74KZeIQ9mtt9s...
-   ✅ Deleted script: hBoRVgjU2Wu7jIjO8VbU...
+   ✅ Deleted script: VyInv1b29beS8EmtbU7N...
+   ✅ Deleted script: Fw22rDs6SkdRP_s7OoKj...
+   ✅ Deleted script: r5zoPdXE6F1JBVgzae_O...
+   ✅ Deleted script: lbH463u7czNm0nVxJJ_4...
    ✅ Deleted collection: crud_functions_users_py
 
 ============================================================
@@ -2955,11 +2559,11 @@ TEST 1: Document TTL Expiration
 [Step 1] Insert document with 3 second TTL
   Input: {name: 'TTL Test', value: 'should expire'}
   TTL: 3s
-  Output: Document ID = vNkdU5uF5FZ0y-VqoEUtKMowZL0CrFWQsvY1ALkNwMwsjaj_eWvLwgC_vwDbVuuh4MGXSbmLp4Gdx9jenSu5Zg
+  Output: Document ID = hQBdLMUlnbgomudlH7dLU3FTWvAggwjLVUbuWzV_xlTe3-LpQ0sfobW_lkmmsNDQtErok6er0YA14-yef_SCDQ
   ✓ PASS: Document inserted
 
 [Step 2] Verify document exists immediately
-  Input: find_by_id(vNkdU5uF5FZ0y-VqoEUtKMowZL0CrFWQsvY1ALkNwMwsjaj_eWvLwgC_vwDbVuuh4MGXSbmLp4Gdx9jenSu5Zg)
+  Input: find_by_id(hQBdLMUlnbgomudlH7dLU3FTWvAggwjLVUbuWzV_xlTe3-LpQ0sfobW_lkmmsNDQtErok6er0YA14-yef_SCDQ)
   Output: Found document with name = TTL Test
   ✓ PASS: Document exists
 
@@ -2968,7 +2572,7 @@ TEST 1: Document TTL Expiration
   ✓ PASS: Wait complete
 
 [Step 4] Verify document has expired
-  Input: find_by_id(vNkdU5uF5FZ0y-VqoEUtKMowZL0CrFWQsvY1ALkNwMwsjaj_eWvLwgC_vwDbVuuh4MGXSbmLp4Gdx9jenSu5Zg)
+  Input: find_by_id(hQBdLMUlnbgomudlH7dLU3FTWvAggwjLVUbuWzV_xlTe3-LpQ0sfobW_lkmmsNDQtErok6er0YA14-yef_SCDQ)
   Output: Error (expected) - Find failed: Record not found
   ✓ PASS: Document expired (not found error)
 
@@ -3001,11 +2605,11 @@ TEST: WebSocket TTL Expiration
 [Step 1] Insert document with 3 second TTL
   Input: {name: 'WS TTL Test', value: 'should expire'}
   TTL: 3s
-  Output: Document ID = 5PzrkBB84GZ3Rw-oEBp9uUbX8nby1cuihKBfnrzHA-ms9gw_oQTBu-jlIFJSSgDkoyhWLERdkB3DocJTaD9Jpw
+  Output: Document ID = bCUojgoZie_LFe4bXesT0wb4OyJymhSwEdYoSvBmSf0ZFnIu-e5aEVH2Dg8eUliPLA5kB7VbRiRzBGfq5SyG5g
   ✓ PASS: Document inserted
 
 [Step 2] Query to verify document exists
-  Input: find_by_id(5PzrkBB84GZ3Rw-oEBp9uUbX8nby1cuihKBfnrzHA-ms9gw_oQTBu-jlIFJSSgDkoyhWLERdkB3DocJTaD9Jpw)
+  Input: find_by_id(bCUojgoZie_LFe4bXesT0wb4OyJymhSwEdYoSvBmSf0ZFnIu-e5aEVH2Dg8eUliPLA5kB7VbRiRzBGfq5SyG5g)
   Output: Found document with name = WS TTL Test
   ✓ PASS: Document exists
 
@@ -3014,7 +2618,7 @@ TEST: WebSocket TTL Expiration
   ✓ PASS: Wait complete
 
 [Step 4] Query to verify document has expired
-  Input: find_by_id(5PzrkBB84GZ3Rw-oEBp9uUbX8nby1cuihKBfnrzHA-ms9gw_oQTBu-jlIFJSSgDkoyhWLERdkB3DocJTaD9Jpw)
+  Input: find_by_id(bCUojgoZie_LFe4bXesT0wb4OyJymhSwEdYoSvBmSf0ZFnIu-e5aEVH2Dg8eUliPLA5kB7VbRiRzBGfq5SyG5g)
   Output: Error (expected) - Find failed: Record not found
   ✓ PASS: Document expired (not found error)
 
@@ -3087,7 +2691,7 @@ Failed: 0
 🐍 Found CPython 3.11 at /Library/Frameworks/Python.framework/Versions/3.11/bin/python3
 🔗 Found pyo3 bindings with abi3-py3.8 support
 💻 Using `MACOSX_DEPLOYMENT_TARGET=11.0` for aarch64-apple-darwin by default
-    Finished `release` profile [optimized] target(s) in 0.19s
+    Finished `release` profile [optimized] target(s) in 0.15s
 📦 Built wheel for abi3 Python ≥ 3.8 to ekoDB/ekodb-client/ekodb-client-py/target/wheels/ekodb_client-0.26.4-cp38-abi3-macosx_11_0_arm64.whl
 📦 Installing Python wheel into .venv...
 Processing ./ekodb-client-py/target/wheels/ekodb_client-0.26.4-cp38-abi3-macosx_11_0_arm64.whl
@@ -3099,39 +2703,24 @@ Installing collected packages: ekodb-client
 Successfully installed ekodb-client-0.26.4
 🧪 Ensuring test dependencies (pytest) in .venv...
 ✅ Python client package built and installed!
-bash: warning: setlocale: LC_ALL: cannot change locale (C.UTF-8): No such file or directory
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB Advanced CRUD Example (Python) ===
 
 --- insert ---
-Inserted: aqM86JhjkPW7sw4LwSnTbLZeBgdIJRUQlFE6Aj74WW40KoIESgVk9aVwU3NWjP5F7G8Vf2jAHwjspAjPcv5ndw
+Inserted: XSNVof4dIF8mfadOhhnxfGm6uPb32g2RE2zi_TuBMvd3IMLSg_G0S429Z--MnN2qal7ksGMj-D6ztP25vPATmA
 
 --- update_with_action (increment) ---
-After increment count by 5: {'id': 'aqM86JhjkPW7sw4LwSnTbLZeBgdIJRUQlFE6Aj74WW40KoIESgVk9aVwU3NWjP5F7G8Vf2jAHwjspAjPcv5ndw', 'name': {'type': 'String', 'value': 'Counter Record'}, 'tags': {'type': 'Array', 'value': ['initial']}, 'count': {'type': 'Integer', 'value': 15}, 'score': {'value': 50.0, 'type': 'Float'}}
+After increment count by 5: {'tags': {'value': ['initial'], 'type': 'Array'}, 'count': {'type': 'Integer', 'value': 15}, 'score': {'value': 50.0, 'type': 'Float'}, 'name': {'type': 'String', 'value': 'Counter Record'}, 'id': 'XSNVof4dIF8mfadOhhnxfGm6uPb32g2RE2zi_TuBMvd3IMLSg_G0S429Z--MnN2qal7ksGMj-D6ztP25vPATmA'}
 
 --- update_with_action (decrement) ---
-After decrement score by 10: {'name': {'type': 'String', 'value': 'Counter Record'}, 'id': 'aqM86JhjkPW7sw4LwSnTbLZeBgdIJRUQlFE6Aj74WW40KoIESgVk9aVwU3NWjP5F7G8Vf2jAHwjspAjPcv5ndw', 'score': {'value': 40.0, 'type': 'Float'}, 'tags': {'type': 'Array', 'value': ['initial']}, 'count': {'type': 'Integer', 'value': 15}}
+After decrement score by 10: {'tags': {'type': 'Array', 'value': ['initial']}, 'score': {'type': 'Float', 'value': 40.0}, 'count': {'type': 'Integer', 'value': 15}, 'id': 'XSNVof4dIF8mfadOhhnxfGm6uPb32g2RE2zi_TuBMvd3IMLSg_G0S429Z--MnN2qal7ksGMj-D6ztP25vPATmA', 'name': {'type': 'String', 'value': 'Counter Record'}}
 
 --- update_with_action_sequence ---
-After action sequence: {'id': 'aqM86JhjkPW7sw4LwSnTbLZeBgdIJRUQlFE6Aj74WW40KoIESgVk9aVwU3NWjP5F7G8Vf2jAHwjspAjPcv5ndw', 'name': {'type': 'String', 'value': 'Counter Record'}, 'tags': {'value': ['initial', 'sequenced'], 'type': 'Array'}, 'score': {'value': 40.0, 'type': 'Float'}, 'count': {'type': 'Integer', 'value': 115}}
+After action sequence: {'score': {'type': 'Float', 'value': 40.0}, 'tags': {'value': ['initial', 'sequenced'], 'type': 'Array'}, 'name': {'value': 'Counter Record', 'type': 'String'}, 'id': 'XSNVof4dIF8mfadOhhnxfGm6uPb32g2RE2zi_TuBMvd3IMLSg_G0S429Z--MnN2qal7ksGMj-D6ztP25vPATmA', 'count': {'type': 'Integer', 'value': 115}}
 
 --- cleanup ---
 Cleaned up collection
 
 === Advanced CRUD example completed ===
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
 === Batch Insert ===
@@ -3148,20 +2737,13 @@ perl: warning: Falling back to the standard locale ("C").
 ✓ Deleted collection
 
 ✓ All batch operations completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB Advanced Chat Features Example ===
 
 === Inserting Sample Data ===
 ✓ Inserted sample product
 
 === Creating Chat Session ===
-✓ Created session: LnBuzLJPwASGqnCQlUmhO-1c-qo1rcC7OuzGVFe0vmhLkxk_HNpdR-SGcLd6nLT15m11-fTUmBM2R0N8KXOWqQ
+✓ Created session: Hm2Eeh8aeynKvmjuspRfPXJRGEoO3sYn6bIrSSQTsAYoSSzy8xK4ugyVKJprgX1nyJLmAwsrzTgTpbl5r0LM4g
 
 === Sending Initial Message ===
 ✓ Message sent
@@ -3171,16 +2753,16 @@ perl: warning: Falling back to the standard locale ("C").
 - **Description:** High-performance database product
 - **Price:** $99
 
-If you need more information or have any other questions, feel free to ask!
+Let me know if you need more information or if there's anything else I can assist you with!
 
 ✓ Second message sent
 
 Debug: Found 4 messages
-Debug: First message keys: dict_keys(['llm_provider', 'token_usage', 'chat_id', 'id', 'updated_at', 'content', 'created_at', 'context_snippets', 'llm_model', 'role'])
-Debug: First message role: {'value': 'assistant', 'type': 'String'}
+Debug: First message keys: dict_keys(['llm_model', 'id', 'updated_at', 'created_at', 'role', 'chat_id', 'context_snippets', 'llm_provider', 'content', 'token_usage'])
+Debug: First message role: {'type': 'String', 'value': 'assistant'}
 === Feature 1: Regenerate AI Response ===
 ✓ Message regenerated
-  New response: The price of ekoDB is $99. If you have any other questions or need further assistance, feel free to ask!
+  New response: The price of ekoDB is $99.
 
 === Feature 2: Edit Message ===
 ✓ Message content updated
@@ -3191,7 +2773,7 @@ Debug: First message role: {'value': 'assistant', 'type': 'String'}
 ✓ Message unmarked as forgotten
 
 === Feature 4: Merge Chat Sessions ===
-✓ Created second session: PblUNwUt_wNcVUJhMbyomvEWuBtNCEiXbReOivh-2e6abH23PqdXpOJNTJg6RIJOZTcjgq9Z3CTFDkPoORg7kQ
+✓ Created second session: E1FmdS2zK3Of4cUipn1aul2vaLMOzFk3hXgr60ytJVWEdnbxRtNZL-WiyMFYt0nQZWWmCuc9HjyVKbAzSFrSIg
 ✓ Sent message in second session
 ✓ Sessions merged successfully
   Total messages in merged session: 7
@@ -3202,85 +2784,67 @@ Debug: First message role: {'value': 'assistant', 'type': 'String'}
 ✓ Messages remaining: 6
 
 === Cleanup ===
-✓ Deleted chat session: PblUNwUt_wNcVUJhMbyomvEWuBtNCEiXbReOivh-2e6abH23PqdXpOJNTJg6RIJOZTcjgq9Z3CTFDkPoORg7kQ
-✓ Deleted chat session: LnBuzLJPwASGqnCQlUmhO-1c-qo1rcC7OuzGVFe0vmhLkxk_HNpdR-SGcLd6nLT15m11-fTUmBM2R0N8KXOWqQ
+✓ Deleted chat session: E1FmdS2zK3Of4cUipn1aul2vaLMOzFk3hXgr60ytJVWEdnbxRtNZL-WiyMFYt0nQZWWmCuc9HjyVKbAzSFrSIg
+✓ Deleted chat session: Hm2Eeh8aeynKvmjuspRfPXJRGEoO3sYn6bIrSSQTsAYoSSzy8xK4ugyVKJprgX1nyJLmAwsrzTgTpbl5r0LM4g
 ✓ Deleted collection
 
 ✓ All advanced chat features demonstrated successfully!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB Chat Basic Example ===
 
 === Inserting Sample Data ===
 ✓ Inserted 3 sample documents
 
 === Creating Chat Session ===
-✓ Created session: d8LtJHpYC_tm702s4o4sgae4mXMsGk5ATuVD8XQxHZV3cprhe4-YQYp61TL-c-AopjE2vl8RqAjOO3r1n20l8g
+✓ Created session: KCFHWYOhkgxNUDgJ3d5Z7S7yothTQvKtwv4el8gT4cZzwynyPJbqXTI8rZjr5-InX_7uvxlZlUxDCjvl7_2g_Q
 
 === Sending Chat Message ===
-Message ID: 9IjPNKJ5vZnKlE2rpTcWxrPpTO8udDzuThHvRDt4KQrovnYYluhDlay2I5ejh644jlH9PeknDfvSieDBX5uvdA
+Message ID: 0GvOKUEneWRweftcFDabFPl6UtSN0FJUmCO2TvMszhTpnlahqqQMI4D4Xfy1bccWLK0KySttkybnBBimP8ETow
 
 === AI Response ===
-The available products and their prices are as follows:
+Here are the available products along with their prices:
 
-1. **ekoDB Cloud**: $499
+1. **ekoDB Cloud**
+   - Price: $499
    - Description: Fully managed cloud database service product
 
-2. **ekoDB**: $99
-   - Description: A high-performance database product with AI capabilities
-
-3. **ekoDB Pro**: $299
+2. **ekoDB Pro**
+   - Price: $299
    - Description: Enterprise edition product with advanced features
 
-Execution Time: 2239ms
+3. **ekoDB**
+   - Price: $99
+   - Description: A high-performance database product with AI capabilities
+
+Execution Time: 3188ms
 
 === Token Usage ===
 Prompt tokens: 3413
-Completion tokens: 82
-Total tokens: 3495
+Completion tokens: 91
+Total tokens: 3504
 
 === Cleanup ===
 ✓ Deleted session
 ✓ Deleted collection
 
 ✓ Chat completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB Chat Message Stream (SSE) Example (Python) ===
 
-Created session: d2jbEsqufBGFUSSPpH8BB2fd4CXpZNhqpCEmA8abcXgB3Jzg8z05ZsjBxJVgwmVlaHmqYy8ifqrTSWa0RYTX8A
+Created session: 4bhc0pDjJChDjq4ggBq_ZetC7LO9UpWc4aad1dA7Lvw-DJntaGWLpVx8bTmH_znjPrg_wMzRrc3HwigcELMF3g
 
 Streaming response for: 'What is ekoDB?'
 
-{"__progress":"received"}{"__progress":"generating","model":"gpt-4o-mini","provider":"openai"}EkoDB is a high-performance, embedded database specifically designed for use with the Elixir programming language. It focuses on providing fast access to data while being lightweight and easy to integrate into Elixir applications. EkoDB supports transactional capabilities and is optimized for concurrent access, making it suitable for applications that require efficient data storage and retrieval.
+{"__progress":"received"}{"__progress":"generating","model":"gpt-4o-mini","provider":"openai"}ekoDB is a database tool designed as a lightweight solution for efficient persistent data storage. It is particularly suitable for scenarios that require easy integration with applications, especially in embedded systems or small-scale applications. ekoDB aims to simplify the development process by providing a straightforward API for developers while supporting functionalities like data indexing and querying.
 
-EkoDB is particularly suitable for scenarios where you want a database that can be embedded within an application without the need for a separate database server, thus reducing the overhead of managing a standalone database system. Its design leverages the strengths of the BEAM virtual machine, which Elixir and Erlang run on, providing excellent performance under concurrent workloads.
+The primary focus of ekoDB is on performance and ease of use, making it an attractive option for developers looking for a simple yet effective way to manage data in their applications without the overhead of more complex database systems.
 
-If you need more specific details or have particular questions about EkoDB, feel free to ask!
+If you have specific use cases or features of ekoDB that you're interested in, feel free to ask!
 
 --- Stream complete ---
-Message ID: 7oTL2uYA-skM95Dt4TndZ-L42OhbZucqA1W3GC2dFVnRbBVfVe5aMGgqKGI598Iz6xztDo7GfzTMv5JVIZSmtg
-Execution time: 2307ms
+Message ID: 8dwlv0bQ6QXbAp0jzu1FcHjznPKlFBXkMvq_i4nT83zax1F8aTPDcuXFaUsvGauvmm8_ncGCnaaae3WNrk8UFA
+Execution time: 1466ms
 Context window: 128000 tokens
 
 ✓ Chat message stream example completed
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
 === Get All Chat Models ===
@@ -3296,33 +2860,26 @@ OpenAI models: ['text-embedding-ada-002', 'whisper-1', 'gpt-3.5-turbo', 'tts-1',
 Anthropic models: ['claude-fable-5-1', 'claude-opus-5', 'claude-sonnet-5', 'claude-fable-5', 'claude-opus-4-8', 'claude-opus-4-7', 'claude-sonnet-4-6', 'claude-opus-4-6', 'claude-opus-4-5-20251101', 'claude-haiku-4-5-20251001', 'claude-sonnet-4-5-20250929']
 
 ✓ Chat Models API example complete
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB Chat Session Management Example ===
 
 === Inserting Sample Data ===
 ✓ Inserted sample product
 
 === Creating Chat Session ===
-✓ Created session: oU2biI16LkKeN5i_IyBuQxxuujQp6RtWRlBHUnF17Bkgv3dcM20VRUwVz578P3nj7KmMhfGg9ilOR_iq5jI-UA
+✓ Created session: 1tMkYFLr8U8IvV6J1NlFcbbNMdh9ObPzpP6RFI4dlhZUR17gKbqzYO-_Yx7XXH8JLi32ASvHZsEsAIAGK_KduQ
 
 === Sending Messages ===
 ✓ Message 1 sent
   Response: The available product is:
 
-- **Name**: ekoDB
-- **Description**: A high-performance database product
-- **Price**: $99
+- **Name:** ekoDB
+  - **Description:** A high-performance database product
+  - **Price:** $99
 
-If you need more details or have other questions, feel free to ask!
+If you need further details or have any specific questions about this product, feel free to ask!
 
 ✓ Message 2 sent
-  Response: The price of ekoDB is $99.
+  Response: The price of the product ekoDB is $99.
 
 === Retrieving Session Messages ===
 ✓ Retrieved 4 messages
@@ -3331,36 +2888,29 @@ If you need more details or have other questions, feel free to ask!
 ✓ Session updated
 
 === Branching Session ===
-✓ Created branch: D5-jZ63H9q4tt_Rv8EoZUi7qV_LxdHn0Fthwil8JBmSVd30GcPAM4b2zer9Q6nOP-7mTnrkumglcFawMr8nb3g
-  Parent: oU2biI16LkKeN5i_IyBuQxxuujQp6RtWRlBHUnF17Bkgv3dcM20VRUwVz578P3nj7KmMhfGg9ilOR_iq5jI-UA
+✓ Created branch: PWbKuWCBCejFnSBHvBQpfTJ3s-PU-bJfWJscVeq7I71EhYtxXbcW9ZM-Fycfo7tdxqCwaTjt7QxJn5XGaH8n4A
+  Parent: 1tMkYFLr8U8IvV6J1NlFcbbNMdh9ObPzpP6RFI4dlhZUR17gKbqzYO-_Yx7XXH8JLi32ASvHZsEsAIAGK_KduQ
 
 === Listing Sessions ===
 ✓ Found 2 sessions
-  Session 1: D5-jZ63H9q4tt_Rv8EoZUi7qV_LxdHn0Fthwil8JBmSVd30GcPAM4b2zer9Q6nOP-7mTnrkumglcFawMr8nb3g (Untitled)
-  Session 2: oU2biI16LkKeN5i_IyBuQxxuujQp6RtWRlBHUnF17Bkgv3dcM20VRUwVz578P3nj7KmMhfGg9ilOR_iq5jI-UA (Untitled)
+  Session 1: PWbKuWCBCejFnSBHvBQpfTJ3s-PU-bJfWJscVeq7I71EhYtxXbcW9ZM-Fycfo7tdxqCwaTjt7QxJn5XGaH8n4A (Untitled)
+  Session 2: 1tMkYFLr8U8IvV6J1NlFcbbNMdh9ObPzpP6RFI4dlhZUR17gKbqzYO-_Yx7XXH8JLi32ASvHZsEsAIAGK_KduQ (Untitled)
 
 === Deleting Branch Session ===
-✓ Deleted branch session: D5-jZ63H9q4tt_Rv8EoZUi7qV_LxdHn0Fthwil8JBmSVd30GcPAM4b2zer9Q6nOP-7mTnrkumglcFawMr8nb3g
+✓ Deleted branch session: PWbKuWCBCejFnSBHvBQpfTJ3s-PU-bJfWJscVeq7I71EhYtxXbcW9ZM-Fycfo7tdxqCwaTjt7QxJn5XGaH8n4A
 
 === Cleanup ===
 ✓ Deleted sessions and collection
 
 ✓ All session management operations completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
 === Create Collection (via insert) ===
-Collection created with first record: "_880851ZpRaOlHOpj6IL3C_3AeBEaD0VYnKnMDK_iL5Eq85tK_Cci6eO90jToLPKMWcCLVofcjJIDc-RAjufVw"
+Collection created with first record: "XRapYBrHSWwSmLKOjufkNY88CszH1HQ1ea500dSl7wpviE5HM16F6maQxoZhe0vRFC-UzqQSqBUd5zYqZV9k_w"
 
 === List Collections ===
 Total collections: 13
-Sample collections: ['chat_agent_configs__ek0_testing', 'agent_function_versions__ek0_testing', 'client_collection_management_python', 'schedules__ek0_testing', 'functions__ek0_testing']
+Sample collections: ['chat_goals__ek0_testing', 'schedules__ek0_testing', 'agent_function_versions__ek0_testing', 'client_collection_management_python', 'chat_raw_completions__ek0_testing']
 
 === Count Documents ===
 Document count: 1
@@ -3372,13 +2922,6 @@ Collection deleted successfully
 Collection still exists: False
 
 ✓ All collection management operations completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
 === Check Collection Exists (Before Creation) ===
@@ -3400,13 +2943,6 @@ Collection 'nonexistent_collection_xyz' exists: False
 Deleted collection 'collection_utils_test_py'
 
 ✓ Collection Utilities example complete
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 ✓ conc_demo_pay saved
 ✓ conc_demo_rl_fail saved
@@ -3420,25 +2956,18 @@ Invoke them like:
   POST /api/functions/conc_demo_lock       { "resource": "queue:drain" }
 
 ✓ Cleaned up demo functions
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB Convenience Methods Example ===
 
 === Native Dict Creation ===
-✓ Created record with plain dict: {'id': 'UuZqbQLFX9209NKfyFPQRaMjGyC82kaMangHnRkiat83hVKIZFihD5Z04YWjpLJARCTS59-I7f7soG3ffincAA'}
+✓ Created record with plain dict: {'id': '1aBn7qJkjrCbAcnxd03iW8AtdxPrWM4_dVdh-pmOsCzRBYr4yHwe0f3R_44IUsQDffDgJCLdMYfjWi7CMRK6zA'}
 
 === Upsert Operation ===
-✓ Upsert (update existing record): UuZqbQLFX9209NKfyFPQRaMjGyC82kaMangHnRkiat83hVKIZFihD5Z04YWjpLJARCTS59-I7f7soG3ffincAA
-✓ Inserted second record: 4imi8hLOz-1OJRE-OsPEy4f_rSuAC_MWElFRrZW6jfE--Ct3gZosPXykkkk5zd_MZR2OrZci2GSJFegMHG9sdw
-✓ Upsert (update second record): 4imi8hLOz-1OJRE-OsPEy4f_rSuAC_MWElFRrZW6jfE--Ct3gZosPXykkkk5zd_MZR2OrZci2GSJFegMHG9sdw
+✓ Upsert (update existing record): 1aBn7qJkjrCbAcnxd03iW8AtdxPrWM4_dVdh-pmOsCzRBYr4yHwe0f3R_44IUsQDffDgJCLdMYfjWi7CMRK6zA
+✓ Inserted second record: CYON3TRcmWHGrmrAgmcurV_59LdCDUfIkBBPYIjWT4e511Jlm03TcSsIaD07WR88dcyLCKRC0CXBNO9V7pDSuw
+✓ Upsert (update second record): CYON3TRcmWHGrmrAgmcurV_59LdCDUfIkBBPYIjWT4e511Jlm03TcSsIaD07WR88dcyLCKRC0CXBNO9V7pDSuw
 
 === Find One Operation ===
-✓ Found user by email: {'active': {'type': 'Boolean', 'value': True}, 'age': {'type': 'Integer', 'value': 29}, 'id': 'UuZqbQLFX9209NKfyFPQRaMjGyC82kaMangHnRkiat83hVKIZFihD5Z04YWjpLJARCTS59-I7f7soG3ffincAA', 'email': {'type': 'String', 'value': 'alice.j@newdomain.com'}, 'name': {'type': 'String', 'value': 'Alice Johnson'}}
+✓ Found user by email: {'age': {'value': 29, 'type': 'Integer'}, 'id': '1aBn7qJkjrCbAcnxd03iW8AtdxPrWM4_dVdh-pmOsCzRBYr4yHwe0f3R_44IUsQDffDgJCLdMYfjWi7CMRK6zA', 'name': {'type': 'String', 'value': 'Alice Johnson'}, 'active': {'type': 'Boolean', 'value': True}, 'email': {'value': 'alice.j@newdomain.com', 'type': 'String'}}
 ✓ User not found (as expected)
 
 === Exists Check ===
@@ -3455,13 +2984,6 @@ perl: warning: Falling back to the standard locale ("C").
 ✓ Deleted collection
 
 ✅ All convenience methods demonstrated successfully!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 ✓ crypto_demo_hmac_py saved
 ✓ crypto_demo_aes_py saved
@@ -3477,13 +2999,6 @@ Invoke them with:
   POST /api/functions/crypto_demo_encoding_py { "title": "Héllo World" }
 
 ✓ Cleaned up demo functions
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === Distinct Values Example ===
 
 Inserting sample products...
@@ -3507,20 +3022,13 @@ Found 2 distinct statuses for electronics:
   - {'type': 'String', 'value': 'discontinued'}
 
 Cleanup done.
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
 === Insert Document with TTL (1 hour) ===
-✓ Inserted document: ama0yiTT93xI7mRlE5SzKYmmEPx7Xf-58ooldS9drtPa9pgW216FbV4uELq1W6kWydtVg-kBopFzaDAWNECWHg
+✓ Inserted document: Hny2Ww1mQtVeDbXufEDTRHE-tgWZ2xjapXYg8SakhjD1n9z-RWayfCVwdPtyHcO_SQTWZRC6q6OBaWjAmoCtnA
 
 === Insert Document with TTL (5 minutes) ===
-✓ Inserted document: lpPdHomV0qnCX-N1NFzEyAluq6LDjxupYRSpT-L75-oPy36pCX67ItRTk9Bcfi6621iPrO6frzZi2gzNsbz79Q
+✓ Inserted document: r6vZ_uVgjp9QmhGHpoa0tM6jFiE8nQB9clCjsyPcvn0hvFUjyGGlWn3dMOKvbJUFSvBPEVQQk7nFBjDyoU4p7A
 
 === Query Documents ===
 ✓ Found 2 documents with TTL
@@ -3537,20 +3045,13 @@ perl: warning: Falling back to the standard locale ("C").
 ✓ All document TTL operations completed successfully
 
 💡 Note: Documents with TTL will automatically expire after the specified duration
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB as Edge Cache - Simple Example ===
 
 Creating edge cache function...
-✓ Edge cache script created: 04t0Hil8MnDnr6wDBmJFm3wfgbGFPDjBWZ4qlR618H9sqSGVJQMWEpZFE9dnuDUtUOnkswEs49DbT4yzRSzf-w
+✓ Edge cache script created: a9omHquMWxP0Y31_8dN_Fw5CSiZfd23QYKsVcsn45VANlHtzdnJWlXd9hNPJGt2eVtXWtT8wwpa6YhxXkQwwzQ
 
 Call 1: Cache miss (fetches from API)
-Response time: 439ms
+Response time: 465ms
 Result: {
   "records": [
     {
@@ -3559,8 +3060,8 @@ Result: {
         "value": {
           "current": {
             "interval": 900,
-            "temperature_2m": 20.0,
-            "time": "2026-09-16T13:45"
+            "temperature_2m": 26.1,
+            "time": "2026-09-16T20:30"
           },
           "current_units": {
             "interval": "seconds",
@@ -3568,7 +3069,7 @@ Result: {
             "time": "iso8601"
           },
           "elevation": 32.0,
-          "generationtime_ms": 0.03254413604736328,
+          "generationtime_ms": 0.05114078521728515,
           "latitude": 40.710335,
           "longitude": -73.99308,
           "timezone": "GMT",
@@ -3588,7 +3089,7 @@ Result: {
 }
 
 Call 2: Cache hit (served from ekoDB)
-Response time: 12ms (37.0x faster!)
+Response time: 2ms (207.6x faster!)
 Result: {
   "records": [
     {
@@ -3597,8 +3098,8 @@ Result: {
         "value": {
           "current": {
             "interval": 900,
-            "temperature_2m": 20.0,
-            "time": "2026-09-16T13:45"
+            "temperature_2m": 26.1,
+            "time": "2026-09-16T20:30"
           },
           "current_units": {
             "interval": "seconds",
@@ -3606,7 +3107,7 @@ Result: {
             "time": "iso8601"
           },
           "elevation": 32.0,
-          "generationtime_ms": 0.03254413604736328,
+          "generationtime_ms": 0.05114078521728515,
           "latitude": 40.710335,
           "longitude": -73.99308,
           "timezone": "GMT",
@@ -3635,13 +3136,6 @@ Result: {
 
 ✓ Example complete!
 
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB Function Composition Examples ===
 
 📋 Setting up test data...
@@ -3671,7 +3165,7 @@ Using KV cache + CallFunction for fast cache-aside pattern...
 ✅ Saved SWR function using composition: swr_user_py
 
 First call (cache miss - will fetch from API):
-   ⏱️  Duration: 102.7ms
+   ⏱️  Duration: 87.6ms
    📊 Records: 1
    📦 Data: {
       "value": {
@@ -3683,7 +3177,7 @@ First call (cache miss - will fetch from API):
                  ...
 
 Second call (cache hit - from cache):
-   ⏱️  Duration: 10.2ms
+   ⏱️  Duration: 2.3ms
    📊 Records: 1
    📦 Data: {
       "value": {
@@ -3693,7 +3187,7 @@ Second call (cache hit - from cache):
                         "city": "Gwenborough",
                         "geo": {
                  ...
-   🚀 Cache speedup: 10.0x faster!
+   🚀 Cache speedup: 38.6x faster!
 
 📝 Example 3: Multi-Level Function Composition
 
@@ -3716,21 +3210,7 @@ Building complex workflows from small, reusable pieces...
 
 ✅ Cleanup complete
 ✅ All composition examples completed!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 client_function_contract: ok
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 🚀 ekoDB Functions Example (Python)
 
 📋 Setting up test data...
@@ -3738,17 +3218,17 @@ perl: warning: Falling back to the standard locale ("C").
 
 📝 Example 1: Simple Query Function
 
-✅ Function saved: uBTrqc9g8xgrY3yfXCvwj0RjoBpGV8eABjKx6Pt9NN8qPNBN2argQTmPhaUdABFHNzn6vPr08kI-8lGYKZin9g
+✅ Function saved: ATlZmhsJXMauA_WvX8twJztiZwO8lA3vG0diZTUQgujqDXNX_Zg9b0LNMiPHqe7qze5aRdgCImhDE-BsAw5TVw
 📊 Found 5 active users
 
 📝 Example 2: Parameterized Function
 
-✅ Function saved: Q7vNTMfUB0R7p18d8r-3LzRJQmv5__c5jaK3Vm9WSM_IBXeS88RDw9aoxnIiCNngKSF_sctZhxTtqTy0wwoXWA
+✅ Function saved: jkFA9qPHLiBcP0IVhQtFv0hd1aifNMKxdBz3Hz2JrYpP0a7EIJiEPImU6cYmIAevN_Y-25zzzhoxVLlfgu6x1A
 📊 Found 3 users (limited)
 
 📝 Example 3: Aggregation Function
 
-✅ Function saved: K-SpJpHmEcyordqYtWLwxiadH5RjiQBBQvZzhU-ejDxtwb17Q_WfYEAEPLeBQVLHp7SUPwb81flo-VJONZesgg
+✅ Function saved: g8EgrcNJ24ajtq6pfYHCLlEyOfu-Z5tDr3IGlrThJqY2_ucIS3uZYk0IVkxEJJlKOSGleu9T4wA_TOka104c-g
 📊 Statistics: 2 groups
    {'avg_score': {'type': 'Float', 'value': 50.0}, 'count': {'type': 'Integer', 'value': 5}, 'status': {'type': 'String', 'value': 'inactive'}}
 
@@ -3764,13 +3244,6 @@ perl: warning: Falling back to the standard locale ("C").
 ℹ️  Note: GET/UPDATE/DELETE use IDs. Only CALL supports labels.
 
 ✅ All examples completed!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 🚀 ekoDB Python Advanced Functions Example
 
 📋 Setting up test data...
@@ -3786,8 +3259,8 @@ perl: warning: Falling back to the standard locale ("C").
 
 ✅ Function saved
 📊 Category breakdown:
-   {'avg_price': {'type': 'Float', 'value': 367.0}, 'category': {'type': 'String', 'value': 'Electronics'}, 'count': {'type': 'Integer', 'value': 5}}
    {'avg_price': {'type': 'Float', 'value': 365.6666666666667}, 'category': {'type': 'String', 'value': 'Furniture'}, 'count': {'type': 'Integer', 'value': 3}}
+   {'avg_price': {'type': 'Float', 'value': 367.0}, 'category': {'type': 'String', 'value': 'Electronics'}, 'count': {'type': 'Integer', 'value': 5}}
 ⏱️  Execution time: 0ms
 
 📝 Example 3: Count Total Products
@@ -3800,13 +3273,6 @@ perl: warning: Falling back to the standard locale ("C").
 ✅ Cleanup complete
 
 ✅ All advanced script examples finished!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 🚀 ekoDB Python AI Functions Example
 
 📋 Setting up test data...
@@ -3816,25 +3282,23 @@ perl: warning: Falling back to the standard locale ("C").
 
 ✅ Chat script saved
 🤖 AI Response:
-   Vector databases offer several benefits:
+   Vector databases offer several benefits, including:
 
-1. **Efficient Similarity Search**: They enable fast retrieval of similar items using vector embeddings, which is essential for applications like image and text similarity.
+1. **Efficient Similarity Search**: They allow for fast and accurate similarity searches for high-dimensional data, making them ideal for applications like image and text retrieval.
 
-2. **High Dimensional Data Handling**: They can efficiently manage and query high-dimensional data, making them suitable for machine learning and AI applications.
+2. **Scalability**: Vector databases can handle large datasets efficiently, enabling scaling as data grows.
 
-3. **Scalability**: Vector databases are designed to scale with large datasets, providing robust performance as data grows.
+3. **Handling Complex Data**: They support complex data types (e.g., embeddings from machine learning models), making them suitable for AI applications.
 
-4. **Real-Time Processing**: They support real-time data processing and querying, which is critical for dynamic applications.
+4. **Real-time Processing**: Many vector databases provide capabilities for real-time data processing and querying.
 
-5. **Advanced Indexing Techniques**: Use of specialized indexing techniques (e.g., Annoy, HNSW) to improve search speed and accuracy.
+5. **Flexible Indexing**: Advanced indexing techniques, such as HNSW (Hierarchical Navigable Small World) and PQ (Product Quantization), enhance performance.
 
-6. **Integration with ML Models**: They easily integrate with machine learning frameworks, enabling seamless workflows from model training to deployment.
+6. **Integration with ML Workflows**: They easily integrate with machine learning and deep learning frameworks for seamless data workflows.
 
-7. **Diverse Data Types**: Ability to store and query various data types (text, images, audio) in a unified manner.
+7. **Multi-Modal Data**: Support for various data formats (text, images, audio) in a unified manner.
 
-8. **Enhanced Recommendation Systems**: Improve recommendation systems through better user-item similarity calculations.
-
-These advantages make vector databases particularly valuable in fields like natural language processing, computer vision, and recommendation systems.
+Overall, vector databases enhance the performance and capabilities of applications that require handling unstructured or semi-structured data effectively.
 ⏱️  Execution time: 0ms
 
 📝 Example 2: Generate Embeddings
@@ -3852,13 +3316,6 @@ These advantages make vector databases particularly valuable in fields like natu
 💡 This example demonstrates:
    ✅ Chat completions with system/user messages
    ✅ Embedding generation for text
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 🚀 ekoDB Python Complete Functions Example
 
 📋 Demonstrates: FindAll, Group, Count, Multi-stage Pipelines
@@ -3868,7 +3325,7 @@ perl: warning: Falling back to the standard locale ("C").
 
 📝 Example 1: FindAll + Group (Simple Aggregation)
 
-✅ Function saved: 1Az68NmOcpikvGyF8TGvTr5s4JQQGJ5eMkg_7NjHKI7EGJwjjijYgpSjCG2m8OtzogGgfqLHxrNle1YUA0KIng
+✅ Function saved: VjuXVrh23PbMvThdoVLcAhYwQEQMvnLFRxLHXqyMKuhcV9H6zRMCEgepxiZefMwvVTYh6yhS0AIbg4RwH7Y1Ow
 📊 Found 2 product groups
    {'avg_price': {'type': 'Float', 'value': 575.6666666666666}, 'category': {'type': 'String', 'value': 'Electronics'}, 'count': {'type': 'Integer', 'value': 3}}
    {'avg_price': {'type': 'Float', 'value': 474.0}, 'category': {'type': 'String', 'value': 'Furniture'}, 'count': {'type': 'Integer', 'value': 2}}
@@ -3884,8 +3341,8 @@ perl: warning: Falling back to the standard locale ("C").
 
 ✅ Function saved
 📊 Found 2 categories
-   {'category': {'type': 'String', 'value': 'Electronics'}, 'count': {'type': 'Integer', 'value': 3}}
    {'category': {'type': 'String', 'value': 'Furniture'}, 'count': {'type': 'Integer', 'value': 2}}
+   {'category': {'type': 'String', 'value': 'Electronics'}, 'count': {'type': 'Integer', 'value': 3}}
 ⏱️  Execution time: 0ms
 
 📝 Example 4: High Rating Products
@@ -3917,13 +3374,6 @@ perl: warning: Falling back to the standard locale ("C").
 🧹 Cleaning up...
 ✅ Cleanup complete
 
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 🚀 ekoDB Python CRUD Functions Example
 
 📋 Setting up test data...
@@ -3939,29 +3389,22 @@ perl: warning: Falling back to the standard locale ("C").
 
 ✅ Function saved
 📊 User counts by status:
-   active: 7 users
    inactive: 3 users
+   active: 7 users
 ⏱️  Execution time: 0ms
 
 📝 Example 3: Average Score by Role
 
 ✅ Function saved
 📊 Average score by role:
-   {'avg_score': {'type': 'Float', 'value': 20.0}, 'count': {'type': 'Integer', 'value': 3}, 'role': {'type': 'String', 'value': 'admin'}}
    {'avg_score': {'type': 'Float', 'value': 70.0}, 'count': {'type': 'Integer', 'value': 7}, 'role': {'type': 'String', 'value': 'user'}}
+   {'avg_score': {'type': 'Float', 'value': 20.0}, 'count': {'type': 'Integer', 'value': 3}, 'role': {'type': 'String', 'value': 'admin'}}
 ⏱️  Execution time: 0ms
 
 🧹 Cleaning up...
 ✅ Cleanup complete
 
 ✅ All CRUD script examples finished!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 🚀 ekoDB Python KV Store & Wrapped Types Example
 
 📋 Demonstrates:
@@ -3971,7 +3414,7 @@ perl: warning: Falling back to the standard locale ("C").
 
 📝 Example 1: Inserting Records with Wrapped Types
 
-✅ Inserted order: cO6ej5ddtcabksB-r6i6VrV3j_CQKfb6hjSXIg_28tMnD6knMeUHFRd2AZ08Em7QQgMuZHRqnipjf0zAJNQuaA
+✅ Inserted order: 90zfLE2Vvz8Oi4kAZ44xEAhyIfrLS58j9JFyaYO_LYi3ETZfiHnuEKCSZH0aogylmo57GJiZDbqZlJKGgTMB7g
 ✅ Inserted 2 products with wrapped types
 
 📝 Example 2: Querying and Extracting Wrapped Types
@@ -3996,9 +3439,9 @@ perl: warning: Falling back to the standard locale ("C").
 
 📝 Example 5: Combined Wrapped Types + KV Usage
 
-✅ Inserted order: _Nc7sXcocnckJf_QLGbzlvmbjs9LxTIAVeFHg6cXTKZaCk8qqSsP2PSY4ExzDJet_5QLL1zKCyc2SZMLhO1q2w
+✅ Inserted order: 6Aazmvc5XKKZoln4aNYuOeevDKt_EJdlF2Dlkgceocag2CHECEuhCqGSj_Y06H3_jPvOB8A9VltTLnVb2LtnNw
 ✅ Cached order status
-📊 Quick status lookup: {'value': '{"type":"Object","value":{"status":"processing","updated_at":"2026-09-16T13:46:38.975619+00:00"}}'}
+📊 Quick status lookup: {'value': '{"type":"Object","value":{"status":"processing","updated_at":"2026-09-16T20:44:27.122108+00:00"}}'}
 
 🧹 Cleaning up...
 ✅ Cleanup complete
@@ -4010,13 +3453,6 @@ perl: warning: Falling back to the standard locale ("C").
    ✅ field_decimal() preserves precision (no floating point errors)
    ✅ KV store is great for caching and quick lookups
    ✅ Combine KV caching with collection inserts for real workflows
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 🚀 ekoDB Python Search Functions Example
 
 📋 Setting up test data...
@@ -4026,39 +3462,32 @@ perl: warning: Falling back to the standard locale ("C").
 
 ✅ Function saved
 📊 Found 5 documents
-   1. Vector Databases Explained (Database)
-   2. Getting Started with ekoDB (Database)
-   3. Natural Language Processing (AI)
-   4. Introduction to Machine Learning (AI)
-   5. Database Design Principles (Database)
+   1. Getting Started with ekoDB (Database)
+   2. Introduction to Machine Learning (AI)
+   3. Database Design Principles (Database)
+   4. Natural Language Processing (AI)
+   5. Vector Databases Explained (Database)
 ⏱️  Execution time: 0ms
 
 📝 Example 2: Count Documents by Category
 
 ✅ Function saved
 📊 Documents by category:
-   {'category': {'type': 'String', 'value': 'Database'}, 'count': {'type': 'Integer', 'value': 3}}
    {'category': {'type': 'String', 'value': 'AI'}, 'count': {'type': 'Integer', 'value': 2}}
+   {'category': {'type': 'String', 'value': 'Database'}, 'count': {'type': 'Integer', 'value': 3}}
 ⏱️  Execution time: 0ms
 
 🧹 Cleaning up...
 ✅ Cleanup complete
 
 ✅ All search script examples finished!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB Goal Template CRUD Example (Python) ===
 
 --- Creating goal template ---
-Created template: Data Migration (id: AuHv6TdHjDt1-RbjlghEBYgJHaYo3sDUs2iwKOUsn5ZIBT6rYedHCuJvhQAM6JIGkx9uEcWhiGnuHLKdCCKEJg)
+Created template: Data Migration (id: Pe4e_p9dLBra_VoZ2rwrgkNMGysaVY-Y10pmP8YRYzYt-cFO-7ATVkHnXCDqzFO-F5UOnVH--NmYAbJ_N601nQ)
 
 --- Listing templates ---
-Templates: {'count': 1, 'items': [{'description': {'type': 'String', 'value': 'Template for migrating data between schemas'}, 'id': 'AuHv6TdHjDt1-RbjlghEBYgJHaYo3sDUs2iwKOUsn5ZIBT6rYedHCuJvhQAM6JIGkx9uEcWhiGnuHLKdCCKEJg', 'steps': {'type': 'Array', 'value': [{'description': 'Analyze source schema'}, {'description': 'Create target schema'}, {'description': 'Migrate records'}, {'description': 'Validate results'}]}, 'title': {'type': 'String', 'value': 'Data Migration'}}]}
+Templates: {'count': 1, 'items': [{'description': {'type': 'String', 'value': 'Template for migrating data between schemas'}, 'id': 'Pe4e_p9dLBra_VoZ2rwrgkNMGysaVY-Y10pmP8YRYzYt-cFO-7ATVkHnXCDqzFO-F5UOnVH--NmYAbJ_N601nQ', 'steps': {'type': 'Array', 'value': [{'description': 'Analyze source schema'}, {'description': 'Create target schema'}, {'description': 'Migrate records'}, {'description': 'Validate results'}]}, 'title': {'type': 'String', 'value': 'Data Migration'}}]}
 
 --- Getting template ---
 Fetched: {'type': 'String', 'value': 'Data Migration'}
@@ -4070,20 +3499,13 @@ Updated description: {'type': 'String', 'value': 'Updated: comprehensive data mi
 Template deleted successfully
 
 ✓ Goal template CRUD example completed
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB Goals / Tasks / Agents Integration Example (Python) ===
 
 --- goal_create ---
-Created goal: Deploy v3 (id: bDL5pHK0PGrg0tSGOgbzgYc4LEyEdawMZEjYIagxXGNxm2lsEEwePDGcjH1GA6mfDguiQxzmCfnV-95Bzk8Neg)
+Created goal: Deploy v3 (id: ipL7zGst6uXqEiC3Gca81o_g57fX2klZUmLaCCtlQEC6uLk5nbF6OyxHgZBaw7nksPTJBWzrpnAQtNKlJxlUjw)
 
 --- goal_list ---
-Goals: {'count': 1, 'goals': [{'created_at': '2026-09-16T13:46:39.430861+00:00', 'description': 'Deploy version 3 to production', 'id': 'bDL5pHK0PGrg0tSGOgbzgYc4LEyEdawMZEjYIagxXGNxm2lsEEwePDGcjH1GA6mfDguiQxzmCfnV-95Bzk8Neg', 'status': 'pending', 'steps': '[{"description":"Build Docker image","status":"pending"},{"description":"Run migrations","status":"pending"},{"description":"Smoke test","status":"pending"}]', 'title': 'Deploy v3', 'updated_at': '2026-09-16T13:46:39.430861+00:00'}]}
+Goals: {'count': 1, 'goals': [{'created_at': '2026-09-16T20:44:27.478983+00:00', 'description': 'Deploy version 3 to production', 'id': 'ipL7zGst6uXqEiC3Gca81o_g57fX2klZUmLaCCtlQEC6uLk5nbF6OyxHgZBaw7nksPTJBWzrpnAQtNKlJxlUjw', 'status': 'pending', 'steps': '[{"description":"Build Docker image","status":"pending"},{"description":"Run migrations","status":"pending"},{"description":"Smoke test","status":"pending"}]', 'title': 'Deploy v3', 'updated_at': '2026-09-16T20:44:27.478983+00:00'}]}
 
 --- goal_get ---
 Fetched: {'type': 'String', 'value': 'Deploy v3'}
@@ -4092,16 +3514,16 @@ Fetched: {'type': 'String', 'value': 'Deploy v3'}
 Updated description: {'type': 'String', 'value': 'Deploy version 3 to production (updated)'}
 
 --- goal_search ---
-Search results: {'count': 1, 'items': [{'_score': 13.2, 'created_at': {'type': 'DateTime', 'value': '2026-09-16T13:46:39.430861+00:00'}, 'description': {'type': 'String', 'value': 'Deploy version 3 to production (updated)'}, 'id': 'bDL5pHK0PGrg0tSGOgbzgYc4LEyEdawMZEjYIagxXGNxm2lsEEwePDGcjH1GA6mfDguiQxzmCfnV-95Bzk8Neg', 'status': {'type': 'String', 'value': 'pending'}, 'steps': {'type': 'String', 'value': '[{"description":"Build Docker image","status":"pending"},{"description":"Run migrations","status":"pending"},{"description":"Smoke test","status":"pending"}]'}, 'title': {'type': 'String', 'value': 'Deploy v3'}, 'updated_at': {'type': 'DateTime', 'value': '2026-09-16T13:46:39.451770+00:00'}}]}
+Search results: {'count': 1, 'items': [{'_score': 13.2, 'created_at': {'type': 'DateTime', 'value': '2026-09-16T20:44:27.478983+00:00'}, 'description': {'type': 'String', 'value': 'Deploy version 3 to production (updated)'}, 'id': 'ipL7zGst6uXqEiC3Gca81o_g57fX2klZUmLaCCtlQEC6uLk5nbF6OyxHgZBaw7nksPTJBWzrpnAQtNKlJxlUjw', 'status': {'type': 'String', 'value': 'pending'}, 'steps': {'type': 'String', 'value': '[{"description":"Build Docker image","status":"pending"},{"description":"Run migrations","status":"pending"},{"description":"Smoke test","status":"pending"}]'}, 'title': {'type': 'String', 'value': 'Deploy v3'}, 'updated_at': {'type': 'DateTime', 'value': '2026-09-16T20:44:27.489158+00:00'}}]}
 
 --- goal_step_start (step 0) ---
-Step 0 started: {'created_at': {'type': 'DateTime', 'value': '2026-09-16T13:46:39.430861+00:00'}, 'description': {'type': 'String', 'value': 'Deploy version 3 to production (updated)'}, 'id': 'bDL5pHK0PGrg0tSGOgbzgYc4LEyEdawMZEjYIagxXGNxm2lsEEwePDGcjH1GA6mfDguiQxzmCfnV-95Bzk8Neg', 'status': {'type': 'String', 'value': 'in_progress'}, 'steps': {'type': 'String', 'value': '[{"description":"Build Docker image","status":"InProgress"},{"description":"Run migrations","status":"pending"},{"description":"Smoke test","status":"pending"}]'}, 'title': {'type': 'String', 'value': 'Deploy v3'}, 'updated_at': {'type': 'DateTime', 'value': '2026-09-16T13:46:39.462377+00:00'}}
+Step 0 started: {'created_at': {'type': 'DateTime', 'value': '2026-09-16T20:44:27.478983+00:00'}, 'description': {'type': 'String', 'value': 'Deploy version 3 to production (updated)'}, 'id': 'ipL7zGst6uXqEiC3Gca81o_g57fX2klZUmLaCCtlQEC6uLk5nbF6OyxHgZBaw7nksPTJBWzrpnAQtNKlJxlUjw', 'status': {'type': 'String', 'value': 'in_progress'}, 'steps': {'type': 'String', 'value': '[{"description":"Build Docker image","status":"InProgress"},{"description":"Run migrations","status":"pending"},{"description":"Smoke test","status":"pending"}]'}, 'title': {'type': 'String', 'value': 'Deploy v3'}, 'updated_at': {'type': 'DateTime', 'value': '2026-09-16T20:44:27.497773+00:00'}}
 
 --- goal_step_complete (step 0) ---
-Step 0 completed: {'created_at': {'type': 'DateTime', 'value': '2026-09-16T13:46:39.430861+00:00'}, 'description': {'type': 'String', 'value': 'Deploy version 3 to production (updated)'}, 'id': 'bDL5pHK0PGrg0tSGOgbzgYc4LEyEdawMZEjYIagxXGNxm2lsEEwePDGcjH1GA6mfDguiQxzmCfnV-95Bzk8Neg', 'status': {'type': 'String', 'value': 'in_progress'}, 'steps': {'type': 'String', 'value': '[{"description":"Build Docker image","result":"Docker image built: sha256:abc123","status":"Completed"},{"description":"Run migrations","status":"pending"},{"description":"Smoke test","status":"pending"}]'}, 'title': {'type': 'String', 'value': 'Deploy v3'}, 'updated_at': {'type': 'DateTime', 'value': '2026-09-16T13:46:39.468647+00:00'}}
+Step 0 completed: {'created_at': {'type': 'DateTime', 'value': '2026-09-16T20:44:27.478983+00:00'}, 'description': {'type': 'String', 'value': 'Deploy version 3 to production (updated)'}, 'id': 'ipL7zGst6uXqEiC3Gca81o_g57fX2klZUmLaCCtlQEC6uLk5nbF6OyxHgZBaw7nksPTJBWzrpnAQtNKlJxlUjw', 'status': {'type': 'String', 'value': 'in_progress'}, 'steps': {'type': 'String', 'value': '[{"description":"Build Docker image","result":"Docker image built: sha256:abc123","status":"Completed"},{"description":"Run migrations","status":"pending"},{"description":"Smoke test","status":"pending"}]'}, 'title': {'type': 'String', 'value': 'Deploy v3'}, 'updated_at': {'type': 'DateTime', 'value': '2026-09-16T20:44:27.504164+00:00'}}
 
 --- goal_step_fail (step 1) ---
-Step 1 failed: {'created_at': {'type': 'DateTime', 'value': '2026-09-16T13:46:39.430861+00:00'}, 'description': {'type': 'String', 'value': 'Deploy version 3 to production (updated)'}, 'id': 'bDL5pHK0PGrg0tSGOgbzgYc4LEyEdawMZEjYIagxXGNxm2lsEEwePDGcjH1GA6mfDguiQxzmCfnV-95Bzk8Neg', 'status': {'type': 'String', 'value': 'in_progress'}, 'steps': {'type': 'String', 'value': '[{"description":"Build Docker image","result":"Docker image built: sha256:abc123","status":"Completed"},{"description":"Run migrations","error":"Migration failed: column already exists","status":"Failed"},{"description":"Smoke test","status":"pending"}]'}, 'title': {'type': 'String', 'value': 'Deploy v3'}, 'updated_at': {'type': 'DateTime', 'value': '2026-09-16T13:46:39.475090+00:00'}}
+Step 1 failed: {'created_at': {'type': 'DateTime', 'value': '2026-09-16T20:44:27.478983+00:00'}, 'description': {'type': 'String', 'value': 'Deploy version 3 to production (updated)'}, 'id': 'ipL7zGst6uXqEiC3Gca81o_g57fX2klZUmLaCCtlQEC6uLk5nbF6OyxHgZBaw7nksPTJBWzrpnAQtNKlJxlUjw', 'status': {'type': 'String', 'value': 'in_progress'}, 'steps': {'type': 'String', 'value': '[{"description":"Build Docker image","result":"Docker image built: sha256:abc123","status":"Completed"},{"description":"Run migrations","error":"Migration failed: column already exists","status":"Failed"},{"description":"Smoke test","status":"pending"}]'}, 'title': {'type': 'String', 'value': 'Deploy v3'}, 'updated_at': {'type': 'DateTime', 'value': '2026-09-16T20:44:27.510322+00:00'}}
 
 --- goal_complete ---
 Goal completed: {'type': 'String', 'value': 'pending_review'}
@@ -4113,10 +3535,10 @@ Goal approved: {'type': 'String', 'value': 'in_progress'}
 Goal rejected: {'type': 'String', 'value': 'failed'}
 
 --- task_create ---
-Created task: Nightly Backup (id: STMTtV3OhmZfvVi1jECkojYI8Poh8Y0RKDuGLpjKsOX7ga0WiwMGYmSnk0Ybz7pQ7XNoaBUxUQtldeLQKndG1w)
+Created task: Nightly Backup (id: VCFJgWUgGhIwRmIeGMvR22xmyHgCf0yNnWtjZMxBwk4wlKQYxzhHlADEjCXA17LqUE3V-GJckTBcHgMxHKFh-g)
 
 --- task_list ---
-Tasks: {'count': 1, 'items': [{'cron': {'type': 'String', 'value': '0 2 * * *'}, 'description': {'type': 'String', 'value': 'Backup all databases nightly'}, 'id': 'STMTtV3OhmZfvVi1jECkojYI8Poh8Y0RKDuGLpjKsOX7ga0WiwMGYmSnk0Ybz7pQ7XNoaBUxUQtldeLQKndG1w', 'max_consecutive_failures': {'type': 'Integer', 'value': 3}, 'name': {'type': 'String', 'value': 'Nightly Backup'}}]}
+Tasks: {'count': 1, 'items': [{'cron': {'type': 'String', 'value': '0 2 * * *'}, 'description': {'type': 'String', 'value': 'Backup all databases nightly'}, 'id': 'VCFJgWUgGhIwRmIeGMvR22xmyHgCf0yNnWtjZMxBwk4wlKQYxzhHlADEjCXA17LqUE3V-GJckTBcHgMxHKFh-g', 'max_consecutive_failures': {'type': 'Integer', 'value': 3}, 'name': {'type': 'String', 'value': 'Nightly Backup'}}]}
 
 --- task_get ---
 Fetched: {'type': 'String', 'value': 'Nightly Backup'}
@@ -4125,7 +3547,7 @@ Fetched: {'type': 'String', 'value': 'Nightly Backup'}
 Task started: {'type': 'String', 'value': 'running'}
 
 --- task_succeed ---
-Task succeeded: {'consecutive_failures': {'type': 'Integer', 'value': 0}, 'cron': {'type': 'String', 'value': '0 2 * * *'}, 'description': {'type': 'String', 'value': 'Backup all databases nightly'}, 'id': 'STMTtV3OhmZfvVi1jECkojYI8Poh8Y0RKDuGLpjKsOX7ga0WiwMGYmSnk0Ybz7pQ7XNoaBUxUQtldeLQKndG1w', 'last_error': {'type': 'Null', 'value': None}, 'last_run': {'type': 'DateTime', 'value': '2026-09-16T13:46:39.546563+00:00'}, 'max_consecutive_failures': {'type': 'Integer', 'value': 3}, 'name': {'type': 'String', 'value': 'Nightly Backup'}, 'run_count': {'type': 'Integer', 'value': 1}, 'status': {'type': 'String', 'value': 'active'}, 'updated_at': {'type': 'DateTime', 'value': '2026-09-16T13:46:39.546563+00:00'}}
+Task succeeded: {'consecutive_failures': {'type': 'Integer', 'value': 0}, 'cron': {'type': 'String', 'value': '0 2 * * *'}, 'description': {'type': 'String', 'value': 'Backup all databases nightly'}, 'id': 'VCFJgWUgGhIwRmIeGMvR22xmyHgCf0yNnWtjZMxBwk4wlKQYxzhHlADEjCXA17LqUE3V-GJckTBcHgMxHKFh-g', 'last_error': {'type': 'Null', 'value': None}, 'last_run': {'type': 'DateTime', 'value': '2026-09-16T20:44:27.569037+00:00'}, 'max_consecutive_failures': {'type': 'Integer', 'value': 3}, 'name': {'type': 'String', 'value': 'Nightly Backup'}, 'run_count': {'type': 'Integer', 'value': 1}, 'status': {'type': 'String', 'value': 'active'}, 'updated_at': {'type': 'DateTime', 'value': '2026-09-16T20:44:27.569037+00:00'}}
 
 --- task_pause ---
 Task paused: {'type': 'String', 'value': 'paused'}
@@ -4134,7 +3556,7 @@ Task paused: {'type': 'String', 'value': 'paused'}
 Task resumed: {'type': 'String', 'value': 'active'}
 
 --- task_fail ---
-Task failed: {'consecutive_failures': {'type': 'Integer', 'value': 1}, 'cron': {'type': 'String', 'value': '0 2 * * *'}, 'description': {'type': 'String', 'value': 'Backup all databases nightly'}, 'id': 'STMTtV3OhmZfvVi1jECkojYI8Poh8Y0RKDuGLpjKsOX7ga0WiwMGYmSnk0Ybz7pQ7XNoaBUxUQtldeLQKndG1w', 'last_error': {'type': 'String', 'value': 'Disk full'}, 'last_run': {'type': 'DateTime', 'value': '2026-09-16T13:46:39.580430+00:00'}, 'max_consecutive_failures': {'type': 'Integer', 'value': 3}, 'name': {'type': 'String', 'value': 'Nightly Backup'}, 'next_run': {'type': 'DateTime', 'value': '2026-03-22T02:00:00+00:00'}, 'run_count': {'type': 'Integer', 'value': 1}, 'status': {'type': 'String', 'value': 'active'}, 'updated_at': {'type': 'DateTime', 'value': '2026-09-16T13:46:39.580430+00:00'}}
+Task failed: {'consecutive_failures': {'type': 'Integer', 'value': 1}, 'cron': {'type': 'String', 'value': '0 2 * * *'}, 'description': {'type': 'String', 'value': 'Backup all databases nightly'}, 'id': 'VCFJgWUgGhIwRmIeGMvR22xmyHgCf0yNnWtjZMxBwk4wlKQYxzhHlADEjCXA17LqUE3V-GJckTBcHgMxHKFh-g', 'last_error': {'type': 'String', 'value': 'Disk full'}, 'last_run': {'type': 'DateTime', 'value': '2026-09-16T20:44:27.597841+00:00'}, 'max_consecutive_failures': {'type': 'Integer', 'value': 3}, 'name': {'type': 'String', 'value': 'Nightly Backup'}, 'next_run': {'type': 'DateTime', 'value': '2026-03-22T02:00:00+00:00'}, 'run_count': {'type': 'Integer', 'value': 1}, 'status': {'type': 'String', 'value': 'active'}, 'updated_at': {'type': 'DateTime', 'value': '2026-09-16T20:44:27.597841+00:00'}}
 
 --- task_due ---
 Due tasks: {'count': 0, 'items': []}
@@ -4143,10 +3565,10 @@ Due tasks: {'count': 0, 'items': []}
 Task deleted
 
 --- agent_create ---
-Created agent: CodeReviewer (id: XIDwOsl1zc59N9RYvoqX_7GkCvQ2Fs7LqAmJHrTh7MmEeXtB4E94coLPiTS9mJ57mBiviiyxAzEpehW_L8PYIA)
+Created agent: CodeReviewer (id: DWZ--MTh5EEjZUQpW_pB3AdN6_ZkAUxLsKRgbc4VJzu6tAQkV-76s8gpylzTThQD5m-gxoSGvKx_SK3Tg06c2w)
 
 --- agent_list ---
-Agents: {'count': 1, 'items': [{'deployment_id': {'type': 'String', 'value': 'deploy_test'}, 'id': 'XIDwOsl1zc59N9RYvoqX_7GkCvQ2Fs7LqAmJHrTh7MmEeXtB4E94coLPiTS9mJ57mBiviiyxAzEpehW_L8PYIA', 'llm_model': {'type': 'String', 'value': 'gpt-4o'}, 'name': {'type': 'String', 'value': 'CodeReviewer'}, 'system_prompt': {'type': 'String', 'value': 'You review code for correctness and style.'}, 'tools': {'type': 'Array', 'value': ['web_search', 'file_read']}}]}
+Agents: {'count': 1, 'items': [{'deployment_id': {'type': 'String', 'value': 'deploy_test'}, 'id': 'DWZ--MTh5EEjZUQpW_pB3AdN6_ZkAUxLsKRgbc4VJzu6tAQkV-76s8gpylzTThQD5m-gxoSGvKx_SK3Tg06c2w', 'llm_model': {'type': 'String', 'value': 'gpt-4o'}, 'name': {'type': 'String', 'value': 'CodeReviewer'}, 'system_prompt': {'type': 'String', 'value': 'You review code for correctness and style.'}, 'tools': {'type': 'Array', 'value': ['web_search', 'file_read']}}]}
 
 --- agent_get ---
 Fetched: {'type': 'String', 'value': 'CodeReviewer'}
@@ -4159,7 +3581,7 @@ Updated agent prompt: {'type': 'String', 'value': 'You review code. Be concise.'
 
 --- agents_by_deployment ---
 Agents in deploy_test: {'count': 0, 'items': []}
-WARNING: agents_by_deployment omitted created agent XIDwOsl1zc59N9RYvoqX_7GkCvQ2Fs7LqAmJHrTh7MmEeXtB4E94coLPiTS9mJ57mBiviiyxAzEpehW_L8PYIA; TODO: check/fix the server-side deployment lookup
+WARNING: agents_by_deployment omitted created agent DWZ--MTh5EEjZUQpW_pB3AdN6_ZkAUxLsKRgbc4VJzu6tAQkV-76s8gpylzTThQD5m-gxoSGvKx_SK3Tg06c2w; TODO: check/fix the server-side deployment lookup
 
 --- agent_delete ---
 Agent deleted
@@ -4168,13 +3590,6 @@ Agent deleted
 Goals cleaned up
 
 === All goals/tasks/agents operations completed successfully ===
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === Join Operations Examples ===
 
 Setting up sample data...
@@ -4182,8 +3597,8 @@ Setting up sample data...
 
 1. Single collection join (users with departments):
 Found 2 users with department data:
-  - Bob Smith: Sales
   - Alice Johnson: Engineering
+  - Bob Smith: Sales
 
 2. Join with filtering:
 Found 1 users in Engineering:
@@ -4191,8 +3606,8 @@ Found 1 users in Engineering:
 
 3. Join with user profiles:
 Found 2 users with profile data:
-  - Bob Smith: Sales Manager
   - Alice Johnson: Senior Software Engineer
+  - Bob Smith: Sales Manager
 
 4. Join orders with user data:
 Found 2 completed orders:
@@ -4208,13 +3623,6 @@ Found 2 users with example.com emails:
 ✅ Deleted test collections
 
 ✅ Join operations examples completed!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 ✓ py_users_register saved
 ✓ py_users_login saved
@@ -4227,26 +3635,19 @@ Call them like:
   POST /api/functions/py_users_verify_token { "token": "<jwt>" }
 
 ✓ Cleaned up demo functions
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB KV Links Example (Python) ===
 
 --- kv_set ---
 Set KV key: app:config
 
 --- insert document ---
-Inserted document: U4z5TpCZJQfXc3du_-UM0WXrbXOUya1mezFtSPlfIN5tJx3hrTcRKHMeyENao2L_hgkjuwN9LXJzKbECH2Xwig
+Inserted document: zS4EmHK2bg6aYfg7ItOuM7xDWyLp9o_KJ28IcnO5UPXInlEbwe2I0PsMonYHmkAeMmZ3zlfGKO7YYh9vVlyf1A
 
 --- kv_link ---
 Linked: None
 
 --- kv_get_links ---
-Links for app:config: [{'collection': 'kv_links_example_py', 'created_at': '2026-09-16T13:46:40.281713Z', 'document_id': 'U4z5TpCZJQfXc3du_-UM0WXrbXOUya1mezFtSPlfIN5tJx3hrTcRKHMeyENao2L_hgkjuwN9LXJzKbECH2Xwig', 'field_path': None, 'last_accessed': '2026-09-16T13:46:40.282939Z', 'metadata': {}}]
+Links for app:config: [{'collection': 'kv_links_example_py', 'created_at': '2026-09-16T20:44:28.121612Z', 'document_id': 'zS4EmHK2bg6aYfg7ItOuM7xDWyLp9o_KJ28IcnO5UPXInlEbwe2I0PsMonYHmkAeMmZ3zlfGKO7YYh9vVlyf1A', 'field_path': None, 'last_accessed': '2026-09-16T20:44:28.122095Z', 'metadata': {}}]
 
 --- kv_unlink ---
 Unlinked: None
@@ -4258,13 +3659,6 @@ Links after unlink: []
 Cleaned up KV key and collection
 
 === KV links example completed ===
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
 === KV Set ===
@@ -4282,8 +3676,8 @@ Retrieved value: {'value': '{"type":"Object","value":{"userId":123,"username":"j
 === KV Batch Get ===
 ✓ Batch retrieved 3 values
   kv_operations:py:cache:product:1: {'name': 'Product 1', 'price': 29.99}
-  kv_operations:py:cache:product:2: {'name': 'Product 2', 'price': 39.99}
-  kv_operations:py:cache:product:3: {'price': 49.99, 'name': 'Product 3'}
+  kv_operations:py:cache:product:2: {'price': 39.99, 'name': 'Product 2'}
+  kv_operations:py:cache:product:3: {'name': 'Product 3', 'price': 49.99}
 
 === KV Exists ===
 Key exists: True
@@ -4305,13 +3699,6 @@ Total keys in store: 4
   kv_operations:py:cache:product:3: deleted
 
 ✓ All KV operations completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === KV Precision: Float vs Decimal ===
 
 === Test 1: Using Python Floats (LOSES PRECISION) ===
@@ -4346,13 +3733,6 @@ Retrieved decimal prices:
    any case where floating-point errors are unacceptable.
 ✅ field_decimal() stores values as strings internally,
    preserving exact precision across all operations.
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 ✓ py_route_admin saved
 ✓ py_route_user_by_id saved
@@ -4367,13 +3747,6 @@ Try them with curl:
        -H 'Content-Type: application/json' -d '{"name":"alice"}'
 
 ✓ Cleaned up demo functions
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === Query Builder Examples ===
 
 Setting up test data...
@@ -4407,13 +3780,6 @@ Found 2 users (bypassed cache)
 ✅ Deleted test collection
 
 ✅ Query Builder examples completed!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB Raw Completion Stream (SSE) Example ===
 
 --- Basic SSE Raw Completion ---
@@ -4422,37 +3788,30 @@ Response: The three primary colors are red, blue, and yellow.
 --- Structured Output via SSE ---
 JSON response: [
   {
+    "name": "Mercury",
+    "diameter_km": 4879
+  },
+  {
+    "name": "Venus",
+    "diameter_km": 12104
+  },
+  {
     "name": "Earth",
     "diameter_km": 12742
-  },
-  {
-    "name": "Mars",
-    "diameter_km": 6779
-  },
-  {
-    "name": "Jupiter",
-    "diameter_km": 139820
   }
 ]
 
 --- Blocking HTTP (for comparison) ---
-Blocking response: Hello! I hope you're having a wonderful day.
+Blocking response: Hello! I hope you’re having a wonderful day.
 
 === Done ===
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB Schedule Management Example (Python) ===
 
 --- create_schedule ---
-Created schedule: Nightly Report (id: cf536bf3-55eb-48f8-9fcd-eb9f3e5ee824)
+Created schedule: Nightly Report (id: 5d608bc4-a14f-49a5-8a61-51d7d3bf946e)
 
 --- list_schedules ---
-Schedules: {'count': 1, 'schedules': [{'created_at': '2026-09-16T13:46:43.864278Z', 'cron_expression': '0 0 0 * * *', 'description': 'Generate and email nightly analytics report', 'enabled': True, 'function_label': 'schedule_noop_python_15331', 'id': 'cf536bf3-55eb-48f8-9fcd-eb9f3e5ee824', 'last_execution': None, 'name': 'Nightly Report', 'next_execution': '2026-09-17T00:00:00Z', 'parameters': {}, 'stats': {'avg_execution_time_ms': 0.0, 'failed_executions': 0, 'last_error': None, 'successful_executions': 0, 'total_executions': 0}, 'timezone': 'UTC', 'updated_at': '2026-09-16T13:46:43.864278Z'}]}
+Schedules: {'count': 1, 'schedules': [{'created_at': '2026-09-16T20:44:31.921304Z', 'cron_expression': '0 0 0 * * *', 'description': 'Generate and email nightly analytics report', 'enabled': True, 'function_label': 'schedule_noop_python_64877', 'id': '5d608bc4-a14f-49a5-8a61-51d7d3bf946e', 'last_execution': None, 'name': 'Nightly Report', 'next_execution': '2026-09-17T00:00:00Z', 'parameters': {}, 'stats': {'avg_execution_time_ms': 0.0, 'failed_executions': 0, 'last_error': None, 'successful_executions': 0, 'total_executions': 0}, 'timezone': 'UTC', 'updated_at': '2026-09-16T20:44:31.921304Z'}]}
 
 --- get_schedule ---
 Fetched: Nightly Report cron=0 0 0 * * *
@@ -4461,7 +3820,7 @@ Fetched: Nightly Report cron=0 0 0 * * *
 Updated cron: 0 30 1 * * *
 
 --- trigger_schedule ---
-Triggered: {'schedule_id': 'cf536bf3-55eb-48f8-9fcd-eb9f3e5ee824', 'status': 'triggered'}
+Triggered: {'schedule_id': '5d608bc4-a14f-49a5-8a61-51d7d3bf946e', 'status': 'triggered'}
 
 --- pause_schedule ---
 Paused: enabled=False
@@ -4471,13 +3830,6 @@ Resumed: enabled=True
 Schedule deleted successfully
 
 === Schedule management example completed ===
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === Schema Management Examples ===
 
 1. Creating user schema with basic fields:
@@ -4500,13 +3852,6 @@ Collection has 4 fields
 ✅ Employee schema with all constraints created
 
 ✅ Schema management examples completed!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === Search Examples ===
 
 Setting up test data...
@@ -4514,13 +3859,13 @@ Setting up test data...
 
 1. Basic full-text search:
 Found 2 results
-  1. Score: 12.870, Matched: email, name
+  1. Score: 12.870, Matched: name, email
   2. Score: 6.270, Matched: name
 
 2. Fuzzy search (typo tolerance):
 Found 4 results with fuzzy matching
   1. Score: 13.200, Matched: bio, title
-  2. Score: 13.200, Matched: title, bio
+  2. Score: 13.200, Matched: bio, title
   3. Score: 13.200, Matched: title, bio
   4. Score: 13.200, Matched: title, bio
 
@@ -4528,7 +3873,7 @@ Found 4 results with fuzzy matching
 Found 4 results with weighted fields
   1. Score: 26.400, Matched: title, bio
   2. Score: 26.400, Matched: bio, title
-  3. Score: 26.400, Matched: title, bio
+  3. Score: 26.400, Matched: bio, title
   4. Score: 26.400, Matched: bio, title
 
 4. Search with minimum score threshold:
@@ -4543,15 +3888,15 @@ Found 2 results (matches: run, running, runs)
 
 6. Vector search (semantic search):
 Found 3 semantically similar documents
-  1. Score: 0.767
-  2. Score: 0.762
-  3. Score: 0.739
+  1. Score: 0.775
+  2. Score: 0.759
+  3. Score: 0.746
 
 7. Hybrid search (text + vector):
 Found 3 results using hybrid search (text + vector)
-  1. Score: 1.381, Matched: title, content
-  2. Score: 0.884, Matched: title, content
-  3. Score: 0.370, Matched:
+  1. Score: 1.387, Matched: content, title
+  2. Score: 0.873, Matched: content, title
+  3. Score: 0.380, Matched:
 
 8. Case-sensitive search:
 Found 1 results (case-sensitive)
@@ -4559,27 +3904,20 @@ Found 1 results (case-sensitive)
 
 9. Vector search with a metadata pre-filter (category = ml):
 Found 2 documents in category "ml" (NLP excluded)
-  1. Deep Learning Fundamentals (category: ml)
-  2. Introduction to Machine Learning (category: ml)
+  1. Introduction to Machine Learning (category: ml)
+  2. Deep Learning Fundamentals (category: ml)
 
 === Cleanup ===
 ✅ Deleted test collections
 
 ✅ Search examples completed!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created (token exchange happens automatically)
 
 === Insert Document ===
-Inserted: {'id': 'N-jyqJKt4chumKeEwGLoDr_Mt1BzZ3w98K7EC8gbnD7fQMu9DWBrtly37pGLR-l8474E1rE_4Ij6midLbfqj6A'}
+Inserted: {'id': 'PMGeryE9Yp6jmr0AXeFsGNXDwTNm4GPgpBRoqvoakp5HNF9KvemumFOcKyTbugRyGcoK-0Zrz2L8KdAx-0iyQg'}
 
 === Find by ID ===
-Found: {'tags': {'value': ['tag1', 'tag2', 'tag3'], 'type': 'Array'}, 'name': {'type': 'String', 'value': 'Test Record'}, 'data': {'value': 'aGVsbG8gd29ybGQ=', 'type': 'String'}, 'categories': {'type': 'Array', 'value': ['electronics', 'computers']}, 'user_id': {'type': 'String', 'value': '550e8400-e29b-41d4-a716-446655440000'}, 'embedding': {'value': [0.1, 0.2, 0.3, 0.4, 0.5], 'type': 'Array'}, 'created_at': {'type': 'String', 'value': '2026-09-16T09:46:44.552501'}, 'metadata': {'type': 'Object', 'value': {'nested': {'deep': True}, 'key': 'value'}}, 'price': {'type': 'Float', 'value': 99.99}, 'value': {'value': 42, 'type': 'Integer'}, 'id': 'N-jyqJKt4chumKeEwGLoDr_Mt1BzZ3w98K7EC8gbnD7fQMu9DWBrtly37pGLR-l8474E1rE_4Ij6midLbfqj6A', 'active': {'value': True, 'type': 'Boolean'}}
+Found: {'name': {'type': 'String', 'value': 'Test Record'}, 'price': {'value': 99.99, 'type': 'Float'}, 'user_id': {'type': 'String', 'value': '550e8400-e29b-41d4-a716-446655440000'}, 'categories': {'type': 'Array', 'value': ['electronics', 'computers']}, 'metadata': {'value': {'key': 'value', 'nested': {'deep': True}}, 'type': 'Object'}, 'value': {'value': 42, 'type': 'Integer'}, 'embedding': {'type': 'Array', 'value': [0.1, 0.2, 0.3, 0.4, 0.5]}, 'active': {'value': True, 'type': 'Boolean'}, 'tags': {'value': ['tag1', 'tag2', 'tag3'], 'type': 'Array'}, 'created_at': {'value': '2026-09-16T16:44:32.397447', 'type': 'String'}, 'id': 'PMGeryE9Yp6jmr0AXeFsGNXDwTNm4GPgpBRoqvoakp5HNF9KvemumFOcKyTbugRyGcoK-0Zrz2L8KdAx-0iyQg', 'data': {'type': 'String', 'value': 'aGVsbG8gd29ybGQ='}}
 
 === Extract Field Values (All Types) ===
 Extracted values:
@@ -4587,20 +3925,20 @@ Extracted values:
   value (Integer): 42
   active (Boolean): True
   price (Decimal): 99.99
-  created_at (DateTime): 2026-09-16 09:46:44.552501
+  created_at (DateTime): 2026-09-16 16:44:32.397447
   user_id (UUID): 550e8400-e29b-41d4-a716-446655440000
   tags (Array): ['tag1', 'tag2', 'tag3']
-  metadata (Object): {'nested': {'deep': True}, 'key': 'value'}
+  metadata (Object): {'key': 'value', 'nested': {'deep': True}}
   embedding (Vector): [0.1, 0.2, 0.3, 0.4, 0.5]
   categories (Set): ['electronics', 'computers']
   data (Bytes): 11 bytes
-Plain record: {'tags': ['tag1', 'tag2', 'tag3'], 'name': 'Test Record', 'data': 'aGVsbG8gd29ybGQ=', 'categories': ['electronics', 'computers'], 'user_id': '550e8400-e29b-41d4-a716-446655440000', 'embedding': [0.1, 0.2, 0.3, 0.4, 0.5], 'created_at': '2026-09-16T09:46:44.552501', 'metadata': {'nested': {'deep': True}, 'key': 'value'}, 'price': 99.99, 'value': 42, 'id': 'N-jyqJKt4chumKeEwGLoDr_Mt1BzZ3w98K7EC8gbnD7fQMu9DWBrtly37pGLR-l8474E1rE_4Ij6midLbfqj6A', 'active': True}
+Plain record: {'name': 'Test Record', 'price': 99.99, 'user_id': '550e8400-e29b-41d4-a716-446655440000', 'categories': ['electronics', 'computers'], 'metadata': {'key': 'value', 'nested': {'deep': True}}, 'value': 42, 'embedding': [0.1, 0.2, 0.3, 0.4, 0.5], 'active': True, 'tags': ['tag1', 'tag2', 'tag3'], 'created_at': '2026-09-16T16:44:32.397447', 'id': 'PMGeryE9Yp6jmr0AXeFsGNXDwTNm4GPgpBRoqvoakp5HNF9KvemumFOcKyTbugRyGcoK-0Zrz2L8KdAx-0iyQg', 'data': 'aGVsbG8gd29ybGQ='}
 
 === Find with Query ===
 Found documents: 1
 
 === Update Document ===
-Updated: {'embedding': {'value': [0.1, 0.2, 0.3, 0.4, 0.5], 'type': 'Array'}, 'user_id': {'value': '550e8400-e29b-41d4-a716-446655440000', 'type': 'String'}, 'created_at': {'type': 'String', 'value': '2026-09-16T09:46:44.552501'}, 'tags': {'type': 'Array', 'value': ['tag1', 'tag2', 'tag3']}, 'metadata': {'value': {'key': 'value', 'nested': {'deep': True}}, 'type': 'Object'}, 'categories': {'value': ['electronics', 'computers'], 'type': 'Array'}, 'name': {'value': 'Updated Record', 'type': 'String'}, 'id': 'N-jyqJKt4chumKeEwGLoDr_Mt1BzZ3w98K7EC8gbnD7fQMu9DWBrtly37pGLR-l8474E1rE_4Ij6midLbfqj6A', 'value': {'type': 'Integer', 'value': 100}, 'price': {'type': 'Float', 'value': 99.99}, 'data': {'type': 'String', 'value': 'aGVsbG8gd29ybGQ='}, 'active': {'type': 'Boolean', 'value': True}}
+Updated: {'tags': {'type': 'Array', 'value': ['tag1', 'tag2', 'tag3']}, 'price': {'type': 'Float', 'value': 99.99}, 'id': 'PMGeryE9Yp6jmr0AXeFsGNXDwTNm4GPgpBRoqvoakp5HNF9KvemumFOcKyTbugRyGcoK-0Zrz2L8KdAx-0iyQg', 'created_at': {'type': 'String', 'value': '2026-09-16T16:44:32.397447'}, 'data': {'type': 'String', 'value': 'aGVsbG8gd29ybGQ='}, 'embedding': {'value': [0.1, 0.2, 0.3, 0.4, 0.5], 'type': 'Array'}, 'user_id': {'type': 'String', 'value': '550e8400-e29b-41d4-a716-446655440000'}, 'metadata': {'value': {'key': 'value', 'nested': {'deep': True}}, 'type': 'Object'}, 'categories': {'value': ['electronics', 'computers'], 'type': 'Array'}, 'active': {'value': True, 'type': 'Boolean'}, 'value': {'value': 100, 'type': 'Integer'}, 'name': {'value': 'Updated Record', 'type': 'String'}}
 
 === Delete Document ===
 Deleted document
@@ -4609,17 +3947,10 @@ Deleted document
 ✓ Deleted collection
 
 ✓ All CRUD operations completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
 === Inserting Test Data ===
-✓ Inserted test record: d60DCX9GnxIKQsDpagOUzX2xmIKZtyU89-K6jIyshEpRUocVoMj1xBKKVYKM3c-v21kOSTSV7VpsAFvJDTEBpA
+✓ Inserted test record: WC0GA6qDW_YJKoye_nVytd4zY2grWeZApo8j2Y61ZNWJqBTOHJJJMzb5WuS7XCHR8EoQOUy6gl8_pw53zdHI_Q
 
 === Connecting to WebSocket ===
 ✓ WebSocket connected
@@ -4632,13 +3963,6 @@ perl: warning: Falling back to the standard locale ("C").
 ✓ Deleted collection
 
 ✓ WebSocket example completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 🚀 ekoDB Python Client - Native SWR Function Examples
 
 📋 Demonstrates:
@@ -4656,22 +3980,22 @@ perl: warning: Falling back to the standard locale ("C").
 Example 1: Basic Native SWR
 ────────────────────────────────────────────────────────────────────────────────
 Single function replaces KvGet → If → HttpRequest → KvSet pipeline
-✓ Created native SWR script: github_user_native_py (xxZRSrRhnZaSTLnQLruEdF-V8vOpgMgyn1PIEGKNjV86T6ht_OICPgXbtae5MSo1XfNeJQkUzeaV0PrWbT09-w)
+✓ Created native SWR script: github_user_native_py (ykHljVlslX8vtbrMepBmFRWjG4Jz0jhOPl6s-VJZunHmFH6PE8v-VdFNHhR5q9K8045qSMx6lJrnTPF8t2nxtg)
 
 First call (cache miss - will fetch from GitHub API):
-  Response time: 160ms
+  Response time: 241ms
   Records returned: 1
 
 Second call (cache hit - instant from KV store):
-  Response time: 4ms
-  Speedup: 38.9x faster 🚀
+  Response time: 2ms
+  Speedup: 101.1x faster 🚀
   Records returned: 1
 
 
 Example 2: SWR with Built-in Audit Trail
 ────────────────────────────────────────────────────────────────────────────────
 Optional collection parameter for automatic request logging
-✓ Created SWR script with audit trail: product_swr_audit_py (BbAIc7ghYyGfeNUFbYU5NIDFyHSQwe-LvKn5MKfTpPm6fl6FhpjykrRq1tybVbbDw_geCee3myS11qfGpkr_eg)
+✓ Created SWR script with audit trail: product_swr_audit_py (qsNjgiNf9G_Hkw4dKiFM785b8e0S5ZkzwQqAG0TSLl0FHA5X7G1c0SMehNP6R2CBtvyNbHypbCRXHvpJiGBW0g)
 
 Fetching product (will create audit trail entry):
   ✓ Product fetched and cached
@@ -4682,7 +4006,7 @@ Fetching product (will create audit trail entry):
 Example 3: SWR in Multi-Function Pipeline
 ────────────────────────────────────────────────────────────────────────────────
 Fetch external data → Process → Store in collection
-✓ Created enrichment pipeline: user_enrichment_pipeline_py (XHbikHblkYdNoShLSTDacMgtjXxgoxnSmKTjL0FAB7Ebb13KjeK3Q3AUVuRxdkWHjn0HDNnaGbcBUCeFdXX-wQ)
+✓ Created enrichment pipeline: user_enrichment_pipeline_py (S6o6toMrSkeWhIege8aaRWxLgDLhWn3wYwQWbjuvEF3Bn3_Xw1y5r5EFvN-ob5xXcrJM8w8H2oBgP0hQWp-0uw)
 
 Running pipeline:
   ✓ Data fetched from API (cached 30m)
@@ -4693,7 +4017,7 @@ Running pipeline:
 Example 4: Dynamic TTL Configuration
 ────────────────────────────────────────────────────────────────────────────────
 TTL as parameter - supports duration strings, integers, ISO timestamps
-✓ Created dynamic TTL script: flexible_cache_py (Zq_uMGdi__HW7v131_fyoYI4PXaKs9RpAhjNZQsCNdSwpCLn9Mh9cr1hJYTp4uyCmgJrKMPQ-WsraWM6LlinuA)
+✓ Created dynamic TTL script: flexible_cache_py (kmViC8kNFLBQGSmWPUhxdR4u2dOgGBcGZmNEEUxVe88HmNQnc3v13TE4Q9j0-pCl32MNuwQTPj5L9eq3gZaJKw)
   ✓ Cached with TTL: 5m (5 minutes)
   ✓ Cached with TTL: 1h (1 hour)
   ✓ Cached with TTL: 30s (30 seconds)
@@ -4716,17 +4040,10 @@ Result:         60% fewer functions, cleaner code, same behavior 🎯
 ✓ Deleted 4 test scripts and owned SWR resources
 
 ✅ All examples completed!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB SWR (Stale-While-Revalidate) Pattern ===
 
 Step 1: Create SWR function that acts as edge cache
-✓ Created SWR script: fetch_api_user_py (4xgBQBp-RoILrO5Ipdr09WufQuaQbTVoJmelROSED7wAtpL783yPsSUQiEzkduVVmlH0yFoSfjQ5IAE5nupzJA)
+✓ Created SWR script: fetch_api_user_py (XkG-QeXi7AhsImmZCGVocW9iaREmcxAL518lW7bBtthHFZMNxZLgawz3hTawvadqExfD7Hgt148o8xpqQJ1Law)
 
 Step 2: First call - Cache miss, fetches from API
 Result: {
@@ -4771,7 +4088,7 @@ Result: {
 ✓ Data fetched from external API and cached
 
 Step 3: Second call - Cache hit, instant response from ekoDB
-Response time: 6ms (served from cache)
+Response time: 2ms (served from cache)
 Result: {
   "records": [
     {
@@ -4820,25 +4137,18 @@ Result: {
 ✅ Cache miss → Fetch from API → Store in ekoDB
 ✅ Cache hit → Instant response from ekoDB
 ✅ TTL handles automatic cache invalidation
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
 === Setup: Creating Test Accounts ===
-Created Alice: $1000 - ID: qzE2Ohr-Pn04Lm5t2PLqd1TaF06MQf_SSrUY94v1hf1p2qK0T4JSBa9wxUJhZjgqgtzIl12HL8FxHaOp0KO5Ww
-Created Bob: $500 - ID: a2-ixUxm5rJsDPFl8jimqo7DSN5Oc-yBvKr1GNTZ1W2Cfo1t01goYIOJd3AuPaH4dI400ADV0KAWnnXov2OJNg
+Created Alice: $1000 - ID: DcUPoLZbmvZQ3wB3he57DhUG9441bodlQe-nY_JfRli0RGC24jggm-RN4_09pmdZwgRSoO3jRL_cSRqQrcX3zQ
+Created Bob: $500 - ID: K9rxO6g7MaXN57LNnKksOFiW9i-Qt-rSjXfkzNh4fGuL0Sh2RgMhgAgVde1dANU8SE9f8_uBNQsCAt2fNEmx3Q
 
 === Example 1: Begin Transaction ===
-Transaction ID (server-default isolation): 255cf96b-c6cf-4b94-b8bc-2b2541f1f723
+Transaction ID (server-default isolation): 566fb109-c545-4f5a-8ec5-7d7e59cf572c
 
 === Example 2: Operations within Transaction ===
-Alice in transaction: {'id': 'qzE2Ohr-Pn04Lm5t2PLqd1TaF06MQf_SSrUY94v1hf1p2qK0T4JSBa9wxUJhZjgqgtzIl12HL8FxHaOp0KO5Ww', 'name': {'type': 'String', 'value': 'Alice'}, 'balance': {'value': 800, 'type': 'Integer'}, 'account_id': {'type': 'String', 'value': 'ACC001'}}
-Bob in transaction: {'id': 'a2-ixUxm5rJsDPFl8jimqo7DSN5Oc-yBvKr1GNTZ1W2Cfo1t01goYIOJd3AuPaH4dI400ADV0KAWnnXov2OJNg', 'balance': {'type': 'Integer', 'value': 700}, 'name': {'type': 'String', 'value': 'Bob'}, 'account_id': {'value': 'ACC002', 'type': 'String'}}
+Alice in transaction: {'name': {'type': 'String', 'value': 'Alice'}, 'balance': {'value': 800, 'type': 'Integer'}, 'id': 'DcUPoLZbmvZQ3wB3he57DhUG9441bodlQe-nY_JfRli0RGC24jggm-RN4_09pmdZwgRSoO3jRL_cSRqQrcX3zQ', 'account_id': {'value': 'ACC001', 'type': 'String'}}
+Bob in transaction: {'account_id': {'type': 'String', 'value': 'ACC002'}, 'name': {'type': 'String', 'value': 'Bob'}, 'balance': {'type': 'Integer', 'value': 700}, 'id': 'K9rxO6g7MaXN57LNnKksOFiW9i-Qt-rSjXfkzNh4fGuL0Sh2RgMhgAgVde1dANU8SE9f8_uBNQsCAt2fNEmx3Q'}
 Updated Alice: $1000 → $800
 Updated Bob: $500 → $700
 
@@ -4852,7 +4162,7 @@ Operations: 2
 ✓ Verified committed balances: Alice=$800, Bob=$700
 
 === Example 5: Rollback Demo ===
-New transaction: 38cbd076-acca-4a4e-9140-90fd8c3c7b49
+New transaction: 3c2f8506-f264-44ea-a905-1bffec5fb963
 Updated Bob: $700 → $600 (in transaction)
 Status before rollback: Active
 ✓ Transaction rolled back
@@ -4863,17 +4173,10 @@ Status before rollback: Active
 ✓ Deleted test account collection
 
 ✓ All client transaction examples completed
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
 === Create User Function ===
-Created user function with ID: cikQHqX29yz_g8VdcDYS8SZs3o8EhOOxEmzCyC7yIRKdfVcdHpmVoajnngCj3gUDievScrqsrp3Fq32ZJAdXYA
+Created user function with ID: Z0Xd-eUyoi8F8c_bVtwy0c6j4iZ8IqizqtvQ_NL-8bA0cG52JiWegf7IQy_0U_cTJZtjU76uDhUW8pxMeK8xAQ
 
 === Get User Function ===
 Retrieved: get_active_users_py - Get Active Users
@@ -4890,57 +4193,43 @@ User function updated successfully
 User function deleted successfully
 
 ✓ User Functions API example complete
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === WebSocket Chat Streaming Example (Python) ===
 
-Created chat session: 8X7E13QPW5EJp8uVTxi94mr0Whg69J-rK-gEXlsvfga6DNhMNarxtcG4t1DlPUR8ynq-PO4xqfzvts9WN85UrA
+Created chat session: hRMzEHjUbl5zraLNYrsNjRomdYWoBRCQXh3DD-6vh_-fSHKNgtyeMgHzNcp04gumPCiybECK_Bdxym3JCSbVZw
 
 Sending message: 'What is the capital of France?'
 {"__progress":"received"}{"__progress":"generating","model":"gpt-4o-mini","provider":"openai"}The capital of France is Paris.
 
 --- Stream ended ---
-Message ID: tosx-JmwfYh2ujqkvdKMxTo9TDgcnYODkw708jvG1CXe0fOqg5TbJXmYmRESh0OvaNgI_OYvoccXHCZi_z4vyA
-Execution time: 870ms
+Message ID: vaxSMNpvrQ-GqRyeT8ujFV1JJCWSS_hci0OtejXmJaYAw-BRhyu0UlVh_OGrpGgo4Mhw9cj4Hfx-kFj_bVTdLw
+Execution time: 670ms
 Token usage: {'completion_tokens': 8, 'prompt_tokens': 15, 'total_tokens': 23}
 
 Full response: {"__progress":"received"}{"__progress":"generating","model":"gpt-4o-mini","provider":"openai"}The capital of France is Paris....
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === WebSocket Subscription Example (Python) ===
 
 ✓ Authentication successful
 ✓ WebSocket connected
 
 === Subscribing to 'ws_subscribe_example_py' ===
-✓ Subscribed (subscription_id: sub_f2670ef209344356a9e118212bb4ef18)
+✓ Subscribed (subscription_id: sub_b46b751735cc4553a276f99ebe298f9f)
 
 === Performing mutations to trigger notifications ===
 Inserting record 1...
-✓ Inserted: JWGtopGtQlVlfAwgxYqbMrD7d-mspY4Jf-lAINnj6MujzSb__AkyjCq9wn9X7h4H-QUHOXAMDSDNQrdCiXcYlg
+✓ Inserted: BVB9EoWq7vQdKQRdS8TvHv9_VFZa1viI-yklNiikbBpNPl8g177Q5raqG371BCKxFuq-2z0569cMmVr_EAyL6g
 
   📡 Notification received:
      Event:      insert
      Collection: ws_subscribe_example_py
-     Record IDs: JWGtopGtQlVlfAwgxYqbMrD7d-mspY4Jf-lAINnj6MujzSb__AkyjCq9wn9X7h4H-QUHOXAMDSDNQrdCiXcYlg
-     Timestamp:  2026-09-16T13:46:47.501309+00:00
+     Record IDs: BVB9EoWq7vQdKQRdS8TvHv9_VFZa1viI-yklNiikbBpNPl8g177Q5raqG371BCKxFuq-2z0569cMmVr_EAyL6g
+     Timestamp:  2026-09-16T20:44:34.693795+00:00
 
 Inserting record 2...
-✓ Inserted: Q2IixamaWeZb8UZTF3wllCBzQHEXUelak2R0Ok35JmVxhQvsUveUAbyslsTwfsozjaSSDBiuBTKjgAh4kLZnuw
+✓ Inserted: 9LkkI1RD-btBtXShWOWr1sJKcau98NZ2CbWvclaUIzr9nFOY1s17EqcKIrzhVXRbm3iC2biAQ9GpyPh2yA0yGw
 
   📡 Notification received:
      Event:      insert
-     Record IDs: Q2IixamaWeZb8UZTF3wllCBzQHEXUelak2R0Ok35JmVxhQvsUveUAbyslsTwfsozjaSSDBiuBTKjgAh4kLZnuw
+     Record IDs: 9LkkI1RD-btBtXShWOWr1sJKcau98NZ2CbWvclaUIzr9nFOY1s17EqcKIrzhVXRbm3iC2biAQ9GpyPh2yA0yGw
 
 === Unsubscribing ===
 ✓ Unsubscribed: {'collection': 'ws_subscribe_example_py', 'found': True, 'unsubscribed': True}
@@ -4949,17 +4238,10 @@ Inserting record 2...
 ✓ Deleted collection 'ws_subscribe_example_py'
 
 ✓ WebSocket subscription example completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
 === Insert Test Data with TTL ===
-✓ Inserted document with TTL: 09XHycUGX8_ITYQH0fmkijqqoXnPs_jtI6ULyUdu5XvHF1uvQSrLc_q0bSFAC8id4PLD75UwwqSAr0Dnf2Tc-Q
+✓ Inserted document with TTL: 5mJnFjInQh99pcs0bt_IMIBkj-mC_x_tOwCOFzQHIOUEwq29mjn0pbo6wKRf1N1ScEkTMkk1gsTlelCOghXsnQ
 
 === Query via WebSocket ===
 ✓ WebSocket connected
@@ -4972,23 +4254,16 @@ perl: warning: Falling back to the standard locale ("C").
 ✓ WebSocket TTL example completed successfully
 
 💡 Note: Documents with TTL will automatically expire after the specified duration
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === Bypass Ripple Example ===
 
 1. Basic insert (ripple enabled):
-   Inserted with ripple: {'id': 'SzVyw2VOoq18eU2wQBBXOlNN8JbFY3EPnUsEw7oi0mznOWDr7MTNl2K9k9R2F6IvqIqHfTc3a3n6DuSOB268XQ'}
+   Inserted with ripple: {'id': 'LEFFeBW-XODAerA3fIXmsCFiH1jJeCGRrRQNC6azD-fiKLjZLprpje4OHEvDGGDK3RxPIE9jeMh-SEO68lZiqg'}
 
 2. Insert with bypass_ripple:
-   Inserted with bypass_ripple: {'id': 'z4fZDtrI9ZHsdgRuWjXeuv4zW5PeJDVLnlyc1VVV_z6bbcQBiEThc6DWF9PpYCYN3hHBbUqKa3IHBCsDDqSTFA'}
+   Inserted with bypass_ripple: {'id': 'fmFIzMAcQE3lel84xXLwIZTh3i2scwypYro5xNC52QkVHX0IZ3Aw04ynOwAeVk8W4ZNy82nmFMMlyA-VABdwMw'}
 
 3. Update with bypass_ripple:
-   Updated with bypass_ripple: {'name': {'value': 'Product 1', 'type': 'String'}, 'price': {'value': 150, 'type': 'Integer'}, 'id': 'SzVyw2VOoq18eU2wQBBXOlNN8JbFY3EPnUsEw7oi0mznOWDr7MTNl2K9k9R2F6IvqIqHfTc3a3n6DuSOB268XQ'}
+   Updated with bypass_ripple: {'price': {'value': 150, 'type': 'Integer'}, 'id': 'LEFFeBW-XODAerA3fIXmsCFiH1jJeCGRrRQNC6azD-fiKLjZLprpje4OHEvDGGDK3RxPIE9jeMh-SEO68lZiqg', 'name': {'type': 'String', 'value': 'Product 1'}}
 
 4. Delete with bypass_ripple:
    Deleted with bypass_ripple
@@ -4997,16 +4272,9 @@ perl: warning: Falling back to the standard locale ("C").
    Batch inserted with bypass_ripple: 2 records
 
 6. Upsert with bypass_ripple:
-   Upserted with bypass_ripple: {'price': {'type': 'Integer', 'value': 500}, 'id': 'SzVyw2VOoq18eU2wQBBXOlNN8JbFY3EPnUsEw7oi0mznOWDr7MTNl2K9k9R2F6IvqIqHfTc3a3n6DuSOB268XQ', 'name': {'type': 'String', 'value': 'Upsert Product'}}
+   Upserted with bypass_ripple: {'price': {'type': 'Integer', 'value': 500}, 'id': 'LEFFeBW-XODAerA3fIXmsCFiH1jJeCGRrRQNC6azD-fiKLjZLprpje4OHEvDGGDK3RxPIE9jeMh-SEO68lZiqg', 'name': {'value': 'Upsert Product', 'type': 'String'}}
 
 ✅ All bypass_ripple operations completed successfully!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 Client created
 
 Setting up test data...
@@ -5023,32 +4291,32 @@ Example 2: Exclude sensitive fields (password, api_key, secret_token)
     - password: excluded
     - api_key: excluded
     - secret_token: excluded
-  Fields returned: ['user_role', 'bio', 'created_at', 'name', 'avatar_url', 'email', 'id', 'status', 'age']
+  Fields returned: ['avatar_url', 'bio', 'email', 'user_role', 'status', 'age', 'id', 'created_at', 'name']
 
 Example 3: Complex query with projection (active users, ages 18-65)
   Found 3 active users (ages 18-65)
-    - {'value': 'Dave Brown', 'type': 'String'} (age {'type': 'Integer', 'value': 45})
-    - {'type': 'String', 'value': 'Alice Johnson'} (age {'type': 'Integer', 'value': 30})
+    - {'type': 'String', 'value': 'Dave Brown'} (age {'value': 45, 'type': 'Integer'})
+    - {'value': 'Alice Johnson', 'type': 'String'} (age {'type': 'Integer', 'value': 30})
     - {'type': 'String', 'value': 'Bob Smith'} (age {'value': 25, 'type': 'Integer'})
 
 Example 4: Query inactive users with profile fields
   Found 1 inactive users
-    - {'value': 'Carol White', 'type': 'String'}: {'value': 'Manager', 'type': 'String'}
+    - {'value': 'Carol White', 'type': 'String'}: {'type': 'String', 'value': 'Manager'}
 
 Example 5: Compare full vs projected data
   Full query:
     - 12 fields per record
-    - Fields: ['id', 'status', 'avatar_url', 'api_key', 'password', 'email', 'bio', 'name', 'age', 'user_role', 'secret_token', 'created_at']
+    - Fields: ['name', 'age', 'secret_token', 'bio', 'created_at', 'avatar_url', 'email', 'api_key', 'user_role', 'password', 'status', 'id']
   Projected query:
     - 3 fields per record
-    - Fields: ['name', 'email', 'id']
+    - Fields: ['email', 'name', 'id']
   Bandwidth savings: ~75% fewer fields
 
 Cleaning up test data...
 Cleanup complete
 
 All projection examples completed successfully!
-
+✅ All Python integration tests complete!
 🧪 Running Go examples (direct HTTP/WebSocket)...
 
 ╔════════════════════════════════════════╗
@@ -5066,16 +4334,16 @@ All projection examples completed successfully!
 ✓ Authentication successful
 
 === Insert Document ===
-Inserted: map[id:3cDtgJ8YImcqpoNzRSaL1jXzcwjFwdhJ44mVVUN_cW0sLSD1yEP7re6yct1pFy5o42n3aR6nyFcDP-b2gjbrPw]
+Inserted: map[id:uphqSGoyhMdv3HZfHIu3OkNlYT5i_waYCGo1FGgmd7qq5YoQTVboPWhTwAWqi9cE2GRrcG57R-OV7dHbMTeMVA]
 
 === Find by ID ===
-Found: map[active:map[type:Boolean value:true] id:3cDtgJ8YImcqpoNzRSaL1jXzcwjFwdhJ44mVVUN_cW0sLSD1yEP7re6yct1pFy5o42n3aR6nyFcDP-b2gjbrPw name:map[type:String value:Test Record] value:map[type:Integer value:42]]
+Found: map[active:map[type:Boolean value:true] id:uphqSGoyhMdv3HZfHIu3OkNlYT5i_waYCGo1FGgmd7qq5YoQTVboPWhTwAWqi9cE2GRrcG57R-OV7dHbMTeMVA name:map[type:String value:Test Record] value:map[type:Integer value:42]]
 
 === Find with Query ===
-Found documents: [map[active:map[type:Boolean value:true] id:3cDtgJ8YImcqpoNzRSaL1jXzcwjFwdhJ44mVVUN_cW0sLSD1yEP7re6yct1pFy5o42n3aR6nyFcDP-b2gjbrPw name:map[type:String value:Test Record] value:map[type:Integer value:42]]]
+Found documents: [map[active:map[type:Boolean value:true] id:uphqSGoyhMdv3HZfHIu3OkNlYT5i_waYCGo1FGgmd7qq5YoQTVboPWhTwAWqi9cE2GRrcG57R-OV7dHbMTeMVA name:map[type:String value:Test Record] value:map[type:Integer value:42]]]
 
 === Update Document ===
-Updated: map[active:map[type:Boolean value:true] id:3cDtgJ8YImcqpoNzRSaL1jXzcwjFwdhJ44mVVUN_cW0sLSD1yEP7re6yct1pFy5o42n3aR6nyFcDP-b2gjbrPw name:map[type:String value:Updated Record] value:map[type:Integer value:100]]
+Updated: map[active:map[type:Boolean value:true] id:uphqSGoyhMdv3HZfHIu3OkNlYT5i_waYCGo1FGgmd7qq5YoQTVboPWhTwAWqi9cE2GRrcG57R-OV7dHbMTeMVA name:map[type:String value:Updated Record] value:map[type:Integer value:100]]
 
 === Delete Document ===
 Deleted document
@@ -5089,14 +4357,14 @@ Deleted document
 ✓ Authentication successful
 
 === Inserting Test Data ===
-✓ Inserted test record: afrAOAVaIEvOpvRrw6pyCxkAyU5wKGa-XFEQoI0IY3KuDbP4nWD5GVPFbV_fpfIObaSWUuC5Dkdie_pjXlscpw
+✓ Inserted test record: sCSOiqbw8sULK_GjBjH2pm3z0Wpmt_4F1C1lPW8-xWYOF_oZujgAtA-p8lPG5Ufv0Sql2BP2WczOyxIe3gR9tw
 
 === Connecting to WebSocket ===
 ✓ WebSocket connected
 
 === Querying Data via WebSocket ===
 Response: {
-  "messageId": "1789566411971623000",
+  "messageId": "1789591477653355000",
   "payload": {
     "data": [
       {
@@ -5104,7 +4372,7 @@ Response: {
           "type": "Boolean",
           "value": true
         },
-        "id": "afrAOAVaIEvOpvRrw6pyCxkAyU5wKGa-XFEQoI0IY3KuDbP4nWD5GVPFbV_fpfIObaSWUuC5Dkdie_pjXlscpw",
+        "id": "sCSOiqbw8sULK_GjBjH2pm3z0Wpmt_4F1C1lPW8-xWYOF_oZujgAtA-p8lPG5Ufv0Sql2BP2WczOyxIe3gR9tw",
         "name": {
           "type": "String",
           "value": "WebSocket Test Record"
@@ -5131,18 +4399,18 @@ Response: {
 
 📝 Example 1: Simple Query Function with Filter
 
-✅ Function saved: YsG6KMZ-hTWinlpD4a0elRYnIcReSpigV_zuV2hmfPZC8hvHBLvnzR2Be1hPDnBDCxR1EMX1Idhs08JBImGCaA
+✅ Function saved: 51taqHcgvzuv6xpza08WoPeK6zIb1CWiam3DRqg8RMmRa4CGLhoAykEIuM74kKvvAikctyqDCxDIsbWl-l07oA
 📊 Found 5 active users
 
 📝 Example 2: Parameterized Pagination with Limit/Skip
 
-✅ Function saved: erbMBGMKAYZDW7GRbuzHGDWwwABomK5QzMQzfCrczew8Q4N907mT-QJ8Z-rtcmRWDUcDYm7wD4ZY_tBbjKiP4A
+✅ Function saved: sC6Dy-JWR-NmW1FzVSPVrJNsnp09Jd3oF54SxaTBfU9ITuocdM2kdnndrZdYHBdyN1ntBJ-rbQIEb_xhNwYOqw
 📊 Page 1: Found 3 users (limit=3, skip=0)
 📊 Page 2: Found 2 users (limit=3, skip=3)
 
 📝 Example 3: Multi-Stage Pipeline (Query → Group → Calculate)
 
-✅ Function saved: -2gey2scpc8ohr_-N1HRpQqpK4_0khQHl4ABhwCXieSItRaPbQvCuQmn3ag3FnYrMnhjG5OALJFa8gKJweayaw
+✅ Function saved: xQA9KUZ99pguaczocJdBaNQLem1vGagJGyf4PhNcQRg6j9wOgkw05RR3ZYVFBOVlzZAHpU02LmwxHm93Wa7vYw
 📊 Pipeline Results: Filtered (age>20) → Grouped by status → 2 groups
    {"avg_score":{"type":"Float","value":60},"count":{"type":"Integer","value":5},"max_score":{"type":"Integer","value":100},"status":{"type":"String","value":"active"}}
    {"avg_score":{"type":"Float","value":50},"count":{"type":"Integer","value":5},"max_score":{"type":"Integer","value":90},"status":{"type":"String","value":"inactive"}}
@@ -5216,11 +4484,11 @@ cache:product:3:go: map[type:Object value:map[name:Product 3 price:49.9899999999
 ✓ Authentication successful
 
 === Create Collection (via insert) ===
-Collection created with first record: xdawGWVX7U75PRcn2v5xVvayVu2XzZco5qWZ9h0Z8dOmosJsF5VRhKHOIGWNvgy6DKToDovOf9DUbzcaRO5wEg
+Collection created with first record: SAJo8pnTfE_EQcQLkGWs0VVA7W5VG0VamCQigPKitmRYwsb95frxPY9nA0JKD_YL4ummeK5TnmeL663Ph-fMYQ
 
 === List Collections ===
 Total collections: 13
-Sample collections: [chat_agent_configs__ek0_testing agent_function_versions__ek0_testing schedules__ek0_testing functions__ek0_testing chat_configurations__ek0_testing]
+Sample collections: [chat_goals__ek0_testing schedules__ek0_testing agent_function_versions__ek0_testing chat_raw_completions__ek0_testing chat_turns__ek0_testing]
 
 === Delete Collection ===
 Collection deleted successfully
@@ -5235,11 +4503,11 @@ Collection still exists: false
 ✓ Authentication successful
 
 === Setup: Creating Test Accounts ===
-Created Alice: $1000 - ID: kDqCp7255ht4xT6yl5MyA6UqMOyng1E7bhBGei1VT8BjX0LOC27xGclB-3doPjw_u0z2aLAD5tZo-pkfSNGhSg
-Created Bob: $500 - ID: uSzfWL_ISVDKl268p120F8d4zaFEJvTT18jb3DBN_4ZNw4sEhqSbJxU7O7jdUM1G43Y7ZaN9VpNe-2EL55oAiw
+Created Alice: $1000 - ID: 2P0RGOeW6LiId5aghHkUlPGuBxN5JYNMgIglJTVLeHdonPh_jqhshUYYeYYtZb-YhHv-R0refGWzC1g59WT2EA
+Created Bob: $500 - ID: yWFfumwlAHaUoOdcO4xYfmPqPB8uZjVg-dqaAPHSKHuDUuVn2XPHwK06gg4OKql1c1zGvBVHafjMGeeCdPH_bQ
 
 === Example 1: Begin Transaction ===
-Transaction ID: 625bf002-a208-45fe-856d-86bc3928ff4f
+Transaction ID: 9f74d016-a4d8-401c-82f1-909201ccdfde
 
 === Example 2: Operations with transaction_id ===
 Updated Alice: $1000 → $800
@@ -5257,7 +4525,7 @@ Alice: map[type:Integer value:800]
 Bob: map[type:Integer value:700]
 
 === Example 5: Rollback ===
-New transaction: 700b95c2-05de-45e1-aebd-bb263d905b8d
+New transaction: 2aa86b4d-35f3-4456-ac48-8a421e9474a3
 Updated Bob: $700 → $600 (in transaction)
 ✓ Transaction rolled back
 Bob after rollback: map[type:Integer value:700]
@@ -5290,7 +4558,7 @@ Each function shows Functions chaining with proper verification
 ============================================================
 
 1️⃣ Saving Function...
-   ✅ Function saved: WQ7QGzNt8Bi15nqhRwCJoEW7X8ANXQD6pT40arjLmSfxsLJg-yrlC8JMe2qJrGpqapfjtM2VZNQn9t815NAQDA
+   ✅ Function saved: X8Q5onvppz3SyQgEWXxeRtdv2oTGmydSoO3oSaQjVUd20i1tTmrkb6qCU8iK1V9NHl0gTrWPkk5e75PJQLtqaA
 
 2️⃣ Calling function (Insert + Verify)...
    ✅ function executed: 2 Functions
@@ -5298,7 +4566,7 @@ Each function shows Functions chaining with proper verification
 
 3️⃣ Verification Results:
    ✅ Found 1 record(s)
-   📋 User ID: ZjgY4Q8XTpUtNLukT5-8q2f-rUDs-Jx7e0eEkioJpa8Y2nwqTg_5sx4fwpxHbWHRvsIek3fqxIEWtVFyWjymcw
+   📋 User ID: STqey5qG5EUOGCEqXwAtNZoG1QgpHgbFuqLhyws79c6prHAiepbYhsAgL0j1zjyurUFd19_JmkDn4xjOPQuK0A
    📋 Name: map[type:String value:Alice Smith]
    📋 Email: map[type:String value:alice@example.com]
    📋 Status: map[type:String value:pending]
@@ -5309,7 +4577,7 @@ Each function shows Functions chaining with proper verification
 ============================================================
 
 1️⃣ Saving Function...
-   ✅ Function saved: 6kH5sL2JPPHor0HtxY8gHRMyUpO_MEco6XPf2N6hdPJL65P3kp7HfjCtnaHph9XcnElre6Mcl0w1Ns5bzqDUQg
+   ✅ Function saved: F9HFn-H6wZVm6R7ADqtp5ekPf_9odpThKRFvS9tUrPeXxVQgmHo8Mf-a8rMprKxZvz-YFLAKimVAm0BKe1dpwg
 
 2️⃣ Calling function (Query + Update + Verify)...
    ✅ function executed: 3 Functions
@@ -5325,7 +4593,7 @@ Each function shows Functions chaining with proper verification
 ============================================================
 
 1️⃣ Saving Function...
-   ✅ Function saved: 2Tkp_K83vTpVN_vrIVYsgsOqYm8KW9nr520vmRITPHzBoNpqGTvZOLF27kAn8jj0N2FhdTbAPenMtLL9QSLh6A
+   ✅ Function saved: 2cswPyOMWXRAXvYzXrqJmUGOF3vTGTLpXwF-y5ksKyeCqq40v5q4hSWJB4lI2lgOnET1qQwIIk6iK2_9_uU91A
 
 2️⃣ Calling function (Query + Update Credits + Verify)...
    ✅ function executed: 3 Functions
@@ -5342,7 +4610,7 @@ Each function shows Functions chaining with proper verification
 ============================================================
 
 1️⃣ Saving Function...
-   ✅ Function saved: qaw4Ey-cS-AU6kw0q23uY5e-4K30XbiU6vr3DmnSSa-RYqEA9kx4OQK2Ev7oLekAfX25smbMM3hdKS7U0qurGQ
+   ✅ Function saved: dtdIXj2QmhTLJtz7pTq5qEtGLbmGbD7hkGAsTJcCbI7dTEdfRfH5VoHlT58gaW-QIIXA--NutbEGAJTrgKesHg
 
 2️⃣ Calling function (Query + Delete + Verify)...
    ✅ function executed: 3 Functions
@@ -5355,10 +4623,10 @@ Each function shows Functions chaining with proper verification
 ============================================================
 🧹 Cleanup
 ============================================================
-   ✅ Deleted script: WQ7QGzNt8Bi15nqhRwCJ...
-   ✅ Deleted script: 6kH5sL2JPPHor0HtxY8g...
-   ✅ Deleted script: 2Tkp_K83vTpVN_vrIVYs...
-   ✅ Deleted script: qaw4Ey-cS-AU6kw0q23u...
+   ✅ Deleted script: X8Q5onvppz3SyQgEWXxe...
+   ✅ Deleted script: F9HFn-H6wZVm6R7ADqtp...
+   ✅ Deleted script: 2cswPyOMWXRAXvYzXrqJ...
+   ✅ Deleted script: dtdIXj2QmhTLJtz7pTq5...
    ✅ Deleted collection: crud_functions_users_go
 
 ============================================================
@@ -5390,11 +4658,11 @@ TEST 1: Document TTL Expiration
 [Step 1] Insert document with 3 second TTL
   Input: {name: 'TTL Test', value: 'should expire'}
   TTL: 3s
-  Output: Document ID = UMiDiPCaKwweKMB_xN2ODrvOVt4upxVr6AggqfAVEBqJZL8tvcuya2-_R9s8gDFJlkIUjaHxMEmsrnbH1ewIoQ
+  Output: Document ID = dsAacbYAifWqKIg_OYSWMbm1oj75FJx4G6yhbKv4jr-4b0hcmbysrfUTDq0CBc0hCX9aIEOD4zqJ8AoxdTMz4g
   ✓ PASS: Document inserted
 
 [Step 2] Verify document exists immediately
-  Input: FindByID(UMiDiPCaKwweKMB_xN2ODrvOVt4upxVr6AggqfAVEBqJZL8tvcuya2-_R9s8gDFJlkIUjaHxMEmsrnbH1ewIoQ)
+  Input: FindByID(dsAacbYAifWqKIg_OYSWMbm1oj75FJx4G6yhbKv4jr-4b0hcmbysrfUTDq0CBc0hCX9aIEOD4zqJ8AoxdTMz4g)
   Output: Found document with name = map[type:String value:TTL Test]
   ✓ PASS: Document exists
 
@@ -5403,7 +4671,7 @@ TEST 1: Document TTL Expiration
   ✓ PASS: Wait complete
 
 [Step 4] Verify document has expired
-  Input: FindByID(UMiDiPCaKwweKMB_xN2ODrvOVt4upxVr6AggqfAVEBqJZL8tvcuya2-_R9s8gDFJlkIUjaHxMEmsrnbH1ewIoQ)
+  Input: FindByID(dsAacbYAifWqKIg_OYSWMbm1oj75FJx4G6yhbKv4jr-4b0hcmbysrfUTDq0CBc0hCX9aIEOD4zqJ8AoxdTMz4g)
   Output: Error (expected) - request failed with status 404: ��error�Record not found (expired)
   ✓ PASS: Document expired (not found error)
 
@@ -5439,11 +4707,11 @@ TEST: WebSocket TTL Expiration
 [Step 1] Insert document with 3 second TTL
   Input: {name: 'WS TTL Test', value: 'should expire'}
   TTL: 3s
-  Output: Document ID = wsm9w_8rgFq8WiUiSHGkTw6xRi0Z1iYNAcNZ04pH9XuDGgiGwqxCzEgujKiLX0PhPiaajPOJ04NBOgHVX8kmJw
+  Output: Document ID = GQAh_J_Wn-GvKP9tJn-Z_IT4DtfRNayRy1g_EIw4payygwgthMnHCSF5EV8r4PjfLrIxiOewpESSYPlqCdxB4g
   ✓ PASS: Document inserted
 
 [Step 2] Query to verify document exists
-  Input: FindByID(wsm9w_8rgFq8WiUiSHGkTw6xRi0Z1iYNAcNZ04pH9XuDGgiGwqxCzEgujKiLX0PhPiaajPOJ04NBOgHVX8kmJw)
+  Input: FindByID(GQAh_J_Wn-GvKP9tJn-Z_IT4DtfRNayRy1g_EIw4payygwgthMnHCSF5EV8r4PjfLrIxiOewpESSYPlqCdxB4g)
   Output: Found document with name = map[type:String value:WS TTL Test]
   ✓ PASS: Document exists
 
@@ -5452,8 +4720,8 @@ TEST: WebSocket TTL Expiration
   ✓ PASS: Wait complete
 
 [Step 4] Query to verify document has expired
-  Input: FindByID(wsm9w_8rgFq8WiUiSHGkTw6xRi0Z1iYNAcNZ04pH9XuDGgiGwqxCzEgujKiLX0PhPiaajPOJ04NBOgHVX8kmJw)
-  Output: Error (expected) - request failed with status 404: ��error�Record has been deleted
+  Input: FindByID(GQAh_J_Wn-GvKP9tJn-Z_IT4DtfRNayRy1g_EIw4payygwgthMnHCSF5EV8r4PjfLrIxiOewpESSYPlqCdxB4g)
+  Output: Error (expected) - request failed with status 404: ��error�Record not found (expired)
   ✓ PASS: Document expired (not found error)
 
 ═══════════════════════════════════════════════════════════
@@ -5477,18 +4745,10 @@ Total: 10
 Passed: 10
 Failed: 0
 ✅ Go direct examples complete!
-bash: warning: setlocale: LC_ALL: cannot change locale (C.UTF-8): No such file or directory
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB Advanced CRUD Integration Example (Go) ===
 
 --- Inserting base record ---
-Inserted record: xOwqTqSHkEiyLyyIpX1Gf9F_KuIphdvSOKdYE72YMsGTL9GutA2aIakCbIJjFvy8yUQSRHR5IsrJfERuyiUoOg
+Inserted record: QNWPeSsxiYKn3nhpuWLV1i5YUafGKO1ypn5LL1wBu11jy4LXnOWZs_By9KLDSNHrnW-K4QT3rwY7Ndgabu_tOQ
 
 --- UpdateWithAction: increment ---
 After increment by 5: count = map[type:Integer value:5]
@@ -5508,13 +4768,6 @@ After sequence: count=map[type:Integer value:16], tags=map[type:Array value:[ini
 Cleaned up all resources
 
 === All advanced CRUD operations completed successfully ===
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
 === Batch Insert ===
@@ -5531,30 +4784,23 @@ perl: warning: Falling back to the standard locale ("C").
 ✓ Deleted collection
 
 ✓ All batch operations completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB Advanced Chat Features Example ===
 
 === Inserting Sample Data ===
 ✓ Inserted sample product
 
 === Creating Chat Session ===
-✓ Created session: Orz6u4lxCXBs0kRKIYjIGJHWiFRlecFy95GcnXCJI2cefsz6gEkeAksb1VAD_8oecMjrQKgrBvl36lddHQNDhQ
+✓ Created session: 9Hy07qoN1qsLk3_oYjxBB6-KQ0JkWwZq4XNxEhsA_KskEnV8HiTiLZuKHV4fLef8tbOcHIGBEsIaboS0-zc06g
 
 === Sending Initial Message ===
 ✓ Message sent
-  Response: The available product is:
+  Response: It seems there are currently no products available based on the filter applied. However, there is information about one product:
 
 - **Name:** ekoDB
 - **Description:** High-performance database product
 - **Price:** $99
 
-If you have any further questions or need more information, feel free to ask!
+If you're looking for a specific type of product or need further assistance, please let me know!
 
 ✓ Second message sent
 
@@ -5571,7 +4817,7 @@ If you have any further questions or need more information, feel free to ask!
 ✓ Message unmarked as forgotten
 
 === Feature 4: Merge Chat Sessions ===
-✓ Created second session: SKCgd5SHIA8LS45JEViLXuwdzsK4Akm6duSgSNKHgab7ipLee0ai-rTBphn6adJA4qaEnG6l1n5u6Ft9VBTuOw
+✓ Created second session: dzszHfK0g0l5dQKn3BLm8j8UcppvaunjYZ2kz4LT2IXgKs_5UoIjN1sRBNaqIRP-s463PeL07l7oJLQI3KaczA
 ✓ Sent message in second session
 ✓ Sessions merged successfully
   Total messages in merged session: 7
@@ -5582,102 +4828,82 @@ If you have any further questions or need more information, feel free to ask!
 ✓ Messages remaining: 6
 
 === Cleanup ===
-✓ Deleted chat session: SKCgd5SHIA8LS45JEViLXuwdzsK4Akm6duSgSNKHgab7ipLee0ai-rTBphn6adJA4qaEnG6l1n5u6Ft9VBTuOw
-✓ Deleted chat session: Orz6u4lxCXBs0kRKIYjIGJHWiFRlecFy95GcnXCJI2cefsz6gEkeAksb1VAD_8oecMjrQKgrBvl36lddHQNDhQ
+✓ Deleted chat session: dzszHfK0g0l5dQKn3BLm8j8UcppvaunjYZ2kz4LT2IXgKs_5UoIjN1sRBNaqIRP-s463PeL07l7oJLQI3KaczA
+✓ Deleted chat session: 9Hy07qoN1qsLk3_oYjxBB6-KQ0JkWwZq4XNxEhsA_KskEnV8HiTiLZuKHV4fLef8tbOcHIGBEsIaboS0-zc06g
 ✓ Deleted collection
 
 ✓ All advanced chat features demonstrated successfully!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB Chat Basic Example ===
 
 === Inserting Sample Data ===
 ✓ Inserted 3 sample documents
 
 === Creating Chat Session ===
-✓ Created session: Ck1wc4wBqz7Nbp2CFll00gDXl6yusrAxyv7Kmb94ZCJM4MhTdIMbg0KPkvokmT-OXfKZAWZ1_H1HLZMrINtnyg
+✓ Created session: _gzlfhH_GMoHu94-x1vimRfrLcOaFo19SIR8YNmHgLd_INsdl9egGojQhVDcD_0CwN6C4mCYSai90egCB3JEzw
 
 === Sending Chat Message ===
-Message ID: ez99c2APV1vR78cSJUK4_y_miaKAmo8oSJAdAbOmLvdoySiFRVo1KoYSC1Tij3IQpyRb9OgwC_uDQhSHFpHIQA
+Message ID: wPPHdAFJB9htAbtKNBdBOCHxwexWipAHCSBCHj1Z9PcSXHB_0WbfKhYMFr0wJWxq-i1HjM8vVM2FQ8wdkUpPxg
 
 === AI Response ===
-The available products and their prices are as follows:
+Here are the available products and their prices:
 
-1. **ekoDB Cloud**: $499
-   Description: Fully managed cloud database service product
+1. **ekoDB Cloud**
+   - Price: $499
+   - Description: Fully managed cloud database service product
 
-2. **ekoDB**: $99
-   Description: A high-performance database product with AI capabilities
+2. **ekoDB Pro**
+   - Price: $299
+   - Description: Enterprise edition product with advanced features
 
-3. **ekoDB Pro**: $299
-   Description: Enterprise edition product with advanced features
+3. **ekoDB**
+   - Price: $99
+   - Description: A high-performance database product with AI capabilities
 
 === Context Used (3 snippets) ===
-  Snippet 1: map[collection:client_chat_basic_go matched_fields:[description] record:map[description:Fully managed cloud database service product id:pI8UKPTEZI2lkVPUmV7ADppA8_Ewb6HzPUQf0eCVpNj4pAKCcAMjYXnbB-cLA5Di8Z19PSPsXTDDN6BzzyZMEQ name:ekoDB Cloud price:499] score:0.1111111111111111]
-  Snippet 2: map[collection:client_chat_basic_go matched_fields:[description] record:map[description:A high-performance database product with AI capabilities id:AhdcahG8y964lJ33ZrYxyxBiNqmZ_z1Zv8_WmzZugcYPBLA8PErb4qKLQxDJcB9pff67ZaVcbwstu6mR8RnsnA name:ekoDB price:99] score:0.1111111111111111]
-  Snippet 3: map[collection:client_chat_basic_go matched_fields:[description] record:map[description:Enterprise edition product with advanced features id:DoDFzC9Mq6d9T0-eic1xQstpyNiG-6lmUltCAIfERR5Mww_Bhgb2NGT-gDO8CuQe5JT-ak426Iznglc5UhvimQ name:ekoDB Pro price:299] score:0.1111111111111111]
+  Snippet 1: map[collection:client_chat_basic_go matched_fields:[description] record:map[description:Fully managed cloud database service product id:aheceJ-zptetPau7bRuLCf1RAv6erswwKt8frFV8lx7Rr5BN9x85VW1nFzOvAGfdu4b6OFyACtH1yMTwta7ajw name:ekoDB Cloud price:499] score:0.1111111111111111]
+  Snippet 2: map[collection:client_chat_basic_go matched_fields:[description] record:map[description:Enterprise edition product with advanced features id:1_voB59OqKtYUu2EawSoAPbwzzDDTyAfmEWW9dA9D9wdNN3Nn1_giNQaLD4FQnQ8gxVOY_rVhr5d_EYbrWCKcA name:ekoDB Pro price:299] score:0.1111111111111111]
+  Snippet 3: map[collection:client_chat_basic_go matched_fields:[description] record:map[description:A high-performance database product with AI capabilities id:Rvsr7fVU0xWsc14NQRjtVR6n4iQ6ZMQDCgwUHlZ3lzGEk8koBB-aVkLdRjt37JHT0D6tGn14dC32Gt1vZQY6ig name:ekoDB price:99] score:0.1111111111111111]
 
-Execution Time: 2347ms
+Execution Time: 2526ms
 
 === Token Usage ===
 Prompt tokens: 3413
-Completion tokens: 82
-Total tokens: 3495
+Completion tokens: 89
+Total tokens: 3502
 
 === Cleanup ===
 ✓ Deleted session
 ✓ Deleted collection
 
 ✓ Chat completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB Chat Message Stream (SSE) Example (Go) ===
 
-Created session: UkjY6eQn4Q9zX_3U2qQul6gXGRfMncWmzBJIMQP5JDmAFBbXQE3fhMt3KQ3IaWQixobjLndxGCJVeOsZtqOwGA
+Created session: CX5mEF30pGkBoNsiZ9vjQaKnDxURyQwfVtQ1Jzcwnm5wXLvEkaq9n9bFZ0VV1t6ZlWT0cKOHLX4cFsNhLxLVFQ
 
 Streaming response for: 'What is ekoDB?'
 
-{"__progress":"received"}{"__progress":"generating","model":"gpt-4o-mini","provider":"openai"}EkoDB is a high-performance, distributed database designed for applications that require low-latency and high throughput. It is particularly suited for use cases such as time-series data, event streaming, and large-scale real-time analytics.
+{"__progress":"received"}{"__progress":"generating","model":"gpt-4o-mini","provider":"openai"}ekoDB is an open-source database management system designed for high-performance applications. It focuses on enabling developers to easily store and manipulate large volumes of data efficiently. ekoDB is particularly suited for scenarios requiring fast read and write operations, often found in applications such as IoT, real-time analytics, and big data processing.
 
-Key features of ekoDB may include:
+Some key features of ekoDB may include:
 
-1. **Scalability**: EkoDB is designed to scale horizontally, allowing it to handle increasing amounts of data and requests by adding more servers to the cluster.
+1. **Scalability**: Designed to handle large datasets and support horizontal scaling across distributed environments.
 
-2. **Performance**: The database engine is optimized for fast read and write operations, making it ideal for high-load environments.
+2. **Performance**: Optimized for speed, providing low-latency access to data and high throughput for concurrent operations.
 
-3. **Distributed Architecture**: EkoDB typically employs a distributed architecture, ensuring data redundancy and fault tolerance, which enhances reliability.
+3. **Flexibility**: Supports various data models, allowing developers to work with structured or unstructured data as needed.
 
-4. **Support for Various Data Models**: EkoDB might support different data models such as key-value, document, or column-family stores, catering to a range of application needs.
+4. **Ease of Use**: Provides APIs and tools that make it easier for developers to integrate the database with their applications.
 
-5. **Efficient Query Mechanisms**: It may offer indexing and querying features that improve the efficiency of data retrieval.
+5. **Open Source**: Being open source allows the community to contribute, review, and improve the database continually.
 
-6. **Real-time Analytics**: Suitable for applications requiring real-time data processing and insights.
-
-While EkoDB may not be as widely known as some other databases, it serves specific niches and use cases where performance and scalability are critical. If you have specific questions about EkoDB or need information on how to implement or use it, feel free to ask!
+Please verify with the latest sources or official documentation for the most current information about ekoDB, as features and capabilities may evolve over time.
 
 --- Stream complete ---
-Message ID: dXm6qVlohpVc3kmwuen-Sgvj5FTxgcOaSUSsrpWZlFp9gPf8WmE_kBdaNMk2r-0dwI8lyJzdNYqSvckHIIY1jg
-Execution time: 2369ms
+Message ID: nxWXi2VR2dNMbhJUKjI7sfx0-cNBsHfxz-j0iAXL6QjC71vPjGnGl6jbND_L2J6l2XPd9vduOph25Q4PBKMB2w
+Execution time: 2086ms
 Context window: 128000 tokens
 
 ✓ Chat message stream example completed
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
 === Get All Chat Models ===
@@ -5685,10 +4911,10 @@ OpenAI models: [text-embedding-ada-002 whisper-1 gpt-3.5-turbo tts-1 gpt-3.5-tur
 Anthropic models: [claude-fable-5-1 claude-opus-5 claude-sonnet-5 claude-fable-5 claude-opus-4-8 claude-opus-4-7 claude-sonnet-4-6 claude-opus-4-6 claude-opus-4-5-20251101 claude-haiku-4-5-20251001 claude-sonnet-4-5-20250929]
 Perplexity models: []
 Gemini models: []
+  perplexity: not_configured (unverified) No Perplexity API Key
   anthropic: ok 11 models
   gemini: not_configured (unverified) No Gemini API Key
   openai: ok 132 models
-  perplexity: not_configured (unverified) No Perplexity API Key
 
 === Get OpenAI Models ===
 OpenAI models: [text-embedding-ada-002 whisper-1 gpt-3.5-turbo tts-1 gpt-3.5-turbo-16k gpt-4-0613 gpt-4 davinci-002 babbage-002 gpt-3.5-turbo-instruct gpt-3.5-turbo-instruct-0914 gpt-3.5-turbo-1106 tts-1-hd tts-1-1106 tts-1-hd-1106 text-embedding-3-small text-embedding-3-large gpt-3.5-turbo-0125 gpt-4-turbo gpt-4-turbo-2024-04-09 gpt-4o gpt-4o-2024-05-13 gpt-4o-mini-2024-07-18 gpt-4o-mini gpt-4o-2024-08-06 omni-moderation-latest omni-moderation-2024-09-26 o1-2024-12-17 o1 o3-mini o3-mini-2025-01-31 gpt-4o-2024-11-20 gpt-4o-mini-search-preview-2025-03-11 gpt-4o-mini-search-preview gpt-4o-transcribe gpt-4o-mini-transcribe o1-pro-2025-03-19 o1-pro gpt-4o-mini-tts o3-2025-04-16 o4-mini-2025-04-16 o3 o4-mini gpt-4.1-2025-04-14 gpt-4.1 gpt-4.1-mini-2025-04-14 gpt-4.1-mini gpt-4.1-nano-2025-04-14 gpt-4.1-nano gpt-image-1 o4-mini-deep-research gpt-4o-transcribe-diarize o4-mini-deep-research-2025-06-26 gpt-5-chat-latest gpt-5-2025-08-07 gpt-5 gpt-5-mini-2025-08-07 gpt-5-mini gpt-5-nano-2025-08-07 gpt-5-nano gpt-audio-2025-08-28 gpt-realtime gpt-realtime-2025-08-28 gpt-audio gpt-5-codex gpt-image-1-mini gpt-5-pro-2025-10-06 gpt-5-pro gpt-audio-mini gpt-audio-mini-2025-10-06 gpt-5-search-api gpt-realtime-mini sora-2 sora-2-pro gpt-5-search-api-2025-10-14 gpt-5.1-chat-latest gpt-5.1-2025-11-13 gpt-5.1 gpt-5.1-codex gpt-5.1-codex-mini gpt-5.1-codex-max gpt-image-1.5 gpt-5.2-2025-12-11 gpt-5.2 gpt-5.2-pro-2025-12-11 gpt-5.2-pro gpt-5.2-chat-latest gpt-4o-mini-transcribe-2025-12-15 gpt-4o-mini-transcribe-2025-03-20 gpt-4o-mini-tts-2025-03-20 gpt-4o-mini-tts-2025-12-15 gpt-realtime-mini-2025-12-15 gpt-audio-mini-2025-12-15 chatgpt-image-latest gpt-5.2-codex gpt-5.3-codex gpt-realtime-1.5 gpt-audio-1.5 gpt-4o-search-preview gpt-4o-search-preview-2025-03-11 gpt-5.3-chat-latest gpt-5.4-2026-03-05 gpt-5.4-pro gpt-5.4-pro-2026-03-05 gpt-5.4 gpt-5.4-nano-2026-03-17 gpt-5.4-nano gpt-5.4-mini-2026-03-17 gpt-5.4-mini gpt-image-2 gpt-image-2-2026-04-21 gpt-5.5 gpt-5.5-2026-04-23 gpt-5.5-pro gpt-5.5-pro-2026-04-23 chat-latest gpt-realtime-translate gpt-realtime-2 gpt-realtime-whisper gpt-5.6-sol gpt-5.6-terra gpt-5.6-luna gpt-realtime-2.1 gpt-realtime-2.1-mini gpt-transcribe gpt-live-transcribe gpt-6-astra gpt-image-2.5-flare gpt-image-2.5-sunburst gpt-image-2.5-flare-2026-09-08 gpt-image-2.5-sunburst-2026-09-08 gpt-live-1]
@@ -5697,20 +4923,13 @@ OpenAI models: [text-embedding-ada-002 whisper-1 gpt-3.5-turbo tts-1 gpt-3.5-tur
 Anthropic models: [claude-fable-5-1 claude-opus-5 claude-sonnet-5 claude-fable-5 claude-opus-4-8 claude-opus-4-7 claude-sonnet-4-6 claude-opus-4-6 claude-opus-4-5-20251101 claude-haiku-4-5-20251001 claude-sonnet-4-5-20250929]
 
 ✓ Chat Models API example complete
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB Chat Session Management Example ===
 
 === Inserting Sample Data ===
 ✓ Inserted sample product
 
 === Creating Chat Session ===
-✓ Created session: v1GI3TjyeOkvS8w70JCCznf05Lidxen9dmR7upuJjJ3GXVOCtDMhEIYqlT1yElBbx5QGzszCIr9meVX3px5GFA
+✓ Created session: 3tFpR9vsbmGSC8RTgMjMNIkWOC4zYGkmdqVdFc2Nek-vL4E75QFwD67UvRpRm7PJ5_msA2VQYoD4cWG35K9l0g
 
 === Sending Messages ===
 ✓ Message 1 sent
@@ -5720,8 +4939,10 @@ perl: warning: Falling back to the standard locale ("C").
 - **Description:** A high-performance database product
 - **Price:** $99
 
+If you would like more information or additional products, please let me know!
+
 ✓ Message 2 sent
-  Response: The price of the product ekoDB is $99.
+  Response: The price of ekoDB is $99.
 
 === Retrieving Session Messages ===
 ✓ Retrieved 4 messages
@@ -5730,41 +4951,34 @@ perl: warning: Falling back to the standard locale ("C").
 ✓ Session updated
 
 === Branching Session ===
-✓ Created branch: 8oHfwZxZ7sR1qhyCo9TUVqnbw1ivkFPnqJZxNGa1f6YzuRnXX26t1z3Im9S1_iD64YA3xiaXX04_L4-QW3qYyw
-  Parent: v1GI3TjyeOkvS8w70JCCznf05Lidxen9dmR7upuJjJ3GXVOCtDMhEIYqlT1yElBbx5QGzszCIr9meVX3px5GFA
+✓ Created branch: SJM7R59Wj7lWafGSAP1VeIciV1m1mtbIsxRGS889vJ0E0G5NSzvRhLca-NZSbpsae4-De4iQU3uPFuyPEU9jww
+  Parent: 3tFpR9vsbmGSC8RTgMjMNIkWOC4zYGkmdqVdFc2Nek-vL4E75QFwD67UvRpRm7PJ5_msA2VQYoD4cWG35K9l0g
 
 === Listing Sessions ===
 ✓ Found 2 sessions
-  Session 1: 8oHfwZxZ7sR1qhyCo9TUVqnbw1ivkFPnqJZxNGa1f6YzuRnXX26t1z3Im9S1_iD64YA3xiaXX04_L4-QW3qYyw (Untitled)
-  Session 2: v1GI3TjyeOkvS8w70JCCznf05Lidxen9dmR7upuJjJ3GXVOCtDMhEIYqlT1yElBbx5QGzszCIr9meVX3px5GFA (Untitled)
+  Session 1: SJM7R59Wj7lWafGSAP1VeIciV1m1mtbIsxRGS889vJ0E0G5NSzvRhLca-NZSbpsae4-De4iQU3uPFuyPEU9jww (Untitled)
+  Session 2: 3tFpR9vsbmGSC8RTgMjMNIkWOC4zYGkmdqVdFc2Nek-vL4E75QFwD67UvRpRm7PJ5_msA2VQYoD4cWG35K9l0g (Untitled)
 
 === Getting Session Details ===
 ✓ Session details retrieved
   Messages: 4
 
 === Deleting Branch Session ===
-✓ Deleted branch session: 8oHfwZxZ7sR1qhyCo9TUVqnbw1ivkFPnqJZxNGa1f6YzuRnXX26t1z3Im9S1_iD64YA3xiaXX04_L4-QW3qYyw
+✓ Deleted branch session: SJM7R59Wj7lWafGSAP1VeIciV1m1mtbIsxRGS889vJ0E0G5NSzvRhLca-NZSbpsae4-De4iQU3uPFuyPEU9jww
 
 === Cleanup ===
 ✓ Deleted session
 ✓ Deleted collection
 
 ✓ All session management operations completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
 === Create Collection (via insert) ===
-Collection created with first record: WmhrsLRQB0JDP_TIkWVD6HoXZS1nvGsGc2DjQ67CN9kyJ3x8RW8EPET6rRc2UZj1eIP9wJeMBawCdCsIo2heCQ
+Collection created with first record: zPBl8keLkQ8cPteAEH3YcgZqAHhZCn-zfbBI_XPGLLQYoAbQJQmyNilmWBCusqGY38cpOuWJcSbg1itKowQ_4Q
 
 === List Collections ===
 Total collections: 13
-Sample collections: [chat_agent_configs__ek0_testing agent_function_versions__ek0_testing schedules__ek0_testing functions__ek0_testing chat_configurations__ek0_testing]
+Sample collections: [chat_goals__ek0_testing schedules__ek0_testing agent_function_versions__ek0_testing chat_raw_completions__ek0_testing chat_turns__ek0_testing]
 
 === Count Documents ===
 Document count: 1
@@ -5776,13 +4990,6 @@ Collection deleted successfully
 Collection still exists: false
 
 ✓ All collection management operations completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
 === Check Collection Exists (Before Creation) ===
@@ -5804,13 +5011,6 @@ Collection 'nonexistent_collection_xyz' exists: false
 Deleted collection 'collection_utils_test_go'
 
 ✓ Collection Utilities example complete
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 ✓ conc_demo_pay_go saved
 ✓ conc_demo_rl_fail_go saved
@@ -5824,24 +5024,17 @@ Invoke them like:
   POST /api/functions/conc_demo_lock_go       { "resource": "queue:drain" }
 
 ✓ Cleaned up demo functions
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB Convenience Methods Example ===
 
 === Native Map Creation ===
-✓ Created record with native map: map[id:da9PiNm4qCV6BU450Jo2pltC6sPijFDvlxN-V-AG1W7XwMMdqbjB8jdQVsjR02yAPhnJcOflwGfeh4Jn5GKdkw]
+✓ Created record with native map: map[id:m2bIhJtMwJNBlmYrAqqw3QaFdCQgJXVGh2wASZI5g3bu2jg5AzMUD2uYJ6MSzb1D24mwK_0Aze_EuqKI2feI9Q]
 
 === Upsert Operation ===
-✓ First upsert (update): map[active:map[type:Boolean value:true] age:map[type:Integer value:29] email:map[type:String value:alice.j@newdomain.com] id:da9PiNm4qCV6BU450Jo2pltC6sPijFDvlxN-V-AG1W7XwMMdqbjB8jdQVsjR02yAPhnJcOflwGfeh4Jn5GKdkw name:map[type:String value:Alice Johnson]]
-✓ Second upsert (insert): map[id:i6Kad4urTBRiuvV6jH_6-1ZLgyRUyikfv_O-wRSOg3LX72_yW7y4dvazLUFe_3s_NhDuKJ6S7fCYAFbiFChJfA]
+✓ First upsert (update): map[active:map[type:Boolean value:true] age:map[type:Integer value:29] email:map[type:String value:alice.j@newdomain.com] id:m2bIhJtMwJNBlmYrAqqw3QaFdCQgJXVGh2wASZI5g3bu2jg5AzMUD2uYJ6MSzb1D24mwK_0Aze_EuqKI2feI9Q name:map[type:String value:Alice Johnson]]
+✓ Second upsert (insert): map[id:GjgX2HV-H82CxOIxsGjHLQbb_Edk12uLGqsIwESlTpSVXUSU1bSHiT8EhpS_x-XEA-58h7YnCtQAUdzc5AUyGQ]
 
 === Find One Operation ===
-✓ Found user by email: map[active:map[type:Boolean value:true] age:map[type:Integer value:29] email:map[type:String value:alice.j@newdomain.com] id:da9PiNm4qCV6BU450Jo2pltC6sPijFDvlxN-V-AG1W7XwMMdqbjB8jdQVsjR02yAPhnJcOflwGfeh4Jn5GKdkw name:map[type:String value:Alice Johnson]]
+✓ Found user by email: map[active:map[type:Boolean value:true] age:map[type:Integer value:29] email:map[type:String value:alice.j@newdomain.com] id:m2bIhJtMwJNBlmYrAqqw3QaFdCQgJXVGh2wASZI5g3bu2jg5AzMUD2uYJ6MSzb1D24mwK_0Aze_EuqKI2feI9Q name:map[type:String value:Alice Johnson]]
 ✓ User not found (as expected)
 
 === Exists Check ===
@@ -5858,13 +5051,6 @@ perl: warning: Falling back to the standard locale ("C").
 ✓ Deleted collection
 
 ✅ All convenience methods demonstrated successfully!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 ✓ crypto_demo_hmac_go saved
 ✓ crypto_demo_aes_go saved
@@ -5880,13 +5066,6 @@ Invoke them with:
   POST /api/functions/crypto_demo_encoding_go { "title": "Héllo World" }
 
 ✓ Cleaned up demo functions
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === Distinct Values Example ===
 
 Inserting sample products...
@@ -5910,20 +5089,13 @@ Found 2 distinct statuses for electronics:
   - map[type:String value:discontinued]
 
 Cleanup done.
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
 === Insert Document with TTL (1 hour) ===
-✓ Inserted document: bsGAJ83cwsNFbEK0raV8qTr59Yvrx4tPnCPM7jDEbwd-AG2pjJP8F7VZyHeNOztNOzpTQJStOiqkE3oiqDhZZQ
+✓ Inserted document: dgcqQ7_B2Sq_23txbS1lAoDIYpdJ1MUDuduUofd2JOJWPQASW6d8avpHpYWTGqDNWFgyOSY6LqkyKZT8NRVNxA
 
 === Insert Document with TTL (5 minutes) ===
-✓ Inserted document: dh3_9iUW8irkPt2XEz2AR9893Vf8t5GYXRIEqd7zKI06BILhLCQxWi2b9KLsUbj1lueqXUxWO-z0KEWUBN437w
+✓ Inserted document: l1KNcAmhJRa9eB0a3qnASxj9naoFv_u22u-xz_SSxsZpTfYofg8Pn1DrE4Yof_Ch9Iq0PuxexqxYD-z8vBMP8Q
 
 === Query Documents ===
 ✓ Found 2 documents with TTL
@@ -5940,27 +5112,20 @@ perl: warning: Falling back to the standard locale ("C").
 ✓ All document TTL operations completed successfully
 
 💡 Note: Documents with TTL will automatically expire after the specified duration
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB as Edge Cache - Simple Example ===
 
 Setting up edge cache collection...
 ✓ Cache entry created
 
 Creating edge cache lookup script...
-✓ Edge cache script created: VNlV3w48vk2MXVpaTNce--C9NLXnZ4eN64_Vpkh-pOj9RtgIRkKnV8ZzW_09CJbq7WHSHgA0h2_6rs2L-1bwAA
+✓ Edge cache script created: IaJnW7j-bYGcby3cNdxXgd9_7dMICcFHfcj_DZ4eHcJtg-_Y_D0uK-CUfor4uF_NUmpsho2kWCR_srYfTw2mgw
 
 Call 1: Cache lookup
-Response time: 2ms
+Response time: 1ms
 Found 1 cached entries
 
 Call 2: Cache lookup (connection warm)
-Response time: 4ms
+Response time: 1ms
 Found 1 cached entries
 
 === The Magic ===
@@ -5975,13 +5140,6 @@ Found 1 cached entries
 
 🧹 Cleaning up...
 ✓ Cleanup complete
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB Function Composition Examples ===
 
 📋 Setting up test data...
@@ -6011,7 +5169,7 @@ Using KV cache + CallFunction for fast cache-aside pattern...
 ✅ Saved SWR function using composition: swr_user
 
 First call (cache miss - will fetch from API):
-   ⏱️  Duration: 94.590709ms
+   ⏱️  Duration: 61.979333ms
    📊 Records: 1
    📦 Data: {
         "value": {
@@ -6024,7 +5182,7 @@ First call (cache miss - will fetch from API):
           ...
 
 Second call (cache hit - from cache):
-   ⏱️  Duration: 4.78075ms
+   ⏱️  Duration: 1.761333ms
    📊 Records: 1
    📦 Data: {
         "value": {
@@ -6035,7 +5193,7 @@ Second call (cache hit - from cache):
               "geo": {
                 "lat": "-37.3159",
           ...
-   🚀 Cache speedup: 23.5x faster!
+   🚀 Cache speedup: 61.0x faster!
 
 📝 Example 3: Multi-Level Function Composition
 
@@ -6057,21 +5215,7 @@ Building complex workflows from small, reusable pieces...
 
 
 ✅ All composition examples completed!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 client_function_contract: ok
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 🚀 ekoDB Functions Example (Go Client)
 
 ✅ Client initialized
@@ -6085,7 +5229,7 @@ perl: warning: Falling back to the standard locale ("C").
 
 📝 Example 1: Simple Query Function
 
-✅ Function saved: LvxDU4er-O37PM-tnPPtYkhWpGC70j09XUVeK5NuqjzxLBxEwKGWuBQt4Db-JkT8CHQ5fxvuE9BlClpLUxrkDw
+✅ Function saved: OD0CbLNHLJGk6UQwvzq84BUMHE5z0Gry72021ejr_wwAJuBKqUd-ynCuaXiIBa5ftLbnInFO0o28zfd6NUFDwA
 📊 Found 5 records
 ⏱️  Execution time: 0ms
 
@@ -6099,8 +5243,8 @@ perl: warning: Falling back to the standard locale ("C").
 
 ✅ Function saved
 📊 Statistics: 2 groups
-   map[avg_score:map[type:Float value:60] count:map[type:Integer value:5] status:map[type:String value:active]]
    map[avg_score:map[type:Float value:50] count:map[type:Integer value:5] status:map[type:String value:inactive]]
+   map[avg_score:map[type:Float value:60] count:map[type:Integer value:5] status:map[type:String value:active]]
 ⏱️  Execution time: 0ms
 
 📝 Example 4: Function Management
@@ -6136,13 +5280,6 @@ perl: warning: Falling back to the standard locale ("C").
    • Automatic token management
    • Type-safe Stage builders
    • Built-in error handling
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 🚀 ekoDB Go Advanced Functions Example
 
 📋 Setting up test data...
@@ -6165,13 +5302,6 @@ perl: warning: Falling back to the standard locale ("C").
 ✅ All advanced script examples finished!
 🧹 Cleaning up...
 ✅ Cleanup complete
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 🚀 ekoDB Go AI Functions Example
 
 📋 Setting up test data...
@@ -6196,13 +5326,6 @@ perl: warning: Falling back to the standard locale ("C").
    ✅ Embedding generation for text
 🧹 Cleaning up...
 ✅ Cleanup complete
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 🚀 ekoDB Go Complete Functions Example
 
 📋 Demonstrates: FindAll, Group, Count, Multi-stage Pipelines
@@ -6212,7 +5335,7 @@ perl: warning: Falling back to the standard locale ("C").
 
 📝 Example 1: FindAll + Group (Simple Aggregation)
 
-✅ Function saved: Tl9QminPFEn8gTBUxcPPNWxnJRENWuemGwd4hCdpxzX3-6kpNuvEq-yEasf30sb90_8ot_xuxrl-iFyX3iEe6A
+✅ Function saved: QChopu7exgTPnVQo2nx4ooVSetjByhp74wnP7gpmJv-Jk7YYCrgRsLphSHuksKjnoHUa-3-ZYaHmGlpsFrLgVg
 📊 Found 2 category stats
 
 📝 Example 2: Simple Product Listing
@@ -6240,13 +5363,6 @@ perl: warning: Falling back to the standard locale ("C").
    ✅ Function management (save, call, delete)
 🧹 Cleaning up...
 ✅ Cleanup complete
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 🚀 ekoDB Go CRUD Functions Example
 
 📋 Setting up test data...
@@ -6262,20 +5378,13 @@ perl: warning: Falling back to the standard locale ("C").
 
 ✅ Function saved
 📊 User counts by status:
-   map[count:map[type:Integer value:3] status:map[type:String value:inactive]]
    map[count:map[type:Integer value:7] status:map[type:String value:active]]
+   map[count:map[type:Integer value:3] status:map[type:String value:inactive]]
 ⏱️  Execution time: 0ms
 
 ✅ All CRUD script examples finished!
 🧹 Cleaning up...
 ✅ Cleanup complete
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 🚀 ekoDB Go KV Store & Wrapped Types Example
 
 📋 Demonstrates:
@@ -6286,12 +5395,12 @@ perl: warning: Falling back to the standard locale ("C").
 
 📝 Example 1: Inserting Records with Wrapped Types
 
-✅ Inserted order: IMn-iJ5WNMOtRnnKJO12_iNpTXbJN6k5EyrcSFlvgroJvOm1EXiDt1bhJNYTrzXnid5LOhZIIB5u302htDj-Ig
+✅ Inserted order: qqVaijG-mWMUdWzcOxFHDruuZfjGf1Mq8_ioOQ7Mxa_nRqldUxJCmwanPyqDPnhI7fTdz3InSLSCTsHGzRhGAg
 ✅ Inserted 2 products with wrapped types
 
 📝 Example 2: function with Wrapped Type Parameters
 
-✅ Function saved: Awew1BkW0kSPEz8gSA2pJW8HpAXhNUv6WwtQ21mM7GLIMgX06nDCOztL6qTyOyYDa-h5GgNFfdoy_TeSFC8Vgw
+✅ Function saved: Zo1X2gNmkYP031MVsPfhYehMk1rkSJsG1oIY_Xi5K5b7DyNNFWDVBweVNqy-2zjEfyML1GTPpTMBsJZfTaE2tA
 📊 Created order via script
 ⏱️  Execution time: 0ms
 
@@ -6304,13 +5413,13 @@ perl: warning: Falling back to the standard locale ("C").
 🗑️  Deleted session
 📝 Example 4: KV Operations in Functions
 
-✅ Function saved: Cr1sE_Lmw6_bwzFlNKKaiVxqzTJAub9Y68VkWvfeVwjXSsP7NqFvoDiRCTyF_7df1Z1WFR8pD22qk8u76ZIPWA
+✅ Function saved: Y02Nquoatd2xiARlSi_7cEKX-OfEwYjfsFnBFPH4v06MTGL-3Yy7YyMCAD_56V_LN2b-_Ea0qbvoqxAAGRJY2g
 📊 Cached and retrieved product data
 ⏱️  Execution time: 0ms
 
 📝 Example 5: Combined Wrapped Types + KV Function
 
-✅ Function saved: ECcbcqW3FBKzBVJ2GDUvhDn00XiotiQh29IikRqxasen4LrRJqP2IQfNVf-gwj_DSWuhQ2k9PNlcjKd6zaE22w
+✅ Function saved: 6C6X5SrarBueAHVyCy7qVku6nWpSyUASG7Dl5jUDd7lHImO5ScatPnmTHGlMFMuJE53Ev_5HL93VHPhE70vVpw
 📊 Processed order with caching
 ⏱️  Stages executed: 3
 ⏱️  Execution time: 0ms
@@ -6325,13 +5434,6 @@ perl: warning: Falling back to the standard locale ("C").
 🧹 Cleaning up...
 ✅ Cleanup complete
 
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 🚀 ekoDB Go Search Functions Example
 
 📋 Setting up test data...
@@ -6341,38 +5443,31 @@ perl: warning: Falling back to the standard locale ("C").
 
 ✅ Function saved
 📊 Found 5 documents
-   1. map[type:String value:Introduction to Machine Learning] (map[type:String value:AI])
-   2. map[type:String value:Getting Started with ekoDB] (map[type:String value:Database])
-   3. map[type:String value:Natural Language Processing] (map[type:String value:AI])
-   4. map[type:String value:Vector Databases Explained] (map[type:String value:Database])
-   5. map[type:String value:Database Design Principles] (map[type:String value:Database])
+   1. map[type:String value:Vector Databases Explained] (map[type:String value:Database])
+   2. map[type:String value:Database Design Principles] (map[type:String value:Database])
+   3. map[type:String value:Getting Started with ekoDB] (map[type:String value:Database])
+   4. map[type:String value:Introduction to Machine Learning] (map[type:String value:AI])
+   5. map[type:String value:Natural Language Processing] (map[type:String value:AI])
 ⏱️  Execution time: 0ms
 
 📝 Example 2: Count Documents by Category
 
 ✅ Function saved
 📊 Documents by category:
-   map[category:map[type:String value:Database] count:map[type:Integer value:3]]
    map[category:map[type:String value:AI] count:map[type:Integer value:2]]
+   map[category:map[type:String value:Database] count:map[type:Integer value:3]]
 ⏱️  Execution time: 0ms
 
 ✅ All search script examples finished!
 🧹 Cleaning up...
 ✅ Cleanup complete
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB Goal Template CRUD Example (Go) ===
 
 --- Creating goal template ---
-Created template: Data Migration (id: O-cvT9FX3IFdZW3GSCwdF8H61LnF4CbQFXocgRIpghNqH3CJuBIYYiT7G81XQ68rf8tXDPcoI9NjnbCNsP7oZA)
+Created template: Data Migration (id: ybctKCeAxR0E_IIEsYj2y4NyEMubI2TdvbLW23AQOOoLX9C7J2G6yL_EBuyrBfV_0a2b7eU_lENcx4RrcGn1fg)
 
 --- Listing templates ---
-Templates: map[count:1 items:[map[description:map[type:String value:Template for migrating data between schemas] id:O-cvT9FX3IFdZW3GSCwdF8H61LnF4CbQFXocgRIpghNqH3CJuBIYYiT7G81XQ68rf8tXDPcoI9NjnbCNsP7oZA steps:map[type:Array value:[map[description:Analyze source schema] map[description:Create target schema] map[description:Migrate records] map[description:Validate results]]] title:map[type:String value:Data Migration]]]]
+Templates: map[count:1 items:[map[description:map[type:String value:Template for migrating data between schemas] id:ybctKCeAxR0E_IIEsYj2y4NyEMubI2TdvbLW23AQOOoLX9C7J2G6yL_EBuyrBfV_0a2b7eU_lENcx4RrcGn1fg steps:map[type:Array value:[map[description:Analyze source schema] map[description:Create target schema] map[description:Migrate records] map[description:Validate results]]] title:map[type:String value:Data Migration]]]]
 
 --- Getting template ---
 Fetched: Data Migration
@@ -6384,20 +5479,13 @@ Updated description: Updated: comprehensive data migration workflow
 Template deleted successfully
 
 ✓ Goal template CRUD example completed
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB Goals, Tasks & Agents Integration Example (Go) ===
 
 --- Creating goal ---
-Created goal: Deploy v2.0 (id: 37fO5DgzYGGoGG434f6_ux4MjyedtMdwZ2Yi8wxDMtKKjGe5mhkg70hJ13q5NqLFNNlHUL-T9jbitwPHn55W2g)
+Created goal: Deploy v2.0 (id: 8ldyi5lwHmuXEG16_qFB0MtQRd5LyVGdkmg2jZoebJJF7sL6xYVU7PuP7t-75RvNtlprdEktlrymMyAqXVMCJQ)
 
 --- Listing goals ---
-Goals response: map[count:1 goals:[map[created_at:2026-09-16T13:48:05.712236+00:00 description:Ship the v2.0 release to production id:37fO5DgzYGGoGG434f6_ux4MjyedtMdwZ2Yi8wxDMtKKjGe5mhkg70hJ13q5NqLFNNlHUL-T9jbitwPHn55W2g status:pending steps:[{"description":"Run integration tests"},{"description":"Build release artifacts"},{"description":"Deploy to staging"}] title:Deploy v2.0 updated_at:2026-09-16T13:48:05.712236+00:00]]]
+Goals response: map[count:1 goals:[map[created_at:2026-09-16T20:45:38.023377+00:00 description:Ship the v2.0 release to production id:8ldyi5lwHmuXEG16_qFB0MtQRd5LyVGdkmg2jZoebJJF7sL6xYVU7PuP7t-75RvNtlprdEktlrymMyAqXVMCJQ status:pending steps:[{"description":"Run integration tests"},{"description":"Build release artifacts"},{"description":"Deploy to staging"}] title:Deploy v2.0 updated_at:2026-09-16T20:45:38.023377+00:00]]]
 
 --- Getting goal ---
 Fetched goal: Deploy v2.0
@@ -6406,7 +5494,7 @@ Fetched goal: Deploy v2.0
 Updated description: Ship the v2.0 release to production (with hotfix)
 
 --- Searching goals ---
-Search result: map[count:1 items:[map[_score:12.870000000000001 created_at:map[type:DateTime value:2026-09-16T13:48:05.712236+00:00] description:map[type:String value:Ship the v2.0 release to production (with hotfix)] id:37fO5DgzYGGoGG434f6_ux4MjyedtMdwZ2Yi8wxDMtKKjGe5mhkg70hJ13q5NqLFNNlHUL-T9jbitwPHn55W2g status:map[type:String value:pending] steps:map[type:String value:[{"description":"Run integration tests"},{"description":"Build release artifacts"},{"description":"Deploy to staging"}]] title:map[type:String value:Deploy v2.0] updated_at:map[type:DateTime value:2026-09-16T13:48:05.730398+00:00]]]]
+Search result: map[count:1 items:[map[_score:12.870000000000001 created_at:map[type:DateTime value:2026-09-16T20:45:38.023377+00:00] description:map[type:String value:Ship the v2.0 release to production (with hotfix)] id:8ldyi5lwHmuXEG16_qFB0MtQRd5LyVGdkmg2jZoebJJF7sL6xYVU7PuP7t-75RvNtlprdEktlrymMyAqXVMCJQ status:map[type:String value:pending] steps:map[type:String value:[{"description":"Run integration tests"},{"description":"Build release artifacts"},{"description":"Deploy to staging"}]] title:map[type:String value:Deploy v2.0] updated_at:map[type:DateTime value:2026-09-16T20:45:38.033133+00:00]]]]
 
 --- Goal step lifecycle ---
 Step 0 started
@@ -6422,10 +5510,10 @@ Goal status after approve: in_progress
 Goal status after reject: failed
 
 --- Creating task ---
-Created task: Run benchmarks (id: V8H3q9l2f4LpzQdSsAMEyXDI8KqMMPXYW6C5XXZVs8GTsKNfzl-GSwr0X_JGeCYGTUp53owlr52By0IuU8iVBw)
+Created task: Run benchmarks (id: kvrQd_LpXmwlTlRzECGB1sS4j4zbWlWjR1MhNTtXii58vFWm-3skRhQQmPIhashYAcn9g8LSd6OIPwPhRDwBJg)
 
 --- Listing tasks ---
-Tasks: map[count:1 items:[map[description:map[type:String value:Execute YCSB benchmarks against staging] due_at:map[type:DateTime value:2026-09-17T13:48:05+00:00] id:V8H3q9l2f4LpzQdSsAMEyXDI8KqMMPXYW6C5XXZVs8GTsKNfzl-GSwr0X_JGeCYGTUp53owlr52By0IuU8iVBw name:map[type:String value:Run benchmarks]]]]
+Tasks: map[count:1 items:[map[description:map[type:String value:Execute YCSB benchmarks against staging] due_at:map[type:DateTime value:2026-09-17T20:45:38+00:00] id:kvrQd_LpXmwlTlRzECGB1sS4j4zbWlWjR1MhNTtXii58vFWm-3skRhQQmPIhashYAcn9g8LSd6OIPwPhRDwBJg name:map[type:String value:Run benchmarks]]]]
 
 --- Getting task ---
 Fetched task: Run benchmarks
@@ -6446,10 +5534,10 @@ Due tasks: map[count:0 items:[]]
 Tasks deleted
 
 --- Creating agent ---
-Created agent: benchmark-runner (id: Tzn_HTMPQ8o3A3P7ITfgC3qefh3qD46AgbxGSIAatWdsm9BH3Z0Chcrga5KrTwqOKm5PEBAQFW2zFyYpNXyKbA)
+Created agent: benchmark-runner (id: -EnNzgFd9uty_NjPO6x08FyeirHNcIg7i_JJmmzdIxDA3HKO4kaFYqqgMIa_pLYH31gqGUNbtLDgFgCfjtuvLA)
 
 --- Listing agents ---
-Agents: map[count:1 items:[map[deployment_id:map[type:String value:deploy_prod_1] description:map[type:String value:Runs periodic benchmarks] id:Tzn_HTMPQ8o3A3P7ITfgC3qefh3qD46AgbxGSIAatWdsm9BH3Z0Chcrga5KrTwqOKm5PEBAQFW2zFyYpNXyKbA llm_model:map[type:String value:gpt-4.1] name:map[type:String value:benchmark-runner]]]]
+Agents: map[count:1 items:[map[deployment_id:map[type:String value:deploy_prod_1] description:map[type:String value:Runs periodic benchmarks] id:-EnNzgFd9uty_NjPO6x08FyeirHNcIg7i_JJmmzdIxDA3HKO4kaFYqqgMIa_pLYH31gqGUNbtLDgFgCfjtuvLA llm_model:map[type:String value:gpt-4.1] name:map[type:String value:benchmark-runner]]]]
 
 --- Getting agent by ID ---
 Fetched agent: benchmark-runner
@@ -6470,13 +5558,6 @@ Agent deleted
 Goal deleted
 
 === All goals, tasks & agents operations completed successfully ===
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === Join Operations Examples ===
 
 Setting up sample data...
@@ -6510,13 +5591,6 @@ Found 2 users with example.com emails
 ✅ Deleted test collections
 
 ✅ Join operations examples completed!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 ✓ go_users_register saved
 ✓ go_users_login saved
@@ -6529,18 +5603,11 @@ Call them like:
   POST /api/functions/go_users_verify_token { "token": "<jwt>" }
 
 ✓ Cleaned up demo functions
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB KV Links Integration Example (Go) ===
 
 --- Inserting documents ---
-Inserted doc1: UzoRgHjEkSjYEH-AI3v7jCBTsJj4jKpP5HJxEAnWmYPHk19uO5K9dTlp9LCKyPnJbLLPA6CU7fR4s4mXwr6nGg
-Inserted doc2: HW0V0XdbI_Do72FPsLifFpLDl_aq1wUdLvHF0ed8-_pzq9uiU7V-auzA7GEH7RzTXm3Tk3ULfRAhUnUjItLkcQ
+Inserted doc1: 9ZKrrXqCvdcsSBpbA4ASjLiml1pIqzL0PXq4fd5yjYpx5ugu_VaWz34FlhAZ_HAPRvEebtFFuWSbhgTuIJXGmw
+Inserted doc2: xRp7wLTUfYwCiPkSDj6dFI6oACrDAmeN-gkuhk3lTZ3DCbFx0H9LNiDp4rOaliIEipPe3Qg5yVOOCnvxRuyfGQ
 
 --- Setting KV entry ---
 KV entry set: team:engineering:go
@@ -6550,25 +5617,18 @@ Linked doc1: map[]
 Linked doc2: map[]
 
 --- Getting links ---
-Links for team:engineering:go: [map[collection:kv_links_example_go created_at:2026-09-16T13:48:07.859124Z document_id:HW0V0XdbI_Do72FPsLifFpLDl_aq1wUdLvHF0ed8-_pzq9uiU7V-auzA7GEH7RzTXm3Tk3ULfRAhUnUjItLkcQ field_path:<nil> last_accessed:2026-09-16T13:48:07.860351Z metadata:map[]] map[collection:kv_links_example_go created_at:2026-09-16T13:48:07.857642Z document_id:UzoRgHjEkSjYEH-AI3v7jCBTsJj4jKpP5HJxEAnWmYPHk19uO5K9dTlp9LCKyPnJbLLPA6CU7fR4s4mXwr6nGg field_path:<nil> last_accessed:2026-09-16T13:48:07.860351Z metadata:map[]]]
+Links for team:engineering:go: [map[collection:kv_links_example_go created_at:2026-09-16T20:45:38.768123Z document_id:xRp7wLTUfYwCiPkSDj6dFI6oACrDAmeN-gkuhk3lTZ3DCbFx0H9LNiDp4rOaliIEipPe3Qg5yVOOCnvxRuyfGQ field_path:<nil> last_accessed:2026-09-16T20:45:38.768516Z metadata:map[]] map[collection:kv_links_example_go created_at:2026-09-16T20:45:38.767663Z document_id:9ZKrrXqCvdcsSBpbA4ASjLiml1pIqzL0PXq4fd5yjYpx5ugu_VaWz34FlhAZ_HAPRvEebtFFuWSbhgTuIJXGmw field_path:<nil> last_accessed:2026-09-16T20:45:38.768516Z metadata:map[]]]
 
 --- Unlinking doc2 ---
 Unlink result: map[]
 
 --- Verifying links after unlink ---
-Links after unlink: [map[collection:kv_links_example_go created_at:2026-09-16T13:48:07.857642Z document_id:UzoRgHjEkSjYEH-AI3v7jCBTsJj4jKpP5HJxEAnWmYPHk19uO5K9dTlp9LCKyPnJbLLPA6CU7fR4s4mXwr6nGg field_path:<nil> last_accessed:2026-09-16T13:48:07.863334Z metadata:map[]]]
+Links after unlink: [map[collection:kv_links_example_go created_at:2026-09-16T20:45:38.767663Z document_id:9ZKrrXqCvdcsSBpbA4ASjLiml1pIqzL0PXq4fd5yjYpx5ugu_VaWz34FlhAZ_HAPRvEebtFFuWSbhgTuIJXGmw field_path:<nil> last_accessed:2026-09-16T20:45:38.769444Z metadata:map[]]]
 
 --- Cleanup ---
 Cleaned up all resources
 
 === All KV link operations completed successfully ===
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
 === KV Set ===
@@ -6609,13 +5669,6 @@ Total keys in store: 4
   cache:product:3:go: deleted
 
 ✓ All KV operations completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === KV Precision: Float vs Decimal ===
 
 === Test 1: Using Go Floats (LOSES PRECISION) ===
@@ -6650,13 +5703,6 @@ Retrieved decimal prices:
 
 === Cleanup ===
 ✓ Cleaned up test keys
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 ✓ go_route_admin saved
 ✓ go_route_user_by_id saved
@@ -6671,13 +5717,6 @@ Try them with curl:
        -H 'Content-Type: application/json' -d '{"name":"alice"}'
 
 ✓ Cleaned up demo functions
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === Query Builder Examples ===
 
 Setting up test data...
@@ -6711,13 +5750,6 @@ Found 2 users (bypassed cache)
 ✅ Deleted test collection
 
 ✅ Query Builder examples completed!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB Raw Completion Stream (SSE) Example ===
 
 --- Basic SSE Raw Completion ---
@@ -6726,16 +5758,16 @@ Response: The three primary colors are red, blue, and yellow.
 --- Structured Output via SSE ---
 JSON response: [
   {
-    "name": "Earth",
-    "diameter_km": 12742
+    "name": "Mercury",
+    "diameter_km": 4879
+  },
+  {
+    "name": "Venus",
+    "diameter_km": 12104
   },
   {
     "name": "Mars",
     "diameter_km": 6779
-  },
-  {
-    "name": "Jupiter",
-    "diameter_km": 139820
   }
 ]
 
@@ -6743,20 +5775,13 @@ JSON response: [
 Blocking response: Hello! I hope you're having a wonderful day.
 
 === Done ===
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB Schedules Integration Example (Go) ===
 
 --- Creating schedule ---
-Created schedule: nightly-backup (id: e9fb0210-7e2d-4f82-85bc-b65ea61d94ac)
+Created schedule: nightly-backup (id: fdb627c7-88b6-48b9-a9c3-2a22ffa69414)
 
 --- Listing schedules ---
-Schedules: map[count:1 schedules:[map[created_at:2026-09-16T13:48:14.297211Z cron_expression:0 0 0 * * * description:Runs a database backup every night at midnight enabled:true function_label:schedule_noop_go_17740 id:e9fb0210-7e2d-4f82-85bc-b65ea61d94ac last_execution:<nil> name:nightly-backup next_execution:2026-09-17T00:00:00Z parameters:map[] stats:map[avg_execution_time_ms:0 failed_executions:0 last_error:<nil> successful_executions:0 total_executions:0] timezone:UTC updated_at:2026-09-16T13:48:14.297211Z]]]
+Schedules: map[count:1 schedules:[map[created_at:2026-09-16T20:45:41.598809Z cron_expression:0 0 0 * * * description:Runs a database backup every night at midnight enabled:true function_label:schedule_noop_go_66430 id:fdb627c7-88b6-48b9-a9c3-2a22ffa69414 last_execution:<nil> name:nightly-backup next_execution:2026-09-17T00:00:00Z parameters:map[] stats:map[avg_execution_time_ms:0 failed_executions:0 last_error:<nil> successful_executions:0 total_executions:0] timezone:UTC updated_at:2026-09-16T20:45:41.598809Z]]]
 
 --- Getting schedule ---
 Fetched schedule: nightly-backup (cron: 0 0 0 * * *)
@@ -6765,7 +5790,7 @@ Fetched schedule: nightly-backup (cron: 0 0 0 * * *)
 Updated cron: 0 0 2 * * *
 
 --- Triggering schedule ---
-Trigger response: map[schedule_id:e9fb0210-7e2d-4f82-85bc-b65ea61d94ac status:triggered]
+Trigger response: map[schedule_id:fdb627c7-88b6-48b9-a9c3-2a22ffa69414 status:triggered]
 
 --- Pausing schedule ---
 Schedule enabled: false
@@ -6777,13 +5802,6 @@ Schedule enabled: true
 Schedule deleted
 
 === All schedule operations completed successfully ===
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === Schema Management Examples ===
 
 1. Creating user schema with basic fields:
@@ -6806,13 +5824,6 @@ Collection has 4 fields
 ✅ Employee schema with all constraints created
 
 ✅ Schema management examples completed!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === Search Examples ===
 
 Setting up test data...
@@ -6848,15 +5859,15 @@ Found 1 results (matches: work, working, worked)
 
 6. Vector search (semantic search):
 Found 3 semantically similar documents
-  1. Score: 0.763
-  2. Score: 0.754
-  3. Score: 0.725
+  1. Score: 0.789
+  2. Score: 0.769
+  3. Score: 0.748
 
 7. Hybrid search (text + vector):
 Found 3 results using hybrid search (text + vector)
-  1. Score: 1.490
-  2. Score: 0.901
-  3. Score: 0.305
+  1. Score: 1.508
+  2. Score: 0.916
+  3. Score: 0.299
 
 8. Case-sensitive search:
 Found 1 results (case-sensitive)
@@ -6871,20 +5882,13 @@ Found 2 documents in category "ml" (NLP excluded)
 ✅ Search examples completed!
 === Cleanup ===
 ✅ Deleted test collections
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created (token exchange happens automatically)
 
 === Insert Document ===
-Inserted: map[id:3Cnc85FwZxs4bHBvdTJfrphlFFZRS8WrgVqyepp9ojwZktlSruuQ_8QhtYp2l3vUrq8GaedZUVUmrx2-Hk2rPA]
+Inserted: map[id:B3kw8RAfc6DYPpEMJ11gBuJnSOYJjF7DMtgPXQnAGCw48G3gEJl2ncz9NMTHWT-4sIsc5NO5RfeApqKHhVsKMA]
 
 === Find by ID ===
-Found: map[active:map[type:Boolean value:true] categories:map[type:Array value:[electronics computers]] created_at:map[type:DateTime value:2026-09-16T13:48:16+00:00] data:map[type:String value:aGVsbG8gd29ybGQ=] embedding:map[type:Array value:[0.1 0.2 0.3 0.4 0.5]] id:3Cnc85FwZxs4bHBvdTJfrphlFFZRS8WrgVqyepp9ojwZktlSruuQ_8QhtYp2l3vUrq8GaedZUVUmrx2-Hk2rPA metadata:map[type:Object value:map[key:value nested:map[deep:true]]] name:map[type:String value:Test Record] price:map[type:Float value:99.99] tags:map[type:Array value:[tag1 tag2 tag3]] user_id:map[type:String value:550e8400-e29b-41d4-a716-446655440000] value:map[type:Integer value:42]]
+Found: map[active:map[type:Boolean value:true] categories:map[type:Array value:[electronics computers]] created_at:map[type:DateTime value:2026-09-16T20:45:42+00:00] data:map[type:String value:aGVsbG8gd29ybGQ=] embedding:map[type:Array value:[0.1 0.2 0.3 0.4 0.5]] id:B3kw8RAfc6DYPpEMJ11gBuJnSOYJjF7DMtgPXQnAGCw48G3gEJl2ncz9NMTHWT-4sIsc5NO5RfeApqKHhVsKMA metadata:map[type:Object value:map[key:value nested:map[deep:true]]] name:map[type:String value:Test Record] price:map[type:Float value:99.99] tags:map[type:Array value:[tag1 tag2 tag3]] user_id:map[type:String value:550e8400-e29b-41d4-a716-446655440000] value:map[type:Integer value:42]]
 
 === Extract Field Values (All Types) ===
 Extracted values:
@@ -6892,20 +5896,20 @@ Extracted values:
   value (Integer): 42
   active (Boolean): true
   price (Decimal): 99.990000
-  created_at (DateTime): 2026-09-16 13:48:16 +0000 +0000
+  created_at (DateTime): 2026-09-16 20:45:42 +0000 +0000
   user_id (UUID): 550e8400-e29b-41d4-a716-446655440000
   tags (Array): [tag1 tag2 tag3]
   metadata (Object): map[key:value nested:map[deep:true]]
   embedding (Vector): [0.1 0.2 0.3 0.4 0.5]
   categories (Set): [electronics computers]
   data (Bytes): 11 bytes
-Plain record: map[active:true categories:[electronics computers] created_at:2026-09-16T13:48:16+00:00 data:aGVsbG8gd29ybGQ= embedding:[0.1 0.2 0.3 0.4 0.5] id:3Cnc85FwZxs4bHBvdTJfrphlFFZRS8WrgVqyepp9ojwZktlSruuQ_8QhtYp2l3vUrq8GaedZUVUmrx2-Hk2rPA metadata:map[key:value nested:map[deep:true]] name:Test Record price:99.99 tags:[tag1 tag2 tag3] user_id:550e8400-e29b-41d4-a716-446655440000 value:42]
+Plain record: map[active:true categories:[electronics computers] created_at:2026-09-16T20:45:42+00:00 data:aGVsbG8gd29ybGQ= embedding:[0.1 0.2 0.3 0.4 0.5] id:B3kw8RAfc6DYPpEMJ11gBuJnSOYJjF7DMtgPXQnAGCw48G3gEJl2ncz9NMTHWT-4sIsc5NO5RfeApqKHhVsKMA metadata:map[key:value nested:map[deep:true]] name:Test Record price:99.99 tags:[tag1 tag2 tag3] user_id:550e8400-e29b-41d4-a716-446655440000 value:42]
 
 === Find with Query ===
 Found documents: 1
 
 === Update Document ===
-Updated: map[active:map[type:Boolean value:true] categories:map[type:Array value:[electronics computers]] created_at:map[type:DateTime value:2026-09-16T13:48:16+00:00] data:map[type:String value:aGVsbG8gd29ybGQ=] embedding:map[type:Array value:[0.1 0.2 0.3 0.4 0.5]] id:3Cnc85FwZxs4bHBvdTJfrphlFFZRS8WrgVqyepp9ojwZktlSruuQ_8QhtYp2l3vUrq8GaedZUVUmrx2-Hk2rPA metadata:map[type:Object value:map[key:value nested:map[deep:true]]] name:map[type:String value:Updated Record] price:map[type:Float value:99.99] tags:map[type:Array value:[tag1 tag2 tag3]] user_id:map[type:String value:550e8400-e29b-41d4-a716-446655440000] value:map[type:Integer value:100]]
+Updated: map[active:map[type:Boolean value:true] categories:map[type:Array value:[electronics computers]] created_at:map[type:DateTime value:2026-09-16T20:45:42+00:00] data:map[type:String value:aGVsbG8gd29ybGQ=] embedding:map[type:Array value:[0.1 0.2 0.3 0.4 0.5]] id:B3kw8RAfc6DYPpEMJ11gBuJnSOYJjF7DMtgPXQnAGCw48G3gEJl2ncz9NMTHWT-4sIsc5NO5RfeApqKHhVsKMA metadata:map[type:Object value:map[key:value nested:map[deep:true]]] name:map[type:String value:Updated Record] price:map[type:Float value:99.99] tags:map[type:Array value:[tag1 tag2 tag3]] user_id:map[type:String value:550e8400-e29b-41d4-a716-446655440000] value:map[type:Integer value:100]]
 
 === Delete Document ===
 Deleted document
@@ -6914,17 +5918,10 @@ Deleted document
 ✓ Deleted collection
 
 ✓ All CRUD operations completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
 === Inserting Test Data ===
-✓ Inserted test record: 8sFz8JMhr2jjeXGkVLiFRH7uCgPwO-NxyH3dUJ08H1H1yDuRfpLLev4d2GrcVGyZ8oXvOIfY5T0KNyn9lwSojg
+✓ Inserted test record: lRWDQjGjHVjyafGdBZnwQG5NbPjWhlJRgmHlt6uTFyNXyDWsRuWII5eg2mWMGF9H3RXaSXVPKLNdZIYRCvAStA
 
 === Connecting to WebSocket ===
 ✓ WebSocket connected
@@ -6937,13 +5934,6 @@ perl: warning: Falling back to the standard locale ("C").
 ✓ Deleted collection
 
 ✓ WebSocket example completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 🚀 ekoDB Go Client - Native SWR Function Examples
 
 📋 Demonstrates:
@@ -6958,22 +5948,22 @@ perl: warning: Falling back to the standard locale ("C").
 Example 1: Basic Native SWR
 ────────────────────────────────────────────────────────────────────────────────
 Single function replaces KvGet → If → HttpRequest → KvSet pipeline
-✓ Created native SWR script: github_user_native_go (ZGSeOq7CasfCxG--WXoIiciwkFE6Nl_h2Z5HMCrg3THqQB-OnzXvhsZya3D-cSvOxbdLQzk4cH4yGqa2ygXkrA)
+✓ Created native SWR script: github_user_native_go (QCw5onqD0qHRPZ3-47u6gx9aN0WS4n5foJ51gB6kS3nn-9Yu-5KngvGzxtPfu-o6SD5Kq_M3Mpa3f9YmC_nT-Q)
 
 First call (cache miss - will fetch from GitHub API):
-  Response time: 152ms
+  Response time: 790ms
   Records returned: 1
 
 Second call (cache hit - instant from KV store):
-  Response time: 6ms
-  Speedup: 25.3x faster 🚀
+  Response time: 1ms
+  Speedup: 790.0x faster 🚀
   Records returned: 1
 
 
 Example 2: SWR with Built-in Audit Trail
 ────────────────────────────────────────────────────────────────────────────────
 Optional collection parameter for automatic request logging
-✓ Created SWR script with audit trail: product_swr_audit_go (ZDujMSaPljFsHYD85eMCypuZQClT78VC8Kk1dG5xb9Siyp4vBUCm_SAuZ-CS37oiR7DGWnGefHJ-WwOlqU7NcA)
+✓ Created SWR script with audit trail: product_swr_audit_go (PxPB_hNEcZJLWI9y5z-phmCaDwFm2mx6ahOutA1hIhUgEYFyLN4q46rj8v5wdCbmr18F19okgSG8AoJuUnuwug)
 
 Fetching product (will create audit trail entry):
   ✓ Product fetched and cached
@@ -6984,7 +5974,7 @@ Fetching product (will create audit trail entry):
 Example 3: SWR in Multi-Function Pipeline
 ────────────────────────────────────────────────────────────────────────────────
 Fetch external data → Process → Store in collection
-✓ Created enrichment pipeline: user_enrichment_pipeline_go (e33qmG9teCuzqQu96ooISHxc9BCDvucFbqA__IfddCT9ij5eevy1UyQ_kM_qWd6cLZjFwQXxj1DicC49sNYX-A)
+✓ Created enrichment pipeline: user_enrichment_pipeline_go (m-dZ80lt5B4ywwRvpJSsOBpFzV33tZy4AM2UUANyc2Uk8Wjy24i5Zes5x6QxabztlKcl9IzBwQOB0HkeHUQcvQ)
 
 Running pipeline:
   ✓ Data fetched from API (cached 30m)
@@ -6995,7 +5985,7 @@ Running pipeline:
 Example 4: Dynamic TTL Configuration
 ────────────────────────────────────────────────────────────────────────────────
 TTL as parameter - supports duration strings, integers, ISO timestamps
-✓ Created dynamic TTL script: flexible_cache_go (6mNRgEGoBDullLfbQNfnAt8FMsqh7Fyxrv99Lb60528nMAosj-OK7tL6p1DDBjVDJ_CcE5x0h3XKpFbLj2UJug)
+✓ Created dynamic TTL script: flexible_cache_go (7zAS45F_HFBBUPrhT5Qa1wsfhYeb_5wYKn3EWnsRmHY97nTzN24z_TTpGUvBgq-t2sA_NNFD2ILTosZ22x9Gaw)
   ✓ Cached with TTL: 5m (5 minutes)
   ✓ Cached with TTL: 1h (1 hour)
   ✓ Cached with TTL: 30s (30 seconds)
@@ -7018,17 +6008,10 @@ Result:         60% fewer functions, cleaner code, same behavior 🎯
 ✓ Deleted 4 test scripts
 
 ✅ All examples completed!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB SWR (Stale-While-Revalidate) Pattern ===
 
 Step 1: Create SWR function that acts as edge cache
-✓ Created SWR script: fetch_api_user_go (4V02qL5UJCRSPg8Qy2UwmUTWPusKjEGPlZIKlvIgKeD9yORLkHMGWc9yBHmePIo6cjY72xkFjVEJROK_gk4uqw)
+✓ Created SWR script: fetch_api_user_go (MrkBukEVuq9TdfmEhCWm2DppqnUApDttjWMCKPZcp1atSmMjeSPdX_d2XrtVj8kwRUI7GR05WiwwYeiwHCD7TQ)
 
 Step 2: First call - Cache miss, fetches from API
 Result: {
@@ -7036,7 +6019,7 @@ Result: {
     {
       "cached_at": {
         "type": "DateTime",
-        "value": "2026-09-16T13:48:18+00:00"
+        "value": "2026-09-16T20:45:43+00:00"
       },
       "data": {
         "type": "Object",
@@ -7078,7 +6061,7 @@ Result: {
 ✓ Data fetched from external API and cached
 
 Step 3: Second call - Cache hit, instant response from ekoDB
-Response time: 11ms (served from cache)
+Response time: 2ms (served from cache)
 ✓ Lightning fast cache hit
 
 === SWR Pattern Summary ===
@@ -7088,21 +6071,14 @@ Response time: 11ms (served from cache)
 🧹 Cleaning up...
 ✓ Cleanup complete
 
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
 === Setup: Creating Test Accounts ===
-Created Alice: $1000 - ID: 6mggmyV-oZ-BVccvy6WU3S30W2JHrc4he5ZV-Evjnc2yY4k-Bm4q1WwucmGbO9BNZHX5odCTU3RqOmWZ2wByBw
-Created Bob: $500 - ID: nlucW5_NZ5J09HtTVjveeiSkKnassnl9Jlz52M078b1ceGCbV6Dd5eBvIwqwlP95e_8G7rI7p2W1CVD781qfOw
+Created Alice: $1000 - ID: jzBkUTV7RY6sUFB1niaWmIblqSzNgD2TAqaup9UBpy-9CZUP12fmFgCCe8oGRyQ1hUkfuyVN2R7N5HSns_aa_Q
+Created Bob: $500 - ID: 6aucy0xYuZ9a-O2batMELLpvvka9XdUasi0C8KxY3bMyPj-OmLDemUEvipcXqpsGvU0OR0wZkN6cL8FmAW0UcQ
 
 === Example 1: Begin Transaction ===
-Transaction ID (server-default isolation): e1b12090-6804-4e5b-8374-f41d68e6c6f6
+Transaction ID (server-default isolation): a80bfddb-4e63-4a24-8a11-467cf7acef94
 
 === Example 2: Operations within Transaction ===
 Updated Alice: $1000 → $800
@@ -7118,7 +6094,7 @@ Operations: 2
 ✓ Verified committed balances: Alice=$800, Bob=$700
 
 === Example 5: Rollback Demo ===
-New transaction: 37eb9f64-99d2-4ae1-af22-969f35fd10b3
+New transaction: 47ffcf8e-ec32-433e-b777-8ded1b03575d
 Updated Bob: $700 → $600 (in transaction)
 Status before rollback: Active
 ✓ Transaction rolled back
@@ -7129,17 +6105,10 @@ Status before rollback: Active
 ✓ Deleted test account collection
 
 ✓ All client transaction examples completed
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
 === Create User Function ===
-Created user function with ID: c_34Wf2QFxDhdj7Z4iQ722YTn9Rvj1unU_HT-aP1eNsT2P44uU3OCW0IDJsOkGlZn5TAJvYtdzIZ_G6d0-FH3A
+Created user function with ID: RMxEl60XpA61SX9n3oCFusvO3DEVWR9_DjjZxPC_CobejexeE8zUWjVDmLjJNZMNZ0nxFjvXcv2oDepnq2qeKg
 
 === Get User Function ===
 Retrieved: get_active_users_go - Get Active Users
@@ -7160,73 +6129,52 @@ User function updated successfully
 User function deleted successfully
 
 ✓ User Functions API example complete
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === WebSocket Chat Streaming Example (Go) ===
 
-Created chat session: lvcuTU5UBxu38FIoCpOmdVRDzP403ZdoDPeZ9laHWCBLPVLm5Wl_saEIcVAjlmojXLo_DvIPZ2_CWdNFwePgPg
+Created chat session: 1iXHm_HUOCG4Z2XwP01paqVSFk1JDICwZLuIolnK6kXkaWBeCO5kbW8Tf4uTvrSu_SNP_QRu3eNp2-owtGKeoA
 
 Sending message: 'What is the capital of France?'
 {"__progress":"received"}{"__progress":"generating","model":"gpt-4o-mini","provider":"openai"}The capital of France is Paris.
 
 --- Stream ended ---
-Message ID: wX_-3uEe4PfROazYY4PrYTUDo0vjtiCeJI2jtw7Ik99tI9BskmWMXDYws5MlDV0j3i2FHCI604WHjx-g19t1IQ
-Execution time: 903ms
+Message ID: 6sVesvFtfAnfuyGc5FMLyrJ9fi-hXiaYo6SkYhAVNcQCmeHlQsxj5SzZQn558BS8ByT6OQTjPaN10yVqKSLcJg
+Execution time: 555ms
 Token usage: {"completion_tokens":8,"prompt_tokens":15,"total_tokens":23}
 
 Full response: {"__progress":"received"}{"__progress":"generating","model":"gpt-4o-mini","provider":"openai"}The capital of France is Paris....
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === WebSocket Subscription Example (Go) ===
 
 ✓ Authentication successful
 ✓ WebSocket connected
 
 === Subscribing to 'ws_subscribe_example_go' ===
-✓ Subscribed (subscription_id: sub_b2472f68d7c0421cb874561766c088e2)
+✓ Subscribed (subscription_id: sub_312808714b434054857110c5eff3970e)
 
 === Performing mutations to trigger notifications ===
 Inserting record 1...
-✓ Inserted: 4XZq4jfDFJzhnR7y1bWXihSUqWARu_dYI6CHrvhK8yTSSPd8USCgJKTbmTiYVEou_d7juEGIthO7g-Iv_A8qbA
+✓ Inserted: NgpgpBYFDs56LTTDdTI6XUJMu3qd5FycFKdF69aUK79_qRquD6fotekZH0KyY67mXGj3JiKsRilq-XVCnVrnyg
 
   📡 Notification received:
      Event:      insert
      Collection: ws_subscribe_example_go
-     Record IDs: [4XZq4jfDFJzhnR7y1bWXihSUqWARu_dYI6CHrvhK8yTSSPd8USCgJKTbmTiYVEou_d7juEGIthO7g-Iv_A8qbA]
-     Timestamp:  2026-09-16T13:48:21.959103+00:00
+     Record IDs: [NgpgpBYFDs56LTTDdTI6XUJMu3qd5FycFKdF69aUK79_qRquD6fotekZH0KyY67mXGj3JiKsRilq-XVCnVrnyg]
+     Timestamp:  2026-09-16T20:45:45.130773+00:00
 
 Inserting record 2...
-✓ Inserted: _SmKrZVPjDoULNEBvafzR0avAVJXfco0sVp2O7HPoXa73XTJqN6q6G_HLWsbicTV0iffvY6JZ-ZNG5bnlUPJvQ
+✓ Inserted: q-mIpZHzM0plBZlHLbd-ykApuijfeHlscUdPsv9aAC6FxjlgZYlYmHLvtV9CIKZVj5Sc6wTzlmhvtKJdD0Cguw
 
   📡 Notification received:
      Event:      insert
-     Record IDs: [_SmKrZVPjDoULNEBvafzR0avAVJXfco0sVp2O7HPoXa73XTJqN6q6G_HLWsbicTV0iffvY6JZ-ZNG5bnlUPJvQ]
+     Record IDs: [q-mIpZHzM0plBZlHLbd-ykApuijfeHlscUdPsv9aAC6FxjlgZYlYmHLvtV9CIKZVj5Sc6wTzlmhvtKJdD0Cguw]
 
 === Unsubscribing ===
 ✓ Unsubscribed
 
 ✓ WebSocket subscription example completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
 === Insert Test Data with TTL ===
-✓ Inserted document with TTL: Rif2Nxfnh5ffyKF294tYL6IIbYqR8MV7NFQjK45XU_vb65QlBGlJYgaHzYQCNQS-hDBpcEVmDJV8y0gxZmJ8Eg
+✓ Inserted document with TTL: Ej9FZZpmae2hQqDOd87CqTm-iR_vHWQvtwGB_eki_mASq1SLcDkyTvjkgaVhvXnUQYUR8l4nAc6C6fpBkT3JCQ
 
 === Query via WebSocket ===
 ✓ WebSocket connected
@@ -7239,27 +6187,13 @@ perl: warning: Falling back to the standard locale ("C").
 ✓ WebSocket TTL example completed successfully
 
 💡 Note: Documents with TTL will automatically expire after the specified duration
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-Inserted with ripple: map[id:hWncVRBtB2er72vYulF0q1E1gQdxzvLZ89_iGE_lV_Nq45Q_-SBne78KuoeWwP-yvcCkjOEBAiegpyI85FFC3A]
-Inserted with bypass_ripple: map[id:M9u4w1dfFKlouqlC2WnR9Nh1FEFTsZ6H-WKV0gxX2YqlcvJbdzzynRaJ-cR6gwGwJtfxI3j5kWFSKplJXy-lXg]
-Inserted with TTL and bypass_ripple: map[id:CEz6TDnfxA1z6S6rjFPwquA3nP3a2vk8kwAG2r8hIpB9CdWYU-jxjxGUEhKf1i7_6u9tt6GzfI8TpcQOQ6j7xg]
-Updated with bypass_ripple: map[id:hWncVRBtB2er72vYulF0q1E1gQdxzvLZ89_iGE_lV_Nq45Q_-SBne78KuoeWwP-yvcCkjOEBAiegpyI85FFC3A name:map[type:String value:Product 1] price:map[type:Integer value:150]]
+Inserted with ripple: map[id:eETnB69106fJwS4zm6gdvT7Q0g9efyD6z8PxDJIc4wuxIvabJ6d0Uvpr8YEArQbI_b-WkJTpfJaNOQ965Y4xoQ]
+Inserted with bypass_ripple: map[id:g-kMA7uOFF48qkfMV6mL6Qk4hmsw-Nb4wAqHVH2FRGmqNAJ7gPXnoNWBKrt31TDljwrlCtCHPeH6N6Fd3LzNzQ]
+Inserted with TTL and bypass_ripple: map[id:AaIABCaObvaC8aHLDT_o6y1wysyRKJumBHIGa-CnY_DPGqbGZefUwbtQF_UK-bXzhTypYnhQsZNbHjBqwhDSmg]
+Updated with bypass_ripple: map[id:eETnB69106fJwS4zm6gdvT7Q0g9efyD6z8PxDJIc4wuxIvabJ6d0Uvpr8YEArQbI_b-WkJTpfJaNOQ965Y4xoQ name:map[type:String value:Product 1] price:map[type:Integer value:150]]
 Deleted with bypass_ripple
 Batch inserted with bypass_ripple: 2 records
-Upserted with bypass_ripple: map[id:yjSK26YSF_uDAHtIOfF-ibzm2Zxz0cutJQt3UtQvkoZw-hgOfhGHHx58yKlkLCTDyUkjqBsAxeW4q8m_Og9u0A]
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
+Upserted with bypass_ripple: map[id:Y6QMhr6TgNUxKfBz0ED11UfNRRzMNaCC84BYSSGn_wZ7Svj-PqyWuygw7oJzmNvwDWQN47NsML9xFMB-djMcCA]
 Client created
 
 Setting up test data...
@@ -7268,7 +6202,7 @@ Inserted 4 test users
 Example 1: Select specific fields (id, name, email only)
   Found 3 active users
   Fields returned: [email id name]
-  First user: Alice Johnson <alice@example.com>
+  First user: Dave Brown <dave@example.com>
 
 Example 2: Exclude sensitive fields (password, api_key, secret_token)
   Found 2 admins
@@ -7301,7 +6235,7 @@ Cleaning up test data...
 Cleanup complete
 
 All projection examples completed successfully!
-
+✅ All Go integration tests complete!
 📦 Building TypeScript client library...
 
 > @ekodb/ekodb-client@0.26.4 prepare
@@ -7312,7 +6246,7 @@ All projection examples completed successfully!
 > tsc
 
 
-up to date, audited 46 packages in 576ms
+up to date, audited 46 packages in 839ms
 
 12 packages are looking for funding
   run `npm fund` for details
@@ -7324,24 +6258,16 @@ found 0 vulnerabilities
 
 ✅ TypeScript client built!
 
-added 1 package, removed 1 package, and audited 13 packages in 390ms
+added 1 package, removed 1 package, and audited 13 packages in 383ms
 
 1 package is looking for funding
   run `npm fund` for details
 
 found 0 vulnerabilities
-bash: warning: setlocale: LC_ALL: cannot change locale (C.UTF-8): No such file or directory
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB Advanced CRUD Example (TypeScript) ===
 
 --- Inserting base record ---
-Inserted: YTKswpeH0xQcnZMsWXaBICQf--0Up8AXP3tvjt6Fw0VJCYF7V5ZFwCbhWITpqVFKjgtFPKHeHvi5iQ_ch-sB2w
+Inserted: 6u5dKOi6Jx9rpwHmj-UaR3qk6coAYm31kBafX9x0ADSvTYLfJjXKPPykoXFEqv3Vgsh8Fr1qLlp7RJz3TX2MFQ
 
 --- updateWithAction: increment ---
 Score after increment: 150
@@ -7359,13 +6285,6 @@ After sequence - score: 160, lives: 2, tags: ["beginner","pro","veteran"]
 Deleted collection
 
 === All advanced CRUD operations completed ===
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
 === Batch Insert ===
@@ -7382,20 +6301,13 @@ perl: warning: Falling back to the standard locale ("C").
 ✓ Deleted collection
 
 ✓ All batch operations completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB Advanced Chat Features Example ===
 
 === Inserting Sample Data ===
 ✓ Inserted sample product
 
 === Creating Chat Session ===
-✓ Created session: gF6YiDd7ia8MzrNsNkVsHqxzxqJekYhUDyBh0VPIeKUY3R4gEHcV4nBxKUQM965t6dThIQa0pzuW8YiTKl4Vpg
+✓ Created session: sEvd-GaxG-EXsSvlh7c0K1eoO5TLBFNjqTcg5pHKtPfaMb5g34yHnqmck-XdtKZm6FW2rx7HiXJOr06Xae9MKg
 
 === Sending Initial Message ===
 ✓ Message sent
@@ -7405,7 +6317,7 @@ perl: warning: Falling back to the standard locale ("C").
 - **Description:** High-performance database product
 - **Price:** $99
 
-If you have any further questions or need more information, feel free to ask!
+If you need more information or have further questions, feel free to ask!
 
 ✓ Second message sent
 
@@ -7422,7 +6334,7 @@ If you have any further questions or need more information, feel free to ask!
 ✓ Message unmarked as forgotten
 
 === Feature 4: Merge Chat Sessions ===
-✓ Created second session: T_NfF1iplssUw35I_WE9NWEexhij3Ibw0AlQsWaJ8ZaFnyxBjbRRxcWs2zG9IxvrsdJbbYERP34L1343LkyIYw
+✓ Created second session: lQrBJD7Qx2fC7oaU7IO8ho19QoF9IhCpcmQHeKdKuJ8nrY75z-Vzv9azTnx042jc-8HjW02dyPuHj96u0IbEnw
 ✓ Sent message in second session
 ✓ Sessions merged successfully
   Total messages in merged session: 7
@@ -7433,52 +6345,45 @@ If you have any further questions or need more information, feel free to ask!
 ✓ Messages remaining: 6
 
 === Cleanup ===
-✓ Deleted chat session: T_NfF1iplssUw35I_WE9NWEexhij3Ibw0AlQsWaJ8ZaFnyxBjbRRxcWs2zG9IxvrsdJbbYERP34L1343LkyIYw
-✓ Deleted chat session: gF6YiDd7ia8MzrNsNkVsHqxzxqJekYhUDyBh0VPIeKUY3R4gEHcV4nBxKUQM965t6dThIQa0pzuW8YiTKl4Vpg
+✓ Deleted chat session: sEvd-GaxG-EXsSvlh7c0K1eoO5TLBFNjqTcg5pHKtPfaMb5g34yHnqmck-XdtKZm6FW2rx7HiXJOr06Xae9MKg
+✓ Deleted chat session: lQrBJD7Qx2fC7oaU7IO8ho19QoF9IhCpcmQHeKdKuJ8nrY75z-Vzv9azTnx042jc-8HjW02dyPuHj96u0IbEnw
 ✓ Deleted collection
 
 ✓ All advanced chat features demonstrated successfully!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB Chat Basic Example ===
 
 === Inserting Sample Data ===
 ✓ Inserted 3 sample documents
 
 === Creating Chat Session ===
-✓ Created session: L5AA1VCt9I1tJU3s5nWJLq3Y_whSqweKWv3rbvo_1vWOWt7CidfyYXWnhEJcHBOFekoze2r2itAA48KNXLPoCA
+✓ Created session: h6NlubxlUOT5IF5q_I3NFOc-dKJ7xSBaKuvIfbPIP2DjBB_2f-exyWH9Jwdspk8CROLphtqG7g1TnQVoJPQfEg
 
 === Sending Chat Message ===
-Message ID: PhdxgKf1JE0PaCfqrJl_QSsSX1ksZwQ8JaUkDWD7i7qsXWoz9WDMI5SilwXrwVj71gOlIWtDiMXqFt-nT8U6IQ
+Message ID: mZHmK9ekxFnQdaJzChuDxo5hIdrQ1mbXHQ5uzlFXFA7ARqEYu5uosOX2hOdNcppLmC_KobP2ph-m3-7tdUHZ2A
 
 === AI Response ===
-Here are the available products along with their prices:
+The available products and their prices are as follows:
 
-1. **ekoDB**
-   - Price: $99
-   - Description: A high-performance database product with AI capabilities.
-
-2. **ekoDB Cloud**
+1. **ekoDB Cloud**
    - Price: $499
-   - Description: Fully managed cloud database service product.
+   - Description: Fully managed cloud database service product
+
+2. **ekoDB**
+   - Price: $99
+   - Description: A high-performance database product with AI capabilities
 
 3. **ekoDB Pro**
    - Price: $299
-   - Description: Enterprise edition product with advanced features.
+   - Description: Enterprise edition product with advanced features
 
 === Context Used (3 snippets) ===
   Snippet 1: {
   collection: 'client_chat_basic_ts',
   record: {
-    id: 'CtaTJoqvQ3TyVfcIGDiJZ_E4teTAcKJnmmjcPm8rttxqdpNrMuQeGN3R0slYgOGBkwAEF18qFjvquRn1EdfuVg',
-    description: 'A high-performance database product with AI capabilities',
-    price: 99,
-    name: 'ekoDB'
+    id: 'QvcVXlHeVaX0gQ0Ra54CeX8yOt2vHauUr-NjmIb2C1IXIqTr4bByL4hLBEz9ZEwcOH5rXGG4owqpvhjUIV--KQ',
+    name: 'ekoDB Cloud',
+    description: 'Fully managed cloud database service product',
+    price: 499
   },
   score: 0.1111111111111111,
   matched_fields: [ 'description' ]
@@ -7486,10 +6391,10 @@ Here are the available products along with their prices:
   Snippet 2: {
   collection: 'client_chat_basic_ts',
   record: {
-    description: 'Fully managed cloud database service product',
-    id: 'cMcOp6cansv6llaoPH4gm2mVxk3FJmxEXN1MU0IfX5pcw4qg_MT_WN3oZwXJHB8Qweok0ShxywiNj7E_sqUfBg',
-    price: 499,
-    name: 'ekoDB Cloud'
+    price: 99,
+    description: 'A high-performance database product with AI capabilities',
+    id: 'm4mKzQj58y94_KlbE3leWMTPXFAVO8UZ6k6gj7GUSMaLymo1izl7gRAkrT4HB9PczvincH0sGNfumzezYHeIFQ',
+    name: 'ekoDB'
   },
   score: 0.1111111111111111,
   matched_fields: [ 'description' ]
@@ -7497,77 +6402,55 @@ Here are the available products along with their prices:
   Snippet 3: {
   collection: 'client_chat_basic_ts',
   record: {
-    id: 'gRANOxcM_j0n1kErwj2-y9j8wpwyPqbYe5ZrdiJPDyfHuNfgQVurtjGVPI-HyrIe91t-s52DYTedmFx4f2hV5A',
+    id: 'B3bg5mY6KDdBx914vxlFW3gLwOj2iylbAC7liEO95sGMxXNJTjyaFBivN4GUo11dZhssGRB2iYZIKEdSE7a8MQ',
     description: 'Enterprise edition product with advanced features',
-    name: 'ekoDB Pro',
-    price: 299
+    price: 299,
+    name: 'ekoDB Pro'
   },
   score: 0.1111111111111111,
   matched_fields: [ 'description' ]
 }
 
-Execution Time: 6509ms
+Execution Time: 5624ms
 
 === Token Usage ===
 Prompt tokens: 3413
-Completion tokens: 91
-Total tokens: 3504
+Completion tokens: 90
+Total tokens: 3503
 
 === Cleanup ===
 ✓ Deleted session
 ✓ Deleted collection
 
 ✓ Chat completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB Chat Message Stream (SSE) Example (TypeScript) ===
 
-Created session: YsEi5x23cRPYqrrDlR6osum7XCXbYsR2W7Yo6LfbdoAgLePGGzuah0jd_qHNGuLhoK0PTWDcw-ipAHq7fm61ig
+Created session: 67v1SoYBya0n_s2YcBLEGTxPq4ZMWr10ZQt5h78cjZusv4re5F73SLVWL-tnX_suG4yP9WFkYEujy6DIJe8i_w
 
 Streaming response for: 'What is ekoDB?'
 
-{"__progress":"received"}{"__progress":"generating","model":"default","provider":"openai"}**ekoDB** (Environmental Knowledge Organization DataBase) is a term that may refer to different resources or databases that catalog information related to ecosystems, environmental knowledge, or eco-organisms, depending on the context. However, as of June 2024, the most widely referenced **ekoDB** is an online database and resource platform specializing in the study of non-coding RNAs (ncRNAs) associated with bacterial and archaeal hosts, especially those involved in defense mechanisms such as CRISPR-Cas systems.
+{"__progress":"received"}{"__progress":"generating","model":"default","provider":"openai"}**ekoDB** is a curated ecological database developed to support ecological research, data analysis, and modeling. Although there may be several uses of the term, in the context of ecology and environmental sciences, **ekoDB** generally refers to:
 
-### ekoDB in the Context of Prokaryotic RNA Defense Systems
-- **ekoDB** stands for **"endogenous prokaryotic RNA defense sYstem DataBase."**
-- It was designed to help researchers explore, analyze, and compare **prokaryotic Argonaute proteins** and other defense-related non-coding RNAs.
-- The database provides curated information on sequences, structures, functions, and evolutionary relationships among various non-coding RNAs involved in prokaryotic immune systems.
-- Resources include:
-  - Genome annotations
-  - Experimental data
-  - Bioinformatic analysis tools
-  - Cross-references to related databases (such as CRISPRdb, anti-CRISPRdb, and others)
+- **A Comprehensive Ecological Data Repository**: ekoDB collects, organizes, and provides access to a wide range of ecological datasets. These may include information on species distributions, trait data, biodiversity, community structure, environmental variables, biotic interactions, and more.
 
-### Possible Broader Uses
-- In some contexts, "ekoDB" might generally refer to databases cataloging ecological or environmental data, but this is less common and not standardized. If your context is ecology, please clarify for a more tailored answer.
+- **A Tool for Data Analysis and Modeling**: ekoDB often includes tools or an API that lets users easily integrate ecological data into their research workflows, facilitating tasks such as ecological modeling, conservation planning, or macroecological analysis.
 
-### Key References
-- **ekoDB:** [ekoDB Database—RNA Defense System in Prokaryotes](https://ekodb.genomics.cn/) (frequently cited in bioinformatics and microbiome research literature)
-- Example publication: **Zhang J, et al. (2021). ekoDB: A comprehensive database of prokaryotic RNA defense systems. Nucleic Acids Research.**
+- **Curated and Standardized Data**: Data in ekoDB is curated and standardized, which helps prevent issues with data quality, format inconsistencies, and facilitates reproducibility in science.
 
----
+**Example:**
+One prominent example of "ekodb" is the R package [`ekodb`](https://cran.r-project.org/web/packages/ekodb/index.html), which is designed as a general-purpose ecological knowledge base for species interactions, traits, and ecological knowledge. It provides an infrastructure for storing, accessing, and querying ecological data in R.
 
 **In summary:**
-**ekoDB** is primarily known as a bioinformatics database for studying RNA-based defense systems in prokaryotes, especially those involving Argonaute and CRISPR-Cas systems, though the term could sometimes refer to other environmental or knowledge-organization databases depending on the context. If you meant a different field or a specific application, please specify for a more precise explanation!
+ekoDB is an ecological knowledge database or platform that makes it easier to access, share, and analyze ecological data, usually through a software library or an online portal, and is particularly valuable for ecologists, conservationists, and data scientists working with ecological or biodiversity data.
+
+**If you have a specific context or platform in mind related to ekoDB, please provide more details for a more targeted answer.**
 
 --- Stream complete ---
-Message ID: WEMudlpJWmx3DwX2k6x8O68qQRhYz2WI3leEJDyT3VPH4D8TH_9SAVbxRtGVgLlG51EQjFEZikEoVH1DAfGUNQ
-Execution time: 7248ms
+Message ID: hjMriqwwY7GH0vK-h6eq4_R23_hHpRMET3cUT7OlVRvGetR-F1Tzgy9RUGY8BrLas5loSLfECjRSosqQNBfchA
+Execution time: 3480ms
 Context window: 1000000 tokens
 
 ✓ Chat message stream example completed
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
 === List Chat Models ===
@@ -7733,33 +6616,26 @@ Anthropic models: claude-fable-5-1, claude-opus-5, claude-sonnet-5, claude-fable
 Expected error for non-existent provider: Error: Request failed with status 404: {"error":"Unknown provider 'nonexistent_provider_xyz'","error_kind":"unknown_provider"}
 
 ✓ Chat Models example complete
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB Chat Session Management Example ===
 
 === Inserting Sample Data ===
 ✓ Inserted sample product
 
 === Creating Chat Session ===
-✓ Created session: EnuGFcCEp5WX4Zp0-1-NWNuz9wbFdMH1BqUI8LfoBMHcPrX4aOwfU7xQ0UYW22OxxmfD7BFaXWJhp-suER_maA
+✓ Created session: fFrkYi28bme2YC4I365Ly17eYYh_hk5D1ICdEQpNRE8lC8E5bB1nAzzMiowmMvJvcUaKr1v_XrfoUwciBA-o-w
 
 === Sending Messages ===
 ✓ Message 1 sent
-  Response: Based on the database context, the available product is:
+  Response: The available product is:
 
 - **Name:** ekoDB
 - **Description:** A high-performance database product
 - **Price:** $99
 
-If you need more information or specifics about this product, feel free to ask!
+If you need more information or additional products, let me know!
 
 ✓ Message 2 sent
-  Response: The price of the product **ekoDB** is **$99**. If you have any other questions or need further details, let me know!
+  Response: The price of ekoDB is $99.
 
 === Retrieving Session Messages ===
 ✓ Retrieved 4 messages
@@ -7768,41 +6644,34 @@ If you need more information or specifics about this product, feel free to ask!
 ✓ Session updated
 
 === Branching Session ===
-✓ Created branch: 1XFz__JkGzeOfEFIHxh6CUmX4ZkOntrR63XnaHNRsfShUVRAEJQ2uAHzygZpM5nHkeYI2j0jZlLJnDaRopwuhQ
-  Parent: EnuGFcCEp5WX4Zp0-1-NWNuz9wbFdMH1BqUI8LfoBMHcPrX4aOwfU7xQ0UYW22OxxmfD7BFaXWJhp-suER_maA
+✓ Created branch: 2I6hbzf3jTTo2g4IwfrZLEa6ucytZ_haxfXWMjCGZnr9vbIvyqpgTnqocWiw4auX-AMXVaaSrv4X9Jzy0KGJ6A
+  Parent: fFrkYi28bme2YC4I365Ly17eYYh_hk5D1ICdEQpNRE8lC8E5bB1nAzzMiowmMvJvcUaKr1v_XrfoUwciBA-o-w
 
 === Listing Sessions ===
 ✓ Found 2 sessions
-  Session 1: 1XFz__JkGzeOfEFIHxh6CUmX4ZkOntrR63XnaHNRsfShUVRAEJQ2uAHzygZpM5nHkeYI2j0jZlLJnDaRopwuhQ (Untitled)
-  Session 2: EnuGFcCEp5WX4Zp0-1-NWNuz9wbFdMH1BqUI8LfoBMHcPrX4aOwfU7xQ0UYW22OxxmfD7BFaXWJhp-suER_maA (Untitled)
+  Session 1: 2I6hbzf3jTTo2g4IwfrZLEa6ucytZ_haxfXWMjCGZnr9vbIvyqpgTnqocWiw4auX-AMXVaaSrv4X9Jzy0KGJ6A (Untitled)
+  Session 2: fFrkYi28bme2YC4I365Ly17eYYh_hk5D1ICdEQpNRE8lC8E5bB1nAzzMiowmMvJvcUaKr1v_XrfoUwciBA-o-w (Untitled)
 
 === Getting Session Details ===
 ✓ Session details retrieved
   Messages: 4
 
 === Deleting Branch Session ===
-✓ Deleted branch session: 1XFz__JkGzeOfEFIHxh6CUmX4ZkOntrR63XnaHNRsfShUVRAEJQ2uAHzygZpM5nHkeYI2j0jZlLJnDaRopwuhQ
+✓ Deleted branch session: 2I6hbzf3jTTo2g4IwfrZLEa6ucytZ_haxfXWMjCGZnr9vbIvyqpgTnqocWiw4auX-AMXVaaSrv4X9Jzy0KGJ6A
 
 === Cleanup ===
 ✓ Deleted session
 ✓ Deleted collection
 
 ✓ All session management operations completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
 === Create Collection (via insert) ===
-Collection created with first record: sNpbVQkDtJe4rFxEZ-CUPyPUkyty4Z3-2mnaq2kOHozzjwbeL2zpD-_ytKc9VZyNm5VciZh6y2joS0rYYjBNfQ
+Collection created with first record: t0LKdxvj-jI-9qfNdjX8wpNoXnw0Jo0wLPZgdKrotd__l15luj82SANe5pivvbvkk_ZU9emTgVjFcdy-EBm-xA
 
 === List Collections ===
-Total collections: 21
-Sample collections: chat_agent_configs__ek0_testing,agent_function_versions__ek0_testing,schedules__ek0_testing,schema_employees_client_go,schema_products_client_go
+Total collections: 17
+Sample collections: chat_goals__ek0_testing,schedules__ek0_testing,client_collection_management_ts,schema_products_client_go,agent_function_versions__ek0_testing
 
 === Count Documents ===
 Document count: 1
@@ -7814,13 +6683,6 @@ Collection deleted successfully
 Collection still exists: false
 
 ✓ All collection management operations completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
 === Check Collection Exists (Before Creation) ===
@@ -7842,13 +6704,6 @@ Collection 'nonexistent_collection_xyz' exists: false
 Deleted collection 'collection_utils_test_ts'
 
 ✓ Collection Utilities example complete
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 ✓ conc_demo_pay saved
 ✓ conc_demo_rl_fail saved
@@ -7856,45 +6711,38 @@ perl: warning: Falling back to the standard locale ("C").
 ✓ conc_demo_lock saved
 
 Invoke them like:
-  POST /api/functions/conc_demo_pay_ts_43664_1789567012579 { "idempotency_key": "...", "amount": 100 }
-  POST /api/functions/conc_demo_rl_fail_ts_43664_1789567012579 { "user_id": 42 }
-  POST /api/functions/conc_demo_rl_skip_ts_43664_1789567012579 { "user_id": 42 }
-  POST /api/functions/conc_demo_lock_ts_43664_1789567012579 { "resource": "queue:drain" }
+  POST /api/functions/conc_demo_pay_ts_67690_1789591578851 { "idempotency_key": "...", "amount": 100 }
+  POST /api/functions/conc_demo_rl_fail_ts_67690_1789591578851 { "user_id": 42 }
+  POST /api/functions/conc_demo_rl_skip_ts_67690_1789591578851 { "user_id": 42 }
+  POST /api/functions/conc_demo_lock_ts_67690_1789591578851 { "resource": "queue:drain" }
 
 ✓ Cleaned up demo functions
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB Convenience Methods Example ===
 
 === Native Object Creation ===
 ✓ Created record with plain object: {
-  id: '4pUsgk8BBBUWa6m_STPjcuuMEbZpeBkgEC5rDRoFdPwR0D8N08n4Sn6LSf6uHdpPDsQV6b5SssV6gj-Clv-ViA'
+  id: 'XDdF0edDtfgx1U9ZWxPmYB--fRFc5nJrLVy0LCzKAToUEwTLN5R_IRvEXg9iM9eUZF-5VnQWwpZ2HH1S8qDigw'
 }
 
 === Upsert Operation ===
 ✓ First upsert (update): {
-  id: '4pUsgk8BBBUWa6m_STPjcuuMEbZpeBkgEC5rDRoFdPwR0D8N08n4Sn6LSf6uHdpPDsQV6b5SssV6gj-Clv-ViA',
+  id: 'XDdF0edDtfgx1U9ZWxPmYB--fRFc5nJrLVy0LCzKAToUEwTLN5R_IRvEXg9iM9eUZF-5VnQWwpZ2HH1S8qDigw',
+  age: { value: 29, type: 'Integer' },
+  active: { type: 'Boolean', value: true },
   email: { type: 'String', value: 'alice.j@newdomain.com' },
-  age: { type: 'Integer', value: 29 },
-  active: { value: true, type: 'Boolean' },
   name: { type: 'String', value: 'Alice Johnson' }
 }
 ✓ Second upsert (insert): {
-  id: 'uLdv1LQyQmeg-P5ACj44wbO7IDpFP9I5Sk12EBA0dMI7r0mATdiS-ZOWsymA6DyXTv62qDVlf5bfacckf94_VA'
+  id: 'rV2nJW3CwBCh8v-Qjw3pfxGQ9sdnQJPdZUIB376yvcQsJBArS54YeHUVfDePDaxvFNd3fQEtxvsVLI9bUdmBaw'
 }
 
 === Find One Operation ===
 ✓ Found user by email: {
-  name: { type: 'String', value: 'Alice Johnson' },
+  name: { value: 'Alice Johnson', type: 'String' },
   email: { type: 'String', value: 'alice.j@newdomain.com' },
-  id: '4pUsgk8BBBUWa6m_STPjcuuMEbZpeBkgEC5rDRoFdPwR0D8N08n4Sn6LSf6uHdpPDsQV6b5SssV6gj-Clv-ViA',
-  active: { type: 'Boolean', value: true },
-  age: { type: 'Integer', value: 29 }
+  id: 'XDdF0edDtfgx1U9ZWxPmYB--fRFc5nJrLVy0LCzKAToUEwTLN5R_IRvEXg9iM9eUZF-5VnQWwpZ2HH1S8qDigw',
+  active: { value: true, type: 'Boolean' },
+  age: { value: 29, type: 'Integer' }
 }
 ✓ User not found (as expected)
 
@@ -7912,13 +6760,6 @@ perl: warning: Falling back to the standard locale ("C").
 ✓ Deleted collection
 
 ✅ All convenience methods demonstrated successfully!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 ✓ crypto_demo_hmac_ts saved
 ✓ crypto_demo_aes_ts saved
@@ -7934,13 +6775,6 @@ Invoke them with:
   POST /api/functions/crypto_demo_encoding_ts { "title": "Héllo World" }
 
 ✓ Cleaned up demo functions
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === Distinct Values Example ===
 
 Inserting sample products...
@@ -7964,20 +6798,13 @@ Found 2 distinct statuses for electronics:
   - discontinued
 
 Cleanup done.
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
 === Insert Document with TTL (1 hour) ===
-✓ Inserted document: Pyd9xz2Eu9iHHD9aoIWr1iqFzuCNheix1LA5lA28bxEMFUamJeJUxOGH0tTzjlsr7GuaH86cGBxhNktOea4BKQ
+✓ Inserted document: 97Bb4GtSSe_toM5d7V53AqbZWyssHzmOXBMN5g6_3tyQtSyaIGD5SC1KBo_c2ZO_ddOcMrRQb-tqpPZCfc4WwA
 
 === Insert Document with TTL (5 minutes) ===
-✓ Inserted document: RqIJtIhnBGLutZw60JXgtjBGYR5QwqBgtNn6LkuhywQMLjW2LWsvbe_u6WqDB9k4kwLJblDXYJREkNcYLUxfdQ
+✓ Inserted document: IEpvfCotH_J1uuT4pMulXG_lakbDX1xEyfcLDG7-kn5v3B9yJ4zBudRj0IgNiK8D_RE-Ipb8UPHJwwslNftOsw
 
 === Query Documents ===
 ✓ Found 2 documents with TTL
@@ -7994,48 +6821,41 @@ perl: warning: Falling back to the standard locale ("C").
 ✓ All document TTL operations completed successfully
 
 💡 Note: Documents with TTL will automatically expire after the specified duration
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB as Edge Cache - Simple Example ===
 
 Creating edge cache function...
-✓ Edge cache script created: XocyYnJ25whFdU1a94R4pZnVvlSbw5EKInYHaWUCWDL1ndawB_jjgG8Dwbzw79ZnM3Gd_Y6hNqwenX6XrrfDIQ
+✓ Edge cache script created: KjnfpDI5ey3lt2wmkVIi3rNg1K214w77g7SSEbkCFHh5_NteFaxlLjpDbLteEobwv8eFFxXjW0LqHf6m70l7Gw
 
 Call 1: Cache miss (fetches from API)
-Response time: 116ms
+Response time: 69ms
 Result: {
   "records": [
     {
       "value": {
-        "type": "Object",
         "value": {
-          "address": {
-            "street": "Kulas Light",
-            "suite": "Apt. 556",
-            "city": "Gwenborough",
-            "geo": {
-              "lat": "-37.3159",
-              "lng": "81.1496"
-            },
-            "zipcode": "92998-3874"
-          },
-          "email": "Sincere@april.biz",
           "phone": "1-770-736-8031 x56442",
-          "username": "Bret",
-          "id": 1,
-          "name": "Leanne Graham",
           "company": {
+            "catchPhrase": "Multi-layered client-server neural-net",
             "name": "Romaguera-Crona",
-            "bs": "harness real-time e-markets",
-            "catchPhrase": "Multi-layered client-server neural-net"
+            "bs": "harness real-time e-markets"
           },
-          "website": "hildegard.org"
-        }
+          "name": "Leanne Graham",
+          "id": 1,
+          "address": {
+            "zipcode": "92998-3874",
+            "suite": "Apt. 556",
+            "street": "Kulas Light",
+            "geo": {
+              "lng": "81.1496",
+              "lat": "-37.3159"
+            },
+            "city": "Gwenborough"
+          },
+          "website": "hildegard.org",
+          "username": "Bret",
+          "email": "Sincere@april.biz"
+        },
+        "type": "Object"
       }
     }
   ],
@@ -8049,35 +6869,35 @@ Result: {
 }
 
 Call 2: Cache hit (served from ekoDB)
-Response time: 9ms (12.9x faster!)
+Response time: 3ms (23x faster!)
 Result: {
   "records": [
     {
       "value": {
-        "type": "Object",
         "value": {
-          "address": {
-            "street": "Kulas Light",
-            "suite": "Apt. 556",
-            "city": "Gwenborough",
-            "geo": {
-              "lat": "-37.3159",
-              "lng": "81.1496"
-            },
-            "zipcode": "92998-3874"
-          },
-          "email": "Sincere@april.biz",
           "phone": "1-770-736-8031 x56442",
-          "username": "Bret",
-          "id": 1,
-          "name": "Leanne Graham",
           "company": {
+            "catchPhrase": "Multi-layered client-server neural-net",
             "name": "Romaguera-Crona",
-            "bs": "harness real-time e-markets",
-            "catchPhrase": "Multi-layered client-server neural-net"
+            "bs": "harness real-time e-markets"
           },
-          "website": "hildegard.org"
-        }
+          "name": "Leanne Graham",
+          "id": 1,
+          "address": {
+            "zipcode": "92998-3874",
+            "suite": "Apt. 556",
+            "street": "Kulas Light",
+            "geo": {
+              "lng": "81.1496",
+              "lat": "-37.3159"
+            },
+            "city": "Gwenborough"
+          },
+          "website": "hildegard.org",
+          "username": "Bret",
+          "email": "Sincere@april.biz"
+        },
+        "type": "Object"
       }
     }
   ],
@@ -8100,13 +6920,6 @@ Result: {
 
 ✓ Example complete!
 
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB Function Composition Examples ===
 
 📋 Setting up test data...
@@ -8122,8 +6935,8 @@ Building reusable functions that call each other...
 
 📊 Result from composed function:
    Records: 1
-   Name: {"type":"String","value":"User 1"}
-   Department: {"value":"engineering","type":"String"}
+   Name: {"value":"User 1","type":"String"}
+   Department: {"type":"String","value":"engineering"}
 
 🎯 Key Benefit: fetch_user can be reused by ANY function!
    No code duplication, single source of truth
@@ -8136,34 +6949,31 @@ Using KV cache + CallFunction for fast cache-aside pattern...
 ✅ Saved SWR function using composition: swr_user
 
 First call (cache miss - will fetch from API):
-   ⏱️  Duration: 106ms
-   📊 Records: 1
-   📦 Data: {
-  "value": {
-    "value": {
-      "phone": "1-770-736-8031 x56442",
-      "address": {
-        "geo": {
-          "lng": "81.1496",
-          "lat": "-37.3159"
-        },
-        "suite": "Apt. 556"...
-
-Second call (cache hit - from cache):
-   ⏱️  Duration: 6ms
+   ⏱️  Duration: 69ms
    📊 Records: 1
    📦 Data: {
   "value": {
     "type": "Object",
     "value": {
-      "phone": "1-770-736-8031 x56442",
-      "address": {
-        "geo": {
-          "lng": "81.1496",
-          "lat": "-37.3159"
-        },
-     ...
-   🚀 Cache speedup: 17.7x faster!
+      "email": "Sincere@april.biz",
+      "website": "hildegard.org",
+      "company": {
+        "bs": "harness real-time e-markets",
+        "name"...
+
+Second call (cache hit - from cache):
+   ⏱️  Duration: 2ms
+   📊 Records: 1
+   📦 Data: {
+  "value": {
+    "type": "Object",
+    "value": {
+      "email": "Sincere@april.biz",
+      "website": "hildegard.org",
+      "company": {
+        "bs": "harness real-time e-markets",
+        "name"...
+   🚀 Cache speedup: 34.5x faster!
 
 📝 Example 3: Multi-Level Function Composition
 
@@ -8185,21 +6995,7 @@ Building complex workflows from small, reusable pieces...
 
 
 ✅ All composition examples completed!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 client_function_contract: ok
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 🚀 ekoDB Functions Example (TypeScript)
 
 📋 Setting up test data...
@@ -8207,24 +7003,24 @@ perl: warning: Falling back to the standard locale ("C").
 
 📝 Example 1: Simple Query Function
 
-✅ Function saved: hepoXMT9m0PENfDrq6D2YaurJivbC8dMhClqekabo9-pZDTK1EMkQBCzICLW_jxX1QgbVXyqxIZDJct1wANdlg
+✅ Function saved: cD2V9m9BoKZAsVE7mGlyM6KFhZvhX-mU9g8tpgbLJ1loQGn4nlXG-Y8rDZnn8ouy9bwVabmYb_Z3F-LedHkmaA
 📊 Found 5 active users
 
 📝 Example 2: Parameterized Function
 
-✅ Function saved: 1sRyK92uMJgIg5nfHZCKEIKn5-af_5F1dkn8skWvUtZctqqONrXZomYNTfJf3jz6yV8XywMs0E9kTFULSWEfcQ
+✅ Function saved: x7LrG8YLGsJGts9vb5BTdq6XZMGv8NdyxiEfP3pGgw0HONzMCU8S_aR5LYp4EH3ZSwj2gXFhmELdn2NTI_WShA
 📊 Found 3 users (limited)
 
 📝 Example 3: Aggregation Function
 
-✅ Function saved: fRc0u3FVNOk_gDADTL_ZTF4UWwPGVNHo3oUEjNUxqJ-SgxQHhYm4NyVrcg8JAZH7dsO7eZYUE0GKPdIRIrxOjg
+✅ Function saved: 2_g4cBQO5H9eBMEntPQ3V0JlLSyhImt7R7YX4numVvcutrTHczXYvFEH9yxsFUZ2qj43SVW2ovnAxKgKFXt63Q
 📊 Statistics: 2 groups
-   {"count":{"type":"Integer","value":5},"avg_score":{"type":"Float","value":50},"status":{"value":"inactive","type":"String"}}
-   {"count":{"value":5,"type":"Integer"},"avg_score":{"value":60,"type":"Float"},"status":{"value":"active","type":"String"}}
+   {"count":{"type":"Integer","value":5},"status":{"type":"String","value":"active"},"avg_score":{"type":"Float","value":60}}
+   {"count":{"value":5,"type":"Integer"},"avg_score":{"type":"Float","value":50},"status":{"value":"inactive","type":"String"}}
 
 📝 Example 4: UserFunction Management
 
-📋 Total scripts: 11
+📋 Total scripts: 5
 🔍 Retrieved script: Get Active Users
 ✏️  function updated
 🗑️  function deleted
@@ -8232,13 +7028,6 @@ perl: warning: Falling back to the standard locale ("C").
 ℹ️  Note: GET/UPDATE/DELETE use IDs. Only CALL supports labels.
 
 ✅ All examples completed!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 🚀 ekoDB TypeScript Advanced Functions Example
 
 📋 Setting up test data...
@@ -8254,21 +7043,14 @@ perl: warning: Falling back to the standard locale ("C").
 
 ✅ Function saved
 📊 Category breakdown:
-   {"count":{"value":3,"type":"Integer"},"category":{"type":"String","value":"Furniture"},"avg_price":{"type":"Float","value":365.6666666666667}}
-   {"avg_price":{"type":"Float","value":367},"category":{"type":"String","value":"Electronics"},"count":{"value":5,"type":"Integer"}}
+   {"count":{"value":3,"type":"Integer"},"avg_price":{"value":365.6666666666667,"type":"Float"},"category":{"value":"Furniture","type":"String"}}
+   {"avg_price":{"type":"Float","value":367},"category":{"value":"Electronics","type":"String"},"count":{"type":"Integer","value":5}}
 ⏱️  Execution time: 0ms
 
 🧹 Cleaning up...
 ✅ Cleanup complete
 
 ✅ All advanced script examples finished!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 🚀 ekoDB TypeScript AI Functions Example
 
 📋 Setting up test data...
@@ -8280,23 +7062,23 @@ perl: warning: Falling back to the standard locale ("C").
 🤖 AI Response:
    Vector databases offer several benefits:
 
-1. **Efficient Similarity Search**: They excel in high-dimensional data retrieval, enabling fast similarity searches based on vector representations, like embeddings.
+1. **Efficient Similarity Search**: Enable fast retrieval of similar items based on vector embeddings, ideal for applications like recommendation systems and image search.
 
-2. **Scalability**: Designed to handle large-scale datasets, they efficiently manage and index vast amounts of vector data.
+2. **High Dimensionality**: Handle high-dimensional data effectively, which is common in machine learning and natural language processing.
 
-3. **Real-time Querying**: Support for real-time access allows for quick responses to queries, which is crucial for applications like recommendation systems.
+3. **Scalability**: Designed to scale with large datasets, allowing for real-time querying and processing.
 
-4. **Enhanced Machine Learning Integration**: They easily integrate with ML models to store and retrieve embeddings, facilitating features like semantic search.
+4. **Flexible Data Types**: Support various data types such as text, images, and audio, making them versatile for diverse applications.
 
-5. **Support for Complex Data Types**: Capable of handling various types of unstructured data, including images, text, and audio.
+5. **Enhanced Performance**: Optimize queries using techniques like approximate nearest neighbor search to improve speed and reduce resource consumption.
 
-6. **Metadata Storage**: Many vector databases allow the storage of associated metadata alongside vectors, providing context to the data retrieved.
+6. **Integration with AI**: Easily integrate with machine learning frameworks, facilitating workflow for AI applications.
 
-7. **Versatile Applications**: Useful in various fields, including natural language processing, image recognition, and anomaly detection.
+7. **Rich Metadata Support**: Often allow for the inclusion of additional metadata alongside vector data, enhancing context for searches.
 
-8. **Flexibility**: Can accommodate various distance metrics (e.g., cosine similarity, Euclidean distance), allowing for tailored search functionality.
+8. **Semantic Understanding**: Enable understanding of semantic relationships and meanings in data through embeddings.
 
-These advantages make vector databases a powerful tool for modern data-intensive applications.
+Overall, they are essential for modern AI-driven applications requiring efficient and effective data retrieval.
 ⏱️  Execution time: 0ms
 
 📝 Example 2: Generate Embeddings
@@ -8314,13 +7096,6 @@ These advantages make vector databases a powerful tool for modern data-intensive
 💡 This example demonstrates:
    ✅ Chat completions with system/user messages
    ✅ Embedding generation for text
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 🚀 ekoDB TypeScript Complete Functions Example
 
 📋 Demonstrates: FindAll, Group, Count, Multi-stage Pipelines
@@ -8330,10 +7105,10 @@ perl: warning: Falling back to the standard locale ("C").
 
 📝 Example 1: FindAll + Group (Simple Aggregation)
 
-✅ Function saved: LS8AwvDPDoarY-1wNXS1QFZik_sSrIkiztTWNZDzHWrfh614pf8u5QYZzyJkd_6andMxMT7PZGeYapr6qI-OUA
+✅ Function saved: 2ihKmqVtRqN2X7jeY33UOOYl6_Pu-T6uZpICs7d1dFFuP4Wfzhm8_AMg0GCFT2tl3MW0mqRaP3PZK_xu5y0buA
 📊 Found 2 product groups
-   {"count":{"value":2,"type":"Integer"},"avg_price":{"type":"Float","value":474},"category":{"value":"Furniture","type":"String"}}
-   {"category":{"value":"Electronics","type":"String"},"count":{"type":"Integer","value":3},"avg_price":{"type":"Float","value":575.6666666666666}}
+   {"count":{"value":3,"type":"Integer"},"category":{"type":"String","value":"Electronics"},"avg_price":{"value":575.6666666666666,"type":"Float"}}
+   {"category":{"type":"String","value":"Furniture"},"count":{"value":2,"type":"Integer"},"avg_price":{"type":"Float","value":474}}
 ⏱️  Execution time: 0ms
 
 📝 Example 2: Simple Product Listing
@@ -8346,8 +7121,8 @@ perl: warning: Falling back to the standard locale ("C").
 
 ✅ Function saved
 📊 Found 2 categories
-   {"category":{"type":"String","value":"Electronics"},"count":{"value":3,"type":"Integer"}}
-   {"count":{"value":2,"type":"Integer"},"category":{"type":"String","value":"Furniture"}}
+   {"category":{"value":"Electronics","type":"String"},"count":{"type":"Integer","value":3}}
+   {"count":{"type":"Integer","value":2},"category":{"type":"String","value":"Furniture"}}
 ⏱️  Execution time: 0ms
 
 📝 Example 4: High Rating Products
@@ -8379,13 +7154,6 @@ perl: warning: Falling back to the standard locale ("C").
    ✅ Multi-stage pipelines (FindAll → Group → Count)
    ✅ Parameter definitions
    ✅ Function management (save, call, delete)
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 🚀 ekoDB TypeScript CRUD Functions Example
 
 📋 Setting up test data...
@@ -8401,29 +7169,22 @@ perl: warning: Falling back to the standard locale ("C").
 
 ✅ Function saved
 📊 User counts by status:
-   inactive: 3 users
    active: 7 users
+   inactive: 3 users
 ⏱️  Execution time: 0ms
 
 📝 Example 3: Average Score by Role
 
 ✅ Function saved
 📊 Average score by role:
-   {"role":{"value":"user","type":"String"},"avg_score":{"type":"Float","value":70},"count":{"type":"Integer","value":7}}
-   {"role":{"type":"String","value":"admin"},"avg_score":{"type":"Float","value":20},"count":{"value":3,"type":"Integer"}}
+   {"count":{"value":7,"type":"Integer"},"role":{"value":"user","type":"String"},"avg_score":{"type":"Float","value":70}}
+   {"count":{"type":"Integer","value":3},"avg_score":{"value":20,"type":"Float"},"role":{"type":"String","value":"admin"}}
 ⏱️  Execution time: 0ms
 
 🧹 Cleaning up...
 ✅ Cleanup complete
 
 ✅ All CRUD script examples finished!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 🚀 ekoDB TypeScript KV Store & Wrapped Types Example
 
 📋 Demonstrates:
@@ -8434,26 +7195,26 @@ perl: warning: Falling back to the standard locale ("C").
 
 📝 Example 1: Inserting Records with Wrapped Types
 
-✅ Inserted order: exVQGRG-8-zXXe6a52fvSaHbhaO7VAZenRXq5ACimpJu41UIna8aZmVJaKpepd4SxeN5oFIfkkCZ068WxQHnFQ
+✅ Inserted order: GmPSy5NyqSkMXjS0Thga5IsnReQIMZfj9_aBRRMGemE2VxNwM0WfSoG92XCBjU4GIhqKQsg7DIYW8SwgTtnCxA
 ✅ Inserted 2 products with wrapped types
 
 📝 Example 2: UserFunction with Wrapped Type Parameters
 
-✅ Function saved: EGAING45NQKEEwYEo5BIXkQnOXTwSSeQfCgXUZC1iGZBLc7u8j_TK02QKw3tOQte1vLQWxjdDwWN2nqM9IfYPw
+✅ Function saved: oY1R8jcpjTO19vt_gopCkdOnejYZSKEAPXRtQAQWa7x5JSwNy0F3c_b4dtZ5J_LNELUnmdfGYU03X6dgAV_RfQ
 📊 Created order via script
 ⏱️  Execution time: 0ms
 
 📝 Example 3: Basic KV Store Operations
 
 ✅ Set session data
-📊 Retrieved session: {"type":"Object","value":{"userId":"user_abc","role":"admin"}}
+📊 Retrieved session: {"value":{"userId":"user_abc","role":"admin"},"type":"Object"}
 🔍 Key exists: true
 ✅ Set cached data with 1 hour TTL
 🗑️  Deleted session
 
 📝 Example 4: KV Operations in Functions
 
-✅ Function saved: lRn6fi1YNrGPPuCHPSqOZq64QRIrkddPbb3o-SPgxltesmtAcom9QbO0JV0ls6hZBu8n_NEWusKQoNsCla3wvA
+✅ Function saved: fwc-RuU06ehUMrOpCmxsqztB9EqKqvtk3QBP-CjMtBIVkIYqbjwPyjwD9c9JSPloEtaIIkoHJUXnjStSSdgPdw
 📊 Cached and retrieved product data
 ⏱️  Execution time: 0ms
 
@@ -8465,7 +7226,7 @@ perl: warning: Falling back to the standard locale ("C").
 
 📝 Example 6: Combined Wrapped Types + KV Function
 
-✅ Function saved: QeS0eqNfn39ejnbElSf7w3yWhBfoGmSqFamvfieKk3Dz4Yy3N2AceF9ytSKdTCUKPbRWAdvO8J38KSx4JGc-KA
+✅ Function saved: 3bLLmFbdSiqdGipgtGvhUIWxYPKlszZSys7-Y7eUZSQmPigDOd_d_Jo9-WJwoaK-r9vCLmTMRziAXmgk2tDHqw
 📊 Processed order with caching
 ⏱️  Stages executed: 3
 ⏱️  Execution time: 0ms
@@ -8481,13 +7242,6 @@ perl: warning: Falling back to the standard locale ("C").
    ✅ KV store is great for caching and quick lookups
    ✅ Stage.kv*() functions work within scripts
    ✅ Combine KV caching with collection inserts for real workflows
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 🚀 ekoDB TypeScript Search Functions Example
 
 📋 Setting up test data...
@@ -8498,35 +7252,28 @@ perl: warning: Falling back to the standard locale ("C").
 ✅ Function saved
 📊 Found 5 documents
    1. Getting Started with ekoDB (Database)
-   2. Database Design Principles (Database)
-   3. Natural Language Processing (AI)
-   4. Introduction to Machine Learning (AI)
-   5. Vector Databases Explained (Database)
+   2. Vector Databases Explained (Database)
+   3. Introduction to Machine Learning (AI)
+   4. Natural Language Processing (AI)
+   5. Database Design Principles (Database)
 ⏱️  Execution time: 0ms
 
 📝 Example 2: Count Documents by Category
 
 ✅ Function saved
 📊 Documents by category:
-   {"category":{"type":"String","value":"Database"},"count":{"type":"Integer","value":3}}
-   {"category":{"type":"String","value":"AI"},"count":{"value":2,"type":"Integer"}}
+   {"category":{"value":"AI","type":"String"},"count":{"type":"Integer","value":2}}
+   {"category":{"type":"String","value":"Database"},"count":{"value":3,"type":"Integer"}}
 ⏱️  Execution time: 0ms
 
 🧹 Cleaning up...
 ✅ Cleanup complete
 
 ✅ All search script examples finished!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB Goal Template CRUD Example (TypeScript) ===
 
 --- Creating goal template ---
-Created template: Data Migration (id: ytkpWUsrmbJzWVFcnphz1UySkvVRWC0LN1mdL_L9cyz_uSEu11CEQ4LY7QWlFCLHRK7g-CpdGV1FND476BbEew)
+Created template: Data Migration (id: MCB2oHFWRBO5pKhcZHb723rnobhDBgJDhiwlPXCVpq9-1C02XdIJJzOmTnvViLfT9YjLBlAZi04sdN3Avy3MNA)
 
 --- Listing templates ---
 Templates: {
@@ -8534,7 +7281,7 @@ Templates: {
   items: [
     {
       description: [Object],
-      id: 'ytkpWUsrmbJzWVFcnphz1UySkvVRWC0LN1mdL_L9cyz_uSEu11CEQ4LY7QWlFCLHRK7g-CpdGV1FND476BbEew',
+      id: 'MCB2oHFWRBO5pKhcZHb723rnobhDBgJDhiwlPXCVpq9-1C02XdIJJzOmTnvViLfT9YjLBlAZi04sdN3Avy3MNA',
       steps: [Object],
       title: [Object]
     }
@@ -8551,30 +7298,23 @@ Updated description: Updated: comprehensive data migration workflow
 Template deleted successfully
 
 ✓ Goal template CRUD example completed
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB Goals, Tasks & Agents Example (TypeScript) ===
 
 --- Creating goal ---
-Created goal: Deploy v2.0 (id: HN6d44HfdlxMEb7ZGLowl8DWb0ZQj6tPasBZfODcazMi790fFRi6gp3HwpUQhPTJ-KC_zy22a3yEIsuM2tsFbA)
+Created goal: Deploy v2.0 (id: 7L3h1mT9ecVvIf_eDJR4-KVf39jQrC6Dx1CZBuaz0swOJtxXYo0MOYpukgrLzeiGLoHER48hrg75c0QmeFkWsA)
 
 --- Listing goals ---
 Goals: {
   "count": 1,
   "goals": [
     {
-      "created_at": "2026-09-16T13:57:03.725190+00:00",
+      "created_at": "2026-09-16T20:46:28.990550+00:00",
       "description": "Ship version 2.0 to production",
-      "id": "HN6d44HfdlxMEb7ZGLowl8DWb0ZQj6tPasBZfODcazMi790fFRi6gp3HwpUQhPTJ-KC_zy22a3yEIsuM2tsFbA",
+      "id": "7L3h1mT9ecVvIf_eDJR4-KVf39jQrC6Dx1CZBuaz0swOJtxXYo0MOYpukgrLzeiGLoHER48hrg75c0QmeFkWsA",
       "status": "pending",
       "steps": "[{\"description\":\"Run test suite\"},{\"description\":\"Build release artifacts\"},{\"description\":\"Deploy to staging\"},{\"description\":\"Deploy to production\"}]",
       "title": "Deploy v2.0",
-      "updated_at": "2026-09-16T13:57:03.725190+00:00"
+      "updated_at": "2026-09-16T20:46:28.990550+00:00"
     }
   ]
 }
@@ -8593,13 +7333,13 @@ Search results: {
       "_score": 12.870000000000001,
       "created_at": {
         "type": "DateTime",
-        "value": "2026-09-16T13:57:03.725190+00:00"
+        "value": "2026-09-16T20:46:28.990550+00:00"
       },
       "description": {
         "type": "String",
         "value": "Ship version 2.0 with hot-fix patches"
       },
-      "id": "HN6d44HfdlxMEb7ZGLowl8DWb0ZQj6tPasBZfODcazMi790fFRi6gp3HwpUQhPTJ-KC_zy22a3yEIsuM2tsFbA",
+      "id": "7L3h1mT9ecVvIf_eDJR4-KVf39jQrC6Dx1CZBuaz0swOJtxXYo0MOYpukgrLzeiGLoHER48hrg75c0QmeFkWsA",
       "status": {
         "type": "String",
         "value": "pending"
@@ -8614,18 +7354,18 @@ Search results: {
       },
       "updated_at": {
         "type": "DateTime",
-        "value": "2026-09-16T13:57:03.746062+00:00"
+        "value": "2026-09-16T20:46:29.001495+00:00"
       }
     }
   ]
 }
 
 --- Goal step: start step 0 ---
-Step 0 started on goal HN6d44HfdlxMEb7ZGLowl8DWb0ZQj6tPasBZfODcazMi790fFRi6gp3HwpUQhPTJ-KC_zy22a3yEIsuM2tsFbA
+Step 0 started on goal 7L3h1mT9ecVvIf_eDJR4-KVf39jQrC6Dx1CZBuaz0swOJtxXYo0MOYpukgrLzeiGLoHER48hrg75c0QmeFkWsA
 --- Goal step: complete step 0 ---
-Step 0 completed on goal HN6d44HfdlxMEb7ZGLowl8DWb0ZQj6tPasBZfODcazMi790fFRi6gp3HwpUQhPTJ-KC_zy22a3yEIsuM2tsFbA
+Step 0 completed on goal 7L3h1mT9ecVvIf_eDJR4-KVf39jQrC6Dx1CZBuaz0swOJtxXYo0MOYpukgrLzeiGLoHER48hrg75c0QmeFkWsA
 --- Goal step: fail step 1 ---
-Step 1 failed on goal HN6d44HfdlxMEb7ZGLowl8DWb0ZQj6tPasBZfODcazMi790fFRi6gp3HwpUQhPTJ-KC_zy22a3yEIsuM2tsFbA
+Step 1 failed on goal 7L3h1mT9ecVvIf_eDJR4-KVf39jQrC6Dx1CZBuaz0swOJtxXYo0MOYpukgrLzeiGLoHER48hrg75c0QmeFkWsA
 
 --- Completing goal ---
 Goal status: pending_review
@@ -8638,7 +7378,7 @@ Goal status after reject: failed
 
 
 --- Creating task ---
-Created task: Hourly Health Check (id: JCkZP3yeHoq8JtDgfwGNUuryq-5Dzz85SpwkciXEpJotYx5-VikImfIlH59_1N_OKiD_RPZiMNk_QgAiD6toqQ)
+Created task: Hourly Health Check (id: CedjLvDx8PbBzQzeCrbe_PBfKbDpscDCFgLA6m-g4yjs1DYwlsD8uRLbZ9WEfcmsV6nQoTvxTnlbpiB6kLee7g)
 
 --- Listing tasks ---
 Tasks: {
@@ -8659,7 +7399,7 @@ Tasks: {
         "type": "String",
         "value": "0 * * * *"
       },
-      "id": "JCkZP3yeHoq8JtDgfwGNUuryq-5Dzz85SpwkciXEpJotYx5-VikImfIlH59_1N_OKiD_RPZiMNk_QgAiD6toqQ",
+      "id": "CedjLvDx8PbBzQzeCrbe_PBfKbDpscDCFgLA6m-g4yjs1DYwlsD8uRLbZ9WEfcmsV6nQoTvxTnlbpiB6kLee7g",
       "name": {
         "type": "String",
         "value": "Hourly Health Check"
@@ -8697,7 +7437,7 @@ Task deleted successfully
 
 
 --- Creating agent ---
-Created agent: SupportBot (id: 9n0Tg_h7UolilyOfJSMYsi13sf89X3l9NuZu7YX6E9mHUQEFBIfQOKXznUeCpNG3gGST8W3dmze5NZx69fWARg)
+Created agent: SupportBot (id: NE_HAsIqkS4ZID1xOnX3rKHosUA1Y3v8eNnNQemqPM7K1wqQS7pxqwhnS_PzegT44yl8M-BVvV8WjPGxmtPduw)
 
 --- Listing agents ---
 Agents: {
@@ -8708,7 +7448,7 @@ Agents: {
         "type": "String",
         "value": "deploy_prod_1"
       },
-      "id": "9n0Tg_h7UolilyOfJSMYsi13sf89X3l9NuZu7YX6E9mHUQEFBIfQOKXznUeCpNG3gGST8W3dmze5NZx69fWARg",
+      "id": "NE_HAsIqkS4ZID1xOnX3rKHosUA1Y3v8eNnNQemqPM7K1wqQS7pxqwhnS_PzegT44yl8M-BVvV8WjPGxmtPduw",
       "llm_model": {
         "type": "String",
         "value": "gpt-4"
@@ -8729,7 +7469,7 @@ Agents: {
 Fetched: SupportBot
 
 --- Getting agent by name ---
-By name: SupportBot (id: 9n0Tg_h7UolilyOfJSMYsi13sf89X3l9NuZu7YX6E9mHUQEFBIfQOKXznUeCpNG3gGST8W3dmze5NZx69fWARg)
+By name: SupportBot (id: NE_HAsIqkS4ZID1xOnX3rKHosUA1Y3v8eNnNQemqPM7K1wqQS7pxqwhnS_PzegT44yl8M-BVvV8WjPGxmtPduw)
 
 --- Updating agent ---
 Updated agent: SupportBot
@@ -8739,7 +7479,7 @@ Agents in deployment: {
   "count": 0,
   "items": []
 }
-WARNING: agents-by-deployment omitted created agent 9n0Tg_h7UolilyOfJSMYsi13sf89X3l9NuZu7YX6E9mHUQEFBIfQOKXznUeCpNG3gGST8W3dmze5NZx69fWARg; TODO: check/fix the server-side deployment lookup
+WARNING: agents-by-deployment omitted created agent NE_HAsIqkS4ZID1xOnX3rKHosUA1Y3v8eNnNQemqPM7K1wqQS7pxqwhnS_PzegT44yl8M-BVvV8WjPGxmtPduw; TODO: check/fix the server-side deployment lookup
 
 --- Deleting agent ---
 Agent deleted successfully
@@ -8748,13 +7488,6 @@ Agent deleted successfully
 Goals deleted successfully
 
 === All goals, tasks & agents operations completed ===
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === Join Operations Examples ===
 
 Setting up sample data...
@@ -8762,8 +7495,8 @@ Setting up sample data...
 
 1. Single collection join (users with departments):
 Found 2 users with department data:
-  - Alice Johnson: Engineering
   - Bob Smith: Sales
+  - Alice Johnson: Engineering
 
 2. Join with filtering:
 Found 1 users in Engineering:
@@ -8771,8 +7504,8 @@ Found 1 users in Engineering:
 
 3. Join with user profiles:
 Found 2 users with profile data:
-  - Alice Johnson: Senior Software Engineer
   - Bob Smith: Sales Manager
+  - Alice Johnson: Senior Software Engineer
 
 4. Join orders with user data:
 Found 2 completed orders:
@@ -8788,13 +7521,6 @@ Found 2 users with example.com emails:
 ✅ Join operations examples completed!
 === Cleanup ===
 ✅ Deleted test collections
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 ✓ ts_users_register saved
 ✓ ts_users_login saved
@@ -8802,62 +7528,55 @@ perl: warning: Falling back to the standard locale ("C").
 
 === Auth flow defined as pure stored functions ===
 Call them like:
-  POST /api/functions/jwt_register_ts_44229_1789567025055 { "email": "a@b.com", "password": "s3cret" }
-  POST /api/functions/jwt_login_ts_44229_1789567025055 { "email": "a@b.com", "password": "s3cret" }
-  POST /api/functions/jwt_verify_ts_44229_1789567025055 { "token": "<jwt>" }
+  POST /api/functions/jwt_register_ts_68440_1789591590076 { "email": "a@b.com", "password": "s3cret" }
+  POST /api/functions/jwt_login_ts_68440_1789591590076 { "email": "a@b.com", "password": "s3cret" }
+  POST /api/functions/jwt_verify_ts_68440_1789591590076 { "token": "<jwt>" }
 
 Set JWT_SECRET in ekoDB's environment_vars whitelist before invoking.
 
 ✓ Cleaned up demo functions
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB KV Document Linking Example (TypeScript) ===
 
 --- Setup: creating KV key and documents ---
 Set KV key: session:admin
-Inserted document 1: yd6IIWRlX2kl3zX5pPTLxLvb3cYnQarkqZre4qsJ0_H8qXKACr76AnSvSwNlsroQ5bxui6tCg0aMENKH4U-n9A
-Inserted document 2: 57ciVJwpuOb_vhrWYNBdxcWkdUQIyce2Qmwm-z-rR-SjH8pfalkpgIDmMh3VYKzihGGoqFkkOtStDUX01LwhBA
+Inserted document 1: 39KI33T5Crwilgsy_XPOuPqUzZGCcjmK5GUMwlmEd-toDjZbZym9rk3y7KCIBu-i-ctmdinAQJZWn_7w9bHU-A
+Inserted document 2: 24eEE4gU81mj0ddsoULx6RR86R3CqCWXx6q5ks-NgqV-UcvBAStdPqoLoIKmtj6SfBZmYRTGehb0Sh6UUQGsWA
 
 --- Linking documents to KV key ---
-Linked doc yd6IIWRlX2kl3zX5pPTLxLvb3cYnQarkqZre4qsJ0_H8qXKACr76AnSvSwNlsroQ5bxui6tCg0aMENKH4U-n9A: null
-Linked doc 57ciVJwpuOb_vhrWYNBdxcWkdUQIyce2Qmwm-z-rR-SjH8pfalkpgIDmMh3VYKzihGGoqFkkOtStDUX01LwhBA: null
+Linked doc 39KI33T5Crwilgsy_XPOuPqUzZGCcjmK5GUMwlmEd-toDjZbZym9rk3y7KCIBu-i-ctmdinAQJZWn_7w9bHU-A: null
+Linked doc 24eEE4gU81mj0ddsoULx6RR86R3CqCWXx6q5ks-NgqV-UcvBAStdPqoLoIKmtj6SfBZmYRTGehb0Sh6UUQGsWA: null
 
 --- Getting links for KV key ---
 Links: [
   {
-    "collection": "kv_links_example_ts_44269_1789567025406",
-    "document_id": "57ciVJwpuOb_vhrWYNBdxcWkdUQIyce2Qmwm-z-rR-SjH8pfalkpgIDmMh3VYKzihGGoqFkkOtStDUX01LwhBA",
+    "collection": "kv_links_example_ts_68475_1789591590426",
+    "document_id": "39KI33T5Crwilgsy_XPOuPqUzZGCcjmK5GUMwlmEd-toDjZbZym9rk3y7KCIBu-i-ctmdinAQJZWn_7w9bHU-A",
     "field_path": null,
-    "created_at": "2026-09-16T13:57:05.497356Z",
-    "last_accessed": "2026-09-16T13:57:05.499629Z",
+    "created_at": "2026-09-16T20:46:30.521535Z",
+    "last_accessed": "2026-09-16T20:46:30.523812Z",
     "metadata": {}
   },
   {
-    "collection": "kv_links_example_ts_44269_1789567025406",
-    "document_id": "yd6IIWRlX2kl3zX5pPTLxLvb3cYnQarkqZre4qsJ0_H8qXKACr76AnSvSwNlsroQ5bxui6tCg0aMENKH4U-n9A",
+    "collection": "kv_links_example_ts_68475_1789591590426",
+    "document_id": "24eEE4gU81mj0ddsoULx6RR86R3CqCWXx6q5ks-NgqV-UcvBAStdPqoLoIKmtj6SfBZmYRTGehb0Sh6UUQGsWA",
     "field_path": null,
-    "created_at": "2026-09-16T13:57:05.494021Z",
-    "last_accessed": "2026-09-16T13:57:05.499629Z",
+    "created_at": "2026-09-16T20:46:30.522765Z",
+    "last_accessed": "2026-09-16T20:46:30.523812Z",
     "metadata": {}
   }
 ]
 
 --- Unlinking document ---
-Unlinked doc 57ciVJwpuOb_vhrWYNBdxcWkdUQIyce2Qmwm-z-rR-SjH8pfalkpgIDmMh3VYKzihGGoqFkkOtStDUX01LwhBA: null
+Unlinked doc 24eEE4gU81mj0ddsoULx6RR86R3CqCWXx6q5ks-NgqV-UcvBAStdPqoLoIKmtj6SfBZmYRTGehb0Sh6UUQGsWA: null
 
 --- Verifying remaining links ---
 Remaining links: [
   {
-    "collection": "kv_links_example_ts_44269_1789567025406",
-    "document_id": "yd6IIWRlX2kl3zX5pPTLxLvb3cYnQarkqZre4qsJ0_H8qXKACr76AnSvSwNlsroQ5bxui6tCg0aMENKH4U-n9A",
+    "collection": "kv_links_example_ts_68475_1789591590426",
+    "document_id": "39KI33T5Crwilgsy_XPOuPqUzZGCcjmK5GUMwlmEd-toDjZbZym9rk3y7KCIBu-i-ctmdinAQJZWn_7w9bHU-A",
     "field_path": null,
-    "created_at": "2026-09-16T13:57:05.494021Z",
-    "last_accessed": "2026-09-16T13:57:05.502709Z",
+    "created_at": "2026-09-16T20:46:30.521535Z",
+    "last_accessed": "2026-09-16T20:46:30.525977Z",
     "metadata": {}
   }
 ]
@@ -8866,32 +7585,25 @@ Remaining links: [
 
 --- Cleanup ---
 Cleanup complete
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
 === KV Set ===
 ✓ Set key: session:user123
 
 === KV Get ===
-Retrieved value: { type: 'Object', value: { username: 'john_doe', userId: 123 } }
+Retrieved value: { type: 'Object', value: { userId: 123, username: 'john_doe' } }
 
 === KV Batch Set ===
 ✓ Batch set 3 keys
-  kv_ops_ts_44298_1789567025865:cache:product:1: success
-  kv_ops_ts_44298_1789567025865:cache:product:2: success
-  kv_ops_ts_44298_1789567025865:cache:product:3: success
+  kv_ops_ts_68505_1789591590884:cache:product:1: success
+  kv_ops_ts_68505_1789591590884:cache:product:2: success
+  kv_ops_ts_68505_1789591590884:cache:product:3: success
 
 === KV Batch Get ===
 ✓ Batch retrieved 3 values
-  kv_ops_ts_44298_1789567025865:cache:product:1: { name: 'Product 1', price: 29.99 }
-  kv_ops_ts_44298_1789567025865:cache:product:2: { price: 39.99, name: 'Product 2' }
-  kv_ops_ts_44298_1789567025865:cache:product:3: { name: 'Product 3', price: 49.99 }
+  kv_ops_ts_68505_1789591590884:cache:product:1: { name: 'Product 1', price: 29.99 }
+  kv_ops_ts_68505_1789591590884:cache:product:2: { name: 'Product 2', price: 39.99 }
+  kv_ops_ts_68505_1789591590884:cache:product:3: { price: 49.99, name: 'Product 3' }
 
 === KV Exists ===
 Key exists: true
@@ -8908,18 +7620,11 @@ Total keys in store: 4
 
 === KV Batch Delete ===
 ✓ Batch deleted 3 keys
-  kv_ops_ts_44298_1789567025865:cache:product:1: deleted
-  kv_ops_ts_44298_1789567025865:cache:product:2: deleted
-  kv_ops_ts_44298_1789567025865:cache:product:3: deleted
+  kv_ops_ts_68505_1789591590884:cache:product:1: deleted
+  kv_ops_ts_68505_1789591590884:cache:product:2: deleted
+  kv_ops_ts_68505_1789591590884:cache:product:3: deleted
 
 ✓ All KV operations completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === KV Precision: Float vs Decimal ===
 
 === Test 1: Using JavaScript Floats (LOSES PRECISION) ===
@@ -8956,13 +7661,6 @@ Retrieved decimal prices:
 
 === Cleanup ===
 ✓ Cleaned up test keys
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 ✓ ts_route_admin → GET /api/route/users/admin
 ✓ ts_route_user_by_id → GET /api/route/users/:id
@@ -8977,13 +7675,6 @@ Try them with curl:
        -H 'Content-Type: application/json' -d '{"name":"alice"}'
 
 ✓ Cleaned up demo functions
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === Query Builder Examples ===
 
 Setting up test data...
@@ -9017,13 +7708,6 @@ Found 2 users (bypassed cache)
 ✅ Deleted test collection
 
 ✅ Query Builder examples completed!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB Raw Completion Stream (SSE) Example ===
 
 --- Basic SSE Raw Completion ---
@@ -9040,38 +7724,31 @@ JSON response: [
     "diameter_km": 12104
   },
   {
-    "name": "Jupiter",
-    "diameter_km": 139820
+    "name": "Earth",
+    "diameter_km": 12742
   }
 ]
 
 --- Blocking HTTP (for comparison) ---
-Blocking response: Hello! I hope you're having a wonderful day.
+Blocking response: Hello! I hope you’re having a wonderful day.
 
 === Done ===
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB Schedule Management Example (TypeScript) ===
 
 --- Creating schedule ---
-Created schedule: Nightly Database Backup (id: b4c3c035-310d-4b3e-9a23-0deec07b44b1, cron: 0 0 2 * * *)
+Created schedule: Nightly Database Backup (id: 093b4f3d-7f60-4f0a-bf48-e017478b8056, cron: 0 0 2 * * *)
 
 --- Listing schedules ---
 Schedules: {
   "count": 1,
   "schedules": [
     {
-      "created_at": "2026-09-16T13:57:10.081119Z",
+      "created_at": "2026-09-16T20:46:35.315401Z",
       "cron_expression": "0 0 2 * * *",
       "description": null,
       "enabled": true,
-      "function_label": "schedule_noop_typescript_44451_1789567030044",
-      "id": "b4c3c035-310d-4b3e-9a23-0deec07b44b1",
+      "function_label": "schedule_noop_typescript_68668_1789591595284",
+      "id": "093b4f3d-7f60-4f0a-bf48-e017478b8056",
       "last_execution": null,
       "name": "Nightly Database Backup",
       "next_execution": "2026-09-17T02:00:00Z",
@@ -9084,7 +7761,7 @@ Schedules: {
         "total_executions": 0
       },
       "timezone": "UTC",
-      "updated_at": "2026-09-16T13:57:10.081119Z"
+      "updated_at": "2026-09-16T20:46:35.315401Z"
     }
   ]
 }
@@ -9097,7 +7774,7 @@ Updated: Nightly Full Backup (new cron: 0 0 3 * * *)
 
 --- Triggering schedule ---
 Trigger response: {
-  "schedule_id": "b4c3c035-310d-4b3e-9a23-0deec07b44b1",
+  "schedule_id": "093b4f3d-7f60-4f0a-bf48-e017478b8056",
   "status": "triggered"
 }
 
@@ -9111,13 +7788,6 @@ Schedule enabled after resume: true
 Schedule deleted successfully
 
 === All schedule operations completed ===
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === Schema Management Examples ===
 
 1. Creating user schema with basic fields:
@@ -9140,13 +7810,6 @@ Collection has 4 fields
 ✅ Employee schema with all constraints created
 
 ✅ Schema management examples completed!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === Search Examples ===
 
 Setting up test data...
@@ -9154,22 +7817,22 @@ Setting up test data...
 
 1. Basic full-text search:
 Found 2 results
-  1. Score: 12.870, Matched: email, name
+  1. Score: 12.870, Matched: name, email
   2. Score: 6.270, Matched: name
 
 2. Fuzzy search (typo tolerance):
 Found 4 results with fuzzy matching
   1. Score: 13.200, Matched: bio, title
   2. Score: 13.200, Matched: title, bio
-  3. Score: 13.200, Matched: title, bio
-  4. Score: 13.200, Matched: title, bio
+  3. Score: 13.200, Matched: bio, title
+  4. Score: 13.200, Matched: bio, title
 
 3. Search with field weights:
 Found 4 results with weighted fields
-  1. Score: 26.400, Matched: title, bio
+  1. Score: 26.400, Matched: bio, title
   2. Score: 26.400, Matched: bio, title
-  3. Score: 26.400, Matched: title, bio
-  4. Score: 26.400, Matched: title, bio
+  3. Score: 26.400, Matched: bio, title
+  4. Score: 26.400, Matched: bio, title
 
 4. Search with minimum score threshold:
 Found 2 results with score >= 0.3
@@ -9183,56 +7846,49 @@ Found 1 results (matches: work, working, worked)
 6. Vector search (semantic search):
 Found 3 semantically similar documents
   1. Score: 0.773, Matched:
-  2. Score: 0.743, Matched:
-  3. Score: 0.730, Matched:
+  2. Score: 0.731, Matched:
+  3. Score: 0.720, Matched:
 
 7. Hybrid search (text + vector):
 Found 3 results using hybrid search (text + vector)
-  1. Score: 1.509, Matched: title, content
-  2. Score: 0.897, Matched: content, title
-  3. Score: 0.292, Matched:
+  1. Score: 1.488, Matched: title, content
+  2. Score: 0.893, Matched: title, content
+  3. Score: 0.309, Matched:
 
 8. Case-sensitive search:
 Found 1 results (case-sensitive)
-  1. Score: 13.200, Matched: bio, skills
+  1. Score: 13.200, Matched: skills, bio
 
 9. Vector search with a metadata pre-filter (category = ml):
 Found 2 documents in category "ml" (NLP excluded)
-  1. Introduction to Machine Learning (category: ml)
-  2. Deep Learning Fundamentals (category: ml)
+  1. Deep Learning Fundamentals (category: ml)
+  2. Introduction to Machine Learning (category: ml)
 
 
 ✅ Search examples completed!
 === Cleanup ===
 ✅ Deleted test collections
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created (token exchange happens automatically)
 
 === Insert Document ===
 Inserted: {
-  id: '6uPvvKVzFjh_rV8M4z8nSfJujtBcV0jkKBuku-mrViwy3E_ix8siVZ_ySTLX9kg6rLJCGkMwgpta-ZcBalDSig'
+  id: 'hyFbi-v9QQDMg8NPP5Hhlqzn74H6GFJ6gwy5PWhIPHmxyTt5VWdJVPqOkbomNsOSM1vJdOu1IEHdsw3c-Iu5jA'
 }
 
 === Find by ID ===
 Found: {
-  user_id: { type: 'String', value: '550e8400-e29b-41d4-a716-446655440000' },
-  name: { type: 'String', value: 'Test Record' },
-  price: { value: 99.99, type: 'Float' },
-  metadata: { type: 'Object', value: { key: 'value', nested: [Object] } },
-  active: { type: 'Boolean', value: true },
-  value: { type: 'Integer', value: 42 },
-  created_at: { value: '2026-09-16T13:57:11.521+00:00', type: 'DateTime' },
-  tags: { type: 'Array', value: [ 'tag1', 'tag2', 'tag3' ] },
-  embedding: { type: 'Array', value: [ 0.1, 0.2, 0.3, 0.4, 0.5 ] },
-  categories: { value: [ 'electronics', 'computers' ], type: 'Array' },
   data: { type: 'String', value: 'aGVsbG8gd29ybGQ=' },
-  id: '6uPvvKVzFjh_rV8M4z8nSfJujtBcV0jkKBuku-mrViwy3E_ix8siVZ_ySTLX9kg6rLJCGkMwgpta-ZcBalDSig'
+  name: { type: 'String', value: 'Test Record' },
+  categories: { value: [ 'electronics', 'computers' ], type: 'Array' },
+  created_at: { type: 'DateTime', value: '2026-09-16T20:46:36.660+00:00' },
+  value: { value: 42, type: 'Integer' },
+  id: 'hyFbi-v9QQDMg8NPP5Hhlqzn74H6GFJ6gwy5PWhIPHmxyTt5VWdJVPqOkbomNsOSM1vJdOu1IEHdsw3c-Iu5jA',
+  embedding: { type: 'Array', value: [ 0.1, 0.2, 0.3, 0.4, 0.5 ] },
+  tags: { value: [ 'tag1', 'tag2', 'tag3' ], type: 'Array' },
+  price: { type: 'Float', value: 99.99 },
+  metadata: { value: { nested: [Object], key: 'value' }, type: 'Object' },
+  user_id: { type: 'String', value: '550e8400-e29b-41d4-a716-446655440000' },
+  active: { type: 'Boolean', value: true }
 }
 
 === Extract Field Values (All Types) ===
@@ -9241,26 +7897,26 @@ Extracted values:
   value (Integer): 42
   active (Boolean): true
   price (Decimal): 99.99
-  created_at (DateTime): 2026-09-16T13:57:11.521Z
+  created_at (DateTime): 2026-09-16T20:46:36.660Z
   user_id (UUID): 550e8400-e29b-41d4-a716-446655440000
   tags (Array): [ 'tag1', 'tag2', 'tag3' ]
-  metadata (Object): { key: 'value', nested: { deep: true } }
+  metadata (Object): { nested: { deep: true }, key: 'value' }
   embedding (Vector): [ 0.1, 0.2, 0.3, 0.4, 0.5 ]
   categories (Set): [ 'electronics', 'computers' ]
   data (Bytes): 11 bytes
 Plain record: {
-  user_id: '550e8400-e29b-41d4-a716-446655440000',
-  name: 'Test Record',
-  price: 99.99,
-  metadata: { key: 'value', nested: { deep: true } },
-  active: true,
-  value: 42,
-  created_at: '2026-09-16T13:57:11.521+00:00',
-  tags: [ 'tag1', 'tag2', 'tag3' ],
-  embedding: [ 0.1, 0.2, 0.3, 0.4, 0.5 ],
-  categories: [ 'electronics', 'computers' ],
   data: 'aGVsbG8gd29ybGQ=',
-  id: '6uPvvKVzFjh_rV8M4z8nSfJujtBcV0jkKBuku-mrViwy3E_ix8siVZ_ySTLX9kg6rLJCGkMwgpta-ZcBalDSig'
+  name: 'Test Record',
+  categories: [ 'electronics', 'computers' ],
+  created_at: '2026-09-16T20:46:36.660+00:00',
+  value: 42,
+  id: 'hyFbi-v9QQDMg8NPP5Hhlqzn74H6GFJ6gwy5PWhIPHmxyTt5VWdJVPqOkbomNsOSM1vJdOu1IEHdsw3c-Iu5jA',
+  embedding: [ 0.1, 0.2, 0.3, 0.4, 0.5 ],
+  tags: [ 'tag1', 'tag2', 'tag3' ],
+  price: 99.99,
+  metadata: { nested: { deep: true }, key: 'value' },
+  user_id: '550e8400-e29b-41d4-a716-446655440000',
+  active: true
 }
 
 === Find with Query ===
@@ -9268,17 +7924,17 @@ Found documents: 1
 
 === Update Document ===
 Updated: {
+  active: { type: 'Boolean', value: true },
+  categories: { value: [ 'electronics', 'computers' ], type: 'Array' },
+  id: 'hyFbi-v9QQDMg8NPP5Hhlqzn74H6GFJ6gwy5PWhIPHmxyTt5VWdJVPqOkbomNsOSM1vJdOu1IEHdsw3c-Iu5jA',
+  price: { type: 'Float', value: 99.99 },
   value: { value: 100, type: 'Integer' },
-  embedding: { type: 'Array', value: [ 0.1, 0.2, 0.3, 0.4, 0.5 ] },
-  id: '6uPvvKVzFjh_rV8M4z8nSfJujtBcV0jkKBuku-mrViwy3E_ix8siVZ_ySTLX9kg6rLJCGkMwgpta-ZcBalDSig',
-  active: { value: true, type: 'Boolean' },
-  metadata: { value: { key: 'value', nested: [Object] }, type: 'Object' },
-  categories: { type: 'Array', value: [ 'electronics', 'computers' ] },
-  data: { type: 'String', value: 'aGVsbG8gd29ybGQ=' },
   name: { value: 'Updated Record', type: 'String' },
   tags: { type: 'Array', value: [ 'tag1', 'tag2', 'tag3' ] },
-  price: { type: 'Float', value: 99.99 },
-  created_at: { type: 'DateTime', value: '2026-09-16T13:57:11.521+00:00' },
+  metadata: { value: { nested: [Object], key: 'value' }, type: 'Object' },
+  created_at: { value: '2026-09-16T20:46:36.660+00:00', type: 'DateTime' },
+  embedding: { type: 'Array', value: [ 0.1, 0.2, 0.3, 0.4, 0.5 ] },
+  data: { type: 'String', value: 'aGVsbG8gd29ybGQ=' },
   user_id: { value: '550e8400-e29b-41d4-a716-446655440000', type: 'String' }
 }
 
@@ -9289,17 +7945,10 @@ Deleted document
 ✓ Deleted collection
 
 ✓ All CRUD operations completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
 === Inserting Test Data ===
-✓ Inserted test record: 1e3c0qoAn3EcbJ0T-vP_sk1akMc5ZCksB5OTpdyBFlKzdRedIyl_ZfZMpS6l2gszuvSzJfZ5m_YqsDuaKcH8kQ
+✓ Inserted test record: YLBLGDcd36AtEOFXkM3Tvun6C20hA_oFFqAa-hHl59PE8qYlU235zCzLks1eCNoSXAai5wqQjGlyel0RZIuGRQ
 
 === Connecting to WebSocket ===
 ✓ WebSocket connected
@@ -9312,13 +7961,6 @@ perl: warning: Falling back to the standard locale ("C").
 ✓ Deleted collection
 
 ✓ WebSocket example completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 🚀 ekoDB TypeScript Client - Native SWR Function Examples
 
 📋 Demonstrates:
@@ -9336,22 +7978,22 @@ perl: warning: Falling back to the standard locale ("C").
 Example 1: Basic Native SWR
 ────────────────────────────────────────────────────────────────────────────────
 Single function replaces KvGet → If → HttpRequest → KvSet pipeline
-✓ Created native SWR script: github_user_native_ts (rF7Co0dMr7y5ZPXvkAWjgd9-5g2ZnbjczF3rXpzckpfojICxG-F6KjX79yVrPZkfisf2j4qzDbghL3aS4dRCVQ)
+✓ Created native SWR script: github_user_native_ts (SfyfnK1wf2Vy4baTcbrWmZsVhnYvpYwz9D9QTnuWWx-HkUaAdOFrl5Ky0lZdLdM78XCJnGWmFMAja57uD8UtMw)
 
 First call (cache miss - will fetch from GitHub API):
-  Response time: 174ms
+  Response time: 482ms
   Records returned: 1
 
 Second call (cache hit - instant from KV store):
-  Response time: 5ms
-  Speedup: 34.8x faster 🚀
+  Response time: 3ms
+  Speedup: 160.7x faster 🚀
   Records returned: 1
 
 
 Example 2: SWR with Built-in Audit Trail
 ────────────────────────────────────────────────────────────────────────────────
 Optional collection parameter for automatic request logging
-✓ Created SWR script with audit trail: product_swr_audit_ts (7vHIO0IpfPdBYxdheHiYgfo6Dchr6KA2F2-oMFVV12MgkXymvbLU1F_DzYg5Ziit8oukluO-nJtqEQGfjBYhjQ)
+✓ Created SWR script with audit trail: product_swr_audit_ts (HhegY1bBBiAxgqW9jTaB2qtmwJGodkDkjSK6rLlQHxgqxCaM-SyTBbTLvUdNT60kQCvvnyD_e7YvvAbYPFTrcQ)
 
 Fetching product (will create audit trail entry):
   ✓ Product fetched and cached
@@ -9362,7 +8004,7 @@ Fetching product (will create audit trail entry):
 Example 3: SWR in Multi-Function Pipeline
 ────────────────────────────────────────────────────────────────────────────────
 Fetch external data → Process → Store in collection
-✓ Created enrichment pipeline: user_enrichment_pipeline_ts (YkpH-3izGy9ESfBr5tcZik5FmMZGcm2S7JyVbEiD6RGWQF2pO1FajLgBtJams63VHl89GspGYomlsDg8MIJ_Vw)
+✓ Created enrichment pipeline: user_enrichment_pipeline_ts (72M6S_phU2tIOPpleluuHFjPe0caosFzFPaDtHUDfAnK_cCBQ--MJe0p6yDu-r4DRg6DTtFOgGxKxYo8NtWUtw)
 
 Running pipeline:
   ✓ Data fetched from API (cached 30m)
@@ -9373,7 +8015,7 @@ Running pipeline:
 Example 4: Dynamic TTL Configuration
 ────────────────────────────────────────────────────────────────────────────────
 TTL as parameter - supports duration strings, integers, ISO timestamps
-✓ Created dynamic TTL script: flexible_cache_ts (ZjZwehFwX-NcY4B5PNNs-1djiXI77f_Hv7hgpgTtZ4jWwno58qv-lBKfGCZxAbMUBYAhUL5UF3YDEASB3RCHEQ)
+✓ Created dynamic TTL script: flexible_cache_ts (aJbRwRO-rd4laSbrHvsRsEYm1MCL8s6wmj9EFJfZ5uWA-UUyTde2zDj_ExbhSGMa04ooyoDRikDKYxm_odiaqg)
   ✓ Cached with TTL: 5m (5 minutes)
   ✓ Cached with TTL: 1h (1 hour)
   ✓ Cached with TTL: 30s (30 seconds)
@@ -9396,17 +8038,10 @@ Result:         60% fewer functions, cleaner code, same behavior 🎯
 ✓ Deleted 4 test scripts and owned SWR resources
 
 ✅ All examples completed!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB SWR (Stale-While-Revalidate) Pattern ===
 
 Step 1: Create SWR function that acts as edge cache
-✓ Created SWR script: fetch_api_user_ts_44654_1789567033797 (C4aA0eLf1hBeFUm0J_ERRpbszRx-G9G_NCan1KV-iQ1aPor2-52ZQECBM4pVvgwKCZbt1PUg8Y4QmiWtmOrgKA)
+✓ Created SWR script: fetch_api_user_ts_68859_1789591599098 (oi1XBJRnnQTprjMZi1w8s9A1yPFzaoLTC46geZXgHaBm7Snm9w4t__4nxUFuxMymNr8QC1I7UE8EVO4hFaABVg)
 
 Step 2: First call - Cache miss, fetches from API
 Result: {
@@ -9415,27 +8050,27 @@ Result: {
       "value": {
         "type": "Object",
         "value": {
+          "email": "Sincere@april.biz",
+          "website": "hildegard.org",
           "company": {
-            "bs": "harness real-time e-markets",
+            "name": "Romaguera-Crona",
             "catchPhrase": "Multi-layered client-server neural-net",
-            "name": "Romaguera-Crona"
+            "bs": "harness real-time e-markets"
           },
           "username": "Bret",
-          "name": "Leanne Graham",
           "phone": "1-770-736-8031 x56442",
-          "website": "hildegard.org",
-          "email": "Sincere@april.biz",
           "id": 1,
           "address": {
-            "suite": "Apt. 556",
+            "city": "Gwenborough",
             "zipcode": "92998-3874",
             "geo": {
-              "lng": "81.1496",
-              "lat": "-37.3159"
+              "lat": "-37.3159",
+              "lng": "81.1496"
             },
-            "city": "Gwenborough",
-            "street": "Kulas Light"
-          }
+            "street": "Kulas Light",
+            "suite": "Apt. 556"
+          },
+          "name": "Leanne Graham"
         }
       }
     }
@@ -9451,35 +8086,35 @@ Result: {
 ✓ Data fetched from external API and cached
 
 Step 3: Second call - Cache hit, instant response from ekoDB
-Response time: 8ms (served from cache)
+Response time: 2ms (served from cache)
 Result (cached): {
   "records": [
     {
       "value": {
-        "type": "Object",
         "value": {
+          "email": "Sincere@april.biz",
+          "website": "hildegard.org",
           "company": {
-            "bs": "harness real-time e-markets",
+            "name": "Romaguera-Crona",
             "catchPhrase": "Multi-layered client-server neural-net",
-            "name": "Romaguera-Crona"
+            "bs": "harness real-time e-markets"
           },
           "username": "Bret",
-          "name": "Leanne Graham",
           "phone": "1-770-736-8031 x56442",
-          "website": "hildegard.org",
-          "email": "Sincere@april.biz",
           "id": 1,
           "address": {
-            "suite": "Apt. 556",
+            "city": "Gwenborough",
             "zipcode": "92998-3874",
             "geo": {
-              "lng": "81.1496",
-              "lat": "-37.3159"
+              "lat": "-37.3159",
+              "lng": "81.1496"
             },
-            "city": "Gwenborough",
-            "street": "Kulas Light"
-          }
-        }
+            "street": "Kulas Light",
+            "suite": "Apt. 556"
+          },
+          "name": "Leanne Graham"
+        },
+        "type": "Object"
       }
     }
   ],
@@ -9496,74 +8131,74 @@ Result (cached): {
 === Advanced: SWR with Data Enrichment ===
 
 Creating product enrichment function...
-✓ Created enrichment script: fetch_product_reviews_ts_44654_1789567033797 (9GM0HCuwR1ivD2uQ9eMyydEJbYUgO_522x5CaIHNLMOMxkGbfFSfOhOXCH9rTRHv2dx5eThSftw4bLdM4EXi-w)
+✓ Created enrichment script: fetch_product_reviews_ts_68859_1789591599098 (1qiuv4ebCd21HKRj9rxOAySdFShIrJoyUAaBzQTlEzYjbryjjoNVZaBz5O6nds-Qa_l8BC6ejE5MCihGRrOcxw)
 
 Step 4: Call enrichment function - Fetches from 2 APIs + stores merged result
 Enriched data: {
   "records": [
     {
       "value": {
-        "type": "Object",
         "value": {
-          "category": "beauty",
-          "stock": 99,
-          "reviews": [
-            {
-              "rating": 3,
-              "comment": "Would not recommend!",
-              "date": "2025-04-30T09:41:02.053Z",
-              "reviewerName": "Eleanor Collins",
-              "reviewerEmail": "eleanor.collins@x.dummyjson.com"
-            },
-            {
-              "reviewerName": "Lucas Gordon",
-              "date": "2025-04-30T09:41:02.053Z",
-              "reviewerEmail": "lucas.gordon@x.dummyjson.com",
-              "comment": "Very satisfied!",
-              "rating": 4
-            },
-            {
-              "reviewerName": "Eleanor Collins",
-              "comment": "Highly impressed!",
-              "date": "2025-04-30T09:41:02.053Z",
-              "reviewerEmail": "eleanor.collins@x.dummyjson.com",
-              "rating": 5
-            }
-          ],
-          "price": 9.99,
-          "sku": "BEA-ESS-ESS-001",
-          "dimensions": {
-            "depth": 22.99,
-            "height": 13.08,
-            "width": 15.14
-          },
-          "shippingInformation": "Ships in 3-5 business days",
-          "id": 1,
-          "thumbnail": "https://cdn.dummyjson.com/product-images/beauty/essence-mascara-lash-princess/thumbnail.webp",
+          "weight": 4,
           "warrantyInformation": "1 week warranty",
-          "minimumOrderQuantity": 48,
-          "brand": "Essence",
-          "availabilityStatus": "In Stock",
-          "description": "The Essence Mascara Lash Princess is a popular mascara known for its volumizing and lengthening effects. Achieve dramatic lashes with this long-lasting and cruelty-free formula.",
-          "discountPercentage": 10.48,
+          "category": "beauty",
           "images": [
             "https://cdn.dummyjson.com/product-images/beauty/essence-mascara-lash-princess/1.webp"
           ],
-          "rating": 2.56,
+          "returnPolicy": "No return policy",
+          "stock": 99,
+          "brand": "Essence",
+          "dimensions": {
+            "width": 15.14,
+            "depth": 22.99,
+            "height": 13.08
+          },
           "meta": {
-            "updatedAt": "2026-05-23T11:27:41.868Z",
-            "createdAt": "2025-10-09T14:47:01.588Z",
             "barcode": "5784719087687",
+            "createdAt": "2025-10-09T14:47:01.588Z",
+            "updatedAt": "2026-05-23T11:27:41.868Z",
             "qrCode": "https://cdn.dummyjson.com/public/qr-code.png"
           },
-          "returnPolicy": "No return policy",
+          "minimumOrderQuantity": 48,
+          "rating": 2.56,
+          "discountPercentage": 10.48,
+          "thumbnail": "https://cdn.dummyjson.com/product-images/beauty/essence-mascara-lash-princess/thumbnail.webp",
+          "shippingInformation": "Ships in 3-5 business days",
+          "availabilityStatus": "In Stock",
+          "title": "Essence Mascara Lash Princess",
+          "description": "The Essence Mascara Lash Princess is a popular mascara known for its volumizing and lengthening effects. Achieve dramatic lashes with this long-lasting and cruelty-free formula.",
           "tags": [
             "beauty",
             "mascara"
           ],
-          "title": "Essence Mascara Lash Princess",
-          "weight": 4
-        }
+          "price": 9.99,
+          "id": 1,
+          "sku": "BEA-ESS-ESS-001",
+          "reviews": [
+            {
+              "date": "2025-04-30T09:41:02.053Z",
+              "comment": "Would not recommend!",
+              "rating": 3,
+              "reviewerEmail": "eleanor.collins@x.dummyjson.com",
+              "reviewerName": "Eleanor Collins"
+            },
+            {
+              "date": "2025-04-30T09:41:02.053Z",
+              "reviewerEmail": "lucas.gordon@x.dummyjson.com",
+              "rating": 4,
+              "reviewerName": "Lucas Gordon",
+              "comment": "Very satisfied!"
+            },
+            {
+              "comment": "Highly impressed!",
+              "reviewerName": "Eleanor Collins",
+              "date": "2025-04-30T09:41:02.053Z",
+              "reviewerEmail": "eleanor.collins@x.dummyjson.com",
+              "rating": 5
+            }
+          ]
+        },
+        "type": "Object"
       }
     }
   ],
@@ -9606,21 +8241,14 @@ Enriched data: {
 
 ✓ Example complete - Your database IS your edge!
 
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
 === Setup: Creating Test Accounts ===
-Created Alice: $1000 - ID: l0t13w8Bc4PT2zMBHo1AFUumOu1sFUwAomyDicvNbxA9FkYFKKEPIfs2US_zth50yad4bHn3c4nXOHLizu59Tg
-Created Bob: $500 - ID: n6a6xjh10AiKr1vibZGSzcaMUG0et7s9t1Vokkylye8zV9JTtpmlw63oYVSnWaiSGFKSydowehMeNvSkNEmQ1A
+Created Alice: $1000 - ID: I2eaEoX_PYiUyPacFGhYmNnB8JeS9Hy4HbH52jAW4jvnMf1C84yBeHftQ2VW36EemT6EUnojk6i8tsO3zo_EXQ
+Created Bob: $500 - ID: hEjGdzSCMTBGAcP1sifrBtNTCaEZ5jQigeUPCgDENoSJV-3hyTJYV6VybjDAbc0f8WigCB1-elG_EJPwsiZxaQ
 
 === Example 1: Begin Transaction ===
-Transaction ID (server-default isolation): 703dded5-cf26-4f0c-bfee-a1a636e21028
+Transaction ID (server-default isolation): 73f926ec-75bf-4b64-b399-d0598476f8eb
 
 === Example 2: Operations within Transaction ===
 Updated Alice: $1000 → $800
@@ -9636,7 +8264,7 @@ Operations: 2
 ✓ Verified committed balances: Alice=$800, Bob=$700
 
 === Example 5: Rollback Demo ===
-New transaction: becf42c6-cde9-4439-bfc3-f07b19ca41d9
+New transaction: b426bb99-2b0f-4e49-84f8-42aa51507cd2
 Updated Bob: $700 → $600 (in transaction)
 Status before rollback: Active
 ✓ Transaction rolled back
@@ -9647,35 +8275,22 @@ Status before rollback: Active
 ✓ Deleted test account collection
 
 ✓ All client transaction examples completed
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
 === Create User Function ===
-Created user function with ID: t5Cs3dhQH9reoGHcdmUSctND3NldctK0NB7ztdKpDkQPiF9CX3FbIKAGQrpyNvP3kL9Z-7oNz6cCf6wgY74Qrg
+Created user function with ID: 667ouiTuRngOR-9_3I7Jct8RC36Ml7YnT_wBvVJxjXeTIdIe-0BTC1myF4HYrFXtsJ9JeX-q1mwJ6hMgWg8Kwg
 
 === Get User Function ===
 Retrieved: get_active_users_ts - Get Active Users
 Description: Fetches all users and filters by active status
 
 === List All User Functions ===
-Found 11 user functions:
-  - conc_demo_rl_fail_ts_30955_1789566761407: Rate-limit (fail mode)
-  - conc_demo_rl_skip_ts_43664_1789567012579: Rate-limit (skip mode)
-  - conc_demo_rl_skip_ts_30955_1789566761407: Rate-limit (skip mode)
-  - conc_demo_rl_fail_ts_19088_1789566533301: Rate-limit (fail mode)
-  - conc_demo_rl_fail_ts_43664_1789567012579: Rate-limit (fail mode)
+Found 5 user functions:
+  - fetch_product_reviews_ts_68859_1789591599098: Fetch Product with Reviews (Multi-API)
+  - conc_demo_rl_skip_ts_67690_1789591578851: Rate-limit (skip mode)
   - get_active_users_ts: Get Active Users
+  - conc_demo_rl_fail_ts_67690_1789591578851: Rate-limit (fail mode)
   - get_active_users_client_ts_updated: Get Active Users (Updated)
-  - fetch_product_reviews_ts_32495_1789566782714: Fetch Product with Reviews (Multi-API)
-  - fetch_product_reviews_ts_44654_1789567033797: Fetch Product with Reviews (Multi-API)
-  - conc_demo_rl_skip_ts_19088_1789566533301: Rate-limit (skip mode)
-  - avg_score_by_role_ts_19467_1789566544643: Average Score by Role
 
 === Update User Function ===
 User function updated successfully
@@ -9684,66 +8299,45 @@ User function updated successfully
 User function deleted successfully
 
 ✓ User Functions API example complete
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === WebSocket Chat Streaming Example (TypeScript) ===
 
-Created chat session: 55eVXkoOfGX8HW1fCOZbqEC4HP7MHmAuTTT2zNEcwkn8sg1uIjD-QLc7FROp8RrcWAy7Fj4sRuVx83HUw4OFcw
+Created chat session: 16cYPTcV5eqr2k1LL0FMGGhXs72oVy6yisJCVDN0kKpkLWwC7PrysYUpdggVesFOgsV5B3FTa2EyAV3KlAiHuA
 
 Sending message: 'What is the capital of France?'
 {"__progress":"received"}{"__progress":"generating","model":"default","provider":"openai"}The capital of France is Paris.
 
 --- Stream ended ---
-Message ID: oeTGyOd-IEst_e64cXenHWlW2apIKAcb5ntf1VQIQghxvDpfwI7WdTDWqypW-oageUm7Uhm6QqvdPLISN0Bd2g
-Execution time: 513ms
+Message ID: jGDWC8yq5ktqJdE4-UZO-WqoC3u3wuyQMp9Ek-2FM6AUiDu7iTBNx-kB0JYOUjxES2lqMU_ec8cG3JQmtzd_lg
+Execution time: 543ms
 Token usage: {"completion_tokens":8,"prompt_tokens":15,"total_tokens":23}
 
 Full response: {"__progress":"received"}{"__progress":"generating","model":"default","provider":"openai"}The capital of France is Paris....
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === WebSocket Subscription Example ===
 
 ✓ Authentication successful
 ✓ WebSocket connected
 
 === Subscribing to 'ws_subscribe_example_ts' ===
-✓ Subscribed (subscription_id: sub_8014a7a55c2446a796e88a5008925e01)
+✓ Subscribed (subscription_id: sub_b21b03b58b784e9c85b5366094b86c5a)
 
 === Performing mutations to trigger notifications ===
 Inserting a record...
-✓ Inserted record: 4xm8tj3LhYAYPvY4Ad5d8AT95dz3NFkPbq97CFPUgtECjAmBcJ30bqqbKSG4k1gZXONXo3FHznmMdjaXOp6OFQ
-  📡 Notification received for 4xm8tj3LhYAYPvY4Ad5d8AT95dz3NFkPbq97CFPUgtECjAmBcJ30bqqbKSG4k1gZXONXo3FHznmMdjaXOp6OFQ
+✓ Inserted record: zQK6JbCAGDGb_5p-TOfMM6ZJ9MeVIgtZf3Ehj_zPrUcW0Td2BIbYau009T6kR93Wawavi62g0i8vcKTn02BzmA
+  📡 Notification received for zQK6JbCAGDGb_5p-TOfMM6ZJ9MeVIgtZf3Ehj_zPrUcW0Td2BIbYau009T6kR93Wawavi62g0i8vcKTn02BzmA
 
 Inserting another record...
-✓ Inserted record: U6uw4WnOPK2IV9a57c-Vd5nwhFJ9HHGIoqFALwJF6mSMakUFQVgEicxvbUss-eD8XB5T6TNHiMRaXzo8E-2pyw
-  📡 Notification received for U6uw4WnOPK2IV9a57c-Vd5nwhFJ9HHGIoqFALwJF6mSMakUFQVgEicxvbUss-eD8XB5T6TNHiMRaXzo8E-2pyw
+✓ Inserted record: BG91MUi138Z2RCOsuQ59hDAUZv64wx7jcsLB_2TQJo7xMQUfoAEMpReYa2t9bzrZxtY8V1ntWNOSf3TuefiekA
+  📡 Notification received for BG91MUi138Z2RCOsuQ59hDAUZv64wx7jcsLB_2TQJo7xMQUfoAEMpReYa2t9bzrZxtY8V1ntWNOSf3TuefiekA
 
 === Unsubscribing ===
 ✓ Unsubscribed: {"collection":"ws_subscribe_example_ts","found":true,"unsubscribed":true}
 
 ✓ WebSocket subscription example completed successfully
 ✓ Deleted collection 'ws_subscribe_example_ts'
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
 === Insert Test Data with TTL ===
-✓ Inserted document with TTL: X4Mv0G4FlDcPOX7EizLypZMulLe37eUVo6jeD4ARSpPXT41kboNNNDBb5fQZxr_-GkndC-_jMsnpmLHU8Vzvpg
+✓ Inserted document with TTL: 3nJHvaPt9Jbwy8Z-u7_--mUd4SnoqGQkc11VlrsI0jfyZCGPewxRalbmPeHoA2uuEvszlgsByj1CQOFYa42yKg
 
 === Query via WebSocket ===
 ✓ WebSocket connected
@@ -9756,23 +8350,16 @@ perl: warning: Falling back to the standard locale ("C").
 ✓ WebSocket TTL example completed successfully
 
 💡 Note: Documents with TTL will automatically expire after the specified duration
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === Bypass Ripple Example ===
 
 1. Basic insert (ripple enabled):
-   Inserted with ripple: {"id":"lpwUJJ0Zdyfln0VIf2q-L1LXJe3BF6bwNkiIHNo7l9KEYtghfkkJM94hJaNWH_hY-FrfvqtO6HK275he3rj6NA"}
+   Inserted with ripple: {"id":"12-xM16Gbq7NcRLRsFEYsbBAwzXT8PREgWmqnNScD7LlDl2UTRCLub_T24paR1s7ywqDRy8ZHpoTt5BVcOBXwQ"}
 
 2. Insert with bypass_ripple:
-   Inserted with bypass_ripple: {"id":"FAnu5BvYFg3qt_c26mQA_M2TbjFxQUjcZ19od3_53zdtW581SKr8d6zRoIifgjwYHyDE3GbdICxJU9AuaqX4Bg"}
+   Inserted with bypass_ripple: {"id":"Zxq5teP2yRWzZRO3sc3cZfNBgfo9SHuBVlhubFGvIY8rTGLPQQBG894-9IX9eL7KCBTVUzBcTA45fTWbLNZuPg"}
 
 3. Update with bypass_ripple:
-   Updated with bypass_ripple: {"id":"lpwUJJ0Zdyfln0VIf2q-L1LXJe3BF6bwNkiIHNo7l9KEYtghfkkJM94hJaNWH_hY-FrfvqtO6HK275he3rj6NA","price":{"value":150,"type":"Integer"},"name":{"type":"String","value":"Product 1"}}
+   Updated with bypass_ripple: {"name":{"type":"String","value":"Product 1"},"price":{"type":"Integer","value":150},"id":"12-xM16Gbq7NcRLRsFEYsbBAwzXT8PREgWmqnNScD7LlDl2UTRCLub_T24paR1s7ywqDRy8ZHpoTt5BVcOBXwQ"}
 
 4. Delete with bypass_ripple:
    Deleted with bypass_ripple
@@ -9781,16 +8368,9 @@ perl: warning: Falling back to the standard locale ("C").
    Batch inserted with bypass_ripple: 2 records
 
 6. Upsert with bypass_ripple:
-   Upserted with bypass_ripple: {"id":"oVupjWL0yw8kwtMHQljrEPBdYEtnWlghP_dVa1v_qpveo4wS-tLVIUIeNIjRrJ4bOdeaBE2HGo-Qqmx_kKEVBg"}
+   Upserted with bypass_ripple: {"id":"m8Rk4ojaO2dFda0-s5SAFWkZDADVDk24JzQ8XYZMY79rO-pCcO7x09bitea8ajDsQFjAoVuOq57izKuj1cBEhg"}
 
 ✅ All bypass_ripple operations completed successfully!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 Client created
 
 Setting up test data...
@@ -9798,7 +8378,7 @@ Inserted 4 test users
 
 Example 1: Select specific fields (id, name, email only)
   Found 3 active users
-  Fields returned: ["id","name","email"]
+  Fields returned: ["name","email","id"]
   First user: Alice Johnson <alice@example.com>
 
 Example 2: Exclude sensitive fields (password, api_key, secret_token)
@@ -9807,7 +8387,7 @@ Example 2: Exclude sensitive fields (password, api_key, secret_token)
     - password: excluded
     - api_key: excluded
     - secret_token: excluded
-  Fields returned: ["created_at","email","user_role","bio","avatar_url","age","id","name","status"]
+  Fields returned: ["avatar_url","id","created_at","email","age","user_role","name","status","bio"]
 
 Example 3: Complex query with projection (active users, ages 18-65)
   Found 3 active users (ages 18-65)
@@ -9822,20 +8402,20 @@ Example 4: Query inactive users with profile fields
 Example 5: Compare full vs projected data
   Full query:
     - 12 fields per record
-    - Fields: ["password","secret_token","age","email","created_at","id","api_key","status","user_role","bio","avatar_url","name"]
+    - Fields: ["created_at","name","email","age","secret_token","avatar_url","bio","user_role","password","id","api_key","status"]
   Projected query:
     - 3 fields per record
-    - Fields: ["name","id","email"]
+    - Fields: ["name","email","id"]
   Bandwidth savings: ~75% fewer fields
 
 Cleaning up test data...
 Cleanup complete
 
 All projection examples completed successfully!
-
+✅ All TypeScript integration tests complete!
 🧪 Running JavaScript examples (direct HTTP/WebSocket)...
 
-added 1 package, removed 1 package, and audited 9 packages in 3s
+added 1 package, removed 1 package, and audited 9 packages in 456ms
 
 1 package is looking for funding
   run `npm fund` for details
@@ -9861,33 +8441,33 @@ found 0 vulnerabilities
 
 === Insert Document ===
 Inserted: {
-  id: 'F8fDcJ4m7sZHXQmlukN3Y6trYGCjr8kj5-zd1jsO5davj6UmHT1cyay0sTDApPXrIBg-XSK_3tCySK549PS3vw'
+  id: 'x7tITASD64-kKZnHuVx2Mbx0pNjnd4UO1QEO5Ztajzl_23RUiYPBpGytjeHLk5B-8JVAA2rz_qpESziumILJTg'
 }
 
 === Find by ID ===
 Found: {
-  name: { type: 'String', value: 'Test Record' },
-  active: { type: 'Boolean', value: true },
-  id: 'F8fDcJ4m7sZHXQmlukN3Y6trYGCjr8kj5-zd1jsO5davj6UmHT1cyay0sTDApPXrIBg-XSK_3tCySK549PS3vw',
-  value: { value: 42, type: 'Integer' }
+  name: { value: 'Test Record', type: 'String' },
+  id: 'x7tITASD64-kKZnHuVx2Mbx0pNjnd4UO1QEO5Ztajzl_23RUiYPBpGytjeHLk5B-8JVAA2rz_qpESziumILJTg',
+  value: { value: 42, type: 'Integer' },
+  active: { value: true, type: 'Boolean' }
 }
 
 === Find with Query ===
 Found documents: [
   {
-    active: { value: true, type: 'Boolean' },
+    value: { type: 'Integer', value: 42 },
+    id: 'x7tITASD64-kKZnHuVx2Mbx0pNjnd4UO1QEO5Ztajzl_23RUiYPBpGytjeHLk5B-8JVAA2rz_qpESziumILJTg',
     name: { type: 'String', value: 'Test Record' },
-    id: 'F8fDcJ4m7sZHXQmlukN3Y6trYGCjr8kj5-zd1jsO5davj6UmHT1cyay0sTDApPXrIBg-XSK_3tCySK549PS3vw',
-    value: { value: 42, type: 'Integer' }
+    active: { value: true, type: 'Boolean' }
   }
 ]
 
 === Update Document ===
 Updated: {
-  value: { type: 'Integer', value: 100 },
-  id: 'F8fDcJ4m7sZHXQmlukN3Y6trYGCjr8kj5-zd1jsO5davj6UmHT1cyay0sTDApPXrIBg-XSK_3tCySK549PS3vw',
   name: { type: 'String', value: 'Updated Record' },
-  active: { value: true, type: 'Boolean' }
+  active: { value: true, type: 'Boolean' },
+  value: { type: 'Integer', value: 100 },
+  id: 'x7tITASD64-kKZnHuVx2Mbx0pNjnd4UO1QEO5Ztajzl_23RUiYPBpGytjeHLk5B-8JVAA2rz_qpESziumILJTg'
 }
 
 === Delete Document ===
@@ -9902,7 +8482,7 @@ Deleted document
 ✓ Authentication successful
 
 === Inserting Test Data ===
-✓ Inserted test record: tuqqPo65s9NE1l4L0kSO8amhdoidyx2Fk_IEq-_EyOMswmorSeE9YZZrvwb4IIhcmvprhg5ypVrxZSnCdUYkdg
+✓ Inserted test record: FCRdBhtGGeKuNwkxK1YjN0kHvaDainX21ZMM-4o6rYEyRkMalSYvVyjZC0_drW07k_Y2CaRdPhJl0mteTdUTDA
 
 === Connecting to WebSocket ===
 ✓ WebSocket connected
@@ -9913,23 +8493,23 @@ Response: {
   "payload": {
     "data": [
       {
-        "id": "tuqqPo65s9NE1l4L0kSO8amhdoidyx2Fk_IEq-_EyOMswmorSeE9YZZrvwb4IIhcmvprhg5ypVrxZSnCdUYkdg",
         "active": {
-          "value": true,
-          "type": "Boolean"
+          "type": "Boolean",
+          "value": true
         },
+        "id": "FCRdBhtGGeKuNwkxK1YjN0kHvaDainX21ZMM-4o6rYEyRkMalSYvVyjZC0_drW07k_Y2CaRdPhJl0mteTdUTDA",
         "value": {
           "value": 42,
           "type": "Integer"
         },
         "name": {
-          "value": "WebSocket Test Record",
-          "type": "String"
+          "type": "String",
+          "value": "WebSocket Test Record"
         }
       }
     ]
   },
-  "messageId": "1789495144348"
+  "messageId": "1789591605771"
 }
 ✓ Retrieved 1 record via WebSocket
 
@@ -9945,25 +8525,25 @@ WebSocket closed
 
 📝 Example 1: Simple Query Function with Filter
 
-✅ Function saved: 8WvIDGgAtJWxUpiDWtSh-pVCGanOohyLVCHP94_jGQwVBklGMVlO0pYGt0U6QzqZ5_RiKX4AVbVoJbV-IlHArA
+✅ Function saved: O6wZizVODQ1dSNkaYmH9RxH83n9yhAqpeGfp8e1hgcys2vyQQjOksBloJgT07L9fZTR08Rp7jMjR3Xr7mwxHFg
 📊 Found 5 active users
 
 📝 Example 2: Parameterized Pagination with Limit/Skip
 
-✅ Function saved: eU4Vxjhng9slQoKuArxowH6bM3t1299gyCsfF6aRd3midRztkjqWUrNcae7zKx637cX7whDJtmpXlUL_h9Q17A
+✅ Function saved: hb6QRzh_39by1ujbA4wBGQsOu8L2nB_8tcw119V842T0nBn9b2yAxlAeZ60IiesaK_VLXWs0nkE4dCHscQNtpA
 📊 Page 1: Found 3 users (limit=3, skip=0)
 📊 Page 2: Found 2 users (limit=3, skip=3)
 
 📝 Example 3: Multi-Stage Pipeline (Query → Group → Calculate)
 
-✅ Function saved: OGllAFnMS3I4LOCc8XA579bDAYajW3vG3GJPu65CkpZ7UNAsZ0L8D-4bRcXfEIurso_p6EX_NyGobRULdZ7Dsw
+✅ Function saved: _B1c4bQrH6A1smGapydxmOnI3NNIoZw5fd6f1mJj6UPFO8RUL8Jk-LAaJyQlpnvUGZhuiwIyJy-GYwKnTARCHQ
 📊 Pipeline Results: Filtered (age>20) → Grouped by status → 2 groups
-   {"status":{"value":"inactive","type":"String"},"avg_score":{"type":"Float","value":50},"max_score":{"type":"Integer","value":90},"count":{"value":5,"type":"Integer"}}
-   {"count":{"type":"Integer","value":5},"avg_score":{"type":"Float","value":60},"status":{"type":"String","value":"active"},"max_score":{"type":"Integer","value":100}}
+   {"status":{"type":"String","value":"active"},"avg_score":{"value":60,"type":"Float"},"count":{"type":"Integer","value":5},"max_score":{"type":"Integer","value":100}}
+   {"status":{"type":"String","value":"inactive"},"max_score":{"type":"Integer","value":90},"avg_score":{"value":50,"type":"Float"},"count":{"type":"Integer","value":5}}
 
 📝 Example 4: Function Management
 
-📋 Total functions: 14
+📋 Total functions: 7
 🔍 Retrieved function: Get Active Users
 ✏️  Function updated
 🗑️  Function deleted
@@ -10006,20 +8586,20 @@ Created 3 test records
 ✓ Set key: session:user123
 
 === KV Get ===
-Retrieved value: { type: 'Object', value: { userId: 123, username: 'john_doe' } }
+Retrieved value: { value: { userId: 123, username: 'john_doe' }, type: 'Object' }
 
 === Set Multiple Keys ===
 ✓ Set 3 keys
 
 === Get Multiple Keys ===
-cache:product:1: { value: { name: 'Product 1', price: 29.99 }, type: 'Object' }
+cache:product:1: { value: { price: 29.99, name: 'Product 1' }, type: 'Object' }
 cache:product:2: {
   type: 'Object',
-  value: { name: 'Product 2', price: 39.989999999999995 }
+  value: { price: 39.989999999999995, name: 'Product 2' }
 }
 cache:product:3: {
-  type: 'Object',
-  value: { price: 49.989999999999995, name: 'Product 3' }
+  value: { price: 49.989999999999995, name: 'Product 3' },
+  type: 'Object'
 }
 
 === KV Delete ===
@@ -10038,16 +8618,16 @@ cache:product:3: {
 ✓ Authentication successful
 
 === Create Collection (via insert) ===
-Collection created with first record: Rnfa4g453_cS0g9ZqFa67BEVsYG-XKlFPj7SnCEbrZacCNmH7WvUZwoJbgdSa_PQcDvV-iUUg0AftHqwa_QXFA
+Collection created with first record: D0Sku9BH5LS6b-aWtwHwCynCsnl36qdkVUv1UfEd_ACc_YirZdv-5JQBrKKLnSo9w5i9gXs1nlmtXTMUDK8Nhg
 
 === List Collections ===
-Total collections: 33
+Total collections: 22
 Sample collections: [
-  'schema_employees_client_ts',
-  'schema_products_client_go',
-  'agent_function_versions__ek0_testing',
-  'chat_agent_configs__ek0_testing',
-  'chat_goal_templates__ek0_testing'
+  'schema_users_client_ts',
+  'demo_collection',
+  'schema_documents_client_ts',
+  'chat_goals__ek0_testing',
+  'schedules__ek0_testing'
 ]
 
 === Count Documents ===
@@ -10066,11 +8646,11 @@ Collection still exists: false
 ✓ Authentication successful
 
 === Setup: Creating Test Accounts ===
-Created Alice: $1000 - ID: 954rkVxajrQ5KMhClBx2c-hQgH-misT_OnJMU1CLivB6zmFjz1grHlIchxTgd-JK0VIw35Yjlw1CV_TyYTZziQ
-Created Bob: $500 - ID: PQd6SZUNfeHHyoHwnu_2f1hy9NiCYmXC2RCdwgHQYGAOMX4jBn8ykOfnlBL6rHtD4lca3jUTQ6tR5STud5lbHw
+Created Alice: $1000 - ID: 161DAiP-k5_Eb4wz_TlT1N0EGA9ZymcJcUxUam_OWu2WlbJYRZm2rlIKB48dEr3RLTs7oLcWnKben9iktLdFtw
+Created Bob: $500 - ID: f6c5GtQzQskov8caYZTBS0U4qnc7n5PPVbWSjBfDs7rFf_E2tHpkQBopMhP-DsNFsXorbR1YI1H7JVZMb23P6g
 
 === Example 1: Begin Transaction ===
-Transaction ID: 2ce6b13e-de85-46bc-9e33-6651f29b35bd
+Transaction ID: 31f07061-7323-4bdd-b7c0-1cd2dd6ab654
 
 === Example 2: Operations with transaction_id ===
 Updated Alice: $1000 → $800
@@ -10084,14 +8664,14 @@ Operations: 2
 ✓ Transaction committed
 
 === Verification ===
-Alice: {"value":800,"type":"Integer"}
+Alice: {"type":"Integer","value":800}
 Bob: {"value":700,"type":"Integer"}
 
 === Example 5: Rollback ===
-New transaction: 846e0741-efd5-4614-8d1b-5b49f67fdba1
+New transaction: e67f5b58-53cc-4c3c-ad55-009fc0253967
 Updated Bob: $700 → $600 (in transaction)
 ✓ Transaction rolled back
-Bob after rollback: {"type":"Integer","value":700}
+Bob after rollback: {"value":700,"type":"Integer"}
 
 === Cleanup ===
 ✓ Deleted test accounts
@@ -10121,7 +8701,7 @@ Each function shows Functions chaining with proper verification
 ============================================================
 
 1️⃣ Saving Function...
-   ✅ Function saved: vRhdtTd7Oo38hyjV6gZvLj70OU4wi5brcnaifzm2hF17--vspedeC2SfjfeF4FVcB2GxTAKM2j3PEfPw_-tJPQ
+   ✅ Function saved: 2n0zM9-D_CdT23-2pNrEMmf49oCGxnQyj1zTWn1wXueElzBBB0KMfpwQtCKhJD4MSN-NL7lkHUeHNNUkvtVP0A
 
 2️⃣ Calling Function (Insert + Verify)...
    ✅ Function executed: 2 Functions
@@ -10139,7 +8719,7 @@ Each function shows Functions chaining with proper verification
 ============================================================
 
 1️⃣ Saving Function...
-   ✅ Function saved: 9c-4ayaieVe_9pFO3hek4gTBuMEBoFy0cpQVoJnfafEyTYG_2BSto9OK9WyRCJB6ypvFImajElh0uD12qZMKEw
+   ✅ Function saved: mO3Kvn0h5gQrBzLVj43uBbtSzs9pfDke_FlER6emnExzBiXhPfkM3tifGs5yH0ypvOYXntWhBM9kedQGvfIj0w
 
 2️⃣ Calling Function (Query + Update + Verify)...
    ✅ Function executed: 3 Functions
@@ -10147,15 +8727,15 @@ Each function shows Functions chaining with proper verification
 
 3️⃣ Verification Results:
    ✅ Found 1 record(s)
-   📋 Status updated to: {"type":"String","value":"active"}
-   📋 Name: {"type":"String","value":"Alice Smith"}
+   📋 Status updated to: {"value":"active","type":"String"}
+   📋 Name: {"value":"Alice Smith","type":"String"}
 
 ============================================================
 📝 Function 3: Query + Update Credits + Verify
 ============================================================
 
 1️⃣ Saving Function...
-   ✅ Function saved: 0Thm3ncO1j_IGYGtopU1f52gKJJpynW8bXNceXQam2rMnnl3B81wZDaVTLlPjYnvzL4tlGmI13eNk4xRzMazzw
+   ✅ Function saved: 35TyOE739fWO_cZioVF1o4X_bfGnMcDknOz51XwS_kxdxlony1MbaJiiIflxUjK5CIRjA7pZTFPbKN4cr1ie5w
 
 2️⃣ Calling Function (Query + Update Credits + Verify)...
    ✅ Function executed: 3 Functions
@@ -10163,16 +8743,16 @@ Each function shows Functions chaining with proper verification
 
 3️⃣ Verification Results:
    ✅ Found 1 record(s)
-   📋 Credits updated to: {"value":100,"type":"Integer"}
-   📋 Status: {"value":"active","type":"String"}
-   📋 Name: {"type":"String","value":"Alice Smith"}
+   📋 Credits updated to: {"type":"Integer","value":100}
+   📋 Status: {"type":"String","value":"active"}
+   📋 Name: {"value":"Alice Smith","type":"String"}
 
 ============================================================
 📝 Function 4: Query Before Delete + Delete + Verify
 ============================================================
 
 1️⃣ Saving Function...
-   ✅ Function saved: gRiNk7jdsd11SFuqWL0TRz1segjWtAiSdldg3ajhX8deKZIKojRtxjfxQt1tJzj1evWT4EjW7vqeDO-BSu0YDg
+   ✅ Function saved: p_j7ZKTVYXSe687cdk126un1frygcuozPyEPILMoPWktGkgRKMFWqR4QnXWhQuWQveWv3rCzb5F278lONXL0VA
 
 2️⃣ Calling Function (Query + Delete + Verify)...
    ✅ Function executed: 3 Functions
@@ -10185,10 +8765,10 @@ Each function shows Functions chaining with proper verification
 ============================================================
 🧹 Cleanup
 ============================================================
-   ✅ Deleted function: vRhdtTd7Oo38hyjV6gZv...
-   ✅ Deleted function: 9c-4ayaieVe_9pFO3hek...
-   ✅ Deleted function: 0Thm3ncO1j_IGYGtopU1...
-   ✅ Deleted function: gRiNk7jdsd11SFuqWL0T...
+   ✅ Deleted function: 2n0zM9-D_CdT23-2pNrE...
+   ✅ Deleted function: mO3Kvn0h5gQrBzLVj43u...
+   ✅ Deleted function: 35TyOE739fWO_cZioVF1...
+   ✅ Deleted function: p_j7ZKTVYXSe687cdk12...
    ✅ Deleted collection: crud_functions_users_js
 
 ============================================================
@@ -10220,11 +8800,11 @@ TEST 1: Document TTL Expiration
 [Step 1] Insert document with 3 second TTL
   Input: {name: 'TTL Test', value: 'should expire'}
   TTL: 3s
-  Output: Document ID = sygB9G5o9JyKciMLRHKcSbo_UYajm4R6XkeitKOs08EXOQGGbV-U1ew1DBqpRMpD2NS4yggRnK2QvcMGT60O0g
+  Output: Document ID = wxP6V9SxjIzFy25vAd5dQxOYS4ilI_hbUM18pfvKo63FcxmDbYMAqaf8V2tCAMomVJB6_de8x46qymtxSukErA
   ✓ PASS: Document inserted
 
 [Step 2] Verify document exists immediately
-  Input: findById(sygB9G5o9JyKciMLRHKcSbo_UYajm4R6XkeitKOs08EXOQGGbV-U1ew1DBqpRMpD2NS4yggRnK2QvcMGT60O0g)
+  Input: findById(wxP6V9SxjIzFy25vAd5dQxOYS4ilI_hbUM18pfvKo63FcxmDbYMAqaf8V2tCAMomVJB6_de8x46qymtxSukErA)
   Output: Found document with name = TTL Test
   ✓ PASS: Document exists
 
@@ -10233,8 +8813,8 @@ TEST 1: Document TTL Expiration
   ✓ PASS: Wait complete
 
 [Step 4] Verify document has expired
-  Input: findById(sygB9G5o9JyKciMLRHKcSbo_UYajm4R6XkeitKOs08EXOQGGbV-U1ew1DBqpRMpD2NS4yggRnK2QvcMGT60O0g)
-  Output: Error (expected) - Request failed with status 404: {"error":"Record not found (expired)"}
+  Input: findById(wxP6V9SxjIzFy25vAd5dQxOYS4ilI_hbUM18pfvKo63FcxmDbYMAqaf8V2tCAMomVJB6_de8x46qymtxSukErA)
+  Output: Error (expected) - Request failed with status 404: {"error":"Record has been deleted"}
   ✓ PASS: Document expired (not found error)
 
 ═══════════════════════════════════════════════════════════
@@ -10269,11 +8849,11 @@ TEST: WebSocket TTL Expiration
 [Step 1] Insert document with 3 second TTL
   Input: {name: 'WS TTL Test', value: 'should expire'}
   TTL: 3s
-  Output: Document ID = UnGbqnoSPZ-1akQnWs16JFPPxKVV1IbI1ZiSX8B2Bs76YwYmYyVymKscS8IQdp1ZqR6La6y8EQTN7ASgAT0KwA
+  Output: Document ID = NKi0VqnseT0o-ZtNz_QxMyCkQ6WxWNQvouRc3A9mc7ubmL6G0gBxjG4hkQZh6ALXZpZ7rkAUXjte19kl1O6M-Q
   ✓ PASS: Document inserted
 
 [Step 2] Query to verify document exists
-  Input: findById(UnGbqnoSPZ-1akQnWs16JFPPxKVV1IbI1ZiSX8B2Bs76YwYmYyVymKscS8IQdp1ZqR6La6y8EQTN7ASgAT0KwA)
+  Input: findById(NKi0VqnseT0o-ZtNz_QxMyCkQ6WxWNQvouRc3A9mc7ubmL6G0gBxjG4hkQZh6ALXZpZ7rkAUXjte19kl1O6M-Q)
   Output: Found document with name = WS TTL Test
   ✓ PASS: Document exists
 
@@ -10282,7 +8862,7 @@ TEST: WebSocket TTL Expiration
   ✓ PASS: Wait complete
 
 [Step 4] Query to verify document has expired
-  Input: findById(UnGbqnoSPZ-1akQnWs16JFPPxKVV1IbI1ZiSX8B2Bs76YwYmYyVymKscS8IQdp1ZqR6La6y8EQTN7ASgAT0KwA)
+  Input: findById(NKi0VqnseT0o-ZtNz_QxMyCkQ6WxWNQvouRc3A9mc7ubmL6G0gBxjG4hkQZh6ALXZpZ7rkAUXjte19kl1O6M-Q)
   Output: Error (expected) - Request failed with status 404: {"error":"Record not found (expired)"}
   ✓ PASS: Document expired (not found error)
 
@@ -10317,7 +8897,7 @@ Failed: 0
 > tsc
 
 
-up to date, audited 46 packages in 4s
+up to date, audited 46 packages in 561ms
 
 12 packages are looking for funding
   run `npm fund` for details
@@ -10329,14 +8909,14 @@ found 0 vulnerabilities
 
 ✅ TypeScript client built!
 
-added 1 package, removed 1 package, and audited 9 packages in 3s
+added 1 package, removed 1 package, and audited 9 packages in 380ms
 
 1 package is looking for funding
   run `npm fund` for details
 
 found 0 vulnerabilities
 
-added 1 package, removed 1 package, and audited 13 packages in 3s
+added 1 package, removed 1 package, and audited 13 packages in 392ms
 
 1 package is looking for funding
   run `npm fund` for details
@@ -10346,7 +8926,6 @@ found 0 vulnerabilities
 > ekodb-typescript-examples@1.0.0 build
 > tsc
 
-bash: warning: setlocale: LC_ALL: cannot change locale (C.UTF-8): No such file or directory
 ✓ Client created
 
 === Batch Insert ===
@@ -10369,7 +8948,7 @@ bash: warning: setlocale: LC_ALL: cannot change locale (C.UTF-8): No such file o
 ✓ Inserted sample product
 
 === Creating Chat Session ===
-✓ Created session: 7C-N9dULIr9A-vLIwmI4GH2gp9TftHWmSOYLC1noqeuc1u4tZ3HhpUZR8ZjFFHzMaORwHDR7DEQ9fetcJ_Yptg
+✓ Created session: xYtgh5kITOPrj06iwmoIG1BATpvbFuQ72m3NmQ1hLw73FauuQS4l7V8kgN09nHmDzpyUNgLbwlm1ioTyXrARBQ
 
 === Sending Initial Message ===
 ✓ Message sent
@@ -10379,7 +8958,7 @@ bash: warning: setlocale: LC_ALL: cannot change locale (C.UTF-8): No such file o
 - **Description:** High-performance database product
 - **Price:** $99
 
-If you have any more questions or need further information, feel free to ask!
+If you have any further questions about this product or others, feel free to ask!
 
 ✓ Second message sent
 
@@ -10396,7 +8975,7 @@ If you have any more questions or need further information, feel free to ask!
 ✓ Message unmarked as forgotten
 
 === Feature 4: Merge Chat Sessions ===
-✓ Created second session: hCkoSQHcG22ihQqUV0v7VbGtTJXM0VbX73mN9kqlbZez8zmP9iT7VahYxJLfzOXBuJdqIYQzWS6H6PJTvyU3kg
+✓ Created second session: 75mvYnnUmG7hfUiSPuo5d-CLNan_hpGOL6QzTzbDoQtxKuU6o03AJ84StW2iTtyc5ugdBbxQZLdY_GyhgIIH7A
 ✓ Sent message in second session
 ✓ Sessions merged successfully
   Total messages in merged session: 7
@@ -10407,6 +8986,7 @@ If you have any more questions or need further information, feel free to ask!
 ✓ Messages remaining: 6
 
 === Cleanup ===
+✓ Deleted second session
 ✓ Deleted session
 ✓ Deleted collection
 
@@ -10417,34 +8997,34 @@ If you have any more questions or need further information, feel free to ask!
 ✓ Inserted 3 sample documents
 
 === Creating Chat Session ===
-✓ Created session: z-5DbLxhrjnqZOcmcj8j_0Wdsj-ytze8jY0rqjCVibULNicquu8OHgdWxkuvTeSidmVl4exznBdI0l-AgvhXHQ
+✓ Created session: zQskMkECJb7UBUH73EzBLVnL3IWYZUp1sOMJbkIPLdW5yyOExZzjTfmNz0E147sOtnLyuj460LtgWka8vHBYpA
 
 === Sending Chat Message ===
-Message ID: RwxVWoGms3JdiSa77MncQNBQBG59DkVBrcx44sH6MYWK40NwA-br2UCw3tmRZ27EmmOWeQkFArZf1p7mKvJ46Q
+Message ID: pdu-AOdgUf3b1_HT9nO5jtxhPiDDFBosid7vXnegYdzYwK5t3QrIE_hp2difEbVzU7dZ7_dns1Yiy51uMgj6tA
 
 === AI Response ===
-Here are the available products along with their prices:
+Here are the available products and their prices:
 
-1. **ekoDB Cloud**
-   - Price: $499
-   - Description: Fully managed cloud database service product
-
-2. **ekoDB**
-   - Price: $99
-   - Description: A high-performance database product with AI capabilities
-
-3. **ekoDB Pro**
+1. **ekoDB Pro**
    - Price: $299
-   - Description: Enterprise edition product with advanced features
+   - Description: Enterprise edition product with advanced features.
+
+2. **ekoDB Cloud**
+   - Price: $499
+   - Description: Fully managed cloud database service product.
+
+3. **ekoDB**
+   - Price: $99
+   - Description: A high-performance database product with AI capabilities.
 
 === Context Used (3 snippets) ===
   Snippet 1: {
   collection: 'client_chat_basic_js',
   record: {
-    price: 499,
-    name: 'ekoDB Cloud',
-    description: 'Fully managed cloud database service product',
-    id: 'eWArQCVvbmm-PHKBCjpXnrfqDV2KScsHeaacktY3lCS3KciyIWFJ3uR5OtGIchqyybMFsM7lavsWMwmJ1z1yUw'
+    price: 299,
+    description: 'Enterprise edition product with advanced features',
+    name: 'ekoDB Pro',
+    id: 'i3Nma9XPdW7H3a46KIq_2zd30jSp4-sXcmylJw5VAyxwakFtU-6D-gcxW8W-blCcDbVF55Bj9WNI0mr8ESLkrA'
   },
   score: 0.1111111111111111,
   matched_fields: [ 'description' ]
@@ -10452,10 +9032,10 @@ Here are the available products along with their prices:
   Snippet 2: {
   collection: 'client_chat_basic_js',
   record: {
-    price: 99,
-    id: '0FbZA3OMJjK0bsViUXHNNOZfB_ZQ4QPN_VCjd1AKAAL1YiI5UEwfVCpNHO0AQCtap4Ev_cFWq8kQoJYR3f6Eow',
-    name: 'ekoDB',
-    description: 'A high-performance database product with AI capabilities'
+    name: 'ekoDB Cloud',
+    id: '4S-4lXl-XplQxMjQRoio_v1XU9xljf1vFJKfLnlw5hxe2skHbyE6EuiDhHyWGViNZaASmbFuIc0Wjq33ZFGllg',
+    description: 'Fully managed cloud database service product',
+    price: 499
   },
   score: 0.1111111111111111,
   matched_fields: [ 'description' ]
@@ -10463,21 +9043,21 @@ Here are the available products along with their prices:
   Snippet 3: {
   collection: 'client_chat_basic_js',
   record: {
-    name: 'ekoDB Pro',
-    description: 'Enterprise edition product with advanced features',
-    id: 'Aez4fHwJYOknfEStP3fvVzbTBvFZzPWalHBIfWa6KPC5mFfZnPFQcgEhVXEIeevRFchglDu3McmB91OkvVCDmg',
-    price: 299
+    price: 99,
+    description: 'A high-performance database product with AI capabilities',
+    name: 'ekoDB',
+    id: 'HkB_UmR4I53jIVwc9O1NUhzR7BYFQN8VwlkOYKjCAj2fZpBVO5eU9FspLJ-lkaAxUvOPGANciIH419RKcacjrQ'
   },
   score: 0.1111111111111111,
   matched_fields: [ 'description' ]
 }
 
-Execution Time: 6681ms
+Execution Time: 2890ms
 
 === Token Usage ===
 Prompt tokens: 3413
-Completion tokens: 91
-Total tokens: 3504
+Completion tokens: 90
+Total tokens: 3503
 
 === Cleanup ===
 ✓ Deleted session
@@ -10655,17 +9235,17 @@ Expected error for non-existent provider: Error: Request failed with status 404:
 ✓ Inserted sample product
 
 === Creating Chat Session ===
-✓ Created session: lXOYCcqcKWvHw5gX-4Njcz1Z7aDg_4hAtIeYtj6yqWejyAuCJsCYqeFiBc7y8H5S--XeDs3I4sDPe8otKzh8SA
+✓ Created session: 00qamAZ7ySHioUYTZ5f7yV3Oqe3T3aRWzBoCUFO2BLutRgbiQVEQZzPcsbSXWdJXtNVgzWMSc5dICVJg7rOM0g
 
 === Sending Messages ===
 ✓ Message 1 sent
-  Response: Currently, the available product is:
+  Response: The available product is:
 
-- **Name:** ekoDB
-- **Description:** A high-performance database product
-- **Price:** $99
+- **Name**: ekoDB
+- **Description**: A high-performance database product
+- **Price**: $99
 
-If you need more information or details about other products, please let me know!
+If you need more information or have other questions, feel free to ask!
 
 ✓ Message 2 sent
   Response: The price of ekoDB is $99.
@@ -10677,25 +9257,20 @@ If you need more information or details about other products, please let me know
 ✓ Session updated
 
 === Branching Session ===
-✓ Created branch: bK3Jeh_ye6jDStQmcUt2VHZB2DbEV-oUUnX-50nF1Gs7qWngtlK-DT57QTvJZLCZen2D9IQI5RUVGV63x-s2pA
-  Parent: lXOYCcqcKWvHw5gX-4Njcz1Z7aDg_4hAtIeYtj6yqWejyAuCJsCYqeFiBc7y8H5S--XeDs3I4sDPe8otKzh8SA
+✓ Created branch: IX9_d9DbvxpXCHvPJXUoX56VKY6qoXlK1OZO6X0BpTFU5hBYKIhCZQrBCFb8a-CaE0jm1hUM9ExxksnNyNjx1Q
+  Parent: 00qamAZ7ySHioUYTZ5f7yV3Oqe3T3aRWzBoCUFO2BLutRgbiQVEQZzPcsbSXWdJXtNVgzWMSc5dICVJg7rOM0g
 
 === Listing Sessions ===
-✓ Found 7 sessions
-  Session 1: bK3Jeh_ye6jDStQmcUt2VHZB2DbEV-oUUnX-50nF1Gs7qWngtlK-DT57QTvJZLCZen2D9IQI5RUVGV63x-s2pA (Untitled)
-  Session 2: lXOYCcqcKWvHw5gX-4Njcz1Z7aDg_4hAtIeYtj6yqWejyAuCJsCYqeFiBc7y8H5S--XeDs3I4sDPe8otKzh8SA (Untitled)
-  Session 3: hCkoSQHcG22ihQqUV0v7VbGtTJXM0VbX73mN9kqlbZez8zmP9iT7VahYxJLfzOXBuJdqIYQzWS6H6PJTvyU3kg (Untitled)
-  Session 4: vuKbaGHsQC94yLa7_2ro5Vdy1xg9A2RA5KvKSyzx1oJLcCAi4D6DZ8eKRvWcmz0zxkBszT3iMxPubOmpZYLlXw (Untitled)
-  Session 5: YUYboJLJZ3yqwxN1Cb5yCHopx8VzkWngmGBfDuMzwk5ocLrAA3onhZxGs9kFbV_RmSc9V1V2HhdynIh_f9G3Ww (Untitled)
-  Session 6: MAxsP25SeTa3zmDskKituh1NEf7CdZJC9f2ywIhfXYYV748h-w5M7KwY6MKOrpZK8nSLu8xnE7EilU_pKoIjUg (Untitled)
-  Session 7: SflIr8vmbb7jS_W_FfaYgsH9mYpw2-RnHYV0wV1SwX1f-j6HhxF5WJTlBhQmO8kpxpJki7WWPq2VM9MJBc5OQg (Untitled)
+✓ Found 2 sessions
+  Session 1: IX9_d9DbvxpXCHvPJXUoX56VKY6qoXlK1OZO6X0BpTFU5hBYKIhCZQrBCFb8a-CaE0jm1hUM9ExxksnNyNjx1Q (Untitled)
+  Session 2: 00qamAZ7ySHioUYTZ5f7yV3Oqe3T3aRWzBoCUFO2BLutRgbiQVEQZzPcsbSXWdJXtNVgzWMSc5dICVJg7rOM0g (Untitled)
 
 === Getting Session Details ===
 ✓ Session details retrieved
   Messages: 4
 
 === Deleting Branch Session ===
-✓ Deleted branch session: bK3Jeh_ye6jDStQmcUt2VHZB2DbEV-oUUnX-50nF1Gs7qWngtlK-DT57QTvJZLCZen2D9IQI5RUVGV63x-s2pA
+✓ Deleted branch session: IX9_d9DbvxpXCHvPJXUoX56VKY6qoXlK1OZO6X0BpTFU5hBYKIhCZQrBCFb8a-CaE0jm1hUM9ExxksnNyNjx1Q
 
 === Cleanup ===
 ✓ Deleted session
@@ -10705,11 +9280,11 @@ If you need more information or details about other products, please let me know
 ✓ Client created
 
 === Create Collection (via insert) ===
-Collection created with first record: 1sMzGLznO_2yNqKHYMYewkCuEKNbD78UNdOTeQ3obu1y5esYPWAitTUjVhaiRjRYpd_bcSvbFKNnNeoxplygYA
+Collection created with first record: bL0e4sWVWy2UrsB6ScEEYnEnLV_u2E9lQvna10f5s7GLhaROjKNBas1c6D7qtZknKuamozS3TaDm5umuMgrXvA
 
 === List Collections ===
-Total collections: 33
-Sample collections: schema_employees_client_ts,schema_products_client_go,agent_function_versions__ek0_testing,chat_agent_configs__ek0_testing,chat_goal_templates__ek0_testing
+Total collections: 23
+Sample collections: schema_users_client_ts,schema_documents_client_ts,chat_goals__ek0_testing,schedules__ek0_testing,schema_products_client_go
 
 === Count Documents ===
 Document count: 1
@@ -10724,10 +9299,10 @@ Collection still exists: false
 ✓ Client created
 
 === Insert Document with TTL (1 hour) ===
-✓ Inserted document: QmzH-QI5oYOfghWmXH0pi14rdqVeZFDGIm4DVaJoSKUWmv6NkAT7Y9IDcWckL1B57us9PaY3z87KwosMUtbxEQ
+✓ Inserted document: Aei0SEHXt4uHRAmwUCLaLmHYLWhfizaJcQ7qkZ7irRiuy5c_6PGKhO_QnSmXt6iKecrbycMhIpOUwP2x7W-deg
 
 === Insert Document with TTL (5 minutes) ===
-✓ Inserted document: PCfTFvc3d3NeJ9hqgUdP_rBgTDAuh4R8KUqhF2iFee34zOmt7Fbiqd1-FOq2ybyo9xPLIKICnjLTFATs8uus5g
+✓ Inserted document: sUS62vZfSFmnZTW1JtSp3Sn9uyBmtFCY0byHBcjl-82PcI7wj3J9YMiJRvvZHkb8WZfWy5s4u-bNXCZcjmwt7A
 
 === Query Documents ===
 ✓ Found 2 documents with TTL
@@ -10747,33 +9322,33 @@ Collection still exists: false
 === ekoDB as Edge Cache - Simple Example ===
 
 Creating edge cache function...
-✓ Edge cache script created: wV_6d37BMQkiluixPD6uxsnVvChxDV3u0w2I0eYsPIzPQmZn3KzuhHBzp-o8ovDDl-5V4dQ0m5BTO59qVvB0oQ
+✓ Edge cache script created: 0eROV_tHzhHGlQKLwjCKdwDC1Gaw0DbiAS_vX1jQHDlnegTnnlK9CmKk2auQdOqMuq8TYDweZv11ezT6MwwNBg
 
 Call 1: Cache miss (fetches from API)
-Response time: 454ms
+Response time: 437ms
 Result: {
   "records": [
     {
       "value": {
         "type": "Object",
         "value": {
-          "timezone_abbreviation": "GMT",
-          "current_units": {
-            "interval": "seconds",
-            "time": "iso8601",
-            "temperature_2m": "°C"
+          "latitude": 40.710335,
+          "generationtime_ms": 0.04088878631591797,
+          "longitude": -73.99308,
+          "current": {
+            "time": "2026-09-16T20:45",
+            "temperature_2m": 26,
+            "interval": 900
           },
           "utc_offset_seconds": 0,
-          "generationtime_ms": 0.035762786865234375,
-          "longitude": -73.99308,
-          "latitude": 40.710335,
+          "current_units": {
+            "temperature_2m": "°C",
+            "time": "iso8601",
+            "interval": "seconds"
+          },
           "elevation": 32,
           "timezone": "GMT",
-          "current": {
-            "temperature_2m": 22.3,
-            "interval": 900,
-            "time": "2026-09-15T18:00"
-          }
+          "timezone_abbreviation": "GMT"
         }
       }
     }
@@ -10788,31 +9363,31 @@ Result: {
 }
 
 Call 2: Cache hit (served from ekoDB)
-Response time: 14ms (32.4x faster!)
+Response time: 4ms (109.3x faster!)
 Result: {
   "records": [
     {
       "value": {
-        "type": "Object",
         "value": {
-          "timezone_abbreviation": "GMT",
-          "current_units": {
-            "interval": "seconds",
-            "time": "iso8601",
-            "temperature_2m": "°C"
+          "latitude": 40.710335,
+          "generationtime_ms": 0.04088878631591797,
+          "longitude": -73.99308,
+          "current": {
+            "time": "2026-09-16T20:45",
+            "temperature_2m": 26,
+            "interval": 900
           },
           "utc_offset_seconds": 0,
-          "generationtime_ms": 0.035762786865234375,
-          "longitude": -73.99308,
-          "latitude": 40.710335,
+          "current_units": {
+            "temperature_2m": "°C",
+            "time": "iso8601",
+            "interval": "seconds"
+          },
           "elevation": 32,
           "timezone": "GMT",
-          "current": {
-            "temperature_2m": 22.3,
-            "interval": 900,
-            "time": "2026-09-15T18:00"
-          }
-        }
+          "timezone_abbreviation": "GMT"
+        },
+        "type": "Object"
       }
     }
   ],
@@ -10845,14 +9420,12 @@ Result: {
 
 Building reusable functions that call each other...
 
-ℹ️  Function 'fetch_user' already existed — updated instead
 ✅ Saved reusable function: fetch_user
-ℹ️  Function 'get_user_wrapper' already existed — updated instead
 ✅ Saved composed function: get_user_wrapper (calls fetch_user + projects fields)
 
 📊 Result from composed function:
    Records: 1
-   Name: {"type":"String","value":"User 1"}
+   Name: {"value":"User 1","type":"String"}
    Department: {"type":"String","value":"engineering"}
 
 🎯 Key Benefit: fetch_user can be reused by ANY function!
@@ -10862,45 +9435,44 @@ Building reusable functions that call each other...
 
 Using KV cache + CallFunction for fast cache-aside pattern...
 
-ℹ️  Function 'fetch_and_store_user' already existed — updated instead
 ✅ Saved reusable function: fetch_and_store_user (uses KV)
-ℹ️  Function 'swr_user' already existed — updated instead
 ✅ Saved SWR function using composition: swr_user
 
 First call (cache miss - will fetch from API):
-   ⏱️  Duration: 163ms
+   ⏱️  Duration: 60ms
    📊 Records: 1
    📦 Data: {
   "value": {
-    "type": "Object",
     "value": {
-      "company": {
-        "name": "Romaguera-Crona",
-        "bs": "harness real-time e-markets",
-        "catchPhrase": "Multi-layered client-serv...
+      "address": {
+        "street": "Kulas Light",
+        "zipcode": "92998-3874",
+        "suite": "Apt. 556",
+        "geo": {
+          "lng": "81.1496",
+          "...
 
 Second call (cache hit - from cache):
-   ⏱️  Duration: 64ms
+   ⏱️  Duration: 2ms
    📊 Records: 1
    📦 Data: {
   "value": {
-    "type": "Object",
     "value": {
-      "company": {
-        "name": "Romaguera-Crona",
-        "bs": "harness real-time e-markets",
-        "catchPhrase": "Multi-layered client-serv...
-   🚀 Cache speedup: 2.5x faster!
+      "address": {
+        "street": "Kulas Light",
+        "zipcode": "92998-3874",
+        "suite": "Apt. 556",
+        "geo": {
+          "lng": "81.1496",
+          "...
+   🚀 Cache speedup: 30.0x faster!
 
 📝 Example 3: Multi-Level Function Composition
 
 Building complex workflows from small, reusable pieces...
 
-ℹ️  Function 'validate_user' already existed — updated instead
 ✅ Level 1 function: validate_user
-ℹ️  Function 'fetch_slim_user' already existed — updated instead
 ✅ Level 2 function: fetch_slim_user (calls validate_user)
-ℹ️  Function 'get_verified_user' already existed — updated instead
 ✅ Level 3 function: get_verified_user (calls fetch_slim_user)
 
 📊 Result from 3-level nested composition:
@@ -10924,7 +9496,7 @@ Building complex workflows from small, reusable pieces...
 
 📝 Example 1: Simple Query Function
 
-✅ Function saved: __zCG9k_e6iC2dlKBVqyj6gAKFms1hp5fEr7JV0vnhZ8r6cBdqJVBHlusXY6kU7Gk2KWXsE-ralYbMI9pv-hAA
+✅ Function saved: 374dG-zClN0tUw5aoxW9dps9RuoVO07FyZjvoQJuUTfvzceyT9IgMY75Tk2uY8MHu9hbFaS3fjj8Ykru9y8EPA
 📊 Found 5 records
 ⏱️  Execution time: 0ms
 
@@ -10938,13 +9510,13 @@ Building complex workflows from small, reusable pieces...
 
 ✅ Function saved
 📊 Statistics: 2 groups
-   {"avg_score":{"value":60,"type":"Float"},"count":{"value":5,"type":"Integer"},"status":{"type":"String","value":"active"}}
-   {"count":{"type":"Integer","value":5},"avg_score":{"type":"Float","value":50},"status":{"value":"inactive","type":"String"}}
+   {"count":{"value":5,"type":"Integer"},"avg_score":{"value":60,"type":"Float"},"status":{"value":"active","type":"String"}}
+   {"count":{"value":5,"type":"Integer"},"avg_score":{"type":"Float","value":50},"status":{"type":"String","value":"inactive"}}
 ⏱️  Execution time: 0ms
 
 📝 Example 4: Function Management
 
-📋 Total functions: 15
+📋 Total functions: 7
 🔍 Retrieved function: Get Active Users
 ✏️  Function updated
 🗑️  Function deleted
@@ -11006,10 +9578,10 @@ Building complex workflows from small, reusable pieces...
 
 ✅ Function saved
 📊 Category analysis (2 categories):
-   Electronics:
-      Products: 6 | Stock: 232 | Avg Rating: ⭐4.52
    Furniture:
       Products: 4 | Stock: 43 | Avg Rating: ⭐4.26
+   Electronics:
+      Products: 6 | Stock: 232 | Avg Rating: ⭐4.52
 
 ⏱️  Total execution time: 0ms
 📈 Pipeline stages:
@@ -11018,9 +9590,9 @@ Building complex workflows from small, reusable pieces...
 
 ✅ Function saved
 📊 Product summaries (10 items, showing first 3):
-   1. Laptop Pro - $1299 (⭐4.8)
-   2. Webcam HD - $119 (⭐4.5)
-   3. Desk Chair - $349 (⭐4.2)
+   1. USB-C Cable - $19 (⭐4.3)
+   2. Keyboard - $89 (⭐4.4)
+   3. Bookshelf - $149 (⭐4.1)
 ⏱️  Execution time: 0ms
 
 🧹 Cleaning up...
@@ -11038,27 +9610,26 @@ Building complex workflows from small, reusable pieces...
 
 ✅ Chat function saved
 🤖 AI Response:
-   1. Higher precision: Vector databases use mathematical points, lines, and polygons to represent spatial data, hence provide draw precision compared to raster databases.
+   1. Precision: Vector data is more accurate and precise compared to raster data.
 
-2. Scalability: The data can be scaled up or down without losing quality, making it suitable for mapping operations on various scales.
+2. Scalability: Vector data is resolution-independent, so it can be resized and scaled without any loss of detail or accuracy.
 
-3. Less storage: Vector databases tend to use less storage space compared to raster databases because they only need to store information about the vertices and paths of the geometric figures.
+3. Minimal Storage: It often requires less storage space than raster data.
 
-4. Detailed attributes: They allow the attachment of extensive attributes to individual objects, which provides comprehensive information for each spatial feature.
+4. Advanced Analysis: It's easier to apply more complex spatial analyses on vector data.
 
-5. Better Analysis: Vector data support a wide spectrum of analysis like topological and network analysis which might not be supported in a raster database.
+5. Clear Representation: Vector data often provides a more human-readable representation of features compared to raster data, making it ideal for mapping tasks.
 
-6. Easier editing: It is generally easier and more versatile to edit vector objects compared to raster objects.
-
+6. Attribute Data: Vector data can store attribute data more effectively which is essential for spatial analysis and queries.
 ⏱️  Execution time: 0ms
 
 📝 Example 2: Generate Embeddings
 
 ✅ Embedding function saved
 📊 Generated embeddings for 3 articles
-   1. "Draft Article" - 0D vector
-   2. "Getting Started with ekoDB" - 0D vector
-   3. "Advanced Query Patterns" - 0D vector
+   1. "Draft Article" - 1536D vector
+   2. "Getting Started with ekoDB" - 1536D vector
+   3. "Advanced Query Patterns" - 1536D vector
 ⏱️  Execution time: 0ms
 
 📝 Example 3: List All Articles
@@ -11080,10 +9651,10 @@ Building complex workflows from small, reusable pieces...
 
 📝 Example 1: FindAll + Group (Simple Aggregation)
 
-✅ Function saved: -kWyfj0OJJq-oqirBP7d_0noSgjU4hzfEj9MPEgVbvrTzglQGvQHt0qpJB9UJgy0H33LLhtMbnbtZ3J5tggZhg
+✅ Function saved: AS3aLiAwBlDYKYu-t0eJ5ov-SOAMAbc9hyIZSAT4l1iYHspy-HQdgbC-0R0ZNNIcE8hGOvX8kR4fujsdRsEzBQ
 📊 Found 2 product groups
-   {"category":{"value":"Electronics","type":"String"},"avg_price":{"type":"Float","value":575.6666666666666},"count":{"type":"Integer","value":3}}
-   {"avg_price":{"value":474,"type":"Float"},"category":{"type":"String","value":"Furniture"},"count":{"type":"Integer","value":2}}
+   {"avg_price":{"type":"Float","value":575.6666666666666},"category":{"type":"String","value":"Electronics"},"count":{"type":"Integer","value":3}}
+   {"category":{"value":"Furniture","type":"String"},"count":{"type":"Integer","value":2},"avg_price":{"value":474,"type":"Float"}}
 ⏱️  Execution time: 0ms
 
 📝 Example 2: Simple Product Listing
@@ -11096,8 +9667,8 @@ Building complex workflows from small, reusable pieces...
 
 ✅ Function saved
 📊 Found 2 categories
-   {"category":{"value":"Electronics","type":"String"},"count":{"type":"Integer","value":3}}
-   {"category":{"type":"String","value":"Furniture"},"count":{"type":"Integer","value":2}}
+   {"category":{"value":"Furniture","type":"String"},"count":{"type":"Integer","value":2}}
+   {"category":{"type":"String","value":"Electronics"},"count":{"type":"Integer","value":3}}
 ⏱️  Execution time: 0ms
 
 📝 Example 4: High Rating Products
@@ -11152,27 +9723,27 @@ Building complex workflows from small, reusable pieces...
 
 ✅ Function saved
 📊 Average scores by role:
-   user: 70.0 (7 users)
    admin: 20.0 (3 users)
+   user: 70.0 (7 users)
 ⏱️  Execution time: 0ms
 
 📝 Example 4: Top Users by Score
 
 ✅ Function saved
 📊 Users (showing first 5 of 10):
-   1. User 7 - Score: 70
-   2. User 6 - Score: 60
-   3. User 5 - Score: 50
-   4. User 4 - Score: 40
-   5. User 8 - Score: 80
+   1. User 4 - Score: 40
+   2. User 1 - Score: 10
+   3. User 9 - Score: 90
+   4. User 8 - Score: 80
+   5. User 5 - Score: 50
 ⏱️  Execution time: 0ms
 
 📝 Example 5: User Summary Statistics
 
 ✅ Function saved
 📊 User summary (2 groups):
-   active users: 7 users, Total Score: 370
-   inactive users: 3 users, Total Score: 180
+   inactive: 3 users, Total Score: 180
+   active: 7 users, Total Score: 370
 ⏱️  Execution time: 0ms
 
 🧹 Cleaning up...
@@ -11189,26 +9760,26 @@ Building complex workflows from small, reusable pieces...
 
 📝 Example 1: Inserting Records with Wrapped Types
 
-✅ Inserted order: mRy1cjtAKIz-00hEiZb_3UC1w-tI9Q-viqDxPQUPmzmpeBSGruINI3XkrFjMEw-ZUxzsiyGsXlnokWr9CjvrnA
+✅ Inserted order: 9rwgcOKm_rGHjodo7GdPInOTPw4XWVDDzfOyHdNa8YRWSirpJUA3GXMI0XRagiuZVQ5iJ78SfAgdNm7E6-3wgg
 ✅ Inserted 2 products with wrapped types
 
 📝 Example 2: Function with Wrapped Type Parameters
 
-✅ Function saved: ICaVe7UPSxr45L0n6JW0eAYmnBlbYviaevg5HfBn12ieLEHuR4Da9rqCcu9bcTyrUMujFgA--gBcNKRi_rhF2g
+✅ Function saved: EakaznPYU3LLVofSISyBxm59B9geIbqSUKiZtZktrukcGt_8dmjUHWKXQg6vKOmw7NpXaU1s9Iv86VFn6_RSCw
 📊 Created order via script
 ⏱️  Execution time: 0ms
 
 📝 Example 3: Basic KV Store Operations
 
 ✅ Set session data
-📊 Retrieved session: {"value":{"role":"admin","userId":"user_abc"},"type":"Object"}
+📊 Retrieved session: {"type":"Object","value":{"userId":"user_abc","role":"admin"}}
 🔍 Key exists: true
 ✅ Set cached data with 1 hour TTL
 🗑️  Deleted session
 
 📝 Example 4: KV Operations in Functions
 
-✅ Function saved: ZW6XSLEWzNWFj2O3AXv-CDadGsa1MfE4w02LT4ZC22oZdmVwX7MkmXJpYsP6jwzGFLY-aXEXZ5R-SSxJntNf9g
+✅ Function saved: PxJLHt73LYPRO2SfbyXyclIiA204lrzj6JdsY-jTn6P4vSpwKd9f-8W_NFHnVAG6yBAK0334zRfZCixAKCtb9A
 📊 Cached and retrieved product data
 ⏱️  Execution time: 0ms
 
@@ -11220,7 +9791,7 @@ Building complex workflows from small, reusable pieces...
 
 📝 Example 6: Combined Wrapped Types + KV Function
 
-✅ Function saved: FpLJ_ZAPzhgO64eVTNnf9naIwRFt7mdRLU8-N4bJ_X7UHPvoZYoJWGZVvlZg6-jOaQjau-ccnDLgUsCQcmSqew
+✅ Function saved: EoNTzTNwdPAsZs5cePBqsMlGiA0KtRiLDC280CeLr6d_Ysi1ff3lgO6QUBUEdOSRYBiBzkGawkNq7SYtqDSaXA
 📊 Processed order with caching
 ⏱️  Stages executed: 3
 ⏱️  Execution time: 0ms
@@ -11245,46 +9816,46 @@ Building complex workflows from small, reusable pieces...
 
 ✅ Function saved
 📊 Found 5 documents
-   1. Introduction to Machine Learning (AI)
+   1. Natural Language Processing (AI)
    2. Getting Started with ekoDB (Database)
-   3. Database Design Principles (Database)
-   4. Natural Language Processing (AI)
-   5. Vector Databases Explained (Database)
+   3. Vector Databases Explained (Database)
+   4. Database Design Principles (Database)
+   5. Introduction to Machine Learning (AI)
 ⏱️  Execution time: 0ms
 
 📝 Example 2: Count Documents by Category
 
 ✅ Function saved
 📊 Documents by category:
-   Database: 3 documents
    AI: 2 documents
+   Database: 3 documents
 ⏱️  Execution time: 0ms
 
 📝 Example 3: Select Specific Fields
 
 ✅ Function saved
 📊 Document titles (5 docs):
-   1. Introduction to Machine Learning
+   1. Natural Language Processing
    2. Getting Started with ekoDB
-   3. Database Design Principles
-   4. Natural Language Processing
-   5. Vector Databases Explained
+   3. Vector Databases Explained
+   4. Database Design Principles
+   5. Introduction to Machine Learning
 ⏱️  Execution time: 0ms
 
 📝 Example 4: Project Document Fields
 
 ✅ Function saved
 📊 Projected documents (showing first 3):
-   1. Introduction to Machine Learning
+   1. Natural Language Processing
    2. Getting Started with ekoDB
-   3. Database Design Principles
+   3. Vector Databases Explained
 ⏱️  Execution time: 0ms
 
 📝 Example 5: All Document Fields
 
 ✅ Function saved
 📊 All documents (5 total, showing first 2):
-   1. Introduction to Machine Learning (AI)
+   1. Natural Language Processing (AI)
    2. Getting Started with ekoDB (Database)
 ⏱️  Execution time: 0ms
 
@@ -11331,16 +9902,16 @@ Found 2 users with example.com emails:
 ✓ Set key: session:user123
 
 === KV Get ===
-Retrieved value: { type: 'Object', value: { userId: 123, username: 'john_doe' } }
+Retrieved value: { value: { userId: 123, username: 'john_doe' }, type: 'Object' }
 
 === Set Multiple Keys ===
 ✓ Set 3 keys
 
 === Get Multiple Keys ===
-cache:product:1: { value: { name: 'Product 1', price: 29.99 }, type: 'Object' }
+cache:product:1: { type: 'Object', value: { price: 29.99, name: 'Product 1' } }
 cache:product:2: {
   type: 'Object',
-  value: { name: 'Product 2', price: 39.989999999999995 }
+  value: { price: 39.989999999999995, name: 'Product 2' }
 }
 cache:product:3: {
   type: 'Object',
@@ -11354,7 +9925,7 @@ Key exists: true
 Found 3 keys matching 'cache:product:.*'
 
 === KV Query (Alias for Find) ===
-Total keys in store: 9
+Total keys in store: 4
 
 === KV Delete ===
 ✓ Deleted key: session:user123
@@ -11426,20 +9997,20 @@ Setting up test data...
 
 1. Basic full-text search:
 Found 2 results
-  1. Score: 12.870, Matched: name, email
+  1. Score: 12.870, Matched: email, name
   2. Score: 6.270, Matched: name
 
 2. Fuzzy search (typo tolerance):
 Found 4 results with fuzzy matching
   1. Score: 13.200, Matched: title, bio
   2. Score: 13.200, Matched: title, bio
-  3. Score: 13.200, Matched: bio, title
+  3. Score: 13.200, Matched: title, bio
   4. Score: 13.200, Matched: bio, title
 
 3. Search with field weights:
 Found 4 results with weighted fields
   1. Score: 26.400, Matched: bio, title
-  2. Score: 26.400, Matched: bio, title
+  2. Score: 26.400, Matched: title, bio
   3. Score: 26.400, Matched: title, bio
   4. Score: 26.400, Matched: title, bio
 
@@ -11454,19 +10025,19 @@ Found 1 results (matches: work, working, worked)
 
 6. Vector search (semantic search):
 Found 3 semantically similar documents
-  1. Score: 0.774, Matched:
-  2. Score: 0.752, Matched:
-  3. Score: 0.742, Matched:
+  1. Score: 0.760, Matched:
+  2. Score: 0.749, Matched:
+  3. Score: 0.731, Matched:
 
 7. Hybrid search (text + vector):
 Found 3 results using hybrid search (text + vector)
-  1. Score: 1.501, Matched: content, title
-  2. Score: 0.897, Matched: title, content
-  3. Score: 0.310, Matched:
+  1. Score: 1.492, Matched: title, content
+  2. Score: 0.904, Matched: content, title
+  3. Score: 0.299, Matched:
 
 8. Case-sensitive search:
 Found 1 results (case-sensitive)
-  1. Score: 13.200, Matched: skills, bio
+  1. Score: 13.200, Matched: bio, skills
 
 === Cleanup ===
 ✅ Deleted test collections
@@ -11476,15 +10047,15 @@ Found 1 results (case-sensitive)
 
 === Insert Document ===
 Inserted: {
-  id: '4-MurzqSw7MnkPrGv4sdvEF9RQMHE8AGa2bU7o3ywT-ix5adnxaY7tLHCaQWObIjxsHIjREUP-WbTfOUxgVGnA'
+  id: 'g5DdKtfwh2Mp1q_xd_5F_IJY6jSO6k1n5597646jzCx5cYz3Y5-6V2U8mBXiX-yBdaHKkusvpH-4RlgqnGD61A'
 }
 
 === Find by ID ===
 Found: {
-  active: { value: true, type: 'Boolean' },
-  value: { type: 'Integer', value: 42 },
   name: { type: 'String', value: 'Test Record' },
-  id: '4-MurzqSw7MnkPrGv4sdvEF9RQMHE8AGa2bU7o3ywT-ix5adnxaY7tLHCaQWObIjxsHIjREUP-WbTfOUxgVGnA'
+  value: { type: 'Integer', value: 42 },
+  id: 'g5DdKtfwh2Mp1q_xd_5F_IJY6jSO6k1n5597646jzCx5cYz3Y5-6V2U8mBXiX-yBdaHKkusvpH-4RlgqnGD61A',
+  active: { type: 'Boolean', value: true }
 }
 
 === Find with Query ===
@@ -11492,10 +10063,10 @@ Found documents: 1
 
 === Update Document ===
 Updated: {
-  id: '4-MurzqSw7MnkPrGv4sdvEF9RQMHE8AGa2bU7o3ywT-ix5adnxaY7tLHCaQWObIjxsHIjREUP-WbTfOUxgVGnA',
-  active: { type: 'Boolean', value: true },
-  name: { type: 'String', value: 'Updated Record' },
-  value: { type: 'Integer', value: 100 }
+  value: { value: 100, type: 'Integer' },
+  id: 'g5DdKtfwh2Mp1q_xd_5F_IJY6jSO6k1n5597646jzCx5cYz3Y5-6V2U8mBXiX-yBdaHKkusvpH-4RlgqnGD61A',
+  name: { value: 'Updated Record', type: 'String' },
+  active: { type: 'Boolean', value: true }
 }
 
 === Delete Document ===
@@ -11508,7 +10079,7 @@ Deleted document
 ✓ Client created
 
 === Inserting Test Data ===
-✓ Inserted test record: t4BsuG2ZgFq1W93NHcepGe_a-DIwpFNonCkRKf3Se7omjY5EEJxj5WkqBgEV5QLfR9RCtbHrMQ5Pr1Ohi4hsRQ
+✓ Inserted test record: bZFewdNT4mFxdOvE3QFWZqPerV6WPlfg5EM3Q2-THBjWl1pd9SwFuv_rf7Tl6QmKPw3rZXcbIFCN7P_hgOolkg
 
 === Connecting to WebSocket ===
 ✓ WebSocket connected
@@ -11538,22 +10109,22 @@ Deleted document
 Example 1: Basic Native SWR
 ────────────────────────────────────────────────────────────────────────────────
 Single function replaces KvGet → If → HttpRequest → KvSet pipeline
-✓ Created native SWR script: github_user_native_js (Q5DHB75F-D-dmS97FXTNy7nDq6y793GZ6BmM1qDKKqtScyu-HaQSkbwqVbpWHAwR9A-kGXwGJFHdcslkd2nmHw)
+✓ Created native SWR script: github_user_native_js (BL95xkxWlDfEs5er6bsyyhppXGfzXuEbQKdmtiB5NZ8Av4E7wG58mySlVcWlq3-41KXZQB-igBx9OcHKOQ4jOA)
 
 First call (cache miss - will fetch from GitHub API):
-  Response time: 207ms
+  Response time: 299ms
   Records returned: 1
 
 Second call (cache hit - instant from KV store):
-  Response time: 14ms
-  Speedup: 14.8x faster 🚀
+  Response time: 2ms
+  Speedup: 149.5x faster 🚀
   Records returned: 1
 
 
 Example 2: SWR with Built-in Audit Trail
 ────────────────────────────────────────────────────────────────────────────────
 Optional collection parameter for automatic request logging
-✓ Created SWR script with audit trail: product_swr_audit_js (dERZX2aScueMliv68ihQNW-wKmWvI_qh8PiGm25ay4l9OvuLn13wYYmla6zo22IUJ6YCiTwQYDyP0oF_Hksahg)
+✓ Created SWR script with audit trail: product_swr_audit_js (rKmqmT3tlZk_KIjLDvPFerWvK8DSjel_F6zyrWQSccLI8ELX4mizfUnDwpe2Meop2tUG05z3eyKdBbCVbE8aIw)
 
 Fetching product (will create audit trail entry):
   ✓ Product fetched and cached
@@ -11564,7 +10135,7 @@ Fetching product (will create audit trail entry):
 Example 3: SWR in Multi-Function Pipeline
 ────────────────────────────────────────────────────────────────────────────────
 Fetch external data → Process → Store in collection
-✓ Created enrichment pipeline: user_enrichment_pipeline_js (2Wp-Mafbmyp4yf48_I9ryO8E3bH296Jqy3v06z1qYjhSF-f2LNhGLHUY5VFv-yE0z6xP7Rx-lu8ESgO4hjMiAQ)
+✓ Created enrichment pipeline: user_enrichment_pipeline_js (q4bmq6b08ByVuqqBX1AmrI26J9R1YwMQT-akSRFzGIhN0h6UXNwGU00WSUqSaOZBcc5JrwjsAlvwwfR0X481Mw)
 
 Running pipeline:
   ✓ Data fetched from API (cached 30m)
@@ -11575,7 +10146,7 @@ Running pipeline:
 Example 4: Dynamic TTL Configuration
 ────────────────────────────────────────────────────────────────────────────────
 TTL as parameter - supports duration strings, integers, ISO timestamps
-✓ Created dynamic TTL script: flexible_cache_js (z3ATGw-bdEdN4GbJe_kW6hEdz1SJ0gqXKHgdaohQCWvi_pvR8b8GS9h0GNVwQxSBMMMiWUrM3AtFe3w092bfDA)
+✓ Created dynamic TTL script: flexible_cache_js (zEWPwrfGY1F-NjahfUvF5XJN-bEb0lRVujHB1SwI58FtyQiK1DDnv7CXKZARNGn3D_pdCu8te3gj18_Vw03tjQ)
   ✓ Cached with TTL: 5m (5 minutes)
   ✓ Cached with TTL: 1h (1 hour)
   ✓ Cached with TTL: 30s (30 seconds)
@@ -11601,37 +10172,37 @@ Result:         60% fewer functions, cleaner code, same behavior 🎯
 === ekoDB SWR (Stale-While-Revalidate) Pattern ===
 
 Step 1: Create SWR function that acts as edge cache
-✓ Created SWR script: fetch_api_user_js (Pebyn8mG_MOexJFUp93R8ePk3POogPYF_dWqtq7afbJ0oNqWLU7QOJnOlTDlKgZSyVmYOa5E0yueXSnPxnlUvg)
+✓ Created SWR script: fetch_api_user_js_70764_1789591679035 (8_Ul-STZU0abEP3MWQ9L8wx7ebtvjJEsaCV0SPkHMDKMf6x9qR7l3ckIVcslRHUWLiNnDUWIvkNBx8-OhZBZrA)
 
 Step 2: First call - Cache miss, fetches from API
 Result: {
   "records": [
     {
       "value": {
+        "type": "Object",
         "value": {
+          "phone": "1-770-736-8031 x56442",
           "website": "hildegard.org",
+          "email": "Sincere@april.biz",
           "address": {
-            "street": "Kulas Light",
             "geo": {
-              "lat": "-37.3159",
-              "lng": "81.1496"
+              "lng": "81.1496",
+              "lat": "-37.3159"
             },
             "suite": "Apt. 556",
             "zipcode": "92998-3874",
+            "street": "Kulas Light",
             "city": "Gwenborough"
           },
           "name": "Leanne Graham",
-          "company": {
-            "name": "Romaguera-Crona",
-            "bs": "harness real-time e-markets",
-            "catchPhrase": "Multi-layered client-server neural-net"
-          },
-          "email": "Sincere@april.biz",
           "username": "Bret",
           "id": 1,
-          "phone": "1-770-736-8031 x56442"
-        },
-        "type": "Object"
+          "company": {
+            "bs": "harness real-time e-markets",
+            "name": "Romaguera-Crona",
+            "catchPhrase": "Multi-layered client-server neural-net"
+          }
+        }
       }
     }
   ],
@@ -11646,49 +10217,54 @@ Result: {
 ✓ Data fetched from external API and cached
 
 Step 3: Second call - Cache hit, instant response from ekoDB
-Response time: 6ms (served from cache)
+Response time: 3ms (served from cache)
 ✓ Lightning fast cache hit
-
-🧹 Cleaning up...
-✓ Cleanup complete
 
 === SWR Pattern Summary ===
 ✅ Cache miss → Fetch from API → Store in ekoDB
 ✅ Cache hit → Instant response from ekoDB
 ✅ TTL handles automatic cache invalidation
+🧹 Cleaning up...
+✓ Cleanup complete
+
 ✓ Client created
 
 === Setup: Creating Test Accounts ===
-Created Alice: $1000 - ID: e1OV4akIF_yUMFU02CS48N4xX_kkRsWC8OKzGfL_qnylfH8G89wGQJjlcETQms7IPsRA-mBI6QSwQxqKWW-uMg
-Created Bob: $500 - ID: 1IZQUMZVOjYVS9omoyBHBdsx-QxVbelov81SZwXbUxUOcqzzya0ybRB3t3FdrOt-6KW08N4sryJca5TfocfjKA
+Created Alice: $1000 - ID: tDNsYrgnhC34mXCyNywU_SdFQOSGm5L8ba0ZyH6HDCclz187V_O6uPW8yoY5Xq3TqE9nFGogeEUcjlWxYQVEoQ
+Created Bob: $500 - ID: 0fSFDn_Zl1YK1jXaB3UMRWdBbwesJqDJX9QVijys31aBuZqg5mon3qcMvQ6pfkZUBxg2hB_d5hPSfGSor52Ktg
 
 === Example 1: Begin Transaction ===
-Transaction ID (server-default isolation): 4768cd4e-f3a3-4d5a-a8f0-98d577547dfc
+Transaction ID (server-default isolation): 6a34e9dc-9681-4e92-966b-5cdf4bcba965
 
 === Example 2: Operations within Transaction ===
-Updated Alice: $1000 → $800 (simulated)
-Updated Bob: $500 → $700 (simulated)
+Updated Alice: $1000 → $800
+Updated Bob: $500 → $700
 
 === Example 3: Transaction Status ===
 Status: Active
-Operations: 0
+Operations: 2
 
 === Example 4: Commit Transaction ===
 ✓ Transaction committed
 
+✓ Verified committed balances: Alice=$800, Bob=$700
+
 === Example 5: Rollback Demo ===
-New transaction: 59731f6c-5c40-4d69-85dc-d185cd7faec3
+New transaction: 472110e6-1950-43e6-bc42-175c3bd64406
+Updated Bob: $700 → $600 (in transaction)
 Status before rollback: Active
 ✓ Transaction rolled back
 
+✓ Verified Bob remains $700 after rollback
+
 === Cleanup ===
-✓ Deleted test accounts
+✓ Deleted test account collection
 
 ✓ All client transaction examples completed
 ✓ Client created
 
 === Insert Test Data with TTL ===
-✓ Inserted document with TTL: IZ6ashqF2X4Ed5cepsuBmGy66ghWSsXpicZdnBNqLASpgDdU1coorWWGYMGkjDlbf0pFt_XeJwRRWP1KnpGDlA
+✓ Inserted document with TTL: qM7ryUrbDkGs3q5e7F-K_n_im_cwhuSp1tbXBNwlJzw5ZyZkvRO37Ru6KrP_XJuJypHrA8bPRqoTcj6CQpIThQ
 
 === Query via WebSocket ===
 ✓ WebSocket connected
@@ -11704,7 +10280,7 @@ Status before rollback: Active
 === ekoDB Advanced CRUD Example (TypeScript) ===
 
 --- Inserting base record ---
-Inserted: Vdm3UXvLqusN1ECKcbfpY3P2nwSSDxkIMAQNA9LbAXbmnHn8F9Z5k2-Y7O7PVJPYOJd1jioGIc_F9JwZoFT5hA
+Inserted: KyC304jqmsx79oTHs1xfy2D--anS9CtNiNiemRxfflhe0D66c7VpBzpUUVNXNCHNXCQFvN8v0Uv15mBGr9EcTw
 
 --- updateWithAction: increment ---
 Score after increment: 150
@@ -11744,11 +10320,18 @@ Deleted collection
 ✓ Inserted sample product
 
 === Creating Chat Session ===
-✓ Created session: -NKOl2jyh_bSKHzclmHE1qHD2mW39pGpxIs6pzc42UpG8jdNk0A0f1k77831PyACssQnI0BH0KmYDRLNTYYGOQ
+✓ Created session: li5WwvL3w_1cYgaxdFYhjD16Bxnk4GpHUoIH0sq1SHnVEYP2vb_NuRnETOWob30uKryqWexdp8i0CGhWu7fYzA
 
 === Sending Initial Message ===
 ✓ Message sent
-  Response: It seems there are currently no active products available in the database. If you were looking for specific details about a product or if there's anything else you need, please let me know!
+  Response: It seems there are no products currently available in the database. However, I have found information about the product "ekoDB":
+
+- **Description:** High-performance database product
+- **ID:** azUfjiXPmjg_FLvfeNfsEq1CRbhlxR9OSF1cHPZfY6IzhTD8h-lQ69Xx2ZXdp-i7Jh0yh03kKyIThZ_qnjVgaA
+- **Name:** ekoDB
+- **Price:** $99
+
+If you need any further details or if you're looking for a specific product, feel free to ask!
 
 ✓ Second message sent
 
@@ -11765,7 +10348,7 @@ Deleted collection
 ✓ Message unmarked as forgotten
 
 === Feature 4: Merge Chat Sessions ===
-✓ Created second session: 8nmIAEuBvl3MZ2ga6cs9wDiH9-Lt73UPAMuab3OlVB_feqbh_jI7KTOo_62LHb2pxuALcwtL4F1iUdrJPtOD8Q
+✓ Created second session: iTPRuU0_OTUkKSbDfKntzAZ_suipnw74-OktglURyyF4ySgApnlVIwhx9SZ4MoexbxXeekSLq3Wq2b87eeyF-g
 ✓ Sent message in second session
 ✓ Sessions merged successfully
   Total messages in merged session: 7
@@ -11776,7 +10359,8 @@ Deleted collection
 ✓ Messages remaining: 6
 
 === Cleanup ===
-✓ Deleted session
+✓ Deleted chat session: iTPRuU0_OTUkKSbDfKntzAZ_suipnw74-OktglURyyF4ySgApnlVIwhx9SZ4MoexbxXeekSLq3Wq2b87eeyF-g
+✓ Deleted chat session: li5WwvL3w_1cYgaxdFYhjD16Bxnk4GpHUoIH0sq1SHnVEYP2vb_NuRnETOWob30uKryqWexdp8i0CGhWu7fYzA
 ✓ Deleted collection
 
 ✓ All advanced chat features demonstrated successfully!
@@ -11786,36 +10370,34 @@ Deleted collection
 ✓ Inserted 3 sample documents
 
 === Creating Chat Session ===
-✓ Created session: kYP1pDtSGKqcDF8jaFLNfsgyfWfH8fc0yJc2055X-6e81m7HhcFoDyIew54XwDeAVIHTf58psnhQg481Q3XucA
+✓ Created session: jBFRyd2imjYMN9u9B7pqV6dOjn1On-Qfv_0FSEPCoUaUkAtDmNa_ghEXUvsNFRHL69GUmCSwXjZ0_AHQBPESwA
 
 === Sending Chat Message ===
-Message ID: tSArvan9t5COeYs-pWQ4T3DzV5-yrUHoDx4wuy8VPeEOq4-yYyYqvMesCZz9YySmNsElMhlop4qYH32yopw6EQ
+Message ID: tsa0HbF_Aomb611_sbdR_OCBDwPVRZ943TcnG9DqU1FPK0W3t6WXn63v-YZKLhklU6chJbAtHK0ax5SlTbauAg
 
 === AI Response ===
-Here are the products available along with their prices:
+The available products and their prices are as follows:
 
-1. **ekoDB Pro**
-   - Price: $299
-   - Description: Enterprise edition product with advanced features
-
-2. **ekoDB**
+1. **ekoDB**
    - Price: $99
-   - Description: A high-performance database product with AI capabilities
+   - Description: A high-performance database product with AI capabilities.
+
+2. **ekoDB Pro**
+   - Price: $299
+   - Description: Enterprise edition product with advanced features.
 
 3. **ekoDB Cloud**
    - Price: $499
-   - Description: Fully managed cloud database service product
-
-If you need more information about any specific product, feel free to ask!
+   - Description: Fully managed cloud database service product.
 
 === Context Used (3 snippets) ===
   Snippet 1: {
   collection: 'client_chat_basic_ts',
   record: {
-    description: 'Enterprise edition product with advanced features',
-    id: '8i2l7aBZY01JlLfYlqInxz--ab5mjEHbHPyTBao-Fvmntq6CvNWVGBNjfaeRuPV6yfT0052tjKyNA4v1J4g9qw',
-    price: 299,
-    name: 'ekoDB Pro'
+    name: 'ekoDB',
+    price: 99,
+    id: 'aiY6TigxcKdOhabw7gm3XSIANe2ACM4v7lDgQjHgbIlB5MpDBMmvHfQafaOABQVBqIu7WFG9WlfVN_u6A8lIwA',
+    description: 'A high-performance database product with AI capabilities'
   },
   score: 0.1111111111111111,
   matched_fields: [ 'description' ]
@@ -11823,10 +10405,10 @@ If you need more information about any specific product, feel free to ask!
   Snippet 2: {
   collection: 'client_chat_basic_ts',
   record: {
-    id: 'NJcru8_gOXbWSvdvWnAG1eez7ZnZqQfhZDVwWJs5XxD1nyqitFoLWIseRm_tr_A0qz8aT_W50RygUUvK8CGtFQ',
-    name: 'ekoDB',
-    price: 99,
-    description: 'A high-performance database product with AI capabilities'
+    description: 'Enterprise edition product with advanced features',
+    price: 299,
+    name: 'ekoDB Pro',
+    id: 'tcVTH7GUXcp08uSX3TGmmFhcjH5HSHVXiFOuV-Ycn2c4roR4bXWPG2_Zr9qUp7GMJBJg-T0Bi-hSovBDom3erQ'
   },
   score: 0.1111111111111111,
   matched_fields: [ 'description' ]
@@ -11834,21 +10416,21 @@ If you need more information about any specific product, feel free to ask!
   Snippet 3: {
   collection: 'client_chat_basic_ts',
   record: {
+    id: '_TceJpyhI07XUE5xWBnfBYKUNWxfoejztvgzk8XUu0PK9jRnMmf_0YdkBuDjxQ0xeSZlVvY4i87b8bvH_wGR5A',
     description: 'Fully managed cloud database service product',
     price: 499,
-    id: 'MjJ3QT7wxmv0LSCoj03ChR51Ykj_ZhquJ1ZRx5wUW6xngr266I7EImb2BwqPiX95_Shhxln0vJ2o0ziG2ICA1A',
     name: 'ekoDB Cloud'
   },
   score: 0.1111111111111111,
   matched_fields: [ 'description' ]
 }
 
-Execution Time: 6024ms
+Execution Time: 1906ms
 
 === Token Usage ===
 Prompt tokens: 3413
-Completion tokens: 110
-Total tokens: 3523
+Completion tokens: 91
+Total tokens: 3504
 
 === Cleanup ===
 ✓ Deleted session
@@ -11857,31 +10439,40 @@ Total tokens: 3523
 ✓ Chat completed successfully
 === ekoDB Chat Message Stream (SSE) Example (TypeScript) ===
 
-Created session: _W8uLBnKKl4FSapuSEKXVEjQtNlv7chSv9Geup_Imi-5S1jeviukqbx8o6fjmjA3L7KzTP85Z18-H2RIJqGgCQ
+Created session: dNNcf_DjUmk7F-dbjBpWHh4Tp8npYhL2FPuIIoBQ2h0tjgyQoNOVx128FL4RIRCMu5dIhDADnvSmkMukXiDOJg
 
 Streaming response for: 'What is ekoDB?'
 
-{"__progress":"received"}{"__progress":"generating","model":"default","provider":"openai"}**ekoDB** is a curated knowledgebase dedicated to the field of **cancer ecosystems**. It integrates and organizes large-scale multi-omic datasets, computational tools, and literature, focusing on the complex cellular and molecular interactions within tumor microenvironments (TMEs). The goal of ekoDB is to facilitate cancer research by providing researchers with user-friendly access to annotated data and analytical resources relating to:
+{"__progress":"received"}{"__progress":"generating","model":"default","provider":"openai"}**ekoDB** does not refer to a single, definitive concept, platform, or product with global recognition (as of June 2024). However, based on context and various uses, here are possible meanings and interpretations:
 
-- Immune landscapes and immune cell infiltration in tumors
-- Cell-cell communication within the TME
-- Spatial organization and phenotypic diversity of tumor and immune cells
-- Tumor heterogeneity and ecosystem dynamics
+### Possible Meanings:
 
-**Key features of ekoDB include**:
-- Aggregated and harmonized single-cell, spatial transcriptomics, and bulk sequencing datasets from various cancer studies.
-- Visualization tools for exploring the composition and dynamics of cancer ecosystems.
-- Downloadable data and analysis results for further research.
+1. **EcoDB (Ecological Database):**
+   - Sometimes stylized as "ekoDB," this can refer to an ecological or environmental database, used for storing biodiversity, species, or environmental data. These platforms are crucial for ecological research and data sharing.
 
-ekoDB is designed to support the research community's efforts in unraveling the complexity of tumor ecology, improving biomarker discovery, and developing new therapeutic strategies.
+2. **Project-Specific Database:**
+   - In some research papers, GitHub repositories, or organizational projects, "ekoDB" may be the name of a custom database or software tool used for specific domains, such as environmental science, bioinformatics, or even financial data.
 
-**References:**
-- [ekoDB official website](https://ekodb.dp.tech)
-- Zhu, X. et al., *ekoDB: a comprehensive molecular ecology knowledgebase for cancer ecosystem research*, Nucleic Acids Research, 2024. [Link](https://academic.oup.com/nar/article/52/D1/D952/7374524)
+3. **NoSQL or SQL Database Technology:**
+   - "ekoDB" might refer to a proprietary or open-source database management system, though, as of mid-2024, there is no widely adopted database engine officially called "ekoDB" in the mainstream database community.
+
+4. **Company or Product Name:**
+   - Some firms or startups may choose "ekoDB" as a brand or product name, particularly those involved in data storage, management, or analytics with an environmental, economical, or eco-friendly focus.
+
+### Example Usages Found Online
+
+- **ekoDB and Bats**: In the field of bioacoustics, there is a project known as **ekoDB** related to bat call analysis and a corresponding open-access database of bat acoustic data. ([source example](https://github.com/eko-project/ekodb))
+- Some **GitHub repositories** or **Python libraries** are named “ekoDB,” but they tend to be project-specific rather than industry standards.
+
+---
+
+### In Summary
+
+If you’re referring to a specific tool, platform, or database called “ekoDB,” please provide more context or its full name. In the most common usages, it relates to specialized environmental data repositories or research-oriented tools, particularly in ecology and biodiversity informatics. If you have a particular field or usage in mind, let me know and I can provide a more tailored answer!
 
 --- Stream complete ---
-Message ID: iYjHofZ1YX8NtxH3R0-ymEQHLb4d568EX-i-XExKOqcV1ZsiKCjB4XWUkFvuSIs-JeUiBy6unXFrpQfmDu5R7g
-Execution time: 4465ms
+Message ID: 7pPLi9__6qoneOZrcMIZVKfWVwxDNtYnZMwVs4SOKoXG6ucIfuTy41j3pONVdew2oHx_XBw_qw1xAygSRCPaxw
+Execution time: 6392ms
 Context window: 1000000 tokens
 
 ✓ Chat message stream example completed
@@ -12056,19 +10647,20 @@ Expected error for non-existent provider: Error: Request failed with status 404:
 ✓ Inserted sample product
 
 === Creating Chat Session ===
-✓ Created session: hm5aw9utC9F2v7PS_NrYOqDbK2eZGIjDigYqh5qDKz6u1j-upqHAEMw59MVOxT2Q9Upj04O-zFJ9imVa1GK1wA
+✓ Created session: MD39dzsBvoWEmoGCVMHAg8m6AHJk2CNvF5e-3J3gY123kcrElbEtXdg7IxqGNP7VykFUVjq_jVdw9MtCXNauAA
 
 === Sending Messages ===
 ✓ Message 1 sent
-  Response: It appears that there are no products available in the queried database. However, I can confirm that we have a product called **ekoDB** with the following details:
+  Response: The available product is:
 
-- **Description:** A high-performance database product
-- **Price:** $99
+- **Name**: ekoDB
+- **Description**: A high-performance database product
+- **Price**: $99
 
-If you need further assistance or want more information, feel free to ask!
+If you need more information or additional products, please let me know!
 
 ✓ Message 2 sent
-  Response: The price of **ekoDB** is **$99**. If you have any more questions or need further information, feel free to ask!
+  Response: The price of ekoDB is **$99**.
 
 === Retrieving Session Messages ===
 ✓ Retrieved 4 messages
@@ -12077,26 +10669,20 @@ If you need further assistance or want more information, feel free to ask!
 ✓ Session updated
 
 === Branching Session ===
-✓ Created branch: 1egLKgFpPARPm4C5xVrm7Z3hQlI4eaDhmRhovvZZciai8VxNT5wPR4aSQqssZDzj2hdT5kWQSdfxdJKHk4jaIA
-  Parent: hm5aw9utC9F2v7PS_NrYOqDbK2eZGIjDigYqh5qDKz6u1j-upqHAEMw59MVOxT2Q9Upj04O-zFJ9imVa1GK1wA
+✓ Created branch: nFLgMXuNAqOtRyddzO-bmb8-2gcx8BMd3tPRolmLV31Y2uVMDBI5YLict1eLtFBEbq55PxGbX0bizccDo5km8A
+  Parent: MD39dzsBvoWEmoGCVMHAg8m6AHJk2CNvF5e-3J3gY123kcrElbEtXdg7IxqGNP7VykFUVjq_jVdw9MtCXNauAA
 
 === Listing Sessions ===
-✓ Found 8 sessions
-  Session 1: 1egLKgFpPARPm4C5xVrm7Z3hQlI4eaDhmRhovvZZciai8VxNT5wPR4aSQqssZDzj2hdT5kWQSdfxdJKHk4jaIA (Untitled)
-  Session 2: hm5aw9utC9F2v7PS_NrYOqDbK2eZGIjDigYqh5qDKz6u1j-upqHAEMw59MVOxT2Q9Upj04O-zFJ9imVa1GK1wA (Untitled)
-  Session 3: 8nmIAEuBvl3MZ2ga6cs9wDiH9-Lt73UPAMuab3OlVB_feqbh_jI7KTOo_62LHb2pxuALcwtL4F1iUdrJPtOD8Q (Untitled)
-  Session 4: hCkoSQHcG22ihQqUV0v7VbGtTJXM0VbX73mN9kqlbZez8zmP9iT7VahYxJLfzOXBuJdqIYQzWS6H6PJTvyU3kg (Untitled)
-  Session 5: vuKbaGHsQC94yLa7_2ro5Vdy1xg9A2RA5KvKSyzx1oJLcCAi4D6DZ8eKRvWcmz0zxkBszT3iMxPubOmpZYLlXw (Untitled)
-  Session 6: YUYboJLJZ3yqwxN1Cb5yCHopx8VzkWngmGBfDuMzwk5ocLrAA3onhZxGs9kFbV_RmSc9V1V2HhdynIh_f9G3Ww (Untitled)
-  Session 7: MAxsP25SeTa3zmDskKituh1NEf7CdZJC9f2ywIhfXYYV748h-w5M7KwY6MKOrpZK8nSLu8xnE7EilU_pKoIjUg (Untitled)
-  Session 8: SflIr8vmbb7jS_W_FfaYgsH9mYpw2-RnHYV0wV1SwX1f-j6HhxF5WJTlBhQmO8kpxpJki7WWPq2VM9MJBc5OQg (Untitled)
+✓ Found 2 sessions
+  Session 1: nFLgMXuNAqOtRyddzO-bmb8-2gcx8BMd3tPRolmLV31Y2uVMDBI5YLict1eLtFBEbq55PxGbX0bizccDo5km8A (Untitled)
+  Session 2: MD39dzsBvoWEmoGCVMHAg8m6AHJk2CNvF5e-3J3gY123kcrElbEtXdg7IxqGNP7VykFUVjq_jVdw9MtCXNauAA (Untitled)
 
 === Getting Session Details ===
 ✓ Session details retrieved
   Messages: 4
 
 === Deleting Branch Session ===
-✓ Deleted branch session: 1egLKgFpPARPm4C5xVrm7Z3hQlI4eaDhmRhovvZZciai8VxNT5wPR4aSQqssZDzj2hdT5kWQSdfxdJKHk4jaIA
+✓ Deleted branch session: nFLgMXuNAqOtRyddzO-bmb8-2gcx8BMd3tPRolmLV31Y2uVMDBI5YLict1eLtFBEbq55PxGbX0bizccDo5km8A
 
 === Cleanup ===
 ✓ Deleted session
@@ -12106,11 +10692,11 @@ If you need further assistance or want more information, feel free to ask!
 ✓ Client created
 
 === Create Collection (via insert) ===
-Collection created with first record: nOlF3SdXSfWt1Xn4qLCnzQNINRhwtcPYNpeC7JvOW1o6D54d2Sih45k9bnW9GRiPlI21gzG5t0no3A60cOOCag
+Collection created with first record: hRvJ65sPIZvVjaxQpV0xA8Sjds1YRgJIHCG1R3FCnoIVoZQKy7NX55T7KWRrOEtjBN2U8wGbdwt7eYlhq74HEw
 
 === List Collections ===
-Total collections: 37
-Sample collections: schema_employees_client_ts,schema_products_client_go,agent_function_versions__ek0_testing,chat_agent_configs__ek0_testing,chat_goal_templates__ek0_testing
+Total collections: 27
+Sample collections: schema_users_client_ts,schema_documents_client_ts,chat_goals__ek0_testing,schema_products_client_js,schedules__ek0_testing
 
 === Count Documents ===
 Document count: 1
@@ -12150,38 +10736,38 @@ Deleted collection 'collection_utils_test_ts'
 ✓ conc_demo_lock saved
 
 Invoke them like:
-  POST /api/functions/conc_demo_pay        { "idempotency_key": "...", "amount": 100 }
-  POST /api/functions/conc_demo_rl_fail    { "user_id": 42 }
-  POST /api/functions/conc_demo_rl_skip    { "user_id": 42 }
-  POST /api/functions/conc_demo_lock       { "resource": "queue:drain" }
+  POST /api/functions/conc_demo_pay_ts_71396_1789591703688 { "idempotency_key": "...", "amount": 100 }
+  POST /api/functions/conc_demo_rl_fail_ts_71396_1789591703688 { "user_id": 42 }
+  POST /api/functions/conc_demo_rl_skip_ts_71396_1789591703688 { "user_id": 42 }
+  POST /api/functions/conc_demo_lock_ts_71396_1789591703688 { "resource": "queue:drain" }
 
 ✓ Cleaned up demo functions
 === ekoDB Convenience Methods Example ===
 
 === Native Object Creation ===
 ✓ Created record with plain object: {
-  id: 'XzXPnN9tq7E4RmyD3jGTraCLVRBvzsNFGOJucKgX0PJ4nMI-1Xfx4pDr39oJFydDni1boHXr3YQTkonY0T-hnA'
+  id: 'kDET-8rSMrCiKDji26DaL40L774EErHJkxZantOcqyP6Oz7BKsUmU-dWVqmcsHhXVRVAPIECyKVLRVH-vQFXzg'
 }
 
 === Upsert Operation ===
 ✓ First upsert (update): {
-  id: 'XzXPnN9tq7E4RmyD3jGTraCLVRBvzsNFGOJucKgX0PJ4nMI-1Xfx4pDr39oJFydDni1boHXr3YQTkonY0T-hnA',
+  id: 'kDET-8rSMrCiKDji26DaL40L774EErHJkxZantOcqyP6Oz7BKsUmU-dWVqmcsHhXVRVAPIECyKVLRVH-vQFXzg',
+  age: { value: 29, type: 'Integer' },
+  name: { type: 'String', value: 'Alice Johnson' },
   active: { type: 'Boolean', value: true },
-  email: { type: 'String', value: 'alice.j@newdomain.com' },
-  age: { type: 'Integer', value: 29 },
-  name: { type: 'String', value: 'Alice Johnson' }
+  email: { value: 'alice.j@newdomain.com', type: 'String' }
 }
 ✓ Second upsert (insert): {
-  id: 'cpTn0L_dLmX_aj7LKXTMUXlsZ2s_knHGCHhQTBKrmLFGz7QCgPyhtOSOOoD1jz_IOHEyylWOBLtZNq5kVfhgOQ'
+  id: '22JZXgYx5Maq3V_ZzzuqKDiyJA8eslBFQ0n1YWc08HXvuhbRVFAcOI-K-fUaGxQgwwQOo1nxT3rxu0IJ8UUtng'
 }
 
 === Find One Operation ===
 ✓ Found user by email: {
-  id: 'XzXPnN9tq7E4RmyD3jGTraCLVRBvzsNFGOJucKgX0PJ4nMI-1Xfx4pDr39oJFydDni1boHXr3YQTkonY0T-hnA',
   name: { type: 'String', value: 'Alice Johnson' },
-  age: { type: 'Integer', value: 29 },
+  email: { value: 'alice.j@newdomain.com', type: 'String' },
   active: { type: 'Boolean', value: true },
-  email: { value: 'alice.j@newdomain.com', type: 'String' }
+  id: 'kDET-8rSMrCiKDji26DaL40L774EErHJkxZantOcqyP6Oz7BKsUmU-dWVqmcsHhXVRVAPIECyKVLRVH-vQFXzg',
+  age: { value: 29, type: 'Integer' }
 }
 ✓ User not found (as expected)
 
@@ -12200,18 +10786,18 @@ Invoke them like:
 
 ✅ All convenience methods demonstrated successfully!
 ✓ Client created
-✓ crypto_demo_hmac saved
-✓ crypto_demo_aes saved
-✓ crypto_demo_uuid saved
-✓ crypto_demo_totp saved
-✓ crypto_demo_encoding saved
+✓ crypto_demo_hmac_ts saved
+✓ crypto_demo_aes_ts saved
+✓ crypto_demo_uuid_ts saved
+✓ crypto_demo_totp_ts saved
+✓ crypto_demo_encoding_ts saved
 
 Invoke them with:
-  POST /api/functions/crypto_demo_hmac     { "payload": "hi" }
-  POST /api/functions/crypto_demo_aes      { "plaintext": "secret" }
-  POST /api/functions/crypto_demo_uuid
-  POST /api/functions/crypto_demo_totp
-  POST /api/functions/crypto_demo_encoding { "title": "Héllo World" }
+  POST /api/functions/crypto_demo_hmac_ts { "payload": "hi" }
+  POST /api/functions/crypto_demo_aes_ts { "plaintext": "secret" }
+  POST /api/functions/crypto_demo_uuid_ts
+  POST /api/functions/crypto_demo_totp_ts
+  POST /api/functions/crypto_demo_encoding_ts { "title": "Héllo World" }
 
 ✓ Cleaned up demo functions
 === Distinct Values Example ===
@@ -12240,10 +10826,10 @@ Cleanup done.
 ✓ Client created
 
 === Insert Document with TTL (1 hour) ===
-✓ Inserted document: FYkvoG21Ko59MH_SuncSj068k1FBIPf4bEWQbvV7YowV32OhGrUCeF4MIgzsATQgwzZ-hnAa1CELeTkPl75T0w
+✓ Inserted document: SNoGNOSfzn9CwZsOZIPINSCCET8-aoGO0UNtjinhIq28LNwC_c_M0PZR2NADDbkynh0iC19NoZUzPiK-yxnTZQ
 
 === Insert Document with TTL (5 minutes) ===
-✓ Inserted document: diOffO3UE6A0lwMZtDzMCVY3T1pzUGrDTrCtzVy3QG2y2KB_zpiR7CTwAGiIImIZ6eBE9s3Zay_KbvOz67nrjg
+✓ Inserted document: 1LotCLFz3lKmIQpJNvCDiVMiZnwSXAcwUtrrP0CL-Dm2o6UqdPNBO7J1vl_m7CkjD3lnu-yYp_Akf3NrHdIpoQ
 
 === Query Documents ===
 ✓ Found 2 documents with TTL
@@ -12263,39 +10849,38 @@ Cleanup done.
 === ekoDB as Edge Cache - Simple Example ===
 
 Creating edge cache function...
-ℹ️  Function 'cache_api_call' already existed — updated instead
-✓ Edge cache script updated: KGn5p2Nthgt1SmGcncaj0NQoxs8yMjFgT0pLDSua-8IZSkDxxui2PSux4X3CojN7N9BjFUyKA5dA92LRD6n_zA
+✓ Edge cache script created: x8MK745khba2QJx9jr18rpE1q2I_RWe7OyfaRam2a9VbgVUjaQz-eOO9AdGAht6sCMmvjYZkGnrmECxuzH_deA
 
 Call 1: Cache miss (fetches from API)
-Response time: 6ms
+Response time: 66ms
 Result: {
   "records": [
     {
       "value": {
+        "type": "Object",
         "value": {
           "phone": "1-770-736-8031 x56442",
-          "website": "hildegard.org",
+          "username": "Bret",
+          "address": {
+            "geo": {
+              "lat": "-37.3159",
+              "lng": "81.1496"
+            },
+            "suite": "Apt. 556",
+            "street": "Kulas Light",
+            "city": "Gwenborough",
+            "zipcode": "92998-3874"
+          },
           "company": {
             "bs": "harness real-time e-markets",
             "catchPhrase": "Multi-layered client-server neural-net",
             "name": "Romaguera-Crona"
           },
-          "id": 1,
+          "email": "Sincere@april.biz",
+          "website": "hildegard.org",
           "name": "Leanne Graham",
-          "username": "Bret",
-          "address": {
-            "suite": "Apt. 556",
-            "geo": {
-              "lat": "-37.3159",
-              "lng": "81.1496"
-            },
-            "zipcode": "92998-3874",
-            "city": "Gwenborough",
-            "street": "Kulas Light"
-          },
-          "email": "Sincere@april.biz"
-        },
-        "type": "Object"
+          "id": 1
+        }
       }
     }
   ],
@@ -12309,35 +10894,35 @@ Result: {
 }
 
 Call 2: Cache hit (served from ekoDB)
-Response time: 4ms (1.5x faster!)
+Response time: 2ms (33x faster!)
 Result: {
   "records": [
     {
       "value": {
+        "type": "Object",
         "value": {
           "phone": "1-770-736-8031 x56442",
-          "website": "hildegard.org",
+          "username": "Bret",
+          "address": {
+            "geo": {
+              "lat": "-37.3159",
+              "lng": "81.1496"
+            },
+            "suite": "Apt. 556",
+            "street": "Kulas Light",
+            "city": "Gwenborough",
+            "zipcode": "92998-3874"
+          },
           "company": {
             "bs": "harness real-time e-markets",
             "catchPhrase": "Multi-layered client-server neural-net",
             "name": "Romaguera-Crona"
           },
-          "id": 1,
+          "email": "Sincere@april.biz",
+          "website": "hildegard.org",
           "name": "Leanne Graham",
-          "username": "Bret",
-          "address": {
-            "suite": "Apt. 556",
-            "geo": {
-              "lat": "-37.3159",
-              "lng": "81.1496"
-            },
-            "zipcode": "92998-3874",
-            "city": "Gwenborough",
-            "street": "Kulas Light"
-          },
-          "email": "Sincere@april.biz"
-        },
-        "type": "Object"
+          "id": 1
+        }
       }
     }
   ],
@@ -12370,15 +10955,13 @@ Result: {
 
 Building reusable functions that call each other...
 
-Function 'fetch_user' already existed — updated instead
 ✅ Saved reusable function: fetch_user
-Function 'get_user_wrapper' already existed — updated instead
 ✅ Saved composed function: get_user_wrapper (calls fetch_user + projects fields)
 
 📊 Result from composed function:
    Records: 1
-   Name: {"type":"String","value":"User 1"}
-   Department: {"type":"String","value":"engineering"}
+   Name: {"value":"User 1","type":"String"}
+   Department: {"value":"engineering","type":"String"}
 
 🎯 Key Benefit: fetch_user can be reused by ANY function!
    No code duplication, single source of truth
@@ -12387,45 +10970,40 @@ Function 'get_user_wrapper' already existed — updated instead
 
 Using KV cache + CallFunction for fast cache-aside pattern...
 
-Function 'fetch_and_store_user' already existed — updated instead
 ✅ Saved reusable function: fetch_and_store_user (uses KV)
-Function 'swr_user' already existed — updated instead
 ✅ Saved SWR function using composition: swr_user
 
 First call (cache miss - will fetch from API):
-   ⏱️  Duration: 6ms
+   ⏱️  Duration: 77ms
    📊 Records: 1
    📦 Data: {
   "value": {
     "type": "Object",
     "value": {
       "company": {
-        "name": "Romaguera-Crona",
         "bs": "harness real-time e-markets",
-        "catchPhrase": "Multi-layered client-serv...
+        "catchPhrase": "Multi-layered client-server neural-net",
+        "name": "Ro...
 
 Second call (cache hit - from cache):
-   ⏱️  Duration: 4ms
+   ⏱️  Duration: 2ms
    📊 Records: 1
    📦 Data: {
   "value": {
+    "type": "Object",
     "value": {
       "company": {
-        "name": "Romaguera-Crona",
         "bs": "harness real-time e-markets",
-        "catchPhrase": "Multi-layered client-server neural-net"
-      }...
-   🚀 Cache speedup: 1.5x faster!
+        "catchPhrase": "Multi-layered client-server neural-net",
+        "name": "Ro...
+   🚀 Cache speedup: 38.5x faster!
 
 📝 Example 3: Multi-Level Function Composition
 
 Building complex workflows from small, reusable pieces...
 
-Function 'validate_user' already existed — updated instead
 ✅ Level 1 function: validate_user
-Function 'fetch_slim_user' already existed — updated instead
 ✅ Level 2 function: fetch_slim_user (calls validate_user)
-Function 'get_verified_user' already existed — updated instead
 ✅ Level 3 function: get_verified_user (calls fetch_slim_user)
 
 📊 Result from 3-level nested composition:
@@ -12448,24 +11026,24 @@ client_function_contract: ok
 
 📝 Example 1: Simple Query Function
 
-✅ Function saved: uow8mTDdXdxqpArVGPwwCawr1omf79ydyKb3pofRcfJhX7iPDRA-TRUu4SJVvG73X520OKslCIHY6W9VszIC_Q
+✅ Function saved: y5UXcNEcdSa-rH8RbO41no23-hZ2dCMLNktaHwq481b_IxCbTZ5N9_1_dtgMk32RVJQ_UlT29auseTqpmpF8lQ
 📊 Found 5 active users
 
 📝 Example 2: Parameterized Function
 
-✅ Function saved: mE4YtxMMeYXm8IbKB-epC7m3VOSY6OHNkJ9Fi1j5K7xl4Q4Lh85vuEC-3K-X5mnSnU_-Ofe9Is_FDoC7Mm8CEw
+✅ Function saved: Nwl1cHZyF3CUVnj-KTUKapwXzvgJyFpv45TIuypcaL_QxIN-fWbM18dqkQZPtbBtc9-yS5DJDg5lKqD6ftxOKQ
 📊 Found 3 users (limited)
 
 📝 Example 3: Aggregation Function
 
-✅ Function saved: 58rzK48Xrb_ee7HXHc44RGUtV4-DjhyzHLaIz7wP7UuHGj5dPzBaUzi6gwCv04lQV7vtFlX_vWxGkqlYSVDMKw
+✅ Function saved: i2U1pPu_2nU0aqCde-0nBDR1HLbd7cByyHTiJnBa6DZciXbMVwCPa41mheJGys9G8bvicCJPqjAtVupjX3iQEA
 📊 Statistics: 2 groups
-   {"status":{"value":"inactive","type":"String"},"avg_score":{"value":50,"type":"Float"},"count":{"value":5,"type":"Integer"}}
-   {"status":{"type":"String","value":"active"},"count":{"value":5,"type":"Integer"},"avg_score":{"value":60,"type":"Float"}}
+   {"avg_score":{"value":50,"type":"Float"},"count":{"type":"Integer","value":5},"status":{"type":"String","value":"inactive"}}
+   {"avg_score":{"value":60,"type":"Float"},"count":{"type":"Integer","value":5},"status":{"type":"String","value":"active"}}
 
 📝 Example 4: UserFunction Management
 
-📋 Total scripts: 15
+📋 Total scripts: 10
 🔍 Retrieved script: Get Active Users
 ✏️  function updated
 🗑️  function deleted
@@ -12488,8 +11066,8 @@ client_function_contract: ok
 
 ✅ Function saved
 📊 Category breakdown:
-   {"avg_price":{"type":"Float","value":367},"count":{"value":5,"type":"Integer"},"category":{"value":"Electronics","type":"String"}}
-   {"avg_price":{"type":"Float","value":365.6666666666667},"count":{"value":3,"type":"Integer"},"category":{"type":"String","value":"Furniture"}}
+   {"avg_price":{"value":365.6666666666667,"type":"Float"},"count":{"type":"Integer","value":3},"category":{"type":"String","value":"Furniture"}}
+   {"avg_price":{"type":"Float","value":367},"count":{"type":"Integer","value":5},"category":{"type":"String","value":"Electronics"}}
 ⏱️  Execution time: 0ms
 
 🧹 Cleaning up...
@@ -12505,29 +11083,32 @@ client_function_contract: ok
 
 ✅ Chat script saved
 🤖 AI Response:
-   Vector databases offer several benefits:
+   Vector databases offer several benefits, including:
 
-1. **High-Dimensional Data Handling**: Efficiently manage and search vast amounts of high-dimensional data, such as embeddings from machine learning models.
+1. **High-Dimensional Data Handling**: They efficiently manage and query high-dimensional data, which is common in machine learning applications.
 
-2. **Fast Similarity Search**: Enable rapid nearest neighbor search, which is crucial for applications like recommendation systems and image/video retrieval.
+2. **Similarity Search**: Vector databases facilitate fast nearest neighbor searches, making it easier to find similar items based on vector embeddings.
 
-3. **Scalability**: Designed to handle large-scale datasets with horizontal scalability, allowing for growth without performance degradation.
+3. **Scalability**: They are designed to scale with large datasets, allowing for handling billions of vectors.
 
-4. **Flexibility in Data Types**: Support various data types, including images, text, and audio, by representing them as vectors.
+4. **Real-Time Processing**: Many vector databases support real-time querying, enabling dynamic application scenarios.
 
-5. **Real-Time Processing**: Facilitate near-real-time analytics, which is valuable for dynamic applications that require immediate results.
+5. **Integration with AI/ML**: They seamlessly integrate with AI and machine learning workflows, supporting model outputs directly.
 
-6. **Integration with AI/ML**: Seamless integration with machine learning workflows for tasks like clustering, classification, and anomaly detection.
+6. **Flexible Data Models**: Vector databases can accommodate various data types and formats, enhancing usability.
 
-7. **Enhanced Performance**: Optimized for performance, reducing latency in queries compared to traditional databases when dealing with unstructured data.
+7. **Efficient Storage**: Optimized for storing and retrieving vectors, leading to better performance compared to traditional databases for specific use cases.
 
-8. **Support for Advanced Algorithms**: Enable the implementation of complex algorithms for tasks such as semantic search and natural language processing.
+8. **Multi-Modal Data Support**: Capable of processing data from different modalities (e.g., text, images, audio) in a unified way.
+
+Using a vector database can significantly enhance the performance and functionality of applications that rely on complex data representations.
 ⏱️  Execution time: 0ms
 
 📝 Example 2: Generate Embeddings
 
 ✅ Embed script saved
-📊 Embedding generated
+📊 Generated 2 embeddings
+   Dimensions: 1536
 ⏱️  Execution time: 0ms
 
 🧹 Cleaning up...
@@ -12547,10 +11128,10 @@ client_function_contract: ok
 
 📝 Example 1: FindAll + Group (Simple Aggregation)
 
-✅ Function saved: Uli0Kih7kT2kCQhwmKNEWrENEkLXl4DcNnN29LVwWoA1Zces7YYEH3n_6Ox0tCQilHMwtzxI4RqTxhxY3IO9sw
+✅ Function saved: AZ9F-AOryMq3FO_cal1aCbPwtatXASbMboQopyuSjzhEaA8eswPxtzBEmq9y3j6MZUpoqTYpGJ-R14Px_LpGUQ
 📊 Found 2 product groups
-   {"category":{"type":"String","value":"Electronics"},"count":{"type":"Integer","value":3},"avg_price":{"type":"Float","value":575.6666666666666}}
-   {"count":{"type":"Integer","value":2},"avg_price":{"type":"Float","value":474},"category":{"value":"Furniture","type":"String"}}
+   {"avg_price":{"type":"Float","value":474},"category":{"type":"String","value":"Furniture"},"count":{"value":2,"type":"Integer"}}
+   {"category":{"value":"Electronics","type":"String"},"count":{"type":"Integer","value":3},"avg_price":{"type":"Float","value":575.6666666666666}}
 ⏱️  Execution time: 0ms
 
 📝 Example 2: Simple Product Listing
@@ -12563,8 +11144,8 @@ client_function_contract: ok
 
 ✅ Function saved
 📊 Found 2 categories
-   {"count":{"type":"Integer","value":3},"category":{"type":"String","value":"Electronics"}}
-   {"category":{"type":"String","value":"Furniture"},"count":{"type":"Integer","value":2}}
+   {"count":{"type":"Integer","value":3},"category":{"value":"Electronics","type":"String"}}
+   {"count":{"value":2,"type":"Integer"},"category":{"type":"String","value":"Furniture"}}
 ⏱️  Execution time: 0ms
 
 📝 Example 4: High Rating Products
@@ -12619,8 +11200,8 @@ client_function_contract: ok
 
 ✅ Function saved
 📊 Average score by role:
-   {"role":{"value":"user","type":"String"},"count":{"type":"Integer","value":7},"avg_score":{"type":"Float","value":70}}
-   {"role":{"value":"admin","type":"String"},"count":{"type":"Integer","value":3},"avg_score":{"type":"Float","value":20}}
+   {"avg_score":{"value":20,"type":"Float"},"role":{"value":"admin","type":"String"},"count":{"type":"Integer","value":3}}
+   {"role":{"type":"String","value":"user"},"avg_score":{"type":"Float","value":70},"count":{"type":"Integer","value":7}}
 ⏱️  Execution time: 0ms
 
 🧹 Cleaning up...
@@ -12637,26 +11218,26 @@ client_function_contract: ok
 
 📝 Example 1: Inserting Records with Wrapped Types
 
-✅ Inserted order: 1RQT20Gfm8tVO9Smx-sR0h335fFhnFkY29PH_X-VPb4729z7FVUSpFSmTkNeqK07D7QnLPq9ycG_n2H1lwDagw
+✅ Inserted order: Z7ZUcmWk11i6FQxdpuWNgPOPq2WpE2sXFG8yDnF_4v3jyya-Zm7_F7d6QaT3X0UjG406cj1e8pXuELJsCslaxw
 ✅ Inserted 2 products with wrapped types
 
 📝 Example 2: UserFunction with Wrapped Type Parameters
 
-✅ Function saved: q-rBmMyzrwQJdiUD0WmBuZolg5eRJ7Or8D91vzoZMRz9LdjHJBvld9gvwTHisfhgfkgXEGDlC16o_6xpepeFoQ
+✅ Function saved: SJzULk_i3b5E0aXbJdrcNNBzkK2DJGdjL6XiqrtM2lXeTj7kRVGb-eEVX3UAhSih9VuVPLEJ6s5sODR5OuV7cw
 📊 Created order via script
 ⏱️  Execution time: 0ms
 
 📝 Example 3: Basic KV Store Operations
 
 ✅ Set session data
-📊 Retrieved session: {"type":"Object","value":{"role":"admin","userId":"user_abc"}}
+📊 Retrieved session: {"value":{"role":"admin","userId":"user_abc"},"type":"Object"}
 🔍 Key exists: true
 ✅ Set cached data with 1 hour TTL
 🗑️  Deleted session
 
 📝 Example 4: KV Operations in Functions
 
-✅ Function saved: LLaoMfSW-UdNREUsRHs-b8yiBZW-y2SlmzRXwNIg7cMTxxXiXGORGq3c5CWFdeIbGrtDgYMVmfaw73YGZL1HcQ
+✅ Function saved: j5CDVf3O4FGFhYlA_PlYaoMQJhMbWn1p7T8xmaxm4VQjf7D4w7LhCyJeET2cAz3neVLWA3zPzzIEeXKe3D3u4g
 📊 Cached and retrieved product data
 ⏱️  Execution time: 0ms
 
@@ -12668,7 +11249,7 @@ client_function_contract: ok
 
 📝 Example 6: Combined Wrapped Types + KV Function
 
-✅ Function saved: RKfuuzYpeptF4btu-6d_vsFJHigB_f_-ksqB1qxKA50eRyWjrFNRcLhrL3ewCH8UMLkIMToXPrZSBtzp0XjihQ
+✅ Function saved: TqIQ1CN3-WgLwkD0iI85aRv39bMtmkyW2mwxT5vExoT8ZRx9k4HXI6Daq4a3k_bUuWtzBzOMUz2rMd06uQvZMw
 📊 Processed order with caching
 ⏱️  Stages executed: 3
 ⏱️  Execution time: 0ms
@@ -12693,19 +11274,19 @@ client_function_contract: ok
 
 ✅ Function saved
 📊 Found 5 documents
-   1. Vector Databases Explained (Database)
-   2. Natural Language Processing (AI)
-   3. Database Design Principles (Database)
-   4. Introduction to Machine Learning (AI)
-   5. Getting Started with ekoDB (Database)
+   1. Natural Language Processing (AI)
+   2. Introduction to Machine Learning (AI)
+   3. Getting Started with ekoDB (Database)
+   4. Vector Databases Explained (Database)
+   5. Database Design Principles (Database)
 ⏱️  Execution time: 0ms
 
 📝 Example 2: Count Documents by Category
 
 ✅ Function saved
 📊 Documents by category:
+   {"count":{"value":2,"type":"Integer"},"category":{"value":"AI","type":"String"}}
    {"count":{"type":"Integer","value":3},"category":{"value":"Database","type":"String"}}
-   {"count":{"value":2,"type":"Integer"},"category":{"type":"String","value":"AI"}}
 ⏱️  Execution time: 0ms
 
 🧹 Cleaning up...
@@ -12715,7 +11296,7 @@ client_function_contract: ok
 === ekoDB Goal Template CRUD Example (TypeScript) ===
 
 --- Creating goal template ---
-Created template: Data Migration (id: 0z6N03TZl0aBV61eKixki01R-OZ66ZVwc2GSNOLjmOA5uqKN7L_q7TH2_enT-YNNSFlL2TsV8S1Zv8xiL2AWgg)
+Created template: Data Migration (id: QQjXLJ9fa6Y2Is_DgqnVb-N2WN8j4mHl9t8clECmVScnB1FpOjCq6hcKIAe7FYe05shUbxGR7V9cf4Wp5oWghg)
 
 --- Listing templates ---
 Templates: {
@@ -12723,7 +11304,7 @@ Templates: {
   items: [
     {
       description: [Object],
-      id: '0z6N03TZl0aBV61eKixki01R-OZ66ZVwc2GSNOLjmOA5uqKN7L_q7TH2_enT-YNNSFlL2TsV8S1Zv8xiL2AWgg',
+      id: 'QQjXLJ9fa6Y2Is_DgqnVb-N2WN8j4mHl9t8clECmVScnB1FpOjCq6hcKIAe7FYe05shUbxGR7V9cf4Wp5oWghg',
       steps: [Object],
       title: [Object]
     }
@@ -12743,20 +11324,20 @@ Template deleted successfully
 === ekoDB Goals, Tasks & Agents Example (TypeScript) ===
 
 --- Creating goal ---
-Created goal: Deploy v2.0 (id: P4a5f0CnS_RKc4TyqfkljHHjMt5Ij2muAfrDNKRvRGH8L2nLNjcpPJxcJH9NQL2TPIZ9Dp0Twr3BVRwGRKlLcw)
+Created goal: Deploy v2.0 (id: AUWYQZHGfkr30b9xKb5dJpxvD6WTsZoWHoXbUpFR-2Y-Zc82uQflPnG1fKYAIOFweLgDw-bdH2cEeDmOJhg2Zg)
 
 --- Listing goals ---
 Goals: {
   "count": 1,
   "goals": [
     {
-      "created_at": "2026-09-15T18:02:27.754712+00:00",
+      "created_at": "2026-09-16T20:48:29.030857+00:00",
       "description": "Ship version 2.0 to production",
-      "id": "P4a5f0CnS_RKc4TyqfkljHHjMt5Ij2muAfrDNKRvRGH8L2nLNjcpPJxcJH9NQL2TPIZ9Dp0Twr3BVRwGRKlLcw",
+      "id": "AUWYQZHGfkr30b9xKb5dJpxvD6WTsZoWHoXbUpFR-2Y-Zc82uQflPnG1fKYAIOFweLgDw-bdH2cEeDmOJhg2Zg",
       "status": "pending",
       "steps": "[{\"description\":\"Run test suite\"},{\"description\":\"Build release artifacts\"},{\"description\":\"Deploy to staging\"},{\"description\":\"Deploy to production\"}]",
       "title": "Deploy v2.0",
-      "updated_at": "2026-09-15T18:02:27.754712+00:00"
+      "updated_at": "2026-09-16T20:48:29.030857+00:00"
     }
   ]
 }
@@ -12775,13 +11356,13 @@ Search results: {
       "_score": 12.870000000000001,
       "created_at": {
         "type": "DateTime",
-        "value": "2026-09-15T18:02:27.754712+00:00"
+        "value": "2026-09-16T20:48:29.030857+00:00"
       },
       "description": {
         "type": "String",
         "value": "Ship version 2.0 with hot-fix patches"
       },
-      "id": "P4a5f0CnS_RKc4TyqfkljHHjMt5Ij2muAfrDNKRvRGH8L2nLNjcpPJxcJH9NQL2TPIZ9Dp0Twr3BVRwGRKlLcw",
+      "id": "AUWYQZHGfkr30b9xKb5dJpxvD6WTsZoWHoXbUpFR-2Y-Zc82uQflPnG1fKYAIOFweLgDw-bdH2cEeDmOJhg2Zg",
       "status": {
         "type": "String",
         "value": "pending"
@@ -12796,18 +11377,18 @@ Search results: {
       },
       "updated_at": {
         "type": "DateTime",
-        "value": "2026-09-15T18:02:27.793574+00:00"
+        "value": "2026-09-16T20:48:29.042118+00:00"
       }
     }
   ]
 }
 
 --- Goal step: start step 0 ---
-Step 0 started on goal P4a5f0CnS_RKc4TyqfkljHHjMt5Ij2muAfrDNKRvRGH8L2nLNjcpPJxcJH9NQL2TPIZ9Dp0Twr3BVRwGRKlLcw
+Step 0 started on goal AUWYQZHGfkr30b9xKb5dJpxvD6WTsZoWHoXbUpFR-2Y-Zc82uQflPnG1fKYAIOFweLgDw-bdH2cEeDmOJhg2Zg
 --- Goal step: complete step 0 ---
-Step 0 completed on goal P4a5f0CnS_RKc4TyqfkljHHjMt5Ij2muAfrDNKRvRGH8L2nLNjcpPJxcJH9NQL2TPIZ9Dp0Twr3BVRwGRKlLcw
+Step 0 completed on goal AUWYQZHGfkr30b9xKb5dJpxvD6WTsZoWHoXbUpFR-2Y-Zc82uQflPnG1fKYAIOFweLgDw-bdH2cEeDmOJhg2Zg
 --- Goal step: fail step 1 ---
-Step 1 failed on goal P4a5f0CnS_RKc4TyqfkljHHjMt5Ij2muAfrDNKRvRGH8L2nLNjcpPJxcJH9NQL2TPIZ9Dp0Twr3BVRwGRKlLcw
+Step 1 failed on goal AUWYQZHGfkr30b9xKb5dJpxvD6WTsZoWHoXbUpFR-2Y-Zc82uQflPnG1fKYAIOFweLgDw-bdH2cEeDmOJhg2Zg
 
 --- Completing goal ---
 Goal status: pending_review
@@ -12820,7 +11401,7 @@ Goal status after reject: failed
 
 
 --- Creating task ---
-Created task: Hourly Health Check (id: 2nXjDzbkhuqALahCrpOM2MUJgmMOvTfvhKky6nrCRKN4dkFnq9gB3lbryZu_8ltt8wucBX8MSmSdkIK4z_FDVg)
+Created task: Hourly Health Check (id: RzC8roM0um58OwJBZMZj_c8NCISXJXUwEGwgRRPe2fE3aAmauJZhAHAvvIoy2g2KNBqSlyYCm9QXrObNOMmTJw)
 
 --- Listing tasks ---
 Tasks: {
@@ -12841,7 +11422,7 @@ Tasks: {
         "type": "String",
         "value": "0 * * * *"
       },
-      "id": "2nXjDzbkhuqALahCrpOM2MUJgmMOvTfvhKky6nrCRKN4dkFnq9gB3lbryZu_8ltt8wucBX8MSmSdkIK4z_FDVg",
+      "id": "RzC8roM0um58OwJBZMZj_c8NCISXJXUwEGwgRRPe2fE3aAmauJZhAHAvvIoy2g2KNBqSlyYCm9QXrObNOMmTJw",
       "name": {
         "type": "String",
         "value": "Hourly Health Check"
@@ -12879,7 +11460,7 @@ Task deleted successfully
 
 
 --- Creating agent ---
-Created agent: SupportBot (id: cEUR6saBaw1-7czwBdmZk_TPbivSgnx6UfPRPZK-nNmbkY2hWd6pRQ6JGDtXr3EKh5DEZ3LRU0hzddCpUEgDew)
+Created agent: SupportBot (id: SI3W6OI1EUa7hZzhrktAHZFFjhsFOmW87ZHq5y92HtaRaa99nPBBuICWOUuPyZO6N6RDBCXWcIW5ZYZGSxh6cw)
 
 --- Listing agents ---
 Agents: {
@@ -12890,7 +11471,7 @@ Agents: {
         "type": "String",
         "value": "deploy_prod_1"
       },
-      "id": "cEUR6saBaw1-7czwBdmZk_TPbivSgnx6UfPRPZK-nNmbkY2hWd6pRQ6JGDtXr3EKh5DEZ3LRU0hzddCpUEgDew",
+      "id": "SI3W6OI1EUa7hZzhrktAHZFFjhsFOmW87ZHq5y92HtaRaa99nPBBuICWOUuPyZO6N6RDBCXWcIW5ZYZGSxh6cw",
       "llm_model": {
         "type": "String",
         "value": "gpt-4"
@@ -12911,7 +11492,7 @@ Agents: {
 Fetched: SupportBot
 
 --- Getting agent by name ---
-By name: SupportBot (id: cEUR6saBaw1-7czwBdmZk_TPbivSgnx6UfPRPZK-nNmbkY2hWd6pRQ6JGDtXr3EKh5DEZ3LRU0hzddCpUEgDew)
+By name: SupportBot (id: SI3W6OI1EUa7hZzhrktAHZFFjhsFOmW87ZHq5y92HtaRaa99nPBBuICWOUuPyZO6N6RDBCXWcIW5ZYZGSxh6cw)
 
 --- Updating agent ---
 Updated agent: SupportBot
@@ -12921,6 +11502,7 @@ Agents in deployment: {
   "count": 0,
   "items": []
 }
+WARNING: agents-by-deployment omitted created agent SI3W6OI1EUa7hZzhrktAHZFFjhsFOmW87ZHq5y92HtaRaa99nPBBuICWOUuPyZO6N6RDBCXWcIW5ZYZGSxh6cw; TODO: check/fix the server-side deployment lookup
 
 --- Deleting agent ---
 Agent deleted successfully
@@ -12936,8 +11518,8 @@ Setting up sample data...
 
 1. Single collection join (users with departments):
 Found 2 users with department data:
-  - Bob Smith: Sales
   - Alice Johnson: Engineering
+  - Bob Smith: Sales
 
 2. Join with filtering:
 Found 1 users in Engineering:
@@ -12945,8 +11527,8 @@ Found 1 users in Engineering:
 
 3. Join with user profiles:
 Found 2 users with profile data:
-  - Bob Smith: Sales Manager
   - Alice Johnson: Senior Software Engineer
+  - Bob Smith: Sales Manager
 
 4. Join orders with user data:
 Found 2 completed orders:
@@ -12958,10 +11540,10 @@ Found 2 users with example.com emails:
   - Alice Johnson (alice@example.com): Building A
   - Bob Smith (bob@example.com): Building B
 
-=== Cleanup ===
-✅ Deleted test collections
 
 ✅ Join operations examples completed!
+=== Cleanup ===
+✅ Deleted test collections
 ✓ Client created
 ✓ ts_users_register saved
 ✓ ts_users_login saved
@@ -12969,9 +11551,9 @@ Found 2 users with example.com emails:
 
 === Auth flow defined as pure stored functions ===
 Call them like:
-  POST /api/functions/ts_users_register { "email": "a@b.com", "password": "s3cret" }
-  POST /api/functions/ts_users_login    { "email": "a@b.com", "password": "s3cret" }
-  POST /api/functions/ts_users_verify_token { "token": "<jwt>" }
+  POST /api/functions/jwt_register_ts_71446_1789591709554 { "email": "a@b.com", "password": "s3cret" }
+  POST /api/functions/jwt_login_ts_71446_1789591709554 { "email": "a@b.com", "password": "s3cret" }
+  POST /api/functions/jwt_verify_ts_71446_1789591709554 { "token": "<jwt>" }
 
 Set JWT_SECRET in ekoDB's environment_vars whitelist before invoking.
 
@@ -12980,71 +11562,71 @@ Set JWT_SECRET in ekoDB's environment_vars whitelist before invoking.
 
 --- Setup: creating KV key and documents ---
 Set KV key: session:admin
-Inserted document 1: -Hxy_4IWvmjoEZIZPoZ4ZA8DksKby--3yyQydrD7YkVOT_2SdN93coIbOdjqUsppuiPDgcg8o29oSiqNtbMEZQ
-Inserted document 2: doHlyt5UcRbAirtrkgnXleT-HFrepHFmWOpyYMxGHN2F_0nb3V4SgL7Rof6Wuc7BslFrU9RbLqQOLQxghK31lw
+Inserted document 1: E3NXtElXrhlbF-iVscch9L4t_2pGN4KWPYVx4PnGbOglS34JDCtzF8tYXRV1RaEoJSR6V6bektz7RN3dL8hcLw
+Inserted document 2: U1Vr65U1GQ3-j4eNcRPkOJ7MS6ksCaKmh_kPw9r479-zxBVYFs5mVFpwnngEdLQ4Kl7i-yP--Nr1TZxIk9cNgQ
 
 --- Linking documents to KV key ---
-Linked doc -Hxy_4IWvmjoEZIZPoZ4ZA8DksKby--3yyQydrD7YkVOT_2SdN93coIbOdjqUsppuiPDgcg8o29oSiqNtbMEZQ: null
-Linked doc doHlyt5UcRbAirtrkgnXleT-HFrepHFmWOpyYMxGHN2F_0nb3V4SgL7Rof6Wuc7BslFrU9RbLqQOLQxghK31lw: null
+Linked doc E3NXtElXrhlbF-iVscch9L4t_2pGN4KWPYVx4PnGbOglS34JDCtzF8tYXRV1RaEoJSR6V6bektz7RN3dL8hcLw: null
+Linked doc U1Vr65U1GQ3-j4eNcRPkOJ7MS6ksCaKmh_kPw9r479-zxBVYFs5mVFpwnngEdLQ4Kl7i-yP--Nr1TZxIk9cNgQ: null
 
 --- Getting links for KV key ---
 Links: [
   {
-    "collection": "kv_links_example_ts",
-    "document_id": "-Hxy_4IWvmjoEZIZPoZ4ZA8DksKby--3yyQydrD7YkVOT_2SdN93coIbOdjqUsppuiPDgcg8o29oSiqNtbMEZQ",
+    "collection": "kv_links_example_ts_71451_1789591709634",
+    "document_id": "E3NXtElXrhlbF-iVscch9L4t_2pGN4KWPYVx4PnGbOglS34JDCtzF8tYXRV1RaEoJSR6V6bektz7RN3dL8hcLw",
     "field_path": null,
-    "created_at": "2026-09-15T18:02:30.575586Z",
-    "last_accessed": "2026-09-15T18:02:30.594565Z",
+    "created_at": "2026-09-16T20:48:29.717970Z",
+    "last_accessed": "2026-09-16T20:48:29.720617Z",
     "metadata": {}
   },
   {
-    "collection": "kv_links_example_ts",
-    "document_id": "doHlyt5UcRbAirtrkgnXleT-HFrepHFmWOpyYMxGHN2F_0nb3V4SgL7Rof6Wuc7BslFrU9RbLqQOLQxghK31lw",
+    "collection": "kv_links_example_ts_71451_1789591709634",
+    "document_id": "U1Vr65U1GQ3-j4eNcRPkOJ7MS6ksCaKmh_kPw9r479-zxBVYFs5mVFpwnngEdLQ4Kl7i-yP--Nr1TZxIk9cNgQ",
     "field_path": null,
-    "created_at": "2026-09-15T18:02:30.590204Z",
-    "last_accessed": "2026-09-15T18:02:30.594565Z",
+    "created_at": "2026-09-16T20:48:29.719408Z",
+    "last_accessed": "2026-09-16T20:48:29.720617Z",
     "metadata": {}
   }
 ]
 
 --- Unlinking document ---
-Unlinked doc doHlyt5UcRbAirtrkgnXleT-HFrepHFmWOpyYMxGHN2F_0nb3V4SgL7Rof6Wuc7BslFrU9RbLqQOLQxghK31lw: null
+Unlinked doc U1Vr65U1GQ3-j4eNcRPkOJ7MS6ksCaKmh_kPw9r479-zxBVYFs5mVFpwnngEdLQ4Kl7i-yP--Nr1TZxIk9cNgQ: null
 
 --- Verifying remaining links ---
 Remaining links: [
   {
-    "collection": "kv_links_example_ts",
-    "document_id": "-Hxy_4IWvmjoEZIZPoZ4ZA8DksKby--3yyQydrD7YkVOT_2SdN93coIbOdjqUsppuiPDgcg8o29oSiqNtbMEZQ",
+    "collection": "kv_links_example_ts_71451_1789591709634",
+    "document_id": "E3NXtElXrhlbF-iVscch9L4t_2pGN4KWPYVx4PnGbOglS34JDCtzF8tYXRV1RaEoJSR6V6bektz7RN3dL8hcLw",
     "field_path": null,
-    "created_at": "2026-09-15T18:02:30.575586Z",
-    "last_accessed": "2026-09-15T18:02:30.605193Z",
+    "created_at": "2026-09-16T20:48:29.717970Z",
+    "last_accessed": "2026-09-16T20:48:29.722621Z",
     "metadata": {}
   }
 ]
 
+=== All KV linking operations completed ===
+
 --- Cleanup ---
 Cleanup complete
-
-=== All KV linking operations completed ===
 ✓ Client created
 
 === KV Set ===
 ✓ Set key: session:user123
 
 === KV Get ===
-Retrieved value: { value: { username: 'john_doe', userId: 123 }, type: 'Object' }
+Retrieved value: { type: 'Object', value: { username: 'john_doe', userId: 123 } }
 
 === KV Batch Set ===
 ✓ Batch set 3 keys
-  cache:product:1: success
-  cache:product:2: success
-  cache:product:3: success
+  kv_ops_ts_71453_1789591709804:cache:product:1: success
+  kv_ops_ts_71453_1789591709804:cache:product:2: success
+  kv_ops_ts_71453_1789591709804:cache:product:3: success
 
 === KV Batch Get ===
 ✓ Batch retrieved 3 values
-  cache:product:1: { name: 'Product 1', price: 29.99 }
-  cache:product:2: { price: 39.99, name: 'Product 2' }
-  cache:product:3: { price: 49.99, name: 'Product 3' }
+  kv_ops_ts_71453_1789591709804:cache:product:1: { price: 29.99, name: 'Product 1' }
+  kv_ops_ts_71453_1789591709804:cache:product:2: { price: 39.99, name: 'Product 2' }
+  kv_ops_ts_71453_1789591709804:cache:product:3: { price: 49.99, name: 'Product 3' }
 
 === KV Exists ===
 Key exists: true
@@ -13053,7 +11635,7 @@ Key exists: true
 Found 3 keys matching 'cache:product:.*'
 
 === KV Query (Alias for Find) ===
-Total keys in store: 9
+Total keys in store: 4
 
 === KV Delete ===
 ✓ Deleted key: session:user123
@@ -13061,9 +11643,9 @@ Total keys in store: 9
 
 === KV Batch Delete ===
 ✓ Batch deleted 3 keys
-  cache:product:1: deleted
-  cache:product:2: deleted
-  cache:product:3: deleted
+  kv_ops_ts_71453_1789591709804:cache:product:1: deleted
+  kv_ops_ts_71453_1789591709804:cache:product:2: deleted
+  kv_ops_ts_71453_1789591709804:cache:product:3: deleted
 
 ✓ All KV operations completed successfully
 === KV Precision: Float vs Decimal ===
@@ -13093,13 +11675,15 @@ Retrieved decimal prices:
   Decimal "0.30" = 0.30 (exact!)
 
 === Cleanup ===
-✓ Cleaned up test keys
 
 === Summary ===
 ✅ Use Field.decimal() for monetary values, percentages, and
    any case where floating-point errors are unacceptable.
 ✅ Field.decimal() stores values as strings internally,
    preserving exact precision across all operations.
+
+=== Cleanup ===
+✓ Cleaned up test keys
 ✓ Client created
 ✓ ts_route_admin → GET /api/route/users/admin
 ✓ ts_route_user_by_id → GET /api/route/users/:id
@@ -13155,12 +11739,12 @@ Response: The three primary colors are red, blue, and yellow.
 --- Structured Output via SSE ---
 JSON response: [
   {
-    "name": "Earth",
-    "diameter_km": 12742
+    "name": "Mercury",
+    "diameter_km": 4879
   },
   {
-    "name": "Mars",
-    "diameter_km": 6779
+    "name": "Earth",
+    "diameter_km": 12742
   },
   {
     "name": "Jupiter",
@@ -13169,28 +11753,28 @@ JSON response: [
 ]
 
 --- Blocking HTTP (for comparison) ---
-Blocking response: Hello! I hope you're having a great day.
+Blocking response: Hello! I hope you're having a wonderful day.
 
 === Done ===
 === ekoDB Schedule Management Example (TypeScript) ===
 
 --- Creating schedule ---
-Created schedule: Nightly Database Backup (id: 23a55926-be7e-4fde-aea4-e3fd9ef9d7d7, cron: 0 0 2 * * *)
+Created schedule: Nightly Database Backup (id: 1554f21d-3f36-4100-be62-84b4c99b1f35, cron: 0 0 2 * * *)
 
 --- Listing schedules ---
 Schedules: {
   "count": 1,
   "schedules": [
     {
-      "created_at": "2026-09-15T18:02:42.477409Z",
+      "created_at": "2026-09-16T20:48:32.486415Z",
       "cron_expression": "0 0 2 * * *",
       "description": null,
       "enabled": true,
-      "function_label": "schedule_noop_typescript_24355",
-      "id": "23a55926-be7e-4fde-aea4-e3fd9ef9d7d7",
+      "function_label": "schedule_noop_typescript_71471_1789591712452",
+      "id": "1554f21d-3f36-4100-be62-84b4c99b1f35",
       "last_execution": null,
       "name": "Nightly Database Backup",
-      "next_execution": "2026-09-16T02:00:00Z",
+      "next_execution": "2026-09-17T02:00:00Z",
       "parameters": {},
       "stats": {
         "avg_execution_time_ms": 0,
@@ -13200,7 +11784,7 @@ Schedules: {
         "total_executions": 0
       },
       "timezone": "UTC",
-      "updated_at": "2026-09-15T18:02:42.477409Z"
+      "updated_at": "2026-09-16T20:48:32.486415Z"
     }
   ]
 }
@@ -13213,7 +11797,7 @@ Updated: Nightly Full Backup (new cron: 0 0 3 * * *)
 
 --- Triggering schedule ---
 Trigger response: {
-  "schedule_id": "23a55926-be7e-4fde-aea4-e3fd9ef9d7d7",
+  "schedule_id": "1554f21d-3f36-4100-be62-84b4c99b1f35",
   "status": "triggered"
 }
 
@@ -13261,7 +11845,7 @@ Found 2 results
 
 2. Fuzzy search (typo tolerance):
 Found 4 results with fuzzy matching
-  1. Score: 13.200, Matched: title, bio
+  1. Score: 13.200, Matched: bio, title
   2. Score: 13.200, Matched: bio, title
   3. Score: 13.200, Matched: title, bio
   4. Score: 13.200, Matched: title, bio
@@ -13270,7 +11854,7 @@ Found 4 results with fuzzy matching
 Found 4 results with weighted fields
   1. Score: 26.400, Matched: bio, title
   2. Score: 26.400, Matched: title, bio
-  3. Score: 26.400, Matched: title, bio
+  3. Score: 26.400, Matched: bio, title
   4. Score: 26.400, Matched: bio, title
 
 4. Search with minimum score threshold:
@@ -13284,15 +11868,15 @@ Found 1 results (matches: work, working, worked)
 
 6. Vector search (semantic search):
 Found 3 semantically similar documents
-  1. Score: 0.774, Matched:
-  2. Score: 0.772, Matched:
-  3. Score: 0.754, Matched:
+  1. Score: 0.760, Matched:
+  2. Score: 0.757, Matched:
+  3. Score: 0.743, Matched:
 
 7. Hybrid search (text + vector):
 Found 3 results using hybrid search (text + vector)
-  1. Score: 1.501, Matched: content, title
-  2. Score: 0.910, Matched: content, title
-  3. Score: 0.309, Matched:
+  1. Score: 1.497, Matched: content, title
+  2. Score: 0.903, Matched: title, content
+  3. Score: 0.304, Matched:
 
 8. Case-sensitive search:
 Found 1 results (case-sensitive)
@@ -13303,31 +11887,31 @@ Found 2 documents in category "ml" (NLP excluded)
   1. Deep Learning Fundamentals (category: ml)
   2. Introduction to Machine Learning (category: ml)
 
-=== Cleanup ===
-✅ Deleted test collections
 
 ✅ Search examples completed!
+=== Cleanup ===
+✅ Deleted test collections
 ✓ Client created (token exchange happens automatically)
 
 === Insert Document ===
 Inserted: {
-  id: 'PNb5NiQaihw5YEsEQvgXEp66q5EnkRNIjIBe61RuRJQOhI-CM08uNJ8BipBQMCv1N7u9eCvjIlSCDd0lz5IfyA'
+  id: '7mdmdUFGP8vPGRai1Lt5SQXqMbjbaWTk35EFtCzyTjwJBpWjiy8PPyMb91SweoKZy0EjG9Badlw4qYYuKQessw'
 }
 
 === Find by ID ===
 Found: {
-  categories: { type: 'Array', value: [ 'electronics', 'computers' ] },
-  created_at: { value: '2026-09-15T18:02:44.118+00:00', type: 'DateTime' },
-  embedding: { type: 'Array', value: [ 0.1, 0.2, 0.3, 0.4, 0.5 ] },
-  value: { type: 'Integer', value: 42 },
-  user_id: { value: '550e8400-e29b-41d4-a716-446655440000', type: 'String' },
+  value: { value: 42, type: 'Integer' },
   name: { type: 'String', value: 'Test Record' },
-  metadata: { value: { key: 'value', nested: [Object] }, type: 'Object' },
-  data: { type: 'String', value: 'aGVsbG8gd29ybGQ=' },
+  created_at: { value: '2026-09-16T20:48:32.979+00:00', type: 'DateTime' },
   price: { value: 99.99, type: 'Float' },
-  active: { value: true, type: 'Boolean' },
-  id: 'PNb5NiQaihw5YEsEQvgXEp66q5EnkRNIjIBe61RuRJQOhI-CM08uNJ8BipBQMCv1N7u9eCvjIlSCDd0lz5IfyA',
-  tags: { type: 'Array', value: [ 'tag1', 'tag2', 'tag3' ] }
+  tags: { value: [ 'tag1', 'tag2', 'tag3' ], type: 'Array' },
+  data: { type: 'String', value: 'aGVsbG8gd29ybGQ=' },
+  active: { type: 'Boolean', value: true },
+  metadata: { value: { nested: [Object], key: 'value' }, type: 'Object' },
+  embedding: { value: [ 0.1, 0.2, 0.3, 0.4, 0.5 ], type: 'Array' },
+  id: '7mdmdUFGP8vPGRai1Lt5SQXqMbjbaWTk35EFtCzyTjwJBpWjiy8PPyMb91SweoKZy0EjG9Badlw4qYYuKQessw',
+  user_id: { type: 'String', value: '550e8400-e29b-41d4-a716-446655440000' },
+  categories: { type: 'Array', value: [ 'electronics', 'computers' ] }
 }
 
 === Extract Field Values (All Types) ===
@@ -13336,26 +11920,26 @@ Extracted values:
   value (Integer): 42
   active (Boolean): true
   price (Decimal): 99.99
-  created_at (DateTime): 2026-09-15T18:02:44.118Z
+  created_at (DateTime): 2026-09-16T20:48:32.979Z
   user_id (UUID): 550e8400-e29b-41d4-a716-446655440000
   tags (Array): [ 'tag1', 'tag2', 'tag3' ]
-  metadata (Object): { key: 'value', nested: { deep: true } }
+  metadata (Object): { nested: { deep: true }, key: 'value' }
   embedding (Vector): [ 0.1, 0.2, 0.3, 0.4, 0.5 ]
   categories (Set): [ 'electronics', 'computers' ]
   data (Bytes): 11 bytes
 Plain record: {
-  categories: [ 'electronics', 'computers' ],
-  created_at: '2026-09-15T18:02:44.118+00:00',
-  embedding: [ 0.1, 0.2, 0.3, 0.4, 0.5 ],
   value: 42,
-  user_id: '550e8400-e29b-41d4-a716-446655440000',
   name: 'Test Record',
-  metadata: { key: 'value', nested: { deep: true } },
-  data: 'aGVsbG8gd29ybGQ=',
+  created_at: '2026-09-16T20:48:32.979+00:00',
   price: 99.99,
+  tags: [ 'tag1', 'tag2', 'tag3' ],
+  data: 'aGVsbG8gd29ybGQ=',
   active: true,
-  id: 'PNb5NiQaihw5YEsEQvgXEp66q5EnkRNIjIBe61RuRJQOhI-CM08uNJ8BipBQMCv1N7u9eCvjIlSCDd0lz5IfyA',
-  tags: [ 'tag1', 'tag2', 'tag3' ]
+  metadata: { nested: { deep: true }, key: 'value' },
+  embedding: [ 0.1, 0.2, 0.3, 0.4, 0.5 ],
+  id: '7mdmdUFGP8vPGRai1Lt5SQXqMbjbaWTk35EFtCzyTjwJBpWjiy8PPyMb91SweoKZy0EjG9Badlw4qYYuKQessw',
+  user_id: '550e8400-e29b-41d4-a716-446655440000',
+  categories: [ 'electronics', 'computers' ]
 }
 
 === Find with Query ===
@@ -13363,18 +11947,18 @@ Found documents: 1
 
 === Update Document ===
 Updated: {
-  value: { value: 100, type: 'Integer' },
-  categories: { value: [ 'electronics', 'computers' ], type: 'Array' },
-  price: { value: 99.99, type: 'Float' },
-  id: 'PNb5NiQaihw5YEsEQvgXEp66q5EnkRNIjIBe61RuRJQOhI-CM08uNJ8BipBQMCv1N7u9eCvjIlSCDd0lz5IfyA',
-  tags: { value: [ 'tag1', 'tag2', 'tag3' ], type: 'Array' },
-  created_at: { value: '2026-09-15T18:02:44.118+00:00', type: 'DateTime' },
-  name: { type: 'String', value: 'Updated Record' },
+  id: '7mdmdUFGP8vPGRai1Lt5SQXqMbjbaWTk35EFtCzyTjwJBpWjiy8PPyMb91SweoKZy0EjG9Badlw4qYYuKQessw',
+  tags: { type: 'Array', value: [ 'tag1', 'tag2', 'tag3' ] },
   embedding: { type: 'Array', value: [ 0.1, 0.2, 0.3, 0.4, 0.5 ] },
+  value: { type: 'Integer', value: 100 },
+  name: { value: 'Updated Record', type: 'String' },
+  categories: { value: [ 'electronics', 'computers' ], type: 'Array' },
+  data: { value: 'aGVsbG8gd29ybGQ=', type: 'String' },
+  price: { value: 99.99, type: 'Float' },
   active: { value: true, type: 'Boolean' },
-  metadata: { type: 'Object', value: { key: 'value', nested: [Object] } },
-  data: { type: 'String', value: 'aGVsbG8gd29ybGQ=' },
-  user_id: { type: 'String', value: '550e8400-e29b-41d4-a716-446655440000' }
+  metadata: { type: 'Object', value: { nested: [Object], key: 'value' } },
+  user_id: { value: '550e8400-e29b-41d4-a716-446655440000', type: 'String' },
+  created_at: { type: 'DateTime', value: '2026-09-16T20:48:32.979+00:00' }
 }
 
 === Delete Document ===
@@ -13387,7 +11971,7 @@ Deleted document
 ✓ Client created
 
 === Inserting Test Data ===
-✓ Inserted test record: MaN-CtgMKxFWHZBpOJMCd9LxkfYIR-YVoLHya-ovllpr4aPKYTJy88i2o4rL6aKlZsO_kgILkiQcN8RGTlOLhA
+✓ Inserted test record: uF1St5sR_-PJEH6sgXqQvVu0QdFC5cgdHSoMctY7Vxhk4fwHD9_YDBO1m3n2ybOBL8WX1_ZKsZNEnVRCHonyzw
 
 === Connecting to WebSocket ===
 ✓ WebSocket connected
@@ -13417,22 +12001,22 @@ Deleted document
 Example 1: Basic Native SWR
 ────────────────────────────────────────────────────────────────────────────────
 Single function replaces KvGet → If → HttpRequest → KvSet pipeline
-✓ Created native SWR script: github_user_native_ts (LslJm_UHmfQOtd0JrTFARkPC43uX6x0DMcHlxewviYcv2bwAGBPtslCQ1jJyOTU5rLarJqed9PLDOaaHGi-eQw)
+✓ Created native SWR script: github_user_native_ts (wSDOG7IqXbcde-LrbQ_tmoDt6N1gy8LjIfQTBaWJ0pyz0HKzOsLMTJNSy3Sj1_n996IgBnmg5B0pYqHMtOfA4g)
 
 First call (cache miss - will fetch from GitHub API):
-  Response time: 164ms
+  Response time: 63ms
   Records returned: 1
 
 Second call (cache hit - instant from KV store):
-  Response time: 9ms
-  Speedup: 18.2x faster 🚀
+  Response time: 2ms
+  Speedup: 31.5x faster 🚀
   Records returned: 1
 
 
 Example 2: SWR with Built-in Audit Trail
 ────────────────────────────────────────────────────────────────────────────────
 Optional collection parameter for automatic request logging
-✓ Created SWR script with audit trail: product_swr_audit_ts (TDNOxApZx_oKRuTckyVGOjz1cz-zApEED7VSoaObHzK4F7ZlEkjBz7cPqJWhn-T1B7GzqLvWGzF867kxma1v9g)
+✓ Created SWR script with audit trail: product_swr_audit_ts (GqiYJfA6p7Xe-3qwqoFyensjn1c0790PPJTf_y2R_uklxvXZhWe0BrsvE0FNFNUlQ5yFLmRc0MQz1PKm14bjTg)
 
 Fetching product (will create audit trail entry):
   ✓ Product fetched and cached
@@ -13443,7 +12027,7 @@ Fetching product (will create audit trail entry):
 Example 3: SWR in Multi-Function Pipeline
 ────────────────────────────────────────────────────────────────────────────────
 Fetch external data → Process → Store in collection
-✓ Created enrichment pipeline: user_enrichment_pipeline_ts (Ws6-Ub0UvvsWH_I6iVTBFc-7hEu5NxPkXWRzb8j1t99zwDvgIE5dc_Jc3LcryDONbHDF3MC3payQGztZBJcwmg)
+✓ Created enrichment pipeline: user_enrichment_pipeline_ts (ul_81pJkeazbYYhCTYuPdFfevLpXJIi0gs24HyvFQSLWLPUvo4ngEnT4SMcdX-8W2kCLbvjTfuzoDMiokt8B6g)
 
 Running pipeline:
   ✓ Data fetched from API (cached 30m)
@@ -13454,7 +12038,7 @@ Running pipeline:
 Example 4: Dynamic TTL Configuration
 ────────────────────────────────────────────────────────────────────────────────
 TTL as parameter - supports duration strings, integers, ISO timestamps
-✓ Created dynamic TTL script: flexible_cache_ts (HLQUphEszTPSgZceyyqEFQLTdoR35BudMELYJOqKtPCvJmWSCuO8iMO-OP0C0mSmCepMEHyk61UfqWx4JSgu5g)
+✓ Created dynamic TTL script: flexible_cache_ts (x-G8x6hnW1t4NHXAZeLG77aw5N_qlNzQ-nvlTy7RuMvR01MZRdODyrKA3FzaXB9LdCqX1VYB_CHj6JgAmCCPhw)
   ✓ Cached with TTL: 5m (5 minutes)
   ✓ Cached with TTL: 1h (1 hour)
   ✓ Cached with TTL: 30s (30 seconds)
@@ -13480,8 +12064,7 @@ Result:         60% fewer functions, cleaner code, same behavior 🎯
 === ekoDB SWR (Stale-While-Revalidate) Pattern ===
 
 Step 1: Create SWR function that acts as edge cache
-Function 'fetch_api_user' already existed — updated instead
-✓ Created SWR script: fetch_api_user (YpdpS_Zhn0VlrPNEiJiImqRS1dZGpJK573hvdEVDVwpHHnxDd0VDq4wKUZm3fy6_xdxP_5VCzkfLiKyBgDCATw)
+✓ Created SWR script: fetch_api_user_ts_71483_1789591713776 (E2cP-wz67AwG6iv8788JffTC8DrWDRE87tdxMjCXErTrXKAhIYnpsrBMwhMU20EZs3k72wk2tN-UiUrLMVrGOA)
 
 Step 2: First call - Cache miss, fetches from API
 Result: {
@@ -13491,26 +12074,26 @@ Result: {
         "type": "Object",
         "value": {
           "website": "hildegard.org",
-          "address": {
-            "street": "Kulas Light",
-            "geo": {
-              "lat": "-37.3159",
-              "lng": "81.1496"
-            },
-            "suite": "Apt. 556",
-            "zipcode": "92998-3874",
-            "city": "Gwenborough"
-          },
-          "name": "Leanne Graham",
           "company": {
             "name": "Romaguera-Crona",
             "bs": "harness real-time e-markets",
             "catchPhrase": "Multi-layered client-server neural-net"
           },
-          "email": "Sincere@april.biz",
+          "name": "Leanne Graham",
           "username": "Bret",
           "id": 1,
-          "phone": "1-770-736-8031 x56442"
+          "address": {
+            "zipcode": "92998-3874",
+            "street": "Kulas Light",
+            "suite": "Apt. 556",
+            "city": "Gwenborough",
+            "geo": {
+              "lng": "81.1496",
+              "lat": "-37.3159"
+            }
+          },
+          "phone": "1-770-736-8031 x56442",
+          "email": "Sincere@april.biz"
         }
       }
     }
@@ -13526,33 +12109,33 @@ Result: {
 ✓ Data fetched from external API and cached
 
 Step 3: Second call - Cache hit, instant response from ekoDB
-Response time: 11ms (served from cache)
+Response time: 2ms (served from cache)
 Result (cached): {
   "records": [
     {
       "value": {
         "value": {
           "website": "hildegard.org",
-          "address": {
-            "street": "Kulas Light",
-            "geo": {
-              "lat": "-37.3159",
-              "lng": "81.1496"
-            },
-            "suite": "Apt. 556",
-            "zipcode": "92998-3874",
-            "city": "Gwenborough"
-          },
-          "name": "Leanne Graham",
           "company": {
             "name": "Romaguera-Crona",
             "bs": "harness real-time e-markets",
             "catchPhrase": "Multi-layered client-server neural-net"
           },
-          "email": "Sincere@april.biz",
+          "name": "Leanne Graham",
           "username": "Bret",
           "id": 1,
-          "phone": "1-770-736-8031 x56442"
+          "address": {
+            "zipcode": "92998-3874",
+            "street": "Kulas Light",
+            "suite": "Apt. 556",
+            "city": "Gwenborough",
+            "geo": {
+              "lng": "81.1496",
+              "lat": "-37.3159"
+            }
+          },
+          "phone": "1-770-736-8031 x56442",
+          "email": "Sincere@april.biz"
         },
         "type": "Object"
       }
@@ -13571,75 +12154,74 @@ Result (cached): {
 === Advanced: SWR with Data Enrichment ===
 
 Creating product enrichment function...
-Function 'fetch_product_with_reviews' already existed — updated instead
-✓ Created enrichment script: fetch_product_with_reviews (nTIKJdn9imY6WSIgQJDxYhjBSivzUkUw-X262i-BTncmU_MuenQg9QpB_aGTjo36ThoHhSz3ttSCjvbhOge_FQ)
+✓ Created enrichment script: fetch_product_reviews_ts_71483_1789591713776 (_ylC4lYgFzElx_c6cpwB1RnHc06lkhR4C6VcVl-Pd4Py_utKf0ZtKb9bkmR42mnfwc0-HdpAqXY7Hv2fUwVK-g)
 
 Step 4: Call enrichment function - Fetches from 2 APIs + stores merged result
 Enriched data: {
   "records": [
     {
       "value": {
-        "type": "Object",
         "value": {
-          "weight": 4,
-          "discountPercentage": 10.48,
           "dimensions": {
+            "depth": 22.99,
             "height": 13.08,
-            "width": 15.14,
-            "depth": 22.99
+            "width": 15.14
           },
-          "meta": {
-            "updatedAt": "2026-05-23T11:27:41.868Z",
-            "barcode": "5784719087687",
-            "qrCode": "https://cdn.dummyjson.com/public/qr-code.png",
-            "createdAt": "2025-10-09T14:47:01.588Z"
-          },
-          "minimumOrderQuantity": 48,
+          "reviews": [
+            {
+              "reviewerEmail": "eleanor.collins@x.dummyjson.com",
+              "date": "2025-04-30T09:41:02.053Z",
+              "comment": "Would not recommend!",
+              "reviewerName": "Eleanor Collins",
+              "rating": 3
+            },
+            {
+              "rating": 4,
+              "comment": "Very satisfied!",
+              "date": "2025-04-30T09:41:02.053Z",
+              "reviewerEmail": "lucas.gordon@x.dummyjson.com",
+              "reviewerName": "Lucas Gordon"
+            },
+            {
+              "rating": 5,
+              "reviewerName": "Eleanor Collins",
+              "reviewerEmail": "eleanor.collins@x.dummyjson.com",
+              "comment": "Highly impressed!",
+              "date": "2025-04-30T09:41:02.053Z"
+            }
+          ],
+          "images": [
+            "https://cdn.dummyjson.com/product-images/beauty/essence-mascara-lash-princess/1.webp"
+          ],
           "shippingInformation": "Ships in 3-5 business days",
-          "stock": 99,
-          "id": 1,
+          "thumbnail": "https://cdn.dummyjson.com/product-images/beauty/essence-mascara-lash-princess/thumbnail.webp",
           "brand": "Essence",
+          "category": "beauty",
+          "price": 9.99,
+          "discountPercentage": 10.48,
+          "returnPolicy": "No return policy",
+          "meta": {
+            "createdAt": "2025-10-09T14:47:01.588Z",
+            "updatedAt": "2026-05-23T11:27:41.868Z",
+            "qrCode": "https://cdn.dummyjson.com/public/qr-code.png",
+            "barcode": "5784719087687"
+          },
+          "id": 1,
+          "weight": 4,
+          "description": "The Essence Mascara Lash Princess is a popular mascara known for its volumizing and lengthening effects. Achieve dramatic lashes with this long-lasting and cruelty-free formula.",
+          "minimumOrderQuantity": 48,
           "tags": [
             "beauty",
             "mascara"
           ],
-          "title": "Essence Mascara Lash Princess",
-          "description": "The Essence Mascara Lash Princess is a popular mascara known for its volumizing and lengthening effects. Achieve dramatic lashes with this long-lasting and cruelty-free formula.",
-          "rating": 2.56,
+          "warrantyInformation": "1 week warranty",
           "availabilityStatus": "In Stock",
-          "images": [
-            "https://cdn.dummyjson.com/product-images/beauty/essence-mascara-lash-princess/1.webp"
-          ],
-          "thumbnail": "https://cdn.dummyjson.com/product-images/beauty/essence-mascara-lash-princess/thumbnail.webp",
-          "price": 9.99,
-          "category": "beauty",
-          "reviews": [
-            {
-              "comment": "Would not recommend!",
-              "date": "2025-04-30T09:41:02.053Z",
-              "reviewerName": "Eleanor Collins",
-              "reviewerEmail": "eleanor.collins@x.dummyjson.com",
-              "rating": 3
-            },
-            {
-              "reviewerEmail": "lucas.gordon@x.dummyjson.com",
-              "date": "2025-04-30T09:41:02.053Z",
-              "comment": "Very satisfied!",
-              "reviewerName": "Lucas Gordon",
-              "rating": 4
-            },
-            {
-              "reviewerEmail": "eleanor.collins@x.dummyjson.com",
-              "comment": "Highly impressed!",
-              "rating": 5,
-              "reviewerName": "Eleanor Collins",
-              "date": "2025-04-30T09:41:02.053Z"
-            }
-          ],
+          "rating": 2.56,
+          "title": "Essence Mascara Lash Princess",
           "sku": "BEA-ESS-ESS-001",
-          "returnPolicy": "No return policy",
-          "warrantyInformation": "1 week warranty"
-        }
+          "stock": 99
+        },
+        "type": "Object"
       }
     }
   ],
@@ -13685,56 +12267,58 @@ Enriched data: {
 ✓ Client created
 
 === Setup: Creating Test Accounts ===
-Created Alice: $1000 - ID: XoF3jmpJn3IIqK1TcDEFtFWQNd6UWSeCZ3OxwSpz8lohn5IL-E0e2NEQiHa5SPrbafI8wi2NsRuHxO15nE9pxQ
-Created Bob: $500 - ID: jvfuWwW-ZzapctLHXEombm_Z_F7AAADGWqsU4Ms29mnBNxLQE4h-ys6g28RbqOD0DUhKVroku6GL1xxMwPHoow
+Created Alice: $1000 - ID: 9GBXudSUQP_JSKoTqJbk9XmagMr3h_4EnM-Rv2_k-lZVowx32dFtqtrjGhLcf47tchL1jtSPZF91S8MI3jOOHQ
+Created Bob: $500 - ID: xqug9ZIR5fwvbknAObA9gvEHHarbw7ZDo4DpSj3gmPSFcgRIj5i6ttixOLc5tMm4wHzmkzKqw4TX4My7A7QbrA
 
 === Example 1: Begin Transaction ===
-Transaction ID (server-default isolation): a8ddf2b4-16d6-4ba3-805f-ed51b423b496
+Transaction ID (server-default isolation): 777a755b-f218-4c5b-b204-6fbc9e66e583
 
 === Example 2: Operations within Transaction ===
-Updated Alice: $1000 → $800 (simulated)
-Updated Bob: $500 → $700 (simulated)
+Updated Alice: $1000 → $800
+Updated Bob: $500 → $700
 
 === Example 3: Transaction Status ===
 Status: Active
-Operations: 0
+Operations: 2
 
 === Example 4: Commit Transaction ===
 ✓ Transaction committed
 
+✓ Verified committed balances: Alice=$800, Bob=$700
+
 === Example 5: Rollback Demo ===
-New transaction: ba3b29a2-5ec4-4e44-bff6-097b7764ca4b
+New transaction: 48fd32e9-fdac-4cc5-95a1-1cd10c084d15
+Updated Bob: $700 → $600 (in transaction)
 Status before rollback: Active
 ✓ Transaction rolled back
 
+✓ Verified Bob remains $700 after rollback
+
 === Cleanup ===
-✓ Deleted test accounts
+✓ Deleted test account collection
 
 ✓ All client transaction examples completed
 ✓ Client created
 
 === Create User Function ===
-Created user function with ID: gb4JooUhfekWqzW4h92Is8WqTM3Kz5Pk12CUE19cRczyZkHrLmg3XEiYtBE60LnTU6CFMOdpArxye3m_LqksIA
+Created user function with ID: cBTtPbp8MmMOYjsczS0VwykZDdtwJIu6K8fFCSkPvrC400_veka-_mtR66nRoSchthFOkYdFzEbXb7XSolwjZA
 
 === Get User Function ===
 Retrieved: get_active_users_ts - Get Active Users
 Description: Fetches all users and filters by active status
 
 === List All User Functions ===
-Found 13 user functions:
-  - fetch_slim_user: Validate and slim down user
-  - cache_api_call_js: Cache External API Call
-  - get_verified_user: Get verified and validated user
-  - cache_api_call: Cache External API Call
-  - cache_api_call_py: Cache External API Call
-  - fetch_api_user: Fetch User with Cache
-  - fetch_user: Fetch user by code
-  - get_user_wrapper: Wrapper that calls fetch_user
-  - fetch_product_with_reviews: Fetch Product with Reviews (Multi-API)
-  - swr_user: SWR pattern for user data (KV-based)
-  - fetch_and_store_user: Fetch user from API and cache in KV
+Found 10 user functions:
+  - get_active_users_client_js: Get Active Users (Updated)
+  - fetch_product_reviews_ts_68859_1789591599098: Fetch Product with Reviews (Multi-API)
+  - get_active_users_client_ts_updated: Get Active Users (Updated)
+  - fetch_product_reviews_ts_71483_1789591713776: Fetch Product with Reviews (Multi-API)
+  - conc_demo_rl_skip_ts_71396_1789591703688: Rate-limit (skip mode)
+  - conc_demo_rl_skip_ts_67690_1789591578851: Rate-limit (skip mode)
   - get_active_users_ts: Get Active Users
-  - validate_user: Check if user exists
+  - conc_demo_rl_fail_ts_71396_1789591703688: Rate-limit (fail mode)
+  - conc_demo_rl_fail_ts_67690_1789591578851: Rate-limit (fail mode)
+  - get_active_users_client_ts_updated: Get Active Users (Updated)
 
 === Update User Function ===
 User function updated successfully
@@ -13745,14 +12329,14 @@ User function deleted successfully
 ✓ User Functions API example complete
 === WebSocket Chat Streaming Example (TypeScript) ===
 
-Created chat session: rglSiBmBMU_HxuLekpGiQo_xtbNA5ZVNpgx6wSVeVgdVb25tlvZWsXfVvP6NpUKnhG5Wrce1-lKcjAKKzza7bg
+Created chat session: rL609goL8DMjebdp08yQC_Dz5e_LJzmet2Su3a3hNACIrDVAAqSS7Viap6kxmqBo0G5bah-eckJ4SA6Np20izA
 
 Sending message: 'What is the capital of France?'
 {"__progress":"received"}{"__progress":"generating","model":"default","provider":"openai"}The capital of France is Paris.
 
 --- Stream ended ---
-Message ID: 0PIvbkMF-1R1wy6G0RhYD76xF8KySpLKQAONIaTaFz0B5thQPRYsZ6KD0Cgi2KwgaMtPIH4qABJBLVcAp3kO3Q
-Execution time: 2337ms
+Message ID: oAoQAOGA8C9fS2aptZj7niYc1F8S0QYQYdi59l0wd0IaJYAnInA3bUtElsCpKKyErsBDd2JtNl_4ztVo98-HYg
+Execution time: 586ms
 Token usage: {"completion_tokens":8,"prompt_tokens":15,"total_tokens":23}
 
 Full response: {"__progress":"received"}{"__progress":"generating","model":"default","provider":"openai"}The capital of France is Paris....
@@ -13762,37 +12346,26 @@ Full response: {"__progress":"received"}{"__progress":"generating","model":"defa
 ✓ WebSocket connected
 
 === Subscribing to 'ws_subscribe_example_ts' ===
-✓ Subscribed (subscription_id: sub_5b24034195d94f40a653ce3d0f541012)
+✓ Subscribed (subscription_id: sub_ca3710f80ea44a8b80acaeb4b0394f78)
 
-=== Listening for mutation notifications ===
-
+=== Performing mutations to trigger notifications ===
 Inserting a record...
-
-  📡 Notification received:
-     Event:      insert
-     Collection: ws_subscribe_example_ts
-     Record IDs: 4J6iUOIBJ7i9BTR0V0Rd_BNqxkXk_E3g5Yx_sLhLFsAZPW9vuhz_YEK7lRm3msey3FwPWjb8lrYH6_3yrL2McQ
-     Timestamp:  2026-09-15T18:02:50.167327+00:00
-     Records:    {"active":{"type":"Boolean","value":true},"id":"4J6iUOIBJ7i9BTR0V0Rd_BNqxkXk_E3g5Yx_sLhLFsAZPW9vuhz_...
-✓ Inserted record: 4J6iUOIBJ7i9BTR0V0Rd_BNqxkXk_E3g5Yx_sLhLFsAZPW9vuhz_YEK7lRm3msey3FwPWjb8lrYH6_3yrL2McQ
+✓ Inserted record: qS7BBmHw9KyB_Mc3d8IUNUq9IX8aA93lQX-bBIaL2EN0FpoBTxv3HzBSwR8g2KzzyUG-Zm9-Mf3qgw0tjteoVg
+  📡 Notification received for qS7BBmHw9KyB_Mc3d8IUNUq9IX8aA93lQX-bBIaL2EN0FpoBTxv3HzBSwR8g2KzzyUG-Zm9-Mf3qgw0tjteoVg
 
 Inserting another record...
-
-  📡 Notification received:
-     Event:      insert
-     Collection: ws_subscribe_example_ts
-     Record IDs: 7AEK2CX9m2Tix_br0R97krh3UgB0gGPMIQSPGxdEkqTysuyZ2T8AQkjtxbpCxTbuQHQQ-bjTApBxmXTGwi1aOA
-     Timestamp:  2026-09-15T18:02:51.182832+00:00
-     Records:    {"active":{"type":"Boolean","value":true},"id":"7AEK2CX9m2Tix_br0R97krh3UgB0gGPMIQSPGxdEkqTysuyZ2T8A...
+✓ Inserted record: xftwtN-6ivteyL4YfEOMdSSAoco8gG1mUgEhbifNTijtuZys2quW7XPq88PdNSKhy0TL0C6YUr1pZ1Pc3ahZ1g
+  📡 Notification received for xftwtN-6ivteyL4YfEOMdSSAoco8gG1mUgEhbifNTijtuZys2quW7XPq88PdNSKhy0TL0C6YUr1pZ1Pc3ahZ1g
 
 === Unsubscribing ===
 ✓ Unsubscribed: {"collection":"ws_subscribe_example_ts","found":true,"unsubscribed":true}
 
 ✓ WebSocket subscription example completed successfully
+✓ Deleted collection 'ws_subscribe_example_ts'
 ✓ Client created
 
 === Insert Test Data with TTL ===
-✓ Inserted document with TTL: 9AXlTOQRmHl75WM0EUZbMmk8i6SDBp7ZJGtgISRjnP6Kh4GcAyh0EiaJtIHcD-z-D4k2L1kFksZjNUg_lZlh7g
+✓ Inserted document with TTL: Y4Ij6wxkXqtJCjL6qMpbbXJH6WIiSyvPaOeZERsk31MBS9xvk6weTc2xGkuLxBRbXfZ9pm1YVxhwqqJR0xB2qQ
 
 === Query via WebSocket ===
 ✓ WebSocket connected
@@ -13808,13 +12381,13 @@ Inserting another record...
 === Bypass Ripple Example ===
 
 1. Basic insert (ripple enabled):
-   Inserted with ripple: {"id":"W0-pSo3f2l8efNozPwQtsrvWpHYvrnWt5lCWXsEP-clHb5dDVMVk6BDJZgCMXifs3yIFOwxanLSnWXVFl7bkLw"}
+   Inserted with ripple: {"id":"iw74DS347MnDTx5FiXt8FyyiWwA7zRnooq22M8qn_oWsQklbjb5LGq461rjdTyrCGQM_21R9KC4KDPpjOZmTrg"}
 
 2. Insert with bypass_ripple:
-   Inserted with bypass_ripple: {"id":"pMljFpQuuXqXhBdzcavkFJntVtrNuFOIxnx2jVEpDB_bHgHdHHecoNXWWrSId3zQg6s0lk71-2XyyFRLqgTd_Q"}
+   Inserted with bypass_ripple: {"id":"yriH3jOYEam1d-fQDCslT5ZuUv1TojLkDUZKd-mGJowd3XMxFmDRTzHipcIQV5IfBaMiplLuimSJLWlwZpkuwQ"}
 
 3. Update with bypass_ripple:
-   Updated with bypass_ripple: {"id":"W0-pSo3f2l8efNozPwQtsrvWpHYvrnWt5lCWXsEP-clHb5dDVMVk6BDJZgCMXifs3yIFOwxanLSnWXVFl7bkLw","price":{"value":150,"type":"Integer"},"name":{"type":"String","value":"Product 1"}}
+   Updated with bypass_ripple: {"name":{"value":"Product 1","type":"String"},"id":"iw74DS347MnDTx5FiXt8FyyiWwA7zRnooq22M8qn_oWsQklbjb5LGq461rjdTyrCGQM_21R9KC4KDPpjOZmTrg","price":{"type":"Integer","value":150}}
 
 4. Delete with bypass_ripple:
    Deleted with bypass_ripple
@@ -13823,7 +12396,7 @@ Inserting another record...
    Batch inserted with bypass_ripple: 2 records
 
 6. Upsert with bypass_ripple:
-   Upserted with bypass_ripple: {"name":{"type":"String","value":"Upsert Product"},"id":"custom-id","price":{"type":"Integer","value":500}}
+   Upserted with bypass_ripple: {"id":"leOr6aVYyxfholm0-QwMu26QWjZbEE40cfD0sKB9cW_jzZgc7MQuk8J2Ar1bKvOHVT2Ew_87rqgSOjm7sA6SNQ"}
 
 ✅ All bypass_ripple operations completed successfully!
 Client created
@@ -13833,7 +12406,7 @@ Inserted 4 test users
 
 Example 1: Select specific fields (id, name, email only)
   Found 3 active users
-  Fields returned: ["name","id","email"]
+  Fields returned: ["name","email","id"]
   First user: Bob Smith <bob@example.com>
 
 Example 2: Exclude sensitive fields (password, api_key, secret_token)
@@ -13842,7 +12415,7 @@ Example 2: Exclude sensitive fields (password, api_key, secret_token)
     - password: excluded
     - api_key: excluded
     - secret_token: excluded
-  Fields returned: ["age","created_at","user_role","status","bio","avatar_url","email","name","id"]
+  Fields returned: ["bio","name","age","created_at","email","avatar_url","status","id","user_role"]
 
 Example 3: Complex query with projection (active users, ages 18-65)
   Found 3 active users (ages 18-65)
@@ -13857,17 +12430,17 @@ Example 4: Query inactive users with profile fields
 Example 5: Compare full vs projected data
   Full query:
     - 12 fields per record
-    - Fields: ["id","avatar_url","secret_token","age","name","user_role","status","api_key","email","bio","password","created_at"]
+    - Fields: ["age","password","api_key","avatar_url","email","id","secret_token","user_role","status","bio","name","created_at"]
   Projected query:
     - 3 fields per record
-    - Fields: ["name","id","email"]
+    - Fields: ["name","email","id"]
   Bandwidth savings: ~75% fewer fields
 
 Cleaning up test data...
 Cleanup complete
 
 All projection examples completed successfully!
-
+✅ All JavaScript integration tests complete!
 🟣 Building Kotlin client library...
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.7.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build
@@ -13883,15 +12456,15 @@ Daemon will be stopped at the end of the build
 > Task :ktlintKotlinScriptCheck UP-TO-DATE
 > Task :runKtlintCheckOverMainSourceSet UP-TO-DATE
 > Task :ktlintMainSourceSetCheck UP-TO-DATE
+> Task :runKtlintCheckOverTestSourceSet UP-TO-DATE
+> Task :ktlintTestSourceSetCheck UP-TO-DATE
 > Task :compileTestKotlin UP-TO-DATE
 > Task :compileTestJava NO-SOURCE
 > Task :processTestResources NO-SOURCE
 > Task :testClasses UP-TO-DATE
-> Task :test
-> Task :runKtlintCheckOverTestSourceSet
-> Task :ktlintTestSourceSetCheck
-> Task :check
-> Task :build
+> Task :test UP-TO-DATE
+> Task :check UP-TO-DATE
+> Task :build UP-TO-DATE
 
 [Incubating] Problems report is available at: file://ekoDB/ekodb-client/ekodb-client-kt/build/reports/problems/problems-report.html
 
@@ -13901,11 +12474,11 @@ You can use '--warning-mode all' to show the individual deprecation warnings and
 
 For more on this, please refer to https://docs.gradle.org/9.7.1/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
 
-BUILD SUCCESSFUL in 13s
-11 actionable tasks: 3 executed, 8 up-to-date
+BUILD SUCCESSFUL in 3s
+11 actionable tasks: 11 up-to-date
 Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.7.1/userguide/configuration_cache_enabling.html
 ✅ Kotlin client built!
-bash: warning: setlocale: LC_ALL: cannot change locale (C.UTF-8): No such file or directory
+=== Running Kotlin example: ClientAdvancedCrud.kt ===
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.7.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build
 > Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
@@ -13921,25 +12494,26 @@ SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
 === ekoDB Kotlin Client - Advanced CRUD Example ===
 
 --- Inserting base record ---
-Inserted: 8UbsmV80IkDd1tN1BM-oZq7BZQfMOrzIleI2iS5tSVqPXAq3dz8MvRDZNoFZpO0PLjiJ8oVI0-7f2bku6SatHA
+Inserted: 49DwLGFXGhzI55pk7CR8FZ9Y0f3JjDxxrleA9k5e9mmdFzdAS4uFgwOhb8MP3rHddoZfzOmNDz_NjXoMNFJlbQ
 
 --- updateWithAction: increment views ---
-After increment: EkoRecord(fields={views=ObjectValue(value={type=StringValue(value=Integer), value=IntegerValue(value=15)}), tags=ObjectValue(value={type=StringValue(value=Array), value=ArrayValue(value=[StringValue(value=kotlin), StringValue(value=example)])}), id=StringValue(value=8UbsmV80IkDd1tN1BM-oZq7BZQfMOrzIleI2iS5tSVqPXAq3dz8MvRDZNoFZpO0PLjiJ8oVI0-7f2bku6SatHA), name=ObjectValue(value={value=StringValue(value=Counter Record), type=StringValue(value=String)}), score=ObjectValue(value={type=StringValue(value=Float), value=FloatValue(value=100.0)})})
+After increment: EkoRecord(fields={name=ObjectValue(value={type=StringValue(value=String), value=StringValue(value=Counter Record)}), views=ObjectValue(value={type=StringValue(value=Integer), value=IntegerValue(value=15)}), score=ObjectValue(value={value=FloatValue(value=100.0), type=StringValue(value=Float)}), id=StringValue(value=49DwLGFXGhzI55pk7CR8FZ9Y0f3JjDxxrleA9k5e9mmdFzdAS4uFgwOhb8MP3rHddoZfzOmNDz_NjXoMNFJlbQ), tags=ObjectValue(value={value=ArrayValue(value=[StringValue(value=kotlin), StringValue(value=example)]), type=StringValue(value=Array)})})
 
 --- updateWithAction: push to tags ---
-After push: EkoRecord(fields={score=ObjectValue(value={value=FloatValue(value=100.0), type=StringValue(value=Float)}), views=ObjectValue(value={value=IntegerValue(value=15), type=StringValue(value=Integer)}), id=StringValue(value=8UbsmV80IkDd1tN1BM-oZq7BZQfMOrzIleI2iS5tSVqPXAq3dz8MvRDZNoFZpO0PLjiJ8oVI0-7f2bku6SatHA), name=ObjectValue(value={type=StringValue(value=String), value=StringValue(value=Counter Record)}), tags=ObjectValue(value={value=ArrayValue(value=[StringValue(value=kotlin), StringValue(value=example), StringValue(value=advanced)]), type=StringValue(value=Array)})})
+After push: EkoRecord(fields={score=ObjectValue(value={type=StringValue(value=Float), value=FloatValue(value=100.0)}), views=ObjectValue(value={type=StringValue(value=Integer), value=IntegerValue(value=15)}), id=StringValue(value=49DwLGFXGhzI55pk7CR8FZ9Y0f3JjDxxrleA9k5e9mmdFzdAS4uFgwOhb8MP3rHddoZfzOmNDz_NjXoMNFJlbQ), tags=ObjectValue(value={type=StringValue(value=Array), value=ArrayValue(value=[StringValue(value=kotlin), StringValue(value=example), StringValue(value=advanced)])}), name=ObjectValue(value={value=StringValue(value=Counter Record), type=StringValue(value=String)})})
 
 --- updateWithActionSequence: multiple operations ---
-After sequence: EkoRecord(fields={score=ObjectValue(value={type=StringValue(value=Float), value=FloatValue(value=75.0)}), name=ObjectValue(value={type=StringValue(value=String), value=StringValue(value=Counter Record)}), tags=ObjectValue(value={value=ArrayValue(value=[StringValue(value=kotlin), StringValue(value=example), StringValue(value=advanced), StringValue(value=sequenced)]), type=StringValue(value=Array)}), views=ObjectValue(value={value=IntegerValue(value=115), type=StringValue(value=Integer)}), id=StringValue(value=8UbsmV80IkDd1tN1BM-oZq7BZQfMOrzIleI2iS5tSVqPXAq3dz8MvRDZNoFZpO0PLjiJ8oVI0-7f2bku6SatHA)})
+After sequence: EkoRecord(fields={id=StringValue(value=49DwLGFXGhzI55pk7CR8FZ9Y0f3JjDxxrleA9k5e9mmdFzdAS4uFgwOhb8MP3rHddoZfzOmNDz_NjXoMNFJlbQ), score=ObjectValue(value={value=FloatValue(value=75.0), type=StringValue(value=Float)}), name=ObjectValue(value={value=StringValue(value=Counter Record), type=StringValue(value=String)}), tags=ObjectValue(value={type=StringValue(value=Array), value=ArrayValue(value=[StringValue(value=kotlin), StringValue(value=example), StringValue(value=advanced), StringValue(value=sequenced)])}), views=ObjectValue(value={type=StringValue(value=Integer), value=IntegerValue(value=115)})})
 
 --- Cleanup ---
 Deleted collection: kotlin_advanced_crud_example
 
 === Example Complete ===
 
-BUILD SUCCESSFUL in 8s
+BUILD SUCCESSFUL in 4s
 2 actionable tasks: 2 executed
 Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.7.1/userguide/configuration_cache_enabling.html
+=== Running Kotlin example: ClientBatchOperations.kt ===
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.7.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build
 > Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
@@ -13955,23 +12529,24 @@ SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
 === ekoDB Kotlin Client - Batch Operations Example ===
 
 === Batch Insert ===
-? Inserted 5 records
-  IDs: J7u8ChqppBfuKEBeYqzNDUe3ek-0pPIgxdRUR770NB0VlhyNEP_dLo2DyDTiVGdydETM0QxZJ-UcwIvFJiTBOw, KTcWmXfGA9kbbetmJ25pMJl04btfIBSXYBD0JDLhx-uygL5K3y9XbsXNM9ITpBi4Fbh5ht9qI0IV6xePTS4N5g, gyjNbyqJCizfh0OU9PdldARIQKw994Rv4hcyK7WKTarxbXau3As08sfDefS0wf6AmImyzfXkXBTLNRGZqT17mg...
+✓ Inserted 5 records
+  IDs: QPqSyXpXret2dXdYUbSKUjjTvstbBQAS03jicFf8B0zXfR3yZHdGPetTOkme3wXlUNK-QErC1Q4UGcOvimEFIw, 9VypQIpaWwvuwWLR7IrZ3WQ4Genrt8s0Bxgh0p_a0DXbC70bql_qqRNRlnUoU80GLlM-jLzHOCxgLWgJMke3KA, nULAkIDEofg7KcdEArYQqVxfiG65_WHxJ7C6_TGNycdWm7zTC3NQkwYL-w-7dUTgJkecv5BwBviRnabcv17EgA...
 
 === Batch Update ===
-? Updated 3 records
+✓ Updated 3 records
 
 === Batch Delete ===
-? Deleted 2 records
+✓ Deleted 2 records
 
 === Cleanup ===
-? Deleted collection: kotlin_batch_example
+✓ Deleted collection: kotlin_batch_example
 
 === Example Complete ===
 
-BUILD SUCCESSFUL in 7s
+BUILD SUCCESSFUL in 4s
 2 actionable tasks: 2 executed
 Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.7.1/userguide/configuration_cache_enabling.html
+=== Running Kotlin example: ClientChatAdvanced.kt ===
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.7.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build
 > Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
@@ -13987,47 +12562,48 @@ SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
 === ekoDB Kotlin Client - Advanced Chat Features Example ===
 
 === Inserting Sample Data ===
-? Inserted sample product
+✓ Inserted sample product
 
 === Creating Chat Session ===
-? Created session: 4I0UdfqNcdqtoUkD2pTT0Lg80yq8iMn3Fi0yuonQzTaTnn8nqG_cBsb_jku4YXLB2uVhrZhYqtsUPYR1gqQHng
+✓ Created session: fZCjHdz6GGctm2deeJTM98-jc6Fw43IUzepT6lVxVQLO99HUQ7SjiCxv_ZYmB8MT0aiUZuYvbnWyVznNApPTzw
 
 === Sending Initial Message ===
-? Message sent
-  Responses: ["The available product is:\n\n- **Name:** ekoDB\n- **Description:** High-performance database product\n- **Price:** $99\n\nIf you need more information or have other questions, feel free to ask!"]
+✓ Message sent
+  Responses: ["It seems there are currently no active products available in the database. Would you like to check for any specific product names or details?"]
 
-? Second message sent
+✓ Second message sent
 
 === Regenerating AI Response ===
-? AI response regenerated
-  New responses: ["The price of ekoDB is $99. If you have any other questions or need more information, feel free to ask!"]
+✓ AI response regenerated
+  New responses: ["The price of ekoDB is $99."]
 
 === Updating Message ===
-? Updated message content
+✓ Updated message content
 
 === Toggling Forgotten Status ===
-? Marked message as forgotten (excluded from context)
+✓ Marked message as forgotten (excluded from context)
 
 === Creating Second Session for Merge ===
-? Created second session: kyZrtql3xoKunqJ4L8bITuiX46MMo9wmXuXx7R01Cn07BtB259BtnQ-rxfIzYzOmVi6Ddi2Yn1_8ZEIjz_gfrg
+✓ Created second session: s-I5FIXph2OxFiIKu1sB5ed9TuJF56E4SmKpmkUCd-hTqnw6nuCUCj8ok2Pkg2C1kQV5p2_9D2vz_Fl0uLpUpQ
 
 === Merging Sessions ===
-? Merged sessions
+✓ Merged sessions
   Total messages in merged session: 5
 
 === Deleting Message ===
-? Deleted message
+✓ Deleted message
 
 === Cleanup ===
-? Deleted chat session: kyZrtql3xoKunqJ4L8bITuiX46MMo9wmXuXx7R01Cn07BtB259BtnQ-rxfIzYzOmVi6Ddi2Yn1_8ZEIjz_gfrg
-? Deleted chat session: 4I0UdfqNcdqtoUkD2pTT0Lg80yq8iMn3Fi0yuonQzTaTnn8nqG_cBsb_jku4YXLB2uVhrZhYqtsUPYR1gqQHng
-? Deleted collection: kotlin_chat_advanced_example
+✓ Deleted chat session: s-I5FIXph2OxFiIKu1sB5ed9TuJF56E4SmKpmkUCd-hTqnw6nuCUCj8ok2Pkg2C1kQV5p2_9D2vz_Fl0uLpUpQ
+✓ Deleted chat session: fZCjHdz6GGctm2deeJTM98-jc6Fw43IUzepT6lVxVQLO99HUQ7SjiCxv_ZYmB8MT0aiUZuYvbnWyVznNApPTzw
+✓ Deleted collection: kotlin_chat_advanced_example
 
-? Advanced chat features example completed successfully
+✓ Advanced chat features example completed successfully
 
-BUILD SUCCESSFUL in 14s
+BUILD SUCCESSFUL in 8s
 2 actionable tasks: 2 executed
 Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.7.1/userguide/configuration_cache_enabling.html
+=== Running Kotlin example: ClientChatBasic.kt ===
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.7.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build
 > Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
@@ -14043,25 +12619,26 @@ SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
 === ekoDB Kotlin Client - Basic Chat Example ===
 
 === Inserting Sample Data ===
-? Inserted 3 sample documents
+✓ Inserted 3 sample documents
 
 === Creating Chat Session ===
-? Created session: kIsbXtyCWRFJtyKoIXIXv6AmzmyH5frO9CjGaNbf74cLZX-xknROnusfswvCLzVIN3LDDNTkWsIFJEe-UAbKow
+✓ Created session: 0w5HD8JD_wEKAw5sHWmk9pgvNnHpyETTx3AhwbJ0fdzNatXR-FLdmhnEDTioyKnLQKxaLddz_2BaZkG1zFR3FQ
 
 === Sending Chat Message ===
-? Chat response:
-  Message ID: "ZZSaE2WgA-t6zm3XjcAAWhpkGyRwW-4pjuy4aDe-9WZKYu7_Zgeu5emvEBM_xQlLMn1zLGhbunWDbhsjKMvGQg"
-  Responses: ["ekoDB is a high-performance database that integrates intelligent caching and real-time capabilities, along with AI integration. It allows users to query the database using natural language, providing AI-powered responses enriched with relevant context. \n\nKey features of ekoDB include:\n\n1. **AI Chat Integration**: Users can interact with the database through a chat feature that facilitates querying using natural language.\n   \n2. **Search Capabilities**: ekoDB supports multiple search types, including full-text search, vector search, and hybrid search, which automatically retrieves context relevant to the queries.\n\nIn summary, ekoDB offers a user-friendly interface powered by AI, along with robust search functionalities that enhance the database querying experience."]
+✓ Chat response:
+  Message ID: "tVub5Rj0tK0H1v5dGUAE613u11WeodIpQnwLzRJ9v8478o_vgJa0O50YNP7TVo_nVBp_wNUONVSx76E8zG5fWA"
+  Responses: ["ekoDB is a high-performance database that boasts intelligent caching, real-time capabilities, and AI integration. It is designed to provide flexibility and efficiency for various data management tasks.\n\nHere are some key features of ekoDB:\n\n1. **AI Chat Integration**: The chat feature allows you to query your database using natural language and receive AI-powered responses with relevant context.\n\n2. **Search Capabilities**: ekoDB supports full-text search, vector search, and hybrid search, enabling automatic context retrieval to enhance the search experience.\n\n3. **Performance Optimization**: With intelligent caching and real-time capabilities, ekoDB ensures high performance for data retrieval and management tasks.\n\nOverall, ekoDB combines advanced search functionalities and AI integration to streamline interactions with your data."]
 
 === Cleanup ===
-? Deleted chat session
-? Deleted collection: kotlin_chat_basic_example
+✓ Deleted chat session
+✓ Deleted collection: kotlin_chat_basic_example
 
-? Basic chat example completed successfully
+✓ Basic chat example completed successfully
 
-BUILD SUCCESSFUL in 10s
+BUILD SUCCESSFUL in 7s
 2 actionable tasks: 2 executed
 Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.7.1/userguide/configuration_cache_enabling.html
+=== Running Kotlin example: ClientChatMessageStream.kt ===
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.7.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build
 > Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
@@ -14076,26 +12653,35 @@ Daemon will be stopped at the end of the build
 SLF4J(W): No SLF4J providers were found.
 SLF4J(W): Defaulting to no-operation (NOP) logger implementation
 SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
-Created session: hLMzYUbPX-WRBVW9QJs37_qky1BqyGJxS1odkg48aGebdrFOLdj3EUK9qux99C44n9-JdrBD191FnMLEdBpVLw
+Created session: m0uT0hOoU4uXwxOMMtGQo7l31fb1CmBgWraQj7yMnzIIr_8ZnYubr8Xqz5P0s2biBI6T6lb7sw2sgFS4zxuc5A
 
 Streaming response for: 'What is ekoDB?'
 
-{"__progress":"received"}{"__progress":"generating","model":"gpt-4o-mini","provider":"openai"}EkoDB is a high-performance, in-memory key-value database designed for fast data retrieval and manipulation. It is often used in environments requiring low-latency access to data, such as real-time analytics, gaming, or caching scenarios.
+{"__progress":"received"}{"__progress":"generating","model":"gpt-4o-mini","provider":"openai"}EkoDB is a high-performance, cloud-native database that is designed to handle large volumes of data and enable real-time processing. It is often optimized for certain use cases, such as time-series data, event handling, and analytical workloads, making it suitable for industries that require fast data access and processing capabilities.
 
-EkoDB typically emphasizes ease of use, scalability, and robust performance, allowing developers to efficiently manage data without the overhead associated with traditional disk-based databases. It may support various data structures and provide features like persistence, replication, and transactions, depending on the specific implementation.
+EkoDB typically offers features like:
 
-However, as of my last knowledge update in October 2023, EkoDB does not have widespread recognition compared to other databases like Redis, Memcached, or traditional relational databases. If you are looking for more specific information or have a particular context in mind about EkoDB, feel free to provide additional details!
+- Scalability: The ability to scale out horizontally to manage increasing workloads.
+- Low latency: Quick data retrieval and updates, which is essential for real-time applications.
+- High availability: Features that ensure the database remains operational and accessible even in the event of hardware failures or other issues.
+- Flexibility: Supporting various data models, including structured, unstructured, and semi-structured data.
+- Integration: Easy integration with other cloud services and platforms, allowing for seamless data flow and processing.
+
+Use cases for EkoDB might include Internet of Things (IoT) applications, financial services analytics, social media data processing, and any other domain where rapid data processing is critical.
+
+It's worth noting that specific implementations and features of EkoDB may vary based on the version or deployment context, so checking the official documentation or resources may provide the most current and detailed information.
 
 --- Stream complete ---
-Message ID: UG9V73G6O8rkeGFmUh2-pD8lBW1y1V6hcAsubmZ-EDTHUVcWHIGwpS4nzlXrOWs8cPj6B_cUu6UYx13BV5IAJQ
-Execution time: 1977ms
+Message ID: 1Yf9zk5IcDkfOtcTVMbQRYbNvmkTcQqy0vhSD53tMcdzhqp_wNJu8vxLkKX7lUqfK3uBQTnbhRX7YeD4bkMD0g
+Execution time: 2114ms
 Context window: 128000 tokens
 
-? Chat message stream example completed
+✓ Chat message stream example completed
 
-BUILD SUCCESSFUL in 10s
+BUILD SUCCESSFUL in 6s
 2 actionable tasks: 2 executed
 Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.7.1/userguide/configuration_cache_enabling.html
+=== Running Kotlin example: ClientChatModels.kt ===
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.7.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build
 > Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
@@ -14274,9 +12860,10 @@ Expected error for non-existent provider: Request failed with status 404: {"erro
 
 === Chat Models Example Complete ===
 
-BUILD SUCCESSFUL in 9s
+BUILD SUCCESSFUL in 4s
 2 actionable tasks: 2 executed
 Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.7.1/userguide/configuration_cache_enabling.html
+=== Running Kotlin example: ClientChatSessions.kt ===
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.7.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build
 > Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
@@ -14292,40 +12879,41 @@ SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
 === ekoDB Kotlin Client - Chat Session Management Example ===
 
 === Inserting Sample Data ===
-? Inserted sample product
+✓ Inserted sample product
 
 === Creating Chat Session ===
-? Created session: kt47Tl9LW95YFmu0_P_Q2lWT2XBjMwM512abXuUtxnRyNR1YQw18hcS3g1loxGE7RjmWjdTD4HL8N5olIiAh7Q
+✓ Created session: 2xG7WFAwTzplk-MA71vhiL_UHzV7s4AhMi9LGmSUd4o_bfJzB2U3bJ1J9hgZf4BkXI8kjE75TNztXe9Z_xJQEQ
 
 === Sending Messages ===
-? Message 1 sent
-  Responses: ["The available product is:\n\n- **Product**: ekoDB\n- **Description**: A high-performance database product with AI capabilities\n- **Price**: $99\n\nIf you need more information or have any other questions, feel free to ask!"]
+✓ Message 1 sent
+  Responses: ["The available product is:\n\n- **Product**: ekoDB\n- **Description**: A high-performance database product with AI capabilities\n- **Price**: $99\n\nIf you need further information or have additional questions, feel free to ask!"]
 
-? Message 2 sent
-  Responses: ["The price of the product ekoDB is $99."]
+✓ Message 2 sent
+  Responses: ["The price of the product ekoDB is **$99**."]
 
 === Getting Message History ===
-? Retrieved message history
-  Total messages: [{"chat_id":{"type":"String","value":"kt47Tl9LW95YFmu0_P_Q2lWT2XBjMwM512abXuUtxnRyNR1YQw18hcS3g1loxGE7RjmWjdTD4HL8N5olIiAh7Q"},"content":{"type":"String","value":"What products are available?"},"context_snippets":{"type":"Array","value":[{"collection":"kotlin_chat_sessions_example","matched_fields":["description"],"record":{"description":"A high-performance database product with AI capabilities","id":"J-QZq3RjgoPld842BzRy3A3h1DYLUp3pzDM-uAPlrv_KOwtxW3ct0sCZazA1TOVogwmFiYlbkIMazuPG_DBhlQ","price":99,"product":"ekoDB"},"score":0.25}]},"created_at":{"type":"DateTime","value":"2026-09-15T18:47:31.268160+00:00"},"id":"1RkW57DsL52uIH78R8rvB03lhRW-JPIZm1Wt-pCOQirLu86lniSfdOQz2Myezk_gYElA4wbSzZWWF72M2zLqnQ","role":{"type":"String","value":"user"},"token_usage":{"type":"Object","value":{"completion_tokens":87,"prompt_tokens":6740,"total_tokens":6827}},"updated_at":{"type":"DateTime","value":"2026-09-15T18:47:31.268160+00:00"}},{"chat_id":{"type":"String","value":"kt47Tl9LW95YFmu0_P_Q2lWT2XBjMwM512abXuUtxnRyNR1YQw18hcS3g1loxGE7RjmWjdTD4HL8N5olIiAh7Q"},"content":{"type":"String","value":"The available product is:\n\n- **Product**: ekoDB\n- **Description**: A high-performance database product with AI capabilities\n- **Price**: $99\n\nIf you need more information or have any other questions, feel free to ask!"},"context_snippets":{"type":"Array","value":[{"collection":"kotlin_chat_sessions_example","matched_fields":["description"],"record":{"description":"A high-performance database product with AI capabilities","id":"J-QZq3RjgoPld842BzRy3A3h1DYLUp3pzDM-uAPlrv_KOwtxW3ct0sCZazA1TOVogwmFiYlbkIMazuPG_DBhlQ","price":99,"product":"ekoDB"},"score":0.25}]},"created_at":{"type":"DateTime","value":"2026-09-15T18:47:31.286+00:00"},"id":"OORWYCZwiY2JbR8igbUYNARC6bJ0Xj63uTfCF9PFNrSbafqOqUs4BAAfbfbNy7aY8j4Pk3_mS-p0N3NWdVMoaA","llm_model":{"type":"String","value":"gpt-4o-mini"},"llm_provider":{"type":"String","value":"openai"},"role":{"type":"String","value":"assistant"},"token_usage":{"type":"Object","value":{"completion_tokens":87,"prompt_tokens":6740,"total_tokens":6827}},"tool_call_count":{"type":"Number","value":2},"tool_call_history":{"type":"Object","value":{"iterations":2,"tool_calls":[{"arguments":{"collection":"kotlin_chat_sessions_example","filter":{"content":{"field":"product","operator":"Ne","value":""},"type":"Condition"}},"id":"call_QeGb0sRTrxyy0bJnpYPdUOGe","name":"query_collection"}],"tool_results":[{"error":null,"result":{"count":1,"records":[{"description":"A high-performance database product with AI capabilities","id":"J-QZq3RjgoPld842BzRy3A3h1DYLUp3pzDM-uAPlrv_KOwtxW3ct0sCZazA1TOVogwmFiYlbkIMazuPG_DBhlQ","price":99,"product":"ekoDB"}]},"success":true,"tool_call_id":"call_QeGb0sRTrxyy0bJnpYPdUOGe","tool_name":"query_collection"}]}},"updated_at":{"type":"DateTime","value":"2026-09-15T18:47:31.286+00:00"}},{"chat_id":{"type":"String","value":"kt47Tl9LW95YFmu0_P_Q2lWT2XBjMwM512abXuUtxnRyNR1YQw18hcS3g1loxGE7RjmWjdTD4HL8N5olIiAh7Q"},"content":{"type":"String","value":"What is the price?"},"context_snippets":{"type":"Array","value":[{"collection":"kotlin_chat_sessions_example","matched_fields":["description","product","price"],"record":{"description":"A high-performance database product with AI capabilities","id":"J-QZq3RjgoPld842BzRy3A3h1DYLUp3pzDM-uAPlrv_KOwtxW3ct0sCZazA1TOVogwmFiYlbkIMazuPG_DBhlQ","price":99,"product":"ekoDB"},"score":2.0999999999999996}]},"created_at":{"type":"DateTime","value":"2026-09-15T18:47:32.480620+00:00"},"id":"eL1iyirvuDp5XuUcDOCqSS62mo-En1KrQpojhgbkVUU0Uu7ge4kSrcMujOMHsayhGMe0CL2qesYJ75LclseC0w","role":{"type":"String","value":"user"},"token_usage":{"type":"Object","value":{"completion_tokens":9,"prompt_tokens":3386,"total_tokens":3395}},"updated_at":{"type":"DateTime","value":"2026-09-15T18:47:32.480620+00:00"}},{"chat_id":{"type":"String","value":"kt47Tl9LW95YFmu0_P_Q2lWT2XBjMwM512abXuUtxnRyNR1YQw18hcS3g1loxGE7RjmWjdTD4HL8N5olIiAh7Q"},"content":{"type":"String","value":"The price of the product ekoDB is $99."},"context_snippets":{"type":"Array","value":[{"collection":"kotlin_chat_sessions_example","matched_fields":["description","product","price"],"record":{"description":"A high-performance database product with AI capabilities","id":"J-QZq3RjgoPld842BzRy3A3h1DYLUp3pzDM-uAPlrv_KOwtxW3ct0sCZazA1TOVogwmFiYlbkIMazuPG_DBhlQ","price":99,"product":"ekoDB"},"score":2.0999999999999996}]},"created_at":{"type":"DateTime","value":"2026-09-15T18:47:32.508340+00:00"},"id":"I8wFL6UVDy5INpDj-lbTDBZEFnbJdRG2vOy_LiMuVB64-SpsDBxwMi3hKENgTYk7_uZ6FYSEQxcz15NT0muIFA","llm_model":{"type":"String","value":"gpt-4o-mini"},"llm_provider":{"type":"String","value":"openai"},"role":{"type":"String","value":"assistant"},"token_usage":{"type":"Object","value":{"completion_tokens":9,"prompt_tokens":3386,"total_tokens":3395}},"updated_at":{"type":"DateTime","value":"2026-09-15T18:47:32.508340+00:00"}}]
+✓ Retrieved message history
+  Total messages: [{"chat_id":{"type":"String","value":"2xG7WFAwTzplk-MA71vhiL_UHzV7s4AhMi9LGmSUd4o_bfJzB2U3bJ1J9hgZf4BkXI8kjE75TNztXe9Z_xJQEQ"},"content":{"type":"String","value":"What products are available?"},"context_snippets":{"type":"Array","value":[{"collection":"kotlin_chat_sessions_example","matched_fields":["description"],"record":{"description":"A high-performance database product with AI capabilities","id":"FAv5CykZ8y87Ikb6aF45xbiUCtT6GIl7LtTr7OfQGd46NLcWHsocyj3Cb-RIP5pDavMVLiatWjKOHzPSVq0gfw","price":99,"product":"ekoDB"},"score":0.25}]},"created_at":{"type":"DateTime","value":"2026-09-16T20:49:29.701496+00:00"},"id":"ZMj6nPKzoJdpwhIagku7oNoja04RxgZrWbMq0JIn8c8LIzSoncYfofjSOpVXk8qErK4GH_XZF_TC7NSZ-9uvig","role":{"type":"String","value":"user"},"token_usage":{"type":"Object","value":{"completion_tokens":66,"prompt_tokens":6740,"total_tokens":6806}},"updated_at":{"type":"DateTime","value":"2026-09-16T20:49:29.701496+00:00"}},{"chat_id":{"type":"String","value":"2xG7WFAwTzplk-MA71vhiL_UHzV7s4AhMi9LGmSUd4o_bfJzB2U3bJ1J9hgZf4BkXI8kjE75TNztXe9Z_xJQEQ"},"content":{"type":"String","value":"The available product is:\n\n- **Product**: ekoDB\n- **Description**: A high-performance database product with AI capabilities\n- **Price**: $99\n\nIf you need further information or have additional questions, feel free to ask!"},"context_snippets":{"type":"Array","value":[{"collection":"kotlin_chat_sessions_example","matched_fields":["description"],"record":{"description":"A high-performance database product with AI capabilities","id":"FAv5CykZ8y87Ikb6aF45xbiUCtT6GIl7LtTr7OfQGd46NLcWHsocyj3Cb-RIP5pDavMVLiatWjKOHzPSVq0gfw","price":99,"product":"ekoDB"},"score":0.25}]},"created_at":{"type":"DateTime","value":"2026-09-16T20:49:29.718063+00:00"},"id":"OZ9gdCvlrUE5PZzYZicZa75DdDpLSL5uKB59hSQyBlDA7IQvPXYs8xfCF9Lnk8ydFDvnorBnZpCabxnmTzDrPQ","llm_model":{"type":"String","value":"gpt-4o-mini"},"llm_provider":{"type":"String","value":"openai"},"role":{"type":"String","value":"assistant"},"token_usage":{"type":"Object","value":{"completion_tokens":66,"prompt_tokens":6740,"total_tokens":6806}},"tool_call_count":{"type":"Number","value":2},"tool_call_history":{"type":"Object","value":{"iterations":2,"tool_calls":[{"arguments":{"collection":"kotlin_chat_sessions_example"},"id":"call_USSL71jK9ONowirWrK0o4qOE","name":"query_collection"}],"tool_results":[{"error":null,"result":{"count":1,"records":[{"description":"A high-performance database product with AI capabilities","id":"FAv5CykZ8y87Ikb6aF45xbiUCtT6GIl7LtTr7OfQGd46NLcWHsocyj3Cb-RIP5pDavMVLiatWjKOHzPSVq0gfw","price":99,"product":"ekoDB"}]},"success":true,"tool_call_id":"call_USSL71jK9ONowirWrK0o4qOE","tool_name":"query_collection"}]}},"updated_at":{"type":"DateTime","value":"2026-09-16T20:49:29.718063+00:00"}},{"chat_id":{"type":"String","value":"2xG7WFAwTzplk-MA71vhiL_UHzV7s4AhMi9LGmSUd4o_bfJzB2U3bJ1J9hgZf4BkXI8kjE75TNztXe9Z_xJQEQ"},"content":{"type":"String","value":"What is the price?"},"context_snippets":{"type":"Array","value":[{"collection":"kotlin_chat_sessions_example","matched_fields":["description","product","price"],"record":{"description":"A high-performance database product with AI capabilities","id":"FAv5CykZ8y87Ikb6aF45xbiUCtT6GIl7LtTr7OfQGd46NLcWHsocyj3Cb-RIP5pDavMVLiatWjKOHzPSVq0gfw","price":99,"product":"ekoDB"},"score":2.095}]},"created_at":{"type":"DateTime","value":"2026-09-16T20:49:30.719634+00:00"},"id":"0o2xmdkeL55iJMcBDugBJLMwPlYQRvHSykChcwLqcwvpI6LK0pmC7pVpLRp7WGkH3n-Z37ithROWuXXEE-Rpag","role":{"type":"String","value":"user"},"token_usage":{"type":"Object","value":{"completion_tokens":10,"prompt_tokens":3387,"total_tokens":3397}},"updated_at":{"type":"DateTime","value":"2026-09-16T20:49:30.719634+00:00"}},{"chat_id":{"type":"String","value":"2xG7WFAwTzplk-MA71vhiL_UHzV7s4AhMi9LGmSUd4o_bfJzB2U3bJ1J9hgZf4BkXI8kjE75TNztXe9Z_xJQEQ"},"content":{"type":"String","value":"The price of the product ekoDB is **$99**."},"context_snippets":{"type":"Array","value":[{"collection":"kotlin_chat_sessions_example","matched_fields":["description","product","price"],"record":{"description":"A high-performance database product with AI capabilities","id":"FAv5CykZ8y87Ikb6aF45xbiUCtT6GIl7LtTr7OfQGd46NLcWHsocyj3Cb-RIP5pDavMVLiatWjKOHzPSVq0gfw","price":99,"product":"ekoDB"},"score":2.095}]},"created_at":{"type":"DateTime","value":"2026-09-16T20:49:30.736321+00:00"},"id":"PkyMYYSRLW2pQhiUuBd3GxXY6PqXlJ8sIRKG71f77txh-At2gdyXonXQu3WwL6cuB3a3FZMpfCXHVI_bUMQTRQ","llm_model":{"type":"String","value":"gpt-4o-mini"},"llm_provider":{"type":"String","value":"openai"},"role":{"type":"String","value":"assistant"},"token_usage":{"type":"Object","value":{"completion_tokens":10,"prompt_tokens":3387,"total_tokens":3397}},"updated_at":{"type":"DateTime","value":"2026-09-16T20:49:30.736321+00:00"}}]
 
 === Updating Session ===
-? Updated session system prompt
+✓ Updated session system prompt
 
 === Listing Sessions ===
-? Total sessions: 7
+✓ Total sessions: 1
 
 === Branching Session ===
-? Created branched session: x1MfXtI-2NL_d5CAuzXjhHVxvb1gpFPZlcxW_P7BL4Sn-Ua7SHYi5fJyzok7LRt3fAg6WAuLgc7e0X0oYvoQ9Q
+✓ Created branched session: k4s0fiZzClFpjL3ylWokTAb0wNIMx3plpl3eIWdfSxicJSPp6jPTSAZftBoEg9zk5TVXOb7JRlSsIl6C69mcFg
 
 === Cleanup ===
-? Deleted chat sessions
-? Deleted collection: kotlin_chat_sessions_example
+✓ Deleted chat sessions
+✓ Deleted collection: kotlin_chat_sessions_example
 
-? Chat session management example completed successfully
+✓ Chat session management example completed successfully
 
-BUILD SUCCESSFUL in 14s
+BUILD SUCCESSFUL in 10s
 2 actionable tasks: 2 executed
 Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.7.1/userguide/configuration_cache_enabling.html
+=== Running Kotlin example: ClientCollectionManagement.kt ===
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.7.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build
 > Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
@@ -14341,30 +12929,31 @@ SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
 === ekoDB Kotlin Client - Collection Management Example ===
 
 === List Collections ===
-? Found 36 collections
-  - schema_employees_client_ts
-  - schema_products_client_go
-  - agent_function_versions__ek0_testing
-  - chat_agent_configs__ek0_testing
-  - chat_goal_templates__ek0_testing
+✓ Found 26 collections
+  - schema_users_client_ts
+  - schema_documents_client_ts
+  - chat_goals__ek0_testing
+  - schema_products_client_js
+  - schedules__ek0_testing
 
 === Check Collection Existence ===
 Collection 'kotlin_collection_example' exists: false
 
 === Create Collection with Schema ===
-? Created collection with schema: kotlin_collection_example
+✓ Created collection with schema: kotlin_collection_example
 
 === Get Collection Schema ===
-? Schema: {"fields":{"name":{"field_type":"String","default":null,"unique":false,"required":true,"enums":[],"max":null,"min":null,"regex":null},"age":{"field_type":"Integer","default":null,"unique":false,"required":false,"enums":[],"max":null,"min":null,"regex":null}},"version":1,"created_at":"2026-09-15T18:47:42.018463Z","last_modified":"2026-09-15T18:47:42.018464Z","bypass_ripple":false,"primary_key_alias":"id"}
+✓ Schema: {"fields":{"age":{"field_type":"Integer","default":null,"unique":false,"required":false,"enums":[],"max":null,"min":null,"regex":null},"name":{"field_type":"String","default":null,"unique":false,"required":true,"enums":[],"max":null,"min":null,"regex":null}},"version":1,"created_at":"2026-09-16T20:49:35.869225Z","last_modified":"2026-09-16T20:49:35.869225Z","bypass_ripple":false,"primary_key_alias":"id"}
 
 === Cleanup ===
-? Deleted collection: kotlin_collection_example
+✓ Deleted collection: kotlin_collection_example
 
 === Example Complete ===
 
-BUILD SUCCESSFUL in 8s
+BUILD SUCCESSFUL in 4s
 2 actionable tasks: 2 executed
 Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.7.1/userguide/configuration_cache_enabling.html
+=== Running Kotlin example: ClientCollectionUtils.kt ===
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.7.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build
 > Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
@@ -14392,59 +12981,50 @@ Collection 'collection_utils_test_kt' exists: true
 Document count in 'collection_utils_test_kt': 5
 
 === Get Collection Metadata ===
-Collection metadata: {"analytics":["collection_utils_test_kt",{"manifest_backed":false,"record_count":5,"resident_record_ids":5,"total_size":675}],"collection":{"bypass_ripple":false,"created_at":"2026-09-15T18:47:51.727908Z","fields":{"index":{"default":null,"enums":[],"field_type":"Integer","max":null,"min":null,"regex":null,"required":false,"unique":false},"name":{"default":null,"enums":[],"field_type":"String","max":null,"min":null,"regex":null,"required":false,"unique":false}},"last_modified":"2026-09-15T18:47:51.728757Z","primary_key_alias":"id","version":1}}
+Collection metadata: {"analytics":["collection_utils_test_kt",{"manifest_backed":false,"record_count":5,"resident_record_ids":5,"total_size":675}],"collection":{"bypass_ripple":false,"created_at":"2026-09-16T20:49:41.038236Z","fields":{"index":{"default":null,"enums":[],"field_type":"Integer","max":null,"min":null,"regex":null,"required":false,"unique":false},"name":{"default":null,"enums":[],"field_type":"String","max":null,"min":null,"regex":null,"required":false,"unique":false}},"last_modified":"2026-09-16T20:49:41.038507Z","primary_key_alias":"id","version":1}}
 
 === List Collections ===
-All collections (37):
-  - schema_employees_client_ts
+All collections (27):
+  - schema_users_client_ts
+  - schema_documents_client_ts
+  - chat_goals__ek0_testing
+  - schema_products_client_js
+  - schedules__ek0_testing
+  - schema_employees_client_js
   - schema_products_client_go
   - agent_function_versions__ek0_testing
-  - chat_agent_configs__ek0_testing
-  - chat_goal_templates__ek0_testing
-  - schedules__ek0_testing
-  - schema_users_client_py
-  - schema_employees_client_py
-  - schema_products_client_js
-  - test_accounts
-  - users
-  - ws_subscribe_example_rs
   - schema_products_client_ts
-  - ws_subscribe_example_go
-  - chat_messages__ek0_testing
-  - schema_products_client_py
   - chat_raw_completions__ek0_testing
-  - chat_tasks__ek0_testing
-  - schema_documents_client_ts
-  - ws_subscribe_example_ts
-  - chat_goals__ek0_testing
-  - schema_users_client_ts
-  - collection_utils_test_kt
-  - schema_documents_client_go
-  - schema_users_client_js
-  - schema_employees_client_js
-  - test_collection
-  - chat_configurations__ek0_testing
-  - schema_documents_client_js
-  - audit__ek0_testing
   - chat_turns__ek0_testing
-  - ttl_cache
-  - functions__ek0_testing
-  - schema_documents_client_py
-  - ws_subscribe_example_py
-  - schema_users_client_go
   - schema_employees_client_go
+  - audit__ek0_testing
+  - schema_users_client_go
+  - schema_documents_client_js
+  - chat_goal_templates__ek0_testing
+  - schema_users_client_js
+  - collection_utils_test_kt
+  - schema_employees_client_ts
+  - chat_tasks__ek0_testing
+  - test_accounts
+  - schema_documents_client_go
+  - test_collection
+  - chat_messages__ek0_testing
+  - functions__ek0_testing
+  - chat_configurations__ek0_testing
+  - chat_agent_configs__ek0_testing
 
 === Check Non-Existent Collection ===
-Collection 'nonexistent_collection_xyz_304132701624750' exists: false
+Collection 'nonexistent_collection_xyz_397841971344791' exists: false
 
 === Cleanup ===
 Deleted collection 'collection_utils_test_kt'
 
 === Collection Utilities Example Complete ===
 
-BUILD SUCCESSFUL in 9s
+BUILD SUCCESSFUL in 4s
 2 actionable tasks: 2 executed
 Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.7.1/userguide/configuration_cache_enabling.html
+=== Running Kotlin example: ClientConcurrencyStages.kt ===
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.7.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build
 > Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
@@ -14457,11 +13037,11 @@ Daemon will be stopped at the end of the build
 SLF4J(W): No SLF4J providers were found.
 SLF4J(W): Defaulting to no-operation (NOP) logger implementation
 SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
-? Client created
-? conc_demo_pay saved
-? conc_demo_rl_fail saved
-? conc_demo_rl_skip saved
-? conc_demo_lock saved
+✓ Client created
+✓ conc_demo_pay saved
+✓ conc_demo_rl_fail saved
+✓ conc_demo_rl_skip saved
+✓ conc_demo_lock saved
 
 Invoke them like:
   POST /api/functions/conc_demo_pay        { "idempotency_key": "...", "amount": 100 }
@@ -14469,11 +13049,12 @@ Invoke them like:
   POST /api/functions/conc_demo_rl_skip    { "user_id": 42 }
   POST /api/functions/conc_demo_lock       { "resource": "queue:drain" }
 
-? Cleaned up demo functions
+✓ Cleaned up demo functions
 
-BUILD SUCCESSFUL in 10s
+BUILD SUCCESSFUL in 4s
 2 actionable tasks: 2 executed
 Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.7.1/userguide/configuration_cache_enabling.html
+=== Running Kotlin example: ClientConvenienceMethods.kt ===
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.7.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build
 > Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
@@ -14489,34 +13070,35 @@ SLF4J(W): No SLF4J providers were found.
 SLF4J(W): Defaulting to no-operation (NOP) logger implementation
 SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
 === Native Object Creation ===
-? Created record: EkoRecord(fields={id=StringValue(value=dnEhhLEAo7Yn8V9-ewQZYd3hd06vHkRCdMMhodUdnKoTpa29Ljm_uAkFNFyJXrIZQysluXYWFHwTtPr_NwItMQ)})
+✓ Created record: EkoRecord(fields={id=StringValue(value=m-C3C_gK43A7v_Ki1HjeEBVD3GqO22SHpNxqoqEVhzxjbmQkb___EzEJNNxOFuXM0GTgFd6Hax1HK6g-7GnMBQ)})
 
 === Upsert Operation ===
-? First upsert (update): EkoRecord(fields={age=ObjectValue(value={type=StringValue(value=Integer), value=IntegerValue(value=29)}), email=ObjectValue(value={value=StringValue(value=alice.j@newdomain.com), type=StringValue(value=String)}), id=StringValue(value=dnEhhLEAo7Yn8V9-ewQZYd3hd06vHkRCdMMhodUdnKoTpa29Ljm_uAkFNFyJXrIZQysluXYWFHwTtPr_NwItMQ), active=ObjectValue(value={type=StringValue(value=Boolean), value=BooleanValue(value=true)}), name=ObjectValue(value={type=StringValue(value=String), value=StringValue(value=Alice Johnson)})})
-? Second upsert (insert): EkoRecord(fields={id=StringValue(value=0RhSR5nksqnLzx9oIancnBdAlL6AZY-_aJ64PmcOO4nq4hEz4xVKrU3T4OLl5DhL-rPdj6HNvMklV8xQ195QFg)})
+✓ First upsert (update): EkoRecord(fields={id=StringValue(value=m-C3C_gK43A7v_Ki1HjeEBVD3GqO22SHpNxqoqEVhzxjbmQkb___EzEJNNxOFuXM0GTgFd6Hax1HK6g-7GnMBQ), active=ObjectValue(value={value=BooleanValue(value=true), type=StringValue(value=Boolean)}), email=ObjectValue(value={type=StringValue(value=String), value=StringValue(value=alice.j@newdomain.com)}), name=ObjectValue(value={type=StringValue(value=String), value=StringValue(value=Alice Johnson)}), age=ObjectValue(value={value=IntegerValue(value=29), type=StringValue(value=Integer)})})
+✓ Second upsert (insert): EkoRecord(fields={id=StringValue(value=O8WK04yGOEv_okgtGfzQtqkoWLV2WVuFrrURVZSOSjkWLjmfNr0WhGAuMGShVDG6eBGbSqAPRPLEfndRKK9nXg)})
 
 === Find One Operation ===
-? Found user by email: EkoRecord(fields={age=ObjectValue(value={type=StringValue(value=Integer), value=IntegerValue(value=29)}), name=ObjectValue(value={type=StringValue(value=String), value=StringValue(value=Alice Johnson)}), email=ObjectValue(value={value=StringValue(value=alice.j@newdomain.com), type=StringValue(value=String)}), active=ObjectValue(value={value=BooleanValue(value=true), type=StringValue(value=Boolean)}), id=StringValue(value=dnEhhLEAo7Yn8V9-ewQZYd3hd06vHkRCdMMhodUdnKoTpa29Ljm_uAkFNFyJXrIZQysluXYWFHwTtPr_NwItMQ)})
-? User not found (as expected)
+✓ Found user by email: EkoRecord(fields={name=ObjectValue(value={type=StringValue(value=String), value=StringValue(value=Alice Johnson)}), active=ObjectValue(value={value=BooleanValue(value=true), type=StringValue(value=Boolean)}), id=StringValue(value=m-C3C_gK43A7v_Ki1HjeEBVD3GqO22SHpNxqoqEVhzxjbmQkb___EzEJNNxOFuXM0GTgFd6Hax1HK6g-7GnMBQ), email=ObjectValue(value={type=StringValue(value=String), value=StringValue(value=alice.j@newdomain.com)}), age=ObjectValue(value={type=StringValue(value=Integer), value=IntegerValue(value=29)})})
+✓ User not found (as expected)
 
 === Exists Check ===
-? Record exists: true
-? Fake record exists: false (should be false)
+✓ Record exists: true
+✓ Fake record exists: false (should be false)
 
 === Pagination ===
-? Inserted 25 records for pagination
-? Page 1: 10 records (expected 10)
-? Page 2: 10 records (expected 10)
-? Page 3: 7 records (expected ~7)
+✓ Inserted 25 records for pagination
+✓ Page 1: 10 records (expected 10)
+✓ Page 2: 10 records (expected 10)
+✓ Page 3: 7 records (expected ~7)
 
 === Cleanup ===
-? Deleted collection
+✓ Deleted collection
 
-? All convenience methods demonstrated successfully!
+✅ All convenience methods demonstrated successfully!
 
-BUILD SUCCESSFUL in 8s
+BUILD SUCCESSFUL in 5s
 2 actionable tasks: 2 executed
 Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.7.1/userguide/configuration_cache_enabling.html
+=== Running Kotlin example: ClientCryptoStages.kt ===
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.7.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build
 > Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
@@ -14529,25 +13111,26 @@ Daemon will be stopped at the end of the build
 SLF4J(W): No SLF4J providers were found.
 SLF4J(W): Defaulting to no-operation (NOP) logger implementation
 SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
-? Client created
-? crypto_demo_hmac saved
-? crypto_demo_aes saved
-? crypto_demo_uuid saved
-? crypto_demo_totp saved
-? crypto_demo_encoding saved
+✓ Client created
+✓ crypto_demo_hmac_kt saved
+✓ crypto_demo_aes_kt saved
+✓ crypto_demo_uuid_kt saved
+✓ crypto_demo_totp_kt saved
+✓ crypto_demo_encoding_kt saved
 
 Invoke them with:
-  POST /api/functions/crypto_demo_hmac     { "payload": "hi" }
-  POST /api/functions/crypto_demo_aes      { "plaintext": "secret" }
-  POST /api/functions/crypto_demo_uuid
-  POST /api/functions/crypto_demo_totp
-  POST /api/functions/crypto_demo_encoding { "title": "H?llo World" }
+  POST /api/functions/crypto_demo_hmac_kt { "payload": "hi" }
+  POST /api/functions/crypto_demo_aes_kt { "plaintext": "secret" }
+  POST /api/functions/crypto_demo_uuid_kt
+  POST /api/functions/crypto_demo_totp_kt
+  POST /api/functions/crypto_demo_encoding_kt { "title": "Héllo World" }
 
-? Cleaned up demo functions
+✓ Cleaned up demo functions
 
-BUILD SUCCESSFUL in 6s
+BUILD SUCCESSFUL in 4s
 2 actionable tasks: 2 executed
 Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.7.1/userguide/configuration_cache_enabling.html
+=== Running Kotlin example: ClientDistinctValues.kt ===
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.7.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build
 > Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
@@ -14562,9 +13145,10 @@ SLF4J(W): Defaulting to no-operation (NOP) logger implementation
 SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
 Kotlin distinct-values example passed
 
-BUILD SUCCESSFUL in 6s
+BUILD SUCCESSFUL in 4s
 2 actionable tasks: 2 executed
 Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.7.1/userguide/configuration_cache_enabling.html
+=== Running Kotlin example: ClientDocumentTtl.kt ===
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.7.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build
 > Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
@@ -14580,33 +13164,34 @@ SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
 === ekoDB Kotlin Client - Document TTL Example ===
 
 === Insert with TTL ===
-? Inserted document with 10s TTL
-  Document ID: yjmuX9E4nl2YPHzvQ6_pS4IJbU8ppfn8kkzyXb6F2k8qPjiXYQWlH368eRYOk4ngTWt4-sio_Lt7dF5wo-Jpew
+✓ Inserted document with 10s TTL
+  Document ID: 9wQj4m7tjPPN6GHcIKihjKgITeT1LinOfzbz-A6hri0xpyeaxTeqE4HOFkePcAPlOaABmjOc1DTCUQXx1JkQkA
 
 === Verify Document Exists ===
-? Document found: user_id, created_at, session_id, id, ttl
+✓ Document found: id, created_at, session_id, user_id, ttl
 
 === Insert with Longer TTL ===
-? Inserted document with 1h TTL
-  Document ID: 1J7UPQFGNoO0QgBMyQkZsNZjl7hR-30TcVkiST3xf3-V2-AleYV_Nr8dPTg2YVDoQbTbok88lZVYaqJGmSN9Ew
+✓ Inserted document with 1h TTL
+  Document ID: h31guTPyOG-donTGpg78QUkMoICifha1W07UO-uUCUDx8QnY-yPeRW3ab7uZWL7edE2bVWcVjY9WKPiIWCJn_Q
 
 === TTL Expiration ===
-? Document will automatically expire after 10 seconds
+✓ Document will automatically expire after 10 seconds
 
 === Verify Long TTL Document ===
-? Long TTL document still exists: id, value, cache_key, ttl
+✓ Long TTL document still exists: cache_key, value, id, ttl
 
 === Delete Document ===
-? Deleted document
+✓ Deleted document
 
 === Cleanup ===
-? Deleted collection: kotlin_ttl_example
+✓ Deleted collection: kotlin_ttl_example
 
 === Example Complete ===
 
-BUILD SUCCESSFUL in 7s
+BUILD SUCCESSFUL in 4s
 2 actionable tasks: 2 executed
 Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.7.1/userguide/configuration_cache_enabling.html
+=== Running Kotlin example: ClientEdgeCache.kt ===
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.7.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build
 > Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
@@ -14622,21 +13207,18 @@ SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
 === ekoDB as Edge Cache - Simple Example ===
 
 Setting up edge cache collection...
-? Cache entry created
+✓ Cache entry created
 
 Creating edge cache lookup function...
-? Edge cache function created: JLsCg7zHjtA4y3S2cCnG_b1T6kQAsVZCRQAeef6LHJ5dEBkhPFswW3BkiW6Loth6G6UHoU8q2dRHVHxKXcpydg
+✓ Edge cache function created: U8Vy-iE5gZqsDfVWWIyGORjSeP_a95HqNAgI5dB6_O-UGGBlTW5kDgppSqwxPNc0ZFhkxkbBdYufWCFxAJ4diw
 
 Call 1: Cache lookup
 Found 1 cached entries
-Response time: 24ms
+Response time: 17ms
 
 Call 2: Cache lookup (connection warm)
 Found 1 cached entries
-Response time: 14ms
-
-? Cleaning up...
-? Cleanup complete
+Response time: 4ms
 
 === The Magic ===
 - Your DATABASE is your EDGE
@@ -14646,11 +13228,15 @@ Response time: 14ms
 - With ripples: All nodes auto-sync cache
 - One service: Database + Cache + Edge Functions
 
-? Example complete!
+🧹 Cleaning up...
+✓ Cleanup complete
 
-BUILD SUCCESSFUL in 7s
+✓ Example complete!
+
+BUILD SUCCESSFUL in 4s
 2 actionable tasks: 2 executed
 Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.7.1/userguide/configuration_cache_enabling.html
+=== Running Kotlin example: ClientFunctionComposition.kt ===
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.7.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build
 > Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
@@ -14665,67 +13251,68 @@ SLF4J(W): Defaulting to no-operation (NOP) logger implementation
 SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
 === ekoDB Function Composition Examples ===
 
-? Setting up test data...
+📋 Setting up test data...
 
-? Test data ready
+✅ Test data ready
 
-? Example 1: Basic Function Composition
+📝 Example 1: Basic Function Composition
 
 Building reusable functions that call each other...
 
-? Saved reusable function: fetch_user
-? Saved composed function: get_user_wrapper (calls fetch_user + projects fields)
+✅ Saved reusable function: fetch_user
+✅ Saved composed function: get_user_wrapper (calls fetch_user + projects fields)
 
-? Result from composed function:
+📊 Result from composed function:
    Records: 1
    Name: {"value":"User 1","type":"String"}
    Department: {"value":"engineering","type":"String"}
 
-? Key Benefit: fetch_user can be reused by ANY function!
+🎯 Key Benefit: fetch_user can be reused by ANY function!
    No code duplication, single source of truth
 
-? Example 2: SWR Pattern with Function Composition
+📝 Example 2: SWR Pattern with Function Composition
 
 Using KV cache + CallFunction for fast cache-aside pattern...
 
-? Saved reusable function: fetch_and_store_user (uses KV)
-? Saved SWR function using composition: swr_user
+✅ Saved reusable function: fetch_and_store_user (uses KV)
+✅ Saved SWR function using composition: swr_user
 
 First call (cache miss - will fetch from API):
-   ??  Duration: 118ms
-   ? Records: 1
+   ⏱️  Duration: 92ms
+   📊 Records: 1
 
 Second call (cache hit - from cache):
-   ??  Duration: 14ms
-   ? Records: 1
-   ? Cache speedup: 8.4x faster!
+   ⏱️  Duration: 5ms
+   📊 Records: 1
+   🚀 Cache speedup: 18.4x faster!
 
-? Example 3: Multi-Level Function Composition
+📝 Example 3: Multi-Level Function Composition
 
 Building complex workflows from small, reusable pieces...
 
-? Level 1 function: validate_user
-? Level 2 function: fetch_slim_user (calls validate_user)
-? Level 3 function: get_verified_user (calls fetch_slim_user)
+✅ Level 1 function: validate_user
+✅ Level 2 function: fetch_slim_user (calls validate_user)
+✅ Level 3 function: get_verified_user (calls fetch_slim_user)
 
-? Result from 3-level nested composition:
+📊 Result from 3-level nested composition:
    Records: 1
-   Name: {"value":"User 1","type":"String"}
+   Name: {"type":"String","value":"User 1"}
    Department: {"type":"String","value":"engineering"}
 
-? Key Benefit: Each function is independently testable and reusable!
+🎯 Key Benefit: Each function is independently testable and reusable!
    - validate_user: Used in 100 different workflows
    - fetch_slim_user: Used in 50 workflows
    - get_verified_user: Specific workflow
 
-? Cleaning up...
-? Cleanup complete
+🧹 Cleaning up...
+✅ Cleanup complete
 
-? All composition examples completed!
+✅ All composition examples completed!
 
-BUILD SUCCESSFUL in 7s
+BUILD SUCCESSFUL in 5s
 2 actionable tasks: 2 executed
 Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.7.1/userguide/configuration_cache_enabling.html
+=== Running Kotlin example: ClientFunctionContract.kt ===
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.7.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build
 > Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
@@ -14737,9 +13324,10 @@ Daemon will be stopped at the end of the build
 > Task :run
 client_function_contract: ok
 
-BUILD SUCCESSFUL in 7s
+BUILD SUCCESSFUL in 4s
 2 actionable tasks: 2 executed
 Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.7.1/userguide/configuration_cache_enabling.html
+=== Running Kotlin example: ClientFunctions.kt ===
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.7.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build
 > Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
@@ -14749,112 +13337,74 @@ Daemon will be stopped at the end of the build
 > Task :classes UP-TO-DATE
 
 > Task :run
-? ekoDB Functions Example (Kotlin Client)
+🚀 ekoDB Functions Example (Kotlin Client)
 
 SLF4J(W): No SLF4J providers were found.
 SLF4J(W): Defaulting to no-operation (NOP) logger implementation
 SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
-? Client initialized
+✅ Client initialized
 
-? Setting up test data...
-? Test data ready
+📋 Setting up test data...
+✅ Test data ready
 
-? Example 1: Simple Query Function
+📝 Example 1: Simple Query Function
 
-? Function saved: 8buUeI05rP5_2OgeBRt97ZyW6plRfeLVgWy7jX8xYpZyl2Yop00jRGsU_UCT8OQevxC99drW8SZkdoHak183kg
-? Found 5 records
-??  Execution time: 0ms
+✅ Function saved: GGkJCTTnZTfTEf5OIU2d-q2DLskt0ZFo9y06f9pZqdwejlfZixK7WCRWXttOBiRJ7x0DdNvjTe0tUIboR_ZA2w
+📊 Found 5 records
+⏱️  Execution time: 0ms
 
-? Example 2: Parameterized Function
+📝 Example 2: Parameterized Function
 
-? Function saved
-? Found 3 users (limited)
-??  Execution time: 0ms
+✅ Function saved
+📊 Found 3 users (limited)
+⏱️  Execution time: 0ms
 
-? Example 3: Aggregation Function
+📝 Example 3: Aggregation Function
 
-? Function saved
-? Statistics: 2 groups
-   {"avg_score":{"value":60.0,"type":"Float"},"status":{"value":"active","type":"String"},"count":{"value":5,"type":"Integer"}}
-   {"avg_score":{"type":"Float","value":50.0},"count":{"value":5,"type":"Integer"},"status":{"value":"inactive","type":"String"}}
-??  Execution time: 0ms
+✅ Function saved
+📊 Statistics: 2 groups
+   {"count":{"type":"Integer","value":5},"avg_score":{"type":"Float","value":60.0},"status":{"type":"String","value":"active"}}
+   {"count":{"type":"Integer","value":5},"avg_score":{"value":50.0,"type":"Float"},"status":{"type":"String","value":"inactive"}}
+⏱️  Execution time: 0ms
 
-? Example 4: function Management
+📝 Example 4: function Management
 
-? Total functions: 15
-? Retrieved function: Get Active Users
-??  function updated
-??  function deleted
+📋 Total functions: 12
+🔍 Retrieved function: Get Active Users
+✏️  function updated
+🗑️  function deleted
 
-??  Note: GET/UPDATE/DELETE operations require the encrypted ID
-??  Only CALL can use either ID or label
+ℹ️  Note: GET/UPDATE/DELETE operations require the encrypted ID
+ℹ️  Only CALL can use either ID or label
 
-? Example 5: Multi-Stage Pipeline
+📝 Example 5: Multi-Stage Pipeline
 
-? Multi-stage function saved
-? Pipeline executed 2 stages
-??  Total execution time: 0ms
-? Stage breakdown:
+✅ Multi-stage function saved
+📊 Pipeline executed 2 stages
+⏱️  Total execution time: 0ms
+📈 Stage breakdown:
 
-? Example 6: Count Users
+📝 Example 6: Count Users
 
-? Count function saved
-? Total user count: {"type":"Integer","value":10}
-??  Execution time: 0ms
+✅ Count function saved
+📊 Total user count: {"type":"Integer","value":10}
+⏱️  Execution time: 0ms
 
-? Cleaning up...
-? Deleted test functions
-? Deleted collection
+🧹 Cleaning up...
+✅ Deleted test functions
+✅ Deleted collection
 
-? All examples completed successfully!
+✅ All examples completed successfully!
 
-? Key Advantages of Using the Client:
-   ? Automatic token management
-   ? Type-safe Stage builders
-   ? Built-in error handling
+💡 Key Advantages of Using the Client:
+   • Automatic token management
+   • Type-safe Stage builders
+   • Built-in error handling
 
-BUILD SUCCESSFUL in 7s
+BUILD SUCCESSFUL in 4s
 2 actionable tasks: 2 executed
 Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.7.1/userguide/configuration_cache_enabling.html
-To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.7.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
-Daemon will be stopped at the end of the build
-> Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :processResources NO-SOURCE
-> Task :compileKotlin
-> Task :compileJava NO-SOURCE
-> Task :classes UP-TO-DATE
-
-> Task :run
-SLF4J(W): No SLF4J providers were found.
-SLF4J(W): Defaulting to no-operation (NOP) logger implementation
-SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
-? ekoDB Kotlin Advanced Functions Example
-
-? Setting up test data...
-? Created 8 products
-
-? Example 1: List All Products
-
-? Function saved
-? Found 8 products
-??  Execution time: 0ms
-
-? Example 2: Group Products by Category
-
-? Function saved
-? Category breakdown:
-   {"category":{"value":"Electronics","type":"String"},"count":{"type":"Integer","value":5},"avg_price":{"type":"Float","value":367.0}}
-   {"category":{"value":"Furniture","type":"String"},"count":{"type":"Integer","value":3},"avg_price":{"type":"Float","value":365.6666666666667}}
-??  Execution time: 0ms
-
-? Cleaning up...
-? Cleanup complete
-
-? All advanced function examples finished!
-
-BUILD SUCCESSFUL in 7s
-2 actionable tasks: 2 executed
-Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.7.1/userguide/configuration_cache_enabling.html
+=== Running Kotlin example: ClientFunctionsAdvanced.kt ===
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.7.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build
 > Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
@@ -14867,55 +13417,96 @@ Daemon will be stopped at the end of the build
 SLF4J(W): No SLF4J providers were found.
 SLF4J(W): Defaulting to no-operation (NOP) logger implementation
 SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
-? ekoDB Kotlin AI Functions Example
+🚀 ekoDB Kotlin Advanced Functions Example
 
-? Setting up test data...
-? Created 2 articles
+📋 Setting up test data...
+✅ Created 8 products
 
-? Example 1: Simple Chat Completion
+📝 Example 1: List All Products
 
-? Chat function saved
-? AI Response:
-   Vector databases offer several benefits, including:
+✅ Function saved
+📊 Found 8 products
+⏱️  Execution time: 0ms
 
-1. **Efficient Similarity Search**: They enable fast retrieval of similar items through vector representations, making them ideal for applications like recommendation systems and image searches.
+📝 Example 2: Group Products by Category
 
-2. **Handling High-Dimensional Data**: They effectively manage and query high-dimensional data, which is common in machine learning and AI applications.
+✅ Function saved
+📊 Category breakdown:
+   {"category":{"type":"String","value":"Furniture"},"count":{"value":3,"type":"Integer"},"avg_price":{"value":365.6666666666667,"type":"Float"}}
+   {"category":{"type":"String","value":"Electronics"},"count":{"type":"Integer","value":5},"avg_price":{"value":367.0,"type":"Float"}}
+⏱️  Execution time: 0ms
 
-3. **Scalability**: Vector databases can scale to handle large datasets, accommodating growth in data volume and complexity.
+🧹 Cleaning up...
+✅ Cleanup complete
 
-4. **Real-time Querying**: They support real-time data processing and querying, essential for dynamic applications.
+✅ All advanced function examples finished!
 
-5. **Integration with AI/ML Models**: Vector databases can efficiently store and query embeddings from deep learning models, facilitating AI-driven applications.
+BUILD SUCCESSFUL in 4s
+2 actionable tasks: 2 executed
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.7.1/userguide/configuration_cache_enabling.html
+=== Running Kotlin example: ClientFunctionsAi.kt ===
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.7.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+> Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :processResources NO-SOURCE
+> Task :compileKotlin
+> Task :compileJava NO-SOURCE
+> Task :classes UP-TO-DATE
 
-6. **Complex Data Understanding**: They allow for capturing and querying complex relationships in data, improving the understanding of contextual information.
+> Task :run
+SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+🚀 ekoDB Kotlin AI Functions Example
 
-7. **Reduced Latency**: By optimizing data retrieval through indexing techniques, they significantly reduce query response times.
+📋 Setting up test data...
+✅ Created 2 articles
 
-8. **Versatile Use Cases**: Suitable for a wide range of applications, including natural language processing, computer vision, and anomaly detection.
+📝 Example 1: Simple Chat Completion
 
-Overall, vector databases enhance performance and usability for modern applications relying on data relationships and similarity.
-??  Execution time: 0ms
+✅ Chat function saved
+🤖 AI Response:
+   Vector databases offer several benefits:
 
-? Example 2: Generate Embeddings
+1. **Efficient Similarity Search**: They excel in searching high-dimensional data quickly, using techniques like approximate nearest neighbors (ANN).
 
-? Embed function saved
-? Generated 2 embeddings
+2. **Handling Unstructured Data**: They effectively manage and retrieve unstructured data, such as text, images, and audio, by converting them into vector representations.
+
+3. **Scalability**: Many vector databases are designed to scale horizontally, accommodating large datasets without compromising performance.
+
+4. **Improved Machine Learning Integration**: They facilitate seamless integration with machine learning workflows, supporting tasks like recommendation systems and natural language processing.
+
+5. **Real-time Processing**: Vector databases often enable real-time querying, which is useful for applications requiring immediate feedback.
+
+6. **Advanced Search Capabilities**: They allow for semantic search, enabling users to find relevant results based on meaning rather than exact matches.
+
+7. **Multi-modal Data Support**: Vector databases can store and query multiple data types together, enhancing data analysis and usage.
+
+8. **Robustness to Data Variability**: They typically handle noisy and varied data better than traditional relational databases.
+
+These advantages make vector databases particularly valuable for applications in AI, machine learning, and data analytics.
+⏱️  Execution time: 0ms
+
+📝 Example 2: Generate Embeddings
+
+✅ Embed function saved
+📊 Generated 2 embeddings
    Dimensions: 1536
-??  Execution time: 0ms
+⏱️  Execution time: 0ms
 
-? Cleaning up...
-? Cleanup complete
+🧹 Cleaning up...
+✅ Cleanup complete
 
-? All AI function examples finished!
+✅ All AI function examples finished!
 
-? This example demonstrates:
-   ? Chat completions with system/user messages
-   ? Embedding generation for text
+💡 This example demonstrates:
+   ✅ Chat completions with system/user messages
+   ✅ Embedding generation for text
 
-BUILD SUCCESSFUL in 10s
+BUILD SUCCESSFUL in 8s
 2 actionable tasks: 2 executed
 Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.7.1/userguide/configuration_cache_enabling.html
+=== Running Kotlin example: ClientFunctionsComplete.kt ===
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.7.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build
 > Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
@@ -14928,47 +13519,48 @@ Daemon will be stopped at the end of the build
 SLF4J(W): No SLF4J providers were found.
 SLF4J(W): Defaulting to no-operation (NOP) logger implementation
 SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
-? ekoDB Kotlin Complete Functions Example
+🚀 ekoDB Kotlin Complete Functions Example
 
-? Demonstrates: FindAll, Group, Count, Multi-stage Pipelines
+📋 Demonstrates: FindAll, Group, Count, Multi-stage Pipelines
 
-? Setting up complete test data...
-? Created 5 products
+📋 Setting up complete test data...
+✅ Created 5 products
 
-? Example 1: FindAll + Group (Simple Aggregation)
+📝 Example 1: FindAll + Group (Simple Aggregation)
 
-? Function saved: hZuSe1cn1dvdYzth2CXcF_KmiFlmNhJtIasRFhEafLS_sA5K0JCOnPEf--F6N3Mn97IsFRyeFTBMuRyo1nmcuw
-? Found 2 category groups
+✅ Function saved: 6mEgGTVUKJRHkCBda4skNBWTNYotT8DDYzYRvUEXv3lhdbJU7p8gRBX5si_dOqDgYUvvFjmM7mtRLub-7w9uCA
+📊 Found 2 category groups
 
-? Example 2: Simple Product Listing
+📝 Example 2: Simple Product Listing
 
-? Function saved
-? Found 5 products
+✅ Function saved
+📊 Found 5 products
 
-? Example 3: Count by Category
+📝 Example 3: Count by Category
 
-? Function saved
-? Found 2 categories
+✅ Function saved
+📊 Found 2 categories
 
-? Example 4: Multi-Stage Pipeline (FindAll ? Group ? Count)
+📝 Example 4: Multi-Stage Pipeline (FindAll → Group → Count)
 
-? Function saved
-? Pipeline executed with 1 results
+✅ Function saved
+📊 Pipeline executed with 1 results
 
-? Cleaning up...
-? Cleanup complete
+🧹 Cleaning up...
+✅ Cleanup complete
 
-? All complete function examples finished!
+✅ All complete function examples finished!
 
-? This example demonstrates ekoDB's function system:
-   ? FindAll operations
-   ? Group aggregations (Count, Average)
-   ? Multi-stage pipelines (FindAll ? Group ? Count)
-   ? Function management (save, call, delete)
+💡 This example demonstrates ekoDB's function system:
+   ✅ FindAll operations
+   ✅ Group aggregations (Count, Average)
+   ✅ Multi-stage pipelines (FindAll → Group → Count)
+   ✅ Function management (save, call, delete)
 
-BUILD SUCCESSFUL in 7s
+BUILD SUCCESSFUL in 5s
 2 actionable tasks: 2 executed
 Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.7.1/userguide/configuration_cache_enabling.html
+=== Running Kotlin example: ClientFunctionsCrud.kt ===
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.7.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build
 > Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
@@ -14981,33 +13573,34 @@ Daemon will be stopped at the end of the build
 SLF4J(W): No SLF4J providers were found.
 SLF4J(W): Defaulting to no-operation (NOP) logger implementation
 SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
-? ekoDB Kotlin CRUD Functions Example
+🚀 ekoDB Kotlin CRUD Functions Example
 
-? Setting up test data...
-? Created 10 test users
+📋 Setting up test data...
+✅ Created 10 test users
 
-? Example 1: List All Users
+📝 Example 1: List All Users
 
-? Function saved
-? Found 10 users
-??  Execution time: 0ms
+✅ Function saved
+📊 Found 10 users
+⏱️  Execution time: 0ms
 
-? Example 2: Count Users by Status
+📝 Example 2: Count Users by Status
 
-? Function saved
-? User counts by status:
-   {"count":{"type":"Integer","value":7},"status":{"type":"String","value":"active"}}
-   {"status":{"value":"inactive","type":"String"},"count":{"value":3,"type":"Integer"}}
-??  Execution time: 0ms
+✅ Function saved
+📊 User counts by status:
+   {"status":{"value":"active","type":"String"},"count":{"type":"Integer","value":7}}
+   {"status":{"value":"inactive","type":"String"},"count":{"type":"Integer","value":3}}
+⏱️  Execution time: 0ms
 
-? Cleaning up...
-? Cleanup complete
+🧹 Cleaning up...
+✅ Cleanup complete
 
-? All CRUD function examples finished!
+✅ All CRUD function examples finished!
 
-BUILD SUCCESSFUL in 7s
+BUILD SUCCESSFUL in 4s
 2 actionable tasks: 2 executed
 Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.7.1/userguide/configuration_cache_enabling.html
+=== Running Kotlin example: ClientFunctionsKvWrapped.kt ===
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.7.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build
 > Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
@@ -15017,64 +13610,65 @@ Daemon will be stopped at the end of the build
 > Task :classes UP-TO-DATE
 
 > Task :run
-? ekoDB Kotlin KV Store & Wrapped Types Example
+🚀 ekoDB Kotlin KV Store & Wrapped Types Example
 
-? Demonstrates:
-   ? Wrapped type field builders (UUID, Decimal, DateTime, etc.)
-   ? KV store operations (get, set, delete, exists, query)
-   ? KV operations within functions
-   ? Combined wrapped types + KV workflows
+📋 Demonstrates:
+   • Wrapped type field builders (UUID, Decimal, DateTime, etc.)
+   • KV store operations (get, set, delete, exists, query)
+   • KV operations within functions
+   • Combined wrapped types + KV workflows
 
 SLF4J(W): No SLF4J providers were found.
 SLF4J(W): Defaulting to no-operation (NOP) logger implementation
 SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
-? Client initialized
+✅ Client initialized
 
-? Example 1: Inserting Records with Wrapped Types
+📝 Example 1: Inserting Records with Wrapped Types
 
-? Inserted order: StringValue(value=bBff1zdFPvHAK9e-hj0POymIgKBv75zOe1d1qFZoinVxm0jhJqSichZEj7hZnvdXXMvA6BvxWleWGyceDNM4HA)
-? Inserted 2 products
+✅ Inserted order: StringValue(value=1-ZCNz_rrDlzDSYyScNg18rRPQeNm70Wwn3Xrrq2YYW0_fGWcuCc7tgcg2ce1kTmQdp7osHUzYAjLVACQP0GDQ)
+✅ Inserted 2 products
 
-? Example 2: function with Wrapped Type Parameters
+📝 Example 2: function with Wrapped Type Parameters
 
-? Function saved: TOTtKjeNUez1WupoE_2BCdwRrTR4sxQ2q4BM4BgRSOgMxoDBO60d4H7LAFW2zbxplVsWzLUrfKsb4KvFwbsVYQ
-? Created order via function
-??  Execution time: 0ms
+✅ Function saved: i-W7GY6Ke9fZc7CShrj1LKwOBqJlAPl4Cmi7tHyXvkGKTmi8o8H0E6AP5Z5I-wdv8R1MVTGiY5OVqxroDYO42w
+📊 Created order via function
+⏱️  Execution time: 0ms
 
-? Example 3: Basic KV Store Operations
+📝 Example 3: Basic KV Store Operations
 
-? Set session data
-? Retrieved session: {"type":"Object","value":{"userId":"user_abc","role":"admin"}}
-? Set cached data with 1 hour TTL
-??  Deleted session
+✅ Set session data
+📊 Retrieved session: {"type":"Object","value":{"userId":"user_abc","role":"admin"}}
+✅ Set cached data with 1 hour TTL
+🗑️  Deleted session
 
-? Example 4: KV Operations in Functions
+📝 Example 4: KV Operations in Functions
 
-? Function saved: jrwKLNg89_-d5EulebV86tzUHLwO6LaIHhhs14pPAcLr9bT3QqkiLdwfR5RceD3PhDxRnVK21iz3-FxJxtRxXg
-? Cached and retrieved product data
-??  Execution time: 0ms
+✅ Function saved: -7IR3rmO-8Cha3IaxfPrano5dCWkkXKsXGDN1gFtJPn3H60qZJJV-genkk9ayGOSp_07zPlfb_GLoedSiO726w
+📊 Cached and retrieved product data
+⏱️  Execution time: 0ms
 
-? Example 5: Combined Wrapped Types + KV Function
+📝 Example 5: Combined Wrapped Types + KV Function
 
-? Function saved: Ue2UStGQXyz_1x1OZ5oMcuB7oZDFdh3_xonDH4UT7upL56aKqRiOkalYvEDrnqbPUmkT7EBggIFsk3jQOdTt5w
-? Processed order with caching
-??  Stages executed: 3
-??  Execution time: 0ms
+✅ Function saved: HsK1T5CUdoqLNS8AAVhe_WbvilcFtxZnoQ0hrgvC1VaoE_226dzknnRcWvfuIcYrWbMry_0Bck8i8MFl76mKfQ
+📊 Processed order with caching
+⏱️  Stages executed: 3
+⏱️  Execution time: 0ms
 
-? Cleaning up...
-? Cleanup complete
+🧹 Cleaning up...
+✅ Cleanup complete
 
-? All KV & Wrapped Types examples completed!
+✅ All KV & Wrapped Types examples completed!
 
-? Key takeaways:
-   ? Use field* helpers for type-safe wrapped values
-   ? fieldDecimal() preserves precision (no floating point errors)
-   ? KV store is great for caching and quick lookups
-   ? FunctionStageConfig.Kv* classes work within functions
+💡 Key takeaways:
+   ✅ Use field* helpers for type-safe wrapped values
+   ✅ fieldDecimal() preserves precision (no floating point errors)
+   ✅ KV store is great for caching and quick lookups
+   ✅ FunctionStageConfig.Kv* classes work within functions
 
-BUILD SUCCESSFUL in 7s
+BUILD SUCCESSFUL in 4s
 2 actionable tasks: 2 executed
 Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.7.1/userguide/configuration_cache_enabling.html
+=== Running Kotlin example: ClientFunctionsSearch.kt ===
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.7.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build
 > Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
@@ -15087,38 +13681,39 @@ Daemon will be stopped at the end of the build
 SLF4J(W): No SLF4J providers were found.
 SLF4J(W): Defaulting to no-operation (NOP) logger implementation
 SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
-? ekoDB Kotlin Search Functions Example
+🚀 ekoDB Kotlin Search Functions Example
 
-? Setting up test data...
-? Inserted 5 documents
+📋 Setting up test data...
+✅ Inserted 5 documents
 
-? Example 1: List All Documents
+📝 Example 1: List All Documents
 
-? Function saved
-? Found 5 documents
-   1. {"value":"Vector Databases Explained","type":"String"} ({"type":"String","value":"Database"})
-   2. {"value":"Database Design Principles","type":"String"} ({"type":"String","value":"Database"})
-   3. {"type":"String","value":"Natural Language Processing"} ({"type":"String","value":"AI"})
-   4. {"type":"String","value":"Getting Started with ekoDB"} ({"type":"String","value":"Database"})
-   5. {"type":"String","value":"Introduction to Machine Learning"} ({"value":"AI","type":"String"})
-??  Execution time: 0ms
+✅ Function saved
+📊 Found 5 documents
+   1. {"type":"String","value":"Getting Started with ekoDB"} ({"value":"Database","type":"String"})
+   2. {"type":"String","value":"Vector Databases Explained"} ({"type":"String","value":"Database"})
+   3. {"type":"String","value":"Introduction to Machine Learning"} ({"value":"AI","type":"String"})
+   4. {"type":"String","value":"Database Design Principles"} ({"value":"Database","type":"String"})
+   5. {"type":"String","value":"Natural Language Processing"} ({"type":"String","value":"AI"})
+⏱️  Execution time: 0ms
 
-? Example 2: Count Documents by Category
+📝 Example 2: Count Documents by Category
 
-? Function saved
-? Documents by category:
-   {"count":{"value":3,"type":"Integer"},"category":{"type":"String","value":"Database"}}
-   {"category":{"type":"String","value":"AI"},"count":{"value":2,"type":"Integer"}}
-??  Execution time: 0ms
+✅ Function saved
+📊 Documents by category:
+   {"count":{"type":"Integer","value":2},"category":{"type":"String","value":"AI"}}
+   {"category":{"type":"String","value":"Database"},"count":{"type":"Integer","value":3}}
+⏱️  Execution time: 0ms
 
-? Cleaning up...
-? Cleanup complete
+🧹 Cleaning up...
+✅ Cleanup complete
 
-? All search function examples finished!
+✅ All search function examples finished!
 
-BUILD SUCCESSFUL in 7s
+BUILD SUCCESSFUL in 4s
 2 actionable tasks: 2 executed
 Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.7.1/userguide/configuration_cache_enabling.html
+=== Running Kotlin example: ClientGoalTemplates.kt ===
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.7.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build
 > Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
@@ -15134,10 +13729,10 @@ SLF4J(W): No SLF4J providers were found.
 SLF4J(W): Defaulting to no-operation (NOP) logger implementation
 SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
 --- Creating goal template ---
-Created template: Data Migration (id: W67MA6Yphp4XmBUV_FocBA-TXt4bwLIfTzufpqZbQUYv1Qxv6XO_SQeWlRcD7XJIEclFxrGMqro_9yMjb7DiOg)
+Created template: Data Migration (id: BEvw_7LEzRWRb_JLaXl1CbPE53mIvyHTJBa4_KdSSvupvaVJ1as3DxHuK7wBl_jVWwctsJggD46mYgxCi9omUg)
 
 --- Listing templates ---
-Templates: {"count":1,"items":[{"description":{"type":"String","value":"Template for migrating data between schemas"},"id":"W67MA6Yphp4XmBUV_FocBA-TXt4bwLIfTzufpqZbQUYv1Qxv6XO_SQeWlRcD7XJIEclFxrGMqro_9yMjb7DiOg","steps":{"type":"Array","value":[{"description":"Analyze source schema"},{"description":"Create target schema"},{"description":"Migrate records"},{"description":"Validate results"}]},"title":{"type":"String","value":"Data Migration"}}]}
+Templates: {"count":1,"items":[{"description":{"type":"String","value":"Template for migrating data between schemas"},"id":"BEvw_7LEzRWRb_JLaXl1CbPE53mIvyHTJBa4_KdSSvupvaVJ1as3DxHuK7wBl_jVWwctsJggD46mYgxCi9omUg","steps":{"type":"Array","value":[{"description":"Analyze source schema"},{"description":"Create target schema"},{"description":"Migrate records"},{"description":"Validate results"}]},"title":{"type":"String","value":"Data Migration"}}]}
 
 --- Getting template ---
 Fetched: {"type":"String","value":"Data Migration"}
@@ -15148,11 +13743,12 @@ Updated description: {"type":"String","value":"Updated: comprehensive data migra
 --- Deleting template ---
 Template deleted successfully
 
-? Goal template CRUD example completed
+✓ Goal template CRUD example completed
 
-BUILD SUCCESSFUL in 6s
+BUILD SUCCESSFUL in 4s
 2 actionable tasks: 2 executed
 Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.7.1/userguide/configuration_cache_enabling.html
+=== Running Kotlin example: ClientGoalsTasksAgents.kt ===
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.7.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build
 > Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
@@ -15168,10 +13764,10 @@ SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
 === ekoDB Kotlin Client - Goals, Tasks & Agents Example ===
 
 --- Creating goal ---
-Created goal: 80s7Jc2zfe6x_2_88pB2BctIAD0zzn-CsuywRFYooL4LVgIqfJtnr7y6sQBlU4REmL0ucUzxYT4QnipaHgFlrA
+Created goal: nfq-POp9rIQXZGWnvAU_9tCauIbEgSyoswwFEnGMd4aWNcv4rDQd-QdjWzqDKFkNIaRZyINB2kIxFAKiviJp1g
 
 --- Listing goals ---
-Goals: {"count":1,"goals":[{"created_at":"2026-09-15T18:50:13.044861+00:00","description":"Ship the next major release","id":"80s7Jc2zfe6x_2_88pB2BctIAD0zzn-CsuywRFYooL4LVgIqfJtnr7y6sQBlU4REmL0ucUzxYT4QnipaHgFlrA","status":"pending","steps":"[{\"description\":\"Run test suite\"},{\"description\":\"Build release artifacts\"},{\"description\":\"Deploy to production\"}]","title":"Deploy v2.0","updated_at":"2026-09-15T18:50:13.044861+00:00"}]}
+Goals: {"count":1,"goals":[{"created_at":"2026-09-16T20:51:14.977316+00:00","description":"Ship the next major release","id":"nfq-POp9rIQXZGWnvAU_9tCauIbEgSyoswwFEnGMd4aWNcv4rDQd-QdjWzqDKFkNIaRZyINB2kIxFAKiviJp1g","status":"pending","steps":"[{\"description\":\"Run test suite\"},{\"description\":\"Build release artifacts\"},{\"description\":\"Deploy to production\"}]","title":"Deploy v2.0","updated_at":"2026-09-16T20:51:14.977316+00:00"}]}
 
 --- Getting goal ---
 Fetched: {"type":"String","value":"Deploy v2.0"}
@@ -15180,13 +13776,13 @@ Fetched: {"type":"String","value":"Deploy v2.0"}
 Updated description: {"type":"String","value":"Ship v2.0 with full test coverage"}
 
 --- Searching goals ---
-Search results: {"count":1,"items":[{"_score":12.870000000000001,"created_at":{"type":"DateTime","value":"2026-09-15T18:50:13.044861+00:00"},"description":{"type":"String","value":"Ship v2.0 with full test coverage"},"id":"80s7Jc2zfe6x_2_88pB2BctIAD0zzn-CsuywRFYooL4LVgIqfJtnr7y6sQBlU4REmL0ucUzxYT4QnipaHgFlrA","status":{"type":"String","value":"pending"},"steps":{"type":"String","value":"[{\"description\":\"Run test suite\"},{\"description\":\"Build release artifacts\"},{\"description\":\"Deploy to production\"}]"},"title":{"type":"String","value":"Deploy v2.0"},"updated_at":{"type":"DateTime","value":"2026-09-15T18:50:13.101196+00:00"}}]}
+Search results: {"count":1,"items":[{"_score":12.870000000000001,"created_at":{"type":"DateTime","value":"2026-09-16T20:51:14.977316+00:00"},"description":{"type":"String","value":"Ship v2.0 with full test coverage"},"id":"nfq-POp9rIQXZGWnvAU_9tCauIbEgSyoswwFEnGMd4aWNcv4rDQd-QdjWzqDKFkNIaRZyINB2kIxFAKiviJp1g","status":{"type":"String","value":"pending"},"steps":{"type":"String","value":"[{\"description\":\"Run test suite\"},{\"description\":\"Build release artifacts\"},{\"description\":\"Deploy to production\"}]"},"title":{"type":"String","value":"Deploy v2.0"},"updated_at":{"type":"DateTime","value":"2026-09-16T20:51:15.001335+00:00"}}]}
 
 --- Goal step lifecycle ---
-Step 0 started: "80s7Jc2zfe6x_2_88pB2BctIAD0zzn-CsuywRFYooL4LVgIqfJtnr7y6sQBlU4REmL0ucUzxYT4QnipaHgFlrA"
-Step 0 completed: "80s7Jc2zfe6x_2_88pB2BctIAD0zzn-CsuywRFYooL4LVgIqfJtnr7y6sQBlU4REmL0ucUzxYT4QnipaHgFlrA"
-Step 1 started: "80s7Jc2zfe6x_2_88pB2BctIAD0zzn-CsuywRFYooL4LVgIqfJtnr7y6sQBlU4REmL0ucUzxYT4QnipaHgFlrA"
-Step 1 failed: "80s7Jc2zfe6x_2_88pB2BctIAD0zzn-CsuywRFYooL4LVgIqfJtnr7y6sQBlU4REmL0ucUzxYT4QnipaHgFlrA"
+Step 0 started: "nfq-POp9rIQXZGWnvAU_9tCauIbEgSyoswwFEnGMd4aWNcv4rDQd-QdjWzqDKFkNIaRZyINB2kIxFAKiviJp1g"
+Step 0 completed: "nfq-POp9rIQXZGWnvAU_9tCauIbEgSyoswwFEnGMd4aWNcv4rDQd-QdjWzqDKFkNIaRZyINB2kIxFAKiviJp1g"
+Step 1 started: "nfq-POp9rIQXZGWnvAU_9tCauIbEgSyoswwFEnGMd4aWNcv4rDQd-QdjWzqDKFkNIaRZyINB2kIxFAKiviJp1g"
+Step 1 failed: "nfq-POp9rIQXZGWnvAU_9tCauIbEgSyoswwFEnGMd4aWNcv4rDQd-QdjWzqDKFkNIaRZyINB2kIxFAKiviJp1g"
 
 --- Completing goal ---
 Goal status after complete: {"type":"String","value":"pending_review"}
@@ -15198,10 +13794,10 @@ Goal status after approve: {"type":"String","value":"in_progress"}
 Goal status after reject: {"type":"String","value":"failed"}
 
 --- Creating task ---
-Created task: CqXNegRwOpwwtYyhQPukbSOcnCYSfRhS0_h9zHm6nGY6jpLCNVtQZLTC9cCIPccQK6BTy1AtECzS7lGRZqqnag
+Created task: Bvt7m6u4KSaNN9eoVTDTXyLMc_DwO9s88U021mNnZ1Vdh4gJJTEGTa_zXdk-7bD7Lu30odxDv9RQ6dGpu7EcPg
 
 --- Listing tasks ---
-Tasks: {"count":1,"items":[{"cron":{"type":"String","value":"0 2 * * *"},"description":{"type":"String","value":"Full database backup every night at 2 AM"},"id":"CqXNegRwOpwwtYyhQPukbSOcnCYSfRhS0_h9zHm6nGY6jpLCNVtQZLTC9cCIPccQK6BTy1AtECzS7lGRZqqnag","name":{"type":"String","value":"Nightly Backup"}}]}
+Tasks: {"count":1,"items":[{"cron":{"type":"String","value":"0 2 * * *"},"description":{"type":"String","value":"Full database backup every night at 2 AM"},"id":"Bvt7m6u4KSaNN9eoVTDTXyLMc_DwO9s88U021mNnZ1Vdh4gJJTEGTa_zXdk-7bD7Lu30odxDv9RQ6dGpu7EcPg","name":{"type":"String","value":"Nightly Backup"}}]}
 
 --- Getting task ---
 Task name: {"type":"String","value":"Nightly Backup"}
@@ -15228,10 +13824,10 @@ Due tasks: {"count":0,"items":[]}
 Tasks deleted
 
 --- Creating agent ---
-Created agent: l-KzWeoKPFHpOY662VLZuJPyMnwJOqU8hOzgdW5KHHIyMDAIrLapTTpXthE_xN2ffacDNv6VHdRpd0vha0G4KA ? null
+Created agent: mlQpTxEh00XB15ERWh91uUaHOAxr8ExaPCXP3lthSkP7H9LxxPsC3K_lY7d1mand5Q3BPB0LLHj8hFzadLH8sQ — null
 
 --- Listing agents ---
-Agents: {"count":1,"items":[{"deployment_id":{"type":"String","value":"deploy_kt_example"},"id":"l-KzWeoKPFHpOY662VLZuJPyMnwJOqU8hOzgdW5KHHIyMDAIrLapTTpXthE_xN2ffacDNv6VHdRpd0vha0G4KA","llm_model":{"type":"String","value":"gpt-4.1"},"name":{"type":"String","value":"DataBot"},"system_prompt":{"type":"String","value":"You are a data analysis assistant."}}]}
+Agents: {"count":1,"items":[{"deployment_id":{"type":"String","value":"deploy_kt_example"},"id":"mlQpTxEh00XB15ERWh91uUaHOAxr8ExaPCXP3lthSkP7H9LxxPsC3K_lY7d1mand5Q3BPB0LLHj8hFzadLH8sQ","llm_model":{"type":"String","value":"gpt-4.1"},"name":{"type":"String","value":"DataBot"},"system_prompt":{"type":"String","value":"You are a data analysis assistant."}}]}
 
 --- Getting agent by ID ---
 Agent: {"type":"String","value":"DataBot"}
@@ -15244,6 +13840,7 @@ Updated agent system_prompt
 
 --- Agents by deployment ---
 Agents for deployment: {"count":0,"items":[]}
+WARNING: agents-by-deployment omitted created agent mlQpTxEh00XB15ERWh91uUaHOAxr8ExaPCXP3lthSkP7H9LxxPsC3K_lY7d1mand5Q3BPB0LLHj8hFzadLH8sQ; TODO: check/fix the server-side deployment lookup
 
 --- Deleting agent ---
 Agent deleted
@@ -15253,9 +13850,10 @@ Goals deleted
 
 === Example Complete ===
 
-BUILD SUCCESSFUL in 7s
+BUILD SUCCESSFUL in 5s
 2 actionable tasks: 2 executed
 Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.7.1/userguide/configuration_cache_enabling.html
+=== Running Kotlin example: ClientJoins.kt ===
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.7.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build
 > Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
@@ -15271,40 +13869,41 @@ SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
 === ekoDB Kotlin Client - Join Operations Example ===
 
 === Setting up sample data ===
-? Sample data created
+✓ Sample data created
 
 === Example 1: Single collection join (users with departments) ===
-? Found 2 users with department data
+✓ Found 2 users with department data
   - Bob Smith: Sales
   - Alice Johnson: Engineering
 
 === Example 2: Join with filtering ===
-? Found 1 users in Engineering
+✓ Found 1 users in Engineering
   - Alice Johnson: Building A
 
 === Example 3: Join with user profiles ===
-? Found 2 users with profile data
+✓ Found 2 users with profile data
   - Bob Smith: Sales Manager
   - Alice Johnson: Senior Software Engineer
 
 === Example 4: Join orders with user data ===
-? Found 2 completed orders
+✓ Found 2 completed orders
   - Laptop ($1200) by Alice Johnson
   - Mouse ($25) by Alice Johnson
 
 === Example 5: Complex join with multiple conditions ===
-? Found 2 users with example.com emails
+✓ Found 2 users with example.com emails
   - Alice Johnson (alice@example.com): Building A
   - Bob Smith (bob@example.com): Building B
 
 === Cleanup ===
-? Deleted test collections
+✓ Deleted test collections
 
-? Join operations example completed successfully
+✓ Join operations example completed successfully
 
-BUILD SUCCESSFUL in 8s
+BUILD SUCCESSFUL in 4s
 2 actionable tasks: 2 executed
 Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.7.1/userguide/configuration_cache_enabling.html
+=== Running Kotlin example: ClientJwtAuthFlow.kt ===
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.7.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build
 > Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
@@ -15317,10 +13916,10 @@ Daemon will be stopped at the end of the build
 SLF4J(W): No SLF4J providers were found.
 SLF4J(W): Defaulting to no-operation (NOP) logger implementation
 SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
-? Client created
-? kt_users_register saved
-? kt_users_login saved
-? kt_users_verify_token saved
+✓ Client created
+✓ kt_users_register saved
+✓ kt_users_login saved
+✓ kt_users_verify_token saved
 
 === Auth flow defined as pure stored functions ===
 Call them like:
@@ -15328,11 +13927,12 @@ Call them like:
   POST /api/functions/kt_users_login    { "email": "a@b.com", "password": "s3cret" }
   POST /api/functions/kt_users_verify_token { "token": "<jwt>" }
 
-? Cleaned up demo functions
+✓ Cleaned up demo functions
 
-BUILD SUCCESSFUL in 7s
+BUILD SUCCESSFUL in 4s
 2 actionable tasks: 2 executed
 Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.7.1/userguide/configuration_cache_enabling.html
+=== Running Kotlin example: ClientKvLinks.kt ===
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.7.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build
 > Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
@@ -15356,13 +13956,13 @@ Linked order_002: null
 Linked inv_100: null
 
 --- Getting links ---
-Links for user:alice: [{"collection":"invoices","document_id":"inv_100","field_path":null,"created_at":"2026-09-15T18:50:38.896396Z","last_accessed":"2026-09-15T18:50:38.902537Z","metadata":{}},{"collection":"orders","document_id":"order_001","field_path":null,"created_at":"2026-09-15T18:50:38.877175Z","last_accessed":"2026-09-15T18:50:38.902537Z","metadata":{}},{"collection":"orders","document_id":"order_002","field_path":null,"created_at":"2026-09-15T18:50:38.886981Z","last_accessed":"2026-09-15T18:50:38.902537Z","metadata":{}}]
+Links for user:alice: [{"collection":"invoices","document_id":"inv_100","field_path":null,"created_at":"2026-09-16T20:51:30.534819Z","last_accessed":"2026-09-16T20:51:30.538463Z","metadata":{}},{"collection":"orders","document_id":"order_001","field_path":null,"created_at":"2026-09-16T20:51:30.528086Z","last_accessed":"2026-09-16T20:51:30.538463Z","metadata":{}},{"collection":"orders","document_id":"order_002","field_path":null,"created_at":"2026-09-16T20:51:30.531738Z","last_accessed":"2026-09-16T20:51:30.538463Z","metadata":{}}]
 
 --- Unlinking document ---
 Unlinked order_002: null
 
 --- Verifying remaining links ---
-Remaining links: [{"collection":"invoices","document_id":"inv_100","field_path":null,"created_at":"2026-09-15T18:50:38.896396Z","last_accessed":"2026-09-15T18:50:38.915969Z","metadata":{}},{"collection":"orders","document_id":"order_001","field_path":null,"created_at":"2026-09-15T18:50:38.877175Z","last_accessed":"2026-09-15T18:50:38.915969Z","metadata":{}}]
+Remaining links: [{"collection":"invoices","document_id":"inv_100","field_path":null,"created_at":"2026-09-16T20:51:30.534819Z","last_accessed":"2026-09-16T20:51:30.546020Z","metadata":{}},{"collection":"orders","document_id":"order_001","field_path":null,"created_at":"2026-09-16T20:51:30.528086Z","last_accessed":"2026-09-16T20:51:30.546020Z","metadata":{}}]
 
 --- Cleanup ---
 Unlinked remaining documents
@@ -15370,9 +13970,10 @@ Deleted key: user:alice
 
 === Example Complete ===
 
-BUILD SUCCESSFUL in 7s
+BUILD SUCCESSFUL in 4s
 2 actionable tasks: 2 executed
 Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.7.1/userguide/configuration_cache_enabling.html
+=== Running Kotlin example: ClientKvOperations.kt ===
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.7.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build
 > Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
@@ -15388,56 +13989,57 @@ SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
 === ekoDB Kotlin Client - KV Operations Example ===
 
 === KV Set ===
-? Set key: user:123
+✓ Set key: user:123
 
 === KV Get ===
-? Retrieved value: {"type":"Object","value":{"name":"Alice","email":"alice@example.com","role":"admin"}}
+✓ Retrieved value: {"type":"Object","value":{"email":"alice@example.com","name":"Alice","role":"admin"}}
 
 === KV Set with TTL ===
-? Set key with 10s TTL: session:abc123
+✓ Set key with 10s TTL: session:abc123
 
 === Verify TTL Key ===
-? Session value: {"value":{"user_id":"123","created_at":1789498246239},"type":"Object"}
+✓ Session value: {"value":{"created_at":1789591895586,"user_id":"123"},"type":"Object"}
   (Will expire in 10 seconds)
 
 === KV Batch Set ===
-? Batch set 3 keys
-  config:db: success
-  config:cache: success
-  config:api: success
+✓ Batch set 3 keys
+  kv_ops_kt_1789591895472:config:db: success
+  kv_ops_kt_1789591895472:config:cache: success
+  kv_ops_kt_1789591895472:config:api: success
 
 === KV Batch Get ===
-? Batch retrieved 3 values
-  config:db: {"value":{"host":"localhost","port":5432}}
-  config:cache: {"value":{"ttl":3600,"enabled":true}}
-  config:api: {"value":{"retries":3,"timeout":30}}
+✓ Batch retrieved 3 values
+  kv_ops_kt_1789591895472:config:db: {"port":5432,"host":"localhost"}
+  kv_ops_kt_1789591895472:config:cache: {"enabled":true,"ttl":3600}
+  kv_ops_kt_1789591895472:config:api: {"timeout":30,"retries":3}
 
 === KV Exists ===
-? Key exists: true
+✓ Key exists: true
 
 === KV Find (Pattern Query) ===
-? Found 3 keys matching 'config:.*'
+✓ Found 3 keys matching 'config:.*'
 
 === KV Query (Alias for Find) ===
-? Total keys in store: 5
+✓ Total keys in store: 5
 
 === KV Delete ===
-? Deleted key: user:123
+✓ Deleted key: user:123
 
 === Verify Deletion ===
-? Key exists after delete: false
+✓ Key exists after delete: false
 
 === KV Batch Delete ===
-? Batch deleted 3 keys
-  config:db: deleted
-  config:cache: deleted
-  config:api: deleted
+✓ Batch deleted 3 keys
+  kv_ops_kt_1789591895472:config:db: deleted
+  kv_ops_kt_1789591895472:config:cache: deleted
+  kv_ops_kt_1789591895472:config:api: deleted
 
 === Example Complete ===
 
-BUILD SUCCESSFUL in 6s
+BUILD SUCCESSFUL in 4s
 2 actionable tasks: 2 executed
 Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.7.1/userguide/configuration_cache_enabling.html
+=== Running Kotlin example: ClientKvPrecision.kt ===
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.7.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build
 > Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
@@ -15487,10 +14089,762 @@ preserving exact precision across all operations.
 
 === Example Complete ===
 
-BUILD SUCCESSFUL in 7s
+BUILD SUCCESSFUL in 4s
 2 actionable tasks: 2 executed
 Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.7.1/userguide/configuration_cache_enabling.html
+=== Running Kotlin example: ClientPathRoutedFunction.kt ===
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.7.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+> Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :processResources NO-SOURCE
+> Task :compileKotlin
+> Task :compileJava NO-SOURCE
+> Task :classes UP-TO-DATE
 
+> Task :run
+SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+✓ Client created
+✓ kt_route_admin saved
+✓ kt_route_user_by_id saved
+✓ kt_route_user_posts saved
+✓ kt_route_org_create_member saved
+
+Try them with curl:
+  curl http://localhost:8080/api/route/users/admin
+  curl http://localhost:8080/api/route/users/42
+  curl http://localhost:8080/api/route/users/42/posts/7
+  curl -X POST http://localhost:8080/api/route/orgs/acme/members \
+       -H 'Content-Type: application/json' -d '{"name":"alice"}'
+
+✓ Cleaned up demo functions
+
+BUILD SUCCESSFUL in 4s
+2 actionable tasks: 2 executed
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.7.1/userguide/configuration_cache_enabling.html
+=== Running Kotlin example: ClientProjection.kt ===
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.7.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+> Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :processResources NO-SOURCE
+> Task :compileKotlin
+> Task :compileJava NO-SOURCE
+> Task :classes UP-TO-DATE
+
+> Task :run
+SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+Client created
+
+Setting up test data...
+Inserted 4 test users
+
+Example 1: Select specific fields
+Fetched 3 users with only 3 fields each
+
+Example 2: Exclude sensitive fields
+Fetched 2 admins without sensitive data
+  Password field excluded: true
+
+Example 3: Complex query with projection
+Fetched 3 active users with profile fields
+
+Example 4: Find by ID with projection
+Fetched user profile: Alice Johnson
+
+Example 5: Compare full vs projected data
+Full query returned 12 fields per user
+Projected query returned 3 fields per user
+
+Cleaning up test data...
+Cleanup complete
+
+All projection examples completed successfully!
+
+BUILD SUCCESSFUL in 4s
+2 actionable tasks: 2 executed
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.7.1/userguide/configuration_cache_enabling.html
+=== Running Kotlin example: ClientQueryBuilder.kt ===
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.7.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+> Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :processResources NO-SOURCE
+> Task :compileKotlin
+> Task :compileJava NO-SOURCE
+> Task :classes UP-TO-DATE
+
+> Task :run
+SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+=== ekoDB Kotlin Client - Query Builder Example ===
+
+=== Inserting Sample Data ===
+✓ Inserted 5 records
+
+=== Query 1: Equality (city = 'NYC') ===
+✓ Found 2 records in NYC
+
+=== Query 2: Range (age >= 25 AND age < 32) ===
+✓ Found 3 records with age 25-31
+
+=== Query 3: Sort by score (descending) ===
+✓ Top 3 scores:
+  - Score: ObjectValue(value={value=IntegerValue(value=95), type=StringValue(value=Integer)})
+  - Score: ObjectValue(value={value=IntegerValue(value=92), type=StringValue(value=Integer)})
+  - Score: ObjectValue(value={value=IntegerValue(value=88), type=StringValue(value=Integer)})
+
+=== Query 4: Complex (score > 80 AND age >= 25) ===
+✓ Found 4 high-scoring adults
+
+=== Query 5: IN (city IN ['NYC', 'LA']) ===
+✓ Found 4 records in NYC or LA
+
+=== Query 6: Pagination (skip 2, limit 2) ===
+✓ Page 2 (2 records):
+  - ObjectValue(value={type=StringValue(value=String), value=StringValue(value=Charlie)})
+  - ObjectValue(value={type=StringValue(value=String), value=StringValue(value=Diana)})
+
+=== Query 7: Contains (name contains 'a') ===
+✓ Found 2 names containing 'a'
+
+=== Cleanup ===
+✓ Deleted collection: kotlin_query_example
+
+=== Example Complete ===
+
+BUILD SUCCESSFUL in 4s
+2 actionable tasks: 2 executed
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.7.1/userguide/configuration_cache_enabling.html
+=== Running Kotlin example: ClientRawCompletionStream.kt ===
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.7.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+> Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :processResources NO-SOURCE
+> Task :compileKotlin
+> Task :compileJava NO-SOURCE
+> Task :classes UP-TO-DATE
+
+> Task :run
+SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+=== ekoDB Raw Completion Stream (SSE) Example ===
+
+--- Basic SSE Raw Completion ---
+Response: The three primary colors are red, blue, and yellow.
+
+--- Structured Output via SSE ---
+JSON response: [
+  {
+    "name": "Mercury",
+    "diameter_km": 4879
+  },
+  {
+    "name": "Venus",
+    "diameter_km": 12104
+  },
+  {
+    "name": "Earth",
+    "diameter_km": 12742
+  }
+]
+
+--- Blocking HTTP (for comparison) ---
+Blocking response: Hello! I hope you’re having a wonderful day.
+
+=== Done ===
+
+BUILD SUCCESSFUL in 6s
+2 actionable tasks: 2 executed
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.7.1/userguide/configuration_cache_enabling.html
+=== Running Kotlin example: ClientSchedules.kt ===
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.7.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+> Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :processResources NO-SOURCE
+> Task :compileKotlin
+> Task :compileJava NO-SOURCE
+> Task :classes UP-TO-DATE
+
+> Task :run
+SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+=== ekoDB Kotlin Client - Schedules Example ===
+
+--- Creating schedule ---
+Created schedule: ba818451-0666-4729-9f00-86116d53dccb — "Hourly Health Check"
+
+--- Listing schedules ---
+Schedules: {"count":1,"schedules":[{"created_at":"2026-09-16T20:52:08.545693Z","cron_expression":"0 0 * * * *","description":"Ping all services every hour","enabled":true,"function_label":"schedule_noop_kotlin_75993_1789591928422","id":"ba818451-0666-4729-9f00-86116d53dccb","last_execution":null,"name":"Hourly Health Check","next_execution":"2026-09-16T21:00:00Z","parameters":{},"stats":{"avg_execution_time_ms":0.0,"failed_executions":0,"last_error":null,"successful_executions":0,"total_executions":0},"timezone":"UTC","updated_at":"2026-09-16T20:52:08.545693Z"}]}
+
+--- Getting schedule ---
+Fetched: "Hourly Health Check" (cron: "0 0 * * * *")
+
+--- Updating schedule ---
+Updated cron: "0 */30 * * * *"
+
+--- Triggering schedule ---
+Trigger response: {"schedule_id":"ba818451-0666-4729-9f00-86116d53dccb","status":"triggered"}
+
+--- Pausing schedule ---
+Enabled after pause: false
+
+--- Resuming schedule ---
+Enabled after resume: true
+
+--- Deleting schedule ---
+Schedule deleted successfully
+
+=== Example Complete ===
+
+BUILD SUCCESSFUL in 4s
+2 actionable tasks: 2 executed
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.7.1/userguide/configuration_cache_enabling.html
+=== Running Kotlin example: ClientSchemaManagement.kt ===
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.7.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+> Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :processResources NO-SOURCE
+> Task :compileKotlin
+> Task :compileJava NO-SOURCE
+> Task :classes UP-TO-DATE
+
+> Task :run
+SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+=== ekoDB Kotlin Client - Schema Management Example ===
+
+=== Creating Collection with Schema ===
+✓ Created collection 'kotlin_schema_example' with schema
+
+=== Inserting Valid Documents ===
+✓ Inserted user 1: StringValue(value=tQTXq3T5vFak3_KuW1PZVRmn_1NewygFXmpDkjpk_tAb7c50dnOMHjXHt6f8xjmcqY13LSScgwTzAwMDDlNiKA)
+✓ Inserted user 2: StringValue(value=ZazaxdIJjwcspeGnGp3ff-BRiYzhWDRvNRimnSxMtUjP3W7un1vFovNShFf00pvl2QLpv1A_IQrKYixrdX_Jfw)
+
+=== Getting Schema ===
+✓ Schema for kotlin_schema_example:
+  Fields: {"title":{"field_type":"String","default":null,"unique":false,"required":true,"enums":[],"max":null,"min":null,"regex":null},"age":{"field_type":"Integer","default":null,"unique":false,"required":false,"enums":[],"max":null,"min":null,"regex":null},"status":{"field_type":"String","default":null,"unique":false,"required":false,"enums":[],"max":null,"min":null,"regex":null},"email":{"field_type":"String","default":null,"unique":false,"required":true,"enums":[],"max":null,"min":null,"regex":null}}
+
+=== Listing Collections ===
+✓ Total collections: 27
+  Sample: [schema_users_client_ts, schema_documents_client_ts, chat_goals__ek0_testing, schema_products_client_js, schedules__ek0_testing]
+
+=== Cleanup ===
+✓ Deleted collection: kotlin_schema_example
+
+✓ All schema management operations completed successfully
+
+BUILD SUCCESSFUL in 4s
+2 actionable tasks: 2 executed
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.7.1/userguide/configuration_cache_enabling.html
+=== Running Kotlin example: ClientSearch.kt ===
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.7.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+> Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :processResources NO-SOURCE
+> Task :compileKotlin
+> Task :compileJava NO-SOURCE
+> Task :classes UP-TO-DATE
+
+> Task :run
+SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+Text results: 2; execution time: 1 ms
+{"type":"String","value":"Python Programming"}: score=13.200000000000001, matched=[category, title]
+{"value":"Rust Programming","type":"String"}: score=13.200000000000001, matched=[category, title]
+Vector results: 3
+Filtered vector results: 2
+Custom-weight hybrid results: 3
+Raw search: {"results":[{"record":{"id":"GThoHpnKn-zT8dPaV8Q-Gc4GM7ZJpHL5ZiWfZwDVRoctnh_3OmuoxCq-Fy7znziRf-TBc4Aq2FhvtnorJpJsqg","title":{"value":"Python Programming","type":"String"},"category":{"type":"String","value":"programming"},"embedding":{"value":[0.8,0.2,0.1],"type":"Vector"}},"score":1.0,"matched_fields":[]},{"record":{"id":"gyRqGwU9GXb2cU70TFRAZqXRIQPehYdT5PC6-6DKD-u9NHO5Rntp9jqZEfuVZj0iaVK3V4PHqEO1cXQGj9DgOg","title":{"type":"String","value":"Rust Programming"},"category":{"value":"programming","type":"String"},"embedding":{"type":"Vector","value":[0.9,0.1,0.2]}},"score":1.0,"matched_fields":[]}],"total":2,"execution_time_ms":0}
+
+BUILD SUCCESSFUL in 4s
+2 actionable tasks: 2 executed
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.7.1/userguide/configuration_cache_enabling.html
+=== Running Kotlin example: ClientSimpleCrud.kt ===
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.7.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+> Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :processResources NO-SOURCE
+> Task :compileKotlin
+> Task :compileJava NO-SOURCE
+> Task :classes UP-TO-DATE
+
+> Task :run
+SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+=== ekoDB Kotlin Client - Simple CRUD Example ===
+
+=== Create ===
+✓ Inserted user: EkoRecord(fields={id=StringValue(value=3i1hGuBPab5pMDeMzPEKG_5UnWQc-YoBSKnOTmW61eHeFpa4MtVECXLXOOGdzLcWmJ0oI8cpe6fowGFqTtF-8w)})
+  User ID: 3i1hGuBPab5pMDeMzPEKG_5UnWQc-YoBSKnOTmW61eHeFpa4MtVECXLXOOGdzLcWmJ0oI8cpe6fowGFqTtF-8w
+
+=== Read ===
+✓ Found user by ID: EkoRecord(fields={tags=ObjectValue(value={type=StringValue(value=Array), value=ArrayValue(value=[StringValue(value=tag1), StringValue(value=tag2), StringValue(value=tag3)])}), active=ObjectValue(value={value=BooleanValue(value=true), type=StringValue(value=Boolean)}), data=ObjectValue(value={value=ArrayValue(value=[IntegerValue(value=104), IntegerValue(value=101), IntegerValue(value=108), IntegerValue(value=108), IntegerValue(value=111), IntegerValue(value=32), IntegerValue(value=119), IntegerValue(value=111), IntegerValue(value=114), IntegerValue(value=108), IntegerValue(value=100)]), type=StringValue(value=Array)}), id=StringValue(value=3i1hGuBPab5pMDeMzPEKG_5UnWQc-YoBSKnOTmW61eHeFpa4MtVECXLXOOGdzLcWmJ0oI8cpe6fowGFqTtF-8w), created_at=ObjectValue(value={type=StringValue(value=String), value=StringValue(value=Wed Sep 16 16:52:23 EDT 2026)}), age=ObjectValue(value={type=StringValue(value=Integer), value=IntegerValue(value=28)}), categories=ObjectValue(value={type=StringValue(value=Array), value=ArrayValue(value=[StringValue(value=electronics), StringValue(value=computers)])}), user_id=ObjectValue(value={type=StringValue(value=String), value=StringValue(value=550e8400-e29b-41d4-a716-446655440000)}), name=ObjectValue(value={value=StringValue(value=Alice Johnson), type=StringValue(value=String)}), email=ObjectValue(value={type=StringValue(value=String), value=StringValue(value=alice@example.com)}), metadata=ObjectValue(value={type=StringValue(value=Object), value=ObjectValue(value={key=StringValue(value=value), nested=ObjectValue(value={deep=BooleanValue(value=true)})})}), embedding=VectorValue(value=[0.1, 0.2, 0.3, 0.4, 0.5]), price=ObjectValue(value={type=StringValue(value=Float), value=FloatValue(value=99.99)})})
+
+=== Extract Field Values (All Types) ===
+Extracted values:
+  name (String): Alice Johnson
+  email (String): alice@example.com
+  age (Integer): 28
+  active (Boolean): true
+  price (Decimal): 99.99
+  created_at (DateTime): Wed Sep 16 16:52:23 EDT 2026
+  user_id (UUID): 550e8400-e29b-41d4-a716-446655440000
+  tags (Array): [tag1, tag2, tag3]
+  metadata (Object): {key=value, nested={deep=true}}
+  embedding (Vector): [0.1, 0.2, 0.3, 0.4, 0.5]
+  categories (Set): [electronics, computers]
+  data (Bytes): 11 bytes
+Record fields: tags, active, data, id, created_at, age, categories, user_id, name, email, metadata, embedding, price
+
+=== Update ===
+✓ Updated user: EkoRecord(fields={categories=ObjectValue(value={type=StringValue(value=Array), value=ArrayValue(value=[StringValue(value=electronics), StringValue(value=computers)])}), metadata=ObjectValue(value={type=StringValue(value=Object), value=ObjectValue(value={key=StringValue(value=value), nested=ObjectValue(value={deep=BooleanValue(value=true)})})}), active=ObjectValue(value={type=StringValue(value=Boolean), value=BooleanValue(value=true)}), tags=ObjectValue(value={type=StringValue(value=Array), value=ArrayValue(value=[StringValue(value=tag1), StringValue(value=tag2), StringValue(value=tag3)])}), city=ObjectValue(value={type=StringValue(value=String), value=StringValue(value=San Francisco)}), name=ObjectValue(value={type=StringValue(value=String), value=StringValue(value=Alice Johnson)}), age=ObjectValue(value={value=IntegerValue(value=29), type=StringValue(value=Integer)}), price=ObjectValue(value={type=StringValue(value=Float), value=FloatValue(value=99.99)}), user_id=ObjectValue(value={type=StringValue(value=String), value=StringValue(value=550e8400-e29b-41d4-a716-446655440000)}), embedding=VectorValue(value=[0.1, 0.2, 0.3, 0.4, 0.5]), email=ObjectValue(value={type=StringValue(value=String), value=StringValue(value=alice@example.com)}), data=ObjectValue(value={type=StringValue(value=Array), value=ArrayValue(value=[IntegerValue(value=104), IntegerValue(value=101), IntegerValue(value=108), IntegerValue(value=108), IntegerValue(value=111), IntegerValue(value=32), IntegerValue(value=119), IntegerValue(value=111), IntegerValue(value=114), IntegerValue(value=108), IntegerValue(value=100)])}), created_at=ObjectValue(value={value=StringValue(value=Wed Sep 16 16:52:23 EDT 2026), type=StringValue(value=String)}), id=StringValue(value=3i1hGuBPab5pMDeMzPEKG_5UnWQc-YoBSKnOTmW61eHeFpa4MtVECXLXOOGdzLcWmJ0oI8cpe6fowGFqTtF-8w)})
+
+=== Query ===
+✓ Found 1 users matching query
+  - EkoRecord(fields={id=StringValue(value=3i1hGuBPab5pMDeMzPEKG_5UnWQc-YoBSKnOTmW61eHeFpa4MtVECXLXOOGdzLcWmJ0oI8cpe6fowGFqTtF-8w), tags=ObjectValue(value={value=ArrayValue(value=[StringValue(value=tag1), StringValue(value=tag2), StringValue(value=tag3)]), type=StringValue(value=Array)}), categories=ObjectValue(value={type=StringValue(value=Array), value=ArrayValue(value=[StringValue(value=electronics), StringValue(value=computers)])}), active=ObjectValue(value={type=StringValue(value=Boolean), value=BooleanValue(value=true)}), city=ObjectValue(value={value=StringValue(value=San Francisco), type=StringValue(value=String)}), embedding=VectorValue(value=[0.1, 0.2, 0.3, 0.4, 0.5]), created_at=ObjectValue(value={type=StringValue(value=String), value=StringValue(value=Wed Sep 16 16:52:23 EDT 2026)}), age=ObjectValue(value={type=StringValue(value=Integer), value=IntegerValue(value=29)}), user_id=ObjectValue(value={type=StringValue(value=String), value=StringValue(value=550e8400-e29b-41d4-a716-446655440000)}), metadata=ObjectValue(value={type=StringValue(value=Object), value=ObjectValue(value={key=StringValue(value=value), nested=ObjectValue(value={deep=BooleanValue(value=true)})})}), email=ObjectValue(value={type=StringValue(value=String), value=StringValue(value=alice@example.com)}), price=ObjectValue(value={type=StringValue(value=Float), value=FloatValue(value=99.99)}), data=ObjectValue(value={value=ArrayValue(value=[IntegerValue(value=104), IntegerValue(value=101), IntegerValue(value=108), IntegerValue(value=108), IntegerValue(value=111), IntegerValue(value=32), IntegerValue(value=119), IntegerValue(value=111), IntegerValue(value=114), IntegerValue(value=108), IntegerValue(value=100)]), type=StringValue(value=Array)}), name=ObjectValue(value={type=StringValue(value=String), value=StringValue(value=Alice Johnson)})})
+
+=== Delete ===
+✓ Deleted user with ID: 3i1hGuBPab5pMDeMzPEKG_5UnWQc-YoBSKnOTmW61eHeFpa4MtVECXLXOOGdzLcWmJ0oI8cpe6fowGFqTtF-8w
+
+✓ Confirmed user was deleted
+
+=== Cleanup ===
+✓ Deleted collection: kotlin_users_example
+
+=== Example Complete ===
+
+BUILD SUCCESSFUL in 4s
+2 actionable tasks: 2 executed
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.7.1/userguide/configuration_cache_enabling.html
+=== Running Kotlin example: ClientSimpleWebsocket.kt ===
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.7.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+> Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :processResources NO-SOURCE
+> Task :compileKotlin
+> Task :compileJava NO-SOURCE
+> Task :classes UP-TO-DATE
+
+> Task :run
+SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+=== ekoDB Kotlin Client - Simple WebSocket Example ===
+
+=== Create WebSocket Client ===
+✓ WebSocket client created
+
+=== Connect to WebSocket ===
+✓ Connected to WebSocket
+
+=== Insert Test Record ===
+✓ Inserted test record
+
+=== Find All via WebSocket ===
+✓ WebSocket findAll result:
+  {"data":[{"id":"K4xD8QA5bTFBStg1tfvFtsh1qoeJXPYvy-qjJ80cBJTvi8Got1msdzQF0DRPxbHcKmfT3yY7rU_AUMh2GBAxiw","name":{"type":"String","value":"Test User"},"status":{"type":"String","value":"active"}}]}
+
+=== Close WebSocket ===
+✓ WebSocket closed
+
+=== Cleanup ===
+✓ Deleted collection: kotlin_websocket_example
+
+=== Example Complete ===
+
+BUILD SUCCESSFUL in 4s
+2 actionable tasks: 2 executed
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.7.1/userguide/configuration_cache_enabling.html
+=== Running Kotlin example: ClientSwrNative.kt ===
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.7.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+> Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :processResources NO-SOURCE
+> Task :compileKotlin
+> Task :compileJava NO-SOURCE
+> Task :classes UP-TO-DATE
+
+> Task :run
+🚀 ekoDB Kotlin Client - Native SWR Function Examples
+
+📋 Demonstrates:
+   • Single-function SWR pattern (replaces 4-step pipeline)
+   • Automatic cache checking, HTTP fetching, and cache setting
+   • Built-in audit trail support
+   • Duration string TTLs ('15m', '1h', '30s')
+   • Multi-function pipeline integration
+   • Dynamic TTL configuration
+
+SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+
+🧹 Cleaning up...
+✓ Deleted 0 test functions and owned SWR collections
+
+Example 1: Basic Native SWR
+────────────────────────────────────────────────────────────────────────────────
+Single function replaces KvGet → If → HttpRequest → KvSet pipeline
+✓ Created native SWR function: github_user_native_kt (6DYYV3-1SZgYeLRsMlTKSfajSf9rCjxe_uFso2Xw254_SwrnD8q4ysUBxjTIp5-FY-WsO6xkjOSVyPFKYvSxEA)
+
+First call (cache miss - will fetch from GitHub API):
+  Response time: 196ms
+  Records returned: 1
+
+Second call (cache hit - instant from KV store):
+  Response time: 6ms
+  Speedup: 32.7x faster 🚀
+
+
+Example 2: SWR with Built-in Audit Trail
+────────────────────────────────────────────────────────────────────────────────
+Optional collection parameter for automatic request logging
+✓ Created SWR function with audit trail: product_swr_audit_kt (0rQv_CYEXhewXdzHK8rgUJ_IGfCn8ggzuZTMIO4ozSIzg5DmlfMU9_5e_DGs3BCkjXR322r_ZI_fUN4GMMaqpw)
+
+Fetching product (will create audit trail entry):
+  ✓ Product fetched and cached
+  ✓ Audit record created in 'swr_audit_trail_kt' collection
+  Records: 1
+
+
+Example 3: SWR in Multi-Function Pipeline
+────────────────────────────────────────────────────────────────────────────────
+Fetch external data → Process → Store in collection
+✓ Created enrichment pipeline: user_enrichment_pipeline_kt (hqwmnOub7QD2PT1My4tZY0dfi7h62_2tqusN3iNo4DlozkTB9ac66oy4nJ3xKihlUVWmBXDICtu8yJdqNgDJEA)
+
+Running pipeline:
+  ✓ Data fetched from API (cached 30m)
+  ✓ Enriched data stored in 'enriched_users_kt' (TTL 24h)
+  Pipeline returned 1 records
+
+
+Example 4: Dynamic TTL Configuration
+────────────────────────────────────────────────────────────────────────────────
+TTL as parameter - supports duration strings, integers, ISO timestamps
+✓ Created dynamic TTL function: flexible_cache_kt (Qd7edcAZlBEiyQwIafAsxfo5plL55bClasOW1DeVNdE6hS3FBWZvu5sh24vma8E7ccEhJMKF1qH9jhh-yCiMvQ)
+  ✓ Cached with TTL: 5m (5 minutes)
+  ✓ Cached with TTL: 1h (1 hour)
+  ✓ Cached with TTL: 30s (30 seconds)
+
+================================================================================
+✅ Key Benefits of Native SWR:
+✅ Single function: Replaces 4-function cache-aside pattern
+✅ Duration strings: Use '15m', '1h', '2h' instead of calculating seconds
+✅ Built-in audit: Optional collection parameter for automatic logging
+✅ Auto-enrichment: output_field populates params for downstream functions
+✅ Transactional: Works correctly in both transactional and non-transactional contexts
+✅ KV-optimized: Uses native KV store with proper TTL handling
+
+=== Performance Comparison ===
+Legacy Pattern: KvGet → If → HttpRequest → KvSet → Insert (5 functions)
+Native SWR:     SWR → Insert (2 functions)
+Result:         60% fewer functions, cleaner code, same behavior 🎯
+
+🧹 Cleaning up...
+✓ Deleted 4 test functions and owned SWR collections
+
+✅ All examples completed!
+
+BUILD SUCCESSFUL in 5s
+2 actionable tasks: 2 executed
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.7.1/userguide/configuration_cache_enabling.html
+=== Running Kotlin example: ClientSwrPattern.kt ===
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.7.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+> Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :processResources NO-SOURCE
+> Task :compileKotlin
+> Task :compileJava NO-SOURCE
+> Task :classes UP-TO-DATE
+
+> Task :run
+SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+=== ekoDB SWR (Stale-While-Revalidate) Pattern ===
+
+Step 1: Setting up cache collection...
+✓ Cache entry created
+
+Step 2: Create SWR cache lookup function
+✓ Created SWR function: swr_cache_lookup_kt_1789591959737 (JNRtwV0wmbtnkPzpu5GMI7ezI1oz3Bt8EmsG_JD8UYY-PtPxmCMaZcZutlmrwvitMoeWU8WRmuyHRtM_mbZnlQ)
+
+Step 3: First call - Cache lookup
+Found 1 cached entries
+✓ Cache lookup complete
+
+Step 4: Second call - Fast cache hit
+Response time: 4ms (served from cache)
+✓ Lightning fast cache hit
+
+=== SWR Pattern Summary ===
+✅ Cache miss → Fetch from API → Store in ekoDB
+✅ Cache hit → Instant response from ekoDB
+✅ TTL handles automatic cache invalidation
+🧹 Cleaning up...
+✓ Cleanup complete
+
+
+BUILD SUCCESSFUL in 4s
+2 actionable tasks: 2 executed
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.7.1/userguide/configuration_cache_enabling.html
+=== Running Kotlin example: ClientTransactions.kt ===
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.7.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+> Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :processResources NO-SOURCE
+> Task :compileKotlin
+> Task :compileJava NO-SOURCE
+> Task :classes UP-TO-DATE
+
+> Task :run
+SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+✓ Client created
+
+=== Setup: Creating Test Accounts ===
+Created Alice: $1000 - ID: NacIptDiamV6mP3ePdHhI_HRiLuowEUhCSSXi7GM5vDCfkTB3-xadIks4pRTnS-i7ESiQ8ho0vUAnDa9IpLRBw
+Created Bob: $500 - ID: UG60lZ5YmgtbZB52k4GdeIi3tUyBRB7iyqonmbMcS-RDryqbqitKGDFK3OjRbqS8bHSfmByZf-3l6-UygUSoVw
+
+=== Example 1: Begin Transaction ===
+Transaction ID (server-default isolation): f38f2ab8-9e20-453f-90cf-85ea66d93a51
+
+=== Example 2: Operations within Transaction ===
+Updated Alice: $1000 → $800
+Updated Bob: $500 → $700
+
+=== Example 3: Transaction Status ===
+Status: Active
+Operations: 2
+
+=== Example 4: Commit Transaction ===
+✓ Transaction committed
+
+✓ Verified committed balances: Alice=$800, Bob=$700
+
+=== Example 5: Rollback Demo ===
+New transaction: 489810c7-3a9b-4a25-938d-f1be8d86d39e
+Updated Bob: $700 → $600 (in transaction)
+Status before rollback: Active
+✓ Transaction rolled back
+
+✓ Verified Bob remains $700 after rollback
+
+=== Cleanup ===
+✓ Deleted test account collection
+
+✓ All client transaction examples completed
+
+BUILD SUCCESSFUL in 4s
+2 actionable tasks: 2 executed
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.7.1/userguide/configuration_cache_enabling.html
+=== Running Kotlin example: ClientUserFunctions.kt ===
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.7.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+> Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :processResources NO-SOURCE
+> Task :compileKotlin
+> Task :compileJava NO-SOURCE
+> Task :classes UP-TO-DATE
+
+> Task :run
+SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+=== ekoDB Kotlin Client - User Functions Example ===
+
+=== Create User Function ===
+Created user function with ID: aPIO-3-4YQz_uMq-KBlr60HVKmbRQwzABpx4rcE5fidXQP2f3LONbPemuVnFuaLP65b1sdoL3-1AUxpP2uOXNw
+
+=== Get User Function ===
+Retrieved: "get_active_users_kt" - "Get Active Users (Kotlin)"
+Description: "Fetches all users and filters by active status"
+
+=== List All User Functions ===
+Found 11 user functions:
+  - "get_active_users_kt": "Get Active Users (Kotlin)"
+  - "get_active_users_client_js": "Get Active Users (Updated)"
+  - "fetch_product_reviews_ts_68859_1789591599098": "Fetch Product with Reviews (Multi-API)"
+  - "get_active_users_client_ts_updated": "Get Active Users (Updated)"
+  - "fetch_product_reviews_ts_71483_1789591713776": "Fetch Product with Reviews (Multi-API)"
+
+=== List User Functions by Tag ===
+Found 1 user functions with 'kotlin' tag:
+  - "get_active_users_kt"
+
+=== Update User Function ===
+User function updated successfully
+
+=== Delete User Function ===
+User function deleted successfully
+
+=== User Functions Example Complete ===
+
+BUILD SUCCESSFUL in 4s
+2 actionable tasks: 2 executed
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.7.1/userguide/configuration_cache_enabling.html
+=== Running Kotlin example: ClientWebsocketChatStream.kt ===
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.7.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+> Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :processResources NO-SOURCE
+> Task :compileKotlin
+> Task :compileJava NO-SOURCE
+> Task :classes UP-TO-DATE
+
+> Task :run
+SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+=== WebSocket Chat Streaming Example (Kotlin) ===
+
+Created chat session: ZRr2a5mq9zuIkB1D1Ssx4Hv7FGZT4StjQOu3ZNCOhkNBbOPaiiEnV4VQHAAWkMxKby49kU4m3MD_ZvRPaf-JyA
+
+Sending message: 'What is the capital of France?'
+{"__progress":"received"}{"__progress":"generating","model":"gpt-4o-mini","provider":"openai"}The capital of France is Paris.
+
+--- Stream ended ---
+Message ID: n2Z5A6lKcZ7hWDKRD_SfKKBvPn37NovCHngwJm5umyNuelg0ZEdQqqRysMRdQqv3qkDJeWFUudOfEnVp7mkAaQ
+Execution time: 815ms
+Token usage: {"completion_tokens":8,"prompt_tokens":15,"total_tokens":23}
+
+Full response: {"__progress":"received"}{"__progress":"generating","model":"gpt-4o-mini","provider":"openai"}The capital of France is Paris....
+
+BUILD SUCCESSFUL in 5s
+2 actionable tasks: 2 executed
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.7.1/userguide/configuration_cache_enabling.html
+=== Running Kotlin example: ClientWebsocketSubscribe.kt ===
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.7.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+> Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :processResources NO-SOURCE
+> Task :compileKotlin
+> Task :compileJava NO-SOURCE
+> Task :classes UP-TO-DATE
+
+> Task :run
+=== WebSocket Subscription Example (Kotlin) ===
+
+SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+✓ Authentication successful
+
+=== Connecting to WebSocket ===
+✓ WebSocket connected
+
+=== Subscribing to 'ws_subscribe_example_kt' ===
+✓ Subscribed (subscription_id: sub_a2060ddb7c47450bb9ed003c079a95bb)
+
+=== Performing mutations to trigger notifications ===
+Inserting record 1...
+✓ Inserted: "8xEvkMx8hOJ0uOD_eJFBHNCU_1bZTynvH2jOVlIrYG9SuC0T_V3D9NNQcejsh-oUrlGy7SBhgQ0Wuwmdl4xtXQ"
+
+  📡 Notification received:
+     Event:      "insert"
+     Collection: "ws_subscribe_example_kt"
+     Record IDs: ["8xEvkMx8hOJ0uOD_eJFBHNCU_1bZTynvH2jOVlIrYG9SuC0T_V3D9NNQcejsh-oUrlGy7SBhgQ0Wuwmdl4xtXQ"]
+     Timestamp:  "2026-09-16T20:53:01.216961+00:00"
+
+Inserting record 2...
+✓ Inserted: "9DsJtLGLeS_oLFvI2jP3I1XUG9bSqrexAAmcPyz8VrD-5HiTbJWvZK_MLdn4pWXGo94E50kez5bixR0OO8FA2w"
+
+  📡 Notification received:
+     Event:      "insert"
+     Record IDs: ["9DsJtLGLeS_oLFvI2jP3I1XUG9bSqrexAAmcPyz8VrD-5HiTbJWvZK_MLdn4pWXGo94E50kez5bixR0OO8FA2w"]
+
+=== Unsubscribing ===
+✓ Unsubscribed: {"payload":{"data":{"collection":"ws_subscribe_example_kt","found":true,"unsubscribed":true}},"type":"Success"}
+
+✓ WebSocket subscription example completed successfully
+✓ Deleted collection 'ws_subscribe_example_kt'
+
+BUILD SUCCESSFUL in 4s
+2 actionable tasks: 2 executed
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.7.1/userguide/configuration_cache_enabling.html
+=== Running Kotlin example: ClientWebsocketTtl.kt ===
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.7.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+> Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :processResources NO-SOURCE
+> Task :compileKotlin
+> Task :compileJava NO-SOURCE
+> Task :classes UP-TO-DATE
+
+> Task :run
+SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+=== ekoDB Kotlin Client - WebSocket TTL Example ===
+
+=== Insert Test Data with TTL ===
+✓ Inserted document with TTL: StringValue(value=_L13y--heJXOKS517FrDxmFWo37nakYt2zSOmDurEmL1W_hIZhGfIPJuToaykGbvLwlfIMIsnofdcqILKtM8Mw)
+
+=== Query via WebSocket ===
+✓ WebSocket connected
+✓ Retrieved data via WebSocket:
+  {"data":[{"created_at":{"type":"Integer","value":1789591986134},"name":{"type":"String","value":"WebSocket TTL Test"},"value":{"type":"Integer","value":42},"id":"_L13y--heJXOKS517FrDxmFWo37nakYt2zSOmDurEmL1W_hIZhGfIPJuToaykGbvLwlfIMIsnofdcqILKtM8Mw","ttl":"2026-09-16T21:53:06.236170Z"}]}
+
+✓ WebSocket closed
+
+=== Cleanup ===
+✓ Deleted collection: kotlin_websocket_ttl_example
+
+✓ WebSocket TTL example completed successfully
+
+💡 Note: Documents with TTL will automatically expire after the specified duration
+
+BUILD SUCCESSFUL in 4s
+2 actionable tasks: 2 executed
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.7.1/userguide/configuration_cache_enabling.html
+=== Running Kotlin example: BypassRippleExample.kt ===
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.7.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+> Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :processResources NO-SOURCE
+> Task :compileKotlin
+> Task :compileJava NO-SOURCE
+> Task :classes UP-TO-DATE
+
+> Task :run
+=== Bypass Ripple Example ===
+
+SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+1. Basic insert (ripple enabled):
+   Inserted with ripple: EkoRecord(fields={id=StringValue(value=NPpkz99HsAZM1b_62H09O5FBSwEPAfkT6bF2eJ4qs6s11EhPOQCUDsrruzusKECbjnrDEqR_LAuAvqzF22GpFw)})
+
+2. Insert with bypass_ripple:
+   Inserted with bypass_ripple: EkoRecord(fields={id=StringValue(value=RYfn20pXVGptyiCCxyx_820ehQs-GT0LG5aOYLZapel7rmk210I5pFvW0M-3X9RlCrHv5Jku1rN7NuKzQt7v3Q)})
+
+3. Update with bypass_ripple:
+   Updated with bypass_ripple: EkoRecord(fields={id=StringValue(value=NPpkz99HsAZM1b_62H09O5FBSwEPAfkT6bF2eJ4qs6s11EhPOQCUDsrruzusKECbjnrDEqR_LAuAvqzF22GpFw), name=ObjectValue(value={type=StringValue(value=String), value=StringValue(value=Product 1)}), price=ObjectValue(value={value=IntegerValue(value=150), type=StringValue(value=Integer)})})
+
+4. Delete with bypass_ripple:
+   Deleted with bypass_ripple
+
+5. Batch insert with bypass_ripple:
+   Batch inserted with bypass_ripple: 2 records
+
+6. Upsert with bypass_ripple:
+   Upserted with bypass_ripple: EkoRecord(fields={id=StringValue(value=NPpkz99HsAZM1b_62H09O5FBSwEPAfkT6bF2eJ4qs6s11EhPOQCUDsrruzusKECbjnrDEqR_LAuAvqzF22GpFw), name=ObjectValue(value={type=StringValue(value=String), value=StringValue(value=Upsert Product)}), price=ObjectValue(value={value=IntegerValue(value=500), type=StringValue(value=Integer)})})
+
+✅ All bypass_ripple operations completed successfully!
+
+BUILD SUCCESSFUL in 4s
+2 actionable tasks: 2 executed
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.7.1/userguide/configuration_cache_enabling.html
+✅ All Kotlin integration tests complete!
 🐍 Building Python client package...
 🔧 Ensuring maturin is available in .venv...
 🔨 Building wheel...
@@ -15498,7 +14852,7 @@ Consider enabling configuration cache to speed up this build: https://docs.gradl
 🐍 Found CPython 3.11 at /Library/Frameworks/Python.framework/Versions/3.11/bin/python3
 🔗 Found pyo3 bindings with abi3-py3.8 support
 💻 Using `MACOSX_DEPLOYMENT_TARGET=11.0` for aarch64-apple-darwin by default
-    Finished `release` profile [optimized] target(s) in 0.22s
+    Finished `release` profile [optimized] target(s) in 0.10s
 📦 Built wheel for abi3 Python ≥ 3.8 to ekoDB/ekodb-client/ekodb-client-py/target/wheels/ekodb_client-0.26.4-cp38-abi3-macosx_11_0_arm64.whl
 📦 Installing Python wheel into .venv...
 Processing ./ekodb-client-py/target/wheels/ekodb_client-0.26.4-cp38-abi3-macosx_11_0_arm64.whl
@@ -15560,75 +14914,75 @@ Storing previous conversations with embeddings...
     • Using model: text-embedding-3-small
     • Text length: 34 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 360.470875ms
+    ✓ Generated embedding: 1536 dimensions in 352.596041ms
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 169 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 300.273083ms
+    ✓ Generated embedding: 1536 dimensions in 332.094792ms
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 33 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 404.269167ms
+    ✓ Generated embedding: 1536 dimensions in 414.514875ms
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 230 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 262.820667ms
+    ✓ Generated embedding: 1536 dimensions in 230.384167ms
     • Function auto-cleaned up by client
 ✓ Stored Rust programming conversation (4 messages)
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 31 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 295.301959ms
+    ✓ Generated embedding: 1536 dimensions in 301.442667ms
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 217 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 305.134333ms
+    ✓ Generated embedding: 1536 dimensions in 326.386458ms
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 33 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 364.563667ms
+    ✓ Generated embedding: 1536 dimensions in 320.541042ms
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 232 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 327.223667ms
+    ✓ Generated embedding: 1536 dimensions in 838.232959ms
     • Function auto-cleaned up by client
 ✓ Stored database design conversation (4 messages)
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 36 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 277.821916ms
+    ✓ Generated embedding: 1536 dimensions in 336.290584ms
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 178 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 262.9575ms
+    ✓ Generated embedding: 1536 dimensions in 437.113459ms
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 37 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 429.75675ms
+    ✓ Generated embedding: 1536 dimensions in 501.370542ms
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 213 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 251.396625ms
+    ✓ Generated embedding: 1536 dimensions in 238.206958ms
     • Function auto-cleaned up by client
 ✓ Stored performance optimization conversation (4 messages)
 
@@ -15644,17 +14998,17 @@ Using hybrid search to find relevant messages from all conversations...
     • Using model: text-embedding-3-small
     • Text length: 58 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 249.024958ms
+    ✓ Generated embedding: 1536 dimensions in 307.934792ms
     • Function auto-cleaned up by client
 
 → Executing hybrid_search()...
-  • Collection: rag_messages
+  • Collection: rag_messages_rust
   • Query text: "How do I write memory-safe high-performance database code?"
   • Vector dimensions: 1536
   • Limit: 5 results
   • Search type: Semantic (vector) + Keyword (text)
   • Server combines both scores for relevance ranking
-  ✓ Search completed in 76.088458ms
+  ✓ Search completed in 73.558875ms
 
 ✓ Found 5 related messages across all conversations:
   1. From conv_database_design
@@ -15675,82 +15029,63 @@ Using hybrid search to find relevant messages from all conversations...
 === Step 4: Generating Context-Aware Response ===
 ✓ AI Response (with context from 3 conversations):
 
-Writing memory-safe and high-performance database code involves several strategies that leverage best practices in programming, database design, and performance optimization. Here’s a comprehensive approach that combines these aspects:
+Writing memory-safe, high-performance database code requires attention to several key principles and best practices across software design, architecture, and database interaction. Here are some strategies:
 
-### 1. Use Appropriate Database Technology
-- **Choose the Right DBMS:** Assess your application needs to choose between SQL (for structured, relational data) and NoSQL (for unstructured or semi-structured data). Use NoSQL for flexible schemas and horizontal scaling.
-- **Proper Indexing:** Use indexes on frequently queried fields to improve lookup times. Monitor and optimize existing indexes.
+### 1. Use Safe Programming Languages
+- **Choose Rust, Go, or similar**: Languages like Rust offer memory safety without garbage collection, helping prevent memory leaks and buffer overflows.
+- **Use managed languages wisely**: If using languages like Java or C#, leverage their garbage collection and type safety features, but always be mindful of the performance implications.
 
-### 2. Memory Safety
-- **Use Memory-Safe Programming Languages:** Opt for languages that enforce memory safety through built-in features (e.g., Rust, Java) when possible.
-- **Handling Pointers Carefully:** In languages like C/C++, ensure pointers are handled with care to avoid memory leaks or segmentation faults.
-- **Avoid Buffer Overflows:** Implement bounds-checking and utilize safe libraries for string handling.
-- **Garbage Collection:** In languages with garbage collection (e.g., Java, C#), ensure you manage object lifetimes correctly to avoid memory leaks.
+### 2. Connection Management
+- **Connection Pooling**: Use connection pools to minimize overhead from establishing database connections. Libraries like HikariCP (Java) or pgx (for Go) can manage pools efficiently.
+- **Idle Timeouts**: Set appropriate timeouts for idle connections in a pool to release resources promptly.
 
-### 3. Optimizing Database Queries
-- **Optimize Query Logic:** Write efficient, well-structured queries. Use `EXPLAIN` to analyze query plans and find bottlenecks.
-- **Batch Operations:** Use batch inserts/updates instead of individual operations to reduce transaction overhead.
-- **Connection Pooling:** Reuse database connections instead of opening a new one for each request to decrease latency.
+### 3. Efficient Query Design
+- **Optimize Queries**: Ensure SQL queries are optimized for performance with proper indexing and avoiding SELECT *; specify only the required fields.
+- **Batch Operations**: Use batch processing for inserts, updates, and deletions to minimize the number of round-trips to the database.
+- **Prepared Statements**: Use prepared statements to benefit from execution plan caching, which reduces parsing time for frequently executed queries.
 
-### 4. Error Handling
-- **Graceful Degradation:** Implement proper error handling to ensure that your application can recover or gracefully handle unexpected database errors without crashing.
-- **Transactions:** Use transactions to ensure data integrity and rollback mechanisms during failures.
+### 4. Transaction Management
+- **Use Transactions Wisely**: Group multiple operations into a single transaction to ensure data consistency and integrity while reducing overhead.
+- **Locking Mechanisms**: Understand the locking mechanisms used by your database (like MVCC) and use them appropriately to manage concurrent access without leading to deadlocks.
 
-### 5. Data Manipulation
-- **Prepared Statements:** Use prepared statements to prevent SQL injection and improve performance by allowing the database to cache execution plans.
-- **Normalization:** Normalize your database to eliminate redundancy, which can help reduce memory usage and improve data integrity.
+### 5. Memory Management
+- **Profile Memory Usage**: Use tools and profilers to analyze memory consumption and identify leaks or excessive memory usage patterns.
+- **Smart Data Structures**: Choose appropriate data structures and algorithms for managing in-memory data retrieved from the database to optimize memory usage and access times.
 
-### 6. Caching Strategies
-- **Query Caching:** Cache frequently accessed data to reduce load on the database. Use in-memory storage (like Redis) for caching.
-- **Materialized Views:** Create materialized views for complex queries that are costly to execute.
+### 6. Async and Concurrent Processing
+- **Leverage Asynchronous I/O**: Use asynchronous programming models available in your programming language (like async/await in JavaScript or Rust) to improve throughput without blocking threads.
+- **Concurrency Control**: Use concurrent access patterns that prevent contention, such as actor models or message queues, to manage interactions with the database.
 
-### 7. Profiling and Monitoring
-- **Performance Profiling:** Continuously profile your database interactions to identify slow queries and optimize them.
-- **Monitoring Tools:** Use database monitoring tools to keep an eye on memory usage, query performance, and database health.
+### 7. Caching Strategies
+- **In-Memory Caching**: Use caching mechanisms (like Redis or Memcached) to store frequently-accessed data in memory, reducing database load.
+- **Cache with Expiration**: Implement cache expiration policies to ensure data consistency, thereby preventing stale data from being retrieved.
 
-### 8. Scaling Considerations
-- **Partitioning:** For heavily load-balanced applications, consider sharding the database or partitioning data across multiple databases.
-- **Load Balancing:** Distribute database load across multiple replicas or instances to enhance response times and reduce latency.
+### 8. Monitoring and Analytics
+- **Logging and Metrics**: Implement logging to monitor database interactions and performance metrics to identify slow queries that could be optimized.
+- **Run Load Test**: Conduct load testing to identify performance bottlenecks, ensuring the database can handle expected traffic under varied conditions.
 
-### Example Snippet
-Here’s an example of using prepared statements in Python with a PostgreSQL database to ensure memory safety and performance:
+### 9. Utilize ORM or Query Builders Carefully
+- **Lightweight Libraries**: If using an ORM (Object-Relational Mapping), choose lightweight ORMs that don’t add significant overhead, and ensure they are configured for performance.
+- **Custom SQL When Needed**: Don’t hesitate to use raw SQL for performance-critical paths, as ORMs can sometimes generate inefficient queries.
 
-```python
-import psycopg2
-from psycopg2 import sql
+### 10. Security Measures
+- **SQL Injection Prevention**: Always use parameterized queries or ORM capabilities to prevent SQL injection attacks, which can compromise database security and performance.
+- **Access Control**: Implement strict access controls to ensure that only authorized users have access to sensitive data, thereby managing resource utilization effectively.
 
-# Connection pooling
-from psycopg2 import pool
-db_pool = pool.SimpleConnectionPool(minconn=1, maxconn=10, user='user', password='password', host='127.0.0.1', port='5432', database='test_db')
-
-def insert_user(name, email):
-    conn = db_pool.getconn()
-    try:
-        with conn.cursor() as cursor:
-            cursor.execute("INSERT INTO users (name, email) VALUES (%s, %s)", (name, email))
-            conn.commit()  # Ensure atomicity
-    except Exception as e:
-        print(f"Error occurred: {e}")
-        conn.rollback()
-    finally:
-        db_pool.putconn(conn)  # Return the connection to the pool
-```
-
-### In Summary
-Maintain a balance between memory safety and performance by choosing the right tools, optimizing your database interactions, and constantly monitoring performance metrics. This multifaceted approach can significantly enhance the reliability and efficiency of your database code.
+By focusing on these principles, you can write memory-safe, high-performance database code that is robust and scalable.
 
 === Step 5: Storing New Conversation ===
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 58 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 274.832083ms
+    ✓ Generated embedding: 1536 dimensions in 492.891625ms
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
-    • Text length: 4154 characters
+    • Text length: 4010 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 316.989375ms
+    ✓ Generated embedding: 1536 dimensions in 426.454667ms
     • Function auto-cleaned up by client
 ✓ New conversation stored and indexed for future retrieval
 
@@ -15759,12 +15094,12 @@ Searching for messages about 'ownership' across ALL conversations...
 
 
 → Executing text_search()...
-  • Collection: rag_messages
+  • Collection: rag_messages_rust
   • Query: "ownership system"
   • Limit: 3 results
   • Search method: Full-text with fuzzy matching & stemming
   • No vector embeddings needed - pure keyword search
-  ✓ Text search completed in 44.164792ms
+  ✓ Text search completed in 47.634334ms
 
 ✓ Found 3 messages mentioning ownership:
   1. From conv_performance: Rust's ownership system provides zero-cost memory management. Use Box for heap allocation, Rc/Arc for shared ownership, and avoid cloning large data structures. The compiler optimizes away unnecessary allocations.
@@ -15831,75 +15166,75 @@ Storing previous conversations with embeddings...
     • Using model: text-embedding-3-small
     • Text length: 34 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.261s
+    ✓ Generated embedding: 1536 dimensions in 0.379s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 169 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.297s
+    ✓ Generated embedding: 1536 dimensions in 0.283s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 33 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.273s
+    ✓ Generated embedding: 1536 dimensions in 0.319s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 230 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.572s
+    ✓ Generated embedding: 1536 dimensions in 0.242s
     • Function auto-cleaned up by client
 ✓ Stored Rust programming conversation (4 messages)
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 31 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.300s
+    ✓ Generated embedding: 1536 dimensions in 0.298s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 217 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.323s
+    ✓ Generated embedding: 1536 dimensions in 0.385s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 33 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.238s
+    ✓ Generated embedding: 1536 dimensions in 0.243s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 232 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.282s
+    ✓ Generated embedding: 1536 dimensions in 0.277s
     • Function auto-cleaned up by client
 ✓ Stored database design conversation (4 messages)
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 36 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.344s
+    ✓ Generated embedding: 1536 dimensions in 0.266s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 178 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.406s
+    ✓ Generated embedding: 1536 dimensions in 0.268s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 37 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.337s
+    ✓ Generated embedding: 1536 dimensions in 0.301s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 213 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.266s
+    ✓ Generated embedding: 1536 dimensions in 0.320s
     • Function auto-cleaned up by client
 ✓ Stored performance optimization conversation (4 messages)
 
@@ -15915,17 +15250,17 @@ Using hybrid search to find relevant messages from all conversations...
     • Using model: text-embedding-3-small
     • Text length: 58 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.292s
+    ✓ Generated embedding: 1536 dimensions in 0.254s
     • Function auto-cleaned up by client
 
 → Executing hybrid_search()...
-  • Collection: rag_messages
+  • Collection: rag_messages_py
   • Query text: "How do I write memory-safe high-performance database code?"
   • Vector dimensions: 1536
   • Limit: 5 results
   • Search type: Semantic (vector) + Keyword (text)
   • Server combines both scores for relevance ranking
-  ✓ Search completed in 0.068s
+  ✓ Search completed in 0.067s
 
 ✓ Found 5 related messages across all conversations:
   1. [Score: 0.504] From conv_database_design
@@ -15946,73 +15281,66 @@ Using hybrid search to find relevant messages from all conversations...
 === Step 4: Generating Context-Aware Response ===
 ✓ AI Response (with context from 3 conversations):
 
-Writing memory-safe, high-performance database code involves several best practices and approaches that span the design of your application, the choice of the database, and the handling of data within your code. Below are some key strategies to consider:
+Writing memory-safe, high-performance database code involves several best practices that encompass both the design of the database interactions and the underlying programming language features. Here’s a comprehensive overview of how to achieve this:
 
-### 1. **Choose the Right Database**
+### 1. Use a Type-Safe Language or Framework
+- **Choose Type-Safe Languages:** Programming languages like Rust or Swift provide type safety and memory management features, helping to avoid common pitfalls like null pointers or buffer overflows.
+- **Type Checking at Compile Time:** Leverage ORM (Object-Relational Mapping) tools or database libraries that provide compile-time type checking, reducing runtime errors.
 
-- **NoSQL vs. SQL**: Depending on your needs, choose a suitable database type. SQL databases are great for complex queries and relationships, while NoSQL databases excel in horizontal scaling and working with unstructured data.
-- **Database Optimization**: Take advantage of built-in database features such as indexing, caching, and partitioning to improve performance.
+### 2. Manage Database Connections Prudently
+- **Connection Pools:** Utilize connection pools to manage database connections efficiently. This minimizes the overhead of opening and closing connections repeatedly.
+- **Keep Connections Open Only as Needed:** Open connections just for the duration of the transaction to minimize resource locking and improve performance.
 
-### 2. **Connection Management**
+### 3. Optimize Query Execution
+- **Use Prepared Statements:** They help in reducing parsing time and SQL injection risks by allowing you to define queries with placeholders.
+- **Batch Inserts/Updates:** When working with multiple records, use batch operations instead of single insert/update calls. This reduces the number of round trips to the database.
 
-- **Use Connection Pools**: Instead of opening a new connection for each request, use connection pooling to manage database connections efficiently.
-- **Limit Connection Lifespan**: Occasionally refresh connections to avoid stale connections that can cause memory leaks.
+### 4. Implement Efficient Indexing
+- **Index Frequently Queried Fields:** Carefully index fields that are often sought in search queries to speed up lookups.
+- **Avoid Over-Indexing:** While indexes speed up reads, they slow down writes. Balance the need for fast read operations against write performance.
 
-### 3. **Efficient Query Writing**
+### 5. Normalize Data Appropriately
+- **Database Normalization:** Normalize your database to reduce redundancy and improve data integrity, but be mindful of over-normalization, which can lead to cumbersome joins.
+- **Denormalization for Performance:** In read-heavy applications, consider denormalizing certain aspects to reduce the complexity and speed up data retrieval.
 
-- **Prepared Statements**: Use prepared statements to prevent SQL injection attacks and reduce the overhead of query parsing.
-- **Optimize Queries**: Assess query execution plans and use the right indexes (e.g., composite indexes for multi-field filters) to speed up data access.
-- **Batch Operations**: Use batch insert/update queries to reduce round trips to the database.
+### 6. Optimize Memory Usage
+- **Limit Data Retrieval:** Use filtering and projection in queries to return only necessary fields and rows. This saves memory and reduces processing time.
+- **Stream Data:** For large datasets, process data in streams rather than loading everything into memory at once.
 
-### 4. **Memory Management**
+### 7. Handle Transactions Correctly
+- **Use Transactions for Consistency:** Ensure that operations that need to be atomic are wrapped in transactions. This protects data integrity but can be costly if mismanaged.
+- **Keep Transaction Scope Small:** Minimize the number of operations within a transaction to reduce locking and improve throughput.
 
-- **Limit Result Set Size**: Only fetch the necessary data by applying pagination or limits to your queries.
-- **Lazy Loading**: Consider implementing lazy loading patterns where related data is only fetched when needed.
-- **Free Unused Resources**: Ensure that cursors and result sets are properly closed and cleaned up after use to free memory.
+### 8. Monitor and Profile
+- **Use Query Profiling Tools:** Identify bottlenecks and optimize slow queries. Tools such as EXPLAIN in SQL can show execution plans.
+- **Memory Usage Monitoring:** Continuously monitor memory usage to detect leaks or inefficient use.
 
-### 5. **Concurrency Handling**
+### 9. Error Handling
+- **Graceful Error Handling:** Implement robust error handling to manage database connection failures, transaction rollbacks, and unexpected data issues without crashing the application.
 
-- **Transactions**: Use database transactions to ensure data consistency and integrity, especially when performing multiple related operations.
-- **Optimistic Concurrency Control**: Implement optimistic concurrency controls where applicable to handle updates without lengthy locks.
+### 10. Use Efficient Data Structures
+- **Choose Appropriate Data Types:** Use the most appropriate and compact data types for storing information in the database to save space.
+- **Optimize Data Structures:** Consider using in-memory data structures for frequently accessed data to reduce database hits.
 
-### 6. **Error Handling**
-
-- **Graceful Error Handling**: Implement robust error handling to capture and log exceptions without crashing the application.
-- **Graceful Degradation**: Ensure that when failures occur, the system degrades gracefully rather than becoming entirely unresponsive.
-
-### 7. **Performance Monitoring**
-
-- **Evaluate Performance**: Regularly monitor performance metrics using built-in database tools and custom logging to discover slow queries or high resource usage.
-- **Profile Database Calls**: Use profiling tools to analyze database calls and identify bottlenecks in your application.
-
-### 8. **Use of Database Tools and Libraries**
-
-- Leverage ORM (Object-Relational Mapping) libraries that support memory safety. Some ORMs automatically handle connection pooling, memory management, and query optimization for you while maintaining a focus on high performance.
-
-### Example (Using ekoDB)
-
-If you are using ekoDB, which provides a full backend platform, you can follow these design principles effectively. For instance:
-
-- Utilize `create_function` to create optimized stored procedures to encapsulate complex operations.
-- Employ `query_explain` before executing queries to ensure they are optimized and use indexes appropriately.
-- Manage connection lifecycles with provided tools seamlessly without leaking connections.
+### 11. Build with Scalability in Mind
+- **Horizontal Scaling:** Consider NoSQL databases or sharding techniques for large-scale applications requiring horizontal scaling.
+- **Caching Strategies:** Implement caching layers (e.g., Redis) for frequently accessed data to relieve pressure on the database.
 
 ### Conclusion
-
-By combining efficient database design, robust code practices, and performance monitoring, you can create memory-safe and high-performance database code. Always consider the unique needs of your application and system architecture when adopting these practices.
+By integrating these practices into your database code, you can create a system that is not only memory-safe but also high-performing. It’s important to continuously review and refine these strategies according to the specific requirements and constraints of your project.
 
 === Step 5: Storing New Conversation ===
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 58 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.288s
+    ✓ Generated embedding: 1536 dimensions in 0.269s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
-    • Text length: 3706 characters
+    • Text length: 4101 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.251s
+    ✓ Generated embedding: 1536 dimensions in 0.316s
     • Function auto-cleaned up by client
 ✓ New conversation stored and indexed for future retrieval
 
@@ -16024,60 +15352,53 @@ Searching for messages about 'ownership' across ALL conversations...
 
   2. From conv_rust_programming: Rust's key features include: memory safety without garbage collection, zero-cost abstractions, ownership system, powerful type system, and excellent concurrency support.
 
-  3. From conv_new_question: Writing memory-safe, high-performance database code involves several best practices and approaches that span the design of your application, the choice of the database, and the handling of data within your code. Below are some key strategies to consider:
+  3. From conv_new_question: Writing memory-safe, high-performance database code involves several best practices that encompass both the design of the database interactions and the underlying programming language features. Here’s a comprehensive overview of how to achieve this:
 
-### 1. **Choose the Right Database**
+### 1. Use a Type-Safe Language or Framework
+- **Choose Type-Safe Languages:** Programming languages like Rust or Swift provide type safety and memory management features, helping to avoid common pitfalls like null pointers or buffer overflows.
+- **Type Checking at Compile Time:** Leverage ORM (Object-Relational Mapping) tools or database libraries that provide compile-time type checking, reducing runtime errors.
 
-- **NoSQL vs. SQL**: Depending on your needs, choose a suitable database type. SQL databases are great for complex queries and relationships, while NoSQL databases excel in horizontal scaling and working with unstructured data.
-- **Database Optimization**: Take advantage of built-in database features such as indexing, caching, and partitioning to improve performance.
+### 2. Manage Database Connections Prudently
+- **Connection Pools:** Utilize connection pools to manage database connections efficiently. This minimizes the overhead of opening and closing connections repeatedly.
+- **Keep Connections Open Only as Needed:** Open connections just for the duration of the transaction to minimize resource locking and improve performance.
 
-### 2. **Connection Management**
+### 3. Optimize Query Execution
+- **Use Prepared Statements:** They help in reducing parsing time and SQL injection risks by allowing you to define queries with placeholders.
+- **Batch Inserts/Updates:** When working with multiple records, use batch operations instead of single insert/update calls. This reduces the number of round trips to the database.
 
-- **Use Connection Pools**: Instead of opening a new connection for each request, use connection pooling to manage database connections efficiently.
-- **Limit Connection Lifespan**: Occasionally refresh connections to avoid stale connections that can cause memory leaks.
+### 4. Implement Efficient Indexing
+- **Index Frequently Queried Fields:** Carefully index fields that are often sought in search queries to speed up lookups.
+- **Avoid Over-Indexing:** While indexes speed up reads, they slow down writes. Balance the need for fast read operations against write performance.
 
-### 3. **Efficient Query Writing**
+### 5. Normalize Data Appropriately
+- **Database Normalization:** Normalize your database to reduce redundancy and improve data integrity, but be mindful of over-normalization, which can lead to cumbersome joins.
+- **Denormalization for Performance:** In read-heavy applications, consider denormalizing certain aspects to reduce the complexity and speed up data retrieval.
 
-- **Prepared Statements**: Use prepared statements to prevent SQL injection attacks and reduce the overhead of query parsing.
-- **Optimize Queries**: Assess query execution plans and use the right indexes (e.g., composite indexes for multi-field filters) to speed up data access.
-- **Batch Operations**: Use batch insert/update queries to reduce round trips to the database.
+### 6. Optimize Memory Usage
+- **Limit Data Retrieval:** Use filtering and projection in queries to return only necessary fields and rows. This saves memory and reduces processing time.
+- **Stream Data:** For large datasets, process data in streams rather than loading everything into memory at once.
 
-### 4. **Memory Management**
+### 7. Handle Transactions Correctly
+- **Use Transactions for Consistency:** Ensure that operations that need to be atomic are wrapped in transactions. This protects data integrity but can be costly if mismanaged.
+- **Keep Transaction Scope Small:** Minimize the number of operations within a transaction to reduce locking and improve throughput.
 
-- **Limit Result Set Size**: Only fetch the necessary data by applying pagination or limits to your queries.
-- **Lazy Loading**: Consider implementing lazy loading patterns where related data is only fetched when needed.
-- **Free Unused Resources**: Ensure that cursors and result sets are properly closed and cleaned up after use to free memory.
+### 8. Monitor and Profile
+- **Use Query Profiling Tools:** Identify bottlenecks and optimize slow queries. Tools such as EXPLAIN in SQL can show execution plans.
+- **Memory Usage Monitoring:** Continuously monitor memory usage to detect leaks or inefficient use.
 
-### 5. **Concurrency Handling**
+### 9. Error Handling
+- **Graceful Error Handling:** Implement robust error handling to manage database connection failures, transaction rollbacks, and unexpected data issues without crashing the application.
 
-- **Transactions**: Use database transactions to ensure data consistency and integrity, especially when performing multiple related operations.
-- **Optimistic Concurrency Control**: Implement optimistic concurrency controls where applicable to handle updates without lengthy locks.
+### 10. Use Efficient Data Structures
+- **Choose Appropriate Data Types:** Use the most appropriate and compact data types for storing information in the database to save space.
+- **Optimize Data Structures:** Consider using in-memory data structures for frequently accessed data to reduce database hits.
 
-### 6. **Error Handling**
-
-- **Graceful Error Handling**: Implement robust error handling to capture and log exceptions without crashing the application.
-- **Graceful Degradation**: Ensure that when failures occur, the system degrades gracefully rather than becoming entirely unresponsive.
-
-### 7. **Performance Monitoring**
-
-- **Evaluate Performance**: Regularly monitor performance metrics using built-in database tools and custom logging to discover slow queries or high resource usage.
-- **Profile Database Calls**: Use profiling tools to analyze database calls and identify bottlenecks in your application.
-
-### 8. **Use of Database Tools and Libraries**
-
-- Leverage ORM (Object-Relational Mapping) libraries that support memory safety. Some ORMs automatically handle connection pooling, memory management, and query optimization for you while maintaining a focus on high performance.
-
-### Example (Using ekoDB)
-
-If you are using ekoDB, which provides a full backend platform, you can follow these design principles effectively. For instance:
-
-- Utilize `create_function` to create optimized stored procedures to encapsulate complex operations.
-- Employ `query_explain` before executing queries to ensure they are optimized and use indexes appropriately.
-- Manage connection lifecycles with provided tools seamlessly without leaking connections.
+### 11. Build with Scalability in Mind
+- **Horizontal Scaling:** Consider NoSQL databases or sharding techniques for large-scale applications requiring horizontal scaling.
+- **Caching Strategies:** Implement caching layers (e.g., Redis) for frequently accessed data to relieve pressure on the database.
 
 ### Conclusion
-
-By combining efficient database design, robust code practices, and performance monitoring, you can create memory-safe and high-performance database code. Always consider the unique needs of your application and system architecture when adopting these practices.
+By integrating these practices into your database code, you can create a system that is not only memory-safe but also high-performing. It’s important to continuously review and refine these strategies according to the specific requirements and constraints of your project.
 
 === System Statistics ===
 Total conversations: 4
@@ -16097,9 +15418,6 @@ Each conversation can have its own search config...
   • Per-conversation AI behavior
 
 This enables context-aware search tuned to each conversation's needs!
-
-=== Cleanup ===
-✓ Cleanup complete
 
 
 === 📚 Summary: What This Example Showed ===
@@ -16129,6 +15447,8 @@ This enables context-aware search tuned to each conversation's needs!
    → Use these client helpers to make AI integration simple
    → Scale to millions of documents with native indexing
 
+✓ Cleanup complete
+
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Running TypeScript RAG Example...
@@ -16145,75 +15465,75 @@ Storing previous conversations with embeddings...
     • Using model: text-embedding-3-small
     • Text length: 34 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.290s
+    ✓ Generated embedding: 1536 dimensions in 0.358s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 169 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.326s
+    ✓ Generated embedding: 1536 dimensions in 0.306s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 33 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.298s
+    ✓ Generated embedding: 1536 dimensions in 0.248s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 230 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.280s
+    ✓ Generated embedding: 1536 dimensions in 0.286s
     • Function auto-cleaned up by client
 ✓ Stored Rust programming conversation (4 messages)
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 31 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.277s
+    ✓ Generated embedding: 1536 dimensions in 0.344s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 217 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.288s
+    ✓ Generated embedding: 1536 dimensions in 0.283s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 33 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.316s
+    ✓ Generated embedding: 1536 dimensions in 0.263s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 232 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.278s
+    ✓ Generated embedding: 1536 dimensions in 0.272s
     • Function auto-cleaned up by client
 ✓ Stored database design conversation (4 messages)
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 36 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.261s
+    ✓ Generated embedding: 1536 dimensions in 0.249s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 178 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.233s
+    ✓ Generated embedding: 1536 dimensions in 0.431s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 37 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.258s
+    ✓ Generated embedding: 1536 dimensions in 0.386s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 213 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.231s
+    ✓ Generated embedding: 1536 dimensions in 0.383s
     • Function auto-cleaned up by client
 ✓ Stored performance optimization conversation (4 messages)
 
@@ -16229,17 +15549,17 @@ Using hybrid search to find relevant messages from all conversations...
     • Using model: text-embedding-3-small
     • Text length: 58 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.215s
+    ✓ Generated embedding: 1536 dimensions in 0.316s
     • Function auto-cleaned up by client
 
 → Executing hybridSearch()...
-  • Collection: rag_messages
+  • Collection: rag_messages_ts
   • Query text: "How do I write memory-safe high-performance database code?"
   • Vector dimensions: 1536
   • Limit: 5 results
   • Search type: Semantic (vector) + Keyword (text)
   • Server combines both scores for relevance ranking
-  ✓ Search completed in 0.079s
+  ✓ Search completed in 0.068s
 ✓ Found 5 related messages across all conversations:
   1. [Score: 0.474] From conv_performance
      How can I optimize database queries?
@@ -16259,61 +15579,63 @@ Using hybrid search to find relevant messages from all conversations...
 === Step 4: Generating Context-Aware Response ===
 ✓ AI Response (with context from 3 conversations):
 
-To write memory-safe high-performance database code, consider the following strategies that combine best practices in database management, programming languages, and system architectures:
+Writing memory-safe, high-performance database code requires a combination of best practices from both database usage and programming. Here are some strategies to consider:
 
-### 1. **Use Prepared Statements and Parameterized Queries**
-   - **Prevention of SQL Injection**: Ensure that queries are safe from injection attacks by using prepared statements, which separate SQL code from data.
-   - **Performance**: Prepared statements can be pre-parsed and compiled, which can lead to performance improvements, especially for repeated queries.
+### 1. **Use Prepared Statements:**
+   - Prepared statements help prevent SQL injection attacks and can lead to performance improvements, especially when the same SQL statement is executed multiple times with different parameters.
 
-### 2. **Connection Pooling**
-   - **Efficient Resource Management**: Utilize connection pooling to manage database connections efficiently. This reduces the overhead of establishing new connections and helps maintain performance.
-   - **Concurrency Handling**: Pooling allows multiple requests to share connections, enhancing scalability in applications with high concurrency demands.
+### 2. **Transaction Handling:**
+   - Use transactions for batch processing to ensure atomicity. In multi-statement operations, wrap them in a transaction to maintain integrity and avoid partial updates.
+   - Be careful with transaction isolation levels; for example, using a higher isolation level like `Serializable` can lead to increased contention, while lower levels might allow dirty reads.
 
-### 3. **Memory Management**
-   - **Garbage Collection**: In languages like Java or C#, rely on garbage collection for automatic memory management, but also monitor memory usage to avoid leaks.
-   - **Manual Memory Management**: In languages like C or C++, ensure to free allocated memory appropriately to prevent memory leaks, utilizing smart pointers where applicable.
+### 3. **Connection Pooling:**
+   - Implement connection pooling to reduce the overhead of establishing connections to the database. This allows for efficient reuse of database connections.
 
-### 4. **Optimize Queries**
-   - **Indexing**: Create appropriate indexes on database tables to speed up query performance. Analyze query performance using explain plans to understand how indexes are utilized.
-   - **Normalization**: Normalize database schemas to reduce redundancy and improve data integrity, but also consider denormalization for read-heavy applications to minimize JOIN operations.
+### 4. **Efficient Query Design:**
+   - Optimize your queries to retrieve only the necessary data. Use selective `SELECT` statements and avoid `SELECT *`.
+   - Utilize indexing wisely. Create indexes on columns that are frequently searched or sorted, but be aware that too many indexes can slow down `INSERT` and `UPDATE` operations.
 
-### 5. **Batch Processing**
-   - **Bulk Inserts and Updates**: Use batch operations for inserts and updates to reduce the number of database transactions. This is more efficient than executing many individual queries.
-   - **Transaction Management**: Wrap multiple operations in transactions to ensure atomicity and to minimize the overhead of commit operations.
+### 5. **Batch Processing:**
+   - For bulk operations, use batch inserts/updates which can drastically reduce round trips to the database and improve performance.
+   - When fetching large datasets, implement pagination to avoid loading excessive amounts of data into memory at once.
 
-### 6. **Asynchronous I/O Operations**
-   - **Non-Blocking Calls**: If supported by your database and programming environment, use asynchronous I/O to avoid blocking application threads while waiting for database responses, improving overall application responsiveness.
+### 6. **Use of Connection and Resource Management:**
+   - Always close database connections, statements, and result sets promptly to free resources. In environments like Java or with frameworks that support it, use try-with-resources statements to ensure this.
 
-### 7. **Caching Mechanisms**
-   - **In-Memory Caching**: Utilize in-memory caching strategies (like Redis or Memcached) to reduce the load on your database and speed up access to frequently queried data.
-   - **Application-Level Caching**: Implement caching at the application level to store results of expensive queries for quick retrieval.
+### 7. **Handling Memory Efficiently:**
+   - In programming languages that allow manual memory management, such as C and C++, be sure to free allocated memory after use.
+   - In higher-level languages, be wary of memory leaks due to lingering references, and consider using memory profiling tools to identify potential issues.
 
-### 8. **Profiling and Monitoring**
-   - **Database Monitoring Tools**: Use tools to monitor query performance and system resource usage to identify bottlenecks (e.g., slow queries, high CPU, or memory consumption).
-   - **Profile Your Code**: Use profiling tools in your development environment to analyze memory usage and identify performance hotspots.
+### 8. **Concurrency Controls:**
+   - Design your application to handle concurrent access properly, using mechanisms like optimistic locking to avoid update conflicts without locking the rows for an extended time.
 
-### 9. **Utilize Connection Options Wisely**
-   - **Timeouts and Retries**: Set appropriate connection timeouts and retry policies to handle transient failures gracefully without crashing the application.
-   - **Transaction Isolation Levels**: Choose the correct isolation level based on the use case to balance between data integrity and performance.
+### 9. **Error Handling and Logging:**
+   - Implement robust error handling. Catch exceptions and perform cleanup (like closing connections) properly to prevent resource leaks.
+   - Use logging judiciously; while it aids in tracking performance and debugging, excessive logging can also hinder performance.
 
-### 10. **Concurrency Control**
-   - **Optimistic Locking**: Implement optimistic locking to avoid blocking database rows during updates, which can improve performance in high-write environments.
-   - **Pessimistic Locking**: In scenarios demanding strong consistency, use pessimistic locking judiciously.
+### 10. **Use of Memory-Mapped Files and Caching:**
+   - Consider using memory-mapped files for large datasets that need frequent access.
+   - Utilize caching mechanisms (like Redis or in-memory databases) to store frequently accessed data, reducing the load on the primary database and decreasing response times.
 
-By integrating these strategies into your coding practices, you can create database interactions that are both memory-safe and performance-oriented. Always ensure to test under load and review code regularly for performance improvements.
+### 11. **Profiling and Monitoring:**
+   - Regularly profile your database queries using tools provided by the database management system. Identify slow queries and optimize them.
+   - Monitor resource usage and performance metrics to adjust configurations dynamically based on usage patterns.
+
+### Key Takeaway
+Combining these practices will not only lead to memory-safe code but will also enhance the performance of your database interactions. Furthermore, using tools and features available in modern database systems, including ekoDB, can significantly improve your backend implementation. Techniques like connection pooling, query optimization, and effective indexing are paramount to achieving the goals of memory safety and high performance.
 
 === Step 5: Storing New Conversation ===
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 58 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.269s
+    ✓ Generated embedding: 1536 dimensions in 0.325s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
-    • Text length: 3950 characters
+    • Text length: 3792 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.246s
+    ✓ Generated embedding: 1536 dimensions in 0.265s
     • Function auto-cleaned up by client
 ✓ New conversation stored and indexed for future retrieval
 
@@ -16322,59 +15644,18 @@ Searching for messages about 'ownership' across ALL conversations...
 
 
 → Executing textSearch()...
-  • Collection: rag_messages
+  • Collection: rag_messages_ts
   • Query: "ownership system"
   • Limit: 3 results
   • Search method: Full-text with fuzzy matching & stemming
   • No vector embeddings needed - pure keyword search
-  ✓ Text search completed in 0.044s
+  ✓ Text search completed in 0.043s
 ✓ Found 3 messages mentioning ownership:
   1. From conv_performance: Rust's ownership system provides zero-cost memory management. Use Box for heap allocation, Rc/Arc for shared ownership, and avoid cloning large data structures. The compiler optimizes away unnecessary allocations.
 
   2. From conv_rust_programming: Rust's key features include: memory safety without garbage collection, zero-cost abstractions, ownership system, powerful type system, and excellent concurrency support.
 
-  3. From conv_new_question: To write memory-safe high-performance database code, consider the following strategies that combine best practices in database management, programming languages, and system architectures:
-
-### 1. **Use Prepared Statements and Parameterized Queries**
-   - **Prevention of SQL Injection**: Ensure that queries are safe from injection attacks by using prepared statements, which separate SQL code from data.
-   - **Performance**: Prepared statements can be pre-parsed and compiled, which can lead to performance improvements, especially for repeated queries.
-
-### 2. **Connection Pooling**
-   - **Efficient Resource Management**: Utilize connection pooling to manage database connections efficiently. This reduces the overhead of establishing new connections and helps maintain performance.
-   - **Concurrency Handling**: Pooling allows multiple requests to share connections, enhancing scalability in applications with high concurrency demands.
-
-### 3. **Memory Management**
-   - **Garbage Collection**: In languages like Java or C#, rely on garbage collection for automatic memory management, but also monitor memory usage to avoid leaks.
-   - **Manual Memory Management**: In languages like C or C++, ensure to free allocated memory appropriately to prevent memory leaks, utilizing smart pointers where applicable.
-
-### 4. **Optimize Queries**
-   - **Indexing**: Create appropriate indexes on database tables to speed up query performance. Analyze query performance using explain plans to understand how indexes are utilized.
-   - **Normalization**: Normalize database schemas to reduce redundancy and improve data integrity, but also consider denormalization for read-heavy applications to minimize JOIN operations.
-
-### 5. **Batch Processing**
-   - **Bulk Inserts and Updates**: Use batch operations for inserts and updates to reduce the number of database transactions. This is more efficient than executing many individual queries.
-   - **Transaction Management**: Wrap multiple operations in transactions to ensure atomicity and to minimize the overhead of commit operations.
-
-### 6. **Asynchronous I/O Operations**
-   - **Non-Blocking Calls**: If supported by your database and programming environment, use asynchronous I/O to avoid blocking application threads while waiting for database responses, improving overall application responsiveness.
-
-### 7. **Caching Mechanisms**
-   - **In-Memory Caching**: Utilize in-memory caching strategies (like Redis or Memcached) to reduce the load on your database and speed up access to frequently queried data.
-   - **Application-Level Caching**: Implement caching at the application level to store results of expensive queries for quick retrieval.
-
-### 8. **Profiling and Monitoring**
-   - **Database Monitoring Tools**: Use tools to monitor query performance and system resource usage to identify bottlenecks (e.g., slow queries, high CPU, or memory consumption).
-   - **Profile Your Code**: Use profiling tools in your development environment to analyze memory usage and identify performance hotspots.
-
-### 9. **Utilize Connection Options Wisely**
-   - **Timeouts and Retries**: Set appropriate connection timeouts and retry policies to handle transient failures gracefully without crashing the application.
-   - **Transaction Isolation Levels**: Choose the correct isolation level based on the use case to balance between data integrity and performance.
-
-### 10. **Concurrency Control**
-   - **Optimistic Locking**: Implement optimistic locking to avoid blocking database rows during updates, which can improve performance in high-write environments.
-   - **Pessimistic Locking**: In scenarios demanding strong consistency, use pessimistic locking judiciously.
-
-By integrating these strategies into your coding practices, you can create database interactions that are both memory-safe and performance-oriented. Always ensure to test under load and review code regularly for performance improvements.
+  3. From conv_rust_programming: The borrow checker enforces Rust's ownership rules at compile time. It ensures that references don't outlive the data they point to and prevents data races by allowing either multiple immutable references or one mutable reference.
 
 === System Statistics ===
 
@@ -16399,9 +15680,6 @@ Each conversation can have its own search config...
   • Per-conversation AI behavior
 
 This enables context-aware search tuned to each conversation's needs!
-
-=== Cleanup ===
-✓ Cleanup complete
 
 
 === 📚 Summary: What This Example Showed ===
@@ -16431,6 +15709,9 @@ This enables context-aware search tuned to each conversation's needs!
    → Use these client helpers to make AI integration simple
    → Scale to millions of documents with native indexing
 
+=== Cleanup ===
+✓ Cleanup complete
+
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Running Go RAG Example...
@@ -16447,69 +15728,69 @@ Storing previous conversations with embeddings...
     • Using model: text-embedding-3-small
     • Text length: 34 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.307s
+    ✓ Generated embedding: 1536 dimensions in 0.416s
     • Function auto-cleaned up by client
   → Calling ekoDB Embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 169 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.228s
+    ✓ Generated embedding: 1536 dimensions in 0.277s
     • Function auto-cleaned up by client
   → Calling ekoDB Embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 33 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.269s
+    ✓ Generated embedding: 1536 dimensions in 0.276s
     • Function auto-cleaned up by client
   → Calling ekoDB Embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 230 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.318s
+    ✓ Generated embedding: 1536 dimensions in 0.482s
     • Function auto-cleaned up by client
 ✓ Stored Rust programming conversation (4 messages)
   → Calling ekoDB Embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 31 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.307s
+    ✓ Generated embedding: 1536 dimensions in 0.947s
     • Function auto-cleaned up by client
   → Calling ekoDB Embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 217 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.271s
+    ✓ Generated embedding: 1536 dimensions in 0.288s
     • Function auto-cleaned up by client
   → Calling ekoDB Embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 33 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.252s
+    ✓ Generated embedding: 1536 dimensions in 0.272s
     • Function auto-cleaned up by client
   → Calling ekoDB Embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 232 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.273s
+    ✓ Generated embedding: 1536 dimensions in 0.274s
     • Function auto-cleaned up by client
 ✓ Stored database design conversation (4 messages)
   → Calling ekoDB Embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 36 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.302s
+    ✓ Generated embedding: 1536 dimensions in 0.318s
     • Function auto-cleaned up by client
   → Calling ekoDB Embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 178 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.276s
+    ✓ Generated embedding: 1536 dimensions in 0.248s
     • Function auto-cleaned up by client
   → Calling ekoDB Embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 37 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.242s
+    ✓ Generated embedding: 1536 dimensions in 0.298s
     • Function auto-cleaned up by client
   → Calling ekoDB Embed() helper...
     • Using model: text-embedding-3-small
@@ -16531,17 +15812,17 @@ Using hybrid search to find relevant messages from all conversations...
     • Using model: text-embedding-3-small
     • Text length: 58 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.244s
+    ✓ Generated embedding: 1536 dimensions in 0.451s
     • Function auto-cleaned up by client
 
 → Executing HybridSearch()...
-  • Collection: rag_messages
+  • Collection: rag_messages_go
   • Query text: "How do I write memory-safe high-performance database code?"
   • Vector dimensions: 1536
   • Limit: 5 results
   • Search type: Semantic (vector) + Keyword (text)
   • Server combines both scores for relevance ranking
-  ✓ Search completed in 0.055s
+  ✓ Search completed in 0.058s
 
 ✓ Found 5 related messages across all conversations:
   1. [Score: 0.474] From conv_performance
@@ -16562,59 +15843,61 @@ Using hybrid search to find relevant messages from all conversations...
 === Step 4: Generating Context-Aware Response ===
 ✓ AI Response (with context from 3 conversations):
 
-Writing memory-safe, high-performance database code involves combining best practices in both database interactions and programming language constructs. Here’s a comprehensive approach to achieve this:
+Writing memory-safe, high-performance database code involves several best practices that ensure efficient resource management while maintaining the integrity and safety of your application. Here are some key strategies:
 
-### 1. Use Efficient Querying Techniques
-- **Prepared Statements**: Use prepared statements to enhance performance by pre-compiling SQL queries. This reduces the overhead of query parsing and execution.
-- **Batch Operations**: When inserting or updating multiple records, use batch operations to minimize the number of database calls.
-- **Proper Indexing**: Ensure that your database tables are appropriately indexed to speed up query performance. Analyze query plans to identify the need for indexes.
+### 1. Use Prepared Statements
+- **Safety**: Prepared statements help prevent SQL injection attacks by separating query logic from data.
+- **Performance**: They can enhance performance because the SQL engine can cache the execution plan.
 
-### 2. Optimize Database Design
-- **Normalization**: Normalize your database schema to reduce redundancy, but also consider denormalization for read-heavy applications where performance is critical and data integrity can be managed.
-- **Use Proper Data Types**: Choose efficient data types for your fields to reduce memory usage and increase performance (e.g., using INTEGER instead of BIGINT if possible).
+### 2. Manage Database Connections Wisely
+- **Connection Pooling**: Use connection pools to manage database connections efficiently. Reusing connections reduces the overhead associated with establishing connections multiple times.
+- **Close Connections**: Always close your connections, preferably using a `try-with-resources` statement or equivalent to ensure they are closed even in case of an exception.
 
-### 3. Connection Management
-- **Connection Pooling**: Utilize connection pooling to manage database connections efficiently, reducing the overhead of establishing database connections for each request.
-- **Close Connections**: Ensure that all database connections are closed or returned to the pool promptly to avoid resource leaks.
+### 3. Indexing
+- **Optimize Queries**: Use indexing wisely to speed up access to the data. Analyze your query patterns and create indexes on columns that are frequently used in WHERE clauses or join conditions.
+- **Remove Unused Indexes**: Regularly review and drop indexes that are not used anymore to enhance write performance.
 
-### 4. Error Handling
-- **Graceful Handling**: Implement proper error handling strategies (such as try-catch blocks) to manage exceptions without crashing the application and ensure resources are freed.
-- **Use Transactions**: Use transactions to ensure that a series of database operations are completed successfully or rolled back in case of errors, maintaining data integrity.
+### 4. Transactional Control
+- **Use Transactions**: Group multiple database changes within transactions to ensure data integrity.
+- **Batch Operations**: When inserting or updating many records, use batch operations instead of single operations. This minimizes the number of database calls and can improve performance.
 
-### 5. Memory Management
-- **Pooling Resources**: For languages like C/C++, use memory pool allocators to minimize fragmentation and allocation overhead.
-- **Automatic Garbage Collection**: If using languages with garbage collection (e.g., Java, C#), ensure large datasets are processed in small chunks to allow for effective garbage collection.
+### 5. Error Handling
+- **Use Exception Handling**: Implement thorough error handling for database operations to catch issues early and prevent resource leaks.
+- **Logging**: Log errors or unexpected behaviors for further analysis without exposing sensitive information.
 
-### 6. Asynchronous Operations
-- **Non-blocking I/O**: Consider using non-blocking I/O operations where possible to prevent blocking threads while waiting for database responses, especially in web applications.
+### 6. Object Relational Mapping (ORM)
+- **Efficient Querying**: If using an ORM, learn its performance features and lazy loading mechanisms to avoid excessive database calls.
+- **Customize Queries**: Sometimes raw SQL queries may be necessary for performance-critical paths; know when to fall back to those.
 
-### 7. Profiling and Monitoring
-- **Performance Monitoring**: Use monitoring tools to analyze query performance, system resource utilization, and identify bottlenecks in the application's interaction with the database.
-- **Regular Profiling**: Profile your code regularly to understand memory usage patterns and optimize hotspots.
+### 7. Memory Management
+- **Limit Memory Use**: Avoid loading large data sets into memory. Use pagination to manage the size of query results and fetch only what you need.
+- **Stream Results**: For large result sets, consider streaming results from the database rather than loading everything at once.
 
-### 8. Security Considerations
-- **Sanitize Inputs**: Always validate and sanitize user inputs to prevent SQL injection attacks and other malicious behaviors.
-- **Limit Permissions**: Operate with the least privileges necessary for database accounts to minimize security risks.
+### 8. Asynchronous Operations
+- **Async Calls**: If your language/framework supports it, use asynchronous database calls to improve application responsiveness and utilization of system resources.
 
-### 9. Use of Frameworks and Libraries
-- **ORMs**: If using an Object-Relational Mapping (ORM) framework, ensure it’s optimized for performance. Some ORMs can generate inefficient queries if not configured properly.
-- **Data Access Layers**: Implement a data access layer that abstracts the database interactions, allowing for better maintenance and reusability.
+### 9. Profiling and Monitoring
+- **Monitor Queries**: Use database profiling tools to analyze the performance of your queries. Optimize slow queries based on the profiling results.
+- **System Resources**: Monitor the application’s memory and CPU usage to identify potential bottlenecks or memory leaks.
 
-### Conclusion
-Combining these practices will help you write database code that is both memory-safe and performs well. Always keep performance considerations in mind during the design and implementation phases, and continuously evaluate your code as the application and database grow.
+### 10. Follow Language/Framework Best Practices
+- **Compiler Optimizations**: Take advantage of compiler optimizations where applicable, especially for low-level languages (like C/C++).
+- **Language Features**: Use language features such as safe memory models, garbage collection, and safe async patterns to ensure memory safety.
+
+By incorporating these practices, you will be able to write database code that is both memory-safe and performant, minimizing risks while maintaining optimal efficiency in data handling.
 
 === Step 5: Storing New Conversation ===
   → Calling ekoDB Embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 58 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.250s
+    ✓ Generated embedding: 1536 dimensions in 0.268s
     • Function auto-cleaned up by client
   → Calling ekoDB Embed() helper...
     • Using model: text-embedding-3-small
-    • Text length: 3652 characters
+    • Text length: 3430 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.291s
+    ✓ Generated embedding: 1536 dimensions in 0.429s
     • Function auto-cleaned up by client
 ✓ New conversation stored and indexed for future retrieval
 
@@ -16623,12 +15906,12 @@ Searching for messages about 'ownership' across ALL conversations...
 
 
 → Executing TextSearch()...
-  • Collection: rag_messages
+  • Collection: rag_messages_go
   • Query: "ownership system"
   • Limit: 3 results
   • Search method: Full-text with fuzzy matching & stemming
   • No vector embeddings needed - pure keyword search
-  ✓ Text search completed in 0.041s
+  ✓ Text search completed in 0.042s
 
 ✓ Found 3 messages mentioning ownership:
   1. From conv_rust_programming: Rust's key features include: memory safety without garbage collection, zero-cost abstractions, ownership system, powerful type system, and excellent concurrency support.
@@ -16661,9 +15944,6 @@ Each conversation can have its own search config...
 
 This enables context-aware search tuned to each conversation's needs!
 
-=== Cleanup ===
-✓ Cleanup complete
-
 
 === 📚 Summary: What This Example Showed ===
 
@@ -16692,6 +15972,9 @@ This enables context-aware search tuned to each conversation's needs!
    → Use these client helpers to make AI integration simple
    → Scale to millions of documents with native indexing
 
+=== Cleanup ===
+✓ Cleanup complete
+
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Running Kotlin RAG Example...
@@ -16707,81 +15990,81 @@ SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
 === Step 1: Building Conversation History ===
 Storing previous conversations with embeddings...
 
-  ? Calling ekoDB embed() helper...
-    ? Using model: text-embedding-3-small
-    ? Text length: 34 characters
-    ? Behind the scenes: Creating temp Function with Embed operation
-    ? Generated embedding: 1536 dimensions in 0.313s
-    ? Function auto-cleaned up by client
-  ? Calling ekoDB embed() helper...
-    ? Using model: text-embedding-3-small
-    ? Text length: 169 characters
-    ? Behind the scenes: Creating temp Function with Embed operation
-    ? Generated embedding: 1536 dimensions in 0.297s
-    ? Function auto-cleaned up by client
-  ? Calling ekoDB embed() helper...
-    ? Using model: text-embedding-3-small
-    ? Text length: 33 characters
-    ? Behind the scenes: Creating temp Function with Embed operation
-    ? Generated embedding: 1536 dimensions in 0.248s
-    ? Function auto-cleaned up by client
-  ? Calling ekoDB embed() helper...
-    ? Using model: text-embedding-3-small
-    ? Text length: 230 characters
-    ? Behind the scenes: Creating temp Function with Embed operation
-    ? Generated embedding: 1536 dimensions in 0.256s
-    ? Function auto-cleaned up by client
-? Stored Rust programming conversation (4 messages)
-  ? Calling ekoDB embed() helper...
-    ? Using model: text-embedding-3-small
-    ? Text length: 31 characters
-    ? Behind the scenes: Creating temp Function with Embed operation
-    ? Generated embedding: 1536 dimensions in 0.244s
-    ? Function auto-cleaned up by client
-  ? Calling ekoDB embed() helper...
-    ? Using model: text-embedding-3-small
-    ? Text length: 217 characters
-    ? Behind the scenes: Creating temp Function with Embed operation
-    ? Generated embedding: 1536 dimensions in 0.296s
-    ? Function auto-cleaned up by client
-  ? Calling ekoDB embed() helper...
-    ? Using model: text-embedding-3-small
-    ? Text length: 33 characters
-    ? Behind the scenes: Creating temp Function with Embed operation
-    ? Generated embedding: 1536 dimensions in 0.226s
-    ? Function auto-cleaned up by client
-  ? Calling ekoDB embed() helper...
-    ? Using model: text-embedding-3-small
-    ? Text length: 232 characters
-    ? Behind the scenes: Creating temp Function with Embed operation
-    ? Generated embedding: 1536 dimensions in 0.285s
-    ? Function auto-cleaned up by client
-? Stored database design conversation (4 messages)
-  ? Calling ekoDB embed() helper...
-    ? Using model: text-embedding-3-small
-    ? Text length: 36 characters
-    ? Behind the scenes: Creating temp Function with Embed operation
-    ? Generated embedding: 1536 dimensions in 0.296s
-    ? Function auto-cleaned up by client
-  ? Calling ekoDB embed() helper...
-    ? Using model: text-embedding-3-small
-    ? Text length: 178 characters
-    ? Behind the scenes: Creating temp Function with Embed operation
-    ? Generated embedding: 1536 dimensions in 0.281s
-    ? Function auto-cleaned up by client
-  ? Calling ekoDB embed() helper...
-    ? Using model: text-embedding-3-small
-    ? Text length: 37 characters
-    ? Behind the scenes: Creating temp Function with Embed operation
-    ? Generated embedding: 1536 dimensions in 0.272s
-    ? Function auto-cleaned up by client
-  ? Calling ekoDB embed() helper...
-    ? Using model: text-embedding-3-small
-    ? Text length: 213 characters
-    ? Behind the scenes: Creating temp Function with Embed operation
-    ? Generated embedding: 1536 dimensions in 0.245s
-    ? Function auto-cleaned up by client
-? Stored performance optimization conversation (4 messages)
+  → Calling ekoDB embed() helper...
+    • Using model: text-embedding-3-small
+    • Text length: 34 characters
+    • Behind the scenes: Creating temp Function with Embed operation
+    ✓ Generated embedding: 1536 dimensions in 0.295s
+    • Function auto-cleaned up by client
+  → Calling ekoDB embed() helper...
+    • Using model: text-embedding-3-small
+    • Text length: 169 characters
+    • Behind the scenes: Creating temp Function with Embed operation
+    ✓ Generated embedding: 1536 dimensions in 0.332s
+    • Function auto-cleaned up by client
+  → Calling ekoDB embed() helper...
+    • Using model: text-embedding-3-small
+    • Text length: 33 characters
+    • Behind the scenes: Creating temp Function with Embed operation
+    ✓ Generated embedding: 1536 dimensions in 0.294s
+    • Function auto-cleaned up by client
+  → Calling ekoDB embed() helper...
+    • Using model: text-embedding-3-small
+    • Text length: 230 characters
+    • Behind the scenes: Creating temp Function with Embed operation
+    ✓ Generated embedding: 1536 dimensions in 0.319s
+    • Function auto-cleaned up by client
+✓ Stored Rust programming conversation (4 messages)
+  → Calling ekoDB embed() helper...
+    • Using model: text-embedding-3-small
+    • Text length: 31 characters
+    • Behind the scenes: Creating temp Function with Embed operation
+    ✓ Generated embedding: 1536 dimensions in 0.314s
+    • Function auto-cleaned up by client
+  → Calling ekoDB embed() helper...
+    • Using model: text-embedding-3-small
+    • Text length: 217 characters
+    • Behind the scenes: Creating temp Function with Embed operation
+    ✓ Generated embedding: 1536 dimensions in 0.57s
+    • Function auto-cleaned up by client
+  → Calling ekoDB embed() helper...
+    • Using model: text-embedding-3-small
+    • Text length: 33 characters
+    • Behind the scenes: Creating temp Function with Embed operation
+    ✓ Generated embedding: 1536 dimensions in 0.297s
+    • Function auto-cleaned up by client
+  → Calling ekoDB embed() helper...
+    • Using model: text-embedding-3-small
+    • Text length: 232 characters
+    • Behind the scenes: Creating temp Function with Embed operation
+    ✓ Generated embedding: 1536 dimensions in 0.261s
+    • Function auto-cleaned up by client
+✓ Stored database design conversation (4 messages)
+  → Calling ekoDB embed() helper...
+    • Using model: text-embedding-3-small
+    • Text length: 36 characters
+    • Behind the scenes: Creating temp Function with Embed operation
+    ✓ Generated embedding: 1536 dimensions in 0.256s
+    • Function auto-cleaned up by client
+  → Calling ekoDB embed() helper...
+    • Using model: text-embedding-3-small
+    • Text length: 178 characters
+    • Behind the scenes: Creating temp Function with Embed operation
+    ✓ Generated embedding: 1536 dimensions in 0.291s
+    • Function auto-cleaned up by client
+  → Calling ekoDB embed() helper...
+    • Using model: text-embedding-3-small
+    • Text length: 37 characters
+    • Behind the scenes: Creating temp Function with Embed operation
+    ✓ Generated embedding: 1536 dimensions in 0.285s
+    • Function auto-cleaned up by client
+  → Calling ekoDB embed() helper...
+    • Using model: text-embedding-3-small
+    • Text length: 213 characters
+    • Behind the scenes: Creating temp Function with Embed operation
+    ✓ Generated embedding: 1536 dimensions in 0.359s
+    • Function auto-cleaned up by client
+✓ Stored performance optimization conversation (4 messages)
 
 === Step 2: New User Question with Context Retrieval ===
 User asks: "How do I write memory-safe high-performance database code?"
@@ -16790,24 +16073,24 @@ User asks: "How do I write memory-safe high-performance database code?"
 Using hybrid search to find relevant messages from all conversations...
 
 
-? Generating embedding for user question...
-  ? Calling ekoDB embed() helper...
-    ? Using model: text-embedding-3-small
-    ? Text length: 58 characters
-    ? Behind the scenes: Creating temp Function with Embed operation
-    ? Generated embedding: 1536 dimensions in 0.288s
-    ? Function auto-cleaned up by client
+→ Generating embedding for user question...
+  → Calling ekoDB embed() helper...
+    • Using model: text-embedding-3-small
+    • Text length: 58 characters
+    • Behind the scenes: Creating temp Function with Embed operation
+    ✓ Generated embedding: 1536 dimensions in 0.267s
+    • Function auto-cleaned up by client
 
-? Executing hybridSearch()...
-  ? Collection: rag_messages
-  ? Query text: "How do I write memory-safe high-performance database code?"
-  ? Vector dimensions: 1536
-  ? Limit: 5 results
-  ? Search type: Semantic (vector) + Keyword (text)
-  ? Server combines both scores for relevance ranking
-  ? Search completed in 0.093s
+→ Executing hybridSearch()...
+  • Collection: rag_messages_kt
+  • Query text: "How do I write memory-safe high-performance database code?"
+  • Vector dimensions: 1536
+  • Limit: 5 results
+  • Search type: Semantic (vector) + Keyword (text)
+  • Server combines both scores for relevance ranking
+  ✓ Search completed in 0.075s
 
-? Found 5 related messages across all conversations:
+✓ Found 5 related messages across all conversations:
   1. [Score: 0.474] From conv_performance
      How can I optimize database queries?
 
@@ -16824,91 +16107,91 @@ Using hybrid search to find relevant messages from all conversations...
      Database normalization is the process of organizing data to reduce redundancy and improve data integrity. It involves dividing large tables into smaller ones and defining relationships between them using foreign keys.
 
 === Step 4: Generating Context-Aware Response ===
-? Context prepared from search results
-? AI would use this context to generate comprehensive response
+✓ Context prepared from search results
+✓ AI would use this context to generate comprehensive response
 
 === Step 5: Storing New Conversation ===
-  ? Calling ekoDB embed() helper...
-    ? Using model: text-embedding-3-small
-    ? Text length: 58 characters
-    ? Behind the scenes: Creating temp Function with Embed operation
-    ? Generated embedding: 1536 dimensions in 0.265s
-    ? Function auto-cleaned up by client
-? New conversation stored and indexed for future retrieval
+  → Calling ekoDB embed() helper...
+    • Using model: text-embedding-3-small
+    • Text length: 58 characters
+    • Behind the scenes: Creating temp Function with Embed operation
+    ✓ Generated embedding: 1536 dimensions in 0.789s
+    • Function auto-cleaned up by client
+✓ New conversation stored and indexed for future retrieval
 
 === Step 6: Cross-Conversation Search ===
 Searching for messages about 'ownership' across ALL conversations...
 
 
-? Executing textSearch()...
-  ? Collection: rag_messages
-  ? Query: "ownership system"
-  ? Limit: 3 results
-  ? Search method: Full-text with fuzzy matching & stemming
-  ? No vector embeddings needed - pure keyword search
-  ? Text search completed in 0.044s
+→ Executing textSearch()...
+  • Collection: rag_messages_kt
+  • Query: "ownership system"
+  • Limit: 3 results
+  • Search method: Full-text with fuzzy matching & stemming
+  • No vector embeddings needed - pure keyword search
+  ✓ Text search completed in 0.036s
 
-? Found 3 messages mentioning ownership:
-  1. From conv_performance: Rust's ownership system provides zero-cost memory management. Use Box for heap allocation, Rc/Arc for shared ownership, and avoid cloning large data structures. The compiler optimizes away unnecessary allocations.
+✓ Found 3 messages mentioning ownership:
+  1. From conv_rust_programming: Rust's key features include: memory safety without garbage collection, zero-cost abstractions, ownership system, powerful type system, and excellent concurrency support.
 
-  2. From conv_rust_programming: Rust's key features include: memory safety without garbage collection, zero-cost abstractions, ownership system, powerful type system, and excellent concurrency support.
+  2. From conv_performance: Rust's ownership system provides zero-cost memory management. Use Box for heap allocation, Rc/Arc for shared ownership, and avoid cloning large data structures. The compiler optimizes away unnecessary allocations.
 
   3. From conv_rust_programming: The borrow checker enforces Rust's ownership rules at compile time. It ensures that references don't outlive the data they point to and prevents data races by allowing either multiple immutable references or one mutable reference.
 
 === System Statistics ===
 
-? Querying database statistics...
-  ? Using findAllWithLimit() helper - simplified query API
+→ Querying database statistics...
+  • Using findAllWithLimit() helper - simplified query API
 
-? Database Statistics:
-  ? Total conversations: 4
-  ? Total messages stored: 13
-  ? All messages indexed for vector search ?
-  ? All messages indexed for text search ?
-  ? All messages queryable by metadata ?
+📊 Database Statistics:
+  • Total conversations: 4
+  • Total messages stored: 13
+  • All messages indexed for vector search ✓
+  • All messages indexed for text search ✓
+  • All messages queryable by metadata ✓
 
 === Step 8: Dynamic Search Configuration ===
 Each conversation can have its own search config...
 
-? Conversations can store custom search configurations:
-  ? Search type: hybrid, text, or vector
-  ? Relevance thresholds
-  ? Filter by tags or metadata
-  ? Collection-specific settings
-  ? Per-conversation AI behavior
+💡 Conversations can store custom search configurations:
+  • Search type: hybrid, text, or vector
+  • Relevance thresholds
+  • Filter by tags or metadata
+  • Collection-specific settings
+  • Per-conversation AI behavior
 
 This enables context-aware search tuned to each conversation's needs!
 
-=== Cleanup ===
-? Cleanup complete
 
+=== 📚 Summary: What This Example Showed ===
 
-=== ? Summary: What This Example Showed ===
+🔧 ekoDB Native Capabilities Used:
+  ✓ Functions with Embed operation (AI integration)
+  ✓ Hybrid Search (text + vector combined)
+  ✓ Text Search (full-text with stemming)
+  ✓ Automatic embedding generation
+  ✓ Cross-collection queries
 
-? ekoDB Native Capabilities Used:
-  ? Functions with Embed operation (AI integration)
-  ? Hybrid Search (text + vector combined)
-  ? Text Search (full-text with stemming)
-  ? Automatic embedding generation
-  ? Cross-collection queries
+🚀 New Client Helper Methods:
+  • client.embed(text, model) - Generate embeddings
+  • client.hybridSearch() - Semantic + keyword search
+  • client.textSearch() - Full-text search
+  • client.findAllWithLimit() - Query all documents
 
-? New Client Helper Methods:
-  ? client.embed(text, model) - Generate embeddings
-  ? client.hybridSearch() - Semantic + keyword search
-  ? client.textSearch() - Full-text search
-  ? client.findAllWithLimit() - Query all documents
-
-? Key Takeaways:
+💡 Key Takeaways:
   1. ekoDB handles AI Functions natively - no external services needed
   2. One-line embedding generation with auto-cleanup
   3. Hybrid search combines semantic understanding + keyword matching
   4. Perfect for RAG: store, search, and retrieve context
   5. All AI capabilities accessible through simple client methods
 
-? Build production RAG systems with ekoDB!
-   ? Set OPENAI_API_KEY in your ekoDB server environment
-   ? Use these client helpers to make AI integration simple
-   ? Scale to millions of documents with native indexing
+🎯 Build production RAG systems with ekoDB!
+   → Set OPENAI_API_KEY in your ekoDB server environment
+   → Use these client helpers to make AI integration simple
+   → Scale to millions of documents with native indexing
+
+=== Cleanup ===
+✓ Cleanup complete
 
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -16923,3 +16206,1690 @@ What you just saw across 5 languages:
   ✓ Simple client helpers wrapping powerful AI
 
 Mission: AI for All 🚀 - Making RAG accessible to everyone!
+
+✅ All RAG examples complete! Output saved to test-examples-rag.md
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🌐 Testing SWR (Stale-While-Revalidate) Pattern Examples
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📦 Building TypeScript client library...
+
+> @ekodb/ekodb-client@0.26.4 prepare
+> npm run build
+
+
+> @ekodb/ekodb-client@0.26.4 build
+> tsc
+
+
+up to date, audited 46 packages in 597ms
+
+12 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+
+> @ekodb/ekodb-client@0.26.4 build
+> tsc
+
+✅ TypeScript client built!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Running TypeScript SWR Examples...
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+=== ekoDB SWR (Stale-While-Revalidate) Pattern ===
+
+Step 1: Create SWR function that acts as edge cache
+✓ Created SWR script: fetch_api_user_ts_79236_1789592095541 (URLq_1AQ6XPZf4JBNVRZDwjFPYuwjrzsncSyIFUw-r6xcqoFsX06FIdMoRPyr0N2PeoWNpTDH8bVC9zUZNKFDA)
+
+Step 2: First call - Cache miss, fetches from API
+Result: {
+  "records": [
+    {
+      "value": {
+        "value": {
+          "email": "Sincere@april.biz",
+          "id": 1,
+          "website": "hildegard.org",
+          "address": {
+            "geo": {
+              "lng": "81.1496",
+              "lat": "-37.3159"
+            },
+            "street": "Kulas Light",
+            "suite": "Apt. 556",
+            "city": "Gwenborough",
+            "zipcode": "92998-3874"
+          },
+          "username": "Bret",
+          "phone": "1-770-736-8031 x56442",
+          "name": "Leanne Graham",
+          "company": {
+            "catchPhrase": "Multi-layered client-server neural-net",
+            "bs": "harness real-time e-markets",
+            "name": "Romaguera-Crona"
+          }
+        },
+        "type": "Object"
+      }
+    }
+  ],
+  "stats": {
+    "input_count": 0,
+    "output_count": 1,
+    "execution_time_ms": 0,
+    "stages_executed": 2,
+    "stage_stats": []
+  }
+}
+✓ Data fetched from external API and cached
+
+Step 3: Second call - Cache hit, instant response from ekoDB
+Response time: 3ms (served from cache)
+Result (cached): {
+  "records": [
+    {
+      "value": {
+        "type": "Object",
+        "value": {
+          "email": "Sincere@april.biz",
+          "id": 1,
+          "website": "hildegard.org",
+          "address": {
+            "geo": {
+              "lng": "81.1496",
+              "lat": "-37.3159"
+            },
+            "street": "Kulas Light",
+            "suite": "Apt. 556",
+            "city": "Gwenborough",
+            "zipcode": "92998-3874"
+          },
+          "username": "Bret",
+          "phone": "1-770-736-8031 x56442",
+          "name": "Leanne Graham",
+          "company": {
+            "catchPhrase": "Multi-layered client-server neural-net",
+            "bs": "harness real-time e-markets",
+            "name": "Romaguera-Crona"
+          }
+        }
+      }
+    }
+  ],
+  "stats": {
+    "input_count": 0,
+    "output_count": 1,
+    "execution_time_ms": 0,
+    "stages_executed": 2,
+    "stage_stats": []
+  }
+}
+✓ Lightning fast cache hit
+
+=== Advanced: SWR with Data Enrichment ===
+
+Creating product enrichment function...
+✓ Created enrichment script: fetch_product_reviews_ts_79236_1789592095541 (JwNRTeubu4ezVy0KJzvvx963kOD1jecIP0OkivjofyDgQMhibgwe0L_rJKgnlgVe12QUoReMMGzGeFIfJ33qJg)
+
+Step 4: Call enrichment function - Fetches from 2 APIs + stores merged result
+Enriched data: {
+  "records": [
+    {
+      "value": {
+        "type": "Object",
+        "value": {
+          "description": "The Essence Mascara Lash Princess is a popular mascara known for its volumizing and lengthening effects. Achieve dramatic lashes with this long-lasting and cruelty-free formula.",
+          "stock": 99,
+          "returnPolicy": "No return policy",
+          "availabilityStatus": "In Stock",
+          "brand": "Essence",
+          "category": "beauty",
+          "weight": 4,
+          "title": "Essence Mascara Lash Princess",
+          "minimumOrderQuantity": 48,
+          "rating": 2.56,
+          "tags": [
+            "beauty",
+            "mascara"
+          ],
+          "sku": "BEA-ESS-ESS-001",
+          "thumbnail": "https://cdn.dummyjson.com/product-images/beauty/essence-mascara-lash-princess/thumbnail.webp",
+          "shippingInformation": "Ships in 3-5 business days",
+          "price": 9.99,
+          "id": 1,
+          "discountPercentage": 10.48,
+          "meta": {
+            "createdAt": "2025-10-09T14:47:01.588Z",
+            "barcode": "5784719087687",
+            "qrCode": "https://cdn.dummyjson.com/public/qr-code.png",
+            "updatedAt": "2026-05-23T11:27:41.868Z"
+          },
+          "reviews": [
+            {
+              "rating": 3,
+              "comment": "Would not recommend!",
+              "reviewerName": "Eleanor Collins",
+              "reviewerEmail": "eleanor.collins@x.dummyjson.com",
+              "date": "2025-04-30T09:41:02.053Z"
+            },
+            {
+              "date": "2025-04-30T09:41:02.053Z",
+              "reviewerName": "Lucas Gordon",
+              "reviewerEmail": "lucas.gordon@x.dummyjson.com",
+              "rating": 4,
+              "comment": "Very satisfied!"
+            },
+            {
+              "comment": "Highly impressed!",
+              "reviewerEmail": "eleanor.collins@x.dummyjson.com",
+              "reviewerName": "Eleanor Collins",
+              "rating": 5,
+              "date": "2025-04-30T09:41:02.053Z"
+            }
+          ],
+          "images": [
+            "https://cdn.dummyjson.com/product-images/beauty/essence-mascara-lash-princess/1.webp"
+          ],
+          "dimensions": {
+            "depth": 22.99,
+            "height": 13.08,
+            "width": 15.14
+          },
+          "warrantyInformation": "1 week warranty"
+        }
+      }
+    }
+  ],
+  "stats": {
+    "input_count": 0,
+    "output_count": 1,
+    "execution_time_ms": 0,
+    "stages_executed": 2,
+    "stage_stats": []
+  }
+}
+✓ Multi-API data fetched, merged, and cached atomically
+
+=== Why This Is Powerful ===
+
+✓ No separate cache layer (Redis, Memcached) needed
+✓ No manual cache invalidation (TTL handles it)
+✓ No separate edge infrastructure (ekoDB IS the edge)
+✓ Atomic operations (function executes as transaction)
+✓ With multi-node + ripples: Auto-sync across all nodes
+✓ Sub-millisecond cache hits from internal storage
+✓ One service instead of many (cache + API gateway + database)
+
+=== Real-World Use Cases ===
+
+1. API Gateway Pattern:
+   - Client → ekoDB Function → Check cache → Call microservices → Merge → Cache
+
+2. Database Federation:
+   - Query multiple DBs (Postgres, MongoDB) + external APIs
+   - Merge results in one function call
+
+3. IoT Data Enrichment:
+   - Sensor data + weather API + location API
+   - Enrich and cache in one atomic operation
+
+4. E-commerce Product Pages:
+   - Product info + reviews + inventory + pricing
+   - All from different sources, cached together
+
+✓ Example complete - Your database IS your edge!
+
+=== ekoDB as Edge Cache - Simple Example ===
+
+Creating edge cache function...
+✓ Edge cache script created: lEAtn8dagqCTcqeA8MenG0OejRflYFpBJThpJUic6SdxQxbW8DalLXKUoklveDJI3w_JWLVISRuC7CIyOMlxlQ
+
+Call 1: Cache miss (fetches from API)
+Response time: 83ms
+Result: {
+  "records": [
+    {
+      "value": {
+        "type": "Object",
+        "value": {
+          "phone": "1-770-736-8031 x56442",
+          "name": "Leanne Graham",
+          "username": "Bret",
+          "website": "hildegard.org",
+          "email": "Sincere@april.biz",
+          "id": 1,
+          "address": {
+            "city": "Gwenborough",
+            "suite": "Apt. 556",
+            "street": "Kulas Light",
+            "geo": {
+              "lng": "81.1496",
+              "lat": "-37.3159"
+            },
+            "zipcode": "92998-3874"
+          },
+          "company": {
+            "catchPhrase": "Multi-layered client-server neural-net",
+            "name": "Romaguera-Crona",
+            "bs": "harness real-time e-markets"
+          }
+        }
+      }
+    }
+  ],
+  "stats": {
+    "input_count": 0,
+    "output_count": 1,
+    "execution_time_ms": 0,
+    "stages_executed": 2,
+    "stage_stats": []
+  }
+}
+
+Call 2: Cache hit (served from ekoDB)
+Response time: 3ms (27.7x faster!)
+Result: {
+  "records": [
+    {
+      "value": {
+        "type": "Object",
+        "value": {
+          "phone": "1-770-736-8031 x56442",
+          "name": "Leanne Graham",
+          "username": "Bret",
+          "website": "hildegard.org",
+          "email": "Sincere@april.biz",
+          "id": 1,
+          "address": {
+            "city": "Gwenborough",
+            "suite": "Apt. 556",
+            "street": "Kulas Light",
+            "geo": {
+              "lng": "81.1496",
+              "lat": "-37.3159"
+            },
+            "zipcode": "92998-3874"
+          },
+          "company": {
+            "catchPhrase": "Multi-layered client-server neural-net",
+            "name": "Romaguera-Crona",
+            "bs": "harness real-time e-markets"
+          }
+        }
+      }
+    }
+  ],
+  "stats": {
+    "input_count": 0,
+    "output_count": 1,
+    "execution_time_ms": 0,
+    "stages_executed": 2,
+    "stage_stats": []
+  }
+}
+
+=== The Magic ===
+- Your DATABASE is your EDGE
+- No Redis needed
+- No CDN needed
+- No cache invalidation logic needed (TTL handles it)
+- With ripples: All nodes auto-sync cache
+- One service: Database + Cache + Edge Functions
+
+✓ Example complete!
+
+✅ TypeScript SWR examples complete!
+🐍 Building Python client package...
+🔧 Ensuring maturin is available in .venv...
+🔨 Building wheel...
+🍹 Building a mixed python/rust project
+🐍 Found CPython 3.11 at /Library/Frameworks/Python.framework/Versions/3.11/bin/python3
+🔗 Found pyo3 bindings with abi3-py3.8 support
+💻 Using `MACOSX_DEPLOYMENT_TARGET=11.0` for aarch64-apple-darwin by default
+    Finished `release` profile [optimized] target(s) in 0.09s
+📦 Built wheel for abi3 Python ≥ 3.8 to ekoDB/ekodb-client/ekodb-client-py/target/wheels/ekodb_client-0.26.4-cp38-abi3-macosx_11_0_arm64.whl
+📦 Installing Python wheel into .venv...
+Processing ./ekodb-client-py/target/wheels/ekodb_client-0.26.4-cp38-abi3-macosx_11_0_arm64.whl
+Installing collected packages: ekodb-client
+  Attempting uninstall: ekodb-client
+    Found existing installation: ekodb_client 0.26.4
+    Uninstalling ekodb_client-0.26.4:
+      Successfully uninstalled ekodb_client-0.26.4
+Successfully installed ekodb-client-0.26.4
+🧪 Ensuring test dependencies (pytest) in .venv...
+✅ Python client package built and installed!
+📦 Ensuring Python example dependencies in .venv...
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Running Python SWR Examples...
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+=== ekoDB SWR (Stale-While-Revalidate) Pattern ===
+
+Step 1: Create SWR function that acts as edge cache
+✓ Created SWR script: fetch_github_user_swr_py (4QZVyGG7d-p7m2qGawxGW7o8PXfHAwj3_j95et4FG0M9Y3TDcsABNJRBiAhdEMBqK6ZThTcsEUzCDObcdVx84g)
+
+Step 2: First call - Cache miss, fetches from GitHub API
+Response time: 296ms
+Result: [
+  {
+    "cached_at": {
+      "type": "String",
+      "value": "1789592099"
+    },
+    "data": {
+      "type": "Object",
+      "value": {
+        "avatar_url": "https://avatars.githubusercontent.com/u/1024025?v=4",
+        "bio": null,
+        "blog": "",
+        "company": "Linux Foundation",
+        "created_at": "2011-09-03T15:26:22Z",
+        "email": null,
+        "events_url": "https://api.github.com/users/torvalds/events{/privacy}",
+        "followers": 323834,
+        "followers_url": "https://api.github.com/users/torvalds/followers",
+        "following": 0,
+        "following_url": "https://api.github.com/users/torvalds/following{/other_user}",
+        "gists_url": "https://api.github.com/users/torvalds/gists{/gist_id}",
+        "gravatar_id": "",
+        "hireable": null,
+        "html_url": "https://github.com/torvalds",
+        "id": 1024025,
+        "location": "Portland, OR",
+        "login": "torvalds",
+        "name": "Linus Torvalds",
+        "node_id": "MDQ6VXNlcjEwMjQwMjU=",
+        "organizations_url": "https://api.github.com/users/torvalds/orgs",
+        "public_gists": 1,
+        "public_repos": 12,
+        "received_events_url": "https://api.github.com/users/torvalds/received_events",
+        "repos_url": "https://api.github.com/users/torvalds/repos",
+        "site_admin": false,
+        "starred_url": "https://api.github.com/users/torvalds/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/torvalds/subscriptions",
+        "twitter_username": null,
+        "type": "User",
+        "updated_at": "2026-07-21T17:42:26Z",
+        "url": "https://api.github.com/users/torvalds",
+        "user_view_type": "public"
+      }
+    },
+    "id": "torvalds"
+  }
+]
+✓ Data fetched from external API and cached
+
+Step 3: Second call - Cache hit, instant response from ekoDB
+Response time: 8ms (35.0x faster!)
+Result: [
+  {
+    "cached_at": {
+      "type": "String",
+      "value": "1789592099"
+    },
+    "data": {
+      "type": "Object",
+      "value": {
+        "avatar_url": "https://avatars.githubusercontent.com/u/1024025?v=4",
+        "bio": null,
+        "blog": "",
+        "company": "Linux Foundation",
+        "created_at": "2011-09-03T15:26:22Z",
+        "email": null,
+        "events_url": "https://api.github.com/users/torvalds/events{/privacy}",
+        "followers": 323834,
+        "followers_url": "https://api.github.com/users/torvalds/followers",
+        "following": 0,
+        "following_url": "https://api.github.com/users/torvalds/following{/other_user}",
+        "gists_url": "https://api.github.com/users/torvalds/gists{/gist_id}",
+        "gravatar_id": "",
+        "hireable": null,
+        "html_url": "https://github.com/torvalds",
+        "id": 1024025,
+        "location": "Portland, OR",
+        "login": "torvalds",
+        "name": "Linus Torvalds",
+        "node_id": "MDQ6VXNlcjEwMjQwMjU=",
+        "organizations_url": "https://api.github.com/users/torvalds/orgs",
+        "public_gists": 1,
+        "public_repos": 12,
+        "received_events_url": "https://api.github.com/users/torvalds/received_events",
+        "repos_url": "https://api.github.com/users/torvalds/repos",
+        "site_admin": false,
+        "starred_url": "https://api.github.com/users/torvalds/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/torvalds/subscriptions",
+        "twitter_username": null,
+        "type": "User",
+        "updated_at": "2026-07-21T17:42:26Z",
+        "url": "https://api.github.com/users/torvalds",
+        "user_view_type": "public"
+      }
+    }
+  }
+]
+✓ Lightning fast cache hit
+
+=== Advanced: SWR with Data Enrichment ===
+
+Creating product enrichment function...
+✓ Created enrichment script: fetch_product_enriched_swr_py (GSKeuzBR9HldMeRKmqWh7KhFH6ouTlVohSz8-1bopozqZOvKUpUFErss_zCeXhAJsC3yeQYQJYrajlu24OKP-g)
+
+Step 4: Call enrichment function - Fetches from API + stores enriched result
+Enriched data: [
+  {
+    "enriched_at": {
+      "type": "String",
+      "value": "1789592099"
+    },
+    "enriched_data": {
+      "type": "Object",
+      "value": {
+        "availabilityStatus": "In Stock",
+        "brand": "Essence",
+        "category": "beauty",
+        "description": "The Essence Mascara Lash Princess is a popular mascara known for its volumizing and lengthening effects. Achieve dramatic lashes with this long-lasting and cruelty-free formula.",
+        "dimensions": {
+          "depth": 22.99,
+          "height": 13.08,
+          "width": 15.14
+        },
+        "discountPercentage": 10.48,
+        "id": 1,
+        "images": [
+          "https://cdn.dummyjson.com/product-images/beauty/essence-mascara-lash-princess/1.webp"
+        ],
+        "meta": {
+          "barcode": "5784719087687",
+          "createdAt": "2025-10-09T14:47:01.588Z",
+          "qrCode": "https://cdn.dummyjson.com/public/qr-code.png",
+          "updatedAt": "2026-05-23T11:27:41.868Z"
+        },
+        "minimumOrderQuantity": 48,
+        "price": 9.99,
+        "rating": 2.56,
+        "returnPolicy": "No return policy",
+        "reviews": [
+          {
+            "comment": "Would not recommend!",
+            "date": "2025-04-30T09:41:02.053Z",
+            "rating": 3,
+            "reviewerEmail": "eleanor.collins@x.dummyjson.com",
+            "reviewerName": "Eleanor Collins"
+          },
+          {
+            "comment": "Very satisfied!",
+            "date": "2025-04-30T09:41:02.053Z",
+            "rating": 4,
+            "reviewerEmail": "lucas.gordon@x.dummyjson.com",
+            "reviewerName": "Lucas Gordon"
+          },
+          {
+            "comment": "Highly impressed!",
+            "date": "2025-04-30T09:41:02.053Z",
+            "rating": 5,
+            "reviewerEmail": "eleanor.collins@x.dummyjson.com",
+            "reviewerName": "Eleanor Collins"
+          }
+        ],
+        "shippingInformation": "Ships in 3-5 business days",
+        "sku": "BEA-ESS-ESS-001",
+        "stock": 99,
+        "tags": [
+          "beauty",
+          "mascara"
+        ],
+        "thumbnail": "https://cdn.dummyjson.com/product-images/beauty/essence-mascara-lash-princess/thumbnail.webp",
+        "title": "Essence Mascara Lash Princess",
+        "warrantyInformation": "1 week warranty",
+        "weight": 4
+      }
+    },
+    "id": "1"
+  }
+]
+✓ Data fetched, enriched, and cached atomically
+
+=== Why This Is Powerful ===
+✓ No separate cache layer (Redis, Memcached) needed
+✓ No manual cache invalidation (TTL handles it)
+✓ No separate edge infrastructure (ekoDB IS the edge)
+✓ Atomic operations (function executes as transaction)
+✓ With multi-node + ripples: Auto-sync across all nodes
+✓ Sub-millisecond cache hits from internal storage
+✓ One service instead of many (cache + API gateway + database)
+
+=== Real-World Use Cases ===
+1. API Gateway Pattern:
+   - Client → ekoDB Function → Check cache → Call microservices → Merge → Cache
+
+2. Database Federation:
+   - Query multiple DBs (Postgres, MongoDB) + external APIs
+   - Merge results in one function call
+
+3. IoT Data Enrichment:
+   - Sensor data + weather API + location API
+   - Enrich and cache in one atomic operation
+
+4. E-commerce Product Pages:
+   - Product info + reviews + inventory + pricing
+   - All from different sources, cached together
+
+✓ Example complete - Your database IS your edge!
+
+✅ Python SWR examples complete!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Running Go SWR Examples...
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+=== ekoDB SWR (Stale-While-Revalidate) Pattern ===
+
+Step 1: Create SWR function that acts as edge cache
+✓ Created SWR script: fetch_github_user (rPSU3eZkJFvIIm6cTiCOzsoP0o3Fw62ErzGz5Lr3njbIUFpQBxLUGm_AQX5D5zdyO4Aey-xM_qjeF_mWzBt3_A)
+
+Step 2: First call - Cache miss, fetches from GitHub API
+Response time: 135.797375ms
+Result: [
+  {
+    "cached_at": {
+      "type": "DateTime",
+      "value": "2026-09-16T20:55:00+00:00"
+    },
+    "data": {
+      "type": "Object",
+      "value": {
+        "avatar_url": "https://avatars.githubusercontent.com/u/1024025?v=4",
+        "bio": null,
+        "blog": "",
+        "company": "Linux Foundation",
+        "created_at": "2011-09-03T15:26:22Z",
+        "email": null,
+        "events_url": "https://api.github.com/users/torvalds/events{/privacy}",
+        "followers": 323834,
+        "followers_url": "https://api.github.com/users/torvalds/followers",
+        "following": 0,
+        "following_url": "https://api.github.com/users/torvalds/following{/other_user}",
+        "gists_url": "https://api.github.com/users/torvalds/gists{/gist_id}",
+        "gravatar_id": "",
+        "hireable": null,
+        "html_url": "https://github.com/torvalds",
+        "id": 1024025,
+        "location": "Portland, OR",
+        "login": "torvalds",
+        "name": "Linus Torvalds",
+        "node_id": "MDQ6VXNlcjEwMjQwMjU=",
+        "organizations_url": "https://api.github.com/users/torvalds/orgs",
+        "public_gists": 1,
+        "public_repos": 12,
+        "received_events_url": "https://api.github.com/users/torvalds/received_events",
+        "repos_url": "https://api.github.com/users/torvalds/repos",
+        "site_admin": false,
+        "starred_url": "https://api.github.com/users/torvalds/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/torvalds/subscriptions",
+        "twitter_username": null,
+        "type": "User",
+        "updated_at": "2026-07-21T17:42:26Z",
+        "url": "https://api.github.com/users/torvalds",
+        "user_view_type": "public"
+      }
+    },
+    "id": "torvalds"
+  }
+]
+✓ Data fetched from external API and cached
+
+Step 3: Second call - Cache hit, instant response from ekoDB
+Response time: 7.372375ms (19.3x faster!)
+✓ Lightning fast cache hit
+
+=== Advanced: SWR with Data Enrichment ===
+
+Creating product enrichment function...
+✓ Created enrichment script: fetch_product_enriched (7Rn8EEfT91OVEx5CDvrQm32MgAfu-uKAPFnpXc66E5MkR5Y_h-1CPwKjdwYq8R6p0uv1kcbjT1l490R-lEUocw)
+
+Step 4: Call enrichment function - Fetches from API + stores enriched result
+Enriched data: [
+  {
+    "enriched_at": {
+      "type": "DateTime",
+      "value": "2026-09-16T20:55:00+00:00"
+    },
+    "enriched_data": {
+      "type": "Object",
+      "value": {
+        "availabilityStatus": "In Stock",
+        "brand": "Essence",
+        "category": "beauty",
+        "description": "The Essence Mascara Lash Princess is a popular mascara known for its volumizing and lengthening effects. Achieve dramatic lashes with this long-lasting and cruelty-free formula.",
+        "dimensions": {
+          "depth": 22.99,
+          "height": 13.08,
+          "width": 15.14
+        },
+        "discountPercentage": 10.48,
+        "id": 1,
+        "images": [
+          "https://cdn.dummyjson.com/product-images/beauty/essence-mascara-lash-princess/1.webp"
+        ],
+        "meta": {
+          "barcode": "5784719087687",
+          "createdAt": "2025-10-09T14:47:01.588Z",
+          "qrCode": "https://cdn.dummyjson.com/public/qr-code.png",
+          "updatedAt": "2026-05-23T11:27:41.868Z"
+        },
+        "minimumOrderQuantity": 48,
+        "price": 9.99,
+        "rating": 2.56,
+        "returnPolicy": "No return policy",
+        "reviews": [
+          {
+            "comment": "Would not recommend!",
+            "date": "2025-04-30T09:41:02.053Z",
+            "rating": 3,
+            "reviewerEmail": "eleanor.collins@x.dummyjson.com",
+            "reviewerName": "Eleanor Collins"
+          },
+          {
+            "comment": "Very satisfied!",
+            "date": "2025-04-30T09:41:02.053Z",
+            "rating": 4,
+            "reviewerEmail": "lucas.gordon@x.dummyjson.com",
+            "reviewerName": "Lucas Gordon"
+          },
+          {
+            "comment": "Highly impressed!",
+            "date": "2025-04-30T09:41:02.053Z",
+            "rating": 5,
+            "reviewerEmail": "eleanor.collins@x.dummyjson.com",
+            "reviewerName": "Eleanor Collins"
+          }
+        ],
+        "shippingInformation": "Ships in 3-5 business days",
+        "sku": "BEA-ESS-ESS-001",
+        "stock": 99,
+        "tags": [
+          "beauty",
+          "mascara"
+        ],
+        "thumbnail": "https://cdn.dummyjson.com/product-images/beauty/essence-mascara-lash-princess/thumbnail.webp",
+        "title": "Essence Mascara Lash Princess",
+        "warrantyInformation": "1 week warranty",
+        "weight": 4
+      }
+    },
+    "id": "1"
+  }
+]
+✓ Data fetched, enriched, and cached atomically
+
+=== Why This Is Powerful ===
+✓ No separate cache layer (Redis, Memcached) needed
+✓ No manual cache invalidation (TTL handles it)
+✓ No separate edge infrastructure (ekoDB IS the edge)
+✓ Atomic operations (function executes as transaction)
+✓ With multi-node + ripples: Auto-sync across all nodes
+✓ Sub-millisecond cache hits from internal storage
+✓ One service instead of many (cache + API gateway + database)
+
+=== Real-World Use Cases ===
+1. API Gateway Pattern:
+   - Client → ekoDB Function → Check cache → Call microservices → Merge → Cache
+
+2. Database Federation:
+   - Query multiple DBs (Postgres, MongoDB) + external APIs
+   - Merge results in one function call
+
+3. IoT Data Enrichment:
+   - Sensor data + weather API + location API
+   - Enrich and cache in one atomic operation
+
+4. E-commerce Product Pages:
+   - Product info + reviews + inventory + pricing
+   - All from different sources, cached together
+
+✓ Example complete - Your database IS your edge!
+
+✅ Go SWR examples complete!
+🛠️  Building client library...
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.22s
+✅ Client build complete!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Running Rust SWR Examples...
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Compiling ekodb-examples v0.1.0 (ekoDB/ekodb-client/examples/rust)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.35s
+     Running `target/debug/examples/swr_pattern`
+=== ekoDB SWR (Stale-While-Revalidate) Pattern ===
+
+Step 1: Create SWR function that acts as edge cache
+✓ Created SWR script: fetch_github_user (KRWaHM99hr70q9CwCMWJwY0hGTuwbxUcFoIrSLtYU0vKjcFo30JRIK5Ir6J8kMtrUo_LcR_R6m_CAOZVaUU4tw)
+
+Step 2: First call - Cache miss, fetches from GitHub API
+Response time: 191ms
+Result: {
+  "data": {
+    "value": {
+      "followers": 323833,
+      "company": "Linux Foundation",
+      "email": null,
+      "created_at": "2011-09-03T15:26:22Z",
+      "id": 1024025,
+      "node_id": "MDQ6VXNlcjEwMjQwMjU=",
+      "url": "https://api.github.com/users/torvalds",
+      "twitter_username": null,
+      "hireable": null,
+      "site_admin": false,
+      "type": "User",
+      "starred_url": "https://api.github.com/users/torvalds/starred{/owner}{/repo}",
+      "public_gists": 1,
+      "avatar_url": "https://avatars.githubusercontent.com/u/1024025?v=4",
+      "following": 0,
+      "html_url": "https://github.com/torvalds",
+      "organizations_url": "https://api.github.com/users/torvalds/orgs",
+      "subscriptions_url": "https://api.github.com/users/torvalds/subscriptions",
+      "repos_url": "https://api.github.com/users/torvalds/repos",
+      "name": "Linus Torvalds",
+      "location": "Portland, OR",
+      "following_url": "https://api.github.com/users/torvalds/following{/other_user}",
+      "gravatar_id": "",
+      "received_events_url": "https://api.github.com/users/torvalds/received_events",
+      "gists_url": "https://api.github.com/users/torvalds/gists{/gist_id}",
+      "blog": "",
+      "events_url": "https://api.github.com/users/torvalds/events{/privacy}",
+      "updated_at": "2026-07-21T17:42:26Z",
+      "user_view_type": "public",
+      "login": "torvalds",
+      "followers_url": "https://api.github.com/users/torvalds/followers",
+      "public_repos": 12,
+      "bio": null
+    },
+    "type": "Object"
+  }
+}
+✓ Data fetched from external API and cached
+
+Step 3: Second call - Cache hit, instant response from ekoDB
+Response time: 7ms (27.3x faster!)
+✓ Lightning fast cache hit
+
+=== Advanced: SWR with Data Enrichment ===
+
+Creating product enrichment function...
+✓ Created enrichment script: fetch_product_enriched (e_7aVWyTBEhe0an48jnMe7YZ6OljpBWQ2X3JvLnyOX6QXBspXrUJkTBwRczi5vpUBATKOeMSHipFWLGeGlBtyg)
+
+Step 4: Call enrichment function - Fetches from API + stores enriched result
+Enriched data: {
+  "enriched_data": {
+    "value": {
+      "rating": 2.56,
+      "description": "The Essence Mascara Lash Princess is a popular mascara known for its volumizing and lengthening effects. Achieve dramatic lashes with this long-lasting and cruelty-free formula.",
+      "price": 9.99,
+      "shippingInformation": "Ships in 3-5 business days",
+      "brand": "Essence",
+      "stock": 99,
+      "id": 1,
+      "dimensions": {
+        "depth": 22.99,
+        "height": 13.08,
+        "width": 15.14
+      },
+      "title": "Essence Mascara Lash Princess",
+      "availabilityStatus": "In Stock",
+      "images": [
+        "https://cdn.dummyjson.com/product-images/beauty/essence-mascara-lash-princess/1.webp"
+      ],
+      "reviews": [
+        {
+          "comment": "Would not recommend!",
+          "reviewerName": "Eleanor Collins",
+          "date": "2025-04-30T09:41:02.053Z",
+          "rating": 3,
+          "reviewerEmail": "eleanor.collins@x.dummyjson.com"
+        },
+        {
+          "rating": 4,
+          "reviewerName": "Lucas Gordon",
+          "date": "2025-04-30T09:41:02.053Z",
+          "comment": "Very satisfied!",
+          "reviewerEmail": "lucas.gordon@x.dummyjson.com"
+        },
+        {
+          "date": "2025-04-30T09:41:02.053Z",
+          "rating": 5,
+          "reviewerName": "Eleanor Collins",
+          "comment": "Highly impressed!",
+          "reviewerEmail": "eleanor.collins@x.dummyjson.com"
+        }
+      ],
+      "tags": [
+        "beauty",
+        "mascara"
+      ],
+      "returnPolicy": "No return policy",
+      "weight": 4,
+      "discountPercentage": 10.48,
+      "meta": {
+        "createdAt": "2025-10-09T14:47:01.588Z",
+        "barcode": "5784719087687",
+        "updatedAt": "2026-05-23T11:27:41.868Z",
+        "qrCode": "https://cdn.dummyjson.com/public/qr-code.png"
+      },
+      "thumbnail": "https://cdn.dummyjson.com/product-images/beauty/essence-mascara-lash-princess/thumbnail.webp",
+      "category": "beauty",
+      "warrantyInformation": "1 week warranty",
+      "minimumOrderQuantity": 48,
+      "sku": "BEA-ESS-ESS-001"
+    },
+    "type": "Object"
+  }
+}
+✓ Data fetched, enriched, and cached atomically
+
+=== Why This Is Powerful ===
+✓ No separate cache layer (Redis, Memcached) needed
+✓ No manual cache invalidation (TTL handles it)
+✓ No separate edge infrastructure (ekoDB IS the edge)
+✓ Atomic operations (function executes as transaction)
+✓ With multi-node + ripples: Auto-sync across all nodes
+✓ Sub-millisecond cache hits from internal storage
+✓ One service instead of many (cache + API gateway + database)
+
+=== Real-World Use Cases ===
+1. API Gateway Pattern:
+   - Client → ekoDB Function → Check cache → Call microservices → Merge → Cache
+
+2. Database Federation:
+   - Query multiple DBs (Postgres, MongoDB) + external APIs
+   - Merge results in one function call
+
+3. IoT Data Enrichment:
+   - Sensor data + weather API + location API
+   - Enrich and cache in one atomic operation
+
+4. E-commerce Product Pages:
+   - Product info + reviews + inventory + pricing
+   - All from different sources, cached together
+
+✓ Example complete - Your database IS your edge!
+
+✅ Rust SWR examples complete!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Running Kotlin SWR Examples...
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.7.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+> Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :processResources NO-SOURCE
+> Task :compileKotlin
+> Task :compileJava NO-SOURCE
+> Task :classes UP-TO-DATE
+
+> Task :run
+SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+=== ekoDB SWR (Stale-While-Revalidate) Pattern ===
+
+Step 1: Create SWR function that acts as edge cache
+✓ Created SWR function: swr_fetch_github_user_kt_1789592147671 (kUWuWUQxNuik4GKte6pJu2OnxZTxDXKcALQZ6qwV2eQf4V-ZjpTiavJXExmVLCXCoJ5jw4TxZ3hm8NAY20Ycmw)
+
+Step 2: First call - Cache miss, fetches from GitHub API
+Response time: 347ms
+Result: [{"data":{"type":"Object","value":{"node_id":"MDQ6VXNlcjEwMjQwMjU=","bio":null,"company":"Linux Foundation","url":"https://api.github.com/users/torvalds","hireable":null,"repos_url":"https://api.github.com/users/torvalds/repos","type":"User","events_url":"https://api.github.com/users/torvalds/events{/privacy}","blog":"","received_events_url":"https://api.github.com/users/torvalds/received_events","gravatar_id":"","id":1024025,"twitter_username":null,"created_at":"2011-09-03T15:26:22Z","gists_url":"https://api.github.com/users/torvalds/gists{/gist_id}","name":"Linus Torvalds","public_gists":1,"html_url":"https://github.com/torvalds","following":0,"user_view_type":"public","login":"torvalds","organizations_url":"https://api.github.com/users/torvalds/orgs","avatar_url":"https://avatars.githubusercontent.com/u/1024025?v=4","email":null,"followers":323833,"updated_at":"2026-07-21T17:42:26Z","following_url":"https://api.github.com/users/torvalds/following{/other_user}","subscriptions_url":"https://api.github.com/users/torvalds/subscriptions","public_repos":12,"site_admin":false,"location":"Portland, OR","starred_url":"https://api.github.com/users/torvalds/starred{/owner}{/repo}","followers_url":"https://api.github.com/users/torvalds/followers"}},"id":"torvalds","cached_at":{"type":"String","value":"1789592147681"}}]
+✓ Data fetched from external API and cached
+
+Step 3: Second call - Cache hit, instant response from ekoDB
+Response time: 11ms
+Cache hit was 31.5x faster!
+
+✓ Lightning fast cache hit
+
+=== Advanced: SWR with Data Enrichment ===
+
+Creating product enrichment function...
+✓ Created enrichment function: swr_fetch_product_kt_1789592147671 (JBCJuEbLg6_6yNsRzB-zLxAjEWe3vsvkGJe2WoOCIfqQ1A5KmzNDm7mPe5iyTiHwpPSMAo4QBP60VoQSBlSiog)
+
+Step 4: Call enrichment function - Fetches from API + stores enriched result
+Enriched data: [{"enriched_data":{"type":"Object","value":{"brand":"Essence","dimensions":{"width":15.14,"depth":22.99,"height":13.08},"availabilityStatus":"In Stock","price":9.99,"reviews":[{"rating":3,"reviewerName":"Eleanor Collins","comment":"Would not recommend!","reviewerEmail":"eleanor.collins@x.dummyjson.com","date":"2025-04-30T09:41:02.053Z"},{"rating":4,"reviewerEmail":"lucas.gordon@x.dummyjson.com","comment":"Very satisfied!","reviewerName":"Lucas Gordon","date":"2025-04-30T09:41:02.053Z"},{"comment":"Highly impressed!","reviewerName":"Eleanor Collins","date":"2025-04-30T09:41:02.053Z","rating":5,"reviewerEmail":"eleanor.collins@x.dummyjson.com"}],"sku":"BEA-ESS-ESS-001","images":["https://cdn.dummyjson.com/product-images/beauty/essence-mascara-lash-princess/1.webp"],"stock":99,"tags":["beauty","mascara"],"thumbnail":"https://cdn.dummyjson.com/product-images/beauty/essence-mascara-lash-princess/thumbnail.webp","id":1,"title":"Essence Mascara Lash Princess","rating":2.56,"warrantyInformation":"1 week warranty","returnPolicy":"No return policy","description":"The Essence Mascara Lash Princess is a popular mascara known for its volumizing and lengthening effects. Achieve dramatic lashes with this long-lasting and cruelty-free formula.","shippingInformation":"Ships in 3-5 business days","weight":4,"minimumOrderQuantity":48,"category":"beauty","discountPercentage":10.48,"meta":{"createdAt":"2025-10-09T14:47:01.588Z","updatedAt":"2026-05-23T11:27:41.868Z","qrCode":"https://cdn.dummyjson.com/public/qr-code.png","barcode":"5784719087687"}}},"enriched_at":{"type":"String","value":"1789592148165"},"id":"1"}]
+✓ Data fetched, enriched, and cached atomically
+
+=== Why This Is Powerful ===
+✓ No separate cache layer (Redis, Memcached) needed
+✓ No manual cache invalidation (TTL handles it)
+✓ No separate edge infrastructure (ekoDB IS the edge)
+✓ Atomic operations (function executes as transaction)
+✓ With multi-node + ripples: Auto-sync across all nodes
+✓ Sub-millisecond cache hits from internal storage
+✓ One service instead of many (cache + API gateway + database)
+
+=== Real-World Use Cases ===
+1. API Gateway Pattern:
+   - Client → ekoDB Function → Check cache → Call microservices → Merge → Cache
+
+2. Database Federation:
+   - Query multiple DBs (Postgres, MongoDB) + external APIs
+   - Merge results in one function call
+
+3. IoT Data Enrichment:
+   - Sensor data + weather API + location API
+   - Enrich and cache in one atomic operation
+
+4. E-commerce Product Pages:
+   - Product info + reviews + inventory + pricing
+   - All from different sources, cached together
+
+✓ Example complete - Your database IS your edge!
+
+
+BUILD SUCCESSFUL in 5s
+2 actionable tasks: 2 executed
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.7.1/userguide/configuration_cache_enabling.html
+✅ Kotlin SWR examples complete!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ All SWR Examples Complete!
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+What you just saw - ekoDB as Edge Cache:
+  ✓ FindById → Check cache
+  ✓ If/Else → Conditional execution
+  ✓ HttpRequest → External API calls
+  ✓ Insert with TTL → Auto-expiring cache
+  ✓ Sub-millisecond cache hits
+  ✓ No Redis, no CDN, no cache invalidation logic needed
+
+Your DATABASE is your EDGE! 🚀
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔗 Testing Function Composition Examples
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🛠️  Building client library...
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.09s
+✅ Client build complete!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Running Rust Function Composition Examples...
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s
+     Running `target/debug/examples/client_function_composition`
+=== ekoDB Function Composition Examples ===
+
+📋 Setting up test data...
+
+✅ Test data ready
+
+📝 Example 1: Basic Function Composition
+
+Building reusable functions that call each other...
+
+✅ Saved reusable function: fetch_user_rs
+✅ Saved composed function: get_user_wrapper_rs (calls fetch_user_rs + projects fields)
+
+📊 Result from composed function:
+   Records: 1
+   Name: User 1
+   Department: engineering
+
+🎯 Key Benefit: fetch_user can be reused by ANY function!
+   No code duplication, single source of truth
+
+📝 Example 2: SWR Pattern with Function Composition
+
+Using KV cache + CallFunction for fast cache-aside pattern...
+
+✅ Saved reusable function: fetch_and_store_user_rs (uses KV)
+✅ Saved SWR function using composition: swr_user_rs
+
+First call (cache miss - will fetch from API):
+   ⏱️  Duration: 101.396083ms
+   📊 Records: 1
+   📦 Data: {
+  "value": {
+    "value": {
+      "phone": "1-770-736-8031 x56442",
+      "name": "Leanne Graham",
+      "username": "Bret",
+      "address": {
+        "city": "Gwenborough",
+        "street": "Kula...
+
+Second call (cache hit - from cache):
+   ⏱️  Duration: 4.085875ms
+   📊 Records: 1
+   📦 Data: {
+  "value": {
+    "value": {
+      "name": "Leanne Graham",
+      "company": {
+        "name": "Romaguera-Crona",
+        "bs": "harness real-time e-markets",
+        "catchPhrase": "Multi-layered cl...
+   🚀 Cache speedup: 24.8x faster!
+
+📝 Example 3: Multi-Level Function Composition
+
+Building complex workflows from small, reusable pieces...
+
+✅ Level 1 function: validate_user_rs
+✅ Level 2 function: fetch_slim_user_rs (calls validate_user_rs)
+✅ Level 3 function: get_verified_user_rs (calls fetch_slim_user_rs)
+
+📊 Result from 3-level nested composition:
+   Records: 1
+   Name: User 1
+   Department: engineering
+
+🎯 Key Benefit: Each function is independently testable and reusable!
+   - validate_user: Used in 100 different workflows
+   - fetch_enriched_user: Used in 50 workflows
+   - get_engineering_user: Specific workflow
+
+
+✅ Cleanup complete
+✅ All composition examples completed!
+✅ Rust function composition examples complete!
+📦 Building TypeScript client library...
+
+> @ekodb/ekodb-client@0.26.4 prepare
+> npm run build
+
+
+> @ekodb/ekodb-client@0.26.4 build
+> tsc
+
+
+up to date, audited 46 packages in 615ms
+
+12 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+
+> @ekodb/ekodb-client@0.26.4 build
+> tsc
+
+✅ TypeScript client built!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Running TypeScript Function Composition Examples...
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+=== ekoDB Function Composition Examples ===
+
+📋 Setting up test data...
+
+✅ Test data ready
+
+📝 Example 1: Basic Function Composition
+
+Building reusable functions that call each other...
+
+✅ Saved reusable function: fetch_user
+✅ Saved composed function: get_user_wrapper (calls fetch_user + projects fields)
+
+📊 Result from composed function:
+   Records: 1
+   Name: {"value":"User 1","type":"String"}
+   Department: {"value":"engineering","type":"String"}
+
+🎯 Key Benefit: fetch_user can be reused by ANY function!
+   No code duplication, single source of truth
+
+📝 Example 2: SWR Pattern with Function Composition
+
+Using KV cache + CallFunction for fast cache-aside pattern...
+
+✅ Saved reusable function: fetch_and_store_user (uses KV)
+✅ Saved SWR function using composition: swr_user
+
+First call (cache miss - will fetch from API):
+   ⏱️  Duration: 67ms
+   📊 Records: 1
+   📦 Data: {
+  "value": {
+    "value": {
+      "email": "Sincere@april.biz",
+      "name": "Leanne Graham",
+      "id": 1,
+      "website": "hildegard.org",
+      "address": {
+        "street": "Kulas Light",
+  ...
+
+Second call (cache hit - from cache):
+   ⏱️  Duration: 2ms
+   📊 Records: 1
+   📦 Data: {
+  "value": {
+    "value": {
+      "email": "Sincere@april.biz",
+      "name": "Leanne Graham",
+      "id": 1,
+      "website": "hildegard.org",
+      "address": {
+        "street": "Kulas Light",
+  ...
+   🚀 Cache speedup: 33.5x faster!
+
+📝 Example 3: Multi-Level Function Composition
+
+Building complex workflows from small, reusable pieces...
+
+✅ Level 1 function: validate_user
+✅ Level 2 function: fetch_slim_user (calls validate_user)
+✅ Level 3 function: get_verified_user (calls fetch_slim_user)
+
+📊 Result from 3-level nested composition:
+   Records: 1
+   Name: User 1
+   Department: engineering
+
+🎯 Key Benefit: Each function is independently testable and reusable!
+   - validate_user: Used in 100 different workflows
+   - fetch_slim_user: Used in 50 workflows
+   - get_verified_user: Specific workflow
+
+
+✅ All composition examples completed!
+✅ TypeScript function composition examples complete!
+🐍 Building Python client package...
+🔧 Ensuring maturin is available in .venv...
+🔨 Building wheel...
+🍹 Building a mixed python/rust project
+🐍 Found CPython 3.11 at /Library/Frameworks/Python.framework/Versions/3.11/bin/python3
+🔗 Found pyo3 bindings with abi3-py3.8 support
+💻 Using `MACOSX_DEPLOYMENT_TARGET=11.0` for aarch64-apple-darwin by default
+    Finished `release` profile [optimized] target(s) in 0.09s
+📦 Built wheel for abi3 Python ≥ 3.8 to ekoDB/ekodb-client/ekodb-client-py/target/wheels/ekodb_client-0.26.4-cp38-abi3-macosx_11_0_arm64.whl
+📦 Installing Python wheel into .venv...
+Processing ./ekodb-client-py/target/wheels/ekodb_client-0.26.4-cp38-abi3-macosx_11_0_arm64.whl
+Installing collected packages: ekodb-client
+  Attempting uninstall: ekodb-client
+    Found existing installation: ekodb_client 0.26.4
+    Uninstalling ekodb_client-0.26.4:
+      Successfully uninstalled ekodb_client-0.26.4
+Successfully installed ekodb-client-0.26.4
+🧪 Ensuring test dependencies (pytest) in .venv...
+✅ Python client package built and installed!
+📦 Ensuring Python example dependencies in .venv...
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Running Python Function Composition Examples...
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+=== ekoDB Function Composition Examples ===
+
+📋 Setting up test data...
+
+✅ Test data ready
+
+📝 Example 1: Basic Function Composition
+
+Building reusable functions that call each other...
+
+✅ Saved reusable function: fetch_user_py
+✅ Saved composed function: get_user_wrapper_py (calls fetch_user_py + projects fields)
+
+📊 Result from composed function:
+   Records: 1
+   Name: {"type": "String", "value": "User 1"}
+   Department: {"type": "String", "value": "engineering"}
+
+🎯 Key Benefit: fetch_user can be reused by ANY function!
+   No code duplication, single source of truth
+
+📝 Example 2: SWR Pattern with Function Composition
+
+Using KV cache + CallFunction for fast cache-aside pattern...
+
+✅ Saved reusable function: fetch_and_store_user_py (uses KV)
+✅ Saved SWR function using composition: swr_user_py
+
+First call (cache miss - will fetch from API):
+   ⏱️  Duration: 81.3ms
+   📊 Records: 1
+   📦 Data: {
+      "value": {
+            "type": "Object",
+            "value": {
+                  "address": {
+                        "city": "Gwenborough",
+                        "geo": {
+                 ...
+
+Second call (cache hit - from cache):
+   ⏱️  Duration: 3.4ms
+   📊 Records: 1
+   📦 Data: {
+      "value": {
+            "type": "Object",
+            "value": {
+                  "address": {
+                        "city": "Gwenborough",
+                        "geo": {
+                 ...
+   🚀 Cache speedup: 23.8x faster!
+
+📝 Example 3: Multi-Level Function Composition
+
+Building complex workflows from small, reusable pieces...
+
+✅ Level 1 function: validate_user_py
+✅ Level 2 function: fetch_slim_user_py (calls validate_user_py)
+✅ Level 3 function: get_verified_user_py (calls fetch_slim_user_py)
+
+📊 Result from 3-level nested composition:
+   Records: 1
+   Name: User 1
+   Department: engineering
+
+🎯 Key Benefit: Each function is independently testable and reusable!
+   - validate_user: Used in 100 different workflows
+   - fetch_slim_user: Used in 50 workflows
+   - get_verified_user: Specific workflow
+
+
+✅ Cleanup complete
+✅ All composition examples completed!
+✅ Python function composition examples complete!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Running Go Function Composition Examples...
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+=== ekoDB Function Composition Examples ===
+
+📋 Setting up test data...
+
+✅ Test data ready
+
+📝 Example 1: Basic Function Composition
+
+Building reusable functions that call each other...
+
+✅ Saved reusable function: fetch_user
+✅ Saved composed function: get_user_wrapper (calls fetch_user + projects fields)
+
+📊 Result from composed function:
+   Records: 1
+   Name: {"type":"String","value":"User 1"}
+   Department: {"type":"String","value":"engineering"}
+
+🎯 Key Benefit: fetch_user can be reused by ANY function!
+   No code duplication, single source of truth
+
+📝 Example 2: SWR Pattern with Function Composition
+
+Using KV cache + CallFunction for fast cache-aside pattern...
+
+✅ Saved reusable function: fetch_and_store_user (uses KV)
+✅ Saved SWR function using composition: swr_user
+
+First call (cache miss - will fetch from API):
+   ⏱️  Duration: 59.174042ms
+   📊 Records: 1
+   📦 Data: {
+        "value": {
+          "type": "Object",
+          "value": {
+            "address": {
+              "city": "Gwenborough",
+              "geo": {
+                "lat": "-37.3159",
+          ...
+
+Second call (cache hit - from cache):
+   ⏱️  Duration: 2.62275ms
+   📊 Records: 1
+   📦 Data: {
+        "value": {
+          "type": "Object",
+          "value": {
+            "address": {
+              "city": "Gwenborough",
+              "geo": {
+                "lat": "-37.3159",
+          ...
+   🚀 Cache speedup: 29.5x faster!
+
+📝 Example 3: Multi-Level Function Composition
+
+Building complex workflows from small, reusable pieces...
+
+✅ Level 1 function: validate_user
+✅ Level 2 function: fetch_slim_user (calls validate_user)
+✅ Level 3 function: get_verified_user (calls fetch_slim_user)
+
+📊 Result from 3-level nested composition:
+   Records: 1
+   Name: {"type":"String","value":"User 1"}
+   Department: {"type":"String","value":"engineering"}
+
+🎯 Key Benefit: Each function is independently testable and reusable!
+   - validate_user: Used in 100 different workflows
+   - fetch_slim_user: Used in 50 workflows
+   - get_verified_user: Specific workflow
+
+
+✅ All composition examples completed!
+✅ Go function composition examples complete!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Running JavaScript Function Composition Examples...
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+=== ekoDB Function Composition Examples ===
+
+📋 Setting up test data...
+
+✅ Test data ready
+
+📝 Example 1: Basic Function Composition
+
+Building reusable functions that call each other...
+
+✅ Saved reusable function: fetch_user
+✅ Saved composed function: get_user_wrapper (calls fetch_user + projects fields)
+
+📊 Result from composed function:
+   Records: 1
+   Name: {"type":"String","value":"User 1"}
+   Department: {"type":"String","value":"engineering"}
+
+🎯 Key Benefit: fetch_user can be reused by ANY function!
+   No code duplication, single source of truth
+
+📝 Example 2: SWR Pattern with Function Composition
+
+Using KV cache + CallFunction for fast cache-aside pattern...
+
+✅ Saved reusable function: fetch_and_store_user (uses KV)
+✅ Saved SWR function using composition: swr_user
+
+First call (cache miss - will fetch from API):
+   ⏱️  Duration: 76ms
+   📊 Records: 1
+   📦 Data: {
+  "value": {
+    "type": "Object",
+    "value": {
+      "username": "Bret",
+      "phone": "1-770-736-8031 x56442",
+      "name": "Leanne Graham",
+      "address": {
+        "city": "Gwenborough",
+ ...
+
+Second call (cache hit - from cache):
+   ⏱️  Duration: 2ms
+   📊 Records: 1
+   📦 Data: {
+  "value": {
+    "type": "Object",
+    "value": {
+      "username": "Bret",
+      "phone": "1-770-736-8031 x56442",
+      "name": "Leanne Graham",
+      "address": {
+        "city": "Gwenborough",
+ ...
+   🚀 Cache speedup: 38.0x faster!
+
+📝 Example 3: Multi-Level Function Composition
+
+Building complex workflows from small, reusable pieces...
+
+✅ Level 1 function: validate_user
+✅ Level 2 function: fetch_slim_user (calls validate_user)
+✅ Level 3 function: get_verified_user (calls fetch_slim_user)
+
+📊 Result from 3-level nested composition:
+   Records: 1
+   Name: User 1
+   Department: engineering
+
+🎯 Key Benefit: Each function is independently testable and reusable!
+   - validate_user: Used in 100 different workflows
+   - fetch_slim_user: Used in 50 workflows
+   - get_verified_user: Specific workflow
+
+
+✅ All composition examples completed!
+✅ JavaScript function composition examples complete!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ All Function Composition Examples Complete!
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+What you just saw - CallFunction composability:
+  ✓ Reusable Function building blocks
+  ✓ Functions calling other Functions
+  ✓ Clean SWR patterns via composition
+  ✓ Multi-level nesting (arbitrary depth)
+  ✓ No code duplication
+  ✓ Single source of truth
+
+Build complex workflows from simple pieces! 🚀
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📡 WebSocket Subscription Tests
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+These tests verify real-time WebSocket subscriptions by:
+  1. Authenticating and connecting via WebSocket
+  2. Subscribing to a collection
+  3. Inserting records via REST to trigger notifications
+  4. Verifying MutationNotification push messages arrive
+  5. Unsubscribing and cleaning up
+
+🛠️  Building client library...
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.09s
+✅ Client build complete!
+
+🦀 Rust WebSocket Subscription Test...
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s
+     Running `target/debug/examples/client_websocket_subscribe`
+✓ Authentication successful
+
+=== Connecting to WebSocket ===
+✓ WebSocket connected
+
+=== Subscribing to 'ws_subscribe_example_rs' ===
+✓ Subscribed (subscription_id: sub_62cac5b2460b45269cece0221aee3410)
+
+=== Performing mutations to trigger notifications ===
+Inserting record 1...
+✓ Inserted: Vu1e1iGiLFy1LKIlThdmoZPf-cVugIF_Ks2GonP0bhwrx1VSSomjX9QRFV_5QugKGVq6XRmq0gq86vvjEbKKcw
+
+  📡 Notification received:
+     Event:      "insert"
+     Collection: "ws_subscribe_example_rs"
+     Record IDs: ["Vu1e1iGiLFy1LKIlThdmoZPf-cVugIF_Ks2GonP0bhwrx1VSSomjX9QRFV_5QugKGVq6XRmq0gq86vvjEbKKcw"]
+     Timestamp:  "2026-09-16T20:59:37.074646+00:00"
+
+Inserting record 2...
+✓ Inserted: 1IJKwWAmaEnIvFqtE37s0c2ZMbjcIjoqH-6JEEZbnelYr1F_neAEV6QfYFSKn7wr805MbU1c-8xT-j-H7XOMZw
+
+  📡 Notification received:
+     Event:      "insert"
+     Record IDs: ["1IJKwWAmaEnIvFqtE37s0c2ZMbjcIjoqH-6JEEZbnelYr1F_neAEV6QfYFSKn7wr805MbU1c-8xT-j-H7XOMZw"]
+
+=== Unsubscribing ===
+✓ Unsubscribed
+
+=== Cleanup ===
+✓ Deleted collection 'ws_subscribe_example_rs'
+
+✓ WebSocket subscription example completed successfully
+✅ Rust subscription test complete!
+
+🔷 Go WebSocket Subscription Test...
+=== WebSocket Subscription Example (Go) ===
+
+✓ Authentication successful
+✓ WebSocket connected
+
+=== Subscribing to 'ws_subscribe_example_go' ===
+✓ Subscribed (subscription_id: sub_88589fa501e24f9e98abc5f1580b5a1f)
+
+=== Performing mutations to trigger notifications ===
+Inserting record 1...
+✓ Inserted: u0RRWUDEqJ35251TOOXQojcOP4KUnldXggZNx8HC_url5B_-vnVuMyCRA_WoQBA0trpoIkHxWo0-yfhwAYeLNg
+
+  📡 Notification received:
+     Event:      insert
+     Collection: ws_subscribe_example_go
+     Record IDs: [u0RRWUDEqJ35251TOOXQojcOP4KUnldXggZNx8HC_url5B_-vnVuMyCRA_WoQBA0trpoIkHxWo0-yfhwAYeLNg]
+     Timestamp:  2026-09-16T20:59:37.346322+00:00
+
+Inserting record 2...
+✓ Inserted: sv4is84LZ3onVbXGQkKgQUdQggotdYQlsdQjvlaZS0cmIr6r-x3CnO6QqkEd-s5JZGVTSg8WPt5Bb8eRmjkEAQ
+
+  📡 Notification received:
+     Event:      insert
+     Record IDs: [sv4is84LZ3onVbXGQkKgQUdQggotdYQlsdQjvlaZS0cmIr6r-x3CnO6QqkEd-s5JZGVTSg8WPt5Bb8eRmjkEAQ]
+
+=== Unsubscribing ===
+✓ Unsubscribed
+
+✓ WebSocket subscription example completed successfully
+✅ Go subscription test complete!
+📦 Ensuring Python example dependencies in .venv...
+
+🐍 Python WebSocket Subscription Test...
+=== WebSocket Subscription Example (Python) ===
+
+✓ Authentication successful
+✓ WebSocket connected
+
+=== Subscribing to 'ws_subscribe_example_py' ===
+✓ Subscribed (subscription_id: sub_8f175845304745349bdefb84897038e1)
+
+=== Performing mutations to trigger notifications ===
+Inserting record 1...
+✓ Inserted: xnkOjMZ9dgMA6Ngd8opSOo0QYyqBaG40pgkQIZ3agRY2CNtE4DOmLSUF1dYES-MiBiY3uumzTLa-vcY5q0hK5w
+
+  📡 Notification received:
+     Event:      insert
+     Collection: ws_subscribe_example_py
+     Record IDs: xnkOjMZ9dgMA6Ngd8opSOo0QYyqBaG40pgkQIZ3agRY2CNtE4DOmLSUF1dYES-MiBiY3uumzTLa-vcY5q0hK5w
+     Timestamp:  2026-09-16T20:59:37.764814+00:00
+
+Inserting record 2...
+✓ Inserted: ApXKf8Ll8lRqNcC7z3-U-jCcHKb2PlSbILOd8WMM0rxtyRighYVajFwN46hs4t3pOL-5tAnnylAF9kmIXtkcaw
+
+  📡 Notification received:
+     Event:      insert
+     Record IDs: ApXKf8Ll8lRqNcC7z3-U-jCcHKb2PlSbILOd8WMM0rxtyRighYVajFwN46hs4t3pOL-5tAnnylAF9kmIXtkcaw
+
+=== Unsubscribing ===
+✓ Unsubscribed: {'collection': 'ws_subscribe_example_py', 'found': True, 'unsubscribed': True}
+
+=== Cleanup ===
+✓ Deleted collection 'ws_subscribe_example_py'
+
+✓ WebSocket subscription example completed successfully
+✅ Python subscription test complete!
+📦 Building TypeScript client library...
+
+> @ekodb/ekodb-client@0.26.4 prepare
+> npm run build
+
+
+> @ekodb/ekodb-client@0.26.4 build
+> tsc
+
+
+up to date, audited 46 packages in 687ms
+
+12 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+
+> @ekodb/ekodb-client@0.26.4 build
+> tsc
+
+✅ TypeScript client built!
+
+📘 TypeScript WebSocket Subscription Test...
+=== WebSocket Subscription Example ===
+
+✓ Authentication successful
+✓ WebSocket connected
+
+=== Subscribing to 'ws_subscribe_example_ts' ===
+✓ Subscribed (subscription_id: sub_2222b0ae4cb34b789201dba315713be0)
+
+=== Performing mutations to trigger notifications ===
+Inserting a record...
+✓ Inserted record: ibMWRqT4hzeFPqYRZ19IYF-znB6XXM0ZG6jujM3PWYm_hz0dAnpFrQBjUXPmZ_tTZfiZYoawmUR-GsCMKSHOaA
+  📡 Notification received for ibMWRqT4hzeFPqYRZ19IYF-znB6XXM0ZG6jujM3PWYm_hz0dAnpFrQBjUXPmZ_tTZfiZYoawmUR-GsCMKSHOaA
+
+Inserting another record...
+✓ Inserted record: 51gLaNYaGxC-pjCiFizTa7yL1pUcz0k9DAj9kj8LaSShPwY6TCiHPyhltE-0M9pd9qkL7TjMnbTNzeMoWOjEbw
+  📡 Notification received for 51gLaNYaGxC-pjCiFizTa7yL1pUcz0k9DAj9kj8LaSShPwY6TCiHPyhltE-0M9pd9qkL7TjMnbTNzeMoWOjEbw
+
+=== Unsubscribing ===
+✓ Unsubscribed: {"collection":"ws_subscribe_example_ts","found":true,"unsubscribed":true}
+
+✓ WebSocket subscription example completed successfully
+✓ Deleted collection 'ws_subscribe_example_ts'
+✅ TypeScript subscription test complete!
+
+🟣 Kotlin WebSocket Subscription Test...
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.7.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+> Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :processResources NO-SOURCE
+> Task :compileKotlin
+> Task :compileJava NO-SOURCE
+> Task :classes UP-TO-DATE
+
+> Task :run
+=== WebSocket Subscription Example (Kotlin) ===
+
+SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+✓ Authentication successful
+
+=== Connecting to WebSocket ===
+✓ WebSocket connected
+
+=== Subscribing to 'ws_subscribe_example_kt' ===
+✓ Subscribed (subscription_id: sub_72605e3b997a4eba8ffa1af17915c9dd)
+
+=== Performing mutations to trigger notifications ===
+Inserting record 1...
+✓ Inserted: "v75QfuCz3IQdN50vo_VYkGMfTMk4oa7PagJqVm0KKSbo0mUBwWqkXDS2ZRgFCuE3P7RGRpFJ8Eh9X__l2nxTYw"
+
+  📡 Notification received:
+     Event:      "insert"
+     Collection: "ws_subscribe_example_kt"
+     Record IDs: ["v75QfuCz3IQdN50vo_VYkGMfTMk4oa7PagJqVm0KKSbo0mUBwWqkXDS2ZRgFCuE3P7RGRpFJ8Eh9X__l2nxTYw"]
+     Timestamp:  "2026-09-16T20:59:43.937394+00:00"
+
+Inserting record 2...
+✓ Inserted: "ZCkhz9hTql0HPHFYDPhBizCvVlYErm635QJTTZ1Pqty2zn79QwkbCUv6J2KYDeZn8H7cdBRpGNr1zsAnrSqcSA"
+
+  📡 Notification received:
+     Event:      "insert"
+     Record IDs: ["ZCkhz9hTql0HPHFYDPhBizCvVlYErm635QJTTZ1Pqty2zn79QwkbCUv6J2KYDeZn8H7cdBRpGNr1zsAnrSqcSA"]
+
+=== Unsubscribing ===
+✓ Unsubscribed: {"payload":{"data":{"collection":"ws_subscribe_example_kt","found":true,"unsubscribed":true}},"type":"Success"}
+
+✓ WebSocket subscription example completed successfully
+✓ Deleted collection 'ws_subscribe_example_kt'
+
+BUILD SUCCESSFUL in 4s
+2 actionable tasks: 2 executed
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.7.1/userguide/configuration_cache_enabling.html
+✅ Kotlin subscription test complete!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ All WebSocket Subscription Tests Passed!
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

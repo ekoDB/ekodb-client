@@ -16,16 +16,16 @@ make test-examples-go
 ✓ Authentication successful
 
 === Insert Document ===
-Inserted: map[id:3cDtgJ8YImcqpoNzRSaL1jXzcwjFwdhJ44mVVUN_cW0sLSD1yEP7re6yct1pFy5o42n3aR6nyFcDP-b2gjbrPw]
+Inserted: map[id:uphqSGoyhMdv3HZfHIu3OkNlYT5i_waYCGo1FGgmd7qq5YoQTVboPWhTwAWqi9cE2GRrcG57R-OV7dHbMTeMVA]
 
 === Find by ID ===
-Found: map[active:map[type:Boolean value:true] id:3cDtgJ8YImcqpoNzRSaL1jXzcwjFwdhJ44mVVUN_cW0sLSD1yEP7re6yct1pFy5o42n3aR6nyFcDP-b2gjbrPw name:map[type:String value:Test Record] value:map[type:Integer value:42]]
+Found: map[active:map[type:Boolean value:true] id:uphqSGoyhMdv3HZfHIu3OkNlYT5i_waYCGo1FGgmd7qq5YoQTVboPWhTwAWqi9cE2GRrcG57R-OV7dHbMTeMVA name:map[type:String value:Test Record] value:map[type:Integer value:42]]
 
 === Find with Query ===
-Found documents: [map[active:map[type:Boolean value:true] id:3cDtgJ8YImcqpoNzRSaL1jXzcwjFwdhJ44mVVUN_cW0sLSD1yEP7re6yct1pFy5o42n3aR6nyFcDP-b2gjbrPw name:map[type:String value:Test Record] value:map[type:Integer value:42]]]
+Found documents: [map[active:map[type:Boolean value:true] id:uphqSGoyhMdv3HZfHIu3OkNlYT5i_waYCGo1FGgmd7qq5YoQTVboPWhTwAWqi9cE2GRrcG57R-OV7dHbMTeMVA name:map[type:String value:Test Record] value:map[type:Integer value:42]]]
 
 === Update Document ===
-Updated: map[active:map[type:Boolean value:true] id:3cDtgJ8YImcqpoNzRSaL1jXzcwjFwdhJ44mVVUN_cW0sLSD1yEP7re6yct1pFy5o42n3aR6nyFcDP-b2gjbrPw name:map[type:String value:Updated Record] value:map[type:Integer value:100]]
+Updated: map[active:map[type:Boolean value:true] id:uphqSGoyhMdv3HZfHIu3OkNlYT5i_waYCGo1FGgmd7qq5YoQTVboPWhTwAWqi9cE2GRrcG57R-OV7dHbMTeMVA name:map[type:String value:Updated Record] value:map[type:Integer value:100]]
 
 === Delete Document ===
 Deleted document
@@ -39,14 +39,14 @@ Deleted document
 ✓ Authentication successful
 
 === Inserting Test Data ===
-✓ Inserted test record: afrAOAVaIEvOpvRrw6pyCxkAyU5wKGa-XFEQoI0IY3KuDbP4nWD5GVPFbV_fpfIObaSWUuC5Dkdie_pjXlscpw
+✓ Inserted test record: sCSOiqbw8sULK_GjBjH2pm3z0Wpmt_4F1C1lPW8-xWYOF_oZujgAtA-p8lPG5Ufv0Sql2BP2WczOyxIe3gR9tw
 
 === Connecting to WebSocket ===
 ✓ WebSocket connected
 
 === Querying Data via WebSocket ===
 Response: {
-  "messageId": "1789566411971623000",
+  "messageId": "1789591477653355000",
   "payload": {
     "data": [
       {
@@ -54,7 +54,7 @@ Response: {
           "type": "Boolean",
           "value": true
         },
-        "id": "afrAOAVaIEvOpvRrw6pyCxkAyU5wKGa-XFEQoI0IY3KuDbP4nWD5GVPFbV_fpfIObaSWUuC5Dkdie_pjXlscpw",
+        "id": "sCSOiqbw8sULK_GjBjH2pm3z0Wpmt_4F1C1lPW8-xWYOF_oZujgAtA-p8lPG5Ufv0Sql2BP2WczOyxIe3gR9tw",
         "name": {
           "type": "String",
           "value": "WebSocket Test Record"
@@ -81,18 +81,18 @@ Response: {
 
 📝 Example 1: Simple Query Function with Filter
 
-✅ Function saved: YsG6KMZ-hTWinlpD4a0elRYnIcReSpigV_zuV2hmfPZC8hvHBLvnzR2Be1hPDnBDCxR1EMX1Idhs08JBImGCaA
+✅ Function saved: 51taqHcgvzuv6xpza08WoPeK6zIb1CWiam3DRqg8RMmRa4CGLhoAykEIuM74kKvvAikctyqDCxDIsbWl-l07oA
 📊 Found 5 active users
 
 📝 Example 2: Parameterized Pagination with Limit/Skip
 
-✅ Function saved: erbMBGMKAYZDW7GRbuzHGDWwwABomK5QzMQzfCrczew8Q4N907mT-QJ8Z-rtcmRWDUcDYm7wD4ZY_tBbjKiP4A
+✅ Function saved: sC6Dy-JWR-NmW1FzVSPVrJNsnp09Jd3oF54SxaTBfU9ITuocdM2kdnndrZdYHBdyN1ntBJ-rbQIEb_xhNwYOqw
 📊 Page 1: Found 3 users (limit=3, skip=0)
 📊 Page 2: Found 2 users (limit=3, skip=3)
 
 📝 Example 3: Multi-Stage Pipeline (Query → Group → Calculate)
 
-✅ Function saved: -2gey2scpc8ohr_-N1HRpQqpK4_0khQHl4ABhwCXieSItRaPbQvCuQmn3ag3FnYrMnhjG5OALJFa8gKJweayaw
+✅ Function saved: xQA9KUZ99pguaczocJdBaNQLem1vGagJGyf4PhNcQRg6j9wOgkw05RR3ZYVFBOVlzZAHpU02LmwxHm93Wa7vYw
 📊 Pipeline Results: Filtered (age>20) → Grouped by status → 2 groups
    {"avg_score":{"type":"Float","value":60},"count":{"type":"Integer","value":5},"max_score":{"type":"Integer","value":100},"status":{"type":"String","value":"active"}}
    {"avg_score":{"type":"Float","value":50},"count":{"type":"Integer","value":5},"max_score":{"type":"Integer","value":90},"status":{"type":"String","value":"inactive"}}
@@ -166,11 +166,11 @@ cache:product:3:go: map[type:Object value:map[name:Product 3 price:49.9899999999
 ✓ Authentication successful
 
 === Create Collection (via insert) ===
-Collection created with first record: xdawGWVX7U75PRcn2v5xVvayVu2XzZco5qWZ9h0Z8dOmosJsF5VRhKHOIGWNvgy6DKToDovOf9DUbzcaRO5wEg
+Collection created with first record: SAJo8pnTfE_EQcQLkGWs0VVA7W5VG0VamCQigPKitmRYwsb95frxPY9nA0JKD_YL4ummeK5TnmeL663Ph-fMYQ
 
 === List Collections ===
 Total collections: 13
-Sample collections: [chat_agent_configs__ek0_testing agent_function_versions__ek0_testing schedules__ek0_testing functions__ek0_testing chat_configurations__ek0_testing]
+Sample collections: [chat_goals__ek0_testing schedules__ek0_testing agent_function_versions__ek0_testing chat_raw_completions__ek0_testing chat_turns__ek0_testing]
 
 === Delete Collection ===
 Collection deleted successfully
@@ -185,11 +185,11 @@ Collection still exists: false
 ✓ Authentication successful
 
 === Setup: Creating Test Accounts ===
-Created Alice: $1000 - ID: kDqCp7255ht4xT6yl5MyA6UqMOyng1E7bhBGei1VT8BjX0LOC27xGclB-3doPjw_u0z2aLAD5tZo-pkfSNGhSg
-Created Bob: $500 - ID: uSzfWL_ISVDKl268p120F8d4zaFEJvTT18jb3DBN_4ZNw4sEhqSbJxU7O7jdUM1G43Y7ZaN9VpNe-2EL55oAiw
+Created Alice: $1000 - ID: 2P0RGOeW6LiId5aghHkUlPGuBxN5JYNMgIglJTVLeHdonPh_jqhshUYYeYYtZb-YhHv-R0refGWzC1g59WT2EA
+Created Bob: $500 - ID: yWFfumwlAHaUoOdcO4xYfmPqPB8uZjVg-dqaAPHSKHuDUuVn2XPHwK06gg4OKql1c1zGvBVHafjMGeeCdPH_bQ
 
 === Example 1: Begin Transaction ===
-Transaction ID: 625bf002-a208-45fe-856d-86bc3928ff4f
+Transaction ID: 9f74d016-a4d8-401c-82f1-909201ccdfde
 
 === Example 2: Operations with transaction_id ===
 Updated Alice: $1000 → $800
@@ -207,7 +207,7 @@ Alice: map[type:Integer value:800]
 Bob: map[type:Integer value:700]
 
 === Example 5: Rollback ===
-New transaction: 700b95c2-05de-45e1-aebd-bb263d905b8d
+New transaction: 2aa86b4d-35f3-4456-ac48-8a421e9474a3
 Updated Bob: $700 → $600 (in transaction)
 ✓ Transaction rolled back
 Bob after rollback: map[type:Integer value:700]
@@ -240,7 +240,7 @@ Each function shows Functions chaining with proper verification
 ============================================================
 
 1️⃣ Saving Function...
-   ✅ Function saved: WQ7QGzNt8Bi15nqhRwCJoEW7X8ANXQD6pT40arjLmSfxsLJg-yrlC8JMe2qJrGpqapfjtM2VZNQn9t815NAQDA
+   ✅ Function saved: X8Q5onvppz3SyQgEWXxeRtdv2oTGmydSoO3oSaQjVUd20i1tTmrkb6qCU8iK1V9NHl0gTrWPkk5e75PJQLtqaA
 
 2️⃣ Calling function (Insert + Verify)...
    ✅ function executed: 2 Functions
@@ -248,7 +248,7 @@ Each function shows Functions chaining with proper verification
 
 3️⃣ Verification Results:
    ✅ Found 1 record(s)
-   📋 User ID: ZjgY4Q8XTpUtNLukT5-8q2f-rUDs-Jx7e0eEkioJpa8Y2nwqTg_5sx4fwpxHbWHRvsIek3fqxIEWtVFyWjymcw
+   📋 User ID: STqey5qG5EUOGCEqXwAtNZoG1QgpHgbFuqLhyws79c6prHAiepbYhsAgL0j1zjyurUFd19_JmkDn4xjOPQuK0A
    📋 Name: map[type:String value:Alice Smith]
    📋 Email: map[type:String value:alice@example.com]
    📋 Status: map[type:String value:pending]
@@ -259,7 +259,7 @@ Each function shows Functions chaining with proper verification
 ============================================================
 
 1️⃣ Saving Function...
-   ✅ Function saved: 6kH5sL2JPPHor0HtxY8gHRMyUpO_MEco6XPf2N6hdPJL65P3kp7HfjCtnaHph9XcnElre6Mcl0w1Ns5bzqDUQg
+   ✅ Function saved: F9HFn-H6wZVm6R7ADqtp5ekPf_9odpThKRFvS9tUrPeXxVQgmHo8Mf-a8rMprKxZvz-YFLAKimVAm0BKe1dpwg
 
 2️⃣ Calling function (Query + Update + Verify)...
    ✅ function executed: 3 Functions
@@ -275,7 +275,7 @@ Each function shows Functions chaining with proper verification
 ============================================================
 
 1️⃣ Saving Function...
-   ✅ Function saved: 2Tkp_K83vTpVN_vrIVYsgsOqYm8KW9nr520vmRITPHzBoNpqGTvZOLF27kAn8jj0N2FhdTbAPenMtLL9QSLh6A
+   ✅ Function saved: 2cswPyOMWXRAXvYzXrqJmUGOF3vTGTLpXwF-y5ksKyeCqq40v5q4hSWJB4lI2lgOnET1qQwIIk6iK2_9_uU91A
 
 2️⃣ Calling function (Query + Update Credits + Verify)...
    ✅ function executed: 3 Functions
@@ -292,7 +292,7 @@ Each function shows Functions chaining with proper verification
 ============================================================
 
 1️⃣ Saving Function...
-   ✅ Function saved: qaw4Ey-cS-AU6kw0q23uY5e-4K30XbiU6vr3DmnSSa-RYqEA9kx4OQK2Ev7oLekAfX25smbMM3hdKS7U0qurGQ
+   ✅ Function saved: dtdIXj2QmhTLJtz7pTq5qEtGLbmGbD7hkGAsTJcCbI7dTEdfRfH5VoHlT58gaW-QIIXA--NutbEGAJTrgKesHg
 
 2️⃣ Calling function (Query + Delete + Verify)...
    ✅ function executed: 3 Functions
@@ -305,10 +305,10 @@ Each function shows Functions chaining with proper verification
 ============================================================
 🧹 Cleanup
 ============================================================
-   ✅ Deleted script: WQ7QGzNt8Bi15nqhRwCJ...
-   ✅ Deleted script: 6kH5sL2JPPHor0HtxY8g...
-   ✅ Deleted script: 2Tkp_K83vTpVN_vrIVYs...
-   ✅ Deleted script: qaw4Ey-cS-AU6kw0q23u...
+   ✅ Deleted script: X8Q5onvppz3SyQgEWXxe...
+   ✅ Deleted script: F9HFn-H6wZVm6R7ADqtp...
+   ✅ Deleted script: 2cswPyOMWXRAXvYzXrqJ...
+   ✅ Deleted script: dtdIXj2QmhTLJtz7pTq5...
    ✅ Deleted collection: crud_functions_users_go
 
 ============================================================
@@ -340,11 +340,11 @@ TEST 1: Document TTL Expiration
 [Step 1] Insert document with 3 second TTL
   Input: {name: 'TTL Test', value: 'should expire'}
   TTL: 3s
-  Output: Document ID = UMiDiPCaKwweKMB_xN2ODrvOVt4upxVr6AggqfAVEBqJZL8tvcuya2-_R9s8gDFJlkIUjaHxMEmsrnbH1ewIoQ
+  Output: Document ID = dsAacbYAifWqKIg_OYSWMbm1oj75FJx4G6yhbKv4jr-4b0hcmbysrfUTDq0CBc0hCX9aIEOD4zqJ8AoxdTMz4g
   ✓ PASS: Document inserted
 
 [Step 2] Verify document exists immediately
-  Input: FindByID(UMiDiPCaKwweKMB_xN2ODrvOVt4upxVr6AggqfAVEBqJZL8tvcuya2-_R9s8gDFJlkIUjaHxMEmsrnbH1ewIoQ)
+  Input: FindByID(dsAacbYAifWqKIg_OYSWMbm1oj75FJx4G6yhbKv4jr-4b0hcmbysrfUTDq0CBc0hCX9aIEOD4zqJ8AoxdTMz4g)
   Output: Found document with name = map[type:String value:TTL Test]
   ✓ PASS: Document exists
 
@@ -353,7 +353,7 @@ TEST 1: Document TTL Expiration
   ✓ PASS: Wait complete
 
 [Step 4] Verify document has expired
-  Input: FindByID(UMiDiPCaKwweKMB_xN2ODrvOVt4upxVr6AggqfAVEBqJZL8tvcuya2-_R9s8gDFJlkIUjaHxMEmsrnbH1ewIoQ)
+  Input: FindByID(dsAacbYAifWqKIg_OYSWMbm1oj75FJx4G6yhbKv4jr-4b0hcmbysrfUTDq0CBc0hCX9aIEOD4zqJ8AoxdTMz4g)
   Output: Error (expected) - request failed with status 404: ��error�Record not found (expired)
   ✓ PASS: Document expired (not found error)
 
@@ -389,11 +389,11 @@ TEST: WebSocket TTL Expiration
 [Step 1] Insert document with 3 second TTL
   Input: {name: 'WS TTL Test', value: 'should expire'}
   TTL: 3s
-  Output: Document ID = wsm9w_8rgFq8WiUiSHGkTw6xRi0Z1iYNAcNZ04pH9XuDGgiGwqxCzEgujKiLX0PhPiaajPOJ04NBOgHVX8kmJw
+  Output: Document ID = GQAh_J_Wn-GvKP9tJn-Z_IT4DtfRNayRy1g_EIw4payygwgthMnHCSF5EV8r4PjfLrIxiOewpESSYPlqCdxB4g
   ✓ PASS: Document inserted
 
 [Step 2] Query to verify document exists
-  Input: FindByID(wsm9w_8rgFq8WiUiSHGkTw6xRi0Z1iYNAcNZ04pH9XuDGgiGwqxCzEgujKiLX0PhPiaajPOJ04NBOgHVX8kmJw)
+  Input: FindByID(GQAh_J_Wn-GvKP9tJn-Z_IT4DtfRNayRy1g_EIw4payygwgthMnHCSF5EV8r4PjfLrIxiOewpESSYPlqCdxB4g)
   Output: Found document with name = map[type:String value:WS TTL Test]
   ✓ PASS: Document exists
 
@@ -402,8 +402,8 @@ TEST: WebSocket TTL Expiration
   ✓ PASS: Wait complete
 
 [Step 4] Query to verify document has expired
-  Input: FindByID(wsm9w_8rgFq8WiUiSHGkTw6xRi0Z1iYNAcNZ04pH9XuDGgiGwqxCzEgujKiLX0PhPiaajPOJ04NBOgHVX8kmJw)
-  Output: Error (expected) - request failed with status 404: ��error�Record has been deleted
+  Input: FindByID(GQAh_J_Wn-GvKP9tJn-Z_IT4DtfRNayRy1g_EIw4payygwgthMnHCSF5EV8r4PjfLrIxiOewpESSYPlqCdxB4g)
+  Output: Error (expected) - request failed with status 404: ��error�Record not found (expired)
   ✓ PASS: Document expired (not found error)
 
 ═══════════════════════════════════════════════════════════
@@ -427,18 +427,10 @@ Total: 10
 Passed: 10
 Failed: 0
 ✅ Go direct examples complete!
-bash: warning: setlocale: LC_ALL: cannot change locale (C.UTF-8): No such file or directory
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB Advanced CRUD Integration Example (Go) ===
 
 --- Inserting base record ---
-Inserted record: xOwqTqSHkEiyLyyIpX1Gf9F_KuIphdvSOKdYE72YMsGTL9GutA2aIakCbIJjFvy8yUQSRHR5IsrJfERuyiUoOg
+Inserted record: QNWPeSsxiYKn3nhpuWLV1i5YUafGKO1ypn5LL1wBu11jy4LXnOWZs_By9KLDSNHrnW-K4QT3rwY7Ndgabu_tOQ
 
 --- UpdateWithAction: increment ---
 After increment by 5: count = map[type:Integer value:5]
@@ -458,13 +450,6 @@ After sequence: count=map[type:Integer value:16], tags=map[type:Array value:[ini
 Cleaned up all resources
 
 === All advanced CRUD operations completed successfully ===
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
 === Batch Insert ===
@@ -481,30 +466,23 @@ perl: warning: Falling back to the standard locale ("C").
 ✓ Deleted collection
 
 ✓ All batch operations completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB Advanced Chat Features Example ===
 
 === Inserting Sample Data ===
 ✓ Inserted sample product
 
 === Creating Chat Session ===
-✓ Created session: Orz6u4lxCXBs0kRKIYjIGJHWiFRlecFy95GcnXCJI2cefsz6gEkeAksb1VAD_8oecMjrQKgrBvl36lddHQNDhQ
+✓ Created session: 9Hy07qoN1qsLk3_oYjxBB6-KQ0JkWwZq4XNxEhsA_KskEnV8HiTiLZuKHV4fLef8tbOcHIGBEsIaboS0-zc06g
 
 === Sending Initial Message ===
 ✓ Message sent
-  Response: The available product is:
+  Response: It seems there are currently no products available based on the filter applied. However, there is information about one product:
 
 - **Name:** ekoDB
 - **Description:** High-performance database product
 - **Price:** $99
 
-If you have any further questions or need more information, feel free to ask!
+If you're looking for a specific type of product or need further assistance, please let me know!
 
 ✓ Second message sent
 
@@ -521,7 +499,7 @@ If you have any further questions or need more information, feel free to ask!
 ✓ Message unmarked as forgotten
 
 === Feature 4: Merge Chat Sessions ===
-✓ Created second session: SKCgd5SHIA8LS45JEViLXuwdzsK4Akm6duSgSNKHgab7ipLee0ai-rTBphn6adJA4qaEnG6l1n5u6Ft9VBTuOw
+✓ Created second session: dzszHfK0g0l5dQKn3BLm8j8UcppvaunjYZ2kz4LT2IXgKs_5UoIjN1sRBNaqIRP-s463PeL07l7oJLQI3KaczA
 ✓ Sent message in second session
 ✓ Sessions merged successfully
   Total messages in merged session: 7
@@ -532,102 +510,82 @@ If you have any further questions or need more information, feel free to ask!
 ✓ Messages remaining: 6
 
 === Cleanup ===
-✓ Deleted chat session: SKCgd5SHIA8LS45JEViLXuwdzsK4Akm6duSgSNKHgab7ipLee0ai-rTBphn6adJA4qaEnG6l1n5u6Ft9VBTuOw
-✓ Deleted chat session: Orz6u4lxCXBs0kRKIYjIGJHWiFRlecFy95GcnXCJI2cefsz6gEkeAksb1VAD_8oecMjrQKgrBvl36lddHQNDhQ
+✓ Deleted chat session: dzszHfK0g0l5dQKn3BLm8j8UcppvaunjYZ2kz4LT2IXgKs_5UoIjN1sRBNaqIRP-s463PeL07l7oJLQI3KaczA
+✓ Deleted chat session: 9Hy07qoN1qsLk3_oYjxBB6-KQ0JkWwZq4XNxEhsA_KskEnV8HiTiLZuKHV4fLef8tbOcHIGBEsIaboS0-zc06g
 ✓ Deleted collection
 
 ✓ All advanced chat features demonstrated successfully!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB Chat Basic Example ===
 
 === Inserting Sample Data ===
 ✓ Inserted 3 sample documents
 
 === Creating Chat Session ===
-✓ Created session: Ck1wc4wBqz7Nbp2CFll00gDXl6yusrAxyv7Kmb94ZCJM4MhTdIMbg0KPkvokmT-OXfKZAWZ1_H1HLZMrINtnyg
+✓ Created session: _gzlfhH_GMoHu94-x1vimRfrLcOaFo19SIR8YNmHgLd_INsdl9egGojQhVDcD_0CwN6C4mCYSai90egCB3JEzw
 
 === Sending Chat Message ===
-Message ID: ez99c2APV1vR78cSJUK4_y_miaKAmo8oSJAdAbOmLvdoySiFRVo1KoYSC1Tij3IQpyRb9OgwC_uDQhSHFpHIQA
+Message ID: wPPHdAFJB9htAbtKNBdBOCHxwexWipAHCSBCHj1Z9PcSXHB_0WbfKhYMFr0wJWxq-i1HjM8vVM2FQ8wdkUpPxg
 
 === AI Response ===
-The available products and their prices are as follows:
+Here are the available products and their prices:
 
-1. **ekoDB Cloud**: $499
-   Description: Fully managed cloud database service product
+1. **ekoDB Cloud**
+   - Price: $499
+   - Description: Fully managed cloud database service product
 
-2. **ekoDB**: $99
-   Description: A high-performance database product with AI capabilities
+2. **ekoDB Pro**
+   - Price: $299
+   - Description: Enterprise edition product with advanced features
 
-3. **ekoDB Pro**: $299
-   Description: Enterprise edition product with advanced features
+3. **ekoDB**
+   - Price: $99
+   - Description: A high-performance database product with AI capabilities
 
 === Context Used (3 snippets) ===
-  Snippet 1: map[collection:client_chat_basic_go matched_fields:[description] record:map[description:Fully managed cloud database service product id:pI8UKPTEZI2lkVPUmV7ADppA8_Ewb6HzPUQf0eCVpNj4pAKCcAMjYXnbB-cLA5Di8Z19PSPsXTDDN6BzzyZMEQ name:ekoDB Cloud price:499] score:0.1111111111111111]
-  Snippet 2: map[collection:client_chat_basic_go matched_fields:[description] record:map[description:A high-performance database product with AI capabilities id:AhdcahG8y964lJ33ZrYxyxBiNqmZ_z1Zv8_WmzZugcYPBLA8PErb4qKLQxDJcB9pff67ZaVcbwstu6mR8RnsnA name:ekoDB price:99] score:0.1111111111111111]
-  Snippet 3: map[collection:client_chat_basic_go matched_fields:[description] record:map[description:Enterprise edition product with advanced features id:DoDFzC9Mq6d9T0-eic1xQstpyNiG-6lmUltCAIfERR5Mww_Bhgb2NGT-gDO8CuQe5JT-ak426Iznglc5UhvimQ name:ekoDB Pro price:299] score:0.1111111111111111]
+  Snippet 1: map[collection:client_chat_basic_go matched_fields:[description] record:map[description:Fully managed cloud database service product id:aheceJ-zptetPau7bRuLCf1RAv6erswwKt8frFV8lx7Rr5BN9x85VW1nFzOvAGfdu4b6OFyACtH1yMTwta7ajw name:ekoDB Cloud price:499] score:0.1111111111111111]
+  Snippet 2: map[collection:client_chat_basic_go matched_fields:[description] record:map[description:Enterprise edition product with advanced features id:1_voB59OqKtYUu2EawSoAPbwzzDDTyAfmEWW9dA9D9wdNN3Nn1_giNQaLD4FQnQ8gxVOY_rVhr5d_EYbrWCKcA name:ekoDB Pro price:299] score:0.1111111111111111]
+  Snippet 3: map[collection:client_chat_basic_go matched_fields:[description] record:map[description:A high-performance database product with AI capabilities id:Rvsr7fVU0xWsc14NQRjtVR6n4iQ6ZMQDCgwUHlZ3lzGEk8koBB-aVkLdRjt37JHT0D6tGn14dC32Gt1vZQY6ig name:ekoDB price:99] score:0.1111111111111111]
 
-Execution Time: 2347ms
+Execution Time: 2526ms
 
 === Token Usage ===
 Prompt tokens: 3413
-Completion tokens: 82
-Total tokens: 3495
+Completion tokens: 89
+Total tokens: 3502
 
 === Cleanup ===
 ✓ Deleted session
 ✓ Deleted collection
 
 ✓ Chat completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB Chat Message Stream (SSE) Example (Go) ===
 
-Created session: UkjY6eQn4Q9zX_3U2qQul6gXGRfMncWmzBJIMQP5JDmAFBbXQE3fhMt3KQ3IaWQixobjLndxGCJVeOsZtqOwGA
+Created session: CX5mEF30pGkBoNsiZ9vjQaKnDxURyQwfVtQ1Jzcwnm5wXLvEkaq9n9bFZ0VV1t6ZlWT0cKOHLX4cFsNhLxLVFQ
 
 Streaming response for: 'What is ekoDB?'
 
-{"__progress":"received"}{"__progress":"generating","model":"gpt-4o-mini","provider":"openai"}EkoDB is a high-performance, distributed database designed for applications that require low-latency and high throughput. It is particularly suited for use cases such as time-series data, event streaming, and large-scale real-time analytics.
+{"__progress":"received"}{"__progress":"generating","model":"gpt-4o-mini","provider":"openai"}ekoDB is an open-source database management system designed for high-performance applications. It focuses on enabling developers to easily store and manipulate large volumes of data efficiently. ekoDB is particularly suited for scenarios requiring fast read and write operations, often found in applications such as IoT, real-time analytics, and big data processing.
 
-Key features of ekoDB may include:
+Some key features of ekoDB may include:
 
-1. **Scalability**: EkoDB is designed to scale horizontally, allowing it to handle increasing amounts of data and requests by adding more servers to the cluster.
+1. **Scalability**: Designed to handle large datasets and support horizontal scaling across distributed environments.
 
-2. **Performance**: The database engine is optimized for fast read and write operations, making it ideal for high-load environments.
+2. **Performance**: Optimized for speed, providing low-latency access to data and high throughput for concurrent operations.
 
-3. **Distributed Architecture**: EkoDB typically employs a distributed architecture, ensuring data redundancy and fault tolerance, which enhances reliability.
+3. **Flexibility**: Supports various data models, allowing developers to work with structured or unstructured data as needed.
 
-4. **Support for Various Data Models**: EkoDB might support different data models such as key-value, document, or column-family stores, catering to a range of application needs.
+4. **Ease of Use**: Provides APIs and tools that make it easier for developers to integrate the database with their applications.
 
-5. **Efficient Query Mechanisms**: It may offer indexing and querying features that improve the efficiency of data retrieval.
+5. **Open Source**: Being open source allows the community to contribute, review, and improve the database continually.
 
-6. **Real-time Analytics**: Suitable for applications requiring real-time data processing and insights.
-
-While EkoDB may not be as widely known as some other databases, it serves specific niches and use cases where performance and scalability are critical. If you have specific questions about EkoDB or need information on how to implement or use it, feel free to ask!
+Please verify with the latest sources or official documentation for the most current information about ekoDB, as features and capabilities may evolve over time.
 
 --- Stream complete ---
-Message ID: dXm6qVlohpVc3kmwuen-Sgvj5FTxgcOaSUSsrpWZlFp9gPf8WmE_kBdaNMk2r-0dwI8lyJzdNYqSvckHIIY1jg
-Execution time: 2369ms
+Message ID: nxWXi2VR2dNMbhJUKjI7sfx0-cNBsHfxz-j0iAXL6QjC71vPjGnGl6jbND_L2J6l2XPd9vduOph25Q4PBKMB2w
+Execution time: 2086ms
 Context window: 128000 tokens
 
 ✓ Chat message stream example completed
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
 === Get All Chat Models ===
@@ -635,10 +593,10 @@ OpenAI models: [text-embedding-ada-002 whisper-1 gpt-3.5-turbo tts-1 gpt-3.5-tur
 Anthropic models: [claude-fable-5-1 claude-opus-5 claude-sonnet-5 claude-fable-5 claude-opus-4-8 claude-opus-4-7 claude-sonnet-4-6 claude-opus-4-6 claude-opus-4-5-20251101 claude-haiku-4-5-20251001 claude-sonnet-4-5-20250929]
 Perplexity models: []
 Gemini models: []
+  perplexity: not_configured (unverified) No Perplexity API Key
   anthropic: ok 11 models
   gemini: not_configured (unverified) No Gemini API Key
   openai: ok 132 models
-  perplexity: not_configured (unverified) No Perplexity API Key
 
 === Get OpenAI Models ===
 OpenAI models: [text-embedding-ada-002 whisper-1 gpt-3.5-turbo tts-1 gpt-3.5-turbo-16k gpt-4-0613 gpt-4 davinci-002 babbage-002 gpt-3.5-turbo-instruct gpt-3.5-turbo-instruct-0914 gpt-3.5-turbo-1106 tts-1-hd tts-1-1106 tts-1-hd-1106 text-embedding-3-small text-embedding-3-large gpt-3.5-turbo-0125 gpt-4-turbo gpt-4-turbo-2024-04-09 gpt-4o gpt-4o-2024-05-13 gpt-4o-mini-2024-07-18 gpt-4o-mini gpt-4o-2024-08-06 omni-moderation-latest omni-moderation-2024-09-26 o1-2024-12-17 o1 o3-mini o3-mini-2025-01-31 gpt-4o-2024-11-20 gpt-4o-mini-search-preview-2025-03-11 gpt-4o-mini-search-preview gpt-4o-transcribe gpt-4o-mini-transcribe o1-pro-2025-03-19 o1-pro gpt-4o-mini-tts o3-2025-04-16 o4-mini-2025-04-16 o3 o4-mini gpt-4.1-2025-04-14 gpt-4.1 gpt-4.1-mini-2025-04-14 gpt-4.1-mini gpt-4.1-nano-2025-04-14 gpt-4.1-nano gpt-image-1 o4-mini-deep-research gpt-4o-transcribe-diarize o4-mini-deep-research-2025-06-26 gpt-5-chat-latest gpt-5-2025-08-07 gpt-5 gpt-5-mini-2025-08-07 gpt-5-mini gpt-5-nano-2025-08-07 gpt-5-nano gpt-audio-2025-08-28 gpt-realtime gpt-realtime-2025-08-28 gpt-audio gpt-5-codex gpt-image-1-mini gpt-5-pro-2025-10-06 gpt-5-pro gpt-audio-mini gpt-audio-mini-2025-10-06 gpt-5-search-api gpt-realtime-mini sora-2 sora-2-pro gpt-5-search-api-2025-10-14 gpt-5.1-chat-latest gpt-5.1-2025-11-13 gpt-5.1 gpt-5.1-codex gpt-5.1-codex-mini gpt-5.1-codex-max gpt-image-1.5 gpt-5.2-2025-12-11 gpt-5.2 gpt-5.2-pro-2025-12-11 gpt-5.2-pro gpt-5.2-chat-latest gpt-4o-mini-transcribe-2025-12-15 gpt-4o-mini-transcribe-2025-03-20 gpt-4o-mini-tts-2025-03-20 gpt-4o-mini-tts-2025-12-15 gpt-realtime-mini-2025-12-15 gpt-audio-mini-2025-12-15 chatgpt-image-latest gpt-5.2-codex gpt-5.3-codex gpt-realtime-1.5 gpt-audio-1.5 gpt-4o-search-preview gpt-4o-search-preview-2025-03-11 gpt-5.3-chat-latest gpt-5.4-2026-03-05 gpt-5.4-pro gpt-5.4-pro-2026-03-05 gpt-5.4 gpt-5.4-nano-2026-03-17 gpt-5.4-nano gpt-5.4-mini-2026-03-17 gpt-5.4-mini gpt-image-2 gpt-image-2-2026-04-21 gpt-5.5 gpt-5.5-2026-04-23 gpt-5.5-pro gpt-5.5-pro-2026-04-23 chat-latest gpt-realtime-translate gpt-realtime-2 gpt-realtime-whisper gpt-5.6-sol gpt-5.6-terra gpt-5.6-luna gpt-realtime-2.1 gpt-realtime-2.1-mini gpt-transcribe gpt-live-transcribe gpt-6-astra gpt-image-2.5-flare gpt-image-2.5-sunburst gpt-image-2.5-flare-2026-09-08 gpt-image-2.5-sunburst-2026-09-08 gpt-live-1]
@@ -647,20 +605,13 @@ OpenAI models: [text-embedding-ada-002 whisper-1 gpt-3.5-turbo tts-1 gpt-3.5-tur
 Anthropic models: [claude-fable-5-1 claude-opus-5 claude-sonnet-5 claude-fable-5 claude-opus-4-8 claude-opus-4-7 claude-sonnet-4-6 claude-opus-4-6 claude-opus-4-5-20251101 claude-haiku-4-5-20251001 claude-sonnet-4-5-20250929]
 
 ✓ Chat Models API example complete
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB Chat Session Management Example ===
 
 === Inserting Sample Data ===
 ✓ Inserted sample product
 
 === Creating Chat Session ===
-✓ Created session: v1GI3TjyeOkvS8w70JCCznf05Lidxen9dmR7upuJjJ3GXVOCtDMhEIYqlT1yElBbx5QGzszCIr9meVX3px5GFA
+✓ Created session: 3tFpR9vsbmGSC8RTgMjMNIkWOC4zYGkmdqVdFc2Nek-vL4E75QFwD67UvRpRm7PJ5_msA2VQYoD4cWG35K9l0g
 
 === Sending Messages ===
 ✓ Message 1 sent
@@ -670,8 +621,10 @@ perl: warning: Falling back to the standard locale ("C").
 - **Description:** A high-performance database product
 - **Price:** $99
 
+If you would like more information or additional products, please let me know!
+
 ✓ Message 2 sent
-  Response: The price of the product ekoDB is $99.
+  Response: The price of ekoDB is $99.
 
 === Retrieving Session Messages ===
 ✓ Retrieved 4 messages
@@ -680,41 +633,34 @@ perl: warning: Falling back to the standard locale ("C").
 ✓ Session updated
 
 === Branching Session ===
-✓ Created branch: 8oHfwZxZ7sR1qhyCo9TUVqnbw1ivkFPnqJZxNGa1f6YzuRnXX26t1z3Im9S1_iD64YA3xiaXX04_L4-QW3qYyw
-  Parent: v1GI3TjyeOkvS8w70JCCznf05Lidxen9dmR7upuJjJ3GXVOCtDMhEIYqlT1yElBbx5QGzszCIr9meVX3px5GFA
+✓ Created branch: SJM7R59Wj7lWafGSAP1VeIciV1m1mtbIsxRGS889vJ0E0G5NSzvRhLca-NZSbpsae4-De4iQU3uPFuyPEU9jww
+  Parent: 3tFpR9vsbmGSC8RTgMjMNIkWOC4zYGkmdqVdFc2Nek-vL4E75QFwD67UvRpRm7PJ5_msA2VQYoD4cWG35K9l0g
 
 === Listing Sessions ===
 ✓ Found 2 sessions
-  Session 1: 8oHfwZxZ7sR1qhyCo9TUVqnbw1ivkFPnqJZxNGa1f6YzuRnXX26t1z3Im9S1_iD64YA3xiaXX04_L4-QW3qYyw (Untitled)
-  Session 2: v1GI3TjyeOkvS8w70JCCznf05Lidxen9dmR7upuJjJ3GXVOCtDMhEIYqlT1yElBbx5QGzszCIr9meVX3px5GFA (Untitled)
+  Session 1: SJM7R59Wj7lWafGSAP1VeIciV1m1mtbIsxRGS889vJ0E0G5NSzvRhLca-NZSbpsae4-De4iQU3uPFuyPEU9jww (Untitled)
+  Session 2: 3tFpR9vsbmGSC8RTgMjMNIkWOC4zYGkmdqVdFc2Nek-vL4E75QFwD67UvRpRm7PJ5_msA2VQYoD4cWG35K9l0g (Untitled)
 
 === Getting Session Details ===
 ✓ Session details retrieved
   Messages: 4
 
 === Deleting Branch Session ===
-✓ Deleted branch session: 8oHfwZxZ7sR1qhyCo9TUVqnbw1ivkFPnqJZxNGa1f6YzuRnXX26t1z3Im9S1_iD64YA3xiaXX04_L4-QW3qYyw
+✓ Deleted branch session: SJM7R59Wj7lWafGSAP1VeIciV1m1mtbIsxRGS889vJ0E0G5NSzvRhLca-NZSbpsae4-De4iQU3uPFuyPEU9jww
 
 === Cleanup ===
 ✓ Deleted session
 ✓ Deleted collection
 
 ✓ All session management operations completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
 === Create Collection (via insert) ===
-Collection created with first record: WmhrsLRQB0JDP_TIkWVD6HoXZS1nvGsGc2DjQ67CN9kyJ3x8RW8EPET6rRc2UZj1eIP9wJeMBawCdCsIo2heCQ
+Collection created with first record: zPBl8keLkQ8cPteAEH3YcgZqAHhZCn-zfbBI_XPGLLQYoAbQJQmyNilmWBCusqGY38cpOuWJcSbg1itKowQ_4Q
 
 === List Collections ===
 Total collections: 13
-Sample collections: [chat_agent_configs__ek0_testing agent_function_versions__ek0_testing schedules__ek0_testing functions__ek0_testing chat_configurations__ek0_testing]
+Sample collections: [chat_goals__ek0_testing schedules__ek0_testing agent_function_versions__ek0_testing chat_raw_completions__ek0_testing chat_turns__ek0_testing]
 
 === Count Documents ===
 Document count: 1
@@ -726,13 +672,6 @@ Collection deleted successfully
 Collection still exists: false
 
 ✓ All collection management operations completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
 === Check Collection Exists (Before Creation) ===
@@ -754,13 +693,6 @@ Collection 'nonexistent_collection_xyz' exists: false
 Deleted collection 'collection_utils_test_go'
 
 ✓ Collection Utilities example complete
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 ✓ conc_demo_pay_go saved
 ✓ conc_demo_rl_fail_go saved
@@ -774,24 +706,17 @@ Invoke them like:
   POST /api/functions/conc_demo_lock_go       { "resource": "queue:drain" }
 
 ✓ Cleaned up demo functions
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB Convenience Methods Example ===
 
 === Native Map Creation ===
-✓ Created record with native map: map[id:da9PiNm4qCV6BU450Jo2pltC6sPijFDvlxN-V-AG1W7XwMMdqbjB8jdQVsjR02yAPhnJcOflwGfeh4Jn5GKdkw]
+✓ Created record with native map: map[id:m2bIhJtMwJNBlmYrAqqw3QaFdCQgJXVGh2wASZI5g3bu2jg5AzMUD2uYJ6MSzb1D24mwK_0Aze_EuqKI2feI9Q]
 
 === Upsert Operation ===
-✓ First upsert (update): map[active:map[type:Boolean value:true] age:map[type:Integer value:29] email:map[type:String value:alice.j@newdomain.com] id:da9PiNm4qCV6BU450Jo2pltC6sPijFDvlxN-V-AG1W7XwMMdqbjB8jdQVsjR02yAPhnJcOflwGfeh4Jn5GKdkw name:map[type:String value:Alice Johnson]]
-✓ Second upsert (insert): map[id:i6Kad4urTBRiuvV6jH_6-1ZLgyRUyikfv_O-wRSOg3LX72_yW7y4dvazLUFe_3s_NhDuKJ6S7fCYAFbiFChJfA]
+✓ First upsert (update): map[active:map[type:Boolean value:true] age:map[type:Integer value:29] email:map[type:String value:alice.j@newdomain.com] id:m2bIhJtMwJNBlmYrAqqw3QaFdCQgJXVGh2wASZI5g3bu2jg5AzMUD2uYJ6MSzb1D24mwK_0Aze_EuqKI2feI9Q name:map[type:String value:Alice Johnson]]
+✓ Second upsert (insert): map[id:GjgX2HV-H82CxOIxsGjHLQbb_Edk12uLGqsIwESlTpSVXUSU1bSHiT8EhpS_x-XEA-58h7YnCtQAUdzc5AUyGQ]
 
 === Find One Operation ===
-✓ Found user by email: map[active:map[type:Boolean value:true] age:map[type:Integer value:29] email:map[type:String value:alice.j@newdomain.com] id:da9PiNm4qCV6BU450Jo2pltC6sPijFDvlxN-V-AG1W7XwMMdqbjB8jdQVsjR02yAPhnJcOflwGfeh4Jn5GKdkw name:map[type:String value:Alice Johnson]]
+✓ Found user by email: map[active:map[type:Boolean value:true] age:map[type:Integer value:29] email:map[type:String value:alice.j@newdomain.com] id:m2bIhJtMwJNBlmYrAqqw3QaFdCQgJXVGh2wASZI5g3bu2jg5AzMUD2uYJ6MSzb1D24mwK_0Aze_EuqKI2feI9Q name:map[type:String value:Alice Johnson]]
 ✓ User not found (as expected)
 
 === Exists Check ===
@@ -808,13 +733,6 @@ perl: warning: Falling back to the standard locale ("C").
 ✓ Deleted collection
 
 ✅ All convenience methods demonstrated successfully!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 ✓ crypto_demo_hmac_go saved
 ✓ crypto_demo_aes_go saved
@@ -830,13 +748,6 @@ Invoke them with:
   POST /api/functions/crypto_demo_encoding_go { "title": "Héllo World" }
 
 ✓ Cleaned up demo functions
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === Distinct Values Example ===
 
 Inserting sample products...
@@ -860,20 +771,13 @@ Found 2 distinct statuses for electronics:
   - map[type:String value:discontinued]
 
 Cleanup done.
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
 === Insert Document with TTL (1 hour) ===
-✓ Inserted document: bsGAJ83cwsNFbEK0raV8qTr59Yvrx4tPnCPM7jDEbwd-AG2pjJP8F7VZyHeNOztNOzpTQJStOiqkE3oiqDhZZQ
+✓ Inserted document: dgcqQ7_B2Sq_23txbS1lAoDIYpdJ1MUDuduUofd2JOJWPQASW6d8avpHpYWTGqDNWFgyOSY6LqkyKZT8NRVNxA
 
 === Insert Document with TTL (5 minutes) ===
-✓ Inserted document: dh3_9iUW8irkPt2XEz2AR9893Vf8t5GYXRIEqd7zKI06BILhLCQxWi2b9KLsUbj1lueqXUxWO-z0KEWUBN437w
+✓ Inserted document: l1KNcAmhJRa9eB0a3qnASxj9naoFv_u22u-xz_SSxsZpTfYofg8Pn1DrE4Yof_Ch9Iq0PuxexqxYD-z8vBMP8Q
 
 === Query Documents ===
 ✓ Found 2 documents with TTL
@@ -890,27 +794,20 @@ perl: warning: Falling back to the standard locale ("C").
 ✓ All document TTL operations completed successfully
 
 💡 Note: Documents with TTL will automatically expire after the specified duration
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB as Edge Cache - Simple Example ===
 
 Setting up edge cache collection...
 ✓ Cache entry created
 
 Creating edge cache lookup script...
-✓ Edge cache script created: VNlV3w48vk2MXVpaTNce--C9NLXnZ4eN64_Vpkh-pOj9RtgIRkKnV8ZzW_09CJbq7WHSHgA0h2_6rs2L-1bwAA
+✓ Edge cache script created: IaJnW7j-bYGcby3cNdxXgd9_7dMICcFHfcj_DZ4eHcJtg-_Y_D0uK-CUfor4uF_NUmpsho2kWCR_srYfTw2mgw
 
 Call 1: Cache lookup
-Response time: 2ms
+Response time: 1ms
 Found 1 cached entries
 
 Call 2: Cache lookup (connection warm)
-Response time: 4ms
+Response time: 1ms
 Found 1 cached entries
 
 === The Magic ===
@@ -925,13 +822,6 @@ Found 1 cached entries
 
 🧹 Cleaning up...
 ✓ Cleanup complete
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB Function Composition Examples ===
 
 📋 Setting up test data...
@@ -961,7 +851,7 @@ Using KV cache + CallFunction for fast cache-aside pattern...
 ✅ Saved SWR function using composition: swr_user
 
 First call (cache miss - will fetch from API):
-   ⏱️  Duration: 94.590709ms
+   ⏱️  Duration: 61.979333ms
    📊 Records: 1
    📦 Data: {
         "value": {
@@ -974,7 +864,7 @@ First call (cache miss - will fetch from API):
           ...
 
 Second call (cache hit - from cache):
-   ⏱️  Duration: 4.78075ms
+   ⏱️  Duration: 1.761333ms
    📊 Records: 1
    📦 Data: {
         "value": {
@@ -985,7 +875,7 @@ Second call (cache hit - from cache):
               "geo": {
                 "lat": "-37.3159",
           ...
-   🚀 Cache speedup: 23.5x faster!
+   🚀 Cache speedup: 61.0x faster!
 
 📝 Example 3: Multi-Level Function Composition
 
@@ -1007,21 +897,7 @@ Building complex workflows from small, reusable pieces...
 
 
 ✅ All composition examples completed!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 client_function_contract: ok
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 🚀 ekoDB Functions Example (Go Client)
 
 ✅ Client initialized
@@ -1035,7 +911,7 @@ perl: warning: Falling back to the standard locale ("C").
 
 📝 Example 1: Simple Query Function
 
-✅ Function saved: LvxDU4er-O37PM-tnPPtYkhWpGC70j09XUVeK5NuqjzxLBxEwKGWuBQt4Db-JkT8CHQ5fxvuE9BlClpLUxrkDw
+✅ Function saved: OD0CbLNHLJGk6UQwvzq84BUMHE5z0Gry72021ejr_wwAJuBKqUd-ynCuaXiIBa5ftLbnInFO0o28zfd6NUFDwA
 📊 Found 5 records
 ⏱️  Execution time: 0ms
 
@@ -1049,8 +925,8 @@ perl: warning: Falling back to the standard locale ("C").
 
 ✅ Function saved
 📊 Statistics: 2 groups
-   map[avg_score:map[type:Float value:60] count:map[type:Integer value:5] status:map[type:String value:active]]
    map[avg_score:map[type:Float value:50] count:map[type:Integer value:5] status:map[type:String value:inactive]]
+   map[avg_score:map[type:Float value:60] count:map[type:Integer value:5] status:map[type:String value:active]]
 ⏱️  Execution time: 0ms
 
 📝 Example 4: Function Management
@@ -1086,13 +962,6 @@ perl: warning: Falling back to the standard locale ("C").
    • Automatic token management
    • Type-safe Stage builders
    • Built-in error handling
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 🚀 ekoDB Go Advanced Functions Example
 
 📋 Setting up test data...
@@ -1115,13 +984,6 @@ perl: warning: Falling back to the standard locale ("C").
 ✅ All advanced script examples finished!
 🧹 Cleaning up...
 ✅ Cleanup complete
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 🚀 ekoDB Go AI Functions Example
 
 📋 Setting up test data...
@@ -1146,13 +1008,6 @@ perl: warning: Falling back to the standard locale ("C").
    ✅ Embedding generation for text
 🧹 Cleaning up...
 ✅ Cleanup complete
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 🚀 ekoDB Go Complete Functions Example
 
 📋 Demonstrates: FindAll, Group, Count, Multi-stage Pipelines
@@ -1162,7 +1017,7 @@ perl: warning: Falling back to the standard locale ("C").
 
 📝 Example 1: FindAll + Group (Simple Aggregation)
 
-✅ Function saved: Tl9QminPFEn8gTBUxcPPNWxnJRENWuemGwd4hCdpxzX3-6kpNuvEq-yEasf30sb90_8ot_xuxrl-iFyX3iEe6A
+✅ Function saved: QChopu7exgTPnVQo2nx4ooVSetjByhp74wnP7gpmJv-Jk7YYCrgRsLphSHuksKjnoHUa-3-ZYaHmGlpsFrLgVg
 📊 Found 2 category stats
 
 📝 Example 2: Simple Product Listing
@@ -1190,13 +1045,6 @@ perl: warning: Falling back to the standard locale ("C").
    ✅ Function management (save, call, delete)
 🧹 Cleaning up...
 ✅ Cleanup complete
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 🚀 ekoDB Go CRUD Functions Example
 
 📋 Setting up test data...
@@ -1212,20 +1060,13 @@ perl: warning: Falling back to the standard locale ("C").
 
 ✅ Function saved
 📊 User counts by status:
-   map[count:map[type:Integer value:3] status:map[type:String value:inactive]]
    map[count:map[type:Integer value:7] status:map[type:String value:active]]
+   map[count:map[type:Integer value:3] status:map[type:String value:inactive]]
 ⏱️  Execution time: 0ms
 
 ✅ All CRUD script examples finished!
 🧹 Cleaning up...
 ✅ Cleanup complete
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 🚀 ekoDB Go KV Store & Wrapped Types Example
 
 📋 Demonstrates:
@@ -1236,12 +1077,12 @@ perl: warning: Falling back to the standard locale ("C").
 
 📝 Example 1: Inserting Records with Wrapped Types
 
-✅ Inserted order: IMn-iJ5WNMOtRnnKJO12_iNpTXbJN6k5EyrcSFlvgroJvOm1EXiDt1bhJNYTrzXnid5LOhZIIB5u302htDj-Ig
+✅ Inserted order: qqVaijG-mWMUdWzcOxFHDruuZfjGf1Mq8_ioOQ7Mxa_nRqldUxJCmwanPyqDPnhI7fTdz3InSLSCTsHGzRhGAg
 ✅ Inserted 2 products with wrapped types
 
 📝 Example 2: function with Wrapped Type Parameters
 
-✅ Function saved: Awew1BkW0kSPEz8gSA2pJW8HpAXhNUv6WwtQ21mM7GLIMgX06nDCOztL6qTyOyYDa-h5GgNFfdoy_TeSFC8Vgw
+✅ Function saved: Zo1X2gNmkYP031MVsPfhYehMk1rkSJsG1oIY_Xi5K5b7DyNNFWDVBweVNqy-2zjEfyML1GTPpTMBsJZfTaE2tA
 📊 Created order via script
 ⏱️  Execution time: 0ms
 
@@ -1254,13 +1095,13 @@ perl: warning: Falling back to the standard locale ("C").
 🗑️  Deleted session
 📝 Example 4: KV Operations in Functions
 
-✅ Function saved: Cr1sE_Lmw6_bwzFlNKKaiVxqzTJAub9Y68VkWvfeVwjXSsP7NqFvoDiRCTyF_7df1Z1WFR8pD22qk8u76ZIPWA
+✅ Function saved: Y02Nquoatd2xiARlSi_7cEKX-OfEwYjfsFnBFPH4v06MTGL-3Yy7YyMCAD_56V_LN2b-_Ea0qbvoqxAAGRJY2g
 📊 Cached and retrieved product data
 ⏱️  Execution time: 0ms
 
 📝 Example 5: Combined Wrapped Types + KV Function
 
-✅ Function saved: ECcbcqW3FBKzBVJ2GDUvhDn00XiotiQh29IikRqxasen4LrRJqP2IQfNVf-gwj_DSWuhQ2k9PNlcjKd6zaE22w
+✅ Function saved: 6C6X5SrarBueAHVyCy7qVku6nWpSyUASG7Dl5jUDd7lHImO5ScatPnmTHGlMFMuJE53Ev_5HL93VHPhE70vVpw
 📊 Processed order with caching
 ⏱️  Stages executed: 3
 ⏱️  Execution time: 0ms
@@ -1275,13 +1116,6 @@ perl: warning: Falling back to the standard locale ("C").
 🧹 Cleaning up...
 ✅ Cleanup complete
 
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 🚀 ekoDB Go Search Functions Example
 
 📋 Setting up test data...
@@ -1291,38 +1125,31 @@ perl: warning: Falling back to the standard locale ("C").
 
 ✅ Function saved
 📊 Found 5 documents
-   1. map[type:String value:Introduction to Machine Learning] (map[type:String value:AI])
-   2. map[type:String value:Getting Started with ekoDB] (map[type:String value:Database])
-   3. map[type:String value:Natural Language Processing] (map[type:String value:AI])
-   4. map[type:String value:Vector Databases Explained] (map[type:String value:Database])
-   5. map[type:String value:Database Design Principles] (map[type:String value:Database])
+   1. map[type:String value:Vector Databases Explained] (map[type:String value:Database])
+   2. map[type:String value:Database Design Principles] (map[type:String value:Database])
+   3. map[type:String value:Getting Started with ekoDB] (map[type:String value:Database])
+   4. map[type:String value:Introduction to Machine Learning] (map[type:String value:AI])
+   5. map[type:String value:Natural Language Processing] (map[type:String value:AI])
 ⏱️  Execution time: 0ms
 
 📝 Example 2: Count Documents by Category
 
 ✅ Function saved
 📊 Documents by category:
-   map[category:map[type:String value:Database] count:map[type:Integer value:3]]
    map[category:map[type:String value:AI] count:map[type:Integer value:2]]
+   map[category:map[type:String value:Database] count:map[type:Integer value:3]]
 ⏱️  Execution time: 0ms
 
 ✅ All search script examples finished!
 🧹 Cleaning up...
 ✅ Cleanup complete
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB Goal Template CRUD Example (Go) ===
 
 --- Creating goal template ---
-Created template: Data Migration (id: O-cvT9FX3IFdZW3GSCwdF8H61LnF4CbQFXocgRIpghNqH3CJuBIYYiT7G81XQ68rf8tXDPcoI9NjnbCNsP7oZA)
+Created template: Data Migration (id: ybctKCeAxR0E_IIEsYj2y4NyEMubI2TdvbLW23AQOOoLX9C7J2G6yL_EBuyrBfV_0a2b7eU_lENcx4RrcGn1fg)
 
 --- Listing templates ---
-Templates: map[count:1 items:[map[description:map[type:String value:Template for migrating data between schemas] id:O-cvT9FX3IFdZW3GSCwdF8H61LnF4CbQFXocgRIpghNqH3CJuBIYYiT7G81XQ68rf8tXDPcoI9NjnbCNsP7oZA steps:map[type:Array value:[map[description:Analyze source schema] map[description:Create target schema] map[description:Migrate records] map[description:Validate results]]] title:map[type:String value:Data Migration]]]]
+Templates: map[count:1 items:[map[description:map[type:String value:Template for migrating data between schemas] id:ybctKCeAxR0E_IIEsYj2y4NyEMubI2TdvbLW23AQOOoLX9C7J2G6yL_EBuyrBfV_0a2b7eU_lENcx4RrcGn1fg steps:map[type:Array value:[map[description:Analyze source schema] map[description:Create target schema] map[description:Migrate records] map[description:Validate results]]] title:map[type:String value:Data Migration]]]]
 
 --- Getting template ---
 Fetched: Data Migration
@@ -1334,20 +1161,13 @@ Updated description: Updated: comprehensive data migration workflow
 Template deleted successfully
 
 ✓ Goal template CRUD example completed
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB Goals, Tasks & Agents Integration Example (Go) ===
 
 --- Creating goal ---
-Created goal: Deploy v2.0 (id: 37fO5DgzYGGoGG434f6_ux4MjyedtMdwZ2Yi8wxDMtKKjGe5mhkg70hJ13q5NqLFNNlHUL-T9jbitwPHn55W2g)
+Created goal: Deploy v2.0 (id: 8ldyi5lwHmuXEG16_qFB0MtQRd5LyVGdkmg2jZoebJJF7sL6xYVU7PuP7t-75RvNtlprdEktlrymMyAqXVMCJQ)
 
 --- Listing goals ---
-Goals response: map[count:1 goals:[map[created_at:2026-09-16T13:48:05.712236+00:00 description:Ship the v2.0 release to production id:37fO5DgzYGGoGG434f6_ux4MjyedtMdwZ2Yi8wxDMtKKjGe5mhkg70hJ13q5NqLFNNlHUL-T9jbitwPHn55W2g status:pending steps:[{"description":"Run integration tests"},{"description":"Build release artifacts"},{"description":"Deploy to staging"}] title:Deploy v2.0 updated_at:2026-09-16T13:48:05.712236+00:00]]]
+Goals response: map[count:1 goals:[map[created_at:2026-09-16T20:45:38.023377+00:00 description:Ship the v2.0 release to production id:8ldyi5lwHmuXEG16_qFB0MtQRd5LyVGdkmg2jZoebJJF7sL6xYVU7PuP7t-75RvNtlprdEktlrymMyAqXVMCJQ status:pending steps:[{"description":"Run integration tests"},{"description":"Build release artifacts"},{"description":"Deploy to staging"}] title:Deploy v2.0 updated_at:2026-09-16T20:45:38.023377+00:00]]]
 
 --- Getting goal ---
 Fetched goal: Deploy v2.0
@@ -1356,7 +1176,7 @@ Fetched goal: Deploy v2.0
 Updated description: Ship the v2.0 release to production (with hotfix)
 
 --- Searching goals ---
-Search result: map[count:1 items:[map[_score:12.870000000000001 created_at:map[type:DateTime value:2026-09-16T13:48:05.712236+00:00] description:map[type:String value:Ship the v2.0 release to production (with hotfix)] id:37fO5DgzYGGoGG434f6_ux4MjyedtMdwZ2Yi8wxDMtKKjGe5mhkg70hJ13q5NqLFNNlHUL-T9jbitwPHn55W2g status:map[type:String value:pending] steps:map[type:String value:[{"description":"Run integration tests"},{"description":"Build release artifacts"},{"description":"Deploy to staging"}]] title:map[type:String value:Deploy v2.0] updated_at:map[type:DateTime value:2026-09-16T13:48:05.730398+00:00]]]]
+Search result: map[count:1 items:[map[_score:12.870000000000001 created_at:map[type:DateTime value:2026-09-16T20:45:38.023377+00:00] description:map[type:String value:Ship the v2.0 release to production (with hotfix)] id:8ldyi5lwHmuXEG16_qFB0MtQRd5LyVGdkmg2jZoebJJF7sL6xYVU7PuP7t-75RvNtlprdEktlrymMyAqXVMCJQ status:map[type:String value:pending] steps:map[type:String value:[{"description":"Run integration tests"},{"description":"Build release artifacts"},{"description":"Deploy to staging"}]] title:map[type:String value:Deploy v2.0] updated_at:map[type:DateTime value:2026-09-16T20:45:38.033133+00:00]]]]
 
 --- Goal step lifecycle ---
 Step 0 started
@@ -1372,10 +1192,10 @@ Goal status after approve: in_progress
 Goal status after reject: failed
 
 --- Creating task ---
-Created task: Run benchmarks (id: V8H3q9l2f4LpzQdSsAMEyXDI8KqMMPXYW6C5XXZVs8GTsKNfzl-GSwr0X_JGeCYGTUp53owlr52By0IuU8iVBw)
+Created task: Run benchmarks (id: kvrQd_LpXmwlTlRzECGB1sS4j4zbWlWjR1MhNTtXii58vFWm-3skRhQQmPIhashYAcn9g8LSd6OIPwPhRDwBJg)
 
 --- Listing tasks ---
-Tasks: map[count:1 items:[map[description:map[type:String value:Execute YCSB benchmarks against staging] due_at:map[type:DateTime value:2026-09-17T13:48:05+00:00] id:V8H3q9l2f4LpzQdSsAMEyXDI8KqMMPXYW6C5XXZVs8GTsKNfzl-GSwr0X_JGeCYGTUp53owlr52By0IuU8iVBw name:map[type:String value:Run benchmarks]]]]
+Tasks: map[count:1 items:[map[description:map[type:String value:Execute YCSB benchmarks against staging] due_at:map[type:DateTime value:2026-09-17T20:45:38+00:00] id:kvrQd_LpXmwlTlRzECGB1sS4j4zbWlWjR1MhNTtXii58vFWm-3skRhQQmPIhashYAcn9g8LSd6OIPwPhRDwBJg name:map[type:String value:Run benchmarks]]]]
 
 --- Getting task ---
 Fetched task: Run benchmarks
@@ -1396,10 +1216,10 @@ Due tasks: map[count:0 items:[]]
 Tasks deleted
 
 --- Creating agent ---
-Created agent: benchmark-runner (id: Tzn_HTMPQ8o3A3P7ITfgC3qefh3qD46AgbxGSIAatWdsm9BH3Z0Chcrga5KrTwqOKm5PEBAQFW2zFyYpNXyKbA)
+Created agent: benchmark-runner (id: -EnNzgFd9uty_NjPO6x08FyeirHNcIg7i_JJmmzdIxDA3HKO4kaFYqqgMIa_pLYH31gqGUNbtLDgFgCfjtuvLA)
 
 --- Listing agents ---
-Agents: map[count:1 items:[map[deployment_id:map[type:String value:deploy_prod_1] description:map[type:String value:Runs periodic benchmarks] id:Tzn_HTMPQ8o3A3P7ITfgC3qefh3qD46AgbxGSIAatWdsm9BH3Z0Chcrga5KrTwqOKm5PEBAQFW2zFyYpNXyKbA llm_model:map[type:String value:gpt-4.1] name:map[type:String value:benchmark-runner]]]]
+Agents: map[count:1 items:[map[deployment_id:map[type:String value:deploy_prod_1] description:map[type:String value:Runs periodic benchmarks] id:-EnNzgFd9uty_NjPO6x08FyeirHNcIg7i_JJmmzdIxDA3HKO4kaFYqqgMIa_pLYH31gqGUNbtLDgFgCfjtuvLA llm_model:map[type:String value:gpt-4.1] name:map[type:String value:benchmark-runner]]]]
 
 --- Getting agent by ID ---
 Fetched agent: benchmark-runner
@@ -1420,13 +1240,6 @@ Agent deleted
 Goal deleted
 
 === All goals, tasks & agents operations completed successfully ===
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === Join Operations Examples ===
 
 Setting up sample data...
@@ -1460,13 +1273,6 @@ Found 2 users with example.com emails
 ✅ Deleted test collections
 
 ✅ Join operations examples completed!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 ✓ go_users_register saved
 ✓ go_users_login saved
@@ -1479,18 +1285,11 @@ Call them like:
   POST /api/functions/go_users_verify_token { "token": "<jwt>" }
 
 ✓ Cleaned up demo functions
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB KV Links Integration Example (Go) ===
 
 --- Inserting documents ---
-Inserted doc1: UzoRgHjEkSjYEH-AI3v7jCBTsJj4jKpP5HJxEAnWmYPHk19uO5K9dTlp9LCKyPnJbLLPA6CU7fR4s4mXwr6nGg
-Inserted doc2: HW0V0XdbI_Do72FPsLifFpLDl_aq1wUdLvHF0ed8-_pzq9uiU7V-auzA7GEH7RzTXm3Tk3ULfRAhUnUjItLkcQ
+Inserted doc1: 9ZKrrXqCvdcsSBpbA4ASjLiml1pIqzL0PXq4fd5yjYpx5ugu_VaWz34FlhAZ_HAPRvEebtFFuWSbhgTuIJXGmw
+Inserted doc2: xRp7wLTUfYwCiPkSDj6dFI6oACrDAmeN-gkuhk3lTZ3DCbFx0H9LNiDp4rOaliIEipPe3Qg5yVOOCnvxRuyfGQ
 
 --- Setting KV entry ---
 KV entry set: team:engineering:go
@@ -1500,25 +1299,18 @@ Linked doc1: map[]
 Linked doc2: map[]
 
 --- Getting links ---
-Links for team:engineering:go: [map[collection:kv_links_example_go created_at:2026-09-16T13:48:07.859124Z document_id:HW0V0XdbI_Do72FPsLifFpLDl_aq1wUdLvHF0ed8-_pzq9uiU7V-auzA7GEH7RzTXm3Tk3ULfRAhUnUjItLkcQ field_path:<nil> last_accessed:2026-09-16T13:48:07.860351Z metadata:map[]] map[collection:kv_links_example_go created_at:2026-09-16T13:48:07.857642Z document_id:UzoRgHjEkSjYEH-AI3v7jCBTsJj4jKpP5HJxEAnWmYPHk19uO5K9dTlp9LCKyPnJbLLPA6CU7fR4s4mXwr6nGg field_path:<nil> last_accessed:2026-09-16T13:48:07.860351Z metadata:map[]]]
+Links for team:engineering:go: [map[collection:kv_links_example_go created_at:2026-09-16T20:45:38.768123Z document_id:xRp7wLTUfYwCiPkSDj6dFI6oACrDAmeN-gkuhk3lTZ3DCbFx0H9LNiDp4rOaliIEipPe3Qg5yVOOCnvxRuyfGQ field_path:<nil> last_accessed:2026-09-16T20:45:38.768516Z metadata:map[]] map[collection:kv_links_example_go created_at:2026-09-16T20:45:38.767663Z document_id:9ZKrrXqCvdcsSBpbA4ASjLiml1pIqzL0PXq4fd5yjYpx5ugu_VaWz34FlhAZ_HAPRvEebtFFuWSbhgTuIJXGmw field_path:<nil> last_accessed:2026-09-16T20:45:38.768516Z metadata:map[]]]
 
 --- Unlinking doc2 ---
 Unlink result: map[]
 
 --- Verifying links after unlink ---
-Links after unlink: [map[collection:kv_links_example_go created_at:2026-09-16T13:48:07.857642Z document_id:UzoRgHjEkSjYEH-AI3v7jCBTsJj4jKpP5HJxEAnWmYPHk19uO5K9dTlp9LCKyPnJbLLPA6CU7fR4s4mXwr6nGg field_path:<nil> last_accessed:2026-09-16T13:48:07.863334Z metadata:map[]]]
+Links after unlink: [map[collection:kv_links_example_go created_at:2026-09-16T20:45:38.767663Z document_id:9ZKrrXqCvdcsSBpbA4ASjLiml1pIqzL0PXq4fd5yjYpx5ugu_VaWz34FlhAZ_HAPRvEebtFFuWSbhgTuIJXGmw field_path:<nil> last_accessed:2026-09-16T20:45:38.769444Z metadata:map[]]]
 
 --- Cleanup ---
 Cleaned up all resources
 
 === All KV link operations completed successfully ===
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
 === KV Set ===
@@ -1559,13 +1351,6 @@ Total keys in store: 4
   cache:product:3:go: deleted
 
 ✓ All KV operations completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === KV Precision: Float vs Decimal ===
 
 === Test 1: Using Go Floats (LOSES PRECISION) ===
@@ -1600,13 +1385,6 @@ Retrieved decimal prices:
 
 === Cleanup ===
 ✓ Cleaned up test keys
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 ✓ go_route_admin saved
 ✓ go_route_user_by_id saved
@@ -1621,13 +1399,6 @@ Try them with curl:
        -H 'Content-Type: application/json' -d '{"name":"alice"}'
 
 ✓ Cleaned up demo functions
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === Query Builder Examples ===
 
 Setting up test data...
@@ -1661,13 +1432,6 @@ Found 2 users (bypassed cache)
 ✅ Deleted test collection
 
 ✅ Query Builder examples completed!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB Raw Completion Stream (SSE) Example ===
 
 --- Basic SSE Raw Completion ---
@@ -1676,16 +1440,16 @@ Response: The three primary colors are red, blue, and yellow.
 --- Structured Output via SSE ---
 JSON response: [
   {
-    "name": "Earth",
-    "diameter_km": 12742
+    "name": "Mercury",
+    "diameter_km": 4879
+  },
+  {
+    "name": "Venus",
+    "diameter_km": 12104
   },
   {
     "name": "Mars",
     "diameter_km": 6779
-  },
-  {
-    "name": "Jupiter",
-    "diameter_km": 139820
   }
 ]
 
@@ -1693,20 +1457,13 @@ JSON response: [
 Blocking response: Hello! I hope you're having a wonderful day.
 
 === Done ===
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB Schedules Integration Example (Go) ===
 
 --- Creating schedule ---
-Created schedule: nightly-backup (id: e9fb0210-7e2d-4f82-85bc-b65ea61d94ac)
+Created schedule: nightly-backup (id: fdb627c7-88b6-48b9-a9c3-2a22ffa69414)
 
 --- Listing schedules ---
-Schedules: map[count:1 schedules:[map[created_at:2026-09-16T13:48:14.297211Z cron_expression:0 0 0 * * * description:Runs a database backup every night at midnight enabled:true function_label:schedule_noop_go_17740 id:e9fb0210-7e2d-4f82-85bc-b65ea61d94ac last_execution:<nil> name:nightly-backup next_execution:2026-09-17T00:00:00Z parameters:map[] stats:map[avg_execution_time_ms:0 failed_executions:0 last_error:<nil> successful_executions:0 total_executions:0] timezone:UTC updated_at:2026-09-16T13:48:14.297211Z]]]
+Schedules: map[count:1 schedules:[map[created_at:2026-09-16T20:45:41.598809Z cron_expression:0 0 0 * * * description:Runs a database backup every night at midnight enabled:true function_label:schedule_noop_go_66430 id:fdb627c7-88b6-48b9-a9c3-2a22ffa69414 last_execution:<nil> name:nightly-backup next_execution:2026-09-17T00:00:00Z parameters:map[] stats:map[avg_execution_time_ms:0 failed_executions:0 last_error:<nil> successful_executions:0 total_executions:0] timezone:UTC updated_at:2026-09-16T20:45:41.598809Z]]]
 
 --- Getting schedule ---
 Fetched schedule: nightly-backup (cron: 0 0 0 * * *)
@@ -1715,7 +1472,7 @@ Fetched schedule: nightly-backup (cron: 0 0 0 * * *)
 Updated cron: 0 0 2 * * *
 
 --- Triggering schedule ---
-Trigger response: map[schedule_id:e9fb0210-7e2d-4f82-85bc-b65ea61d94ac status:triggered]
+Trigger response: map[schedule_id:fdb627c7-88b6-48b9-a9c3-2a22ffa69414 status:triggered]
 
 --- Pausing schedule ---
 Schedule enabled: false
@@ -1727,13 +1484,6 @@ Schedule enabled: true
 Schedule deleted
 
 === All schedule operations completed successfully ===
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === Schema Management Examples ===
 
 1. Creating user schema with basic fields:
@@ -1756,13 +1506,6 @@ Collection has 4 fields
 ✅ Employee schema with all constraints created
 
 ✅ Schema management examples completed!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === Search Examples ===
 
 Setting up test data...
@@ -1798,15 +1541,15 @@ Found 1 results (matches: work, working, worked)
 
 6. Vector search (semantic search):
 Found 3 semantically similar documents
-  1. Score: 0.763
-  2. Score: 0.754
-  3. Score: 0.725
+  1. Score: 0.789
+  2. Score: 0.769
+  3. Score: 0.748
 
 7. Hybrid search (text + vector):
 Found 3 results using hybrid search (text + vector)
-  1. Score: 1.490
-  2. Score: 0.901
-  3. Score: 0.305
+  1. Score: 1.508
+  2. Score: 0.916
+  3. Score: 0.299
 
 8. Case-sensitive search:
 Found 1 results (case-sensitive)
@@ -1821,20 +1564,13 @@ Found 2 documents in category "ml" (NLP excluded)
 ✅ Search examples completed!
 === Cleanup ===
 ✅ Deleted test collections
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created (token exchange happens automatically)
 
 === Insert Document ===
-Inserted: map[id:3Cnc85FwZxs4bHBvdTJfrphlFFZRS8WrgVqyepp9ojwZktlSruuQ_8QhtYp2l3vUrq8GaedZUVUmrx2-Hk2rPA]
+Inserted: map[id:B3kw8RAfc6DYPpEMJ11gBuJnSOYJjF7DMtgPXQnAGCw48G3gEJl2ncz9NMTHWT-4sIsc5NO5RfeApqKHhVsKMA]
 
 === Find by ID ===
-Found: map[active:map[type:Boolean value:true] categories:map[type:Array value:[electronics computers]] created_at:map[type:DateTime value:2026-09-16T13:48:16+00:00] data:map[type:String value:aGVsbG8gd29ybGQ=] embedding:map[type:Array value:[0.1 0.2 0.3 0.4 0.5]] id:3Cnc85FwZxs4bHBvdTJfrphlFFZRS8WrgVqyepp9ojwZktlSruuQ_8QhtYp2l3vUrq8GaedZUVUmrx2-Hk2rPA metadata:map[type:Object value:map[key:value nested:map[deep:true]]] name:map[type:String value:Test Record] price:map[type:Float value:99.99] tags:map[type:Array value:[tag1 tag2 tag3]] user_id:map[type:String value:550e8400-e29b-41d4-a716-446655440000] value:map[type:Integer value:42]]
+Found: map[active:map[type:Boolean value:true] categories:map[type:Array value:[electronics computers]] created_at:map[type:DateTime value:2026-09-16T20:45:42+00:00] data:map[type:String value:aGVsbG8gd29ybGQ=] embedding:map[type:Array value:[0.1 0.2 0.3 0.4 0.5]] id:B3kw8RAfc6DYPpEMJ11gBuJnSOYJjF7DMtgPXQnAGCw48G3gEJl2ncz9NMTHWT-4sIsc5NO5RfeApqKHhVsKMA metadata:map[type:Object value:map[key:value nested:map[deep:true]]] name:map[type:String value:Test Record] price:map[type:Float value:99.99] tags:map[type:Array value:[tag1 tag2 tag3]] user_id:map[type:String value:550e8400-e29b-41d4-a716-446655440000] value:map[type:Integer value:42]]
 
 === Extract Field Values (All Types) ===
 Extracted values:
@@ -1842,20 +1578,20 @@ Extracted values:
   value (Integer): 42
   active (Boolean): true
   price (Decimal): 99.990000
-  created_at (DateTime): 2026-09-16 13:48:16 +0000 +0000
+  created_at (DateTime): 2026-09-16 20:45:42 +0000 +0000
   user_id (UUID): 550e8400-e29b-41d4-a716-446655440000
   tags (Array): [tag1 tag2 tag3]
   metadata (Object): map[key:value nested:map[deep:true]]
   embedding (Vector): [0.1 0.2 0.3 0.4 0.5]
   categories (Set): [electronics computers]
   data (Bytes): 11 bytes
-Plain record: map[active:true categories:[electronics computers] created_at:2026-09-16T13:48:16+00:00 data:aGVsbG8gd29ybGQ= embedding:[0.1 0.2 0.3 0.4 0.5] id:3Cnc85FwZxs4bHBvdTJfrphlFFZRS8WrgVqyepp9ojwZktlSruuQ_8QhtYp2l3vUrq8GaedZUVUmrx2-Hk2rPA metadata:map[key:value nested:map[deep:true]] name:Test Record price:99.99 tags:[tag1 tag2 tag3] user_id:550e8400-e29b-41d4-a716-446655440000 value:42]
+Plain record: map[active:true categories:[electronics computers] created_at:2026-09-16T20:45:42+00:00 data:aGVsbG8gd29ybGQ= embedding:[0.1 0.2 0.3 0.4 0.5] id:B3kw8RAfc6DYPpEMJ11gBuJnSOYJjF7DMtgPXQnAGCw48G3gEJl2ncz9NMTHWT-4sIsc5NO5RfeApqKHhVsKMA metadata:map[key:value nested:map[deep:true]] name:Test Record price:99.99 tags:[tag1 tag2 tag3] user_id:550e8400-e29b-41d4-a716-446655440000 value:42]
 
 === Find with Query ===
 Found documents: 1
 
 === Update Document ===
-Updated: map[active:map[type:Boolean value:true] categories:map[type:Array value:[electronics computers]] created_at:map[type:DateTime value:2026-09-16T13:48:16+00:00] data:map[type:String value:aGVsbG8gd29ybGQ=] embedding:map[type:Array value:[0.1 0.2 0.3 0.4 0.5]] id:3Cnc85FwZxs4bHBvdTJfrphlFFZRS8WrgVqyepp9ojwZktlSruuQ_8QhtYp2l3vUrq8GaedZUVUmrx2-Hk2rPA metadata:map[type:Object value:map[key:value nested:map[deep:true]]] name:map[type:String value:Updated Record] price:map[type:Float value:99.99] tags:map[type:Array value:[tag1 tag2 tag3]] user_id:map[type:String value:550e8400-e29b-41d4-a716-446655440000] value:map[type:Integer value:100]]
+Updated: map[active:map[type:Boolean value:true] categories:map[type:Array value:[electronics computers]] created_at:map[type:DateTime value:2026-09-16T20:45:42+00:00] data:map[type:String value:aGVsbG8gd29ybGQ=] embedding:map[type:Array value:[0.1 0.2 0.3 0.4 0.5]] id:B3kw8RAfc6DYPpEMJ11gBuJnSOYJjF7DMtgPXQnAGCw48G3gEJl2ncz9NMTHWT-4sIsc5NO5RfeApqKHhVsKMA metadata:map[type:Object value:map[key:value nested:map[deep:true]]] name:map[type:String value:Updated Record] price:map[type:Float value:99.99] tags:map[type:Array value:[tag1 tag2 tag3]] user_id:map[type:String value:550e8400-e29b-41d4-a716-446655440000] value:map[type:Integer value:100]]
 
 === Delete Document ===
 Deleted document
@@ -1864,17 +1600,10 @@ Deleted document
 ✓ Deleted collection
 
 ✓ All CRUD operations completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
 === Inserting Test Data ===
-✓ Inserted test record: 8sFz8JMhr2jjeXGkVLiFRH7uCgPwO-NxyH3dUJ08H1H1yDuRfpLLev4d2GrcVGyZ8oXvOIfY5T0KNyn9lwSojg
+✓ Inserted test record: lRWDQjGjHVjyafGdBZnwQG5NbPjWhlJRgmHlt6uTFyNXyDWsRuWII5eg2mWMGF9H3RXaSXVPKLNdZIYRCvAStA
 
 === Connecting to WebSocket ===
 ✓ WebSocket connected
@@ -1887,13 +1616,6 @@ perl: warning: Falling back to the standard locale ("C").
 ✓ Deleted collection
 
 ✓ WebSocket example completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 🚀 ekoDB Go Client - Native SWR Function Examples
 
 📋 Demonstrates:
@@ -1908,22 +1630,22 @@ perl: warning: Falling back to the standard locale ("C").
 Example 1: Basic Native SWR
 ────────────────────────────────────────────────────────────────────────────────
 Single function replaces KvGet → If → HttpRequest → KvSet pipeline
-✓ Created native SWR script: github_user_native_go (ZGSeOq7CasfCxG--WXoIiciwkFE6Nl_h2Z5HMCrg3THqQB-OnzXvhsZya3D-cSvOxbdLQzk4cH4yGqa2ygXkrA)
+✓ Created native SWR script: github_user_native_go (QCw5onqD0qHRPZ3-47u6gx9aN0WS4n5foJ51gB6kS3nn-9Yu-5KngvGzxtPfu-o6SD5Kq_M3Mpa3f9YmC_nT-Q)
 
 First call (cache miss - will fetch from GitHub API):
-  Response time: 152ms
+  Response time: 790ms
   Records returned: 1
 
 Second call (cache hit - instant from KV store):
-  Response time: 6ms
-  Speedup: 25.3x faster 🚀
+  Response time: 1ms
+  Speedup: 790.0x faster 🚀
   Records returned: 1
 
 
 Example 2: SWR with Built-in Audit Trail
 ────────────────────────────────────────────────────────────────────────────────
 Optional collection parameter for automatic request logging
-✓ Created SWR script with audit trail: product_swr_audit_go (ZDujMSaPljFsHYD85eMCypuZQClT78VC8Kk1dG5xb9Siyp4vBUCm_SAuZ-CS37oiR7DGWnGefHJ-WwOlqU7NcA)
+✓ Created SWR script with audit trail: product_swr_audit_go (PxPB_hNEcZJLWI9y5z-phmCaDwFm2mx6ahOutA1hIhUgEYFyLN4q46rj8v5wdCbmr18F19okgSG8AoJuUnuwug)
 
 Fetching product (will create audit trail entry):
   ✓ Product fetched and cached
@@ -1934,7 +1656,7 @@ Fetching product (will create audit trail entry):
 Example 3: SWR in Multi-Function Pipeline
 ────────────────────────────────────────────────────────────────────────────────
 Fetch external data → Process → Store in collection
-✓ Created enrichment pipeline: user_enrichment_pipeline_go (e33qmG9teCuzqQu96ooISHxc9BCDvucFbqA__IfddCT9ij5eevy1UyQ_kM_qWd6cLZjFwQXxj1DicC49sNYX-A)
+✓ Created enrichment pipeline: user_enrichment_pipeline_go (m-dZ80lt5B4ywwRvpJSsOBpFzV33tZy4AM2UUANyc2Uk8Wjy24i5Zes5x6QxabztlKcl9IzBwQOB0HkeHUQcvQ)
 
 Running pipeline:
   ✓ Data fetched from API (cached 30m)
@@ -1945,7 +1667,7 @@ Running pipeline:
 Example 4: Dynamic TTL Configuration
 ────────────────────────────────────────────────────────────────────────────────
 TTL as parameter - supports duration strings, integers, ISO timestamps
-✓ Created dynamic TTL script: flexible_cache_go (6mNRgEGoBDullLfbQNfnAt8FMsqh7Fyxrv99Lb60528nMAosj-OK7tL6p1DDBjVDJ_CcE5x0h3XKpFbLj2UJug)
+✓ Created dynamic TTL script: flexible_cache_go (7zAS45F_HFBBUPrhT5Qa1wsfhYeb_5wYKn3EWnsRmHY97nTzN24z_TTpGUvBgq-t2sA_NNFD2ILTosZ22x9Gaw)
   ✓ Cached with TTL: 5m (5 minutes)
   ✓ Cached with TTL: 1h (1 hour)
   ✓ Cached with TTL: 30s (30 seconds)
@@ -1968,17 +1690,10 @@ Result:         60% fewer functions, cleaner code, same behavior 🎯
 ✓ Deleted 4 test scripts
 
 ✅ All examples completed!
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === ekoDB SWR (Stale-While-Revalidate) Pattern ===
 
 Step 1: Create SWR function that acts as edge cache
-✓ Created SWR script: fetch_api_user_go (4V02qL5UJCRSPg8Qy2UwmUTWPusKjEGPlZIKlvIgKeD9yORLkHMGWc9yBHmePIo6cjY72xkFjVEJROK_gk4uqw)
+✓ Created SWR script: fetch_api_user_go (MrkBukEVuq9TdfmEhCWm2DppqnUApDttjWMCKPZcp1atSmMjeSPdX_d2XrtVj8kwRUI7GR05WiwwYeiwHCD7TQ)
 
 Step 2: First call - Cache miss, fetches from API
 Result: {
@@ -1986,7 +1701,7 @@ Result: {
     {
       "cached_at": {
         "type": "DateTime",
-        "value": "2026-09-16T13:48:18+00:00"
+        "value": "2026-09-16T20:45:43+00:00"
       },
       "data": {
         "type": "Object",
@@ -2028,7 +1743,7 @@ Result: {
 ✓ Data fetched from external API and cached
 
 Step 3: Second call - Cache hit, instant response from ekoDB
-Response time: 11ms (served from cache)
+Response time: 2ms (served from cache)
 ✓ Lightning fast cache hit
 
 === SWR Pattern Summary ===
@@ -2038,21 +1753,14 @@ Response time: 11ms (served from cache)
 🧹 Cleaning up...
 ✓ Cleanup complete
 
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
 === Setup: Creating Test Accounts ===
-Created Alice: $1000 - ID: 6mggmyV-oZ-BVccvy6WU3S30W2JHrc4he5ZV-Evjnc2yY4k-Bm4q1WwucmGbO9BNZHX5odCTU3RqOmWZ2wByBw
-Created Bob: $500 - ID: nlucW5_NZ5J09HtTVjveeiSkKnassnl9Jlz52M078b1ceGCbV6Dd5eBvIwqwlP95e_8G7rI7p2W1CVD781qfOw
+Created Alice: $1000 - ID: jzBkUTV7RY6sUFB1niaWmIblqSzNgD2TAqaup9UBpy-9CZUP12fmFgCCe8oGRyQ1hUkfuyVN2R7N5HSns_aa_Q
+Created Bob: $500 - ID: 6aucy0xYuZ9a-O2batMELLpvvka9XdUasi0C8KxY3bMyPj-OmLDemUEvipcXqpsGvU0OR0wZkN6cL8FmAW0UcQ
 
 === Example 1: Begin Transaction ===
-Transaction ID (server-default isolation): e1b12090-6804-4e5b-8374-f41d68e6c6f6
+Transaction ID (server-default isolation): a80bfddb-4e63-4a24-8a11-467cf7acef94
 
 === Example 2: Operations within Transaction ===
 Updated Alice: $1000 → $800
@@ -2068,7 +1776,7 @@ Operations: 2
 ✓ Verified committed balances: Alice=$800, Bob=$700
 
 === Example 5: Rollback Demo ===
-New transaction: 37eb9f64-99d2-4ae1-af22-969f35fd10b3
+New transaction: 47ffcf8e-ec32-433e-b777-8ded1b03575d
 Updated Bob: $700 → $600 (in transaction)
 Status before rollback: Active
 ✓ Transaction rolled back
@@ -2079,17 +1787,10 @@ Status before rollback: Active
 ✓ Deleted test account collection
 
 ✓ All client transaction examples completed
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
 === Create User Function ===
-Created user function with ID: c_34Wf2QFxDhdj7Z4iQ722YTn9Rvj1unU_HT-aP1eNsT2P44uU3OCW0IDJsOkGlZn5TAJvYtdzIZ_G6d0-FH3A
+Created user function with ID: RMxEl60XpA61SX9n3oCFusvO3DEVWR9_DjjZxPC_CobejexeE8zUWjVDmLjJNZMNZ0nxFjvXcv2oDepnq2qeKg
 
 === Get User Function ===
 Retrieved: get_active_users_go - Get Active Users
@@ -2110,73 +1811,52 @@ User function updated successfully
 User function deleted successfully
 
 ✓ User Functions API example complete
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === WebSocket Chat Streaming Example (Go) ===
 
-Created chat session: lvcuTU5UBxu38FIoCpOmdVRDzP403ZdoDPeZ9laHWCBLPVLm5Wl_saEIcVAjlmojXLo_DvIPZ2_CWdNFwePgPg
+Created chat session: 1iXHm_HUOCG4Z2XwP01paqVSFk1JDICwZLuIolnK6kXkaWBeCO5kbW8Tf4uTvrSu_SNP_QRu3eNp2-owtGKeoA
 
 Sending message: 'What is the capital of France?'
 {"__progress":"received"}{"__progress":"generating","model":"gpt-4o-mini","provider":"openai"}The capital of France is Paris.
 
 --- Stream ended ---
-Message ID: wX_-3uEe4PfROazYY4PrYTUDo0vjtiCeJI2jtw7Ik99tI9BskmWMXDYws5MlDV0j3i2FHCI604WHjx-g19t1IQ
-Execution time: 903ms
+Message ID: 6sVesvFtfAnfuyGc5FMLyrJ9fi-hXiaYo6SkYhAVNcQCmeHlQsxj5SzZQn558BS8ByT6OQTjPaN10yVqKSLcJg
+Execution time: 555ms
 Token usage: {"completion_tokens":8,"prompt_tokens":15,"total_tokens":23}
 
 Full response: {"__progress":"received"}{"__progress":"generating","model":"gpt-4o-mini","provider":"openai"}The capital of France is Paris....
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 === WebSocket Subscription Example (Go) ===
 
 ✓ Authentication successful
 ✓ WebSocket connected
 
 === Subscribing to 'ws_subscribe_example_go' ===
-✓ Subscribed (subscription_id: sub_b2472f68d7c0421cb874561766c088e2)
+✓ Subscribed (subscription_id: sub_312808714b434054857110c5eff3970e)
 
 === Performing mutations to trigger notifications ===
 Inserting record 1...
-✓ Inserted: 4XZq4jfDFJzhnR7y1bWXihSUqWARu_dYI6CHrvhK8yTSSPd8USCgJKTbmTiYVEou_d7juEGIthO7g-Iv_A8qbA
+✓ Inserted: NgpgpBYFDs56LTTDdTI6XUJMu3qd5FycFKdF69aUK79_qRquD6fotekZH0KyY67mXGj3JiKsRilq-XVCnVrnyg
 
   📡 Notification received:
      Event:      insert
      Collection: ws_subscribe_example_go
-     Record IDs: [4XZq4jfDFJzhnR7y1bWXihSUqWARu_dYI6CHrvhK8yTSSPd8USCgJKTbmTiYVEou_d7juEGIthO7g-Iv_A8qbA]
-     Timestamp:  2026-09-16T13:48:21.959103+00:00
+     Record IDs: [NgpgpBYFDs56LTTDdTI6XUJMu3qd5FycFKdF69aUK79_qRquD6fotekZH0KyY67mXGj3JiKsRilq-XVCnVrnyg]
+     Timestamp:  2026-09-16T20:45:45.130773+00:00
 
 Inserting record 2...
-✓ Inserted: _SmKrZVPjDoULNEBvafzR0avAVJXfco0sVp2O7HPoXa73XTJqN6q6G_HLWsbicTV0iffvY6JZ-ZNG5bnlUPJvQ
+✓ Inserted: q-mIpZHzM0plBZlHLbd-ykApuijfeHlscUdPsv9aAC6FxjlgZYlYmHLvtV9CIKZVj5Sc6wTzlmhvtKJdD0Cguw
 
   📡 Notification received:
      Event:      insert
-     Record IDs: [_SmKrZVPjDoULNEBvafzR0avAVJXfco0sVp2O7HPoXa73XTJqN6q6G_HLWsbicTV0iffvY6JZ-ZNG5bnlUPJvQ]
+     Record IDs: [q-mIpZHzM0plBZlHLbd-ykApuijfeHlscUdPsv9aAC6FxjlgZYlYmHLvtV9CIKZVj5Sc6wTzlmhvtKJdD0Cguw]
 
 === Unsubscribing ===
 ✓ Unsubscribed
 
 ✓ WebSocket subscription example completed successfully
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
 ✓ Client created
 
 === Insert Test Data with TTL ===
-✓ Inserted document with TTL: Rif2Nxfnh5ffyKF294tYL6IIbYqR8MV7NFQjK45XU_vb65QlBGlJYgaHzYQCNQS-hDBpcEVmDJV8y0gxZmJ8Eg
+✓ Inserted document with TTL: Ej9FZZpmae2hQqDOd87CqTm-iR_vHWQvtwGB_eki_mASq1SLcDkyTvjkgaVhvXnUQYUR8l4nAc6C6fpBkT3JCQ
 
 === Query via WebSocket ===
 ✓ WebSocket connected
@@ -2189,27 +1869,13 @@ perl: warning: Falling back to the standard locale ("C").
 ✓ WebSocket TTL example completed successfully
 
 💡 Note: Documents with TTL will automatically expire after the specified duration
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-Inserted with ripple: map[id:hWncVRBtB2er72vYulF0q1E1gQdxzvLZ89_iGE_lV_Nq45Q_-SBne78KuoeWwP-yvcCkjOEBAiegpyI85FFC3A]
-Inserted with bypass_ripple: map[id:M9u4w1dfFKlouqlC2WnR9Nh1FEFTsZ6H-WKV0gxX2YqlcvJbdzzynRaJ-cR6gwGwJtfxI3j5kWFSKplJXy-lXg]
-Inserted with TTL and bypass_ripple: map[id:CEz6TDnfxA1z6S6rjFPwquA3nP3a2vk8kwAG2r8hIpB9CdWYU-jxjxGUEhKf1i7_6u9tt6GzfI8TpcQOQ6j7xg]
-Updated with bypass_ripple: map[id:hWncVRBtB2er72vYulF0q1E1gQdxzvLZ89_iGE_lV_Nq45Q_-SBne78KuoeWwP-yvcCkjOEBAiegpyI85FFC3A name:map[type:String value:Product 1] price:map[type:Integer value:150]]
+Inserted with ripple: map[id:eETnB69106fJwS4zm6gdvT7Q0g9efyD6z8PxDJIc4wuxIvabJ6d0Uvpr8YEArQbI_b-WkJTpfJaNOQ965Y4xoQ]
+Inserted with bypass_ripple: map[id:g-kMA7uOFF48qkfMV6mL6Qk4hmsw-Nb4wAqHVH2FRGmqNAJ7gPXnoNWBKrt31TDljwrlCtCHPeH6N6Fd3LzNzQ]
+Inserted with TTL and bypass_ripple: map[id:AaIABCaObvaC8aHLDT_o6y1wysyRKJumBHIGa-CnY_DPGqbGZefUwbtQF_UK-bXzhTypYnhQsZNbHjBqwhDSmg]
+Updated with bypass_ripple: map[id:eETnB69106fJwS4zm6gdvT7Q0g9efyD6z8PxDJIc4wuxIvabJ6d0Uvpr8YEArQbI_b-WkJTpfJaNOQ965Y4xoQ name:map[type:String value:Product 1] price:map[type:Integer value:150]]
 Deleted with bypass_ripple
 Batch inserted with bypass_ripple: 2 records
-Upserted with bypass_ripple: map[id:yjSK26YSF_uDAHtIOfF-ibzm2Zxz0cutJQt3UtQvkoZw-hgOfhGHHx58yKlkLCTDyUkjqBsAxeW4q8m_Og9u0A]
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LC_ALL = "C.UTF-8",
-	LC_CTYPE = "C.UTF-8",
-	LANG = "C.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
+Upserted with bypass_ripple: map[id:Y6QMhr6TgNUxKfBz0ED11UfNRRzMNaCC84BYSSGn_wZ7Svj-PqyWuygw7oJzmNvwDWQN47NsML9xFMB-djMcCA]
 Client created
 
 Setting up test data...
@@ -2218,7 +1884,7 @@ Inserted 4 test users
 Example 1: Select specific fields (id, name, email only)
   Found 3 active users
   Fields returned: [email id name]
-  First user: Alice Johnson <alice@example.com>
+  First user: Dave Brown <dave@example.com>
 
 Example 2: Exclude sensitive fields (password, api_key, secret_token)
   Found 2 admins

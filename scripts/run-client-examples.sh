@@ -136,6 +136,7 @@ case "$mode:$language" in
         for source in "$root"/examples/kotlin/examples/Client*.kt \
             "$root"/examples/kotlin/examples/BypassRippleExample.kt; do
             main="io.ekodb.client.examples.$(basename "${source%.kt}")Kt"
+            echo "=== Running Kotlin example: $(basename "$source") ==="
             (cd "$root/examples/kotlin" && run_with_timeout ./gradlew run -PmainClass="$main" --no-daemon)
         done
         ;;
