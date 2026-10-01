@@ -8,6 +8,16 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Fixed
+
+- **CI does no work on a draft PR and runs when the PR is marked ready.** The
+  `pull_request` triggers in `unit-tests.yml` and `examples-inventory.yml` now
+  list `types: [opened, synchronize, reopened, ready_for_review]`, and every job
+  carries `!github.event.pull_request.draft` in its `if:`. The guard is a no-op
+  on `push` and `schedule` runs. The unit-test `summary` job keeps `always()`
+  but skips on a draft too, where it would otherwise render four "Failed" rows
+  for tests that never ran. (#260)
+
 ## [0.27.0] - 2026-09-16
 
 ### Added
