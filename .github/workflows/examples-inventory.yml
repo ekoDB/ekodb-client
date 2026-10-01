@@ -4,6 +4,10 @@ permissions:
 
 on:
   pull_request:
+    # Listing `types:` replaces the default three, so `ready_for_review` is
+    # added explicitly: both jobs below skip while the PR is a draft, and
+    # marking it ready is the event that runs them.
+    types: [opened, synchronize, reopened, ready_for_review]
     paths:
       - 'Makefile'
       - 'examples/**'
@@ -35,6 +39,9 @@ on:
 jobs:
   check-inventory:
     name: Verify Examples Inventory
+    # No work on a draft PR; runs when the PR is marked ready. A no-op on
+    # push and schedule, where github.event.pull_request is null.
+    if: ${{ !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
 
     steps:
@@ -73,6 +80,9 @@ jobs:
   # of "compile the Go examples".
   check-go-examples-compile:
     name: Compile Go Examples
+    # No work on a draft PR; runs when the PR is marked ready. A no-op on
+    # push and schedule, where github.event.pull_request is null.
+    if: ${{ !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
 
     steps:
