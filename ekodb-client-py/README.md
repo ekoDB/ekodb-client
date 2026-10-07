@@ -323,6 +323,9 @@ Update a document.
 - `collection`: The collection name
 - `id`: The document ID
 - `updates`: Dictionary of fields to update
+- `bypass_cache`: Optional cache bypass flag
+- `select_fields`: Optional returned fields to include (plus the primary key)
+- `exclude_fields`: Optional returned fields to omit
 
 **Returns:**
 

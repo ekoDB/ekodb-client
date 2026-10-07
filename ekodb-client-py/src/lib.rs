@@ -376,7 +376,9 @@ impl Client {
     ///     bypass_ripple: Optional flag to bypass ripple propagation
     ///     transaction_id: Optional transaction ID for atomic operations
     ///     bypass_cache: Optional flag to bypass cache
-    #[pyo3(signature = (collection, id, updates, bypass_ripple=None, transaction_id=None, bypass_cache=None))]
+    ///     select_fields: Optional fields to include in the returned record
+    ///     exclude_fields: Optional fields to omit from the returned record
+    #[pyo3(signature = (collection, id, updates, bypass_ripple=None, transaction_id=None, bypass_cache=None, select_fields=None, exclude_fields=None))]
     fn update<'py>(
         &self,
         py: Python<'py>,
@@ -386,12 +388,19 @@ impl Client {
         bypass_ripple: Option<bool>,
         transaction_id: Option<String>,
         bypass_cache: Option<bool>,
+        select_fields: Option<Vec<String>>,
+        exclude_fields: Option<Vec<String>>,
     ) -> PyResult<Bound<'py, PyAny>> {
         let rust_updates = dict_to_record(updates)?;
 
         // Build UpdateOptions from Python parameters
         let options =
-            if bypass_ripple.is_some() || transaction_id.is_some() || bypass_cache.is_some() {
+            if bypass_ripple.is_some()
+                || transaction_id.is_some()
+                || bypass_cache.is_some()
+                || select_fields.is_some()
+                || exclude_fields.is_some()
+            {
                 let mut opts = ekodb_client::options::UpdateOptions::new();
                 if let Some(br) = bypass_ripple {
                     opts = opts.bypass_ripple(br);
@@ -401,6 +410,12 @@ impl Client {
                 }
                 if let Some(bc) = bypass_cache {
                     opts = opts.bypass_cache(bc);
+                }
+                if let Some(fields) = select_fields {
+                    opts = opts.select_fields(fields);
+                }
+                if let Some(fields) = exclude_fields {
+                    opts = opts.exclude_fields(fields);
                 }
                 Some(opts)
             } else {
