@@ -1640,6 +1640,9 @@ export class EkoDBClient {
    */
   /**
    * Upsert a document (insert or update)
+   * This is a read followed by a write, not an atomic operation. On insert,
+   * the id argument overrides any id in record.
+   *
    * @param collection - Collection name
    * @param id - Document ID
    * @param record - Document data
@@ -1658,12 +1661,16 @@ export class EkoDBClient {
       });
     } catch (error) {
       if (isNotFoundError(error)) {
-        return await this.insert(collection, record, {
-          ttl: options?.ttl,
-          bypassRipple: options?.bypassRipple,
-          transactionId: options?.transactionId,
-          bypassCache: options?.bypassCache,
-        });
+        return await this.insert(
+          collection,
+          { ...record, id },
+          {
+            ttl: options?.ttl,
+            bypassRipple: options?.bypassRipple,
+            transactionId: options?.transactionId,
+            bypassCache: options?.bypassCache,
+          },
+        );
       }
       throw error;
     }

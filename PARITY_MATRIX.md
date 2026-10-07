@@ -57,6 +57,11 @@ documented below. Language-specific differences are noted separately.
 All core features are implemented across all client libraries (Rust, Python,
 TypeScript, Go, Kotlin). This includes:
 
+- `upsert` preserves the caller-supplied ID on a miss in Rust, Python,
+  TypeScript, Kotlin, and Go. The ID argument wins over a conflicting record
+  field. Every client performs a read followed by a write, so concurrent upserts
+  still need coordination.
+
 - Core CRUD, batch operations, transactions
 - Search (text, vector, hybrid), KV store, document TTL
 - Chat sessions, models, streaming, branching, merging

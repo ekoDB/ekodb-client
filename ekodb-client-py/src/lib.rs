@@ -777,8 +777,9 @@ impl Client {
 
     /// Insert or update a record (upsert operation)
     ///
-    /// Attempts to update the record first. If the record doesn't exist (NotFound error),
-    /// it will be inserted instead. This provides atomic insert-or-update semantics.
+    /// Checks for the record and then updates or inserts it with the requested ID.
+    /// This is a read followed by a write, not an atomic operation. The ID
+    /// argument takes precedence over an ID in the record on insert.
     ///
     /// Args:
     ///     collection: Collection name
@@ -788,6 +789,7 @@ impl Client {
     ///
     /// Returns:
     ///     The inserted or updated record as a dict
+    #[pyo3(signature = (collection, id, record, bypass_ripple=None))]
     fn upsert<'py>(
         &self,
         py: Python<'py>,
@@ -799,35 +801,15 @@ impl Client {
         let rust_record = dict_to_record(record)?;
         let client = self.inner.clone();
 
-        // Build options from bypass_ripple
-        let update_options =
-            bypass_ripple.map(|br| ekodb_client::options::UpdateOptions::new().bypass_ripple(br));
-        let insert_options =
-            bypass_ripple.map(|br| ekodb_client::options::InsertOptions::new().bypass_ripple(br));
+        let options =
+            bypass_ripple.map(|br| ekodb_client::options::UpsertOptions::new().bypass_ripple(br));
 
         future_into_py::<_, Py<PyAny>>(py, async move {
-            // Try update first
-            match client
-                .update(&collection, &id, rust_record.clone(), update_options)
+            let result = client
+                .upsert(&collection, &id, rust_record, options)
                 .await
-            {
-                Ok(updated) => Python::attach(|py| record_to_dict(py, &updated)),
-                Err(e) => {
-                    // Check if it's a NotFound error
-                    let error_msg = e.to_string();
-                    if error_msg.contains("Not found") || error_msg.contains("404") {
-                        // Record doesn't exist, insert it
-                        let inserted = client
-                            .insert(&collection, rust_record, insert_options)
-                            .await
-                            .map_err(|e| map_client_err("Upsert insert failed", e))?;
-                        Python::attach(|py| record_to_dict(py, &inserted))
-                    } else {
-                        // Other error, propagate it
-                        Err(map_client_err("Upsert failed", e))
-                    }
-                }
-            }
+                .map_err(|e| map_client_err("Upsert failed", e))?;
+            Python::attach(|py| record_to_dict(py, &result))
         })
     }
 
