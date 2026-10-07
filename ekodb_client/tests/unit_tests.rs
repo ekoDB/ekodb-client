@@ -510,6 +510,39 @@ async fn test_update_success() {
     assert!(result.is_ok());
 }
 
+#[tokio::test]
+async fn update_sends_projection_options_as_query_parameters() {
+    let mut server = Server::new_async().await;
+    let token_mock = mock_token_endpoint(&mut server);
+    let update_mock = server
+        .mock("PUT", "/api/update/users/user_123")
+        .match_query(Matcher::AllOf(vec![
+            Matcher::UrlEncoded("bypass_cache".into(), "false".into()),
+            Matcher::UrlEncoded("select_fields".into(), "first name,email".into()),
+            Matcher::UrlEncoded("exclude_fields".into(), "secret&token".into()),
+        ]))
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"id":"user_123","first name":"Alice"}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    let mut record = Record::new();
+    record.insert("first name", "Alice");
+    let options = ekodb_client::options::UpdateOptions::new()
+        .bypass_cache(false)
+        .select_fields(vec!["first name".into(), "email".into()])
+        .exclude_fields(vec!["secret&token".into()]);
+    client
+        .update("users", "user_123", record, Some(options))
+        .await
+        .expect("update should send projection query parameters");
+
+    token_mock.assert_async().await;
+    update_mock.assert_async().await;
+}
+
 // ============================================================================
 // Delete Tests
 // ============================================================================

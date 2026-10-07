@@ -20,7 +20,9 @@ and this project adheres to
 - Kotlin insert/update now forward cache and projection options. Its timeout
   bounds connection, request, and socket waits even with an injected HTTP
   client; injected clients explicitly own their transport plugins. TypeScript
-  insert/update now forward the matching cache and projection options. (#269)
+  insert/update now forward the matching cache and projection options. Rust
+  update now forwards its existing projection options, and Python update exposes
+  them through the binding. (#269)
 
 ## [0.27.0] - 2026-09-16
 
