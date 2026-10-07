@@ -2,7 +2,7 @@
 # Exact per-framework pass counts (Rust includes doc tests). 'make test-ls-check'
 # checks presence, format and Total==sum only (run 'make test' to refresh). Help + CI read from this.
 Rust: 487
-TypeScript: 502
+TypeScript: 504
 Python: 357
-Kotlin: 477
-Total: 1823
+Kotlin: 478
+Total: 1826

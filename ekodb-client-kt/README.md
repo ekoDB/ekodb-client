@@ -696,6 +696,17 @@ val client = EkoDBClient.builder()
 client.close()
 ```
 
+`timeout(seconds)` bounds connection, request, and socket waits. If you pass an
+`HttpClient` to `httpClient(...)`, its engine and plugins remain yours to
+configure: include content negotiation and any desired compression, logging, or
+WebSocket plugins. The builder still applies its timeout to that client. Close
+the original supplied client separately when finished.
+
+`insert(..., bypassCache = false)` and
+`update(..., bypassCache = true, selectFields = listOf("name"), excludeFields = listOf("secret"))`
+send these options as query parameters. Omitted options leave the server
+defaults in effect.
+
 ### Error Handling
 
 The unreleased client exposes terminal HTTP errors as `EkoDBHttpException`. Use

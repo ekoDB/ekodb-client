@@ -17,6 +17,10 @@ and this project adheres to
   on `push` and `schedule` runs. The unit-test `summary` job keeps `always()`
   but skips on a draft too, where it would otherwise render four "Failed" rows
   for tests that never ran. (#260)
+- Kotlin insert/update now forward cache and projection options. Its timeout
+  bounds connection, request, and socket waits even with an injected HTTP
+  client; injected clients explicitly own their transport plugins. TypeScript
+  insert/update now forward the matching cache and projection options. (#269)
 
 ## [0.27.0] - 2026-09-16
 
