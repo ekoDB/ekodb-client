@@ -991,6 +991,9 @@ export class EkoDBClient {
     if (options?.transactionId) {
       params.append("transaction_id", options.transactionId);
     }
+    if (options?.bypassCache !== undefined) {
+      params.append("bypass_cache", String(options.bypassCache));
+    }
 
     const url = params.toString()
       ? `/api/insert/${encodeURIComponent(collection)}?${params.toString()}`
@@ -1134,6 +1137,15 @@ export class EkoDBClient {
     }
     if (options?.transactionId) {
       params.append("transaction_id", options.transactionId);
+    }
+    if (options?.bypassCache !== undefined) {
+      params.append("bypass_cache", String(options.bypassCache));
+    }
+    if (options?.selectFields?.length) {
+      params.append("select_fields", options.selectFields.join(","));
+    }
+    if (options?.excludeFields?.length) {
+      params.append("exclude_fields", options.excludeFields.join(","));
     }
 
     const url = params.toString()

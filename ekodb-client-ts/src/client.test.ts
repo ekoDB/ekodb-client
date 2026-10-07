@@ -122,6 +122,19 @@ describe("EkoDBClient configuration", () => {
 // ============================================================================
 
 describe("EkoDBClient insert", () => {
+  it("forwards bypassCache=false on the wire", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+    mockJsonResponse({ id: "record_123" });
+
+    await client.insert("users", { name: "Test" }, { bypassCache: false });
+
+    const [url] = mockFetch.mock.calls[1];
+    expect(new URL(url as string).searchParams.get("bypass_cache")).toBe(
+      "false",
+    );
+  });
+
   it("inserts record successfully", async () => {
     const client = createTestClient();
 
@@ -192,6 +205,29 @@ describe("EkoDBClient find", () => {
 // ============================================================================
 
 describe("EkoDBClient update", () => {
+  it("forwards cache and projection options on the wire", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+    mockJsonResponse({ id: "user_123" });
+
+    await client.update(
+      "users",
+      "user_123",
+      { name: "Test" },
+      {
+        bypassCache: true,
+        selectFields: ["name", "display name"],
+        excludeFields: ["secret"],
+      },
+    );
+
+    const [url] = mockFetch.mock.calls[1];
+    const params = new URL(url as string).searchParams;
+    expect(params.get("bypass_cache")).toBe("true");
+    expect(params.get("select_fields")).toBe("name,display name");
+    expect(params.get("exclude_fields")).toBe("secret");
+  });
+
   it("updates record successfully", async () => {
     const client = createTestClient();
 

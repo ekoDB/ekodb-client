@@ -124,7 +124,7 @@ class EkoDBClient private constructor(
     schemaCacheEnabled: Boolean = false,
     schemaCacheTtlMs: Long = 300_000,
     schemaCacheMax: Int = 100,
-    injectedClient: HttpClient? = null // Optional injected client for testing
+    injectedClient: HttpClient? = null // Optional caller-supplied engine and plugins
 ) {
     // Schema cache for primary_key_alias resolution (parity with the other
     // clients). Always created; a no-op when disabled. Shared with every
@@ -137,7 +137,13 @@ class EkoDBClient private constructor(
         ignoreUnknownKeys = true
     }
 
-    private val client: HttpClient = injectedClient ?: HttpClient(CIO) {
+    private val client: HttpClient = injectedClient?.config {
+        install(HttpTimeout) {
+            connectTimeoutMillis = timeout * 1000
+            requestTimeoutMillis = timeout * 1000
+            socketTimeoutMillis = timeout * 1000
+        }
+    } ?: HttpClient(CIO) {
         install(ContentNegotiation) {
             json(Json {
                 prettyPrint = true
@@ -156,6 +162,8 @@ class EkoDBClient private constructor(
 
         install(HttpTimeout) {
             connectTimeoutMillis = timeout * 1000
+            requestTimeoutMillis = timeout * 1000
+            socketTimeoutMillis = timeout * 1000
         }
 
         install(Logging) {
@@ -399,6 +407,7 @@ class EkoDBClient private constructor(
         val params = mutableListOf<String>()
         bypassRipple?.let { params.add("bypass_ripple=$it") }
         transactionId?.let { params.add("transaction_id=${it.encodeURLQueryComponent(encodeFull = true)}") }
+        bypassCache?.let { params.add("bypass_cache=$it") }
 
         val url = if (params.isNotEmpty()) {
             "$baseUrl/api/insert/${collection.encodeURLPathPart()}?${params.joinToString("&")}"
@@ -557,6 +566,13 @@ class EkoDBClient private constructor(
         val params = mutableListOf<String>()
         bypassRipple?.let { params.add("bypass_ripple=$it") }
         transactionId?.let { params.add("transaction_id=${it.encodeURLQueryComponent(encodeFull = true)}") }
+        bypassCache?.let { params.add("bypass_cache=$it") }
+        selectFields?.takeIf { it.isNotEmpty() }?.let {
+            params.add("select_fields=${it.joinToString(",").encodeURLQueryComponent(encodeFull = true)}")
+        }
+        excludeFields?.takeIf { it.isNotEmpty() }?.let {
+            params.add("exclude_fields=${it.joinToString(",").encodeURLQueryComponent(encodeFull = true)}")
+        }
 
         val url = if (params.isNotEmpty()) {
             "$baseUrl/api/update/${collection.encodeURLPathPart()}/${id.encodeURLPathPart()}?${params.joinToString("&")}"
@@ -2358,11 +2374,14 @@ class EkoDBClient private constructor(
         private var schemaCacheEnabled: Boolean = false
         private var schemaCacheTtlMs: Long = 300_000
         private var schemaCacheMax: Int = 100
-        private var httpClient: HttpClient? = null // For testing
+        private var httpClient: HttpClient? = null
 
         fun baseUrl(url: String) = apply { this.baseUrl = url }
         fun apiKey(key: String) = apply { this.apiKey = key }
-        fun timeout(seconds: Long) = apply { this.timeout = seconds }
+        fun timeout(seconds: Long) = apply {
+            require(seconds > 0 && seconds <= Long.MAX_VALUE / 1000) { "Timeout must be a positive number of seconds" }
+            this.timeout = seconds
+        }
         fun maxRetries(retries: Int) = apply { this.maxRetries = retries }
 
         /**
@@ -2386,7 +2405,12 @@ class EkoDBClient private constructor(
         fun format(format: SerializationFormat) = apply { this.format = format }
 
         /**
-         * Set a custom HTTP client (for testing with mock engines)
+         * Use a caller-supplied HTTP client, including its engine and transport
+         * plugins. The builder timeout is applied to a configured copy of this
+         * client. Configure content negotiation, compression, logging, and
+         * WebSockets on the supplied client; the defaults used by the built-in
+         * CIO client are not installed on it. Close the original supplied
+         * client separately.
          */
         fun httpClient(client: HttpClient) = apply { this.httpClient = client }
 
