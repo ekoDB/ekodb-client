@@ -1946,6 +1946,7 @@ async fn test_upsert_inserts_when_not_found() {
     // Mock insert endpoint succeeding
     let _insert_mock = server
         .mock("POST", "/api/insert/users")
+        .match_body(Matcher::Json(json!({"id": "user123", "name": "John Doe"})))
         .with_status(200)
         .with_header("content-type", "application/json")
         .with_body(json!({"id": "user123", "name": "John Doe"}).to_string())
@@ -1954,7 +1955,9 @@ async fn test_upsert_inserts_when_not_found() {
 
     let client = create_test_client(&server).await;
 
-    let record = Record::new().field("name", "John Doe");
+    let record = Record::new()
+        .field("id", "different-id")
+        .field("name", "John Doe");
     let result = client.upsert("users", "user123", record, None).await;
 
     assert!(result.is_ok());

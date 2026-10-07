@@ -1403,21 +1403,29 @@ describe("Convenience methods", () => {
       // Preflight lookup does not find the caller-supplied ID.
       mockErrorResponse(404, "Not found");
       // Mock insert succeeding
-      mockJsonResponse({ id: "server-generated", name: "John Doe" });
+      mockJsonResponse({ id: "user123", name: "John Doe" });
 
       const client = createTestClient();
       await client.init();
 
-      const result = await client.upsert("users", "user123", {
+      const record = {
+        id: "different-id",
         name: "John Doe",
-      });
-      expect(result).toEqual({ id: "server-generated", name: "John Doe" });
+      };
+      const result = await client.upsert("users", "user123", record);
+      expect(result).toEqual({ id: "user123", name: "John Doe" });
+      expect(record.id).toBe("different-id");
       expect(mockFetch.mock.calls[1][0]).toBe(
         "http://localhost:8080/api/find/users/user123",
       );
       expect(mockFetch.mock.calls[2][0]).toBe(
         "http://localhost:8080/api/insert/users",
       );
+      const insertRequest = mockFetch.mock.calls[2][1] as RequestInit;
+      expect(JSON.parse(insertRequest.body as string)).toEqual({
+        id: "user123",
+        name: "John Doe",
+      });
     });
 
     it("updates when record exists", async () => {

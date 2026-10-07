@@ -849,7 +849,9 @@ class EkoDBClient private constructor(
      * Insert or update a record (upsert operation)
      *
      * Checks whether the caller-supplied ID exists before updating it. If it does
-     * not exist, inserts the record and returns the server-generated ID.
+     * not exist, inserts it with the caller-supplied ID. The ID argument wins
+     * if the record contains a different ID. This is a read followed by a
+     * write, not an atomic operation.
      *
      * @param collection Collection name
      * @param id Record ID
@@ -867,7 +869,9 @@ class EkoDBClient private constructor(
             findById(collection, id, bypassRipple)
         } catch (e: EkoDBHttpException) {
             if (e.statusCode == HttpStatusCode.NotFound.value) {
-                return insert(collection, record, ttl = null, bypassRipple = bypassRipple)
+                val insertRecord = Record(record.toMutableMap())
+                    .insert("id", id)
+                return insert(collection, insertRecord, ttl = null, bypassRipple = bypassRipple)
             }
             throw e
         }

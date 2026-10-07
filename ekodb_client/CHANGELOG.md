@@ -33,6 +33,11 @@ and this project adheres to
   reports its ID and error; its input index is nullable because the server can
   return no ID or an ID shared by multiple inputs. `batchUpdate` now returns
   `BatchResult` instead of a bare list so callers can inspect failures. (#268)
+- `upsert` now inserts with the requested ID on a miss in Rust, Python,
+  TypeScript, and Kotlin, with the ID argument taking precedence over a
+  conflicting record field. Python now uses the shared Rust upsert path instead
+  of a text-matched update fallback, and `bypass_ripple` can be omitted as
+  documented. Upsert remains a non-atomic read and write. (#270)
 
 ## [0.27.0] - 2026-09-16
 
