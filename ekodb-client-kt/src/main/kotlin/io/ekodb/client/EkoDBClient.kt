@@ -734,18 +734,8 @@ class EkoDBClient private constructor(
         }
 
         val result = response.body<JsonObject>()
-        val successful = result["successful"]?.jsonArray ?: JsonArray(emptyList())
-        val failed = result["failed"]?.jsonArray ?: JsonArray(emptyList())
-
-        return BatchResult(
-            successful = successful.map { idElement ->
-                val id = idElement.jsonPrimitive.content
-                Record().apply { this["id"] = FieldType.string(id) }
-            },
-            failed = failed.map { errorElement ->
-                BatchError(0, errorElement.toString())
-            }
-        )
+        val ids = records.map { (it["id"] as? FieldType.StringValue)?.value }
+        return parseBatchResult(result, ids)
     }
 
     /**
@@ -760,7 +750,7 @@ class EkoDBClient private constructor(
         updates: List<Pair<String, Record>>,
         transactionId: String? = null,
         bypassRipple: Boolean? = null
-    ): List<Record> {
+    ): BatchResult {
         val urlPath = if (transactionId != null) {
             "$baseUrl/api/batch/update/${collection.encodeURLPathPart()}?transaction_id=${transactionId.encodeURLQueryComponent(encodeFull = true)}"
         } else {
@@ -786,11 +776,26 @@ class EkoDBClient private constructor(
         }
 
         val result = response.body<JsonObject>()
+        return parseBatchResult(result, updates.map { it.first })
+    }
+
+    /** Preserve server failures and map an ID to an input position only when unique. */
+    private fun parseBatchResult(result: JsonObject, inputIds: List<String?>): BatchResult {
+        val positions = inputIds.withIndex().filter { it.value != null }.groupBy({ it.value }, { it.index })
         val successful = result["successful"]?.jsonArray ?: JsonArray(emptyList())
-        return successful.map { idElement ->
-            val id = idElement.jsonPrimitive.content
-            Record().apply { this["id"] = FieldType.string(id) }
-        }
+        val failed = result["failed"]?.jsonArray ?: JsonArray(emptyList())
+        return BatchResult(
+            successful = successful.map { element ->
+                Record().apply { this["id"] = FieldType.string(element.jsonPrimitive.content) }
+            },
+            failed = failed.map { element ->
+                val failure = element.jsonObject
+                val id = (failure["id"] as? JsonPrimitive)?.contentOrNull
+                val error = failure["error"]?.jsonPrimitive?.content
+                    ?: throw IllegalStateException("Batch failure is missing an error message")
+                BatchError(index = positions[id]?.singleOrNull(), error = error, id = id)
+            }
+        )
     }
 
     /**
@@ -3781,8 +3786,11 @@ data class BatchResult(
  * Batch operation error
  */
 data class BatchError(
-    val index: Int,
-    val error: String
+    /** Input position, if the server returned an ID that uniquely identifies one input. */
+    val index: Int?,
+    val error: String,
+    /** Record ID supplied by the server, when known. */
+    val id: String? = null
 )
 
 /**

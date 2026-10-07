@@ -56,7 +56,7 @@ fun main() = runBlocking {
         }
         
         val updateResult = client.batchUpdate(collection, updates)
-        println("✓ Updated ${updateResult.size} records\n")
+        println("✓ Updated ${updateResult.successful.size} records; ${updateResult.failed.size} failed\n")
         
         // Example 3: Batch Delete
         println("=== Batch Delete ===")

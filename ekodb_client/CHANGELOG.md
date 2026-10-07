@@ -23,6 +23,10 @@ and this project adheres to
   insert/update now forward the matching cache and projection options. Rust
   update now forwards its existing projection options, and Python update exposes
   them through the binding. (#269)
+- Kotlin batch insert and update now retain server per-item failures. A failure
+  reports its ID and error; its input index is nullable because the server can
+  return no ID or an ID shared by multiple inputs. `batchUpdate` now returns
+  `BatchResult` instead of a bare list so callers can inspect failures. (#268)
 
 ## [0.27.0] - 2026-09-16
 
