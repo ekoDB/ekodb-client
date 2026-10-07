@@ -78,12 +78,14 @@ class FieldTypeSchemaBuilder(private val fieldType: String) {
      * @param metric Distance metric ("cosine", "euclidean", "dotproduct")
      * @param m HNSW parameter for max connections per node
      * @param efConstruction HNSW parameter for construction-time search width
+     * @param efSearch Default HNSW search beam width; request values override it
      */
     fun vectorIndex(
         algorithm: String = "flat",
         metric: String = "cosine",
         m: Int = 16,
-        efConstruction: Int = 200
+        efConstruction: Int = 200,
+        efSearch: Int? = null
     ) = apply {
         this.index = buildJsonObject {
             put("type", "vector")
@@ -91,6 +93,7 @@ class FieldTypeSchemaBuilder(private val fieldType: String) {
             put("metric", metric)
             put("m", m)
             put("ef_construction", efConstruction)
+            if (efSearch != null) put("ef_search", efSearch)
         }
     }
 

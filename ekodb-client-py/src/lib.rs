@@ -1156,6 +1156,7 @@ impl Client {
     ///     vector_field: Field containing vectors (optional)
     ///     vector_metric: Similarity metric (optional)
     ///     vector_k: Number of vector results (optional)
+    ///     ef_search: HNSW search beam width, overriding the index setting (optional)
     ///     vector_threshold: Minimum similarity threshold (optional)
     ///     text_weight: Weight for text search in hybrid (optional)
     ///     vector_weight: Weight for vector search in hybrid (optional)
@@ -1167,7 +1168,7 @@ impl Client {
     ///     filters: Metadata pre-filter for text/vector/hybrid search as a canonical
     ///         QueryExpression dict (same format as find()); only matching
     ///         records are candidates before ranking (optional)
-    #[pyo3(signature = (collection, query, language=None, case_sensitive=None, fuzzy=None, min_score=None, fields=None, weights=None, enable_stemming=None, boost_exact=None, max_edit_distance=None, vector=None, vector_field=None, vector_metric=None, vector_k=None, vector_threshold=None, text_weight=None, vector_weight=None, bypass_ripple=None, bypass_cache=None, limit=None, select_fields=None, exclude_fields=None, filters=None))]
+    #[pyo3(signature = (collection, query, language=None, case_sensitive=None, fuzzy=None, min_score=None, fields=None, weights=None, enable_stemming=None, boost_exact=None, max_edit_distance=None, vector=None, vector_field=None, vector_metric=None, vector_k=None, vector_threshold=None, text_weight=None, vector_weight=None, bypass_ripple=None, bypass_cache=None, limit=None, select_fields=None, exclude_fields=None, filters=None, ef_search=None))]
     #[allow(clippy::too_many_arguments)]
     fn search<'py>(
         &self,
@@ -1196,6 +1197,7 @@ impl Client {
         select_fields: Option<Vec<String>>,
         exclude_fields: Option<Vec<String>>,
         filters: Option<&Bound<'py, PyDict>>,
+        ef_search: Option<usize>,
     ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
 
@@ -1226,6 +1228,7 @@ impl Client {
             vector_field,
             vector_metric,
             vector_k,
+            ef_search,
             vector_threshold,
             text_weight,
             vector_weight,

@@ -29,6 +29,9 @@ pub enum IndexConfig {
         m: usize,
         #[serde(default = "default_hnsw_ef_construction")]
         ef_construction: usize,
+        /// Default HNSW search beam width for this index
+        #[serde(skip_serializing_if = "Option::is_none")]
+        ef_search: Option<usize>,
     },
     /// B-tree index for range queries and exact matches
     BTree,
@@ -350,6 +353,7 @@ mod tests {
             metric: DistanceMetric::Cosine,
             m: 16,
             ef_construction: 200,
+            ef_search: Some(128),
         });
 
         assert!(field.index.is_some());
@@ -359,14 +363,40 @@ mod tests {
                 metric,
                 m,
                 ef_construction,
+                ef_search,
             } => {
                 assert_eq!(algorithm, VectorIndexAlgorithm::HNSW);
                 assert_eq!(metric, DistanceMetric::Cosine);
                 assert_eq!(m, 16);
                 assert_eq!(ef_construction, 200);
+                assert_eq!(ef_search, Some(128));
             }
             _ => panic!("Expected Vector index"),
         }
+    }
+
+    #[test]
+    fn vector_index_omits_unset_search_width() {
+        let index: IndexConfig = serde_json::from_value(serde_json::json!({
+            "type": "vector", "algorithm": "hnsw"
+        }))
+        .unwrap();
+        assert_eq!(
+            index,
+            IndexConfig::Vector {
+                algorithm: VectorIndexAlgorithm::HNSW,
+                metric: DistanceMetric::Cosine,
+                m: 16,
+                ef_construction: 200,
+                ef_search: None,
+            }
+        );
+        assert!(
+            serde_json::to_value(index)
+                .unwrap()
+                .get("ef_search")
+                .is_none()
+        );
     }
 
     #[test]

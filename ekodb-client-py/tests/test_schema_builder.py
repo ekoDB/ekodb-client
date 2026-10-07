@@ -60,12 +60,17 @@ class TestFieldTypeSchemaBuilder:
         assert schema["index"]["metric"] == "cosine"
         assert schema["index"]["m"] == 16
         assert schema["index"]["ef_construction"] == 200
+        assert "ef_search" not in schema["index"]
 
     def test_vector_index_custom(self):
         schema = (
             FieldTypeSchemaBuilder("vector")
             .vector_index(
-                algorithm="hnsw", metric="euclidean", m=32, ef_construction=400
+                algorithm="hnsw",
+                metric="euclidean",
+                m=32,
+                ef_construction=400,
+                ef_search=128,
             )
             .build()
         )
@@ -73,6 +78,7 @@ class TestFieldTypeSchemaBuilder:
         assert schema["index"]["metric"] == "euclidean"
         assert schema["index"]["m"] == 32
         assert schema["index"]["ef_construction"] == 400
+        assert schema["index"]["ef_search"] == 128
 
     def test_btree_index(self):
         schema = FieldTypeSchemaBuilder("number").btree_index().build()

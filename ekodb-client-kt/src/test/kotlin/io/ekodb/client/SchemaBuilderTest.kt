@@ -114,12 +114,13 @@ class SchemaBuilderTest {
         assertEquals("cosine", index?.get("metric")?.jsonPrimitive?.content)
         assertEquals(16, index?.get("m")?.jsonPrimitive?.int)
         assertEquals(200, index?.get("ef_construction")?.jsonPrimitive?.int)
+        assertFalse(index?.containsKey("ef_search") ?: true)
     }
 
     @Test
     fun `vector index custom params`() {
         val schema = FieldTypeSchemaBuilder("vector")
-            .vectorIndex(algorithm = "hnsw", metric = "euclidean", m = 32, efConstruction = 400)
+            .vectorIndex(algorithm = "hnsw", metric = "euclidean", m = 32, efConstruction = 400, efSearch = 128)
             .build()
         assertEquals("Vector", schema["field_type"]?.jsonPrimitive?.content)
         val index = schema["index"]?.jsonObject
@@ -127,6 +128,7 @@ class SchemaBuilderTest {
         assertEquals("euclidean", index?.get("metric")?.jsonPrimitive?.content)
         assertEquals(32, index?.get("m")?.jsonPrimitive?.int)
         assertEquals(400, index?.get("ef_construction")?.jsonPrimitive?.int)
+        assertEquals(128, index?.get("ef_search")?.jsonPrimitive?.int)
     }
 
     @Test

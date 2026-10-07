@@ -24,6 +24,7 @@ class SearchQueryBuilder(query: String = "") {
     fun vectorField(vectorField: String) = apply { value = value.copy(vectorField = vectorField) }
     fun vectorMetric(vectorMetric: DistanceMetric) = apply { value = value.copy(vectorMetric = vectorMetric) }
     fun vectorK(vectorK: Int) = apply { value = value.copy(vectorK = vectorK) }
+    fun efSearch(efSearch: Int) = apply { value = value.copy(efSearch = efSearch) }
     fun vectorThreshold(vectorThreshold: Double) = apply { value = value.copy(vectorThreshold = vectorThreshold) }
     fun textWeight(textWeight: Double) = apply { value = value.copy(textWeight = textWeight) }
     fun vectorWeight(vectorWeight: Double) = apply { value = value.copy(vectorWeight = vectorWeight) }

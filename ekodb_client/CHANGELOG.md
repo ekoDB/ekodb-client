@@ -8,6 +8,12 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- Expose HNSW `ef_search` on search requests and vector index configuration in
+  the Rust, Python, TypeScript, and Kotlin clients. Request values override the
+  index default; omitted values leave the server default in effect. (#267)
+
 ### Fixed
 
 - **CI does no work on a draft PR and runs when the PR is marked ready.** The

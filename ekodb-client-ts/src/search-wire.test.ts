@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { SearchQueryBuilder } from "./search";
 import { QueryBuilder } from "./query-builder";
+import { FieldTypeSchemaBuilder, VectorIndexAlgorithm } from "./schema";
 
 const golden = JSON.parse(
   readFileSync(
@@ -23,6 +24,7 @@ describe("cross-client search wire cases", () => {
       .vector(vector)
       .vectorMetric("cosine")
       .vectorK(10)
+      .efSearch(128)
       .vectorThreshold(0.25)
       .filters(new QueryBuilder().eq("category", "ml").build().filter)
       .build(),
@@ -53,5 +55,15 @@ describe("cross-client search wire cases", () => {
     expect(
       JSON.parse(JSON.stringify(new SearchQueryBuilder("").build())),
     ).toEqual({ query: "" });
+  });
+  it("sends an index default only when configured", () => {
+    expect(
+      new FieldTypeSchemaBuilder("Vector").vectorIndex().build().index,
+    ).not.toHaveProperty("ef_search");
+    expect(
+      new FieldTypeSchemaBuilder("Vector")
+        .vectorIndex(VectorIndexAlgorithm.HNSW, undefined, 16, 200, 128)
+        .build().index,
+    ).toHaveProperty("ef_search", 128);
   });
 });
