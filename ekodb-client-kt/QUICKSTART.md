@@ -150,7 +150,8 @@ val usersWithOrders = client.query("users") {
 
 See the [search guide](README.md#typed-text-vector-and-hybrid-search) for vector
 search, metadata prefilters, custom hybrid weights, and the raw JSON escape
-hatch.
+hatch. For HNSW, set `efSearch` on `SearchQueryBuilder` to override the index's
+`efSearch` default for one request; omit both to use the server default.
 
 ```kotlin
 import io.ekodb.client.types.SearchQuery

@@ -45,6 +45,8 @@ export interface SearchQuery {
   vector_metric?: string;
   /** Number of vector results (k-nearest neighbors) */
   vector_k?: number;
+  /** HNSW search beam width; overrides the index setting for this request */
+  ef_search?: number;
   /** Minimum similarity threshold */
   vector_threshold?: number;
 
@@ -216,6 +218,12 @@ export class SearchQueryBuilder {
    */
   vectorK(k: number): this {
     this.query.vector_k = k;
+    return this;
+  }
+
+  /** Set HNSW search beam width for this request */
+  efSearch(width: number): this {
+    this.query.ef_search = width;
     return this;
   }
 

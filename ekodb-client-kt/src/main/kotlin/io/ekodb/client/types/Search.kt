@@ -77,6 +77,9 @@ data class SearchQuery(
     /** Number of nearest vector candidates requested. */
     @SerialName("vector_k")
     val vectorK: Int? = null,
+    /** HNSW search beam width; overrides the index setting for this request. */
+    @SerialName("ef_search")
+    val efSearch: Int? = null,
     /** Vector similarity threshold; interpretation belongs to the server. */
     @SerialName("vector_threshold")
     val vectorThreshold: Double? = null,

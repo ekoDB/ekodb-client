@@ -96,6 +96,9 @@ semantics that direct client access would lose. Revisit if a customer asks.
   `SearchResult`/`SearchResponse`, and typed `search` overloads. The request
   model covers the Rust/TypeScript search fields, including metadata filters,
   named vector fields, projections, and custom hybrid weights.
+- Rust, Python, TypeScript, Kotlin, and Go expose optional HNSW `ef_search` on
+  both vector search requests and vector index configuration. A request value
+  overrides the index default; omission leaves the server's choice in effect.
 - Kotlin raw JSON search and record-list helpers remain available. Typed results
   expose scores, matched fields, totals, and optional execution time.
 - Search uses JSON HTTP transport in Rust, TypeScript, and Kotlin, including

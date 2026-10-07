@@ -41,6 +41,7 @@ export type IndexConfig =
       metric?: DistanceMetric;
       m?: number;
       ef_construction?: number;
+      ef_search?: number;
     }
   | {
       type: "btree";
@@ -217,6 +218,7 @@ export class FieldTypeSchemaBuilder {
     metric: DistanceMetric = DistanceMetric.Cosine,
     m: number = 16,
     efConstruction: number = 200,
+    efSearch?: number,
   ): this {
     this.schema.index = {
       type: "vector",
@@ -224,6 +226,7 @@ export class FieldTypeSchemaBuilder {
       metric,
       m,
       ef_construction: efConstruction,
+      ...(efSearch === undefined ? {} : { ef_search: efSearch }),
     };
     return this;
   }
