@@ -179,6 +179,10 @@ val result = client.batchInsert("users", listOf(user1, user2))
 println("Batch completed: ${result.successful.size} successful, ${result.failed.size} failed")
 ```
 
+`batchUpdate` also returns `BatchResult`. Inspect `failed` after either call:
+each `BatchError` keeps the server's `id` and `error`. Its `index` is nullable
+because the server may return no ID or an ID shared by multiple inputs.
+
 ### TTL (Time-To-Live) Support
 
 ```kotlin

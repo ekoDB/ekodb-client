@@ -1,5 +1,6 @@
 package io.ekodb.client
 
+import io.ekodb.client.types.Record
 import io.ktor.client.*
 import io.ktor.client.engine.mock.*
 import io.ktor.client.plugins.HttpRequestTimeoutException
@@ -1760,7 +1761,34 @@ class EkoDBClientTest {
             "id_2" to io.ekodb.client.types.Record().insert("score", 200)
         )
         val result = client.batchUpdate("users", updates)
-        assertEquals(2, result.size)
+        assertEquals(2, result.successful.size)
+        assertTrue(result.failed.isEmpty())
+    }
+
+    @Test
+    fun `batchInsert retains server failures and identifies only unambiguous positions`() = runBlocking {
+        val mockEngine = createMockEngine("""{"successful":["id_1"],"failed":[{"id":"id_2","error":"duplicate"},{"id":null,"error":"chunk failed"}]}""")
+        val client = createTestClient(mockEngine)
+        val records = listOf(
+            Record().insert("id", "id_1"),
+            Record().insert("id", "id_2"),
+            Record().insert("name", "no id")
+        )
+        val result = client.batchInsert("users", records)
+        assertEquals(1, result.successful.size)
+        assertEquals(BatchError(1, "duplicate", "id_2"), result.failed[0])
+        assertEquals(BatchError(null, "chunk failed"), result.failed[1])
+    }
+
+    @Test
+    fun `batchUpdate retains failed IDs errors and unique input positions`() = runBlocking {
+        val mockEngine = createMockEngine("""{"successful":["id_1"],"failed":[{"id":"id_2","error":"not found"},{"id":null,"error":"chunk failed"}]}""")
+        val client = createTestClient(mockEngine)
+        val updates = listOf("id_1", "id_2", "id_2").map { it to Record().insert("score", 1) }
+        val result = client.batchUpdate("users", updates)
+        assertEquals(1, result.successful.size)
+        assertEquals(BatchError(null, "not found", "id_2"), result.failed[0])
+        assertEquals(BatchError(null, "chunk failed"), result.failed[1])
     }
 
     @Test
