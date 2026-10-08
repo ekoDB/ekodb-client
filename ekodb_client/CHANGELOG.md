@@ -16,6 +16,12 @@ and this project adheres to
 
 ### Fixed
 
+- Rust dependency checks and updates now include the standalone `examples/rust`
+  manifest and lockfile. `deps-update-all` previously skipped that lockfile,
+  leaving its `rustls` below the patched 0.23.45 version even when the other
+  Rust lockfiles were current. The update summary now notes that Kotlin
+  dependency versions still require manual changes. Kotlin example builds now
+  ignore their generated `.kotlin` cache.
 - **CI does no work on a draft PR and runs when the PR is marked ready.** The
   `pull_request` triggers in `unit-tests.yml` and `examples-inventory.yml` now
   list `types: [opened, synchronize, reopened, ready_for_review]`, and every job
