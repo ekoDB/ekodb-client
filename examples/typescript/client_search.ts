@@ -13,6 +13,10 @@ import {
   EkoDBClient,
   SearchQueryBuilder,
   QueryBuilder,
+  SchemaBuilder,
+  FieldTypeSchemaBuilder,
+  VectorIndexAlgorithm,
+  DistanceMetric,
   getValue,
 } from "@ekodb/ekodb-client";
 import * as dotenv from "dotenv";
@@ -51,7 +55,8 @@ async function main() {
   // Use unique collection names
   const usersCollection = "search_users_client_ts";
   const documentsCollection = "search_documents_client_ts";
-  const collections = [usersCollection, documentsCollection];
+  const pairedCollection = `search_paired_client_ts_${Math.random().toString(36).slice(2, 14)}`;
+  const collections = [usersCollection, documentsCollection, pairedCollection];
 
   // Cleanup any existing test collections
   await cleanupCollections(client, collections);
@@ -308,6 +313,110 @@ async function main() {
       console.log(`  ${i + 1}. ${title} (category: ${category})`);
     });
     console.log();
+
+    // Orthogonal toy vectors show field selection. Real query/document vectors
+    // need compatible dimensions and a shared dual-encoder model space.
+    const pairedSchema = new SchemaBuilder()
+      .addField("title", new FieldTypeSchemaBuilder("String").required())
+      .addField("category", new FieldTypeSchemaBuilder("String").required())
+      .addField(
+        "query_embedding",
+        new FieldTypeSchemaBuilder("Vector")
+          .required()
+          .vectorIndex(
+            VectorIndexAlgorithm.Flat,
+            DistanceMetric.Cosine,
+            16,
+            200,
+            undefined,
+            3,
+          ),
+      )
+      .addField(
+        "document_embedding",
+        new FieldTypeSchemaBuilder("Vector")
+          .required()
+          .vectorIndex(
+            VectorIndexAlgorithm.Flat,
+            DistanceMetric.Cosine,
+            16,
+            200,
+            undefined,
+            3,
+          ),
+      )
+      .build();
+    await client.createCollection(pairedCollection, pairedSchema);
+
+    const pairedDocuments = [
+      {
+        title: "Rust Programming Question",
+        category: "programming",
+        query: [1, 0, 0],
+        document: [0, 1, 0],
+      },
+      {
+        title: "Rust Programming Answer",
+        category: "programming",
+        query: [0, 1, 0],
+        document: [1, 0, 0],
+      },
+      {
+        title: "Database Design Answer",
+        category: "database",
+        query: [0, 0, 1],
+        document: [0, 0, 1],
+      },
+    ];
+    for (const item of pairedDocuments) {
+      await client.insert(pairedCollection, {
+        title: item.title,
+        category: item.category,
+        query_embedding: { type: "Vector", value: item.query },
+        document_embedding: { type: "Vector", value: item.document },
+      });
+    }
+
+    const sourceQuery = pairedDocuments[0].query;
+    const documentMatches = await client.search(
+      pairedCollection,
+      new SearchQueryBuilder("")
+        .vector(sourceQuery)
+        .vectorField("document_embedding")
+        .vectorMetric("cosine")
+        .vectorK(3)
+        .limit(3)
+        .bypassCache(true)
+        .build(),
+    );
+    const queryMatches = await client.search(
+      pairedCollection,
+      new SearchQueryBuilder("")
+        .vector(sourceQuery)
+        .vectorField("query_embedding")
+        .vectorMetric("cosine")
+        .vectorK(3)
+        .limit(3)
+        .bypassCache(true)
+        .build(),
+    );
+    const documentTop = documentMatches.results[0]
+      ? getValue<string>(documentMatches.results[0].record.title)
+      : undefined;
+    const queryTop = queryMatches.results[0]
+      ? getValue<string>(queryMatches.results[0].record.title)
+      : undefined;
+    if (
+      documentTop !== "Rust Programming Answer" ||
+      queryTop !== "Rust Programming Question"
+    ) {
+      throw new Error(
+        `Unexpected paired-vector tops: document=${documentTop}, query=${queryTop}`,
+      );
+    }
+    console.log(
+      `Paired vector search: document=${documentTop}, query=${queryTop}`,
+    );
 
     console.log("\n✅ Search examples completed!");
   } catch (error) {

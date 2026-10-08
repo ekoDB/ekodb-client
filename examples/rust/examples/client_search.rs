@@ -8,7 +8,10 @@
 //!
 //! Run with: `cargo run --example client_search`
 
-use ekodb_client::{Client, Error as EkoError, Record, SearchQuery};
+use ekodb_client::{
+    Client, DistanceMetric, Error as EkoError, FieldType, FieldTypeSchema, IndexConfig, Record,
+    Schema, SearchQuery, VectorIndexAlgorithm,
+};
 use std::error::Error;
 
 const COLLECTION: &str = "search_client_rust";
@@ -22,6 +25,125 @@ async fn cleanup(client: &Client) -> Result<(), Box<dyn Error>> {
         Err(error) if is_not_found(&error) => Ok(()),
         Err(error) => Err(format!("collection {COLLECTION}: {error}").into()),
         Ok(()) => Ok(()),
+    }
+}
+
+async fn paired_vector_search(client: &Client) -> Result<(), Box<dyn Error>> {
+    let collection = format!("search_paired_client_rust_{:016x}", rand::random::<u64>());
+    let operation_result: Result<(), Box<dyn Error>> = async {
+        let vector_field = || {
+            FieldTypeSchema::new("Vector")
+                .required()
+                .with_index(IndexConfig::Vector {
+                    algorithm: VectorIndexAlgorithm::Flat,
+                    metric: DistanceMetric::Cosine,
+                    m: 16,
+                    ef_construction: 200,
+                    ef_search: None,
+                    dimension: Some(3),
+                })
+        };
+        let schema = Schema::new()
+            .add_field("title", FieldTypeSchema::new("String").required())
+            .add_field("category", FieldTypeSchema::new("String").required())
+            .add_field("query_embedding", vector_field())
+            .add_field("document_embedding", vector_field());
+        client.create_collection(&collection, schema).await?;
+
+        // Orthogonal toy vectors show field selection; production embeddings need
+        // compatible dimensions and a shared dual-encoder model space.
+        let documents = [
+            (
+                "Rust Programming Question",
+                "programming",
+                [1.0, 0.0, 0.0],
+                [0.0, 1.0, 0.0],
+            ),
+            (
+                "Rust Programming Answer",
+                "programming",
+                [0.0, 1.0, 0.0],
+                [1.0, 0.0, 0.0],
+            ),
+            (
+                "Database Design Answer",
+                "database",
+                [0.0, 0.0, 1.0],
+                [0.0, 0.0, 1.0],
+            ),
+        ];
+        for (title, category, query, document) in documents {
+            let record = Record::new()
+                .field("title", title)
+                .field("category", category)
+                .field("query_embedding", FieldType::vector(query.to_vec()))
+                .field("document_embedding", FieldType::vector(document.to_vec()));
+            client.insert(&collection, record, None).await?;
+        }
+
+        let source_query = vec![1.0, 0.0, 0.0];
+        let document_matches = client
+            .search(
+                &collection,
+                SearchQuery::new("")
+                    .vector(source_query.clone())
+                    .vector_field("document_embedding")
+                    .vector_metric("cosine")
+                    .vector_k(3)
+                    .limit(3)
+                    .bypass_cache(true),
+            )
+            .await?;
+        let query_matches = client
+            .search(
+                &collection,
+                SearchQuery::new("")
+                    .vector(source_query)
+                    .vector_field("query_embedding")
+                    .vector_metric("cosine")
+                    .vector_k(3)
+                    .limit(3)
+                    .bypass_cache(true),
+            )
+            .await?;
+        let document_top = document_matches
+            .results
+            .first()
+            .and_then(|hit| hit.record.get("title"))
+            .and_then(|field| field.get("value"))
+            .and_then(|value| value.as_str());
+        let query_top = query_matches
+            .results
+            .first()
+            .and_then(|hit| hit.record.get("title"))
+            .and_then(|field| field.get("value"))
+            .and_then(|value| value.as_str());
+        if document_top != Some("Rust Programming Answer")
+            || query_top != Some("Rust Programming Question")
+        {
+            return Err(format!(
+                "unexpected paired-vector tops: document={document_top:?}, query={query_top:?}"
+            )
+            .into());
+        }
+        println!("Paired vector search: document={document_top:?}, query={query_top:?}");
+        Ok(())
+    }
+    .await;
+
+    // A create response can be lost after server success, so always attempt cleanup.
+    let cleanup_result = match client.delete_collection(&collection).await {
+        Err(error) if is_not_found(&error) => Ok(()),
+        Err(error) => Err(format!("collection {collection}: {error}").into()),
+        Ok(()) => Ok(()),
+    };
+    match (operation_result, cleanup_result) {
+        (Err(primary), Err(cleanup)) => {
+            Err(format!("{primary}; cleanup also failed: {cleanup}").into())
+        }
+        (Err(primary), Ok(())) => Err(primary),
+        (Ok(()), Err(cleanup)) => Err(cleanup),
+        (Ok(()), Ok(())) => Ok(()),
     }
 }
 
@@ -252,6 +374,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         println!();
 
         println!("Execution time: {}ms", results.execution_time_ms);
+        paired_vector_search(&client).await?;
         Ok(())
     }
     .await;

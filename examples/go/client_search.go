@@ -6,6 +6,7 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"time"
 
 	ekodb "github.com/ekoDB/ekodb-client-go"
 	"github.com/joho/godotenv"
@@ -38,7 +39,9 @@ func run() (runErr error) {
 	// Use unique collection names
 	usersCollection := "search_users_client_go"
 	documentsCollection := "search_documents_client_go"
+	pairedCollection := fmt.Sprintf("search_paired_client_go_%d", time.Now().UnixNano())
 	usersOwned, documentsOwned := false, false
+	pairedAttempted := false
 	defer func() {
 		fmt.Println("=== Cleanup ===")
 		if usersOwned {
@@ -46,6 +49,20 @@ func run() (runErr error) {
 		}
 		if documentsOwned {
 			runErr = errors.Join(runErr, client.DeleteCollection(documentsCollection))
+		}
+		if pairedAttempted {
+			// A lost create response can still leave a collection on the server.
+			collections, err := client.ListCollections()
+			if err != nil {
+				runErr = errors.Join(runErr, fmt.Errorf("list collections for cleanup: %w", err))
+			} else {
+				for _, name := range collections {
+					if name == pairedCollection {
+						runErr = errors.Join(runErr, client.DeleteCollection(pairedCollection))
+						break
+					}
+				}
+			}
 		}
 		if runErr == nil {
 			fmt.Println("✅ Deleted test collections")
@@ -376,6 +393,74 @@ func run() (runErr error) {
 		}
 	}
 	fmt.Println()
+
+	// Orthogonal toy vectors show field selection. Real query/document vectors
+	// need compatible dimensions and a shared dual-encoder model space.
+	pairedSchema := ekodb.NewSchemaBuilder().
+		AddField("title", ekodb.NewFieldTypeSchemaBuilder("String").Required().Build()).
+		AddField("category", ekodb.NewFieldTypeSchemaBuilder("String").Required().Build()).
+		AddField("query_embedding", ekodb.NewFieldTypeSchemaBuilder("Vector").Required().
+			VectorIndex(ekodb.VectorIndexFlat, ekodb.DistanceMetricCosine, 16, 200).Dimension(3).Build()).
+		AddField("document_embedding", ekodb.NewFieldTypeSchemaBuilder("Vector").Required().
+			VectorIndex(ekodb.VectorIndexFlat, ekodb.DistanceMetricCosine, 16, 200).Dimension(3).Build()).
+		Build()
+	pairedAttempted = true
+	if err := client.CreateCollection(pairedCollection, pairedSchema); err != nil {
+		return fmt.Errorf("create paired collection: %w", err)
+	}
+	pairedDocuments := []struct {
+		title    string
+		category string
+		query    []float64
+		document []float64
+	}{
+		{"Rust Programming Question", "programming", []float64{1, 0, 0}, []float64{0, 1, 0}},
+		{"Rust Programming Answer", "programming", []float64{0, 1, 0}, []float64{1, 0, 0}},
+		{"Database Design Answer", "database", []float64{0, 0, 1}, []float64{0, 0, 1}},
+	}
+	for _, item := range pairedDocuments {
+		record := ekodb.Record{
+			"title":              item.title,
+			"category":           item.category,
+			"query_embedding":    map[string]interface{}{"type": "Vector", "value": item.query},
+			"document_embedding": map[string]interface{}{"type": "Vector", "value": item.document},
+		}
+		if _, err := client.Insert(pairedCollection, record); err != nil {
+			return fmt.Errorf("insert paired document: %w", err)
+		}
+	}
+
+	sourceQuery := pairedDocuments[0].query
+	documentField := "document_embedding"
+	queryField := "query_embedding"
+	pairedK, pairedLimit, bypassCache := 3, 3, true
+	documentMatches, err := client.Search(pairedCollection, ekodb.SearchQuery{
+		Query: "", Vector: sourceQuery, VectorField: &documentField,
+		VectorMetric: &vectorMetric, VectorK: &pairedK, Limit: &pairedLimit,
+		BypassCache: &bypassCache,
+	})
+	if err != nil {
+		return fmt.Errorf("paired document search: %w", err)
+	}
+	queryMatches, err := client.Search(pairedCollection, ekodb.SearchQuery{
+		Query: "", Vector: sourceQuery, VectorField: &queryField,
+		VectorMetric: &vectorMetric, VectorK: &pairedK, Limit: &pairedLimit,
+		BypassCache: &bypassCache,
+	})
+	if err != nil {
+		return fmt.Errorf("paired query search: %w", err)
+	}
+	documentTop, queryTop := "", ""
+	if len(documentMatches.Results) > 0 {
+		documentTop = ekodb.GetStringValue(documentMatches.Results[0].Record["title"])
+	}
+	if len(queryMatches.Results) > 0 {
+		queryTop = ekodb.GetStringValue(queryMatches.Results[0].Record["title"])
+	}
+	if documentTop != "Rust Programming Answer" || queryTop != "Rust Programming Question" {
+		return fmt.Errorf("unexpected paired-vector tops: document=%q, query=%q", documentTop, queryTop)
+	}
+	fmt.Printf("Paired vector search: document=%s, query=%s\n", documentTop, queryTop)
 
 	fmt.Println("\n✅ Search examples completed!")
 	return nil

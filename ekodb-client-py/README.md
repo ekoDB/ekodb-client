@@ -145,6 +145,14 @@ search_query = {
 results = await client.search("articles", search_query)
 ```
 
+For directional matching, store two indexed `Vector` fields per record:
+`query_embedding` for a need and `document_embedding` for a complementary offer.
+Search the same source vector with `vector_field="document_embedding"` to find
+offers, or `vector_field="query_embedding"` to find similar needs. Both fields
+need compatible dimensions and a shared dual-encoder model space. The orthogonal
+vectors in [client_search.py](../examples/python/client_search.py) only
+demonstrate field selection; its live searches assert different top records.
+
 ### Schema Management
 
 ```python

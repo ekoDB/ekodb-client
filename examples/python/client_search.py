@@ -11,11 +11,16 @@ Demonstrates full-text search, vector search, and hybrid search:
 import asyncio
 import os
 import random
+import uuid
 from pathlib import Path
 from dotenv import load_dotenv
 from ekodb_client import Client, get_value
 
-COLLECTIONS = ("search_users_client_py", "search_documents_client_py")
+COLLECTIONS = (
+    "search_users_client_py",
+    "search_documents_client_py",
+    f"search_paired_client_py_{uuid.uuid4().hex[:12]}",
+)
 
 # Load environment variables
 env_path = Path(__file__).parent.parent / ".env"
@@ -26,7 +31,7 @@ async def run_example(client):
     print("=== Search Examples ===\n")
 
     # Use unique collection names
-    users_collection, documents_collection = COLLECTIONS
+    users_collection, documents_collection, paired_collection = COLLECTIONS
 
     # Setup: Insert test data
     print("Setting up test data...")
@@ -264,6 +269,78 @@ async def run_example(client):
         category = get_value(record.get("category"))
         print(f"  {i}. {title} (category: {category})")
     print()
+
+    # Orthogonal toy vectors show field selection. Real query/document vectors
+    # need compatible dimensions and a shared dual-encoder model space.
+    paired_schema = {
+        "fields": {
+            "title": {"field_type": "String", "required": True},
+            "category": {"field_type": "String", "required": True},
+            "query_embedding": {
+                "field_type": "Vector",
+                "required": True,
+                "index": {"type": "vector", "metric": "cosine", "dimension": 3},
+            },
+            "document_embedding": {
+                "field_type": "Vector",
+                "required": True,
+                "index": {"type": "vector", "metric": "cosine", "dimension": 3},
+            },
+        }
+    }
+    await client.create_collection(paired_collection, paired_schema)
+    paired_documents = [
+        ("Rust Programming Question", "programming", [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]),
+        ("Rust Programming Answer", "programming", [0.0, 1.0, 0.0], [1.0, 0.0, 0.0]),
+        ("Database Design Answer", "database", [0.0, 0.0, 1.0], [0.0, 0.0, 1.0]),
+    ]
+    for title, category, query_embedding, document_embedding in paired_documents:
+        await client.insert(
+            paired_collection,
+            {
+                "title": title,
+                "category": category,
+                "query_embedding": {"type": "Vector", "value": query_embedding},
+                "document_embedding": {"type": "Vector", "value": document_embedding},
+            },
+        )
+
+    source_query = paired_documents[0][2]
+    document_matches = await client.search(
+        paired_collection,
+        query="",
+        vector=source_query,
+        vector_field="document_embedding",
+        vector_metric="cosine",
+        vector_k=3,
+        limit=3,
+        bypass_cache=True,
+    )
+    query_matches = await client.search(
+        paired_collection,
+        query="",
+        vector=source_query,
+        vector_field="query_embedding",
+        vector_metric="cosine",
+        vector_k=3,
+        limit=3,
+        bypass_cache=True,
+    )
+
+    def top_title(response):
+        results = response.get("results", [])
+        return get_value(results[0]["record"]["title"]) if results else None
+
+    document_top = top_title(document_matches)
+    query_top = top_title(query_matches)
+    if (
+        document_top != "Rust Programming Answer"
+        or query_top != "Rust Programming Question"
+    ):
+        raise AssertionError(
+            f"Unexpected paired-vector tops: document={document_top}, query={query_top}"
+        )
+    print(f"Paired vector search: document={document_top}, query={query_top}")
 
     # Cleanup
     print("=== Cleanup ===")

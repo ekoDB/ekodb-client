@@ -4,7 +4,7 @@ This directory contains Go examples demonstrating ekoDB features.
 
 ## Prerequisites
 
-- Go 1.19 or higher
+- Go 1.27 or higher
 
 ## Installation
 
@@ -25,6 +25,20 @@ go mod download
   operations
 - [Batch Operations](performance/batch.go) - Efficient batch operations
 - [Real-time Updates](websocket/realtime.go) - WebSocket-based real-time updates
+
+### Paired Vector Search
+
+[client_search.go](client_search.go) creates two indexed `Vector` fields per
+record: `query_embedding` for a need and `document_embedding` for a
+complementary offer. The same source vector targets `document_embedding` to find
+offers and `query_embedding` to find similar needs. Both fields need compatible
+dimensions and a shared dual-encoder model space. Its orthogonal toy vectors
+only demonstrate field selection; the live example asserts different top records
+for the two searches.
+
+```bash
+go run client_search.go
+```
 
 ### AI & RAG Examples
 
