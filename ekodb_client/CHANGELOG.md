@@ -8,6 +8,13 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- Kotlin search example and README now show directional matching with paired,
+  indexed `query_embedding` and `document_embedding` Vector fields. The live
+  example asserts that complementary and same-field searches return different
+  top records. (#277)
+
 ## [0.29.0] - 2026-10-08
 
 ### Added
