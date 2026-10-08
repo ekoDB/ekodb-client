@@ -146,6 +146,15 @@ const weightedSearch: SearchQuery = {
 const searchResults = await client.search("articles", weightedSearch);
 ```
 
+For directional matching, store two indexed `Vector` fields per record:
+`query_embedding` for a need and `document_embedding` for a complementary offer.
+Select `vector_field: "document_embedding"` to find offers, or
+`vector_field: "query_embedding"` to find similar needs using the same source
+vector. Both fields need compatible dimensions and a shared dual-encoder model
+space. The orthogonal vectors in
+[client_search.ts](../examples/typescript/client_search.ts) only demonstrate
+field selection; its live searches assert different top records.
+
 ### Schema Management
 
 ```typescript

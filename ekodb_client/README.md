@@ -302,6 +302,16 @@ let search = SearchQuery::new("rust database")
 let results = client.search("articles", search).await?;
 ```
 
+For directional matching, store two indexed `Vector` fields per record:
+`query_embedding` for a need and `document_embedding` for a complementary offer.
+Use the same source query vector with `.vector_field("document_embedding")` to
+find offers, or `.vector_field("query_embedding")` to find similar needs. Both
+fields need compatible dimensions and a shared dual-encoder model space; the
+orthogonal vectors in
+[client_search.rs](../examples/rust/examples/client_search.rs) only demonstrate
+field selection. That live example asserts different top records for the two
+searches.
+
 ### AI Chat Integration
 
 ```rust
