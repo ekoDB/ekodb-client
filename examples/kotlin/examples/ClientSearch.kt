@@ -10,7 +10,10 @@ import io.ekodb.client.types.Record
 import io.ekodb.client.types.SearchQuery
 import io.ekodb.client.types.SearchResponse
 import io.github.cdimascio.dotenv.dotenv
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.decodeFromJsonElement
@@ -121,10 +124,14 @@ fun main() = runBlocking {
         throw error
     } finally {
         try {
-            // A lost create response can leave a collection even when createCollection throws.
-            if (collection in client.listCollections()) {
-                client.deleteCollection(collection)
-                check(collection !in client.listCollections()) { "Example collection $collection was not deleted" }
+            // A lost create response or canceled search can still leave a collection behind.
+            withContext(NonCancellable) {
+                withTimeout(120_000) {
+                    if (collection in client.listCollections()) {
+                        client.deleteCollection(collection)
+                        check(collection !in client.listCollections()) { "Example collection $collection was not deleted" }
+                    }
+                }
             }
         } catch (cleanup: Throwable) {
             val originalFailure = failure
