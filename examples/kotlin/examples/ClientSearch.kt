@@ -32,7 +32,7 @@ fun main() = runBlocking {
         .apiKey(dotenv["API_BASE_KEY"] ?: "a-test-api-key-from-ekodb")
         .build()
     val collection = "kotlin_search_example_${UUID.randomUUID().toString().replace("-", "").take(12)}"
-    var created = false
+    var failure: Throwable? = null
     try {
         client.createCollection(collection, SchemaBuilder()
             .addField("title", FieldTypeSchemaBuilder("String").required().textIndex())
@@ -40,8 +40,6 @@ fun main() = runBlocking {
             .addField("query_embedding", FieldTypeSchemaBuilder("Vector").required().vectorIndex(metric = "cosine", dimension = 3))
             .addField("document_embedding", FieldTypeSchemaBuilder("Vector").required().vectorIndex(metric = "cosine", dimension = 3))
             .build())
-        created = true
-
         // Orthogonal toy vectors make the two rankings deterministic. Real query/document
         // vectors need compatible dimensions and a shared dual-encoder model space.
         val documents = listOf(
@@ -118,9 +116,19 @@ fun main() = runBlocking {
             put("limit", 10)
         })
         println("Raw search: $raw")
+    } catch (error: Throwable) {
+        failure = error
+        throw error
     } finally {
         try {
-            if (created) client.deleteCollection(collection)
+            // A lost create response can leave a collection even when createCollection throws.
+            if (collection in client.listCollections()) {
+                client.deleteCollection(collection)
+                check(collection !in client.listCollections()) { "Example collection $collection was not deleted" }
+            }
+        } catch (cleanup: Throwable) {
+            val originalFailure = failure
+            if (originalFailure != null) originalFailure.addSuppressed(cleanup) else throw cleanup
         } finally {
             client.close()
         }
