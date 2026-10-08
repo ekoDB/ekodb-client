@@ -93,6 +93,7 @@ class FieldTypeSchemaBuilder:
         m: int = 16,
         ef_construction: int = 200,
         ef_search: Optional[int] = None,
+        dimension: Optional[int] = None,
     ) -> "FieldTypeSchemaBuilder":
         """Add a vector similarity search index.
 
@@ -102,6 +103,8 @@ class FieldTypeSchemaBuilder:
             m: HNSW parameter for max connections per node
             ef_construction: HNSW parameter for construction-time search width
             ef_search: Default HNSW search beam width; requests may override it
+            dimension: Fixed vector length enforced from the first write; the
+                server refuses a value that is not a positive integer
         """
         self._index = {
             "type": "vector",
@@ -112,6 +115,8 @@ class FieldTypeSchemaBuilder:
         }
         if ef_search is not None:
             self._index["ef_search"] = ef_search
+        if dimension is not None:
+            self._index["dimension"] = dimension
         return self
 
     def btree_index(self) -> "FieldTypeSchemaBuilder":

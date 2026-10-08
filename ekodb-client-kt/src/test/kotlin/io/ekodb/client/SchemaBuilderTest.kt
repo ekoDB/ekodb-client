@@ -132,6 +132,14 @@ class SchemaBuilderTest {
     }
 
     @Test
+    fun `vector index dimension is sent only when set`() {
+        val with = FieldTypeSchemaBuilder("vector").vectorIndex(dimension = 384).build()
+        assertEquals(384, with["index"]?.jsonObject?.get("dimension")?.jsonPrimitive?.int)
+        val without = FieldTypeSchemaBuilder("vector").vectorIndex().build()
+        assertFalse(without["index"]?.jsonObject?.containsKey("dimension") ?: true)
+    }
+
+    @Test
     fun `known field type aliases use server casing and unknown types pass through`() {
         for (canonical in listOf("String", "Integer", "Float", "Boolean", "DateTime", "UUID", "Array", "Object",
             "Decimal", "Bytes", "Null", "Number", "Set", "Vector", "Binary", "Duration", "FutureType")) {

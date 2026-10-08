@@ -42,6 +42,7 @@ export type IndexConfig =
       m?: number;
       ef_construction?: number;
       ef_search?: number;
+      dimension?: number;
     }
   | {
       type: "btree";
@@ -219,6 +220,7 @@ export class FieldTypeSchemaBuilder {
     m: number = 16,
     efConstruction: number = 200,
     efSearch?: number,
+    dimension?: number,
   ): this {
     this.schema.index = {
       type: "vector",
@@ -227,6 +229,7 @@ export class FieldTypeSchemaBuilder {
       m,
       ef_construction: efConstruction,
       ...(efSearch === undefined ? {} : { ef_search: efSearch }),
+      ...(dimension === undefined ? {} : { dimension }),
     };
     return this;
   }
