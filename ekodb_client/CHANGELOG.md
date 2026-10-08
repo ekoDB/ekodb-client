@@ -14,6 +14,14 @@ and this project adheres to
   indexed `query_embedding` and `document_embedding` Vector fields. The live
   example asserts that complementary and same-field searches return different
   top records. (#277)
+- Rust search example and README now show the same paired-vector directional
+  pattern with live top-record assertions. (#281)
+- TypeScript search example and README now show the same paired-vector
+  directional pattern with live top-record assertions. (#282)
+- Python search example and README now show the same paired-vector directional
+  pattern with live top-record assertions. (#283)
+- Go search example and README now show the same paired-vector directional
+  pattern with live top-record assertions. (#284)
 
 ## [0.29.0] - 2026-10-08
 
