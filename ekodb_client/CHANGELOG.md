@@ -8,6 +8,8 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.28.0] - 2026-10-08
+
 ### Added
 
 - Expose HNSW `ef_search` on search requests and vector index configuration in
