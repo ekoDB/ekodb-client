@@ -4,7 +4,7 @@ This directory contains Go examples demonstrating ekoDB features.
 
 ## Prerequisites
 
-- Go 1.19 or higher
+- Go 1.27 or higher
 
 ## Installation
 
