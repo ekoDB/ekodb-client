@@ -66,4 +66,21 @@ describe("cross-client search wire cases", () => {
         .build().index,
     ).toHaveProperty("ef_search", 128);
   });
+  it("sends a vector dimension only when configured", () => {
+    expect(
+      new FieldTypeSchemaBuilder("Vector").vectorIndex().build().index,
+    ).not.toHaveProperty("dimension");
+    expect(
+      new FieldTypeSchemaBuilder("Vector")
+        .vectorIndex(
+          VectorIndexAlgorithm.HNSW,
+          undefined,
+          16,
+          200,
+          undefined,
+          384,
+        )
+        .build().index,
+    ).toHaveProperty("dimension", 384);
+  });
 });

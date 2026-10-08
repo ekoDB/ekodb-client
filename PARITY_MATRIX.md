@@ -104,6 +104,9 @@ semantics that direct client access would lose. Revisit if a customer asks.
 - Rust, Python, TypeScript, Kotlin, and Go expose optional HNSW `ef_search` on
   both vector search requests and vector index configuration. A request value
   overrides the index default; omission leaves the server's choice in effect.
+- Rust, Python, TypeScript, Kotlin, and Go expose an optional vector index
+  `dimension`, the vector length the index enforces from the first write. It is
+  omitted when unset; the server refuses a non-positive value.
 - Kotlin raw JSON search and record-list helpers remain available. Typed results
   expose scores, matched fields, totals, and optional execution time.
 - Search uses JSON HTTP transport in Rust, TypeScript, and Kotlin, including

@@ -8,6 +8,17 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.29.0] - 2026-10-08
+
+### Added
+
+- Expose the optional vector index `dimension` in the Rust, Python, TypeScript,
+  and Kotlin schema types. The index enforces that vector length from the first
+  write; unset values are omitted from the request. The server refuses a value
+  that is not a positive integer. (#279)
+  Rust: `IndexConfig::Vector` gains a `dimension` field, so a struct literal or
+  a destructure without `..` needs `dimension: None`.
+
 ## [0.28.0] - 2026-10-08
 
 ### Added

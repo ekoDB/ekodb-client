@@ -80,6 +80,12 @@ class TestFieldTypeSchemaBuilder:
         assert schema["index"]["ef_construction"] == 400
         assert schema["index"]["ef_search"] == 128
 
+    def test_vector_index_dimension(self):
+        with_dim = FieldTypeSchemaBuilder("vector").vector_index(dimension=384).build()
+        assert with_dim["index"]["dimension"] == 384
+        without = FieldTypeSchemaBuilder("vector").vector_index().build()
+        assert "dimension" not in without["index"]
+
     def test_btree_index(self):
         schema = FieldTypeSchemaBuilder("number").btree_index().build()
         assert schema["index"] == {"type": "btree"}

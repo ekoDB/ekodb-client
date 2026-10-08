@@ -32,6 +32,10 @@ pub enum IndexConfig {
         /// Default HNSW search beam width for this index
         #[serde(skip_serializing_if = "Option::is_none")]
         ef_search: Option<usize>,
+        /// Fixed vector length enforced from the first write; the server
+        /// refuses a value that is not a positive integer
+        #[serde(skip_serializing_if = "Option::is_none")]
+        dimension: Option<usize>,
     },
     /// B-tree index for range queries and exact matches
     BTree,
@@ -354,6 +358,7 @@ mod tests {
             m: 16,
             ef_construction: 200,
             ef_search: Some(128),
+            dimension: Some(384),
         });
 
         assert!(field.index.is_some());
@@ -364,12 +369,14 @@ mod tests {
                 m,
                 ef_construction,
                 ef_search,
+                dimension,
             } => {
                 assert_eq!(algorithm, VectorIndexAlgorithm::HNSW);
                 assert_eq!(metric, DistanceMetric::Cosine);
                 assert_eq!(m, 16);
                 assert_eq!(ef_construction, 200);
                 assert_eq!(ef_search, Some(128));
+                assert_eq!(dimension, Some(384));
             }
             _ => panic!("Expected Vector index"),
         }
@@ -389,12 +396,34 @@ mod tests {
                 m: 16,
                 ef_construction: 200,
                 ef_search: None,
+                dimension: None,
             }
         );
         assert!(
             serde_json::to_value(index)
                 .unwrap()
                 .get("ef_search")
+                .is_none()
+        );
+    }
+
+    #[test]
+    fn vector_index_dimension_is_sent_only_when_set() {
+        let set: IndexConfig = serde_json::from_value(serde_json::json!({
+            "type": "vector", "algorithm": "hnsw", "dimension": 384
+        }))
+        .unwrap();
+        let wire = serde_json::to_value(&set).unwrap();
+        assert_eq!(wire.get("dimension"), Some(&serde_json::json!(384)));
+
+        let unset: IndexConfig = serde_json::from_value(serde_json::json!({
+            "type": "vector", "algorithm": "hnsw"
+        }))
+        .unwrap();
+        assert!(
+            serde_json::to_value(unset)
+                .unwrap()
+                .get("dimension")
                 .is_none()
         );
     }
