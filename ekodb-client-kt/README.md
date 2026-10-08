@@ -322,6 +322,56 @@ Search request `vector` is a separate `List<Double>` contract and remains
 [contract commands](../COMMANDS.md#search-and-schema-compatibility) for the
 bounded live test and protocol evidence.
 
+### Paired vectors for directional matching
+
+For question-to-answer or need-to-offer retrieval, store both sides of each
+record in separate, indexed `Vector` fields. Embed the source need into query
+space, then select `document_embedding` to find a complementary offer. Searching
+the same vector against `query_embedding` finds similar needs instead. Both
+fields and the search vector must have compatible dimensions and model space;
+use a dual-encoder trained for the direction you intend. The coordinates below
+only demonstrate field selection, not learned semantic quality.
+
+```kotlin
+import io.ekodb.client.FieldTypeSchemaBuilder
+import io.ekodb.client.SchemaBuilder
+import io.ekodb.client.types.DistanceMetric
+import io.ekodb.client.types.FieldType
+import io.ekodb.client.types.Record
+import io.ekodb.client.types.SearchQuery
+
+val schema = SchemaBuilder()
+    .addField("title", FieldTypeSchemaBuilder("String").required())
+    .addField("query_embedding", FieldTypeSchemaBuilder("Vector").required()
+        .vectorIndex(metric = "cosine", dimension = 3))
+    .addField("document_embedding", FieldTypeSchemaBuilder("Vector").required()
+        .vectorIndex(metric = "cosine", dimension = 3))
+    .build()
+client.createCollection("paired_search", schema)
+
+client.insert("paired_search", Record.new()
+    .insert("title", "Question")
+    .insert("query_embedding", FieldType.vector(listOf(1.0, 0.0, 0.0)))
+    .insert("document_embedding", FieldType.vector(listOf(0.0, 1.0, 0.0))))
+client.insert("paired_search", Record.new()
+    .insert("title", "Answer")
+    .insert("query_embedding", FieldType.vector(listOf(0.0, 1.0, 0.0)))
+    .insert("document_embedding", FieldType.vector(listOf(1.0, 0.0, 0.0))))
+
+val sourceQuery = listOf(1.0, 0.0, 0.0)
+val answers = client.search("paired_search", SearchQuery(
+    vector = sourceQuery, vectorField = "document_embedding",
+    vectorMetric = DistanceMetric.COSINE, vectorK = 2, limit = 2,
+))
+val similarQuestions = client.search("paired_search", SearchQuery(
+    vector = sourceQuery, vectorField = "query_embedding",
+    vectorMetric = DistanceMetric.COSINE, vectorK = 2, limit = 2,
+))
+```
+
+See the assertions and cleanup in
+[`ClientSearch.kt`](../examples/kotlin/examples/ClientSearch.kt).
+
 ### Typed text, vector, and hybrid search
 
 Use `SearchQuery` or the search builder for text, vector, and hybrid requests.
