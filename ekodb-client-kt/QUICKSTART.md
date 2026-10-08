@@ -8,7 +8,7 @@ Get started with ekoDB Kotlin client in 5 minutes!
 
 ```kotlin
 dependencies {
-    implementation("io.ekodb:ekodb-client-kt:0.27.0")
+    implementation("io.ekodb:ekodb-client-kt:0.28.0")
 }
 ```
 
@@ -16,7 +16,7 @@ dependencies {
 
 ```groovy
 dependencies {
-    implementation 'io.ekodb:ekodb-client-kt:0.27.0'
+    implementation 'io.ekodb:ekodb-client-kt:0.28.0'
 }
 ```
 
@@ -26,7 +26,7 @@ dependencies {
 <dependency>
     <groupId>io.ekodb</groupId>
     <artifactId>ekodb-client-kt</artifactId>
-    <version>0.27.0</version>
+    <version>0.28.0</version>
 </dependency>
 ```
 
@@ -150,7 +150,8 @@ val usersWithOrders = client.query("users") {
 
 See the [search guide](README.md#typed-text-vector-and-hybrid-search) for vector
 search, metadata prefilters, custom hybrid weights, and the raw JSON escape
-hatch.
+hatch. For HNSW, set `efSearch` on `SearchQueryBuilder` to override the index's
+`efSearch` default for one request; omit both to use the server default.
 
 ```kotlin
 import io.ekodb.client.types.SearchQuery

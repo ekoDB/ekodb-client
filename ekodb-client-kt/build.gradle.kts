@@ -1,15 +1,15 @@
 plugins {
     kotlin("jvm") version "2.4.20"
-    kotlin("plugin.serialization") version "2.4.10"
+    kotlin("plugin.serialization") version "2.4.20"
     `maven-publish`
     signing
     id("io.github.gradle-nexus.publish-plugin") version "2.0.0"
-    id("com.github.ben-manes.versions") version "0.54.0"
+    id("com.github.ben-manes.versions") version "0.63.0"
     id("org.jlleitschuh.gradle.ktlint") version "14.2.0"
 }
 
 group = "io.ekodb"
-version = "0.27.0"
+version = "0.28.0"
 
 // ktlint lint gate. The enabled rule subset is configured in .editorconfig
 // (aggressive reflow/wrapping opinions are disabled — see that file). The
@@ -52,7 +52,7 @@ dependencies {
 
     // Testing
     testImplementation(kotlin("test"))
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
     testImplementation("io.ktor:ktor-client-mock:3.5.2")
 }
 

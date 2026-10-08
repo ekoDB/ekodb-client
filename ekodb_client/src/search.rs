@@ -145,6 +145,10 @@ pub struct SearchQuery {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub vector_k: Option<usize>,
 
+    /// HNSW search beam width; overrides the index setting for this request
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ef_search: Option<usize>,
+
     /// Minimum similarity threshold
     #[serde(skip_serializing_if = "Option::is_none")]
     pub vector_threshold: Option<f64>,
@@ -258,6 +262,12 @@ impl SearchQuery {
     /// Set number of vector results (k-nearest neighbors)
     pub fn vector_k(mut self, k: usize) -> Self {
         self.vector_k = Some(k);
+        self
+    }
+
+    /// Set HNSW search beam width for this request
+    pub fn ef_search(mut self, width: usize) -> Self {
+        self.ef_search = Some(width);
         self
     }
 
@@ -432,12 +442,14 @@ mod tests {
             .vector_field("embedding")
             .vector_metric("cosine")
             .vector_k(5)
+            .ef_search(128)
             .vector_threshold(0.8);
 
         assert_eq!(query.vector, Some(vec![0.1, 0.2, 0.3]));
         assert_eq!(query.vector_field, Some("embedding".to_string()));
         assert_eq!(query.vector_metric, Some("cosine".to_string()));
         assert_eq!(query.vector_k, Some(5));
+        assert_eq!(query.ef_search, Some(128));
         assert_eq!(query.vector_threshold, Some(0.8));
     }
 

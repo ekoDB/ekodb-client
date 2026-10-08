@@ -124,7 +124,7 @@ class EkoDBClient private constructor(
     schemaCacheEnabled: Boolean = false,
     schemaCacheTtlMs: Long = 300_000,
     schemaCacheMax: Int = 100,
-    injectedClient: HttpClient? = null // Optional injected client for testing
+    injectedClient: HttpClient? = null // Optional caller-supplied engine and plugins
 ) {
     // Schema cache for primary_key_alias resolution (parity with the other
     // clients). Always created; a no-op when disabled. Shared with every
@@ -137,7 +137,13 @@ class EkoDBClient private constructor(
         ignoreUnknownKeys = true
     }
 
-    private val client: HttpClient = injectedClient ?: HttpClient(CIO) {
+    private val client: HttpClient = injectedClient?.config {
+        install(HttpTimeout) {
+            connectTimeoutMillis = timeout * 1000
+            requestTimeoutMillis = timeout * 1000
+            socketTimeoutMillis = timeout * 1000
+        }
+    } ?: HttpClient(CIO) {
         install(ContentNegotiation) {
             json(Json {
                 prettyPrint = true
@@ -156,6 +162,8 @@ class EkoDBClient private constructor(
 
         install(HttpTimeout) {
             connectTimeoutMillis = timeout * 1000
+            requestTimeoutMillis = timeout * 1000
+            socketTimeoutMillis = timeout * 1000
         }
 
         install(Logging) {
@@ -399,6 +407,7 @@ class EkoDBClient private constructor(
         val params = mutableListOf<String>()
         bypassRipple?.let { params.add("bypass_ripple=$it") }
         transactionId?.let { params.add("transaction_id=${it.encodeURLQueryComponent(encodeFull = true)}") }
+        bypassCache?.let { params.add("bypass_cache=$it") }
 
         val url = if (params.isNotEmpty()) {
             "$baseUrl/api/insert/${collection.encodeURLPathPart()}?${params.joinToString("&")}"
@@ -557,6 +566,13 @@ class EkoDBClient private constructor(
         val params = mutableListOf<String>()
         bypassRipple?.let { params.add("bypass_ripple=$it") }
         transactionId?.let { params.add("transaction_id=${it.encodeURLQueryComponent(encodeFull = true)}") }
+        bypassCache?.let { params.add("bypass_cache=$it") }
+        selectFields?.takeIf { it.isNotEmpty() }?.let {
+            params.add("select_fields=${it.joinToString(",").encodeURLQueryComponent(encodeFull = true)}")
+        }
+        excludeFields?.takeIf { it.isNotEmpty() }?.let {
+            params.add("exclude_fields=${it.joinToString(",").encodeURLQueryComponent(encodeFull = true)}")
+        }
 
         val url = if (params.isNotEmpty()) {
             "$baseUrl/api/update/${collection.encodeURLPathPart()}/${id.encodeURLPathPart()}?${params.joinToString("&")}"
@@ -718,18 +734,8 @@ class EkoDBClient private constructor(
         }
 
         val result = response.body<JsonObject>()
-        val successful = result["successful"]?.jsonArray ?: JsonArray(emptyList())
-        val failed = result["failed"]?.jsonArray ?: JsonArray(emptyList())
-
-        return BatchResult(
-            successful = successful.map { idElement ->
-                val id = idElement.jsonPrimitive.content
-                Record().apply { this["id"] = FieldType.string(id) }
-            },
-            failed = failed.map { errorElement ->
-                BatchError(0, errorElement.toString())
-            }
-        )
+        val ids = records.map { (it["id"] as? FieldType.StringValue)?.value }
+        return parseBatchResult(result, ids)
     }
 
     /**
@@ -744,7 +750,7 @@ class EkoDBClient private constructor(
         updates: List<Pair<String, Record>>,
         transactionId: String? = null,
         bypassRipple: Boolean? = null
-    ): List<Record> {
+    ): BatchResult {
         val urlPath = if (transactionId != null) {
             "$baseUrl/api/batch/update/${collection.encodeURLPathPart()}?transaction_id=${transactionId.encodeURLQueryComponent(encodeFull = true)}"
         } else {
@@ -770,11 +776,26 @@ class EkoDBClient private constructor(
         }
 
         val result = response.body<JsonObject>()
+        return parseBatchResult(result, updates.map { it.first })
+    }
+
+    /** Preserve server failures and map an ID to an input position only when unique. */
+    private fun parseBatchResult(result: JsonObject, inputIds: List<String?>): BatchResult {
+        val positions = inputIds.withIndex().filter { it.value != null }.groupBy({ it.value }, { it.index })
         val successful = result["successful"]?.jsonArray ?: JsonArray(emptyList())
-        return successful.map { idElement ->
-            val id = idElement.jsonPrimitive.content
-            Record().apply { this["id"] = FieldType.string(id) }
-        }
+        val failed = result["failed"]?.jsonArray ?: JsonArray(emptyList())
+        return BatchResult(
+            successful = successful.map { element ->
+                Record().apply { this["id"] = FieldType.string(element.jsonPrimitive.content) }
+            },
+            failed = failed.map { element ->
+                val failure = element.jsonObject
+                val id = (failure["id"] as? JsonPrimitive)?.contentOrNull
+                val error = failure["error"]?.jsonPrimitive?.content
+                    ?: throw IllegalStateException("Batch failure is missing an error message")
+                BatchError(index = positions[id]?.singleOrNull(), error = error, id = id)
+            }
+        )
     }
 
     /**
@@ -828,7 +849,9 @@ class EkoDBClient private constructor(
      * Insert or update a record (upsert operation)
      *
      * Checks whether the caller-supplied ID exists before updating it. If it does
-     * not exist, inserts the record and returns the server-generated ID.
+     * not exist, inserts it with the caller-supplied ID. The ID argument wins
+     * if the record contains a different ID. This is a read followed by a
+     * write, not an atomic operation.
      *
      * @param collection Collection name
      * @param id Record ID
@@ -846,7 +869,9 @@ class EkoDBClient private constructor(
             findById(collection, id, bypassRipple)
         } catch (e: EkoDBHttpException) {
             if (e.statusCode == HttpStatusCode.NotFound.value) {
-                return insert(collection, record, ttl = null, bypassRipple = bypassRipple)
+                val insertRecord = Record(record.toMutableMap())
+                    .insert("id", id)
+                return insert(collection, insertRecord, ttl = null, bypassRipple = bypassRipple)
             }
             throw e
         }
@@ -2358,11 +2383,14 @@ class EkoDBClient private constructor(
         private var schemaCacheEnabled: Boolean = false
         private var schemaCacheTtlMs: Long = 300_000
         private var schemaCacheMax: Int = 100
-        private var httpClient: HttpClient? = null // For testing
+        private var httpClient: HttpClient? = null
 
         fun baseUrl(url: String) = apply { this.baseUrl = url }
         fun apiKey(key: String) = apply { this.apiKey = key }
-        fun timeout(seconds: Long) = apply { this.timeout = seconds }
+        fun timeout(seconds: Long) = apply {
+            require(seconds > 0 && seconds <= Long.MAX_VALUE / 1000) { "Timeout must be a positive number of seconds" }
+            this.timeout = seconds
+        }
         fun maxRetries(retries: Int) = apply { this.maxRetries = retries }
 
         /**
@@ -2386,7 +2414,12 @@ class EkoDBClient private constructor(
         fun format(format: SerializationFormat) = apply { this.format = format }
 
         /**
-         * Set a custom HTTP client (for testing with mock engines)
+         * Use a caller-supplied HTTP client, including its engine and transport
+         * plugins. The builder timeout is applied to a configured copy of this
+         * client. Configure content negotiation, compression, logging, and
+         * WebSockets on the supplied client; the defaults used by the built-in
+         * CIO client are not installed on it. Close the original supplied
+         * client separately.
          */
         fun httpClient(client: HttpClient) = apply { this.httpClient = client }
 
@@ -3757,8 +3790,11 @@ data class BatchResult(
  * Batch operation error
  */
 data class BatchError(
-    val index: Int,
-    val error: String
+    /** Input position, if the server returned an ID that uniquely identifies one input. */
+    val index: Int?,
+    val error: String,
+    /** Record ID supplied by the server, when known. */
+    val id: String? = null
 )
 
 /**

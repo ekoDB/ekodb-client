@@ -396,6 +396,16 @@ impl HttpClient {
             if let Some(bypass_cache) = opts.bypass_cache {
                 params.append_pair("bypass_cache", &bypass_cache.to_string());
             }
+            if let Some(ref fields) = opts.select_fields {
+                if !fields.is_empty() {
+                    params.append_pair("select_fields", &fields.join(","));
+                }
+            }
+            if let Some(ref fields) = opts.exclude_fields {
+                if !fields.is_empty() {
+                    params.append_pair("exclude_fields", &fields.join(","));
+                }
+            }
         }
 
         let body = self.serialize(url_path, &record)?;

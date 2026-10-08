@@ -991,6 +991,9 @@ export class EkoDBClient {
     if (options?.transactionId) {
       params.append("transaction_id", options.transactionId);
     }
+    if (options?.bypassCache !== undefined) {
+      params.append("bypass_cache", String(options.bypassCache));
+    }
 
     const url = params.toString()
       ? `/api/insert/${encodeURIComponent(collection)}?${params.toString()}`
@@ -1134,6 +1137,15 @@ export class EkoDBClient {
     }
     if (options?.transactionId) {
       params.append("transaction_id", options.transactionId);
+    }
+    if (options?.bypassCache !== undefined) {
+      params.append("bypass_cache", String(options.bypassCache));
+    }
+    if (options?.selectFields?.length) {
+      params.append("select_fields", options.selectFields.join(","));
+    }
+    if (options?.excludeFields?.length) {
+      params.append("exclude_fields", options.excludeFields.join(","));
     }
 
     const url = params.toString()
@@ -1628,6 +1640,9 @@ export class EkoDBClient {
    */
   /**
    * Upsert a document (insert or update)
+   * This is a read followed by a write, not an atomic operation. On insert,
+   * the id argument overrides any id in record.
+   *
    * @param collection - Collection name
    * @param id - Document ID
    * @param record - Document data
@@ -1646,12 +1661,16 @@ export class EkoDBClient {
       });
     } catch (error) {
       if (isNotFoundError(error)) {
-        return await this.insert(collection, record, {
-          ttl: options?.ttl,
-          bypassRipple: options?.bypassRipple,
-          transactionId: options?.transactionId,
-          bypassCache: options?.bypassCache,
-        });
+        return await this.insert(
+          collection,
+          { ...record, id },
+          {
+            ttl: options?.ttl,
+            bypassRipple: options?.bypassRipple,
+            transactionId: options?.transactionId,
+            bypassCache: options?.bypassCache,
+          },
+        );
       }
       throw error;
     }

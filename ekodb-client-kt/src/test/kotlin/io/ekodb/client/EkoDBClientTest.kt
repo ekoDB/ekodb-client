@@ -1,14 +1,18 @@
 package io.ekodb.client
 
+import io.ekodb.client.types.Record
 import io.ktor.client.*
 import io.ktor.client.engine.mock.*
+import io.ktor.client.plugins.HttpRequestTimeoutException
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.HttpRequestData
 import io.ktor.http.*
 import io.ktor.http.content.TextContent
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -94,6 +98,34 @@ class EkoDBClientTest {
             .apiKey(testApiKey)
             .httpClient(mockHttpClient)
             .build()
+    }
+
+    @Test
+    fun `builder timeout bounds a stalled request with injected client`() = runBlocking {
+        val engine = MockEngine { request ->
+            if (request.url.encodedPath.contains("/api/auth/token")) {
+                respond("""{"token":"mock_jwt_token_123"}""",
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
+            } else {
+                delay(2_000)
+                respond("""{"id":"id_1"}""",
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
+            }
+        }
+        val supplied = HttpClient(engine) {
+            install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
+        }
+        val client = EkoDBClient.builder().baseUrl(testBaseUrl).apiKey(testApiKey)
+            .httpClient(supplied).timeout(1).maxRetries(1).build()
+        try {
+            withTimeout(3_000) {
+                assertFailsWith<HttpRequestTimeoutException> {
+                    client.insert("users", io.ekodb.client.types.Record().insert("name", "Alice"))
+                }
+            }
+        } finally {
+            client.close()
+        }
     }
 
     // ========================================================================
@@ -1584,6 +1616,25 @@ class EkoDBClientTest {
     }
 
     @Test
+    fun `insert and update forward cache and projection options`() = runBlocking {
+        val recorded = mutableListOf<HttpRequestData>()
+        val client = createTestClient(capturingMockEngine(recorded, """{"id":"id_1","name":"Alice"}"""))
+        val record = io.ekodb.client.types.Record().insert("name", "Alice")
+
+        client.insert("users", record, bypassCache = false)
+        client.update("users", "id_1", record, bypassCache = true,
+            selectFields = listOf("name", "display name"), excludeFields = listOf("secret"))
+        client.update("users", "id_1", record)
+
+        assertEquals("false", recorded[0].url.parameters["bypass_cache"])
+        assertEquals("true", recorded[1].url.parameters["bypass_cache"])
+        assertEquals("name,display name", recorded[1].url.parameters["select_fields"])
+        assertEquals("secret", recorded[1].url.parameters["exclude_fields"])
+        assertNull(recorded[2].url.parameters["bypass_cache"])
+        assertNull(recorded[2].url.parameters["select_fields"])
+    }
+
+    @Test
     fun `findById sends GET to correct endpoint`() = runBlocking {
         val mockEngine = createMockEngine("""{"id": "rec_1", "name": "Alice"}""")
         val client = createTestClient(mockEngine)
@@ -1710,7 +1761,34 @@ class EkoDBClientTest {
             "id_2" to io.ekodb.client.types.Record().insert("score", 200)
         )
         val result = client.batchUpdate("users", updates)
-        assertEquals(2, result.size)
+        assertEquals(2, result.successful.size)
+        assertTrue(result.failed.isEmpty())
+    }
+
+    @Test
+    fun `batchInsert retains server failures and identifies only unambiguous positions`() = runBlocking {
+        val mockEngine = createMockEngine("""{"successful":["id_1"],"failed":[{"id":"id_2","error":"duplicate"},{"id":null,"error":"chunk failed"}]}""")
+        val client = createTestClient(mockEngine)
+        val records = listOf(
+            Record().insert("id", "id_1"),
+            Record().insert("id", "id_2"),
+            Record().insert("name", "no id")
+        )
+        val result = client.batchInsert("users", records)
+        assertEquals(1, result.successful.size)
+        assertEquals(BatchError(1, "duplicate", "id_2"), result.failed[0])
+        assertEquals(BatchError(null, "chunk failed"), result.failed[1])
+    }
+
+    @Test
+    fun `batchUpdate retains failed IDs errors and unique input positions`() = runBlocking {
+        val mockEngine = createMockEngine("""{"successful":["id_1"],"failed":[{"id":"id_2","error":"not found"},{"id":null,"error":"chunk failed"}]}""")
+        val client = createTestClient(mockEngine)
+        val updates = listOf("id_1", "id_2", "id_2").map { it to Record().insert("score", 1) }
+        val result = client.batchUpdate("users", updates)
+        assertEquals(1, result.successful.size)
+        assertEquals(BatchError(null, "not found", "id_2"), result.failed[0])
+        assertEquals(BatchError(null, "chunk failed"), result.failed[1])
     }
 
     @Test

@@ -35,7 +35,7 @@ integration, and automatic optimization.
 
 ```kotlin
 dependencies {
-    implementation("io.ekodb:ekodb-client-kt:0.27.0")
+    implementation("io.ekodb:ekodb-client-kt:0.28.0")
 }
 ```
 
@@ -43,7 +43,7 @@ dependencies {
 
 ```groovy
 dependencies {
-    implementation 'io.ekodb:ekodb-client-kt:0.27.0'
+    implementation 'io.ekodb:ekodb-client-kt:0.28.0'
 }
 ```
 
@@ -53,7 +53,7 @@ dependencies {
 <dependency>
     <groupId>io.ekodb</groupId>
     <artifactId>ekodb-client-kt</artifactId>
-    <version>0.27.0</version>
+    <version>0.28.0</version>
 </dependency>
 ```
 
@@ -178,6 +178,10 @@ val user2 = Record.new()
 val result = client.batchInsert("users", listOf(user1, user2))
 println("Batch completed: ${result.successful.size} successful, ${result.failed.size} failed")
 ```
+
+`batchUpdate` also returns `BatchResult`. Inspect `failed` after either call:
+each `BatchError` keeps the server's `id` and `error`. Its `index` is nullable
+because the server may return no ID or an ID shared by multiple inputs.
 
 ### TTL (Time-To-Live) Support
 
@@ -695,6 +699,17 @@ val client = EkoDBClient.builder()
 // Close it when done
 client.close()
 ```
+
+`timeout(seconds)` bounds connection, request, and socket waits. If you pass an
+`HttpClient` to `httpClient(...)`, its engine and plugins remain yours to
+configure: include content negotiation and any desired compression, logging, or
+WebSocket plugins. The builder still applies its timeout to that client. Close
+the original supplied client separately when finished.
+
+`insert(..., bypassCache = false)` and
+`update(..., bypassCache = true, selectFields = listOf("name"), excludeFields = listOf("secret"))`
+send these options as query parameters. Omitted options leave the server
+defaults in effect.
 
 ### Error Handling
 

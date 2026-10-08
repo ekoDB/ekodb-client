@@ -26,6 +26,7 @@ class SearchTest {
     fun `simple text and vector query include query even when empty and omit unset options`() {
         assertEquals(expected("""{"query":"hello"}"""), wire(SearchQuery("hello")))
         assertEquals(expected("""{"query":""}"""), wire(SearchQuery()))
+        assertFalse(wire(SearchQuery()).containsKey("ef_search"))
         assertEquals(expected("""{"query":"","vector":[0.1,0.2,0.3]}"""), wire(SearchQuery(vector = vector)))
     }
 
@@ -233,7 +234,7 @@ class SearchTest {
         val golden = json.parseToJsonElement(File("../test-fixtures/search-requests.json").readText()).jsonObject
         fun base(query: String = "") = SearchQueryBuilder(query).bypassRipple(false).bypassCache(false).limit(10)
         val cases = mapOf(
-            "filtered_vector" to base().vector(vector).vectorMetric(DistanceMetric.COSINE).vectorK(10).vectorThreshold(0.25).filters { eq("category", "ml") }.build(),
+            "filtered_vector" to base().vector(vector).vectorMetric(DistanceMetric.COSINE).vectorK(10).efSearch(128).vectorThreshold(0.25).filters { eq("category", "ml") }.build(),
             "hybrid_custom_weights" to base("machine learning").vector(vector).textWeight(0.7).vectorWeight(0.3).build(),
             "named_vector_field" to base().vector(vector).vectorField("title_embedding").vectorMetric(DistanceMetric.DOT_PRODUCT).vectorK(10).build(),
             "full_text" to base("enginer").fields(listOf("title", "body")).weights(linkedMapOf("title" to 2.5, "body" to 1.5)).fuzzy(true).maxEditDistance(2).build(),

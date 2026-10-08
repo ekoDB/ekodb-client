@@ -122,6 +122,19 @@ describe("EkoDBClient configuration", () => {
 // ============================================================================
 
 describe("EkoDBClient insert", () => {
+  it("forwards bypassCache=false on the wire", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+    mockJsonResponse({ id: "record_123" });
+
+    await client.insert("users", { name: "Test" }, { bypassCache: false });
+
+    const [url] = mockFetch.mock.calls[1];
+    expect(new URL(url as string).searchParams.get("bypass_cache")).toBe(
+      "false",
+    );
+  });
+
   it("inserts record successfully", async () => {
     const client = createTestClient();
 
@@ -192,6 +205,29 @@ describe("EkoDBClient find", () => {
 // ============================================================================
 
 describe("EkoDBClient update", () => {
+  it("forwards cache and projection options on the wire", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+    mockJsonResponse({ id: "user_123" });
+
+    await client.update(
+      "users",
+      "user_123",
+      { name: "Test" },
+      {
+        bypassCache: true,
+        selectFields: ["name", "display name"],
+        excludeFields: ["secret"],
+      },
+    );
+
+    const [url] = mockFetch.mock.calls[1];
+    const params = new URL(url as string).searchParams;
+    expect(params.get("bypass_cache")).toBe("true");
+    expect(params.get("select_fields")).toBe("name,display name");
+    expect(params.get("exclude_fields")).toBe("secret");
+  });
+
   it("updates record successfully", async () => {
     const client = createTestClient();
 
@@ -1367,21 +1403,29 @@ describe("Convenience methods", () => {
       // Preflight lookup does not find the caller-supplied ID.
       mockErrorResponse(404, "Not found");
       // Mock insert succeeding
-      mockJsonResponse({ id: "server-generated", name: "John Doe" });
+      mockJsonResponse({ id: "user123", name: "John Doe" });
 
       const client = createTestClient();
       await client.init();
 
-      const result = await client.upsert("users", "user123", {
+      const record = {
+        id: "different-id",
         name: "John Doe",
-      });
-      expect(result).toEqual({ id: "server-generated", name: "John Doe" });
+      };
+      const result = await client.upsert("users", "user123", record);
+      expect(result).toEqual({ id: "user123", name: "John Doe" });
+      expect(record.id).toBe("different-id");
       expect(mockFetch.mock.calls[1][0]).toBe(
         "http://localhost:8080/api/find/users/user123",
       );
       expect(mockFetch.mock.calls[2][0]).toBe(
         "http://localhost:8080/api/insert/users",
       );
+      const insertRequest = mockFetch.mock.calls[2][1] as RequestInit;
+      expect(JSON.parse(insertRequest.body as string)).toEqual({
+        id: "user123",
+        name: "John Doe",
+      });
     });
 
     it("updates when record exists", async () => {

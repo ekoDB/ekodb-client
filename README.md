@@ -68,7 +68,7 @@ npm install @ekodb/ekodb-client
 
 ```kotlin
 // Gradle (Kotlin DSL)
-implementation("io.ekodb:ekodb-client-kt:0.27.0")
+implementation("io.ekodb:ekodb-client-kt:0.28.0")
 ```
 
 **Features:**
@@ -99,6 +99,11 @@ All clients provide:
 - ✅ TTL (time-to-live) support
 - ✅ Key-value operations
 - ✅ Error handling and retries
+
+`upsert(collection, id, record)` checks for the ID before writing. On a miss,
+the ID argument is inserted into the record and wins over any conflicting
+`record.id`; on a hit, the existing record is updated. This is a read followed
+by a write, not an atomic server operation.
 
 Each client also includes language-specific features:
 

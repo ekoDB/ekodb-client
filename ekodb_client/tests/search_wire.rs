@@ -28,6 +28,7 @@ fn cross_client_search_wire_cases() {
                 .vector(vector.clone())
                 .vector_metric("cosine")
                 .vector_k(10)
+                .ef_search(128)
                 .vector_threshold(0.25)
                 .filters(filter),
         ),

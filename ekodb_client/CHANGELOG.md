@@ -8,8 +8,22 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.28.0] - 2026-10-08
+
+### Added
+
+- Expose HNSW `ef_search` on search requests and vector index configuration in
+  the Rust, Python, TypeScript, and Kotlin clients. Request values override the
+  index default; omitted values leave the server default in effect. (#267)
+
 ### Fixed
 
+- Rust dependency checks and updates now include the standalone `examples/rust`
+  manifest and lockfile. `deps-update-all` previously skipped that lockfile,
+  leaving its `rustls` below the patched 0.23.45 version even when the other
+  Rust lockfiles were current. The update summary now notes that Kotlin
+  dependency versions still require manual changes. Kotlin example builds now
+  ignore their generated `.kotlin` cache.
 - **CI does no work on a draft PR and runs when the PR is marked ready.** The
   `pull_request` triggers in `unit-tests.yml` and `examples-inventory.yml` now
   list `types: [opened, synchronize, reopened, ready_for_review]`, and every job
@@ -17,6 +31,21 @@ and this project adheres to
   on `push` and `schedule` runs. The unit-test `summary` job keeps `always()`
   but skips on a draft too, where it would otherwise render four "Failed" rows
   for tests that never ran. (#260)
+- Kotlin insert/update now forward cache and projection options. Its timeout
+  bounds connection, request, and socket waits even with an injected HTTP
+  client; injected clients explicitly own their transport plugins. TypeScript
+  insert/update now forward the matching cache and projection options. Rust
+  update now forwards its existing projection options, and Python update exposes
+  them through the binding. (#269)
+- Kotlin batch insert and update now retain server per-item failures. A failure
+  reports its ID and error; its input index is nullable because the server can
+  return no ID or an ID shared by multiple inputs. `batchUpdate` now returns
+  `BatchResult` instead of a bare list so callers can inspect failures. (#268)
+- `upsert` now inserts with the requested ID on a miss in Rust, Python,
+  TypeScript, and Kotlin, with the ID argument taking precedence over a
+  conflicting record field. Python now uses the shared Rust upsert path instead
+  of a text-matched update fallback, and `bypass_ripple` can be omitted as
+  documented. Upsert remains a non-atomic read and write. (#270)
 
 ## [0.27.0] - 2026-09-16
 

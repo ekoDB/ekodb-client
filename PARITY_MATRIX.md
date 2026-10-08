@@ -57,6 +57,11 @@ documented below. Language-specific differences are noted separately.
 All core features are implemented across all client libraries (Rust, Python,
 TypeScript, Go, Kotlin). This includes:
 
+- `upsert` preserves the caller-supplied ID on a miss in Rust, Python,
+  TypeScript, Kotlin, and Go. The ID argument wins over a conflicting record
+  field. Every client performs a read followed by a write, so concurrent upserts
+  still need coordination.
+
 - Core CRUD, batch operations, transactions
 - Search (text, vector, hybrid), KV store, document TTL
 - Chat sessions, models, streaming, branching, merging
@@ -96,6 +101,9 @@ semantics that direct client access would lose. Revisit if a customer asks.
   `SearchResult`/`SearchResponse`, and typed `search` overloads. The request
   model covers the Rust/TypeScript search fields, including metadata filters,
   named vector fields, projections, and custom hybrid weights.
+- Rust, Python, TypeScript, Kotlin, and Go expose optional HNSW `ef_search` on
+  both vector search requests and vector index configuration. A request value
+  overrides the index default; omission leaves the server's choice in effect.
 - Kotlin raw JSON search and record-list helpers remain available. Typed results
   expose scores, matched fields, totals, and optional execution time.
 - Search uses JSON HTTP transport in Rust, TypeScript, and Kotlin, including

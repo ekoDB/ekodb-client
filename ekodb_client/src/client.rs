@@ -750,11 +750,13 @@ impl Client {
     /// # Ok(())
     /// # }
     /// ```
+    /// This is a read followed by a write, not an atomic server operation. On
+    /// insert, the `id` argument takes precedence over any `id` in `record`.
     pub async fn upsert(
         &self,
         collection: &str,
         id: &str,
-        record: Record,
+        mut record: Record,
         options: Option<crate::options::UpsertOptions>,
     ) -> Result<Record> {
         // Convert UpsertOptions to UpdateOptions for the update call
@@ -798,7 +800,8 @@ impl Client {
         match existing {
             Ok(_) => self.update(collection, id, record, update_opts).await,
             Err(Error::NotFound) => {
-                // Record doesn't exist, insert it
+                // The caller's ID must be the one persisted on a miss.
+                record.insert("id", id);
                 // Convert UpsertOptions to InsertOptions
                 let insert_opts = options.map(|o| {
                     let mut opts = crate::options::InsertOptions::new();

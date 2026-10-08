@@ -376,7 +376,9 @@ impl Client {
     ///     bypass_ripple: Optional flag to bypass ripple propagation
     ///     transaction_id: Optional transaction ID for atomic operations
     ///     bypass_cache: Optional flag to bypass cache
-    #[pyo3(signature = (collection, id, updates, bypass_ripple=None, transaction_id=None, bypass_cache=None))]
+    ///     select_fields: Optional fields to include in the returned record
+    ///     exclude_fields: Optional fields to omit from the returned record
+    #[pyo3(signature = (collection, id, updates, bypass_ripple=None, transaction_id=None, bypass_cache=None, select_fields=None, exclude_fields=None))]
     fn update<'py>(
         &self,
         py: Python<'py>,
@@ -386,12 +388,19 @@ impl Client {
         bypass_ripple: Option<bool>,
         transaction_id: Option<String>,
         bypass_cache: Option<bool>,
+        select_fields: Option<Vec<String>>,
+        exclude_fields: Option<Vec<String>>,
     ) -> PyResult<Bound<'py, PyAny>> {
         let rust_updates = dict_to_record(updates)?;
 
         // Build UpdateOptions from Python parameters
         let options =
-            if bypass_ripple.is_some() || transaction_id.is_some() || bypass_cache.is_some() {
+            if bypass_ripple.is_some()
+                || transaction_id.is_some()
+                || bypass_cache.is_some()
+                || select_fields.is_some()
+                || exclude_fields.is_some()
+            {
                 let mut opts = ekodb_client::options::UpdateOptions::new();
                 if let Some(br) = bypass_ripple {
                     opts = opts.bypass_ripple(br);
@@ -401,6 +410,12 @@ impl Client {
                 }
                 if let Some(bc) = bypass_cache {
                     opts = opts.bypass_cache(bc);
+                }
+                if let Some(fields) = select_fields {
+                    opts = opts.select_fields(fields);
+                }
+                if let Some(fields) = exclude_fields {
+                    opts = opts.exclude_fields(fields);
                 }
                 Some(opts)
             } else {
@@ -762,8 +777,9 @@ impl Client {
 
     /// Insert or update a record (upsert operation)
     ///
-    /// Attempts to update the record first. If the record doesn't exist (NotFound error),
-    /// it will be inserted instead. This provides atomic insert-or-update semantics.
+    /// Checks for the record and then updates or inserts it with the requested ID.
+    /// This is a read followed by a write, not an atomic operation. The ID
+    /// argument takes precedence over an ID in the record on insert.
     ///
     /// Args:
     ///     collection: Collection name
@@ -773,6 +789,7 @@ impl Client {
     ///
     /// Returns:
     ///     The inserted or updated record as a dict
+    #[pyo3(signature = (collection, id, record, bypass_ripple=None))]
     fn upsert<'py>(
         &self,
         py: Python<'py>,
@@ -784,35 +801,15 @@ impl Client {
         let rust_record = dict_to_record(record)?;
         let client = self.inner.clone();
 
-        // Build options from bypass_ripple
-        let update_options =
-            bypass_ripple.map(|br| ekodb_client::options::UpdateOptions::new().bypass_ripple(br));
-        let insert_options =
-            bypass_ripple.map(|br| ekodb_client::options::InsertOptions::new().bypass_ripple(br));
+        let options =
+            bypass_ripple.map(|br| ekodb_client::options::UpsertOptions::new().bypass_ripple(br));
 
         future_into_py::<_, Py<PyAny>>(py, async move {
-            // Try update first
-            match client
-                .update(&collection, &id, rust_record.clone(), update_options)
+            let result = client
+                .upsert(&collection, &id, rust_record, options)
                 .await
-            {
-                Ok(updated) => Python::attach(|py| record_to_dict(py, &updated)),
-                Err(e) => {
-                    // Check if it's a NotFound error
-                    let error_msg = e.to_string();
-                    if error_msg.contains("Not found") || error_msg.contains("404") {
-                        // Record doesn't exist, insert it
-                        let inserted = client
-                            .insert(&collection, rust_record, insert_options)
-                            .await
-                            .map_err(|e| map_client_err("Upsert insert failed", e))?;
-                        Python::attach(|py| record_to_dict(py, &inserted))
-                    } else {
-                        // Other error, propagate it
-                        Err(map_client_err("Upsert failed", e))
-                    }
-                }
-            }
+                .map_err(|e| map_client_err("Upsert failed", e))?;
+            Python::attach(|py| record_to_dict(py, &result))
         })
     }
 
@@ -1141,6 +1138,7 @@ impl Client {
     ///     vector_field: Field containing vectors (optional)
     ///     vector_metric: Similarity metric (optional)
     ///     vector_k: Number of vector results (optional)
+    ///     ef_search: HNSW search beam width, overriding the index setting (optional)
     ///     vector_threshold: Minimum similarity threshold (optional)
     ///     text_weight: Weight for text search in hybrid (optional)
     ///     vector_weight: Weight for vector search in hybrid (optional)
@@ -1152,7 +1150,7 @@ impl Client {
     ///     filters: Metadata pre-filter for text/vector/hybrid search as a canonical
     ///         QueryExpression dict (same format as find()); only matching
     ///         records are candidates before ranking (optional)
-    #[pyo3(signature = (collection, query, language=None, case_sensitive=None, fuzzy=None, min_score=None, fields=None, weights=None, enable_stemming=None, boost_exact=None, max_edit_distance=None, vector=None, vector_field=None, vector_metric=None, vector_k=None, vector_threshold=None, text_weight=None, vector_weight=None, bypass_ripple=None, bypass_cache=None, limit=None, select_fields=None, exclude_fields=None, filters=None))]
+    #[pyo3(signature = (collection, query, language=None, case_sensitive=None, fuzzy=None, min_score=None, fields=None, weights=None, enable_stemming=None, boost_exact=None, max_edit_distance=None, vector=None, vector_field=None, vector_metric=None, vector_k=None, vector_threshold=None, text_weight=None, vector_weight=None, bypass_ripple=None, bypass_cache=None, limit=None, select_fields=None, exclude_fields=None, filters=None, ef_search=None))]
     #[allow(clippy::too_many_arguments)]
     fn search<'py>(
         &self,
@@ -1181,6 +1179,7 @@ impl Client {
         select_fields: Option<Vec<String>>,
         exclude_fields: Option<Vec<String>>,
         filters: Option<&Bound<'py, PyDict>>,
+        ef_search: Option<usize>,
     ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
 
@@ -1211,6 +1210,7 @@ impl Client {
             vector_field,
             vector_metric,
             vector_k,
+            ef_search,
             vector_threshold,
             text_weight,
             vector_weight,

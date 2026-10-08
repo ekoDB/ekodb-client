@@ -1475,9 +1475,9 @@ deps-check-all: deps-check-rust deps-check-python deps-check-typescript deps-che
 
 # Update all packages' dependencies
 deps-update-all: deps-update-rust deps-update-python deps-update-typescript deps-update-kotlin
-	@echo "✅ $(GREEN)All dependencies updated!$(RESET)"
+	@echo "✅ $(GREEN)Dependency update steps complete; review Kotlin updates manually.$(RESET)"
 
-# Rust dependency checks (detailed)
+# Rust dependency checks (workspace, Python bindings, and standalone examples)
 deps-check-rust:
 	@echo "🦀 $(CYAN)Checking Rust workspace dependencies...$(RESET)"
 	@echo ""
@@ -1496,6 +1496,11 @@ deps-check-rust:
 	@echo "📦 Python Client (PyO3)"
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@cd ekodb-client-py && cargo outdated || echo "$(YELLOW)⚠️  cargo-outdated failed$(RESET)"
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "📦 Rust Examples (examples/rust)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@cd examples/rust && cargo outdated || echo "$(YELLOW)⚠️  cargo-outdated failed$(RESET)"
 	@echo ""
 	@echo "💡 $(YELLOW)Note: Some deps require edition2024 (Rust 1.85+) - editions are backward compatible$(RESET)"
 	@echo "💡 $(YELLOW)Alternative: Use 'cargo tree -d' to check for duplicate dependencies$(RESET)"
@@ -1551,7 +1556,7 @@ deps-check-kotlin: ensure-jvm
 		echo "$(RED)❌ ekodb-client-kt directory not found$(RESET)"; \
 	fi
 
-# Rust dependency updates (detailed — workspace + Python bindings)
+# Rust dependency updates (workspace, Python bindings, and standalone examples)
 deps-update-rust:
 	@if ! command -v cargo-upgrade >/dev/null 2>&1; then \
 		echo "$(YELLOW)Installing cargo-edit (provides cargo upgrade)...$(RESET)"; \
@@ -1569,6 +1574,11 @@ deps-update-rust:
 	@echo "📦 Python Bindings (ekodb-client-py)"
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@cd ekodb-client-py && $(CARGO) upgrade && $(CARGO) update
+	@echo ""
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "📦 Rust Examples (examples/rust)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@cd examples/rust && $(CARGO) upgrade && $(CARGO) update
 	@echo ""
 	@echo "✅ $(GREEN)Rust dependencies upgraded!$(RESET)"
 
