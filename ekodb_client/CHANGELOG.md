@@ -8,6 +8,13 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- Expose the optional vector index `dimension` in the Rust, Python, TypeScript,
+  and Kotlin schema types. The index enforces that vector length from the first
+  write; unset values are omitted from the request. The server refuses a value
+  that is not a positive integer. (#279)
+
 ## [0.28.0] - 2026-10-08
 
 ### Added
