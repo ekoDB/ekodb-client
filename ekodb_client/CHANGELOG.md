@@ -16,6 +16,8 @@ and this project adheres to
 
 ### Added
 
+- Go paired-vector search example prints the server's optional execution path
+  when available. Requires the Go client 0.30.0 `ExecutionPath` field. (#94)
 - Kotlin search example and README now show directional matching with paired,
   indexed `query_embedding` and `document_embedding` Vector fields. The live
   example asserts that complementary and same-field searches return different
