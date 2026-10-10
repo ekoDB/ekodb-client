@@ -461,6 +461,12 @@ func run() (runErr error) {
 		return fmt.Errorf("unexpected paired-vector tops: document=%q, query=%q", documentTop, queryTop)
 	}
 	fmt.Printf("Paired vector search: document=%s, query=%s\n", documentTop, queryTop)
+	if documentMatches.ExecutionPath != nil {
+		fmt.Printf("Document search execution path: %s\n", *documentMatches.ExecutionPath)
+	}
+	if queryMatches.ExecutionPath != nil {
+		fmt.Printf("Query search execution path: %s\n", *queryMatches.ExecutionPath)
+	}
 
 	fmt.Println("\n✅ Search examples completed!")
 	return nil
