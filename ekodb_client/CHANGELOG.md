@@ -8,6 +8,11 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Changed
+
+- Kotlin client now uses Ktor 3.6.0 across its HTTP and test modules and Gradle
+  wrapper 9.8.0. (#288, #289, #290, #291)
+
 ### Added
 
 - Kotlin search example and README now show directional matching with paired,
