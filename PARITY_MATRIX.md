@@ -1,10 +1,11 @@
 # Client Library Parity Matrix
 
-**Last Updated:** September 12, 2026
+**Last Updated:** October 10, 2026
 
-**Published client version:** 0.26.4. The changes under `[Unreleased]` are on
-the current development branches. Go is maintained in the separate
-`ekodb-client-go` repository.
+**Published client version:** See the
+[latest release](https://github.com/ekoDB/ekodb-client/releases/latest). The
+changes under `[Unreleased]` are on the current development branches. Go is
+maintained in the separate `ekodb-client-go` repository.
 
 > Renamed from `MISSING_FEATURES.md` (April 28, 2026) to reflect the current
 > intent: a parity tracker, not a missing-features checklist. Inbound links from
