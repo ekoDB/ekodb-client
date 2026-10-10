@@ -13,8 +13,19 @@ and this project adheres to
 - Kotlin client now uses Ktor 3.6.0 across its HTTP and test modules and Gradle
   wrapper 9.8.0. (#288, #289, #290, #291)
 
+### Fixed
+
+- **Parity matrix published version.** Link to the latest release so the
+  published-version header stays current without a manually maintained number.
+  (#174)
+- **Kotlin example wrapper.** Align the example project's Gradle wrapper with
+  the Kotlin client at 9.8.0, including its launch scripts and wrapper JAR.
+  (#248)
+
 ### Added
 
+- Go paired-vector search example prints the server's optional execution path
+  when available. Requires the Go client 0.30.0 `ExecutionPath` field. (#94)
 - Kotlin search example and README now show directional matching with paired,
   indexed `query_embedding` and `document_embedding` Vector fields. The live
   example asserts that complementary and same-field searches return different
@@ -35,9 +46,9 @@ and this project adheres to
 - Expose the optional vector index `dimension` in the Rust, Python, TypeScript,
   and Kotlin schema types. The index enforces that vector length from the first
   write; unset values are omitted from the request. The server refuses a value
-  that is not a positive integer. (#279)
-  Rust: `IndexConfig::Vector` gains a `dimension` field, so a struct literal or
-  a destructure without `..` needs `dimension: None`.
+  that is not a positive integer. (#279) Rust: `IndexConfig::Vector` gains a
+  `dimension` field, so a struct literal or a destructure without `..` needs
+  `dimension: None`.
 
 ## [0.28.0] - 2026-10-08
 
