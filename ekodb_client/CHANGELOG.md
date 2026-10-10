@@ -8,6 +8,12 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Fixed
+
+- **Parity matrix published version.** Link to the latest release so the
+  published-version header stays current without a manually maintained number.
+  (#174)
+
 ### Added
 
 - Kotlin search example and README now show directional matching with paired,
