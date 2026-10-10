@@ -13,6 +13,9 @@ and this project adheres to
 - **Parity matrix published version.** Link to the latest release so the
   published-version header stays current without a manually maintained number.
   (#174)
+- **Kotlin example wrapper.** Align the example project's Gradle wrapper with
+  the Kotlin client at 9.8.0, including its launch scripts and wrapper JAR.
+  (#248)
 
 ### Added
 
