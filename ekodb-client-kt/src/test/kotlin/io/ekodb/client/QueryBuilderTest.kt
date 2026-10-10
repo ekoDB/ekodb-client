@@ -536,6 +536,16 @@ class QueryBuilderTest {
     }
 
     @Test
+    fun `builds join configuration with nested maps and lists`() {
+        val query = QueryBuilder().join(mapOf(
+            "nested" to mapOf("field" to "value"),
+            "items" to listOf(mapOf("count" to 2))
+        )).build()
+
+        assertEquals(Json.parseToJsonElement("""{"nested":{"field":"value"},"items":[{"count":2}]}"""), query.join)
+    }
+
+    @Test
     fun `builds join with joinWith helper`() {
         val query = QueryBuilder()
             .joinWith(

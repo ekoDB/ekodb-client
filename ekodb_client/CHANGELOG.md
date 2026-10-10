@@ -15,6 +15,9 @@ and this project adheres to
 
 ### Fixed
 
+- Kotlin build no longer uses the deprecated Gradle versions plugin ID or task
+  registration syntax. Removed compiler warnings in the query builder, field
+  serializer, and tests while preserving the legacy datetime overload.
 - **Parity matrix published version.** Link to the latest release so the
   published-version header stays current without a manually maintained number.
   (#174)

@@ -4,7 +4,7 @@ plugins {
     `maven-publish`
     signing
     id("io.github.gradle-nexus.publish-plugin") version "2.0.0"
-    id("com.github.ben-manes.versions") version "0.63.0"
+    id("io.github.ben-manes.versions") version "0.63.0"
     id("org.jlleitschuh.gradle.ktlint") version "14.2.0"
 }
 
@@ -65,13 +65,13 @@ kotlin {
 }
 
 // Generate sources JAR
-val sourcesJar by tasks.registering(Jar::class) {
+val sourcesJar = tasks.register<Jar>("sourcesJar") {
     archiveClassifier.set("sources")
     from(sourceSets.main.get().allSource)
 }
 
 // Generate javadoc JAR (empty for Kotlin, but required by Maven Central)
-val javadocJar by tasks.registering(Jar::class) {
+val javadocJar = tasks.register<Jar>("javadocJar") {
     archiveClassifier.set("javadoc")
 }
 
