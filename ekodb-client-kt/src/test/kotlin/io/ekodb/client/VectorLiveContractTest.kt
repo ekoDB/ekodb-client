@@ -18,6 +18,8 @@ import kotlin.test.*
 
 /** Opt-in via vectorLiveTest. Only the uniquely named collection is mutated. */
 class VectorLiveContractTest {
+    private val prettyJson = Json { prettyPrint = true }
+
     @Test
     fun `create insert search filter update and cleanup`() = runBlocking {
         val baseUrl = requireNotNull(System.getenv("EKODB_BASE_URL")) { "EKODB_BASE_URL is required" }.trimEnd('/')
@@ -146,7 +148,7 @@ class VectorLiveContractTest {
                 if (failure != null) failure.addSuppressed(cleanup) else throw cleanup
             } finally {
                 client.close()
-                File("build/vector-live-contract.json").writeText(Json { prettyPrint = true }.encodeToString(JsonObject(evidence)) + "\n")
+                File("build/vector-live-contract.json").writeText(prettyJson.encodeToString(JsonObject(evidence)) + "\n")
             }
         }
     }

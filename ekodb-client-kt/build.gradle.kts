@@ -4,12 +4,12 @@ plugins {
     `maven-publish`
     signing
     id("io.github.gradle-nexus.publish-plugin") version "2.0.0"
-    id("com.github.ben-manes.versions") version "0.63.0"
+    id("io.github.ben-manes.versions") version "0.63.0"
     id("org.jlleitschuh.gradle.ktlint") version "14.2.0"
 }
 
 group = "io.ekodb"
-version = "0.29.0"
+version = "0.30.0"
 
 // ktlint lint gate. The enabled rule subset is configured in .editorconfig
 // (aggressive reflow/wrapping opinions are disabled — see that file). The
@@ -39,21 +39,18 @@ dependencies {
     implementation("org.msgpack:msgpack-core:0.9.8")
 
     // HTTP client
-    implementation("io.ktor:ktor-client-core:3.5.2")
-    implementation("io.ktor:ktor-client-cio:3.5.2")
-    implementation("io.ktor:ktor-client-content-negotiation:3.5.2")
-    implementation("io.ktor:ktor-serialization-kotlinx-json:3.5.2")
-    implementation("io.ktor:ktor-client-websockets:3.5.2")
-    implementation("io.ktor:ktor-client-logging:3.5.2")
-    implementation("io.ktor:ktor-client-encoding:3.5.2")
-
-    // DateTime
-    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0-0.6.x-compat")
+    implementation("io.ktor:ktor-client-core:3.6.0")
+    implementation("io.ktor:ktor-client-cio:3.6.0")
+    implementation("io.ktor:ktor-client-content-negotiation:3.6.0")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:3.6.0")
+    implementation("io.ktor:ktor-client-websockets:3.6.0")
+    implementation("io.ktor:ktor-client-logging:3.6.0")
+    implementation("io.ktor:ktor-client-encoding:3.6.0")
 
     // Testing
     testImplementation(kotlin("test"))
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
-    testImplementation("io.ktor:ktor-client-mock:3.5.2")
+    testImplementation("io.ktor:ktor-client-mock:3.6.0")
 }
 
 tasks.test {
@@ -65,13 +62,13 @@ kotlin {
 }
 
 // Generate sources JAR
-val sourcesJar by tasks.registering(Jar::class) {
+val sourcesJar = tasks.register<Jar>("sourcesJar") {
     archiveClassifier.set("sources")
     from(sourceSets.main.get().allSource)
 }
 
 // Generate javadoc JAR (empty for Kotlin, but required by Maven Central)
-val javadocJar by tasks.registering(Jar::class) {
+val javadocJar = tasks.register<Jar>("javadocJar") {
     archiveClassifier.set("javadoc")
 }
 

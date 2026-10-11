@@ -398,17 +398,18 @@ class QueryBuilder {
 
     private fun convertToJsonElement(value: Any): JsonElement = valueToJsonElement(value)
 
-    private fun convertMapToJsonElement(map: Map<String, Any>): JsonElement {
+    private fun convertMapToJsonElement(map: Map<*, *>): JsonElement {
         return buildJsonObject {
-            map.forEach { (key, value) ->
+            map.forEach { (rawKey, value) ->
+                val key = rawKey as String
                 when (value) {
                     is String -> put(key, value)
                     is Number -> put(key, value)
                     is Boolean -> put(key, value)
-                    is Map<*, *> -> put(key, convertMapToJsonElement(value as Map<String, Any>))
+                    is Map<*, *> -> put(key, convertMapToJsonElement(value))
                     is List<*> -> put(key, JsonArray(value.map {
                         when (it) {
-                            is Map<*, *> -> convertMapToJsonElement(it as Map<String, Any>)
+                            is Map<*, *> -> convertMapToJsonElement(it)
                             else -> convertToJsonElement(it!!)
                         }
                     }))

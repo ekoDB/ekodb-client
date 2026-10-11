@@ -1,6 +1,5 @@
 package io.ekodb.client.types
 
-import kotlinx.datetime.Instant
 import kotlinx.serialization.*
 import kotlinx.serialization.builtins.*
 import kotlinx.serialization.descriptors.*
@@ -46,7 +45,7 @@ sealed class FieldType {
         fun array(value: List<FieldType>) = ArrayValue(value)
         fun set(value: List<FieldType>) = SetValue(value)
         fun vector(value: List<Double>) = VectorValue(value)
-        fun dateTime(value: Instant) = DateTimeValue(value.toString())
+        fun dateTime(value: kotlin.time.Instant) = DateTimeValue(value.toString())
         fun uuid(value: UUID) = UUIDValue(value.toString())
         fun decimal(value: BigDecimal) = DecimalValue(value.toString())
         fun binary(value: ByteArray) = BinaryValue(value)
@@ -57,6 +56,7 @@ sealed class FieldType {
 object FieldTypeSerializer : KSerializer<FieldType> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("FieldType")
 
+    @OptIn(ExperimentalSerializationApi::class)
     override fun serialize(encoder: Encoder, value: FieldType) {
         // Format-agnostic serialization - works with both JSON and CBOR
         when (value) {
@@ -75,7 +75,6 @@ object FieldTypeSerializer : KSerializer<FieldType> {
                 val list = when (value) {
                     is FieldType.ArrayValue -> value.value
                     is FieldType.SetValue -> value.value
-                    else -> emptyList()
                 }
                 val listSerializer: KSerializer<List<FieldType>> = kotlinx.serialization.builtins.ListSerializer(FieldTypeSerializer)
                 encoder.encodeSerializableValue(listSerializer, list)
@@ -131,7 +130,6 @@ object FieldTypeSerializer : KSerializer<FieldType> {
                     FieldType.ObjectValue(element.mapValues { deserializeElement(it.value) })
                 }
             }
-            else -> error("Unknown FieldType: $element")
         }
     }
 }

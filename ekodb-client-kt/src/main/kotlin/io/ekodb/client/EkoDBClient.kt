@@ -2533,19 +2533,6 @@ class EkoDBClient private constructor(
         return response.body<io.ekodb.client.functions.FunctionResult>()
     }
 
-    /**
-     * Call a function (deprecated - use callFunction with labelOrId)
-     * @deprecated Use callFunction(labelOrId, params) instead
-     */
-    @Deprecated("Collection parameter is not used for functions", ReplaceWith("callFunction(label, params)"))
-    suspend fun callFunction(
-        collection: String,
-        label: String,
-        params: Map<String, JsonElement>? = null
-    ): io.ekodb.client.functions.FunctionResult {
-        return callFunction(label, params)
-    }
-
     // ========================================================================
     // USER FUNCTIONS API
     // ========================================================================

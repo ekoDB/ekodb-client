@@ -6,10 +6,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.30.0] - 2026-10-10
+
+### Changed
+
+- Kotlin client now uses Ktor 3.6.0 across its HTTP and test modules and Gradle
+  wrapper 9.8.0. (#288, #289, #290, #291)
+- Kotlin `FieldType.dateTime` now accepts `kotlin.time.Instant`; the deprecated
+  `kotlinx.datetime.Instant` overload and direct compatibility dependency are
+  removed. The deprecated `callFunction(collection, label, params)` overload is
+  also removed; use `callFunction(labelOrId, params)`.
+
+### Fixed
+
+- Kotlin build no longer uses the deprecated Gradle versions plugin ID or task
+  registration syntax. Removed compiler warnings in the query builder, field
+  serializer, and tests.
+- **Parity matrix published version.** Link to the latest release so the
+  published-version header stays current without a manually maintained number.
+  (#174)
+- **Kotlin example wrapper.** Align the example project's Gradle wrapper with
+  the Kotlin client at 9.8.0, including its launch scripts and wrapper JAR.
+  (#248)
 
 ### Added
 
+- Go paired-vector search example prints the server's optional execution path
+  when available. Requires the Go client 0.30.0 `ExecutionPath` field. (#94)
 - Kotlin search example and README now show directional matching with paired,
   indexed `query_embedding` and `document_embedding` Vector fields. The live
   example asserts that complementary and same-field searches return different
