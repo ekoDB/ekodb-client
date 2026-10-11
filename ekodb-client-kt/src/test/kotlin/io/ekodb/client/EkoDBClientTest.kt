@@ -30,6 +30,8 @@ import kotlin.test.fail
 class EkoDBClientTest {
     private val testBaseUrl = "https://test.ekodb.net"
     private val testApiKey = "test_api_key_123"
+    private val jsonOmitNulls = Json { explicitNulls = false }
+    private val jsonIgnoreUnknownKeys = Json { ignoreUnknownKeys = true }
 
     // Helper to create mock engine that returns token first, then the actual response
     private fun createMockEngine(responseBody: String, statusCode: HttpStatusCode = HttpStatusCode.OK): MockEngine {
@@ -777,9 +779,9 @@ class EkoDBClientTest {
         }
         client.search("documents", searchQuery)
         assertNotNull(capturedBody)
-        assertTrue(capturedBody!!.contains("filters"))
-        assertTrue(capturedBody!!.contains("category"))
-        assertTrue(capturedBody!!.contains("Condition"))
+        assertTrue(capturedBody.contains("filters"))
+        assertTrue(capturedBody.contains("category"))
+        assertTrue(capturedBody.contains("Condition"))
     }
 
     // ========================================================================
@@ -2398,7 +2400,7 @@ class EkoDBClientTest {
             llmProvider = "openai",
         )
         assertEquals(null, req.agentId)
-        val json = Json { explicitNulls = false }.encodeToString(
+        val json = jsonOmitNulls.encodeToString(
             io.ekodb.client.types.CreateChatSessionRequest.serializer(), req
         )
         assertFalse(json.contains("agent_id"))
@@ -2407,7 +2409,7 @@ class EkoDBClientTest {
     @Test
     fun `ChatSession deserializes agent_id`() {
         val raw = """{"chat_id":"c1","created_at":"t","updated_at":"t","llm_provider":"openai","llm_model":"gpt-4","collections":[],"agent_id":"bot-1","message_count":0}"""
-        val session = Json { ignoreUnknownKeys = true }.decodeFromString(
+        val session = jsonIgnoreUnknownKeys.decodeFromString(
             io.ekodb.client.types.ChatSession.serializer(), raw
         )
         assertEquals("bot-1", session.agentId)
@@ -2416,7 +2418,7 @@ class EkoDBClientTest {
     @Test
     fun `ChatSession handles missing agent_id`() {
         val raw = """{"chat_id":"c1","created_at":"t","updated_at":"t","llm_provider":"openai","llm_model":"gpt-4","collections":[],"message_count":0}"""
-        val session = Json { ignoreUnknownKeys = true }.decodeFromString(
+        val session = jsonIgnoreUnknownKeys.decodeFromString(
             io.ekodb.client.types.ChatSession.serializer(), raw
         )
         assertEquals(null, session.agentId)
@@ -2466,7 +2468,7 @@ class EkoDBClientTest {
     @Test
     fun `ChatMessageRequest omits tool fields when null`() {
         val req = io.ekodb.client.types.ChatMessageRequest(message = "hi")
-        val json = Json { explicitNulls = false }.encodeToString(
+        val json = jsonOmitNulls.encodeToString(
             io.ekodb.client.types.ChatMessageRequest.serializer(), req
         )
         assertFalse(json.contains("client_tools"))

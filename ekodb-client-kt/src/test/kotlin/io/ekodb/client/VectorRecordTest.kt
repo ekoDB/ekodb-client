@@ -21,6 +21,14 @@ class VectorRecordTest {
     private fun golden() = Json.parseToJsonElement(File("../test-fixtures/vector-record.json").readText())
 
     @Test
+    fun `dateTime accepts the standard library Instant`() {
+        assertEquals(
+            FieldType.DateTimeValue("2026-10-10T00:00:00Z"),
+            FieldType.dateTime(kotlin.time.Instant.parse("2026-10-10T00:00:00Z"))
+        )
+    }
+
+    @Test
     fun `vector record preserves its type instead of the historical plain array`() {
         // Reproduced before changing the serializer: expected the tagged value,
         // but RecordSerializer -> FieldTypeSerializer emitted {"embedding":[1.0,0.0,0.0]}.

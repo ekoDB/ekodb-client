@@ -12,9 +12,16 @@ and this project adheres to
 
 - Kotlin client now uses Ktor 3.6.0 across its HTTP and test modules and Gradle
   wrapper 9.8.0. (#288, #289, #290, #291)
+- Kotlin `FieldType.dateTime` now accepts `kotlin.time.Instant`; the deprecated
+  `kotlinx.datetime.Instant` overload and direct compatibility dependency are
+  removed. The deprecated `callFunction(collection, label, params)` overload is
+  also removed; use `callFunction(labelOrId, params)`.
 
 ### Fixed
 
+- Kotlin build no longer uses the deprecated Gradle versions plugin ID or task
+  registration syntax. Removed compiler warnings in the query builder, field
+  serializer, and tests.
 - **Parity matrix published version.** Link to the latest release so the
   published-version header stays current without a manually maintained number.
   (#174)
