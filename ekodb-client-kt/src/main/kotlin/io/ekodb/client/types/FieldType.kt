@@ -46,10 +46,6 @@ sealed class FieldType {
         fun set(value: List<FieldType>) = SetValue(value)
         fun vector(value: List<Double>) = VectorValue(value)
         fun dateTime(value: kotlin.time.Instant) = DateTimeValue(value.toString())
-
-        @Deprecated("Use kotlin.time.Instant instead")
-        @Suppress("DEPRECATION")
-        fun dateTime(value: kotlinx.datetime.Instant) = DateTimeValue(value.toString())
         fun uuid(value: UUID) = UUIDValue(value.toString())
         fun decimal(value: BigDecimal) = DecimalValue(value.toString())
         fun binary(value: ByteArray) = BinaryValue(value)

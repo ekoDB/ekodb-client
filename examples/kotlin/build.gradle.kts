@@ -40,9 +40,6 @@ dependencies {
     implementation("io.ktor:ktor-client-logging:3.5.2")
     implementation("io.ktor:ktor-client-encoding:3.5.2")
 
-    // DateTime
-    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0-0.6.x-compat")
-    
     // Dotenv for environment variables
     implementation("io.github.cdimascio:dotenv-kotlin:6.4.1")
 }

@@ -47,9 +47,6 @@ dependencies {
     implementation("io.ktor:ktor-client-logging:3.6.0")
     implementation("io.ktor:ktor-client-encoding:3.6.0")
 
-    // DateTime
-    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0-0.6.x-compat")
-
     // Testing
     testImplementation(kotlin("test"))
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
