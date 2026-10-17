@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- Update Rust lockfile dependencies `serde_json` and `tokio-util`. (#303, #306)
+- Update the Python development dependency `ruff` to 0.17.0. (#304)
+- Update TypeScript lockfile dependencies `@types/node` and `vitest`. (#305,
+  #307)
+- Update Kotlin JVM and serialization plugins to 2.4.21, the versions plugin to
+  0.66.0, MessagePack core to 0.9.12, and the Gradle wrapper to 9.8.1. (#227,
+  #308, #309, #310, #311)
+
 ## [0.30.0] - 2026-10-10
 
 ### Changed
@@ -53,9 +65,9 @@ and this project adheres to
 - Expose the optional vector index `dimension` in the Rust, Python, TypeScript,
   and Kotlin schema types. The index enforces that vector length from the first
   write; unset values are omitted from the request. The server refuses a value
-  that is not a positive integer. (#279)
-  Rust: `IndexConfig::Vector` gains a `dimension` field, so a struct literal or
-  a destructure without `..` needs `dimension: None`.
+  that is not a positive integer. (#279) Rust: `IndexConfig::Vector` gains a
+  `dimension` field, so a struct literal or a destructure without `..` needs
+  `dimension: None`.
 
 ## [0.28.0] - 2026-10-08
 
