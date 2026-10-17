@@ -1,10 +1,10 @@
 plugins {
     kotlin("jvm") version "2.4.21"
-    kotlin("plugin.serialization") version "2.4.20"
+    kotlin("plugin.serialization") version "2.4.21"
     `maven-publish`
     signing
     id("io.github.gradle-nexus.publish-plugin") version "2.0.0"
-    id("io.github.ben-manes.versions") version "0.63.0"
+    id("io.github.ben-manes.versions") version "0.66.0"
     id("org.jlleitschuh.gradle.ktlint") version "14.2.0"
 }
 
@@ -36,7 +36,7 @@ dependencies {
     // MessagePack core, for the WebSocket binary transport negotiated with the
     // server. CBOR above is NOT wire-compatible with the server's msgpack, so a
     // real msgpack codec is required.
-    implementation("org.msgpack:msgpack-core:0.9.8")
+    implementation("org.msgpack:msgpack-core:0.9.12")
 
     // HTTP client
     implementation("io.ktor:ktor-client-core:3.6.0")
