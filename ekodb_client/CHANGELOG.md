@@ -18,6 +18,13 @@ and this project adheres to
   0.66.0, MessagePack core to 0.9.12, and the Gradle wrapper to 9.8.1. (#227,
   #308, #309, #310, #311)
 
+### Fixed
+
+- Kotlin standalone examples now match the client library's Kotlin, Ktor,
+  MessagePack, and Gradle wrapper versions. The examples load the client as a
+  flat JAR, so their older Ktor runtime caused `NoSuchMethodError` when the
+  client requested an auth token.
+
 ## [0.30.0] - 2026-10-10
 
 ### Changed
