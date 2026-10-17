@@ -1,6 +1,6 @@
 plugins {
-    kotlin("jvm") version "2.4.10"
-    kotlin("plugin.serialization") version "2.4.10"
+    kotlin("jvm") version "2.4.21"
+    kotlin("plugin.serialization") version "2.4.21"
     application
 }
 
@@ -29,16 +29,16 @@ dependencies {
     // MessagePack core: the client depends on it for the WebSocket binary
     // transport. The examples consume the client as a flat jar (no transitive
     // deps), so this must mirror the client's dependency.
-    implementation("org.msgpack:msgpack-core:0.9.8")
+    implementation("org.msgpack:msgpack-core:0.9.12")
 
     // Ktor client (match client library versions)
-    implementation("io.ktor:ktor-client-core:3.5.2")
-    implementation("io.ktor:ktor-client-cio:3.5.2")
-    implementation("io.ktor:ktor-client-content-negotiation:3.5.2")
-    implementation("io.ktor:ktor-serialization-kotlinx-json:3.5.2")
-    implementation("io.ktor:ktor-client-websockets:3.5.2")
-    implementation("io.ktor:ktor-client-logging:3.5.2")
-    implementation("io.ktor:ktor-client-encoding:3.5.2")
+    implementation("io.ktor:ktor-client-core:3.6.0")
+    implementation("io.ktor:ktor-client-cio:3.6.0")
+    implementation("io.ktor:ktor-client-content-negotiation:3.6.0")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:3.6.0")
+    implementation("io.ktor:ktor-client-websockets:3.6.0")
+    implementation("io.ktor:ktor-client-logging:3.6.0")
+    implementation("io.ktor:ktor-client-encoding:3.6.0")
 
     // Dotenv for environment variables
     implementation("io.github.cdimascio:dotenv-kotlin:6.4.1")
