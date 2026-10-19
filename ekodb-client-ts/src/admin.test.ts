@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { EkoDBAdminClient } from "./admin";
+import { RateLimitError } from "./client";
 
 const request = vi.fn<typeof fetch>();
 const key = {
@@ -48,6 +49,34 @@ afterEach(() => {
 });
 
 describe("admin wire contract", () => {
+  it.each([
+    Object.assign(new Error("Admin request failed (HTTP 500)"), {
+      cause: "admin-secret",
+      diagnostic: "target-secret",
+    }),
+    Object.assign(new RateLimitError(1, "jwt-secret"), {
+      cause: "admin-secret",
+      diagnostic: "target-secret",
+    }),
+  ])(
+    "reconstructs safe exceptions from wrapped fetch failures",
+    async (original) => {
+      auth();
+      request.mockRejectedValueOnce(original);
+      let failure: unknown;
+      try {
+        await admin().revokeApiKey("target-secret");
+      } catch (error) {
+        failure = error;
+      }
+      expect(failure).toBeInstanceOf(Error);
+      expect(failure).not.toBe(original);
+      expect(String(failure)).not.toContain("secret");
+      expect((failure as { cause?: unknown }).cause).toBeUndefined();
+      expect((failure as { diagnostic?: unknown }).diagnostic).toBeUndefined();
+      expect(request).toHaveBeenCalledTimes(2);
+    },
+  );
   it("retries a definite 401 with a fresh token successfully", async () => {
     auth("old-secret");
     request.mockResolvedValueOnce(response({ error: "old-secret" }, 401));

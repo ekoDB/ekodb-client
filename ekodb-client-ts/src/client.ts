@@ -970,12 +970,18 @@ export class EkoDBClient {
       if (this.redactErrors) {
         // Errors created here carry only a fixed message/status. Never retain
         // causes: fetch and JSON errors can echo credentials or request URLs.
-        if (error instanceof RateLimitError) throw error;
+        if (error instanceof RateLimitError) {
+          const retryAfter =
+            Number.isFinite(error.retryAfterSecs) && error.retryAfterSecs >= 0
+              ? error.retryAfterSecs
+              : 60;
+          throw new RateLimitError(retryAfter);
+        }
         if (
           error instanceof Error &&
           /^Admin request failed \(HTTP [0-9]{3}\)$/.test(error.message)
         )
-          throw error;
+          throw new Error(error.message);
         throw new Error(
           errName === "TimeoutError" || errName === "AbortError"
             ? "Admin request timed out"
