@@ -1,0 +1,90 @@
+{
+  "label": "unique sdk-admin-probe-<uuid>",
+  "operations": [
+    {
+      "registration_format": "object",
+      "status": 400
+    },
+    {
+      "registration_format": "array",
+      "status": 200,
+      "response_fields": [
+        "collection_permissions",
+        "created_at",
+        "description",
+        "expires_at",
+        "is_admin",
+        "key",
+        "kv_permissions",
+        "label"
+      ],
+      "permissions": {
+        "sdk_admin_probe": [
+          "read"
+        ]
+      }
+    },
+    {
+      "permission_update_status": 200,
+      "response_fields": [
+        "collection_permissions",
+        "created_at",
+        "description",
+        "expires_at",
+        "is_admin",
+        "key",
+        "kv_permissions",
+        "label"
+      ],
+      "permissions": {
+        "sdk_admin_probe": {
+          "read": true,
+          "write": false,
+          "select_fields": null,
+          "exclude_fields": null,
+          "writable_fields": null
+        }
+      }
+    },
+    {
+      "permission_read_status": 200,
+      "is_admin": false,
+      "permissions": {
+        "sdk_admin_probe": {
+          "read": true,
+          "write": false,
+          "select_fields": null,
+          "exclude_fields": null,
+          "writable_fields": null
+        }
+      },
+      "response_fields": [
+        "collection_permissions",
+        "is_admin",
+        "kv_permissions"
+      ]
+    },
+    {
+      "list_status": 200,
+      "matching_keys": 1
+    }
+  ],
+  "cleanup": [
+    {
+      "status": 200
+    }
+  ],
+  "health_status": 200,
+  "server_version": "0.79.0",
+  "build": {
+    "version": "0.79.0",
+    "commit": "2af52800"
+  },
+  "remaining_disposable_keys": 0,
+  "tested_on": "2026-10-19",
+  "sdk_lifecycle": {
+    "typescript": "failed: fresh token retained the previous grant after PUT",
+    "go": "failed: permission update not reflected in fresh token",
+    "cleanup": "both SDK runs revoked their disposable key and verified no matching keys remained"
+  }
+}

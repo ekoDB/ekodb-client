@@ -490,6 +490,12 @@ stream.on("event", (event) => {
 });
 ```
 
+## API-key administration
+
+Import `EkoDBAdminClient` from `@ekodb/ekodb-client/admin` for typed API-key
+creation, listing, revocation, permission reads and single-collection permission
+updates. See [admin usage and contract verification](ADMIN.md).
+
 ## License
 
 MIT
