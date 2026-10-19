@@ -15,7 +15,12 @@ and this project adheres to
   updates. Defaults to non-admin creation, preserves field restrictions on
   reads, redacts credential-bearing failures and avoids ambiguous create
   retries. Includes packed-package import checks and an opt-in disposable
-  lifecycle test. Field-restriction writes require server support. (#317)
+  lifecycle test. Collection updates replace read/write and support three-state
+  field edits: omitted/undefined keeps a restriction, null clears it, and an
+  array replaces it. Earlier servers remove a grant's field restrictions on this
+  call, so the method refuses to run against them. The server fix ships in a
+  later release; the minimum release is set by the owner and remains unset.
+  (#317)
 
 ## [0.30.1] - 2026-10-17
 
