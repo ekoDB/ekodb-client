@@ -1,4 +1,5 @@
 {
+  "status": "Historical 0.79.0 observations only; permission updates erase field restrictions. This is not the accepted permission-edit contract and no test treats it as correct.",
   "label": "unique sdk-admin-probe-<uuid>",
   "operations": [
     {

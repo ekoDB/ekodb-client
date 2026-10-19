@@ -1,5 +1,22 @@
 /** API-key administration. Import from @ekodb/ekodb-client/admin. */
 import { EkoDBClient, type ClientConfig } from "./client";
+import { MIN_SERVER_VERSION_FOR_PERMISSION_EDITS } from "./admin-version";
+export { MIN_SERVER_VERSION_FOR_PERMISSION_EDITS } from "./admin-version";
+
+const permissionEditRequirement =
+  "Permission updates need a newer ekoDB server because earlier servers remove a grant's field restrictions when it is updated";
+
+// Accept stable semantic releases only; malformed or prerelease versions fail closed.
+function releaseParts(value: unknown): number[] | undefined {
+  if (typeof value !== "string") return undefined;
+  const match =
+    /^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/.exec(
+      value,
+    );
+  if (!match) return undefined;
+  const parts = match.slice(1, 4).map(Number);
+  return parts.every(Number.isSafeInteger) ? parts : undefined;
+}
 
 export type AdminClientConfig = Pick<
   ClientConfig,
@@ -46,6 +63,10 @@ export interface UpdateApiKeyCollectionPermissionsRequest {
   collection: string;
   read: boolean;
   write: boolean;
+  /** Omitted/undefined keeps the restriction; null clears it; an array replaces it. */
+  select_fields?: string[] | null | undefined;
+  exclude_fields?: string[] | null | undefined;
+  writable_fields?: string[] | null | undefined;
 }
 
 function invalid(): never {
@@ -136,6 +157,23 @@ class AdminTransport extends EkoDBClient {
 export class EkoDBAdminClient {
   private readonly transport: AdminTransport;
   private readonly apiKey: string;
+  private serverVersion?: Promise<unknown>;
+
+  private async requirePermissionEdits(): Promise<void> {
+    const minimum = releaseParts(MIN_SERVER_VERSION_FOR_PERMISSION_EDITS);
+    if (!minimum) throw new Error(permissionEditRequirement);
+    this.serverVersion ??= this.transport
+      .send<unknown>("GET", "/api/health")
+      .then((health) => (object(health) ? health.version : undefined))
+      .catch(() => undefined);
+    const current = releaseParts(await this.serverVersion);
+    if (!current) throw new Error(permissionEditRequirement);
+    for (let part = 0; part < minimum.length; part++) {
+      if (current[part] > minimum[part]) return;
+      if (current[part] < minimum[part])
+        throw new Error(permissionEditRequirement);
+    }
+  }
 
   constructor(config: AdminClientConfig) {
     this.apiKey = config.apiKey;
@@ -195,29 +233,42 @@ export class EkoDBAdminClient {
     request: UpdateApiKeyCollectionPermissionsRequest,
   ): Promise<ApiKey> {
     if (
-      ["select_fields", "exclude_fields", "writable_fields"].some(
-        (field) => field in request,
-      )
-    )
-      throw new Error(
-        "The server does not support field restrictions on key permission updates",
-      );
-    if (
+      !object(request) ||
       typeof request.api_key !== "string" ||
-      !request.api_key ||
+      !request.api_key.trim() ||
       typeof request.collection !== "string" ||
-      !request.collection ||
+      !request.collection.trim() ||
       typeof request.read !== "boolean" ||
       typeof request.write !== "boolean"
     )
       throw new Error("Invalid collection permission update");
+    const body: UpdateApiKeyCollectionPermissionsRequest = {
+      api_key: request.api_key,
+      collection: request.collection,
+      read: request.read,
+      write: request.write,
+    };
+    for (const field of [
+      "select_fields",
+      "exclude_fields",
+      "writable_fields",
+    ] as const) {
+      if (!Object.prototype.hasOwnProperty.call(request, field)) continue;
+      const value = request[field];
+      if (value === undefined) continue;
+      if (
+        value !== null &&
+        (!Array.isArray(value) ||
+          !Array.from(value).every(
+            (item) => typeof item === "string" && item.trim().length > 0,
+          ))
+      )
+        throw new Error("Invalid collection permission update");
+      body[field] = value;
+    }
+    await this.requirePermissionEdits();
     return parseKey(
-      await this.transport.send("PUT", "/api/auth/permissions", {
-        api_key: request.api_key,
-        collection: request.collection,
-        read: request.read,
-        write: request.write,
-      }),
+      await this.transport.send("PUT", "/api/auth/permissions", body),
     );
   }
 }

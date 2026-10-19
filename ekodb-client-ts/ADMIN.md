@@ -49,14 +49,40 @@ await admin.updateApiKeyCollectionPermissions({
 });
 ```
 
-Each update replaces one collection grant. Server 0.79.0 (`2af52800`) accepts
-only read/write flags on this endpoint and resets field restrictions to null.
-This SDK does not accept field-restriction writes; JavaScript callers receive an
-error if they supply those fields. Read existing grants before replacing a
-restricted grant. The current server leaves its in-memory key cache stale after
-a PUT, so newly authenticated tokens still carry the previous grant. The opt-in
-live test fails here. Server correction and a passing rerun are required before
-using permission updates for rotation or access control.
+Each update replaces `read` and `write` for that collection. Each restriction
+has three edit states:
+
+| Request value                   | Effect                             |
+| ------------------------------- | ---------------------------------- |
+| Omitted or `undefined`          | Keep the current restriction       |
+| `null`                          | Remove the restriction             |
+| A string array (including `[]`) | Replace it with exactly that array |
+
+```ts
+await admin.updateApiKeyCollectionPermissions({
+  api_key: key.key,
+  collection: "jobs",
+  read: true,
+  write: false,
+  // select_fields omitted: keep the current selection.
+  exclude_fields: null, // Clear this restriction.
+  writable_fields: ["status"], // Replace this restriction.
+});
+```
+
+Earlier servers remove a grant's field restrictions on this call, so the method
+refuses to run against them. The server fix ships in a later release. The
+minimum release is **set by the owner**;
+`MIN_SERVER_VERSION_FOR_PERMISSION_EDITS` is currently unset, so all permission
+updates are blocked before any HTTP request. There is no caller override. Once
+the minimum is set, the client reads the authenticated `/api/health` payload's
+top-level `version` and caches that read per client instance. Unreadable, older,
+malformed or prerelease versions fail closed. Create a new client after a server
+upgrade to refresh that cached reading.
+
+Restrictions in requests must be null or arrays of non-empty strings; undefined
+is omitted. Response restrictions retain their exact arrays, empty arrays and
+nulls. This package does not wrap the endpoint for editing the caller's own key.
 
 The facade reuses the data SDK's token cache, proactive refresh, JSON transport,
 and request timeout. It refreshes once after a definite 401. It does not retry
@@ -75,30 +101,34 @@ constrain stored-function internals; see the
 
 ## Contract verification
 
-The live disposable tests on server 0.79.0 confirmed array registration,
-permission readback, non-admin denial and cleanup, but failed because the
-updated grant did not reach a newly authenticated token. The protocol probe also
-confirmed object registration returns 400 and field restrictions sent to PUT are
-ignored. See
-[redacted evidence](https://github.com/ekoDB/ekodb-client/blob/main/test-fixtures/admin-contract-0.79.0.json)
-in the repository. Both an admin Bearer JWT and the admin key in the
-registration body are sent for deployed-server compatibility; the current
-handler authenticates the body key. There is no format-probing retry during SDK
-registration.
+Registration takes action arrays only, for example
+`collection_permissions: { jobs: ["read", "write"] }`. An object-form
+registration body returns 400. Array-form registration responses remain
+supported. Both an admin Bearer JWT and the admin key in the registration body
+are sent for deployed-server compatibility.
+
+The
+[specified permission-edit fixture](https://github.com/ekoDB/ekodb-client/blob/main/test-fixtures/admin-permission-edits-specified.json)
+is hand-written and marked "specified, to be re-recorded against the fixed
+server". The
+[historical 0.79.0 observations](https://github.com/ekoDB/ekodb-client/blob/main/test-fixtures/admin-contract-0.79.0.json)
+record restriction erasure and stale token grants; tests never treat those
+update responses as the accepted contract. The server fix ships in a later
+release. There is no format-probing retry during SDK registration.
 
 Offline tests include installing an actual npm tarball in an isolated consumer:
 
 ```sh
-cd ekodb-client-ts
-npm test -- src/admin.test.ts src/admin-package.test.ts
+make test-typescript
 ```
 
 For an authorized disposable environment only, use the repository's example
 configuration and run the opt-in lifecycle test. It creates one uniquely labeled
-key, exercises all five operations, and revokes that key in cleanup:
+key, exercises all five operations, and always revokes that key in a `finally`
+block with matching-label absence verification. Its restriction round-trip is
+refused until the same version gate passes; no existing key is updated:
 
 ```sh
 source scripts/load-root-env.sh
-export EKODB_ADMIN_LIVE=1
-(cd ekodb-client-ts && npm test -- src/admin-live.test.ts)
+EKODB_ADMIN_LIVE=1 make test-typescript
 ```

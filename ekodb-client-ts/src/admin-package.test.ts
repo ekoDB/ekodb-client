@@ -50,7 +50,8 @@ it("installs the packed artifact and supports root, admin and existing deep impo
       `
       const assert = require('node:assert/strict');
       const {EkoDBClient} = require('@ekodb/ekodb-client');
-      const {EkoDBAdminClient} = require('@ekodb/ekodb-client/admin');
+      const {EkoDBAdminClient, MIN_SERVER_VERSION_FOR_PERMISSION_EDITS} = require('@ekodb/ekodb-client/admin');
+      assert.equal(MIN_SERVER_VERSION_FOR_PERMISSION_EDITS, undefined);
       assert.equal(typeof EkoDBClient, 'function');
       assert.equal(typeof EkoDBAdminClient, 'function');
       assert.equal(typeof require('@ekodb/ekodb-client/dist/client').EkoDBClient, 'function');
@@ -66,7 +67,8 @@ it("installs the packed artifact and supports root, admin and existing deep impo
       `
       import assert from 'node:assert/strict';
       import {EkoDBClient} from '@ekodb/ekodb-client';
-      import {EkoDBAdminClient} from '@ekodb/ekodb-client/admin';
+      import {EkoDBAdminClient, MIN_SERVER_VERSION_FOR_PERMISSION_EDITS} from '@ekodb/ekodb-client/admin';
+      assert.equal(MIN_SERVER_VERSION_FOR_PERMISSION_EDITS, undefined);
       import {EkoDBClient as DeepClient} from '@ekodb/ekodb-client/dist/client.js';
       assert.equal(typeof EkoDBClient, 'function');
       assert.equal(typeof EkoDBAdminClient, 'function');
@@ -76,7 +78,7 @@ it("installs the packed artifact and supports root, admin and existing deep impo
     );
     const typed = `
       import {EkoDBClient} from '@ekodb/ekodb-client';
-      import {EkoDBAdminClient, type CreateApiKeyRequest, type ApiKey} from '@ekodb/ekodb-client/admin';
+      import {EkoDBAdminClient, type CreateApiKeyRequest, type ApiKey, type UpdateApiKeyCollectionPermissionsRequest, MIN_SERVER_VERSION_FOR_PERMISSION_EDITS} from '@ekodb/ekodb-client/admin';
       import {EkoDBClient as DeepClient} from '@ekodb/ekodb-client/dist/client';
       const client = new EkoDBAdminClient({baseURL:'https://example.test',apiKey:'test'});
       const request: CreateApiKeyRequest = {collection_permissions:{users:['read']}};
@@ -84,6 +86,10 @@ it("installs the packed artifact and supports root, admin and existing deep impo
       new EkoDBClient({baseURL:'https://example.test',apiKey:'test'});
       // @ts-expect-error An admin facade has no CRUD methods.
       client.insert('users', {});
+      const edit: UpdateApiKeyCollectionPermissionsRequest = {api_key:'test', collection:'users', read:true, write:false, select_fields:null, exclude_fields:undefined, writable_fields:[]};
+      const minimum: string | undefined = MIN_SERVER_VERSION_FOR_PERMISSION_EDITS;
+      void edit;
+      void minimum;
       void result;
       void DeepClient;
     `;
@@ -105,7 +111,8 @@ it("installs the packed artifact and supports root, admin and existing deep impo
       resolve(packageRoot, "node_modules/.bin/tsc"),
       [
         "--noEmit",
-        "--skipLibCheck",
+        "--strict",
+        "--exactOptionalPropertyTypes",
         "--target",
         "ES2020",
         "--module",

@@ -1,5 +1,37 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { EkoDBAdminClient } from "./admin";
+import {
+  EkoDBAdminClient,
+  MIN_SERVER_VERSION_FOR_PERMISSION_EDITS,
+} from "./admin";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import type { ApiKey, UpdateApiKeyCollectionPermissionsRequest } from "./admin";
+
+const specified = JSON.parse(
+  readFileSync(
+    resolve(
+      __dirname,
+      "../../test-fixtures/admin-permission-edits-specified.json",
+    ),
+    "utf8",
+  ),
+) as {
+  permission_edits: {
+    name: string;
+    request: UpdateApiKeyCollectionPermissionsRequest;
+    response: ApiKey;
+  }[];
+};
+
+const versionGate = vi.hoisted(() => ({
+  minimum: undefined as string | undefined,
+}));
+// Synthetic release values are used only by mock tests; production remains unset.
+vi.mock("./admin-version", () => ({
+  get MIN_SERVER_VERSION_FOR_PERMISSION_EDITS() {
+    return versionGate.minimum;
+  },
+}));
 import { RateLimitError } from "./client";
 
 const request = vi.fn<typeof fetch>();
@@ -42,6 +74,7 @@ function auth(token = "jwt-secret") {
 beforeEach(() => {
   vi.stubGlobal("fetch", request);
   request.mockReset();
+  versionGate.minimum = undefined;
 });
 afterEach(() => {
   vi.restoreAllMocks();
@@ -170,7 +203,9 @@ describe("admin wire contract", () => {
   });
 
   it("updates exactly one collection by the target secret", async () => {
+    versionGate.minimum = "9.8.7";
     auth();
+    request.mockResolvedValueOnce(response({ version: "9.8.7" }));
     request.mockResolvedValueOnce(response(key));
     const body = {
       api_key: "target-secret",
@@ -179,11 +214,11 @@ describe("admin wire contract", () => {
       write: true,
     };
     expect(await admin().updateApiKeyCollectionPermissions(body)).toEqual(key);
-    expect(request.mock.calls[1][0]).toBe(
+    expect(request.mock.calls[2][0]).toBe(
       "https://example.test/api/auth/permissions",
     );
-    expect(request.mock.calls[1][1]!.method).toBe("PUT");
-    expect(JSON.parse(request.mock.calls[1][1]!.body as string)).toEqual(body);
+    expect(request.mock.calls[2][1]!.method).toBe("PUT");
+    expect(JSON.parse(request.mock.calls[2][1]!.body as string)).toEqual(body);
   });
 
   it.each([200, 204])(
@@ -362,17 +397,279 @@ describe("admin wire contract", () => {
     expect(request).not.toHaveBeenCalled();
   });
 
-  it("rejects unsupported field restriction updates before sending", async () => {
+  it.each(specified.permission_edits)(
+    "preserves exact three-state body: $name",
+    async (contract) => {
+      versionGate.minimum = "9.8.7";
+      auth();
+      request.mockResolvedValueOnce(response({ version: "9.8.7" }));
+      request.mockResolvedValueOnce(response(contract.response));
+      expect(
+        await admin().updateApiKeyCollectionPermissions(contract.request),
+      ).toEqual(contract.response);
+      const [url, options] = request.mock.calls[2];
+      expect(url).toBe("https://example.test/api/auth/permissions");
+      expect(options).toMatchObject({
+        method: "PUT",
+        headers: { Authorization: "Bearer jwt-secret" },
+      });
+      expect(JSON.parse(options!.body as string)).toStrictEqual(
+        contract.request,
+      );
+    },
+  );
+
+  it("never exchanges explicit null and omitted/undefined fields", async () => {
+    versionGate.minimum = "9.8.7";
+    auth();
+    request.mockResolvedValueOnce(response({ version: "9.8.7" }));
+    request.mockResolvedValueOnce(response(key));
+    await admin().updateApiKeyCollectionPermissions({
+      api_key: "target-secret",
+      collection: "users",
+      read: true,
+      write: false,
+      select_fields: null,
+      exclude_fields: undefined,
+    });
+    const body = JSON.parse(request.mock.calls[2][1]!.body as string);
+    expect(Object.prototype.hasOwnProperty.call(body, "select_fields")).toBe(
+      true,
+    );
+    expect(body.select_fields).toBeNull();
+    expect(Object.prototype.hasOwnProperty.call(body, "exclude_fields")).toBe(
+      false,
+    );
+    expect(Object.prototype.hasOwnProperty.call(body, "writable_fields")).toBe(
+      false,
+    );
+  });
+
+  it.each(["select_fields", "exclude_fields", "writable_fields"] as const)(
+    "omits explicit undefined for %s",
+    async (field) => {
+      versionGate.minimum = "9.8.7";
+      auth();
+      request.mockResolvedValueOnce(response({ version: "9.8.7" }));
+      request.mockResolvedValueOnce(response(key));
+      await admin().updateApiKeyCollectionPermissions({
+        api_key: "target-secret",
+        collection: "users",
+        read: true,
+        write: false,
+        [field]: undefined,
+      });
+      expect(
+        JSON.parse(request.mock.calls[2][1]!.body as string),
+      ).toStrictEqual({
+        api_key: "target-secret",
+        collection: "users",
+        read: true,
+        write: false,
+      });
+    },
+  );
+
+  it("fails closed without any request while the release constant is unset", async () => {
+    expect(MIN_SERVER_VERSION_FOR_PERMISSION_EDITS).toBeUndefined();
     await expect(
       admin().updateApiKeyCollectionPermissions({
         api_key: "target-secret",
         collection: "users",
         read: true,
-        write: false,
-        // @ts-expect-error The server ignores field restrictions on PUT.
-        select_fields: ["name"],
+        write: true,
       }),
-    ).rejects.toThrow("does not support field restrictions");
+    ).rejects.toThrow("earlier servers remove a grant's field restrictions");
     expect(request).not.toHaveBeenCalled();
   });
+
+  it.each([
+    {},
+    null,
+    { version: 9 },
+    { version: "9.8" },
+    { version: "09.8.7" },
+    { version: "999999999999999999999.8.7" },
+    { version: "9.8.7-rc.1" },
+    { version: "0.79.0" },
+    { version: "9.8.6" },
+    { version: "9.7.99" },
+    { version: "8.99.99" },
+  ])(
+    "refuses unreadable, prerelease or older server versions: %j",
+    async (health) => {
+      versionGate.minimum = "9.8.7";
+      auth();
+      request.mockResolvedValueOnce(response(health));
+      const client = admin();
+      const edit = {
+        api_key: "target-secret",
+        collection: "users",
+        read: true,
+        write: true,
+      };
+      await expect(
+        client.updateApiKeyCollectionPermissions(edit),
+      ).rejects.toThrow("newer ekoDB server");
+      await expect(
+        client.updateApiKeyCollectionPermissions(edit),
+      ).rejects.toThrow("newer ekoDB server");
+      expect(request.mock.calls.map(([url]) => url)).toEqual([
+        "https://example.test/api/auth/token",
+        "https://example.test/api/health",
+      ]);
+      expect(request.mock.calls[1][1]).toMatchObject({
+        method: "GET",
+        headers: { Authorization: "Bearer jwt-secret" },
+      });
+    },
+  );
+
+  it.each(["9.8.7", "9.8.7+build.1", "9.8.8", "9.9.0", "10.0.0"])(
+    "accepts sufficient release %s and caches its health read per instance",
+    async (version) => {
+      versionGate.minimum = "9.8.7";
+      auth();
+      request.mockResolvedValueOnce(response({ version }));
+      request.mockResolvedValueOnce(response(key));
+      request.mockResolvedValueOnce(response(key));
+      const client = admin();
+      const edit = {
+        api_key: "target-secret",
+        collection: "users",
+        read: true,
+        write: true,
+      };
+      await client.updateApiKeyCollectionPermissions(edit);
+      await client.updateApiKeyCollectionPermissions(edit);
+      auth();
+      request.mockResolvedValueOnce(response({ version }));
+      request.mockResolvedValueOnce(response(key));
+      await admin().updateApiKeyCollectionPermissions(edit);
+      expect(
+        request.mock.calls.map(([url, options]) => [url, options!.method]),
+      ).toEqual([
+        ["https://example.test/api/auth/token", "POST"],
+        ["https://example.test/api/health", "GET"],
+        ["https://example.test/api/auth/permissions", "PUT"],
+        ["https://example.test/api/auth/permissions", "PUT"],
+        ["https://example.test/api/auth/token", "POST"],
+        ["https://example.test/api/health", "GET"],
+        ["https://example.test/api/auth/permissions", "PUT"],
+      ]);
+    },
+  );
+
+  it.each([
+    new TypeError("admin-secret"),
+    response({ error: "jwt-secret" }, 403),
+    new Response("secret invalid JSON"),
+  ])("sanitizes and caches an unreadable health response", async (failure) => {
+    versionGate.minimum = "9.8.7";
+    auth();
+    if (failure instanceof Error) request.mockRejectedValueOnce(failure);
+    else request.mockResolvedValueOnce(failure);
+    const client = admin();
+    const edit = {
+      api_key: "target-secret",
+      collection: "users",
+      read: true,
+      write: true,
+    };
+    for (let n = 0; n < 2; n++)
+      await expect(
+        client.updateApiKeyCollectionPermissions(edit),
+      ).rejects.toThrow(
+        /^Permission updates need a newer ekoDB server because earlier servers remove a grant's field restrictions when it is updated$/,
+      );
+    expect(request).toHaveBeenCalledTimes(2);
+  });
+
+  it("ignores inherited restriction fields and unrecognized properties", async () => {
+    versionGate.minimum = "9.8.7";
+    auth();
+    request.mockResolvedValueOnce(response({ version: "9.8.7" }));
+    request.mockResolvedValueOnce(response(key));
+    const edit = Object.assign(Object.create({ select_fields: null }), {
+      api_key: "target-secret",
+      collection: "users",
+      read: false,
+      write: true,
+      extra: "not sent",
+    });
+    await admin().updateApiKeyCollectionPermissions(edit);
+    expect(JSON.parse(request.mock.calls[2][1]!.body as string)).toStrictEqual({
+      api_key: "target-secret",
+      collection: "users",
+      read: false,
+      write: true,
+    });
+  });
+
+  it.each([null, undefined, []])(
+    "rejects non-object update %j",
+    async (edit) => {
+      await expect(
+        admin().updateApiKeyCollectionPermissions(edit as never),
+      ).rejects.toThrow("Invalid collection permission update");
+      expect(request).not.toHaveBeenCalled();
+    },
+  );
+
+  it("shares the pending health read across concurrent updates", async () => {
+    versionGate.minimum = "9.8.7";
+    auth();
+    request.mockResolvedValueOnce(response({ version: "9.8.7" }));
+    request.mockResolvedValueOnce(response(key));
+    request.mockResolvedValueOnce(response(key));
+    const client = admin();
+    const edit = {
+      api_key: "target-secret",
+      collection: "users",
+      read: true,
+      write: true,
+    };
+    await Promise.all([
+      client.updateApiKeyCollectionPermissions(edit),
+      client.updateApiKeyCollectionPermissions(edit),
+    ]);
+    expect(
+      request.mock.calls.filter(
+        ([url]) => url === "https://example.test/api/health",
+      ),
+    ).toHaveLength(1);
+    expect(
+      request.mock.calls.filter(([, options]) => options!.method === "PUT"),
+    ).toHaveLength(2);
+  });
+
+  it.each([
+    { api_key: "" },
+    { api_key: "  " },
+    { api_key: 4 },
+    { collection: "" },
+    { collection: "  " },
+    { collection: false },
+    { read: 1 },
+    { write: "false" },
+    ...["select_fields", "exclude_fields", "writable_fields"].flatMap((field) =>
+      [false, {}, "name", [""], ["  "], [null], [4], new Array(1)].map(
+        (value) => ({ [field]: value }),
+      ),
+    ),
+  ])(
+    "rejects invalid edits before authentication or health: %j",
+    async (invalid) => {
+      await expect(
+        admin().updateApiKeyCollectionPermissions({
+          api_key: "target-secret",
+          collection: "users",
+          read: true,
+          write: false,
+          ...invalid,
+        } as never),
+      ).rejects.toThrow("Invalid collection permission update");
+      expect(request).not.toHaveBeenCalled();
+    },
+  );
 });
