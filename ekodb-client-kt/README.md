@@ -35,7 +35,7 @@ integration, and automatic optimization.
 
 ```kotlin
 dependencies {
-    implementation("io.ekodb:ekodb-client-kt:0.30.1")
+    implementation("io.ekodb:ekodb-client-kt:0.31.0")
 }
 ```
 
@@ -43,7 +43,7 @@ dependencies {
 
 ```groovy
 dependencies {
-    implementation 'io.ekodb:ekodb-client-kt:0.30.1'
+    implementation 'io.ekodb:ekodb-client-kt:0.31.0'
 }
 ```
 
@@ -53,7 +53,7 @@ dependencies {
 <dependency>
     <groupId>io.ekodb</groupId>
     <artifactId>ekodb-client-kt</artifactId>
-    <version>0.30.1</version>
+    <version>0.31.0</version>
 </dependency>
 ```
 
