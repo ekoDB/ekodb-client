@@ -186,6 +186,38 @@ class EkoDBClient private constructor(
     private var tokenExpiry: Long = 0
     private var lastRateLimitInfo: RateLimitInfo? = null
 
+    // Shared authentication and HTTP transport for the separate admin facade.
+    // Never call the data retry layer: an ambiguous POST must not be replayed.
+    internal suspend fun adminRequest(method: HttpMethod, path: String, body: JsonObject? = null): JsonElement {
+        try {
+            for (attempt in 0..1) {
+                val token = getToken()
+                check(token.isNotEmpty())
+                val response = client.request("$baseUrl$path") {
+                    this.method = method
+                    bearerAuth(token)
+                    contentType(ContentType.Application.Json)
+                    accept(ContentType.Application.Json)
+                    if (body != null) setBody(TextContent(body.toString(), ContentType.Application.Json))
+                }
+                if (response.status == HttpStatusCode.Unauthorized && attempt == 0) {
+                    clearTokenCache()
+                    continue
+                }
+                if (!response.status.isSuccess()) throw AdminStatusFailure(response.status.value)
+                if (response.status == HttpStatusCode.NoContent || method == HttpMethod.Delete) return JsonNull
+                return Json.parseToJsonElement(response.bodyAsText())
+            }
+        } catch (error: AdminStatusFailure) {
+            throw IllegalStateException("Admin request failed (HTTP ${error.status})")
+        } catch (error: kotlinx.coroutines.CancellationException) {
+            throw error
+        } catch (_: Exception) {
+            throw IllegalStateException("Admin request failed")
+        }
+        throw IllegalStateException("Admin request failed")
+    }
+
     /**
      * Get the last observed rate limit information.
      * Returns null if no rate limit headers have been received yet.
@@ -3811,3 +3843,5 @@ data class RateLimitInfo(
         return (remaining.toDouble() / limit.toDouble()) * 100.0
     }
 }
+
+private class AdminStatusFailure(val status: Int) : Exception()

@@ -2,6 +2,8 @@
 //!
 //! This module provides Python bindings for the ekoDB Rust client library using PyO3.
 
+mod admin;
+
 use ekodb_client::{
     Attachment, ChatMessageRequest, ChatResponse, Client as RustClient, CollectionConfig,
     CreateChatSessionRequest, DistinctValuesQuery as RustDistinctValuesQuery, FieldSearchOptions,
@@ -5424,6 +5426,7 @@ fn parse_health_status(py: Python<'_>, body: &Bound<'_, PyDict>) -> PyResult<PyH
 /// ekoDB Python module
 #[pymodule]
 fn _ekodb_client(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    admin::register(m)?;
     m.add_class::<Client>()?;
     m.add_class::<WebSocketClient>()?;
     m.add_class::<SubscriptionReceiver>()?;
