@@ -10,6 +10,17 @@ and this project adheres to
 
 ### Added
 
+- API-key admin entry points for Rust, Python (including the compiled PyO3
+  binding) and Kotlin, matching TypeScript's five-operation 0.79.2 contract.
+  Preserve omitted/null/empty restriction edits and response metadata; gate
+  updates on authenticated server version, sanitize errors and bound auth
+  retries. Add recorded HTTP-boundary tests and matching disposable admin
+  examples across all five SDKs. (#320)
+- Canonical `sdk-parity` skill and mandatory repository guide loaded by Codex,
+  Claude and Copilot. Require verified five-SDK evidence and ticketed gaps
+  before implementation and completion. Reuse the existing example parity gate.
+  (#320)
+
 - TypeScript `@ekodb/ekodb-client/admin` entry point for API-key creation,
   listing, revocation, current-token permissions and single-collection grant
   updates. Defaults to non-admin creation, preserves field restrictions on
