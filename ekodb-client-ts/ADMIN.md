@@ -132,3 +132,14 @@ refused until the same version gate passes; no existing key is updated:
 source scripts/load-root-env.sh
 EKODB_ADMIN_LIVE=1 make test-typescript
 ```
+
+## SDK parity
+
+The same five-operation contract is exposed through Rust
+`ekodb_client::admin::AdminClient`, Python `ekodb_client.admin.AdminClient`,
+Kotlin `io.ekodb.client.admin.EkoDBAdminClient`, and Go `ekodb.AdminClient`.
+Each has HTTP-boundary tests for the recorded 0.79.2 cases and a matching
+`client_admin` example. See the
+[parity matrix](../PARITY_MATRIX.md#api-key-administration). Examples are
+read-only unless `EKODB_ADMIN_LIVE=1` enables a uniquely labeled disposable-key
+lifecycle; they never change existing keys or application data.

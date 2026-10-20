@@ -744,3 +744,28 @@ MIT
 - [GitHub](https://github.com/ekoDB/ekodb-client)
 - [Examples](https://github.com/ekoDB/ekodb-client/tree/main/examples/python)
 - [PyPI Package](https://pypi.org/project/ekodb-client/)
+
+## API-key administration
+
+The separate admin client exposes only API-key creation, listing, revocation,
+current-token permissions and collection-grant updates. See the
+[shared admin contract](../ekodb-client-ts/ADMIN.md) for authentication, safe
+failures and permission semantics. Permission updates require authenticated
+server version 0.79.2 or later. Restriction omission preserves a list, null
+clears it, and arrays replace it, including an empty array. Responses retain
+unrecognized metadata. Never log key records.
+
+```python
+from ekodb_client.admin import AdminClient
+admin = AdminClient(base_url, api_key)
+permissions = await admin.get_permissions()
+# update_api_key_collection_permissions accepts a dict: omit a field to keep,
+# pass None to clear, or a list (including []) to replace.
+```
+
+This entry point uses the compiled Rust/PyO3 admin binding and returns Python
+records; it is available through `ekodb_client.admin`.
+
+See the matching `client_admin` scenario in [examples](../examples). It is
+read-only by default; `EKODB_ADMIN_LIVE=1` enables a uniquely labeled disposable
+key lifecycle with guarded revocation and verified cleanup.

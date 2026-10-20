@@ -38,6 +38,7 @@
 //! }
 //! ```
 
+pub mod admin;
 mod auth;
 mod batch;
 pub mod chat;

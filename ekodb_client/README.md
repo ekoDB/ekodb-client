@@ -929,3 +929,25 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 - [GitHub Repository](https://github.com/ekoDB/ekodb-client)
 - [Examples](https://github.com/ekoDB/ekodb-client/tree/main/examples/rust/examples)
 - [crates.io Package](https://crates.io/crates/ekodb_client)
+
+## API-key administration
+
+The separate admin client exposes only API-key creation, listing, revocation,
+current-token permissions and collection-grant updates. See the
+[shared admin contract](../ekodb-client-ts/ADMIN.md) for authentication, safe
+failures and permission semantics. Permission updates require authenticated
+server version 0.79.2 or later. Restriction omission preserves a list, null
+clears it, and arrays replace it, including an empty array. Responses retain
+unrecognized metadata. Never log key records.
+
+```rust
+use ekodb_client::admin::{AdminClient, PermissionEdit, UpdateApiKeyCollectionPermissionsRequest};
+let admin = AdminClient::new(&base_url, &api_key)?;
+let permissions = admin.get_permissions().await?;
+// Update requests use PermissionEdit::Keep (omitted), ::Clear (null),
+// or ::Set(Vec<String>) (an exact replacement, including an empty Vec).
+```
+
+See the matching `client_admin` scenario in [examples](../examples). It is
+read-only by default; `EKODB_ADMIN_LIVE=1` enables a uniquely labeled disposable
+key lifecycle with guarded revocation and verified cleanup.

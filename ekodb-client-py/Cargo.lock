@@ -270,6 +270,7 @@ dependencies = [
  "pyo3-async-runtimes",
  "pyo3-build-config",
  "rust_decimal",
+ "serde",
  "serde_json",
  "tokio",
  "uuid",

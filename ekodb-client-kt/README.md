@@ -879,3 +879,27 @@ for details.
 - [GitHub Repository](https://github.com/ekoDB/ekodb-client)
 - [ekoDB Documentation](https://ekodb.io/docs)
 - [API Reference](https://ekodb.io/docs/api)
+
+## API-key administration
+
+The separate admin client exposes only API-key creation, listing, revocation,
+current-token permissions and collection-grant updates. See the
+[shared admin contract](../ekodb-client-ts/ADMIN.md) for authentication, safe
+failures and permission semantics. Permission updates require authenticated
+server version 0.79.2 or later. Restriction omission preserves a list, null
+clears it, and arrays replace it, including an empty array. Responses retain
+unrecognized metadata. Never log key records.
+
+```kotlin
+import io.ekodb.client.admin.EkoDBAdminClient
+import io.ekodb.client.admin.PermissionEdit
+EkoDBAdminClient(baseUrl, apiKey).use { admin ->
+    val permissions = admin.getPermissions()
+}
+// Update requests use PermissionEdit.Keep, PermissionEdit.Clear,
+// or PermissionEdit.Set(listOf(...)); Set(emptyList()) is an exact empty list.
+```
+
+See the matching `client_admin` scenario in [examples](../examples). It is
+read-only by default; `EKODB_ADMIN_LIVE=1` enables a uniquely labeled disposable
+key lifecycle with guarded revocation and verified cleanup.

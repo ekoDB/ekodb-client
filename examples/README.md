@@ -987,3 +987,13 @@ documentation)
 
 **Supported language aliases:** `rust`/`rs`, `python`/`py`, `typescript`/`ts`,
 `javascript`/`js`, `go`, `kotlin`/`kt`
+
+### API-key administration
+
+`client_admin` is available in Rust, Python, TypeScript, Go and Kotlin. It reads
+current-token permissions by default. With explicit authorization and
+`EKODB_ADMIN_LIVE=1`, it creates one uniquely labeled non-admin key, verifies
+set/keep/clear/empty restriction edits through fresh authentication, and revokes
+only that key with a final absence check. Requires `API_BASE_URL`,
+`API_BASE_KEY` and server 0.79.2 or later for updates. It does not perform data
+operations.
