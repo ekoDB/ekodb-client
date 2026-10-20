@@ -1,6 +1,6 @@
 # Client Library Parity Matrix
 
-**Last Updated:** October 10, 2026
+**Last Updated:** October 20, 2026
 
 **Published client version:** See the
 [latest release](https://github.com/ekoDB/ekodb-client/releases/latest). The
@@ -494,6 +494,32 @@ server contract additions should be evaluated against that boundary.
 
 ---
 
+## API-key administration
+
+All five SDKs expose a separate admin entry point with creation, listing,
+revocation, current-token permissions and collection-permission updates.
+Permission updates require authenticated server version **0.79.2 or later**.
+Omitted restrictions preserve the previous list, null clears it, and arrays
+replace it (including an empty array). Recorded contract cases live in
+`test-fixtures/admin-contract-0.79.2.json`; each SDK exercises its public HTTP
+boundary against those cases. Matching `client_admin` examples are read-only
+unless `EKODB_ADMIN_LIVE=1` explicitly enables disposable-key verification.
+
+| SDK        | Entry point                              | Contract tests                                                         | Example                                   |
+| ---------- | ---------------------------------------- | ---------------------------------------------------------------------- | ----------------------------------------- |
+| Rust       | `ekodb_client::admin::AdminClient`       | `ekodb_client/tests/admin_contract.rs`                                 | `examples/rust/examples/client_admin.rs`  |
+| Python     | `ekodb_client.admin.AdminClient` (PyO3)  | `ekodb-client-py/tests/test_admin_contract.py`                         | `examples/python/client_admin.py`         |
+| TypeScript | `@ekodb/ekodb-client/admin`              | `ekodb-client-ts/src/admin.test.ts`                                    | `examples/typescript/client_admin.ts`     |
+| Kotlin     | `io.ekodb.client.admin.EkoDBAdminClient` | `ekodb-client-kt/src/test/kotlin/io/ekodb/client/AdminContractTest.kt` | `examples/kotlin/examples/ClientAdmin.kt` |
+| Go         | `ekodb.AdminClient` in `ekodb-client-go` | `admin_permission_parity_test.go` in that module                       | `examples/go/client_admin.go`             |
+
+See [ADMIN.md](ekodb-client-ts/ADMIN.md) for the common contract and
+language-specific READMEs for construction and request types. This table
+describes this feature branch; release availability depends on the corresponding
+SDK release.
+
+---
+
 ## Testing Requirements
 
 Each new feature must include:
@@ -523,10 +549,17 @@ Each new feature must include:
 
 ## Contributing
 
-When changing a client contract:
+When changing a client contract, all agents (Codex, Claude and Copilot) must
+first read the canonical [SDK parity skill](.agents/skills/sdk-parity/SKILL.md).
+Record source, behavior, tests, examples and documentation evidence per SDK in
+the issue and draft PR. Verify and ticket gaps before implementation, and take
+them In Progress. Missing or unassessed required rows block a full-parity claim.
+
+Then:
 
 1. **Verify the server contract** - Confirm routes and wire fields against the
-   current server implementation and public API documentation.
+   authorized public contract, fixtures and API documentation. Respect any
+   server-source inspection restriction.
 2. **Compare every SDK** - Check Rust, Python, TypeScript, Kotlin, and Go rather
    than inferring parity from one implementation.
 3. **Follow existing patterns** - Match each language's established API style.

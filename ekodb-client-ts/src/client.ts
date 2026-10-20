@@ -583,6 +583,9 @@ function functionRequestBody(userFunction: UserFunction): UserFunction {
 }
 
 export class EkoDBClient {
+  // Used by the separate admin facade: never include a secret-bearing URL,
+  // response body, or transport exception in errors or diagnostics.
+  protected redactErrors = false;
   private baseURL: string;
   private apiKey: string;
   private token: string | null = null;
@@ -641,32 +644,44 @@ export class EkoDBClient {
    * Refresh the authentication token
    */
   async refreshToken(): Promise<void> {
-    const response = await fetch(`${this.baseURL}/api/auth/token`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ api_key: this.apiKey }),
-      signal: AbortSignal.timeout(this.requestTimeoutMs),
-    });
+    try {
+      const response = await fetch(`${this.baseURL}/api/auth/token`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ api_key: this.apiKey }),
+        signal: AbortSignal.timeout(this.requestTimeoutMs),
+        ...(this.redactErrors ? { redirect: "error" as const } : {}),
+      });
 
-    if (!response.ok) {
-      let errorMsg = `Auth failed with status: ${response.status}`;
-      try {
-        const errorBody = (await response.json()) as { error?: string };
-        if (errorBody.error) {
-          errorMsg = errorBody.error;
+      if (!response.ok) {
+        if (this.redactErrors)
+          throw new Error(
+            `Admin authentication failed (HTTP ${response.status})`,
+          );
+        let errorMsg = `Auth failed with status: ${response.status}`;
+        try {
+          const errorBody = (await response.json()) as { error?: string };
+          if (errorBody.error) {
+            errorMsg = errorBody.error;
+          }
+        } catch {
+          // Ignore JSON parse errors, use default message
         }
-      } catch {
-        // Ignore JSON parse errors, use default message
+        throw new Error(errorMsg);
       }
-      throw new Error(errorMsg);
+
+      const result = (await response.json()) as { token: string };
+      if (typeof result?.token !== "string" || !result.token)
+        throw new Error("Invalid token response");
+      this.token = result.token;
+
+      // Extract and cache JWT expiry for proactive refresh
+      const expiry = this.extractJWTExpiry(result.token);
+      this.tokenExpiry = expiry ?? Math.floor(Date.now() / 1000) + 3600; // fallback: 1 hour
+    } catch (error) {
+      if (this.redactErrors) throw new Error("Admin authentication failed");
+      throw error;
     }
-
-    const result = (await response.json()) as { token: string };
-    this.token = result.token;
-
-    // Extract and cache JWT expiry for proactive refresh
-    const expiry = this.extractJWTExpiry(result.token);
-    this.tokenExpiry = expiry ?? Math.floor(Date.now() / 1000) + 3600; // fallback: 1 hour
   }
 
   /**
@@ -829,7 +844,7 @@ export class EkoDBClient {
   /**
    * Make an HTTP request to the ekoDB API with retry logic
    */
-  private async makeRequest<T>(
+  protected async makeRequest<T>(
     method: string,
     path: string,
     data?: any,
@@ -862,6 +877,7 @@ export class EkoDBClient {
       // hanging the caller. A fresh signal per attempt is correct here because
       // makeRequest recurses on retry, rebuilding `options` each time.
       signal: AbortSignal.timeout(this.requestTimeoutMs),
+      ...(this.redactErrors ? { redirect: "error" as const } : {}),
     };
 
     if (data) {
@@ -876,13 +892,18 @@ export class EkoDBClient {
       // Extract rate limit info from successful responses
       if (response.ok) {
         this.extractRateLimitInfo(response);
+        if (this.redactErrors && method === "DELETE") return undefined as T;
 
         // Deserialize based on format
         if (isMessagePack) {
           const buffer = await response.arrayBuffer();
           return decode(new Uint8Array(buffer)) as T;
         } else {
-          return response.json() as Promise<T>;
+          // Await sensitive JSON parsing so a SyntaxError cannot escape the
+          // redaction boundary with an echoed credential in its message.
+          return this.redactErrors
+            ? ((await response.json()) as T)
+            : (response.json() as Promise<T>);
         }
       }
 
@@ -934,6 +955,8 @@ export class EkoDBClient {
 
       // Handle other errors
       const text = await response.text();
+      if (this.redactErrors)
+        throw new Error(`Admin request failed (HTTP ${response.status})`);
       throw new Error(`Request failed with status ${response.status}: ${text}`);
     } catch (error) {
       // A fired request-timeout (AbortSignal.timeout) surfaces as a DOMException
@@ -944,6 +967,27 @@ export class EkoDBClient {
         error && typeof error === "object" && "name" in error
           ? (error as { name?: string }).name
           : undefined;
+      if (this.redactErrors) {
+        // Errors created here carry only a fixed message/status. Never retain
+        // causes: fetch and JSON errors can echo credentials or request URLs.
+        if (error instanceof RateLimitError) {
+          const retryAfter =
+            Number.isFinite(error.retryAfterSecs) && error.retryAfterSecs >= 0
+              ? error.retryAfterSecs
+              : 60;
+          throw new RateLimitError(retryAfter);
+        }
+        if (
+          error instanceof Error &&
+          /^Admin request failed \(HTTP [0-9]{3}\)$/.test(error.message)
+        )
+          throw new Error(error.message);
+        throw new Error(
+          errName === "TimeoutError" || errName === "AbortError"
+            ? "Admin request timed out"
+            : "Admin request failed",
+        );
+      }
       if (errName === "TimeoutError" || errName === "AbortError") {
         throw new Error(
           `Request timed out after ${this.requestTimeoutMs}ms: ${method} ${path}`,

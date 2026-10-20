@@ -6,6 +6,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.31.0] - 2026-10-20
+
+### Added
+
+- API-key admin entry points for Rust, Python (including the compiled PyO3
+  binding) and Kotlin, matching TypeScript's five-operation 0.79.2 contract.
+  Preserve omitted/null/empty restriction edits and response metadata; gate
+  updates on authenticated server version, sanitize errors and bound auth
+  retries. Add recorded HTTP-boundary tests and matching disposable admin
+  examples across all five SDKs. (#320)
+- Canonical `sdk-parity` skill and mandatory repository guide loaded by Codex,
+  Claude and Copilot. Require verified five-SDK evidence and ticketed gaps
+  before implementation and completion. Reuse the existing example parity gate.
+  (#320)
+
+- TypeScript `@ekodb/ekodb-client/admin` entry point for API-key creation,
+  listing, revocation, current-token permissions and single-collection grant
+  updates. Defaults to non-admin creation, preserves field restrictions on
+  reads, redacts credential-bearing failures and avoids ambiguous create
+  retries. Includes packed-package import checks and an opt-in disposable
+  lifecycle test. Collection updates replace read/write and support three-state
+  field edits: omitted/undefined keeps a restriction, null clears it, and an
+  array replaces it. Earlier servers remove a grant's field restrictions on this
+  call, so the method requires ekoDB 0.79.2 or later. Live disposable
+  verification on 0.79.2 confirms all nine field/state cases plus mixed edits,
+  fresh-token readback and revocation with absence verification. (#317)
+
 ## [0.30.1] - 2026-10-17
 
 ### Changed

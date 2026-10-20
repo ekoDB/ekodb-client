@@ -8,14 +8,14 @@ Official client libraries for ekoDB - a high-performance document database.
 
 **🚀 Quick Stats:**
 
-- **<!--ex:total-->314<!--/ex:total--> working examples** -
-  <!--ex:client-->263<!--/ex:client--> client library +
+- **<!--ex:total-->319<!--/ex:total--> working examples** -
+  <!--ex:client-->268<!--/ex:client--> client library +
   <!--ex:direct-->51<!--/ex:direct--> direct API examples
 - **<!--ex:languages-->6<!--/ex:languages--> programming languages** - Rust,
   Python, Go, TypeScript, JavaScript, Kotlin
-- **<!--ex:clients-->5<!--/ex:clients--> full-featured clients** - Complete
-  feature parity across Rust, Python, Go, TypeScript, Kotlin
-- **<!--ex:perclient-->46<!--/ex:perclient--> shared client-library scenarios
+- **<!--ex:clients-->5<!--/ex:clients--> full-featured clients** - Shared
+  contract checks across Rust, Python, Go, TypeScript, Kotlin
+- **<!--ex:perclient-->47<!--/ex:perclient--> shared client-library scenarios
   per SDK** - CRUD, batch ops, queries, joins, search, WebSocket, AI/chat, and
   more; language-specific auxiliary examples may add to this total
 - **Parity-gated** - Offline checks enforce the same scenario set and compile
@@ -68,7 +68,7 @@ npm install @ekodb/ekodb-client
 
 ```kotlin
 // Gradle (Kotlin DSL)
-implementation("io.ekodb:ekodb-client-kt:0.30.1")
+implementation("io.ekodb:ekodb-client-kt:0.31.0")
 ```
 
 **Features:**
@@ -80,7 +80,7 @@ implementation("io.ekodb:ekodb-client-kt:0.30.1")
 - ✅ AI/Chat integration
 - ✅ Schema management
 - ✅ Full-text search
-- ✅ <!--ex:perclient-->46<!--/ex:perclient--> shared client-library scenarios
+- ✅ <!--ex:perclient-->47<!--/ex:perclient--> shared client-library scenarios
   (+ language-specific auxiliary and RAG examples)
 
 ## Features
@@ -122,7 +122,7 @@ Each client also includes language-specific features:
 - [TypeScript Client Documentation](./ekodb-client-ts/README.md)
 - [Kotlin Client Documentation](./ekodb-client-kt/README.md)
 - [Examples](./examples/) - Code examples across all available languages
-  (<!--ex:perclient-->46<!--/ex:perclient--> shared client-library scenarios per
+  (<!--ex:perclient-->47<!--/ex:perclient--> shared client-library scenarios per
   SDK)
 
 ## 🛠️ Development
@@ -178,3 +178,11 @@ cd ekodb-client-kt && ./gradlew publish
 ## License
 
 MIT
+
+## API-key administration
+
+Separate admin clients are available for Rust, Python, TypeScript and Kotlin;
+the paired Go module exposes the same five operations. See the
+[admin contract](ekodb-client-ts/ADMIN.md) and
+[parity matrix](PARITY_MATRIX.md#api-key-administration) for entry points, tests
+and runnable examples. Permission edits require server 0.79.2 or later.
