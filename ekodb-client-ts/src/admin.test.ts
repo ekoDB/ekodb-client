@@ -7,12 +7,9 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import type { ApiKey, UpdateApiKeyCollectionPermissionsRequest } from "./admin";
 
-const specified = JSON.parse(
+const recorded = JSON.parse(
   readFileSync(
-    resolve(
-      __dirname,
-      "../../test-fixtures/admin-permission-edits-specified.json",
-    ),
+    resolve(__dirname, "../../test-fixtures/admin-contract-0.79.2.json"),
     "utf8",
   ),
 ) as {
@@ -26,7 +23,7 @@ const specified = JSON.parse(
 const versionGate = vi.hoisted(() => ({
   minimum: undefined as string | undefined,
 }));
-// Synthetic release values are used only by mock tests; production remains unset.
+// Synthetic release values exercise the generic gate; real release boundaries are tested below.
 vi.mock("./admin-version", () => ({
   get MIN_SERVER_VERSION_FOR_PERMISSION_EDITS() {
     return versionGate.minimum;
@@ -397,7 +394,7 @@ describe("admin wire contract", () => {
     expect(request).not.toHaveBeenCalled();
   });
 
-  it.each(specified.permission_edits)(
+  it.each(recorded.permission_edits)(
     "preserves exact three-state body: $name",
     async (contract) => {
       versionGate.minimum = "9.8.7";
@@ -482,6 +479,44 @@ describe("admin wire contract", () => {
     ).rejects.toThrow("earlier servers remove a grant's field restrictions");
     expect(request).not.toHaveBeenCalled();
   });
+
+  it.each(["0.79.0", "0.79.1", "0.79.2-rc.1", "0.79.2", "0.79.3", "0.80.0"])(
+    "uses the released production minimum for server %s",
+    async (version) => {
+      const production =
+        await vi.importActual<typeof import("./admin-version")>(
+          "./admin-version",
+        );
+      expect(production.MIN_SERVER_VERSION_FOR_PERMISSION_EDITS).toBe("0.79.2");
+      versionGate.minimum = production.MIN_SERVER_VERSION_FOR_PERMISSION_EDITS;
+      auth();
+      request.mockResolvedValueOnce(response({ version }));
+      const edit = {
+        api_key: "target-secret",
+        collection: "users",
+        read: true,
+        write: false,
+        select_fields: null,
+      };
+      const client = admin();
+      if (["0.79.0", "0.79.1", "0.79.2-rc.1"].includes(version)) {
+        await expect(
+          client.updateApiKeyCollectionPermissions(edit),
+        ).rejects.toThrow(
+          "earlier servers remove a grant's field restrictions",
+        );
+        expect(request).toHaveBeenCalledTimes(2);
+      } else {
+        request.mockResolvedValueOnce(response(key));
+        await expect(
+          client.updateApiKeyCollectionPermissions(edit),
+        ).resolves.toEqual(key);
+        expect(
+          JSON.parse(request.mock.calls[2][1]!.body as string),
+        ).toStrictEqual(edit);
+      }
+    },
+  );
 
   it.each([
     {},
