@@ -51,7 +51,7 @@ it("installs the packed artifact and supports root, admin and existing deep impo
       const assert = require('node:assert/strict');
       const {EkoDBClient} = require('@ekodb/ekodb-client');
       const {EkoDBAdminClient, MIN_SERVER_VERSION_FOR_PERMISSION_EDITS} = require('@ekodb/ekodb-client/admin');
-      assert.equal(MIN_SERVER_VERSION_FOR_PERMISSION_EDITS, undefined);
+      assert.equal(MIN_SERVER_VERSION_FOR_PERMISSION_EDITS, '0.79.2');
       assert.equal(typeof EkoDBClient, 'function');
       assert.equal(typeof EkoDBAdminClient, 'function');
       assert.equal(typeof require('@ekodb/ekodb-client/dist/client').EkoDBClient, 'function');
@@ -68,7 +68,7 @@ it("installs the packed artifact and supports root, admin and existing deep impo
       import assert from 'node:assert/strict';
       import {EkoDBClient} from '@ekodb/ekodb-client';
       import {EkoDBAdminClient, MIN_SERVER_VERSION_FOR_PERMISSION_EDITS} from '@ekodb/ekodb-client/admin';
-      assert.equal(MIN_SERVER_VERSION_FOR_PERMISSION_EDITS, undefined);
+      assert.equal(MIN_SERVER_VERSION_FOR_PERMISSION_EDITS, '0.79.2');
       import {EkoDBClient as DeepClient} from '@ekodb/ekodb-client/dist/client.js';
       assert.equal(typeof EkoDBClient, 'function');
       assert.equal(typeof EkoDBAdminClient, 'function');

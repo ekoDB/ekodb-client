@@ -18,9 +18,9 @@ and this project adheres to
   lifecycle test. Collection updates replace read/write and support three-state
   field edits: omitted/undefined keeps a restriction, null clears it, and an
   array replaces it. Earlier servers remove a grant's field restrictions on this
-  call, so the method refuses to run against them. The server fix ships in a
-  later release; the minimum release is set by the owner and remains unset.
-  (#317)
+  call, so the method requires ekoDB 0.79.2 or later. Live disposable
+  verification on 0.79.2 confirms all nine field/state cases plus mixed edits,
+  fresh-token readback and revocation with absence verification. (#317)
 
 ## [0.30.1] - 2026-10-17
 

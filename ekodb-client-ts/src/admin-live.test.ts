@@ -144,7 +144,7 @@ it("recovers a uniquely labeled key after an ambiguous create response", async (
   }
 });
 
-it("cleans up its disposable key when the unset version gate refuses the round-trip", async () => {
+it("cleans up its disposable key when an older server version refuses the round-trip", async () => {
   const label = "sdk-ts-admin-gate-test";
   const record = {
     key: "new-secret",
@@ -162,6 +162,9 @@ it("cleans up its disposable key when the unset version gate refuses the round-t
   ])
     request.mockResolvedValueOnce(new Response(JSON.stringify(body)));
   request.mockResolvedValueOnce(new Response("{}", { status: 403 }));
+  request.mockResolvedValueOnce(
+    new Response(JSON.stringify({ version: "0.79.1" })),
+  );
   request.mockResolvedValueOnce(new Response(JSON.stringify([record])));
   request.mockResolvedValueOnce(new Response(null, { status: 204 }));
   request.mockResolvedValueOnce(new Response("[]"));
@@ -181,7 +184,7 @@ it("cleans up its disposable key when the unset version gate refuses the round-t
     expect(request.mock.calls[request.mock.calls.length - 1]?.[0]).toBe(
       "https://example.test/api/auth/keys",
     );
-    expect(request).toHaveBeenCalledTimes(9);
+    expect(request).toHaveBeenCalledTimes(10);
   } finally {
     vi.unstubAllGlobals();
   }

@@ -1,17 +1,16 @@
 {
-  "status": "specified, to be re-recorded against the fixed server",
-  "minimum_server_version": "set by the owner",
+  "status": "recorded against server 0.79.2 using a disposable key; credentials redacted",
+  "server_version": "0.79.2",
+  "minimum_server_version": "0.79.2",
   "registration": {
     "collection_permissions": {
       "users": [
-        "read",
-        "write"
+        "read"
       ]
     },
     "response_collection_permissions": {
       "users": [
-        "read",
-        "write"
+        "read"
       ]
     }
   },
@@ -57,6 +56,20 @@
             ]
           }
         }
+      },
+      "fresh_token_grant": {
+        "read": false,
+        "write": true,
+        "select_fields": [
+          "name",
+          "email"
+        ],
+        "exclude_fields": [
+          "secret"
+        ],
+        "writable_fields": [
+          "name"
+        ]
       }
     },
     {
@@ -84,6 +97,17 @@
             ]
           }
         }
+      },
+      "fresh_token_grant": {
+        "read": false,
+        "write": true,
+        "select_fields": null,
+        "exclude_fields": [
+          "secret"
+        ],
+        "writable_fields": [
+          "name"
+        ]
       }
     },
     {
@@ -115,6 +139,19 @@
             ]
           }
         }
+      },
+      "fresh_token_grant": {
+        "read": false,
+        "write": true,
+        "select_fields": [
+          "email"
+        ],
+        "exclude_fields": [
+          "secret"
+        ],
+        "writable_fields": [
+          "name"
+        ]
       }
     },
     {
@@ -144,6 +181,20 @@
             ]
           }
         }
+      },
+      "fresh_token_grant": {
+        "read": false,
+        "write": true,
+        "select_fields": [
+          "name",
+          "email"
+        ],
+        "exclude_fields": [
+          "secret"
+        ],
+        "writable_fields": [
+          "name"
+        ]
       }
     },
     {
@@ -172,6 +223,18 @@
             ]
           }
         }
+      },
+      "fresh_token_grant": {
+        "read": false,
+        "write": true,
+        "select_fields": [
+          "name",
+          "email"
+        ],
+        "exclude_fields": null,
+        "writable_fields": [
+          "name"
+        ]
       }
     },
     {
@@ -200,6 +263,18 @@
             ]
           }
         }
+      },
+      "fresh_token_grant": {
+        "read": false,
+        "write": true,
+        "select_fields": [
+          "name",
+          "email"
+        ],
+        "exclude_fields": [],
+        "writable_fields": [
+          "name"
+        ]
       }
     },
     {
@@ -229,6 +304,20 @@
             ]
           }
         }
+      },
+      "fresh_token_grant": {
+        "read": false,
+        "write": true,
+        "select_fields": [
+          "name",
+          "email"
+        ],
+        "exclude_fields": [
+          "secret"
+        ],
+        "writable_fields": [
+          "name"
+        ]
       }
     },
     {
@@ -257,6 +346,18 @@
             "writable_fields": null
           }
         }
+      },
+      "fresh_token_grant": {
+        "read": false,
+        "write": true,
+        "select_fields": [
+          "name",
+          "email"
+        ],
+        "exclude_fields": [
+          "secret"
+        ],
+        "writable_fields": null
       }
     },
     {
@@ -289,6 +390,20 @@
             ]
           }
         }
+      },
+      "fresh_token_grant": {
+        "read": false,
+        "write": true,
+        "select_fields": [
+          "name",
+          "email"
+        ],
+        "exclude_fields": [
+          "secret"
+        ],
+        "writable_fields": [
+          "email"
+        ]
       }
     },
     {
@@ -318,7 +433,17 @@
             ]
           }
         }
+      },
+      "fresh_token_grant": {
+        "read": false,
+        "write": true,
+        "select_fields": null,
+        "exclude_fields": [],
+        "writable_fields": [
+          "email"
+        ]
       }
     }
-  ]
+  ],
+  "remaining_disposable_keys": 0
 }

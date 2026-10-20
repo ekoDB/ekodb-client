@@ -70,15 +70,13 @@ await admin.updateApiKeyCollectionPermissions({
 });
 ```
 
-Earlier servers remove a grant's field restrictions on this call, so the method
-refuses to run against them. The server fix ships in a later release. The
-minimum release is **set by the owner**;
-`MIN_SERVER_VERSION_FOR_PERMISSION_EDITS` is currently unset, so all permission
-updates are blocked before any HTTP request. There is no caller override. Once
-the minimum is set, the client reads the authenticated `/api/health` payload's
-top-level `version` and caches that read per client instance. Unreadable, older,
-malformed or prerelease versions fail closed. Create a new client after a server
-upgrade to refresh that cached reading.
+Permission edits require **ekoDB 0.79.2 or later**. Earlier servers remove a
+grant's field restrictions on this call, so the method refuses to run against
+them. `MIN_SERVER_VERSION_FOR_PERMISSION_EDITS` is set to `0.79.2`. The client
+reads the authenticated `/api/health` payload's top-level `version` before the
+first update and caches that read per client instance. There is no caller
+override. Unreadable, older, malformed or prerelease versions fail closed.
+Create a new client after a server upgrade to refresh that cached reading.
 
 Restrictions in requests must be null or arrays of non-empty strings; undefined
 is omitted. Response restrictions retain their exact arrays, empty arrays and
@@ -108,13 +106,15 @@ supported. Both an admin Bearer JWT and the admin key in the registration body
 are sent for deployed-server compatibility.
 
 The
-[specified permission-edit fixture](https://github.com/ekoDB/ekodb-client/blob/main/test-fixtures/admin-permission-edits-specified.json)
-is hand-written and marked "specified, to be re-recorded against the fixed
-server". The
+[recorded 0.79.2 contract](https://github.com/ekoDB/ekodb-client/blob/main/test-fixtures/admin-contract-0.79.2.json)
+covers all nine restriction-field/state combinations plus a mixed edit, with
+fresh-token readback after every update. Registration action arrays, the
+restriction lifecycle and disposable-key revocation with absence verification
+passed on 0.79.2. Recording changed only a newly registered disposable key. The
 [historical 0.79.0 observations](https://github.com/ekoDB/ekodb-client/blob/main/test-fixtures/admin-contract-0.79.0.json)
 record restriction erasure and stale token grants; tests never treat those
-update responses as the accepted contract. The server fix ships in a later
-release. There is no format-probing retry during SDK registration.
+update responses as the accepted contract. There is no format-probing retry
+during SDK registration.
 
 Offline tests include installing an actual npm tarball in an isolated consumer:
 
