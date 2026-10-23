@@ -12,6 +12,11 @@ This directory contains Go examples demonstrating ekoDB features.
 go mod download
 ```
 
+The example module declares Go SDK **v0.31.1** and resolves it from the sibling
+`ekodb-client-go` checkout through its local `replace` directive. Update that
+checkout to the released version before building. `make build-examples` compiles
+the examples without executing them.
+
 ## Examples
 
 ### TTL Features

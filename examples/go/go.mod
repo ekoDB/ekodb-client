@@ -5,7 +5,7 @@ go 1.27.3
 replace github.com/ekoDB/ekodb-client-go => ../../../ekodb-client-go
 
 require (
-	github.com/ekoDB/ekodb-client-go v0.0.0-00010101000000-000000000000
+	github.com/ekoDB/ekodb-client-go v0.31.1
 	github.com/gorilla/websocket v1.5.3
 	github.com/joho/godotenv v1.5.1
 )
