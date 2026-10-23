@@ -86,8 +86,9 @@ async function chatCompletionScript(client) {
           ),
           ChatMessage.user("What are the benefits of using vector databases?"),
         ],
-        "gpt-4",
-        0.7,
+        "gpt-6-luna",
+        undefined,
+        1024,
       ),
     ],
     tags: ["ai", "chat"],
@@ -120,7 +121,7 @@ async function embedGenerationScript(client) {
     parameters: {},
     functions: [
       Stage.findAll("ai_articles"),
-      Stage.embed("content", "embedding", "text-embedding-ada-002"),
+      Stage.embed("content", "embedding", "text-embedding-3-small"),
     ],
     tags: ["ai", "embeddings"],
   };

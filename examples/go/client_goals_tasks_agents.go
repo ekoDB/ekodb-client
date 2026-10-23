@@ -344,7 +344,7 @@ func run() (runErr error) {
 		"name":          "benchmark-runner",
 		"description":   "Runs periodic benchmarks",
 		"deployment_id": "deploy_prod_1",
-		"llm_model":     "gpt-4.1",
+		"llm_model":     "gpt-6-luna",
 	})
 	if err != nil {
 		return fmt.Errorf("create agent: %w", err)

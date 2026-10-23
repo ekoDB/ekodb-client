@@ -335,7 +335,8 @@ async function main() {
     const chatSession = await client.createChatSession({
       collections: [],
       llm_provider: "openai",
-      llm_model: "gpt-4o-mini",
+      llm_model: "gpt-6-luna",
+      max_tokens: 1024,
       system_prompt:
         "You are a helpful programming assistant. Use the provided context " +
         "to give comprehensive answers that combine knowledge from multiple " +
