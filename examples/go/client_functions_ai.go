@@ -101,8 +101,7 @@ func run() (runErr error) {
 	fmt.Println("📝 Example 1: Simple Chat Completion")
 	fmt.Println()
 
-	model1 := "gpt-4o-mini"
-	temp1 := 0.7
+	model1 := "gpt-6-luna"
 	script1 := ekodb.UserFunction{
 		Label:       "ai_assistant_go",
 		Name:        "AI Chat Assistant",
@@ -116,11 +115,12 @@ func run() (runErr error) {
 					{Role: "user", Content: "What are the benefits of using vector databases?"},
 				},
 				&model1,
-				&temp1,
+				nil,
 			),
 		},
 		Tags: []string{"ai", "chat"},
 	}
+	script1.Functions[0].Data["max_tokens"] = 1024
 	scriptID1, err := saveOrUpdateFn(client, script1)
 	if err != nil {
 		return err

@@ -26,6 +26,8 @@ async def main():
     response = await client.raw_completion_stream(
         system_prompt="You are a helpful assistant. Keep responses concise.",
         message="What are the three primary colors?",
+        provider="openai",
+        model="gpt-6-luna",
         max_tokens=256,
     )
     print(f"Response: {response['content']}\n")
@@ -35,6 +37,8 @@ async def main():
     response = await client.raw_completion_stream(
         system_prompt="Output only valid JSON. No other text.",
         message="Return a JSON array of 3 planets with name and diameter_km fields.",
+        provider="openai",
+        model="gpt-6-luna",
         max_tokens=512,
     )
     print(f"JSON response: {response['content']}\n")
@@ -46,6 +50,8 @@ async def main():
     response = await client.raw_completion(
         system_prompt="You are a helpful assistant.",
         message="Say hello in one sentence.",
+        provider="openai",
+        model="gpt-6-luna",
         max_tokens=64,
     )
     print(f"Blocking response: {response['content']}\n")

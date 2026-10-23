@@ -43,6 +43,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .json(&json!({
             "collections": [],
             "llm_provider": "openai",
+            "llm_model": "gpt-5.6-luna",
+            "max_tokens": 1024,
             "system_prompt": "You are a helpful assistant.",
         }))
         .send()

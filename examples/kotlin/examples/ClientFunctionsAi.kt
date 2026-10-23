@@ -84,8 +84,8 @@ fun main() = runBlocking {
                         ChatMessage(role = "system", content = "You are a helpful database assistant. Be concise."),
                         ChatMessage(role = "user", content = "What are the benefits of using vector databases?")
                     ),
-                    model = "gpt-4o-mini",
-                    temperature = 0.7
+                    model = "gpt-6-luna",
+                    max_tokens = 1024
                 )
             ),
             tags = listOf("ai", "chat")
@@ -116,7 +116,8 @@ fun main() = runBlocking {
                 FunctionStageConfig.FindAll(collection = "ai_articles_kt"),
                 FunctionStageConfig.Embed(
                     input_field = "content",
-                    output_field = "embedding"
+                    output_field = "embedding",
+                    model = kotlinx.serialization.json.JsonPrimitive("text-embedding-3-small")
                 )
             ),
             tags = listOf("ai", "embed")

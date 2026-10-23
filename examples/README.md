@@ -32,6 +32,7 @@ that behavior-level integration pass.
 
 ## Table of Contents
 
+- [AI example costs](#ai-example-costs)
 - [Quick Start](#-quick-start)
 - [Example Types](#-example-types)
 - [Example Catalog](#-example-catalog)
@@ -46,6 +47,34 @@ that behavior-level integration pass.
 - [CI/CD Integration](#-cicd-integration)
 - [Troubleshooting](#-troubleshooting)
 - [Adding New Examples](#-adding-new-examples)
+
+## AI example costs
+
+AI examples use `gpt-6-luna` for plain chat, stored Chat stages, RAG and raw
+completions. The WebSocket client-tool scenario uses `gpt-5.6-luna`: GPT-6 Luna
+requires `reasoning_effort: "none"` for Chat Completions function calling, and
+the current ekoDB request types do not expose that setting. Agent CRUD examples
+only store a model choice; they do not verify agent execution.
+
+Chat-session and stored Chat-stage requests set `max_tokens` to **1,024**. Raw
+completion examples preserve their smaller existing limits: **256**, **512** and
+**64** tokens. Custom sampling temperatures are omitted for reasoning-model
+compatibility. AI-function embedding stages explicitly select
+`text-embedding-3-small` instead of inheriting a potentially expensive server
+default. Raw completions explicitly select the OpenAI provider and Luna model.
+
+These are request-side completion limits, **not a total spend cap**. Input and
+reasoning tokens, embeddings, repeated requests and tool loops can all
+contribute to the bill. The server/provider adapter must enforce the limit using
+the provider's supported parameter; reasoning can consume the budget before
+visible text appears. Live provider behavior and billing need a manual run.
+
+`make build-examples` compiles without executing the examples.
+`make test-examples` executes live requests and can incur provider charges. Read
+the current official
+[Luna model documentation](https://developers.openai.com/api/docs/models/gpt-6-luna),
+[GPT-5.6 Luna documentation](https://developers.openai.com/api/docs/models/gpt-5.6-luna)
+and [pricing](https://developers.openai.com/api/docs/pricing) before a live run.
 
 ## 🚀 Quick Start
 
