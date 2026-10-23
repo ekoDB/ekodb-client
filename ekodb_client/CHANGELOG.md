@@ -8,6 +8,13 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Changed
+
+- **Use the released Go SDK in examples** — Replace the placeholder module
+  requirement with v0.31.1 while retaining the sibling checkout for local
+  development. Document updating that checkout before compile-only example
+  builds. (#332)
+
 ### Security
 
 - **Match the patched Go example toolchain** — Require Go 1.27.3 or newer in the
