@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	ekodb "github.com/ekoDB/ekodb-client-go"
 	"github.com/joho/godotenv"
@@ -132,10 +133,15 @@ func run() (runErr error) {
 	if err != nil {
 		return err
 	}
-	if result1 != nil {
-		fmt.Println("📊 AI Response generated")
-		fmt.Printf("⏱️  Execution time: %vms\n\n", result1.Stats.ExecutionTimeMs)
+	if result1 == nil || len(result1.Records) == 0 {
+		return fmt.Errorf("chat function returned no records")
 	}
+	response := strings.TrimSpace(ekodb.GetStringValue(result1.Records[0]["response"]))
+	if response == "" {
+		return fmt.Errorf("chat function returned no response text")
+	}
+	fmt.Printf("🤖 AI Response:\n   %s\n", response)
+	fmt.Printf("⏱️  Execution time: %vms\n\n", result1.Stats.ExecutionTimeMs)
 
 	// Example 2: Embed Generation
 	fmt.Println("📝 Example 2: Generate Embeddings")
@@ -145,13 +151,14 @@ func run() (runErr error) {
 	script2 := ekodb.UserFunction{
 		Label:       "generate_embedding_go",
 		Name:        "Generate Embedding",
-		Description: func() *string { s := "Generate embedding for text"; return &s }(),
+		Description: func() *string { s := "Generate embeddings for the example articles"; return &s }(),
 		Version:     func() *string { s := "1.0"; return &s }(),
-		Parameters: map[string]ekodb.ParameterDefinition{
-			"text": {Required: true, Description: "Text to embed"},
+		Parameters:  map[string]ekodb.ParameterDefinition{},
+		Functions: []ekodb.FunctionStageConfig{
+			ekodb.StageFindAll(collection),
+			ekodb.StageEmbed("content", "embedding", &model2),
 		},
-		Functions: []ekodb.FunctionStageConfig{ekodb.StageEmbed("text", "embedding", &model2)},
-		Tags:      []string{"ai", "embed"},
+		Tags: []string{"ai", "embed"},
 	}
 	scriptID2, err := saveOrUpdateFn(client, script2)
 	if err != nil {
@@ -160,16 +167,29 @@ func run() (runErr error) {
 	scriptIDs = append(scriptIDs, scriptID2)
 	fmt.Println("✅ Embed script saved")
 
-	result2, err := client.CallFunction("generate_embedding_go", map[string]interface{}{
-		"text": "ekoDB is a powerful database",
-	})
+	result2, err := client.CallFunction("generate_embedding_go", nil)
 	if err != nil {
 		return err
 	}
-	if result2 != nil {
-		fmt.Println("📊 Embedding generated")
-		fmt.Printf("⏱️  Execution time: %vms\n\n", result2.Stats.ExecutionTimeMs)
+	if result2 == nil {
+		return fmt.Errorf("embedding function returned no result")
 	}
+	if len(result2.Records) != len(articles) {
+		return fmt.Errorf("embedding function returned %d records; expected %d", len(result2.Records), len(articles))
+	}
+	firstDimensions := 0
+	for i, article := range result2.Records {
+		dimensions := len(ekodb.GetVectorValue(article["embedding"]))
+		if dimensions == 0 {
+			return fmt.Errorf("article %d did not contain an embedding vector", i+1)
+		}
+		if i == 0 {
+			firstDimensions = dimensions
+		}
+	}
+	fmt.Printf("📊 Generated %d embeddings\n", len(result2.Records))
+	fmt.Printf("   Dimensions: %d\n", firstDimensions)
+	fmt.Printf("⏱️  Execution time: %vms\n\n", result2.Stats.ExecutionTimeMs)
 
 	fmt.Println("✅ All AI script examples finished!")
 	fmt.Println()
