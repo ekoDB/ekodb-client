@@ -10,6 +10,14 @@ and this project adheres to
 
 ### Changed
 
+- **Refresh AI example models and completion budgets** — Select cost-sensitive
+  Luna models across all five SDK example sets, using GPT-5.6 Luna for the
+  WebSocket client-tool scenario. Bound chat-session and stored-stage
+  completions to 1,024 tokens, preserve smaller raw-completion limits, omit
+  custom temperatures and explicitly select the small embedding model in AI
+  functions. Expose the existing branch completion limit in the Python binding
+  without changing prior positional calls. Document live-run costs and provider
+  compatibility limits. (#337)
 - **Use the released Go SDK in examples** — Replace the placeholder module
   requirement with v0.31.1 while retaining the sibling checkout for local
   development. Document updating that checkout before compile-only example
