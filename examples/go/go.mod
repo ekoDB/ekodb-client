@@ -1,6 +1,6 @@
 module github.com/ekodb/examples
 
-go 1.27
+go 1.27.3
 
 replace github.com/ekoDB/ekodb-client-go => ../../../ekodb-client-go
 
