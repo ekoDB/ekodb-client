@@ -87,12 +87,14 @@ async def run_examples(client, script_ids):
                         "What are the benefits of using vector databases?"
                     ),
                 ],
-                "gpt-4o-mini",
-                0.7,
+                "gpt-6-luna",
+                max_tokens=1024,
             )
         ],
         "tags": ["ai", "chat"],
     }
+    # The helper defaults to a custom temperature; reasoning models omit it.
+    script1["functions"][0].pop("temperature", None)
     script_id1 = await save_or_update(client, script1)
     script_ids.append(script_id1)
     print("✅ Chat script saved")
@@ -119,7 +121,7 @@ async def run_examples(client, script_ids):
         "parameters": {},
         "functions": [
             {"type": "FindAll", "collection": COLLECTION},
-            Stage.embed("content", "embedding"),
+            Stage.embed("content", "embedding", "text-embedding-3-small"),
         ],
         "tags": ["ai", "embed"],
     }

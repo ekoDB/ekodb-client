@@ -25,6 +25,8 @@ async function main() {
   const response1 = await client.rawCompletionStream({
     system_prompt: "You are a helpful assistant. Keep responses concise.",
     message: "What are the three primary colors?",
+    provider: "openai",
+    model: "gpt-6-luna",
     max_tokens: 256,
   });
   console.log(`Response: ${response1.content}\n`);
@@ -35,6 +37,8 @@ async function main() {
     system_prompt: "Output only valid JSON. No other text.",
     message:
       "Return a JSON array of 3 planets with name and diameter_km fields.",
+    provider: "openai",
+    model: "gpt-6-luna",
     max_tokens: 512,
   });
   console.log(`JSON response: ${response2.content}\n`);
@@ -46,6 +50,8 @@ async function main() {
   const response3 = await client.rawCompletion({
     system_prompt: "You are a helpful assistant.",
     message: "Say hello in one sentence.",
+    provider: "openai",
+    model: "gpt-6-luna",
     max_tokens: 64,
   });
   console.log(`Blocking response: ${response3.content}\n`);

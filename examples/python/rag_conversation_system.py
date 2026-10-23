@@ -286,7 +286,8 @@ async def run_example(client, resources):
     chat_session = await client.create_chat_session(
         collections=[],  # No collections needed for this chat
         llm_provider="openai",
-        llm_model="gpt-4o-mini",
+        llm_model="gpt-6-luna",
+        max_tokens=1024,
         system_prompt=(
             f"You are a helpful programming assistant. Use the provided context "
             f"to give comprehensive answers that combine knowledge from multiple "

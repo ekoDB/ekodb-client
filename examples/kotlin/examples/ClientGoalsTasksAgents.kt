@@ -186,7 +186,7 @@ fun main() = runBlocking {
             put("name", "DataBot")
             put("system_prompt", "You are a data analysis assistant.")
             put("deployment_id", "deploy_kt_example")
-            put("llm_model", "gpt-4.1")
+            put("llm_model", "gpt-6-luna")
         })
         val agentId = agent["id"].toString().trim('"')
         agentIds.add(agentId)

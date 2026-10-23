@@ -56,6 +56,8 @@ async function main() {
     const session = await client.createChatSession({
       collections: [],
       llm_provider: "openai",
+      llm_model: "gpt-5.6-luna",
+      max_tokens: 1024,
       system_prompt: "You are a helpful assistant.",
     });
     const activeChatId = session.chat_id;
@@ -151,6 +153,8 @@ async function chatWithClientTools() {
     const session = await client.createChatSession({
       collections: [],
       llm_provider: "openai",
+      llm_model: "gpt-5.6-luna",
+      max_tokens: 1024,
       system_prompt: "You are a helpful assistant with access to tools.",
     });
     const activeChatId = session.chat_id;
