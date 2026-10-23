@@ -10,7 +10,7 @@ approaches**:
 
 ## Prerequisites
 
-- Rust 1.70 or higher
+- Rust 1.85 or higher
 - Cargo package manager
 
 ## Building
@@ -18,6 +18,11 @@ approaches**:
 ```bash
 cargo build
 ```
+
+Use the committed lockfile for reproducible checks
+(`cargo check --locked --examples`). It includes the rustls 0.23.46,
+rustls-webpki 0.103.16, webpki-roots 1.0.10, and Tokio 1.53.3 security patches.
+The legacy `dotenv` example helper retains an unmaintained-crate warning.
 
 ## Examples
 

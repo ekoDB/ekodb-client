@@ -40,6 +40,11 @@ ekodb_client = "0.31.0"
 tokio = { version = "1", features = ["full"] }
 ```
 
+The development lockfiles include rustls 0.23.46, rustls-webpki 0.103.16,
+webpki-roots 1.0.10, and Tokio 1.53.3 security patches. Applications maintain
+their own `Cargo.lock`: refresh these transitive TLS dependencies and rebuild
+deployed binaries to pick up the certificate trust-store updates.
+
 ## Quick Start
 
 ```rust

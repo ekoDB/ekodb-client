@@ -38,6 +38,18 @@ pip install maturin
 maturin develop
 ```
 
+Python 3.10 or later is required. The native extension shares the Rust client's
+TLS dependencies; updating Python packages alone does not update TLS code
+embedded in an existing wheel. Rebuild source installations after refreshing
+`ekodb-client-py/Cargo.lock`, or install a wheel built with the patched
+lockfile.
+
+For this repository's Python examples, install `examples/requirements.txt` in
+the project virtual environment. Its security minimums cover aiohttp 3.14.4,
+multidict 6.9.1, python-dotenv 1.2.2, requests 2.33.0, certifi 2026.10.19, and
+urllib3 2.8.0. These are example dependencies; the native SDK does not declare
+them as Python runtime dependencies.
+
 ## Quick Start
 
 ```python
