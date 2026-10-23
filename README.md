@@ -68,7 +68,7 @@ npm install @ekodb/ekodb-client
 
 ```kotlin
 // Gradle (Kotlin DSL)
-implementation("io.ekodb:ekodb-client-kt:0.31.1")
+implementation("io.ekodb:ekodb-client-kt:0.31.0")
 ```
 
 **Features:**
