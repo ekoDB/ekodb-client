@@ -10,6 +10,11 @@ limits. The WebSocket client-tool scenario uses GPT-5.6 Luna for compatibility.
 See the shared [AI example cost policy](../README.md#ai-example-costs) before
 executing live examples; compilation does not incur provider-generation charges.
 
+`client_functions_ai.go` loads its example articles with `FindAll` before
+embedding their `content`. It requires nonempty chat text, one returned record
+per article, and a nonempty embedding vector for every record before reporting
+success.
+
 ## Prerequisites
 
 - Go 1.27.3 or higher, using a supported release with current security patches

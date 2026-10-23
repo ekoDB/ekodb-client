@@ -37,6 +37,12 @@ These are request-side limits; live provider enforcement, visible output under
 reasoning budgets and total billing remain unverified by offline checks. See
 [AI example costs](examples/README.md#ai-example-costs).
 
+Matching AI-function examples load their articles before the Embed stage. The Go
+example now uses `FindAll` followed by embedding `content`, and verifies chat
+text, the expected article count and nonempty vectors. This fixes its former
+zero-record embedding pipeline and unconditional success report; no Go SDK API
+change is required.
+
 ### Security dependency maintenance (unreleased)
 
 | SDK                   | Transport dependency surface                    | Maintenance scope                                                                                                                                                                                          |
