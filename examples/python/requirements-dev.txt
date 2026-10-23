@@ -4,6 +4,7 @@
 -e ../../ekodb-client-py
 
 # Other dependencies
-aiohttp>=3.8.0
+aiohttp>=3.14.4
+multidict>=6.9.1
 websockets>=14.0
-python-dotenv>=1.0.0
+python-dotenv>=1.2.2

@@ -1244,7 +1244,7 @@ fmt-python: venv
 	@echo "🐍 $(CYAN)Formatting Python code...$(RESET)"
 	@if ! $(VENV_PY) -m black --version >/dev/null 2>&1; then \
 		echo "$(YELLOW)Installing black into the project virtual environment...$(RESET)"; \
-		$(VENV_PY) -m pip install --quiet black; \
+		$(VENV_PY) -m pip install --quiet 'black>=26.10.1'; \
 	fi
 	@$(VENV_PY) -m black ekodb-client-py/ examples/python/ --line-length 88 --exclude 'target|venv|\.venv|test_env'
 	@echo "✅ $(GREEN)Python formatting complete with project-local black!$(RESET)"

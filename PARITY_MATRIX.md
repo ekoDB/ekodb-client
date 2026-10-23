@@ -1,6 +1,6 @@
 # Client Library Parity Matrix
 
-**Last Updated:** October 20, 2026
+**Last Updated:** October 23, 2026
 
 **Published client version:** See the
 [latest release](https://github.com/ekoDB/ekodb-client/releases/latest). The
@@ -14,6 +14,20 @@ maintained in the separate `ekodb-client-go` repository.
 > because it had fallen behind this canonical matrix.
 
 ## Status: Core and stored-function contract parity
+
+### Security dependency maintenance (unreleased)
+
+| SDK                   | Transport dependency surface                    | Maintenance scope                                                                                                                                                                  |
+| --------------------- | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Rust                  | reqwest and tokio-tungstenite with rustls       | Root and Rust-example lockfiles include rustls 0.23.46, rustls-webpki 0.103.16, webpki-roots 1.0.10, and Tokio 1.53.3.                                                             |
+| Python                | PyO3 extension wrapping the Rust client         | The binding's separate Cargo lockfile carries the same patches. Example dependency floors preserve Python 3.10 support. Rebuild native wheels to update embedded TLS dependencies. |
+| TypeScript/JavaScript | Node fetch and `ws`                             | Existing npm dependency graph retained; CI uses patched Node 24.22.1 LTS.                                                                                                          |
+| Kotlin                | Ktor CIO on the JVM                             | Existing dependency graph retained; JVM trust-store maintenance remains an application responsibility.                                                                             |
+| Go                    | Standard-library HTTP/TLS and Gorilla WebSocket | Maintained in the separate Go SDK repository; its toolchain and module verification are separate from the four-language suite here.                                                |
+
+This maintenance changes dependency resolutions and minimums without changing
+the public API or wire contract. Offline tests exercise existing HTTP/WebSocket
+fixtures; they do not prove production certificate-store or deployment state.
 
 The core parity baseline below was verified at v0.21.0. Search API coverage was
 updated through v0.26.4; the current stored-function and example-parity work is
