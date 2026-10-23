@@ -8,6 +8,13 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Fixed
+
+- **Generate and verify embeddings in the Go AI example** — Load the example
+  articles before embedding their content, matching the other SDK examples.
+  Reject missing chat text, unexpected record counts and empty vectors instead
+  of reporting success for a zero-record result. (#339)
+
 ### Changed
 
 - **Refresh AI example models and completion budgets** — Select cost-sensitive
