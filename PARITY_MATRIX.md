@@ -25,13 +25,13 @@ sampling temperatures are omitted. Agent CRUD examples store the model choice
 without running an agent. The Go examples consume the released sibling Go SDK;
 no Go SDK source or version changes are required.
 
-| SDK                   | Example request path                                                            | Session / stored-stage limit                                              |
-| --------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| Rust                  | Typed chat-session builder and stored Chat variant; raw HTTP WebSocket setup    | `max_tokens(1024)` or `Some(1024)`; raw session JSON carries `max_tokens` |
-| Python                | Compiled chat-session/branch/raw-completion binding; Python stored-stage helper | `max_tokens=1024`; remove the helper's default temperature before saving  |
-| TypeScript/JavaScript | Public chat-session/raw-completion client and Stage helper                      | `max_tokens: 1024`; optional Chat temperature omitted                     |
-| Kotlin                | Public JSON chat-session client, typed Chat stage and raw completion            | `max_tokens`/`maxTokens` set to 1024; nullable temperature omitted        |
-| Go                    | Released typed session/raw-completion requests and public Chat-stage data map   | `MaxTokens` or stage data `max_tokens` set to 1024; nil temperature       |
+| SDK                   | Example request path                                                            | Session / stored-stage limit                                                       |
+| --------------------- | ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| Rust                  | Typed chat-session builder and stored Chat variant; raw HTTP WebSocket setup    | `max_tokens(1024)` or `Some(1024)`; raw session JSON carries `max_tokens`          |
+| Python                | Compiled chat-session/branch/raw-completion binding; Python stored-stage helper | `max_tokens=1024`; remove the helper's default temperature before saving           |
+| TypeScript/JavaScript | Public chat-session/raw-completion client and Stage helper                      | `max_tokens: 1024`; optional Chat temperature omitted                              |
+| Kotlin                | Public JSON chat-session client, typed Chat stage and raw completion            | Session JSON and Chat-stage `max_tokens` set to 1024; nullable temperature omitted |
+| Go                    | Released typed session/raw-completion requests and public Chat-stage data map   | `MaxTokens` or stage data `max_tokens` set to 1024; nil temperature                |
 
 These are request-side limits; live provider enforcement, visible output under
 reasoning budgets and total billing remain unverified by offline checks. See
