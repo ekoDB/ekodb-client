@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Security
+
+- **Refresh native TLS and async dependencies** — Update all three Cargo
+  lockfiles to rustls 0.23.46, rustls-webpki 0.103.16, webpki-roots 1.0.10, and
+  Tokio 1.53.3, addressing RUSTSEC-2026-0346 through RUSTSEC-2026-0349,
+  RUSTSEC-2026-0381, RUSTSEC-2026-0382, and RUSTSEC-2026-0386. Raise the Tokio
+  manifest minimum to the patched release. Applications and native Python wheels
+  must be rebuilt to pick up embedded TLS and certificate-store fixes.
+- **Require patched Python example dependencies** — Set compatible minimums for
+  aiohttp, multidict, python-dotenv, requests, certifi, and urllib3, and for the
+  Black development formatter. Preserve Python 3.10 support and document
+  refreshing existing environments and their interpreter. (#332)
+- **Pin patched Node LTS in SDK CI** — Run TypeScript unit tests on Node 24.22.1
+  instead of allowing a major-only selector to use an older cached runtime.
+
 ## [0.31.0] - 2026-10-20
 
 ### Added
