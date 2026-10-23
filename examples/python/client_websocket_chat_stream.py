@@ -31,7 +31,8 @@ async def main(resources):
     session = await client.create_chat_session(
         collections=[],
         llm_provider="openai",
-        llm_model="gpt-4o-mini",
+        llm_model="gpt-5.6-luna",
+        max_tokens=1024,
         system_prompt="You are a helpful assistant.",
     )
     chat_id = session["chat_id"]
@@ -96,7 +97,8 @@ async def _chat_with_client_tools(resources):
     session = await client.create_chat_session(
         collections=[],
         llm_provider="openai",
-        llm_model="gpt-4o-mini",
+        llm_model="gpt-5.6-luna",
+        max_tokens=1024,
         system_prompt="You are a helpful assistant with access to tools.",
     )
     chat_id = session["chat_id"]

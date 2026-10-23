@@ -29,6 +29,8 @@ async function main() {
     const session = await client.createChatSession({
       collections: [],
       llm_provider: "openai",
+      llm_model: "gpt-6-luna",
+      max_tokens: 1024,
       system_prompt: "You are a helpful assistant.",
     });
     chatId = session.chat_id;

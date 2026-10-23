@@ -31,8 +31,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let request = RawCompletionRequest {
         system_prompt: "You are a helpful assistant. Keep responses concise.".to_string(),
         message: "What are the three primary colors?".to_string(),
-        provider: None,
-        model: None,
+        provider: Some("openai".to_string()),
+        model: Some("gpt-6-luna".to_string()),
         max_tokens: Some(256),
     };
 
@@ -44,8 +44,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let request = RawCompletionRequest {
         system_prompt: "Output only valid JSON. No other text.".to_string(),
         message: "Return a JSON array of 3 planets with name and diameter_km fields.".to_string(),
-        provider: None,
-        model: None,
+        provider: Some("openai".to_string()),
+        model: Some("gpt-6-luna".to_string()),
         max_tokens: Some(512),
     };
 
@@ -59,8 +59,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let request = RawCompletionRequest {
         system_prompt: "You are a helpful assistant.".to_string(),
         message: "Say hello in one sentence.".to_string(),
-        provider: None,
-        model: None,
+        provider: Some("openai".to_string()),
+        model: Some("gpt-6-luna".to_string()),
         max_tokens: Some(64),
     };
 

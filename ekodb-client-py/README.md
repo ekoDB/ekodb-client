@@ -607,6 +607,23 @@ Roll the transaction back to a savepoint.
 
 Release (forget) a savepoint.
 
+## Chat-session completion budgets
+
+`create_chat_session` and `branch_chat_session` accept an optional `max_tokens`
+argument. Branching appends it after the existing `llm_model` argument,
+preserving older positional calls. Omission or `None` leaves the wire field
+absent.
+
+```python
+branched = await client.branch_chat_session(
+    "parent-chat", 0, [("products", ["name"])], "openai",
+    llm_model="gpt-6-luna", max_tokens=1024,
+)
+```
+
+This requests a completion limit through the server; it is not a total billing
+limit. See [AI example costs](../examples/README.md#ai-example-costs).
+
 ## Examples
 
 See the

@@ -100,8 +100,9 @@ async function main() {
               "What are the benefits of using vector databases?",
             ),
           ],
-          "gpt-4o-mini",
-          0.7,
+          "gpt-6-luna",
+          undefined,
+          1024,
         ),
       ],
       tags: ["ai", "chat"],
@@ -130,7 +131,7 @@ async function main() {
       parameters: {},
       functions: [
         Stage.findAll("ai_articles_ts"),
-        Stage.embed("content", "embedding"),
+        Stage.embed("content", "embedding", "text-embedding-3-small"),
       ],
       tags: ["ai", "embed"],
     };

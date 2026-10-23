@@ -34,6 +34,8 @@ fun main() = runBlocking {
         val response1 = client.rawCompletionStream(
             systemPrompt = "You are a helpful assistant. Keep responses concise.",
             message = "What are the three primary colors?",
+            provider = "openai",
+            model = "gpt-6-luna",
             maxTokens = 256,
         )
         println("Response: ${response1["content"]?.jsonPrimitive?.content}\n")
@@ -43,6 +45,8 @@ fun main() = runBlocking {
         val response2 = client.rawCompletionStream(
             systemPrompt = "Output only valid JSON. No other text.",
             message = "Return a JSON array of 3 planets with name and diameter_km fields.",
+            provider = "openai",
+            model = "gpt-6-luna",
             maxTokens = 512,
         )
         println("JSON response: ${response2["content"]?.jsonPrimitive?.content}\n")
@@ -52,6 +56,8 @@ fun main() = runBlocking {
         val response3 = client.rawCompletion(
             systemPrompt = "You are a helpful assistant.",
             message = "Say hello in one sentence.",
+            provider = "openai",
+            model = "gpt-6-luna",
             maxTokens = 64,
         )
         println("Blocking response: ${response3["content"]?.jsonPrimitive?.content}\n")

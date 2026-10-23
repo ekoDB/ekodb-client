@@ -2330,8 +2330,8 @@ impl Client {
         })
     }
 
-    /// Branch a chat session
-    #[pyo3(signature = (parent_id, branch_point_idx, collections, llm_provider, llm_model=None))]
+    /// Branch a chat session, optionally bounding completion tokens.
+    #[pyo3(signature = (parent_id, branch_point_idx, collections, llm_provider, llm_model=None, max_tokens=None))]
     fn branch_chat_session<'py>(
         &self,
         py: Python<'py>,
@@ -2340,6 +2340,7 @@ impl Client {
         collections: Vec<(String, Vec<String>)>,
         llm_provider: String,
         llm_model: Option<String>,
+        max_tokens: Option<i32>,
     ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
 
@@ -2373,7 +2374,7 @@ impl Client {
                 parent_id: Some(parent_id),
                 branch_point_idx: Some(branch_point_idx),
                 max_context_messages: None,
-                max_tokens: None,
+                max_tokens,
                 temperature: None,
                 tool_config: None,
             };
