@@ -334,7 +334,8 @@ func run() (runErr error) {
 	chatSession, err := client.CreateChatSession(ekodb.CreateChatSessionRequest{
 		Collections:  []ekodb.CollectionConfig{},
 		LLMProvider:  "openai",
-		LLMModel:     strPtr("gpt-4o-mini"),
+		LLMModel:     strPtr("gpt-6-luna"),
+		MaxTokens:    func() *int32 { n := int32(1024); return &n }(),
 		SystemPrompt: &systemPrompt,
 	})
 	if err != nil {

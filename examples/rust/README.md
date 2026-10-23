@@ -8,6 +8,14 @@ approaches**:
 2. **ekodb_client Library** - Type-safe client library with auto-retry and
    better ergonomics
 
+## AI example costs
+
+The matching chat, AI-function, RAG and raw-completion examples select Luna
+models and bound completions, preserving the smaller existing raw-completion
+limits. The WebSocket client-tool scenario uses GPT-5.6 Luna for compatibility.
+See the shared [AI example cost policy](../README.md#ai-example-costs) before
+executing live examples; compilation does not incur provider-generation charges.
+
 ## Prerequisites
 
 - Rust 1.85 or higher

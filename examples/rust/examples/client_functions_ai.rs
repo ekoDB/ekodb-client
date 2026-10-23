@@ -95,9 +95,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 ChatMessage::system("You are a helpful database assistant. Be concise."),
                 ChatMessage::user("What are the benefits of using vector databases?"),
             ],
-            model: Some("gpt-4o-mini".to_string()),
-            temperature: Some(0.7),
-            max_tokens: None,
+            model: Some("gpt-6-luna".to_string()),
+            temperature: None,
+            max_tokens: Some(1024),
         })
         .with_tag("ai")
         .with_tag("chat");
@@ -130,7 +130,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with_function(Function::Embed {
             input_field: "content".to_string(),
             output_field: "embedding".to_string(),
-            model: None,
+            model: Some("text-embedding-3-small".to_string()),
         })
         .with_tag("ai")
         .with_tag("embed");

@@ -179,7 +179,7 @@ async def main():
             "name": "CodeReviewer",
             "system_prompt": "You review code for correctness and style.",
             "deployment_id": "deploy_test",
-            "llm_model": "gpt-4o",
+            "llm_model": "gpt-6-luna",
             "tools": ["web_search", "file_read"],
         }
     )

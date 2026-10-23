@@ -78,7 +78,7 @@ func run() (runErr error) {
 
 	// Step 2: Create a chat session
 	fmt.Println("=== Creating Chat Session ===")
-	llmModel := "gpt-4o-mini"
+	llmModel := "gpt-6-luna"
 	systemPrompt := "You are a helpful assistant for product information."
 
 	session, err := client.CreateChatSession(ekodb.CreateChatSessionRequest{
@@ -90,6 +90,7 @@ func run() (runErr error) {
 		},
 		LLMProvider:  "openai",
 		LLMModel:     &llmModel,
+		MaxTokens:    func() *int32 { n := int32(1024); return &n }(),
 		SystemPrompt: &systemPrompt,
 	})
 	if err != nil {

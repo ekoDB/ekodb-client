@@ -39,6 +39,8 @@ func main() {
 	resp, err := client.RawCompletionStream(ekodb.RawCompletionRequest{
 		SystemPrompt: "You are a helpful assistant. Keep responses concise.",
 		Message:      "What are the three primary colors?",
+		Provider:     func() *string { s := "openai"; return &s }(),
+		Model:        func() *string { s := "gpt-6-luna"; return &s }(),
 		MaxTokens:    ekodb.IntPtr(256),
 	})
 	if err != nil {
@@ -51,6 +53,8 @@ func main() {
 	resp, err = client.RawCompletionStream(ekodb.RawCompletionRequest{
 		SystemPrompt: "Output only valid JSON. No other text.",
 		Message:      "Return a JSON array of 3 planets with name and diameter_km fields.",
+		Provider:     func() *string { s := "openai"; return &s }(),
+		Model:        func() *string { s := "gpt-6-luna"; return &s }(),
 		MaxTokens:    ekodb.IntPtr(512),
 	})
 	if err != nil {
@@ -65,6 +69,8 @@ func main() {
 	resp, err = client.RawCompletion(ekodb.RawCompletionRequest{
 		SystemPrompt: "You are a helpful assistant.",
 		Message:      "Say hello in one sentence.",
+		Provider:     func() *string { s := "openai"; return &s }(),
+		Model:        func() *string { s := "gpt-6-luna"; return &s }(),
 		MaxTokens:    ekodb.IntPtr(64),
 	})
 	if err != nil {

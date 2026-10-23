@@ -59,7 +59,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // Step 2: Create a chat session
     println!("=== Creating Chat Session ===");
     let session_request = CreateChatSessionRequest::new("openai")
-        .model("gpt-4o-mini")
+        .model("gpt-6-luna")
+        .max_tokens(1024)
         .system_prompt("You are a helpful assistant for ekoDB documentation.")
         .max_context_messages(10)
         .collection(CollectionConfig {

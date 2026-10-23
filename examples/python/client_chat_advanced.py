@@ -37,7 +37,8 @@ async def run_example(client, collection, chat_ids):
     session = await client.create_chat_session(
         collections=[(collection, [])],
         llm_provider="openai",
-        llm_model="gpt-4o-mini",
+        llm_model="gpt-6-luna",
+        max_tokens=1024,
         system_prompt="You are a helpful product assistant.",
     )
     chat_id = session["chat_id"]
@@ -130,7 +131,8 @@ async def run_example(client, collection, chat_ids):
     session2 = await client.create_chat_session(
         collections=[(collection, [])],
         llm_provider="openai",
-        llm_model="gpt-4o-mini",
+        llm_model="gpt-6-luna",
+        max_tokens=1024,
     )
     chat_id2 = session2["chat_id"]
     chat_ids.append(chat_id2)

@@ -168,7 +168,7 @@ async function main() {
   const agent = await client.agentCreate({
     name: "SupportBot",
     system_prompt: "You are a helpful customer support agent.",
-    llm_model: "gpt-4",
+    llm_model: "gpt-6-luna",
     deployment_id: "deploy_prod_1",
   });
   const agentId = agent.id as string;
