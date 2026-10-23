@@ -10,6 +10,10 @@ and this project adheres to
 
 ### Security
 
+- **Match the patched Go example toolchain** — Require Go 1.27.3 or newer in
+  the Go example module and README, matching the Go SDK minimum for the
+  crypto/x509 certificate-verification fix (GO-2026-6809). Existing example CI
+  reads this minimum from the module file. (#334)
 - **Refresh native TLS and async dependencies** — Update all three Cargo
   lockfiles to rustls 0.23.46, rustls-webpki 0.103.16, webpki-roots 1.0.10, and
   Tokio 1.53.3, addressing RUSTSEC-2026-0346 through RUSTSEC-2026-0349,
