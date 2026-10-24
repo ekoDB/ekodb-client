@@ -35,7 +35,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Get authentication token
     let client = Client::new();
     let auth_response: Value = client
-        .post(&format!("{}/api/auth/token", base_url))
+        .post(format!("{}/api/auth/token", base_url))
         .json(&json!({"api_key": api_key}))
         .send()
         .await?
@@ -129,12 +129,24 @@ async fn run_example(
         ))
         .await?;
 
-    // Wait for one complete response and fail rather than reporting a false success.
-    let msg = tokio::time::timeout(std::time::Duration::from_secs(10), read.next())
-        .await
-        .map_err(|_| "WebSocket response timed out")?
-        .ok_or("WebSocket closed before returning data")??;
-    let text = msg.into_text()?;
+    // Wait for the reply to the query and fail rather than reporting a false success. The
+    // server pings each connection as a heartbeat, and a ping can arrive before the reply, so
+    // control frames are skipped; the first data frame must be the JSON reply.
+    let deadline = tokio::time::Instant::now() + std::time::Duration::from_secs(10);
+    let text = loop {
+        let msg = tokio::time::timeout_at(deadline, read.next())
+            .await
+            .map_err(|_| "WebSocket response timed out")?
+            .ok_or("WebSocket closed before returning data")??;
+        match msg {
+            Message::Text(text) => break text.as_str().to_string(),
+            Message::Ping(_) | Message::Pong(_) | Message::Frame(_) => continue,
+            Message::Binary(_) => {
+                return Err("expected a JSON text reply, got a binary frame".into())
+            }
+            Message::Close(_) => return Err("WebSocket closed before returning data".into()),
+        }
+    };
     let response: Value = serde_json::from_str(&text)?;
     let records = response
         .pointer("/payload/data")
