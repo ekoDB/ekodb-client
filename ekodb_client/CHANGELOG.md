@@ -10,6 +10,15 @@ and this project adheres to
 
 ### Fixed
 
+- **Skip WebSocket control frames in the Rust TTL example** — `websocket_ttl`
+  read the first frame after its query as the reply. The server pings each
+  connection as a heartbeat, and that ping can arrive first, so the example
+  parsed an empty ping payload as JSON and failed with "EOF while parsing a
+  value". It now skips ping, pong and raw frames until the first data frame,
+  which must be the JSON reply, within the same 10-second limit. A binary frame
+  or a close before the reply is still an error. The other direct WebSocket
+  examples already read past control frames.
+
 - **Generate and verify embeddings in the Go AI example** — Load the example
   articles before embedding their content, matching the other SDK examples.
   Reject missing chat text, unexpected record counts and empty vectors instead
