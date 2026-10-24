@@ -35,7 +35,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Get authentication token
     let client = Client::new();
     let auth_response: Value = client
-        .post(&format!("{}/api/auth/token", base_url))
+        .post(format!("{}/api/auth/token", base_url))
         .json(&json!({"api_key": api_key}))
         .send()
         .await?
@@ -141,7 +141,9 @@ async fn run_example(
         match msg {
             Message::Text(text) => break text.as_str().to_string(),
             Message::Ping(_) | Message::Pong(_) | Message::Frame(_) => continue,
-            Message::Binary(_) => return Err("expected a JSON text reply, got a binary frame".into()),
+            Message::Binary(_) => {
+                return Err("expected a JSON text reply, got a binary frame".into())
+            }
             Message::Close(_) => return Err("WebSocket closed before returning data".into()),
         }
     };
