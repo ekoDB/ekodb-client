@@ -1,6 +1,6 @@
 # Client Library Parity Matrix
 
-**Last Updated:** October 20, 2026
+**Last Updated:** October 23, 2026
 
 **Published client version:** See the
 [latest release](https://github.com/ekoDB/ekodb-client/releases/latest). The
@@ -14,6 +14,48 @@ maintained in the separate `ekodb-client-go` repository.
 > because it had fallen behind this canonical matrix.
 
 ## Status: Core and stored-function contract parity
+
+### AI example model and cost maintenance (unreleased)
+
+All five SDK example sets explicitly select GPT-6 Luna for plain chat and raw
+completions, and GPT-5.6 Luna for the WebSocket client-tool scenario.
+Chat-session and stored Chat-stage requests carry a 1,024-token completion
+limit; raw completions retain their existing 256/512/64-token limits. Custom
+sampling temperatures are omitted. Agent CRUD examples store the model choice
+without running an agent. The Go examples consume the released sibling Go SDK;
+no Go SDK source or version changes are required.
+
+| SDK                   | Example request path                                                            | Session / stored-stage limit                                                       |
+| --------------------- | ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| Rust                  | Typed chat-session builder and stored Chat variant; raw HTTP WebSocket setup    | `max_tokens(1024)` or `Some(1024)`; raw session JSON carries `max_tokens`          |
+| Python                | Compiled chat-session/branch/raw-completion binding; Python stored-stage helper | `max_tokens=1024`; remove the helper's default temperature before saving           |
+| TypeScript/JavaScript | Public chat-session/raw-completion client and Stage helper                      | `max_tokens: 1024`; optional Chat temperature omitted                              |
+| Kotlin                | Public JSON chat-session client, typed Chat stage and raw completion            | Session JSON and Chat-stage `max_tokens` set to 1024; nullable temperature omitted |
+| Go                    | Released typed session/raw-completion requests and public Chat-stage data map   | `MaxTokens` or stage data `max_tokens` set to 1024; nil temperature                |
+
+These are request-side limits; live provider enforcement, visible output under
+reasoning budgets and total billing remain unverified by offline checks. See
+[AI example costs](examples/README.md#ai-example-costs).
+
+Matching AI-function examples load their articles before the Embed stage. The Go
+example now uses `FindAll` followed by embedding `content`, and verifies chat
+text, the expected article count and nonempty vectors. This fixes its former
+zero-record embedding pipeline and unconditional success report; no Go SDK API
+change is required.
+
+### Security dependency maintenance (unreleased)
+
+| SDK                   | Transport dependency surface                    | Maintenance scope                                                                                                                                                                                          |
+| --------------------- | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Rust                  | reqwest and tokio-tungstenite with rustls       | Root and Rust-example lockfiles include rustls 0.23.46, rustls-webpki 0.103.16, webpki-roots 1.0.10, and Tokio 1.53.3.                                                                                     |
+| Python                | PyO3 extension wrapping the Rust client         | The binding's separate Cargo lockfile carries the same patches. Example dependency floors preserve Python 3.10 support. Rebuild native wheels to update embedded TLS dependencies.                         |
+| TypeScript/JavaScript | Node fetch and `ws`                             | Existing npm dependency graph retained; CI uses patched Node 24.22.1 LTS.                                                                                                                                  |
+| Kotlin                | Ktor CIO on the JVM                             | Existing dependency graph retained; JVM trust-store maintenance remains an application responsibility.                                                                                                     |
+| Go                    | Standard-library HTTP/TLS and Gorilla WebSocket | Go examples declare SDK v0.31.1 through the sibling checkout. The SDK and examples require Go 1.27.3 or newer for GO-2026-6809. Go module verification remains separate from the four-language suite here. |
+
+This maintenance changes dependency resolutions and minimums without changing
+the public API or wire contract. Offline tests exercise existing HTTP/WebSocket
+fixtures; they do not prove production certificate-store or deployment state.
 
 The core parity baseline below was verified at v0.21.0. Search API coverage was
 updated through v0.26.4; the current stored-function and example-parity work is

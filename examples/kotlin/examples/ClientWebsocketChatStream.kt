@@ -38,7 +38,8 @@ fun main(): Unit = runBlocking {
         val session = client.createChatSession(buildJsonObject {
             putJsonArray("collections") {}
             put("llm_provider", "openai")
-            put("llm_model", "gpt-4o-mini")
+            put("llm_model", "gpt-5.6-luna")
+            put("max_tokens", 1024)
             put("system_prompt", "You are a helpful assistant.")
         })
         val chatId = session["chat_id"]?.jsonPrimitive?.content ?: error("No chat_id")

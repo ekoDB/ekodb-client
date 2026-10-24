@@ -50,7 +50,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
         // Step 2: Create a chat session
         println!("=== Creating Chat Session ===");
         let session_request = CreateChatSessionRequest::new("openai")
-            .model("gpt-4o-mini")
+            .model("gpt-6-luna")
+            .max_tokens(1024)
             .system_prompt("You are a helpful assistant for product information.")
             .collection(CollectionConfig {
                 collection_name: collection.to_string(),
@@ -125,7 +126,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
         // Step 6: Branch the session (branch at message index 0)
         println!("=== Branching Session ===");
         let branch_request = CreateChatSessionRequest::new("openai")
-            .model("gpt-4o-mini")
+            .model("gpt-6-luna")
+            .max_tokens(1024)
             .branch_from(chat_id.to_string(), 0);
 
         let branched = client.branch_chat_session(branch_request).await?;

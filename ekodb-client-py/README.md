@@ -38,6 +38,18 @@ pip install maturin
 maturin develop
 ```
 
+Python 3.10 or later is required. The native extension shares the Rust client's
+TLS dependencies; updating Python packages alone does not update TLS code
+embedded in an existing wheel. Rebuild source installations after refreshing
+`ekodb-client-py/Cargo.lock`, or install a wheel built with the patched
+lockfile.
+
+For this repository's Python examples, install `examples/requirements.txt` in
+the project virtual environment. Its security minimums cover aiohttp 3.14.4,
+multidict 6.9.1, python-dotenv 1.2.2, requests 2.33.0, certifi 2026.10.19, and
+urllib3 2.8.0. These are example dependencies; the native SDK does not declare
+them as Python runtime dependencies.
+
 ## Quick Start
 
 ```python
@@ -594,6 +606,23 @@ Roll the transaction back to a savepoint.
 #### `await client.release_savepoint(transaction_id: str, name: str) -> None`
 
 Release (forget) a savepoint.
+
+## Chat-session completion budgets
+
+`create_chat_session` and `branch_chat_session` accept an optional `max_tokens`
+argument. Branching appends it after the existing `llm_model` argument,
+preserving older positional calls. Omission or `None` leaves the wire field
+absent.
+
+```python
+branched = await client.branch_chat_session(
+    "parent-chat", 0, [("products", ["name"])], "openai",
+    llm_model="gpt-6-luna", max_tokens=1024,
+)
+```
+
+This requests a completion limit through the server; it is not a total billing
+limit. See [AI example costs](../examples/README.md#ai-example-costs).
 
 ## Examples
 

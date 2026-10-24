@@ -226,7 +226,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             "name": "backup-agent",
             "description": "Handles nightly backups and restores",
             "deployment_id": "deploy-abc-123",
-            "llm_model": "gpt-4.1",
+            "llm_model": "gpt-6-luna",
             "capabilities": ["backup", "restore", "verify"],
         }))
         .await?;

@@ -2,6 +2,14 @@
 
 This directory contains Python examples for ekoDB.
 
+## AI example costs
+
+The matching chat, AI-function, RAG and raw-completion examples select Luna
+models and bound completions, preserving the smaller existing raw-completion
+limits. The WebSocket client-tool scenario uses GPT-5.6 Luna for compatibility.
+See the shared [AI example cost policy](../README.md#ai-example-costs) before
+executing live examples; compilation does not incur provider-generation charges.
+
 ## Installation
 
 ### Using Published Package (Default)
@@ -48,8 +56,21 @@ ekodb-client>=0.1.0
 
 ## Prerequisites
 
-- Python 3.9 or higher
+- Python 3.10 or higher
 - pip (Python package manager)
+
+The requirements files require aiohttp 3.14.4, multidict 6.9.1, and
+python-dotenv 1.2.2 or later. The shared `../requirements.txt` also requires
+requests 2.33.0, certifi 2026.10.19, and urllib3 2.8.0 or later for the direct
+HTTP examples. Refresh an existing environment with:
+
+```bash
+python -m pip install --upgrade "pip>=26.2" "setuptools>=83.0.0" "black>=26.10.1"
+python -m pip install --upgrade -r ../requirements.txt
+```
+
+Use a supported, patched Python interpreter when creating the environment;
+upgrading pip packages does not update its interpreter.
 
 ## Installation
 

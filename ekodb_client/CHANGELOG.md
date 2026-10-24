@@ -6,6 +6,49 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **Generate and verify embeddings in the Go AI example** — Load the example
+  articles before embedding their content, matching the other SDK examples.
+  Reject missing chat text, unexpected record counts and empty vectors instead
+  of reporting success for a zero-record result. (#339)
+
+### Changed
+
+- **Refresh AI example models and completion budgets** — Select cost-sensitive
+  Luna models across all five SDK example sets, using GPT-5.6 Luna for the
+  WebSocket client-tool scenario. Bound chat-session and stored-stage
+  completions to 1,024 tokens, preserve smaller raw-completion limits, omit
+  custom temperatures and explicitly select the small embedding model in AI
+  functions. Expose the existing branch completion limit in the Python binding
+  without changing prior positional calls. Document live-run costs and provider
+  compatibility limits. (#337)
+- **Use the released Go SDK in examples** — Replace the placeholder module
+  requirement with v0.31.1 while retaining the sibling checkout for local
+  development. Document updating that checkout before compile-only example
+  builds. (#332)
+
+### Security
+
+- **Match the patched Go example toolchain** — Require Go 1.27.3 or newer in the
+  Go example module and README, matching the Go SDK minimum for the crypto/x509
+  certificate-verification fix (GO-2026-6809). Existing example CI reads this
+  minimum from the module file. (#334)
+- **Refresh native TLS and async dependencies** — Update all three Cargo
+  lockfiles to rustls 0.23.46, rustls-webpki 0.103.16, webpki-roots 1.0.10, and
+  Tokio 1.53.3, addressing RUSTSEC-2026-0346 through RUSTSEC-2026-0349,
+  RUSTSEC-2026-0381, RUSTSEC-2026-0382, and RUSTSEC-2026-0386. Raise the Tokio
+  manifest minimum to the patched release. Applications and native Python wheels
+  must be rebuilt to pick up embedded TLS and certificate-store fixes.
+- **Require patched Python example dependencies** — Set compatible minimums for
+  aiohttp, multidict, python-dotenv, requests, certifi, and urllib3, and for the
+  Black development formatter. Preserve Python 3.10 support and document
+  refreshing existing environments and their interpreter. (#332)
+- **Pin patched Node LTS in SDK CI** — Run TypeScript unit tests on Node 24.22.1
+  instead of allowing a major-only selector to use an older cached runtime.
+
 ## [0.31.0] - 2026-10-20
 
 ### Added

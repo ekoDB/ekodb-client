@@ -39,11 +39,12 @@ func runBasic() (runErr error) {
 
 	// Create a chat session
 	systemPrompt := "You are a helpful assistant."
-	llmModel := "gpt-4o-mini"
+	llmModel := "gpt-5.6-luna"
 	session, err := client.CreateChatSession(ekodb.CreateChatSessionRequest{
 		Collections:  []ekodb.CollectionConfig{},
 		LLMProvider:  "openai",
 		LLMModel:     &llmModel,
+		MaxTokens:    func() *int32 { n := int32(1024); return &n }(),
 		SystemPrompt: &systemPrompt,
 	})
 	if err != nil {
@@ -142,11 +143,12 @@ func chatWithClientTools() (runErr error) {
 	defer ws.Close()
 
 	systemPrompt := "You are a helpful assistant with access to tools."
-	llmModel := "gpt-4o-mini"
+	llmModel := "gpt-5.6-luna"
 	session, err := client.CreateChatSession(ekodb.CreateChatSessionRequest{
 		Collections:  []ekodb.CollectionConfig{},
 		LLMProvider:  "openai",
 		LLMModel:     &llmModel,
+		MaxTokens:    func() *int32 { n := int32(1024); return &n }(),
 		SystemPrompt: &systemPrompt,
 	})
 	if err != nil {

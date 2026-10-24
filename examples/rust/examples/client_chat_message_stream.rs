@@ -24,7 +24,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // Create a chat session
     let session = client
         .create_chat_session(
-            CreateChatSessionRequest::new("openai").system_prompt("You are a helpful assistant."),
+            CreateChatSessionRequest::new("openai")
+                .model("gpt-6-luna")
+                .max_tokens(1024)
+                .system_prompt("You are a helpful assistant."),
         )
         .await?;
     println!("Created session: {}", session.chat_id);

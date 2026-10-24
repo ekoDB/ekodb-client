@@ -2,6 +2,17 @@
 
 This directory contains examples for the ekoDB Kotlin client.
 
+## AI example costs
+
+The matching chat, AI-function and raw-completion examples select Luna models
+and bound completions, preserving the smaller existing raw-completion limits.
+The WebSocket client-tool scenario uses GPT-5.6 Luna for compatibility. See the
+shared [AI example cost policy](../README.md#ai-example-costs) before executing
+live examples; compilation does not incur provider-generation charges.
+
+The Kotlin RAG example performs retrieval only; it does not generate an AI
+response.
+
 ## Prerequisites
 
 - JDK 17 or higher
