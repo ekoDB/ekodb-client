@@ -568,13 +568,19 @@ SDK release.
 ### Permission-name validation and legacy health recovery
 
 Rust, the compiled Python binding, TypeScript and Kotlin share
-`test-fixtures/admin-permission-names.json`; Go vendors the identical fixture
-so its module can test as a standalone clone. All five public collection/KV facet
+`test-fixtures/admin-permission-names.json`; Go vendors the identical fixture so
+its module can test as a standalone clone. All five public collection/KV facet
 operations reject empty names, `.` and `..`, Unicode Cc controls, and exactly
 U+00AD, U+061C, U+180E, U+200B–U+200F, U+2028–U+202E, U+2060–U+2064,
 U+2066–U+2069 and U+FEFF. Other format characters are accepted. Kotlin checks
 Unicode code points rather than individual UTF-16 units. The same fixture drives
 accepted HTTP requests and rejected requests that must never reach HTTP.
+
+All five SDKs require well-formed Unicode facet names before HTTP. Rust uses
+safe UTF-8 strings; compiled Python validates through PyO3 string extraction or
+JSON parsing, TypeScript handles URI-encoding errors, Kotlin rejects unpaired
+UTF-16 surrogates, and Go rejects invalid UTF-8. U+FFFD and supplementary
+characters remain valid names, with language-specific boundary tests.
 
 All five SDKs cache only successful, parseable stable legacy health versions.
 Failed, malformed and prerelease reads can be retried; a valid unsupported
