@@ -32,9 +32,10 @@ prefixes are encoded as path segments, including `/`, spaces and literal `+`
 characters. A facet name is rejected before HTTP if it is empty, `.` or `..`,
 contains a Unicode control character (category Cc), or contains U+00AD, U+061C,
 U+180E, U+200B–U+200F, U+2028–U+202E, U+2060–U+2064, U+2066–U+2069 or U+FEFF.
-Other code points are accepted, including format characters outside that list
-and supplementary-plane characters. KV list filters remain query values; they
-are not subject to path-facet validation.
+Names must be well-formed Unicode; malformed surrogate sequences are rejected
+before HTTP. U+FFFD, supplementary-plane characters and format characters
+outside that list remain accepted. KV list filters remain query values; they are
+not subject to path-facet validation.
 
 Each client probes `GET /api/auth/keys/me/permissions` and caches the successful
 generation decision. A 200 selects the new routes; only 404 or 405 selects the
