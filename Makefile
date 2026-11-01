@@ -281,70 +281,31 @@ deploy-all: ## Deploy all client libraries (Rust, Python, TypeScript, Kotlin)
 	@./scripts/publish-all.sh --all
 	@echo "✅ $(GREEN)All client libraries deployed!$(RESET)"
 
-# Version bumping targets
+# Version changes belong to this target; sync-versions owns downstream manifests.
+export SDK_RELEASE_VERSION_INPUT := $(VERSION)
 bump-version:
-	@echo "🔢 $(CYAN)Bumping all client versions...$(RESET)"
-	@RUST_VERSION=$$(grep '^version = ' ekodb_client/Cargo.toml | head -1 | cut -d'"' -f2); \
-	PYTHON_VERSION=$$(grep '^version = ' ekodb-client-py/Cargo.toml | head -1 | cut -d'"' -f2); \
-	TS_VERSION=$$(grep '"version":' ekodb-client-ts/package.json | head -1 | cut -d'"' -f4); \
-	KOTLIN_VERSION=$$(grep '^version = ' ekodb-client-kt/build.gradle.kts | head -1 | cut -d'"' -f2); \
-	echo ""; \
-	echo "$(YELLOW)📦 Current versions:$(RESET)"; \
-	echo "  Rust:       $$RUST_VERSION"; \
-	echo "  Python:     $$PYTHON_VERSION"; \
-	echo "  TypeScript: $$TS_VERSION"; \
-	echo "  Kotlin:     $$KOTLIN_VERSION"; \
-	echo ""; \
-	read -p "Enter new version (e.g. current: '$$RUST_VERSION'): " NEW_VERSION; \
+	@set -eu; \
+	CURRENT_VERSION=$$(awk -F'"' '/^version = / { print $$2; exit }' ekodb_client/Cargo.toml); \
+	NEW_VERSION="$${SDK_RELEASE_VERSION_INPUT:-}"; \
 	if [ -z "$$NEW_VERSION" ]; then \
-		echo "$(RED)❌ No version provided$(RESET)"; \
-		exit 1; \
+		NEW_VERSION=$$(python3 -c 'import sys; a,b,c=map(int,sys.argv[1].split("-")[0].split(".")); print(f"{a}.{b}.{c+1}")' "$$CURRENT_VERSION"); \
 	fi; \
-	echo ""; \
-	echo "$(YELLOW)📦 New version: $$NEW_VERSION$(RESET)"; \
-	echo ""; \
-	read -p "Continue? (y/N): " -n 1 -r; \
-	echo; \
-	if [[ ! $$REPLY =~ ^[Yy]$$ ]]; then \
-		echo "$(RED)❌ Cancelled$(RESET)"; \
-		exit 1; \
-	fi; \
-	echo ""; \
-	echo "$(CYAN)Updating Rust client...$(RESET)"; \
-	sed -i '' "s/^version = \"[^\"]*\"/version = \"$$NEW_VERSION\"/" ekodb_client/Cargo.toml; \
-	echo "  ✅ ekodb_client/Cargo.toml"; \
-	echo ""; \
-	echo "$(CYAN)Updating Python client...$(RESET)"; \
-	sed -i '' "s/^version = \"[^\"]*\"/version = \"$$NEW_VERSION\"/" ekodb-client-py/Cargo.toml; \
-	sed -i '' "s/^version = \"[^\"]*\"/version = \"$$NEW_VERSION\"/" ekodb-client-py/pyproject.toml; \
-	sed -i '' "s/ekodb_client = { version = \"[^\"]*\"/ekodb_client = { version = \"$$NEW_VERSION\"/" ekodb-client-py/Cargo.toml; \
-	echo "  ✅ ekodb-client-py/Cargo.toml (version + ekodb_client dependency)"; \
-	echo "  ✅ ekodb-client-py/pyproject.toml"; \
-	echo ""; \
-	echo "$(CYAN)Updating TypeScript client...$(RESET)"; \
-	sed -i '' "s/\"version\": \"[^\"]*\"/\"version\": \"$$NEW_VERSION\"/" ekodb-client-ts/package.json; \
-	echo "  ✅ ekodb-client-ts/package.json"; \
-	echo ""; \
-	echo "$(CYAN)Updating Kotlin client...$(RESET)"; \
-	sed -i '' "s/^version = \"[^\"]*\"/version = \"$$NEW_VERSION\"/" ekodb-client-kt/build.gradle.kts; \
-	echo "  ✅ ekodb-client-kt/build.gradle.kts"; \
-	echo ""; \
-	echo "$(GREEN)✅ All versions bumped to $$NEW_VERSION$(RESET)"; \
-	echo ""; \
-	echo "$(CYAN)Running make fmt...$(RESET)"; \
-	$(MAKE) fmt; \
-	echo ""; \
-	echo "$(CYAN)Running make build...$(RESET)"; \
-	$(MAKE) build; \
-	echo ""; \
-	echo "$(GREEN)✅ Format and build complete!$(RESET)"; \
-	echo ""; \
-	echo "$(YELLOW)💡 Next steps:$(RESET)"; \
-	echo "  1. Review changes: git diff"; \
-	echo "  2. Collapse [Unreleased] in ekodb_client/CHANGELOG.md into '## [$$NEW_VERSION] - YYYY-MM-DD' (that date shape exactly)"; \
-	echo "  3. Commit it as the cap, from a tree that holds nothing else (git status): git add -A && git commit -m 'chore(*): v$$NEW_VERSION' (any other subject is not a cap and cuts no tag)"; \
-	echo "  4. Rebase-merge the cap to main: CI cuts the tag and publishes the GitHub Release"; \
-	echo "  5. Publish the packages: make deploy-all (or individual deploy commands)"
+	bash scripts/sync-versions.sh --check-version "$$NEW_VERSION"; \
+	[ "$$(grep -c '^## \[Unreleased\]$$' ekodb_client/CHANGELOG.md)" = 1 ] || { echo 'Expected one ## [Unreleased] heading' >&2; exit 2; }; \
+	sed -i.bak "s/^version = \"[^\"]*\"/version = \"$$NEW_VERSION\"/" ekodb_client/Cargo.toml; \
+	rm -f ekodb_client/Cargo.toml.bak; \
+	$(MAKE) --no-print-directory sync-versions; \
+	for manifest in Cargo.toml ekodb-client-py/Cargo.toml examples/rust/Cargo.toml; do \
+		if [ -f "$$manifest" ]; then $(CARGO) update --workspace --manifest-path "$$manifest" --offline >/dev/null; fi; \
+	done; \
+	for package in ekodb-client-ts examples/typescript examples/javascript; do \
+		if [ -f "$$package/package-lock.json" ]; then npm --prefix "$$package" install --package-lock-only --ignore-scripts --offline --no-audit --no-fund >/dev/null; fi; \
+	done; \
+	release_date=$$(date -u +%Y-%m-%d); \
+	sed -i.bak "s/^## \[Unreleased\]$$/## [$$NEW_VERSION] - $$release_date/" ekodb_client/CHANGELOG.md; \
+	rm -f ekodb_client/CHANGELOG.md.bak; \
+	if [ "$${NEW_VERSION#*-}" != "$$NEW_VERSION" ]; then prefix='pre-release '; else prefix=''; fi; \
+	printf 'Suggested commit subject: chore(*): %sv%s\n' "$$prefix" "$$NEW_VERSION"
 
 bump-client-py:
 	@echo "🔢 $(CYAN)Bumping Python client version...$(RESET)"
@@ -430,7 +391,7 @@ deploy-client-kt:
 deploy-client-kotlin: deploy-client-kt
 
 # Test targets - runs ALL unit tests across all client libraries
-test: function-stage-contract-check example-parity-check ensure-hooks test-hooks test-example-env examples-ls-check build-python-client ensure-jvm
+test: function-stage-contract-check example-parity-check ensure-hooks test-hooks test-example-env test-bump-version examples-ls-check build-python-client ensure-jvm
 	@RUST_COUNT=0; TS_COUNT=0; PY_COUNT=0; KT_COUNT=0; \
 	echo "🦀 $(CYAN)Running Rust client tests...$(RESET)"; \
 	RUST_OUTPUT=$$($(CARGO) test -p ekodb_client 2>&1); RUST_STATUS=$$?; \
@@ -1700,3 +1661,7 @@ count-detailed:
 		echo "$(RED)tokei is not installed. Please install tokei for detailed statistics.$(RESET)"; \
 		echo "$(YELLOW)Run 'cargo install tokei' to install tokei.$(RESET)"; \
 	fi
+
+.PHONY: test-bump-version
+test-bump-version:
+	@bash scripts/test-bump-version.sh
