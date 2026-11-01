@@ -333,6 +333,34 @@ describe("0.80 permission resources", () => {
       request.mock.calls.filter(([, options]) => options?.method === "DELETE"),
     ).toHaveLength(2);
   });
+  it.each([
+    [".", "."],
+    ["..", ".."],
+    ["", ""],
+    ["a space+", "a%20space%2B"],
+    ["a/?&=%*", "a%2F%3F%26%3D%25%2A"],
+  ])(
+    "encodes KV prefix filters independently of path segments",
+    async (prefix, encoded) => {
+      modern();
+      request.mockResolvedValueOnce(response([]));
+      await expect(
+        client().listApiKeyKvPermissions("me", prefix),
+      ).resolves.toEqual([]);
+      expect(request.mock.calls[request.mock.calls.length - 1]?.[0]).toBe(
+        `https://example.test/api/auth/keys/me/permissions/kv?prefix=${encoded}`,
+      );
+    },
+  );
+  it.each([42, "\ud800"])(
+    "rejects malformed KV prefix filters before authentication",
+    async (prefix) => {
+      await expect(
+        client().listApiKeyKvPermissions("me", prefix as string),
+      ).rejects.toThrow("Invalid permission resource name");
+      expect(request).not.toHaveBeenCalled();
+    },
+  );
   it.each([fixture.key.key, "", "0123456789ABCDEF0123456789ABCDEF", "../me"])(
     "rejects a secret/invalid identifier before any network request",
     async (keyId) => {
