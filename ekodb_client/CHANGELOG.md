@@ -10,6 +10,9 @@ and this project adheres to
 
 ### Fixed
 
+- Make SDK version bumps portable and non-interactive, validate versions before
+  changing manifests, synchronize prerelease install snippets, refresh generated
+  lock metadata, and stamp release notes in UTC. (#207)
 - **Generate and verify embeddings in the Go AI example** — Load the example
   articles before embedding their content, matching the other SDK examples.
   Reject missing chat text, unexpected record counts and empty vectors instead
