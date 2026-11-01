@@ -850,6 +850,7 @@ export class EkoDBClient {
     data?: any,
     attempt: number = 0,
     forceJson: boolean = false,
+    readDeleteResponse: boolean = false,
   ): Promise<T> {
     if (!this.token) {
       await this.refreshToken();
@@ -892,7 +893,8 @@ export class EkoDBClient {
       // Extract rate limit info from successful responses
       if (response.ok) {
         this.extractRateLimitInfo(response);
-        if (this.redactErrors && method === "DELETE") return undefined as T;
+        if (this.redactErrors && method === "DELETE" && !readDeleteResponse)
+          return undefined as T;
 
         // Deserialize based on format
         if (isMessagePack) {
@@ -925,6 +927,7 @@ export class EkoDBClient {
             data,
             attempt + 1,
             forceJson,
+            readDeleteResponse,
           );
         }
 
@@ -936,7 +939,14 @@ export class EkoDBClient {
         console.log("Authentication failed, refreshing token...");
         await this.refreshToken();
         // Retry with new token
-        return this.makeRequest<T>(method, path, data, attempt + 1, forceJson);
+        return this.makeRequest<T>(
+          method,
+          path,
+          data,
+          attempt + 1,
+          forceJson,
+          readDeleteResponse,
+        );
       }
 
       // Handle service unavailable (503)
@@ -950,7 +960,14 @@ export class EkoDBClient {
           `Service unavailable. Retrying after ${retryDelay.toFixed(2)}s...`,
         );
         await this.sleep(retryDelay);
-        return this.makeRequest<T>(method, path, data, attempt + 1, forceJson);
+        return this.makeRequest<T>(
+          method,
+          path,
+          data,
+          attempt + 1,
+          forceJson,
+          readDeleteResponse,
+        );
       }
 
       // Handle other errors
@@ -1005,7 +1022,14 @@ export class EkoDBClient {
           `Network error. Retrying after ${retryDelay.toFixed(2)}s...`,
         );
         await this.sleep(retryDelay);
-        return this.makeRequest<T>(method, path, data, attempt + 1, forceJson);
+        return this.makeRequest<T>(
+          method,
+          path,
+          data,
+          attempt + 1,
+          forceJson,
+          readDeleteResponse,
+        );
       }
 
       throw error;

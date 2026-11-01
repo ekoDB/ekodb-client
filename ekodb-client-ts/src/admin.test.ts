@@ -1,11 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   EkoDBAdminClient,
-  MIN_SERVER_VERSION_FOR_PERMISSION_EDITS,
+  MIN_LEGACY_SERVER_VERSION_FOR_PERMISSION_EDITS,
 } from "./admin";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import type { ApiKey, UpdateApiKeyCollectionPermissionsRequest } from "./admin";
+import type {
+  ApiKey,
+  LegacyUpdateApiKeyCollectionPermissionsRequest,
+} from "./admin";
 
 const recorded = JSON.parse(
   readFileSync(
@@ -15,7 +18,7 @@ const recorded = JSON.parse(
 ) as {
   permission_edits: {
     name: string;
-    request: UpdateApiKeyCollectionPermissionsRequest;
+    request: LegacyUpdateApiKeyCollectionPermissionsRequest;
     response: ApiKey;
   }[];
 };
@@ -25,7 +28,7 @@ const versionGate = vi.hoisted(() => ({
 }));
 // Synthetic release values exercise the generic gate; real release boundaries are tested below.
 vi.mock("./admin-version", () => ({
-  get MIN_SERVER_VERSION_FOR_PERMISSION_EDITS() {
+  get MIN_LEGACY_SERVER_VERSION_FOR_PERMISSION_EDITS() {
     return versionGate.minimum;
   },
 }));
@@ -69,7 +72,15 @@ function auth(token = "jwt-secret") {
 }
 
 beforeEach(() => {
-  vi.stubGlobal("fetch", request);
+  // Emulate a legacy server: its unknown per-key route returns 404. The
+  // separate modern-contract suite records and asserts the capability probe.
+  vi.stubGlobal(
+    "fetch",
+    (input: Parameters<typeof fetch>[0], init?: RequestInit) =>
+      String(input).endsWith("/api/auth/keys/me/permissions")
+        ? Promise.resolve(response({}, 404))
+        : request(input, init),
+  );
   request.mockReset();
   versionGate.minimum = undefined;
 });
@@ -210,7 +221,9 @@ describe("admin wire contract", () => {
       read: false,
       write: true,
     };
-    expect(await admin().updateApiKeyCollectionPermissions(body)).toEqual(key);
+    expect(await admin().legacyUpdateApiKeyCollectionPermissions(body)).toEqual(
+      key,
+    );
     expect(request.mock.calls[2][0]).toBe(
       "https://example.test/api/auth/permissions",
     );
@@ -402,7 +415,7 @@ describe("admin wire contract", () => {
       request.mockResolvedValueOnce(response({ version: "9.8.7" }));
       request.mockResolvedValueOnce(response(contract.response));
       expect(
-        await admin().updateApiKeyCollectionPermissions(contract.request),
+        await admin().legacyUpdateApiKeyCollectionPermissions(contract.request),
       ).toEqual(contract.response);
       const [url, options] = request.mock.calls[2];
       expect(url).toBe("https://example.test/api/auth/permissions");
@@ -421,7 +434,7 @@ describe("admin wire contract", () => {
     auth();
     request.mockResolvedValueOnce(response({ version: "9.8.7" }));
     request.mockResolvedValueOnce(response(key));
-    await admin().updateApiKeyCollectionPermissions({
+    await admin().legacyUpdateApiKeyCollectionPermissions({
       api_key: "target-secret",
       collection: "users",
       read: true,
@@ -449,7 +462,7 @@ describe("admin wire contract", () => {
       auth();
       request.mockResolvedValueOnce(response({ version: "9.8.7" }));
       request.mockResolvedValueOnce(response(key));
-      await admin().updateApiKeyCollectionPermissions({
+      await admin().legacyUpdateApiKeyCollectionPermissions({
         api_key: "target-secret",
         collection: "users",
         read: true,
@@ -468,9 +481,9 @@ describe("admin wire contract", () => {
   );
 
   it("fails closed without any request while the release constant is unset", async () => {
-    expect(MIN_SERVER_VERSION_FOR_PERMISSION_EDITS).toBeUndefined();
+    expect(MIN_LEGACY_SERVER_VERSION_FOR_PERMISSION_EDITS).toBeUndefined();
     await expect(
-      admin().updateApiKeyCollectionPermissions({
+      admin().legacyUpdateApiKeyCollectionPermissions({
         api_key: "target-secret",
         collection: "users",
         read: true,
@@ -487,8 +500,11 @@ describe("admin wire contract", () => {
         await vi.importActual<typeof import("./admin-version")>(
           "./admin-version",
         );
-      expect(production.MIN_SERVER_VERSION_FOR_PERMISSION_EDITS).toBe("0.79.2");
-      versionGate.minimum = production.MIN_SERVER_VERSION_FOR_PERMISSION_EDITS;
+      expect(production.MIN_LEGACY_SERVER_VERSION_FOR_PERMISSION_EDITS).toBe(
+        "0.79.2",
+      );
+      versionGate.minimum =
+        production.MIN_LEGACY_SERVER_VERSION_FOR_PERMISSION_EDITS;
       auth();
       request.mockResolvedValueOnce(response({ version }));
       const edit = {
@@ -501,7 +517,7 @@ describe("admin wire contract", () => {
       const client = admin();
       if (["0.79.0", "0.79.1", "0.79.2-rc.1"].includes(version)) {
         await expect(
-          client.updateApiKeyCollectionPermissions(edit),
+          client.legacyUpdateApiKeyCollectionPermissions(edit),
         ).rejects.toThrow(
           "earlier servers remove a grant's field restrictions",
         );
@@ -509,7 +525,7 @@ describe("admin wire contract", () => {
       } else {
         request.mockResolvedValueOnce(response(key));
         await expect(
-          client.updateApiKeyCollectionPermissions(edit),
+          client.legacyUpdateApiKeyCollectionPermissions(edit),
         ).resolves.toEqual(key);
         expect(
           JSON.parse(request.mock.calls[2][1]!.body as string),
@@ -544,10 +560,10 @@ describe("admin wire contract", () => {
         write: true,
       };
       await expect(
-        client.updateApiKeyCollectionPermissions(edit),
+        client.legacyUpdateApiKeyCollectionPermissions(edit),
       ).rejects.toThrow("newer ekoDB server");
       await expect(
-        client.updateApiKeyCollectionPermissions(edit),
+        client.legacyUpdateApiKeyCollectionPermissions(edit),
       ).rejects.toThrow("newer ekoDB server");
       expect(request.mock.calls.map(([url]) => url)).toEqual([
         "https://example.test/api/auth/token",
@@ -575,12 +591,12 @@ describe("admin wire contract", () => {
         read: true,
         write: true,
       };
-      await client.updateApiKeyCollectionPermissions(edit);
-      await client.updateApiKeyCollectionPermissions(edit);
+      await client.legacyUpdateApiKeyCollectionPermissions(edit);
+      await client.legacyUpdateApiKeyCollectionPermissions(edit);
       auth();
       request.mockResolvedValueOnce(response({ version }));
       request.mockResolvedValueOnce(response(key));
-      await admin().updateApiKeyCollectionPermissions(edit);
+      await admin().legacyUpdateApiKeyCollectionPermissions(edit);
       expect(
         request.mock.calls.map(([url, options]) => [url, options!.method]),
       ).toEqual([
@@ -613,7 +629,7 @@ describe("admin wire contract", () => {
     };
     for (let n = 0; n < 2; n++)
       await expect(
-        client.updateApiKeyCollectionPermissions(edit),
+        client.legacyUpdateApiKeyCollectionPermissions(edit),
       ).rejects.toThrow(
         /^Permission updates need a newer ekoDB server because earlier servers remove a grant's field restrictions when it is updated$/,
       );
@@ -632,7 +648,7 @@ describe("admin wire contract", () => {
       write: true,
       extra: "not sent",
     });
-    await admin().updateApiKeyCollectionPermissions(edit);
+    await admin().legacyUpdateApiKeyCollectionPermissions(edit);
     expect(JSON.parse(request.mock.calls[2][1]!.body as string)).toStrictEqual({
       api_key: "target-secret",
       collection: "users",
@@ -645,7 +661,7 @@ describe("admin wire contract", () => {
     "rejects non-object update %j",
     async (edit) => {
       await expect(
-        admin().updateApiKeyCollectionPermissions(edit as never),
+        admin().legacyUpdateApiKeyCollectionPermissions(edit as never),
       ).rejects.toThrow("Invalid collection permission update");
       expect(request).not.toHaveBeenCalled();
     },
@@ -665,8 +681,8 @@ describe("admin wire contract", () => {
       write: true,
     };
     await Promise.all([
-      client.updateApiKeyCollectionPermissions(edit),
-      client.updateApiKeyCollectionPermissions(edit),
+      client.legacyUpdateApiKeyCollectionPermissions(edit),
+      client.legacyUpdateApiKeyCollectionPermissions(edit),
     ]);
     expect(
       request.mock.calls.filter(
@@ -689,14 +705,16 @@ describe("admin wire contract", () => {
     { write: "false" },
     ...["select_fields", "exclude_fields", "writable_fields"].flatMap((field) =>
       [false, {}, "name", [""], ["  "], [null], [4], new Array(1)].map(
-        (value) => ({ [field]: value }),
+        (value) => ({
+          [field]: value,
+        }),
       ),
     ),
   ])(
     "rejects invalid edits before authentication or health: %j",
     async (invalid) => {
       await expect(
-        admin().updateApiKeyCollectionPermissions({
+        admin().legacyUpdateApiKeyCollectionPermissions({
           api_key: "target-secret",
           collection: "users",
           read: true,

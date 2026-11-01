@@ -28,8 +28,29 @@ async def main():
         scoped = AdminClient(base, created["key"])
         if (await scoped.get_permissions())["is_admin"]:
             raise RuntimeError("Unexpected admin grant")
+        modern = await admin.uses_key_permission_routes()
+        if modern:
+            key_id = created.get("id")
+            if not key_id or not any(
+                key.get("id") == key_id and key.get("label") == label
+                for key in await admin.list_api_keys()
+            ):
+                raise RuntimeError("Registration/listing omitted key id")
+            prefix = f"sdk-admin:{label}:"
+            target = {"key_id": key_id, "prefix": prefix}
+            change = await admin.put_api_key_kv_permissions(
+                {**target, "read": True, "write": False}
+            )
+            if not change["after"]["read"] or change["after"]["write"]:
+                raise RuntimeError("KV grant creation failed")
+            await admin.patch_api_key_kv_permissions({**target, "write": True})
+            if (await admin.delete_api_key_kv_permissions(key_id, prefix))[
+                "after"
+            ] is not None:
+                raise RuntimeError("KV grant removal failed")
+        target = {"key_id": created["id"]} if modern else {"api_key": created["key"]}
         request = {
-            "api_key": created["key"],
+            **target,
             "collection": "sdk_admin_probe",
             "read": True,
             "write": True,
@@ -37,7 +58,10 @@ async def main():
             "exclude_fields": ["secret"],
             "writable_fields": ["public"],
         }
-        await admin.update_api_key_collection_permissions(request)
+        if modern:
+            await admin.put_api_key_collection_permissions(request)
+        else:
+            await admin.legacy_update_api_key_collection_permissions(request)
         initial = (await AdminClient(base, created["key"]).get_permissions())[
             "collection_permissions"
         ]["sdk_admin_probe"]
@@ -50,9 +74,14 @@ async def main():
         }
         if any(initial.get(field) != value for field, value in expected.items()):
             raise RuntimeError("Initial restriction readback failed")
-        await admin.update_api_key_collection_permissions(
+        update = (
+            admin.update_api_key_collection_permissions
+            if modern
+            else admin.legacy_update_api_key_collection_permissions
+        )
+        await update(
             {
-                "api_key": created["key"],
+                **target,
                 "collection": "sdk_admin_probe",
                 "read": True,
                 "write": False,
@@ -78,7 +107,7 @@ async def main():
         if len(matches) > 1 or any(key["key"] == owner for key in matches):
             raise RuntimeError("Unexpected disposable cleanup match")
         for key in matches:
-            await admin.revoke_api_key(key["key"])
+            await admin.revoke_api_key(key.get("id") or key["key"])
         if any(key.get("label") == label for key in await admin.list_api_keys()):
             raise RuntimeError(f"Disposable cleanup failed for label {label}")
     print("Disposable admin lifecycle verified; no matching key remains")

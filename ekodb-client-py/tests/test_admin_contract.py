@@ -6,7 +6,10 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 import pytest
-from ekodb_client.admin import AdminClient, MIN_SERVER_VERSION_FOR_PERMISSION_EDITS
+from ekodb_client.admin import (
+    AdminClient,
+    MIN_LEGACY_SERVER_VERSION_FOR_PERMISSION_EDITS,
+)
 
 CONTRACT = json.loads(
     (Path(__file__).parents[2] / "test-fixtures/admin-contract-0.79.2.json").read_text()
@@ -38,6 +41,9 @@ def endpoint():
             status = 200
             if self.path == "/api/auth/token":
                 result = {"token": state["token"]}
+            elif self.path == "/api/auth/keys/me/permissions":
+                result = {}
+                status = 404
             elif self.path == "/api/health":
                 result = {"version": state["version"]}
             elif self.command == "DELETE":
@@ -95,7 +101,9 @@ async def test_recorded_permission_edits(endpoint, case):
     client, state = endpoint
     state["record"] = case["response"]
     for _ in range(2):
-        result = await client.update_api_key_collection_permissions(case["request"])
+        result = await client.legacy_update_api_key_collection_permissions(
+            case["request"]
+        )
         assert result["collection_permissions"]["users"] == case["fresh_token_grant"]
     assert [request[2] for request in state["requests"] if request[0] == "PUT"] == [
         case["request"],
@@ -156,7 +164,10 @@ async def test_operations_nonadmin_default_legacy_metadata_and_encoding(endpoint
 )
 async def test_version_floor(endpoint, version):
     client, state = endpoint
-    assert MIN_SERVER_VERSION_FOR_PERMISSION_EDITS == CONTRACT["minimum_server_version"]
+    assert (
+        MIN_LEGACY_SERVER_VERSION_FOR_PERMISSION_EDITS
+        == CONTRACT["minimum_server_version"]
+    )
     state["version"] = version
     request = {
         "api_key": "target-secret",
@@ -166,10 +177,10 @@ async def test_version_floor(endpoint, version):
     }
     for _ in range(2):
         if version in ("0.79.2", "0.79.3", "1.0.0"):
-            await client.update_api_key_collection_permissions(request)
+            await client.legacy_update_api_key_collection_permissions(request)
         else:
             with pytest.raises(RuntimeError, match="earlier servers remove"):
-                await client.update_api_key_collection_permissions(request)
+                await client.legacy_update_api_key_collection_permissions(request)
     assert sum(item[1] == "/api/health" for item in state["requests"]) == 1
     assert sum(item[0] == "PUT" for item in state["requests"]) == (
         2 if version in ("0.79.2", "0.79.3", "1.0.0") else 0
@@ -212,7 +223,7 @@ async def test_validation_precedes_http(endpoint, invalid):
         **invalid,
     }
     with pytest.raises((ValueError, RuntimeError)):
-        await client.update_api_key_collection_permissions(request)
+        await client.legacy_update_api_key_collection_permissions(request)
     assert state["requests"] == []
 
 

@@ -567,8 +567,8 @@ All examples use the ekoDB authentication system:
 ### Test Credentials
 
 - **API Key**: supply the key configured for the test instance. Some local-only
-  examples fall back to `a-test-api-key-from-ekodb`, but portable runners must
-  not rely on that value.
+  examples fall back to `a-test-api-key-from-ekodb-0123456789`, but portable
+  runners must not rely on that value.
 - **Token Generation**: Automatic via `/api/auth/token`
 - **Token Usage**: `Authorization: Bearer <token>` header
 
@@ -623,7 +623,7 @@ repository-root `.env` file:
 ```bash
 # .env file
 API_BASE_URL=http://localhost:8080
-API_BASE_KEY=a-test-api-key-from-ekodb
+API_BASE_KEY=a-test-api-key-from-ekodb-0123456789
 WS_BASE_URL=ws://localhost:8080
 REQUEST_TIMEOUT=30000
 ```
@@ -807,7 +807,9 @@ make run-release
 **Solution:**
 
 - Check that your API key is registered with the server
-- Default test key `a-test-api-key-from-ekodb` should work out of the box
+- Configure `API_BASE_KEY` with an authorized test key registered through your
+  server provisioning flow; synthetic fallback keys are not automatically
+  registered.
 - If using custom key, ensure it's registered
 
 ### WebSocket Connection Failed
@@ -920,13 +922,14 @@ touch rust/examples/my_new_example.rs
 ```javascript
 // JavaScript
 const BASE_URL = process.env.API_BASE_URL || "http://localhost:8080";
-const API_KEY = process.env.API_BASE_KEY || "a-test-api-key-from-ekodb";
+const API_KEY =
+  process.env.API_BASE_KEY || "a-test-api-key-from-ekodb-0123456789";
 ```
 
 ```python
 # Python
 BASE_URL = os.getenv('API_BASE_URL', 'http://localhost:8080')
-API_KEY = os.getenv('API_BASE_KEY', 'a-test-api-key-from-ekodb')
+API_KEY = os.getenv('API_BASE_KEY', 'a-test-api-key-from-ekodb-0123456789')
 ```
 
 ```go
@@ -938,7 +941,7 @@ apiKey := os.Getenv("API_BASE_KEY")
 ```rust
 // Rust
 let base_url = env::var("API_BASE_URL").unwrap_or_else(|_| "http://localhost:8080".to_string());
-let api_key = env::var("API_BASE_KEY").unwrap_or_else(|_| "a-test-api-key-from-ekodb".to_string());
+let api_key = env::var("API_BASE_KEY").unwrap_or_else(|_| "a-test-api-key-from-ekodb-0123456789".to_string());
 ```
 
 ### 3. Implement Authentication
@@ -1024,5 +1027,8 @@ current-token permissions by default. With explicit authorization and
 `EKODB_ADMIN_LIVE=1`, it creates one uniquely labeled non-admin key, verifies
 set/keep/clear/empty restriction edits through fresh authentication, and revokes
 only that key with a final absence check. Requires `API_BASE_URL`,
-`API_BASE_KEY` and server 0.79.2 or later for updates. It does not perform data
-operations.
+`API_BASE_KEY`. A cached capability probe chooses modern per-key permission
+routes or explicit legacy edits (server >=0.79.2). Modern runs verify key ids
+from registration and listing, collection and KV grant changes, and revoke by
+id. Modern facet operations need the 0.80.0 route generation, including pre-cap
+builds that still report 0.79.2. The example does not perform data operations.

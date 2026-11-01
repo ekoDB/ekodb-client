@@ -538,22 +538,27 @@ server contract additions should be evaluated against that boundary.
 
 ## API-key administration
 
-All five SDKs expose a separate admin entry point with creation, listing,
-revocation, current-token permissions and collection-permission updates.
-Permission updates require authenticated server version **0.79.2 or later**.
-Omitted restrictions preserve the previous list, null clears it, and arrays
-replace it (including an empty array). Recorded contract cases live in
-`test-fixtures/admin-contract-0.79.2.json`; each SDK exercises its public HTTP
-boundary against those cases. Matching `client_admin` examples are read-only
-unless `EKODB_ADMIN_LIVE=1` explicitly enables disposable-key verification.
+All five SDKs expose separate admin entry points for key lifecycle and
+collection/KV permissions. A cached permission-route probe selects modern 0.80.0
+resources (including pre-cap and prerelease servers) or legacy routes. Modern
+targets are key ids or `me`; edits return before/after grants. Explicit legacy
+collection updates retain their secret-targeted request and >=0.79.2 health
+gate. Modern methods never send key values in permission URLs/bodies. The
+historical fixtures remain in place; the synthetic
+`test-fixtures/admin-contract-0.80.0.json` adds modern facet cases. Each SDK
+must exercise public HTTP entry points, not just shared serializers. Matching
+`client_admin` examples use disposable keys only when `EKODB_ADMIN_LIVE=1` and
+verify registration/list ids, modern KV edits and cleanup. Live server evidence
+is separate from fixture coverage: the current pre-cap modern server is the live
+acceptance target, while legacy behavior is covered by offline contracts.
 
-| SDK        | Entry point                              | Contract tests                                                         | Example                                   |
-| ---------- | ---------------------------------------- | ---------------------------------------------------------------------- | ----------------------------------------- |
-| Rust       | `ekodb_client::admin::AdminClient`       | `ekodb_client/tests/admin_contract.rs`                                 | `examples/rust/examples/client_admin.rs`  |
-| Python     | `ekodb_client.admin.AdminClient` (PyO3)  | `ekodb-client-py/tests/test_admin_contract.py`                         | `examples/python/client_admin.py`         |
-| TypeScript | `@ekodb/ekodb-client/admin`              | `ekodb-client-ts/src/admin.test.ts`                                    | `examples/typescript/client_admin.ts`     |
-| Kotlin     | `io.ekodb.client.admin.EkoDBAdminClient` | `ekodb-client-kt/src/test/kotlin/io/ekodb/client/AdminContractTest.kt` | `examples/kotlin/examples/ClientAdmin.kt` |
-| Go         | `ekodb.AdminClient` in `ekodb-client-go` | `admin_permission_parity_test.go` in that module                       | `examples/go/client_admin.go`             |
+| SDK        | Entry point                              | Contract tests                                                                       | Example                                   |
+| ---------- | ---------------------------------------- | ------------------------------------------------------------------------------------ | ----------------------------------------- |
+| Rust       | `ekodb_client::admin::AdminClient`       | `ekodb_client/tests/admin_contract.rs`, `admin_permission_resources.rs`              | `examples/rust/examples/client_admin.rs`  |
+| Python     | `ekodb_client.admin.AdminClient` (PyO3)  | `ekodb-client-py/tests/test_admin_contract.py`, `test_admin_permission_resources.py` | `examples/python/client_admin.py`         |
+| TypeScript | `@ekodb/ekodb-client/admin`              | `admin.test.ts`, `admin-permission-resources.test.ts`                                | `examples/typescript/client_admin.ts`     |
+| Kotlin     | `io.ekodb.client.admin.EkoDBAdminClient` | `AdminContractTest.kt`, `AdminPermissionResourcesTest.kt`                            | `examples/kotlin/examples/ClientAdmin.kt` |
+| Go         | `ekodb.AdminClient` in `ekodb-client-go` | `admin_permission_parity_test.go`, `admin_key_permissions_test.go` in that module    | `examples/go/client_admin.go`             |
 
 See [ADMIN.md](ekodb-client-ts/ADMIN.md) for the common contract and
 language-specific READMEs for construction and request types. This table

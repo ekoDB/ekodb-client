@@ -9,7 +9,9 @@ it("installs the packed artifact and supports root, admin and existing deep impo
   const packageRoot = resolve(__dirname, "..");
   const metadata = JSON.parse(
     readFileSync(join(packageRoot, "package.json"), "utf8"),
-  ) as { dependencies: { [name: string]: string } };
+  ) as {
+    dependencies: { [name: string]: string };
+  };
   // Install copies of the already-installed runtime dependencies. A fresh cache
   // proves this consumer check needs neither registry metadata nor a server.
   const dependencies = Object.keys(metadata.dependencies).map((name) =>
@@ -19,7 +21,10 @@ it("installs the packed artifact and supports root, admin and existing deep impo
     const output = execFileSync(
       "npm",
       ["pack", "--json", "--pack-destination", directory],
-      { cwd: packageRoot, encoding: "utf8" },
+      {
+        cwd: packageRoot,
+        encoding: "utf8",
+      },
     );
     // npm can print prepare output before its JSON report.
     const report = JSON.parse(output.slice(output.indexOf("[\n"))) as {
@@ -51,7 +56,7 @@ it("installs the packed artifact and supports root, admin and existing deep impo
       const assert = require('node:assert/strict');
       const {EkoDBClient} = require('@ekodb/ekodb-client');
       const {EkoDBAdminClient, MIN_SERVER_VERSION_FOR_PERMISSION_EDITS} = require('@ekodb/ekodb-client/admin');
-      assert.equal(MIN_SERVER_VERSION_FOR_PERMISSION_EDITS, '0.79.2');
+      assert.equal(MIN_SERVER_VERSION_FOR_PERMISSION_EDITS, '0.80.0');
       assert.equal(typeof EkoDBClient, 'function');
       assert.equal(typeof EkoDBAdminClient, 'function');
       assert.equal(typeof require('@ekodb/ekodb-client/dist/client').EkoDBClient, 'function');
@@ -68,7 +73,7 @@ it("installs the packed artifact and supports root, admin and existing deep impo
       import assert from 'node:assert/strict';
       import {EkoDBClient} from '@ekodb/ekodb-client';
       import {EkoDBAdminClient, MIN_SERVER_VERSION_FOR_PERMISSION_EDITS} from '@ekodb/ekodb-client/admin';
-      assert.equal(MIN_SERVER_VERSION_FOR_PERMISSION_EDITS, '0.79.2');
+      assert.equal(MIN_SERVER_VERSION_FOR_PERMISSION_EDITS, '0.80.0');
       import {EkoDBClient as DeepClient} from '@ekodb/ekodb-client/dist/client.js';
       assert.equal(typeof EkoDBClient, 'function');
       assert.equal(typeof EkoDBAdminClient, 'function');
@@ -86,7 +91,7 @@ it("installs the packed artifact and supports root, admin and existing deep impo
       new EkoDBClient({baseURL:'https://example.test',apiKey:'test'});
       // @ts-expect-error An admin facade has no CRUD methods.
       client.insert('users', {});
-      const edit: UpdateApiKeyCollectionPermissionsRequest = {api_key:'test', collection:'users', read:true, write:false, select_fields:null, exclude_fields:undefined, writable_fields:[]};
+      const edit: UpdateApiKeyCollectionPermissionsRequest = {key_id:'me', collection:'users', read:true, write:false, select_fields:null, exclude_fields:undefined, writable_fields:[]};
       const minimum: string | undefined = MIN_SERVER_VERSION_FOR_PERMISSION_EDITS;
       void edit;
       void minimum;
