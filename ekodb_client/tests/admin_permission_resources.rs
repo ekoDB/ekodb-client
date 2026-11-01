@@ -13,6 +13,209 @@ fn fixture() -> Value {
     .unwrap()
 }
 
+fn permission_names() -> Value {
+    serde_json::from_str(include_str!(
+        "../../test-fixtures/admin-permission-names.json"
+    ))
+    .unwrap()
+}
+
+fn decoded_facet(path: &str, prefix: &str) -> Option<String> {
+    let encoded = path.strip_prefix(prefix)?;
+    if encoded.contains('/') || encoded.contains('?') || encoded.contains('#') {
+        return None;
+    }
+    let query = format!("name={encoded}");
+    let mut pairs = url::form_urlencoded::parse(query.as_bytes());
+    let (key, value) = pairs.next()?;
+    if key != "name" || pairs.next().is_some() {
+        return None;
+    }
+    Some(value.into_owned())
+}
+
+#[tokio::test]
+async fn accepted_facet_names_cross_the_public_http_boundary() {
+    let names = permission_names();
+    let mut failures = Vec::new();
+    for case in names["accepted"].as_array().unwrap() {
+        let name = case["value"].as_str().unwrap();
+        let mut server = mockito::Server::new_async().await;
+        let auth = server
+            .mock("POST", "/api/auth/token")
+            .with_body(r#"{"token":"jwt-synthetic"}"#)
+            .expect(1)
+            .create_async()
+            .await;
+        let probe = server
+            .mock("GET", "/api/auth/keys/me/permissions")
+            .with_body(fixture()["permissions"].to_string())
+            .expect(1)
+            .create_async()
+            .await;
+        let expected = name.to_owned();
+        let collection = server
+            .mock(
+                "GET",
+                Matcher::Regex("^/api/auth/keys/me/permissions/collections/".into()),
+            )
+            .match_request(move |request| {
+                decoded_facet(request.path(), "/api/auth/keys/me/permissions/collections/")
+                    == Some(expected.clone())
+            })
+            .with_body(r#"{"read":true,"write":false}"#)
+            .expect(1)
+            .create_async()
+            .await;
+        let expected = name.to_owned();
+        let kv = server
+            .mock(
+                "GET",
+                Matcher::Regex("^/api/auth/keys/me/permissions/kv/".into()),
+            )
+            .match_request(move |request| {
+                decoded_facet(request.path(), "/api/auth/keys/me/permissions/kv/")
+                    == Some(expected.clone())
+            })
+            .with_body(json!({"prefix":name,"read":true,"write":false}).to_string())
+            .expect(1)
+            .create_async()
+            .await;
+        let client =
+            AdminClient::new(&server.url(), "synthetic-admin-key-0123456789-abcdef").unwrap();
+        let collection_result = client.get_api_key_collection_permissions("me", name).await;
+        let kv_result = client.get_api_key_kv_permissions("me", name).await;
+        if collection_result.is_err() || kv_result.is_err() {
+            failures.push(case["name"].as_str().unwrap().to_owned());
+            continue;
+        }
+        assert!(collection_result.unwrap().read);
+        assert_eq!(kv_result.unwrap().prefix.as_deref(), Some(name));
+        auth.assert_async().await;
+        probe.assert_async().await;
+        collection.assert_async().await;
+        kv.assert_async().await;
+    }
+    assert!(failures.is_empty(), "accepted names refused: {failures:?}");
+}
+
+#[tokio::test]
+async fn rejected_facet_names_fail_before_any_http_request() {
+    let names = permission_names();
+    let mut server = mockito::Server::new_async().await;
+    let auth = server
+        .mock("POST", "/api/auth/token")
+        .expect(0)
+        .create_async()
+        .await;
+    let client = AdminClient::new(&server.url(), "synthetic-admin-key-0123456789-abcdef").unwrap();
+    let mut failures = Vec::new();
+    for case in names["rejected"].as_array().unwrap() {
+        let name = case["value"].as_str().unwrap();
+        for facet in ["collections", "kv"] {
+            let rejected = if facet == "collections" {
+                matches!(client.get_api_key_collection_permissions("me", name).await, Err(ekodb_client::Error::Validation(message)) if message == "Invalid permission facet")
+            } else {
+                matches!(client.get_api_key_kv_permissions("me", name).await, Err(ekodb_client::Error::Validation(message)) if message == "Invalid permission facet")
+            };
+            if !rejected {
+                failures.push(format!("{}:{facet}", case["name"].as_str().unwrap()));
+            }
+        }
+    }
+    assert!(
+        failures.is_empty(),
+        "rejected names reached transport: {failures:?}"
+    );
+    auth.assert_async().await;
+}
+
+#[tokio::test]
+async fn failed_legacy_health_reads_are_retried_then_success_is_cached() {
+    for (status, body, error_fragment) in [
+        (503, r#"{"error":"synthetic-secret"}"#, "503"),
+        (
+            200,
+            "synthetic-secret invalid JSON",
+            "Invalid admin response",
+        ),
+        (200, "{}", "earlier servers remove"),
+        (200, r#"{"version":9}"#, "earlier servers remove"),
+        (200, r#"{"version":"invalid"}"#, "earlier servers remove"),
+        (
+            200,
+            r#"{"version":"0.80.0-rc.1"}"#,
+            "earlier servers remove",
+        ),
+    ] {
+        let mut server = mockito::Server::new_async().await;
+        let auth = server
+            .mock("POST", "/api/auth/token")
+            .with_body(r#"{"token":"jwt-synthetic"}"#)
+            .expect(1)
+            .create_async()
+            .await;
+        let probe = server
+            .mock("GET", "/api/auth/keys/me/permissions")
+            .with_status(404)
+            .expect(1)
+            .create_async()
+            .await;
+        let failed_health = server
+            .mock("GET", "/api/health")
+            .with_status(status)
+            .with_body(body)
+            .expect(1)
+            .create_async()
+            .await;
+        let update = server
+            .mock("PUT", "/api/auth/permissions")
+            .with_body(fixture()["key"].to_string())
+            .expect(2)
+            .create_async()
+            .await;
+        let client =
+            AdminClient::new(&server.url(), "synthetic-admin-key-0123456789-abcdef").unwrap();
+        let request: LegacyUpdateApiKeyCollectionPermissionsRequest = serde_json::from_value(json!({"api_key":"synthetic-target-key-0123456789-abcdef","collection":"users","read":true,"write":false})).unwrap();
+        let first_error = client
+            .legacy_update_api_key_collection_permissions(&request)
+            .await
+            .err()
+            .unwrap()
+            .to_string();
+        assert!(!first_error.contains("synthetic-secret"));
+        failed_health.assert_async().await;
+        failed_health.remove_async().await;
+        let successful_health = server
+            .mock("GET", "/api/health")
+            .with_body(r#"{"version":"0.79.2"}"#)
+            .expect(1)
+            .create_async()
+            .await;
+        assert!(
+            client
+                .legacy_update_api_key_collection_permissions(&request)
+                .await
+                .is_ok(),
+            "failed health read poisoned the cache"
+        );
+        assert!(
+            first_error.contains(error_fragment),
+            "unexpected safe error: {first_error}"
+        );
+        assert!(
+            client
+                .legacy_update_api_key_collection_permissions(&request)
+                .await
+                .is_ok()
+        );
+        auth.assert_async().await;
+        probe.assert_async().await;
+        successful_health.assert_async().await;
+        update.assert_async().await;
+    }
+}
+
 #[tokio::test]
 async fn modern_permission_facets_preserve_wire_bodies_and_change_responses() {
     let fixture = fixture();

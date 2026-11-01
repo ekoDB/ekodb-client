@@ -29,7 +29,12 @@ Version 0.80.0 moves permission routes under `/api/auth/keys/{id}/permissions`.
 The target is the server-generated key id or `me` for the calling key. New
 permission methods reject key values as targets. Collection names and KV
 prefixes are encoded as path segments, including `/`, spaces and literal `+`
-characters. Dot-only facet names (`.` and `..`) are rejected before HTTP.
+characters. A facet name is rejected before HTTP if it is empty, `.` or `..`,
+contains a Unicode control character (category Cc), or contains U+00AD, U+061C,
+U+180E, U+200B–U+200F, U+2028–U+202E, U+2060–U+2064, U+2066–U+2069 or U+FEFF.
+Other code points are accepted, including format characters outside that list
+and supplementary-plane characters. KV list filters remain query values; they
+are not subject to path-facet validation.
 
 Each client probes `GET /api/auth/keys/me/permissions` and caches the successful
 generation decision. A 200 selects the new routes; only 404 or 405 selects the
@@ -42,7 +47,10 @@ pre-cap servers that still report `0.79.2`. The new API's documented release
 minimum is `MIN_SERVER_VERSION_FOR_PERMISSION_EDITS = "0.80.0"`. Legacy edits
 retain `MIN_LEGACY_SERVER_VERSION_FOR_PERMISSION_EDITS = "0.79.2"`; their cached
 health check rejects earlier, malformed, unreadable and prerelease legacy
-versions because older implementations erase field restrictions.
+versions because older implementations erase field restrictions. Only a
+successfully read, parseable stable version is cached. Failed or unreadable
+reads remain retryable, and transport/JSON failures retain their sanitized
+errors. A valid older stable version remains cached and refused.
 
 `getPermissions()` reads the caller's grants through either generation. Its
 public result preserves `is_admin` and `collection_permissions`, and exposes

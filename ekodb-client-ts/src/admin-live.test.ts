@@ -1,4 +1,6 @@
 import { randomUUID } from "node:crypto";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { expect, it, vi } from "vitest";
 import {
   EkoDBAdminClient,
@@ -99,6 +101,42 @@ async function disposableLifecycle(
     });
     if (modern) {
       const id = created.id!;
+      const names: { accepted: Array<{ name: string; value: string }> } =
+        JSON.parse(
+          readFileSync(
+            resolve(
+              __dirname,
+              "../../test-fixtures/admin-permission-names.json",
+            ),
+            "utf8",
+          ),
+        );
+      for (const { value } of names.accepted) {
+        const collectionChange = await admin.putApiKeyCollectionPermissions({
+          key_id: id,
+          collection: value,
+          read: true,
+          write: false,
+        });
+        expect(collectionChange.after?.read).toBe(true);
+        expect(
+          (await admin.getApiKeyCollectionPermissions(id, value)).read,
+        ).toBe(true);
+        expect(
+          (await admin.deleteApiKeyCollectionPermissions(id, value)).after,
+        ).toBeNull();
+        const kvChange = await admin.putApiKeyKvPermissions({
+          key_id: id,
+          prefix: value,
+          read: true,
+          write: false,
+        });
+        expect(kvChange.after?.read).toBe(true);
+        expect((await admin.getApiKeyKvPermissions(id, value)).read).toBe(true);
+        expect(
+          (await admin.deleteApiKeyKvPermissions(id, value)).after,
+        ).toBeNull();
+      }
       const collection = "sdk probe+tenant:a/";
       const put = await admin.putApiKeyCollectionPermissions({
         key_id: id,

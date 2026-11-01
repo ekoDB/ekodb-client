@@ -4,12 +4,18 @@ import json
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from urllib.parse import unquote
 
 import pytest
 from ekodb_client.admin import AdminClient
 
 CONTRACT = json.loads(
     (Path(__file__).parents[2] / "test-fixtures/admin-contract-0.80.0.json").read_text()
+)
+PERMISSION_NAMES = json.loads(
+    (
+        Path(__file__).parents[2] / "test-fixtures/admin-permission-names.json"
+    ).read_text()
 )
 
 
@@ -35,12 +41,18 @@ def modern_endpoint():
                 response = state.get("key_record", CONTRACT["key"])
             elif self.path == "/api/auth/keys":
                 response = [state.get("key_record", CONTRACT["key"])]
+            elif self.path == "/api/health":
+                status, response = state["health_responses"].pop(0)
             elif self.path == "/api/auth/permissions":
-                response = {
-                    "is_admin": False,
-                    "collection_permissions": {},
-                    "kv_permissions": None,
-                }
+                response = (
+                    CONTRACT["key"]
+                    if self.command == "PUT"
+                    else {
+                        "is_admin": False,
+                        "collection_permissions": {},
+                        "kv_permissions": None,
+                    }
+                )
             elif self.path in state.get("reads", {}):
                 response = state["reads"][self.path]
             elif state["change"] is not None:
@@ -48,7 +60,11 @@ def modern_endpoint():
             else:
                 response = {}
                 status = 404
-            encoded = json.dumps(response).encode()
+            encoded = (
+                response
+                if isinstance(response, bytes)
+                else json.dumps(response).encode()
+            )
             self.send_response(status)
             self.send_header("Content-Type", "application/json")
             self.send_header("Content-Length", str(len(encoded)))
@@ -68,6 +84,82 @@ def modern_endpoint():
         server.shutdown()
         server.server_close()
         thread.join()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("facet", ["collection", "kv"])
+@pytest.mark.parametrize(
+    "case", PERMISSION_NAMES["accepted"], ids=lambda case: case["name"]
+)
+async def test_accepted_facet_names_cross_public_http_boundary(
+    modern_endpoint, facet, case
+):
+    state, base = modern_endpoint
+    name = case["value"]
+    state["change"] = {"response": {"read": True, "write": False, "prefix": name}}
+    client = AdminClient(base, "synthetic-admin-key-0123456789-abcdef")
+    grant = await getattr(client, f"get_api_key_{facet}_permissions")("me", name)
+    assert grant["read"] is True
+    expected_facet = "collections" if facet == "collection" else "kv"
+    path = state["requests"][-1][1]
+    prefix = f"/api/auth/keys/me/permissions/{expected_facet}/"
+    assert path.startswith(prefix)
+    encoded = path[len(prefix) :]
+    assert not any(char in encoded for char in "/?#")
+    assert unquote(encoded) == name
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("facet", ["collection", "kv"])
+@pytest.mark.parametrize(
+    "case", PERMISSION_NAMES["rejected"], ids=lambda case: case["name"]
+)
+async def test_rejected_facet_names_fail_before_http(modern_endpoint, facet, case):
+    state, base = modern_endpoint
+    client = AdminClient(base, "synthetic-admin-key-0123456789-abcdef")
+    with pytest.raises(RuntimeError, match="Invalid permission facet"):
+        await getattr(client, f"get_api_key_{facet}_permissions")("me", case["value"])
+    assert state["requests"] == []
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "failure",
+    [
+        (503, {"error": "synthetic-secret"}, "503"),
+        (200, b"synthetic-secret invalid JSON", "Invalid admin response"),
+        (200, {}, "earlier servers remove"),
+        (200, {"version": 9}, "earlier servers remove"),
+        (200, {"version": "invalid"}, "earlier servers remove"),
+        (200, {"version": "0.80.0-rc.1"}, "earlier servers remove"),
+    ],
+)
+async def test_failed_legacy_health_reads_retry_then_cache_success(
+    modern_endpoint, failure
+):
+    state, base = modern_endpoint
+    status, response, error_fragment = failure
+    state["probe_status"] = 404
+    state["health_responses"] = [(status, response), (200, {"version": "0.79.2"})]
+    client = AdminClient(base, "synthetic-admin-key-0123456789-abcdef")
+    request = {
+        "api_key": "synthetic-target-key-0123456789-abcdef",
+        "collection": "users",
+        "read": True,
+        "write": False,
+    }
+    with pytest.raises(RuntimeError) as first_error:
+        await client.legacy_update_api_key_collection_permissions(request)
+    assert "synthetic-secret" not in str(first_error.value)
+    await client.legacy_update_api_key_collection_permissions(request)
+    assert error_fragment in str(first_error.value)
+    await client.legacy_update_api_key_collection_permissions(request)
+    assert sum(path == "/api/health" for _, path, _ in state["requests"]) == 2
+    assert (
+        sum(path == "/api/auth/keys/me/permissions" for _, path, _ in state["requests"])
+        == 1
+    )
+    assert sum(method == "PUT" for method, _, _ in state["requests"]) == 2
 
 
 @pytest.mark.asyncio

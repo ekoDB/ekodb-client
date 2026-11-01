@@ -565,6 +565,28 @@ language-specific READMEs for construction and request types. This table
 describes this feature branch; release availability depends on the corresponding
 SDK release.
 
+### Permission-name validation and legacy health recovery
+
+Rust, the compiled Python binding, TypeScript and Kotlin share
+`test-fixtures/admin-permission-names.json`. Their public collection/KV facet
+operations reject empty names, `.` and `..`, Unicode Cc controls, and exactly
+U+00AD, U+061C, U+180E, U+200B–U+200F, U+2028–U+202E, U+2060–U+2064,
+U+2066–U+2069 and U+FEFF. Other format characters are accepted. Kotlin checks
+Unicode code points rather than individual UTF-16 units. The same fixture drives
+accepted HTTP requests and rejected requests that must never reach HTTP.
+
+These four SDKs cache only successful, parseable stable legacy health versions.
+Failed, malformed and prerelease reads can be retried; a valid unsupported
+stable version remains cached and refused. HTTP/JSON failures propagate through
+the existing sanitized error paths.
+
+Go was assessed separately and is outside this four-SDK correction: its broad
+Cf/whitespace validation and failed health-read caching remain tracked in
+[permission compatibility](https://github.com/ekoDB/ekodb-client-go/issues/110)
+and
+[legacy version gating](https://github.com/ekoDB/ekodb-client-go/issues/104).
+This correction does not claim five-SDK parity for those two behaviors.
+
 ---
 
 ## Testing Requirements
