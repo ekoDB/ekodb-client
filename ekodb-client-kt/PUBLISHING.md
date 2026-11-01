@@ -49,11 +49,18 @@ signingInMemoryKeyPassword=YOUR_GPG_PASSPHRASE
 
 ### 1. Update Version
 
-Edit `build.gradle.kts`:
+From the repository root, generate the release metadata with the repository's
+bump target:
 
-```kotlin
-version = "0.1.0"  // Update this
+```bash
+make bump-version VERSION=X.Y.Z
 ```
+
+Commit the generated metadata using the printed subject verbatim and
+rebase-merge the release cap to `main` before publishing packages. The
+[release workflow](../.github/workflows/release.yml) requires the cap subject
+intact: a squash appends the PR number and a merge commit replaces the subject,
+making the release a silent, green no-op.
 
 ### 2. Build and Test
 
