@@ -1,6 +1,6 @@
 use ekodb_client::admin::{
-    AdminClient, CreateApiKeyRequest, MIN_SERVER_VERSION_FOR_PERMISSION_EDITS, PermissionEdit,
-    UpdateApiKeyCollectionPermissionsRequest,
+    AdminClient, CreateApiKeyRequest, LegacyUpdateApiKeyCollectionPermissionsRequest,
+    MIN_LEGACY_SERVER_VERSION_FOR_PERMISSION_EDITS, PermissionEdit,
 };
 use mockito::Matcher;
 use serde_json::{Value, json};
@@ -10,7 +10,7 @@ fn fixture() -> Value {
     ))
     .unwrap()
 }
-fn edit() -> UpdateApiKeyCollectionPermissionsRequest {
+fn edit() -> LegacyUpdateApiKeyCollectionPermissionsRequest {
     serde_json::from_value(
         json!({"api_key":"target-secret","collection":"users","read":true,"write":false}),
     )
@@ -21,6 +21,11 @@ fn edit() -> UpdateApiKeyCollectionPermissionsRequest {
 async fn recorded_three_state_bodies_and_responses_with_cached_health() {
     for case in fixture()["permission_edits"].as_array().unwrap() {
         let mut server = mockito::Server::new_async().await;
+        let _probe = server
+            .mock("GET", "/api/auth/keys/me/permissions")
+            .with_status(404)
+            .create_async()
+            .await;
         let auth = server
             .mock("POST", "/api/auth/token")
             .match_body(Matcher::Json(json!({"api_key":"admin-secret"})))
@@ -45,11 +50,11 @@ async fn recorded_three_state_bodies_and_responses_with_cached_health() {
             .create_async()
             .await;
         let client = AdminClient::new(&server.url(), "admin-secret").unwrap();
-        let request: UpdateApiKeyCollectionPermissionsRequest =
+        let request: LegacyUpdateApiKeyCollectionPermissionsRequest =
             serde_json::from_value(case["request"].clone()).unwrap();
         for _ in 0..2 {
             let result = client
-                .update_api_key_collection_permissions(&request)
+                .legacy_update_api_key_collection_permissions(&request)
                 .await
                 .unwrap();
             assert_eq!(
@@ -65,6 +70,11 @@ async fn recorded_three_state_bodies_and_responses_with_cached_health() {
 #[tokio::test]
 async fn all_five_operations_registration_defaults_and_metadata() {
     let mut server = mockito::Server::new_async().await;
+    let _probe = server
+        .mock("GET", "/api/auth/keys/me/permissions")
+        .with_status(404)
+        .create_async()
+        .await;
     let record = json!({"key":"new-secret","is_admin":false,"collection_permissions":{"users":["read"]},"label":"disposable","description":null,"ripple_warning":"Incomplete propagation","created_at":1,"kv_permissions":[]});
     let auth = server
         .mock("POST", "/api/auth/token")
@@ -132,7 +142,7 @@ async fn all_five_operations_registration_defaults_and_metadata() {
 }
 #[tokio::test]
 async fn gate_rejects_unreadable_old_and_prerelease_without_put() {
-    assert_eq!(MIN_SERVER_VERSION_FOR_PERMISSION_EDITS, "0.79.2");
+    assert_eq!(MIN_LEGACY_SERVER_VERSION_FOR_PERMISSION_EDITS, "0.79.2");
     for version in [
         Value::Null,
         json!(9),
@@ -144,6 +154,11 @@ async fn gate_rejects_unreadable_old_and_prerelease_without_put() {
         json!("999999999999999999999999.1.1"),
     ] {
         let mut server = mockito::Server::new_async().await;
+        let _probe = server
+            .mock("GET", "/api/auth/keys/me/permissions")
+            .with_status(404)
+            .create_async()
+            .await;
         let auth = server
             .mock("POST", "/api/auth/token")
             .with_body(r#"{"token":"jwt-secret"}"#)
@@ -165,7 +180,7 @@ async fn gate_rejects_unreadable_old_and_prerelease_without_put() {
         for _ in 0..2 {
             assert!(
                 client
-                    .update_api_key_collection_permissions(&edit())
+                    .legacy_update_api_key_collection_permissions(&edit())
                     .await
                     .err()
                     .unwrap()
@@ -182,6 +197,11 @@ async fn gate_rejects_unreadable_old_and_prerelease_without_put() {
 async fn errors_are_safe_creation_is_not_replayed_and_401_refresh_is_bounded() {
     for status in [400, 401, 403, 429, 500, 503, 307] {
         let mut server = mockito::Server::new_async().await;
+        let _probe = server
+            .mock("GET", "/api/auth/keys/me/permissions")
+            .with_status(404)
+            .create_async()
+            .await;
         let expected = if status == 401 { 2 } else { 1 };
         let auth = server
             .mock("POST", "/api/auth/token")
@@ -216,15 +236,20 @@ async fn validation_precedes_http_and_parser_errors_redact_payloads() {
     bad.select_fields = PermissionEdit::Set(vec![" ".into()]);
     assert!(
         client
-            .update_api_key_collection_permissions(&bad)
+            .legacy_update_api_key_collection_permissions(&bad)
             .await
             .err()
             .unwrap()
             .to_string()
             .contains("Invalid collection")
     );
-    assert!(serde_json::from_value::<UpdateApiKeyCollectionPermissionsRequest>(json!({"api_key":"x","collection":"users","read":true,"write":false,"select_fields":[null]})).is_err());
+    assert!(serde_json::from_value::<LegacyUpdateApiKeyCollectionPermissionsRequest>(json!({"api_key":"x","collection":"users","read":true,"write":false,"select_fields":[null]})).is_err());
     let mut server = mockito::Server::new_async().await;
+    let _probe = server
+        .mock("GET", "/api/auth/keys/me/permissions")
+        .with_status(404)
+        .create_async()
+        .await;
     let auth = server
         .mock("POST", "/api/auth/token")
         .with_body(r#"{"token":"jwt-secret"}"#)

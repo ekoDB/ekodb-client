@@ -1,7 +1,8 @@
 //! Read-only by default; EKODB_ADMIN_LIVE=1 creates and revokes one disposable key.
 use ekodb_client::admin::{
-    AdminClient, ApiKeyAction, CreateApiKeyRequest, PermissionEdit,
-    UpdateApiKeyCollectionPermissionsRequest,
+    AdminClient, ApiKey, ApiKeyAction, CreateApiKeyRequest,
+    LegacyUpdateApiKeyCollectionPermissionsRequest, PatchApiKeyKvPermissionsRequest,
+    PermissionEdit, UpdateApiKeyCollectionPermissionsRequest, UpdateApiKeyKvPermissionsRequest,
 };
 use std::{collections::HashMap, env, error::Error};
 #[tokio::main]
@@ -38,7 +39,45 @@ async fn main() -> Result<(), Box<dyn Error>> {
         if scoped.get_permissions().await?.is_admin {
             return Err("Unexpected admin grant".into());
         }
-        let request = UpdateApiKeyCollectionPermissionsRequest {
+        if admin.uses_key_permission_routes().await? {
+            let id = created.id.as_ref().ok_or("Registration omitted key id")?;
+            let listed = admin.list_api_keys().await?;
+            if !listed
+                .iter()
+                .any(|key| key.label.as_deref() == Some(&label) && key.id.as_ref() == Some(id))
+            {
+                return Err("Key listing omitted the registered id".into());
+            }
+            let prefix = format!("sdk-admin:{label}:");
+            let change = admin
+                .put_api_key_kv_permissions(&UpdateApiKeyKvPermissionsRequest {
+                    key_id: id.clone(),
+                    prefix: prefix.clone(),
+                    read: true,
+                    write: false,
+                })
+                .await?;
+            if !change.after.is_some_and(|grant| grant.read && !grant.write) {
+                return Err("KV grant creation failed".into());
+            }
+            admin
+                .patch_api_key_kv_permissions(&PatchApiKeyKvPermissionsRequest {
+                    key_id: id.clone(),
+                    prefix: prefix.clone(),
+                    read: None,
+                    write: Some(true),
+                })
+                .await?;
+            if admin
+                .delete_api_key_kv_permissions(id, &prefix)
+                .await?
+                .after
+                .is_some()
+            {
+                return Err("KV grant removal failed".into());
+            }
+        }
+        let request = LegacyUpdateApiKeyCollectionPermissionsRequest {
             api_key: created.key.clone(),
             collection: "sdk_admin_probe".into(),
             read: true,
@@ -47,9 +86,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             exclude_fields: PermissionEdit::Set(vec!["secret".into()]),
             writable_fields: PermissionEdit::Set(vec!["public".into()]),
         };
-        admin
-            .update_api_key_collection_permissions(&request)
-            .await?;
+        edit_grant(&admin, &created, &request, true).await?;
         let first = AdminClient::new(&base, &created.key)?
             .get_permissions()
             .await?;
@@ -65,16 +102,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
         {
             return Err("Initial restriction readback failed".into());
         }
-        let request = UpdateApiKeyCollectionPermissionsRequest {
+        let request = LegacyUpdateApiKeyCollectionPermissionsRequest {
             write: false,
             select_fields: PermissionEdit::Keep,
             exclude_fields: PermissionEdit::Clear,
             writable_fields: PermissionEdit::Set(vec![]),
             ..request
         };
-        admin
-            .update_api_key_collection_permissions(&request)
-            .await?;
+        edit_grant(&admin, &created, &request, false).await?;
         let fresh = AdminClient::new(&base, &created.key)?
             .get_permissions()
             .await?;
@@ -104,7 +139,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
         return Err("Unexpected disposable cleanup match".into());
     }
     for key in matches {
-        admin.revoke_api_key(&key.key).await?;
+        admin
+            .revoke_api_key(key.id.as_deref().unwrap_or(&key.key))
+            .await?;
     }
     if admin
         .list_api_keys()
@@ -116,5 +153,36 @@ async fn main() -> Result<(), Box<dyn Error>> {
     }
     result?;
     println!("Disposable admin lifecycle verified; no matching key remains");
+    Ok(())
+}
+
+async fn edit_grant(
+    admin: &AdminClient,
+    key: &ApiKey,
+    request: &LegacyUpdateApiKeyCollectionPermissionsRequest,
+    replace: bool,
+) -> Result<(), Box<dyn Error>> {
+    if admin.uses_key_permission_routes().await? {
+        let request = UpdateApiKeyCollectionPermissionsRequest {
+            key_id: key.id.clone().ok_or("Registration omitted key id")?,
+            collection: request.collection.clone(),
+            read: request.read,
+            write: request.write,
+            select_fields: request.select_fields.clone(),
+            exclude_fields: request.exclude_fields.clone(),
+            writable_fields: request.writable_fields.clone(),
+        };
+        if replace {
+            admin.put_api_key_collection_permissions(&request).await?;
+        } else {
+            admin
+                .update_api_key_collection_permissions(&request)
+                .await?;
+        }
+    } else {
+        admin
+            .legacy_update_api_key_collection_permissions(request)
+            .await?;
+    }
     Ok(())
 }

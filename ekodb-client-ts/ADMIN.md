@@ -1,14 +1,13 @@
 # API-key administration
 
-Use the existing npm package's separate entry point from a trusted server or
-owner tool:
+Use the separate admin entry point from a trusted server or owner tool. Returned
+key records contain secrets; never log them.
 
 ```ts
 import { EkoDBAdminClient } from "@ekodb/ekodb-client/admin";
 
-const baseURL = process.env.API_BASE_URL!;
 const admin = new EkoDBAdminClient({
-  baseURL,
+  baseURL: process.env.API_BASE_URL!,
   apiKey: process.env.API_BASE_KEY!,
   timeout: 30_000,
 });
@@ -16,130 +15,134 @@ const key = await admin.createApiKey({
   label: "worker-replacement",
   collection_permissions: { jobs: ["read", "write"] },
 });
+const permissions = await admin.getPermissions();
+```
 
-// Returned key records contain secrets. Never log them.
-const scoped = new EkoDBAdminClient({ baseURL, apiKey: key.key });
-const permissions = await scoped.getPermissions();
-if (permissions.is_admin || !permissions.collection_permissions.jobs?.read) {
-  throw new Error("Unexpected worker permissions");
+Registration defaults to a non-admin key and an empty collection grant map. The
+server generates the new key. Registration and listing expose `id` when the
+server supplies one; older responses may omit it. Check `ripple_warning` before
+installing a new key: it indicates incomplete propagation after local success.
+
+## Permission route generations
+
+Version 0.80.0 moves permission routes under `/api/auth/keys/{id}/permissions`.
+The target is the server-generated key id or `me` for the calling key. New
+permission methods reject key values as targets. Collection names and KV
+prefixes are encoded as path segments, including `/`, spaces and literal `+`
+characters. Dot-only facet names (`.` and `..`) are rejected before HTTP.
+
+Each client probes `GET /api/auth/keys/me/permissions` and caches the successful
+generation decision. A 200 selects the new routes; only 404 or 405 selects the
+legacy routes. Authentication and other failures propagate without selecting a
+generation. The authenticated transport can exchange a fresh token once after
+401, including when an old token needs replacement after a server upgrade.
+
+The route capability is authoritative: new routes work on `0.80.0-rc.N` and on
+pre-cap servers that still report `0.79.2`. The new API's documented release
+minimum is `MIN_SERVER_VERSION_FOR_PERMISSION_EDITS = "0.80.0"`. Legacy edits
+retain `MIN_LEGACY_SERVER_VERSION_FOR_PERMISSION_EDITS = "0.79.2"`; their cached
+health check rejects earlier, malformed, unreadable and prerelease legacy
+versions because older implementations erase field restrictions.
+
+`getPermissions()` reads the caller's grants through either generation. Its
+public result preserves `is_admin` and `collection_permissions`, and exposes
+`kv_permissions`. Modern `{admin, collections, kv}` responses are normalized to
+those names. Field limits, empty arrays, null limits and additional metadata are
+retained. On modern servers, `getApiKeyPermissions(id)` reads a key's aggregate
+resource. Any valid token may read its own key; other-key reads and all edits
+require an admin token.
+
+## Modern collection and KV grants
+
+```ts
+if (await admin.usesKeyPermissionRoutes()) {
+  if (!key.id) throw new Error("Registration omitted the key id");
+  await admin.putApiKeyCollectionPermissions({
+    key_id: key.id,
+    collection: "jobs",
+    read: true,
+    write: true,
+    writable_fields: ["status"],
+  });
+  const change = await admin.patchApiKeyCollectionPermissions({
+    key_id: key.id,
+    collection: "jobs",
+    exclude_fields: null,
+  });
+  // change.before and change.after contain grants, or null.
+  await admin.putApiKeyKvPermissions({
+    key_id: key.id,
+    prefix: "session:",
+    read: true,
+    write: false,
+  });
+  await admin.deleteApiKeyKvPermissions(key.id, "session:");
 }
-// Install and verify the replacement in your application before revoking an old key.
-// await admin.revokeApiKey(oldKey);
 ```
 
-`createApiKey` defaults to `is_admin: false` and an empty grant map. An admin
-key requires explicit `is_admin: true`. `listApiKeys()` returns all
-secret-bearing key records. `revokeApiKey(secret)` identifies a key by its
-actual secret value, which the SDK encodes as one path segment.
+Collection and KV methods expose `put`, `patch` and `delete` operations. The
+aggregate, list and single-facet read methods are `getApiKeyPermissions`,
+`listApiKeyCollectionPermissions`, `getApiKeyCollectionPermissions`,
+`listApiKeyKvPermissions` and `getApiKeyKvPermissions`. KV listing accepts an
+optional prefix filter. The `*` prefix denotes the entire KV namespace.
 
-Check `key.ripple_warning` before installing a new key: a warning means
-registration succeeded locally but replication to peers failed.
+PUT replaces a grant: collection read/write flags are required, and an omitted
+field limit means unlimited. PATCH preserves omitted flags and limits, clears a
+limit sent as null, and sets a supplied array exactly, including an empty array.
+`updateApiKeyCollectionPermissions` is a PATCH convenience method with required
+read/write flags. DELETE removes a grant. All modern edits return
+`{before, after}` without a token. KV PUT requires at least one of read/write; a
+KV PATCH that removes both rights removes the grant.
 
-`getPermissions()` reads the calling token's grants, including `select_fields`,
-`exclude_fields` and `writable_fields`. Array-form registration responses are
-converted to read/write objects; object-form responses preserve field
-restrictions, including null and empty arrays, and additional server metadata.
+A changed grant applies to the key's next token. Already minted tokens retain
+their previous grants until expiry; create a fresh scoped client for readback.
+
+## Explicit legacy compatibility
 
 ```ts
-await admin.updateApiKeyCollectionPermissions({
-  api_key: key.key,
-  collection: "jobs",
-  read: true,
-  write: false,
-});
+if (!(await admin.usesKeyPermissionRoutes())) {
+  await admin.legacyUpdateApiKeyCollectionPermissions({
+    api_key: key.key,
+    collection: "jobs",
+    read: true,
+    write: false,
+    exclude_fields: null,
+  });
+}
 ```
 
-Each update replaces `read` and `write` for that collection. Each restriction
-has three edit states:
+The explicit legacy method retains the old secret-targeted body and key-record
+response only for the detected old generation. It refuses to send that body to a
+modern server. Modern facet methods fail explicitly on old servers; the old API
+cannot represent the same per-facet verbs and change responses. No legacy
+KV-edit payload is inferred from the new API.
 
-| Request value                   | Effect                             |
-| ------------------------------- | ---------------------------------- |
-| Omitted or `undefined`          | Keep the current restriction       |
-| `null`                          | Remove the restriction             |
-| A string array (including `[]`) | Replace it with exactly that array |
+`revokeApiKey(key.id ?? key.key)` prefers an id and supports older servers that
+only expose key values. The SDK sends no revoke request body. Install and verify
+a replacement before revoking the old key.
 
-```ts
-await admin.updateApiKeyCollectionPermissions({
-  api_key: key.key,
-  collection: "jobs",
-  read: true,
-  write: false,
-  // select_fields omitted: keep the current selection.
-  exclude_fields: null, // Clear this restriction.
-  writable_fields: ["status"], // Replace this restriction.
-});
-```
+## Transport and verification
 
-Permission edits require **ekoDB 0.79.2 or later**. Earlier servers remove a
-grant's field restrictions on this call, so the method refuses to run against
-them. `MIN_SERVER_VERSION_FOR_PERMISSION_EDITS` is set to `0.79.2`. The client
-reads the authenticated `/api/health` payload's top-level `version` before the
-first update and caches that read per client instance. There is no caller
-override. Unreadable, older, malformed or prerelease versions fail closed.
-Create a new client after a server upgrade to refresh that cached reading.
+The facade reuses token caching, proactive refresh, JSON transport and request
+timeouts. It permits one refresh after a definite 401, rejects redirects and
+does not retry ambiguous registration or edit failures. Errors omit response
+bodies, request URLs and exception causes. After ambiguous registration, look up
+the unique disposable label before retrying. No unrestricted request method is
+exposed.
 
-Restrictions in requests must be null or arrays of non-empty strings; undefined
-is omitted. Response restrictions retain their exact arrays, empty arrays and
-nulls. This package does not wrap the endpoint for editing the caller's own key.
+Legacy tests retain the historical contract fixtures. The synthetic
+`test-fixtures/admin-contract-0.80.0.json` fixture specifies modern path
+encoding, PATCH states and change results; it is not a captured server response.
+Rust, TypeScript, Kotlin and Python test public HTTP entry points against both
+route generations; Go has matching tests in its own repository.
 
-The facade reuses the data SDK's token cache, proactive refresh, JSON transport,
-and request timeout. It refreshes once after a definite 401. It does not retry
-network failures, timeouts, rate limits or server failures, and rejects
-redirects. After an ambiguous registration failure, inspect the uniquely labeled
-key list before manually retrying. Errors omit server bodies, request URLs, and
-exception causes because those can contain credentials. No unrestricted request
-method is exposed by the admin facade. CommonJS `require` and ESM `import` both
-support the root and `/admin` entry points.
+Use the repository Make targets for unit tests, compilation and example parity.
+The matching `client_admin` example reads permissions by default;
+`EKODB_ADMIN_LIVE=1` enables a uniquely labeled disposable-key lifecycle,
+registration/list id checks and modern KV grant edits. Cleanup revokes only the
+owned key and checks absence. Live validation of each generation requires a real
+server serving that generation; a version label alone is insufficient.
 
-Keep rotation locks, labels, installation and replacement verification in the
-application. This API provides no delegation, tenant isolation, inherited
-quotas, permission ceilings or cascading revocation. Collection grants do not
-constrain stored-function internals; see the
-[function permission model](https://docs.ekodb.io/reference/functions-architecture#permission-model).
-
-## Contract verification
-
-Registration takes action arrays only, for example
-`collection_permissions: { jobs: ["read", "write"] }`. An object-form
-registration body returns 400. Array-form registration responses remain
-supported. Both an admin Bearer JWT and the admin key in the registration body
-are sent for deployed-server compatibility.
-
-The
-[recorded 0.79.2 contract](https://github.com/ekoDB/ekodb-client/blob/main/test-fixtures/admin-contract-0.79.2.json)
-covers all nine restriction-field/state combinations plus a mixed edit, with
-fresh-token readback after every update. Registration action arrays, the
-restriction lifecycle and disposable-key revocation with absence verification
-passed on 0.79.2. Recording changed only a newly registered disposable key. The
-[historical 0.79.0 observations](https://github.com/ekoDB/ekodb-client/blob/main/test-fixtures/admin-contract-0.79.0.json)
-record restriction erasure and stale token grants; tests never treat those
-update responses as the accepted contract. There is no format-probing retry
-during SDK registration.
-
-Offline tests include installing an actual npm tarball in an isolated consumer:
-
-```sh
-make test-typescript
-```
-
-For an authorized disposable environment only, use the repository's example
-configuration and run the opt-in lifecycle test. It creates one uniquely labeled
-key, exercises all five operations, and always revokes that key in a `finally`
-block with matching-label absence verification. Its restriction round-trip is
-refused until the same version gate passes; no existing key is updated:
-
-```sh
-source scripts/load-root-env.sh
-EKODB_ADMIN_LIVE=1 make test-typescript
-```
-
-## SDK parity
-
-The same five-operation contract is exposed through Rust
-`ekodb_client::admin::AdminClient`, Python `ekodb_client.admin.AdminClient`,
-Kotlin `io.ekodb.client.admin.EkoDBAdminClient`, and Go `ekodb.AdminClient`.
-Each has HTTP-boundary tests for the recorded 0.79.2 cases and a matching
-`client_admin` example. See the
-[parity matrix](../PARITY_MATRIX.md#api-key-administration). Examples are
-read-only unless `EKODB_ADMIN_LIVE=1` enables a uniquely labeled disposable-key
-lifecycle; they never change existing keys or application data.
+Keep rotation coordination, labels, installation and application-specific
+permission policy in the application. See the
+[SDK parity matrix](../PARITY_MATRIX.md#api-key-administration).

@@ -25,15 +25,68 @@ async function main() {
     const scoped = new EkoDBAdminClient({ baseURL, apiKey: created.key });
     if ((await scoped.getPermissions()).is_admin)
       throw new Error("Unexpected admin grant");
-    await admin.updateApiKeyCollectionPermissions({
-      api_key: created.key,
-      collection: "sdk_admin_probe",
-      read: true,
-      write: true,
-      select_fields: ["public"],
-      exclude_fields: ["secret"],
-      writable_fields: ["public"],
-    });
+    const modern = await admin.usesKeyPermissionRoutes();
+    if (modern) {
+      if (
+        !created.id ||
+        !(await admin.listApiKeys()).some(
+          (key) => key.id === created.id && key.label === label,
+        )
+      )
+        throw new Error("Registration/listing omitted key id");
+      const prefix = `sdk-admin:${label}:`;
+      const change = await admin.putApiKeyKvPermissions({
+        key_id: created.id,
+        prefix,
+        read: true,
+        write: false,
+      });
+      if (!change.after?.read || change.after.write)
+        throw new Error("KV grant creation failed");
+      await admin.patchApiKeyKvPermissions({
+        key_id: created.id,
+        prefix,
+        write: true,
+      });
+      if (
+        (await admin.deleteApiKeyKvPermissions(created.id, prefix)).after !==
+        null
+      )
+        throw new Error("KV grant removal failed");
+    }
+    const edit = async (
+      body: {
+        collection: string;
+        read: boolean;
+        write: boolean;
+        select_fields?: string[] | null;
+        exclude_fields?: string[] | null;
+        writable_fields?: string[] | null;
+      },
+      replace = false,
+    ) => {
+      if (modern) {
+        const request = { ...body, key_id: created.id! };
+        return replace
+          ? admin.putApiKeyCollectionPermissions(request)
+          : admin.updateApiKeyCollectionPermissions(request);
+      }
+      return admin.legacyUpdateApiKeyCollectionPermissions({
+        ...body,
+        api_key: created.key,
+      });
+    };
+    await edit(
+      {
+        collection: "sdk_admin_probe",
+        read: true,
+        write: true,
+        select_fields: ["public"],
+        exclude_fields: ["secret"],
+        writable_fields: ["public"],
+      },
+      true,
+    );
     const initial = (
       await new EkoDBAdminClient({
         baseURL,
@@ -48,8 +101,7 @@ async function main() {
       JSON.stringify(initial.writable_fields) !== '["public"]'
     )
       throw new Error("Initial restriction readback failed");
-    await admin.updateApiKeyCollectionPermissions({
-      api_key: created.key,
+    await edit({
       collection: "sdk_admin_probe",
       read: true,
       write: false,
@@ -76,7 +128,7 @@ async function main() {
     );
     if (matches.length > 1 || matches.some((key) => key.key === owner))
       throw new Error("Unexpected disposable cleanup match");
-    for (const key of matches) await admin.revokeApiKey(key.key);
+    for (const key of matches) await admin.revokeApiKey(key.id ?? key.key);
     if ((await admin.listApiKeys()).some((key) => key.label === label))
       throw new Error(`Disposable cleanup failed for label ${label}`);
   }

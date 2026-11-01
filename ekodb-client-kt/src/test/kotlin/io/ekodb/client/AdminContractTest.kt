@@ -30,7 +30,7 @@ class AdminContractTest {
 
     @Test fun recordedThreeStateContract() = runBlocking {
         val fixture = Json.parseToJsonElement(File("../test-fixtures/admin-contract-0.79.2.json").readText()).jsonObject
-        assertEquals(MIN_SERVER_VERSION_FOR_PERMISSION_EDITS, fixture["minimum_server_version"]!!.jsonPrimitive.content)
+        assertEquals(MIN_LEGACY_SERVER_VERSION_FOR_PERMISSION_EDITS, fixture["minimum_server_version"]!!.jsonPrimitive.content)
         for (case in fixture["permission_edits"]!!.jsonArray) {
             val body = case.jsonObject["request"]!!.jsonObject
             val response = case.jsonObject["response"]!!.jsonObject
@@ -41,6 +41,7 @@ class AdminContractTest {
                 } else {
                     assertEquals("Bearer jwt-secret", request.headers[HttpHeaders.Authorization])
                     when (request.url.encodedPath) {
+                        "/api/auth/keys/me/permissions" -> respond("{}", HttpStatusCode.NotFound, headers)
                         "/api/health" -> { health++; respond("""{"version":"0.79.2"}""", headers = headers) }
                         "/api/auth/permissions" -> {
                             updates++; assertEquals(HttpMethod.Put, request.method)
@@ -52,9 +53,9 @@ class AdminContractTest {
                 }
             }
             withAdmin(engine) { admin ->
-                val input = UpdateApiKeyCollectionPermissionsRequest("target-secret", "users", body["read"]!!.jsonPrimitive.boolean, body["write"]!!.jsonPrimitive.boolean, edit(body["select_fields"]), edit(body["exclude_fields"]), edit(body["writable_fields"]))
+                val input = LegacyUpdateApiKeyCollectionPermissionsRequest("target-secret", "users", body["read"]!!.jsonPrimitive.boolean, body["write"]!!.jsonPrimitive.boolean, edit(body["select_fields"]), edit(body["exclude_fields"]), edit(body["writable_fields"]))
                 repeat(2) {
-                    val actual = admin.updateApiKeyCollectionPermissions(input).collectionPermissions.getValue("users")
+                    val actual = admin.legacyUpdateApiKeyCollectionPermissions(input).collectionPermissions.getValue("users")
                     val expected = response["collection_permissions"]!!.jsonObject["users"]!!.jsonObject
                     assertEquals(expected["read"]!!.jsonPrimitive.boolean, actual.read)
                     assertEquals(expected["write"]!!.jsonPrimitive.boolean, actual.write)
@@ -74,6 +75,7 @@ class AdminContractTest {
         val engine = MockEngine { request ->
             paths += request.url.encodedPath
             when (request.url.encodedPath) {
+                "/api/auth/keys/me/permissions" -> respond("{}", HttpStatusCode.NotFound, headers)
                 "/api/auth/token" -> respond("""{"token":"jwt-secret"}""", headers = headers)
                 "/api/auth/register" -> {
                     assertEquals(Json.parseToJsonElement("""{"api_key":"admin-secret","is_admin":false,"collection_permissions":{}}"""), Json.parseToJsonElement((request.body as TextContent).text))
@@ -103,6 +105,7 @@ class AdminContractTest {
             val allowed = version in listOf("0.79.2", "0.79.3", "1.0.0")
             val engine = MockEngine { request ->
                 when (request.url.encodedPath) {
+                    "/api/auth/keys/me/permissions" -> respond("{}", HttpStatusCode.NotFound, headers)
                     "/api/auth/token" -> respond("""{"token":"jwt-secret"}""", headers = headers)
                     "/api/health" -> { health++; respond(buildJsonObject { put("version", version) }.toString(), headers = headers) }
                     else -> { puts++; respond("""{"key":"new-secret","is_admin":false,"collection_permissions":{}}""", headers = headers) }
@@ -110,11 +113,11 @@ class AdminContractTest {
             }
             withAdmin(engine) { admin ->
                 repeat(2) {
-                    val request = UpdateApiKeyCollectionPermissionsRequest("target-secret", "users", true, false)
+                    val request = LegacyUpdateApiKeyCollectionPermissionsRequest("target-secret", "users", true, false)
                     if (allowed) {
-                        admin.updateApiKeyCollectionPermissions(request)
+                        admin.legacyUpdateApiKeyCollectionPermissions(request)
                     } else {
-                        assertFailsWith<IllegalArgumentException> { admin.updateApiKeyCollectionPermissions(request) }
+                        assertFailsWith<IllegalArgumentException> { admin.legacyUpdateApiKeyCollectionPermissions(request) }
                     }
                 }
             }
@@ -153,7 +156,7 @@ class AdminContractTest {
             }
         }
         withAdmin(engine) { admin ->
-            assertFailsWith<IllegalArgumentException> { admin.updateApiKeyCollectionPermissions(UpdateApiKeyCollectionPermissionsRequest("target-secret", "users", true, false, PermissionEdit.Set(listOf(" ")))) }
+            assertFailsWith<IllegalArgumentException> { admin.legacyUpdateApiKeyCollectionPermissions(LegacyUpdateApiKeyCollectionPermissionsRequest("target-secret", "users", true, false, PermissionEdit.Set(listOf(" ")))) }
             assertEquals(0, calls)
             val error = assertFailsWith<IllegalStateException> { admin.listApiKeys() }
             assertFalse(error.toString().contains("secret")); assertNull(error.cause)

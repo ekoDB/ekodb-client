@@ -1,6 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { expect, it, vi } from "vitest";
-import { EkoDBAdminClient } from "./admin";
+import {
+  EkoDBAdminClient,
+  type UpdateApiKeyCollectionPermissionsRequest,
+} from "./admin";
 
 // Opt-in only. The caller supplies the authorized disposable environment.
 it.skipIf(process.env.EKODB_ADMIN_LIVE !== "1")(
@@ -41,9 +44,27 @@ async function disposableLifecycle(
     expect(before.collection_permissions.sdk_admin_probe.read).toBe(true);
     expect(before.collection_permissions.sdk_admin_probe.write).toBe(false);
     await expect(scoped.listApiKeys()).rejects.toThrow();
-    // The SDK gate refuses every PUT until the fixed release is set and verified.
-    await admin.updateApiKeyCollectionPermissions({
-      api_key: createdKey,
+    const modern = await admin.usesKeyPermissionRoutes();
+    if (modern) {
+      expect(
+        typeof created.id === "string" && /^[0-9a-f]{32}$/.test(created.id),
+      ).toBe(true);
+      expect(matches[0].id === created.id).toBe(true);
+    }
+    const update = async (
+      grant: Omit<UpdateApiKeyCollectionPermissionsRequest, "key_id">,
+    ) => {
+      if (modern)
+        return admin.updateApiKeyCollectionPermissions({
+          key_id: created.id!,
+          ...grant,
+        });
+      return admin.legacyUpdateApiKeyCollectionPermissions({
+        api_key: createdKey,
+        ...grant,
+      });
+    };
+    await update({
       collection: "sdk_admin_probe",
       read: true,
       write: true,
@@ -60,8 +81,7 @@ async function disposableLifecycle(
       exclude_fields: ["secret"],
       writable_fields: ["editable"],
     });
-    await admin.updateApiKeyCollectionPermissions({
-      api_key: createdKey,
+    await update({
       collection: "sdk_admin_probe",
       read: true,
       write: false,
@@ -77,6 +97,68 @@ async function disposableLifecycle(
       exclude_fields: null,
       writable_fields: [],
     });
+    if (modern) {
+      const id = created.id!;
+      const collection = "sdk probe+tenant:a/";
+      const put = await admin.putApiKeyCollectionPermissions({
+        key_id: id,
+        collection,
+        read: true,
+        write: false,
+        select_fields: ["name"],
+      });
+      expect(put.before).toBeNull();
+      expect(put.after?.select_fields).toEqual(["name"]);
+      expect(
+        (await admin.getApiKeyCollectionPermissions(id, collection)).read,
+      ).toBe(true);
+      expect(
+        (await admin.listApiKeyCollectionPermissions(id))[collection].read,
+      ).toBe(true);
+      const patched = await admin.patchApiKeyCollectionPermissions({
+        key_id: id,
+        collection,
+        select_fields: null,
+      });
+      expect(patched.after?.select_fields).toBeNull();
+      expect(
+        (await admin.deleteApiKeyCollectionPermissions(id, collection)).after,
+      ).toBeNull();
+      const prefix = "sdk probe+tenant:a/";
+      expect(
+        (
+          await admin.putApiKeyKvPermissions({
+            key_id: id,
+            prefix,
+            read: true,
+            write: false,
+          })
+        ).after?.read,
+      ).toBe(true);
+      expect((await admin.getApiKeyKvPermissions(id, prefix)).read).toBe(true);
+      expect(
+        (await admin.listApiKeyKvPermissions(id, prefix)).some(
+          (grant) => grant.prefix === prefix,
+        ),
+      ).toBe(true);
+      expect(
+        (
+          await admin.patchApiKeyKvPermissions({
+            key_id: id,
+            prefix,
+            read: false,
+            write: false,
+          })
+        ).after,
+      ).toBeNull();
+      await admin.putApiKeyKvPermissions({
+        key_id: id,
+        prefix: "*",
+        read: true,
+        write: false,
+      });
+      expect((await admin.deleteApiKeyKvPermissions(id, "*")).after).toBeNull();
+    }
   } finally {
     try {
       await cleanupDisposableKey(admin, label, apiKey);
@@ -98,7 +180,7 @@ async function cleanupDisposableKey(
   );
   if (matches.length > 1 || matches.some((key) => key.key === ownerKey))
     throw new Error("Unexpected disposable key match");
-  for (const key of matches) await admin.revokeApiKey(key.key);
+  for (const key of matches) await admin.revokeApiKey(key.id ?? key.key);
   if ((await admin.listApiKeys()).some((key) => key.label === label))
     throw new Error("Disposable key remains");
 }
@@ -168,7 +250,13 @@ it("cleans up its disposable key when an older server version refuses the round-
   request.mockResolvedValueOnce(new Response(JSON.stringify([record])));
   request.mockResolvedValueOnce(new Response(null, { status: 204 }));
   request.mockResolvedValueOnce(new Response("[]"));
-  vi.stubGlobal("fetch", request);
+  vi.stubGlobal(
+    "fetch",
+    (input: Parameters<typeof fetch>[0], init?: RequestInit) =>
+      String(input).endsWith("/api/auth/keys/me/permissions")
+        ? Promise.resolve(new Response("{}", { status: 404 }))
+        : request(input, init),
+  );
   try {
     await expect(
       disposableLifecycle("https://example.test", "admin-secret", label),

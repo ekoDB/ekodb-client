@@ -937,13 +937,19 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## API-key administration
 
-The separate admin client exposes only API-key creation, listing, revocation,
-current-token permissions and collection-grant updates. See the
-[shared admin contract](../ekodb-client-ts/ADMIN.md) for authentication, safe
-failures and permission semantics. Permission updates require authenticated
-server version 0.79.2 or later. Restriction omission preserves a list, null
-clears it, and arrays replace it, including an empty array. Responses retain
-unrecognized metadata. Never log key records.
+The separate admin client exposes API-key creation, listing, revocation,
+current-key permissions, and collection/KV grant reads and edits. See the
+[shared admin contract](../ekodb-client-ts/ADMIN.md) for exact methods and
+compatibility. Version 0.80.0 moves permission routes under
+`/api/auth/keys/{id}/permissions`. A cached route probe supports both
+generations, including new-route prereleases and pre-cap builds that report
+0.79.2. New methods target `id` (or `me`) and return `{before, after}` changes.
+PATCH omission preserves a limit, null clears it, and arrays replace it,
+including an empty array. `get_permissions`/`getPermissions` retain the existing
+admin/collection fields and add KV grants. Explicit legacy collection edits
+retain the old secret-targeted shape only for detected legacy servers >=0.79.2.
+Registration and listing expose optional ids for compatibility with older
+replies. Prefer ids for revocation. Never log key records.
 
 ```rust
 use ekodb_client::admin::{AdminClient, PermissionEdit, UpdateApiKeyCollectionPermissionsRequest};
