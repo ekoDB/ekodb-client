@@ -30,7 +30,7 @@ func init() {
 	}
 	apiKey = os.Getenv("API_BASE_KEY")
 	if apiKey == "" {
-		apiKey = "a-test-api-key-from-ekodb"
+		apiKey = "a-test-api-key-from-ekodb-0123456789"
 	}
 }
 

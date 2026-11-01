@@ -18,7 +18,7 @@ env_path = Path(__file__).parent.parent / ".env"
 load_dotenv(env_path)
 
 BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8080")
-API_KEY = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb")
+API_KEY = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb-0123456789")
 EXAMPLE_TIMEOUT_SECONDS = int(os.getenv("EXAMPLE_TIMEOUT_SECONDS", "300"))
 if EXAMPLE_TIMEOUT_SECONDS <= 0:
     raise ValueError("EXAMPLE_TIMEOUT_SECONDS must be a positive integer")

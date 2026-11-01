@@ -13,7 +13,7 @@ const dotenv = require("dotenv");
 dotenv.config();
 
 const BASE_URL = process.env.API_BASE_URL || "http://localhost:8080";
-const API_KEY = process.env.API_BASE_KEY || "a-test-api-key-from-ekodb";
+const API_KEY = process.env.API_BASE_KEY || "a-test-api-key-from-ekodb-0123456789";
 const RUN_SUFFIX = `${process.pid}_${Date.now()}`;
 const COLLECTION = `crud_users_js_${RUN_SUFFIX}`;
 const LABELS = {

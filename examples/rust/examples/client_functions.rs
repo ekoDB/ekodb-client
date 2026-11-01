@@ -9,7 +9,6 @@ use std::{collections::HashMap, env};
 
 const TEST_COLLECTION: &str = "functions_users_client_rs";
 const ACTIVE_LABEL: &str = "get_active_users_client_rs";
-const UPDATED_ACTIVE_LABEL: &str = "get_active_users_updated_client_rs";
 const STATUS_LABEL: &str = "get_users_by_status_client_rs";
 const STATS_LABEL: &str = "user_stats_client_rs";
 
@@ -18,8 +17,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv::dotenv().ok();
 
     let base_url = env::var("API_BASE_URL").unwrap_or_else(|_| "http://localhost:8080".to_string());
-    let api_key =
-        env::var("API_BASE_KEY").unwrap_or_else(|_| "a-test-api-key-from-ekodb".to_string());
+    let api_key = env::var("API_BASE_KEY")
+        .unwrap_or_else(|_| "a-test-api-key-from-ekodb-0123456789".to_string());
 
     // Create ekoDB client
     let client = Client::builder()
@@ -48,12 +47,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     .await;
 
     let mut cleanup_errors = Vec::new();
-    for label in [
-        ACTIVE_LABEL,
-        UPDATED_ACTIVE_LABEL,
-        STATUS_LABEL,
-        STATS_LABEL,
-    ] {
+    for label in [ACTIVE_LABEL, STATUS_LABEL, STATS_LABEL] {
         if let Err(error) = client.delete_function(label).await {
             if !error.to_string().contains("not found") {
                 cleanup_errors.push(format!("function {label}: {error}"));
@@ -221,7 +215,7 @@ async fn script_management(
     println!("🔍 Retrieved function: {}", function.name);
 
     // Update function by ID
-    let updated = UserFunction::new(UPDATED_ACTIVE_LABEL, "Get Active Users (Updated)")
+    let updated = UserFunction::new(ACTIVE_LABEL, "Get Active Users (Updated)")
         .with_description("Updated description")
         .with_version("1.1")
         .with_function(Function::FindAll {

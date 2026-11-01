@@ -10,9 +10,9 @@ val client = OkHttpClient()
 val JSON = "application/json; charset=utf-8".toMediaType()
 
 fun getAuthToken(): String {
-    val dotenv = dotenv()
+    val dotenv = dotenv { ignoreIfMissing = true }
     val baseURL = dotenv["API_BASE_URL"] ?: "http://localhost:8080"
-    val apiKey = dotenv["API_BASE_KEY"] ?: "a-test-api-key-from-ekodb"
+    val apiKey = dotenv["API_BASE_KEY"] ?: "a-test-api-key-from-ekodb-0123456789"
     
     val json = JSONObject().put("api_key", apiKey).toString()
     val body = json.toRequestBody(JSON)
@@ -28,7 +28,7 @@ fun getAuthToken(): String {
 }
 
 fun makeRequest(method: String, path: String, token: String, data: JSONObject? = null): JSONObject {
-    val dotenv = dotenv()
+    val dotenv = dotenv { ignoreIfMissing = true }
     val baseURL = dotenv["API_BASE_URL"] ?: "http://localhost:8080"
     
     val requestBuilder = Request.Builder()

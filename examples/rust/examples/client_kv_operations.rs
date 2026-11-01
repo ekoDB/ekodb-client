@@ -112,8 +112,8 @@ async fn run_examples(client: &Client) -> Result<(), Box<dyn std::error::Error>>
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv::dotenv().ok();
     let base_url = env::var("API_BASE_URL").unwrap_or_else(|_| "http://localhost:8080".to_string());
-    let api_key =
-        env::var("API_BASE_KEY").unwrap_or_else(|_| "a-test-api-key-from-ekodb".to_string());
+    let api_key = env::var("API_BASE_KEY")
+        .unwrap_or_else(|_| "a-test-api-key-from-ekodb-0123456789".to_string());
     let client = Client::builder()
         .base_url(&base_url)
         .api_key(&api_key)

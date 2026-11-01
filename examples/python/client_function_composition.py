@@ -21,7 +21,7 @@ env_path = Path(__file__).parent.parent / ".env"
 load_dotenv(env_path)
 
 BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8080")
-API_KEY = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb")
+API_KEY = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb-0123456789")
 COLLECTION = "function_composition_users_py"
 FETCH_USER = "fetch_user_py"
 GET_USER_WRAPPER = "get_user_wrapper_py"

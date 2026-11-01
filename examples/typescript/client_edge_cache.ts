@@ -4,7 +4,8 @@ import * as dotenv from "dotenv";
 dotenv.config();
 
 const BASE_URL = process.env.API_BASE_URL || "http://localhost:8080";
-const API_KEY = process.env.API_BASE_KEY || "a-test-api-key-from-ekodb";
+const API_KEY =
+  process.env.API_BASE_KEY || "a-test-api-key-from-ekodb-0123456789";
 
 function isNotFoundError(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error);
@@ -124,9 +125,7 @@ async function edgeCacheExample() {
     });
     const duration2 = Date.now() - start2;
     console.log(
-      `Response time: ${duration2}ms (${
-        Math.round((duration1 / duration2) * 10) / 10
-      }x faster!)`,
+      `Response time: ${duration2}ms (${Math.round((duration1 / duration2) * 10) / 10}x faster!)`,
     );
     console.log("Result:", JSON.stringify(result2, null, 2));
 

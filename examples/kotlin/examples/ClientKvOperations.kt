@@ -11,9 +11,9 @@ import kotlinx.serialization.json.put
  * Key-Value operations example - Store and retrieve key-value pairs
  */
 fun main() = runBlocking {
-    val dotenv = dotenv()
+    val dotenv = dotenv { ignoreIfMissing = true }
     val baseUrl = dotenv["API_BASE_URL"] ?: "http://localhost:8080"
-    val apiKey = dotenv["API_BASE_KEY"] ?: "a-test-api-key-from-ekodb"
+    val apiKey = dotenv["API_BASE_KEY"] ?: "a-test-api-key-from-ekodb-0123456789"
     
     val client = EkoDBClient.builder()
         .baseUrl(baseUrl)

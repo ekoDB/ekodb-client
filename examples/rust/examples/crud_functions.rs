@@ -38,7 +38,7 @@ fn get_base_url() -> String {
 }
 
 fn get_api_key() -> String {
-    env::var("API_BASE_KEY").unwrap_or_else(|_| "a-test-api-key-from-ekodb".to_string())
+    env::var("API_BASE_KEY").unwrap_or_else(|_| "a-test-api-key-from-ekodb-0123456789".to_string())
 }
 
 async fn get_auth_token() -> Result<String, Box<dyn std::error::Error>> {

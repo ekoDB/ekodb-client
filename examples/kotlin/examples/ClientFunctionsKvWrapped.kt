@@ -60,9 +60,9 @@ fun main() = runBlocking {
     println("   • KV operations within functions")
     println("   • Combined wrapped types + KV workflows\n")
 
-    val dotenv = dotenv()
+    val dotenv = dotenv { ignoreIfMissing = true }
     val baseUrl = dotenv["API_BASE_URL"] ?: "http://localhost:8080"
-    val apiKey = dotenv["API_BASE_KEY"] ?: "a-test-api-key-from-ekodb"
+    val apiKey = dotenv["API_BASE_KEY"] ?: "a-test-api-key-from-ekodb-0123456789"
 
     val client = EkoDBClient.builder()
         .baseUrl(baseUrl)
