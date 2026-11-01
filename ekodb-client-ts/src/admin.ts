@@ -246,6 +246,11 @@ function segment(value: unknown): string {
     /[\p{Cc}\p{Cf}]/u.test(value)
   )
     throw new Error("Invalid permission resource name");
+  return encodedPermissionValue(value);
+}
+function encodedPermissionValue(value: unknown): string {
+  if (typeof value !== "string")
+    throw new Error("Invalid permission resource name");
   try {
     return encodeURIComponent(value).replace(
       /[!'()*]/g,
@@ -488,7 +493,8 @@ export class EkoDBAdminClient {
     prefix?: string,
   ): Promise<KvPermission[]> {
     let path = `${resource(keyId)}/kv`;
-    if (prefix !== undefined) path += `?prefix=${segment(prefix)}`;
+    if (prefix !== undefined)
+      path += `?prefix=${encodedPermissionValue(prefix)}`;
     await this.requireKeyPermissionRoutes();
     const result = await this.transport.send<unknown>("GET", path);
     if (!Array.isArray(result)) invalid();
