@@ -28,8 +28,8 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
     
     // Serialization (match client library versions)
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-cbor:1.11.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.12.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-cbor:1.12.0")
     // MessagePack core: the client depends on it for the WebSocket binary
     // transport. The examples consume the client as a flat jar (no transitive
     // deps), so this must mirror the client's dependency.
