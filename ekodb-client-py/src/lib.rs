@@ -396,33 +396,32 @@ impl Client {
         let rust_updates = dict_to_record(updates)?;
 
         // Build UpdateOptions from Python parameters
-        let options =
-            if bypass_ripple.is_some()
-                || transaction_id.is_some()
-                || bypass_cache.is_some()
-                || select_fields.is_some()
-                || exclude_fields.is_some()
-            {
-                let mut opts = ekodb_client::options::UpdateOptions::new();
-                if let Some(br) = bypass_ripple {
-                    opts = opts.bypass_ripple(br);
-                }
-                if let Some(tx) = transaction_id {
-                    opts = opts.transaction_id(tx);
-                }
-                if let Some(bc) = bypass_cache {
-                    opts = opts.bypass_cache(bc);
-                }
-                if let Some(fields) = select_fields {
-                    opts = opts.select_fields(fields);
-                }
-                if let Some(fields) = exclude_fields {
-                    opts = opts.exclude_fields(fields);
-                }
-                Some(opts)
-            } else {
-                None
-            };
+        let options = if bypass_ripple.is_some()
+            || transaction_id.is_some()
+            || bypass_cache.is_some()
+            || select_fields.is_some()
+            || exclude_fields.is_some()
+        {
+            let mut opts = ekodb_client::options::UpdateOptions::new();
+            if let Some(br) = bypass_ripple {
+                opts = opts.bypass_ripple(br);
+            }
+            if let Some(tx) = transaction_id {
+                opts = opts.transaction_id(tx);
+            }
+            if let Some(bc) = bypass_cache {
+                opts = opts.bypass_cache(bc);
+            }
+            if let Some(fields) = select_fields {
+                opts = opts.select_fields(fields);
+            }
+            if let Some(fields) = exclude_fields {
+                opts = opts.exclude_fields(fields);
+            }
+            Some(opts)
+        } else {
+            None
+        };
 
         let client = self.inner.clone();
 
