@@ -4,7 +4,7 @@ import json
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import unquote
+from urllib.parse import quote, unquote
 
 import pytest
 from ekodb_client.admin import AdminClient
@@ -120,6 +120,75 @@ async def test_rejected_facet_names_fail_before_http(modern_endpoint, facet, cas
     with pytest.raises(RuntimeError, match="Invalid permission facet"):
         await getattr(client, f"get_api_key_{facet}_permissions")("me", case["value"])
     assert state["requests"] == []
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("facet", ["collection", "kv"])
+@pytest.mark.parametrize("verb", ["get", "put", "patch", "delete"])
+@pytest.mark.parametrize(
+    "name",
+    [
+        "\ud800",
+        "\udc00",
+        "pre\ud800post",
+        "pre\udc00post",
+        "\udc00\ud800",
+        "\ud800\ud800",
+    ],
+    ids=[
+        "lone-high",
+        "lone-low",
+        "embedded-high",
+        "embedded-low",
+        "reversed",
+        "two-high",
+    ],
+)
+async def test_malformed_surrogates_fail_at_public_native_boundary(
+    modern_endpoint, facet, verb, name
+):
+    state, base = modern_endpoint
+    client = AdminClient(base, "synthetic-admin-key-0123456789-abcdef")
+    method = getattr(client, f"{verb}_api_key_{facet}_permissions")
+    # Read/delete use PyO3 String extraction; dictionary edits pass through JSON
+    # and serde. Both boundaries must reject malformed Unicode before HTTP.
+    error_type = UnicodeEncodeError if verb in ("get", "delete") else ValueError
+    with pytest.raises(error_type):
+        if verb in ("get", "delete"):
+            await method("me", name)
+        else:
+            field = "collection" if facet == "collection" else "prefix"
+            await method({"key_id": "me", field: name, "read": True, "write": False})
+    assert state["requests"] == []
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("facet", ["collection", "kv"])
+@pytest.mark.parametrize("verb", ["get", "put", "patch", "delete"])
+@pytest.mark.parametrize(
+    "name", ["\ufffd", "\U0001f600"], ids=["replacement", "supplementary"]
+)
+async def test_valid_unicode_survives_public_native_http_boundary(
+    modern_endpoint, facet, verb, name
+):
+    state, base = modern_endpoint
+    grant = {"read": True, "write": False}
+    state["change"] = {
+        "response": grant if verb == "get" else {"before": None, "after": grant}
+    }
+    client = AdminClient(base, "synthetic-admin-key-0123456789-abcdef")
+    method = getattr(client, f"{verb}_api_key_{facet}_permissions")
+    if verb in ("get", "delete"):
+        await method("me", name)
+    else:
+        field = "collection" if facet == "collection" else "prefix"
+        await method({"key_id": "me", field: name, "read": True, "write": False})
+    expected_facet = "collections" if facet == "collection" else "kv"
+    prefix = f"/api/auth/keys/me/permissions/{expected_facet}/"
+    path = state["requests"][-1][1]
+    assert path.startswith(prefix)
+    assert path == prefix + quote(name, safe="-._~")
+    assert unquote(path[len(prefix) :]) == name
 
 
 @pytest.mark.asyncio

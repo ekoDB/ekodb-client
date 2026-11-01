@@ -36,7 +36,11 @@ fn decoded_facet(path: &str, prefix: &str) -> Option<String> {
 
 #[tokio::test]
 async fn accepted_facet_names_cross_the_public_http_boundary() {
-    let names = permission_names();
+    let mut names = permission_names();
+    names["accepted"].as_array_mut().unwrap().push(json!({
+        "name": "replacement character",
+        "value": "\u{fffd}",
+    }));
     let mut failures = Vec::new();
     for case in names["accepted"].as_array().unwrap() {
         let name = case["value"].as_str().unwrap();
@@ -62,6 +66,7 @@ async fn accepted_facet_names_cross_the_public_http_boundary() {
             .match_request(move |request| {
                 decoded_facet(request.path(), "/api/auth/keys/me/permissions/collections/")
                     == Some(expected.clone())
+                    && (expected != "\u{fffd}" || request.path().ends_with("/%EF%BF%BD"))
             })
             .with_body(r#"{"read":true,"write":false}"#)
             .expect(1)
@@ -76,6 +81,7 @@ async fn accepted_facet_names_cross_the_public_http_boundary() {
             .match_request(move |request| {
                 decoded_facet(request.path(), "/api/auth/keys/me/permissions/kv/")
                     == Some(expected.clone())
+                    && (expected != "\u{fffd}" || request.path().ends_with("/%EF%BF%BD"))
             })
             .with_body(json!({"prefix":name,"read":true,"write":false}).to_string())
             .expect(1)
