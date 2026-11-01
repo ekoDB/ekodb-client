@@ -23,6 +23,8 @@ and this project adheres to
 
 ### Fixed
 
+- Keep Kotlin coroutine runtime/test dependencies on a resolvable release and
+  align standalone example serialization dependencies with the client. (#353)
 - Reject unpaired UTF-16 surrogates in Kotlin permission-facet names before
   authentication instead of encoding them as question marks in request paths.
   Preserve U+FFFD and supplementary characters, with matching Rust, compiled
