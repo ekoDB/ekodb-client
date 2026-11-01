@@ -188,7 +188,7 @@ class EkoDBClient private constructor(
 
     // Shared authentication and HTTP transport for the separate admin facade.
     // Never call the data retry layer: an ambiguous POST must not be replayed.
-    internal suspend fun adminRequest(method: HttpMethod, path: String, body: JsonObject? = null): JsonElement {
+    internal suspend fun adminRequest(method: HttpMethod, path: String, body: JsonObject? = null, readDeleteBody: Boolean = false): JsonElement {
         try {
             for (attempt in 0..1) {
                 val token = getToken()
@@ -205,7 +205,7 @@ class EkoDBClient private constructor(
                     continue
                 }
                 if (!response.status.isSuccess()) throw AdminStatusFailure(response.status.value)
-                if (response.status == HttpStatusCode.NoContent || method == HttpMethod.Delete) return JsonNull
+                if (response.status == HttpStatusCode.NoContent || (method == HttpMethod.Delete && !readDeleteBody)) return JsonNull
                 return Json.parseToJsonElement(response.bodyAsText())
             }
         } catch (error: AdminStatusFailure) {

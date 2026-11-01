@@ -182,7 +182,9 @@ MIT
 ## API-key administration
 
 Separate admin clients are available for Rust, Python, TypeScript and Kotlin;
-the paired Go module exposes the same five operations. See the
+the paired Go module exposes the same permission-resource operations. See the
 [admin contract](ekodb-client-ts/ADMIN.md) and
 [parity matrix](PARITY_MATRIX.md#api-key-administration) for entry points, tests
-and runnable examples. Permission edits require server 0.79.2 or later.
+and runnable examples. Permission resources support server 0.80.0 and
+capability-detected pre-cap builds; explicit legacy edits retain the 0.79.2
+minimum.

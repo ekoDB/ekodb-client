@@ -997,7 +997,10 @@ describe("WebSocketClient", () => {
       const client = new WebSocketClient(
         `ws://localhost:${port}/api/ws`,
         "test-token",
-        { requestTimeoutMs: 50, autoReconnect: false },
+        {
+          requestTimeoutMs: 50,
+          autoReconnect: false,
+        },
       );
 
       const resultPromise = client.findAll("users");
@@ -1015,7 +1018,10 @@ describe("WebSocketClient", () => {
       const client = new WebSocketClient(
         `ws://localhost:${port}/api/ws`,
         "test-token",
-        { requestTimeoutMs: 500, autoReconnect: false },
+        {
+          requestTimeoutMs: 500,
+          autoReconnect: false,
+        },
       );
 
       const resultPromise = client.findAll("users");
@@ -1044,7 +1050,9 @@ describe("WebSocketClient", () => {
       const client = new WebSocketClient(
         `ws://localhost:${port}/api/ws`,
         "test-token",
-        { autoReconnect: false },
+        {
+          autoReconnect: false,
+        },
       );
 
       const resultPromise = client.findAll("users");
@@ -1071,7 +1079,10 @@ describe("WebSocketClient", () => {
       const client = new WebSocketClient(
         `ws://localhost:${port}/api/ws`,
         "test-token",
-        { reconnectInitialDelayMs: 200, reconnectMaxDelayMs: 5000 },
+        {
+          reconnectInitialDelayMs: 200,
+          reconnectMaxDelayMs: 5000,
+        },
       );
 
       // attempt 0 -> base 200, +/-25% => [150, 250]
@@ -1183,7 +1194,10 @@ describe("WebSocketClient", () => {
       const client = new WebSocketClient(
         `ws://localhost:${port}/api/ws`,
         "test-token",
-        { autoReconnect: true, reconnectInitialDelayMs: 10 },
+        {
+          autoReconnect: true,
+          reconnectInitialDelayMs: 10,
+        },
       );
 
       const streamPromise = client.subscribe("widgets");
