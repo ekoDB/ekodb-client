@@ -181,7 +181,13 @@ async def test_version_floor(endpoint, version):
         else:
             with pytest.raises(RuntimeError, match="earlier servers remove"):
                 await client.legacy_update_api_key_collection_permissions(request)
-    assert sum(item[1] == "/api/health" for item in state["requests"]) == 1
+    expected_health_reads = (
+        1 if version in ("0.79.0", "0.79.1", "0.79.2", "0.79.3", "1.0.0") else 2
+    )
+    assert (
+        sum(item[1] == "/api/health" for item in state["requests"])
+        == expected_health_reads
+    )
     assert sum(item[0] == "PUT" for item in state["requests"]) == (
         2 if version in ("0.79.2", "0.79.3", "1.0.0") else 0
     )
