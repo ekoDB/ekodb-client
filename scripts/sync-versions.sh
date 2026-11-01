@@ -10,8 +10,8 @@
 # nothing, and any drift (a downstream manifest or a README snippet left behind by
 # a release) shows up as a diff instead of shipping stale.
 #
-# To CHANGE the released version, edit ekodb_client/Cargo.toml (or run the
-# interactive `make bump-version`) and then run this / `make fmt`.
+# To CHANGE the released version, run `make bump-version [VERSION=X.Y.Z]`.
+# The bump target also stamps the changelog and refreshes lockfile metadata.
 #
 # Note: version literals inside README code fences (```kotlin ... ```) cannot use
 # HTML-comment markers the way prose stats do — a comment renders literally inside
@@ -27,6 +27,27 @@ YELLOW='\033[33m'
 RED='\033[31m'
 RESET='\033[0m'
 
+# Validate the supported X.Y.Z[-prerelease] form in one place. Numeric core and
+# prerelease identifiers may not have leading zeros; identifiers cannot be empty.
+validate_version() {
+    local number='(0|[1-9][0-9]*)'
+    local identifier='(0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)'
+    if [[ ! "$1" =~ ^${number}\.${number}\.${number}(-${identifier}(\.${identifier})*)?$ ]]; then
+        echo 'VERSION must be X.Y.Z or a valid prerelease (without leading-zero numeric identifiers)' >&2
+        return 1
+    fi
+}
+
+# Bump validates proposed input before any manifest edit. This mode deliberately
+# returns before source-manifest discovery; no-argument sync still reads only the
+# Rust source version and propagates it to downstream manifests and README text.
+if [ "${1:-}" = --check-version ]; then
+    [ "$#" -eq 2 ] || { echo 'Usage: sync-versions.sh --check-version VERSION' >&2; exit 2; }
+    validate_version "$2"
+    exit
+fi
+[ "$#" -eq 0 ] || { echo 'Usage: sync-versions.sh [--check-version VERSION]' >&2; exit 2; }
+
 SOT_FILE="ekodb_client/Cargo.toml"
 
 if [ ! -f "$SOT_FILE" ]; then
@@ -38,10 +59,7 @@ fi
 VERSION=$(awk -F'"' '/^version = /{print $2; exit}' "$SOT_FILE")
 
 # Never let an extraction failure blank out every version file.
-if ! echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.]+)?$'; then
-    echo -e "${RED}❌ Could not read a valid version from $SOT_FILE (got: '$VERSION')${RESET}"
-    exit 1
-fi
+validate_version "$VERSION"
 
 echo -e "${CYAN}🔢 Syncing all clients to source-of-truth version ${GREEN}$VERSION${CYAN} (from $SOT_FILE)${RESET}"
 
@@ -70,16 +88,16 @@ sync_readme() { # $1=file  $2=sed-expression
 # Kotlin Maven coordinate: io.ekodb:ekodb-client-kt:X.Y.Z (Kotlin + Groovy DSL).
 for f in README.md ekodb-client-kt/README.md \
          ekodb-client-kt/QUICKSTART.md ekodb-client-kt/PUBLISHING.md; do
-    sync_readme "$f" "s/(ekodb-client-kt:)[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.]+)?/\1$VERSION/g"
+    sync_readme "$f" "s/(ekodb-client-kt:)[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?/\1$VERSION/g"
 done
 
 # Kotlin Maven XML: the <version> tag inside the ekodb-client-kt dependency block.
 for f in ekodb-client-kt/README.md ekodb-client-kt/QUICKSTART.md ekodb-client-kt/PUBLISHING.md; do
-    sync_readme "$f" "/<artifactId>ekodb-client-kt<\/artifactId>/{n;s|(<version>)[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.]+)?(</version>)|\1$VERSION\3|;}"
+    sync_readme "$f" "/<artifactId>ekodb-client-kt<\/artifactId>/{n;s|(<version>)[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(</version>)|\1$VERSION\3|;}"
 done
 
 # Rust crate install: ekodb_client = "X[.Y[.Z]]"  (the "{ version = ... }" form in
 # manifests is a different shape and is handled by set_manifest above).
-sync_readme "ekodb_client/README.md" "s/(ekodb_client = \")[0-9]+(\.[0-9]+)+(\")/\1$VERSION\3/g"
+sync_readme "ekodb_client/README.md" "s/(ekodb_client = \")[0-9]+(\.[0-9]+)+(-[0-9A-Za-z.-]+)?(\")/\1$VERSION\4/g"
 
 echo -e "${GREEN}✅ All client manifests and README install snippets are at $VERSION${RESET}"
