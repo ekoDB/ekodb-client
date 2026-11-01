@@ -222,15 +222,9 @@ class EkoDBAdminClient(
         require(!usesKeyPermissionRoutes()) { "Legacy permission edits are unavailable on this server" }
         versionMutex.withLock {
             if (!versionRead) {
-                version = try {
-                    val health = transport.adminRequest(HttpMethod.Get, "/api/health") as? JsonObject
-                    (health?.get("version") as? JsonPrimitive)?.takeIf { it.isString }?.content
-                } catch (error: kotlinx.coroutines.CancellationException) {
-                    throw error
-                } catch (_: Exception) {
-                    null
-                }
-                versionRead = true
+                val health = transport.adminRequest(HttpMethod.Get, "/api/health") as? JsonObject
+                version = (health?.get("version") as? JsonPrimitive)?.takeIf { it.isString }?.content
+                versionRead = versionParts(version) != null
             }
             require(supportedVersion(version)) { REQUIREMENT }
         }
@@ -238,9 +232,12 @@ class EkoDBAdminClient(
     }
     override fun close() { transport.close(); secureClient.close(); if (ownsBaseClient) baseClient.close() }
 }
+private fun versionParts(version: String?): List<Long>? {
+    val match = Regex("^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$").matchEntire(version ?: return null) ?: return null
+    return match.groupValues.drop(1).map { it.toLongOrNull() ?: return null }
+}
 private fun supportedVersion(version: String?): Boolean {
-    val match = Regex("^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$").matchEntire(version ?: return false) ?: return false
-    val parts = match.groupValues.drop(1).map { it.toLongOrNull() ?: return false }
+    val parts = versionParts(version) ?: return false
     val minimum = MIN_LEGACY_SERVER_VERSION_FOR_PERMISSION_EDITS.split(".").map { it.toLongOrNull() ?: return false }
     for (i in parts.indices) { if (parts[i] > minimum[i]) return true; if (parts[i] < minimum[i]) return false }
     return true
@@ -277,7 +274,12 @@ private fun validateKeyId(keyId: String) {
     require(keyId == "me" || Regex("[0-9a-f]{32}").matches(keyId)) { "A key id or me is required; key values are not accepted" }
 }
 private fun validateFacet(value: String) {
-    require(value.isNotEmpty() && value != "." && value != ".." && value.none { Character.isISOControl(it) || Character.getType(it) == Character.FORMAT.toInt() }) { "Invalid permission facet" }
+    require(value.isNotEmpty() && value != "." && value != ".." && value.codePoints().noneMatch {
+        Character.getType(it) == Character.CONTROL.toInt() ||
+            it == 0x00AD || it == 0x061C || it == 0x180E ||
+            it in 0x200B..0x200F || it in 0x2028..0x202E ||
+            it in 0x2060..0x2064 || it in 0x2066..0x2069 || it == 0xFEFF
+    }) { "Invalid permission facet" }
 }
 private fun encodeSegment(value: String): String = value.toByteArray(Charsets.UTF_8).joinToString("") { byte ->
     val c = byte.toInt() and 255

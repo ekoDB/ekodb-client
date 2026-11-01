@@ -243,7 +243,9 @@ function segment(value: unknown): string {
     !value.length ||
     value === "." ||
     value === ".." ||
-    /[\p{Cc}\p{Cf}]/u.test(value)
+    /[\p{Cc}\u00ad\u061c\u180e\u200b-\u200f\u2028-\u202e\u2060-\u2064\u2066-\u2069\ufeff]/u.test(
+      value,
+    )
   )
     throw new Error("Invalid permission resource name");
   return encodedPermissionValue(value);
@@ -397,8 +399,15 @@ export class EkoDBAdminClient {
       throw new Error("Use key-id permission methods for this server");
     this.serverVersion ??= this.transport
       .send<unknown>("GET", "/api/health")
-      .then((health) => (object(health) ? health.version : undefined))
-      .catch(() => undefined);
+      .then((health) => {
+        const version = object(health) ? health.version : undefined;
+        if (!releaseParts(version)) throw new Error(permissionEditRequirement);
+        return version;
+      })
+      .catch((error) => {
+        this.serverVersion = undefined;
+        throw error;
+      });
     const current = releaseParts(await this.serverVersion);
     if (!current) throw new Error(permissionEditRequirement);
     for (let part = 0; part < minimum.length; part++) {

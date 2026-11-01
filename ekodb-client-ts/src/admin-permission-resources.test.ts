@@ -37,6 +37,83 @@ const fixture: {
   ),
 );
 const request = vi.fn<typeof fetch>();
+const permissionNames: {
+  accepted: Array<{ name: string; value: string }>;
+  rejected: Array<{ name: string; value: string }>;
+} = JSON.parse(
+  readFileSync(
+    resolve(__dirname, "../../test-fixtures/admin-permission-names.json"),
+    "utf8",
+  ),
+);
+const namedOperations = [
+  {
+    facet: "collections",
+    method: "GET",
+    run: (admin: EkoDBAdminClient, name: string) =>
+      admin.getApiKeyCollectionPermissions("me", name),
+  },
+  {
+    facet: "collections",
+    method: "PUT",
+    run: (admin: EkoDBAdminClient, name: string) =>
+      admin.putApiKeyCollectionPermissions({
+        key_id: "me",
+        collection: name,
+        read: true,
+        write: false,
+      }),
+  },
+  {
+    facet: "collections",
+    method: "PATCH",
+    run: (admin: EkoDBAdminClient, name: string) =>
+      admin.patchApiKeyCollectionPermissions({
+        key_id: "me",
+        collection: name,
+        read: true,
+      }),
+  },
+  {
+    facet: "collections",
+    method: "DELETE",
+    run: (admin: EkoDBAdminClient, name: string) =>
+      admin.deleteApiKeyCollectionPermissions("me", name),
+  },
+  {
+    facet: "kv",
+    method: "GET",
+    run: (admin: EkoDBAdminClient, name: string) =>
+      admin.getApiKeyKvPermissions("me", name),
+  },
+  {
+    facet: "kv",
+    method: "PUT",
+    run: (admin: EkoDBAdminClient, name: string) =>
+      admin.putApiKeyKvPermissions({
+        key_id: "me",
+        prefix: name,
+        read: true,
+        write: false,
+      }),
+  },
+  {
+    facet: "kv",
+    method: "PATCH",
+    run: (admin: EkoDBAdminClient, name: string) =>
+      admin.patchApiKeyKvPermissions({
+        key_id: "me",
+        prefix: name,
+        read: true,
+      }),
+  },
+  {
+    facet: "kv",
+    method: "DELETE",
+    run: (admin: EkoDBAdminClient, name: string) =>
+      admin.deleteApiKeyKvPermissions("me", name),
+  },
+];
 function response(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -63,6 +140,45 @@ afterEach(() => {
 });
 
 describe("0.80 permission resources", () => {
+  it.each(permissionNames.accepted)(
+    "accepts shared facet name $name",
+    async ({ value }) => {
+      for (const operation of namedOperations) {
+        request.mockReset();
+        modern();
+        const grant = { read: true, write: false };
+        request.mockResolvedValueOnce(
+          response(
+            operation.method === "GET"
+              ? grant
+              : {
+                  before: grant,
+                  after: operation.method === "DELETE" ? null : grant,
+                },
+          ),
+        );
+        await operation.run(client(), value);
+        const [url, options] =
+          request.mock.calls[request.mock.calls.length - 1];
+        expect(options?.method).toBe(operation.method);
+        const path = new URL(String(url)).pathname;
+        expect(path).toContain(`/permissions/${operation.facet}/`);
+        expect(decodeURIComponent(path.split("/").pop()!)).toBe(value);
+      }
+    },
+  );
+  it.each(permissionNames.rejected)(
+    "rejects shared facet name $name before HTTP",
+    async ({ value }) => {
+      for (const operation of namedOperations) {
+        request.mockReset();
+        await expect(operation.run(client(), value)).rejects.toThrow(
+          /^Invalid (permission resource name|collection permission update|KV permission update)$/,
+        );
+        expect(request).not.toHaveBeenCalled();
+      }
+    },
+  );
   it.each([undefined, ""])(
     "rejects a missing or empty aggregate KV prefix",
     async (prefix) => {

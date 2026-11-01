@@ -247,7 +247,7 @@ pub struct AdminClient {
     auth: Arc<AuthManager>,
     base_url: Url,
     api_key: String,
-    version: Arc<OnceCell<Option<String>>>,
+    version: Arc<OnceCell<String>>,
     permission_routes: Arc<OnceCell<bool>>,
 }
 impl AdminClient {
@@ -619,14 +619,17 @@ impl AdminClient {
         }
         let version = self
             .version
-            .get_or_init(|| async {
-                self.send(Method::GET, "/api/health", None)
-                    .await
-                    .ok()
-                    .and_then(|v| v.get("version").and_then(Value::as_str).map(str::to_owned))
+            .get_or_try_init(|| async {
+                let health = self.send(Method::GET, "/api/health", None).await?;
+                let version = health
+                    .get("version")
+                    .and_then(Value::as_str)
+                    .filter(|version| version_parts(version).is_some())
+                    .ok_or_else(|| Error::Validation(REQUIREMENT.into()))?;
+                Ok::<_, Error>(version.to_owned())
             })
-            .await;
-        if !version.as_deref().is_some_and(supported_version) {
+            .await?;
+        if !supported_version(version) {
             return Err(Error::Validation(REQUIREMENT.into()));
         }
         let body = serde_json::to_value(request).map_err(|_| safe_error())?;
@@ -716,7 +719,14 @@ fn validate_facet(value: &str) -> Result<()> {
         || matches!(value, "." | "..")
         || value.chars().any(|c| {
             c.is_control()
-                || matches!(c, '\u{00ad}' | '\u{061c}' | '\u{200b}'..='\u{200f}' | '\u{202a}'..='\u{202e}' | '\u{2060}'..='\u{206f}' | '\u{feff}')
+                || matches!(c,
+                    '\u{00ad}' | '\u{061c}' | '\u{180e}'
+                    | '\u{200b}'..='\u{200f}'
+                    | '\u{2028}'..='\u{202e}'
+                    | '\u{2060}'..='\u{2064}'
+                    | '\u{2066}'..='\u{2069}'
+                    | '\u{feff}'
+                )
         })
     {
         return Err(Error::Validation("Invalid permission facet".into()));

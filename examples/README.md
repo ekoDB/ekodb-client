@@ -193,6 +193,10 @@ Direct examples are in the main language directories:
   additional handwritten examples in `javascript/`
 - **Kotlin** - `Client*.kt` in `kotlin/examples/`
 
+Kotlin examples select only the binary JAR matching the current Kotlin client
+version. Rebuild it with `make build-kotlin-client` after changing the SDK;
+older versions and sources/javadoc JARs are excluded from the example classpath.
+
 ### Feature Categories (Direct API Examples)
 
 ### 1. Basic CRUD Operations

@@ -121,7 +121,56 @@ class AdminContractTest {
                     }
                 }
             }
-            assertEquals(1, health); assertEquals(if (allowed) 2 else 0, puts)
+            val validVersion = version in listOf("0.79.0", "0.79.1", "0.79.2", "0.79.3", "1.0.0")
+            assertEquals(if (validVersion) 1 else 2, health); assertEquals(if (allowed) 2 else 0, puts)
+        }
+    }
+
+    @Test fun failedLegacyHealthReadIsRetriedBeforePermissionEdit() = runBlocking<Unit> {
+        val failures = listOf(
+            Triple("{}", HttpStatusCode.ServiceUnavailable, "Admin request failed (HTTP 503)"),
+            Triple("{", HttpStatusCode.OK, "Admin request failed"),
+            Triple("{}", HttpStatusCode.OK, null),
+            Triple("""{"version":79}""", HttpStatusCode.OK, null),
+            Triple("""{"version":"invalid"}""", HttpStatusCode.OK, null),
+            Triple("""{"version":"0.79.2-rc.1"}""", HttpStatusCode.OK, null),
+        )
+        for ((body, status, expectedError) in failures) {
+            var health = 0
+            var updates = 0
+            val engine = MockEngine { request ->
+                when (request.url.encodedPath) {
+                    "/api/auth/token" -> respond("""{"token":"jwt-synthetic"}""", headers = headers)
+                    "/api/auth/keys/me/permissions" -> respond("{}", HttpStatusCode.NotFound, headers)
+                    "/api/health" -> {
+                        health++
+                        if (health == 1) {
+                            respond(body, status, headers)
+                        } else {
+                            respond("""{"version":"0.79.2"}""", headers = headers)
+                        }
+                    }
+                    "/api/auth/permissions" -> {
+                        updates++
+                        respond("""{"key":"synthetic-key","is_admin":false,"collection_permissions":{}}""", headers = headers)
+                    }
+                    else -> error("Unexpected route")
+                }
+            }
+            withAdmin(engine) { admin ->
+                val request = LegacyUpdateApiKeyCollectionPermissionsRequest("synthetic-target-key", "users", true, false)
+                if (expectedError != null) {
+                    val error = assertFailsWith<IllegalStateException> { admin.legacyUpdateApiKeyCollectionPermissions(request) }
+                    assertEquals(expectedError, error.message)
+                    assertNull(error.cause)
+                } else {
+                    assertFailsWith<IllegalArgumentException> { admin.legacyUpdateApiKeyCollectionPermissions(request) }
+                }
+                assertEquals(0, updates)
+                repeat(2) { admin.legacyUpdateApiKeyCollectionPermissions(request) }
+            }
+            assertEquals(2, health)
+            assertEquals(2, updates)
         }
     }
 
