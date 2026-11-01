@@ -87,6 +87,11 @@ respective package registries.
 
 ## Publishing Workflow
 
+Release caps must be rebase-merged to `main`. The
+[release workflow](../.github/workflows/release.yml) requires the cap subject
+intact: a squash appends the PR number and a merge commit replaces the subject,
+making the release a silent, green no-op.
+
 ### 1. Pre-Release Checklist
 
 - [ ] All tests passing
@@ -107,8 +112,9 @@ version = "0.1.0"
 ```
 
 **Go** (`ekodb-client-go`, a separate repository): collapse its `[Unreleased]`
-into `## [X.Y.Z] - YYYY-MM-DD` and merge the `chore(*): vX.Y.Z` cap to its
-`main`; CI cuts the tag and publishes the Release. No tag is created by hand.
+into `## [X.Y.Z] - YYYY-MM-DD` and rebase-merge the `chore(*): vX.Y.Z` cap to
+its `main`; CI cuts the tag and publishes the Release. No tag is created by
+hand.
 
 **Python** (`ekodb-client-py/Cargo.toml`):
 
@@ -158,8 +164,8 @@ version = "0.1.0"
 
 - [ ] Collapse `[Unreleased]` in `ekodb_client/CHANGELOG.md` into
       `## [X.Y.Z] - YYYY-MM-DD` (that date shape exactly) in the cap commit
-- [ ] Merge the version cap (`chore(*): vX.Y.Z`) to `main`; CI cuts the tag and
-      publishes the GitHub Release, nothing to do by hand
+- [ ] Rebase-merge the version cap (`chore(*): vX.Y.Z`) to `main`; CI cuts the
+      tag and publishes the GitHub Release, nothing to do by hand
 - [ ] Announce on social media/blog
 - [ ] Update documentation website
 - [ ] Monitor for issues

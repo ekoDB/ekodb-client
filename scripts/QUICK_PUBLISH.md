@@ -32,6 +32,12 @@ git commit -m "chore: bump version to 0.1.0"
 git push
 ```
 
+Release caps must be rebase-merged to `main`, using the exact subject printed by
+the repository's bump target. The
+[release workflow](../.github/workflows/release.yml) requires the cap subject
+intact: a squash appends the PR number and a merge commit replaces the subject,
+making the release a silent, green no-op.
+
 ## 🔑 Authentication Setup
 
 ### First Time Only
