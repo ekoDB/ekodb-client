@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8080")
-API_KEY = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb")
+API_KEY = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb-0123456789")
 
 auth_token = None
 COLLECTION = "simple_crud_example_py"

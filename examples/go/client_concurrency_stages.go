@@ -25,7 +25,7 @@ func run() (runErr error) {
 		log.Println("No .env file found")
 	}
 	baseURL := getenv("API_BASE_URL", "http://localhost:8080")
-	apiKey := getenv("API_BASE_KEY", "a-test-api-key-from-ekodb")
+	apiKey := getenv("API_BASE_KEY", "a-test-api-key-from-ekodb-0123456789")
 
 	client, err := ekodb.NewClient(baseURL, apiKey)
 	if err != nil {

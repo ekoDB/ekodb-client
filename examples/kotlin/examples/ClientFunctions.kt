@@ -339,9 +339,9 @@ suspend fun cleanup(client: EkoDBClient, functionIds: Collection<String>): List<
 fun main() = runBlocking {
     println("🚀 ekoDB Functions Example (Kotlin Client)\n")
 
-    val dotenv = dotenv()
+    val dotenv = dotenv { ignoreIfMissing = true }
     val baseUrl = dotenv["API_BASE_URL"] ?: "http://localhost:8080"
-    val apiKey = dotenv["API_BASE_KEY"] ?: "a-test-api-key-from-ekodb"
+    val apiKey = dotenv["API_BASE_KEY"] ?: "a-test-api-key-from-ekodb-0123456789"
     val client = EkoDBClient.builder().baseUrl(baseUrl).apiKey(apiKey).build()
     val functionIds = linkedSetOf<String>()
     var failure: Throwable? = null

@@ -19,7 +19,7 @@ load_dotenv(env_path)
 
 BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8080")
 WS_URL = os.getenv("WS_BASE_URL", "ws://localhost:8080")
-API_KEY = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb")
+API_KEY = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb-0123456789")
 
 
 async def websocket_ttl_examples():

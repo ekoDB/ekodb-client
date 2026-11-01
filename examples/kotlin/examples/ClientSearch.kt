@@ -29,10 +29,10 @@ private data class PairedDocument(
 
 /** Typed search on current main; requires a local server to run. */
 fun main() = runBlocking {
-    val dotenv = dotenv()
+    val dotenv = dotenv { ignoreIfMissing = true }
     val client = EkoDBClient.builder()
         .baseUrl(dotenv["API_BASE_URL"] ?: "http://localhost:8080")
-        .apiKey(dotenv["API_BASE_KEY"] ?: "a-test-api-key-from-ekodb")
+        .apiKey(dotenv["API_BASE_KEY"] ?: "a-test-api-key-from-ekodb-0123456789")
         .build()
     val collection = "kotlin_search_example_${UUID.randomUUID().toString().replace("-", "").take(12)}"
     var failure: Throwable? = null

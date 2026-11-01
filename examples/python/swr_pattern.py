@@ -242,7 +242,7 @@ async def run_examples(client, function_ids):
 
 async def main():
     base_url = os.getenv("API_BASE_URL", "http://localhost:8080")
-    api_key = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb")
+    api_key = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb-0123456789")
     client = Client.new(base_url, api_key)
     for collection in (GITHUB_COLLECTION, PRODUCT_COLLECTION):
         try:

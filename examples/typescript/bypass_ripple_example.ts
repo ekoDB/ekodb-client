@@ -16,7 +16,7 @@ async function main() {
 
   const client = new EkoDBClient(
     process.env.API_BASE_URL || "http://localhost:8080",
-    process.env.API_BASE_KEY || "a-test-api-key-from-ekodb",
+    process.env.API_BASE_KEY || "a-test-api-key-from-ekodb-0123456789",
   );
 
   const collection = `bypass_ripple_products_ts_${process.pid}_${Date.now()}`;
@@ -71,7 +71,9 @@ async function main() {
       collection,
       "custom-id",
       upsertRecord,
-      { bypassRipple: true },
+      {
+        bypassRipple: true,
+      },
     );
     console.log(
       `   Upserted with bypass_ripple: ${JSON.stringify(upsertResult)}\n`,

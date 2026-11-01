@@ -16,7 +16,7 @@ from ekodb_client import Client
 load_dotenv()
 
 BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8080")
-API_KEY = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb")
+API_KEY = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb-0123456789")
 
 TEST_COLLECTION = "projection_test_users_py"
 

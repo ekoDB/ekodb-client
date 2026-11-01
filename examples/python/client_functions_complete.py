@@ -16,7 +16,7 @@ load_dotenv(env_path)
 # Note: Python client uses Rust bindings, so functions are defined using dictionaries
 
 BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8080")
-API_KEY = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb")
+API_KEY = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb-0123456789")
 COLLECTION = "complete_products_py"
 FUNCTION_LABELS = {
     "product_stats",

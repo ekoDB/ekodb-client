@@ -104,7 +104,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let base_url = env::var("API_BASE_URL").unwrap_or_else(|_| "http://localhost:8080".to_string());
     let ws_url = env::var("WS_BASE_URL").unwrap_or_else(|_| "ws://localhost:8080".to_string());
-    let api_key = env::var("API_BASE_KEY").unwrap_or_else(|_| "a-test-api-key-from-ekodb".into());
+    let api_key =
+        env::var("API_BASE_KEY").unwrap_or_else(|_| "a-test-api-key-from-ekodb-0123456789".into());
     let collection = "ws_subscribe_example_rs";
 
     // Step 1: Authenticate

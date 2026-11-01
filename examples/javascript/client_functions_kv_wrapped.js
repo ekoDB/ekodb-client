@@ -8,7 +8,7 @@ const { EkoDBClient, Stage, Field } = require("@ekodb/ekodb-client");
 require("dotenv").config();
 
 const BASE_URL = process.env.API_BASE_URL || "http://localhost:8080";
-const API_KEY = process.env.API_BASE_KEY || "a-test-api-key-from-ekodb";
+const API_KEY = process.env.API_BASE_KEY || "a-test-api-key-from-ekodb-0123456789";
 const ORDERS_COLLECTION = "kv_wrapped_orders_js";
 const PRODUCTS_COLLECTION = "kv_wrapped_products_js";
 const SCRIPT_ORDERS_COLLECTION = "kv_wrapped_script_orders_js";

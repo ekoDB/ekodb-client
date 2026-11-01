@@ -35,7 +35,7 @@ const statsLabel = "user_stats_http_go"
 func init() {
 	godotenv.Load("../.env")
 	baseURL = getEnv("API_BASE_URL", "http://localhost:8080")
-	apiKey = getEnv("API_BASE_KEY", "a-test-api-key-from-ekodb")
+	apiKey = getEnv("API_BASE_KEY", "a-test-api-key-from-ekodb-0123456789")
 }
 
 func getEnv(key, defaultValue string) string {

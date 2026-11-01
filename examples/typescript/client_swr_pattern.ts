@@ -4,7 +4,8 @@ import * as dotenv from "dotenv";
 dotenv.config();
 
 const BASE_URL = process.env.API_BASE_URL || "http://localhost:8080";
-const API_KEY = process.env.API_BASE_KEY || "a-test-api-key-from-ekodb";
+const API_KEY =
+  process.env.API_BASE_KEY || "a-test-api-key-from-ekodb-0123456789";
 
 function isNotFoundError(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error);
@@ -92,7 +93,9 @@ async function swrPatternExample() {
             Stage.httpRequest(
               "https://jsonplaceholder.typicode.com/users/{{user_id}}",
               "GET",
-              { Accept: "application/json" },
+              {
+                Accept: "application/json",
+              },
             ),
             // Store in KV with 5 minute TTL
             Stage.kvSet(

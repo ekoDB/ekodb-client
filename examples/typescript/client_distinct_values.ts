@@ -17,7 +17,8 @@ dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
 async function main() {
   const baseURL = process.env.API_BASE_URL ?? "http://localhost:8080";
-  const apiKey = process.env.API_BASE_KEY ?? "a-test-api-key-from-ekodb";
+  const apiKey =
+    process.env.API_BASE_KEY ?? "a-test-api-key-from-ekodb-0123456789";
 
   const client = new EkoDBClient({ baseURL, apiKey });
 
