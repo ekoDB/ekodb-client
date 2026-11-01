@@ -191,7 +191,7 @@ async function scriptManagement(
 
   // Update script by ID
   const updated = {
-    label: `${ACTIVE_LABEL}_updated`,
+    label: ACTIVE_LABEL,
     name: "Get Active Users (Updated)",
     description: "Updated description",
     version: "1.1",

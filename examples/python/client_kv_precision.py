@@ -24,7 +24,7 @@ env_path = Path(__file__).parent.parent / ".env"
 load_dotenv(env_path)
 
 BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8080")
-API_KEY = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb")
+API_KEY = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb-0123456789")
 FLOAT_KEYS = [f"kv_precision:py:product:float:{index}" for index in range(1, 4)]
 DECIMAL_KEYS = [f"kv_precision:py:product:decimal:{index}" for index in range(1, 4)]
 FLOAT_PRECISION_KEY = "kv_precision:py:precision:float"

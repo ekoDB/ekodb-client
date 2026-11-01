@@ -100,7 +100,7 @@ async def cleanup(client):
 async def main():
     client = Client.new(
         os.getenv("API_BASE_URL", "http://localhost:8080"),
-        os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb"),
+        os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb-0123456789"),
     )
     await cleanup(client)
     primary_error = None

@@ -19,7 +19,7 @@ env_path = Path(__file__).parent.parent / ".env"
 load_dotenv(env_path)
 
 BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8080")
-API_KEY = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb")
+API_KEY = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb-0123456789")
 SESSION_KEY = "kv_operations:py:session:user123"
 PRODUCT_KEYS = [f"kv_operations:py:cache:product:{index}" for index in range(1, 4)]
 

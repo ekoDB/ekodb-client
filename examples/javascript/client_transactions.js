@@ -4,7 +4,7 @@ const dotenv = require("dotenv");
 dotenv.config();
 
 const BASE_URL = process.env.API_BASE_URL || "http://localhost:8080";
-const API_KEY = process.env.API_BASE_KEY || "a-test-api-key-from-ekodb";
+const API_KEY = process.env.API_BASE_KEY || "a-test-api-key-from-ekodb-0123456789";
 const COLLECTION = "client_transactions_accounts_js";
 
 function fieldValue(field) {

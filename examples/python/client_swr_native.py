@@ -40,7 +40,7 @@ async def save_or_update(client, script):
 
 
 BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8080")
-API_KEY = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb")
+API_KEY = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb-0123456789")
 FUNCTION_LABELS = {
     "basic": "github_user_native_py",
     "audit": "product_swr_audit_py",

@@ -61,6 +61,22 @@ for language, paths in auxiliary.items():
     if absent:
         errors.append(f"{language}: missing auxiliary examples {absent}")
 
+# These are public synthetic example defaults, not configured credentials. Keep
+# the shared fallback registerable under the documented API-key contract.
+default_key = re.compile(r"[\"'](a-test-api-key-from-ekodb[^\"']*)[\"']")
+for directory, pattern in [
+    ("examples/rust/examples", "*.rs"),
+    ("examples/python", "*.py"),
+    ("examples/go", "*.go"),
+    ("examples/typescript", "*.ts"),
+    ("examples/javascript", "*.js"),
+    ("examples/kotlin/examples", "*.kt"),
+]:
+    for path in (ROOT / directory).glob(pattern):
+        for key in default_key.findall(path.read_text()):
+            if len(key) < 32 or len(set(key)) < 8:
+                errors.append(f"{path.relative_to(ROOT)}: example default API key does not meet the registration minimum")
+
 if errors:
     print("Client example parity check failed:", file=sys.stderr)
     for error in errors:

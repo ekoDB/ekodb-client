@@ -43,7 +43,7 @@ func main() {
 	}
 
 	baseURL := getEnv("API_BASE_URL", "http://localhost:8080")
-	apiKey := getEnv("API_BASE_KEY", "a-test-api-key-from-ekodb")
+	apiKey := getEnv("API_BASE_KEY", "a-test-api-key-from-ekodb-0123456789")
 
 	client, err := ekodb.NewClient(baseURL, apiKey)
 	if err != nil {

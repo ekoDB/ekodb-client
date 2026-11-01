@@ -11,7 +11,8 @@ import * as dotenv from "dotenv";
 dotenv.config();
 
 const API_BASE_URL = process.env.API_BASE_URL || "http://localhost:8080";
-const API_BASE_KEY = process.env.API_BASE_KEY || "a-test-api-key-from-ekodb";
+const API_BASE_KEY =
+  process.env.API_BASE_KEY || "a-test-api-key-from-ekodb-0123456789";
 const RUN_SUFFIX = `${process.pid}_${Date.now()}`;
 const TEST_COLLECTION = `function_composition_users_ts_${RUN_SUFFIX}`;
 const FETCH_USER_LABEL = `fc_fetch_user_ts_${RUN_SUFFIX}`;

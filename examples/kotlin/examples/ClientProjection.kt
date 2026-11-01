@@ -19,9 +19,9 @@ import java.time.Instant
 const val TEST_COLLECTION = "projection_test_users_kt"
 
 fun main() = runBlocking {
-    val dotenv = dotenv()
+    val dotenv = dotenv { ignoreIfMissing = true }
     val baseUrl = dotenv["API_BASE_URL"] ?: "http://localhost:8080"
-    val apiKey = dotenv["API_BASE_KEY"] ?: "a-test-api-key-from-ekodb"
+    val apiKey = dotenv["API_BASE_KEY"] ?: "a-test-api-key-from-ekodb-0123456789"
 
     val client = EkoDBClient.builder()
         .baseUrl(baseUrl)

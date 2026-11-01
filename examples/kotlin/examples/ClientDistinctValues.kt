@@ -11,10 +11,10 @@ import kotlinx.serialization.json.put
 
 /** Retrieve unique field values with and without a typed query-expression filter. */
 fun main() = runBlocking {
-    val dotenv = dotenv()
+    val dotenv = dotenv { ignoreIfMissing = true }
     val client = EkoDBClient.builder()
         .baseUrl(dotenv["API_BASE_URL"] ?: "http://localhost:8080")
-        .apiKey(dotenv["API_BASE_KEY"] ?: "a-test-api-key-from-ekodb")
+        .apiKey(dotenv["API_BASE_KEY"] ?: "a-test-api-key-from-ekodb-0123456789")
         .build()
     val collection = "distinct_values_example_kt"
 
