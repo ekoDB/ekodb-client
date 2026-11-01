@@ -32,7 +32,7 @@ async def main(resources):
         collections=[],
         llm_provider="openai",
         llm_model="gpt-5.6-luna",
-        max_tokens=1024,
+        max_tokens=4096,
         system_prompt="You are a helpful assistant.",
     )
     chat_id = session["chat_id"]
@@ -98,7 +98,7 @@ async def _chat_with_client_tools(resources):
         collections=[],
         llm_provider="openai",
         llm_model="gpt-5.6-luna",
-        max_tokens=1024,
+        max_tokens=4096,
         system_prompt="You are a helpful assistant with access to tools.",
     )
     chat_id = session["chat_id"]

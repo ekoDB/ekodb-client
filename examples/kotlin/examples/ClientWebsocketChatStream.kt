@@ -39,7 +39,7 @@ fun main(): Unit = runBlocking {
             putJsonArray("collections") {}
             put("llm_provider", "openai")
             put("llm_model", "gpt-5.6-luna")
-            put("max_tokens", 1024)
+            put("max_tokens", 4096)
             put("system_prompt", "You are a helpful assistant.")
         })
         val chatId = session["chat_id"]?.jsonPrimitive?.content ?: error("No chat_id")
