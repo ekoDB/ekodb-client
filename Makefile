@@ -1193,6 +1193,7 @@ fmt-rust: fmt-rust-client fmt-rust-examples
 fmt-rust-client:
 	@echo "🖌️  $(CYAN)Formatting ekodb_client...$(RESET)"
 	@cd ekodb_client && cargo fmt
+	@cd ekodb-client-py && cargo fmt
 	@echo "✅ $(GREEN)ekodb_client formatted!$(RESET)"
 
 fmt-rust-examples:
