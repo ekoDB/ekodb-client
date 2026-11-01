@@ -23,6 +23,10 @@ and this project adheres to
 
 ### Fixed
 
+- Reject unpaired UTF-16 surrogates in Kotlin permission-facet names before
+  authentication instead of encoding them as question marks in request paths.
+  Preserve U+FFFD and supplementary characters, with matching Rust, compiled
+  Python and TypeScript boundary regressions. (#345)
 - Make SDK version bumps portable and non-interactive, validate versions before
   changing manifests, synchronize prerelease install snippets, refresh generated
   lock metadata, and stamp release notes in UTC. (#207)
