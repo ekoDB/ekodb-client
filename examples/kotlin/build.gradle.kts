@@ -11,10 +11,14 @@ repositories {
     mavenCentral()
 }
 
+val clientVersion = Regex("""(?m)^version\s*=\s*"([^"]+)"\s*$""")
+    .find(file("../../ekodb-client-kt/build.gradle.kts").readText())
+    ?.groupValues?.get(1) ?: error("Client version is missing")
+
 dependencies {
-    // Use the local client library (dynamically find the built JAR)
+    // Select only the current binary, excluding stale versions and classifiers.
     implementation(fileTree("../../ekodb-client-kt/build/libs") {
-        include("ekodb-client-kt-*.jar")
+        include("ekodb-client-kt-$clientVersion.jar")
     })
     
     // Kotlin stdlib

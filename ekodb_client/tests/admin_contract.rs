@@ -153,6 +153,11 @@ async fn gate_rejects_unreadable_old_and_prerelease_without_put() {
         json!("0.79.2+"),
         json!("999999999999999999999999.1.1"),
     ] {
+        let expected_health_reads = if matches!(version.as_str(), Some("0.79.0" | "0.79.1")) {
+            1
+        } else {
+            2
+        };
         let mut server = mockito::Server::new_async().await;
         let _probe = server
             .mock("GET", "/api/auth/keys/me/permissions")
@@ -168,7 +173,7 @@ async fn gate_rejects_unreadable_old_and_prerelease_without_put() {
         let health = server
             .mock("GET", "/api/health")
             .with_body(json!({"version":version}).to_string())
-            .expect(1)
+            .expect(expected_health_reads)
             .create_async()
             .await;
         let put = server

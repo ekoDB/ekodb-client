@@ -535,20 +535,20 @@ describe("admin wire contract", () => {
   );
 
   it.each([
-    {},
-    null,
-    { version: 9 },
-    { version: "9.8" },
-    { version: "09.8.7" },
-    { version: "999999999999999999999.8.7" },
-    { version: "9.8.7-rc.1" },
-    { version: "0.79.0" },
-    { version: "9.8.6" },
-    { version: "9.7.99" },
-    { version: "8.99.99" },
+    { health: {}, retry: true },
+    { health: null, retry: true },
+    { health: { version: 9 }, retry: true },
+    { health: { version: "9.8" }, retry: true },
+    { health: { version: "09.8.7" }, retry: true },
+    { health: { version: "999999999999999999999.8.7" }, retry: true },
+    { health: { version: "9.8.7-rc.1" }, retry: true },
+    { health: { version: "0.79.0" }, retry: false },
+    { health: { version: "9.8.6" }, retry: false },
+    { health: { version: "9.7.99" }, retry: false },
+    { health: { version: "8.99.99" }, retry: false },
   ])(
     "refuses unreadable, prerelease or older server versions: %j",
-    async (health) => {
+    async ({ health, retry }) => {
       versionGate.minimum = "9.8.7";
       auth();
       request.mockResolvedValueOnce(response(health));
@@ -562,12 +562,14 @@ describe("admin wire contract", () => {
       await expect(
         client.legacyUpdateApiKeyCollectionPermissions(edit),
       ).rejects.toThrow("newer ekoDB server");
+      if (retry) request.mockResolvedValueOnce(response(health));
       await expect(
         client.legacyUpdateApiKeyCollectionPermissions(edit),
       ).rejects.toThrow("newer ekoDB server");
       expect(request.mock.calls.map(([url]) => url)).toEqual([
         "https://example.test/api/auth/token",
         "https://example.test/api/health",
+        ...(retry ? ["https://example.test/api/health"] : []),
       ]);
       expect(request.mock.calls[1][1]).toMatchObject({
         method: "GET",
@@ -615,26 +617,42 @@ describe("admin wire contract", () => {
     new TypeError("admin-secret"),
     response({ error: "jwt-secret" }, 403),
     new Response("secret invalid JSON"),
-  ])("sanitizes and caches an unreadable health response", async (failure) => {
-    versionGate.minimum = "9.8.7";
-    auth();
-    if (failure instanceof Error) request.mockRejectedValueOnce(failure);
-    else request.mockResolvedValueOnce(failure);
-    const client = admin();
-    const edit = {
-      api_key: "target-secret",
-      collection: "users",
-      read: true,
-      write: true,
-    };
-    for (let n = 0; n < 2; n++)
-      await expect(
-        client.legacyUpdateApiKeyCollectionPermissions(edit),
-      ).rejects.toThrow(
-        /^Permission updates need a newer ekoDB server because earlier servers remove a grant's field restrictions when it is updated$/,
+    response({ error: "jwt-secret" }, 503),
+  ])(
+    "retries a failed health read and caches the recovered version",
+    async (failure) => {
+      versionGate.minimum = "9.8.7";
+      auth();
+      if (failure instanceof Error) request.mockRejectedValueOnce(failure);
+      else request.mockResolvedValueOnce(failure);
+      const client = admin();
+      const edit = {
+        api_key: "target-secret",
+        collection: "users",
+        read: true,
+        write: true,
+      };
+      const failed = client.legacyUpdateApiKeyCollectionPermissions(edit);
+      await expect(failed).rejects.toThrow();
+      await expect(failed).rejects.not.toThrow(
+        /admin-secret|jwt-secret|secret invalid JSON|newer ekoDB server/,
       );
-    expect(request).toHaveBeenCalledTimes(2);
-  });
+      request.mockResolvedValueOnce(response({ version: "9.8.7" }));
+      request.mockResolvedValueOnce(response(key));
+      request.mockResolvedValueOnce(response(key));
+      expect(
+        await client.legacyUpdateApiKeyCollectionPermissions(edit),
+      ).toEqual(key);
+      expect(
+        await client.legacyUpdateApiKeyCollectionPermissions(edit),
+      ).toEqual(key);
+      expect(
+        request.mock.calls.filter(
+          ([url]) => url === "https://example.test/api/health",
+        ),
+      ).toHaveLength(2);
+    },
+  );
 
   it("ignores inherited restriction fields and unrecognized properties", async () => {
     versionGate.minimum = "9.8.7";
