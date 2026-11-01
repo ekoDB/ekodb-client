@@ -568,24 +568,28 @@ SDK release.
 ### Permission-name validation and legacy health recovery
 
 Rust, the compiled Python binding, TypeScript and Kotlin share
-`test-fixtures/admin-permission-names.json`. Their public collection/KV facet
+`test-fixtures/admin-permission-names.json`; Go vendors the identical fixture
+so its module can test as a standalone clone. All five public collection/KV facet
 operations reject empty names, `.` and `..`, Unicode Cc controls, and exactly
 U+00AD, U+061C, U+180E, U+200B–U+200F, U+2028–U+202E, U+2060–U+2064,
 U+2066–U+2069 and U+FEFF. Other format characters are accepted. Kotlin checks
 Unicode code points rather than individual UTF-16 units. The same fixture drives
 accepted HTTP requests and rejected requests that must never reach HTTP.
 
-These four SDKs cache only successful, parseable stable legacy health versions.
+All five SDKs cache only successful, parseable stable legacy health versions.
 Failed, malformed and prerelease reads can be retried; a valid unsupported
 stable version remains cached and refused. HTTP/JSON failures propagate through
 the existing sanitized error paths.
 
-Go was assessed separately and is outside this four-SDK correction: its broad
-Cf/whitespace validation and failed health-read caching remain tracked in
-[permission compatibility](https://github.com/ekoDB/ekodb-client-go/issues/110)
-and
-[legacy version gating](https://github.com/ekoDB/ekodb-client-go/issues/104).
-This correction does not claim five-SDK parity for those two behaviors.
+The matching Go changes are on the
+[Go permission branch](https://github.com/ekoDB/ekodb-client-go/pull/113).
+`TestAdminPermissionNamesMatchSharedContract` exercises all eight named facet
+methods against the fixture, while `TestAdminLegacyHealthFailureRecovery` and
+`TestAdminProbeRefreshFailureDoesNotSelectLegacy` pin retry behavior and prevent
+wrapped token-refresh 404/405 failures from selecting legacy routes. The opt-in
+Go lifecycle also verifies every accepted fixture name as collection and KV
+grants. These are development-branch parity claims; published availability
+depends on the corresponding SDK releases.
 
 ---
 
