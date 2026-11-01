@@ -493,8 +493,10 @@ stream.on("event", (event) => {
 ## API-key administration
 
 Import `EkoDBAdminClient` from `@ekodb/ekodb-client/admin` for typed API-key
-creation, listing, revocation, permission reads and single-collection permission
-updates. See [admin usage and contract verification](ADMIN.md).
+creation, listing, revocation, permission reads and collection/KV grant edits.
+Modern methods address server-generated key ids and return before/after grants;
+a cached capability probe preserves explicit legacy compatibility. See
+[admin usage and contract verification](ADMIN.md).
 
 ## License
 

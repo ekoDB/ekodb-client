@@ -1,6 +1,8 @@
 use crate::json_to_pydict;
 use ekodb_client::admin::{
-    AdminClient as RustAdmin, CreateApiKeyRequest, UpdateApiKeyCollectionPermissionsRequest,
+    AdminClient as RustAdmin, CreateApiKeyRequest, LegacyUpdateApiKeyCollectionPermissionsRequest,
+    PatchApiKeyCollectionPermissionsRequest, PatchApiKeyKvPermissionsRequest,
+    UpdateApiKeyCollectionPermissionsRequest, UpdateApiKeyKvPermissionsRequest,
 };
 use pyo3::{
     exceptions::{PyRuntimeError, PyValueError},
@@ -82,14 +84,31 @@ impl AdminClient {
         let client = self.inner.clone();
         finish(py, async move { value(client.get_permissions().await?) })
     }
-    fn update_api_key_collection_permissions<'py>(
+    fn legacy_update_api_key_collection_permissions<'py>(
         &self,
         py: Python<'py>,
         request: Bound<'py, PyDict>,
     ) -> PyResult<Bound<'py, PyAny>> {
         let input = request_json(py, request)?;
-        let request: UpdateApiKeyCollectionPermissionsRequest = serde_json::from_value(input)
+        let request: LegacyUpdateApiKeyCollectionPermissionsRequest = serde_json::from_value(input)
             .map_err(|_| PyValueError::new_err("Invalid collection permission update"))?;
+        let client = self.inner.clone();
+        finish(py, async move {
+            value(
+                client
+                    .legacy_update_api_key_collection_permissions(&request)
+                    .await?,
+            )
+        })
+    }
+    fn update_api_key_collection_permissions<'py>(
+        &self,
+        py: Python<'py>,
+        request: Bound<'py, PyDict>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let request: UpdateApiKeyCollectionPermissionsRequest =
+            serde_json::from_value(request_json(py, request)?)
+                .map_err(|_| PyValueError::new_err("Invalid permission request"))?;
         let client = self.inner.clone();
         finish(py, async move {
             value(
@@ -99,11 +118,169 @@ impl AdminClient {
             )
         })
     }
+    fn put_api_key_collection_permissions<'py>(
+        &self,
+        py: Python<'py>,
+        request: Bound<'py, PyDict>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let request: UpdateApiKeyCollectionPermissionsRequest =
+            serde_json::from_value(request_json(py, request)?)
+                .map_err(|_| PyValueError::new_err("Invalid permission request"))?;
+        let client = self.inner.clone();
+        finish(py, async move {
+            value(client.put_api_key_collection_permissions(&request).await?)
+        })
+    }
+    fn patch_api_key_collection_permissions<'py>(
+        &self,
+        py: Python<'py>,
+        request: Bound<'py, PyDict>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let request: PatchApiKeyCollectionPermissionsRequest =
+            serde_json::from_value(request_json(py, request)?)
+                .map_err(|_| PyValueError::new_err("Invalid permission request"))?;
+        let client = self.inner.clone();
+        finish(py, async move {
+            value(
+                client
+                    .patch_api_key_collection_permissions(&request)
+                    .await?,
+            )
+        })
+    }
+    fn put_api_key_kv_permissions<'py>(
+        &self,
+        py: Python<'py>,
+        request: Bound<'py, PyDict>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let request: UpdateApiKeyKvPermissionsRequest =
+            serde_json::from_value(request_json(py, request)?)
+                .map_err(|_| PyValueError::new_err("Invalid permission request"))?;
+        let client = self.inner.clone();
+        finish(py, async move {
+            value(client.put_api_key_kv_permissions(&request).await?)
+        })
+    }
+    fn patch_api_key_kv_permissions<'py>(
+        &self,
+        py: Python<'py>,
+        request: Bound<'py, PyDict>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let request: PatchApiKeyKvPermissionsRequest =
+            serde_json::from_value(request_json(py, request)?)
+                .map_err(|_| PyValueError::new_err("Invalid permission request"))?;
+        let client = self.inner.clone();
+        finish(py, async move {
+            value(client.patch_api_key_kv_permissions(&request).await?)
+        })
+    }
+    fn delete_api_key_collection_permissions<'py>(
+        &self,
+        py: Python<'py>,
+        key_id: String,
+        collection: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        finish(py, async move {
+            value(
+                client
+                    .delete_api_key_collection_permissions(&key_id, &collection)
+                    .await?,
+            )
+        })
+    }
+    fn get_api_key_collection_permissions<'py>(
+        &self,
+        py: Python<'py>,
+        key_id: String,
+        collection: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        finish(py, async move {
+            value(
+                client
+                    .get_api_key_collection_permissions(&key_id, &collection)
+                    .await?,
+            )
+        })
+    }
+    fn delete_api_key_kv_permissions<'py>(
+        &self,
+        py: Python<'py>,
+        key_id: String,
+        prefix: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        finish(py, async move {
+            value(
+                client
+                    .delete_api_key_kv_permissions(&key_id, &prefix)
+                    .await?,
+            )
+        })
+    }
+    fn get_api_key_kv_permissions<'py>(
+        &self,
+        py: Python<'py>,
+        key_id: String,
+        prefix: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        finish(py, async move {
+            value(client.get_api_key_kv_permissions(&key_id, &prefix).await?)
+        })
+    }
+    fn get_api_key_permissions<'py>(
+        &self,
+        py: Python<'py>,
+        key_id: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        finish(py, async move {
+            value(client.get_api_key_permissions(&key_id).await?)
+        })
+    }
+    fn list_api_key_collection_permissions<'py>(
+        &self,
+        py: Python<'py>,
+        key_id: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        finish(py, async move {
+            value(client.list_api_key_collection_permissions(&key_id).await?)
+        })
+    }
+    #[pyo3(signature=(key_id,prefix=None))]
+    fn list_api_key_kv_permissions<'py>(
+        &self,
+        py: Python<'py>,
+        key_id: String,
+        prefix: Option<String>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        finish(py, async move {
+            value(
+                client
+                    .list_api_key_kv_permissions(&key_id, prefix.as_deref())
+                    .await?,
+            )
+        })
+    }
+    fn uses_key_permission_routes<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        finish(py, async move {
+            value(client.uses_key_permission_routes().await?)
+        })
+    }
 }
 pub(crate) fn register(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_class::<AdminClient>()?;
     module.add(
         "MIN_SERVER_VERSION_FOR_PERMISSION_EDITS",
         ekodb_client::admin::MIN_SERVER_VERSION_FOR_PERMISSION_EDITS,
+    )?;
+    module.add(
+        "MIN_LEGACY_SERVER_VERSION_FOR_PERMISSION_EDITS",
+        ekodb_client::admin::MIN_LEGACY_SERVER_VERSION_FOR_PERMISSION_EDITS,
     )
 }

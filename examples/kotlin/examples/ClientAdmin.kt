@@ -21,13 +21,29 @@ fun main() = runBlocking {
             val key = admin.createApiKey(CreateApiKeyRequest(label = label, collectionPermissions = mapOf("sdk_admin_probe" to listOf(ApiKeyAction.Read))))
             check(key.key != owner && !key.isAdmin) { "Unexpected disposable key" }
             EkoDBAdminClient(base, key.key).use { check(!it.getPermissions().isAdmin) { "Unexpected admin grant" } }
-            val request = UpdateApiKeyCollectionPermissionsRequest(key.key, "sdk_admin_probe", true, true, PermissionEdit.Set(listOf("public")), PermissionEdit.Set(listOf("secret")), PermissionEdit.Set(listOf("public")))
-            admin.updateApiKeyCollectionPermissions(request)
+            val modern = admin.usesKeyPermissionRoutes()
+            if (modern) {
+                val id = key.id ?: error("Registration omitted key id")
+                check(admin.listApiKeys().any { it.id == id && it.label == label }) { "Key listing omitted the registered id" }
+                val prefix = "sdk-admin:$label:"
+                val change = admin.putApiKeyKvPermissions(UpdateApiKeyKvPermissionsRequest(id, prefix, true, false))
+                check(change.after?.read == true && change.after?.write == false) { "KV grant creation failed" }
+                admin.patchApiKeyKvPermissions(PatchApiKeyKvPermissionsRequest(id, prefix, write = true))
+                check(admin.deleteApiKeyKvPermissions(id, prefix).after == null) { "KV grant removal failed" }
+            }
+            suspend fun edit(request: LegacyUpdateApiKeyCollectionPermissionsRequest, replace: Boolean = false) {
+                if (modern) {
+                    val input = UpdateApiKeyCollectionPermissionsRequest(key.id ?: error("Registration omitted key id"), request.collection, request.read, request.write, request.selectFields, request.excludeFields, request.writableFields)
+                    if (replace) admin.putApiKeyCollectionPermissions(input) else admin.updateApiKeyCollectionPermissions(input)
+                } else admin.legacyUpdateApiKeyCollectionPermissions(request)
+            }
+            val request = LegacyUpdateApiKeyCollectionPermissionsRequest(key.key, "sdk_admin_probe", true, true, PermissionEdit.Set(listOf("public")), PermissionEdit.Set(listOf("secret")), PermissionEdit.Set(listOf("public")))
+            edit(request, replace = true)
             EkoDBAdminClient(base, key.key).use { fresh ->
                 val initial = fresh.getPermissions().collectionPermissions.getValue("sdk_admin_probe")
                 check(initial.read && initial.write && initial.selectFields == listOf("public") && initial.excludeFields == listOf("secret") && initial.writableFields == listOf("public")) { "Initial restriction readback failed" }
             }
-            admin.updateApiKeyCollectionPermissions(request.copy(write = false, selectFields = PermissionEdit.Keep, excludeFields = PermissionEdit.Clear, writableFields = PermissionEdit.Set(emptyList())))
+            edit(request.copy(write = false, selectFields = PermissionEdit.Keep, excludeFields = PermissionEdit.Clear, writableFields = PermissionEdit.Set(emptyList())))
             EkoDBAdminClient(base, key.key).use { fresh ->
                 val grant = fresh.getPermissions().collectionPermissions.getValue("sdk_admin_probe")
                 check(grant.read && !grant.write && grant.selectFields == listOf("public") && grant.excludeFields == null && grant.writableFields == emptyList<String>()) { "Restriction readback failed" }
@@ -35,7 +51,7 @@ fun main() = runBlocking {
         } finally {
             val matches = admin.listApiKeys().filter { it.label == label }
             check(matches.size <= 1 && matches.none { it.key == owner }) { "Unexpected disposable cleanup match" }
-            matches.forEach { admin.revokeApiKey(it.key) }
+            matches.forEach { admin.revokeApiKey(it.id ?: it.key) }
             check(admin.listApiKeys().none { it.label == label }) { "Disposable cleanup failed for label $label" }
         }
         println("Disposable admin lifecycle verified; no matching key remains")

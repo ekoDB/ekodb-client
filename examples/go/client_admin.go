@@ -58,7 +58,12 @@ func runAdmin() (result error) {
 			}
 			if cleanupErr == nil {
 				for _, key := range matches {
-					if cleanupErr = admin.RevokeAPIKey(key.Key); cleanupErr != nil {
+					if cleanupErr = admin.RevokeAPIKey(func() string {
+						if key.ID != "" {
+							return key.ID
+						}
+						return key.Key
+					}()); cleanupErr != nil {
 						break
 					}
 				}
@@ -94,9 +99,63 @@ func runAdmin() (result error) {
 	if permissions.IsAdmin {
 		return fmt.Errorf("unexpected admin grant")
 	}
+	modern, err := admin.UsesKeyPermissionRoutes()
+	if err != nil {
+		return err
+	}
+	if modern {
+		if key.ID == "" {
+			return fmt.Errorf("registration omitted key id")
+		}
+		listed, err := admin.ListAPIKeys()
+		if err != nil {
+			return err
+		}
+		found := false
+		for _, listedKey := range listed {
+			if listedKey.ID == key.ID && listedKey.Label != nil && *listedKey.Label == label {
+				found = true
+			}
+		}
+		if !found {
+			return fmt.Errorf("key listing omitted the registered id")
+		}
+		prefix := "sdk-admin:" + label + ":"
+		change, err := admin.PutAPIKeyKVPermissions(ekodb.UpdateAPIKeyKVPermissionsRequest{KeyID: key.ID, Prefix: prefix, Read: true, Write: false})
+		if err != nil {
+			return err
+		}
+		if change.After == nil || !change.After.Read || change.After.Write {
+			return fmt.Errorf("KV grant creation failed")
+		}
+		write := true
+		if _, err = admin.PatchAPIKeyKVPermissions(ekodb.PatchAPIKeyKVPermissionsRequest{KeyID: key.ID, Prefix: prefix, Write: &write}); err != nil {
+			return err
+		}
+		change, err = admin.DeleteAPIKeyKVPermissions(key.ID, prefix)
+		if err != nil {
+			return err
+		}
+		if change.After != nil {
+			return fmt.Errorf("KV grant removal failed")
+		}
+	}
+	edit := func(request ekodb.LegacyUpdateAPIKeyCollectionPermissionsRequest, replace bool) error {
+		if modern {
+			input := ekodb.UpdateAPIKeyCollectionPermissionsRequest{KeyID: key.ID, Collection: request.Collection, Read: request.Read, Write: request.Write, SelectFields: request.SelectFields, ExcludeFields: request.ExcludeFields, WritableFields: request.WritableFields}
+			if replace {
+				_, err := admin.PutAPIKeyCollectionPermissions(input)
+				return err
+			}
+			_, err := admin.UpdateAPIKeyCollectionPermissions(input)
+			return err
+		}
+		_, err := admin.LegacyUpdateAPIKeyCollectionPermissions(request)
+		return err
+	}
 	selected, excluded, writable := []string{"public"}, []string{"secret"}, []string{"public"}
-	request := ekodb.UpdateAPIKeyCollectionPermissionsRequest{APIKey: key.Key, Collection: "sdk_admin_probe", Read: true, Write: true, SelectFields: &selected, ExcludeFields: &excluded, WritableFields: &writable}
-	if _, err = admin.UpdateAPIKeyCollectionPermissions(request); err != nil {
+	request := ekodb.LegacyUpdateAPIKeyCollectionPermissionsRequest{APIKey: key.Key, Collection: "sdk_admin_probe", Read: true, Write: true, SelectFields: &selected, ExcludeFields: &excluded, WritableFields: &writable}
+	if err = edit(request, true); err != nil {
 		return err
 	}
 	firstClient, err := ekodb.NewAdminClient(base, key.Key)
@@ -117,7 +176,7 @@ func runAdmin() (result error) {
 	request.SelectFields = nil
 	request.ExcludeFields = &clear
 	request.WritableFields = &empty
-	if _, err = admin.UpdateAPIKeyCollectionPermissions(request); err != nil {
+	if err = edit(request, false); err != nil {
 		return err
 	}
 	fresh, err := ekodb.NewAdminClient(base, key.Key)
