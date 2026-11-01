@@ -33,7 +33,7 @@ fun main(): Unit = runBlocking {
             putJsonArray("collections") {}
             put("llm_provider", "openai")
             put("llm_model", "gpt-6-luna")
-            put("max_tokens", 1024)
+            put("max_tokens", 4096)
             put("system_prompt", "You are a helpful assistant.")
         })
         chatId = session["chat_id"]?.jsonPrimitive?.content

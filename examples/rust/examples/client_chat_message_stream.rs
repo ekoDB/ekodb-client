@@ -26,7 +26,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .create_chat_session(
             CreateChatSessionRequest::new("openai")
                 .model("gpt-6-luna")
-                .max_tokens(1024)
+                .max_tokens(4096)
                 .system_prompt("You are a helpful assistant."),
         )
         .await?;
