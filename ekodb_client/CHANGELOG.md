@@ -8,17 +8,53 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- Rust: key-id permission resources, collection/KV facet reads and
+  PUT/PATCH/DELETE changes, key ids, typed KV grants, and an explicit legacy
+  collection-edit facade with cached capability detection. (#345, #324)
+- Python: expose the matching Rust admin operations through the compiled PyO3
+  binding and typed request/result models, including nullable registration KV
+  grants and required aggregate KV arrays. (#345)
+- TypeScript: typed key-id permission resources, facet reads and changes,
+  preserved DELETE response bodies, and explicit legacy collection edits. (#345)
+- Kotlin: matching coroutine admin operations, key ids, KV grant models,
+  before/after changes and cached route detection. (#345)
+
 ### Fixed
 
 - Make SDK version bumps portable and non-interactive, validate versions before
   changing manifests, synchronize prerelease install snippets, refresh generated
   lock metadata, and stamp release notes in UTC. (#207)
+- Align Rust, compiled Python, TypeScript and Kotlin permission-facet validation
+  with the explicit Unicode contract, backed by one shared accepted/rejected
+  name fixture and public HTTP-boundary tests.
+- Retry failed or unreadable legacy permission health reads while caching only
+  successful stable versions and preserving sanitized transport errors.
+- Select only the current Kotlin client binary JAR for examples, excluding stale
+  versions and classifier JARs.
+- Example fallback keys meet the registration minimum of 32 characters and eight
+  distinct characters; the existing example parity check rejects regressions.
+  Disposable admin examples support both route generations, verify modern key
+  ids and KV changes, and prefer ids during owned-key cleanup. (#344, #345)
+- TypeScript, Rust and Python function examples retain their owned function
+  label during updates so repeated runs do not collide with a fixed renamed
+  label. (#348)
+- Kotlin examples accept an absent local dotenv file when the runner supplies
+  process environment variables, using the existing optional-file idiom. (#349)
 - **Generate and verify embeddings in the Go AI example** — Load the example
   articles before embedding their content, matching the other SDK examples.
   Reject missing chat text, unexpected record counts and empty vectors instead
   of reporting success for a zero-record result. (#339)
 
 ### Changed
+
+- Permission updates target key ids and use PATCH semantics. New resources are
+  documented for server 0.80.0; a successful capability probe also supports
+  prereleases and pre-cap builds reporting 0.79.2. Explicit legacy collection
+  updates retain the 0.79.2 minimum and secret-targeted request only for
+  detected legacy routes. Keep the historical fixtures and add a synthetic
+  modern contract with transport-boundary tests across all five SDKs. (#345)
 
 - **Refresh AI example models and completion budgets** — Select cost-sensitive
   Luna models across all five SDK example sets, using GPT-5.6 Luna for the
