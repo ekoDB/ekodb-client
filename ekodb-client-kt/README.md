@@ -896,6 +896,10 @@ retain the old secret-targeted shape only for detected legacy servers >=0.79.2.
 Registration and listing expose optional ids for compatibility with older
 replies. Prefer ids for revocation. Never log key records.
 
+Permission-facet names must be well-formed Unicode. Unpaired UTF-16 surrogates
+fail before HTTP; U+FFFD and valid supplementary-character pairs remain
+accepted.
+
 ```kotlin
 import io.ekodb.client.admin.EkoDBAdminClient
 import io.ekodb.client.admin.PermissionEdit

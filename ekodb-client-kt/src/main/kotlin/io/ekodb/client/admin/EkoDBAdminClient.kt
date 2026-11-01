@@ -275,7 +275,7 @@ private fun validateKeyId(keyId: String) {
 }
 private fun validateFacet(value: String) {
     require(value.isNotEmpty() && value != "." && value != ".." && value.codePoints().noneMatch {
-        Character.getType(it) == Character.CONTROL.toInt() ||
+        it in 0xD800..0xDFFF || Character.getType(it) == Character.CONTROL.toInt() ||
             it == 0x00AD || it == 0x061C || it == 0x180E ||
             it in 0x200B..0x200F || it in 0x2028..0x202E ||
             it in 0x2060..0x2064 || it in 0x2066..0x2069 || it == 0xFEFF
