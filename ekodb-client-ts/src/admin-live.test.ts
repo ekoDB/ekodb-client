@@ -141,6 +141,14 @@ async function disposableLifecycle(
           (grant) => grant.prefix === prefix,
         ),
       ).toBe(true);
+      for (const filter of [".", ".."]) {
+        expect(await admin.listApiKeyKvPermissions(id, filter)).toEqual([]);
+      }
+      expect(
+        (await admin.listApiKeyKvPermissions(id, "")).some(
+          (grant) => grant.prefix === prefix,
+        ),
+      ).toBe(true);
       expect(
         (
           await admin.patchApiKeyKvPermissions({
