@@ -32,7 +32,7 @@ async function main() {
 
   const client = new EkoDBClient(
     process.env.API_BASE_URL || "http://localhost:8080",
-    process.env.API_BASE_KEY || "a-test-api-key-from-ekodb",
+    process.env.API_BASE_KEY || "a-test-api-key-from-ekodb-0123456789",
   );
   await client.init();
   console.log("✓ Client connected");

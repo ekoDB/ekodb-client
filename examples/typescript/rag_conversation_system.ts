@@ -146,7 +146,7 @@ async function main() {
   // Create client
   const client = new EkoDBClient({
     baseURL: process.env.API_BASE_URL || "http://localhost:8080",
-    apiKey: process.env.API_BASE_KEY || "a-test-api-key-from-ekodb",
+    apiKey: process.env.API_BASE_KEY || "a-test-api-key-from-ekodb-0123456789",
   });
 
   const messagesCollection = "rag_messages_ts";
@@ -435,7 +435,9 @@ async function main() {
     const ownershipResults = await client.textSearch(
       messagesCollection,
       "ownership system",
-      { limit: 3 },
+      {
+        limit: 3,
+      },
     );
     const textDuration = (Date.now() - textStart) / 1000;
     console.log(`  ✓ Text search completed in ${textDuration.toFixed(3)}s`);

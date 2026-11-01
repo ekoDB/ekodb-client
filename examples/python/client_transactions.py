@@ -23,7 +23,7 @@ env_path = Path(__file__).parent.parent / ".env"
 load_dotenv(env_path)
 
 BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8080")
-API_KEY = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb")
+API_KEY = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb-0123456789")
 COLLECTION = "client_transactions_accounts_py"
 
 

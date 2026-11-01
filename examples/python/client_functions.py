@@ -18,7 +18,7 @@ env_path = Path(__file__).parent.parent / ".env"
 load_dotenv(env_path)
 
 BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8080")
-API_KEY = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb")
+API_KEY = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb-0123456789")
 COLLECTION = "functions_users_client_py"
 ACTIVE_LABEL = "get_active_users_client_py"
 STATUS_LABEL = "get_users_by_status_client_py"
@@ -200,7 +200,7 @@ async def script_management(client, get_active_users_id, user_stats_id):
 
     # Update function by ID
     updated = {
-        "label": f"{ACTIVE_LABEL}_updated",
+        "label": ACTIVE_LABEL,
         "name": "Get Active Users (Updated)",
         "description": "Updated description",
         "version": "1.1",
@@ -241,7 +241,6 @@ async def main():
         cleanup_errors = []
         cleanup_labels = [
             ACTIVE_LABEL,
-            f"{ACTIVE_LABEL}_updated",
             STATUS_LABEL,
             STATS_LABEL,
         ]

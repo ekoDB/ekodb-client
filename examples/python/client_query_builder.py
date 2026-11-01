@@ -22,7 +22,7 @@ load_dotenv(env_path)
 async def main():
     # Create client
     base_url = os.getenv("API_BASE_URL", "http://localhost:8080")
-    api_key = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb")
+    api_key = os.getenv("API_BASE_KEY", "a-test-api-key-from-ekodb-0123456789")
     client = Client.new(base_url, api_key)
 
     print("=== Query Builder Examples ===\n")
