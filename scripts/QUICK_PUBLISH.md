@@ -34,9 +34,13 @@ git push
 
 Release caps must be rebase-merged to `main`, using the exact subject printed by
 the repository's bump target. The
-[release workflow](../.github/workflows/release.yml) requires the cap subject
-intact: a squash appends the PR number and a merge commit replaces the subject,
-making the release a silent, green no-op.
+[release workflow](../.github/workflows/release.yml) requires an exact cap
+subject. A squash that appends the PR number changes it and does not trigger a
+release. The
+[shared cap selector](https://github.com/ekoDB/ekodb-workflows-public/blob/main/scripts/release-cap-at-commit.sh)
+also recognizes a cap at the second parent of a two-parent merge, so that form
+can publish; rebase-merge remains the repository convention and supported
+release path.
 
 ## 🔑 Authentication Setup
 
