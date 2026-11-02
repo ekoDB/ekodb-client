@@ -71,6 +71,7 @@ for directory, pattern in [
     ("examples/typescript", "*.ts"),
     ("examples/javascript", "*.js"),
     ("examples/kotlin/examples", "*.kt"),
+    ("examples/kotlin", "*.kt"),
 ]:
     for path in (ROOT / directory).glob(pattern):
         for key in default_key.findall(path.read_text()):
