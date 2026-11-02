@@ -23,11 +23,10 @@ and this project adheres to
 
 ### Fixed
 
-- Examples: the SSE and WebSocket chat-stream examples and the RAG conversation
-  example request a 4,096-token output budget instead of 1,024. The server
-  refuses a response that stops at the budget, and a reasoning model's reasoning
-  counts against it, so the smaller budget could end the open-ended prompt
-  without an answer.
+- Examples: every chat, chat-stream, RAG and AI-function example requests a
+  4,096-token output budget instead of 1,024. The server refuses a response that
+  stops at the budget, and a reasoning model's reasoning counts against it, so
+  the smaller budget could end the open-ended prompt without an answer.
 - Keep Kotlin coroutine runtime/test dependencies on a resolvable release and
   align standalone example serialization dependencies with the client. (#353)
 - Reject unpaired UTF-16 surrogates in Kotlin permission-facet names before
