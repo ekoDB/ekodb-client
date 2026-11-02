@@ -634,6 +634,27 @@ WS_BASE_URL=ws://localhost:8080
 REQUEST_TIMEOUT=30000
 ```
 
+### Registering the example API key
+
+`API_BASE_KEY` must be a key the server has registered; a key that was never
+registered is rejected with `401`. Register one with `POST /api/auth/register`,
+passing the existing admin key in the `api_key` body field and the new secret in
+the optional `key` field. Omit `key` to let the server generate a secret.
+Version 0.80.0 requires a supplied `key` to have at least 32 characters and at
+least 8 distinct characters, and rejects a value shaped like an id (32 lowercase
+hexadecimal characters). Invalid keys return `400`; a key already registered
+returns `409`.
+
+```bash
+curl -X POST "$API_BASE_URL/api/auth/register" \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"api_key": "'"$ADMIN_KEY"'", "key": "'"$API_BASE_KEY"'", "label": "examples", "is_admin": true}'
+```
+
+The full contract is in the
+[authentication guide](https://docs.ekodb.io/authentication).
+
 ### Setup
 
 ```bash
@@ -813,9 +834,9 @@ make run-release
 **Solution:**
 
 - Check that your API key is registered with the server
-- Configure `API_BASE_KEY` with an authorized test key registered through your
-  server provisioning flow; synthetic fallback keys are not automatically
-  registered.
+- Configure `API_BASE_KEY` with an authorized test key; synthetic fallback keys
+  are not automatically registered. See
+  [Registering the example API key](#registering-the-example-api-key).
 - If using custom key, ensure it's registered
 
 ### WebSocket Connection Failed
