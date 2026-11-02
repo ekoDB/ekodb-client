@@ -335,7 +335,7 @@ func run() (runErr error) {
 		Collections:  []ekodb.CollectionConfig{},
 		LLMProvider:  "openai",
 		LLMModel:     strPtr("gpt-6-luna"),
-		MaxTokens:    func() *int32 { n := int32(1024); return &n }(),
+		MaxTokens:    func() *int32 { n := int32(4096); return &n }(),
 		SystemPrompt: &systemPrompt,
 	})
 	if err != nil {
