@@ -50,7 +50,7 @@ async function main() {
       ],
       llm_provider: "openai",
       llm_model: "gpt-6-luna",
-      max_tokens: 1024,
+      max_tokens: 4096,
       system_prompt: "You are a helpful assistant for product information.",
     });
     chatId = session.chat_id;
@@ -96,7 +96,7 @@ async function main() {
       ],
       llm_provider: "openai",
       llm_model: "gpt-6-luna",
-      max_tokens: 1024,
+      max_tokens: 4096,
       parent_id: chatId,
       branch_point_idx: 0,
     });

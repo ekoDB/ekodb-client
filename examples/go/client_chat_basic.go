@@ -90,7 +90,7 @@ func run() (runErr error) {
 		},
 		LLMProvider:  "openai",
 		LLMModel:     &llmModel,
-		MaxTokens:    func() *int32 { n := int32(1024); return &n }(),
+		MaxTokens:    func() *int32 { n := int32(4096); return &n }(),
 		SystemPrompt: &systemPrompt,
 	})
 	if err != nil {

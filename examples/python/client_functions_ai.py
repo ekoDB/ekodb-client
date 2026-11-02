@@ -88,7 +88,7 @@ async def run_examples(client, script_ids):
                     ),
                 ],
                 "gpt-6-luna",
-                max_tokens=1024,
+                max_tokens=4096,
             )
         ],
         "tags": ["ai", "chat"],

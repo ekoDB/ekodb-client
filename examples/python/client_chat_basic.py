@@ -57,7 +57,7 @@ async def main(resources):
         collections=[(collection, [])],
         llm_provider="openai",
         llm_model="gpt-6-luna",
-        max_tokens=1024,
+        max_tokens=4096,
         system_prompt="You are a helpful assistant for product information.",
     )
     chat_id = session["chat_id"]

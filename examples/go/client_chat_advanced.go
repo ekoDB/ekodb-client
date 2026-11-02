@@ -97,7 +97,7 @@ func run() (runErr error) {
 		},
 		LLMProvider:  "openai",
 		LLMModel:     &llmModel,
-		MaxTokens:    func() *int32 { n := int32(1024); return &n }(),
+		MaxTokens:    func() *int32 { n := int32(4096); return &n }(),
 		SystemPrompt: &systemPrompt,
 	})
 	if err != nil {
@@ -222,7 +222,7 @@ func run() (runErr error) {
 		},
 		LLMProvider: "openai",
 		LLMModel:    &llmModel,
-		MaxTokens:   func() *int32 { n := int32(1024); return &n }(),
+		MaxTokens:   func() *int32 { n := int32(4096); return &n }(),
 	})
 	if err != nil {
 		return fmt.Errorf("create second session: %w", err)

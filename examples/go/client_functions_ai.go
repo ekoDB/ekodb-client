@@ -121,7 +121,7 @@ func run() (runErr error) {
 		},
 		Tags: []string{"ai", "chat"},
 	}
-	script1.Functions[0].Data["max_tokens"] = 1024
+	script1.Functions[0].Data["max_tokens"] = 4096
 	scriptID1, err := saveOrUpdateFn(client, script1)
 	if err != nil {
 		return err

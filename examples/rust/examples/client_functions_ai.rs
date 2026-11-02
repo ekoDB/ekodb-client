@@ -97,7 +97,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             ],
             model: Some("gpt-6-luna".to_string()),
             temperature: None,
-            max_tokens: Some(1024),
+            max_tokens: Some(4096),
         })
         .with_tag("ai")
         .with_tag("chat");

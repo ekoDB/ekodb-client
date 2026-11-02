@@ -46,7 +46,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .create_chat_session(
                 ekodb_client::CreateChatSessionRequest::new("openai")
                     .model("gpt-6-luna")
-                    .max_tokens(1024)
+                    .max_tokens(4096)
                     .collection(ekodb_client::CollectionConfig {
                         collection_name: collection.to_string(),
                         fields: vec![],
@@ -188,7 +188,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .create_chat_session(
                 ekodb_client::CreateChatSessionRequest::new("openai")
                     .model("gpt-6-luna")
-                    .max_tokens(1024)
+                    .max_tokens(4096)
                     .collection(ekodb_client::CollectionConfig {
                         collection_name: collection.to_string(),
                         fields: vec![],

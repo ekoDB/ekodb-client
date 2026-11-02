@@ -49,7 +49,7 @@ async function main() {
       ],
       llm_provider: "openai",
       llm_model: "gpt-6-luna",
-      max_tokens: 1024,
+      max_tokens: 4096,
       system_prompt: "You are a helpful product assistant.",
     });
     const chatId = session.chat_id;
@@ -137,7 +137,7 @@ async function main() {
       ],
       llm_provider: "openai",
       llm_model: "gpt-6-luna",
-      max_tokens: 1024,
+      max_tokens: 4096,
     });
     const chatId2 = session2.chat_id;
     chatIds.push(chatId2);
