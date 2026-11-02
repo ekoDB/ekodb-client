@@ -329,11 +329,11 @@ deploy-client-rust:
 	@./scripts/publish-rust.sh
 
 # Python deployment with multi-platform builds (Linux + macOS + source)
-deploy-client-py:
+deploy-client-py: venv
 	@echo "🐍 $(CYAN)Publishing Python client to PyPI (multi-platform)...$(RESET)"
-	@if ! python3 -m pip show twine > /dev/null 2>&1; then \
-		echo "📦 $(YELLOW)Installing twine...$(RESET)"; \
-		python3 -m pip install twine; \
+	@if ! $(VENV_PY) -m pip show twine maturin > /dev/null 2>&1; then \
+		echo "📦 $(YELLOW)Installing twine and maturin into .venv...$(RESET)"; \
+		$(VENV_PY) -m pip install twine maturin; \
 	fi
 	@if [ -f .env ]; then \
 		export $$(grep -v '^#' .env | xargs) && \
@@ -351,9 +351,9 @@ deploy-client-py:
 			-w /workspace/ekodb-client-py \
 			ghcr.io/pyo3/maturin build --release --manylinux 2_28 --no-default-features --features rustls && \
 		echo "  🍎 Building for macOS (current platform)..." && \
-		cd ekodb-client-py && python3 -m maturin build --release --no-default-features --features rustls --sdist && \
+		cd ekodb-client-py && $(VENV_PY) -m maturin build --release --no-default-features --features rustls --sdist && \
 		echo "📤 $(CYAN)Publishing all wheels to PyPI...$(RESET)" && \
-		python3 -m twine upload --skip-existing target/wheels/* -u __token__ -p "$$MATURIN_PYPI_TOKEN"; \
+		$(VENV_PY) -m twine upload --skip-existing target/wheels/* -u __token__ -p "$$MATURIN_PYPI_TOKEN"; \
 	else \
 		if [ -z "$$MATURIN_PYPI_TOKEN" ]; then \
 			echo "$(RED)❌ MATURIN_PYPI_TOKEN not set and no .env file found$(RESET)"; \
@@ -369,9 +369,9 @@ deploy-client-py:
 			-w /workspace/ekodb-client-py \
 			ghcr.io/pyo3/maturin build --release --manylinux 2_28 --no-default-features --features rustls && \
 		echo "  🍎 Building for macOS (current platform)..." && \
-		cd ekodb-client-py && python3 -m maturin build --release --no-default-features --features rustls --sdist && \
+		cd ekodb-client-py && $(VENV_PY) -m maturin build --release --no-default-features --features rustls --sdist && \
 		echo "📤 $(CYAN)Publishing all wheels to PyPI...$(RESET)" && \
-		python3 -m twine upload --skip-existing target/wheels/* -u __token__ -p "$$MATURIN_PYPI_TOKEN"; \
+		$(VENV_PY) -m twine upload --skip-existing target/wheels/* -u __token__ -p "$$MATURIN_PYPI_TOKEN"; \
 	fi
 	@echo "✅ $(GREEN)Python client published!$(RESET)"
 	@echo "💡 $(YELLOW)Note: Windows wheels require a Windows machine or CI/CD$(RESET)"
