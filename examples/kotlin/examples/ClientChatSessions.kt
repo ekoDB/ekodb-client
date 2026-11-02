@@ -50,7 +50,7 @@ fun main() = runBlocking {
             }
             put("llm_provider", "openai")
             put("llm_model", "gpt-6-luna")
-            put("max_tokens", 1024)
+            put("max_tokens", 4096)
             put("system_prompt", "You are a helpful assistant for product information.")
         }
         
@@ -109,7 +109,7 @@ fun main() = runBlocking {
             }
             put("llm_provider", "openai")
             put("llm_model", "gpt-6-luna")
-            put("max_tokens", 1024)
+            put("max_tokens", 4096)
             put("parent_id", chatId)
         }
         

@@ -88,7 +88,7 @@ async function chatCompletionScript(client) {
         ],
         "gpt-6-luna",
         undefined,
-        1024,
+        4096,
       ),
     ],
     tags: ["ai", "chat"],

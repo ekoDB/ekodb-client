@@ -85,7 +85,7 @@ fun main() = runBlocking {
                         ChatMessage(role = "user", content = "What are the benefits of using vector databases?")
                     ),
                     model = "gpt-6-luna",
-                    max_tokens = 1024
+                    max_tokens = 4096
                 )
             ),
             tags = listOf("ai", "chat")

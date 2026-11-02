@@ -38,7 +38,7 @@ async def run_example(client, collection, chat_ids):
         collections=[(collection, [])],
         llm_provider="openai",
         llm_model="gpt-6-luna",
-        max_tokens=1024,
+        max_tokens=4096,
         system_prompt="You are a helpful product assistant.",
     )
     chat_id = session["chat_id"]
@@ -132,7 +132,7 @@ async def run_example(client, collection, chat_ids):
         collections=[(collection, [])],
         llm_provider="openai",
         llm_model="gpt-6-luna",
-        max_tokens=1024,
+        max_tokens=4096,
     )
     chat_id2 = session2["chat_id"]
     chat_ids.append(chat_id2)

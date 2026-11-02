@@ -48,7 +48,7 @@ async def main(resources):
         collections=[(collection, [])],
         llm_provider="openai",
         llm_model="gpt-6-luna",
-        max_tokens=1024,
+        max_tokens=4096,
         system_prompt="You are a helpful assistant for product information.",
     )
     chat_id = session["chat_id"]
@@ -96,7 +96,7 @@ async def main(resources):
         collections=[("products", [])],
         llm_provider="openai",
         llm_model="gpt-6-luna",
-        max_tokens=1024,
+        max_tokens=4096,
     )
     branch_id = branched["chat_id"]
     resources["chat_ids"].append(branch_id)
