@@ -57,13 +57,14 @@ the current ekoDB request types do not expose that setting. Agent CRUD examples
 only store a model choice; they do not verify agent execution.
 
 Chat-session and stored Chat-stage requests set `max_tokens` to **1,024**; the
-SSE and WebSocket chat-stream examples set **4,096**, because the server refuses
-a response that stops at the budget and reasoning counts against it. Raw
-completion examples preserve their smaller existing limits: **256**, **512** and
-**64** tokens. Custom sampling temperatures are omitted for reasoning-model
-compatibility. AI-function embedding stages explicitly select
-`text-embedding-3-small` instead of inheriting a potentially expensive server
-default. Raw completions explicitly select the OpenAI provider and Luna model.
+SSE and WebSocket chat-stream examples and the RAG conversation example set
+**4,096**, because the server refuses a response that stops at the budget and
+reasoning counts against it. Raw completion examples preserve their smaller
+existing limits: **256**, **512** and **64** tokens. Custom sampling
+temperatures are omitted for reasoning-model compatibility. AI-function
+embedding stages explicitly select `text-embedding-3-small` instead of
+inheriting a potentially expensive server default. Raw completions explicitly
+select the OpenAI provider and Luna model.
 
 These are request-side completion limits, **not a total spend cap**. Input and
 reasoning tokens, embeddings, repeated requests and tool loops can all
