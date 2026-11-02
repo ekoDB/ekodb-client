@@ -23,6 +23,10 @@ and this project adheres to
 
 ### Fixed
 
+- Examples: the README explains how to register the example API key with
+  `POST /api/auth/register` (admin key in `api_key`, optional `key` of at least
+  32 characters and 8 distinct characters, `400` and `409` outcomes), matching
+  the authentication guide.
 - Examples: every chat, chat-stream, RAG and AI-function example requests a
   4,096-token output budget instead of 1,024. The server refuses a response that
   stops at the budget, and a reasoning model's reasoning counts against it, so
