@@ -331,10 +331,11 @@ deploy-client-rust:
 # Python deployment with multi-platform builds (Linux + macOS + source)
 deploy-client-py: venv
 	@echo "🐍 $(CYAN)Publishing Python client to PyPI (multi-platform)...$(RESET)"
-	@if ! $(VENV_PY) -m pip show twine maturin > /dev/null 2>&1; then \
-		echo "📦 $(YELLOW)Installing twine and maturin into .venv...$(RESET)"; \
-		$(VENV_PY) -m pip install twine maturin; \
-	fi
+	@echo "📦 $(YELLOW)Ensuring twine and maturin are in .venv...$(RESET)"
+	@$(VENV_PY) -m pip install --quiet twine maturin || { \
+		echo "$(RED)Failed to install twine and maturin into .venv$(RESET)"; \
+		exit 1; \
+	}
 	@if [ -f .env ]; then \
 		export $$(grep -v '^#' .env | xargs) && \
 		if [ -z "$$MATURIN_PYPI_TOKEN" ]; then \
