@@ -18,7 +18,8 @@ fun main() = runBlocking {
         val label = "sdk-kotlin-admin-example-${UUID.randomUUID()}"
         println("Disposable cleanup label: $label")
         try {
-            val key = admin.createApiKey(CreateApiKeyRequest(label = label, collectionPermissions = mapOf("sdk_admin_probe" to listOf(ApiKeyAction.Read))))
+            val registered = "$label-registered"
+            val key = admin.createApiKey(CreateApiKeyRequest(label = label, collectionPermissions = mapOf("sdk_admin_probe" to listOf(ApiKeyAction.Read)), functionPermissions = mapOf(registered to listOf(FunctionAction.Call))))
             check(key.key != owner && !key.isAdmin) { "Unexpected disposable key" }
             EkoDBAdminClient(base, key.key).use { check(!it.getPermissions().isAdmin) { "Unexpected admin grant" } }
             val modern = admin.usesKeyPermissionRoutes()
@@ -30,6 +31,13 @@ fun main() = runBlocking {
                 check(change.after?.read == true && change.after?.write == false) { "KV grant creation failed" }
                 admin.patchApiKeyKvPermissions(PatchApiKeyKvPermissionsRequest(id, prefix, write = true))
                 check(admin.deleteApiKeyKvPermissions(id, prefix).after == null) { "KV grant removal failed" }
+                // Stored-function call grants (needs a server that supports them).
+                check(admin.listApiKeyFunctionPermissions(id).any { it.pattern == registered }) { "Registered function grant missing" }
+                val functionPattern = "$label-*"
+                val granted = admin.putApiKeyFunctionPermissions(id, functionPattern)
+                check(granted.before == null && granted.after?.pattern == functionPattern) { "Function grant creation failed" }
+                check(admin.getApiKeyFunctionPermissions(id, functionPattern).pattern == functionPattern) { "Function grant readback failed" }
+                check(admin.deleteApiKeyFunctionPermissions(id, functionPattern).after == null) { "Function grant removal failed" }
             }
             suspend fun edit(request: LegacyUpdateApiKeyCollectionPermissionsRequest, replace: Boolean = false) {
                 if (modern) {

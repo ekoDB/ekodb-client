@@ -59,6 +59,16 @@ pub enum ApiKeyAction {
     Write,
 }
 
+/// The one right a function grant carries.
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum FunctionAction {
+    Call,
+}
+
+/// The longest function grant pattern the server accepts, in bytes.
+pub const MAX_FUNCTION_PATTERN_BYTES: usize = 256;
+
 #[derive(Clone, Default, Debug, Serialize, Deserialize)]
 pub struct CreateApiKeyRequest {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -69,6 +79,12 @@ pub struct CreateApiKeyRequest {
     pub is_admin: bool,
     #[serde(default)]
     pub collection_permissions: HashMap<String, Vec<ApiKeyAction>>,
+    /// Stored-function call grants: a function label, a label prefix ending in
+    /// one `*`, or `*` for every function, each with `[FunctionAction::Call]`.
+    /// A pattern given an empty list grants nothing. Omitted from the request
+    /// when empty, so servers that predate function grants see the same body.
+    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
+    pub function_permissions: HashMap<String, Vec<FunctionAction>>,
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct LegacyUpdateApiKeyCollectionPermissionsRequest {
@@ -156,6 +172,15 @@ pub struct KvPermissions {
     #[serde(flatten)]
     pub metadata: HashMap<String, Value>,
 }
+/// A server-returned stored-function call grant. `pattern` is a function
+/// label, a label prefix ending in one `*`, or `*`; holding the grant is the
+/// right to call.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct FunctionPermissions {
+    pub pattern: String,
+    #[serde(flatten)]
+    pub metadata: HashMap<String, Value>,
+}
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(bound(deserialize = "T: Deserialize<'de>"))]
 pub struct PermissionChange<T> {
@@ -168,6 +193,7 @@ pub struct PermissionChange<T> {
 }
 pub type CollectionPermissionChange = PermissionChange<CollectionPermissions>;
 pub type KvPermissionChange = PermissionChange<KvPermissions>;
+pub type FunctionPermissionChange = PermissionChange<FunctionPermissions>;
 #[derive(Clone, Debug, Serialize, PartialEq)]
 pub struct CollectionPermissions {
     pub read: bool,
@@ -222,6 +248,10 @@ pub struct ApiKeyPermissions {
     pub collection_permissions: HashMap<String, CollectionPermissions>,
     #[serde(default)]
     pub kv_permissions: Vec<KvPermissions>,
+    /// Empty when the key holds no function grant, and when the server
+    /// predates function grants.
+    #[serde(default)]
+    pub function_permissions: Vec<FunctionPermissions>,
     #[serde(flatten)]
     pub metadata: HashMap<String, Value>,
 }
@@ -235,6 +265,12 @@ pub struct ApiKey {
     pub collection_permissions: HashMap<String, CollectionPermissions>,
     #[serde(default)]
     pub kv_permissions: Option<Vec<KvPermissions>>,
+    /// `None` when the response carries none. Registration echoes the request
+    /// map (`pattern -> ["call"]`) and key listings return grants; both read
+    /// as grants sorted by pattern, and a pattern registered with no rights
+    /// grants nothing.
+    #[serde(default, deserialize_with = "function_grants")]
+    pub function_permissions: Option<Vec<FunctionPermissions>>,
     pub label: Option<String>,
     pub description: Option<String>,
     pub ripple_warning: Option<String>,
@@ -336,6 +372,10 @@ impl AdminClient {
         Err(safe_error())
     }
     pub async fn create_api_key(&self, request: &CreateApiKeyRequest) -> Result<ApiKey> {
+        request
+            .function_permissions
+            .keys()
+            .try_for_each(|pattern| validate_function_pattern(pattern))?;
         let mut body = serde_json::to_value(request).map_err(|_| safe_error())?;
         body["api_key"] = json!(self.api_key);
         parse_key(
@@ -464,6 +504,55 @@ impl AdminClient {
     ) -> Result<KvPermissions> {
         let path = self.permission_path(key_id, "kv", Some(prefix)).await?;
         decode(self.send(Method::GET, &path, None).await?)
+    }
+    pub async fn list_api_key_function_permissions(
+        &self,
+        key_id: &str,
+    ) -> Result<Vec<FunctionPermissions>> {
+        let path = self.permission_path(key_id, "functions", None).await?;
+        parse_function_list(self.send(Method::GET, &path, None).await?)
+    }
+    pub async fn get_api_key_function_permissions(
+        &self,
+        key_id: &str,
+        pattern: &str,
+    ) -> Result<FunctionPermissions> {
+        validate_function_pattern(pattern)?;
+        let path = self
+            .permission_path(key_id, "functions", Some(pattern))
+            .await?;
+        decode(self.send(Method::GET, &path, None).await?)
+    }
+    async fn function_change(
+        &self,
+        method: Method,
+        key_id: &str,
+        pattern: &str,
+        body: Option<Value>,
+    ) -> Result<FunctionPermissionChange> {
+        validate_function_pattern(pattern)?;
+        let path = self
+            .permission_path(key_id, "functions", Some(pattern))
+            .await?;
+        decode(self.send_response(method, &path, body, true).await?)
+    }
+    /// Gives the key the right to call the functions `pattern` covers.
+    pub async fn put_api_key_function_permissions(
+        &self,
+        key_id: &str,
+        pattern: &str,
+    ) -> Result<FunctionPermissionChange> {
+        self.function_change(Method::PUT, key_id, pattern, Some(json!({"call": true})))
+            .await
+    }
+    /// Removes the key's grant on exactly `pattern`.
+    pub async fn delete_api_key_function_permissions(
+        &self,
+        key_id: &str,
+        pattern: &str,
+    ) -> Result<FunctionPermissionChange> {
+        self.function_change(Method::DELETE, key_id, pattern, None)
+            .await
     }
     async fn collection_change<T: Serialize>(
         &self,
@@ -764,19 +853,87 @@ fn parse_permissions(mut value: Value, modern: bool) -> Result<ApiKeyPermissions
         let admin = record.remove("admin").ok_or_else(invalid_response)?;
         let collections = record.remove("collections").ok_or_else(invalid_response)?;
         let kv = record.remove("kv").ok_or_else(invalid_response)?;
+        let functions = record.remove("functions");
         record.insert("is_admin".into(), admin);
         record.insert("collection_permissions".into(), collections);
         record.insert("kv_permissions".into(), kv);
+        if let Some(functions) = functions {
+            record.insert("function_permissions".into(), functions);
+        }
     }
     let result: ApiKeyPermissions = decode(value)?;
     if result
         .kv_permissions
         .iter()
         .any(|grant| grant.prefix.as_deref().is_none_or(str::is_empty))
+        || result
+            .function_permissions
+            .iter()
+            .any(|grant| grant.pattern.is_empty())
     {
         return Err(invalid_response());
     }
     Ok(result)
+}
+fn parse_function_list(value: Value) -> Result<Vec<FunctionPermissions>> {
+    let grants: Vec<FunctionPermissions> = decode(value)?;
+    if grants.iter().any(|grant| grant.pattern.is_empty()) {
+        return Err(invalid_response());
+    }
+    Ok(grants)
+}
+/// The pattern rules the server enforces, checked before any request: a label,
+/// a label prefix ending in one `*`, or `*`; non-empty, at most
+/// [`MAX_FUNCTION_PATTERN_BYTES`] bytes, no control or invisible formatting
+/// character, and `*` nowhere but last.
+fn validate_function_pattern(pattern: &str) -> Result<()> {
+    let literal = pattern.strip_suffix('*').unwrap_or(pattern);
+    if pattern.len() > MAX_FUNCTION_PATTERN_BYTES
+        || literal.contains('*')
+        || validate_facet(pattern).is_err()
+    {
+        return Err(Error::Validation("Invalid function pattern".into()));
+    }
+    Ok(())
+}
+/// Reads the three shapes a key's `function_permissions` arrives in: absent or
+/// null, a list of grants, or the registration map `pattern -> ["call"]`.
+fn function_grants<'de, D: serde::Deserializer<'de>>(
+    deserializer: D,
+) -> std::result::Result<Option<Vec<FunctionPermissions>>, D::Error> {
+    use serde::de::Error as _;
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    enum Wire {
+        Grants(Vec<FunctionPermissions>),
+        Registered(HashMap<String, Vec<FunctionAction>>),
+    }
+    Ok(match Option::<Wire>::deserialize(deserializer)? {
+        None => None,
+        Some(Wire::Grants(grants)) => {
+            if grants.iter().any(|grant| grant.pattern.is_empty()) {
+                return Err(D::Error::custom("empty function pattern"));
+            }
+            Some(grants)
+        }
+        Some(Wire::Registered(map)) => {
+            let mut patterns: Vec<String> = map
+                .into_iter()
+                .filter(|(_, rights)| !rights.is_empty())
+                .map(|(pattern, _)| pattern)
+                .collect();
+            patterns.sort();
+            Some(
+                patterns
+                    .into_iter()
+                    .map(|pattern| FunctionPermissions {
+                        pattern,
+                        metadata: HashMap::new(),
+                    })
+                    .collect(),
+            )
+        }
+    })
 }
 fn parse_kv_list(value: Value) -> Result<Vec<KvPermissions>> {
     let grants: Vec<KvPermissions> = decode(value)?;

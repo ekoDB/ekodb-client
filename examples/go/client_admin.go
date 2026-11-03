@@ -81,7 +81,8 @@ func runAdmin() (result error) {
 			result = fmt.Errorf("disposable cleanup failed for label %s", label)
 		}
 	}()
-	key, err := admin.CreateAPIKey(ekodb.CreateAPIKeyRequest{Label: label, CollectionPermissions: map[string][]ekodb.APIKeyAction{"sdk_admin_probe": {ekodb.APIKeyRead}}})
+	registered := label + "-registered"
+	key, err := admin.CreateAPIKey(ekodb.CreateAPIKeyRequest{Label: label, CollectionPermissions: map[string][]ekodb.APIKeyAction{"sdk_admin_probe": {ekodb.APIKeyRead}}, FunctionPermissions: map[string][]ekodb.FunctionAction{registered: {ekodb.FunctionCall}}})
 	if err != nil {
 		return err
 	}
@@ -138,6 +139,40 @@ func runAdmin() (result error) {
 		}
 		if change.After != nil {
 			return fmt.Errorf("KV grant removal failed")
+		}
+		// Stored-function call grants (needs a server that supports them).
+		held, err := admin.ListAPIKeyFunctionPermissions(key.ID)
+		if err != nil {
+			return err
+		}
+		registeredHeld := false
+		for _, grant := range held {
+			registeredHeld = registeredHeld || grant.Pattern == registered
+		}
+		if !registeredHeld {
+			return fmt.Errorf("registered function grant missing")
+		}
+		functionPattern := label + "-*"
+		granted, err := admin.PutAPIKeyFunctionPermissions(key.ID, functionPattern)
+		if err != nil {
+			return err
+		}
+		if granted.Before != nil || granted.After == nil || granted.After.Pattern != functionPattern {
+			return fmt.Errorf("function grant creation failed")
+		}
+		readback, err := admin.GetAPIKeyFunctionPermissions(key.ID, functionPattern)
+		if err != nil {
+			return err
+		}
+		if readback.Pattern != functionPattern {
+			return fmt.Errorf("function grant readback failed")
+		}
+		removed, err := admin.DeleteAPIKeyFunctionPermissions(key.ID, functionPattern)
+		if err != nil {
+			return err
+		}
+		if removed.After != nil {
+			return fmt.Errorf("function grant removal failed")
 		}
 	}
 	edit := func(request ekodb.LegacyUpdateAPIKeyCollectionPermissionsRequest, replace bool) error {

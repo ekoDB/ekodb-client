@@ -141,6 +141,8 @@ async fn run_examples(
         http_path: None,
         created_at: None,
         updated_at: None,
+        created_by: None,
+        run_as: None,
     };
 
     *script_id = Some(save_or_update(client, swr_script).await?);

@@ -1,6 +1,6 @@
 //! Read-only by default; EKODB_ADMIN_LIVE=1 creates and revokes one disposable key.
 use ekodb_client::admin::{
-    AdminClient, ApiKey, ApiKeyAction, CreateApiKeyRequest,
+    AdminClient, ApiKey, ApiKeyAction, CreateApiKeyRequest, FunctionAction,
     LegacyUpdateApiKeyCollectionPermissionsRequest, PatchApiKeyKvPermissionsRequest,
     PermissionEdit, UpdateApiKeyCollectionPermissionsRequest, UpdateApiKeyKvPermissionsRequest,
 };
@@ -28,6 +28,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 collection_permissions: HashMap::from([(
                     "sdk_admin_probe".into(),
                     vec![ApiKeyAction::Read],
+                )]),
+                function_permissions: HashMap::from([(
+                    format!("{label}-registered"),
+                    vec![FunctionAction::Call],
                 )]),
                 ..Default::default()
             })
@@ -75,6 +79,37 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 .is_some()
             {
                 return Err("KV grant removal failed".into());
+            }
+            // Stored-function call grants (needs a server that supports them).
+            let registered = format!("{label}-registered");
+            let function_pattern = format!("{label}-*");
+            let held = admin.list_api_key_function_permissions(id).await?;
+            if !held.iter().any(|grant| grant.pattern == registered) {
+                return Err("Registered function grant missing".into());
+            }
+            let granted = admin
+                .put_api_key_function_permissions(id, &function_pattern)
+                .await?;
+            if granted.before.is_some()
+                || granted.after.map(|grant| grant.pattern) != Some(function_pattern.clone())
+            {
+                return Err("Function grant creation failed".into());
+            }
+            if admin
+                .get_api_key_function_permissions(id, &function_pattern)
+                .await?
+                .pattern
+                != function_pattern
+            {
+                return Err("Function grant readback failed".into());
+            }
+            if admin
+                .delete_api_key_function_permissions(id, &function_pattern)
+                .await?
+                .after
+                .is_some()
+            {
+                return Err("Function grant removal failed".into());
             }
         }
         let request = LegacyUpdateApiKeyCollectionPermissionsRequest {
