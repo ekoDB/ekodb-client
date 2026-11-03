@@ -8,6 +8,23 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- Rust, Python, TypeScript, Kotlin: stored-function call grants. A key registers
+  with `function_permissions` (`pattern -> ["call"]`, where a pattern is a
+  function label, a label prefix ending in one `*`, or `*`); key records and the
+  aggregate permission read return the grants; and list/get/put/delete methods
+  address one pattern by key id. Patterns are validated before HTTP (non-empty,
+  at most 256 bytes, no control or invisible character, `*` only last) and a
+  server that predates the grants reads as none.
+- Rust, Python, TypeScript, Kotlin: stored-function definitions carry `run_as`
+  (`caller` or `author`) and the read-only, server-recorded `created_by`. The
+  Rust `UserFunction` and the Kotlin typed function reject unknown fields, so a
+  function read from a server that records authors no longer fails to decode.
+- Shared `admin-function-permissions-contract.json` fixture and a common
+  contract section in `ekodb-client-ts/ADMIN.md`; the `client_admin` examples
+  exercise function grants in every language.
+
 ### Fixed
 
 - Tooling: `make deploy-client-py` installs and runs `twine` and `maturin` from
