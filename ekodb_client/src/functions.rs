@@ -316,6 +316,45 @@ pub struct UserFunction {
     /// map. Requires ekoDB >= 0.42.0.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub http_path: Option<String>,
+
+    /// The key (and the subject its token named) that saved the function.
+    /// Server-managed and read-only: the server sets it when the function is
+    /// created and keeps it across updates, and replaces any value sent in a
+    /// request. `None` for a function saved before the server recorded
+    /// authors, which reads as unrecorded.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub created_by: Option<Principal>,
+
+    /// Whose grants every step of the function runs with: [`RunAs::Caller`]
+    /// (the calling key's grants) or [`RunAs::Author`] (the recorded author's).
+    /// Leave unset to let the server apply its default; a server reports
+    /// `None` for a function saved before the field existed.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub run_as: Option<RunAs>,
+}
+
+/// Whose grants the steps of a stored function run with.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum RunAs {
+    /// The key that calls the function.
+    Caller,
+    /// The key recorded as the function's author ([`UserFunction::created_by`]).
+    Author,
+}
+
+/// The key, and the subject its token named, that created a function or a
+/// schedule. Read-only: the server records it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Principal {
+    /// The key's non-secret id, never the key itself.
+    pub key_id: String,
+    /// The key's label, when it was registered with one.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub key_label: Option<String>,
+    /// The subject the token was minted for, when it named one.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub subject: Option<String>,
 }
 
 impl UserFunction {
@@ -335,7 +374,15 @@ impl UserFunction {
             updated_at: None,
             http_method: None,
             http_path: None,
+            created_by: None,
+            run_as: None,
         }
+    }
+
+    /// Choose whose grants the function's steps run with.
+    pub fn with_run_as(mut self, run_as: RunAs) -> Self {
+        self.run_as = Some(run_as);
+        self
     }
 
     /// Execute supported write stages atomically with the supplied settings.

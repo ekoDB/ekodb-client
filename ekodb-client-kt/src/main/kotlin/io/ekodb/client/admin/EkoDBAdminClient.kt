@@ -15,6 +15,9 @@ import kotlinx.serialization.json.*
 
 const val MIN_SERVER_VERSION_FOR_PERMISSION_EDITS = "0.80.0"
 const val MIN_LEGACY_SERVER_VERSION_FOR_PERMISSION_EDITS = "0.79.2"
+
+/** The longest function grant pattern the server accepts, in bytes. */
+const val MAX_FUNCTION_PATTERN_BYTES = 256
 private const val REQUIREMENT = "Permission updates need ekoDB 0.79.2 or later because earlier servers remove a grant's field restrictions when it is updated"
 
 sealed interface PermissionEdit {
@@ -23,11 +26,20 @@ sealed interface PermissionEdit {
     data class Set(val fields: List<String>) : PermissionEdit
 }
 enum class ApiKeyAction { Read, Write }
+
+/** The one right a function grant carries. */
+enum class FunctionAction { Call }
 data class CreateApiKeyRequest(
     val label: String? = null,
     val description: String? = null,
     val isAdmin: Boolean = false,
     val collectionPermissions: Map<String, List<ApiKeyAction>> = emptyMap(),
+    /**
+     * Stored-function call grants: a function label, a label prefix ending in
+     * one `*`, or `*`, each with `[FunctionAction.Call]`. A pattern given an
+     * empty list grants nothing. Omitted from the request when empty.
+     */
+    val functionPermissions: Map<String, List<FunctionAction>> = emptyMap(),
 )
 data class LegacyUpdateApiKeyCollectionPermissionsRequest(
     val apiKey: String,
@@ -59,9 +71,16 @@ data class PatchApiKeyCollectionPermissionsRequest(
 data class UpdateApiKeyKvPermissionsRequest(val keyId: String, val prefix: String, val read: Boolean, val write: Boolean)
 data class PatchApiKeyKvPermissionsRequest(val keyId: String, val prefix: String, val read: Boolean? = null, val write: Boolean? = null)
 data class KvPermissions(val read: Boolean, val write: Boolean, val prefix: String? = null, val metadata: JsonObject = JsonObject(emptyMap()))
+
+/**
+ * A server-returned stored-function call grant. [pattern] is a function label, a label
+ * prefix ending in one `*`, or `*`; holding the grant is the right to call.
+ */
+data class FunctionPermissions(val pattern: String, val metadata: JsonObject = JsonObject(emptyMap()))
 data class PermissionChange<T>(val before: T?, val after: T?, val metadata: JsonObject = JsonObject(emptyMap()))
 typealias CollectionPermissionChange = PermissionChange<CollectionPermissions>
 typealias KvPermissionChange = PermissionChange<KvPermissions>
+typealias FunctionPermissionChange = PermissionChange<FunctionPermissions>
 data class CollectionPermissions(
     val read: Boolean,
     val write: Boolean,
@@ -75,6 +94,8 @@ class ApiKeyPermissions internal constructor(
     val collectionPermissions: Map<String, CollectionPermissions>,
     val metadata: JsonObject,
     val kvPermissions: List<KvPermissions> = emptyList(),
+    /** Empty when the key holds no function grant, and when the server predates function grants. */
+    val functionPermissions: List<FunctionPermissions> = emptyList(),
 )
 
 /** Contains a secret: never log the key or the returned record. */
@@ -88,6 +109,12 @@ class ApiKey internal constructor(
     val metadata: JsonObject,
     val id: String? = null,
     val kvPermissions: List<KvPermissions>? = null,
+    /**
+     * Null when the response carries none. Registration echoes the request map and key
+     * listings return grants; both read as grants sorted by pattern, and a pattern registered
+     * with no rights grants nothing.
+     */
+    val functionPermissions: List<FunctionPermissions>? = null,
 )
 
 class EkoDBAdminClient(
@@ -113,6 +140,7 @@ class EkoDBAdminClient(
     private var version: String? = null
 
     suspend fun createApiKey(request: CreateApiKeyRequest = CreateApiKeyRequest()): ApiKey {
+        request.functionPermissions.keys.forEach(::validateFunctionPattern)
         val body = buildJsonObject {
             put("api_key", apiKey)
             request.label?.let { put("label", it) }
@@ -123,6 +151,13 @@ class EkoDBAdminClient(
                     put(name, JsonArray(actions.map { JsonPrimitive(it.name.lowercase()) }))
                 }
             })
+            if (request.functionPermissions.isNotEmpty()) {
+                put("function_permissions", buildJsonObject {
+                    request.functionPermissions.forEach { (pattern, rights) ->
+                        put(pattern, JsonArray(rights.map { JsonPrimitive(it.name.lowercase()) }))
+                    }
+                })
+            }
         }
         return parseKey(transport.adminRequest(HttpMethod.Post, "/api/auth/register", body))
     }
@@ -173,6 +208,25 @@ class EkoDBAdminClient(
     }
     suspend fun getApiKeyKvPermissions(keyId: String, prefix: String): KvPermissions =
         parseKv(transport.adminRequest(HttpMethod.Get, permissionPath(keyId, "kv", prefix)))
+    suspend fun listApiKeyFunctionPermissions(keyId: String): List<FunctionPermissions> =
+        parseFunctionList(transport.adminRequest(HttpMethod.Get, permissionPath(keyId, "functions")))
+    suspend fun getApiKeyFunctionPermissions(keyId: String, pattern: String): FunctionPermissions {
+        validateFunctionPattern(pattern)
+        return parseFunction(transport.adminRequest(HttpMethod.Get, permissionPath(keyId, "functions", pattern)))
+    }
+    private suspend fun functionChange(method: HttpMethod, keyId: String, pattern: String, body: JsonObject?): FunctionPermissionChange {
+        validateFunctionPattern(pattern)
+        val result = transport.adminRequest(method, permissionPath(keyId, "functions", pattern), body, readDeleteBody = true)
+        return parseChange(result, ::parseFunction)
+    }
+
+    /** Gives the key the right to call the functions [pattern] covers. */
+    suspend fun putApiKeyFunctionPermissions(keyId: String, pattern: String): FunctionPermissionChange =
+        functionChange(HttpMethod.Put, keyId, pattern, buildJsonObject { put("call", true) })
+
+    /** Removes the key's grant on exactly [pattern]. */
+    suspend fun deleteApiKeyFunctionPermissions(keyId: String, pattern: String): FunctionPermissionChange =
+        functionChange(HttpMethod.Delete, keyId, pattern, null)
     private suspend fun collectionChange(method: HttpMethod, keyId: String, collection: String, body: JsonObject?): CollectionPermissionChange {
         val result = transport.adminRequest(method, permissionPath(keyId, "collections", collection), body, readDeleteBody = true)
         return parseChange(result, ::parseGrant)
@@ -267,7 +321,7 @@ private fun parseKey(value: JsonElement): ApiKey {
     val key = text(record["key"])?.takeIf { it.isNotEmpty() } ?: invalid()
     val id = text(record["id"])
     if (id != null && !Regex("[0-9a-f]{32}").matches(id)) invalid()
-    return ApiKey(key, boolean(record["is_admin"]), grants(record["collection_permissions"]), text(record["label"]), text(record["description"]), text(record["ripple_warning"]), JsonObject(record.filterKeys { it != "key" }), id, record["kv_permissions"]?.takeUnless { it == JsonNull }?.let(::parseKvList))
+    return ApiKey(key, boolean(record["is_admin"]), grants(record["collection_permissions"]), text(record["label"]), text(record["description"]), text(record["ripple_warning"]), JsonObject(record.filterKeys { it != "key" }), id, record["kv_permissions"]?.takeUnless { it == JsonNull }?.let(::parseKvList), record["function_permissions"]?.takeUnless { it == JsonNull }?.let(::parseFunctionGrants))
 }
 
 private fun validateKeyId(keyId: String) {
@@ -303,13 +357,42 @@ private fun parseKv(value: JsonElement): KvPermissions {
     val record = value as? JsonObject ?: invalid()
     return KvPermissions(boolean(record["read"]), boolean(record["write"]), text(record["prefix"]), record)
 }
+private fun parseFunction(value: JsonElement): FunctionPermissions {
+    val record = value as? JsonObject ?: invalid()
+    return FunctionPermissions(text(record["pattern"])?.takeIf { it.isNotEmpty() } ?: invalid(), record)
+}
+private fun parseFunctionList(value: JsonElement): List<FunctionPermissions> = (value as? JsonArray ?: invalid()).map(::parseFunction)
+
+/** Reads the grants list, or the registration map `pattern -> ["call"]` (sorted, empty rights grant nothing). */
+private fun parseFunctionGrants(value: JsonElement): List<FunctionPermissions> = when (value) {
+    is JsonArray -> parseFunctionList(value)
+    is JsonObject -> value.entries.filter { (_, rights) ->
+        val list = rights as? JsonArray ?: invalid()
+        if (list.any { text(it) != "call" }) invalid()
+        list.isNotEmpty()
+    }.map { it.key }.sorted().map { FunctionPermissions(it) }
+    else -> invalid()
+}
+
+/**
+ * The pattern rules the server enforces, checked before any request: a label, a label prefix
+ * ending in one `*`, or `*`; non-empty, at most [MAX_FUNCTION_PATTERN_BYTES] bytes, no control
+ * or invisible formatting character, and `*` nowhere but last.
+ */
+private fun validateFunctionPattern(pattern: String) {
+    val wellFormed = runCatching { validateFacet(pattern) }.isSuccess
+    require(wellFormed && '*' !in pattern.removeSuffix("*") && pattern.toByteArray(Charsets.UTF_8).size <= MAX_FUNCTION_PATTERN_BYTES) {
+        "Invalid function pattern"
+    }
+}
 private fun parseKvList(value: JsonElement): List<KvPermissions> = (value as? JsonArray ?: invalid()).map {
     parseKv(it).also { grant -> if (grant.prefix.isNullOrEmpty()) invalid() }
 }
 private fun parsePermissions(value: JsonElement, modern: Boolean): ApiKeyPermissions {
     val record = value as? JsonObject ?: invalid()
     return ApiKeyPermissions(boolean(record[if (modern) "admin" else "is_admin"]), grants(record[if (modern) "collections" else "collection_permissions"]), record,
-        record[if (modern) "kv" else "kv_permissions"]?.takeUnless { !modern && it == JsonNull }?.let(::parseKvList) ?: if (modern) invalid() else emptyList())
+        record[if (modern) "kv" else "kv_permissions"]?.takeUnless { !modern && it == JsonNull }?.let(::parseKvList) ?: if (modern) invalid() else emptyList(),
+        record[if (modern) "functions" else "function_permissions"]?.takeUnless { it == JsonNull }?.let(::parseFunctionGrants) ?: emptyList())
 }
 private fun <T> parseChange(value: JsonElement, parse: (JsonElement) -> T): PermissionChange<T> {
     val record = value as? JsonObject ?: invalid()

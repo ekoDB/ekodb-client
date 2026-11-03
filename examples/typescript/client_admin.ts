@@ -19,6 +19,7 @@ async function main() {
     const created = await admin.createApiKey({
       label,
       collection_permissions: { sdk_admin_probe: ["read"] },
+      function_permissions: { [`${label}-registered`]: ["call"] },
     });
     if (created.key === owner || created.is_admin)
       throw new Error("Unexpected disposable key");
@@ -53,6 +54,31 @@ async function main() {
         null
       )
         throw new Error("KV grant removal failed");
+      // Stored-function call grants (needs a server that supports them).
+      const held = await admin.listApiKeyFunctionPermissions(created.id);
+      if (!held.some((grant) => grant.pattern === `${label}-registered`))
+        throw new Error("Registered function grant missing");
+      const functionPattern = `${label}-*`;
+      const granted = await admin.putApiKeyFunctionPermissions(
+        created.id,
+        functionPattern,
+      );
+      if (granted.before !== null || granted.after?.pattern !== functionPattern)
+        throw new Error("Function grant creation failed");
+      if (
+        (await admin.getApiKeyFunctionPermissions(created.id, functionPattern))
+          .pattern !== functionPattern
+      )
+        throw new Error("Function grant readback failed");
+      if (
+        (
+          await admin.deleteApiKeyFunctionPermissions(
+            created.id,
+            functionPattern,
+          )
+        ).after !== null
+      )
+        throw new Error("Function grant removal failed");
     }
     const edit = async (
       body: {

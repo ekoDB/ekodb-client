@@ -790,6 +790,12 @@ retain the old secret-targeted shape only for detected legacy servers >=0.79.2.
 Registration and listing expose optional ids for compatibility with older
 replies. Prefer ids for revocation. Never log key records.
 
+Stored-function call grants (`function_permissions` at registration and
+`list_`/`get_`/`put_`/`delete_api_key_function_permissions`) and the function
+`run_as` / `created_by` fields are described in the shared contract's
+[stored-function call grants](../ekodb-client-ts/ADMIN.md#stored-function-call-grants)
+section.
+
 ```python
 from ekodb_client.admin import AdminClient
 admin = AdminClient(base_url, api_key)

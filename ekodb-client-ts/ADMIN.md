@@ -106,6 +106,53 @@ KV PATCH that removes both rights removes the grant.
 A changed grant applies to the key's next token. Already minted tokens retain
 their previous grants until expiry; create a fresh scoped client for readback.
 
+## Stored-function call grants
+
+A non-admin key can be allowed to call stored functions. A grant is a `pattern`
+with one right, `call`: an exact function label, a label prefix ending in one
+`*` (`report_*`), or `*` for every function. `*` is valid only as the last
+character; a pattern is non-empty, at most 256 bytes, and holds no control or
+invisible formatting character. Every client checks these rules before sending a
+request. A key holds no empty grant: `PUT` gives one and `DELETE` removes it.
+
+Registration takes `function_permissions` as `pattern -> ["call"]`, beside
+`collection_permissions`; a pattern given `[]` grants nothing, and the field is
+omitted from the request when empty. A registration response echoes that map;
+key listings and the aggregate permission read return a list of `{pattern}`
+grants. All of these read as grants sorted by pattern. The record field is
+absent/null/nil when the response carries none, and the aggregate read returns
+an empty list for a server that predates function grants.
+
+Per-key routes (key-addressed servers only): `GET .../permissions/functions`,
+`GET .../permissions/functions/{pattern}`,
+`PUT .../permissions/functions/{pattern}` with body `{"call": true}`, and
+`DELETE .../permissions/functions/{pattern}`. The pattern is one percent-encoded
+path segment (`*` is `%2A`). Changes return `{before, after}` grants (`null` for
+none) and any additional metadata such as `ripple_warning`. A `DELETE` of a
+grant the key does not hold is a 404; a non-admin caller is refused with 403. A
+removed grant stays usable through a token already issued until it expires.
+
+| Operation                    | Rust                                       | Python                                     | TypeScript                               | Kotlin                                      | Go                                        |
+| ---------------------------- | ------------------------------------------ | ------------------------------------------ | ---------------------------------------- | ------------------------------------------- | ----------------------------------------- |
+| Register with grants         | `CreateApiKeyRequest.function_permissions` | `create_api_key({"function_permissions"})` | `createApiKey({function_permissions})`   | `CreateApiKeyRequest(functionPermissions=)` | `CreateAPIKeyRequest.FunctionPermissions` |
+| Grants on a key record       | `ApiKey.function_permissions`              | `["function_permissions"]`                 | `ApiKey.function_permissions`            | `ApiKey.functionPermissions`                | `APIKey.FunctionPermissions`              |
+| Grants in the aggregate read | `ApiKeyPermissions.function_permissions`   | `["function_permissions"]`                 | `ApiKeyPermissions.function_permissions` | `ApiKeyPermissions.functionPermissions`     | `APIKeyPermissions.FunctionPermissions`   |
+| List grants                  | `list_api_key_function_permissions`        | `list_api_key_function_permissions`        | `listApiKeyFunctionPermissions`          | `listApiKeyFunctionPermissions`             | `ListAPIKeyFunctionPermissions`           |
+| Read one grant               | `get_api_key_function_permissions`         | `get_api_key_function_permissions`         | `getApiKeyFunctionPermissions`           | `getApiKeyFunctionPermissions`              | `GetAPIKeyFunctionPermissions`            |
+| Give a grant                 | `put_api_key_function_permissions`         | `put_api_key_function_permissions`         | `putApiKeyFunctionPermissions`           | `putApiKeyFunctionPermissions`              | `PutAPIKeyFunctionPermissions`            |
+| Remove a grant               | `delete_api_key_function_permissions`      | `delete_api_key_function_permissions`      | `deleteApiKeyFunctionPermissions`        | `deleteApiKeyFunctionPermissions`           | `DeleteAPIKeyFunctionPermissions`         |
+
+The read, give and remove methods take `(key_id, pattern)`; a key value is never
+accepted as a target. A call the server refuses for want of a grant is a 403
+that each client reports as its ordinary HTTP error for a function call.
+
+Stored-function definitions gain two fields in every client: `run_as`
+(`"caller"` or `"author"`, settable when a function is created or updated; any
+other value is rejected) and the read-only, server-recorded `created_by`
+(`{key_id, key_label?, subject?}`). A function saved before the server recorded
+these reads as unset. Schedules are untyped records in every client, so the
+server-recorded `created_by` on a schedule is returned unchanged.
+
 ## Explicit legacy compatibility
 
 ```ts

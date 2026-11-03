@@ -123,7 +123,10 @@ describe("admin wire contract", () => {
     request.mockResolvedValueOnce(response({ error: "old-secret" }, 401));
     auth();
     request.mockResolvedValueOnce(response(key));
-    await expect(admin().getPermissions()).resolves.toEqual(key);
+    await expect(admin().getPermissions()).resolves.toEqual({
+      ...key,
+      function_permissions: [],
+    });
     expect(request).toHaveBeenCalledTimes(4);
   });
 
@@ -199,7 +202,10 @@ describe("admin wire contract", () => {
     request.mockResolvedValueOnce(response(key));
     const client = admin();
     expect(await client.listApiKeys()).toEqual([key]);
-    expect(await client.getPermissions()).toEqual(key);
+    expect(await client.getPermissions()).toEqual({
+      ...key,
+      function_permissions: [],
+    });
     expect(
       request.mock.calls
         .slice(1)

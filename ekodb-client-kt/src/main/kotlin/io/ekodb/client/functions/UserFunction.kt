@@ -1,5 +1,6 @@
 package io.ekodb.client.functions
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
@@ -20,7 +21,45 @@ data class UserFunction(
     val http_path: String? = null,
     val id: String? = null,
     val created_at: String? = null,
-    val updated_at: String? = null
+    val updated_at: String? = null,
+    /**
+     * The key (and the subject its token named) that saved the function.
+     * Server-managed and read-only: the server sets it on create, keeps it
+     * across updates and replaces any value sent. Null for a function saved
+     * before the server recorded authors.
+     */
+    val created_by: Principal? = null,
+    /**
+     * Whose grants every step of the function runs with: [RunAs.Caller] (the
+     * calling key's grants) or [RunAs.Author] (the recorded author's). Leave
+     * unset to let the server apply its default; a server reports null for a
+     * function saved before the field existed.
+     */
+    val run_as: RunAs? = null
+)
+
+/** Whose grants the steps of a stored function run with. */
+@Serializable
+enum class RunAs {
+    @SerialName("caller")
+    Caller,
+
+    @SerialName("author")
+    Author
+}
+
+/**
+ * The key, and the subject its token named, that created a function or a
+ * schedule. Read-only: the server records it.
+ */
+@Serializable
+data class Principal(
+    /** The key's non-secret id, never the key itself. */
+    val key_id: String,
+    /** The key's label, when it was registered with one. */
+    val key_label: String? = null,
+    /** The subject the token was minted for, when it named one. */
+    val subject: String? = null
 )
 
 @Serializable
