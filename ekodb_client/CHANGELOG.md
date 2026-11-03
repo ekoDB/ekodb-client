@@ -8,6 +8,15 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Changed
+
+- **BREAKING (Rust) — new public fields.** `UserFunction` gained `created_by`
+  and `run_as`, `CreateApiKeyRequest` gained `function_permissions`, and
+  `ApiKey` and `ApiKeyPermissions` gained `function_permissions`. Code that
+  builds these with struct literals must add the fields (`None` or empty);
+  `UserFunction::new` and `CreateApiKeyRequest`'s `..Default::default()` already
+  cover them.
+
 ### Added
 
 - Rust, Python, TypeScript, Kotlin: stored-function call grants. A key registers
@@ -18,9 +27,14 @@ and this project adheres to
   at most 256 bytes, no control or invisible character, `*` only last) and a
   server that predates the grants reads as none.
 - Rust, Python, TypeScript, Kotlin: stored-function definitions carry `run_as`
-  (`caller` or `author`) and the read-only, server-recorded `created_by`. The
-  Rust `UserFunction` and the Kotlin typed function reject unknown fields, so a
-  function read from a server that records authors no longer fails to decode.
+  (`caller` or `author`; any other value is rejected, including when a
+  definition is read) and the read-only, server-recorded `created_by`. The Rust
+  `UserFunction` and the Kotlin typed function reject unknown fields, so they
+  could not decode a function from a server that records authors; with the new
+  fields known they now do.
+- Function grant patterns that are the bare segments `.` or `..` are rejected.
+  This is an SDK-side rule (a bare dot segment is not safely routable, and the
+  clients do not percent-encode around it); the server currently accepts them.
 - Shared `admin-function-permissions-contract.json` fixture and a common
   contract section in `ekodb-client-ts/ADMIN.md`; the `client_admin` examples
   exercise function grants in every language.
