@@ -571,7 +571,23 @@ function isNotFoundError(error: unknown): boolean {
  * Keep the legacy `param_type` field available to TypeScript callers without
  * sending it to servers that reject the retired wire field.
  */
+/** `run_as` is `caller`, `author`, or null/absent; anything else is not a function definition. */
+function checkRunAs<T extends UserFunction | UserFunction[]>(value: T): T {
+  for (const definition of Array.isArray(value) ? value : [value]) {
+    const runAs = (definition as { run_as?: unknown } | null)?.run_as;
+    if (
+      runAs !== undefined &&
+      runAs !== null &&
+      runAs !== "caller" &&
+      runAs !== "author"
+    )
+      throw new Error('run_as must be "caller" or "author"');
+  }
+  return value;
+}
+
 function functionRequestBody(userFunction: UserFunction): UserFunction {
+  checkRunAs(userFunction);
   const parameters = Object.fromEntries(
     Object.entries(userFunction.parameters).map(([name, definition]) => {
       const wireDefinition = { ...definition };
@@ -2846,9 +2862,11 @@ export class EkoDBClient {
    * Get a function by ID
    */
   async getFunction(id: string): Promise<UserFunction> {
-    return this.makeRequest<UserFunction>(
-      "GET",
-      `/api/functions/${encodeURIComponent(id)}`,
+    return checkRunAs(
+      await this.makeRequest<UserFunction>(
+        "GET",
+        `/api/functions/${encodeURIComponent(id)}`,
+      ),
     );
   }
 
@@ -2860,7 +2878,9 @@ export class EkoDBClient {
     tags?.forEach((tag) => query.append("tag", tag));
     const encodedQuery = query.toString();
     const params = encodedQuery ? `?${encodedQuery}` : "";
-    return this.makeRequest<UserFunction[]>("GET", `/api/functions${params}`);
+    return checkRunAs(
+      await this.makeRequest<UserFunction[]>("GET", `/api/functions${params}`),
+    );
   }
 
   /**
@@ -2924,12 +2944,14 @@ export class EkoDBClient {
    * @returns The user function definition
    */
   async getUserFunction(label: string): Promise<UserFunction> {
-    return this.makeRequest<UserFunction>(
-      "GET",
-      `/api/functions/${encodeURIComponent(label)}`,
-      undefined,
-      0,
-      true, // Force JSON
+    return checkRunAs(
+      await this.makeRequest<UserFunction>(
+        "GET",
+        `/api/functions/${encodeURIComponent(label)}`,
+        undefined,
+        0,
+        true, // Force JSON
+      ),
     );
   }
 
@@ -2943,12 +2965,14 @@ export class EkoDBClient {
     tags?.forEach((tag) => query.append("tag", tag));
     const encodedQuery = query.toString();
     const params = encodedQuery ? `?${encodedQuery}` : "";
-    return this.makeRequest<UserFunction[]>(
-      "GET",
-      `/api/functions${params}`,
-      undefined,
-      0,
-      true, // Force JSON
+    return checkRunAs(
+      await this.makeRequest<UserFunction[]>(
+        "GET",
+        `/api/functions${params}`,
+        undefined,
+        0,
+        true, // Force JSON
+      ),
     );
   }
 

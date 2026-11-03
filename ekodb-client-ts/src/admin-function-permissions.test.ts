@@ -312,6 +312,27 @@ describe("function definitions and refusals", () => {
     expect(unrecorded.created_by).toBeNull();
   });
 
+  it("rejects a run_as other than caller, author or null", async () => {
+    request.mockResolvedValueOnce(response({ token: "synthetic-jwt" }));
+    request.mockResolvedValueOnce(
+      response({ ...fixture.function_definition, run_as: "root" }),
+    );
+    request.mockResolvedValueOnce(
+      response([{ ...fixture.function_definition, run_as: "root" }]),
+    );
+    const sdk = plain();
+    await expect(sdk.getUserFunction("nightly_close")).rejects.toThrow(
+      'run_as must be "caller" or "author"',
+    );
+    await expect(sdk.listUserFunctions()).rejects.toThrow("run_as");
+    await expect(
+      sdk.saveUserFunction({
+        ...fixture.function_save_request,
+        run_as: "root" as "caller",
+      }),
+    ).rejects.toThrow("run_as");
+  });
+
   it("sends run_as when saving a function", async () => {
     request.mockResolvedValueOnce(response({ token: "synthetic-jwt" }));
     request.mockResolvedValueOnce(response({ id: keyId }));

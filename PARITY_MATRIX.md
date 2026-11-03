@@ -604,13 +604,15 @@ at key registration (`pattern -> ["call"]`), grants on key records and in the
 aggregate permission read, and list, read, give (`PUT {"call": true}`) and
 remove (`DELETE`) per-pattern methods addressed by key id. A pattern is an exact
 label, a label prefix ending in one `*`, or `*`; every SDK rejects an empty,
-over-256-byte, control/invisible-character or mid-string-`*` pattern before
-HTTP, and encodes the pattern as one path segment. Stored-function definitions
-carry `run_as` (`caller` or `author`, any other value rejected) and the
-read-only server-set `created_by`; schedules are untyped in every SDK, so their
-server-set `created_by` is returned unchanged. A function call refused for want
-of a grant (403) surfaces as each SDK's ordinary HTTP error. The common contract
-and per-language method names are in
+over-256-byte, control/invisible-character or mid-string-`*` pattern, and the
+bare segments `.` and `..` (an SDK-side rule: a bare dot segment is not safely
+routable and is not percent-encoded around), before HTTP, and encodes the
+pattern as one path segment. Stored-function definitions carry `run_as`
+(`caller` or `author`, any other value rejected) and the read-only server-set
+`created_by`; schedules are untyped in every SDK, so their server-set
+`created_by` is returned unchanged. A function call refused for want of a grant
+(403) surfaces as each SDK's ordinary HTTP error. The common contract and
+per-language method names are in
 [ADMIN.md](ekodb-client-ts/ADMIN.md#stored-function-call-grants). The recorded
 cases are the synthetic `test-fixtures/admin-function-permissions-contract.json`
 (vendored unchanged by the Go module), not a server response capture.
