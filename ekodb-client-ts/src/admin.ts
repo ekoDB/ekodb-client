@@ -25,6 +25,10 @@ export type AdminClientConfig = Pick<
   "baseURL" | "apiKey" | "timeout"
 >;
 export type ApiKeyAction = "read" | "write";
+/** The one right a function grant carries. */
+export type FunctionAction = "call";
+/** The longest function grant pattern the server accepts, in bytes. */
+export const MAX_FUNCTION_PATTERN_BYTES = 256;
 export interface CollectionPermissions {
   read: boolean;
   write: boolean;
@@ -45,6 +49,14 @@ export interface KvGrant {
   write: boolean;
   [field: string]: unknown;
 }
+/**
+ * A stored-function call grant: `pattern` is a function label, a label prefix
+ * ending in one `*`, or `*`. Holding the grant is the right to call.
+ */
+export interface FunctionPermission {
+  pattern: string;
+  [field: string]: unknown;
+}
 interface PermissionSet {
   is_admin: boolean;
   collection_permissions: { [collection: string]: CollectionPermissions };
@@ -52,10 +64,18 @@ interface PermissionSet {
 }
 export interface ApiKeyPermissions extends PermissionSet {
   kv_permissions: KvPermission[];
+  /** Empty when the key holds none, and when the server predates function grants. */
+  function_permissions: FunctionPermission[];
 }
 /** Contains a secret key; store securely and never log the returned object. */
 export interface ApiKey extends PermissionSet {
   kv_permissions?: KvPermission[] | null;
+  /**
+   * Absent or null when the response carries none. Registration echoes the
+   * request map and key listings return grants; both read as grants sorted by
+   * pattern, and a pattern registered with no rights grants nothing.
+   */
+  function_permissions?: FunctionPermission[] | null;
   /** Absent on legacy server responses. Never derive this from the secret. */
   id?: string;
   key: string;
@@ -71,6 +91,12 @@ export interface CreateApiKeyRequest {
   is_admin?: boolean;
   /** Registration accepts action arrays, not field restrictions. */
   collection_permissions?: { [collection: string]: ApiKeyAction[] };
+  /**
+   * Stored-function call grants: a function label, a label prefix ending in one
+   * `*`, or `*`, each with `["call"]`. A pattern given `[]` grants nothing.
+   * Omitted from the request when absent or empty.
+   */
+  function_permissions?: { [pattern: string]: FunctionAction[] };
 }
 export interface PutApiKeyCollectionPermissionsRequest {
   key_id: string;
@@ -122,6 +148,7 @@ export interface PermissionChange<T> {
 export type CollectionPermissionChange =
   PermissionChange<CollectionPermissions>;
 export type KvPermissionChange = PermissionChange<KvGrant>;
+export type FunctionPermissionChange = PermissionChange<FunctionPermission>;
 
 function invalid(): never {
   throw new Error("Invalid admin response");
@@ -169,11 +196,31 @@ function kvGrant(value: unknown, requirePrefix = false): KvGrant {
     invalid();
   return { ...value } as KvGrant;
 }
+function functionGrant(value: unknown): FunctionPermission {
+  if (!object(value) || typeof value.pattern !== "string" || !value.pattern)
+    invalid();
+  return { ...value } as FunctionPermission;
+}
+/** Reads the grants list, or the registration map `pattern -> ["call"]`. */
+function functionGrants(value: unknown): FunctionPermission[] {
+  if (Array.isArray(value)) return value.map(functionGrant);
+  if (!object(value)) invalid();
+  return Object.entries(value)
+    .filter(([, rights]) => {
+      if (!Array.isArray(rights) || !rights.every((right) => right === "call"))
+        invalid();
+      return rights.length > 0;
+    })
+    .map(([pattern]) => pattern)
+    .sort()
+    .map((pattern) => ({ pattern }));
+}
 function parsePermissions(value: unknown, modern = false): ApiKeyPermissions {
   if (!object(value)) invalid();
   const admin = modern ? value.admin : value.is_admin;
   const collections = modern ? value.collections : value.collection_permissions;
   const kv = modern ? value.kv : value.kv_permissions;
+  const functions = modern ? value.functions : value.function_permissions;
   if (typeof admin !== "boolean" || !object(collections)) invalid();
   if ((modern || (kv !== undefined && kv !== null)) && !Array.isArray(kv))
     invalid();
@@ -189,6 +236,10 @@ function parsePermissions(value: unknown, modern = false): ApiKeyPermissions {
     kv_permissions: Array.isArray(kv)
       ? kv.map((grant) => kvGrant(grant, true) as KvPermission)
       : [],
+    function_permissions:
+      functions === undefined || functions === null
+        ? []
+        : functionGrants(functions),
   };
 }
 function parseKey(value: unknown): ApiKey {
@@ -197,6 +248,10 @@ function parseKey(value: unknown): ApiKey {
     result.kv_permissions = null;
   else if (object(value) && value.kv_permissions === undefined)
     delete result.kv_permissions;
+  if (object(value) && value.function_permissions === null)
+    result.function_permissions = null;
+  else if (object(value) && value.function_permissions === undefined)
+    delete result.function_permissions;
   if (typeof result.key !== "string" || !result.key) invalid();
   if (
     result.id !== undefined &&
@@ -260,6 +315,25 @@ function encodedPermissionValue(value: unknown): string {
     );
   } catch {
     throw new Error("Invalid permission resource name");
+  }
+}
+/**
+ * The pattern rules the server enforces, checked before any request: a label,
+ * a label prefix ending in one `*`, or `*`; non-empty, at most
+ * MAX_FUNCTION_PATTERN_BYTES bytes, no control or invisible formatting
+ * character, and `*` nowhere but last.
+ */
+function functionPattern(value: unknown): string {
+  if (
+    typeof value !== "string" ||
+    new TextEncoder().encode(value).length > MAX_FUNCTION_PATTERN_BYTES ||
+    (value.endsWith("*") ? value.slice(0, -1) : value).includes("*")
+  )
+    throw new Error("Invalid function pattern");
+  try {
+    return segment(value);
+  } catch {
+    throw new Error("Invalid function pattern");
   }
 }
 function resource(keyId: string): string {
@@ -429,6 +503,17 @@ export class EkoDBAdminClient {
       )
     )
       throw new Error("Registration requires read/write action arrays");
+    const functions = request.function_permissions;
+    if (
+      functions !== undefined &&
+      (!object(functions) ||
+        !Object.values(functions).every(
+          (rights) =>
+            Array.isArray(rights) && rights.every((right) => right === "call"),
+        ))
+    )
+      throw new Error("Registration requires call action arrays");
+    Object.keys(functions ?? {}).forEach(functionPattern);
     return parseKey(
       await this.transport.send("POST", "/api/auth/register", {
         api_key: this.apiKey,
@@ -436,6 +521,9 @@ export class EkoDBAdminClient {
         description: request.description,
         is_admin: request.is_admin === true,
         collection_permissions: grants,
+        ...(functions && Object.keys(functions).length
+          ? { function_permissions: functions }
+          : {}),
       }),
     );
   }
@@ -516,6 +604,47 @@ export class EkoDBAdminClient {
     const path = `${resource(keyId)}/kv/${segment(prefix)}`;
     await this.requireKeyPermissionRoutes();
     return kvGrant(await this.transport.send("GET", path));
+  }
+  async listApiKeyFunctionPermissions(
+    keyId: string,
+  ): Promise<FunctionPermission[]> {
+    const path = `${resource(keyId)}/functions`;
+    await this.requireKeyPermissionRoutes();
+    const result = await this.transport.send<unknown>("GET", path);
+    if (!Array.isArray(result)) invalid();
+    return result.map(functionGrant);
+  }
+  async getApiKeyFunctionPermissions(
+    keyId: string,
+    pattern: string,
+  ): Promise<FunctionPermission> {
+    const path = `${resource(keyId)}/functions/${functionPattern(pattern)}`;
+    await this.requireKeyPermissionRoutes();
+    return functionGrant(await this.transport.send("GET", path));
+  }
+  /** Gives the key the right to call the functions `pattern` covers. */
+  async putApiKeyFunctionPermissions(
+    keyId: string,
+    pattern: string,
+  ): Promise<FunctionPermissionChange> {
+    const path = `${resource(keyId)}/functions/${functionPattern(pattern)}`;
+    await this.requireKeyPermissionRoutes();
+    return change(
+      await this.transport.send("PUT", path, { call: true }),
+      functionGrant,
+    );
+  }
+  /** Removes the key's grant on exactly `pattern`. */
+  async deleteApiKeyFunctionPermissions(
+    keyId: string,
+    pattern: string,
+  ): Promise<FunctionPermissionChange> {
+    const path = `${resource(keyId)}/functions/${functionPattern(pattern)}`;
+    await this.requireKeyPermissionRoutes();
+    return change(
+      await this.transport.send("DELETE", path, undefined, true),
+      functionGrant,
+    );
   }
   async updateApiKeyCollectionPermissions(
     request: UpdateApiKeyCollectionPermissionsRequest,

@@ -20,8 +20,13 @@ async def main():
     label = f"sdk-python-admin-example-{uuid4()}"
     print(f"Disposable cleanup label: {label}")
     try:
+        registered = f"{label}-registered"
         created = await admin.create_api_key(
-            {"label": label, "collection_permissions": {"sdk_admin_probe": ["read"]}}
+            {
+                "label": label,
+                "collection_permissions": {"sdk_admin_probe": ["read"]},
+                "function_permissions": {registered: ["call"]},
+            }
         )
         if created["key"] == owner or created["is_admin"]:
             raise RuntimeError("Unexpected disposable key")
@@ -48,6 +53,28 @@ async def main():
                 "after"
             ] is not None:
                 raise RuntimeError("KV grant removal failed")
+            # Stored-function call grants (needs a server that supports them).
+            held = await admin.list_api_key_function_permissions(key_id)
+            if not any(grant["pattern"] == registered for grant in held):
+                raise RuntimeError("Registered function grant missing")
+            function_pattern = f"{label}-*"
+            granted = await admin.put_api_key_function_permissions(
+                key_id, function_pattern
+            )
+            if granted["before"] is not None or granted["after"] != {
+                "pattern": function_pattern
+            }:
+                raise RuntimeError("Function grant creation failed")
+            if await admin.get_api_key_function_permissions(
+                key_id, function_pattern
+            ) != {"pattern": function_pattern}:
+                raise RuntimeError("Function grant readback failed")
+            if (
+                await admin.delete_api_key_function_permissions(
+                    key_id, function_pattern
+                )
+            )["after"] is not None:
+                raise RuntimeError("Function grant removal failed")
         target = {"key_id": created["id"]} if modern else {"api_key": created["key"]}
         request = {
             **target,

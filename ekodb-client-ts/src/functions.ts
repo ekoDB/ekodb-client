@@ -30,6 +30,36 @@ export interface UserFunction {
    * map at call time. Requires ekoDB >= 0.42.0.
    */
   http_path?: string;
+  /**
+   * The key (and the subject its token named) that saved the function.
+   * Server-managed and read-only: the server sets it on create, keeps it across
+   * updates and replaces any value sent. `null` for a function saved before the
+   * server recorded authors.
+   */
+  created_by?: Principal | null;
+  /**
+   * Whose grants every step of the function runs with: `"caller"` (the calling
+   * key's grants) or `"author"` (the recorded author's). Leave unset to let the
+   * server apply its default; `null` on a function saved before the field
+   * existed.
+   */
+  run_as?: RunAs | null;
+}
+
+/** Whose grants the steps of a stored function run with. */
+export type RunAs = "caller" | "author";
+
+/**
+ * The key, and the subject its token named, that created a function or a
+ * schedule. Read-only: the server records it.
+ */
+export interface Principal {
+  /** The key's non-secret id, never the key itself. */
+  key_id: string;
+  /** The key's label, when it was registered with one. */
+  key_label?: string | null;
+  /** The subject the token was minted for, when it named one. */
+  subject?: string | null;
 }
 
 export interface TransactionConfig {

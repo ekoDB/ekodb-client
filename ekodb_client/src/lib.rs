@@ -75,8 +75,8 @@ pub use client::{Client, ClientBuilder, RateLimitInfo};
 pub use error::{Error, Result};
 pub use functions::{
     ChatMessage, Function, FunctionCondition, FunctionResult, FunctionStats, GroupFunctionConfig,
-    GroupFunctionOp, ParameterDefinition, QueryConditionOperator, QueryExpression,
-    QueryLogicalOperator, SortFieldConfig, StageStats, TransactionConfig, UserFunction,
+    GroupFunctionOp, ParameterDefinition, Principal, QueryConditionOperator, QueryExpression,
+    QueryLogicalOperator, RunAs, SortFieldConfig, StageStats, TransactionConfig, UserFunction,
     parameter_ref,
 };
 pub use health::{

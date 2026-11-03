@@ -896,6 +896,12 @@ retain the old secret-targeted shape only for detected legacy servers >=0.79.2.
 Registration and listing expose optional ids for compatibility with older
 replies. Prefer ids for revocation. Never log key records.
 
+Stored-function call grants (`function_permissions` at registration and the
+list, get, put and delete function-grant methods) and the function `run_as` /
+`created_by` fields are described in the shared contract's
+[stored-function call grants](../ekodb-client-ts/ADMIN.md#stored-function-call-grants)
+section.
+
 Permission-facet names must be well-formed Unicode. Unpaired UTF-16 surrogates
 fail before HTTP; U+FFFD and valid supplementary-character pairs remain
 accepted.

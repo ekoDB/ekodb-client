@@ -266,6 +266,61 @@ impl AdminClient {
             )
         })
     }
+    fn list_api_key_function_permissions<'py>(
+        &self,
+        py: Python<'py>,
+        key_id: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        finish(py, async move {
+            value(client.list_api_key_function_permissions(&key_id).await?)
+        })
+    }
+    fn get_api_key_function_permissions<'py>(
+        &self,
+        py: Python<'py>,
+        key_id: String,
+        pattern: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        finish(py, async move {
+            value(
+                client
+                    .get_api_key_function_permissions(&key_id, &pattern)
+                    .await?,
+            )
+        })
+    }
+    fn put_api_key_function_permissions<'py>(
+        &self,
+        py: Python<'py>,
+        key_id: String,
+        pattern: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        finish(py, async move {
+            value(
+                client
+                    .put_api_key_function_permissions(&key_id, &pattern)
+                    .await?,
+            )
+        })
+    }
+    fn delete_api_key_function_permissions<'py>(
+        &self,
+        py: Python<'py>,
+        key_id: String,
+        pattern: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        finish(py, async move {
+            value(
+                client
+                    .delete_api_key_function_permissions(&key_id, &pattern)
+                    .await?,
+            )
+        })
+    }
     fn uses_key_permission_routes<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
         finish(py, async move {
@@ -275,6 +330,10 @@ impl AdminClient {
 }
 pub(crate) fn register(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_class::<AdminClient>()?;
+    module.add(
+        "MAX_FUNCTION_PATTERN_BYTES",
+        ekodb_client::admin::MAX_FUNCTION_PATTERN_BYTES,
+    )?;
     module.add(
         "MIN_SERVER_VERSION_FOR_PERMISSION_EDITS",
         ekodb_client::admin::MIN_SERVER_VERSION_FOR_PERMISSION_EDITS,
