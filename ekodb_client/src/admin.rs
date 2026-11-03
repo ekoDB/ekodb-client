@@ -521,7 +521,7 @@ impl AdminClient {
         let path = self
             .permission_path(key_id, "functions", Some(pattern))
             .await?;
-        decode(self.send(Method::GET, &path, None).await?)
+        parse_function_grant(self.send(Method::GET, &path, None).await?)
     }
     async fn function_change(
         &self,
@@ -534,7 +534,16 @@ impl AdminClient {
         let path = self
             .permission_path(key_id, "functions", Some(pattern))
             .await?;
-        decode(self.send_response(method, &path, body, true).await?)
+        let change: FunctionPermissionChange =
+            decode(self.send_response(method, &path, body, true).await?)?;
+        if [&change.before, &change.after]
+            .into_iter()
+            .flatten()
+            .any(|grant| grant.pattern.is_empty())
+        {
+            return Err(invalid_response());
+        }
+        Ok(change)
     }
     /// Gives the key the right to call the functions `pattern` covers.
     pub async fn put_api_key_function_permissions(
@@ -874,6 +883,13 @@ fn parse_permissions(mut value: Value, modern: bool) -> Result<ApiKeyPermissions
         return Err(invalid_response());
     }
     Ok(result)
+}
+fn parse_function_grant(value: Value) -> Result<FunctionPermissions> {
+    let grant: FunctionPermissions = decode(value)?;
+    if grant.pattern.is_empty() {
+        return Err(invalid_response());
+    }
+    Ok(grant)
 }
 fn parse_function_list(value: Value) -> Result<Vec<FunctionPermissions>> {
     let grants: Vec<FunctionPermissions> = decode(value)?;

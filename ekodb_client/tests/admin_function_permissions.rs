@@ -495,3 +495,50 @@ async fn schedules_return_the_creator_the_server_recorded() {
     assert_eq!(principal.key_label.as_deref(), Some("report-runner"));
     assert_eq!(principal.subject, None);
 }
+
+#[tokio::test]
+async fn malformed_grant_replies_are_rejected() {
+    let id = key_id();
+    let url = format!("/api/auth/keys/{id}/permissions/functions/report_%2A");
+    for reply in [
+        json!({"pattern": ""}),
+        json!({}),
+        json!({"before": null, "after": {"pattern": ""}}),
+        json!({"before": {"pattern": ""}, "after": null}),
+        json!({"before": null, "after": {}}),
+        json!({"before": null}),
+        json!([]),
+    ] {
+        let mut server = authed_server().await;
+        modern(&mut server).await;
+        server
+            .mock("GET", url.as_str())
+            .with_body(reply.to_string())
+            .create_async()
+            .await;
+        server
+            .mock("PUT", url.as_str())
+            .with_body(reply.to_string())
+            .create_async()
+            .await;
+        let client = AdminClient::new(&server.url(), ADMIN_KEY).unwrap();
+        if reply.get("before").is_none() && reply.get("after").is_none() {
+            assert!(
+                client
+                    .get_api_key_function_permissions(&id, "report_*")
+                    .await
+                    .is_err(),
+                "get accepted {reply}"
+            );
+        }
+        if reply.get("pattern").is_none() || reply.get("before").is_some() {
+            assert!(
+                client
+                    .put_api_key_function_permissions(&id, "report_*")
+                    .await
+                    .is_err(),
+                "put accepted {reply}"
+            );
+        }
+    }
+}

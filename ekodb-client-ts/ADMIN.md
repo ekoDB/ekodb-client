@@ -112,8 +112,11 @@ A non-admin key can be allowed to call stored functions. A grant is a `pattern`
 with one right, `call`: an exact function label, a label prefix ending in one
 `*` (`report_*`), or `*` for every function. `*` is valid only as the last
 character; a pattern is non-empty, at most 256 bytes, and holds no control or
-invisible formatting character. Every client checks these rules before sending a
-request. A key holds no empty grant: `PUT` gives one and `DELETE` removes it.
+invisible formatting character. Every client also rejects the bare segments `.`
+and `..` (an SDK-side rule: a bare dot segment is not safely routable, and the
+clients do not percent-encode around it; the server currently accepts them).
+Every client checks these rules before sending a request. A key holds no empty
+grant: `PUT` gives one and `DELETE` removes it.
 
 Registration takes `function_permissions` as `pattern -> ["call"]`, beside
 `collection_permissions`; a pattern given `[]` grants nothing, and the field is
