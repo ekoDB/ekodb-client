@@ -39,7 +39,7 @@ dependencies {
     implementation("org.msgpack:msgpack-core:0.9.12")
 
     // HTTP client
-    implementation("io.ktor:ktor-client-core:3.6.0")
+    implementation("io.ktor:ktor-client-core:3.6.1")
     implementation("io.ktor:ktor-client-cio:3.6.0")
     implementation("io.ktor:ktor-client-content-negotiation:3.6.0")
     implementation("io.ktor:ktor-serialization-kotlinx-json:3.6.0")
