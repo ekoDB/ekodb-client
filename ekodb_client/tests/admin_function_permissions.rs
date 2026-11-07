@@ -330,6 +330,18 @@ async fn invalid_patterns_and_targets_fail_before_any_request() {
         .expect(0)
         .create_async()
         .await;
+    // Any request at all fails this test: an unmatched request would also come back as
+    // an error, so the error alone cannot show the pattern was refused before sending.
+    let mut anything = Vec::new();
+    for method in ["GET", "PUT", "DELETE"] {
+        anything.push(
+            server
+                .mock(method, Matcher::Any)
+                .expect(0)
+                .create_async()
+                .await,
+        );
+    }
     let client = AdminClient::new(&server.url(), ADMIN_KEY).unwrap();
     let id = key_id();
     for case in fixture["rejected_patterns"].as_array().unwrap() {
@@ -343,18 +355,12 @@ async fn invalid_patterns_and_targets_fail_before_any_request() {
             case["name"]
         );
         assert!(
-            client
-                .put_api_key_function_permissions(&id, &pattern)
-                .await
-                .is_err(),
+            matches!(client.put_api_key_function_permissions(&id, &pattern).await, Err(Error::Validation(m)) if m == "Invalid function pattern"),
             "{}",
             case["name"]
         );
         assert!(
-            client
-                .delete_api_key_function_permissions(&id, &pattern)
-                .await
-                .is_err(),
+            matches!(client.delete_api_key_function_permissions(&id, &pattern).await, Err(Error::Validation(m)) if m == "Invalid function pattern"),
             "{}",
             case["name"]
         );
@@ -367,6 +373,9 @@ async fn invalid_patterns_and_targets_fail_before_any_request() {
         Err(Error::Validation(_))
     ));
     token.assert_async().await;
+    for mock in anything {
+        mock.assert_async().await;
+    }
 }
 
 #[tokio::test]
