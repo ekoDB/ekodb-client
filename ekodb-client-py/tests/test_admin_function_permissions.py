@@ -170,6 +170,23 @@ def answer_listing_and_aggregate(state, value):
     state["routes"][("GET", "/api/auth/keys/me/permissions")] = (200, permissions)
 
 
+def answer_legacy_aggregate(state, value):
+    """A server without key permission routes; its legacy read carries `value`."""
+    state["routes"][("GET", "/api/auth/keys/me/permissions")] = (
+        404,
+        {"error": "not found"},
+    )
+    state["routes"][("GET", "/api/auth/permissions")] = (
+        200,
+        {
+            "is_admin": False,
+            "collection_permissions": {},
+            "kv_permissions": [],
+            "function_permissions": value,
+        },
+    )
+
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "case",
@@ -187,6 +204,12 @@ async def test_listing_and_aggregate_read_accept_the_shared_shapes(endpoint, cas
     aggregate = permissions["function_permissions"]
     assert [grant["pattern"] for grant in aggregate] == case["patterns"]
 
+    answer_legacy_aggregate(state, case["value"])
+    legacy = AdminClient(base, ADMIN_KEY)
+    assert await legacy.uses_key_permission_routes() is False
+    aggregate = (await legacy.get_permissions())["function_permissions"]
+    assert [grant["pattern"] for grant in aggregate] == case["patterns"]
+
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
@@ -202,6 +225,12 @@ async def test_listing_and_aggregate_read_refuse_the_shared_shapes(endpoint, cas
         await client.list_api_keys()
     with pytest.raises(RuntimeError):
         await client.get_permissions()
+
+    answer_legacy_aggregate(state, case["value"])
+    legacy = AdminClient(base, ADMIN_KEY)
+    assert await legacy.uses_key_permission_routes() is False
+    with pytest.raises(RuntimeError):
+        await legacy.get_permissions()
 
 
 @pytest.mark.asyncio

@@ -124,6 +124,13 @@ class AdminFunctionPermissionsTest {
         val cases = fixture.getValue("function_permissions_reply_values").jsonObject
         fun record(value: JsonElement) = JsonArray(listOf(JsonObject(fixture.getValue("key_list_record").jsonObject + ("function_permissions" to value)))).toString()
         fun permissions(value: JsonElement) = JsonObject(fixture.getValue("permissions").jsonObject + ("functions" to value)).toString()
+        fun legacy(value: JsonElement) = buildJsonObject {
+            put("is_admin", false)
+            put("collection_permissions", buildJsonObject {})
+            put("kv_permissions", buildJsonArray {})
+            put("function_permissions", value)
+        }.toString()
+        val notFound = 404 to """{"error":"not found"}"""
         for (case in cases.getValue("accepted").jsonArray.map { it.jsonObject }) {
             val name = case.getValue("name").jsonPrimitive.content
             val value = case.getValue("value")
@@ -134,6 +141,12 @@ class AdminFunctionPermissionsTest {
             withAdmin(emptyMap(), probe = 200 to permissions(value)) { client ->
                 runBlocking { assertEquals(expected, patterns(client.getPermissions().functionPermissions), "aggregate: $name") }
             }
+            withAdmin(mapOf("GET /api/auth/permissions" to (200 to legacy(value))), probe = notFound) { client ->
+                runBlocking {
+                    assertFalse(client.usesKeyPermissionRoutes())
+                    assertEquals(expected, patterns(client.getPermissions().functionPermissions), "legacy aggregate: $name")
+                }
+            }
         }
         for (case in cases.getValue("rejected").jsonArray.map { it.jsonObject }) {
             val name = case.getValue("name").jsonPrimitive.content
@@ -143,6 +156,10 @@ class AdminFunctionPermissionsTest {
             }
             withAdmin(emptyMap(), probe = 200 to permissions(value)) { client ->
                 assertFails("aggregate accepted: $name") { runBlocking { client.getPermissions() } }
+            }
+            withAdmin(mapOf("GET /api/auth/permissions" to (200 to legacy(value))), probe = notFound) { client ->
+                assertFalse(runBlocking { client.usesKeyPermissionRoutes() })
+                assertFails("legacy aggregate accepted: $name") { runBlocking { client.getPermissions() } }
             }
         }
     }

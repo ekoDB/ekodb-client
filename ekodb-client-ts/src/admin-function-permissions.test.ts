@@ -173,6 +173,19 @@ describe("function call grants", () => {
         response({ ...fixture.permissions, functions: value }),
       );
     }
+    /** A server without key permission routes; its legacy read carries `value`. */
+    function answerLegacy(value: unknown) {
+      request.mockResolvedValueOnce(response({ token: "synthetic-jwt" }));
+      request.mockResolvedValueOnce(response({ error: "not found" }, 404));
+      request.mockResolvedValueOnce(
+        response({
+          is_admin: false,
+          collection_permissions: {},
+          kv_permissions: [],
+          function_permissions: value,
+        }),
+      );
+    }
     for (const entry of cases.accepted) {
       it(`accepts ${entry.name}`, async () => {
         answer(entry.value);
@@ -185,6 +198,15 @@ describe("function call grants", () => {
         expect(
           permissions.function_permissions.map((grant) => grant.pattern),
         ).toEqual(entry.patterns);
+
+        answerLegacy(entry.value);
+        const legacy = client();
+        expect(await legacy.usesKeyPermissionRoutes()).toBe(false);
+        expect(
+          (await legacy.getPermissions()).function_permissions.map(
+            (grant) => grant.pattern,
+          ),
+        ).toEqual(entry.patterns);
       });
     }
     for (const entry of cases.rejected) {
@@ -193,6 +215,11 @@ describe("function call grants", () => {
         const admin = client();
         await expect(admin.listApiKeys()).rejects.toThrow();
         await expect(admin.getPermissions()).rejects.toThrow();
+
+        answerLegacy(entry.value);
+        const legacy = client();
+        expect(await legacy.usesKeyPermissionRoutes()).toBe(false);
+        await expect(legacy.getPermissions()).rejects.toThrow();
       });
     }
   });
