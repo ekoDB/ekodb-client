@@ -248,9 +248,11 @@ pub struct ApiKeyPermissions {
     pub collection_permissions: HashMap<String, CollectionPermissions>,
     #[serde(default)]
     pub kv_permissions: Vec<KvPermissions>,
-    /// Empty when the key holds no function grant, and when the server
-    /// predates function grants.
-    #[serde(default)]
+    /// Empty when the key holds no function grant, when the server predates
+    /// function grants, and when it sends null. Read like
+    /// [`ApiKey::function_permissions`]: a list of grants or the registration
+    /// map, sorted by pattern.
+    #[serde(default, deserialize_with = "function_grant_list")]
     pub function_permissions: Vec<FunctionPermissions>,
     #[serde(flatten)]
     pub metadata: HashMap<String, Value>,
@@ -875,10 +877,6 @@ fn parse_permissions(mut value: Value, modern: bool) -> Result<ApiKeyPermissions
         .kv_permissions
         .iter()
         .any(|grant| grant.prefix.as_deref().is_none_or(str::is_empty))
-        || result
-            .function_permissions
-            .iter()
-            .any(|grant| grant.pattern.is_empty())
     {
         return Err(invalid_response());
     }
@@ -913,7 +911,8 @@ fn validate_function_pattern(pattern: &str) -> Result<()> {
     Ok(())
 }
 /// Reads the three shapes a key's `function_permissions` arrives in: absent or
-/// null, a list of grants, or the registration map `pattern -> ["call"]`.
+/// null, a list of grants, or the registration map `pattern -> ["call"]`. An
+/// empty pattern is refused in either form.
 fn function_grants<'de, D: serde::Deserializer<'de>>(
     deserializer: D,
 ) -> std::result::Result<Option<Vec<FunctionPermissions>>, D::Error> {
@@ -933,6 +932,9 @@ fn function_grants<'de, D: serde::Deserializer<'de>>(
             Some(grants)
         }
         Some(Wire::Registered(map)) => {
+            if map.contains_key("") {
+                return Err(D::Error::custom("empty function pattern"));
+            }
             let mut patterns: Vec<String> = map
                 .into_iter()
                 .filter(|(_, rights)| !rights.is_empty())
@@ -950,6 +952,12 @@ fn function_grants<'de, D: serde::Deserializer<'de>>(
             )
         }
     })
+}
+/// [`function_grants`] for a field that reads absent or null as no grants.
+fn function_grant_list<'de, D: serde::Deserializer<'de>>(
+    deserializer: D,
+) -> std::result::Result<Vec<FunctionPermissions>, D::Error> {
+    Ok(function_grants(deserializer)?.unwrap_or_default())
 }
 fn parse_kv_list(value: Value) -> Result<Vec<KvPermissions>> {
     let grants: Vec<KvPermissions> = decode(value)?;
