@@ -284,12 +284,29 @@ class AdminFunctionPermissionsTest {
 
         // The two names, an explicit null and an absent field (a function saved before
         // the server recorded run_as) all pass, in both directions.
-        val recorded = mutableListOf<HttpRequestData>()
-        client(recorded, 200, """{"id":"f1"}""").updateUserFunction("nightly_close", JsonObject(save + ("run_as" to JsonPrimitive("author"))))
-        assertEquals("author", bodyOf(recorded.single())!!.jsonObject.getValue("run_as").jsonPrimitive.content)
+        val unset = JsonObject(save - "run_as")
+        val accepted = listOf(
+            JsonObject(save + ("run_as" to JsonPrimitive("caller"))),
+            JsonObject(save + ("run_as" to JsonPrimitive("author"))),
+            JsonObject(save + ("run_as" to JsonNull)),
+            unset,
+        )
+        for (definition in accepted) {
+            val recorded = mutableListOf<HttpRequestData>()
+            val writer = client(recorded, 200, """{"id":"f1"}""")
+            writer.saveUserFunction(definition)
+            writer.updateUserFunction("nightly_close", definition)
+            assertEquals(2, recorded.size, "run_as ${definition["run_as"]} must be sent by save and update")
+            for (request in recorded) assertEquals(definition["run_as"], bodyOf(request)!!.jsonObject["run_as"])
+        }
+        val definition = fixture.getValue("function_definition").jsonObject
         val unrecorded = fixture.getValue("function_definition_unrecorded").toString()
-        val withNull = JsonObject(fixture.getValue("function_definition").jsonObject + ("run_as" to JsonNull)).toString()
-        assertEquals(2, client(mutableListOf(), 200, "[$unrecorded, $withNull]").listUserFunctions().size)
+        val withNull = JsonObject(definition + ("run_as" to JsonNull)).toString()
+        val absent = JsonObject(definition - "run_as").toString()
+        for (served in listOf(definition.toString(), unrecorded, withNull, absent)) {
+            client(mutableListOf(), 200, served).getUserFunction("nightly_close")
+        }
+        assertEquals(4, client(mutableListOf(), 200, "[$definition, $unrecorded, $withNull, $absent]").listUserFunctions().size)
     }
 
     @Test fun aRefusedFunctionCallIsTheClientsNormalHttpError() = runBlocking<Unit> {
