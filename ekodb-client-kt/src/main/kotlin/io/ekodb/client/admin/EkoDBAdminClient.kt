@@ -363,10 +363,14 @@ private fun parseFunction(value: JsonElement): FunctionPermissions {
 }
 private fun parseFunctionList(value: JsonElement): List<FunctionPermissions> = (value as? JsonArray ?: invalid()).map(::parseFunction)
 
-/** Reads the grants list, or the registration map `pattern -> ["call"]` (sorted, empty rights grant nothing). */
+/**
+ * Reads the grants list, or the registration map `pattern -> ["call"]` (sorted, empty rights grant nothing).
+ * An empty pattern is refused in either form.
+ */
 private fun parseFunctionGrants(value: JsonElement): List<FunctionPermissions> = when (value) {
     is JsonArray -> parseFunctionList(value)
-    is JsonObject -> value.entries.filter { (_, rights) ->
+    is JsonObject -> value.entries.filter { (pattern, rights) ->
+        if (pattern.isEmpty()) invalid()
         val list = rights as? JsonArray ?: invalid()
         if (list.any { text(it) != "call" }) invalid()
         list.isNotEmpty()

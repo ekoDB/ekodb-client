@@ -52,6 +52,10 @@ const fixture = JSON.parse(
     id: string;
     created_by: Principal;
   };
+  function_permissions_reply_values: {
+    accepted: Array<{ name: string; value: unknown; patterns: string[] }>;
+    rejected: Array<{ name: string; value: unknown }>;
+  };
 };
 const request = vi.fn<typeof fetch>();
 const keyId = fixture.key_id;
@@ -156,6 +160,41 @@ describe("function call grants", () => {
     expect((await admin.listApiKeys())[0].function_permissions).toEqual(
       fixture.function_grants,
     );
+  });
+
+  describe("reads function grants in the shapes every SDK accepts", () => {
+    const cases = fixture.function_permissions_reply_values;
+    function answer(value: unknown) {
+      request.mockResolvedValueOnce(response({ token: "synthetic-jwt" }));
+      request.mockResolvedValueOnce(
+        response([{ ...fixture.key_list_record, function_permissions: value }]),
+      );
+      request.mockResolvedValueOnce(
+        response({ ...fixture.permissions, functions: value }),
+      );
+    }
+    for (const entry of cases.accepted) {
+      it(`accepts ${entry.name}`, async () => {
+        answer(entry.value);
+        const admin = client();
+        const keys = await admin.listApiKeys();
+        expect(
+          (keys[0].function_permissions ?? []).map((grant) => grant.pattern),
+        ).toEqual(entry.patterns);
+        const permissions = await admin.getPermissions();
+        expect(
+          permissions.function_permissions.map((grant) => grant.pattern),
+        ).toEqual(entry.patterns);
+      });
+    }
+    for (const entry of cases.rejected) {
+      it(`refuses ${entry.name}`, async () => {
+        answer(entry.value);
+        const admin = client();
+        await expect(admin.listApiKeys()).rejects.toThrow();
+        await expect(admin.getPermissions()).rejects.toThrow();
+      });
+    }
   });
 
   it("reads no grants from a server that predates them", async () => {

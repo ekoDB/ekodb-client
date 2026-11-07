@@ -162,6 +162,48 @@ async def test_key_listing_and_permission_reads_carry_function_grants(endpoint):
     assert (await older.get_permissions())["function_permissions"] == []
 
 
+def answer_listing_and_aggregate(state, value):
+    """Key listing and aggregate read whose function grants are `value`."""
+    record = {**CONTRACT["key_list_record"], "function_permissions": value}
+    permissions = {**CONTRACT["permissions"], "functions": value}
+    state["routes"][("GET", "/api/auth/keys")] = (200, [record])
+    state["routes"][("GET", "/api/auth/keys/me/permissions")] = (200, permissions)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "case",
+    CONTRACT["function_permissions_reply_values"]["accepted"],
+    ids=lambda case: case["name"],
+)
+async def test_listing_and_aggregate_read_accept_the_shared_shapes(endpoint, case):
+    state, base = endpoint
+    answer_listing_and_aggregate(state, case["value"])
+    client = AdminClient(base, ADMIN_KEY)
+    keys = await client.list_api_keys()
+    listed = keys[0]["function_permissions"] or []
+    assert [grant["pattern"] for grant in listed] == case["patterns"]
+    permissions = await client.get_permissions()
+    aggregate = permissions["function_permissions"]
+    assert [grant["pattern"] for grant in aggregate] == case["patterns"]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "case",
+    CONTRACT["function_permissions_reply_values"]["rejected"],
+    ids=lambda case: case["name"],
+)
+async def test_listing_and_aggregate_read_refuse_the_shared_shapes(endpoint, case):
+    state, base = endpoint
+    answer_listing_and_aggregate(state, case["value"])
+    client = AdminClient(base, ADMIN_KEY)
+    with pytest.raises(RuntimeError):
+        await client.list_api_keys()
+    with pytest.raises(RuntimeError):
+        await client.get_permissions()
+
+
 @pytest.mark.asyncio
 async def test_list_and_get_read_the_function_grant_routes(endpoint):
     state, base = endpoint
