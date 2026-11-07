@@ -197,6 +197,32 @@ async fn listing_and_aggregate(value: &Value) -> ServerGuard {
     server
 }
 
+/// A server without key permission routes, whose legacy aggregate read
+/// carries `function_permissions: value`.
+async fn legacy_aggregate(value: &Value) -> ServerGuard {
+    let mut server = authed_server().await;
+    server
+        .mock("GET", "/api/auth/keys/me/permissions")
+        .with_status(404)
+        .with_body(r#"{"error":"not found"}"#)
+        .create_async()
+        .await;
+    server
+        .mock("GET", "/api/auth/permissions")
+        .with_body(
+            json!({
+                "is_admin": false,
+                "collection_permissions": {},
+                "kv_permissions": [],
+                "function_permissions": value,
+            })
+            .to_string(),
+        )
+        .create_async()
+        .await;
+    server
+}
+
 #[tokio::test]
 async fn key_listings_and_permission_reads_accept_and_refuse_the_same_shapes() {
     let cases = fixture()["function_permissions_reply_values"].clone();
@@ -214,6 +240,15 @@ async fn key_listings_and_permission_reads_accept_and_refuse_the_same_shapes() {
             expected,
             "aggregate: {name}"
         );
+        let legacy = legacy_aggregate(&case["value"]).await;
+        let client = AdminClient::new(&legacy.url(), ADMIN_KEY).unwrap();
+        assert!(!client.uses_key_permission_routes().await.unwrap());
+        let permissions = client.get_permissions().await.unwrap();
+        assert_eq!(
+            patterns(&permissions.function_permissions),
+            expected,
+            "legacy aggregate: {name}"
+        );
     }
     for case in cases["rejected"].as_array().unwrap() {
         let name = case["name"].as_str().unwrap();
@@ -226,6 +261,13 @@ async fn key_listings_and_permission_reads_accept_and_refuse_the_same_shapes() {
         assert!(
             client.get_permissions().await.is_err(),
             "aggregate accepted: {name}"
+        );
+        let legacy = legacy_aggregate(&case["value"]).await;
+        let client = AdminClient::new(&legacy.url(), ADMIN_KEY).unwrap();
+        assert!(!client.uses_key_permission_routes().await.unwrap());
+        assert!(
+            client.get_permissions().await.is_err(),
+            "legacy aggregate accepted: {name}"
         );
     }
 }
