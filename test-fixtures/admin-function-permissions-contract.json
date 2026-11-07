@@ -234,6 +234,10 @@
         "name": "empty pattern in the registration map",
         "value": { "": ["call"] }
       },
+      {
+        "name": "empty pattern with no rights in the registration map",
+        "value": { "": [] }
+      },
       { "name": "empty pattern in the list", "value": [{ "pattern": "" }] },
       { "name": "right other than call", "value": { "report_*": ["read"] } },
       { "name": "neither a list nor a map", "value": 7 }
