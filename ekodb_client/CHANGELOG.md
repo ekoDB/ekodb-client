@@ -36,15 +36,23 @@ and this project adheres to
   `UserFunction` and the Kotlin typed function reject unknown fields, so they
   could not decode a function from a server that records authors; with the new
   fields known they now do.
-- Function grant patterns that are the bare segments `.` or `..` are rejected.
-  This is an SDK-side rule (a bare dot segment is not safely routable, and the
-  clients do not percent-encode around it); the server currently accepts them.
+- Function grant patterns that are the bare segments `.` or `..` are rejected
+  before sending: a bare dot segment cannot be addressed in a URL path, and the
+  server refuses them as grant patterns too (since ekoDB 0.81.1).
 - Shared `admin-function-permissions-contract.json` fixture and a common
   contract section in `ekodb-client-ts/ADMIN.md`; the `client_admin` examples
   exercise function grants in every language.
 
 ### Fixed
 
+- Kotlin: the raw `JsonObject` user-function methods (`saveUserFunction`,
+  `updateUserFunction`, `getUserFunction`, `listUserFunctions`) now refuse a
+  `run_as` other than `caller` or `author`, before sending a definition and when
+  reading one, as the typed function methods already did. An explicit `null` or
+  an absent field still reads as unset.
+- The shared `admin-function-permissions-contract.json` fixture lists bare `.`
+  and `..` among its rejected patterns, so every SDK's suite now exercises that
+  rule on the function-grant methods themselves.
 - Tooling: `make deploy-client-py` installs and runs `twine` and `maturin` from
   the repository `.venv` instead of the system Python, which a uv- or
   Homebrew-managed interpreter refuses to modify
