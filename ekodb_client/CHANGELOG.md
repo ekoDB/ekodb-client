@@ -53,6 +53,14 @@ and this project adheres to
 - The shared `admin-function-permissions-contract.json` fixture lists bare `.`
   and `..` among its rejected patterns, so every SDK's suite now exercises that
   rule on the function-grant methods themselves.
+- Rust, Python, TypeScript, Kotlin: one rule for reading `function_permissions`
+  in a reply, on key records and on the aggregate permission read. It may be
+  absent or `null` (no grants), a list of grants, or the registration map
+  `pattern -> ["call"]`, and an empty pattern is refused in either form.
+  Previously the map accepted an empty pattern in TypeScript, Kotlin and on Rust
+  key records, and the Rust aggregate read refused `null` and the map. The
+  shared fixture carries the accepted and refused shapes, and every SDK's suite
+  reads them.
 - Tooling: `make deploy-client-py` installs and runs `twine` and `maturin` from
   the repository `.venv` instead of the system Python, which a uv- or
   Homebrew-managed interpreter refuses to modify
