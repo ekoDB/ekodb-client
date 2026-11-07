@@ -120,6 +120,33 @@ class AdminFunctionPermissionsTest {
         }
     }
 
+    @Test fun listingsAndPermissionReadsAcceptAndRefuseTheSharedShapes() = runBlocking<Unit> {
+        val cases = fixture.getValue("function_permissions_reply_values").jsonObject
+        fun record(value: JsonElement) = JsonArray(listOf(JsonObject(fixture.getValue("key_list_record").jsonObject + ("function_permissions" to value)))).toString()
+        fun permissions(value: JsonElement) = JsonObject(fixture.getValue("permissions").jsonObject + ("functions" to value)).toString()
+        for (case in cases.getValue("accepted").jsonArray.map { it.jsonObject }) {
+            val name = case.getValue("name").jsonPrimitive.content
+            val value = case.getValue("value")
+            val expected = case.getValue("patterns").jsonArray.map { it.jsonPrimitive.content }
+            withAdmin(mapOf("GET /api/auth/keys" to (200 to record(value)))) { client ->
+                runBlocking { assertEquals(expected, patterns(client.listApiKeys().single().functionPermissions) ?: emptyList(), "listing: $name") }
+            }
+            withAdmin(emptyMap(), probe = 200 to permissions(value)) { client ->
+                runBlocking { assertEquals(expected, patterns(client.getPermissions().functionPermissions), "aggregate: $name") }
+            }
+        }
+        for (case in cases.getValue("rejected").jsonArray.map { it.jsonObject }) {
+            val name = case.getValue("name").jsonPrimitive.content
+            val value = case.getValue("value")
+            withAdmin(mapOf("GET /api/auth/keys" to (200 to record(value)))) { client ->
+                assertFails("listing accepted: $name") { runBlocking { client.listApiKeys() } }
+            }
+            withAdmin(emptyMap(), probe = 200 to permissions(value)) { client ->
+                assertFails("aggregate accepted: $name") { runBlocking { client.getPermissions() } }
+            }
+        }
+    }
+
     @Test fun listAndGetReadTheFunctionGrantRoutes() = runBlocking<Unit> {
         val recorded = mutableListOf<HttpRequestData>()
         val routes = mapOf(

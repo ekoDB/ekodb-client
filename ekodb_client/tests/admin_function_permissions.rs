@@ -175,6 +175,61 @@ async fn key_listings_and_permission_reads_carry_function_grants() {
     );
 }
 
+/// Answers a key listing and an aggregate permission read whose
+/// `function_permissions` (`functions` on the aggregate) is `value`.
+async fn listing_and_aggregate(value: &Value) -> ServerGuard {
+    let fixture = fixture();
+    let mut server = authed_server().await;
+    let mut record = fixture["key_list_record"].clone();
+    record["function_permissions"] = value.clone();
+    let mut permissions = fixture["permissions"].clone();
+    permissions["functions"] = value.clone();
+    server
+        .mock("GET", "/api/auth/keys")
+        .with_body(json!([record]).to_string())
+        .create_async()
+        .await;
+    server
+        .mock("GET", "/api/auth/keys/me/permissions")
+        .with_body(permissions.to_string())
+        .create_async()
+        .await;
+    server
+}
+
+#[tokio::test]
+async fn key_listings_and_permission_reads_accept_and_refuse_the_same_shapes() {
+    let cases = fixture()["function_permissions_reply_values"].clone();
+    for case in cases["accepted"].as_array().unwrap() {
+        let name = case["name"].as_str().unwrap();
+        let expected: Vec<String> = serde_json::from_value(case["patterns"].clone()).unwrap();
+        let server = listing_and_aggregate(&case["value"]).await;
+        let client = AdminClient::new(&server.url(), ADMIN_KEY).unwrap();
+        let keys = client.list_api_keys().await.unwrap();
+        let listed = keys[0].function_permissions.as_deref().unwrap_or_default();
+        assert_eq!(patterns(listed), expected, "listing: {name}");
+        let permissions = client.get_permissions().await.unwrap();
+        assert_eq!(
+            patterns(&permissions.function_permissions),
+            expected,
+            "aggregate: {name}"
+        );
+    }
+    for case in cases["rejected"].as_array().unwrap() {
+        let name = case["name"].as_str().unwrap();
+        let server = listing_and_aggregate(&case["value"]).await;
+        let client = AdminClient::new(&server.url(), ADMIN_KEY).unwrap();
+        assert!(
+            client.list_api_keys().await.is_err(),
+            "listing accepted: {name}"
+        );
+        assert!(
+            client.get_permissions().await.is_err(),
+            "aggregate accepted: {name}"
+        );
+    }
+}
+
 #[tokio::test]
 async fn list_and_get_read_the_function_grant_routes() {
     let fixture = fixture();

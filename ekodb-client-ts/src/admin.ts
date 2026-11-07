@@ -201,13 +201,20 @@ function functionGrant(value: unknown): FunctionPermission {
     invalid();
   return { ...value } as FunctionPermission;
 }
-/** Reads the grants list, or the registration map `pattern -> ["call"]`. */
+/**
+ * Reads the grants list, or the registration map `pattern -> ["call"]`. An
+ * empty pattern is refused in either form.
+ */
 function functionGrants(value: unknown): FunctionPermission[] {
   if (Array.isArray(value)) return value.map(functionGrant);
   if (!object(value)) invalid();
   return Object.entries(value)
-    .filter(([, rights]) => {
-      if (!Array.isArray(rights) || !rights.every((right) => right === "call"))
+    .filter(([pattern, rights]) => {
+      if (
+        !pattern ||
+        !Array.isArray(rights) ||
+        !rights.every((right) => right === "call")
+      )
         invalid();
       return rights.length > 0;
     })
