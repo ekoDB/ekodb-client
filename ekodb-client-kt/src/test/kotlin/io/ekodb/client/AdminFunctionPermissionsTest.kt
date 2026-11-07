@@ -301,12 +301,16 @@ class AdminFunctionPermissionsTest {
         }
         val definition = fixture.getValue("function_definition").jsonObject
         val unrecorded = fixture.getValue("function_definition_unrecorded").toString()
-        val withNull = JsonObject(definition + ("run_as" to JsonNull)).toString()
-        val absent = JsonObject(definition - "run_as").toString()
-        for (served in listOf(definition.toString(), unrecorded, withNull, absent)) {
-            client(mutableListOf(), 200, served).getUserFunction("nightly_close")
+        val caller = JsonObject(definition + ("run_as" to JsonPrimitive("caller")))
+        val withNull = JsonObject(definition + ("run_as" to JsonNull))
+        val absent = JsonObject(definition - "run_as")
+        val served = listOf(caller, definition, fixture.getValue("function_definition_unrecorded").jsonObject, withNull, absent)
+        for (document in served) {
+            val read = client(mutableListOf(), 200, document.toString()).getUserFunction("nightly_close")
+            assertEquals(document["run_as"], read["run_as"])
         }
-        assertEquals(4, client(mutableListOf(), 200, "[$definition, $unrecorded, $withNull, $absent]").listUserFunctions().size)
+        val listed = client(mutableListOf(), 200, served.joinToString(",", "[", "]")).listUserFunctions()
+        assertEquals(served.map { it["run_as"] }, listed.map { it["run_as"] })
     }
 
     @Test fun aRefusedFunctionCallIsTheClientsNormalHttpError() = runBlocking<Unit> {
