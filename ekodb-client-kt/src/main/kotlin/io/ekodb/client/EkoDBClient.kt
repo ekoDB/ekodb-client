@@ -2570,12 +2570,36 @@ class EkoDBClient private constructor(
     // ========================================================================
 
     /**
+     * Why a raw function definition's `run_as` is unacceptable, or null when it is one of
+     * the two names, explicitly null, or absent (a function saved before the server
+     * recorded it). The typed [UserFunction] path enforces the same through [RunAs].
+     */
+    private fun runAsProblem(definition: JsonObject): String? {
+        val value = definition["run_as"] ?: return null
+        if (value is JsonNull) return null
+        val name = (value as? JsonPrimitive)?.takeIf { it.isString }?.content
+        return if (name == "caller" || name == "author") null else "run_as must be \"caller\" or \"author\", got $value"
+    }
+
+    /** Refuses a definition with an unknown `run_as` before it is sent. */
+    private fun requireKnownRunAs(definition: JsonObject) {
+        runAsProblem(definition)?.let { throw IllegalArgumentException(it) }
+    }
+
+    /** Refuses a definition the server returned with an unknown `run_as`. */
+    private fun checkReadRunAs(definition: JsonObject): JsonObject {
+        runAsProblem(definition)?.let { throw IllegalStateException(it) }
+        return definition
+    }
+
+    /**
      * Save a new user function
      * User functions are reusable sequences of Functions that can be called by functions.
      * @param userFunction The user function definition as JSON
      * @return The ID of the created user function
      */
     suspend fun saveUserFunction(userFunction: JsonObject): String {
+        requireKnownRunAs(userFunction)
         val response = executeWithRetry { token ->
             client.post("$baseUrl/api/functions") {
                 bearerAuth(token)
@@ -2611,7 +2635,7 @@ class EkoDBClient private constructor(
             throw IllegalStateException("Server error ${response.status.value}: $errorText")
         }
 
-        return response.body()
+        return checkReadRunAs(response.body())
     }
 
     /**
@@ -2637,7 +2661,7 @@ class EkoDBClient private constructor(
             throw IllegalStateException("Server error ${response.status.value}: $errorText")
         }
 
-        return response.body<List<JsonObject>>()
+        return response.body<List<JsonObject>>().map { checkReadRunAs(it) }
     }
 
     /**
@@ -2646,6 +2670,7 @@ class EkoDBClient private constructor(
      * @param userFunction The updated user function definition
      */
     suspend fun updateUserFunction(label: String, userFunction: JsonObject) {
+        requireKnownRunAs(userFunction)
         val response = executeWithRetry { token ->
             client.put("$baseUrl/api/functions/${label.encodeURLPathPart()}") {
                 bearerAuth(token)

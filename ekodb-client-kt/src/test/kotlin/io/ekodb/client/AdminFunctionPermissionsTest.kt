@@ -266,6 +266,32 @@ class AdminFunctionPermissionsTest {
         assertEquals("caller", bodyOf(recorded.single())!!.jsonObject.getValue("run_as").jsonPrimitive.content)
     }
 
+    @Test fun rawUserFunctionsRefuseAnUnknownRunAsOnWriteAndRead() = runBlocking<Unit> {
+        val save = fixture.getValue("function_save_request").jsonObject
+        for (bad in listOf(JsonPrimitive("root"), JsonPrimitive(""), JsonPrimitive(1))) {
+            val definition = JsonObject(save + ("run_as" to bad))
+            val recorded = mutableListOf<HttpRequestData>()
+            val writer = client(recorded, 200, """{"id":"f1"}""")
+            assertFailsWith<IllegalArgumentException>("save with run_as $bad") { runBlocking { writer.saveUserFunction(definition) } }
+            assertFailsWith<IllegalArgumentException>("update with run_as $bad") { runBlocking { writer.updateUserFunction("nightly_close", definition) } }
+            assertTrue(recorded.isEmpty(), "run_as $bad reached the server: ${recorded.map { it.url }}")
+
+            val served = JsonObject(fixture.getValue("function_definition").jsonObject + ("run_as" to bad)).toString()
+            assertFailsWith<IllegalStateException>("get with run_as $bad") { runBlocking { client(mutableListOf(), 200, served).getUserFunction("nightly_close") } }
+            val good = fixture.getValue("function_definition").toString()
+            assertFailsWith<IllegalStateException>("list with run_as $bad") { runBlocking { client(mutableListOf(), 200, "[$good, $served]").listUserFunctions() } }
+        }
+
+        // The two names, an explicit null and an absent field (a function saved before
+        // the server recorded run_as) all pass, in both directions.
+        val recorded = mutableListOf<HttpRequestData>()
+        client(recorded, 200, """{"id":"f1"}""").updateUserFunction("nightly_close", JsonObject(save + ("run_as" to JsonPrimitive("author"))))
+        assertEquals("author", bodyOf(recorded.single())!!.jsonObject.getValue("run_as").jsonPrimitive.content)
+        val unrecorded = fixture.getValue("function_definition_unrecorded").toString()
+        val withNull = JsonObject(fixture.getValue("function_definition").jsonObject + ("run_as" to JsonNull)).toString()
+        assertEquals(2, client(mutableListOf(), 200, "[$unrecorded, $withNull]").listUserFunctions().size)
+    }
+
     @Test fun aRefusedFunctionCallIsTheClientsNormalHttpError() = runBlocking<Unit> {
         val refusal = fixture.getValue("function_call_refusal").jsonObject
         val status = refusal.getValue("status").jsonPrimitive.int
