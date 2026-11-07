@@ -506,7 +506,10 @@ export class EkoDBAdminClient {
       !Object.values(grants).every(
         (actions) =>
           Array.isArray(actions) &&
-          actions.every((action) => action === "read" || action === "write"),
+          // Array.from turns a hole into undefined; `every` alone skips holes.
+          Array.from(actions).every(
+            (action) => action === "read" || action === "write",
+          ),
       )
     )
       throw new Error("Registration requires read/write action arrays");
@@ -516,7 +519,8 @@ export class EkoDBAdminClient {
       (!object(functions) ||
         !Object.values(functions).every(
           (rights) =>
-            Array.isArray(rights) && rights.every((right) => right === "call"),
+            Array.isArray(rights) &&
+            Array.from(rights).every((right) => right === "call"),
         ))
     )
       throw new Error("Registration requires call action arrays");

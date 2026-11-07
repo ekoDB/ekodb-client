@@ -140,6 +140,24 @@ describe("function call grants", () => {
     },
   );
 
+  it("refuses a sparse rights array, which JSON would send as [null]", async () => {
+    await expect(
+      client().createApiKey({
+        function_permissions: {
+          "report_*": new Array(1) as unknown as ["call"],
+        },
+      }),
+    ).rejects.toThrow("Registration requires call action arrays");
+    await expect(
+      client().createApiKey({
+        collection_permissions: {
+          orders: new Array(1) as unknown as ["read"],
+        },
+      }),
+    ).rejects.toThrow("Registration requires read/write action arrays");
+    expect(request).not.toHaveBeenCalled();
+  });
+
   it("refuses a right other than call", async () => {
     await expect(
       client().createApiKey({
