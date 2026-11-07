@@ -330,11 +330,10 @@ async fn invalid_patterns_and_targets_fail_before_any_request() {
         .expect(0)
         .create_async()
         .await;
-    // A GET, PUT or DELETE fails this test (the token mock above covers POST): an unmatched
-    // request would also come back as
-    // an error, so the error alone cannot show the pattern was refused before sending.
+    // Any request at all fails this test. An unmatched request would also come back as an
+    // error, so the error alone cannot show that the pattern was refused before sending.
     let mut anything = Vec::new();
-    for method in ["GET", "PUT", "DELETE"] {
+    for method in ["GET", "POST", "PUT", "DELETE"] {
         anything.push(
             server
                 .mock(method, Matcher::Any)
