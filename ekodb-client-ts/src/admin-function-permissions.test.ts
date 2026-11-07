@@ -186,6 +186,17 @@ describe("function call grants", () => {
         }),
       );
     }
+    /** The probe answered 404, then exactly one legacy read followed. */
+    function expectLegacyRead() {
+      expect(calls().slice(-2)).toEqual([
+        {
+          path: "/api/auth/keys/me/permissions",
+          method: "GET",
+          body: undefined,
+        },
+        { path: "/api/auth/permissions", method: "GET", body: undefined },
+      ]);
+    }
     for (const entry of cases.accepted) {
       it(`accepts ${entry.name}`, async () => {
         answer(entry.value);
@@ -207,6 +218,7 @@ describe("function call grants", () => {
             (grant) => grant.pattern,
           ),
         ).toEqual(entry.patterns);
+        expectLegacyRead();
       });
     }
     for (const entry of cases.rejected) {
@@ -220,6 +232,7 @@ describe("function call grants", () => {
         const legacy = client();
         expect(await legacy.usesKeyPermissionRoutes()).toBe(false);
         await expect(legacy.getPermissions()).rejects.toThrow();
+        expectLegacyRead();
       });
     }
   });
