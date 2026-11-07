@@ -16,6 +16,10 @@ and this project adheres to
   builds these with struct literals must add the fields (`None` or empty);
   `UserFunction::new` and `CreateApiKeyRequest`'s `..Default::default()` already
   cover them.
+- Kotlin: move every Ktor module (client core, CIO, content negotiation, kotlinx
+  JSON serialization, WebSockets, logging, encoding, and the test mock) to 3.6.1
+  together, and mirror the same pins in the flat-JAR Kotlin examples, so no
+  build mixes Ktor 3.6.0 and 3.6.1 artifacts.
 
 ### Added
 
