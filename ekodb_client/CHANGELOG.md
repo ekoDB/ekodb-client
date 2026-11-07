@@ -61,8 +61,7 @@ and this project adheres to
   key records, and the Rust aggregate read refused `null` and the map. The
   shared fixture carries the accepted and refused shapes, and every SDK's suite
   reads them. A `null` rights value in the map (`{"report_*": null}`) is among
-  the refused shapes, and the Go module's copy of the fixture is byte-identical
-  again.
+  the refused shapes.
 - TypeScript: registration refuses a sparse rights array (such as
   `new Array(1)`) for function and collection grants before sending. `every`
   skips holes, so such an array passed the local check and reached the server as
