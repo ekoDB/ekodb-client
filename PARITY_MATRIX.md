@@ -605,14 +605,15 @@ aggregate permission read, and list, read, give (`PUT {"call": true}`) and
 remove (`DELETE`) per-pattern methods addressed by key id. A pattern is an exact
 label, a label prefix ending in one `*`, or `*`; every SDK rejects an empty,
 over-256-byte, control/invisible-character or mid-string-`*` pattern, and the
-bare segments `.` and `..` (an SDK-side rule: a bare dot segment is not safely
-routable and is not percent-encoded around), before HTTP, and encodes the
-pattern as one path segment. Stored-function definitions carry `run_as`
-(`caller` or `author`, any other value rejected) and the read-only server-set
-`created_by`; schedules are untyped in every SDK, so their server-set
-`created_by` is returned unchanged. A function call refused for want of a grant
-(403) surfaces as each SDK's ordinary HTTP error. The common contract and
-per-language method names are in
+bare segments `.` and `..` (a bare dot segment cannot be addressed in a URL
+path; the server refuses them as grant patterns too, since ekoDB 0.81.1), before
+HTTP, and encodes the pattern as one path segment. Stored-function definitions
+carry `run_as` (`caller` or `author`; any other value is rejected before a
+definition is sent and when one is read, on the typed and the raw function
+methods alike) and the read-only server-set `created_by`; schedules are untyped
+in every SDK, so their server-set `created_by` is returned unchanged. A function
+call refused for want of a grant (403) surfaces as each SDK's ordinary HTTP
+error. The common contract and per-language method names are in
 [ADMIN.md](ekodb-client-ts/ADMIN.md#stored-function-call-grants). The recorded
 cases are the synthetic `test-fixtures/admin-function-permissions-contract.json`
 (vendored unchanged by the Go module), not a server response capture.
@@ -627,9 +628,11 @@ cases are the synthetic `test-fixtures/admin-function-permissions-contract.json`
 
 The `client_admin` example's disposable-key lifecycle (`EKODB_ADMIN_LIVE=1`)
 registers a function grant, then lists, reads, gives and removes one more. The
-Go example compiles against the Go module's function-grant branch; offline
-fixture tests are distinct from live verification, which needs a server that
-supports function grants.
+Go example needs a Go module that carries the function-grant methods: CI builds
+it against the same-named `ekodb-client-go` branch, or that repository's default
+branch when none exists, so the Go module's change must reach its default branch
+before this repository's change does; offline fixture tests are distinct from
+live verification, which needs a server that supports function grants.
 
 ---
 
