@@ -300,7 +300,6 @@ class AdminFunctionPermissionsTest {
             for (request in recorded) assertEquals(definition["run_as"], bodyOf(request)!!.jsonObject["run_as"])
         }
         val definition = fixture.getValue("function_definition").jsonObject
-        val unrecorded = fixture.getValue("function_definition_unrecorded").toString()
         val caller = JsonObject(definition + ("run_as" to JsonPrimitive("caller")))
         val withNull = JsonObject(definition + ("run_as" to JsonNull))
         val absent = JsonObject(definition - "run_as")
