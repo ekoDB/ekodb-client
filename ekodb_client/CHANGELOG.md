@@ -58,17 +58,18 @@ and this project adheres to
   in a reply, on key records and on the aggregate permission read. It may be
   absent or `null` (no grants), a list of grants, or the registration map
   `pattern -> ["call"]`, and an empty pattern is refused in either form.
+  Previously the map accepted an empty pattern in TypeScript, Kotlin and on Rust
+  key records, and the Rust aggregate read refused `null` and the map. The
+  shared fixture carries the accepted and refused shapes, and every SDK's suite
+  reads them. A `null` rights value in the map (`{"report_*": null}`) is among
+  the refused shapes.
 - Rust, Python, TypeScript, Kotlin: function grants read sorted by pattern in
   Unicode code-point order whichever shape the reply uses. A list reply used to
   keep the server's order while the registration map was sorted, and TypeScript
   and Kotlin sorted the map by UTF-16 code unit, so a pattern outside the Basic
   Multilingual Plane came before one in U+E000..U+FFFF there and after it in
   Rust, Python and Go. The shared fixture adds an out-of-order list and that
-  Unicode case in both shapes. Previously the map accepted an empty pattern in
-  TypeScript, Kotlin and on Rust key records, and the Rust aggregate read
-  refused `null` and the map. The shared fixture carries the accepted and
-  refused shapes, and every SDK's suite reads them. A `null` rights value in the
-  map (`{"report_*": null}`) is among the refused shapes.
+  Unicode case in both shapes.
 - TypeScript: registration refuses a sparse rights array (such as
   `new Array(1)`) for function and collection grants before sending. `every`
   skips holes, so such an array passed the local check and reached the server as
