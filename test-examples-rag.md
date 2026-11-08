@@ -6,16 +6,16 @@ make test-examples-rag
 🐍 Found CPython 3.15 at /Users/tek/.local/bin/python3
 🔗 Found pyo3 bindings with abi3-py3.8 support
 💻 Using `MACOSX_DEPLOYMENT_TARGET=11.0` for aarch64-apple-darwin by default
-    Finished `release` profile [optimized] target(s) in 0.15s
-📦 Built wheel for abi3 Python ≥ 3.8 to ekoDB/ekodb-client/ekodb-client-py/target/wheels/ekodb_client-0.31.0-cp38-abi3-macosx_11_0_arm64.whl
+    Finished `release` profile [optimized] target(s) in 0.10s
+📦 Built wheel for abi3 Python ≥ 3.8 to ekoDB/ekodb-client/ekodb-client-py/target/wheels/ekodb_client-0.32.0-cp38-abi3-macosx_11_0_arm64.whl
 📦 Installing Python wheel into .venv...
-Processing ./ekodb-client-py/target/wheels/ekodb_client-0.31.0-cp38-abi3-macosx_11_0_arm64.whl
+Processing ./ekodb-client-py/target/wheels/ekodb_client-0.32.0-cp38-abi3-macosx_11_0_arm64.whl
 Installing collected packages: ekodb-client
   Attempting uninstall: ekodb-client
-    Found existing installation: ekodb_client 0.31.0
-    Uninstalling ekodb_client-0.31.0:
-      Successfully uninstalled ekodb_client-0.31.0
-Successfully installed ekodb-client-0.31.0
+    Found existing installation: ekodb_client 0.32.0
+    Uninstalling ekodb_client-0.32.0:
+      Successfully uninstalled ekodb_client-0.32.0
+Successfully installed ekodb-client-0.32.0
 🧪 Ensuring test dependencies (pytest) in .venv...
 ✅ Python client package built and installed!
 📦 Ensuring Python example dependencies in .venv...
@@ -68,75 +68,75 @@ Storing previous conversations with embeddings...
     • Using model: text-embedding-3-small
     • Text length: 34 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 967.265459ms
+    ✓ Generated embedding: 1536 dimensions in 460.804792ms
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 169 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 643.677667ms
+    ✓ Generated embedding: 1536 dimensions in 271.738ms
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 33 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 315.196833ms
+    ✓ Generated embedding: 1536 dimensions in 234.168667ms
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 230 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 330.049167ms
+    ✓ Generated embedding: 1536 dimensions in 271.472625ms
     • Function auto-cleaned up by client
 ✓ Stored Rust programming conversation (4 messages)
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 31 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 358.847791ms
+    ✓ Generated embedding: 1536 dimensions in 308.596834ms
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 217 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 270.113834ms
+    ✓ Generated embedding: 1536 dimensions in 278.503625ms
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 33 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 303.01425ms
+    ✓ Generated embedding: 1536 dimensions in 277.214333ms
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 232 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 314.942916ms
+    ✓ Generated embedding: 1536 dimensions in 310.740666ms
     • Function auto-cleaned up by client
 ✓ Stored database design conversation (4 messages)
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 36 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 381.30725ms
+    ✓ Generated embedding: 1536 dimensions in 272.524167ms
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 178 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 341.626459ms
+    ✓ Generated embedding: 1536 dimensions in 285.147875ms
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 37 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 278.760208ms
+    ✓ Generated embedding: 1536 dimensions in 249.947292ms
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 213 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 310.380209ms
+    ✓ Generated embedding: 1536 dimensions in 274.533959ms
     • Function auto-cleaned up by client
 ✓ Stored performance optimization conversation (4 messages)
 
@@ -152,7 +152,7 @@ Using hybrid search to find relevant messages from all conversations...
     • Using model: text-embedding-3-small
     • Text length: 58 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 333.013833ms
+    ✓ Generated embedding: 1536 dimensions in 249.498667ms
     • Function auto-cleaned up by client
 
 → Executing hybrid_search()...
@@ -162,7 +162,7 @@ Using hybrid search to find relevant messages from all conversations...
   • Limit: 5 results
   • Search type: Semantic (vector) + Keyword (text)
   • Server combines both scores for relevance ranking
-  ✓ Search completed in 70.6735ms
+  ✓ Search completed in 41.656917ms
 
 ✓ Found 5 related messages across all conversations:
   1. From conv_database_design
@@ -183,47 +183,45 @@ Using hybrid search to find relevant messages from all conversations...
 === Step 4: Generating Context-Aware Response ===
 ✓ AI Response (with context from 3 conversations):
 
-“Memory-safe” and “high-performance” are related but different goals: memory safety prevents invalid access and leaks; performance comes from measuring and controlling allocations, I/O, contention, and query work.
+Write database code so its **memory use is bounded by the work in progress**, then optimize the queries that dominate real workloads. “Memory-safe” can mean two things: preventing bugs such as use-after-free and data races, and avoiding application or database memory exhaustion. Good design addresses both.
 
-### Keep memory use bounded
-- **Stream or page through large results** instead of loading an entire table into memory. Use a stable sort key for pagination so records aren’t skipped or repeated as data changes.
-- **Put limits on every potentially large operation**: result size, batch size, request body, concurrency, and timeouts.
-- **Apply filters in the database** rather than fetching lots of rows and filtering them in application code.
-- Reuse buffers and temporary objects where it’s worthwhile, but avoid complicated pooling unless profiling shows allocation costs matter.
+### Keep memory bounded
+- **Paginate or stream results.** Don’t load an entire large collection or result set into memory. Fetch a limited page, process it, then continue.
+- **Project only needed fields.** Large blobs and unused columns add allocation and transfer costs.
+- **Batch writes** in a measured, bounded size. Oversized batches can spike memory and increase latency; tiny batches can waste round trips.
+- **Put limits on inputs and work:** page size, payload size, concurrency, and queued jobs. Apply backpressure instead of letting work accumulate in unbounded queues.
+- **Release resources promptly.** Close cursors, transactions, connections, and file/blob handles using your language’s scope-based cleanup (`defer`, `using`, RAII, etc.). Don’t keep references to large records longer than necessary.
 
-### Use the language’s safety features
-- Prefer owned values and safe borrowing/lifetimes over raw pointers or manual memory management. In Rust, avoid `unsafe` unless it is necessary, isolated, and carefully reviewed.
-- Make resource lifetimes explicit: close cursors and connections promptly, and use scoped cleanup or RAII-style guards.
-- Don’t retain references to temporary data or buffers after their owner can be released.
-- Bound queues and worker pools. An unbounded queue can turn a traffic spike into an out-of-memory failure even when the code has no memory-safety bugs.
+### Use safe concurrency and ownership
+Prefer a memory-safe language and its standard ownership or garbage-collection mechanisms. Avoid raw pointers and shared mutable state unless profiling shows a real need. If multiple tasks share a connection pool or cache, use synchronization primitives correctly—and bound the number of concurrent tasks. For example, 1,000 concurrent queries can exhaust memory even if each query is individually small.
 
-### Reduce database work
-- Select only the fields you need; avoid fetching whole records by default.
-- Avoid N+1 queries. Fetch related data in batches or use an appropriate join/aggregation when supported.
-- Use transactions for operations that must be atomic, but keep transactions short—don’t hold them open while waiting on network calls or user input.
-- Batch writes where possible, while keeping batches small enough to limit memory use, lock duration, and retry cost.
-- Use connection pooling with a sensible cap. Too many concurrent connections can hurt the database rather than speed it up.
+### Make queries do less work
+- Avoid N+1 patterns: fetch related data in batches or through an appropriate join/API operation.
+- Filter early and use indexes that match common filters and sort orders.
+- Use query-plan tools and representative data to check whether a query scans too much.
+- Prefer keyset pagination for large, changing datasets when offset-based pagination becomes expensive.
+- Avoid repeated conversions, copies, and serialization of large values in hot paths.
 
-### Measure before tuning
-- Inspect query plans and look for full scans, unnecessary sorting, and missing indexes.
-- Index fields used frequently for filtering or sorting, but remember that indexes consume space and make writes more expensive.
-- Benchmark with realistic data sizes and concurrency. Track latency percentiles, allocation rate, peak memory, pool waits, and database load—not just average response time.
-- Add timeouts, cancellation, and backpressure so slow database work doesn’t accumulate indefinitely.
+### Handle failures safely
+Use parameterized query APIs rather than building query strings from input. Keep transactions short, roll them back on error, and make retries safe—especially for writes. Set timeouts and define what happens when a database or downstream service is slow.
 
-A useful shape for a data path is: **validate input → issue a bounded, parameterized query → process results incrementally → release resources promptly**. The exact APIs depend on your language and database; if you share those, I can give a concrete implementation pattern.
+### Measure, then tune
+Profile memory allocations, peak resident memory, query latency, and throughput under realistic load. Test large result sets, slow queries, retries, and concurrent requests. Change batch sizes, pool sizes, or indexes based on those measurements rather than guesses.
+
+A useful rule of thumb: **each request should have a predictable upper bound on rows, bytes, and concurrent work**. In ekoDB, the same principles translate to using query limits and field projection, explicit schemas, indexes for frequent filters, and bounded batches or stored functions for repeatable operations.
 
 === Step 5: Storing New Conversation ===
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 58 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 453.545375ms
+    ✓ Generated embedding: 1536 dimensions in 220.183916ms
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
-    • Text length: 2806 characters
+    • Text length: 2951 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 324.920458ms
+    ✓ Generated embedding: 1536 dimensions in 230.177875ms
     • Function auto-cleaned up by client
 ✓ New conversation stored and indexed for future retrieval
 
@@ -237,14 +235,39 @@ Searching for messages about 'ownership' across ALL conversations...
   • Limit: 3 results
   • Search method: Full-text with fuzzy matching & stemming
   • No vector embeddings needed - pure keyword search
-  ✓ Text search completed in 47.815041ms
+  ✓ Text search completed in 26.555292ms
 
 ✓ Found 3 messages mentioning ownership:
-  1. From conv_performance: Rust's ownership system provides zero-cost memory management. Use Box for heap allocation, Rc/Arc for shared ownership, and avoid cloning large data structures. The compiler optimizes away unnecessary allocations.
+  1. From conv_rust_programming: Rust's key features include: memory safety without garbage collection, zero-cost abstractions, ownership system, powerful type system, and excellent concurrency support.
 
-  2. From conv_rust_programming: Rust's key features include: memory safety without garbage collection, zero-cost abstractions, ownership system, powerful type system, and excellent concurrency support.
+  2. From conv_performance: Rust's ownership system provides zero-cost memory management. Use Box for heap allocation, Rc/Arc for shared ownership, and avoid cloning large data structures. The compiler optimizes away unnecessary allocations.
 
-  3. From conv_rust_programming: The borrow checker enforces Rust's ownership rules at compile time. It ensures that references don't outlive the data they point to and prevents data races by allowing either multiple immutable references or one mutable reference.
+  3. From conv_new_question: Write database code so its **memory use is bounded by the work in progress**, then optimize the queries that dominate real workloads. “Memory-safe” can mean two things: preventing bugs such as use-after-free and data races, and avoiding application or database memory exhaustion. Good design addresses both.
+
+### Keep memory bounded
+- **Paginate or stream results.** Don’t load an entire large collection or result set into memory. Fetch a limited page, process it, then continue.
+- **Project only needed fields.** Large blobs and unused columns add allocation and transfer costs.
+- **Batch writes** in a measured, bounded size. Oversized batches can spike memory and increase latency; tiny batches can waste round trips.
+- **Put limits on inputs and work:** page size, payload size, concurrency, and queued jobs. Apply backpressure instead of letting work accumulate in unbounded queues.
+- **Release resources promptly.** Close cursors, transactions, connections, and file/blob handles using your language’s scope-based cleanup (`defer`, `using`, RAII, etc.). Don’t keep references to large records longer than necessary.
+
+### Use safe concurrency and ownership
+Prefer a memory-safe language and its standard ownership or garbage-collection mechanisms. Avoid raw pointers and shared mutable state unless profiling shows a real need. If multiple tasks share a connection pool or cache, use synchronization primitives correctly—and bound the number of concurrent tasks. For example, 1,000 concurrent queries can exhaust memory even if each query is individually small.
+
+### Make queries do less work
+- Avoid N+1 patterns: fetch related data in batches or through an appropriate join/API operation.
+- Filter early and use indexes that match common filters and sort orders.
+- Use query-plan tools and representative data to check whether a query scans too much.
+- Prefer keyset pagination for large, changing datasets when offset-based pagination becomes expensive.
+- Avoid repeated conversions, copies, and serialization of large values in hot paths.
+
+### Handle failures safely
+Use parameterized query APIs rather than building query strings from input. Keep transactions short, roll them back on error, and make retries safe—especially for writes. Set timeouts and define what happens when a database or downstream service is slow.
+
+### Measure, then tune
+Profile memory allocations, peak resident memory, query latency, and throughput under realistic load. Test large result sets, slow queries, retries, and concurrent requests. Change batch sizes, pool sizes, or indexes based on those measurements rather than guesses.
+
+A useful rule of thumb: **each request should have a predictable upper bound on rows, bytes, and concurrent work**. In ekoDB, the same principles translate to using query limits and field projection, explicit schemas, indexes for frequent filters, and bounded batches or stored functions for repeatable operations.
 
 === System Statistics ===
 
@@ -308,75 +331,75 @@ Storing previous conversations with embeddings...
     • Using model: text-embedding-3-small
     • Text length: 34 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.428s
+    ✓ Generated embedding: 1536 dimensions in 0.247s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 169 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.314s
+    ✓ Generated embedding: 1536 dimensions in 0.233s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 33 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.325s
+    ✓ Generated embedding: 1536 dimensions in 0.296s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 230 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.397s
+    ✓ Generated embedding: 1536 dimensions in 0.262s
     • Function auto-cleaned up by client
 ✓ Stored Rust programming conversation (4 messages)
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 31 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.632s
+    ✓ Generated embedding: 1536 dimensions in 0.265s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 217 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.372s
+    ✓ Generated embedding: 1536 dimensions in 0.215s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 33 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.283s
+    ✓ Generated embedding: 1536 dimensions in 0.230s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 232 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.306s
+    ✓ Generated embedding: 1536 dimensions in 0.243s
     • Function auto-cleaned up by client
 ✓ Stored database design conversation (4 messages)
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 36 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.306s
+    ✓ Generated embedding: 1536 dimensions in 0.324s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 178 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.343s
+    ✓ Generated embedding: 1536 dimensions in 0.265s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 37 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.325s
+    ✓ Generated embedding: 1536 dimensions in 0.272s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 213 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.307s
+    ✓ Generated embedding: 1536 dimensions in 0.220s
     • Function auto-cleaned up by client
 ✓ Stored performance optimization conversation (4 messages)
 
@@ -392,7 +415,7 @@ Using hybrid search to find relevant messages from all conversations...
     • Using model: text-embedding-3-small
     • Text length: 58 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.310s
+    ✓ Generated embedding: 1536 dimensions in 0.228s
     • Function auto-cleaned up by client
 
 → Executing hybrid_search()...
@@ -402,7 +425,7 @@ Using hybrid search to find relevant messages from all conversations...
   • Limit: 5 results
   • Search type: Semantic (vector) + Keyword (text)
   • Server combines both scores for relevance ranking
-  ✓ Search completed in 0.061s
+  ✓ Search completed in 0.029s
 
 ✓ Found 5 related messages across all conversations:
   1. [Score: 0.504] From conv_database_design
@@ -423,44 +446,44 @@ Using hybrid search to find relevant messages from all conversations...
 === Step 4: Generating Context-Aware Response ===
 ✓ AI Response (with context from 3 conversations):
 
-Write database code so that **memory use is bounded, data access is predictable, and work is performed in batches**. The exact techniques depend on your language and database, but these principles apply broadly:
+Write database code so memory use is **bounded and predictable**, then optimize based on measurements.
 
-- **Fetch only what you need.** Project the required fields instead of loading entire records. Avoid fetching large result sets just to discard most of them.
-- **Paginate large reads.** Use a stable sort and a page size you can keep in memory. Prefer cursor-based pagination when offset-based pages become slow or records change during traversal.
-- **Avoid N+1 queries.** Don’t issue one query per item in a result set. Fetch related data in batches or use an appropriate join/query pattern.
-- **Use indexes that match real access patterns.** Index fields you filter or sort on; avoid adding indexes indiscriminately, since they consume storage and make writes more expensive. Check the query plan rather than guessing.
-- **Bound concurrency and buffering.** A large pool of concurrent queries can exhaust memory, connections, or the database. Set limits on in-flight work, queue sizes, and batch sizes.
-- **Reuse connections through a pool.** Don’t open a new database connection for every operation. Configure pool limits and timeouts for your workload.
-- **Keep transactions short.** Fetch or prepare data before starting a transaction when possible, and commit or roll back promptly. Long transactions can hold locks and retain database resources.
-- **Use parameterized operations.** Pass values as parameters rather than building query strings from user input; this helps prevent injection and often improves plan reuse.
-- **Handle resource lifetimes explicitly.** Close cursors, statements, connections, and transactions—or use language features such as RAII, `defer`, or context managers. In garbage-collected languages, still avoid retaining large result objects longer than needed.
-- **Measure before optimizing.** Track latency, memory, query counts, pool waits, and errors. Test with realistic data and concurrency.
+### Keep memory use safe
 
-For example, in Rust, a typical safe pattern is to borrow data where possible, fetch bounded pages, and let scoped values release resources automatically:
+- **Prefer managed or ownership-safe APIs.** In Rust, use owned values and borrowing carefully; in C/C++, use RAII, smart pointers, and containers rather than manual `malloc`/`free` where possible.
+- **Bound every result set.** Use limits and keyset pagination instead of loading an entire table into memory. For large exports or scans, process rows as a stream or in fixed-size batches.
+- **Avoid unnecessary copies.** Select only needed columns, reuse buffers when appropriate, and pass references or slices where the API permits.
+- **Make resource lifetimes explicit.** Close cursors and transactions promptly; use context managers, RAII, or `defer`-style cleanup. Don’t retain database rows or large buffers longer than needed.
+- **Validate input sizes.** Cap page sizes, batch sizes, query lengths, and payload sizes to prevent accidental or malicious memory spikes.
 
-```rust
-async fn load_page(pool: &DbPool, cursor: Option<Cursor>) -> Result<Vec<Item>, DbError> {
-    let rows = query_items(pool, cursor, 200).await?;
-    Ok(rows)
-}
-```
+### Make it fast without wasting resources
 
-The key is that `query_items` should enforce the page limit and select only the fields the caller needs; callers should process one page at a time rather than accumulating the whole dataset.
+- **Use parameterized queries** and reuse prepared statements where supported.
+- **Fetch only what you need.** Avoid `SELECT *` when a few fields suffice.
+- **Index for actual query patterns.** Index columns used frequently in filters, joins, and ordering—but avoid excessive indexes, which increase write and storage costs.
+- **Avoid N+1 queries.** Fetch related records in batches or use an appropriate join.
+- **Batch writes** when safe, but keep batches bounded; very large batches can increase memory use, lock time, and recovery costs.
+- **Use transactions deliberately.** Group related changes for consistency, and keep transactions short to reduce lock contention.
+- **Use connection pooling** for services, and set sensible pool limits and timeouts.
 
-In ekoDB, the same approach means using `select_fields` and a reasonable `limit` with `query_collection`. Use `query_explain` to inspect whether a filter or sort is doing a full scan, then add an index if the observed access pattern warrants it. A useful rule of thumb: **bound every collection of work—rows, buffers, concurrency, and time.**
+### Measure, then tune
+
+Profile both the application and database. Track query latency, rows scanned versus returned, allocation rate, peak memory, and connection-pool waits. Inspect query plans, add or adjust indexes based on evidence, and test with realistic data volumes and concurrency.
+
+A useful rule of thumb: **stream large reads, batch bounded writes, keep transactions short, and never optimize a query without checking its plan and measurements.** The best implementation details depend on your language and database; if you share those, I can give a concrete example.
 
 === Step 5: Storing New Conversation ===
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 58 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.277s
+    ✓ Generated embedding: 1536 dimensions in 0.252s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
-    • Text length: 2903 characters
+    • Text length: 2385 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.317s
+    ✓ Generated embedding: 1536 dimensions in 0.196s
     • Function auto-cleaned up by client
 ✓ New conversation stored and indexed for future retrieval
 
@@ -539,75 +562,75 @@ Storing previous conversations with embeddings...
     • Using model: text-embedding-3-small
     • Text length: 34 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.351s
+    ✓ Generated embedding: 1536 dimensions in 0.275s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 169 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.322s
+    ✓ Generated embedding: 1536 dimensions in 0.265s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 33 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.363s
+    ✓ Generated embedding: 1536 dimensions in 0.243s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 230 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.286s
+    ✓ Generated embedding: 1536 dimensions in 0.259s
     • Function auto-cleaned up by client
 ✓ Stored Rust programming conversation (4 messages)
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 31 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.371s
+    ✓ Generated embedding: 1536 dimensions in 0.273s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 217 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.322s
+    ✓ Generated embedding: 1536 dimensions in 0.270s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 33 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.316s
+    ✓ Generated embedding: 1536 dimensions in 0.213s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 232 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.322s
+    ✓ Generated embedding: 1536 dimensions in 0.314s
     • Function auto-cleaned up by client
 ✓ Stored database design conversation (4 messages)
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 36 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.288s
+    ✓ Generated embedding: 1536 dimensions in 0.243s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 178 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.298s
+    ✓ Generated embedding: 1536 dimensions in 0.200s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 37 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.313s
+    ✓ Generated embedding: 1536 dimensions in 0.266s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 213 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.361s
+    ✓ Generated embedding: 1536 dimensions in 0.258s
     • Function auto-cleaned up by client
 ✓ Stored performance optimization conversation (4 messages)
 
@@ -623,7 +646,7 @@ Using hybrid search to find relevant messages from all conversations...
     • Using model: text-embedding-3-small
     • Text length: 58 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.341s
+    ✓ Generated embedding: 1536 dimensions in 0.253s
     • Function auto-cleaned up by client
 
 → Executing hybridSearch()...
@@ -633,7 +656,7 @@ Using hybrid search to find relevant messages from all conversations...
   • Limit: 5 results
   • Search type: Semantic (vector) + Keyword (text)
   • Server combines both scores for relevance ranking
-  ✓ Search completed in 0.069s
+  ✓ Search completed in 0.030s
 ✓ Found 5 related messages across all conversations:
   1. [Score: 0.474] From conv_performance
      How can I optimize database queries?
@@ -653,47 +676,32 @@ Using hybrid search to find relevant messages from all conversations...
 === Step 4: Generating Context-Aware Response ===
 ✓ AI Response (with context from 3 conversations):
 
-Write database code that keeps **both data volume and concurrency bounded**, then measure the actual bottlenecks. “Memory-safe” is about preventing invalid memory access and leaks; “memory-efficient” is about not retaining or copying more data than necessary.
+Write database code so **memory use, work per request, and concurrency are all bounded**—then measure and optimize the actual bottleneck.
 
-### Core practices
+- **Fetch only what you need.** Select specific fields, filter on the server, and set a limit. Avoid loading whole collections or large blobs just to use a few fields. In ekoDB, use `select_fields` and a bounded `limit` with `query_collection`.
+- **Process large result sets in pages.** Keep one page in memory, process it, then fetch the next. Prefer keyset pagination—“records after the last seen ID or timestamp”—over large offsets when your query supports it.
+- **Avoid N+1 queries.** Don’t issue a query for every row in a result. Fetch related data in batches or redesign the query/API so the server does more of the work.
+- **Index the access path, not every field.** Index fields used frequently for filters and sorting. Check the query plan first; in ekoDB, `query_explain` shows whether a query scans or uses an index and may recommend indexes.
+- **Keep batches and concurrency bounded.** Use modest batch sizes, cap simultaneous queries, and apply backpressure when the database or downstream service is slow. Unbounded queues and “fetch everything, then process” designs can exhaust memory under load.
+- **Make resource ownership explicit.** In C++, prefer RAII and smart pointers over unmanaged ownership; in Rust, let ownership and borrowing govern lifetimes. Release cursors, connections, statements, and temporary buffers promptly. Don’t retain references into buffers after their owner is gone.
+- **Keep transactions short.** Do work that doesn’t require the transaction before or after it. Long transactions can hold locks and resources and increase contention.
+- **Use parameterized queries and validate bounds.** This avoids injection and lets you enforce maximum page sizes, batch sizes, and payload sizes.
+- **Measure before tuning.** Track query latency, rows and bytes returned, allocation rate, peak memory, and contention. Benchmark with realistic data and concurrent load; a query that is fast on a tiny dataset may not scale.
 
-- **Stream or page large result sets.** Don’t load an unbounded query into memory. Use a cursor or keyset pagination, and process a bounded number of rows at a time. Large `OFFSET` pages can become slow; keyset pagination is often better.
-- **Select only what you need.** Avoid fetching every column or materializing large blobs when the operation uses only a few fields.
-- **Batch writes sensibly.** Batching reduces round trips, but enormous batches can consume memory and hold locks too long. Choose a bounded batch size and tune it with measurements.
-- **Avoid N+1 queries.** Fetch related data in a join or a bounded bulk query rather than issuing one query per row.
-- **Use indexes that match real access patterns.** Check the query plan for common filters and sorts. Indexes can speed reads, but too many slow writes and use extra storage.
-- **Bound concurrency and queues.** A connection pool, worker count, and request queue should all have limits. Backpressure is safer than letting requests pile up in memory.
-- **Keep transactions short.** Don’t hold a transaction or lock while doing slow network calls or unrelated work. Use retries only where operations are safe to retry.
-- **Use parameterized queries.** This prevents injection and often lets the database reuse query plans.
-- **Avoid unnecessary copies and unbounded caches.** In Rust, borrow data where practical and let RAII release resources; in C++, use RAII and smart pointers rather than manual ownership. Keep caches and buffers capped.
-- **Profile before optimizing.** Measure allocations, peak memory, query latency, rows read, and connection-pool waits under realistic load.
-
-A useful general pattern is:
-
-```text
-for each bounded page of rows:
-    process rows
-    accumulate a bounded write batch
-    persist the batch
-    release page and batch memory
-```
-
-For Rust specifically, prefer safe database-client APIs, bounded streams, and explicit limits on concurrent tasks; avoid `unsafe` unless profiling demonstrates a need and you can carefully justify and test the invariants.
-
-The biggest wins usually come from controlling result size, eliminating redundant queries, and fixing the query plan—not from low-level memory tricks.
+A useful request pattern is: **validate the request → query a bounded, projected page → process it without accumulating every page → return or persist a bounded result**. That usually improves both memory safety and throughput without relying on fragile micro-optimizations.
 
 === Step 5: Storing New Conversation ===
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 58 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.337s
+    ✓ Generated embedding: 1536 dimensions in 0.253s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
-    • Text length: 2492 characters
+    • Text length: 2368 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.374s
+    ✓ Generated embedding: 1536 dimensions in 0.210s
     • Function auto-cleaned up by client
 ✓ New conversation stored and indexed for future retrieval
 
@@ -707,11 +715,11 @@ Searching for messages about 'ownership' across ALL conversations...
   • Limit: 3 results
   • Search method: Full-text with fuzzy matching & stemming
   • No vector embeddings needed - pure keyword search
-  ✓ Text search completed in 0.038s
+  ✓ Text search completed in 0.023s
 ✓ Found 3 messages mentioning ownership:
-  1. From conv_rust_programming: Rust's key features include: memory safety without garbage collection, zero-cost abstractions, ownership system, powerful type system, and excellent concurrency support.
+  1. From conv_performance: Rust's ownership system provides zero-cost memory management. Use Box for heap allocation, Rc/Arc for shared ownership, and avoid cloning large data structures. The compiler optimizes away unnecessary allocations.
 
-  2. From conv_performance: Rust's ownership system provides zero-cost memory management. Use Box for heap allocation, Rc/Arc for shared ownership, and avoid cloning large data structures. The compiler optimizes away unnecessary allocations.
+  2. From conv_rust_programming: Rust's key features include: memory safety without garbage collection, zero-cost abstractions, ownership system, powerful type system, and excellent concurrency support.
 
   3. From conv_rust_programming: The borrow checker enforces Rust's ownership rules at compile time. It ensures that references don't outlive the data they point to and prevents data races by allowing either multiple immutable references or one mutable reference.
 
@@ -786,75 +794,75 @@ Storing previous conversations with embeddings...
     • Using model: text-embedding-3-small
     • Text length: 34 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.258s
+    ✓ Generated embedding: 1536 dimensions in 0.256s
     • Function auto-cleaned up by client
   → Calling ekoDB Embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 169 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.328s
+    ✓ Generated embedding: 1536 dimensions in 0.273s
     • Function auto-cleaned up by client
   → Calling ekoDB Embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 33 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.317s
+    ✓ Generated embedding: 1536 dimensions in 0.255s
     • Function auto-cleaned up by client
   → Calling ekoDB Embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 230 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.333s
+    ✓ Generated embedding: 1536 dimensions in 0.254s
     • Function auto-cleaned up by client
 ✓ Stored Rust programming conversation (4 messages)
   → Calling ekoDB Embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 31 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.518s
+    ✓ Generated embedding: 1536 dimensions in 0.385s
     • Function auto-cleaned up by client
   → Calling ekoDB Embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 217 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.300s
+    ✓ Generated embedding: 1536 dimensions in 0.273s
     • Function auto-cleaned up by client
   → Calling ekoDB Embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 33 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.290s
+    ✓ Generated embedding: 1536 dimensions in 0.233s
     • Function auto-cleaned up by client
   → Calling ekoDB Embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 232 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.317s
+    ✓ Generated embedding: 1536 dimensions in 0.302s
     • Function auto-cleaned up by client
 ✓ Stored database design conversation (4 messages)
   → Calling ekoDB Embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 36 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.303s
+    ✓ Generated embedding: 1536 dimensions in 0.290s
     • Function auto-cleaned up by client
   → Calling ekoDB Embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 178 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.310s
+    ✓ Generated embedding: 1536 dimensions in 0.235s
     • Function auto-cleaned up by client
   → Calling ekoDB Embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 37 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.338s
+    ✓ Generated embedding: 1536 dimensions in 0.253s
     • Function auto-cleaned up by client
   → Calling ekoDB Embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 213 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.282s
+    ✓ Generated embedding: 1536 dimensions in 0.303s
     • Function auto-cleaned up by client
 ✓ Stored performance optimization conversation (4 messages)
 
@@ -870,7 +878,7 @@ Using hybrid search to find relevant messages from all conversations...
     • Using model: text-embedding-3-small
     • Text length: 58 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.265s
+    ✓ Generated embedding: 1536 dimensions in 0.230s
     • Function auto-cleaned up by client
 
 → Executing HybridSearch()...
@@ -880,7 +888,7 @@ Using hybrid search to find relevant messages from all conversations...
   • Limit: 5 results
   • Search type: Semantic (vector) + Keyword (text)
   • Server combines both scores for relevance ranking
-  ✓ Search completed in 0.050s
+  ✓ Search completed in 0.023s
 
 ✓ Found 5 related messages across all conversations:
   1. [Score: 0.474] From conv_performance
@@ -901,61 +909,45 @@ Using hybrid search to find relevant messages from all conversations...
 === Step 4: Generating Context-Aware Response ===
 ✓ AI Response (with context from 3 conversations):
 
-Memory-safe, high-performance database code is mostly about **bounded resource use, clear ownership, and efficient query shapes**. The exact implementation depends on your language and database, but these practices apply broadly:
+Memory safety and database performance are related but separate concerns: keep both **application memory use** and **database work** bounded.
 
-### Bound memory use
-- **Stream or page through large result sets** instead of loading everything into a list at once.
-- Fetch only the fields you need; avoid large blobs and unnecessary copies.
-- Put explicit limits on queries, request sizes, batch sizes, and concurrency.
-- Reuse buffers where appropriate, but don’t keep them alive longer than needed.
-- Close cursors, statements, connections, and transactions reliably—using RAII, `defer`, `using`, or `finally`, depending on the language.
+### In application code
+- Prefer a memory-safe language and its standard database driver. Use safe abstractions instead of raw pointers or manual allocation.
+- Scope connections, cursors, statements, and transactions so they’re reliably closed—even on errors. Use RAII, `defer`, `using`, or equivalent.
+- Bound inputs and outputs: cap request sizes, batch sizes, result counts, and concurrency. Don’t load an entire large table into memory.
+- Stream large results or process them in bounded batches. Avoid building many intermediate copies of large records.
+- Use parameterized queries. This prevents injection and often lets the database reuse query plans.
+- Set timeouts and cancellation; avoid unbounded queues of work when the database slows down.
 
-For example, prefer processing one page at a time:
+### In database access
+- Fetch only the columns and rows you need; use pagination. For large or changing datasets, prefer **keyset pagination** over large `OFFSET`s.
+- Avoid N+1 queries. Fetch related data in a join or a deliberate batch where appropriate.
+- Batch writes when possible, but keep batches bounded and transactions short. Don’t hold a transaction open while doing network calls or other slow work.
+- Use a connection pool sized for your workload; more connections are not automatically faster.
+- Add indexes for real filter, join, and sort patterns. Indexes speed reads but cost memory, disk, and write time—measure before adding them.
+- Check query plans and benchmark with representative data. Fix slow queries based on evidence, not intuition.
 
-```text
-cursor = open_query(page_size = 500)
-try:
-    while page = cursor.next_page():
-        process(page)
-finally:
-    cursor.close()
-```
+### A practical loop
+1. Set memory, concurrency, and query-size limits.
+2. Measure latency, allocation rate, peak memory, and database load.
+3. Inspect slow queries and their execution plans.
+4. Optimize the largest measured cost.
+5. Re-test under realistic concurrency and failure conditions.
 
-### Make ownership and concurrency explicit
-- In memory-safe languages, use the language’s ownership, borrowing, or garbage-collection model rather than unsafe pointers or manual lifetime tricks.
-- Avoid retaining references to request-scoped data after the request ends.
-- Don’t share mutable database objects across threads unless the driver explicitly supports it. Use a connection pool and follow the driver’s concurrency rules.
-- Bound concurrent queries: too many individually reasonable queries can exhaust memory, connections, or the database.
-
-### Keep queries efficient
-- Avoid N+1 query patterns; fetch related data in batches where possible.
-- Use indexes that match your actual filters and sort order, and verify query plans rather than guessing.
-- Paginate with a stable ordering. For deep pagination, consider a cursor/keyset approach instead of increasingly large offsets.
-- Use parameterized queries when using SQL. They help prevent injection and let drivers/database engines handle values safely.
-- Select only needed fields and avoid repeatedly fetching the same data.
-
-### Keep writes and transactions controlled
-- Batch writes when it reduces overhead, but keep batches small enough to avoid large in-memory buffers and long-running transactions.
-- Keep transactions short; don’t hold one open while doing network calls or slow application work.
-- Make retries safe: use idempotency keys or otherwise prevent a retry from duplicating a write.
-
-### Measure before optimizing
-Track query latency, memory use, allocation rates, pool saturation, and error rates under realistic load. Use query-plan tools and a profiler to locate the actual bottleneck; optimization without measurement often just moves the problem.
-
-If you’re using ekoDB, the same ideas mean using `limit` and `select_fields` to keep reads bounded, checking `query_explain` for scans and index recommendations, and using `collection_info` to inspect indexes and data volume.
+If you’re using ekoDB, `query_explain` can show whether a query scans or uses an index; `collection_info` shows existing indexes. For language-specific code, tell me the language and database driver.
 
 === Step 5: Storing New Conversation ===
   → Calling ekoDB Embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 58 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.309s
+    ✓ Generated embedding: 1536 dimensions in 0.231s
     • Function auto-cleaned up by client
   → Calling ekoDB Embed() helper...
     • Using model: text-embedding-3-small
-    • Text length: 2894 characters
+    • Text length: 2164 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.346s
+    ✓ Generated embedding: 1536 dimensions in 0.286s
     • Function auto-cleaned up by client
 ✓ New conversation stored and indexed for future retrieval
 
@@ -969,7 +961,7 @@ Searching for messages about 'ownership' across ALL conversations...
   • Limit: 3 results
   • Search method: Full-text with fuzzy matching & stemming
   • No vector embeddings needed - pure keyword search
-  ✓ Text search completed in 0.042s
+  ✓ Text search completed in 0.021s
 
 ✓ Found 3 messages mentioning ownership:
   1. From conv_performance: Rust's ownership system provides zero-cost memory management. Use Box for heap allocation, Rc/Arc for shared ownership, and avoid cloning large data structures. The compiler optimizes away unnecessary allocations.
@@ -1052,75 +1044,75 @@ Storing previous conversations with embeddings...
     • Using model: text-embedding-3-small
     • Text length: 34 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.356s
+    ✓ Generated embedding: 1536 dimensions in 0.31s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 169 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.305s
+    ✓ Generated embedding: 1536 dimensions in 0.222s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 33 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.347s
+    ✓ Generated embedding: 1536 dimensions in 0.229s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 230 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.27s
+    ✓ Generated embedding: 1536 dimensions in 0.229s
     • Function auto-cleaned up by client
 ✓ Stored Rust programming conversation (4 messages)
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 31 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.308s
+    ✓ Generated embedding: 1536 dimensions in 0.235s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 217 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.268s
+    ✓ Generated embedding: 1536 dimensions in 0.236s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 33 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.312s
+    ✓ Generated embedding: 1536 dimensions in 0.246s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 232 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.424s
+    ✓ Generated embedding: 1536 dimensions in 0.221s
     • Function auto-cleaned up by client
 ✓ Stored database design conversation (4 messages)
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 36 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.31s
+    ✓ Generated embedding: 1536 dimensions in 0.279s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 178 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.332s
+    ✓ Generated embedding: 1536 dimensions in 0.263s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 37 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.287s
+    ✓ Generated embedding: 1536 dimensions in 0.228s
     • Function auto-cleaned up by client
   → Calling ekoDB embed() helper...
     • Using model: text-embedding-3-small
     • Text length: 213 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 1.316s
+    ✓ Generated embedding: 1536 dimensions in 0.252s
     • Function auto-cleaned up by client
 ✓ Stored performance optimization conversation (4 messages)
 
@@ -1136,7 +1128,7 @@ Using hybrid search to find relevant messages from all conversations...
     • Using model: text-embedding-3-small
     • Text length: 58 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.404s
+    ✓ Generated embedding: 1536 dimensions in 0.233s
     • Function auto-cleaned up by client
 
 → Executing hybridSearch()...
@@ -1146,7 +1138,7 @@ Using hybrid search to find relevant messages from all conversations...
   • Limit: 5 results
   • Search type: Semantic (vector) + Keyword (text)
   • Server combines both scores for relevance ranking
-  ✓ Search completed in 0.07s
+  ✓ Search completed in 0.035s
 
 ✓ Found 5 related messages across all conversations:
   1. [Score: 0.474] From conv_performance
@@ -1173,7 +1165,7 @@ Using hybrid search to find relevant messages from all conversations...
     • Using model: text-embedding-3-small
     • Text length: 58 characters
     • Behind the scenes: Creating temp Function with Embed operation
-    ✓ Generated embedding: 1536 dimensions in 0.276s
+    ✓ Generated embedding: 1536 dimensions in 0.206s
     • Function auto-cleaned up by client
 ✓ New conversation stored and indexed for future retrieval
 
@@ -1187,12 +1179,12 @@ Searching for messages about 'ownership' across ALL conversations...
   • Limit: 3 results
   • Search method: Full-text with fuzzy matching & stemming
   • No vector embeddings needed - pure keyword search
-  ✓ Text search completed in 0.034s
+  ✓ Text search completed in 0.009s
 
 ✓ Found 3 messages mentioning ownership:
-  1. From conv_rust_programming: Rust's key features include: memory safety without garbage collection, zero-cost abstractions, ownership system, powerful type system, and excellent concurrency support.
+  1. From conv_performance: Rust's ownership system provides zero-cost memory management. Use Box for heap allocation, Rc/Arc for shared ownership, and avoid cloning large data structures. The compiler optimizes away unnecessary allocations.
 
-  2. From conv_performance: Rust's ownership system provides zero-cost memory management. Use Box for heap allocation, Rc/Arc for shared ownership, and avoid cloning large data structures. The compiler optimizes away unnecessary allocations.
+  2. From conv_rust_programming: Rust's key features include: memory safety without garbage collection, zero-cost abstractions, ownership system, powerful type system, and excellent concurrency support.
 
   3. From conv_rust_programming: The borrow checker enforces Rust's ownership rules at compile time. It ensures that references don't outlive the data they point to and prevents data races by allowing either multiple immutable references or one mutable reference.
 

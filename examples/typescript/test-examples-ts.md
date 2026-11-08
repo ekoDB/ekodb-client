@@ -1,15 +1,15 @@
 make test-examples-typescript
 📦 Building TypeScript client library...
 
-> @ekodb/ekodb-client@0.31.0 prepare
+> @ekodb/ekodb-client@0.32.0 prepare
 > npm run build
 
 
-> @ekodb/ekodb-client@0.31.0 build
+> @ekodb/ekodb-client@0.32.0 build
 > tsc
 
 
-up to date, audited 44 packages in 4s
+up to date, audited 44 packages in 921ms
 
 12 packages are looking for funding
   run `npm fund` for details
@@ -20,19 +20,19 @@ npm warn install-scripts   fsevents@2.3.3 (install: (install scripts present))
 npm warn install-scripts
 npm warn install-scripts Run `npm install-scripts ls` to review, or `npm install-scripts approve <pkg>` to allow.
 
-> @ekodb/ekodb-client@0.31.0 build
+> @ekodb/ekodb-client@0.32.0 build
 > tsc
 
 ✅ TypeScript client built!
 
-added 1 package, removed 1 package, and audited 13 packages in 775ms
+added 1 package, removed 1 package, and audited 13 packages in 452ms
 
 1 package is looking for funding
   run `npm fund` for details
 
 found 0 vulnerabilities
 npm warn install-scripts 3 packages have install scripts not yet covered by allowScripts:
-npm warn install-scripts   ekodb-client-ts@0.31.0 (prepare: npm run build)
+npm warn install-scripts   ekodb-client-ts@0.32.0 (prepare: npm run build)
 npm warn install-scripts   esbuild@0.28.1 (postinstall: node install.js)
 npm warn install-scripts   fsevents@2.3.3 (install: (install scripts present))
 npm warn install-scripts
@@ -41,7 +41,7 @@ Admin permissions read successfully
 === ekoDB Advanced CRUD Example (TypeScript) ===
 
 --- Inserting base record ---
-Inserted: LdwdpHFJ_kcTQfr95jA_wFiSfrivQcjbkbCawSMh_1Qzol9UH1w5G7HshLjflwRKnIy4zfNxMMV2Mab6oL35nw
+Inserted: Ww91CocKTstsTIbOwCxhVpTrVNNLh4imGS5EWChmuhDtR-HFmbKgJ9P7bUFeKEw0zUD4sKU1efwYXt6FIDfa3g
 
 --- updateWithAction: increment ---
 Score after increment: 150
@@ -81,17 +81,17 @@ Deleted collection
 ✓ Inserted sample product
 
 === Creating Chat Session ===
-✓ Created session: -bamzbsvq9mYP1AJIK4CT7C1ehFJOcaV2A4uF6dYvQo7G6XvX3Letr7UDU-GvQt_1Dz-6V73NxUk5ThZbTcKPg
+✓ Created session: WQXdkWX05JnnqeZl8hdKxyYlPi6Bb7BW90S2W5odU0spROssJNBx8Bx5qKhuCCTfH7u722Mtc7pSpCgSKG3EXg
 
 === Sending Initial Message ===
 ✓ Message sent
-  Response: The available product is **ekoDB** — a high-performance database product priced at **$99**.
+  Response: The available product listed is **ekoDB**, described as a high-performance database product, priced at **99**. The currency wasn’t specified.
 
 ✓ Second message sent
 
 === Feature 1: Regenerate AI Response ===
 ✓ Message regenerated
-  New response: ekoDB costs **$99**.
+  New response: ekoDB costs **99**. The currency isn’t specified.
 
 === Feature 2: Edit Message ===
 ✓ Message content updated
@@ -102,7 +102,7 @@ Deleted collection
 ✓ Message unmarked as forgotten
 
 === Feature 4: Merge Chat Sessions ===
-✓ Created second session: xCgy5lVNs_khzmvt3q5g0B5Wc04kyl9ePI2KBi9NKvwVg8ytlJjYk-fsq34eHGwEigTOkVhOeREUT2p9h2Bj2g
+✓ Created second session: ATADWYb6BSWW5QQsdDr-kZKkSyXvly4QVhHzDfTk8Spr6kSgY44lvCaOJiVTJmOouvYo-2UcY261txfmcG4GTA
 ✓ Sent message in second session
 ✓ Sessions merged successfully
   Total messages in merged session: 7
@@ -113,8 +113,8 @@ Deleted collection
 ✓ Messages remaining: 6
 
 === Cleanup ===
-✓ Deleted chat session: xCgy5lVNs_khzmvt3q5g0B5Wc04kyl9ePI2KBi9NKvwVg8ytlJjYk-fsq34eHGwEigTOkVhOeREUT2p9h2Bj2g
-✓ Deleted chat session: -bamzbsvq9mYP1AJIK4CT7C1ehFJOcaV2A4uF6dYvQo7G6XvX3Letr7UDU-GvQt_1Dz-6V73NxUk5ThZbTcKPg
+✓ Deleted chat session: ATADWYb6BSWW5QQsdDr-kZKkSyXvly4QVhHzDfTk8Spr6kSgY44lvCaOJiVTJmOouvYo-2UcY261txfmcG4GTA
+✓ Deleted chat session: WQXdkWX05JnnqeZl8hdKxyYlPi6Bb7BW90S2W5odU0spROssJNBx8Bx5qKhuCCTfH7u722Mtc7pSpCgSKG3EXg
 ✓ Deleted collection
 
 ✓ All advanced chat features demonstrated successfully!
@@ -124,26 +124,28 @@ Deleted collection
 ✓ Inserted 3 sample documents
 
 === Creating Chat Session ===
-✓ Created session: H9u0DwaTH9WKlMDqxnjxFSlb0hqtel2MEq4xcELm309islmv9Sy0GnwIpEZpbXXl8MLpbDa0MOxtP2vH3rxzKA
+✓ Created session: 0tDVOfiJLYZohMnIUHo47907BZj2_2I7Ko8G4SbFX9ct6L6Zaf2GeO8Bfsof7T51xWgPu_tHHbwbQ1VRfeSqqQ
 
 === Sending Chat Message ===
-Message ID: lah_oQSmqvKWlpip6bYIe3nUs3ZoieF0_qH7SNr2Z5QVZiofCf6AOpmlJ_GSXn3aaPVqWHkkuNohcJMpZo2mig
+Message ID: cN5pmdYhThNqLqzdcJEWCTCiQ3t4YS-wm3sUXe9EJ4jgSKHzoEnIB7WE4Bk7tRr5EiovqtTGUKKk24A2o0z_Fw
 
 === AI Response ===
-Available products and prices:
+Available products and their listed prices:
 
-- **ekoDB Cloud** — $499
-- **ekoDB Pro** — $299
-- **ekoDB** — $99
+- **ekoDB** — 99
+- **ekoDB Pro** — 299
+- **ekoDB Cloud** — 499
+
+The currency isn’t specified in the provided data.
 
 === Context Used (3 snippets) ===
   Snippet 1: {
   collection: 'client_chat_basic_ts',
   record: {
-    price: 499,
-    id: '0hBVp-ywjwj3Ibio9TXwTR_vUQF94mnrnlYMUzBXq06AAhjjnlT-0lOG1-7gUfZUu3pczqb0zACndnij85vXQw',
+    description: 'Fully managed cloud database service product',
     name: 'ekoDB Cloud',
-    description: 'Fully managed cloud database service product'
+    price: 499,
+    id: '4M1Waecu9uv0xLsI9QL7oJAORzHL27qrP-IhZHrci2jekOD7RYpvFZ2ZnyYSc863DI_rG5RzXzIQKnuYmjol2Q'
   },
   score: 0.1111111111111111,
   matched_fields: [ 'description' ]
@@ -151,10 +153,10 @@ Available products and prices:
   Snippet 2: {
   collection: 'client_chat_basic_ts',
   record: {
+    description: 'Enterprise edition product with advanced features',
     name: 'ekoDB Pro',
     price: 299,
-    id: 'XEaYjWivy1e4F0fqo06p4nqPydXVUI_t0puRlgmdeCqCa0meT49zAQ9x6qlRRFFdNsYOU6IN4kPlJkvKBl1t5Q',
-    description: 'Enterprise edition product with advanced features'
+    id: 'QrPFSnw9UF6uyV7THtF1IVEeESWvrYJTgvc3HtD3m8p8IzMMv1bcNRcBXYqV3MgSda9wRmtpuyO3tlMfbrMaWA'
   },
   score: 0.1111111111111111,
   matched_fields: [ 'description' ]
@@ -162,21 +164,21 @@ Available products and prices:
   Snippet 3: {
   collection: 'client_chat_basic_ts',
   record: {
-    price: 99,
-    description: 'A high-performance database product with AI capabilities',
+    id: 'hPQ2sBk1YmSxRxslkRG5bmpGbWX8P9X8NQ8qKR99fZl0Uuz7800pq6LVBFEQiK4J5PsSf5RWJpOI_25rKCx0rg',
     name: 'ekoDB',
-    id: 'nolUf21a90sXyvGPgV40dTMX0QQMapPjjKONLBJGumlkZ7KNrrAUXEQdtIHAPwBzprPnX0de9aonV7E0pNQNfg'
+    description: 'A high-performance database product with AI capabilities',
+    price: 99
   },
   score: 0.1111111111111111,
   matched_fields: [ 'description' ]
 }
 
-Execution Time: 1499ms
+Execution Time: 1853ms
 
 === Token Usage ===
-Prompt tokens: 13709
-Completion tokens: 37
-Total tokens: 13746
+Prompt tokens: 13711
+Completion tokens: 80
+Total tokens: 13791
 
 === Cleanup ===
 ✓ Deleted session
@@ -185,15 +187,15 @@ Total tokens: 13746
 ✓ Chat completed successfully
 === ekoDB Chat Message Stream (SSE) Example (TypeScript) ===
 
-Created session: mDNCcEl4X7WA6julR2V12sTK4uyJY3JRDguWSD1fE-T6A-HhQwP2eWHYJ7NIaMWFOdeBjx1skhrf-9tWcDobbQ
+Created session: QkMluyZfaloTSCGJPcP6X-W7nJH-KtYG4eb8P97dYY9-5lhPpU4ryxzqQVu-zE8C1Z9vTkmV6dieKUE4RAyctQ
 
 Streaming response for: 'What is ekoDB?'
 
-{"__progress":"received"}{"__progress":"generating","model":"gpt-6-luna","provider":"openai"}**ekoDB** is a real-time database service for application data. It lets apps store and retrieve structured data, and can push updates to connected clients as data changes—similar in broad purpose to Firebase. If you mean a particular ekoDB project or product, share a link and I can describe that specific one.
+{"__progress":"received"}{"__progress":"generating","model":"gpt-6-luna","provider":"openai"}**ekoDB** is a database platform for application developers. It provides a way for apps to store and access data—typically through an API or SDK—without having to build all the database infrastructure themselves. The name may refer to more than one project, so share a link if you mean a specific ekoDB.
 
 --- Stream complete ---
-Message ID: 8TmNLQ2yVw1JScSDHypo_1ghO2yuXWEHb2jPML0fEQ6cpZocnjRc-9hH5Ggiv4fz2MEO2NXyZbLAoWJOolHsYg
-Execution time: 7664ms
+Message ID: _yhCRa8ecxPuE9ABKpTxqPV4S_YI7NlVGOVElvAKFAka1bpBSCgNACu16zaWsz_GApSCXCNvXwMQwri0hYPc7w
+Execution time: 7312ms
 Context window: 128000 tokens
 
 ✓ Chat message stream example completed
@@ -202,142 +204,102 @@ Context window: 128000 tokens
 === List Chat Models ===
 Available chat models by provider:
   openai:
-    - gpt-3.5-turbo-0125
+    - tts-1
+    - gpt-5-mini
+    - gpt-5-mini-2025-08-07
     - gpt-5.4-2026-03-05
     - gpt-5-nano
-    - gpt-5.5-pro
-    - gpt-audio-2025-08-28
-    - gpt-4o-mini-transcribe-2025-03-20
-    - gpt-4-turbo-2024-04-09
-    - gpt-realtime-2.1-mini
-    - gpt-realtime-2025-08-28
-    - gpt-4
-    - tts-1-hd
-    - gpt-realtime-1.5
-    - gpt-realtime
-    - gpt-5.2-pro
-    - gpt-5-chat-latest
-    - gpt-5.4-mini-2026-03-17
-    - babbage-002
-    - gpt-4o-2024-05-13
-    - text-embedding-3-large
-    - tts-1
+    - gpt-5.4-mini
     - omni-moderation-2024-09-26
     - gpt-live-transcribe
     - gpt-5.6-luna
-    - gpt-5-2025-08-07
-    - gpt-5-mini
-    - gpt-5-mini-2025-08-07
-    - omni-moderation-latest
-    - o3-mini-2025-01-31
-    - gpt-audio-1.5
-    - gpt-image-1.5
-    - tts-1-1106
-    - gpt-5.5-pro-2026-04-23
-    - gpt-audio-mini-2025-10-06
-    - gpt-5.2-pro-2025-12-11
-    - o4-mini-2025-04-16
     - gpt-4o-2024-11-20
     - gpt-5.1
     - whisper-1
     - gpt-5-pro
     - gpt-realtime-whisper
+    - omni-moderation-latest
     - gpt-realtime-2
     - gpt-5-search-api
     - gpt-5.5-2026-04-23
-    - gpt-4.1-nano
+    - gpt-5.5-pro
+    - gpt-audio-2025-08-28
+    - gpt-4o-mini-transcribe-2025-03-20
+    - chat-latest
+    - gpt-realtime-translate
+    - gpt-5.4-pro-2026-03-05
+    - gpt-4o-mini-transcribe-2025-12-15
+    - gpt-5-pro-2025-10-06
+    - gpt-5.6-sol
+    - gpt-5.4-mini-2026-03-17
+    - text-embedding-3-large
+    - gpt-4o-2024-08-06
+    - o3
+    - gpt-5.4-pro
+    - gpt-4o-mini-tts
+    - gpt-realtime-mini-2025-12-15
+    - gpt-realtime-2.1-mini
+    - gpt-realtime-2025-08-28
+    - tts-1-hd-1106
+    - tts-1-hd
+    - gpt-realtime-1.5
+    - gpt-realtime
+    - gpt-5.2-pro
+    - gpt-4o-transcribe-diarize
+    - gpt-5.1-2025-11-13
+    - gpt-5.4
+    - text-embedding-3-small
+    - gpt-5-2025-08-07
+    - o3-2025-04-16
+    - gpt-5.2-2025-12-11
+    - chatgpt-image-latest
+    - tts-1-1106
+    - gpt-5.5-pro-2026-04-23
+    - gpt-5.2-pro-2025-12-11
+    - gpt-5.4-nano
+    - gpt-audio-mini-2025-12-15
+    - gpt-audio-mini
+    - gpt-4.1-mini-2025-04-14
+    - gpt-5
+    - gpt-4o-mini-transcribe
+    - gpt-image-2-2026-04-21
+    - gpt-transcribe
     - gpt-image-2
-    - gpt-3.5-turbo-16k
     - text-embedding-ada-002
     - gpt-realtime-2.1
     - gpt-4.1
     - gpt-5.5
-    - chat-latest
-    - gpt-realtime-translate
-    - gpt-5.4-pro-2026-03-05
-    - gpt-4.1-mini
-    - gpt-4o-mini
-    - gpt-4o-mini-transcribe-2025-12-15
+    - gpt-audio-1.5
+    - gpt-image-1.5
+    - gpt-6.1-sol
+    - gpt-6-sol
     - gpt-realtime-mini
     - gpt-image-1-mini
     - gpt-5.6-terra
-    - gpt-3.5-turbo-instruct-0914
-    - gpt-4-turbo
-    - gpt-4o-2024-08-06
-    - o3
-    - gpt-4o-mini-search-preview-2025-03-11
-    - o1-2024-12-17
-    - gpt-5.1-chat-latest
-    - gpt-5-pro-2025-10-06
-    - gpt-5.6-sol
-    - gpt-4o-transcribe-diarize
-    - gpt-5-codex
-    - gpt-4-0613
-    - gpt-5.1-2025-11-13
-    - gpt-4o-search-preview
+    - gpt-5-nano-2025-08-07
+    - gpt-4o-transcribe
+    - gpt-4.1-mini
+    - gpt-4o-mini
+    - gpt-6.1-terra
+    - gpt-6-luna
     - gpt-4o-mini-tts-2025-12-15
-    - gpt-image-1
     - gpt-audio
     - gpt-5.3-codex
     - gpt-5-search-api-2025-10-14
-    - gpt-5.4-pro
-    - gpt-4o-mini-tts
-    - gpt-realtime-mini-2025-12-15
-    - gpt-5.1-codex-max
-    - sora-2
     - gpt-4o
+    - gpt-image-2.6-flare
     - gpt-4o-mini-2024-07-18
     - gpt-4.1-2025-04-14
-    - gpt-5
-    - gpt-4o-mini-transcribe
-    - gpt-image-2-2026-04-21
-    - gpt-5.2-chat-latest
-    - sora-2-pro
-    - gpt-3.5-turbo-instruct
-    - gpt-transcribe
-    - gpt-4.1-nano-2025-04-14
-    - gpt-3.5-turbo-1106
+    - gpt-image-2.5-flare
     - gpt-4o-mini-tts-2025-03-20
     - gpt-5.2
     - gpt-5.4-nano-2026-03-17
-    - o1
-    - tts-1-hd-1106
-    - gpt-5.2-codex
-    - gpt-5.4-mini
-    - o1-pro
-    - gpt-5.1-codex
-    - o4-mini-deep-research
-    - gpt-5.4
-    - gpt-4o-search-preview-2025-03-11
-    - text-embedding-3-small
-    - gpt-5-nano-2025-08-07
-    - gpt-4o-transcribe
-    - o4-mini
-    - gpt-5.1-codex-mini
     - gpt-6-astra
-    - gpt-5.3-chat-latest
-    - o3-2025-04-16
-    - gpt-5.2-2025-12-11
-    - chatgpt-image-latest
-    - gpt-3.5-turbo
     - gpt-image-2.5-sunburst-2026-09-08
-    - gpt-image-2.5-flare
-    - davinci-002
-    - gpt-5.4-nano
-    - o3-mini
-    - o4-mini-deep-research-2025-06-26
-    - gpt-audio-mini-2025-12-15
-    - o1-pro-2025-03-19
-    - gpt-live-1
     - gpt-image-2.5-sunburst
     - gpt-image-2.5-flare-2026-09-08
-    - gpt-6.1-terra
-    - gpt-audio-mini
-    - gpt-4.1-mini-2025-04-14
-    - gpt-6-luna
-    - gpt-4o-mini-search-preview
-    - gpt-6-sol
-    - gpt-6.1-sol
+    - gpt-image-2.6-sunburst
+    - gpt-live-1
   anthropic:
     - claude-haiku-5-5
     - claude-sonnet-5-5
@@ -381,6 +343,7 @@ Available chat models by provider:
     - gemini-3.5-flash-lite
     - gemini-omni-flash-preview
     - gemini-omni-1.1-flash
+    - gemini-omni-1.2-flash
     - gemini-3.5-transcribe
     - gemini-3.6-flash
     - gemini-3.7-flash
@@ -416,12 +379,12 @@ Available chat models by provider:
     - lyria-realtime-exp
 Provider status:
   anthropic: ok 14 models
-  gemini: ok 60 models
-  openai: ok 136 models
+  gemini: ok 61 models
+  openai: ok 96 models
   perplexity: not_configured (unverified) No Perplexity API Key
 
 === Get Specific Provider Models ===
-OpenAI models: gpt-3.5-turbo-0125, gpt-5.4-2026-03-05, gpt-5-nano, gpt-5.5-pro, gpt-audio-2025-08-28, gpt-4o-mini-transcribe-2025-03-20, gpt-4-turbo-2024-04-09, gpt-realtime-2.1-mini, gpt-realtime-2025-08-28, gpt-4, tts-1-hd, gpt-realtime-1.5, gpt-realtime, gpt-5.2-pro, gpt-5-chat-latest, gpt-5.4-mini-2026-03-17, babbage-002, gpt-4o-2024-05-13, text-embedding-3-large, tts-1, omni-moderation-2024-09-26, gpt-live-transcribe, gpt-5.6-luna, gpt-5-2025-08-07, gpt-5-mini, gpt-5-mini-2025-08-07, omni-moderation-latest, o3-mini-2025-01-31, gpt-audio-1.5, gpt-image-1.5, tts-1-1106, gpt-5.5-pro-2026-04-23, gpt-audio-mini-2025-10-06, gpt-5.2-pro-2025-12-11, o4-mini-2025-04-16, gpt-4o-2024-11-20, gpt-5.1, whisper-1, gpt-5-pro, gpt-realtime-whisper, gpt-realtime-2, gpt-5-search-api, gpt-5.5-2026-04-23, gpt-4.1-nano, gpt-image-2, gpt-3.5-turbo-16k, text-embedding-ada-002, gpt-realtime-2.1, gpt-4.1, gpt-5.5, chat-latest, gpt-realtime-translate, gpt-5.4-pro-2026-03-05, gpt-4.1-mini, gpt-4o-mini, gpt-4o-mini-transcribe-2025-12-15, gpt-realtime-mini, gpt-image-1-mini, gpt-5.6-terra, gpt-3.5-turbo-instruct-0914, gpt-4-turbo, gpt-4o-2024-08-06, o3, gpt-4o-mini-search-preview-2025-03-11, o1-2024-12-17, gpt-5.1-chat-latest, gpt-5-pro-2025-10-06, gpt-5.6-sol, gpt-4o-transcribe-diarize, gpt-5-codex, gpt-4-0613, gpt-5.1-2025-11-13, gpt-4o-search-preview, gpt-4o-mini-tts-2025-12-15, gpt-image-1, gpt-audio, gpt-5.3-codex, gpt-5-search-api-2025-10-14, gpt-5.4-pro, gpt-4o-mini-tts, gpt-realtime-mini-2025-12-15, gpt-5.1-codex-max, sora-2, gpt-4o, gpt-4o-mini-2024-07-18, gpt-4.1-2025-04-14, gpt-5, gpt-4o-mini-transcribe, gpt-image-2-2026-04-21, gpt-5.2-chat-latest, sora-2-pro, gpt-3.5-turbo-instruct, gpt-transcribe, gpt-4.1-nano-2025-04-14, gpt-3.5-turbo-1106, gpt-4o-mini-tts-2025-03-20, gpt-5.2, gpt-5.4-nano-2026-03-17, o1, tts-1-hd-1106, gpt-5.2-codex, gpt-5.4-mini, o1-pro, gpt-5.1-codex, o4-mini-deep-research, gpt-5.4, gpt-4o-search-preview-2025-03-11, text-embedding-3-small, gpt-5-nano-2025-08-07, gpt-4o-transcribe, o4-mini, gpt-5.1-codex-mini, gpt-6-astra, gpt-5.3-chat-latest, o3-2025-04-16, gpt-5.2-2025-12-11, chatgpt-image-latest, gpt-3.5-turbo, gpt-image-2.5-sunburst-2026-09-08, gpt-image-2.5-flare, davinci-002, gpt-5.4-nano, o3-mini, o4-mini-deep-research-2025-06-26, gpt-audio-mini-2025-12-15, o1-pro-2025-03-19, gpt-live-1, gpt-image-2.5-sunburst, gpt-image-2.5-flare-2026-09-08, gpt-6.1-terra, gpt-audio-mini, gpt-4.1-mini-2025-04-14, gpt-6-luna, gpt-4o-mini-search-preview, gpt-6-sol, gpt-6.1-sol
+OpenAI models: tts-1, gpt-5-mini, gpt-5-mini-2025-08-07, gpt-5.4-2026-03-05, gpt-5-nano, gpt-5.4-mini, omni-moderation-2024-09-26, gpt-live-transcribe, gpt-5.6-luna, gpt-4o-2024-11-20, gpt-5.1, whisper-1, gpt-5-pro, gpt-realtime-whisper, omni-moderation-latest, gpt-realtime-2, gpt-5-search-api, gpt-5.5-2026-04-23, gpt-5.5-pro, gpt-audio-2025-08-28, gpt-4o-mini-transcribe-2025-03-20, chat-latest, gpt-realtime-translate, gpt-5.4-pro-2026-03-05, gpt-4o-mini-transcribe-2025-12-15, gpt-5-pro-2025-10-06, gpt-5.6-sol, gpt-5.4-mini-2026-03-17, text-embedding-3-large, gpt-4o-2024-08-06, o3, gpt-5.4-pro, gpt-4o-mini-tts, gpt-realtime-mini-2025-12-15, gpt-realtime-2.1-mini, gpt-realtime-2025-08-28, tts-1-hd-1106, tts-1-hd, gpt-realtime-1.5, gpt-realtime, gpt-5.2-pro, gpt-4o-transcribe-diarize, gpt-5.1-2025-11-13, gpt-5.4, text-embedding-3-small, gpt-5-2025-08-07, o3-2025-04-16, gpt-5.2-2025-12-11, chatgpt-image-latest, tts-1-1106, gpt-5.5-pro-2026-04-23, gpt-5.2-pro-2025-12-11, gpt-5.4-nano, gpt-audio-mini-2025-12-15, gpt-audio-mini, gpt-4.1-mini-2025-04-14, gpt-5, gpt-4o-mini-transcribe, gpt-image-2-2026-04-21, gpt-transcribe, gpt-image-2, text-embedding-ada-002, gpt-realtime-2.1, gpt-4.1, gpt-5.5, gpt-audio-1.5, gpt-image-1.5, gpt-6.1-sol, gpt-6-sol, gpt-realtime-mini, gpt-image-1-mini, gpt-5.6-terra, gpt-5-nano-2025-08-07, gpt-4o-transcribe, gpt-4.1-mini, gpt-4o-mini, gpt-6.1-terra, gpt-6-luna, gpt-4o-mini-tts-2025-12-15, gpt-audio, gpt-5.3-codex, gpt-5-search-api-2025-10-14, gpt-4o, gpt-image-2.6-flare, gpt-4o-mini-2024-07-18, gpt-4.1-2025-04-14, gpt-image-2.5-flare, gpt-4o-mini-tts-2025-03-20, gpt-5.2, gpt-5.4-nano-2026-03-17, gpt-6-astra, gpt-image-2.5-sunburst-2026-09-08, gpt-image-2.5-sunburst, gpt-image-2.5-flare-2026-09-08, gpt-image-2.6-sunburst, gpt-live-1
 
 === Get Anthropic Models ===
 Anthropic models: claude-haiku-5-5, claude-sonnet-5-5, claude-opus-5-5, claude-fable-5-1, claude-opus-5, claude-sonnet-5, claude-fable-5, claude-opus-4-8, claude-opus-4-7, claude-sonnet-4-6, claude-opus-4-6, claude-opus-4-5-20251101, claude-haiku-4-5-20251001, claude-sonnet-4-5-20250929
@@ -436,11 +399,11 @@ Expected error for non-existent provider: Error: Request failed with status 404:
 ✓ Inserted sample product
 
 === Creating Chat Session ===
-✓ Created session: 6QRiTp_aLu1OqYVSODrcUM9RhDYQzz9huCs05MPYqCadsVWr4jl4abmlp7A-WvNhcGnDAevGoY0jpWsDGh9UCw
+✓ Created session: -j8xdgg2upC78ULhsHwJp7uSXhwIgdqKkwvvw4591VbHmC9c645ZCTeXasxjkuxDvauFxImxbqbocynfp78NXw
 
 === Sending Messages ===
 ✓ Message 1 sent
-  Response: The available product is **ekoDB**, described as a high-performance database product. It’s priced at **$99**.
+  Response: The available product is **ekoDB**, a high-performance database product, priced at **$99**.
 
 ✓ Message 2 sent
   Response: ekoDB is priced at **$99**.
@@ -452,20 +415,20 @@ Expected error for non-existent provider: Error: Request failed with status 404:
 ✓ Session updated
 
 === Branching Session ===
-✓ Created branch: ksGWasNLmTUOMeVXNgpCDaTvG1yZMGM07VwfX9tqYAR8CmsOslOeoBBgM2tGorsWfbfJT20PUkUtEYovTVWV5w
-  Parent: 6QRiTp_aLu1OqYVSODrcUM9RhDYQzz9huCs05MPYqCadsVWr4jl4abmlp7A-WvNhcGnDAevGoY0jpWsDGh9UCw
+✓ Created branch: w9aP6mVntdUGxMKvqU_ZdTXYD3KtluoksASd1Ixo6uP2I3RYmHqMKtyRsN22HQllM5zj3s46PMAuh5W-hDHVQQ
+  Parent: -j8xdgg2upC78ULhsHwJp7uSXhwIgdqKkwvvw4591VbHmC9c645ZCTeXasxjkuxDvauFxImxbqbocynfp78NXw
 
 === Listing Sessions ===
 ✓ Found 2 sessions
-  Session 1: ksGWasNLmTUOMeVXNgpCDaTvG1yZMGM07VwfX9tqYAR8CmsOslOeoBBgM2tGorsWfbfJT20PUkUtEYovTVWV5w (Untitled)
-  Session 2: 6QRiTp_aLu1OqYVSODrcUM9RhDYQzz9huCs05MPYqCadsVWr4jl4abmlp7A-WvNhcGnDAevGoY0jpWsDGh9UCw (Untitled)
+  Session 1: w9aP6mVntdUGxMKvqU_ZdTXYD3KtluoksASd1Ixo6uP2I3RYmHqMKtyRsN22HQllM5zj3s46PMAuh5W-hDHVQQ (Untitled)
+  Session 2: -j8xdgg2upC78ULhsHwJp7uSXhwIgdqKkwvvw4591VbHmC9c645ZCTeXasxjkuxDvauFxImxbqbocynfp78NXw (Untitled)
 
 === Getting Session Details ===
 ✓ Session details retrieved
   Messages: 4
 
 === Deleting Branch Session ===
-✓ Deleted branch session: ksGWasNLmTUOMeVXNgpCDaTvG1yZMGM07VwfX9tqYAR8CmsOslOeoBBgM2tGorsWfbfJT20PUkUtEYovTVWV5w
+✓ Deleted branch session: w9aP6mVntdUGxMKvqU_ZdTXYD3KtluoksASd1Ixo6uP2I3RYmHqMKtyRsN22HQllM5zj3s46PMAuh5W-hDHVQQ
 
 === Cleanup ===
 ✓ Deleted session
@@ -475,11 +438,11 @@ Expected error for non-existent provider: Error: Request failed with status 404:
 ✓ Client created
 
 === Create Collection (via insert) ===
-Collection created with first record: 9peNqSrynzGsZ6GJz8xWAe1iPvStDUTcDssIDIGtyV383d9zy5oxH7L_GRexo2ZoSP6e7M_Y41I-pz_IY9-Bzw
+Collection created with first record: WYCAt1MNx0tPMG9Y2017Lm3d2ulT9HjSed-MXJLwYDLE1MsQeRFKLZuOP93rL4lxyoGxVcyXGAN2EFL_zTDyPw
 
 === List Collections ===
 Total collections: 17
-Sample collections: schema_users_client_go,audit__ek0_testing,schema_employees_client_go,chat_raw_completions__ek0_testing,schema_documents_client_go
+Sample collections: schema_products_client_go,chat_raw_completions__ek0_testing,chat_agent_configs__ek0_testing,schedules__ek0_testing,functions__ek0_testing
 
 === Count Documents ===
 Document count: 1
@@ -519,36 +482,36 @@ Deleted collection 'collection_utils_test_ts'
 ✓ conc_demo_lock saved
 
 Invoke them like:
-  POST /api/functions/conc_demo_pay_ts_50152_1793594691316 { "idempotency_key": "...", "amount": 100 }
-  POST /api/functions/conc_demo_rl_fail_ts_50152_1793594691316 { "user_id": 42 }
-  POST /api/functions/conc_demo_rl_skip_ts_50152_1793594691316 { "user_id": 42 }
-  POST /api/functions/conc_demo_lock_ts_50152_1793594691316 { "resource": "queue:drain" }
+  POST /api/functions/conc_demo_pay_ts_72807_1794156869177 { "idempotency_key": "...", "amount": 100 }
+  POST /api/functions/conc_demo_rl_fail_ts_72807_1794156869177 { "user_id": 42 }
+  POST /api/functions/conc_demo_rl_skip_ts_72807_1794156869177 { "user_id": 42 }
+  POST /api/functions/conc_demo_lock_ts_72807_1794156869177 { "resource": "queue:drain" }
 
 ✓ Cleaned up demo functions
 === ekoDB Convenience Methods Example ===
 
 === Native Object Creation ===
 ✓ Created record with plain object: {
-  id: 'lqRwO-8QBT04esMqoefLPfapy20CkMGjF9cqZNqaeEO0JiqabAQ-gCaBu-JeS_ao2SSOuaQTawIvjiyHnbABsg'
+  id: 'ABz_QZRdhe7JI4bTOtVp1PNl5Ok_Ue5Wl5L0J-KZPKpsoXJpVg7i18f07x09Vh_27UDGzSbXa0UIO3WA6E7Rdw'
 }
 
 === Upsert Operation ===
 ✓ First upsert (update): {
-  email: { value: 'alice.j@newdomain.com', type: 'String' },
-  name: { value: 'Alice Johnson', type: 'String' },
-  id: 'lqRwO-8QBT04esMqoefLPfapy20CkMGjF9cqZNqaeEO0JiqabAQ-gCaBu-JeS_ao2SSOuaQTawIvjiyHnbABsg',
-  active: { type: 'Boolean', value: true },
-  age: { type: 'Integer', value: 29 }
+  id: 'ABz_QZRdhe7JI4bTOtVp1PNl5Ok_Ue5Wl5L0J-KZPKpsoXJpVg7i18f07x09Vh_27UDGzSbXa0UIO3WA6E7Rdw',
+  age: { type: 'Integer', value: 29 },
+  email: { type: 'String', value: 'alice.j@newdomain.com' },
+  name: { type: 'String', value: 'Alice Johnson' },
+  active: { value: true, type: 'Boolean' }
 }
 ✓ Second upsert (insert): { id: 'new-user-id' }
 
 === Find One Operation ===
 ✓ Found user by email: {
-  id: 'lqRwO-8QBT04esMqoefLPfapy20CkMGjF9cqZNqaeEO0JiqabAQ-gCaBu-JeS_ao2SSOuaQTawIvjiyHnbABsg',
-  email: { value: 'alice.j@newdomain.com', type: 'String' },
-  name: { type: 'String', value: 'Alice Johnson' },
-  active: { type: 'Boolean', value: true },
-  age: { value: 29, type: 'Integer' }
+  active: { value: true, type: 'Boolean' },
+  id: 'ABz_QZRdhe7JI4bTOtVp1PNl5Ok_Ue5Wl5L0J-KZPKpsoXJpVg7i18f07x09Vh_27UDGzSbXa0UIO3WA6E7Rdw',
+  email: { type: 'String', value: 'alice.j@newdomain.com' },
+  name: { value: 'Alice Johnson', type: 'String' },
+  age: { type: 'Integer', value: 29 }
 }
 ✓ User not found (as expected)
 
@@ -607,10 +570,10 @@ Cleanup done.
 ✓ Client created
 
 === Insert Document with TTL (1 hour) ===
-✓ Inserted document: IcSKhKmWtB8q-sMc8gvkBFch5g6h6SCIOyWQemTNTGuhhy5Zt-A0Zaos7v0qU5xJwo9JZyOen53h0sMV13A4uA
+✓ Inserted document: B9ccbRfk435s2WR0GSVA0se2fUqyGASxNIurvMyOjLn-QcWd8KGI6kJEQgR0o_KcXDIX_9C6SvDwCTrpjEuMPQ
 
 === Insert Document with TTL (5 minutes) ===
-✓ Inserted document: e3ECXs9m5MrwNz_Dmr4QGJ6bpTgw7GFTnPbAPNfH5d78yUbHd5xv0dEWg5Fg3EYAwzVnY3yOs2D4o7b_umvnUA
+✓ Inserted document: xMbMmBPk6DPZeCAlg4Nss7BT9r_ZgHompPjFmQsxsySEexSGPMR80sJPyEX57hgYa-lvzymc6Q-lRmLiWWRRRg
 
 === Query Documents ===
 ✓ Found 2 documents with TTL
@@ -630,10 +593,10 @@ Cleanup done.
 === ekoDB as Edge Cache - Simple Example ===
 
 Creating edge cache function...
-✓ Edge cache script created: wbWdV7SVn2ZVH730TCN0r4Lg-yl2Nc54sdG_-1v3pZAMYnlkMer-1mpqQoh0Nqn-jCBf2WHUDdfCE2l6BCgIeA
+✓ Edge cache script created: zXwUury1OnlTukeVqfvZRzqeAc1QE8pK61uK6sg7i4UeUIX27K7EAZR4sW5B4lK7YgBy97AE4ot5OMqLOmErZw
 
 Call 1: Cache miss (fetches from API)
-Response time: 76ms
+Response time: 52ms
 Result: {
   "records": [
     {
@@ -641,26 +604,26 @@ Result: {
         "type": "Object",
         "value": {
           "username": "Bret",
-          "email": "Sincere@april.biz",
+          "id": 1,
+          "phone": "1-770-736-8031 x56442",
           "company": {
-            "bs": "harness real-time e-markets",
             "catchPhrase": "Multi-layered client-server neural-net",
+            "bs": "harness real-time e-markets",
             "name": "Romaguera-Crona"
           },
-          "phone": "1-770-736-8031 x56442",
-          "id": 1,
           "website": "hildegard.org",
+          "email": "Sincere@april.biz",
+          "name": "Leanne Graham",
           "address": {
-            "suite": "Apt. 556",
-            "geo": {
-              "lat": "-37.3159",
-              "lng": "81.1496"
-            },
             "zipcode": "92998-3874",
-            "street": "Kulas Light",
-            "city": "Gwenborough"
-          },
-          "name": "Leanne Graham"
+            "geo": {
+              "lng": "81.1496",
+              "lat": "-37.3159"
+            },
+            "suite": "Apt. 556",
+            "city": "Gwenborough",
+            "street": "Kulas Light"
+          }
         }
       }
     }
@@ -675,7 +638,7 @@ Result: {
 }
 
 Call 2: Cache hit (served from ekoDB)
-Response time: 4ms (19x faster!)
+Response time: 2ms (26x faster!)
 Result: {
   "records": [
     {
@@ -683,26 +646,26 @@ Result: {
         "type": "Object",
         "value": {
           "username": "Bret",
-          "email": "Sincere@april.biz",
+          "id": 1,
+          "phone": "1-770-736-8031 x56442",
           "company": {
-            "bs": "harness real-time e-markets",
             "catchPhrase": "Multi-layered client-server neural-net",
+            "bs": "harness real-time e-markets",
             "name": "Romaguera-Crona"
           },
-          "phone": "1-770-736-8031 x56442",
-          "id": 1,
           "website": "hildegard.org",
+          "email": "Sincere@april.biz",
+          "name": "Leanne Graham",
           "address": {
-            "suite": "Apt. 556",
-            "geo": {
-              "lat": "-37.3159",
-              "lng": "81.1496"
-            },
             "zipcode": "92998-3874",
-            "street": "Kulas Light",
-            "city": "Gwenborough"
-          },
-          "name": "Leanne Graham"
+            "geo": {
+              "lng": "81.1496",
+              "lat": "-37.3159"
+            },
+            "suite": "Apt. 556",
+            "city": "Gwenborough",
+            "street": "Kulas Light"
+          }
         }
       }
     }
@@ -741,8 +704,8 @@ Building reusable functions that call each other...
 
 📊 Result from composed function:
    Records: 1
-   Name: {"type":"String","value":"User 1"}
-   Department: {"value":"engineering","type":"String"}
+   Name: {"value":"User 1","type":"String"}
+   Department: {"type":"String","value":"engineering"}
 
 🎯 Key Benefit: fetch_user can be reused by ANY function!
    No code duplication, single source of truth
@@ -755,33 +718,29 @@ Using KV cache + CallFunction for fast cache-aside pattern...
 ✅ Saved SWR function using composition: swr_user
 
 First call (cache miss - will fetch from API):
-   ⏱️  Duration: 58ms
+   ⏱️  Duration: 53ms
    📊 Records: 1
    📦 Data: {
   "value": {
     "type": "Object",
     "value": {
-      "website": "hildegard.org",
-      "username": "Bret",
-      "address": {
-        "zipcode": "92998-3874",
-        "geo": {
-          "lat": "-...
+      "company": {
+        "bs": "harness real-time e-markets",
+        "name": "Romaguera-Crona",
+        "catchPhrase": "Multi-layered client-serv...
 
 Second call (cache hit - from cache):
-   ⏱️  Duration: 3ms
+   ⏱️  Duration: 1ms
    📊 Records: 1
    📦 Data: {
   "value": {
     "value": {
-      "website": "hildegard.org",
-      "username": "Bret",
-      "address": {
-        "zipcode": "92998-3874",
-        "geo": {
-          "lat": "-37.3159",
-          "l...
-   🚀 Cache speedup: 19.3x faster!
+      "company": {
+        "bs": "harness real-time e-markets",
+        "name": "Romaguera-Crona",
+        "catchPhrase": "Multi-layered client-server neural-net"
+      }...
+   🚀 Cache speedup: 53.0x faster!
 
 📝 Example 3: Multi-Level Function Composition
 
@@ -804,38 +763,6 @@ Building complex workflows from small, reusable pieces...
 
 ✅ All composition examples completed!
 client_function_contract: ok
-🚀 ekoDB Functions Example (TypeScript)
-
-📋 Setting up test data...
-✅ Test data ready
-
-📝 Example 1: Simple Query Function
-
-✅ Function saved: tB9qwLU5ALuBa83x_vKS9yw1JV_pkR5g6oZ8l3HVVKZSIWXP2SP9CjGk7vZmUMJpA38_0HH7K35BtDbIcFID8A
-📊 Found 5 active users
-
-📝 Example 2: Parameterized Function
-
-✅ Function saved: 2677WcuJtheD5Ijw4mgBt7oehk8jWQqivy1gmAKEJQlaNrtUcta573BecIsDvO6r0SJ-g8ay1P0x2Kq_VZQxHQ
-📊 Found 3 users (limited)
-
-📝 Example 3: Aggregation Function
-
-✅ Function saved: nCOuvRExQL7g9bX5VUS9rsl83axsBE5XMouN6FDeW1ZbP27kU-W5hu7eMhHFqss3ZxlQZfRGNFzaxJK0CDS-2Q
-📊 Statistics: 2 groups
-   {"count":{"value":5,"type":"Integer"},"avg_score":{"type":"Float","value":60},"status":{"type":"String","value":"active"}}
-   {"avg_score":{"type":"Float","value":50},"status":{"type":"String","value":"inactive"},"count":{"type":"Integer","value":5}}
-
-📝 Example 4: UserFunction Management
-
-📋 Total scripts: 5
-🔍 Retrieved script: Get Active Users
-✏️  function updated
-🗑️  function deleted
-
-ℹ️  Note: GET/UPDATE/DELETE use IDs. Only CALL supports labels.
-
-✅ All examples completed!
 🚀 ekoDB TypeScript Advanced Functions Example
 
 📋 Setting up test data...
@@ -851,8 +778,8 @@ client_function_contract: ok
 
 ✅ Function saved
 📊 Category breakdown:
-   {"category":{"value":"Furniture","type":"String"},"count":{"type":"Integer","value":3},"avg_price":{"value":365.6666666666667,"type":"Float"}}
-   {"avg_price":{"value":367,"type":"Float"},"count":{"type":"Integer","value":5},"category":{"value":"Electronics","type":"String"}}
+   {"count":{"value":3,"type":"Integer"},"avg_price":{"value":365.6666666666667,"type":"Float"},"category":{"type":"String","value":"Furniture"}}
+   {"category":{"type":"String","value":"Electronics"},"avg_price":{"value":367,"type":"Float"},"count":{"value":5,"type":"Integer"}}
 ⏱️  Execution time: 0ms
 
 🧹 Cleaning up...
@@ -868,16 +795,15 @@ client_function_contract: ok
 
 ✅ Chat script saved
 🤖 AI Response:
-   Vector databases store embeddings—numeric representations of text, images, audio, or other data—and make it efficient to find items that are *similar in meaning or content*, not just exact matches.
+   Vector databases are designed to store and search **embeddings**—numeric representations of text, images, audio, or other data. Their main benefits include:
 
-Key benefits:
-- **Semantic search:** Finds relevant results even when they use different wording.
-- **Fast similarity matching at scale:** Uses specialized indexes to search large collections efficiently.
-- **AI application support:** Helps retrieve relevant context for chatbots, recommendation systems, and retrieval-augmented generation (RAG).
-- **Multimodal search:** Can compare embeddings from text, images, audio, and other data types.
-- **Metadata filtering:** Combines similarity search with filters such as date, category, or permissions.
+- **Semantic search:** Find items that are similar in meaning, even when they don’t share exact keywords.
+- **Fast similarity search at scale:** Specialized indexes can efficiently search large collections of high-dimensional vectors.
+- **Multimodal retrieval:** Search across content such as text, images, and audio when they’re represented as vectors.
+- **Metadata filtering:** Combine similarity search with filters like date, category, or user ID.
+- **Support for AI applications:** They’re commonly used for retrieval-augmented generation (RAG), recommendations, deduplication, and personalization.
 
-They complement rather than replace traditional databases, which are usually better for exact lookups and structured transactions.
+They’re usually best alongside a traditional database: use a vector database for similarity retrieval and a relational or document database for structured records and transactions.
 ⏱️  Execution time: 0ms
 
 📝 Example 2: Generate Embeddings
@@ -904,10 +830,10 @@ They complement rather than replace traditional databases, which are usually bet
 
 📝 Example 1: FindAll + Group (Simple Aggregation)
 
-✅ Function saved: pjlIOWl5ftvL7WrPubIkqT2YjNEXFqhXmpX9WiVHLgasxx5wnove5ac37DTE_Y2y_wEcu8tcG0GOz74tExvESg
+✅ Function saved: QFj1MNEkj96TqaVxomkQoR3uDkzMVHc3MISAx_F7fyiBsnAn0w4Slw1AJzziYkQDXlvztIpXTJ0E-yy8KI_Kkg
 📊 Found 2 product groups
-   {"avg_price":{"type":"Float","value":575.6666666666666},"category":{"type":"String","value":"Electronics"},"count":{"type":"Integer","value":3}}
-   {"count":{"type":"Integer","value":2},"avg_price":{"type":"Float","value":474},"category":{"value":"Furniture","type":"String"}}
+   {"avg_price":{"value":575.6666666666666,"type":"Float"},"count":{"value":3,"type":"Integer"},"category":{"type":"String","value":"Electronics"}}
+   {"category":{"value":"Furniture","type":"String"},"avg_price":{"type":"Float","value":474},"count":{"value":2,"type":"Integer"}}
 ⏱️  Execution time: 0ms
 
 📝 Example 2: Simple Product Listing
@@ -920,8 +846,8 @@ They complement rather than replace traditional databases, which are usually bet
 
 ✅ Function saved
 📊 Found 2 categories
-   {"count":{"type":"Integer","value":2},"category":{"value":"Furniture","type":"String"}}
-   {"count":{"value":3,"type":"Integer"},"category":{"value":"Electronics","type":"String"}}
+   {"category":{"type":"String","value":"Electronics"},"count":{"type":"Integer","value":3}}
+   {"category":{"type":"String","value":"Furniture"},"count":{"value":2,"type":"Integer"}}
 ⏱️  Execution time: 0ms
 
 📝 Example 4: High Rating Products
@@ -968,16 +894,16 @@ They complement rather than replace traditional databases, which are usually bet
 
 ✅ Function saved
 📊 User counts by status:
-   active: 7 users
    inactive: 3 users
+   active: 7 users
 ⏱️  Execution time: 0ms
 
 📝 Example 3: Average Score by Role
 
 ✅ Function saved
 📊 Average score by role:
-   {"role":{"value":"admin","type":"String"},"avg_score":{"type":"Float","value":20},"count":{"type":"Integer","value":3}}
-   {"count":{"value":7,"type":"Integer"},"avg_score":{"type":"Float","value":70},"role":{"type":"String","value":"user"}}
+   {"role":{"type":"String","value":"user"},"count":{"type":"Integer","value":7},"avg_score":{"type":"Float","value":70}}
+   {"count":{"type":"Integer","value":3},"avg_score":{"type":"Float","value":20},"role":{"type":"String","value":"admin"}}
 ⏱️  Execution time: 0ms
 
 🧹 Cleaning up...
@@ -994,26 +920,26 @@ They complement rather than replace traditional databases, which are usually bet
 
 📝 Example 1: Inserting Records with Wrapped Types
 
-✅ Inserted order: EO-mMzMybp4svoY4UpuPMM9ygZjaRkc6kelu4idA8REcZfxbP2qvLSbk0HsvDpNyhrpCx5MXL1gTkHAxXaW_pA
+✅ Inserted order: ZMSxgHxYhWjOwdMOIkEPXJB6pFpiLrZRxY9ZrBUNw9-bKBPEfwNsW3HIo87izeyF8xT5SgK5jnhN4hD0nmHhFA
 ✅ Inserted 2 products with wrapped types
 
 📝 Example 2: UserFunction with Wrapped Type Parameters
 
-✅ Function saved: TIGHbO-dUsKoAbL0pq_i_b8X2sRdiXTq1HDYrbgahQ5aEDtg-Q0Kddb5_Ua-6K2wYcqiOwOfYKWY8N1dC3xwkg
+✅ Function saved: zcspIaw5KhGLN92UGuI7pvP5eAnkZGf4ED8YlX2bi6wcxvBpEOz8BgfiPpVAXGRfe6eSjxHUXBhP4tOxPY4tTw
 📊 Created order via script
 ⏱️  Execution time: 0ms
 
 📝 Example 3: Basic KV Store Operations
 
 ✅ Set session data
-📊 Retrieved session: {"type":"Object","value":{"role":"admin","userId":"user_abc"}}
+📊 Retrieved session: {"value":{"userId":"user_abc","role":"admin"},"type":"Object"}
 🔍 Key exists: true
 ✅ Set cached data with 1 hour TTL
 🗑️  Deleted session
 
 📝 Example 4: KV Operations in Functions
 
-✅ Function saved: OqMcNFN5sTW3dn-0HmGnIb4dFylLcmbo000Vh5cYikEKKVXfCeJnbSbGlAguV17AMCJUU4VCNJnOfcR8DTW0tg
+✅ Function saved: mpo8Jq0dqIyaL6BtjS8hrkcvYCDtIu6ULQoZJOwd9nAmyeNlsQLrTQBfgcXkeZgCce2-rKipCGg19Cv62GbqXQ
 📊 Cached and retrieved product data
 ⏱️  Execution time: 0ms
 
@@ -1025,7 +951,7 @@ They complement rather than replace traditional databases, which are usually bet
 
 📝 Example 6: Combined Wrapped Types + KV Function
 
-✅ Function saved: DL105Jv2LD7tpyd4So9dwrKuax2vW9RtSRjXu4eMSGpBH6yJH_tFl63WT6ImODSc182Lm6DsAshir0UK3BhXXg
+✅ Function saved: lPcvTRJSb6ZTjYbmIf2p4QiK8wvjiV7QEc2KHs5ucou86rdheUNISd8rVsKUUpTDzX1M_o2vSlMUXmNOzT6Mag
 📊 Processed order with caching
 ⏱️  Stages executed: 3
 ⏱️  Execution time: 0ms
@@ -1050,10 +976,10 @@ They complement rather than replace traditional databases, which are usually bet
 
 ✅ Function saved
 📊 Found 5 documents
-   1. Getting Started with ekoDB (Database)
-   2. Database Design Principles (Database)
-   3. Vector Databases Explained (Database)
-   4. Natural Language Processing (AI)
+   1. Database Design Principles (Database)
+   2. Vector Databases Explained (Database)
+   3. Natural Language Processing (AI)
+   4. Getting Started with ekoDB (Database)
    5. Introduction to Machine Learning (AI)
 ⏱️  Execution time: 0ms
 
@@ -1061,18 +987,50 @@ They complement rather than replace traditional databases, which are usually bet
 
 ✅ Function saved
 📊 Documents by category:
-   {"count":{"value":2,"type":"Integer"},"category":{"value":"AI","type":"String"}}
-   {"count":{"type":"Integer","value":3},"category":{"value":"Database","type":"String"}}
+   {"category":{"type":"String","value":"Database"},"count":{"type":"Integer","value":3}}
+   {"category":{"type":"String","value":"AI"},"count":{"type":"Integer","value":2}}
 ⏱️  Execution time: 0ms
 
 🧹 Cleaning up...
 ✅ Cleanup complete
 
 ✅ All search script examples finished!
+🚀 ekoDB Functions Example (TypeScript)
+
+📋 Setting up test data...
+✅ Test data ready
+
+📝 Example 1: Simple Query Function
+
+✅ Function saved: C1LR-gzetmXl8y0G73uSf5qM2fSabG9XLtZxUIunH8AaeBwN6X_7e5uiAHimCmU5CP9si6RGpc46-VDiVv48Ew
+📊 Found 5 active users
+
+📝 Example 2: Parameterized Function
+
+✅ Function saved: _RG4Ozksn6zTNdFL0HLOnv4mlaXsxHxe-ws1sLOWNXw7__MrCZu7_a2CN9djqRjnMTWwA5bzXeUpAdgi9VDEKg
+📊 Found 3 users (limited)
+
+📝 Example 3: Aggregation Function
+
+✅ Function saved: VAw1xRXONbitCIkz-rpxRV9GWVfMsF-8RgstwJlK4RjWfdI5zFtUV4Iejmc-ibasfH5DAMEnereQMOJNY2V4UQ
+📊 Statistics: 2 groups
+   {"avg_score":{"type":"Float","value":60},"status":{"type":"String","value":"active"},"count":{"type":"Integer","value":5}}
+   {"count":{"type":"Integer","value":5},"avg_score":{"type":"Float","value":50},"status":{"type":"String","value":"inactive"}}
+
+📝 Example 4: UserFunction Management
+
+📋 Total scripts: 5
+🔍 Retrieved script: Get Active Users
+✏️  function updated
+🗑️  function deleted
+
+ℹ️  Note: GET/UPDATE/DELETE use IDs. Only CALL supports labels.
+
+✅ All examples completed!
 === ekoDB Goal Template CRUD Example (TypeScript) ===
 
 --- Creating goal template ---
-Created template: Data Migration (id: IdsfeZYlFCHefyI4XVolZV7GNmB2xwarrgiBj0EWWuvYtWvK17ROms0h8UVbvzPpFfTP1YV8b-ZtZN8aq4rtrA)
+Created template: Data Migration (id: vn486V67QjY-H2pN6lkZFUqfVQIUnkTnmKD6Y7jE3YWf2nW3xqdNX3gFUhdjmPobdv3xep80jDfgn4LaagJ9vA)
 
 --- Listing templates ---
 Templates: {
@@ -1080,7 +1038,7 @@ Templates: {
   items: [
     {
       description: [Object],
-      id: 'IdsfeZYlFCHefyI4XVolZV7GNmB2xwarrgiBj0EWWuvYtWvK17ROms0h8UVbvzPpFfTP1YV8b-ZtZN8aq4rtrA',
+      id: 'vn486V67QjY-H2pN6lkZFUqfVQIUnkTnmKD6Y7jE3YWf2nW3xqdNX3gFUhdjmPobdv3xep80jDfgn4LaagJ9vA',
       owner: [Object],
       steps: [Object],
       title: [Object]
@@ -1102,7 +1060,7 @@ Template deleted successfully
 === ekoDB Goals, Tasks & Agents Example (TypeScript) ===
 
 --- Creating goal ---
-Created goal: Deploy v2.0 (id: KJl0aQd8B-rViEWc6UxU-NYfbZPvcs1VBh4P3PtCmS3K-hLZnunZXvKex6yYWKbH5mYs2OZNm1JcxkrjY-ZmRA)
+Created goal: Deploy v2.0 (id: EX8VWT7sRGg9TnJyDvT3-OZLAxHZDLmyaC5y3u0aLlm1_rGuN72-2VgmWAIpnxsdOECS2jFvoxHBL9rCMGA3vw)
 
 --- Listing goals ---
 Goals: {
@@ -1111,13 +1069,13 @@ Goals: {
     {
       "created_at": {
         "type": "DateTime",
-        "value": "2026-11-02T04:45:02.290500+00:00"
+        "value": "2026-11-08T16:54:40.542830+00:00"
       },
       "description": {
         "type": "String",
         "value": "Ship version 2.0 to production"
       },
-      "id": "KJl0aQd8B-rViEWc6UxU-NYfbZPvcs1VBh4P3PtCmS3K-hLZnunZXvKex6yYWKbH5mYs2OZNm1JcxkrjY-ZmRA",
+      "id": "EX8VWT7sRGg9TnJyDvT3-OZLAxHZDLmyaC5y3u0aLlm1_rGuN72-2VgmWAIpnxsdOECS2jFvoxHBL9rCMGA3vw",
       "owner": {
         "type": "Object",
         "value": {
@@ -1139,7 +1097,7 @@ Goals: {
       },
       "updated_at": {
         "type": "DateTime",
-        "value": "2026-11-02T04:45:02.290500+00:00"
+        "value": "2026-11-08T16:54:40.542830+00:00"
       }
     }
   ],
@@ -1160,13 +1118,13 @@ Search results: {
       "_score": 12.870000000000001,
       "created_at": {
         "type": "DateTime",
-        "value": "2026-11-02T04:45:02.290500+00:00"
+        "value": "2026-11-08T16:54:40.542830+00:00"
       },
       "description": {
         "type": "String",
         "value": "Ship version 2.0 with hot-fix patches"
       },
-      "id": "KJl0aQd8B-rViEWc6UxU-NYfbZPvcs1VBh4P3PtCmS3K-hLZnunZXvKex6yYWKbH5mYs2OZNm1JcxkrjY-ZmRA",
+      "id": "EX8VWT7sRGg9TnJyDvT3-OZLAxHZDLmyaC5y3u0aLlm1_rGuN72-2VgmWAIpnxsdOECS2jFvoxHBL9rCMGA3vw",
       "owner": {
         "type": "Object",
         "value": {
@@ -1188,18 +1146,18 @@ Search results: {
       },
       "updated_at": {
         "type": "DateTime",
-        "value": "2026-11-02T04:45:02.303160+00:00"
+        "value": "2026-11-08T16:54:40.550890+00:00"
       }
     }
   ]
 }
 
 --- Goal step: start step 0 ---
-Step 0 started on goal KJl0aQd8B-rViEWc6UxU-NYfbZPvcs1VBh4P3PtCmS3K-hLZnunZXvKex6yYWKbH5mYs2OZNm1JcxkrjY-ZmRA
+Step 0 started on goal EX8VWT7sRGg9TnJyDvT3-OZLAxHZDLmyaC5y3u0aLlm1_rGuN72-2VgmWAIpnxsdOECS2jFvoxHBL9rCMGA3vw
 --- Goal step: complete step 0 ---
-Step 0 completed on goal KJl0aQd8B-rViEWc6UxU-NYfbZPvcs1VBh4P3PtCmS3K-hLZnunZXvKex6yYWKbH5mYs2OZNm1JcxkrjY-ZmRA
+Step 0 completed on goal EX8VWT7sRGg9TnJyDvT3-OZLAxHZDLmyaC5y3u0aLlm1_rGuN72-2VgmWAIpnxsdOECS2jFvoxHBL9rCMGA3vw
 --- Goal step: fail step 1 ---
-Step 1 failed on goal KJl0aQd8B-rViEWc6UxU-NYfbZPvcs1VBh4P3PtCmS3K-hLZnunZXvKex6yYWKbH5mYs2OZNm1JcxkrjY-ZmRA
+Step 1 failed on goal EX8VWT7sRGg9TnJyDvT3-OZLAxHZDLmyaC5y3u0aLlm1_rGuN72-2VgmWAIpnxsdOECS2jFvoxHBL9rCMGA3vw
 
 --- Completing goal ---
 Goal status: pending_review
@@ -1212,7 +1170,7 @@ Goal status after reject: failed
 
 
 --- Creating task ---
-Created task: Hourly Health Check (id: G4rwx3NLk7OgmrSCNkzzxgSf-2tpHLrSKDgQg6gfS3lpnalYSCAgDoYAEeNOOI1NdwdYH4K5mfMbio9Q1CysDQ)
+Created task: Hourly Health Check (id: ays47243PZal4h6FMyhoQwN3RHcsetKNsxkCAKmE54A310jroOxM4MG8n7AFrJ2Yux-PmTax4JzYzfpiKGa6wQ)
 
 --- Listing tasks ---
 Tasks: {
@@ -1233,7 +1191,7 @@ Tasks: {
         "type": "String",
         "value": "0 * * * *"
       },
-      "id": "G4rwx3NLk7OgmrSCNkzzxgSf-2tpHLrSKDgQg6gfS3lpnalYSCAgDoYAEeNOOI1NdwdYH4K5mfMbio9Q1CysDQ",
+      "id": "ays47243PZal4h6FMyhoQwN3RHcsetKNsxkCAKmE54A310jroOxM4MG8n7AFrJ2Yux-PmTax4JzYzfpiKGa6wQ",
       "name": {
         "type": "String",
         "value": "Hourly Health Check"
@@ -1279,7 +1237,7 @@ Task deleted successfully
 
 
 --- Creating agent ---
-Created agent: SupportBot (id: US9Co6gSIImFW8TILtCU9yl8CndRcyofoUSM5kH_DZDHPUnJyp3P0TaSClOo4J_UNwzPemGd_MOBVvR70VI38g)
+Created agent: SupportBot (id: y82NGV9dHmPhZBZHOlNThYUCXFP1h2tdJsPTsEbmoulb0b2qIHHnOhFifkleFjBux_pp4pdDkFmYUY4U2HGy2Q)
 
 --- Listing agents ---
 Agents: {
@@ -1290,7 +1248,7 @@ Agents: {
         "type": "String",
         "value": "deploy_prod_1"
       },
-      "id": "US9Co6gSIImFW8TILtCU9yl8CndRcyofoUSM5kH_DZDHPUnJyp3P0TaSClOo4J_UNwzPemGd_MOBVvR70VI38g",
+      "id": "y82NGV9dHmPhZBZHOlNThYUCXFP1h2tdJsPTsEbmoulb0b2qIHHnOhFifkleFjBux_pp4pdDkFmYUY4U2HGy2Q",
       "llm_model": {
         "type": "String",
         "value": "gpt-6-luna"
@@ -1323,7 +1281,7 @@ Agents: {
 Fetched: SupportBot
 
 --- Getting agent by name ---
-By name: SupportBot (id: US9Co6gSIImFW8TILtCU9yl8CndRcyofoUSM5kH_DZDHPUnJyp3P0TaSClOo4J_UNwzPemGd_MOBVvR70VI38g)
+By name: SupportBot (id: y82NGV9dHmPhZBZHOlNThYUCXFP1h2tdJsPTsEbmoulb0b2qIHHnOhFifkleFjBux_pp4pdDkFmYUY4U2HGy2Q)
 
 --- Updating agent ---
 Updated agent: SupportBot
@@ -1333,7 +1291,7 @@ Agents in deployment: {
   "count": 0,
   "items": []
 }
-WARNING: agents-by-deployment omitted created agent US9Co6gSIImFW8TILtCU9yl8CndRcyofoUSM5kH_DZDHPUnJyp3P0TaSClOo4J_UNwzPemGd_MOBVvR70VI38g; TODO: check/fix the server-side deployment lookup
+WARNING: agents-by-deployment omitted created agent y82NGV9dHmPhZBZHOlNThYUCXFP1h2tdJsPTsEbmoulb0b2qIHHnOhFifkleFjBux_pp4pdDkFmYUY4U2HGy2Q; TODO: check/fix the server-side deployment lookup
 
 --- Deleting agent ---
 Agent deleted successfully
@@ -1349,8 +1307,8 @@ Setting up sample data...
 
 1. Single collection join (users with departments):
 Found 2 users with department data:
-  - Alice Johnson: Engineering
   - Bob Smith: Sales
+  - Alice Johnson: Engineering
 
 2. Join with filtering:
 Found 1 users in Engineering:
@@ -1358,8 +1316,8 @@ Found 1 users in Engineering:
 
 3. Join with user profiles:
 Found 2 users with profile data:
-  - Alice Johnson: Senior Software Engineer
   - Bob Smith: Sales Manager
+  - Alice Johnson: Senior Software Engineer
 
 4. Join orders with user data:
 Found 2 completed orders:
@@ -1382,9 +1340,9 @@ Found 2 users with example.com emails:
 
 === Auth flow defined as pure stored functions ===
 Call them like:
-  POST /api/functions/jwt_register_ts_52767_1793594703397 { "email": "a@b.com", "password": "s3cret" }
-  POST /api/functions/jwt_login_ts_52767_1793594703397 { "email": "a@b.com", "password": "s3cret" }
-  POST /api/functions/jwt_verify_ts_52767_1793594703397 { "token": "<jwt>" }
+  POST /api/functions/jwt_register_ts_73353_1794156881678 { "email": "a@b.com", "password": "s3cret" }
+  POST /api/functions/jwt_login_ts_73353_1794156881678 { "email": "a@b.com", "password": "s3cret" }
+  POST /api/functions/jwt_verify_ts_73353_1794156881678 { "token": "<jwt>" }
 
 Set JWT_SECRET in ekoDB's environment_vars whitelist before invoking.
 
@@ -1393,44 +1351,44 @@ Set JWT_SECRET in ekoDB's environment_vars whitelist before invoking.
 
 --- Setup: creating KV key and documents ---
 Set KV key: session:admin
-Inserted document 1: jV7-3vJJ9mY1h22VijEWnscb59uPIpqyoN3_33QC48Ib8bEw6yR9PUtQ_4UR5oE1pph2kIMFsgYE6GSTqQ19Fw
-Inserted document 2: ugtKpu9QNn8cvnFDT3wPhEY2_888tiC2Kb_R08u1W04xy1a28SsCis79meKsQ9DiKBN3x8MuLtUkstjgFbOeeQ
+Inserted document 1: 0kgJufq1foXMmjk1b4KhKbFOXcG9_eGTgQzoaREZRX7KmokPri45tzf8SSZLIy5J8QHUPucv1OWfiREVMvYHvw
+Inserted document 2: r5KXTx5uroRGEplvHfR9AhbwPGMxOBp6eh_Pu36eb6Z6YLVL-A2nyuLe2sIXP40fx1FpDnte651ayHKug165GQ
 
 --- Linking documents to KV key ---
-Linked doc jV7-3vJJ9mY1h22VijEWnscb59uPIpqyoN3_33QC48Ib8bEw6yR9PUtQ_4UR5oE1pph2kIMFsgYE6GSTqQ19Fw: null
-Linked doc ugtKpu9QNn8cvnFDT3wPhEY2_888tiC2Kb_R08u1W04xy1a28SsCis79meKsQ9DiKBN3x8MuLtUkstjgFbOeeQ: null
+Linked doc 0kgJufq1foXMmjk1b4KhKbFOXcG9_eGTgQzoaREZRX7KmokPri45tzf8SSZLIy5J8QHUPucv1OWfiREVMvYHvw: null
+Linked doc r5KXTx5uroRGEplvHfR9AhbwPGMxOBp6eh_Pu36eb6Z6YLVL-A2nyuLe2sIXP40fx1FpDnte651ayHKug165GQ: null
 
 --- Getting links for KV key ---
 Links: [
   {
-    "collection": "kv_links_example_ts_52846_1793594703753",
-    "document_id": "jV7-3vJJ9mY1h22VijEWnscb59uPIpqyoN3_33QC48Ib8bEw6yR9PUtQ_4UR5oE1pph2kIMFsgYE6GSTqQ19Fw",
+    "collection": "kv_links_example_ts_73383_1794156882088",
+    "document_id": "r5KXTx5uroRGEplvHfR9AhbwPGMxOBp6eh_Pu36eb6Z6YLVL-A2nyuLe2sIXP40fx1FpDnte651ayHKug165GQ",
     "field_path": null,
-    "created_at": "2026-11-02T04:45:03.836730Z",
-    "last_accessed": "2026-11-02T04:45:03.839945Z",
+    "created_at": "2026-11-08T16:54:42.161280Z",
+    "last_accessed": "2026-11-08T16:54:42.162297Z",
     "metadata": {}
   },
   {
-    "collection": "kv_links_example_ts_52846_1793594703753",
-    "document_id": "ugtKpu9QNn8cvnFDT3wPhEY2_888tiC2Kb_R08u1W04xy1a28SsCis79meKsQ9DiKBN3x8MuLtUkstjgFbOeeQ",
+    "collection": "kv_links_example_ts_73383_1794156882088",
+    "document_id": "0kgJufq1foXMmjk1b4KhKbFOXcG9_eGTgQzoaREZRX7KmokPri45tzf8SSZLIy5J8QHUPucv1OWfiREVMvYHvw",
     "field_path": null,
-    "created_at": "2026-11-02T04:45:03.838461Z",
-    "last_accessed": "2026-11-02T04:45:03.839945Z",
+    "created_at": "2026-11-08T16:54:42.160059Z",
+    "last_accessed": "2026-11-08T16:54:42.162297Z",
     "metadata": {}
   }
 ]
 
 --- Unlinking document ---
-Unlinked doc ugtKpu9QNn8cvnFDT3wPhEY2_888tiC2Kb_R08u1W04xy1a28SsCis79meKsQ9DiKBN3x8MuLtUkstjgFbOeeQ: null
+Unlinked doc r5KXTx5uroRGEplvHfR9AhbwPGMxOBp6eh_Pu36eb6Z6YLVL-A2nyuLe2sIXP40fx1FpDnte651ayHKug165GQ: null
 
 --- Verifying remaining links ---
 Remaining links: [
   {
-    "collection": "kv_links_example_ts_52846_1793594703753",
-    "document_id": "jV7-3vJJ9mY1h22VijEWnscb59uPIpqyoN3_33QC48Ib8bEw6yR9PUtQ_4UR5oE1pph2kIMFsgYE6GSTqQ19Fw",
+    "collection": "kv_links_example_ts_73383_1794156882088",
+    "document_id": "0kgJufq1foXMmjk1b4KhKbFOXcG9_eGTgQzoaREZRX7KmokPri45tzf8SSZLIy5J8QHUPucv1OWfiREVMvYHvw",
     "field_path": null,
-    "created_at": "2026-11-02T04:45:03.836730Z",
-    "last_accessed": "2026-11-02T04:45:03.842454Z",
+    "created_at": "2026-11-08T16:54:42.160059Z",
+    "last_accessed": "2026-11-08T16:54:42.163724Z",
     "metadata": {}
   }
 ]
@@ -1449,15 +1407,15 @@ Retrieved value: { type: 'Object', value: { userId: 123, username: 'john_doe' } 
 
 === KV Batch Set ===
 ✓ Batch set 3 keys
-  kv_ops_ts_52931_1793594704219:cache:product:1: success
-  kv_ops_ts_52931_1793594704219:cache:product:2: success
-  kv_ops_ts_52931_1793594704219:cache:product:3: success
+  kv_ops_ts_73415_1794156882585:cache:product:1: success
+  kv_ops_ts_73415_1794156882585:cache:product:2: success
+  kv_ops_ts_73415_1794156882585:cache:product:3: success
 
 === KV Batch Get ===
 ✓ Batch retrieved 3 values
-  kv_ops_ts_52931_1793594704219:cache:product:1: { name: 'Product 1', price: 29.99 }
-  kv_ops_ts_52931_1793594704219:cache:product:2: { price: 39.99, name: 'Product 2' }
-  kv_ops_ts_52931_1793594704219:cache:product:3: { name: 'Product 3', price: 49.99 }
+  kv_ops_ts_73415_1794156882585:cache:product:1: { name: 'Product 1', price: 29.99 }
+  kv_ops_ts_73415_1794156882585:cache:product:2: { price: 39.99, name: 'Product 2' }
+  kv_ops_ts_73415_1794156882585:cache:product:3: { name: 'Product 3', price: 49.99 }
 
 === KV Exists ===
 Key exists: true
@@ -1474,9 +1432,9 @@ Total keys in store: 4
 
 === KV Batch Delete ===
 ✓ Batch deleted 3 keys
-  kv_ops_ts_52931_1793594704219:cache:product:1: deleted
-  kv_ops_ts_52931_1793594704219:cache:product:2: deleted
-  kv_ops_ts_52931_1793594704219:cache:product:3: deleted
+  kv_ops_ts_73415_1794156882585:cache:product:1: deleted
+  kv_ops_ts_73415_1794156882585:cache:product:2: deleted
+  kv_ops_ts_73415_1794156882585:cache:product:3: deleted
 
 ✓ All KV operations completed successfully
 === KV Precision: Float vs Decimal ===
@@ -1565,7 +1523,7 @@ Found 2 users (bypassed cache)
 === ekoDB Raw Completion Stream (SSE) Example ===
 
 --- Basic SSE Raw Completion ---
-Response: For traditional painting, the three primary colors are **red, yellow, and blue**. For light, they’re **red, green, and blue**.
+Response: It depends on the context: **red, yellow, and blue** are the traditional primary colors in art; **red, green, and blue** are primary colors of light.
 
 --- Structured Output via SSE ---
 JSON response: [
@@ -1575,28 +1533,32 @@ JSON response: [
 ]
 
 --- Blocking HTTP (for comparison) ---
-Blocking response: Hello!
+Blocking response: Hello! I hope you’re having a great day.
 
 === Done ===
 === ekoDB Schedule Management Example (TypeScript) ===
 
 --- Creating schedule ---
-Created schedule: Nightly Database Backup (id: 273bea77-df49-4b70-a627-959ed5fceb27, cron: 0 0 2 * * *)
+Created schedule: Nightly Database Backup (id: c90b3bad-a43b-45a0-b535-638c48c9cd7d, cron: 0 0 2 * * *)
 
 --- Listing schedules ---
 Schedules: {
   "count": 1,
   "schedules": [
     {
-      "created_at": "2026-11-02T04:45:10.995195Z",
+      "created_at": "2026-11-08T16:54:49.363487Z",
+      "created_by": {
+        "key_id": "3a0cdba0da7c060610042783cc758f1f",
+        "key_label": "default_admin"
+      },
       "cron_expression": "0 0 2 * * *",
       "description": null,
       "enabled": true,
-      "function_label": "schedule_noop_typescript_54427_1793594710962",
-      "id": "273bea77-df49-4b70-a627-959ed5fceb27",
+      "function_label": "schedule_noop_typescript_73568_1794156889329",
+      "id": "c90b3bad-a43b-45a0-b535-638c48c9cd7d",
       "last_execution": null,
       "name": "Nightly Database Backup",
-      "next_execution": "2026-11-03T02:00:00Z",
+      "next_execution": "2026-11-09T02:00:00Z",
       "parameters": {},
       "stats": {
         "avg_execution_time_ms": 0,
@@ -1606,7 +1568,7 @@ Schedules: {
         "total_executions": 0
       },
       "timezone": "UTC",
-      "updated_at": "2026-11-02T04:45:10.995195Z"
+      "updated_at": "2026-11-08T16:54:49.363487Z"
     }
   ]
 }
@@ -1619,7 +1581,7 @@ Updated: Nightly Full Backup (new cron: 0 0 3 * * *)
 
 --- Triggering schedule ---
 Trigger response: {
-  "schedule_id": "273bea77-df49-4b70-a627-959ed5fceb27",
+  "schedule_id": "c90b3bad-a43b-45a0-b535-638c48c9cd7d",
   "status": "triggered"
 }
 
@@ -1662,20 +1624,20 @@ Setting up test data...
 
 1. Basic full-text search:
 Found 2 results
-  1. Score: 12.870, Matched: email, name
+  1. Score: 12.870, Matched: name, email
   2. Score: 6.270, Matched: name
 
 2. Fuzzy search (typo tolerance):
 Found 4 results with fuzzy matching
-  1. Score: 13.200, Matched: title, bio
+  1. Score: 13.200, Matched: bio, title
   2. Score: 13.200, Matched: title, bio
-  3. Score: 13.200, Matched: bio, title
+  3. Score: 13.200, Matched: title, bio
   4. Score: 13.200, Matched: bio, title
 
 3. Search with field weights:
 Found 4 results with weighted fields
   1. Score: 26.400, Matched: title, bio
-  2. Score: 26.400, Matched: title, bio
+  2. Score: 26.400, Matched: bio, title
   3. Score: 26.400, Matched: title, bio
   4. Score: 26.400, Matched: title, bio
 
@@ -1690,24 +1652,24 @@ Found 1 results (matches: work, working, worked)
 
 6. Vector search (semantic search):
 Found 3 semantically similar documents
-  1. Score: 0.776, Matched:
-  2. Score: 0.747, Matched:
-  3. Score: 0.734, Matched:
+  1. Score: 0.762, Matched:
+  2. Score: 0.755, Matched:
+  3. Score: 0.735, Matched:
 
 7. Hybrid search (text + vector):
 Found 3 results using hybrid search (text + vector)
-  1. Score: 1.499, Matched: title, content
-  2. Score: 0.910, Matched: title, content
-  3. Score: 0.294, Matched:
+  1. Score: 1.502, Matched: title, content
+  2. Score: 0.894, Matched: content, title
+  3. Score: 0.305, Matched:
 
 8. Case-sensitive search:
 Found 1 results (case-sensitive)
-  1. Score: 13.200, Matched: skills, bio
+  1. Score: 13.200, Matched: bio, skills
 
 9. Vector search with a metadata pre-filter (category = ml):
 Found 2 documents in category "ml" (NLP excluded)
-  1. Deep Learning Fundamentals (category: ml)
-  2. Introduction to Machine Learning (category: ml)
+  1. Introduction to Machine Learning (category: ml)
+  2. Deep Learning Fundamentals (category: ml)
 
 Paired vector search: document=Rust Programming Answer, query=Rust Programming Question
 
@@ -1718,23 +1680,23 @@ Paired vector search: document=Rust Programming Answer, query=Rust Programming Q
 
 === Insert Document ===
 Inserted: {
-  id: 'eSACgRwxC-hCE699EW8t410_yM-kCwrS7BygcQ1MccB6l694UrKjpwZ7wlZzSlsUq02OWil50RBHir8gsb9EKA'
+  id: 'Gnez-xvJSRYgNgFSp1HtHBZW4gZ3WpfOhp4pixFP8Q1sLpwhE0O6Kn9iD-krj9UWEjpnzlRboBn4Q6ck5DdOnA'
 }
 
 === Find by ID ===
 Found: {
-  metadata: { value: { nested: [Object], key: 'value' }, type: 'Object' },
-  active: { type: 'Boolean', value: true },
-  embedding: { value: [ 0.1, 0.2, 0.3, 0.4, 0.5 ], type: 'Array' },
-  id: 'eSACgRwxC-hCE699EW8t410_yM-kCwrS7BygcQ1MccB6l694UrKjpwZ7wlZzSlsUq02OWil50RBHir8gsb9EKA',
-  created_at: { value: '2026-11-02T04:45:12.416+00:00', type: 'DateTime' },
-  value: { value: 42, type: 'Integer' },
-  name: { type: 'String', value: 'Test Record' },
-  user_id: { value: '550e8400-e29b-41d4-a716-446655440000', type: 'String' },
+  name: { value: 'Test Record', type: 'String' },
+  created_at: { value: '2026-11-08T16:54:50.895+00:00', type: 'DateTime' },
+  tags: { value: [ 'tag1', 'tag2', 'tag3' ], type: 'Array' },
+  value: { type: 'Integer', value: 42 },
   price: { type: 'Float', value: 99.99 },
-  data: { type: 'String', value: 'aGVsbG8gd29ybGQ=' },
-  tags: { type: 'Array', value: [ 'tag1', 'tag2', 'tag3' ] },
-  categories: { value: [ 'electronics', 'computers' ], type: 'Array' }
+  metadata: { value: { key: 'value', nested: [Object] }, type: 'Object' },
+  active: { value: true, type: 'Boolean' },
+  embedding: { type: 'Array', value: [ 0.1, 0.2, 0.3, 0.4, 0.5 ] },
+  categories: { type: 'Array', value: [ 'electronics', 'computers' ] },
+  data: { value: 'aGVsbG8gd29ybGQ=', type: 'String' },
+  id: 'Gnez-xvJSRYgNgFSp1HtHBZW4gZ3WpfOhp4pixFP8Q1sLpwhE0O6Kn9iD-krj9UWEjpnzlRboBn4Q6ck5DdOnA',
+  user_id: { value: '550e8400-e29b-41d4-a716-446655440000', type: 'String' }
 }
 
 === Extract Field Values (All Types) ===
@@ -1743,26 +1705,26 @@ Extracted values:
   value (Integer): 42
   active (Boolean): true
   price (Decimal): 99.99
-  created_at (DateTime): 2026-11-02T04:45:12.416Z
+  created_at (DateTime): 2026-11-08T16:54:50.895Z
   user_id (UUID): 550e8400-e29b-41d4-a716-446655440000
   tags (Array): [ 'tag1', 'tag2', 'tag3' ]
-  metadata (Object): { nested: { deep: true }, key: 'value' }
+  metadata (Object): { key: 'value', nested: { deep: true } }
   embedding (Vector): [ 0.1, 0.2, 0.3, 0.4, 0.5 ]
   categories (Set): [ 'electronics', 'computers' ]
   data (Bytes): 11 bytes
 Plain record: {
-  metadata: { nested: { deep: true }, key: 'value' },
+  name: 'Test Record',
+  created_at: '2026-11-08T16:54:50.895+00:00',
+  tags: [ 'tag1', 'tag2', 'tag3' ],
+  value: 42,
+  price: 99.99,
+  metadata: { key: 'value', nested: { deep: true } },
   active: true,
   embedding: [ 0.1, 0.2, 0.3, 0.4, 0.5 ],
-  id: 'eSACgRwxC-hCE699EW8t410_yM-kCwrS7BygcQ1MccB6l694UrKjpwZ7wlZzSlsUq02OWil50RBHir8gsb9EKA',
-  created_at: '2026-11-02T04:45:12.416+00:00',
-  value: 42,
-  name: 'Test Record',
-  user_id: '550e8400-e29b-41d4-a716-446655440000',
-  price: 99.99,
+  categories: [ 'electronics', 'computers' ],
   data: 'aGVsbG8gd29ybGQ=',
-  tags: [ 'tag1', 'tag2', 'tag3' ],
-  categories: [ 'electronics', 'computers' ]
+  id: 'Gnez-xvJSRYgNgFSp1HtHBZW4gZ3WpfOhp4pixFP8Q1sLpwhE0O6Kn9iD-krj9UWEjpnzlRboBn4Q6ck5DdOnA',
+  user_id: '550e8400-e29b-41d4-a716-446655440000'
 }
 
 === Find with Query ===
@@ -1770,18 +1732,18 @@ Found documents: 1
 
 === Update Document ===
 Updated: {
-  embedding: { value: [ 0.1, 0.2, 0.3, 0.4, 0.5 ], type: 'Array' },
   value: { type: 'Integer', value: 100 },
-  user_id: { type: 'String', value: '550e8400-e29b-41d4-a716-446655440000' },
-  data: { type: 'String', value: 'aGVsbG8gd29ybGQ=' },
-  created_at: { value: '2026-11-02T04:45:12.416+00:00', type: 'DateTime' },
-  tags: { type: 'Array', value: [ 'tag1', 'tag2', 'tag3' ] },
+  metadata: { value: { key: 'value', nested: [Object] }, type: 'Object' },
+  active: { value: true, type: 'Boolean' },
+  tags: { value: [ 'tag1', 'tag2', 'tag3' ], type: 'Array' },
+  embedding: { type: 'Array', value: [ 0.1, 0.2, 0.3, 0.4, 0.5 ] },
   categories: { value: [ 'electronics', 'computers' ], type: 'Array' },
-  id: 'eSACgRwxC-hCE699EW8t410_yM-kCwrS7BygcQ1MccB6l694UrKjpwZ7wlZzSlsUq02OWil50RBHir8gsb9EKA',
+  name: { value: 'Updated Record', type: 'String' },
+  created_at: { type: 'DateTime', value: '2026-11-08T16:54:50.895+00:00' },
+  id: 'Gnez-xvJSRYgNgFSp1HtHBZW4gZ3WpfOhp4pixFP8Q1sLpwhE0O6Kn9iD-krj9UWEjpnzlRboBn4Q6ck5DdOnA',
+  user_id: { value: '550e8400-e29b-41d4-a716-446655440000', type: 'String' },
   price: { type: 'Float', value: 99.99 },
-  metadata: { value: { nested: [Object], key: 'value' }, type: 'Object' },
-  active: { type: 'Boolean', value: true },
-  name: { type: 'String', value: 'Updated Record' }
+  data: { type: 'String', value: 'aGVsbG8gd29ybGQ=' }
 }
 
 === Delete Document ===
@@ -1794,7 +1756,7 @@ Deleted document
 ✓ Client created
 
 === Inserting Test Data ===
-✓ Inserted test record: HnIKbWcirZP4ow_dA_VRuyuFlbvCnjuKh4dV526n5bGHdmo2Ppqan38s1NRK7iA8MYmiVbII5LWxNHxszHjk3A
+✓ Inserted test record: F-7UIRdVuNTX9Fe3gGYPHN8x3D1cs61PbVNo1ZSC9uoQfptCoYHsCEJYKk73be36gOFgG97vBGERQHddcdSc1g
 
 === Connecting to WebSocket ===
 ✓ WebSocket connected
@@ -1824,22 +1786,22 @@ Deleted document
 Example 1: Basic Native SWR
 ────────────────────────────────────────────────────────────────────────────────
 Single function replaces KvGet → If → HttpRequest → KvSet pipeline
-✓ Created native SWR script: github_user_native_ts (Kqwvk2PyvGnZo87CEbEGApzc2vJIkjr6wvitBU4HXSOk6shzXMTqjYSLcitT0MOaBY_skmYvGEI3uN42HoxLgQ)
+✓ Created native SWR script: github_user_native_ts (xRjWD_usj0uTtRZsxpcIi54Xv6fv3JHGSm9MY9GvM2OYMmz9imHfW_ArVXz9HkplhEsIj0vgpgCvlTpJkXTDSw)
 
 First call (cache miss - will fetch from GitHub API):
-  Response time: 170ms
+  Response time: 135ms
   Records returned: 1
 
 Second call (cache hit - instant from KV store):
-  Response time: 3ms
-  Speedup: 56.7x faster 🚀
+  Response time: 2ms
+  Speedup: 67.5x faster 🚀
   Records returned: 1
 
 
 Example 2: SWR with Built-in Audit Trail
 ────────────────────────────────────────────────────────────────────────────────
 Optional collection parameter for automatic request logging
-✓ Created SWR script with audit trail: product_swr_audit_ts (M2TwV0qNLH-61AOUPqQk0uPCwWteN7EmeNzhTg7np0NSYCwcV7ksHHN7bLfsNw8Fn9OMXpGtQDMX9UwvjTTZ3g)
+✓ Created SWR script with audit trail: product_swr_audit_ts (z8qjm8hbo6nmh7hOXy2SOYViqDz-Z_tqCo594npghbIAqTlMpnM1AF2ZPmENInN0qxP4R82JQCEJz5AEBP6x7A)
 
 Fetching product (will create audit trail entry):
   ✓ Product fetched and cached
@@ -1850,7 +1812,7 @@ Fetching product (will create audit trail entry):
 Example 3: SWR in Multi-Function Pipeline
 ────────────────────────────────────────────────────────────────────────────────
 Fetch external data → Process → Store in collection
-✓ Created enrichment pipeline: user_enrichment_pipeline_ts (fSC5vic8jOs8CIFAB5cljZ3gpA09IY1WhsVavPIXmQRNA7Kk9rFayDhiI5JgdXVm_UQlQaoB_LkjsG-6fU6JLg)
+✓ Created enrichment pipeline: user_enrichment_pipeline_ts (B5kYMGWb6HKduF1FfXv-757DYrYVthvUvh8I3V8Vga6pD1B_GzeZpJWV6zQ786hg4T-3LPeIuqBEsb_omI6ukA)
 
 Running pipeline:
   ✓ Data fetched from API (cached 30m)
@@ -1861,7 +1823,7 @@ Running pipeline:
 Example 4: Dynamic TTL Configuration
 ────────────────────────────────────────────────────────────────────────────────
 TTL as parameter - supports duration strings, integers, ISO timestamps
-✓ Created dynamic TTL script: flexible_cache_ts (FQPXReVEMaLL7CIIjHzWZEz4D_o7HKBLogo1XhqdYrX55TBnUNrztf9-oiwDlse4tIr4iTabZrvp5j2xVmWsCg)
+✓ Created dynamic TTL script: flexible_cache_ts (YnGvUy9vMuyfURNTaxIR-3lPRCAeK8lJUqzsBNUizehZmVGYpL_CDakSdDpiuZGsjM2ZTbx3MAvoheAatTWDNg)
   ✓ Cached with TTL: 5m (5 minutes)
   ✓ Cached with TTL: 1h (1 hour)
   ✓ Cached with TTL: 30s (30 seconds)
@@ -1887,37 +1849,37 @@ Result:         60% fewer functions, cleaner code, same behavior 🎯
 === ekoDB SWR (Stale-While-Revalidate) Pattern ===
 
 Step 1: Create SWR function that acts as edge cache
-✓ Created SWR script: fetch_api_user_ts_55079_1793594714450 (w-sBKieHcaEwNdVXyhGxfqVQhAmTDzTv-83tHleVfniE8dx9E5gwWY8Jwqru8W6up86IsK1PqYLVv5lzrkz_gg)
+✓ Created SWR script: fetch_api_user_ts_73755_1794156892739 (LpJECKFtczLI6sdxOv9T6rYbBwJMwJnkIqHLfZFySgfuUhSV7le4C0nWYCpv2Q7e4UDKguK-1ObzitwW3ig6bQ)
 
 Step 2: First call - Cache miss, fetches from API
 Result: {
   "records": [
     {
       "value": {
-        "type": "Object",
         "value": {
-          "id": 1,
           "address": {
-            "geo": {
-              "lat": "-37.3159",
-              "lng": "81.1496"
-            },
-            "suite": "Apt. 556",
             "street": "Kulas Light",
+            "geo": {
+              "lng": "81.1496",
+              "lat": "-37.3159"
+            },
             "city": "Gwenborough",
+            "suite": "Apt. 556",
             "zipcode": "92998-3874"
           },
-          "company": {
-            "catchPhrase": "Multi-layered client-server neural-net",
-            "name": "Romaguera-Crona",
-            "bs": "harness real-time e-markets"
-          },
-          "email": "Sincere@april.biz",
           "name": "Leanne Graham",
           "phone": "1-770-736-8031 x56442",
+          "email": "Sincere@april.biz",
           "username": "Bret",
+          "id": 1,
+          "company": {
+            "bs": "harness real-time e-markets",
+            "name": "Romaguera-Crona",
+            "catchPhrase": "Multi-layered client-server neural-net"
+          },
           "website": "hildegard.org"
-        }
+        },
+        "type": "Object"
       }
     }
   ],
@@ -1932,32 +1894,32 @@ Result: {
 ✓ Data fetched from external API and cached
 
 Step 3: Second call - Cache hit, instant response from ekoDB
-Response time: 3ms (served from cache)
+Response time: 2ms (served from cache)
 Result (cached): {
   "records": [
     {
       "value": {
         "value": {
-          "id": 1,
           "address": {
-            "geo": {
-              "lat": "-37.3159",
-              "lng": "81.1496"
-            },
-            "suite": "Apt. 556",
             "street": "Kulas Light",
+            "geo": {
+              "lng": "81.1496",
+              "lat": "-37.3159"
+            },
             "city": "Gwenborough",
+            "suite": "Apt. 556",
             "zipcode": "92998-3874"
           },
-          "company": {
-            "catchPhrase": "Multi-layered client-server neural-net",
-            "name": "Romaguera-Crona",
-            "bs": "harness real-time e-markets"
-          },
-          "email": "Sincere@april.biz",
           "name": "Leanne Graham",
           "phone": "1-770-736-8031 x56442",
+          "email": "Sincere@april.biz",
           "username": "Bret",
+          "id": 1,
+          "company": {
+            "bs": "harness real-time e-markets",
+            "name": "Romaguera-Crona",
+            "catchPhrase": "Multi-layered client-server neural-net"
+          },
           "website": "hildegard.org"
         },
         "type": "Object"
@@ -1977,74 +1939,74 @@ Result (cached): {
 === Advanced: SWR with Data Enrichment ===
 
 Creating product enrichment function...
-✓ Created enrichment script: fetch_product_reviews_ts_55079_1793594714450 (jweTlPsQrl8qRuCmdYXU2a8LkzzHHbVwJ5TY6ErFZBQmeVZCBIxhpgcn9YbOYQlYAqLquuM0_-FPR2T2xXKW2A)
+✓ Created enrichment script: fetch_product_reviews_ts_73755_1794156892739 (YnTU5eaNtAU8ll82D7l9TKurfta-waYalDoG540YCYlieWZKH1bzKJj9D6yTiBC5lnLnb2dUkAOb8Dv7vxqYHA)
 
 Step 4: Call enrichment function - Fetches from 2 APIs + stores merged result
 Enriched data: {
   "records": [
     {
       "value": {
-        "type": "Object",
         "value": {
+          "weight": 4,
+          "shippingInformation": "Ships in 3-5 business days",
           "brand": "Essence",
-          "description": "The Essence Mascara Lash Princess is a popular mascara known for its volumizing and lengthening effects. Achieve dramatic lashes with this long-lasting and cruelty-free formula.",
-          "dimensions": {
-            "depth": 22.99,
-            "height": 13.08,
-            "width": 15.14
-          },
+          "title": "Essence Mascara Lash Princess",
           "meta": {
             "createdAt": "2025-10-09T14:47:01.588Z",
-            "barcode": "5784719087687",
             "qrCode": "https://cdn.dummyjson.com/public/qr-code.png",
+            "barcode": "5784719087687",
             "updatedAt": "2026-05-23T11:27:41.868Z"
           },
-          "rating": 2.56,
-          "category": "beauty",
-          "minimumOrderQuantity": 48,
-          "id": 1,
-          "discountPercentage": 10.48,
-          "availabilityStatus": "In Stock",
           "tags": [
             "beauty",
             "mascara"
           ],
-          "title": "Essence Mascara Lash Princess",
-          "sku": "BEA-ESS-ESS-001",
+          "availabilityStatus": "In Stock",
           "price": 9.99,
-          "shippingInformation": "Ships in 3-5 business days",
+          "returnPolicy": "No return policy",
+          "warrantyInformation": "1 week warranty",
+          "thumbnail": "https://cdn.dummyjson.com/product-images/beauty/essence-mascara-lash-princess/thumbnail.webp",
+          "category": "beauty",
+          "discountPercentage": 10.48,
+          "stock": 99,
+          "rating": 2.56,
+          "minimumOrderQuantity": 48,
           "reviews": [
             {
-              "rating": 3,
-              "reviewerEmail": "eleanor.collins@x.dummyjson.com",
-              "comment": "Would not recommend!",
               "reviewerName": "Eleanor Collins",
+              "rating": 3,
+              "comment": "Would not recommend!",
+              "reviewerEmail": "eleanor.collins@x.dummyjson.com",
               "date": "2025-04-30T09:41:02.053Z"
             },
             {
-              "comment": "Very satisfied!",
+              "rating": 4,
               "reviewerName": "Lucas Gordon",
               "date": "2025-04-30T09:41:02.053Z",
-              "rating": 4,
-              "reviewerEmail": "lucas.gordon@x.dummyjson.com"
+              "reviewerEmail": "lucas.gordon@x.dummyjson.com",
+              "comment": "Very satisfied!"
             },
             {
-              "date": "2025-04-30T09:41:02.053Z",
-              "rating": 5,
               "reviewerEmail": "eleanor.collins@x.dummyjson.com",
-              "comment": "Highly impressed!",
-              "reviewerName": "Eleanor Collins"
+              "reviewerName": "Eleanor Collins",
+              "rating": 5,
+              "date": "2025-04-30T09:41:02.053Z",
+              "comment": "Highly impressed!"
             }
           ],
-          "stock": 99,
-          "returnPolicy": "No return policy",
-          "thumbnail": "https://cdn.dummyjson.com/product-images/beauty/essence-mascara-lash-princess/thumbnail.webp",
+          "dimensions": {
+            "width": 15.14,
+            "height": 13.08,
+            "depth": 22.99
+          },
           "images": [
             "https://cdn.dummyjson.com/product-images/beauty/essence-mascara-lash-princess/1.webp"
           ],
-          "warrantyInformation": "1 week warranty",
-          "weight": 4
-        }
+          "sku": "BEA-ESS-ESS-001",
+          "id": 1,
+          "description": "The Essence Mascara Lash Princess is a popular mascara known for its volumizing and lengthening effects. Achieve dramatic lashes with this long-lasting and cruelty-free formula."
+        },
+        "type": "Object"
       }
     }
   ],
@@ -2090,11 +2052,11 @@ Enriched data: {
 ✓ Client created
 
 === Setup: Creating Test Accounts ===
-Created Alice: $1000 - ID: a0O1_y8foIsBOko4z_r9kWsX5DDiA9V2MCfOyDQhkfRptLwAQHviVq-6FsPPjnsNNFG1XNF8ljNOsMlgFvFclg
-Created Bob: $500 - ID: 6ZeYvlf-3ztnWQpDPVVGHaZpysRUG1u208C6hfu86y0ySzEdGtaSyji7L6viBdSgb1-EHzgC9MXP34eTntdHuA
+Created Alice: $1000 - ID: GbgC8vEehzy3wzeZxhGUBuDrBo2vzIOoB4jgJ2QTcGMmapS2yd2RhLQFAoglznT5S3399HXBh1EM3xspGI6Iag
+Created Bob: $500 - ID: _avzY0Zph8EO-uR9rcyanm7T-2xReQu7RIH0jyFoKL4EA8mQUYAf45onqBGfwYVTNd5A6RvEjeGkKYd5v_WcoA
 
 === Example 1: Begin Transaction ===
-Transaction ID (server-default isolation): 42f21aa7-4ab9-40f8-877c-22f937e2a857
+Transaction ID (server-default isolation): 9ea4d75c-00b6-4acd-8edc-37c94502cadc
 
 === Example 2: Operations within Transaction ===
 Updated Alice: $1000 → $800
@@ -2110,7 +2072,7 @@ Operations: 2
 ✓ Verified committed balances: Alice=$800, Bob=$700
 
 === Example 5: Rollback Demo ===
-New transaction: a622c1aa-08ed-4755-bc8c-823b4ff6eb50
+New transaction: 5b873bd6-a379-4a23-834a-3d696728b5d6
 Updated Bob: $700 → $600 (in transaction)
 Status before rollback: Active
 ✓ Transaction rolled back
@@ -2124,7 +2086,7 @@ Status before rollback: Active
 ✓ Client created
 
 === Create User Function ===
-Created user function with ID: tLeSdZTFqV1zHwPyGa7ldgT-hwlPbT2UHbtgiF-scuMxsAO4Eg_ykH49sbWBOFidYtml0gT7nooodxswWxMXUA
+Created user function with ID: nuo66esntrr9TGdcxsYm87JrqSNXhLD5AyFr_JS81nbkSf54LcPEXejzE68hRHzo0A60yKjnH3M0t-dQvuwj3A
 
 === Get User Function ===
 Retrieved: get_active_users_ts - Get Active Users
@@ -2132,11 +2094,11 @@ Description: Fetches all users and filters by active status
 
 === List All User Functions ===
 Found 5 user functions:
-  - conc_demo_rl_skip_ts_50152_1793594691316: Rate-limit (skip mode)
-  - conc_demo_rl_fail_ts_50152_1793594691316: Rate-limit (fail mode)
-  - fetch_product_reviews_ts_55079_1793594714450: Fetch Product with Reviews (Multi-API)
-  - get_active_users_ts: Get Active Users
+  - conc_demo_rl_fail_ts_72807_1794156869177: Rate-limit (fail mode)
   - get_active_users_client_ts: Get Active Users (Updated)
+  - fetch_product_reviews_ts_73755_1794156892739: Fetch Product with Reviews (Multi-API)
+  - conc_demo_rl_skip_ts_72807_1794156869177: Rate-limit (skip mode)
+  - get_active_users_ts: Get Active Users
 
 === Update User Function ===
 User function updated successfully
@@ -2147,14 +2109,14 @@ User function deleted successfully
 ✓ User Functions API example complete
 === WebSocket Chat Streaming Example (TypeScript) ===
 
-Created chat session: sCr31eUvVFvjTL_7HTeZatrjoopjEF-8Chb3jle9xF3smpTbBwhL2QG-rI9XUvg1ErYCSIfXZNxLPBBkqgpm7g
+Created chat session: TWst7du_U3JctA7H6b8kyHmYfhkJPhCa8CjxM90S9SrWruaOhUbVjg1QoJYBIvMMru24PnVM2xYY12BglEDwoA
 
 Sending message: 'What is the capital of France?'
 {"__progress":"received"}{"__progress":"generating","model":"gpt-5.6-luna","provider":"openai"}The capital of France is Paris.
 
 --- Stream ended ---
-Message ID: pMZubX4b67KLhg40H_by8qlqBR3eil1Sm78dmWYI6KvTD9x_0KtAI52Ge7I8y0dsLE3llzw7YcZ5ei5sPG60TQ
-Execution time: 816ms
+Message ID: -X98AKVC5Imq_gfADhaVWwH2cKWMryNXO5ApRBTrcywYWgQLuwvZBiZG9et1vyWJljK_oWuWu3ISfR2TbPcr8w
+Execution time: 640ms
 Token usage: {"cached_input_tokens":0,"completion_tokens":11,"prompt_tokens":23,"thinking_tokens":0,"total_tokens":34}
 
 Full response: {"__progress":"received"}{"__progress":"generating","model":"gpt-5.6-luna","provider":"openai"}The capital of France is Paris....
@@ -2164,16 +2126,16 @@ Full response: {"__progress":"received"}{"__progress":"generating","model":"gpt-
 ✓ WebSocket connected
 
 === Subscribing to 'ws_subscribe_example_ts' ===
-✓ Subscribed (subscription_id: sub_1b7e74c4a6cc40beb4afc68147861c97)
+✓ Subscribed (subscription_id: sub_d4915ba652024e568835dabbf8b1ee48)
 
 === Performing mutations to trigger notifications ===
 Inserting a record...
-✓ Inserted record: j56xxkFM8IFvM6J9uljiRHWXJRdqsEXIoJsm1S5J7dWMBWTDGm-yokhCsARA4PDQfsCy7IeFAD_GeLpaee5m4Q
-  📡 Notification received for j56xxkFM8IFvM6J9uljiRHWXJRdqsEXIoJsm1S5J7dWMBWTDGm-yokhCsARA4PDQfsCy7IeFAD_GeLpaee5m4Q
+✓ Inserted record: Xs631W0ml8MSEI5hTTjMQnL7k0aA2tEAmodNMGCX95TIUPpbQbpmF1zKVpQwxjf-BZHNZ92gp6y00gP6XK8Ocw
+  📡 Notification received for Xs631W0ml8MSEI5hTTjMQnL7k0aA2tEAmodNMGCX95TIUPpbQbpmF1zKVpQwxjf-BZHNZ92gp6y00gP6XK8Ocw
 
 Inserting another record...
-✓ Inserted record: lP2dOo_jM3RUHV47QdI4UE06s2oVcHZfe7LLo2X8LF_SvksqfwWfYgpwHtZZcgiyspTxEpiJYVDXuN8wUXL2fQ
-  📡 Notification received for lP2dOo_jM3RUHV47QdI4UE06s2oVcHZfe7LLo2X8LF_SvksqfwWfYgpwHtZZcgiyspTxEpiJYVDXuN8wUXL2fQ
+✓ Inserted record: yWFLtq9YafJzBgxdOuSF6sNThgnGUvjkKSRZvvA2n-GexokdMnVaJMGqXvIIkkMTWGZUDxKf2mBkvz9ObsIngw
+  📡 Notification received for yWFLtq9YafJzBgxdOuSF6sNThgnGUvjkKSRZvvA2n-GexokdMnVaJMGqXvIIkkMTWGZUDxKf2mBkvz9ObsIngw
 
 === Unsubscribing ===
 ✓ Unsubscribed: {"collection":"ws_subscribe_example_ts","found":true,"unsubscribed":true}
@@ -2183,7 +2145,7 @@ Inserting another record...
 ✓ Client created
 
 === Insert Test Data with TTL ===
-✓ Inserted document with TTL: Hxh3SLN5ELNf6pdEZ22EArVsHRv0TEbnAIDpkC787g58qn1BZzzTzHhzDmTb3YPOjj4iPLMZKcco6m06acXIYQ
+✓ Inserted document with TTL: PuMMrLlYwt2kkR3qTcvF_RzaTh73W_tVRhOqDu9LKJOlazALy0PE5nm49NL8iBSsp6NGMLb9QWDtDbdBW60Z2Q
 
 === Query via WebSocket ===
 ✓ WebSocket connected
@@ -2199,13 +2161,13 @@ Inserting another record...
 === Bypass Ripple Example ===
 
 1. Basic insert (ripple enabled):
-   Inserted with ripple: {"id":"ScMIPbxNJrsqw0pwQZKLvnTj-yqaeRh0qmLKcxpyv86uUqAMp1dGms_gcJvy8e2GtAsvieSsbtgwkDddtcRSbA"}
+   Inserted with ripple: {"id":"R4qjX_6j5cnl9T73XrIM_KICEJCGISdazjvXMdESZGQCtMCuclXqS2VtzvCoguCZpNB8afXzWhqX2wp9wpXKGQ"}
 
 2. Insert with bypass_ripple:
-   Inserted with bypass_ripple: {"id":"gB9VqkW5JHBp2ht4ThIK8BLImm-4PUCXsT-SHvrBWPWI5oBI4mGioUEY-b4FXjrjRfV1fgB29NyrkaUpJhV54g"}
+   Inserted with bypass_ripple: {"id":"2kknmXrjZrJntINF5enmAkZNHPNFcGvDwbQwaLhg9hGcI8whEQ6SiD_vTnBgR6N8nLryIhx2Yz5oe-iKqKQrtg"}
 
 3. Update with bypass_ripple:
-   Updated with bypass_ripple: {"price":{"value":150,"type":"Integer"},"id":"ScMIPbxNJrsqw0pwQZKLvnTj-yqaeRh0qmLKcxpyv86uUqAMp1dGms_gcJvy8e2GtAsvieSsbtgwkDddtcRSbA","name":{"value":"Product 1","type":"String"}}
+   Updated with bypass_ripple: {"price":{"type":"Integer","value":150},"name":{"type":"String","value":"Product 1"},"id":"R4qjX_6j5cnl9T73XrIM_KICEJCGISdazjvXMdESZGQCtMCuclXqS2VtzvCoguCZpNB8afXzWhqX2wp9wpXKGQ"}
 
 4. Delete with bypass_ripple:
    Deleted with bypass_ripple
@@ -2224,7 +2186,7 @@ Inserted 4 test users
 
 Example 1: Select specific fields (id, name, email only)
   Found 3 active users
-  Fields returned: ["id","email","name"]
+  Fields returned: ["email","name","id"]
   First user: Alice Johnson <alice@example.com>
 
 Example 2: Exclude sensitive fields (password, api_key, secret_token)
@@ -2233,7 +2195,7 @@ Example 2: Exclude sensitive fields (password, api_key, secret_token)
     - password: excluded
     - api_key: excluded
     - secret_token: excluded
-  Fields returned: ["id","bio","user_role","age","email","status","avatar_url","created_at","name"]
+  Fields returned: ["id","avatar_url","created_at","user_role","age","name","status","email","bio"]
 
 Example 3: Complex query with projection (active users, ages 18-65)
   Found 3 active users (ages 18-65)
@@ -2248,10 +2210,10 @@ Example 4: Query inactive users with profile fields
 Example 5: Compare full vs projected data
   Full query:
     - 12 fields per record
-    - Fields: ["age","email","api_key","password","created_at","id","secret_token","user_role","name","status","bio","avatar_url"]
+    - Fields: ["id","email","user_role","bio","avatar_url","name","age","status","api_key","created_at","secret_token","password"]
   Projected query:
     - 3 fields per record
-    - Fields: ["email","name","id"]
+    - Fields: ["name","email","id"]
   Bandwidth savings: ~75% fewer fields
 
 Cleaning up test data...
