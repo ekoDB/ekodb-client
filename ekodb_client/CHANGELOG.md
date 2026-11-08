@@ -20,6 +20,7 @@ and this project adheres to
   JSON serialization, WebSockets, logging, encoding, and the test mock) to 3.6.1
   together, and mirror the same pins in the flat-JAR Kotlin examples, so no
   build mixes Ktor 3.6.0 and 3.6.1 artifacts.
+- make test-examples ran and updated.
 
 ### Added
 
