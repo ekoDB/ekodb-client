@@ -912,7 +912,8 @@ fn validate_function_pattern(pattern: &str) -> Result<()> {
 }
 /// Reads the three shapes a key's `function_permissions` arrives in: absent or
 /// null, a list of grants, or the registration map `pattern -> ["call"]`. An
-/// empty pattern is refused in either form.
+/// empty pattern is refused in either form, and both forms read as grants
+/// sorted by pattern in code-point order.
 fn function_grants<'de, D: serde::Deserializer<'de>>(
     deserializer: D,
 ) -> std::result::Result<Option<Vec<FunctionPermissions>>, D::Error> {
@@ -925,10 +926,13 @@ fn function_grants<'de, D: serde::Deserializer<'de>>(
     }
     Ok(match Option::<Wire>::deserialize(deserializer)? {
         None => None,
-        Some(Wire::Grants(grants)) => {
+        Some(Wire::Grants(mut grants)) => {
             if grants.iter().any(|grant| grant.pattern.is_empty()) {
                 return Err(D::Error::custom("empty function pattern"));
             }
+            // `String` orders by UTF-8 bytes, which is Unicode code-point order:
+            // the order every SDK returns, in both reply shapes.
+            grants.sort_by(|a, b| a.pattern.cmp(&b.pattern));
             Some(grants)
         }
         Some(Wire::Registered(map)) => {

@@ -364,17 +364,30 @@ private fun parseFunction(value: JsonElement): FunctionPermissions {
 private fun parseFunctionList(value: JsonElement): List<FunctionPermissions> = (value as? JsonArray ?: invalid()).map(::parseFunction)
 
 /**
- * Reads the grants list, or the registration map `pattern -> ["call"]` (sorted, empty rights grant nothing).
- * An empty pattern is refused in either form.
+ * Unicode code-point order, which is the UTF-8 byte order Rust and Go sort by. [String.compareTo]
+ * orders UTF-16 code units instead, and puts a character outside the Basic Multilingual Plane
+ * before U+E000..U+FFFF.
+ */
+private val byCodePoint = Comparator<String> { a, b ->
+    val x = a.codePoints().toArray()
+    val y = b.codePoints().toArray()
+    val index = x.indices.firstOrNull { it < y.size && x[it] != y[it] }
+    if (index != null) x[index].compareTo(y[index]) else x.size.compareTo(y.size)
+}
+
+/**
+ * Reads the grants list, or the registration map `pattern -> ["call"]` (empty rights grant nothing).
+ * An empty pattern is refused in either form, and both forms read as grants sorted by pattern in
+ * code-point order.
  */
 private fun parseFunctionGrants(value: JsonElement): List<FunctionPermissions> = when (value) {
-    is JsonArray -> parseFunctionList(value)
+    is JsonArray -> parseFunctionList(value).sortedWith(compareBy(byCodePoint) { it.pattern })
     is JsonObject -> value.entries.filter { (pattern, rights) ->
         if (pattern.isEmpty()) invalid()
         val list = rights as? JsonArray ?: invalid()
         if (list.any { text(it) != "call" }) invalid()
         list.isNotEmpty()
-    }.map { it.key }.sorted().map { FunctionPermissions(it) }
+    }.map { it.key }.sortedWith(byCodePoint).map { FunctionPermissions(it) }
     else -> invalid()
 }
 
