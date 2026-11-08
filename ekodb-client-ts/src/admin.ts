@@ -202,11 +202,29 @@ function functionGrant(value: unknown): FunctionPermission {
   return { ...value } as FunctionPermission;
 }
 /**
+ * Unicode code-point order, which is the UTF-8 byte order Rust and Go sort by.
+ * The default string comparison orders UTF-16 code units instead, and puts a
+ * character outside the Basic Multilingual Plane before U+E000..U+FFFF.
+ */
+function byCodePoint(a: string, b: string): number {
+  const x = Array.from(a);
+  const y = Array.from(b);
+  for (let i = 0; i < Math.min(x.length, y.length); i++) {
+    const difference = (x[i].codePointAt(0) ?? 0) - (y[i].codePointAt(0) ?? 0);
+    if (difference !== 0) return difference;
+  }
+  return x.length - y.length;
+}
+/**
  * Reads the grants list, or the registration map `pattern -> ["call"]`. An
- * empty pattern is refused in either form.
+ * empty pattern is refused in either form, and both forms read as grants
+ * sorted by pattern in code-point order.
  */
 function functionGrants(value: unknown): FunctionPermission[] {
-  if (Array.isArray(value)) return value.map(functionGrant);
+  if (Array.isArray(value))
+    return value
+      .map(functionGrant)
+      .sort((a, b) => byCodePoint(a.pattern, b.pattern));
   if (!object(value)) invalid();
   return Object.entries(value)
     .filter(([pattern, rights]) => {
@@ -219,7 +237,7 @@ function functionGrants(value: unknown): FunctionPermission[] {
       return rights.length > 0;
     })
     .map(([pattern]) => pattern)
-    .sort()
+    .sort(byCodePoint)
     .map((pattern) => ({ pattern }));
 }
 function parsePermissions(value: unknown, modern = false): ApiKeyPermissions {
