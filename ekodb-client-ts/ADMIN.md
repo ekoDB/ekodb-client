@@ -122,7 +122,8 @@ Registration takes `function_permissions` as `pattern -> ["call"]`, beside
 `collection_permissions`; a pattern given `[]` grants nothing, and the field is
 omitted from the request when empty. A registration response echoes that map;
 key listings and the aggregate permission read return a list of `{pattern}`
-grants. All of these read as grants sorted by pattern. The record field is
+grants. All of these read as grants sorted by pattern in Unicode code-point
+order (UTF-8 byte order), the same in every SDK. The record field is
 absent/null/nil when the response carries none, and the aggregate read returns
 an empty list for a server that predates function grants.
 
