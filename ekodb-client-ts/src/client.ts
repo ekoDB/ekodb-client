@@ -567,10 +567,6 @@ function isNotFoundError(error: unknown): boolean {
   );
 }
 
-/**
- * Keep the legacy `param_type` field available to TypeScript callers without
- * sending it to servers that reject the retired wire field.
- */
 /** `run_as` is `caller`, `author`, or null/absent; anything else is not a function definition. */
 function checkRunAs<T extends UserFunction | UserFunction[]>(value: T): T {
   for (const definition of Array.isArray(value) ? value : [value]) {
@@ -586,6 +582,10 @@ function checkRunAs<T extends UserFunction | UserFunction[]>(value: T): T {
   return value;
 }
 
+/**
+ * Keep the legacy `param_type` field available to TypeScript callers without
+ * sending it to servers that reject the retired wire field.
+ */
 function functionRequestBody(userFunction: UserFunction): UserFunction {
   checkRunAs(userFunction);
   const parameters = Object.fromEntries(
