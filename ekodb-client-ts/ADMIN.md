@@ -130,11 +130,13 @@ an empty list for a server that predates function grants.
 Per-key routes (key-addressed servers only): `GET .../permissions/functions`,
 `GET .../permissions/functions/{pattern}`,
 `PUT .../permissions/functions/{pattern}` with body `{"call": true}`, and
-`DELETE .../permissions/functions/{pattern}`. The pattern is one percent-encoded
-path segment (`*` is `%2A`). Changes return `{before, after}` grants (`null` for
-none) and any additional metadata such as `ripple_warning`. A `DELETE` of a
-grant the key does not hold is a 404; a non-admin caller is refused with 403. A
-removed grant stays usable through a token already issued until it expires.
+`DELETE .../permissions/functions/{pattern}`. The list route returns the grants
+as the server stores them, sorted by pattern in code-point order. The pattern is
+one percent-encoded path segment (`*` is `%2A`). Changes return
+`{before, after}` grants (`null` for none) and any additional metadata such as
+`ripple_warning`. A `DELETE` of a grant the key does not hold is a 404; a
+non-admin caller is refused with 403. A removed grant stays usable through a
+token already issued until it expires.
 
 | Operation                    | Rust                                       | Python                                     | TypeScript                               | Kotlin                                      | Go                                        |
 | ---------------------------- | ------------------------------------------ | ------------------------------------------ | ---------------------------------------- | ------------------------------------------- | ----------------------------------------- |
