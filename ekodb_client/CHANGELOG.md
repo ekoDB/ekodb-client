@@ -46,6 +46,10 @@ and this project adheres to
 
 ### Fixed
 
+- Python: `save_function`, `update_function`, `save_user_function` and
+  `update_user_function` refuse a `run_as` other than `"caller"`, `"author"` or
+  `None` before sending. A tuple or a non-finite float used to become JSON null,
+  which read as unset and applied the server's default.
 - TypeScript: the `param_type` JSDoc now sits on `functionRequestBody` instead
   of `checkRunAs`, and `ekodb-client-ts/ADMIN.md` states that the per-key
   function list returns grants in the server's stored, code-point-sorted order.
