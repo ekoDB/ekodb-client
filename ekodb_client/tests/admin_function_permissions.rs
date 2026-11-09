@@ -254,20 +254,20 @@ async fn key_listings_and_permission_reads_accept_and_refuse_the_same_shapes() {
         let name = case["name"].as_str().unwrap();
         let server = listing_and_aggregate(&case["value"]).await;
         let client = AdminClient::new(&server.url(), ADMIN_KEY).unwrap();
-        assert!(
-            client.list_api_keys().await.is_err(),
-            "listing accepted: {name}"
+        assert_refused(
+            client.list_api_keys().await,
+            &format!("listing accepted: {name}"),
         );
-        assert!(
-            client.get_permissions().await.is_err(),
-            "aggregate accepted: {name}"
+        assert_refused(
+            client.get_permissions().await,
+            &format!("aggregate accepted: {name}"),
         );
         let legacy = legacy_aggregate(&case["value"]).await;
         let client = AdminClient::new(&legacy.url(), ADMIN_KEY).unwrap();
         assert!(!client.uses_key_permission_routes().await.unwrap());
-        assert!(
-            client.get_permissions().await.is_err(),
-            "legacy aggregate accepted: {name}"
+        assert_refused(
+            client.get_permissions().await,
+            &format!("legacy aggregate accepted: {name}"),
         );
     }
 }
@@ -647,4 +647,16 @@ async fn malformed_grant_replies_are_rejected() {
             );
         }
     }
+}
+
+/// A rejected reply is refused by the parser, not by any other failure.
+fn assert_refused<T, E: std::fmt::Display>(result: Result<T, E>, context: &str) {
+    let Err(error) = result else {
+        panic!("{context}");
+    };
+    let message = error.to_string();
+    assert!(
+        message.contains("Invalid admin response"),
+        "{context}: {message}"
+    );
 }

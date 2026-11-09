@@ -152,14 +152,14 @@ class AdminFunctionPermissionsTest {
             val name = case.getValue("name").jsonPrimitive.content
             val value = case.getValue("value")
             withAdmin(mapOf("GET /api/auth/keys" to (200 to record(value)))) { client ->
-                assertFails("listing accepted: $name") { runBlocking { client.listApiKeys() } }
+                assertEquals("Invalid admin response", assertFails("listing accepted: $name") { runBlocking { client.listApiKeys() } }.message, "listing accepted: $name")
             }
             withAdmin(emptyMap(), probe = 200 to permissions(value)) { client ->
-                assertFails("aggregate accepted: $name") { runBlocking { client.getPermissions() } }
+                assertEquals("Invalid admin response", assertFails("aggregate accepted: $name") { runBlocking { client.getPermissions() } }.message, "aggregate accepted: $name")
             }
             withAdmin(mapOf("GET /api/auth/permissions" to (200 to legacy(value))), probe = notFound) { client ->
                 assertFalse(runBlocking { client.usesKeyPermissionRoutes() })
-                assertFails("legacy aggregate accepted: $name") { runBlocking { client.getPermissions() } }
+                assertEquals("Invalid admin response", assertFails("legacy aggregate accepted: $name") { runBlocking { client.getPermissions() } }.message, "legacy aggregate accepted: $name")
             }
         }
     }
@@ -219,6 +219,25 @@ class AdminFunctionPermissionsTest {
                 assertEquals("Admin request failed (HTTP $status)", error.message)
             }
         }
+    }
+
+    @Test fun aLoneSurrogateInAPatternFailsBeforeAnyRequest() = runBlocking<Unit> {
+        val recorded = mutableListOf<HttpRequestData>()
+        withAdmin(emptyMap(), recorded) { client ->
+            for (pattern in listOf("report_\uD800", "\uDC00report")) {
+                runBlocking {
+                    for (call in listOf<suspend () -> Unit>(
+                        { client.getApiKeyFunctionPermissions(keyId, pattern) },
+                        { client.putApiKeyFunctionPermissions(keyId, pattern) },
+                        { client.deleteApiKeyFunctionPermissions(keyId, pattern) },
+                    )) {
+                        val error = assertFailsWith<IllegalArgumentException> { call() }
+                        assertEquals("Invalid function pattern", error.message)
+                    }
+                }
+            }
+        }
+        assertEquals(0, recorded.size)
     }
 
     @Test fun invalidPatternsFailBeforeAnyRequest() = runBlocking<Unit> {
