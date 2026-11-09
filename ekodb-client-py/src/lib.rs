@@ -2590,6 +2590,7 @@ impl Client {
         py: Python<'py>,
         script: &Bound<'py, PyDict>,
     ) -> PyResult<Bound<'py, PyAny>> {
+        check_run_as(script)?;
         let client = self.inner.clone();
         let script_json = serde_json::to_string(&pydict_to_json(py, script)?)
             .map_err(|e| PyValueError::new_err(format!("Invalid script definition: {}", e)))?;
@@ -2668,6 +2669,7 @@ impl Client {
         script_id: String,
         data: &Bound<'py, PyDict>,
     ) -> PyResult<Bound<'py, PyAny>> {
+        check_run_as(data)?;
         let client = self.inner.clone();
         let script_json = serde_json::to_string(&pydict_to_json(py, data)?)
             .map_err(|e| PyValueError::new_err(format!("Invalid script definition: {}", e)))?;
@@ -2876,6 +2878,7 @@ impl Client {
         py: Python<'py>,
         user_function: &Bound<'py, PyDict>,
     ) -> PyResult<Bound<'py, PyAny>> {
+        check_run_as(user_function)?;
         let client = self.inner.clone();
         let func_json =
             serde_json::to_string(&pydict_to_json(py, user_function)?).map_err(|e| {
@@ -2962,6 +2965,7 @@ impl Client {
         label: String,
         user_function: &Bound<'py, PyDict>,
     ) -> PyResult<Bound<'py, PyAny>> {
+        check_run_as(user_function)?;
         let client = self.inner.clone();
         let func_json =
             serde_json::to_string(&pydict_to_json(py, user_function)?).map_err(|e| {
@@ -5270,6 +5274,24 @@ fn json_to_pydict(py: Python, value: &serde_json::Value) -> PyResult<Py<PyAny>> 
             }
             Ok(dict.into())
         }
+    }
+}
+
+/// A function definition's `run_as` is absent, `None`, `"caller"` or `"author"`. Anything else is
+/// refused here, because [`pydict_to_json`] writes a value JSON cannot hold as null, which would
+/// read as unset and run the function under the server's default.
+fn check_run_as(definition: &Bound<'_, PyDict>) -> PyResult<()> {
+    let Some(value) = definition.get_item("run_as")? else {
+        return Ok(());
+    };
+    if value.is_none() {
+        return Ok(());
+    }
+    match value.extract::<String>().as_deref() {
+        Ok("caller") | Ok("author") => Ok(()),
+        _ => Err(PyValueError::new_err(
+            "run_as must be \"caller\" or \"author\"",
+        )),
     }
 }
 
