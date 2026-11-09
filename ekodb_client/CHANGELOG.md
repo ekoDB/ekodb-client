@@ -46,6 +46,9 @@ and this project adheres to
 
 ### Fixed
 
+- TypeScript: the `param_type` JSDoc now sits on `functionRequestBody` instead
+  of `checkRunAs`, and `ekodb-client-ts/ADMIN.md` states that the per-key
+  function list returns grants in the server's stored, code-point-sorted order.
 - Kotlin: the raw `JsonObject` user-function methods (`saveUserFunction`,
   `updateUserFunction`, `getUserFunction`, `listUserFunctions`) now refuse a
   `run_as` other than `caller` or `author`, before sending a definition and when
