@@ -1,6 +1,6 @@
 # Client Library Parity Matrix
 
-**Last Updated:** November 3, 2026
+**Last Updated:** November 9, 2026
 
 **Published client version:** See the
 [latest release](https://github.com/ekoDB/ekodb-client/releases/latest). The

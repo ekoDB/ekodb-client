@@ -221,15 +221,15 @@ async def test_listing_and_aggregate_read_refuse_the_shared_shapes(endpoint, cas
     state, base = endpoint
     answer_listing_and_aggregate(state, case["value"])
     client = AdminClient(base, ADMIN_KEY)
-    with pytest.raises(RuntimeError):
+    with pytest.raises(RuntimeError, match="Invalid admin response"):
         await client.list_api_keys()
-    with pytest.raises(RuntimeError):
+    with pytest.raises(RuntimeError, match="Invalid admin response"):
         await client.get_permissions()
 
     answer_legacy_aggregate(state, case["value"])
     legacy = AdminClient(base, ADMIN_KEY)
     assert await legacy.uses_key_permission_routes() is False
-    with pytest.raises(RuntimeError):
+    with pytest.raises(RuntimeError, match="Invalid admin response"):
         await legacy.get_permissions()
 
 
@@ -304,6 +304,19 @@ async def test_invalid_patterns_fail_before_http(endpoint, case, verb):
     pattern = case.get("value", "a" * case.get("length", 0))
     client = AdminClient(base, ADMIN_KEY)
     with pytest.raises(RuntimeError, match="Invalid function pattern"):
+        await getattr(client, f"{verb}_api_key_function_permissions")(KEY_ID, pattern)
+    assert state["requests"] == []
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "pattern", ["report_\ud800", "\udc00report"], ids=["lone-high", "lone-low"]
+)
+@pytest.mark.parametrize("verb", ["get", "put", "delete"])
+async def test_a_lone_surrogate_in_a_pattern_fails_before_http(endpoint, pattern, verb):
+    state, base = endpoint
+    client = AdminClient(base, ADMIN_KEY)
+    with pytest.raises(UnicodeEncodeError):
         await getattr(client, f"{verb}_api_key_function_permissions")(KEY_ID, pattern)
     assert state["requests"] == []
 

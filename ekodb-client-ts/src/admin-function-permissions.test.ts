@@ -243,13 +243,19 @@ describe("function call grants", () => {
       it(`refuses ${entry.name}`, async () => {
         answer(entry.value);
         const admin = client();
-        await expect(admin.listApiKeys()).rejects.toThrow();
-        await expect(admin.getPermissions()).rejects.toThrow();
+        await expect(admin.listApiKeys()).rejects.toThrow(
+          "Invalid admin response",
+        );
+        await expect(admin.getPermissions()).rejects.toThrow(
+          "Invalid admin response",
+        );
 
         answerLegacy(entry.value);
         const legacy = client();
         expect(await legacy.usesKeyPermissionRoutes()).toBe(false);
-        await expect(legacy.getPermissions()).rejects.toThrow();
+        await expect(legacy.getPermissions()).rejects.toThrow(
+          "Invalid admin response",
+        );
         expectLegacyRead();
       });
     }
@@ -336,6 +342,20 @@ describe("function call grants", () => {
     "rejects pattern $name before HTTP",
     async (entry) => {
       const pattern = rejectedPattern(entry);
+      const admin = client();
+      for (const run of [
+        () => admin.getApiKeyFunctionPermissions(keyId, pattern),
+        () => admin.putApiKeyFunctionPermissions(keyId, pattern),
+        () => admin.deleteApiKeyFunctionPermissions(keyId, pattern),
+      ])
+        await expect(run()).rejects.toThrow("Invalid function pattern");
+      expect(request).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(["report_\ud800", "\udc00report"])(
+    "rejects a lone surrogate in %j before HTTP",
+    async (pattern) => {
       const admin = client();
       for (const run of [
         () => admin.getApiKeyFunctionPermissions(keyId, pattern),
