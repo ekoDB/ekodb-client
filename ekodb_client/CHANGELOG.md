@@ -10,6 +10,9 @@ and this project adheres to
 
 ### Changed
 
+- Tests: the rejected function-grant reply shapes assert each SDK's own refusal
+  message, and TypeScript, Kotlin and Python pin that a lone surrogate in a
+  grant pattern is refused before any request.
 - **BREAKING (Rust) — new public fields.** `UserFunction` gained `created_by`
   and `run_as`, `CreateApiKeyRequest` gained `function_permissions`, and
   `ApiKey` and `ApiKeyPermissions` gained `function_permissions`. Code that
