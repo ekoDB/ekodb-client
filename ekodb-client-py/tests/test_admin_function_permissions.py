@@ -371,10 +371,51 @@ async def test_function_definitions_carry_run_as_and_created_by(endpoint):
     assert saved[2]["run_as"] == "caller"
     assert "created_by" not in saved[2]
 
-    with pytest.raises(Exception, match="expected `caller` or `author`"):
+    with pytest.raises(ValueError, match="run_as must be"):
         await client.save_user_function(
             {**CONTRACT["function_save_request"], "run_as": "root"}
         )
+
+
+FUNCTION_WRITES = {
+    "save_function": lambda client, body: client.save_function(body),
+    "update_function": lambda client, body: client.update_function("f1", body),
+    "save_user_function": lambda client, body: client.save_user_function(body),
+    "update_user_function": lambda client, body: client.update_user_function(
+        "f1", body
+    ),
+}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("verb", sorted(FUNCTION_WRITES))
+@pytest.mark.parametrize(
+    "bad",
+    [("author",), float("nan"), 1, True, "", "root", ["caller"], {"as": "caller"}],
+    ids=repr,
+)
+async def test_an_invalid_run_as_is_refused_before_http(endpoint, verb, bad):
+    state, base = endpoint
+    client = Client.new(base, ADMIN_KEY, should_retry=False, timeout_secs=30)
+    body = {**CONTRACT["function_save_request"], "run_as": bad}
+    with pytest.raises(ValueError, match="run_as must be"):
+        await FUNCTION_WRITES[verb](client, body)
+    assert not [r for r in state["requests"] if r[1].startswith("/api/functions")]
+
+
+@pytest.mark.asyncio
+async def test_a_none_run_as_is_left_to_the_server(endpoint):
+    state, base = endpoint
+    state["routes"][("POST", "/api/functions")] = (
+        200,
+        {"status": "success", "id": "f1"},
+    )
+    client = Client.new(base, ADMIN_KEY, should_retry=False, timeout_secs=30)
+    await client.save_user_function(
+        {**CONTRACT["function_save_request"], "run_as": None}
+    )
+    saved = [r for r in state["requests"] if r[:2] == ("POST", "/api/functions")][0]
+    assert "run_as" not in saved[2]
 
 
 @pytest.mark.asyncio
