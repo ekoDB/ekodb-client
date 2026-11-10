@@ -1,0 +1,26 @@
+name: prune-pr-caches
+
+# Delete the Actions caches a pull request saved, once it closes. A cache saved
+# by a pull request run can only be restored by that pull request, so after it
+# closes the cache only occupies this repository's cache storage until the
+# 7-day retention expires it.
+#
+# `pull_request_target` is what gives a Dependabot-authored pull request a
+# token that can delete its caches. The called workflow runs only its own
+# repository's script and never checks out this repository's code, so no code
+# from the pull request runs with this token.
+
+on:
+  pull_request_target:
+    types: [closed]
+
+permissions: {}
+
+jobs:
+  prune:
+    permissions:
+      actions: write
+      contents: read
+    uses: ekoDB/ekodb-workflows-public/.github/workflows/prune-pr-caches.yml@main
+    with:
+      pr-number: ${{ github.event.pull_request.number }}
