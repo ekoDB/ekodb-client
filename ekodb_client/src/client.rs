@@ -2354,10 +2354,11 @@ impl Client {
             .embeddings
             .into_iter()
             .next()
-            .ok_or(crate::Error::Api {
-                code: 500,
-                message: "No embedding returned".to_string(),
-            })
+            // A successful answer with no embedding is a malformed answer, not
+            // an error status: `Validation`, as for other unparseable answers.
+            .ok_or(crate::Error::Validation(
+                "No embedding returned".to_string(),
+            ))
     }
 
     /// Generate embeddings for multiple texts in a single batch request
@@ -3403,12 +3404,8 @@ impl Client {
     ) -> Result<tokio::sync::mpsc::Receiver<crate::websocket::MutationNotificationPayload>> {
         let token = self.auth.get_token().await?;
         let mut parsed_url =
-            url::Url::parse(&format!("{}/api/subscribe/{}", self.base_url, collection)).map_err(
-                |e| Error::Api {
-                    code: 0,
-                    message: format!("Invalid SSE URL: {}", e),
-                },
-            )?;
+            url::Url::parse(&format!("{}/api/subscribe/{}", self.base_url, collection))
+                .map_err(Error::InvalidUrl)?;
 
         {
             let mut pairs = parsed_url.query_pairs_mut();
@@ -3429,10 +3426,7 @@ impl Client {
             .header("Accept", "text/event-stream")
             .send()
             .await
-            .map_err(|e| Error::Api {
-                code: 0,
-                message: format!("SSE connection failed: {}", e),
-            })?;
+            .map_err(Error::Http)?;
 
         if !response.status().is_success() {
             return Err(Error::Api {
