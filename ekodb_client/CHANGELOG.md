@@ -20,7 +20,8 @@ and this project adheres to
   redacted, `body` is empty (#390).
 - Python: `ApiError`, a subclass of `RuntimeError`, is raised for an HTTP error
   answer (`404`, `409`, `500`, `503`, and a `401` the client could not refresh
-  away), with `status` and `message`. An existing `except RuntimeError` still
+  away), with `status` and `message`; from the WebSocket client, `status` is the
+  code in the server's error frame. An existing `except RuntimeError` still
   catches it, and its message is unchanged (#390).
 - Rust, Python, TypeScript, Kotlin: `restore_collection_counts` /
   `restoreCollectionCounts` returns both counts a whole-collection restore
@@ -42,9 +43,11 @@ and this project adheres to
   `restoreCollectionCounts(...).recordsRestored` for the records recovered. The
   Rust, Python and Kotlin `restore_collection` docs now say they return the
   cleared count (#394).
-- Rust: `Error::Api { code }` is always the answer's HTTP status. An error body
-  carrying its own `code` field used to set it, so the same answer could report
-  different statuses across SDKs (#390).
+- Rust: for a REST call, `Error::Api { code }` is always the answer's HTTP
+  status. An error body carrying its own `code` field used to set it, so the
+  same answer could report different statuses across SDKs. A WebSocket call's
+  `Error::Api` carries the code in the server's error frame (an HTTP-style
+  status such as `401` or `500`), as before (#390).
 - Rust: `save_function`, `call_function` and `save_user_function` report a
   successful answer with an empty or unparseable body, or (for the two saves) a
   body whose `status` is not `success`, as `Error::Validation`, as
