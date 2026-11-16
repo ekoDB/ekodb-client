@@ -10,11 +10,116 @@ and this project adheres to
 
 ### Added
 
+- TypeScript: `EkoDBApiError`, exported from the package root, is thrown for
+  every HTTP error answer a REST call does not retry away, with `status` (the
+  HTTP status code) and `body` (the response text). A caller can now branch on
+  `error.status === 404` / `409` / `500` instead of parsing the message, as Rust
+  (`Error::Api { code, .. }`), Kotlin (`EkoDBHttpException.statusCode`) and Go
+  (`HTTPError.StatusCode`) already allowed. The message text is unchanged.
+  `RateLimitError` is now a subclass of it, with `status` 429. With admin errors
+  redacted, `body` is empty (#390).
+- Python: `ApiError`, a subclass of `RuntimeError`, is raised for an HTTP error
+  answer (`404`, `409`, `500`, `503`, and a `401` the client could not refresh
+  away), with `status` and `message`. An existing `except RuntimeError` still
+  catches it, and its message is unchanged (#390).
+- Rust, Python, TypeScript, Kotlin: `restore_collection_counts` /
+  `restoreCollectionCounts` returns both counts a whole-collection restore
+  reports: `cleared_count` (tombstones removed) and `records_restored` (records
+  whose data was recovered, which can be fewer). `records_restored` is absent
+  (`None` / `null`) on servers before 0.72.7, which do not send it (#394).
 - CI: a closed pull request's Actions caches are deleted by a new
   `prune-pr-caches` workflow (`pull_request_target: closed`, `actions: write` on
   the one job), calling the shared reusable workflow in
   `ekodb-workflows-public`; they used to sit in cache storage until the 7-day
   retention expired them (#384).
+
+### Changed
+
+- TypeScript: `restoreCollection` returns `clearedCount`, the number of
+  tombstones cleared. Its `recordsRestored` field, which always carried that
+  same tombstone count and not the records recovered, is deprecated and will be
+  removed in a later release; use `clearedCount`, or
+  `restoreCollectionCounts(...).recordsRestored` for the records recovered. The
+  Rust, Python and Kotlin `restore_collection` docs now say they return the
+  cleared count (#394).
+
+### Fixed
+
+- Python: `RateLimitError` has a `retry_after_secs` attribute, as the module
+  docstring and README already showed; it used to exist only as `e.args[0]`, so
+  the documented example raised `AttributeError` at the moment a caller was rate
+  limited. `args[0]` still carries the same value, and `status` is 429 (#395).
+
+### Migration note: the 0.32.0 collection-permission change was breaking
+
+0.32.0 changed `updateApiKeyCollectionPermissions` /
+`update_api_key_collection_permissions` in Rust, Python, TypeScript and Kotlin
+in a breaking way, and its changelog did not mark it **BREAKING** (#392). The
+released 0.32.0 block stays as it shipped; this note is the record.
+
+- **What changed.** The request names the key by its id (`key_id`), not by its
+  secret (`api_key`), and the method returns the grant's change
+  (`CollectionPermissionChange`, `{ before, after }`) instead of the whole
+  `ApiKey`.
+- **The old call still exists** as `legacyUpdateApiKeyCollectionPermissions` /
+  `legacy_update_api_key_collection_permissions`, with the 0.31 request and
+  return types, for servers that predate the key-permission routes.
+
+TypeScript, before (0.31) and after (0.32 and later):
+
+```ts
+// 0.31
+const key: ApiKey = await admin.updateApiKeyCollectionPermissions({
+  api_key: secret,
+  collection: "users",
+  read: true,
+  write: false,
+});
+
+// 0.32+: name the key by id; the result is the grant's before/after
+const change: CollectionPermissionChange =
+  await admin.updateApiKeyCollectionPermissions({
+    key_id: keyId,
+    collection: "users",
+    read: true,
+    write: false,
+  });
+console.log(change.after);
+```
+
+Rust, before and after (the three field-list edits default to
+`PermissionEdit::Keep`, which leaves them unchanged):
+
+```rust
+// 0.31
+let key: ApiKey = admin
+    .update_api_key_collection_permissions(&UpdateApiKeyCollectionPermissionsRequest {
+        api_key: secret.to_string(),
+        collection: "users".to_string(),
+        read: true,
+        write: false,
+        select_fields: PermissionEdit::Keep,
+        exclude_fields: PermissionEdit::Keep,
+        writable_fields: PermissionEdit::Keep,
+    })
+    .await?;
+
+// 0.32+: name the key by id; the result is the grant's before/after
+let change: CollectionPermissionChange = admin
+    .update_api_key_collection_permissions(&UpdateApiKeyCollectionPermissionsRequest {
+        key_id: key_id.to_string(),
+        collection: "users".to_string(),
+        read: true,
+        write: false,
+        select_fields: PermissionEdit::Keep,
+        exclude_fields: PermissionEdit::Keep,
+        writable_fields: PermissionEdit::Keep,
+    })
+    .await?;
+```
+
+Python and Kotlin follow the same shape: pass `key_id` and read `before` /
+`after` from the result.
 
 ## [0.33.1] - 2026-11-09
 
