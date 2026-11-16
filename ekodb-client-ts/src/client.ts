@@ -2080,10 +2080,10 @@ export class EkoDBClient {
   /**
    * Update constraints on one or more fields of an existing collection's schema
    *
-   * This is a partial update: only the attributes actually set on each
-   * SchemaConstraintUpdate are sent, and only those attributes are changed on
-   * the server. Omitted attributes (left `undefined`) leave that field's
-   * existing constraint untouched.
+   * Only the attributes set on each SchemaConstraintUpdate are sent. Current
+   * servers replace a named field's constraints rather than merging them: each
+   * update must set `unique`, `required` and `enums`, and `max`, `min` and
+   * `regex` are cleared when left unset (see SchemaConstraintUpdate).
    *
    * @param collection - Collection name
    * @param constraints - Map of field name to the constraint attributes to update
@@ -2091,8 +2091,8 @@ export class EkoDBClient {
    * @example
    * ```typescript
    * await client.updateSchemaConstraints("users", {
-   *   email: { unique: true, required: true },
-   *   age: { min: 0, max: 150 },
+   *   email: { unique: true, required: true, enums: [] },
+   *   age: { unique: false, required: false, enums: [], min: 0, max: 150 },
    * });
    * ```
    */

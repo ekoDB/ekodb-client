@@ -1133,10 +1133,11 @@ class EkoDBClient private constructor(
     }
 
     /**
-     * Partially update constraints on one or more fields of a collection's
-     * schema. Each [SchemaConstraintUpdate] is a partial update: only the
-     * attributes actually set on it are sent, so an omitted attribute is left
-     * untouched server-side rather than cleared.
+     * Update constraints on one or more existing fields of a collection's
+     * schema. Only the attributes set on each [SchemaConstraintUpdate] are
+     * sent; current servers replace a named field's constraints, so each update
+     * must set unique, required and enums, and max, min and regex are cleared
+     * when left unset (see [SchemaConstraintUpdate]).
      */
     suspend fun updateSchemaConstraints(collection: String, constraints: Map<String, SchemaConstraintUpdate>) {
         val body = buildJsonObject {

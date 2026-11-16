@@ -238,13 +238,15 @@ impl Default for Schema {
     }
 }
 
-/// A partial update to a single field's constraints, sent to
-/// `PUT /api/schemas/{collection}`.
+/// One field's entry in a `PUT /api/schemas/{collection}` request.
 ///
-/// Mirrors the server's schema-constraints-update request contract exactly.
-/// Every field is optional: only the attributes that are set are serialized,
-/// so a request can adjust one constraint (e.g. `required`) without
-/// resending the others.
+/// Every attribute is optional and only the ones that are set are serialized.
+/// What the server does with an omitted attribute: current servers replace a
+/// named field's constraints rather than merging them, so each update must set
+/// `unique`, `required` and `enums` (an update without one is refused), `max`,
+/// `min` and `regex` are cleared when left unset, and `default` and
+/// `field_type` change only when set. `enums: Some(vec![])` sends an empty
+/// list, which clears the field's enums.
 #[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq)]
 pub struct SchemaConstraintUpdate {
     /// New field type (e.g. "string", "number", "boolean")
