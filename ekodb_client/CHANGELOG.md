@@ -23,7 +23,9 @@ and this project adheres to
   `unique`, `required` and `enums` together, which current servers require; they
   also clear `max`, `min` and `regex` when left out (#393). The Go examples call
   `GetScheduleStats` and `EnumValues`, which ship in ekodb-client-go 0.34.0
-  (ekoDB/ekodb-client-go#118); until that release they build against its branch.
+  (ekoDB/ekodb-client-go#118). `examples/go/go.mod` replaces the module with a
+  sibling `ekodb-client-go` checkout, and CI checks out its same-named branch
+  there, so until that release the examples build against that branch.
 - TypeScript: `EkoDBApiError`, exported from the package root, is thrown for
   every HTTP error answer a REST call does not retry away (the token exchange
   and the SSE raw-completion calls included), with `status` (the HTTP status
