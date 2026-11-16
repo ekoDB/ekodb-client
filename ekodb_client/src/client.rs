@@ -1807,11 +1807,13 @@ impl Client {
         .await
     }
 
-    /// Apply a partial update to one or more fields' schema constraints.
+    /// Update the constraints of one or more existing fields.
     ///
-    /// Calls `PUT /api/schemas/{collection}` with only the attributes set on
-    /// each [`SchemaConstraintUpdate`] — fields left as `None` are omitted
-    /// from the request body, so this only touches what you pass.
+    /// Calls `PUT /api/schemas/{collection}` with each
+    /// [`SchemaConstraintUpdate`]'s set attributes. Current servers replace a
+    /// named field's constraints rather than merging them: each update must
+    /// set `unique`, `required` and `enums`, and `max`, `min` and `regex` are
+    /// cleared when left unset (see [`SchemaConstraintUpdate`]).
     ///
     /// # Arguments
     ///
@@ -1828,7 +1830,9 @@ impl Client {
     /// constraints.insert(
     ///     "email".to_string(),
     ///     SchemaConstraintUpdate {
+    ///         unique: Some(true),
     ///         required: Some(true),
+    ///         enums: Some(vec![]),
     ///         ..Default::default()
     ///     },
     /// );

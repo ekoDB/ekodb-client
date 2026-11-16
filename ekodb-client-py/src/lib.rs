@@ -1146,16 +1146,18 @@ impl Client {
         })
     }
 
-    /// Apply a partial update to one or more fields' schema constraints.
+    /// Update the constraints of one or more existing fields.
     ///
     /// Args:
     ///     collection: Collection name
-    ///     constraints: Dict of field name -> partial constraint-update dict.
+    ///     constraints: Dict of field name -> constraint-update dict.
     ///         Recognized attributes: field_type, default, unique, required,
-    ///         enums, max, min, regex. Only the attributes present in a
-    ///         field's dict are sent to the server — an attribute you leave
-    ///         out is left untouched (this is a partial update, not a
-    ///         replacement of the field's constraints).
+    ///         enums, max, min, regex. Only the attributes present are sent.
+    ///         Current servers replace a named field's constraints rather than
+    ///         merging them: each update must carry unique, required and enums
+    ///         (an update without one is refused), max, min and regex are
+    ///         cleared when left out, and default and field_type change only
+    ///         when present. An empty enums list clears the field's enums.
     fn update_schema_constraints<'py>(
         &self,
         py: Python<'py>,

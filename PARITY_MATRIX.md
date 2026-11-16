@@ -525,6 +525,11 @@ PUT /api/schemas/{collection}                   - Update schema constraints
 
 - `updateSchemaConstraints(collection, constraints)` is implemented in Rust,
   Python, TypeScript, Kotlin, and Go.
+- Current servers replace a named field's constraints rather than merging them:
+  each update must carry `unique`, `required` and `enums`, `max`, `min` and
+  `regex` are cleared when omitted, and `default` and `field_type` change only
+  when sent. Every SDK's docs say so, and the `client_schema` example in every
+  language runs an update and reads it back.
 
 ### Use Cases
 
