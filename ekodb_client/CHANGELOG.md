@@ -11,8 +11,10 @@ and this project adheres to
 ### Added
 
 - TypeScript: `EkoDBApiError`, exported from the package root, is thrown for
-  every HTTP error answer a REST call does not retry away, with `status` (the
-  HTTP status code) and `body` (the response text). A caller can now branch on
+  every HTTP error answer a REST call does not retry away (the token exchange
+  and the SSE raw-completion calls included), with `status` (the HTTP status
+  code) and `body` (the response text). Streaming subscriptions and chat streams
+  report an error answer as an event, as before. A caller can now branch on
   `error.status === 404` / `409` / `500` instead of parsing the message, as Rust
   (`Error::Api { code, .. }`), Kotlin (`EkoDBHttpException.statusCode`) and Go
   (`HTTPError.StatusCode`) already allowed. The message text is unchanged.
@@ -21,8 +23,9 @@ and this project adheres to
 - Python: `ApiError`, a subclass of `RuntimeError`, is raised for an HTTP error
   answer (`404`, `409`, `500`, `503`, and a `401` the client could not refresh
   away), with `status` and `message`; from the WebSocket client, `status` is the
-  code in the server's error frame. An existing `except RuntimeError` still
-  catches it, and its message is unchanged (#390).
+  code in the server's error frame, and a failure the server reports inside a
+  streamed completion is an `ApiError` with status `500`. An existing
+  `except RuntimeError` still catches it, and its message is unchanged (#390).
 - Rust, Python, TypeScript, Kotlin: `restore_collection_counts` /
   `restoreCollectionCounts` returns both counts a whole-collection restore
   reports: `cleared_count` (tombstones removed) and `records_restored` (records
@@ -55,15 +58,18 @@ and this project adheres to
   `save_user_function`), a body whose `status` is not `success` (the two saves)
   and an `embed` answer with no embedding are `Error::Validation`, as
   `handle_response` already reported unparseable answers; they used to be
-  `Error::Api` with status 200 or a made-up 500. A dropped WebSocket connection
-  and a streamed completion that ends with neither content nor its done event
-  are `Error::Connection`; they used to be `Error::Api` with code 0 or 500 (a
-  stream that sent content and then closed still returns that content). Both now
-  report `true` from `Error::is_retryable()`, as every `Connection` error does;
-  the client does not retry either itself, and retrying a streamed completion
-  repeats the model call. An SSE subscription's bad URL is `Error::InvalidUrl`
-  and its failed connect `Error::Http`, instead of `Error::Api` with code 0. In
-  Python, none of these is an `ApiError` any more (#390).
+  `Error::Api` with status 200 or a made-up 500. A WebSocket connection that
+  drops while a request waits for its answer, and a streamed completion that
+  ends with neither content nor its done event, are `Error::Connection`; they
+  used to be `Error::Api` with code 0 or 500. A send onto a WebSocket that is
+  already closed is still `Error::WebSocket`, and a stream that sent content and
+  then closed still returns that content, both as before. The two
+  `Error::Connection` cases now report `true` from `Error::is_retryable()`, as
+  every `Connection` error does; the client does not retry either itself, and
+  retrying a streamed completion repeats the model call. An SSE subscription's
+  bad URL is `Error::InvalidUrl` and its failed connect `Error::Http`, instead
+  of `Error::Api` with code 0. In Python, none of these is an `ApiError` any
+  more (#390).
 
 ### Fixed
 
