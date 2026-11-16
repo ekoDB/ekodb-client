@@ -67,13 +67,15 @@ async fn test_update_schema_constraints_round_trip() -> Result<(), Box<dyn std::
         .create_collection("test_schema_constraints", schema)
         .await?;
 
-    // Tighten the constraint via the endpoint under test.
+    // Tighten the constraint via the endpoint under test. Current servers
+    // require unique, required and enums on every update and replace them.
     let mut constraints = std::collections::HashMap::new();
     constraints.insert(
         "email".to_string(),
         SchemaConstraintUpdate {
             required: Some(true),
             unique: Some(true),
+            enums: Some(vec![]),
             ..Default::default()
         },
     );
@@ -81,7 +83,7 @@ async fn test_update_schema_constraints_round_trip() -> Result<(), Box<dyn std::
         .update_schema_constraints("test_schema_constraints", constraints)
         .await?;
 
-    // The server-side schema must reflect the partial update.
+    // The server-side schema must reflect the replaced constraints.
     let updated = client.get_schema("test_schema_constraints").await?;
     let email_field = updated
         .fields
