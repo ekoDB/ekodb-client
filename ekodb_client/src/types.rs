@@ -12,6 +12,13 @@ use std::collections::HashMap;
 use std::time::Duration;
 use uuid::Uuid;
 
+/// The server's schedule summary (`GET /api/schedules/stats`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ScheduleStats {
+    /// The number of schedules the server is running.
+    pub active_schedules: u64,
+}
+
 /// What restoring a whole collection from trash reported.
 ///
 /// The two counts differ: a tombstone can be cleared while the record's data

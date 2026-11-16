@@ -6,6 +6,7 @@ Demonstrates schema creation and management:
 - Field types and constraints
 - Indexes (text, vector, btree, hash)
 - Validation rules
+- Updating constraints on an existing field
 """
 
 import asyncio
@@ -179,6 +180,33 @@ async def run_example(client):
 
     await client.create_collection(employees_collection, employee_schema)
     print("✅ Employee schema with all constraints created\n")
+
+    # Example 7: Update constraints on an existing field.
+    # Current servers replace a named field's constraints rather than merging
+    # them, so each update sends unique, required and enums together; max, min
+    # and regex left out are cleared, and the default is kept.
+    print("7. Updating constraints on an existing field:")
+    await client.update_schema_constraints(
+        users_collection,
+        {"status": {"unique": False, "required": True, "enums": ["active", "pending"]}},
+    )
+    narrowed = (await client.get_schema(users_collection))["fields"]["status"]
+    print(
+        f"status: required = {narrowed.get('required')}, enums = {narrowed.get('enums')}"
+    )
+    if narrowed.get("required") is not True or len(narrowed.get("enums") or []) != 2:
+        raise RuntimeError(f"Constraint update not applied: {narrowed}")
+
+    # An empty enums list clears the field's enums.
+    await client.update_schema_constraints(
+        users_collection,
+        {"status": {"unique": False, "required": True, "enums": []}},
+    )
+    cleared = (await client.get_schema(users_collection))["fields"]["status"]
+    print(f"status after clearing: enums = {cleared.get('enums') or []}")
+    if cleared.get("enums"):
+        raise RuntimeError(f"Enums were not cleared: {cleared}")
+    print("✅ Constraints updated and read back\n")
 
 
 async def cleanup(client):

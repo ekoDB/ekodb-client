@@ -784,6 +784,10 @@ client.trigger_schedule("sched-id").await?;
 
 // Delete
 client.delete_schedule("sched-id").await?;
+
+// How many schedules the server is running
+let stats = client.get_schedule_stats().await?;
+println!("{}", stats.active_schedules);
 ```
 
 ### WebSocket Chat Streaming

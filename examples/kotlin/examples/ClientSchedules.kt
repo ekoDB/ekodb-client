@@ -15,7 +15,7 @@ import kotlinx.serialization.json.put
 /**
  * Schedule management example.
  *
- * Exercises create -> list -> get -> update -> trigger -> pause -> resume -> delete.
+ * Exercises create -> list -> stats -> get -> update -> trigger -> pause -> resume -> delete.
  * A temporary no-op function makes the trigger step self-contained.
  */
 fun main() = runBlocking {
@@ -78,6 +78,13 @@ fun main() = runBlocking {
             requireNotNull(item.jsonObject["id"]) { "Listed schedule omitted id" }.jsonPrimitive.content
         }
         check(schedId in listedIds) { "Created schedule $schedId was absent from listSchedules" }
+
+        // Schedule stats: the server counts from a cache it reloads
+        // periodically, so the schedule created above may not be counted yet.
+        println("\n--- Schedule stats ---")
+        val stats = client.getScheduleStats()
+        println("Active schedules: ${stats.activeSchedules}")
+        check(stats.activeSchedules >= 0) { "Unexpected schedule stats: $stats" }
 
         // 3. Get schedule by ID
         println("\n--- Getting schedule ---")

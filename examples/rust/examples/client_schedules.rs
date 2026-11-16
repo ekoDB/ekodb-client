@@ -1,6 +1,6 @@
 //! ekoDB Rust Client - Schedule Management Example
 //!
-//! Demonstrates the full schedule lifecycle: create, list, get, update,
+//! Demonstrates the full schedule lifecycle: create, list, stats, get, update,
 //! trigger, pause, resume, and delete. It creates a temporary no-op function
 //! so the immediate trigger exercises a complete, standalone lifecycle.
 //!
@@ -61,6 +61,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
         println!("\n--- Listing schedules ---");
         let schedules = client.list_schedules().await?;
         println!("Schedules: {}", schedules);
+
+        // Schedule stats: the server counts from a cache it reloads
+        // periodically, so the schedule created above may not be counted yet.
+        println!("\n--- Schedule stats ---");
+        let stats = client.get_schedule_stats().await?;
+        println!("Active schedules: {}", stats.active_schedules);
 
         // 3. Get schedule by ID
         println!("\n--- Getting schedule ---");

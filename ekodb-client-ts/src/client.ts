@@ -69,6 +69,12 @@ export interface ClientConfig {
   timeout?: number;
 }
 
+/** The server's schedule summary, from {@link EkoDBClient.getScheduleStats}. */
+export interface ScheduleStats {
+  /** The number of schedules the server is running. */
+  active_schedules: number;
+}
+
 /**
  * An HTTP error answer from the server: every non-2xx response a REST call
  * does not retry away is thrown as this, so a caller can branch on `status`
@@ -3603,6 +3609,20 @@ export class EkoDBClient {
     return this.makeRequest<Record>(
       "POST",
       `/api/schedules/${encodeURIComponent(id)}/trigger`,
+      undefined,
+      0,
+      true,
+    );
+  }
+
+  /**
+   * The server's schedule summary (`GET /api/schedules/stats`): how many
+   * schedules it is running. Needs an admin key, like the other schedule calls.
+   */
+  async getScheduleStats(): Promise<ScheduleStats> {
+    return this.makeRequest<ScheduleStats>(
+      "GET",
+      `/api/schedules/stats`,
       undefined,
       0,
       true,

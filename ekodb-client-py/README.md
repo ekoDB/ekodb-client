@@ -732,6 +732,10 @@ await client.pause_schedule("sched-id")
 
 # Run immediately
 await client.trigger_schedule("sched-id")
+
+# How many schedules the server is running
+stats = await client.get_schedule_stats()
+print(stats["active_schedules"])
 ```
 
 ### WebSocket Operations

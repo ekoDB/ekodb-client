@@ -3337,6 +3337,32 @@ describe("EkoDBClient schedules", () => {
     expect(result).toHaveProperty("name", "Nightly Backup");
   });
 
+  it("reads schedule stats from the stats route", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+    mockJsonResponse({ active_schedules: 3 });
+
+    await expect(client.getScheduleStats()).resolves.toEqual({
+      active_schedules: 3,
+    });
+    const statsCall = mockFetch.mock.calls[1];
+    expect(statsCall[0]).toBe("http://localhost:8080/api/schedules/stats");
+    expect(statsCall[1].method).toBe("GET");
+  });
+
+  it("surfaces a 403 from schedule stats as EkoDBApiError", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+    mockErrorResponse(403, "admin required");
+
+    const error = await client
+      .getScheduleStats()
+      .then(() => undefined)
+      .catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(EkoDBApiError);
+    expect((error as EkoDBApiError).status).toBe(403);
+  });
+
   it("updates a schedule", async () => {
     const client = createTestClient();
     mockTokenResponse();
