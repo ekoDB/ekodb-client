@@ -474,7 +474,7 @@ GET    /api/schedules/{id}                      - Get schedule details
 PUT    /api/schedules/{id}                      - Update schedule
 DELETE /api/schedules/{id}                      - Delete schedule
 POST   /api/schedules/{id}/trigger              - Run a schedule now
-GET    /api/schedules/stats                     - Schedule execution stats
+GET    /api/schedules/stats                     - Schedule summary: {"active_schedules": N}
 
 NOTE: there is no /pause or /resume endpoint. Pause and resume are a partial
 update - PUT /api/schedules/{id} with {"enabled": false|true} - which is what
@@ -495,6 +495,9 @@ All languages expose:
 - `pauseSchedule(id)` - Pause execution
 - `resumeSchedule(id)` - Resume execution
 - `triggerSchedule(id)` - Run immediately
+- `getScheduleStats()` - How many schedules the server is running
+  (`get_schedule_stats` in Rust and Python, `GetScheduleStats` in Go; Go's is in
+  the paired `ekodb-client-go` change, unreleased)
 
 ### Use Cases
 

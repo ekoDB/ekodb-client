@@ -4200,6 +4200,27 @@ impl Client {
             Python::attach(|py| json_to_pydict(py, &result))
         })
     }
+
+    /// The server's schedule summary (`GET /api/schedules/stats`). Needs an
+    /// admin key, like the other schedule calls.
+    ///
+    /// Returns:
+    ///     A dict with `active_schedules`, the number of schedules the server
+    ///     is running.
+    fn get_schedule_stats<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            let stats = client
+                .get_schedule_stats()
+                .await
+                .map_err(|e| map_client_err("get_schedule_stats failed", e))?;
+            Python::attach(|py| {
+                let dict = PyDict::new(py);
+                dict.set_item("active_schedules", stats.active_schedules)?;
+                Ok(dict.into_any().unbind())
+            })
+        })
+    }
 }
 
 /// Python wrapper for WebSocket Client

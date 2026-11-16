@@ -14,7 +14,7 @@ export {
   HealthDegraded,
   HealthUnknown,
 } from "./client";
-export type { HealthState } from "./client";
+export type { HealthState, ScheduleStats } from "./client";
 export { QueryBuilder, SortOrder } from "./query-builder";
 export { queryExpression, assertQueryExpression } from "./query-expression";
 export type {

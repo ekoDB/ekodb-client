@@ -1,13 +1,18 @@
 //! Schema Management Example
 //!
-//! This example demonstrates basic schema management operations.
+//! This example demonstrates basic schema management operations, including
+//! updating constraints on an existing field.
 //!
 //! Prerequisites:
 //! - Run the ekoDB server: `make run`
 //!
 //! Run with: `cargo run --example client_schema_management`
 
-use ekodb_client::{Client, Error as EkoError, FieldTypeSchema, Record, Schema};
+use ekodb_client::{
+    Client, Error as EkoError, FieldTypeSchema, Record, Schema, SchemaConstraintUpdate,
+};
+use serde_json::json;
+use std::collections::HashMap;
 use std::error::Error;
 
 const COLLECTION: &str = "schema_client_rust";
@@ -100,6 +105,56 @@ async fn main() -> Result<(), Box<dyn Error>> {
             collections.iter().take(5).collect::<Vec<_>>()
         );
         println!();
+
+        // Step 5: Update constraints on an existing field. Current servers
+        // replace a named field's constraints rather than merging them, so
+        // each update sends unique, required and enums together; max, min and
+        // regex left out are cleared, and the default is kept.
+        println!("=== Updating Constraints on an Existing Field ===");
+        let status_update = |enums: Vec<serde_json::Value>| SchemaConstraintUpdate {
+            unique: Some(false),
+            required: Some(true),
+            enums: Some(enums),
+            ..Default::default()
+        };
+        client
+            .update_schema_constraints(
+                collection,
+                HashMap::from([(
+                    "status".to_string(),
+                    status_update(vec![json!("active"), json!("pending")]),
+                )]),
+            )
+            .await?;
+        let narrowed = client.get_schema(collection).await?;
+        let status = narrowed
+            .fields
+            .get("status")
+            .ok_or("schema has no status field after the update")?;
+        println!(
+            "✓ status: required = {}, enums = {:?}",
+            status.required, status.enums
+        );
+        if !status.required || status.enums.len() != 2 {
+            return Err(format!("constraint update not applied: {status:?}").into());
+        }
+
+        // An empty enums list clears the field's enums.
+        client
+            .update_schema_constraints(
+                collection,
+                HashMap::from([("status".to_string(), status_update(vec![]))]),
+            )
+            .await?;
+        let cleared = client.get_schema(collection).await?;
+        let status = cleared
+            .fields
+            .get("status")
+            .ok_or("schema has no status field after clearing")?;
+        println!("✓ status after clearing: enums = {:?}\n", status.enums);
+        if !status.enums.is_empty() {
+            return Err(format!("enums were not cleared: {status:?}").into());
+        }
 
         Ok(())
     }

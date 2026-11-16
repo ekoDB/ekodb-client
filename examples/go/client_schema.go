@@ -194,5 +194,42 @@ func main() {
 		fmt.Println("✅ Employee schema with all constraints created\n")
 	}
 
+	// Example 7: Update constraints on an existing field. Current servers
+	// replace a named field's constraints rather than merging them, so each
+	// update sends Unique, Required and Enums together; Max, Min and Regex left
+	// unset are cleared, and the default is kept.
+	fmt.Println("7. Updating constraints on an existing field:")
+	no, yes := false, true
+	if err := client.UpdateSchemaConstraints(usersCollection, map[string]ekodb.SchemaConstraintUpdate{
+		"status": {Unique: &no, Required: &yes, Enums: ekodb.EnumValues("active", "pending")},
+	}); err != nil {
+		log.Fatalf("Update constraints failed: %v", err)
+	}
+	narrowed, err := client.GetSchema(usersCollection)
+	if err != nil {
+		log.Fatalf("Get schema failed: %v", err)
+	}
+	status := narrowed.Fields["status"]
+	fmt.Printf("status: required = %v, enums = %v\n", status.Required, status.Enums)
+	if !status.Required || len(status.Enums) != 2 {
+		log.Fatalf("Constraint update not applied: %+v", status)
+	}
+
+	// An empty enums list clears the field's enums.
+	if err := client.UpdateSchemaConstraints(usersCollection, map[string]ekodb.SchemaConstraintUpdate{
+		"status": {Unique: &no, Required: &yes, Enums: ekodb.EnumValues()},
+	}); err != nil {
+		log.Fatalf("Clear enums failed: %v", err)
+	}
+	cleared, err := client.GetSchema(usersCollection)
+	if err != nil {
+		log.Fatalf("Get schema failed: %v", err)
+	}
+	fmt.Printf("status after clearing: enums = %v\n", cleared.Fields["status"].Enums)
+	if len(cleared.Fields["status"].Enums) != 0 {
+		log.Fatalf("Enums were not cleared: %+v", cleared.Fields["status"])
+	}
+	fmt.Println("✅ Constraints updated and read back\n")
+
 	fmt.Println("✅ Schema management examples completed!")
 }

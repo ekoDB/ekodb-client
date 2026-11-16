@@ -1953,6 +1953,23 @@ class EkoDBClientTest {
     }
 
     @Test
+    fun `getScheduleStats reads active_schedules from the stats route`() = runBlocking {
+        val recorded = mutableListOf<HttpRequestData>()
+        val client = createTestClient(capturingMockEngine(recorded, """{"active_schedules": 3}"""))
+        assertEquals(ScheduleStats(activeSchedules = 3), client.getScheduleStats())
+        val sent = recorded.last()
+        assertEquals("/api/schedules/stats", sent.url.encodedPath)
+        assertEquals(HttpMethod.Get, sent.method)
+    }
+
+    @Test
+    fun `getScheduleStats surfaces a 403 as EkoDBHttpException`() = runBlocking {
+        val client = createTestClient(createMockEngine("""{"error": "admin required"}""", HttpStatusCode.Forbidden))
+        val error = assertFailsWith<EkoDBHttpException> { client.getScheduleStats() }
+        assertEquals(403, error.statusCode)
+    }
+
+    @Test
     fun `pause and resume update the enabled flag instead of calling absent routes`() = runBlocking {
         val recorded = mutableListOf<HttpRequestData>()
 

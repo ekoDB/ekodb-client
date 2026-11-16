@@ -6,6 +6,7 @@
  * - Field types and constraints
  * - Indexes (text, vector, btree, hash)
  * - Validation rules
+ * - Updating constraints on an existing field
  */
 
 import {
@@ -214,6 +215,39 @@ async function main() {
       throw e;
     }
   }
+
+  // Example 7: Update constraints on an existing field.
+  // Current servers replace a named field's constraints rather than merging
+  // them, so each update sends unique, required and enums together; max, min
+  // and regex left out are cleared, and the default is kept.
+  console.log("7. Updating constraints on an existing field:");
+  await client.updateSchemaConstraints(usersCollection, {
+    status: { unique: false, required: true, enums: ["active", "pending"] },
+  });
+  const narrowed = await client.getSchema(usersCollection);
+  const narrowedStatus = narrowed.fields.status;
+  console.log(
+    "status: required =",
+    narrowedStatus.required,
+    ", enums =",
+    narrowedStatus.enums,
+  );
+  if (narrowedStatus.required !== true || narrowedStatus.enums?.length !== 2) {
+    throw new Error(
+      `Constraint update not applied: ${JSON.stringify(narrowedStatus)}`,
+    );
+  }
+
+  // An empty enums list clears the field's enums.
+  await client.updateSchemaConstraints(usersCollection, {
+    status: { unique: false, required: true, enums: [] },
+  });
+  const cleared = (await client.getSchema(usersCollection)).fields.status;
+  console.log("status after clearing: enums =", cleared.enums ?? []);
+  if ((cleared.enums ?? []).length !== 0) {
+    throw new Error(`Enums were not cleared: ${JSON.stringify(cleared)}`);
+  }
+  console.log("✅ Constraints updated and read back\n");
 
   console.log("✅ Schema management examples completed!");
 }

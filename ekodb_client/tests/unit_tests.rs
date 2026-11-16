@@ -252,6 +252,53 @@ async fn test_raw_completion_stream_content_then_close_returns_the_content() {
     assert_eq!(tokens.concat(), "Hello");
 }
 
+#[tokio::test]
+async fn test_get_schedule_stats_reads_active_schedules() {
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+    let stats_mock = server
+        .mock("GET", "/api/schedules/stats")
+        .match_header("authorization", "Bearer test-jwt-token")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"active_schedules": 3}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    let stats = client
+        .get_schedule_stats()
+        .await
+        .expect("stats should load");
+
+    assert_eq!(
+        stats,
+        ekodb_client::ScheduleStats {
+            active_schedules: 3
+        }
+    );
+    stats_mock.assert_async().await;
+}
+
+#[tokio::test]
+async fn test_get_schedule_stats_forbidden_is_an_api_error() {
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+    let _stats_mock = server
+        .mock("GET", "/api/schedules/stats")
+        .with_status(403)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"error": "admin required"}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    match client.get_schedule_stats().await {
+        Err(Error::Api { code, .. }) => assert_eq!(code, 403),
+        other => panic!("expected Error::Api with 403, got {other:?}"),
+    }
+}
+
 /// Setup mock for token endpoint
 fn mock_token_endpoint(server: &mut Server) -> mockito::Mock {
     server

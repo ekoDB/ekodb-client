@@ -93,7 +93,7 @@ pub use search::{
     DistinctValuesQuery, DistinctValuesResponse, SearchQuery, SearchResponse, SearchResult,
 };
 pub use types::{
-    FieldType, NumberValue, Query, QueryOperator, Record, RestoreCollectionResult,
+    FieldType, NumberValue, Query, QueryOperator, Record, RestoreCollectionResult, ScheduleStats,
     SerializationFormat,
 };
 pub use utils::{
