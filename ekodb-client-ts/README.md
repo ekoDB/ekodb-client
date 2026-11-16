@@ -464,6 +464,9 @@ await client.pauseSchedule("sched-id");
 
 // Run immediately
 await client.triggerSchedule("sched-id");
+
+// How many schedules the server is running
+const { active_schedules } = await client.getScheduleStats();
 ```
 
 ### WebSocket Chat Streaming

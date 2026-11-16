@@ -278,7 +278,34 @@ exhausted).
 
 #### Properties
 
-- `retry_after_secs: int` - Number of seconds to wait before retrying
+- `retry_after_secs: int` - Number of seconds to wait before retrying (also
+  `args[0]`, for code written before the attribute existed)
+- `status: int` - Always `429`
+
+### ApiError
+
+Exception raised for an HTTP error answer from the server (a `404`, `409`,
+`500`, and so on). A subclass of `RuntimeError`, so an existing
+`except RuntimeError` still catches it. A rate limit is raised as
+`RateLimitError` instead.
+
+#### Properties
+
+- `status: int` - The HTTP status code
+- `message: str` - The server's error message, or the client's description when
+  it does not keep the server's (a `404`, or a `401` it could not refresh)
+
+```python
+from ekodb_client import ApiError
+
+try:
+    await client.restore_collection("users")
+except ApiError as e:
+    if e.status == 404:
+        print("No such collection")
+    else:
+        raise
+```
 
 #### `await client.insert(collection: str, record: dict) -> dict`
 
@@ -705,6 +732,10 @@ await client.pause_schedule("sched-id")
 
 # Run immediately
 await client.trigger_schedule("sched-id")
+
+# How many schedules the server is running
+stats = await client.get_schedule_stats()
+print(stats["active_schedules"])
 ```
 
 ### WebSocket Operations

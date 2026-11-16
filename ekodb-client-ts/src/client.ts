@@ -69,15 +69,43 @@ export interface ClientConfig {
   timeout?: number;
 }
 
+/** The server's schedule summary, from {@link EkoDBClient.getScheduleStats}. */
+export interface ScheduleStats {
+  /** The number of schedules the server is running. */
+  active_schedules: number;
+}
+
 /**
- * Rate limit error
+ * An HTTP error answer from the server: every non-2xx response a REST call
+ * does not retry away is thrown as this, so a caller can branch on `status`
+ * (`404`, `409`, `500`, ...) instead of parsing the message.
+ *
+ * `body` is the response text as the server sent it. It is empty when the
+ * client redacts admin errors, so a credential the server echoed is never kept.
  */
-export class RateLimitError extends Error {
+export class EkoDBApiError extends Error {
+  constructor(
+    public readonly status: number,
+    public readonly body: string,
+    message?: string,
+  ) {
+    super(message ?? `Request failed with status ${status}: ${body}`);
+    this.name = "EkoDBApiError";
+  }
+}
+
+/**
+ * Rate limit error (HTTP 429). A subclass of {@link EkoDBApiError} with
+ * `status` 429, carrying the server's `Retry-After` as `retryAfterSecs`.
+ */
+export class RateLimitError extends EkoDBApiError {
   constructor(
     public retryAfterSecs: number,
     message?: string,
   ) {
     super(
+      429,
+      "",
       message || `Rate limit exceeded. Retry after ${retryAfterSecs} seconds`,
     );
     this.name = "RateLimitError";
@@ -561,10 +589,7 @@ function stripTrailingSlashes(url: string): string {
 }
 
 function isNotFoundError(error: unknown): boolean {
-  return (
-    error instanceof Error &&
-    error.message.startsWith("Request failed with status 404:")
-  );
+  return error instanceof EkoDBApiError && error.status === 404;
 }
 
 /** `run_as` is `caller`, `author`, or null/absent; anything else is not a function definition. */
@@ -671,19 +696,22 @@ export class EkoDBClient {
 
       if (!response.ok) {
         if (this.redactErrors)
-          throw new Error(
+          throw new EkoDBApiError(
+            response.status,
+            "",
             `Admin authentication failed (HTTP ${response.status})`,
           );
+        const text = await response.text();
         let errorMsg = `Auth failed with status: ${response.status}`;
         try {
-          const errorBody = (await response.json()) as { error?: string };
-          if (errorBody.error) {
+          const errorBody = JSON.parse(text) as { error?: string };
+          if (errorBody?.error) {
             errorMsg = errorBody.error;
           }
         } catch {
-          // Ignore JSON parse errors, use default message
+          // Not JSON: keep the default message
         }
-        throw new Error(errorMsg);
+        throw new EkoDBApiError(response.status, text, errorMsg);
       }
 
       const result = (await response.json()) as { token: string };
@@ -695,7 +723,17 @@ export class EkoDBClient {
       const expiry = this.extractJWTExpiry(result.token);
       this.tokenExpiry = expiry ?? Math.floor(Date.now() / 1000) + 3600; // fallback: 1 hour
     } catch (error) {
-      if (this.redactErrors) throw new Error("Admin authentication failed");
+      if (this.redactErrors) {
+        // Keep the status for branching; never the body or any cause, which
+        // can echo the credential.
+        if (error instanceof EkoDBApiError)
+          throw new EkoDBApiError(
+            error.status,
+            "",
+            "Admin authentication failed",
+          );
+        throw new Error("Admin authentication failed");
+      }
       throw error;
     }
   }
@@ -989,8 +1027,12 @@ export class EkoDBClient {
       // Handle other errors
       const text = await response.text();
       if (this.redactErrors)
-        throw new Error(`Admin request failed (HTTP ${response.status})`);
-      throw new Error(`Request failed with status ${response.status}: ${text}`);
+        throw new EkoDBApiError(
+          response.status,
+          "",
+          `Admin request failed (HTTP ${response.status})`,
+        );
+      throw new EkoDBApiError(response.status, text);
     } catch (error) {
       // A fired request-timeout (AbortSignal.timeout) surfaces as a DOMException
       // named "TimeoutError" (or "AbortError" in some runtimes). Convert it to a
@@ -1011,10 +1053,10 @@ export class EkoDBClient {
           throw new RateLimitError(retryAfter);
         }
         if (
-          error instanceof Error &&
+          error instanceof EkoDBApiError &&
           /^Admin request failed \(HTTP [0-9]{3}\)$/.test(error.message)
         )
-          throw new Error(error.message);
+          throw new EkoDBApiError(error.status, "", error.message);
         throw new Error(
           errName === "TimeoutError" || errName === "AbortError"
             ? "Admin request timed out"
@@ -1927,15 +1969,41 @@ export class EkoDBClient {
    * Records remain in trash for 30 days before permanent deletion
    *
    * @param collection - Collection name
-   * @returns Number of records restored
+   * @returns `clearedCount`, the number of tombstones cleared (the server's
+   *   `cleared_count`). That is not the number of records recovered: a
+   *   tombstone can be cleared while the record's data is gone. Use
+   *   {@link restoreCollectionCounts} for both counts.
    */
-  async restoreCollection(
+  async restoreCollection(collection: string): Promise<{
+    clearedCount: number;
+    /**
+     * @deprecated The same value as `clearedCount`: the number of tombstones
+     * cleared, not records recovered. Use `clearedCount`, or
+     * `restoreCollectionCounts(collection).recordsRestored` for the records
+     * actually recovered. Removed in a future release.
+     */
+    recordsRestored: number;
+  }> {
+    const { clearedCount } = await this.restoreCollectionCounts(collection);
+    return { clearedCount, recordsRestored: clearedCount };
+  }
+
+  /**
+   * Restore all deleted records in a collection from trash, returning both
+   * counts the server reports.
+   *
+   * @param collection - Collection name
+   * @returns `clearedCount`, tombstones removed, and `recordsRestored`, records
+   *   whose data was recovered. `recordsRestored` is `null` on servers before
+   *   0.72.7, which report only the cleared count.
+   */
+  async restoreCollectionCounts(
     collection: string,
-  ): Promise<{ recordsRestored: number }> {
+  ): Promise<{ clearedCount: number; recordsRestored: number | null }> {
     const result = await this.makeRequest<{
       status: string;
-      collection: string;
       cleared_count: number;
+      records_restored?: number;
     }>(
       "POST",
       `/api/trash/${encodeURIComponent(collection)}`,
@@ -1943,7 +2011,13 @@ export class EkoDBClient {
       0,
       true,
     );
-    return { recordsRestored: result.cleared_count };
+    return {
+      clearedCount: result.cleared_count,
+      recordsRestored:
+        typeof result.records_restored === "number"
+          ? result.records_restored
+          : null,
+    };
   }
 
   /**
@@ -2006,10 +2080,10 @@ export class EkoDBClient {
   /**
    * Update constraints on one or more fields of an existing collection's schema
    *
-   * This is a partial update: only the attributes actually set on each
-   * SchemaConstraintUpdate are sent, and only those attributes are changed on
-   * the server. Omitted attributes (left `undefined`) leave that field's
-   * existing constraint untouched.
+   * Only the attributes set on each SchemaConstraintUpdate are sent. Current
+   * servers replace a named field's constraints rather than merging them: each
+   * update must set `unique`, `required` and `enums`, and `max`, `min` and
+   * `regex` are cleared when left unset (see SchemaConstraintUpdate).
    *
    * @param collection - Collection name
    * @param constraints - Map of field name to the constraint attributes to update
@@ -2017,8 +2091,8 @@ export class EkoDBClient {
    * @example
    * ```typescript
    * await client.updateSchemaConstraints("users", {
-   *   email: { unique: true, required: true },
-   *   age: { min: 0, max: 150 },
+   *   email: { unique: true, required: true, enums: [] },
+   *   age: { unique: false, required: false, enums: [], min: 0, max: 150 },
    * });
    * ```
    */
@@ -2203,11 +2277,10 @@ export class EkoDBClient {
       }
     } catch (err: any) {
       // Server doesn't have the endpoint (404) or route mismatch (405)
-      // Parse status from makeRequest error format: "Request failed with status NNN: ..."
-      const message = String(err?.message ?? "");
-      const match = message.match(/Request failed with status (\d+):/);
-      const status = match ? parseInt(match[1], 10) : undefined;
-      if (status === 404 || status === 405) {
+      if (
+        err instanceof EkoDBApiError &&
+        (err.status === 404 || err.status === 405)
+      ) {
         return null;
       }
       throw err;
@@ -2282,7 +2355,9 @@ export class EkoDBClient {
 
     if (!response.ok) {
       const body = await response.text();
-      throw new Error(
+      throw new EkoDBApiError(
+        response.status,
+        body,
         `SSE raw completion failed (${response.status}): ${body}`,
       );
     }
@@ -2335,7 +2410,9 @@ export class EkoDBClient {
 
     if (!response.ok) {
       const body = await response.text();
-      throw new Error(
+      throw new EkoDBApiError(
+        response.status,
+        body,
         `SSE raw completion failed (${response.status}): ${body}`,
       );
     }
@@ -3532,6 +3609,20 @@ export class EkoDBClient {
     return this.makeRequest<Record>(
       "POST",
       `/api/schedules/${encodeURIComponent(id)}/trigger`,
+      undefined,
+      0,
+      true,
+    );
+  }
+
+  /**
+   * The server's schedule summary (`GET /api/schedules/stats`): how many
+   * schedules it is running. Needs an admin key, like the other schedule calls.
+   */
+  async getScheduleStats(): Promise<ScheduleStats> {
+    return this.makeRequest<ScheduleStats>(
+      "GET",
+      `/api/schedules/stats`,
       undefined,
       0,
       true,

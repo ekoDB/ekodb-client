@@ -25,22 +25,71 @@ create_exception!(
     ekodb_client,
     RateLimitError,
     PyException,
-    "Rate limit exceeded"
+    "Rate limit exceeded (HTTP 429). `retry_after_secs` is the server's wait."
+);
+
+// An HTTP error answer from the server. A subclass of RuntimeError, so code
+// that caught RuntimeError before still catches it.
+create_exception!(
+    ekodb_client,
+    ApiError,
+    PyRuntimeError,
+    "HTTP error answer from the server. `status` is the HTTP status code; \
+     `message` is the server's error message, or the client's description \
+     when the client does not keep it (a 404, or a 401 it could not refresh)."
 );
 
 /// Map an `ekodb_client::Error` to the most specific Python exception.
 ///
-/// A `RateLimit` error (HTTP 429) is surfaced as `RateLimitError`, carrying the
-/// server-provided `retry_after_secs` as the first argument so Python callers can
-/// read `exc.args[0]` to back off. Every other error becomes a `RuntimeError`
-/// with `"{context}: {error}"` for backwards-compatible messages.
+/// - A `RateLimit` error (HTTP 429) is surfaced as `RateLimitError`, with the
+///   server-provided wait as `exc.retry_after_secs` and also as `exc.args[0]`
+///   (kept for callers written before the attribute existed), and `exc.status`
+///   429.
+/// - An error the server answered with an HTTP status (`Api`, `NotFound`,
+///   `ServiceUnavailable`, and a `TokenExpired` the client could not refresh
+///   away) is surfaced as `ApiError`, with `exc.status` and `exc.message`.
+///   `Api` also covers a WebSocket error frame (its status) and a failure the
+///   server reports inside a streamed completion (status 500).
+///   `message` is the server's message where the Rust client keeps it (`Api`,
+///   `ServiceUnavailable`); for `NotFound` and `TokenExpired` the Rust client
+///   does not keep the server's body, so `message` is the client's text.
+/// - Every other error becomes a `RuntimeError`.
+///
+/// The message is always `"{context}: {error}"` (for a rate limit, its args
+/// tuple), as before.
 fn map_client_err(context: &str, e: ekodb_client::Error) -> PyErr {
-    match e {
-        ekodb_client::Error::RateLimit { retry_after_secs } => {
-            RateLimitError::new_err((retry_after_secs,))
+    use ekodb_client::Error as E;
+    let (status, message) = match &e {
+        E::RateLimit { retry_after_secs } => {
+            let secs = *retry_after_secs;
+            let err = RateLimitError::new_err((secs,));
+            return with_attrs(err, |value| {
+                value.setattr("retry_after_secs", secs)?;
+                value.setattr("status", 429u16)
+            });
         }
-        other => PyRuntimeError::new_err(format!("{context}: {other}")),
-    }
+        E::Api { code, message } => (*code, message.clone()),
+        E::NotFound => (404, e.to_string()),
+        E::ServiceUnavailable(message) => (503, message.clone()),
+        E::TokenExpired => (401, e.to_string()),
+        _ => return PyRuntimeError::new_err(format!("{context}: {e}")),
+    };
+    with_attrs(ApiError::new_err(format!("{context}: {e}")), |value| {
+        value.setattr("status", status)?;
+        value.setattr("message", message)
+    })
+}
+
+/// Set attributes on a new exception instance. If setting one fails, that
+/// failure is raised in place of the exception, never dropped.
+fn with_attrs(
+    err: PyErr,
+    set: impl FnOnce(&Bound<'_, pyo3::exceptions::PyBaseException>) -> PyResult<()>,
+) -> PyErr {
+    Python::attach(|py| match set(err.value(py)) {
+        Ok(()) => err,
+        Err(set_err) => set_err,
+    })
 }
 
 /// Serialization format for client-server communication
@@ -954,7 +1003,10 @@ impl Client {
     ///     collection: Collection name
     ///
     /// Returns:
-    ///     Number of records restored
+    ///     The number of tombstones cleared (the server's `cleared_count`).
+    ///     This is not the number of records recovered: a tombstone can be
+    ///     cleared while the record's data is gone. Use
+    ///     `restore_collection_counts` for both counts.
     fn restore_collection<'py>(
         &self,
         py: Python<'py>,
@@ -969,6 +1021,38 @@ impl Client {
                 .map_err(|e| map_client_err("Restore collection failed", e))?;
 
             Python::attach(|py| Ok(PyInt::new(py, count as i64).into()))
+        })
+    }
+
+    /// Restore all deleted records in a collection from trash, returning both
+    /// counts the server reports.
+    ///
+    /// Args:
+    ///     collection: Collection name
+    ///
+    /// Returns:
+    ///     A dict with `cleared_count` (tombstones removed) and
+    ///     `records_restored` (records whose data was recovered; `None` on
+    ///     servers before 0.72.7, which report only the cleared count).
+    fn restore_collection_counts<'py>(
+        &self,
+        py: Python<'py>,
+        collection: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            let result = client
+                .restore_collection_counts(&collection)
+                .await
+                .map_err(|e| map_client_err("Restore collection failed", e))?;
+
+            Python::attach(|py| {
+                let dict = PyDict::new(py);
+                dict.set_item("cleared_count", result.cleared_count)?;
+                dict.set_item("records_restored", result.records_restored)?;
+                Ok(dict.into_any().unbind())
+            })
         })
     }
 
@@ -1062,16 +1146,18 @@ impl Client {
         })
     }
 
-    /// Apply a partial update to one or more fields' schema constraints.
+    /// Update the constraints of one or more existing fields.
     ///
     /// Args:
     ///     collection: Collection name
-    ///     constraints: Dict of field name -> partial constraint-update dict.
+    ///     constraints: Dict of field name -> constraint-update dict.
     ///         Recognized attributes: field_type, default, unique, required,
-    ///         enums, max, min, regex. Only the attributes present in a
-    ///         field's dict are sent to the server — an attribute you leave
-    ///         out is left untouched (this is a partial update, not a
-    ///         replacement of the field's constraints).
+    ///         enums, max, min, regex. Only the attributes present are sent.
+    ///         Current servers replace a named field's constraints rather than
+    ///         merging them: each update must carry unique, required and enums
+    ///         (an update without one is refused), max, min and regex are
+    ///         cleared when left out, and default and field_type change only
+    ///         when present. An empty enums list clears the field's enums.
     fn update_schema_constraints<'py>(
         &self,
         py: Python<'py>,
@@ -4116,6 +4202,27 @@ impl Client {
             Python::attach(|py| json_to_pydict(py, &result))
         })
     }
+
+    /// The server's schedule summary (`GET /api/schedules/stats`). Needs an
+    /// admin key, like the other schedule calls.
+    ///
+    /// Returns:
+    ///     A dict with `active_schedules`, the number of schedules the server
+    ///     is running.
+    fn get_schedule_stats<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let client = self.inner.clone();
+        future_into_py::<_, Py<PyAny>>(py, async move {
+            let stats = client
+                .get_schedule_stats()
+                .await
+                .map_err(|e| map_client_err("get_schedule_stats failed", e))?;
+            Python::attach(|py| {
+                let dict = PyDict::new(py);
+                dict.set_item("active_schedules", stats.active_schedules)?;
+                Ok(dict.into_any().unbind())
+            })
+        })
+    }
 }
 
 /// Python wrapper for WebSocket Client
@@ -5457,6 +5564,7 @@ fn _ekodb_client(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<SerializationFormat>()?;
     m.add_class::<PyHealthStatus>()?;
     m.add("RateLimitError", m.py().get_type::<RateLimitError>())?;
+    m.add("ApiError", m.py().get_type::<ApiError>())?;
     m.add_function(wrap_pyfunction!(extract_record_id, m)?)?;
     m.add_function(wrap_pyfunction!(parse_health_status, m)?)?;
     Ok(())
@@ -5745,6 +5853,68 @@ mod tests {
             let args = value.getattr("args").unwrap();
             let retry: u64 = args.get_item(0).unwrap().extract().unwrap();
             assert_eq!(retry, 42);
+            // The named attribute carries the same value (#395).
+            let named: u64 = value
+                .getattr("retry_after_secs")
+                .unwrap()
+                .extract()
+                .unwrap();
+            assert_eq!(named, 42);
+            let status: u16 = value.getattr("status").unwrap().extract().unwrap();
+            assert_eq!(status, 429);
+        });
+    }
+
+    #[test]
+    fn test_map_client_err_http_statuses_map_to_api_error() {
+        Python::attach(|py| {
+            let cases = [
+                (
+                    ekodb_client::Error::api(409, "conflict"),
+                    409u16,
+                    "conflict",
+                ),
+                (ekodb_client::Error::api(500, "boom"), 500, "boom"),
+                (ekodb_client::Error::NotFound, 404, "Record not found"),
+                (
+                    ekodb_client::Error::ServiceUnavailable("busy".to_string()),
+                    503,
+                    "busy",
+                ),
+                (
+                    ekodb_client::Error::TokenExpired,
+                    401,
+                    "Token expired, please refresh",
+                ),
+            ];
+            for (error, want_status, want_message) in cases {
+                let err = map_client_err("Find failed", error);
+                assert!(err.is_instance_of::<ApiError>(py));
+                // Still a RuntimeError, so existing handlers keep catching it.
+                assert!(err.is_instance_of::<PyRuntimeError>(py));
+                assert!(!err.is_instance_of::<RateLimitError>(py));
+                let value = err.value(py);
+                let status: u16 = value.getattr("status").unwrap().extract().unwrap();
+                assert_eq!(status, want_status);
+                let message: String = value.getattr("message").unwrap().extract().unwrap();
+                assert_eq!(message, want_message);
+                let text = value.str().unwrap().to_string();
+                assert!(text.starts_with("Find failed: "), "text was: {text}");
+            }
+        });
+    }
+
+    #[test]
+    fn test_with_attrs_raises_a_failed_setattr_instead_of_dropping_it() {
+        Python::attach(|py| {
+            let err = with_attrs(ApiError::new_err("boom"), |_| {
+                Err(PyValueError::new_err("setattr failed"))
+            });
+            // The setattr failure replaces the exception; it is not swallowed.
+            assert!(err.is_instance_of::<PyValueError>(py));
+            assert!(!err.is_instance_of::<ApiError>(py));
+            let text = err.value(py).str().unwrap().to_string();
+            assert_eq!(text, "setattr failed");
         });
     }
 
@@ -5757,6 +5927,8 @@ mod tests {
             );
             assert!(err.is_instance_of::<PyRuntimeError>(py));
             assert!(!err.is_instance_of::<RateLimitError>(py));
+            // No HTTP status behind a validation error, so not an ApiError.
+            assert!(!err.is_instance_of::<ApiError>(py));
             let msg = err.value(py).str().unwrap().to_string();
             assert!(msg.contains("Find failed"), "msg was: {msg}");
             assert!(msg.contains("boom"), "msg was: {msg}");

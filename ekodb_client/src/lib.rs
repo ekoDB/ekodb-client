@@ -92,7 +92,10 @@ pub use schema_cache::{CachedSchema, SchemaCache, SchemaCacheConfig};
 pub use search::{
     DistinctValuesQuery, DistinctValuesResponse, SearchQuery, SearchResponse, SearchResult,
 };
-pub use types::{FieldType, NumberValue, Query, QueryOperator, Record, SerializationFormat};
+pub use types::{
+    FieldType, NumberValue, Query, QueryOperator, Record, RestoreCollectionResult, ScheduleStats,
+    SerializationFormat,
+};
 pub use utils::{
     extract_record, extract_record_id, get_array_value, get_binary_value, get_bool_value,
     get_bytes_value, get_datetime_value, get_decimal_value, get_duration_value, get_float_value,

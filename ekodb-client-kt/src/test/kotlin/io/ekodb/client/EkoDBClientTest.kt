@@ -347,6 +347,27 @@ class EkoDBClientTest {
         assertEquals(5, result)
     }
 
+    @Test
+    fun `restoreCollectionCounts reports both counts`() = runBlocking {
+        // A tombstone can be cleared while its record's data is gone, so each
+        // count must come from its own server field.
+        val mockEngine = createMockEngine(
+            """{"status": "success", "cleared_count": 5, "records_restored": 3}"""
+        )
+        val client = createTestClient(mockEngine)
+        assertEquals(RestoreCollectionResult(clearedCount = 5, recordsRestored = 3), client.restoreCollectionCounts("users"))
+        // The plain method still returns the cleared count, not the recovered one.
+        assertEquals(5, client.restoreCollection("users"))
+    }
+
+    @Test
+    fun `restoreCollectionCounts leaves an absent records_restored null`() = runBlocking {
+        // Servers before 0.72.7 send only cleared_count; absent stays absent.
+        val mockEngine = createMockEngine("""{"status": "success", "cleared_count": 5}""")
+        val client = createTestClient(mockEngine)
+        assertEquals(RestoreCollectionResult(clearedCount = 5, recordsRestored = null), client.restoreCollectionCounts("users"))
+    }
+
     // ========================================================================
     // Transaction Tests
     // ========================================================================
@@ -1932,6 +1953,23 @@ class EkoDBClientTest {
     }
 
     @Test
+    fun `getScheduleStats reads active_schedules from the stats route`() = runBlocking {
+        val recorded = mutableListOf<HttpRequestData>()
+        val client = createTestClient(capturingMockEngine(recorded, """{"active_schedules": 3}"""))
+        assertEquals(ScheduleStats(activeSchedules = 3), client.getScheduleStats())
+        val sent = recorded.last()
+        assertEquals("/api/schedules/stats", sent.url.encodedPath)
+        assertEquals(HttpMethod.Get, sent.method)
+    }
+
+    @Test
+    fun `getScheduleStats surfaces a 403 as EkoDBHttpException`() = runBlocking {
+        val client = createTestClient(createMockEngine("""{"error": "admin required"}""", HttpStatusCode.Forbidden))
+        val error = assertFailsWith<EkoDBHttpException> { client.getScheduleStats() }
+        assertEquals(403, error.statusCode)
+    }
+
+    @Test
     fun `pause and resume update the enabled flag instead of calling absent routes`() = runBlocking {
         val recorded = mutableListOf<HttpRequestData>()
 
@@ -1985,7 +2023,7 @@ class EkoDBClientTest {
 
         val body = Json.parseToJsonElement((sent.body as TextContent).text).jsonObject
         // Exactly one top-level key, "constraints" — never "fields" (that shape
-        // belongs to createCollection's full schema, not a partial update).
+        // belongs to createCollection's full schema, not a constraints update).
         assertEquals(setOf("constraints"), body.keys)
         val constraints = body.getValue("constraints").jsonObject
         assertEquals(setOf("email", "age"), constraints.keys)

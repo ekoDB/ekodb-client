@@ -10,11 +10,189 @@ and this project adheres to
 
 ### Added
 
+- Rust, Python, TypeScript, Kotlin: `get_schedule_stats` / `getScheduleStats`
+  reads `GET /api/schedules/stats`, the server's schedule summary, and returns
+  `active_schedules`, the number of schedules it is running (Rust
+  `ScheduleStats`, Kotlin `ScheduleStats(activeSchedules)`, Python a dict,
+  TypeScript `ScheduleStats`). It needs an admin key, like the other schedule
+  calls. The `client_schedules` example in every language calls it (#391).
+- Examples: the `client_schema` example in Rust, Python, Go, TypeScript,
+  JavaScript and Kotlin updates the constraints of an existing field with
+  `PUT /api/schemas/{collection}`, reads the schema back, then clears the
+  field's enums with an empty list and reads it back again. Each update sends
+  `unique`, `required` and `enums` together, which current servers require; they
+  also clear `max`, `min` and `regex` when left out (#393). The Go examples call
+  `GetScheduleStats` and `EnumValues`, which ship in ekodb-client-go 0.34.0
+  (ekoDB/ekodb-client-go#118). `examples/go/go.mod` replaces the module with a
+  sibling `ekodb-client-go` checkout, and CI checks out its same-named branch
+  there, so until that release the examples build against that branch.
+- TypeScript: `EkoDBApiError`, exported from the package root, is thrown for
+  every HTTP error answer a REST call does not retry away (the token exchange
+  and the SSE raw-completion calls included), with `status` (the HTTP status
+  code) and `body` (the response text). Streaming subscriptions and chat streams
+  report an error answer as an event, as before. A caller can now branch on
+  `error.status === 404` / `409` / `500` instead of parsing the message, as Rust
+  (`Error::Api { code, .. }`), Kotlin (`EkoDBHttpException.statusCode`) and Go
+  (`HTTPError.StatusCode`) already allowed. The message text is unchanged.
+  `RateLimitError` is now a subclass of it, with `status` 429. With admin errors
+  redacted, `body` is empty (#390).
+- Python: `ApiError`, a subclass of `RuntimeError`, is raised for an HTTP error
+  answer (`404`, `409`, `500`, `503`, and a `401` the client could not refresh
+  away), with `status` and `message`; from the WebSocket client, `status` is the
+  code in the server's error frame, and a failure the server reports inside a
+  streamed completion is an `ApiError` with status `500`. An existing
+  `except RuntimeError` still catches it, and its message is unchanged (#390).
+- Rust, Python, TypeScript, Kotlin: `restore_collection_counts` /
+  `restoreCollectionCounts` returns both counts a whole-collection restore
+  reports: `cleared_count` (tombstones removed) and `records_restored` (records
+  whose data was recovered, which can be fewer). `records_restored` is absent
+  (`None` / `null`) on servers before 0.72.7, which do not send it (#394).
 - CI: a closed pull request's Actions caches are deleted by a new
   `prune-pr-caches` workflow (`pull_request_target: closed`, `actions: write` on
   the one job), calling the shared reusable workflow in
   `ekodb-workflows-public`; they used to sit in cache storage until the 7-day
   retention expired them (#384).
+
+### Changed
+
+- Docs: the constraint-update docs in Rust (`SchemaConstraintUpdate`,
+  `update_schema_constraints` and its example), Python
+  (`update_schema_constraints`), TypeScript (`SchemaConstraintUpdate`,
+  `updateSchemaConstraints` and its example) and Kotlin
+  (`SchemaConstraintUpdate`, `updateSchemaConstraints`) described a partial
+  update that leaves omitted attributes untouched. Current servers replace a
+  named field's constraints: each update must carry `unique`, `required` and
+  `enums`, `max`, `min` and `regex` are cleared when omitted, and `default` and
+  `field_type` change only when sent. The docs and examples now say that; the
+  clients' behaviour is unchanged (#393).
+- TypeScript: `restoreCollection` returns `clearedCount`, the number of
+  tombstones cleared. Its `recordsRestored` field, which always carried that
+  same tombstone count and not the records recovered, is deprecated and will be
+  removed in a later release; use `clearedCount`, or
+  `restoreCollectionCounts(...).recordsRestored` for the records recovered. The
+  Rust, Python and Kotlin `restore_collection` docs now say they return the
+  cleared count (#394).
+- Rust: `Error::Api` now means the server answered with an error status. For a
+  REST call its `code` is the answer's HTTP status; an error body carrying its
+  own `code` field used to set it, so the same answer could report different
+  statuses across SDKs. For a WebSocket call it is the status in the server's
+  error frame (such as `401` or `500`). One case keeps its existing shape: a
+  failure the server reports inside a successful streamed completion carries no
+  status and stays `Error::Api` with code `500` (#390).
+- Rust: errors the client makes itself no longer use `Error::Api`. A successful
+  answer with an empty or unparseable body (`save_function`, `call_function`,
+  `save_user_function`), a body whose `status` is not `success` (the two saves)
+  and an `embed` answer with no embedding are `Error::Validation`, as
+  `handle_response` already reported unparseable answers; they used to be
+  `Error::Api` with status 200 or a made-up 500. A WebSocket connection that
+  drops while a request waits for its answer, and a streamed completion that
+  ends with neither content nor its done event, are `Error::Connection`; they
+  used to be `Error::Api` with code 0 or 500. A send onto a WebSocket that is
+  already closed is still `Error::WebSocket`, and a stream that sent content and
+  then closed still returns that content, both as before. The two
+  `Error::Connection` cases now report `true` from `Error::is_retryable()`, as
+  every `Connection` error does; the client does not retry either itself, and
+  retrying a streamed completion repeats the model call. An SSE subscription's
+  bad URL is `Error::InvalidUrl` and its failed connect `Error::Http`, instead
+  of `Error::Api` with code 0. In Python, none of these is an `ApiError` any
+  more (#390).
+- Update the Kotlin Gradle wrapper to 9.9.0 (#387), the TypeScript lockfile
+  dependency `ws` to 8.22.2 (#388), and the Python development dependency `ruff`
+  to 0.17.4 (#389).
+
+### Fixed
+
+- Python: `RateLimitError` has a `retry_after_secs` attribute, as the module
+  docstring and README already showed; it used to exist only as `e.args[0]`, so
+  the documented example raised `AttributeError` at the moment a caller was rate
+  limited. `args[0]` still carries the same value, and `status` is 429 (#395).
+- Examples: `make test-examples` runs on a checkout that has only the
+  repository's root `.env` and no client built yet. The Kotlin RAG step no
+  longer prints the whole shell environment, secrets included, into the tracked
+  `test-examples-rag.md` when `examples/kotlin/.env` is missing; it loads that
+  file only when it exists, sourcing it with `set -a`. The Go test runner and
+  `transactions.go` treat a missing `examples/go/.env` as optional, as the other
+  Go examples already did. The Python direct examples build the Python client
+  first, which `document_ttl.py` and `websocket_ttl.py` import. The Go client
+  examples' temp directory honours `TMPDIR`; macOS `mktemp -d` without a
+  template does not.
+- `make deploy-client-py` no longer prints the environment, `MATURIN_PYPI_TOKEN`
+  included, when `.env` exists but holds no assignments. It now sources `.env`
+  with `set -a`, as the Kotlin RAG example step does. A sourced line is read as
+  shell, so a value containing any shell special character must be quoted as it
+  would be in a shell script; a usual `pypi-` token contains none and needs no
+  quoting.
+
+### Migration note: the 0.32.0 collection-permission change was breaking
+
+0.32.0 changed `updateApiKeyCollectionPermissions` /
+`update_api_key_collection_permissions` in Rust, Python, TypeScript and Kotlin
+in a breaking way, and its changelog did not mark it **BREAKING** (#392). The
+released 0.32.0 block stays as it shipped; this note is the record.
+
+- **What changed.** The request names the key by its id (`key_id`), not by its
+  secret (`api_key`), and the method returns the grant's change
+  (`CollectionPermissionChange`, `{ before, after }`) instead of the whole
+  `ApiKey`.
+- **The old call still exists** as `legacyUpdateApiKeyCollectionPermissions` /
+  `legacy_update_api_key_collection_permissions`, with the 0.31 request and
+  return types, for servers that predate the key-permission routes.
+
+TypeScript, before (0.31) and after (0.32 and later):
+
+```ts
+// 0.31
+const key: ApiKey = await admin.updateApiKeyCollectionPermissions({
+  api_key: secret,
+  collection: "users",
+  read: true,
+  write: false,
+});
+
+// 0.32+: name the key by id; the result is the grant's before/after
+const change: CollectionPermissionChange =
+  await admin.updateApiKeyCollectionPermissions({
+    key_id: keyId,
+    collection: "users",
+    read: true,
+    write: false,
+  });
+console.log(change.after);
+```
+
+Rust, before and after (the three field-list edits default to
+`PermissionEdit::Keep`, which leaves them unchanged):
+
+```rust
+// 0.31
+let key: ApiKey = admin
+    .update_api_key_collection_permissions(&UpdateApiKeyCollectionPermissionsRequest {
+        api_key: secret.to_string(),
+        collection: "users".to_string(),
+        read: true,
+        write: false,
+        select_fields: PermissionEdit::Keep,
+        exclude_fields: PermissionEdit::Keep,
+        writable_fields: PermissionEdit::Keep,
+    })
+    .await?;
+
+// 0.32+: name the key by id; the result is the grant's before/after
+let change: CollectionPermissionChange = admin
+    .update_api_key_collection_permissions(&UpdateApiKeyCollectionPermissionsRequest {
+        key_id: key_id.to_string(),
+        collection: "users".to_string(),
+        read: true,
+        write: false,
+        select_fields: PermissionEdit::Keep,
+        exclude_fields: PermissionEdit::Keep,
+        writable_fields: PermissionEdit::Keep,
+    })
+    .await?;
+```
+
+Python and Kotlin follow the same shape: pass `key_id` and read `before` /
+`after` from the result.
 
 ## [0.33.1] - 2026-11-09
 

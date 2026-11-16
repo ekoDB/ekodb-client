@@ -7,7 +7,9 @@
 
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import {
+  EkoDBApiError,
   EkoDBClient,
+  RateLimitError,
   SerializationFormat,
   extractRecordId,
   DEFAULT_REQUEST_TIMEOUT_MS,
@@ -661,7 +663,38 @@ describe("EkoDBClient restore operations", () => {
     mockJsonResponse({ status: "success", cleared_count: 5 });
 
     await expect(client.restoreCollection("users")).resolves.toEqual({
+      clearedCount: 5,
+      // Deprecated alias, kept for one release: the same tombstone count.
       recordsRestored: 5,
+    });
+  });
+
+  it("reports both restore counts from their own server fields", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    // A tombstone can be cleared while its record's data is gone.
+    mockJsonResponse({
+      status: "success",
+      cleared_count: 5,
+      records_restored: 3,
+    });
+
+    await expect(client.restoreCollectionCounts("users")).resolves.toEqual({
+      clearedCount: 5,
+      recordsRestored: 3,
+    });
+  });
+
+  it("leaves recordsRestored null when the server does not send it", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse({ status: "success", cleared_count: 5 });
+
+    await expect(client.restoreCollectionCounts("users")).resolves.toEqual({
+      clearedCount: 5,
+      recordsRestored: null,
     });
   });
 });
@@ -983,19 +1016,96 @@ describe("EkoDBClient error handling", () => {
     await expect(client.insert("users", { name: "Test" })).rejects.toThrow();
   });
 
-  it("handles authentication error", async () => {
+  it.each([404, 409, 500])(
+    "throws EkoDBApiError carrying status %i and the body",
+    async (status) => {
+      const client = createTestClient();
+
+      mockTokenResponse();
+      mockErrorResponse(status, `answer ${status}`);
+
+      const error = await client
+        .insert("users", { name: "Test" })
+        .then(() => undefined)
+        .catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(EkoDBApiError);
+      expect(error).not.toBeInstanceOf(RateLimitError);
+      expect((error as EkoDBApiError).status).toBe(status);
+      expect((error as EkoDBApiError).body).toBe(`answer ${status}`);
+      // The message keeps its existing text, so callers matching on it still work.
+      expect((error as Error).message).toBe(
+        `Request failed with status ${status}: answer ${status}`,
+      );
+    },
+  );
+
+  it("throws RateLimitError as an EkoDBApiError with status 429", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      status: 429,
+      json: async () => ({ error: "Rate limit exceeded" }),
+      text: async () => "Rate limit exceeded",
+      headers: new Headers({ "Retry-After": "42" }),
+    });
+
+    const error = await client
+      .insert("users", { name: "Test" })
+      .then(() => undefined)
+      .catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(RateLimitError);
+    expect(error).toBeInstanceOf(EkoDBApiError);
+    expect((error as RateLimitError).status).toBe(429);
+    expect((error as RateLimitError).retryAfterSecs).toBe(42);
+  });
+
+  it("throws a refused token exchange as EkoDBApiError with its status", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: false,
       status: 401,
       json: async () => ({ error: "Invalid API key" }),
-      text: async () => "Invalid API key",
+      text: async () => JSON.stringify({ error: "Invalid API key" }),
       headers: new Headers(),
     });
 
     const client = createTestClient();
 
-    await expect(client.insert("users", { name: "Test" })).rejects.toThrow();
+    const error = await client
+      .insert("users", { name: "Test" })
+      .then(() => undefined)
+      .catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(EkoDBApiError);
+    expect((error as EkoDBApiError).status).toBe(401);
+    expect((error as EkoDBApiError).body).toBe('{"error":"Invalid API key"}');
+    // The message is still the server's error text.
+    expect((error as Error).message).toBe("Invalid API key");
   });
+
+  it.each(["rawCompletionStream", "rawCompletionStreamWithProgress"] as const)(
+    "throws a refused %s answer as EkoDBApiError with its status",
+    async (method) => {
+      const client = createTestClient();
+      mockTokenResponse();
+      mockErrorResponse(503, "model unavailable");
+
+      const call =
+        method === "rawCompletionStream"
+          ? client.rawCompletionStream({ system_prompt: "s", message: "m" })
+          : client.rawCompletionStreamWithProgress(
+              { system_prompt: "s", message: "m" },
+              () => {},
+            );
+      const error = await call.then(() => undefined).catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(EkoDBApiError);
+      expect((error as EkoDBApiError).status).toBe(503);
+      expect((error as EkoDBApiError).body).toBe("model unavailable");
+      expect((error as Error).message).toBe(
+        "SSE raw completion failed (503): model unavailable",
+      );
+    },
+  );
 });
 
 // Note: Rate limit info tests require actual HTTP response headers
@@ -3225,6 +3335,32 @@ describe("EkoDBClient schedules", () => {
     const result = await client.getSchedule("sched_1");
     expect(result).toHaveProperty("id", "sched_1");
     expect(result).toHaveProperty("name", "Nightly Backup");
+  });
+
+  it("reads schedule stats from the stats route", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+    mockJsonResponse({ active_schedules: 3 });
+
+    await expect(client.getScheduleStats()).resolves.toEqual({
+      active_schedules: 3,
+    });
+    const statsCall = mockFetch.mock.calls[1];
+    expect(statsCall[0]).toBe("http://localhost:8080/api/schedules/stats");
+    expect(statsCall[1].method).toBe("GET");
+  });
+
+  it("surfaces a 403 from schedule stats as EkoDBApiError", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+    mockErrorResponse(403, "admin required");
+
+    const error = await client
+      .getScheduleStats()
+      .then(() => undefined)
+      .catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(EkoDBApiError);
+    expect((error as EkoDBApiError).status).toBe(403);
   });
 
   it("updates a schedule", async () => {

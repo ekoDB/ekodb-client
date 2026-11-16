@@ -50,7 +50,9 @@ run_go() {
     mv "$temp_base" "$modfile"
     cp "$go_dir/go.mod" "$modfile"
     cp "$go_dir/go.sum" "$sumfile"
-    output_dir=$(mktemp -d)
+    # An explicit template, because macOS `mktemp -d` without one ignores
+    # TMPDIR.
+    output_dir=$(mktemp -d "${TMPDIR:-/tmp}/ekodb-examples.XXXXXX")
     trap "rm -f '$modfile' '$sumfile'; rm -rf '$output_dir'" EXIT
     (cd "$go_dir" && go mod edit -modfile="$(basename "$modfile")" \
         -replace="github.com/ekoDB/ekodb-client-go=$go_client_dir")

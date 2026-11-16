@@ -133,16 +133,19 @@ class FieldTypeSchemaBuilder(private val fieldType: String) {
 }
 
 /**
- * A partial update to a single field's constraints, for use with
- * [EkoDBClient.updateSchemaConstraints]. Every attribute is optional and only
- * the attributes actually set are serialized — this is a partial update, so an
- * omitted attribute is left untouched server-side rather than cleared.
+ * One field's entry in an [EkoDBClient.updateSchemaConstraints] request. Every
+ * attribute is optional and only the ones set are serialized. Current servers
+ * replace a named field's constraints rather than merging them: each update
+ * must set [unique], [required] and [enums] (an update without one is refused),
+ * [max], [min] and [regex] are cleared when left unset, and [default] and
+ * [fieldType] change only when set. `enums = emptyList()` clears the field's
+ * enums.
  *
  * Example:
  * ```kotlin
  * client.updateSchemaConstraints(
  *     "users",
- *     mapOf("email" to SchemaConstraintUpdate(required = true, unique = true))
+ *     mapOf("email" to SchemaConstraintUpdate(unique = true, required = true, enums = emptyList()))
  * )
  * ```
  */

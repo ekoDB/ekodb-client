@@ -50,6 +50,255 @@ async fn test_trigger_schedule_posts_to_trigger_endpoint() {
     trigger_mock.assert_async().await;
 }
 
+#[tokio::test]
+async fn test_save_function_empty_success_body_is_validation_not_api() {
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+    // A 200 with no body is a malformed answer, not an HTTP error: it must not
+    // surface as an Api error carrying status 200.
+    let _save_mock = server
+        .mock("POST", "/api/functions")
+        .with_status(200)
+        .with_body("")
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    match client
+        .save_function(ekodb_client::UserFunction::new("noop", "No-op"))
+        .await
+    {
+        Err(Error::Validation(message)) => assert!(message.contains("Empty response")),
+        other => panic!("expected Error::Validation, got {other:?}"),
+    }
+}
+
+#[tokio::test]
+async fn test_api_error_code_is_the_http_status_not_the_body_code() {
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+    // The body carries its own `code`; the error's code must be the answer's
+    // HTTP status, so every SDK reports the same status for the same answer.
+    let _restore_mock = server
+        .mock("POST", "/api/trash/users")
+        .with_status(409)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"code": 400, "message": "conflict"}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    match client.restore_collection("users").await {
+        Err(Error::Api { code, message }) => {
+            assert_eq!(code, 409);
+            assert_eq!(message, "conflict");
+        }
+        other => panic!("expected Error::Api with 409, got {other:?}"),
+    }
+}
+
+#[tokio::test]
+async fn test_embed_without_an_embedding_is_validation_not_api() {
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+    // A 200 whose embeddings list is empty is a malformed answer, not an error
+    // status the server sent: it must not surface as Error::Api.
+    let _embed_mock = server
+        .mock("POST", "/api/embed")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"embeddings": [], "model": "m", "dimensions": 0}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    match client.embed("hello", "m").await {
+        Err(Error::Validation(message)) => assert!(message.contains("No embedding")),
+        other => panic!("expected Error::Validation, got {other:?}"),
+    }
+}
+
+#[tokio::test]
+async fn test_raw_completion_stream_without_done_is_connection_not_api() {
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+    // The stream closes before its done event: a connection-level failure.
+    let _stream_mock = server
+        .mock("POST", "/api/chat/complete/stream")
+        .with_status(200)
+        .with_header("content-type", "text/event-stream")
+        .with_body("")
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    let request = ekodb_client::RawCompletionRequest {
+        system_prompt: "s".to_string(),
+        message: "m".to_string(),
+        provider: None,
+        model: None,
+        max_tokens: None,
+    };
+    match client.raw_completion_stream(request).await {
+        Err(Error::Connection(message)) => assert!(message.contains("done event")),
+        other => panic!("expected Error::Connection, got {other:?}"),
+    }
+}
+
+#[tokio::test]
+async fn test_raw_completion_stream_error_event_is_api_500() {
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+    // A failure the server reports inside a 200 stream carries no status of
+    // its own and is surfaced as Error::Api with code 500.
+    let _stream_mock = server
+        .mock("POST", "/api/chat/complete/stream")
+        .with_status(200)
+        .with_header("content-type", "text/event-stream")
+        .with_body("data: {\"error\": \"provider unavailable\"}\n\n")
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    let request = ekodb_client::RawCompletionRequest {
+        system_prompt: "s".to_string(),
+        message: "m".to_string(),
+        provider: None,
+        model: None,
+        max_tokens: None,
+    };
+    match client.raw_completion_stream(request).await {
+        Err(Error::Api { code, message }) => {
+            assert_eq!(code, 500);
+            assert_eq!(message, "provider unavailable");
+        }
+        other => panic!("expected Error::Api 500, got {other:?}"),
+    }
+}
+
+#[tokio::test]
+async fn test_websocket_dropped_connection_is_a_connection_error() {
+    use futures_util::StreamExt;
+
+    // A server that completes the handshake, reads the client's Hello and its
+    // request, then drops the socket without answering.
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let port = listener.local_addr().unwrap().port();
+    let server = tokio::spawn(async move {
+        let (stream, _) = listener.accept().await.unwrap();
+        let mut ws = tokio_tungstenite::accept_async(stream).await.unwrap();
+        let _hello = ws.next().await;
+        let _request = ws.next().await;
+        drop(ws);
+    });
+
+    let client =
+        ekodb_client::WebSocketClient::new(format!("ws://127.0.0.1:{port}/api/ws"), "token")
+            .unwrap();
+    let result = tokio::time::timeout(std::time::Duration::from_secs(15), client.find_all("users"))
+        .await
+        .expect("find_all should end when the socket drops");
+
+    // The pending request is failed by the client itself, not answered with a
+    // status by the server: it must not surface as Error::Api.
+    match result {
+        Err(Error::Connection(message)) => assert!(message.contains("Connection closed")),
+        other => panic!("expected Error::Connection, got {other:?}"),
+    }
+    server.await.unwrap();
+}
+
+#[tokio::test]
+async fn test_raw_completion_stream_content_then_close_returns_the_content() {
+    // A stream that sent tokens and then closed before its done event returns
+    // the text it got, not an error: only an empty stream is a Connection error.
+    let body = "data: {\"token\": \"Hel\"}\n\ndata: {\"token\": \"lo\"}\n\n";
+    let request = || ekodb_client::RawCompletionRequest {
+        system_prompt: "s".to_string(),
+        message: "m".to_string(),
+        provider: None,
+        model: None,
+        max_tokens: None,
+    };
+
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+    let _stream_mock = server
+        .mock("POST", "/api/chat/complete/stream")
+        .with_status(200)
+        .with_header("content-type", "text/event-stream")
+        .with_body(body)
+        .expect(2)
+        .create_async()
+        .await;
+    let client = create_test_client(&server).await;
+
+    let plain = client
+        .raw_completion_stream(request())
+        .await
+        .expect("partial content is returned");
+    assert_eq!(plain.content, "Hello");
+
+    let (progress_tx, mut progress_rx) = tokio::sync::mpsc::channel(8);
+    let with_progress = client
+        .raw_completion_stream_with_progress(request(), progress_tx)
+        .await
+        .expect("partial content is returned");
+    assert_eq!(with_progress.content, "Hello");
+    let mut tokens = Vec::new();
+    while let Ok(token) = progress_rx.try_recv() {
+        tokens.push(token);
+    }
+    assert_eq!(tokens.concat(), "Hello");
+}
+
+#[tokio::test]
+async fn test_get_schedule_stats_reads_active_schedules() {
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+    let stats_mock = server
+        .mock("GET", "/api/schedules/stats")
+        .match_header("authorization", "Bearer test-jwt-token")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"active_schedules": 3}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    let stats = client
+        .get_schedule_stats()
+        .await
+        .expect("stats should load");
+
+    assert_eq!(
+        stats,
+        ekodb_client::ScheduleStats {
+            active_schedules: 3
+        }
+    );
+    stats_mock.assert_async().await;
+}
+
+#[tokio::test]
+async fn test_get_schedule_stats_forbidden_is_an_api_error() {
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+    let _stats_mock = server
+        .mock("GET", "/api/schedules/stats")
+        .with_status(403)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"error": "admin required"}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    match client.get_schedule_stats().await {
+        Err(Error::Api { code, .. }) => assert_eq!(code, 403),
+        other => panic!("expected Error::Api with 403, got {other:?}"),
+    }
+}
+
 /// Setup mock for token endpoint
 fn mock_token_endpoint(server: &mut Server) -> mockito::Mock {
     server
@@ -1857,6 +2106,61 @@ async fn test_restore_collection_success() {
     let result = client.restore_collection("users").await;
     assert!(result.is_ok());
     assert_eq!(result.unwrap(), 5);
+}
+
+#[tokio::test]
+async fn test_restore_collection_counts_reports_both_counts() {
+    let mut server = Server::new_async().await;
+
+    let _token_mock = mock_token_endpoint(&mut server);
+
+    // A tombstone can be cleared while its record's data is gone, so the two
+    // counts differ; each must come from its own server field.
+    let _restore_mock = server
+        .mock("POST", "/api/trash/users")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(
+            json!({"status": "success", "cleared_count": 5, "records_restored": 3}).to_string(),
+        )
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+
+    let result = client.restore_collection_counts("users").await.unwrap();
+    assert_eq!(
+        result,
+        ekodb_client::RestoreCollectionResult {
+            cleared_count: 5,
+            records_restored: Some(3),
+        }
+    );
+    // The plain method still returns the cleared count, not the recovered one.
+    assert_eq!(client.restore_collection("users").await.unwrap(), 5);
+}
+
+#[tokio::test]
+async fn test_restore_collection_counts_without_records_restored_is_none() {
+    let mut server = Server::new_async().await;
+
+    let _token_mock = mock_token_endpoint(&mut server);
+
+    // Servers before 0.72.7 send only cleared_count: absent must stay absent,
+    // never be guessed from cleared_count.
+    let _restore_mock = server
+        .mock("POST", "/api/trash/users")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"status": "success", "cleared_count": 5}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+
+    let result = client.restore_collection_counts("users").await.unwrap();
+    assert_eq!(result.cleared_count, 5);
+    assert_eq!(result.records_restored, None);
 }
 
 // ============================================================================

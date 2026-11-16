@@ -89,9 +89,9 @@ func makeRequest(method, path string, token string, data interface{}) (map[strin
 }
 
 func run() (runErr error) {
-	// Load environment variables
-	err := godotenv.Load()
-	if err != nil {
+	// A .env in this directory, when present, adds to the environment the
+	// Makefile exports; a missing one is fine, any other error is not.
+	if err := godotenv.Load(); err != nil && !errors.Is(err, os.ErrNotExist) {
 		return fmt.Errorf("load environment variables: %w", err)
 	}
 

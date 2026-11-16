@@ -81,10 +81,12 @@ export interface FieldTypeSchema {
 }
 
 /**
- * Partial update to a single field's constraints, for the schema-constraints
- * update endpoint. Every attribute is optional: only attributes actually set
- * are sent to the server, and an omitted attribute leaves that constraint
- * unchanged on the existing field.
+ * One field's entry in an `updateSchemaConstraints` request. Every attribute
+ * is optional and only the ones set are sent. Current servers replace a named
+ * field's constraints rather than merging them: each update must set `unique`,
+ * `required` and `enums` (an update without one is refused), `max`, `min` and
+ * `regex` are cleared when left unset, and `default` and `field_type` change
+ * only when set. `enums: []` clears the field's enums.
  */
 export interface SchemaConstraintUpdate {
   /** Field type - must be one of the valid types (case-sensitive, e.g., "String", "Integer", "Float") */

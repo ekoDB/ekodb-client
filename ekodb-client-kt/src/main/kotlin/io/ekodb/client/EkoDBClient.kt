@@ -1036,17 +1036,34 @@ class EkoDBClient private constructor(
     }
 
     /**
-     * Restore all deleted records in a collection from trash
-     * Returns the number of records restored
+     * Restore all deleted records in a collection from trash.
+     *
+     * Returns the number of tombstones cleared (the server's `cleared_count`).
+     * This is not the number of records recovered: a tombstone can be cleared
+     * while the record's data is gone. Use [restoreCollectionCounts] for both
+     * counts.
      */
-    suspend fun restoreCollection(collection: String): Long {
+    suspend fun restoreCollection(collection: String): Long =
+        restoreCollectionCounts(collection).clearedCount
+
+    /**
+     * Restore all deleted records in a collection from trash, returning both
+     * counts the server reports: tombstones cleared and records recovered.
+     *
+     * [RestoreCollectionResult.recordsRestored] is null on servers before
+     * 0.72.7, which report only the cleared count.
+     */
+    suspend fun restoreCollectionCounts(collection: String): RestoreCollectionResult {
         val response = executeWithRetry { token ->
             client.post("$baseUrl/api/trash/${collection.encodeURLPathPart()}") {
                 header("Authorization", "Bearer $token")
             }
         }
         val result: JsonObject = response.body()
-        return result["cleared_count"]?.jsonPrimitive?.longOrNull ?: 0L
+        return RestoreCollectionResult(
+            clearedCount = result["cleared_count"]?.jsonPrimitive?.longOrNull ?: 0L,
+            recordsRestored = result["records_restored"]?.jsonPrimitive?.longOrNull,
+        )
     }
 
     /**
@@ -1116,10 +1133,11 @@ class EkoDBClient private constructor(
     }
 
     /**
-     * Partially update constraints on one or more fields of a collection's
-     * schema. Each [SchemaConstraintUpdate] is a partial update: only the
-     * attributes actually set on it are sent, so an omitted attribute is left
-     * untouched server-side rather than cleared.
+     * Update constraints on one or more existing fields of a collection's
+     * schema. Only the attributes set on each [SchemaConstraintUpdate] are
+     * sent; current servers replace a named field's constraints, so each update
+     * must set unique, required and enums, and max, min and regex are cleared
+     * when left unset (see [SchemaConstraintUpdate]).
      */
     suspend fun updateSchemaConstraints(collection: String, constraints: Map<String, SchemaConstraintUpdate>) {
         val body = buildJsonObject {
@@ -3764,6 +3782,23 @@ class EkoDBClient private constructor(
             throw IllegalStateException("Server error ${response.status.value}: $errorText")
         }
         return response.body<JsonObject>()
+    }
+
+    /**
+     * The server's schedule summary (`GET /api/schedules/stats`): how many
+     * schedules it is running. Needs an admin key, like the other schedule
+     * calls. An error answer throws [EkoDBHttpException].
+     */
+    suspend fun getScheduleStats(): ScheduleStats {
+        val response = executeWithRetry { token ->
+            client.get("$baseUrl/api/schedules/stats") {
+                bearerAuth(token)
+            }
+        }
+        val result: JsonObject = response.body()
+        val active = result["active_schedules"]?.jsonPrimitive?.longOrNull
+            ?: throw IllegalStateException("Schedule stats response has no numeric active_schedules: $result")
+        return ScheduleStats(activeSchedules = active)
     }
 
     /**

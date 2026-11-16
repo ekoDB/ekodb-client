@@ -1,14 +1,21 @@
 package io.ekodb.client.examples
 
 import io.ekodb.client.EkoDBClient
+import io.ekodb.client.SchemaConstraintUpdate
 import io.ekodb.client.types.Record
 import io.github.cdimascio.dotenv.dotenv
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 
 /**
- * Schema management example - Advanced schema operations
+ * Schema management example - Advanced schema operations, including updating
+ * constraints on an existing field.
  */
 fun main() = runBlocking {
     val dotenv = dotenv { ignoreIfMissing = true }
@@ -94,7 +101,40 @@ fun main() = runBlocking {
         val collections = client.listCollections()
         println("✓ Total collections: ${collections.size}")
         println("  Sample: ${collections.take(5)}\n")
-        
+
+        // Step 5: Update constraints on an existing field. Current servers
+        // replace a named field's constraints rather than merging them, so each
+        // update sends unique, required and enums together; max, min and regex
+        // left out are cleared, and the default is kept.
+        println("=== Updating Constraints on an Existing Field ===")
+        client.updateSchemaConstraints(
+            collection,
+            mapOf(
+                "status" to SchemaConstraintUpdate(
+                    unique = false,
+                    required = true,
+                    enums = listOf(JsonPrimitive("active"), JsonPrimitive("pending")),
+                ),
+            ),
+        )
+        val narrowed = requireNotNull(client.getSchema(collection)["fields"]?.jsonObject?.get("status")?.jsonObject) {
+            "Schema has no status field after the update"
+        }
+        println("✓ status: required = ${narrowed["required"]}, enums = ${narrowed["enums"]}")
+        check(narrowed["required"]?.jsonPrimitive?.booleanOrNull == true && narrowed["enums"]?.jsonArray?.size == 2) {
+            "Constraint update not applied: $narrowed"
+        }
+
+        // An empty enums list clears the field's enums.
+        client.updateSchemaConstraints(
+            collection,
+            mapOf("status" to SchemaConstraintUpdate(unique = false, required = true, enums = emptyList())),
+        )
+        val cleared = requireNotNull(client.getSchema(collection)["fields"]?.jsonObject?.get("status")?.jsonObject) {
+            "Schema has no status field after clearing"
+        }
+        println("✓ status after clearing: enums = ${cleared["enums"] ?: "[]"}\n")
+        check((cleared["enums"]?.jsonArray?.size ?: 0) == 0) { "Enums were not cleared: $cleared" }
     } finally {
         // Cleanup
         println("=== Cleanup ===")

@@ -139,7 +139,7 @@ async function main() {
    *
    * const restoreResult = await client.restoreCollection(collection);
    * console.log(
-   *   `restoreCollection result: ${restoreResult.recordsRestored} records restored`,
+   *   `restoreCollection result: ${restoreResult.clearedCount} tombstones cleared`,
    * );
    */
 

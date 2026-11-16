@@ -12,7 +12,9 @@ use crate::health::{HealthStatus, parse_health_status};
 use crate::retry::RetryPolicy;
 use crate::schema::{CollectionMetadata, Schema, SchemaConstraintUpdate};
 use crate::search::{DistinctValuesQuery, DistinctValuesResponse, SearchQuery, SearchResponse};
-use crate::types::{FieldType, Query, Record, SerializationFormat};
+use crate::types::{
+    FieldType, Query, Record, RestoreCollectionResult, ScheduleStats, SerializationFormat,
+};
 use reqwest::{Client as ReqwestClient, Response, StatusCode};
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
@@ -596,8 +598,13 @@ impl HttpClient {
         .await
     }
 
-    /// Restore all deleted records in a collection from trash
-    pub async fn restore_collection(&self, collection: &str, token: &str) -> Result<usize> {
+    /// Restore all deleted records in a collection from trash, returning both
+    /// counts the server reports.
+    pub async fn restore_collection(
+        &self,
+        collection: &str,
+        token: &str,
+    ) -> Result<RestoreCollectionResult> {
         let url_path = "/api/trash/";
         let url = self.api_path_url(&["trash", collection])?;
 
@@ -610,10 +617,16 @@ impl HttpClient {
                 .await?;
 
             let result: serde_json::Value = self.handle_response(url_path, response).await?;
-            Ok(result
-                .get("cleared_count")
-                .and_then(|v| v.as_u64())
-                .unwrap_or(0) as usize)
+            Ok(RestoreCollectionResult {
+                cleared_count: result
+                    .get("cleared_count")
+                    .and_then(|v| v.as_u64())
+                    .unwrap_or(0) as usize,
+                records_restored: result
+                    .get("records_restored")
+                    .and_then(|v| v.as_u64())
+                    .map(|n| n as usize),
+            })
         })
         .await
     }
@@ -1529,7 +1542,11 @@ impl HttpClient {
         .await
     }
 
-    /// Apply a partial update to one or more fields' schema constraints.
+    /// Update the constraints of one or more existing fields.
+    ///
+    /// Current servers replace a named field's constraints rather than merging
+    /// them: each update must set `unique`, `required` and `enums`, and `max`,
+    /// `min` and `regex` are cleared when left unset.
     ///
     /// Sends `PUT /api/schemas/{collection}` with a body of
     /// `{"constraints": { <field>: <SchemaConstraintUpdate>, ... }}`, matching
@@ -1725,8 +1742,10 @@ impl HttpClient {
                     .unwrap_or_else(|_| format!("HTTP {} error", status.as_u16()));
 
                 // Try to parse as ErrorResponse, otherwise use the text
+                // The status is always the HTTP status: a body's own `code`
+                // is not the answer's status and can disagree with it.
                 if let Ok(error_body) = serde_json::from_str::<ErrorResponse>(&error_text) {
-                    Err(Error::api(error_body.code, error_body.message))
+                    Err(Error::api(status.as_u16(), error_body.message))
                 } else {
                     Err(Error::api(status.as_u16(), error_text))
                 }
@@ -1939,6 +1958,8 @@ impl HttpClient {
         }
 
         if let Some(err) = last_error {
+            // The server reported a failure inside a successful (200) stream.
+            // It carries no status of its own, so it is surfaced as a 500.
             return Err(Error::Api {
                 code: 500,
                 message: err,
@@ -1946,10 +1967,13 @@ impl HttpClient {
         }
 
         if !got_done && content.is_empty() {
-            return Err(Error::Api {
-                code: 500,
-                message: "SSE stream ended without a done event".to_string(),
-            });
+            // The stream closed with neither content nor its done event: a
+            // connection-level failure, not an error status the server
+            // answered with. A stream that sent tokens and then closed returns
+            // the partial text, as before.
+            return Err(Error::Connection(
+                "SSE stream ended without a done event".to_string(),
+            ));
         }
 
         Ok(RawCompletionResponse { content })
@@ -2029,6 +2053,8 @@ impl HttpClient {
         }
 
         if let Some(err) = last_error {
+            // The server reported a failure inside a successful (200) stream.
+            // It carries no status of its own, so it is surfaced as a 500.
             return Err(Error::Api {
                 code: 500,
                 message: err,
@@ -2036,10 +2062,13 @@ impl HttpClient {
         }
 
         if !got_done && content.is_empty() {
-            return Err(Error::Api {
-                code: 500,
-                message: "SSE stream ended without a done event".to_string(),
-            });
+            // The stream closed with neither content nor its done event: a
+            // connection-level failure, not an error status the server
+            // answered with. A stream that sent tokens and then closed returns
+            // the partial text, as before.
+            return Err(Error::Connection(
+                "SSE stream ended without a done event".to_string(),
+            ));
         }
 
         Ok(RawCompletionResponse { content })
@@ -2794,10 +2823,10 @@ impl HttpClient {
             }
 
             if bytes.is_empty() {
-                return Err(Error::api(
-                    status.as_u16(),
-                    "Empty response from server".to_string(),
-                ));
+                // A successful status with no body is a malformed answer, not
+                // an HTTP error: report it as `Validation`, as
+                // `handle_response` reports an unparseable body.
+                return Err(Error::Validation("Empty response from server".to_string()));
             }
 
             #[derive(Deserialize)]
@@ -2807,21 +2836,18 @@ impl HttpClient {
             }
 
             let result: FunctionResponse = serde_json::from_slice(&bytes).map_err(|e| {
-                Error::api(
-                    500,
-                    format!(
-                        "Failed to parse response: {} (body: {})",
-                        e,
-                        String::from_utf8_lossy(&bytes)
-                    ),
-                )
+                Error::Validation(format!(
+                    "Failed to parse response: {} (body: {})",
+                    e,
+                    String::from_utf8_lossy(&bytes)
+                ))
             })?;
 
             if result.status != "success" {
-                return Err(Error::api(
-                    500,
-                    format!("Failed to save script: status={}", result.status),
-                ));
+                return Err(Error::Validation(format!(
+                    "Failed to save script: status={}",
+                    result.status
+                )));
             }
 
             Ok(result.id)
@@ -2972,21 +2998,18 @@ impl HttpClient {
             }
 
             if bytes.is_empty() {
-                return Err(Error::api(
-                    status.as_u16(),
-                    "Empty response from server".to_string(),
-                ));
+                // A successful status with no body is a malformed answer, not
+                // an HTTP error: report it as `Validation`, as
+                // `handle_response` reports an unparseable body.
+                return Err(Error::Validation("Empty response from server".to_string()));
             }
 
             serde_json::from_slice(&bytes).map_err(|e| {
-                Error::api(
-                    500,
-                    format!(
-                        "Failed to parse response: {} (body: {})",
-                        e,
-                        String::from_utf8_lossy(&bytes)
-                    ),
-                )
+                Error::Validation(format!(
+                    "Failed to parse response: {} (body: {})",
+                    e,
+                    String::from_utf8_lossy(&bytes)
+                ))
             })
         })
         .await
@@ -3027,10 +3050,10 @@ impl HttpClient {
             }
 
             if bytes.is_empty() {
-                return Err(Error::api(
-                    status.as_u16(),
-                    "Empty response from server".to_string(),
-                ));
+                // A successful status with no body is a malformed answer, not
+                // an HTTP error: report it as `Validation`, as
+                // `handle_response` reports an unparseable body.
+                return Err(Error::Validation("Empty response from server".to_string()));
             }
 
             #[derive(Deserialize)]
@@ -3040,21 +3063,18 @@ impl HttpClient {
             }
 
             let result: FunctionResponse = serde_json::from_slice(&bytes).map_err(|e| {
-                Error::api(
-                    500,
-                    format!(
-                        "Failed to parse response: {} (body: {})",
-                        e,
-                        String::from_utf8_lossy(&bytes)
-                    ),
-                )
+                Error::Validation(format!(
+                    "Failed to parse response: {} (body: {})",
+                    e,
+                    String::from_utf8_lossy(&bytes)
+                ))
             })?;
 
             if result.status != "success" {
-                return Err(Error::api(
-                    500,
-                    format!("Failed to save user function: status={}", result.status),
-                ));
+                return Err(Error::Validation(format!(
+                    "Failed to save user function: status={}",
+                    result.status
+                )));
             }
 
             Ok(result.id)
@@ -3784,6 +3804,18 @@ impl HttpClient {
         self.handle_response("/api/schedules", response).await
     }
 
+    /// The server's schedule summary. Needs an admin key.
+    pub async fn get_schedule_stats(&self, token: &str) -> Result<ScheduleStats> {
+        let url = self.api_path_url(&["schedules", "stats"])?;
+        let response = self
+            .client
+            .get(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        self.handle_response("/api/schedules/stats", response).await
+    }
+
     pub async fn get_schedule(&self, id: &str, token: &str) -> Result<serde_json::Value> {
         let url = self.api_path_url(&["schedules", id])?;
         let response = self
@@ -3943,7 +3975,8 @@ async fn error_from_response(response: reqwest::Response) -> Error {
         });
     }
     match serde_json::from_str::<ErrorResponse>(&body) {
-        Ok(parsed) => Error::api(parsed.code, parsed.message),
+        // The HTTP status, not the body's `code`, as in `handle_response`.
+        Ok(parsed) => Error::api(status.as_u16(), parsed.message),
         Err(_) => {
             let detail = body.trim();
             if detail.is_empty() {

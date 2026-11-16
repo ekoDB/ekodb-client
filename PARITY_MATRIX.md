@@ -253,9 +253,33 @@ establish broad prefilter or ANN semantics. Earlier schema-only validation did
 not test record insertion. See
 [contract commands and evidence](COMMANDS.md#search-and-schema-compatibility).
 
-**Kotlin HTTP errors (unreleased):** `EkoDBHttpException` exposes terminal
-status codes and response bodies, including exhausted server errors. See the
-[Kotlin error-handling guide](ekodb-client-kt/README.md#error-handling).
+**HTTP errors carry the status (unreleased):** every SDK lets a caller branch on
+the HTTP status of an error answer without parsing a message.
+
+| SDK        | Error type and status field                                           | Rate limit (429)                                        |
+| ---------- | --------------------------------------------------------------------- | ------------------------------------------------------- |
+| Rust       | `Error::Api { code, message }` (and `NotFound`, `ServiceUnavailable`) | `Error::RateLimit { retry_after_secs }`                 |
+| Python     | `ApiError` (a `RuntimeError`): `status`, `message`                    | `RateLimitError`: `retry_after_secs`, `status` 429      |
+| TypeScript | `EkoDBApiError`: `status`, `body`                                     | `RateLimitError` (an `EkoDBApiError`): `retryAfterSecs` |
+| Kotlin     | `EkoDBHttpException`: `statusCode`, `responseBody`                    | `EkoDBHttpException` with `statusCode` 429              |
+| Go         | `HTTPError`: `StatusCode` (`errors.As`)                               | `RateLimitError`                                        |
+
+See the [Kotlin error-handling guide](ekodb-client-kt/README.md#error-handling).
+
+**Collection restore counts (unreleased):** restoring a whole collection reports
+two counts that can differ: tombstones cleared and records actually recovered
+(absent on servers before 0.72.7). The existing restore method in every SDK
+keeps returning the cleared count (TypeScript as `clearedCount`, with the
+deprecated `recordsRestored` carrying the same value). The new method returns
+both:
+
+| SDK        | Method                      | Returns                                                                                                |
+| ---------- | --------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Rust       | `restore_collection_counts` | `RestoreCollectionResult { cleared_count, records_restored: Option }`                                  |
+| Python     | `restore_collection_counts` | `dict` with `cleared_count` and `records_restored` (or `None`)                                         |
+| TypeScript | `restoreCollectionCounts`   | `{ clearedCount, recordsRestored: number \| null }`                                                    |
+| Kotlin     | `restoreCollectionCounts`   | `RestoreCollectionResult(clearedCount, recordsRestored: Long?)`                                        |
+| Go         | `RestoreCollectionCounts`   | `*RestoreCollectionResult{ClearedCount, RecordsRestored *int}`, in the paired `ekodb-client-go` change |
 
 ---
 
@@ -450,7 +474,7 @@ GET    /api/schedules/{id}                      - Get schedule details
 PUT    /api/schedules/{id}                      - Update schedule
 DELETE /api/schedules/{id}                      - Delete schedule
 POST   /api/schedules/{id}/trigger              - Run a schedule now
-GET    /api/schedules/stats                     - Schedule execution stats
+GET    /api/schedules/stats                     - Schedule summary: {"active_schedules": N}
 
 NOTE: there is no /pause or /resume endpoint. Pause and resume are a partial
 update - PUT /api/schedules/{id} with {"enabled": false|true} - which is what
@@ -471,6 +495,9 @@ All languages expose:
 - `pauseSchedule(id)` - Pause execution
 - `resumeSchedule(id)` - Resume execution
 - `triggerSchedule(id)` - Run immediately
+- `getScheduleStats()` - How many schedules the server is running
+  (`get_schedule_stats` in Rust and Python, `GetScheduleStats` in Go; Go's is in
+  the paired `ekodb-client-go` change, unreleased)
 
 ### Use Cases
 
@@ -498,6 +525,11 @@ PUT /api/schemas/{collection}                   - Update schema constraints
 
 - `updateSchemaConstraints(collection, constraints)` is implemented in Rust,
   Python, TypeScript, Kotlin, and Go.
+- Current servers replace a named field's constraints rather than merging them:
+  each update must carry `unique`, `required` and `enums`, `max`, `min` and
+  `regex` are cleared when omitted, and `default` and `field_type` change only
+  when sent. Every SDK's docs say so, and the `client_schema` example in every
+  language runs an update and reads it back.
 
 ### Use Cases
 

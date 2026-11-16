@@ -1,7 +1,8 @@
 // ekoDB TypeScript Client - Schedule Management Integration Example
 //
-// Exercises: createSchedule, listSchedules, getSchedule, updateSchedule,
-// triggerSchedule, pauseSchedule, resumeSchedule, deleteSchedule.
+// Exercises: createSchedule, listSchedules, getScheduleStats, getSchedule,
+// updateSchedule, triggerSchedule, pauseSchedule, resumeSchedule,
+// deleteSchedule.
 // A temporary no-op function makes the trigger step self-contained.
 
 import { EkoDBClient, Stage } from "@ekodb/ekodb-client";
@@ -59,6 +60,19 @@ async function main() {
       throw new Error(
         `Created schedule ${scheduleId} was absent from listSchedules`,
       );
+    }
+
+    // Schedule stats: how many schedules the server is running. The server
+    // counts from a cache it reloads periodically, so the schedule created
+    // above may not be counted yet; the value is a non-negative integer.
+    console.log("\n--- Schedule stats ---");
+    const stats = await client.getScheduleStats();
+    console.log(`Active schedules: ${stats.active_schedules}`);
+    if (
+      !Number.isInteger(stats.active_schedules) ||
+      stats.active_schedules < 0
+    ) {
+      throw new Error(`Unexpected schedule stats: ${JSON.stringify(stats)}`);
     }
 
     // 3. Get schedule by ID

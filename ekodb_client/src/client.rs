@@ -487,19 +487,51 @@ impl Client {
     ///
     /// # Returns
     ///
-    /// Number of records restored
+    /// The number of tombstones cleared (the server's `cleared_count`). This is
+    /// not the number of records recovered: a tombstone can be cleared while
+    /// the record's data is gone. Use [`Client::restore_collection_counts`] for
+    /// both counts.
     ///
     /// # Example
     ///
     /// ```no_run
     /// # use ekodb_client::Client;
     /// # async fn example(client: &Client) -> Result<(), ekodb_client::Error> {
-    /// let count = client.restore_collection("users").await?;
-    /// println!("Restored {} records", count);
+    /// let cleared = client.restore_collection("users").await?;
+    /// println!("Cleared {} tombstones", cleared);
     /// # Ok(())
     /// # }
     /// ```
     pub async fn restore_collection(&self, collection: &str) -> Result<usize> {
+        Ok(self
+            .restore_collection_counts(collection)
+            .await?
+            .cleared_count)
+    }
+
+    /// Restore all deleted records in a collection from trash, returning both
+    /// counts the server reports: tombstones cleared and records recovered.
+    ///
+    /// `records_restored` is `None` on servers before 0.72.7, which report only
+    /// the cleared count.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # use ekodb_client::Client;
+    /// # async fn example(client: &Client) -> Result<(), ekodb_client::Error> {
+    /// let result = client.restore_collection_counts("users").await?;
+    /// println!(
+    ///     "Cleared {} tombstones, recovered {:?} records",
+    ///     result.cleared_count, result.records_restored
+    /// );
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn restore_collection_counts(
+        &self,
+        collection: &str,
+    ) -> Result<crate::types::RestoreCollectionResult> {
         let collection = collection.to_string();
         let http = self.http.clone();
         self.execute_with_token_refresh(move |token| {
@@ -1775,11 +1807,13 @@ impl Client {
         .await
     }
 
-    /// Apply a partial update to one or more fields' schema constraints.
+    /// Update the constraints of one or more existing fields.
     ///
-    /// Calls `PUT /api/schemas/{collection}` with only the attributes set on
-    /// each [`SchemaConstraintUpdate`] — fields left as `None` are omitted
-    /// from the request body, so this only touches what you pass.
+    /// Calls `PUT /api/schemas/{collection}` with each
+    /// [`SchemaConstraintUpdate`]'s set attributes. Current servers replace a
+    /// named field's constraints rather than merging them: each update must
+    /// set `unique`, `required` and `enums`, and `max`, `min` and `regex` are
+    /// cleared when left unset (see [`SchemaConstraintUpdate`]).
     ///
     /// # Arguments
     ///
@@ -1796,7 +1830,9 @@ impl Client {
     /// constraints.insert(
     ///     "email".to_string(),
     ///     SchemaConstraintUpdate {
+    ///         unique: Some(true),
     ///         required: Some(true),
+    ///         enums: Some(vec![]),
     ///         ..Default::default()
     ///     },
     /// );
@@ -2322,10 +2358,11 @@ impl Client {
             .embeddings
             .into_iter()
             .next()
-            .ok_or(crate::Error::Api {
-                code: 500,
-                message: "No embedding returned".to_string(),
-            })
+            // A successful answer with no embedding is a malformed answer, not
+            // an error status: `Validation`, as for other unparseable answers.
+            .ok_or(crate::Error::Validation(
+                "No embedding returned".to_string(),
+            ))
     }
 
     /// Generate embeddings for multiple texts in a single batch request
@@ -3255,6 +3292,18 @@ impl Client {
         .await
     }
 
+    /// The server's schedule summary (`GET /api/schedules/stats`): how many
+    /// schedules it is running. Needs an admin key, like the other schedule
+    /// calls.
+    pub async fn get_schedule_stats(&self) -> Result<crate::types::ScheduleStats> {
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let http = http.clone();
+            async move { http.get_schedule_stats(&token).await }
+        })
+        .await
+    }
+
     /// Get a schedule by ID.
     pub async fn get_schedule(&self, id: &str) -> Result<serde_json::Value> {
         let id = id.to_string();
@@ -3371,12 +3420,8 @@ impl Client {
     ) -> Result<tokio::sync::mpsc::Receiver<crate::websocket::MutationNotificationPayload>> {
         let token = self.auth.get_token().await?;
         let mut parsed_url =
-            url::Url::parse(&format!("{}/api/subscribe/{}", self.base_url, collection)).map_err(
-                |e| Error::Api {
-                    code: 0,
-                    message: format!("Invalid SSE URL: {}", e),
-                },
-            )?;
+            url::Url::parse(&format!("{}/api/subscribe/{}", self.base_url, collection))
+                .map_err(Error::InvalidUrl)?;
 
         {
             let mut pairs = parsed_url.query_pairs_mut();
@@ -3397,10 +3442,7 @@ impl Client {
             .header("Accept", "text/event-stream")
             .send()
             .await
-            .map_err(|e| Error::Api {
-                code: 0,
-                message: format!("SSE connection failed: {}", e),
-            })?;
+            .map_err(Error::Http)?;
 
         if !response.status().is_success() {
             return Err(Error::Api {

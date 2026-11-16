@@ -6,7 +6,7 @@ import {
   MAX_FUNCTION_PATTERN_BYTES,
   type FunctionPermission,
 } from "./admin";
-import { EkoDBClient } from "./client";
+import { EkoDBApiError, EkoDBClient } from "./client";
 import type { Principal, UserFunction } from "./functions";
 
 interface Change {
@@ -335,6 +335,12 @@ describe("function call grants", () => {
       expect((error as Error).message).toBe(
         `Admin request failed (HTTP ${refusal.status})`,
       );
+      // Redaction keeps the status for branching and drops the body, so a
+      // value the server echoed is never carried on the error.
+      expect(error).toBeInstanceOf(EkoDBApiError);
+      expect((error as EkoDBApiError).status).toBe(refusal.status);
+      expect((error as EkoDBApiError).body).toBe("");
+      expect(JSON.stringify(error)).not.toContain("synthetic-secret");
     },
   );
 

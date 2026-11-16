@@ -130,9 +130,10 @@ func runExample(file string) bool {
 }
 
 func main() {
-	// Load environment variables from the .env file
-	err := godotenv.Load()
-	if err != nil {
+	// `make test-examples-go-direct` exports the repository's .env before
+	// running this; a .env in this directory, when present, adds to it. A
+	// missing one is fine, any other error reading it is not.
+	if err := godotenv.Load(); err != nil && !os.IsNotExist(err) {
 		log(fmt.Sprintf("✗ Failed to load environment variables: %v", err), colorRed)
 		os.Exit(1)
 	}
