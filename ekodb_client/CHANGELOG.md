@@ -10,6 +10,18 @@ and this project adheres to
 
 ### Added
 
+- Rust, Python, TypeScript, Kotlin: `get_schedule_stats` / `getScheduleStats`
+  reads `GET /api/schedules/stats`, the server's schedule summary, and returns
+  `active_schedules`, the number of schedules it is running (Rust
+  `ScheduleStats`, Kotlin `ScheduleStats(activeSchedules)`, Python a dict,
+  TypeScript `ScheduleStats`). It needs an admin key, like the other schedule
+  calls. The `client_schedules` example in every language calls it (#391).
+- Examples: the `client_schema` example in Rust, Python, Go, TypeScript,
+  JavaScript and Kotlin updates the constraints of an existing field with
+  `PUT /api/schemas/{collection}`, reads the schema back, then clears the
+  field's enums with an empty list and reads it back again. Each update sends
+  `unique`, `required` and `enums` together, which current servers require; they
+  also clear `max`, `min` and `regex` when left out (#393).
 - TypeScript: `EkoDBApiError`, exported from the package root, is thrown for
   every HTTP error answer a REST call does not retry away (the token exchange
   and the SSE raw-completion calls included), with `status` (the HTTP status
