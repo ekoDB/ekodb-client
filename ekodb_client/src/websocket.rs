@@ -463,9 +463,9 @@ struct DispatchState {
 /// Turn a `WebSocketResponse::Error` into the client's error.
 ///
 /// A server error frame carries an HTTP-style status (`401`, `500`, ...) and
-/// becomes `Error::Api` with that code. Code `0` is never sent by the server:
-/// the client puts it on the errors it sends its own waiters when the socket
-/// drops, so it becomes `Error::Connection`.
+/// becomes `Error::Api` with that code. Code `0` is the code the client puts on
+/// the errors it sends its own waiters when the socket drops, so it becomes
+/// `Error::Connection`.
 fn frame_error(code: u16, message: String) -> Error {
     if code == 0 {
         Error::Connection(message)
