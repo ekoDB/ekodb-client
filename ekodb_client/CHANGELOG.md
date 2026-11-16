@@ -96,6 +96,9 @@ and this project adheres to
   bad URL is `Error::InvalidUrl` and its failed connect `Error::Http`, instead
   of `Error::Api` with code 0. In Python, none of these is an `ApiError` any
   more (#390).
+- Update the Kotlin Gradle wrapper to 9.9.0 (#387), the TypeScript lockfile
+  dependency `ws` to 8.22.2 (#388), and the Python development dependency `ruff`
+  to 0.17.4 (#389).
 
 ### Fixed
 
