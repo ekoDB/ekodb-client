@@ -110,11 +110,14 @@ and this project adheres to
   repository's root `.env` and no client built yet. The Kotlin RAG step no
   longer prints the whole shell environment, secrets included, into the tracked
   `test-examples-rag.md` when `examples/kotlin/.env` is missing; it loads that
-  file only when it exists. The Go test runner and `transactions.go` treat a
-  missing `examples/go/.env` as optional, as the other Go examples already did.
-  The Python direct examples build the Python client first, which
-  `document_ttl.py` and `websocket_ttl.py` import. The Go client examples' temp
-  directory honours `TMPDIR`; macOS `mktemp -d` without a template does not.
+  file only when it exists. `make deploy-client-py` no longer prints the
+  environment, `MATURIN_PYPI_TOKEN` included, when `.env` exists but holds no
+  assignments; both now source the file with `set -a`. The Go test runner and
+  `transactions.go` treat a missing `examples/go/.env` as optional, as the other
+  Go examples already did. The Python direct examples build the Python client
+  first, which `document_ttl.py` and `websocket_ttl.py` import. The Go client
+  examples' temp directory honours `TMPDIR`; macOS `mktemp -d` without a
+  template does not.
 
 ### Migration note: the 0.32.0 collection-permission change was breaking
 
