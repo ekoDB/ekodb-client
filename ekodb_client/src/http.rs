@@ -1542,7 +1542,11 @@ impl HttpClient {
         .await
     }
 
-    /// Apply a partial update to one or more fields' schema constraints.
+    /// Update the constraints of one or more existing fields.
+    ///
+    /// Current servers replace a named field's constraints rather than merging
+    /// them: each update must set `unique`, `required` and `enums`, and `max`,
+    /// `min` and `regex` are cleared when left unset.
     ///
     /// Sends `PUT /api/schemas/{collection}` with a body of
     /// `{"constraints": { <field>: <SchemaConstraintUpdate>, ... }}`, matching
