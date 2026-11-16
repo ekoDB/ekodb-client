@@ -3288,6 +3288,18 @@ impl Client {
         .await
     }
 
+    /// The server's schedule summary (`GET /api/schedules/stats`): how many
+    /// schedules it is running. Needs an admin key, like the other schedule
+    /// calls.
+    pub async fn get_schedule_stats(&self) -> Result<crate::types::ScheduleStats> {
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let http = http.clone();
+            async move { http.get_schedule_stats(&token).await }
+        })
+        .await
+    }
+
     /// Get a schedule by ID.
     pub async fn get_schedule(&self, id: &str) -> Result<serde_json::Value> {
         let id = id.to_string();

@@ -846,6 +846,10 @@ client.pauseSchedule("sched-id")
 
 // Run immediately
 client.triggerSchedule("sched-id")
+
+// How many schedules the server is running
+val stats = client.getScheduleStats()
+println(stats.activeSchedules)
 ```
 
 ### WebSocket Chat Streaming

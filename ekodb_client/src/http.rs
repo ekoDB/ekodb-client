@@ -12,7 +12,9 @@ use crate::health::{HealthStatus, parse_health_status};
 use crate::retry::RetryPolicy;
 use crate::schema::{CollectionMetadata, Schema, SchemaConstraintUpdate};
 use crate::search::{DistinctValuesQuery, DistinctValuesResponse, SearchQuery, SearchResponse};
-use crate::types::{FieldType, Query, Record, RestoreCollectionResult, SerializationFormat};
+use crate::types::{
+    FieldType, Query, Record, RestoreCollectionResult, ScheduleStats, SerializationFormat,
+};
 use reqwest::{Client as ReqwestClient, Response, StatusCode};
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
@@ -3796,6 +3798,18 @@ impl HttpClient {
             .send()
             .await?;
         self.handle_response("/api/schedules", response).await
+    }
+
+    /// The server's schedule summary. Needs an admin key.
+    pub async fn get_schedule_stats(&self, token: &str) -> Result<ScheduleStats> {
+        let url = self.api_path_url(&["schedules", "stats"])?;
+        let response = self
+            .client
+            .get(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        self.handle_response("/api/schedules/stats", response).await
     }
 
     pub async fn get_schedule(&self, id: &str, token: &str) -> Result<serde_json::Value> {

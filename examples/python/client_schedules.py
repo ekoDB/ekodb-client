@@ -1,7 +1,7 @@
 """ekoDB Python Client - Schedule Management Integration Example
 
 Demonstrates the full schedule lifecycle:
-  create -> list -> get -> update -> trigger -> pause -> resume -> delete
+  create -> list -> stats -> get -> update -> trigger -> pause -> resume -> delete
 
 The example creates a temporary no-op function for the schedule to invoke.
 """
@@ -50,6 +50,15 @@ async def main():
 
         print("\n--- list_schedules ---")
         print(f"Schedules: {await client.list_schedules()}")
+
+        # The server counts from a cache it reloads periodically, so the
+        # schedule created above may not be counted yet.
+        print("\n--- get_schedule_stats ---")
+        stats = await client.get_schedule_stats()
+        print(f"Active schedules: {stats['active_schedules']}")
+        active = stats["active_schedules"]
+        if not isinstance(active, int) or isinstance(active, bool) or active < 0:
+            raise RuntimeError(f"Unexpected schedule stats: {stats}")
 
         print("\n--- get_schedule ---")
         fetched = await client.get_schedule(schedule_id)

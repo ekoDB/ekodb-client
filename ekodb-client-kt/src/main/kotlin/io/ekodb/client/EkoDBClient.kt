@@ -3784,6 +3784,23 @@ class EkoDBClient private constructor(
     }
 
     /**
+     * The server's schedule summary (`GET /api/schedules/stats`): how many
+     * schedules it is running. Needs an admin key, like the other schedule
+     * calls. An error answer throws [EkoDBHttpException].
+     */
+    suspend fun getScheduleStats(): ScheduleStats {
+        val response = executeWithRetry { token ->
+            client.get("$baseUrl/api/schedules/stats") {
+                bearerAuth(token)
+            }
+        }
+        val result: JsonObject = response.body()
+        val active = result["active_schedules"]?.jsonPrimitive?.longOrNull
+            ?: throw IllegalStateException("Schedule stats response has no numeric active_schedules: $result")
+        return ScheduleStats(activeSchedules = active)
+    }
+
+    /**
      * Shared implementation for pause/resume: a partial update carrying only
      * `enabled`. The server recomputes the next execution time when `enabled`
      * changes, so nothing else needs sending.

@@ -1,7 +1,7 @@
 // ekoDB Go Client - Schedules Integration Example
 //
 // Exercises the full schedule lifecycle:
-//   CreateSchedule -> ListSchedules -> GetSchedule -> UpdateSchedule
+//   CreateSchedule -> ListSchedules -> GetScheduleStats -> GetSchedule -> UpdateSchedule
 //   -> TriggerSchedule -> PauseSchedule -> ResumeSchedule -> DeleteSchedule
 //
 // A temporary no-op function makes the trigger step self-contained.
@@ -90,6 +90,18 @@ func run() (runErr error) {
 		return fmt.Errorf("list schedules: %w", err)
 	}
 	fmt.Printf("Schedules: %v\n", list)
+
+	// Schedule stats: the server counts from a cache it reloads periodically,
+	// so the schedule created above may not be counted yet.
+	fmt.Println("\n--- Schedule stats ---")
+	stats, err := client.GetScheduleStats()
+	if err != nil {
+		return fmt.Errorf("schedule stats: %w", err)
+	}
+	if stats.ActiveSchedules < 0 {
+		return fmt.Errorf("schedule stats: negative active_schedules %d", stats.ActiveSchedules)
+	}
+	fmt.Printf("Active schedules: %d\n", stats.ActiveSchedules)
 
 	// 3. Get schedule by ID
 	fmt.Println("\n--- Getting schedule ---")
