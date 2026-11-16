@@ -1859,6 +1859,61 @@ async fn test_restore_collection_success() {
     assert_eq!(result.unwrap(), 5);
 }
 
+#[tokio::test]
+async fn test_restore_collection_counts_reports_both_counts() {
+    let mut server = Server::new_async().await;
+
+    let _token_mock = mock_token_endpoint(&mut server);
+
+    // A tombstone can be cleared while its record's data is gone, so the two
+    // counts differ; each must come from its own server field.
+    let _restore_mock = server
+        .mock("POST", "/api/trash/users")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(
+            json!({"status": "success", "cleared_count": 5, "records_restored": 3}).to_string(),
+        )
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+
+    let result = client.restore_collection_counts("users").await.unwrap();
+    assert_eq!(
+        result,
+        ekodb_client::RestoreCollectionResult {
+            cleared_count: 5,
+            records_restored: Some(3),
+        }
+    );
+    // The plain method still returns the cleared count, not the recovered one.
+    assert_eq!(client.restore_collection("users").await.unwrap(), 5);
+}
+
+#[tokio::test]
+async fn test_restore_collection_counts_without_records_restored_is_none() {
+    let mut server = Server::new_async().await;
+
+    let _token_mock = mock_token_endpoint(&mut server);
+
+    // Servers before 0.72.7 send only cleared_count: absent must stay absent,
+    // never be guessed from cleared_count.
+    let _restore_mock = server
+        .mock("POST", "/api/trash/users")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"status": "success", "cleared_count": 5}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+
+    let result = client.restore_collection_counts("users").await.unwrap();
+    assert_eq!(result.cleared_count, 5);
+    assert_eq!(result.records_restored, None);
+}
+
 // ============================================================================
 // KV Advanced Tests
 // ============================================================================

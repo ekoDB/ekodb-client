@@ -1036,17 +1036,34 @@ class EkoDBClient private constructor(
     }
 
     /**
-     * Restore all deleted records in a collection from trash
-     * Returns the number of records restored
+     * Restore all deleted records in a collection from trash.
+     *
+     * Returns the number of tombstones cleared (the server's `cleared_count`).
+     * This is not the number of records recovered: a tombstone can be cleared
+     * while the record's data is gone. Use [restoreCollectionCounts] for both
+     * counts.
      */
-    suspend fun restoreCollection(collection: String): Long {
+    suspend fun restoreCollection(collection: String): Long =
+        restoreCollectionCounts(collection).clearedCount
+
+    /**
+     * Restore all deleted records in a collection from trash, returning both
+     * counts the server reports: tombstones cleared and records recovered.
+     *
+     * [RestoreCollectionResult.recordsRestored] is null on servers before
+     * 0.72.7, which report only the cleared count.
+     */
+    suspend fun restoreCollectionCounts(collection: String): RestoreCollectionResult {
         val response = executeWithRetry { token ->
             client.post("$baseUrl/api/trash/${collection.encodeURLPathPart()}") {
                 header("Authorization", "Bearer $token")
             }
         }
         val result: JsonObject = response.body()
-        return result["cleared_count"]?.jsonPrimitive?.longOrNull ?: 0L
+        return RestoreCollectionResult(
+            clearedCount = result["cleared_count"]?.jsonPrimitive?.longOrNull ?: 0L,
+            recordsRestored = result["records_restored"]?.jsonPrimitive?.longOrNull,
+        )
     }
 
     /**

@@ -12,7 +12,7 @@ use crate::health::{HealthStatus, parse_health_status};
 use crate::retry::RetryPolicy;
 use crate::schema::{CollectionMetadata, Schema, SchemaConstraintUpdate};
 use crate::search::{DistinctValuesQuery, DistinctValuesResponse, SearchQuery, SearchResponse};
-use crate::types::{FieldType, Query, Record, SerializationFormat};
+use crate::types::{FieldType, Query, Record, RestoreCollectionResult, SerializationFormat};
 use reqwest::{Client as ReqwestClient, Response, StatusCode};
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
@@ -596,8 +596,13 @@ impl HttpClient {
         .await
     }
 
-    /// Restore all deleted records in a collection from trash
-    pub async fn restore_collection(&self, collection: &str, token: &str) -> Result<usize> {
+    /// Restore all deleted records in a collection from trash, returning both
+    /// counts the server reports.
+    pub async fn restore_collection(
+        &self,
+        collection: &str,
+        token: &str,
+    ) -> Result<RestoreCollectionResult> {
         let url_path = "/api/trash/";
         let url = self.api_path_url(&["trash", collection])?;
 
@@ -610,10 +615,16 @@ impl HttpClient {
                 .await?;
 
             let result: serde_json::Value = self.handle_response(url_path, response).await?;
-            Ok(result
-                .get("cleared_count")
-                .and_then(|v| v.as_u64())
-                .unwrap_or(0) as usize)
+            Ok(RestoreCollectionResult {
+                cleared_count: result
+                    .get("cleared_count")
+                    .and_then(|v| v.as_u64())
+                    .unwrap_or(0) as usize,
+                records_restored: result
+                    .get("records_restored")
+                    .and_then(|v| v.as_u64())
+                    .map(|n| n as usize),
+            })
         })
         .await
     }

@@ -347,6 +347,27 @@ class EkoDBClientTest {
         assertEquals(5, result)
     }
 
+    @Test
+    fun `restoreCollectionCounts reports both counts`() = runBlocking {
+        // A tombstone can be cleared while its record's data is gone, so each
+        // count must come from its own server field.
+        val mockEngine = createMockEngine(
+            """{"status": "success", "cleared_count": 5, "records_restored": 3}"""
+        )
+        val client = createTestClient(mockEngine)
+        assertEquals(RestoreCollectionResult(clearedCount = 5, recordsRestored = 3), client.restoreCollectionCounts("users"))
+        // The plain method still returns the cleared count, not the recovered one.
+        assertEquals(5, client.restoreCollection("users"))
+    }
+
+    @Test
+    fun `restoreCollectionCounts leaves an absent records_restored null`() = runBlocking {
+        // Servers before 0.72.7 send only cleared_count; absent stays absent.
+        val mockEngine = createMockEngine("""{"status": "success", "cleared_count": 5}""")
+        val client = createTestClient(mockEngine)
+        assertEquals(RestoreCollectionResult(clearedCount = 5, recordsRestored = null), client.restoreCollectionCounts("users"))
+    }
+
     // ========================================================================
     // Transaction Tests
     // ========================================================================
