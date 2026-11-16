@@ -42,6 +42,15 @@ and this project adheres to
   `restoreCollectionCounts(...).recordsRestored` for the records recovered. The
   Rust, Python and Kotlin `restore_collection` docs now say they return the
   cleared count (#394).
+- Rust: `Error::Api { code }` is always the answer's HTTP status. An error body
+  carrying its own `code` field used to set it, so the same answer could report
+  different statuses across SDKs (#390).
+- Rust: `save_function`, `call_function` and `save_user_function` report a
+  successful answer with an empty or unparseable body, or (for the two saves) a
+  body whose `status` is not `success`, as `Error::Validation`, as
+  `handle_response` already does. They used to build `Error::Api` with status
+  200 or a made-up 500, which read as an HTTP error answer (and in Python became
+  an `ApiError`) (#390).
 
 ### Fixed
 
