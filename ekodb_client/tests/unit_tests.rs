@@ -176,6 +176,38 @@ async fn test_raw_completion_stream_error_event_is_api_500() {
     }
 }
 
+#[tokio::test]
+async fn test_websocket_dropped_connection_is_a_connection_error() {
+    use futures_util::StreamExt;
+
+    // A server that completes the handshake, reads the client's Hello and its
+    // request, then drops the socket without answering.
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let port = listener.local_addr().unwrap().port();
+    let server = tokio::spawn(async move {
+        let (stream, _) = listener.accept().await.unwrap();
+        let mut ws = tokio_tungstenite::accept_async(stream).await.unwrap();
+        let _hello = ws.next().await;
+        let _request = ws.next().await;
+        drop(ws);
+    });
+
+    let client =
+        ekodb_client::WebSocketClient::new(format!("ws://127.0.0.1:{port}/api/ws"), "token")
+            .unwrap();
+    let result = tokio::time::timeout(std::time::Duration::from_secs(15), client.find_all("users"))
+        .await
+        .expect("find_all should end when the socket drops");
+
+    // The pending request is failed by the client itself, not answered with a
+    // status by the server: it must not surface as Error::Api.
+    match result {
+        Err(Error::Connection(message)) => assert!(message.contains("Connection closed")),
+        other => panic!("expected Error::Connection, got {other:?}"),
+    }
+    server.await.unwrap();
+}
+
 /// Setup mock for token endpoint
 fn mock_token_endpoint(server: &mut Server) -> mockito::Mock {
     server
