@@ -1961,8 +1961,10 @@ impl HttpClient {
         }
 
         if !got_done && content.is_empty() {
-            // The stream closed before its done event: a connection-level
-            // failure, not an error status the server answered with.
+            // The stream closed with neither content nor its done event: a
+            // connection-level failure, not an error status the server
+            // answered with. A stream that sent tokens and then closed returns
+            // the partial text, as before.
             return Err(Error::Connection(
                 "SSE stream ended without a done event".to_string(),
             ));
@@ -2054,8 +2056,10 @@ impl HttpClient {
         }
 
         if !got_done && content.is_empty() {
-            // The stream closed before its done event: a connection-level
-            // failure, not an error status the server answered with.
+            // The stream closed with neither content nor its done event: a
+            // connection-level failure, not an error status the server
+            // answered with. A stream that sent tokens and then closed returns
+            // the partial text, as before.
             return Err(Error::Connection(
                 "SSE stream ended without a done event".to_string(),
             ));
