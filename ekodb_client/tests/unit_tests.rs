@@ -97,6 +97,85 @@ async fn test_api_error_code_is_the_http_status_not_the_body_code() {
     }
 }
 
+#[tokio::test]
+async fn test_embed_without_an_embedding_is_validation_not_api() {
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+    // A 200 whose embeddings list is empty is a malformed answer, not an error
+    // status the server sent: it must not surface as Error::Api.
+    let _embed_mock = server
+        .mock("POST", "/api/embed")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"embeddings": [], "model": "m", "dimensions": 0}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    match client.embed("hello", "m").await {
+        Err(Error::Validation(message)) => assert!(message.contains("No embedding")),
+        other => panic!("expected Error::Validation, got {other:?}"),
+    }
+}
+
+#[tokio::test]
+async fn test_raw_completion_stream_without_done_is_connection_not_api() {
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+    // The stream closes before its done event: a connection-level failure.
+    let _stream_mock = server
+        .mock("POST", "/api/chat/complete/stream")
+        .with_status(200)
+        .with_header("content-type", "text/event-stream")
+        .with_body("")
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    let request = ekodb_client::RawCompletionRequest {
+        system_prompt: "s".to_string(),
+        message: "m".to_string(),
+        provider: None,
+        model: None,
+        max_tokens: None,
+    };
+    match client.raw_completion_stream(request).await {
+        Err(Error::Connection(message)) => assert!(message.contains("done event")),
+        other => panic!("expected Error::Connection, got {other:?}"),
+    }
+}
+
+#[tokio::test]
+async fn test_raw_completion_stream_error_event_is_api_500() {
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+    // A failure the server reports inside a 200 stream carries no status of
+    // its own and is surfaced as Error::Api with code 500.
+    let _stream_mock = server
+        .mock("POST", "/api/chat/complete/stream")
+        .with_status(200)
+        .with_header("content-type", "text/event-stream")
+        .with_body("data: {\"error\": \"provider unavailable\"}\n\n")
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    let request = ekodb_client::RawCompletionRequest {
+        system_prompt: "s".to_string(),
+        message: "m".to_string(),
+        provider: None,
+        model: None,
+        max_tokens: None,
+    };
+    match client.raw_completion_stream(request).await {
+        Err(Error::Api { code, message }) => {
+            assert_eq!(code, 500);
+            assert_eq!(message, "provider unavailable");
+        }
+        other => panic!("expected Error::Api 500, got {other:?}"),
+    }
+}
+
 /// Setup mock for token endpoint
 fn mock_token_endpoint(server: &mut Server) -> mockito::Mock {
     server

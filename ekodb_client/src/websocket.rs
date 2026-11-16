@@ -460,6 +460,20 @@ struct DispatchState {
     schema_cache: Option<std::sync::Arc<crate::schema_cache::SchemaCache>>,
 }
 
+/// Turn a `WebSocketResponse::Error` into the client's error.
+///
+/// A server error frame carries an HTTP-style status (`401`, `500`, ...) and
+/// becomes `Error::Api` with that code. Code `0` is never sent by the server:
+/// the client puts it on the errors it sends its own waiters when the socket
+/// drops, so it becomes `Error::Connection`.
+fn frame_error(code: u16, message: String) -> Error {
+    if code == 0 {
+        Error::Connection(message)
+    } else {
+        Error::api(code, message)
+    }
+}
+
 /// WebSocket client for real-time communication with persistent connection.
 ///
 /// Uses a single dispatcher task that reads all incoming frames and routes them
@@ -905,7 +919,7 @@ impl WebSocketClient {
                     Ok(vec![])
                 }
             }
-            WebSocketResponse::Error { code, message, .. } => Err(Error::api(code, message)),
+            WebSocketResponse::Error { code, message, .. } => Err(frame_error(code, message)),
             _ => Err(Error::WebSocket("Unexpected response type".to_string())),
         }
     }
@@ -937,7 +951,7 @@ impl WebSocketClient {
         match response {
             WebSocketResponse::Success { .. } => {}
             WebSocketResponse::Error { code, message, .. } => {
-                return Err(Error::api(code, message));
+                return Err(frame_error(code, message));
             }
             _ => {
                 return Err(Error::WebSocket(
@@ -1101,7 +1115,7 @@ impl WebSocketClient {
 
         match response {
             WebSocketResponse::Success { .. } => Ok(()),
-            WebSocketResponse::Error { code, message, .. } => Err(Error::api(code, message)),
+            WebSocketResponse::Error { code, message, .. } => Err(frame_error(code, message)),
             _ => Err(Error::WebSocket(
                 "Unexpected response to register_client_tools".to_string(),
             )),
@@ -1190,7 +1204,7 @@ impl WebSocketClient {
                     .to_string();
                 Ok(crate::chat::RawCompletionResponse { content })
             }
-            WebSocketResponse::Error { code, message, .. } => Err(Error::api(code, message)),
+            WebSocketResponse::Error { code, message, .. } => Err(frame_error(code, message)),
             _ => Err(Error::WebSocket(
                 "Unexpected response to RawComplete".to_string(),
             )),
@@ -1243,7 +1257,7 @@ impl WebSocketClient {
 
         match response {
             WebSocketResponse::Success { payload, .. } => Ok(payload.data),
-            WebSocketResponse::Error { code, message, .. } => Err(Error::api(code, message)),
+            WebSocketResponse::Error { code, message, .. } => Err(frame_error(code, message)),
             _ => Err(Error::WebSocket("Unexpected response type".to_string())),
         }
     }
@@ -1482,6 +1496,29 @@ impl WebSocketClient {
 
 #[cfg(test)]
 mod tests {
+    use super::frame_error;
+
+    #[test]
+    fn frame_error_maps_a_server_status_to_api() {
+        match frame_error(401, "denied".to_string()) {
+            crate::Error::Api { code, message } => {
+                assert_eq!(code, 401);
+                assert_eq!(message, "denied");
+            }
+            other => panic!("expected Error::Api, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn frame_error_maps_the_client_connection_loss_code_to_connection() {
+        // Code 0 is what the client sends its own waiters when the socket
+        // drops; it is not a status the server answered with.
+        match frame_error(0, "Connection closed".to_string()) {
+            crate::Error::Connection(message) => assert_eq!(message, "Connection closed"),
+            other => panic!("expected Error::Connection, got {other:?}"),
+        }
+    }
+
     use super::*;
 
     // The deployment classifies a provider failure on a stream error

@@ -1952,6 +1952,8 @@ impl HttpClient {
         }
 
         if let Some(err) = last_error {
+            // The server reported a failure inside a successful (200) stream.
+            // It carries no status of its own, so it is surfaced as a 500.
             return Err(Error::Api {
                 code: 500,
                 message: err,
@@ -1959,10 +1961,11 @@ impl HttpClient {
         }
 
         if !got_done && content.is_empty() {
-            return Err(Error::Api {
-                code: 500,
-                message: "SSE stream ended without a done event".to_string(),
-            });
+            // The stream closed before its done event: a connection-level
+            // failure, not an error status the server answered with.
+            return Err(Error::Connection(
+                "SSE stream ended without a done event".to_string(),
+            ));
         }
 
         Ok(RawCompletionResponse { content })
@@ -2042,6 +2045,8 @@ impl HttpClient {
         }
 
         if let Some(err) = last_error {
+            // The server reported a failure inside a successful (200) stream.
+            // It carries no status of its own, so it is surfaced as a 500.
             return Err(Error::Api {
                 code: 500,
                 message: err,
@@ -2049,10 +2054,11 @@ impl HttpClient {
         }
 
         if !got_done && content.is_empty() {
-            return Err(Error::Api {
-                code: 500,
-                message: "SSE stream ended without a done event".to_string(),
-            });
+            // The stream closed before its done event: a connection-level
+            // failure, not an error status the server answered with.
+            return Err(Error::Connection(
+                "SSE stream ended without a done event".to_string(),
+            ));
         }
 
         Ok(RawCompletionResponse { content })
