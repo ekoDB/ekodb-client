@@ -106,6 +106,15 @@ and this project adheres to
   docstring and README already showed; it used to exist only as `e.args[0]`, so
   the documented example raised `AttributeError` at the moment a caller was rate
   limited. `args[0]` still carries the same value, and `status` is 429 (#395).
+- Examples: `make test-examples` runs on a checkout that has only the
+  repository's root `.env` and no client built yet. The Kotlin RAG step no
+  longer prints the whole shell environment, secrets included, into the tracked
+  `test-examples-rag.md` when `examples/kotlin/.env` is missing; it loads that
+  file only when it exists. The Go test runner and `transactions.go` treat a
+  missing `examples/go/.env` as optional, as the other Go examples already did.
+  The Python direct examples build the Python client first, which
+  `document_ttl.py` and `websocket_ttl.py` import. The Go client examples' temp
+  directory honours `TMPDIR`; macOS `mktemp -d` without a template does not.
 
 ### Migration note: the 0.32.0 collection-permission change was breaking
 
