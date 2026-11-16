@@ -21,7 +21,9 @@ and this project adheres to
   `PUT /api/schemas/{collection}`, reads the schema back, then clears the
   field's enums with an empty list and reads it back again. Each update sends
   `unique`, `required` and `enums` together, which current servers require; they
-  also clear `max`, `min` and `regex` when left out (#393).
+  also clear `max`, `min` and `regex` when left out (#393). The Go examples call
+  `GetScheduleStats` and `EnumValues`, which ship in ekodb-client-go 0.34.0
+  (ekoDB/ekodb-client-go#118); until that release they build against its branch.
 - TypeScript: `EkoDBApiError`, exported from the package root, is thrown for
   every HTTP error answer a REST call does not retry away (the token exchange
   and the SSE raw-completion calls included), with `status` (the HTTP status
@@ -51,6 +53,16 @@ and this project adheres to
 
 ### Changed
 
+- Docs: the constraint-update docs in Rust (`SchemaConstraintUpdate`,
+  `update_schema_constraints` and its example), Python
+  (`update_schema_constraints`), TypeScript (`SchemaConstraintUpdate`,
+  `updateSchemaConstraints` and its example) and Kotlin
+  (`SchemaConstraintUpdate`, `updateSchemaConstraints`) described a partial
+  update that leaves omitted attributes untouched. Current servers replace a
+  named field's constraints: each update must carry `unique`, `required` and
+  `enums`, `max`, `min` and `regex` are cleared when omitted, and `default` and
+  `field_type` change only when sent. The docs and examples now say that; the
+  clients' behaviour is unchanged (#393).
 - TypeScript: `restoreCollection` returns `clearedCount`, the number of
   tombstones cleared. Its `recordsRestored` field, which always carried that
   same tombstone count and not the records recovered, is deprecated and will be
