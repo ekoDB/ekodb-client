@@ -3,6 +3,6 @@
 # checks presence, format and Total==sum only (run 'make test' to refresh). Help + CI read from this.
 Rust: 532
 TypeScript: 785
-Python: 714
+Python: 716
 Kotlin: 519
-Total: 2550
+Total: 2552
