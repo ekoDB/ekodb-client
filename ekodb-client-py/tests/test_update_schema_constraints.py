@@ -2,13 +2,15 @@
 Binding-level test for update_schema_constraints.
 
 The Python client wraps the Rust core (ekodb_client), which sends
-`PUT /api/schemas/{collection}` with a body of `{"constraints": {...}}` — a
-per-field, per-attribute partial update where an attribute left off a
-field's dict is omitted from the request entirely (mirrors the Rust
+`PUT /api/schemas/{collection}` with a body of `{"constraints": {...}}`. This
+test pins what is sent on the wire: an attribute left off a field's dict is
+omitted from the request entirely (mirrors the Rust
 `SchemaConstraintUpdate`'s `skip_serializing_if = "Option::is_none"` on every
-attribute). A local HTTP server captures the real outgoing PUT body so this
-test drives the real binding rather than reimplementing the serialization by
-hand.
+attribute). Current servers refuse an update that omits `unique`, `required`
+or `enums`, and clear an omitted `max`, `min` or `regex`.
+
+A local HTTP server captures the real outgoing PUT body so this test drives
+the real binding rather than reimplementing the serialization by hand.
 """
 
 import json
@@ -80,8 +82,8 @@ async def test_update_schema_constraints_sends_partial_update(server):
             "age": {"min": 0, "max": 150},
         }
     }
-    # Partial update: an attribute left off a field's dict must not appear
-    # on the wire at all — not present, not null.
+    # An attribute left off a field's dict must not appear on the wire at
+    # all — not present, not null.
     email_constraint = captured["body"]["constraints"]["email"]
     for omitted in ("field_type", "default", "unique", "enums", "max", "min", "regex"):
         assert omitted not in email_constraint

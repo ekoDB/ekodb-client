@@ -2023,7 +2023,7 @@ class EkoDBClientTest {
 
         val body = Json.parseToJsonElement((sent.body as TextContent).text).jsonObject
         // Exactly one top-level key, "constraints" — never "fields" (that shape
-        // belongs to createCollection's full schema, not a partial update).
+        // belongs to createCollection's full schema, not a constraints update).
         assertEquals(setOf("constraints"), body.keys)
         val constraints = body.getValue("constraints").jsonObject
         assertEquals(setOf("email", "age"), constraints.keys)
