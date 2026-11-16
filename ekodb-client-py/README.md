@@ -278,7 +278,33 @@ exhausted).
 
 #### Properties
 
-- `retry_after_secs: int` - Number of seconds to wait before retrying
+- `retry_after_secs: int` - Number of seconds to wait before retrying (also
+  `args[0]`, for code written before the attribute existed)
+- `status: int` - Always `429`
+
+### ApiError
+
+Exception raised for an HTTP error answer from the server (a `404`, `409`,
+`500`, and so on). A subclass of `RuntimeError`, so an existing
+`except RuntimeError` still catches it. A rate limit is raised as
+`RateLimitError` instead.
+
+#### Properties
+
+- `status: int` - The HTTP status code
+- `message: str` - The server's error message
+
+```python
+from ekodb_client import ApiError
+
+try:
+    await client.restore_collection("users")
+except ApiError as e:
+    if e.status == 404:
+        print("No such collection")
+    else:
+        raise
+```
 
 #### `await client.insert(collection: str, record: dict) -> dict`
 

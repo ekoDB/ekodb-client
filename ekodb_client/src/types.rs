@@ -12,6 +12,21 @@ use std::collections::HashMap;
 use std::time::Duration;
 use uuid::Uuid;
 
+/// What restoring a whole collection from trash reported.
+///
+/// The two counts differ: a tombstone can be cleared while the record's data
+/// is no longer recoverable, so `records_restored` can be lower than
+/// `cleared_count`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RestoreCollectionResult {
+    /// Tombstones removed from the collection (the server's `cleared_count`).
+    pub cleared_count: usize,
+    /// Records whose data was actually recovered (the server's
+    /// `records_restored`). `None` when the server does not send it: servers
+    /// before 0.72.7 report only `cleared_count`.
+    pub records_restored: Option<usize>,
+}
+
 /// Serialization format for client-server communication
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SerializationFormat {

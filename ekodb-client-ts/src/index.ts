@@ -5,6 +5,7 @@ export {
   SerializationFormat,
   MergeStrategy,
   RateLimitError,
+  EkoDBApiError,
   SchemaCache,
   extractRecordId,
   HealthStatus,

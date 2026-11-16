@@ -70,14 +70,36 @@ export interface ClientConfig {
 }
 
 /**
- * Rate limit error
+ * An HTTP error answer from the server: every non-2xx response a REST call
+ * does not retry away is thrown as this, so a caller can branch on `status`
+ * (`404`, `409`, `500`, ...) instead of parsing the message.
+ *
+ * `body` is the response text as the server sent it. It is empty when the
+ * client redacts admin errors, so a credential the server echoed is never kept.
  */
-export class RateLimitError extends Error {
+export class EkoDBApiError extends Error {
+  constructor(
+    public readonly status: number,
+    public readonly body: string,
+    message?: string,
+  ) {
+    super(message ?? `Request failed with status ${status}: ${body}`);
+    this.name = "EkoDBApiError";
+  }
+}
+
+/**
+ * Rate limit error (HTTP 429). A subclass of {@link EkoDBApiError} with
+ * `status` 429, carrying the server's `Retry-After` as `retryAfterSecs`.
+ */
+export class RateLimitError extends EkoDBApiError {
   constructor(
     public retryAfterSecs: number,
     message?: string,
   ) {
     super(
+      429,
+      "",
       message || `Rate limit exceeded. Retry after ${retryAfterSecs} seconds`,
     );
     this.name = "RateLimitError";
@@ -561,10 +583,7 @@ function stripTrailingSlashes(url: string): string {
 }
 
 function isNotFoundError(error: unknown): boolean {
-  return (
-    error instanceof Error &&
-    error.message.startsWith("Request failed with status 404:")
-  );
+  return error instanceof EkoDBApiError && error.status === 404;
 }
 
 /** `run_as` is `caller`, `author`, or null/absent; anything else is not a function definition. */
@@ -989,8 +1008,12 @@ export class EkoDBClient {
       // Handle other errors
       const text = await response.text();
       if (this.redactErrors)
-        throw new Error(`Admin request failed (HTTP ${response.status})`);
-      throw new Error(`Request failed with status ${response.status}: ${text}`);
+        throw new EkoDBApiError(
+          response.status,
+          "",
+          `Admin request failed (HTTP ${response.status})`,
+        );
+      throw new EkoDBApiError(response.status, text);
     } catch (error) {
       // A fired request-timeout (AbortSignal.timeout) surfaces as a DOMException
       // named "TimeoutError" (or "AbortError" in some runtimes). Convert it to a
@@ -1011,10 +1034,10 @@ export class EkoDBClient {
           throw new RateLimitError(retryAfter);
         }
         if (
-          error instanceof Error &&
+          error instanceof EkoDBApiError &&
           /^Admin request failed \(HTTP [0-9]{3}\)$/.test(error.message)
         )
-          throw new Error(error.message);
+          throw new EkoDBApiError(error.status, "", error.message);
         throw new Error(
           errName === "TimeoutError" || errName === "AbortError"
             ? "Admin request timed out"
@@ -1927,15 +1950,41 @@ export class EkoDBClient {
    * Records remain in trash for 30 days before permanent deletion
    *
    * @param collection - Collection name
-   * @returns Number of records restored
+   * @returns `clearedCount`, the number of tombstones cleared (the server's
+   *   `cleared_count`). That is not the number of records recovered: a
+   *   tombstone can be cleared while the record's data is gone. Use
+   *   {@link restoreCollectionCounts} for both counts.
    */
-  async restoreCollection(
+  async restoreCollection(collection: string): Promise<{
+    clearedCount: number;
+    /**
+     * @deprecated The same value as `clearedCount`: the number of tombstones
+     * cleared, not records recovered. Use `clearedCount`, or
+     * `restoreCollectionCounts(collection).recordsRestored` for the records
+     * actually recovered. Removed in a future release.
+     */
+    recordsRestored: number;
+  }> {
+    const { clearedCount } = await this.restoreCollectionCounts(collection);
+    return { clearedCount, recordsRestored: clearedCount };
+  }
+
+  /**
+   * Restore all deleted records in a collection from trash, returning both
+   * counts the server reports.
+   *
+   * @param collection - Collection name
+   * @returns `clearedCount`, tombstones removed, and `recordsRestored`, records
+   *   whose data was recovered. `recordsRestored` is `null` on servers before
+   *   0.72.7, which report only the cleared count.
+   */
+  async restoreCollectionCounts(
     collection: string,
-  ): Promise<{ recordsRestored: number }> {
+  ): Promise<{ clearedCount: number; recordsRestored: number | null }> {
     const result = await this.makeRequest<{
       status: string;
-      collection: string;
       cleared_count: number;
+      records_restored?: number;
     }>(
       "POST",
       `/api/trash/${encodeURIComponent(collection)}`,
@@ -1943,7 +1992,13 @@ export class EkoDBClient {
       0,
       true,
     );
-    return { recordsRestored: result.cleared_count };
+    return {
+      clearedCount: result.cleared_count,
+      recordsRestored:
+        typeof result.records_restored === "number"
+          ? result.records_restored
+          : null,
+    };
   }
 
   /**
@@ -2203,11 +2258,10 @@ export class EkoDBClient {
       }
     } catch (err: any) {
       // Server doesn't have the endpoint (404) or route mismatch (405)
-      // Parse status from makeRequest error format: "Request failed with status NNN: ..."
-      const message = String(err?.message ?? "");
-      const match = message.match(/Request failed with status (\d+):/);
-      const status = match ? parseInt(match[1], 10) : undefined;
-      if (status === 404 || status === 405) {
+      if (
+        err instanceof EkoDBApiError &&
+        (err.status === 404 || err.status === 405)
+      ) {
         return null;
       }
       throw err;

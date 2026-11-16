@@ -487,19 +487,51 @@ impl Client {
     ///
     /// # Returns
     ///
-    /// Number of records restored
+    /// The number of tombstones cleared (the server's `cleared_count`). This is
+    /// not the number of records recovered: a tombstone can be cleared while
+    /// the record's data is gone. Use [`Client::restore_collection_counts`] for
+    /// both counts.
     ///
     /// # Example
     ///
     /// ```no_run
     /// # use ekodb_client::Client;
     /// # async fn example(client: &Client) -> Result<(), ekodb_client::Error> {
-    /// let count = client.restore_collection("users").await?;
-    /// println!("Restored {} records", count);
+    /// let cleared = client.restore_collection("users").await?;
+    /// println!("Cleared {} tombstones", cleared);
     /// # Ok(())
     /// # }
     /// ```
     pub async fn restore_collection(&self, collection: &str) -> Result<usize> {
+        Ok(self
+            .restore_collection_counts(collection)
+            .await?
+            .cleared_count)
+    }
+
+    /// Restore all deleted records in a collection from trash, returning both
+    /// counts the server reports: tombstones cleared and records recovered.
+    ///
+    /// `records_restored` is `None` on servers before 0.72.7, which report only
+    /// the cleared count.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # use ekodb_client::Client;
+    /// # async fn example(client: &Client) -> Result<(), ekodb_client::Error> {
+    /// let result = client.restore_collection_counts("users").await?;
+    /// println!(
+    ///     "Cleared {} tombstones, recovered {:?} records",
+    ///     result.cleared_count, result.records_restored
+    /// );
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn restore_collection_counts(
+        &self,
+        collection: &str,
+    ) -> Result<crate::types::RestoreCollectionResult> {
         let collection = collection.to_string();
         let http = self.http.clone();
         self.execute_with_token_refresh(move |token| {

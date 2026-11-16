@@ -253,9 +253,26 @@ establish broad prefilter or ANN semantics. Earlier schema-only validation did
 not test record insertion. See
 [contract commands and evidence](COMMANDS.md#search-and-schema-compatibility).
 
-**Kotlin HTTP errors (unreleased):** `EkoDBHttpException` exposes terminal
-status codes and response bodies, including exhausted server errors. See the
-[Kotlin error-handling guide](ekodb-client-kt/README.md#error-handling).
+**HTTP errors carry the status (unreleased):** every SDK lets a caller branch on
+the HTTP status of an error answer without parsing a message.
+
+| SDK        | Error type and status field                                           | Rate limit (429)                                        |
+| ---------- | --------------------------------------------------------------------- | ------------------------------------------------------- |
+| Rust       | `Error::Api { code, message }` (and `NotFound`, `ServiceUnavailable`) | `Error::RateLimit { retry_after_secs }`                 |
+| Python     | `ApiError` (a `RuntimeError`): `status`, `message`                    | `RateLimitError`: `retry_after_secs`, `status` 429      |
+| TypeScript | `EkoDBApiError`: `status`, `body`                                     | `RateLimitError` (an `EkoDBApiError`): `retryAfterSecs` |
+| Kotlin     | `EkoDBHttpException`: `statusCode`, `responseBody`                    | `EkoDBHttpException` with `statusCode` 429              |
+| Go         | `HTTPError`: `StatusCode` (`errors.As`)                               | `RateLimitError`                                        |
+
+See the [Kotlin error-handling guide](ekodb-client-kt/README.md#error-handling).
+
+**Collection restore counts (unreleased):** restoring a whole collection reports
+two counts that can differ: tombstones cleared and records actually recovered.
+`restore_collection` / `restoreCollection` keeps returning the cleared count
+(TypeScript as `clearedCount`, with the deprecated `recordsRestored` carrying
+the same value); `restore_collection_counts` / `restoreCollectionCounts` /
+`RestoreCollectionCounts` returns both, with the recovered count absent on
+servers before 0.72.7.
 
 ---
 
