@@ -1736,8 +1736,10 @@ impl HttpClient {
                     .unwrap_or_else(|_| format!("HTTP {} error", status.as_u16()));
 
                 // Try to parse as ErrorResponse, otherwise use the text
+                // The status is always the HTTP status: a body's own `code`
+                // is not the answer's status and can disagree with it.
                 if let Ok(error_body) = serde_json::from_str::<ErrorResponse>(&error_text) {
-                    Err(Error::api(error_body.code, error_body.message))
+                    Err(Error::api(status.as_u16(), error_body.message))
                 } else {
                     Err(Error::api(status.as_u16(), error_text))
                 }
@@ -2805,10 +2807,10 @@ impl HttpClient {
             }
 
             if bytes.is_empty() {
-                return Err(Error::api(
-                    status.as_u16(),
-                    "Empty response from server".to_string(),
-                ));
+                // A successful status with no body is a malformed answer, not
+                // an HTTP error: report it as `Validation`, as
+                // `handle_response` reports an unparseable body.
+                return Err(Error::Validation("Empty response from server".to_string()));
             }
 
             #[derive(Deserialize)]
@@ -2818,21 +2820,18 @@ impl HttpClient {
             }
 
             let result: FunctionResponse = serde_json::from_slice(&bytes).map_err(|e| {
-                Error::api(
-                    500,
-                    format!(
-                        "Failed to parse response: {} (body: {})",
-                        e,
-                        String::from_utf8_lossy(&bytes)
-                    ),
-                )
+                Error::Validation(format!(
+                    "Failed to parse response: {} (body: {})",
+                    e,
+                    String::from_utf8_lossy(&bytes)
+                ))
             })?;
 
             if result.status != "success" {
-                return Err(Error::api(
-                    500,
-                    format!("Failed to save script: status={}", result.status),
-                ));
+                return Err(Error::Validation(format!(
+                    "Failed to save script: status={}",
+                    result.status
+                )));
             }
 
             Ok(result.id)
@@ -2983,21 +2982,18 @@ impl HttpClient {
             }
 
             if bytes.is_empty() {
-                return Err(Error::api(
-                    status.as_u16(),
-                    "Empty response from server".to_string(),
-                ));
+                // A successful status with no body is a malformed answer, not
+                // an HTTP error: report it as `Validation`, as
+                // `handle_response` reports an unparseable body.
+                return Err(Error::Validation("Empty response from server".to_string()));
             }
 
             serde_json::from_slice(&bytes).map_err(|e| {
-                Error::api(
-                    500,
-                    format!(
-                        "Failed to parse response: {} (body: {})",
-                        e,
-                        String::from_utf8_lossy(&bytes)
-                    ),
-                )
+                Error::Validation(format!(
+                    "Failed to parse response: {} (body: {})",
+                    e,
+                    String::from_utf8_lossy(&bytes)
+                ))
             })
         })
         .await
@@ -3038,10 +3034,10 @@ impl HttpClient {
             }
 
             if bytes.is_empty() {
-                return Err(Error::api(
-                    status.as_u16(),
-                    "Empty response from server".to_string(),
-                ));
+                // A successful status with no body is a malformed answer, not
+                // an HTTP error: report it as `Validation`, as
+                // `handle_response` reports an unparseable body.
+                return Err(Error::Validation("Empty response from server".to_string()));
             }
 
             #[derive(Deserialize)]
@@ -3051,21 +3047,18 @@ impl HttpClient {
             }
 
             let result: FunctionResponse = serde_json::from_slice(&bytes).map_err(|e| {
-                Error::api(
-                    500,
-                    format!(
-                        "Failed to parse response: {} (body: {})",
-                        e,
-                        String::from_utf8_lossy(&bytes)
-                    ),
-                )
+                Error::Validation(format!(
+                    "Failed to parse response: {} (body: {})",
+                    e,
+                    String::from_utf8_lossy(&bytes)
+                ))
             })?;
 
             if result.status != "success" {
-                return Err(Error::api(
-                    500,
-                    format!("Failed to save user function: status={}", result.status),
-                ));
+                return Err(Error::Validation(format!(
+                    "Failed to save user function: status={}",
+                    result.status
+                )));
             }
 
             Ok(result.id)
@@ -3954,7 +3947,8 @@ async fn error_from_response(response: reqwest::Response) -> Error {
         });
     }
     match serde_json::from_str::<ErrorResponse>(&body) {
-        Ok(parsed) => Error::api(parsed.code, parsed.message),
+        // The HTTP status, not the body's `code`, as in `handle_response`.
+        Ok(parsed) => Error::api(status.as_u16(), parsed.message),
         Err(_) => {
             let detail = body.trim();
             if detail.is_empty() {

@@ -267,12 +267,19 @@ the HTTP status of an error answer without parsing a message.
 See the [Kotlin error-handling guide](ekodb-client-kt/README.md#error-handling).
 
 **Collection restore counts (unreleased):** restoring a whole collection reports
-two counts that can differ: tombstones cleared and records actually recovered.
-`restore_collection` / `restoreCollection` keeps returning the cleared count
-(TypeScript as `clearedCount`, with the deprecated `recordsRestored` carrying
-the same value); `restore_collection_counts` / `restoreCollectionCounts` /
-`RestoreCollectionCounts` returns both, with the recovered count absent on
-servers before 0.72.7.
+two counts that can differ: tombstones cleared and records actually recovered
+(absent on servers before 0.72.7). The existing restore method in every SDK
+keeps returning the cleared count (TypeScript as `clearedCount`, with the
+deprecated `recordsRestored` carrying the same value). The new method returns
+both:
+
+| SDK        | Method                      | Returns                                                                                                |
+| ---------- | --------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Rust       | `restore_collection_counts` | `RestoreCollectionResult { cleared_count, records_restored: Option }`                                  |
+| Python     | `restore_collection_counts` | `dict` with `cleared_count` and `records_restored` (or `None`)                                         |
+| TypeScript | `restoreCollectionCounts`   | `{ clearedCount, recordsRestored: number \| null }`                                                    |
+| Kotlin     | `restoreCollectionCounts`   | `RestoreCollectionResult(clearedCount, recordsRestored: Long?)`                                        |
+| Go         | `RestoreCollectionCounts`   | `*RestoreCollectionResult{ClearedCount, RecordsRestored *int}`, in the paired `ekodb-client-go` change |
 
 ---
 
