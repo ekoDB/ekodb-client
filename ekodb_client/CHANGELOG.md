@@ -118,9 +118,10 @@ and this project adheres to
   template does not.
 - `make deploy-client-py` no longer prints the environment, `MATURIN_PYPI_TOKEN`
   included, when `.env` exists but holds no assignments. It now sources `.env`
-  with `set -a`, as the Kotlin RAG example step does. A sourced value is read as
-  shell: a value containing `$` or a space must be single-quoted, and ` # ...`
-  after a value is a comment. A usual `pypi-` token needs no quoting.
+  with `set -a`, as the Kotlin RAG example step does. A sourced line is read as
+  shell, so a value containing any shell special character must be quoted as it
+  would be in a shell script; a usual `pypi-` token contains none and needs no
+  quoting.
 
 ### Migration note: the 0.32.0 collection-permission change was breaking
 
