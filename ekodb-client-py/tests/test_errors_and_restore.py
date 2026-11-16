@@ -84,7 +84,8 @@ async def test_rate_limit_error_has_retry_after_secs():
 
 
 @pytest.mark.asyncio
-async def test_module_docstring_rate_limit_example_runs_as_written():
+async def test_documented_rate_limit_handler_reads_retry_after_secs():
+    # The handler pattern the module docstring and README show.
     server, thread, client = serve(
         lambda: (429, {"Retry-After": "7"}, json.dumps({"error": "slow down"}))
     )
@@ -101,21 +102,27 @@ async def test_module_docstring_rate_limit_example_runs_as_written():
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "status,body",
+    "status,body,message",
     [
-        (404, '{"error":"Collection not found"}'),
-        (409, '{"error":"Conflict: unique constraint"}'),
-        (500, '{"error":"internal"}'),
+        # The Rust client does not keep a 404's body: `message` is its own text.
+        (404, '{"error":"Collection not found"}', "Record not found"),
+        # Otherwise `message` is the server's answer.
+        (
+            409,
+            '{"error":"Conflict: unique constraint"}',
+            '{"error":"Conflict: unique constraint"}',
+        ),
+        (500, '{"error":"internal"}', '{"error":"internal"}'),
     ],
 )
-async def test_http_error_raises_api_error_with_status(status, body):
+async def test_http_error_raises_api_error_with_status(status, body, message):
     server, thread, client = serve(lambda: (status, {}, body))
     try:
         with pytest.raises(ApiError) as caught:
             await client.restore_collection("users")
         error = caught.value
         assert error.status == status
-        assert isinstance(error.message, str) and error.message
+        assert error.message == message
         # Code that caught RuntimeError before still catches it.
         assert isinstance(error, RuntimeError)
         assert str(error).startswith("Restore collection failed: ")

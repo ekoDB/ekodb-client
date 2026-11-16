@@ -50,6 +50,53 @@ async fn test_trigger_schedule_posts_to_trigger_endpoint() {
     trigger_mock.assert_async().await;
 }
 
+#[tokio::test]
+async fn test_save_function_empty_success_body_is_validation_not_api() {
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+    // A 200 with no body is a malformed answer, not an HTTP error: it must not
+    // surface as an Api error carrying status 200.
+    let _save_mock = server
+        .mock("POST", "/api/functions")
+        .with_status(200)
+        .with_body("")
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    match client
+        .save_function(ekodb_client::UserFunction::new("noop", "No-op"))
+        .await
+    {
+        Err(Error::Validation(message)) => assert!(message.contains("Empty response")),
+        other => panic!("expected Error::Validation, got {other:?}"),
+    }
+}
+
+#[tokio::test]
+async fn test_api_error_code_is_the_http_status_not_the_body_code() {
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+    // The body carries its own `code`; the error's code must be the answer's
+    // HTTP status, so every SDK reports the same status for the same answer.
+    let _restore_mock = server
+        .mock("POST", "/api/trash/users")
+        .with_status(409)
+        .with_header("content-type", "application/json")
+        .with_body(json!({"code": 400, "message": "conflict"}).to_string())
+        .create_async()
+        .await;
+
+    let client = create_test_client(&server).await;
+    match client.restore_collection("users").await {
+        Err(Error::Api { code, message }) => {
+            assert_eq!(code, 409);
+            assert_eq!(message, "conflict");
+        }
+        other => panic!("expected Error::Api with 409, got {other:?}"),
+    }
+}
+
 /// Setup mock for token endpoint
 fn mock_token_endpoint(server: &mut Server) -> mockito::Mock {
     server

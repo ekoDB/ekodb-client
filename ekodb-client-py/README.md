@@ -292,7 +292,8 @@ Exception raised for an HTTP error answer from the server (a `404`, `409`,
 #### Properties
 
 - `status: int` - The HTTP status code
-- `message: str` - The server's error message
+- `message: str` - The server's error message, or the client's description when
+  it does not keep the server's (a `404`, or a `401` it could not refresh)
 
 ```python
 from ekodb_client import ApiError

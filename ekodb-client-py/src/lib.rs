@@ -34,8 +34,9 @@ create_exception!(
     ekodb_client,
     ApiError,
     PyRuntimeError,
-    "HTTP error answer from the server. `status` is the HTTP status code and \
-     `message` the server's error message."
+    "HTTP error answer from the server. `status` is the HTTP status code; \
+     `message` is the server's error message, or the client's description \
+     when the client does not keep it (a 404, or a 401 it could not refresh)."
 );
 
 /// Map an `ekodb_client::Error` to the most specific Python exception.
@@ -47,6 +48,9 @@ create_exception!(
 /// - An error the server answered with an HTTP status (`Api`, `NotFound`,
 ///   `ServiceUnavailable`, and a `TokenExpired` the client could not refresh
 ///   away) is surfaced as `ApiError`, with `exc.status` and `exc.message`.
+///   `message` is the server's message where the Rust client keeps it (`Api`,
+///   `ServiceUnavailable`); for `NotFound` and `TokenExpired` the Rust client
+///   does not keep the server's body, so `message` is the client's text.
 /// - Every other error becomes a `RuntimeError`.
 ///
 /// The message is always `"{context}: {error}"` (for a rate limit, its args
@@ -5872,6 +5876,20 @@ mod tests {
                 let text = value.str().unwrap().to_string();
                 assert!(text.starts_with("Find failed: "), "text was: {text}");
             }
+        });
+    }
+
+    #[test]
+    fn test_with_attrs_raises_a_failed_setattr_instead_of_dropping_it() {
+        Python::attach(|py| {
+            let err = with_attrs(ApiError::new_err("boom"), |_| {
+                Err(PyValueError::new_err("setattr failed"))
+            });
+            // The setattr failure replaces the exception; it is not swallowed.
+            assert!(err.is_instance_of::<PyValueError>(py));
+            assert!(!err.is_instance_of::<ApiError>(py));
+            let text = err.value(py).str().unwrap().to_string();
+            assert_eq!(text, "setattr failed");
         });
     }
 
