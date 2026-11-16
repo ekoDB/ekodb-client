@@ -3,6 +3,7 @@ import {
   EkoDBAdminClient,
   MIN_LEGACY_SERVER_VERSION_FOR_PERMISSION_EDITS,
 } from "./admin";
+import { EkoDBApiError } from "./client";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import type {
@@ -367,6 +368,18 @@ describe("admin wire contract", () => {
       expect(request).toHaveBeenCalledTimes(1);
     },
   );
+
+  it("keeps a refused token exchange's status and drops its body", async () => {
+    request.mockResolvedValueOnce(response({ error: "admin-secret" }, 403));
+    const error = await admin()
+      .getPermissions()
+      .catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(EkoDBApiError);
+    expect((error as EkoDBApiError).status).toBe(403);
+    expect((error as EkoDBApiError).body).toBe("");
+    expect((error as Error).message).toBe("Admin authentication failed");
+    expect(JSON.stringify(error)).not.toContain("admin-secret");
+  });
 
   it.each([
     null,

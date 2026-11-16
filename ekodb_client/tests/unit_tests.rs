@@ -208,6 +208,50 @@ async fn test_websocket_dropped_connection_is_a_connection_error() {
     server.await.unwrap();
 }
 
+#[tokio::test]
+async fn test_raw_completion_stream_content_then_close_returns_the_content() {
+    // A stream that sent tokens and then closed before its done event returns
+    // the text it got, not an error: only an empty stream is a Connection error.
+    let body = "data: {\"token\": \"Hel\"}\n\ndata: {\"token\": \"lo\"}\n\n";
+    let request = || ekodb_client::RawCompletionRequest {
+        system_prompt: "s".to_string(),
+        message: "m".to_string(),
+        provider: None,
+        model: None,
+        max_tokens: None,
+    };
+
+    let mut server = Server::new_async().await;
+    let _token_mock = mock_token_endpoint(&mut server);
+    let _stream_mock = server
+        .mock("POST", "/api/chat/complete/stream")
+        .with_status(200)
+        .with_header("content-type", "text/event-stream")
+        .with_body(body)
+        .expect(2)
+        .create_async()
+        .await;
+    let client = create_test_client(&server).await;
+
+    let plain = client
+        .raw_completion_stream(request())
+        .await
+        .expect("partial content is returned");
+    assert_eq!(plain.content, "Hello");
+
+    let (progress_tx, mut progress_rx) = tokio::sync::mpsc::channel(8);
+    let with_progress = client
+        .raw_completion_stream_with_progress(request(), progress_tx)
+        .await
+        .expect("partial content is returned");
+    assert_eq!(with_progress.content, "Hello");
+    let mut tokens = Vec::new();
+    while let Ok(token) = progress_rx.try_recv() {
+        tokens.push(token);
+    }
+    assert_eq!(tokens.concat(), "Hello");
+}
+
 /// Setup mock for token endpoint
 fn mock_token_endpoint(server: &mut Server) -> mockito::Mock {
     server

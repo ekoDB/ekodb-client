@@ -48,6 +48,8 @@ create_exception!(
 /// - An error the server answered with an HTTP status (`Api`, `NotFound`,
 ///   `ServiceUnavailable`, and a `TokenExpired` the client could not refresh
 ///   away) is surfaced as `ApiError`, with `exc.status` and `exc.message`.
+///   `Api` also covers a WebSocket error frame (its status) and a failure the
+///   server reports inside a streamed completion (status 500).
 ///   `message` is the server's message where the Rust client keeps it (`Api`,
 ///   `ServiceUnavailable`); for `NotFound` and `TokenExpired` the Rust client
 ///   does not keep the server's body, so `message` is the client's text.

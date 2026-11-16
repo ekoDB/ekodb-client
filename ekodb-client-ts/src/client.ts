@@ -690,19 +690,22 @@ export class EkoDBClient {
 
       if (!response.ok) {
         if (this.redactErrors)
-          throw new Error(
+          throw new EkoDBApiError(
+            response.status,
+            "",
             `Admin authentication failed (HTTP ${response.status})`,
           );
+        const text = await response.text();
         let errorMsg = `Auth failed with status: ${response.status}`;
         try {
-          const errorBody = (await response.json()) as { error?: string };
-          if (errorBody.error) {
+          const errorBody = JSON.parse(text) as { error?: string };
+          if (errorBody?.error) {
             errorMsg = errorBody.error;
           }
         } catch {
-          // Ignore JSON parse errors, use default message
+          // Not JSON: keep the default message
         }
-        throw new Error(errorMsg);
+        throw new EkoDBApiError(response.status, text, errorMsg);
       }
 
       const result = (await response.json()) as { token: string };
@@ -714,7 +717,17 @@ export class EkoDBClient {
       const expiry = this.extractJWTExpiry(result.token);
       this.tokenExpiry = expiry ?? Math.floor(Date.now() / 1000) + 3600; // fallback: 1 hour
     } catch (error) {
-      if (this.redactErrors) throw new Error("Admin authentication failed");
+      if (this.redactErrors) {
+        // Keep the status for branching; never the body or any cause, which
+        // can echo the credential.
+        if (error instanceof EkoDBApiError)
+          throw new EkoDBApiError(
+            error.status,
+            "",
+            "Admin authentication failed",
+          );
+        throw new Error("Admin authentication failed");
+      }
       throw error;
     }
   }
@@ -2336,7 +2349,9 @@ export class EkoDBClient {
 
     if (!response.ok) {
       const body = await response.text();
-      throw new Error(
+      throw new EkoDBApiError(
+        response.status,
+        body,
         `SSE raw completion failed (${response.status}): ${body}`,
       );
     }
@@ -2389,7 +2404,9 @@ export class EkoDBClient {
 
     if (!response.ok) {
       const body = await response.text();
-      throw new Error(
+      throw new EkoDBApiError(
+        response.status,
+        body,
         `SSE raw completion failed (${response.status}): ${body}`,
       );
     }

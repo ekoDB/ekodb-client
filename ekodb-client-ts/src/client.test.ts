@@ -1061,19 +1061,51 @@ describe("EkoDBClient error handling", () => {
     expect((error as RateLimitError).retryAfterSecs).toBe(42);
   });
 
-  it("handles authentication error", async () => {
+  it("throws a refused token exchange as EkoDBApiError with its status", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: false,
       status: 401,
       json: async () => ({ error: "Invalid API key" }),
-      text: async () => "Invalid API key",
+      text: async () => JSON.stringify({ error: "Invalid API key" }),
       headers: new Headers(),
     });
 
     const client = createTestClient();
 
-    await expect(client.insert("users", { name: "Test" })).rejects.toThrow();
+    const error = await client
+      .insert("users", { name: "Test" })
+      .then(() => undefined)
+      .catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(EkoDBApiError);
+    expect((error as EkoDBApiError).status).toBe(401);
+    expect((error as EkoDBApiError).body).toBe('{"error":"Invalid API key"}');
+    // The message is still the server's error text.
+    expect((error as Error).message).toBe("Invalid API key");
   });
+
+  it.each(["rawCompletionStream", "rawCompletionStreamWithProgress"] as const)(
+    "throws a refused %s answer as EkoDBApiError with its status",
+    async (method) => {
+      const client = createTestClient();
+      mockTokenResponse();
+      mockErrorResponse(503, "model unavailable");
+
+      const call =
+        method === "rawCompletionStream"
+          ? client.rawCompletionStream({ system_prompt: "s", message: "m" })
+          : client.rawCompletionStreamWithProgress(
+              { system_prompt: "s", message: "m" },
+              () => {},
+            );
+      const error = await call.then(() => undefined).catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(EkoDBApiError);
+      expect((error as EkoDBApiError).status).toBe(503);
+      expect((error as EkoDBApiError).body).toBe("model unavailable");
+      expect((error as Error).message).toBe(
+        "SSE raw completion failed (503): model unavailable",
+      );
+    },
+  );
 });
 
 // Note: Rate limit info tests require actual HTTP response headers
