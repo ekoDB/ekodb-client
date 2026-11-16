@@ -64,7 +64,7 @@ def server():
 
 
 @pytest.mark.asyncio
-async def test_update_schema_constraints_sends_partial_update(server):
+async def test_update_schema_constraints_omits_unset_attributes(server):
     client = Client.new(server, "test-api-key", should_retry=False, timeout_secs=10)
     result = await client.update_schema_constraints(
         "users",
