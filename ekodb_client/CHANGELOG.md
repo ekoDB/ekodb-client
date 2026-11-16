@@ -43,17 +43,24 @@ and this project adheres to
   `restoreCollectionCounts(...).recordsRestored` for the records recovered. The
   Rust, Python and Kotlin `restore_collection` docs now say they return the
   cleared count (#394).
-- Rust: for a REST call, `Error::Api { code }` is always the answer's HTTP
-  status. An error body carrying its own `code` field used to set it, so the
-  same answer could report different statuses across SDKs. A WebSocket call's
-  `Error::Api` carries the code in the server's error frame (an HTTP-style
-  status such as `401` or `500`), as before (#390).
-- Rust: `save_function`, `call_function` and `save_user_function` report a
-  successful answer with an empty or unparseable body, or (for the two saves) a
-  body whose `status` is not `success`, as `Error::Validation`, as
-  `handle_response` already does. They used to build `Error::Api` with status
-  200 or a made-up 500, which read as an HTTP error answer (and in Python became
-  an `ApiError`) (#390).
+- Rust: `Error::Api` now means the server answered with an error status. For a
+  REST call its `code` is the answer's HTTP status; an error body carrying its
+  own `code` field used to set it, so the same answer could report different
+  statuses across SDKs. For a WebSocket call it is the status in the server's
+  error frame (such as `401` or `500`). One case keeps its existing shape: a
+  failure the server reports inside a successful streamed completion carries no
+  status and stays `Error::Api` with code `500` (#390).
+- Rust: errors the client makes itself no longer use `Error::Api`. A successful
+  answer with an empty or unparseable body (`save_function`, `call_function`,
+  `save_user_function`), a body whose `status` is not `success` (the two saves)
+  and an `embed` answer with no embedding are `Error::Validation`, as
+  `handle_response` already reported unparseable answers; they used to be
+  `Error::Api` with status 200 or a made-up 500. A dropped WebSocket connection
+  and a streamed completion that ends without its done event are
+  `Error::Connection`; they used to be `Error::Api` with code 0 or 500. An SSE
+  subscription's bad URL is `Error::InvalidUrl` and its failed connect
+  `Error::Http`, instead of `Error::Api` with code 0. In Python, none of these
+  is an `ApiError` any more (#390).
 
 ### Fixed
 
