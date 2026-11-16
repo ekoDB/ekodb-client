@@ -56,11 +56,14 @@ and this project adheres to
   and an `embed` answer with no embedding are `Error::Validation`, as
   `handle_response` already reported unparseable answers; they used to be
   `Error::Api` with status 200 or a made-up 500. A dropped WebSocket connection
-  and a streamed completion that ends without its done event are
-  `Error::Connection`; they used to be `Error::Api` with code 0 or 500. An SSE
-  subscription's bad URL is `Error::InvalidUrl` and its failed connect
-  `Error::Http`, instead of `Error::Api` with code 0. In Python, none of these
-  is an `ApiError` any more (#390).
+  and a streamed completion that ends with neither content nor its done event
+  are `Error::Connection`; they used to be `Error::Api` with code 0 or 500 (a
+  stream that sent content and then closed still returns that content). Both now
+  report `true` from `Error::is_retryable()`, as every `Connection` error does;
+  the client does not retry either itself, and retrying a streamed completion
+  repeats the model call. An SSE subscription's bad URL is `Error::InvalidUrl`
+  and its failed connect `Error::Http`, instead of `Error::Api` with code 0. In
+  Python, none of these is an `ApiError` any more (#390).
 
 ### Fixed
 
