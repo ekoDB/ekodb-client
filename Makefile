@@ -337,7 +337,7 @@ deploy-client-py: venv
 		exit 1; \
 	}
 	@if [ -f .env ]; then \
-		export $$(grep -v '^#' .env | xargs) && \
+		set -a && . ./.env && set +a && \
 		if [ -z "$$MATURIN_PYPI_TOKEN" ]; then \
 			echo "$(RED)❌ MATURIN_PYPI_TOKEN not found in .env$(RESET)"; \
 			echo "$(YELLOW)💡 Add to .env: MATURIN_PYPI_TOKEN=pypi-your-token-here$(RESET)"; \
