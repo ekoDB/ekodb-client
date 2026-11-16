@@ -674,7 +674,7 @@ run-rag-examples: build-python-client python-example-deps ensure-jvm
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "$(CYAN)Running Kotlin RAG Example...$(RESET)"
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
-	@cd examples/kotlin && export $$(grep -v '^#' .env | grep -v '^$$' | xargs) && $(RUN_WITH_TIMEOUT) ./gradlew run -PmainClass="io.ekodb.client.examples.RagConversationSystemKt" --quiet
+	@cd examples/kotlin && if [ -f .env ]; then set -a && . ./.env && set +a; fi && $(RUN_WITH_TIMEOUT) ./gradlew run -PmainClass="io.ekodb.client.examples.RagConversationSystemKt" --quiet
 	@echo ""
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "✅ $(GREEN)RAG Examples Complete!$(RESET)"
@@ -1003,7 +1003,7 @@ test-examples-py: test-examples-python
 test-examples-py-direct: test-examples-python-direct
 test-examples-py-client: test-examples-python-client
 
-test-examples-python-direct: python-example-deps
+test-examples-python-direct: build-python-client python-example-deps
 	@echo "🧪 $(CYAN)Running Python examples (direct HTTP/WebSocket)...$(RESET)"
 	@source scripts/load-root-env.sh && cd examples/python && $(VENV_PY) test_runner.py
 	@echo "✅ $(GREEN)Python direct examples complete!$(RESET)"
