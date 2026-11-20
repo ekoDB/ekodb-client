@@ -31,7 +31,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
 
     // Serialization
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.12.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.13.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-cbor:1.12.0") // CBOR for binary serialization (similar to MessagePack)
     // MessagePack core, for the WebSocket binary transport negotiated with the
     // server. CBOR above is NOT wire-compatible with the server's msgpack, so a
