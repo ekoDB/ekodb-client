@@ -37,7 +37,7 @@ enum class SerializationFormat {
     JSON,
 
     /**
-     * MessagePack format (binary), for the single-record CRUD routes: insert, update, delete and find.
+     * MessagePack format (binary), for the CRUD routes: insert, update, delete and find, by id or by query.
      * Batch operations and every other route, and their Accept header, stay JSON.
      */
     MESSAGEPACK
@@ -1844,9 +1844,10 @@ class EkoDBClient private constructor(
                 // concurrency (coroutine cancellation) keeps working.
                 if (e is kotlinx.coroutines.CancellationException) throw e
                 if (e is EkoDBHttpException) throw e
-                // A body that cannot be encoded fails the same way every attempt and sends nothing,
-                // so retrying it only delays the error.
-                if (e is kotlinx.serialization.SerializationException || e.cause is kotlinx.serialization.SerializationException) throw e
+                // A body that cannot be packed fails the same way every attempt and sends nothing,
+                // so retrying it only delays the error. A reply or a token that fails to decode is a
+                // different failure and keeps its retries.
+                if (e is UnencodableRequestBodyException || e.cause is UnencodableRequestBodyException) throw e
                 // A call on an existing transaction is not re-sent after a
                 // transport failure: the failed attempt may have reached the
                 // server.
