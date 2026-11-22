@@ -588,6 +588,7 @@ class EkoDBClientTest {
         answer("/api/auth/token", """{"token": "mock_jwt_token_123"}""".toByteArray(), "application/json")
         answer("/api/collections", """{"collections": ["a"]}""".toByteArray(), "application/json")
         answer("/api/transactions/tx-1/savepoints", "{}".toByteArray(), "application/json")
+        answer("/api/batch/insert/users", "{}".toByteArray(), "application/json")
         answer(
             "/api/insert/users",
             jsonElementToMsgpack(buildJsonObject { put("id", "user_9") }),
@@ -603,6 +604,7 @@ class EkoDBClientTest {
         try {
             assertEquals(listOf("a"), client.listCollections())
             client.createSavepoint("tx-1", "sp1")
+            client.batchInsert("users", listOf(Record().insert("name", "Ada")))
             client.insert("users", Record().insert("name", "Ada"))
 
             val (collectionsAccept, _) = seen.getValue("/api/collections")
@@ -613,10 +615,103 @@ class EkoDBClientTest {
             assertFalse(savepointAccept!!.contains("msgpack"), "Accept was $savepointAccept")
             assertTrue(savepointType!!.startsWith("application/json"), "Content-Type was $savepointType")
 
+            val (batchAccept, batchType) = seen.getValue("/api/batch/insert/users")
+            assertFalse(batchAccept!!.contains("msgpack"), "Accept was $batchAccept")
+            assertTrue(batchType!!.startsWith("application/json"), "Content-Type was $batchType")
+
             // Control: a CRUD route still sends and asks for MessagePack.
             val (insertAccept, insertType) = seen.getValue("/api/insert/users")
             assertTrue(insertAccept!!.contains("application/msgpack"), "Accept was $insertAccept")
             assertEquals("application/msgpack", insertType)
+        } finally {
+            client.close()
+            server.stop(0)
+        }
+    }
+
+    @Test
+    fun `messagepack format keeps routes outside the CRUD set on JSON for a caller-supplied client`() = runBlocking {
+        // The caller's client carries its own JSON converter; the MessagePack type is added beside it,
+        // and a route outside the CRUD set must still ask for JSON only.
+        val accepts = java.util.concurrent.ConcurrentHashMap<String, String>()
+        val engine = MockEngine { request ->
+            val path = request.url.encodedPath
+            accepts[path] = request.headers.getAll(HttpHeaders.Accept).orEmpty().joinToString(", ")
+            when (path) {
+                "/api/auth/token" -> respond(
+                    """{"token": "mock_jwt_token_123"}""",
+                    HttpStatusCode.OK,
+                    headersOf(HttpHeaders.ContentType, "application/json"),
+                )
+                "/api/collections" -> respond(
+                    """{"collections": ["a"]}""",
+                    HttpStatusCode.OK,
+                    headersOf(HttpHeaders.ContentType, "application/json"),
+                )
+                else -> respond(
+                    jsonElementToMsgpack(buildJsonObject { put("id", "user_9") }),
+                    HttpStatusCode.OK,
+                    headersOf(HttpHeaders.ContentType, "application/msgpack"),
+                )
+            }
+        }
+        val client = EkoDBClient.builder()
+            .baseUrl("http://localhost")
+            .apiKey(testApiKey)
+            .format(SerializationFormat.MESSAGEPACK)
+            .maxRetries(1)
+            .httpClient(HttpClient(engine) { install(ContentNegotiation) { json() } })
+            .build()
+        try {
+            assertEquals(listOf("a"), client.listCollections())
+            client.insert("users", Record().insert("name", "Ada"))
+
+            val collectionsAccept = accepts.getValue("/api/collections")
+            assertTrue(collectionsAccept.contains("json"), "Accept was $collectionsAccept")
+            assertFalse(collectionsAccept.contains("msgpack"), "Accept was $collectionsAccept")
+            // Control: a CRUD route still asks for MessagePack.
+            assertTrue(accepts.getValue("/api/insert/users").contains("application/msgpack"))
+        } finally {
+            client.close()
+        }
+    }
+
+    @Test
+    fun `messagepack format reads a MessagePack error body of an insert as the server's message`() = runBlocking {
+        // A MESSAGEPACK-format client asks for MessagePack on an insert, so the server answers an error in
+        // MessagePack; the message the caller sees is the decoded one, not undecodable bytes.
+        val failure = jsonElementToMsgpack(buildJsonObject { put("error", "duplicate key users/1") })
+        val sentAccept = java.util.concurrent.atomic.AtomicReference<String?>()
+        val sentType = java.util.concurrent.atomic.AtomicReference<String?>()
+        val server = com.sun.net.httpserver.HttpServer.create(java.net.InetSocketAddress("127.0.0.1", 0), 0)
+        server.createContext("/api/auth/token") { exchange ->
+            val body = """{"token": "mock_jwt_token_123"}""".toByteArray()
+            exchange.responseHeaders.add("Content-Type", "application/json")
+            exchange.sendResponseHeaders(200, body.size.toLong())
+            exchange.responseBody.use { it.write(body) }
+        }
+        server.createContext("/api/insert/users") { exchange ->
+            sentAccept.set(exchange.requestHeaders.getFirst("Accept"))
+            sentType.set(exchange.requestHeaders.getFirst("Content-Type"))
+            exchange.requestBody.readBytes()
+            exchange.responseHeaders.add("Content-Type", "application/msgpack")
+            exchange.sendResponseHeaders(400, failure.size.toLong())
+            exchange.responseBody.use { it.write(failure) }
+        }
+        server.start()
+        val client = EkoDBClient.builder()
+            .baseUrl("http://127.0.0.1:${server.address.port}")
+            .apiKey(testApiKey)
+            .format(SerializationFormat.MESSAGEPACK)
+            .maxRetries(1)
+            .build()
+        try {
+            val error = assertFailsWith<Exception> { client.insert("users", Record().insert("name", "Ada")) }
+            assertTrue(error.message.orEmpty().contains("duplicate key users/1"), "got ${error.message}")
+            assertTrue(sentAccept.get().orEmpty().contains("application/msgpack"), "Accept was ${sentAccept.get()}")
+            // The body went out as MessagePack: Accept alone cannot show it, since content negotiation
+            // adds the registered MessagePack type to every request.
+            assertEquals("application/msgpack", sentType.get())
         } finally {
             client.close()
             server.stop(0)
