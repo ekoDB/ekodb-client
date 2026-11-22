@@ -1863,7 +1863,7 @@ class EkoDBClient private constructor(
                 }
 
                 if (transactional && !response.status.isSuccess()) {
-                    throw transactionHttpException(response.status.value, errorBodyText(response))
+                    throw transactionHttpException(response.status.value, response.bodyAsText())
                 }
 
                 // Check for rate limiting — same "only if a retry follows" guard,
