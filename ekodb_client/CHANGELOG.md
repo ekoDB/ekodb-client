@@ -131,8 +131,8 @@ and this project adheres to
   `{"field", "ascending"}`; it now sends that list, from a dict of field to
   `"asc"`, `"desc"` or a bool, in the dict's order, or from a list of
   `{"field": str, "ascending": bool}` entries or `(field, direction)` pairs. Any
-  other shape raises `TypeError` naming the entry, and an unknown direction
-  raises `ValueError`.
+  other shape, an `ascending` that is not a bool included, raises `TypeError`
+  naming the entry, and an unknown direction string raises `ValueError`.
 
 - **Document counts are exact past one page (#405).** Every SDK now counts with
   `POST /api/count/{collection}`, new in ekoDB server 0.84.0, and returns the
