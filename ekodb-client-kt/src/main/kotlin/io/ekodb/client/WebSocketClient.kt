@@ -1009,7 +1009,10 @@ private fun unpackValue(unpacker: MessageUnpacker): JsonElement {
     }
 }
 
-/** The payload of a WebSocket `TextSearch`. The server names the field list `search_fields` (#414). */
+/**
+ * The payload of a WebSocket `TextSearch`. The server names the field list `search_fields` (#414),
+ * and its options require `language`, so they carry the server's own default.
+ */
 internal fun textSearchPayload(collection: String, query: String, fields: List<String>?, limit: Int?): JsonObject =
     buildJsonObject {
         put("collection", collection)
@@ -1018,6 +1021,7 @@ internal fun textSearchPayload(collection: String, query: String, fields: List<S
             put("options", buildJsonObject {
                 fields?.let { put("search_fields", JsonArray(it.map { f -> JsonPrimitive(f) })) }
                 limit?.let { put("limit", it) }
+                put("language", "english")
             })
         }
     }
