@@ -137,6 +137,23 @@ async def test_forbidden_filter_raises_api_error_with_the_server_text():
 
 
 @pytest.mark.asyncio
+async def test_a_bad_request_passes_through_as_itself():
+    body = json.dumps({"error": "Invalid filter structure in body"})
+    server, thread, client, requests = serve_count(400, body)
+    try:
+        with pytest.raises(ApiError) as caught:
+            await client.count_documents(
+                "users", filter=QueryBuilder.condition("salary", "Gt", 100)
+            )
+        error = caught.value
+        assert error.status == 400
+        assert error.message == "Invalid filter structure in body"
+        assert "0.84.0" not in error.message
+    finally:
+        stop(server, thread)
+
+
+@pytest.mark.asyncio
 async def test_collection_name_is_path_escaped():
     server, thread, client, requests = serve_count(200, json.dumps({"count": 3}))
     try:
