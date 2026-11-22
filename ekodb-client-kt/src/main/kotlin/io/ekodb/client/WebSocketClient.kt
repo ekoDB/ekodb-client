@@ -475,11 +475,6 @@ class WebSocketClient(
     }
 
     /**
-     * Send a request on the active session using the negotiated format: binary
-     * msgpack when the server Welcomed it, JSON text otherwise. The single write
-     * point so every request honors the negotiated transport.
-     */
-    /**
      * Send [request]; if the send throws (a body that cannot be packed, a closed socket), run [undo] to
      * remove the state the caller registered for its answer, so a failed send leaves no pending entry
      * behind to misroute a later frame.
@@ -497,6 +492,11 @@ class WebSocketClient(
         }
     }
 
+    /**
+     * Send a request on the active session using the negotiated format: binary
+     * msgpack when the server Welcomed it, JSON text otherwise. The single write
+     * point so every request honors the negotiated transport.
+     */
     private suspend fun sendFrame(s: DefaultClientWebSocketSession, request: JsonObject) {
         if (binary) {
             s.send(Frame.Binary(true, jsonElementToMsgpack(request)))
