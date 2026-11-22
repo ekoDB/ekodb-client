@@ -17,6 +17,14 @@ import java.nio.charset.Charset
 internal val MessagePackContentType = ContentType("application", "msgpack")
 
 /**
+ * A request body that cannot be packed (an integer beyond 64 bits). It fails the same way on every
+ * attempt and nothing is sent, so the retry loop raises it at once; it is a
+ * [kotlinx.serialization.SerializationException] so callers and tests catching that still see it.
+ */
+internal class UnencodableRequestBodyException(cause: kotlinx.serialization.SerializationException) :
+    kotlinx.serialization.SerializationException(cause.message, cause)
+
+/**
  * Content negotiation for `application/msgpack`, registered when a client uses
  * [SerializationFormat.MESSAGEPACK] (#418).
  *
@@ -46,7 +54,12 @@ internal class MessagePackConverter(
         } else {
             json.encodeToJsonElement(serializerFor(typeInfo) as KSerializer<Any?>, value)
         }
-        return ByteArrayContent(jsonElementToMsgpack(element), contentType)
+        val packed = try {
+            jsonElementToMsgpack(element)
+        } catch (e: kotlinx.serialization.SerializationException) {
+            throw UnencodableRequestBodyException(e)
+        }
+        return ByteArrayContent(packed, contentType)
     }
 
     override suspend fun deserialize(charset: Charset, typeInfo: TypeInfo, content: ByteReadChannel): Any? =
