@@ -183,6 +183,57 @@ class EkoDBClientTest {
         }
     }
 
+    /** An insert answered 400 with [body] under [contentType]: the exception it fails with. */
+    private suspend fun insertFailedWith(contentType: String, body: ByteArray): Exception {
+        val engine = MockEngine { request ->
+            if (request.url.encodedPath.contains("/api/auth/token")) {
+                respond("""{"token":"mock_jwt_token_123"}""",
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
+            } else {
+                respond(body, status = HttpStatusCode.BadRequest,
+                    headers = headersOf(HttpHeaders.ContentType, contentType))
+            }
+        }
+        val client = createTestClient(engine)
+        try {
+            return assertFailsWith<Exception> {
+                client.insert("users", io.ekodb.client.types.Record().insert("name", "Alice"))
+            }
+        } finally {
+            client.close()
+        }
+    }
+
+    @Test
+    fun `a MessagePack error body is decoded whatever the letter case or parameters of its content type`() = runBlocking {
+        val packer = org.msgpack.core.MessagePack.newDefaultBufferPacker()
+        packer.packMapHeader(1)
+        packer.packString("error")
+        packer.packString("bad filter")
+        packer.close()
+        val error = insertFailedWith("Application/X-MsgPack; charset=binary", packer.toByteArray())
+        assertTrue(error.message.orEmpty().contains("""{"error":"bad filter"}"""), "${error.message}")
+    }
+
+    @Test
+    fun `a MessagePack content type with an invalid or non-map body keeps the bytes as text`() = runBlocking {
+        val invalid = byteArrayOf(0xc1.toByte(), 0xff.toByte())
+        val invalidError = insertFailedWith("application/msgpack", invalid)
+        assertTrue(
+            invalidError.message.orEmpty().endsWith(String(invalid, Charsets.UTF_8)),
+            "${invalidError.message}",
+        )
+        val packer = org.msgpack.core.MessagePack.newDefaultBufferPacker()
+        packer.packString("just a string")
+        packer.close()
+        val notAMap = packer.toByteArray()
+        val notAMapError = insertFailedWith("application/msgpack", notAMap)
+        assertTrue(
+            notAMapError.message.orEmpty().endsWith(String(notAMap, Charsets.UTF_8)),
+            "${notAMapError.message}",
+        )
+    }
+
     // ========================================================================
     // Health Check Tests
     // ========================================================================
