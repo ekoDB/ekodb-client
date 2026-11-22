@@ -55,6 +55,16 @@ and this project adheres to
 
 ### Changed
 
+- **The Kotlin builds lock and verify what they download (#386).**
+  `ekodb-client-kt` and `examples/kotlin` lock every resolved configuration
+  (`gradle.lockfile`), check every artifact against
+  `gradle/verification-metadata.xml` (sha256), and pin the Gradle distribution
+  with `distributionSha256Sum`. A substituted artifact or distribution now fails
+  the build, a dependency changed without refreshing its lock fails with
+  Gradle's lock-state error, and a build can run offline from a verified set of
+  artifacts. `make lock-kotlin` refreshes the locks and checksums after a
+  dependency change.
+
 - Docs: the constraint-update docs in Rust (`SchemaConstraintUpdate`,
   `update_schema_constraints` and its example), Python
   (`update_schema_constraints`), TypeScript (`SchemaConstraintUpdate`,
