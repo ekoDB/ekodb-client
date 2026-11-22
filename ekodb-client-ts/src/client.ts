@@ -164,14 +164,15 @@ function actsOnExistingTransaction(method: string, path: string): boolean {
  */
 async function errorBodyText(response: Response): Promise<string> {
   const contentType = response.headers?.get("content-type") ?? "";
-  if (!contentType.includes("msgpack")) return response.text();
+  if (!contentType.toLowerCase().includes("msgpack")) return response.text();
   const bytes = new Uint8Array(await response.arrayBuffer());
   try {
     const decoded: unknown = decode(bytes);
+    // A map decodes to a plain object; a binary value or a timestamp is not one.
     if (
       decoded !== null &&
       typeof decoded === "object" &&
-      !Array.isArray(decoded)
+      [Object.prototype, null].includes(Object.getPrototypeOf(decoded))
     ) {
       return JSON.stringify(decoded);
     }
@@ -2517,7 +2518,7 @@ export class EkoDBClient {
     });
 
     if (!response.ok) {
-      const body = await response.text();
+      const body = await errorBodyText(response);
       throw new EkoDBApiError(
         response.status,
         body,
@@ -2572,7 +2573,7 @@ export class EkoDBClient {
     });
 
     if (!response.ok) {
-      const body = await response.text();
+      const body = await errorBodyText(response);
       throw new EkoDBApiError(
         response.status,
         body,
@@ -2707,7 +2708,7 @@ export class EkoDBClient {
         });
 
         if (!response.ok) {
-          const body = await response.text();
+          const body = await errorBodyText(response);
           stream.emit("event", {
             type: "error",
             error: `SSE chat message stream failed (${response.status}): ${body}`,
@@ -3914,7 +3915,7 @@ export class EkoDBClient {
         });
 
         if (!response.ok) {
-          const body = await response.text();
+          const body = await errorBodyText(response);
           stream.emit(
             "error",
             `SSE subscribe failed (${response.status}): ${body}`,
