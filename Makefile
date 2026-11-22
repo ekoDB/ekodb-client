@@ -54,7 +54,7 @@ YELLOW := \033[33m
 RED := \033[31m
 RESET := \033[0m
 
-.PHONY: all build build-release build-client build-python-client build-typescript-client build-examples check-client-examples example-parity-check test test-hooks test-example-env test-ls test-ls-check test-ci test-client test-examples test-examples-direct test-examples-client test-examples-rust test-examples-python test-examples-go test-examples-typescript test-examples-javascript test-examples-transactions test-examples-scripts test-examples-scripts-crud test-examples-swr test-examples-ts-swr test-examples-py-swr test-examples-go-swr test-examples-rust-swr test-examples-kt-swr function-stage-contract-check clean check fmt fmt-rust fmt-rust-client fmt-rust-examples fmt-python fmt-go fmt-typescript fmt-md format install install-rust install-python install-typescript install-go venv python-example-deps ensure-jvm ensure-ruff ensure-cargo check-toolchains setup install-hooks deps-check deps-update deploy-client deploy-client-rust deploy-client-py deploy-client-py-simple deploy-client-go deploy-client-ts bump-version sync-versions bump-client-py docs-client
+.PHONY: all build build-release build-client build-python-client build-typescript-client build-examples check-client-examples example-parity-check test test-hooks test-example-env test-ls test-ls-check test-ci test-client test-examples test-examples-direct test-examples-client test-examples-rust test-examples-python test-examples-go test-examples-typescript test-examples-javascript test-examples-transactions test-examples-scripts test-examples-scripts-crud test-examples-swr test-examples-ts-swr test-examples-py-swr test-examples-go-swr test-examples-rust-swr test-examples-kt-swr function-stage-contract-check clean check fmt fmt-rust fmt-rust-client fmt-rust-examples fmt-python fmt-go fmt-typescript fmt-md format install install-rust install-python install-typescript install-go venv python-example-deps ensure-jvm ensure-ruff ensure-cargo check-toolchains setup install-hooks deps-check deps-update deps-update-kotlin lock-kotlin deploy-client deploy-client-rust deploy-client-py deploy-client-py-simple deploy-client-go deploy-client-ts bump-version sync-versions bump-client-py docs-client
 
 # Color codes for Worthington jet
 MAGENTA := \033[35m
@@ -181,6 +181,7 @@ help:
 	@echo "     $(GREEN)make deps-check-python$(RESET) - Check Python/pip dependencies"
 	@echo "     $(GREEN)make deps-check-typescript$(RESET) - Check TypeScript/npm dependencies"
 	@echo "     $(GREEN)make deps-check-kotlin$(RESET) - Check Kotlin/Gradle dependencies"
+	@echo "     $(GREEN)make lock-kotlin$(RESET)      - Refresh the Kotlin lockfiles and checksums after a dependency change"
 	@echo "  📋 $(GREEN)make examples-ls$(RESET)  - Generate comprehensive examples inventory"
 	@echo "  🔍 $(GREEN)make examples-ls-check$(RESET) - Validate examples inventory against committed snapshot"
 	@echo "  🔄 $(GREEN)make examples-ls-badge$(RESET) - Update README badge with current example count"
@@ -1593,15 +1594,16 @@ deps-update-kotlin: ensure-jvm
 
 # Refresh the Kotlin dependency locks (gradle.lockfile) and the sha256 verification metadata of both
 # Kotlin builds after a dependency change (#386). Each run uses a new, empty Gradle home under the
-# client's build directory (removed by `gradle clean`): Gradle records only what it downloads, so a
-# warm cache would leave artifacts out of the metadata and a fresh machine would then fail
-# verification. The client is built first: the examples consume its jar. Network access is
-# needed; the checked-in files then let a build run offline.
+# client's build directory, removed again when both builds finish, whether they pass or fail:
+# Gradle records only what it downloads, so a warm cache would leave artifacts out of the metadata
+# and a fresh machine would then fail verification. The client is built first: the examples consume
+# its jar. Network access is needed; the checked-in files then let a build run offline.
 lock-kotlin: ensure-jvm ## Refresh the Kotlin lockfiles and verification metadata after a dependency change
 	@mkdir -p $(CLIENT_KT_DIR)/build
-	@home=$$(mktemp -d "$(CURDIR)/$(CLIENT_KT_DIR)/build/lock-kotlin-home.XXXXXX") && \
+	@home=$$(mktemp -d "$(CURDIR)/$(CLIENT_KT_DIR)/build/lock-kotlin-home.XXXXXX") || exit 1; \
 	(cd $(CLIENT_KT_DIR) && GRADLE_USER_HOME="$$home" ./gradlew --no-daemon --write-locks --write-verification-metadata sha256 resolveAndLockAll build) && \
-	(cd examples/kotlin && GRADLE_USER_HOME="$$home" ./gradlew --no-daemon --write-locks --write-verification-metadata sha256 resolveAndLockAll build -x test)
+	(cd examples/kotlin && GRADLE_USER_HOME="$$home" ./gradlew --no-daemon --write-locks --write-verification-metadata sha256 resolveAndLockAll build -x test); \
+	status=$$?; rm -rf "$$home"; exit $$status
 
 # ============================================================================
 # Examples Inventory
