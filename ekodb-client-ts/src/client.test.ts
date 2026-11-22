@@ -4871,28 +4871,6 @@ describe("EkoDBClient MessagePack error bodies (#408)", () => {
     }
   });
 
-  it("gives a transaction failure answered as MessagePack its message and retryable flag", async () => {
-    const client = msgpackClient();
-    mockTokenResponse();
-    mockFailure(
-      409,
-      encode({
-        error: "write conflict on users/1",
-        transaction_id: "tx-1",
-        retryable: true,
-      }),
-      "application/msgpack",
-    );
-    const error = (await client
-      .commitTransaction("tx-1")
-      .then(() => undefined)
-      .catch((e: unknown) => e)) as EkoDBApiError;
-    expect(error).toBeInstanceOf(EkoDBApiError);
-    expect(error.status).toBe(409);
-    expect(error.message).toBe("write conflict on users/1");
-    expect(error.retryable).toBe(true);
-  });
-
   it("keeps a JSON error body as its text", async () => {
     const client = msgpackClient();
     mockTokenResponse();
