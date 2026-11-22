@@ -889,6 +889,70 @@ describe("WebSocketClient", () => {
   });
 
   // --------------------------------------------------------------------------
+  // Frames the server must be able to parse (#414, #415)
+  // --------------------------------------------------------------------------
+
+  describe("textSearch and createCollection frames", () => {
+    it("sends the text search field list as search_fields", async () => {
+      const client = new WebSocketClient(
+        `ws://localhost:${port}/api/ws`,
+        "test-token",
+      );
+
+      const resultPromise = client.textSearch("docs", "alpha", ["title"], 5);
+
+      await new Promise((r) => wss.once("connection", r));
+      const ws = getLastConnection();
+      const msg = await waitForMessage(ws);
+
+      expect(msg.type).toBe("TextSearch");
+      expect(msg.payload.options).toEqual({
+        search_fields: ["title"],
+        limit: 5,
+      });
+      expect(msg.payload.options.fields).toBeUndefined();
+
+      ws.send(
+        JSON.stringify({
+          type: "Success",
+          messageId: msg.messageId,
+          payload: { data: [] },
+        }),
+      );
+      await expect(resultPromise).resolves.toEqual([]);
+
+      client.close();
+    });
+
+    it("sends a schema with empty fields when createCollection has none", async () => {
+      const client = new WebSocketClient(
+        `ws://localhost:${port}/api/ws`,
+        "test-token",
+      );
+
+      const resultPromise = client.createCollection("things");
+
+      await new Promise((r) => wss.once("connection", r));
+      const ws = getLastConnection();
+      const msg = await waitForMessage(ws);
+
+      expect(msg.type).toBe("CreateCollection");
+      expect(msg.payload).toEqual({ name: "things", schema: { fields: {} } });
+
+      ws.send(
+        JSON.stringify({
+          type: "Success",
+          messageId: msg.messageId,
+          payload: { data: null },
+        }),
+      );
+      await resultPromise;
+
+      client.close();
+    });
+  });
+
+  // --------------------------------------------------------------------------
   // rawCompletion
   // --------------------------------------------------------------------------
 
