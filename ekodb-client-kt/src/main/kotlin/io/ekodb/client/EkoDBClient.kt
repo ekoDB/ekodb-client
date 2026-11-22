@@ -25,10 +25,6 @@ import io.ktor.utils.io.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.cbor.Cbor
-import kotlinx.serialization.decodeFromByteArray
-import kotlinx.serialization.encodeToByteArray
 import kotlinx.serialization.json.*
 import kotlin.time.Duration.Companion.seconds
 
@@ -39,7 +35,7 @@ enum class SerializationFormat {
     /** JSON format (default, human-readable, fully supported) */
     JSON,
 
-    /** MessagePack format (binary, experimental) - uses CBOR encoding. Has compatibility issues with custom types. */
+    /** MessagePack format (binary), for the CRUD routes; every other route uses JSON. */
     MESSAGEPACK
 }
 
@@ -114,13 +110,12 @@ fun parseHealthStatus(body: JsonObject?): HealthStatus {
     return HealthStatus(true, status, integrityOk, body)
 }
 
-@OptIn(ExperimentalSerializationApi::class)
 class EkoDBClient private constructor(
     private val baseUrl: String,
     private val apiKey: String,
     private val timeout: Long = 30,
     private val maxRetries: Int = 3,
-    private val format: SerializationFormat = SerializationFormat.JSON, // Default to JSON (CBOR has serialization compatibility issues)
+    private val format: SerializationFormat = SerializationFormat.JSON, // Default to JSON
     schemaCacheEnabled: Boolean = false,
     schemaCacheTtlMs: Long = 300_000,
     schemaCacheMax: Int = 100,
@@ -132,12 +127,11 @@ class EkoDBClient private constructor(
     // SchemaChanged events invalidate the same cache.
     private val schemaCache = SchemaCache(schemaCacheEnabled, schemaCacheMax, schemaCacheTtlMs)
 
-    // CBOR serializer for MessagePack format
-    private val cbor = Cbor {
-        ignoreUnknownKeys = true
-    }
-
     private val client: HttpClient = injectedClient?.config {
+        if (format == SerializationFormat.MESSAGEPACK) {
+            // Added to the caller's own content negotiation, which keeps its JSON converter.
+            install(ContentNegotiation) { register(MessagePackContentType, MessagePackConverter()) }
+        }
         install(HttpTimeout) {
             connectTimeoutMillis = timeout * 1000
             requestTimeoutMillis = timeout * 1000
@@ -151,6 +145,9 @@ class EkoDBClient private constructor(
                 ignoreUnknownKeys = true
                 // No global classDiscriminator - let sealed classes define their own
             })
+            if (format == SerializationFormat.MESSAGEPACK) {
+                register(MessagePackContentType, MessagePackConverter())
+            }
         }
 
         // Enable compression with proper content negotiation
@@ -319,7 +316,7 @@ class EkoDBClient private constructor(
 
     /**
      * Determine if a path should always use JSON (metadata endpoints)
-     * CRUD operations support MessagePack/CBOR, but metadata/KV/auth/chat endpoints are JSON-only
+     * CRUD operations support MessagePack, but metadata/KV/auth/chat endpoints are JSON-only
      */
     private fun shouldUseJSON(path: String): Boolean {
         if (path.startsWith("/api/update/sequence/")) return true
@@ -351,72 +348,7 @@ class EkoDBClient private constructor(
         } else {
             when (this@EkoDBClient.format) {
                 SerializationFormat.JSON -> ContentType.Application.Json
-                SerializationFormat.MESSAGEPACK -> ContentType("application", "msgpack")
-            }
-        }
-    }
-
-    /**
-     * Set request body with proper serialization based on format and request URL
-     */
-    private fun HttpRequestBuilder.setBodyWithFormat(data: Any) {
-        // Get path from the request URL
-        val path = url.encodedPath
-        val forceJSON = shouldUseJSON(path)
-
-        when {
-            forceJSON || this@EkoDBClient.format == SerializationFormat.JSON -> {
-                // Use JSON serialization
-                when (data) {
-                    is JsonElement -> {
-                        val jsonString = Json.encodeToString(JsonElement.serializer(), data)
-                        setBody(TextContent(jsonString, ContentType.Application.Json))
-                    }
-                    else -> setBody(data) // Let ContentNegotiation handle @Serializable types
-                }
-            }
-            this@EkoDBClient.format == SerializationFormat.MESSAGEPACK -> {
-                // Manually serialize to CBOR bytes for CRUD operations only
-                val cborBytes = when (data) {
-                    is JsonElement -> {
-                        // Convert JsonElement to JSON string first, then to CBOR-compatible structure
-                        // JsonElement can be JsonObject, JsonArray, JsonPrimitive, or JsonNull
-                        val jsonString = Json.encodeToString(JsonElement.serializer(), data)
-                        this@EkoDBClient.cbor.encodeToByteArray(JsonElement.serializer(), Json.decodeFromString(jsonString))
-                    }
-                    is Record -> {
-                        // Serialize Record using its custom serializer
-                        this@EkoDBClient.cbor.encodeToByteArray(Record.serializer(), data)
-                    }
-                    is Query -> {
-                        // Serialize Query using its custom serializer
-                        this@EkoDBClient.cbor.encodeToByteArray(Query.serializer(), data)
-                    }
-                    else -> {
-                        // CBOR only supports known @Serializable types
-                        // For other types, throw clear error instead of attempting dynamic resolution
-                        throw IllegalArgumentException(
-                            "MessagePack/CBOR serialization only supports Record, Query, and JsonElement types. " +
-                                "Received unsupported type: ${data::class.qualifiedName}. " +
-                                "Use SerializationFormat.JSON instead or ensure your type is @Serializable and explicitly handled."
-                        )
-                    }
-                }
-                setBody(ByteArrayContent(cborBytes, ContentType("application", "msgpack")))
-            }
-        }
-    }
-
-    /**
-     * Parse response body based on format
-     */
-    private suspend inline fun <reified T> HttpResponse.bodyWithFormat(): T {
-        return when (this@EkoDBClient.format) {
-            SerializationFormat.JSON -> body()
-            SerializationFormat.MESSAGEPACK -> {
-                val bytes = body<ByteArray>()
-                val jsonElement = this@EkoDBClient.cbor.decodeFromByteArray(JsonElement.serializer(), bytes)
-                Json.decodeFromJsonElement(jsonElement)
+                SerializationFormat.MESSAGEPACK -> MessagePackContentType
             }
         }
     }
@@ -460,7 +392,7 @@ class EkoDBClient private constructor(
             throw Exception("Insert failed with status ${response.status}: $errorBody")
         }
 
-        return response.bodyWithFormat()
+        return response.body()
     }
 
     /**
@@ -2471,7 +2403,7 @@ class EkoDBClient private constructor(
         private var apiKey: String = ""
         private var timeout: Long = 30
         private var maxRetries: Int = 3
-        private var format: SerializationFormat = SerializationFormat.JSON // Default to JSON (CBOR has compatibility issues)
+        private var format: SerializationFormat = SerializationFormat.JSON // Default to JSON
         private var schemaCacheEnabled: Boolean = false
         private var schemaCacheTtlMs: Long = 300_000
         private var schemaCacheMax: Int = 100
@@ -2501,7 +2433,7 @@ class EkoDBClient private constructor(
 
         /**
          * Set serialization format (default: JSON for compatibility, MESSAGEPACK experimental)
-         * MESSAGEPACK uses CBOR encoding which is faster but has compatibility issues with custom types
+         * MESSAGEPACK sends and reads the CRUD routes as MessagePack; every other route stays JSON
          */
         fun format(format: SerializationFormat) = apply { this.format = format }
 
