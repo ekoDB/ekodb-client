@@ -2653,7 +2653,12 @@ impl Client {
                 "Summarized" => MergeStrategy::Summarized,
                 "LatestOnly" => MergeStrategy::LatestOnly,
                 "Interleaved" => MergeStrategy::Interleaved,
-                _ => return Err(PyRuntimeError::new_err(format!("Invalid merge strategy: {}. Valid options: Chronological, Summarized, LatestOnly, Interleaved", merge_strategy))),
+                _ => {
+                    return Err(PyRuntimeError::new_err(format!(
+                        "Invalid merge strategy: {}. Valid options: Chronological, Summarized, LatestOnly, Interleaved",
+                        merge_strategy
+                    )));
+                }
             };
 
             let request = ekodb_client::MergeSessionsRequest {
@@ -4751,8 +4756,7 @@ impl WebSocketClient {
                 Python::attach(|py| pydict_to_json(py, f.bind(py).cast::<PyDict>()?))?;
         }
         if let Some(s) = sort {
-            payload["sort"] =
-                Python::attach(|py| pydict_to_json(py, s.bind(py).cast::<PyDict>()?))?;
+            payload["sort"] = Python::attach(|py| ws_query_sort(s.bind(py)))?;
         }
         if let Some(l) = limit {
             payload["limit"] = serde_json::json!(l);
@@ -4887,17 +4891,7 @@ impl WebSocketClient {
         fields: Option<Vec<String>>,
         limit: Option<u64>,
     ) -> PyResult<Bound<'py, PyAny>> {
-        let mut payload = serde_json::json!({"collection": collection, "query": query});
-        let mut opts = serde_json::Map::new();
-        if let Some(f) = fields {
-            opts.insert("fields".to_string(), serde_json::json!(f));
-        }
-        if let Some(l) = limit {
-            opts.insert("limit".to_string(), serde_json::json!(l));
-        }
-        if !opts.is_empty() {
-            payload["options"] = serde_json::Value::Object(opts);
-        }
+        let payload = ws_text_search_payload(&collection, &query, fields, limit);
         self.send_crud(py, "TextSearch", payload)
     }
 
@@ -4950,13 +4944,15 @@ impl WebSocketClient {
         schema: Option<Py<PyAny>>,
     ) -> PyResult<Bound<'py, PyAny>> {
         let schema_json = match schema {
-            Some(s) => Python::attach(|py| pydict_to_json(py, s.bind(py).cast::<PyDict>()?))?,
-            None => serde_json::json!({}),
+            Some(s) => Some(Python::attach(|py| {
+                pydict_to_json(py, s.bind(py).cast::<PyDict>()?)
+            })?),
+            None => None,
         };
         self.send_crud(
             py,
             "CreateCollection",
-            serde_json::json!({"name": name, "schema": schema_json}),
+            ws_create_collection_payload(&name, schema_json),
         )
     }
 
@@ -5137,6 +5133,84 @@ fn extract_record_id(
 }
 
 /// Convert Python value to JSON recursively
+/// The payload of a WebSocket `TextSearch`. The server names the field list `search_fields`
+/// (#414).
+fn ws_text_search_payload(
+    collection: &str,
+    query: &str,
+    fields: Option<Vec<String>>,
+    limit: Option<u64>,
+) -> serde_json::Value {
+    let mut payload = serde_json::json!({"collection": collection, "query": query});
+    let mut opts = serde_json::Map::new();
+    if let Some(f) = fields {
+        opts.insert("search_fields".to_string(), serde_json::json!(f));
+    }
+    if let Some(l) = limit {
+        opts.insert("limit".to_string(), serde_json::json!(l));
+    }
+    if !opts.is_empty() {
+        payload["options"] = serde_json::Value::Object(opts);
+    }
+    payload
+}
+
+/// The payload of a WebSocket `CreateCollection`. With no schema, an empty one: a schema always
+/// has a `fields` object (#415).
+fn ws_create_collection_payload(
+    name: &str,
+    schema: Option<serde_json::Value>,
+) -> serde_json::Value {
+    serde_json::json!({
+        "name": name,
+        "schema": schema.unwrap_or_else(|| serde_json::json!({"fields": {}})),
+    })
+}
+
+/// The `sort` of a WebSocket `Query`, which the server takes as a list of
+/// `{"field": ..., "ascending": ...}` (#416). A list is sent as given. A dict maps each field, in
+/// its order, to its direction: `"asc"` or `"desc"` (any case), or a bool for ascending.
+fn ws_query_sort(sort: &Bound<'_, PyAny>) -> PyResult<serde_json::Value> {
+    if let Ok(dict) = sort.cast::<PyDict>() {
+        let mut pairs = Vec::with_capacity(dict.len());
+        for (key, value) in dict.iter() {
+            let field: String = key.extract().map_err(|_| {
+                pyo3::exceptions::PyTypeError::new_err("sort: each key must be a field name")
+            })?;
+            pairs.push((field, py_to_json(&value)?));
+        }
+        return sort_pairs_to_list(pairs).map_err(pyo3::exceptions::PyValueError::new_err);
+    }
+    match py_to_json(sort)? {
+        list @ serde_json::Value::Array(_) => Ok(list),
+        _ => Err(pyo3::exceptions::PyTypeError::new_err(
+            "sort must be a dict of field to direction or a list of {\"field\", \"ascending\"}",
+        )),
+    }
+}
+
+/// `(field, direction)` pairs as the server's sort list. A direction is `"asc"`, `"desc"` (any
+/// case) or a bool for ascending.
+fn sort_pairs_to_list(
+    pairs: Vec<(String, serde_json::Value)>,
+) -> Result<serde_json::Value, String> {
+    let mut list = Vec::with_capacity(pairs.len());
+    for (field, direction) in pairs {
+        let ascending = match &direction {
+            serde_json::Value::Bool(b) => *b,
+            serde_json::Value::String(s) if s.eq_ignore_ascii_case("asc") => true,
+            serde_json::Value::String(s) if s.eq_ignore_ascii_case("desc") => false,
+            other => {
+                return Err(format!(
+                    "sort: the direction of '{field}' must be \"asc\", \"desc\" or a bool, got {other}"
+                ));
+            }
+        };
+        list.push(serde_json::json!({"field": field, "ascending": ascending}));
+    }
+    Ok(serde_json::Value::Array(list))
+}
+
 fn py_to_json(value: &Bound<'_, PyAny>) -> PyResult<serde_json::Value> {
     use serde_json::json;
 
@@ -5642,6 +5716,60 @@ mod tests {
         }
     }
 
+    /// #414: a WebSocket text search sends its field list as `search_fields`.
+    #[test]
+    fn ws_text_search_sends_search_fields() {
+        let payload = ws_text_search_payload("docs", "alpha", Some(vec!["title".into()]), Some(5));
+        assert_eq!(
+            payload,
+            serde_json::json!({
+                "collection": "docs",
+                "query": "alpha",
+                "options": {"search_fields": ["title"], "limit": 5},
+            })
+        );
+        assert_eq!(
+            ws_text_search_payload("docs", "alpha", None, None),
+            serde_json::json!({"collection": "docs", "query": "alpha"}),
+            "no options when none are given"
+        );
+    }
+
+    /// #415: with no schema, a WebSocket create sends one with an empty `fields`. Control: a
+    /// given schema is sent as given.
+    #[test]
+    fn ws_create_collection_without_a_schema_sends_empty_fields() {
+        assert_eq!(
+            ws_create_collection_payload("c", None),
+            serde_json::json!({"name": "c", "schema": {"fields": {}}})
+        );
+        let schema = serde_json::json!({"fields": {"a": {"field_type": "String"}}});
+        assert_eq!(
+            ws_create_collection_payload("c", Some(schema.clone())),
+            serde_json::json!({"name": "c", "schema": schema})
+        );
+    }
+
+    /// #416: a dict sort becomes the server's list, in the dict's order, with each direction
+    /// mapped. A direction that is not one is refused.
+    #[test]
+    fn a_dict_sort_becomes_the_servers_list() {
+        let list = sort_pairs_to_list(vec![
+            ("b".into(), serde_json::json!("desc")),
+            ("a".into(), serde_json::json!("ASC")),
+            ("c".into(), serde_json::json!(false)),
+        ])
+        .expect("a valid sort");
+        assert_eq!(
+            list,
+            serde_json::json!([
+                {"field": "b", "ascending": false},
+                {"field": "a", "ascending": true},
+                {"field": "c", "ascending": false},
+            ])
+        );
+        assert!(sort_pairs_to_list(vec![("a".into(), serde_json::json!("up"))]).is_err());
+    }
     #[test]
     fn test_bytes_roundtrip() {
         Python::attach(|py| {

@@ -63,16 +63,27 @@ pub enum WebSocketRequest {
     CancelChat { payload: CancelChatPayload },
     /// Stateless raw LLM completion (no session, no history, no RAG).
     /// Mirrors POST /api/chat/complete. Response: Success { data: { "content": "..." } }.
+    /// The fields go in `payload` and the `messageId` beside it, as every other
+    /// request carries them, so the server can read the request and the reply is
+    /// routed back to the caller (#413).
     RawComplete {
-        system_prompt: String,
-        message: String,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        provider: Option<String>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        model: Option<String>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        max_tokens: Option<i32>,
+        #[serde(rename = "messageId")]
+        message_id: String,
+        payload: RawCompletePayload,
     },
+}
+
+/// The fields of a [`WebSocketRequest::RawComplete`].
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RawCompletePayload {
+    pub system_prompt: String,
+    pub message: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub provider: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub model: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub max_tokens: Option<i32>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -1185,11 +1196,14 @@ impl WebSocketClient {
         let message_id = Self::gen_message_id();
 
         let ws_request = WebSocketRequest::RawComplete {
-            system_prompt: request.system_prompt.clone(),
-            message: request.message.clone(),
-            provider: request.provider.clone(),
-            model: request.model.clone(),
-            max_tokens: request.max_tokens,
+            message_id: message_id.clone(),
+            payload: RawCompletePayload {
+                system_prompt: request.system_prompt.clone(),
+                message: request.message.clone(),
+                provider: request.provider.clone(),
+                model: request.model.clone(),
+                max_tokens: request.max_tokens,
+            },
         };
 
         let response = self.send_and_wait(&ws_request, &message_id).await?;
@@ -1410,9 +1424,10 @@ impl WebSocketClient {
         fields: Option<Vec<String>>,
         limit: Option<u64>,
     ) -> Result<Vec<Value>> {
+        // The server names the field list `search_fields` (#414).
         let mut options = serde_json::Map::new();
         if let Some(f) = fields {
-            options.insert("fields".to_string(), serde_json::json!(f));
+            options.insert("search_fields".to_string(), serde_json::json!(f));
         }
         if let Some(l) = limit {
             options.insert("limit".to_string(), serde_json::json!(l));
@@ -1463,9 +1478,10 @@ impl WebSocketClient {
 
     /// Create a new collection with optional schema via WebSocket.
     pub async fn create_collection(&self, name: &str, schema: Option<Value>) -> Result<()> {
+        // With no schema, an empty one: a schema always has a `fields` object (#415).
         let payload = serde_json::json!({
             "name": name,
-            "schema": schema.unwrap_or(serde_json::json!({})),
+            "schema": schema.unwrap_or(serde_json::json!({ "fields": {} })),
         });
         self.send_crud("CreateCollection", payload).await?;
         Ok(())
