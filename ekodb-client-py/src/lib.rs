@@ -5934,6 +5934,17 @@ mod tests {
             // unknown direction a ValueError.
             let error_of = |sort: &Bound<'_, PyAny>| ws_query_sort(sort).expect_err("refused");
             assert!(error_of(bare.as_any()).is_instance_of::<pyo3::exceptions::PyTypeError>(py));
+            // Every other structural shape is a TypeError too: a three-item pair, an entry with an
+            // extra key, a top-level string, and a mapping keyed by something that is not a field name.
+            assert!(error_of(triple.as_any()).is_instance_of::<pyo3::exceptions::PyTypeError>(py));
+            assert!(
+                error_of(with_extra.as_any()).is_instance_of::<pyo3::exceptions::PyTypeError>(py)
+            );
+            assert!(error_of(PyString::new(py, "name").as_any())
+                .is_instance_of::<pyo3::exceptions::PyTypeError>(py));
+            let int_key = PyDict::new(py);
+            int_key.set_item(1, "asc").unwrap();
+            assert!(error_of(int_key.as_any()).is_instance_of::<pyo3::exceptions::PyTypeError>(py));
             // A wrong-typed `ascending` in an entry is a structural problem, so a TypeError.
             assert!(error_of(with_not_bool.as_any())
                 .is_instance_of::<pyo3::exceptions::PyTypeError>(py));
