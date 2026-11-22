@@ -157,6 +157,31 @@ function actsOnExistingTransaction(method: string, path: string): boolean {
 }
 
 /**
+ * The text of a failed response's body. The server encodes an error in the format the
+ * request's `Accept` asks for, so on a MessagePack route the body is MessagePack (#408). A body
+ * whose `Content-Type` names MessagePack and that decodes as a map is rendered as JSON, so it
+ * reads like the JSON answer for the same failure. Any other body is its text.
+ */
+async function errorBodyText(response: Response): Promise<string> {
+  const contentType = response.headers?.get("content-type") ?? "";
+  if (!contentType.includes("msgpack")) return response.text();
+  const bytes = new Uint8Array(await response.arrayBuffer());
+  try {
+    const decoded: unknown = decode(bytes);
+    if (
+      decoded !== null &&
+      typeof decoded === "object" &&
+      !Array.isArray(decoded)
+    ) {
+      return JSON.stringify(decoded);
+    }
+  } catch {
+    // Not MessagePack after all: the bytes as text.
+  }
+  return new TextDecoder().decode(bytes);
+}
+
+/**
  * Build the typed error for a failed call on an existing transaction from its
  * status and body. The server answers `{"error", "transaction_id",
  * "retryable"}`; a body that is not that JSON keeps its raw text as the
@@ -1065,7 +1090,10 @@ export class EkoDBClient {
         actsOnExistingTransaction(method, path) &&
         !(response.status === 401 && attempt === 0)
       ) {
-        const error = transactionError(response.status, await response.text());
+        const error = transactionError(
+          response.status,
+          await errorBodyText(response),
+        );
         if (this.redactErrors)
           throw new EkoDBApiError(
             response.status,
@@ -1138,7 +1166,7 @@ export class EkoDBClient {
       }
 
       // Handle other errors
-      const text = await response.text();
+      const text = await errorBodyText(response);
       if (this.redactErrors)
         throw new EkoDBApiError(
           response.status,
