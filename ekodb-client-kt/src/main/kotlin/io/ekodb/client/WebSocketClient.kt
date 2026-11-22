@@ -470,7 +470,7 @@ class WebSocketClient(
             pendingRequests[messageId] = deferred
         }
 
-        sendFrame(s, request)
+        sendOrUndo(s, request) { mutex.withLock { pendingRequests.remove(messageId) } }
         return deferred.await()
     }
 
@@ -479,6 +479,24 @@ class WebSocketClient(
      * msgpack when the server Welcomed it, JSON text otherwise. The single write
      * point so every request honors the negotiated transport.
      */
+    /**
+     * Send [request]; if the send throws (a body that cannot be packed, a closed socket), run [undo] to
+     * remove the state the caller registered for its answer, so a failed send leaves no pending entry
+     * behind to misroute a later frame.
+     */
+    private suspend fun sendOrUndo(
+        s: DefaultClientWebSocketSession,
+        request: JsonObject,
+        undo: suspend () -> Unit,
+    ) {
+        try {
+            sendFrame(s, request)
+        } catch (e: Throwable) {
+            undo()
+            throw e
+        }
+    }
+
     private suspend fun sendFrame(s: DefaultClientWebSocketSession, request: JsonObject) {
         if (binary) {
             s.send(Frame.Binary(true, jsonElementToMsgpack(request)))
@@ -643,7 +661,7 @@ class WebSocketClient(
             })
         }
 
-        sendFrame(s, request)
+        sendOrUndo(s, request) { mutex.withLock { if (chatStreams[chatId] === channel) chatStreams.remove(chatId) } }
 
         return flow {
             for (event in channel) {
@@ -679,7 +697,7 @@ class WebSocketClient(
             })
         }
 
-        sendFrame(s, request)
+        sendOrUndo(s, request) { mutex.withLock { if (registerToolsAck === deferred) registerToolsAck = null } }
         deferred.await()
     }
 
