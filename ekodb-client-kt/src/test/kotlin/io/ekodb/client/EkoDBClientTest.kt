@@ -719,6 +719,42 @@ class EkoDBClientTest {
     }
 
     @Test
+    fun `messagepack format keeps the CRUD routes when the baseUrl carries a path`() = runBlocking {
+        // encodedPath includes the base URL's own path; the route is matched after it, or a deployment
+        // behind a path prefix would silently send every route, CRUD included, as JSON.
+        val sentType = java.util.concurrent.atomic.AtomicReference<String?>()
+        val reply = jsonElementToMsgpack(buildJsonObject { put("id", "user_9") })
+        val server = com.sun.net.httpserver.HttpServer.create(java.net.InetSocketAddress("127.0.0.1", 0), 0)
+        server.createContext("/ekodb/api/auth/token") { exchange ->
+            val body = """{"token": "mock_jwt_token_123"}""".toByteArray()
+            exchange.responseHeaders.add("Content-Type", "application/json")
+            exchange.sendResponseHeaders(200, body.size.toLong())
+            exchange.responseBody.use { it.write(body) }
+        }
+        server.createContext("/ekodb/api/insert/users") { exchange ->
+            sentType.set(exchange.requestHeaders.getFirst("Content-Type"))
+            exchange.requestBody.readBytes()
+            exchange.responseHeaders.add("Content-Type", "application/msgpack")
+            exchange.sendResponseHeaders(200, reply.size.toLong())
+            exchange.responseBody.use { it.write(reply) }
+        }
+        server.start()
+        val client = EkoDBClient.builder()
+            .baseUrl("http://127.0.0.1:${server.address.port}/ekodb")
+            .apiKey(testApiKey)
+            .format(SerializationFormat.MESSAGEPACK)
+            .maxRetries(1)
+            .build()
+        try {
+            client.insert("users", Record().insert("name", "Ada"))
+            assertEquals("application/msgpack", sentType.get())
+        } finally {
+            client.close()
+            server.stop(0)
+        }
+    }
+
+    @Test
     fun `msgpack helpers keep unsigned 64-bit integers exact and refuse what they cannot represent`() {
         val max = java.math.BigInteger("18446744073709551615")
         assertEquals(JsonPrimitive(max), msgpackToJsonElement(jsonElementToMsgpack(JsonPrimitive(max))))
