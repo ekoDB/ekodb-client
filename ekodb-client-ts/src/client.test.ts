@@ -2442,6 +2442,26 @@ describe("EkoDBClient collection utilities", () => {
     expect(mockFetch).toHaveBeenCalledTimes(2);
   });
 
+  it("countDocuments passes a 400 through as itself, not the version error", async () => {
+    const client = createTestClient();
+    const body = JSON.stringify({ error: "Invalid filter structure in body" });
+
+    mockTokenResponse();
+    mockErrorResponse(400, body);
+
+    const error = await client
+      .countDocuments("users", {
+        type: "Condition",
+        content: { field: "salary", operator: "Gt", value: 100 },
+      })
+      .catch((e) => e);
+
+    expect(error).toBeInstanceOf(EkoDBApiError);
+    expect(error.status).toBe(400);
+    expect(error.message).toContain("Invalid filter structure in body");
+    expect(error.message).not.toContain("0.84.0");
+  });
+
   it("countDocuments path-escapes the collection name", async () => {
     const client = createTestClient();
 
