@@ -312,8 +312,9 @@ const joinResults = await client.find("users", multiQuery);
 - `deleteCollection(collection: string): Promise<void>`
 - `collectionExists(collection: string): Promise<boolean>` - Check if collection
   exists
-- `countDocuments(collection: string): Promise<number>` - Count documents in
-  collection
+- `countDocuments(collection: string, filter?: QueryExpression): Promise<number>` -
+  Count every document in a collection, or only those matching `filter`, exactly
+  (`POST /api/count`; requires ekoDB server 0.84.0 or later)
 
 #### Chat Models
 

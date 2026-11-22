@@ -20,6 +20,11 @@ use serde::{Deserialize, Serialize};
 use std::time::Duration;
 use url::Url;
 
+/// The message of the error `count` returns when the server has no
+/// `POST /api/count` route: an ekoDB server older than 0.84.0.
+pub(crate) const COUNT_UNSUPPORTED_MESSAGE: &str =
+    "count requires ekoDB server 0.84.0 or later (POST /api/count is not available on this server)";
+
 /// Body for the single-field atomic action endpoint.
 #[derive(Serialize, Deserialize, Clone)]
 struct UpdateWithActionBody {
@@ -922,6 +927,58 @@ impl HttpClient {
             Ok(())
         })
         .await
+    }
+
+    /// Count the records in a collection that match `filter` (every record
+    /// when `filter` is `None`), with `POST /api/count/{collection}`.
+    ///
+    /// The server counts every match, so the answer is exact however many
+    /// records match. The route is new in ekoDB server 0.84.0; an older server
+    /// answers 404 for the unknown path, which becomes `Error::Api` with status
+    /// 404 and [`COUNT_UNSUPPORTED_MESSAGE`]. The route itself has no 404
+    /// answer, so every 404 here is that case. Every other failure maps as in
+    /// `json_body`.
+    pub async fn count(
+        &self,
+        collection: &str,
+        filter: Option<&serde_json::Value>,
+        token: &str,
+    ) -> Result<usize> {
+        #[derive(Serialize)]
+        struct CountRequest<'a> {
+            #[serde(skip_serializing_if = "Option::is_none")]
+            filter: Option<&'a serde_json::Value>,
+        }
+
+        #[derive(Deserialize)]
+        struct CountResponse {
+            count: usize,
+        }
+
+        let url = self.api_path_url(&["count", collection])?;
+        let body = serde_json::to_vec(&CountRequest { filter })?;
+
+        let answer: CountResponse = self
+            .execute_with_retry(|| async {
+                let response = self
+                    .client
+                    .post(url.clone())
+                    .header("Authorization", format!("Bearer {}", token))
+                    .header("Content-Type", "application/json")
+                    .header("Accept", "application/json")
+                    .body(body.clone())
+                    .send()
+                    .await?;
+
+                if response.status() == StatusCode::NOT_FOUND {
+                    return Err(Error::api(404, COUNT_UNSUPPORTED_MESSAGE));
+                }
+                // Force JSON for metadata operations
+                Self::json_body(response).await
+            })
+            .await?;
+
+        Ok(answer.count)
     }
 
     /// Set a key-value pair

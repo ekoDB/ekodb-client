@@ -4,6 +4,7 @@
 
 import { encode, decode } from "@msgpack/msgpack";
 import { QueryBuilder, Query } from "./query-builder";
+import type { QueryExpression } from "./query-expression";
 import { SearchQuery, SearchResponse } from "./search";
 import {
   Schema,
@@ -106,6 +107,13 @@ export class EkoDBApiError extends Error {
     this.name = "EkoDBApiError";
   }
 }
+
+/**
+ * The message of the {@link EkoDBApiError} `countDocuments` throws when the
+ * server has no `POST /api/count` route: an ekoDB server older than 0.84.0.
+ */
+export const COUNT_UNSUPPORTED_MESSAGE =
+  "count requires ekoDB server 0.84.0 or later (POST /api/count is not available on this server)";
 
 /** The prefix of the routes that name an existing transaction. */
 const TRANSACTION_ROUTE_PREFIX = "/api/transactions/";
@@ -3793,14 +3801,47 @@ export class EkoDBClient {
   }
 
   /**
-   * Count documents in a collection
+   * Count the documents in a collection exactly, optionally only those that
+   * match a filter.
+   *
+   * Sends `POST /api/count/{collection}`, so the server counts every match
+   * however many there are. Requires ekoDB server 0.84.0 or later: an older
+   * server has no count route, and the call throws an {@link EkoDBApiError}
+   * with `status` 404 and a message naming the required version. Any other
+   * failure (400 for a malformed filter, 403 for a filter on a field the key
+   * cannot read) is thrown as an {@link EkoDBApiError} carrying the server's
+   * status and body.
+   *
    * @param collection - Collection name
-   * @returns Number of documents in the collection
+   * @param filter - Optional query expression, the same shape as a find
+   *   query's `filter`
+   * @returns Number of matching documents
    */
-  async countDocuments(collection: string): Promise<number> {
-    const query = new QueryBuilder().limit(100000).build();
-    const records = await this.find(collection, query);
-    return records.length;
+  async countDocuments(
+    collection: string,
+    filter?: QueryExpression,
+  ): Promise<number> {
+    const path = `/api/count/${encodeURIComponent(collection)}`;
+    try {
+      const answer = await this.makeRequest<{ count: number }>(
+        "POST",
+        path,
+        filter === undefined ? {} : { filter },
+        0,
+        true,
+      );
+      if (typeof answer.count !== "number")
+        throw new Error(
+          `count response has no numeric count field: ${JSON.stringify(answer)}`,
+        );
+      return answer.count;
+    } catch (error) {
+      // The count route has no 404 answer of its own, so a 404 means the
+      // server predates it.
+      if (error instanceof EkoDBApiError && error.status === 404)
+        throw new EkoDBApiError(404, error.body, COUNT_UNSUPPORTED_MESSAGE);
+      throw error;
+    }
   }
 
   /**
