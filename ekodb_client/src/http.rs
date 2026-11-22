@@ -1170,6 +1170,19 @@ impl HttpClient {
     }
 
     // ========== Transaction Methods ==========
+    //
+    // Every `/api/transactions` route answers a failure with
+    // `{"error": "...", "transaction_id": "...", "retryable": <bool>}`. These
+    // calls read it through `transaction_ok` / `transaction_json`, so a failure
+    // is `Error::Transaction`.
+    //
+    // They are sent exactly once, outside the retry policy. A failed commit has
+    // already discarded its transaction when the server answers, so a re-sent
+    // call can only come back 404 and hide the real cause. `retryable: true`
+    // tells the caller to begin a new transaction and run the work again; it is
+    // never a reason for the client to re-send the call. A 401 is still
+    // `TokenExpired`, which the client layer refreshes and sends once more: that
+    // request never reached the transaction.
 
     /// Begin a new transaction
     pub async fn begin_transaction(
@@ -1186,27 +1199,23 @@ impl HttpClient {
         }
 
         let request = BeginTransactionRequest { isolation_level };
+        let response = self
+            .client
+            .post(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .header("Accept", "application/json")
+            .json(&request)
+            .send()
+            .await?;
 
-        self.execute_with_retry(|| async {
-            let response = self
-                .client
-                .post(url.clone())
-                .header("Authorization", format!("Bearer {}", token))
-                .header("Accept", "application/json")
-                .json(&request)
-                .send()
-                .await?;
+        let result: serde_json::Value = Self::transaction_json(response).await?;
 
-            let result: serde_json::Value = Self::json_body(response).await?;
-
-            result["transaction_id"]
-                .as_str()
-                .map(|s| s.to_string())
-                .ok_or_else(|| {
-                    Error::Serialization(serde::de::Error::custom("No transaction_id in response"))
-                })
-        })
-        .await
+        result["transaction_id"]
+            .as_str()
+            .map(|s| s.to_string())
+            .ok_or_else(|| {
+                Error::Serialization(serde::de::Error::custom("No transaction_id in response"))
+            })
     }
 
     /// Get transaction status
@@ -1216,62 +1225,38 @@ impl HttpClient {
         token: &str,
     ) -> Result<serde_json::Value> {
         let url = self.api_path_url(&["transactions", transaction_id])?;
-
-        self.execute_with_retry(|| async {
-            let response = self
-                .client
-                .get(url.clone())
-                .header("Authorization", format!("Bearer {}", token))
-                .header("Accept", "application/json")
-                .send()
-                .await?;
-
-            let result: serde_json::Value = Self::json_body(response).await?;
-            Ok(result)
-        })
-        .await
+        let response = self
+            .client
+            .get(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .header("Accept", "application/json")
+            .send()
+            .await?;
+        Self::transaction_json(response).await
     }
 
     /// Commit a transaction
     pub async fn commit_transaction(&self, transaction_id: &str, token: &str) -> Result<()> {
         let url = self.api_path_url(&["transactions", transaction_id, "commit"])?;
-
-        self.execute_with_retry(|| async {
-            let response = self
-                .client
-                .post(url.clone())
-                .header("Authorization", format!("Bearer {}", token))
-                .send()
-                .await?;
-
-            if response.status().is_success() {
-                Ok(())
-            } else {
-                Err(Error::Http(response.error_for_status().unwrap_err()))
-            }
-        })
-        .await
+        let response = self
+            .client
+            .post(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        Self::transaction_ok(response).await
     }
 
     /// Rollback a transaction
     pub async fn rollback_transaction(&self, transaction_id: &str, token: &str) -> Result<()> {
         let url = self.api_path_url(&["transactions", transaction_id, "rollback"])?;
-
-        self.execute_with_retry(|| async {
-            let response = self
-                .client
-                .post(url.clone())
-                .header("Authorization", format!("Bearer {}", token))
-                .send()
-                .await?;
-
-            if response.status().is_success() {
-                Ok(())
-            } else {
-                Err(Error::Http(response.error_for_status().unwrap_err()))
-            }
-        })
-        .await
+        let response = self
+            .client
+            .post(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        Self::transaction_ok(response).await
     }
 
     /// Create a savepoint within a transaction.
@@ -1282,22 +1267,14 @@ impl HttpClient {
         token: &str,
     ) -> Result<()> {
         let url = self.api_path_url(&["transactions", transaction_id, "savepoints"])?;
-        let body = serde_json::json!({ "name": name });
-        self.execute_with_retry(|| async {
-            let response = self
-                .client
-                .post(url.clone())
-                .header("Authorization", format!("Bearer {}", token))
-                .json(&body)
-                .send()
-                .await?;
-            if response.status().is_success() {
-                Ok(())
-            } else {
-                Err(Error::Http(response.error_for_status().unwrap_err()))
-            }
-        })
-        .await
+        let response = self
+            .client
+            .post(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .json(&serde_json::json!({ "name": name }))
+            .send()
+            .await?;
+        Self::transaction_ok(response).await
     }
 
     /// Roll a transaction back to a savepoint, discarding writes staged after it.
@@ -1314,20 +1291,13 @@ impl HttpClient {
             name,
             "rollback",
         ])?;
-        self.execute_with_retry(|| async {
-            let response = self
-                .client
-                .post(url.clone())
-                .header("Authorization", format!("Bearer {}", token))
-                .send()
-                .await?;
-            if response.status().is_success() {
-                Ok(())
-            } else {
-                Err(Error::Http(response.error_for_status().unwrap_err()))
-            }
-        })
-        .await
+        let response = self
+            .client
+            .post(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        Self::transaction_ok(response).await
     }
 
     /// Release (forget) a savepoint. Staged work is unaffected.
@@ -1338,20 +1308,13 @@ impl HttpClient {
         token: &str,
     ) -> Result<()> {
         let url = self.api_path_url(&["transactions", transaction_id, "savepoints", name])?;
-        self.execute_with_retry(|| async {
-            let response = self
-                .client
-                .delete(url.clone())
-                .header("Authorization", format!("Bearer {}", token))
-                .send()
-                .await?;
-            if response.status().is_success() {
-                Ok(())
-            } else {
-                Err(Error::Http(response.error_for_status().unwrap_err()))
-            }
-        })
-        .await
+        let response = self
+            .client
+            .delete(url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+        Self::transaction_ok(response).await
     }
 
     /// Find a record by ID within a transaction (read-your-writes): served from
@@ -1622,6 +1585,28 @@ impl HttpClient {
         serde_json::from_slice(&bytes).map_err(Error::Serialization)
     }
 
+    /// Succeed on a 2xx answer from a `/api/transactions` route; turn any
+    /// other answer into the typed transaction error.
+    async fn transaction_ok(response: Response) -> Result<()> {
+        if response.status().is_success() {
+            Ok(())
+        } else {
+            Err(transaction_error_from_response(response).await)
+        }
+    }
+
+    /// Deserialize the JSON body of a 2xx answer from a `/api/transactions`
+    /// route; turn any other answer into the typed transaction error.
+    async fn transaction_json<T: for<'de> serde::Deserialize<'de>>(
+        response: Response,
+    ) -> Result<T> {
+        if !response.status().is_success() {
+            return Err(transaction_error_from_response(response).await);
+        }
+        let bytes = response.bytes().await.map_err(Error::Http)?;
+        serde_json::from_slice(&bytes).map_err(Error::Serialization)
+    }
+
     /// Extract rate limit information from response headers
     fn extract_rate_limit_info(&self, response: &Response) -> Option<RateLimitInfo> {
         let headers = response.headers();
@@ -1735,11 +1720,13 @@ impl HttpClient {
                 Err(Error::ServiceUnavailable(error_body.message))
             }
             _ => {
-                // Try to get error text, fallback to status description
-                let error_text = response
-                    .text()
-                    .await
-                    .unwrap_or_else(|_| format!("HTTP {} error", status.as_u16()));
+                // Read the body as bytes, not text: a MessagePack route can
+                // answer its error in MessagePack, which `error_body_text`
+                // decodes. Fall back to the status when the body cannot be read.
+                let error_text = match response.bytes().await {
+                    Ok(bytes) => error_body_text(&bytes),
+                    Err(_) => format!("HTTP {} error", status.as_u16()),
+                };
 
                 // Try to parse as ErrorResponse, otherwise use the text
                 // The status is always the HTTP status: a body's own `code`
@@ -3920,6 +3907,75 @@ fn extract_error_message(body: &str) -> String {
         .unwrap_or_else(|| body.to_string())
 }
 
+/// Decode a MessagePack error body. Only a map is accepted: a MessagePack
+/// decoder reads the first byte of plain text as a small integer, so any other
+/// decoded value means the body was not MessagePack.
+fn decode_msgpack_error_body(bytes: &[u8]) -> Option<serde_json::Value> {
+    match rmp_serde::from_slice::<serde_json::Value>(bytes) {
+        Ok(value @ serde_json::Value::Object(_)) => Some(value),
+        _ => None,
+    }
+}
+
+/// The text of a failed answer's body.
+///
+/// A body that is JSON, or not valid in either format, is its text as sent. A
+/// body that is not JSON but decodes as a MessagePack map is rendered as JSON,
+/// so a MessagePack route's error reads the same as the JSON answer for the
+/// same failure instead of as undecodable bytes.
+fn error_body_text(bytes: &[u8]) -> String {
+    if serde_json::from_slice::<serde::de::IgnoredAny>(bytes).is_ok() {
+        return String::from_utf8_lossy(bytes).into_owned();
+    }
+    match decode_msgpack_error_body(bytes) {
+        Some(value) => value.to_string(),
+        None => String::from_utf8_lossy(bytes).into_owned(),
+    }
+}
+
+/// Turn a failed answer from a `/api/transactions` route into an [`Error`].
+///
+/// A 401 stays `TokenExpired`, so the token-refresh layer can re-authenticate:
+/// the request was refused before it reached the transaction. Every other
+/// status becomes `Error::Transaction`, carrying the server's `error` text
+/// (the raw body when the body is not that JSON, the status when it is empty)
+/// and its `retryable` flag (false when absent), which tells the caller
+/// whether to begin a new transaction and run the work again.
+async fn transaction_error_from_response(response: Response) -> Error {
+    let status = response.status();
+    if status == StatusCode::UNAUTHORIZED {
+        return Error::TokenExpired;
+    }
+    match response.bytes().await {
+        Ok(bytes) => transaction_error(status, &bytes),
+        Err(read_error) => Error::Transaction {
+            code: status.as_u16(),
+            message: format!("{status}: response body could not be read: {read_error}"),
+            retryable: false,
+        },
+    }
+}
+
+/// Build `Error::Transaction` from a failed answer's status and body.
+fn transaction_error(status: StatusCode, body: &[u8]) -> Error {
+    let text = error_body_text(body);
+    let retryable = serde_json::from_str::<serde_json::Value>(&text)
+        .ok()
+        .and_then(|value| value.get("retryable").and_then(serde_json::Value::as_bool))
+        .unwrap_or(false);
+    let message = extract_error_message(text.trim());
+    let message = if message.trim().is_empty() {
+        status.to_string()
+    } else {
+        message
+    };
+    Error::Transaction {
+        code: status.as_u16(),
+        message,
+        retryable,
+    }
+}
+
 #[derive(Deserialize, Serialize)]
 struct ErrorResponse {
     code: u16,
@@ -4108,6 +4164,383 @@ mod tests {
         for mock in created {
             mock.assert_async().await;
         }
+    }
+
+    // ── Transaction errors (#406) ──
+    //
+    // A transaction route answers a failure with
+    // `{"error", "transaction_id", "retryable"}`. A failed commit has already
+    // discarded its transaction, so the client never re-sends a transaction
+    // call, even with retries enabled: the caller gets the server's message
+    // and flag at once, and a retryable failure means a new transaction.
+
+    /// A client with retries enabled, so a mock that records exactly one call
+    /// proves the client chose not to re-send.
+    fn transaction_client(server: &mockito::Server) -> HttpClient {
+        HttpClient::new(
+            &server.url(),
+            Duration::from_secs(5),
+            3,
+            true,
+            SerializationFormat::Json,
+        )
+        .expect("client builds")
+    }
+
+    /// A 409 conflict is `Error::Transaction` with the server's message and
+    /// `retryable: true`, and the commit is sent exactly once.
+    #[tokio::test]
+    async fn commit_conflict_is_a_retryable_transaction_error_sent_once() {
+        let mut server = mockito::Server::new_async().await;
+        let conflict = server
+            .mock("POST", "/api/transactions/tx-1/commit")
+            .with_status(409)
+            .with_header("content-type", "application/json")
+            .with_body(
+                r#"{"error":"write conflict on users/1","transaction_id":"tx-1","retryable":true}"#,
+            )
+            .expect(1)
+            .create_async()
+            .await;
+        let client = transaction_client(&server);
+
+        let err = client
+            .commit_transaction("tx-1", "token")
+            .await
+            .expect_err("a 409 is an error");
+
+        match err {
+            Error::Transaction {
+                code,
+                ref message,
+                retryable,
+            } => {
+                assert_eq!(code, 409);
+                assert_eq!(message, "write conflict on users/1");
+                assert!(retryable);
+            }
+            ref other => panic!("expected Transaction, got {other:?}"),
+        }
+        // The flag is for the caller; the retry policy does not re-send it.
+        assert!(!err.is_retryable());
+        conflict.assert_async().await;
+    }
+
+    /// A 400 constraint failure is `retryable: false` and is sent once, even
+    /// with retries enabled.
+    #[tokio::test]
+    async fn commit_constraint_failure_is_not_retried() {
+        let mut server = mockito::Server::new_async().await;
+        let refused = server
+            .mock("POST", "/api/transactions/tx-2/commit")
+            .with_status(400)
+            .with_header("content-type", "application/json")
+            .with_body(r#"{"error":"unique constraint violated: email","transaction_id":"tx-2","retryable":false}"#)
+            .expect(1)
+            .create_async()
+            .await;
+        let client = transaction_client(&server);
+
+        let err = client
+            .commit_transaction("tx-2", "token")
+            .await
+            .expect_err("a 400 is an error");
+
+        match err {
+            Error::Transaction {
+                code,
+                message,
+                retryable,
+            } => {
+                assert_eq!(code, 400);
+                assert_eq!(message, "unique constraint violated: email");
+                assert!(!retryable);
+            }
+            other => panic!("expected Transaction, got {other:?}"),
+        }
+        refused.assert_async().await;
+    }
+
+    /// Neither 503 is re-sent, unlike a 503 on another route: shutting down
+    /// carries `retryable: true` and at capacity `retryable: false`, and both
+    /// reach the caller after one send.
+    #[tokio::test]
+    async fn commit_503_is_sent_once_and_carries_the_server_flag() {
+        let mut server = mockito::Server::new_async().await;
+        let shutting_down = server
+            .mock("POST", "/api/transactions/draining/commit")
+            .with_status(503)
+            .with_header("content-type", "application/json")
+            .with_body(r#"{"error":"shutting down","transaction_id":"draining","retryable":true}"#)
+            .expect(1)
+            .create_async()
+            .await;
+        let at_capacity = server
+            .mock("POST", "/api/transactions/full/commit")
+            .with_status(503)
+            .with_header("content-type", "application/json")
+            .with_body(r#"{"error":"at capacity","transaction_id":"full","retryable":false}"#)
+            .expect(1)
+            .create_async()
+            .await;
+        let client = transaction_client(&server);
+
+        let draining = client.commit_transaction("draining", "token").await;
+        assert!(
+            matches!(
+                draining,
+                Err(Error::Transaction {
+                    code: 503,
+                    retryable: true,
+                    ..
+                })
+            ),
+            "got {draining:?}"
+        );
+        let full = client.commit_transaction("full", "token").await;
+        assert!(
+            matches!(
+                full,
+                Err(Error::Transaction {
+                    code: 503,
+                    retryable: false,
+                    ..
+                })
+            ),
+            "got {full:?}"
+        );
+        shutting_down.assert_async().await;
+        at_capacity.assert_async().await;
+    }
+
+    /// A body that is not the JSON envelope (a proxy's text) is kept as the
+    /// message, and with no flag the error is not retryable. An empty body
+    /// falls back to the status.
+    #[tokio::test]
+    async fn commit_non_json_error_body_falls_back_to_the_raw_text() {
+        let mut server = mockito::Server::new_async().await;
+        let proxied = server
+            .mock("POST", "/api/transactions/tx-3/commit")
+            .with_status(502)
+            .with_header("content-type", "text/plain")
+            .with_body("upstream connect error")
+            .expect(1)
+            .create_async()
+            .await;
+        let empty = server
+            .mock("POST", "/api/transactions/tx-4/commit")
+            .with_status(500)
+            .expect(1)
+            .create_async()
+            .await;
+        let client = transaction_client(&server);
+
+        match client.commit_transaction("tx-3", "token").await {
+            Err(Error::Transaction {
+                code,
+                message,
+                retryable,
+            }) => {
+                assert_eq!(code, 502);
+                assert_eq!(message, "upstream connect error");
+                assert!(!retryable);
+            }
+            other => panic!("expected Transaction, got {other:?}"),
+        }
+        match client.commit_transaction("tx-4", "token").await {
+            Err(Error::Transaction {
+                code, ref message, ..
+            }) => {
+                assert_eq!(code, 500);
+                assert_eq!(message, "500 Internal Server Error");
+            }
+            other => panic!("expected Transaction, got {other:?}"),
+        }
+        proxied.assert_async().await;
+        empty.assert_async().await;
+    }
+
+    /// Every transaction route maps its failure the same way: a 404 for a
+    /// session that no longer exists is `Error::Transaction`, not the generic
+    /// `NotFound`, so the server's message reaches the caller.
+    #[tokio::test]
+    async fn every_transaction_route_returns_the_typed_error() {
+        let mut server = mockito::Server::new_async().await;
+        let gone =
+            r#"{"error":"transaction tx-9 not found","transaction_id":"tx-9","retryable":false}"#;
+        let routes = [
+            ("POST", "/api/transactions"),
+            ("GET", "/api/transactions/tx-9"),
+            ("POST", "/api/transactions/tx-9/rollback"),
+            ("POST", "/api/transactions/tx-9/savepoints"),
+            ("POST", "/api/transactions/tx-9/savepoints/sp1/rollback"),
+            ("DELETE", "/api/transactions/tx-9/savepoints/sp1"),
+        ];
+        let mut mocks = Vec::with_capacity(routes.len());
+        for (method, path) in routes {
+            mocks.push(
+                server
+                    .mock(method, path)
+                    .with_status(404)
+                    .with_header("content-type", "application/json")
+                    .with_body(gone)
+                    .expect(1)
+                    .create_async()
+                    .await,
+            );
+        }
+        let client = transaction_client(&server);
+
+        let results = [
+            client.begin_transaction(None, "token").await.map(drop),
+            client
+                .get_transaction_status("tx-9", "token")
+                .await
+                .map(drop),
+            client.rollback_transaction("tx-9", "token").await,
+            client.create_savepoint("tx-9", "sp1", "token").await,
+            client.rollback_to_savepoint("tx-9", "sp1", "token").await,
+            client.release_savepoint("tx-9", "sp1", "token").await,
+        ];
+        for result in results {
+            match result {
+                Err(Error::Transaction {
+                    code,
+                    message,
+                    retryable,
+                }) => {
+                    assert_eq!(code, 404);
+                    assert_eq!(message, "transaction tx-9 not found");
+                    assert!(!retryable);
+                }
+                other => panic!("expected Transaction, got {other:?}"),
+            }
+        }
+        for mock in mocks {
+            mock.assert_async().await;
+        }
+    }
+
+    /// A 401 on a transaction route stays `TokenExpired`, so the client layer
+    /// refreshes the token instead of surfacing an authentication refusal as a
+    /// transaction failure.
+    #[tokio::test]
+    async fn transaction_401_stays_token_expired() {
+        let mut server = mockito::Server::new_async().await;
+        let expired = server
+            .mock("POST", "/api/transactions/tx-5/commit")
+            .with_status(401)
+            .expect(1)
+            .create_async()
+            .await;
+        let client = transaction_client(&server);
+
+        let result = client.commit_transaction("tx-5", "token").await;
+        assert!(matches!(result, Err(Error::TokenExpired)), "got {result:?}");
+        expired.assert_async().await;
+    }
+
+    /// A transaction error body sent as MessagePack is decoded, so its message
+    /// and flag are read the same as from JSON.
+    #[tokio::test]
+    async fn transaction_error_body_in_messagepack_is_decoded() {
+        let mut server = mockito::Server::new_async().await;
+        let body = rmp_serde::to_vec(&serde_json::json!({
+            "error": "write conflict",
+            "transaction_id": "tx-6",
+            "retryable": false,
+        }))
+        .expect("encodes");
+        let refused = server
+            .mock("POST", "/api/transactions/tx-6/commit")
+            .with_status(409)
+            .with_header("content-type", "application/msgpack")
+            .with_body(body)
+            .expect(1)
+            .create_async()
+            .await;
+        let client = transaction_client(&server);
+
+        match client.commit_transaction("tx-6", "token").await {
+            Err(Error::Transaction {
+                code,
+                message,
+                retryable,
+            }) => {
+                assert_eq!(code, 409);
+                assert_eq!(message, "write conflict");
+                assert!(!retryable);
+            }
+            other => panic!("expected Transaction, got {other:?}"),
+        }
+        refused.assert_async().await;
+    }
+
+    /// A MessagePack route that answers its error in MessagePack yields a
+    /// readable message: the envelope's `message` when it carries one, and the
+    /// decoded body rendered as JSON otherwise. Before, the bytes were read as
+    /// text and the message was unreadable.
+    #[tokio::test]
+    async fn messagepack_route_error_body_is_decoded() {
+        let mut server = mockito::Server::new_async().await;
+        let envelope = rmp_serde::to_vec(&serde_json::json!({
+            "code": 422,
+            "message": "field age must be an integer",
+        }))
+        .expect("encodes");
+        let other =
+            rmp_serde::to_vec(&serde_json::json!({ "error": "bad record" })).expect("encodes");
+        let mocks = [
+            server
+                .mock("POST", "/api/insert/typed")
+                .with_status(422)
+                .with_header("content-type", "application/msgpack")
+                .with_body(envelope),
+            server
+                .mock("POST", "/api/insert/untyped")
+                .with_status(400)
+                .with_header("content-type", "application/msgpack")
+                .with_body(other),
+        ];
+        let mut created = Vec::with_capacity(mocks.len());
+        for mock in mocks {
+            created.push(mock.create_async().await);
+        }
+        let client = HttpClient::new(
+            &server.url(),
+            Duration::from_secs(5),
+            0,
+            false,
+            SerializationFormat::MessagePack,
+        )
+        .expect("client builds");
+
+        match client.insert("typed", Record::new(), None, "token").await {
+            Err(Error::Api { code, message }) => {
+                assert_eq!(code, 422);
+                assert_eq!(message, "field age must be an integer");
+            }
+            other => panic!("expected Api, got {other:?}"),
+        }
+        match client.insert("untyped", Record::new(), None, "token").await {
+            Err(Error::Api { code, message }) => {
+                assert_eq!(code, 400);
+                assert_eq!(message, r#"{"error":"bad record"}"#);
+            }
+            other => panic!("expected Api, got {other:?}"),
+        }
+        for mock in created {
+            mock.assert_async().await;
+        }
+    }
+
+    /// Plain text is never mistaken for MessagePack: its first byte decodes as
+    /// a MessagePack integer, which is not an error map.
+    #[test]
+    fn error_body_text_keeps_plain_text() {
+        assert_eq!(error_body_text(b"Not Found"), "Not Found");
+        assert_eq!(error_body_text(br#"{"error":"x"}"#), r#"{"error":"x"}"#);
+        assert_eq!(error_body_text(b""), "");
     }
 
     /// With `should_retry(false)`, `execute_with_retry` must invoke the

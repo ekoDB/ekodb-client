@@ -82,16 +82,62 @@ export interface ScheduleStats {
  *
  * `body` is the response text as the server sent it. It is empty when the
  * client redacts admin errors, so a credential the server echoed is never kept.
+ *
+ * `retryable` is the server's verdict on a transaction call (`begin`, status,
+ * `commit`, `rollback`, the savepoint calls): such a failure has `message` set
+ * to the server's `error` text (the raw body when the body is not that JSON)
+ * and `retryable` set to the server's `retryable` flag. `true` means begin a
+ * new transaction and run the work again; the client never re-sends a
+ * transaction call itself. It is `false` for every other call and whenever the
+ * server does not say.
  */
 export class EkoDBApiError extends Error {
   constructor(
     public readonly status: number,
     public readonly body: string,
     message?: string,
+    public readonly retryable: boolean = false,
   ) {
     super(message ?? `Request failed with status ${status}: ${body}`);
     this.name = "EkoDBApiError";
   }
+}
+
+/** Every route under this prefix is a transaction call. */
+const TRANSACTIONS_PATH = "/api/transactions";
+
+/** Whether a request path is a transaction call. */
+function isTransactionPath(path: string): boolean {
+  return path === TRANSACTIONS_PATH || path.startsWith(`${TRANSACTIONS_PATH}/`);
+}
+
+/**
+ * Build the typed error for a failed transaction call from its status and
+ * body. The server answers `{"error", "transaction_id", "retryable"}`; a body
+ * that is not that JSON keeps its raw text as the message, and an absent flag
+ * is `false`.
+ */
+function transactionError(status: number, body: string): EkoDBApiError {
+  let message = body.trim();
+  let retryable = false;
+  try {
+    const parsed: unknown = JSON.parse(body);
+    if (parsed !== null && typeof parsed === "object") {
+      const answer = parsed as { error?: unknown; retryable?: unknown };
+      if (typeof answer.error === "string") message = answer.error;
+      retryable = answer.retryable === true;
+    }
+  } catch {
+    // Not JSON: the raw text is the message.
+  }
+  return new EkoDBApiError(
+    status,
+    body,
+    message.trim() === ""
+      ? `Transaction request failed with status ${status}`
+      : message,
+    retryable,
+  );
 }
 
 /**
@@ -963,6 +1009,27 @@ export class EkoDBClient {
         }
       }
 
+      // A transaction call is never re-sent, whatever the status or flag: a
+      // failed commit has already discarded its transaction when the server
+      // answers, so a re-sent call could only come back 404 and hide the real
+      // cause. The error carries the server's `retryable` flag for the caller,
+      // who begins a new transaction. A first 401 still falls through to the
+      // token refresh below: the request never reached the transaction.
+      if (
+        isTransactionPath(path) &&
+        !(response.status === 401 && attempt === 0)
+      ) {
+        const error = transactionError(response.status, await response.text());
+        if (this.redactErrors)
+          throw new EkoDBApiError(
+            response.status,
+            "",
+            `Admin request failed (HTTP ${response.status})`,
+            error.retryable,
+          );
+        throw error;
+      }
+
       // Handle rate limiting (429)
       if (response.status === 429) {
         const retryAfter = this.parseRetryAfter(
@@ -1056,7 +1123,12 @@ export class EkoDBClient {
           error instanceof EkoDBApiError &&
           /^Admin request failed \(HTTP [0-9]{3}\)$/.test(error.message)
         )
-          throw new EkoDBApiError(error.status, "", error.message);
+          throw new EkoDBApiError(
+            error.status,
+            "",
+            error.message,
+            error.retryable,
+          );
         throw new Error(
           errName === "TimeoutError" || errName === "AbortError"
             ? "Admin request timed out"
@@ -1069,11 +1141,13 @@ export class EkoDBClient {
         );
       }
 
-      // Handle network errors with retry
+      // Handle network errors with retry. A transaction call is not re-sent:
+      // the failed attempt may have reached the server.
       if (
         error instanceof TypeError &&
         this.shouldRetry &&
-        attempt < this.maxRetries
+        attempt < this.maxRetries &&
+        !isTransactionPath(path)
       ) {
         const retryDelay = this.backoffSeconds(attempt);
         console.log(
@@ -1638,6 +1712,11 @@ export class EkoDBClient {
    * `commitTransaction` may reject with a conflict (HTTP 409) if a record this
    * transaction read or wrote was changed by another committed transaction —
    * retry the transaction in that case.
+   *
+   * Every transaction call rejects with an {@link EkoDBApiError} carrying the
+   * server's message and its `retryable` flag, after a single send: the client
+   * never re-sends a transaction call. `retryable: true` means begin a new
+   * transaction and run the work again.
    *
    * @param isolationLevel - Optional transaction isolation level; omit it to use the server default
    * @returns Transaction ID
