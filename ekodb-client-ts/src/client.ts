@@ -5339,10 +5339,12 @@ export class WebSocketClient {
     fields?: string[],
     limit?: number,
   ): Promise<any[]> {
-    // The server names the field list `search_fields` (#414).
+    // The server names the field list `search_fields` (#414), and its options
+    // require `language`, so they carry the server's own default.
     const options: any = {};
     if (fields) options.search_fields = fields;
     if (limit) options.limit = limit;
+    if (Object.keys(options).length > 0) options.language = "english";
     const data = await this.sendCRUD("TextSearch", {
       collection,
       query,
