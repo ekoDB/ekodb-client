@@ -569,6 +569,83 @@ class EkoDBClientTest {
         assertEquals(OneField(1), decoded)
     }
 
+    @Test
+    fun `messagepack format keeps routes outside the CRUD set on JSON`() = runBlocking {
+        // The MessagePack type is registered on the whole client and content negotiation adds every
+        // registered type to Accept, so a route that is not a CRUD route must exclude it: it sends,
+        // and asks for, JSON, or the server may answer MessagePack to a reader that parses JSON.
+        val seen = java.util.concurrent.ConcurrentHashMap<String, Pair<String?, String?>>()
+        val server = com.sun.net.httpserver.HttpServer.create(java.net.InetSocketAddress("127.0.0.1", 0), 0)
+        fun answer(path: String, reply: ByteArray, type: String) {
+            server.createContext(path) { exchange ->
+                seen[path] = exchange.requestHeaders.getFirst("Accept") to exchange.requestHeaders.getFirst("Content-Type")
+                exchange.requestBody.readBytes()
+                exchange.responseHeaders.add("Content-Type", type)
+                exchange.sendResponseHeaders(200, reply.size.toLong())
+                exchange.responseBody.use { it.write(reply) }
+            }
+        }
+        answer("/api/auth/token", """{"token": "mock_jwt_token_123"}""".toByteArray(), "application/json")
+        answer("/api/collections", """{"collections": ["a"]}""".toByteArray(), "application/json")
+        answer("/api/transactions/tx-1/savepoints", "{}".toByteArray(), "application/json")
+        answer(
+            "/api/insert/users",
+            jsonElementToMsgpack(buildJsonObject { put("id", "user_9") }),
+            "application/msgpack",
+        )
+        server.start()
+        val client = EkoDBClient.builder()
+            .baseUrl("http://127.0.0.1:${server.address.port}")
+            .apiKey(testApiKey)
+            .format(SerializationFormat.MESSAGEPACK)
+            .maxRetries(1)
+            .build()
+        try {
+            assertEquals(listOf("a"), client.listCollections())
+            client.createSavepoint("tx-1", "sp1")
+            client.insert("users", Record().insert("name", "Ada"))
+
+            val (collectionsAccept, _) = seen.getValue("/api/collections")
+            assertTrue(collectionsAccept!!.contains("json"), "Accept was $collectionsAccept")
+            assertFalse(collectionsAccept.contains("msgpack"), "Accept was $collectionsAccept")
+
+            val (savepointAccept, savepointType) = seen.getValue("/api/transactions/tx-1/savepoints")
+            assertFalse(savepointAccept!!.contains("msgpack"), "Accept was $savepointAccept")
+            assertTrue(savepointType!!.startsWith("application/json"), "Content-Type was $savepointType")
+
+            // Control: a CRUD route still sends and asks for MessagePack.
+            val (insertAccept, insertType) = seen.getValue("/api/insert/users")
+            assertTrue(insertAccept!!.contains("application/msgpack"), "Accept was $insertAccept")
+            assertEquals("application/msgpack", insertType)
+        } finally {
+            client.close()
+            server.stop(0)
+        }
+    }
+
+    @Test
+    fun `msgpack helpers keep unsigned 64-bit integers exact and refuse what they cannot represent`() {
+        val max = java.math.BigInteger("18446744073709551615")
+        assertEquals(JsonPrimitive(max), msgpackToJsonElement(jsonElementToMsgpack(JsonPrimitive(max))))
+        for (value in listOf(Long.MIN_VALUE, -1L, 0L, Long.MAX_VALUE)) {
+            assertEquals(JsonPrimitive(value), msgpackToJsonElement(jsonElementToMsgpack(JsonPrimitive(value))))
+        }
+        // Beyond the unsigned 64-bit maximum and below the signed minimum: refused, not packed as a double.
+        assertFailsWith<kotlinx.serialization.SerializationException> {
+            jsonElementToMsgpack(JsonPrimitive(max.add(java.math.BigInteger.ONE)))
+        }
+        assertFailsWith<kotlinx.serialization.SerializationException> {
+            jsonElementToMsgpack(JsonPrimitive(java.math.BigInteger.valueOf(Long.MIN_VALUE).subtract(java.math.BigInteger.ONE)))
+        }
+        // An extension value is an error, not a silent null.
+        val extension = org.msgpack.core.MessagePack.newDefaultBufferPacker().use { packer ->
+            packer.packExtensionTypeHeader(1.toByte(), 2)
+            packer.writePayload(byteArrayOf(1, 2))
+            packer.toByteArray()
+        }
+        assertFailsWith<kotlinx.serialization.SerializationException> { msgpackToJsonElement(extension) }
+    }
+
     @OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)
     @Test
     fun `FieldType refuses a decoder that is not JSON instead of reading a string`() {
