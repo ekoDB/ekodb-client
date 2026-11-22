@@ -37,8 +37,8 @@ enum class SerializationFormat {
     JSON,
 
     /**
-     * MessagePack format (binary), for the CRUD routes: insert, batch insert, update, batch update,
-     * delete, batch delete and find. Every other route, and its Accept header, stays JSON.
+     * MessagePack format (binary), for the single-record CRUD routes: insert, update, delete and find.
+     * Batch operations and every other route, and their Accept header, stay JSON.
      */
     MESSAGEPACK
 }
@@ -131,10 +131,10 @@ class EkoDBClient private constructor(
     // SchemaChanged events invalidate the same cache.
     private val schemaCache = SchemaCache(schemaCacheEnabled, schemaCacheMax, schemaCacheTtlMs)
 
-    // The routes that can be sent and read as MessagePack. The other SDKs name the same set.
+    // The single-record CRUD routes sent and read as MessagePack. Batch operations (`/api/batch/...`)
+    // and every other route use JSON.
     private val messagePackRoutes = listOf(
-        "/api/insert/", "/api/batch_insert/", "/api/update/", "/api/batch_update/",
-        "/api/delete/", "/api/batch_delete/", "/api/find/",
+        "/api/insert/", "/api/update/", "/api/delete/", "/api/find/",
     )
 
     // The MessagePack content type is registered on the whole client, and content negotiation adds
