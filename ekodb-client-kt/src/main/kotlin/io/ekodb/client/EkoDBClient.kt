@@ -1844,6 +1844,9 @@ class EkoDBClient private constructor(
                 // concurrency (coroutine cancellation) keeps working.
                 if (e is kotlinx.coroutines.CancellationException) throw e
                 if (e is EkoDBHttpException) throw e
+                // A body that cannot be encoded fails the same way every attempt and sends nothing,
+                // so retrying it only delays the error.
+                if (e is kotlinx.serialization.SerializationException || e.cause is kotlinx.serialization.SerializationException) throw e
                 // A call on an existing transaction is not re-sent after a
                 // transport failure: the failed attempt may have reached the
                 // server.
@@ -2421,7 +2424,8 @@ class EkoDBClient private constructor(
         private var schemaCacheMax: Int = 100
         private var httpClient: HttpClient? = null
 
-        fun baseUrl(url: String) = apply { this.baseUrl = url }
+        // Requests are built as "$baseUrl/api/...", so a trailing slash would make "//api/...".
+        fun baseUrl(url: String) = apply { this.baseUrl = url.trimEnd('/') }
         fun apiKey(key: String) = apply { this.apiKey = key }
         fun timeout(seconds: Long) = apply {
             require(seconds > 0 && seconds <= Long.MAX_VALUE / 1000) { "Timeout must be a positive number of seconds" }

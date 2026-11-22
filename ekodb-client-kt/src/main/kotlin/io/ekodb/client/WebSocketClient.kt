@@ -544,7 +544,15 @@ class WebSocketClient(
             subscriptions[collection] = channel
         }
 
-        sendRequest(request)
+        try {
+            sendRequest(request)
+        } catch (e: Throwable) {
+            // The subscription was registered before the request; a failed request leaves no
+            // channel behind that nothing holds.
+            mutex.withLock { if (subscriptions[collection] === channel) subscriptions.remove(collection) }
+            channel.close()
+            throw e
+        }
 
         return flow {
             for (notification in channel) {
