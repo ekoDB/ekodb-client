@@ -4448,7 +4448,8 @@ async fn test_ws_raw_completion_sends_a_payload_and_gets_its_answer() {
     );
 }
 
-/// #414: a WebSocket text search sends its field list as `search_fields`.
+/// #414: a WebSocket text search sends its field list as `search_fields`, with the `language`
+/// the server's options type requires.
 #[tokio::test]
 async fn test_ws_text_search_sends_search_fields() {
     let (port, server) = ws_answer_one(|request| {
@@ -4464,7 +4465,7 @@ async fn test_ws_text_search_sends_search_fields() {
     assert_eq!(sent["type"], "TextSearch");
     assert_eq!(
         sent["payload"]["options"],
-        json!({"search_fields": ["title"], "limit": 5})
+        json!({"search_fields": ["title"], "limit": 5, "language": "english"})
     );
 }
 

@@ -2653,12 +2653,7 @@ impl Client {
                 "Summarized" => MergeStrategy::Summarized,
                 "LatestOnly" => MergeStrategy::LatestOnly,
                 "Interleaved" => MergeStrategy::Interleaved,
-                _ => {
-                    return Err(PyRuntimeError::new_err(format!(
-                        "Invalid merge strategy: {}. Valid options: Chronological, Summarized, LatestOnly, Interleaved",
-                        merge_strategy
-                    )));
-                }
+                _ => return Err(PyRuntimeError::new_err(format!("Invalid merge strategy: {}. Valid options: Chronological, Summarized, LatestOnly, Interleaved", merge_strategy))),
             };
 
             let request = ekodb_client::MergeSessionsRequest {
@@ -4740,6 +4735,10 @@ impl WebSocketClient {
     }
 
     /// Query records via WebSocket.
+    ///
+    /// `sort` is a dict of field to direction (`"asc"`, `"desc"` or a bool for ascending), in
+    /// order, or a list of `{"field": str, "ascending": bool}` dicts or `(field, direction)`
+    /// pairs. Any other shape raises `TypeError` (`ValueError` for an unknown direction).
     #[pyo3(signature = (collection, filter=None, sort=None, limit=None, skip=None))]
     fn ws_query<'py>(
         &self,
@@ -5132,9 +5131,12 @@ fn extract_record_id(
     Ok(ekodb_client::extract_record_id(&value, &extra_refs))
 }
 
-/// Convert Python value to JSON recursively
+/// The language a WebSocket text search sends with its options: the server requires the field
+/// and uses this value when it is left unset.
+const TEXT_SEARCH_LANGUAGE: &str = "english";
+
 /// The payload of a WebSocket `TextSearch`. The server names the field list `search_fields`
-/// (#414).
+/// (#414), and its options require `language`, so it is sent with the server's own default.
 fn ws_text_search_payload(
     collection: &str,
     query: &str,
@@ -5150,6 +5152,10 @@ fn ws_text_search_payload(
         opts.insert("limit".to_string(), serde_json::json!(l));
     }
     if !opts.is_empty() {
+        opts.insert(
+            "language".to_string(),
+            serde_json::json!(TEXT_SEARCH_LANGUAGE),
+        );
         payload["options"] = serde_json::Value::Object(opts);
     }
     payload
@@ -5168,8 +5174,10 @@ fn ws_create_collection_payload(
 }
 
 /// The `sort` of a WebSocket `Query`, which the server takes as a list of
-/// `{"field": ..., "ascending": ...}` (#416). A list is sent as given. A dict maps each field, in
-/// its order, to its direction: `"asc"` or `"desc"` (any case), or a bool for ascending.
+/// `{"field": ..., "ascending": ...}` (#416). A dict maps each field, in its order, to its
+/// direction: `"asc"` or `"desc"` (any case), or a bool for ascending. A list (or tuple) holds
+/// entries in the server's shape or `(field, direction)` pairs; each is checked, and anything
+/// else is a `TypeError` naming the entry.
 fn ws_query_sort(sort: &Bound<'_, PyAny>) -> PyResult<serde_json::Value> {
     if let Ok(dict) = sort.cast::<PyDict>() {
         let mut pairs = Vec::with_capacity(dict.len());
@@ -5181,12 +5189,57 @@ fn ws_query_sort(sort: &Bound<'_, PyAny>) -> PyResult<serde_json::Value> {
         }
         return sort_pairs_to_list(pairs).map_err(pyo3::exceptions::PyValueError::new_err);
     }
-    match py_to_json(sort)? {
-        list @ serde_json::Value::Array(_) => Ok(list),
-        _ => Err(pyo3::exceptions::PyTypeError::new_err(
-            "sort must be a dict of field to direction or a list of {\"field\", \"ascending\"}",
-        )),
+    let items: Vec<Bound<'_, PyAny>> = if let Ok(list) = sort.cast::<PyList>() {
+        list.iter().collect()
+    } else if let Ok(tuple) = sort.cast::<PyTuple>() {
+        tuple.iter().collect()
+    } else {
+        return Err(pyo3::exceptions::PyTypeError::new_err(
+            "sort must be a dict of field to direction, or a list of {\"field\": str, \"ascending\": bool} or (field, direction) pairs",
+        ));
+    };
+    let mut pairs = Vec::with_capacity(items.len());
+    for (index, item) in items.iter().enumerate() {
+        let pair = sort_entry_pair(item).map_err(|reason| {
+            pyo3::exceptions::PyTypeError::new_err(format!("sort[{index}]: {reason}"))
+        })?;
+        pairs.push(pair);
     }
+    sort_pairs_to_list(pairs).map_err(pyo3::exceptions::PyValueError::new_err)
+}
+
+/// One entry of a list `sort` as a `(field, direction)` pair: a dict holding exactly a str
+/// `field` and a bool `ascending`, or a two-item list or tuple of a field name and a direction.
+/// Anything else is refused, never sent as something the server cannot read.
+fn sort_entry_pair(entry: &Bound<'_, PyAny>) -> Result<(String, serde_json::Value), String> {
+    const SHAPE: &str =
+        "each entry must be {\"field\": str, \"ascending\": bool} or a (field, direction) pair";
+    if let Ok(dict) = entry.cast::<PyDict>() {
+        let field = dict.get_item("field").map_err(|e| e.to_string())?;
+        let ascending = dict.get_item("ascending").map_err(|e| e.to_string())?;
+        let (Some(field), Some(ascending), 2) = (field, ascending, dict.len()) else {
+            return Err(SHAPE.to_string());
+        };
+        let field: String = field.extract().map_err(|_| SHAPE.to_string())?;
+        let ascending: bool = ascending
+            .cast::<PyBool>()
+            .map_err(|_| SHAPE.to_string())?
+            .is_true();
+        return Ok((field, serde_json::Value::Bool(ascending)));
+    }
+    let items: Vec<Bound<'_, PyAny>> = if let Ok(list) = entry.cast::<PyList>() {
+        list.iter().collect()
+    } else if let Ok(tuple) = entry.cast::<PyTuple>() {
+        tuple.iter().collect()
+    } else {
+        return Err(SHAPE.to_string());
+    };
+    let [field, direction] = items.as_slice() else {
+        return Err(SHAPE.to_string());
+    };
+    let field: String = field.extract().map_err(|_| SHAPE.to_string())?;
+    let direction = py_to_json(direction).map_err(|e| e.to_string())?;
+    Ok((field, direction))
 }
 
 /// `(field, direction)` pairs as the server's sort list. A direction is `"asc"`, `"desc"` (any
@@ -5211,6 +5264,7 @@ fn sort_pairs_to_list(
     Ok(serde_json::Value::Array(list))
 }
 
+/// Convert Python value to JSON recursively
 fn py_to_json(value: &Bound<'_, PyAny>) -> PyResult<serde_json::Value> {
     use serde_json::json;
 
@@ -5507,7 +5561,7 @@ fn check_run_as(definition: &Bound<'_, PyDict>) -> PyResult<()> {
 
 /// Convert Python dict to JSON value
 fn pydict_to_json(py: Python, dict: &Bound<'_, PyDict>) -> PyResult<serde_json::Value> {
-    use pyo3::types::{PyBool, PyFloat, PyInt, PyString};
+    use pyo3::types::{PyBool, PyDict, PyFloat, PyInt, PyList, PyString, PyTuple};
 
     let mut map = serde_json::Map::new();
     for (key, value) in dict.iter() {
@@ -5716,7 +5770,8 @@ mod tests {
         }
     }
 
-    /// #414: a WebSocket text search sends its field list as `search_fields`.
+    /// #414: a WebSocket text search sends its field list as `search_fields`, and options always
+    /// carry `language`, which the server's options type requires.
     #[test]
     fn ws_text_search_sends_search_fields() {
         let payload = ws_text_search_payload("docs", "alpha", Some(vec!["title".into()]), Some(5));
@@ -5725,8 +5780,13 @@ mod tests {
             serde_json::json!({
                 "collection": "docs",
                 "query": "alpha",
-                "options": {"search_fields": ["title"], "limit": 5},
+                "options": {"search_fields": ["title"], "limit": 5, "language": "english"},
             })
+        );
+        assert_eq!(
+            ws_text_search_payload("docs", "alpha", None, Some(3))["options"],
+            serde_json::json!({"limit": 3, "language": "english"}),
+            "a limit alone still carries language"
         );
         assert_eq!(
             ws_text_search_payload("docs", "alpha", None, None),
@@ -5770,6 +5830,99 @@ mod tests {
         );
         assert!(sort_pairs_to_list(vec![("a".into(), serde_json::json!("up"))]).is_err());
     }
+
+    /// #416, through the Python-facing conversion: a dict, a list of the server's entries, and a
+    /// list or tuple of `(field, direction)` pairs all become the server's list, in order.
+    #[test]
+    fn a_python_sort_becomes_the_servers_list() {
+        Python::attach(|py| {
+            let expected = serde_json::json!([
+                {"field": "b", "ascending": false},
+                {"field": "a", "ascending": true},
+            ]);
+            let dict = PyDict::new(py);
+            dict.set_item("b", "desc").unwrap();
+            dict.set_item("a", true).unwrap();
+            assert_eq!(ws_query_sort(dict.as_any()).unwrap(), expected, "a dict");
+
+            let entries = PyList::empty(py);
+            for (field, ascending) in [("b", false), ("a", true)] {
+                let entry = PyDict::new(py);
+                entry.set_item("field", field).unwrap();
+                entry.set_item("ascending", ascending).unwrap();
+                entries.append(entry).unwrap();
+            }
+            assert_eq!(
+                ws_query_sort(entries.as_any()).unwrap(),
+                expected,
+                "server entries"
+            );
+
+            let pairs = PyList::empty(py);
+            pairs
+                .append(PyTuple::new(py, ["b", "desc"]).unwrap())
+                .unwrap();
+            pairs
+                .append(("a", true).into_pyobject(py).unwrap())
+                .unwrap();
+            assert_eq!(ws_query_sort(pairs.as_any()).unwrap(), expected, "pairs");
+            let tuple = PyTuple::new(
+                py,
+                [
+                    PyTuple::new(py, ["b", "desc"]).unwrap(),
+                    PyTuple::new(py, ["a", "asc"]).unwrap(),
+                ],
+            )
+            .unwrap();
+            assert_eq!(
+                ws_query_sort(tuple.as_any()).unwrap(),
+                expected,
+                "a tuple of pairs"
+            );
+        });
+    }
+
+    /// #416: a sort the server cannot read is refused with a message naming the entry, never sent
+    /// with a null or a bare string in it.
+    #[test]
+    fn a_python_sort_of_another_shape_is_refused() {
+        Python::attach(|py| {
+            let refused = |sort: &Bound<'_, PyAny>, needle: &str| {
+                let err = ws_query_sort(sort).expect_err("refused");
+                let text = err.to_string();
+                assert!(
+                    text.contains(needle),
+                    "{text:?} does not contain {needle:?}"
+                );
+            };
+            let bare = PyList::empty(py);
+            bare.append("name").unwrap();
+            refused(bare.as_any(), "sort[0]");
+            let triple = PyList::empty(py);
+            triple
+                .append(PyTuple::new(py, ["a", "asc", "x"]).unwrap())
+                .unwrap();
+            refused(triple.as_any(), "sort[0]");
+            let extra = PyDict::new(py);
+            extra.set_item("field", "a").unwrap();
+            extra.set_item("ascending", true).unwrap();
+            extra.set_item("nulls", "last").unwrap();
+            let with_extra = PyList::empty(py);
+            with_extra.append(extra).unwrap();
+            refused(with_extra.as_any(), "sort[0]");
+            let not_bool = PyDict::new(py);
+            not_bool.set_item("field", "a").unwrap();
+            not_bool.set_item("ascending", "yes").unwrap();
+            let with_not_bool = PyList::empty(py);
+            with_not_bool.append(not_bool).unwrap();
+            refused(with_not_bool.as_any(), "sort[0]");
+            let unknown = PyDict::new(py);
+            unknown.set_item("a", "up").unwrap();
+            refused(unknown.as_any(), "must be");
+            refused(PyString::new(py, "name").as_any(), "sort must be");
+        });
+    }
+
     #[test]
     fn test_bytes_roundtrip() {
         Python::attach(|py| {
