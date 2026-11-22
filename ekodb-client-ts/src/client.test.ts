@@ -6,6 +6,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
+import { encode } from "@msgpack/msgpack";
 import {
   COUNT_UNSUPPORTED_MESSAGE,
   EkoDBApiError,
@@ -4777,5 +4778,56 @@ describe("health / healthStatus", () => {
   it("parseHealthStatus treats a non-object (array) body as unknown", () => {
     expect(parseHealthStatus([1, 2, 3]).reachable).toBe(false);
     expect(parseHealthStatus([1, 2, 3]).status).toBe("unknown");
+  });
+});
+
+describe("EkoDBClient MessagePack error bodies (#408)", () => {
+  function msgpackClient(): EkoDBClient {
+    return new EkoDBClient({
+      baseURL: "http://localhost:8080",
+      apiKey: "test-api-key",
+      format: SerializationFormat.MessagePack,
+      shouldRetry: false,
+    });
+  }
+
+  it("decodes a MessagePack error body into the server's message", async () => {
+    const client = msgpackClient();
+    mockTokenResponse();
+    const body = encode({ error: "Field 'age' must be an Integer" });
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      status: 400,
+      text: async () => new TextDecoder().decode(body),
+      arrayBuffer: async () =>
+        body.buffer.slice(body.byteOffset, body.byteOffset + body.byteLength),
+      headers: new Headers({ "content-type": "application/msgpack" }),
+    });
+
+    const error = (await client
+      .insert("users", { name: "Ada" })
+      .catch((e: unknown) => e)) as EkoDBApiError;
+    expect(error).toBeInstanceOf(EkoDBApiError);
+    expect(error.status).toBe(400);
+    expect(JSON.parse(error.body)).toEqual({
+      error: "Field 'age' must be an Integer",
+    });
+    expect(error.message).toContain("Field 'age' must be an Integer");
+  });
+
+  it("keeps a JSON error body as its text", async () => {
+    const client = msgpackClient();
+    mockTokenResponse();
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      status: 400,
+      text: async () => '{"error":"bad filter"}',
+      headers: new Headers({ "content-type": "application/json" }),
+    });
+
+    const error = (await client
+      .insert("users", { name: "Ada" })
+      .catch((e: unknown) => e)) as EkoDBApiError;
+    expect(error.body).toBe('{"error":"bad filter"}');
   });
 });

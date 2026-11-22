@@ -269,7 +269,7 @@ class EkoDBClient private constructor(
         }
 
         if (!response.status.isSuccess()) {
-            val errorBody = response.bodyAsText()
+            val errorBody = errorBodyText(response)
             throw Exception("Authentication failed: $errorBody")
         }
 
@@ -456,7 +456,7 @@ class EkoDBClient private constructor(
         }
 
         if (!response.status.isSuccess()) {
-            val errorBody = response.bodyAsText()
+            val errorBody = errorBodyText(response)
             throw Exception("Insert failed with status ${response.status}: $errorBody")
         }
 
@@ -497,7 +497,7 @@ class EkoDBClient private constructor(
         }
 
         if (!response.status.isSuccess()) {
-            val errorBody = response.bodyAsText()
+            val errorBody = errorBodyText(response)
             throw Exception("Find by ID failed with status ${response.status}: $errorBody")
         }
 
@@ -530,7 +530,7 @@ class EkoDBClient private constructor(
         }
 
         if (!response.status.isSuccess()) {
-            val errorBody = response.bodyAsText()
+            val errorBody = errorBodyText(response)
             throw Exception("Find by ID with projection failed with status ${response.status}: $errorBody")
         }
 
@@ -720,7 +720,7 @@ class EkoDBClient private constructor(
         }
 
         if (!response.status.isSuccess()) {
-            val errorBody = response.bodyAsText()
+            val errorBody = errorBodyText(response)
             throw Exception("Delete failed with status ${response.status}: $errorBody")
         }
     }
@@ -1392,7 +1392,7 @@ class EkoDBClient private constructor(
             setBody(body)
         }
         if (response.status != io.ktor.http.HttpStatusCode.OK) {
-            val errBody = response.bodyAsText()
+            val errBody = errorBodyText(response)
             throw RuntimeException("SSE raw completion failed (${response.status}): $errBody")
         }
         val sseBody = response.bodyAsText()
@@ -1444,7 +1444,7 @@ class EkoDBClient private constructor(
             setBody(body)
         }
         if (response.status != io.ktor.http.HttpStatusCode.OK) {
-            val errBody = response.bodyAsText()
+            val errBody = errorBodyText(response)
             throw RuntimeException("SSE raw completion failed (${response.status}): $errBody")
         }
         val sseBody = response.bodyAsText()
@@ -1537,7 +1537,7 @@ class EkoDBClient private constructor(
         }
 
         if (!response.status.isSuccess() && response.status != HttpStatusCode.NotFound) {
-            val errorBody = response.bodyAsText()
+            val errorBody = errorBodyText(response)
             throw Exception("KV delete failed with status ${response.status}: $errorBody")
         }
     }
@@ -1553,7 +1553,7 @@ class EkoDBClient private constructor(
         }
 
         if (!response.status.isSuccess()) {
-            val errorBody = response.bodyAsText()
+            val errorBody = errorBodyText(response)
             throw Exception("KV clear failed with status ${response.status}: $errorBody")
         }
     }
@@ -1575,7 +1575,7 @@ class EkoDBClient private constructor(
         }
 
         if (!response.status.isSuccess()) {
-            val errorBody = response.bodyAsText()
+            val errorBody = errorBodyText(response)
             throw Exception("KV batch get failed with status ${response.status}: $errorBody")
         }
 
@@ -1608,7 +1608,7 @@ class EkoDBClient private constructor(
         }
 
         if (!response.status.isSuccess()) {
-            val errorBody = response.bodyAsText()
+            val errorBody = errorBodyText(response)
             throw Exception("KV batch set failed with status ${response.status}: $errorBody")
         }
 
@@ -1635,7 +1635,7 @@ class EkoDBClient private constructor(
         }
 
         if (!response.status.isSuccess()) {
-            val errorBody = response.bodyAsText()
+            val errorBody = errorBodyText(response)
             throw Exception("KV batch delete failed with status ${response.status}: $errorBody")
         }
 
@@ -1670,7 +1670,7 @@ class EkoDBClient private constructor(
         }
 
         if (!response.status.isSuccess()) {
-            val errorBody = response.bodyAsText()
+            val errorBody = errorBodyText(response)
             throw Exception("KV find failed with status ${response.status}: $errorBody")
         }
 
@@ -1703,7 +1703,7 @@ class EkoDBClient private constructor(
         }
 
         if (!response.status.isSuccess()) {
-            val errorBody = response.bodyAsText()
+            val errorBody = errorBodyText(response)
             throw Exception("Begin transaction failed with status ${response.status}: $errorBody")
         }
 
@@ -1725,7 +1725,7 @@ class EkoDBClient private constructor(
         }
 
         if (!response.status.isSuccess()) {
-            val errorBody = response.bodyAsText()
+            val errorBody = errorBodyText(response)
             throw Exception("Get transaction status failed with status ${response.status}: $errorBody")
         }
 
@@ -1890,7 +1890,7 @@ class EkoDBClient private constructor(
 
                 // Preserve terminal HTTP failures, including exhausted 5xx retries.
                 if (response.status.value in 400..599) {
-                    val errorBody = response.bodyAsText()
+                    val errorBody = errorBodyText(response)
                     throw EkoDBHttpException(response.status.value, errorBody)
                 }
 
@@ -2220,7 +2220,7 @@ class EkoDBClient private constructor(
             setBody(request)
         }
         if (response.status != io.ktor.http.HttpStatusCode.OK) {
-            val errBody = response.bodyAsText()
+            val errBody = errorBodyText(response)
             emit(ChatStreamEvent.Error("SSE chat message stream failed (${response.status}): $errBody"))
             return@flow
         }
@@ -2405,7 +2405,7 @@ class EkoDBClient private constructor(
             header("Accept", "text/event-stream")
         }.execute { response ->
             if (response.status != HttpStatusCode.OK) {
-                val errBody = response.bodyAsText()
+                val errBody = errorBodyText(response)
                 throw RuntimeException("SSE subscribe failed (${response.status}): $errBody")
             }
 
@@ -2827,7 +2827,7 @@ class EkoDBClient private constructor(
             }
         }
         if (!response.status.isSuccess()) {
-            val errorBody = response.bodyAsText()
+            val errorBody = errorBodyText(response)
             throw Exception("Embed request failed with status ${response.status}: $errorBody")
         }
         return response.body<JsonObject>()
@@ -3973,4 +3973,18 @@ internal fun transactionHttpException(statusCode: Int, responseBody: String): Ek
     val retryable = (answer?.get("retryable") as? JsonPrimitive)?.takeUnless { it.isString }?.booleanOrNull ?: false
     val message = (serverMessage ?: responseBody.trim()).ifBlank { HttpStatusCode.fromValue(statusCode).toString() }
     return EkoDBHttpException(statusCode, responseBody, message, retryable)
+}
+
+/**
+ * The text of a failed response's body (#408). The server encodes an error in the format the
+ * request's `Accept` asks for, so on a MessagePack route the body is MessagePack. A body whose
+ * `Content-Type` names MessagePack and that decodes as a map is rendered as JSON, so it reads like
+ * the JSON answer for the same failure. Any other body is its text.
+ */
+internal suspend fun errorBodyText(response: HttpResponse): String {
+    val contentType = response.headers[HttpHeaders.ContentType].orEmpty()
+    if (!contentType.contains("msgpack")) return response.bodyAsText()
+    val bytes: ByteArray = response.body()
+    val decoded = runCatching { msgpackToJsonElement(bytes) }.getOrNull()
+    return if (decoded is JsonObject) decoded.toString() else String(bytes, Charsets.UTF_8)
 }
