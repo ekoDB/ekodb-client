@@ -443,6 +443,166 @@ class EkoDBClientTest {
         assertTrue((recorded.single().body as TextContent).text.contains("increment"))
     }
 
+    /** A MESSAGEPACK-format client on [engine], with the caller's own JSON content negotiation. */
+    private fun messagePackClient(engine: MockEngine): EkoDBClient =
+        EkoDBClient.builder()
+            .baseUrl(testBaseUrl)
+            .apiKey(testApiKey)
+            .format(SerializationFormat.MESSAGEPACK)
+            .httpClient(HttpClient(engine) { install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) } })
+            .build()
+
+    /** Answers the token request as JSON and every other request with [reply] as MessagePack. */
+    private fun messagePackEngine(recorded: MutableList<HttpRequestData>, reply: JsonElement): MockEngine =
+        MockEngine { request ->
+            if (request.url.encodedPath.contains("/api/auth/token")) {
+                respond(
+                    content = """{"token": "mock_jwt_token_123"}""",
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+                )
+            } else {
+                recorded.add(request)
+                respond(
+                    content = jsonElementToMsgpack(reply),
+                    headers = headersOf(HttpHeaders.ContentType, "application/msgpack"),
+                )
+            }
+        }
+
+    @Test
+    fun `messagepack insert sends the record as msgpack and reads a msgpack reply`() = runBlocking {
+        // #418: the body was sent with no converter for application/msgpack, and the reply was
+        // read as CBOR. The body must decode with msgpack-core to the record the JSON path sends.
+        val recorded = mutableListOf<HttpRequestData>()
+        val reply = buildJsonObject {
+            put("id", "user_1")
+            put("name", "Alice")
+            put("age", 30)
+        }
+        val client = messagePackClient(messagePackEngine(recorded, reply))
+        val record = Record().insert("name", "Alice").insert("age", 30).insert("score", 1.5)
+
+        val stored = client.insert("users", record)
+
+        val sent = recorded.single().body
+        assertEquals(ContentType("application", "msgpack"), sent.contentType)
+        assertEquals(
+            Json.encodeToJsonElement(Record.serializer(), record),
+            msgpackToJsonElement((sent as io.ktor.http.content.OutgoingContent.ByteArrayContent).bytes()),
+        )
+        assertEquals("application/msgpack", recorded.single().headers[HttpHeaders.Accept])
+        val id = stored["id"]
+        assertTrue(id is io.ekodb.client.types.FieldType.StringValue, "id: $id")
+        assertEquals("user_1", id.value)
+        val name = stored["name"]
+        assertTrue(name is io.ekodb.client.types.FieldType.StringValue, "name: $name")
+        assertEquals("Alice", name.value)
+    }
+
+    @Test
+    fun `messagepack find reads a msgpack list reply`() = runBlocking {
+        val recorded = mutableListOf<HttpRequestData>()
+        val reply = buildJsonArray {
+            add(buildJsonObject { put("id", "rec_1"); put("name", "Alice") })
+            add(buildJsonObject { put("id", "rec_2"); put("name", "Bob") })
+        }
+        val client = messagePackClient(messagePackEngine(recorded, reply))
+
+        val found = client.find("users", io.ekodb.client.types.Query.new())
+
+        assertEquals(ContentType("application", "msgpack"), recorded.single().body.contentType)
+        assertEquals(listOf("rec_1", "rec_2"), found.map { (it["id"] as io.ekodb.client.types.FieldType.StringValue).value })
+    }
+
+    @Test
+    fun `messagepack built-in client sends and reads msgpack over HTTP`() = runBlocking {
+        // The built-in client (no httpClient supplied) is what callers use; a real local HTTP
+        // server stands in for ekoDB so the request crosses an actual socket.
+        val reply = jsonElementToMsgpack(buildJsonObject { put("id", "user_9"); put("name", "Ada") })
+        val sentType = java.util.concurrent.atomic.AtomicReference<String?>()
+        val sentBody = java.util.concurrent.atomic.AtomicReference(ByteArray(0))
+        val server = com.sun.net.httpserver.HttpServer.create(java.net.InetSocketAddress("127.0.0.1", 0), 0)
+        server.createContext("/api/auth/token") { exchange ->
+            val body = """{"token": "mock_jwt_token_123"}""".toByteArray()
+            exchange.responseHeaders.add("Content-Type", "application/json")
+            exchange.sendResponseHeaders(200, body.size.toLong())
+            exchange.responseBody.use { it.write(body) }
+        }
+        server.createContext("/api/insert/users") { exchange ->
+            sentType.set(exchange.requestHeaders.getFirst("Content-Type"))
+            sentBody.set(exchange.requestBody.readBytes())
+            exchange.responseHeaders.add("Content-Type", "application/msgpack")
+            exchange.sendResponseHeaders(200, reply.size.toLong())
+            exchange.responseBody.use { it.write(reply) }
+        }
+        server.start()
+        val client = EkoDBClient.builder()
+            .baseUrl("http://127.0.0.1:${server.address.port}")
+            .apiKey(testApiKey)
+            .format(SerializationFormat.MESSAGEPACK)
+            .maxRetries(1)
+            .build()
+        try {
+            val record = Record().insert("name", "Ada")
+            val stored = client.insert("users", record)
+            assertEquals("application/msgpack", sentType.get())
+            assertEquals(Json.encodeToJsonElement(Record.serializer(), record), msgpackToJsonElement(sentBody.get()))
+            assertEquals("user_9", (stored["id"] as io.ekodb.client.types.FieldType.StringValue).value)
+        } finally {
+            client.close()
+            server.stop(0)
+        }
+    }
+
+    @kotlinx.serialization.Serializable
+    private data class OneField(val a: Long)
+
+    @Test
+    fun `messagepack converter reads a reply with a field the type does not know`() = runBlocking {
+        // The JSON path's content negotiation ignores unknown keys; the MessagePack one must too.
+        val bytes = jsonElementToMsgpack(buildJsonObject { put("a", 1); put("added_by_a_newer_server", true) })
+        val decoded = MessagePackConverter().deserialize(
+            Charsets.UTF_8,
+            io.ktor.util.reflect.typeInfo<OneField>(),
+            io.ktor.utils.io.ByteReadChannel(bytes),
+        )
+        assertEquals(OneField(1), decoded)
+    }
+
+    @OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)
+    @Test
+    fun `FieldType refuses a decoder that is not JSON instead of reading a string`() {
+        // Before #418 a non-JSON decoder read every field as a string, mistyping it.
+        val decoder = object : kotlinx.serialization.encoding.AbstractDecoder() {
+            override val serializersModule = kotlinx.serialization.modules.EmptySerializersModule()
+            override fun decodeElementIndex(descriptor: kotlinx.serialization.descriptors.SerialDescriptor) =
+                kotlinx.serialization.encoding.CompositeDecoder.DECODE_DONE
+            override fun decodeString() = "42"
+        }
+        assertFailsWith<kotlinx.serialization.SerializationException> {
+            io.ekodb.client.types.FieldTypeSerializer.deserialize(decoder)
+        }
+        // Control: the JSON decoder reads the same value with its type.
+        assertEquals(
+            io.ekodb.client.types.FieldType.IntegerValue(42),
+            Json.decodeFromString(io.ekodb.client.types.FieldTypeSerializer, "42"),
+        )
+    }
+
+    @Test
+    fun `jsonElementToMsgpack round-trips through msgpackToJsonElement`() {
+        val value = buildJsonObject {
+            put("s", "text")
+            put("i", 42)
+            put("neg", -7)
+            put("f", 2.25)
+            put("t", true)
+            put("n", JsonNull)
+            put("list", buildJsonArray { add(1); add("two"); add(buildJsonObject { put("x", false) }) })
+        }
+        assertEquals(value, msgpackToJsonElement(jsonElementToMsgpack(value)))
+    }
+
     @Test
     fun `restoreCollection returns count`() = runBlocking {
         val mockEngine = createMockEngine("""{"status": "success", "cleared_count": 5}""")

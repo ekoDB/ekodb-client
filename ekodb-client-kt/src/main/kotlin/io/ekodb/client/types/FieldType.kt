@@ -58,7 +58,7 @@ object FieldTypeSerializer : KSerializer<FieldType> {
 
     @OptIn(ExperimentalSerializationApi::class)
     override fun serialize(encoder: Encoder, value: FieldType) {
-        // Format-agnostic serialization - works with both JSON and CBOR
+        // Encoded as the JSON value the server reads; the MessagePack format packs that same value.
         when (value) {
             is FieldType.StringValue -> encoder.encodeString(value.value)
             is FieldType.IntegerValue -> encoder.encodeLong(value.value)
@@ -100,16 +100,12 @@ object FieldTypeSerializer : KSerializer<FieldType> {
     }
 
     override fun deserialize(decoder: Decoder): FieldType {
-        // For deserialization, we need to peek at the structure
-        // Since we can't easily do that in a format-agnostic way, we'll use JsonDecoder when available
-        return if (decoder is JsonDecoder) {
-            val element = decoder.decodeJsonElement()
-            deserializeElement(element)
-        } else {
-            // For CBOR and other formats, try to decode as a dynamic structure
-            // This is a simplified approach - in practice, CBOR responses should be JSON
-            decoder.decodeString().let { FieldType.StringValue(it) }
-        }
+        // A field's type is read from the JSON value's shape, so it decodes only through JSON.
+        // MessagePack replies are converted to JSON before they are decoded (#418). Any other
+        // decoder is refused rather than read as a string, which would mistype every field.
+        val json = decoder as? JsonDecoder
+            ?: throw SerializationException("FieldType decodes only from JSON, not ${decoder::class.simpleName}")
+        return deserializeElement(json.decodeJsonElement())
     }
 
     private fun deserializeElement(element: JsonElement): FieldType {
