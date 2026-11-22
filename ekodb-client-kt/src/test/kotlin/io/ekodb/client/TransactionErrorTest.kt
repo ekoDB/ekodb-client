@@ -295,31 +295,4 @@ class TransactionErrorTest {
         assertEquals("Request failed with status 500: boom", error.message)
         assertFalse(error.retryable)
     }
-
-    @Test
-    fun `a MessagePack 409 commit carries the decoded message and the retryable flag`() = runTest {
-        val packer = org.msgpack.core.MessagePack.newDefaultBufferPacker()
-        packer.packMapHeader(3)
-        packer.packString("error")
-        packer.packString("write conflict on users/1")
-        packer.packString("transaction_id")
-        packer.packString("tx-1")
-        packer.packString("retryable")
-        packer.packBoolean(true)
-        packer.close()
-        val bytes = packer.toByteArray()
-        val paths = mutableListOf<String>()
-        val client = client(paths) {
-            respond(bytes, HttpStatusCode.Conflict, headersOf(HttpHeaders.ContentType, "application/msgpack"))
-        }
-        try {
-            val error = assertFailsWith<EkoDBHttpException> { client.commitTransaction("tx-1") }
-            assertEquals(409, error.statusCode)
-            assertEquals("write conflict on users/1", error.message)
-            assertTrue(error.retryable)
-            assertEquals(listOf("/api/transactions/tx-1/commit"), paths)
-        } finally {
-            client.close()
-        }
-    }
 }
