@@ -19,6 +19,10 @@ use tokio_tungstenite::{
 };
 use url::Url;
 
+/// The language a WebSocket text search sends with its options: the server requires the field
+/// and uses this value when it is left unset.
+const TEXT_SEARCH_LANGUAGE: &str = "english";
+
 /// WebSocket message types
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type")]
@@ -1424,13 +1428,20 @@ impl WebSocketClient {
         fields: Option<Vec<String>>,
         limit: Option<u64>,
     ) -> Result<Vec<Value>> {
-        // The server names the field list `search_fields` (#414).
+        // The server names the field list `search_fields` (#414), and its options require
+        // `language`, so they carry the server's own default.
         let mut options = serde_json::Map::new();
         if let Some(f) = fields {
             options.insert("search_fields".to_string(), serde_json::json!(f));
         }
         if let Some(l) = limit {
             options.insert("limit".to_string(), serde_json::json!(l));
+        }
+        if !options.is_empty() {
+            options.insert(
+                "language".to_string(),
+                serde_json::json!(TEXT_SEARCH_LANGUAGE),
+            );
         }
         let payload = serde_json::json!({
             "collection": collection,
