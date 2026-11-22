@@ -237,7 +237,7 @@ results = await client.find("users", query)
 
 ### Client
 
-#### `Client.new(base_url: str, api_key: str, should_retry: bool = True, max_retries: int = 3, timeout_secs: int = 30) -> Client`
+#### `Client.new(base_url: str, api_key: str, should_retry: bool = True, max_retries: int = 3, timeout_secs: int = 30, format: SerializationFormat | None = None) -> Client`
 
 Create a new ekoDB client.
 
@@ -248,6 +248,10 @@ Create a new ekoDB client.
 - `should_retry`: Enable automatic retries (default: True)
 - `max_retries`: Maximum number of retry attempts (default: 3)
 - `timeout_secs`: Request timeout in seconds (default: 30)
+- `format`: Serialization format for the routes that accept MessagePack (insert,
+  update, delete and their batch forms). Default:
+  `SerializationFormat.MessagePack`; pass `SerializationFormat.Json` to send
+  JSON there too. Every other route always uses JSON.
 
 **Returns:**
 
@@ -294,6 +298,10 @@ Exception raised for an HTTP error answer from the server (a `404`, `409`,
 - `status: int` - The HTTP status code
 - `message: str` - The server's error message, or the client's description when
   it does not keep the server's (a `404`, or a `401` it could not refresh)
+- `retryable: bool` - Whether trying again can succeed. For a transaction call
+  it is the server's `retryable` flag (`False` when the answer does not carry
+  one): `True` means begin a new transaction and run the work again. The client
+  never re-sends a transaction call itself
 
 ```python
 from ekodb_client import ApiError
@@ -616,7 +624,25 @@ server default.
 
 #### `await client.commit_transaction(transaction_id: str) -> None`
 
-Apply the staged writes. May raise a retryable conflict (HTTP 409).
+Apply the staged writes. A failure raises `ApiError` with the server's `message`
+and `retryable` flag. A conflict (HTTP 409) is `retryable`: begin a new
+transaction and run the work again. A failed commit has already discarded its
+transaction when the server answers, so the client never re-sends a transaction
+call, whatever the status or flag; a re-sent commit could only come back `404`
+and hide the real cause. Only a `401` is sent again, once, after refreshing the
+token. The same applies to every transaction call.
+
+```python
+from ekodb_client import ApiError
+
+try:
+    await client.commit_transaction(tx_id)
+except ApiError as e:
+    if e.retryable:
+        ...  # Begin a new transaction and run the work again.
+    else:
+        raise
+```
 
 #### `await client.rollback_transaction(transaction_id: str) -> None`
 

@@ -461,7 +461,7 @@ match client.insert("users", record).await {
     Err(Error::RateLimit { retry_after_secs }) => {
         println!("Rate limited. Retry after {} seconds", retry_after_secs);
     }
-    Err(Error::Auth(msg)) => {
+    Err(Error::Authentication(msg)) => {
         println!("Authentication failed: {}", msg);
     }
     Err(Error::NotFound) => {
@@ -470,6 +470,31 @@ match client.insert("users", record).await {
     Err(e) => {
         println!("Error: {}", e);
     }
+}
+```
+
+Transaction calls (`begin_transaction`, `get_transaction_status`,
+`commit_transaction`, `rollback_transaction` and the savepoint calls) return
+`Error::Transaction { code, message, retryable }` on failure: the HTTP status,
+the server's error text (the raw body when it is not the JSON error) and the
+server's `retryable` flag (`false` when absent). `retryable: true` means begin a
+new transaction and run the work again. The client never re-sends a transaction
+call, whatever the status or flag: a failed commit has already discarded its
+transaction when the server answers, so a re-sent commit could only come back
+404 and hide the real cause. `Error::is_retryable()` is therefore `false` for
+every `Error::Transaction`. Only a `401` is sent again: it is still
+`Error::TokenExpired`, refreshed and re-sent once.
+
+```rust
+match client.commit_transaction(&tx_id).await {
+    Ok(()) => println!("Committed"),
+    Err(Error::Transaction { retryable: true, .. }) => {
+        // Begin a new transaction and run the work again.
+    }
+    Err(Error::Transaction { code, message, .. }) => {
+        println!("Commit failed ({}): {}", code, message);
+    }
+    Err(e) => println!("Error: {}", e),
 }
 ```
 
@@ -684,7 +709,7 @@ Buffered, read-your-writes transactions. Statements issued with a
 - `begin_transaction(isolation_level: Option<&str>)` - Start a transaction and
   return its id; pass `None` to use the server default
 - `commit_transaction(transaction_id)` - Apply staged writes (may return a
-  retryable HTTP 409 conflict)
+  retryable HTTP 409 conflict as `Error::Transaction`)
 - `rollback_transaction(transaction_id)` - Discard staged writes
 - `create_savepoint(transaction_id, name)` - Create a savepoint
 - `rollback_to_savepoint(transaction_id, name)` - Roll back to a savepoint
@@ -860,7 +885,7 @@ match client.insert("users", record).await {
         // Wait and retry
         tokio::time::sleep(Duration::from_secs(retry_after_secs)).await;
     }
-    Err(Error::Auth(msg)) => {
+    Err(Error::Authentication(msg)) => {
         // Handle authentication error
     }
     Err(e) => {

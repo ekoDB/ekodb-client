@@ -21,6 +21,24 @@ pub enum Error {
         message: String,
     },
 
+    /// A transaction call (begin, status, commit, rollback or a savepoint call)
+    /// failed. `message` is the server's `error` text, or the raw response body
+    /// when the body is not that JSON. `retryable` is the server's verdict on
+    /// the transaction: `true` means begin a new transaction and run the work
+    /// again. The client never re-sends a transaction call: a failed commit has
+    /// already discarded its transaction, so a re-sent call could only come
+    /// back 404 and hide the original cause.
+    #[error("Transaction error ({code}): {message}")]
+    Transaction {
+        /// HTTP status code
+        code: u16,
+        /// The server's error message, or the raw response body
+        message: String,
+        /// Whether the server says a new transaction may retry the work (false
+        /// when the answer does not say)
+        retryable: bool,
+    },
+
     /// Token expired - can be retried with token refresh
     #[error("Token expired, please refresh")]
     TokenExpired,
@@ -86,7 +104,10 @@ impl Error {
         }
     }
 
-    /// Check if the error is retryable
+    /// Check if the request that failed may be sent again. This is what the
+    /// retry policy re-sends. It is never true for `Transaction`: a transaction
+    /// call is not re-sent, and its own `retryable` field says whether a new
+    /// transaction may retry the work.
     pub fn is_retryable(&self) -> bool {
         matches!(
             self,
@@ -253,6 +274,40 @@ mod tests {
     fn test_is_retryable_connection() {
         let err = Error::Connection("Connection reset".to_string());
         assert!(err.is_retryable());
+    }
+
+    #[test]
+    fn test_transaction_error_is_never_resent_whatever_its_flag() {
+        // Even a conflict the server marks retryable is not re-sent: the flag
+        // is for the caller, who begins a new transaction.
+        let conflict = Error::Transaction {
+            code: 409,
+            message: "write conflict".to_string(),
+            retryable: true,
+        };
+        assert!(!conflict.is_retryable());
+        assert_eq!(conflict.retry_delay_secs(), None);
+
+        // A 503 is not re-sent either, unlike `ServiceUnavailable`.
+        let shutting_down = Error::Transaction {
+            code: 503,
+            message: "shutting down".to_string(),
+            retryable: true,
+        };
+        assert!(!shutting_down.is_retryable());
+    }
+
+    #[test]
+    fn test_error_display_transaction() {
+        let err = Error::Transaction {
+            code: 400,
+            message: "unique constraint violated".to_string(),
+            retryable: false,
+        };
+        assert_eq!(
+            format!("{}", err),
+            "Transaction error (400): unique constraint violated"
+        );
     }
 
     #[test]

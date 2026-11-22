@@ -593,6 +593,215 @@ describe("EkoDBClient transactions", () => {
 });
 
 // ============================================================================
+// Transaction Error Tests (#406)
+// ============================================================================
+
+describe("EkoDBClient transaction errors", () => {
+  function createRetryingClient(maxRetries: number): EkoDBClient {
+    return new EkoDBClient({
+      baseURL: "http://localhost:8080",
+      apiKey: "test-api-key",
+      format: SerializationFormat.Json,
+      shouldRetry: true,
+      maxRetries,
+    });
+  }
+
+  function mockTransactionFailure(status: number, body: string): void {
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      status,
+      json: async () => JSON.parse(body),
+      text: async () => body,
+      headers: new Headers({ "content-type": "application/json" }),
+    });
+  }
+
+  function transactionCalls(): string[] {
+    return mockFetch.mock.calls
+      .map(([url]) => new URL(url as string).pathname)
+      .filter((path) => path.startsWith("/api/transactions"));
+  }
+
+  it("throws a 409 commit as a retryable EkoDBApiError after one send", async () => {
+    const client = createRetryingClient(3);
+    const body = JSON.stringify({
+      error: "write conflict on users/1",
+      transaction_id: "tx-1",
+      retryable: true,
+    });
+    mockTokenResponse();
+    mockTransactionFailure(409, body);
+    // A second answer is queued so that a re-send would succeed instead of
+    // failing loudly: the assertions below must catch it.
+    mockJsonResponse({ status: "committed" });
+
+    const error = await client
+      .commitTransaction("tx-1")
+      .then(() => undefined)
+      .catch((e: unknown) => e);
+
+    expect(error).toBeInstanceOf(EkoDBApiError);
+    expect((error as EkoDBApiError).status).toBe(409);
+    expect((error as EkoDBApiError).message).toBe("write conflict on users/1");
+    expect((error as EkoDBApiError).retryable).toBe(true);
+    expect((error as EkoDBApiError).body).toBe(body);
+    // Retries are enabled, and the commit is still sent exactly once.
+    expect(transactionCalls()).toEqual(["/api/transactions/tx-1/commit"]);
+  });
+
+  it("does not retry a commit the server marked not retryable", async () => {
+    const client = createRetryingClient(3);
+    mockTokenResponse();
+    mockTransactionFailure(
+      400,
+      JSON.stringify({
+        error: "unique constraint violated",
+        transaction_id: "tx-2",
+        retryable: false,
+      }),
+    );
+
+    const error = await client
+      .commitTransaction("tx-2")
+      .then(() => undefined)
+      .catch((e: unknown) => e);
+
+    expect(error).toBeInstanceOf(EkoDBApiError);
+    expect((error as EkoDBApiError).status).toBe(400);
+    expect((error as EkoDBApiError).message).toBe("unique constraint violated");
+    expect((error as EkoDBApiError).retryable).toBe(false);
+    expect(transactionCalls()).toEqual(["/api/transactions/tx-2/commit"]);
+  });
+
+  it("does not re-send a 503, whatever its flag", async () => {
+    const client = createRetryingClient(3);
+    mockTokenResponse();
+    mockTransactionFailure(
+      503,
+      JSON.stringify({
+        error: "at capacity",
+        transaction_id: "tx-3",
+        retryable: false,
+      }),
+    );
+
+    const error = await client
+      .commitTransaction("tx-3")
+      .then(() => undefined)
+      .catch((e: unknown) => e);
+
+    expect((error as EkoDBApiError).status).toBe(503);
+    expect((error as EkoDBApiError).retryable).toBe(false);
+    expect(transactionCalls()).toEqual(["/api/transactions/tx-3/commit"]);
+  });
+
+  it("does not re-send a shutdown 503 the server marked retryable", async () => {
+    const client = createRetryingClient(3);
+    mockTokenResponse();
+    mockTransactionFailure(
+      503,
+      JSON.stringify({
+        error: "shutting down",
+        transaction_id: "tx-5",
+        retryable: true,
+      }),
+    );
+    mockJsonResponse({ status: "committed" });
+
+    const error = await client
+      .commitTransaction("tx-5")
+      .then(() => undefined)
+      .catch((e: unknown) => e);
+
+    expect((error as EkoDBApiError).status).toBe(503);
+    expect((error as EkoDBApiError).retryable).toBe(true);
+    expect(transactionCalls()).toEqual(["/api/transactions/tx-5/commit"]);
+  });
+
+  it("does not re-send a commit after a network error", async () => {
+    const client = createRetryingClient(3);
+    mockTokenResponse();
+    mockFetch.mockRejectedValueOnce(new TypeError("fetch failed"));
+    mockJsonResponse({ status: "committed" });
+
+    await expect(client.commitTransaction("tx-6")).rejects.toThrow(
+      "fetch failed",
+    );
+    expect(transactionCalls()).toEqual(["/api/transactions/tx-6/commit"]);
+  });
+
+  it("falls back to the raw text for a non-JSON error body", async () => {
+    const client = createRetryingClient(3);
+    mockTokenResponse();
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      status: 502,
+      json: async () => {
+        throw new SyntaxError("Unexpected token");
+      },
+      text: async () => "upstream connect error",
+      headers: new Headers({ "content-type": "text/plain" }),
+    });
+
+    const error = await client
+      .commitTransaction("tx-4")
+      .then(() => undefined)
+      .catch((e: unknown) => e);
+
+    expect(error).toBeInstanceOf(EkoDBApiError);
+    expect((error as EkoDBApiError).status).toBe(502);
+    expect((error as EkoDBApiError).message).toBe("upstream connect error");
+    expect((error as EkoDBApiError).retryable).toBe(false);
+    expect(transactionCalls()).toEqual(["/api/transactions/tx-4/commit"]);
+  });
+
+  it("maps every transaction route's failure to the typed error", async () => {
+    const client = createRetryingClient(3);
+    const gone = JSON.stringify({
+      error: "transaction tx-9 not found",
+      transaction_id: "tx-9",
+      retryable: false,
+    });
+    const calls: Array<() => Promise<unknown>> = [
+      () => client.beginTransaction(),
+      () => client.getTransactionStatus("tx-9"),
+      () => client.rollbackTransaction("tx-9"),
+      () => client.createSavepoint("tx-9", "sp1"),
+      () => client.rollbackToSavepoint("tx-9", "sp1"),
+      () => client.releaseSavepoint("tx-9", "sp1"),
+    ];
+    mockTokenResponse();
+    for (const call of calls) {
+      mockTransactionFailure(404, gone);
+      const error = await call()
+        .then(() => undefined)
+        .catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(EkoDBApiError);
+      expect((error as EkoDBApiError).status).toBe(404);
+      expect((error as EkoDBApiError).message).toBe(
+        "transaction tx-9 not found",
+      );
+      expect((error as EkoDBApiError).retryable).toBe(false);
+    }
+    expect(transactionCalls()).toHaveLength(calls.length);
+  });
+
+  it("leaves retryable false on errors from other routes", async () => {
+    const client = createTestClient();
+    mockTokenResponse();
+    mockErrorResponse(409, "conflict");
+
+    const error = await client
+      .insert("users", { name: "Test" })
+      .then(() => undefined)
+      .catch((e: unknown) => e);
+
+    expect((error as EkoDBApiError).retryable).toBe(false);
+  });
+});
+
+// ============================================================================
 // Collection Management Tests
 // ============================================================================
 

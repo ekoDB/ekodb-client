@@ -655,8 +655,8 @@ Buffered, read-your-writes transactions. Statements issued with a
 `transactionId` are staged and applied atomically at commit.
 
 - `beginTransaction(isolationLevel?)` - Start a transaction, returns its id
-- `commitTransaction(transactionId)` - Apply staged writes (may return a
-  retryable HTTP 409 conflict)
+- `commitTransaction(transactionId)` - Apply staged writes (may throw a
+  retryable HTTP 409 conflict; see [Error Handling](#error-handling))
 - `rollbackTransaction(transactionId)` - Discard staged writes
 - `createSavepoint(transactionId, name)` - Create a savepoint
 - `rollbackToSavepoint(transactionId, name)` - Roll back to a savepoint
@@ -785,6 +785,30 @@ try {
 Transient server errors are retried with exponential backoff. Terminal client
 errors are thrown immediately, after any applicable authentication refresh or
 rate-limit handling. Exhausted server errors also throw `EkoDBHttpException`.
+
+Transaction calls (`beginTransaction`, `getTransactionStatus`,
+`commitTransaction`, `rollbackTransaction` and the savepoint calls) are handled
+differently. A failure throws `EkoDBHttpException` whose `message` is the
+server's error text (the raw body when it is not the JSON error) and whose
+`retryable` is the server's `retryable` flag (`false` when absent).
+`retryable: true` means begin a new transaction and run the work again. The
+client never re-sends a transaction call, whatever the status or flag: a failed
+commit has already discarded its transaction when the server answers, so a
+re-sent commit could only come back 404 and hide the real cause. Only a 401 is
+sent again, once, after refreshing the token. A transport failure on a
+transaction call is not retried either.
+
+```kotlin
+try {
+    client.commitTransaction(txId)
+} catch (e: EkoDBHttpException) {
+    if (e.retryable) {
+        // Begin a new transaction and run the work again.
+    } else {
+        println("Commit failed with HTTP ${e.statusCode}: ${e.message}")
+    }
+}
+```
 
 ### Performance Tips
 

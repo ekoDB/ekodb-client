@@ -396,6 +396,30 @@ Buffered, read-your-writes transactions. Statements issued with a
 - `rollbackToSavepoint(transactionId, name): Promise<void>`
 - `releaseSavepoint(transactionId, name): Promise<void>`
 
+Every transaction call rejects with `EkoDBApiError` on failure: `status`, the
+server's error text as `message` (the raw body when it is not the JSON error)
+and the server's `retryable` flag (`false` when absent). `retryable: true` means
+begin a new transaction and run the work again. The client never re-sends a
+transaction call, whatever the status or flag: a failed commit has already
+discarded its transaction when the server answers, so a re-sent commit could
+only come back 404 and hide the real cause. Only a 401 is sent again, once,
+after refreshing the token. A network error on a transaction call is not retried
+either.
+
+```typescript
+import { EkoDBApiError } from "@ekodb/ekodb-client";
+
+try {
+  await client.commitTransaction(txId);
+} catch (error) {
+  if (error instanceof EkoDBApiError && error.retryable) {
+    // Begin a new transaction and run the work again.
+  } else {
+    throw error;
+  }
+}
+```
+
 Pass `transactionId` in the options of `insert` / `update` / `delete` / `find` /
 `findById` to read and write within the transaction (read-your-writes).
 
