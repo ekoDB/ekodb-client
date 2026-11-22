@@ -102,6 +102,49 @@ and this project adheres to
 
 ### Fixed
 
+- **Transaction calls surface the server's error and are never re-sent (#406).**
+  The server answers a failed transaction call with
+  `{"error", "transaction_id", "retryable"}`, and a failed commit has already
+  discarded its transaction when that answer arrives, so a re-sent commit can
+  only come back 404 and hide the real cause. Every transaction call (begin,
+  status, commit, rollback and the three savepoint calls) now reports the HTTP
+  status, the server's `error` text (the raw body when the body is not that
+  JSON, the status when it is empty) and the `retryable` flag (`false` when
+  absent). `retryable: true` means begin a new transaction and run the work
+  again. No SDK re-sends a transaction call any more, whatever the status, the
+  flag or a transport failure; only a `401` is sent again, once, after the token
+  is refreshed, because that request never reached the transaction.
+  - **BREAKING (Rust) — new `Error` variant.**
+    `Error::Transaction { code, message, retryable }` is new, and `Error` is not
+    `#[non_exhaustive]`, so a `match` on `Error` that lists every variant
+    without a `_` arm must add an arm for it. `Error::is_retryable()` is `false`
+    for it: that method says whether the client may re-send a request, and a
+    transaction call is never re-sent. Before, commit, rollback and the
+    savepoint calls returned `Error::Http` with the body dropped, and begin and
+    status returned `Error::Api` or `Error::NotFound` and were re-sent on a
+    `429` or `503`.
+  - Rust: on the MessagePack routes (insert, update, delete and their batch
+    forms) an error body sent as MessagePack is decoded before the message is
+    built; it used to be read as text and came back unreadable. The README's
+    error examples match on `Error::Authentication`, not the long-removed
+    `Error::Auth`.
+  - Python: the error is raised as `ApiError` with `status`, `message` and a new
+    `retryable` attribute: the server's flag for a transaction call, the Rust
+    error's `is_retryable()` for any other `ApiError`. Before, a failed commit
+    raised `ApiError` or `RuntimeError` with no server message. The `Client.new`
+    docstring and the README now state the real default format, MessagePack, on
+    the routes that accept it.
+  - TypeScript: `EkoDBApiError` gains `retryable`; for a transaction call its
+    `message` is the server's `error` text. Before, a transaction call was
+    re-sent on every 503, every 429 and every network error, and the message was
+    `Request failed with status N: <raw body>`.
+  - Kotlin: `EkoDBHttpException` gains `retryable` and takes a `message`; for a
+    transaction call `message` is the server's `error` text. Its constructor is
+    `@JvmOverloads`, so Java callers keep the `(int, String)` constructor.
+    Before, a transaction call was re-sent on every 429, every 5xx and every
+    transport failure.
+  - Go: the matching change ships in ekodb-client-go, where `HTTPError` gains
+    `Retryable`.
 - Python: `RateLimitError` has a `retry_after_secs` attribute, as the module
   docstring and README already showed; it used to exist only as `e.args[0]`, so
   the documented example raised `AttributeError` at the moment a caller was rate
