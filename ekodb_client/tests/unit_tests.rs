@@ -4365,3 +4365,124 @@ async fn test_update_schema_constraints_omits_unset_fields() {
         result
     );
 }
+
+/// A WebSocket server for one request: it reads the client's Hello (if any) and its request,
+/// answers the request with `reply(&request)`, and returns the request for the test to inspect.
+async fn ws_answer_one(
+    reply: impl FnOnce(&serde_json::Value) -> serde_json::Value + Send + 'static,
+) -> (u16, tokio::task::JoinHandle<serde_json::Value>) {
+    use futures_util::{SinkExt, StreamExt};
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let port = listener.local_addr().unwrap().port();
+    let server = tokio::spawn(async move {
+        let (stream, _) = listener.accept().await.unwrap();
+        let mut ws = tokio_tungstenite::accept_async(stream).await.unwrap();
+        loop {
+            let message = ws.next().await.expect("a frame").expect("a readable frame");
+            let text = match message {
+                tokio_tungstenite::tungstenite::Message::Text(text) => text.to_string(),
+                _ => continue,
+            };
+            let request: serde_json::Value = serde_json::from_str(&text).unwrap();
+            if request["type"] == "Hello" {
+                continue;
+            }
+            let answer = reply(&request);
+            ws.send(tokio_tungstenite::tungstenite::Message::Text(
+                answer.to_string().into(),
+            ))
+            .await
+            .unwrap();
+            return request;
+        }
+    });
+    (port, server)
+}
+
+fn ws_client(port: u16) -> ekodb_client::WebSocketClient {
+    ekodb_client::WebSocketClient::new(format!("ws://127.0.0.1:{port}/api/ws"), "token").unwrap()
+}
+
+/// #413: a WebSocket raw completion sends its fields in `payload`, with a `messageId`, so the
+/// server can read it and the answer reaches the caller. Before, the fields went at the top level
+/// with no id, and the call waited until the connection closed.
+#[tokio::test]
+async fn test_ws_raw_completion_sends_a_payload_and_gets_its_answer() {
+    let (port, server) = ws_answer_one(|request| {
+        json!({
+            "type": "Success",
+            "messageId": request["messageId"],
+            "payload": {"data": {"content": "hi"}},
+        })
+    })
+    .await;
+    let request = ekodb_client::RawCompletionRequest {
+        system_prompt: "s".to_string(),
+        message: "m".to_string(),
+        provider: None,
+        model: Some("small".to_string()),
+        max_tokens: None,
+    };
+    let answer = tokio::time::timeout(
+        std::time::Duration::from_secs(15),
+        ws_client(port).raw_completion(&request),
+    )
+    .await
+    .expect("the answer reaches the caller")
+    .expect("a completion");
+    assert_eq!(answer.content, "hi");
+
+    let sent = server.await.unwrap();
+    assert_eq!(sent["type"], "RawComplete");
+    assert!(
+        sent["messageId"].as_str().is_some_and(|id| !id.is_empty()),
+        "{sent}"
+    );
+    assert_eq!(
+        sent["payload"],
+        json!({"system_prompt": "s", "message": "m", "model": "small"})
+    );
+    assert!(
+        sent.get("system_prompt").is_none(),
+        "no field at the top level: {sent}"
+    );
+}
+
+/// #414: a WebSocket text search sends its field list as `search_fields`.
+#[tokio::test]
+async fn test_ws_text_search_sends_search_fields() {
+    let (port, server) = ws_answer_one(|request| {
+        json!({"type": "Success", "messageId": request["messageId"], "payload": {"data": []}})
+    })
+    .await;
+    let hits = ws_client(port)
+        .text_search("docs", "alpha", Some(vec!["title".to_string()]), Some(5))
+        .await
+        .expect("a search");
+    assert!(hits.is_empty());
+    let sent = server.await.unwrap();
+    assert_eq!(sent["type"], "TextSearch");
+    assert_eq!(
+        sent["payload"]["options"],
+        json!({"search_fields": ["title"], "limit": 5})
+    );
+}
+
+/// #415: a WebSocket create with no schema sends one with an empty `fields`.
+#[tokio::test]
+async fn test_ws_create_collection_without_a_schema_sends_empty_fields() {
+    let (port, server) = ws_answer_one(|request| {
+        json!({"type": "Success", "messageId": request["messageId"], "payload": {"data": null}})
+    })
+    .await;
+    ws_client(port)
+        .create_collection("things", None)
+        .await
+        .expect("a create");
+    let sent = server.await.unwrap();
+    assert_eq!(sent["type"], "CreateCollection");
+    assert_eq!(
+        sent["payload"],
+        json!({"name": "things", "schema": {"fields": {}}})
+    );
+}

@@ -866,16 +866,7 @@ class WebSocketClient(
 
     /** Full-text search via WebSocket. */
     suspend fun textSearch(collection: String, query: String, fields: List<String>? = null, limit: Int? = null): JsonObject =
-        sendCRUD("TextSearch", buildJsonObject {
-            put("collection", collection)
-            put("query", query)
-            if (fields != null || limit != null) {
-                put("options", buildJsonObject {
-                    fields?.let { put("fields", JsonArray(it.map { f -> JsonPrimitive(f) })) }
-                    limit?.let { put("limit", it) }
-                })
-            }
-        })
+        sendCRUD("TextSearch", textSearchPayload(collection, query, fields, limit))
 
     /** Get distinct values for a field via WebSocket. */
     suspend fun distinctValues(collection: String, field: String, filter: JsonElement? = null): JsonObject =
@@ -898,10 +889,7 @@ class WebSocketClient(
 
     /** Create a collection with optional schema via WebSocket. */
     suspend fun createCollection(name: String, schema: JsonObject? = null): JsonObject =
-        sendCRUD("CreateCollection", buildJsonObject {
-            put("name", name)
-            put("schema", schema ?: buildJsonObject {})
-        })
+        sendCRUD("CreateCollection", createCollectionPayload(name, schema))
 
     /** List all collections via WebSocket. */
     suspend fun listCollections(): JsonObject =
@@ -1020,3 +1008,26 @@ private fun unpackValue(unpacker: MessageUnpacker): JsonElement {
         }
     }
 }
+
+/** The payload of a WebSocket `TextSearch`. The server names the field list `search_fields` (#414). */
+internal fun textSearchPayload(collection: String, query: String, fields: List<String>?, limit: Int?): JsonObject =
+    buildJsonObject {
+        put("collection", collection)
+        put("query", query)
+        if (fields != null || limit != null) {
+            put("options", buildJsonObject {
+                fields?.let { put("search_fields", JsonArray(it.map { f -> JsonPrimitive(f) })) }
+                limit?.let { put("limit", it) }
+            })
+        }
+    }
+
+/**
+ * The payload of a WebSocket `CreateCollection`. With no schema, an empty one: a schema always has
+ * a `fields` object (#415).
+ */
+internal fun createCollectionPayload(name: String, schema: JsonObject?): JsonObject =
+    buildJsonObject {
+        put("name", name)
+        put("schema", schema ?: buildJsonObject { put("fields", buildJsonObject {}) })
+    }

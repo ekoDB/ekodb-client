@@ -366,3 +366,29 @@ class WebSocketClientTest {
         assertEquals(255, photo[2].jsonPrimitive.int)
     }
 }
+
+/** The WebSocket frames the server must be able to parse (#414, #415). */
+class WebSocketFramePayloadTest {
+    @Test
+    fun `text search sends its field list as search_fields`() {
+        val payload = textSearchPayload("docs", "alpha", listOf("title"), 5)
+        val options = payload["options"]!!.jsonObject
+        assertEquals(listOf("title"), options["search_fields"]!!.jsonArray.map { it.jsonPrimitive.content })
+        assertEquals(5, options["limit"]!!.jsonPrimitive.int)
+        assertNull(options["fields"], "the server does not read `fields`")
+        assertNull(textSearchPayload("docs", "alpha", null, null)["options"], "no options when none are given")
+    }
+
+    @Test
+    fun `create collection without a schema sends empty fields`() {
+        assertEquals(
+            buildJsonObject {
+                put("name", "things")
+                put("schema", buildJsonObject { put("fields", buildJsonObject {}) })
+            },
+            createCollectionPayload("things", null),
+        )
+        val schema = buildJsonObject { put("fields", buildJsonObject { put("a", buildJsonObject { put("field_type", "String") }) }) }
+        assertEquals(schema, createCollectionPayload("things", schema)["schema"], "control: a given schema is sent as given")
+    }
+}
