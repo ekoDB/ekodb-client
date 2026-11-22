@@ -9,6 +9,7 @@ import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.toByteArray
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.serializer
 import java.nio.charset.Charset
 
@@ -37,8 +38,14 @@ internal class MessagePackConverter(
         typeInfo: TypeInfo,
         value: Any?,
     ): OutgoingContent {
+        // A body that already is a JsonElement is packed as it is: encoding it through the serializer
+        // rewrites an integer literal beyond the unsigned 64-bit range as a double.
         @Suppress("UNCHECKED_CAST")
-        val element = json.encodeToJsonElement(serializerFor(typeInfo) as KSerializer<Any?>, value)
+        val element = if (value is JsonElement) {
+            value
+        } else {
+            json.encodeToJsonElement(serializerFor(typeInfo) as KSerializer<Any?>, value)
+        }
         return ByteArrayContent(jsonElementToMsgpack(element), contentType)
     }
 
