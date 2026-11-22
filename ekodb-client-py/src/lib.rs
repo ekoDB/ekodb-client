@@ -5920,6 +5920,11 @@ mod tests {
             unknown.set_item("a", "up").unwrap();
             refused(unknown.as_any(), "must be");
             refused(PyString::new(py, "name").as_any(), "sort must be");
+            // The exception type is part of the contract: a structural problem is a TypeError and an
+            // unknown direction a ValueError.
+            let error_of = |sort: &Bound<'_, PyAny>| ws_query_sort(sort).expect_err("refused");
+            assert!(error_of(bare.as_any()).is_instance_of::<pyo3::exceptions::PyTypeError>(py));
+            assert!(error_of(unknown.as_any()).is_instance_of::<pyo3::exceptions::PyValueError>(py));
         });
     }
 
