@@ -1210,7 +1210,11 @@ class EkoDBClient private constructor(
             }
             throw e
         }
-        return response.body<JsonObject>().getValue("count").jsonPrimitive.long
+        // A count that is missing, null, a string or a fraction is an error, never a count, as
+        // the other SDKs refuse it.
+        val count = response.body<JsonObject>()["count"] as? JsonPrimitive
+        return count?.takeIf { !it.isString }?.longOrNull
+            ?: throw IllegalStateException("count response has no integer count")
     }
 
     private val searchJson = Json { ignoreUnknownKeys = true }
