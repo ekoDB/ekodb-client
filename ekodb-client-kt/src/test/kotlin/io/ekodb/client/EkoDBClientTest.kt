@@ -130,6 +130,59 @@ class EkoDBClientTest {
         }
     }
 
+    @Test
+    fun `a MessagePack error body is decoded into the server's message`() = runBlocking {
+        val packer = org.msgpack.core.MessagePack.newDefaultBufferPacker()
+        packer.packMapHeader(1)
+        packer.packString("error")
+        packer.packString("Field 'age' must be an Integer")
+        packer.close()
+        val errorBytes = packer.toByteArray()
+        val engine = MockEngine { request ->
+            if (request.url.encodedPath.contains("/api/auth/token")) {
+                respond("""{"token":"mock_jwt_token_123"}""",
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
+            } else {
+                respond(errorBytes, status = HttpStatusCode.BadRequest,
+                    headers = headersOf(HttpHeaders.ContentType, "application/msgpack"))
+            }
+        }
+        val client = createTestClient(engine)
+        try {
+            val error = assertFailsWith<Exception> {
+                client.insert("users", io.ekodb.client.types.Record().insert("name", "Alice"))
+            }
+            assertTrue(
+                error.message.orEmpty().contains("""{"error":"Field 'age' must be an Integer"}"""),
+                "the error carries the decoded body: ${error.message}",
+            )
+        } finally {
+            client.close()
+        }
+    }
+
+    @Test
+    fun `a JSON error body is kept as its text`() = runBlocking {
+        val engine = MockEngine { request ->
+            if (request.url.encodedPath.contains("/api/auth/token")) {
+                respond("""{"token":"mock_jwt_token_123"}""",
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
+            } else {
+                respond("""{"error":"bad filter"}""", status = HttpStatusCode.BadRequest,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
+            }
+        }
+        val client = createTestClient(engine)
+        try {
+            val error = assertFailsWith<Exception> {
+                client.insert("users", io.ekodb.client.types.Record().insert("name", "Alice"))
+            }
+            assertTrue(error.message.orEmpty().contains("""{"error":"bad filter"}"""), "${error.message}")
+        } finally {
+            client.close()
+        }
+    }
+
     // ========================================================================
     // Health Check Tests
     // ========================================================================
