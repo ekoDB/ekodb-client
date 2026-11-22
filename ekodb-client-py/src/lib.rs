@@ -4738,7 +4738,8 @@ impl WebSocketClient {
     ///
     /// `sort` is a dict of field to direction (`"asc"`, `"desc"` or a bool for ascending), in
     /// order, or a list of `{"field": str, "ascending": bool}` dicts or `(field, direction)`
-    /// pairs. Any other shape raises `TypeError` (`ValueError` for an unknown direction).
+    /// pairs. Any other shape raises `TypeError`, an `ascending` that is not a bool included, and an
+    /// unknown direction string raises `ValueError`.
     #[pyo3(signature = (collection, filter=None, sort=None, limit=None, skip=None))]
     fn ws_query<'py>(
         &self,
@@ -5177,7 +5178,8 @@ fn ws_create_collection_payload(
 /// `{"field": ..., "ascending": ...}` (#416). A dict maps each field, in its order, to its
 /// direction: `"asc"` or `"desc"` (any case), or a bool for ascending. A list (or tuple) holds
 /// entries in the server's shape or `(field, direction)` pairs; each is checked: a structural
-/// problem is a `TypeError` naming the entry, and an unknown direction is a `ValueError`.
+/// problem, a wrong-typed field included (an `ascending` that is not a bool), is a `TypeError`
+/// naming the entry, and an unknown direction string is a `ValueError`.
 fn ws_query_sort(sort: &Bound<'_, PyAny>) -> PyResult<serde_json::Value> {
     if let Ok(dict) = sort.cast::<PyDict>() {
         let mut pairs = Vec::with_capacity(dict.len());
@@ -5924,6 +5926,9 @@ mod tests {
             // unknown direction a ValueError.
             let error_of = |sort: &Bound<'_, PyAny>| ws_query_sort(sort).expect_err("refused");
             assert!(error_of(bare.as_any()).is_instance_of::<pyo3::exceptions::PyTypeError>(py));
+            // A wrong-typed `ascending` in an entry is a structural problem, so a TypeError.
+            assert!(error_of(with_not_bool.as_any())
+                .is_instance_of::<pyo3::exceptions::PyTypeError>(py));
             assert!(error_of(unknown.as_any()).is_instance_of::<pyo3::exceptions::PyValueError>(py));
             // The list form takes the same ValueError for an unknown direction.
             let unknown_pair = PyList::empty(py);
