@@ -1863,7 +1863,7 @@ class EkoDBClient private constructor(
                 }
 
                 if (transactional && !response.status.isSuccess()) {
-                    throw transactionHttpException(response.status.value, response.bodyAsText())
+                    throw transactionHttpException(response.status.value, errorBodyText(response))
                 }
 
                 // Check for rate limiting — same "only if a retry follows" guard,
@@ -3983,7 +3983,7 @@ internal fun transactionHttpException(statusCode: Int, responseBody: String): Ek
  */
 internal suspend fun errorBodyText(response: HttpResponse): String {
     val contentType = response.headers[HttpHeaders.ContentType].orEmpty()
-    if (!contentType.contains("msgpack")) return response.bodyAsText()
+    if (!contentType.contains("msgpack", ignoreCase = true)) return response.bodyAsText()
     val bytes: ByteArray = response.body()
     val decoded = runCatching { msgpackToJsonElement(bytes) }.getOrNull()
     return if (decoded is JsonObject) decoded.toString() else String(bytes, Charsets.UTF_8)
