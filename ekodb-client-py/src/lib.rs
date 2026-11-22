@@ -36,7 +36,10 @@ create_exception!(
     PyRuntimeError,
     "HTTP error answer from the server. `status` is the HTTP status code; \
      `message` is the server's error message, or the client's description \
-     when the client does not keep it (a 404, or a 401 it could not refresh)."
+     when the client does not keep it (a 404, or a 401 it could not refresh); \
+     `retryable` says whether trying again can succeed: for a transaction \
+     call it is the server's flag, and `True` means begin a new transaction \
+     and run the work again (the client never re-sends a transaction call)."
 );
 
 /// Map an `ekodb_client::Error` to the most specific Python exception.
@@ -45,13 +48,17 @@ create_exception!(
 ///   server-provided wait as `exc.retry_after_secs` and also as `exc.args[0]`
 ///   (kept for callers written before the attribute existed), and `exc.status`
 ///   429.
-/// - An error the server answered with an HTTP status (`Api`, `NotFound`,
-///   `ServiceUnavailable`, and a `TokenExpired` the client could not refresh
-///   away) is surfaced as `ApiError`, with `exc.status` and `exc.message`.
+/// - An error the server answered with an HTTP status (`Api`, `Transaction`,
+///   `NotFound`, `ServiceUnavailable`, and a `TokenExpired` the client could
+///   not refresh away) is surfaced as `ApiError`, with `exc.status`,
+///   `exc.message` and `exc.retryable`. For a transaction call `retryable` is
+///   the server's flag (`True`: begin a new transaction and run the work
+///   again; the client never re-sends the call); otherwise it is the Rust
+///   error's `is_retryable()`.
 ///   `Api` also covers a WebSocket error frame (its status) and a failure the
 ///   server reports inside a streamed completion (status 500).
 ///   `message` is the server's message where the Rust client keeps it (`Api`,
-///   `ServiceUnavailable`); for `NotFound` and `TokenExpired` the Rust client
+///   `Transaction`, `ServiceUnavailable`); for `NotFound` and `TokenExpired` the Rust client
 ///   does not keep the server's body, so `message` is the client's text.
 /// - Every other error becomes a `RuntimeError`.
 ///
@@ -59,7 +66,7 @@ create_exception!(
 /// tuple), as before.
 fn map_client_err(context: &str, e: ekodb_client::Error) -> PyErr {
     use ekodb_client::Error as E;
-    let (status, message) = match &e {
+    let (status, message, retryable) = match &e {
         E::RateLimit { retry_after_secs } => {
             let secs = *retry_after_secs;
             let err = RateLimitError::new_err((secs,));
@@ -68,15 +75,21 @@ fn map_client_err(context: &str, e: ekodb_client::Error) -> PyErr {
                 value.setattr("status", 429u16)
             });
         }
-        E::Api { code, message } => (*code, message.clone()),
-        E::NotFound => (404, e.to_string()),
-        E::ServiceUnavailable(message) => (503, message.clone()),
-        E::TokenExpired => (401, e.to_string()),
+        E::Api { code, message } => (*code, message.clone(), e.is_retryable()),
+        E::Transaction {
+            code,
+            message,
+            retryable,
+        } => (*code, message.clone(), *retryable),
+        E::NotFound => (404, e.to_string(), e.is_retryable()),
+        E::ServiceUnavailable(message) => (503, message.clone(), e.is_retryable()),
+        E::TokenExpired => (401, e.to_string(), e.is_retryable()),
         _ => return PyRuntimeError::new_err(format!("{context}: {e}")),
     };
     with_attrs(ApiError::new_err(format!("{context}: {e}")), |value| {
         value.setattr("status", status)?;
-        value.setattr("message", message)
+        value.setattr("message", message)?;
+        value.setattr("retryable", retryable)
     })
 }
 
@@ -100,9 +113,9 @@ fn with_attrs(
 #[pyclass(from_py_object)]
 #[derive(Clone, Copy)]
 enum SerializationFormat {
-    /// JSON format (default, human-readable)
+    /// JSON format (human-readable)
     Json,
-    /// MessagePack format (binary, 2-3x faster)
+    /// MessagePack format (binary, 2-3x faster; the default)
     MessagePack,
 }
 
@@ -187,8 +200,11 @@ impl Client {
     ///     should_retry: Enable automatic retries (default: True)
     ///     max_retries: Maximum number of retry attempts (default: 3)
     ///     timeout_secs: Request timeout in seconds (default: 30)
-    ///     format: Serialization format (default: SerializationFormat.Json)
-    ///             Use SerializationFormat.MessagePack for 2-3x better performance
+    ///     format: Serialization format for the routes that accept MessagePack
+    ///             (insert, update, delete and their batch forms). Default:
+    ///             SerializationFormat.MessagePack. Pass SerializationFormat.Json
+    ///             to send JSON on those routes too; every other route always
+    ///             uses JSON.
     ///
     /// Returns:
     ///     A new Client instance
@@ -5901,6 +5917,60 @@ mod tests {
                 let text = value.str().unwrap().to_string();
                 assert!(text.starts_with("Find failed: "), "text was: {text}");
             }
+        });
+    }
+
+    #[test]
+    fn test_map_client_err_transaction_error_carries_the_server_flag() {
+        Python::attach(|py| {
+            let cases = [
+                (409u16, "write conflict", true),
+                (400, "unique constraint violated", false),
+            ];
+            for (status, message, retryable) in cases {
+                let err = map_client_err(
+                    "Commit transaction failed",
+                    ekodb_client::Error::Transaction {
+                        code: status,
+                        message: message.to_string(),
+                        retryable,
+                    },
+                );
+                assert!(err.is_instance_of::<ApiError>(py));
+                assert!(err.is_instance_of::<PyRuntimeError>(py));
+                let value = err.value(py);
+                let got_status: u16 = value.getattr("status").unwrap().extract().unwrap();
+                assert_eq!(got_status, status);
+                let got_message: String = value.getattr("message").unwrap().extract().unwrap();
+                assert_eq!(got_message, message);
+                let got_retryable: bool = value.getattr("retryable").unwrap().extract().unwrap();
+                assert_eq!(got_retryable, retryable);
+            }
+        });
+    }
+
+    #[test]
+    fn test_map_client_err_retryable_follows_the_rust_error() {
+        Python::attach(|py| {
+            let busy = map_client_err(
+                "Find failed",
+                ekodb_client::Error::ServiceUnavailable("busy".to_string()),
+            );
+            let retryable: bool = busy
+                .value(py)
+                .getattr("retryable")
+                .unwrap()
+                .extract()
+                .unwrap();
+            assert!(retryable);
+            let conflict = map_client_err("Find failed", ekodb_client::Error::api(409, "conflict"));
+            let retryable: bool = conflict
+                .value(py)
+                .getattr("retryable")
+                .unwrap()
+                .extract()
+                .unwrap();
+            assert!(!retryable);
         });
     }
 
