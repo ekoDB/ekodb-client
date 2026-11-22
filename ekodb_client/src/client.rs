@@ -4392,6 +4392,40 @@ mod tests {
         find.assert_async().await;
     }
 
+    /// A failure other than the 404 of an older server passes through as itself, not as the
+    /// version error.
+    #[tokio::test]
+    async fn test_count_documents_where_passes_a_400_through() {
+        let CountFixture {
+            mut server,
+            token,
+            client,
+            ..
+        } = count_fixture().await;
+        let count = server
+            .mock("POST", "/api/count/users")
+            .with_status(400)
+            .with_header("content-type", "application/json")
+            .with_body(r#"{"error":"Invalid filter structure in body"}"#)
+            .expect(1)
+            .create_async()
+            .await;
+
+        let filter = serde_json::json!({
+            "type": "Condition",
+            "content": {"field": "salary", "operator": "Gt", "value": 100}
+        });
+        match client.count_documents_where("users", filter).await {
+            Err(Error::Api { code, message }) => {
+                assert_eq!(code, 400);
+                assert_eq!(message, "Invalid filter structure in body");
+            }
+            other => panic!("expected Api {{ 400, .. }}, got {other:?}"),
+        }
+        count.assert_async().await;
+        token.assert_async().await;
+    }
+
     #[tokio::test]
     async fn test_count_documents_where_surfaces_a_403_as_an_api_error() {
         let CountFixture {

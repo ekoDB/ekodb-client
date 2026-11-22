@@ -1575,6 +1575,32 @@ class EkoDBClientTest {
     }
 
     @Test
+    fun `countDocuments passes a 400 through as itself, not the version error`() = runBlocking {
+        val requests = mutableListOf<HttpRequestData>()
+        val body = """{"error":"Invalid filter structure in body"}"""
+        val client = createTestClient(capturingMockEngine(requests, body, HttpStatusCode.BadRequest))
+        val filter = QueryBuilder().gt("salary", 100).build().filter!!
+
+        val error = assertFailsWith<EkoDBHttpException> { client.countDocuments("users", filter) }
+
+        assertEquals(400, error.statusCode)
+        assertTrue(error.message.contains("Invalid filter structure in body"), error.message)
+        assertFalse(error.message.contains("0.84.0"), error.message)
+    }
+
+    @Test
+    fun `countDocuments refuses a response without an integer count`() = runBlocking {
+        for (body in listOf("""{}""", """{"count":null}""", """{"count":"5"}""", """{"count":2.5}""")) {
+            val requests = mutableListOf<HttpRequestData>()
+            val client = createTestClient(capturingMockEngine(requests, body))
+            assertFailsWith<IllegalStateException>(body) { client.countDocuments("users") }
+        }
+        val requests = mutableListOf<HttpRequestData>()
+        val client = createTestClient(capturingMockEngine(requests, """{"count":7}"""))
+        assertEquals(7L, client.countDocuments("users"), "control")
+    }
+
+    @Test
     fun `countDocuments path-escapes the collection name`() = runBlocking {
         val requests = mutableListOf<HttpRequestData>()
         val client = createTestClient(capturingMockEngine(requests, """{"count":3}"""))
