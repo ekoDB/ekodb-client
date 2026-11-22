@@ -4815,6 +4815,84 @@ describe("EkoDBClient MessagePack error bodies (#408)", () => {
     expect(error.message).toContain("Field 'age' must be an Integer");
   });
 
+  function mockFailure(
+    status: number,
+    body: Uint8Array,
+    contentType: string,
+  ): void {
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      status,
+      text: async () => new TextDecoder().decode(body),
+      arrayBuffer: async () =>
+        body.buffer.slice(body.byteOffset, body.byteOffset + body.byteLength),
+      headers: new Headers({ "content-type": contentType }),
+    });
+  }
+
+  async function failedInsert(): Promise<EkoDBApiError> {
+    return (await msgpackClient()
+      .insert("users", { name: "Ada" })
+      .catch((e: unknown) => e)) as EkoDBApiError;
+  }
+
+  it("matches the MessagePack content type in any letter case and with parameters", async () => {
+    mockTokenResponse();
+    mockFailure(
+      400,
+      encode({ error: "bad filter" }),
+      "Application/X-MsgPack; charset=binary",
+    );
+    const error = await failedInsert();
+    expect(JSON.parse(error.body)).toEqual({ error: "bad filter" });
+  });
+
+  it("keeps the bytes as text for a MessagePack content type with an invalid body", async () => {
+    mockTokenResponse();
+    const invalid = new Uint8Array([0xc1, 0xff]);
+    mockFailure(500, invalid, "application/msgpack");
+    const error = await failedInsert();
+    expect(error.body).toBe(new TextDecoder().decode(invalid));
+  });
+
+  it("keeps the bytes as text for a MessagePack body that is not a map", async () => {
+    // A binary value decodes to a Uint8Array, a timestamp to a Date, a string to a string:
+    // none is an error object.
+    for (const value of [
+      new Uint8Array([0x41, 0x42]),
+      new Date(0),
+      "just a string",
+    ]) {
+      const bytes = encode(value);
+      mockTokenResponse(); // each failedInsert builds a client, which exchanges its key
+      mockFailure(500, bytes, "application/msgpack");
+      const error = await failedInsert();
+      expect(error.body).toBe(new TextDecoder().decode(bytes));
+    }
+  });
+
+  it("gives a transaction failure answered as MessagePack its message and retryable flag", async () => {
+    const client = msgpackClient();
+    mockTokenResponse();
+    mockFailure(
+      409,
+      encode({
+        error: "write conflict on users/1",
+        transaction_id: "tx-1",
+        retryable: true,
+      }),
+      "application/msgpack",
+    );
+    const error = (await client
+      .commitTransaction("tx-1")
+      .then(() => undefined)
+      .catch((e: unknown) => e)) as EkoDBApiError;
+    expect(error).toBeInstanceOf(EkoDBApiError);
+    expect(error.status).toBe(409);
+    expect(error.message).toBe("write conflict on users/1");
+    expect(error.retryable).toBe(true);
+  });
+
   it("keeps a JSON error body as its text", async () => {
     const client = msgpackClient();
     mockTokenResponse();
