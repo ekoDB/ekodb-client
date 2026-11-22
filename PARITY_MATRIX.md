@@ -267,19 +267,21 @@ the HTTP status of an error answer without parsing a message.
 See the [Kotlin error-handling guide](ekodb-client-kt/README.md#error-handling).
 
 **Transaction errors carry the server's `retryable` flag (unreleased, #406):**
-every SDK reports a failed transaction call (begin, status, commit, rollback,
-the savepoint calls) with its status, the server's `error` text and the server's
-`retryable` flag, and never re-sends the call (only a 401 is sent again after a
-token refresh). `retryable == true` means begin a new transaction and run the
-work again.
+every SDK reports a failed call on an existing transaction (commit, rollback,
+create savepoint, rollback to savepoint, release savepoint) with its status, the
+server's `error` text and the server's `retryable` flag, and never re-sends the
+call (only a 401 is sent again after a token refresh). `retryable == true` means
+begin a new transaction and run the work again. Begin and status keep each SDK's
+normal retry policy and error types: a refused begin started no transaction, and
+a status read changes nothing.
 
-| SDK        | Error type: status, message, flag                               |
-| ---------- | --------------------------------------------------------------- |
-| Rust       | `Error::Transaction { code, message, retryable }`               |
-| Python     | `ApiError`: `status`, `message`, `retryable`                    |
-| TypeScript | `EkoDBApiError`: `status`, `message`, `retryable`               |
-| Kotlin     | `EkoDBHttpException`: `statusCode`, `message`, `retryable`      |
-| Go         | `HTTPError`: `StatusCode`, `Message`, `Retryable` (`errors.As`) |
+| SDK        | Error type: status, message, flag                                                                    |
+| ---------- | ---------------------------------------------------------------------------------------------------- |
+| Rust       | `Error::Transaction { code, message, retryable }`                                                    |
+| Python     | `ApiError`: `status`, `message`, `retryable`                                                         |
+| TypeScript | `EkoDBApiError`: `status`, `message`, `retryable`                                                    |
+| Kotlin     | `EkoDBHttpException`: `statusCode`, `message`, `retryable`                                           |
+| Go         | `HTTPError`: `StatusCode`, `Message`, `Retryable` (`errors.As`), in ekoDB/ekodb-client-go#123 (open) |
 
 **Collection restore counts (unreleased):** restoring a whole collection reports
 two counts that can differ: tombstones cleared and records actually recovered

@@ -473,17 +473,22 @@ match client.insert("users", record).await {
 }
 ```
 
-Transaction calls (`begin_transaction`, `get_transaction_status`,
-`commit_transaction`, `rollback_transaction` and the savepoint calls) return
-`Error::Transaction { code, message, retryable }` on failure: the HTTP status,
-the server's error text (the raw body when it is not the JSON error) and the
-server's `retryable` flag (`false` when absent). `retryable: true` means begin a
-new transaction and run the work again. The client never re-sends a transaction
-call, whatever the status or flag: a failed commit has already discarded its
-transaction when the server answers, so a re-sent commit could only come back
-404 and hide the real cause. `Error::is_retryable()` is therefore `false` for
-every `Error::Transaction`. Only a `401` is sent again: it is still
-`Error::TokenExpired`, refreshed and re-sent once.
+The calls that act on an existing transaction (`commit_transaction`,
+`rollback_transaction`, `create_savepoint`, `rollback_to_savepoint` and
+`release_savepoint`) return `Error::Transaction { code, message, retryable }` on
+failure: the HTTP status, the server's error text (the raw body when it is not
+the JSON error) and the server's `retryable` flag (`false` when absent or not a
+boolean). `retryable: true` means begin a new transaction and run the work
+again. The client never re-sends these calls, whatever the status or flag: a
+failed commit has already discarded its transaction when the server answers, so
+a re-sent commit could only come back 404 and hide the real cause.
+`Error::is_retryable()` is therefore `false` for every `Error::Transaction`.
+Only a `401` is sent again: it is still `Error::TokenExpired`, refreshed and
+re-sent once. `begin_transaction` and `get_transaction_status` keep the normal
+retry policy and error variants: a begin refused with `429` or `503` started no
+transaction, and a status read changes nothing, so both are retried like any
+other call and fail with `Error::RateLimit`, `Error::ServiceUnavailable`,
+`Error::NotFound` or `Error::Api`.
 
 ```rust
 match client.commit_transaction(&tx_id).await {

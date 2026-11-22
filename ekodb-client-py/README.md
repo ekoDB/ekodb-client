@@ -298,10 +298,11 @@ Exception raised for an HTTP error answer from the server (a `404`, `409`,
 - `status: int` - The HTTP status code
 - `message: str` - The server's error message, or the client's description when
   it does not keep the server's (a `404`, or a `401` it could not refresh)
-- `retryable: bool` - Whether trying again can succeed. For a transaction call
-  it is the server's `retryable` flag (`False` when the answer does not carry
-  one): `True` means begin a new transaction and run the work again. The client
-  never re-sends a transaction call itself
+- `retryable: bool` - Whether trying again can succeed. For a call on an
+  existing transaction (commit, rollback, or a savepoint call) it is the
+  server's `retryable` flag (`False` when the answer does not carry one, or
+  carries a non-boolean): `True` means begin a new transaction and run the work
+  again. The client never re-sends those calls itself
 
 ```python
 from ekodb_client import ApiError
@@ -620,17 +621,21 @@ Buffered, read-your-writes transactions. Operations issued with a
 #### `await client.begin_transaction(isolation_level: str | None = None) -> str`
 
 Start a transaction and return its id. Omitting `isolation_level` uses the
-server default.
+server default. A begin refused with `429` or `503` started no transaction, so
+it keeps the client's normal retry policy and error types: it is retried, and a
+`429` that outlasts the retries raises `RateLimitError`.
 
 #### `await client.commit_transaction(transaction_id: str) -> None`
 
 Apply the staged writes. A failure raises `ApiError` with the server's `message`
 and `retryable` flag. A conflict (HTTP 409) is `retryable`: begin a new
 transaction and run the work again. A failed commit has already discarded its
-transaction when the server answers, so the client never re-sends a transaction
-call, whatever the status or flag; a re-sent commit could only come back `404`
-and hide the real cause. Only a `401` is sent again, once, after refreshing the
-token. The same applies to every transaction call.
+transaction when the server answers, so the client never re-sends a commit,
+whatever the status or flag; a re-sent commit could only come back `404` and
+hide the real cause. Only a `401` is sent again, once, after refreshing the
+token. The same applies to `rollback_transaction` and the three savepoint calls.
+`begin_transaction` and `get_transaction_status` keep the normal retry policy
+and error types.
 
 ```python
 from ekodb_client import ApiError

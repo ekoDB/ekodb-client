@@ -3655,21 +3655,21 @@ impl ClientBuilder {
 
     /// Set the serialization format for client-server communication
     ///
-    /// Supports JSON (default, human-readable) and MessagePack (binary, faster).
+    /// Supports MessagePack (default, binary, faster) and JSON (human-readable).
     /// MessagePack can provide 2-3x performance improvement over JSON.
     ///
-    /// Default: JSON
+    /// Default: MessagePack
     ///
     /// # Example
     ///
     /// ```
     /// use ekodb_client::{Client, SerializationFormat};
     ///
-    /// // Use MessagePack for better performance
+    /// // Use JSON for human-readable payloads
     /// let client = Client::builder()
     ///     .base_url("https://api.ekodb.net")
     ///     .api_key("your-api-key")
-    ///     .serialization_format(SerializationFormat::MessagePack)
+    ///     .serialization_format(SerializationFormat::Json)
     ///     .build()?;
     /// # Ok::<(), ekodb_client::Error>(())
     /// ```
@@ -4121,5 +4121,85 @@ mod tests {
         token_mock.assert_async().await;
         unauthorized.assert_async().await;
         success.assert_async().await;
+    }
+
+    /// A commit answered 401 never reached the transaction, so the client
+    /// refreshes its token once and sends the commit once more, which
+    /// succeeds: exactly two sends of the commit.
+    #[tokio::test]
+    async fn test_commit_401_refreshes_the_token_once_and_resends() {
+        let mut server = mockito::Server::new_async().await;
+        let jwt = far_future_jwt();
+        // The initial get_token() and the one refresh.
+        let token_mock = server
+            .mock("POST", "/api/auth/token")
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(serde_json::json!({ "token": jwt }).to_string())
+            .expect(2)
+            .create_async()
+            .await;
+        let unauthorized = server
+            .mock("POST", "/api/transactions/tx-1/commit")
+            .with_status(401)
+            .expect(1)
+            .create_async()
+            .await;
+        let committed = server
+            .mock("POST", "/api/transactions/tx-1/commit")
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(r#"{"status":"committed"}"#)
+            .expect(1)
+            .create_async()
+            .await;
+        let client = Client::builder()
+            .base_url(server.url())
+            .api_key("test-key")
+            .build()
+            .expect("client builds");
+
+        client
+            .commit_transaction("tx-1")
+            .await
+            .expect("the commit sent after the refresh succeeds");
+
+        token_mock.assert_async().await;
+        unauthorized.assert_async().await;
+        committed.assert_async().await;
+    }
+
+    /// A commit answered 401 twice is sent exactly twice: the token is
+    /// refreshed once, the second 401 is returned as `TokenExpired`, and the
+    /// client does not loop.
+    #[tokio::test]
+    async fn test_commit_401_twice_returns_token_expired_after_two_sends() {
+        let mut server = mockito::Server::new_async().await;
+        let jwt = far_future_jwt();
+        let token_mock = server
+            .mock("POST", "/api/auth/token")
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(serde_json::json!({ "token": jwt }).to_string())
+            .expect(2)
+            .create_async()
+            .await;
+        let unauthorized = server
+            .mock("POST", "/api/transactions/tx-2/commit")
+            .with_status(401)
+            .expect(2)
+            .create_async()
+            .await;
+        let client = Client::builder()
+            .base_url(server.url())
+            .api_key("test-key")
+            .build()
+            .expect("client builds");
+
+        let result = client.commit_transaction("tx-2").await;
+
+        assert!(matches!(result, Err(Error::TokenExpired)), "got {result:?}");
+        token_mock.assert_async().await;
+        unauthorized.assert_async().await;
     }
 }

@@ -1660,7 +1660,7 @@ class EkoDBClient private constructor(
      * @return Transaction ID
      */
     suspend fun beginTransaction(isolationLevel: String? = null): String {
-        val response = executeWithRetry(transactional = true) { token ->
+        val response = executeWithRetry { token ->
             client.post("$baseUrl/api/transactions") {
                 header("Authorization", "Bearer $token")
                 contentType(ContentType.Application.Json)
@@ -1669,7 +1669,8 @@ class EkoDBClient private constructor(
         }
 
         if (!response.status.isSuccess()) {
-            throw transactionHttpException(response.status.value, response.bodyAsText())
+            val errorBody = response.bodyAsText()
+            throw Exception("Begin transaction failed with status ${response.status}: $errorBody")
         }
 
         val result = response.body<JsonElement>()
@@ -1683,14 +1684,15 @@ class EkoDBClient private constructor(
      * @return Transaction status map
      */
     suspend fun getTransactionStatus(transactionId: String): Map<String, Any?> {
-        val response = executeWithRetry(transactional = true) { token ->
+        val response = executeWithRetry { token ->
             client.get("$baseUrl/api/transactions/${transactionId.encodeURLPathPart()}") {
                 header("Authorization", "Bearer $token")
             }
         }
 
         if (!response.status.isSuccess()) {
-            throw transactionHttpException(response.status.value, response.bodyAsText())
+            val errorBody = response.bodyAsText()
+            throw Exception("Get transaction status failed with status ${response.status}: $errorBody")
         }
 
         val result = response.body<JsonElement>()
@@ -1711,17 +1713,21 @@ class EkoDBClient private constructor(
      * if a record this transaction read or wrote was changed by another committed
      * transaction — retry the transaction in that case.
      *
+     * Commit, rollback and the savepoint calls are sent once: a failure throws
+     * [EkoDBHttpException] with the server's message and its `retryable` flag
+     * (`true` means begin a new transaction and run the work again), and the
+     * client never re-sends the call. Only a 401 is sent once more, after the
+     * token is refreshed. [beginTransaction] and [getTransactionStatus] keep the
+     * normal retry policy.
+     *
      * @param transactionId The transaction ID to commit
+     * @throws EkoDBHttpException when the server answers with a failure
      */
     suspend fun commitTransaction(transactionId: String) {
-        val response = executeWithRetry(transactional = true) { token ->
+        executeWithRetry(transactional = true) { token ->
             client.post("$baseUrl/api/transactions/${transactionId.encodeURLPathPart()}/commit") {
                 header("Authorization", "Bearer $token")
             }
-        }
-
-        if (!response.status.isSuccess()) {
-            throw transactionHttpException(response.status.value, response.bodyAsText())
         }
     }
 
@@ -1730,14 +1736,10 @@ class EkoDBClient private constructor(
      * @param transactionId The transaction ID to rollback
      */
     suspend fun rollbackTransaction(transactionId: String) {
-        val response = executeWithRetry(transactional = true) { token ->
+        executeWithRetry(transactional = true) { token ->
             client.post("$baseUrl/api/transactions/${transactionId.encodeURLPathPart()}/rollback") {
                 header("Authorization", "Bearer $token")
             }
-        }
-
-        if (!response.status.isSuccess()) {
-            throw transactionHttpException(response.status.value, response.bodyAsText())
         }
     }
 
@@ -1746,15 +1748,12 @@ class EkoDBClient private constructor(
      * discards everything staged after it.
      */
     suspend fun createSavepoint(transactionId: String, name: String) {
-        val response = executeWithRetry(transactional = true) { token ->
+        executeWithRetry(transactional = true) { token ->
             client.post("$baseUrl/api/transactions/${transactionId.encodeURLPathPart()}/savepoints") {
                 header("Authorization", "Bearer $token")
                 contentType(getContentTypeForRequest())
                 setBody(buildJsonObject { put("name", name) })
             }
-        }
-        if (!response.status.isSuccess()) {
-            throw transactionHttpException(response.status.value, response.bodyAsText())
         }
     }
 
@@ -1762,13 +1761,10 @@ class EkoDBClient private constructor(
      * Roll the transaction back to a savepoint, discarding writes staged after it.
      */
     suspend fun rollbackToSavepoint(transactionId: String, name: String) {
-        val response = executeWithRetry(transactional = true) { token ->
+        executeWithRetry(transactional = true) { token ->
             client.post("$baseUrl/api/transactions/${transactionId.encodeURLPathPart()}/savepoints/${name.encodeURLPathPart()}/rollback") {
                 header("Authorization", "Bearer $token")
             }
-        }
-        if (!response.status.isSuccess()) {
-            throw transactionHttpException(response.status.value, response.bodyAsText())
         }
     }
 
@@ -1776,27 +1772,28 @@ class EkoDBClient private constructor(
      * Release (forget) a savepoint. Staged work is unaffected.
      */
     suspend fun releaseSavepoint(transactionId: String, name: String) {
-        val response = executeWithRetry(transactional = true) { token ->
+        executeWithRetry(transactional = true) { token ->
             client.delete("$baseUrl/api/transactions/${transactionId.encodeURLPathPart()}/savepoints/${name.encodeURLPathPart()}") {
                 header("Authorization", "Bearer $token")
             }
-        }
-        if (!response.status.isSuccess()) {
-            throw transactionHttpException(response.status.value, response.bodyAsText())
         }
     }
 
     /**
      * Execute request with retry logic.
      *
-     * With [transactional], the request is a transaction call and is never
-     * re-sent, whatever the status, the server's flag or a transport failure:
-     * a failed commit has already discarded its transaction when the server
-     * answers, so a re-sent call could only come back 404 and hide the real
-     * cause. A failure is thrown as [EkoDBHttpException] carrying the server's
-     * message and `retryable` flag, which tells the caller to begin a new
-     * transaction. A 401 still refreshes the token and is sent once more: the
-     * request never reached the transaction.
+     * With [transactional], the request acts on an existing transaction
+     * (commit, rollback, or a create, rollback-to or release savepoint call)
+     * and is never re-sent, whatever the status, the server's flag or a
+     * transport failure: a failed commit has already discarded its transaction
+     * when the server answers, so a re-sent call could only come back 404 and
+     * hide the real cause. Any answer that is not a success is thrown as
+     * [EkoDBHttpException] carrying the server's message and `retryable` flag,
+     * which tells the caller to begin a new transaction, so a transactional
+     * call returns only a successful response. A 401 still refreshes the token
+     * and is sent once more: the request never reached the transaction. Begin
+     * and status are not transactional here: they keep the normal retry
+     * policy.
      */
     private suspend fun executeWithRetry(
         transactional: Boolean = false,
@@ -1831,7 +1828,7 @@ class EkoDBClient private constructor(
                     return@repeat
                 }
 
-                if (transactional && response.status.value in 400..599) {
+                if (transactional && !response.status.isSuccess()) {
                     throw transactionHttpException(response.status.value, response.bodyAsText())
                 }
 
@@ -1869,8 +1866,9 @@ class EkoDBClient private constructor(
                 // concurrency (coroutine cancellation) keeps working.
                 if (e is kotlinx.coroutines.CancellationException) throw e
                 if (e is EkoDBHttpException) throw e
-                // A transaction call is not re-sent after a transport failure:
-                // the failed attempt may have reached the server.
+                // A call on an existing transaction is not re-sent after a
+                // transport failure: the failed attempt may have reached the
+                // server.
                 if (transactional) throw e
                 lastException = e
                 if (attempt < maxRetries - 1) {
@@ -3917,7 +3915,8 @@ data class RateLimitInfo(
 private class AdminStatusFailure(val status: Int) : Exception()
 
 /**
- * Build the [EkoDBHttpException] for a failed transaction call. The server
+ * Build the [EkoDBHttpException] for a failed call on an existing transaction
+ * (commit, rollback, or a savepoint call). The server
  * answers `{"error", "transaction_id", "retryable"}`; a body that is not that
  * JSON keeps its raw text as the message (the status when it is blank), and an
  * absent or non-boolean flag is `false`.
