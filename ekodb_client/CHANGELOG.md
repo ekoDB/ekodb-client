@@ -112,6 +112,25 @@ and this project adheres to
 
 ### Fixed
 
+- **Document counts are exact past one page (#405).** Every SDK now counts with
+  `POST /api/count/{collection}`, new in ekoDB server 0.84.0, and returns the
+  server's `count`; a server without the route answers 404, which every SDK
+  reports with the message
+  `count requires ekoDB server 0.84.0 or later (POST /api/count is not available on this server)`
+  and never answers by counting a page of records. Rust: `count_documents` no
+  longer returns the length of one `find` page (capped by the server's default
+  page of 1,000), and the new `count_documents_where(collection, filter)` counts
+  the matches of a query expression; the 404 is `Error::Api { code: 404, .. }`.
+  Python: `count_documents` takes an optional `filter` dict and raises
+  `ApiError` with `status` 404 on an older server. TypeScript: `countDocuments`
+  no longer stops at a `limit(100000)` find, which a host with a lower maximum
+  limit refused with 400, and takes an optional `QueryExpression` filter; the
+  404 is an `EkoDBApiError` with `status` 404. Kotlin: `countDocuments` (and
+  `count`) no longer read the collection's `record_count` statistic, which
+  returned 0 when absent, and a new `countDocuments(collection, filter)`
+  overload counts matches; the 404 is an `EkoDBHttpException` with
+  `statusCode` 404. Go: shipped in the paired `ekodb-client-go` change
+  (`CountDocuments`, and `CountDocumentsWhere(collection, filter)`).
 - **Calls on an existing transaction surface the server's error and are never
   re-sent (#406).** The server answers a failed commit, rollback or savepoint
   call with `{"error", "transaction_id", "retryable"}`, and a failed commit has
