@@ -755,6 +755,112 @@ class EkoDBClientTest {
     }
 
     @Test
+    fun `messagepack format keeps the CRUD routes when the baseUrl ends in a slash`() = runBlocking {
+        // "$baseUrl/api/..." with a trailing slash would be "//api/...", which matches no route.
+        val sentTypes = java.util.concurrent.ConcurrentHashMap<String, String?>()
+        val reply = jsonElementToMsgpack(buildJsonObject { put("id", "user_9") })
+        val server = com.sun.net.httpserver.HttpServer.create(java.net.InetSocketAddress("127.0.0.1", 0), 0)
+        for (prefix in listOf("", "/ekodb")) {
+            server.createContext("$prefix/api/auth/token") { exchange ->
+                val body = """{"token": "mock_jwt_token_123"}""".toByteArray()
+                exchange.responseHeaders.add("Content-Type", "application/json")
+                exchange.sendResponseHeaders(200, body.size.toLong())
+                exchange.responseBody.use { it.write(body) }
+            }
+            server.createContext("$prefix/api/insert/users") { exchange ->
+                sentTypes[prefix] = exchange.requestHeaders.getFirst("Content-Type")
+                exchange.requestBody.readBytes()
+                exchange.responseHeaders.add("Content-Type", "application/msgpack")
+                exchange.sendResponseHeaders(200, reply.size.toLong())
+                exchange.responseBody.use { it.write(reply) }
+            }
+        }
+        server.start()
+        try {
+            for ((prefix, base) in listOf("" to "/", "/ekodb" to "/ekodb/")) {
+                val client = EkoDBClient.builder()
+                    .baseUrl("http://127.0.0.1:${server.address.port}$base")
+                    .apiKey(testApiKey)
+                    .format(SerializationFormat.MESSAGEPACK)
+                    .maxRetries(1)
+                    .build()
+                try {
+                    client.insert("users", Record().insert("name", "Ada"))
+                } finally {
+                    client.close()
+                }
+                assertEquals("application/msgpack", sentTypes[prefix], "base URL ending in '$base'")
+            }
+        } finally {
+            server.stop(0)
+        }
+    }
+
+    @Test
+    fun `msgpack converter refuses a JsonObject holding an integer beyond 64 bits`() = runBlocking {
+        // The REST body of updateWithAction is a JsonObject; the converter packs it with the shared helper.
+        val body = buildJsonObject { put("value", JsonPrimitive(java.math.BigInteger("18446744073709551616"))) }
+        assertFailsWith<kotlinx.serialization.SerializationException> {
+            MessagePackConverter().serialize(
+                ContentType("application", "msgpack"),
+                Charsets.UTF_8,
+                io.ktor.util.reflect.typeInfo<JsonObject>(),
+                body,
+            )
+        }
+        Unit
+    }
+
+    @Test
+    fun `messagepack format does not retry a body that cannot be packed`() = runBlocking {
+        // An integer beyond 64 bits cannot be packed: it fails the same way every attempt and no request
+        // is sent, so the failure is raised at once instead of after the retry delays.
+        val requests = java.util.concurrent.atomic.AtomicInteger()
+        val seen = java.util.concurrent.atomic.AtomicReference("")
+        val server = com.sun.net.httpserver.HttpServer.create(java.net.InetSocketAddress("127.0.0.1", 0), 0)
+        server.createContext("/api/auth/token") { exchange ->
+            val body = """{"token": "mock_jwt_token_123"}""".toByteArray()
+            exchange.responseHeaders.add("Content-Type", "application/json")
+            exchange.sendResponseHeaders(200, body.size.toLong())
+            exchange.responseBody.use { it.write(body) }
+        }
+        server.createContext("/api/update") { exchange ->
+            requests.incrementAndGet()
+            val sent = exchange.requestBody.readBytes()
+            seen.set("Content-Type ${exchange.requestHeaders.getFirst("Content-Type")}, ${sent.size} bytes: ${sent.take(40).joinToString("") { "%02x".format(it) }}")
+            exchange.sendResponseHeaders(500, -1)
+            exchange.close()
+        }
+        server.start()
+        val client = EkoDBClient.builder()
+            .baseUrl("http://127.0.0.1:${server.address.port}")
+            .apiKey(testApiKey)
+            .format(SerializationFormat.MESSAGEPACK)
+            .maxRetries(3)
+            .build()
+        try {
+            val started = System.nanoTime()
+            val error = assertFailsWith<Exception> {
+                client.updateWithAction(
+                    "users", "u1", "increment", "n",
+                    JsonPrimitive(java.math.BigInteger("18446744073709551616")),
+                )
+            }
+            val elapsedMs = (System.nanoTime() - started) / 1_000_000
+            assertTrue(
+                generateSequence<Throwable>(error) { it.cause }.any { it is kotlinx.serialization.SerializationException },
+                "got $error; the server saw ${seen.get()}",
+            )
+            assertEquals(0, requests.get(), "no request is sent for a body that cannot be packed")
+            // The retry delays are one and two seconds; a failure raised at once is well inside the three seconds they add.
+            assertTrue(elapsedMs < 2500, "took $elapsedMs ms, so the failure was retried")
+        } finally {
+            client.close()
+            server.stop(0)
+        }
+    }
+
+    @Test
     fun `msgpack helpers keep unsigned 64-bit integers exact and refuse what they cannot represent`() {
         val max = java.math.BigInteger("18446744073709551615")
         assertEquals(JsonPrimitive(max), msgpackToJsonElement(jsonElementToMsgpack(JsonPrimitive(max))))
