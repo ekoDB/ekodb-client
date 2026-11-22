@@ -11,6 +11,7 @@ import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.*
+import io.ktor.client.plugins.api.*
 import io.ktor.client.plugins.compression.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.plugins.logging.*
@@ -35,7 +36,10 @@ enum class SerializationFormat {
     /** JSON format (default, human-readable, fully supported) */
     JSON,
 
-    /** MessagePack format (binary), for the CRUD routes; every other route uses JSON. */
+    /**
+     * MessagePack format (binary), for the CRUD routes: insert, batch insert, update, batch update,
+     * delete, batch delete and find. Every other route, and its Accept header, stays JSON.
+     */
     MESSAGEPACK
 }
 
@@ -127,10 +131,26 @@ class EkoDBClient private constructor(
     // SchemaChanged events invalidate the same cache.
     private val schemaCache = SchemaCache(schemaCacheEnabled, schemaCacheMax, schemaCacheTtlMs)
 
+    // The routes that can be sent and read as MessagePack. The other SDKs name the same set.
+    private val messagePackRoutes = listOf(
+        "/api/insert/", "/api/batch_insert/", "/api/update/", "/api/batch_update/",
+        "/api/delete/", "/api/batch_delete/", "/api/find/",
+    )
+
+    // The MessagePack content type is registered on the whole client, and content negotiation adds
+    // every registered type to Accept, so a route outside the MessagePack set excludes it and keeps
+    // asking for JSON (#418).
+    private val messagePackRoutesOnly = createClientPlugin("EkoDBMessagePackRoutes") {
+        onRequest { request, _ ->
+            if (shouldUseJSON(request.url.encodedPath)) request.exclude(MessagePackContentType)
+        }
+    }
+
     private val client: HttpClient = injectedClient?.config {
         if (format == SerializationFormat.MESSAGEPACK) {
             // Added to the caller's own content negotiation, which keeps its JSON converter.
             install(ContentNegotiation) { register(MessagePackContentType, MessagePackConverter()) }
+            install(messagePackRoutesOnly)
         }
         install(HttpTimeout) {
             connectTimeoutMillis = timeout * 1000
@@ -149,6 +169,8 @@ class EkoDBClient private constructor(
                 register(MessagePackContentType, MessagePackConverter())
             }
         }
+
+        if (format == SerializationFormat.MESSAGEPACK) install(messagePackRoutesOnly)
 
         // Enable compression with proper content negotiation
         // Client sends Accept-Encoding: gzip, server compresses only if it accepts
@@ -315,27 +337,12 @@ class EkoDBClient private constructor(
     }
 
     /**
-     * Determine if a path should always use JSON (metadata endpoints)
-     * CRUD operations support MessagePack, but metadata/KV/auth/chat endpoints are JSON-only
+     * Determine if a path should use JSON: every route outside [messagePackRoutes]
+     * (metadata, schemas, transactions, KV, auth, chat and the rest are JSON-only)
      */
     private fun shouldUseJSON(path: String): Boolean {
         if (path.startsWith("/api/update/sequence/")) return true
-
-        val jsonOnlyPaths = listOf(
-            "/api/collections",
-            "/api/kv",
-            "/api/auth",
-            "/api/health",
-            "/api/config",
-            "/api/schema",
-            "/api/analytics",
-            "/api/ripples",
-            "/api/chat"
-        )
-
-        return jsonOnlyPaths.any { prefix ->
-            path == prefix || path.startsWith("$prefix/")
-        }
+        return messagePackRoutes.none { path.startsWith(it) }
     }
 
     /**
