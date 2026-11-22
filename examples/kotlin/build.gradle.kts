@@ -29,10 +29,9 @@ dependencies {
     
     // Serialization (match client library versions)
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.12.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-cbor:1.12.0")
-    // MessagePack core: the client depends on it for the WebSocket binary
-    // transport. The examples consume the client as a flat jar (no transitive
-    // deps), so this must mirror the client's dependency.
+    // MessagePack core: the client depends on it for the REST MessagePack format
+    // and the WebSocket binary transport. The examples consume the client as a
+    // flat jar (no transitive deps), so this must mirror the client's dependency.
     implementation("org.msgpack:msgpack-core:0.9.12")
 
     // Ktor client (match client library versions)
