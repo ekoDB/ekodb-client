@@ -909,6 +909,7 @@ describe("WebSocketClient", () => {
       expect(msg.payload.options).toEqual({
         search_fields: ["title"],
         limit: 5,
+        language: "english",
       });
       expect(msg.payload.options.fields).toBeUndefined();
 
