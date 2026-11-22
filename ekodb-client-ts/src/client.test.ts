@@ -7,6 +7,7 @@
 
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import {
+  COUNT_UNSUPPORTED_MESSAGE,
   EkoDBApiError,
   EkoDBClient,
   RateLimitError,
@@ -17,6 +18,7 @@ import {
 } from "./client";
 import type { ChatMessageRequest, ChatModels } from "./client";
 import { SearchQueryBuilder } from "./search";
+import type { QueryExpression } from "./query-expression";
 
 // Mock fetch globally
 const mockFetch = vi.fn();
@@ -2357,30 +2359,101 @@ describe("EkoDBClient collection utilities", () => {
     expect(result).toBe(false);
   });
 
-  it("countDocuments returns correct count", async () => {
+  it("countDocuments returns a count above one page exactly", async () => {
     const client = createTestClient();
 
     mockTokenResponse();
-    mockJsonResponse([
-      { id: "1", name: "A" },
-      { id: "2", name: "B" },
-      { id: "3", name: "C" },
-    ]);
+    mockJsonResponse({ count: 2029 });
 
     const result = await client.countDocuments("users");
 
-    expect(result).toBe(3);
+    expect(result).toBe(2029);
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+    const [url, init] = mockFetch.mock.calls[1];
+    expect(url).toBe("http://localhost:8080/api/count/users");
+    expect(init.method).toBe("POST");
+    expect(init.headers).toMatchObject({
+      Authorization: "Bearer test-jwt-token",
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    });
+    expect(JSON.parse(init.body)).toEqual({});
   });
 
-  it("countDocuments returns zero for empty collection", async () => {
+  it("countDocuments sends a filter as the request body", async () => {
+    const client = createTestClient();
+    const filter: QueryExpression = {
+      type: "Condition",
+      content: { field: "status", operator: "Eq", value: "active" },
+    };
+
+    mockTokenResponse();
+    mockJsonResponse({ count: 1500 });
+
+    const result = await client.countDocuments("users", filter);
+
+    expect(result).toBe(1500);
+    const [url, init] = mockFetch.mock.calls[1];
+    expect(url).toBe("http://localhost:8080/api/count/users");
+    expect(JSON.parse(init.body)).toEqual({ filter });
+  });
+
+  it("countDocuments on a server without the route throws the version error", async () => {
     const client = createTestClient();
 
     mockTokenResponse();
-    mockJsonResponse([]);
+    mockErrorResponse(404, "Not Found");
 
-    const result = await client.countDocuments("empty_collection");
+    const error = await client.countDocuments("users").catch((e) => e);
 
-    expect(result).toBe(0);
+    expect(error).toBeInstanceOf(EkoDBApiError);
+    expect(error.status).toBe(404);
+    expect(error.message).toBe(COUNT_UNSUPPORTED_MESSAGE);
+    expect(error.message).toBe(
+      "count requires ekoDB server 0.84.0 or later (POST /api/count is not available on this server)",
+    );
+    // The token exchange and the one count request: no find followed.
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+    expect(mockFetch.mock.calls[1][0]).toBe(
+      "http://localhost:8080/api/count/users",
+    );
+  });
+
+  it("countDocuments throws a 403 as EkoDBApiError with the server's error", async () => {
+    const client = createTestClient();
+    const body = JSON.stringify({
+      error: "No read permission for field salary",
+    });
+
+    mockTokenResponse();
+    mockErrorResponse(403, body);
+
+    const error = await client
+      .countDocuments("users", {
+        type: "Condition",
+        content: { field: "salary", operator: "Gt", value: 100 },
+      })
+      .catch((e) => e);
+
+    expect(error).toBeInstanceOf(EkoDBApiError);
+    expect(error.status).toBe(403);
+    expect(error.body).toBe(body);
+    expect(error.message).toContain("No read permission for field salary");
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+  });
+
+  it("countDocuments path-escapes the collection name", async () => {
+    const client = createTestClient();
+
+    mockTokenResponse();
+    mockJsonResponse({ count: 3 });
+
+    const result = await client.countDocuments("team/a b");
+
+    expect(result).toBe(3);
+    expect(mockFetch.mock.calls[1][0]).toBe(
+      "http://localhost:8080/api/count/team%2Fa%20b",
+    );
   });
 });
 

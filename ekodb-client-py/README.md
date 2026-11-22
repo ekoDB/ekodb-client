@@ -471,17 +471,21 @@ Check if a collection exists.
 
 - True if the collection exists, False otherwise
 
-#### `await client.count_documents(collection: str) -> int`
+#### `await client.count_documents(collection: str, filter: dict | None = None) -> int`
 
-Count documents in a collection.
+Count the documents in a collection exactly, however many there are, or only
+those matching `filter`. Sends `POST /api/count/{collection}` and requires ekoDB
+server 0.84.0 or later; an older server raises `ApiError` with status 404.
 
 **Parameters:**
 
 - `collection`: The collection name
+- `filter`: Optional query expression, the same shape as a `find` query's
+  `filter` (for example `QueryBuilder.condition("status", "Eq", "active")`)
 
 **Returns:**
 
-- Number of documents in the collection
+- Number of matching documents
 
 ### Chat Models
 

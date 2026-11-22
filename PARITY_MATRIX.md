@@ -1,6 +1,6 @@
 # Client Library Parity Matrix
 
-**Last Updated:** November 9, 2026
+**Last Updated:** November 22, 2026
 
 **Published client version:** See the
 [latest release](https://github.com/ekoDB/ekodb-client/releases/latest). The
@@ -229,6 +229,24 @@ server contract. The Kotlin property name is unchanged.
   JavaScript ✅ | Kotlin ✅
 - `countDocuments()` - Rust ✅ | Go ✅ | Python ✅ | TypeScript ✅ | JavaScript
   ✅ | Kotlin ✅
+
+**Exact document count (unreleased, #405):** every SDK counts with
+`POST /api/count/{collection}` (ekoDB server 0.84.0 or later) and returns the
+server's `count`, so a collection larger than one page of records is counted
+exactly. The body is `{}` to count everything or
+`{"filter": <query expression>}` to count matches. A 404 from an older server is
+reported as an error with the message
+`count requires ekoDB server 0.84.0 or later (POST /api/count is not available on this server)`;
+no SDK falls back to counting a page of records. Every other failure keeps each
+SDK's typed HTTP error.
+
+| SDK        | Count everything                      | Count matches                                | Older server (404)                     |
+| ---------- | ------------------------------------- | -------------------------------------------- | -------------------------------------- |
+| Rust       | `count_documents(c) -> Result<usize>` | `count_documents_where(c, filter: Value)`    | `Error::Api { code: 404, message }`    |
+| Python     | `count_documents(c) -> int`           | `count_documents(c, filter=dict)`            | `ApiError`, `status` 404               |
+| TypeScript | `countDocuments(c): Promise<number>`  | `countDocuments(c, filter: QueryExpression)` | `EkoDBApiError`, `status` 404          |
+| Kotlin     | `countDocuments(c): Long`, `count(c)` | `countDocuments(c, filter: JsonElement)`     | `EkoDBHttpException`, `statusCode` 404 |
+| Go         | `CountDocuments(c) (int, error)`      | `CountDocumentsWhere(c, filter interface{})` | `*HTTPError`, `StatusCode` 404         |
 
 ### Schema Compatibility
 

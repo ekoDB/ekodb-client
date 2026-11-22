@@ -440,9 +440,21 @@ for (name, field) in &schema.fields {
 let collections = client.list_collections().await?;
 println!("Collections: {:?}", collections);
 
-// Count documents in a collection
-let count = client.count("users").await?;
+// Count documents in a collection: exact, however many there are
+// (requires ekoDB server 0.84.0 or later)
+let count = client.count_documents("users").await?;
 println!("Total users: {}", count);
+
+// Count only the documents that match a filter
+let active = client
+    .count_documents_where(
+        "users",
+        json!({
+            "type": "Condition",
+            "content": {"field": "status", "operator": "Eq", "value": "active"}
+        }),
+    )
+    .await?;
 
 // Check if collection exists
 let exists = client.collection_exists("users").await?;
@@ -702,7 +714,10 @@ All examples are located in `examples/rust/examples/` directory.
 - `list_collections()` - List all collections
 - `list_user_collections()` - List collections excluding internal chat/system
   collections
-- `count(collection)` - Count documents in collection
+- `count_documents(collection)` - Count every document in a collection exactly
+  (`POST /api/count`; requires ekoDB server 0.84.0 or later)
+- `count_documents_where(collection, filter)` - Count the documents matching a
+  filter exactly (requires ekoDB server 0.84.0 or later)
 - `collection_exists(collection)` - Check if collection exists
 - `delete_collection(collection)` - Delete entire collection
 

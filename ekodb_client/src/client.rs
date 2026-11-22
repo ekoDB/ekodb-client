@@ -1082,7 +1082,10 @@ impl Client {
         .await
     }
 
-    /// Count documents in a collection
+    /// Count every document in a collection, exactly.
+    ///
+    /// Sends `POST /api/count/{collection}`, so the server counts every record
+    /// however many there are. Requires ekoDB server 0.84.0 or later.
     ///
     /// # Arguments
     ///
@@ -1091,15 +1094,49 @@ impl Client {
     /// # Returns
     ///
     /// The number of documents in the collection
+    ///
+    /// # Errors
+    ///
+    /// `Error::Api` with status 404 when the server is older than 0.84.0 and
+    /// has no count route; otherwise the same errors as [`Client::find`].
     pub async fn count_documents(&self, collection: &str) -> Result<usize> {
-        // Use select_fields to return only _id (minimal data transfer).
-        // No dedicated server count endpoint exists, so we fetch IDs only.
-        let query = Query {
-            select_fields: Some(vec!["_id".to_string()]),
-            ..Query::default()
-        };
-        let records = self.find(collection, query, None).await?;
-        Ok(records.len())
+        let collection = collection.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let collection = collection.clone();
+            let http = http.clone();
+            async move { http.count(&collection, None, &token).await }
+        })
+        .await
+    }
+
+    /// Count the documents in a collection that match `filter`, exactly.
+    ///
+    /// `filter` is a query expression in the same shape as `Query::filter`
+    /// (for example `{"type":"Condition","content":{"field":"status",
+    /// "operator":"Eq","value":"active"}}`). Sends
+    /// `POST /api/count/{collection}` with `{"filter": filter}`. Requires
+    /// ekoDB server 0.84.0 or later.
+    ///
+    /// # Errors
+    ///
+    /// `Error::Api` with status 404 when the server is older than 0.84.0 and
+    /// has no count route, status 400 for a malformed filter, and status 403
+    /// for a filter on a field the key cannot read.
+    pub async fn count_documents_where(
+        &self,
+        collection: &str,
+        filter: serde_json::Value,
+    ) -> Result<usize> {
+        let collection = collection.to_string();
+        let http = self.http.clone();
+        self.execute_with_token_refresh(move |token| {
+            let collection = collection.clone();
+            let filter = filter.clone();
+            let http = http.clone();
+            async move { http.count(&collection, Some(&filter), &token).await }
+        })
+        .await
     }
 
     /// Check if a collection exists
@@ -4201,5 +4238,216 @@ mod tests {
         assert!(matches!(result, Err(Error::TokenExpired)), "got {result:?}");
         token_mock.assert_async().await;
         unauthorized.assert_async().await;
+    }
+
+    // ── Exact document count (#405) ──
+    //
+    // `count_documents` and `count_documents_where` send
+    // `POST /api/count/{collection}` and return the server's `count`: never
+    // the length of a page of records. A server older than 0.84.0 has no
+    // count route and answers 404, which is reported as such, with no
+    // fallback to a find.
+
+    /// A mock server whose token exchange answers `jwt`, and a client
+    /// pointed at it. `token` expects exactly one exchange.
+    struct CountFixture {
+        server: mockito::ServerGuard,
+        token: mockito::Mock,
+        jwt: String,
+        client: Client,
+    }
+
+    async fn count_fixture() -> CountFixture {
+        let mut server = mockito::Server::new_async().await;
+        let jwt = far_future_jwt();
+        let token = server
+            .mock("POST", "/api/auth/token")
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(serde_json::json!({ "token": jwt }).to_string())
+            .expect(1)
+            .create_async()
+            .await;
+        let client = Client::builder()
+            .base_url(server.url())
+            .api_key("test-key")
+            .build()
+            .expect("client builds");
+        CountFixture {
+            server,
+            token,
+            jwt,
+            client,
+        }
+    }
+
+    /// A mock that fails the test if any find request reaches the server.
+    async fn no_find(server: &mut mockito::ServerGuard) -> mockito::Mock {
+        server
+            .mock("POST", mockito::Matcher::Regex("^/api/find/".to_string()))
+            .expect(0)
+            .create_async()
+            .await
+    }
+
+    #[tokio::test]
+    async fn test_count_documents_returns_a_count_above_one_page_exactly() {
+        let CountFixture {
+            mut server,
+            token,
+            jwt,
+            client,
+        } = count_fixture().await;
+        let count = server
+            .mock("POST", "/api/count/users")
+            .match_header("authorization", format!("Bearer {jwt}").as_str())
+            .match_header("accept", "application/json")
+            .match_body(mockito::Matcher::Json(serde_json::json!({})))
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(r#"{"count":2029}"#)
+            .expect(1)
+            .create_async()
+            .await;
+        let find = no_find(&mut server).await;
+
+        let total = client
+            .count_documents("users")
+            .await
+            .expect("count succeeds");
+
+        assert_eq!(total, 2029);
+        count.assert_async().await;
+        token.assert_async().await;
+        find.assert_async().await;
+    }
+
+    #[tokio::test]
+    async fn test_count_documents_where_sends_the_filter() {
+        let CountFixture {
+            mut server,
+            token,
+            client,
+            ..
+        } = count_fixture().await;
+        let filter = serde_json::json!({
+            "type": "Condition",
+            "content": {"field": "status", "operator": "Eq", "value": "active"}
+        });
+        let count = server
+            .mock("POST", "/api/count/users")
+            .match_body(mockito::Matcher::Json(
+                serde_json::json!({ "filter": filter.clone() }),
+            ))
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(r#"{"count":1500}"#)
+            .expect(1)
+            .create_async()
+            .await;
+        let find = no_find(&mut server).await;
+
+        let matched = client
+            .count_documents_where("users", filter)
+            .await
+            .expect("filtered count succeeds");
+
+        assert_eq!(matched, 1500);
+        count.assert_async().await;
+        token.assert_async().await;
+        find.assert_async().await;
+    }
+
+    #[tokio::test]
+    async fn test_count_documents_on_a_server_without_the_route_is_unsupported() {
+        let CountFixture {
+            mut server,
+            token,
+            client,
+            ..
+        } = count_fixture().await;
+        let count = server
+            .mock("POST", "/api/count/users")
+            .with_status(404)
+            .with_body("Not Found")
+            .expect(1)
+            .create_async()
+            .await;
+        let find = no_find(&mut server).await;
+
+        match client.count_documents("users").await {
+            Err(Error::Api { code, message }) => {
+                assert_eq!(code, 404);
+                assert_eq!(message, crate::http::COUNT_UNSUPPORTED_MESSAGE);
+                assert_eq!(
+                    message,
+                    "count requires ekoDB server 0.84.0 or later \
+                     (POST /api/count is not available on this server)"
+                );
+            }
+            other => panic!("expected the unsupported-server error, got {other:?}"),
+        }
+        count.assert_async().await;
+        token.assert_async().await;
+        find.assert_async().await;
+    }
+
+    #[tokio::test]
+    async fn test_count_documents_where_surfaces_a_403_as_an_api_error() {
+        let CountFixture {
+            mut server,
+            token,
+            client,
+            ..
+        } = count_fixture().await;
+        let count = server
+            .mock("POST", "/api/count/users")
+            .with_status(403)
+            .with_header("content-type", "application/json")
+            .with_body(r#"{"error":"No read permission for field salary"}"#)
+            .expect(1)
+            .create_async()
+            .await;
+
+        let filter = serde_json::json!({
+            "type": "Condition",
+            "content": {"field": "salary", "operator": "Gt", "value": 100}
+        });
+        match client.count_documents_where("users", filter).await {
+            Err(Error::Api { code, message }) => {
+                assert_eq!(code, 403);
+                assert_eq!(message, "No read permission for field salary");
+            }
+            other => panic!("expected Api {{ 403, .. }}, got {other:?}"),
+        }
+        count.assert_async().await;
+        token.assert_async().await;
+    }
+
+    #[tokio::test]
+    async fn test_count_documents_escapes_the_collection_name() {
+        let CountFixture {
+            mut server,
+            token,
+            client,
+            ..
+        } = count_fixture().await;
+        let count = server
+            .mock("POST", "/api/count/team%2Fa%20b")
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(r#"{"count":3}"#)
+            .expect(1)
+            .create_async()
+            .await;
+
+        let total = client
+            .count_documents("team/a b")
+            .await
+            .expect("count succeeds");
+
+        assert_eq!(total, 3);
+        count.assert_async().await;
+        token.assert_async().await;
     }
 }
