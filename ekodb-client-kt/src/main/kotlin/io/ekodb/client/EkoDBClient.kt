@@ -131,6 +131,9 @@ class EkoDBClient private constructor(
     // SchemaChanged events invalidate the same cache.
     private val schemaCache = SchemaCache(schemaCacheEnabled, schemaCacheMax, schemaCacheTtlMs)
 
+    // The path of the base URL (a deployment behind a path prefix), without its trailing slash.
+    private val basePath = Url(baseUrl).encodedPath.trimEnd('/')
+
     // The single-record CRUD routes sent and read as MessagePack. Batch operations (`/api/batch/...`)
     // and every other route use JSON.
     private val messagePackRoutes = listOf(
@@ -340,7 +343,9 @@ class EkoDBClient private constructor(
      * Determine if a path should use JSON: every route outside [messagePackRoutes]
      * (metadata, schemas, transactions, KV, auth, chat and the rest are JSON-only)
      */
-    private fun shouldUseJSON(path: String): Boolean {
+    private fun shouldUseJSON(requestPath: String): Boolean {
+        // The route is the path after the base URL's own path.
+        val path = if (basePath.isNotEmpty() && requestPath.startsWith(basePath)) requestPath.substring(basePath.length) else requestPath
         if (path.startsWith("/api/update/sequence/")) return true
         return messagePackRoutes.none { path.startsWith(it) }
     }
