@@ -5176,8 +5176,8 @@ fn ws_create_collection_payload(
 /// The `sort` of a WebSocket `Query`, which the server takes as a list of
 /// `{"field": ..., "ascending": ...}` (#416). A dict maps each field, in its order, to its
 /// direction: `"asc"` or `"desc"` (any case), or a bool for ascending. A list (or tuple) holds
-/// entries in the server's shape or `(field, direction)` pairs; each is checked, and anything
-/// else is a `TypeError` naming the entry.
+/// entries in the server's shape or `(field, direction)` pairs; each is checked: a structural
+/// problem is a `TypeError` naming the entry, and an unknown direction is a `ValueError`.
 fn ws_query_sort(sort: &Bound<'_, PyAny>) -> PyResult<serde_json::Value> {
     if let Ok(dict) = sort.cast::<PyDict>() {
         let mut pairs = Vec::with_capacity(dict.len());
@@ -5925,6 +5925,14 @@ mod tests {
             let error_of = |sort: &Bound<'_, PyAny>| ws_query_sort(sort).expect_err("refused");
             assert!(error_of(bare.as_any()).is_instance_of::<pyo3::exceptions::PyTypeError>(py));
             assert!(error_of(unknown.as_any()).is_instance_of::<pyo3::exceptions::PyValueError>(py));
+            // The list form takes the same ValueError for an unknown direction.
+            let unknown_pair = PyList::empty(py);
+            unknown_pair
+                .append(PyTuple::new(py, ["a", "up"]).unwrap())
+                .unwrap();
+            refused(unknown_pair.as_any(), "must be");
+            assert!(error_of(unknown_pair.as_any())
+                .is_instance_of::<pyo3::exceptions::PyValueError>(py));
         });
     }
 
