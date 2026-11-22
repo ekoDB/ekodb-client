@@ -238,9 +238,10 @@ The document Vector envelope is `{"type":"Vector","value":[...]}`. Rust's
 Kotlin's `FieldType.vector` all construct that envelope.
 `test-fixtures/vector-record.json` compares complete insertion payloads without
 collapsing Array and Vector. Rust and TypeScript codec tests retain the same
-distinction in MessagePack; this is not a live binary-transport claim. Kotlin
-HTTP MessagePack/CBOR remains experimental and unverified; this fix validates
-JSON. Search query vectors use a separate plain numeric array contract.
+distinction in MessagePack; this is not a live binary-transport claim. Kotlin's
+HTTP MessagePack format is tested against a local HTTP server, not a live ekoDB;
+this fix validates JSON. Search query vectors use a separate plain numeric array
+contract.
 
 ```bash
 # Explicit opt-in; provide these through your authorized environment.
