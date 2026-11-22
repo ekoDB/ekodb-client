@@ -132,7 +132,8 @@ and this project adheres to
   `"asc"`, `"desc"` or a bool, in the dict's order, or from a list of
   `{"field": str, "ascending": bool}` entries or `(field, direction)` pairs. Any
   other shape, an `ascending` that is not a bool included, raises `TypeError`
-  naming the entry, and an unknown direction string raises `ValueError`.
+  naming the entry, and an unrecognised direction (an unknown string, or a value
+  that is neither a string nor a bool) raises `ValueError`.
 
 - **Document counts are exact past one page (#405).** Every SDK now counts with
   `POST /api/count/{collection}`, new in ekoDB server 0.84.0, and returns the
