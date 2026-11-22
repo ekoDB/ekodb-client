@@ -1583,12 +1583,25 @@ deps-update-kotlin: ensure-jvm
 	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 	@echo "$(YELLOW)⚠️  Gradle requires manual dependency updates in build.gradle.kts$(RESET)"
 	@echo "$(YELLOW)Run 'make deps-check-kotlin' to see available updates$(RESET)"
+	@echo "$(YELLOW)After changing a Kotlin dependency, run 'make lock-kotlin' to refresh the locks and checksums$(RESET)"
 	@echo ""
 	@if [ -d "ekodb-client-kt" ]; then \
 		cd ekodb-client-kt && ./gradlew dependencies --no-daemon --configuration runtimeClasspath || true; \
 	else \
 		echo "$(RED)❌ ekodb-client-kt directory not found$(RESET)"; \
 	fi
+
+# Refresh the Kotlin dependency locks (gradle.lockfile) and the sha256 verification metadata of both
+# Kotlin builds after a dependency change (#386). Each run uses a new, empty Gradle home under the
+# client's build directory (removed by `gradle clean`): Gradle records only what it downloads, so a
+# warm cache would leave artifacts out of the metadata and a fresh machine would then fail
+# verification. The client is built first: the examples consume its jar. Network access is
+# needed; the checked-in files then let a build run offline.
+lock-kotlin: ensure-jvm ## Refresh the Kotlin lockfiles and verification metadata after a dependency change
+	@mkdir -p $(CLIENT_KT_DIR)/build
+	@home=$$(mktemp -d "$(CURDIR)/$(CLIENT_KT_DIR)/build/lock-kotlin-home.XXXXXX") && \
+	(cd $(CLIENT_KT_DIR) && GRADLE_USER_HOME="$$home" ./gradlew --no-daemon --write-locks --write-verification-metadata sha256 resolveAndLockAll build) && \
+	(cd examples/kotlin && GRADLE_USER_HOME="$$home" ./gradlew --no-daemon --write-locks --write-verification-metadata sha256 resolveAndLockAll build -x test)
 
 # ============================================================================
 # Examples Inventory
