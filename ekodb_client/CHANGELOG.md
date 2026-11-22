@@ -112,6 +112,27 @@ and this project adheres to
 
 ### Fixed
 
+- **Four WebSocket frames the server could not parse are fixed (#413, #414,
+  #415, #416).** The Rust client's `raw_completion` sent its fields at the top
+  level with no `messageId`, so the server could not read the request and the
+  call waited until the connection closed; the Python client, which uses it, did
+  the same. It now sends them in `payload` with a `messageId`, as every other
+  request does. In Rust, `WebSocketRequest::RawComplete` now holds `message_id`
+  and a `RawCompletePayload` in place of the request's fields, the shape the
+  server reads; code that builds that variant directly changes with it. A
+  WebSocket text search sent its field list as `fields`, which the server calls
+  `search_fields`, and left out `language`, which the server's text search
+  options require, so a search with fields or a limit was refused; in Rust,
+  Python, TypeScript and Kotlin it now sends `search_fields` and
+  `"language": "english"`, the server's default. A WebSocket `create_collection`
+  with no schema sent `{}`, which the server refuses because a schema needs
+  `fields`; it now sends `{"fields": {}}`. The Python WebSocket `query` sent
+  `sort` as an object, while the server takes a list of
+  `{"field", "ascending"}`; it now sends that list, from a dict of field to
+  `"asc"`, `"desc"` or a bool, in the dict's order, or from a list of
+  `{"field": str, "ascending": bool}` entries or `(field, direction)` pairs. Any
+  other shape raises `TypeError` naming the entry.
+
 - **Document counts are exact past one page (#405).** Every SDK now counts with
   `POST /api/count/{collection}`, new in ekoDB server 0.84.0, and returns the
   server's `count`; a server without the route answers 404, which every SDK
