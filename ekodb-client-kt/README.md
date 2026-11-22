@@ -225,9 +225,13 @@ client.kvSetWithTtl("cache:product:1", productData, "1h")
 val collections = client.listCollections()
 println("Collections: $collections")
 
-// Count documents in a collection
+// Count documents in a collection: exact, however many there are
+// (requires ekoDB server 0.84.0 or later)
 val count = client.count("users")
 println("Total users: $count")
+
+// Count only the documents that match a filter
+val active = client.countDocuments("users", QueryBuilder().eq("status", "active").build().filter!!)
 
 // Check if collection exists
 val exists = client.collectionExists("users")
@@ -637,7 +641,10 @@ For complete, runnable examples of all features, see the
 - `listCollections()` - List all collections
 - `listUserCollections()` - List collections excluding internal chat/system
   collections
-- `count(collection)` - Count documents in collection
+- `count(collection)` / `countDocuments(collection)` - Count every document in a
+  collection exactly (`POST /api/count`; requires ekoDB server 0.84.0 or later)
+- `countDocuments(collection, filter)` - Count the documents matching a filter
+  exactly (requires ekoDB server 0.84.0 or later)
 - `collectionExists(collection)` - Check if collection exists
 - `deleteCollection(collection)` - Delete entire collection
 - `createCollection(collection, schema)` - Create with schema

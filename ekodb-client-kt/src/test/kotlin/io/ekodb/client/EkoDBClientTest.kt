@@ -1512,38 +1512,85 @@ class EkoDBClientTest {
     // ========================================================================
 
     @Test
-    fun `countDocuments returns legacy top-level count`() = runBlocking {
-        val mockEngine = createMockEngine("""{"count":2}""")
-        val client = createTestClient(mockEngine)
-        val count = client.countDocuments("users")
-        assertEquals(2L, count)
-    }
-
-    @Test
-    fun `countDocuments returns live analytics record count`() = runBlocking {
-        val mockEngine = createMockEngine(
-            """{"analytics":["users",{"record_count":5}],"collection":{}}"""
-        )
-        val client = createTestClient(mockEngine)
-        assertEquals(5L, client.countDocuments("users"))
-    }
-
-    @Test
-    fun `countDocuments uses collection metadata endpoint`() = runBlocking {
+    fun `countDocuments returns a count above one page exactly`() = runBlocking {
         val requests = mutableListOf<HttpRequestData>()
-        val mockEngine = capturingMockEngine(requests, """{"count":0}""")
-        val client = createTestClient(mockEngine)
-        client.countDocuments("users")
+        val client = createTestClient(capturingMockEngine(requests, """{"count":2029}"""))
 
-        assertEquals(HttpMethod.Get, requests.single().method)
-        assertEquals("/api/collections/users", requests.single().url.encodedPath)
+        assertEquals(2029L, client.countDocuments("users"))
+
+        val sent = requests.single()
+        assertEquals(HttpMethod.Post, sent.method)
+        assertEquals("/api/count/users", sent.url.encodedPath)
+        assertEquals("Bearer mock_jwt_token_123", sent.headers[HttpHeaders.Authorization])
+        assertEquals(ContentType.Application.Json.toString(), sent.headers[HttpHeaders.Accept])
+        assertEquals(buildJsonObject {}, Json.parseToJsonElement((sent.body as TextContent).text))
     }
 
     @Test
-    fun `count delegates to countDocuments metadata lookup`() = runBlocking {
-        val mockEngine = createMockEngine("""{"count":1}""")
-        val client = createTestClient(mockEngine)
+    fun `countDocuments with a filter sends the filter`() = runBlocking {
+        val requests = mutableListOf<HttpRequestData>()
+        val client = createTestClient(capturingMockEngine(requests, """{"count":1500}"""))
+        val filter = QueryBuilder().eq("status", "active").build().filter!!
+
+        assertEquals(1500L, client.countDocuments("users", filter))
+
+        val sent = requests.single()
+        assertEquals("/api/count/users", sent.url.encodedPath)
+        assertEquals(
+            buildJsonObject { put("filter", filter) },
+            Json.parseToJsonElement((sent.body as TextContent).text),
+        )
+    }
+
+    @Test
+    fun `countDocuments on a server without the route throws the version error`() = runBlocking {
+        val requests = mutableListOf<HttpRequestData>()
+        val client = createTestClient(capturingMockEngine(requests, "Not Found", HttpStatusCode.NotFound))
+
+        val error = assertFailsWith<EkoDBHttpException> { client.countDocuments("users") }
+
+        assertEquals(404, error.statusCode)
+        assertEquals(EkoDBClient.COUNT_UNSUPPORTED_MESSAGE, error.message)
+        assertEquals(
+            "count requires ekoDB server 0.84.0 or later (POST /api/count is not available on this server)",
+            error.message,
+        )
+        // One count request, and no find after it.
+        assertEquals(listOf("/api/count/users"), requests.map { it.url.encodedPath })
+    }
+
+    @Test
+    fun `countDocuments throws a 403 as EkoDBHttpException with the server's error`() = runBlocking {
+        val requests = mutableListOf<HttpRequestData>()
+        val body = """{"error":"No read permission for field salary"}"""
+        val client = createTestClient(capturingMockEngine(requests, body, HttpStatusCode.Forbidden))
+        val filter = QueryBuilder().gt("salary", 100).build().filter!!
+
+        val error = assertFailsWith<EkoDBHttpException> { client.countDocuments("users", filter) }
+
+        assertEquals(403, error.statusCode)
+        assertEquals(body, error.responseBody)
+        assertTrue(error.message.contains("No read permission for field salary"))
+        assertEquals(1, requests.size)
+    }
+
+    @Test
+    fun `countDocuments path-escapes the collection name`() = runBlocking {
+        val requests = mutableListOf<HttpRequestData>()
+        val client = createTestClient(capturingMockEngine(requests, """{"count":3}"""))
+
+        assertEquals(3L, client.countDocuments("team/a b"))
+
+        assertEquals("/api/count/team%2Fa%20b", requests.single().url.encodedPath)
+    }
+
+    @Test
+    fun `count delegates to countDocuments`() = runBlocking {
+        val requests = mutableListOf<HttpRequestData>()
+        val client = createTestClient(capturingMockEngine(requests, """{"count":1}"""))
+
         assertEquals(1L, client.count("users"))
+        assertEquals("/api/count/users", requests.single().url.encodedPath)
     }
 
     // ========================================================================

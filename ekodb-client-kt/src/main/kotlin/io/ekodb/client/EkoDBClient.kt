@@ -977,7 +977,7 @@ class EkoDBClient private constructor(
     }
 
     /**
-     * Count documents in a collection
+     * Count every document in a collection, exactly. Same as [countDocuments].
      */
     suspend fun count(collection: String): Long = countDocuments(collection)
 
@@ -1168,19 +1168,49 @@ class EkoDBClient private constructor(
     }
 
     /**
-     * Count documents in a collection
+     * Count every document in a collection, exactly.
+     *
+     * Sends `POST /api/count/{collection}`, so the server counts every record
+     * however many there are. Requires ekoDB server 0.84.0 or later: an older
+     * server has no count route, and the call throws [EkoDBHttpException] with
+     * status 404 and a message naming the required version. Any other failure
+     * is thrown as [EkoDBHttpException] carrying the server's status and body.
      */
-    suspend fun countDocuments(collection: String): Long {
-        val metadata = getCollection(collection)
-        metadata["count"]?.jsonPrimitive?.longOrNull?.let { return it }
+    suspend fun countDocuments(collection: String): Long = countMatching(collection, null)
 
-        val analytics = metadata["analytics"]
-        val analyticsObject = when (analytics) {
-            is JsonObject -> analytics
-            is JsonArray -> analytics.lastOrNull { it is JsonObject } as? JsonObject
-            else -> null
+    /**
+     * Count the documents in a collection that match [filter], exactly.
+     *
+     * [filter] is a query expression in the same shape as [Query.filter] (for
+     * example `QueryBuilder().eq("status", "active").build().filter`). Sends
+     * `POST /api/count/{collection}` with `{"filter": filter}`. Requires ekoDB
+     * server 0.84.0 or later; errors as for [countDocuments], including 400 for
+     * a malformed filter and 403 for a filter on a field the key cannot read.
+     */
+    suspend fun countDocuments(collection: String, filter: JsonElement): Long =
+        countMatching(collection, filter)
+
+    /** `POST /api/count/{collection}`, with `{"filter": filter}` when [filter] is set. */
+    private suspend fun countMatching(collection: String, filter: JsonElement?): Long {
+        val body = buildJsonObject { if (filter != null) put("filter", filter) }
+        val response = try {
+            executeWithRetry { token ->
+                client.post("$baseUrl/api/count/${collection.encodeURLPathPart()}") {
+                    header("Authorization", "Bearer $token")
+                    contentType(ContentType.Application.Json)
+                    header("Accept", ContentType.Application.Json.toString())
+                    setBody(body)
+                }
+            }
+        } catch (e: EkoDBHttpException) {
+            // The count route has no 404 answer of its own, so a 404 means the
+            // server predates it.
+            if (e.statusCode == HttpStatusCode.NotFound.value) {
+                throw EkoDBHttpException(e.statusCode, e.responseBody, COUNT_UNSUPPORTED_MESSAGE)
+            }
+            throw e
         }
-        return analyticsObject?.get("record_count")?.jsonPrimitive?.longOrNull ?: 0L
+        return response.body<JsonObject>().getValue("count").jsonPrimitive.long
     }
 
     private val searchJson = Json { ignoreUnknownKeys = true }
@@ -3848,6 +3878,14 @@ class EkoDBClient private constructor(
          * retried 5xx responses. Mirrors the Rust client's `MAX_BACKOFF` (30s).
          */
         const val MAX_BACKOFF_MS = 30_000L
+
+        /**
+         * The message of the [EkoDBHttpException] [countDocuments] throws when
+         * the server has no `POST /api/count` route: an ekoDB server older
+         * than 0.84.0.
+         */
+        internal const val COUNT_UNSUPPORTED_MESSAGE =
+            "count requires ekoDB server 0.84.0 or later (POST /api/count is not available on this server)"
 
         /**
          * Clamp a server-supplied `Retry-After` (seconds) to `[0, MAX_RETRY_AFTER_SECONDS]`.

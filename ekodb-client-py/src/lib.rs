@@ -3138,25 +3138,37 @@ impl Client {
         })
     }
 
-    /// Count documents in a collection
+    /// Count the documents in a collection exactly, optionally only those
+    /// matching a filter.
+    ///
+    /// Sends `POST /api/count/{collection}`, so the server counts every match
+    /// however many there are. Requires ekoDB server 0.84.0 or later; an older
+    /// server raises `ApiError` with status 404.
     ///
     /// Args:
     ///     collection: Collection name
+    ///     filter: Optional query expression dict, the same shape as the
+    ///         `filter` of a `find` query (for example
+    ///         `QueryBuilder.condition("status", "Eq", "active")`)
     ///
     /// Returns:
-    ///     Number of documents in the collection
+    ///     Number of matching documents
+    #[pyo3(signature = (collection, filter=None))]
     fn count_documents<'py>(
         &self,
         py: Python<'py>,
         collection: String,
+        filter: Option<&Bound<'py, PyDict>>,
     ) -> PyResult<Bound<'py, PyAny>> {
         let client = self.inner.clone();
+        let filter_json = filter.map(dict_to_json).transpose()?;
 
         future_into_py::<_, Py<PyAny>>(py, async move {
-            let count = client
-                .count_documents(&collection)
-                .await
-                .map_err(|e| map_client_err("Count documents failed", e))?;
+            let count = match filter_json {
+                Some(filter) => client.count_documents_where(&collection, filter).await,
+                None => client.count_documents(&collection).await,
+            }
+            .map_err(|e| map_client_err("Count documents failed", e))?;
 
             Python::attach(|py| Ok(PyInt::new(py, count as i64).into()))
         })
