@@ -5189,7 +5189,7 @@ fn ws_query_sort(sort: &Bound<'_, PyAny>) -> PyResult<serde_json::Value> {
             let field: String = key.extract().map_err(|_| {
                 pyo3::exceptions::PyTypeError::new_err("sort: each key must be a field name")
             })?;
-            pairs.push((field, py_to_json(&value)?));
+            pairs.push((field, sort_direction(&value)));
         }
         return sort_pairs_to_list(pairs).map_err(pyo3::exceptions::PyValueError::new_err);
     }
@@ -5242,8 +5242,14 @@ fn sort_entry_pair(entry: &Bound<'_, PyAny>) -> Result<(String, serde_json::Valu
         return Err(SHAPE.to_string());
     };
     let field: String = field.extract().map_err(|_| SHAPE.to_string())?;
-    let direction = py_to_json(direction).map_err(|e| e.to_string())?;
+    let direction = sort_direction(direction);
     Ok((field, direction))
+}
+
+/// A sort direction as JSON. A value that cannot be converted (a dict with a non-string key) is as
+/// unrecognised as one of another type, so it becomes null and `sort_pairs_to_list` refuses it.
+fn sort_direction(value: &Bound<'_, PyAny>) -> serde_json::Value {
+    py_to_json(value).unwrap_or(serde_json::Value::Null)
 }
 
 /// `(field, direction)` pairs as the server's sort list. A direction is `"asc"`, `"desc"` (any
@@ -5962,6 +5968,30 @@ mod tests {
             refused(int_pair.as_any(), "must be");
             assert!(
                 error_of(int_pair.as_any()).is_instance_of::<pyo3::exceptions::PyValueError>(py)
+            );
+            // A direction that cannot be converted (a dict with a non-string key) is a ValueError too.
+            let odd_direction = PyDict::new(py);
+            odd_direction.set_item(1, "x").unwrap();
+            let odd_dict = PyDict::new(py);
+            odd_dict.set_item("a", &odd_direction).unwrap();
+            assert!(
+                error_of(odd_dict.as_any()).is_instance_of::<pyo3::exceptions::PyValueError>(py)
+            );
+            let odd_pair = PyList::empty(py);
+            odd_pair
+                .append(
+                    PyTuple::new(
+                        py,
+                        [
+                            PyString::new(py, "a").into_any(),
+                            odd_direction.clone().into_any(),
+                        ],
+                    )
+                    .unwrap(),
+                )
+                .unwrap();
+            assert!(
+                error_of(odd_pair.as_any()).is_instance_of::<pyo3::exceptions::PyValueError>(py)
             );
         });
     }
