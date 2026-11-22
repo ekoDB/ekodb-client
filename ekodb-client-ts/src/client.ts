@@ -3830,9 +3830,9 @@ export class EkoDBClient {
         0,
         true,
       );
-      if (typeof answer.count !== "number")
+      if (!Number.isSafeInteger(answer.count) || answer.count < 0)
         throw new Error(
-          `count response has no numeric count field: ${JSON.stringify(answer)}`,
+          `count response has no non-negative integer count: ${JSON.stringify(answer)}`,
         );
       return answer.count;
     } catch (error) {

@@ -2462,6 +2462,29 @@ describe("EkoDBClient collection utilities", () => {
     expect(error.message).not.toContain("0.84.0");
   });
 
+  it("countDocuments refuses a response without a non-negative integer count", async () => {
+    for (const body of [
+      {},
+      { count: null },
+      { count: "5" },
+      { count: 2.5 },
+      { count: -1 },
+    ]) {
+      const client = createTestClient();
+      mockTokenResponse();
+      mockJsonResponse(body);
+      await expect(client.countDocuments("users")).rejects.toThrow(
+        "count response has no non-negative integer count",
+      );
+    }
+
+    // Control: an integer count is returned.
+    const client = createTestClient();
+    mockTokenResponse();
+    mockJsonResponse({ count: 7 });
+    expect(await client.countDocuments("users")).toBe(7);
+  });
+
   it("countDocuments path-escapes the collection name", async () => {
     const client = createTestClient();
 
