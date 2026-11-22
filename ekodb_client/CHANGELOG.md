@@ -129,8 +129,8 @@ and this project adheres to
   `count`) no longer read the collection's `record_count` statistic, which
   returned 0 when absent, and a new `countDocuments(collection, filter)`
   overload counts matches; the 404 is an `EkoDBHttpException` with
-  `statusCode` 404. Go: shipped in the paired `ekodb-client-go` change
-  (`CountDocuments`, and `CountDocumentsWhere(collection, filter)`).
+  `statusCode` 404. Go: added by the paired `ekodb-client-go` change, released
+  separately (`CountDocuments`, and `CountDocumentsWhere(collection, filter)`).
 - **Calls on an existing transaction surface the server's error and are never
   re-sent (#406).** The server answers a failed commit, rollback or savepoint
   call with `{"error", "transaction_id", "retryable"}`, and a failed commit has
