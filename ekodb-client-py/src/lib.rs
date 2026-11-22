@@ -4739,7 +4739,8 @@ impl WebSocketClient {
     /// `sort` is a dict of field to direction (`"asc"`, `"desc"` or a bool for ascending), in
     /// order, or a list of `{"field": str, "ascending": bool}` dicts or `(field, direction)`
     /// pairs. Any other shape raises `TypeError`, an `ascending` that is not a bool included, and an
-    /// unknown direction string raises `ValueError`.
+    /// unrecognised direction (an unknown string, or a value that is neither a string nor a bool)
+    /// raises `ValueError`.
     #[pyo3(signature = (collection, filter=None, sort=None, limit=None, skip=None))]
     fn ws_query<'py>(
         &self,
@@ -5179,7 +5180,8 @@ fn ws_create_collection_payload(
 /// direction: `"asc"` or `"desc"` (any case), or a bool for ascending. A list (or tuple) holds
 /// entries in the server's shape or `(field, direction)` pairs; each is checked: a structural
 /// problem, a wrong-typed field included (an `ascending` that is not a bool), is a `TypeError`
-/// naming the entry, and an unknown direction string is a `ValueError`.
+/// naming the entry, and an unrecognised direction (an unknown string, or a value that is neither
+/// a string nor a bool) is a `ValueError`.
 fn ws_query_sort(sort: &Bound<'_, PyAny>) -> PyResult<serde_json::Value> {
     if let Ok(dict) = sort.cast::<PyDict>() {
         let mut pairs = Vec::with_capacity(dict.len());
@@ -5563,7 +5565,7 @@ fn check_run_as(definition: &Bound<'_, PyDict>) -> PyResult<()> {
 
 /// Convert Python dict to JSON value
 fn pydict_to_json(py: Python, dict: &Bound<'_, PyDict>) -> PyResult<serde_json::Value> {
-    use pyo3::types::{PyBool, PyDict, PyFloat, PyInt, PyList, PyString, PyTuple};
+    use pyo3::types::{PyBool, PyFloat, PyInt, PyString};
 
     let mut map = serde_json::Map::new();
     for (key, value) in dict.iter() {
@@ -5938,6 +5940,29 @@ mod tests {
             refused(unknown_pair.as_any(), "must be");
             assert!(error_of(unknown_pair.as_any())
                 .is_instance_of::<pyo3::exceptions::PyValueError>(py));
+            // A direction that is neither a string nor a bool is unrecognised: a ValueError in both forms.
+            let int_direction = PyDict::new(py);
+            int_direction.set_item("a", 1).unwrap();
+            refused(int_direction.as_any(), "must be");
+            assert!(error_of(int_direction.as_any())
+                .is_instance_of::<pyo3::exceptions::PyValueError>(py));
+            let int_pair = PyList::empty(py);
+            int_pair
+                .append(
+                    PyTuple::new(
+                        py,
+                        [
+                            PyString::new(py, "a").into_any(),
+                            1_i64.into_pyobject(py).unwrap().into_any(),
+                        ],
+                    )
+                    .unwrap(),
+                )
+                .unwrap();
+            refused(int_pair.as_any(), "must be");
+            assert!(
+                error_of(int_pair.as_any()).is_instance_of::<pyo3::exceptions::PyValueError>(py)
+            );
         });
     }
 
