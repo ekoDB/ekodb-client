@@ -79,3 +79,22 @@ sourceSets {
         kotlin.include(exampleSource)
     }
 }
+
+// Every resolved configuration is locked (gradle.lockfile) and every downloaded artifact is checked
+// against gradle/verification-metadata.xml (#386), so a build can be reproduced offline from a
+// verified set and a substituted artifact fails the build. After changing a dependency, refresh
+// both with `make lock-kotlin`.
+dependencyLocking {
+    lockAllConfigurations()
+}
+
+tasks.register("resolveAndLockAll") {
+    description = "Resolves every configuration, so --write-locks records them all (#386)."
+    notCompatibleWithConfigurationCache("Resolves configurations at execution time")
+    doFirst {
+        require(gradle.startParameter.isWriteDependencyLocks) { "run with --write-locks" }
+    }
+    doLast {
+        configurations.filter { it.isCanBeResolved }.forEach { it.resolve() }
+    }
+}
