@@ -5339,8 +5339,9 @@ export class WebSocketClient {
     fields?: string[],
     limit?: number,
   ): Promise<any[]> {
+    // The server names the field list `search_fields` (#414).
     const options: any = {};
-    if (fields) options.fields = fields;
+    if (fields) options.search_fields = fields;
     if (limit) options.limit = limit;
     const data = await this.sendCRUD("TextSearch", {
       collection,
@@ -5382,9 +5383,10 @@ export class WebSocketClient {
 
   /** Create a collection with optional schema via WebSocket. */
   async createCollection(name: string, schema?: any): Promise<void> {
+    // With no schema, an empty one: a schema always has a `fields` object (#415).
     await this.sendCRUD("CreateCollection", {
       name,
-      schema: schema ?? {},
+      schema: schema ?? { fields: {} },
     });
   }
 
