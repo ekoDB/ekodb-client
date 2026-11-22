@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.*
 import org.msgpack.core.MessageBufferPacker
 import org.msgpack.core.MessagePack
@@ -932,6 +933,19 @@ internal fun jsonElementToMsgpack(element: JsonElement): ByteArray {
     return bytes
 }
 
+/**
+ * An integer literal, classified by its digits rather than by a parser that may saturate: exact
+ * through the unsigned 64-bit maximum, which MessagePack carries, and refused beyond it rather than
+ * packed as a double that loses digits.
+ */
+private fun packInteger(packer: MessageBufferPacker, value: java.math.BigInteger) {
+    when {
+        value.bitLength() < 64 -> packer.packLong(value.toLong())
+        value.signum() >= 0 && value.bitLength() <= 64 -> packer.packBigInteger(value)
+        else -> throw SerializationException("integer $value does not fit MessagePack's 64-bit integers")
+    }
+}
+
 private fun packElement(packer: MessageBufferPacker, el: JsonElement) {
     when (el) {
         is JsonNull -> packer.packNil()
@@ -950,7 +964,7 @@ private fun packElement(packer: MessageBufferPacker, el: JsonElement) {
             when {
                 el.isString -> packer.packString(el.content)
                 el.booleanOrNull != null -> packer.packBoolean(el.boolean)
-                el.longOrNull != null -> packer.packLong(el.long)
+                el.content.toBigIntegerOrNull() != null -> packInteger(packer, el.content.toBigInteger())
                 el.doubleOrNull != null -> packer.packDouble(el.double)
                 else -> packer.packString(el.content)
             }
@@ -977,7 +991,11 @@ private fun unpackValue(unpacker: MessageUnpacker): JsonElement {
             JsonNull
         }
         ValueType.BOOLEAN -> JsonPrimitive(unpacker.unpackBoolean())
-        ValueType.INTEGER -> JsonPrimitive(unpacker.unpackLong())
+        ValueType.INTEGER -> {
+            // unpackLong throws above Long.MAX_VALUE, which an unsigned 64-bit value can reach.
+            val integer = unpacker.unpackBigInteger()
+            if (integer.bitLength() < 64) JsonPrimitive(integer.toLong()) else JsonPrimitive(integer)
+        }
         ValueType.FLOAT -> JsonPrimitive(unpacker.unpackDouble())
         ValueType.STRING -> JsonPrimitive(unpacker.unpackString())
         ValueType.BINARY -> {
@@ -1002,10 +1020,9 @@ private fun unpackValue(unpacker: MessageUnpacker): JsonElement {
             }
             JsonObject(map)
         }
-        else -> {
-            unpacker.skipValue()
-            JsonNull
-        }
+        else -> throw SerializationException(
+            "MessagePack value of type ${unpacker.nextFormat.valueType} is not supported",
+        )
     }
 }
 
