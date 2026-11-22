@@ -375,6 +375,7 @@ class WebSocketFramePayloadTest {
         val options = payload["options"]!!.jsonObject
         assertEquals(listOf("title"), options["search_fields"]!!.jsonArray.map { it.jsonPrimitive.content })
         assertEquals(5, options["limit"]!!.jsonPrimitive.int)
+        assertEquals("english", options["language"]!!.jsonPrimitive.content, "the server requires `language`")
         assertNull(options["fields"], "the server does not read `fields`")
         assertNull(textSearchPayload("docs", "alpha", null, null)["options"], "no options when none are given")
     }
