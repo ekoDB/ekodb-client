@@ -37,9 +37,10 @@ create_exception!(
     "HTTP error answer from the server. `status` is the HTTP status code; \
      `message` is the server's error message, or the client's description \
      when the client does not keep it (a 404, or a 401 it could not refresh); \
-     `retryable` says whether trying again can succeed: for a transaction \
-     call it is the server's flag, and `True` means begin a new transaction \
-     and run the work again (the client never re-sends a transaction call)."
+     `retryable` says whether trying again can succeed: for a call on an \
+     existing transaction (commit, rollback, or a savepoint call) it is the \
+     server's flag, and `True` means begin a new transaction and run the work \
+     again (the client never re-sends those calls)."
 );
 
 /// Map an `ekodb_client::Error` to the most specific Python exception.
@@ -51,10 +52,10 @@ create_exception!(
 /// - An error the server answered with an HTTP status (`Api`, `Transaction`,
 ///   `NotFound`, `ServiceUnavailable`, and a `TokenExpired` the client could
 ///   not refresh away) is surfaced as `ApiError`, with `exc.status`,
-///   `exc.message` and `exc.retryable`. For a transaction call `retryable` is
-///   the server's flag (`True`: begin a new transaction and run the work
-///   again; the client never re-sends the call); otherwise it is the Rust
-///   error's `is_retryable()`.
+///   `exc.message` and `exc.retryable`. For a call on an existing transaction
+///   (`Transaction`) `retryable` is the server's flag (`True`: begin a new
+///   transaction and run the work again; the client never re-sends the call);
+///   otherwise it is the Rust error's `is_retryable()`.
 ///   `Api` also covers a WebSocket error frame (its status) and a failure the
 ///   server reports inside a streamed completion (status 500).
 ///   `message` is the server's message where the Rust client keeps it (`Api`,

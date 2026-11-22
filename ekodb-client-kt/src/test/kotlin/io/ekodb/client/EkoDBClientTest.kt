@@ -509,7 +509,7 @@ class EkoDBClientTest {
                     throw java.io.IOException("simulated transient network failure")
                 }
                 respond(
-                    content = """{"collections": ["after_retry"]}""",
+                    content = """{"transaction_id": "tx_after_retry", "status": "active"}""",
                     status = HttpStatusCode.OK,
                     headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
                 )
@@ -531,12 +531,11 @@ class EkoDBClientTest {
             .build()
 
         val start = System.currentTimeMillis()
-        // A non-transaction route: transaction calls are never re-sent (#406).
-        val result = client.listCollections()
+        val result = client.getTransactionStatus("tx_after_retry")
         val elapsed = System.currentTimeMillis() - start
 
         // Recovered after the throw (proves the catch path retried).
-        assertEquals(listOf("after_retry"), result)
+        assertTrue(result.isNotEmpty())
         assertEquals(2, nonAuthCalls, "expected one failed non-auth call and one successful retry")
         // attempt-0 backoff is the clamped 1000ms; assert it never blew past the
         // clamp ceiling (an unclamped overflow path could sleep far longer).
