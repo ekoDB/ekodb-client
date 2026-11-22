@@ -861,6 +861,42 @@ class EkoDBClientTest {
     }
 
     @Test
+    fun `a token reply that does not decode is retried`() = runBlocking {
+        // Only a body that cannot be packed is raised at once; a token reply that fails to decode (a
+        // proxy page, a truncated body) keeps its retries, in every format.
+        val tokenCalls = java.util.concurrent.atomic.AtomicInteger()
+        val server = com.sun.net.httpserver.HttpServer.create(java.net.InetSocketAddress("127.0.0.1", 0), 0)
+        server.createContext("/api/auth/token") { exchange ->
+            val body = (
+                if (tokenCalls.incrementAndGet() == 1) "<html>captive portal</html>" else """{"token": "mock_jwt_token_123"}"""
+            ).toByteArray()
+            exchange.responseHeaders.add("Content-Type", "application/json")
+            exchange.sendResponseHeaders(200, body.size.toLong())
+            exchange.responseBody.use { it.write(body) }
+        }
+        server.createContext("/api/insert/users") { exchange ->
+            exchange.requestBody.readBytes()
+            val body = """{"id": "user_9"}""".toByteArray()
+            exchange.responseHeaders.add("Content-Type", "application/json")
+            exchange.sendResponseHeaders(200, body.size.toLong())
+            exchange.responseBody.use { it.write(body) }
+        }
+        server.start()
+        val client = EkoDBClient.builder()
+            .baseUrl("http://127.0.0.1:${server.address.port}")
+            .apiKey(testApiKey)
+            .maxRetries(3)
+            .build()
+        try {
+            client.insert("users", Record().insert("name", "Ada"))
+            assertEquals(2, tokenCalls.get(), "the first token reply did not decode, so it was asked for again")
+        } finally {
+            client.close()
+            server.stop(0)
+        }
+    }
+
+    @Test
     fun `msgpack helpers keep unsigned 64-bit integers exact and refuse what they cannot represent`() {
         val max = java.math.BigInteger("18446744073709551615")
         assertEquals(JsonPrimitive(max), msgpackToJsonElement(jsonElementToMsgpack(JsonPrimitive(max))))
