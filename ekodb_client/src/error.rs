@@ -21,13 +21,15 @@ pub enum Error {
         message: String,
     },
 
-    /// A transaction call (begin, status, commit, rollback or a savepoint call)
-    /// failed. `message` is the server's `error` text, or the raw response body
-    /// when the body is not that JSON. `retryable` is the server's verdict on
-    /// the transaction: `true` means begin a new transaction and run the work
-    /// again. The client never re-sends a transaction call: a failed commit has
-    /// already discarded its transaction, so a re-sent call could only come
-    /// back 404 and hide the original cause.
+    /// A call on an existing transaction (commit, rollback, or a create,
+    /// rollback-to or release savepoint call) failed. `message` is the
+    /// server's `error` text, or the raw response body when the body is not
+    /// that JSON. `retryable` is the server's verdict on the transaction:
+    /// `true` means begin a new transaction and run the work again. The client
+    /// never re-sends these calls: a failed commit has already discarded its
+    /// transaction, so a re-sent call could only come back 404 and hide the
+    /// original cause. Begin and status are not covered: they keep the normal
+    /// retry policy and error variants.
     #[error("Transaction error ({code}): {message}")]
     Transaction {
         /// HTTP status code
@@ -105,9 +107,9 @@ impl Error {
     }
 
     /// Check if the request that failed may be sent again. This is what the
-    /// retry policy re-sends. It is never true for `Transaction`: a transaction
-    /// call is not re-sent, and its own `retryable` field says whether a new
-    /// transaction may retry the work.
+    /// retry policy re-sends. It is never true for `Transaction`: a call on an
+    /// existing transaction is not re-sent, and its own `retryable` field says
+    /// whether a new transaction may retry the work.
     pub fn is_retryable(&self) -> bool {
         matches!(
             self,

@@ -10,21 +10,29 @@ import kotlinx.coroutines.test.runTest
 import kotlin.test.*
 
 /**
- * A transaction route answers a failure with
- * `{"error", "transaction_id", "retryable"}`. A failed commit has already
- * discarded its transaction, so the client never re-sends a transaction call,
- * even with retries enabled: the caller sees the server's own message and flag,
- * and `retryable` means begin a new transaction (#406).
+ * A call on an existing transaction (commit, rollback, or a savepoint call)
+ * answers a failure with `{"error", "transaction_id", "retryable"}`. A failed
+ * commit has already discarded its transaction, so the client never re-sends
+ * those calls, even with retries enabled: the caller sees the server's own
+ * message and flag, and `retryable` means begin a new transaction (#406). Begin
+ * and status keep the normal retry policy, and a 401 is sent once more after
+ * the token is refreshed.
  */
 class TransactionErrorTest {
     /**
      * A client with retries enabled (3 attempts) whose transaction requests are
-     * answered by [answer] and recorded in [paths]. A single recorded request
-     * therefore proves the client chose not to re-send.
+     * answered by [answer] and recorded in [paths]; token exchanges are recorded
+     * in [tokenRequests]. A single recorded request therefore proves the client
+     * chose not to re-send.
      */
-    private fun client(paths: MutableList<String>, answer: MockRequestHandleScope.() -> HttpResponseData): EkoDBClient {
+    private fun client(
+        paths: MutableList<String>,
+        tokenRequests: MutableList<String> = mutableListOf(),
+        answer: MockRequestHandleScope.() -> HttpResponseData,
+    ): EkoDBClient {
         val engine = MockEngine { request ->
             if (request.url.encodedPath == "/api/auth/token") {
+                tokenRequests.add(request.url.encodedPath)
                 respond("""{"token":"test-token"}""", headers = headersOf(HttpHeaders.ContentType, "application/json"))
             } else {
                 paths.add(request.url.encodedPath)
@@ -125,13 +133,11 @@ class TransactionErrorTest {
     }
 
     @Test
-    fun `every transaction route throws the typed error`() = runTest {
+    fun `every call on an existing transaction throws the typed error`() = runTest {
         val body = """{"error":"transaction tx-9 not found","transaction_id":"tx-9","retryable":false}"""
         val paths = mutableListOf<String>()
         val client = client(HttpStatusCode.NotFound, body, "application/json", paths)
         val calls = listOf<suspend () -> Unit>(
-            { client.beginTransaction() },
-            { client.getTransactionStatus("tx-9") },
             { client.rollbackTransaction("tx-9") },
             { client.createSavepoint("tx-9", "sp1") },
             { client.rollbackToSavepoint("tx-9", "sp1") },
@@ -145,6 +151,125 @@ class TransactionErrorTest {
                 assertFalse(error.retryable)
             }
             assertEquals(calls.size, paths.size)
+        } finally {
+            client.close()
+        }
+    }
+
+    @Test
+    fun `429 commit is sent once as the typed error`() = runTest {
+        val body = """{"error":"too many requests","transaction_id":"tx-6","retryable":true}"""
+        val paths = mutableListOf<String>()
+        val client = client(paths) {
+            respond(
+                body,
+                HttpStatusCode.TooManyRequests,
+                headersOf(HttpHeaders.ContentType to listOf("application/json"), "Retry-After" to listOf("0")),
+            )
+        }
+        try {
+            val error = assertFailsWith<EkoDBHttpException> { client.commitTransaction("tx-6") }
+            assertEquals(429, error.statusCode)
+            assertEquals("too many requests", error.message)
+            assertTrue(error.retryable)
+            assertEquals(listOf("/api/transactions/tx-6/commit"), paths)
+        } finally {
+            client.close()
+        }
+    }
+
+    @Test
+    fun `429 begin is retried and succeeds`() = runTest {
+        val paths = mutableListOf<String>()
+        val client = client(paths) {
+            if (paths.size == 1) {
+                respond("", HttpStatusCode.TooManyRequests, headersOf("Retry-After", "0"))
+            } else {
+                respond("""{"transaction_id":"tx-new"}""", headers = headersOf(HttpHeaders.ContentType, "application/json"))
+            }
+        }
+        try {
+            assertEquals("tx-new", client.beginTransaction())
+            // A refused begin started no transaction, so it is sent again.
+            assertEquals(listOf("/api/transactions", "/api/transactions"), paths)
+        } finally {
+            client.close()
+        }
+    }
+
+    @Test
+    fun `429 begin after every retry is the normal EkoDBHttpException`() = runTest {
+        val paths = mutableListOf<String>()
+        val client = client(paths) {
+            respond("rate limited", HttpStatusCode.TooManyRequests, headersOf("Retry-After", "0"))
+        }
+        try {
+            val error = assertFailsWith<EkoDBHttpException> { client.beginTransaction() }
+            assertEquals(429, error.statusCode)
+            assertEquals("Request failed with status 429: rate limited", error.message)
+            assertFalse(error.retryable)
+            // All three attempts were sent.
+            assertEquals(List(3) { "/api/transactions" }, paths)
+        } finally {
+            client.close()
+        }
+    }
+
+    @Test
+    fun `429 status read is retried and succeeds`() = runTest {
+        val paths = mutableListOf<String>()
+        val client = client(paths) {
+            if (paths.size == 1) {
+                respond("", HttpStatusCode.TooManyRequests, headersOf("Retry-After", "0"))
+            } else {
+                respond(
+                    """{"state":"Active","operations_count":2}""",
+                    headers = headersOf(HttpHeaders.ContentType, "application/json"),
+                )
+            }
+        }
+        try {
+            assertEquals("Active", client.getTransactionStatus("tx-10")["state"])
+            assertEquals(listOf("/api/transactions/tx-10", "/api/transactions/tx-10"), paths)
+        } finally {
+            client.close()
+        }
+    }
+
+    @Test
+    fun `401 commit refreshes the token once and is sent once more`() = runTest {
+        val paths = mutableListOf<String>()
+        val tokenRequests = mutableListOf<String>()
+        val client = client(paths, tokenRequests) {
+            if (paths.size == 1) {
+                respond("""{"error":"token expired"}""", HttpStatusCode.Unauthorized)
+            } else {
+                respond("""{"status":"committed"}""", headers = headersOf(HttpHeaders.ContentType, "application/json"))
+            }
+        }
+        try {
+            client.commitTransaction("tx-11")
+            assertEquals(List(2) { "/api/transactions/tx-11/commit" }, paths)
+            // The first token exchange and the one refresh.
+            assertEquals(2, tokenRequests.size)
+        } finally {
+            client.close()
+        }
+    }
+
+    @Test
+    fun `401 commit twice is sent twice and then throws`() = runTest {
+        val paths = mutableListOf<String>()
+        val tokenRequests = mutableListOf<String>()
+        val client = client(paths, tokenRequests) {
+            respond("""{"error":"token expired"}""", HttpStatusCode.Unauthorized)
+        }
+        try {
+            val error = assertFailsWith<EkoDBHttpException> { client.commitTransaction("tx-12") }
+            assertEquals(401, error.statusCode)
+            assertEquals("token expired", error.message)
+            assertEquals(List(2) { "/api/transactions/tx-12/commit" }, paths)
+            assertEquals(2, tokenRequests.size)
         } finally {
             client.close()
         }

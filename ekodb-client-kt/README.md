@@ -786,17 +786,20 @@ Transient server errors are retried with exponential backoff. Terminal client
 errors are thrown immediately, after any applicable authentication refresh or
 rate-limit handling. Exhausted server errors also throw `EkoDBHttpException`.
 
-Transaction calls (`beginTransaction`, `getTransactionStatus`,
-`commitTransaction`, `rollbackTransaction` and the savepoint calls) are handled
-differently. A failure throws `EkoDBHttpException` whose `message` is the
-server's error text (the raw body when it is not the JSON error) and whose
-`retryable` is the server's `retryable` flag (`false` when absent).
-`retryable: true` means begin a new transaction and run the work again. The
-client never re-sends a transaction call, whatever the status or flag: a failed
-commit has already discarded its transaction when the server answers, so a
-re-sent commit could only come back 404 and hide the real cause. Only a 401 is
-sent again, once, after refreshing the token. A transport failure on a
-transaction call is not retried either.
+The calls that act on an existing transaction (`commitTransaction`,
+`rollbackTransaction`, `createSavepoint`, `rollbackToSavepoint` and
+`releaseSavepoint`) are handled differently. A failure throws
+`EkoDBHttpException` whose `message` is the server's error text (the raw body
+when it is not the JSON error) and whose `retryable` is the server's `retryable`
+flag (`false` when absent or not a boolean). `retryable: true` means begin a new
+transaction and run the work again. The client never re-sends these calls,
+whatever the status or flag: a failed commit has already discarded its
+transaction when the server answers, so a re-sent commit could only come back
+404 and hide the real cause. Only a 401 is sent again, once, after refreshing
+the token. A transport failure on these calls is not retried either.
+`beginTransaction` and `getTransactionStatus` keep the normal retry policy
+above: a begin refused with 429 or 503 started no transaction, and a status read
+changes nothing, so both are retried like any other call.
 
 ```kotlin
 try {

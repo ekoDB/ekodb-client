@@ -623,6 +623,12 @@ describe("EkoDBClient transaction errors", () => {
       .filter((path) => path.startsWith("/api/transactions"));
   }
 
+  function tokenCalls(): string[] {
+    return mockFetch.mock.calls
+      .map(([url]) => new URL(url as string).pathname)
+      .filter((path) => path === "/api/auth/token");
+  }
+
   it("throws a 409 commit as a retryable EkoDBApiError after one send", async () => {
     const client = createRetryingClient(3);
     const body = JSON.stringify({
@@ -756,7 +762,7 @@ describe("EkoDBClient transaction errors", () => {
     expect(transactionCalls()).toEqual(["/api/transactions/tx-4/commit"]);
   });
 
-  it("maps every transaction route's failure to the typed error", async () => {
+  it("maps every call on an existing transaction to the typed error", async () => {
     const client = createRetryingClient(3);
     const gone = JSON.stringify({
       error: "transaction tx-9 not found",
@@ -764,8 +770,6 @@ describe("EkoDBClient transaction errors", () => {
       retryable: false,
     });
     const calls: Array<() => Promise<unknown>> = [
-      () => client.beginTransaction(),
-      () => client.getTransactionStatus("tx-9"),
       () => client.rollbackTransaction("tx-9"),
       () => client.createSavepoint("tx-9", "sp1"),
       () => client.rollbackToSavepoint("tx-9", "sp1"),
@@ -785,6 +789,163 @@ describe("EkoDBClient transaction errors", () => {
       expect((error as EkoDBApiError).retryable).toBe(false);
     }
     expect(transactionCalls()).toHaveLength(calls.length);
+  });
+
+  it("sends a commit answered 429 once as an EkoDBApiError", async () => {
+    const client = createRetryingClient(3);
+    mockTokenResponse();
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      status: 429,
+      json: async () => ({ error: "too many requests", retryable: true }),
+      text: async () =>
+        JSON.stringify({ error: "too many requests", retryable: true }),
+      headers: new Headers({ "Retry-After": "0" }),
+    });
+    mockJsonResponse({ status: "committed" });
+
+    const error = await client
+      .commitTransaction("tx-7")
+      .then(() => undefined)
+      .catch((e: unknown) => e);
+
+    expect(error).toBeInstanceOf(EkoDBApiError);
+    expect(error).not.toBeInstanceOf(RateLimitError);
+    expect((error as EkoDBApiError).status).toBe(429);
+    expect((error as EkoDBApiError).message).toBe("too many requests");
+    expect((error as EkoDBApiError).retryable).toBe(true);
+    expect(transactionCalls()).toEqual(["/api/transactions/tx-7/commit"]);
+  });
+
+  it("reads a non-boolean retryable flag as false", async () => {
+    const client = createRetryingClient(3);
+    mockTokenResponse();
+    mockTransactionFailure(
+      409,
+      JSON.stringify({
+        error: "write conflict",
+        transaction_id: "tx-8",
+        retryable: "true",
+      }),
+    );
+
+    const error = await client
+      .commitTransaction("tx-8")
+      .then(() => undefined)
+      .catch((e: unknown) => e);
+
+    expect((error as EkoDBApiError).status).toBe(409);
+    expect((error as EkoDBApiError).message).toBe("write conflict");
+    expect((error as EkoDBApiError).retryable).toBe(false);
+  });
+
+  it("retries a begin answered 429 and returns the second answer", async () => {
+    const client = createRetryingClient(3);
+    mockTokenResponse();
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      status: 429,
+      json: async () => ({ error: "Rate limit exceeded" }),
+      text: async () => "Rate limit exceeded",
+      headers: new Headers({ "Retry-After": "0" }),
+    });
+    mockJsonResponse({ transaction_id: "tx-new" });
+
+    await expect(client.beginTransaction()).resolves.toBe("tx-new");
+    // A refused begin started no transaction, so it is sent again.
+    expect(transactionCalls()).toEqual([
+      "/api/transactions",
+      "/api/transactions",
+    ]);
+  });
+
+  it("rejects a begin throttled past its retries with RateLimitError", async () => {
+    const client = createRetryingClient(1);
+    mockTokenResponse();
+    for (let i = 0; i < 2; i++) {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 429,
+        json: async () => ({ error: "Rate limit exceeded" }),
+        text: async () => "Rate limit exceeded",
+        headers: new Headers({ "Retry-After": "0" }),
+      });
+    }
+
+    const error = await client
+      .beginTransaction()
+      .then(() => undefined)
+      .catch((e: unknown) => e);
+
+    expect(error).toBeInstanceOf(RateLimitError);
+    expect((error as RateLimitError).retryAfterSecs).toBe(0);
+    // The first send plus the one retry.
+    expect(transactionCalls()).toEqual([
+      "/api/transactions",
+      "/api/transactions",
+    ]);
+  });
+
+  it("retries a status read answered 429", async () => {
+    const client = createRetryingClient(3);
+    mockTokenResponse();
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      status: 429,
+      json: async () => ({ error: "Rate limit exceeded" }),
+      text: async () => "Rate limit exceeded",
+      headers: new Headers({ "Retry-After": "0" }),
+    });
+    mockJsonResponse({ state: "Active", operations_count: 2 });
+
+    await expect(client.getTransactionStatus("tx-10")).resolves.toEqual({
+      state: "Active",
+      operations_count: 2,
+    });
+    expect(transactionCalls()).toEqual([
+      "/api/transactions/tx-10",
+      "/api/transactions/tx-10",
+    ]);
+  });
+
+  it("refreshes the token once on a 401 commit and sends it once more", async () => {
+    const client = createRetryingClient(3);
+    mockTokenResponse();
+    mockTransactionFailure(401, JSON.stringify({ error: "token expired" }));
+    mockTokenResponse();
+    mockJsonResponse({ status: "committed" });
+
+    await expect(client.commitTransaction("tx-11")).resolves.toBeUndefined();
+
+    expect(transactionCalls()).toEqual([
+      "/api/transactions/tx-11/commit",
+      "/api/transactions/tx-11/commit",
+    ]);
+    expect(tokenCalls()).toHaveLength(2);
+  });
+
+  it("stops after two sends when a commit is answered 401 twice", async () => {
+    const client = createRetryingClient(3);
+    mockTokenResponse();
+    mockTransactionFailure(401, JSON.stringify({ error: "token expired" }));
+    mockTokenResponse();
+    mockTransactionFailure(401, JSON.stringify({ error: "token expired" }));
+    // Queued so that a third send or refresh would be visible below.
+    mockTokenResponse();
+    mockJsonResponse({ status: "committed" });
+
+    const error = await client
+      .commitTransaction("tx-12")
+      .then(() => undefined)
+      .catch((e: unknown) => e);
+
+    expect(error).toBeInstanceOf(EkoDBApiError);
+    expect((error as EkoDBApiError).status).toBe(401);
+    expect(transactionCalls()).toEqual([
+      "/api/transactions/tx-12/commit",
+      "/api/transactions/tx-12/commit",
+    ]);
+    expect(tokenCalls()).toHaveLength(2);
   });
 
   it("leaves retryable false on errors from other routes", async () => {

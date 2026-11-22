@@ -83,13 +83,17 @@ export interface ScheduleStats {
  * `body` is the response text as the server sent it. It is empty when the
  * client redacts admin errors, so a credential the server echoed is never kept.
  *
- * `retryable` is the server's verdict on a transaction call (`begin`, status,
- * `commit`, `rollback`, the savepoint calls): such a failure has `message` set
+ * `retryable` is the server's verdict on a call that acts on an existing
+ * transaction (`commitTransaction`, `rollbackTransaction`, `createSavepoint`,
+ * `rollbackToSavepoint`, `releaseSavepoint`): such a failure has `message` set
  * to the server's `error` text (the raw body when the body is not that JSON)
  * and `retryable` set to the server's `retryable` flag. `true` means begin a
- * new transaction and run the work again; the client never re-sends a
- * transaction call itself. It is `false` for every other call and whenever the
- * server does not say.
+ * new transaction and run the work again; the client never re-sends those
+ * calls itself. With `redactErrors` on, `message` is
+ * `Admin request failed (HTTP N)` instead of the server's text, and
+ * `retryable` still carries the flag. It is `false` for every other call
+ * (begin and status included) and whenever the flag is absent or not a
+ * boolean.
  */
 export class EkoDBApiError extends Error {
   constructor(
@@ -103,19 +107,52 @@ export class EkoDBApiError extends Error {
   }
 }
 
-/** Every route under this prefix is a transaction call. */
-const TRANSACTIONS_PATH = "/api/transactions";
+/** The prefix of the routes that name an existing transaction. */
+const TRANSACTION_ROUTE_PREFIX = "/api/transactions/";
 
-/** Whether a request path is a transaction call. */
-function isTransactionPath(path: string): boolean {
-  return path === TRANSACTIONS_PATH || path.startsWith(`${TRANSACTIONS_PATH}/`);
+/**
+ * Whether a request acts on an existing transaction: commit
+ * (`POST /api/transactions/{id}/commit`), rollback
+ * (`POST /api/transactions/{id}/rollback`), create savepoint
+ * (`POST /api/transactions/{id}/savepoints`), rollback to savepoint
+ * (`POST /api/transactions/{id}/savepoints/{name}/rollback`) and release
+ * savepoint (`DELETE /api/transactions/{id}/savepoints/{name}`). Those calls
+ * are never re-sent. Begin (`POST /api/transactions`) and status
+ * (`GET /api/transactions/{id}`) are not among them: they keep the normal
+ * retry policy and error types. The id and name are percent-encoded, so a
+ * `/` always separates segments.
+ */
+function actsOnExistingTransaction(method: string, path: string): boolean {
+  if (!path.startsWith(TRANSACTION_ROUTE_PREFIX)) return false;
+  const segments = path.slice(TRANSACTION_ROUTE_PREFIX.length).split("/");
+  if (segments.some((segment) => segment === "")) return false;
+  const [, action, , savepointAction] = segments;
+  switch (segments.length) {
+    case 2:
+      return (
+        method === "POST" &&
+        (action === "commit" ||
+          action === "rollback" ||
+          action === "savepoints")
+      );
+    case 3:
+      return method === "DELETE" && action === "savepoints";
+    case 4:
+      return (
+        method === "POST" &&
+        action === "savepoints" &&
+        savepointAction === "rollback"
+      );
+    default:
+      return false;
+  }
 }
 
 /**
- * Build the typed error for a failed transaction call from its status and
- * body. The server answers `{"error", "transaction_id", "retryable"}`; a body
- * that is not that JSON keeps its raw text as the message, and an absent flag
- * is `false`.
+ * Build the typed error for a failed call on an existing transaction from its
+ * status and body. The server answers `{"error", "transaction_id",
+ * "retryable"}`; a body that is not that JSON keeps its raw text as the
+ * message, and an absent or non-boolean flag is `false`.
  */
 function transactionError(status: number, body: string): EkoDBApiError {
   let message = body.trim();
@@ -1009,14 +1046,15 @@ export class EkoDBClient {
         }
       }
 
-      // A transaction call is never re-sent, whatever the status or flag: a
-      // failed commit has already discarded its transaction when the server
-      // answers, so a re-sent call could only come back 404 and hide the real
-      // cause. The error carries the server's `retryable` flag for the caller,
-      // who begins a new transaction. A first 401 still falls through to the
-      // token refresh below: the request never reached the transaction.
+      // A call on an existing transaction is never re-sent, whatever the
+      // status or flag: a failed commit has already discarded its transaction
+      // when the server answers, so a re-sent call could only come back 404
+      // and hide the real cause. The error carries the server's `retryable`
+      // flag for the caller, who begins a new transaction. A first 401 still
+      // falls through to the token refresh below: the request never reached
+      // the transaction. Begin and status are not covered and fall through.
       if (
-        isTransactionPath(path) &&
+        actsOnExistingTransaction(method, path) &&
         !(response.status === 401 && attempt === 0)
       ) {
         const error = transactionError(response.status, await response.text());
@@ -1141,13 +1179,13 @@ export class EkoDBClient {
         );
       }
 
-      // Handle network errors with retry. A transaction call is not re-sent:
-      // the failed attempt may have reached the server.
+      // Handle network errors with retry. A call on an existing transaction is
+      // not re-sent: the failed attempt may have reached the server.
       if (
         error instanceof TypeError &&
         this.shouldRetry &&
         attempt < this.maxRetries &&
-        !isTransactionPath(path)
+        !actsOnExistingTransaction(method, path)
       ) {
         const retryDelay = this.backoffSeconds(attempt);
         console.log(
@@ -1713,10 +1751,20 @@ export class EkoDBClient {
    * transaction read or wrote was changed by another committed transaction —
    * retry the transaction in that case.
    *
-   * Every transaction call rejects with an {@link EkoDBApiError} carrying the
-   * server's message and its `retryable` flag, after a single send: the client
-   * never re-sends a transaction call. `retryable: true` means begin a new
-   * transaction and run the work again.
+   * `beginTransaction` and {@link getTransactionStatus} keep the client's
+   * normal retry policy and error types: a begin refused with 429 or 503
+   * started no transaction, so it is sent again, and a 429 that outlasts the
+   * retries rejects with {@link RateLimitError}.
+   *
+   * The calls that act on the transaction ({@link commitTransaction},
+   * {@link rollbackTransaction}, {@link createSavepoint},
+   * {@link rollbackToSavepoint}, {@link releaseSavepoint}) reject with an
+   * {@link EkoDBApiError} after a single send, carrying the server's
+   * `retryable` flag and, unless the client redacts errors, the server's
+   * message (with `redactErrors` the message is
+   * `Admin request failed (HTTP N)`). The client never re-sends them; only a
+   * 401 is sent once more after the token is refreshed. `retryable: true`
+   * means begin a new transaction and run the work again.
    *
    * @param isolationLevel - Optional transaction isolation level; omit it to use the server default
    * @returns Transaction ID
