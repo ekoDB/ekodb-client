@@ -263,10 +263,15 @@ older versions and sources/javadoc JARs are excluded from the example classpath.
 **Features demonstrated:**
 
 - Save/call/update/delete scripts via direct HTTP API
-- Parameterized scripts with type validation
+- Parameterized scripts with defaults and explicit pagination values
 - Multi-stage pipelines (query + aggregation)
 - Script management (list, retrieve by ID/label)
 - Group aggregations (count, average, etc.)
+
+Stored-function parameter definitions use `required`, `default`, and
+`description`. They do not declare a `type` or `param_type`; typed record values
+are a separate contract. The pagination examples verify both omitted defaults
+and explicit pages, including the order of returned scores.
 
 ### 9. Transactions
 

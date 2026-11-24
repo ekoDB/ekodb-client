@@ -274,12 +274,10 @@ func parameterizedPaginationFunction() (string, error) {
 		"version": "1.0",
 		"parameters": map[string]interface{}{
 			"page_size": map[string]interface{}{
-				"type":     "Integer",
 				"required": false,
 				"default":  5,
 			},
 			"page_offset": map[string]interface{}{
-				"type":     "Integer",
 				"required": false,
 				"default":  0,
 			},
@@ -309,6 +307,18 @@ func parameterizedPaginationFunction() (string, error) {
 		return "", err
 	}
 	fmt.Printf("✅ Function saved: %s\n", functionID)
+
+	defaults, err := request("POST", "/api/functions/"+paginatedLabel, map[string]interface{}{})
+	if err != nil {
+		return functionID, err
+	}
+	defaultRecords, err := functionRecords(defaults)
+	if err != nil {
+		return functionID, err
+	}
+	if err := assertScores(defaultRecords, []float64{100, 80, 60, 40, 20}); err != nil {
+		return functionID, fmt.Errorf("default page: %w", err)
+	}
 
 	// Call with page 1 (first 3 users)
 	callResultRaw, err := request("POST", "/api/functions/"+paginatedLabel, map[string]interface{}{

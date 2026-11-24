@@ -111,12 +111,10 @@ async fn script_1_insert_and_verify() -> Result<(String, String), Box<dyn std::e
         "version": "1.0",
         "parameters": {
             "user_name": {
-                "type": "String",
                 "required": true,
                 "description": "Name of the user"
             },
             "user_email": {
-                "type": "String",
                 "required": true,
                 "description": "Email of the user"
             }
@@ -207,12 +205,10 @@ async fn script_2_query_update_verify() -> Result<String, Box<dyn std::error::Er
         "version": "1.0",
         "parameters": {
             "user_email": {
-                "type": "String",
                 "required": true,
                 "description": "Email to search for"
             },
             "new_status": {
-                "type": "String",
                 "default": "active",
                 "required": false,
                 "description": "New status value"
@@ -322,7 +318,6 @@ async fn script_3_query_update_credits() -> Result<String, Box<dyn std::error::E
         "version": "1.0",
         "parameters": {
             "user_email": {
-                "type": "String",
                 "required": true,
                 "description": "Email to search for"
             },
@@ -431,7 +426,6 @@ async fn script_4_delete_and_verify() -> Result<String, Box<dyn std::error::Erro
         "version": "1.0",
         "parameters": {
             "user_email": {
-                "type": "String",
                 "required": true,
                 "description": "Email of user to delete"
             }

@@ -167,7 +167,6 @@ suspend fun wrappedTypesInScript(client: EkoDBClient): String {
                 description = "Unique order ID"
             ),
             "timestamp" to ParameterDefinition(
-                paramType = "DateTime",
                 required = true,
                 description = "Current UTC timestamp (ISO 8601)"
             )
@@ -305,7 +304,6 @@ suspend fun combinedExample(client: EkoDBClient): String {
                 description = "Order total"
             ),
             "timestamp" to ParameterDefinition(
-                paramType = "DateTime",
                 required = true,
                 description = "Current UTC timestamp (ISO 8601)"
             )

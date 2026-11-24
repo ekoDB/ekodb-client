@@ -141,6 +141,19 @@ async def simple_query_function(session, token):
     return function_id
 
 
+def assert_scores(records, expected):
+    scores = [
+        (
+            record["score"].get("value")
+            if isinstance(record["score"], dict)
+            else record["score"]
+        )
+        for record in records
+    ]
+    if scores != expected:
+        raise AssertionError(f"Expected scores {expected}, received {scores}")
+
+
 async def parameterized_pagination_function(session, token):
     """Example 2: Parameterized Pagination with Limit/Skip"""
     print("📝 Example 2: Parameterized Pagination with Limit/Skip\n")
@@ -151,12 +164,10 @@ async def parameterized_pagination_function(session, token):
         "version": "1.0",
         "parameters": {
             "page_size": {
-                "type": "Integer",
                 "required": False,
                 "default": 5,
             },
             "page_offset": {
-                "type": "Integer",
                 "required": False,
                 "default": 0,
             },
@@ -184,6 +195,11 @@ async def parameterized_pagination_function(session, token):
     function_id = await save_or_update_function(session, token, function2)
     print(f"✅ Function saved: {function_id}")
 
+    defaults = await request(
+        session, "POST", f"/api/functions/{FUNCTION_LABELS[1]}", {}, token
+    )
+    assert_scores(defaults["records"], [100, 80, 60, 40, 20])
+
     # Call with page 1 (first 3 users)
     call_result = await request(
         session,
@@ -192,6 +208,7 @@ async def parameterized_pagination_function(session, token):
         {"page_size": 3, "page_offset": 0},
         token,
     )
+    assert_scores(call_result["records"], [100, 80, 60])
     print(f"📊 Page 1: Found {len(call_result['records'])} users (limit=3, skip=0)\n")
 
     # Call with page 2 (next 3 users)
@@ -202,6 +219,7 @@ async def parameterized_pagination_function(session, token):
         {"page_size": 3, "page_offset": 3},
         token,
     )
+    assert_scores(call_result["records"], [40, 20])
     print(f"📊 Page 2: Found {len(call_result['records'])} users (limit=3, skip=3)\n")
     return function_id
 

@@ -125,15 +125,12 @@ async function wrappedTypesInScript(client) {
     version: "1.0",
     parameters: {
       order_total: {
-        param_type: "String",
         required: true,
       },
       order_id: {
-        param_type: "String",
         required: true,
       },
       timestamp: {
-        param_type: "DateTime",
         required: true,
         description: "Current UTC timestamp (ISO 8601)",
       },
@@ -201,11 +198,9 @@ async function kvScriptOperations(client) {
     version: "1.0",
     parameters: {
       product_key: {
-        param_type: "String",
         required: true,
       },
       product_data: {
-        param_type: "Object",
         required: true,
       },
     },
@@ -267,15 +262,12 @@ async function combinedExample(client) {
     version: "1.0",
     parameters: {
       order_id: {
-        param_type: "String",
         required: true,
       },
       total: {
-        param_type: "String",
         required: true,
       },
       timestamp: {
-        param_type: "DateTime",
         required: true,
       },
     },

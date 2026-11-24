@@ -77,7 +77,8 @@ data class ParameterDefinition(
     val required: Boolean = false,
     val default: kotlinx.serialization.json.JsonElement? = null,
     val description: String? = null,
-    @kotlinx.serialization.SerialName("param_type")
+    @Deprecated("Parameter types are not part of the stored-function wire contract")
+    @kotlinx.serialization.Transient
     val paramType: String? = null
 )
 

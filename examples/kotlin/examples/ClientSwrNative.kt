@@ -61,7 +61,6 @@ fun exampleBasicSWR(client: EkoDBClient): String = runBlocking {
             "username" to ParameterDefinition(
                 required = true,
                 description = "GitHub username to fetch",
-                paramType = "String"
             )
         ),
         functions = listOf(
@@ -120,7 +119,6 @@ fun exampleAuditTrail(client: EkoDBClient): String = runBlocking {
             "product_id" to ParameterDefinition(
                 required = true,
                 description = "Product ID to fetch",
-                paramType = "String"
             )
         ),
         functions = listOf(
@@ -165,7 +163,6 @@ fun examplePipelineEnrichment(client: EkoDBClient): String = runBlocking {
             "user_id" to ParameterDefinition(
                 required = true,
                 description = "User ID to enrich",
-                paramType = "String"
             )
         ),
         functions = listOf(
@@ -227,12 +224,10 @@ fun exampleDynamicTTL(client: EkoDBClient): String = runBlocking {
             "resource_id" to ParameterDefinition(
                 required = true,
                 description = "Resource to fetch",
-                paramType = "String"
             ),
             "ttl" to ParameterDefinition(
                 required = true,
                 description = "Cache duration (e.g., '5m', '1h', '30s')",
-                paramType = "String"
             )
         ),
         functions = listOf(

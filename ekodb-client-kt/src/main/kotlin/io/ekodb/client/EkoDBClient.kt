@@ -2595,6 +2595,15 @@ class EkoDBClient private constructor(
         runAsProblem(definition)?.let { throw IllegalArgumentException(it) }
     }
 
+    /** Keep legacy caller metadata off the wire without changing parameter defaults. */
+    private fun functionRequestBody(definition: JsonObject): JsonObject {
+        val parameters = definition["parameters"] as? JsonObject ?: return definition
+        val wireParameters = JsonObject(parameters.mapValues { (_, value) ->
+            if (value is JsonObject) JsonObject(value - "param_type") else value
+        })
+        return JsonObject(definition + ("parameters" to wireParameters))
+    }
+
     /** Refuses a definition the server returned with an unknown `run_as`. */
     private fun checkReadRunAs(definition: JsonObject): JsonObject {
         runAsProblem(definition)?.let { throw IllegalStateException(it) }
@@ -2609,11 +2618,12 @@ class EkoDBClient private constructor(
      */
     suspend fun saveUserFunction(userFunction: JsonObject): String {
         requireKnownRunAs(userFunction)
+        val body = functionRequestBody(userFunction)
         val response = executeWithRetry { token ->
             client.post("$baseUrl/api/functions") {
                 bearerAuth(token)
                 contentType(ContentType.Application.Json)
-                setBody(userFunction)
+                setBody(body)
             }
         }
 
@@ -2680,11 +2690,12 @@ class EkoDBClient private constructor(
      */
     suspend fun updateUserFunction(label: String, userFunction: JsonObject) {
         requireKnownRunAs(userFunction)
+        val body = functionRequestBody(userFunction)
         val response = executeWithRetry { token ->
             client.put("$baseUrl/api/functions/${label.encodeURLPathPart()}") {
                 bearerAuth(token)
                 contentType(ContentType.Application.Json)
-                setBody(userFunction)
+                setBody(body)
             }
         }
 

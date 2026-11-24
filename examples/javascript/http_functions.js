@@ -163,6 +163,15 @@ async function simpleQueryFunction() {
   return saveResult.id;
 }
 
+function assertScores(records, expected) {
+  const scores = records.map((record) => record.score?.value ?? record.score);
+  if (JSON.stringify(scores) !== JSON.stringify(expected)) {
+    throw new Error(
+      `Expected scores ${JSON.stringify(expected)}, received ${JSON.stringify(scores)}`,
+    );
+  }
+}
+
 async function parameterizedPaginationFunction() {
   console.log("📝 Example 2: Parameterized Pagination with Limit/Skip\n");
 
@@ -172,12 +181,10 @@ async function parameterizedPaginationFunction() {
     version: "1.0",
     parameters: {
       page_size: {
-        type: "Integer",
         required: false,
         default: 5,
       },
       page_offset: {
-        type: "Integer",
         required: false,
         default: 0,
       },
@@ -205,6 +212,9 @@ async function parameterizedPaginationFunction() {
   const saveResult = await saveOrUpdateFunction(function2);
   console.log(`✅ Function saved: ${saveResult.id}`);
 
+  const defaults = await request("POST", `/api/functions/${saveResult.id}`, {});
+  assertScores(defaults.records, [100, 80, 60, 40, 20]);
+
   // Call with page 1 (first 3 users)
   let callResult = await request("POST", `/api/functions/${saveResult.id}`, {
     page_size: 3,
@@ -215,6 +225,7 @@ async function parameterizedPaginationFunction() {
       `Page 1 returned ${callResult.records.length} records; expected 3`,
     );
   }
+  assertScores(callResult.records, [100, 80, 60]);
   console.log(
     `📊 Page 1: Found ${callResult.records.length} users (limit=3, skip=0)`,
   );
@@ -229,6 +240,7 @@ async function parameterizedPaginationFunction() {
       `Page 2 returned ${callResult.records.length} records; expected 2`,
     );
   }
+  assertScores(callResult.records, [40, 20]);
   console.log(
     `📊 Page 2: Found ${callResult.records.length} users (limit=3, skip=3)\n`,
   );
