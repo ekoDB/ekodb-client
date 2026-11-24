@@ -116,6 +116,10 @@ and this project adheres to
 
 ### Fixed
 
+- **Kotlin `countDocuments` refuses a negative count, as the other SDKs do (#405 review).** A response whose `count` is negative (for example `-1`) was returned as a negative `Long`; it now throws `IllegalStateException`, the same refusal as a missing, null, string or fractional count. Zero is still a count. TypeScript and Rust already refused a negative count.
+
+- **TypeScript reads a `message` text from a failed transaction call's body when it has no `error` text (#406 review).** A failed commit, rollback or savepoint call whose body is `{"message":"x"}` now reads as `x`, as the Rust client reads it, and `error` is still read before `message`; before, TypeScript kept the raw body text as the message.
+
 - **Kotlin: `SerializationFormat.MESSAGEPACK` speaks MessagePack on REST
   (#418).** The format sent each body with no converter registered for
   `application/msgpack`, and read a reply as CBOR, a different encoding, so
