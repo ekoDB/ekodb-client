@@ -46,7 +46,9 @@ async fn main() -> Result<()> {
         .api_key(&api_key)
         .build()?;
 
-    let collection = "convenience_methods_example";
+    let run_id = uuid::Uuid::new_v4().simple().to_string();
+    let collection_name = format!("convenience_methods_rs_{run_id}");
+    let collection = collection_name.as_str();
     let operation_result = async {
         println!("=== Record Builder Pattern ===");
         // Fluent builder for creating records
@@ -68,10 +70,16 @@ async fn main() -> Result<()> {
             .field("age", 35);
 
         // First upsert - will insert (new ID doesn't exist yet)
+        let requested_bob_id = format!("bob-{run_id}");
         let upserted1 = client
-            .upsert(collection, "bob-user-id", user2.clone(), None)
+            .upsert(collection, &requested_bob_id, user2.clone(), None)
             .await?;
         let bob_id = record_id(&upserted1)?;
+        if bob_id != requested_bob_id {
+            return Err(Error::Validation(
+                "first upsert did not persist the supplied record id".into(),
+            ));
+        }
         println!("✓ First upsert (insert): {:?}", upserted1);
 
         // Second upsert - will update (same ID, already exists)
@@ -174,7 +182,22 @@ async fn main() -> Result<()> {
     .await;
 
     println!("\n=== Cleanup ===");
-    let cleanup_result = client.delete_collection(collection).await;
+    let cleanup_result = async {
+        match client.delete_collection(collection).await {
+            Ok(()) | Err(Error::NotFound) => {}
+            Err(error) => return Err(error),
+        }
+        if client.collection_exists(collection).await? {
+            return Err(Error::Validation(
+                "owned example collection remained after cleanup".into(),
+            ));
+        }
+        Ok(())
+    }
+    .await;
+    if let Err(error) = &cleanup_result {
+        eprintln!("Cleanup failed: {error}");
+    }
     operation_result?;
     cleanup_result?;
     println!("✓ Deleted collection");

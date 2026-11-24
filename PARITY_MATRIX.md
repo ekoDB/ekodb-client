@@ -34,6 +34,15 @@ The matching live example suite is the integration check; offline parity and
 compilation remain separate checks. Live verification results are recorded on
 the change's PR rather than captured in repository example transcripts.
 
+### Convenience-example fixture isolation (unreleased)
+
+The Rust convenience example uses fresh collection and record identities for
+each run. It checks insert-path ID preservation, update read-back, the exact
+record count and page sizes, then verifies collection absence after cleanup. Go
+already uses a fresh insert-path ID, TypeScript and Kotlin use per-run
+collections, and Python inserts records with generated IDs. Their public upsert
+transport paths were inspected; this example correction changes no SDK API.
+
 ### AI example model and cost maintenance (unreleased)
 
 All five SDK example sets explicitly select GPT-6 Luna for plain chat and raw
