@@ -842,6 +842,25 @@ describe("EkoDBClient transaction errors", () => {
     expect((error as EkoDBApiError).retryable).toBe(false);
   });
 
+  it("reads a message-only body as the message, and error before message", async () => {
+    for (const [body, want] of [
+      [{ message: "only a message", retryable: true }, "only a message"],
+      [{ error: "the error", message: "the message" }, "the error"],
+    ] as const) {
+      const client = createRetryingClient(3);
+      mockTokenResponse();
+      mockTransactionFailure(409, JSON.stringify(body));
+
+      const error = await client
+        .commitTransaction("tx-9")
+        .then(() => undefined)
+        .catch((e: unknown) => e);
+
+      expect((error as EkoDBApiError).status).toBe(409);
+      expect((error as EkoDBApiError).message).toBe(want);
+    }
+  });
+
   it("retries a begin answered 429 and returns the second answer", async () => {
     const client = createRetryingClient(3);
     mockTokenResponse();

@@ -185,8 +185,9 @@ async function errorBodyText(response: Response): Promise<string> {
 /**
  * Build the typed error for a failed call on an existing transaction from its
  * status and body. The server answers `{"error", "transaction_id",
- * "retryable"}`; a body that is not that JSON keeps its raw text as the
- * message, and an absent or non-boolean flag is `false`.
+ * "retryable"}`; the message is the `error` text, else a `message` text (as the
+ * Rust client reads it), and a body that is neither keeps its raw text. An
+ * absent or non-boolean flag is `false`.
  */
 function transactionError(status: number, body: string): EkoDBApiError {
   let message = body.trim();
@@ -194,8 +195,13 @@ function transactionError(status: number, body: string): EkoDBApiError {
   try {
     const parsed: unknown = JSON.parse(body);
     if (parsed !== null && typeof parsed === "object") {
-      const answer = parsed as { error?: unknown; retryable?: unknown };
+      const answer = parsed as {
+        error?: unknown;
+        message?: unknown;
+        retryable?: unknown;
+      };
       if (typeof answer.error === "string") message = answer.error;
+      else if (typeof answer.message === "string") message = answer.message;
       retryable = answer.retryable === true;
     }
   } catch {
