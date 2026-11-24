@@ -1349,8 +1349,6 @@ lint-fix-typescript:
 
 # Install all client libraries
 install: check-toolchains install-rust install-python install-typescript install-go
-	@echo "🔧 $(CYAN)Making scripts executable...$(RESET)"
-	@chmod +x scripts/*.sh
 	@echo "✅ $(GREEN)All client libraries installed!$(RESET)"
 
 # Install individual client libraries
@@ -1393,7 +1391,6 @@ setup:
 	@echo "🛠️  $(CYAN)Setting up the project...$(RESET)"
 	cargo fetch
 	cargo check
-	@chmod +x scripts/*.sh
 	@mkdir -p logs
 	@if [ ! -f ".env" ] && [ -f ".env.example" ]; then \
 		cp .env.example .env; \
@@ -1403,8 +1400,7 @@ setup:
 
 install-hooks:
 	@echo "🪝 $(CYAN)Installing Git hooks...$(RESET)"
-	cp scripts/pre-commit .git/hooks/pre-commit
-	chmod +x .git/hooks/pre-commit
+	install -m 755 scripts/pre-commit .git/hooks/pre-commit
 	@echo "✅ $(GREEN)Git hooks installed!$(RESET)"
 
 # ============================================================================
@@ -1622,7 +1618,6 @@ ensure-hooks:
 		REPO_ROOT="$$(dirname "$$GIT_COMMON_DIR")"; \
 		test -x "$$REPO_ROOT/scripts/pre-commit"; \
 		ln -s "$$REPO_ROOT/scripts/pre-commit" "$$HOOK_PATH"; \
-		chmod +x "$$HOOK_PATH"; \
 		echo "✅ $(GREEN)Pre-commit hook installed$(RESET)"; \
 	fi
 
@@ -1633,6 +1628,8 @@ test-example-env:
 	@bash scripts/test-load-root-env.sh
 	@bash scripts/test-scrub-paths.sh
 	@bash scripts/test-run-with-timeout.sh
+	@bash scripts/test-script-modes.sh --self-test
+	@bash scripts/test-script-modes.sh
 
 examples-ls:
 	@echo "📋 $(CYAN)Generating examples inventory...$(RESET)"
