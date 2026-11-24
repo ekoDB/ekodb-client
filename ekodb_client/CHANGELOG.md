@@ -116,6 +116,50 @@ and this project adheres to
 
 ### Fixed
 
+- **`make install` and `make setup` no longer change script file modes (#411).**
+  Both ran `chmod +x scripts/*.sh`, which made five scripts tracked as `100644`
+  executable, so a clean checkout showed five mode changes after `make install`
+  and a `git add -A` could commit them into unrelated work. Git already restores
+  each tracked file's mode, so the chmod is gone.
+  `scripts/test-script-modes.sh`, run by `make test-example-env`, keeps a
+  `chmod` in the Makefile from changing the mode git tracks for any file. It is
+  a whitelist: a Makefile line that holds the word `chmod` (a backslash
+  continuation joined the way make and the shell join it) must be a plain recipe
+  command, `chmod <mode> <path> ...`, with a literal mode and literal paths and
+  nothing else (no operand that starts with `-`, glob, variable, quote,
+  redirection, second command or absolute path). Each path must also name a
+  tracked regular file exactly: spelled as git records it, reached without
+  passing through a symlink, present on disk, and with no other hard link, and
+  the file must keep the mode git records for it, the owner execute bit set
+  exactly when it is tracked `100755`. An untracked path, a directory, a path
+  inside `.git`, a path that does not exist yet (an earlier line may create it
+  as a link), a symlink or a path through one, and a `.` or `..` segment are not
+  plain, so a person approves that line. Any line that is not plain fails unless
+  it is written in `scripts/test-script-modes.allow`, as it stands in the
+  Makefile with its continuations joined; a row that matches no line fails, so
+  an approval does not outlive its line. The allow file has no rows today: every
+  `chmod` in the Makefile is a plain command the check settles itself.
+  `make install-hooks` installs the hook with `install -m 755`, which replaces
+  what is at the hook path instead of writing through a symlink there, and
+  `ensure-hooks` links the hook without a `chmod`, because it already requires
+  the target to be executable, so a link to another tracked file keeps its
+  content and mode (`make test-hooks` covers both). The tracked set is read from
+  the checkout's own index, with `GIT_DIR`, `GIT_INDEX_FILE` and `GIT_WORK_TREE`
+  removed from the environment of the git call. A `GNUmakefile` or `makefile`
+  (in any letter case) beside the Makefile, a Makefile that calls make's `eval`
+  (which builds make text when make runs), a Makefile that holds a carriage
+  return (make does not break a line on it), or a Makefile that sets `.ONESHELL`
+  or `.RECIPEPREFIX` (as a target, in a target list, as a variable, or under a
+  name that holds a `$`, which make can expand into one), fails the check, since
+  make reads the first ahead of the Makefile and the others change how its
+  recipe lines run. It does not read a command whose name is never spelled
+  `chmod` on one line (`$(CHMOD)`, `c"h"mod`), `install -m`, a script a recipe
+  runs that chmods on its own, a file the Makefile includes, another recipe line
+  that replaces a path the chmod names before it runs, or a Makefile that
+  redirects which program `chmod` is (an exported `PATH` or `SHELL`, a wrapper):
+  it guards against accidents, not a Makefile written to defeat it.
+  `--self-test` runs it against built fixtures.
+
 - **Four WebSocket frames the server could not parse are fixed (#413, #414,
   #415, #416).** The Rust client's `raw_completion` sent its fields at the top
   level with no `messageId`, so the server could not read the request and the
