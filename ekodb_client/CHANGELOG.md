@@ -116,6 +116,18 @@ and this project adheres to
 
 ### Fixed
 
+- Direct HTTP function examples in Rust, Python, JavaScript and Go no longer
+  send unsupported parameter `type` metadata. They check default pagination and
+  explicit page contents instead of relying on success messages.
+- Kotlin keeps the deprecated `ParameterDefinition.paramType` property for
+  source compatibility but omits it from stored-function requests. Raw JSON
+  saves and updates also strip parameter-level `param_type`, preserving defaults
+  and nested payload fields. Regression tests exercise all four public
+  save/update entry points. Matching examples omit retired metadata.
+- The Rust convenience example uses fresh collection and upsert identities on
+  each run, verifies the supplied ID is persisted, and checks collection absence
+  after cleanup. Its exact count and pagination assertions remain.
+
 - **Kotlin `countDocuments` refuses a negative count, as the other SDKs do (#405
   review).** A response whose `count` is negative (for example `-1`) was
   returned as a negative `Long`; it now throws `IllegalStateException`, the same
