@@ -2203,8 +2203,8 @@ class EkoDBClientTest {
     }
 
     @Test
-    fun `countDocuments refuses a response without an integer count`() = runBlocking {
-        for (body in listOf("""{}""", """{"count":null}""", """{"count":"5"}""", """{"count":2.5}""")) {
+    fun `countDocuments refuses a response without a non-negative integer count`() = runBlocking {
+        for (body in listOf("""{}""", """{"count":null}""", """{"count":"5"}""", """{"count":2.5}""", """{"count":-1}""")) {
             val requests = mutableListOf<HttpRequestData>()
             val client = createTestClient(capturingMockEngine(requests, body))
             assertFailsWith<IllegalStateException>(body) { client.countDocuments("users") }
@@ -2212,6 +2212,9 @@ class EkoDBClientTest {
         val requests = mutableListOf<HttpRequestData>()
         val client = createTestClient(capturingMockEngine(requests, """{"count":7}"""))
         assertEquals(7L, client.countDocuments("users"), "control")
+        val emptyRequests = mutableListOf<HttpRequestData>()
+        val emptyClient = createTestClient(capturingMockEngine(emptyRequests, """{"count":0}"""))
+        assertEquals(0L, emptyClient.countDocuments("users"), "control: zero is a count")
     }
 
     @Test
