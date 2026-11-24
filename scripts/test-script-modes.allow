@@ -1,0 +1,7 @@
+# Lines of the Makefile that hold chmod and that scripts/test-script-modes.sh cannot read or cannot settle, each
+# approved by a person, who reads the line and answers for any state it depends on that the check cannot read.
+# A row is the line as it stands in the Makefile, backslash continuations joined the way the check joins them
+# (leading and trailing whitespace aside); the check prints a line when it refuses it. A row that matches no
+# line fails the check.
+#
+# There are no rows: every chmod in the Makefile is a plain command that the check settles itself.
