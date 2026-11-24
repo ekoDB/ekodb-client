@@ -116,6 +116,15 @@ and this project adheres to
 
 ### Fixed
 
+- **TypeScript and Kotlin read a MessagePack error body as the server's message
+  (#408).** On a MessagePack route the server encodes an error as MessagePack,
+  and both SDKs read it as text, so the caller got undecodable bytes. A failed
+  response whose `Content-Type` names MessagePack (in any letter case) and that
+  decodes as a map is now rendered as JSON before the error is built, as Rust
+  and Python already do; any other body, including a MessagePack one that is
+  invalid or is not a map, is read as before. The error reads of the chat
+  request and streaming paths in TypeScript use the same rule, as Kotlin's do.
+
 - **`make install` and `make setup` no longer change script file modes (#411).**
   Both ran `chmod +x scripts/*.sh`, which made five scripts tracked as `100644`
   executable, so a clean checkout showed five mode changes after `make install`
