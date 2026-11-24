@@ -29,6 +29,15 @@ integration, and automatic optimization.
   - Context retrieval from collections
   - Session branching and merging
 
+## Stored-function parameters
+
+Function parameters accept `required`, `default`, and `description`.
+`ParameterDefinition.paramType` remains available for source compatibility but
+is deprecated and is not serialized. The raw `saveUserFunction` and
+`updateUserFunction` methods also omit the retired `param_type` metadata from
+parameter definitions. Defaults, including zero and explicit JSON null, and
+fields inside default payloads are preserved.
+
 ## Installation
 
 ### Gradle (Kotlin DSL)

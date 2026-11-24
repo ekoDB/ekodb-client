@@ -137,12 +137,10 @@ func script1InsertAndVerify(token string) (string, string, error) {
 		"version":     "1.0",
 		"parameters": map[string]interface{}{
 			"user_name": map[string]interface{}{
-				"type":        "String",
 				"required":    true,
 				"description": "Name of the user",
 			},
 			"user_email": map[string]interface{}{
-				"type":        "String",
 				"required":    true,
 				"description": "Email of the user",
 			},
@@ -235,12 +233,10 @@ func script2QueryUpdateVerify(token string) (string, error) {
 		"version":     "1.0",
 		"parameters": map[string]interface{}{
 			"user_email": map[string]interface{}{
-				"type":        "String",
 				"required":    true,
 				"description": "Email to search for",
 			},
 			"new_status": map[string]interface{}{
-				"type":        "String",
 				"default":     "active",
 				"required":    false,
 				"description": "New status value",
@@ -340,7 +336,6 @@ func script3QueryUpdateCredits(token string) (string, error) {
 		"version":     "1.0",
 		"parameters": map[string]interface{}{
 			"user_email": map[string]interface{}{
-				"type":        "String",
 				"required":    true,
 				"description": "Email to search for",
 			},
@@ -439,7 +434,6 @@ func script4DeleteAndVerify(token string) (string, error) {
 		"version":     "1.0",
 		"parameters": map[string]interface{}{
 			"user_email": map[string]interface{}{
-				"type":        "String",
 				"required":    true,
 				"description": "Email of user to delete",
 			},

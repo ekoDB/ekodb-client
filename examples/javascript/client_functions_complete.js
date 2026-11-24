@@ -229,7 +229,6 @@ async function scriptWithParameter(client) {
     version: "1.0",
     parameters: {
       max_items: {
-        param_type: "Integer",
         required: false,
         default: 5,
       },

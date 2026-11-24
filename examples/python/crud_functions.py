@@ -84,12 +84,10 @@ async def script_1_insert_and_verify(session, token):
         "version": "1.0",
         "parameters": {
             "user_name": {
-                "type": "String",
                 "required": True,
                 "description": "Name of the user",
             },
             "user_email": {
-                "type": "String",
                 "required": True,
                 "description": "Email of the user",
             },
@@ -180,12 +178,10 @@ async def script_2_query_update_verify(session, token):
         "version": "1.0",
         "parameters": {
             "user_email": {
-                "type": "String",
                 "required": True,
                 "description": "Email to search for",
             },
             "new_status": {
-                "type": "String",
                 "default": "active",
                 "required": False,
                 "description": "New status value",
@@ -290,7 +286,6 @@ async def script_3_query_update_credits(session, token):
         "version": "1.0",
         "parameters": {
             "user_email": {
-                "type": "String",
                 "required": True,
                 "description": "Email to search for",
             },
@@ -395,7 +390,6 @@ async def script_4_delete_and_verify(session, token):
         "version": "1.0",
         "parameters": {
             "user_email": {
-                "type": "String",
                 "required": True,
                 "description": "Email of user to delete",
             }

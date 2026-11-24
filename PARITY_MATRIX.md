@@ -1,6 +1,6 @@
 # Client Library Parity Matrix
 
-**Last Updated:** November 22, 2026
+**Last Updated:** November 24, 2026
 
 **Published client version:** See the
 [latest release](https://github.com/ekoDB/ekodb-client/releases/latest). The
@@ -14,6 +14,25 @@ maintained in the separate `ekodb-client-go` repository.
 > because it had fallen behind this canonical matrix.
 
 ## Status: Core and stored-function contract parity
+
+### Stored-function parameter metadata (unreleased)
+
+Parameter definitions carry `required`, `default`, and `description`. A raw HTTP
+definition must not add `type` or `param_type` metadata. The direct Rust,
+Python, JavaScript and Go pagination examples use the same supported fields and
+assert default and explicit pages, including row order.
+
+| SDK                   | Parameter implementation and transport                                                                                                                                                                                                               |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Rust                  | `ParameterDefinition` exposes the supported fields; typed save and update serialize that model.                                                                                                                                                      |
+| Python                | Save and update dictionaries are converted through Rust's parameter model by the compiled binding.                                                                                                                                                   |
+| TypeScript/JavaScript | The compatibility `param_type` property is stripped by `functionRequestBody` on save and update.                                                                                                                                                     |
+| Kotlin                | The deprecated `paramType` constructor property is transient; raw JSON save/update remove only parameter-level `param_type`. HTTP boundary tests assert whole requests and preserve zero, explicit null, omitted defaults and nested payload fields. |
+| Go                    | `ParameterDefinition` exposes the supported fields and the public save/update methods marshal the typed model.                                                                                                                                       |
+
+The matching live example suite is the integration check; offline parity and
+compilation remain separate checks. Live verification results are recorded on
+the change's PR rather than captured in repository example transcripts.
 
 ### AI example model and cost maintenance (unreleased)
 

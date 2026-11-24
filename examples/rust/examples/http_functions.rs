@@ -207,6 +207,21 @@ async fn simple_query_function() -> Result<String, Box<dyn std::error::Error>> {
     Ok(id)
 }
 
+fn assert_scores(records: &[Value], expected: &[i64]) -> Result<(), Box<dyn std::error::Error>> {
+    let scores: Option<Vec<i64>> = records
+        .iter()
+        .map(|record| {
+            record["score"]
+                .as_i64()
+                .or_else(|| record["score"]["value"].as_i64())
+        })
+        .collect();
+    if scores.as_deref() != Some(expected) {
+        return Err(format!("Expected scores {expected:?}, received {scores:?}").into());
+    }
+    Ok(())
+}
+
 async fn parameterized_pagination_function() -> Result<String, Box<dyn std::error::Error>> {
     println!("📝 Example 2: Parameterized Pagination with Limit/Skip\n");
 
@@ -216,12 +231,10 @@ async fn parameterized_pagination_function() -> Result<String, Box<dyn std::erro
         "version": "1.0",
         "parameters": {
             "page_size": {
-                "type": "Integer",
                 "required": false,
                 "default": 5
             },
             "page_offset": {
-                "type": "Integer",
                 "required": false,
                 "default": 0
             }
@@ -247,6 +260,19 @@ async fn parameterized_pagination_function() -> Result<String, Box<dyn std::erro
     let id = save_or_update(function2, PAGINATED_LABEL).await?;
     println!("✅ Function saved: {}", id);
 
+    let defaults = request(
+        "POST",
+        &format!("/api/functions/{}", PAGINATED_LABEL),
+        Some(json!({})),
+    )
+    .await?;
+    assert_scores(
+        defaults["records"]
+            .as_array()
+            .ok_or("Missing default page records")?,
+        &[100, 80, 60, 40, 20],
+    )?;
+
     // Call with page 1 (first 3 users)
     let call_result = request(
         "POST",
@@ -255,6 +281,7 @@ async fn parameterized_pagination_function() -> Result<String, Box<dyn std::erro
     )
     .await?;
     let records = call_result["records"].as_array().unwrap();
+    assert_scores(records, &[100, 80, 60])?;
     println!("📊 Page 1: Found {} users (limit=3, skip=0)", records.len());
 
     // Call with page 2 (next 3 users)
@@ -265,6 +292,7 @@ async fn parameterized_pagination_function() -> Result<String, Box<dyn std::erro
     )
     .await?;
     let records = call_result["records"].as_array().unwrap();
+    assert_scores(records, &[40, 20])?;
     println!(
         "📊 Page 2: Found {} users (limit=3, skip=3)\n",
         records.len()
