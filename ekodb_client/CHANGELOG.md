@@ -116,6 +116,32 @@ and this project adheres to
 
 ### Fixed
 
+- **Kotlin: `SerializationFormat.MESSAGEPACK` speaks MessagePack on REST
+  (#418).** The format sent each body with no converter registered for
+  `application/msgpack`, and read a reply as CBOR, a different encoding, so
+  every MessagePack route failed. A MessagePack content converter now packs the
+  same JSON value the JSON path sends with msgpack-core and reads a reply with
+  the JSON path's settings, on the built-in client and on a caller-supplied one.
+  Only the CRUD routes (insert, update, delete and find, by id or by query) use
+  it, matched after the path of the base URL, so a base URL such as
+  `https://host/ekodb` keeps them on MessagePack: batch operations and every
+  other route, schemas and transactions included, send and ask for JSON. The
+  builder drops a trailing slash from the base URL, so `https://host/` no longer
+  makes requests to `//api/...`. The unused CBOR helpers and the
+  `kotlinx-serialization-cbor` dependency are gone (also from the Kotlin
+  examples), and `FieldType` refuses a decoder that is not JSON instead of
+  reading every field as a string. The MessagePack helpers, shared with the
+  WebSocket client, read an unsigned 64-bit integer exactly as a JSON value (a
+  record field above the signed 64-bit range is still read as a float, as on the
+  JSON path), refuse an extension value instead of reading it as null (a
+  WebSocket frame holding one is dropped, as any frame that does not decode is),
+  and refuse an integer beyond 64 bits instead of packing it as a double; a REST
+  body holding one fails at once instead of being retried, and a body that
+  already is a JSON value is packed as it is, so such an integer is refused
+  instead of being rewritten as a double on the way. A WebSocket request,
+  subscribe, tool registration or chat send whose frame cannot be sent removes
+  the state it registered, so a stale entry cannot misroute a later frame.
+
 - **TypeScript and Kotlin read a MessagePack error body as the server's message
   (#408).** On a MessagePack route the server encodes an error as MessagePack,
   and both SDKs read it as text, so the caller got undecodable bytes. A failed
