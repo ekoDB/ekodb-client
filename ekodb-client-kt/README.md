@@ -44,7 +44,7 @@ fields inside default payloads are preserved.
 
 ```kotlin
 dependencies {
-    implementation("io.ekodb:ekodb-client-kt:0.33.1")
+    implementation("io.ekodb:ekodb-client-kt:0.34.0")
 }
 ```
 
@@ -52,7 +52,7 @@ dependencies {
 
 ```groovy
 dependencies {
-    implementation 'io.ekodb:ekodb-client-kt:0.33.1'
+    implementation 'io.ekodb:ekodb-client-kt:0.34.0'
 }
 ```
 
@@ -62,7 +62,7 @@ dependencies {
 <dependency>
     <groupId>io.ekodb</groupId>
     <artifactId>ekodb-client-kt</artifactId>
-    <version>0.33.1</version>
+    <version>0.34.0</version>
 </dependency>
 ```
 
